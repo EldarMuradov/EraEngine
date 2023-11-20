@@ -28,10 +28,4 @@ ext/
 
 
 # Learning
-learning/gym-loco/gym_loco.egg-info/
-learning/gym-loco/gym_loco/__pycache__/
-learning/gym-loco/gym_loco/envs/__pycache__/
-learning/__pycache__/
 learning/
-trained_models/
-tmp/
