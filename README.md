@@ -8,7 +8,7 @@
 <a href="https://github.com/EldarMuradov/EraGameEngine"><img alt="platforms" src="https://img.shields.io/badge/platforms-Windows-blue?style=flat-square"/></a>
 
 # About
-This repository is a part of proprietary multithreaded ECS-based Era game engine. 
+This repository is a part of multithreaded ECS-based Era game engine. 
 Game Engine will be used by Era Game Cloud Gaming Platform and other developers to make games work not only on local machine,
 but to do it on Cloud Gaming.
 
