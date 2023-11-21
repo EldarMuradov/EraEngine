@@ -25,7 +25,7 @@ but to do it on Cloud Gaming.
 -.NET 8
 
 
-# Festures
+# Features
 -Real-time raytracing (DXR)
 
 -Rigidbodies and colliders
