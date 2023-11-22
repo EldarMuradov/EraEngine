@@ -409,37 +409,37 @@ slider_constraint_handle addConstraint(eentity& a, eentity& b, const slider_cons
 	return { constraintEntity };
 }
 
-distance_constraint& getConstraint(game_scene& scene, distance_constraint_handle handle)
+distance_constraint& getConstraint(escene& scene, distance_constraint_handle handle)
 {
 	return eentity{ handle.entity, scene }.getComponent<distance_constraint>();
 }
 
-ball_constraint& getConstraint(game_scene& scene, ball_constraint_handle handle)
+ball_constraint& getConstraint(escene& scene, ball_constraint_handle handle)
 {
 	return eentity{ handle.entity, scene }.getComponent<ball_constraint>();
 }
 
-fixed_constraint& getConstraint(game_scene& scene, fixed_constraint_handle handle)
+fixed_constraint& getConstraint(escene& scene, fixed_constraint_handle handle)
 {
 	return eentity{ handle.entity, scene }.getComponent<fixed_constraint>();
 }
 
-hinge_constraint& getConstraint(game_scene& scene, hinge_constraint_handle handle)
+hinge_constraint& getConstraint(escene& scene, hinge_constraint_handle handle)
 {
 	return eentity{ handle.entity, scene }.getComponent<hinge_constraint>();
 }
 
-cone_twist_constraint& getConstraint(game_scene& scene, cone_twist_constraint_handle handle)
+cone_twist_constraint& getConstraint(escene& scene, cone_twist_constraint_handle handle)
 {
 	return eentity{ handle.entity, scene }.getComponent<cone_twist_constraint>();
 }
 
-slider_constraint& getConstraint(game_scene& scene, slider_constraint_handle handle)
+slider_constraint& getConstraint(escene& scene, slider_constraint_handle handle)
 {
 	return eentity{ handle.entity, scene }.getComponent<slider_constraint>();
 }
 
-void deleteAllConstraints(game_scene& scene)
+void deleteAllConstraints(escene& scene)
 {
 	scene.deleteAllComponents<distance_constraint>();
 	scene.deleteAllComponents<ball_constraint>();
@@ -489,32 +489,32 @@ static void deleteConstraint(entt::registry* registry, entity_handle constraintE
 	registry->destroy(constraintEntity.handle);
 }
 
-void deleteConstraint(game_scene& scene, distance_constraint_handle handle)
+void deleteConstraint(escene& scene, distance_constraint_handle handle)
 {
 	deleteConstraint(&scene.registry, handle.entity);
 }
 
-void deleteConstraint(game_scene& scene, ball_constraint_handle handle)
+void deleteConstraint(escene& scene, ball_constraint_handle handle)
 {
 	deleteConstraint(&scene.registry, handle.entity);
 }
 
-void deleteConstraint(game_scene& scene, fixed_constraint_handle handle)
+void deleteConstraint(escene& scene, fixed_constraint_handle handle)
 {
 	deleteConstraint(&scene.registry, handle.entity);
 }
 
-void deleteConstraint(game_scene& scene, hinge_constraint_handle handle)
+void deleteConstraint(escene& scene, hinge_constraint_handle handle)
 {
 	deleteConstraint(&scene.registry, handle.entity);
 }
 
-void deleteConstraint(game_scene& scene, cone_twist_constraint_handle handle)
+void deleteConstraint(escene& scene, cone_twist_constraint_handle handle)
 {
 	deleteConstraint(&scene.registry, handle.entity);
 }
 
-void deleteConstraint(game_scene& scene, slider_constraint_handle handle)
+void deleteConstraint(escene& scene, slider_constraint_handle handle)
 {
 	deleteConstraint(&scene.registry, handle.entity);
 }
@@ -551,7 +551,7 @@ std::pair<eentity, constraint_type> constraint_entity_iterator::iterator::operat
 }
 
 
-void testPhysicsInteraction(game_scene& scene, ray r, float strength)
+void testPhysicsInteraction(escene& scene, ray r, float strength)
 {
 	float minT = FLT_MAX;
 	rigid_body_component* minRB = 0;
@@ -627,7 +627,7 @@ void testPhysicsInteraction(game_scene& scene, ray r, float strength)
 	}
 }
 
-static void getWorldSpaceColliders(game_scene& scene, bounding_box* outWorldspaceAABBs, collider_union* outWorldSpaceColliders, uint16 dummyRigidBodyIndex)
+static void getWorldSpaceColliders(escene& scene, bounding_box* outWorldspaceAABBs, collider_union* outWorldSpaceColliders, uint16 dummyRigidBodyIndex)
 {
 	CPU_PROFILE_BLOCK("Get world space colliders");
 
@@ -755,7 +755,7 @@ static void getWorldSpaceColliders(game_scene& scene, bounding_box* outWorldspac
 }
 
 // Returns the accumulated force from all global force fields and writes localized forces (from force fields with colliders) in outLocalizedForceFields.
-static vec3 getForceFieldStates(game_scene& scene, force_field_global_state* outLocalForceFields)
+static vec3 getForceFieldStates(escene& scene, force_field_global_state* outLocalForceFields)
 {
 	vec3 globalForceField(0.f);
 
@@ -786,7 +786,7 @@ static vec3 getForceFieldStates(game_scene& scene, force_field_global_state* out
 }
 
 template <typename constraint_t>
-static void getConstraintBodyPairs(game_scene& scene, constraint_body_pair* bodyPairs)
+static void getConstraintBodyPairs(escene& scene, constraint_body_pair* bodyPairs)
 {
 	uint32 i = scene.numberOfComponentsOfType<constraint_t>() - 1;
 	for (auto [entityHandle, _] : scene.view<constraint_t>().each())
@@ -948,7 +948,7 @@ struct event_context
 	std::vector<collision_entity_pair> prevFrameCollisions;
 };
 
-static void handleNonCollisionInteractions(game_scene& scene, 
+static void handleNonCollisionInteractions(escene& scene, 
 	const force_field_global_state* ffGlobal, const non_collision_interaction* nonCollisionInteractions, uint32 numNonCollisionInteractions,
 	uint32 numRigidBodies, uint32 numTriggers)
 {
@@ -1033,7 +1033,7 @@ static void handleNonCollisionInteractions(game_scene& scene,
 	context.prevFrameTriggerOverlaps = std::move(triggerOverlaps);
 }
 
-static void handleCollisionCallbacks(game_scene& scene, const collider_pair* colliderPairs, uint8* contactCountPerCollision, uint32 numColliderPairs,
+static void handleCollisionCallbacks(escene& scene, const collider_pair* colliderPairs, uint8* contactCountPerCollision, uint32 numColliderPairs,
 	uint32 numColliders, const collision_contact* contacts, const rigid_body_global_state* rbGlobal, uint32 dummyRigidBodyIndex,
 	const collision_begin_event_func& collisionBeginCallback, const collision_end_event_func& collisionEndCallback)
 {
@@ -1175,7 +1175,7 @@ static void handleCollisionCallbacks(game_scene& scene, const collider_pair* col
 	context.prevFrameCollisions = std::move(collisions);
 }
 
-static void physicsStepInternal(game_scene& scene, memory_arena& arena, const physics_settings& settings, float dt)
+static void physicsStepInternal(escene& scene, memory_arena& arena, const physics_settings& settings, float dt)
 {
 	CPU_PROFILE_BLOCK("Physics step");
 
@@ -1345,7 +1345,7 @@ static void physicsStepInternal(game_scene& scene, memory_arena& arena, const ph
 	arena.resetToMarker(marker);
 }
 
-void physicsStep(game_scene& scene, memory_arena& arena, float& timer, const physics_settings& settings, float dt)
+void physicsStep(escene& scene, memory_arena& arena, float& timer, const physics_settings& settings, float dt)
 {
 	if (settings.fixedFrameRate)
 	{

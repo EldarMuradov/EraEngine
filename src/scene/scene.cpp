@@ -11,7 +11,7 @@
 #include <px/physics/px_rigidbody_component.h>
 #include <px/physics/px_collider_component.h>
 
-game_scene::game_scene()
+escene::escene()
 {
 	// Construct groups early. Ignore the return types.
 	(void)registry.group<collider_component, sap_endpoint_indirection_component>(); // Colliders and SAP endpoints are always sorted in the same order.
@@ -24,16 +24,16 @@ game_scene::game_scene()
 #endif
 }
 
-void game_scene::clearAll()
+void escene::clearAll()
 {
-	void clearBroadphase(game_scene & scene);
+	void clearBroadphase(escene & scene);
 	clearBroadphase(*this);
 
 	deleteAllConstraints(*this);
 	registry.clear();
 }
 
-void game_scene::cloneTo(game_scene& target)
+void escene::cloneTo(escene& target)
 {
 	target.registry.assign(registry.data(), registry.data() + registry.size(), registry.released());
 
@@ -95,7 +95,7 @@ void game_scene::cloneTo(game_scene& target)
 	target.registry.ctx() = registry.ctx();
 }
 
-eentity game_scene::copyEntity(eentity src)
+eentity escene::copyEntity(eentity src)
 {
 	ASSERT(src.hasComponent<tag_component>());
 
@@ -130,7 +130,7 @@ eentity game_scene::copyEntity(eentity src)
 	return dest;
 }
 
-void game_scene::deleteEntity(eentity e)
+void escene::deleteEntity(eentity e)
 {
 	void removeColliderFromBroadphase(eentity entity);
 

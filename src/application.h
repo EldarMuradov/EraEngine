@@ -22,7 +22,7 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh);
 bool editFireParticleSystem(fire_particle_system& particleSystem);
 bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
-void updatePhysXPhysics(game_scene& currentScene, float dt);
+void updatePhysXPhysics(escene& currentScene, float dt);
 
 struct application
 {
@@ -52,7 +52,7 @@ private:
 	main_renderer* renderer;
 
 	editor_scene scene;
-	scene_editor editor;
+	eeditor editor;
 
 	fire_particle_system fireParticleSystem;
 	smoke_particle_system smokeParticleSystem;
@@ -72,5 +72,5 @@ private:
 	compute_pass computePass;
 
 	friend class px_physics_engine;
-	friend class scene_editor;
+	friend class eeditor;
 };

@@ -20,7 +20,7 @@
 
 #include <px/core/px_physics_engine.h>
 
-struct game_scene;
+struct escene;
 
 using entity_handle = entt::entity;
 static const auto null_entity = entt::null;
@@ -28,8 +28,8 @@ static const auto null_entity = entt::null;
 struct eentity
 {
 	eentity() = default;
-	inline eentity(entity_handle handle, game_scene& scene);
-	inline eentity(uint32 id, game_scene& scene);
+	inline eentity(entity_handle handle, escene& scene);
+	inline eentity(uint32 id, escene& scene);
 	eentity(entity_handle handle, entt::registry* registry) : handle(handle), registry(registry) {}
 	eentity(uint32 id, entt::registry* reg) : handle((entity_handle)id), registry(reg) {}
 	eentity(const eentity&) = default;
@@ -223,9 +223,9 @@ inline void deleteContextVariable(entt::registry& registry)
 	c.erase<context_t>();
 }
 
-struct game_scene
+struct escene
 {
-	game_scene();
+	escene();
 
 	eentity createEntity(const char* name)
 	{
@@ -314,6 +314,8 @@ struct game_scene
 		return (uint32)v.size();
 	}
 
+	struct f {};
+
 	template <typename component_t>
 	component_t& getComponentAtIndex(uint32 index)
 	{
@@ -351,13 +353,13 @@ struct game_scene
 		return ::deleteContextVariable<context_t>(registry);
 	}
 
-	void cloneTo(game_scene& target);
+	void cloneTo(escene& target);
 
 	entt::registry registry;
 
 private:
 	template <typename component_t>
-	void copyComponentPoolTo(game_scene& target)
+	void copyComponentPoolTo(escene& target)
 	{
 		auto v = view<component_t>();
 		auto& s = registry.storage<component_t>();
@@ -365,20 +367,20 @@ private:
 	}
 
 	template <typename... component_t>
-	void copyComponentPoolsTo(game_scene& target)
+	void copyComponentPoolsTo(escene& target)
 	{
 		(copyComponentPoolTo<component_t>(target), ...);
 	}
 
 	template <typename... component_t>
-	void copyComponentPoolsTo(component_group_t<component_t...>, game_scene& target)
+	void copyComponentPoolsTo(component_group_t<component_t...>, escene& target)
 	{
 		(copyComponentPoolTo<component_t>(target), ...);
 	}
 };
 
-inline eentity::eentity(entity_handle handle, game_scene& scene) : handle(handle), registry(&scene.registry) {}
-inline eentity::eentity(uint32 id, game_scene& scene) : handle((entity_handle)id), registry(&scene.registry) {}
+inline eentity::eentity(entity_handle handle, escene& scene) : handle(handle), registry(&scene.registry) {}
+inline eentity::eentity(uint32 id, escene& scene) : handle((entity_handle)id), registry(&scene.registry) {}
 
 enum scene_mode
 {
@@ -389,7 +391,7 @@ enum scene_mode
 
 struct editor_scene
 {
-	game_scene& getCurrentScene()
+	escene& getCurrentScene()
 	{
 		return (mode == scene_mode_editor) ? editorScene : runtimeScene;
 	}
@@ -403,7 +405,7 @@ struct editor_scene
 	{
 		if (mode == scene_mode_editor)
 		{
-			runtimeScene = game_scene();
+			runtimeScene = escene();
 			editorScene.cloneTo(runtimeScene);
 		}
 		mode = scene_mode_runtime_playing;
@@ -435,8 +437,8 @@ struct editor_scene
 		return mode == scene_mode_runtime_playing || mode == scene_mode_runtime_paused;
 	}
 
-	game_scene editorScene;
-	game_scene runtimeScene;
+	escene editorScene;
+	escene runtimeScene;
 
 	scene_mode mode = scene_mode_editor;
 	float timestepScale = 1.f;

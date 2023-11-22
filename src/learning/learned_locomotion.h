@@ -3,10 +3,10 @@
 
 struct learned_locomotion
 {
-	void initialize(game_scene& scene, const humanoid_ragdoll& ragdoll);
-	void reset(game_scene& scene);
+	void initialize(escene& scene, const humanoid_ragdoll& ragdoll);
+	void reset(escene& scene);
 
-	void update(game_scene& scene);
+	void update(escene& scene);
 
 	static const uint32 NUM_CONE_TWIST_CONSTRAINTS =  arraysize(humanoid_ragdoll::coneTwistConstraints);
 	static const uint32 NUM_HINGE_CONSTRAINTS = arraysize(humanoid_ragdoll::hingeConstraints);
@@ -65,9 +65,9 @@ struct learned_locomotion
 	humanoid_ragdoll ragdoll;
 
 protected:
-	void updateConstraint(game_scene& scene, hinge_constraint_handle handle, hinge_action action = {}) const;
-	void updateConstraint(game_scene& scene, cone_twist_constraint_handle handle, cone_twist_action action = {}) const;
-	void applyAction(game_scene& scene, const learning_action& action);
+	void updateConstraint(escene& scene, hinge_constraint_handle handle, hinge_action action = {}) const;
+	void updateConstraint(escene& scene, cone_twist_constraint_handle handle, cone_twist_action action = {}) const;
+	void applyAction(escene& scene, const learning_action& action);
 
 	trs getCoordinateSystem() const;
 	void readBodyPartState(const trs& transform, eentity entity, vec3& position, vec3& velocity) const;

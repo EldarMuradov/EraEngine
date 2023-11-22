@@ -15,6 +15,7 @@
 #include <scene/scene.h>
 
 px_physics_engine* px_physics_engine::engine = nullptr;
+std::mutex px_physics_engine::sync;
 
 ESGS_CollisionContactCallback collision_callback;
 
@@ -79,8 +80,8 @@ void px_physics::initialize()
 
 	pvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
 
-	toleranceScale.length = 100;
-	toleranceScale.speed = 981;
+	toleranceScale.length = 1.0;
+	toleranceScale.speed = 98.1;
 
 	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, pvd);
 
@@ -161,16 +162,20 @@ void px_physics_engine::initialize(application* application)
 {
 	if (engine)
 		throw std::exception("Failed to create {px_physics_engine}. Error in {px_physics_engine::initialize()}. {px_physics_engine} is already created.");
+	sync.lock();
 	px_physics_engine::engine = new px_physics_engine(application);
+	sync.unlock();
 }
 
 void px_physics_engine::release()
 {
+	sync.lock();
 	if (engine)
 	{
 		delete engine;
 		engine = nullptr;
 	}
+	sync.unlock();
 }
 
 void px_physics_engine::start()
@@ -179,7 +184,7 @@ void px_physics_engine::start()
 
 void px_physics_engine::update(float dt)
 {
-	physics->scene->collide(1.0 / 60.0);
+	physics->scene->collide(1.0 / frameRate);
 	physics->scene->fetchCollision(true);
 	physics->scene->advance();
 	physics->scene->fetchResults(true);
@@ -205,18 +210,21 @@ void px_physics_engine::update(float dt)
 
 void px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ractor)
 {
+	sync.lock();
 	physics->scene->addActor(*ractor);
 	actors.emplace(actor);
 	actors_map.insert(std::make_pair(ractor, actor));
+	sync.unlock();
 }
 
 void px_physics_engine::removeActor(px_rigidbody_component* actor)
 {
+	sync.lock();
 	actors.erase(actor);
-
 	actors_map.erase(actor->getRigidActor());
 	physics->scene->removeActor(*actor->getRigidActor());
-	actor->getRigidActor()->release();
+	//actor->getRigidActor()->release();
+	sync.unlock();
 }
 
 px_physics_engine* px_physics_engine::get()
@@ -231,8 +239,10 @@ PxPhysics* px_physics_engine::getPhysics()
 
 void px_physics_engine::releaseActors() noexcept
 {
+	sync.lock();
 	actors.clear();
 	actors_map.clear();
+	sync.unlock();
 }
 
 px_raycast_info px_physics_engine::raycast(px_rigidbody_component* rb, const vec3& origin, const vec3& dir, int maxDist, int maxHits, PxHitFlags hitFlags)

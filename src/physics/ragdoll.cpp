@@ -7,7 +7,7 @@
 #include "geometry/mesh_builder.h"
 #endif
 
-void humanoid_ragdoll::initialize(game_scene& scene, vec3 initialHipPosition, float initialRotation)
+void humanoid_ragdoll::initialize(escene& scene, vec3 initialHipPosition, float initialRotation)
 {
 	float scale = 0.42f; // This file is completely hardcoded. I initially screwed up the scaling a bit, so this factor brings everything to the correct scale (and therefore weight).
 
@@ -248,7 +248,7 @@ void humanoid_ragdoll::initialize(game_scene& scene, vec3 initialHipPosition, fl
 #endif
 }
 
-humanoid_ragdoll humanoid_ragdoll::create(game_scene& scene, vec3 initialHipPosition, float initialRotation)
+humanoid_ragdoll humanoid_ragdoll::create(escene& scene, vec3 initialHipPosition, float initialRotation)
 {
 	humanoid_ragdoll ragdoll;
 	ragdoll.initialize(scene, initialHipPosition, initialRotation);

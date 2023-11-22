@@ -24,13 +24,13 @@ static void applyLayer(const float(&weights)[outputSize][inputSize], const float
 }
 #endif
 
-void learned_locomotion::initialize(game_scene& scene, const humanoid_ragdoll& ragdoll)
+void learned_locomotion::initialize(escene& scene, const humanoid_ragdoll& ragdoll)
 {
 	this->ragdoll = ragdoll;
 	reset(scene);
 }
 
-void learned_locomotion::reset(game_scene& scene)
+void learned_locomotion::reset(escene& scene)
 {
 	lastSmoothedAction = {};
 	applyAction(scene, {});
@@ -39,7 +39,7 @@ void learned_locomotion::reset(game_scene& scene)
 	torsoVelocityTarget = vec3(0.f);
 }
 
-void learned_locomotion::update(game_scene& scene)
+void learned_locomotion::update(escene& scene)
 {
 #ifdef INFERENCE_POSSIBLE
 	learning_state state;
@@ -65,7 +65,7 @@ void learned_locomotion::update(game_scene& scene)
 #endif
 }
 
-void learned_locomotion::updateConstraint(game_scene& scene, hinge_constraint_handle handle, hinge_action action) const
+void learned_locomotion::updateConstraint(escene& scene, hinge_constraint_handle handle, hinge_action action) const
 {
 	hinge_constraint& c = getConstraint(scene, handle);
 	c.maxMotorTorque = 200.f;
@@ -73,7 +73,7 @@ void learned_locomotion::updateConstraint(game_scene& scene, hinge_constraint_ha
 	c.motorTargetAngle = action.targetAngle;
 }
 
-void learned_locomotion::updateConstraint(game_scene& scene, cone_twist_constraint_handle handle, cone_twist_action action) const
+void learned_locomotion::updateConstraint(escene& scene, cone_twist_constraint_handle handle, cone_twist_action action) const
 {
 	cone_twist_constraint& c = getConstraint(scene, handle);
 	c.maxSwingMotorTorque = 200.f;
@@ -85,7 +85,7 @@ void learned_locomotion::updateConstraint(game_scene& scene, cone_twist_constrai
 	c.swingMotorAxis = action.swingAxisAngle;
 }
 
-void learned_locomotion::applyAction(game_scene& scene, const learning_action& action)
+void learned_locomotion::applyAction(escene& scene, const learning_action& action)
 {
 	const float beta = 0.1f;
 
@@ -152,9 +152,9 @@ bool learned_locomotion::hasFallen(const learning_state& state) const
 // --------------------------------
 struct training_locomotion : learned_locomotion
 {
-	void reset(game_scene& scene);
+	void reset(escene& scene);
 
-	void applyAction(game_scene& scene, const learning_action& action);
+	void applyAction(escene& scene, const learning_action& action);
 	bool getState(learning_state& outState) const;
 	float getReward() const;
 
@@ -295,7 +295,7 @@ training_locomotion::body_part_error training_locomotion::readPartDifference(een
 	return { positionError, velocityError, rotationError };
 }
 
-void training_locomotion::reset(game_scene& scene)
+void training_locomotion::reset(escene& scene)
 {
 	transform_component torsoTransform = getCoordinateSystem();
 
@@ -308,7 +308,7 @@ void training_locomotion::reset(game_scene& scene)
 	learned_locomotion::reset(scene);
 }
 
-void training_locomotion::applyAction(game_scene& scene, const learning_action& action)
+void training_locomotion::applyAction(escene& scene, const learning_action& action)
 {
 	learned_locomotion::applyAction(scene, action);
 }
@@ -350,14 +350,14 @@ float training_locomotion::getReward() const
 	return result;
 }
 
-static void getLimits(game_scene& scene, hinge_constraint_handle handle, float* minPtr, uint32& minPushIndex, float* maxPtr, uint32& maxPushIndex)
+static void getLimits(escene& scene, hinge_constraint_handle handle, float* minPtr, uint32& minPushIndex, float* maxPtr, uint32& maxPushIndex)
 {
 	hinge_constraint& c = getConstraint(scene, handle);
 	minPtr[minPushIndex++] = c.minRotationLimit <= 0.f ? c.minRotationLimit : -M_PI;
 	maxPtr[maxPushIndex++] = c.maxRotationLimit >= 0.f ? c.maxRotationLimit : M_PI;
 }
 
-static void getLimits(game_scene& scene, cone_twist_constraint_handle handle, float* minPtr, uint32& minPushIndex, float* maxPtr, uint32& maxPushIndex)
+static void getLimits(escene& scene, cone_twist_constraint_handle handle, float* minPtr, uint32& minPushIndex, float* maxPtr, uint32& maxPushIndex)
 {
 	cone_twist_constraint& c = getConstraint(scene, handle);
 
@@ -372,7 +372,7 @@ static void getLimits(game_scene& scene, cone_twist_constraint_handle handle, fl
 
 static training_locomotion* trainingEnv = 0;
 static memory_arena stackArena;
-static game_scene trainingScene;
+static escene trainingScene;
 static float totalReward;
 static random_number_generator rng = { (uint32)time(0) };
 
@@ -381,7 +381,7 @@ extern "C" __declspec(dllexport) int getPhysicsActionSize() { return sizeof(lear
 
 extern "C" __declspec(dllexport) void getPhysicsRanges(float* stateMin, float* stateMax, float* actionMin, float* actionMax)
 {
-	game_scene tmpScene;
+	escene tmpScene;
 	humanoid_ragdoll tmpRagdoll;
 	tmpRagdoll.initialize(tmpScene, vec3(0.f));
 

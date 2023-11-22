@@ -35,8 +35,8 @@ struct px_rigidbody_component
 	void setLockRotation(bool x, bool y, bool z);
 	void setLockPosition(bool x, bool y, bool z);
 
-	constexpr bool* getLockRotation() noexcept;
-	constexpr bool* getLockPosition() noexcept;
+	bool* getLockRotation() noexcept;
+	bool* getLockPosition() noexcept;
 
 	void setLinearVelocity(vec3& velocity);
 

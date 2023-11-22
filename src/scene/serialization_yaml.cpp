@@ -457,7 +457,7 @@ bool deserializeSceneFromYAMLFile(editor_scene& scene, renderer_settings& render
 	if (!n["Scene"])
 		return false;
 
-	scene.editorScene = game_scene();
+	scene.editorScene = escene();
 	scene.savePath = std::move(filename);
 
 	std::string sceneName = n["Scene"].as<std::string>();

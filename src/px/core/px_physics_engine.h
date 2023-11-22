@@ -152,6 +152,8 @@ public:
 
 	void releaseActors() noexcept;
 
+	float frameRate = 120.0f;
+
 	px_physics* getPhysicsAdapter() const noexcept { return physics; }
 
 	std::set<px_rigidbody_component*> actors;
@@ -168,6 +170,8 @@ private:
 	std::unordered_map<PxRigidActor*, px_rigidbody_component*> actors_map;
 
 	static px_physics_engine* engine;
+
+	static std::mutex sync;
 
 	friend class ESGS_CCDContactModification;
 	friend class ESGS_CollisionContactCallback;

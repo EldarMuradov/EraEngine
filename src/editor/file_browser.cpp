@@ -7,6 +7,7 @@
 #include "asset/model_asset.h"
 #include <shellapi.h>
 #include <imgui/imgui_internal.h>
+#include <editor/system_calls.h>
 
 file_browser::file_browser()
 {
@@ -155,16 +156,15 @@ void file_browser::draw()
 						// Context menu
 						if (ImGui::BeginPopupContextItem(0, ImGuiPopupFlags_MouseButtonRight))
 						{
-							if (ImGui::MenuItem("Reveal in Windows Explorer"))
+							if (ImGui::MenuItem("Show in Explorer"))
 							{
-								fs::path fullPath = currentPath / p.filename;
-								ShellExecuteW(0, 0, L"explorer.exe", (L"/select," + fullPath.wstring()).c_str(), 0, SW_SHOWNORMAL);
+								os::system_calls::showInExplorer(currentPath.string());
 							}
 
 							if (isFile(p.type) && ImGui::MenuItem("Open in default program"))
 							{
 								fs::path fullPath = currentPath / p.filename;
-								ShellExecuteW(0, 0, fullPath.c_str(), 0, 0, SW_SHOWNORMAL);
+								os::system_calls::openFile(fullPath);
 							}
 							ImGui::EndPopup();
 						}

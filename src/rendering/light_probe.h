@@ -44,7 +44,7 @@ private:
 	mutable random_number_generator rng = { 61913 };
 
 	friend struct light_probe_tracer;
-	friend struct scene_editor;
+	friend struct eeditor;
 };
 
 void initializeLightProbePipelines();

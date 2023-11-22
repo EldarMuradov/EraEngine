@@ -9,7 +9,7 @@
 #include "rendering/main_renderer.h"
 #include "physics/physics.h"
 
-struct scene_editor
+struct eeditor
 {
 	void initialize(editor_scene* scene, main_renderer* renderer, editor_panels* editorPanels);
 

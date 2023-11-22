@@ -78,11 +78,11 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
 	}, data).submitAfter(mesh->loadJob);
 }
 
-void updatePhysXPhysics(game_scene& currentScene, float dt)
+void updatePhysXPhysics(escene& currentScene, float dt)
 {
 	struct updatePhysXPhysicsData
 	{
-		game_scene& scene;
+		escene& scene;
 		float deltaTime;
 	};
 
@@ -138,7 +138,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	editor.initialize(&this->scene, renderer, editorPanels);
 	editor.app = this;
 
-	game_scene& scene = this->scene.getCurrentScene();
+	escene& scene = this->scene.getCurrentScene();
 
 	px_physics_engine::initialize(this);
 
@@ -508,7 +508,7 @@ void application::update(const user_input& input, float dt)
 	setAudioListener(camera.position, camera.rotation, vec3(0.f));
 	environment.lightProbeGrid.visualize(&opaqueRenderPass);
 
-	game_scene& scene = this->scene.getCurrentScene();
+	escene& scene = this->scene.getCurrentScene();
 	float unscaledDt = dt;
 	dt *= this->scene.getTimestepScale();
 
@@ -521,11 +521,6 @@ void application::update(const user_input& input, float dt)
 		heightmap_collider_component* collider = entity.getComponentIfExists<heightmap_collider_component>();
 
 		terrain.update(position.position, collider);
-	}
-
-	if (this->scene.isPausable())
-	{
-		updatePhysXPhysics(scene, dt);
 	}
 
 	static float physicsTimer = 0.f;
@@ -639,6 +634,11 @@ void application::update(const user_input& input, float dt)
 	renderer->setCamera(camera);
 
 	executeMainThreadJobs();
+
+	if (this->scene.isPausable())
+	{
+		updatePhysXPhysics(scene, dt);
+	}
 }
 
 void application::handleFileDrop(const fs::path& filename)

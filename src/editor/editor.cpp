@@ -23,6 +23,8 @@
 #include <sstream>
 #include "application.h"
 
+#include <editor/system_calls.h>
+
 static vec3 getEuler(quat q)
 {
 	vec3 euler = quatToEuler(q);
@@ -122,7 +124,7 @@ private:
 
 struct entity_existence_undo
 {
-	entity_existence_undo(game_scene& scene, eentity entity)
+	entity_existence_undo(escene& scene, eentity entity)
 		: scene(scene), entity(entity)
 	{
 		size = serializeEntityToMemory(entity, buffer, sizeof(buffer));
@@ -151,14 +153,14 @@ private:
 		ASSERT(success);
 	}
 
-	game_scene& scene;
+	escene& scene;
 	eentity entity;
 	uint8 buffer[1024];
 	uint64 size;
 };
 
 template <typename value_t, typename action_t, typename... args_t>
-void scene_editor::undoable(const char* undoLabel, value_t before, value_t& value, 
+void eeditor::undoable(const char* undoLabel, value_t before, value_t& value, 
 	args_t... args)
 {
 	if (ImGui::IsItemActive() && !ImGui::IsItemActiveLastFrame())
@@ -201,7 +203,7 @@ void scene_editor::undoable(const char* undoLabel, value_t before, value_t& valu
 	}
 
 
-void scene_editor::updateSelectedEntityUIRotation()
+void eeditor::updateSelectedEntityUIRotation()
 {
 	if (selectedEntity)
 	{
@@ -220,7 +222,7 @@ void scene_editor::updateSelectedEntityUIRotation()
 	}
 }
 
-void scene_editor::setSelectedEntity(eentity entity)
+void eeditor::setSelectedEntity(eentity entity)
 {
 	selectedEntity = entity;
 	updateSelectedEntityUIRotation();
@@ -228,7 +230,7 @@ void scene_editor::setSelectedEntity(eentity entity)
 	selectedConstraintEntity = {};
 }
 
-void scene_editor::initialize(editor_scene* scene, main_renderer* renderer, editor_panels* editorPanels)
+void eeditor::initialize(editor_scene* scene, main_renderer* renderer, editor_panels* editorPanels)
 {
 	this->scene = scene;
 	this->renderer = renderer;
@@ -238,7 +240,7 @@ void scene_editor::initialize(editor_scene* scene, main_renderer* renderer, edit
 	systemInfo = getSystemInfo();
 }
 
-bool scene_editor::update(const user_input& input, ldr_render_pass* ldrRenderPass, float dt)
+bool eeditor::update(const user_input& input, ldr_render_pass* ldrRenderPass, float dt)
 {
 	CPU_PROFILE_BLOCK("Update editor");
 
@@ -362,7 +364,7 @@ static void drawIconsWindow(bool& open)
 	}
 }
 
-bool scene_editor::drawMainMenuBar()
+bool eeditor::drawMainMenuBar()
 {
 	static bool iconsWindowOpen = false;
 	static bool demoWindowOpen = false;
@@ -470,7 +472,16 @@ bool scene_editor::drawMainMenuBar()
 
 		if (ImGui::BeginMenu(ICON_FA_QUESTION "  Help"))
 		{
-			if (ImGui::MenuItem(ICON_FA_QUESTION "  About"))
+			// TODO: Docs
+			if (ImGui::MenuItem(ICON_FA_MEMORY "  Repository"))
+				os::system_calls::openURL("https://github.com/EldarMuradov/EraGameEngine");
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu(ICON_FA_QUESTION "  About"))
+		{
+			if (ImGui::MenuItem(ICON_FA_QUESTION "  Author"))
 			{
 				aboutClicked = true;
 			}
@@ -650,9 +661,9 @@ static void editMaterial(const ref<pbr_material>& material)
 	}
 }
 
-bool scene_editor::drawSceneHierarchy()
+bool eeditor::drawSceneHierarchy()
 {
-	game_scene& scene = this->scene->getCurrentScene();
+	escene& scene = this->scene->getCurrentScene();
 
 	bool objectMovedByWidget = false;
 
@@ -788,12 +799,12 @@ bool scene_editor::drawSceneHierarchy()
 
 					drawComponent<dynamic_transform_component>(selectedEntity, "Dynamic Transform", [](dynamic_transform_component& dynamic)
 					{
-						ImGui::Text("Dynamic");
+						ImGui::Text("Dynamic entity");
 					});
 
 					drawComponent<raytrace_component>(selectedEntity, "Ray-tracing", [](raytrace_component& dynamic)
 					{
-						ImGui::Text("Ray-tracing");
+						ImGui::Text("Ray-tracing ON");
 					});
 
 					drawComponent<mesh_component>(selectedEntity, "Mesh", [this](mesh_component& raster)
@@ -806,7 +817,7 @@ bool scene_editor::drawSceneHierarchy()
 							editMesh("Mesh", raster.mesh, mesh_creation_flags_default);
 							ImGui::EndProperties();
 						}
-						if (ImGui::BeginTree("Submeshes"))
+						if (ImGui::BeginTree("Childs"))
 						{
 							for (const auto& sub : raster.mesh->submeshes)
 							{
@@ -977,18 +988,6 @@ bool scene_editor::drawSceneHierarchy()
 							{
 								if (ImGui::BeginTree("Skeleton"))
 								{
-									if (ImGui::BeginTree("Joints"))
-									{
-										for (uint32 i = 0; i < (uint32)skeleton.joints.size(); ++i)
-										{
-											const skeleton_joint& j = skeleton.joints[i];
-											vec3 c = limbTypeColors[j.limbType];
-											ImGui::TextColored(ImVec4(c.x, c.y, c.z, 1.f), j.name.c_str());
-										}
-
-										ImGui::EndTree();
-									}
-
 									if (ImGui::BeginTree("Limbs"))
 									{
 										for (uint32 i = 0; i < limb_type_count; ++i)
@@ -1020,6 +1019,18 @@ bool scene_editor::drawSceneHierarchy()
 										ImGui::EndTree();
 									}
 
+									if (ImGui::BeginTree("Joints"))
+									{
+										for (uint32 i = 0; i < (uint32)skeleton.joints.size(); ++i)
+										{
+											const skeleton_joint& j = skeleton.joints[i];
+											vec3 c = limbTypeColors[j.limbType];
+											ImGui::TextColored(ImVec4(c.x, c.y, c.z, 1.f), j.name.c_str());
+										}
+
+										ImGui::EndTree();
+									}
+
 									ImGui::EndTree();
 								}
 							}
@@ -1033,9 +1044,8 @@ bool scene_editor::drawSceneHierarchy()
 						if (ImGui::BeginProperties())
 						{
 							if (rb.invMass != 0)
-							{
 								ImGui::PropertyValue("Mass", 1.f / rb.invMass, "%.3fkg");
-							}
+							
 							UNDOABLE_COMPONENT_SETTING("rigid body linear velocity damping", rb.linearDamping,
 								ImGui::PropertySlider("Linear velocity damping", rb.linearDamping));
 							UNDOABLE_COMPONENT_SETTING("rigid body angular velocity damping", rb.angularDamping,
@@ -1043,12 +1053,72 @@ bool scene_editor::drawSceneHierarchy()
 							UNDOABLE_COMPONENT_SETTING("rigid body gravity factor", rb.gravityFactor,
 								ImGui::PropertySlider("Gravity factor", rb.gravityFactor));
 
-							//ImGui::PropertyValue("Linear velocity", rb.linearVelocity);
-							//ImGui::PropertyValue("Angular velocity", rb.angularVelocity);
+							ImGui::PropertyValue("Linear velocity", rb.linearVelocity);
+							ImGui::PropertyValue("Angular velocity", rb.angularVelocity);
 
 							ImGui::EndProperties();
 						}
 					});
+
+					drawComponent<px_rigidbody_component>(selectedEntity, "Rigidbody (PhysX)", [this, &scene](px_rigidbody_component& rb)
+						{
+							using component_t = px_rigidbody_component;
+
+							if (ImGui::BeginProperties())
+							{
+								ImGui::PropertyValue("Mass", 1.f / rb.getMass(), "%.3fkg");
+								bool dynamic = rb.getType() == px_rigidbody_type::Dynamic;
+								if (dynamic)
+								{
+									vec3 lv = rb.getLinearVelocity();
+									vec3 lt = lv;
+									ImGui::PropertyValue("Linear velocity", lv);
+									if (lv != lt)
+										rb.setLinearVelocity(lv);
+
+									vec3 av = rb.getAngularVelocity();
+									vec3 at = av;
+									ImGui::PropertyValue("Angular velocity", av);
+									if (av != at)
+										rb.setLinearVelocity(av);
+								}
+
+								ImGui::EndProperties();
+
+								if (dynamic)
+								{
+									bool* rot_lock = rb.getLockRotation();
+
+									bool tlx = rot_lock[0];
+									bool tly = rot_lock[1];
+									bool tlz = rot_lock[2];
+
+									ImGui::Text("Physics Lock Rotation");
+
+									ImGui::Checkbox("Lock Rotation X ", &tlx);
+									ImGui::Checkbox("Lock Rotation Y ", &tly);
+									ImGui::Checkbox("Lock Rotation Z ", &tlz);
+
+									if (tlx != rot_lock[0] || tly != rot_lock[1] || tlz != rot_lock[2])
+										rb.setLockRotation(tlx, tly, tlz);
+
+									bool* pos_lock = rb.getLockPosition();
+
+									bool plx = pos_lock[0];
+									bool ply = pos_lock[1];
+									bool plz = pos_lock[2];
+
+									ImGui::Text("Physics Lock Position");
+
+									ImGui::Checkbox("Lock Position X ", &plx);
+									ImGui::Checkbox("Lock Position Y ", &ply);
+									ImGui::Checkbox("Lock Position Z ", &plz);
+
+									if (plx != pos_lock[0] || ply != pos_lock[1] || plz != pos_lock[2])
+										rb.setLockPosition(plx, ply, plz);
+								}
+							}
+						});
 
 					drawComponent<physics_reference_component>(selectedEntity, "Colliders", [this, &scene](physics_reference_component& reference)
 					{
@@ -1169,7 +1239,7 @@ bool scene_editor::drawSceneHierarchy()
 						}
 					});
 
-					drawComponent<physics_reference_component>(selectedEntity, "Constraints", [this](physics_reference_component& reference)
+					drawComponent<physics_reference_component>(selectedEntity, "Reference constraints", [this](physics_reference_component& reference)
 					{
 						// TODO UNDO
 						for (auto [constraintEntity, constraintType] : constraint_entity_iterator(selectedEntity))
@@ -1620,7 +1690,7 @@ bool scene_editor::drawSceneHierarchy()
 	return objectMovedByWidget;
 }
 
-void scene_editor::onObjectMoved()
+void eeditor::onObjectMoved()
 {
 	if (selectedEntity)
 	{
@@ -1631,9 +1701,9 @@ void scene_editor::onObjectMoved()
 	}
 }
 
-bool scene_editor::handleUserInput(const user_input& input, ldr_render_pass* ldrRenderPass, float dt)
+bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRenderPass, float dt)
 {
-	game_scene* scene = &this->scene->getCurrentScene();
+	escene* scene = &this->scene->getCurrentScene();
 
 	// Returns true, if the user dragged an object using a gizmo.
 
@@ -2005,9 +2075,9 @@ bool scene_editor::handleUserInput(const user_input& input, ldr_render_pass* ldr
 	return objectMovedByGizmo;
 }
 
-bool scene_editor::drawEntityCreationPopup()
+bool eeditor::drawEntityCreationPopup()
 {
-	game_scene* scene = &this->scene->getCurrentScene();
+	escene* scene = &this->scene->getCurrentScene();
 	render_camera& camera = this->scene->camera;
 
 	bool clicked = false;
@@ -2103,12 +2173,12 @@ bool scene_editor::drawEntityCreationPopup()
 	return clicked;
 }
 
-void scene_editor::serializeToFile()
+void eeditor::serializeToFile()
 {
 	serializeSceneToYAMLFile(*scene, renderer->settings);
 }
 
-bool scene_editor::deserializeFromFile()
+bool eeditor::deserializeFromFile()
 {
 	std::string environmentName;
 	if (deserializeSceneFromYAMLFile(*scene, renderer->settings, environmentName))
@@ -2125,7 +2195,7 @@ bool scene_editor::deserializeFromFile()
 	return false;
 }
 
-bool scene_editor::editCamera(render_camera& camera)
+bool eeditor::editCamera(render_camera& camera)
 {
 	bool result = false;
 	if (ImGui::BeginTree("Camera"))
@@ -2165,7 +2235,7 @@ bool scene_editor::editCamera(render_camera& camera)
 	return result;
 }
 
-bool scene_editor::editTonemapping(tonemap_settings& tonemap)
+bool eeditor::editTonemapping(tonemap_settings& tonemap)
 {
 	bool result = false;
 	if (ImGui::BeginTree("Tonemapping"))
@@ -2205,7 +2275,7 @@ bool scene_editor::editTonemapping(tonemap_settings& tonemap)
 	return result;
 }
 
-bool scene_editor::editSunShadowParameters(directional_light& sun)
+bool eeditor::editSunShadowParameters(directional_light& sun)
 {
 	bool result = false;
 	if (ImGui::BeginTree("Sun"))
@@ -2285,7 +2355,7 @@ bool scene_editor::editSunShadowParameters(directional_light& sun)
 	return result;
 }
 
-bool scene_editor::editAO(bool& enable, hbao_settings& settings, const ref<dx_texture>& aoTexture)
+bool eeditor::editAO(bool& enable, hbao_settings& settings, const ref<dx_texture>& aoTexture)
 {
 	bool result = false;
 	if (ImGui::BeginProperties())
@@ -2313,7 +2383,7 @@ bool scene_editor::editAO(bool& enable, hbao_settings& settings, const ref<dx_te
 	return result;
 }
 
-bool scene_editor::editSSS(bool& enable, sss_settings& settings, const ref<dx_texture>& sssTexture)
+bool eeditor::editSSS(bool& enable, sss_settings& settings, const ref<dx_texture>& sssTexture)
 {
 	bool result = false;
 	if (ImGui::BeginProperties())
@@ -2345,7 +2415,7 @@ bool scene_editor::editSSS(bool& enable, sss_settings& settings, const ref<dx_te
 	return result;
 }
 
-bool scene_editor::editSSR(bool& enable, ssr_settings& settings, const ref<dx_texture>& ssrTexture)
+bool eeditor::editSSR(bool& enable, ssr_settings& settings, const ref<dx_texture>& ssrTexture)
 {
 	bool result = false;
 	if (ImGui::BeginProperties())
@@ -2373,7 +2443,7 @@ bool scene_editor::editSSR(bool& enable, ssr_settings& settings, const ref<dx_te
 	return result;
 }
 
-bool scene_editor::editTAA(bool& enable, taa_settings& settings, const ref<dx_texture>& velocityTexture)
+bool eeditor::editTAA(bool& enable, taa_settings& settings, const ref<dx_texture>& velocityTexture)
 {
 	bool result = false;
 	if (ImGui::BeginProperties())
@@ -2395,7 +2465,7 @@ bool scene_editor::editTAA(bool& enable, taa_settings& settings, const ref<dx_te
 	return result;
 }
 
-bool scene_editor::editBloom(bool& enable, bloom_settings& settings, const ref<dx_texture>& bloomTexture)
+bool eeditor::editBloom(bool& enable, bloom_settings& settings, const ref<dx_texture>& bloomTexture)
 {
 	bool result = false;
 	if (ImGui::BeginProperties())
@@ -2419,7 +2489,7 @@ bool scene_editor::editBloom(bool& enable, bloom_settings& settings, const ref<d
 	return result;
 }
 
-bool scene_editor::editSharpen(bool& enable, sharpen_settings& settings)
+bool eeditor::editSharpen(bool& enable, sharpen_settings& settings)
 {
 	bool result = false;
 	if (ImGui::BeginProperties())
@@ -2436,9 +2506,9 @@ bool scene_editor::editSharpen(bool& enable, sharpen_settings& settings)
 	return result;
 }
 
-void scene_editor::drawSettings(float dt)
+void eeditor::drawSettings(float dt)
 {
-	game_scene* scene = &this->scene->getCurrentScene();
+	escene* scene = &this->scene->getCurrentScene();
 
 	if (ImGui::Begin("Settings"))
 	{
@@ -2631,6 +2701,15 @@ void scene_editor::drawSettings(float dt)
 		{
 			if (ImGui::BeginProperties())
 			{
+				UNDOABLE_SETTING("px frame rate", px_physics_engine::get()->frameRate,
+					ImGui::PropertyInput("Frame rate", px_physics_engine::get()->frameRate));
+				if (px_physics_engine::get()->frameRate < 30)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.f, 0.f, 1.f));
+					ImGui::PropertyValue("", "Low frame rate");
+					ImGui::PopStyleColor();
+				}
+
 				// TODO: Physics undoable properties
 				ImGui::EndProperties();
 			}

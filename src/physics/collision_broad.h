@@ -11,7 +11,7 @@ struct collider_pair
 	uint16 colliderB;
 };
 
-uint32 broadphase(struct game_scene& scene, bounding_box* worldSpaceAABBs, memory_arena& arena, collider_pair* outOverlaps, bool simd);
+uint32 broadphase(struct escene& scene, bounding_box* worldSpaceAABBs, memory_arena& arena, collider_pair* outOverlaps, bool simd);
 
 // Internal
 struct sap_endpoint_indirection_component

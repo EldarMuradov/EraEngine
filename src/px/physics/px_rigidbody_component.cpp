@@ -13,17 +13,16 @@ px_rigidbody_component::px_rigidbody_component(eentity* entt, px_rigidbody_type 
 
 px_rigidbody_component::~px_rigidbody_component()
 {
-	px_physics_engine::get()->removeActor(this);
-	PX_RELEASE(material)
-	PX_RELEASE(actor)
+	//px_physics_engine::get()->removeActor(this);
+	//PX_RELEASE(material)
 
-	if (rotationLock)
-		delete[] rotationLock;
-	rotationLock = nullptr;
+	//if (rotationLock)
+	//	delete[] rotationLock;
+	//rotationLock = nullptr;
 
-	if (positionLock)
-		delete[] positionLock;
-	positionLock = nullptr;
+	//if (positionLock)
+	//	delete[] positionLock;
+	//positionLock = nullptr;
 }
 
 void px_rigidbody_component::addForce(vec3 force, px_force_mode mode) noexcept
@@ -106,36 +105,46 @@ void px_rigidbody_component::setLockPosition(bool x, bool y, bool z)
 	posLockNative = flags;
 }
 
-constexpr bool* px_rigidbody_component::getLockRotation() noexcept
+bool* px_rigidbody_component::getLockRotation() noexcept
 {
 	return positionLock;
 }
 
-constexpr bool* px_rigidbody_component::getLockPosition() noexcept
+bool* px_rigidbody_component::getLockPosition() noexcept
 {
 	return rotationLock;
 }
 
 void px_rigidbody_component::setLinearVelocity(vec3& velocity)
 {
-	actor->is<PxRigidDynamic>()->setLinearVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
+	if(actor->is<PxRigidDynamic>())
+		actor->is<PxRigidDynamic>()->setLinearVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
 }
 
 vec3 px_rigidbody_component::getLinearVelocity()
 {
-	PxVec3 vel = actor->is<PxRigidDynamic>()->getLinearVelocity();
-	return vec3(vel.x, vel.y, vel.z);
+	if (actor->is<PxRigidDynamic>())
+	{
+		PxVec3 vel = actor->is<PxRigidDynamic>()->getLinearVelocity();
+		return vec3(vel.x, vel.y, vel.z);
+	}
+	return vec3();
 }
 
 void px_rigidbody_component::setAngularVelocity(vec3& velocity)
 {
-	actor->is<PxRigidDynamic>()->setAngularVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
+	if (actor->is<PxRigidDynamic>())
+		actor->is<PxRigidDynamic>()->setAngularVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
 }
 
 vec3 px_rigidbody_component::getAngularVelocity()
 {
-	PxVec3 vel = actor->is<PxRigidDynamic>()->getAngularVelocity();
-	return vec3(vel.x, vel.y, vel.z);
+	if (actor->is<PxRigidDynamic>())
+	{
+		PxVec3 vel = actor->is<PxRigidDynamic>()->getAngularVelocity();
+		return vec3(vel.x, vel.y, vel.z);
+	}
+	return vec3();
 }
 
 vec3 px_rigidbody_component::getPhysicsPosition()

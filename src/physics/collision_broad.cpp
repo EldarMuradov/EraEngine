@@ -74,7 +74,7 @@ void removeColliderFromBroadphase(eentity entity)
 	}
 }
 
-void clearBroadphase(game_scene& scene)
+void clearBroadphase(escene& scene)
 {
 	auto c = scene.registry.ctx();
 	if (sap_context* context = c.find<sap_context>())
@@ -293,7 +293,7 @@ static uint32 determineOverlapsSIMD(const sap_endpoint* endpoints, uint32 numEnd
 #undef COLLISION_SIMD_WIDTH
 }
 
-uint32 broadphase(game_scene& scene, bounding_box* worldSpaceAABBs, memory_arena& arena, collider_pair* outCollisions, bool simd)
+uint32 broadphase(escene& scene, bounding_box* worldSpaceAABBs, memory_arena& arena, collider_pair* outCollisions, bool simd)
 {
 	CPU_PROFILE_BLOCK("Broad phase");
 

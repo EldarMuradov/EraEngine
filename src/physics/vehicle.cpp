@@ -137,7 +137,7 @@ static void attach(mesh_builder& builder, ref<pbr_material> material, eentity ax
 	}
 }
 
-static eentity createAxis(game_scene& scene, mesh_builder& builder, ref<pbr_material> material,
+static eentity createAxis(escene& scene, mesh_builder& builder, ref<pbr_material> material,
 	vec3 position, quat rotation, gear_description desc, axis_attachment* firstAttachment = 0, axis_attachment* secondAttachment = 0)
 {
 	eentity axis = scene.createEntity("Axis")
@@ -166,7 +166,7 @@ static eentity createAxis(game_scene& scene, mesh_builder& builder, ref<pbr_mate
 	return axis;
 }
 
-static eentity createGearAxis(game_scene& scene, mesh_builder& builder, ref<pbr_material> material,
+static eentity createGearAxis(escene& scene, mesh_builder& builder, ref<pbr_material> material,
 	vec3 position, quat rotation, float length, uint32 numTeeth, float toothLength, float toothWidth, 
 	float friction, float density)
 {
@@ -213,7 +213,7 @@ static eentity createGearAxis(game_scene& scene, mesh_builder& builder, ref<pbr_
 	return axis;
 }
 
-static eentity createWheel(game_scene& scene, mesh_builder& builder, ref<pbr_material> material,
+static eentity createWheel(escene& scene, mesh_builder& builder, ref<pbr_material> material,
 	vec3 position, quat rotation, wheel_description desc)
 {
 	eentity result = scene.createEntity("Wheel")
@@ -243,7 +243,7 @@ static eentity createWheel(game_scene& scene, mesh_builder& builder, ref<pbr_mat
 	return result;
 }
 
-static eentity createWheelSuspension(game_scene& scene, mesh_builder& builder, ref<pbr_material> material,
+static eentity createWheelSuspension(escene& scene, mesh_builder& builder, ref<pbr_material> material,
 	vec3 position, quat rotation, float axisLength, float thickness, bool right)
 {
 	eentity result = scene.createEntity("Wheel suspension")
@@ -274,7 +274,7 @@ static eentity createWheelSuspension(game_scene& scene, mesh_builder& builder, r
 	return result;
 }
 
-static eentity createRod(game_scene& scene, mesh_builder& builder, ref<pbr_material> material, 
+static eentity createRod(escene& scene, mesh_builder& builder, ref<pbr_material> material, 
 	vec3 from, vec3 to, float thickness)
 {
 	vec3 position = (from + to) * 0.5f;
@@ -299,7 +299,7 @@ static eentity createRod(game_scene& scene, mesh_builder& builder, ref<pbr_mater
 	return result;
 }
 
-void vehicle::initialize(game_scene& scene, vec3 initialMotorPosition, float initialRotation)
+void vehicle::initialize(escene& scene, vec3 initialMotorPosition, float initialRotation)
 {
 	float density = 2000.f;
 
@@ -488,7 +488,7 @@ void vehicle::initialize(game_scene& scene, vec3 initialMotorPosition, float ini
 	}
 }
 
-vehicle vehicle::create(game_scene& scene, vec3 initialMotorPosition, float initialRotation)
+vehicle vehicle::create(escene& scene, vec3 initialMotorPosition, float initialRotation)
 {
 	vehicle v;
 	v.initialize(scene, initialMotorPosition, initialRotation);

@@ -328,7 +328,7 @@ static void renderStaticObjectsToShadowMap(group_t group, std::unordered_map<mul
 	}
 }
 
-static void renderStaticObjects(game_scene& scene, const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
+static void renderStaticObjects(escene& scene, const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
 {
 	CPU_PROFILE_BLOCK("Static objects");
@@ -491,7 +491,7 @@ static void renderDynamicObjectsToShadowMap(group_t group, std::unordered_map<mu
 	}
 }
 
-static void renderDynamicObjects(game_scene& scene, const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
+static void renderDynamicObjects(escene& scene, const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
 {
 	CPU_PROFILE_BLOCK("Dynamic objects");
@@ -510,7 +510,7 @@ static void renderDynamicObjects(game_scene& scene, const camera_frustum_planes&
 	}
 }
 
-static void renderAnimatedObjects(game_scene& scene, const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
+static void renderAnimatedObjects(escene& scene, const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
 {
 	CPU_PROFILE_BLOCK("Animated objects");
@@ -597,7 +597,7 @@ static void renderAnimatedObjects(game_scene& scene, const camera_frustum_planes
 	}
 }
 
-static void renderTerrain(const render_camera& camera, game_scene& scene, memory_arena& arena, entity_handle selectedObjectID,
+static void renderTerrain(const render_camera& camera, escene& scene, memory_arena& arena, entity_handle selectedObjectID,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
 	compute_pass* computePass, float dt)
 {
@@ -634,7 +634,7 @@ static void renderTerrain(const render_camera& camera, game_scene& scene, memory
 	}
 }
 
-static void renderTrees(game_scene& scene, const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
+static void renderTrees(escene& scene, const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
 	float dt)
 {
@@ -692,7 +692,7 @@ static void renderTrees(game_scene& scene, const camera_frustum_planes& frustum,
 	}
 }
 
-static void renderCloth(game_scene& scene, entity_handle selectedObjectID, 
+static void renderCloth(escene& scene, entity_handle selectedObjectID, 
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass)
 {
 	CPU_PROFILE_BLOCK("Cloth");
@@ -782,7 +782,7 @@ static void setupSunShadowPass(directional_light& sun, sun_shadow_render_pass* s
 	sunShadowRenderPass->copyFromStaticCache = !command.renderStaticGeometry;
 }
 
-static void setupSpotShadowPasses(game_scene& scene, scene_lighting& lighting, bool invalidateShadowMapCache)
+static void setupSpotShadowPasses(escene& scene, scene_lighting& lighting, bool invalidateShadowMapCache)
 {
 	uint32 numSpotLights = scene.numberOfComponentsOfType<spot_light_component>();
 	if (numSpotLights)
@@ -816,7 +816,7 @@ static void setupSpotShadowPasses(game_scene& scene, scene_lighting& lighting, b
 	}
 }
 
-static void setupPointShadowPasses(game_scene& scene, scene_lighting& lighting, bool invalidateShadowMapCache)
+static void setupPointShadowPasses(escene& scene, scene_lighting& lighting, bool invalidateShadowMapCache)
 {
 	uint32 numPointLights = scene.numberOfComponentsOfType<point_light_component>();
 	if (numPointLights)
@@ -853,7 +853,7 @@ static void setupPointShadowPasses(game_scene& scene, scene_lighting& lighting, 
 	}
 }
 
-void renderScene(const render_camera& camera, game_scene& scene, memory_arena& arena, entity_handle selectedObjectID,
+void renderScene(const render_camera& camera, escene& scene, memory_arena& arena, entity_handle selectedObjectID,
 	directional_light& sun, scene_lighting& lighting, bool invalidateShadowMapCache,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
 	compute_pass* computePass, float dt)

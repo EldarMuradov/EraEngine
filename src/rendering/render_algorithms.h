@@ -47,7 +47,7 @@ REFLECT_STRUCT(taa_settings,
 struct bloom_settings
 {
 	float threshold = 100.f;
-	float strength = 0.05f;
+	float strength = 0.2f; //0.05
 };
 REFLECT_STRUCT(bloom_settings,
 	(threshold, "Threshold"),
@@ -56,7 +56,7 @@ REFLECT_STRUCT(bloom_settings,
 
 struct hbao_settings
 {
-	float radius = 0.5f;
+	float radius = 0.3f;
 	uint32 numRays = 4;
 	uint32 maxNumStepsPerRay = 10;
 	float strength = 1.f;
@@ -70,7 +70,7 @@ REFLECT_STRUCT(hbao_settings,
 
 struct sharpen_settings
 {
-	float strength = 0.5f;
+	float strength = 0.25f; //0.5
 };
 REFLECT_STRUCT(sharpen_settings,
 	(strength, "Strength")
@@ -96,16 +96,16 @@ REFLECT_STRUCT(sss_settings,
 
 struct tonemap_settings
 {
-	float A = 0.22f; // Shoulder strength.
-	float B = 0.3f; // Linear strength.
-	float C = 0.1f; // Linear angle.
-	float D = 0.2f; // Toe strength.
+	float A = 0.176f; // Shoulder strength. 0.22
+	float B = 0.134f; // Linear strength. 0.3
+	float C = 0.11f; // Linear angle. 0.1
+	float D = 0.31f; // Toe strength. 0.2
 	float E = 0.01f; // Toe Numerator.
 	float F = 0.3f; // Toe denominator.
 	// Note E/F = Toe angle.
 	float linearWhite = 11.2f;
 
-	float exposure = 0.2f;
+	float exposure = 0.05f; //0.2
 
 	float tonemap(float color) const
 	{

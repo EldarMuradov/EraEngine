@@ -241,21 +241,21 @@ hinge_constraint_handle addConstraint(eentity& a, eentity& b, const hinge_constr
 cone_twist_constraint_handle addConstraint(eentity& a, eentity& b, const cone_twist_constraint& c);
 slider_constraint_handle addConstraint(eentity& a, eentity& b, const slider_constraint& c);
 
-distance_constraint& getConstraint(game_scene& scene, distance_constraint_handle handle);
-ball_constraint& getConstraint(game_scene& scene, ball_constraint_handle handle);
-fixed_constraint& getConstraint(game_scene& scene, fixed_constraint_handle handle);
-hinge_constraint& getConstraint(game_scene& scene, hinge_constraint_handle handle);
-cone_twist_constraint& getConstraint(game_scene& scene, cone_twist_constraint_handle handle);
-slider_constraint& getConstraint(game_scene& scene, slider_constraint_handle handle);
+distance_constraint& getConstraint(escene& scene, distance_constraint_handle handle);
+ball_constraint& getConstraint(escene& scene, ball_constraint_handle handle);
+fixed_constraint& getConstraint(escene& scene, fixed_constraint_handle handle);
+hinge_constraint& getConstraint(escene& scene, hinge_constraint_handle handle);
+cone_twist_constraint& getConstraint(escene& scene, cone_twist_constraint_handle handle);
+slider_constraint& getConstraint(escene& scene, slider_constraint_handle handle);
 
-void deleteAllConstraints(game_scene& scene);
+void deleteAllConstraints(escene& scene);
 
-void deleteConstraint(game_scene& scene, distance_constraint_handle handle);
-void deleteConstraint(game_scene& scene, ball_constraint_handle handle);
-void deleteConstraint(game_scene& scene, fixed_constraint_handle handle);
-void deleteConstraint(game_scene& scene, hinge_constraint_handle handle);
-void deleteConstraint(game_scene& scene, cone_twist_constraint_handle handle);
-void deleteConstraint(game_scene& scene, slider_constraint_handle handle);
+void deleteConstraint(escene& scene, distance_constraint_handle handle);
+void deleteConstraint(escene& scene, ball_constraint_handle handle);
+void deleteConstraint(escene& scene, fixed_constraint_handle handle);
+void deleteConstraint(escene& scene, hinge_constraint_handle handle);
+void deleteConstraint(escene& scene, cone_twist_constraint_handle handle);
+void deleteConstraint(escene& scene, slider_constraint_handle handle);
 
 void deleteAllConstraintsFromEntity(eentity& entity);
 
@@ -391,5 +391,5 @@ struct physics_settings
 	collision_end_event_func collisionEndCallback;
 };
 
-void testPhysicsInteraction(game_scene& scene, ray r, float strength = 1000.f);
-void physicsStep(game_scene& scene, memory_arena& arena, float& timer, const physics_settings& settings, float dt);
+void testPhysicsInteraction(escene& scene, ray r, float strength = 1000.f);
+void physicsStep(escene& scene, memory_arena& arena, float& timer, const physics_settings& settings, float dt);
