@@ -17,7 +17,7 @@
 
 #include <px/core/px_physics_engine.h>
 
-void addRaytracingComponentAsync(scene_entity entity, ref<multi_mesh> mesh);
+void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh);
 
 bool editFireParticleSystem(fire_particle_system& particleSystem);
 bool editBoidParticleSystem(boid_particle_system& particleSystem);

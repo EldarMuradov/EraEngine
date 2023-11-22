@@ -95,12 +95,12 @@ void game_scene::cloneTo(game_scene& target)
 	target.registry.ctx() = registry.ctx();
 }
 
-scene_entity game_scene::copyEntity(scene_entity src)
+eentity game_scene::copyEntity(eentity src)
 {
 	ASSERT(src.hasComponent<tag_component>());
 
 	tag_component& tag = src.getComponent<tag_component>();
-	scene_entity dest = createEntity(tag.name);
+	eentity dest = createEntity(tag.name);
 
 	if (auto* c = src.getComponentIfExists<transform_component>()) { dest.addComponent<transform_component>(*c); }
 	if (auto* c = src.getComponentIfExists<position_component>()) { dest.addComponent<position_component>(*c); }
@@ -130,13 +130,13 @@ scene_entity game_scene::copyEntity(scene_entity src)
 	return dest;
 }
 
-void game_scene::deleteEntity(scene_entity e)
+void game_scene::deleteEntity(eentity e)
 {
-	void removeColliderFromBroadphase(scene_entity entity);
+	void removeColliderFromBroadphase(eentity entity);
 
 	if (physics_reference_component* reference = e.getComponentIfExists<physics_reference_component>())
 	{
-		scene_entity colliderEntity = { reference->firstColliderEntity, &registry };
+		eentity colliderEntity = { reference->firstColliderEntity, &registry };
 		while (colliderEntity)
 		{
 			collider_component& collider = colliderEntity.getComponent<collider_component>();

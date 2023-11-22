@@ -38,7 +38,7 @@ void rigid_body_component::recalculateProperties(entt::registry* registry, const
 
 	uint32 i = 0;
 
-	scene_entity colliderEntity = { reference.firstColliderEntity, registry };
+	eentity colliderEntity = { reference.firstColliderEntity, registry };
 	while (colliderEntity)
 	{
 		collider_component& collider = colliderEntity.getComponent<collider_component>();
@@ -61,9 +61,6 @@ void rigid_body_component::recalculateProperties(entt::registry* registry, const
 	invMass = 1.f / mass;
 	localCOGPosition = cog = cog * invMass; // TODO: Update linear velocity, since thats given at the COG.
 
-	// Combine inertia tensors: https://pybullet.org/Bullet/phpBB3/viewtopic.php?t=246
-	// This assumes that all shapes have the same orientation, which is true in our case, since all shapes are given 
-	// in the entity's local coordinate system.
 	for (uint32 i = 0; i < numColliders; ++i)
 	{
 		vec3& localCOG = properties[i].cog;

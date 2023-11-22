@@ -50,11 +50,11 @@ static raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh)
 		return {};
 }
 
-void addRaytracingComponentAsync(scene_entity entity, ref<multi_mesh> mesh)
+void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
 {
 	struct add_ray_tracing_data
 	{
-		scene_entity entity;
+		eentity entity;
 		ref<multi_mesh> mesh;
 	};
 
@@ -64,7 +64,7 @@ void addRaytracingComponentAsync(scene_entity entity, ref<multi_mesh> mesh)
 	{
 		struct create_component_data
 		{
-			scene_entity entity;
+			eentity entity;
 			raytracing_object_type blas;
 		};
 
@@ -98,11 +98,11 @@ void updatePhysXPhysics(game_scene& currentScene, float dt)
 		}, data).submitNow();
 }
 
-static void initializeAnimationComponentAsync(scene_entity entity, ref<multi_mesh> mesh)
+static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> mesh)
 {
 	struct add_animation_data
 	{
-		scene_entity entity;
+		eentity entity;
 		ref<multi_mesh> mesh;
 	};
 
@@ -517,7 +517,7 @@ void application::update(const user_input& input, float dt)
 	// Must happen before physics update.
 	for (auto [entityHandle, terrain, position] : scene.group(component_group<terrain_component, position_component>).each())
 	{
-		scene_entity entity = { entityHandle, scene };
+		eentity entity = { entityHandle, scene };
 		heightmap_collider_component* collider = entity.getComponentIfExists<heightmap_collider_component>();
 
 		terrain.update(position.position, collider);
@@ -551,7 +551,7 @@ void application::update(const user_input& input, float dt)
 
 #endif
 
-	scene_entity selectedEntity = editor.selectedEntity;
+	eentity selectedEntity = editor.selectedEntity;
 
 	if (renderer->mode != renderer_mode_pathtraced)
 	{

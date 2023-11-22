@@ -83,7 +83,7 @@ uint32 allocateBoundingHullGeometry(const std::string& meshFilepath)
 }
 #endif
 
-static void addConstraintEdge(scene_entity& e, constraint_entity_reference_component& constraintEntityReference, entity_handle constraintEntity, constraint_type type)
+static void addConstraintEdge(eentity& e, constraint_entity_reference_component& constraintEntityReference, entity_handle constraintEntity, constraint_type type)
 {
 	if (!e.hasComponent<physics_reference_component>())
 	{
@@ -124,7 +124,7 @@ static void addConstraintEdge(scene_entity& e, constraint_entity_reference_compo
 	++reference.numConstraints;
 }
 
-distance_constraint_handle addDistanceConstraintFromLocalPoints(scene_entity& a, scene_entity& b, vec3 localAnchorA, vec3 localAnchorB, float distance)
+distance_constraint_handle addDistanceConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB, float distance)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -143,7 +143,7 @@ distance_constraint_handle addDistanceConstraintFromLocalPoints(scene_entity& a,
 	return { constraintEntity };
 }
 
-distance_constraint_handle addDistanceConstraintFromGlobalPoints(scene_entity& a, scene_entity& b, vec3 globalAnchorA, vec3 globalAnchorB)
+distance_constraint_handle addDistanceConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchorA, vec3 globalAnchorB)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -154,7 +154,7 @@ distance_constraint_handle addDistanceConstraintFromGlobalPoints(scene_entity& a
 	return addDistanceConstraintFromLocalPoints(a, b, localAnchorA, localAnchorB, distance);
 }
 
-ball_constraint_handle addBallConstraintFromLocalPoints(scene_entity& a, scene_entity& b, vec3 localAnchorA, vec3 localAnchorB)
+ball_constraint_handle addBallConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -172,7 +172,7 @@ ball_constraint_handle addBallConstraintFromLocalPoints(scene_entity& a, scene_e
 	return { constraintEntity };
 }
 
-ball_constraint_handle addBallConstraintFromGlobalPoints(scene_entity& a, scene_entity& b, vec3 globalAnchor)
+ball_constraint_handle addBallConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -182,7 +182,7 @@ ball_constraint_handle addBallConstraintFromGlobalPoints(scene_entity& a, scene_
 	return addBallConstraintFromLocalPoints(a, b, localAnchorA, localAnchorB);
 }
 
-fixed_constraint_handle addFixedConstraintFromLocalPoints(scene_entity& a, scene_entity& b, vec3 localAnchorA, vec3 localAnchorB)
+fixed_constraint_handle addFixedConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -200,7 +200,7 @@ fixed_constraint_handle addFixedConstraintFromLocalPoints(scene_entity& a, scene
 	return { constraintEntity };
 }
 
-fixed_constraint_handle addFixedConstraintFromGlobalPoints(scene_entity& a, scene_entity& b, vec3 globalAnchor)
+fixed_constraint_handle addFixedConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -223,7 +223,7 @@ fixed_constraint_handle addFixedConstraintFromGlobalPoints(scene_entity& a, scen
 	return { constraintEntity };
 }
 
-hinge_constraint_handle addHingeConstraintFromGlobalPoints(scene_entity& a, scene_entity& b, vec3 globalAnchor, vec3 globalHingeAxis,
+hinge_constraint_handle addHingeConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalHingeAxis,
 	float minLimit, float maxLimit)
 {
 	ASSERT(a.registry == b.registry);
@@ -259,7 +259,7 @@ hinge_constraint_handle addHingeConstraintFromGlobalPoints(scene_entity& a, scen
 	return { constraintEntity };
 }
 
-cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(scene_entity& a, scene_entity& b, vec3 globalAnchor, vec3 globalAxis, 
+cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, 
 	float swingLimit, float twistLimit)
 {
 	ASSERT(a.registry == b.registry);
@@ -300,7 +300,7 @@ cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(scene_entity
 	return { constraintEntity };
 }
 
-slider_constraint_handle addSliderConstraintFromGlobalPoints(scene_entity& a, scene_entity& b, vec3 globalAnchor, vec3 globalAxis, float minLimit, float maxLimit)
+slider_constraint_handle addSliderConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, float minLimit, float maxLimit)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -331,7 +331,7 @@ slider_constraint_handle addSliderConstraintFromGlobalPoints(scene_entity& a, sc
 	return { constraintEntity };
 }
 
-distance_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const distance_constraint& c)
+distance_constraint_handle addConstraint(eentity& a, eentity& b, const distance_constraint& c)
 {
 	entt::registry& registry = *a.registry;
 	entity_handle constraintEntity = registry.create();
@@ -344,7 +344,7 @@ distance_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const
 	return { constraintEntity };
 }
 
-ball_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const ball_constraint& c)
+ball_constraint_handle addConstraint(eentity& a, eentity& b, const ball_constraint& c)
 {
 	entt::registry& registry = *a.registry;
 	entity_handle constraintEntity = registry.create();
@@ -357,7 +357,7 @@ ball_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const bal
 	return { constraintEntity };
 }
 
-fixed_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const fixed_constraint& c)
+fixed_constraint_handle addConstraint(eentity& a, eentity& b, const fixed_constraint& c)
 {
 	entt::registry& registry = *a.registry;
 	entity_handle constraintEntity = registry.create();
@@ -370,7 +370,7 @@ fixed_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const fi
 	return { constraintEntity };
 }
 
-hinge_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const hinge_constraint& c)
+hinge_constraint_handle addConstraint(eentity& a, eentity& b, const hinge_constraint& c)
 {
 	entt::registry& registry = *a.registry;
 	entity_handle constraintEntity = registry.create();
@@ -383,7 +383,7 @@ hinge_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const hi
 	return { constraintEntity };
 }
 
-cone_twist_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const cone_twist_constraint& c)
+cone_twist_constraint_handle addConstraint(eentity& a, eentity& b, const cone_twist_constraint& c)
 {
 	entt::registry& registry = *a.registry;
 	entity_handle constraintEntity = registry.create();
@@ -396,7 +396,7 @@ cone_twist_constraint_handle addConstraint(scene_entity& a, scene_entity& b, con
 	return { constraintEntity };
 }
 
-slider_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const slider_constraint& c)
+slider_constraint_handle addConstraint(eentity& a, eentity& b, const slider_constraint& c)
 {
 	entt::registry& registry = *a.registry;
 	entity_handle constraintEntity = registry.create();
@@ -411,32 +411,32 @@ slider_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const s
 
 distance_constraint& getConstraint(game_scene& scene, distance_constraint_handle handle)
 {
-	return scene_entity{ handle.entity, scene }.getComponent<distance_constraint>();
+	return eentity{ handle.entity, scene }.getComponent<distance_constraint>();
 }
 
 ball_constraint& getConstraint(game_scene& scene, ball_constraint_handle handle)
 {
-	return scene_entity{ handle.entity, scene }.getComponent<ball_constraint>();
+	return eentity{ handle.entity, scene }.getComponent<ball_constraint>();
 }
 
 fixed_constraint& getConstraint(game_scene& scene, fixed_constraint_handle handle)
 {
-	return scene_entity{ handle.entity, scene }.getComponent<fixed_constraint>();
+	return eentity{ handle.entity, scene }.getComponent<fixed_constraint>();
 }
 
 hinge_constraint& getConstraint(game_scene& scene, hinge_constraint_handle handle)
 {
-	return scene_entity{ handle.entity, scene }.getComponent<hinge_constraint>();
+	return eentity{ handle.entity, scene }.getComponent<hinge_constraint>();
 }
 
 cone_twist_constraint& getConstraint(game_scene& scene, cone_twist_constraint_handle handle)
 {
-	return scene_entity{ handle.entity, scene }.getComponent<cone_twist_constraint>();
+	return eentity{ handle.entity, scene }.getComponent<cone_twist_constraint>();
 }
 
 slider_constraint& getConstraint(game_scene& scene, slider_constraint_handle handle)
 {
-	return scene_entity{ handle.entity, scene }.getComponent<slider_constraint>();
+	return eentity{ handle.entity, scene }.getComponent<slider_constraint>();
 }
 
 void deleteAllConstraints(game_scene& scene)
@@ -449,7 +449,7 @@ void deleteAllConstraints(game_scene& scene)
 	scene.deleteAllComponents<slider_constraint>();
 }
 
-static void removeConstraintEdge(scene_entity entity, constraint_edge& edge, constraint_context& context)
+static void removeConstraintEdge(eentity entity, constraint_edge& edge, constraint_context& context)
 {
 	physics_reference_component& ref = entity.getComponent<physics_reference_component>();
 	if (edge.prevConstraintEdge != INVALID_CONSTRAINT_EDGE)
@@ -472,11 +472,11 @@ static void removeConstraintEdge(scene_entity entity, constraint_edge& edge, con
 
 static void deleteConstraint(entt::registry* registry, entity_handle constraintEntityHandle)
 {
-	scene_entity constraintEntity = { constraintEntityHandle, registry };
+	eentity constraintEntity = { constraintEntityHandle, registry };
 	constraint_entity_reference_component& constraint = constraintEntity.getComponent<constraint_entity_reference_component>();
 
-	scene_entity parentEntityA = { constraint.entityA, registry };
-	scene_entity parentEntityB = { constraint.entityB, registry };
+	eentity parentEntityA = { constraint.entityA, registry };
+	eentity parentEntityB = { constraint.entityB, registry };
 
 	constraint_context& context = getContextVariable<constraint_context>(*registry);
 
@@ -519,7 +519,7 @@ void deleteConstraint(game_scene& scene, slider_constraint_handle handle)
 	deleteConstraint(&scene.registry, handle.entity);
 }
 
-void deleteAllConstraintsFromEntity(scene_entity& entity)
+void deleteAllConstraintsFromEntity(eentity& entity)
 {
 	entt::registry* registry = entity.registry;
 	if (constraint_context* context = tryGetContextVariable<constraint_context>(*registry))
@@ -544,7 +544,7 @@ constraint_entity_iterator::iterator& constraint_entity_iterator::iterator::oper
 	return *this;
 }
 
-std::pair<scene_entity, constraint_type> constraint_entity_iterator::iterator::operator*()
+std::pair<eentity, constraint_type> constraint_entity_iterator::iterator::operator*()
 {
 	constraint_context& context = getContextVariable<constraint_context>(*registry);
 	return { { context.constraintEdges[constraintEdgeIndex].constraintEntity, registry }, context.constraintEdges[constraintEdgeIndex].type };
@@ -560,7 +560,7 @@ void testPhysicsInteraction(game_scene& scene, ray r, float strength)
 
 	for (auto [entityHandle, collider] : scene.view<collider_component>().each())
 	{
-		scene_entity entity = { collider.parentEntity, scene };
+		eentity entity = { collider.parentEntity, scene };
 		if (rigid_body_component* rb = entity.getComponentIfExists<rigid_body_component>())
 		{
 			physics_transform1_component* physicsTransformComponent = entity.getComponentIfExists<physics_transform1_component>();
@@ -639,7 +639,7 @@ static void getWorldSpaceColliders(game_scene& scene, bounding_box* outWorldspac
 		collider_union& col = outWorldSpaceColliders[pushIndex];
 		++pushIndex;
 
-		scene_entity entity = { collider.parentEntity, scene };
+		eentity entity = { collider.parentEntity, scene };
 
 		physics_transform1_component* physicsTransformComponent = entity.getComponentIfExists<physics_transform1_component>();
 		transform_component* transformComponent = entity.getComponentIfExists<transform_component>();
@@ -761,7 +761,7 @@ static vec3 getForceFieldStates(game_scene& scene, force_field_global_state* out
 
 	for (auto [entityHandle, forceField] : scene.view<force_field_component>().each())
 	{
-		scene_entity entity = { entityHandle, scene };
+		eentity entity = { entityHandle, scene };
 
 		vec3 force = forceField.force; 
 		if (transform_component* transform = entity.getComponentIfExists<transform_component>())
@@ -791,13 +791,13 @@ static void getConstraintBodyPairs(game_scene& scene, constraint_body_pair* body
 	uint32 i = scene.numberOfComponentsOfType<constraint_t>() - 1;
 	for (auto [entityHandle, _] : scene.view<constraint_t>().each())
 	{
-		scene_entity entity = { entityHandle, scene };
+		eentity entity = { entityHandle, scene };
 		constraint_entity_reference_component& reference = entity.getComponent<constraint_entity_reference_component>();
 
 		constraint_body_pair& pair = bodyPairs[i--];
 
-		scene_entity rbAEntity = { reference.entityA, scene };
-		scene_entity rbBEntity = { reference.entityB, scene };
+		eentity rbAEntity = { reference.entityA, scene };
+		eentity rbBEntity = { reference.entityB, scene };
 		pair.rbA = (uint16)rbAEntity.getComponentIndex<rigid_body_component>();
 		pair.rbB = (uint16)rbBEntity.getComponentIndex<rigid_body_component>();
 	}
@@ -966,8 +966,8 @@ static void handleNonCollisionInteractions(game_scene& scene,
 		}
 		else if (interaction.otherType == physics_object_type_trigger)
 		{
-			scene_entity triggerEntity = scene.getEntityFromComponentAtIndex<trigger_component>(numTriggers - 1 - interaction.otherIndex);
-			scene_entity rbEntity = scene.getEntityFromComponent(rb);
+			eentity triggerEntity = scene.getEntityFromComponentAtIndex<trigger_component>(numTriggers - 1 - interaction.otherIndex);
+			eentity rbEntity = scene.getEntityFromComponent(rb);
 
 			entity_pair overlap = { triggerEntity.handle, rbEntity.handle };
 
@@ -990,8 +990,8 @@ static void handleNonCollisionInteractions(game_scene& scene,
 
 	auto triggerEvent = [&scene](entity_pair pair, trigger_event_type type)
 	{
-		scene_entity triggerEntity = { pair.a, scene };
-		scene_entity otherEntity = { pair.b, scene };
+		eentity triggerEntity = { pair.a, scene };
+		eentity otherEntity = { pair.b, scene };
 		const trigger_component& triggerComp = triggerEntity.getComponent<trigger_component>();
 		triggerComp.callback(trigger_event{ triggerEntity, otherEntity, type });
 	};
@@ -1049,8 +1049,8 @@ static void handleCollisionCallbacks(game_scene& scene, const collider_pair* col
 		{
 			uint16 numContacts = contactCountPerCollision[i];
 
-			scene_entity aEntity = scene.getEntityFromComponentAtIndex<collider_component>(numColliders - 1 - colliderPair.colliderA);
-			scene_entity bEntity = scene.getEntityFromComponentAtIndex<collider_component>(numColliders - 1 - colliderPair.colliderB);
+			eentity aEntity = scene.getEntityFromComponentAtIndex<collider_component>(numColliders - 1 - colliderPair.colliderA);
+			eentity bEntity = scene.getEntityFromComponentAtIndex<collider_component>(numColliders - 1 - colliderPair.colliderB);
 
 			collision_entity_pair overlap = { aEntity.handle, bEntity.handle, contactOffset, numContacts };
 
@@ -1075,14 +1075,14 @@ static void handleCollisionCallbacks(game_scene& scene, const collider_pair* col
 		{
 			if (collisionBeginCallback)
 			{
-				scene_entity colliderAEntity = { pair.a, scene };
-				scene_entity colliderBEntity = { pair.b, scene };
+				eentity colliderAEntity = { pair.a, scene };
+				eentity colliderBEntity = { pair.b, scene };
 
 				const collider_component& colliderA = colliderAEntity.getComponent<collider_component>();
 				const collider_component& colliderB = colliderBEntity.getComponent<collider_component>();
 
-				scene_entity rbAEntity = { colliderA.parentEntity, scene };
-				scene_entity rbBEntity = { colliderB.parentEntity, scene };
+				eentity rbAEntity = { colliderA.parentEntity, scene };
+				eentity rbBEntity = { colliderB.parentEntity, scene };
 
 				const collision_contact* c = contacts + pair.contactOffset;
 				uint32 numContacts = pair.numContacts;
@@ -1117,14 +1117,14 @@ static void handleCollisionCallbacks(game_scene& scene, const collider_pair* col
 		{
 			if (collisionEndCallback)
 			{
-				scene_entity colliderAEntity = { pair.a, scene };
-				scene_entity colliderBEntity = { pair.b, scene };
+				eentity colliderAEntity = { pair.a, scene };
+				eentity colliderBEntity = { pair.b, scene };
 
 				const collider_component& colliderA = colliderAEntity.getComponent<collider_component>();
 				const collider_component& colliderB = colliderBEntity.getComponent<collider_component>();
 
-				scene_entity rbAEntity = { colliderA.parentEntity, scene };
-				scene_entity rbBEntity = { colliderB.parentEntity, scene };
+				eentity rbAEntity = { colliderA.parentEntity, scene };
+				eentity rbBEntity = { colliderB.parentEntity, scene };
 
 				collision_end_event e = { rbAEntity, rbBEntity, colliderA, colliderB };
 				collisionEndCallback(e);

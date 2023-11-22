@@ -24,7 +24,7 @@ struct sap_context
 };
 
 
-void addColliderToBroadphase(scene_entity entity)
+void addColliderToBroadphase(eentity entity)
 {
 	sap_context& context = createOrGetContextVariable<sap_context>(*entity.registry);
 
@@ -59,7 +59,7 @@ static void removeEndpoint(uint16 endpointIndex, entt::registry& registry, sap_c
 	context.endpoints.pop_back();
 }
 
-void removeColliderFromBroadphase(scene_entity entity)
+void removeColliderFromBroadphase(eentity entity)
 {
 	sap_endpoint_indirection_component& endpointIndirection = entity.getComponent<sap_endpoint_indirection_component>();
 
@@ -418,8 +418,8 @@ uint32 broadphase(game_scene& scene, bounding_box* worldSpaceAABBs, memory_arena
 		for (uint32 i = 0; i < numEndpoints; ++i)
 		{
 			sap_endpoint ep = endpoints[i];
-			scene_entity entity = { ep.entity, scene };
-			sap_endpoint_indirection_component& in = entity.getComponent<sap_endpoint_indirection_component>();
+			eentity eentity = { ep.entity, scene };
+			sap_endpoint_indirection_component& in = eentity.getComponent<sap_endpoint_indirection_component>();
 
 			if (ep.start)
 			{

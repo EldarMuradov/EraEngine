@@ -43,7 +43,7 @@ static quat getQuat(vec3 euler)
 template <typename component_t, typename member_t>
 struct component_member_undo
 {
-	component_member_undo(member_t& member, member_t before, scene_entity entity, void (*callback)(component_t&, member_t, void*) = 0, void* userData = 0)
+	component_member_undo(member_t& member, member_t before, eentity entity, void (*callback)(component_t&, member_t, void*) = 0, void* userData = 0)
 	{
 		this->entity = entity;
 		this->byteOffset = (uint8*)&member - (uint8*)&entity.getComponent<component_t>();
@@ -68,7 +68,7 @@ struct component_member_undo
 	}
 
 private:
-	scene_entity entity;
+	eentity entity;
 	uint64 byteOffset;
 
 	member_t before;
@@ -80,7 +80,7 @@ private:
 template <typename... component_t>
 struct component_undo
 {
-	component_undo(scene_entity entity, component_t... before)
+	component_undo(eentity entity, component_t... before)
 	{
 		this->entity = entity;
 		this->before = std::make_tuple(before...);
@@ -101,7 +101,7 @@ private:
 		std::swap(entity.getComponent<T>(), c);
 	}
 
-	scene_entity entity;
+	eentity entity;
 
 	std::tuple<component_t...> before;
 };
@@ -122,7 +122,7 @@ private:
 
 struct entity_existence_undo
 {
-	entity_existence_undo(game_scene& scene, scene_entity entity)
+	entity_existence_undo(game_scene& scene, eentity entity)
 		: scene(scene), entity(entity)
 	{
 		size = serializeEntityToMemory(entity, buffer, sizeof(buffer));
@@ -152,7 +152,7 @@ private:
 	}
 
 	game_scene& scene;
-	scene_entity entity;
+	eentity entity;
 	uint8 buffer[1024];
 	uint64 size;
 };
@@ -220,7 +220,7 @@ void scene_editor::updateSelectedEntityUIRotation()
 	}
 }
 
-void scene_editor::setSelectedEntity(scene_entity entity)
+void scene_editor::setSelectedEntity(eentity entity)
 {
 	selectedEntity = entity;
 	updateSelectedEntityUIRotation();
@@ -276,8 +276,8 @@ bool scene_editor::update(const user_input& input, ldr_render_pass* ldrRenderPas
 	{
 		if (auto* ref = selectedConstraintEntity.getComponentIfExists<constraint_entity_reference_component>())
 		{
-			scene_entity entityA = { ref->entityA, scene };
-			scene_entity entityB = { ref->entityB, scene };
+			eentity entityA = { ref->entityA, scene };
+			eentity entityB = { ref->entityB, scene };
 
 			const trs& transformA = entityA.getComponent<transform_component>();
 			const trs& transformB = entityB.getComponent<transform_component>();
@@ -532,7 +532,7 @@ bool scene_editor::drawMainMenuBar()
 }
 
 template<typename component_t, typename ui_func>
-static void drawComponent(scene_entity entity, const char* componentName, ui_func func)
+static void drawComponent(eentity entity, const char* componentName, ui_func func)
 {
 	const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
 	if (auto* component = entity.getComponentIfExists<component_t>())
@@ -549,7 +549,7 @@ static void drawComponent(scene_entity entity, const char* componentName, ui_fun
 	}
 }
 
-static bounding_box getObjectBoundingBox(scene_entity entity, bool applyPosition)
+static bounding_box getObjectBoundingBox(eentity entity, bool applyPosition)
 {
 	bounding_box aabb = entity.hasComponent<mesh_component>() ? entity.getComponent<mesh_component>().mesh->aabb : bounding_box::fromCenterRadius(0.f, 1.f);
 
@@ -665,7 +665,7 @@ bool scene_editor::drawSceneHierarchy()
 			{
 				ImGui::PushID((uint32)entityHandle);
 				const char* name = tag.name;
-				scene_entity entity = { entityHandle, scene };
+				eentity entity = { entityHandle, scene };
 
 				if (ImGui::Selectable(name, entity == selectedEntity))
 				{
@@ -1055,7 +1055,7 @@ bool scene_editor::drawSceneHierarchy()
 						// TODO UNDO
 						bool dirty = false;
 
-						for (scene_entity colliderEntity : collider_entity_iterator(selectedEntity))
+						for (eentity colliderEntity : collider_entity_iterator(selectedEntity))
 						{
 							ImGui::PushID((int)colliderEntity.handle);
 
@@ -1150,7 +1150,7 @@ bool scene_editor::drawSceneHierarchy()
 									bool editCollider = selectedColliderEntity == colliderEntity;
 									if (ImGui::PropertyCheckbox("Edit", editCollider))
 									{
-										selectedColliderEntity = editCollider ? colliderEntity : scene_entity{};
+										selectedColliderEntity = editCollider ? colliderEntity : eentity{};
 									}
 
 									ImGui::EndProperties();
@@ -1184,7 +1184,7 @@ bool scene_editor::drawSceneHierarchy()
 									{
 										if (ImGui::BeginProperties())
 										{
-											scene_entity otherEntity = getOtherEntity(constraintEntity.getComponent<constraint_entity_reference_component>(), selectedEntity);
+											eentity otherEntity = getOtherEntity(constraintEntity.getComponent<constraint_entity_reference_component>(), selectedEntity);
 											if (ImGui::PropertyButton("Connected entity", ICON_FA_CUBE, otherEntity.getComponent<tag_component>().name))
 											{
 												setSelectedEntity(otherEntity);
@@ -1193,7 +1193,7 @@ bool scene_editor::drawSceneHierarchy()
 											bool visConstraint = selectedConstraintEntity == constraintEntity;
 											if (ImGui::PropertyCheckbox("Visualize", visConstraint))
 											{
-												selectedConstraintEntity = visConstraint ? constraintEntity : scene_entity{};
+												selectedConstraintEntity = visConstraint ? constraintEntity : eentity{};
 											}
 
 											ImGui::PropertySlider("Length", constraint.globalLength);
@@ -1208,7 +1208,7 @@ bool scene_editor::drawSceneHierarchy()
 									{
 										if (ImGui::BeginProperties())
 										{
-											scene_entity otherEntity = getOtherEntity(constraintEntity.getComponent<constraint_entity_reference_component>(), selectedEntity);
+											eentity otherEntity = getOtherEntity(constraintEntity.getComponent<constraint_entity_reference_component>(), selectedEntity);
 											if (ImGui::PropertyButton("Connected entity", ICON_FA_CUBE, otherEntity.getComponent<tag_component>().name))
 											{
 												setSelectedEntity(otherEntity);
@@ -1217,7 +1217,7 @@ bool scene_editor::drawSceneHierarchy()
 											bool visConstraint = selectedConstraintEntity == constraintEntity;
 											if (ImGui::PropertyCheckbox("Visualize", visConstraint))
 											{
-												selectedConstraintEntity = visConstraint ? constraintEntity : scene_entity{};
+												selectedConstraintEntity = visConstraint ? constraintEntity : eentity{};
 											}
 
 											ImGui::EndProperties();
@@ -1231,7 +1231,7 @@ bool scene_editor::drawSceneHierarchy()
 									{
 										if (ImGui::BeginProperties())
 										{
-											scene_entity otherEntity = getOtherEntity(constraintEntity.getComponent<constraint_entity_reference_component>(), selectedEntity);
+											eentity otherEntity = getOtherEntity(constraintEntity.getComponent<constraint_entity_reference_component>(), selectedEntity);
 											if (ImGui::PropertyButton("Connected entity", ICON_FA_CUBE, otherEntity.getComponent<tag_component>().name))
 											{
 												setSelectedEntity(otherEntity);
@@ -1240,7 +1240,7 @@ bool scene_editor::drawSceneHierarchy()
 											bool visConstraint = selectedConstraintEntity == constraintEntity;
 											if (ImGui::PropertyCheckbox("Visualize", visConstraint))
 											{
-												selectedConstraintEntity = visConstraint ? constraintEntity : scene_entity{};
+												selectedConstraintEntity = visConstraint ? constraintEntity : eentity{};
 											}
 
 											ImGui::EndProperties();
@@ -1254,7 +1254,7 @@ bool scene_editor::drawSceneHierarchy()
 									{
 										if (ImGui::BeginProperties())
 										{
-											scene_entity otherEntity = getOtherEntity(constraintEntity.getComponent<constraint_entity_reference_component>(), selectedEntity);
+											eentity otherEntity = getOtherEntity(constraintEntity.getComponent<constraint_entity_reference_component>(), selectedEntity);
 											if (ImGui::PropertyButton("Connected entity", ICON_FA_CUBE, otherEntity.getComponent<tag_component>().name))
 											{
 												setSelectedEntity(otherEntity);
@@ -1308,7 +1308,7 @@ bool scene_editor::drawSceneHierarchy()
 											bool visConstraint = selectedConstraintEntity == constraintEntity;
 											if (ImGui::PropertyCheckbox("Visualize", visConstraint))
 											{
-												selectedConstraintEntity = visConstraint ? constraintEntity : scene_entity{};
+												selectedConstraintEntity = visConstraint ? constraintEntity : eentity{};
 											}
 											ImGui::EndProperties();
 										}
@@ -1321,7 +1321,7 @@ bool scene_editor::drawSceneHierarchy()
 									{
 										if (ImGui::BeginProperties())
 										{
-											scene_entity otherEntity = getOtherEntity(constraintEntity.getComponent<constraint_entity_reference_component>(), selectedEntity);
+											eentity otherEntity = getOtherEntity(constraintEntity.getComponent<constraint_entity_reference_component>(), selectedEntity);
 											if (ImGui::PropertyButton("Connected entity", ICON_FA_CUBE, otherEntity.getComponent<tag_component>().name))
 											{
 												setSelectedEntity(otherEntity);
@@ -1395,7 +1395,7 @@ bool scene_editor::drawSceneHierarchy()
 											bool visConstraint = selectedConstraintEntity == constraintEntity;
 											if (ImGui::PropertyCheckbox("Visualize", visConstraint))
 											{
-												selectedConstraintEntity = visConstraint ? constraintEntity : scene_entity{};
+												selectedConstraintEntity = visConstraint ? constraintEntity : eentity{};
 											}
 											ImGui::EndProperties();
 										}
@@ -1408,7 +1408,7 @@ bool scene_editor::drawSceneHierarchy()
 									{
 										if (ImGui::BeginProperties())
 										{
-											scene_entity otherEntity = getOtherEntity(constraintEntity.getComponent<constraint_entity_reference_component>(), selectedEntity);
+											eentity otherEntity = getOtherEntity(constraintEntity.getComponent<constraint_entity_reference_component>(), selectedEntity);
 											if (ImGui::PropertyButton("Connected entity", ICON_FA_CUBE, otherEntity.getComponent<tag_component>().name))
 											{
 												setSelectedEntity(otherEntity);
@@ -1462,7 +1462,7 @@ bool scene_editor::drawSceneHierarchy()
 											bool visConstraint = selectedConstraintEntity == constraintEntity;
 											if (ImGui::PropertyCheckbox("Visualize", visConstraint))
 											{
-												selectedConstraintEntity = visConstraint ? constraintEntity : scene_entity{};
+												selectedConstraintEntity = visConstraint ? constraintEntity : eentity{};
 											}
 											ImGui::EndProperties();
 										}
@@ -1893,7 +1893,7 @@ bool scene_editor::handleUserInput(const user_input& input, ldr_render_pass* ldr
 			else if (ImGui::IsKeyDown(key_ctrl) && ImGui::IsKeyPressed('D'))
 			{
 				// Duplicate entity.
-				scene_entity newEntity = scene->copyEntity(selectedEntity);
+				eentity newEntity = scene->copyEntity(selectedEntity);
 				setSelectedEntity(newEntity);
 				inputCaptured = true;
 				objectMovedByGizmo = true;

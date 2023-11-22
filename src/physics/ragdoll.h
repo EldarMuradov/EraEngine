@@ -14,44 +14,44 @@ struct humanoid_ragdoll
 	{
 		struct
 		{
-			scene_entity torso;
-			scene_entity head;
-			scene_entity leftUpperArm;
-			scene_entity leftLowerArm;
-			scene_entity rightUpperArm;
-			scene_entity rightLowerArm;
-			scene_entity leftUpperLeg;
-			scene_entity leftLowerLeg;
-			scene_entity leftFoot;
-			scene_entity leftToes;
-			scene_entity rightUpperLeg;
-			scene_entity rightLowerLeg;
-			scene_entity rightFoot;
-			scene_entity rightToes;
+			eentity torso;
+			eentity head;
+			eentity leftUpperArm;
+			eentity leftLowerArm;
+			eentity rightUpperArm;
+			eentity rightLowerArm;
+			eentity leftUpperLeg;
+			eentity leftLowerLeg;
+			eentity leftFoot;
+			eentity leftToes;
+			eentity rightUpperLeg;
+			eentity rightLowerLeg;
+			eentity rightFoot;
+			eentity rightToes;
 		};
-		scene_entity bodyParts[14];
+		eentity bodyParts[14];
 	};
 
 	union
 	{
 		struct
 		{
-			scene_entity torsoParent;
-			scene_entity headParent;
-			scene_entity leftUpperArmParent;
-			scene_entity leftLowerArmParent;
-			scene_entity rightUpperArmParent;
-			scene_entity rightLowerArmParent;
-			scene_entity leftUpperLegParent;
-			scene_entity leftLowerLegParent;
-			scene_entity leftFootParent;
-			scene_entity leftToesParent;
-			scene_entity rightUpperLegParent;
-			scene_entity rightLowerLegParent;
-			scene_entity rightFootParent;
-			scene_entity rightToesParent;
+			eentity torsoParent;
+			eentity headParent;
+			eentity leftUpperArmParent;
+			eentity leftLowerArmParent;
+			eentity rightUpperArmParent;
+			eentity rightLowerArmParent;
+			eentity leftUpperLegParent;
+			eentity leftLowerLegParent;
+			eentity leftFootParent;
+			eentity leftToesParent;
+			eentity rightUpperLegParent;
+			eentity rightLowerLegParent;
+			eentity rightFootParent;
+			eentity rightToesParent;
 		};
-		scene_entity bodyPartParents[14];
+		eentity bodyPartParents[14];
 	};
 
 	union

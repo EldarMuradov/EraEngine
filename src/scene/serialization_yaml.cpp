@@ -381,7 +381,7 @@ void serializeSceneToYAMLFile(editor_scene& scene, const renderer_settings& rend
 
 	scene.editorScene.forEachEntity([&entityNode, &scene = scene.editorScene](entity_handle entityID)
 	{
-		scene_entity entity = { entityID, scene };
+		eentity entity = { entityID, scene };
 
 		// Only entities with tags are valid top level entities. All others are helpers like colliders and constraints.
 		if (tag_component* tag = entity.getComponentIfExists<tag_component>())
@@ -472,7 +472,7 @@ bool deserializeSceneFromYAMLFile(editor_scene& scene, renderer_settings& render
 	for (auto entityNode : entitiesNode)
 	{
 		std::string name = entityNode["Tag"].as<std::string>();
-		scene_entity entity = scene.editorScene.createEntity(name.c_str());
+		eentity entity = scene.editorScene.createEntity(name.c_str());
 
 #define LOAD_COMPONENT(type, name) if (auto node = entityNode[name]) { entity.addComponent<type>(node.as<type>()); }
 

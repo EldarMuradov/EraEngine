@@ -70,7 +70,7 @@ protected:
 	void applyAction(game_scene& scene, const learning_action& action);
 
 	trs getCoordinateSystem() const;
-	void readBodyPartState(const trs& transform, scene_entity entity, vec3& position, vec3& velocity) const;
+	void readBodyPartState(const trs& transform, eentity entity, vec3& position, vec3& velocity) const;
 	void getState(learning_state& outState) const;
 	bool hasFallen(const learning_state& state) const;
 

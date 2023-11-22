@@ -131,13 +131,13 @@ using serialized_components = component_group_t<
 >;
 
 template <typename component_t>
-void serializeToMemoryStream(scene_entity entity, const component_t& component, write_stream& stream)
+void serializeToMemoryStream(eentity entity, const component_t& component, write_stream& stream)
 {
 	stream.write(component);
 }
 
 template <typename component_t>
-void deserializeFromMemoryStream(scene_entity entity, read_stream& stream)
+void deserializeFromMemoryStream(eentity entity, read_stream& stream)
 {
 	entity.addComponent<component_t>();
 	component_t& component = entity.getComponent<component_t>();
@@ -147,11 +147,11 @@ void deserializeFromMemoryStream(scene_entity entity, read_stream& stream)
 
 #define READ(type, var) type var; stream.read(var);
 
-template <> void serializeToMemoryStream(scene_entity entity, const dynamic_transform_component& component, write_stream& stream) {}
-template <> void deserializeFromMemoryStream<dynamic_transform_component>(scene_entity entity, read_stream& stream) { entity.addComponent<dynamic_transform_component>(); }
+template <> void serializeToMemoryStream(eentity entity, const dynamic_transform_component& component, write_stream& stream) {}
+template <> void deserializeFromMemoryStream<dynamic_transform_component>(eentity entity, read_stream& stream) { entity.addComponent<dynamic_transform_component>(); }
 
 template <>
-void serializeToMemoryStream(scene_entity entity, const mesh_component& component, write_stream& stream)
+void serializeToMemoryStream(eentity entity, const mesh_component& component, write_stream& stream)
 {
 	asset_handle handle = component.mesh ? component.mesh->handle : 0;
 	uint32 flags = component.mesh ? component.mesh->flags : 0;
@@ -160,7 +160,7 @@ void serializeToMemoryStream(scene_entity entity, const mesh_component& componen
 }
 
 template <>
-void deserializeFromMemoryStream<mesh_component>(scene_entity entity, read_stream& stream)
+void deserializeFromMemoryStream<mesh_component>(eentity entity, read_stream& stream)
 {
 	READ(asset_handle, handle);
 	READ(uint32, flags);
@@ -170,7 +170,7 @@ void deserializeFromMemoryStream<mesh_component>(scene_entity entity, read_strea
 }
 
 template <>
-void serializeToMemoryStream(scene_entity entity, const cloth_component& component, write_stream& stream)
+void serializeToMemoryStream(eentity entity, const cloth_component& component, write_stream& stream)
 {
 	stream.write(component.width);
 	stream.write(component.height);
@@ -183,7 +183,7 @@ void serializeToMemoryStream(scene_entity entity, const cloth_component& compone
 }
 
 template <>
-void deserializeFromMemoryStream<cloth_component>(scene_entity entity, read_stream& stream)
+void deserializeFromMemoryStream<cloth_component>(eentity entity, read_stream& stream)
 {
 	READ(float, width);
 	READ(float, height);
@@ -197,11 +197,11 @@ void deserializeFromMemoryStream<cloth_component>(scene_entity entity, read_stre
 	entity.addComponent<cloth_component>(width, height, gridSizeX, gridSizeY, totalMass, stiffness, damping, gravityFactor);
 }
 
-template <> void serializeToMemoryStream(scene_entity entity, const cloth_render_component& component, write_stream& stream) {}
-template <> void deserializeFromMemoryStream<cloth_render_component>(scene_entity entity, read_stream& stream) { entity.addComponent<cloth_render_component>(); }
+template <> void serializeToMemoryStream(eentity entity, const cloth_render_component& component, write_stream& stream) {}
+template <> void deserializeFromMemoryStream<cloth_render_component>(eentity entity, read_stream& stream) { entity.addComponent<cloth_render_component>(); }
 
 template <>
-void serializeToMemoryStream(scene_entity entity, const physics_reference_component& component, write_stream& stream)
+void serializeToMemoryStream(eentity entity, const physics_reference_component& component, write_stream& stream)
 {
 	stream.write(component.numColliders);
 	for (collider_component& collider : collider_component_iterator(entity))
@@ -231,7 +231,7 @@ void serializeToMemoryStream(scene_entity entity, const physics_reference_compon
 }
 
 template <>
-void deserializeFromMemoryStream<physics_reference_component>(scene_entity entity, read_stream& stream)
+void deserializeFromMemoryStream<physics_reference_component>(eentity entity, read_stream& stream)
 {
 	READ(uint32, numColliders);
 	for (uint32 i = 0; i < numColliders; ++i)
@@ -250,8 +250,8 @@ void deserializeFromMemoryStream<physics_reference_component>(scene_entity entit
 
 		ASSERT(entity.handle == entityHandleA || entity.handle == entityHandleB);
 
-		scene_entity a = { entityHandleA, entity.registry };
-		scene_entity b = { entityHandleB, entity.registry };
+		eentity a = { entityHandleA, entity.registry };
+		eentity b = { entityHandleB, entity.registry };
 
 		switch (constraintType)
 		{
@@ -344,7 +344,7 @@ static ref<pbr_material> deserializeMaterial(read_stream& stream)
 }
 
 template <>
-void serializeToMemoryStream(scene_entity entity, const terrain_component& component, write_stream& stream)
+void serializeToMemoryStream(eentity entity, const terrain_component& component, write_stream& stream)
 {
 	stream.write(component.chunksPerDim);
 	stream.write(component.chunkSize);
@@ -357,7 +357,7 @@ void serializeToMemoryStream(scene_entity entity, const terrain_component& compo
 }
 
 template <>
-void deserializeFromMemoryStream<terrain_component>(scene_entity entity, read_stream& stream)
+void deserializeFromMemoryStream<terrain_component>(eentity entity, read_stream& stream)
 {
 	READ(uint32, chunksPerDim);
 	READ(float, chunkSize);
@@ -372,7 +372,7 @@ void deserializeFromMemoryStream<terrain_component>(scene_entity entity, read_st
 }
 
 template <>
-void serializeToMemoryStream(scene_entity entity, const heightmap_collider_component& component, write_stream& stream)
+void serializeToMemoryStream(eentity entity, const heightmap_collider_component& component, write_stream& stream)
 {
 	stream.write(component.chunksPerDim);
 	stream.write(component.chunkSize);
@@ -380,7 +380,7 @@ void serializeToMemoryStream(scene_entity entity, const heightmap_collider_compo
 }
 
 template <>
-void deserializeFromMemoryStream<heightmap_collider_component>(scene_entity entity, read_stream& stream)
+void deserializeFromMemoryStream<heightmap_collider_component>(eentity entity, read_stream& stream)
 {
 	READ(uint32, chunksPerDim);
 	READ(float, chunkSize);
@@ -390,32 +390,32 @@ void deserializeFromMemoryStream<heightmap_collider_component>(scene_entity enti
 }
 
 template <>
-void serializeToMemoryStream(scene_entity entity, const grass_component& component, write_stream& stream)
+void serializeToMemoryStream(eentity entity, const grass_component& component, write_stream& stream)
 {
 	stream.write(component.settings);
 }
 
 template <>
-void deserializeFromMemoryStream<grass_component>(scene_entity entity, read_stream& stream)
+void deserializeFromMemoryStream<grass_component>(eentity entity, read_stream& stream)
 {
 	READ(grass_settings, settings);
 	entity.addComponent<grass_component>(settings);
 }
 
 template <>
-void serializeToMemoryStream(scene_entity entity, const proc_placement_component& component, write_stream& stream)
+void serializeToMemoryStream(eentity entity, const proc_placement_component& component, write_stream& stream)
 {
 	// TODO
 }
 
 template <>
-void deserializeFromMemoryStream<proc_placement_component>(scene_entity entity, read_stream& stream)
+void deserializeFromMemoryStream<proc_placement_component>(eentity entity, read_stream& stream)
 {
 	// TODO
 }
 
 template <typename component_t>
-void serializeComponentToMemoryStream(scene_entity entity, write_stream& stream)
+void serializeComponentToMemoryStream(eentity entity, write_stream& stream)
 {
 	if (component_t* component = entity.getComponentIfExists<component_t>())
 	{
@@ -429,7 +429,7 @@ void serializeComponentToMemoryStream(scene_entity entity, write_stream& stream)
 }
 
 template <typename component_t>
-void deserializeComponentFromMemoryStream(scene_entity entity, read_stream& stream)
+void deserializeComponentFromMemoryStream(eentity entity, read_stream& stream)
 {
 	READ(bool, hasComponent);
 
@@ -440,25 +440,25 @@ void deserializeComponentFromMemoryStream(scene_entity entity, read_stream& stre
 }
 
 template <typename... component_t>
-static void serializeComponentsToMemoryStream(component_group_t<component_t...>, scene_entity entity, write_stream& stream)
+static void serializeComponentsToMemoryStream(component_group_t<component_t...>, eentity entity, write_stream& stream)
 {
 	(serializeComponentToMemoryStream<component_t>(entity, stream), ...);
 }
 
 template <typename... component_t>
-static void deserializeComponentsFromMemoryStream(component_group_t<component_t...>, scene_entity entity, read_stream& stream)
+static void deserializeComponentsFromMemoryStream(component_group_t<component_t...>, eentity entity, read_stream& stream)
 {
 	(deserializeComponentFromMemoryStream<component_t>(entity, stream), ...);
 }
 
-uint64 serializeEntityToMemory(scene_entity entity, void* memory, uint64 maxSize)
+uint64 serializeEntityToMemory(eentity entity, void* memory, uint64 maxSize)
 {
 	write_stream stream = { (uint8*)memory, maxSize };
 	serializeComponentsToMemoryStream(serialized_components{}, entity, stream);
 	return stream.writeOffset;
 }
 
-bool deserializeEntityFromMemory(scene_entity entity, void* memory, uint64 size)
+bool deserializeEntityFromMemory(eentity entity, void* memory, uint64 size)
 {
 	read_stream stream = { (uint8*)memory, size };
 	deserializeComponentsFromMemoryStream(serialized_components{}, entity, stream);

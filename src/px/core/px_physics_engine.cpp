@@ -193,7 +193,7 @@ void px_physics_engine::update(float dt)
 	for (; i < nbActiveActors; i++)
 	{
 		entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
-		scene_entity* renderObject = new scene_entity(*handle, *scene);
+		eentity* renderObject = new eentity(*handle, *scene);
 		auto transform = &renderObject->getComponent<transform_component>();
 		auto pxt = activeActors[i]->is<PxRigidDynamic>()->getGlobalPose();
 		auto pos = pxt.p;

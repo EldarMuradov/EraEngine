@@ -13,28 +13,28 @@ struct vehicle
 	{
 		struct
 		{
-			scene_entity motor;
-			scene_entity motorGear;
-			scene_entity driveAxis;
-			scene_entity frontAxis;
-			scene_entity steeringWheel;
-			scene_entity steeringAxis;
+			eentity motor;
+			eentity motorGear;
+			eentity driveAxis;
+			eentity frontAxis;
+			eentity steeringWheel;
+			eentity steeringAxis;
 
-			scene_entity leftWheelSuspension;
-			scene_entity rightWheelSuspension;
+			eentity leftWheelSuspension;
+			eentity rightWheelSuspension;
 
-			scene_entity leftFrontWheel;
-			scene_entity rightFrontWheel;
+			eentity leftFrontWheel;
+			eentity rightFrontWheel;
 
-			scene_entity leftWheelArm;
-			scene_entity rightWheelArm;
+			eentity leftWheelArm;
+			eentity rightWheelArm;
 
-			scene_entity differentialSunGear;
-			scene_entity differentialSpiderGear;
+			eentity differentialSunGear;
+			eentity differentialSpiderGear;
 
-			scene_entity leftRearWheel;
-			scene_entity rightRearWheel;
+			eentity leftRearWheel;
+			eentity rightRearWheel;
 		};
-		scene_entity parts[16];
+		eentity parts[16];
 	};
 };

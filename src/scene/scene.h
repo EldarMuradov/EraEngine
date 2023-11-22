@@ -25,21 +25,21 @@ struct game_scene;
 using entity_handle = entt::entity;
 static const auto null_entity = entt::null;
 
-struct scene_entity
+struct eentity
 {
-	scene_entity() = default;
-	inline scene_entity(entity_handle handle, game_scene& scene);
-	inline scene_entity(uint32 id, game_scene& scene);
-	scene_entity(entity_handle handle, entt::registry* registry) : handle(handle), registry(registry) {}
-	scene_entity(uint32 id, entt::registry* reg) : handle((entity_handle)id), registry(reg) {}
-	scene_entity(const scene_entity&) = default;
+	eentity() = default;
+	inline eentity(entity_handle handle, game_scene& scene);
+	inline eentity(uint32 id, game_scene& scene);
+	eentity(entity_handle handle, entt::registry* registry) : handle(handle), registry(registry) {}
+	eentity(uint32 id, entt::registry* reg) : handle((entity_handle)id), registry(reg) {}
+	eentity(const eentity&) = default;
 
 	template <typename component_t, typename... args>
-	scene_entity& addComponent(args&&... a)
+	eentity& addComponent(args&&... a)
 	{
 		if constexpr (std::is_same_v<component_t, struct collider_component>)
 		{
-			void addColliderToBroadphase(scene_entity entity);
+			void addColliderToBroadphase(eentity eentity);
 
 			if (!hasComponent<struct physics_reference_component>())
 				addComponent<struct physics_reference_component>();
@@ -49,7 +49,7 @@ struct scene_entity
 
 			entity_handle child = registry->create();
 			struct collider_component& collider = registry->emplace<struct collider_component>(child, std::forward<args>(a)...);
-			addColliderToBroadphase(scene_entity(child, registry));
+			addColliderToBroadphase(eentity(child, registry));
 
 			collider.parentEntity = handle;
 			collider.nextEntity = reference.firstColliderEntity;
@@ -165,12 +165,12 @@ struct scene_entity
 		return registry->valid(handle);
 	}
 
-	inline bool operator==(const scene_entity& o) const
+	inline bool operator==(const eentity& o) const
 	{
 		return handle == o.handle && registry == o.registry;
 	}
 
-	inline bool operator!=(const scene_entity& o) const
+	inline bool operator!=(const eentity& o) const
 	{
 		return !(*this == o);
 	}
@@ -227,21 +227,21 @@ struct game_scene
 {
 	game_scene();
 
-	scene_entity createEntity(const char* name)
+	eentity createEntity(const char* name)
 	{
-		return scene_entity(registry.create(), &registry)
+		return eentity(registry.create(), &registry)
 			.addComponent<tag_component>(name);
 	}
 
-	scene_entity tryCreateEntityInPlace(scene_entity place, const char* name)
+	eentity tryCreateEntityInPlace(eentity place, const char* name)
 	{
-		return scene_entity(registry.create(place.handle), &registry)
+		return eentity(registry.create(place.handle), &registry)
 			.addComponent<tag_component>(name);
 	}
 
-	scene_entity copyEntity(scene_entity src); // Source can be either from the same scene or from another.
+	eentity copyEntity(eentity src); // Source can be either from the same scene or from another.
 
-	void deleteEntity(scene_entity e);
+	void deleteEntity(eentity e);
 	void clearAll();
 
 	template <typename component_t>
@@ -250,20 +250,20 @@ struct game_scene
 		registry.clear<component_t>();
 	}
 
-	bool isEntityValid(scene_entity e)
+	bool isEntityValid(eentity e)
 	{
 		return &registry == e.registry && registry.valid(e.handle);
 	}
 
 	template <typename component_t>
-	scene_entity getEntityFromComponent(const component_t& c)
+	eentity getEntityFromComponent(const component_t& c)
 	{
 		entity_handle e = entt::to_entity(registry, c);
 		return { e, &registry };
 	}
 
 	template <typename component_t>
-	void copyComponentIfExists(scene_entity src, scene_entity dst)
+	void copyComponentIfExists(eentity src, eentity dst)
 	{
 		if (component_t* comp = src.getComponentIfExists<component_t>())
 		{
@@ -272,7 +272,7 @@ struct game_scene
 	}
 
 	template <typename first_component_t, typename... tail_component_t>
-	void copyComponentsIfExists(scene_entity src, scene_entity dst)
+	void copyComponentsIfExists(eentity src, eentity dst)
 	{
 		copyComponentIfExists<first_component_t>(src, dst);
 		if constexpr (sizeof...(tail_component_t) > 0)
@@ -322,7 +322,7 @@ struct game_scene
 	}
 
 	template <typename component_t>
-	scene_entity getEntityFromComponentAtIndex(uint32 index)
+	eentity getEntityFromComponentAtIndex(uint32 index)
 	{
 		return getEntityFromComponent(getComponentAtIndex<component_t>(index));
 	}
@@ -377,8 +377,8 @@ private:
 	}
 };
 
-inline scene_entity::scene_entity(entity_handle handle, game_scene& scene) : handle(handle), registry(&scene.registry) {}
-inline scene_entity::scene_entity(uint32 id, game_scene& scene) : handle((entity_handle)id), registry(&scene.registry) {}
+inline eentity::eentity(entity_handle handle, game_scene& scene) : handle(handle), registry(&scene.registry) {}
+inline eentity::eentity(uint32 id, game_scene& scene) : handle((entity_handle)id), registry(&scene.registry) {}
 
 enum scene_mode
 {

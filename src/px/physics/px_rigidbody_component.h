@@ -1,7 +1,7 @@
 #pragma once
 #include <px/core/px_physics_engine.h>
 
-struct scene_entity;
+struct eentity;
 
 enum class px_rigidbody_type 
 {
@@ -19,7 +19,7 @@ enum class px_force_mode
 struct px_rigidbody_component 
 {
 	px_rigidbody_component() {};
-	px_rigidbody_component(scene_entity* entt, px_rigidbody_type rbtype) noexcept;
+	px_rigidbody_component(eentity* entt, px_rigidbody_type rbtype) noexcept;
 	~px_rigidbody_component();
 
 	void addForce(vec3 force, px_force_mode mode = px_force_mode::Impulse) noexcept;
@@ -56,7 +56,7 @@ struct px_rigidbody_component
 
 	void onCollisionEnter(px_rigidbody_component* collision);
 
-	scene_entity* entity = nullptr;
+	eentity* entity = nullptr;
 
 private:
 	void createPhysics();

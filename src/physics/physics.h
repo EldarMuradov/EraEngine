@@ -192,8 +192,8 @@ enum trigger_event_type
 
 struct trigger_event
 {
-	scene_entity trigger;
-	scene_entity other;
+	eentity trigger;
+	eentity other;
 	trigger_event_type type;
 };
 
@@ -214,32 +214,32 @@ struct cone_twist_constraint_handle { entity_handle entity; };
 struct slider_constraint_handle { entity_handle entity; };
 
 // Local anchors are always in the space of the entities.
-distance_constraint_handle addDistanceConstraintFromLocalPoints(scene_entity& a, scene_entity& b, vec3 localAnchorA, vec3 localAnchorB, float distance);
-distance_constraint_handle addDistanceConstraintFromGlobalPoints(scene_entity& a, scene_entity& b, vec3 globalAnchorA, vec3 globalAnchorB); // Calculates distance from current configuration.
+distance_constraint_handle addDistanceConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB, float distance);
+distance_constraint_handle addDistanceConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchorA, vec3 globalAnchorB); // Calculates distance from current configuration.
 
-ball_constraint_handle addBallConstraintFromLocalPoints(scene_entity& a, scene_entity& b, vec3 localAnchorA, vec3 localAnchorB);
-ball_constraint_handle addBallConstraintFromGlobalPoints(scene_entity& a, scene_entity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
+ball_constraint_handle addBallConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB);
+ball_constraint_handle addBallConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
 
-fixed_constraint_handle addFixedConstraintFromGlobalPoints(scene_entity& a, scene_entity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
+fixed_constraint_handle addFixedConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
 
 // The min limit is in the range [-pi, 0], the max limit in the range [0, pi]. 
 // If the specified values are not in this range, the limits are disabled.
 // Limits are specified as allowed deviations from the initial relative rotation.
 // Usually the absolute of each limit should be a lot smaller than pi.
-hinge_constraint_handle addHingeConstraintFromGlobalPoints(scene_entity& a, scene_entity& b, vec3 globalAnchor, vec3 globalHingeAxis,
+hinge_constraint_handle addHingeConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalHingeAxis,
 	float minLimit = 1.f, float maxLimit = -1.f);
 
-cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(scene_entity& a, scene_entity& b, vec3 globalAnchor, vec3 globalAxis, 
+cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, 
 	float swingLimit, float twistLimit);
 
-slider_constraint_handle addSliderConstraintFromGlobalPoints(scene_entity& a, scene_entity& b, vec3 globalAnchor, vec3 globalAxis, float minLimit = 1.f, float maxLimit = -1.f);
+slider_constraint_handle addSliderConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, float minLimit = 1.f, float maxLimit = -1.f);
 
-distance_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const distance_constraint& c);
-ball_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const ball_constraint& c);
-fixed_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const fixed_constraint& c);
-hinge_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const hinge_constraint& c);
-cone_twist_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const cone_twist_constraint& c);
-slider_constraint_handle addConstraint(scene_entity& a, scene_entity& b, const slider_constraint& c);
+distance_constraint_handle addConstraint(eentity& a, eentity& b, const distance_constraint& c);
+ball_constraint_handle addConstraint(eentity& a, eentity& b, const ball_constraint& c);
+fixed_constraint_handle addConstraint(eentity& a, eentity& b, const fixed_constraint& c);
+hinge_constraint_handle addConstraint(eentity& a, eentity& b, const hinge_constraint& c);
+cone_twist_constraint_handle addConstraint(eentity& a, eentity& b, const cone_twist_constraint& c);
+slider_constraint_handle addConstraint(eentity& a, eentity& b, const slider_constraint& c);
 
 distance_constraint& getConstraint(game_scene& scene, distance_constraint_handle handle);
 ball_constraint& getConstraint(game_scene& scene, ball_constraint_handle handle);
@@ -257,9 +257,9 @@ void deleteConstraint(game_scene& scene, hinge_constraint_handle handle);
 void deleteConstraint(game_scene& scene, cone_twist_constraint_handle handle);
 void deleteConstraint(game_scene& scene, slider_constraint_handle handle);
 
-void deleteAllConstraintsFromEntity(scene_entity& entity);
+void deleteAllConstraintsFromEntity(eentity& entity);
 
-static scene_entity getOtherEntity(const constraint_entity_reference_component& constraint, scene_entity first)
+static eentity getOtherEntity(const constraint_entity_reference_component& constraint, eentity first)
 {
 	entity_handle result = (first == constraint.entityA) ? constraint.entityB : constraint.entityA;
 	return { result, first.registry };
@@ -267,7 +267,7 @@ static scene_entity getOtherEntity(const constraint_entity_reference_component& 
 
 struct collider_entity_iterator
 {
-	collider_entity_iterator(scene_entity entity)
+	collider_entity_iterator(eentity entity)
 	{
 		if (physics_reference_component* ref = entity.getComponentIfExists<physics_reference_component>())
 		{
@@ -277,22 +277,22 @@ struct collider_entity_iterator
 
 	struct iterator
 	{
-		scene_entity entity;
-
 		friend bool operator!=(const iterator& a, const iterator& b) { return a.entity != b.entity; }
 		iterator& operator++() { entity = { entity.getComponent<collider_component>().nextEntity, entity.registry }; return *this; }
-		scene_entity operator*() { return entity; }
+		eentity operator*() { return this->entity; }
+
+		eentity entity;
 	};
 
 	iterator begin() { return iterator{ firstColliderEntity }; }
-	iterator end() { return iterator{ scene_entity{ entity_handle(entt::null), firstColliderEntity.registry } }; }
+	iterator end() { return iterator{ eentity{ entity_handle(entt::null), firstColliderEntity.registry } }; }
 
-	scene_entity firstColliderEntity = {};
+	eentity firstColliderEntity = {};
 };
 
 struct collider_component_iterator : collider_entity_iterator
 {
-	collider_component_iterator(scene_entity entity) : collider_entity_iterator(entity) {}
+	collider_component_iterator(eentity entity) : collider_entity_iterator(entity) {}
 
 	struct iterator : collider_entity_iterator::iterator 
 	{
@@ -300,12 +300,12 @@ struct collider_component_iterator : collider_entity_iterator
 	};
 
 	iterator begin() { return iterator{ firstColliderEntity }; }
-	iterator end() { return iterator{ scene_entity{ entity_handle(entt::null), firstColliderEntity.registry } }; }
+	iterator end() { return iterator{ eentity{ entity_handle(entt::null), firstColliderEntity.registry } }; }
 };
 
 struct constraint_entity_iterator
 {
-	constraint_entity_iterator(scene_entity entity)
+	constraint_entity_iterator(eentity entity)
 		: registry(entity.registry)
 	{
 		if (physics_reference_component* ref = entity.getComponentIfExists<physics_reference_component>())
@@ -321,7 +321,7 @@ struct constraint_entity_iterator
 
 		friend bool operator!=(const iterator& a, const iterator& b) { return a.constraintEdgeIndex != b.constraintEdgeIndex; }
 		iterator& operator++();
-		std::pair<scene_entity, constraint_type> operator*();
+		std::pair<eentity, constraint_type> operator*();
 	};
 
 	iterator begin() { return iterator{ firstConstraintEdgeIndex, registry }; }
@@ -348,8 +348,8 @@ struct collision_contact
 
 struct collision_begin_event
 {
-	scene_entity entityA;
-	scene_entity entityB;
+	eentity entityA;
+	eentity entityB;
 
 	const collider_component& colliderA;
 	const collider_component& colliderB;
@@ -361,8 +361,8 @@ struct collision_begin_event
 
 struct collision_end_event
 {
-	scene_entity entityA;
-	scene_entity entityB;
+	eentity entityA;
+	eentity entityB;
 
 	const collider_component& colliderA;
 	const collider_component& colliderB;

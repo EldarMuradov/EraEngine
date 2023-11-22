@@ -15,7 +15,7 @@ struct scene_editor
 
 	bool update(const user_input& input, ldr_render_pass* ldrRenderPass, float dt);
 
-	scene_entity selectedEntity;
+	eentity selectedEntity;
 	physics_settings physicsSettings;
 
 private:
@@ -25,8 +25,8 @@ private:
 		template <typename T> inline T& as() { return *(T*)before; }
 	};
 
-	scene_entity selectedColliderEntity;
-	scene_entity selectedConstraintEntity;
+	eentity selectedColliderEntity;
+	eentity selectedConstraintEntity;
 
 	void drawSettings(float dt);
 	bool drawMainMenuBar();
@@ -36,7 +36,7 @@ private:
 
 	void updateSelectedEntityUIRotation();
 
-	void setSelectedEntity(scene_entity entity);
+	void setSelectedEntity(eentity entity);
 
 	bool editCamera(render_camera& camera);
 	bool editTonemapping(tonemap_settings& tonemap);

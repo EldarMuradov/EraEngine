@@ -5,7 +5,7 @@
 #include <core/log.h>
 #include "core/math.h"
 
-px_rigidbody_component::px_rigidbody_component(scene_entity* entt, px_rigidbody_type rbtype) noexcept : entity(entt), type(rbtype)
+px_rigidbody_component::px_rigidbody_component(eentity* entt, px_rigidbody_type rbtype) noexcept : entity(entt), type(rbtype)
 {
 	createPhysics();
 	this->transform = entt->getComponentIfExists<transform_component>();

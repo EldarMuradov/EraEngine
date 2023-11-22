@@ -116,7 +116,7 @@ trs learned_locomotion::getCoordinateSystem() const
 	return transform;
 }
 
-void learned_locomotion::readBodyPartState(const trs& transform, scene_entity entity, vec3& position, vec3& velocity) const
+void learned_locomotion::readBodyPartState(const trs& transform, eentity entity, vec3& position, vec3& velocity) const
 {
 	transform_component& bodyPartTransform = entity.getComponent<transform_component>();
 	rigid_body_component& rb = entity.getComponent<rigid_body_component>();
@@ -172,20 +172,20 @@ private:
 		float rotationError;
 	};
 
-	void getLocalPositions(scene_entity entity, learning_positions& outPositions) const;
-	void getBodyPartTarget(scene_entity entity, scene_entity parent, learning_target& outTarget, const learning_positions& localPositions, const transform_component& torsoTransform) const;
-	body_part_error readPartDifference(scene_entity entity, scene_entity parent, const learning_target& target, const learning_positions& localPositions, const transform_component& torsoTransform) const;
+	void getLocalPositions(eentity entity, learning_positions& outPositions) const;
+	void getBodyPartTarget(eentity entity, eentity parent, learning_target& outTarget, const learning_positions& localPositions, const transform_component& torsoTransform) const;
+	body_part_error readPartDifference(eentity entity, eentity parent, const learning_target& target, const learning_positions& localPositions, const transform_component& torsoTransform) const;
 
 
 	learning_positions localPositions[NUM_BODY_PARTS];
 	learning_target targets[NUM_BODY_PARTS];
 };
 
-void training_locomotion::getLocalPositions(scene_entity entity, learning_positions& outPositions) const
+void training_locomotion::getLocalPositions(eentity entity, learning_positions& outPositions) const
 {
 	physics_reference_component& reference = entity.getComponent<physics_reference_component>();
 
-	scene_entity colliderEntity = { reference.firstColliderEntity, entity.registry };
+	eentity colliderEntity = { reference.firstColliderEntity, entity.registry };
 
 	bounding_box aabb = bounding_box::negativeInfinity();
 
@@ -246,7 +246,7 @@ void training_locomotion::getLocalPositions(scene_entity entity, learning_positi
 	outPositions.p[5] = c + vec3(0.f, 0.f, r.z);
 }
 
-void training_locomotion::getBodyPartTarget(scene_entity entity, scene_entity parent, learning_target& outTarget, const learning_positions& localPositions, const transform_component& torsoTransform) const
+void training_locomotion::getBodyPartTarget(eentity entity, eentity parent, learning_target& outTarget, const learning_positions& localPositions, const transform_component& torsoTransform) const
 {
 	transform_component& transform = entity.getComponent<transform_component>();
 	rigid_body_component& rb = entity.getComponent<rigid_body_component>();
@@ -267,7 +267,7 @@ void training_locomotion::getBodyPartTarget(scene_entity entity, scene_entity pa
 	outTarget.localTargetRotation = localRotation;
 }
 
-training_locomotion::body_part_error training_locomotion::readPartDifference(scene_entity entity, scene_entity parent, const learning_target& target, const learning_positions& localPositions, const transform_component& torsoTransform) const
+training_locomotion::body_part_error training_locomotion::readPartDifference(eentity entity, eentity parent, const learning_target& target, const learning_positions& localPositions, const transform_component& torsoTransform) const
 {
 	transform_component& transform = entity.getComponent<transform_component>();
 	rigid_body_component& rb = entity.getComponent<rigid_body_component>();

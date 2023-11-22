@@ -51,7 +51,7 @@ struct axis_attachment
 		: type(attachment_type_wheel), rodLength(rodLength), rodThickness(rodThickness), wheel(wheel) {}
 };
 
-static void attach(mesh_builder& builder, ref<pbr_material> material, scene_entity axis, axis_attachment& attachment, float sign)
+static void attach(mesh_builder& builder, ref<pbr_material> material, eentity axis, axis_attachment& attachment, float sign)
 {
 	float rodOffset = attachment.rodLength * sign;
 
@@ -137,10 +137,10 @@ static void attach(mesh_builder& builder, ref<pbr_material> material, scene_enti
 	}
 }
 
-static scene_entity createAxis(game_scene& scene, mesh_builder& builder, ref<pbr_material> material,
+static eentity createAxis(game_scene& scene, mesh_builder& builder, ref<pbr_material> material,
 	vec3 position, quat rotation, gear_description desc, axis_attachment* firstAttachment = 0, axis_attachment* secondAttachment = 0)
 {
-	scene_entity axis = scene.createEntity("Axis")
+	eentity axis = scene.createEntity("Axis")
 		.addComponent<transform_component>(position, rotation);
 
 	auto mesh = make_ref<multi_mesh>();
@@ -166,11 +166,11 @@ static scene_entity createAxis(game_scene& scene, mesh_builder& builder, ref<pbr
 	return axis;
 }
 
-static scene_entity createGearAxis(game_scene& scene, mesh_builder& builder, ref<pbr_material> material,
+static eentity createGearAxis(game_scene& scene, mesh_builder& builder, ref<pbr_material> material,
 	vec3 position, quat rotation, float length, uint32 numTeeth, float toothLength, float toothWidth, 
 	float friction, float density)
 {
-	scene_entity axis = scene.createEntity("Gear Axis")
+	eentity axis = scene.createEntity("Gear Axis")
 		.addComponent<transform_component>(position, rotation);
 
 	auto mesh = make_ref<multi_mesh>();
@@ -213,10 +213,10 @@ static scene_entity createGearAxis(game_scene& scene, mesh_builder& builder, ref
 	return axis;
 }
 
-static scene_entity createWheel(game_scene& scene, mesh_builder& builder, ref<pbr_material> material,
+static eentity createWheel(game_scene& scene, mesh_builder& builder, ref<pbr_material> material,
 	vec3 position, quat rotation, wheel_description desc)
 {
-	scene_entity result = scene.createEntity("Wheel")
+	eentity result = scene.createEntity("Wheel")
 		.addComponent<transform_component>(position, rotation);
 
 	auto mesh = make_ref<multi_mesh>();
@@ -243,10 +243,10 @@ static scene_entity createWheel(game_scene& scene, mesh_builder& builder, ref<pb
 	return result;
 }
 
-static scene_entity createWheelSuspension(game_scene& scene, mesh_builder& builder, ref<pbr_material> material,
+static eentity createWheelSuspension(game_scene& scene, mesh_builder& builder, ref<pbr_material> material,
 	vec3 position, quat rotation, float axisLength, float thickness, bool right)
 {
-	scene_entity result = scene.createEntity("Wheel suspension")
+	eentity result = scene.createEntity("Wheel suspension")
 		.addComponent<transform_component>(position, rotation);
 
 	auto mesh = make_ref<multi_mesh>();
@@ -274,7 +274,7 @@ static scene_entity createWheelSuspension(game_scene& scene, mesh_builder& build
 	return result;
 }
 
-static scene_entity createRod(game_scene& scene, mesh_builder& builder, ref<pbr_material> material, 
+static eentity createRod(game_scene& scene, mesh_builder& builder, ref<pbr_material> material, 
 	vec3 from, vec3 to, float thickness)
 {
 	vec3 position = (from + to) * 0.5f;
@@ -282,7 +282,7 @@ static scene_entity createRod(game_scene& scene, mesh_builder& builder, ref<pbr_
 	float len = length(to - from);
 	quat rotation = rotateFromTo(vec3(0.f, 1.f, 0.f), axis);
 
-	scene_entity result = scene.createEntity("Rod")
+	eentity result = scene.createEntity("Rod")
 		.addComponent<transform_component>(position, rotation);
 
 	auto mesh = make_ref<multi_mesh>();
