@@ -201,12 +201,12 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		auto px_sphere = &this->scene.getCurrentScene().createEntity("SpherePX")
 			.addComponent<transform_component>(vec3(25.f, 10.f * 3.f, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
-			.addComponent<px_sphere_collider>(1.0f)
+			.addComponent<px_sphere_collider_component>(1.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);
 
 		auto px_plane = &this->scene.getCurrentScene().createEntity("PlanePX")
 			.addComponent<transform_component>(vec3(0.f, 0.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
-			.addComponent<px_box_collider>(100.0f, 5.0f, 100.0f)
+			.addComponent<px_box_collider_component>(100.0f, 5.0f, 100.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Static);
 
 		auto triggerCallback = [scene = &scene](trigger_event e)

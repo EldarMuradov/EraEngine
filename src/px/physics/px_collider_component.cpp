@@ -54,11 +54,11 @@ PxTriangleMesh* px_triangle_mesh_collider_builder::createMeshShape(mesh_asset* a
 	return mesh_adapter.createTriangleMesh(meshDesc);
 }
 
-px_box_collider::~px_box_collider()
+px_box_collider_component::~px_box_collider_component()
 {
 }
 
-bool px_box_collider::createShape()
+bool px_box_collider_component::createShape()
 {
 	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	shape = px_physics_engine::getPhysics()->createShape(physx::PxBoxGeometry(height, length, width), *material);
@@ -66,12 +66,12 @@ bool px_box_collider::createShape()
 	return true;
 }
 
-px_sphere_collider::~px_sphere_collider()
+px_sphere_collider_component::~px_sphere_collider_component()
 {
 
 }
 
-bool px_sphere_collider::createShape()
+bool px_sphere_collider_component::createShape()
 {
 	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	shape = px_physics_engine::getPhysics()->createShape(physx::PxSphereGeometry(radius), *material);
@@ -79,11 +79,11 @@ bool px_sphere_collider::createShape()
 	return true;
 }
 
-px_capsule_collider::~px_capsule_collider()
+px_capsule_collider_component::~px_capsule_collider_component()
 {
 }
 
-bool px_capsule_collider::createShape()
+bool px_capsule_collider_component::createShape()
 {
 	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	shape = px_physics_engine::getPhysics()->createShape(physx::PxCapsuleGeometry(radius, height / 2.0), *material);
@@ -91,7 +91,7 @@ bool px_capsule_collider::createShape()
 	return true;
 }
 
-px_triangle_mesh_collider::~px_triangle_mesh_collider()
+px_triangle_mesh_collider_component::~px_triangle_mesh_collider_component()
 {
 	if (asset)
 	{
@@ -100,7 +100,7 @@ px_triangle_mesh_collider::~px_triangle_mesh_collider()
 	}
 }
 
-bool px_triangle_mesh_collider::createShape()
+bool px_triangle_mesh_collider_component::createShape()
 {
 	px_triangle_mesh_collider_builder builder;
 	PxTriangleMesh* mesh = builder.createMeshShape(asset, model_size);

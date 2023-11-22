@@ -176,13 +176,13 @@ void px_rigidbody_component::createPhysics()
 
 physx::PxRigidActor* px_rigidbody_component::createActor()
 {
-	px_collider_component_base* coll = (px_collider_component_base*)entity->getComponentIfExists<px_sphere_collider>();
+	px_collider_component_base* coll = (px_collider_component_base*)entity->getComponentIfExists<px_sphere_collider_component>();
 	if(!coll)
-		coll = (px_collider_component_base*)entity->getComponentIfExists<px_box_collider>();
+		coll = (px_collider_component_base*)entity->getComponentIfExists<px_box_collider_component>();
 	if(!coll)
-		coll = (px_collider_component_base*)entity->getComponentIfExists<px_capsule_collider>();
+		coll = (px_collider_component_base*)entity->getComponentIfExists<px_capsule_collider_component>();
 	if(!coll)
-		coll = (px_collider_component_base*)entity->getComponentIfExists<px_triangle_mesh_collider>();
+		coll = (px_collider_component_base*)entity->getComponentIfExists<px_triangle_mesh_collider_component>();
 	if (!coll)
 		return nullptr;
 

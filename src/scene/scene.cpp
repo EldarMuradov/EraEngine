@@ -46,10 +46,10 @@ void game_scene::cloneTo(game_scene& target)
 		dynamic_transform_component,
 
 		px_rigidbody_component,
-		px_box_collider,
-		px_sphere_collider,
-		px_capsule_collider,
-		px_triangle_mesh_collider,
+		px_box_collider_component,
+		px_sphere_collider_component,
+		px_capsule_collider_component,
+		px_triangle_mesh_collider_component,
 
 #ifndef PHYSICS_ONLY
 		point_light_component,

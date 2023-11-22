@@ -39,10 +39,10 @@ protected:
 	physx::PxShape* shape = nullptr;
 };
 
-class px_box_collider : public px_collider_component_base 
+class px_box_collider_component : public px_collider_component_base 
 {
 public:
-	px_box_collider(float h, float l, float w) noexcept 
+	px_box_collider_component(float h, float l, float w) noexcept 
 	{
 		type = px_collider_type::Box;
 		height = h;
@@ -50,7 +50,7 @@ public:
 		width = w;
 	};
 
-	~px_box_collider();
+	~px_box_collider_component();
 
 	bool createShape() override;
 
@@ -58,16 +58,16 @@ private:
 	float height, length, width;
 };
 
-class px_sphere_collider : public px_collider_component_base
+class px_sphere_collider_component : public px_collider_component_base
 {
 public:
-	px_sphere_collider(float r) noexcept
+	px_sphere_collider_component(float r) noexcept
 	{
 		radius = r;
 		type = px_collider_type::Sphere;
 	};
 
-	~px_sphere_collider();
+	~px_sphere_collider_component();
 
 	bool createShape() override;
 
@@ -75,17 +75,17 @@ private:
 	float radius;
 };
 
-class px_capsule_collider : public px_collider_component_base
+class px_capsule_collider_component : public px_collider_component_base
 {
 public:
-	px_capsule_collider(float r, float h) noexcept
+	px_capsule_collider_component(float r, float h) noexcept
 	{
 		type = px_collider_type::Capsule;
 		radius = r;
 		height = h;
 	};
 
-	~px_capsule_collider();
+	~px_capsule_collider_component();
 
 	bool createShape() override;
 
@@ -93,15 +93,15 @@ private:
 	float height, radius;
 };
 
-class px_triangle_mesh_collider : public px_collider_component_base
+class px_triangle_mesh_collider_component : public px_collider_component_base
 {
 public:
-	px_triangle_mesh_collider(mesh_asset* as, unsigned int size) noexcept : asset(as), model_size(size)
+	px_triangle_mesh_collider_component(mesh_asset* as, unsigned int size) noexcept : asset(as), model_size(size)
 	{
 		type = px_collider_type::TriangleMesh;
 	};
 
-	~px_triangle_mesh_collider();
+	~px_triangle_mesh_collider_component();
 
 	bool createShape() override;
 
