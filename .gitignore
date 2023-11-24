@@ -8,6 +8,7 @@ shaders/
 *.exe
 *.pdb
 *.ini
+*.png
 
 # Visual studio files
 .vs/

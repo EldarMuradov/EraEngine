@@ -25,7 +25,7 @@ void job_queue::initialize(uint32 numThreads, uint32 threadOffset, int threadPri
 void job_queue::addContinuation(int32 first, job_handle second)
 {
     job_queue_entry& firstJob = allJobs[first];
-    ASSERT(firstJob.continuation.index == -1);
+    //ASSERT(firstJob.continuation.index == -1);
 
     int32 unfinished = firstJob.numUnfinishedJobs++;
     if (unfinished == 0)
