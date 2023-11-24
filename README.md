@@ -1,4 +1,4 @@
-![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/2a6cb57fddbd727a890b5db65fcb9842c6db15ac/screenshot2.png)
+![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/da9de144b32b494bf6ae2a4914002de34bec4c8a/shot1.png)
 
 # Era Game Engine
 
@@ -12,7 +12,7 @@ This repository is a part of multithreaded ECS-based Era game engine.
 Game Engine will be used by Era Game Cloud Gaming Platform and other developers to make games work not only on local machine,
 but to do it on Cloud Gaming.
 
-![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/2a6cb57fddbd727a890b5db65fcb9842c6db15ac/screenshot1.png)
+![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/da9de144b32b494bf6ae2a4914002de34bec4c8a/shot2.png)
 
 # Base
 
