@@ -2,7 +2,7 @@
 #include "island.h"
 #include "core/cpu_profiling.h"
 
-void buildIslands(memory_arena& arena, constraint_body_pair* bodyPairs, uint32 numBodyPairs, uint32 numRigidBodies, uint16 dummyRigidBodyIndex, const constraint_offsets& offsets)
+void buildIslands(eallocator& arena, constraint_body_pair* bodyPairs, uint32 numBodyPairs, uint32 numRigidBodies, uint16 dummyRigidBodyIndex, const constraint_offsets& offsets)
 {
 	CPU_PROFILE_BLOCK("Build islands");
 

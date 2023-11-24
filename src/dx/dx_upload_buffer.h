@@ -28,7 +28,7 @@ struct dx_page_pool
 {
 	void initialize(uint32 sizeInBytes);
 
-	memory_arena arena;
+	eallocator arena;
 
 	std::mutex mutex;
 

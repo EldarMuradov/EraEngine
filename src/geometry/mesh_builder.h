@@ -190,9 +190,9 @@ struct mesh_builder
 private:
 	std::tuple<vec3*, uint8*, uint8*, uint32> beginPrimitive(uint32 numVertices, uint32 numTriangles);
 
-	memory_arena positionArena;
-	memory_arena othersArena;
-	memory_arena indexArena;
+	eallocator positionArena;
+	eallocator othersArena;
+	eallocator indexArena;
 
 	uint32 vertexFlags;
 	mesh_index_type indexType;

@@ -17,7 +17,7 @@ struct heightmap_collider_chunk
 
 	template <typename callback_func>
 	void iterateTrianglesInVolume(uint32 volMinX, uint32 volMinZ, uint32 volMaxX, uint32 volMaxZ,
-		uint32 volMinY, uint32 volMaxY, float chunkScale, float heightScale, vec3 chunkMinCorner, memory_arena& arena, const callback_func& func) const;
+		uint32 volMinY, uint32 volMaxY, float chunkScale, float heightScale, vec3 chunkMinCorner, eallocator& arena, const callback_func& func) const;
 
 	float getHeightAt(vec2 coord, float heightScale, float heightOffset) const;
 
@@ -34,7 +34,7 @@ private:
 
 template <typename callback_func>
 void heightmap_collider_chunk::iterateTrianglesInVolume(uint32 volMinX, uint32 volMinZ, uint32 volMaxX, uint32 volMaxZ,
-	uint32 volMinY, uint32 volMaxY, float chunkScale, float heightScale, vec3 chunkMinCorner, memory_arena& arena, const callback_func& func) const
+	uint32 volMinY, uint32 volMaxY, float chunkScale, float heightScale, vec3 chunkMinCorner, eallocator& arena, const callback_func& func) const
 {
 	if (!heights)
 		return;
@@ -120,7 +120,7 @@ struct heightmap_collider_component
 	void update(vec3 minCorner, float amplitudeScale);
 
 	template <typename callback_func>
-	void iterateTrianglesInVolume(bounding_box volume, memory_arena& arena, const callback_func& func) const;
+	void iterateTrianglesInVolume(bounding_box volume, eallocator& arena, const callback_func& func) const;
 
 	float getHeightAt(vec2 coord) const;
 
@@ -142,7 +142,7 @@ private:
 };
 
 template<typename callback_func>
-inline void heightmap_collider_component::iterateTrianglesInVolume(bounding_box volume, memory_arena& arena, const callback_func& func) const
+inline void heightmap_collider_component::iterateTrianglesInVolume(bounding_box volume, eallocator& arena, const callback_func& func) const
 {
 	volume.minCorner -= this->minCorner;
 	volume.maxCorner -= this->minCorner;

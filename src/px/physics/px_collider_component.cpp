@@ -17,7 +17,7 @@ PxTriangleMesh* px_triangle_mesh_collider_builder::createMeshShape(mesh_asset* a
 	size_t trianglesCount = triangles.size();
 	size_t verticesCount = positions.size();
 
-	std::vector<physx::PxU32> indices(trianglesCount * 3);
+	std::vector<physx::PxU32> indices;
 
 	for (size_t i = 0; i < trianglesCount; i += 3)
 	{
@@ -34,7 +34,7 @@ PxTriangleMesh* px_triangle_mesh_collider_builder::createMeshShape(mesh_asset* a
 		indices.push_back(triangles[i + 2].c);
 	}
 
-	std::vector<physx::PxVec3> vertices(verticesCount);
+	std::vector<physx::PxVec3> vertices;
 	for (size_t i = 0; i < verticesCount; i++)
 	{
 		vertices.push_back(PxVec3(positions[i].x, positions[i].y, positions[i].z) * size);
@@ -93,11 +93,11 @@ bool px_capsule_collider_component::createShape()
 
 px_triangle_mesh_collider_component::~px_triangle_mesh_collider_component()
 {
-	if (asset)
-	{
-		delete asset;
-		asset = nullptr;
-	}
+	//if (asset)
+	//{
+	//	delete asset;
+	//	asset = nullptr;
+	//}
 }
 
 bool px_triangle_mesh_collider_component::createShape()
@@ -106,8 +106,115 @@ bool px_triangle_mesh_collider_component::createShape()
 	PxTriangleMesh* mesh = builder.createMeshShape(asset, model_size);
 
 	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
-	shape = px_physics_engine::getPhysics()->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(model_size)), &material, PxShapeFlag::eVISUALIZATION | PxShapeFlag::eSCENE_QUERY_SHAPE);
+	auto physics = px_physics_engine::getPhysics();
+	shape = physics->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(model_size)), *material);
 
 	PX_RELEASE(mesh);
 	return true;
+}
+
+px_bounding_box_collider_component::~px_bounding_box_collider_component()
+{
+	//if (asset)
+	//{
+	//	delete asset;
+	//	asset = nullptr;
+	//}
+}
+
+bool px_bounding_box_collider_component::createShape()
+{
+	submesh_asset root = asset->submeshes[0];
+
+	const auto& positions = root.positions;
+
+	size_t verticesCount = positions.size();
+
+	std::vector<physx::PxVec3> vertices;
+	for (size_t i = 0; i < verticesCount; i++)
+	{
+		vertices.push_back(PxVec3(positions[i].x, positions[i].y, positions[i].z) * model_size);
+	}
+
+	auto result = calculateBoundingBox(vertices);
+	std::vector<physx::PxVec3> vts;
+	std::vector<uint32_t> inds;
+
+	createMeshFromBoundingBox(result, vts, inds);
+
+	PxTriangleMeshDesc meshDesc;
+	meshDesc.points.count = vts.size();
+	meshDesc.points.stride = sizeof(physx::PxVec3);
+	meshDesc.points.data = vts.data();
+
+	meshDesc.triangles.count = inds.size() / 3;
+	meshDesc.triangles.stride = 3 * sizeof(PxU32);
+	meshDesc.triangles.data = inds.data();
+
+	px_triangle_mesh mesh_adapter;
+	auto mesh = mesh_adapter.createTriangleMesh(meshDesc);
+
+	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
+	shape = px_physics_engine::getPhysics()->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(model_size)), *material);
+
+	PX_RELEASE(mesh);
+	return true;
+}
+
+px_bounding_box calculateBoundingBox(const std::vector<physx::PxVec3>& positions)
+{
+	px_bounding_box box;
+	if (positions.empty())
+		return box;
+
+	box.minCorner = positions[0];
+	box.maxCorner = positions[0];
+
+	for (const auto& position : positions)
+	{
+		box.minCorner = physx::min(box.minCorner, position);
+		box.maxCorner = physx::max(box.maxCorner, position);
+	}
+
+	return box;
+}
+
+void createMeshFromBoundingBox(const px_bounding_box& box, std::vector<physx::PxVec3>& vertices, std::vector<uint32_t>& indices)
+{
+	physx::PxVec3 p0 = box.minCorner;
+	physx::PxVec3 p1 = physx::PxVec3(box.maxCorner.x, box.minCorner.y, box.minCorner.z);
+	physx::PxVec3 p2 = physx::PxVec3(box.maxCorner.x, box.minCorner.y, box.maxCorner.z);
+	physx::PxVec3 p3 = physx::PxVec3(box.minCorner.x, box.minCorner.y, box.maxCorner.z);
+	physx::PxVec3 p4 = physx::PxVec3(box.minCorner.x, box.maxCorner.y, box.minCorner.z);
+	physx::PxVec3 p5 = physx::PxVec3(box.maxCorner.x, box.maxCorner.y, box.minCorner.z);
+	physx::PxVec3 p6 = box.maxCorner;
+	physx::PxVec3 p7 = physx::PxVec3(box.minCorner.x, box.maxCorner.y, box.maxCorner.z);
+
+	vertices.push_back({ p0 });
+	vertices.push_back({ p1 });
+	vertices.push_back({ p2 });
+	vertices.push_back({ p3 });
+	vertices.push_back({ p4 });
+	vertices.push_back({ p5 });
+	vertices.push_back({ p6 });
+	vertices.push_back({ p7 });
+
+	uint32_t boxIndices[36] =
+	{
+		0, 1, 2,
+		2, 3, 0,
+		4, 5, 6,
+		6, 7, 4,
+		0, 1, 5,
+		5, 4, 0,
+		2, 3, 7,
+		7, 6, 2,
+		0, 4, 7,
+		7, 3, 0,
+		1, 5, 6,
+		6, 2, 1
+	};
+
+	for (int i = 0; i < 36; i++)
+		indices.push_back(boxIndices[i]);
 }

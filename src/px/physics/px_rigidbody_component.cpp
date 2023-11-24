@@ -193,6 +193,8 @@ physx::PxRigidActor* px_rigidbody_component::createActor()
 	if(!coll)
 		coll = (px_collider_component_base*)entity->getComponentIfExists<px_triangle_mesh_collider_component>();
 	if (!coll)
+		coll = (px_collider_component_base*)entity->getComponentIfExists<px_bounding_box_collider_component>();
+	if (!coll)
 		return nullptr;
 
 	auto tranaform = entity->getComponentIfExists<transform_component>();

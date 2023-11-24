@@ -51,12 +51,12 @@ struct memory_marker
 	uint64 before;
 };
 
-struct memory_arena
+struct eallocator
 {
-	memory_arena() {}
-	memory_arena(const memory_arena&) = delete;
-	memory_arena(memory_arena&&) = default;
-	~memory_arena() { reset(true); }
+	eallocator() {}
+	eallocator(const eallocator&) = delete;
+	eallocator(eallocator&&) = default;
+	~eallocator() { reset(true); }
 
 	void initialize(uint64 minimumBlockSize = 0, uint64 reserveSize = GB(8));
 
@@ -108,9 +108,9 @@ protected:
 
 struct scope_temp_memory
 {
-	memory_arena& arena;
+	eallocator& arena;
 	memory_marker marker;
 
-	scope_temp_memory(memory_arena& arena) : arena(arena), marker(arena.getMarker()) {}
+	scope_temp_memory(eallocator& arena) : arena(arena), marker(arena.getMarker()) {}
 	~scope_temp_memory() { arena.resetToMarker(marker); }
 };

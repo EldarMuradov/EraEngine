@@ -21,16 +21,12 @@
 #include "terrain_rs.hlsli"
 #include "depth_only_rs.hlsli"
 
-
 static dx_pipeline terrainGenerationPipeline;
 static dx_pipeline terrainPipeline;
 static dx_pipeline terrainDepthOnlyPipeline;
 static dx_pipeline terrainShadowPipeline;
 static dx_pipeline terrainOutlinePipeline;
 static ref<dx_index_buffer> terrainIndexBuffers[TERRAIN_MAX_LOD + 1];
-
-
-
 
 struct terrain_render_data_common
 {
@@ -86,10 +82,6 @@ struct terrain_outline_pipeline
 	PIPELINE_RENDER_DECL(terrain_render_data_common);
 };
 
-
-
-
-
 void initializeTerrainPipelines()
 {
 	terrainGenerationPipeline = createReloadablePipeline("terrain_generation_cs");
@@ -128,8 +120,6 @@ void initializeTerrainPipelines()
 
 		terrainOutlinePipeline = createReloadablePipeline(desc, { "terrain_outline_vs" }, rs_in_vertex_shader);
 	}
-
-
 
 	uint32 numSegmentsPerDim = TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1;
 	uint32 numTrisLod0 = numSegmentsPerDim * numSegmentsPerDim * 2;
@@ -222,7 +212,6 @@ PIPELINE_RENDER_IMPL(terrain_pipeline, terrain_render_data)
 	cl->drawIndexed(numTris * 3, 1, 0, 0, 0);
 }
 
-
 PIPELINE_SETUP_IMPL(terrain_depth_prepass_pipeline)
 {
 	cl->setPipelineState(*terrainDepthOnlyPipeline.pipeline);
@@ -251,7 +240,6 @@ DEPTH_ONLY_RENDER_IMPL(terrain_depth_prepass_pipeline, terrain_render_data_commo
 	cl->drawIndexed(numTris * 3, 1, 0, 0, 0);
 }
 
-
 PIPELINE_SETUP_IMPL(terrain_shadow_pipeline)
 {
 	cl->setPipelineState(*terrainShadowPipeline.pipeline);
@@ -275,7 +263,6 @@ PIPELINE_RENDER_IMPL(terrain_shadow_pipeline, terrain_render_data_common)
 	cl->setIndexBuffer(terrainIndexBuffers[data.lod]);
 	cl->drawIndexed(numTris * 3, 1, 0, 0, 0);
 }
-
 
 PIPELINE_SETUP_IMPL(terrain_outline_pipeline)
 {
@@ -301,20 +288,6 @@ PIPELINE_RENDER_IMPL(terrain_outline_pipeline, terrain_render_data_common)
 	cl->setIndexBuffer(terrainIndexBuffers[data.lod]);
 	cl->drawIndexed(numTris * 3, 1, 0, 0, 0);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 struct height_generator
 {
@@ -440,10 +413,7 @@ struct height_generator_layered : height_generator
 	}
 };
 
-
-
 const uint32 normalMapDimension = 2048;
-
 
 terrain_component::terrain_component(uint32 chunksPerDim, float chunkSize, float amplitudeScale, 
 	ref<pbr_material> groundMaterial, ref<pbr_material> rockMaterial, ref<pbr_material> mudMaterial,
@@ -591,9 +561,7 @@ void terrain_component::generateChunksGPU()
 
 	auto settingsCBV = dxContext.uploadDynamicConstantBuffer(settings);
 
-
 	bool mipmaps = true;
-
 
 	dx_command_list* cl = dxContext.getFreeRenderCommandList();
 
@@ -634,11 +602,6 @@ void terrain_component::generateChunksGPU()
 
 				cl->dispatch(bucketize(normalMapDimension, 16), bucketize(normalMapDimension, 16));
 
-
-
-
-
-
 				barrier_batcher(cl)
 					.transition(c.heightmap, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ)
 					.transition(c.normalmap, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
@@ -650,11 +613,8 @@ void terrain_component::generateChunksGPU()
 
 			}
 		}
-
 	}
-
 	dxContext.executeCommandList(cl);
-
 
 	{
 		CPU_PROFILE_BLOCK("Copy heights to CPU");
@@ -800,18 +760,3 @@ void terrain_component::render(const render_camera& camera, struct opaque_render
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

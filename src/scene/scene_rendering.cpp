@@ -197,7 +197,7 @@ static void addToDynamicRenderPass(pbr_material_shader shader, const shadow_rend
 
 template <typename group_t>
 static void renderStaticObjectsToMainCamera(group_t group, std::unordered_map<multi_mesh*, offset_count> ocPerMesh,
-	const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
+	const camera_frustum_planes& frustum, eallocator& arena, entity_handle selectedObjectID,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass)
 {
 	uint32 groupSize = (uint32)group.size();
@@ -281,7 +281,7 @@ static void renderStaticObjectsToMainCamera(group_t group, std::unordered_map<mu
 
 template <typename group_t>
 static void renderStaticObjectsToShadowMap(group_t group, std::unordered_map<multi_mesh*, offset_count> ocPerMesh, 
-	const light_frustum& frustum, memory_arena& arena, shadow_render_pass_base* shadowRenderPass)
+	const light_frustum& frustum, eallocator& arena, shadow_render_pass_base* shadowRenderPass)
 {
 	uint32 groupSize = (uint32)group.size();
 
@@ -328,7 +328,7 @@ static void renderStaticObjectsToShadowMap(group_t group, std::unordered_map<mul
 	}
 }
 
-static void renderStaticObjects(escene& scene, const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
+static void renderStaticObjects(escene& scene, const camera_frustum_planes& frustum, eallocator& arena, entity_handle selectedObjectID,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
 {
 	CPU_PROFILE_BLOCK("Static objects");
@@ -356,7 +356,7 @@ static void renderStaticObjects(escene& scene, const camera_frustum_planes& frus
 
 template <typename group_t>
 static void renderDynamicObjectsToMainCamera(group_t group, std::unordered_map<multi_mesh*, offset_count> ocPerMesh,
-	const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
+	const camera_frustum_planes& frustum, eallocator& arena, entity_handle selectedObjectID,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass)
 {
 	uint32 groupSize = (uint32)group.size();
@@ -444,7 +444,7 @@ static void renderDynamicObjectsToMainCamera(group_t group, std::unordered_map<m
 
 template <typename group_t>
 static void renderDynamicObjectsToShadowMap(group_t group, std::unordered_map<multi_mesh*, offset_count> ocPerMesh,
-	const light_frustum& frustum, memory_arena& arena, shadow_render_pass_base* shadowRenderPass)
+	const light_frustum& frustum, eallocator& arena, shadow_render_pass_base* shadowRenderPass)
 {
 	uint32 groupSize = (uint32)group.size();
 
@@ -491,7 +491,7 @@ static void renderDynamicObjectsToShadowMap(group_t group, std::unordered_map<mu
 	}
 }
 
-static void renderDynamicObjects(escene& scene, const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
+static void renderDynamicObjects(escene& scene, const camera_frustum_planes& frustum, eallocator& arena, entity_handle selectedObjectID,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
 {
 	CPU_PROFILE_BLOCK("Dynamic objects");
@@ -510,7 +510,7 @@ static void renderDynamicObjects(escene& scene, const camera_frustum_planes& fru
 	}
 }
 
-static void renderAnimatedObjects(escene& scene, const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
+static void renderAnimatedObjects(escene& scene, const camera_frustum_planes& frustum, eallocator& arena, entity_handle selectedObjectID,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
 {
 	CPU_PROFILE_BLOCK("Animated objects");
@@ -597,7 +597,7 @@ static void renderAnimatedObjects(escene& scene, const camera_frustum_planes& fr
 	}
 }
 
-static void renderTerrain(const render_camera& camera, escene& scene, memory_arena& arena, entity_handle selectedObjectID,
+static void renderTerrain(const render_camera& camera, escene& scene, eallocator& arena, entity_handle selectedObjectID,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
 	compute_pass* computePass, float dt)
 {
@@ -634,7 +634,7 @@ static void renderTerrain(const render_camera& camera, escene& scene, memory_are
 	}
 }
 
-static void renderTrees(escene& scene, const camera_frustum_planes& frustum, memory_arena& arena, entity_handle selectedObjectID,
+static void renderTrees(escene& scene, const camera_frustum_planes& frustum, eallocator& arena, entity_handle selectedObjectID,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
 	float dt)
 {
@@ -853,7 +853,7 @@ static void setupPointShadowPasses(escene& scene, scene_lighting& lighting, bool
 	}
 }
 
-void renderScene(const render_camera& camera, escene& scene, memory_arena& arena, entity_handle selectedObjectID,
+void renderScene(const render_camera& camera, escene& scene, eallocator& arena, entity_handle selectedObjectID,
 	directional_light& sun, scene_lighting& lighting, bool invalidateShadowMapCache,
 	opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
 	compute_pass* computePass, float dt)

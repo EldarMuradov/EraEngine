@@ -1,8 +1,8 @@
 #include "pch.h"
-#include "memory.h"
+#include "core/memory.h"
 #include "math.h"
 
-void memory_arena::initialize(uint64 minimumBlockSize, uint64 reserveSize)
+void eallocator::initialize(uint64 minimumBlockSize, uint64 reserveSize)
 {
 	reset(true);
 
@@ -17,14 +17,14 @@ void memory_arena::initialize(uint64 minimumBlockSize, uint64 reserveSize)
 	this->reserveSize = reserveSize;
 }
 
-void memory_arena::ensureFreeSize(uint64 size)
+void eallocator::ensureFreeSize(uint64 size)
 {
 	mutex.lock();
 	ensureFreeSizeInternal(size);
 	mutex.unlock();
 }
 
-void memory_arena::ensureFreeSizeInternal(uint64 size)
+void eallocator::ensureFreeSizeInternal(uint64 size)
 {
 	if (sizeLeftCurrent < size)
 	{
@@ -38,7 +38,7 @@ void memory_arena::ensureFreeSizeInternal(uint64 size)
 	}
 }
 
-void* memory_arena::allocate(uint64 size, uint64 alignment, bool clearToZero)
+void* eallocator::allocate(uint64 size, uint64 alignment, bool clearToZero)
 {
 	if (size == 0)
 		return 0;
@@ -70,19 +70,19 @@ void* memory_arena::allocate(uint64 size, uint64 alignment, bool clearToZero)
 	return result;
 }
 
-void* memory_arena::getCurrent(uint64 alignment)
+void* eallocator::getCurrent(uint64 alignment)
 {
 	return memory + alignTo(current, alignment);
 }
 
-void memory_arena::setCurrentTo(void* ptr)
+void eallocator::setCurrentTo(void* ptr)
 {
 	current = (uint8*)ptr - memory;
 	sizeLeftCurrent = committedMemory - current;
 	sizeLeftTotal = reserveSize - current;
 }
 
-void memory_arena::reset(bool freeMemory)
+void eallocator::reset(bool freeMemory)
 {
 	if (memory && freeMemory)
 	{
@@ -94,12 +94,12 @@ void memory_arena::reset(bool freeMemory)
 	resetToMarker(memory_marker{ 0 });
 }
 
-memory_marker memory_arena::getMarker()
+memory_marker eallocator::getMarker()
 {
 	return { current };
 }
 
-void memory_arena::resetToMarker(memory_marker marker)
+void eallocator::resetToMarker(memory_marker marker)
 {
 	current = marker.before;
 	sizeLeftCurrent = committedMemory - current;

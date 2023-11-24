@@ -666,7 +666,7 @@ void animation_blend_tree_1d::setBlendValue(float value)
 }
 #endif
 
-void animation_component::update(const ref<multi_mesh>& mesh, memory_arena& arena, float dt, trs* transform)
+void animation_component::update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform)
 {
 	const dx_mesh& dxMesh = mesh->mesh;
 	animation_skeleton& skeleton = mesh->skeleton;

@@ -198,9 +198,13 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 				.addComponent<rigid_body_component>(false, 1.f);
 		}
 
+		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
+
 		auto px_sphere = &this->scene.getCurrentScene().createEntity("SpherePX")
 			.addComponent<transform_component>(vec3(25.f, 10.f * 3.f, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
+			//.addComponent<px_triangle_mesh_collider_component>(&(ass.meshes[0]))
+			//.addComponent<px_bounding_box_collider_component>(&(ass.meshes[0]))
 			.addComponent<px_sphere_collider_component>(1.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);
 
@@ -301,21 +305,20 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		float terrainChunkSize = 64.f;
 
 		pbr_material_desc terrainGroundDesc;
-		terrainGroundDesc.albedo = "assets/terrain/ground/Grass002_2K_Color.png";
-		terrainGroundDesc.normal = "assets/terrain/ground/Grass002_2K_NormalDX.png";
-		terrainGroundDesc.roughness = "assets/terrain/ground/Grass002_2K_Roughness.png";
+		terrainGroundDesc.albedo = "assets/terrain/grass.bmp";
+		terrainGroundDesc.normal = "assets/terrain/grass_normal.bmp";
+		terrainGroundDesc.roughness = "assets/terrain/grass.bmp";
 		terrainGroundDesc.albedoFlags &= ~image_load_flags_compress;
 
 		pbr_material_desc terrainRockDesc;
-		terrainRockDesc.albedo = "assets/terrain/rock/Rock034_2K_Color.png";
-		terrainRockDesc.normal = "assets/terrain/rock/Rock034_2K_NormalDX.png";
-		terrainRockDesc.roughness = "assets/terrain/rock/Rock034_2K_Roughness.png";
+		terrainRockDesc.albedo = "assets/terrain/rock.bmp";
+		terrainRockDesc.normal = "assets/terrain/rock_normal.bmp";
+		terrainRockDesc.roughness = "assets/terrain/rock.bmp";
 
 		pbr_material_desc terrainMudDesc;
-		terrainMudDesc.albedo = "assets/terrain/mud/Ground049B_2K_Color.png";
-		terrainMudDesc.normal = "assets/terrain/mud/Ground049B_2K_NormalDX.png";
-		terrainMudDesc.roughness = "assets/terrain/mud/Ground049B_2K_Roughness.png";
-
+		terrainMudDesc.albedo = "assets/terrain/grass.bmp";
+		terrainMudDesc.normal = "assets/terrain/grass_normal.bmp";
+		terrainMudDesc.roughness = "assets/terrain/grass.bmp";
 
 		auto terrainGroundMaterial = createPBRMaterialAsync(terrainGroundDesc);
 		auto terrainRockMaterial = createPBRMaterialAsync(terrainRockDesc);

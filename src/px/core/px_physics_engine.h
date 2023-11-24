@@ -18,7 +18,7 @@
 
 struct application;
 
-#define PX_PHYSICS_ENABLED = 0
+#define PX_PHYSICS_ENABLED = 1
 
 using namespace physx;
 
@@ -33,6 +33,15 @@ struct px_raycast_info
 	unsigned int hitCount;
 	vec3 position;
 };
+
+namespace physx 
+{
+	static PxVec2 min(PxVec2 a, PxVec2 b) noexcept { return PxVec2(std::min(a.x, b.x), std::min(a.y, b.y)); }
+	static PxVec3 min(PxVec3 a, PxVec3 b) noexcept { return PxVec3(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z)); }
+
+	static PxVec2 max(PxVec2 a, PxVec2 b) noexcept { return PxVec2(std::max(a.x, b.x), std::max(a.y, b.y)); }
+	static PxVec3 max(PxVec3 a, PxVec3 b) noexcept { return PxVec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)); }
+}
 
 class SnippetGpuLoadHook : public PxGpuLoadHook
 {

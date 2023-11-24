@@ -65,6 +65,18 @@ struct eentity
 			if (!hasComponent<dynamic_transform_component>())
 				addComponent<dynamic_transform_component>();
 		}
+		else if	constexpr (std::is_same_v<component_t, struct px_triangle_mesh_collider_component>)
+		{
+			unsigned int size = (unsigned int)getComponent<transform_component>().scale.x;
+
+			auto& component = registry->emplace_or_replace<component_t>(handle, size, std::forward<args>(a)...);
+		}
+		else if	constexpr (std::is_same_v<component_t, struct px_bounding_box_collider_component>)
+		{
+			unsigned int size = (unsigned int)getComponent<transform_component>().scale.x;
+
+			auto& component = registry->emplace_or_replace<component_t>(handle, size, std::forward<args>(a)...);
+		}
 		else
 		{
 			auto& component = registry->emplace_or_replace<component_t>(handle, std::forward<args>(a)...);

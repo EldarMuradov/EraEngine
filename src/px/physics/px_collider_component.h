@@ -11,7 +11,8 @@ enum class px_collider_type
 	Capsule,
 	TriangleMesh,
 	ConvexMesh,
-	Plane
+	Plane,
+	BoundingBox
 };
 
 struct px_triangle_mesh_collider_builder
@@ -19,9 +20,8 @@ struct px_triangle_mesh_collider_builder
 	PxTriangleMesh* createMeshShape(mesh_asset* asset, unsigned int size);
 };
 
-class px_collider_component_base
+struct px_collider_component_base
 {
-public:
 	px_collider_component_base(px_collider_type collType) noexcept : type(collType) {};
 	px_collider_component_base() = default;
 	virtual ~px_collider_component_base();
@@ -39,9 +39,8 @@ protected:
 	physx::PxShape* shape = nullptr;
 };
 
-class px_box_collider_component : public px_collider_component_base 
+struct px_box_collider_component : px_collider_component_base 
 {
-public:
 	px_box_collider_component(float h, float l, float w) noexcept 
 	{
 		type = px_collider_type::Box;
@@ -58,9 +57,8 @@ private:
 	float height, length, width;
 };
 
-class px_sphere_collider_component : public px_collider_component_base
+struct px_sphere_collider_component : px_collider_component_base
 {
-public:
 	px_sphere_collider_component(float r) noexcept
 	{
 		radius = r;
@@ -75,9 +73,8 @@ private:
 	float radius;
 };
 
-class px_capsule_collider_component : public px_collider_component_base
+struct px_capsule_collider_component : px_collider_component_base
 {
-public:
 	px_capsule_collider_component(float r, float h) noexcept
 	{
 		type = px_collider_type::Capsule;
@@ -93,10 +90,35 @@ private:
 	float height, radius;
 };
 
-class px_triangle_mesh_collider_component : public px_collider_component_base
+struct px_bounding_box 
 {
-public:
-	px_triangle_mesh_collider_component(mesh_asset* as, unsigned int size) noexcept : asset(as), model_size(size)
+	physx::PxVec3 minCorner;
+	physx::PxVec3 maxCorner;
+};
+
+px_bounding_box calculateBoundingBox(const std::vector<physx::PxVec3>& positions);
+
+void createMeshFromBoundingBox(const px_bounding_box& box, std::vector<physx::PxVec3>& vertices, std::vector<uint32_t>& indices);
+
+struct px_bounding_box_collider_component : px_collider_component_base
+{
+	px_bounding_box_collider_component(unsigned int size, mesh_asset* as) noexcept : asset(as), model_size(size)
+	{
+		type = px_collider_type::BoundingBox;
+	};
+
+	~px_bounding_box_collider_component();
+
+	bool createShape() override;
+
+private:
+	mesh_asset* asset = nullptr;
+	unsigned int model_size = 0;
+};
+
+struct px_triangle_mesh_collider_component : px_collider_component_base
+{
+	px_triangle_mesh_collider_component(unsigned int size, mesh_asset* as) noexcept : asset(as), model_size(size)
 	{
 		type = px_collider_type::TriangleMesh;
 	};

@@ -1175,7 +1175,7 @@ static void handleCollisionCallbacks(escene& scene, const collider_pair* collide
 	context.prevFrameCollisions = std::move(collisions);
 }
 
-static void physicsStepInternal(escene& scene, memory_arena& arena, const physics_settings& settings, float dt)
+static void physicsStepInternal(escene& scene, eallocator& arena, const physics_settings& settings, float dt)
 {
 	CPU_PROFILE_BLOCK("Physics step");
 
@@ -1345,7 +1345,7 @@ static void physicsStepInternal(escene& scene, memory_arena& arena, const physic
 	arena.resetToMarker(marker);
 }
 
-void physicsStep(escene& scene, memory_arena& arena, float& timer, const physics_settings& settings, float dt)
+void physicsStep(escene& scene, eallocator& arena, float& timer, const physics_settings& settings, float dt)
 {
 	if (settings.fixedFrameRate)
 	{

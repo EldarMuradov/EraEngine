@@ -24,7 +24,7 @@ static const ImVec4 colorPerType[] =
 	ImVec4(1.f, 0.f, 0.f, 1.f),
 };
 
-static memory_arena arena;
+static eallocator arena;
 static std::vector<log_message> messages;
 static std::mutex mutex;
 

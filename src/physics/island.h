@@ -8,4 +8,4 @@ struct constraint_offsets
 	uint32 constraintOffsets[constraint_type_count];
 };
 
-void buildIslands(memory_arena& arena, constraint_body_pair* bodyPairs, uint32 numBodyPairs, uint32 numRigidBodies, uint16 dummyRigidBodyIndex, const constraint_offsets& offsets);
+void buildIslands(eallocator& arena, constraint_body_pair* bodyPairs, uint32 numBodyPairs, uint32 numRigidBodies, uint16 dummyRigidBodyIndex, const constraint_offsets& offsets);

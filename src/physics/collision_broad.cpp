@@ -84,7 +84,7 @@ void clearBroadphase(escene& scene)
 	}
 }
 
-static uint32 determineOverlapsScalar(const sap_endpoint* endpoints, uint32 numEndpoints, const bounding_box* worldSpaceAABBs, uint32 numColliders, memory_arena& arena,
+static uint32 determineOverlapsScalar(const sap_endpoint* endpoints, uint32 numEndpoints, const bounding_box* worldSpaceAABBs, uint32 numColliders, eallocator& arena,
 	collider_pair* outCollisions)
 {
 	CPU_PROFILE_BLOCK("Determine overlaps");
@@ -165,7 +165,7 @@ static uint32 determineOverlapsScalar(const sap_endpoint* endpoints, uint32 numE
 #undef CACHE_AABBS
 }
 
-static uint32 determineOverlapsSIMD(const sap_endpoint* endpoints, uint32 numEndpoints, const bounding_box* worldSpaceAABBs, uint32 numColliders, memory_arena& arena,
+static uint32 determineOverlapsSIMD(const sap_endpoint* endpoints, uint32 numEndpoints, const bounding_box* worldSpaceAABBs, uint32 numColliders, eallocator& arena,
 	collider_pair* outCollisions)
 {
 	CPU_PROFILE_BLOCK("Determine overlaps SIMD");
@@ -293,7 +293,7 @@ static uint32 determineOverlapsSIMD(const sap_endpoint* endpoints, uint32 numEnd
 #undef COLLISION_SIMD_WIDTH
 }
 
-uint32 broadphase(escene& scene, bounding_box* worldSpaceAABBs, memory_arena& arena, collider_pair* outCollisions, bool simd)
+uint32 broadphase(escene& scene, bounding_box* worldSpaceAABBs, eallocator& arena, collider_pair* outCollisions, bool simd)
 {
 	CPU_PROFILE_BLOCK("Broad phase");
 

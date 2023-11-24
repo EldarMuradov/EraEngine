@@ -2,6 +2,7 @@
 bin/
 bin_int/
 shaders/bin/
+
 *.dll
 *.exe
 *.pdb
@@ -21,11 +22,9 @@ shaders/generated/
 resources/files.yaml
 assets/
 asset_cache/
-captures/
 x64/
 resources/
 ext/
-
 
 # Learning
 learning/

@@ -23,7 +23,7 @@ private:
 	};
 
 	std::vector<command_key> keys;
-	memory_arena arena;
+	eallocator arena;
 
 	template <typename pipeline_t, typename command_t>
 	command_t& pushInternal(key_t sortKey)
@@ -116,7 +116,6 @@ public:
 
 	iterator begin() const { return iterator{ keys.begin() }; }
 	iterator end() const { return iterator{ keys.end() }; }
-
 };
 
 struct default_command_header

@@ -392,4 +392,4 @@ struct physics_settings
 };
 
 void testPhysicsInteraction(escene& scene, ray r, float strength = 1000.f);
-void physicsStep(escene& scene, memory_arena& arena, float& timer, const physics_settings& settings, float dt);
+void physicsStep(escene& scene, eallocator& arena, float& timer, const physics_settings& settings, float dt);

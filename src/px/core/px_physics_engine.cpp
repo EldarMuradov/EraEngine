@@ -184,7 +184,7 @@ void px_physics_engine::start()
 
 void px_physics_engine::update(float dt)
 {
-	physics->scene->collide(1.0 / frameRate);
+	physics->scene->collide(std::max(dt, 1.0f / frameRate));
 	physics->scene->fetchCollision(true);
 	physics->scene->advance();
 	physics->scene->fetchResults(true);
@@ -194,8 +194,7 @@ void px_physics_engine::update(float dt)
 
 	auto scene = &app->scene.getCurrentScene();
 
-	size_t i = 0;
-	for (; i < nbActiveActors; i++)
+	for (size_t i = 0; i < nbActiveActors; i++)
 	{
 		entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
 		eentity* renderObject = new eentity(*handle, *scene);
@@ -343,7 +342,7 @@ PxTriangleMesh* px_triangle_mesh::createTriangleMesh(PxTriangleMeshDesc desc)
 	}
 	catch (...)
 	{
-		LOG_MESSAGE("Physics> Failed to create physics triangle mesh");
+		LOG_ERROR("Physics> Failed to create physics triangle mesh");
 	}
 	return nullptr;
 }

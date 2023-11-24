@@ -371,7 +371,7 @@ static void getLimits(escene& scene, cone_twist_constraint_handle handle, float*
 }
 
 static training_locomotion* trainingEnv = 0;
-static memory_arena stackArena;
+static eallocator stackArena;
 static escene trainingScene;
 static float totalReward;
 static random_number_generator rng = { (uint32)time(0) };

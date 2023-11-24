@@ -426,7 +426,7 @@ static uint32 collideAABBvsTriangle(vec3 center, vec3 radius, vec3 a, vec3 b, ve
 	return 1;
 }
 
-static uint32 intersection(const bounding_sphere& s, const bounding_box& aabb, const heightmap_collider_component& heightmap, memory_arena& arena,
+static uint32 intersection(const bounding_sphere& s, const bounding_box& aabb, const heightmap_collider_component& heightmap, eallocator& arena,
 	collision_contact* outContacts)
 {
 	uint32 numContacts = 0;
@@ -440,7 +440,7 @@ static uint32 intersection(const bounding_sphere& s, const bounding_box& aabb, c
 	return numContacts;
 }
 
-static uint32 intersection(const bounding_capsule& capsule, const bounding_box& aabb, const heightmap_collider_component& heightmap, memory_arena& arena,
+static uint32 intersection(const bounding_capsule& capsule, const bounding_box& aabb, const heightmap_collider_component& heightmap, eallocator& arena,
 	collision_contact* outContacts)
 {
 	uint32 numContacts = 0;
@@ -468,7 +468,7 @@ static uint32 intersection(const bounding_capsule& capsule, const bounding_box& 
 	return numContacts;
 }
 
-static uint32 intersection(const bounding_box& box, const bounding_box& aabb, const heightmap_collider_component& heightmap, memory_arena& arena,
+static uint32 intersection(const bounding_box& box, const bounding_box& aabb, const heightmap_collider_component& heightmap, eallocator& arena,
 	collision_contact* outContacts)
 {
 	uint32 numContacts = 0;
@@ -485,7 +485,7 @@ static uint32 intersection(const bounding_box& box, const bounding_box& aabb, co
 	return numContacts;
 }
 
-static uint32 intersection(const bounding_oriented_box& obb, const bounding_box& aabb, const heightmap_collider_component& heightmap, memory_arena& arena,
+static uint32 intersection(const bounding_oriented_box& obb, const bounding_box& aabb, const heightmap_collider_component& heightmap, eallocator& arena,
 	collision_contact* outContacts)
 {
 	uint32 numContacts = 0;
@@ -512,7 +512,7 @@ static uint32 intersection(const bounding_oriented_box& obb, const bounding_box&
 narrowphase_result heightmapCollision(const heightmap_collider_component& heightmap, 
 	const collider_union* worldSpaceColliders, const bounding_box* worldSpaceAABBs, uint32 numColliders, 
 	collision_contact* outContacts, constraint_body_pair* outBodyPairs, collider_pair* outColliderPairs, uint8* outContactCountPerCollision, 
-	memory_arena& arena, uint16 dummyRigidBodyIndex)
+	eallocator& arena, uint16 dummyRigidBodyIndex)
 {
 	CPU_PROFILE_BLOCK("Heightmap collisions");
 

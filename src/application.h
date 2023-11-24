@@ -59,7 +59,7 @@ private:
 	boid_particle_system boidParticleSystem;
 	debris_particle_system debrisParticleSystem;
 
-	memory_arena stackArena;
+	eallocator stackArena;
 
 	learned_locomotion learnedLocomotion;
 

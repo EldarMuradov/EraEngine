@@ -180,7 +180,7 @@ struct half
 
 	operator float();
 
-	static const half minValue; // Smallest possible half. Not the smallest positive, but the smallest total, so essentially -maxValue.
+	static const half minValue;
 	static const half maxValue;
 };
 

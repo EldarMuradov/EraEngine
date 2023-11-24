@@ -182,7 +182,7 @@ struct animation_component
 	dx_vertex_buffer_group_view prevFrameVertexBuffer;
 	trs* currentGlobalTransforms = 0;
 
-	void update(const ref<struct multi_mesh>& mesh, memory_arena& arena, float dt, trs* transform = 0);
+	void update(const ref<struct multi_mesh>& mesh, eallocator& arena, float dt, trs* transform = 0);
 	void drawCurrentSkeleton(const ref<struct multi_mesh>& mesh, const trs& transform, struct ldr_render_pass* renderPass);
 };
 
