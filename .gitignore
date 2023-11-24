@@ -2,6 +2,7 @@
 bin/
 bin_int/
 shaders/bin/
+shaders/
 
 *.dll
 *.exe
