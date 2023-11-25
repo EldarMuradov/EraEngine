@@ -53,7 +53,6 @@ struct opaque_render_pass
 		depthPrepass.emplace_back<pipeline_t, render_data_t>(sortKey, std::move(renderData));
 	}
 
-
 	template <typename pipeline_t, typename depth_prepass_pipeline_t, typename render_data_t, typename depth_prepass_render_data_t>
 	void renderObject(const render_data_t& renderData, 
 		const depth_prepass_render_data_t& depthPrepassRenderData)

@@ -661,6 +661,17 @@ static void editMaterial(const ref<pbr_material>& material)
 	}
 }
 
+static void editSubmeshTransform(trs* transform)
+{
+	ImGui::Drag("Position", transform->position, 0.1f);
+	vec3& selectedEntityEulerRotation = getEuler(transform->rotation);
+	if (ImGui::Drag("Rotation", selectedEntityEulerRotation, 0.1f))
+	{
+		transform->rotation = getQuat(selectedEntityEulerRotation);
+	}
+	ImGui::Drag("Scale", transform->scale, 0.1f);
+}
+
 bool eeditor::drawSceneHierarchy()
 {
 	escene& scene = this->scene->getCurrentScene();
@@ -819,13 +830,13 @@ bool eeditor::drawSceneHierarchy()
 						}
 						if (ImGui::BeginTree("Childs"))
 						{
-							for (const auto& sub : raster.mesh->submeshes)
+							for (auto& sub : raster.mesh->submeshes)
 							{
 								ImGui::PushID(&sub);
 								if (ImGui::BeginTree(sub.name.c_str()))
 								{
+									//editSubmeshTransform(&sub.transform);
 									editMaterial(sub.material);
-
 									ImGui::EndTree();
 								}
 								ImGui::PopID();

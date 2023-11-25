@@ -60,7 +60,6 @@ static gizmo_rectangle rectangles[] =
 
 static dx_mesh mesh;
 
-
 void initializeTransformationGizmos()
 {
 	mesh_builder mesh(mesh_creation_flags_with_positions | mesh_creation_flags_with_normals);
@@ -473,7 +472,6 @@ bool transformation_gizmo::handleUserInput(bool allowKeyboardInput,
 		ImGui::PopID();
 
 		ImGui::SameLine(0.f, (float)IMGUI_ICON_DEFAULT_SIZE);
-
 
 		ImGui::PushID(&type);
 		uiInteraction |= ImGui::IconRadioButton(imgui_icon_cross, (int*)&type, transformation_type_none, IMGUI_ICON_DEFAULT_SIZE, true);

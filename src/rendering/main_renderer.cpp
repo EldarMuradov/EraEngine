@@ -555,7 +555,7 @@ dx_command_list* main_renderer::renderThread2(const common_render_data& commonRe
 
 dx_command_list* main_renderer::renderThread3(common_render_data commonRenderData, dx_dynamic_constant_buffer unjitteredCameraCBV)
 {
-	// After this there is no more camera jittering!
+	// After this there is no more camera jittering
 	commonRenderData.cameraCBV = unjitteredCameraCBV;
 
 	dx_command_list* cl = dxContext.getFreeRenderCommandList();

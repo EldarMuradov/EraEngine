@@ -714,10 +714,10 @@ static void renderCloth(escene& scene, entity_handle selectedObjectID,
 	for (auto [entityHandle, cloth, render] : scene.group<cloth_component, cloth_render_component>().each())
 	{
 		pbr_material_desc desc;
-		desc.albedo = "assets/sponza/textures/Sponza_Curtain_Red_diffuse.tga";
-		desc.normal = "assets/sponza/textures/Sponza_Curtain_Red_normal.tga";
-		desc.roughness = "assets/sponza/textures/Sponza_Curtain_roughness.tga";
-		desc.metallic = "assets/sponza/textures/Sponza_Curtain_metallic.tga";
+		desc.albedo = "assets/Sponza/textures/sponza_curtain_diff.png";
+		desc.normal = "assets/Sponza/textures/sponza_fabric_ddn.jpg";
+		desc.roughness = "assets/Sponza/textures/sponza_curtain_diff.png";
+		desc.metallic = "";
 		desc.shader = pbr_material_shader_double_sided;
 
 		static auto clothMaterial = createPBRMaterial(desc);

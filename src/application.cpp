@@ -122,6 +122,8 @@ void application::loadCustomShaders()
 	}
 }
 
+eentity door;
+
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
 	this->renderer = renderer;
@@ -151,6 +153,19 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		addRaytracingComponentAsync(sponza, mesh);
 	}
+#endif
+
+#if 1
+	if (auto mesh = loadMeshFromFileAsync("assets/Door/source/Office Door.fbx"))
+	{
+		door = scene.createEntity("Door")
+			.addComponent<transform_component>(vec3(0.f, 0.f, 0.f), quat::identity, 0.02f)
+			//.addComponent<animation_component>()
+			.addComponent<dynamic_transform_component>()
+			.addComponent<mesh_component>(mesh);
+		//initializeAnimationComponentAsync(door, mesh);
+		addRaytracingComponentAsync(door, mesh);
+}
 #endif
 
 #if 0
@@ -528,6 +543,11 @@ void application::update(const user_input& input, float dt)
 
 	static float physicsTimer = 0.f;
 	physicsStep(scene, stackArena, physicsTimer, editor.physicsSettings, dt);
+
+	//auto& m = door.getComponent<mesh_component>().mesh;
+	//auto& s = m->submeshes[0];
+	//auto& t = s.transform;
+	//t.position = vec3(700.0f, 700.0f, 700.0f);
 
 	// Particles
 #if 1

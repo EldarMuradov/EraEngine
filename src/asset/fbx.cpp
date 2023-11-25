@@ -2174,7 +2174,6 @@ model_asset loadFBX(const fs::path& path, uint32 flags)
 
 		ASSERT(out.joints.size() == out.nameToJointID.size());
 
-
 		for (uint32 i = 0; i < (uint32)objectLUT.meshes.size(); ++i)
 		{
 			if (objectLUT.meshes[i].skeletonID == id)

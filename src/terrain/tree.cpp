@@ -1,21 +1,14 @@
 #include "pch.h"
 #include "tree.h"
-
 #include "core/color.h"
 #include "core/nearest_neighbor.h"
-
 #include "dx/dx_pipeline.h"
-
 #include "rendering/render_resources.h"
 #include "rendering/pbr.h"
 #include "rendering/render_pass.h"
-
 #include "tree_rs.hlsli"
 
-
-
 static dx_pipeline treePipeline;
-
 
 void initializeTreePipelines()
 {
@@ -29,7 +22,6 @@ void initializeTreePipelines()
         treePipeline = createReloadablePipeline(desc, { "tree_vs", "tree_ps" });
     }
 }
-
 
 struct tree_render_data
 {
@@ -151,9 +143,6 @@ void renderTree(opaque_render_pass* renderPass, D3D12_GPU_VIRTUAL_ADDRESS transf
     }
 }
 
-
-
-
 struct tree_mesh_others
 {
     vec2 uv;
@@ -266,4 +255,3 @@ ref<multi_mesh> loadTreeMeshFromHandleAsync(asset_handle handle, job_handle pare
 {
     return loadMeshFromHandleAsync(handle, mesh_creation_flags_default | mesh_creation_flags_with_colors, parentJob, analyzeTreeMesh);
 }
-
