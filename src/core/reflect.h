@@ -63,25 +63,3 @@ static std::ostream& operator<<(std::ostream& o, const T& v)
 	o << "}\n";
 	return o;
 }
-
-// USAGE:
-#if 0
-
-struct test_reflect
-{
-	float v = 1.f;
-	int a = 1;
-	std::string test = "asd";
-	vec3 lightDirection;
-};
-REFLECT_STRUCT(test_reflect,
-	(v), // Reflect member v.
-	(a, "A"), // You can optionally supply a custom name.
-	(test),
-	(lightDirection, "Light direction")
-);
-
-// Printing the reflected struct.
-test_reflect test = { 2.f, 6123 };
-std::cout << test << '\n';
-#endif

@@ -60,7 +60,6 @@ struct skinning_pipeline
 			memcpy(mats + data.matrixOffset, data.skinningMatrices, sizeof(mat4) * data.numSkinningMatrices);
 			unmapBuffer(data.skinningMatricesBuffer, true, map_range{ data.matrixOffset, data.numSkinningMatrices });
 
-
 			cl->setPipelineState(*skinningPipeline.pipeline);
 			cl->setComputeRootSignature(*skinningPipeline.rootSignature);
 

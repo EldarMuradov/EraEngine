@@ -122,8 +122,6 @@ void application::loadCustomShaders()
 	}
 }
 
-eentity door;
-
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
 	this->renderer = renderer;
@@ -153,19 +151,6 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		addRaytracingComponentAsync(sponza, mesh);
 	}
-#endif
-
-#if 1
-	if (auto mesh = loadMeshFromFileAsync("assets/Door/source/Office Door.fbx"))
-	{
-		door = scene.createEntity("Door")
-			.addComponent<transform_component>(vec3(0.f, 0.f, 0.f), quat::identity, 0.02f)
-			//.addComponent<animation_component>()
-			.addComponent<dynamic_transform_component>()
-			.addComponent<mesh_component>(mesh);
-		//initializeAnimationComponentAsync(door, mesh);
-		addRaytracingComponentAsync(door, mesh);
-}
 #endif
 
 #if 0

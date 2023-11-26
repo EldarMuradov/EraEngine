@@ -1738,7 +1738,6 @@ static void resolveConnections(const fbx_node* connectionsNode, const std::vecto
 		}
 	}
 
-
 	for (fbx_animation_stack& stack : lut.animationStacks)
 	{
 		fbx_animation& anim = lut.animations.emplace_back();
@@ -1784,9 +1783,7 @@ static void finishMesh(fbx_mesh& mesh, uint32 flags, std::unordered_map<int64, f
 				int32 index = indices[i];
 				uint8 weight = (uint8)clamp(weights[i] * 255.f, 0.f, 255.f);
 				if (weight == 0)
-				{
 					continue;
-				}
 
 				uint32 offset = mesh.vertexOffsetCounts[index].offset;
 				uint32 count = mesh.vertexOffsetCounts[index].count;
@@ -1875,9 +1872,7 @@ static float sampleAnimationCurve(fbx_animation_curve* curve, int64 time, const 
 	while (index < first + count - 1)
 	{
 		if (time < animationTimes[index + 1])
-		{
 			break;
-		}
 
 		++index;
 	}

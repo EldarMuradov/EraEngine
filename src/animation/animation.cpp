@@ -438,7 +438,7 @@ void animation_skeleton::getSkinningMatricesFromLocalTransforms(const trs* local
 		const skeleton_joint& skelJoint = joints[i];
 		if (skelJoint.parentID != INVALID_JOINT)
 		{
-			ASSERT(i > skelJoint.parentID); // Parent already processed.
+			ASSERT(i > skelJoint.parentID); // Parent already processed
 			outGlobalTransforms[i] = outGlobalTransforms[skelJoint.parentID] * localTransforms[i];
 		}
 		else
