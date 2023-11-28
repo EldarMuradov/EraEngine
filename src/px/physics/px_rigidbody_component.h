@@ -32,11 +32,8 @@ struct px_rigidbody_component
 	void setMass(unsigned int mass);
 	unsigned int getMass() noexcept;
 
-	void setLockRotation(bool x, bool y, bool z);
-	void setLockPosition(bool x, bool y, bool z);
-
-	bool* getLockRotation() noexcept;
-	bool* getLockPosition() noexcept;
+	void setConstraints(uint8 constraints) noexcept;
+	uint8 getConstraints() noexcept;
 
 	void setLinearVelocity(vec3& velocity);
 

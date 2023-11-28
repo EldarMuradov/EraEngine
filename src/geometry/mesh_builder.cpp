@@ -1246,7 +1246,7 @@ void mesh_builder::pushMesh(const submesh_asset& mesh, float scale, bounding_box
 
 	if (indexType == mesh_index_uint16)
 	{
-		ASSERT(numVertices <= UINT16_MAX);
+		ASSERT(numVertices - 1 <= UINT16_MAX);
 	}
 
 	auto [positionPtr, othersPtr, indexPtr, indexOffset] = beginPrimitive(numVertices, numFaces);
@@ -1373,7 +1373,7 @@ std::tuple<vec3*, uint8*, uint8*, uint32> mesh_builder::beginPrimitive(uint32 nu
 	numTrianglesInCurrentSubmesh += numTriangles;
 
 	uint32 maxNumVertices = (indexType == mesh_index_uint16) ? UINT16_MAX : UINT32_MAX;
-	ASSERT(numVerticesInCurrentSubmesh <= maxNumVertices);
+	ASSERT(numVerticesInCurrentSubmesh - 1 <= maxNumVertices);
 
 	return { positionPtr, othersPtr, indexPtr, indexOffset };
 }

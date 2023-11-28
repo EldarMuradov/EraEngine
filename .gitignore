@@ -4,6 +4,15 @@ bin_int/
 shaders/bin/
 shaders/
 
+scripting/DotnetScripting-Lib/EraScriptingCore/bin
+scripting/DotnetScripting-Lib/EraScriptingCore/obj
+
+scripting/DotnetScripting-Lib/EraScriptingProjectTemplate/bin
+scripting/DotnetScripting-Lib/EraScriptingProjectTemplate/obj
+
+scripting/EraScriptingLauncher-Lib/Release
+scripting/EraScriptingLauncher-Lib/x64
+
 *.dll
 *.exe
 *.pdb
@@ -30,3 +39,5 @@ ext/
 
 # Learning
 learning/
+/shot1.png
+/shot2.png

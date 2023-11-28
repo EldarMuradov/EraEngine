@@ -10,19 +10,15 @@
 #include "audio.h"
 #include "sound.h"
 #include "channel.h"
-
 #include "core/log.h"
 #include "core/cpu_profiling.h"
-
 #include <unordered_map>
 #include <x3daudio.h>
-
 
 master_audio_settings masterAudioSettings;
 master_audio_settings oldMasterAudioSettings;
 
 static property_fader masterVolumeFader;
-
 
 float soundTypeVolumes[sound_type_count];
 static float oldSoundTypeVolumes[sound_type_count];
@@ -33,10 +29,6 @@ static audio_context context;
 typedef std::unordered_map<uint32, ref<audio_channel>> channel_map;
 static channel_map channels;
 static uint32 nextChannelID = 1;
-
-
-
-
 
 static XAUDIO2FX_REVERB_I3DL2_PARAMETERS reverbPresets[] =
 {
@@ -72,16 +64,12 @@ static XAUDIO2FX_REVERB_I3DL2_PARAMETERS reverbPresets[] =
 	XAUDIO2FX_I3DL2_PRESET_PLATE,
 };
 
-
-
 /*
 	Our audio graph looks like this:
 
 	[Source(s)] ----> [Sound type submix] ----> [Master]
 	     `-> [Sound type reverb] -^
 */
-
-
 
 static void setReverb()
 {
@@ -127,13 +115,7 @@ bool initializeAudio()
 	context.masterVoice->GetChannelMask(&channelMask);
 	context.masterVoice->GetVoiceDetails(&context.masterVoiceDetails);
 
-
-
-
 	X3DAudioInitialize(channelMask, X3DAUDIO_SPEED_OF_SOUND, context.xaudio3D);
-
-
-
 
 	for (uint32 i = 0; i < sound_type_count; ++i)
 	{
@@ -144,10 +126,8 @@ bool initializeAudio()
 		context.soundTypeSubmixVoices[i]->GetVoiceDetails(&context.soundTypeSubmixVoiceDetails[i]);
 		context.soundTypeSubmixVoices[i]->SetVolume(soundTypeVolumes[i]);
 
-
 		IUnknown* reverbXAPO;
 		checkResult(XAudio2CreateReverb(&reverbXAPO));
-
 
 		XAUDIO2_EFFECT_DESCRIPTOR descriptor;
 		descriptor.InitialState = true;
@@ -157,7 +137,6 @@ bool initializeAudio()
 		XAUDIO2_EFFECT_CHAIN chain;
 		chain.EffectCount = 1;
 		chain.pEffectDescriptors = &descriptor;
-
 
 		XAUDIO2_SEND_DESCRIPTOR sendDescriptor;
 		sendDescriptor.Flags = 0;
@@ -170,10 +149,7 @@ bool initializeAudio()
 		reverbXAPO->Release();
 	}
 
-
 	setReverb();
-
-
 
 	context.listener.OrientFront = { 0.f, 0.f, 1.f };
 	context.listener.OrientTop = { 0.f, 1.f, 0.f };

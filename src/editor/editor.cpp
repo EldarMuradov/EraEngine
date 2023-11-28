@@ -22,7 +22,6 @@
 #include <fontawesome/list.h>
 #include <sstream>
 #include "application.h"
-
 #include <editor/system_calls.h>
 
 static vec3 getEuler(quat q)
@@ -813,9 +812,19 @@ bool eeditor::drawSceneHierarchy()
 						ImGui::Text("Dynamic entity");
 					});
 
-					drawComponent<raytrace_component>(selectedEntity, "Ray-tracing", [](raytrace_component& dynamic)
+					drawComponent<raytrace_component>(selectedEntity, "Ray-tracing", [](raytrace_component& trace)
 					{
 						ImGui::Text("Ray-tracing ON");
+					});
+
+					drawComponent<tree_component>(selectedEntity, "Tree", [](tree_component& tree)
+					{
+						ImGui::Text("Tree mesh");
+						if (ImGui::BeginProperties())
+						{
+							ImGui::PropertyValue("Bend strength", tree.settings.bendStrength);
+							ImGui::EndProperties();
+						}
 					});
 
 					drawComponent<mesh_component>(selectedEntity, "Mesh", [this](mesh_component& raster)
@@ -1094,40 +1103,52 @@ bool eeditor::drawSceneHierarchy()
 										rb.setLinearVelocity(av);
 								}
 
-								ImGui::EndProperties();
-
 								if (dynamic)
 								{
-									bool* rot_lock = rb.getLockRotation();
+									uint8 prevConstraints = rb.getConstraints();
+									uint8 newConstraints = prevConstraints;
+									
+									bool lx = prevConstraints & 1;
+									bool ly = prevConstraints & 2;
+									bool lz = prevConstraints & 4;
 
-									bool tlx = rot_lock[0];
-									bool tly = rot_lock[1];
-									bool tlz = rot_lock[2];
+									bool rx = prevConstraints & 8;
+									bool ry = prevConstraints & 16;
+									bool rz = prevConstraints & 32;
 
-									ImGui::Text("Physics Lock Rotation");
+									if (ImGui::PropertyCheckbox("Lock position X ", lx))
+									{
+										newConstraints ^= (-lx ^ newConstraints) & 1;
+									}
+									if (ImGui::PropertyCheckbox("Lock position Y ", ly))
+									{
+										newConstraints ^= (-ly ^ newConstraints) & 2;
+									}
+									if (ImGui::PropertyCheckbox("Lock position Z ", lz))
+									{
+										newConstraints ^= (-lz ^ newConstraints) & 4;
+									}
 
-									ImGui::Checkbox("Lock Rotation X ", &tlx);
-									ImGui::Checkbox("Lock Rotation Y ", &tly);
-									ImGui::Checkbox("Lock Rotation Z ", &tlz);
+									ImGui::Separator();
 
-									if (tlx != rot_lock[0] || tly != rot_lock[1] || tlz != rot_lock[2])
-										rb.setLockRotation(tlx, tly, tlz);
+									if (ImGui::PropertyCheckbox("Lock rotation X ", rx))
+									{
+										newConstraints ^= (-rx ^ newConstraints) & 8;
+									}
+									if (ImGui::PropertyCheckbox("Lock rotation Y ", ry))
+									{
+										newConstraints ^= (-ry ^ newConstraints) & 16;
+									}
+									if (ImGui::PropertyCheckbox("Lock rotation Z ", rz))
+									{
+										newConstraints ^= (-rz ^ newConstraints) & 32;
+									}
 
-									bool* pos_lock = rb.getLockPosition();
-
-									bool plx = pos_lock[0];
-									bool ply = pos_lock[1];
-									bool plz = pos_lock[2];
-
-									ImGui::Text("Physics Lock Position");
-
-									ImGui::Checkbox("Lock Position X ", &plx);
-									ImGui::Checkbox("Lock Position Y ", &ply);
-									ImGui::Checkbox("Lock Position Z ", &plz);
-
-									if (plx != pos_lock[0] || ply != pos_lock[1] || plz != pos_lock[2])
-										rb.setLockPosition(plx, ply, plz);
+									if (newConstraints != prevConstraints)
+										rb.setConstraints(newConstraints);
 								}
+
+								ImGui::EndProperties();
 							}
 						});
 

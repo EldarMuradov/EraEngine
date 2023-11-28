@@ -61,58 +61,14 @@ unsigned int px_rigidbody_component::getMass() noexcept
 	return mass;
 }
 
-void px_rigidbody_component::setLockRotation(bool x, bool y, bool z)
+void px_rigidbody_component::setConstraints(uint8 constraints) noexcept
 {
-	rotationLock[0] = x;
-	rotationLock[1] = y;
-	rotationLock[2] = z;
-
-	PxRigidDynamicLockFlags flags;
-
-	if (x)
-		flags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_X;
-
-	if (y)
-		flags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_Y;
-
-	if (z)
-		flags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_Z;
-
-	actor->is<PxRigidDynamic>()->setRigidDynamicLockFlags(flags | posLockNative);
-
-	rotLockNative = flags;
+	actor->is<PxRigidDynamic>()->setRigidDynamicLockFlags((physx::PxRigidDynamicLockFlags)constraints);
 }
 
-void px_rigidbody_component::setLockPosition(bool x, bool y, bool z)
+uint8 px_rigidbody_component::getConstraints() noexcept
 {
-	positionLock[0] = x;
-	positionLock[1] = y;
-	positionLock[2] = z;
-
-	PxRigidDynamicLockFlags flags;
-
-	if (x)
-		flags |= PxRigidDynamicLockFlag::eLOCK_LINEAR_X;
-
-	if (y)
-		flags |= PxRigidDynamicLockFlag::eLOCK_LINEAR_Y;
-
-	if (z)
-		flags |= PxRigidDynamicLockFlag::eLOCK_LINEAR_Z;
-
-	actor->is<PxRigidDynamic>()->setRigidDynamicLockFlags(flags | rotLockNative);
-
-	posLockNative = flags;
-}
-
-bool* px_rigidbody_component::getLockRotation() noexcept
-{
-	return positionLock;
-}
-
-bool* px_rigidbody_component::getLockPosition() noexcept
-{
-	return rotationLock;
+	return (uint8)actor->is<PxRigidDynamic>()->getRigidDynamicLockFlags();
 }
 
 void px_rigidbody_component::setLinearVelocity(vec3& velocity)

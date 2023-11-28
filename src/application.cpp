@@ -122,9 +122,14 @@ void application::loadCustomShaders()
 	}
 }
 
+#include <EraScriptingLauncher-Lib/scripting_core.h>
+
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
 	this->renderer = renderer;
+
+	scripting_core core{};
+	core.init();
 
 	if (dxContext.featureSupport.raytracing())
 	{
@@ -153,8 +158,8 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	}
 #endif
 
-#if 0
-	if (auto treeMesh = loadTreeMeshFromFileAsync("assets/tree/simpleTree.fbx"))
+#if 1
+	if (auto treeMesh = loadTreeMeshFromFileAsync("assets/tree/source/tree.fbx"))
 	{
 		auto tree = scene.createEntity("SimpleTree")
 			.addComponent<transform_component>(vec3(0.0, 0.0f, 0.0f), quat::identity, 0.1f)

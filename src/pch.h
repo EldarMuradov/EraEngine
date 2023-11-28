@@ -17,7 +17,6 @@
 namespace fs = std::filesystem;
 
 #include <mutex>
-
 #include <wrl.h> 
 
 typedef int8_t int8;

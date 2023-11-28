@@ -250,7 +250,6 @@ bool dx_context::initialize()
 
 	checkResult(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE));
 
-
 	enableDebugLayer();
 
 	factory = createFactory();
