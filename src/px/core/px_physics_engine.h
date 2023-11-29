@@ -53,6 +53,7 @@ class SnippetGpuLoadHook : public PxGpuLoadHook
 
 class ESGS_SimulationFilterCallback : public PxSimulationFilterCallback
 {
+public:
 	PxFilterFlags pairFound(PxU32 pairID,
 		PxFilterObjectAttributes attributes0, PxFilterData filterData0, const PxActor* a0, const PxShape* s0,
 		PxFilterObjectAttributes attributes1, PxFilterData filterData1, const PxActor* a1, const PxShape* s1,
@@ -184,5 +185,5 @@ private:
 
 	friend class ESGS_CCDContactModification;
 	friend class ESGS_CollisionContactCallback;
-	friend class px_rigidbody_component;
+	friend struct px_rigidbody_component;
 };

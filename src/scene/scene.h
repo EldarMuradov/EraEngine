@@ -194,6 +194,9 @@ struct eentity
 
 	entity_handle handle = entt::null;
 	entt::registry* registry;
+
+private:
+	eentity* parent = nullptr;
 };
 
 template <typename context_t, typename... args>
