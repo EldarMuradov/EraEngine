@@ -49,7 +49,7 @@ struct px_rigidbody_component
 
 	void setAngularDamping(float damping);
 
-	px_rigidbody_type getType() noexcept { return type; }
+	px_rigidbody_type getType() const noexcept { return type; }
 
 	void onCollisionEnter(px_rigidbody_component* collision);
 

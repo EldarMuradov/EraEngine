@@ -25,6 +25,91 @@ struct escene;
 using entity_handle = entt::entity;
 static const auto null_entity = entt::null;
 
+#include <vector>
+#include <unordered_map>
+#include <mutex>
+
+struct lock
+{
+	lock(std::mutex& mutex) : sync(&mutex)
+	{
+		sync->lock();
+	}
+
+	~lock()
+	{
+		sync->unlock();
+	}
+
+	std::mutex* sync;
+};
+
+struct eentity_node
+{
+	eentity_node() = default;
+	~eentity_node() {}
+
+	std::vector<entity_handle> childs;
+};
+
+struct child_component
+{
+	child_component() = default;
+	child_component(entity_handle prnt) : parent(prnt) {}
+	entity_handle parent;
+};
+
+struct eentity_container
+{
+	static void emplacePair(entity_handle parent, entity_handle child) noexcept
+	{
+		lock l(sync);
+
+		if (container.find(parent) == container.end())
+			container.emplace(std::make_pair(parent, eentity_node()));
+		container.at(parent).childs.push_back(child);
+	}
+
+	static void erase(entity_handle parent) noexcept
+	{
+		lock l(sync);
+
+		if (container.find(parent) == container.end())
+			return;
+
+		container.erase(parent);
+	}
+
+	static void erasePair(entity_handle parent, entity_handle child) noexcept
+	{
+		lock l(sync);
+
+		if (container.find(parent) == container.end())
+			return;
+
+		auto& iter = container.at(parent).childs.begin();
+		const auto& end = container.at(parent).childs.end();
+
+		for (; iter != end; ++iter)
+		{
+			if (*iter == child)
+				container.at(parent).childs.erase(iter);
+		}
+	}
+
+	static std::vector<entity_handle> getChilds(entity_handle parent)
+	{
+		if (container.find(parent) == container.end())
+			return std::vector<entity_handle>();
+
+		return container.at(parent).childs;
+	}
+
+private:
+	static std::unordered_map<entity_handle, eentity_node> container;
+	static std::mutex sync;
+};
+
 struct eentity
 {
 	eentity() = default;
@@ -162,6 +247,54 @@ struct eentity
 		registry->remove<component_t>(handle);
 	}
 
+	entity_handle getParentHandle() const noexcept
+	{
+		auto child = getComponentIfExists<child_component>();
+		if(child)
+			return child->parent;
+		return null_entity;
+	}
+
+	void setParent(entity_handle prnt) noexcept
+	{
+		addComponent<child_component>(prnt);
+		
+		eentity_container::emplacePair(prnt, handle);
+	}
+
+	void setParent(eentity& prnt) noexcept
+	{
+		addComponent<child_component>(prnt.handle);
+
+		eentity_container::emplacePair(prnt.handle, handle);
+	}
+
+	void addChild(eentity& child) noexcept
+	{
+		child.addComponent<child_component>(handle);
+		eentity_container::emplacePair(handle, child.handle);
+	}
+
+	void deleteChild(eentity& child) noexcept
+	{
+		child.removeComponent<child_component>();
+		eentity_container::erasePair(handle, child.handle);
+	}
+
+	std::vector<entity_handle> getChildsHandles() noexcept
+	{
+		return eentity_container::getChilds(handle);
+	}
+
+	std::vector<eentity> getChilds() noexcept
+	{
+		const auto& collection = getChildsHandles();
+		std::vector<eentity> result;
+		for (const auto& item : collection)
+			result.push_back({item, registry});
+		return result;
+	}
+
 	inline operator uint32() const
 	{
 		return (uint32)handle;
@@ -194,9 +327,6 @@ struct eentity
 
 	entity_handle handle = entt::null;
 	entt::registry* registry;
-
-private:
-	eentity* parent = nullptr;
 };
 
 template <typename context_t, typename... args>

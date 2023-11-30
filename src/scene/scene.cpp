@@ -11,6 +11,10 @@
 #include <px/physics/px_rigidbody_component.h>
 #include <px/physics/px_collider_component.h>
 
+
+std::mutex eentity_container::sync;
+std::unordered_map<entity_handle, eentity_node> eentity_container::container;
+
 escene::escene()
 {
 	// Construct groups early. Ignore the return types.
@@ -51,6 +55,8 @@ void escene::cloneTo(escene& target)
 		px_capsule_collider_component,
 		px_triangle_mesh_collider_component,
 		px_bounding_box_collider_component,
+
+		child_component,
 
 #ifndef PHYSICS_ONLY
 		point_light_component,
@@ -102,6 +108,7 @@ eentity escene::copyEntity(eentity src)
 
 	tag_component& tag = src.getComponent<tag_component>();
 	eentity dest = createEntity(tag.name);
+	dest.setParent(src.getParentHandle());
 
 	if (auto* c = src.getComponentIfExists<transform_component>()) { dest.addComponent<transform_component>(*c); }
 	if (auto* c = src.getComponentIfExists<position_component>()) { dest.addComponent<position_component>(*c); }
@@ -152,6 +159,13 @@ void escene::deleteEntity(eentity e)
 
 		deleteAllConstraintsFromEntity(e);
 	}
+
+	// TODO: make it thread-safe
+	auto& childs = e.getChilds();
+	auto& iter = childs.begin();
+	const auto& end = childs.end();
+	for (; iter != end; ++iter)
+		deleteEntity(*iter);
 
 	registry.destroy(e.handle);
 }

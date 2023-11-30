@@ -31,6 +31,7 @@ private:
 	void drawSettings(float dt);
 	bool drawMainMenuBar();
 	bool drawSceneHierarchy();
+	void renderChilds(eentity& entity);
 	bool handleUserInput(const user_input& input, ldr_render_pass* ldrRenderPass, float dt);
 	bool drawEntityCreationPopup();
 

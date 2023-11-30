@@ -378,7 +378,7 @@ bool eeditor::drawMainMenuBar()
 
 	if (ImGui::BeginMainMenuBar())
 	{
-		if (ImGui::BeginMenu(ICON_FA_FILE "  File"))
+		if (ImGui::BeginMenu(ICON_FA_FILE "  Project"))
 		{
 			char textBuffer[128];
 			auto [undoPossible, undoName] = currentUndoStack->undoPossible();
@@ -671,6 +671,29 @@ static void editSubmeshTransform(trs* transform)
 	ImGui::Drag("Scale", transform->scale, 0.1f);
 }
 
+void eeditor::renderChilds(eentity& entity)
+{
+	auto& childs = entity.getChilds();
+	if (!childs.empty())
+	{
+		auto& iter = childs.begin();
+		const auto& end = childs.end();
+		for (; iter != end; ++iter)
+		{
+			ImGuiTreeNodeFlags flags = ((selectedEntity == *iter) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
+			if (ImGui::TreeNodeEx((void*)(uint32)(*iter).handle, flags, (*iter).getComponentIfExists<tag_component>()->name))
+			{
+				if (ImGui::IsItemClicked())
+					setSelectedEntity(*iter);
+
+				renderChilds(*iter);
+
+				ImGui::TreePop();
+			}
+		}
+	}
+}
+
 bool eeditor::drawSceneHierarchy()
 {
 	escene& scene = this->scene->getCurrentScene();
@@ -688,10 +711,24 @@ bool eeditor::drawSceneHierarchy()
 				const char* name = tag.name;
 				eentity entity = { entityHandle, scene };
 
-				if (ImGui::Selectable(name, entity == selectedEntity))
+				if (entity.getParentHandle() == null_entity)
 				{
-					setSelectedEntity(entity);
+					ImGuiTreeNodeFlags flags = ((selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
+					if (ImGui::TreeNodeEx((void*)(uint32)entityHandle, flags, name))
+					{
+						if (ImGui::IsItemClicked())
+							setSelectedEntity(entity);
+
+						renderChilds(entity);
+
+						ImGui::TreePop();
+					}
 				}
+
+				//if (ImGui::Selectable(name, entity == selectedEntity))
+				//{
+				//	setSelectedEntity(entity);
+				//}
 
 				bool entityDeleted = false;
 				if (ImGui::BeginPopupContextItem(name))
