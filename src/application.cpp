@@ -123,10 +123,14 @@ void application::loadCustomShaders()
 }
 
 #include <EraScriptingLauncher-Lib/scripting_core.h>
+#include <scripting/native_scripting_linker.h>
 
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
 	this->renderer = renderer;
+
+	native_scripting_linker linker{};
+	linker.init();
 
 	scripting_core core{};
 	core.init();

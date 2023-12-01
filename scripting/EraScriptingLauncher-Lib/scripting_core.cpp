@@ -3,38 +3,58 @@
 #include <intrin.h>
 #include "scripting_core.h"
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <handleapi.h>
 
-#define _X86_
-#include <libloaderapi.h>
-
-typedef void (*void_func)();
-typedef uintptr_t (*ptr_func)();
-typedef uint32_t(*uint32_func)();
-
-typedef uintptr_t(*get_types_net)(uint32_t);
-
+//powershell commainds (i dont want to write it from scratch)
 //cd DotnetScripting-Lib\EraScriptingCore
 //cd DotnetScripting-Lib\EraScriptingProjectTemplate
 //cd ../..
+//cd scripting
 //dotnet publish -r win-x64 -c Release
+
+static inline std::vector<std::string> split(const std::string& source, char delimiter)
+{
+	std::vector<std::string> tokens;
+	std::string token;
+	std::istringstream tokenStream(source);
+	while (std::getline(tokenStream, token, delimiter))
+	{
+		if (!token.empty())
+			tokens.push_back(token);
+	}
+	return tokens;
+}
 
 void scripting_core::init()
 {
-	void* lib = LoadLibraryA("EraScriptingCore.dll");
-	if (!lib)
+	lib = LoadLibraryA("EraScriptingCore.dll");
+	if (!lib || lib == INVALID_HANDLE_VALUE)
 	{
 		std::cerr << "bliaaaa";
 		return;
 	}
-	void_func init_func = (void_func)GetProcAddress((HMODULE)lib, "init_scripting");
-	init_func();
 
-	uint32_func length_func = (uint32_func)GetProcAddress((HMODULE)lib, "get_types_length");
-	uint32_t length = length_func();
+	call_v<evoidf_na>("init_scripting");
+	//auto r = call<eu32f_u32>("init_scripting", [](uint32_t i) { return (uint32_t)0; }, 5);
 
-	get_types_net get_func = (get_types_net)GetProcAddress((HMODULE)lib, "get_types");
-	auto types = get_func(length);
+	std::ifstream file("bin\\Release_x86_64\\types.cfg");
+	std::string types;
+	file >> types;
+	
+	script_types = split(types, ' ');
+}
 
-	std::string types_str = std::string(reinterpret_cast<const char*>(types), length);
-	std::cout << types_str << "\n";
+void scripting_core::reload()
+{
+	release();
+
+	init();
+}
+
+void scripting_core::release()
+{
+	if (lib)
+		FreeLibrary(lib);
 }

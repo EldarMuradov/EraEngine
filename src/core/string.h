@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <sstream>
 
 static std::string wstringToString(const std::wstring_view& wstr)
 {
@@ -21,6 +22,19 @@ static std::wstring stringToWstring(const std::string_view& str)
 	std::wstring result(size, 0);
 	MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &result[0], size);
 	return result;
+}
+
+static std::vector<std::string> split(const std::string& source, char delimiter)
+{
+	std::vector<std::string> tokens;
+	std::string token;
+	std::istringstream tokenStream(source);
+	while (std::getline(tokenStream, token, delimiter)) 
+	{
+		if (!token.empty())
+			tokens.push_back(token);
+	}
+	return tokens;
 }
 
 constexpr uint32 hashString32(const char* s)
