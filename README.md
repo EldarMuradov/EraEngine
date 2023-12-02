@@ -106,8 +106,6 @@ Era Engine uses .NET 8.0 Native AOT. This allows developers to write scripts in 
 
 # TODO:
 
--Scripting
-
 -Building
 
 -Console support
