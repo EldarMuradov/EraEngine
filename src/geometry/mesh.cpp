@@ -205,3 +205,13 @@ ref<multi_mesh> loadMeshFromHandleAsync(asset_handle handle, uint32 flags, job_h
 	fs::path sceneFilename = getPathFromAssetHandle(handle);
 	return loadMeshFromFileAndHandle(sceneFilename, handle, flags, cb, true, parentJob);
 }
+
+#include <scene/scene.h>
+
+eentity loadEntityMeshFromFile(escene scene, const fs::path& filename, uint32 flags, mesh_load_callback cb)
+{
+	auto& registry = scene.registry;
+	eentity parent(registry.create(), &registry);
+
+	return parent;
+}

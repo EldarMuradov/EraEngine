@@ -13,15 +13,13 @@ public enum ForceMode : uint
 
 public class RigidbodyComponent : EComponent
 {
-    private int _mass = 0;
-
     public void AddForce(Vector3 force, ForceMode mode) 
     {
         IntPtr vec = Memory.Vector3ToIntPtr(force);
-        AddForce_Impl(Entity.Id, (uint)mode, vec);
+        addForce(Entity.Id, (uint)mode, vec);
         Memory.ReleaseIntPtr(vec);
     }
 
     [DllImport("EraScriptingCPPDecls.dll")]
-    private static extern void AddForce_Impl(uint id, uint mode, IntPtr force);
+    private static extern void addForce(uint id, uint mode, IntPtr force);
 }

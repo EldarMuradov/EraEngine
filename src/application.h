@@ -14,8 +14,9 @@
 #include "rendering/raytracing.h"
 #include "editor/editor.h"
 #include "learning/learned_locomotion.h"
-
 #include <px/core/px_physics_engine.h>
+#include <EraScriptingLauncher-Lib/scripting_core.h>
+#include <scripting/native_scripting_linker.h>
 
 void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh);
 
@@ -50,6 +51,10 @@ private:
 	ref<dx_texture> decalTexture;
 
 	main_renderer* renderer;
+
+	native_scripting_linker linker;
+
+	scripting_core core;
 
 	editor_scene scene;
 	eeditor editor;

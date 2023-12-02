@@ -326,7 +326,7 @@ struct eentity
 	}
 
 	entity_handle handle = entt::null;
-	entt::registry* registry;
+	entt::registry* registry = nullptr;
 };
 
 template <typename context_t, typename... args>
