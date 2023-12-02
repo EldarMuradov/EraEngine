@@ -22,7 +22,7 @@ but to do it on Cloud Gaming.
 
 -EnTT
 
--.NET 8
+-.NET 8.0 Native AOT (Scripting) 
 
 
 # Features
