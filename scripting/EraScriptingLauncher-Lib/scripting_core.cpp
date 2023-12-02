@@ -1,3 +1,5 @@
+#include "scripting_core.h"
+#include "scripting_core.h"
 #include "pch.h"
 #include <stdio.h>
 #include <intrin.h>
@@ -57,4 +59,16 @@ void scripting_core::release()
 {
 	if (lib)
 		FreeLibrary(lib);
+}
+
+void scripting_core::start()
+{
+}
+
+void scripting_core::update(float dt)
+{
+}
+
+void scripting_core::stop()
+{
 }

@@ -81,7 +81,7 @@ void px_physics::initialize()
 	pvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
 
 	toleranceScale.length = 1.0;
-	toleranceScale.speed = 98.1;
+	toleranceScale.speed = 981;
 
 	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, pvd);
 
@@ -198,10 +198,10 @@ void px_physics_engine::update(float dt)
 	{
 		entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
 		eentity* renderObject = new eentity(*handle, *scene);
-		auto transform = &renderObject->getComponent<transform_component>();
-		auto pxt = activeActors[i]->is<PxRigidDynamic>()->getGlobalPose();
-		auto pos = pxt.p;
-		auto rot = pxt.q.getConjugate();
+		const auto transform = &renderObject->getComponent<transform_component>();
+		const auto& pxt = activeActors[i]->is<PxRigidDynamic>()->getGlobalPose();
+		const auto& pos = pxt.p;
+		const auto& rot = pxt.q.getConjugate();
 		transform->position = vec3(pos.x, pos.y, pos.z);
 		transform->rotation = quat(rot.x, rot.y, rot.z, rot.w);
 	}

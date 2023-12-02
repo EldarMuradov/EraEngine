@@ -50,3 +50,4 @@ struct ERASCRIPTINGCPPDECLS_API enative_scripting_factory
 extern "C" ERASCRIPTINGCPPDECLS_API enative_scripting_builder* createNativeScriptingBuilder(void);
 
 extern "C" ERASCRIPTINGCPPDECLS_API void addForce(uint32_t id, uint32_t mode, float* force);
+extern "C" ERASCRIPTINGCPPDECLS_API void log_message(uint32_t mode, const char* message, uint32_t length);

@@ -2055,6 +2055,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 			this->scene->play();
 			undoStacks[1].reset();
 			setSelectedEntity({});
+			app->core.start();
 		}
 		ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
 		if (ImGui::IconButton(imgui_icon_pause, imgui_icon_pause, IMGUI_ICON_DEFAULT_SIZE, this->scene->isPausable()))
@@ -2067,6 +2068,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 			this->scene->stop();
 			this->scene->environment.forceUpdate(this->scene->sun.direction);
 			setSelectedEntity({});
+			app->core.stop();
 		}
 
 		scene = &this->scene->getCurrentScene();

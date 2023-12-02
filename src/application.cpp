@@ -78,24 +78,37 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
 	}, data).submitAfter(mesh->loadJob);
 }
 
-void updatePhysXPhysics(escene& currentScene, float dt)
+void updatePhysXPhysicsAndScripting(escene& currentScene, scripting_core& core, float dt)
 {
 	struct updatePhysXPhysicsData
 	{
+		scripting_core& core;
 		escene& scene;
 		float deltaTime;
 	};
 
-	updatePhysXPhysicsData data = {currentScene, dt};
+	updatePhysXPhysicsData data = { core, currentScene, dt};
 
 	highPriorityJobQueue.createJob<updatePhysXPhysicsData>([](updatePhysXPhysicsData& data, job_handle)
 		{
-			for (auto [entityHandle, rigidbody, transform] : data.scene.group(component_group<px_rigidbody_component, transform_component>).each())
 			{
-				rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
+				CPU_PROFILE_BLOCK("PhysX physics steps");
+				for (auto [entityHandle, rigidbody, transform] : data.scene.group(component_group<px_rigidbody_component, transform_component>).each())
+				{
+					rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
+				}
+				px_physics_engine::get()->update(data.deltaTime);
 			}
-			px_physics_engine::get()->update(data.deltaTime);
+			updateScripting(data.core, data.deltaTime);
 		}, data).submitNow();
+}
+
+void updateScripting(scripting_core& core, float dt)
+{
+	{
+		CPU_PROFILE_BLOCK(".NET 8.0 Native AOT scripting steps");
+		core.update(dt);
+	}
 }
 
 static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> mesh)
@@ -126,9 +139,12 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 {
 	this->renderer = renderer;
 
-	linker.init();
+	{
+		CPU_PROFILE_BLOCK(".NET 8.0 Native AOT scripting initialization");
+		linker.init();
 
-	core.init();
+		core.init();
+	}
 
 	if (dxContext.featureSupport.raytracing())
 	{
@@ -566,12 +582,6 @@ void application::update(const user_input& input, float dt)
 
 	if (renderer->mode != renderer_mode_pathtraced)
 	{
-		// Draw fucking fuck
-		//if (dxContext.featureSupport.meshShaders())
-		//{
-		//	testRenderMeshShader(&transparentRenderPass, dt);
-		//}
-
 		// Update animated meshes
 		for (auto [entityHandle, anim, mesh, transform] : scene.group(component_group<animation_component, mesh_component, transform_component>).each())
 		{
@@ -653,7 +663,7 @@ void application::update(const user_input& input, float dt)
 
 	if (this->scene.isPausable())
 	{
-		updatePhysXPhysics(scene, dt);
+		updatePhysXPhysicsAndScripting(scene, core, dt);
 	}
 }
 

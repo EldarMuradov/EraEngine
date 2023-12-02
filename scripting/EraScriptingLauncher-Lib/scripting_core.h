@@ -33,6 +33,10 @@ struct scripting_core
 
 	void release();
 
+	void start();
+	void update(float dt);
+	void stop();
+
 	//Call scripting void function directly
 	template <typename Func>
 	void call_v(const char* funcName)

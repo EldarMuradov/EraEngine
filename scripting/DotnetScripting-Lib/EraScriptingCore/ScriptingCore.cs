@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 
 namespace EraScriptingCore;
@@ -23,6 +24,8 @@ public class ScriptingCore
         Init();
 
         SerializeUserTypes();
+
+        Core.Debug.Log("Usage of debug");
     }
 
     private static unsafe int GetStringLength(IntPtr str)

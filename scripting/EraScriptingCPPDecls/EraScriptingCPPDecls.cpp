@@ -15,6 +15,11 @@ ERASCRIPTINGCPPDECLS_API void addForce(uint32_t id, uint32_t mode, float* force)
     (*((enative_scripting_builder::func_obj<void, uint32_t, uint32_t, float*>*)enative_scripting_factory::builder->functions["addForce"].obj))(id, mode, force);
 }
 
+ERASCRIPTINGCPPDECLS_API void log_message(uint32_t mode, const char* message, uint32_t length)
+{
+    (*((enative_scripting_builder::func_obj<void, uint32_t, const char*, uint32_t>*)enative_scripting_factory::builder->functions["log"].obj))(mode, message, length);
+}
+
 enative_scripting_builder::enative_scripting_builder()
 {
 }
