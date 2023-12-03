@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 
 namespace EraScriptingCore;

@@ -28,6 +28,7 @@
 #include "asset/model_asset.h"
 #include <px/physics/px_collider_component.h>
 #include <asset/file_registry.h>
+#include <px/physics/px_joint.h>
 
 static raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh)
 {
@@ -227,6 +228,21 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			//.addComponent<px_bounding_box_collider_component>(&(ass.meshes[0]))
 			.addComponent<px_sphere_collider_component>(1.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);
+
+		auto px_sphere1 = &scene.createEntity("SpherePX1")
+			.addComponent<transform_component>(vec3(20.f, 12.f * 3.f, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<mesh_component>(sphereMesh)
+			//.addComponent<px_triangle_mesh_collider_component>(&(ass.meshes[0]))
+			//.addComponent<px_bounding_box_collider_component>(&(ass.meshes[0]))
+			.addComponent<px_sphere_collider_component>(1.0f)
+			.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);
+
+		auto rb1 = px_sphere->getComponent<px_rigidbody_component>().getRigidActor();
+		auto rb2 = px_sphere1->getComponent<px_rigidbody_component>().getRigidActor();
+
+		px_joint_desc jointDesc{};
+
+		px_joint joint = px_joint(jointDesc, rb1, rb2);
 
 		auto px_plane = &scene.createEntity("PlanePX")
 			.addComponent<transform_component>(vec3(0.f, -5.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
@@ -550,6 +566,11 @@ void application::update(const user_input& input, float dt)
 		terrain.update(position.position, collider);
 	}
 
+	if (this->scene.isPausable())
+	{
+		updatePhysXPhysicsAndScripting(scene, core, dt);
+	}
+
 	static float physicsTimer = 0.f;
 	physicsStep(scene, stackArena, physicsTimer, editor.physicsSettings, dt);
 
@@ -660,11 +681,6 @@ void application::update(const user_input& input, float dt)
 	renderer->setCamera(camera);
 
 	executeMainThreadJobs();
-
-	if (this->scene.isPausable())
-	{
-		updatePhysXPhysicsAndScripting(scene, core, dt);
-	}
 }
 
 void application::handleFileDrop(const fs::path& filename)

@@ -87,16 +87,22 @@ void px_physics::initialize()
 
 	dispatcher = physx::PxDefaultCpuDispatcherCreate(4);
 
+	PxCudaContextManagerDesc cudaContextManagerDesc;
+
+	cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, PxGetProfilerCallback());
+
 	PxSceneDesc sceneDesc(physics->getTolerancesScale());
 	sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
 	sceneDesc.cpuDispatcher = dispatcher;
+	sceneDesc.cudaContextManager = cudaContextManager;
 	sceneDesc.filterShader = contactReportFilterShader;
 	sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneDesc.simulationEventCallback = &collision_callback;
-	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eABP;
+	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
+	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
 	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;

@@ -120,6 +120,8 @@ struct px_physics
 
 	PxDefaultAllocator px_allocator;
 
+	PxCudaContextManager* cudaContextManager = nullptr;
+
 	PxDefaultErrorCallback defaultErrorCallback;
 
 	PxFoundation* foundation = nullptr;
@@ -162,7 +164,7 @@ public:
 
 	void releaseActors() noexcept;
 
-	float frameRate = 120.0f;
+	float frameRate = 60.0f;
 
 	px_physics* getPhysicsAdapter() const noexcept { return physics; }
 

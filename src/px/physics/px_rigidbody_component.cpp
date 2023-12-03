@@ -13,16 +13,6 @@ px_rigidbody_component::px_rigidbody_component(eentity* entt, px_rigidbody_type 
 
 px_rigidbody_component::~px_rigidbody_component()
 {
-	//px_physics_engine::get()->removeActor(this);
-	//PX_RELEASE(material)
-
-	//if (rotationLock)
-	//	delete[] rotationLock;
-	//rotationLock = nullptr;
-
-	//if (positionLock)
-	//	delete[] positionLock;
-	//positionLock = nullptr;
 }
 
 void px_rigidbody_component::addForce(vec3 force, px_force_mode mode) noexcept
@@ -181,8 +171,9 @@ physx::PxRigidActor* px_rigidbody_component::createActor()
 	{
 		PxRigidDynamic* actor = px_physics_engine::get()->physics->physics->createRigidDynamic(PxTransform(pospx, rotpx));
 
-		actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
+		//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 		actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
+		actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
 
 		coll->createShape();
 		actor->attachShape(*coll->getShape());
