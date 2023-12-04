@@ -23,8 +23,8 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh);
 bool editFireParticleSystem(fire_particle_system& particleSystem);
 bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
-void updatePhysXPhysicsAndScripting(escene& currentScene, scripting_core& core, float dt);
-void updateScripting(scripting_core& core, float dt);
+void updatePhysXPhysicsAndScripting(escene& currentScene, std::shared_ptr<escripting_core> core, float dt);
+void updateScripting(std::shared_ptr<escripting_core> core, float dt);
 
 struct application
 {
@@ -53,9 +53,9 @@ private:
 
 	main_renderer* renderer;
 
-	native_scripting_linker linker;
+	enative_scripting_linker linker;
 
-	scripting_core core;
+	std::shared_ptr<escripting_core> core;
 
 	editor_scene scene;
 	eeditor editor;

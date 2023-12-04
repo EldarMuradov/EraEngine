@@ -17,11 +17,11 @@
 px_physics_engine* px_physics_engine::engine = nullptr;
 std::mutex px_physics_engine::sync;
 
-ESGS_CollisionContactCallback collision_callback;
+CollisionContactCallback collision_callback;
 
-ESGS_CCDContactModification contact_modification;
+CCDContactModification contact_modification;
 
-ESGS_SimulationFilterCallback simulation_filter_callback;
+SimulationFilterCallback simulation_filter_callback;
 
 physx::PxFilterFlags contactReportFilterShader(
 	PxFilterObjectAttributes attributes0,
@@ -94,6 +94,7 @@ void px_physics::initialize()
 	PxSceneDesc sceneDesc(physics->getTolerancesScale());
 	sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
 	sceneDesc.cpuDispatcher = dispatcher;
+	sceneDesc.gpuDynamicsConfig = PxgDynamicsMemoryConfig();
 	sceneDesc.cudaContextManager = cudaContextManager;
 	sceneDesc.filterShader = contactReportFilterShader;
 	sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
@@ -119,8 +120,13 @@ void px_physics::initialize()
 		client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
 		client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
 	}
+	auto& cookingParams = PxCookingParams(toleranceScale);
 
-	cooking = PxCreateCooking(PX_PHYSICS_VERSION, *foundation, PxCookingParams(toleranceScale));
+#if PX_GPU_BROAD_PHASE
+	cookingParams.buildGPUData = true;
+#endif
+
+	cooking = PxCreateCooking(PX_PHYSICS_VERSION, *foundation, cookingParams);
 
 	insertationCallback = &physics->getPhysicsInsertionCallback();
 
@@ -202,14 +208,18 @@ void px_physics_engine::update(float dt)
 
 	for (size_t i = 0; i < nbActiveActors; i++)
 	{
-		entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
-		eentity* renderObject = new eentity(*handle, *scene);
-		const auto transform = &renderObject->getComponent<transform_component>();
-		const auto& pxt = activeActors[i]->is<PxRigidDynamic>()->getGlobalPose();
-		const auto& pos = pxt.p;
-		const auto& rot = pxt.q.getConjugate();
-		transform->position = vec3(pos.x, pos.y, pos.z);
-		transform->rotation = quat(rot.x, rot.y, rot.z, rot.w);
+		if (auto rd = activeActors[i]->is<PxRigidDynamic>())
+		{
+			entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
+			eentity* renderObject = new eentity(*handle, *scene);
+			const auto transform = &renderObject->getComponent<transform_component>();
+
+			const auto& pxt = rd->getGlobalPose();
+			const auto& pos = pxt.p;
+			const auto& rot = pxt.q.getConjugate();
+			transform->position = vec3(pos.x, pos.y, pos.z);
+			transform->rotation = quat(rot.x, rot.y, rot.z, rot.w);
+		}
 	}
 }
 
@@ -297,7 +307,7 @@ px_raycast_info px_physics_engine::raycast(px_rigidbody_component* rb, const vec
 	return px_raycast_info();
 }
 
-void ESGS_CCDContactModification::onCCDContactModify(PxContactModifyPair* const pairs, PxU32 count)
+void CCDContactModification::onCCDContactModify(PxContactModifyPair* const pairs, PxU32 count)
 {
 	UNUSED(pairs);
 
@@ -316,7 +326,7 @@ void ESGS_CCDContactModification::onCCDContactModify(PxContactModifyPair* const 
 	}
 }
 
-void ESGS_CollisionContactCallback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
+void CollisionContactCallback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
 {
 	UNUSED(pairHeader);
 

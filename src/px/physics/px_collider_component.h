@@ -4,7 +4,7 @@
 #include <geometry/mesh.h>
 #include <asset/model_asset.h>
 
-enum class px_collider_type 
+enum class px_collider_type : uint8
 {
 	Box,
 	Sphere,
@@ -19,6 +19,11 @@ struct px_triangle_mesh_collider_builder
 {
 	PxTriangleMesh* createMeshShape(mesh_asset* asset, unsigned int size);
 };
+
+void enableShapeInContactTests(PxShape* shape) noexcept;
+void disableShapeInContactTests(PxShape* shape) noexcept;
+void enableShapeInSceneQueryTests(PxShape* shape) noexcept;
+void disableShapeInSceneQueryTests(PxShape* shape) noexcept;
 
 struct px_collider_component_base
 {

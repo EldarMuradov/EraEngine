@@ -8,7 +8,7 @@
 px_rigidbody_component::px_rigidbody_component(eentity* entt, px_rigidbody_type rbtype) noexcept : entity(entt), type(rbtype)
 {
 	createPhysics();
-	this->transform = entt->getComponentIfExists<transform_component>();
+	transform = entity->getComponentIfExists<transform_component>();
 }
 
 px_rigidbody_component::~px_rigidbody_component()

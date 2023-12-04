@@ -23,6 +23,7 @@
 #include <sstream>
 #include "application.h"
 #include <editor/system_calls.h>
+#include <px/physics/px_character_controller_component.h>
 
 static vec3 getEuler(quat q)
 {
@@ -851,7 +852,12 @@ bool eeditor::drawSceneHierarchy()
 
 					drawComponent<raytrace_component>(selectedEntity, "Ray-tracing", [](raytrace_component& trace)
 					{
-						ImGui::Text("Ray-tracing ON");
+						ImGui::Text("Ray-tracing component ON");
+					});
+
+					drawComponent<px_character_controller_component>(selectedEntity, "Character Controller (PhysX)", [](px_character_controller_component& cct)
+					{
+						ImGui::Text("Kinematic character controller");
 					});
 
 					drawComponent<tree_component>(selectedEntity, "Tree", [](tree_component& tree)
@@ -2055,7 +2061,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 			this->scene->play();
 			undoStacks[1].reset();
 			setSelectedEntity({});
-			app->core.start();
+			app->core->start();
 		}
 		ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
 		if (ImGui::IconButton(imgui_icon_pause, imgui_icon_pause, IMGUI_ICON_DEFAULT_SIZE, this->scene->isPausable()))
@@ -2068,7 +2074,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 			this->scene->stop();
 			this->scene->environment.forceUpdate(this->scene->sun.direction);
 			setSelectedEntity({});
-			app->core.stop();
+			app->core->stop();
 		}
 
 		scene = &this->scene->getCurrentScene();

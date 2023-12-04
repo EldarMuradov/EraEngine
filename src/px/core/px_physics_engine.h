@@ -8,6 +8,8 @@
 
 #define NDEBUG 0
 
+#define PX_GPU_BROAD_PHASE 1
+
 #include <PxPhysics.h>
 #include <PxPhysicsAPI.h>
 
@@ -51,7 +53,7 @@ class SnippetGpuLoadHook : public PxGpuLoadHook
 	}
 };
 
-class ESGS_SimulationFilterCallback : public PxSimulationFilterCallback
+class SimulationFilterCallback : public PxSimulationFilterCallback
 {
 public:
 	PxFilterFlags pairFound(PxU32 pairID,
@@ -78,7 +80,7 @@ public:
 	};
 };
 
-class ESGS_CollisionContactCallback : public PxSimulationEventCallback
+class CollisionContactCallback : public PxSimulationEventCallback
 {
 public:
 	void onConstraintBreak(physx::PxConstraintInfo* constraints, physx::PxU32 count) override { std::cout << "onConstraintBreak\n"; }
@@ -89,7 +91,7 @@ public:
 	void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override;
 };
 
-class ESGS_CCDContactModification : public PxCCDContactModifyCallback
+class CCDContactModification : public PxCCDContactModifyCallback
 {
 public:
 	void onCCDContactModify(PxContactModifyPair* const pairs, PxU32 count);
@@ -133,8 +135,8 @@ private:
 	bool released = false;
 
 	friend class px_physics_engine;
-	friend class ESGS_CollisionContactCallback;
-	friend class ESGS_CCDContactModification;
+	friend class CollisionContactCallback;
+	friend class CCDContactModification;
 };
 
 struct px_triangle_mesh
@@ -185,7 +187,7 @@ private:
 
 	static std::mutex sync;
 
-	friend class ESGS_CCDContactModification;
-	friend class ESGS_CollisionContactCallback;
+	friend class CCDContactModification;
+	friend class CollisionContactCallback;
 	friend struct px_rigidbody_component;
 };

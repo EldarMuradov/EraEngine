@@ -23,9 +23,9 @@ using eu32f_u32 = uint32_t(*)(uint32_t); //Era uint32_t function with NO ARGS
 using eptrf_u32 = uintptr_t(*)(uint32_t); //Era uintptr_t function with uint32_t argument
 using eptrf_u32_u32 = uintptr_t(*)(uint32_t, uint32_t); //Era uintptr_t function with 2 uint32_t arguments
 
-struct scripting_core 
+struct escripting_core 
 {
-	scripting_core() = default;
+	escripting_core() = default;
 
 	void init();
 

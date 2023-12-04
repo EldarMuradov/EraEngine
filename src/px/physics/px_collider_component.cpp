@@ -4,7 +4,7 @@
 
 px_collider_component_base::~px_collider_component_base()
 {
-	PX_RELEASE(shape)
+	//PX_RELEASE(shape)
 }
 
 PxTriangleMesh* px_triangle_mesh_collider_builder::createMeshShape(mesh_asset* asset, unsigned int size)
@@ -62,7 +62,8 @@ bool px_box_collider_component::createShape()
 {
 	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	shape = px_physics_engine::getPhysics()->createShape(physx::PxBoxGeometry(height, length, width), *material);
-
+	enableShapeInSceneQueryTests(shape);
+	enableShapeInContactTests(shape);
 	return true;
 }
 
@@ -75,7 +76,8 @@ bool px_sphere_collider_component::createShape()
 {
 	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	shape = px_physics_engine::getPhysics()->createShape(physx::PxSphereGeometry(radius), *material);
-
+	enableShapeInSceneQueryTests(shape);
+	enableShapeInContactTests(shape);
 	return true;
 }
 
@@ -87,7 +89,8 @@ bool px_capsule_collider_component::createShape()
 {
 	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	shape = px_physics_engine::getPhysics()->createShape(physx::PxCapsuleGeometry(radius, height / 2.0), *material);
-
+	enableShapeInSceneQueryTests(shape);
+	enableShapeInContactTests(shape);
 	return true;
 }
 
@@ -108,7 +111,8 @@ bool px_triangle_mesh_collider_component::createShape()
 	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	auto physics = px_physics_engine::getPhysics();
 	shape = physics->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(model_size)), *material);
-
+	enableShapeInSceneQueryTests(shape);
+	enableShapeInContactTests(shape);
 	PX_RELEASE(mesh);
 	return true;
 }
@@ -159,6 +163,26 @@ bool px_bounding_box_collider_component::createShape()
 
 	PX_RELEASE(mesh);
 	return true;
+}
+
+void enableShapeInContactTests(PxShape* shape) noexcept
+{
+	shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
+}
+
+void disableShapeInContactTests(PxShape* shape) noexcept
+{
+	shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+}
+
+void enableShapeInSceneQueryTests(PxShape* shape) noexcept
+{
+	shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
+}
+
+void disableShapeInSceneQueryTests(PxShape* shape) noexcept
+{
+	shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
 }
 
 px_bounding_box calculateBoundingBox(const std::vector<physx::PxVec3>& positions)

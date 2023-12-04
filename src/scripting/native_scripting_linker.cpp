@@ -19,7 +19,7 @@ static void log_message_internal(uint32_t mode, const char* message, uint32_t le
 		LOG_MESSAGE(message);
 }
 
-void native_scripting_linker::init()
+void enative_scripting_linker::init()
 {
 	lib = LoadLibraryA("EraScriptingCPPDecls.dll");
 	if (!lib || lib == INVALID_HANDLE_VALUE)
@@ -31,7 +31,7 @@ void native_scripting_linker::init()
 	get_builder get_builder_func_instance = (get_builder)GetProcAddress(lib, "createNativeScriptingBuilder");
 	builder = get_builder_func_instance();
 
-	injectFunctions();
+	bindFunctions();
 		
 	//uint32_t id = 0, mode = 1;
 	//float* force = new float[3] {0.0, 1.5, 0.0};
@@ -39,7 +39,7 @@ void native_scripting_linker::init()
 	//f(id, mode, force);
 }
 
-void native_scripting_linker::release()
+void enative_scripting_linker::release()
 {
 	if (builder)
 		delete builder;
@@ -47,11 +47,11 @@ void native_scripting_linker::release()
 		FreeLibrary(lib);
 }
 
-void native_scripting_linker::injectFunctions()
+void enative_scripting_linker::bindFunctions()
 {
 	if (builder)
 	{
-		builder->functions.emplace("addForce", INJECT(addForceFAKE, void, uint32_t, uint32_t, float*));
-		builder->functions.emplace("log", INJECT(log_message_internal, void, uint32_t, const char*, uint32_t));
+		builder->functions.emplace("addForce", BIND(addForceFAKE, void, uint32_t, uint32_t, float*));
+		builder->functions.emplace("log", BIND(log_message_internal, void, uint32_t, const char*, uint32_t));
 	}
 }

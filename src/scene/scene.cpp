@@ -10,7 +10,7 @@
 #include <px/core/px_physics_engine.h>
 #include <px/physics/px_rigidbody_component.h>
 #include <px/physics/px_collider_component.h>
-
+#include <px/physics/px_character_controller_component.h>
 
 std::mutex eentity_container::sync;
 std::unordered_map<entity_handle, eentity_node> eentity_container::container;
@@ -55,6 +55,7 @@ void escene::cloneTo(escene& target)
 		px_capsule_collider_component,
 		px_triangle_mesh_collider_component,
 		px_bounding_box_collider_component,
+		px_character_controller_component,
 
 		child_component,
 

@@ -29,6 +29,9 @@
 #include <px/physics/px_collider_component.h>
 #include <asset/file_registry.h>
 #include <px/physics/px_joint.h>
+#include <px/physics/px_character_controller_component.h>
+
+std::mutex syncPhysics;
 
 static raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh)
 {
@@ -79,11 +82,11 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
 	}, data).submitAfter(mesh->loadJob);
 }
 
-void updatePhysXPhysicsAndScripting(escene& currentScene, scripting_core& core, float dt)
+void updatePhysXPhysicsAndScripting(escene& currentScene, std::shared_ptr<escripting_core> core, float dt)
 {
 	struct updatePhysXPhysicsData
 	{
-		scripting_core& core;
+		std::shared_ptr<escripting_core> core;
 		escene& scene;
 		float deltaTime;
 	};
@@ -94,21 +97,23 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, scripting_core& core, 
 		{
 			{
 				CPU_PROFILE_BLOCK("PhysX physics steps");
+				syncPhysics.lock();
 				for (auto [entityHandle, rigidbody, transform] : data.scene.group(component_group<px_rigidbody_component, transform_component>).each())
 				{
 					rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
 				}
 				px_physics_engine::get()->update(data.deltaTime);
+				syncPhysics.unlock();
 			}
 			updateScripting(data.core, data.deltaTime);
 		}, data).submitNow();
 }
 
-void updateScripting(scripting_core& core, float dt)
+void updateScripting(std::shared_ptr<escripting_core> core, float dt)
 {
 	{
 		CPU_PROFILE_BLOCK(".NET 8.0 Native AOT scripting steps");
-		core.update(dt);
+		core->update(dt);
 	}
 }
 
@@ -144,7 +149,8 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		CPU_PROFILE_BLOCK(".NET 8.0 Native AOT scripting initialization");
 		linker.init();
 
-		core.init();
+		core = std::make_shared<escripting_core>();
+		core->init();
 	}
 
 	if (dxContext.featureSupport.raytracing())
@@ -220,7 +226,6 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		}
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
-
 		auto px_sphere = &scene.createEntity("SpherePX")
 			.addComponent<transform_component>(vec3(20.f, 10.f * 3.f, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
@@ -232,26 +237,26 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		auto px_sphere1 = &scene.createEntity("SpherePX1")
 			.addComponent<transform_component>(vec3(20.f, 12.f * 3.f, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
-			//.addComponent<px_triangle_mesh_collider_component>(&(ass.meshes[0]))
-			//.addComponent<px_bounding_box_collider_component>(&(ass.meshes[0]))
 			.addComponent<px_sphere_collider_component>(1.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);
+
+		px_sphere1->addChild(*px_sphere);
 
 		auto rb1 = px_sphere->getComponent<px_rigidbody_component>().getRigidActor();
 		auto rb2 = px_sphere1->getComponent<px_rigidbody_component>().getRigidActor();
 
-		px_joint_desc jointDesc{};
+		px_revolute_joint_desc jointDesc{};
 
-		px_joint joint = px_joint(jointDesc, rb1, rb2);
+		px_revolute_joint* joint = new px_revolute_joint(jointDesc, rb1, rb2);
+
+		auto px_cct = &scene.createEntity("CharacterControllerPx")
+			.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<px_character_controller_component>();
 
 		auto px_plane = &scene.createEntity("PlanePX")
 			.addComponent<transform_component>(vec3(0.f, -5.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
 			.addComponent<px_box_collider_component>(100.0f, 5.0f, 100.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Static);
-
-		px_plane->addChild(*px_sphere);
-
-		//std::cout << px_plane->getChilds().size() << "\n";
 
 		auto triggerCallback = [scene = &scene](trigger_event e)
 		{

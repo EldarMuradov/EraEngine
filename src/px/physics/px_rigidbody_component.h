@@ -3,14 +3,14 @@
 
 struct eentity;
 
-enum class px_rigidbody_type 
+enum class px_rigidbody_type : uint8
 {
 	Static,
 	Dynamic,
 	Kinematic
 };
 
-enum class px_force_mode 
+enum class px_force_mode : uint8
 {
 	Impulse,
 	Force

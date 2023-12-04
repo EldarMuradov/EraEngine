@@ -29,7 +29,7 @@ static inline std::vector<std::string> split(const std::string& source, char del
 	return tokens;
 }
 
-void scripting_core::init()
+void escripting_core::init()
 {
 	lib = LoadLibraryA("EraScriptingCore.dll");
 	if (!lib || lib == INVALID_HANDLE_VALUE)
@@ -48,27 +48,27 @@ void scripting_core::init()
 	script_types = split(types, ' ');
 }
 
-void scripting_core::reload()
+void escripting_core::reload()
 {
 	release();
 
 	init();
 }
 
-void scripting_core::release()
+void escripting_core::release()
 {
 	if (lib)
 		FreeLibrary(lib);
 }
 
-void scripting_core::start()
+void escripting_core::start()
 {
 }
 
-void scripting_core::update(float dt)
+void escripting_core::update(float dt)
 {
 }
 
-void scripting_core::stop()
+void escripting_core::stop()
 {
 }
