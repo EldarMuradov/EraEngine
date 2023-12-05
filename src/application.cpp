@@ -251,7 +251,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		auto px_cct = &scene.createEntity("CharacterControllerPx")
 			.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-			.addComponent<px_character_controller_component>();
+			.addComponent<px_box_cct_component>();
 
 		auto px_plane = &scene.createEntity("PlanePX")
 			.addComponent<transform_component>(vec3(0.f, -5.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
@@ -579,11 +579,6 @@ void application::update(const user_input& input, float dt)
 	static float physicsTimer = 0.f;
 	physicsStep(scene, stackArena, physicsTimer, editor.physicsSettings, dt);
 
-	//auto& m = door.getComponent<mesh_component>().mesh;
-	//auto& s = m->submeshes[0];
-	//auto& t = s.transform;
-	//t.position = vec3(700.0f, 700.0f, 700.0f);
-
 	// Particles
 #if 1
 	if (input.keyboard['T'].pressEvent)
@@ -656,6 +651,16 @@ void application::update(const user_input& input, float dt)
 
 				renderWireCone(prc.position, prc.rotation * vec3(0.f, 0.f, -1.f),
 					sl->distance, sl->outerAngle * 2.f, vec4(sl->color, 1.f), &ldrRenderPass);
+			}
+			else if (px_capsule_cct_component* cct = selectedEntity.getComponentIfExists<px_capsule_cct_component>())
+			{
+				dynamic_transform_component& dtc = selectedEntity.getComponent<dynamic_transform_component>();
+				renderWireCapsule(dtc.position, dtc.position + vec3(0, cct->getHeight(), 0), cct->getRadius(), vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
+			}
+			else if (px_box_cct_component* cct = selectedEntity.getComponentIfExists<px_box_cct_component>())
+			{
+				dynamic_transform_component& dtc = selectedEntity.getComponent<dynamic_transform_component>();
+				renderWireBox(dtc.position, vec3(cct->getHalfSideExtent(), cct->getHalfHeight() * 2, cct->getHalfSideExtent()), dtc.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
 			}
 		}
 

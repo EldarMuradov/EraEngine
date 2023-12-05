@@ -1503,8 +1503,6 @@ physics_properties collider_union::calculatePhysicsProperties()
 
 		case collider_type_hull:
 		{
-			// http://number-none.com/blow/inertia/
-			// http://number-none.com/blow/inertia/bb_inertia.doc
 			const bounding_hull_geometry& geom = boundingHullGeometries[hull.geometryIndex];
 
 			const float s60 = 1.f / 60.f;

@@ -162,10 +162,24 @@ struct eentity
 
 			auto& component = registry->emplace_or_replace<component_t>(handle, size, std::forward<args>(a)...);
 		}
-		else if	constexpr (std::is_same_v<component_t, struct px_character_controller_component>)
+		else if	constexpr (std::is_same_v<component_t, struct px_cct_component_base>)
 		{
 			auto& component = registry->emplace_or_replace<component_t>(handle, this, std::forward<args>(a)...);
-		
+
+			if (!hasComponent<dynamic_transform_component>())
+				addComponent<dynamic_transform_component>();
+		}
+		else if	constexpr (std::is_same_v<component_t, struct px_box_cct_component>)
+		{
+			auto& component = registry->emplace_or_replace<component_t>(handle, this, std::forward<args>(a)...);
+
+			if (!hasComponent<dynamic_transform_component>())
+				addComponent<dynamic_transform_component>();
+		}
+		else if	constexpr (std::is_same_v<component_t, struct px_capsule_cct_component>)
+		{
+			auto& component = registry->emplace_or_replace<component_t>(handle, this, std::forward<args>(a)...);
+
 			if (!hasComponent<dynamic_transform_component>())
 				addComponent<dynamic_transform_component>();
 		}

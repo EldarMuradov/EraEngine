@@ -51,11 +51,14 @@ void escene::cloneTo(escene& target)
 
 		px_rigidbody_component,
 		px_box_collider_component,
+		px_collider_component_base,
 		px_sphere_collider_component,
 		px_capsule_collider_component,
 		px_triangle_mesh_collider_component,
 		px_bounding_box_collider_component,
-		px_character_controller_component,
+		px_cct_component_base,
+		px_capsule_cct_component,
+		px_box_cct_component,
 
 		child_component,
 

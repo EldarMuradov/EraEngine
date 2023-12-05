@@ -13,29 +13,58 @@ enum class px_cct_type : uint8
 	px_capsule
 };
 
-struct px_character_controller_component
+struct px_cct_component_base
 {
-	px_character_controller_component(eentity* entt) noexcept;
-
-	px_character_controller_component(eentity* entt, float h, float r, float m = 1.0f) noexcept;
-
-	~px_character_controller_component() {}
+	px_cct_component_base(eentity* entt) noexcept;
+	virtual ~px_cct_component_base() {}
 
 	eentity* entity = nullptr;
 
-private:
-	void createCharacterController() noexcept;
+protected:
+	virtual void createCharacterController() noexcept {};
 
-private:
+protected:
 	physx::PxControllerManager* manager = nullptr;
 	physx::PxMaterial* material = nullptr;
 	physx::PxController* controller = nullptr;
 
 	trs* transform = nullptr;
 
-	px_cct_type type = px_cct_type::px_capsule;
+	px_cct_type type = px_cct_type::px_none;
+	float mass = 1.0f;
+};
 
+struct px_box_cct_component : px_cct_component_base
+{
+	px_box_cct_component() = default;
+	px_box_cct_component(eentity* entt) noexcept;
+	px_box_cct_component(eentity* entt, float hh, float hs, float m = 1.0f) noexcept;
+
+	float getHalfHeight() const noexcept { return halfHeight; }
+	float getHalfSideExtent() const noexcept { return halfSideExtent; }
+
+protected:
+	void createCharacterController() noexcept override;
+
+private:
+	float halfHeight = 1.0f;
+	float halfSideExtent = 0.5f;
+};
+
+struct px_capsule_cct_component : px_cct_component_base
+{
+	px_capsule_cct_component() = default;
+	px_capsule_cct_component(eentity* entt) noexcept;
+	px_capsule_cct_component(eentity* entt, float h, float r, float m = 1.0f) noexcept;
+	~px_capsule_cct_component() {}
+
+	float getHeight() const noexcept { return height; }
+	float getRadius() const noexcept { return radius; }
+
+protected:
+	void createCharacterController() noexcept override;
+
+private:
 	float height = 2.0f;
 	float radius = 0.5f;
-	float mass = 1.0f;
 };

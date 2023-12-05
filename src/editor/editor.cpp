@@ -855,9 +855,16 @@ bool eeditor::drawSceneHierarchy()
 						ImGui::Text("Ray-tracing component ON");
 					});
 
-					drawComponent<px_character_controller_component>(selectedEntity, "Character Controller (PhysX)", [](px_character_controller_component& cct)
+					drawComponent<px_capsule_cct_component>(selectedEntity, "Character Controller (PhysX)", [](px_capsule_cct_component& cct)
 					{
 						ImGui::Text("Kinematic character controller");
+						ImGui::Text("Controller type: Capsule");
+					});
+
+					drawComponent<px_box_cct_component>(selectedEntity, "Character Controller (PhysX)", [](px_box_cct_component& cct)
+					{
+						ImGui::Text("Kinematic character controller");
+						ImGui::Text("Controller type: Box");
 					});
 
 					drawComponent<tree_component>(selectedEntity, "Tree", [](tree_component& tree)
