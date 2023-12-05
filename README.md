@@ -9,7 +9,7 @@
 
 # About
 
-Era Engine is a modern game engine that provides developers with powerful tools for creating 2D/3D games. It includes the following features and functionality:
+Era Engine is a modern ECS-based game engine that provides developers with powerful tools for creating 2D/3D games. It includes the following features and functionality:
 
 ### Entity Component System:
 Era Engine uses ECS to manage game objects and their behavior. This allows developers to easily create and modify complex systems in the game.
