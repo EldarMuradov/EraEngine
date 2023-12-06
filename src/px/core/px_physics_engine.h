@@ -129,10 +129,12 @@ struct px_physics
 	PxFoundation* foundation = nullptr;
 
 	PxTolerancesScale toleranceScale;
-	PxDefaultCpuDispatcher* dispatcher = NULL;
+	PxDefaultCpuDispatcher* dispatcher = nullptr;
 
 private:
 	bool released = false;
+
+	const uint32_t nbCPUDispatcherThreads = 4;
 
 	friend class px_physics_engine;
 	friend class CollisionContactCallback;

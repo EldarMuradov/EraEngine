@@ -2874,7 +2874,7 @@ void eeditor::drawSettings(float dt)
 		{
 			if (ImGui::BeginTree("Particle systems"))
 			{
-				editFireParticleSystem(app->fireParticleSystem);
+				//editFireParticleSystem(app->fireParticleSystem);
 				//editBoidParticleSystem(app->boidParticleSystem);
 			
 				ImGui::EndTree();

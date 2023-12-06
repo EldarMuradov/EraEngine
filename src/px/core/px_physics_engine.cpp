@@ -85,7 +85,7 @@ void px_physics::initialize()
 
 	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, pvd);
 
-	dispatcher = physx::PxDefaultCpuDispatcherCreate(4);
+	dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
 
 	PxCudaContextManagerDesc cudaContextManagerDesc;
 
@@ -106,6 +106,7 @@ void px_physics::initialize()
 	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
 	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
+	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
 	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
 	sceneDesc.ccdContactModifyCallback = &contact_modification;
 	sceneDesc.filterCallback = &simulation_filter_callback;
@@ -196,6 +197,8 @@ void px_physics_engine::start()
 
 void px_physics_engine::update(float dt)
 {
+	physics->scene->lockWrite();
+	physics->scene->getTaskManager()->startSimulation();
 	physics->scene->collide(std::max(dt, 1.0f / frameRate));
 	physics->scene->fetchCollision(true);
 	physics->scene->advance();
@@ -221,6 +224,8 @@ void px_physics_engine::update(float dt)
 			transform->rotation = quat(rot.x, rot.y, rot.z, rot.w);
 		}
 	}
+	physics->scene->getTaskManager()->stopSimulation();
+	physics->scene->unlockWrite();
 }
 
 void px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ractor)

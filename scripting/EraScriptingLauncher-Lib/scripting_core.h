@@ -50,7 +50,7 @@ struct escripting_core
 
 	//Call scripting void function directly
 	template <typename Func, typename... Args>
-	void call_v(const char* funcName, Args... args)
+	void call_v(const char* funcName, Args&&... args)
 	{
 		if (!lib)
 			return;
@@ -61,7 +61,7 @@ struct escripting_core
 
 	//Call scripting function directly
 	template <typename Func, typename... Args>
-	auto call(const char* funcName, Func fn, Args... args) -> std::optional<decltype(fn(args...))>
+	auto call(const char* funcName, Func fn, Args&&... args) -> std::optional<decltype(fn(args...))>
 	{
 		if (!lib)
 			return std::nullopt;

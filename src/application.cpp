@@ -30,8 +30,12 @@
 #include <asset/file_registry.h>
 #include <px/physics/px_joint.h>
 #include <px/physics/px_character_controller_component.h>
+#include <px/core/px_tasks.h>
 
-std::mutex syncPhysics;
+void prnt(int i)
+{
+	std::cout << i << "\n";
+}
 
 static raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh)
 {
@@ -97,13 +101,11 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, std::shared_ptr<escrip
 		{
 			{
 				CPU_PROFILE_BLOCK("PhysX physics steps");
-				syncPhysics.lock();
 				for (auto [entityHandle, rigidbody, transform] : data.scene.group(component_group<px_rigidbody_component, transform_component>).each())
 				{
 					rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
 				}
 				px_physics_engine::get()->update(data.deltaTime);
-				syncPhysics.unlock();
 			}
 			updateScripting(data.core, data.deltaTime);
 		}, data).submitNow();
@@ -257,6 +259,10 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<transform_component>(vec3(0.f, -5.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
 			.addComponent<px_box_collider_component>(100.0f, 5.0f, 100.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Static);
+
+
+		px_task task = px_task(std::function<void(int)>(prnt), 5);
+		px_physics_engine::get()->getPhysicsAdapter()->dispatcher->submitTask(task);
 
 		auto triggerCallback = [scene = &scene](trigger_event e)
 		{
@@ -425,7 +431,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		SET_NAME(pointLightShadowInfoBuffer[i]->resource, "Point light shadow infos");
 	}
 
-#if 1
+#if 0
 	fireParticleSystem.initialize(10000, 50.f, "assets/particles/fire_explosion.png", 6, 6, vec3(0, 1, 30));
 	smokeParticleSystem.initialize(10000, 500.f, "assets/particles/smoke1.tif", 5, 5, vec3(0, 1, 15));
 	//boidParticleSystem.initialize(10000, 2000.f);
@@ -435,7 +441,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	stackArena.initialize();
 }
 
-#if 1
+#if 0
 bool editFireParticleSystem(fire_particle_system& particleSystem)
 {
 	bool result = false;
@@ -580,7 +586,7 @@ void application::update(const user_input& input, float dt)
 	physicsStep(scene, stackArena, physicsTimer, editor.physicsSettings, dt);
 
 	// Particles
-#if 1
+#if 0
 	if (input.keyboard['T'].pressEvent)
 	{
 		debrisParticleSystem.burst(camera.position + camera.rotation * vec3(0.f, 0.f, -3.f));

@@ -25,7 +25,7 @@ struct ERASCRIPTINGCPPDECLS_API enative_scripting_builder
 
 		TResult operator() (Args... args)
 		{
-			fn(args ...);
+			fn(args...);
 		}
 
 		std::function<TResult(Args...)> fn;
