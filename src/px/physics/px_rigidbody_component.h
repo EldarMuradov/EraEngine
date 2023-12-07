@@ -19,7 +19,7 @@ enum class px_force_mode : uint8
 struct px_rigidbody_component 
 {
 	px_rigidbody_component() {};
-	px_rigidbody_component(eentity* entt, px_rigidbody_type rbtype) noexcept;
+	px_rigidbody_component(eentity* entt, px_rigidbody_type rbtype, bool addToScene = true) noexcept;
 	~px_rigidbody_component();
 
 	void addForce(vec3 force, px_force_mode mode = px_force_mode::Impulse) noexcept;
@@ -30,7 +30,7 @@ struct px_rigidbody_component
 	void setEnableGravity() noexcept;
 
 	void setMass(unsigned int mass);
-	unsigned int getMass() noexcept;
+	unsigned int getMass() const noexcept;
 
 	void setConstraints(uint8 constraints) noexcept;
 	uint8 getConstraints() noexcept;
@@ -56,11 +56,11 @@ struct px_rigidbody_component
 	eentity* entity = nullptr;
 
 private:
-	void createPhysics();
+	void createPhysics(bool addToScene);
 	physx::PxRigidActor* createActor();
 
 private:
-	float restriction = 0.6f;
+	float restitution = 0.6f;
 
 	trs* transform = nullptr;
 

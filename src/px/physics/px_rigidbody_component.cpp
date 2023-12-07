@@ -5,9 +5,9 @@
 #include <core/log.h>
 #include "core/math.h"
 
-px_rigidbody_component::px_rigidbody_component(eentity* entt, px_rigidbody_type rbtype) noexcept : entity(entt), type(rbtype)
+px_rigidbody_component::px_rigidbody_component(eentity* entt, px_rigidbody_type rbtype, bool addToScene) noexcept : entity(entt), type(rbtype)
 {
-	createPhysics();
+	createPhysics(addToScene);
 	transform = entity->getComponentIfExists<transform_component>();
 }
 
@@ -46,7 +46,7 @@ void px_rigidbody_component::setMass(unsigned int mass)
 	actor->is<PxRigidDynamic>()->setMass(mass);
 }
 
-unsigned int px_rigidbody_component::getMass() noexcept
+unsigned int px_rigidbody_component::getMass() const noexcept
 {
 	return mass;
 }
@@ -117,14 +117,14 @@ void px_rigidbody_component::onCollisionEnter(px_rigidbody_component* collision)
 	std::cout << "collide" << "\n";
 }
 
-void px_rigidbody_component::createPhysics()
+void px_rigidbody_component::createPhysics(bool addToScene)
 {
 	actor = createActor();
 	uint32_t* handle = new uint32_t[1];
 	handle[0] = (uint32_t)entity->handle;
 	actor->userData = handle;
 
-	px_physics_engine::get()->addActor(this, actor);
+	px_physics_engine::get()->addActor(this, actor, addToScene);
 
 	actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
 }
@@ -149,18 +149,17 @@ physx::PxRigidActor* px_rigidbody_component::createActor()
 		return nullptr;
 
 	vec3 pos = tranaform->position;
-	vec3 r = quatToEuler(tranaform->rotation);
-	r *= 180.0f / M_PI;
-	quat q = eulerToQuat(r);
 	PxVec3 pospx = PxVec3(pos.x, pos.y, pos.z);
+
+	quat q = tranaform->rotation;
 	PxQuat rotpx = PxQuat(q.x, q.y, q.z, q.w);
 	rotpx = rotpx.getConjugate();
 
-	material = px_physics_engine::get()->physics->physics->createMaterial(staticFriction, dynamicFriction, restriction);
+	material = px_physics_engine::getPhysics()->createMaterial(staticFriction, dynamicFriction, restitution);
 
 	if (type == px_rigidbody_type::Static)
 	{
-		PxRigidStatic* actor = px_physics_engine::get()->physics->physics->createRigidStatic(PxTransform(pospx, rotpx));
+		PxRigidStatic* actor = px_physics_engine::getPhysics()->createRigidStatic(PxTransform(pospx, rotpx));
 
 		coll->createShape();
 		actor->attachShape(*coll->getShape());
@@ -169,11 +168,11 @@ physx::PxRigidActor* px_rigidbody_component::createActor()
 	}
 	else
 	{
-		PxRigidDynamic* actor = px_physics_engine::get()->physics->physics->createRigidDynamic(PxTransform(pospx, rotpx));
+		PxRigidDynamic* actor = px_physics_engine::getPhysics()->createRigidDynamic(PxTransform(pospx, rotpx));
 
-		//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
+		actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 		actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
-		actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
+		//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
 
 		coll->createShape();
 		actor->attachShape(*coll->getShape());

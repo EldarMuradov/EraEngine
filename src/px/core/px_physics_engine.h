@@ -9,9 +9,11 @@
 #define NDEBUG 0
 
 #define PX_GPU_BROAD_PHASE 1
+#define PX_ENABLE_RAYCAST_CCD 0
 
 #include <PxPhysics.h>
 #include <PxPhysicsAPI.h>
+#include "extensions/PxRaycastCCD.h"
 
 #include <px/physics/px_rigidbody_component.h>
 #include <set>
@@ -29,11 +31,11 @@ using namespace physx;
 
 struct px_raycast_info
 {
-	px_rigidbody_component* actor;
+	px_rigidbody_component* actor = nullptr;
 
-	float distance;
-	unsigned int hitCount;
-	vec3 position;
+	float distance = 0.0f;
+	unsigned int hitCount = 0;
+	vec3 position = vec3(0.0f);
 };
 
 namespace physx 
@@ -126,6 +128,8 @@ struct px_physics
 
 	PxDefaultErrorCallback defaultErrorCallback;
 
+	RaycastCCDManager* raycastCCD = nullptr;
+
 	PxFoundation* foundation = nullptr;
 
 	PxTolerancesScale toleranceScale;
@@ -159,7 +163,9 @@ public:
 	void start();
 	void update(float dt);
 
-	void addActor(px_rigidbody_component* actor, PxRigidActor* ractor);
+	void resetActorsVelocityAndInertia();
+
+	void addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene);
 	void removeActor(px_rigidbody_component* actor);
 
 	static px_physics_engine* get();

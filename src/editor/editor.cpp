@@ -809,6 +809,7 @@ bool eeditor::drawSceneHierarchy()
 								transform.rotation = getQuat(selectedEntityEulerRotation);
 								objectMovedByWidget = true;
 							}, [](transform_component&, quat rot, void* userData) { *(vec3*)userData = getEuler(rot); }, &selectedEntityEulerRotation);
+						selectedEntityEulerRotation = getEuler(transform.rotation);
 						UNDOABLE_COMPONENT_SETTING("entity scale", transform.scale,
 							objectMovedByWidget |= ImGui::Drag("Scale", transform.scale, 0.1f));
 					});
@@ -2082,6 +2083,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 			this->scene->environment.forceUpdate(this->scene->sun.direction);
 			setSelectedEntity({});
 			app->core->stop();
+			px_physics_engine::get()->resetActorsVelocityAndInertia();
 		}
 
 		scene = &this->scene->getCurrentScene();

@@ -9,6 +9,8 @@
 #define PX_PHYSX_STATIC_LIB
 #endif
 
+#define PX_VEHICLE 0
+
 #pragma comment(lib, "PhysXCooking_64.lib")
 
 #include <application.h>
@@ -123,25 +125,53 @@ void px_physics::initialize()
 	}
 	auto& cookingParams = PxCookingParams(toleranceScale);
 
+	if(!PxInitExtensions(*physics, pvd))
+		LOG_ERROR("Physics> Failed to initialize extensions.");
+
 #if PX_GPU_BROAD_PHASE
 	cookingParams.buildGPUData = true;
 #endif
+	cookingParams.suppressTriangleMeshRemapTable = true;
+	cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
+	cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
 
 	cooking = PxCreateCooking(PX_PHYSICS_VERSION, *foundation, cookingParams);
 
 	insertationCallback = &physics->getPhysicsInsertionCallback();
 
 	if (pvd->isConnected())
-		LOG_ERROR("Physics> PVD Connection enabled.");
+		LOG_MESSAGE("Physics> PVD Connection enabled.");
+
+#if PX_ENABLE_RAYCAST_CCD
+	raycastCCD = new RaycastCCDManager(scene);
+#endif
+
+#if PX_VEHICLE
+	if(!PxInitVehicleSDK(*physics))
+		LOG_ERROR("Physics> Failed to initialize PxVehicleSDK.");
+
+	PxVehicleSetBasisVectors(PxVec3(0, 1, 0), PxVec3(0, 0, 1));
+	PxVehicleSetUpdateMode(PxVehicleUpdateMode::eVELOCITY_CHANGE);
+#endif
 }
 
 void px_physics::release()
 {
+#if PX_VEHICLE
+	PxCloseVehicleSDK();
+#endif
+
 	PX_RELEASE(physics)
 	PX_RELEASE(cooking)
 	PX_RELEASE(pvd)
 	PX_RELEASE(foundation)
 	PX_RELEASE(scene)
+	PX_RELEASE(cudaContextManager)
+
+#if PX_ENABLE_RAYCAST_CCD
+	delete raycastCCD;
+	raycastCCD = nullptr;
+#endif
 
 	released = true;
 }
@@ -203,7 +233,6 @@ void px_physics_engine::update(float dt)
 	physics->scene->fetchCollision(true);
 	physics->scene->advance();
 	physics->scene->fetchResults(true);
-
 	PxU32 nbActiveActors;
 	PxActor** activeActors = physics->scene->getActiveActors(nbActiveActors);
 
@@ -224,14 +253,59 @@ void px_physics_engine::update(float dt)
 			transform->rotation = quat(rot.x, rot.y, rot.z, rot.w);
 		}
 	}
+
+#if PX_ENABLE_RAYCAST_CCD
+	physics->raycastCCD->doRaycastCCD(true);
+#endif
+
 	physics->scene->getTaskManager()->stopSimulation();
 	physics->scene->unlockWrite();
 }
 
-void px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ractor)
+void px_physics_engine::resetActorsVelocityAndInertia()
+{
+	physics->scene->lockWrite();
+	PxU32 nbActiveActors;
+	PxActor** activeActors = physics->scene->getActiveActors(nbActiveActors);
+
+	for (size_t i = 0; i < nbActiveActors; i++)
+	{
+		if (auto rd = activeActors[i]->is<PxRigidDynamic>())
+		{
+			rd->setAngularVelocity(PxVec3(0.0f));
+			rd->setLinearVelocity(PxVec3(0.0f));
+		}
+	}
+
+	physics->scene->flushSimulation();
+	physics->scene->unlockWrite();
+}
+
+void px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene)
 {
 	sync.lock();
-	physics->scene->addActor(*ractor);
+	if(addToScene)
+		physics->scene->addActor(*ractor);
+
+#if PX_ENABLE_RAYCAST_CCD
+	if (auto r = ractor->is<PxRigidDynamic>())
+	{
+		auto entity = actor->entity;
+		px_collider_component_base* coll = (px_collider_component_base*)entity->getComponentIfExists<px_sphere_collider_component>();
+		if (!coll)
+			coll = (px_collider_component_base*)entity->getComponentIfExists<px_box_collider_component>();
+		if (!coll)
+			coll = (px_collider_component_base*)entity->getComponentIfExists<px_capsule_collider_component>();
+		if (!coll)
+			coll = (px_collider_component_base*)entity->getComponentIfExists<px_triangle_mesh_collider_component>();
+		if (!coll)
+			coll = (px_collider_component_base*)entity->getComponentIfExists<px_bounding_box_collider_component>();
+
+		if(coll)
+			physics->raycastCCD->registerRaycastCCDObject(r, coll->getShape());
+	}
+#endif
+
 	actors.emplace(actor);
 	actors_map.insert(std::make_pair(ractor, actor));
 	sync.unlock();
@@ -267,45 +341,45 @@ void px_physics_engine::releaseActors() noexcept
 
 px_raycast_info px_physics_engine::raycast(px_rigidbody_component* rb, const vec3& origin, const vec3& dir, int maxDist, int maxHits, PxHitFlags hitFlags)
 {
-	auto collider = &rb->entity->getComponent<px_collider_component_base>();
+	//TODO: approximate origin to object boundind box -> dist face
 
-	if (collider)
+	auto pose = rb->getRigidActor()->getGlobalPose();
+
+	PxRaycastBuffer hit;
+	PxVec3 o(origin.x, origin.y, origin.z);
+	PxVec3 d(dir.x, dir.y, dir.z);
+	bool status = physics->scene->raycast(o, d, maxDist, hit, PxHitFlag::eDEFAULT);
+
+	if (status)
 	{
-		auto pose = rb->getRigidActor()->getGlobalPose();
+		uint32 nb = hit.getNbAnyHits();
+		std::cout << "Hits: " << nb << "\n";
 
-		PxRaycastBuffer hit;
-		PxVec3 o(origin.x, origin.y, origin.z);
-		PxVec3 d(dir.x, dir.y, dir.z);
-		bool status = physics->scene->raycast(o, d, maxDist, hit);
+		const auto& hitInfo1 = hit.getAnyHit(0);
 
-		if (status)
-		{
-			auto hitInfo = hit.getAnyHit(0);
+		auto actor = actors_map[hitInfo1.actor];
 
-			auto actor = actors_map[hitInfo.actor];
-
-			if (actor != rb)
-				return
-				{
-					actor,
-					hitInfo.distance,
-					hit.getNbAnyHits(),
-					vec3(hitInfo.position.x, hitInfo.position.y, hitInfo.position.z)
-				};
-			else if (hit.getNbAnyHits() > 1)
+		if (actor != rb)
+			return
 			{
-				hitInfo = hit.getAnyHit(1);
+				actor,
+				hitInfo1.distance,
+				hit.getNbAnyHits(),
+				vec3(hitInfo1.position.x, hitInfo1.position.y, hitInfo1.position.z)
+			};
+		else if (hit.getNbAnyHits() > 1)
+		{
+			const auto& hitInfo2 = hit.getAnyHit(1);
 
-				actor = actors_map[hitInfo.actor];
+			actor = actors_map[hitInfo2.actor];
 
-				return
-				{
-					actor,
-					hitInfo.distance,
-					hit.getNbAnyHits(),
-					vec3(hitInfo.position.x, hitInfo.position.y, hitInfo.position.z)
-				};
-			}
+			return
+			{
+				actor,
+				hitInfo2.distance,
+				hit.getNbAnyHits(),
+				vec3(hitInfo2.position.x, hitInfo2.position.y, hitInfo2.position.z)
+			};
 		}
 	}
 
