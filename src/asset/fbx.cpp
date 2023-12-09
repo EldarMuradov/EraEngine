@@ -2191,7 +2191,7 @@ model_asset loadFBX(const fs::path& path, uint32 flags)
 			out.joints.reserve(animation.joints.size());
 			out.name = animation.name;
 
-			for (auto [id, j] : animation.joints)
+			for (auto& [id, j] : animation.joints)
 			{
 				auto [modelType, modelIndex] = objectLUT.find(id);
 				ASSERT(modelType == fbx_object_type_model);

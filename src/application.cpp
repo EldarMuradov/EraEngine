@@ -178,7 +178,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	}
 #endif
 
-#if 1
+#if 0
 	if (auto treeMesh = loadTreeMeshFromFileAsync("assets/tree/source/tree.fbx"))
 	{
 		auto tree = scene.createEntity("SimpleTree")
@@ -256,7 +256,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<px_box_collider_component>(100.0f, 5.0f, 100.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Static);
 
-		px_raycast_info rci = px_physics_engine::get()->raycast(&px_sphere1->getComponent<px_rigidbody_component>(), vec3(20.f, 12.f * 3.f, -5.f), vec3(0, -1, 0));
+		px_raycast_info rci = px_physics_engine::get()->raycast(&px_sphere1->getComponent<px_rigidbody_component>(), vec3(20.f, 11.5f * 3.f, -5.f), vec3(0, -1, 0));
 		if (rci.actor)
 		{
 			std::cout << "Raycast. Dist: " << rci.distance << " Actor's Name: " << rci.actor->entity->getComponent<tag_component>().name << '\n';

@@ -2,13 +2,10 @@
 
 #include "dx.h"
 #include "dx_descriptor.h"
-
 #include <deque>
-
 
 struct dx_command_list;
 struct dx_root_signature;
-
 
 struct dx_dynamic_descriptor_heap
 {
@@ -35,7 +32,6 @@ private:
 	void commitStagedDescriptors(dx_command_list* commandList, bool graphics);
 
 	static const uint32 maxDescriptorTables = 32;
-
 
 	struct descriptor_table_cache
 	{

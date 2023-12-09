@@ -70,7 +70,7 @@ REFLECT_STRUCT(hbao_settings,
 
 struct sharpen_settings
 {
-	float strength = 0.25f; //0.5
+	float strength = 0.0f; //0.5
 };
 REFLECT_STRUCT(sharpen_settings,
 	(strength, "Strength")

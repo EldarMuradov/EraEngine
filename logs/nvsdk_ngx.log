@@ -1,0 +1,2 @@
+[2023-12-10 00:12:28] [ngx::util::setLogFilename:213] Logging to requested file (E:\Era Engine\logs/nvsdk_ngx.log) enabled successfully
+[2023-12-10 00:12:28] [NGXLoadLibrary:265] Loaded NGXCore from path (E:\Era Engine\bin\Release_x86_64\nvngx.dll)

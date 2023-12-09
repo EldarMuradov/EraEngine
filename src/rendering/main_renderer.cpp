@@ -142,6 +142,11 @@ void main_renderer::initialize(color_depth colorDepth, uint32 windowWidth, uint3
 	{
 		pathTracer.initialize();
 	}
+
+	if (dxContext.featureSupport.dlss())
+	{
+		dlss_adapter.initialize(this);
+	}
 }
 
 void main_renderer::beginFrame(uint32 windowWidth, uint32 windowHeight)
@@ -404,6 +409,11 @@ dx_command_list* main_renderer::renderThread1(const common_render_data& commonRe
 		.transition(linearDepthBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
 		.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
+	if (dxContext.featureSupport.dlss())
+	{
+		dlss_adapter.updateDLSS(cl->commandList.Get());
+	}
+
 	return cl;
 }
 
@@ -550,6 +560,11 @@ dx_command_list* main_renderer::renderThread2(const common_render_data& commonRe
 		}
 	}
 
+	if (dxContext.featureSupport.dlss())
+	{
+		dlss_adapter.updateDLSS(cl->commandList.Get());
+	}
+
 	return cl;
 }
 
@@ -680,7 +695,10 @@ dx_command_list* main_renderer::renderThread3(common_render_data commonRenderDat
 	}
 
 	// TODO: If we really care we should sharpen before rendering overlays and outlines.
-
+	if (dxContext.featureSupport.dlss())
+	{
+		dlss_adapter.updateDLSS(cl->commandList.Get());
+	}
 	present(cl, ldrPostProcessingTexture, frameResult, settings.enableSharpen ? settings.sharpenSettings : sharpen_settings{ 0.f });
 
 	barrier_batcher(cl)

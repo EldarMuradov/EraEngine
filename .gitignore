@@ -27,8 +27,6 @@ scripting/EraScriptingLauncher-Lib/x64
 *.user
 *.nvuser
 
-# Our files
-src/generated/
 shaders/generated/
 resources/files.yaml
 assets/
@@ -41,3 +39,6 @@ ext/
 learning/
 /shot1.png
 /shot2.png
+
+# Roadmap
+roadmap.txt

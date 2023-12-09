@@ -6,6 +6,7 @@
 #include "dx_profiling.h"
 #include "core/string.h"
 #include <d3d12memoryallocator/D3D12MemAlloc.cpp>
+#include <dlss/dlss.h>
 
 extern "C"
 {
@@ -255,6 +256,7 @@ bool dx_context::initialize()
 	factory = createFactory();
 	adapter_desc adapterDesc = getAdapter(factory);
 	this->adapter = adapterDesc.adapter;
+
 	if (!adapter)
 	{
 		std::cerr << "No DX12 capable GPU found.\n";
@@ -272,10 +274,12 @@ bool dx_context::initialize()
 
 	featureSupport = checkFeatureSupport(device);
 
+	if (!checkDLSSStatus(adapter.Get()))
+		featureSupport.dlss_status = DLSS_status_not_available;
+
 	bufferedFrameID = NUM_BUFFERED_FRAMES - 1;
 
 	descriptorHandleIncrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
 
 	srvUavAllocator.initialize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, false, 4096);
 	srvUavAllocatorShaderVisible.initialize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true, 128);
@@ -559,7 +563,6 @@ void dx_context::newFrame(uint64 frameID)
 
 	timestampQueryIndex[bufferedFrameID] = 0;
 #endif
-
 
 	textureGraveyard[bufferedFrameID].clear();
 	bufferGraveyard[bufferedFrameID].clear();

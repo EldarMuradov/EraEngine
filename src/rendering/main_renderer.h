@@ -15,6 +15,7 @@
 #include "pbr_environment.h"
 #include "light_source.hlsli"
 #include "camera.hlsli"
+#include <dlss/dlss.h>
 
 #define MAX_NUM_SUN_LIGHT_SHADOW_PASSES 16
 #define MAX_NUM_SPOT_LIGHT_SHADOW_PASSES 16
@@ -35,6 +36,8 @@ struct renderer_settings
 
 	bool enableTAA = true;
 	taa_settings taaSettings;
+
+	bool enableDLSS = false;
 
 	bool enableBloom = true;
 	bloom_settings bloomSettings;
@@ -98,6 +101,7 @@ struct renderer_spec
 	bool allowSSR = true;
 	bool allowTAA = true;
 	bool allowBloom = true;
+	bool allowDLSS = true;
 };
 
 struct main_renderer
@@ -237,8 +241,14 @@ private:
 
 	light_culling culling;
 
+	dlss_feature_adapter dlss_adapter;
+	bool dlssInited = false;
+
 	aspect_ratio_mode oldAspectRatioMode = aspect_ratio_free;
 	renderer_mode oldMode = renderer_mode_rasterized;
 
 	void recalculateViewport(bool resizeTextures);
+
+	friend dlss_feature_adapter;
+	friend struct eeditor;
 };

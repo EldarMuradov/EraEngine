@@ -2538,6 +2538,7 @@ bool eeditor::editTAA(bool& enable, taa_settings& settings, const ref<dx_texture
 			result |= ImGui::PropertyCheckbox("Enable TAA", enable));
 		if (enable)
 		{
+			renderer->settings.enableDLSS = false;
 			UNDOABLE_SETTING("TAA jitter strength", settings.cameraJitterStrength,
 				result |= ImGui::PropertySlider("Jitter strength", settings.cameraJitterStrength));
 		}
@@ -2638,6 +2639,30 @@ void eeditor::drawSettings(float dt)
 			if (renderer->spec.allowSSR) { editSSR(renderer->settings.enableSSR, renderer->settings.ssrSettings, renderer->getSSRResult()); ImGui::Separator(); }
 			if (renderer->spec.allowTAA) { editTAA(renderer->settings.enableTAA, renderer->settings.taaSettings, renderer->getScreenVelocities()); ImGui::Separator(); }
 			if (renderer->spec.allowBloom) { editBloom(renderer->settings.enableBloom, renderer->settings.bloomSettings, renderer->getBloomResult()); ImGui::Separator(); }
+			if (renderer->spec.allowDLSS) 
+			{ 
+				if (ImGui::BeginProperties())
+				{
+					ImGui::PropertyCheckbox("Enable DLSS", renderer->settings.enableDLSS);
+					
+					ImGui::EndProperties();
+				}
+
+				if (!renderer->settings.enableDLSS)
+				{
+					dxContext.featureSupport.dlss_status = DLSS_status_not_available;
+				}
+				else
+				{
+					renderer->settings.enableTAA = false;
+					dxContext.featureSupport.dlss_status = DLSS_status_3_5;
+					if (!renderer->dlssInited)
+					{
+						renderer->dlss_adapter.initialize(renderer);
+					}
+				}
+				ImGui::Separator();
+			}
 			editSharpen(renderer->settings.enableSharpen, renderer->settings.sharpenSettings);
 
 			ImGui::EndTree();

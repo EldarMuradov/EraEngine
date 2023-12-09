@@ -22,6 +22,13 @@ enum dx_raytracing_tier
 	dx_raytracing_1_1,
 };
 
+enum DLSS_status
+{
+	DLSS_status_not_available,
+	DLSS_status_3_0,
+	DLSS_status_3_5,
+};
+
 enum dx_mesh_shader_tier
 {
 	dx_mesh_shader_not_available,
@@ -42,10 +49,12 @@ struct dx_feature_support
 	dx_raytracing_tier raytracingTier = dx_raytracing_1_0;
 	dx_mesh_shader_tier meshShaderTier = dx_mesh_shader_1_0;
 	dx_tiling_tier tilingTier = dx_tiling_1;
+	DLSS_status dlss_status = DLSS_status_3_5;
 
 	constexpr bool raytracing() { return raytracingTier >= dx_raytracing_1_0; }
 	constexpr bool meshShaders() { return meshShaderTier >= dx_mesh_shader_1_0; }
 	constexpr bool tiling() { return tilingTier >= dx_tiling_1; }
+	constexpr bool dlss() { return dlss_status >= DLSS_status_3_0; }
 };
 
 struct dx_context
@@ -134,6 +143,8 @@ private:
 
 	dx_command_queue& getQueue(D3D12_COMMAND_LIST_TYPE type);
 	dx_command_list* getFreeCommandList(dx_command_queue& queue);
+
+	friend struct dlss_feature_adapter;
 };
 
 extern dx_context& dxContext;
