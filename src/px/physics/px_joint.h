@@ -109,6 +109,8 @@ struct px_joint
 	px_joint() = default;
 	px_joint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept : first(f), second(s) {};
 	virtual ~px_joint();
+
+	void init(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept;
 	
 	physx::PxRigidActor* first = nullptr;
 	physx::PxRigidActor* second = nullptr;

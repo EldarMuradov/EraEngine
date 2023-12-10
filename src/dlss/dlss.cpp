@@ -18,7 +18,7 @@ bool checkDLSSStatus(IDXGIAdapter* adapter)
 
 	if (NVSDK_NGX_D3D11_GetFeatureRequirements(adapter, &dlssInfo, &outSupported) != NVSDK_NGX_Result_Success)
 	{
-		std::cerr << "No DLSS capable GPU/Software found.\n";
+		//std::cerr << "No DLSS capable GPU/Software found.\n";
 		return false;
 	}
 	if (outSupported.FeatureSupported != NVSDK_NGX_FeatureSupportResult_Supported)

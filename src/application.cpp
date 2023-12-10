@@ -32,6 +32,7 @@
 #include <px/physics/px_character_controller_component.h>
 #include <px/core/px_tasks.h>
 #include <px/core/px_aggregate.h>
+#include <px/features/px_ragdoll.h>
 
 static raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh)
 {
@@ -171,7 +172,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	if (auto mesh = loadMeshFromFileAsync("assets/Sponza/Sponza.obj"))
 	{
 		auto sponza = scene.createEntity("Sponza")
-			.addComponent<transform_component>(vec3(0.f, 0.f, 0.f), quat::identity, 0.01f)
+			.addComponent<transform_component>(vec3(0.f, 1.f, 0.f), quat::identity, 0.01f)
 			.addComponent<mesh_component>(mesh);
 
 		addRaytracingComponentAsync(sponza, mesh);
@@ -407,7 +408,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 	this->scene.sun.direction = normalize(vec3(-0.6f, -1.f, -0.3f));
 	this->scene.sun.color = vec3(1.f, 0.93f, 0.76f);
-	this->scene.sun.intensity = 6.f;
+	this->scene.sun.intensity = 11.1f;
 
 	this->scene.sun.numShadowCascades = 3;
 	this->scene.sun.shadowDimensions = 2048;
@@ -692,6 +693,11 @@ void application::update(const user_input& input, float dt)
 		}
 
 		renderer->setRaytracingScene(&raytracingTLAS);
+
+		if (dxContext.featureSupport.dlss())
+		{
+			renderer->dlssPass();
+		}
 	}
 
 	renderer->setEnvironment(environment);

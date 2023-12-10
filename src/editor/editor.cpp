@@ -24,6 +24,8 @@
 #include "application.h"
 #include <editor/system_calls.h>
 #include <px/physics/px_character_controller_component.h>
+#include <imgui/imgui_internal.h>
+#include <px/physics/px_collider_component.h>
 
 static vec3 getEuler(quat q)
 {
@@ -695,6 +697,93 @@ void eeditor::renderChilds(eentity& entity)
 	}
 }
 
+static void draw_float_wrap(float wdt, const char* label, float* v, float v_speed = 1.0f, float v_min = 0.0f, float v_max = 0.0f, const char* format = "%.3f", const ImGuiSliderFlags flags = 0)
+{
+	static const uint32_t screen_edge_padding = 10;
+	static bool needs_to_wrap = false;
+	ImGuiIO& imgui_io = ImGui::GetIO();
+
+	if (ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+	{
+		ImVec2 position_cursor = imgui_io.MousePos;
+		float position_left = static_cast<float>(screen_edge_padding);
+		float position_right = static_cast<float>(wdt - screen_edge_padding);
+		bool is_on_right_screen_edge = position_cursor.x >= position_right;
+		bool is_on_left_screen_edge = position_cursor.x <= position_left;
+
+		if (is_on_right_screen_edge)
+		{
+			position_cursor.x = position_left + 1;
+			needs_to_wrap = true;
+		}
+		else if (is_on_left_screen_edge)
+		{
+			position_cursor.x = position_right - 1;
+			needs_to_wrap = true;
+		}
+
+		//if (needs_to_wrap)
+		//{
+		//	// set mouse position
+		//	imgui_io.MousePos = position_cursor;
+		//	imgui_io.WantSetMousePos = true;
+
+		//	// prevent delta from being huge by invalidating the previous position
+		//	imgui_io.MousePosPrev = ImVec2(-FLT_MAX, -FLT_MAX);
+
+		//	needs_to_wrap = false;
+		//}
+	}
+
+	ImGui::PushID(static_cast<int>(ImGui::GetCursorPosX() + ImGui::GetCursorPosY()));
+	ImGui::DragFloat(label, v, v_speed, v_min, v_max, format, flags);
+	ImGui::PopID();
+}
+
+
+static void showVector3(const char* label, vec3& vector, float wdt)
+{
+	const float label_indetation = 15.0f;
+
+	const auto show_float = [wdt](vec3 axis, float* value)
+		{
+			const float label_float_spacing = 12.0f;
+			const float step = 0.01f;
+
+			// Label
+			ImGui::TextUnformatted(axis.x == 1.0f ? "x" : axis.y == 1.0f ? "y" : "z");
+			ImGui::SameLine(label_float_spacing);
+			ImVec2 cp = ImGui::GetCursorScreenPos();
+			vec2 pos_post_label = vec2(cp.x, cp.y);
+
+			// Float
+			ImGui::PushItemWidth(128.0f);
+			ImGui::PushID(static_cast<int>(ImGui::GetCursorPosX() + ImGui::GetCursorPosY()));
+			draw_float_wrap(wdt, "##no_label", value, step, std::numeric_limits<float>::lowest(), std::numeric_limits<float>::max(), "%.4f");
+			ImGui::PopID();
+			ImGui::PopItemWidth();
+
+			// Axis color
+			static const ImU32 color_x = IM_COL32(168, 46, 2, 255);
+			static const ImU32 color_y = IM_COL32(112, 162, 22, 255);
+			static const ImU32 color_z = IM_COL32(51, 122, 210, 255);
+			static const vec2 size = vec2(4.0f, 19.0f);
+			static const vec2 offset = vec2(5.0f, 4.0);
+			pos_post_label += offset;
+			ImRect axis_color_rect = ImRect(pos_post_label.x, pos_post_label.y, pos_post_label.x + size.x, pos_post_label.y + size.y);
+			ImGui::GetWindowDrawList()->AddRectFilled(axis_color_rect.Min, axis_color_rect.Max, axis.x == 1.0f ? color_x : axis.y == 1.0f ? color_y : color_z);
+		};
+
+	ImGui::BeginGroup();
+	ImGui::Indent(label_indetation);
+	ImGui::TextUnformatted(label);
+	ImGui::Unindent(label_indetation);
+	show_float(vec3(1.0f, 0.0f, 0.0f), &vector.x);
+	show_float(vec3(0.0f, 1.0f, 0.0f), &vector.y);
+	show_float(vec3(0.0f, 0.0f, 1.0f), &vector.z);
+	ImGui::EndGroup();
+};
+
 bool eeditor::drawSceneHierarchy()
 {
 	escene& scene = this->scene->getCurrentScene();
@@ -725,11 +814,6 @@ bool eeditor::drawSceneHierarchy()
 						ImGui::TreePop();
 					}
 				}
-
-				//if (ImGui::Selectable(name, entity == selectedEntity))
-				//{
-				//	setSelectedEntity(entity);
-				//}
 
 				bool entityDeleted = false;
 				if (ImGui::BeginPopupContextItem(name))
@@ -801,7 +885,17 @@ bool eeditor::drawSceneHierarchy()
 					{
 						using component_t = transform_component;
 
-						UNDOABLE_COMPONENT_SETTING("entity position", transform.position,
+						float wdt = renderer->renderWidth;
+						
+						showVector3("Position", transform.position, wdt);
+						ImGui::SameLine();
+						selectedEntityEulerRotation = getEuler(transform.rotation);
+						showVector3("Rotation", selectedEntityEulerRotation, wdt);
+						transform.rotation = getQuat(selectedEntityEulerRotation);
+						ImGui::SameLine();
+						showVector3("Scale", transform.scale, wdt);
+
+						/*UNDOABLE_COMPONENT_SETTING("entity position", transform.position,
 							objectMovedByWidget |= ImGui::Drag("Position", transform.position, 0.1f));
 						UNDOABLE_COMPONENT_SETTING("entity rotation", transform.rotation,
 							if (ImGui::Drag("Rotation", selectedEntityEulerRotation, 0.1f))
@@ -809,9 +903,9 @@ bool eeditor::drawSceneHierarchy()
 								transform.rotation = getQuat(selectedEntityEulerRotation);
 								objectMovedByWidget = true;
 							}, [](transform_component&, quat rot, void* userData) { *(vec3*)userData = getEuler(rot); }, &selectedEntityEulerRotation);
-						selectedEntityEulerRotation = getEuler(transform.rotation);
+						
 						UNDOABLE_COMPONENT_SETTING("entity scale", transform.scale,
-							objectMovedByWidget |= ImGui::Drag("Scale", transform.scale, 0.1f));
+							objectMovedByWidget |= ImGui::Drag("Scale", transform.scale, 0.1f));*/
 					});
 
 					drawComponent<position_component>(selectedEntity, "Transform", [this, &objectMovedByWidget](position_component& transform)
@@ -854,6 +948,31 @@ bool eeditor::drawSceneHierarchy()
 					drawComponent<raytrace_component>(selectedEntity, "Ray-tracing", [](raytrace_component& trace)
 					{
 						ImGui::Text("Ray-tracing component ON");
+					});
+
+					drawComponent<px_box_collider_component>(selectedEntity, "Box Collider (PhysX)", [](px_box_collider_component& trace)
+					{
+						ImGui::Text("Box collider component");
+					});
+
+					drawComponent<px_sphere_collider_component>(selectedEntity, "Sphere Collider (PhysX)", [](px_sphere_collider_component& trace)
+					{
+						ImGui::Text("Sphere collider component");
+					});
+
+					drawComponent<px_bounding_box_collider_component>(selectedEntity, "Bounding Box Collider (PhysX)", [](px_bounding_box_collider_component& trace)
+					{
+						ImGui::Text("Bounding Box collider component");
+					});
+
+					drawComponent<px_capsule_collider_component>(selectedEntity, "Capsule Collider (PhysX)", [](px_capsule_collider_component& trace)
+					{
+						ImGui::Text("Capsule collider component");
+					});
+
+					drawComponent<px_triangle_mesh_collider_component>(selectedEntity, "Triangle Mesh Collider (PhysX)", [](px_triangle_mesh_collider_component& trace)
+					{
+						ImGui::Text("Triangle mesh collider component");
 					});
 
 					drawComponent<px_capsule_cct_component>(selectedEntity, "Character Controller (PhysX)", [](px_capsule_cct_component& cct)

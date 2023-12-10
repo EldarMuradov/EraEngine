@@ -114,6 +114,8 @@ struct main_renderer
 
 	void setCamera(const render_camera& camera);
 
+	void dlssPass();
+
 	void submitRenderPass(opaque_render_pass* renderPass) {	ASSERT(!opaqueRenderPass); opaqueRenderPass = renderPass; }
 	void submitRenderPass(transparent_render_pass* renderPass) { ASSERT(!transparentRenderPass); transparentRenderPass = renderPass; }
 	void submitRenderPass(ldr_render_pass* renderPass) { ASSERT(!ldrRenderPass); ldrRenderPass = renderPass; }

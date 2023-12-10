@@ -25,7 +25,7 @@ struct ssr_settings
 	uint32 numSteps = 400;
 	float maxDistance = 1000.f;
 	float strideCutoff = 100.f;
-	float minStride = 5.f;
+	float minStride = 9.f;
 	float maxStride = 30.f;
 };
 REFLECT_STRUCT(ssr_settings,
@@ -99,13 +99,13 @@ struct tonemap_settings
 	float A = 0.176f; // Shoulder strength. 0.22
 	float B = 0.134f; // Linear strength. 0.3
 	float C = 0.11f; // Linear angle. 0.1
-	float D = 0.31f; // Toe strength. 0.2
+	float D = 0.375f; // Toe strength. 0.2
 	float E = 0.01f; // Toe Numerator.
-	float F = 0.3f; // Toe denominator.
+	float F = 0.34f; // Toe denominator.
 	// Note E/F = Toe angle.
 	float linearWhite = 11.2f;
 
-	float exposure = 0.05f; //0.2
+	float exposure = -0.30f; //0.2
 
 	float tonemap(float color) const
 	{

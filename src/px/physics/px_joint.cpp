@@ -6,6 +6,12 @@ px_joint::~px_joint()
 	PX_RELEASE(joint)
 }
 
+void px_joint::init(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
+{
+	first = f;
+	second = s;
+}
+
 physx::PxRevoluteJoint* createRevoluteJoint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
 {
 	physx::PxRevoluteJoint* joint = PxRevoluteJointCreate(*px_physics_engine::getPhysics(),

@@ -272,6 +272,11 @@ void main_renderer::setCamera(const render_camera& camera)
 	buildCameraConstantBuffer(camera, 0.f, this->unjitteredCamera);
 }
 
+void main_renderer::dlssPass()
+{
+	dlss_adapter.updateDLSS(dxContext.getFreeRenderCommandList()->commandList.Get());
+}
+
 void main_renderer::setEnvironment(const pbr_environment& environment)
 {
 	main_renderer::environment = &environment;
@@ -409,10 +414,10 @@ dx_command_list* main_renderer::renderThread1(const common_render_data& commonRe
 		.transition(linearDepthBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
 		.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
-	if (dxContext.featureSupport.dlss())
-	{
-		dlss_adapter.updateDLSS(cl->commandList.Get());
-	}
+	//if (dxContext.featureSupport.dlss())
+	//{
+	//	dlss_adapter.updateDLSS(cl->commandList.Get());
+	//}
 
 	return cl;
 }
@@ -560,10 +565,10 @@ dx_command_list* main_renderer::renderThread2(const common_render_data& commonRe
 		}
 	}
 
-	if (dxContext.featureSupport.dlss())
-	{
-		dlss_adapter.updateDLSS(cl->commandList.Get());
-	}
+	//if (dxContext.featureSupport.dlss())
+	//{
+	//	dlss_adapter.updateDLSS(cl->commandList.Get());
+	//}
 
 	return cl;
 }
@@ -695,10 +700,10 @@ dx_command_list* main_renderer::renderThread3(common_render_data commonRenderDat
 	}
 
 	// TODO: If we really care we should sharpen before rendering overlays and outlines.
-	if (dxContext.featureSupport.dlss())
-	{
-		dlss_adapter.updateDLSS(cl->commandList.Get());
-	}
+	//if (dxContext.featureSupport.dlss())
+	//{
+	//	dlss_adapter.updateDLSS(cl->commandList.Get());
+	//}
 	present(cl, ldrPostProcessingTexture, frameResult, settings.enableSharpen ? settings.sharpenSettings : sharpen_settings{ 0.f });
 
 	barrier_batcher(cl)

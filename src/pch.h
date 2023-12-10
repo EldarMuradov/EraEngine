@@ -19,6 +19,9 @@ namespace fs = std::filesystem;
 #include <mutex>
 #include <wrl.h> 
 
+#define RELEASE_PTR(ptr) if(ptr) { delete ptr; ptr = nullptr; }
+#define RELEASE_ARRAY_PTR(arrayPtr) if(arrayPtr) { delete[] arrayPtr; arrayPtr = nullptr; } 
+
 typedef int8_t int8;
 typedef uint8_t uint8;
 typedef int16_t int16;
