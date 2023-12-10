@@ -15,7 +15,7 @@ Era Engine is a modern ECS-based game engine that provides developers with power
 Era Engine uses ECS to manage game objects and their behavior. This allows developers to easily create and modify complex systems in the game.
 
 ### Rendering: 
-The engine uses DirectX 12 to provide high-quality and efficient rendering, allowing you to create visually appealing games with advanced graphical effects.
+The engine uses DirectX 12 to provide high-quality and efficient rendering, allowing you to create visually appealing games with advanced graphical effects. DLSS 3.5 and FSR 2.0 supported.
 
 ### Physics: 
 Integration with PhysX 4.1 provides realistic simulation of game physics, including collisions, gravity, and other physical interactions.
@@ -42,7 +42,14 @@ Era Engine uses .NET 8.0 Native AOT. This allows developers to write scripts in 
 
 
 # Features
+
 -Real-time raytracing (DXR)
+
+-TAA
+
+-DLSS 3.5
+
+-FSR 2.0
 
 -Rigidbodies and colliders
 
