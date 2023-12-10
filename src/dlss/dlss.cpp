@@ -2,10 +2,6 @@
 #include "dlss/dlss.h"
 #include <dx/dx_command_list.h>
 #include <rendering/main_renderer.h>
-
-#ifndef SAFE_RELEASE
-#define SAFE_RELEASE(ptr)   do { if(ptr) { (ptr)->Release(); (ptr) = NULL; } } while(false)
-#endif
 #include <core/log.h>
 
 bool checkDLSSStatus(IDXGIAdapter* adapter)
@@ -18,13 +14,13 @@ bool checkDLSSStatus(IDXGIAdapter* adapter)
 
 	if (NVSDK_NGX_D3D11_GetFeatureRequirements(adapter, &dlssInfo, &outSupported) != NVSDK_NGX_Result_Success)
 	{
-		//std::cerr << "No DLSS capable GPU/Software found.\n";
+		std::cerr << "No DLSS capable GPU/Software found.\n";
 		return false;
 	}
 	if (outSupported.FeatureSupported != NVSDK_NGX_FeatureSupportResult_Supported)
 	{
-		//std::cerr << "No DLSS capable GPU/Software found.\n";
-		//return false;
+		std::cerr << "No DLSS capable GPU/Software found.\n";
+		return false;
 	}
 
 	return true;
@@ -32,6 +28,8 @@ bool checkDLSSStatus(IDXGIAdapter* adapter)
 
 void dlss_feature_adapter::initialize(main_renderer* rnd)
 {
+	if (rnd->dlssInited)
+		return;
 	renderer = rnd;
 	initializeDLSS();
 	renderer->dlssInited = true;
@@ -106,12 +104,13 @@ void dlss_feature_adapter::initializeDLSS() noexcept
 	NVSDK_NGX_DLSS_Create_Params dlss_c_p{};
 	dlss_c_p.InFeatureCreateFlags = NVSDK_NGX_DLSS_Feature_Flags_IsHDR
 		| NVSDK_NGX_DLSS_Feature_Flags_AutoExposure
-		| NVSDK_NGX_DLSS_Feature_Flags_DoSharpening;
+		| NVSDK_NGX_DLSS_Feature_Flags_DoSharpening
+		| NVSDK_NGX_DLSS_Feature_Flags_DepthInverted;
 	dlss_c_p.InEnableOutputSubrects = false;
-	dlss_c_p.Feature.InWidth = renderOptimalWidth;
-	dlss_c_p.Feature.InHeight = renderOptimalHeight;
-	dlss_c_p.Feature.InTargetWidth = renderOptimalWidth;
-	dlss_c_p.Feature.InTargetHeight = renderOptimalHeight;
-	dlss_c_p.Feature.InPerfQualityValue = NVSDK_NGX_PerfQuality_Value_UltraQuality;
+	dlss_c_p.Feature.InWidth = outRenderMaxWidth;
+	dlss_c_p.Feature.InHeight = outRenderMaxHeight;
+	dlss_c_p.Feature.InTargetWidth = renderer->windowWidth;
+	dlss_c_p.Feature.InTargetHeight = renderer->windowHeight;
+	dlss_c_p.Feature.InPerfQualityValue = NVSDK_NGX_PerfQuality_Value_Balanced;
 	NVSDK_NGX_Result CreatDLSSExtRes = NGX_D3D12_CREATE_DLSS_EXT(dxContext.getFreeRenderCommandList()->commandList.Get(), 1, 1, &handle, params, &dlss_c_p);
 }

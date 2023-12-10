@@ -157,7 +157,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		raytracingTLAS.initialize();
 	}
 
-	scene.camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.1f);
+	scene.camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
 	scene.environment.setFromTexture("assets/sky/sunset_in_the_chalk_quarry_4k.hdr");
 	scene.environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
 
@@ -694,10 +694,10 @@ void application::update(const user_input& input, float dt)
 
 		renderer->setRaytracingScene(&raytracingTLAS);
 
-		if (dxContext.featureSupport.dlss())
-		{
-			renderer->dlssPass();
-		}
+		//if (dxContext.featureSupport.dlss())
+		//{
+		//	renderer->dlssPass();
+		//}
 	}
 
 	renderer->setEnvironment(environment);

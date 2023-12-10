@@ -2767,14 +2767,9 @@ void eeditor::drawSettings(float dt)
 					ImGui::EndProperties();
 				}
 
-				if (!renderer->settings.enableDLSS)
-				{
-					dxContext.featureSupport.dlss_status = DLSS_status_not_available;
-				}
-				else
+				if (renderer->settings.enableDLSS)
 				{
 					renderer->settings.enableTAA = false;
-					dxContext.featureSupport.dlss_status = DLSS_status_3_5;
 					if (!renderer->dlssInited)
 					{
 						renderer->dlss_adapter.initialize(renderer);

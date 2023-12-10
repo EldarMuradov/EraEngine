@@ -22,6 +22,10 @@ namespace fs = std::filesystem;
 #define RELEASE_PTR(ptr) if(ptr) { delete ptr; ptr = nullptr; }
 #define RELEASE_ARRAY_PTR(arrayPtr) if(arrayPtr) { delete[] arrayPtr; arrayPtr = nullptr; } 
 
+#ifndef SAFE_RELEASE
+#define SAFE_RELEASE(ptr)   do { if(ptr) { (ptr)->Release(); (ptr) = NULL; } } while(false)
+#endif
+
 typedef int8_t int8;
 typedef uint8_t uint8;
 typedef int16_t int16;

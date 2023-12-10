@@ -565,10 +565,10 @@ dx_command_list* main_renderer::renderThread2(const common_render_data& commonRe
 		}
 	}
 
-	//if (dxContext.featureSupport.dlss())
-	//{
-	//	dlss_adapter.updateDLSS(cl->commandList.Get());
-	//}
+	if (dxContext.featureSupport.dlss())
+	{
+		dlss_adapter.updateDLSS(cl->commandList.Get());
+	}
 
 	return cl;
 }
