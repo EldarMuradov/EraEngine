@@ -131,7 +131,7 @@ void mesh_editor_panel::endFrame()
 {
 	if (isOpen())
 	{
-		renderer.endFrame(0);
+		renderer.endFrame(0, 0.0f);
 	}
 }
 

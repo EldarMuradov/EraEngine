@@ -15,6 +15,8 @@ struct eeditor
 
 	bool update(const user_input& input, ldr_render_pass* ldrRenderPass, float dt);
 
+	void render(ldr_render_pass* ldrRenderPass, float dt);
+
 	eentity selectedEntity;
 	physics_settings physicsSettings;
 

@@ -276,6 +276,13 @@ bool eeditor::update(const user_input& input, ldr_render_pass* ldrRenderPass, fl
 		setSelectedEntity(selectedEntity);
 	}
 
+	return objectChanged;
+}
+
+void eeditor::render(ldr_render_pass* ldrRenderPass, float dt)
+{
+	auto& scene = this->scene->getCurrentScene();
+
 	if (selectedConstraintEntity)
 	{
 		if (auto* ref = selectedConstraintEntity.getComponentIfExists<constraint_entity_reference_component>())
@@ -330,8 +337,6 @@ bool eeditor::update(const user_input& input, ldr_render_pass* ldrRenderPass, fl
 			}
 		}
 	}
-
-	return objectChanged;
 }
 
 static void drawIconsWindow(bool& open)
@@ -2657,7 +2662,6 @@ bool eeditor::editTAA(bool& enable, taa_settings& settings, const ref<dx_texture
 			result |= ImGui::PropertyCheckbox("Enable TAA", enable));
 		if (enable)
 		{
-			renderer->settings.enableDLSS = false;
 			UNDOABLE_SETTING("TAA jitter strength", settings.cameraJitterStrength,
 				result |= ImGui::PropertySlider("Jitter strength", settings.cameraJitterStrength));
 		}
@@ -2769,7 +2773,6 @@ void eeditor::drawSettings(float dt)
 
 				if (renderer->settings.enableDLSS)
 				{
-					renderer->settings.enableTAA = false;
 					if (!renderer->dlssInited)
 					{
 						renderer->dlss_adapter.initialize(renderer);

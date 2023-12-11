@@ -12,14 +12,14 @@ bool checkDLSSStatus(IDXGIAdapter* adapter)
 	dlssInfo.ApplicationDataPath = L"E:\\Era Engine\\logs";
 	dlssInfo.Identifier.v.ProjectDesc.EngineType = NVSDK_NGX_ENGINE_TYPE_CUSTOM;
 
-	if (NVSDK_NGX_D3D11_GetFeatureRequirements(adapter, &dlssInfo, &outSupported) != NVSDK_NGX_Result_Success)
+	if (NVSDK_NGX_D3D12_GetFeatureRequirements(adapter, &dlssInfo, &outSupported) != NVSDK_NGX_Result_Success)
 	{
-		std::cerr << "No DLSS capable GPU/Software found.\n";
+		std::cerr << "No DLSS 3.5 capable GPU/Software found.\n";
 		return false;
 	}
 	if (outSupported.FeatureSupported != NVSDK_NGX_FeatureSupportResult_Supported)
 	{
-		std::cerr << "No DLSS capable GPU/Software found.\n";
+		std::cerr << "No capable GPU/Software for current DLSS 3.5 feature found.\n";
 		return false;
 	}
 
@@ -50,24 +50,32 @@ void NGXResourceAllocCallback(D3D12_RESOURCE_DESC* InDesc, int InState,
 	}
 }
 
-void dlss_feature_adapter::updateDLSS(ID3D12GraphicsCommandList* cmdList)
+void dlss_feature_adapter::updateDLSS(ID3D12GraphicsCommandList* cmdList, float dt)
 {
 	NVSDK_NGX_D3D12_Feature_Eval_Params featureEvalsParams{};
 	featureEvalsParams.pInOutput = renderer->frameResult->resource.Get();
 	featureEvalsParams.pInColor = renderer->hdrColorTexture->resource.Get();
+	featureEvalsParams.InSharpness = 0.05f;
 	
 	NVSDK_NGX_Dimensions dim{};
-	dim.Width = renderer->windowWidth;
-	dim.Height = renderer->windowHeight;
+	dim.Width = renderer->renderWidth;
+	dim.Height = renderer->renderHeight;
 
 	NVSDK_NGX_D3D12_DLSS_Eval_Params evalsParams{};
 	evalsParams.Feature = featureEvalsParams;
 	evalsParams.InRenderSubrectDimensions = dim;
 	evalsParams.InJitterOffsetX = renderer->windowXOffset;
 	evalsParams.InJitterOffsetY = renderer->windowYOffset;
+	evalsParams.InExposureScale = renderer->settings.tonemapSettings.exposure;
 	evalsParams.pInMotionVectors = renderer->screenVelocitiesTexture->resource.Get();
-	evalsParams.pInDepth = renderer->opaqueDepthBuffer->resource.Get();
-
+	evalsParams.InMVScaleX = renderer->screenVelocitiesTexture->width;
+	evalsParams.InMVScaleY = renderer->screenVelocitiesTexture->height;
+	evalsParams.pInDepth = renderer->depthStencilBuffer->resource.Get();
+	evalsParams.InRenderSubrectDimensions.Width = renderer->renderWidth;
+	evalsParams.InRenderSubrectDimensions.Height = renderer->renderHeight;
+	evalsParams.InPreExposure = 0.0f;
+	evalsParams.InFrameTimeDeltaInMsec = dt;
+	
 	NVSDK_NGX_Result EvalDLSSFeatureRes = NGX_D3D12_EVALUATE_DLSS_EXT(cmdList, handle, params, &evalsParams);
 }
 
@@ -103,14 +111,15 @@ void dlss_feature_adapter::initializeDLSS() noexcept
 
 	NVSDK_NGX_DLSS_Create_Params dlss_c_p{};
 	dlss_c_p.InFeatureCreateFlags = NVSDK_NGX_DLSS_Feature_Flags_IsHDR
-		| NVSDK_NGX_DLSS_Feature_Flags_AutoExposure
 		| NVSDK_NGX_DLSS_Feature_Flags_DoSharpening
+		| NVSDK_NGX_DLSS_Feature_Flags_MVLowRes
+		| NVSDK_NGX_DLSS_Feature_Flags_MVJittered
 		| NVSDK_NGX_DLSS_Feature_Flags_DepthInverted;
 	dlss_c_p.InEnableOutputSubrects = false;
-	dlss_c_p.Feature.InWidth = outRenderMaxWidth;
+	dlss_c_p.Feature.InWidth = outRenderMaxWidth; 
 	dlss_c_p.Feature.InHeight = outRenderMaxHeight;
-	dlss_c_p.Feature.InTargetWidth = renderer->windowWidth;
-	dlss_c_p.Feature.InTargetHeight = renderer->windowHeight;
+	dlss_c_p.Feature.InTargetWidth = renderer->renderWidth;
+	dlss_c_p.Feature.InTargetHeight = renderer->renderHeight;
 	dlss_c_p.Feature.InPerfQualityValue = NVSDK_NGX_PerfQuality_Value_Balanced;
 	NVSDK_NGX_Result CreatDLSSExtRes = NGX_D3D12_CREATE_DLSS_EXT(dxContext.getFreeRenderCommandList()->commandList.Get(), 1, 1, &handle, params, &dlss_c_p);
 }

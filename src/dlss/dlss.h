@@ -16,7 +16,7 @@ struct dlss_feature_adapter
 	void initialize(main_renderer* rbd);
 	~dlss_feature_adapter() { NVSDK_NGX_D3D12_Shutdown1(dxContext.device.Get()); NVSDK_NGX_D3D12_DestroyParameters(params);}
 
-	void updateDLSS(ID3D12GraphicsCommandList* cmdList);
+	void updateDLSS(ID3D12GraphicsCommandList* cmdList, float dt);
 
 private:
 	void initializeDLSS() noexcept;

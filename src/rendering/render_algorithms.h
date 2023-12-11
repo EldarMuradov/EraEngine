@@ -25,7 +25,7 @@ struct ssr_settings
 	uint32 numSteps = 400;
 	float maxDistance = 1000.f;
 	float strideCutoff = 100.f;
-	float minStride = 9.f;
+	float minStride = 1.f;
 	float maxStride = 30.f;
 };
 REFLECT_STRUCT(ssr_settings,
@@ -56,7 +56,7 @@ REFLECT_STRUCT(bloom_settings,
 
 struct hbao_settings
 {
-	float radius = 0.3f;
+	float radius = 1.0f;
 	uint32 numRays = 4;
 	uint32 maxNumStepsPerRay = 10;
 	float strength = 1.f;
@@ -70,7 +70,7 @@ REFLECT_STRUCT(hbao_settings,
 
 struct sharpen_settings
 {
-	float strength = 0.0f; //0.5
+	float strength = 0.1f; //0.5
 };
 REFLECT_STRUCT(sharpen_settings,
 	(strength, "Strength")
@@ -81,7 +81,7 @@ struct sss_settings
 	uint32 numSteps = 16;
     float rayDistance = 0.5f;
     float thickness = 0.05f;
-	float maxDistanceFromCamera = 15.f;
+	float maxDistanceFromCamera = 5.0f;
 	float distanceFadeoutRange = 2.f;
 	float borderFadeout = 0.1f; // In UV-space.
 };

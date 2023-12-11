@@ -18,7 +18,7 @@
 #define SSR_RESOLVE_WIDTH (renderWidth / 2)
 #define SSR_RESOLVE_HEIGHT (renderHeight / 2)
 
-void main_renderer::initialize(color_depth colorDepth, uint32 windowWidth, uint32 windowHeight, renderer_spec spec)
+void main_renderer::initialize(color_depth colorDepth, uint32 windowWidth, uint32 windowHeight, renderer_spec spec, float initDLSS)
 {
 	this->windowWidth = windowWidth;
 	this->windowHeight = windowHeight;
@@ -143,7 +143,7 @@ void main_renderer::initialize(color_depth colorDepth, uint32 windowWidth, uint3
 		pathTracer.initialize();
 	}
 
-	if (dxContext.featureSupport.dlss())
+	if (initDLSS && dxContext.featureSupport.dlss())
 	{
 		dlss_adapter.initialize(this);
 	}
@@ -272,9 +272,9 @@ void main_renderer::setCamera(const render_camera& camera)
 	buildCameraConstantBuffer(camera, 0.f, this->unjitteredCamera);
 }
 
-void main_renderer::dlssPass()
+void main_renderer::dlssPass(float dt)
 {
-	dlss_adapter.updateDLSS(dxContext.getFreeRenderCommandList()->commandList.Get());
+	dlss_adapter.updateDLSS(dxContext.getFreeRenderCommandList()->commandList.Get(), dt);
 }
 
 void main_renderer::setEnvironment(const pbr_environment& environment)
@@ -565,10 +565,11 @@ dx_command_list* main_renderer::renderThread2(const common_render_data& commonRe
 		}
 	}
 
-	if (dxContext.featureSupport.dlss())
-	{
-		dlss_adapter.updateDLSS(cl->commandList.Get());
-	}
+	//if (dxContext.featureSupport.dlss())
+	//{
+	//	PROFILE_ALL(cl, "DLSS Evaluation");
+	//	dlss_adapter.updateDLSS(cl->commandList.Get());
+	//}
 
 	return cl;
 }
@@ -717,7 +718,7 @@ dx_command_list* main_renderer::renderThread3(common_render_data commonRenderDat
 	return cl;
 }
 
-void main_renderer::endFrame(const user_input* input)
+void main_renderer::endFrame(const user_input* input, float dt)
 {
 	bool aspectRatioModeChanged = aspectRatioMode != oldAspectRatioMode;
 	oldAspectRatioMode = aspectRatioMode;
@@ -883,11 +884,18 @@ void main_renderer::endFrame(const user_input* input)
 				}
 			}
 		}));
+
 		dxContext.executeCommandList(cl2);
 
 		dxContext.renderQueue.waitForOtherQueue(dxContext.computeQueue, executeComputeTasks(compute_pass_before_transparent_and_post_processing));
-		dxContext.executeCommandList(cl3);
+		
+		if (dxContext.featureSupport.dlss() && settings.enableDLSS)
+		{
+			PROFILE_ALL(cl3, "DLSS Evaluation");
+			dlss_adapter.updateDLSS(cl3->commandList.Get(), dt);
+		}
 
+		dxContext.executeCommandList(cl3);
 	}
 	else if (mode == renderer_mode_visualize_sun_shadow_cascades)
 	{

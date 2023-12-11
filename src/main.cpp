@@ -137,7 +137,7 @@ int main(int argc, char** argv)
 	spec.allowBloom = true;
 
 	main_renderer renderer;
-	renderer.initialize(window.colorDepth, window.clientWidth, window.clientHeight, spec);
+	renderer.initialize(window.colorDepth, window.clientWidth, window.clientHeight, spec, true);
 
 	editor_panels editorPanels;
 
@@ -276,7 +276,7 @@ int main(int argc, char** argv)
 		app.update(input, dt);
 
 		endFrameCommon();
-		renderer.endFrame(&input);
+		renderer.endFrame(&input, dt);
 
 		editorPanels.meshEditor.endFrame();
 

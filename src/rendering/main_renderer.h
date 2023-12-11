@@ -34,7 +34,7 @@ struct renderer_settings
 	bool enableSSR = true;
 	ssr_settings ssrSettings;
 
-	bool enableTAA = false;
+	bool enableTAA = true;
 	taa_settings taaSettings;
 
 	bool enableDLSS = true;
@@ -107,14 +107,14 @@ struct renderer_spec
 struct main_renderer
 {
 	main_renderer() {}
-	void initialize(color_depth colorDepth, uint32 windowWidth, uint32 windowHeight, renderer_spec spec);
+	void initialize(color_depth colorDepth, uint32 windowWidth, uint32 windowHeight, renderer_spec spec, float initDLSS = false);
 
 	void beginFrame(uint32 windowWidth, uint32 windowHeight);
-	void endFrame(const user_input* input);
+	void endFrame(const user_input* input, float dt);
 
 	void setCamera(const render_camera& camera);
 
-	void dlssPass();
+	void dlssPass(float dt);
 
 	void submitRenderPass(opaque_render_pass* renderPass) {	ASSERT(!opaqueRenderPass); opaqueRenderPass = renderPass; }
 	void submitRenderPass(transparent_render_pass* renderPass) { ASSERT(!transparentRenderPass); transparentRenderPass = renderPass; }

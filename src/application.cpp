@@ -434,7 +434,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		SET_NAME(pointLightShadowInfoBuffer[i]->resource, "Point light shadow infos");
 	}
 
-#if 0
+#if 1
 	fireParticleSystem.initialize(10000, 50.f, "assets/particles/fire_explosion.png", 6, 6, vec3(0, 1, 30));
 	smokeParticleSystem.initialize(10000, 500.f, "assets/particles/smoke1.tif", 5, 5, vec3(0, 1, 15));
 	//boidParticleSystem.initialize(10000, 2000.f);
@@ -444,7 +444,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	stackArena.initialize();
 }
 
-#if 0
+#if 1
 bool editFireParticleSystem(fire_particle_system& particleSystem)
 {
 	bool result = false;
@@ -555,7 +555,7 @@ void application::update(const user_input& input, float dt)
 	stackArena.reset();
 
 	bool objectDragged = editor.update(input, &ldrRenderPass, dt);
-
+	editor.render(&ldrRenderPass, dt);
 	render_camera& camera = scene.camera;
 	directional_light& sun = scene.sun;
 	pbr_environment& environment = scene.environment;
@@ -589,7 +589,7 @@ void application::update(const user_input& input, float dt)
 	physicsStep(scene, stackArena, physicsTimer, editor.physicsSettings, dt);
 
 	// Particles
-#if 0
+#if 1
 	if (input.keyboard['T'].pressEvent)
 	{
 		debrisParticleSystem.burst(camera.position + camera.rotation * vec3(0.f, 0.f, -3.f));
@@ -693,11 +693,6 @@ void application::update(const user_input& input, float dt)
 		}
 
 		renderer->setRaytracingScene(&raytracingTLAS);
-
-		//if (dxContext.featureSupport.dlss())
-		//{
-		//	renderer->dlssPass();
-		//}
 	}
 
 	renderer->setEnvironment(environment);
