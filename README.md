@@ -1,4 +1,4 @@
-![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/ea2b31115dbb7467764a7cccf4714b33589a31da/EngineSC4.png)
+![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/02d7801170a48c62c13e82ff4261d3a94ee91df3/DLSS_ON.png)
 
 # Era Game Engine
 
@@ -26,7 +26,7 @@ ImGui is integrated into the engine to create intuitive and customizable user in
 ### Scripting: 
 Era Engine uses .NET 8.0 Native AOT. This allows developers to write scripts in C# with all the benefits of .NET, including high performance and a rich class library.
 
-![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/ea2b31115dbb7467764a7cccf4714b33589a31da/EngineSC3.png)
+![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/ea2b31115dbb7467764a7cccf4714b33589a31da/EngineSC4.png)
 
 # Dependencies
 
@@ -40,6 +40,7 @@ Era Engine uses .NET 8.0 Native AOT. This allows developers to write scripts in 
 
 -.NET 8.0 Native AOT
 
+![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/ea2b31115dbb7467764a7cccf4714b33589a31da/EngineSC3.png)
 
 # Features
 
@@ -110,6 +111,8 @@ Era Engine uses .NET 8.0 Native AOT. This allows developers to write scripts in 
 -Child-parent system
 
 -Post processing
+
+![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/02d7801170a48c62c13e82ff4261d3a94ee91df3/NORMALS.png)
 
 # TODO:
 
