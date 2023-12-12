@@ -1641,7 +1641,7 @@ static void resolveConnections(const fbx_node* connectionsNode, const std::vecto
 				// Deformer-mesh connection -> A deforms B.
 				fbx_deformer& a = lut.deformers[indexA];
 				fbx_mesh& b = lut.meshes[indexB];
-				ASSERT(b.skeletonID == 0);
+				//ASSERT(b.skeletonID == 0);
 				b.skeletonID = idA;
 			}
 			else if (typeA == fbx_object_type_deformer && typeB == fbx_object_type_deformer)
@@ -1939,26 +1939,31 @@ static offset_count transferAnimationCurve(fbx_animation_curve_node* curveNode, 
 	fbx_animation_curve* y = curveNode->yCurve;
 	fbx_animation_curve* z = curveNode->zCurve;
 
-	uint32 count = max(max(x->count, y->count), max(z->count, 2u));
-	offset_count result = { (uint32)outValues.size(), count };
-
-	int64 step = animationDuration / (count - 1);
-	int64 time = 0;
-
-	for (uint32 i = 0; i < count; ++i)
+	if (x && y && z)
 	{
-		vec3 value;
-		value.x = sampleAnimationCurve(x, time, animationTimes, animationValues);
-		value.y = sampleAnimationCurve(y, time, animationTimes, animationValues);
-		value.z = sampleAnimationCurve(z, time, animationTimes, animationValues);
+		uint32 count = max(max(x->count, y->count), max(z->count, 2u));
+		offset_count result = { (uint32)outValues.size(), count };
 
-		outValues.push_back(convertRotation(value, rotationOrder));
-		outTimes.push_back(convertTime(time));
+		int64 step = animationDuration / (count - 1);
+		int64 time = 0;
 
-		time += step;
+		for (uint32 i = 0; i < count; ++i)
+		{
+			vec3 value;
+			value.x = sampleAnimationCurve(x, time, animationTimes, animationValues);
+			value.y = sampleAnimationCurve(y, time, animationTimes, animationValues);
+			value.z = sampleAnimationCurve(z, time, animationTimes, animationValues);
+
+			outValues.push_back(convertRotation(value, rotationOrder));
+			outTimes.push_back(convertTime(time));
+
+			time += step;
+		}
+
+		return result;
 	}
 
-	return result;
+	return { (uint32)outValues.size(), 0 };
 }
 
 static const fbx_node* findNode(const std::vector<fbx_node>& nodes, std::initializer_list<sized_string> names)
@@ -2202,20 +2207,29 @@ model_asset loadFBX(const fs::path& path, uint32 flags)
 				animation_joint& joint = out.joints[name];
 				joint.isAnimated = true;
 
-				offset_count position = transferAnimationCurve(j.curveNodes[0], out.positionKeyframes, out.positionTimestamps, animation.duration, 
-					animationTimes, animationValues);
-				joint.firstPositionKeyframe = position.offset;
-				joint.numPositionKeyframes = position.count;
+				if (j.curveNodes[0])
+				{
+					offset_count position = transferAnimationCurve(j.curveNodes[0], out.positionKeyframes, out.positionTimestamps, animation.duration,
+						animationTimes, animationValues);
+					joint.firstPositionKeyframe = position.offset;
+					joint.numPositionKeyframes = position.count;
+				}
 
-				offset_count rotation = transferAnimationCurve(j.curveNodes[1], out.rotationKeyframes, out.rotationTimestamps, animation.duration,
-					animationTimes, animationValues, definitions.defaultRotationOrder);
-				joint.firstRotationKeyframe = rotation.offset;
-				joint.numRotationKeyframes = rotation.count;
+				if (j.curveNodes[1])
+				{
+					offset_count rotation = transferAnimationCurve(j.curveNodes[1], out.rotationKeyframes, out.rotationTimestamps, animation.duration,
+						animationTimes, animationValues, definitions.defaultRotationOrder);
+					joint.firstRotationKeyframe = rotation.offset;
+					joint.numRotationKeyframes = rotation.count;
+				}
 
-				offset_count scale = transferAnimationCurve(j.curveNodes[2], out.scaleKeyframes, out.scaleTimestamps, animation.duration,
-					animationTimes, animationValues);
-				joint.firstScaleKeyframe = scale.offset;
-				joint.numScaleKeyframes = scale.count;
+				if (j.curveNodes[2])
+				{
+					offset_count scale = transferAnimationCurve(j.curveNodes[2], out.scaleKeyframes, out.scaleTimestamps, animation.duration,
+						animationTimes, animationValues);
+					joint.firstScaleKeyframe = scale.offset;
+					joint.numScaleKeyframes = scale.count;
+				}
 			}
 
 			result.animations.push_back(std::move(out));

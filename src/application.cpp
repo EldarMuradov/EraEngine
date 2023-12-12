@@ -171,7 +171,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 #if 1
 	if (auto mesh = loadMeshFromFileAsync("assets/Sponza/Sponza.obj"))
 	{
-		auto sponza = scene.createEntity("Sponza")
+		const auto& sponza = scene.createEntity("Sponza")
 			.addComponent<transform_component>(vec3(0.f, 1.f, 0.f), quat::identity, 0.01f)
 			.addComponent<mesh_component>(mesh);
 
@@ -580,13 +580,13 @@ void application::update(const user_input& input, float dt)
 		terrain.update(position.position, collider);
 	}
 
+	static float physicsTimer = 0.f;
+	physicsStep(scene, stackArena, physicsTimer, editor.physicsSettings, dt);
+
 	if (this->scene.isPausable())
 	{
 		updatePhysXPhysicsAndScripting(scene, core, dt);
 	}
-
-	static float physicsTimer = 0.f;
-	physicsStep(scene, stackArena, physicsTimer, editor.physicsSettings, dt);
 
 	// Particles
 #if 1
@@ -619,10 +619,10 @@ void application::update(const user_input& input, float dt)
 		}
 
 		// Draw animation skelet
-		//for (auto [entityHandle, anim, raster, transform] : scene.group(component_group<animation_component, mesh_component, transform_component>).each())
-		//{
-		//	anim.drawCurrentSkeleton(raster.mesh, transform, &ldrRenderPass);
-		//}
+		for (auto [entityHandle, anim, raster, transform] : scene.group(component_group<animation_component, mesh_component, transform_component>).each())
+		{
+			anim.drawCurrentSkeleton(raster.mesh, transform, &ldrRenderPass);
+		}
 
 		scene_lighting lighting;
 		lighting.spotLightBuffer = spotLightBuffer[dxContext.bufferedFrameID];

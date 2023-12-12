@@ -24,6 +24,8 @@ struct application;
 
 #define PX_PHYSICS_ENABLED = 1
 
+#define PX_VEHICLE 0
+
 using namespace physx;
 
 #define PX_RELEASE(x)	if(x)	{ x->release(); x = nullptr;}
@@ -52,6 +54,31 @@ class SnippetGpuLoadHook : public PxGpuLoadHook
 	virtual const char* getPhysXGpuDllName() const
 	{
 		return "PhysXGpu_64.dll";
+	}
+};
+
+class px_query_filter : public PxQueryFilterCallback
+{
+	PxQueryHitType::Enum preFilter(const PxFilterData& filterData, const PxShape* shape, const PxRigidActor* actor, PxHitFlags& queryFlags) override
+	{
+		if (!shape)
+			return PxQueryHitType::eNONE;
+
+		const PxFilterData shapeFilter = shape->getQueryFilterData();
+		if ((filterData.word0 & shapeFilter.word0) == 0)
+			return PxQueryHitType::eNONE;
+
+		const bool hitTriggers = filterData.word2 != 0;
+		if (!hitTriggers && shape->getFlags() & PxShapeFlag::eTRIGGER_SHAPE)
+			return PxQueryHitType::eNONE;
+
+		const bool blockSingle = filterData.word1 != 0;
+		return blockSingle ? PxQueryHitType::eBLOCK : PxQueryHitType::eTOUCH;
+	}
+
+	PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit) override
+	{
+		return PxQueryHitType::eNONE;
 	}
 };
 
@@ -149,6 +176,30 @@ struct px_triangle_mesh
 {
 	PxTriangleMesh* createTriangleMesh(PxTriangleMeshDesc desc);
 };
+
+#if PX_VEHICLE
+
+class px_wheel_filter : public PxQueryFilterCallback
+{
+public:
+	PxQueryHitType::Enum preFilter(const PxFilterData& filterData, const PxShape* shape, const PxRigidActor* actor, PxHitFlags& queryFlags) override
+	{
+		if (!shape)
+			return PxQueryHitType::eNONE;
+
+		const PxFilterData shapeFilter = shape->getQueryFilterData();
+
+		if (filterData.word3 == shapeFilter.word3)
+			return PxQueryHitType::eNONE;
+
+		if ((filterData.word0 & shapeFilter.word1) && (shapeFilter.word0 & filterData.word1))
+			return PxQueryHitType::eBLOCK;
+
+		return PxQueryHitType::eNONE;
+	}
+};
+
+#endif
 
 class px_physics_engine 
 {

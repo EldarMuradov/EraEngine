@@ -9,8 +9,6 @@
 #define PX_PHYSX_STATIC_LIB
 #endif
 
-#define PX_VEHICLE 0
-
 #pragma comment(lib, "PhysXCooking_64.lib")
 
 #include <application.h>
@@ -114,7 +112,7 @@ void px_physics::initialize()
 	sceneDesc.filterCallback = &simulation_filter_callback;
 
 	scene = physics->createScene(sceneDesc);
-
+	
 	PxPvdSceneClient* client = scene->getScenePvdClient();
 
 	if (client)

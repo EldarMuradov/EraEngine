@@ -7,6 +7,7 @@
 #include "dx/dx_context.h"
 #include "rendering/debug_visualization.h"
 #include <algorithm>
+#include <core/log.h>
 
 static void scaleKeyframes(animation_clip& clip, animation_joint& joint, float scale)
 {
@@ -248,7 +249,7 @@ static vec3 samplePosition(const animation_clip& clip, const animation_joint& an
 	uint32 secondKeyframeIndex = firstKeyframeIndex + 1;
 
 	float t = inverseLerp(clip.positionTimestamps[firstKeyframeIndex], clip.positionTimestamps[secondKeyframeIndex], time);
-
+;
 	vec3 a = clip.positionKeyframes[firstKeyframeIndex];
 	vec3 b = clip.positionKeyframes[secondKeyframeIndex];
 
@@ -297,19 +298,19 @@ static quat sampleRotation(const animation_clip& clip, const animation_joint& an
 static vec3 sampleScale(const animation_clip& clip, const animation_joint& animJoint, float time)
 {
 	if (time >= clip.lengthInSeconds)
-	{
 		return clip.scaleKeyframes[animJoint.firstScaleKeyframe + animJoint.numScaleKeyframes - 1];
-	}
 
 	if (animJoint.numScaleKeyframes == 1)
-	{
 		return clip.scaleKeyframes[animJoint.firstScaleKeyframe];
-	}
+
+	if (!clip.scaleTimestamps.size())
+		return vec3(1.0f);
 
 	uint32 firstKeyframeIndex = -1;
 	for (uint32 i = 0; i < animJoint.numScaleKeyframes - 1; ++i)
 	{
 		uint32 j = i + animJoint.firstScaleKeyframe;
+
 		if (time < clip.scaleTimestamps[j + 1])
 		{
 			firstKeyframeIndex = j;
@@ -680,7 +681,7 @@ void animation_component::update(const ref<multi_mesh>& mesh, eallocator& arena,
 		prevFrameVertexBuffer = currentVertexBuffer;
 		currentVertexBuffer = vb;
 
-		trs* localTransforms = (trs*)alloca(sizeof(trs) * skeleton.joints.size());
+		trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
 		trs deltaRootMotion;
 		animation.update(skeleton, dt * timeScale, localTransforms, deltaRootMotion);
 

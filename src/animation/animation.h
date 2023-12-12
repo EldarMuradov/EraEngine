@@ -91,7 +91,6 @@ struct animation_clip
 	bool bakeRootXZTranslationIntoPose = false;
 	bool bakeRootYTranslationIntoPose = false;
 
-
 	void edit();
 	trs getFirstRootTransform() const;
 	trs getLastRootTransform() const;
