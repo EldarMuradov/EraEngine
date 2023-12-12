@@ -24,6 +24,7 @@
 struct renderer_settings
 {
 	tonemap_settings tonemapSettings;
+	tonemap_settings defaultTonemapSettings;
 
 	bool enableAO = true;
 	hbao_settings aoSettings;
@@ -34,7 +35,7 @@ struct renderer_settings
 	bool enableSSR = true;
 	ssr_settings ssrSettings;
 
-	bool enableTAA = true;
+	bool enableTAA = false;
 	taa_settings taaSettings;
 
 	bool enableDLSS = true;

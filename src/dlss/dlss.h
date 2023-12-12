@@ -5,6 +5,7 @@
 #include <nvsdk_ngx_params.h>
 #include <nvsdk_ngx_helpers.h>
 #include <dx/dx_context.h>
+#include "rendering/render_algorithms.h"
 
 bool checkDLSSStatus(IDXGIAdapter* adapter);
 
@@ -25,6 +26,8 @@ private:
 	main_renderer* renderer = nullptr;
 	NVSDK_NGX_Handle* handle = nullptr;
 	NVSDK_NGX_Parameter* params = nullptr;
+
+	tonemap_settings tonemapSettings;
 
 	unsigned int renderOptimalWidth = 0;
 	unsigned int renderOptimalHeight = 0;

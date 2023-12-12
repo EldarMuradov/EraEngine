@@ -34,6 +34,14 @@ void dlss_feature_adapter::initialize(main_renderer* rnd)
 	initializeDLSS();
 	renderer->dlssInited = true;
 	LOG_MESSAGE("Graphics> DLSS 3.5 Initialized succefffuly.");
+
+	tonemapSettings.A = 0.191f;
+	tonemapSettings.B = 0.082f;
+	tonemapSettings.C = 1.0f;
+	tonemapSettings.D = 0.5f;
+	tonemapSettings.E = 0.082f;
+	tonemapSettings.F = 0.255f;
+	tonemapSettings.exposure = -0.06f;
 }
 
 void NGXResourceAllocCallback(D3D12_RESOURCE_DESC* InDesc, int InState,
@@ -52,10 +60,11 @@ void NGXResourceAllocCallback(D3D12_RESOURCE_DESC* InDesc, int InState,
 
 void dlss_feature_adapter::updateDLSS(ID3D12GraphicsCommandList* cmdList, float dt)
 {
+	renderer->settings.tonemapSettings = tonemapSettings;
 	NVSDK_NGX_D3D12_Feature_Eval_Params featureEvalsParams{};
 	featureEvalsParams.pInOutput = renderer->frameResult->resource.Get();
-	featureEvalsParams.pInColor = renderer->hdrColorTexture->resource.Get();
-	featureEvalsParams.InSharpness = 0.05f;
+	featureEvalsParams.pInColor = renderer->ldrPostProcessingTexture->resource.Get();
+	featureEvalsParams.InSharpness = 0.15f;
 	
 	NVSDK_NGX_Dimensions dim{};
 	dim.Width = renderer->renderWidth;
@@ -116,7 +125,7 @@ void dlss_feature_adapter::initializeDLSS() noexcept
 		| NVSDK_NGX_DLSS_Feature_Flags_MVJittered
 		| NVSDK_NGX_DLSS_Feature_Flags_DepthInverted;
 	dlss_c_p.InEnableOutputSubrects = false;
-	dlss_c_p.Feature.InWidth = outRenderMaxWidth; 
+	dlss_c_p.Feature.InWidth = outRenderMaxWidth;
 	dlss_c_p.Feature.InHeight = outRenderMaxHeight;
 	dlss_c_p.Feature.InTargetWidth = renderer->renderWidth;
 	dlss_c_p.Feature.InTargetHeight = renderer->renderHeight;

@@ -2762,12 +2762,12 @@ void eeditor::drawSettings(float dt)
 			if (renderer->spec.allowSSR) { editSSR(renderer->settings.enableSSR, renderer->settings.ssrSettings, renderer->getSSRResult()); ImGui::Separator(); }
 			if (renderer->spec.allowTAA) { editTAA(renderer->settings.enableTAA, renderer->settings.taaSettings, renderer->getScreenVelocities()); ImGui::Separator(); }
 			if (renderer->spec.allowBloom) { editBloom(renderer->settings.enableBloom, renderer->settings.bloomSettings, renderer->getBloomResult()); ImGui::Separator(); }
-			if (renderer->spec.allowDLSS) 
+			if (renderer->spec.allowDLSS)
 			{ 
 				if (ImGui::BeginProperties())
 				{
 					ImGui::PropertyCheckbox("Enable DLSS", renderer->settings.enableDLSS);
-					
+
 					ImGui::EndProperties();
 				}
 
@@ -2778,6 +2778,8 @@ void eeditor::drawSettings(float dt)
 						renderer->dlss_adapter.initialize(renderer);
 					}
 				}
+				else
+					renderer->settings.tonemapSettings = renderer->settings.defaultTonemapSettings;
 				ImGui::Separator();
 			}
 			editSharpen(renderer->settings.enableSharpen, renderer->settings.sharpenSettings);
