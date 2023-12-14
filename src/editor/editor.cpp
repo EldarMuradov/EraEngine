@@ -26,6 +26,7 @@
 #include <px/physics/px_character_controller_component.h>
 #include <imgui/imgui_internal.h>
 #include <px/physics/px_collider_component.h>
+#include <stack>
 
 static vec3 getEuler(quat q)
 {
@@ -652,7 +653,7 @@ static void editMaterial(const ref<pbr_material>& material)
 		ImGui::PropertyColor("Emission", material->emission);
 		ImGui::PropertyColor("Albedo tint", material->albedoTint);
 		ImGui::PropertyDropdown("Shader", pbrMaterialShaderNames, pbr_material_shader_count, (uint32&)material->shader);
-		ImGui::PropertySlider("UV scale", material->uvScale);
+		ImGui::PropertySlider("UV scale", material->uvScale, 0.0f, 15.0f);
 		ImGui::PropertySlider("Translucency", material->translucency);
 
 		if (!material->roughness)
@@ -718,26 +719,14 @@ static void draw_float_wrap(float wdt, const char* label, float* v, float v_spee
 
 		if (is_on_right_screen_edge)
 		{
-			position_cursor.x = position_left + 1;
+			position_cursor.x = position_left + 2;
 			needs_to_wrap = true;
 		}
 		else if (is_on_left_screen_edge)
 		{
-			position_cursor.x = position_right - 1;
+			position_cursor.x = position_right - 2;
 			needs_to_wrap = true;
 		}
-
-		//if (needs_to_wrap)
-		//{
-		//	// set mouse position
-		//	imgui_io.MousePos = position_cursor;
-		//	imgui_io.WantSetMousePos = true;
-
-		//	// prevent delta from being huge by invalidating the previous position
-		//	imgui_io.MousePosPrev = ImVec2(-FLT_MAX, -FLT_MAX);
-
-		//	needs_to_wrap = false;
-		//}
 	}
 
 	ImGui::PushID(static_cast<int>(ImGui::GetCursorPosX() + ImGui::GetCursorPosY()));
@@ -752,7 +741,7 @@ static void showVector3(const char* label, vec3& vector, float wdt)
 
 	const auto show_float = [wdt](vec3 axis, float* value)
 		{
-			const float label_float_spacing = 12.0f;
+			const float label_float_spacing = 15.0f;
 			const float step = 0.01f;
 
 			// Label

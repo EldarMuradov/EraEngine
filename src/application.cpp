@@ -618,11 +618,11 @@ void application::update(const user_input& input, float dt)
 			anim.update(mesh.mesh, stackArena, dt, &transform);
 		}
 
-		// Draw animation skelet
-		for (auto [entityHandle, anim, raster, transform] : scene.group(component_group<animation_component, mesh_component, transform_component>).each())
-		{
-			anim.drawCurrentSkeleton(raster.mesh, transform, &ldrRenderPass);
-		}
+		//// Draw animation skelet
+		//for (auto [entityHandle, anim, raster, transform] : scene.group(component_group<animation_component, mesh_component, transform_component>).each())
+		//{
+		//	anim.drawCurrentSkeleton(raster.mesh, transform, &ldrRenderPass);
+		//}
 
 		scene_lighting lighting;
 		lighting.spotLightBuffer = spotLightBuffer[dxContext.bufferedFrameID];
