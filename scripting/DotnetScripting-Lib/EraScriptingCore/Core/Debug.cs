@@ -1,5 +1,4 @@
 ﻿using System.Runtime.InteropServices;
-using System.Text;
 namespace EraScriptingCore.Core;
 
 public enum LogMessageMode : uint

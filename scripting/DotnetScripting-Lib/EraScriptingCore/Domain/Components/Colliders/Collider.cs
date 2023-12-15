@@ -9,7 +9,7 @@ public enum ColliderType : uint
     Mesh
 }
 
-public abstract class Collider(ColliderType type) : EComponent
+public abstract class Collider : EComponent
 {
-    public ColliderType Type { get; } = type;
+    public ColliderType Type { get; protected set; }
 }

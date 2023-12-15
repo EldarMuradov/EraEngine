@@ -16,9 +16,8 @@
 #include "terrain/grass.h"
 #include "terrain/water.h"
 #include "terrain/tree.h"
-#endif
-
 #include <px/core/px_physics_engine.h>
+#endif
 
 struct escene;
 

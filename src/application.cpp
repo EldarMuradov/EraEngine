@@ -583,11 +583,6 @@ void application::update(const user_input& input, float dt)
 	static float physicsTimer = 0.f;
 	physicsStep(scene, stackArena, physicsTimer, editor.physicsSettings, dt);
 
-	if (this->scene.isPausable())
-	{
-		updatePhysXPhysicsAndScripting(scene, core, dt);
-	}
-
 	// Particles
 #if 1
 	if (input.keyboard['T'].pressEvent)
@@ -700,6 +695,11 @@ void application::update(const user_input& input, float dt)
 	renderer->setCamera(camera);
 
 	executeMainThreadJobs();
+
+	if (this->scene.isPausable())
+	{
+		updatePhysXPhysicsAndScripting(scene, core, dt);
+	}
 }
 
 void application::handleFileDrop(const fs::path& filename)

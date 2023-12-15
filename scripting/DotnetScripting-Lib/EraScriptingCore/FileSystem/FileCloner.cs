@@ -1,6 +1,6 @@
 ﻿namespace EraScriptingCore.FileSystem;
 
-public class FileCloner : IFileCloner
+public sealed class FileCloner : IFileCloner
 {
     public void Clone(string input, string output)
     {

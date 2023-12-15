@@ -7,10 +7,12 @@
 #include "terrain/heightmap_collider.h"
 #include "rendering/raytracing.h"
 
+#ifndef PHYSICS_ONLY
 #include <px/core/px_physics_engine.h>
 #include <px/physics/px_rigidbody_component.h>
 #include <px/physics/px_collider_component.h>
 #include <px/physics/px_character_controller_component.h>
+#endif
 
 std::mutex eentity_container::sync;
 std::unordered_map<entity_handle, eentity_node> eentity_container::container;
@@ -49,6 +51,7 @@ void escene::cloneTo(escene& target)
 		position_scale_component,
 		dynamic_transform_component,
 
+#ifndef PHYSICS_ONLY
 		px_rigidbody_component,
 		px_box_collider_component,
 		px_collider_component_base,
@@ -59,6 +62,7 @@ void escene::cloneTo(escene& target)
 		px_cct_component_base,
 		px_capsule_cct_component,
 		px_box_cct_component,
+#endif
 
 		child_component,
 
