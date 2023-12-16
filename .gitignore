@@ -13,8 +13,6 @@ scripting/DotnetScripting-Lib/EraScriptingProjectTemplate/obj
 scripting/EraScriptingLauncher-Lib/Release
 scripting/EraScriptingLauncher-Lib/x64
 
-packages/
-
 *.dll
 *.exe
 *.pdb
