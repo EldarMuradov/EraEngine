@@ -49,7 +49,7 @@ public sealed class RigidbodyComponent : EComponent
 
     public void AddForce(Vector3 force, ForceMode mode) 
     {
-        IntPtr vec = Memory.Vector3ToIntPtr(force);
+        IntPtr vec = Memory.StructToIntPtr(force);
         addForce(Entity.Id, (uint)mode, vec);
         Memory.ReleaseIntPtr(vec);
     }
@@ -66,12 +66,16 @@ public sealed class RigidbodyComponent : EComponent
 
     public void SetLinearVelocity(Vector3 velocity)
     {
-        setLinearVelocity(Entity.Id, velocity);
+        IntPtr vec = Memory.StructToIntPtr(velocity);
+        setLinearVelocity(Entity.Id, vec);
+        Memory.ReleaseIntPtr(vec);
     }
 
     public void SetAngularVelocity(Vector3 velocity)
     {
-        setAngularVelocity(Entity.Id, velocity);
+        IntPtr vec = Memory.StructToIntPtr(velocity);
+        setAngularVelocity(Entity.Id, vec);
+        Memory.ReleaseIntPtr(vec);
     }
 
     #endregion
@@ -88,10 +92,10 @@ public sealed class RigidbodyComponent : EComponent
     private static extern Vector3 getAngularVelocity(int id);
 
     [DllImport("EraScriptingCPPDecls.dll")]
-    private static extern void setLinearVelocity(int id, Vector3 velocity);
+    private static extern void setLinearVelocity(int id, IntPtr velocity);
 
     [DllImport("EraScriptingCPPDecls.dll")]
-    private static extern void setAngularVelocity(int id, Vector3 velocity);
+    private static extern void setAngularVelocity(int id, IntPtr velocity);
 
     [DllImport("EraScriptingCPPDecls.dll")]
     private static extern float getMass(int id);

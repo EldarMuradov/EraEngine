@@ -12,9 +12,9 @@ public static class Debug
 {
     public static void Log(string message) 
     {
-        log_message((uint)LogMessageMode.Normal, message, (uint)message.Length);
+        log_message((uint)LogMessageMode.Normal, message);
     }
 
     [DllImport("EraScriptingCPPDecls.dll", CharSet = CharSet.Ansi)]
-    private static extern unsafe void log_message(uint mode, /*[In]*/ string message, uint length);
+    private static extern unsafe void log_message(uint mode, string message);
 }

@@ -1,6 +1,5 @@
 ﻿using EraScriptingCore.Core;
 using EraScriptingCore.Domain.Components;
-using System.ComponentModel;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -59,8 +58,8 @@ public class EEntity
 
     public T? GetComponent<T>() where T : EComponent, new()
     {
-        if (Components.TryGetValue(nameof(T), out var comp))
-            return (T)comp;
+        if (Components.TryGetValue(typeof(T).Name, out var comp))
+                return (T)comp;
         return null;
     }
 
@@ -79,11 +78,11 @@ public class EEntity
         comp.Initialize(args);
 
         if (comp is Script)
-            createScript(Id, nameof(T));
+            createScript(Id, comp.GetType().Name);
         else
-            createComponent(Id, nameof(T)); // TODO: agrs sync
+            createComponent(Id, comp.GetType().Name); // TODO: agrs sync
 
-        Components.Add(nameof(T), comp);
+        Components.Add(comp.GetType().Name, comp);
         comp.Entity = this;
 
         comp.Start();
@@ -96,7 +95,7 @@ public class EEntity
         var comp = GetComponent<T>() ?? 
             throw new NullReferenceException("Runtime> Failed to remove component! Value is null.");
         
-        var compname = nameof(T);
+        var compname = typeof(T).Name;
 
         Components.Remove(compname);
         if (sync)
@@ -199,7 +198,7 @@ public class EEntity
 
         comp.Initialize(args);
 
-        Components.Add(nameof(T), comp);
+        Components.Add(comp.GetType().Name, comp);
         comp.Entity = this;
 
         comp.Start();

@@ -27,6 +27,7 @@
 #include <imgui/imgui_internal.h>
 #include <px/physics/px_collider_component.h>
 #include <stack>
+#include <EraScriptingLauncher-Lib/src/script.h>
 
 static vec3 getEuler(quat q)
 {
@@ -937,6 +938,16 @@ bool eeditor::drawSceneHierarchy()
 					drawComponent<dynamic_transform_component>(selectedEntity, "Dynamic Transform", [](dynamic_transform_component& dynamic)
 					{
 						ImGui::Text("Dynamic entity");
+					});
+
+					drawComponent<script_component>(selectedEntity, "Script", [](script_component& script)
+					{
+						auto& iter = script.typeNames.begin();
+						const auto& end = script.typeNames.end();
+						for (; iter != end; ++iter) 
+						{
+							ImGui::Text((*iter).c_str());
+						}
 					});
 
 					drawComponent<raytrace_component>(selectedEntity, "Ray-tracing", [](raytrace_component& trace)

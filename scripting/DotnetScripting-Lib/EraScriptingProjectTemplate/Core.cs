@@ -1,5 +1,6 @@
 ﻿using EraScriptingCore;
 using EraScriptingCore.Domain;
+using EraScriptingCore.Domain.Components;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -75,5 +76,10 @@ public static class Core
         {
             Console.WriteLine("Scripting> Type found: " + type.Key);
         }
+
+        EEntity e = new(60, "Px_Sphere");
+        e.CreateComponentInternal<RigidbodyComponent>(RigidbodyType.Dynamic).AddForce(new System.Numerics.Vector3(0, 10, 0), ForceMode.Impulse);
+
+        e.CreateComponent<TestScript>();
     }
 }

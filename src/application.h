@@ -34,6 +34,8 @@ struct application
 
 	void handleFileDrop(const fs::path& filename);
 
+	escene* getCurrentScene() { return &scene.getCurrentScene(); }
+
 private:
 	void resetRenderPasses();
 	void submitRendererParams(uint32 numSpotLightShadowPasses, uint32 numPointLightShadowPasses);

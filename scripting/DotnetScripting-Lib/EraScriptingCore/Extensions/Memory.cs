@@ -5,11 +5,11 @@ namespace EraScriptingCore.Extensions;
 
 public static class Memory
 {
-    public static IntPtr Vector3ToIntPtr(Vector3 vector)
+    public static IntPtr StructToIntPtr<T>(T @struct) where T : struct
     {
-        int size = Marshal.SizeOf(vector);
+        int size = Marshal.SizeOf(@struct);
         IntPtr ptr = Marshal.AllocHGlobal(size);
-        Marshal.StructureToPtr(vector, ptr, false);
+        Marshal.StructureToPtr(@struct, ptr, false);
         return ptr;
     }
 

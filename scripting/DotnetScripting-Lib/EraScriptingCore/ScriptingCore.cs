@@ -1,11 +1,8 @@
 ﻿using EraScriptingCore.Domain;
+using EraScriptingCore.Domain.Components;
 using System.Runtime.InteropServices;
-using System.Text.Json.Serialization;
 
 namespace EraScriptingCore;
-
-[JsonSerializable(typeof(string), GenerationMode = JsonSourceGenerationMode.Metadata)]
-internal partial class JsonContext : JsonSerializerContext { }
 
 [StructLayout(LayoutKind.Sequential)]
 public struct CustomTypesDTO

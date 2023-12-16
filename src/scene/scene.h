@@ -6,6 +6,7 @@
 #include <entt/entity/registry.hpp>
 #include <entt/entity/helper.hpp>
 #include "components.h"
+
 #ifndef PHYSICS_ONLY
 #include "rendering/light_source.h"
 #include "rendering/pbr.h"
@@ -40,7 +41,7 @@ struct lock
 		sync->unlock();
 	}
 
-	std::mutex* sync;
+	std::mutex* sync = nullptr;
 };
 
 struct eentity_node
@@ -395,6 +396,12 @@ struct escene
 	eentity createEntity(const char* name)
 	{
 		return eentity(registry.create(), &registry)
+			.addComponent<tag_component>(name);
+	}
+
+	eentity createEntity(const char* name, entity_handle id)
+	{
+		return eentity(registry.create(id), &registry)
 			.addComponent<tag_component>(name);
 	}
 

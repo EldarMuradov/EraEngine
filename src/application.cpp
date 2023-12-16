@@ -144,14 +144,6 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 {
 	this->renderer = renderer;
 
-	{
-		CPU_PROFILE_BLOCK(".NET 8.0 Native AOT scripting initialization");
-		linker.init();
-
-		core = std::make_shared<escripting_core>();
-		core->init();
-	}
-
 	if (dxContext.featureSupport.raytracing())
 	{
 		raytracingTLAS.initialize();
@@ -225,7 +217,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		}
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
-		auto px_sphere = &scene.createEntity("SpherePX")
+		auto px_sphere = &scene.createEntity("SpherePX", (entity_handle)60)
 			.addComponent<transform_component>(vec3(20.f, 10.f * 3.f, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
 			//.addComponent<px_triangle_mesh_collider_component>(&(ass.meshes[0]))
@@ -442,6 +434,15 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 #endif
 
 	stackArena.initialize();
+
+	{
+		CPU_PROFILE_BLOCK(".NET 8.0 Native AOT scripting initialization");
+		linker.app = this;
+		linker.init();
+
+		core = std::make_shared<escripting_core>();
+		core->init();
+	}
 }
 
 #if 1
