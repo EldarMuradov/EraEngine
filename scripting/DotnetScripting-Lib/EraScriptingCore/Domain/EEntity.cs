@@ -73,14 +73,17 @@ public class EEntity
         comp = new T();
 
         if (comp is null)
-            throw new InvalidOperationException($"Scripting> Failed to create {nameof(T)} component!");
-
-        comp.Initialize(args);
+        {
+            Debug.LogError($"Scripting> Failed to create {nameof(T)} component!");
+            return null!;
+        }
 
         if (comp is Script)
             createScript(Id, comp.GetType().Name);
         else
             createComponent(Id, comp.GetType().Name); // TODO: agrs sync
+
+        comp.Initialize(args);
 
         Components.Add(comp.GetType().Name, comp);
         comp.Entity = this;
@@ -95,7 +98,7 @@ public class EEntity
         var comp = GetComponent<T>() ?? 
             throw new NullReferenceException("Runtime> Failed to remove component! Value is null.");
         
-        var compname = typeof(T).Name;
+        var compname = comp.GetType().Name;
 
         Components.Remove(compname);
         if (sync)
@@ -184,7 +187,7 @@ public class EEntity
 
     #region Internal
 
-    public T CreateComponentInternal<T>(params object[] args) where T : EComponent, new()
+    internal T CreateComponentInternal<T>(params object[] args) where T : EComponent, new()
     {
         var comp = GetComponent<T>();
 
@@ -194,7 +197,10 @@ public class EEntity
         comp = new T();
 
         if (comp is null)
-            throw new InvalidOperationException($"Scripting> Failed to create {nameof(T)} component!");
+        {
+            Debug.LogError($"Scripting> Failed to create {nameof(T)} component!");
+            return null!;
+        }
 
         comp.Initialize(args);
 

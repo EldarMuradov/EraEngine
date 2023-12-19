@@ -1,4 +1,6 @@
-﻿namespace EraScriptingCore.Domain.Components;
+﻿using System.Runtime.InteropServices;
+
+namespace EraScriptingCore.Domain.Components;
 
 public sealed class BoxCollider : Collider
 {
@@ -10,7 +12,8 @@ public sealed class BoxCollider : Collider
         Height = (float)args[0];
         Length = (float)args[1];
         Width = (float)args[2];
-        Type = ColliderType.Sphere;
+        Type = ColliderType.Box;
+        initializeBoxCollider(Entity.Id, Height, Length, Width);
     }
 
     /// <summary>
@@ -27,4 +30,7 @@ public sealed class BoxCollider : Collider
     /// Z
     /// </summary>
     public float Width { get; private set; }
+
+    [DllImport("EraScriptingCPPDecls.dll")]
+    private static extern void initializeBoxCollider(int id, float x, float y, float z);
 }

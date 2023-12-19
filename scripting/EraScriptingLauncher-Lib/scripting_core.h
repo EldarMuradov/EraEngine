@@ -17,6 +17,7 @@
 typedef HMODULE elib; //Era .NET Native AOT library instance
 
 using evoidf_na = void(*)(); //Era void function with NO ARGS
+using evoidf_float = void(*)(float); //Era void function with float argument
 using eptrf_na = uintptr_t(*)(); //Era uintptr_t function with NO ARGS
 using eu32f_na = uint32_t(*)(); //Era uint32_t function with NO ARGS
 using eu32f_u32 = uint32_t(*)(uint32_t); //Era uint32_t function with NO ARGS
@@ -39,7 +40,7 @@ struct escripting_core
 
 	//Call scripting void function directly
 	template <typename Func>
-	void call_v(const char* funcName)
+	void call_void(const char* funcName)
 	{
 		if (!lib)
 			return;
@@ -49,8 +50,17 @@ struct escripting_core
 	} 
 
 	//Call scripting void function directly
+	void* get_func(const char* funcName) const noexcept
+	{
+		if (!lib)
+			return nullptr;
+
+		return GetProcAddress(lib, funcName);
+	}
+
+	//Call scripting void function directly
 	template <typename Func, typename... Args>
-	void call_v(const char* funcName, Args&&... args)
+	void call_void(const char* funcName, Args&&... args)
 	{
 		if (!lib)
 			return;
@@ -74,4 +84,7 @@ struct escripting_core
 
 private:
 	elib lib;
+
+	evoidf_na startFunc;
+	evoidf_float updateFunc;
 };

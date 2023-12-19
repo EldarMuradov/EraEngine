@@ -54,7 +54,7 @@ void enative_scripting_linker::init()
 	lib = LoadLibraryA("EraScriptingCPPDecls.dll");
 	if (!lib || lib == INVALID_HANDLE_VALUE)
 	{
-		std::cerr << "bliaaaa";
+		std::cerr << "bliaaaa"; 
 		return;
 	}
 
@@ -66,8 +66,7 @@ void enative_scripting_linker::init()
 
 void enative_scripting_linker::release()
 {
-	if (builder)
-		delete builder;
+	RELEASE_PTR(builder)
 	if (lib)
 		FreeLibrary(lib);
 }

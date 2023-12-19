@@ -46,6 +46,24 @@ void logMessageInternal(message_type type, const char* file, const char* functio
 	mutex.unlock();
 }
 
+void logMessage(message_type type, const char* format, ...)
+{
+	mutex.lock();
+	arena.ensureFreeSize(1024);
+
+	char* buffer = (char*)arena.getCurrent();
+
+	va_list args;
+	va_start(args, format);
+	int countWritten = vsnprintf(buffer, 1024, format, args);
+	va_end(args);
+
+	messages.push_back({ buffer, type, 5.f, nullptr, nullptr, 0 });
+
+	arena.setCurrentTo(buffer + countWritten + 1);
+	mutex.unlock();
+}
+
 void initializeMessageLog()
 {
 	arena.initialize(0, GB(1));
@@ -82,15 +100,6 @@ void updateMessageLog(float dt)
 	numMessagesToShow = min(numMessagesToShow, 8u);
 	startIndex = count - numMessagesToShow;
 
-	//if (windowOpen)
-	//{
-	//	for (uint32 i = startIndex; i < count; ++i)
-	//	{
-	//		auto& msg = messages[i];
-	//		ImGui::TextColored(colorPerType[msg.type], msg.text);
-	//	}
-	//}
-
 	ImGui::End();
 
 	if (logWindowOpen)
@@ -100,7 +109,10 @@ void updateMessageLog(float dt)
 			for (uint32 i = 0; i < count; ++i)
 			{
 				auto& msg = messages[i];
-				ImGui::TextColored(colorPerType[msg.type], "%s (%s [%u])", msg.text, msg.function, msg.line);
+				if(msg.file)
+					ImGui::TextColored(colorPerType[msg.type], "%s (%s [%u])", msg.text, msg.function, msg.line);
+				else
+					ImGui::TextColored(colorPerType[msg.type], "%s", msg.text);
 			}
 		}
 		ImGui::End();

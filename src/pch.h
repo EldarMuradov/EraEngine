@@ -2,6 +2,9 @@
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
+
+#define LOG_LEVEL_PROFILE 0
+
 #include <Windows.h>
 #include <windowsx.h>
 #include <tchar.h>

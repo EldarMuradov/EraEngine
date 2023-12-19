@@ -23,7 +23,10 @@ public sealed class RigidbodyComponent : EComponent
 {
     public override void Initialize(params object[] args)
     {
+        if (args.Length == 0)
+            throw new ArgumentException("Runtime> You must put at least 1 argument!");
         Type = (RigidbodyType)args[0];
+        initializeRigidbody(Entity.Id, (uint)Type);
     }
 
     public float Mass 
@@ -102,6 +105,9 @@ public sealed class RigidbodyComponent : EComponent
 
     [DllImport("EraScriptingCPPDecls.dll")]
     private static extern void setMass(int id, float mass);
+
+    [DllImport("EraScriptingCPPDecls.dll")]
+    private static extern void initializeRigidbody(int id, uint type);
 
     #endregion
 }

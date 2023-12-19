@@ -38,7 +38,7 @@ void escripting_core::init()
 		return;
 	}
 
-	call_v<evoidf_na>("init_scripting");
+	call_void<evoidf_na>("init_scripting");
 	//auto r = call<eu32f_u32>("init_scripting", [](uint32_t i) { return (uint32_t)0; }, 5);
 
 	std::ifstream file("bin\\Release_x86_64\\types.cfg");
@@ -46,6 +46,9 @@ void escripting_core::init()
 	file >> types;
 	
 	script_types = split(types, ' ');
+
+	startFunc = (evoidf_na)get_func("start");
+	updateFunc = (evoidf_float)get_func("update");
 }
 
 void escripting_core::reload()
@@ -59,14 +62,19 @@ void escripting_core::release()
 {
 	if (lib)
 		FreeLibrary(lib);
+
+	startFunc = nullptr;
+	updateFunc = nullptr;
 }
 
 void escripting_core::start()
 {
+	startFunc();
 }
 
 void escripting_core::update(float dt)
 {
+	updateFunc(dt);
 }
 
 void escripting_core::stop()
