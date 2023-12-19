@@ -12,6 +12,6 @@ public class Result<T>
         Error = error;
     }
 
-    public static Result<T> Success(T value) => new(value, null);
+    public static Result<T> Success(T value) => new(value, null!);
     public static Result<T> Failure(string error) => new(default, error);
 }
