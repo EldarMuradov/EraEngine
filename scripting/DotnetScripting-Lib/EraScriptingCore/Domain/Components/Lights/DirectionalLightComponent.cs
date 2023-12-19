@@ -10,9 +10,9 @@ public sealed class DirectionalLightComponent : LightComponent
         LightData = (ILightData)args[0];
         LightType = LightType.Spot;
         DirLightData data = (DirLightData)LightData;
-        init(Entity.Id, data.Color.RGBAColor, data.Direction, data.Ambient);
+        initializeDirLight(Entity.Id, data.Color.RGBAColor, data.Direction, data.Ambient);
     }
 
     [DllImport("EraScriptingCPPDecls.dll")]
-    private extern static void init(int id, Vector4 color, Vector3 direction, Vector3 ambient);
+    private extern static void initializeDirLight(int id, Vector4 color, Vector3 direction, Vector3 ambient);
 }

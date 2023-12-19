@@ -10,9 +10,9 @@ public sealed class PointLightComponent : LightComponent
         LightData = (ILightData)args[0];
         LightType = LightType.Spot;
         PointLightData data = (PointLightData)LightData;
-        init(Entity.Id, data.Color.RGBAColor, data.Position, data.Attenuation, data.Range);
+        initializePointLight(Entity.Id, data.Color.RGBAColor, data.Position, data.Attenuation, data.Range);
     }
 
     [DllImport("EraScriptingCPPDecls.dll")]
-    private extern static void init(int id, Vector4 color, Vector3 position, Vector3 attenuation, float range);
+    private extern static void initializePointLight(int id, Vector4 color, Vector3 position, Vector3 attenuation, float range);
 }
