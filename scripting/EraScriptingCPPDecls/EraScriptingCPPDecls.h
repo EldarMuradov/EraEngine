@@ -4,6 +4,8 @@
 #define ERASCRIPTINGCPPDECLS_API __declspec(dllimport)
 #endif
 
+#define EEXTERN extern "C"
+
 #include <functional>
 #include <any>
 #include <string>
@@ -25,7 +27,7 @@ struct ERASCRIPTINGCPPDECLS_API enative_scripting_builder
 
 		TResult operator() (Args... args)
 		{
-			fn(args...);
+			return fn(args...);
 		}
 
 		std::function<TResult(Args...)> fn;
@@ -47,8 +49,36 @@ struct ERASCRIPTINGCPPDECLS_API enative_scripting_factory
 	static enative_scripting_builder* builder;
 };
 
-extern "C" ERASCRIPTINGCPPDECLS_API enative_scripting_builder* createNativeScriptingBuilder(void);
+struct ERASCRIPTINGCPPDECLS_API enative_caller
+{
+	template<typename TResult, typename... Args>
+	static TResult call(const char* name, Args&&... args) noexcept
+	{
+		return (*((enative_scripting_builder::func_obj<TResult, Args...>*)enative_scripting_factory::builder->functions[name].obj))(args...);
+	}
 
-extern "C" ERASCRIPTINGCPPDECLS_API void addForce(uint32_t id, uint32_t mode, float* force);
-extern "C" ERASCRIPTINGCPPDECLS_API void log_message(uint32_t mode, const char* message);
-extern "C" ERASCRIPTINGCPPDECLS_API void createScript(uint32_t id, const char* name);
+	template<typename... Args>
+	static void call(const char* name, Args&&... args) noexcept
+	{
+		(*((enative_scripting_builder::func_obj<void, Args...>*)enative_scripting_factory::builder->functions[name].obj))(args...);
+	}
+
+private:
+	enative_caller() = delete;
+};
+
+EEXTERN ERASCRIPTINGCPPDECLS_API enative_scripting_builder* createNativeScriptingBuilder(void);
+
+// Rigidbody
+EEXTERN ERASCRIPTINGCPPDECLS_API void addForce(uint32_t id, uint32_t mode, float* force);
+EEXTERN ERASCRIPTINGCPPDECLS_API float getMass(uint32_t id);
+EEXTERN ERASCRIPTINGCPPDECLS_API void setMass(uint32_t id, float mass);
+EEXTERN ERASCRIPTINGCPPDECLS_API void initializeRigidbody(uint32_t id, uint32_t type);
+EEXTERN ERASCRIPTINGCPPDECLS_API float* getLinearVelocity(uint32_t id);
+EEXTERN ERASCRIPTINGCPPDECLS_API float* getAngularVelocity(uint32_t id);
+
+// Debug
+EEXTERN ERASCRIPTINGCPPDECLS_API void log_message(uint32_t mode, const char* message);
+
+// EEntity
+EEXTERN ERASCRIPTINGCPPDECLS_API void createScript(uint32_t id, const char* name);

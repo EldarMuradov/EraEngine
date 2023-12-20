@@ -100,10 +100,20 @@ void px_physics::initialize()
 	sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneDesc.simulationEventCallback = &collision_callback;
+
+#if PX_GPU_BROAD_PHASE
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
+#else
+	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eABP;
+#endif
+
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
+
+#if PX_GPU_BROAD_PHASE
 	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
+#endif
+
 	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;

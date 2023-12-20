@@ -1,16 +1,20 @@
 ﻿using EraScriptingCore.Core;
 using EraScriptingCore.Domain.Components;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace EraScriptingCore.Domain;
 
 public class EEntity
 {
-    public EEntity(int id, string name)
+    public unsafe EEntity(int id, string name)
     {
         (Id, Name) = (id, name);
         CreateComponentInternal<TransformComponent>();
+
+        EEntity _this = this;
+        AddEntity(new EntityCreationDTO() { Entity = (IntPtr)Unsafe.AsPointer(ref _this) });
     }
 
     public int Id { get; init; }
@@ -59,7 +63,7 @@ public class EEntity
     public T? GetComponent<T>() where T : EComponent, new()
     {
         if (Components.TryGetValue(typeof(T).Name, out var comp))
-                return (T)comp;
+            return (T)comp;
         return null;
     }
 
@@ -83,10 +87,10 @@ public class EEntity
         else
             createComponent(Id, comp.GetType().Name); // TODO: agrs sync
 
+        comp.Entity = this;
         comp.Initialize(args);
 
         Components.Add(comp.GetType().Name, comp);
-        comp.Entity = this;
 
         comp.Start();
 
@@ -95,9 +99,9 @@ public class EEntity
 
     public void RemoveComponent<T>(bool sync = false) where T : EComponent, new()
     {
-        var comp = GetComponent<T>() ?? 
+        var comp = GetComponent<T>() ??
             throw new NullReferenceException("Runtime> Failed to remove component! Value is null.");
-        
+
         var compname = comp.GetType().Name;
 
         Components.Remove(compname);
@@ -181,13 +185,17 @@ public class EEntity
         Childs.Remove(entity);
     }
 
-    public void Release() => release(Id);
+    public void Release()
+    {
+        release(Id);
+        Scene.Entities.Remove(Id);
+    } 
 
     #endregion
 
     #region Internal
 
-    internal T CreateComponentInternal<T>(params object[] args) where T : EComponent, new()
+    public T CreateComponentInternal<T>(params object[] args) where T : EComponent, new()
     {
         var comp = GetComponent<T>();
 
@@ -202,10 +210,10 @@ public class EEntity
             return null!;
         }
 
+        comp.Entity = this;
         comp.Initialize(args);
 
         Components.Add(comp.GetType().Name, comp);
-        comp.Entity = this;
 
         comp.Start();
 
@@ -218,6 +226,9 @@ public class EEntity
         if (sync)
             removeComponent(Id, name);
     }
+
+    [DllImport("EraScriptingCore.dll")]
+    private static extern unsafe void AddEntity(EntityCreationDTO creationDTO);
 
     internal void AddComponentFromInstance(EComponent comp, string name, bool from = true)
     {

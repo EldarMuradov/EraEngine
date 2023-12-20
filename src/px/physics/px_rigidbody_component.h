@@ -5,6 +5,7 @@ struct eentity;
 
 enum class px_rigidbody_type : uint8
 {
+	None,
 	Static,
 	Dynamic,
 	Kinematic

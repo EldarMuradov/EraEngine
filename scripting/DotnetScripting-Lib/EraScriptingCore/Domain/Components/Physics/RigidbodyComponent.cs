@@ -1,5 +1,7 @@
-﻿using EraScriptingCore.Extensions;
+﻿using EraScriptingCore.Core;
+using EraScriptingCore.Extensions;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace EraScriptingCore.Domain.Components;
@@ -23,10 +25,11 @@ public sealed class RigidbodyComponent : EComponent
 {
     public override void Initialize(params object[] args)
     {
-        if (args.Length == 0)
-            throw new ArgumentException("Runtime> You must put at least 1 argument!");
-        Type = (RigidbodyType)args[0];
-        initializeRigidbody(Entity.Id, (uint)Type);
+        if (args.Length == 1)
+        {
+            Type = (RigidbodyType)args[0];
+            initializeRigidbody(Entity.Id, (uint)Type);
+        }
     }
 
     public float Mass 
@@ -57,14 +60,21 @@ public sealed class RigidbodyComponent : EComponent
         Memory.ReleaseIntPtr(vec);
     }
 
-    public Vector3 GetLinearVelocity() 
+    public unsafe Vector3 GetLinearVelocity() 
     {
-        return getLinearVelocity(Entity.Id);
+        Debug.Log("SYKA");
+        float* ptr = (float*)getLinearVelocity(Entity.Id);
+        Vector3 velocity = new Vector3(*ptr, *(++ptr), *(++ptr));
+        return velocity;
     }
 
     public Vector3 GetAngularVelocity()
     {
-        return getAngularVelocity(Entity.Id);
+        //IntPtr ptr = getAngularVelocity(Entity.Id);
+        //Vector3 velocity = Memory.PtrToStruct<Vector3>(ptr);
+        //Memory.ReleaseIntPtr(ptr);
+        //return velocity;
+        return new Vector3();
     }
 
     public void SetLinearVelocity(Vector3 velocity)
@@ -89,10 +99,10 @@ public sealed class RigidbodyComponent : EComponent
     private static extern void addForce(int id, uint mode, IntPtr force);
 
     [DllImport("EraScriptingCPPDecls.dll")]
-    private static extern Vector3 getLinearVelocity(int id);
+    private static extern IntPtr getLinearVelocity(int id);
 
     [DllImport("EraScriptingCPPDecls.dll")]
-    private static extern Vector3 getAngularVelocity(int id);
+    private static extern IntPtr getAngularVelocity(int id);
 
     [DllImport("EraScriptingCPPDecls.dll")]
     private static extern void setLinearVelocity(int id, IntPtr velocity);

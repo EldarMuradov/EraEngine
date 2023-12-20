@@ -7,46 +7,104 @@
 
 application* enative_scripting_linker::app;
 
-static void add_force_internal(uint32_t id, uint32_t mode, float* force)
+namespace bind
 {
-	entity_handle hid = (entity_handle)id;
-	eentity entity { hid, &enative_scripting_linker::app->getCurrentScene()->registry };
-	
-	if (auto rb = entity.getComponentIfExists<px_rigidbody_component>())
+	static void add_force_internal(uint32_t id, uint32_t mode, float* force)
 	{
-		vec3 f = vec3(force[0], force[1], force[2]);
-		rb->addForce(f, (px_force_mode)mode);
-		std::cout << "Force" << "\n";
-	}
-	else
-		std::cerr << "bliaaaa addForce";
-}
+		entity_handle hid = (entity_handle)id;
+		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
 
-static void create_script_internal(uint32_t id, const char* name)
-{
-	entity_handle hid = (entity_handle)id;
-	eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
-	
-	if (auto script = entity.getComponentIfExists<script_component>())
+		if (auto rb = entity.getComponentIfExists<px_rigidbody_component>())
+		{
+			vec3 f = vec3(force[0], force[1], force[2]);
+			rb->addForce(f, (px_force_mode)mode);
+			std::cout << "Force" << "\n";
+		}
+		else
+			std::cerr << "bliaaaa addForce";
+	}
+
+	static void initialize_rigidbody_internal(uint32_t id, uint32_t type)
 	{
-		script->typeNames.push_back(name);
+		entity_handle hid = (entity_handle)id;
+		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+
+		entity.addComponent<px_rigidbody_component>((px_rigidbody_type)type);
 	}
-	else
+
+	static float get_mass_internal(uint32_t id)
 	{
-		entity.addComponent<script_component>(name);
+		entity_handle hid = (entity_handle)id;
+		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+
+		if (auto rb = entity.getComponentIfExists<px_rigidbody_component>())
+			return rb->getMass();
+		else
+			return -1.0f;
 	}
-}
 
-static void log_message_internal(uint32_t mode, const char* message)
-{
-	message_type type = (message_type)mode;
+	static void set_mass_internal(uint32_t id, float mass)
+	{
+		entity_handle hid = (entity_handle)id;
+		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
 
-	if(type == message_type_warning)
-		LOG_WARNING(message);
-	else if (type == message_type_error)
-		LOG_ERROR(message);
-	else
-		LOG_MESSAGE(message);
+		if (auto rb = entity.getComponentIfExists<px_rigidbody_component>())
+			rb->setMass(mass);
+		else
+			std::cerr << "bliaaaa";
+	}
+
+	static float* get_linear_velocity_internal(uint32_t id)
+	{
+		entity_handle hid = (entity_handle)id;
+		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+
+		if (auto rb = entity.getComponentIfExists<px_rigidbody_component>())
+		{
+
+			return rb->getLinearVelocity().data;
+		}
+		else
+			return new float[3];
+	}
+
+	static float* get_angular_velocity_internal(uint32_t id)
+	{
+		entity_handle hid = (entity_handle)id;
+		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+
+		if (auto rb = entity.getComponentIfExists<px_rigidbody_component>())
+			return rb->getAngularVelocity().data;
+		else
+			return new float[3];
+	}
+
+	static void create_script_internal(uint32_t id, const char* name)
+	{
+		entity_handle hid = (entity_handle)id;
+		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+
+		if (auto script = entity.getComponentIfExists<script_component>())
+		{
+			script->typeNames.push_back(name);
+		}
+		else
+		{
+			entity.addComponent<script_component>(name);
+		}
+	}
+
+	static void log_message_internal(uint32_t mode, const char* message)
+	{
+		message_type type = (message_type)mode;
+
+		if (type == message_type_warning)
+			LOG_WARNING(message);
+		else if (type == message_type_error)
+			LOG_ERROR(message);
+		else
+			LOG_MESSAGE(message);
+	}
 }
 
 void enative_scripting_linker::init()
@@ -54,7 +112,7 @@ void enative_scripting_linker::init()
 	lib = LoadLibraryA("EraScriptingCPPDecls.dll");
 	if (!lib || lib == INVALID_HANDLE_VALUE)
 	{
-		std::cerr << "bliaaaa"; 
+		std::cerr << "bliaaaa";
 		return;
 	}
 
@@ -75,8 +133,24 @@ void enative_scripting_linker::bindFunctions()
 {
 	if (builder)
 	{
-		builder->functions.emplace("addForce", BIND(add_force_internal, void, uint32_t, uint32_t, float*));
-		builder->functions.emplace("log", BIND(log_message_internal, void, uint32_t, const char*));
-		builder->functions.emplace("createScript", BIND(create_script_internal, void, uint32_t, const char*));
+		// Rigidbody
+		{
+			builder->functions.emplace("getLinearVelocity", BIND(bind::get_linear_velocity_internal, float*, uint32_t));
+			builder->functions.emplace("getAngularVelocity", BIND(bind::get_angular_velocity_internal, float*, uint32_t));
+			builder->functions.emplace("initializeRigidbody", BIND(bind::initialize_rigidbody_internal, void, uint32_t, uint32_t));
+			builder->functions.emplace("getMass", BIND(bind::get_mass_internal, float, uint32_t));
+			builder->functions.emplace("setMass", BIND(bind::set_mass_internal, void, uint32_t, float));
+			builder->functions.emplace("addForce", BIND(bind::add_force_internal, void, uint32_t, uint32_t, float*));
+		}
+
+		// Debug
+		{
+			builder->functions.emplace("log", BIND(bind::log_message_internal, void, uint32_t, const char*));
+		}
+		
+		// EEntity
+		{
+			builder->functions.emplace("createScript", BIND(bind::create_script_internal, void, uint32_t, const char*));
+		}
 	}
 }

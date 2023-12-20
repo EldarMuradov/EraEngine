@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace EraScriptingCore.Extensions;
@@ -12,6 +13,13 @@ public static class Memory
         Marshal.StructureToPtr(@struct, ptr, false);
         return ptr;
     }
+
+    //public static unsafe Vector3 PtrToVector3(IntPtr ptr)
+    //{
+    //    int* v = (int*)ptr.ToPointer();
+    //    Vector3 vector = new Vector3((float)*v, (float)*(++v), (float)*(++v));
+    //    return vector;
+    //}
 
     public static unsafe void CopyToManaged<T>(IntPtr source, T[] destination, int startIndex, int length)
     {

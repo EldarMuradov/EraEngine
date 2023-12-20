@@ -8,7 +8,7 @@
 
 #define NDEBUG 0
 
-#define PX_GPU_BROAD_PHASE 1
+#define PX_GPU_BROAD_PHASE 0
 #define PX_ENABLE_RAYCAST_CCD 0
 
 #include <PxPhysics.h>
