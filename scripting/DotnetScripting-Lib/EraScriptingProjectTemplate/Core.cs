@@ -5,16 +5,15 @@ using EraScriptingCore.Domain.Components;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.Json.Serialization;
+using System.Text.Json;
+using EraScriptingCore.Infrastructure.Serializers;
+using RGiesecke.DllExport;
 
 namespace EraScriptingProjectTemplate;
 
-[JsonSerializable(typeof(string), GenerationMode = JsonSourceGenerationMode.Metadata)]
-internal partial class JsonContext : JsonSerializerContext { }
-
 public static class Core
 {
-    internal static Dictionary<string, Func<Script>> Types = new();
+    internal static Dictionary<string, EComponentCreationHelper.CreateComponentFunc> Types = new();
 
     private static void RegisterClasses() 
     {
@@ -40,9 +39,14 @@ public static class Core
             File.WriteAllText(path, strTypes);
     }
 
-    public static CustomTypesDTO GetCtors()
+    [UnmanagedCallersOnly(EntryPoint = "CreateTestScript")]
+    public static IntPtr CreateTestScript() 
     {
-        return new CustomTypesDTO() { CustomTypes = Types };
+        TestScript ts = new();
+        GCHandle handle = GCHandle.Alloc(ts);
+        IntPtr parameter = (IntPtr)handle;
+        
+        return parameter;
     }
 
     [UnmanagedCallersOnly(EntryPoint = "GetTypes")]
@@ -78,9 +82,5 @@ public static class Core
         {
             Console.WriteLine("Scripting> Type found: " + type.Key);
         }
-
-        EEntity e = new(60, "Px_Sphere");
-        Debug.Log(Scene.Entities.Count.ToString());
-        e.CreateComponent<TestScript>();
     }
 }

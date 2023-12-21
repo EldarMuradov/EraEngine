@@ -58,6 +58,8 @@ public sealed class TransformComponent : EComponent
         Memory.ReleaseIntPtr(trs);
     }
 
+    internal override void InitializeComponentInternal(params object[] args) { }
+
     #region P/I
 
     [DllImport("EraScriptingCPPDecls.dll")]

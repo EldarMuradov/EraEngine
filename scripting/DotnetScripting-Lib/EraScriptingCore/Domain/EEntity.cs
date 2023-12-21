@@ -1,8 +1,11 @@
 ﻿using EraScriptingCore.Core;
 using EraScriptingCore.Domain.Components;
+using EraScriptingCore.Infrastructure.Serializers;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Json;
 
 namespace EraScriptingCore.Domain;
 
@@ -12,9 +15,10 @@ public class EEntity
     {
         (Id, Name) = (id, name);
         CreateComponentInternal<TransformComponent>();
+    }
 
-        EEntity _this = this;
-        AddEntity(new EntityCreationDTO() { Entity = (IntPtr)Unsafe.AsPointer(ref _this) });
+    public EEntity()
+    {
     }
 
     public int Id { get; init; }
@@ -36,7 +40,7 @@ public class EEntity
         set
         {
             _activeSelf = value;
-            setActive(Id, _activeSelf);
+            //setActive(Id, _activeSelf);
         }
     }
 
@@ -88,7 +92,7 @@ public class EEntity
             createComponent(Id, comp.GetType().Name); // TODO: agrs sync
 
         comp.Entity = this;
-        comp.Initialize(args);
+        comp.InitializeComponentInternal(args);
 
         Components.Add(comp.GetType().Name, comp);
 
@@ -164,18 +168,17 @@ public class EEntity
 
     public EComponent CopyComponent(EComponent component)
     {
-        var type = component.GetType();
+        //var type = component.GetType();
 
-        foreach (var c in Components)
-        {
-            if (c.Value.GetType() == type)
-                return c.Value;
-        }
+        //foreach (var c in Components)
+        //{
+        //    if (c.Value.GetType() == type)
+        //        return c.Value;
+        //}
 
         var comp = component;
 
         Components.Add(comp.GetType().Name, comp);
-        comp.Entity = this;
 
         return comp;
     }
@@ -211,7 +214,7 @@ public class EEntity
         }
 
         comp.Entity = this;
-        comp.Initialize(args);
+        comp.InitializeComponentInternal(args);
 
         Components.Add(comp.GetType().Name, comp);
 
@@ -228,7 +231,7 @@ public class EEntity
     }
 
     [DllImport("EraScriptingCore.dll")]
-    private static extern unsafe void AddEntity(EntityCreationDTO creationDTO);
+    private static extern unsafe void AddEntity(IntPtr str, int length);
 
     internal void AddComponentFromInstance(EComponent comp, string name, bool from = true)
     {
@@ -248,14 +251,11 @@ public class EEntity
         Debug.Log($"Scripting> {comp} removed successfuly");
     }
 
-    [DllImport("EraScriptingProjectTemplate.dll", EntryPoint = "GetCtors")]
-    private static extern CustomTypesDTO GetCtors();
-
     internal static void AddComponentFromEngine(int id, string comp)
     {
-        var component = GetCtors().CustomTypes[comp];
-        Debug.Log($"Runtime> {comp} added successfuly");
-        Scene.Entities[id].AddComponentFromInstance(component(), comp, false);
+        //var component = GetCtors().CustomTypes[comp];
+        //Debug.Log($"Runtime> {comp} added successfuly");
+        //Scene.Entities[id].AddComponentFromInstance(component(), comp, false);
     }
 
     #endregion

@@ -61,8 +61,11 @@ namespace bind
 
 		if (auto rb = entity.getComponentIfExists<px_rigidbody_component>())
 		{
-
-			return rb->getLinearVelocity().data;
+			float* f = new float[3];
+			f[0] = rb->getLinearVelocity().data[0];
+			f[1] = rb->getLinearVelocity().data[1];
+			f[2] = rb->getLinearVelocity().data[2];
+			return f;
 		}
 		else
 			return new float[3];
@@ -74,7 +77,13 @@ namespace bind
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
 
 		if (auto rb = entity.getComponentIfExists<px_rigidbody_component>())
-			return rb->getAngularVelocity().data;
+		{
+			float* f = new float[3];
+			f[0] = rb->getAngularVelocity().data[0];
+			f[1] = rb->getAngularVelocity().data[1];
+			f[2] = rb->getAngularVelocity().data[2];
+			return f;
+		}
 		else
 			return new float[3];
 	}

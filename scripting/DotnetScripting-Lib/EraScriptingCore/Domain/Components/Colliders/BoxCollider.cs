@@ -4,7 +4,7 @@ namespace EraScriptingCore.Domain.Components;
 
 public sealed class BoxCollider : Collider
 {
-    public override void Initialize(params object[] args)
+    internal override void InitializeComponentInternal(params object[] args)
     {
         if (args.Length < 3)
             throw new ArgumentException("Runtime> You must put at least 3 arguments!");

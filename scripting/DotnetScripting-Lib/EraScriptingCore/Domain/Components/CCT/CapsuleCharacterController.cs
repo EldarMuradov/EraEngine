@@ -7,7 +7,7 @@ public sealed class CapsuleCharacterController : CharacterController
 {
     public float Radius { get; private set; }
 
-    public override void Initialize(params object[] args)
+    internal override void InitializeComponentInternal(params object[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("Runtime> You must put at least 1 argument!");

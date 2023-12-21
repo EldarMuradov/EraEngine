@@ -2,7 +2,7 @@
 
 public sealed class MeshCollider : Collider
 {
-    public override void Initialize(params object[] args)
+    internal override void InitializeComponentInternal(params object[] args)
     {
         Type = ColliderType.Mesh;
     }

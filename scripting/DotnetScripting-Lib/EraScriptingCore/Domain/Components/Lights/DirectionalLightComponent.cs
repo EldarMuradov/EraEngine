@@ -5,7 +5,7 @@ namespace EraScriptingCore.Domain.Components.Lights;
 
 public sealed class DirectionalLightComponent : LightComponent
 {
-    public override void Initialize(params object[] args)
+    internal override void InitializeComponentInternal(params object[] args)
     {
         LightData = (ILightData)args[0];
         LightType = LightType.Spot;

@@ -20,7 +20,7 @@ public sealed class BoxCharacterController : CharacterController
     /// </summary>
     public float Width { get; private set; }
 
-    public override void Initialize(params object[] args)
+    internal override void InitializeComponentInternal(params object[] args)
     {
         if (args.Length < 3)
             throw new ArgumentException("Runtime> You must put at least 3 arguments!");

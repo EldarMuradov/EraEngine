@@ -1,6 +1,4 @@
-﻿using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace EraScriptingCore.Extensions;
 
@@ -14,13 +12,6 @@ public static class Memory
         return ptr;
     }
 
-    //public static unsafe Vector3 PtrToVector3(IntPtr ptr)
-    //{
-    //    int* v = (int*)ptr.ToPointer();
-    //    Vector3 vector = new Vector3((float)*v, (float)*(++v), (float)*(++v));
-    //    return vector;
-    //}
-
     public static unsafe void CopyToManaged<T>(IntPtr source, T[] destination, int startIndex, int length)
     {
         ArgumentNullException.ThrowIfNull(destination);
@@ -30,6 +21,15 @@ public static class Memory
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         new Span<T>((void*)source, length).CopyTo(new Span<T>(destination, startIndex, length));
+    }
+
+    public static unsafe int GetStringLength(IntPtr str)
+    {
+        var ptr = (byte*)str;
+        var length = 0;
+        while (*(ptr + length) != 0)
+            length++;
+        return length;
     }
 
     public static void ReleaseIntPtr(IntPtr data)

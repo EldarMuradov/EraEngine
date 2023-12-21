@@ -2,6 +2,7 @@
 
 namespace EraScriptingCore.AI;
 
-public class NavigationMeshAIComponent : EComponent
+public sealed class NavigationMeshAIComponent : EComponent
 {
+    internal override void InitializeComponentInternal(params object[] args) { }
 }

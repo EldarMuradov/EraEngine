@@ -4,7 +4,7 @@ namespace EraScriptingCore.Domain.Components;
 
 public sealed class SphereCollider : Collider
 {
-    public override void Initialize(params object[] args)
+    internal override void InitializeComponentInternal(params object[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("Runtime> You must put at least 1 argument!");

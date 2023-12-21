@@ -1,7 +1,5 @@
-﻿using EraScriptingCore.Core;
-using EraScriptingCore.Extensions;
+﻿using EraScriptingCore.Extensions;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace EraScriptingCore.Domain.Components;
@@ -23,15 +21,6 @@ public enum RigidbodyType : uint
 
 public sealed class RigidbodyComponent : EComponent
 {
-    public override void Initialize(params object[] args)
-    {
-        if (args.Length == 1)
-        {
-            Type = (RigidbodyType)args[0];
-            initializeRigidbody(Entity.Id, (uint)Type);
-        }
-    }
-
     public float Mass 
     {
         get => _mass;
@@ -62,19 +51,20 @@ public sealed class RigidbodyComponent : EComponent
 
     public unsafe Vector3 GetLinearVelocity() 
     {
-        Debug.Log("SYKA");
-        float* ptr = (float*)getLinearVelocity(Entity.Id);
-        Vector3 velocity = new Vector3(*ptr, *(++ptr), *(++ptr));
+        IntPtr ptrn = getLinearVelocity(Entity.Id);
+        float* ptr = (float*)ptrn;
+        Vector3 velocity = new(*ptr, *(ptr + 1), *(ptr + 2));
+        Memory.ReleaseIntPtr(ptrn);
         return velocity;
     }
 
-    public Vector3 GetAngularVelocity()
+    public unsafe Vector3 GetAngularVelocity()
     {
-        //IntPtr ptr = getAngularVelocity(Entity.Id);
-        //Vector3 velocity = Memory.PtrToStruct<Vector3>(ptr);
-        //Memory.ReleaseIntPtr(ptr);
-        //return velocity;
-        return new Vector3();
+        IntPtr ptrn = getAngularVelocity(Entity.Id);
+        float* ptr = (float*)ptrn;
+        Vector3 velocity = new(*ptr, *(++ptr), *(++ptr));
+        Memory.ReleaseIntPtr(ptrn);
+        return velocity;
     }
 
     public void SetLinearVelocity(Vector3 velocity)
@@ -92,6 +82,15 @@ public sealed class RigidbodyComponent : EComponent
     }
 
     #endregion
+
+    internal override void InitializeComponentInternal(params object[] args)
+    {
+        if (args.Length == 1)
+        {
+            Type = (RigidbodyType)args[0];
+            initializeRigidbody(Entity.Id, (uint)Type);
+        }
+    }
 
     #region P/I
 

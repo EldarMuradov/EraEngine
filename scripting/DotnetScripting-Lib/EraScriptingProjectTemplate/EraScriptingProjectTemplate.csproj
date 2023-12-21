@@ -19,6 +19,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="UnmanagedExports" Version="1.2.7" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\EraScriptingCore\EraScriptingCore.csproj" />
   </ItemGroup>
 </Project>
