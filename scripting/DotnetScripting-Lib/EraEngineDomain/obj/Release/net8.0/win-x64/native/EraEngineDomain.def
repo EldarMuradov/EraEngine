@@ -1,0 +1,6 @@
+EXPORTS
+   handle_collisions
+   handle_transform
+   handle_positions
+   handle_rotations
+   handle_scales

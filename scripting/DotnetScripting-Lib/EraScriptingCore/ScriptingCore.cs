@@ -27,19 +27,9 @@ public class ScriptingCore
 {
     #region P/I
 
-    [DllImport("EraScriptingProjectTemplate.dll")]
-    private static extern void SerializeUserTypes();
-
-    [DllImport("EraScriptingProjectTemplate.dll")]
-    private static extern void Init();
-
     [UnmanagedCallersOnly(EntryPoint = "init_scripting")]
     public static unsafe void InitializeScripting()
     {
-        Init();
-
-        SerializeUserTypes();
-
         Core.Debug.Log("Usage of debug");
     }
 

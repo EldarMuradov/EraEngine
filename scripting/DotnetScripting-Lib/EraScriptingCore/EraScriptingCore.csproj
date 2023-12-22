@@ -18,4 +18,9 @@
     <Optimize>False</Optimize>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\EraEngineDomain\EraEngineDomain.csproj" />
+    <ProjectReference Include="..\EraScriptingProjectTemplate\EraScriptingProjectTemplate.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,0 +1,12 @@
+E:\Era Engine\scripting\DotnetScripting-Lib\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.GeneratedMSBuildEditorConfig.editorconfig
+E:\Era Engine\scripting\DotnetScripting-Lib\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.AssemblyInfoInputs.cache
+E:\Era Engine\scripting\DotnetScripting-Lib\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.AssemblyInfo.cs
+E:\Era Engine\scripting\DotnetScripting-Lib\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.csproj.CoreCompileInputs.cache
+E:\Era Engine\scripting\DotnetScripting-Lib\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.sourcelink.json
+E:\Era Engine\bin\Release_x86_64\Release\net8.0\EraEngineDomain.deps.json
+E:\Era Engine\bin\Release_x86_64\Release\net8.0\EraEngineDomain.dll
+E:\Era Engine\bin\Release_x86_64\Release\net8.0\EraEngineDomain.pdb
+E:\Era Engine\scripting\DotnetScripting-Lib\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.dll
+E:\Era Engine\scripting\DotnetScripting-Lib\EraEngineDomain\obj\Release\net8.0\refint\EraEngineDomain.dll
+E:\Era Engine\scripting\DotnetScripting-Lib\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.pdb
+E:\Era Engine\scripting\DotnetScripting-Lib\EraEngineDomain\obj\Release\net8.0\ref\EraEngineDomain.dll

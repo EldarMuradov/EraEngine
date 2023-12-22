@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EraScriptingCore\EraScriptingCore.csproj" />
+    <ProjectReference Include="..\EraEngineDomain\EraEngineDomain.csproj" />
   </ItemGroup>
+	
 </Project>
