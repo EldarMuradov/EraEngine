@@ -62,7 +62,7 @@ public sealed class RigidbodyComponent : EComponent
     {
         IntPtr ptrn = getAngularVelocity(Entity.Id);
         float* ptr = (float*)ptrn;
-        Vector3 velocity = new(*ptr, *(++ptr), *(++ptr));
+        Vector3 velocity = new(*ptr, *(ptr + 1), *(ptr + 2));
         Memory.ReleaseIntPtr(ptrn);
         return velocity;
     }
