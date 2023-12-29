@@ -1,6 +1,6 @@
-﻿using EraScriptingCore.Domain.Components;
+﻿using EraEngine.Components;
 
-namespace EraScriptingCore.Domain;
+namespace EraEngine;
 
 public class Script : EComponent
 {

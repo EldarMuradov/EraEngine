@@ -1,7 +1,7 @@
-﻿using EraScriptingCore.Domain.Components;
+﻿using EraEngine.Components;
 using System.Runtime.InteropServices;
 
-namespace EraScriptingCore.Domain.Descriptors;
+namespace EraEngine.Descriptors;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct RigidbodyDescriptor

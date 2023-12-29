@@ -1,8 +1,7 @@
-﻿using EraScriptingCore.Domain;
-using EraScriptingCore.Domain.Components;
+﻿using EraEngine.Components;
 using System.Text.Json.Serialization;
 
-namespace EraScriptingCore.Infrastructure.Serializers;
+namespace EraEngine.Infrastructure.Serializers;
 
 [JsonSerializable(typeof(Type), GenerationMode = JsonSourceGenerationMode.Metadata)]
 [JsonSerializable(typeof(Type[]), GenerationMode = JsonSourceGenerationMode.Metadata)]

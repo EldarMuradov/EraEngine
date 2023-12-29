@@ -2,7 +2,6 @@
 #include "ejson_serializer.h"
 #include <scene/scene.h>
 #include <fstream>
-#include "project.h"
 
 json merge(const json& rhs, const json& lhs)
 {
@@ -66,7 +65,7 @@ json ejson_serializer::convert2JsonWithNb(eentity* entity, int nb)
 	return obj;
 }
 
-eentity* ejson_serializer::deserializePrefab(std::string_view name, escene* scene)
+eentity ejson_serializer::deserializePrefab(std::string_view name, escene* scene)
 {
 	std::string path = eproject::path + "\\assets\\prefabs\\" + name.data() + ".eprefab";
 
@@ -76,7 +75,7 @@ eentity* ejson_serializer::deserializePrefab(std::string_view name, escene* scen
 
 	json jname = object["Name"];
 	json jid = object["Id"];
-	eentity* result = &scene->createEntity((jname.get<std::string>() + "_prefab").c_str(), jid.get<entity_handle>());
+	eentity result = scene->createEntity((jname.get<std::string>() + "_prefab").c_str(), jid.get<entity_handle>());
 
 	return result;
 }

@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace EraScriptingCore.Domain.Components.Lights;
+namespace EraEngine.Components.Lights;
 
 public sealed class PointLightComponent : LightComponent
 {

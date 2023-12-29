@@ -1,5 +1,6 @@
 #pragma once
 #include <nlohmann/json.hpp>
+#include "project.h"
 
 using json = nlohmann::basic_json<>;
 
@@ -14,7 +15,7 @@ struct ejson_serializer
 	static void serializeObject(T object)
 	{
 		json node = object;
-		std::string name = Project::ProjectPath + (std::string)"\\data\\Preferences\\" + std::string(node.type_name()) + std::string(".eobject");
+		std::string name = eproject::path + (std::string)"\\data\\Preferences\\" + std::string(node.type_name()) + std::string(".eobject");
 		std::ofstream o(name.c_str());
 		o << node << std::endl;
 	}
@@ -22,7 +23,7 @@ struct ejson_serializer
 	template<typename T>
 	static T deserializeObject(std::string_view name)
 	{
-		std::ifstream file(Project::ProjectPath + (std::string)"\\data\\Preferences\\" + name.data());
+		std::ifstream file(eproject::path + (std::string)"\\data\\Preferences\\" + name.data());
 		json object;
 		file >> object;
 
@@ -37,7 +38,7 @@ struct ejson_serializer
 
 	static json convert2JsonWithNb(eentity* entity, int nb);
 
-	static eentity* deserializePrefab(std::string_view name, escene* scene);
+	static eentity deserializePrefab(std::string_view name, escene* scene);
 
 	static void serializeScene(escene* scene, const char* name);
 

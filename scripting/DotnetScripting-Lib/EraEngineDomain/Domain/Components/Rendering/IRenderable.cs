@@ -1,4 +1,4 @@
-﻿namespace EraScriptingCore.Domain.Components;
+﻿namespace EraEngine.Components;
 
 public interface IRenderable
 {

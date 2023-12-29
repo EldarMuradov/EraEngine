@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace EraScriptingCore.Domain.Components;
+namespace EraEngine.Components;
 
 public sealed class CapsuleCharacterController : CharacterController
 {

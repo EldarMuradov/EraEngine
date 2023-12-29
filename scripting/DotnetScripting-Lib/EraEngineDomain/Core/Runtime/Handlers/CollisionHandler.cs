@@ -1,9 +1,7 @@
-﻿using EraEngineDomain.Domain;
-using EraScriptingCore.Domain;
-using EraScriptingCore.Domain.Components;
+﻿using EraEngine.Components;
 using System.Runtime.InteropServices;
 
-namespace EraScriptingCore.Core;
+namespace EraEngine.Core;
 
 public sealed class CollisionHandler
 {
@@ -18,16 +16,16 @@ public sealed class CollisionHandler
 
         for (int i = 0; i < size; i++)
         {
-            foreach (var comp in SceneDomain.Entities[ids1[i]].Components)
+            foreach (var comp in Scene.Entities[ids1[i]].Components)
             {
                 if (comp.Value is ICollidable collidable)
-                    collidable.OnCollisionEnter(SceneDomain.Entities[ids2[i]]);
+                    collidable.OnCollisionEnter(Scene.Entities[ids2[i]]);
             }
 
-            foreach (var comp in SceneDomain.Entities[ids2[i]].Components)
+            foreach (var comp in Scene.Entities[ids2[i]].Components)
             {
                 if (comp.Value is ICollidable collidable)
-                    collidable.OnCollisionEnter(SceneDomain.Entities[ids2[i]]);
+                    collidable.OnCollisionEnter(Scene.Entities[ids2[i]]);
             }
         }
 

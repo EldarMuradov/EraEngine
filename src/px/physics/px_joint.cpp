@@ -176,6 +176,21 @@ px_d6_joint::px_d6_joint(px_d6_joint_desc desc, physx::PxRigidActor* f, physx::P
 	joint = createD6Joint(f, s);
 	type = px_joint_type::px_d6;
 	auto jInstance = joint->is<physx::PxD6Joint>();
+	if (desc.drive.anabledDrive)
+	{
+		auto jointDrive = PxD6JointDrive();
+		if (desc.drive.acceleration)
+			jointDrive.flags = physx::PxD6JointDriveFlag::eACCELERATION;
+		jointDrive.damping = desc.drive.damping;
+		jointDrive.forceLimit = desc.drive.forceLimit;
+		jointDrive.stiffness = desc.drive.stiffness;
+		jInstance->setDrive((physx::PxD6Drive::Enum)desc.drive.flags, jointDrive);
+		jInstance->setProjectionLinearTolerance(desc.projectionLinearTolerance);
+		jInstance->setProjectionAngularTolerance(desc.projectionAngularTolerance);
+		jInstance->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+		jInstance->setTwistLimit(PxJointAngularLimitPair(desc.angularLimitPair.lower, desc.angularLimitPair.upper, desc.angularLimitPair.contactDistance));
+		jInstance->setLinearLimit(PxJointLinearLimit(desc.linearLimit.value, PxSpring(desc.linearLimit.stiffness, desc.linearLimit.damping)));
+	}
 }
 
 px_d6_joint::~px_d6_joint()

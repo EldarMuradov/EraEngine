@@ -1,8 +1,8 @@
-﻿using EraScriptingCore.Extensions;
+﻿using EraEngine.Extensions;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace EraScriptingCore.Domain.Components;
+namespace EraEngine.Components;
 
 public enum CharacterControllerType 
 {

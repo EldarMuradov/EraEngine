@@ -87,7 +87,7 @@ struct eentity_container
 		if (container.find(parent) == container.end())
 			return;
 
-		auto& iter = container.at(parent).childs.begin();
+		auto iter = container.at(parent).childs.begin();
 		const auto& end = container.at(parent).childs.end();
 
 		for (; iter != end; ++iter)

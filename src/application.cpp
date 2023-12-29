@@ -209,17 +209,17 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		for (uint32 i = 0; i < 3; ++i)
 		{
-			scene.createEntity("Box")
+			/*scene.createEntity("Box")
 				.addComponent<transform_component>(vec3(25.f, 10.f + i * 3.f, -5.f), quat(vec3(0.f, 0.f, 1.f), deg2rad(1.f)))
 				.addComponent<mesh_component>(boxMesh)
 				.addComponent<px_box_collider_component>(1.0f, 1.0f, 1.0f)
-				.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);
+				.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);*/
 
-			/*scene.createEntity("Sphere")
+			scene.createEntity("Sphere")
 				.addComponent<transform_component>(vec3(25.f, 10.f + i * 3.f, -5.f), quat(vec3(0.f, 0.f, 1.f), deg2rad(1.f)), vec3(1.f))
 				.addComponent<mesh_component>(sphereMesh)
 				.addComponent<collider_component>(collider_component::asSphere({ vec3(0.f, 0.f, 0.f), 1.f }, { physics_material_type_wood, 0.1f, 0.5f, 1.f }))
-				.addComponent<rigid_body_component>(false, 1.f);*/
+				.addComponent<rigid_body_component>(false, 1.f);
 		}
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");

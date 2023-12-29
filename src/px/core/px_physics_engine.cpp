@@ -131,7 +131,7 @@ void px_physics::initialize()
 		client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
 		client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
 	}
-	auto& cookingParams = PxCookingParams(toleranceScale);
+	auto cookingParams = PxCookingParams(toleranceScale);
 
 	if(!PxInitExtensions(*physics, pvd))
 		LOG_ERROR("Physics> Failed to initialize extensions.");

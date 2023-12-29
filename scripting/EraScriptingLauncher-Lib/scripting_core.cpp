@@ -14,6 +14,7 @@
 //cd DotnetScripting-Lib\EraScriptingProjectTemplate
 //cd ../..
 //cd scripting
+//cd DotnetScripting-Lib\EraEngineDomain
 //dotnet publish -r win-x64 -c Release
 
 static inline std::vector<std::string> split(const std::string& source, char delimiter)
@@ -79,4 +80,5 @@ void escripting_core::update(float dt)
 
 void escripting_core::stop()
 {
+	
 }

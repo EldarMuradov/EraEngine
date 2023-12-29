@@ -1,6 +1,6 @@
-﻿using EraScriptingCore.Domain;
+﻿using EraEngine;
 
-namespace EraScriptingCore.Extensions;
+namespace EraEngine.Extensions;
 
 public static class TaskExtensions
 {

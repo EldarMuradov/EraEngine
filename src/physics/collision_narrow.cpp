@@ -1690,7 +1690,7 @@ static bool overlapCheck(const collider_union* worldSpaceColliders, collider_pai
 
 
 template <typename collider_t>
-static collider_t loadBoundingVolumeSIMD(const collider_union* worldSpaceColliders, uint16* indices) { static_assert(false); }
+static collider_t loadBoundingVolumeSIMD(const collider_union* worldSpaceColliders, uint16* indices) { /*static_assert(false);*/ }
 
 template <>
 static w_bounding_sphere loadBoundingVolumeSIMD<w_bounding_sphere>(const collider_union* worldSpaceColliders, uint16* indices)
@@ -1752,7 +1752,7 @@ static w_bounding_oriented_box loadBoundingVolumeSIMD<w_bounding_oriented_box>(c
 	return result;
 }
 
-template <typename collider_t> static const collider_t& loadBoundingVolumeScalar(const collider_union* worldSpaceColliders, uint32 index) { static_assert(false); }
+template <typename collider_t> static const collider_t& loadBoundingVolumeScalar(const collider_union* worldSpaceColliders, uint32 index) { /*static_assert(false);*/ }
 template <> static const bounding_sphere& loadBoundingVolumeScalar<bounding_sphere>(const collider_union* worldSpaceColliders, uint32 index) { return worldSpaceColliders[index].sphere; }
 template <> static const bounding_capsule& loadBoundingVolumeScalar<bounding_capsule>(const collider_union* worldSpaceColliders, uint32 index) { return worldSpaceColliders[index].capsule; }
 template <> static const bounding_cylinder& loadBoundingVolumeScalar<bounding_cylinder>(const collider_union* worldSpaceColliders, uint32 index) { return worldSpaceColliders[index].cylinder; }
@@ -2193,7 +2193,7 @@ static void writeWideContact(const collider_union* worldSpaceColliders, const w_
 					{
 						uint32 offset = offsetPerLane[k];
 
-						auto& [outContact, outBodyPair] = writeContext.pushContact();
+						auto [outContact, outBodyPair] = writeContext.pushContact();
 
 						v[k].store((float*)&outContact);
 #if COLLISION_SIMD_WIDTH == 4
@@ -2232,7 +2232,7 @@ static void writeScalarContact(const collider_union* worldSpaceColliders, const 
 
 	for (uint32 contactIndex = 0; contactIndex < contact.numContacts; ++contactIndex)
 	{
-		auto& [outContact, outBodyPair] = writeContext.pushContact();
+		auto [outContact, outBodyPair] = writeContext.pushContact();
 
 		outContact.normal = contact.collisionNormal;
 		outContact.penetrationDepth = contact.contacts[contactIndex].penetrationDepth;

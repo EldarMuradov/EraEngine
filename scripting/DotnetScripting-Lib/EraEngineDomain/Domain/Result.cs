@@ -1,4 +1,4 @@
-﻿namespace EraScriptingCore.Domain;
+﻿namespace EraEngine;
 
 public class Result<T>
 {

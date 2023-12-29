@@ -1,6 +1,6 @@
-﻿using EraScriptingCore.Domain.Components;
+﻿using EraEngine.Components;
 
-namespace EraScriptingCore.AI;
+namespace EraEngine.AI;
 
 public sealed class NavigationMeshAIComponent : EComponent
 {

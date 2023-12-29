@@ -36,9 +36,9 @@ private:
 		command_wrapper* commandWrapper = arena.allocate<command_wrapper>();
 		new (commandWrapper) command_wrapper;
 
-		commandWrapper->header.initialize<pipeline_t, command_wrapper>();
+		commandWrapper->header.template initialize<pipeline_t, command_wrapper>();
 
-		command_key key;
+		command_key key{};
 		key.key = sortKey;
 		key.data = commandWrapper;
 

@@ -153,7 +153,7 @@ template <> void deserializeFromMemoryStream<dynamic_transform_component>(eentit
 template <>
 void serializeToMemoryStream(eentity entity, const mesh_component& component, write_stream& stream)
 {
-	asset_handle handle = component.mesh ? component.mesh->handle : 0;
+	asset_handle handle = component.mesh ? component.mesh->handle : (asset_handle)0;
 	uint32 flags = component.mesh ? component.mesh->flags : 0;
 	stream.write(handle);
 	stream.write(flags);

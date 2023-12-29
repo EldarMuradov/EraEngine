@@ -12,6 +12,7 @@
 #include <px/physics/px_rigidbody_component.h>
 #include <px/physics/px_collider_component.h>
 #include <px/physics/px_character_controller_component.h>
+#include <EraScriptingLauncher-Lib/src/script.h>
 #endif
 
 std::mutex eentity_container::sync;
@@ -62,6 +63,8 @@ void escene::cloneTo(escene& target)
 		px_cct_component_base,
 		px_capsule_cct_component,
 		px_box_cct_component,
+
+		script_component,
 #endif
 
 		child_component,
@@ -169,8 +172,8 @@ void escene::deleteEntity(eentity e)
 	}
 
 	// TODO: make it thread-safe
-	auto& childs = e.getChilds();
-	auto& iter = childs.begin();
+	auto childs = e.getChilds();
+	auto iter = childs.begin();
 	const auto& end = childs.end();
 	for (; iter != end; ++iter)
 		deleteEntity(*iter);

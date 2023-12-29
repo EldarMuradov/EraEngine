@@ -1,4 +1,4 @@
-﻿namespace EraScriptingCore.FileSystem;
+﻿namespace EraEngine.FileSystem;
 
 public interface IFileCloner
 {

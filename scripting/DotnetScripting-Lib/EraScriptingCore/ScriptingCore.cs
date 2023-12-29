@@ -1,7 +1,7 @@
-﻿using EraScriptingCore.Domain.Components;
+﻿using EraEngine.Components;
 using System.Runtime.InteropServices;
 
-namespace EraScriptingCore;
+namespace EraEngine;
 
 public static class EComponentCreationHelper
 {

@@ -1,4 +1,4 @@
-﻿namespace EraScriptingCore.Domain.Components.Lights;
+﻿namespace EraEngine.Components.Lights;
 
 public enum LightType : uint 
 {

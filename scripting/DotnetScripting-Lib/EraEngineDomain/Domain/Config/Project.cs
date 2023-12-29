@@ -1,4 +1,4 @@
-﻿namespace EraScriptingCore.Domain.Config;
+﻿namespace EraEngine.Configuration;
 
 public static class Project
 {

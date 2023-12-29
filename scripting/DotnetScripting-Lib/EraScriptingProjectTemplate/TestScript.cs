@@ -1,6 +1,6 @@
-﻿using EraScriptingCore.Core;
-using EraScriptingCore.Domain;
-using EraScriptingCore.Domain.Components;
+﻿using EraEngine.Core;
+using EraEngine;
+using EraEngine.Components;
 using System.Numerics;
 
 namespace EraScriptingProjectTemplate
@@ -10,7 +10,7 @@ namespace EraScriptingProjectTemplate
         public override void Start()
         {
             Console.WriteLine("User script");
-            Entity.CreateComponentInternal<RigidbodyComponent>(RigidbodyType.Dynamic).AddForce(new System.Numerics.Vector3(0, 10, 0), ForceMode.Impulse);
+            Entity.CreateComponentInternal<RigidbodyComponent>(RigidbodyType.Dynamic).AddForce(new Vector3(0, 10, 0), ForceMode.Impulse);
 
             Entity.GetComponent<RigidbodyComponent>().Mass = 5.0f;
 

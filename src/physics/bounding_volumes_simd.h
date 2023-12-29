@@ -2,6 +2,24 @@
 
 #include "core/math_simd.h"
 
+#ifndef BOUNDING_VOLUME_SIMD
+
+#define BOUNDING_VOLUME_SIMD
+
+#include "core/math.h"
+
+typedef w8_float w_float;
+typedef w8_int w_int;
+
+typedef wN_vec2<w_float> w_vec2;
+typedef wN_vec3<w_float> w_vec3;
+typedef wN_vec4<w_float> w_vec4;
+typedef wN_quat<w_float> w_quat;
+typedef wN_mat2<w_float> w_mat2;
+typedef wN_mat3<w_float> w_mat3;
+
+#endif
+
 template <typename simd_t>
 struct wN_bounding_sphere
 {
@@ -31,12 +49,12 @@ struct wN_bounding_box
 	wN_vec3<simd_t> minCorner;
 	wN_vec3<simd_t> maxCorner;
 
-	static wN_bounding_box wN_bounding_box::fromMinMax(wN_vec3<simd_t> minCorner, wN_vec3<simd_t> maxCorner)
+	static wN_bounding_box fromMinMax(wN_vec3<simd_t> minCorner, wN_vec3<simd_t> maxCorner)
 	{
 		return wN_bounding_box{ minCorner, maxCorner };
 	}
 
-	static wN_bounding_box wN_bounding_box::fromCenterRadius(wN_vec3<simd_t> center, wN_vec3<simd_t> radius)
+	static wN_bounding_box fromCenterRadius(wN_vec3<simd_t> center, wN_vec3<simd_t> radius)
 	{
 		return wN_bounding_box{ center - radius, center + radius };
 	}

@@ -1,4 +1,4 @@
-﻿namespace EraScriptingCore.Domain.Components.Audio;
+﻿namespace EraEngine.Components.Audio;
 
 public struct Audio
 {

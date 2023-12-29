@@ -1,5 +1,5 @@
 ﻿using System.Runtime.InteropServices;
-namespace EraScriptingCore.Core;
+namespace EraEngine.Core;
 
 public enum LogLevel : uint
 {

@@ -673,7 +673,7 @@ static void editMaterial(const ref<pbr_material>& material)
 static void editSubmeshTransform(trs* transform)
 {
 	ImGui::Drag("Position", transform->position, 0.1f);
-	vec3& selectedEntityEulerRotation = getEuler(transform->rotation);
+	vec3 selectedEntityEulerRotation = getEuler(transform->rotation);
 	if (ImGui::Drag("Rotation", selectedEntityEulerRotation, 0.1f))
 	{
 		transform->rotation = getQuat(selectedEntityEulerRotation);
@@ -683,10 +683,10 @@ static void editSubmeshTransform(trs* transform)
 
 void eeditor::renderChilds(eentity& entity)
 {
-	auto& childs = entity.getChilds();
+	auto childs = entity.getChilds();
 	if (!childs.empty())
 	{
-		auto& iter = childs.begin();
+		auto iter = childs.begin();
 		const auto& end = childs.end();
 		for (; iter != end; ++iter)
 		{
@@ -942,7 +942,7 @@ bool eeditor::drawSceneHierarchy()
 
 					drawComponent<script_component>(selectedEntity, "Script", [](script_component& script)
 					{
-						auto& iter = script.typeNames.begin();
+						auto iter = script.typeNames.begin();
 						const auto& end = script.typeNames.end();
 						for (; iter != end; ++iter) 
 						{
@@ -2207,6 +2207,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 			this->scene->environment.forceUpdate(this->scene->sun.direction);
 			setSelectedEntity({});
 			app->core->stop();
+			app->core->reload();
 			px_physics_engine::get()->resetActorsVelocityAndInertia();
 		}
 

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace EraScriptingCore.Extensions;
+namespace EraEngine.Extensions;
 
 public static class Memory
 {

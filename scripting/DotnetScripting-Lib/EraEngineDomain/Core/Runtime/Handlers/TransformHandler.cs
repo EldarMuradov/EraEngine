@@ -1,11 +1,9 @@
-﻿using EraEngineDomain.Domain;
-using EraScriptingCore.Domain;
-using EraScriptingCore.Domain.Components;
-using EraScriptingCore.Extensions;
+﻿using EraEngine.Components;
+using EraEngine.Extensions;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace EraScriptingCore.Core.Runtime;
+namespace EraEngine.Core.Runtime;
 
 public sealed class TransformHandler
 {
@@ -20,7 +18,7 @@ public sealed class TransformHandler
 
         for (int i = 0; i < size; i++)
         {
-            SceneDomain.Entities[ids[i]].GetComponent<TransformComponent>().SetTransformMatrix(transforms[i], false);
+            Scene.Entities[ids[i]].GetComponent<TransformComponent>().SetTransformMatrix(transforms[i], false);
         }
 
         Marshal.FreeHGlobal(transformPtr);
@@ -38,7 +36,7 @@ public sealed class TransformHandler
 
         for (int i = 0; i < size; i++)
         {
-            SceneDomain.Entities[ids[i]].GetComponent<TransformComponent>().SetPosition(positions[i], false);
+            Scene.Entities[ids[i]].GetComponent<TransformComponent>().SetPosition(positions[i], false);
         }
 
         Marshal.FreeHGlobal(positionsPtr);
@@ -56,7 +54,7 @@ public sealed class TransformHandler
 
         for (int i = 0; i < size; i++)
         {
-            SceneDomain.Entities[ids[i]].GetComponent<TransformComponent>().SetRotation(rotations[i], false);
+            Scene.Entities[ids[i]].GetComponent<TransformComponent>().SetRotation(rotations[i], false);
         }
 
         Marshal.FreeHGlobal(rotationsPtr);
@@ -74,7 +72,7 @@ public sealed class TransformHandler
 
         for (int i = 0; i < size; i++)
         {
-            SceneDomain.Entities[ids[i]].GetComponent<TransformComponent>().SetScale(scales[i], false);
+            Scene.Entities[ids[i]].GetComponent<TransformComponent>().SetScale(scales[i], false);
         }
 
         Marshal.FreeHGlobal(scalesPtr);

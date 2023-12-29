@@ -1,8 +1,8 @@
-﻿using EraScriptingCore.Domain.Components;
+﻿using EraEngine.Components;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace EraScriptingCore.Core;
+namespace EraEngine.Core;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct RaycastInfo

@@ -1,13 +1,9 @@
-﻿using EraEngineDomain.Domain;
-using EraScriptingCore.Core;
-using EraScriptingCore.Domain.Components;
+﻿using EraEngine.Components;
+using EraEngine.Core;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.Json;
 
-namespace EraScriptingCore.Domain;
+namespace EraEngine;
 
 public class EEntity
 {
@@ -16,8 +12,7 @@ public class EEntity
         (Id, Name) = (id, name);
         CreateComponentInternal<TransformComponent>();
 
-        SceneDomain.Entities.Add(id, this);
-        IsInitialized = true;
+        Scene.Add(this);
     }
 
     public EEntity()
@@ -34,7 +29,7 @@ public class EEntity
 
     public List<EEntity> Childs = new();
 
-    public bool IsInitialized { get; private set; }
+    public bool IsInitialized { get; private set; } = false;
 
     public bool ActiveSelf
     {
@@ -55,14 +50,18 @@ public class EEntity
 
     public void Start()
     {
-        foreach (var comp in Components)
-            comp.Value.Start();
+        IsInitialized = true;
+
+        var components = new List<EComponent>(Components.Values);
+        foreach (var comp in components)
+            comp.Start();
     }
 
     public void Update(float dt)
     {
-        foreach (var comp in Components)
-            comp.Value.Update(dt);
+        var components = new List<EComponent>(Components.Values);
+        foreach (var comp in components)
+            comp.Update(dt);
     }
 
     #endregion
@@ -121,7 +120,7 @@ public class EEntity
 
     public static EEntity Instantiate(EEntity original, Vector3 position, Quaternion rotation, EEntity? parent = null)
     {
-        int newId = SceneDomain.Entities.Count + 100000;
+        int newId = Scene.Entities.Count + 100000;
 
         if (parent != null)
             instantiate(original.Id, newId, parent.Id);
@@ -140,14 +139,14 @@ public class EEntity
         transform.SetPosition(position);
         transform.SetRotation(rotation);
 
-        SceneDomain.Entities.Add(newId, instance);
+        Scene.Entities.Add(newId, instance);
 
         return instance;
     }
 
     public static EEntity Instantiate(EEntity original, EEntity? parent = null)
     {
-        int newId = SceneDomain.Entities.Count + 100000;
+        int newId = Scene.Entities.Count + 100000;
 
         if (parent != null)
             instantiate(original.Id, newId, (int)parent.Id);
@@ -162,7 +161,7 @@ public class EEntity
         foreach (var comp in original.Components)
             instance.CopyComponent(comp.Value);
 
-        SceneDomain.Entities.Add(newId, instance);
+        Scene.Entities.Add(newId, instance);
 
         return instance;
     }
@@ -189,7 +188,7 @@ public class EEntity
     public void Release()
     {
         release(Id);
-        SceneDomain.Entities.Remove(Id);
+        Scene.Entities.Remove(Id);
     } 
 
     #endregion
