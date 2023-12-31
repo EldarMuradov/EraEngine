@@ -20,8 +20,15 @@ namespace EraScriptingProjectTemplate
 
         public override void Update(float dt)
         {
-            Vector3 velocity = Entity.GetComponent<RigidbodyComponent>().GetLinearVelocity();
-            Debug.Log($"X = {velocity.X}, Y = {velocity.Y}, Z = {velocity.Z}");
+            //Vector3 velocity = Entity.GetComponent<RigidbodyComponent>().GetLinearVelocity();
+            //Debug.Log($"X = {velocity.X}, Y = {velocity.Y}, Z = {velocity.Z}");
+
+            Vector3 pos = Entity.GetComponent<TransformComponent>().GetPosition();
+            Debug.Log($"Position X = {pos.X}, Y = {pos.Y}, Z = {pos.Z}");
+
+
+            Quaternion rot = Entity.GetComponent<TransformComponent>().GetRotation();
+            Debug.Log($"Rotation X = {rot.X}, Y = {rot.Y}, Z = {rot.Z}, W = {rot.W}");
         }
     }
 }

@@ -10,6 +10,12 @@ public sealed class TransformComponent : EComponent
     private Quaternion _rotation;
     private Vector3 _scale;
 
+    public Vector3 GetPosition() => _position;
+
+    public Quaternion GetRotation() => _rotation;
+
+    public Vector3 GetScale() => _scale;
+
     public void SetPosition(Vector3 position, bool sync = true)
     {
         _position = position;
@@ -45,17 +51,18 @@ public sealed class TransformComponent : EComponent
 
     public void SetTransformMatrix(Matrix4x4 transform, bool sync = true)
     {
-        IntPtr trs = Memory.StructToIntPtr(transform);
-        Matrix4x4.Decompose(transform, out var pos, out var rot, out var scale);
+        Matrix4x4.Decompose(transform, out var scale, out var rot, out var pos);
 
         SetPosition(pos, sync);
         SetRotation(rot, sync);
         SetScale(scale, sync);
-        
-        if (sync)
-            setTransformMatrix(Entity.Id, trs);
 
-        Memory.ReleaseIntPtr(trs);
+        if (sync)
+        {
+            IntPtr trs = Memory.StructToIntPtr(transform);
+            setTransformMatrix(Entity.Id, trs);
+            Memory.ReleaseIntPtr(trs);
+        }
     }
 
     internal override void InitializeComponentInternal(params object[] args) { }

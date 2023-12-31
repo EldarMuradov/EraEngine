@@ -50,6 +50,7 @@ void escripting_core::init()
 
 	startFunc = (evoidf_na)get_func("start");
 	updateFunc = (evoidf_float)get_func("update");
+	processTransform = (evoidf_u32ptr_u32)get_func("process_transform");
 }
 
 void escripting_core::reload()
@@ -66,11 +67,17 @@ void escripting_core::release()
 
 	startFunc = nullptr;
 	updateFunc = nullptr;
+	processTransform = nullptr;
 }
 
 void escripting_core::start()
 {
 	startFunc();
+}
+
+void escripting_core::processTransforms(uintptr_t mat, uint32_t id)
+{
+	processTransform(mat, id);
 }
 
 void escripting_core::update(float dt)

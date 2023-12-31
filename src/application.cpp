@@ -33,6 +33,7 @@
 #include <px/core/px_tasks.h>
 #include <px/core/px_aggregate.h>
 #include <px/features/px_ragdoll.h>
+#include <EraScriptingLauncher-Lib/src/script.h>
 
 static raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh)
 {
@@ -104,6 +105,17 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, std::shared_ptr<escrip
 				}
 				px_physics_engine::get()->update(data.deltaTime);
 			}
+
+
+			for (auto [entityHandle, transform, script] : data.scene.group(component_group<transform_component, script_component>).each())
+			{
+				auto mat = trsToMat4(transform);
+				float* ptr = new float[16];
+				for (size_t i = 0; i < 16; i++)
+					ptr[i] = mat.m[i];
+				data.core->processTransforms(reinterpret_cast<uintptr_t>(ptr), (uint32_t)entityHandle);
+			}
+
 			updateScripting(data.core, data.deltaTime);
 		}, data).submitNow();
 }
