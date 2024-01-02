@@ -21,7 +21,7 @@ struct px_rigidbody_component
 {
 	px_rigidbody_component() {};
 	px_rigidbody_component(eentity* entt, px_rigidbody_type rbtype, bool addToScene = true) noexcept;
-	~px_rigidbody_component();
+	virtual ~px_rigidbody_component();
 
 	void addForce(vec3 force, px_force_mode mode = px_force_mode::Impulse) noexcept;
 
@@ -67,7 +67,7 @@ private:
 
 	unsigned int mass = 1;
 
-	px_rigidbody_type type = px_rigidbody_type::Dynamic;
+	px_rigidbody_type type = px_rigidbody_type::None;
 
 	float dynamicFriction = 0.5f;
 	float staticFriction = 0.5f;

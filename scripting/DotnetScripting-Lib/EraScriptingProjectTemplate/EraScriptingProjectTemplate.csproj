@@ -19,10 +19,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="UnmanagedExports" Version="1.2.7" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\EraEngineDomain\EraEngineDomain.csproj" />
   </ItemGroup>
 	

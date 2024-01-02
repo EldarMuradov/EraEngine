@@ -9,6 +9,9 @@
 #define NDEBUG 0
 
 #define PX_GPU_BROAD_PHASE 0
+
+#define PX_CONTACT_BUFFER_SIZE 128
+
 #define PX_ENABLE_RAYCAST_CCD 0
 
 #include <PxPhysics.h>
@@ -23,6 +26,9 @@
 struct application;
 
 #define PX_PHYSICS_ENABLED = 1
+
+#define PX_NB_MAX_RAYCAST_HITS 64
+#define PX_NB_MAX_RAYCAST_DISTANCE 128
 
 #define PX_VEHICLE 0
 
@@ -42,14 +48,24 @@ struct px_raycast_info
 
 namespace physx 
 {
-	static PxVec2 min(PxVec2 a, PxVec2 b) noexcept { return PxVec2(std::min(a.x, b.x), std::min(a.y, b.y)); }
-	static PxVec3 min(PxVec3 a, PxVec3 b) noexcept { return PxVec3(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z)); }
+	static PxVec3 createPxVec3(const vec3& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
+	static PxVec2 createPxVec2(const vec2& vec) noexcept { return PxVec2(vec.x, vec.y); }
+	static PxVec3 createPxVec3(vec3&& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
+	static PxVec2 createPxVec2(vec2&& vec) noexcept { return PxVec2(vec.x, vec.y); }
 
-	static PxVec2 max(PxVec2 a, PxVec2 b) noexcept { return PxVec2(std::max(a.x, b.x), std::max(a.y, b.y)); }
-	static PxVec3 max(PxVec3 a, PxVec3 b) noexcept { return PxVec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)); }
+	static vec3 createVec3(const PxVec3& vec) noexcept { return vec3(vec.x, vec.y, vec.z); }
+	static vec2 createVec2(const PxVec2& vec) noexcept { return vec2(vec.x, vec.y); }
+	static vec3 createVec3(PxVec3&& vec) noexcept { return vec3(vec.x, vec.y, vec.z); }
+	static vec2 createVec2(PxVec2&& vec) noexcept { return vec2(vec.x, vec.y); }
+
+	static PxVec2 min(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::min(a.x, b.x), std::min(a.y, b.y)); }
+	static PxVec3 min(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z)); }
+
+	static PxVec2 max(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::max(a.x, b.x), std::max(a.y, b.y)); }
+	static PxVec3 max(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)); }
 }
 
-class SnippetGpuLoadHook : public PxGpuLoadHook
+class px_snippet_gpu_load_hook : public PxGpuLoadHook
 {
 	virtual const char* getPhysXGpuDllName() const
 	{
@@ -82,7 +98,7 @@ class px_query_filter : public PxQueryFilterCallback
 	}
 };
 
-class SimulationFilterCallback : public PxSimulationFilterCallback
+class px_simulation_filter_callback : public PxSimulationFilterCallback
 {
 public:
 	PxFilterFlags pairFound(PxU32 pairID,
@@ -109,7 +125,7 @@ public:
 	};
 };
 
-class CollisionContactCallback : public PxSimulationEventCallback
+class px_collision_contact_callback : public PxSimulationEventCallback
 {
 public:
 	void onConstraintBreak(physx::PxConstraintInfo* constraints, physx::PxU32 count) override { std::cout << "onConstraintBreak\n"; }
@@ -120,7 +136,7 @@ public:
 	void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override;
 };
 
-class CCDContactModification : public PxCCDContactModifyCallback
+class px_CCD_contact_modification : public PxCCDContactModifyCallback
 {
 public:
 	void onCCDContactModify(PxContactModifyPair* const pairs, PxU32 count);
@@ -203,10 +219,16 @@ public:
 
 class px_physics_engine 
 {
-public:
+private:
 	px_physics_engine(application* application) noexcept;
 	~px_physics_engine();
 
+	px_physics_engine(const px_physics_engine&) = delete;
+	px_physics_engine& operator=(const px_physics_engine&) = delete;
+	px_physics_engine(px_physics_engine&&) = delete;
+	px_physics_engine& operator=(px_physics_engine&&) = delete;
+
+public:
 	static void initialize(application* application);
 
 	static void release();
@@ -230,8 +252,9 @@ public:
 	px_physics* getPhysicsAdapter() const noexcept { return physics; }
 
 	std::set<px_rigidbody_component*> actors;
+	std::unordered_map<PxRigidActor*, px_rigidbody_component*> actors_map;
 
-	px_raycast_info raycast(px_rigidbody_component* rb, const vec3& origin, const vec3& dir, int maxDist = 100, int maxHits = 1, PxHitFlags hitFlags = PxHitFlag::ePOSITION | PxHitFlag::eNORMAL | PxHitFlag::eUV);
+	px_raycast_info raycast(px_rigidbody_component* rb, const vec3& dir, int maxDist = PX_NB_MAX_RAYCAST_DISTANCE, int maxHits = PX_NB_MAX_RAYCAST_HITS, PxHitFlags hitFlags = PxHitFlag::ePOSITION | PxHitFlag::eNORMAL | PxHitFlag::eUV | PxHitFlag::eMESH_MULTIPLE);
 
 private:
 	px_physics* physics = nullptr;
@@ -240,13 +263,11 @@ private:
 
 	bool released = false;
 
-	std::unordered_map<PxRigidActor*, px_rigidbody_component*> actors_map;
-
 	static px_physics_engine* engine;
 
 	static std::mutex sync;
 
-	friend class CCDContactModification;
-	friend class CollisionContactCallback;
+	friend class px_CCD_contact_modification;
+	friend class px_collision_contact_callback;
 	friend struct px_rigidbody_component;
 };

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EraEngineDomain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7a7f435e4856ffe026410b339f61b7a0e7de4dee")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e9a8e713a2a842a6774027706bf432b88df913ad")]
 [assembly: System.Reflection.AssemblyProductAttribute("EraEngineDomain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EraEngineDomain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -18,7 +18,7 @@ public sealed class TransformHandler
 
         for (int i = 0; i < size; i++)
         {
-            Scene.Entities[ids[i]].GetComponent<TransformComponent>().SetTransformMatrix(transforms[i], false);
+            Scene.GetEntity(ids[i]).GetComponent<TransformComponent>().SetTransformMatrix(transforms[i], false);
         }
 
         Marshal.FreeHGlobal(transformPtr);
@@ -40,7 +40,7 @@ public sealed class TransformHandler
                 index++;
             }
         }
-        Scene.Entities[id].GetComponent<TransformComponent>().SetTransformMatrix(transforms, false);
+        Scene.GetEntity(id).GetComponent<TransformComponent>().SetTransformMatrix(transforms, false);
 
         Marshal.FreeHGlobal(transformPtr);
     }
@@ -56,7 +56,7 @@ public sealed class TransformHandler
 
         for (int i = 0; i < size; i++)
         {
-            Scene.Entities[ids[i]].GetComponent<TransformComponent>().SetPosition(positions[i], false);
+            Scene.GetEntity(ids[i]).GetComponent<TransformComponent>().SetPosition(positions[i], false);
         }
 
         Marshal.FreeHGlobal(positionsPtr);
@@ -74,7 +74,7 @@ public sealed class TransformHandler
 
         for (int i = 0; i < size; i++)
         {
-            Scene.Entities[ids[i]].GetComponent<TransformComponent>().SetRotation(rotations[i], false);
+            Scene.GetEntity(ids[i]).GetComponent<TransformComponent>().SetRotation(rotations[i], false);
         }
 
         Marshal.FreeHGlobal(rotationsPtr);
@@ -92,7 +92,7 @@ public sealed class TransformHandler
 
         for (int i = 0; i < size; i++)
         {
-            Scene.Entities[ids[i]].GetComponent<TransformComponent>().SetScale(scales[i], false);
+            Scene.GetEntity(ids[i]).GetComponent<TransformComponent>().SetScale(scales[i], false);
         }
 
         Marshal.FreeHGlobal(scalesPtr);

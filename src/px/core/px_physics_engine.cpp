@@ -17,11 +17,11 @@
 px_physics_engine* px_physics_engine::engine = nullptr;
 std::mutex px_physics_engine::sync;
 
-CollisionContactCallback collision_callback;
+px_collision_contact_callback collision_callback;
 
-CCDContactModification contact_modification;
+px_CCD_contact_modification contact_modification;
 
-SimulationFilterCallback simulation_filter_callback;
+px_simulation_filter_callback simulation_filter_callback;
 
 physx::PxFilterFlags contactReportFilterShader(
 	PxFilterObjectAttributes attributes0,
@@ -60,7 +60,6 @@ px_physics::~px_physics()
 	if (!released)
 	{
 		release();
-
 		released = true;
 	}
 }
@@ -325,7 +324,6 @@ void px_physics_engine::removeActor(px_rigidbody_component* actor)
 	actors.erase(actor);
 	actors_map.erase(actor->getRigidActor());
 	physics->scene->removeActor(*actor->getRigidActor());
-	//actor->getRigidActor()->release();
 	sync.unlock();
 }
 
@@ -347,23 +345,24 @@ void px_physics_engine::releaseActors() noexcept
 	sync.unlock();
 }
 
-px_raycast_info px_physics_engine::raycast(px_rigidbody_component* rb, const vec3& origin, const vec3& dir, int maxDist, int maxHits, PxHitFlags hitFlags)
+px_raycast_info px_physics_engine::raycast(px_rigidbody_component* rb, const vec3& dir, int maxDist, int maxHits, PxHitFlags hitFlags)
 {
 	//TODO: approximate origin to object boundind box -> dist face
 
-	auto pose = rb->getRigidActor()->getGlobalPose();
+	const auto& pose = rb->getRigidActor()->getGlobalPose().p - PxVec3(0.0f, 1.5f, 0.0f);
 
 	PxRaycastBuffer hit;
-	PxVec3 o(origin.x, origin.y, origin.z);
-	PxVec3 d(dir.x, dir.y, dir.z);
-	bool status = physics->scene->raycast(o, d, maxDist, hit, PxHitFlag::eDEFAULT);
+	PxVec3 d = createPxVec3(dir);
+	bool status = physics->scene->raycast(pose, d, maxDist, hit, PxHitFlag::eDEFAULT);
 
 	if (status)
 	{
 		uint32 nb = hit.getNbAnyHits();
 		std::cout << "Hits: " << nb << "\n";
-
-		const auto& hitInfo1 = hit.getAnyHit(0);
+		uint32 index = 0;
+		if (nb > 1)
+			index = 1;
+		const auto& hitInfo1 = hit.getAnyHit(index);
 
 		auto actor = actors_map[hitInfo1.actor];
 
@@ -394,7 +393,7 @@ px_raycast_info px_physics_engine::raycast(px_rigidbody_component* rb, const vec
 	return px_raycast_info();
 }
 
-void CCDContactModification::onCCDContactModify(PxContactModifyPair* const pairs, PxU32 count)
+void px_CCD_contact_modification::onCCDContactModify(PxContactModifyPair* const pairs, PxU32 count)
 {
 	UNUSED(pairs);
 
@@ -408,18 +407,35 @@ void CCDContactModification::onCCDContactModify(PxContactModifyPair* const pairs
 		auto rb1 = px_physics_engine::get()->actors_map[actor1];
 		auto rb2 = px_physics_engine::get()->actors_map[actor2];
 
-		rb1->onCollisionEnter(rb2);
-		rb2->onCollisionEnter(rb1);
+		if (rb1 && rb2)
+		{
+			rb1->onCollisionEnter(rb2);
+			rb2->onCollisionEnter(rb1);
+		}
 	}
 }
 
-void CollisionContactCallback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
+void px_collision_contact_callback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
 {
 	UNUSED(pairHeader);
-
-	for (size_t i = 0; i < nbPairs; i++)
+	
+	const physx::PxU32 bufferSize = PX_CONTACT_BUFFER_SIZE;
+	physx::PxContactPairPoint contacts[bufferSize];
+	for (physx::PxU32 i = 0; i < nbPairs; i++)
 	{
 		const physx::PxContactPair& cp = pairs[i];
+		physx::PxU32 nbContacts = pairs[i].extractContacts(contacts, bufferSize);
+		for (physx::PxU32 j = 0; j < nbContacts; j++)
+		{
+			physx::PxVec3 point = contacts[j].position;
+			physx::PxVec3 impulse = contacts[j].impulse;
+			physx::PxU32 internalFaceIndex0 = contacts[j].internalFaceIndex0;
+			physx::PxU32 internalFaceIndex1 = contacts[j].internalFaceIndex1;
+			UNUSED(point);
+			UNUSED(impulse);
+			UNUSED(internalFaceIndex0);
+			UNUSED(internalFaceIndex1);
+		}
 
 		if (cp.events & physx::PxPairFlag::eNOTIFY_TOUCH_FOUND)
 		{
@@ -429,8 +445,11 @@ void CollisionContactCallback::onContact(const PxContactPairHeader& pairHeader, 
 			auto rb1 = px_physics_engine::get()->actors_map[actor1];
 			auto rb2 = px_physics_engine::get()->actors_map[actor2];
 
-			rb1->onCollisionEnter(rb2);
-			rb2->onCollisionEnter(rb1);
+			if (rb1 && rb2)
+			{
+				rb1->onCollisionEnter(rb2);
+				rb2->onCollisionEnter(rb1);
+			}
 		}
 	}
 }

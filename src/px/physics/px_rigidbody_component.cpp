@@ -7,7 +7,8 @@
 
 px_rigidbody_component::px_rigidbody_component(eentity* entt, px_rigidbody_type rbtype, bool addToScene) noexcept : entity(entt), type(rbtype)
 {
-	createPhysics(addToScene);
+	if(rbtype != px_rigidbody_type::None)
+		createPhysics(addToScene);
 	transform = entity->getComponentIfExists<transform_component>();
 }
 

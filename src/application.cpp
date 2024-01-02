@@ -84,48 +84,45 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
 	}, data).submitAfter(mesh->loadJob);
 }
 
+struct updatePhysXPhysicsData
+{
+	std::shared_ptr<escripting_core> core;
+	escene& scene;
+	float deltaTime;
+};
+
 void updatePhysXPhysicsAndScripting(escene& currentScene, std::shared_ptr<escripting_core> core, float dt)
 {
-	struct updatePhysXPhysicsData
-	{
-		std::shared_ptr<escripting_core> core;
-		escene& scene;
-		float deltaTime;
-	};
-
 	updatePhysXPhysicsData data = { core, currentScene, dt};
 
 	highPriorityJobQueue.createJob<updatePhysXPhysicsData>([](updatePhysXPhysicsData& data, job_handle)
+	{
 		{
+			CPU_PROFILE_BLOCK("PhysX physics step");
+			for (auto [entityHandle, rigidbody, transform] : data.scene.group(component_group<px_rigidbody_component, transform_component>).each())
 			{
-				CPU_PROFILE_BLOCK("PhysX physics steps");
-				for (auto [entityHandle, rigidbody, transform] : data.scene.group(component_group<px_rigidbody_component, transform_component>).each())
-				{
-					rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
-				}
-				px_physics_engine::get()->update(data.deltaTime);
+				rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
 			}
+			px_physics_engine::get()->update(data.deltaTime);
+		}
 
-
-			for (auto [entityHandle, transform, script] : data.scene.group(component_group<transform_component, script_component>).each())
-			{
-				auto mat = trsToMat4(transform);
-				float* ptr = new float[16];
-				for (size_t i = 0; i < 16; i++)
-					ptr[i] = mat.m[i];
-				data.core->processTransforms(reinterpret_cast<uintptr_t>(ptr), (uint32_t)entityHandle);
-			}
-
-			updateScripting(data.core, data.deltaTime);
-		}, data).submitNow();
+		updateScripting(data);
+	}, data).submitNow();
 }
 
-void updateScripting(std::shared_ptr<escripting_core> core, float dt)
+void updateScripting(updatePhysXPhysicsData& data)
 {
+	CPU_PROFILE_BLOCK(".NET 8.0 Native AOT scripting step");
+	for (auto [entityHandle, transform, script] : data.scene.group(component_group<transform_component, script_component>).each())
 	{
-		CPU_PROFILE_BLOCK(".NET 8.0 Native AOT scripting steps");
-		core->update(dt);
+		auto mat = trsToMat4(transform);
+		float* ptr = new float[16];
+		for (size_t i = 0; i < 16; i++)
+			ptr[i] = mat.m[i];
+		data.core->processTransforms(reinterpret_cast<uintptr_t>(ptr), (uint32_t)entityHandle);
 	}
+
+	data.core->update(data.deltaTime);
 }
 
 static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> mesh)
@@ -251,12 +248,12 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		px_sphere1->addChild(*px_sphere);
 
-		auto rb1 = px_sphere->getComponent<px_rigidbody_component>().getRigidActor();
+		/*auto rb1 = px_sphere->getComponent<px_rigidbody_component>().getRigidActor();
 		auto rb2 = px_sphere1->getComponent<px_rigidbody_component>().getRigidActor();
 
 		px_revolute_joint_desc jointDesc{};
 
-		px_revolute_joint* joint = new px_revolute_joint(jointDesc, rb1, rb2);
+		px_revolute_joint* joint = new px_revolute_joint(jointDesc, rb1, rb2);*/
 
 		auto px_cct = &scene.createEntity("CharacterControllerPx")
 			.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
@@ -267,7 +264,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<px_box_collider_component>(100.0f, 5.0f, 100.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Static);
 
-		px_raycast_info rci = px_physics_engine::get()->raycast(&px_sphere1->getComponent<px_rigidbody_component>(), vec3(20.f, 11.5f * 3.f, -5.f), vec3(0, -1, 0));
+		px_raycast_info rci = px_physics_engine::get()->raycast(&px_sphere1->getComponent<px_rigidbody_component>(), vec3(0, -1, 0));
 		if (rci.actor)
 		{
 			std::cout << "Raycast. Dist: " << rci.distance << " Actor's Name: " << rci.actor->entity->getComponent<tag_component>().name << '\n';
@@ -444,7 +441,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		SET_NAME(pointLightShadowInfoBuffer[i]->resource, "Point light shadow infos");
 	}
 
-#if 1
+#if 0
 	fireParticleSystem.initialize(10000, 50.f, "assets/particles/fire_explosion.png", 6, 6, vec3(0, 1, 30));
 	smokeParticleSystem.initialize(10000, 500.f, "assets/particles/smoke1.tif", 5, 5, vec3(0, 1, 15));
 	//boidParticleSystem.initialize(10000, 2000.f);
@@ -463,7 +460,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	}
 }
 
-#if 1
+#if 0
 bool editFireParticleSystem(fire_particle_system& particleSystem)
 {
 	bool result = false;
@@ -603,7 +600,7 @@ void application::update(const user_input& input, float dt)
 	physicsStep(scene, stackArena, physicsTimer, editor.physicsSettings, dt);
 
 	// Particles
-#if 1
+#if 0
 	if (input.keyboard['T'].pressEvent)
 	{
 		debrisParticleSystem.burst(camera.position + camera.rotation * vec3(0.f, 0.f, -3.f));
@@ -619,7 +616,6 @@ void application::update(const user_input& input, float dt)
 	fireParticleSystem.render(&transparentRenderPass);
 	smokeParticleSystem.render(&transparentRenderPass);
 	debrisParticleSystem.render(&transparentRenderPass);
-
 #endif
 
 	eentity selectedEntity = editor.selectedEntity;

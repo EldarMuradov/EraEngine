@@ -6,6 +6,10 @@ px_capsule_cct_component::px_capsule_cct_component(eentity* entt) noexcept : px_
 {
 	type = px_cct_type::px_capsule;
 	createCharacterController();
+	uint32_t* handle = new uint32_t[1];
+	handle[0] = (uint32_t)entity->handle;
+	controller->getActor()->userData = handle;
+	px_physics_engine::get()->addActor(this, controller->getActor(), false);
 }
 
 void px_capsule_cct_component::createCharacterController() noexcept
@@ -40,6 +44,10 @@ px_capsule_cct_component::px_capsule_cct_component(eentity* entt, float h, float
 	mass = m;
 	type = px_cct_type::px_capsule;
 	createCharacterController();
+	uint32_t* handle = new uint32_t[1];
+	handle[0] = (uint32_t)entity->handle;
+	controller->getActor()->userData = handle;
+	px_physics_engine::get()->addActor(this, controller->getActor(), false);
 }
 
 px_cct_component_base::px_cct_component_base(eentity* entt) noexcept
@@ -52,6 +60,10 @@ px_box_cct_component::px_box_cct_component(eentity* entt) noexcept : px_cct_comp
 {
 	type = px_cct_type::px_box;
 	createCharacterController();
+	uint32_t* handle = new uint32_t[1];
+	handle[0] = (uint32_t)entity->handle;
+	controller->getActor()->userData = handle;
+	px_physics_engine::get()->addActor(this, controller->getActor(), false);
 }
 
 px_box_cct_component::px_box_cct_component(eentity* entt, float hh, float hs, float m) noexcept : px_cct_component_base(entt)
@@ -59,6 +71,10 @@ px_box_cct_component::px_box_cct_component(eentity* entt, float hh, float hs, fl
 	mass = m;
 	type = px_cct_type::px_box;
 	createCharacterController();
+	uint32_t* handle = new uint32_t[1];
+	handle[0] = (uint32_t)entity->handle;
+	controller->getActor()->userData = handle;
+	px_physics_engine::get()->addActor(this, controller->getActor(), false);
 }
 
 void px_box_cct_component::createCharacterController() noexcept

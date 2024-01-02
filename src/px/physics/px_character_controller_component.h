@@ -13,7 +13,7 @@ enum class px_cct_type : uint8
 	px_capsule
 };
 
-struct px_cct_component_base
+struct px_cct_component_base : px_rigidbody_component
 {
 	px_cct_component_base(eentity* entt) noexcept;
 	virtual ~px_cct_component_base() {}

@@ -2941,6 +2941,11 @@ void eeditor::drawSettings(float dt)
 					ImGui::PopStyleColor();
 				}
 
+				uint32 nbaa = 0;
+				px_physics_engine::get()->getPhysicsAdapter()->scene->getActiveActors(nbaa);
+				uint32 nba = px_physics_engine::get()->actors_map.size();
+				ImGui::PropertyValue("Number of active actors", std::to_string(nbaa).c_str());
+				ImGui::PropertyValue("Number of actors", std::to_string(nba).c_str());
 				// TODO: Physics undoable properties
 				ImGui::EndProperties();
 			}

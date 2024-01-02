@@ -29,7 +29,8 @@ namespace bind
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
 
-		entity.addComponent<px_rigidbody_component>((px_rigidbody_type)type);
+		if (!entity.hasComponent<px_rigidbody_component>())
+			entity.addComponent<px_rigidbody_component>((px_rigidbody_type)type);
 	}
 
 	static float get_mass_internal(uint32_t id)
