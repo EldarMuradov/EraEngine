@@ -218,7 +218,6 @@ bool dx_window::initialize(const TCHAR* name, uint32 requestedClientWidth, uint3
 	this->exclusiveFullscreen = exclusiveFullscreen;
 	tearingSupported = checkTearingSupport(dxContext.factory);
 
-
 	swapchain = createSwapChain(windowHandle, dxContext.factory, dxContext.renderQueue, clientWidth, clientHeight, NUM_BUFFERED_FRAMES, tearingSupported, colorDepth, exclusiveFullscreen);
 	currentBackbufferIndex = swapchain->GetCurrentBackBufferIndex();
 

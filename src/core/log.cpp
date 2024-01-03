@@ -7,6 +7,8 @@ bool logWindowOpen = true;
 
 #if ENABLE_MESSAGE_LOG
 
+#define MAX_NB_MESSAGES 32
+
 struct log_message
 {
 	const char* text;
@@ -117,6 +119,9 @@ void updateMessageLog(float dt)
 		}
 		ImGui::End();
 	}
+
+	if (messages.size() > MAX_NB_MESSAGES)
+		messages.clear();
 }
 
 #endif

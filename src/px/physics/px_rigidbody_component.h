@@ -13,8 +13,9 @@ enum class px_rigidbody_type : uint8
 
 enum class px_force_mode : uint8
 {
-	Impulse,
-	Force
+	None,
+	Force,
+	Impulse
 };
 
 struct px_rigidbody_component 

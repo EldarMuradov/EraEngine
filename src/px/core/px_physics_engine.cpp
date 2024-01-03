@@ -258,6 +258,8 @@ void px_physics_engine::update(float dt)
 			const auto& rot = pxt.q.getConjugate();
 			transform->position = vec3(pos.x, pos.y, pos.z);
 			transform->rotation = quat(rot.x, rot.y, rot.z, rot.w);
+
+			delete renderObject;
 		}
 	}
 

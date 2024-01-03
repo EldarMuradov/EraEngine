@@ -35,10 +35,10 @@ struct renderer_settings
 	bool enableSSR = true;
 	ssr_settings ssrSettings;
 
-	bool enableTAA = false;
+	bool enableTAA = true;
 	taa_settings taaSettings;
 
-	bool enableDLSS = true;
+	bool enableDLSS = false;
 
 	bool enableBloom = true;
 	bloom_settings bloomSettings;

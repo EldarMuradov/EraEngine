@@ -137,7 +137,7 @@ int main(int argc, char** argv)
 	spec.allowBloom = true;
 
 	main_renderer renderer;
-	renderer.initialize(window.colorDepth, window.clientWidth, window.clientHeight, spec, true);
+	renderer.initialize(window.colorDepth, window.clientWidth, window.clientHeight, spec);
 
 	editor_panels editorPanels;
 

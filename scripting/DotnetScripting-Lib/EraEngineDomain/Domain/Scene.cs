@@ -13,7 +13,7 @@ public static class Scene
             _entities[entity.Id] = entity;
     }
 
-    public static void OnFrameEnded() 
+    public static void SyncEntities() 
     {
         Entities = _entities;
     }

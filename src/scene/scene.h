@@ -577,6 +577,7 @@ struct editor_scene
 	{
 		if (mode == scene_mode_editor)
 		{
+			runtimeScene.clearAll();
 			runtimeScene = escene();
 			editorScene.cloneTo(runtimeScene);
 		}

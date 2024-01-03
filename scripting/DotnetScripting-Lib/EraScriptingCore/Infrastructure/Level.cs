@@ -12,6 +12,8 @@ public static class Level
     {
         EEntity e = new(60, "Px_Sphere");
         e.CreateComponent<TestScript>();
+        Scene.SyncEntities();
+
         _syncObj.Wait();
         var values = Scene.Entities.Values;
         foreach (var entity in values)
@@ -26,7 +28,7 @@ public static class Level
         var values = Scene.Entities.Values;
         foreach (var entity in values)
             entity.Update(dt);
-        Scene.OnFrameEnded();
+        Scene.SyncEntities();
         _syncObj.Release();
     }
 }
