@@ -2,10 +2,10 @@
 #include <core/math.h>
 #include <stack>
 
-#define NAV_X_MAX 1000
-#define NAV_X_STEP 20
-#define NAV_Y_MAX 1000
-#define NAV_Y_STEP 20
+#define NAV_X_MAX 100
+#define NAV_X_STEP 1
+#define NAV_Y_MAX 100
+#define NAV_Y_STEP 1
 
 #define NAV_INF_POS 0xffffffff
 
@@ -35,6 +35,7 @@ static float calculateH(vec2 pos, nav_node dest) noexcept
 	return length(pos - dest.position);
 }
 
+// TODO: Obstacle checking
 static bool isValid(vec2 pos) noexcept
 {
 	return true;
@@ -42,7 +43,7 @@ static bool isValid(vec2 pos) noexcept
 
 struct path_finder
 {
-    static std::vector<nav_node> makePath(std::array<std::array<nav_node, (NAV_Y_MAX / NAV_Y_STEP)>, (NAV_X_MAX / NAV_X_STEP)> map, nav_node& dest)
+    static std::vector<nav_node> a_star_makePath(std::array<std::array<nav_node, (NAV_Y_MAX / NAV_Y_STEP)>, (NAV_X_MAX / NAV_X_STEP)> map, nav_node& dest)
     {
         try
         {
@@ -52,7 +53,7 @@ struct path_finder
             std::stack<nav_node> path;
             std::vector<nav_node> usablePath;
 
-            while (!(map[x][y].parentPosition == dest.position)
+            while (!(map[x][y].parentPosition == vec2(x, y))
                 && map[x][y].position != NAV_INF_POS)
             {
                 path.push(map[x][y]);
@@ -75,27 +76,27 @@ struct path_finder
         catch (const std::exception& e)
         {
             std::cout << e.what() << "\n";
+            return {};
         }
     }
 };
 
 struct a_star_navigation
 {
-    static std::vector<nav_node> navigate(nav_node& player, nav_node& dest)
+    static std::vector<nav_node> navigate(nav_node& from, nav_node& to)
     {
-        std::vector<nav_node> empty;
-        if (isValid(dest.position) == false)
+        if (isValid(to.position) == false)
         {
             std::cout << "Destination is an obstacle\n";
-            return empty;
+            return {};
         }
-        if (isDestination(player.position, dest))
+        if (isDestination(from.position, to))
         {
             std::cout << "You are the destination\n";
-            return empty;
+            return {};
         }
 
-        bool closedList[(NAV_X_MAX / NAV_X_STEP)][(NAV_Y_MAX / NAV_Y_STEP)];
+        bool closedList[(NAV_X_MAX / NAV_X_STEP)][(NAV_Y_MAX / NAV_Y_STEP)]{};
 
         std::array<std::array<nav_node, (NAV_Y_MAX / NAV_Y_STEP)>, (NAV_X_MAX / NAV_X_STEP)> allMap;
         for (int x = 0; x < (NAV_X_MAX / NAV_X_STEP); x++)
@@ -112,8 +113,8 @@ struct a_star_navigation
             }
         }
 
-        int x = player.position.x;
-        int y = player.position.y;
+        int x = from.position.x;
+        int y = from.position.y;
         allMap[x][y].fCost = 0.0;
         allMap[x][y].gCost = 0.0;
         allMap[x][y].hCost = 0.0;
@@ -154,16 +155,17 @@ struct a_star_navigation
                     double gNew, hNew, fNew;
                     if (isValid(vec2(x + newX, y + newY)))
                     {
-                        if (isDestination(vec2(x + newX, y + newY), dest))
+                        if (isDestination(vec2(x + newX, y + newY), to))
                         {
                             allMap[x + newX][y + newY].parentPosition = vec2(x, y);
                             destinationFound = true;
-                            return path_finder::makePath(allMap, dest);
+
+                            return path_finder::a_star_makePath(allMap, to);
                         }
                         else if (closedList[x + newX][y + newY] == false)
                         {
                             gNew = node.gCost + 1.0;
-                            hNew = calculateH(vec2(x + newX, y + newY), dest);
+                            hNew = calculateH(vec2(x + newX, y + newY), to);
                             fNew = gNew + hNew;
 
                             if (allMap[x + newX][y + newY].fCost == FLT_MAX ||
@@ -180,10 +182,13 @@ struct a_star_navigation
                 }
             }
         }
+
         if (destinationFound == false)
         {
             std::cout << "Destination not found\n";
-            return empty;
+            return {};
         }
+
+        return {};
     }
 };

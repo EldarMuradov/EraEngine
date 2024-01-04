@@ -177,6 +177,8 @@ struct animation_component
 	animation_instance animation;
 	float timeScale = 1.f;
 
+	bool drawSceleton = false;
+
 	dx_vertex_buffer_group_view currentVertexBuffer;
 	dx_vertex_buffer_group_view prevFrameVertexBuffer;
 	trs* currentGlobalTransforms = 0;

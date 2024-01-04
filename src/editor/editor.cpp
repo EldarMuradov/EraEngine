@@ -1933,7 +1933,6 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 
 	bool gizmoDrawn = false;
 
-
 	if (!inputCaptured && !ImGui::IsAnyItemActive() && ImGui::IsKeyDown(key_shift) && ImGui::IsKeyPressed('A'))
 	{
 		ImGui::OpenPopup("CreateEntityPopup");
@@ -2741,13 +2740,16 @@ void eeditor::drawSettings(float dt)
 			dx_memory_usage memoryUsage = dxContext.getMemoryUsage();
 
 			ImGui::PropertyValue("Video memory usage", "%u / %uMB", memoryUsage.currentlyUsed, memoryUsage.available);
-			//ImGui::PropertyValue("Running command lists", "%u", dxContext.renderQueue.numRunningCommandLists);
+			ImGui::PropertyValue("Render queue command lists count", "%u", dxContext.renderQueue.totalNumCommandLists);
 
 			UNDOABLE_SETTING("aspect ratio", renderer->aspectRatioMode,
 				ImGui::PropertyDropdown("Aspect ratio", aspectRatioNames, aspect_ratio_mode_count, (uint32&)renderer->aspectRatioMode));
 
 			UNDOABLE_SETTING("static shadow map caching", enableStaticShadowMapCaching,
 				ImGui::PropertyCheckbox("Static shadow map caching", enableStaticShadowMapCaching));
+
+			UNDOABLE_SETTING("shadow map caching", renderer->settings.cacheShadowMap,
+				ImGui::PropertyCheckbox("Shadow map caching", renderer->settings.cacheShadowMap));
 
 			ImGui::EndProperties();
 		}

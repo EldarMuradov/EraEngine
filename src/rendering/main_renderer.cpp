@@ -156,7 +156,6 @@ void main_renderer::beginFrame(uint32 windowWidth, uint32 windowHeight)
 		this->windowWidth = windowWidth;
 		this->windowHeight = windowHeight;
 
-		// Frame result
 		resizeTexture(frameResult, windowWidth, windowHeight);
 
 		recalculateViewport(true);
@@ -414,11 +413,6 @@ dx_command_list* main_renderer::renderThread1(const common_render_data& commonRe
 		.transition(linearDepthBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
 		.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
-	//if (dxContext.featureSupport.dlss())
-	//{
-	//	dlss_adapter.updateDLSS(cl->commandList.Get());
-	//}
-
 	return cl;
 }
 
@@ -430,6 +424,7 @@ dx_command_list* main_renderer::renderThread2(const common_render_data& commonRe
 	// ----------------------------------------
 	// SKY PASS
 	// ----------------------------------------
+
 	auto skyRenderTarget = dx_render_target(renderWidth, renderHeight)
 		.colorAttachment(hdrColorTexture)
 		.colorAttachment(screenVelocitiesTexture, render_resources::nullScreenVelocitiesRTV)
@@ -455,6 +450,7 @@ dx_command_list* main_renderer::renderThread2(const common_render_data& commonRe
 	// ----------------------------------------
 	// AMBIENT OCCLUSION
 	// ----------------------------------------
+
 	if (settings.enableAO)
 	{
 		uint32 aoResultIndex = 1 - aoHistoryIndex;
@@ -473,6 +469,7 @@ dx_command_list* main_renderer::renderThread2(const common_render_data& commonRe
 	// ----------------------------------------
 	// SCREEN SPACE REFLECTIONS
 	// ----------------------------------------
+
 	if (environment && environment->giMode == environment_gi_raytraced)
 	{
 		barrier_batcher(cl)
@@ -565,12 +562,6 @@ dx_command_list* main_renderer::renderThread2(const common_render_data& commonRe
 		}
 	}
 
-	//if (dxContext.featureSupport.dlss())
-	//{
-	//	PROFILE_ALL(cl, "DLSS Evaluation");
-	//	dlss_adapter.updateDLSS(cl->commandList.Get());
-	//}
-
 	return cl;
 }
 
@@ -649,7 +640,6 @@ dx_command_list* main_renderer::renderThread3(common_render_data commonRenderDat
 	}
 
 	// At this point hdrResult is either the TAA result or the hdrResult. Either one is in read state.
-
 	// Downsample scene. This is also the copy used in SSR next frame.
 	if (prevFrameHDRColorTexture)
 	{
@@ -667,7 +657,6 @@ dx_command_list* main_renderer::renderThread3(common_render_data commonRenderDat
 	}
 
 	// At this point hdrResult is either the TAA result, the hdrColorTexture, or the hdrPostProcessingTexture. Either one is in read state.
-
 	tonemap(cl, hdrResult, ldrPostProcessingTexture, settings.tonemapSettings);
 
 	// ----------------------------------------
@@ -700,11 +689,6 @@ dx_command_list* main_renderer::renderThread3(common_render_data commonRenderDat
 			.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 	}
 
-	// TODO: If we really care we should sharpen before rendering overlays and outlines.
-	//if (dxContext.featureSupport.dlss())
-	//{
-	//	dlss_adapter.updateDLSS(cl->commandList.Get());
-	//}
 	present(cl, ldrPostProcessingTexture, frameResult, settings.enableSharpen ? settings.sharpenSettings : sharpen_settings{ 0.f });
 
 	barrier_batcher(cl)
@@ -919,7 +903,7 @@ void main_renderer::endFrame(const user_input* input, float dt)
 
 		cl->clearDepthAndStencil(depthStencilBuffer);
 
-		auto depthOnlyRenderTarget = dx_render_target(renderWidth, renderHeight)
+		auto& depthOnlyRenderTarget = dx_render_target(renderWidth, renderHeight)
 			// No screen space velocities or object IDs needed.
 			.depthAttachment(depthStencilBuffer);
 

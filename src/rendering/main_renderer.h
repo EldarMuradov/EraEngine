@@ -40,6 +40,8 @@ struct renderer_settings
 
 	bool enableDLSS = false;
 
+	bool cacheShadowMap = false;
+
 	bool enableBloom = true;
 	bloom_settings bloomSettings;
 

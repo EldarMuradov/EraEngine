@@ -492,7 +492,7 @@ struct trs
 	static const trs identity;
 };
 
-// Vec2 operators.
+// Vec2 operators
 static vec2 operator+(vec2 a, vec2 b) { vec2 result = { a.x + b.x, a.y + b.y }; return result; }
 static vec2& operator+=(vec2& a, vec2 b) { a = a + b; return a; }
 static vec2 operator-(vec2 a, vec2 b) { vec2 result = { a.x - b.x, a.y - b.y }; return result; }
@@ -513,7 +513,7 @@ static vec2 operator-(vec2 a) { return vec2(-a.x, -a.y); }
 static bool operator==(vec2 a, vec2 b) { return a.x == b.x && a.y == b.y; }
 static bool operator!=(vec2 a, vec2 b) { return !(a == b); }
 
-// Vec3 operators.
+// Vec3 operators
 static vec3 operator+(vec3 a, vec3 b) { vec3 result = { a.x + b.x, a.y + b.y, a.z + b.z }; return result; }
 static vec3& operator+=(vec3& a, vec3 b) { a = a + b; return a; }
 static vec3 operator-(vec3 a, vec3 b) { vec3 result = { a.x - b.x, a.y - b.y, a.z - b.z }; return result; }
@@ -534,7 +534,7 @@ static vec3 operator-(vec3 a) { return vec3(-a.x, -a.y, -a.z); }
 static bool operator==(vec3 a, vec3 b) { return a.x == b.x && a.y == b.y && a.z == b.z; }
 static bool operator!=(vec3 a, vec3 b) { return !(a == b); }
 
-// Vec4 operators.
+// Vec4 operators
 static vec4 operator+(vec4 a, vec4 b) { vec4 result = { a.f4 + b.f4 }; return result; }
 static vec4& operator+=(vec4& a, vec4 b) { a = a + b; return a; }
 static vec4 operator-(vec4 a, vec4 b) { vec4 result = { a.f4 - b.f4 }; return result; }

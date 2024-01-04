@@ -85,11 +85,11 @@ public sealed class RigidbodyComponent : EComponent
 
     internal override void InitializeComponentInternal(params object[] args)
     {
-        if (args.Length == 1)
-        {
-            Type = (RigidbodyType)args[0];
-            initializeRigidbody(Entity.Id, (uint)Type);
-        }
+        if (args.Length != 1)
+            throw new ArgumentException("Wrong number of arguments!");
+        Type = (RigidbodyType)args[0];
+        initializeRigidbody(Entity.Id, (uint)Type);
+        
     }
 
     #region P/I

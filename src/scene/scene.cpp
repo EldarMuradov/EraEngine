@@ -14,6 +14,7 @@
 #include <px/physics/px_character_controller_component.h>
 #include <EraScriptingLauncher-Lib/src/script.h>
 #endif
+#include <ai/navigation_component.h>
 
 std::mutex eentity_container::sync;
 std::unordered_map<entity_handle, eentity_node> eentity_container::container;
@@ -67,6 +68,7 @@ void escene::cloneTo(escene& target)
 		script_component,
 #endif
 
+		navigation_component,
 		child_component,
 
 #ifndef PHYSICS_ONLY

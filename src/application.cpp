@@ -34,6 +34,9 @@
 #include <px/core/px_aggregate.h>
 #include <px/features/px_ragdoll.h>
 #include <EraScriptingLauncher-Lib/src/script.h>
+#include "core/coroutine.h"
+#include <ai/navigation.h>
+#include <ai/navigation_component.h>
 
 static raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh)
 {
@@ -149,6 +152,9 @@ void application::loadCustomShaders()
 	}
 }
 
+entity_handle sph;
+entity_handle nav_sphere;
+
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
 	this->renderer = renderer;
@@ -224,12 +230,19 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 				.addComponent<px_box_collider_component>(1.0f, 1.0f, 1.0f)
 				.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);*/
 
-			scene.createEntity("Sphere")
-				.addComponent<transform_component>(vec3(25.f, 10.f + i * 3.f, -5.f), quat(vec3(0.f, 0.f, 1.f), deg2rad(1.f)), vec3(1.f))
-				.addComponent<mesh_component>(sphereMesh)
-				.addComponent<collider_component>(collider_component::asSphere({ vec3(0.f, 0.f, 0.f), 1.f }, { physics_material_type_wood, 0.1f, 0.5f, 1.f }))
-				.addComponent<rigid_body_component>(false, 1.f);
+			sph = scene.createEntity("Sphere")
+				.addComponent<transform_component>(vec3(15.0f, 10.f + i * 3.f, 15.0f), quat(vec3(0.f, 0.f, 1.f), deg2rad(1.f)), vec3(1.f))
+				.addComponent<mesh_component>(sphereMesh).handle;
+				//.addComponent<collider_component>(collider_component::asSphere({ vec3(0.f, 0.f, 0.f), 1.f }, { physics_material_type_wood, 0.1f, 0.5f, 1.f }))
+				//.addComponent<rigid_body_component>(false, 1.f).handle;
 		}
+
+		auto e = scene.createEntity("SphereNav")
+			.addComponent<transform_component>(vec3(0.f), quat(vec3(0.f, 0.f, 1.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<navigation_component>(nav_type::A_Star)
+			.addComponent<mesh_component>(sphereMesh);
+		e.getComponent<navigation_component>().destination = vec3(980.0f, 0.0f, 720.0f);
+		nav_sphere = e.handle;
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
 		auto px_sphere = &scene.createEntity("SpherePX", (entity_handle)60)
@@ -585,6 +598,11 @@ void application::update(const user_input& input, float dt)
 	float unscaledDt = dt;
 	dt *= this->scene.getTimestepScale();
 
+	for (auto [entityHandle, nav, transform] : scene.group(component_group<navigation_component, transform_component>).each())
+	{
+		nav.processPath();
+	}
+
 	//learnedLocomotion.update(scene);
 
 	// Must happen before physics update.
@@ -622,17 +640,13 @@ void application::update(const user_input& input, float dt)
 
 	if (renderer->mode != renderer_mode_pathtraced)
 	{
-		// Update animated meshes
 		for (auto [entityHandle, anim, mesh, transform] : scene.group(component_group<animation_component, mesh_component, transform_component>).each())
 		{
 			anim.update(mesh.mesh, stackArena, dt, &transform);
+			
+			if(anim.drawSceleton)
+				anim.drawCurrentSkeleton(mesh.mesh, transform, &ldrRenderPass);
 		}
-
-		//// Draw animation skelet
-		//for (auto [entityHandle, anim, raster, transform] : scene.group(component_group<animation_component, mesh_component, transform_component>).each())
-		//{
-		//	anim.drawCurrentSkeleton(raster.mesh, transform, &ldrRenderPass);
-		//}
 
 		scene_lighting lighting;
 		lighting.spotLightBuffer = spotLightBuffer[dxContext.bufferedFrameID];
@@ -644,7 +658,7 @@ void application::update(const user_input& input, float dt)
 		lighting.maxNumSpotShadowRenderPasses = arraysize(spotShadowRenderPasses);
 		lighting.maxNumPointShadowRenderPasses = arraysize(pointShadowRenderPasses);
 
-		renderScene(this->scene.camera, scene, stackArena, selectedEntity.handle, sun, lighting, objectDragged, 
+		renderScene(this->scene.camera, scene, stackArena, selectedEntity.handle, sun, lighting, !renderer->settings.cacheShadowMap, 
 			&opaqueRenderPass, &transparentRenderPass, &ldrRenderPass, &sunShadowRenderPass, &computePass, unscaledDt);
 
 		renderer->setSpotLights(spotLightBuffer[dxContext.bufferedFrameID], scene.numberOfComponentsOfType<spot_light_component>(), spotLightShadowInfoBuffer[dxContext.bufferedFrameID]);
