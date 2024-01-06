@@ -126,6 +126,11 @@ void updateScripting(updatePhysXPhysicsData& data)
 	}
 
 	data.core->update(data.deltaTime);
+
+	for (auto [entityHandle, nav, transform] : data.scene.group(component_group<navigation_component, transform_component>).each())
+	{
+		nav.processPath();
+	}
 }
 
 static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> mesh)
@@ -237,11 +242,14 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 				//.addComponent<rigid_body_component>(false, 1.f).handle;
 		}
 
+		eentity _p = { sph, &scene.registry };
+		_p.addComponent<script_component>("_");
+
 		auto e = scene.createEntity("SphereNav")
 			.addComponent<transform_component>(vec3(0.f), quat(vec3(0.f, 0.f, 1.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<navigation_component>(nav_type::A_Star)
 			.addComponent<mesh_component>(sphereMesh);
-		e.getComponent<navigation_component>().destination = vec3(980.0f, 0.0f, 720.0f);
+		e.getComponent<navigation_component>().destination = vec3(0.0f);
 		nav_sphere = e.handle;
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
@@ -260,13 +268,6 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);
 
 		px_sphere1->addChild(*px_sphere);
-
-		/*auto rb1 = px_sphere->getComponent<px_rigidbody_component>().getRigidActor();
-		auto rb2 = px_sphere1->getComponent<px_rigidbody_component>().getRigidActor();
-
-		px_revolute_joint_desc jointDesc{};
-
-		px_revolute_joint* joint = new px_revolute_joint(jointDesc, rb1, rb2);*/
 
 		auto px_cct = &scene.createEntity("CharacterControllerPx")
 			.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
@@ -597,11 +598,6 @@ void application::update(const user_input& input, float dt)
 	escene& scene = this->scene.getCurrentScene();
 	float unscaledDt = dt;
 	dt *= this->scene.getTimestepScale();
-
-	for (auto [entityHandle, nav, transform] : scene.group(component_group<navigation_component, transform_component>).each())
-	{
-		nav.processPath();
-	}
 
 	//learnedLocomotion.update(scene);
 

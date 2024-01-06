@@ -4,14 +4,14 @@ using System.Runtime.InteropServices;
 
 namespace EraEngine.Components;
 
-public enum ForceMode : uint
+public enum ForceMode : byte
 {
     None,
     Force,
     Impulse
 }
 
-public enum RigidbodyType : uint
+public enum RigidbodyType : byte
 {
     None,
     Static,
@@ -45,7 +45,7 @@ public sealed class RigidbodyComponent : EComponent
     public void AddForce(Vector3 force, ForceMode mode) 
     {
         IntPtr vec = Memory.StructToIntPtr(force);
-        addForce(Entity.Id, (uint)mode, vec);
+        addForce(Entity.Id, (byte)mode, vec);
         Memory.ReleaseIntPtr(vec);
     }
 
@@ -88,14 +88,14 @@ public sealed class RigidbodyComponent : EComponent
         if (args.Length != 1)
             throw new ArgumentException("Wrong number of arguments!");
         Type = (RigidbodyType)args[0];
-        initializeRigidbody(Entity.Id, (uint)Type);
+        initializeRigidbody(Entity.Id, (byte)Type);
         
     }
 
     #region P/I
 
     [DllImport("EraScriptingCPPDecls.dll")]
-    private static extern void addForce(int id, uint mode, IntPtr force);
+    private static extern void addForce(int id, byte mode, IntPtr force);
 
     [DllImport("EraScriptingCPPDecls.dll")]
     private static extern IntPtr getLinearVelocity(int id);
@@ -116,7 +116,7 @@ public sealed class RigidbodyComponent : EComponent
     private static extern void setMass(int id, float mass);
 
     [DllImport("EraScriptingCPPDecls.dll")]
-    private static extern void initializeRigidbody(int id, uint type);
+    private static extern void initializeRigidbody(int id, byte type);
 
     #endregion
 }

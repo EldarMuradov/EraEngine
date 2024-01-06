@@ -2,20 +2,24 @@
 using EraEngine;
 using EraEngine.Components;
 using System.Numerics;
+using EraEngine.AI;
 
 namespace EraScriptingProjectTemplate
 {
     public class TestScript : Script
     {
-        private RigidbodyComponent _rb;
+        private TransformComponent _target;
+        private NavigationComponent _nav_comp;
+
         public override void Start()
         {
-            _rb = Entity.CreateComponentInternal<RigidbodyComponent>(RigidbodyType.Dynamic);
+            _nav_comp = Entity.CreateComponentInternal<NavigationComponent>(NavigationType.A_Star);
+            _target = Scene.GetEntity(3).GetComponent<TransformComponent>();
         }
 
         public override void Update(float dt)
         {
-            _rb.AddForce(new Vector3(0, 10, 0), ForceMode.Impulse);
+            _nav_comp.SetDestination(_target.GetPosition());
         }
     }
 }

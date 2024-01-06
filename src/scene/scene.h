@@ -164,9 +164,7 @@ struct eentity
 		}
 		else if	constexpr (std::is_same_v<component_t, struct navigation_component>)
 		{
-			trs* trs = &getComponent<transform_component>();
-
-			auto& component = registry->emplace_or_replace<component_t>(handle, trs, std::forward<args>(a)...);
+			auto& component = registry->emplace_or_replace<component_t>(handle, handle, std::forward<args>(a)...);
 		}
 		else if	constexpr (std::is_same_v<component_t, struct px_cct_component_base>)
 		{

@@ -13,8 +13,8 @@
 #include <px/physics/px_collider_component.h>
 #include <px/physics/px_character_controller_component.h>
 #include <EraScriptingLauncher-Lib/src/script.h>
-#endif
 #include <ai/navigation_component.h>
+#endif
 
 std::mutex eentity_container::sync;
 std::unordered_map<entity_handle, eentity_node> eentity_container::container;
@@ -65,10 +65,10 @@ void escene::cloneTo(escene& target)
 		px_capsule_cct_component,
 		px_box_cct_component,
 
+		navigation_component,
 		script_component,
 #endif
 
-		navigation_component,
 		child_component,
 
 #ifndef PHYSICS_ONLY

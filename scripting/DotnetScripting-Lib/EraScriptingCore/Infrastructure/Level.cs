@@ -10,8 +10,11 @@ public static class Level
     [UnmanagedCallersOnly(EntryPoint = "start")]
     public static unsafe void Start()
     {
-        EEntity e = new(60, "Px_Sphere");
+        EEntity nav_target = new(3, "Sphere");
+
+        EEntity e = new(4, "SphereNav");
         e.CreateComponent<TestScript>();
+
         Scene.SyncEntities();
 
         _syncObj.Wait();

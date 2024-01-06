@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 namespace EraEngine.Core;
 
-public enum LogLevel : uint
+public enum LogLevel : byte
 {
     Normal,
     Warning,
@@ -12,14 +12,14 @@ public static class Debug
 {
     public static void Log(string message, LogLevel level = LogLevel.Normal)
     {
-        log_message((uint)level, message);
+        log_message((byte)level, message);
     }
 
     public static void LogError(string message)
     {
-        log_message((uint)LogLevel.Error, message);
+        log_message((byte)LogLevel.Error, message);
     }
 
     [DllImport("EraScriptingCPPDecls.dll", CharSet = CharSet.Ansi)]
-    private static extern unsafe void log_message(uint mode, string message);
+    private static extern unsafe void log_message(byte mode, string message);
 }

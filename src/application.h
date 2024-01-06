@@ -37,6 +37,8 @@ struct application
 
 	escene* getCurrentScene() { return &scene.getCurrentScene(); }
 
+	eallocator stackArena;
+
 private:
 	void resetRenderPasses();
 	void submitRendererParams(uint32 numSpotLightShadowPasses, uint32 numPointLightShadowPasses);
@@ -67,8 +69,6 @@ private:
 	smoke_particle_system smokeParticleSystem;
 	boid_particle_system boidParticleSystem;
 	debris_particle_system debrisParticleSystem;
-
-	eallocator stackArena;
 
 	learned_locomotion learnedLocomotion;
 

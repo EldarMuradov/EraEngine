@@ -4,12 +4,13 @@
 #include <scene/scene.h>
 #include "application.h"
 #include <EraScriptingLauncher-Lib/src/script.h>
+#include <ai/navigation_component.h>
 
 application* enative_scripting_linker::app;
 
 namespace bind
 {
-	static void add_force_internal(uint32_t id, uint32_t mode, float* force)
+	static void add_force_internal(uint32_t id, uint8_t mode, float* force)
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -24,7 +25,7 @@ namespace bind
 			std::cerr << "bliaaaa addForce";
 	}
 
-	static void initialize_rigidbody_internal(uint32_t id, uint32_t type)
+	static void initialize_rigidbody_internal(uint32_t id, uint8_t type)
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -104,7 +105,32 @@ namespace bind
 		}
 	}
 
-	static void log_message_internal(uint32_t mode, const char* message)
+	static void initialize_navigation_internal(uint32_t id, uint8_t type)
+	{
+		entity_handle hid = (entity_handle)id;
+		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+
+		if (!entity.hasComponent<navigation_component>())
+			entity.addComponent<navigation_component>((nav_type)type);
+	}
+
+	static void set_destination_internal(uint32_t id, float* destPtr)
+	{
+		entity_handle hid = (entity_handle)id;
+		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+
+		if (auto nav_comp = entity.getComponentIfExists<navigation_component>())
+		{
+			vec3 pos = vec3(destPtr[0], 0.0f, destPtr[2]);
+			nav_comp->destination = pos;
+		}
+		else
+		{
+			std::cerr << "bliaaaaaaa\n";
+		}
+	}
+
+	static void log_message_internal(uint8_t mode, const char* message)
 	{
 		message_type type = (message_type)mode;
 
@@ -147,15 +173,21 @@ void enative_scripting_linker::bindFunctions()
 		{
 			builder->functions.emplace("getLinearVelocity", BIND(bind::get_linear_velocity_internal, float*, uint32_t));
 			builder->functions.emplace("getAngularVelocity", BIND(bind::get_angular_velocity_internal, float*, uint32_t));
-			builder->functions.emplace("initializeRigidbody", BIND(bind::initialize_rigidbody_internal, void, uint32_t, uint32_t));
+			builder->functions.emplace("initializeRigidbody", BIND(bind::initialize_rigidbody_internal, void, uint32_t, uint8_t));
 			builder->functions.emplace("getMass", BIND(bind::get_mass_internal, float, uint32_t));
 			builder->functions.emplace("setMass", BIND(bind::set_mass_internal, void, uint32_t, float));
-			builder->functions.emplace("addForce", BIND(bind::add_force_internal, void, uint32_t, uint32_t, float*));
+			builder->functions.emplace("addForce", BIND(bind::add_force_internal, void, uint32_t, uint8_t, float*));
+		}
+
+		// Navigation
+		{
+			builder->functions.emplace("initializeNavigationComponent", BIND(bind::initialize_navigation_internal, void, uint32_t, int8_t));
+			builder->functions.emplace("setDestination", BIND(bind::set_destination_internal, void, uint32_t, float*));
 		}
 
 		// Debug
 		{
-			builder->functions.emplace("log", BIND(bind::log_message_internal, void, uint32_t, const char*));
+			builder->functions.emplace("log_message", BIND(bind::log_message_internal, void, uint8_t, const char*));
 		}
 		
 		// EEntity
