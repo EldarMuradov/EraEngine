@@ -19,19 +19,16 @@ static coroutine_return<nav_node> navigate(eallocator& allocator, vec2 pos, vec2
 	nav_node destination;
 	destination.position = target / (float)NAV_X_STEP;
 
-	try 
+	const auto& path = a_star_navigation::navigate(allocator, player, destination);
+	for (const nav_node& node : path)
 	{
-		for (const nav_node& node : a_star_navigation::navigate(allocator, player, destination))
-		{
-			co_yield node;
-		}
-	}
-	catch (...) 
-	{
-	
+		co_yield node;
 	}
 
-	co_yield nav_node{ vec2(NAV_INF_POS) };
+	while (true)
+		co_yield nav_node(vec2(NAV_INF_POS));
+
+	co_return nav_node(vec2(NAV_INF_POS));
 }
 
 static coroutine_return<nav_node> navigate(vec2 pos, vec2 target) noexcept
@@ -42,18 +39,23 @@ static coroutine_return<nav_node> navigate(vec2 pos, vec2 target) noexcept
 	nav_node destination;
 	destination.position = target / (float)NAV_X_STEP;
 
-	for (const nav_node& node : a_star_navigation::navigate(player, destination))
+	const auto& path = a_star_navigation::navigate(player, destination);
+	for (const nav_node& node : path)
 	{
 		co_yield node;
 	}
 
-	co_yield nav_node{ vec2(NAV_INF_POS) };
+	while(true)
+		co_yield nav_node(vec2(NAV_INF_POS));
+
+	co_return nav_node(vec2(NAV_INF_POS));
 }
 
 struct navigation_component
 {
 	navigation_component() = default;
 	navigation_component(entity_handle h, nav_type tp) noexcept;
+	~navigation_component() { allocator->reset(true); RELEASE_PTR(allocator) }
 
 	void processPath();
 
@@ -68,6 +70,8 @@ private:
 	entity_handle handle;
 
 	coroutine_return<nav_node> nav_coroutine;
+
+	eallocator* allocator = nullptr;
 
 	vec3 previousDestination = vec3(NAV_INF_POS);
 };
