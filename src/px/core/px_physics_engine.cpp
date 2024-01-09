@@ -86,34 +86,38 @@ void px_physics::initialize()
 	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, pvd);
 	
 	dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
-	
-	PxCudaContextManagerDesc cudaContextManagerDesc;
-
-	cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profiler_callback);
 
 	PxSceneDesc sceneDesc(physics->getTolerancesScale());
 	sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
 	sceneDesc.cpuDispatcher = dispatcher;
-	sceneDesc.gpuDynamicsConfig = PxgDynamicsMemoryConfig();
-	sceneDesc.cudaContextManager = cudaContextManager;
 	sceneDesc.filterShader = contactReportFilterShader;
 	sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneDesc.simulationEventCallback = &collision_callback;
+
+	PxCudaContextManagerDesc cudaContextManagerDesc;
+
 #if PX_GPU_BROAD_PHASE
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
+	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
+	sceneDesc.gpuMaxNumPartitions = 8;
+	sceneDesc.gpuDynamicsConfig = PxgDynamicsMemoryConfig();
 #else
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eABP;
+	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
+	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
+	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
 #endif
+	cudaContextManagerDesc.interopMode = PxCudaInteropMode::NO_INTEROP;
+	cudaContextManagerDesc.graphicsDevice = dxContext.device.Get();
+	cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profiler_callback);
+
+	sceneDesc.cudaContextManager = cudaContextManager;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
-#if PX_GPU_BROAD_PHASE
-	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
-#endif
+	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
-	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
-	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
-	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
+
 	sceneDesc.ccdContactModifyCallback = &contact_modification;
 	sceneDesc.filterCallback = &simulation_filter_callback;
 
@@ -232,11 +236,20 @@ void px_physics_engine::start()
 
 void px_physics_engine::update(float dt)
 {
+	float accumulator = 0.0f;
+	float stepSize = 1.0f / frameRate;
+
 	physics->scene->lockWrite();
 	physics->scene->getTaskManager()->startSimulation();
-	physics->scene->collide(std::max(dt, 1.0f / frameRate));
+
+#if PX_GPU_BROAD_PHASE
+	physics->scene->simulate(stepSize);
+#else
+	physics->scene->collide(std::max(dt, stepSize));
 	physics->scene->fetchCollision(true);
 	physics->scene->advance();
+#endif
+
 	physics->scene->fetchResults(true);
 	PxU32 nbActiveActors;
 	PxActor** activeActors = physics->scene->getActiveActors(nbActiveActors);

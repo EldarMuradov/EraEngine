@@ -177,9 +177,11 @@ physx::PxRigidActor* px_rigidbody_component::createActor()
 	{
 		PxRigidDynamic* actor = px_physics_engine::getPhysics()->createRigidDynamic(PxTransform(pospx, rotpx));
 
+#if !PX_GPU_BROAD_PHASE
 		actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 		actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
 		//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
+#endif
 
 		coll->createShape();
 		uint32_t* h = new uint32_t[1];

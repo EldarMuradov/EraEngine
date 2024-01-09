@@ -306,11 +306,14 @@ struct px_profiler_callback : PxProfilerCallback
 	}
 };
 
-class px_error_reporter : public PxErrorCallback
+struct px_error_reporter : PxErrorCallback
 {
 	void reportError(PxErrorCode::Enum code, const char* message, const char* file, int line) override
 	{
-		LOG_ERROR("PhysX Error! Code: {0}.\n{1}\nSource: {2} : {3}.", static_cast<int32>(code), message, file, line);
+		if (message)
+			LOG_ERROR("PhysX Error! Message: ", message, " Code: ", static_cast<int32>(code), " Source: ", file, " : ", line);
+		else
+			std::cerr << "PhysX Error! \n";
 	}
 };
 
