@@ -145,7 +145,7 @@ struct eentity
 		}
 		else if	constexpr (std::is_same_v<component_t, struct px_rigidbody_component>)
 		{
-			auto& component = registry->emplace_or_replace<component_t>(handle, this, std::forward<args>(a)...);
+			auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
 			
 			if (!hasComponent<dynamic_transform_component>())
 				addComponent<dynamic_transform_component>();

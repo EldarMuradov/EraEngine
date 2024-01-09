@@ -87,7 +87,7 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
 	}, data).submitAfter(mesh->loadJob);
 }
 
-struct updatePhysXPhysicsData
+struct updatePhysicsAndScriptingData
 {
 	std::shared_ptr<escripting_core> core;
 	escene& scene;
@@ -96,9 +96,9 @@ struct updatePhysXPhysicsData
 
 void updatePhysXPhysicsAndScripting(escene& currentScene, std::shared_ptr<escripting_core> core, float dt)
 {
-	updatePhysXPhysicsData data = { core, currentScene, dt};
+	updatePhysicsAndScriptingData data = { core, currentScene, dt};
 
-	highPriorityJobQueue.createJob<updatePhysXPhysicsData>([](updatePhysXPhysicsData& data, job_handle)
+	highPriorityJobQueue.createJob<updatePhysicsAndScriptingData>([](updatePhysicsAndScriptingData& data, job_handle)
 	{
 		{
 			CPU_PROFILE_BLOCK("PhysX physics step");
@@ -107,30 +107,53 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, std::shared_ptr<escrip
 				rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
 			}
 			px_physics_engine::get()->update(data.deltaTime);
+
+			while (px_physics_engine::collisionQueue.size())
+			{
+				const auto& c = px_physics_engine::collisionQueue.back();
+				px_physics_engine::collisionQueue.pop();
+				data.core->handleOnCollisionEnter(c.id1, c.id2);
+			}
 		}
 
 		updateScripting(data);
 	}, data).submitNow();
+
+	const auto& nav_objects = data.scene.group(component_group<navigation_component, transform_component>);
+
+	if (nav_objects.size())
+	{
+		struct nav_process_data
+		{
+			decltype(nav_objects) objects;
+		};
+
+		nav_process_data nav_data{ nav_objects };
+
+		lowPriorityJobQueue.createJob<nav_process_data>([](nav_process_data& data, job_handle)
+		{
+			for (auto [entityHandle, nav, transform] : data.objects.each())
+			{
+				nav.processPath();
+			}
+		}, nav_data).submitNow();
+	}
 }
 
-void updateScripting(updatePhysXPhysicsData& data)
+void updateScripting(updatePhysicsAndScriptingData& data)
 {
 	CPU_PROFILE_BLOCK(".NET 8.0 Native AOT scripting step");
 	for (auto [entityHandle, transform, script] : data.scene.group(component_group<transform_component, script_component>).each())
 	{
-		auto mat = trsToMat4(transform);
-		float* ptr = new float[16];
-		for (size_t i = 0; i < 16; i++)
+		const auto& mat = trsToMat4(transform);
+		constexpr size_t mat_size = 16;
+		float* ptr = new float[mat_size];
+		for (size_t i = 0; i < mat_size; i++)
 			ptr[i] = mat.m[i];
 		data.core->processTransforms(reinterpret_cast<uintptr_t>(ptr), (uint32_t)entityHandle);
 	}
 
 	data.core->update(data.deltaTime);
-
-	for (auto [entityHandle, nav, transform] : data.scene.group(component_group<navigation_component, transform_component>).each())
-	{
-		nav.processPath();
-	}
 }
 
 static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> mesh)
@@ -157,9 +180,6 @@ void application::loadCustomShaders()
 	}
 }
 
-entity_handle sph;
-entity_handle nav_sphere;
-
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
 	this->renderer = renderer;
@@ -178,6 +198,12 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 	escene& scene = this->scene.getCurrentScene();
 
+	{
+		CPU_PROFILE_BLOCK("Binding for scripting initialization");
+		linker.app = this;
+		linker.init();
+	}
+
 	px_physics_engine::initialize(this);
 
 #if 1
@@ -194,7 +220,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 #if 0
 	if (auto treeMesh = loadTreeMeshFromFileAsync("assets/tree/source/tree.fbx"))
 	{
-		auto tree = scene.createEntity("SimpleTree")
+		auto tree = scene.createEntity("Tree")
 			.addComponent<transform_component>(vec3(0.0, 0.0f, 0.0f), quat::identity, 0.1f)
 			.addComponent<mesh_component>(treeMesh)
 			.addComponent<tree_component>();
@@ -229,28 +255,10 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		for (uint32 i = 0; i < 3; ++i)
 		{
-			/*scene.createEntity("Box")
-				.addComponent<transform_component>(vec3(25.f, 10.f + i * 3.f, -5.f), quat(vec3(0.f, 0.f, 1.f), deg2rad(1.f)))
-				.addComponent<mesh_component>(boxMesh)
-				.addComponent<px_box_collider_component>(1.0f, 1.0f, 1.0f)
-				.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);*/
-
-			sph = scene.createEntity("Sphere")
+			scene.createEntity("Sphere")
 				.addComponent<transform_component>(vec3(15.0f, 10.f + i * 3.f, 15.0f), quat(vec3(0.f, 0.f, 1.f), deg2rad(1.f)), vec3(1.f))
-				.addComponent<mesh_component>(sphereMesh).handle;
-				//.addComponent<collider_component>(collider_component::asSphere({ vec3(0.f, 0.f, 0.f), 1.f }, { physics_material_type_wood, 0.1f, 0.5f, 1.f }))
-				//.addComponent<rigid_body_component>(false, 1.f).handle;
+				.addComponent<mesh_component>(sphereMesh);
 		}
-
-		eentity _p = { sph, &scene.registry };
-		_p.addComponent<script_component>("_");
-
-		auto e = scene.createEntity("SphereNav")
-			.addComponent<transform_component>(vec3(0.f), quat(vec3(0.f, 0.f, 1.f), deg2rad(1.f)), vec3(1.f))
-			.addComponent<navigation_component>(nav_type::A_Star)
-			.addComponent<mesh_component>(sphereMesh);
-		e.getComponent<navigation_component>().destination = vec3(0.0f);
-		nav_sphere = e.handle;
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
 		auto px_sphere = &scene.createEntity("SpherePX", (entity_handle)60)
@@ -281,21 +289,17 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		px_raycast_info rci = px_physics_engine::get()->raycast(&px_sphere1->getComponent<px_rigidbody_component>(), vec3(0, -1, 0));
 		if (rci.actor)
 		{
-			std::cout << "Raycast. Dist: " << rci.distance << " Actor's Name: " << rci.actor->entity->getComponent<tag_component>().name << '\n';
+			std::cout << "Raycast. Dist: " << rci.distance << '\n';
 		}
 		else
 		{
 			std::cout << "Raycast. Dist: " << rci.distance << "\n";
 		}
 
-		auto triggerCallback = [scene = &scene](trigger_event e)
-		{
-			std::cout << ((e.type == trigger_event_enter) ? "enter" : "leave") << '\n';
-		};
+		const auto& overlap_info = px_physics_engine::overlapCapsule(vec3(0, -5, 0), 1.5f, 3.0f, quat::identity, false);
 
-		scene.createEntity("Trigger")
-			.addComponent<collider_component>(collider_component::asAABB(bounding_box::fromCenterRadius(vec3(25.f, 1.f, -5.f), vec3(5.f, 1.f, 5.f)), { physics_material_type_none, 0, 0, 0 }))
-			.addComponent<trigger_component>(triggerCallback);
+		std::cout << "Overlapping: " << overlap_info.isOverlapping << "\n";
+		std::cout << "Results: " << overlap_info.results.size() << "\n";
 
 #if 1
 		editor.physicsSettings.collisionBeginCallback = [rng = random_number_generator{ 519431 }](const collision_begin_event& e) mutable
@@ -321,109 +325,11 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		auto chainMesh = make_ref<multi_mesh>();
 
-#if 0
-		builder.pushCapsule(capsule_mesh_desc(vec3(0.f, -1.f, 0.f), vec3(0.f, 1.f, 0.f), 0.18f));
-		chainMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, lollipopMaterial });
-
-		auto fixed = scene.createEntity("Fixed")
-			.addComponent<transform_component>(vec3(37.f, 15.f, -2.f), quat(vec3(0.f, 0.f, 1.f), deg2rad(90.f)))
-			.addComponent<mesh_component>(chainMesh)
-			.addComponent<collider_component>(collider_component::asCapsule({ vec3(0.f, -1.f, 0.f), vec3(0.f, 1.f, 0.f), 0.18f }, { physics_material_type_none, 0.2f, 0.5f, 1.f }))
-			.addComponent<rigid_body_component>(true, 1.f);
-
-		auto prev = fixed;
-
-		for (uint32 i = 0; i < 10; ++i)
-		{
-			float xPrev = 37.f + 2.5f * i;
-			float xCurr = 37.f + 2.5f * (i + 1);
-
-			auto chain = scene.createEntity("Chain")
-				.addComponent<transform_component>(vec3(xCurr, 15.f, -2.f), quat(vec3(0.f, 0.f, 1.f), deg2rad(90.f)))
-				.addComponent<mesh_component>(chainMesh)
-				.addComponent<collider_component>(collider_component::asCapsule({ vec3(0.f, -1.f, 0.f), vec3(0.f, 1.f, 0.f), 0.18f }, { physics_material_type_none, 0.2f, 0.5f, 1.f }))
-				.addComponent<rigid_body_component>(false, 1.f);
-
-			addConeTwistConstraintFromGlobalPoints(prev, chain, vec3(xPrev + 1.18f, 15.f, -2.f), vec3(1.f, 0.f, 0.f), deg2rad(20.f), deg2rad(30.f));
-
-			prev = chain;
-		}
-#endif
-
 		groundMesh->mesh =
 			boxMesh->mesh =
 			sphereMesh->mesh =
 			chainMesh->mesh =
 			builder.createDXMesh();
-	}
-#endif
-
-#if 0
-	{
-		auto sphereMesh = make_ref<multi_mesh>();
-		auto boxMesh = make_ref<multi_mesh>();
-
-		{
-			mesh_builder builder;
-			builder.pushSphere({ });
-			sphereMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity });
-			sphereMesh->mesh = builder.createDXMesh();
-		}
-		{
-			mesh_builder builder;
-			builder.pushBox({ vec3(0.f), vec3(1.f, 1.f, 2.f) });
-			boxMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity });
-			boxMesh->mesh = builder.createDXMesh();
-		}
-
-		uint32 numTerrainChunks = 10;
-		float terrainChunkSize = 64.f;
-
-		pbr_material_desc terrainGroundDesc;
-		terrainGroundDesc.albedo = "assets/terrain/grass.bmp";
-		terrainGroundDesc.normal = "assets/terrain/grass_normal.bmp";
-		terrainGroundDesc.roughness = "assets/terrain/grass.bmp";
-		terrainGroundDesc.albedoFlags &= ~image_load_flags_compress;
-
-		pbr_material_desc terrainRockDesc;
-		terrainRockDesc.albedo = "assets/terrain/rock.bmp";
-		terrainRockDesc.normal = "assets/terrain/rock_normal.bmp";
-		terrainRockDesc.roughness = "assets/terrain/rock.bmp";
-
-		pbr_material_desc terrainMudDesc;
-		terrainMudDesc.albedo = "assets/terrain/grass.bmp";
-		terrainMudDesc.normal = "assets/terrain/grass_normal.bmp";
-		terrainMudDesc.roughness = "assets/terrain/grass.bmp";
-
-		auto terrainGroundMaterial = createPBRMaterialAsync(terrainGroundDesc);
-		auto terrainRockMaterial = createPBRMaterialAsync(terrainRockDesc);
-		auto terrainMudMaterial = createPBRMaterialAsync(terrainMudDesc);
-
-		std::vector<proc_placement_layer_desc> layers =
-		{
-			proc_placement_layer_desc {
-				"Trees and rocks",
-				5.f,
-				{ 
-					loadMeshFromFile("assets/hoewa/hoewa1.fbx"), 
-					loadMeshFromFile("assets/hoewa/hoewa2.fbx"),
-					loadMeshFromFile("assets/desert/rock1.fbx"),
-					loadMeshFromFile("assets/desert/rock4.fbx"),
-				}
-			}
-		};
-
-		auto terrain = scene.createEntity("Terrain")
-			.addComponent<position_component>(vec3(0.f, -64.f, 0.f))
-			.addComponent<terrain_component>(numTerrainChunks, terrainChunkSize, 50.f, terrainGroundMaterial, terrainRockMaterial, terrainMudMaterial)
-			.addComponent<heightmap_collider_component>(numTerrainChunks, terrainChunkSize, physics_material{ physics_material_type_metal, 0.1f, 1.f, 4.f })
-			//.addComponent<proc_placement_component>(layers) // TODO: This could be deferred if we want to load the meshes asynchronously.
-			.addComponent<grass_component>()
-			;
-
-		auto water = scene.createEntity("Water")
-			.addComponent<position_scale_component>(vec3(-3.920f, -48.689f, -85.580f), vec3(90.f))
-			.addComponent<water_component>();
 	}
 #endif
 
@@ -465,10 +371,6 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	stackArena.initialize();
 
 	{
-		CPU_PROFILE_BLOCK(".NET 8.0 Native AOT scripting initialization");
-		linker.app = this;
-		linker.init();
-
 		core = std::make_shared<escripting_core>();
 		core->init();
 	}

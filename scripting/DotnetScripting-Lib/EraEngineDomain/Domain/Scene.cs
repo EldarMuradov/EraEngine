@@ -7,13 +7,13 @@ public static class Scene
 
     public static EEntity GetEntity(int id) => _entities[id];
 
-    public static void Add(EEntity entity) 
+    public static void Add(EEntity entity)
     {
         if (!_entities.TryAdd(entity.Id, entity))
             _entities[entity.Id] = entity;
     }
 
-    public static void SyncEntities() 
+    public static void SyncEntities()
     {
         Entities = _entities;
     }

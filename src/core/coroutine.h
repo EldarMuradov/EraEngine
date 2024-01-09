@@ -12,7 +12,6 @@ struct cancellation_token
 template <typename param_t>
 struct coroutine_return
 {
-	//~coroutine_return() { RELEASE_PTR(token) }
 	struct promise_type
 	{
 		param_t value;
@@ -69,29 +68,5 @@ struct coroutine
 		return !h.done();
 	}
 };
-
-#if 0
-	//Example:
-	coroutine_return<uint32> counter()
-	{
-		for (uint32 i = 0; i < 3; ++i)
-		{
-			co_yield i;
-		}
-	}
-
-	void call()
-	{
-		coroutine<uint32> h = counter();
-
-		for (int i = 0; h; ++i)
-		{
-			std::cout << "counter3: " << h.value() << std::endl;
-			h();
-		}
-		h.destroy();
-	}
-
-#endif
 
 #endif

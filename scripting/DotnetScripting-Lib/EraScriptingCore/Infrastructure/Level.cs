@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using EraEngine.Components;
 using EraScriptingProjectTemplate;
 
 namespace EraEngine;
@@ -10,10 +11,11 @@ public static class Level
     [UnmanagedCallersOnly(EntryPoint = "start")]
     public static unsafe void Start()
     {
-        EEntity nav_target = new(3, "Sphere");
+        EEntity nav_target = new(59, "SpherePX1");
+        nav_target.CreateComponent<RigidbodyComponent>(RigidbodyType.Dynamic);
 
-        EEntity e = new(4, "SphereNav");
-        e.CreateComponent<TestScript>();
+        EEntity e = new(60, "SpherePX");
+        e.CreateComponent<RigidbodyComponent>(RigidbodyType.Dynamic);
 
         Scene.SyncEntities();
 

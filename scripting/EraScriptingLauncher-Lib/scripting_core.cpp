@@ -51,6 +51,7 @@ void escripting_core::init()
 	startFunc = (evoidf_na)get_func("start");
 	updateFunc = (evoidf_float)get_func("update");
 	processTransform = (evoidf_u32ptr_u32)get_func("process_transform");
+	handleCollisions = (evoidf_u32_u32)get_func("handle_collision");
 }
 
 void escripting_core::reload()
@@ -68,6 +69,7 @@ void escripting_core::release()
 	startFunc = nullptr;
 	updateFunc = nullptr;
 	processTransform = nullptr;
+	handleCollisions = nullptr;
 }
 
 void escripting_core::start()
@@ -78,6 +80,11 @@ void escripting_core::start()
 void escripting_core::processTransforms(uintptr_t mat, uint32_t id)
 {
 	processTransform(mat, id);
+}
+
+void escripting_core::handleOnCollisionEnter(uint32_t id1, uint32_t id2)
+{
+	handleCollisions(id1, id2);
 }
 
 void escripting_core::update(float dt)

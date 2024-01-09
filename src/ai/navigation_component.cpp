@@ -5,8 +5,6 @@
 
 navigation_component::navigation_component(entity_handle h, nav_type tp) noexcept : handle(h), type(tp)
 {
-	allocator = new eallocator();
-	allocator->initialize(0, KB(300));
 }
 
 static bool equal_in_2d(vec3 rhs, vec3 lhs)
@@ -45,8 +43,6 @@ void navigation_component::processPath()
 			nav_cor.destroy();
 		}
 	}
-	
-	allocator->reset();
 }
 
 void navigation_component::createPath(vec3 to, vec3 from)

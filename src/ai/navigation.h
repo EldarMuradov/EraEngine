@@ -84,48 +84,11 @@ struct path_finder
             return {};
         }
     }
-
-    static std::vector<nav_node> a_star_makePath(std::array<std::array<nav_node, (NAV_Y_MAX / NAV_Y_STEP)>, (NAV_X_MAX / NAV_X_STEP)>& map, nav_node& dest)
-    {
-        try
-        {
-            std::cout << "Found a path\n";
-            int x = dest.position.x;
-            int y = dest.position.y;
-            std::stack<nav_node> path;
-            std::vector<nav_node> usablePath;
-
-            while (!(map[x][y].parentPosition == vec2(x, y))
-                && map[x][y].position != NAV_INF_POS)
-            {
-                path.push(map[x][y]);
-                int tempX = map[x][y].parentPosition.x;
-                int tempY = map[x][y].parentPosition.y;
-                x = tempX;
-                y = tempY;
-            }
-            path.push(map[x][y]);
-
-            while (!path.empty())
-            {
-                nav_node top = path.top();
-                path.pop();
-                usablePath.emplace_back(top);
-            }
-
-            return usablePath;
-        }
-        catch (const std::exception& e)
-        {
-            std::cout << e.what() << "\n";
-            return {};
-        }
-    }
 };
 
 struct a_star_navigation
 {
-    static std::vector<nav_node> navigate(eallocator& allocator, nav_node& from, nav_node& to)
+    static std::vector<nav_node> navigate(nav_node& from, nav_node& to)
     {
         if (isValid(to.position) == false)
         {
@@ -138,15 +101,14 @@ struct a_star_navigation
             return {};
         }
 
-        bool closedList[(NAV_X_MAX / NAV_X_STEP)][(NAV_Y_MAX / NAV_Y_STEP)]{};
-        std::cout << "closedList allocate\n";
+        std::unordered_map<vec2, bool> closedList;
+        closedList.reserve((NAV_X_MAX / NAV_X_STEP) * (NAV_Y_MAX / NAV_Y_STEP) + 1);
 
         std::unordered_map<vec2, nav_node> allMap;
-        allMap.reserve((NAV_X_MAX / NAV_X_STEP)*(NAV_Y_MAX / NAV_Y_STEP));
-
-        for (int x = 0; x < (NAV_X_MAX / NAV_X_STEP); x++)
+        allMap.reserve((NAV_X_MAX / NAV_X_STEP) * (NAV_Y_MAX / NAV_Y_STEP) + 1);
+        for (int x = -1; x < (NAV_X_MAX / NAV_X_STEP) + 1; x++)
         {
-            for (int y = 0; y < (NAV_Y_MAX / NAV_Y_STEP); y++)
+            for (int y = -1; y < (NAV_Y_MAX / NAV_Y_STEP) + 1; y++)
             {
                 allMap[vec2(x, y)].fCost = FLT_MAX;
                 allMap[vec2(x, y)].gCost = FLT_MAX;
@@ -154,7 +116,7 @@ struct a_star_navigation
                 allMap[vec2(x, y)].parentPosition = NAV_INF_POS;
                 allMap[vec2(x, y)].position = vec2(x, y);
 
-                closedList[x][y] = false;
+                closedList.emplace(vec2(x, y), false);
             }
         }
 
@@ -191,11 +153,11 @@ struct a_star_navigation
 
             x = node.position.x;
             y = node.position.y;
-            closedList[x][y] = true;
+            closedList[vec2(x, y)] = true;
 
-            for (int newX = 0; newX <= 1; newX++)
+            for (int newX = -1; newX <= 1; newX++)
             {
-                for (int newY = 0; newY <= 1; newY++)
+                for (int newY = -1; newY <= 1; newY++)
                 {
                     double gNew, hNew, fNew;
                     if (isValid(vec2(x + newX, y + newY)))
@@ -204,10 +166,9 @@ struct a_star_navigation
                         {
                             allMap[vec2(x + newX, y + newY)].parentPosition = vec2(x, y);
                             destinationFound = true;
-                            std::cout << "exit\n";
                             return path_finder::a_star_makePath(allMap, to);;
                         }
-                        else if (x < 99 && y < 99 && closedList[x + newX][y + newY] == false)
+                        else if (closedList[vec2(x + newX, y + newY)] == false)
                         {
                             gNew = node.gCost + 1.0;
                             hNew = calculateH(vec2(x + newX, y + newY), to);
@@ -221,117 +182,6 @@ struct a_star_navigation
                                 allMap[vec2(x + newX, y + newY)].hCost = hNew;
                                 allMap[vec2(x + newX, y + newY)].parentPosition = vec2(x, y);
                                 openList.emplace_back(allMap[vec2(x + newX, y + newY)]);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (destinationFound == false)
-        {
-            std::cout << "exit\n";
-            std::cout << "Destination not found\n";
-            return {};
-        }
-
-        std::cout << "exit\n";
-        return {};
-    }
-
-    static std::vector<nav_node> navigate(nav_node& from, nav_node& to)
-    {
-        if (isValid(to.position) == false)
-        {
-            std::cout << "Destination is an obstacle\n";
-            return {};
-        }
-        if (isDestination(from.position, to))
-        {
-            std::cout << "You are the destination\n";
-            return {};
-        }
-
-        bool closedList[(NAV_X_MAX / NAV_X_STEP)][(NAV_Y_MAX / NAV_Y_STEP)]{};
-
-        std::array<std::array<nav_node, (NAV_Y_MAX / NAV_Y_STEP)>, (NAV_X_MAX / NAV_X_STEP)> allMap;
-        for (int x = 0; x < (NAV_X_MAX / NAV_X_STEP); x++)
-        {
-            for (int y = 0; y < (NAV_Y_MAX / NAV_Y_STEP); y++)
-            {
-                allMap[x][y].fCost = FLT_MAX;
-                allMap[x][y].gCost = FLT_MAX;
-                allMap[x][y].hCost = FLT_MAX;
-                allMap[x][y].parentPosition = NAV_INF_POS;
-                allMap[x][y].position = vec2(x, y);
-
-                closedList[x][y] = false;
-            }
-        }
-
-        int x = from.position.x;
-        int y = from.position.y;
-        allMap[x][y].fCost = 0.0;
-        allMap[x][y].gCost = 0.0;
-        allMap[x][y].hCost = 0.0;
-        allMap[x][y].parentPosition = vec2(x, y);
-
-        std::vector<nav_node> openList;
-        openList.emplace_back(allMap[x][y]);
-        bool destinationFound = false;
-
-        while (!openList.empty() && openList.size() < (NAV_X_MAX / NAV_X_STEP) * (NAV_Y_MAX / NAV_Y_STEP))
-        {
-            nav_node node;
-            do
-            {
-                float temp = FLT_MAX;
-                std::vector<nav_node>::iterator itNode;
-                for (auto it = openList.begin(); it != openList.end(); it = next(it))
-                {
-                    nav_node n = *it;
-                    if (n.fCost < temp)
-                    {
-                        temp = n.fCost;
-                        itNode = it;
-                    }
-                }
-                node = *itNode;
-                openList.erase(itNode);
-            } while (isValid(node.position) == false);
-
-            x = node.position.x;
-            y = node.position.y;
-            closedList[x][y] = true;
-
-            for (int newX = -1; newX <= 1; newX++)
-            {
-                for (int newY = -1; newY <= 1; newY++)
-                {
-                    double gNew, hNew, fNew;
-                    if (isValid(vec2(x + newX, y + newY)))
-                    {
-                        if (isDestination(vec2(x + newX, y + newY), to))
-                        {
-                            allMap[x + newX][y + newY].parentPosition = vec2(x, y);
-                            destinationFound = true;
-
-                            return path_finder::a_star_makePath(allMap, to);
-                        }
-                        else if (closedList[x + newX][y + newY] == false)
-                        {
-                            gNew = node.gCost + 1.0;
-                            hNew = calculateH(vec2(x + newX, y + newY), to);
-                            fNew = gNew + hNew;
-
-                            if (allMap[x + newX][y + newY].fCost == FLT_MAX ||
-                                allMap[x + newX][y + newY].fCost > fNew)
-                            {
-                                allMap[x + newX][y + newY].fCost = fNew;
-                                allMap[x + newX][y + newY].gCost = gNew;
-                                allMap[x + newX][y + newY].hCost = hNew;
-                                allMap[x + newX][y + newY].parentPosition = vec2(x, y);
-                                openList.emplace_back(allMap[x + newX][y + newY]);
                             }
                         }
                     }

@@ -15,6 +15,7 @@
 #include <scene/scene.h>
 
 px_physics_engine* px_physics_engine::engine = nullptr;
+std::queue<collision_handling_data> px_physics_engine::collisionQueue;
 std::mutex px_physics_engine::sync;
 
 px_collision_contact_callback collision_callback;
@@ -66,7 +67,7 @@ px_physics::~px_physics()
 
 void px_physics::initialize()
 {
-	foundation = PxCreateFoundation(PX_PHYSICS_VERSION, px_allocator, defaultErrorCallback);
+	foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocator_callback, error_reporter);
 
 	if (!foundation)
 		throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
@@ -83,12 +84,12 @@ void px_physics::initialize()
 	toleranceScale.speed = 981;
 
 	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, pvd);
-
+	
 	dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
-
+	
 	PxCudaContextManagerDesc cudaContextManagerDesc;
 
-	cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, PxGetProfilerCallback());
+	cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profiler_callback);
 
 	PxSceneDesc sceneDesc(physics->getTolerancesScale());
 	sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
@@ -99,20 +100,16 @@ void px_physics::initialize()
 	sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneDesc.simulationEventCallback = &collision_callback;
-
 #if PX_GPU_BROAD_PHASE
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
 #else
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eABP;
 #endif
-
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
-
 #if PX_GPU_BROAD_PHASE
 	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
 #endif
-
 	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
@@ -131,10 +128,6 @@ void px_physics::initialize()
 		client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
 	}
 	auto cookingParams = PxCookingParams(toleranceScale);
-
-	if(!PxInitExtensions(*physics, pvd))
-		LOG_ERROR("Physics> Failed to initialize extensions.");
-
 #if PX_GPU_BROAD_PHASE
 	cookingParams.buildGPUData = true;
 #endif
@@ -143,6 +136,9 @@ void px_physics::initialize()
 	cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
 
 	cooking = PxCreateCooking(PX_PHYSICS_VERSION, *foundation, cookingParams);
+
+	if (!PxInitExtensions(*physics, pvd))
+		LOG_ERROR("Physics> Failed to initialize extensions.");
 
 	insertationCallback = &physics->getPhysicsInsertionCallback();
 
@@ -167,6 +163,8 @@ void px_physics::release()
 #if PX_VEHICLE
 	PxCloseVehicleSDK();
 #endif
+
+	PxCloseExtensions();
 
 	PX_RELEASE(physics)
 	PX_RELEASE(cooking)
@@ -250,16 +248,14 @@ void px_physics_engine::update(float dt)
 		if (auto rd = activeActors[i]->is<PxRigidDynamic>())
 		{
 			entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
-			eentity* renderObject = new eentity(*handle, *scene);
-			const auto transform = &renderObject->getComponent<transform_component>();
+			eentity renderObject = { *handle, &scene->registry };
+			const auto transform = &renderObject.getComponent<transform_component>();
 
 			const auto& pxt = rd->getGlobalPose();
 			const auto& pos = pxt.p;
 			const auto& rot = pxt.q.getConjugate();
-			transform->position = vec3(pos.x, pos.y, pos.z);
-			transform->rotation = quat(rot.x, rot.y, rot.z, rot.w);
-
-			delete renderObject;
+			transform->position = createVec3(pos);
+			transform->rotation = createQuat(rot);
 		}
 	}
 
@@ -347,24 +343,23 @@ void px_physics_engine::releaseActors() noexcept
 	sync.unlock();
 }
 
-px_raycast_info px_physics_engine::raycast(px_rigidbody_component* rb, const vec3& dir, int maxDist, int maxHits, PxHitFlags hitFlags)
+px_raycast_info px_physics_engine::raycast(px_rigidbody_component* rb, const vec3& dir, int maxDist, bool hitTriggers, uint32_t layerMask, int maxHits)
 {
-	//TODO: approximate origin to object boundind box -> dist face
-
 	const auto& pose = rb->getRigidActor()->getGlobalPose().p - PxVec3(0.0f, 1.5f, 0.0f);
 
-	PxRaycastBuffer hit;
+	PX_SCENE_QUERY_SETUP(true);
+	PxRaycastBuffer buffer;
 	PxVec3 d = createPxVec3(dir);
-	bool status = physics->scene->raycast(pose, d, maxDist, hit, PxHitFlag::eDEFAULT);
+	bool status = physics->scene->raycast(pose, d, maxDist, buffer, hitFlags, PxQueryFilterData(), &engine->physics->queryFilter);
 
 	if (status)
 	{
-		uint32 nb = hit.getNbAnyHits();
+		uint32 nb = buffer.getNbAnyHits();
 		std::cout << "Hits: " << nb << "\n";
 		uint32 index = 0;
 		if (nb > 1)
 			index = 1;
-		const auto& hitInfo1 = hit.getAnyHit(index);
+		const auto& hitInfo1 = buffer.getAnyHit(index);
 
 		auto actor = actors_map[hitInfo1.actor];
 
@@ -373,12 +368,12 @@ px_raycast_info px_physics_engine::raycast(px_rigidbody_component* rb, const vec
 			{
 				actor,
 				hitInfo1.distance,
-				hit.getNbAnyHits(),
+				buffer.getNbAnyHits(),
 				vec3(hitInfo1.position.x, hitInfo1.position.y, hitInfo1.position.z)
 			};
-		else if (hit.getNbAnyHits() > 1)
+		else if (buffer.getNbAnyHits() > 1)
 		{
-			const auto& hitInfo2 = hit.getAnyHit(1);
+			const auto& hitInfo2 = buffer.getAnyHit(1);
 
 			actor = actors_map[hitInfo2.actor];
 
@@ -386,7 +381,7 @@ px_raycast_info px_physics_engine::raycast(px_rigidbody_component* rb, const vec
 			{
 				actor,
 				hitInfo2.distance,
-				hit.getNbAnyHits(),
+				buffer.getNbAnyHits(),
 				vec3(hitInfo2.position.x, hitInfo2.position.y, hitInfo2.position.z)
 			};
 		}
@@ -451,6 +446,7 @@ void px_collision_contact_callback::onContact(const PxContactPairHeader& pairHea
 			{
 				rb1->onCollisionEnter(rb2);
 				rb2->onCollisionEnter(rb1);
+				px_physics_engine::collisionQueue.emplace(rb1->handle, rb2->handle);
 			}
 		}
 	}

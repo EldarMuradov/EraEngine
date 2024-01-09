@@ -17,6 +17,7 @@
 typedef HMODULE elib; //Era .NET Native AOT library instance
 
 using evoidf_na = void(*)(); //Era void function with NO ARGS
+using evoidf_u32_u32 = void(*)(uint32_t, uint32_t); //Era void function with mat4x4 and uint32_t arguments
 using evoidf_u32ptr_u32 = void(*)(uintptr_t, uint32_t); //Era void function with mat4x4 and uint32_t arguments
 using evoidf_float = void(*)(float); //Era void function with float argument
 using eptrf_na = uintptr_t(*)(); //Era uintptr_t function with NO ARGS
@@ -35,8 +36,10 @@ struct escripting_core
 
 	void release();
 
-	void start();
 	void processTransforms(uintptr_t mat, uint32_t id);
+	void handleOnCollisionEnter(uint32_t id1, uint32_t id2);
+
+	void start();
 	void update(float dt);
 	void stop();
 
@@ -90,4 +93,5 @@ private:
 	evoidf_na startFunc;
 	evoidf_float updateFunc;
 	evoidf_u32ptr_u32 processTransform;
+	evoidf_u32_u32 handleCollisions;
 };

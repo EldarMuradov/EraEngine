@@ -21,7 +21,7 @@ public class EEntity
 
     public int Id { get; init; }
 
-    public string Name { get; init; }
+    public string Name { get; init; } = null!;
 
     public Dictionary<string, EComponent> Components = new();
 
@@ -46,22 +46,31 @@ public class EEntity
 
     private bool _activeSelf = true;
 
+    public Dictionary<string, EComponent> _components = new();
+
     #region Pipeline Methods
 
     public void Start()
     {
         IsInitialized = true;
+        SyncComponents();
 
-        var components = new List<EComponent>(Components.Values);
+        var components = Components.Values;
         foreach (var comp in components)
             comp.Start();
     }
 
     public void Update(float dt)
     {
-        var components = new List<EComponent>(Components.Values);
+        var components = Components.Values;
         foreach (var comp in components)
             comp.Update(dt);
+        SyncComponents();
+    }
+
+    private void SyncComponents()
+    {
+        Components = _components;
     }
 
     #endregion
@@ -70,7 +79,7 @@ public class EEntity
 
     public T? GetComponent<T>() where T : EComponent, new()
     {
-        if (Components.TryGetValue(typeof(T).Name, out var comp))
+        if (_components.TryGetValue(typeof(T).Name, out var comp))
             return (T)comp;
         return null;
     }
@@ -92,13 +101,11 @@ public class EEntity
 
         if (comp is Script)
             createScript(Id, comp.GetType().Name);
-        else
-            createComponent(Id, comp.GetType().Name); // TODO: agrs sync
 
         comp.Entity = this;
         comp.InitializeComponentInternal(args);
 
-        Components.Add(comp.GetType().Name, comp);
+        _components.Add(comp.GetType().Name, comp);
 
         if(IsInitialized)
             comp.Start();
@@ -113,7 +120,7 @@ public class EEntity
 
         var compname = comp.GetType().Name;
 
-        Components.Remove(compname);
+        _components.Remove(compname);
         if (sync)
             removeComponent(Id, compname);
     }
@@ -132,7 +139,7 @@ public class EEntity
         if (parent != null)
             instance.Parent = parent;
 
-        foreach (var comp in original.Components)
+        foreach (var comp in original._components)
             instance.CopyComponent(comp.Value);
 
         var transform = instance.GetComponent<TransformComponent>()!;
@@ -158,7 +165,7 @@ public class EEntity
         if (parent != null)
             instance.Parent = parent;
 
-        foreach (var comp in original.Components)
+        foreach (var comp in original._components)
             instance.CopyComponent(comp.Value);
 
         Scene.Entities.Add(newId, instance);
@@ -175,7 +182,7 @@ public class EEntity
     {
         var comp = component;
 
-        Components.Add(comp.GetType().Name, comp);
+        _components.Add(comp.GetType().Name, comp);
 
         return comp;
     }
@@ -213,7 +220,7 @@ public class EEntity
         comp.Entity = this;
         comp.InitializeComponentInternal(args);
 
-        Components.Add(comp.GetType().Name, comp);
+        _components.Add(comp.GetType().Name, comp);
 
         if (IsInitialized)
             comp.Start();
@@ -223,19 +230,16 @@ public class EEntity
 
     internal void RemoveComponent(string name, bool sync = true)
     {
-        Components.Remove(name);
+        _components.Remove(name);
         if (sync)
             removeComponent(Id, name);
     }
-
-    [DllImport("EraScriptingCore.dll")]
-    private static extern unsafe void AddEntity(IntPtr str, int length);
 
     internal void AddComponentFromInstance(EComponent comp, string name, bool from = true)
     {
         if (comp != null)
         {
-            Components.Add(name, comp);
+            _components.Add(name, comp);
             comp.Entity = this;
             comp.Start();
             if (from)

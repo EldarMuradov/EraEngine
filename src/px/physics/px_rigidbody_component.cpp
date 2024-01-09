@@ -4,12 +4,14 @@
 #include <px/physics/px_collider_component.h>
 #include <core/log.h>
 #include "core/math.h"
+#include <scripting/native_scripting_linker.h>
+#include "application.h"
 
-px_rigidbody_component::px_rigidbody_component(eentity* entt, px_rigidbody_type rbtype, bool addToScene) noexcept : entity(entt), type(rbtype)
+px_rigidbody_component::px_rigidbody_component(uint32_t entt, px_rigidbody_type rbtype, bool addToScene) noexcept : type(rbtype)
 {
+	handle = entt;
 	if(rbtype != px_rigidbody_type::None)
 		createPhysics(addToScene);
-	transform = entity->getComponentIfExists<transform_component>();
 }
 
 px_rigidbody_component::~px_rigidbody_component()
@@ -102,9 +104,9 @@ vec3 px_rigidbody_component::getPhysicsPosition()
 
 void px_rigidbody_component::setPhysicsPositionAndRotation(vec3& pos, quat& rot)
 {
-	PxQuat nq = PxQuat(rot.x, rot.y, rot.z, rot.w);
+	PxQuat nq = physx::createPxQuat(rot);
 
-	actor->setGlobalPose(PxTransform(PxVec3(pos.x, pos.y, pos.z), nq.getConjugate()));
+	actor->setGlobalPose(PxTransform(physx::createPxVec3(pos), nq.getConjugate()));
 }
 
 void px_rigidbody_component::setAngularDamping(float damping)
@@ -113,17 +115,17 @@ void px_rigidbody_component::setAngularDamping(float damping)
 		actor->is<PxRigidDynamic>()->setAngularDamping(damping);
 }
 
-void px_rigidbody_component::onCollisionEnter(px_rigidbody_component* collision)
+void px_rigidbody_component::onCollisionEnter(px_rigidbody_component* collision) const
 {
-	std::cout << "collide" << "\n";
+
 }
 
 void px_rigidbody_component::createPhysics(bool addToScene)
 {
 	actor = createActor();
-	uint32_t* handle = new uint32_t[1];
-	handle[0] = (uint32_t)entity->handle;
-	actor->userData = handle;
+	uint32_t* h = new uint32_t[1];
+	h[0] = (uint32_t)handle;
+	actor->userData = h;
 
 	px_physics_engine::get()->addActor(this, actor, addToScene);
 
@@ -132,28 +134,29 @@ void px_rigidbody_component::createPhysics(bool addToScene)
 
 physx::PxRigidActor* px_rigidbody_component::createActor()
 {
-	px_collider_component_base* coll = (px_collider_component_base*)entity->getComponentIfExists<px_sphere_collider_component>();
+	eentity entity = { handle, &enative_scripting_linker::app->getCurrentScene()->registry };
+	px_collider_component_base* coll = (px_collider_component_base*)entity.getComponentIfExists<px_sphere_collider_component>();
 	if(!coll)
-		coll = (px_collider_component_base*)entity->getComponentIfExists<px_box_collider_component>();
+		coll = (px_collider_component_base*)entity.getComponentIfExists<px_box_collider_component>();
 	if(!coll)
-		coll = (px_collider_component_base*)entity->getComponentIfExists<px_capsule_collider_component>();
+		coll = (px_collider_component_base*)entity.getComponentIfExists<px_capsule_collider_component>();
 	if(!coll)
-		coll = (px_collider_component_base*)entity->getComponentIfExists<px_triangle_mesh_collider_component>();
+		coll = (px_collider_component_base*)entity.getComponentIfExists<px_triangle_mesh_collider_component>();
 	if (!coll)
-		coll = (px_collider_component_base*)entity->getComponentIfExists<px_bounding_box_collider_component>();
+		coll = (px_collider_component_base*)entity.getComponentIfExists<px_bounding_box_collider_component>();
 	if (!coll)
 		return nullptr;
 
-	auto tranaform = entity->getComponentIfExists<transform_component>();
+	auto tranaform = entity.getComponentIfExists<transform_component>();
 
 	if (!tranaform)
 		return nullptr;
 
 	vec3 pos = tranaform->position;
-	PxVec3 pospx = PxVec3(pos.x, pos.y, pos.z);
+	PxVec3 pospx = physx::createPxVec3(pos);
 
 	quat q = tranaform->rotation;
-	PxQuat rotpx = PxQuat(q.x, q.y, q.z, q.w);
+	PxQuat rotpx = physx::createPxQuat(q);
 	rotpx = rotpx.getConjugate();
 
 	material = px_physics_engine::getPhysics()->createMaterial(staticFriction, dynamicFriction, restitution);
@@ -163,6 +166,9 @@ physx::PxRigidActor* px_rigidbody_component::createActor()
 		PxRigidStatic* actor = px_physics_engine::getPhysics()->createRigidStatic(PxTransform(pospx, rotpx));
 
 		coll->createShape();
+		uint32_t* h= new uint32_t[1];
+		h[0] = (uint32_t)handle;
+		coll->getShape()->userData = h;
 		actor->attachShape(*coll->getShape());
 
 		return actor;
@@ -176,6 +182,9 @@ physx::PxRigidActor* px_rigidbody_component::createActor()
 		//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
 
 		coll->createShape();
+		uint32_t* h = new uint32_t[1];
+		h[0] = (uint32_t)handle;
+		coll->getShape()->userData = h;
 		actor->attachShape(*coll->getShape());
 
 		return actor;
