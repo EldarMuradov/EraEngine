@@ -5,7 +5,7 @@
 #include <d3dcompiler.h>
 #include <sdkddkver.h>
 
-#define USE_D3D12_BLOCK_ALLOCATOR 0
+#define USE_D3D12_BLOCK_ALLOCATOR 1
 namespace D3D12MA { class Allocator; class Allocation; };
 
 #ifdef __ID3D12GraphicsCommandList6_INTERFACE_DEFINED__

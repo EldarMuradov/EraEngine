@@ -35,11 +35,11 @@ struct px_rigidbody_component
 	void setConstraints(uint8 constraints) noexcept;
 	uint8 getConstraints() noexcept;
 
-	void setLinearVelocity(vec3& velocity);
+	void setLinearVelocity(vec3 velocity);
 
 	vec3 getLinearVelocity();
 
-	void setAngularVelocity(vec3& velocity);
+	void setAngularVelocity(vec3 velocity);
 
 	vec3 getAngularVelocity();
 

@@ -51,13 +51,13 @@ void logMessageInternal(message_type type, const char* file, const char* functio
 void logMessage(message_type type, const char* format, ...)
 {
 	mutex.lock();
-	arena.ensureFreeSize(1024);
+	arena.ensureFreeSize(KB(1));
 
 	char* buffer = (char*)arena.getCurrent();
 
 	va_list args;
 	va_start(args, format);
-	int countWritten = vsnprintf(buffer, 1024, format, args);
+	int countWritten = vsnprintf(buffer, KB(1), format, args);
 	va_end(args);
 
 	messages.push_back({ buffer, type, 5.f, nullptr, nullptr, 0 });
@@ -68,7 +68,7 @@ void logMessage(message_type type, const char* format, ...)
 
 void initializeMessageLog()
 {
-	arena.initialize(0, GB(1));
+	arena.initialize(0, MB(128));
 }
 
 void updateMessageLog(float dt)
@@ -121,7 +121,10 @@ void updateMessageLog(float dt)
 	}
 
 	if (messages.size() > MAX_NB_MESSAGES)
+	{
 		messages.clear();
+		arena.reset();
+	}
 }
 
 #endif

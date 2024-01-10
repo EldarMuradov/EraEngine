@@ -4,7 +4,6 @@
 #include <px/physics/px_collider_component.h>
 #include <core/log.h>
 #include "core/math.h"
-#include <scripting/native_scripting_linker.h>
 #include "application.h"
 
 px_rigidbody_component::px_rigidbody_component(uint32_t entt, px_rigidbody_type rbtype, bool addToScene) noexcept : type(rbtype)
@@ -64,7 +63,7 @@ uint8 px_rigidbody_component::getConstraints() noexcept
 	return (uint8)actor->is<PxRigidDynamic>()->getRigidDynamicLockFlags();
 }
 
-void px_rigidbody_component::setLinearVelocity(vec3& velocity)
+void px_rigidbody_component::setLinearVelocity(vec3 velocity)
 {
 	if(actor->is<PxRigidDynamic>())
 		actor->is<PxRigidDynamic>()->setLinearVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
@@ -80,7 +79,7 @@ vec3 px_rigidbody_component::getLinearVelocity()
 	return vec3();
 }
 
-void px_rigidbody_component::setAngularVelocity(vec3& velocity)
+void px_rigidbody_component::setAngularVelocity(vec3 velocity)
 {
 	if (actor->is<PxRigidDynamic>())
 		actor->is<PxRigidDynamic>()->setAngularVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
@@ -104,6 +103,8 @@ vec3 px_rigidbody_component::getPhysicsPosition()
 
 void px_rigidbody_component::setPhysicsPositionAndRotation(vec3& pos, quat& rot)
 {
+	setAngularVelocity(vec3(0.0f));
+	setLinearVelocity(vec3(0.0f));
 	PxQuat nq = physx::createPxQuat(rot);
 
 	actor->setGlobalPose(PxTransform(physx::createPxVec3(pos), nq.getConjugate()));
@@ -129,12 +130,14 @@ void px_rigidbody_component::createPhysics(bool addToScene)
 
 	px_physics_engine::get()->addActor(this, actor, addToScene);
 
+#if PX_ENABLE_PVD
 	actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
+#endif
 }
 
 physx::PxRigidActor* px_rigidbody_component::createActor()
 {
-	eentity entity = { handle, &enative_scripting_linker::app->getCurrentScene()->registry };
+	eentity entity = { handle, &px_physics_engine::get()->app->getCurrentScene()->registry };
 	px_collider_component_base* coll = (px_collider_component_base*)entity.getComponentIfExists<px_sphere_collider_component>();
 	if(!coll)
 		coll = (px_collider_component_base*)entity.getComponentIfExists<px_box_collider_component>();
@@ -176,11 +179,14 @@ physx::PxRigidActor* px_rigidbody_component::createActor()
 	else
 	{
 		PxRigidDynamic* actor = px_physics_engine::getPhysics()->createRigidDynamic(PxTransform(pospx, rotpx));
+		actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
+		actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
 
-#if !PX_GPU_BROAD_PHASE
+#if PX_GPU_BROAD_PHASE
+		actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
+#else
 		actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 		actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
-		//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
 #endif
 
 		coll->createShape();

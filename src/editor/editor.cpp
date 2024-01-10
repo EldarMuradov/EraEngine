@@ -483,7 +483,7 @@ bool eeditor::drawMainMenuBar()
 		{
 			// TODO: Docs
 			if (ImGui::MenuItem(ICON_FA_MEMORY "  Repository"))
-				os::system_calls::openURL("https://github.com/EldarMuradov/EraGameEngine");
+				os::system_calls::openURL("https://github.com/EldarMuradov/EraEngine");
 
 			ImGui::EndMenu();
 		}
@@ -2100,6 +2100,8 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 		{
 			if (gizmo.manipulateTransformation(*transform, camera, input, !inputCaptured, ldrRenderPass))
 			{
+				if(auto rb = selectedEntity.getComponentIfExists<px_rigidbody_component>())
+					rb->setPhysicsPositionAndRotation(transform->position, transform->rotation);
 				updateSelectedEntityUIRotation();
 				inputCaptured = true;
 				objectMovedByGizmo = true;
@@ -2192,6 +2194,12 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 			this->scene->play();
 			undoStacks[1].reset();
 			setSelectedEntity({});
+
+			for (auto [entityHandle, rigidbody, transform] : this->scene->getCurrentScene().group(component_group<px_rigidbody_component, transform_component>).each())
+			{
+				rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
+			}
+
 			app->core->start();
 		}
 		ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
@@ -2948,6 +2956,11 @@ void eeditor::drawSettings(float dt)
 				uint32 nba = px_physics_engine::get()->actors_map.size();
 				ImGui::PropertyValue("Number of active actors", std::to_string(nbaa).c_str());
 				ImGui::PropertyValue("Number of actors", std::to_string(nba).c_str());
+#if PX_GPU_BROAD_PHASE
+				ImGui::PropertyValue("Broad phase", "GPU");
+#else
+				ImGui::PropertyValue("Broad phase", "ABP (CPU)");
+#endif
 				// TODO: Physics undoable properties
 				ImGui::EndProperties();
 			}

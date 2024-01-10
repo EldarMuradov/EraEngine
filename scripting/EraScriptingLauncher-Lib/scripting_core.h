@@ -36,12 +36,12 @@ struct escripting_core
 
 	void release();
 
-	void processTransforms(uintptr_t mat, uint32_t id);
-	void handleOnCollisionEnter(uint32_t id1, uint32_t id2);
+	void processTransforms(uintptr_t mat, uint32_t id) const;
+	void handleOnCollisionEnter(uint32_t id1, uint32_t id2) const;
 
-	void start();
-	void update(float dt);
-	void stop();
+	void start() const;
+	void update(float dt) const;
+	void stop() const;
 
 	//Call scripting void function directly
 	template <typename Func>

@@ -8,11 +8,22 @@
 
 #define NDEBUG 0
 
-#define PX_GPU_BROAD_PHASE 0
+#define PX_GPU_BROAD_PHASE 1
 
 #define PX_CONTACT_BUFFER_SIZE 64
 
 #define PX_ENABLE_RAYCAST_CCD 0
+#define PX_ENABLE_PVD 0
+
+#define PX_PHYSICS_ENABLED = 1
+
+#define PX_NB_MAX_RAYCAST_HITS 64
+#define PX_NB_MAX_RAYCAST_DISTANCE 128
+
+#define PX_VEHICLE 0
+
+#define PX_RELEASE(x)	if(x)	{ x->release(); x = nullptr;}
+#define UNUSED(x) (void)(x)
 
 #include <PxPhysics.h>
 #include <PxPhysicsAPI.h>
@@ -27,18 +38,9 @@
 #include <queue>
 
 struct application;
-
-#define PX_PHYSICS_ENABLED = 1
-
-#define PX_NB_MAX_RAYCAST_HITS 64
-#define PX_NB_MAX_RAYCAST_DISTANCE 128
-
-#define PX_VEHICLE 0
+struct eallocator;
 
 using namespace physx;
-
-#define PX_RELEASE(x)	if(x)	{ x->release(); x = nullptr;}
-#define UNUSED(x) (void)(x)
 
 struct px_allocator_callback : PxAllocatorCallback
 {
@@ -298,6 +300,7 @@ struct px_profiler_callback : PxProfilerCallback
 {
 	void* zoneStart(const char* eventName, bool detached, uint64_t contextId) override
 	{
+		LOG_MESSAGE(eventName);
 		return nullptr;
 	}
 
@@ -311,7 +314,10 @@ struct px_error_reporter : PxErrorCallback
 	void reportError(PxErrorCode::Enum code, const char* message, const char* file, int line) override
 	{
 		if (message)
-			LOG_ERROR("PhysX Error! Message: ", message, " Code: ", static_cast<int32>(code), " Source: ", file, " : ", line);
+		{
+			LOG_ERROR("PhysX Error! Message: ");
+			LOG_ERROR(message, " Code: ", static_cast<int32>(code), " Source: ", file, " : ", line);
+		}
 		else
 			std::cerr << "PhysX Error! \n";
 	}
@@ -533,6 +539,8 @@ private:
 	px_physics* physics = nullptr;
 
 	application* app = nullptr;
+
+	eallocator allocator;
 
 	bool released = false;
 

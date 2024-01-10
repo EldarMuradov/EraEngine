@@ -72,27 +72,31 @@ void escripting_core::release()
 	handleCollisions = nullptr;
 }
 
-void escripting_core::start()
+void escripting_core::start() const
 {
-	startFunc();
+	if (startFunc)
+		startFunc();
 }
 
-void escripting_core::processTransforms(uintptr_t mat, uint32_t id)
+void escripting_core::processTransforms(uintptr_t mat, uint32_t id) const
 {
-	processTransform(mat, id);
+	if (processTransform)
+		processTransform(mat, id);
 }
 
-void escripting_core::handleOnCollisionEnter(uint32_t id1, uint32_t id2)
+void escripting_core::handleOnCollisionEnter(uint32_t id1, uint32_t id2) const
 {
-	handleCollisions(id1, id2);
+	if(handleCollisions)
+		handleCollisions(id1, id2);
 }
 
-void escripting_core::update(float dt)
+void escripting_core::update(float dt) const
 {
-	updateFunc(dt);
+	if(updateFunc)
+		updateFunc(dt);
 }
 
-void escripting_core::stop()
+void escripting_core::stop() const
 {
 	
 }

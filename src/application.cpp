@@ -101,11 +101,6 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, std::shared_ptr<escrip
 	highPriorityJobQueue.createJob<updatePhysicsAndScriptingData>([](updatePhysicsAndScriptingData& data, job_handle)
 	{
 		{
-			CPU_PROFILE_BLOCK("PhysX physics step");
-			for (auto [entityHandle, rigidbody, transform] : data.scene.group(component_group<px_rigidbody_component, transform_component>).each())
-			{
-				rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
-			}
 			px_physics_engine::get()->update(data.deltaTime);
 
 			while (px_physics_engine::collisionQueue.size())
@@ -501,9 +496,6 @@ void application::update(const user_input& input, float dt)
 	float unscaledDt = dt;
 	dt *= this->scene.getTimestepScale();
 
-	//learnedLocomotion.update(scene);
-
-	// Must happen before physics update.
 	for (auto [entityHandle, terrain, position] : scene.group(component_group<terrain_component, position_component>).each())
 	{
 		eentity entity = { entityHandle, scene };
@@ -514,6 +506,11 @@ void application::update(const user_input& input, float dt)
 
 	static float physicsTimer = 0.f;
 	physicsStep(scene, stackArena, physicsTimer, editor.physicsSettings, dt);
+
+	if (this->scene.isPausable())
+	{
+		updatePhysXPhysicsAndScripting(scene, core, dt);
+	}
 
 	// Particles
 #if 0
@@ -622,11 +619,6 @@ void application::update(const user_input& input, float dt)
 	renderer->setCamera(camera);
 
 	executeMainThreadJobs();
-
-	if (this->scene.isPausable())
-	{
-		updatePhysXPhysicsAndScripting(scene, core, dt);
-	}
 }
 
 void application::handleFileDrop(const fs::path& filename)

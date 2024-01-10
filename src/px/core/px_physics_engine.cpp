@@ -71,19 +71,23 @@ void px_physics::initialize()
 
 	if (!foundation)
 		throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
+
+
 	pvd = PxCreatePvd(*foundation);
 
+#if PX_ENABLE_PVD
 	PxPvdTransport* transport = physx::PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
 
 	if (transport == NULL)
 		throw std::exception("Failed to create {PxPvdTransport}. Error in {PhysicsEngine} ctor.");
 
 	pvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
-
-	toleranceScale.length = 1.0;
-	toleranceScale.speed = 981;
-
 	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, pvd);
+#endif
+	toleranceScale.length = 1.0;
+	toleranceScale.speed = 10.0;
+
+	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, nullptr);
 	
 	dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
 
@@ -104,25 +108,25 @@ void px_physics::initialize()
 	sceneDesc.gpuDynamicsConfig = PxgDynamicsMemoryConfig();
 #else
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eABP;
+#endif
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
 	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
-#endif
 	cudaContextManagerDesc.interopMode = PxCudaInteropMode::NO_INTEROP;
 	cudaContextManagerDesc.graphicsDevice = dxContext.device.Get();
 	cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profiler_callback);
-
 	sceneDesc.cudaContextManager = cudaContextManager;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
-	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
-
-	sceneDesc.ccdContactModifyCallback = &contact_modification;
+	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
+	sceneDesc.flags |= PxSceneFlag::eADAPTIVE_FORCE;
 	sceneDesc.filterCallback = &simulation_filter_callback;
+	sceneDesc.ccdContactModifyCallback = &contact_modification;
 
 	scene = physics->createScene(sceneDesc);
 	
+#if PX_ENABLE_PVD
 	PxPvdSceneClient* client = scene->getScenePvdClient();
 
 	if (client)
@@ -131,6 +135,8 @@ void px_physics::initialize()
 		client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
 		client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
 	}
+#endif
+
 	auto cookingParams = PxCookingParams(toleranceScale);
 #if PX_GPU_BROAD_PHASE
 	cookingParams.buildGPUData = true;
@@ -146,8 +152,10 @@ void px_physics::initialize()
 
 	insertationCallback = &physics->getPhysicsInsertionCallback();
 
+#if PX_ENABLE_PVD
 	if (pvd->isConnected())
 		LOG_MESSAGE("Physics> PVD Connection enabled.");
+#endif
 
 #if PX_ENABLE_RAYCAST_CCD
 	raycastCCD = new RaycastCCDManager(scene);
@@ -197,6 +205,7 @@ px_physics_engine::px_physics_engine(application* application) noexcept
 	app = application;
 	physics = new px_physics();
 	physics->initialize();
+	allocator.initialize(MB(256));
 }
 
 px_physics_engine::~px_physics_engine()
@@ -204,6 +213,7 @@ px_physics_engine::~px_physics_engine()
 	if (!released)
 		release();
 
+	allocator.reset(true);
 	physics->release();
 	delete physics;
 
@@ -236,21 +246,23 @@ void px_physics_engine::start()
 
 void px_physics_engine::update(float dt)
 {
-	float accumulator = 0.0f;
 	float stepSize = 1.0f / frameRate;
 
 	physics->scene->lockWrite();
 	physics->scene->getTaskManager()->startSimulation();
 
+	void* scratchMemBlock = allocator.allocate(MB(16), 16U, true);
+
 #if PX_GPU_BROAD_PHASE
-	physics->scene->simulate(stepSize);
+	physics->scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
 #else
-	physics->scene->collide(std::max(dt, stepSize));
+	physics->scene->collide(std::max(dt, stepSize), NULL, scratchMemBlock, MB(16));
 	physics->scene->fetchCollision(true);
 	physics->scene->advance();
 #endif
 
 	physics->scene->fetchResults(true);
+
 	PxU32 nbActiveActors;
 	PxActor** activeActors = physics->scene->getActiveActors(nbActiveActors);
 
@@ -258,13 +270,13 @@ void px_physics_engine::update(float dt)
 
 	for (size_t i = 0; i < nbActiveActors; i++)
 	{
-		if (auto rd = activeActors[i]->is<PxRigidDynamic>())
+		if (auto rb = activeActors[i]->is<PxRigidDynamic>())
 		{
 			entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
 			eentity renderObject = { *handle, &scene->registry };
 			const auto transform = &renderObject.getComponent<transform_component>();
 
-			const auto& pxt = rd->getGlobalPose();
+			const auto& pxt = rb->getGlobalPose();
 			const auto& pos = pxt.p;
 			const auto& rot = pxt.q.getConjugate();
 			transform->position = createVec3(pos);
@@ -276,8 +288,11 @@ void px_physics_engine::update(float dt)
 	physics->raycastCCD->doRaycastCCD(true);
 #endif
 
+	physics->scene->flushSimulation();
 	physics->scene->getTaskManager()->stopSimulation();
 	physics->scene->unlockWrite();
+
+	allocator.reset();
 }
 
 void px_physics_engine::resetActorsVelocityAndInertia()
@@ -308,16 +323,18 @@ void px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ra
 #if PX_ENABLE_RAYCAST_CCD
 	if (auto r = ractor->is<PxRigidDynamic>())
 	{
-		auto entity = actor->entity;
-		px_collider_component_base* coll = (px_collider_component_base*)entity->getComponentIfExists<px_sphere_collider_component>();
+		auto handle = (entity_handle)actor->handle;
+		auto scene = &app->scene.getCurrentScene();
+		eentity entity = { handle, &scene->registry };
+		px_collider_component_base* coll = (px_collider_component_base*)entity.getComponentIfExists<px_sphere_collider_component>();
 		if (!coll)
-			coll = (px_collider_component_base*)entity->getComponentIfExists<px_box_collider_component>();
+			coll = (px_collider_component_base*)entity.getComponentIfExists<px_box_collider_component>();
 		if (!coll)
-			coll = (px_collider_component_base*)entity->getComponentIfExists<px_capsule_collider_component>();
+			coll = (px_collider_component_base*)entity.getComponentIfExists<px_capsule_collider_component>();
 		if (!coll)
-			coll = (px_collider_component_base*)entity->getComponentIfExists<px_triangle_mesh_collider_component>();
+			coll = (px_collider_component_base*)entity.getComponentIfExists<px_triangle_mesh_collider_component>();
 		if (!coll)
-			coll = (px_collider_component_base*)entity->getComponentIfExists<px_bounding_box_collider_component>();
+			coll = (px_collider_component_base*)entity.getComponentIfExists<px_bounding_box_collider_component>();
 
 		if(coll)
 			physics->raycastCCD->registerRaycastCCDObject(r, coll->getShape());
@@ -353,6 +370,7 @@ void px_physics_engine::releaseActors() noexcept
 	sync.lock();
 	actors.clear();
 	actors_map.clear();
+	physics->scene->flushSimulation();
 	sync.unlock();
 }
 
