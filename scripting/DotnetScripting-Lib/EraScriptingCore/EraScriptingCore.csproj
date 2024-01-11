@@ -7,6 +7,10 @@
 	<PublishAot>true</PublishAot>
 	<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	<BaseOutputPath>E:\Era Engine\bin\Release_x86_64</BaseOutputPath>
+	<OutputType>Exe</OutputType>
+	<EnableDynamicLoading>true</EnableDynamicLoading>
+	<StartupObject>App</StartupObject>
+	<PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -18,6 +22,15 @@
     <Optimize>False</Optimize>
   </PropertyGroup>
 
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+		<IsAotCompatible>True</IsAotCompatible>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+		<IsAotCompatible>True</IsAotCompatible>
+		<Optimize>False</Optimize>
+	</PropertyGroup>
+	
   <ItemGroup>
     <ProjectReference Include="..\EraEngineDomain\EraEngineDomain.csproj" />
     <ProjectReference Include="..\EraScriptingProjectTemplate\EraScriptingProjectTemplate.csproj" />

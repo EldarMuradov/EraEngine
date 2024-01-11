@@ -10,7 +10,7 @@
 #    define EXPIMP_TEMPLATE extern
 #endif
 
-#define _X86_
+#define _AMD64_
 #include <libloaderapi.h>
 #include <optional>
 

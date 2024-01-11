@@ -1,5 +1,4 @@
 #pragma once
-
 #include <EraScriptingLauncher-Lib/scripting_core.h>
 #include "EraScriptingCPPDecls/EraScriptingCPPDecls.h"
 

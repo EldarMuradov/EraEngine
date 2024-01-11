@@ -263,6 +263,10 @@ void px_physics_engine::update(float dt)
 
 	physics->scene->fetchResults(true);
 
+	physics->scene->flushSimulation();
+	physics->scene->getTaskManager()->stopSimulation();
+	physics->scene->unlockWrite();
+
 	PxU32 nbActiveActors;
 	PxActor** activeActors = physics->scene->getActiveActors(nbActiveActors);
 
@@ -287,10 +291,6 @@ void px_physics_engine::update(float dt)
 #if PX_ENABLE_RAYCAST_CCD
 	physics->raycastCCD->doRaycastCCD(true);
 #endif
-
-	physics->scene->flushSimulation();
-	physics->scene->getTaskManager()->stopSimulation();
-	physics->scene->unlockWrite();
 
 	allocator.reset();
 }

@@ -338,8 +338,6 @@ struct px_CCD_contact_modification : PxCCDContactModifyCallback
 	void onCCDContactModify(PxContactModifyPair* const pairs, PxU32 count);
 };
 
-struct px_allocator_callback;
-
 class px_physics_engine;
 
 struct px_physics
@@ -387,8 +385,6 @@ private:
 	const uint32_t nbCPUDispatcherThreads = 4;
 
 	friend class px_physics_engine;
-	friend class CollisionContactCallback;
-	friend class CCDContactModification;
 };
 
 struct px_triangle_mesh
