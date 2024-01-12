@@ -39,7 +39,7 @@ struct escripting_core
 	void processTransforms(uintptr_t mat, uint32_t id) const;
 	void handleOnCollisionEnter(uint32_t id1, uint32_t id2) const;
 
-	void start() const;
+	void start();
 	void update(float dt) const;
 	void stop() const;
 

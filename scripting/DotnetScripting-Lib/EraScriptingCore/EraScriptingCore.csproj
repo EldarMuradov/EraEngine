@@ -7,9 +7,9 @@
 	<PublishAot>true</PublishAot>
 	<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	<BaseOutputPath>E:\Era Engine\bin\Release_x86_64</BaseOutputPath>
-	<OutputType>Exe</OutputType>
+	<OutputType>Library</OutputType>
 	<EnableDynamicLoading>true</EnableDynamicLoading>
-	<StartupObject>App</StartupObject>
+	<StartupObject></StartupObject>
 	<PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
@@ -33,7 +33,6 @@
 	
   <ItemGroup>
     <ProjectReference Include="..\EraEngineDomain\EraEngineDomain.csproj" />
-    <ProjectReference Include="..\EraScriptingProjectTemplate\EraScriptingProjectTemplate.csproj" />
   </ItemGroup>
 
 </Project>

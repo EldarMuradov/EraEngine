@@ -2214,7 +2214,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 			this->scene->environment.forceUpdate(this->scene->sun.direction);
 			setSelectedEntity({});
 			app->core->stop();
-			app->core->reload();
+			app->core->release();
 			px_physics_engine::get()->resetActorsVelocityAndInertia();
 		}
 

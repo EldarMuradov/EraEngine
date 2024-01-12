@@ -1,12 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "YwmUDd+FLRJzSVFSBgr6+onZFxGJkgIOeEJf2EEtfDAq5JKvYnV7EcRanhn88iqNaq6S3e8hP42MNb9eb4a1Ug==",
+  "dgSpecHash": "S7P68x+84//84dponWfrsTYTPvhO1QwaKLBO9qTkFqv8R8t5wuGoEjh0f9XqJl7nPa9TpRTSRYZGnblBnPggAQ==",
   "success": true,
   "projectFilePath": "E:\\Era Engine\\scripting\\DotnetScripting-Lib\\EraEngineDomain\\EraEngineDomain.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\Эльдар\\.nuget\\packages\\microsoft.dotnet.ilcompiler\\8.0.0\\microsoft.dotnet.ilcompiler.8.0.0.nupkg.sha512",
-    "C:\\Users\\Эльдар\\.nuget\\packages\\microsoft.net.illink.tasks\\8.0.0\\microsoft.net.illink.tasks.8.0.0.nupkg.sha512",
-    "C:\\Users\\Эльдар\\.nuget\\packages\\runtime.win-x64.microsoft.dotnet.ilcompiler\\8.0.0\\runtime.win-x64.microsoft.dotnet.ilcompiler.8.0.0.nupkg.sha512"
+    "C:\\Users\\Эльдар\\.nuget\\packages\\microsoft.dotnet.ilcompiler\\8.0.1\\microsoft.dotnet.ilcompiler.8.0.1.nupkg.sha512",
+    "C:\\Users\\Эльдар\\.nuget\\packages\\microsoft.net.illink.tasks\\8.0.1\\microsoft.net.illink.tasks.8.0.1.nupkg.sha512",
+    "C:\\Users\\Эльдар\\.nuget\\packages\\runtime.win-x64.microsoft.dotnet.ilcompiler\\8.0.1\\runtime.win-x64.microsoft.dotnet.ilcompiler.8.0.1.nupkg.sha512"
   ],
   "logs": []
 }

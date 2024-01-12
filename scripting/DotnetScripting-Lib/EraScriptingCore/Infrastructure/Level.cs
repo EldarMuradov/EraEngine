@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using EraEngine.Components;
-using EraScriptingProjectTemplate;
+using EraEngine.Core;
 
 namespace EraEngine;
 
@@ -16,6 +16,8 @@ public static class Level
 
         EEntity e = new(60, "SpherePX");
         e.CreateComponent<RigidbodyComponent>(RigidbodyType.Dynamic);
+
+        Debug.Log("Reloading");
 
         Scene.SyncEntities();
 

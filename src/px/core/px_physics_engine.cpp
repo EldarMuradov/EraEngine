@@ -88,7 +88,10 @@ void px_physics::initialize()
 	toleranceScale.speed = 10.0;
 
 	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, nullptr);
-	
+
+	if (!PxInitExtensions(*physics, pvd))
+		LOG_ERROR("Physics> Failed to initialize extensions.");
+
 	dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
 
 	PxSceneDesc sceneDesc(physics->getTolerancesScale());
@@ -146,9 +149,6 @@ void px_physics::initialize()
 	cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
 
 	cooking = PxCreateCooking(PX_PHYSICS_VERSION, *foundation, cookingParams);
-
-	if (!PxInitExtensions(*physics, pvd))
-		LOG_ERROR("Physics> Failed to initialize extensions.");
 
 	insertationCallback = &physics->getPhysicsInsertionCallback();
 

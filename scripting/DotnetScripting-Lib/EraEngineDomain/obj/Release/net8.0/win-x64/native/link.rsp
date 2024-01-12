@@ -12,12 +12,12 @@
 /LIBPATH:"C:\Program Files (x86)\Windows Kits\10\lib\10.0.22621.0\ucrt\x86"
 /LIBPATH:"C:\Program Files (x86)\Windows Kits\10\\lib\10.0.22621.0\\um\x86"
 /DLL
-"C:\Users\Эльдар\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\8.0.0\sdk\bootstrapperdll.obj"
-"C:\Users\Эльдар\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\8.0.0\sdk\Runtime.WorkstationGC.lib"
-"C:\Users\Эльдар\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\8.0.0\sdk\eventpipe-disabled.lib"
-"C:\Users\Эльдар\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\8.0.0\sdk\Runtime.VxsortEnabled.lib"
-"C:\Users\Эльдар\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\8.0.0\sdk\System.Globalization.Native.Aot.lib"
-"C:\Users\Эльдар\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\8.0.0\sdk\System.IO.Compression.Native.Aot.lib"
+"C:\Users\Эльдар\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\8.0.1\sdk\bootstrapperdll.obj"
+"C:\Users\Эльдар\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\8.0.1\sdk\Runtime.WorkstationGC.lib"
+"C:\Users\Эльдар\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\8.0.1\sdk\eventpipe-disabled.lib"
+"C:\Users\Эльдар\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\8.0.1\sdk\Runtime.VxsortEnabled.lib"
+"C:\Users\Эльдар\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\8.0.1\sdk\System.Globalization.Native.Aot.lib"
+"C:\Users\Эльдар\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\8.0.1\sdk\System.IO.Compression.Native.Aot.lib"
 "advapi32.lib"
 "bcrypt.lib"
 "crypt32.lib"
@@ -36,7 +36,7 @@
 /NOLOGO /MANIFEST:NO
 /DEBUG
 /INCREMENTAL:NO
-/NATVIS:"C:\Users\Эльдар\.nuget\packages\microsoft.dotnet.ilcompiler\8.0.0\build\NativeAOT.natvis"
+/NATVIS:"C:\Users\Эльдар\.nuget\packages\microsoft.dotnet.ilcompiler\8.0.1\build\NativeAOT.natvis"
 /NODEFAULTLIB:libucrt.lib
 /DEFAULTLIB:ucrt.lib
 /OPT:REF
