@@ -8,6 +8,161 @@
 
 application* enative_scripting_linker::app;
 
+#include <Windows.h>
+#include <semaphore>
+
+#define NETHOST_USE_AS_STATIC
+#include <clrhost/nethost.h>
+#include <clrhost/coreclr_delegates.h>
+#include <clrhost/hostfxr.h>
+
+#define STR(s) L ## s
+#define CH(c) L ## c
+#define DIR_SEPARATOR L'\\'
+
+using string_t = std::basic_string<char_t>;
+
+namespace
+{
+	hostfxr_initialize_for_runtime_config_fn init_fptr;
+	hostfxr_get_runtime_delegate_fn get_delegate_fptr;
+	hostfxr_close_fn close_fptr;
+	hostfxr_handle cxt = nullptr;
+	get_function_pointer_fn get_function_pointer;
+	bool load_hostfxr();
+	load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const char_t* assembly);
+
+	void* load_library(const char_t*);
+	void* get_export(void*, const char*);
+}
+
+std::binary_semaphore s(1);
+
+void exec()
+{
+	if (!load_hostfxr())
+	{
+		assert(false && "Failure: load_hostfxr()");
+	}
+
+	const string_t root = STR("E:\\Release\\");
+	const string_t cfg = STR("CSDll.runtimeconfig.json");
+	const string_t lib = STR("CSDll.dll");
+
+	const string_t cfg_path = root + cfg;
+	const string_t lib_path = root + lib;
+
+	const char_t* dotnet_type = STR("CSDll.EntryPoint, CSDll");
+	const char_t* dotnet_type_method = STR("Main");
+
+	load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer = nullptr;
+	load_assembly_and_get_function_pointer = get_dotnet_load_assembly(cfg_path.c_str());
+	assert(load_assembly_and_get_function_pointer != nullptr && "Failure: get_dotnet_load_assembly()");
+	component_entry_point_fn main = nullptr;
+	int rc = load_assembly_and_get_function_pointer(
+		lib_path.c_str(),
+		dotnet_type,
+		dotnet_type_method,
+		nullptr,
+		nullptr,
+		(void**)&main);
+	assert(rc == 0 && main != nullptr && "Failure: load_assembly_and_get_function_pointer()");
+
+	struct lib_args
+	{
+		const char_t* message;
+	};
+	lib_args args
+	{
+		STR("")
+	};
+
+	get_delegate_fptr(
+		cxt,
+		hdt_get_function_pointer,
+		(void**)&get_function_pointer);
+
+	s.release();
+	main(&args, sizeof(args));
+
+	close_fptr(cxt);
+}
+
+void load()
+{
+	try 
+	{
+		exec();
+	}
+	catch (std::exception ex) 
+	{
+		//Some logging
+	}
+}
+
+void unload()
+{
+
+}
+
+namespace
+{
+	void* load_library(const char_t* path)
+	{
+		HMODULE h = ::LoadLibraryW(path);
+		assert(h != nullptr);
+		return (void*)h;
+	}
+	void* get_export(void* h, const char* name)
+	{
+		void* f = ::GetProcAddress((HMODULE)h, name);
+		assert(f != nullptr);
+		return f;
+	}
+
+	bool load_hostfxr()
+	{
+		char_t buffer[MAX_PATH];
+		size_t buffer_size = sizeof(buffer) / sizeof(char_t);
+		int rc = get_hostfxr_path(buffer, &buffer_size, nullptr);
+		if (rc != 0)
+			return false;
+		void* lib = load_library(buffer);
+		init_fptr = (hostfxr_initialize_for_runtime_config_fn)get_export(lib, "hostfxr_initialize_for_runtime_config");
+		get_delegate_fptr = (hostfxr_get_runtime_delegate_fn)get_export(lib, "hostfxr_get_runtime_delegate");
+		close_fptr = (hostfxr_close_fn)get_export(lib, "hostfxr_close");
+
+		return (init_fptr && get_delegate_fptr && close_fptr);
+	}
+
+	load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const char_t* config_path)
+	{
+		void* load_assembly_and_get_function_pointer = nullptr;
+		int rc = init_fptr(config_path, nullptr, &cxt);
+		if (rc != 0 || cxt == nullptr)
+		{
+			std::cerr << "Init failed: " << std::hex << std::showbase << rc << std::endl;
+			close_fptr(cxt);
+			return nullptr;
+		}
+		rc = get_delegate_fptr(
+			cxt,
+			hdt_load_assembly_and_get_function_pointer,
+			&load_assembly_and_get_function_pointer);
+		if (rc != 0 || load_assembly_and_get_function_pointer == nullptr)
+			std::cerr << "Get delegate failed: " << std::hex << std::showbase << rc << std::endl;
+
+		return (load_assembly_and_get_function_pointer_fn)load_assembly_and_get_function_pointer;
+	}
+}
+
+int init_dotnet()
+{
+	s.acquire();
+	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)load, NULL, NULL, NULL);
+	return 0;
+}
+
 namespace bind
 {
 	static void add_force_internal(uint32_t id, uint8_t mode, float* force)
@@ -145,6 +300,16 @@ namespace bind
 
 void enative_scripting_linker::init()
 {
+	init_dotnet();
+	s.acquire();
+
+	void* f = nullptr;
+
+	const char_t* dotnet_method_name = STR("CSDll.EntryPoint.InitializeScripting");
+	const char_t* dotnet_type = STR("CSDll.EntryPoint");
+	auto rc1 = get_function_pointer(dotnet_type, dotnet_method_name, UNMANAGEDCALLERSONLY_METHOD, nullptr, nullptr, &f);
+	void(*fn)() = (void(*)())f;
+
 	lib = LoadLibraryA("EraScriptingCPPDecls.dll");
 	if (!lib || lib == INVALID_HANDLE_VALUE)
 	{

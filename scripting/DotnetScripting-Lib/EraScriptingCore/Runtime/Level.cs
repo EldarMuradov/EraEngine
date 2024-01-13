@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using EraEngine.Components;
 using EraEngine.Core;
 
@@ -8,6 +9,7 @@ public static class Level
 {
     private static readonly SemaphoreSlim _syncObj = new(1, 1);
 
+    [RequiresUnreferencedCode("sefsefes")]
     [UnmanagedCallersOnly(EntryPoint = "start")]
     public static unsafe void Start()
     {
@@ -16,6 +18,8 @@ public static class Level
 
         EEntity e = new(60, "SpherePX");
         e.CreateComponent<RigidbodyComponent>(RigidbodyType.Dynamic);
+
+        Scene.SyncEntities();
 
         Debug.Log("Reloading");
 

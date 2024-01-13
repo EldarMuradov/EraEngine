@@ -1,15 +1,20 @@
 ﻿using EraEngine.Components;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace EraEngine.Core;
 
 public static class RuntimeHelper
 {
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     public delegate EComponent CreateComponentFunc();
 
-    private static IntPtr _hModule = 0;
+    private delegate void CallFunc(int id);
 
     public static Dictionary<string, CreateComponentFunc> ComponentCreationFuncs = new();
+
+    private static IntPtr _hModule = 0;
 
     public static bool LoadUserLibrary(string dllPath)
     {

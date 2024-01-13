@@ -6,6 +6,7 @@ shaders/
 
 scripting/DotnetScripting-Lib/EraScriptingCore/bin
 scripting/DotnetScripting-Lib/EraScriptingCore/obj
+scripting/DotnetScripting-Lib/Test
 
 scripting/DotnetScripting-Lib/EraScriptingProjectTemplate/bin
 scripting/DotnetScripting-Lib/EraScriptingProjectTemplate/obj
