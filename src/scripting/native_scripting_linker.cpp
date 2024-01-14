@@ -11,32 +11,49 @@ application* enative_scripting_linker::app;
 #include <Windows.h>
 #include <semaphore>
 
-#define NETHOST_USE_AS_STATIC
-#include <clrhost/nethost.h>
-#include <clrhost/coreclr_delegates.h>
-#include <clrhost/hostfxr.h>
-
-#define STR(s) L ## s
-#define CH(c) L ## c
-#define DIR_SEPARATOR L'\\'
-
-using string_t = std::basic_string<char_t>;
-
 namespace
 {
 	hostfxr_initialize_for_runtime_config_fn init_fptr;
+	hostfxr_initialize_for_dotnet_command_line_fn initialize_for_dotnet_command_line;
 	hostfxr_get_runtime_delegate_fn get_delegate_fptr;
 	hostfxr_close_fn close_fptr;
 	hostfxr_handle cxt = nullptr;
-	get_function_pointer_fn get_function_pointer;
+
 	bool load_hostfxr();
 	load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const char_t* assembly);
 
 	void* load_library(const char_t*);
 	void* get_export(void*, const char*);
+
+	start_fn startf;
+	update_fn updatef;
+	handle_collisions_fn handle_collisionsf;
+	handle_trs_fn handle_trsf;
+
+	std::binary_semaphore s(1);
 }
 
-std::binary_semaphore s(1);
+void get_all_functions()
+{
+	const char_t* dotnet_type_init = STR("EraEngine.ScriptingCore, EraScriptingCore");
+	const char_t* dotnet_type_method_init = STR("InitializeScripting");
+	init_fn f = enative_scripting_linker::get_static_method<init_fn>(dotnet_type_init, dotnet_type_method_init, STR("EraEngine.Call, EraScriptingCore"));
+	f();
+
+	const char_t* dotnet_type = STR("EraEngine.Level, EraScriptingCore");
+	const char_t* dotnet_type_method_st = STR("Start");
+	startf = enative_scripting_linker::get_static_method<start_fn>(dotnet_type, dotnet_type_method_st, STR("EraEngine.Call, EraScriptingCore"));
+	const char_t* dotnet_type_method_up = STR("Update");
+	updatef = enative_scripting_linker::get_static_method<update_fn>(dotnet_type, dotnet_type_method_up, STR("EraEngine.CallUpdate, EraScriptingCore"));
+
+	const char_t* dotnet_type_hc = STR("EraEngine.Core.CollisionHandler, EraScriptingCore");
+	const char_t* dotnet_type_method_c = STR("HandleCollision");
+	handle_collisionsf = enative_scripting_linker::get_static_method<handle_collisions_fn>(dotnet_type_hc, dotnet_type_method_c, STR("EraEngine.CallHandleColls, EraScriptingCore"));
+
+	const char_t* dotnet_type_tr = STR("EraEngine.Core.TransformHandler, EraScriptingCore");
+	const char_t* dotnet_type_method_t = STR("ProcessTransform");
+	handle_trsf = enative_scripting_linker::get_static_method<handle_trs_fn>(dotnet_type_tr, dotnet_type_method_t, STR("EraEngine.CallHandleTrs, EraScriptingCore"));
+}
 
 void exec()
 {
@@ -45,28 +62,35 @@ void exec()
 		assert(false && "Failure: load_hostfxr()");
 	}
 
-	const string_t root = STR("E:\\Release\\");
-	const string_t cfg = STR("CSDll.runtimeconfig.json");
-	const string_t lib = STR("CSDll.dll");
+	const string_t root = STR("E:\\Era Engine\\bin\\Release_x86_64\\Release\\net8.0\\");
+	const string_t cfg = STR("EraScriptingCore.runtimeconfig.json");
+	const string_t lib = STR("EraScriptingCore.dll");
 
 	const string_t cfg_path = root + cfg;
 	const string_t lib_path = root + lib;
 
-	const char_t* dotnet_type = STR("CSDll.EntryPoint, CSDll");
-	const char_t* dotnet_type_method = STR("Main");
+	hostfxr_handle dotnetHostContext = nullptr;
 
-	load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer = nullptr;
-	load_assembly_and_get_function_pointer = get_dotnet_load_assembly(cfg_path.c_str());
-	assert(load_assembly_and_get_function_pointer != nullptr && "Failure: get_dotnet_load_assembly()");
-	component_entry_point_fn main = nullptr;
-	int rc = load_assembly_and_get_function_pointer(
-		lib_path.c_str(),
-		dotnet_type,
-		dotnet_type_method,
-		nullptr,
-		nullptr,
-		(void**)&main);
-	assert(rc == 0 && main != nullptr && "Failure: load_assembly_and_get_function_pointer()");
+	int launchArgumentsCount = 1;
+	wchar_t** launchArguments = new wchar_t* [launchArgumentsCount];
+	launchArguments[0] = (wchar_t*)lib_path.c_str();
+	int result = initialize_for_dotnet_command_line(launchArgumentsCount, (const wchar_t**)launchArguments, nullptr, &dotnetHostContext);
+	if ((result != 0) || (dotnetHostContext == nullptr))
+	{
+		std::cerr
+			<< "Dotnet host init failed (failed to initialize managed library; error code - "
+			<< std::hex << std::showbase << result
+			<< ")" << std::endl;
+		return;
+	}
+
+
+	get_delegate_fptr(
+		dotnetHostContext,
+		hdt_get_function_pointer,
+		(void**)&get_function_pointer);
+
+	close_fptr(dotnetHostContext);
 
 	struct lib_args
 	{
@@ -77,15 +101,9 @@ void exec()
 		STR("")
 	};
 
-	get_delegate_fptr(
-		cxt,
-		hdt_get_function_pointer,
-		(void**)&get_function_pointer);
-
+	get_all_functions();
+	
 	s.release();
-	main(&args, sizeof(args));
-
-	close_fptr(cxt);
 }
 
 void load()
@@ -131,6 +149,7 @@ namespace
 		init_fptr = (hostfxr_initialize_for_runtime_config_fn)get_export(lib, "hostfxr_initialize_for_runtime_config");
 		get_delegate_fptr = (hostfxr_get_runtime_delegate_fn)get_export(lib, "hostfxr_get_runtime_delegate");
 		close_fptr = (hostfxr_close_fn)get_export(lib, "hostfxr_close");
+		initialize_for_dotnet_command_line = (hostfxr_initialize_for_dotnet_command_line_fn)get_export(lib, "hostfxr_initialize_for_dotnet_command_line");
 
 		return (init_fptr && get_delegate_fptr && close_fptr);
 	}
@@ -159,6 +178,7 @@ namespace
 int init_dotnet()
 {
 	s.acquire();
+
 	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)load, NULL, NULL, NULL);
 	return 0;
 }
@@ -300,16 +320,6 @@ namespace bind
 
 void enative_scripting_linker::init()
 {
-	init_dotnet();
-	s.acquire();
-
-	void* f = nullptr;
-
-	const char_t* dotnet_method_name = STR("CSDll.EntryPoint.InitializeScripting");
-	const char_t* dotnet_type = STR("CSDll.EntryPoint");
-	auto rc1 = get_function_pointer(dotnet_type, dotnet_method_name, UNMANAGEDCALLERSONLY_METHOD, nullptr, nullptr, &f);
-	void(*fn)() = (void(*)())f;
-
 	lib = LoadLibraryA("EraScriptingCPPDecls.dll");
 	if (!lib || lib == INVALID_HANDLE_VALUE)
 	{
@@ -321,6 +331,9 @@ void enative_scripting_linker::init()
 	builder = get_builder_func_instance();
 
 	bindFunctions();
+
+	init_dotnet();
+	s.acquire();
 }
 
 void enative_scripting_linker::release()
@@ -328,6 +341,26 @@ void enative_scripting_linker::release()
 	RELEASE_PTR(builder)
 	if (lib)
 		FreeLibrary(lib);
+}
+
+void enative_scripting_linker::start()
+{
+	startf();
+}
+
+void enative_scripting_linker::update(float dt)
+{
+	updatef(dt);
+}
+
+void enative_scripting_linker::handle_coll(int id1, int id2)
+{
+	handle_collisionsf(id1, id2);
+}
+
+void enative_scripting_linker::process_trs(intptr_t ptr, int id)
+{
+	handle_trsf(ptr, id);
 }
 
 void enative_scripting_linker::bindFunctions()

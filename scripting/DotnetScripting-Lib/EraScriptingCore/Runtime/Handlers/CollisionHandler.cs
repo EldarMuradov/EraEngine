@@ -1,10 +1,7 @@
-﻿using System.Runtime.InteropServices;
+﻿namespace EraEngine.Core;
 
-namespace EraEngine.Core;
-
-public sealed class CollisionHandler
+public class CollisionHandler
 {
-    [UnmanagedCallersOnly(EntryPoint = "handle_collision")]
     public static void HandleCollision(int id1, int id2)
     {
         if (Scene.Entities.TryGetValue(id1, out var entity1)

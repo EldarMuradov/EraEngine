@@ -24,7 +24,7 @@ bool editFireParticleSystem(fire_particle_system& particleSystem);
 bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
 struct updatePhysicsAndScriptingData;
-void updatePhysXPhysicsAndScripting(escene& currentScene, std::shared_ptr<escripting_core> core, float dt);
+void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt);
 void updateScripting(updatePhysicsAndScriptingData& data);
 
 struct application

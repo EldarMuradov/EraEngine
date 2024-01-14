@@ -89,12 +89,12 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
 
 struct updatePhysicsAndScriptingData
 {
-	std::shared_ptr<escripting_core> core;
+	enative_scripting_linker core;
 	escene& scene;
 	float deltaTime;
 };
 
-void updatePhysXPhysicsAndScripting(escene& currentScene, std::shared_ptr<escripting_core> core, float dt)
+void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt)
 {
 	updatePhysicsAndScriptingData data = { core, currentScene, dt};
 
@@ -107,7 +107,7 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, std::shared_ptr<escrip
 			{
 				const auto& c = px_physics_engine::collisionQueue.back();
 				px_physics_engine::collisionQueue.pop();
-				data.core->handleOnCollisionEnter(c.id1, c.id2);
+				data.core.handle_coll(c.id1, c.id2);
 			}
 		}
 
@@ -145,10 +145,9 @@ void updateScripting(updatePhysicsAndScriptingData& data)
 		float* ptr = new float[mat_size];
 		for (size_t i = 0; i < mat_size; i++)
 			ptr[i] = mat.m[i];
-		data.core->processTransforms(reinterpret_cast<uintptr_t>(ptr), (uint32_t)entityHandle);
+		data.core.process_trs(reinterpret_cast<uintptr_t>(ptr), (int)entityHandle);
 	}
-
-	data.core->update(data.deltaTime);
+	data.core.update(data.deltaTime);
 }
 
 static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> mesh)
@@ -509,7 +508,7 @@ void application::update(const user_input& input, float dt)
 
 	if (this->scene.isPausable())
 	{
-		updatePhysXPhysicsAndScripting(scene, core, dt);
+		updatePhysXPhysicsAndScripting(scene, linker, dt);
 	}
 
 	// Particles

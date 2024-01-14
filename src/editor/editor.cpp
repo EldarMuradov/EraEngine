@@ -2200,7 +2200,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 				rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
 			}
 
-			app->core->start();
+			app->linker.start();
 		}
 		ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
 		if (ImGui::IconButton(imgui_icon_pause, imgui_icon_pause, IMGUI_ICON_DEFAULT_SIZE, this->scene->isPausable()))
