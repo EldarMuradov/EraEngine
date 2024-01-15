@@ -5,11 +5,14 @@
 #include "application.h"
 #include <EraScriptingLauncher-Lib/src/script.h>
 #include <ai/navigation_component.h>
+#include <fstream>
 
 application* enative_scripting_linker::app;
+std::vector<std::string> enative_scripting_linker::script_types;
 
 #include <Windows.h>
 #include <semaphore>
+#include <core/project.h>
 
 namespace
 {
@@ -30,15 +33,36 @@ namespace
 	handle_collisions_fn handle_collisionsf;
 	handle_trs_fn handle_trsf;
 
+	scr_fn init_scrf;
+	scr_fn release_srcf;
+	scr_fn reload_srcf;
+
+	comp_fn create_compf;
+	comp_fn remove_compf;
+
 	std::binary_semaphore s(1);
 }
 
-void get_all_functions()
+static void get_all_functions_and_start()
 {
+	{
+		std::ofstream file("E:\\Era Engine\\bin\\Release_x86_64\\core.cfg");
+		file << eproject::name << "," << eproject::path;
+	}
+
 	const char_t* dotnet_type_init = STR("EraEngine.ScriptingCore, EraScriptingCore");
-	const char_t* dotnet_type_method_init = STR("InitializeScripting");
-	init_fn f = enative_scripting_linker::get_static_method<init_fn>(dotnet_type_init, dotnet_type_method_init, STR("EraEngine.Call, EraScriptingCore"));
+	const char_t* dotnet_type_method_main = STR("MainFunc");
+	init_fn f = enative_scripting_linker::get_static_method<init_fn>(dotnet_type_init, dotnet_type_method_main, STR("EraEngine.Call, EraScriptingCore"));
 	f();
+
+	const char_t* dotnet_type_method_init = STR("InitializeScripting");
+	init_scrf = enative_scripting_linker::get_static_method<scr_fn>(dotnet_type_init, dotnet_type_method_init, STR("EraEngine.Call, EraScriptingCore"));;
+	
+	const char_t* dotnet_type_method_rel = STR("ShutdownScripting");
+	release_srcf = enative_scripting_linker::get_static_method<scr_fn>(dotnet_type_init, dotnet_type_method_rel, STR("EraEngine.Call, EraScriptingCore"));;
+
+	const char_t* dotnet_type_method_relo = STR("ReloadScripting");
+	reload_srcf = enative_scripting_linker::get_static_method<scr_fn>(dotnet_type_init, dotnet_type_method_relo, STR("EraEngine.Call, EraScriptingCore"));;
 
 	const char_t* dotnet_type = STR("EraEngine.Level, EraScriptingCore");
 	const char_t* dotnet_type_method_st = STR("Start");
@@ -53,9 +77,15 @@ void get_all_functions()
 	const char_t* dotnet_type_tr = STR("EraEngine.Core.TransformHandler, EraScriptingCore");
 	const char_t* dotnet_type_method_t = STR("ProcessTransform");
 	handle_trsf = enative_scripting_linker::get_static_method<handle_trs_fn>(dotnet_type_tr, dotnet_type_method_t, STR("EraEngine.CallHandleTrs, EraScriptingCore"));
+
+	const char_t* dotnet_type_cc = STR("EraEngine.Runtime.ComponentHandler, EraScriptingCore");
+	const char_t* dotnet_type_method_cc = STR("AddComponent");
+	create_compf = enative_scripting_linker::get_static_method<comp_fn>(dotnet_type_cc, dotnet_type_method_cc, STR("EraEngine.CallAddComp, EraScriptingCore"));
+	const char_t* dotnet_type_method_rc = STR("RemoveComponent");
+	remove_compf = enative_scripting_linker::get_static_method<comp_fn>(dotnet_type_cc, dotnet_type_method_rc, STR("EraEngine.CallRemoveComp, EraScriptingCore"));
 }
 
-void exec()
+static void exec()
 {
 	if (!load_hostfxr())
 	{
@@ -92,21 +122,12 @@ void exec()
 
 	close_fptr(dotnetHostContext);
 
-	struct lib_args
-	{
-		const char_t* message;
-	};
-	lib_args args
-	{
-		STR("")
-	};
-
-	get_all_functions();
+	get_all_functions_and_start();
 	
 	s.release();
 }
 
-void load()
+static void load()
 {
 	try 
 	{
@@ -114,11 +135,11 @@ void load()
 	}
 	catch (std::exception ex) 
 	{
-		//Some logging
+		LOG_ERROR(ex.what());
 	}
 }
 
-void unload()
+static void unload()
 {
 
 }
@@ -175,7 +196,7 @@ namespace
 	}
 }
 
-int init_dotnet()
+static int init_dotnet()
 {
 	s.acquire();
 
@@ -316,6 +337,12 @@ namespace bind
 		else
 			LOG_MESSAGE(message);
 	}
+
+	static void send_type_internal(const char* type)
+	{
+		std::cout << "Type found: " << type << "\n";
+		enative_scripting_linker::script_types.push_back(type);
+	}
 }
 
 void enative_scripting_linker::init()
@@ -363,6 +390,32 @@ void enative_scripting_linker::process_trs(intptr_t ptr, int id)
 	handle_trsf(ptr, id);
 }
 
+void enative_scripting_linker::init_src()
+{
+	init_scrf();
+}
+
+void enative_scripting_linker::release_src()
+{
+	release_srcf();
+}
+
+void enative_scripting_linker::reload_src()
+{
+	script_types.clear();
+	reload_srcf();
+}
+
+void enative_scripting_linker::createScript(int id, const char* comp)
+{
+	create_compf(id, reinterpret_cast<uintptr_t>(comp));
+}
+
+void enative_scripting_linker::removeScript(int id, const char* comp)
+{
+	remove_compf(id, reinterpret_cast<uintptr_t>(comp));
+}
+
 void enative_scripting_linker::bindFunctions()
 {
 	if (builder)
@@ -386,6 +439,11 @@ void enative_scripting_linker::bindFunctions()
 		// Debug
 		{
 			builder->functions.emplace("log_message", BIND(bind::log_message_internal, void, uint8_t, const char*));
+		}
+
+		// User Scripting
+		{
+			builder->functions.emplace("sendType", BIND(bind::send_type_internal, void, const char*));
 		}
 		
 		// EEntity

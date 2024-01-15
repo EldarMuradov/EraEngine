@@ -1,5 +1,5 @@
 ﻿using System.Runtime.InteropServices;
-namespace EraEngine.Core;
+namespace EraEngine;
 
 public enum LogLevel : byte
 {

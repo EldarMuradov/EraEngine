@@ -2,6 +2,7 @@
 
 public class CollisionHandler
 {
+    [UnmanagedCaller]
     public static void HandleCollision(int id1, int id2)
     {
         if (Scene.Entities.TryGetValue(id1, out var entity1)

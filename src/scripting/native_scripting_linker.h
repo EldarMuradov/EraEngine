@@ -10,7 +10,9 @@
 using string_t = std::basic_string<char_t>;
 
 typedef void (CORECLR_DELEGATE_CALLTYPE* init_fn)();
+typedef void (CORECLR_DELEGATE_CALLTYPE* comp_fn)(int, uintptr_t);
 typedef void (CORECLR_DELEGATE_CALLTYPE* start_fn)();
+typedef void (CORECLR_DELEGATE_CALLTYPE* scr_fn)();
 typedef void (CORECLR_DELEGATE_CALLTYPE* update_fn)(float);
 typedef void (CORECLR_DELEGATE_CALLTYPE* handle_collisions_fn)(int, int);
 typedef void (CORECLR_DELEGATE_CALLTYPE* handle_trs_fn)(intptr_t, int);
@@ -37,6 +39,13 @@ struct enative_scripting_linker
 	void handle_coll(int id1, int id2);
 	void process_trs(intptr_t ptr, int id);
 
+	void init_src();
+	void release_src();
+	void reload_src();
+
+	static void createScript(int id, const char* comp);
+	static void removeScript(int id, const char* comp);
+
 	template<typename Func, typename... Args>
 	static void call_static_method(Func f, Args&&... args)
 	{
@@ -54,6 +63,8 @@ struct enative_scripting_linker
 	}
 
 	static application* app;
+
+	static std::vector<std::string> script_types;
 
 private:
 	void bindFunctions();

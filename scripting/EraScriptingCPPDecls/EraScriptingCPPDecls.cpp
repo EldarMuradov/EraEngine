@@ -60,6 +60,11 @@ ERASCRIPTINGCPPDECLS_API void log_message(uint8_t mode, const char* message)
     enative_caller::call("log_message", mode, message);
 }
 
+ERASCRIPTINGCPPDECLS_API void sendType(const char* type)
+{
+    enative_caller::call("sendType", type);
+}
+
 enative_scripting_factory::enative_scripting_factory()
 {
     if (!builder)

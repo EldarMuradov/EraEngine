@@ -1,133 +1,113 @@
-﻿using EraEngine;
+﻿using EraEngine.Components;
 using EraEngine.Configuration;
-using EraEngine.Core;
 using EraEngine.FileSystem;
-using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Loader;
 
-namespace EraEngineDomain.Core
+namespace EraEngine.Core;
+
+class HostAssemblyLoadContext : AssemblyLoadContext
 {
-    public interface IAssemblyLoader
+    private AssemblyDependencyResolver _resolver;
+
+    public HostAssemblyLoadContext(string pluginPath) : base(isCollectible: true)
     {
-        Assembly Load(byte[] bytes);
+        _resolver = new AssemblyDependencyResolver(pluginPath);
     }
 
-    internal class ProxyDomain : MarshalByRefObject
+    protected override Assembly Load(AssemblyName name)
     {
-        public Assembly GetAssembly(string assemblyPath)
+        string assemblyPath = _resolver.ResolveAssemblyToPath(name);
+        if (assemblyPath != null)
         {
-            try
-            {
-                return Assembly.LoadFrom(assemblyPath);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"Scripting> {ex.Message}");
-                return null!;
-            }
+            Console.WriteLine($"Loading assembly {assemblyPath} into the HostAssemblyLoadContext");
+            return LoadFromAssemblyPath(assemblyPath);
         }
-    }
 
-    public class AssemblyLoader : MarshalByRefObject, IAssemblyLoader
+        return null;
+    }
+}
+
+public sealed class UserScripting
+{
+    private HostAssemblyLoadContext _context;
+
+    private Assembly _assembly;
+
+    internal void LoadDll()
     {
-        public Assembly Load(byte[] bytes)
+        if (!Directory.Exists(Project.TempDllPath))
         {
-            return AppDomain.CurrentDomain.Load(bytes);
+            Directory.CreateDirectory(Project.Path + "\\" + Project.TempDllPath);
+            Debug.Log("Created temp path");
         }
+
+        Debug.Log(Project.Path);
+        Debug.Log(Project.Name);
+        Debug.Log(Path.Combine(Project.Path, "assets\\scripts", Project.Name, Project.Name, "bin\\Release\\net8.0"));
+        FileCloner fileCloner = new();
+        fileCloner.Clone(Path.Combine(Project.Path, "assets\\scripts", Project.Name, Project.Name, "bin\\Release\\net8.0"), Project.Path + "\\" + Project.TempDllPath);
+        Debug.Log("Cloned all files");
+
+        _context = new HostAssemblyLoadContext(Project.Path + "\\" + Project.TempDllPath + $"\\{Project.Name}.dll");
+
+        _assembly = _context.LoadFromAssemblyPath(Project.Path + "\\" + Project.TempDllPath + $"\\{Project.Name}.dll");
+
+        Debug.Log("Assembly loaded successfuly");
+
+        var types = _assembly.GetTypes();
+        string[] names = new string[types.Length];
+        int i = 0, length = types.Length;
+        for (; i < length; i++)
+        {
+            names[i] = types[i].Name;
+            sendType(names[i]);
+        }
+
+        Debug.Log("All types are sent");
     }
 
-    public sealed class UserScripting
+    internal void UnloadDll()
     {
-        private AppDomain _domain;
+        Console.WriteLine("1");
+        _context.Unload();
+        Console.WriteLine("2");
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        Console.WriteLine("3");
+    }
 
-        private Assembly _assembly;
-
-        public UserScripting() => CreateDomain();
-
-        internal void ReloadDll()
+    internal EComponent GetComponent(string name)
+    {
+        var type = _assembly.GetType(Project.Name + "." + name);
+        if (type != null)
         {
-            ReleaseDomain();
+            
+            var component = Unsafe.As<EComponent>(Activator.CreateInstance(type));
 
-            CreateDomain();
+            return component;
+        }
+
+        return null!;
+    }
+
+    internal void ReloadScripting()
+    {
+        try
+        {
+            UnloadDll();
+            Console.WriteLine("4");
 
             LoadDll();
         }
-
-        internal void LoadDll()
-        {
-            if (!Directory.Exists(Project.TempDllPath))
-                Directory.CreateDirectory(Project.Path + "\\" + Project.TempDllPath);
-
-            IFileCloner fileCloner = new FileCloner();
-            fileCloner.Clone(Path.Combine(Project.Path, "assets\\scripts", Project.Name, Project.Name, "bin\\Release"), Project.Path + "\\" + Project.TempDllPath);
-
-            var bytes = GenerateAssemblyAndGetRawBytes();
-
-            var assemblyLoader = new AssemblyLoader();
-
-            _assembly = assemblyLoader.Load(bytes);
-
-            var types = _assembly.GetTypes();
-            string[] names = new string[types.Length];
-            int i = 0, length = types.Length;
-            for (; i < length; i++)
-            {
-                names[i] = types[i].Name;
-                SendTypes_Internal(names[i]);
-            }
-        }
-
-        internal void SyncScripting()
-        {
-            if (_assembly != null)
-                LoadAllData(_assembly);
-        }
-
-        internal Component GetComponent(string name)
-        {
-            var type = _assembly.GetType(Project.Name + "." + name);
-            if (type != null)
-            {
-                var component = (Component)Activator.CreateInstance(type);
-
-                return component;
-            }
-
-            return null;
-        }
-
-        private void LoadAllData(Assembly assembly)
-        {
-
-        }
-
-        private static byte[] GenerateAssemblyAndGetRawBytes()
-        {
-            return File.ReadAllBytes(Project.Path + "\\" + Project.TempDllPath + $"\\{Project.Name}.dll");
-        }
-
-        internal void ReleaseDomain() => AppDomain.Unload(_domain);
-
-        private void CreateDomain()
-        {
-            _domain = AppDomain.CreateDomain("UserAppDomain" + Guid.NewGuid());
-            _domain.UnhandledException += (o, e) => { Debug.LogError("Scripting> " + ((Exception)e.ExceptionObject).Message); };
-        }
-
-        internal static void ReloadScripting_External()
-        {
-            UserScripting scripting = ScriptingCore.UserScripting;
-            AppDomain.Unload(scripting._domain);
-            scripting.CreateDomain();
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
-            scripting.LoadDll();
-        }
-
-        [DllImport("EraScriptingCPPDecls.dll")]
-        private extern static void SendTypes_Internal(string types);
+        catch (Exception e) { Console.WriteLine(e.Message); }
     }
+
+    private void OnUnloaded(AssemblyLoadContext ctx) { Debug.Log("Assembly unloaded."); }
+
+    [DllImport("EraScriptingCPPDecls.dll", CharSet = CharSet.Ansi)]
+    private extern static void sendType(string types);
 }

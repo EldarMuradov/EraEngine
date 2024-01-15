@@ -1885,6 +1885,13 @@ bool eeditor::drawSceneHierarchy()
 
 						ImGui::EndMenu();
 					}
+					for (const auto& script : enative_scripting_linker::script_types)
+					{
+						if (ImGui::MenuItem(script.c_str()))
+						{
+							enative_scripting_linker::createScript((int)selectedEntity.handle, script.c_str());
+						}
+					}
 
 					ImGui::EndPopup();
 				}
@@ -2213,8 +2220,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 			this->scene->stop();
 			this->scene->environment.forceUpdate(this->scene->sun.direction);
 			setSelectedEntity({});
-			app->core->stop();
-			app->core->release();
+			app->linker.reload_src();
 			px_physics_engine::get()->resetActorsVelocityAndInertia();
 		}
 

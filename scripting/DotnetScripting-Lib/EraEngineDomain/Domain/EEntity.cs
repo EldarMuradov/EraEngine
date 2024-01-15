@@ -23,11 +23,11 @@ public class EEntity
 
     public string Name { get; init; } = null!;
 
-    public Dictionary<string, EComponent> Components = new();
+    public Dictionary<string, EComponent> Components = [];
 
     public EEntity? Parent;
 
-    public List<EEntity> Childs = new();
+    public List<EEntity> Childs = [];
 
     public bool IsInitialized { get; private set; } = false;
 
@@ -46,7 +46,7 @@ public class EEntity
 
     private bool _activeSelf = true;
 
-    public Dictionary<string, EComponent> _components = new();
+    public Dictionary<string, EComponent> _components = [];
 
     #region Pipeline Methods
 
@@ -180,9 +180,14 @@ public class EEntity
 
     public EComponent CopyComponent(EComponent component)
     {
+        if (_components.ContainsKey(component.GetType().Name))
+            RemoveComponent(component.GetType().Name);
         var comp = component;
-
+        comp.Entity = this;
         _components.Add(comp.GetType().Name, comp);
+
+        if (comp is Script)
+            createScript(Id, comp.GetType().Name);
 
         return comp;
     }
@@ -199,8 +204,6 @@ public class EEntity
     } 
 
     #endregion
-
-    #region Internal
 
     public T CreateComponentInternal<T>(params object[] args) where T : EComponent, new()
     {
@@ -228,7 +231,7 @@ public class EEntity
         return comp;
     }
 
-    internal void RemoveComponent(string name, bool sync = true)
+    public void RemoveComponent(string name, bool sync = true)
     {
         _components.Remove(name);
         if (sync)
@@ -246,8 +249,6 @@ public class EEntity
                 createScript(Id, name);
         }
     }
-
-    #endregion
 
     #region P/I
 

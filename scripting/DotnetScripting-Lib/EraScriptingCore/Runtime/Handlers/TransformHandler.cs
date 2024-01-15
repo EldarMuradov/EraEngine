@@ -6,6 +6,7 @@ namespace EraEngine.Core;
 
 public class TransformHandler
 {
+    [UnmanagedCaller]
     public static unsafe void ProcessTransform(IntPtr transformPtr, int id)
     {
         Matrix4x4 transforms = new();

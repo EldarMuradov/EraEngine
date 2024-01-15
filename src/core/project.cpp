@@ -1,5 +1,5 @@
 #include "pch.h"
 #include "project.h"
 
-std::string eproject::path = "";
-std::string eproject::name = "New Project";
+std::string eproject::path = "E:\\Era Engine";
+std::string eproject::name = "NewProject";

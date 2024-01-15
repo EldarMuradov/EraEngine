@@ -84,5 +84,8 @@ EEXTERN ERASCRIPTINGCPPDECLS_API void initializeNavigationComponent(uint32_t id,
 // Debug
 EEXTERN ERASCRIPTINGCPPDECLS_API void log_message(uint8_t mode, const char* message);
 
+// User Scripting
+EEXTERN ERASCRIPTINGCPPDECLS_API void sendType(const char* type);
+
 // EEntity
 EEXTERN ERASCRIPTINGCPPDECLS_API void createScript(uint32_t id, const char* name);

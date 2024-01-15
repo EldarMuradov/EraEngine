@@ -1,5 +1,4 @@
 ﻿using EraEngine.Components;
-using EraEngine.Core;
 
 namespace EraEngine;
 
@@ -10,6 +9,7 @@ public static class Level
     internal delegate void UpdateDelegates();
     internal static UpdateDelegates UpdateDelegate;
 
+    [UnmanagedCaller]
     public static unsafe void Start()
     {
         EEntity nav_target = new(59, "SpherePX1");
@@ -28,6 +28,7 @@ public static class Level
         _syncObj.Release();
     }
 
+    [UnmanagedCaller]
     public static void Update(float dt)
     {
         _syncObj.Wait();
