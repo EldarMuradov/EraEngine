@@ -1,5 +1,6 @@
 ﻿using EraEngine.Components;
 using EraEngine.Core;
+using EraEngine.Infrastructure;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -23,11 +24,11 @@ public class EEntity
 
     public string Name { get; init; } = null!;
 
-    public Dictionary<string, EComponent> Components = [];
-
     public EEntity? Parent;
 
     public List<EEntity> Childs = [];
+
+    public ComponentsContainer Components = new();
 
     public bool IsInitialized { get; private set; } = false;
 
@@ -46,14 +47,12 @@ public class EEntity
 
     private bool _activeSelf = true;
 
-    public Dictionary<string, EComponent> _components = [];
-
     #region Pipeline Methods
 
     public void Start()
     {
         IsInitialized = true;
-        SyncComponents();
+        Components.SyncComponents();
 
         var components = Components.Values;
         foreach (var comp in components)
@@ -65,12 +64,7 @@ public class EEntity
         var components = Components.Values;
         foreach (var comp in components)
             comp.Update(dt);
-        SyncComponents();
-    }
-
-    private void SyncComponents()
-    {
-        Components = _components;
+        Components.SyncComponents();
     }
 
     #endregion
@@ -79,7 +73,7 @@ public class EEntity
 
     public T? GetComponent<T>() where T : EComponent, new()
     {
-        if (_components.TryGetValue(typeof(T).Name, out var comp))
+        if (Components.TryGetValue(typeof(T).Name, out var comp))
             return (T)comp;
         return null;
     }
@@ -105,7 +99,7 @@ public class EEntity
         comp.Entity = this;
         comp.InitializeComponentInternal(args);
 
-        _components.Add(comp.GetType().Name, comp);
+        Components.Add(comp.GetType().Name, comp);
 
         if(IsInitialized)
             comp.Start();
@@ -120,7 +114,7 @@ public class EEntity
 
         var compname = comp.GetType().Name;
 
-        _components.Remove(compname);
+        Components.Remove(compname);
         if (sync)
             removeComponent(Id, compname);
     }
@@ -139,8 +133,8 @@ public class EEntity
         if (parent != null)
             instance.Parent = parent;
 
-        foreach (var comp in original._components)
-            instance.CopyComponent(comp.Value);
+        foreach (var comp in original.Components.ActiveValues)
+            instance.CopyComponent(comp);
 
         var transform = instance.GetComponent<TransformComponent>()!;
         transform.SetPosition(position);
@@ -165,8 +159,8 @@ public class EEntity
         if (parent != null)
             instance.Parent = parent;
 
-        foreach (var comp in original._components)
-            instance.CopyComponent(comp.Value);
+        foreach (var comp in original.Components.ActiveValues)
+            instance.CopyComponent(comp);
 
         Scene.Entities.Add(newId, instance);
 
@@ -180,11 +174,11 @@ public class EEntity
 
     public EComponent CopyComponent(EComponent component)
     {
-        if (_components.ContainsKey(component.GetType().Name))
+        if (Components.ContainsKey(component.GetType().Name))
             RemoveComponent(component.GetType().Name);
         var comp = component;
         comp.Entity = this;
-        _components.Add(comp.GetType().Name, comp);
+        Components.Add(comp.GetType().Name, comp);
 
         if (comp is Script)
             createScript(Id, comp.GetType().Name);
@@ -223,7 +217,7 @@ public class EEntity
         comp.Entity = this;
         comp.InitializeComponentInternal(args);
 
-        _components.Add(comp.GetType().Name, comp);
+        Components.Add(comp.GetType().Name, comp);
 
         if (IsInitialized)
             comp.Start();
@@ -233,7 +227,7 @@ public class EEntity
 
     public void RemoveComponent(string name, bool sync = true)
     {
-        _components.Remove(name);
+        Components.Remove(name);
         if (sync)
             removeComponent(Id, name);
     }
@@ -242,7 +236,7 @@ public class EEntity
     {
         if (comp != null)
         {
-            _components.Add(name, comp);
+            Components.Add(name, comp);
             comp.Entity = this;
             comp.Start();
             if (from)

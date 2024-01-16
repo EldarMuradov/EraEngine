@@ -21,8 +21,12 @@ public class ComponentHandler
     [UnmanagedCaller]
     public static void RemoveComponent(int id, IntPtr comp)
     {
-        string result = Marshal.PtrToStringAnsi(comp);
-        var entity = Scene.GetEntity(id);
-        entity.RemoveComponent(result);
+        try
+        {
+            string result = Marshal.PtrToStringAnsi(comp);
+            var entity = Scene.GetEntity(id);
+            entity.RemoveComponent(result);
+        }
+        catch (Exception e) { Console.WriteLine(e.Message); }
     }
 }

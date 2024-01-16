@@ -14,7 +14,7 @@ public delegate void CallRemoveComp(int id, IntPtr comp);
 
 public class ScriptingCore
 {
-    internal static UserScripting UserScriptingObj = new();
+    internal static UserScriptingLauncher UserScriptingObj = new();
 
     public static void Main(string[] args)
     {
@@ -44,8 +44,8 @@ public class ScriptingCore
     [UnmanagedCaller]
     public static void ShutdownScripting()
     {
-        Debug.Log("Unloading user dll");
-        UserScriptingObj.UnloadDll();
+        //Debug.Log("Unloading user dll");
+        //UserScriptingObj.UnloadAssembly();
     }
 
     [UnmanagedCaller]

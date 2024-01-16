@@ -293,12 +293,29 @@ namespace bind
 
 		if (auto script = entity.getComponentIfExists<script_component>())
 		{
-			script->typeNames.push_back(name);
+			script->typeNames.emplace(name);
 		}
 		else
 		{
 			entity.addComponent<script_component>(name);
 		}
+	}
+
+	static void remove_component_internal(uint32_t id, const char* name)
+	{
+		entity_handle hid = (entity_handle)id;
+		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+
+		// TODO: Removing all internal components
+		if (auto comp = entity.getComponentIfExists<script_component>())
+		{
+			comp->typeNames.clear();
+		}
+	}
+
+	static void create_component_internal(uint32_t id, const char* name)
+	{
+		
 	}
 
 	static void initialize_navigation_internal(uint32_t id, uint8_t type)
@@ -449,6 +466,8 @@ void enative_scripting_linker::bindFunctions()
 		// EEntity
 		{
 			builder->functions.emplace("createScript", BIND(bind::create_script_internal, void, uint32_t, const char*));
+			builder->functions.emplace("createComponent", BIND(bind::create_component_internal, void, uint32_t, const char*));
+			builder->functions.emplace("removeComponent", BIND(bind::remove_component_internal, void, uint32_t, const char*));
 		}
 	}
 }

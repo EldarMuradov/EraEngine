@@ -89,3 +89,5 @@ EEXTERN ERASCRIPTINGCPPDECLS_API void sendType(const char* type);
 
 // EEntity
 EEXTERN ERASCRIPTINGCPPDECLS_API void createScript(uint32_t id, const char* name);
+EEXTERN ERASCRIPTINGCPPDECLS_API void createComponent(uint32_t id, const char* name);
+EEXTERN ERASCRIPTINGCPPDECLS_API void removeComponent(uint32_t id, const char* name);

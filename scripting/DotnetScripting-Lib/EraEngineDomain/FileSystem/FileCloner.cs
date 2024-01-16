@@ -12,6 +12,8 @@ public sealed class FileCloner : IFileCloner
 
     private static void CopyAll(DirectoryInfo source, DirectoryInfo target)
     {
+        if(Directory.Exists(target.FullName))
+            Directory.Delete(target.FullName, true);
         Directory.CreateDirectory(target.FullName);
 
         foreach (FileInfo fi in source.GetFiles())
