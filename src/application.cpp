@@ -247,12 +247,12 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
 		groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
 
-		for (uint32 i = 0; i < 3; ++i)
-		{
-			scene.createEntity("Sphere")
-				.addComponent<transform_component>(vec3(15.0f, 10.f + i * 3.f, 15.0f), quat(vec3(0.f, 0.f, 1.f), deg2rad(1.f)), vec3(1.f))
-				.addComponent<mesh_component>(sphereMesh);
-		}
+		//for (uint32 i = 0; i < 3; ++i)
+		//{
+		//	scene.createEntity("Sphere")
+		//		.addComponent<transform_component>(vec3(15.0f, 10.f + i * 3.f, 15.0f), quat(vec3(0.f, 0.f, 1.f), deg2rad(1.f)), vec3(1.f))
+		//		.addComponent<mesh_component>(sphereMesh);
+		//}
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
 		auto px_sphere = &scene.createEntity("SpherePX", (entity_handle)60)
@@ -271,9 +271,9 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		px_sphere1->addChild(*px_sphere);
 
-		auto px_cct = &scene.createEntity("CharacterControllerPx")
-			.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-			.addComponent<px_box_cct_component>();
+		//auto px_cct = &scene.createEntity("CharacterControllerPx")
+		//	.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+		//	.addComponent<px_box_cct_component>();
 
 		auto px_plane = &scene.createEntity("PlanePX")
 			.addComponent<transform_component>(vec3(0.f, -5.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))

@@ -148,12 +148,18 @@ physx::PxRigidActor* px_rigidbody_component::createActor()
 	if (!coll)
 		coll = (px_collider_component_base*)entity.getComponentIfExists<px_bounding_box_collider_component>();
 	if (!coll)
-		return nullptr;
+	{
+		entity.addComponent<px_capsule_collider_component>(1.0f, 2.0f);
+		coll = (px_collider_component_base*)&entity.getComponent<px_capsule_collider_component>();
+	}
 
 	auto tranaform = entity.getComponentIfExists<transform_component>();
 
 	if (!tranaform)
-		return nullptr;
+	{
+		entity.addComponent<transform_component>(vec3(0.0f), quat::identity);
+		tranaform = &entity.getComponent<transform_component>();
+	}
 
 	vec3 pos = tranaform->position;
 	PxVec3 pospx = physx::createPxVec3(pos);

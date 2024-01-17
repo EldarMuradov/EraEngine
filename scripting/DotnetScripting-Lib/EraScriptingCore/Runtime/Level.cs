@@ -24,7 +24,6 @@ public static class Level
         var values = Scene.Entities.Values;
         foreach (var entity in values)
             entity.Start();
-        Debug.Log("Start");
         _syncObj.Release();
     }
 
@@ -38,7 +37,6 @@ public static class Level
         var values = Scene.Entities.Values;
         foreach (var entity in values)
             entity.Update(dt);
-        Debug.Log("Update");
         Scene.SyncEntities();
         _syncObj.Release();
     }
