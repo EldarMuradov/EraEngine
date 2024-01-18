@@ -42,13 +42,13 @@ void px_rigidbody_component::setEnableGravity() noexcept
 	useGravity = true;
 }
 
-void px_rigidbody_component::setMass(unsigned int mass)
+void px_rigidbody_component::setMass(uint32_t mass) noexcept
 {
 	this->mass = mass;
 	actor->is<PxRigidDynamic>()->setMass(mass);
 }
 
-unsigned int px_rigidbody_component::getMass() const noexcept
+uint32_t px_rigidbody_component::getMass() const noexcept
 {
 	return mass;
 }

@@ -119,6 +119,8 @@ void px_physics::initialize()
 	cudaContextManagerDesc.graphicsDevice = dxContext.device.Get();
 	cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profiler_callback);
 	sceneDesc.cudaContextManager = cudaContextManager;
+	sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
+	sceneDesc.frictionOffsetThreshold = 0.08 * toleranceScale.length;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
 	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
@@ -267,7 +269,6 @@ void px_physics_engine::update(float dt)
 	physics->scene->getTaskManager()->stopSimulation();
 	physics->scene->unlockWrite();
 
-	PxU32 nbActiveActors;
 	PxActor** activeActors = physics->scene->getActiveActors(nbActiveActors);
 
 	auto scene = &app->scene.getCurrentScene();
@@ -497,3 +498,215 @@ PxTriangleMesh* px_triangle_mesh::createTriangleMesh(PxTriangleMeshDesc desc)
 	}
 	return nullptr;
 }
+
+#if PX_VEHICLE
+
+void physx::setupWheelsSimulationData(const PxF32 wheelMass, const PxF32 wheelMOI, const PxF32 wheelRadius, const PxF32 wheelWidth, const PxU32 numWheels, const PxVec3* wheelCenterActorOffsets, const PxVec3& chassisCMOffset, const PxF32 chassisMass, PxVehicleWheelsSimData* wheelsSimData)
+{
+	PxVehicleWheelData wheels[PX_MAX_NB_WHEELS];
+	{
+		for (PxU32 i = 0; i < numWheels; i++)
+		{
+			wheels[i].mMass = wheelMass;
+			wheels[i].mMOI = wheelMOI;
+			wheels[i].mRadius = wheelRadius;
+			wheels[i].mWidth = wheelWidth;
+		}
+
+		wheels[PxVehicleDrive4WWheelOrder::eREAR_LEFT].mMaxHandBrakeTorque = 4000.0f;
+		wheels[PxVehicleDrive4WWheelOrder::eREAR_RIGHT].mMaxHandBrakeTorque = 4000.0f;
+		wheels[PxVehicleDrive4WWheelOrder::eFRONT_LEFT].mMaxSteer = PxPi * 0.3333f;
+		wheels[PxVehicleDrive4WWheelOrder::eFRONT_RIGHT].mMaxSteer = PxPi * 0.3333f;
+	}
+
+	PxVehicleTireData tires[PX_MAX_NB_WHEELS];
+	{
+		for (PxU32 i = 0; i < numWheels; i++)
+			tires[i].mType = TIRE_TYPE_NORMAL;
+	}
+
+	PxVehicleSuspensionData suspensions[PX_MAX_NB_WHEELS];
+	{
+		PxF32 suspSprungMasses[PX_MAX_NB_WHEELS];
+		PxVehicleComputeSprungMasses
+		(numWheels, wheelCenterActorOffsets,
+			chassisCMOffset, chassisMass, 1, suspSprungMasses);
+		for (PxU32 i = 0; i < numWheels; i++)
+		{
+			suspensions[i].mMaxCompression = 0.3f;
+			suspensions[i].mMaxDroop = 0.1f;
+			suspensions[i].mSpringStrength = 35000.0f;
+			suspensions[i].mSpringDamperRate = 4500.0f;
+			suspensions[i].mSprungMass = suspSprungMasses[i];
+		}
+
+		const PxF32 camberAngleAtRest = 0.0;
+		const PxF32 camberAngleAtMaxDroop = 0.01f;
+		const PxF32 camberAngleAtMaxCompression = -0.01f;
+		for (PxU32 i = 0; i < numWheels; i += 2)
+		{
+			suspensions[i + 0].mCamberAtRest = camberAngleAtRest;
+			suspensions[i + 1].mCamberAtRest = -camberAngleAtRest;
+			suspensions[i + 0].mCamberAtMaxDroop = camberAngleAtMaxDroop;
+			suspensions[i + 1].mCamberAtMaxDroop = -camberAngleAtMaxDroop;
+			suspensions[i + 0].mCamberAtMaxCompression = camberAngleAtMaxCompression;
+			suspensions[i + 1].mCamberAtMaxCompression = -camberAngleAtMaxCompression;
+		}
+	}
+
+	PxVec3 suspTravelDirections[PX_MAX_NB_WHEELS];
+	PxVec3 wheelCentreCMOffsets[PX_MAX_NB_WHEELS];
+	PxVec3 suspForceAppCMOffsets[PX_MAX_NB_WHEELS];
+	PxVec3 tireForceAppCMOffsets[PX_MAX_NB_WHEELS];
+	{
+		for (PxU32 i = 0; i < numWheels; i++)
+		{
+			suspTravelDirections[i] = PxVec3(0, -1, 0);
+
+			wheelCentreCMOffsets[i] =
+				wheelCenterActorOffsets[i] - chassisCMOffset;
+
+			suspForceAppCMOffsets[i] =
+				PxVec3(wheelCentreCMOffsets[i].x, -0.3f, wheelCentreCMOffsets[i].z);
+
+			tireForceAppCMOffsets[i] =
+				PxVec3(wheelCentreCMOffsets[i].x, -0.3f, wheelCentreCMOffsets[i].z);
+		}
+	}
+
+	PxFilterData qryFilterData;
+	setupNonDrivableSurface(qryFilterData);
+
+	for (PxU32 i = 0; i < numWheels; i++)
+	{
+		wheelsSimData->setWheelData(i, wheels[i]);
+		wheelsSimData->setTireData(i, tires[i]);
+		wheelsSimData->setSuspensionData(i, suspensions[i]);
+		wheelsSimData->setSuspTravelDirection(i, suspTravelDirections[i]);
+		wheelsSimData->setWheelCentreOffset(i, wheelCentreCMOffsets[i]);
+		wheelsSimData->setSuspForceAppPointOffset(i, suspForceAppCMOffsets[i]);
+		wheelsSimData->setTireForceAppPointOffset(i, tireForceAppCMOffsets[i]);
+		wheelsSimData->setSceneQueryFilterData(i, qryFilterData);
+		wheelsSimData->setWheelShapeMapping(i, i);
+	}
+}
+
+PxRigidDynamic* physx::createVehicleActor(const PxVehicleChassisData& chassisData, PxMaterial** wheelMaterials, PxConvexMesh** wheelConvexMeshes, const PxU32 numWheels, const PxFilterData& wheelSimFilterData, PxMaterial** chassisMaterials, PxConvexMesh** chassisConvexMeshes, const PxU32 numChassisMeshes, const PxFilterData& chassisSimFilterData, PxPhysics& physics)
+{
+	PxRigidDynamic* vehActor = physics.createRigidDynamic(PxTransform(PxIdentity));
+
+	PxFilterData wheelQryFilterData;
+	setupNonDrivableSurface(wheelQryFilterData);
+	PxFilterData chassisQryFilterData;
+	setupNonDrivableSurface(chassisQryFilterData);
+
+	for (PxU32 i = 0; i < numWheels; i++)
+	{
+		PxConvexMeshGeometry geom(wheelConvexMeshes[i]);
+		PxShape* wheelShape = PxRigidActorExt::createExclusiveShape(*vehActor, geom, *wheelMaterials[i]);
+		wheelShape->setQueryFilterData(wheelQryFilterData);
+		wheelShape->setSimulationFilterData(wheelSimFilterData);
+		wheelShape->setLocalPose(PxTransform(PxIdentity));
+	}
+
+	for (PxU32 i = 0; i < numChassisMeshes; i++)
+	{
+		PxShape* chassisShape = PxRigidActorExt::createExclusiveShape(*vehActor, PxConvexMeshGeometry(chassisConvexMeshes[i]), *chassisMaterials[i]);
+		chassisShape->setQueryFilterData(chassisQryFilterData);
+		chassisShape->setSimulationFilterData(chassisSimFilterData);
+		chassisShape->setLocalPose(PxTransform(PxIdentity));
+	}
+
+	vehActor->setMass(chassisData.mMass);
+	vehActor->setMassSpaceInertiaTensor(chassisData.mMOI);
+	vehActor->setCMassLocalPose(PxTransform(chassisData.mCMOffset, PxQuat(PxIdentity)));
+
+	return vehActor;
+}
+
+PxVehicleDriveNW* physx::instantiate4WVersion(const PxVehicleDriveNW& vehicle18W, PxPhysics& physics)
+{
+	PxReal sprungMasses[4];
+	{
+		const PxReal rigidBodyMass = vehicle18W.getRigidDynamicActor()->getMass();
+		const PxVec3 wheelCoords[4] =
+		{
+			vehicle18W.mWheelsSimData.getWheelCentreOffset(0),
+			vehicle18W.mWheelsSimData.getWheelCentreOffset(1),
+			vehicle18W.mWheelsSimData.getWheelCentreOffset(2),
+			vehicle18W.mWheelsSimData.getWheelCentreOffset(3)
+		};
+		const PxU32 upDirection = 1;
+		PxVehicleComputeSprungMasses(4, wheelCoords, PxVec3(0, 0, 0), rigidBodyMass, upDirection,
+			sprungMasses);
+	}
+
+	PxVehicleWheelsSimData* wheelsSimData4W = PxVehicleWheelsSimData::allocate(4);
+	for (PxU32 i = 0; i < 4; i++)
+	{
+		wheelsSimData4W->copy(vehicle18W.mWheelsSimData, i, i);
+
+		PxVehicleSuspensionData suspData = wheelsSimData4W->getSuspensionData(i);
+		suspData.setMassAndPreserveNaturalFrequency(sprungMasses[i]);
+		wheelsSimData4W->setSuspensionData(i, suspData);
+	}
+	wheelsSimData4W->setTireLoadFilterData(vehicle18W.mWheelsSimData.getTireLoadFilterData());
+
+	wheelsSimData4W->setWheelShapeMapping(0, 0);
+	wheelsSimData4W->setWheelShapeMapping(1, 1);
+	wheelsSimData4W->setWheelShapeMapping(2, 2);
+	wheelsSimData4W->setWheelShapeMapping(3, 3);
+
+	PxVehicleDriveSimDataNW driveSimData4W = vehicle18W.mDriveSimData;
+	PxVehicleDifferentialNWData diff4W;
+	diff4W.setDrivenWheel(0, true);
+	diff4W.setDrivenWheel(1, true);
+	diff4W.setDrivenWheel(2, true);
+	diff4W.setDrivenWheel(3, true);
+	driveSimData4W.setDiffData(diff4W);
+
+	PxRigidDynamic* rigidDynamic =
+		const_cast<PxRigidDynamic*>(vehicle18W.getRigidDynamicActor());
+	PxVehicleDriveNW* vehicle4W =
+		PxVehicleDriveNW::create(&physics, rigidDynamic, *wheelsSimData4W, driveSimData4W, 4);
+
+	wheelsSimData4W->free();
+
+	return vehicle4W;
+}
+
+void physx::swapToLowLodVersion(const PxVehicleDriveNW& vehicle18W, PxVehicleDrive4W* vehicle4W, PxVehicleWheels** vehicles, PxU32 vehicleId)
+{
+	vehicles[vehicleId] = vehicle4W;
+
+	PxVehicleCopyDynamicsMap wheelMap;
+	wheelMap.sourceWheelIds[0] = 0;
+	wheelMap.sourceWheelIds[1] = 1;
+	wheelMap.sourceWheelIds[2] = 2;
+	wheelMap.sourceWheelIds[3] = 3;
+	wheelMap.targetWheelIds[0] = 0;
+	wheelMap.targetWheelIds[1] = 1;
+	wheelMap.targetWheelIds[2] = 2;
+	wheelMap.targetWheelIds[3] = 3;
+
+	PxVehicleCopyDynamicsData(wheelMap, vehicle18W, vehicle4W);
+}
+
+void physx::swapToHighLowVersion(const PxVehicleDriveNW& vehicle4W, PxVehicleDrive4W* vehicle18W, PxVehicleWheels** vehicles, PxU32 vehicleId)
+{
+	vehicles[vehicleId] = vehicle18W;
+
+	PxVehicleCopyDynamicsMap wheelMap;
+	wheelMap.sourceWheelIds[0] = 0;
+	wheelMap.sourceWheelIds[1] = 1;
+	wheelMap.sourceWheelIds[2] = 2;
+	wheelMap.sourceWheelIds[3] = 3;
+	wheelMap.targetWheelIds[0] = 0;
+	wheelMap.targetWheelIds[1] = 1;
+	wheelMap.targetWheelIds[2] = 2;
+	wheelMap.targetWheelIds[3] = 3;
+
+	PxVehicleCopyDynamicsData(wheelMap, vehicle4W, vehicle18W);
+}
+
+#endif

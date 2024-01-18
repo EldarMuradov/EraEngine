@@ -29,8 +29,8 @@ struct px_rigidbody_component
 	void setDisableGravity() noexcept;
 	void setEnableGravity() noexcept;
 
-	void setMass(unsigned int mass);
-	unsigned int getMass() const noexcept;
+	void setMass(uint32_t mass) noexcept;
+	uint32_t getMass() const noexcept;
 
 	void setConstraints(uint8 constraints) noexcept;
 	uint8 getConstraints() noexcept;
@@ -53,34 +53,31 @@ struct px_rigidbody_component
 
 	void onCollisionEnter(px_rigidbody_component* collision) const;
 
-	uint32_t handle;
+	uint32_t handle {};
 
 private:
 	void createPhysics(bool addToScene);
 	physx::PxRigidActor* createActor();
 
 private:
+	physx::PxMaterial* material = nullptr;
+
+	physx::PxRigidActor* actor = nullptr;
+
 	float restitution = 0.6f;
 
-	unsigned int mass = 1;
+	uint32_t mass = 1;
 
-	px_rigidbody_type type = px_rigidbody_type::None;
-
-	float dynamicFriction = 0.5f;
-	float staticFriction = 0.5f;
+	float dynamicFriction = 0.8f;
+	float staticFriction = 0.8f;
  
  	physx::PxU32 filterGroup = -1;
 	physx::PxU32 filterMask = -1;
-
-	bool* rotationLock = new bool[3]{ 0, 0, 0 };
-	bool* positionLock = new bool[3]{ 0, 0, 0 };
 
 	physx::PxRigidDynamicLockFlags rotLockNative;
 	physx::PxRigidDynamicLockFlags posLockNative;
 
 	bool useGravity = true;
 
-	physx::PxMaterial* material = nullptr;
-
-	physx::PxRigidActor* actor = nullptr;
+	px_rigidbody_type type = px_rigidbody_type::None;
 }; 

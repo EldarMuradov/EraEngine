@@ -20,7 +20,7 @@
 #define PX_NB_MAX_RAYCAST_HITS 64
 #define PX_NB_MAX_RAYCAST_DISTANCE 128
 
-#define PX_VEHICLE 0
+#define PX_VEHICLE 1
 
 #define PX_RELEASE(x)	if(x)	{ x->release(); x = nullptr;}
 #define UNUSED(x) (void)(x)
@@ -198,6 +198,75 @@ namespace physx
 
 	static PxVec2 max(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::max(a.x, b.x), std::max(a.y, b.y)); }
 	static PxVec3 max(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)); }
+
+#if PX_VEHICLE
+
+	enum
+	{
+		DRIVABLE_SURFACE = 0xffff0000,
+		UNDRIVABLE_SURFACE = 0x0000ffff
+	};
+
+	enum
+	{
+		COLLISION_FLAG_GROUND = 1 << 0,
+		COLLISION_FLAG_WHEEL = 1 << 1,
+		COLLISION_FLAG_CHASSIS = 1 << 2,
+		COLLISION_FLAG_OBSTACLE = 1 << 3,
+		COLLISION_FLAG_DRIVABLE_OBSTACLE = 1 << 4,
+
+		COLLISION_FLAG_GROUND_AGAINST = COLLISION_FLAG_CHASSIS | COLLISION_FLAG_OBSTACLE | COLLISION_FLAG_DRIVABLE_OBSTACLE,
+		COLLISION_FLAG_WHEEL_AGAINST = COLLISION_FLAG_WHEEL | COLLISION_FLAG_CHASSIS | COLLISION_FLAG_OBSTACLE,
+		COLLISION_FLAG_CHASSIS_AGAINST = COLLISION_FLAG_GROUND | COLLISION_FLAG_WHEEL | COLLISION_FLAG_CHASSIS | COLLISION_FLAG_OBSTACLE | COLLISION_FLAG_DRIVABLE_OBSTACLE,
+		COLLISION_FLAG_OBSTACLE_AGAINST = COLLISION_FLAG_GROUND | COLLISION_FLAG_WHEEL | COLLISION_FLAG_CHASSIS | COLLISION_FLAG_OBSTACLE | COLLISION_FLAG_DRIVABLE_OBSTACLE,
+		COLLISION_FLAG_DRIVABLE_OBSTACLE_AGAINST = COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS | COLLISION_FLAG_OBSTACLE | COLLISION_FLAG_DRIVABLE_OBSTACLE,
+	};
+
+	enum
+	{
+		DRIVABLE_SURFACE_ID = 0xffffffff
+	};
+
+	enum
+	{
+		TIRE_TYPE_NORMAL = 0,
+		TIRE_TYPE_WETS,
+		TIRE_TYPE_SLICKS,
+		TIRE_TYPE_ICE,
+		TIRE_TYPE_MUD,
+		MAX_NUM_TIRE_TYPES
+	};
+
+	static inline void setupDrivableSurface(PxFilterData& filterData)
+	{
+		filterData.word3 = (PxU32)DRIVABLE_SURFACE;
+	}
+
+	static inline void setupNonDrivableSurface(PxFilterData& filterData)
+	{
+		filterData.word3 = UNDRIVABLE_SURFACE;
+	}
+	
+	inline void setupWheelsSimulationData(const PxF32 wheelMass, const PxF32 wheelMOI,
+		const PxF32 wheelRadius, const PxF32 wheelWidth, const PxU32 numWheels,
+		const PxVec3* wheelCenterActorOffsets, const PxVec3& chassisCMOffset,
+		const PxF32 chassisMass, PxVehicleWheelsSimData* wheelsSimData);
+
+	inline PxRigidDynamic* createVehicleActor
+	(const PxVehicleChassisData& chassisData,
+		PxMaterial** wheelMaterials, PxConvexMesh** wheelConvexMeshes, const PxU32 numWheels, const PxFilterData& wheelSimFilterData,
+		PxMaterial** chassisMaterials, PxConvexMesh** chassisConvexMeshes, const PxU32 numChassisMeshes, const PxFilterData& chassisSimFilterData,
+		PxPhysics& physics);
+
+	inline PxVehicleDriveNW* instantiate4WVersion(const PxVehicleDriveNW& vehicle18W, PxPhysics& physics);
+
+	inline void swapToLowLodVersion(const PxVehicleDriveNW& vehicle18W, PxVehicleDrive4W* vehicle4W,
+		PxVehicleWheels** vehicles, PxU32 vehicleId);
+
+	inline void swapToHighLowVersion(const PxVehicleDriveNW& vehicle4W, PxVehicleDrive4W* vehicle18W,
+		PxVehicleWheels** vehicles, PxU32 vehicleId);
+
+#endif
 }
 
 struct px_snippet_gpu_load_hook : PxGpuLoadHook
@@ -446,6 +515,8 @@ public:
 	void releaseActors() noexcept;
 
 	float frameRate = 60.0f;
+
+	uint32_t nbActiveActors{};
 
 	px_physics* getPhysicsAdapter() const noexcept { return physics; }
 
