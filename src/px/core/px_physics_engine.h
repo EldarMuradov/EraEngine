@@ -20,11 +20,13 @@
 #define PX_NB_MAX_RAYCAST_HITS 64
 #define PX_NB_MAX_RAYCAST_DISTANCE 128
 
-#define PX_VEHICLE 1
+#define PX_VEHICLE 0
+#define PX_CLOTH 0
 
 #define PX_RELEASE(x)	if(x)	{ x->release(); x = nullptr;}
 #define UNUSED(x) (void)(x)
 
+#include <cuda.h>
 #include <PxPhysics.h>
 #include <PxPhysicsAPI.h>
 #include "extensions/PxRaycastCCD.h"
@@ -37,10 +39,14 @@
 #include <core/log.h>
 #include <queue>
 
+#include <px/features/cloth/px_clothing_factory.h>
+
 struct application;
 struct eallocator;
 
 using namespace physx;
+
+static physx::PxVec3 gravity(0.0f, -9.8f, 0.0f);
 
 struct px_allocator_callback : PxAllocatorCallback
 {
@@ -407,7 +413,7 @@ struct px_CCD_contact_modification : PxCCDContactModifyCallback
 	void onCCDContactModify(PxContactModifyPair* const pairs, PxU32 count);
 };
 
-class px_physics_engine;
+struct px_physics_engine;
 
 struct px_physics
 {
@@ -517,6 +523,10 @@ public:
 	float frameRate = 60.0f;
 
 	uint32_t nbActiveActors{};
+
+#if PX_CLOTH
+	px_clothing_factory clothing_factory{};
+#endif
 
 	px_physics* getPhysicsAdapter() const noexcept { return physics; }
 

@@ -4,6 +4,7 @@
 #include <core/log.h>
 #include <scene/scene.h>
 #include <px/physics/px_collider_component.h>
+#include <px/features/cloth/px_clothing_factory.h>
 
 #ifndef PX_PHYSX_STATIC_LIB
 #define PX_PHYSX_STATIC_LIB
@@ -95,7 +96,7 @@ void px_physics::initialize()
 	dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
 
 	PxSceneDesc sceneDesc(physics->getTolerancesScale());
-	sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
+	sceneDesc.gravity = gravity;
 	sceneDesc.cpuDispatcher = dispatcher;
 	sceneDesc.filterShader = contactReportFilterShader;
 	sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
@@ -120,12 +121,12 @@ void px_physics::initialize()
 	cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profiler_callback);
 	sceneDesc.cudaContextManager = cudaContextManager;
 	sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
-	sceneDesc.frictionOffsetThreshold = 0.08 * toleranceScale.length;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
 	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 	sceneDesc.flags |= PxSceneFlag::eADAPTIVE_FORCE;
+	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 	sceneDesc.filterCallback = &simulation_filter_callback;
 	sceneDesc.ccdContactModifyCallback = &contact_modification;
 
@@ -212,14 +213,14 @@ px_physics_engine::px_physics_engine(application* application) noexcept
 
 px_physics_engine::~px_physics_engine()
 {
+	releaseActors();
 	if (!released)
 		release();
 
 	allocator.reset(true);
 	physics->release();
-	delete physics;
 
-	releaseActors();
+	RELEASE_PTR(physics)
 }
 
 void px_physics_engine::initialize(application* application)
