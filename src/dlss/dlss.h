@@ -27,7 +27,7 @@ private:
 	NVSDK_NGX_Handle* handle = nullptr;
 	NVSDK_NGX_Parameter* params = nullptr;
 
-	tonemap_settings tonemapSettings;
+	tonemap_settings tonemapSettings{};
 
 	unsigned int renderOptimalWidth = 0;
 	unsigned int renderOptimalHeight = 0;

@@ -141,17 +141,17 @@ struct main_renderer
 	renderer_mode mode = renderer_mode_rasterized;
 	aspect_ratio_mode aspectRatioMode = aspect_ratio_free;
 
-	renderer_settings settings;
+	renderer_settings settings{};
 
-	uint32 renderWidth;
-	uint32 renderHeight;
+	uint32 renderWidth{};
+	uint32 renderHeight{};
 	ref<dx_texture> frameResult;
 
 	uint32 hoveredObjectID = -1;
 
 	const renderer_spec spec;
 
-	path_tracer pathTracer;
+	path_tracer pathTracer{};
 
 	const ref<dx_texture>& getAOResult() const { return aoTextures[aoHistoryIndex]; }
 	const ref<dx_texture>& getSSSResult() const { return sssTextures[sssHistoryIndex]; }
@@ -171,23 +171,23 @@ private:
 	const sun_shadow_render_pass* sunShadowRenderPasses[MAX_NUM_SUN_LIGHT_SHADOW_PASSES];
 	const spot_shadow_render_pass* spotLightShadowRenderPasses[MAX_NUM_SPOT_LIGHT_SHADOW_PASSES];
 	const point_shadow_render_pass* pointLightShadowRenderPasses[MAX_NUM_POINT_LIGHT_SHADOW_PASSES];
-	uint32 numSunLightShadowRenderPasses;
-	uint32 numSpotLightShadowRenderPasses;
-	uint32 numPointLightShadowRenderPasses;
+	uint32 numSunLightShadowRenderPasses{};
+	uint32 numSpotLightShadowRenderPasses{};
+	uint32 numPointLightShadowRenderPasses{};
 
 	raytracing_tlas* tlas;
 
 	const pbr_environment* environment;
-	directional_light_cb sun;
+	directional_light_cb sun{};
 
 	ref<dx_buffer> pointLights;
 	ref<dx_buffer> spotLights;
 	ref<dx_buffer> pointLightShadowInfoBuffer;
 	ref<dx_buffer> spotLightShadowInfoBuffer;
 	ref<dx_buffer> decals;
-	uint32 numPointLights;
-	uint32 numSpotLights;
-	uint32 numDecals;
+	uint32 numPointLights{};
+	uint32 numSpotLights{};
+	uint32 numDecals{};
 	
 	ref<dx_texture> decalTextureAtlas;
 
@@ -196,10 +196,10 @@ private:
 	const ldr_render_pass* ldrRenderPass;
 	const compute_pass* computePass;
 
-	uint32 windowWidth;
-	uint32 windowHeight;
-	int32 windowXOffset = 0;
-	int32 windowYOffset = 0;
+	uint32 windowWidth{};
+	uint32 windowHeight{};
+	int32 windowXOffset{};
+	int32 windowYOffset{};
 
 	bool windowHovered = false;
 
@@ -241,12 +241,12 @@ private:
 
 	ref<dx_buffer> hoveredObjectIDReadbackBuffer;
 
-	camera_cb jitteredCamera;
-	camera_cb unjitteredCamera;
+	camera_cb jitteredCamera{};
+	camera_cb unjitteredCamera{};
 
-	light_culling culling;
+	light_culling culling{};
 
-	dlss_feature_adapter dlss_adapter;
+	dlss_feature_adapter dlss_adapter{};
 	bool dlssInited = false;
 
 	aspect_ratio_mode oldAspectRatioMode = aspect_ratio_free;

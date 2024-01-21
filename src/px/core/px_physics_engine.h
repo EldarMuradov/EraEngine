@@ -275,6 +275,30 @@ namespace physx
 #endif
 }
 
+struct px_simulation_filter_callback : PxSimulationFilterCallback
+{
+	PxFilterFlags pairFound(PxU64 pairID,
+		PxFilterObjectAttributes attributes0, PxFilterData filterData0, const PxActor* a0, const PxShape* s0,
+		PxFilterObjectAttributes attributes1, PxFilterData filterData1, const PxActor* a1, const PxShape* s1,
+		PxPairFlags& pairFlags) override
+	{
+		return PxFilterFlags(PxFilterFlag::eDEFAULT);
+	};
+
+	void pairLost(PxU64 pairID,
+		PxFilterObjectAttributes attributes0, PxFilterData filterData0,
+		PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+		bool objectRemoved) override
+	{
+
+	};
+
+	bool statusChange(PxU64& pairID, PxPairFlags& pairFlags, PxFilterFlags& filterFlags) override
+	{
+		return false;
+	};
+};
+
 struct px_snippet_gpu_load_hook : PxGpuLoadHook
 {
 	virtual const char* getPhysXGpuDllName() const
@@ -302,36 +326,10 @@ struct px_query_filter : public PxQueryFilterCallback
 		return blockSingle ? PxQueryHitType::eBLOCK : PxQueryHitType::eTOUCH;
 	}
 
-	PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit) override
+	PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit, const PxShape* shape, const PxRigidActor* actor) override
 	{
 		return PxQueryHitType::eNONE;
 	}
-};
-
-struct px_simulation_filter_callback : PxSimulationFilterCallback
-{
-	PxFilterFlags pairFound(PxU32 pairID,
-		PxFilterObjectAttributes attributes0, PxFilterData filterData0, const PxActor* a0, const PxShape* s0,
-		PxFilterObjectAttributes attributes1, PxFilterData filterData1, const PxActor* a1, const PxShape* s1,
-		PxPairFlags& pairFlags) override
-	{
-		return PxFilterFlags(PxFilterFlag::eDEFAULT);
-	};
-
-	void pairLost(PxU32 pairID,
-		PxFilterObjectAttributes attributes0,
-		PxFilterData filterData0,
-		PxFilterObjectAttributes attributes1,
-		PxFilterData filterData1,
-		bool objectRemoved) override
-	{
-
-	};
-
-	bool statusChange(PxU32& pairID, PxPairFlags& pairFlags, PxFilterFlags& filterFlags) override
-	{
-		return false;
-	};
 };
 
 class px_character_controller_filter_callback : public PxControllerFilterCallback
@@ -413,7 +411,7 @@ struct px_CCD_contact_modification : PxCCDContactModifyCallback
 	void onCCDContactModify(PxContactModifyPair* const pairs, PxU32 count);
 };
 
-struct px_physics_engine;
+class px_physics_engine;
 
 struct px_physics
 {
@@ -430,11 +428,7 @@ struct px_physics
 
 	PxPhysics* physics = nullptr;
 
-	PxCooking* cooking = nullptr;
-
 	PxPvd* pvd = nullptr;
-
-	PxPhysicsInsertionCallback* insertationCallback = nullptr;
 
 	PxDefaultAllocator default_allocator_callback;
 	px_allocator_callback allocator_callback;
@@ -444,6 +438,8 @@ struct px_physics
 	PxCudaContextManager* cudaContextManager = nullptr;
 
 	PxDefaultErrorCallback defaultErrorCallback;
+
+	px_simulation_filter_callback simulation_filter_callback;
 
 	RaycastCCDManager* raycastCCD = nullptr;
 
@@ -484,6 +480,11 @@ struct px_wheel_filter : PxQueryFilterCallback
 		if ((filterData.word0 & shapeFilter.word1) && (shapeFilter.word0 & filterData.word1))
 			return PxQueryHitType::eBLOCK;
 
+		return PxQueryHitType::eNONE;
+	}
+
+	PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit, const PxShape* shape, const PxRigidActor* actor) override
+	{
 		return PxQueryHitType::eNONE;
 	}
 };

@@ -23,8 +23,6 @@ px_collision_contact_callback collision_callback;
 
 px_CCD_contact_modification contact_modification;
 
-px_simulation_filter_callback simulation_filter_callback;
-
 physx::PxFilterFlags contactReportFilterShader(
 	PxFilterObjectAttributes attributes0,
 	PxFilterData filterData0,
@@ -95,7 +93,7 @@ void px_physics::initialize()
 
 	dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
 
-	PxSceneDesc sceneDesc(physics->getTolerancesScale());
+	PxSceneDesc sceneDesc(toleranceScale);
 	sceneDesc.gravity = gravity;
 	sceneDesc.cpuDispatcher = dispatcher;
 	sceneDesc.filterShader = contactReportFilterShader;
@@ -110,13 +108,13 @@ void px_physics::initialize()
 	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
 	sceneDesc.gpuMaxNumPartitions = 8;
 	sceneDesc.gpuDynamicsConfig = PxgDynamicsMemoryConfig();
+	//sceneDesc.flags |= PxSceneFlag::eENABLE_DIRECT_GPU_API;
 #else
-	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eABP;
+	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::ePABP;
 #endif
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
 	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
-	cudaContextManagerDesc.interopMode = PxCudaInteropMode::NO_INTEROP;
 	cudaContextManagerDesc.graphicsDevice = dxContext.device.Get();
 	cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profiler_callback);
 	sceneDesc.cudaContextManager = cudaContextManager;
@@ -125,7 +123,6 @@ void px_physics::initialize()
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
 	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
-	sceneDesc.flags |= PxSceneFlag::eADAPTIVE_FORCE;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 	sceneDesc.filterCallback = &simulation_filter_callback;
 	sceneDesc.ccdContactModifyCallback = &contact_modification;
@@ -142,18 +139,6 @@ void px_physics::initialize()
 		client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
 	}
 #endif
-
-	auto cookingParams = PxCookingParams(toleranceScale);
-#if PX_GPU_BROAD_PHASE
-	cookingParams.buildGPUData = true;
-#endif
-	cookingParams.suppressTriangleMeshRemapTable = true;
-	cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
-	cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
-
-	cooking = PxCreateCooking(PX_PHYSICS_VERSION, *foundation, cookingParams);
-
-	insertationCallback = &physics->getPhysicsInsertionCallback();
 
 #if PX_ENABLE_PVD
 	if (pvd->isConnected())
@@ -182,7 +167,6 @@ void px_physics::release()
 	PxCloseExtensions();
 
 	PX_RELEASE(physics)
-	PX_RELEASE(cooking)
 	PX_RELEASE(pvd)
 	PX_RELEASE(foundation)
 	PX_RELEASE(scene)
@@ -469,8 +453,12 @@ void px_collision_contact_callback::onContact(const PxContactPairHeader& pairHea
 
 		if (cp.events & physx::PxPairFlag::eNOTIFY_TOUCH_FOUND)
 		{
-			PxRigidActor* actor1 = pairHeader.actors[0];
-			PxRigidActor* actor2 = pairHeader.actors[1];
+			auto r1 = pairHeader.actors[0]->is<PxRigidActor>();
+			auto r2 = pairHeader.actors[1]->is<PxRigidActor>();
+			if (!r1 || !r2)
+				return;
+			PxRigidActor* actor1 = r1;
+			PxRigidActor* actor2 = r2;
 
 			auto rb1 = px_physics_engine::get()->actors_map[actor1];
 			auto rb2 = px_physics_engine::get()->actors_map[actor2];
@@ -491,7 +479,16 @@ PxTriangleMesh* px_triangle_mesh::createTriangleMesh(PxTriangleMeshDesc desc)
 	{
 		auto adapter = px_physics_engine::get()->getPhysicsAdapter();
 		if (desc.triangles.count > 0 && desc.isValid())
-			return adapter->cooking->createTriangleMesh(desc, *adapter->insertationCallback);
+		{
+			auto cookingParams = PxCookingParams(px_physics_engine::get()->getPhysicsAdapter()->toleranceScale);
+#if PX_GPU_BROAD_PHASE
+			cookingParams.buildGPUData = true;
+#endif
+			cookingParams.suppressTriangleMeshRemapTable = true;
+			cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
+			cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
+			return PxCreateTriangleMesh(cookingParams, desc);
+		}
 	}
 	catch (...)
 	{

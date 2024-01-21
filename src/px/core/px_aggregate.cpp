@@ -3,7 +3,7 @@
 
 px_aggregate::px_aggregate(uint8 nb, bool sc) noexcept : nbActors(nb), selfCollisions(sc)
 {
-	aggregate = px_physics_engine::getPhysics()->createAggregate(nbActors, selfCollisions);
+	aggregate = px_physics_engine::getPhysics()->createAggregate(nbActors, selfCollisions, PxAggregateFilterHint());
 	px_physics_engine::get()->getPhysicsAdapter()->scene->addAggregate(*aggregate);
 }
 

@@ -144,8 +144,8 @@ struct light_culling
 	// For more info, see light_culling_cs.hlsl.
 	ref<dx_texture> tiledCullingGrid;
 
-	uint32 numCullingTilesX;
-	uint32 numCullingTilesY;
+	uint32 numCullingTilesX{};
+	uint32 numCullingTilesY{};
 
 	void allocateIfNecessary(uint32 renderWidth, uint32 renderHeight);
 };

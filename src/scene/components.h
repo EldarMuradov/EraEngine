@@ -5,7 +5,7 @@
 
 struct tag_component
 {
-	char name[32];
+	char name[32]{};
 
 	tag_component() {}
 

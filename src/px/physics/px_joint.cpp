@@ -66,8 +66,7 @@ px_revolute_joint::px_revolute_joint(px_revolute_joint_desc desc, physx::PxRigid
 	joint = createRevoluteJoint(f, s);
 	type = px_joint_type::px_revolute;
 	PxJointAngularLimitPair limitPair(desc.angularPair.lower,
-		desc.angularPair.upper,
-		desc.angularPair.contactDistance);
+		desc.angularPair.upper);
 	limitPair.stiffness = desc.angularPair.stiffness;
 	limitPair.damping = desc.angularPair.damping;
 
@@ -79,8 +78,7 @@ px_revolute_joint::px_revolute_joint(px_revolute_joint_desc desc, physx::PxRigid
 		jInstance->setDriveForceLimit(desc.drive.driveForceLimit);
 		jInstance->setRevoluteJointFlag(PxRevoluteJointFlag::eDRIVE_ENABLED, true);
 	}
-	jInstance->setProjectionLinearTolerance(desc.projectionLinearTolerance);
-	jInstance->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+	jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 	jInstance->setLimit(limitPair);
 	jInstance->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, true);
 }
@@ -95,15 +93,13 @@ px_spherical_joint::px_spherical_joint(px_spherical_joint_desc desc, physx::PxRi
 	type = px_joint_type::px_spherical;
 
 	PxJointLimitCone limitCone(desc.limitCone.yAngle,
-		desc.limitCone.zAngle,
-		desc.limitCone.contactDistance);
+		desc.limitCone.zAngle);
 
 	limitCone.stiffness = desc.limitCone.stiffness;
 	limitCone.damping = desc.limitCone.damping;
 
 	auto jInstance = joint->is<physx::PxSphericalJoint>();
-	jInstance->setProjectionLinearTolerance(desc.projectionLinearTolerance);
-	jInstance->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+	jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 	jInstance->setLimitCone(limitCone);
 	jInstance->setSphericalJointFlag(PxSphericalJointFlag::eLIMIT_ENABLED, true);
 }
@@ -121,16 +117,13 @@ px_prismatic_joint::px_prismatic_joint(px_prismatic_joint_desc desc, physx::PxRi
 	ts.speed = 981;
 	PxJointLinearLimitPair limitPair(ts,
 		desc.linearPair.lower,
-		desc.linearPair.upper,
-		desc.linearPair.contactDistance);
+		desc.linearPair.upper);
 
 	limitPair.stiffness = desc.linearPair.stiffness;
 	limitPair.damping = desc.linearPair.damping;
 
 	auto jInstance = joint->is<physx::PxPrismaticJoint>();
-	jInstance->setProjectionLinearTolerance(desc.projectionLinearTolerance);
-	jInstance->setProjectionAngularTolerance(desc.projectionAngularTolerance);
-	jInstance->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+	jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 	jInstance->setLimit(limitPair);
 	jInstance->setPrismaticJointFlag(PxPrismaticJointFlag::eLIMIT_ENABLED, true);
 }
@@ -162,9 +155,7 @@ px_fixed_joint::px_fixed_joint(px_fixed_joint_desc desc, physx::PxRigidActor* f,
 	joint = createFixedJoint(f, s);
 	type = px_joint_type::px_fixed;
 	auto jInstance = joint->is<physx::PxFixedJoint>();
-	jInstance->setProjectionLinearTolerance(desc.projectionLinearTolerance);
-	jInstance->setProjectionAngularTolerance(desc.projectionAngularTolerance);
-	jInstance->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+	jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 }
 
 px_fixed_joint::~px_fixed_joint()
@@ -185,10 +176,8 @@ px_d6_joint::px_d6_joint(px_d6_joint_desc desc, physx::PxRigidActor* f, physx::P
 		jointDrive.forceLimit = desc.drive.forceLimit;
 		jointDrive.stiffness = desc.drive.stiffness;
 		jInstance->setDrive((physx::PxD6Drive::Enum)desc.drive.flags, jointDrive);
-		jInstance->setProjectionLinearTolerance(desc.projectionLinearTolerance);
-		jInstance->setProjectionAngularTolerance(desc.projectionAngularTolerance);
-		jInstance->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
-		jInstance->setTwistLimit(PxJointAngularLimitPair(desc.angularLimitPair.lower, desc.angularLimitPair.upper, desc.angularLimitPair.contactDistance));
+		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
+		jInstance->setTwistLimit(PxJointAngularLimitPair(desc.angularLimitPair.lower, desc.angularLimitPair.upper));
 		jInstance->setLinearLimit(PxJointLinearLimit(desc.linearLimit.value, PxSpring(desc.linearLimit.stiffness, desc.linearLimit.damping)));
 	}
 }

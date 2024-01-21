@@ -42,11 +42,11 @@ REFLECT_STRUCT(directional_light,
 
 struct point_light_component
 {
-	vec3 color;
-	float intensity;
-	float radius;
-	bool castsShadow;
-	uint32 shadowMapResolution;
+	vec3 color{};
+	float intensity{};
+	float radius{};
+	bool castsShadow{};
+	uint32 shadowMapResolution{};
 
 	point_light_component() {}
 	point_light_component(vec3 color, float intensity, float radius, bool castsShadow = false, uint32 shadowMapResolution = 512)
