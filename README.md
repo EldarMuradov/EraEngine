@@ -24,7 +24,7 @@ Integration with PhysX 4.1 provides realistic simulation of game physics, includ
 ImGui is integrated into the engine to create intuitive and customizable user interfaces in games. 
 
 ### Scripting: 
-Era Engine uses .NET 8.0 Native AOT. This allows developers to write scripts in C# with all the benefits of .NET, including high performance and a rich class library.
+Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write scripts in C# with all the benefits of .NET, including high performance and a rich class library.
 
 ![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/ea2b31115dbb7467764a7cccf4714b33589a31da/EngineSC4.png)
 
