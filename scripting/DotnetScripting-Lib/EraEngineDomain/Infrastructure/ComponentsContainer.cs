@@ -43,6 +43,6 @@ public sealed class ComponentsContainer
 
     internal void SyncComponents()
     {
-        Components = _components;
+        Components = new(_components);
     }
 }

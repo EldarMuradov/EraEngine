@@ -1,26 +1,40 @@
 ﻿using EraEngine.Components;
-using EraEngine.Core;
 using EraEngine.Infrastructure;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace EraEngine;
 
+[StructLayout(LayoutKind.Sequential)]
+public record struct EEntityFilter(int Id);
+
 public class EEntity
 {
-    public unsafe EEntity(int id, string name)
+    public unsafe EEntity(int id, string name, EEntityFilter filter = default)
     {
-        (Id, Name) = (id, name);
+        (Id, Name, Filter) = (id, name, filter);
         CreateComponentInternal<TransformComponent>();
 
-        Scene.Add(this);
+        EWorld.Add(this);
     }
 
     public EEntity()
     {
+        Name = Guid.NewGuid().ToString();
+        Filter = default;
+        Id = EEntityManager.CreateEntity(Name);
+    }
+
+    public EEntity(string name, EEntityFilter filter = default)
+    {
+        Name = name;
+        Filter = filter;
+        Id = EEntityManager.CreateEntity(Name);
     }
 
     public int Id { get; init; }
+
+    public EEntityFilter Filter { get; init; }
 
     public string Name { get; init; } = null!;
 
@@ -121,7 +135,7 @@ public class EEntity
 
     public static EEntity Instantiate(EEntity original, Vector3 position, Quaternion rotation, EEntity? parent = null)
     {
-        int newId = Scene.Entities.Count + 100000;
+        int newId = EEntityManager.CreateEntity(Guid.NewGuid().ToString());
 
         if (parent != null)
             instantiate(original.Id, newId, parent.Id);
@@ -140,14 +154,14 @@ public class EEntity
         transform.SetPosition(position);
         transform.SetRotation(rotation);
 
-        Scene.Entities.Add(newId, instance);
+        EWorld.Entities.Add(newId, instance);
 
         return instance;
     }
 
     public static EEntity Instantiate(EEntity original, EEntity? parent = null)
     {
-        int newId = Scene.Entities.Count + 100000;
+        int newId = EEntityManager.CreateEntity(Guid.NewGuid().ToString());
 
         if (parent != null)
             instantiate(original.Id, newId, (int)parent.Id);
@@ -162,7 +176,7 @@ public class EEntity
         foreach (var comp in original.Components.ActiveValues)
             instance.CopyComponent(comp);
 
-        Scene.Entities.Add(newId, instance);
+        EWorld.Entities.Add(newId, instance);
 
         return instance;
     }
@@ -194,7 +208,7 @@ public class EEntity
     public void Release()
     {
         release(Id);
-        Scene.Entities.Remove(Id);
+        EWorld.Remove(this);
     } 
 
     #endregion

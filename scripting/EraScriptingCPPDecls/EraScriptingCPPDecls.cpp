@@ -40,6 +40,11 @@ ERASCRIPTINGCPPDECLS_API void removeComponent(uint32_t id, const char* name)
     enative_caller::call("removeComponent", id, name);
 }
 
+ERASCRIPTINGCPPDECLS_API uint32_t createEntity(const char* name)
+{
+    return enative_caller::call<uint32_t>("createEntity", name);
+}
+
 ERASCRIPTINGCPPDECLS_API void initializeRigidbody(uint32_t id, uint8_t type)
 {
     enative_caller::call("initializeRigidbody", id, type);

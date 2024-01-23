@@ -40,7 +40,7 @@ public sealed class UserScriptingLauncher
         _userTypes.Clear();
         _userTypes = new();
 
-        Parallel.ForEach(Scene.Entities.Values, (e) => 
+        Parallel.ForEach(EWorld.Entities.Values, (e) => 
         {
             foreach (var comp in e.Components.Values)
             {
@@ -50,7 +50,6 @@ public sealed class UserScriptingLauncher
                     e.Components.TempCompData.Add(name);
                     e.RemoveComponent(name, false);
                 }
-
             }
         });
 
@@ -81,10 +80,13 @@ public sealed class UserScriptingLauncher
         foreach (var type in assembly.GetTypes())
         {
             _userTypes.Add(type.Name, type);
-            sendType(type.Name);
+            if(type.IsSubclassOf(typeof(Script)))
+                sendType(type.Name);
+            if (type.GetInterface("IESystem") is not null)
+                ESystemManager.RegisterSystem((IESystem)Activator.CreateInstance(type)!);
         }
 
-        Parallel.ForEach(Scene.Entities.Values, (e) =>
+        Parallel.ForEach(EWorld.Entities.Values, (e) =>
         {
             if (e.Components.TempCompData.Count > 0)
             {

@@ -64,7 +64,7 @@ static void get_all_functions_and_start()
 	const char_t* dotnet_type_method_relo = STR("ReloadScripting");
 	reload_srcf = enative_scripting_linker::get_static_method<scr_fn>(dotnet_type_init, dotnet_type_method_relo, STR("EraEngine.Call, EraScriptingCore"));;
 
-	const char_t* dotnet_type = STR("EraEngine.Level, EraScriptingCore");
+	const char_t* dotnet_type = STR("EraEngine.ELevel, EraScriptingCore");
 	const char_t* dotnet_type_method_st = STR("Start");
 	startf = enative_scripting_linker::get_static_method<start_fn>(dotnet_type, dotnet_type_method_st, STR("EraEngine.Call, EraScriptingCore"));
 	const char_t* dotnet_type_method_up = STR("Update");
@@ -269,6 +269,14 @@ namespace bind
 			return new float[3];
 	}
 
+	static uint32_t create_entity_internal(const char* name)
+	{
+	    auto scene = enative_scripting_linker::app->getCurrentScene();
+		return (uint32_t)scene->createEntity(name)
+			.addComponent<transform_component>(vec3(0.f), quat::identity)
+			.handle;
+	}
+
 	static float* get_angular_velocity_internal(uint32_t id)
 	{
 		entity_handle hid = (entity_handle)id;
@@ -468,6 +476,11 @@ void enative_scripting_linker::bindFunctions()
 			builder->functions.emplace("createScript", BIND(bind::create_script_internal, void, uint32_t, const char*));
 			builder->functions.emplace("createComponent", BIND(bind::create_component_internal, void, uint32_t, const char*));
 			builder->functions.emplace("removeComponent", BIND(bind::remove_component_internal, void, uint32_t, const char*));
+		}
+
+		// EEntityManager
+		{
+			builder->functions.emplace("createEntity", BIND(bind::create_entity_internal, uint32_t, const char*));
 		}
 	}
 }

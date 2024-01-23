@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace EraEngine.Core;
 
-public class TransformHandler
+public class TransformHandler : IEHandler
 {
     [UnmanagedCaller]
     public static unsafe void ProcessTransform(IntPtr transformPtr, int id)
@@ -21,7 +21,7 @@ public class TransformHandler
                 index++;
             }
         }
-        Scene.GetEntity(id).GetComponent<TransformComponent>().SetTransformMatrix(transforms, false);
+        EWorld.GetEntity(id).GetComponent<TransformComponent>().SetTransformMatrix(transforms, false);
 
         Marshal.FreeHGlobal(transformPtr);
     }

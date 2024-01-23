@@ -1,6 +1,4 @@
-﻿using EraEngine.Core;
-
-namespace EraEngine.Components;
+﻿namespace EraEngine.Components;
 
 public abstract class EComponent
 {

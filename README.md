@@ -30,7 +30,7 @@ Era Engine uses .NET 8.0 Native AOT. This allows developers to write scripts in 
 
 # Dependencies
 
--PhysX 4.1
+-PhysX 5.3
 
 -DirectX 12
 

@@ -2,7 +2,7 @@
 
 namespace EraEngine.Runtime;
 
-public class ComponentHandler
+public class ComponentHandler : IEHandler
 {
     [UnmanagedCaller]
     public static void AddComponent(int id, IntPtr comp)
@@ -10,7 +10,7 @@ public class ComponentHandler
         try
         {
             string result = Marshal.PtrToStringAnsi(comp);
-            var entity = Scene.GetEntity(id);
+            var entity = EWorld.GetEntity(id);
             var c = ScriptingCore.UserScriptingObj.GetComponent(result);
             entity.CopyComponent(c);
         }
@@ -24,7 +24,7 @@ public class ComponentHandler
         try
         {
             string result = Marshal.PtrToStringAnsi(comp);
-            var entity = Scene.GetEntity(id);
+            var entity = EWorld.GetEntity(id);
             entity.RemoveComponent(result);
         }
         catch (Exception e) { Console.WriteLine(e.Message); }

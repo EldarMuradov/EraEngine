@@ -1,5 +1,6 @@
 ﻿using EraEngine.Configuration;
 using EraEngine.Core;
+using EraEngine.Extensions;
 
 namespace EraEngine;
 
@@ -21,17 +22,23 @@ public class ScriptingCore
 
     }
 
+    private static async Task InitAsync()
+    {
+        using StreamReader sr = new(Path.Combine(Environment.CurrentDirectory, "bin", "Release_x86_64", "core.cfg"));
+        var res = await sr.ReadToEndAsync();
+        var str = res.Split(',');
+        Project.Name = str[0];
+        Project.Path = str[1];
+        InitializeScripting();
+    }
+
     #region Invoke from C++
 
     [UnmanagedCaller]
     public static void MainFunc()
     {
-        using StreamReader sr = new("E:\\Era Engine\\bin\\Release_x86_64\\core.cfg");
-        var res = sr.ReadToEnd();
-        var str = res.Split(',');
-        Project.Name = str[0];
-        Project.Path = str[1];
-        InitializeScripting();
+        Debug.Log("Initializing scripting");
+        InitAsync().FireAndForget((Exception ex) => Console.WriteLine(ex.Message));
     }
 
     [UnmanagedCaller]
@@ -39,19 +46,20 @@ public class ScriptingCore
     {
         Debug.Log("Loading user dll");
         UserScriptingObj.LoadDll();
+        ELevel.RegisterSystemsWithReflection();
     }
 
     [UnmanagedCaller]
     public static void ShutdownScripting()
     {
-        //Debug.Log("Unloading user dll");
-        //UserScriptingObj.UnloadAssembly();
+        ESystemManager.ReleaseSystems();
     }
 
     [UnmanagedCaller]
     public static void ReloadScripting()
     {
         Console.WriteLine("Reloading user dll");
+        ESystemManager.ReleaseSystems();
         UserScriptingObj.ReloadScripting();
     }
 
