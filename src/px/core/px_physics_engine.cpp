@@ -81,12 +81,10 @@ void px_physics::initialize()
 		throw std::exception("Failed to create {PxPvdTransport}. Error in {PhysicsEngine} ctor.");
 
 	pvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
-	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, pvd);
 #endif
 	toleranceScale.length = 1.0;
 	toleranceScale.speed = 10.0;
-
-	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, nullptr);
+	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, pvd);
 
 	if (!PxInitExtensions(*physics, pvd))
 		LOG_ERROR("Physics> Failed to initialize extensions.");
