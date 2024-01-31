@@ -29,8 +29,8 @@ struct px_rigidbody_component
 	void setDisableGravity() noexcept;
 	void setEnableGravity() noexcept;
 
-	void setMass(uint32_t mass) noexcept;
-	uint32_t getMass() const noexcept;
+	void setMass(float mass) noexcept;
+	float getMass() const noexcept;
 
 	void setConstraints(uint8 constraints) noexcept;
 	uint8 getConstraints() noexcept;
@@ -66,7 +66,7 @@ private:
 
 	float restitution = 0.6f;
 
-	uint32_t mass = 1;
+	float mass = 1;
 
 	float dynamicFriction = 0.8f;
 	float staticFriction = 0.8f;

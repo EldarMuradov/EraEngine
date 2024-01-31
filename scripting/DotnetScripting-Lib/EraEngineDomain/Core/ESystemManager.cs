@@ -41,10 +41,10 @@ public class ESystemManager : IEManager
         return priorityQueue;
     }
 
-    public static IESystem GetSystem<T>() where T : IESystem, new()
+    public static T GetSystem<T>() where T : IESystem, new()
     {
         if (_systems.TryGetValue(typeof(T).Name, out var system))
-            return system;
-        return null!;
+            return (T)system;
+        return default!;
     }
 }

@@ -36,6 +36,7 @@ struct application
 	void handleFileDrop(const fs::path& filename);
 
 	escene* getCurrentScene() { return &scene.getCurrentScene(); }
+	editor_scene* getScene() { return &scene; }
 
 	eallocator stackArena;
 

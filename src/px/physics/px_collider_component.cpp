@@ -88,7 +88,7 @@ px_capsule_collider_component::~px_capsule_collider_component()
 bool px_capsule_collider_component::createShape()
 {
 	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
-	shape = px_physics_engine::getPhysics()->createShape(physx::PxCapsuleGeometry(radius, height / 2.0), *material);
+	shape = px_physics_engine::getPhysics()->createShape(physx::PxCapsuleGeometry(radius, height / 2.0f), *material);
 	enableShapeInSceneQueryTests(shape);
 	enableShapeInContactTests(shape);
 	return true;
@@ -106,11 +106,11 @@ px_triangle_mesh_collider_component::~px_triangle_mesh_collider_component()
 bool px_triangle_mesh_collider_component::createShape()
 {
 	px_triangle_mesh_collider_builder builder;
-	PxTriangleMesh* mesh = builder.createMeshShape(asset, model_size);
+	PxTriangleMesh* mesh = builder.createMeshShape(asset, modelSize);
 
 	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	auto physics = px_physics_engine::getPhysics();
-	shape = physics->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(model_size)), *material);
+	shape = physics->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(modelSize)), *material);
 	enableShapeInSceneQueryTests(shape);
 	enableShapeInContactTests(shape);
 	PX_RELEASE(mesh);
@@ -137,7 +137,7 @@ bool px_bounding_box_collider_component::createShape()
 	std::vector<physx::PxVec3> vertices;
 	for (size_t i = 0; i < verticesCount; i++)
 	{
-		vertices.push_back(PxVec3(positions[i].x, positions[i].y, positions[i].z) * model_size);
+		vertices.push_back(PxVec3(positions[i].x, positions[i].y, positions[i].z) * modelSize);
 	}
 
 	auto result = calculateBoundingBox(vertices);
@@ -159,7 +159,7 @@ bool px_bounding_box_collider_component::createShape()
 	auto mesh = mesh_adapter.createTriangleMesh(meshDesc);
 
 	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
-	shape = px_physics_engine::getPhysics()->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(model_size)), *material);
+	shape = px_physics_engine::getPhysics()->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(modelSize)), *material);
 
 	PX_RELEASE(mesh);
 	return true;

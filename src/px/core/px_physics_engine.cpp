@@ -19,9 +19,9 @@ px_physics_engine* px_physics_engine::engine = nullptr;
 std::queue<collision_handling_data> px_physics_engine::collisionQueue;
 std::mutex px_physics_engine::sync;
 
-px_collision_contact_callback collision_callback;
+px_collision_contact_callback collisionCallback;
 
-px_CCD_contact_modification contact_modification;
+px_CCD_contact_modification contactModification;
 
 physx::PxFilterFlags contactReportFilterShader(
 	PxFilterObjectAttributes attributes0,
@@ -66,7 +66,7 @@ px_physics::~px_physics()
 
 void px_physics::initialize()
 {
-	foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocator_callback, error_reporter);
+	foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocatorCallback, errorReporter);
 
 	if (!foundation)
 		throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
@@ -97,7 +97,7 @@ void px_physics::initialize()
 	sceneDesc.filterShader = contactReportFilterShader;
 	sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
-	sceneDesc.simulationEventCallback = &collision_callback;
+	sceneDesc.simulationEventCallback = &collisionCallback;
 
 	PxCudaContextManagerDesc cudaContextManagerDesc;
 
@@ -114,7 +114,7 @@ void px_physics::initialize()
 	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
 	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
 	cudaContextManagerDesc.graphicsDevice = dxContext.device.Get();
-	cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profiler_callback);
+	cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profilerCallback);
 	sceneDesc.cudaContextManager = cudaContextManager;
 	sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
@@ -122,8 +122,8 @@ void px_physics::initialize()
 	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
-	sceneDesc.filterCallback = &simulation_filter_callback;
-	sceneDesc.ccdContactModifyCallback = &contact_modification;
+	sceneDesc.filterCallback = &simulationFilterCallback;
+	sceneDesc.ccdContactModifyCallback = &contactModification;
 
 	scene = physics->createScene(sceneDesc);
 	

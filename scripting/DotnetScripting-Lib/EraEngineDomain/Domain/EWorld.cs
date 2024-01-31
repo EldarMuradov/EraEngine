@@ -1,4 +1,6 @@
-﻿namespace EraEngine;
+﻿using System.Collections.Immutable;
+
+namespace EraEngine;
 
 public static class EWorld
 {
@@ -29,6 +31,16 @@ public static class EWorld
             else
                 _filterEntities.Add(entity.Filter, new(16) {entity});
         }
+    }
+
+    public static void RefreshScene()
+    {
+        var entities = _entities.Values.Where(e => e.Filter.Id == -1).ToImmutableList();
+
+        foreach (var entity in entities)
+            _entities.Remove(entity.Id);
+
+        SyncEntities();
     }
 
     public static void Remove(EEntity entity)

@@ -2,7 +2,7 @@
 
 namespace EraEngine;
 
-public class Script : EComponent
+public class EScript : EComponent
 {
     internal override void InitializeComponentInternal(params object[] args) { }
 }

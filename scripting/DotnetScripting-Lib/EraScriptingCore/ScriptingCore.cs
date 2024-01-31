@@ -58,9 +58,16 @@ public class ScriptingCore
     [UnmanagedCaller]
     public static void ReloadScripting()
     {
-        Console.WriteLine("Reloading user dll");
-        ESystemManager.ReleaseSystems();
-        UserScriptingObj.ReloadScripting();
+        try
+        {
+            Console.WriteLine("Reloading user dll");
+            ESystemManager.ReleaseSystems();
+            UserScriptingObj.ReloadScripting();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
     }
 
     #endregion

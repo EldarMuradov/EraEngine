@@ -33,8 +33,7 @@ public static class ELevel
         }
         catch (Exception ex)
         {
-            Debug.LogError(ex.Message);
-
+            Console.WriteLine(ex.Message);
         }
     }
 
@@ -56,7 +55,7 @@ public static class ELevel
         }
         catch (Exception ex)
         {
-            Debug.LogError(ex.Message);
+            Console.WriteLine(ex.Message);
         }
     }
 

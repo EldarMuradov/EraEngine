@@ -107,7 +107,7 @@ void createMeshFromBoundingBox(const px_bounding_box& box, std::vector<physx::Px
 
 struct px_bounding_box_collider_component : px_collider_component_base
 {
-	px_bounding_box_collider_component(unsigned int size, mesh_asset* as) noexcept : asset(as), model_size(size)
+	px_bounding_box_collider_component(unsigned int size, mesh_asset* as) noexcept : asset(as), modelSize(size)
 	{
 		type = px_collider_type::BoundingBox;
 	};
@@ -118,12 +118,12 @@ struct px_bounding_box_collider_component : px_collider_component_base
 
 private:
 	mesh_asset* asset = nullptr;
-	unsigned int model_size = 0;
+	unsigned int modelSize = 0;
 };
 
 struct px_triangle_mesh_collider_component : px_collider_component_base
 {
-	px_triangle_mesh_collider_component(unsigned int size, mesh_asset* as) noexcept : asset(as), model_size(size)
+	px_triangle_mesh_collider_component(unsigned int size, mesh_asset* as) noexcept : asset(as), modelSize(size)
 	{
 		type = px_collider_type::TriangleMesh;
 	};
@@ -134,5 +134,5 @@ struct px_triangle_mesh_collider_component : px_collider_component_base
 
 private:
 	mesh_asset* asset = nullptr;
-	unsigned int model_size = 0;
+	unsigned int modelSize = 0;
 };

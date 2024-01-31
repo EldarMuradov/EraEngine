@@ -430,16 +430,16 @@ struct px_physics
 
 	PxPvd* pvd = nullptr;
 
-	PxDefaultAllocator default_allocator_callback;
-	px_allocator_callback allocator_callback;
-	px_error_reporter error_reporter;
-	px_profiler_callback profiler_callback;
+	PxDefaultAllocator defaultAllocatorCallback;
+	px_allocator_callback allocatorCallback;
+	px_error_reporter errorReporter;
+	px_profiler_callback profilerCallback;
 
 	PxCudaContextManager* cudaContextManager = nullptr;
 
 	PxDefaultErrorCallback defaultErrorCallback;
 
-	px_simulation_filter_callback simulation_filter_callback;
+	px_simulation_filter_callback simulationFilterCallback;
 
 	RaycastCCDManager* raycastCCD = nullptr;
 

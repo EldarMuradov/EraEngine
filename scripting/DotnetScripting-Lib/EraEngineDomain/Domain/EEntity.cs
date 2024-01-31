@@ -23,13 +23,17 @@ public class EEntity
         Name = Guid.NewGuid().ToString();
         Filter = default;
         Id = EEntityManager.CreateEntity(Name);
+        CreateComponentInternal<TransformComponent>();
+        EWorld.Add(this);
     }
 
-    public EEntity(string name, EEntityFilter filter = default)
+    public EEntity(string name, EEntityFilter filter)
     {
         Name = name;
         Filter = filter;
         Id = EEntityManager.CreateEntity(Name);
+        CreateComponentInternal<TransformComponent>();
+        EWorld.Add(this);
     }
 
     public int Id { get; init; }
@@ -107,7 +111,7 @@ public class EEntity
             return null!;
         }
 
-        if (comp is Script)
+        if (comp is EScript)
             createScript(Id, comp.GetType().Name);
 
         comp.Entity = this;
@@ -194,7 +198,7 @@ public class EEntity
         comp.Entity = this;
         Components.Add(comp.GetType().Name, comp);
 
-        if (comp is Script)
+        if (comp is EScript)
             createScript(Id, comp.GetType().Name);
 
         return comp;

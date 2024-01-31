@@ -44,7 +44,7 @@ public sealed class UserScriptingLauncher
         {
             foreach (var comp in e.Components.Values)
             {
-                if (comp is Script)
+                if (comp is EScript)
                 {
                     var name = comp.GetType().Name;
                     e.Components.TempCompData.Add(name);
@@ -80,23 +80,42 @@ public sealed class UserScriptingLauncher
         foreach (var type in assembly.GetTypes())
         {
             _userTypes.Add(type.Name, type);
-            if(type.IsSubclassOf(typeof(Script)))
+            if(type.IsSubclassOf(typeof(EScript)))
                 sendType(type.Name);
             if (type.GetInterface("IESystem") is not null)
                 ESystemManager.RegisterSystem((IESystem)Activator.CreateInstance(type)!);
         }
 
-        Parallel.ForEach(EWorld.Entities.Values, (e) =>
+        try
         {
-            if (e.Components.TempCompData.Count > 0)
+            EWorld.RefreshScene();
+
+            Parallel.ForEach(EWorld.Entities.Values, (e) =>
             {
-                foreach (var data in e.Components.TempCompData)
+                try
                 {
-                    e.CopyComponent(GetComponent(data));
+                    Console.WriteLine(e.Components.TempCompData is null);
+                    if (e is null)
+                        return;
+                    if (e.Components.TempCompData.Count > 0)
+                    {
+                        foreach (var data in e.Components.TempCompData)
+                        {
+                            e.CopyComponent(GetComponent(data));
+                        }
+                        e.Components.TempCompData.Clear();
+                    }
                 }
-                e.Components.TempCompData.Clear();
-            }
-        });
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
 
         bool unloading = true;
         _alc.Unloading += (alc) => { unloading = false; };
@@ -138,21 +157,20 @@ public sealed class UserScriptingLauncher
         {
             fileCloner.Clone(projectPath, tempPath);
             Debug.Log("Cloned all files");
+
+            ExecuteAndUnload(tempDllPath, out WeakReference hostAlcWeakRef);
+            for (int i = 0; hostAlcWeakRef.IsAlive && (i < 10); i++)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+
+            Console.WriteLine($"Unload success: {!hostAlcWeakRef.IsAlive}");
         }
         catch (Exception e)
         {
             Debug.Log(e.Message);
         }
-
-        ExecuteAndUnload(tempDllPath, out WeakReference hostAlcWeakRef);
-
-        for (int i = 0; hostAlcWeakRef.IsAlive && (i < 10); i++)
-        {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-        }
-
-        Console.WriteLine($"Unload success: {!hostAlcWeakRef.IsAlive}");
     }
 
     internal EComponent GetComponent(string name)
