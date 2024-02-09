@@ -10,3 +10,6 @@ E:\Era Engine\scripting\DotnetScripting-Lib\EraEngineDomain\obj\Release\net8.0\E
 E:\Era Engine\scripting\DotnetScripting-Lib\EraEngineDomain\obj\Release\net8.0\refint\EraEngineDomain.dll
 E:\Era Engine\scripting\DotnetScripting-Lib\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.pdb
 E:\Era Engine\scripting\DotnetScripting-Lib\EraEngineDomain\obj\Release\net8.0\ref\EraEngineDomain.dll
+E:\Era Engine\bin\Dotnet\Release\net8.0\EraEngineDomain.deps.json
+E:\Era Engine\bin\Dotnet\Release\net8.0\EraEngineDomain.dll
+E:\Era Engine\bin\Dotnet\Release\net8.0\EraEngineDomain.pdb

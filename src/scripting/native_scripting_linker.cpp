@@ -46,8 +46,13 @@ namespace
 static void get_all_functions_and_start()
 {
 	{
+#if _DEBUG
+		std::ofstream file("E:\\Era Engine\\bin\\Debug_x86_64\\core.cfg");
+		file << eproject::name << "," << eproject::path;
+#else
 		std::ofstream file("E:\\Era Engine\\bin\\Release_x86_64\\core.cfg");
 		file << eproject::name << "," << eproject::path;
+#endif
 	}
 
 	const char_t* dotnet_type_init = STR("EraEngine.ScriptingCore, EraScriptingCore");
@@ -92,7 +97,7 @@ static void exec()
 		assert(false && "Failure: load_hostfxr()");
 	}
 
-	const string_t root = STR("E:\\Era Engine\\bin\\Release_x86_64\\Release\\net8.0\\");
+	const string_t root = STR("E:\\Era Engine\\bin\\Dotnet\\Release\\net8.0\\");
 	const string_t cfg = STR("EraScriptingCore.runtimeconfig.json");
 	const string_t lib = STR("EraScriptingCore.dll");
 
@@ -152,6 +157,7 @@ namespace
 		assert(h != nullptr);
 		return (void*)h;
 	}
+
 	void* get_export(void* h, const char* name)
 	{
 		void* f = ::GetProcAddress((HMODULE)h, name);

@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-	<BaseOutputPath>E:\Era Engine\bin\Release_x86_64</BaseOutputPath>
+	<BaseOutputPath>E:\Era Engine\bin\Dotnet</BaseOutputPath>
 	<OutputType>Exe</OutputType>
 	<EnableDynamicLoading>true</EnableDynamicLoading>
 	<PlatformTarget>x64</PlatformTarget>

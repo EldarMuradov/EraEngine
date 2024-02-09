@@ -6,14 +6,18 @@
 
 #include <core/math.h>
 
+#ifndef _DEBUG
 #define NDEBUG 0
+#define PX_ENABLE_PVD 0
+#else
+#define PX_ENABLE_PVD 1
+#endif
 
 #define PX_GPU_BROAD_PHASE 1
 
 #define PX_CONTACT_BUFFER_SIZE 64
 
 #define PX_ENABLE_RAYCAST_CCD 0
-#define PX_ENABLE_PVD 0
 
 #define PX_PHYSICS_ENABLED = 1
 

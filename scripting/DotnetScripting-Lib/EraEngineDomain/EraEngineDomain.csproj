@@ -6,7 +6,7 @@
 	  <Nullable>enable</Nullable>
 	  <PublishAot>true</PublishAot>
 	  <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-	  <BaseOutputPath>E:\Era Engine\bin\Release_x86_64</BaseOutputPath>
+	  <BaseOutputPath>E:\Era Engine\bin\Dotnet</BaseOutputPath>
   </PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

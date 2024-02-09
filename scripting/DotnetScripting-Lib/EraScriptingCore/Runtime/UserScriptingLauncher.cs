@@ -61,6 +61,7 @@ public sealed class UserScriptingLauncher
 
         GC.Collect();
         GC.WaitForPendingFinalizers();
+        GC.Collect();
     }
 
     public void ExecuteAndUnload(string assemblyPath, out WeakReference alcWeakRef)
@@ -143,11 +144,9 @@ public sealed class UserScriptingLauncher
             UnloadAssembly(_alc);
             _alc = new(tempDllPath);
 
-            for (int i = 0; (i < 10); i++)
-            {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-            }
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
         }
 
         Debug.Log("Before cleaning");
@@ -159,11 +158,10 @@ public sealed class UserScriptingLauncher
             Debug.Log("Cloned all files");
 
             ExecuteAndUnload(tempDllPath, out WeakReference hostAlcWeakRef);
-            for (int i = 0; hostAlcWeakRef.IsAlive && (i < 10); i++)
-            {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-            }
+            
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
 
             Console.WriteLine($"Unload success: {!hostAlcWeakRef.IsAlive}");
         }
