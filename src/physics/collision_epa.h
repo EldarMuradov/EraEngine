@@ -93,9 +93,6 @@ static const char* epaReturnNames[] =
 template <typename shapeA_t, typename shapeB_t>
 static epa_status epaCollisionInfo(const gjk_simplex& gjkSimplex, const shapeA_t& shapeA, const shapeB_t& shapeB, epa_result& outResult, uint32 maxNumIterations = 20)
 {
-	// http://www.dyn4j.org/2010/05/epa-expanding-polytope-algorithm/
-	// http://uu.diva-portal.org/smash/get/diva2:343820/FULLTEXT01 page 23+
-
 	ASSERT(gjkSimplex.numPoints == 4);
 
 	epa_simplex epaSimplex;

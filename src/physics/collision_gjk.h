@@ -181,7 +181,6 @@ enum gjk_internal_success
 template <typename shapeA_t, typename shapeB_t>
 static bool gjkIntersectionTest(const shapeA_t& shapeA, const shapeB_t& shapeB, gjk_simplex& outSimplex)
 {
-	// http://www.dyn4j.org/2010/04/gjk-gilbert-johnson-keerthi/
 	gjk_internal_success updateGJKSimplex(gjk_simplex& s, const gjk_support_point& a, vec3& dir);
 
 	vec3 dir(1.f, 0.1f, -0.2f); // Arbitrary.

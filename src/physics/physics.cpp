@@ -1450,10 +1450,12 @@ physics_properties collider_union::calculatePhysicsProperties()
 		case collider_type_cylinder:
 		{
 			vec3 axis = cylinder.positionA - cylinder.positionB;
+
 			if (axis.y < 0.f)
 			{
 				axis *= -1.f;
 			}
+
 			float height = length(axis);
 			axis *= (1.f / height);
 
