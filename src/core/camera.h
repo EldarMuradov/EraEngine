@@ -86,6 +86,7 @@ struct render_camera
 	
 	float aspect;
 
+	void setPositionAndRotation(vec3 position, quat rotation);
 	void initializeIngame(vec3 position, quat rotation, float verticalFOV, float nearPlane, float farPlane = -1.f);
 	void initializeCalibrated(vec3 position, quat rotation, uint32 width, uint32 height, float fx, float fy, float cx, float cy, float nearPlane, float farPlane = -1.f);
 

@@ -31,6 +31,7 @@ struct win32_window
 	win32_window(win32_window&& o) noexcept;
 
 	bool initialize(const TCHAR* name, uint32 clientWidth, uint32 clientHeight, bool visible = true);
+	bool initialize(HINSTANCE hInst, const TCHAR* name, uint32 clientWidth, uint32 clientHeight, bool visible = true);
 	virtual void shutdown();
 
 	virtual ~win32_window();

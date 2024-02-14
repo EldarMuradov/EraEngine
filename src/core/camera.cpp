@@ -1,6 +1,12 @@
 #include "pch.h"
 #include "camera.h"
 
+void render_camera::setPositionAndRotation(vec3 position, quat rotation)
+{
+	this->position = position;
+	this->rotation = rotation;
+}
+
 void render_camera::initializeIngame(vec3 position, quat rotation, float verticalFOV, float nearPlane, float farPlane)
 {
 	type = camera_type_ingame;

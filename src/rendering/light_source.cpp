@@ -74,10 +74,6 @@ void directional_light::updateMatrices(const render_camera& camera)
 
 			minExtents = extents.minCorner;
 			maxExtents = extents.maxCorner;
-
-			//float scale = (shadowDimensions + 9.f) / shadowDimensions;
-			//minExtents.xy *= scale;
-			//maxExtents.xy *= scale;
 		}
 
 		vec3 cascadeExtents = maxExtents - minExtents;
@@ -87,7 +83,6 @@ void directional_light::updateMatrices(const render_camera& camera)
 
 		mat4 projMatrix = createOrthographicProjectionMatrix(maxExtents.x, minExtents.x, maxExtents.y, minExtents.y, -negativeZOffset, cascadeExtents.z);
 
-		//if (stabilize)
 		{
 			mat4 matrix = projMatrix * viewMatrix;
 			vec3 shadowOrigin(0.f);

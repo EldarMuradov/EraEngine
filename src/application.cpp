@@ -184,6 +184,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	}
 
 	scene.camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
+	scene.editor_camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
 	scene.environment.setFromTexture("assets/sky/sunset_in_the_chalk_quarry_4k.hdr");
 	scene.environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
 
@@ -482,7 +483,12 @@ void application::update(const user_input& input, float dt)
 
 	bool objectDragged = editor.update(input, &ldrRenderPass, dt);
 	editor.render(&ldrRenderPass, dt);
-	render_camera& camera = scene.camera;
+
+	render_camera& camera = this->scene.isPausable() ? scene.editor_camera : scene.camera;
+
+	if (&camera != editor.cameraController.camera)
+		editor.cameraController.camera = &camera;
+
 	directional_light& sun = scene.sun;
 	pbr_environment& environment = scene.environment;
 
@@ -552,7 +558,7 @@ void application::update(const user_input& input, float dt)
 		lighting.maxNumSpotShadowRenderPasses = arraysize(spotShadowRenderPasses);
 		lighting.maxNumPointShadowRenderPasses = arraysize(pointShadowRenderPasses);
 
-		renderScene(this->scene.camera, scene, stackArena, selectedEntity.handle, sun, lighting, !renderer->settings.cacheShadowMap, 
+		renderScene(camera, scene, stackArena, selectedEntity.handle, sun, lighting, !renderer->settings.cacheShadowMap, 
 			&opaqueRenderPass, &transparentRenderPass, &ldrRenderPass, &sunShadowRenderPass, &computePass, unscaledDt);
 
 		renderer->setSpotLights(spotLightBuffer[dxContext.bufferedFrameID], scene.numberOfComponentsOfType<spot_light_component>(), spotLightShadowInfoBuffer[dxContext.bufferedFrameID]);

@@ -2222,6 +2222,8 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 			setSelectedEntity({});
 			app->linker.reload_src();
 			px_physics_engine::get()->resetActorsVelocityAndInertia();
+
+			this->scene->editor_camera.setPositionAndRotation(vec3(0.0f), quat::identity);
 		}
 
 		scene = &this->scene->getCurrentScene();

@@ -354,6 +354,82 @@ bool win32_window::initialize(const TCHAR* name, uint32 clientWidth, uint32 clie
 	return true;
 }
 
+bool win32_window::initialize(HINSTANCE hInst, const TCHAR* name, uint32 clientWidth, uint32 clientHeight, bool visible)
+{
+	if (!windowClassInitialized)
+	{
+		WNDCLASSEX wndClass;
+		ZeroMemory(&wndClass, sizeof(WNDCLASSEX));
+		wndClass.cbSize = sizeof(WNDCLASSEX);
+		wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
+		wndClass.lpfnWndProc = windowCallBack;
+		wndClass.hInstance = hInst;
+		wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+		wndClass.lpszClassName = windowClassName;
+
+		if (!RegisterClassEx(&wndClass))
+		{
+			std::cerr << "Failed to create window class.\n";
+			return false;
+		}
+
+		RegisterHotKey(0, 0, 0, VK_SNAPSHOT);
+		RegisterHotKey(0, 1, MOD_CONTROL, VK_SNAPSHOT);
+
+		windowClassInitialized = true;
+	}
+
+	if (!windowHandle)
+	{
+		++numOpenWindows;
+
+		this->clientWidth = clientWidth;
+		this->clientHeight = clientHeight;
+
+		DWORD windowStyle = WS_OVERLAPPEDWINDOW;
+
+		RECT r = { 0, 0, (LONG)clientWidth, (LONG)clientHeight };
+		AdjustWindowRect(&r, windowStyle, FALSE);
+		int width = r.right - r.left;
+		int height = r.bottom - r.top;
+
+		windowHandle = CreateWindowEx(0, windowClassName, name, windowStyle,
+#if 1
+			CW_USEDEFAULT, CW_USEDEFAULT,
+#else
+			0, 0
+#endif
+			width, height,
+			0, 0, 0, 0);
+
+		fullscreen = false;
+
+		SetWindowLongPtr(windowHandle, GWLP_USERDATA, (LONG_PTR)this);
+
+		if (!windowHandle)
+		{
+			std::cerr << "Failed to create window.\n";
+			return false;
+		}
+
+		atLeastOneWindowWasOpened = true;
+	}
+
+	if (!mainWindow)
+	{
+		mainWindow = this;
+	}
+
+	open = true;
+	this->visible = visible;
+	/*if (visible)
+	{
+		ShowWindow(windowHandle, SW_SHOW);
+	}*/
+
+	return true;
+}
+
 void win32_window::shutdown()
 {
 	if (windowHandle)

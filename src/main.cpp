@@ -95,6 +95,8 @@ static void renderToMainWindow(dx_window& window)
 	fenceValues[window.currentBackbufferIndex] = result;
 }
 
+#ifndef ERA_RUNTIME
+
 int main(int argc, char** argv)
 {
 	if (!dxContext.initialize())
@@ -113,7 +115,7 @@ int main(int argc, char** argv)
 	}
 
 	dx_window window;
-	window.initialize(TEXT("  New Project - Era Engine - 0.084v0 - <DX12>"), 1920, 1080);
+	window.initialize(TEXT("  New Project - Era Engine - 0.096v0 - <DX12>"), 1920, 1080);
 	window.setIcon("resources/icons/Logo.ico");
 	window.setCustomWindowStyle();
 	window.maximize();
@@ -204,17 +206,17 @@ int main(int argc, char** argv)
 				input.mouse.reldx = 0.f;
 				input.mouse.reldy = 0.f;
 
-				if (input.mouse.left.down && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) 
+				if (input.mouse.left.down && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
 				{ 
-					input.mouse.left.down = false; 
+					input.mouse.left.down = false;
 				}
-				if (input.mouse.right.down && !ImGui::IsMouseDown(ImGuiMouseButton_Right)) 
+				if (input.mouse.right.down && !ImGui::IsMouseDown(ImGuiMouseButton_Right))
 				{ 
-					input.mouse.right.down = false; 
+					input.mouse.right.down = false;
 				}
-				if (input.mouse.middle.down && !ImGui::IsMouseDown(ImGuiMouseButton_Middle)) 
+				if (input.mouse.middle.down && !ImGui::IsMouseDown(ImGuiMouseButton_Middle))
 				{ 
-					input.mouse.middle.down = false; 
+					input.mouse.middle.down = false;
 				}
 
 				input.mouse.left.clickEvent = input.mouse.left.doubleClickEvent = false;
@@ -242,13 +244,13 @@ int main(int argc, char** argv)
 
 		if (ImGui::BeginDragDropTarget())
 		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_MESH)) 
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_MESH))
 			{ 
-				app.handleFileDrop((const char*)payload->Data); 
+				app.handleFileDrop((const char*)payload->Data);
 			}
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_IMAGE_HDR)) 
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_IMAGE_HDR))
 			{ 
-				app.handleFileDrop((const char*)payload->Data); 
+				app.handleFileDrop((const char*)payload->Data);
 			}
 			ImGui::EndDragDropTarget();
 		}
@@ -261,12 +263,6 @@ int main(int argc, char** argv)
 			break; // Also allowed if not focused on main window.
 		if (ImGui::IsKeyPressed(key_enter) && ImGui::IsKeyDown(key_alt))
 			window.toggleFullscreen(); // Also allowed if not focused on main window.
-
-		if (ImGui::IsKeyPressed(key_enter))
-		{
-			sound_settings soundSettings;
-			play3DSound(SOUND_ID("FireGren"), vec3(0.f), soundSettings);
-		}
 
 		// Update and render
 		renderer.beginFrame(renderWidth, renderHeight);
@@ -293,7 +289,6 @@ int main(int argc, char** argv)
 			}
 			else
 			{
-				//saveTextureToFile(window.backBuffers[window.currentBackbufferIndex], window.clientWidth, window.clientHeight, DXGI_FORMAT_R8G8B8A8_UNORM, path);
 				saveTextureToFile(renderer.frameResult, path);
 			}
 
@@ -323,3 +318,5 @@ int main(int argc, char** argv)
 
 	return EXIT_SUCCESS;
 }
+
+#endif

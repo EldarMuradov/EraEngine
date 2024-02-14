@@ -622,6 +622,9 @@ struct editor_scene
 
 #ifndef PHYSICS_ONLY
 	render_camera camera;
+
+	render_camera editor_camera;
+
 	directional_light sun;
 	pbr_environment environment;
 #endif

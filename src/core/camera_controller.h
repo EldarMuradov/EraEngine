@@ -10,7 +10,7 @@ struct camera_controller
 	bool centerCameraOnObject(const bounding_box& aabb);
 	bool update(const user_input& input, uint32 viewportWidth, uint32 viewportHeight, float dt);
 
-	render_camera* camera;
+	render_camera* camera = nullptr;
 
 private:
 	float orbitRadius = 10.f;
