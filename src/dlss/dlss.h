@@ -1,9 +1,15 @@
 #pragma once
 
+#define ENABLE_DLSS 0
+
+#if ENABLE_DLSS
+
 #include <nvsdk_ngx.h>
 #include <nvsdk_ngx_defs.h>
 #include <nvsdk_ngx_params.h>
 #include <nvsdk_ngx_helpers.h>
+
+#endif
 #include <dx/dx_context.h>
 #include "rendering/render_algorithms.h"
 
@@ -15,7 +21,13 @@ struct dlss_feature_adapter
 {
 	dlss_feature_adapter() = default;
 	void initialize(main_renderer* rbd);
-	~dlss_feature_adapter() { NVSDK_NGX_D3D12_Shutdown1(dxContext.device.Get()); NVSDK_NGX_D3D12_DestroyParameters(params);}
+	~dlss_feature_adapter()
+	{ 
+#if ENABLE_DLSS
+		NVSDK_NGX_D3D12_Shutdown1(dxContext.device.Get());
+		NVSDK_NGX_D3D12_DestroyParameters(params);
+#endif
+	}
 
 	void updateDLSS(ID3D12GraphicsCommandList* cmdList, float dt);
 
@@ -24,8 +36,11 @@ private:
 
 private:
 	main_renderer* renderer = nullptr;
+
+#if ENABLE_DLSS
 	NVSDK_NGX_Handle* handle = nullptr;
 	NVSDK_NGX_Parameter* params = nullptr;
+#endif
 
 	tonemap_settings tonemapSettings{};
 

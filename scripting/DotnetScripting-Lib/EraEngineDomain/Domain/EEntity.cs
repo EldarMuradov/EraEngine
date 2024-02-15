@@ -10,7 +10,7 @@ public record struct EEntityFilter(int Id);
 
 public class EEntity
 {
-    public unsafe EEntity(int id, string name, EEntityFilter filter = default)
+    public EEntity(int id, string name, EEntityFilter filter = default)
     {
         (Id, Name, Filter) = (id, name, filter);
         CreateComponentInternal<TransformComponent>();
@@ -137,6 +137,13 @@ public class EEntity
             removeComponent(Id, compname);
     }
 
+    public void RemoveComponent(string name, bool sync = true)
+    {
+        Components.Remove(name);
+        if (sync)
+            removeComponent(Id, name);
+    }
+
     public static EEntity Instantiate(EEntity original, Vector3 position, Quaternion rotation, EEntity? parent = null)
     {
         int newId = EEntityManager.CreateEntity(Guid.NewGuid().ToString());
@@ -217,7 +224,7 @@ public class EEntity
 
     #endregion
 
-    public T CreateComponentInternal<T>(params object[] args) where T : EComponent, new()
+    internal T CreateComponentInternal<T>(params object[] args) where T : EComponent, new()
     {
         var comp = GetComponent<T>();
 
@@ -241,13 +248,6 @@ public class EEntity
             comp.Start();
 
         return comp;
-    }
-
-    public void RemoveComponent(string name, bool sync = true)
-    {
-        Components.Remove(name);
-        if (sync)
-            removeComponent(Id, name);
     }
 
     internal void AddComponentFromInstance(EComponent comp, string name, bool from = true)

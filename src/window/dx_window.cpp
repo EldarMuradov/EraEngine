@@ -240,6 +240,37 @@ bool dx_window::initialize(const TCHAR* name, uint32 requestedClientWidth, uint3
 	return true;
 }
 
+bool dx_window::initialize(HINSTANCE hInst, const TCHAR* name, uint32 requestedClientWidth, uint32 requestedClientHeight, color_depth colorDepth, bool exclusiveFullscreen)
+{
+	if (!win32_window::initialize(hInst, name, requestedClientWidth, requestedClientHeight))
+		return false;
+
+	this->colorDepth = colorDepth;
+	this->exclusiveFullscreen = exclusiveFullscreen;
+	tearingSupported = checkTearingSupport(dxContext.factory);
+
+	swapchain = createSwapChain(windowHandle, dxContext.factory, dxContext.renderQueue, clientWidth, clientHeight, NUM_BUFFERED_FRAMES, tearingSupported, colorDepth, exclusiveFullscreen);
+	currentBackbufferIndex = swapchain->GetCurrentBackBufferIndex();
+
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc = {};
+	descriptorHeapDesc.NumDescriptors = NUM_BUFFERED_FRAMES;
+	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+
+	checkResult(dxContext.device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&rtvDescriptorHeap)));
+
+	RECT windowRect = { 0, 0, (LONG)clientWidth, (LONG)clientHeight };
+	AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
+	GetWindowRect(windowHandle, &windowRect);
+	hdrSupport = checkForHDRSupport(dxContext.factory, windowRect, colorDepth);
+	setSwapChainColorSpace(swapchain, colorDepth, hdrSupport);
+
+	updateRenderTargetViews();
+
+	initialized = true;
+
+	return true;
+}
+
 void dx_window::shutdown()
 {
 	// Flush the GPU queue to make sure the swap chain's back buffers

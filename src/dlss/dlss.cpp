@@ -6,6 +6,8 @@
 
 bool checkDLSSStatus(IDXGIAdapter* adapter)
 {
+#if ENABLE_DLSS
+
 	NVSDK_NGX_FeatureDiscoveryInfo dlssInfo{};
 	NVSDK_NGX_FeatureRequirement outSupported{};
 	dlssInfo.FeatureID = NVSDK_NGX_Feature_SuperSampling;
@@ -24,10 +26,19 @@ bool checkDLSSStatus(IDXGIAdapter* adapter)
 	}
 
 	return true;
+
+#else
+
+	return false;
+
+#endif
 }
 
 void dlss_feature_adapter::initialize(main_renderer* rnd)
 {
+
+#if ENABLE_DLSS
+
 	if (rnd->dlssInited)
 		return;
 	renderer = rnd;
@@ -42,11 +53,17 @@ void dlss_feature_adapter::initialize(main_renderer* rnd)
 	tonemapSettings.E = 0.082f;
 	tonemapSettings.F = 0.255f;
 	tonemapSettings.exposure = -0.06f;
+
+#endif
+
 }
 
 void NGXResourceAllocCallback(D3D12_RESOURCE_DESC* InDesc, int InState,
 	CD3DX12_HEAP_PROPERTIES* InHeap, ID3D12Resource** OutResource)
 {
+
+#if ENABLE_DLSS
+
 	*OutResource = nullptr;
 	HRESULT hr = dxContext.device->CreateCommittedResource(InHeap, D3D12_HEAP_FLAG_NONE,
 		InDesc, (D3D12_RESOURCE_STATES)InState,
@@ -56,10 +73,16 @@ void NGXResourceAllocCallback(D3D12_RESOURCE_DESC* InDesc, int InState,
 	{
 		LOG_ERROR("Graphics> DLSS allocation failed.");
 	}
+
+#endif
+
 }
 
 void dlss_feature_adapter::updateDLSS(ID3D12GraphicsCommandList* cmdList, float dt)
 {
+
+#if ENABLE_DLSS
+
 	renderer->settings.tonemapSettings = tonemapSettings;
 	NVSDK_NGX_D3D12_Feature_Eval_Params featureEvalsParams{};
 	featureEvalsParams.pInOutput = renderer->frameResult->resource.Get();
@@ -86,6 +109,9 @@ void dlss_feature_adapter::updateDLSS(ID3D12GraphicsCommandList* cmdList, float 
 	evalsParams.InFrameTimeDeltaInMsec = dt;
 	
 	NVSDK_NGX_Result EvalDLSSFeatureRes = NGX_D3D12_EVALUATE_DLSS_EXT(cmdList, handle, params, &evalsParams);
+
+#endif
+
 }
 
 void NGXResourceReleaseCallback(IUnknown* InResource)
@@ -95,8 +121,11 @@ void NGXResourceReleaseCallback(IUnknown* InResource)
 
 void dlss_feature_adapter::initializeDLSS() noexcept
 {
+
+#if ENABLE_DLSS
+
 	auto res = NVSDK_NGX_D3D12_Init_with_ProjectID("FAF85B49-66B9-D77F-2FF4-20FD9B731C5C", NVSDK_NGX_ENGINE_TYPE_CUSTOM,
-		"0.1", L"E:\\Era Engine\\logs", dxContext.device.Get());
+		"0.1", L"logs", dxContext.device.Get());
 
 	NVSDK_NGX_Result CapParRes = NVSDK_NGX_D3D12_GetCapabilityParameters(&params);
 	params->Set(NVSDK_NGX_Parameter_ResourceAllocCallback, NGXResourceAllocCallback);
@@ -131,4 +160,7 @@ void dlss_feature_adapter::initializeDLSS() noexcept
 	dlss_c_p.Feature.InTargetHeight = renderer->renderHeight;
 	dlss_c_p.Feature.InPerfQualityValue = NVSDK_NGX_PerfQuality_Value_Balanced;
 	NVSDK_NGX_Result CreatDLSSExtRes = NGX_D3D12_CREATE_DLSS_EXT(dxContext.getFreeRenderCommandList()->commandList.Get(), 1, 1, &handle, params, &dlss_c_p);
+
+#endif
+
 }

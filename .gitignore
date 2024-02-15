@@ -18,6 +18,16 @@ Temp/
 
 packages/
 
+runtime/x64
+runtime/EraRuntime/asset_cache
+runtime/EraRuntime/asset
+runtime/EraRuntime/bin
+runtime/EraRuntime/bin_int
+runtime/EraRuntime/res
+runtime/EraRuntime/resources
+runtime/EraRuntime/shaders
+runtime/EraRuntime/x64
+
 *.dll
 *.exe
 *.pdb
