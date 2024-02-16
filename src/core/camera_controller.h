@@ -2,6 +2,15 @@
 #include "camera.h"
 #include "input.h"
 
+struct runtime_camera_controller
+{
+	void initialize(render_camera* camera) { this->camera = camera; }
+
+	void update(uint32 viewportWidth, uint32 viewportHeight);
+
+	render_camera* camera = nullptr;
+};
+
 struct camera_controller
 {
 	void initialize(render_camera* camera) { this->camera = camera; }

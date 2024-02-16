@@ -99,25 +99,17 @@ static void renderToMainWindow(dx_window& window)
 
 int main(int argc, char** argv)
 {
-	try 
+	try
 	{
 		if (!dxContext.initialize())
 			return EXIT_FAILURE;
 
 		initializeJobSystem();
-		initializeMessageLog();
 		initializeFileRegistry();
 		initializeAudio();
 
-		{
-			sound_settings soundSettings;
-			soundSettings.loop = true;
-
-			play2DSound(SOUND_ID("Music"), soundSettings);
-		}
-
 		dx_window window;
-		window.initialize(TEXT("  New Project - Era Engine - 0.096v0 - <DX12>"), 1920, 1080);
+		window.initialize(TEXT("  New Project"), 1920, 1080);
 		window.setIcon("resources/icons/Logo.ico");
 		window.setCustomWindowStyle();
 		window.maximize();
@@ -125,9 +117,6 @@ int main(int argc, char** argv)
 		application app = {};
 		app.loadCustomShaders();
 
-		window.setFileDropCallback([&app](const fs::path& s) { app.handleFileDrop(s); });
-
-		initializeTransformationGizmos();
 		initializeRenderUtils();
 
 		initializeImGui(window);
@@ -146,8 +135,6 @@ int main(int argc, char** argv)
 		editor_panels editorPanels;
 
 		app.initialize(&renderer, &editorPanels);
-
-		file_browser fileBrowser;
 
 		// Wait for initialization to finish
 		fenceValues[NUM_BUFFERED_FRAMES - 1] = dxContext.renderQueue.signal();
@@ -238,68 +225,18 @@ int main(int argc, char** argv)
 				}
 			}
 
-			// The drag&drop outline is rendered around the drop target. Since the image fills the frame, the outline is outside the window 
-			// and thus invisible. So instead this (slightly smaller) Dummy acts as the drop target.
-			// Important: This is below the input processing, so that we don't override the current element id.
 			ImGui::SetCursorPos(ImVec2(4.5f, 4.5f));
 			ImGui::Dummy(ImVec2(renderWidth - 9.f, renderHeight - 9.f));
 
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_MESH))
-				{
-					app.handleFileDrop((const char*)payload->Data);
-				}
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_IMAGE_HDR))
-				{
-					app.handleFileDrop((const char*)payload->Data);
-				}
-				ImGui::EndDragDropTarget();
-			}
-
 			appFocusedLastFrame = ImGui::IsMousePosValid();
-
-			if (input.keyboard['V'].pressEvent && !(input.keyboard[key_ctrl].down || input.keyboard[key_shift].down || input.keyboard[key_alt].down))
-				window.toggleVSync();
-			if (ImGui::IsKeyPressed(key_esc))
-				break; // Also allowed if not focused on main window.
-			if (ImGui::IsKeyPressed(key_enter) && ImGui::IsKeyDown(key_alt))
-				window.toggleFullscreen(); // Also allowed if not focused on main window.
 
 			// Update and render
 			renderer.beginFrame(renderWidth, renderHeight);
-
-			editorPanels.meshEditor.beginFrame();
 
 			app.update(input, dt);
 
 			endFrameCommon();
 			renderer.endFrame(&input, dt);
-
-			editorPanels.meshEditor.endFrame();
-
-			if (ImGui::IsKeyPressed(key_print))
-			{
-				const fs::path dir = "captures";
-				fs::create_directories(dir);
-
-				fs::path path = dir / (getTimeString() + ".png");
-
-				if (ImGui::IsKeyDown(key_ctrl))
-				{
-					saveTextureToFile(window.backBuffers[window.currentBackbufferIndex], window.clientWidth, window.clientHeight, DXGI_FORMAT_R8G8B8A8_UNORM, path);
-				}
-				else
-				{
-					saveTextureToFile(renderer.frameResult, path);
-				}
-
-				LOG_MESSAGE("Saved screenshot to '%ws'", path.c_str());
-			}
-
-			fileBrowser.draw();
-
-			updateMessageLog(dt);
 
 			updateAudio(dt);
 
@@ -308,7 +245,6 @@ int main(int argc, char** argv)
 			renderToMainWindow(window);
 
 			cpuProfilingFrameEndMarker();
-
 
 			++frameID;
 		}

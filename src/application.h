@@ -18,6 +18,12 @@
 #include <EraScriptingLauncher-Lib/scripting_core.h>
 #include <scripting/native_scripting_linker.h>
 
+#if ERA_RUNTIME
+
+#include "core/runtime.h"
+
+#endif
+
 void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh);
 
 bool editFireParticleSystem(fire_particle_system& particleSystem);
@@ -64,7 +70,16 @@ private:
 	std::shared_ptr<escripting_core> core;
 
 	editor_scene scene;
+
+#ifndef ERA_RUNTIME
+
 	eeditor editor;
+
+#else
+
+	runtime rt;
+
+#endif
 
 	fire_particle_system fireParticleSystem;
 	smoke_particle_system smokeParticleSystem;

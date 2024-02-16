@@ -2,8 +2,6 @@
 
 extern bool logWindowOpen;
 
-#if ENABLE_MESSAGE_LOG
-
 enum message_type
 {
 	message_type_normal,
@@ -12,6 +10,8 @@ enum message_type
 
 	message_type_count,
 };
+
+#if ENABLE_MESSAGE_LOG
 
 #if LOG_LEVEL_PROFILE
 #define LOG_MESSAGE(message, ...) logMessageInternal(message_type_normal, __FILE__, __FUNCTION__, __LINE__, message, __VA_ARGS__)

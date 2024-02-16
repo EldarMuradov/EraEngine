@@ -100,3 +100,9 @@ bool camera_controller::update(const user_input& input, uint32 viewportWidth, ui
 
 	return result;
 }
+
+void runtime_camera_controller::update(uint32 viewportWidth, uint32 viewportHeight)
+{
+	camera->setViewport(viewportWidth, viewportHeight);
+	camera->updateMatrices();
+}

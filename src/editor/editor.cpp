@@ -2783,6 +2783,9 @@ void eeditor::drawSettings(float dt)
 			if (renderer->spec.allowBloom) { editBloom(renderer->settings.enableBloom, renderer->settings.bloomSettings, renderer->getBloomResult()); ImGui::Separator(); }
 			if (renderer->spec.allowDLSS)
 			{ 
+
+#if ENABLE_DLSS
+
 				if (ImGui::BeginProperties())
 				{
 					ImGui::PropertyCheckbox("Enable DLSS", renderer->settings.enableDLSS);
@@ -2800,6 +2803,9 @@ void eeditor::drawSettings(float dt)
 				else
 					renderer->settings.tonemapSettings = renderer->settings.defaultTonemapSettings;
 				ImGui::Separator();
+
+#endif
+
 			}
 			editSharpen(renderer->settings.enableSharpen, renderer->settings.sharpenSettings);
 

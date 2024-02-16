@@ -188,8 +188,16 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	scene.environment.setFromTexture("assets/sky/sunset_in_the_chalk_quarry_4k.hdr");
 	scene.environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
 
+#ifndef ERA_RUNTIME
+
 	editor.initialize(&this->scene, renderer, editorPanels);
 	editor.app = this;
+
+#else
+
+	rt.initialize(&this->scene, renderer);
+
+#endif
 
 	escene& scene = this->scene.getCurrentScene();
 
@@ -201,7 +209,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 	px_physics_engine::initialize(this);
 
-#if 1
+#ifndef ERA_RUNTIME
 	if (auto mesh = loadMeshFromFileAsync("assets/Sponza/Sponza.obj"))
 	{
 		const auto& sponza = scene.createEntity("Sponza")
@@ -222,7 +230,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	}
 #endif
 
-#if 1
+#ifndef ERA_RUNTIME
 	{
 		auto defaultmat = createPBRMaterialAsync({ "", "" });
 
@@ -296,7 +304,6 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		std::cout << "Overlapping: " << overlap_info.isOverlapping << "\n";
 		std::cout << "Results: " << overlap_info.results.size() << "\n";
 
-#if 1
 		editor.physicsSettings.collisionBeginCallback = [rng = random_number_generator{ 519431 }](const collision_begin_event& e) mutable
 		{
 			float speed = length(e.relativeVelocity);
@@ -311,7 +318,6 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		editor.physicsSettings.collisionEndCallback = [](const collision_end_event& e) mutable
 		{
 		};
-#endif
 
 		scene.createEntity("Platform")
 			.addComponent<transform_component>(vec3(10, -4.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
@@ -481,6 +487,8 @@ void application::update(const user_input& input, float dt)
 
 	stackArena.reset();
 
+#ifndef ERA_RUNTIME
+
 	bool objectDragged = editor.update(input, &ldrRenderPass, dt);
 	editor.render(&ldrRenderPass, dt);
 
@@ -488,6 +496,16 @@ void application::update(const user_input& input, float dt)
 
 	if (&camera != editor.cameraController.camera)
 		editor.cameraController.camera = &camera;
+
+#else
+
+	bool objectDragged = false;
+
+	render_camera& camera = scene.camera;
+
+	rt.update();
+
+#endif
 
 	directional_light& sun = scene.sun;
 	pbr_environment& environment = scene.environment;
@@ -510,7 +528,7 @@ void application::update(const user_input& input, float dt)
 	}
 
 	static float physicsTimer = 0.f;
-	physicsStep(scene, stackArena, physicsTimer, editor.physicsSettings, dt);
+	physicsStep(scene, stackArena, physicsTimer, physics_settings(), dt);
 
 	if (this->scene.isPausable())
 	{
@@ -536,7 +554,16 @@ void application::update(const user_input& input, float dt)
 	debrisParticleSystem.render(&transparentRenderPass);
 #endif
 
+#ifndef ERA_RUNTIME
+
 	eentity selectedEntity = editor.selectedEntity;
+
+#else
+
+	eentity selectedEntity{};
+
+#endif
+
 
 	if (renderer->mode != renderer_mode_pathtraced)
 	{
@@ -570,6 +597,8 @@ void application::update(const user_input& input, float dt)
 			renderer->setDecals(decalBuffer[dxContext.bufferedFrameID], (uint32)decals.size(), decalTexture);
 		}
 
+#ifndef ERA_RUNTIME
+
 		if (selectedEntity)
 		{
 			if (point_light_component* pl = selectedEntity.getComponentIfExists<point_light_component>())
@@ -595,7 +624,9 @@ void application::update(const user_input& input, float dt)
 				dynamic_transform_component& dtc = selectedEntity.getComponent<dynamic_transform_component>();
 				renderWireBox(dtc.position, vec3(cct->getHalfSideExtent(), cct->getHalfHeight() * 2, cct->getHalfSideExtent()), dtc.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
 			}
-		}
+	}
+
+#endif
 
 		submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
 	}
