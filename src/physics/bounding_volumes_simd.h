@@ -49,12 +49,12 @@ struct wN_bounding_box
 	wN_vec3<simd_t> minCorner;
 	wN_vec3<simd_t> maxCorner;
 
-	static wN_bounding_box fromMinMax(wN_vec3<simd_t> minCorner, wN_vec3<simd_t> maxCorner)
+	NODISCARD static wN_bounding_box fromMinMax(wN_vec3<simd_t> minCorner, wN_vec3<simd_t> maxCorner)
 	{
 		return wN_bounding_box{ minCorner, maxCorner };
 	}
 
-	static wN_bounding_box fromCenterRadius(wN_vec3<simd_t> center, wN_vec3<simd_t> radius)
+	NODISCARD static wN_bounding_box fromCenterRadius(wN_vec3<simd_t> center, wN_vec3<simd_t> radius)
 	{
 		return wN_bounding_box{ center - radius, center + radius };
 	}
@@ -75,7 +75,7 @@ struct wN_line_segment
 };
 
 template <typename simd_t>
-inline auto aabbVsAABB(const wN_bounding_box<simd_t>& a, const wN_bounding_box<simd_t>& b)
+inline NODISCARD auto aabbVsAABB(const wN_bounding_box<simd_t>& a, const wN_bounding_box<simd_t>& b)
 {
 	return
 		(a.maxCorner.x >= b.minCorner.x) & (a.minCorner.x <= b.maxCorner.x) &
@@ -84,7 +84,7 @@ inline auto aabbVsAABB(const wN_bounding_box<simd_t>& a, const wN_bounding_box<s
 }
 
 template <typename simd_t>
-inline wN_vec3<simd_t> closestPoint_PointSegment(const wN_vec3<simd_t>& q, const wN_line_segment<simd_t>& l)
+inline NODISCARD wN_vec3<simd_t> closestPoint_PointSegment(const wN_vec3<simd_t>& q, const wN_line_segment<simd_t>& l)
 {
 	wN_vec3<simd_t> ab = l.b - l.a;
 	simd_t t = dot(q - l.a, ab) / squaredLength(ab);
@@ -93,7 +93,7 @@ inline wN_vec3<simd_t> closestPoint_PointSegment(const wN_vec3<simd_t>& q, const
 }
 
 template <typename simd_t>
-inline wN_vec3<simd_t> closestPoint_PointAABB(const wN_vec3<simd_t>& q, const wN_bounding_box<simd_t>& aabb)
+inline NODISCARD wN_vec3<simd_t> closestPoint_PointAABB(const wN_vec3<simd_t>& q, const wN_bounding_box<simd_t>& aabb)
 {
 	wN_vec3<simd_t> result;
 	for (uint32 i = 0; i < 3; ++i)
@@ -107,7 +107,7 @@ inline wN_vec3<simd_t> closestPoint_PointAABB(const wN_vec3<simd_t>& q, const wN
 }
 
 template <typename simd_t>
-inline simd_t closestPoint_SegmentSegment(const wN_line_segment<simd_t>& l1, const wN_line_segment<simd_t>& l2, wN_vec3<simd_t>& c1, wN_vec3<simd_t>& c2)
+inline NODISCARD simd_t closestPoint_SegmentSegment(const wN_line_segment<simd_t>& l1, const wN_line_segment<simd_t>& l2, wN_vec3<simd_t>& c1, wN_vec3<simd_t>& c2)
 {
 	w_vec3 d1 = l1.b - l1.a;
 	w_vec3 d2 = l2.b - l2.a;

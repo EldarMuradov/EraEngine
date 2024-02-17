@@ -1993,7 +1993,7 @@ static const fbx_node* findNode(const std::vector<fbx_node>& nodes, std::initial
 	return 0;
 }
 
-model_asset loadFBX(const fs::path& path, uint32 flags)
+NODISCARD model_asset loadFBX(const fs::path& path, uint32 flags)
 {
 	std::string pathStr = path.string();
 	const char* s = pathStr.c_str();

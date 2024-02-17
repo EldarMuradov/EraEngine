@@ -2317,7 +2317,7 @@ static void collision(const collider_union* worldSpaceColliders, collider_pair* 
 	}
 }
 
-narrowphase_result narrowphase(const collider_union* worldSpaceColliders, collider_pair* colliderPairs, uint32 numCollisionPairs, eallocator& arena,
+NODISCARD narrowphase_result narrowphase(const collider_union* worldSpaceColliders, collider_pair* colliderPairs, uint32 numCollisionPairs, eallocator& arena,
 	collision_contact* outContacts, constraint_body_pair* outBodyPairs, 
 	collider_pair* outColliderPairs, uint8* outContactCountPerCollision,
 	non_collision_interaction* outNonCollisionInteractions,

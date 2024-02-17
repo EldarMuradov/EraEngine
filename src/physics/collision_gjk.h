@@ -179,7 +179,7 @@ enum gjk_internal_success
 };
 
 template <typename shapeA_t, typename shapeB_t>
-static bool gjkIntersectionTest(const shapeA_t& shapeA, const shapeB_t& shapeB, gjk_simplex& outSimplex)
+NODISCARD static bool gjkIntersectionTest(const shapeA_t& shapeA, const shapeB_t& shapeB, gjk_simplex& outSimplex)
 {
 	gjk_internal_success updateGJKSimplex(gjk_simplex& s, const gjk_support_point& a, vec3& dir);
 

@@ -12,7 +12,7 @@ void px_joint::init(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
 	second = s;
 }
 
-physx::PxRevoluteJoint* createRevoluteJoint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
+NODISCARD physx::PxRevoluteJoint* createRevoluteJoint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
 {
 	physx::PxRevoluteJoint* joint = PxRevoluteJointCreate(*px_physics_engine::getPhysics(),
 		f, f->getGlobalPose(),
@@ -21,7 +21,7 @@ physx::PxRevoluteJoint* createRevoluteJoint(physx::PxRigidActor* f, physx::PxRig
 	return joint;
 }
 
-physx::PxDistanceJoint* createDistanceJoint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
+NODISCARD physx::PxDistanceJoint* createDistanceJoint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
 {
 	physx::PxDistanceJoint* joint = PxDistanceJointCreate(*px_physics_engine::getPhysics(),
 		f, f->getGlobalPose(),
@@ -29,7 +29,7 @@ physx::PxDistanceJoint* createDistanceJoint(physx::PxRigidActor* f, physx::PxRig
 	return joint;
 }
 
-physx::PxSphericalJoint* createSphericalJoint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
+NODISCARD physx::PxSphericalJoint* createSphericalJoint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
 {
 	physx::PxSphericalJoint* joint = PxSphericalJointCreate(*px_physics_engine::getPhysics(),
 		f, f->getGlobalPose(),
@@ -37,7 +37,7 @@ physx::PxSphericalJoint* createSphericalJoint(physx::PxRigidActor* f, physx::PxR
 	return joint;
 }
 
-physx::PxFixedJoint* createFixedJoint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
+NODISCARD physx::PxFixedJoint* createFixedJoint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
 {
 	physx::PxFixedJoint* joint = PxFixedJointCreate(*px_physics_engine::getPhysics(),
 		f, f->getGlobalPose(),
@@ -45,7 +45,7 @@ physx::PxFixedJoint* createFixedJoint(physx::PxRigidActor* f, physx::PxRigidActo
 	return joint;
 }
 
-physx::PxPrismaticJoint* createPrismaticJoint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
+NODISCARD physx::PxPrismaticJoint* createPrismaticJoint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
 {
 	physx::PxPrismaticJoint* joint = PxPrismaticJointCreate(*px_physics_engine::getPhysics(),
 		f, f->getGlobalPose(),
@@ -53,7 +53,7 @@ physx::PxPrismaticJoint* createPrismaticJoint(physx::PxRigidActor* f, physx::PxR
 	return joint;
 }
 
-physx::PxD6Joint* createD6Joint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
+NODISCARD physx::PxD6Joint* createD6Joint(physx::PxRigidActor* f, physx::PxRigidActor* s) noexcept
 {
 	physx::PxD6Joint* joint = PxD6JointCreate(*px_physics_engine::getPhysics(),
 		f, f->getGlobalPose(),

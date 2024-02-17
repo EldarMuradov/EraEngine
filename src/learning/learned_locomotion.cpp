@@ -106,7 +106,7 @@ void learned_locomotion::applyAction(escene& scene, const learning_action& actio
 	}
 }
 
-trs learned_locomotion::getCoordinateSystem() const
+NODISCARD trs learned_locomotion::getCoordinateSystem() const
 {
 	const transform_component& torsoTransform = ragdoll.torso.getComponent<transform_component>();
 	vec3 cog = ragdoll.torso.getComponent<rigid_body_component>().getGlobalCOGPosition(torsoTransform);
@@ -142,7 +142,7 @@ void learned_locomotion::getState(learning_state& outState) const
 	outState.lastSmoothedAction = lastSmoothedAction;
 }
 
-bool learned_locomotion::hasFallen(const learning_state& state) const
+NODISCARD bool learned_locomotion::hasFallen(const learning_state& state) const
 {
 	return (state.headPosition.y < 1.f);
 }

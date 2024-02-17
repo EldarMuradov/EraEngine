@@ -59,6 +59,6 @@ struct pbr_material
 	float translucency;
 };
 
-ref<pbr_material> createPBRMaterial(const pbr_material_desc& desc);
-ref<pbr_material> createPBRMaterialAsync(const pbr_material_desc& desc, job_handle parentJob = {});
-ref<pbr_material> getDefaultPBRMaterial();
+NODISCARD ref<pbr_material> createPBRMaterial(const pbr_material_desc& desc);
+NODISCARD ref<pbr_material> createPBRMaterialAsync(const pbr_material_desc& desc, job_handle parentJob = {});
+NODISCARD ref<pbr_material> getDefaultPBRMaterial();

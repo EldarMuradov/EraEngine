@@ -20,7 +20,7 @@ struct dx_render_target
 		viewport = { 0.f, 0.f, (float)width, (float)height, 0.f, 1.f };
 	}
 
-	dx_render_target& colorAttachment(const ref<dx_texture>& attachment, dx_rtv_descriptor_handle useIfNull = CD3DX12_DEFAULT())
+	NODISCARD dx_render_target& colorAttachment(const ref<dx_texture>& attachment, dx_rtv_descriptor_handle useIfNull = CD3DX12_DEFAULT())
 	{
 		ASSERT(pushIndex < arraysize(rtv));
 		rtv[pushIndex++] = attachment ? attachment->defaultRTV : useIfNull;
@@ -34,7 +34,7 @@ struct dx_render_target
 		return *this;
 	}
 
-	dx_render_target& depthAttachment(const ref<dx_texture>& attachment, dx_dsv_descriptor_handle useIfNull = CD3DX12_DEFAULT())
+	NODISCARD dx_render_target& depthAttachment(const ref<dx_texture>& attachment, dx_dsv_descriptor_handle useIfNull = CD3DX12_DEFAULT())
 	{
 		ASSERT(!dsv);
 		dsv = attachment ? attachment->defaultDSV : useIfNull;

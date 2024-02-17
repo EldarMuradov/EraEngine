@@ -24,7 +24,7 @@ struct pbr_environment
 	ref<dx_texture> irradiance;
 	ref<dx_texture> prefilteredRadiance;
 
-	bool isProcedural() const { return sky == 0; }
+	NODISCARD bool isProcedural() const { return sky == 0; }
 
 	void setFromTexture(const fs::path& filename);
 	void setToProcedural(vec3 sunDirection);

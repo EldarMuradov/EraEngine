@@ -124,7 +124,7 @@ void render_resources::evaluate()
 	}
 }
 
-const std::vector<ref<dx_texture>>& render_resources::getTemporaryResources(uint64 id, dx_command_list* cl)
+NODISCARD const std::vector<ref<dx_texture>>& render_resources::getTemporaryResources(uint64 id, dx_command_list* cl)
 {
 	ASSERT(!dirty);
 
@@ -163,7 +163,7 @@ void render_resources::getAllocationInfo(temporary_render_resources& resources)
 	resources.totalAllocationSize = offset;
 }
 
-uint64 render_resources::hashResourceRequirements(const std::vector<render_resource_desc>& descs)
+NODISCARD uint64 render_resources::hashResourceRequirements(const std::vector<render_resource_desc>& descs)
 {
 	uint64 hash = 0;
 	for (const render_resource_desc& desc : descs)

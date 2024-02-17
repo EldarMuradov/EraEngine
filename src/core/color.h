@@ -7,7 +7,7 @@
 // RGB is in [0,1]^3.
 // HSV is in [0,2pi]x[0,1]x[0,1]
 
-static vec3 rgb2hsv(vec3 rgb)
+NODISCARD static vec3 rgb2hsv(vec3 rgb)
 {
 	float cmax = max(max(rgb.x, rgb.y), rgb.z);
 	float cmin = min(min(rgb.x, rgb.y), rgb.z);
@@ -24,7 +24,7 @@ static vec3 rgb2hsv(vec3 rgb)
 	return vec3(h, s, v);
 }
 
-static vec3 hsv2rgb(vec3 hsv)
+NODISCARD static vec3 hsv2rgb(vec3 hsv)
 {
 	float h = rad2deg(hsv.x);
 	float s = hsv.y;
@@ -46,7 +46,7 @@ static vec3 hsv2rgb(vec3 hsv)
 	return rgb;
 }
 
-static vec3 randomRGB(random_number_generator& rng)
+NODISCARD static vec3 randomRGB(random_number_generator& rng)
 {
 	vec3 hsv =
 	{
@@ -57,7 +57,7 @@ static vec3 randomRGB(random_number_generator& rng)
 	return hsv2rgb(hsv);
 }
 
-static vec3 linearToSRGB(vec3 color)
+NODISCARD static vec3 linearToSRGB(vec3 color)
 {
 	// Approximately pow(color, 1.0 / 2.2).
 	float r = color.r < 0.0031308f ? 12.92f * color.r : 1.055f * pow(abs(color.r), 1.f / 2.4f) - 0.055f;
@@ -66,7 +66,7 @@ static vec3 linearToSRGB(vec3 color)
 	return vec3(r, g, b);
 }
 
-static vec3 sRGBToLinear(vec3 color)
+NODISCARD static vec3 sRGBToLinear(vec3 color)
 {
 	// Approximately pow(color, 2.2).
 	float r = color.r < 0.04045f ? color.r / 12.92f : pow(abs(color.r + 0.055f) / 1.055f, 2.4f);
@@ -75,7 +75,7 @@ static vec3 sRGBToLinear(vec3 color)
 	return vec3(r, g, b);
 }
 
-static vec3 rec709ToRec2020(vec3 color)
+NODISCARD static vec3 rec709ToRec2020(vec3 color)
 {
 	static const mat3 conversion =
 	{
@@ -86,7 +86,7 @@ static vec3 rec709ToRec2020(vec3 color)
 	return conversion * color;
 }
 
-static vec3 rec2020ToRec709(vec3 color)
+NODISCARD static vec3 rec2020ToRec709(vec3 color)
 {
 	static const mat3 conversion =
 	{
@@ -97,7 +97,7 @@ static vec3 rec2020ToRec709(vec3 color)
 	return conversion * color;
 }
 
-static vec3 linearToST2084(vec3 color)
+NODISCARD static vec3 linearToST2084(vec3 color)
 {
 	float m1 = 2610.f / 4096.f / 4.f;
 	float m2 = 2523.f / 4096.f * 128.f;
@@ -108,7 +108,7 @@ static vec3 linearToST2084(vec3 color)
 	return pow((c1 + c2 * cp) / (1.f + c3 * cp), m2);
 }
 
-static vec3 YxyToXYZ(vec3 Yxy)
+NODISCARD static vec3 YxyToXYZ(vec3 Yxy)
 {
 	float Y = Yxy.r;
 	float x = Yxy.g;
@@ -120,7 +120,7 @@ static vec3 YxyToXYZ(vec3 Yxy)
 	return vec3(X, Y, Z);
 }
 
-static vec3 XYZToRGB(vec3 XYZ)
+NODISCARD static vec3 XYZToRGB(vec3 XYZ)
 {
 	// CIE/E.
 	static const mat3 M =
@@ -133,7 +133,7 @@ static vec3 XYZToRGB(vec3 XYZ)
 	return M * XYZ;
 }
 
-static vec3 YxyToRGB(vec3 Yxy)
+NODISCARD static vec3 YxyToRGB(vec3 Yxy)
 {
 	vec3 XYZ = YxyToXYZ(Yxy);
 	vec3 RGB = XYZToRGB(XYZ);

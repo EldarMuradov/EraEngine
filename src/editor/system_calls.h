@@ -19,26 +19,24 @@ namespace os
 
 		path_parser() = delete;
 
-		static std::string makeWindowsStyle(std::string_view path);
+		NODISCARD static std::string makeWindowsStyle(std::string_view path);
 
-		static std::string makeNonWindowsStyle(std::string_view path);
+		NODISCARD static std::string makeNonWindowsStyle(std::string_view path);
 
-		static std::string getContainingFolder(std::string_view path);
+		NODISCARD static std::string getContainingFolder(std::string_view path);
 
-		static std::string getElementName(std::string_view path);
+		NODISCARD static std::string getElementName(std::string_view path);
 
-		static std::string getExtension(std::string_view path);
+		NODISCARD static std::string getExtension(std::string_view path);
 
-		static std::string fileTypeToString(file_type fileType);
+		NODISCARD static std::string fileTypeToString(file_type fileType);
 
-		static file_type getFileType(std::string_view path);
+		NODISCARD static file_type getFileType(std::string_view path);
 	};
 
 
 	struct system_calls
 	{
-		system_calls() = delete;
-
 		static void showInExplorer(std::string_view path);
 
 		static void openFile(std::filesystem::path& path);
@@ -46,5 +44,10 @@ namespace os
 		static void editFile(std::string_view file);
 
 		static void openURL(std::string_view url);
+
+	private:
+		system_calls() = delete;
+		system_calls(system_calls&) = delete;
+		system_calls(system_calls&&) = delete;
 	};
 }

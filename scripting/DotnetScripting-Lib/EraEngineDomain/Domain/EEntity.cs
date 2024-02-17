@@ -1,12 +1,12 @@
 ﻿using EraEngine.Components;
 using EraEngine.Infrastructure;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace EraEngine;
 
-[StructLayout(LayoutKind.Sequential)]
-public record struct EEntityFilter(int Id);
+using EEntityFilter = Int32;
 
 public class EEntity
 {
@@ -36,11 +36,29 @@ public class EEntity
         EWorld.Add(this);
     }
 
-    public int Id { get; init; }
+    public int Id
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        init;
+    }
 
-    public EEntityFilter Filter { get; init; }
+    public EEntityFilter Filter
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        init;
+    }
 
-    public string Name { get; init; } = null!;
+    public string Name
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        init;
+    } = null!;
 
     public EEntity? Parent;
 
@@ -48,14 +66,22 @@ public class EEntity
 
     public ComponentsContainer Components = new();
 
-    public bool IsInitialized { get; private set; } = false;
+    public bool IsInitialized
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private set;
+    } = false;
 
     public bool ActiveSelf
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
             return _activeSelf;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set
         {
             _activeSelf = value;

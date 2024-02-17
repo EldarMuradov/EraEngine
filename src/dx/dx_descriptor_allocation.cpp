@@ -72,7 +72,7 @@ void dx_descriptor_heap::initialize(D3D12_DESCRIPTOR_HEAP_TYPE type, bool shader
 	this->shaderVisible = shaderVisible;
 }
 
-dx_descriptor_allocation dx_descriptor_heap::allocate(uint64 count)
+NODISCARD dx_descriptor_allocation dx_descriptor_heap::allocate(uint64 count)
 {
 	if (count == 0)
 		return {};
@@ -147,7 +147,7 @@ void dx_frame_descriptor_allocator::newFrame(uint32 bufferedFrameID)
 	mutex.unlock();
 }
 
-dx_descriptor_range dx_frame_descriptor_allocator::allocateContiguousDescriptorRange(uint32 count)
+NODISCARD dx_descriptor_range dx_frame_descriptor_allocator::allocateContiguousDescriptorRange(uint32 count)
 {
 	mutex.lock();
 
@@ -217,7 +217,7 @@ void dx_pushable_descriptor_heap::reset()
 	currentGPU = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
 }
 
-dx_cpu_descriptor_handle dx_pushable_descriptor_heap::push()
+NODISCARD dx_cpu_descriptor_handle dx_pushable_descriptor_heap::push()
 {
 	++currentGPU;
 	return currentCPU++;

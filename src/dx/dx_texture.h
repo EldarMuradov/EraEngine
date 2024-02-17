@@ -49,7 +49,7 @@ struct dx_texture
 	std::atomic<asset_load_state> loadState = asset_loaded;
 	job_handle loadJob;
 
-	void setName(const wchar* name);
+	void setName(const wchar* name) const;
 	std::wstring getName() const;
 };
 
@@ -60,7 +60,7 @@ struct dx_texture_atlas
 	uint32 cols;
 	uint32 rows;
 
-	std::pair<vec2, vec2> getUVs(uint32 x, uint32 y)
+	NODISCARD std::pair<vec2, vec2> getUVs(uint32 x, uint32 y) const
 	{
 		ASSERT(x < cols);
 		ASSERT(y < rows);
@@ -73,7 +73,7 @@ struct dx_texture_atlas
 		return { uv0, uv1 };
 	}
 
-	std::pair<vec2, vec2> getUVs(uint32 i)
+	NODISCARD std::pair<vec2, vec2> getUVs(uint32 i) const
 	{
 		uint32 x = i % cols;
 		uint32 y = i / cols;
@@ -96,7 +96,7 @@ struct dx_tiled_texture
 	uint32 numStandard;
 	uint32 numPacked;
 
-	inline bool isMipPacked(uint32 index) { return index >= numStandard; }
+	inline NODISCARD bool isMipPacked(uint32 index) const { return index >= numStandard; }
 };
 
 struct texture_grave
@@ -117,36 +117,36 @@ struct texture_grave
 	~texture_grave();
 };
 
-D3D12_RESOURCE_ALLOCATION_INFO getTextureAllocationInfo(uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips, D3D12_RESOURCE_FLAGS flags);
+NODISCARD D3D12_RESOURCE_ALLOCATION_INFO getTextureAllocationInfo(uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips, D3D12_RESOURCE_FLAGS flags);
 
 void uploadTextureSubresourceData(ref<dx_texture> texture, D3D12_SUBRESOURCE_DATA* subresourceData, uint32 firstSubresource, uint32 numSubresources);
-ref<dx_texture> createTexture(D3D12_RESOURCE_DESC textureDesc, D3D12_SUBRESOURCE_DATA* subresourceData, uint32 numSubresources, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
-ref<dx_texture> createTexture(const void* data, uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips = false, bool allowRenderTarget = false, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
-ref<dx_texture> createDepthTexture(uint32 width, uint32 height, DXGI_FORMAT format, uint32 arrayLength = 1, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE);
-ref<dx_texture> createCubeTexture(const void* data, uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips = false, bool allowRenderTarget = false, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
-ref<dx_texture> createVolumeTexture(const void* data, uint32 width, uint32 height, uint32 depth, DXGI_FORMAT format, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON);
+NODISCARD ref<dx_texture> createTexture(D3D12_RESOURCE_DESC textureDesc, D3D12_SUBRESOURCE_DATA* subresourceData, uint32 numSubresources, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
+NODISCARD ref<dx_texture> createTexture(const void* data, uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips = false, bool allowRenderTarget = false, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
+NODISCARD ref<dx_texture> createDepthTexture(uint32 width, uint32 height, DXGI_FORMAT format, uint32 arrayLength = 1, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE);
+NODISCARD ref<dx_texture> createCubeTexture(const void* data, uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips = false, bool allowRenderTarget = false, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
+NODISCARD ref<dx_texture> createVolumeTexture(const void* data, uint32 width, uint32 height, uint32 depth, DXGI_FORMAT format, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON);
 void resizeTexture(ref<dx_texture> texture, uint32 newWidth, uint32 newHeight, D3D12_RESOURCE_STATES initialState = (D3D12_RESOURCE_STATES )-1);
 
-ref<dx_texture> createPlacedTexture(dx_heap heap, uint64 offset, uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips = false, bool allowRenderTarget = false, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
-ref<dx_texture> createPlacedTexture(dx_heap heap, uint64 offset, D3D12_RESOURCE_DESC textureDesc, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
+NODISCARD ref<dx_texture> createPlacedTexture(dx_heap heap, uint64 offset, uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips = false, bool allowRenderTarget = false, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
+NODISCARD ref<dx_texture> createPlacedTexture(dx_heap heap, uint64 offset, D3D12_RESOURCE_DESC textureDesc, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
 
-ref<dx_texture> createPlacedDepthTexture(dx_heap heap, uint64 offset, uint32 width, uint32 height, DXGI_FORMAT format, uint32 arrayLength = 1, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE, bool allowDepthStencil = true);
-ref<dx_texture> createPlacedDepthTexture(dx_heap heap, uint64 offset, D3D12_RESOURCE_DESC textureDesc, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE);
+NODISCARD ref<dx_texture> createPlacedDepthTexture(dx_heap heap, uint64 offset, uint32 width, uint32 height, DXGI_FORMAT format, uint32 arrayLength = 1, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE, bool allowDepthStencil = true);
+NODISCARD ref<dx_texture> createPlacedDepthTexture(dx_heap heap, uint64 offset, D3D12_RESOURCE_DESC textureDesc, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
-dx_tiled_texture createTiledTexture(D3D12_RESOURCE_DESC textureDesc, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
-dx_tiled_texture createTiledTexture(uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips = false, bool allowRenderTarget = false, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
+NODISCARD dx_tiled_texture createTiledTexture(D3D12_RESOURCE_DESC textureDesc, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
+NODISCARD dx_tiled_texture createTiledTexture(uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips = false, bool allowRenderTarget = false, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
 
 // This system caches textures. It does not keep the resource alive (we store weak ptrs).
 // So if no one else has a reference, the texture gets deleted.
 // This means you should keep a reference to your textures yourself and not call this every frame.
 
-ref<dx_texture> loadTextureFromFile(const fs::path& filename, uint32 flags = image_load_flags_default);
-ref<dx_texture> loadTextureFromHandle(asset_handle handle, uint32 flags = image_load_flags_default);
-ref<dx_texture> loadTextureFromFileAsync(const fs::path& filename, uint32 flags = image_load_flags_default, job_handle parentJob = {});
-ref<dx_texture> loadTextureFromHandleAsync(asset_handle handle, uint32 flags = image_load_flags_default, job_handle parentJob = {});
+NODISCARD ref<dx_texture> loadTextureFromFile(const fs::path& filename, uint32 flags = image_load_flags_default);
+NODISCARD ref<dx_texture> loadTextureFromHandle(asset_handle handle, uint32 flags = image_load_flags_default);
+NODISCARD ref<dx_texture> loadTextureFromFileAsync(const fs::path& filename, uint32 flags = image_load_flags_default, job_handle parentJob = {});
+NODISCARD ref<dx_texture> loadTextureFromHandleAsync(asset_handle handle, uint32 flags = image_load_flags_default, job_handle parentJob = {});
 
-ref<dx_texture> loadTextureFromMemory(const void* ptr, uint32 size, image_format imageFormat, const fs::path& cacheFilename, uint32 flags = image_load_flags_default);
-ref<dx_texture> loadVolumeTextureFromDirectory(const fs::path& dirname, uint32 flags = image_load_flags_compress | image_load_flags_cache_to_dds | image_load_flags_noncolor);
+NODISCARD ref<dx_texture> loadTextureFromMemory(const void* ptr, uint32 size, image_format imageFormat, const fs::path& cacheFilename, uint32 flags = image_load_flags_default);
+NODISCARD ref<dx_texture> loadVolumeTextureFromDirectory(const fs::path& dirname, uint32 flags = image_load_flags_compress | image_load_flags_cache_to_dds | image_load_flags_noncolor);
 
 void copyTextureToCPUBuffer(const ref<dx_texture>& texture, void* buffer, D3D12_RESOURCE_STATES beforeAndAfterState = D3D12_RESOURCE_STATE_COMMON);
 void saveTextureToFile(const ref<dx_texture>& texture, const fs::path& path);

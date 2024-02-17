@@ -9,7 +9,7 @@ struct dx_command_queue
 	void initialize(dx_device device, D3D12_COMMAND_LIST_TYPE type);
 
 	uint64 signal();
-	bool isFenceComplete(uint64 fenceValue);
+	NODISCARD bool isFenceComplete(uint64 fenceValue) const;
 	void waitForFence(uint64 fenceValue);
 	void waitForOtherQueue(dx_command_queue& other);
 	void waitForOtherQueue(dx_command_queue& other, uint64 fenceValue);

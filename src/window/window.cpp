@@ -701,7 +701,7 @@ bool monitor_iterator::step(monitor_info& info)
 	return result;
 }
 
-std::vector<monitor_info> getAllDisplayDevices()
+NODISCARD std::vector<monitor_info> getAllDisplayDevices()
 {
 	std::vector<monitor_info> result;
 
@@ -715,7 +715,7 @@ std::vector<monitor_info> getAllDisplayDevices()
 	return result;
 }
 
-std::vector<monitor_info> getAllDisplayDevices(uint32 width, uint32 height)
+NODISCARD std::vector<monitor_info> getAllDisplayDevices(uint32 width, uint32 height)
 {
 	std::vector<monitor_info> result;
 

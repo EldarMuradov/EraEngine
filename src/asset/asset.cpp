@@ -4,7 +4,7 @@
 
 static random_number_generator rng = time(0);
 
-asset_handle asset_handle::generate()
+NODISCARD asset_handle asset_handle::generate()
 {
 	return asset_handle(rng.randomUint64());
 }

@@ -347,7 +347,7 @@ uint64 main_renderer::executeComputeTasks(compute_pass_event eventTime, const fu
 	return result;
 }
 
-dx_command_list* main_renderer::renderThread0(const common_render_data& commonRenderData)
+NODISCARD dx_command_list* main_renderer::renderThread0(const common_render_data& commonRenderData)
 {
 	dx_command_list* cl = dxContext.getFreeRenderCommandList();
 	PROFILE_ALL(cl, "Render thread 0");
@@ -370,7 +370,7 @@ dx_command_list* main_renderer::renderThread0(const common_render_data& commonRe
 	return cl;
 }
 
-dx_command_list* main_renderer::renderThread1(const common_render_data& commonRenderData, bool aspectRatioModeChanged)
+NODISCARD dx_command_list* main_renderer::renderThread1(const common_render_data& commonRenderData, bool aspectRatioModeChanged)
 {
 	dx_command_list* cl = dxContext.getFreeRenderCommandList();
 	PROFILE_ALL(cl, "Render thread 1");
@@ -416,7 +416,7 @@ dx_command_list* main_renderer::renderThread1(const common_render_data& commonRe
 	return cl;
 }
 
-dx_command_list* main_renderer::renderThread2(const common_render_data& commonRenderData, const user_input* input)
+NODISCARD dx_command_list* main_renderer::renderThread2(const common_render_data& commonRenderData, const user_input* input)
 {
 	dx_command_list* cl = dxContext.getFreeRenderCommandList();
 	PROFILE_ALL(cl, "Render thread 2");
@@ -565,7 +565,7 @@ dx_command_list* main_renderer::renderThread2(const common_render_data& commonRe
 	return cl;
 }
 
-dx_command_list* main_renderer::renderThread3(common_render_data commonRenderData, dx_dynamic_constant_buffer unjitteredCameraCBV)
+NODISCARD dx_command_list* main_renderer::renderThread3(common_render_data commonRenderData, dx_dynamic_constant_buffer unjitteredCameraCBV)
 {
 	// After this there is no more camera jittering
 	commonRenderData.cameraCBV = unjitteredCameraCBV;

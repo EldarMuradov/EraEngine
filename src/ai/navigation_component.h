@@ -11,7 +11,7 @@ enum class nav_type
 	Dijkstra
 };
 
-static coroutine_return<nav_node> navigate(vec2 pos, vec2 target) noexcept
+NODISCARD static coroutine_return<nav_node> navigate(vec2 pos, vec2 target) noexcept
 {
 	nav_node player;
 	player.position = pos / (float)NAV_X_STEP;

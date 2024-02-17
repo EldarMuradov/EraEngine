@@ -153,20 +153,20 @@ struct main_renderer
 
 	path_tracer pathTracer{};
 
-	const ref<dx_texture>& getAOResult() const { return aoTextures[aoHistoryIndex]; }
-	const ref<dx_texture>& getSSSResult() const { return sssTextures[sssHistoryIndex]; }
-	const ref<dx_texture>& getSSRResult() const { return ssrResolveTexture; }
-	const ref<dx_texture>& getBloomResult() const { return bloomTexture; }
-	const ref<dx_texture>& getScreenVelocities() const { return screenVelocitiesTexture; }
+	NODISCARD const ref<dx_texture>& getAOResult() const { return aoTextures[aoHistoryIndex]; }
+	NODISCARD const ref<dx_texture>& getSSSResult() const { return sssTextures[sssHistoryIndex]; }
+	NODISCARD const ref<dx_texture>& getSSRResult() const { return ssrResolveTexture; }
+	NODISCARD const ref<dx_texture>& getBloomResult() const { return bloomTexture; }
+	NODISCARD const ref<dx_texture>& getScreenVelocities() const { return screenVelocitiesTexture; }
 
 private:
 	template <typename func_t = std::nullptr_t>
 	uint64 executeComputeTasks(compute_pass_event eventTime, const func_t& additionalTasksCallback = nullptr);
 
-	dx_command_list* renderThread0(const common_render_data& commonRenderData);
-	dx_command_list* renderThread1(const common_render_data& commonRenderData, bool aspectRatioModeChanged);
-	dx_command_list* renderThread2(const common_render_data& commonRenderData, const user_input* input);
-	dx_command_list* renderThread3(common_render_data commonRenderData, dx_dynamic_constant_buffer unjitteredCameraCBV);
+	NODISCARD dx_command_list* renderThread0(const common_render_data& commonRenderData);
+	NODISCARD dx_command_list* renderThread1(const common_render_data& commonRenderData, bool aspectRatioModeChanged);
+	NODISCARD dx_command_list* renderThread2(const common_render_data& commonRenderData, const user_input* input);
+	NODISCARD dx_command_list* renderThread3(common_render_data commonRenderData, dx_dynamic_constant_buffer unjitteredCameraCBV);
 
 	const sun_shadow_render_pass* sunShadowRenderPasses[MAX_NUM_SUN_LIGHT_SHADOW_PASSES];
 	const spot_shadow_render_pass* spotLightShadowRenderPasses[MAX_NUM_SPOT_LIGHT_SHADOW_PASSES];

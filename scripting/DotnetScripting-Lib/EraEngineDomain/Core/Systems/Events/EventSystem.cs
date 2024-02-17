@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace EraEngine;
 
@@ -12,7 +13,11 @@ public struct EventRequest
 
 public class EventSystem : IESystem, IEHandler<EventRequest>
 {
-    public ESystemPriority Priority { get; }
+    public ESystemPriority Priority
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+    }
 
     private Dictionary<string, EventRequest> _events = [];
 

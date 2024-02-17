@@ -378,7 +378,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 }
 
 #if 0
-bool editFireParticleSystem(fire_particle_system& particleSystem)
+NODISCARD bool editFireParticleSystem(fire_particle_system& particleSystem)
 {
 	bool result = false;
 	if (ImGui::BeginTree("Fire particles"))
@@ -400,7 +400,7 @@ bool editFireParticleSystem(fire_particle_system& particleSystem)
 	return result;
 }
 
-bool editBoidParticleSystem(boid_particle_system& particleSystem)
+NODISCARD bool editBoidParticleSystem(boid_particle_system& particleSystem)
 {
 	bool result = false;
 	if (ImGui::BeginTree("Boid particles"))

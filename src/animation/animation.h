@@ -92,8 +92,8 @@ struct animation_clip
 	bool bakeRootYTranslationIntoPose = false;
 
 	void edit();
-	trs getFirstRootTransform() const;
-	trs getLastRootTransform() const;
+	NODISCARD trs getFirstRootTransform() const;
+	NODISCARD trs getLastRootTransform() const;
 };
 
 struct limb_dimensions

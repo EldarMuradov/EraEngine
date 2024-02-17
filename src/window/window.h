@@ -93,7 +93,6 @@ protected:
 	friend bool handleWindowsMessages();
 };
 
-
 struct monitor_info
 {
 	// This is specific for the actual physical monitor / projector.
@@ -106,7 +105,7 @@ struct monitor_info
 	uint32 width, height;
 };
 
-std::vector<monitor_info> getAllDisplayDevices();
-std::vector<monitor_info> getAllDisplayDevices(uint32 width, uint32 height);
+NODISCARD std::vector<monitor_info> getAllDisplayDevices();
+NODISCARD std::vector<monitor_info> getAllDisplayDevices(uint32 width, uint32 height);
 
 void setMainWindow(win32_window* window);

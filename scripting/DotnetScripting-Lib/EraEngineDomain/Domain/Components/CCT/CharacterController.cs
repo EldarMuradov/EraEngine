@@ -1,5 +1,6 @@
 ﻿using EraEngine.Extensions;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace EraEngine.Components;
@@ -13,7 +14,13 @@ public enum CharacterControllerType
 
 public abstract class CharacterController : EComponent
 {
-    public CharacterControllerType Type { get; protected set; }
+    public CharacterControllerType Type
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected set;
+    }
 
     public virtual void Move(Vector3 position) 
     {

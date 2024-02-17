@@ -8,7 +8,7 @@
 #define BYTE_TO_MB(b) ((b) / (1024 * 1024))
 #define BYTE_TO_GB(b) ((b) / (1024 * 1024))
 
-static uint32 alignTo(uint32 currentOffset, uint32 alignment)
+NODISCARD static uint32 alignTo(uint32 currentOffset, uint32 alignment)
 {
 	uint32 mask = alignment - 1;
 	uint32 misalignment = currentOffset & mask;
@@ -16,7 +16,7 @@ static uint32 alignTo(uint32 currentOffset, uint32 alignment)
 	return currentOffset + adjustment;
 }
 
-static uint64 alignTo(uint64 currentOffset, uint64 alignment)
+NODISCARD static uint64 alignTo(uint64 currentOffset, uint64 alignment)
 {
 	uint64 mask = alignment - 1;
 	uint64 misalignment = currentOffset & mask;
@@ -24,7 +24,7 @@ static uint64 alignTo(uint64 currentOffset, uint64 alignment)
 	return currentOffset + adjustment;
 }
 
-static void* alignTo(void* currentAddress, uint64 alignment)
+NODISCARD static void* alignTo(void* currentAddress, uint64 alignment)
 {
 	uint64 mask = alignment - 1;
 	uint64 misalignment = (uint64)(currentAddress)&mask;
@@ -62,19 +62,19 @@ struct eallocator
 
 	void ensureFreeSize(uint64 size);
 
-	void* allocate(uint64 size, uint64 alignment = 1, bool clearToZero = false);
+	NODISCARD void* allocate(uint64 size, uint64 alignment = 1, bool clearToZero = false);
 
 	template <typename T>
-	T* allocate(uint32 count = 1, bool clearToZero = false)
+	NODISCARD T* allocate(uint32 count = 1, bool clearToZero = false)
 	{
 		return (T*)allocate(sizeof(T) * count, alignof(T), clearToZero);
 	}
 
 	// Get and set current are not thread safe.
-	void* getCurrent(uint64 alignment = 1);
+	NODISCARD void* getCurrent(uint64 alignment = 1);
 
 	template <typename T>
-	T* getCurrent()
+	NODISCARD T* getCurrent()
 	{
 		return (T*)getCurrent(alignof(T));
 	}
@@ -83,10 +83,10 @@ struct eallocator
 
 	void reset(bool freeMemory = false);
 
-	memory_marker getMarker();
+	NODISCARD memory_marker getMarker() const;
 	void resetToMarker(memory_marker marker);
 
-	uint8* base() { return memory; }
+	NODISCARD uint8* base() const { return memory; }
 protected:
 	void ensureFreeSizeInternal(uint64 size);
 

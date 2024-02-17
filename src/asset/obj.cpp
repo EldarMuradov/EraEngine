@@ -305,7 +305,7 @@ static std::vector<std::pair<std::string, pbr_material_desc>> loadMaterialLibrar
 	return result;
 }
 
-model_asset loadOBJ(const fs::path& path, uint32 flags)
+NODISCARD model_asset loadOBJ(const fs::path& path, uint32 flags)
 {
 	PROFILE("Loading OBJ");
 

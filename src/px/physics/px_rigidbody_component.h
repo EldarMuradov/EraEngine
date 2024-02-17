@@ -24,32 +24,32 @@ struct px_rigidbody_component
 
 	void addForce(vec3 force, px_force_mode mode = px_force_mode::Impulse) noexcept;
 
-	physx::PxRigidActor* getRigidActor() noexcept;
+	NODISCARD physx::PxRigidActor* getRigidActor() const noexcept { return actor; }
 
 	void setDisableGravity() noexcept;
 	void setEnableGravity() noexcept;
 
 	void setMass(float mass) noexcept;
-	float getMass() const noexcept;
+	NODISCARD float getMass() const noexcept { return mass; }
 
 	void setConstraints(uint8 constraints) noexcept;
-	uint8 getConstraints() noexcept;
+	NODISCARD uint8 getConstraints() const noexcept;
 
 	void setLinearVelocity(vec3 velocity);
 
-	vec3 getLinearVelocity();
+	NODISCARD vec3 getLinearVelocity() const noexcept;
 
 	void setAngularVelocity(vec3 velocity);
 
-	vec3 getAngularVelocity();
+	NODISCARD vec3 getAngularVelocity() const noexcept;
 
-	vec3 getPhysicsPosition();
+	NODISCARD vec3 getPhysicsPosition() const noexcept;
 
 	void setPhysicsPositionAndRotation(vec3& pos, quat& rot);
 
 	void setAngularDamping(float damping);
 
-	px_rigidbody_type getType() const noexcept { return type; }
+	NODISCARD px_rigidbody_type getType() const noexcept { return type; }
 
 	void onCollisionEnter(px_rigidbody_component* collision) const;
 
@@ -57,7 +57,7 @@ struct px_rigidbody_component
 
 private:
 	void createPhysics(bool addToScene);
-	physx::PxRigidActor* createActor();
+	NODISCARD physx::PxRigidActor* createActor();
 
 private:
 	physx::PxMaterial* material = nullptr;

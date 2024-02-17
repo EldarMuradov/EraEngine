@@ -7,7 +7,7 @@ void block_allocator::initialize(uint64 capacity)
 	addNewBlock(0, capacity);
 }
 
-uint64 block_allocator::allocate(uint64 requestedSize)
+NODISCARD uint64 block_allocator::allocate(uint64 requestedSize)
 {
 	auto smallestBlockItIt = blocksBySize.lower_bound(requestedSize);
 	if (smallestBlockItIt == blocksBySize.end())

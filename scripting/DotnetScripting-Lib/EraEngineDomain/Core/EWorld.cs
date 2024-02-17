@@ -2,6 +2,8 @@
 
 namespace EraEngine;
 
+using EEntityFilter = Int32;
+
 public static class EWorld
 {
     public static Dictionary<int, EEntity> Entities = [];
@@ -35,7 +37,7 @@ public static class EWorld
 
     public static void RefreshScene()
     {
-        var entities = _entities.Values.Where(e => e.Filter.Id == -1).ToImmutableList();
+        var entities = _entities.Values.Where(e => e.Filter == -1).ToImmutableList();
 
         foreach (var entity in entities)
             _entities.Remove(entity.Id);

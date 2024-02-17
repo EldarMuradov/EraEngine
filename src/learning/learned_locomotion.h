@@ -69,10 +69,10 @@ protected:
 	void updateConstraint(escene& scene, cone_twist_constraint_handle handle, cone_twist_action action = {}) const;
 	void applyAction(escene& scene, const learning_action& action);
 
-	trs getCoordinateSystem() const;
+	NODISCARD trs getCoordinateSystem() const;
 	void readBodyPartState(const trs& transform, eentity entity, vec3& position, vec3& velocity) const;
 	void getState(learning_state& outState) const;
-	bool hasFallen(const learning_state& state) const;
+	NODISCARD bool hasFallen(const learning_state& state) const;
 
 	learning_action lastSmoothedAction;
 	float headTargetHeight;

@@ -6,7 +6,7 @@
 
 struct pbr_raytracer : dx_raytracer
 {
-    static raytracing_object_type defineObjectType(const ref<raytracing_blas>& blas, const std::vector<ref<pbr_material>>& materials);
+    NODISCARD static raytracing_object_type defineObjectType(const ref<raytracing_blas>& blas, const std::vector<ref<pbr_material>>& materials);
     void finalizeForRender();
 
 protected:

@@ -178,7 +178,7 @@ static ref<multi_mesh> loadMeshFromFileAndHandle(const fs::path& filename, asset
 	return result;
 }
 
-ref<multi_mesh> loadMeshFromFile(const fs::path& filename, uint32 flags, mesh_load_callback cb)
+NODISCARD ref<multi_mesh> loadMeshFromFile(const fs::path& filename, uint32 flags, mesh_load_callback cb)
 {
 	fs::path path = filename.lexically_normal().make_preferred();
 
@@ -186,13 +186,13 @@ ref<multi_mesh> loadMeshFromFile(const fs::path& filename, uint32 flags, mesh_lo
 	return loadMeshFromFileAndHandle(path, handle, flags, cb);
 }
 
-ref<multi_mesh> loadMeshFromHandle(asset_handle handle, uint32 flags, mesh_load_callback cb)
+NODISCARD ref<multi_mesh> loadMeshFromHandle(asset_handle handle, uint32 flags, mesh_load_callback cb)
 {
 	fs::path sceneFilename = getPathFromAssetHandle(handle);
 	return loadMeshFromFileAndHandle(sceneFilename, handle, flags, cb);
 }
 
-ref<multi_mesh> loadMeshFromFileAsync(const fs::path& filename, uint32 flags, job_handle parentJob, mesh_load_callback cb)
+NODISCARD ref<multi_mesh> loadMeshFromFileAsync(const fs::path& filename, uint32 flags, job_handle parentJob, mesh_load_callback cb)
 {
 	fs::path path = filename.lexically_normal().make_preferred();
 
@@ -200,7 +200,7 @@ ref<multi_mesh> loadMeshFromFileAsync(const fs::path& filename, uint32 flags, jo
 	return loadMeshFromFileAndHandle(path, handle, flags, cb, true, parentJob);
 }
 
-ref<multi_mesh> loadMeshFromHandleAsync(asset_handle handle, uint32 flags, job_handle parentJob, mesh_load_callback cb)
+NODISCARD ref<multi_mesh> loadMeshFromHandleAsync(asset_handle handle, uint32 flags, job_handle parentJob, mesh_load_callback cb)
 {
 	fs::path sceneFilename = getPathFromAssetHandle(handle);
 	return loadMeshFromFileAndHandle(sceneFilename, handle, flags, cb, true, parentJob);
@@ -208,7 +208,7 @@ ref<multi_mesh> loadMeshFromHandleAsync(asset_handle handle, uint32 flags, job_h
 
 #include <scene/scene.h>
 
-eentity loadEntityMeshFromFile(escene scene, const fs::path& filename, uint32 flags, mesh_load_callback cb)
+NODISCARD eentity loadEntityMeshFromFile(escene scene, const fs::path& filename, uint32 flags, mesh_load_callback cb)
 {
 	auto& registry = scene.registry;
 	eentity parent(registry.create(), &registry);

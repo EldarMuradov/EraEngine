@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace EraEngine.Components;
 
@@ -14,7 +15,13 @@ public sealed class SphereCollider : Collider
         initializeSphereCollider(Entity.Id, Radius);
     }
 
-    public float Radius { get; private set; }
+    public float Radius
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private set;
+    }
 
     [DllImport("EraScriptingCPPDecls.dll")]
     private static extern void initializeSphereCollider(int id, float radius);

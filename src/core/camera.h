@@ -43,9 +43,9 @@ union camera_frustum_planes
 	camera_frustum_planes() {}
 
 	// Returns true, if object should be culled.
-	bool cullWorldSpaceAABB(const bounding_box& aabb) const;
-	bool cullModelSpaceAABB(const bounding_box& aabb, const trs& transform) const;
-	bool cullModelSpaceAABB(const bounding_box& aabb, const mat4& transform) const;
+	NODISCARD bool cullWorldSpaceAABB(const bounding_box& aabb) const;
+	NODISCARD bool cullModelSpaceAABB(const bounding_box& aabb, const trs& transform) const;
+	NODISCARD bool cullModelSpaceAABB(const bounding_box& aabb, const mat4& transform) const;
 };
 
 enum camera_type

@@ -10,7 +10,7 @@ struct random_number_generator
 	random_number_generator() {}
 	random_number_generator(uint64 seed) { state = seed; }
 
-	inline uint64 randomUint64()
+	inline NODISCARD uint64 randomUint64()
 	{
 		uint64 x = state;
 		x ^= x << 13;
@@ -20,39 +20,39 @@ struct random_number_generator
 		return x;
 	}
 
-	inline uint32 randomUint32()
+	inline NODISCARD uint32 randomUint32()
 	{
 		return (uint32)randomUint64();
 	}
 
-	inline uint64 randomUint64Between(uint64 lo, uint64 hi)
+	inline NODISCARD uint64 randomUint64Between(uint64 lo, uint64 hi)
 	{
 		return randomUint64() % (hi - lo) + lo;
 	}
 
-	inline uint32 randomUint32Between(uint32 lo, uint32 hi)
+	inline NODISCARD uint32 randomUint32Between(uint32 lo, uint32 hi)
 	{
 		return randomUint32() % (hi - lo) + lo;
 	}
 
-	inline float randomFloat01()
+	inline NODISCARD float randomFloat01()
 	{
 		return randomUint32() / (float)UINT_MAX;
 	}
 
-	inline float randomFloatBetween(float lo, float hi)
+	inline NODISCARD float randomFloatBetween(float lo, float hi)
 	{
 		return remap(randomFloat01(), 0.f, 1.f, lo, hi);
 	}
 
-	inline vec2 randomVec2Between(float lo, float hi)
+	inline NODISCARD vec2 randomVec2Between(float lo, float hi)
 	{
 		return vec2(
 			randomFloatBetween(lo, hi),
 			randomFloatBetween(lo, hi));
 	}
 
-	inline vec3 randomVec3Between(float lo, float hi)
+	inline NODISCARD vec3 randomVec3Between(float lo, float hi)
 	{
 		return vec3(
 			randomFloatBetween(lo, hi),
@@ -60,7 +60,7 @@ struct random_number_generator
 			randomFloatBetween(lo, hi));
 	}
 
-	inline vec4 randomVec4Between(float lo, float hi)
+	inline NODISCARD vec4 randomVec4Between(float lo, float hi)
 	{
 		return vec4(
 			randomFloatBetween(lo, hi),
@@ -69,18 +69,18 @@ struct random_number_generator
 			randomFloatBetween(lo, hi));
 	}
 
-	inline vec3 randomPointOnUnitSphere()
+	inline NODISCARD vec3 randomPointOnUnitSphere()
 	{
 		return normalize(randomVec3Between(-1.f, 1.f));
 	}
 
-	inline quat randomRotation(float maxAngle = M_PI)
+	inline NODISCARD quat randomRotation(float maxAngle = M_PI)
 	{
 		return quat(randomPointOnUnitSphere(), randomFloatBetween(-maxAngle, maxAngle));
 	}
 };
 
-static float halton(uint32 index, uint32 base)
+NODISCARD static float halton(uint32 index, uint32 base)
 {
 	float fraction = 1.f;
 	float result = 0.f;
@@ -93,12 +93,12 @@ static float halton(uint32 index, uint32 base)
 	return result;
 }
 
-static vec2 halton23(uint32 index)
+NODISCARD static vec2 halton23(uint32 index)
 {
 	return vec2(halton(index, 2), halton(index, 3));
 }
 
-static uint32 hash(uint32 x)
+NODISCARD static uint32 hash(uint32 x)
 {
 	x += (x << 10u);
 	x ^= (x >> 6u);
@@ -109,16 +109,16 @@ static uint32 hash(uint32 x)
 }
 
 // Compound versions of the hashing algorithm I whipped together.
-static uint32 hash(uint32 x, uint32 y) { return hash(x ^ hash(y)); }
-static uint32 hash(uint32 x, uint32 y, uint32 z) { return hash(x ^ hash(y) ^ hash(z)); }
-static uint32 hash(uint32 x, uint32 y, uint32 z, uint32 w) { return hash(x ^ hash(y) ^ hash(z) ^ hash(w)); }
+NODISCARD static uint32 hash(uint32 x, uint32 y) { return hash(x ^ hash(y)); }
+NODISCARD static uint32 hash(uint32 x, uint32 y, uint32 z) { return hash(x ^ hash(y) ^ hash(z)); }
+NODISCARD static uint32 hash(uint32 x, uint32 y, uint32 z, uint32 w) { return hash(x ^ hash(y) ^ hash(z) ^ hash(w)); }
 
-inline float asfloat(uint32 u) { return *(float*)&u; }
-inline uint32 asuint(float f) { return *(uint32*)&f; }
+inline NODISCARD float asfloat(uint32 u) { return *(float*)&u; }
+inline NODISCARD uint32 asuint(float f) { return *(uint32*)&f; }
 
 // Construct a float with half-open range [0:1] using low 23 bits.
 // All zeroes yields 0.0, all ones yields the next smallest representable value below 1.0.
-static float floatConstruct(uint32 m)
+NODISCARD static float floatConstruct(uint32 m)
 {
 	const uint32 ieeeMantissa = 0x007FFFFFu; // binary32 mantissa bitmask
 	const uint32 ieeeOne = 0x3F800000u; // 1.0 in IEEE binary32
@@ -131,15 +131,15 @@ static float floatConstruct(uint32 m)
 }
 
 // Pseudo-random value in half-open range [0:1].
-static float random1(float x) { return floatConstruct(hash(asuint(x))); }
-static float random1(vec2 v)  { return floatConstruct(hash(asuint(v.x), asuint(v.y))); }
-static float random1(vec3 v)  { return floatConstruct(hash(asuint(v.x), asuint(v.y), asuint(v.z))); }
-static float random1(vec4 v)  { return floatConstruct(hash(asuint(v.x), asuint(v.y), asuint(v.z), asuint(v.w))); }
+NODISCARD static float random1(float x) { return floatConstruct(hash(asuint(x))); }
+NODISCARD static float random1(vec2 v)  { return floatConstruct(hash(asuint(v.x), asuint(v.y))); }
+NODISCARD static float random1(vec3 v)  { return floatConstruct(hash(asuint(v.x), asuint(v.y), asuint(v.z))); }
+NODISCARD static float random1(vec4 v)  { return floatConstruct(hash(asuint(v.x), asuint(v.y), asuint(v.z), asuint(v.w))); }
 
-static vec2 random2(vec2 v) { return vec2(floatConstruct(hash(asuint(v.x * 15123.6989f))), floatConstruct(hash(asuint(v.y * 6192.234f)))); }
-static vec3 random3(vec3 v) { return vec3(floatConstruct(hash(asuint(v.x * 15123.6989f))), floatConstruct(hash(asuint(v.y * 6192.234f))), floatConstruct(hash(asuint(v.z * 31923.123f)))); }
+NODISCARD static vec2 random2(vec2 v) { return vec2(floatConstruct(hash(asuint(v.x * 15123.6989f))), floatConstruct(hash(asuint(v.y * 6192.234f)))); }
+NODISCARD static vec3 random3(vec3 v) { return vec3(floatConstruct(hash(asuint(v.x * 15123.6989f))), floatConstruct(hash(asuint(v.y * 6192.234f))), floatConstruct(hash(asuint(v.z * 31923.123f)))); }
 
-static vec3 valueNoise(vec2 x)
+NODISCARD static vec3 valueNoise(vec2 x)
 {
 	vec2 p = floor(x);
 	vec2 w = frac(x);
@@ -166,7 +166,7 @@ static vec3 valueNoise(vec2 x)
 	return vec3(value, deriv.x, deriv.y);
 }
 
-static vec4 valueNoise(vec3 x)
+NODISCARD static vec4 valueNoise(vec3 x)
 {
 	vec3 p = floor(x);
 	vec3 w = frac(x);
@@ -202,7 +202,7 @@ static vec4 valueNoise(vec3 x)
 	return vec4(value, deriv.x, deriv.y, deriv.z);
 }
 
-static vec3 gradientNoise(vec2 x)
+NODISCARD static vec3 gradientNoise(vec2 x)
 {
 	vec2 p = floor(x);
 	vec2 w = frac(x);
@@ -243,7 +243,7 @@ static vec3 gradientNoise(vec2 x)
 	return vec3(v, d.x, d.y);
 }
 
-static vec4 gradientNoise(vec3 x)
+NODISCARD static vec4 gradientNoise(vec3 x)
 {
 	vec3 p = floor(x);
 	vec3 w = frac(x);
@@ -304,7 +304,7 @@ static vec4 gradientNoise(vec3 x)
 typedef vec3(*fbm_noise_2D)(vec2);
 typedef vec4(*fbm_noise_3D)(vec3);
 
-static vec3 fbm(fbm_noise_2D noiseFunc, vec2 x, uint32 numOctaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
+NODISCARD static vec3 fbm(fbm_noise_2D noiseFunc, vec2 x, uint32 numOctaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
 {
 	float value = 0.f;
 	float amplitude = 0.5f;
@@ -330,7 +330,7 @@ static vec3 fbm(fbm_noise_2D noiseFunc, vec2 x, uint32 numOctaves = 6, float lac
 	return vec3(value, deriv.x, deriv.y);
 }
 
-static vec4 fbm(fbm_noise_3D noiseFunc, vec3 x, uint32 numOctaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
+NODISCARD static vec4 fbm(fbm_noise_3D noiseFunc, vec3 x, uint32 numOctaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
 {
 	float value = 0.f;
 	float amplitude = 0.5;

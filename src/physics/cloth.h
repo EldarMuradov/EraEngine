@@ -48,7 +48,7 @@ private:
 	void solveVelocities(const std::vector<struct cloth_constraint_temp>& constraintsTemp);
 	void solvePositions();
 
-	vec3 getParticlePosition(float relX, float relY);
+	NODISCARD vec3 getParticlePosition(float relX, float relY);
 
 	void addConstraint(uint32 a, uint32 b);
 
@@ -63,7 +63,7 @@ private:
 
 struct cloth_render_component
 {
-	std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, submesh_info> getRenderData(const cloth_component& cloth);
+	NODISCARD std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, submesh_info> getRenderData(const cloth_component& cloth);
 
 	ref<dx_index_buffer> indexBuffer;
 	dx_vertex_buffer_group_view prevFrameVB;

@@ -10,8 +10,8 @@ struct px_aggregate
 	void addActor(physx::PxActor* actor) noexcept;
 	void removeActor(physx::PxActor* actor) noexcept;
 
-	uint8 getNbActors() const noexcept { return nbActors; }
-	bool isSelfCollision() const noexcept { return selfCollisions; }
+	NODISCARD uint8 getNbActors() const noexcept { return nbActors; }
+	NODISCARD bool isSelfCollision() const noexcept { return selfCollisions; }
 
 private:
 	physx::PxAggregate* aggregate = nullptr;

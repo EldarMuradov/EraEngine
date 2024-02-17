@@ -4,7 +4,7 @@
 #include "log.h"
 #include <core/project.h>
 
-std::optional<std::string> ebuilder::selectBuildFolder()
+NODISCARD std::optional<std::string> ebuilder::selectBuildFolder()
 {
 	const std::string result = openFileDialog("Build location", "..");
 	if (!result.empty())

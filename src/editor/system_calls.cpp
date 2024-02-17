@@ -22,7 +22,7 @@ void os::system_calls::openURL(std::string_view url)
 	ShellExecuteA(0, 0, url.data(), 0, 0, SW_SHOW);
 }
 
-std::string os::path_parser::makeWindowsStyle(std::string_view path)
+NODISCARD std::string os::path_parser::makeWindowsStyle(std::string_view path)
 {
 	std::string result;
 	result.resize(path.size());
@@ -33,7 +33,7 @@ std::string os::path_parser::makeWindowsStyle(std::string_view path)
 	return result;
 }
 
-std::string os::path_parser::makeNonWindowsStyle(std::string_view path)
+NODISCARD std::string os::path_parser::makeNonWindowsStyle(std::string_view path)
 {
 	std::string result;
 	result.resize(path.size());
@@ -44,7 +44,7 @@ std::string os::path_parser::makeNonWindowsStyle(std::string_view path)
 	return result;
 }
 
-std::string os::path_parser::getContainingFolder(std::string_view path)
+NODISCARD std::string os::path_parser::getContainingFolder(std::string_view path)
 {
 	std::string result;
 
@@ -67,7 +67,7 @@ std::string os::path_parser::getContainingFolder(std::string_view path)
 	return result;
 }
 
-std::string os::path_parser::getElementName(std::string_view path)
+NODISCARD std::string os::path_parser::getElementName(std::string_view path)
 {
 	std::string result;
 
@@ -83,7 +83,7 @@ std::string os::path_parser::getElementName(std::string_view path)
 	return result;
 }
 
-std::string os::path_parser::getExtension(std::string_view path)
+NODISCARD std::string os::path_parser::getExtension(std::string_view path)
 {
 	std::string result;
 
@@ -95,7 +95,7 @@ std::string os::path_parser::getExtension(std::string_view path)
 	return result;
 }
 
-std::string os::path_parser::fileTypeToString(file_type fileType)
+NODISCARD std::string os::path_parser::fileTypeToString(file_type fileType)
 {
 	switch (fileType)
 	{
@@ -112,7 +112,7 @@ std::string os::path_parser::fileTypeToString(file_type fileType)
 	return "Unknown";
 }
 
-os::path_parser::file_type os::path_parser::getFileType(std::string_view path)
+NODISCARD os::path_parser::file_type os::path_parser::getFileType(std::string_view path)
 {
 	std::string ext = getExtension(path);
 	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);

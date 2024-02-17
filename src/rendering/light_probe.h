@@ -27,7 +27,7 @@ struct light_probe_grid
 
 	void updateProbes(dx_command_list* cl, const struct raytracing_tlas& lightProbeTlas, const common_render_data& common) const;
 
-	light_probe_grid_cb getCB() const { return { minCorner, cellSize, numNodesX, numNodesY, numNodesZ }; }
+	NODISCARD light_probe_grid_cb getCB() const { return { minCorner, cellSize, numNodesX, numNodesY, numNodesZ }; }
 
 private:
 	bool visualizeProbes = false;

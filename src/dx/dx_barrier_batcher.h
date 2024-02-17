@@ -39,5 +39,3 @@ struct barrier_batcher
 	CD3DX12_RESOURCE_BARRIER barriers[16];
 	uint32 numBarriers = 0;
 };
-
-

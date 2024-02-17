@@ -1,11 +1,18 @@
 ﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace EraEngine.Components;
 
 public sealed class CapsuleCharacterController : CharacterController
 {
-    public float Radius { get; private set; }
+    public float Radius
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private set;
+    }
 
     internal override void InitializeComponentInternal(params object[] args)
     {

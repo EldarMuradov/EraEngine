@@ -1,6 +1,7 @@
 ﻿using EraEngine.Components;
 using EraEngine.Extensions;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace EraEngine.AI;
@@ -14,7 +15,13 @@ public enum NavigationType : byte
 
 public sealed class NavigationComponent : EComponent
 {
-    public NavigationType Type { get; private set; }
+    public NavigationType Type
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private set;
+    }
 
     private Vector3 _destination;
 

@@ -68,7 +68,7 @@ struct sound_settings
     float pitchFadeTime = 0.1f;
 };
 
-ref<audio_sound> getSound(sound_id id);
+NODISCARD ref<audio_sound> getSound(sound_id id);
 
 void unloadSound(sound_id id);
 void unloadAllSounds();
@@ -154,5 +154,5 @@ static bool loadSynthSound(const char* idStr, sound_type type, bool stream, cons
     }
 }
 
-bool isSoundExtension(const fs::path& extension);
-bool isSoundExtension(const std::string& extension);
+NODISCARD bool isSoundExtension(const fs::path& extension);
+NODISCARD bool isSoundExtension(const std::string& extension);

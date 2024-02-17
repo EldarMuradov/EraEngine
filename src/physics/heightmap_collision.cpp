@@ -509,7 +509,7 @@ static uint32 intersection(const bounding_oriented_box& obb, const bounding_box&
 	return numContacts;
 }
 
-narrowphase_result heightmapCollision(const heightmap_collider_component& heightmap, 
+NODISCARD narrowphase_result heightmapCollision(const heightmap_collider_component& heightmap,
 	const collider_union* worldSpaceColliders, const bounding_box* worldSpaceAABBs, uint32 numColliders, 
 	collision_contact* outContacts, constraint_body_pair* outBodyPairs, collider_pair* outColliderPairs, uint8* outContactCountPerCollision, 
 	eallocator& arena, uint16 dummyRigidBodyIndex)

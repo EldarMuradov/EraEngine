@@ -109,7 +109,7 @@ void cloth_component::setWorldPositionOfFixedVertices(const trs& transform, bool
 	}
 }
 
-vec3 cloth_component::getParticlePosition(float relX, float relY)
+NODISCARD vec3 cloth_component::getParticlePosition(float relX, float relY)
 {
 	vec3 position = vec3(relX * width, -relY * height, 0.f);
 	position.x -= width * 0.5f;
@@ -117,7 +117,7 @@ vec3 cloth_component::getParticlePosition(float relX, float relY)
 	return position;
 }
 
-static vec3 calculateNormal(vec3 a, vec3 b, vec3 c)
+NODISCARD static vec3 calculateNormal(vec3 a, vec3 b, vec3 c)
 {
 	return cross(b - a, c - a);
 }
@@ -334,7 +334,7 @@ void cloth_component::recalculateProperties()
 #ifndef PHYSICS_ONLY
 #include "animation/skinning.h"
 
-std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, submesh_info> cloth_render_component::getRenderData(const cloth_component& cloth)
+NODISCARD std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, submesh_info> cloth_render_component::getRenderData(const cloth_component& cloth)
 {
 	CPU_PROFILE_BLOCK("Get cloth render data");
 
@@ -353,8 +353,6 @@ std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_bu
 
 	dx_vertex_buffer_group_view prev = prevFrameVB;
 	prevFrameVB = vb;
-
-
 
 	if (!indexBuffer)
 	{
@@ -376,7 +374,6 @@ std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_bu
 
 		indexBuffer = createIndexBuffer(sizeof(uint16), (uint32)triangles.size() * 3, triangles.data());
 	}
-
 
 	return { vb, prev, indexBuffer, sm };
 }

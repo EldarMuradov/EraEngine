@@ -270,7 +270,7 @@ render_camera render_camera::getJitteredVersion(vec2 offset) const
 	return result;
 }
 
-bool camera_frustum_planes::cullWorldSpaceAABB(const bounding_box& aabb) const
+NODISCARD bool camera_frustum_planes::cullWorldSpaceAABB(const bounding_box& aabb) const
 {
 	for (uint32 i = 0; i < 6; ++i)
 	{
@@ -289,12 +289,12 @@ bool camera_frustum_planes::cullWorldSpaceAABB(const bounding_box& aabb) const
 	return false;
 }
 
-bool camera_frustum_planes::cullModelSpaceAABB(const bounding_box& aabb, const trs& transform) const
+NODISCARD bool camera_frustum_planes::cullModelSpaceAABB(const bounding_box& aabb, const trs& transform) const
 {
 	return cullModelSpaceAABB(aabb, trsToMat4(transform));
 }
 
-bool camera_frustum_planes::cullModelSpaceAABB(const bounding_box& aabb, const mat4& transform) const
+NODISCARD bool camera_frustum_planes::cullModelSpaceAABB(const bounding_box& aabb, const mat4& transform) const
 {
 	// TODO: Transform planes instead of AABB?
 

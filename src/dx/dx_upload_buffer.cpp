@@ -3,7 +3,7 @@
 #include "core/memory.h"
 #include "dx_context.h"
 
-dx_page* dx_page_pool::allocateNewPage()
+NODISCARD dx_page* dx_page_pool::allocateNewPage()
 {
 	mutex.lock();
 	dx_page* result = arena.allocate<dx_page>(1, true);
@@ -27,7 +27,7 @@ dx_page* dx_page_pool::allocateNewPage()
 	return result;
 }
 
-dx_page* dx_page_pool::getFreePage()
+NODISCARD dx_page* dx_page_pool::getFreePage()
 {
 	mutex.lock();
 	dx_page* result = freePages;
@@ -70,7 +70,7 @@ void dx_page_pool::reset()
 	lastUsedPage = 0;
 }
 
-dx_allocation dx_upload_buffer::allocate(uint64 size, uint64 alignment)
+NODISCARD dx_allocation dx_upload_buffer::allocate(uint64 size, uint64 alignment)
 {
 	ASSERT(size <= pagePool->pageSize);
 

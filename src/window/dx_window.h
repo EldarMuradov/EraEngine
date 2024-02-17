@@ -26,7 +26,6 @@ struct dx_window : win32_window
 	virtual void onMove();
 	virtual void onWindowDisplayChange();
 
-
 	dx_resource backBuffers[NUM_BUFFERED_FRAMES];
 	dx_rtv_descriptor_handle backBufferRTVs[NUM_BUFFERED_FRAMES];
 	uint32 currentBackbufferIndex;
@@ -38,7 +37,6 @@ private:
 
 	dx_swapchain swapchain;
 	com<ID3D12DescriptorHeap> rtvDescriptorHeap;
-
 
 	bool tearingSupported;
 	bool exclusiveFullscreen;

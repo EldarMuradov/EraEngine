@@ -39,7 +39,7 @@ struct raytracing_blas_builder
 {
 	raytracing_blas_builder& push(vertex_buffer_group vertexBuffer, ref<dx_index_buffer> indexBuffer, submesh_info submesh, bool opaque = true, const trs& localTransform = trs::identity);
 	raytracing_blas_builder& push(const std::vector<bounding_box>& boundingBoxes, bool opaque);
-	ref<raytracing_blas> finish(bool keepScratch = false);
+	NODISCARD ref<raytracing_blas> finish(bool keepScratch = false);
 
 private:
 	std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometryDescs;

@@ -32,12 +32,15 @@ struct job_queue
         uint8 data[DATA_SIZE];
     };
 
+    template<typename T_>
+    using ValidJobDataType = std::enable_if_t<sizeof(T_) <= job_queue_entry::DATA_SIZE, bool>;
+
     static_assert(sizeof(job_queue_entry) % 64 == 0);
 
     void initialize(uint32 numThreads, uint32 threadOffset, int threadPriority, const wchar* description);
 
     template <typename data_t,
-        typename = std::enable_if_t<sizeof(data_t) <= job_queue_entry::DATA_SIZE>>
+        ValidJobDataType<data_t> = true>
         job_handle createJob(job_function<data_t> function, const data_t& data, job_handle parent = {})
     {
         int32 handle = allocateJob();

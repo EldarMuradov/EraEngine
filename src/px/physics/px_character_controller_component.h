@@ -40,8 +40,8 @@ struct px_box_cct_component : px_cct_component_base
 	px_box_cct_component(eentity* entt) noexcept;
 	px_box_cct_component(eentity* entt, float hh, float hs, float m = 1.0f) noexcept;
 
-	float getHalfHeight() const noexcept { return halfHeight; }
-	float getHalfSideExtent() const noexcept { return halfSideExtent; }
+	NODISCARD float getHalfHeight() const noexcept { return halfHeight; }
+	NODISCARD float getHalfSideExtent() const noexcept { return halfSideExtent; }
 
 protected:
 	void createCharacterController() noexcept override;
@@ -58,8 +58,8 @@ struct px_capsule_cct_component : px_cct_component_base
 	px_capsule_cct_component(eentity* entt, float h, float r, float m = 1.0f) noexcept;
 	~px_capsule_cct_component() {}
 
-	float getHeight() const noexcept { return height; }
-	float getRadius() const noexcept { return radius; }
+	NODISCARD float getHeight() const noexcept { return height; }
+	NODISCARD float getRadius() const noexcept { return radius; }
 
 protected:
 	void createCharacterController() noexcept override;

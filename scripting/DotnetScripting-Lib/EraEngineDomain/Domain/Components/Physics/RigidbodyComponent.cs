@@ -1,5 +1,6 @@
 ﻿using EraEngine.Extensions;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace EraEngine.Components;
@@ -23,7 +24,9 @@ public sealed class RigidbodyComponent : EComponent
 {
     public float Mass 
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _mass;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set 
         {
             if (value >= 0)
@@ -38,7 +41,13 @@ public sealed class RigidbodyComponent : EComponent
 
     private float _mass = 1.0f;
 
-    public RigidbodyType Type { get; private set; }
+    public RigidbodyType Type 
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private set;
+    }
 
     #region Core Logic
 

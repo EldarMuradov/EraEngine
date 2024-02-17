@@ -7,7 +7,7 @@ struct asset_handle
 	asset_handle() : value(0) {}
 	asset_handle(uint64 value) : value(value) {}
 
-	static asset_handle generate();
+	static NODISCARD asset_handle generate();
 
 	operator bool() { return value != 0; }
 

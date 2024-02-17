@@ -86,4 +86,4 @@ REFLECT_STRUCT(spot_light_component,
 	(shadowMapResolution, "Shadow resolution")
 );
 
-mat4 getSpotLightViewProjectionMatrix(const spot_light_cb& sl);
+NODISCARD mat4 getSpotLightViewProjectionMatrix(const spot_light_cb& sl);

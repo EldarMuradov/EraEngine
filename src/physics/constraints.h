@@ -647,47 +647,47 @@ struct simd_collision_constraint_solver
 	uint32 numBatches;
 };
 
-distance_constraint_solver initializeDistanceVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const distance_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
+NODISCARD distance_constraint_solver initializeDistanceVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const distance_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
 void solveDistanceVelocityConstraints(distance_constraint_solver constraints, rigid_body_global_state* rbs);
 
-ball_constraint_solver initializeBallVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const ball_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
+NODISCARD ball_constraint_solver initializeBallVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const ball_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
 void solveBallVelocityConstraints(ball_constraint_solver constraints, rigid_body_global_state* rbs);
 
-fixed_constraint_solver initializeFixedVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const fixed_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
+NODISCARD fixed_constraint_solver initializeFixedVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const fixed_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
 void solveFixedVelocityConstraints(fixed_constraint_solver constraints, rigid_body_global_state* rbs);
 
-hinge_constraint_solver initializeHingeVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const hinge_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
+NODISCARD hinge_constraint_solver initializeHingeVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const hinge_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
 void solveHingeVelocityConstraints(hinge_constraint_solver constraints, rigid_body_global_state* rbs);
 
-cone_twist_constraint_solver initializeConeTwistVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const cone_twist_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
+NODISCARD cone_twist_constraint_solver initializeConeTwistVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const cone_twist_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
 void solveConeTwistVelocityConstraints(cone_twist_constraint_solver constraints, rigid_body_global_state* rbs);
 
-slider_constraint_solver initializeSliderVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const slider_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
+NODISCARD slider_constraint_solver initializeSliderVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const slider_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
 void solveSliderVelocityConstraints(slider_constraint_solver constraints, rigid_body_global_state* rbs);
 
-collision_constraint_solver initializeCollisionVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const collision_contact* contacts, const constraint_body_pair* bodyPairs, uint32 numContacts, float dt);
+NODISCARD collision_constraint_solver initializeCollisionVelocityConstraints(eallocator& arena, const rigid_body_global_state* rbs, const collision_contact* contacts, const constraint_body_pair* bodyPairs, uint32 numContacts, float dt);
 void solveCollisionVelocityConstraints(collision_constraint_solver constraints, rigid_body_global_state* rbs);
 
 // SIMD
-simd_distance_constraint_solver initializeDistanceVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const distance_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
+NODISCARD simd_distance_constraint_solver initializeDistanceVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const distance_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
 void solveDistanceVelocityConstraintsSIMD(simd_distance_constraint_solver constraints, rigid_body_global_state* rbs);
 
-simd_ball_constraint_solver initializeBallVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const ball_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
+NODISCARD simd_ball_constraint_solver initializeBallVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const ball_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
 void solveBallVelocityConstraintsSIMD(simd_ball_constraint_solver constraints, rigid_body_global_state* rbs);
 
-simd_fixed_constraint_solver initializeFixedVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const fixed_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
+NODISCARD simd_fixed_constraint_solver initializeFixedVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const fixed_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
 void solveFixedVelocityConstraintsSIMD(simd_fixed_constraint_solver constraints, rigid_body_global_state* rbs);
 
-simd_hinge_constraint_solver initializeHingeVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const hinge_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
+NODISCARD simd_hinge_constraint_solver initializeHingeVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const hinge_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
 void solveHingeVelocityConstraintsSIMD(simd_hinge_constraint_solver constraints, rigid_body_global_state* rbs);
 
-simd_cone_twist_constraint_solver initializeConeTwistVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const cone_twist_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
+NODISCARD simd_cone_twist_constraint_solver initializeConeTwistVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const cone_twist_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
 void solveConeTwistVelocityConstraintsSIMD(simd_cone_twist_constraint_solver constraints, rigid_body_global_state* rbs);
 
-simd_slider_constraint_solver initializeSliderVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const slider_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
+NODISCARD simd_slider_constraint_solver initializeSliderVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const slider_constraint* input, const constraint_body_pair* bodyPairs, uint32 count, float dt);
 void solveSliderVelocityConstraintsSIMD(simd_slider_constraint_solver constraints, rigid_body_global_state* rbs);
 
-simd_collision_constraint_solver initializeCollisionVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const collision_contact* contacts, const constraint_body_pair* bodyPairs, uint32 numContacts, uint16 dummyRigidBodyIndex, float dt);
+NODISCARD simd_collision_constraint_solver initializeCollisionVelocityConstraintsSIMD(eallocator& arena, const rigid_body_global_state* rbs, const collision_contact* contacts, const constraint_body_pair* bodyPairs, uint32 numContacts, uint16 dummyRigidBodyIndex, float dt);
 void solveCollisionVelocityConstraintsSIMD(simd_collision_constraint_solver constraints, rigid_body_global_state* rbs);
 
 struct constraint_solver

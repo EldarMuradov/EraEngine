@@ -8,7 +8,7 @@ struct block_allocator
 	void initialize(uint64 capacity);
 
 	// Returns the offset.
-	uint64 allocate(uint64 requestedSize);
+	NODISCARD uint64 allocate(uint64 requestedSize);
 	void free(uint64 offset, uint64 size);
 
 private:
@@ -24,7 +24,7 @@ private:
 		offset_value() {}
 		offset_value(block_by_size_map::iterator sizeIterator) : sizeIterator(sizeIterator) {}
 		block_by_size_map::iterator sizeIterator;
-		uint64 getSize() { return sizeIterator->first; }
+		NODISCARD uint64 getSize() const { return sizeIterator->first; }
 	};
 
 	struct size_value
@@ -32,7 +32,7 @@ private:
 		size_value() {}
 		size_value(block_by_offset_map::iterator offsetIterator) : offsetIterator(offsetIterator) {}
 		block_by_offset_map::iterator offsetIterator;
-		uint64 getOffset() { return offsetIterator->first; }
+		NODISCARD uint64 getOffset() const { return offsetIterator->first; }
 	};
 
 	block_by_offset_map blocksByOffset;

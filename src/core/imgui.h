@@ -7,7 +7,7 @@
 #include "dx/dx.h"
 #include "math.h"
 
-ImGuiContext* initializeImGui(struct dx_window& window);
+NODISCARD ImGuiContext* initializeImGui(struct dx_window& window);
 void newImGuiFrame(float dt);
 void renderImGui(struct dx_command_list* cl);
 
@@ -59,7 +59,7 @@ namespace ImGui
 
 	void Image(const ref<dx_texture>& texture, uint32 width = 0, uint32 height = 0, ImVec2 uv0 = ImVec2(0.f, 0.f), ImVec2 uv1 = ImVec2(1.f, 1.f));
 
-	inline float CalcButtonWidth(const char* text) { return CalcTextSize(text).x + (GetStyle().FramePadding.x + GetStyle().FrameBorderSize) * 2.f; }
+	NODISCARD inline float CalcButtonWidth(const char* text) { return CalcTextSize(text).x + (GetStyle().FramePadding.x + GetStyle().FrameBorderSize) * 2.f; }
 
 	bool ImageButton(const ref<dx_texture>& texture, uint32 width, uint32 height, ImVec2 uvTopLeft = ImVec2(0, 0), ImVec2 uvBottomRight = ImVec2(1, 1));
 

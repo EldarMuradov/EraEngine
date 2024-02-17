@@ -9,7 +9,7 @@ namespace YAML
 	template<>
 	struct convert<vec2>
 	{
-		static Node encode(const vec2& v)
+		NODISCARD static Node encode(const vec2& v)
 		{
 			Node n; n.SetStyle(EmitterStyle::Flow); n.push_back(v.x); n.push_back(v.y); return n;
 		}
@@ -29,7 +29,7 @@ namespace YAML
 	template<>
 	struct convert<vec3>
 	{
-		static Node encode(const vec3& v)
+		NODISCARD static Node encode(const vec3& v)
 		{
 			Node n;
 			n.SetStyle(EmitterStyle::Flow);
@@ -53,7 +53,7 @@ namespace YAML
 	template<>
 	struct convert<vec4>
 	{
-		static Node encode(const vec4& v)
+		NODISCARD static Node encode(const vec4& v)
 		{
 			Node n;
 			n.SetStyle(EmitterStyle::Flow);
@@ -79,7 +79,7 @@ namespace YAML
 	template<>
 	struct convert<quat>
 	{
-		static Node encode(const quat& v)
+		NODISCARD static Node encode(const quat& v)
 		{
 			Node n;
 			n.SetStyle(EmitterStyle::Flow);
@@ -105,7 +105,7 @@ namespace YAML
 	template<>
 	struct convert<mat2>
 	{
-		static Node encode(const mat2& m)
+		NODISCARD static Node encode(const mat2& m)
 		{
 			Node n;
 			n.SetStyle(EmitterStyle::Flow);
@@ -131,7 +131,7 @@ namespace YAML
 	template<>
 	struct convert<mat3>
 	{
-		static Node encode(const mat3& m)
+		NODISCARD static Node encode(const mat3& m)
 		{
 			Node n;
 			n.SetStyle(EmitterStyle::Flow);
@@ -167,7 +167,7 @@ namespace YAML
 	template<>
 	struct convert<mat4>
 	{
-		static Node encode(const mat4& m)
+		NODISCARD static Node encode(const mat4& m)
 		{
 			Node n;
 			n.SetStyle(EmitterStyle::Flow);
@@ -217,14 +217,14 @@ namespace YAML
 	template<>
 	struct convert<fs::path>
 	{
-		static Node encode(const fs::path& v) { Node n; n = v.string(); return n; }
+		NODISCARD static Node encode(const fs::path& v) { Node n; n = v.string(); return n; }
 		static bool decode(const Node& n, fs::path& v) { v = n.as<std::string>(); return true; }
 	};
 
 	template<>
 	struct convert<asset_handle>
 	{
-		static Node encode(const asset_handle& v) { Node n; n = v.value; return n; }
+		NODISCARD static Node encode(const asset_handle& v) { Node n; n = v.value; return n; }
 		static bool decode(const Node& n, asset_handle& h) { h.value = n.as<uint64>(); return true; }
 	};
 }

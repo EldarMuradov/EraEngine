@@ -7,7 +7,7 @@ px_collider_component_base::~px_collider_component_base()
 	//PX_RELEASE(shape)
 }
 
-PxTriangleMesh* px_triangle_mesh_collider_builder::createMeshShape(mesh_asset* asset, unsigned int size)
+NODISCARD PxTriangleMesh* px_triangle_mesh_collider_builder::createMeshShape(mesh_asset* asset, unsigned int size)
 {
 	submesh_asset root = asset->submeshes[0];
 
@@ -185,7 +185,7 @@ void disableShapeInSceneQueryTests(PxShape* shape) noexcept
 	shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
 }
 
-px_bounding_box calculateBoundingBox(const std::vector<physx::PxVec3>& positions)
+NODISCARD px_bounding_box calculateBoundingBox(const std::vector<physx::PxVec3>& positions)
 {
 	px_bounding_box box;
 	if (positions.empty())

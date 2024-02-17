@@ -54,7 +54,7 @@ struct force_field_global_state
 #include "geometry/mesh_builder.h"
 #include "asset/model_asset.h"
 
-uint32 allocateBoundingHullGeometry(const std::string& meshFilepath)
+NODISCARD uint32 allocateBoundingHullGeometry(const std::string& meshFilepath)
 {
 	model_asset asset = load3DModelFromFile(meshFilepath);
 
@@ -124,7 +124,7 @@ static void addConstraintEdge(eentity& e, constraint_entity_reference_component&
 	++reference.numConstraints;
 }
 
-distance_constraint_handle addDistanceConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB, float distance)
+NODISCARD distance_constraint_handle addDistanceConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB, float distance)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -143,7 +143,7 @@ distance_constraint_handle addDistanceConstraintFromLocalPoints(eentity& a, eent
 	return { constraintEntity };
 }
 
-distance_constraint_handle addDistanceConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchorA, vec3 globalAnchorB)
+NODISCARD distance_constraint_handle addDistanceConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchorA, vec3 globalAnchorB)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -154,7 +154,7 @@ distance_constraint_handle addDistanceConstraintFromGlobalPoints(eentity& a, een
 	return addDistanceConstraintFromLocalPoints(a, b, localAnchorA, localAnchorB, distance);
 }
 
-ball_constraint_handle addBallConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB)
+NODISCARD ball_constraint_handle addBallConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -172,7 +172,7 @@ ball_constraint_handle addBallConstraintFromLocalPoints(eentity& a, eentity& b, 
 	return { constraintEntity };
 }
 
-ball_constraint_handle addBallConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor)
+NODISCARD ball_constraint_handle addBallConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -182,7 +182,7 @@ ball_constraint_handle addBallConstraintFromGlobalPoints(eentity& a, eentity& b,
 	return addBallConstraintFromLocalPoints(a, b, localAnchorA, localAnchorB);
 }
 
-fixed_constraint_handle addFixedConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB)
+NODISCARD fixed_constraint_handle addFixedConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -200,7 +200,7 @@ fixed_constraint_handle addFixedConstraintFromLocalPoints(eentity& a, eentity& b
 	return { constraintEntity };
 }
 
-fixed_constraint_handle addFixedConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor)
+NODISCARD fixed_constraint_handle addFixedConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -223,7 +223,7 @@ fixed_constraint_handle addFixedConstraintFromGlobalPoints(eentity& a, eentity& 
 	return { constraintEntity };
 }
 
-hinge_constraint_handle addHingeConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalHingeAxis,
+NODISCARD hinge_constraint_handle addHingeConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalHingeAxis,
 	float minLimit, float maxLimit)
 {
 	ASSERT(a.registry == b.registry);
@@ -259,7 +259,7 @@ hinge_constraint_handle addHingeConstraintFromGlobalPoints(eentity& a, eentity& 
 	return { constraintEntity };
 }
 
-cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, 
+NODISCARD cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis,
 	float swingLimit, float twistLimit)
 {
 	ASSERT(a.registry == b.registry);
@@ -300,7 +300,7 @@ cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(eentity& a, 
 	return { constraintEntity };
 }
 
-slider_constraint_handle addSliderConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, float minLimit, float maxLimit)
+NODISCARD slider_constraint_handle addSliderConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, float minLimit, float maxLimit)
 {
 	ASSERT(a.registry == b.registry);
 
@@ -331,7 +331,7 @@ slider_constraint_handle addSliderConstraintFromGlobalPoints(eentity& a, eentity
 	return { constraintEntity };
 }
 
-distance_constraint_handle addConstraint(eentity& a, eentity& b, const distance_constraint& c)
+NODISCARD distance_constraint_handle addConstraint(eentity& a, eentity& b, const distance_constraint& c)
 {
 	entt::registry& registry = *a.registry;
 	entity_handle constraintEntity = registry.create();
@@ -344,7 +344,7 @@ distance_constraint_handle addConstraint(eentity& a, eentity& b, const distance_
 	return { constraintEntity };
 }
 
-ball_constraint_handle addConstraint(eentity& a, eentity& b, const ball_constraint& c)
+NODISCARD ball_constraint_handle addConstraint(eentity& a, eentity& b, const ball_constraint& c)
 {
 	entt::registry& registry = *a.registry;
 	entity_handle constraintEntity = registry.create();
@@ -357,7 +357,7 @@ ball_constraint_handle addConstraint(eentity& a, eentity& b, const ball_constrai
 	return { constraintEntity };
 }
 
-fixed_constraint_handle addConstraint(eentity& a, eentity& b, const fixed_constraint& c)
+NODISCARD fixed_constraint_handle addConstraint(eentity& a, eentity& b, const fixed_constraint& c)
 {
 	entt::registry& registry = *a.registry;
 	entity_handle constraintEntity = registry.create();
@@ -370,7 +370,7 @@ fixed_constraint_handle addConstraint(eentity& a, eentity& b, const fixed_constr
 	return { constraintEntity };
 }
 
-hinge_constraint_handle addConstraint(eentity& a, eentity& b, const hinge_constraint& c)
+NODISCARD hinge_constraint_handle addConstraint(eentity& a, eentity& b, const hinge_constraint& c)
 {
 	entt::registry& registry = *a.registry;
 	entity_handle constraintEntity = registry.create();
@@ -383,7 +383,7 @@ hinge_constraint_handle addConstraint(eentity& a, eentity& b, const hinge_constr
 	return { constraintEntity };
 }
 
-cone_twist_constraint_handle addConstraint(eentity& a, eentity& b, const cone_twist_constraint& c)
+NODISCARD cone_twist_constraint_handle addConstraint(eentity& a, eentity& b, const cone_twist_constraint& c)
 {
 	entt::registry& registry = *a.registry;
 	entity_handle constraintEntity = registry.create();
@@ -396,7 +396,7 @@ cone_twist_constraint_handle addConstraint(eentity& a, eentity& b, const cone_tw
 	return { constraintEntity };
 }
 
-slider_constraint_handle addConstraint(eentity& a, eentity& b, const slider_constraint& c)
+NODISCARD slider_constraint_handle addConstraint(eentity& a, eentity& b, const slider_constraint& c)
 {
 	entt::registry& registry = *a.registry;
 	entity_handle constraintEntity = registry.create();
@@ -409,32 +409,32 @@ slider_constraint_handle addConstraint(eentity& a, eentity& b, const slider_cons
 	return { constraintEntity };
 }
 
-distance_constraint& getConstraint(escene& scene, distance_constraint_handle handle)
+NODISCARD distance_constraint& getConstraint(escene& scene, distance_constraint_handle handle)
 {
 	return eentity{ handle.entity, scene }.getComponent<distance_constraint>();
 }
 
-ball_constraint& getConstraint(escene& scene, ball_constraint_handle handle)
+NODISCARD ball_constraint& getConstraint(escene& scene, ball_constraint_handle handle)
 {
 	return eentity{ handle.entity, scene }.getComponent<ball_constraint>();
 }
 
-fixed_constraint& getConstraint(escene& scene, fixed_constraint_handle handle)
+NODISCARD fixed_constraint& getConstraint(escene& scene, fixed_constraint_handle handle)
 {
 	return eentity{ handle.entity, scene }.getComponent<fixed_constraint>();
 }
 
-hinge_constraint& getConstraint(escene& scene, hinge_constraint_handle handle)
+NODISCARD hinge_constraint& getConstraint(escene& scene, hinge_constraint_handle handle)
 {
 	return eentity{ handle.entity, scene }.getComponent<hinge_constraint>();
 }
 
-cone_twist_constraint& getConstraint(escene& scene, cone_twist_constraint_handle handle)
+NODISCARD cone_twist_constraint& getConstraint(escene& scene, cone_twist_constraint_handle handle)
 {
 	return eentity{ handle.entity, scene }.getComponent<cone_twist_constraint>();
 }
 
-slider_constraint& getConstraint(escene& scene, slider_constraint_handle handle)
+NODISCARD slider_constraint& getConstraint(escene& scene, slider_constraint_handle handle)
 {
 	return eentity{ handle.entity, scene }.getComponent<slider_constraint>();
 }
@@ -1397,7 +1397,7 @@ void physicsStep(escene& scene, eallocator& arena, float& timer, const physics_s
 }
 
 // This function returns the inertia tensors with respect to the center of gravity, so with a coordinate system centered at the COG.
-physics_properties collider_union::calculatePhysicsProperties()
+NODISCARD physics_properties collider_union::calculatePhysicsProperties()
 {
 	physics_properties result;
 	switch (type)

@@ -108,21 +108,21 @@ struct bounding_box
 
 	void grow(vec3 o);
 	void pad(vec3 p);
-	vec3 getCenter() const;
-	vec3 getRadius() const;
-	bool contains(vec3 p) const;
+	NODISCARD vec3 getCenter() const;
+	NODISCARD vec3 getRadius() const;
+	NODISCARD bool contains(vec3 p) const;
 
-	bounding_box transformToAABB(quat rotation, vec3 translation) const;
-	bounding_oriented_box transformToOBB(quat rotation, vec3 translation) const;
-	bounding_box_corners getCorners() const;
-	bounding_box_corners getCorners(quat rotation, vec3 translation) const;
+	NODISCARD bounding_box transformToAABB(quat rotation, vec3 translation) const;
+	NODISCARD bounding_oriented_box transformToOBB(quat rotation, vec3 translation) const;
+	NODISCARD bounding_box_corners getCorners() const;
+	NODISCARD bounding_box_corners getCorners(quat rotation, vec3 translation) const;
 
-	static bounding_box everything();
-	static bounding_box negativeInfinity();
-	static bounding_box fromMinMax(vec3 minCorner, vec3 maxCorner);
-	static bounding_box fromCenterRadius(vec3 center, vec3 radius);
+	NODISCARD static bounding_box everything();
+	NODISCARD static bounding_box negativeInfinity();
+	NODISCARD static bounding_box fromMinMax(vec3 minCorner, vec3 maxCorner);
+	NODISCARD static bounding_box fromCenterRadius(vec3 center, vec3 radius);
 
-	float volume()
+	NODISCARD float volume()
 	{
 		vec3 diameter = maxCorner - minCorner;
 		return diameter.x * diameter.y * diameter.z;
@@ -135,16 +135,16 @@ struct bounding_oriented_box
 	vec3 center;
 	vec3 radius;
 
-	float volume()
+	NODISCARD float volume()
 	{
 		vec3 diameter = radius * 2.f;
 		return diameter.x * diameter.y * diameter.z;
 	}
 
-	bounding_box getAABB() const;
-	bounding_box transformToAABB(quat rotation, vec3 translation) const;
-	bounding_oriented_box transformToOBB(quat rotation, vec3 translation) const;
-	bounding_box_corners getCorners() const;
+	NODISCARD bounding_box getAABB() const;
+	NODISCARD bounding_box transformToAABB(quat rotation, vec3 translation) const;
+	NODISCARD bounding_oriented_box transformToOBB(quat rotation, vec3 translation) const;
+	NODISCARD bounding_box_corners getCorners() const;
 };
 
 struct bounding_rectangle
@@ -158,24 +158,24 @@ struct bounding_rectangle
 	vec2 getRadius() const;
 	bool contains(vec2 p) const;
 
-	static bounding_rectangle negativeInfinity();
-	static bounding_rectangle fromMinMax(vec2 minCorner, vec2 maxCorner);
-	static bounding_rectangle fromCenterRadius(vec2 center, vec2 radius);
+	NODISCARD static bounding_rectangle negativeInfinity();
+	NODISCARD static bounding_rectangle fromMinMax(vec2 minCorner, vec2 maxCorner);
+	NODISCARD static bounding_rectangle fromCenterRadius(vec2 center, vec2 radius);
 };
 
-inline vec4 createPlane(vec3 point, vec3 normal)
+inline NODISCARD vec4 createPlane(vec3 point, vec3 normal)
 {
 	float d = -dot(normal, point);
 	return vec4(normal, d);
 }
 
-inline vec3 createLine(vec2 point, vec2 normal)
+inline NODISCARD vec3 createLine(vec2 point, vec2 normal)
 {
 	float d = -dot(normal, point);
 	return vec3(normal, d);
 }
 
-float signedDistanceToPlane(const vec3& p, const vec4& plane);
+NODISCARD float signedDistanceToPlane(const vec3& p, const vec4& plane);
 
 struct bounding_plane
 {
@@ -187,7 +187,7 @@ struct bounding_plane
 		plane = createPlane(point, normal);
 	}
 
-	float signedDistance(vec3 p)
+	NODISCARD float signedDistance(vec3 p) const
 	{
 		return signedDistanceToPlane(p, plane);
 	}
@@ -213,8 +213,8 @@ struct bounding_hull_geometry
 
 	bounding_box aabb;
 
-	static bounding_hull_geometry fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle16* triangles, uint32 numTriangles);
-	static bounding_hull_geometry fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle32* triangles, uint32 numTriangles);
+	NODISCARD static bounding_hull_geometry fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle16* triangles, uint32 numTriangles);
+	NODISCARD static bounding_hull_geometry fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle32* triangles, uint32 numTriangles);
 };
 
 // MUST be convex.
@@ -235,68 +235,68 @@ struct ray
 	vec3 origin;
 	vec3 direction;
 
-	bool intersectPlane(vec3 normal, float d, float& outT) const;
-	bool intersectPlane(vec3 normal, vec3 point, float& outT) const;
-	bool intersectAABB(const bounding_box& a, float& outT) const;
-	bool intersectOBB(const bounding_oriented_box& a, float& outT) const;
-	bool intersectTriangle(vec3 a, vec3 b, vec3 c, float& outT, bool& outFrontFacing) const;
-	bool intersectSphere(vec3 center, float radius, float& outT) const;
-	bool intersectSphere(const bounding_sphere& sphere, float& outT) const { return intersectSphere(sphere.center, sphere.radius, outT); }
-	bool intersectCylinder(const bounding_cylinder& cylinder, float& outT) const;
-	bool intersectCapsule(const bounding_capsule& capsule, float& outT) const;
-	bool intersectDisk(vec3 pos, vec3 normal, float radius, float& outT) const;
-	bool intersectRectangle(vec3 pos, vec3 tangent, vec3 bitangent, vec2 radius, float& outT) const;
-	bool intersectTorus(const bounding_torus& torus, float& outT) const;
-	bool intersectHull(const bounding_hull& hull, const bounding_hull_geometry& geometry, float& outT) const;
+	NODISCARD bool intersectPlane(vec3 normal, float d, float& outT) const;
+	NODISCARD bool intersectPlane(vec3 normal, vec3 point, float& outT) const;
+	NODISCARD bool intersectAABB(const bounding_box& a, float& outT) const;
+	NODISCARD bool intersectOBB(const bounding_oriented_box& a, float& outT) const;
+	NODISCARD bool intersectTriangle(vec3 a, vec3 b, vec3 c, float& outT, bool& outFrontFacing) const;
+	NODISCARD bool intersectSphere(vec3 center, float radius, float& outT) const;
+	NODISCARD bool intersectSphere(const bounding_sphere& sphere, float& outT) const { return intersectSphere(sphere.center, sphere.radius, outT); }
+	NODISCARD bool intersectCylinder(const bounding_cylinder& cylinder, float& outT) const;
+	NODISCARD bool intersectCapsule(const bounding_capsule& capsule, float& outT) const;
+	NODISCARD bool intersectDisk(vec3 pos, vec3 normal, float radius, float& outT) const;
+	NODISCARD bool intersectRectangle(vec3 pos, vec3 tangent, vec3 bitangent, vec2 radius, float& outT) const;
+	NODISCARD bool intersectTorus(const bounding_torus& torus, float& outT) const;
+	NODISCARD bool intersectHull(const bounding_hull& hull, const bounding_hull_geometry& geometry, float& outT) const;
 };
 
-bool sphereVsSphere(const bounding_sphere& a, const bounding_sphere& b);
-bool sphereVsPlane(const bounding_sphere& s, const vec4& p);
-bool sphereVsCapsule(const bounding_sphere& s, const bounding_capsule& c);
-bool sphereVsCylinder(const bounding_sphere& s, const bounding_cylinder& c);
-bool sphereVsAABB(const bounding_sphere& s, const bounding_box& a);
-bool sphereVsOBB(const bounding_sphere& s, const bounding_oriented_box& o);
-bool sphereVsHull(const bounding_sphere& s, const bounding_hull& h);
-bool sphereVsTriangle(const bounding_sphere& s, vec3 a, vec3 b, vec3 c);
+NODISCARD bool sphereVsSphere(const bounding_sphere& a, const bounding_sphere& b);
+NODISCARD bool sphereVsPlane(const bounding_sphere& s, const vec4& p);
+NODISCARD bool sphereVsCapsule(const bounding_sphere& s, const bounding_capsule& c);
+NODISCARD bool sphereVsCylinder(const bounding_sphere& s, const bounding_cylinder& c);
+NODISCARD bool sphereVsAABB(const bounding_sphere& s, const bounding_box& a);
+NODISCARD bool sphereVsOBB(const bounding_sphere& s, const bounding_oriented_box& o);
+NODISCARD bool sphereVsHull(const bounding_sphere& s, const bounding_hull& h);
+NODISCARD bool sphereVsTriangle(const bounding_sphere& s, vec3 a, vec3 b, vec3 c);
 
-bool capsuleVsCapsule(const bounding_capsule& a, const bounding_capsule& b);
-bool capsuleVsCylinder(const bounding_capsule& a, const bounding_cylinder& b);
-bool capsuleVsAABB(const bounding_capsule& c, const bounding_box& b);
-bool capsuleVsOBB(const bounding_capsule& c, const bounding_oriented_box& o);
-bool capsuleVsHull(const bounding_capsule& c, const bounding_hull& h);
-bool capsuleVsTriangle(const bounding_capsule& capsule, vec3 a, vec3 b, vec3 c);
+NODISCARD bool capsuleVsCapsule(const bounding_capsule& a, const bounding_capsule& b);
+NODISCARD bool capsuleVsCylinder(const bounding_capsule& a, const bounding_cylinder& b);
+NODISCARD bool capsuleVsAABB(const bounding_capsule& c, const bounding_box& b);
+NODISCARD bool capsuleVsOBB(const bounding_capsule& c, const bounding_oriented_box& o);
+NODISCARD bool capsuleVsHull(const bounding_capsule& c, const bounding_hull& h);
+NODISCARD bool capsuleVsTriangle(const bounding_capsule& capsule, vec3 a, vec3 b, vec3 c);
 
-bool cylinderVsCylinder(const bounding_cylinder& a, const bounding_cylinder& b);
-bool cylinderVsAABB(const bounding_cylinder& c, const bounding_box& b);
-bool cylinderVsOBB(const bounding_cylinder& c, const bounding_oriented_box& o);
-bool cylinderVsHull(const bounding_cylinder& c, const bounding_hull& h);
+NODISCARD bool cylinderVsCylinder(const bounding_cylinder& a, const bounding_cylinder& b);
+NODISCARD bool cylinderVsAABB(const bounding_cylinder& c, const bounding_box& b);
+NODISCARD bool cylinderVsOBB(const bounding_cylinder& c, const bounding_oriented_box& o);
+NODISCARD bool cylinderVsHull(const bounding_cylinder& c, const bounding_hull& h);
 
-bool aabbVsAABB(const bounding_box& a, const bounding_box& b);
-bool aabbVsOBB(const bounding_box& a, const bounding_oriented_box& o);
-bool aabbVsHull(const bounding_box& a, const bounding_hull& h);
-bool aabbVsPlane(const bounding_box& a, vec4 plane);
-bool aabbVsTriangle(const bounding_box& aabb, vec3 a, vec3 b, vec3 c);
+NODISCARD bool aabbVsAABB(const bounding_box& a, const bounding_box& b);
+NODISCARD bool aabbVsOBB(const bounding_box& a, const bounding_oriented_box& o);
+NODISCARD bool aabbVsHull(const bounding_box& a, const bounding_hull& h);
+NODISCARD bool aabbVsPlane(const bounding_box& a, vec4 plane);
+NODISCARD bool aabbVsTriangle(const bounding_box& aabb, vec3 a, vec3 b, vec3 c);
 
-bool obbVsOBB(const bounding_oriented_box& a, const bounding_oriented_box& b);
-bool obbVsHull(const bounding_oriented_box& o, const bounding_hull& h);
-bool obbVsPlane(const bounding_oriented_box& a, vec4 plane);
-bool obbVsTriangle(const bounding_oriented_box& obb, vec3 a, vec3 b, vec3 c);
+NODISCARD bool obbVsOBB(const bounding_oriented_box& a, const bounding_oriented_box& b);
+NODISCARD bool obbVsHull(const bounding_oriented_box& o, const bounding_hull& h);
+NODISCARD bool obbVsPlane(const bounding_oriented_box& a, vec4 plane);
+NODISCARD bool obbVsTriangle(const bounding_oriented_box& obb, vec3 a, vec3 b, vec3 c);
 
-bool hullVsHull(const bounding_hull& a, const bounding_hull& b);
+NODISCARD bool hullVsHull(const bounding_hull& a, const bounding_hull& b);
 
-vec3 closestPoint_PointSegment(const vec3& q, const line_segment& l);
-vec3 closestPoint_PointAABB(const vec3& q, const bounding_box& aabb);
-float closestPoint_SegmentSegment(const line_segment& l1, const line_segment& l2, vec3& c1, vec3& c2);
-vec3 closestPoint_PointTriangle(const vec3& q, const vec3& a, const vec3& b, const vec3& c);
+NODISCARD vec3 closestPoint_PointSegment(const vec3& q, const line_segment& l);
+NODISCARD vec3 closestPoint_PointAABB(const vec3& q, const bounding_box& aabb);
+NODISCARD float closestPoint_SegmentSegment(const line_segment& l1, const line_segment& l2, vec3& c1, vec3& c2);
+NODISCARD vec3 closestPoint_PointTriangle(const vec3& q, const vec3& a, const vec3& b, const vec3& c);
 
 // Inline functions:
 
-inline float signedDistanceToPlane(const vec3& p, const vec4& plane)
+inline NODISCARD float signedDistanceToPlane(const vec3& p, const vec4& plane)
 {
 	return dot(vec4(p, 1.f), plane);
 }
 
-inline bool sphereVsSphere(const bounding_sphere& a, const bounding_sphere& b)
+inline NODISCARD bool sphereVsSphere(const bounding_sphere& a, const bounding_sphere& b)
 {
 	vec3 d = a.center - b.center;
 	float dist2 = dot(d, d);
@@ -304,18 +304,18 @@ inline bool sphereVsSphere(const bounding_sphere& a, const bounding_sphere& b)
 	return dist2 <= radiusSum * radiusSum;
 }
 
-inline bool sphereVsPlane(const bounding_sphere& s, const vec4& p)
+inline NODISCARD bool sphereVsPlane(const bounding_sphere& s, const vec4& p)
 {
 	return abs(signedDistanceToPlane(s.center, p)) <= s.radius;
 }
 
-inline bool sphereVsCapsule(const bounding_sphere& s, const bounding_capsule& c)
+inline NODISCARD bool sphereVsCapsule(const bounding_sphere& s, const bounding_capsule& c)
 {
 	vec3 closestPoint = closestPoint_PointSegment(s.center, line_segment{ c.positionA, c.positionB });
 	return sphereVsSphere(s, bounding_sphere{ closestPoint, c.radius });
 }
 
-inline bool sphereVsAABB(const bounding_sphere& s, const bounding_box& a)
+inline NODISCARD bool sphereVsAABB(const bounding_sphere& s, const bounding_box& a)
 {
 	vec3 p = closestPoint_PointAABB(s.center, a);
 	vec3 n = p - s.center;
@@ -323,7 +323,7 @@ inline bool sphereVsAABB(const bounding_sphere& s, const bounding_box& a)
 	return sqDistance <= s.radius * s.radius;
 }
 
-inline bool sphereVsOBB(const bounding_sphere& s, const bounding_oriented_box& o)
+inline NODISCARD bool sphereVsOBB(const bounding_sphere& s, const bounding_oriented_box& o)
 {
 	bounding_box aabb = bounding_box::fromCenterRadius(o.center, o.radius);
 	bounding_sphere s_ = {
@@ -333,21 +333,21 @@ inline bool sphereVsOBB(const bounding_sphere& s, const bounding_oriented_box& o
 	return sphereVsAABB(s_, aabb);
 }
 
-inline bool capsuleVsCapsule(const bounding_capsule& a, const bounding_capsule& b)
+inline NODISCARD bool capsuleVsCapsule(const bounding_capsule& a, const bounding_capsule& b)
 {
 	vec3 closestPoint1, closestPoint2;
 	closestPoint_SegmentSegment(line_segment{ a.positionA, a.positionB }, line_segment{ b.positionA, b.positionB }, closestPoint1, closestPoint2);
 	return sphereVsSphere(bounding_sphere{ closestPoint1, a.radius }, bounding_sphere{ closestPoint2, b.radius });
 }
 
-inline bool capsuleVsCylinder(const bounding_capsule& a, const bounding_cylinder& b)
+inline NODISCARD bool capsuleVsCylinder(const bounding_capsule& a, const bounding_cylinder& b)
 {
 	vec3 closestPoint1, closestPoint2;
 	closestPoint_SegmentSegment(line_segment{ a.positionA, a.positionB }, line_segment{ b.positionA, b.positionB }, closestPoint1, closestPoint2);
 	return sphereVsCylinder(bounding_sphere{ closestPoint1, a.radius }, b);
 }
 
-inline bool aabbVsAABB(const bounding_box& a, const bounding_box& b)
+inline NODISCARD bool aabbVsAABB(const bounding_box& a, const bounding_box& b)
 {
 	if (a.maxCorner.x < b.minCorner.x || a.minCorner.x > b.maxCorner.x) return false;
 	if (a.maxCorner.y < b.minCorner.y || a.minCorner.y > b.maxCorner.y) return false;
@@ -355,12 +355,12 @@ inline bool aabbVsAABB(const bounding_box& a, const bounding_box& b)
 	return true;
 }
 
-inline bool aabbVsOBB(const bounding_box& a, const bounding_oriented_box& o)
+inline NODISCARD bool aabbVsOBB(const bounding_box& a, const bounding_oriented_box& o)
 {
 	return obbVsOBB(bounding_oriented_box{ quat::identity, a.getCenter(), a.getRadius() }, o);
 }
 
-inline vec3 closestPoint_PointSegment(const vec3& q, const line_segment& l)
+inline NODISCARD vec3 closestPoint_PointSegment(const vec3& q, const line_segment& l)
 {
 	vec3 ab = l.b - l.a;
 	float t = dot(q - l.a, ab) / squaredLength(ab);
@@ -368,7 +368,7 @@ inline vec3 closestPoint_PointSegment(const vec3& q, const line_segment& l)
 	return l.a + t * ab;
 }
 
-inline vec3 closestPoint_PointAABB(const vec3& q, const bounding_box& aabb)
+inline NODISCARD vec3 closestPoint_PointAABB(const vec3& q, const bounding_box& aabb)
 {
 	vec3 result;
 	for (uint32 i = 0; i < 3; ++i)

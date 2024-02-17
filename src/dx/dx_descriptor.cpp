@@ -36,7 +36,7 @@ static uint32 getShader4ComponentMapping(DXGI_FORMAT format)
 	return D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::create2DTextureSRV(const ref<dx_texture>& texture, texture_mip_range mipRange, DXGI_FORMAT overrideFormat)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::create2DTextureSRV(const ref<dx_texture>& texture, texture_mip_range mipRange, DXGI_FORMAT overrideFormat)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = (overrideFormat == DXGI_FORMAT_UNKNOWN) ? texture->resource->GetDesc().Format : overrideFormat;
@@ -50,7 +50,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::create2DTextureSRV(const ref
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createCubemapSRV(const ref<dx_texture>& texture, texture_mip_range mipRange, DXGI_FORMAT overrideFormat)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createCubemapSRV(const ref<dx_texture>& texture, texture_mip_range mipRange, DXGI_FORMAT overrideFormat)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = (overrideFormat == DXGI_FORMAT_UNKNOWN) ? texture->resource->GetDesc().Format : overrideFormat;
@@ -64,7 +64,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createCubemapSRV(const ref<d
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createCubemapArraySRV(const ref<dx_texture>& texture, texture_mip_range mipRange, uint32 firstCube, uint32 numCubes, DXGI_FORMAT overrideFormat)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createCubemapArraySRV(const ref<dx_texture>& texture, texture_mip_range mipRange, uint32 firstCube, uint32 numCubes, DXGI_FORMAT overrideFormat)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = (overrideFormat == DXGI_FORMAT_UNKNOWN) ? texture->resource->GetDesc().Format : overrideFormat;
@@ -80,7 +80,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createCubemapArraySRV(const 
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createVolumeTextureSRV(const ref<dx_texture>& texture, texture_mip_range mipRange, DXGI_FORMAT overrideFormat)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createVolumeTextureSRV(const ref<dx_texture>& texture, texture_mip_range mipRange, DXGI_FORMAT overrideFormat)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = (overrideFormat == DXGI_FORMAT_UNKNOWN) ? texture->resource->GetDesc().Format : overrideFormat;
@@ -95,7 +95,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createVolumeTextureSRV(const
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createDepthTextureSRV(const ref<dx_texture>& texture)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createDepthTextureSRV(const ref<dx_texture>& texture)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = getDepthReadFormat(texture->format);
@@ -108,7 +108,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createDepthTextureSRV(const 
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createDepthTextureArraySRV(const ref<dx_texture>& texture)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createDepthTextureArraySRV(const ref<dx_texture>& texture)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = getDepthReadFormat(texture->format);
@@ -123,7 +123,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createDepthTextureArraySRV(c
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createStencilTextureSRV(const ref<dx_texture>& texture)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createStencilTextureSRV(const ref<dx_texture>& texture)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = getStencilReadFormat(texture->format);
@@ -137,7 +137,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createStencilTextureSRV(cons
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullTextureSRV()
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullTextureSRV()
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -150,7 +150,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullTextureSRV()
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createBufferSRV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createBufferSRV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -166,7 +166,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createBufferSRV(const ref<dx
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createRawBufferSRV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createRawBufferSRV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
 {
 	uint32 firstElementByteOffset = bufferRange.firstElement * buffer->elementSize;
 	ASSERT(firstElementByteOffset % 16 == 0);
@@ -188,7 +188,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createRawBufferSRV(const ref
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullBufferSRV()
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullBufferSRV()
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
@@ -204,7 +204,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullBufferSRV()
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::create2DTextureUAV(const ref<dx_texture>& texture, uint32 mipSlice, DXGI_FORMAT overrideFormat)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::create2DTextureUAV(const ref<dx_texture>& texture, uint32 mipSlice, DXGI_FORMAT overrideFormat)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
@@ -215,7 +215,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::create2DTextureUAV(const ref
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::create2DTextureArrayUAV(const ref<dx_texture>& texture, uint32 mipSlice, DXGI_FORMAT overrideFormat)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::create2DTextureArrayUAV(const ref<dx_texture>& texture, uint32 mipSlice, DXGI_FORMAT overrideFormat)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
@@ -228,7 +228,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::create2DTextureArrayUAV(cons
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createCubemapUAV(const ref<dx_texture>& texture, uint32 mipSlice, DXGI_FORMAT overrideFormat)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createCubemapUAV(const ref<dx_texture>& texture, uint32 mipSlice, DXGI_FORMAT overrideFormat)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
@@ -241,7 +241,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createCubemapUAV(const ref<d
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createVolumeTextureUAV(const ref<dx_texture>& texture, uint32 mipSlice, DXGI_FORMAT overrideFormat)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createVolumeTextureUAV(const ref<dx_texture>& texture, uint32 mipSlice, DXGI_FORMAT overrideFormat)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
@@ -254,7 +254,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createVolumeTextureUAV(const
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullTextureUAV()
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullTextureUAV()
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
@@ -265,7 +265,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullTextureUAV()
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createBufferUAV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createBufferUAV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
@@ -280,7 +280,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createBufferUAV(const ref<dx
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createBufferUintUAV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createBufferUintUAV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
 {
 	uint32 firstElementByteOffset = bufferRange.firstElement * buffer->elementSize;
 	ASSERT(firstElementByteOffset % 16 == 0);
@@ -302,7 +302,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createBufferUintUAV(const re
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createRawBufferUAV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createRawBufferUAV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
 {
 	uint32 firstElementByteOffset = bufferRange.firstElement * buffer->elementSize;
 	ASSERT(firstElementByteOffset % 16 == 0);
@@ -323,7 +323,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createRawBufferUAV(const ref
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullBufferUAV()
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullBufferUAV()
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
@@ -334,7 +334,7 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullBufferUAV()
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createRaytracingAccelerationStructureSRV(const ref<dx_buffer>& tlas)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createRaytracingAccelerationStructureSRV(const ref<dx_buffer>& tlas)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
@@ -346,55 +346,55 @@ dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createRaytracingAcceleration
 	return *this;
 }
 
-dx_cpu_descriptor_handle dx_cpu_descriptor_handle::operator+(uint32 i)
+NODISCARD dx_cpu_descriptor_handle dx_cpu_descriptor_handle::operator+(uint32 i)
 {
 	return { CD3DX12_CPU_DESCRIPTOR_HANDLE(cpuHandle, i, dxContext.descriptorHandleIncrementSize) };
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::operator+=(uint32 i)
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::operator+=(uint32 i)
 {
 	cpuHandle.Offset(i, dxContext.descriptorHandleIncrementSize);
 	return *this;
 }
 
-dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::operator++()
+NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::operator++()
 {
 	cpuHandle.Offset(dxContext.descriptorHandleIncrementSize);
 	return *this;
 }
 
-dx_cpu_descriptor_handle dx_cpu_descriptor_handle::operator++(int)
+NODISCARD dx_cpu_descriptor_handle dx_cpu_descriptor_handle::operator++(int)
 {
 	dx_cpu_descriptor_handle result = *this;
 	cpuHandle.Offset(dxContext.descriptorHandleIncrementSize);
 	return result;
 }
 
-dx_gpu_descriptor_handle dx_gpu_descriptor_handle::operator+(uint32 i)
+NODISCARD dx_gpu_descriptor_handle dx_gpu_descriptor_handle::operator+(uint32 i)
 {
 	return { CD3DX12_GPU_DESCRIPTOR_HANDLE(gpuHandle, i, dxContext.descriptorHandleIncrementSize) };
 }
 
-dx_gpu_descriptor_handle& dx_gpu_descriptor_handle::operator+=(uint32 i)
+NODISCARD dx_gpu_descriptor_handle& dx_gpu_descriptor_handle::operator+=(uint32 i)
 {
 	gpuHandle.Offset(i, dxContext.descriptorHandleIncrementSize);
 	return *this;
 }
 
-dx_gpu_descriptor_handle& dx_gpu_descriptor_handle::operator++()
+NODISCARD dx_gpu_descriptor_handle& dx_gpu_descriptor_handle::operator++()
 {
 	gpuHandle.Offset(dxContext.descriptorHandleIncrementSize);
 	return *this;
 }
 
-dx_gpu_descriptor_handle dx_gpu_descriptor_handle::operator++(int)
+NODISCARD dx_gpu_descriptor_handle dx_gpu_descriptor_handle::operator++(int)
 {
 	dx_gpu_descriptor_handle result = *this;
 	gpuHandle.Offset(dxContext.descriptorHandleIncrementSize);
 	return result;
 }
 
-dx_rtv_descriptor_handle& dx_rtv_descriptor_handle::create2DTextureRTV(const ref<dx_texture>& texture, uint32 arraySlice, uint32 mipSlice)
+NODISCARD dx_rtv_descriptor_handle& dx_rtv_descriptor_handle::create2DTextureRTV(const ref<dx_texture>& texture, uint32 arraySlice, uint32 mipSlice)
 {
 	ASSERT(texture->supportsRTV);
 
@@ -422,7 +422,7 @@ dx_rtv_descriptor_handle& dx_rtv_descriptor_handle::create2DTextureRTV(const ref
 	return *this;
 }
 
-dx_rtv_descriptor_handle& dx_rtv_descriptor_handle::createNullTextureRTV(DXGI_FORMAT format)
+NODISCARD dx_rtv_descriptor_handle& dx_rtv_descriptor_handle::createNullTextureRTV(DXGI_FORMAT format)
 {
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 	rtvDesc.Format = format;
@@ -433,7 +433,7 @@ dx_rtv_descriptor_handle& dx_rtv_descriptor_handle::createNullTextureRTV(DXGI_FO
 	return *this;
 }
 
-dx_dsv_descriptor_handle& dx_dsv_descriptor_handle::create2DTextureDSV(const ref<dx_texture>& texture, uint32 arraySlice, uint32 mipSlice)
+NODISCARD dx_dsv_descriptor_handle& dx_dsv_descriptor_handle::create2DTextureDSV(const ref<dx_texture>& texture, uint32 arraySlice, uint32 mipSlice)
 {
 	ASSERT(texture->supportsDSV);
 	ASSERT(isDepthFormat(texture->format));

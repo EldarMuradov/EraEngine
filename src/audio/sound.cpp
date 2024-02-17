@@ -128,7 +128,7 @@ void unloadAllSounds()
     synthSounds.clear();
 }
 
-ref<audio_sound> getSound(sound_id id)
+NODISCARD ref<audio_sound> getSound(sound_id id)
 {
     auto it = fileSounds.find(id.hash);
     ref<audio_sound> result = (it != fileSounds.end()) ? it->second : 0;
@@ -289,12 +289,12 @@ static bool getWFX(HANDLE fileHandle, const fs::path& path, WAVEFORMATEXTENSIBLE
     return true;
 }
 
-bool isSoundExtension(const fs::path& extension)
+NODISCARD bool isSoundExtension(const fs::path& extension)
 {
     return extension == ".wav";
 }
 
-bool isSoundExtension(const std::string& extension)
+NODISCARD bool isSoundExtension(const std::string& extension)
 {
     return extension == ".wav";
 }

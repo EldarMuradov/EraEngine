@@ -25,11 +25,6 @@ void px_rigidbody_component::addForce(vec3 force, px_force_mode mode) noexcept
 		actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eIMPULSE);
 }
 
-physx::PxRigidActor* px_rigidbody_component::getRigidActor() noexcept
-{
-	return actor;
-}
-
 void px_rigidbody_component::setDisableGravity() noexcept
 {
 	actor->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, true);
@@ -48,17 +43,12 @@ void px_rigidbody_component::setMass(float mass) noexcept
 	actor->is<PxRigidDynamic>()->setMass(mass);
 }
 
-float px_rigidbody_component::getMass() const noexcept
-{
-	return mass;
-}
-
 void px_rigidbody_component::setConstraints(uint8 constraints) noexcept
 {
 	actor->is<PxRigidDynamic>()->setRigidDynamicLockFlags((physx::PxRigidDynamicLockFlags)constraints);
 }
 
-uint8 px_rigidbody_component::getConstraints() noexcept
+NODISCARD uint8 px_rigidbody_component::getConstraints() const noexcept
 {
 	return (uint8)actor->is<PxRigidDynamic>()->getRigidDynamicLockFlags();
 }
@@ -69,7 +59,7 @@ void px_rigidbody_component::setLinearVelocity(vec3 velocity)
 		actor->is<PxRigidDynamic>()->setLinearVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
 }
 
-vec3 px_rigidbody_component::getLinearVelocity()
+NODISCARD vec3 px_rigidbody_component::getLinearVelocity() const noexcept
 {
 	if (actor->is<PxRigidDynamic>())
 	{
@@ -85,7 +75,7 @@ void px_rigidbody_component::setAngularVelocity(vec3 velocity)
 		actor->is<PxRigidDynamic>()->setAngularVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
 }
 
-vec3 px_rigidbody_component::getAngularVelocity()
+NODISCARD vec3 px_rigidbody_component::getAngularVelocity() const noexcept
 {
 	if (actor->is<PxRigidDynamic>())
 	{
@@ -95,7 +85,7 @@ vec3 px_rigidbody_component::getAngularVelocity()
 	return vec3();
 }
 
-vec3 px_rigidbody_component::getPhysicsPosition()
+NODISCARD vec3 px_rigidbody_component::getPhysicsPosition() const noexcept
 {
 	PxVec3 pos = actor->getGlobalPose().p;
 	return vec3(pos.x, pos.y, pos.z);
@@ -135,7 +125,7 @@ void px_rigidbody_component::createPhysics(bool addToScene)
 #endif
 }
 
-physx::PxRigidActor* px_rigidbody_component::createActor()
+NODISCARD physx::PxRigidActor* px_rigidbody_component::createActor()
 {
 	eentity entity = { handle, &px_physics_engine::get()->app->getCurrentScene()->registry };
 	px_collider_component_base* coll = (px_collider_component_base*)entity.getComponentIfExists<px_sphere_collider_component>();

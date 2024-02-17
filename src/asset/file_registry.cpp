@@ -135,7 +135,7 @@ static void handleAssetChange(const file_system_event& e)
 	}
 }
 
-asset_handle getAssetHandleFromPath(const fs::path& path)
+NODISCARD asset_handle getAssetHandleFromPath(const fs::path& path)
 {
 	const std::lock_guard<std::mutex> lock(mutex);
 
@@ -147,7 +147,7 @@ asset_handle getAssetHandleFromPath(const fs::path& path)
 	return it->second;
 }
 
-fs::path getPathFromAssetHandle(asset_handle handle)
+NODISCARD fs::path getPathFromAssetHandle(asset_handle handle)
 {
 	const std::lock_guard<std::mutex> lock(mutex);
 

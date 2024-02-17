@@ -1,16 +1,5 @@
 #include "pch.h"
 #include "scripting_core.h"
-#include <stdio.h>
-#include <intrin.h>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <handleapi.h>
-
-#include <assert.h>
-#include <thread>
-
-#include <limits.h>
 
 //powershell commainds (i dont want to write it from scratch)
 //cd DotnetScripting-Lib\EraScriptingCore

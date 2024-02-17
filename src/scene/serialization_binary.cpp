@@ -4,8 +4,6 @@
 
 #include "physics/physics.h"
 #include "terrain/heightmap_collider.h"
-//#include <px/physics/px_rigidbody_component.h>
-//#include <px/physics/px_collider_component.h>
 
 struct write_stream
 {
@@ -291,14 +289,14 @@ static void serializeMaterial(const ref<pbr_material>& mat, write_stream& stream
 	}
 }
 
-static std::pair<asset_handle, uint32> deserializeTexture(read_stream& stream)
+NODISCARD static std::pair<asset_handle, uint32> deserializeTexture(read_stream& stream)
 {
 	READ(asset_handle, handle);
 	READ(uint32, flags);
 	return { handle, flags };
 }
 
-static ref<pbr_material> deserializeMaterial(read_stream& stream)
+NODISCARD static ref<pbr_material> deserializeMaterial(read_stream& stream)
 {
 	ref<pbr_material> result = 0;
 

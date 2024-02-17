@@ -471,7 +471,7 @@ void px_collision_contact_callback::onContact(const PxContactPairHeader& pairHea
 	}
 }
 
-PxTriangleMesh* px_triangle_mesh::createTriangleMesh(PxTriangleMeshDesc desc)
+NODISCARD PxTriangleMesh* px_triangle_mesh::createTriangleMesh(PxTriangleMeshDesc desc)
 {
 	try
 	{

@@ -18,7 +18,7 @@ static bool endsWith(std::string const& value, std::string const& ending)
 	return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
-std::string openFileDialog(const std::string& fileDescription, const std::string& extension)
+NODISCARD std::string openFileDialog(const std::string& fileDescription, const std::string& extension)
 {
 	char filter[128];
 	createFilter(filter, fileDescription, extension);
@@ -46,7 +46,7 @@ std::string openFileDialog(const std::string& fileDescription, const std::string
 	return std::string();
 }
 
-std::string saveFileDialog(const std::string& fileDescription, const std::string& extension)
+NODISCARD std::string saveFileDialog(const std::string& fileDescription, const std::string& extension)
 {
 	char filter[128];
 	createFilter(filter, fileDescription, extension);
@@ -76,7 +76,7 @@ std::string saveFileDialog(const std::string& fileDescription, const std::string
 
 #pragma warning( disable : 4244 )
 
-std::string directoryDialog()
+NODISCARD std::string directoryDialog()
 {
 	IFileDialog* pFileOpen;
 

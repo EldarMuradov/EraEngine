@@ -38,7 +38,7 @@ void eallocator::ensureFreeSizeInternal(uint64 size)
 	}
 }
 
-void* eallocator::allocate(uint64 size, uint64 alignment, bool clearToZero)
+NODISCARD void* eallocator::allocate(uint64 size, uint64 alignment, bool clearToZero)
 {
 	if (size == 0)
 		return 0;
@@ -70,7 +70,7 @@ void* eallocator::allocate(uint64 size, uint64 alignment, bool clearToZero)
 	return result;
 }
 
-void* eallocator::getCurrent(uint64 alignment)
+NODISCARD void* eallocator::getCurrent(uint64 alignment)
 {
 	return memory + alignTo(current, alignment);
 }
@@ -94,7 +94,7 @@ void eallocator::reset(bool freeMemory)
 	resetToMarker(memory_marker{ 0 });
 }
 
-memory_marker eallocator::getMarker()
+NODISCARD memory_marker eallocator::getMarker() const
 {
 	return { current };
 }

@@ -115,7 +115,7 @@ void drawSoundEditor(bool& open)
 
 static sound_spec nullSpec = {};
 
-const sound_spec& getSoundSpec(const sound_id& id)
+NODISCARD const sound_spec& getSoundSpec(const sound_id& id)
 {
     auto it = soundRegistry.find(id.hash);
     return (it != soundRegistry.end()) ? it->second : nullSpec;

@@ -542,7 +542,7 @@ static void copyRootSignatureDesc(const D3D12_ROOT_SIGNATURE_DESC1* desc, dx_roo
 	}
 }
 
-dx_root_signature createRootSignature(dx_blob rootSignatureBlob)
+NODISCARD dx_root_signature createRootSignature(dx_blob rootSignatureBlob)
 {
 	dx_root_signature result = {};
 
@@ -558,14 +558,14 @@ dx_root_signature createRootSignature(dx_blob rootSignatureBlob)
 	return result;
 }
 
-dx_root_signature createRootSignature(const wchar* path)
+NODISCARD dx_root_signature createRootSignature(const wchar* path)
 {
 	dx_blob rootSignatureBlob;
 	checkResult(D3DReadFileToBlob(path, &rootSignatureBlob));
 	return createRootSignature(rootSignatureBlob);
 }
 
-dx_root_signature createRootSignature(const D3D12_ROOT_SIGNATURE_DESC1& desc)
+NODISCARD dx_root_signature createRootSignature(const D3D12_ROOT_SIGNATURE_DESC1& desc)
 {
 	D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
 	featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
@@ -591,7 +591,7 @@ dx_root_signature createRootSignature(const D3D12_ROOT_SIGNATURE_DESC1& desc)
 	return rootSignature;
 }
 
-dx_root_signature createRootSignature(CD3DX12_ROOT_PARAMETER1* rootParameters, uint32 numRootParameters, CD3DX12_STATIC_SAMPLER_DESC* samplers, uint32 numSamplers,
+NODISCARD dx_root_signature createRootSignature(CD3DX12_ROOT_PARAMETER1* rootParameters, uint32 numRootParameters, CD3DX12_STATIC_SAMPLER_DESC* samplers, uint32 numSamplers,
 	D3D12_ROOT_SIGNATURE_FLAGS flags)
 {
 	D3D12_ROOT_SIGNATURE_DESC1 rootSignatureDesc = {};
@@ -603,7 +603,7 @@ dx_root_signature createRootSignature(CD3DX12_ROOT_PARAMETER1* rootParameters, u
 	return createRootSignature(rootSignatureDesc);
 }
 
-dx_root_signature createRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc)
+NODISCARD dx_root_signature createRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc)
 {
 	dx_blob rootSignatureBlob;
 	dx_blob errorBlob;
@@ -619,7 +619,7 @@ dx_root_signature createRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc)
 	return rootSignature;
 }
 
-dx_root_signature createRootSignature(CD3DX12_ROOT_PARAMETER* rootParameters, uint32 numRootParameters, CD3DX12_STATIC_SAMPLER_DESC* samplers, uint32 numSamplers,
+NODISCARD dx_root_signature createRootSignature(CD3DX12_ROOT_PARAMETER* rootParameters, uint32 numRootParameters, CD3DX12_STATIC_SAMPLER_DESC* samplers, uint32 numSamplers,
 	D3D12_ROOT_SIGNATURE_FLAGS flags)
 {
 	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
@@ -631,7 +631,7 @@ dx_root_signature createRootSignature(CD3DX12_ROOT_PARAMETER* rootParameters, ui
 	return createRootSignature(rootSignatureDesc);
 }
 
-dx_root_signature createRootSignature(D3D12_ROOT_SIGNATURE_FLAGS flags)
+NODISCARD dx_root_signature createRootSignature(D3D12_ROOT_SIGNATURE_FLAGS flags)
 {
 	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
 	rootSignatureDesc.Flags = flags;

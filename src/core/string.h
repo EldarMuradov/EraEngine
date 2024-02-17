@@ -2,7 +2,7 @@
 #include <string>
 #include <sstream>
 
-static std::string wstringToString(const std::wstring_view& wstr)
+NODISCARD static std::string wstringToString(const std::wstring_view& wstr)
 {
 	if (wstr.empty())
 		return std::string();
@@ -13,7 +13,7 @@ static std::string wstringToString(const std::wstring_view& wstr)
 	return result;
 }
 
-static std::wstring stringToWstring(const std::string_view& str)
+NODISCARD static std::wstring stringToWstring(const std::string_view& str)
 {
 	if (str.empty())
 		return std::wstring();
@@ -24,7 +24,7 @@ static std::wstring stringToWstring(const std::string_view& str)
 	return result;
 }
 
-static std::vector<std::string> split(const std::string& source, char delimiter)
+NODISCARD static std::vector<std::string> split(const std::string& source, char delimiter)
 {
 	std::vector<std::string> tokens;
 	std::string token;
@@ -37,7 +37,7 @@ static std::vector<std::string> split(const std::string& source, char delimiter)
 	return tokens;
 }
 
-constexpr uint32 hashString32(const char* s)
+NODISCARD constexpr uint32 hashString32(const char* s)
 {
 	uint32 hash = 2166136261u;
 
@@ -47,7 +47,7 @@ constexpr uint32 hashString32(const char* s)
 	return hash;
 }
 
-constexpr uint64 hashString64(const char* s)
+NODISCARD constexpr uint64 hashString64(const char* s)
 {
 	uint64 hash = 14695981039346656037llu;
 	while (*s)
@@ -59,7 +59,7 @@ constexpr uint64 hashString64(const char* s)
 #define COMPILE_TIME_STRING_HASH_32(str) (force_consteval<hashString32(str)>)
 #define COMPILE_TIME_STRING_HASH_64(str) (force_consteval<hashString64(str)>)
 
-static inline std::string getTimeString()
+NODISCARD static inline std::string getTimeString()
 {
 	time_t now = time(0);
 	char nowString[100];
@@ -72,12 +72,12 @@ static inline std::string getTimeString()
 	return time;
 }
 
-static inline bool contains(const std::string_view& s, const char* sub)
+NODISCARD static inline bool contains(const std::string_view& s, const char* sub)
 {
 	return s.find(sub) != std::string::npos;
 }
 
-static inline bool endsWith(const std::string_view& s, const std::string_view& sub)
+NODISCARD static inline bool endsWith(const std::string_view& s, const std::string_view& sub)
 {
 	if (s.length() >= sub.length())
 		return s.compare(s.length() - sub.length(), sub.length(), sub) == 0;

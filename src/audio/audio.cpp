@@ -344,7 +344,7 @@ void restartAllSounds()
 	}
 }
 
-sound_settings* getSettings(sound_handle handle)
+NODISCARD sound_settings* getSettings(sound_handle handle)
 {
 	if (handle)
 	{

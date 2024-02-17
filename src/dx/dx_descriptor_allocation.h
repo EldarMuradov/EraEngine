@@ -7,10 +7,10 @@ struct dx_descriptor_page;
 
 struct dx_descriptor_allocation
 {
-	inline CD3DX12_CPU_DESCRIPTOR_HANDLE cpuAt(uint32 index = 0) { ASSERT(index < count); return CD3DX12_CPU_DESCRIPTOR_HANDLE(cpuBase, index, descriptorSize); }
-	inline CD3DX12_GPU_DESCRIPTOR_HANDLE gpuAt(uint32 index = 0) { ASSERT(index < count); return CD3DX12_GPU_DESCRIPTOR_HANDLE(gpuBase, index, descriptorSize); }
+	inline NODISCARD CD3DX12_CPU_DESCRIPTOR_HANDLE cpuAt(uint32 index = 0) const { ASSERT(index < count); return CD3DX12_CPU_DESCRIPTOR_HANDLE(cpuBase, index, descriptorSize); }
+	inline NODISCARD CD3DX12_GPU_DESCRIPTOR_HANDLE gpuAt(uint32 index = 0) const { ASSERT(index < count); return CD3DX12_GPU_DESCRIPTOR_HANDLE(gpuBase, index, descriptorSize); }
 
-	inline bool valid() { return count > 0; }
+	NODISCARD inline bool valid() const { return count > 0; }
 	uint64 count = 0;
 
 private:
@@ -27,7 +27,7 @@ struct dx_descriptor_heap
 {
 	void initialize(D3D12_DESCRIPTOR_HEAP_TYPE type, bool shaderVisible, uint64 pageSize = 1024);
 
-	dx_descriptor_allocation allocate(uint64 count = 1);
+	NODISCARD dx_descriptor_allocation allocate(uint64 count = 1);
 	void free(dx_descriptor_allocation allocation);
 
 	D3D12_DESCRIPTOR_HEAP_TYPE type;
@@ -41,7 +41,7 @@ private:
 
 struct dx_descriptor_range
 {
-	inline dx_double_descriptor_handle pushHandle()
+	inline NODISCARD dx_double_descriptor_handle pushHandle()
 	{
 		dx_double_descriptor_handle result =
 		{
@@ -78,14 +78,14 @@ struct dx_frame_descriptor_allocator
 
 	void initialize();
 	void newFrame(uint32 bufferedFrameID);
-	dx_descriptor_range allocateContiguousDescriptorRange(uint32 count);
+	NODISCARD dx_descriptor_range allocateContiguousDescriptorRange(uint32 count);
 };
 
 struct dx_pushable_descriptor_heap
 {
 	void initialize(uint32 maxSize, bool shaderVisible = true);
 	void reset();
-	dx_cpu_descriptor_handle push();
+	NODISCARD dx_cpu_descriptor_handle push();
 
 	com<ID3D12DescriptorHeap> descriptorHeap;
 	dx_cpu_descriptor_handle currentCPU;

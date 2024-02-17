@@ -16,14 +16,16 @@ public static class ELevel
     {
         try
         {
-            // Test data
-            EEntity nav_target = new(59, "SpherePX1");
-            nav_target.CreateComponent<RigidbodyComponent>(RigidbodyType.Dynamic);
+            {
+                // Test case
+                EEntity nav_target = new(59, "SpherePX1");
+                nav_target.CreateComponent<RigidbodyComponent>(RigidbodyType.Dynamic);
 
-            EEntity e = new(60, "SpherePX");
-            e.CreateComponent<RigidbodyComponent>(RigidbodyType.Dynamic);
+                EEntity e = new(60, "SpherePX");
+                e.CreateComponent<RigidbodyComponent>(RigidbodyType.Dynamic);
 
-            EWorld.SyncEntities();
+                EWorld.SyncEntities();
+            }
 
             _syncObj.Wait();
 

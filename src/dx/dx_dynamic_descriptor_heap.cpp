@@ -143,7 +143,7 @@ void dx_dynamic_descriptor_heap::reset()
 	}
 }
 
-com<ID3D12DescriptorHeap> dx_dynamic_descriptor_heap::requestDescriptorHeap()
+NODISCARD com<ID3D12DescriptorHeap> dx_dynamic_descriptor_heap::requestDescriptorHeap()
 {
 	com<ID3D12DescriptorHeap> descriptorHeap;
 	if (freeDescriptorHeaps.size() > 0)
@@ -160,7 +160,7 @@ com<ID3D12DescriptorHeap> dx_dynamic_descriptor_heap::requestDescriptorHeap()
 	return descriptorHeap;
 }
 
-com<ID3D12DescriptorHeap> dx_dynamic_descriptor_heap::createDescriptorHeap()
+NODISCARD com<ID3D12DescriptorHeap> dx_dynamic_descriptor_heap::createDescriptorHeap()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc = {};
 	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -173,7 +173,7 @@ com<ID3D12DescriptorHeap> dx_dynamic_descriptor_heap::createDescriptorHeap()
 	return descriptorHeap;
 }
 
-uint32 dx_dynamic_descriptor_heap::computeStaleDescriptorCount() const
+NODISCARD uint32 dx_dynamic_descriptor_heap::computeStaleDescriptorCount() const
 {
 	uint32 numStaleDescriptors = 0;
 	DWORD i;

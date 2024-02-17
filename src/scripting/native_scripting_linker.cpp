@@ -6,6 +6,7 @@
 #include <EraScriptingLauncher-Lib/src/script.h>
 #include <ai/navigation_component.h>
 #include <fstream>
+#include <core/project.h>
 
 application* enative_scripting_linker::app;
 std::vector<std::string> enative_scripting_linker::script_types;
@@ -13,6 +14,7 @@ std::vector<std::string> enative_scripting_linker::script_types;
 #include <Windows.h>
 #include <semaphore>
 #include <core/project.h>
+#include <core/string.h>
 
 namespace
 {
@@ -73,21 +75,21 @@ static void get_all_functions_and_start()
 	const char_t* dotnet_type_method_st = STR("Start");
 	startf = enative_scripting_linker::get_static_method<start_fn>(dotnet_type, dotnet_type_method_st, STR("EraEngine.Call, EraScriptingCore"));
 	const char_t* dotnet_type_method_up = STR("Update");
-	updatef = enative_scripting_linker::get_static_method<update_fn>(dotnet_type, dotnet_type_method_up, STR("EraEngine.CallUpdate, EraScriptingCore"));
+	updatef = enative_scripting_linker::get_static_method<update_fn, float>(dotnet_type, dotnet_type_method_up, STR("EraEngine.CallUpdate, EraScriptingCore"));
 
 	const char_t* dotnet_type_hc = STR("EraEngine.Core.CollisionHandler, EraScriptingCore");
 	const char_t* dotnet_type_method_c = STR("HandleCollision");
-	handle_collisionsf = enative_scripting_linker::get_static_method<handle_collisions_fn>(dotnet_type_hc, dotnet_type_method_c, STR("EraEngine.CallHandleColls, EraScriptingCore"));
+	handle_collisionsf = enative_scripting_linker::get_static_method<handle_collisions_fn, int, int>(dotnet_type_hc, dotnet_type_method_c, STR("EraEngine.CallHandleColls, EraScriptingCore"));
 
 	const char_t* dotnet_type_tr = STR("EraEngine.Core.TransformHandler, EraScriptingCore");
 	const char_t* dotnet_type_method_t = STR("ProcessTransform");
-	handle_trsf = enative_scripting_linker::get_static_method<handle_trs_fn>(dotnet_type_tr, dotnet_type_method_t, STR("EraEngine.CallHandleTrs, EraScriptingCore"));
+	handle_trsf = enative_scripting_linker::get_static_method<handle_trs_fn, intptr_t, int>(dotnet_type_tr, dotnet_type_method_t, STR("EraEngine.CallHandleTrs, EraScriptingCore"));
 
 	const char_t* dotnet_type_cc = STR("EraEngine.Runtime.ComponentHandler, EraScriptingCore");
 	const char_t* dotnet_type_method_cc = STR("AddComponent");
-	create_compf = enative_scripting_linker::get_static_method<comp_fn>(dotnet_type_cc, dotnet_type_method_cc, STR("EraEngine.CallAddComp, EraScriptingCore"));
+	create_compf = enative_scripting_linker::get_static_method<comp_fn, int, uintptr_t>(dotnet_type_cc, dotnet_type_method_cc, STR("EraEngine.CallAddComp, EraScriptingCore"));
 	const char_t* dotnet_type_method_rc = STR("RemoveComponent");
-	remove_compf = enative_scripting_linker::get_static_method<comp_fn>(dotnet_type_cc, dotnet_type_method_rc, STR("EraEngine.CallRemoveComp, EraScriptingCore"));
+	remove_compf = enative_scripting_linker::get_static_method<comp_fn, int, uintptr_t>(dotnet_type_cc, dotnet_type_method_rc, STR("EraEngine.CallRemoveComp, EraScriptingCore"));
 }
 
 static void exec()
@@ -97,7 +99,7 @@ static void exec()
 		assert(false && "Failure: load_hostfxr()");
 	}
 
-	const string_t root = STR("E:\\Era Engine\\bin\\Dotnet\\Release\\net8.0\\");
+	const string_t root = stringToWstring(eproject::dotnet_path);
 	const string_t cfg = STR("EraScriptingCore.runtimeconfig.json");
 	const string_t lib = STR("EraScriptingCore.dll");
 
@@ -118,7 +120,6 @@ static void exec()
 			<< ")" << std::endl;
 		return;
 	}
-
 
 	get_delegate_fptr(
 		dotnetHostContext,

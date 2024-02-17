@@ -1,4 +1,5 @@
 ﻿using EraEngine.Components;
+using System.Runtime.CompilerServices;
 namespace EraEngine.Infrastructure;
 
 public sealed class ComponentsContainer
@@ -11,12 +12,14 @@ public sealed class ComponentsContainer
     public List<string> TempCompData = [];
 
     public Dictionary<string, EComponent>.ValueCollection Values 
-    { 
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => Components.Values;
     }
 
     public Dictionary<string, EComponent>.ValueCollection ActiveValues
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _components.Values;
     }
 

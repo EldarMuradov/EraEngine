@@ -1,18 +1,4 @@
 #pragma once
-#include <vector>
-#include <string>
-
-#ifdef INSIDE_MANAGED_CODE
-#    define DECLSPECIFIER __declspec(dllexport)
-#    define EXPIMP_TEMPLATE
-#else
-#    define DECLSPECIFIER __declspec(dllimport)
-#    define EXPIMP_TEMPLATE extern
-#endif
-
-#define _AMD64_
-#include <libloaderapi.h>
-#include <optional>
 
 typedef HMODULE elib; //Era .NET Native AOT library instance
 
@@ -26,7 +12,7 @@ using eu32f_u32 = uint32_t(*)(uint32_t); //Era uint32_t function with NO ARGS
 using eptrf_u32 = uintptr_t(*)(uint32_t); //Era uintptr_t function with uint32_t argument
 using eptrf_u32_u32 = uintptr_t(*)(uint32_t, uint32_t); //Era uintptr_t function with 2 uint32_t arguments
 
-struct escripting_core 
+struct escripting_core
 {
 	escripting_core() = default;
 
@@ -44,7 +30,6 @@ struct escripting_core
 	void stop() const;
 
 	//Call scripting void function directly
-	template <typename Func>
 	void call_void(const char* funcName)
 	{
 		if (!lib)
@@ -64,7 +49,7 @@ struct escripting_core
 	}
 
 	//Call scripting void function directly
-	template <typename Func, typename... Args>
+	template <typename Func, typename... Args, IsCallableFunc<Func, Args...> = true>
 	void call_void(const char* funcName, Args&&... args)
 	{
 		if (!lib)
@@ -75,7 +60,7 @@ struct escripting_core
 	}
 
 	//Call scripting function directly
-	template <typename Func, typename... Args>
+	template <typename Func, typename... Args, IsCallableFunc<Func, Args...> = true>
 	auto call(const char* funcName, Func fn, Args&&... args) -> std::optional<decltype(fn(args...))>
 	{
 		if (!lib)

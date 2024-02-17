@@ -7,7 +7,7 @@ struct entire_file
 	uint64 readOffset;
 
 	template <typename T>
-	T* consume(uint32 count = 1)
+	NODISCARD T* consume(uint32 count = 1)
 	{
 		uint32 readSize = sizeof(T) * count;
 		if (readSize > size - readOffset)
@@ -21,7 +21,7 @@ struct entire_file
 	}
 };
 
-static entire_file loadFile(const fs::path& path)
+NODISCARD static entire_file loadFile(const fs::path& path)
 {
 	FILE* f = fopen(path.string().c_str(), "rb");
 	if (!f)
@@ -49,7 +49,6 @@ static void freeFile(entire_file file)
 	free(file.content);
 }
 
-
 struct sized_string
 {
 	const char* str;
@@ -65,7 +64,7 @@ static bool operator==(sized_string a, sized_string b)
 	return a.length == b.length && strncmp(a.str, b.str, a.length) == 0;
 }
 
-static std::string nameToString(sized_string str)
+NODISCARD static std::string nameToString(sized_string str)
 {
 	std::string name;
 	name.reserve(str.length);
@@ -87,7 +86,7 @@ static std::string nameToString(sized_string str)
 	return name;
 }
 
-static std::string relativeFilepath(sized_string str, const fs::path& scenePath)
+NODISCARD static std::string relativeFilepath(sized_string str, const fs::path& scenePath)
 {
 	fs::path p = std::string(str.str, str.length);
 	fs::path abs = (p.is_absolute()) ? p : scenePath.parent_path() / p;

@@ -46,14 +46,14 @@ struct enative_scripting_linker
 	static void createScript(int id, const char* comp);
 	static void removeScript(int id, const char* comp);
 
-	template<typename Func, typename... Args>
-	static void call_static_method(Func f, Args&&... args)
+	template<typename Func, typename... Args, IsCallableFunc<Func, Args...> = true>
+	static void call_static_method(Func f, Args... args)
 	{
-		f(std::forward(args)...);
+		f(args...);
 	}
 
-	template<typename Func>
-	static Func get_static_method(const char_t* type_name, const char_t* method_name, const char_t* delegate_name)
+	template<typename Func, typename... Args, IsCallableFunc<Func, Args...> = true>
+	NODISCARD static Func get_static_method(const char_t* type_name, const char_t* method_name, const char_t* delegate_name)
 	{
 		Func f = nullptr;
 		auto rc = get_function_pointer(type_name, method_name, delegate_name, nullptr, nullptr, (void**)&f);

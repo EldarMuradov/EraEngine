@@ -24,7 +24,8 @@ struct px_task : physx::PxLightCpuTask
 		: func(f),
 		args(std::forward<Args>(ars)...) {}
 	~px_task() {}
-	virtual  const char* getName() const { return "PhysX Task"; }
+
+	virtual const char* getName() const { return "PhysX Task"; }
 	virtual void run() { call(args); }
 
 private:

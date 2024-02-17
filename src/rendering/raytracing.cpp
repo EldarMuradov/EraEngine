@@ -68,7 +68,7 @@ raytracing_blas_builder& raytracing_blas_builder::push(const std::vector<boundin
 	return *this;
 }
 
-ref<raytracing_blas> raytracing_blas_builder::finish(bool keepScratch)
+NODISCARD ref<raytracing_blas> raytracing_blas_builder::finish(bool keepScratch)
 {	
 	dx_dynamic_constant_buffer localTransformsBuffer = {};
 	if (localTransforms.size() > 0)

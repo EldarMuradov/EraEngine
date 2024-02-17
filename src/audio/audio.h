@@ -39,7 +39,7 @@ bool soundStillPlaying(sound_handle handle);
 bool stop(sound_handle handle, float fadeOutTime = 0.1f);
 
 // Only hold on to this pointer for one frame! Retrieve each frame! Returns null, if sound has stopped already.
-sound_settings* getSettings(sound_handle handle);
+NODISCARD sound_settings* getSettings(sound_handle handle);
 
 float dbToVolume(float db);
 float volumeToDB(float volume);

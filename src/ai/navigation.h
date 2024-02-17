@@ -28,27 +28,27 @@ inline bool operator <(const nav_node& lhs, const nav_node& rhs)
 	return lhs.fCost < rhs.fCost;
 }
 
-static bool isDestination(vec2 pos, nav_node dest) noexcept
+NODISCARD static bool isDestination(vec2 pos, nav_node dest) noexcept
 {
 	if (pos == dest.position)
 		return true;
 	return false;
 }
 
-static float calculateH(vec2 pos, nav_node dest) noexcept
+NODISCARD static float calculateH(vec2 pos, nav_node dest) noexcept
 {
 	return length(pos - dest.position);
 }
 
 // TODO: Obstacle checking
-static bool isValid(vec2 pos) noexcept
+NODISCARD static bool isValid(vec2 pos) noexcept
 {
 	return true;
 }
 
 struct path_finder
 {
-    static std::vector<nav_node> a_star_makePath(std::unordered_map<vec2, nav_node>& map, nav_node& dest)
+    NODISCARD static std::vector<nav_node> a_star_makePath(std::unordered_map<vec2, nav_node>& map, nav_node& dest)
     {
         try
         {
@@ -88,7 +88,7 @@ struct path_finder
 
 struct a_star_navigation
 {
-    static std::vector<nav_node> navigate(nav_node& from, nav_node& to)
+    NODISCARD static std::vector<nav_node> navigate(nav_node& from, nav_node& to)
     {
         if (isValid(to.position) == false)
         {

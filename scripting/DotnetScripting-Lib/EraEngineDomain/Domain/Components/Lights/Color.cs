@@ -1,21 +1,39 @@
 ﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace EraEngine.Components.Lights;
 
 public interface ILightData
 {
-    Color Color { get; }
+    Color Color 
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get; 
+    }
 }
 
 public struct PointLightData : ILightData
 {
-    public Color Color { get; }
+    public Color Color 
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+    }
+
+    public Vector3 Position 
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+    }
+
+    public Vector3 Attenuation 
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+    }
 
     public readonly float Range;
-
-    public Vector3 Position { get; }
-    public Vector3 Attenuation { get; }
 
     public PointLightData(Color color, Vector3 pos, Vector3 att, float range)
     {
@@ -28,11 +46,29 @@ public struct PointLightData : ILightData
 
 public struct SpotLightData : ILightData
 {
-    public Color Color { get; }
+    public Color Color
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+    }
 
-    public Vector3 Direction { get; }
-    public Vector3 Position { get; }
-    public Vector3 Attenuation { get; }
+    public Vector3 Direction
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+    }
+
+    public Vector3 Position
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+    }
+
+    public Vector3 Attenuation
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+    }
 
     public readonly float Range;
     public readonly float InnerConeAngle;
@@ -52,9 +88,23 @@ public struct SpotLightData : ILightData
 
 public struct DirLightData : ILightData
 {
-    public Color Color { get; }
-    public Vector3 Direction { get; }
-    public Vector3 Ambient { get; }
+    public Color Color
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+    }
+
+    public Vector3 Direction
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+    }
+
+    public Vector3 Ambient
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+    }
 
     public DirLightData(Color color, Vector3 dir, Vector3 amb)
     {

@@ -4,7 +4,7 @@
 
 using json = nlohmann::basic_json<>;
 
-json merge(const json& rhs, const json& lhs);
+NODISCARD json merge(const json& rhs, const json& lhs);
 
 struct escene;
 struct eentity;
@@ -21,7 +21,7 @@ struct ejson_serializer
 	}
 
 	template<typename T>
-	static T deserializeObject(std::string_view name)
+	NODISCARD static T deserializeObject(std::string_view name)
 	{
 		std::ifstream file(eproject::path + (std::string)"\\data\\Preferences\\" + name.data());
 		json object;
@@ -34,13 +34,13 @@ struct ejson_serializer
 
 	static void serializePrefab(eentity* entity);
 
-	static json convert2Json(eentity* entity);
+	NODISCARD static json convert2Json(eentity* entity);
 
-	static json convert2JsonWithNb(eentity* entity, int nb);
+	NODISCARD static json convert2JsonWithNb(eentity* entity, int nb);
 
-	static eentity deserializePrefab(std::string_view name, escene* scene);
+	NODISCARD static eentity deserializePrefab(std::string_view name, escene* scene);
 
 	static void serializeScene(escene* scene, const char* name);
 
-	static escene deserializeScene(std::string_view name);
+	NODISCARD static escene deserializeScene(std::string_view name);
 };

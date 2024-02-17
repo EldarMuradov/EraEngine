@@ -72,12 +72,12 @@ void rigid_body_component::recalculateProperties(entt::registry* registry, const
 	invInertia = invert(inertia);
 }
 
-vec3 rigid_body_component::getGlobalCOGPosition(const trs& transform) const
+NODISCARD vec3 rigid_body_component::getGlobalCOGPosition(const trs& transform) const
 {
 	return transform.position + transform.rotation * localCOGPosition;
 }
 
-vec3 rigid_body_component::getGlobalPointVelocity(const trs& transform, vec3 localP) const
+NODISCARD vec3 rigid_body_component::getGlobalPointVelocity(const trs& transform, vec3 localP) const
 {
 	vec3 globalP = transformPosition(transform, localP);
 	vec3 globalCOG = getGlobalCOGPosition(transform);

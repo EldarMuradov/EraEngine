@@ -142,7 +142,7 @@ struct mace_mesh_desc
 	uint32 slices = 15;
 };
 
-static uint32 getVertexOthersSize(uint32 meshFlags)
+NODISCARD static uint32 getVertexOthersSize(uint32 meshFlags)
 {
 	uint32 size = 0;
 	if (meshFlags & mesh_creation_flags_with_uvs) { size += sizeof(vec2); }
@@ -174,18 +174,18 @@ struct mesh_builder
 
 	void pushMesh(const struct submesh_asset& mesh, float scale, bounding_box* aabb = 0);
 
-	submesh_info endSubmesh();
+	NODISCARD submesh_info endSubmesh();
 
-	dx_mesh createDXMesh();
+	NODISCARD dx_mesh createDXMesh();
 
-	vec3* getPositions() { return (vec3*)positionArena.base(); }
-	void* getOthers() { return othersArena.base(); }
-	void* getTriangles() { return indexArena.base(); }
+	NODISCARD vec3* getPositions() { return (vec3*)positionArena.base(); }
+	NODISCARD void* getOthers() { return othersArena.base(); }
+	NODISCARD void* getTriangles() { return indexArena.base(); }
 
-	uint32 getNumVertices() { return totalNumVertices; }
-	uint32 getNumTriangles() { return totalNumTriangles; }
-	uint32 getSkinOffset() { return skinOffset; }
-	uint32 getOthersSize() { return othersSize; }
+	NODISCARD uint32 getNumVertices() const { return totalNumVertices; }
+	NODISCARD uint32 getNumTriangles() const { return totalNumTriangles; }
+	NODISCARD uint32 getSkinOffset() const { return skinOffset; }
+	NODISCARD uint32 getOthersSize() const { return othersSize; }
 
 private:
 	std::tuple<vec3*, uint8*, uint8*, uint32> beginPrimitive(uint32 numVertices, uint32 numTriangles);

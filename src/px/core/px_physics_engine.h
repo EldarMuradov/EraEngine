@@ -54,7 +54,7 @@ static physx::PxVec3 gravity(0.0f, -9.8f, 0.0f);
 
 struct px_allocator_callback : PxAllocatorCallback
 {
-	void* allocate(size_t size, const char* typeName, const char* filename, int line) override
+	NODISCARD void* allocate(size_t size, const char* typeName, const char* filename, int line) override
 	{
 		ASSERT(size < GB(1));
 		return _aligned_malloc(size, 16);
@@ -87,40 +87,40 @@ public:
 	}
 
 public:
-	PX_INLINE PxU32 getNbAnyHits() const
+	NODISCARD PX_INLINE PxU32 getNbAnyHits() const
 	{
 		return getNbTouches();
 	}
 
-	PX_INLINE const HitType& getAnyHit(const PxU32 index) const
+	NODISCARD PX_INLINE const HitType& getAnyHit(const PxU32 index) const
 	{
 		PX_ASSERT(index < getNbTouches() + PxU32(this->hasBlock));
 		return index < getNbTouches() ? getTouches()[index] : this->block;
 	}
 
-	PX_INLINE PxU32 getNbTouches() const
+	NODISCARD PX_INLINE PxU32 getNbTouches() const
 	{
 		return _count;
 	}
 
-	PX_INLINE const HitType* getTouches() const
+	NODISCARD PX_INLINE const HitType* getTouches() const
 	{
 		return _buffer;
 	}
 
-	PX_INLINE const HitType& getTouch(const PxU32 index) const
+	NODISCARD PX_INLINE const HitType& getTouch(const PxU32 index) const
 	{
 		PX_ASSERT(index < getNbTouches());
 		return _buffer[index];
 	}
 
-	PX_INLINE PxU32 getMaxNbTouches() const
+	NODISCARD PX_INLINE PxU32 getMaxNbTouches() const
 	{
 		return PX_CONTACT_BUFFER_SIZE;
 	}
 
 protected:
-	PxAgain processTouches(const HitType* buffer, PxU32 nbHits) override
+	NODISCARD PxAgain processTouches(const HitType* buffer, PxU32 nbHits) override
 	{
 		nbHits = min(nbHits, PX_CONTACT_BUFFER_SIZE - _count);
 		for (PxU32 i = 0; i < nbHits; i++)
@@ -187,27 +187,27 @@ struct px_overlap_info
 
 namespace physx
 {
-	static PxVec3 createPxVec3(const vec3& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
-	static PxVec2 createPxVec2(const vec2& vec) noexcept { return PxVec2(vec.x, vec.y); }
-	static PxVec3 createPxVec3(vec3&& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
-	static PxVec2 createPxVec2(vec2&& vec) noexcept { return PxVec2(vec.x, vec.y); }
+	NODISCARD static PxVec3 createPxVec3(const vec3& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
+	NODISCARD static PxVec2 createPxVec2(const vec2& vec) noexcept { return PxVec2(vec.x, vec.y); }
+	NODISCARD static PxVec3 createPxVec3(vec3&& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
+	NODISCARD static PxVec2 createPxVec2(vec2&& vec) noexcept { return PxVec2(vec.x, vec.y); }
 
-	static PxQuat createPxQuat(const quat& q) noexcept { return PxQuat(q.x, q.y, q.z, q.w); }
-	static PxQuat createPxQuat(quat&& q) noexcept { return PxQuat(q.x, q.y, q.z, q.w); }
+	NODISCARD static PxQuat createPxQuat(const quat& q) noexcept { return PxQuat(q.x, q.y, q.z, q.w); }
+	NODISCARD static PxQuat createPxQuat(quat&& q) noexcept { return PxQuat(q.x, q.y, q.z, q.w); }
 
-	static vec3 createVec3(const PxVec3& vec) noexcept { return vec3(vec.x, vec.y, vec.z); }
-	static vec2 createVec2(const PxVec2& vec) noexcept { return vec2(vec.x, vec.y); }
-	static vec3 createVec3(PxVec3&& vec) noexcept { return vec3(vec.x, vec.y, vec.z); }
-	static vec2 createVec2(PxVec2&& vec) noexcept { return vec2(vec.x, vec.y); }
+	NODISCARD static vec3 createVec3(const PxVec3& vec) noexcept { return vec3(vec.x, vec.y, vec.z); }
+	NODISCARD static vec2 createVec2(const PxVec2& vec) noexcept { return vec2(vec.x, vec.y); }
+	NODISCARD static vec3 createVec3(PxVec3&& vec) noexcept { return vec3(vec.x, vec.y, vec.z); }
+	NODISCARD static vec2 createVec2(PxVec2&& vec) noexcept { return vec2(vec.x, vec.y); }
 
-	static quat createQuat(const PxQuat& q) noexcept { return quat(q.x, q.y, q.z, q.w); }
-	static quat createQuat(PxQuat&& q) noexcept { return quat(q.x, q.y, q.z, q.w); }
+	NODISCARD static quat createQuat(const PxQuat& q) noexcept { return quat(q.x, q.y, q.z, q.w); }
+	NODISCARD static quat createQuat(PxQuat&& q) noexcept { return quat(q.x, q.y, q.z, q.w); }
 
-	static PxVec2 min(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::min(a.x, b.x), std::min(a.y, b.y)); }
-	static PxVec3 min(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z)); }
+	NODISCARD static PxVec2 min(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::min(a.x, b.x), std::min(a.y, b.y)); }
+	NODISCARD static PxVec3 min(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z)); }
 
-	static PxVec2 max(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::max(a.x, b.x), std::max(a.y, b.y)); }
-	static PxVec3 max(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)); }
+	NODISCARD static PxVec2 max(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::max(a.x, b.x), std::max(a.y, b.y)); }
+	NODISCARD static PxVec3 max(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)); }
 
 #if PX_VEHICLE
 
@@ -338,7 +338,7 @@ struct px_query_filter : public PxQueryFilterCallback
 
 class px_character_controller_filter_callback : public PxControllerFilterCallback
 {
-	static PxShape* getShape(const PxController& controller)
+	NODISCARD static PxShape* getShape(const PxController& controller)
 	{
 		PxRigidDynamic* actor = controller.getActor();
 
@@ -464,7 +464,7 @@ private:
 
 struct px_triangle_mesh
 {
-	PxTriangleMesh* createTriangleMesh(PxTriangleMeshDesc desc);
+	NODISCARD PxTriangleMesh* createTriangleMesh(PxTriangleMeshDesc desc);
 };
 
 #if PX_VEHICLE
@@ -503,8 +503,8 @@ private:
 
 	px_physics_engine(const px_physics_engine&) = delete;
 	px_physics_engine& operator=(const px_physics_engine&) = delete;
-	px_physics_engine(px_physics_engine&&) = delete;
 	px_physics_engine& operator=(px_physics_engine&&) = delete;
+	px_physics_engine(px_physics_engine&&) = delete;
 
 public:
 	static void initialize(application* application);

@@ -1,4 +1,6 @@
-﻿#ifdef ERASCRIPTINGCPPDECLS_EXPORTS
+﻿#pragma once
+
+#ifdef ERASCRIPTINGCPPDECLS_EXPORTS
 #define ERASCRIPTINGCPPDECLS_API __declspec(dllexport)
 #else
 #define ERASCRIPTINGCPPDECLS_API __declspec(dllimport)

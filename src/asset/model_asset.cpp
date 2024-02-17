@@ -2,12 +2,12 @@
 #include "model_asset.h"
 #include "core/log.h"
 
-model_asset loadFBX(const fs::path& path, uint32 flags);
-model_asset loadOBJ(const fs::path& path, uint32 flags);
-model_asset loadBIN(const fs::path& path);
+NODISCARD model_asset loadFBX(const fs::path& path, uint32 flags);
+NODISCARD model_asset loadOBJ(const fs::path& path, uint32 flags);
+NODISCARD model_asset loadBIN(const fs::path& path);
 void writeBIN(const model_asset& asset, const fs::path& path);
 
-model_asset load3DModelFromFile(const fs::path& path, uint32 meshFlags)
+NODISCARD model_asset load3DModelFromFile(const fs::path& path, uint32 meshFlags)
 {
 	if (!fs::exists(path))
 	{

@@ -43,14 +43,14 @@ static void initialize()
 	}
 }
 
-static uint32 getIndex(uint32 size)
+NODISCARD static uint32 getIndex(uint32 size)
 {
 	uint32 index = indexOfLeastSignificantSetBit(size) - indexOfLeastSignificantSetBit(minimumSize);
 	index = numBuckets - index - 1;
 	return index;
 }
 
-static shadow_map_viewport allocateShadowViewport(uint32 size)
+NODISCARD static shadow_map_viewport allocateShadowViewport(uint32 size)
 {
 	ASSERT(size <= maximumSize);
 	ASSERT(size >= minimumSize);
@@ -166,7 +166,7 @@ static void visualize(dx_command_list* cl, ref<dx_texture> texture)
 
 static bool init = false;
 
-std::pair<shadow_map_viewport, bool> assignShadowMapViewport(uint64 uniqueLightID, uint64 lightMovementHash, uint32 size)
+NODISCARD std::pair<shadow_map_viewport, bool> assignShadowMapViewport(uint64 uniqueLightID, uint64 lightMovementHash, uint32 size)
 {
 	if (!init)
 	{
@@ -214,7 +214,7 @@ std::pair<shadow_map_viewport, bool> assignShadowMapViewport(uint64 uniqueLightI
 	return { vp, staticCacheAvailable };
 }
 
-uint64 getLightMovementHash(const directional_light& dl)
+NODISCARD uint64 getLightMovementHash(const directional_light& dl)
 {
 	size_t seed = 0;
 	for (uint32 i = 0; i < dl.numShadowCascades; ++i)
@@ -224,7 +224,7 @@ uint64 getLightMovementHash(const directional_light& dl)
 	return seed;
 }
 
-uint64 getLightMovementHash(const spot_light_cb& sl)
+NODISCARD uint64 getLightMovementHash(const spot_light_cb& sl)
 {
 	size_t seed = 0;
 	hash_combine(seed, sl.direction);
@@ -234,7 +234,7 @@ uint64 getLightMovementHash(const spot_light_cb& sl)
 	return seed;
 }
 
-uint64 getLightMovementHash(const point_light_cb& pl)
+NODISCARD uint64 getLightMovementHash(const point_light_cb& pl)
 {
 	size_t seed = 0;
 	hash_combine(seed, pl.position);

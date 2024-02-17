@@ -14,7 +14,7 @@ void raytracing_tlas::reset()
     allInstances.clear();
 }
 
-raytracing_instance_handle raytracing_tlas::instantiate(raytracing_object_type type, const trs& transform)
+NODISCARD raytracing_instance_handle raytracing_tlas::instantiate(raytracing_object_type type, const trs& transform)
 {
     uint32 result = (uint32)allInstances.size();
     D3D12_RAYTRACING_INSTANCE_DESC& instance = allInstances.emplace_back();

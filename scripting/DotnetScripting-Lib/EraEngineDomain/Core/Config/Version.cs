@@ -1,10 +1,24 @@
-﻿namespace EraEngine.Configuration;
+﻿using System.Runtime.CompilerServices;
+
+namespace EraEngine.Configuration;
 
 public class Version(int build, int release)
 {
-    public int Release { get; init; } = build;
+    public int Release
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        init;
+    } = build;
 
-    public int Build { get; init; } = release;
+    public int Build
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        init;
+    } = release;
 
     public static bool operator ==(Version left, Version right) 
     { 

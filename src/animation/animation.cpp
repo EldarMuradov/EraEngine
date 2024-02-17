@@ -498,7 +498,7 @@ void animation_clip::edit()
 	ImGui::Checkbox("Bake y translation into pose", &bakeRootYTranslationIntoPose);
 }
 
-trs animation_clip::getFirstRootTransform() const
+NODISCARD trs animation_clip::getFirstRootTransform() const
 {
 	if (rootMotionJoint.isAnimated)
 	{
@@ -526,7 +526,7 @@ trs animation_clip::getFirstRootTransform() const
 	return trs::identity;
 }
 
-trs animation_clip::getLastRootTransform() const
+NODISCARD trs animation_clip::getLastRootTransform() const
 {
 	if (rootMotionJoint.isAnimated)
 	{

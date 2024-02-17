@@ -54,7 +54,7 @@ void pbr_raytracer::pushTexture(const ref<dx_texture>& tex, uint32& flags, uint3
     }
 }
 
-raytracing_object_type pbr_raytracer::defineObjectType(const ref<raytracing_blas>& blas, const std::vector<ref<pbr_material>>& materials)
+NODISCARD raytracing_object_type pbr_raytracer::defineObjectType(const ref<raytracing_blas>& blas, const std::vector<ref<pbr_material>>& materials)
 {
     uint32 numGeometries = (uint32)blas->geometries.size();
 

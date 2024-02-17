@@ -74,7 +74,7 @@ enum mesh_flags
 		mesh_flag_load_colors | mesh_flag_load_skin,
 };
 
-model_asset load3DModelFromFile(const fs::path& path, uint32 meshFlags = mesh_flag_default);
+NODISCARD model_asset load3DModelFromFile(const fs::path& path, uint32 meshFlags = mesh_flag_default);
 
 bool isMeshExtension(const fs::path& extension);
 bool isMeshExtension(const std::string& extension);

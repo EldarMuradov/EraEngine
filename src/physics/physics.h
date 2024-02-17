@@ -84,7 +84,7 @@ static_assert(arraysize(colliderTypeNames) == collider_type_count, "Missing coll
 struct collider_union
 {
 	collider_union() {}
-	physics_properties calculatePhysicsProperties();
+	NODISCARD physics_properties calculatePhysicsProperties();
 
 	union
 	{
@@ -107,7 +107,7 @@ struct collider_union
 
 struct collider_component : collider_union
 {
-	static collider_component asSphere(bounding_sphere s, physics_material material)
+	NODISCARD static collider_component asSphere(bounding_sphere s, physics_material material)
 	{
 		collider_component result;
 		result.sphere = s;
@@ -115,7 +115,8 @@ struct collider_component : collider_union
 		result.material = material;
 		return result;
 	}
-	static collider_component asCapsule(bounding_capsule c, physics_material material)
+
+	NODISCARD static collider_component asCapsule(bounding_capsule c, physics_material material)
 	{
 		collider_component result;
 		result.capsule = c;
@@ -123,7 +124,8 @@ struct collider_component : collider_union
 		result.material = material;
 		return result;
 	}
-	static collider_component asCylinder(bounding_cylinder c, physics_material material)
+
+	NODISCARD static collider_component asCylinder(bounding_cylinder c, physics_material material)
 	{
 		collider_component result;
 		result.cylinder = c;
@@ -131,7 +133,8 @@ struct collider_component : collider_union
 		result.material = material;
 		return result;
 	}
-	static collider_component asAABB(bounding_box b, physics_material material)
+
+	NODISCARD static collider_component asAABB(bounding_box b, physics_material material)
 	{
 		collider_component result;
 		result.aabb = b;
@@ -139,7 +142,8 @@ struct collider_component : collider_union
 		result.material = material;
 		return result;
 	}
-	static collider_component asOBB(bounding_oriented_box b, physics_material material)
+
+	NODISCARD static collider_component asOBB(bounding_oriented_box b, physics_material material)
 	{
 		collider_component result;
 		result.obb = b;
@@ -147,7 +151,8 @@ struct collider_component : collider_union
 		result.material = material;
 		return result;
 	}
-	static collider_component asHull(bounding_hull h, physics_material material)
+
+	NODISCARD static collider_component asHull(bounding_hull h, physics_material material)
 	{
 		collider_component result;
 		result.hull = h;
@@ -156,7 +161,7 @@ struct collider_component : collider_union
 		return result;
 	}
 
-	static collider_component fromUnion(const collider_union& u)
+	NODISCARD static collider_component fromUnion(const collider_union& u)
 	{
 		collider_component result;
 		memcpy(&result, &u, sizeof(u));
@@ -204,7 +209,7 @@ struct trigger_component
 
 #define INVALID_BOUNDING_HULL_INDEX -1
 
-uint32 allocateBoundingHullGeometry(const std::string& meshFilepath);
+NODISCARD uint32 allocateBoundingHullGeometry(const std::string& meshFilepath);
 
 struct distance_constraint_handle { entity_handle entity; };
 struct ball_constraint_handle { entity_handle entity; };
@@ -214,39 +219,39 @@ struct cone_twist_constraint_handle { entity_handle entity; };
 struct slider_constraint_handle { entity_handle entity; };
 
 // Local anchors are always in the space of the entities.
-distance_constraint_handle addDistanceConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB, float distance);
-distance_constraint_handle addDistanceConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchorA, vec3 globalAnchorB); // Calculates distance from current configuration.
+NODISCARD distance_constraint_handle addDistanceConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB, float distance);
+NODISCARD distance_constraint_handle addDistanceConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchorA, vec3 globalAnchorB); // Calculates distance from current configuration.
 
-ball_constraint_handle addBallConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB);
-ball_constraint_handle addBallConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
+NODISCARD ball_constraint_handle addBallConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB);
+NODISCARD ball_constraint_handle addBallConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
 
-fixed_constraint_handle addFixedConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
+NODISCARD fixed_constraint_handle addFixedConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
 
 // The min limit is in the range [-pi, 0], the max limit in the range [0, pi]. 
 // If the specified values are not in this range, the limits are disabled.
 // Limits are specified as allowed deviations from the initial relative rotation.
 // Usually the absolute of each limit should be a lot smaller than pi.
-hinge_constraint_handle addHingeConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalHingeAxis,
+NODISCARD hinge_constraint_handle addHingeConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalHingeAxis,
 	float minLimit = 1.f, float maxLimit = -1.f);
 
-cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, 
+NODISCARD cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis,
 	float swingLimit, float twistLimit);
 
-slider_constraint_handle addSliderConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, float minLimit = 1.f, float maxLimit = -1.f);
+NODISCARD slider_constraint_handle addSliderConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, float minLimit = 1.f, float maxLimit = -1.f);
 
-distance_constraint_handle addConstraint(eentity& a, eentity& b, const distance_constraint& c);
-ball_constraint_handle addConstraint(eentity& a, eentity& b, const ball_constraint& c);
-fixed_constraint_handle addConstraint(eentity& a, eentity& b, const fixed_constraint& c);
-hinge_constraint_handle addConstraint(eentity& a, eentity& b, const hinge_constraint& c);
-cone_twist_constraint_handle addConstraint(eentity& a, eentity& b, const cone_twist_constraint& c);
-slider_constraint_handle addConstraint(eentity& a, eentity& b, const slider_constraint& c);
+NODISCARD distance_constraint_handle addConstraint(eentity& a, eentity& b, const distance_constraint& c);
+NODISCARD ball_constraint_handle addConstraint(eentity& a, eentity& b, const ball_constraint& c);
+NODISCARD fixed_constraint_handle addConstraint(eentity& a, eentity& b, const fixed_constraint& c);
+NODISCARD hinge_constraint_handle addConstraint(eentity& a, eentity& b, const hinge_constraint& c);
+NODISCARD cone_twist_constraint_handle addConstraint(eentity& a, eentity& b, const cone_twist_constraint& c);
+NODISCARD slider_constraint_handle addConstraint(eentity& a, eentity& b, const slider_constraint& c);
 
-distance_constraint& getConstraint(escene& scene, distance_constraint_handle handle);
-ball_constraint& getConstraint(escene& scene, ball_constraint_handle handle);
-fixed_constraint& getConstraint(escene& scene, fixed_constraint_handle handle);
-hinge_constraint& getConstraint(escene& scene, hinge_constraint_handle handle);
-cone_twist_constraint& getConstraint(escene& scene, cone_twist_constraint_handle handle);
-slider_constraint& getConstraint(escene& scene, slider_constraint_handle handle);
+NODISCARD distance_constraint& getConstraint(escene& scene, distance_constraint_handle handle);
+NODISCARD ball_constraint& getConstraint(escene& scene, ball_constraint_handle handle);
+NODISCARD fixed_constraint& getConstraint(escene& scene, fixed_constraint_handle handle);
+NODISCARD hinge_constraint& getConstraint(escene& scene, hinge_constraint_handle handle);
+NODISCARD cone_twist_constraint& getConstraint(escene& scene, cone_twist_constraint_handle handle);
+NODISCARD slider_constraint& getConstraint(escene& scene, slider_constraint_handle handle);
 
 void deleteAllConstraints(escene& scene);
 
@@ -259,7 +264,7 @@ void deleteConstraint(escene& scene, slider_constraint_handle handle);
 
 void deleteAllConstraintsFromEntity(eentity& entity);
 
-static eentity getOtherEntity(const constraint_entity_reference_component& constraint, eentity first)
+NODISCARD static eentity getOtherEntity(const constraint_entity_reference_component& constraint, eentity first)
 {
 	entity_handle result = (first == constraint.entityA) ? constraint.entityB : constraint.entityA;
 	return { result, first.registry };
@@ -284,8 +289,8 @@ struct collider_entity_iterator
 		eentity entity;
 	};
 
-	iterator begin() { return iterator{ firstColliderEntity }; }
-	iterator end() { return iterator{ eentity{ entity_handle(entt::null), firstColliderEntity.registry } }; }
+	NODISCARD iterator begin() { return iterator{ firstColliderEntity }; }
+	NODISCARD iterator end() { return iterator{ eentity{ entity_handle(entt::null), firstColliderEntity.registry } }; }
 
 	eentity firstColliderEntity = {};
 };
@@ -299,8 +304,8 @@ struct collider_component_iterator : collider_entity_iterator
 		collider_component& operator*() { return entity.getComponent<collider_component>(); }
 	};
 
-	iterator begin() { return iterator{ firstColliderEntity }; }
-	iterator end() { return iterator{ eentity{ entity_handle(entt::null), firstColliderEntity.registry } }; }
+	NODISCARD iterator begin() { return iterator{ firstColliderEntity }; }
+	NODISCARD iterator end() { return iterator{ eentity{ entity_handle(entt::null), firstColliderEntity.registry } }; }
 };
 
 struct constraint_entity_iterator
@@ -324,8 +329,8 @@ struct constraint_entity_iterator
 		std::pair<eentity, constraint_type> operator*();
 	};
 
-	iterator begin() { return iterator{ firstConstraintEdgeIndex, registry }; }
-	iterator end() { return iterator{ INVALID_CONSTRAINT_EDGE, registry }; }
+	NODISCARD iterator begin() { return iterator{ firstConstraintEdgeIndex, registry }; }
+	NODISCARD iterator end() { return iterator{ INVALID_CONSTRAINT_EDGE, registry }; }
 
 	uint16 firstConstraintEdgeIndex = INVALID_CONSTRAINT_EDGE;
 	entt::registry* registry;

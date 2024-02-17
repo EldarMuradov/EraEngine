@@ -21,7 +21,7 @@ struct narrowphase_result
 };
 
 // outColliderPairs may be the same as colliderPairs
-narrowphase_result narrowphase(const collider_union* worldSpaceColliders, collider_pair* colliderPairs, uint32 numCollisionPairs, eallocator& arena,
+NODISCARD narrowphase_result narrowphase(const collider_union* worldSpaceColliders, collider_pair* colliderPairs, uint32 numCollisionPairs, eallocator& arena,
 	collision_contact* outContacts, constraint_body_pair* outBodyPairs, // result.numContacts many.
 	collider_pair* outColliderPairs, uint8* outContactCountPerCollision, // result.numCollisions many.
 	non_collision_interaction* outNonCollisionInteractions,			// result.numNonCollisionInteractions many.

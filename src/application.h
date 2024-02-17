@@ -26,8 +26,8 @@
 
 void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh);
 
-bool editFireParticleSystem(fire_particle_system& particleSystem);
-bool editBoidParticleSystem(boid_particle_system& particleSystem);
+NODISCARD bool editFireParticleSystem(fire_particle_system& particleSystem);
+NODISCARD bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
 struct updatePhysicsAndScriptingData;
 void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt);
@@ -41,8 +41,8 @@ struct application
 
 	void handleFileDrop(const fs::path& filename);
 
-	escene* getCurrentScene() { return &scene.getCurrentScene(); }
-	editor_scene* getScene() { return &scene; }
+	NODISCARD escene* getCurrentScene() { return &scene.getCurrentScene(); }
+	NODISCARD editor_scene* getScene() { return &scene; }
 
 	eallocator stackArena;
 

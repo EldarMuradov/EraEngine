@@ -45,7 +45,7 @@ static bool operator==(const pbr_material_desc& a, const pbr_material_desc& b)
 static std::unordered_map<pbr_material_desc, weakref<pbr_material>> materialCache;
 static std::mutex mutex;
 
-ref<pbr_material> createPBRMaterial(const pbr_material_desc& desc)
+NODISCARD ref<pbr_material> createPBRMaterial(const pbr_material_desc& desc)
 {
 	mutex.lock();
 
@@ -73,7 +73,7 @@ ref<pbr_material> createPBRMaterial(const pbr_material_desc& desc)
 	return sp;
 }
 
-ref<pbr_material> createPBRMaterialAsync(const pbr_material_desc& desc, job_handle parentJob)
+NODISCARD ref<pbr_material> createPBRMaterialAsync(const pbr_material_desc& desc, job_handle parentJob)
 {
 	mutex.lock();
 
@@ -101,7 +101,7 @@ ref<pbr_material> createPBRMaterialAsync(const pbr_material_desc& desc, job_hand
 	return sp;
 }
 
-ref<pbr_material> getDefaultPBRMaterial()
+NODISCARD ref<pbr_material> getDefaultPBRMaterial()
 {
 	static ref<pbr_material> material = createPBRMaterial({});
 	return material;

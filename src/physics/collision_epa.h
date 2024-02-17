@@ -91,7 +91,7 @@ static const char* epaReturnNames[] =
 // Regardless of the return type, this function always returns the best approximation of the collision info in outResult.
 // The caller can decide whether to use the result or not.
 template <typename shapeA_t, typename shapeB_t>
-static epa_status epaCollisionInfo(const gjk_simplex& gjkSimplex, const shapeA_t& shapeA, const shapeB_t& shapeB, epa_result& outResult, uint32 maxNumIterations = 20)
+NODISCARD static epa_status epaCollisionInfo(const gjk_simplex& gjkSimplex, const shapeA_t& shapeA, const shapeB_t& shapeB, epa_result& outResult, uint32 maxNumIterations = 20)
 {
 	ASSERT(gjkSimplex.numPoints == 4);
 

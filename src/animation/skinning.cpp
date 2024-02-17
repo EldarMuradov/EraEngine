@@ -132,7 +132,7 @@ void initializeSkinning()
 	clothSkinningPipeline = createReloadablePipeline("cloth_skinning_cs");
 }
 
-std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer_group_view& vertexBuffer, vertex_range range, uint32 numJoints)
+NODISCARD std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer_group_view& vertexBuffer, vertex_range range, uint32 numJoints)
 {
 	uint32 jointOffset = atomicAdd(numSkinningMatricesThisFrame, numJoints);
 	ASSERT(jointOffset + numJoints <= MAX_NUM_SKINNING_MATRICES_PER_FRAME);
@@ -168,20 +168,20 @@ std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer
 	return { result, skinningMatrices + jointOffset };
 }
 
-std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer_group_view& vertexBuffer, uint32 numVertices, uint32 numJoints)
+NODISCARD std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer_group_view& vertexBuffer, uint32 numVertices, uint32 numJoints)
 {
 	auto [vb, mats] = skinObject(vertexBuffer, vertex_range{ 0, numVertices }, numJoints);
 	return { vb, mats };
 }
 
-std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer_group_view& vertexBuffer, submesh_info submesh, uint32 numJoints)
+NODISCARD std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer_group_view& vertexBuffer, submesh_info submesh, uint32 numJoints)
 {
 	auto [vb, mats] = skinObject(vertexBuffer, vertex_range{ submesh.baseVertex, submesh.numVertices }, numJoints);
 
 	return { vb, mats };
 }
 
-dx_vertex_buffer_group_view skinCloth(const dx_vertex_buffer_view& inpositions, uint32 gridSizeX, uint32 gridSizeY)
+NODISCARD dx_vertex_buffer_group_view skinCloth(const dx_vertex_buffer_view& inpositions, uint32 gridSizeX, uint32 gridSizeY)
 {
 	uint32 numVertices = gridSizeX * gridSizeY;
 	uint32 vertexOffset = atomicAdd(totalNumVertices, numVertices);

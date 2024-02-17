@@ -1,8 +1,14 @@
-﻿namespace EraEngine;
+﻿using System.Runtime.CompilerServices;
+
+namespace EraEngine;
 
 public class BackgroundServiceSystem : IESystem
 {
-    public ESystemPriority Priority { get; }
+    public ESystemPriority Priority
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+    }
 
     public BackgroundServiceSystem()
     {

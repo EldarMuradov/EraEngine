@@ -27,7 +27,7 @@ struct sat_edge
 };
 
 template <typename shape_t>
-static sat_status satFaceIntersectionTest(vec4* planes, uint32 numPlanes, const shape_t& otherShape, sat_result& outResult)
+NODISCARD static sat_status satFaceIntersectionTest(vec4* planes, uint32 numPlanes, const shape_t& otherShape, sat_result& outResult)
 {
 	float minPenetration = outResult.minPenetration;
 	uint32 faceIndex = 0;
@@ -63,7 +63,7 @@ static sat_status satFaceIntersectionTest(vec4* planes, uint32 numPlanes, const 
 	return sat_worse_intersection;
 }
 
-static bool isMinkowskiFace(vec3 a, vec3 b, vec3 c, vec3 d)
+NODISCARD static bool isMinkowskiFace(vec3 a, vec3 b, vec3 c, vec3 d)
 {
 	vec3 bxa = cross(b, a);
 	vec3 dxc = cross(d, c);
@@ -77,7 +77,7 @@ static bool isMinkowskiFace(vec3 a, vec3 b, vec3 c, vec3 d)
 }
 
 template <typename shape_t>
-static sat_status satEdgeIntersectionTest(sat_edge* edgesA, uint32 numEdgesA, vec3 centerA, sat_edge* edgesB, uint32 numEdgesB, const shape_t& shapeB, sat_result& outResult)
+NODISCARD static sat_status satEdgeIntersectionTest(sat_edge* edgesA, uint32 numEdgesA, vec3 centerA, sat_edge* edgesB, uint32 numEdgesB, const shape_t& shapeB, sat_result& outResult)
 {
 	float minPenetration = outResult.minPenetration;
 	vec4 minPlane;

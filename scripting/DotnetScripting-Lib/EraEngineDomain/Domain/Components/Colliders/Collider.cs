@@ -1,4 +1,6 @@
-﻿namespace EraEngine.Components;
+﻿using System.Runtime.CompilerServices;
+
+namespace EraEngine.Components;
 
 public enum ColliderType : uint
 {
@@ -11,5 +13,11 @@ public enum ColliderType : uint
 
 public abstract class Collider : EComponent
 {
-    public ColliderType Type { get; protected set; }
+    public ColliderType Type
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected set;
+    }
 }

@@ -3,7 +3,7 @@
 #include <scene/scene.h>
 #include <fstream>
 
-json merge(const json& rhs, const json& lhs)
+NODISCARD json merge(const json& rhs, const json& lhs)
 {
 	json result = rhs.flatten();
 	json temp = lhs.flatten();
@@ -27,7 +27,7 @@ void ejson_serializer::serializePrefab(eentity* entity)
 	o << obj << std::endl;
 }
 
-json ejson_serializer::convert2Json(eentity* entity)
+NODISCARD json ejson_serializer::convert2Json(eentity* entity)
 {
 	std::string name = entity->getComponent<tag_component>().name;
 	entity_handle id = entity->handle;
@@ -46,7 +46,7 @@ json ejson_serializer::convert2Json(eentity* entity)
 	return obj;
 }
 
-json ejson_serializer::convert2JsonWithNb(eentity* entity, int nb)
+NODISCARD json ejson_serializer::convert2JsonWithNb(eentity* entity, int nb)
 {
 	std::string name = entity->getComponent<tag_component>().name;
 	entity_handle id = entity->handle;
@@ -65,7 +65,7 @@ json ejson_serializer::convert2JsonWithNb(eentity* entity, int nb)
 	return obj;
 }
 
-eentity ejson_serializer::deserializePrefab(std::string_view name, escene* scene)
+NODISCARD eentity ejson_serializer::deserializePrefab(std::string_view name, escene* scene)
 {
 	std::string path = eproject::path + "\\assets\\prefabs\\" + name.data() + ".eprefab";
 
@@ -103,7 +103,7 @@ void ejson_serializer::serializeScene(escene* scene, const char* name)
 	o << result << std::endl;
 }
 
-escene ejson_serializer::deserializeScene(std::string_view name)
+NODISCARD escene ejson_serializer::deserializeScene(std::string_view name)
 {
 	escene scene;
 

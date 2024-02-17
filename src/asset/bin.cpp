@@ -353,7 +353,7 @@ static animation_asset readAnimation(entire_file& file)
 	return result;
 }
 
-model_asset loadBIN(const fs::path& path)
+NODISCARD model_asset loadBIN(const fs::path& path)
 {
 	PROFILE("Loading BIN");
 

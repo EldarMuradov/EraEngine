@@ -14,16 +14,16 @@ struct dx_root_signature
 	uint32 totalNumParameters;
 };
 
-dx_root_signature createRootSignature(dx_blob rootSignatureBlob);
-dx_root_signature createRootSignature(const wchar* path);
-dx_root_signature createRootSignature(const D3D12_ROOT_SIGNATURE_DESC1& desc);
-dx_root_signature createRootSignature(CD3DX12_ROOT_PARAMETER1* rootParameters, uint32 numRootParameters, CD3DX12_STATIC_SAMPLER_DESC* samplers, uint32 numSamplers,
+NODISCARD dx_root_signature createRootSignature(dx_blob rootSignatureBlob);
+NODISCARD dx_root_signature createRootSignature(const wchar* path);
+NODISCARD dx_root_signature createRootSignature(const D3D12_ROOT_SIGNATURE_DESC1& desc);
+NODISCARD dx_root_signature createRootSignature(CD3DX12_ROOT_PARAMETER1* rootParameters, uint32 numRootParameters, CD3DX12_STATIC_SAMPLER_DESC* samplers, uint32 numSamplers,
 	D3D12_ROOT_SIGNATURE_FLAGS flags);
-dx_root_signature createRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc);
-dx_root_signature createRootSignature(CD3DX12_ROOT_PARAMETER* rootParameters, uint32 numRootParameters, CD3DX12_STATIC_SAMPLER_DESC* samplers, uint32 numSamplers,
+NODISCARD dx_root_signature createRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc);
+NODISCARD dx_root_signature createRootSignature(CD3DX12_ROOT_PARAMETER* rootParameters, uint32 numRootParameters, CD3DX12_STATIC_SAMPLER_DESC* samplers, uint32 numSamplers,
 	D3D12_ROOT_SIGNATURE_FLAGS flags);
-dx_command_signature createCommandSignature(dx_root_signature rootSignature, const D3D12_COMMAND_SIGNATURE_DESC& commandSignatureDesc);
-dx_root_signature createRootSignature(D3D12_ROOT_SIGNATURE_FLAGS flags);
+NODISCARD dx_command_signature createCommandSignature(dx_root_signature rootSignature, const D3D12_COMMAND_SIGNATURE_DESC& commandSignatureDesc);
+NODISCARD dx_root_signature createRootSignature(D3D12_ROOT_SIGNATURE_FLAGS flags);
 void freeRootSignature(dx_root_signature& rs);
 
 dx_command_signature createCommandSignature(dx_root_signature rootSignature, D3D12_INDIRECT_ARGUMENT_DESC* argumentDescs, uint32 numArgumentDescs, uint32 commandStructureSize);
@@ -421,7 +421,7 @@ dx_pipeline createReloadablePipeline(const char* csFile, dx_root_signature userR
 dx_pipeline createReloadablePipeline(const char* csFile, bool loadImmediately = false);
 
 template <typename stream_t>
-inline dx_pipeline createReloadablePipelineFromStream(const stream_t& stream, const graphics_pipeline_files& files, dx_root_signature userRootSignature)
+inline NODISCARD dx_pipeline createReloadablePipelineFromStream(const stream_t& stream, const graphics_pipeline_files& files, dx_root_signature userRootSignature)
 {
 	static_assert(std::is_base_of_v<dx_pipeline_stream_base, stream_t>, "Stream must inherit from dx_pipeline_stream_base.");
 
@@ -435,7 +435,7 @@ inline dx_pipeline createReloadablePipelineFromStream(const stream_t& stream, co
 }
 
 template <typename stream_t>
-inline dx_pipeline createReloadablePipelineFromStream(const stream_t& stream, const graphics_pipeline_files& files, rs_file rootSignatureFile = rs_in_pixel_shader)
+inline NODISCARD dx_pipeline createReloadablePipelineFromStream(const stream_t& stream, const graphics_pipeline_files& files, rs_file rootSignatureFile = rs_in_pixel_shader)
 {
 	static_assert(std::is_base_of_v<dx_pipeline_stream_base, stream_t>, "Stream must inherit from dx_pipeline_stream_base.");
 

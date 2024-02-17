@@ -17,7 +17,7 @@ enum class px_collider_type : uint8
 
 struct px_triangle_mesh_collider_builder
 {
-	PxTriangleMesh* createMeshShape(mesh_asset* asset, unsigned int size);
+	NODISCARD PxTriangleMesh* createMeshShape(mesh_asset* asset, unsigned int size);
 };
 
 void enableShapeInContactTests(PxShape* shape) noexcept;
@@ -31,12 +31,12 @@ struct px_collider_component_base
 	px_collider_component_base() = default;
 	virtual ~px_collider_component_base();
 
-	physx::PxShape* getShape() const noexcept { return shape; }
+	NODISCARD physx::PxShape* getShape() const noexcept { return shape; }
 	void setShape(physx::PxShape* newShape) noexcept { shape = newShape; }
 
 	virtual bool createShape() { return false; }
 
-	px_collider_type getType() const noexcept { return type; }
+	NODISCARD px_collider_type getType() const noexcept { return type; }
 
 protected:
 	px_collider_type type = px_collider_type::Box;
@@ -101,7 +101,7 @@ struct px_bounding_box
 	physx::PxVec3 maxCorner;
 };
 
-px_bounding_box calculateBoundingBox(const std::vector<physx::PxVec3>& positions);
+NODISCARD px_bounding_box calculateBoundingBox(const std::vector<physx::PxVec3>& positions);
 
 void createMeshFromBoundingBox(const px_bounding_box& box, std::vector<physx::PxVec3>& vertices, std::vector<uint32_t>& indices);
 

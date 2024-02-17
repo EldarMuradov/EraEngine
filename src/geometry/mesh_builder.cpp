@@ -1311,7 +1311,7 @@ void mesh_builder::pushMesh(const submesh_asset& mesh, float scale, bounding_box
 	}
 }
 
-submesh_info mesh_builder::endSubmesh()
+NODISCARD submesh_info mesh_builder::endSubmesh()
 {
 	uint32 firstVertex = totalNumVertices;
 	uint32 firstTriangle = totalNumTriangles;
@@ -1344,7 +1344,7 @@ submesh_info mesh_builder::endSubmesh()
 	return result;
 }
 
-dx_mesh mesh_builder::createDXMesh()
+NODISCARD dx_mesh mesh_builder::createDXMesh()
 {
 	if (numVerticesInCurrentSubmesh > 0)
 	{

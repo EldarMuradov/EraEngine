@@ -56,7 +56,7 @@ uint64 dx_command_queue::signal()
 	return fenceValueForSignal;
 }
 
-bool dx_command_queue::isFenceComplete(uint64 fenceValue)
+NODISCARD bool dx_command_queue::isFenceComplete(uint64 fenceValue) const
 {
 	return fence->GetCompletedValue() >= fenceValue;
 }

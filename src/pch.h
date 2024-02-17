@@ -29,6 +29,10 @@ namespace fs = std::filesystem;
 
 #define STR(s) L ## s
 
+#define NODISCARD [[nodiscard]]
+
+#define EEXTERN extern "C"
+
 typedef int8_t int8;
 typedef uint8_t uint8;
 typedef int16_t int16;
@@ -45,8 +49,11 @@ typedef wchar_t wchar;
 template <typename T> using ref = std::shared_ptr<T>;
 template <typename T> using weakref = std::weak_ptr<T>;
 
+template<typename Func_, typename... Args_>
+using IsCallableFunc = std::enable_if_t<std::is_invocable_v<Func_, Args_...>, bool>;
+
 template <typename T, typename... Args>
-inline ref<T> make_ref(Args&&... args) 
+NODISCARD inline ref<T> make_ref(Args&&... args)
 { 
 	return std::make_shared<T>(std::forward<Args>(args)...); 
 }
@@ -63,13 +70,13 @@ using com = Microsoft::WRL::ComPtr<T>;
 #define arraysize(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 template <typename T>
-constexpr inline auto min(T a, T b)
+NODISCARD constexpr inline auto min(T a, T b)
 {
 	return (a < b) ? a : b;
 }
 
 template <typename T>
-constexpr inline auto max(T a, T b)
+NODISCARD constexpr inline auto max(T a, T b)
 {
 	return (a < b) ? b : a;
 }

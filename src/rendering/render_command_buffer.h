@@ -53,7 +53,7 @@ public:
 		keys.reserve(128);
 	}
 
-	uint64 size() const { return keys.size(); }
+	NODISCARD uint64 size() const { return keys.size(); }
 	void sort() { std::sort(keys.begin(), keys.end(), [](command_key a, command_key b) { return a.key < b.key; }); }
 
 	template <typename pipeline_t, typename command_t, typename... args_t>
@@ -111,11 +111,11 @@ public:
 		}
 	};
 
-	iterator begin() { return iterator{ keys.begin() }; }
-	iterator end() { return iterator{ keys.end() }; }
+	NODISCARD iterator begin() { return iterator{ keys.begin() }; }
+	NODISCARD iterator end() { return iterator{ keys.end() }; }
 
-	iterator begin() const { return iterator{ keys.begin() }; }
-	iterator end() const { return iterator{ keys.end() }; }
+	NODISCARD iterator begin() const { return iterator{ keys.begin() }; }
+	NODISCARD iterator end() const { return iterator{ keys.end() }; }
 };
 
 struct default_command_header

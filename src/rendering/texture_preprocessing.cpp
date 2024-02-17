@@ -282,7 +282,7 @@ void generateMipMapsOnGPU(dx_command_list* cl, ref<dx_texture>& texture)
 	cl->resetToDynamicDescriptorHeap();
 }
 
-ref<dx_texture> equirectangularToCubemap(dx_command_list* cl, const ref<dx_texture>& equirectangular, uint32 resolution, uint32 numMips, DXGI_FORMAT format)
+NODISCARD ref<dx_texture> equirectangularToCubemap(dx_command_list* cl, const ref<dx_texture>& equirectangular, uint32 resolution, uint32 numMips, DXGI_FORMAT format)
 {
 	ASSERT(equirectangular->resource);
 
@@ -519,7 +519,7 @@ void proceduralSkyToPrefilteredRadiance(dx_command_list* cl, vec3 sunDirection, 
 }
 #endif
 
-ref<dx_texture> integrateBRDF(dx_command_list* cl, uint32 resolution)
+NODISCARD ref<dx_texture> integrateBRDF(dx_command_list* cl, uint32 resolution)
 {
 	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(
 		DXGI_FORMAT_R16G16_FLOAT,
@@ -571,7 +571,7 @@ void texturedSkyToIrradianceSH(dx_command_list* cl, const ref<dx_texture>& envir
 	cl->uavBarrier(shBuffer);
 }
 
-ref<dx_buffer> texturedSkyToIrradianceSH(dx_command_list* cl, const ref<dx_texture>& environment)
+NODISCARD ref<dx_buffer> texturedSkyToIrradianceSH(dx_command_list* cl, const ref<dx_texture>& environment)
 {
 	ref<dx_buffer> buffer = createBuffer(sizeof(spherical_harmonics), 1, 0, true);
 	texturedSkyToIrradianceSH(cl, environment, buffer, 0);

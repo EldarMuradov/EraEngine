@@ -12,8 +12,8 @@ struct raytracing_binding_table
 
     void build();
 
-    ref<dx_buffer> getBuffer() { return bindingTableBuffer; }
-    uint32 getNumberOfHitGroups() { return currentHitGroup; }
+    NODISCARD ref<dx_buffer> getBuffer() const { return bindingTableBuffer; }
+    NODISCARD uint32 getNumberOfHitGroups() const { return currentHitGroup; }
 
 private:
     struct alignas(D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT) binding_table_entry

@@ -28,7 +28,7 @@ struct render_resources
 	static void evaluate();
 
 	// Call from renderer in endFrame().
-	static const std::vector<ref<dx_texture>>& getTemporaryResources(uint64 id, dx_command_list* cl);
+	NODISCARD static const std::vector<ref<dx_texture>>& getTemporaryResources(uint64 id, dx_command_list* cl);
 
 	static dx_cpu_descriptor_handle nullTextureSRV;
 	static dx_cpu_descriptor_handle nullBufferSRV;
@@ -58,7 +58,7 @@ private:
 	};
 
 	static void getAllocationInfo(temporary_render_resources& resources);
-	static uint64 hashResourceRequirements(const std::vector<render_resource_desc>& descs);
+	NODISCARD static uint64 hashResourceRequirements(const std::vector<render_resource_desc>& descs);
 
 	static void allocateResources(temporary_render_resources& resources);
 

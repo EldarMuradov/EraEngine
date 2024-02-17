@@ -230,37 +230,37 @@ struct eentity
 	}
 
 	template <typename component_t>
-	bool hasComponent()
+	NODISCARD bool hasComponent() const
 	{
 		return registry->any_of<component_t>(handle);
 	}
 
 	template <typename component_t>
-	component_t& getComponent()
+	NODISCARD component_t& getComponent()
 	{
 		return registry->get<component_t>(handle);
 	}
 
 	template <typename component_t>
-	const component_t& getComponent() const
+	NODISCARD const component_t& getComponent() const
 	{
 		return registry->get<component_t>(handle);
 	}
 
 	template <typename component_t>
-	component_t* getComponentIfExists()
+	NODISCARD component_t* getComponentIfExists()
 	{
 		return registry->try_get<component_t>(handle);
 	}
 
 	template <typename component_t>
-	const component_t* getComponentIfExists() const
+	NODISCARD const component_t* getComponentIfExists() const
 	{
 		return registry->try_get<component_t>(handle);
 	}
 
 	template <typename component_t>
-	uint32 getComponentIndex() const
+	NODISCARD uint32 getComponentIndex() const
 	{
 		auto& s = registry->storage<component_t>();
 		return (uint32)s.index(handle);
@@ -272,7 +272,7 @@ struct eentity
 		registry->remove<component_t>(handle);
 	}
 
-	entity_handle getParentHandle() const noexcept
+	NODISCARD entity_handle getParentHandle() const noexcept
 	{
 		auto child = getComponentIfExists<child_component>();
 		if(child)
@@ -306,12 +306,12 @@ struct eentity
 		eentity_container::erasePair(handle, child.handle);
 	}
 
-	std::vector<entity_handle> getChildsHandles() noexcept
+	NODISCARD std::vector<entity_handle> getChildsHandles() noexcept
 	{
 		return eentity_container::getChilds(handle);
 	}
 
-	std::vector<eentity> getChilds() noexcept
+	NODISCARD std::vector<eentity> getChilds() noexcept
 	{
 		const auto& collection = getChildsHandles();
 		std::vector<eentity> result;
@@ -330,7 +330,7 @@ struct eentity
 		return handle != entt::null;
 	}
 
-	inline bool valid() const
+	inline NODISCARD bool valid() const
 	{
 		return registry->valid(handle);
 	}
@@ -355,7 +355,7 @@ struct eentity
 };
 
 template <typename context_t, typename... args>
-inline context_t& createOrGetContextVariable(entt::registry& registry, args&&... a)
+inline NODISCARD context_t& createOrGetContextVariable(entt::registry& registry, args&&... a)
 {
 	auto& c = registry.ctx();
 	context_t* context = c.find<context_t>();
@@ -366,21 +366,21 @@ inline context_t& createOrGetContextVariable(entt::registry& registry, args&&...
 }
 
 template <typename context_t>
-inline context_t& getContextVariable(entt::registry& registry)
+inline NODISCARD context_t& getContextVariable(entt::registry& registry)
 {
 	auto& c = registry.ctx();
 	return *c.find<context_t>();
 }
 
 template <typename context_t>
-inline context_t* tryGetContextVariable(entt::registry& registry)
+inline NODISCARD context_t* tryGetContextVariable(entt::registry& registry)
 {
 	auto& c = registry.ctx();
 	return c.find<context_t>();
 }
 
 template <typename context_t>
-inline bool doesContextVariableExist(entt::registry& registry)
+inline NODISCARD bool doesContextVariableExist(entt::registry& registry)
 {
 	auto& c = registry.ctx();
 	return c.contains<context_t>();
@@ -397,25 +397,25 @@ struct escene
 {
 	escene();
 
-	eentity createEntity(const char* name)
+	NODISCARD eentity createEntity(const char* name)
 	{
 		return eentity(registry.create(), &registry)
 			.addComponent<tag_component>(name);
 	}
 
-	eentity createEntity(const char* name, entity_handle id)
+	NODISCARD eentity createEntity(const char* name, entity_handle id)
 	{
 		return eentity(registry.create(id), &registry)
 			.addComponent<tag_component>(name);
 	}
 
-	eentity tryCreateEntityInPlace(eentity place, const char* name)
+	NODISCARD eentity tryCreateEntityInPlace(eentity place, const char* name)
 	{
 		return eentity(registry.create(place.handle), &registry)
 			.addComponent<tag_component>(name);
 	}
 
-	eentity copyEntity(eentity src); // Source can be either from the same scene or from another.
+	NODISCARD eentity copyEntity(eentity src); // Source can be either from the same scene or from another.
 
 	void deleteEntity(eentity e);
 	void clearAll();
@@ -426,13 +426,13 @@ struct escene
 		registry.clear<component_t>();
 	}
 
-	bool isEntityValid(eentity e)
+	NODISCARD bool isEntityValid(eentity e)
 	{
 		return &registry == e.registry && registry.valid(e.handle);
 	}
 
 	template <typename component_t>
-	eentity getEntityFromComponent(const component_t& c)
+	NODISCARD eentity getEntityFromComponent(const component_t& c)
 	{
 		entity_handle e = entt::to_entity(registry, c);
 		return { e, &registry };
@@ -458,19 +458,19 @@ struct escene
 	}
 
 	template <typename... component_t>
-	auto view() 
+	NODISCARD auto view()
 	{ 
 		return registry.view<component_t...>(); 
 	}
 
 	template<typename... owned_component_t, typename... non_owned_component_t, typename... excluded_components>
-	auto group(component_group_t<non_owned_component_t...> = {}, component_group_t<excluded_components...> = {})
+	NODISCARD auto group(component_group_t<non_owned_component_t...> = {}, component_group_t<excluded_components...> = {})
 	{
 		return registry.group<owned_component_t...>(entt::get<non_owned_component_t...>, entt::exclude<excluded_components...>);
 	}
 
 	template <typename component_t>
-	auto raw()
+	NODISCARD auto raw()
 	{
 		auto& s = registry.storage<component_t>();
 		component_t** r = s.raw();
@@ -484,7 +484,7 @@ struct escene
 	}
 
 	template <typename component_t>
-	uint32 numberOfComponentsOfType()
+	NODISCARD uint32 numberOfComponentsOfType()
 	{
 		auto v = view<component_t>();
 		return (uint32)v.size();
@@ -493,32 +493,32 @@ struct escene
 	struct f {};
 
 	template <typename component_t>
-	component_t& getComponentAtIndex(uint32 index)
+	NODISCARD component_t& getComponentAtIndex(uint32 index)
 	{
 		auto& s = registry.storage<component_t>();
 		return s.element_at(index);
 	}
 
 	template <typename component_t>
-	eentity getEntityFromComponentAtIndex(uint32 index)
+	NODISCARD eentity getEntityFromComponentAtIndex(uint32 index)
 	{
 		return getEntityFromComponent(getComponentAtIndex<component_t>(index));
 	}
 
 	template <typename context_t, typename... args>
-	context_t& createOrGetContextVariable(args&&... a)
+	NODISCARD context_t& createOrGetContextVariable(args&&... a)
 	{
 		return ::createOrGetContextVariable<context_t, args...>(registry, std::forward<args>(a)...);
 	}
 
 	template <typename context_t>
-	context_t& getContextVariable()
+	NODISCARD context_t& getContextVariable()
 	{
 		return ::getContextVariable<context_t>(registry);
 	}
 
 	template <typename context_t>
-	bool doesContextVariableExist()
+	NODISCARD bool doesContextVariableExist()
 	{
 		return ::doesContextVariableExist<context_t>(registry);
 	}
@@ -567,12 +567,12 @@ enum scene_mode
 
 struct editor_scene
 {
-	escene& getCurrentScene()
+	NODISCARD escene& getCurrentScene()
 	{
 		return (mode == scene_mode_editor) ? editorScene : runtimeScene;
 	}
 
-	float getTimestepScale()
+	NODISCARD float getTimestepScale() const
 	{
 		return (mode == scene_mode_editor || mode == scene_mode_runtime_paused) ? 0.f : timestepScale;
 	}
@@ -599,17 +599,17 @@ struct editor_scene
 		mode = scene_mode_editor;
 	}
 
-	bool isPlayable()
+	NODISCARD bool isPlayable() const
 	{
 		return mode == scene_mode_editor || mode == scene_mode_runtime_paused;
 	}
 
-	bool isPausable()
+	NODISCARD bool isPausable() const
 	{
 		return mode == scene_mode_runtime_playing;
 	}
 
-	bool isStoppable()
+	NODISCARD bool isStoppable() const
 	{
 		return mode == scene_mode_runtime_playing || mode == scene_mode_runtime_paused;
 	}

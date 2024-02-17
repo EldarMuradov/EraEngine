@@ -107,13 +107,13 @@ struct tonemap_settings
 
 	float exposure = -0.30f; //0.2
 
-	float tonemap(float color) const
+	NODISCARD float tonemap(float color) const
 	{
 		color *= exp2(exposure);
 		return evaluate(color) / evaluate(linearWhite);
 	}
 
-	float evaluate(float x) const
+	NODISCARD float evaluate(float x) const
 	{
 		return ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - (E / F);
 	}

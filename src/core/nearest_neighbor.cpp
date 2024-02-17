@@ -25,7 +25,7 @@ point_cloud::~point_cloud()
     delete index;
 }
 
-nearest_neighbor_query_result point_cloud::nearestNeighborIndex(vec3 query)
+NODISCARD nearest_neighbor_query_result point_cloud::nearestNeighborIndex(vec3 query)
 {
     using kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
         nanoflann::L2_Simple_Adaptor<float, point_cloud>,

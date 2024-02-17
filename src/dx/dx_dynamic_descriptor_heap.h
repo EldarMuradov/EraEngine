@@ -24,10 +24,10 @@ public:
 	void reset();
 
 private:
-	com<ID3D12DescriptorHeap> requestDescriptorHeap();
-	com<ID3D12DescriptorHeap> createDescriptorHeap();
+	NODISCARD com<ID3D12DescriptorHeap> requestDescriptorHeap();
+	NODISCARD com<ID3D12DescriptorHeap> createDescriptorHeap();
 
-	uint32 computeStaleDescriptorCount() const;
+	NODISCARD uint32 computeStaleDescriptorCount() const;
 
 	void commitStagedDescriptors(dx_command_list* commandList, bool graphics);
 
