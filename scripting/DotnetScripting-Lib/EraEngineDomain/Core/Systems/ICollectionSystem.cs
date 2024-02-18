@@ -2,9 +2,9 @@
 
 namespace EraEngine;
 
-public interface IEntitySystem : IESystem
+public interface ICollectionSystem : IESystem
 {
-    List<EEntity> Entities
+    int FilterId
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get;

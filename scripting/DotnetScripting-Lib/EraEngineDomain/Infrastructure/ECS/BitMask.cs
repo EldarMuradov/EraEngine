@@ -7,6 +7,7 @@ using MaskInternal = UInt32;
 public struct BitMask
 {
     public const int SizeOfPartInBits = sizeof(MaskInternal) * 8;
+
     private MaskInternal _m1;
     private MaskInternal[] _mn;
 
@@ -28,14 +29,14 @@ public struct BitMask
     public BitMask(params int[] positions)
     {
         _m1 = 0;
-        _mn = null;
+        _mn = null!;
         Length = 0;
 
         Set(positions);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int GetDynamicChunksLength(int length) => (int)Math.Ceiling((float)length / SizeOfPartInBits) - 1;
+    private static int GetDynamicChunksLength(int length) => (int)Math.Ceiling((float)length / SizeOfPartInBits) - 1;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Copy(in BitMask other)
@@ -69,21 +70,23 @@ public struct BitMask
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Set(params int[] positions)
+    public BitMask Set(params int[] positions)
     {
         for (int i = 0; i < positions.Length; i++)
             Set(positions[i]);
+
+        return this;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Set(int i)
+    public BitMask Set(int i)
     {
         var chunkIdx = i / SizeOfPartInBits;
         ref var m = ref _m1;
         if (chunkIdx > 0)
         {
             chunkIdx--;
-            //resize if needed
+
             if (_mn == null || _mn.Length <= chunkIdx)
             {
                 var newChunksLength = 2;
@@ -99,12 +102,13 @@ public struct BitMask
 
         int position = i % SizeOfPartInBits;
         MaskInternal shifted = 1;
-        m |= (MaskInternal)(shifted << position);
+        m |= shifted << position;
 
-        //update length
         i++;
         if (Length < i)
             Length = i;
+
+        return this;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -138,6 +142,7 @@ public struct BitMask
         var mask = this;
         for (int i = 0; i < positions.Length; i++)
             mask.Unset(positions[i]);
+
         return mask;
     }
 
@@ -145,11 +150,11 @@ public struct BitMask
     private bool CheckChunkIdx(int idx) => idx > 0 && (_mn == null || _mn.Length <= idx - 1);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Unset(int i)
+    public BitMask Unset(int i)
     {
         int chunkIdx = i / SizeOfPartInBits;
         if (CheckChunkIdx(chunkIdx))
-            return;
+            return this;
 
         ref var m = ref _m1;
         if (chunkIdx > 0)
@@ -157,7 +162,7 @@ public struct BitMask
 
         int position = i % SizeOfPartInBits;
         MaskInternal shifted = 1;
-        m &= (MaskInternal)~(shifted << position);
+        m &= ~(shifted << position);
 
         //update length
         if (chunkIdx == (Length - 1) / SizeOfPartInBits)
@@ -189,6 +194,8 @@ public struct BitMask
             j++;
             Length = j * SizeOfPartInBits + msb;
         }
+
+        return this;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -206,6 +213,7 @@ public struct BitMask
     }
 
     #region Enumerable
+
     public struct Enumerator
     {
         private int _nextSetBit;
@@ -229,7 +237,7 @@ public struct BitMask
             return _nextSetBit != -1;
         }
 
-        private int GetNextSetBit(int fromPosition)
+        public int GetNextSetBit(int fromPosition)
         {
             for (int i = fromPosition; i < _bitMask.Length; i++)
             {
@@ -268,13 +276,14 @@ public struct BitMask
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool InclusivePass_Internal(MaskInternal value, MaskInternal filter) => (filter & (value ^ filter)) == 0;
+    private static bool InclusivePass_Internal(MaskInternal value, MaskInternal filter) => (filter & (value ^ filter)) == 0;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool InclusivePass(in BitMask filter)
     {
         if (filter.Length > Length)
             return false;
+
         if (!InclusivePass_Internal(_m1, filter._m1))
             return false;
 

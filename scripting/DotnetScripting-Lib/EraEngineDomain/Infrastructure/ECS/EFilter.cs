@@ -169,7 +169,6 @@ public struct EcsFilter
 
     public void Copy(in EcsFilter other)
     {
-        //TODO: can copy only once
         Includes.Copy(other.Includes);
         Excludes.Copy(other.Excludes);
 

@@ -13,9 +13,10 @@ public class EEntity
     public EEntity(int id, string name, EEntityFilter filter = default)
     {
         (Id, Name, Filter) = (id, name, filter);
-        CreateComponentInternal<TransformComponent>();
 
         EWorld.Add(this);
+
+        CreateComponentInternal<TransformComponent>();
     }
 
     public EEntity()
@@ -23,8 +24,10 @@ public class EEntity
         Name = Guid.NewGuid().ToString();
         Filter = default;
         Id = EEntityManager.CreateEntity(Name);
-        CreateComponentInternal<TransformComponent>();
+
         EWorld.Add(this);
+
+        CreateComponentInternal<TransformComponent>();
     }
 
     public EEntity(string name, EEntityFilter filter)
@@ -32,8 +35,10 @@ public class EEntity
         Name = name;
         Filter = filter;
         Id = EEntityManager.CreateEntity(Name);
-        CreateComponentInternal<TransformComponent>();
+
         EWorld.Add(this);
+
+        CreateComponentInternal<TransformComponent>();
     }
 
     public int Id
@@ -124,6 +129,7 @@ public class EEntity
 
     public T CreateComponent<T>(params object[] args) where T : EComponent, new()
     {
+        EWorld.UpdateFiltersOnAdd<T>(Id);
         var comp = GetComponent<T>();
 
         if (comp != null)
@@ -153,6 +159,7 @@ public class EEntity
 
     public void RemoveComponent<T>(bool sync = false) where T : EComponent, new()
     {
+        EWorld.UpdateFiltersOnRemove(ComponentMeta<T>.Id, Id);
         var comp = GetComponent<T>() ??
             throw new NullReferenceException("Runtime> Failed to remove component! Value is null.");
 
@@ -165,6 +172,7 @@ public class EEntity
 
     public void RemoveComponent(string name, bool sync = true)
     {
+        //EWorld.UpdateFiltersOnRemove(ComponentMeta<T>.Id, Id);
         Components.Remove(name);
         if (sync)
             removeComponent(Id, name);
@@ -231,6 +239,8 @@ public class EEntity
         comp.Entity = this;
         Components.Add(comp.GetType().Name, comp);
 
+        //EWorld.UpdateFiltersOnAdd<>(Id);
+
         if (comp is EScript)
             createScript(Id, comp.GetType().Name);
 
@@ -252,6 +262,7 @@ public class EEntity
 
     internal T CreateComponentInternal<T>(params object[] args) where T : EComponent, new()
     {
+        EWorld.UpdateFiltersOnAdd<T>(Id);
         var comp = GetComponent<T>();
 
         if (comp != null)

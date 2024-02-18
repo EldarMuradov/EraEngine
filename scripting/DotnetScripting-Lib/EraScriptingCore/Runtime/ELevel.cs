@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Reflection;
 
 namespace EraEngine;
-
 public static class ELevel
 {
     private static readonly SemaphoreSlim _syncObj = new(1, 1);
@@ -18,11 +17,25 @@ public static class ELevel
         {
             {
                 // Test case
+                BitMask include = new();
+                include.Set(ComponentMeta<TransformComponent>.Id);
+
+                BitMask exclude = new();
+                exclude.Set(ComponentMeta<RigidbodyComponent>.Id);
+
+                var filterId = EWorld.RegisterFilter(include, exclude);
+
                 EEntity nav_target = new(59, "SpherePX1");
                 nav_target.CreateComponent<RigidbodyComponent>(RigidbodyType.Dynamic);
 
                 EEntity e = new(60, "SpherePX");
                 e.CreateComponent<RigidbodyComponent>(RigidbodyType.Dynamic);
+
+                EEntity e1 = new();
+
+                var filter = EWorld.GetFilter(filterId);
+
+                EWorld.Iterate((entity) => { Console.WriteLine(entity.Id); }, filter);
 
                 EWorld.SyncEntities();
             }
