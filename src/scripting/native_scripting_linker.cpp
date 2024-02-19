@@ -39,6 +39,8 @@ namespace
 	scr_fn release_srcf;
 	scr_fn reload_srcf;
 
+	handle_input_fn inputf;
+
 	comp_fn create_compf;
 	comp_fn remove_compf;
 
@@ -49,10 +51,10 @@ static void get_all_functions_and_start()
 {
 	{
 #if _DEBUG
-		std::ofstream file("E:\\Era Engine\\bin\\Debug_x86_64\\core.cfg");
+		std::ofstream file((eproject::path + "\\bin\\Debug_x86_64\\core.cfg");
 		file << eproject::name << "," << eproject::path;
 #else
-		std::ofstream file("E:\\Era Engine\\bin\\Release_x86_64\\core.cfg");
+		std::ofstream file(eproject::path + "\\bin\\Release_x86_64\\core.cfg");
 		file << eproject::name << "," << eproject::path;
 #endif
 	}
@@ -84,6 +86,10 @@ static void get_all_functions_and_start()
 	const char_t* dotnet_type_tr = STR("EraEngine.Core.TransformHandler, EraScriptingCore");
 	const char_t* dotnet_type_method_t = STR("ProcessTransform");
 	handle_trsf = enative_scripting_linker::get_static_method<handle_trs_fn, intptr_t, int>(dotnet_type_tr, dotnet_type_method_t, STR("EraEngine.CallHandleTrs, EraScriptingCore"));
+
+	const char_t* dotnet_type_input = STR("EraEngine.Core.InputHandler, EraScriptingCore");
+	const char_t* dotnet_type_method_input = STR("HandleInput");
+	inputf = enative_scripting_linker::get_static_method<handle_input_fn, intptr_t>(dotnet_type_input, dotnet_type_method_input, STR("EraEngine.CallHandleInput, EraScriptingCore"));
 
 	const char_t* dotnet_type_cc = STR("EraEngine.Runtime.ComponentHandler, EraScriptingCore");
 	const char_t* dotnet_type_method_cc = STR("AddComponent");
@@ -436,6 +442,19 @@ void enative_scripting_linker::reload_src()
 {
 	script_types.clear();
 	reload_srcf();
+}
+
+void enative_scripting_linker::handleInput(uintptr_t input)
+{
+	try
+	{
+		inputf(input);
+	}
+	catch (const std::exception& ex)
+	{
+		std::cout << ex.what() << "\n";
+	}
+
 }
 
 void enative_scripting_linker::createScript(int id, const char* comp)

@@ -155,38 +155,15 @@ int main(int argc, char** argv)
 				CPU_PROFILE_BLOCK("Collect user input");
 
 				ImGuiIO& io = ImGui::GetIO();
-				if (ImGui::IsItemHovered())
+
+				ImVec2 relativeMouse = ImGui::GetMousePos() - ImGui::GetItemRectMin();
+				vec2 mousePos = { relativeMouse.x, relativeMouse.y };
+				if (appFocusedLastFrame)
 				{
-					ImVec2 relativeMouse = ImGui::GetMousePos() - ImGui::GetItemRectMin();
-					vec2 mousePos = { relativeMouse.x, relativeMouse.y };
-					if (appFocusedLastFrame)
-					{
-						input.mouse.dx = (int32)(mousePos.x - input.mouse.x);
-						input.mouse.dy = (int32)(mousePos.y - input.mouse.y);
-						input.mouse.reldx = (float)input.mouse.dx / (renderWidth - 1);
-						input.mouse.reldy = (float)input.mouse.dy / (renderHeight - 1);
-					}
-					else
-					{
-						input.mouse.dx = 0;
-						input.mouse.dy = 0;
-						input.mouse.reldx = 0.f;
-						input.mouse.reldy = 0.f;
-					}
-					input.mouse.x = (int32)mousePos.x;
-					input.mouse.y = (int32)mousePos.y;
-					input.mouse.relX = mousePos.x / (renderWidth - 1);
-					input.mouse.relY = mousePos.y / (renderHeight - 1);
-					input.mouse.left = { ImGui::IsMouseDown(ImGuiMouseButton_Left), ImGui::IsMouseClicked(ImGuiMouseButton_Left), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) };
-					input.mouse.right = { ImGui::IsMouseDown(ImGuiMouseButton_Right), ImGui::IsMouseClicked(ImGuiMouseButton_Right), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Right) };
-					input.mouse.middle = { ImGui::IsMouseDown(ImGuiMouseButton_Middle), ImGui::IsMouseClicked(ImGuiMouseButton_Middle), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Middle) };
-
-					for (uint32 i = 0; i < arraysize(user_input::keyboard); ++i)
-					{
-						input.keyboard[i] = { ImGui::IsKeyDown(i), ImGui::IsKeyPressed(i, false) };
-					}
-
-					input.overWindow = true;
+					input.mouse.dx = (int32)(mousePos.x - input.mouse.x);
+					input.mouse.dy = (int32)(mousePos.y - input.mouse.y);
+					input.mouse.reldx = (float)input.mouse.dx / (renderWidth - 1);
+					input.mouse.reldy = (float)input.mouse.dy / (renderHeight - 1);
 				}
 				else
 				{
@@ -194,35 +171,21 @@ int main(int argc, char** argv)
 					input.mouse.dy = 0;
 					input.mouse.reldx = 0.f;
 					input.mouse.reldy = 0.f;
-
-					if (input.mouse.left.down && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
-					{
-						input.mouse.left.down = false;
-					}
-					if (input.mouse.right.down && !ImGui::IsMouseDown(ImGuiMouseButton_Right))
-					{
-						input.mouse.right.down = false;
-					}
-					if (input.mouse.middle.down && !ImGui::IsMouseDown(ImGuiMouseButton_Middle))
-					{
-						input.mouse.middle.down = false;
-					}
-
-					input.mouse.left.clickEvent = input.mouse.left.doubleClickEvent = false;
-					input.mouse.right.clickEvent = input.mouse.right.doubleClickEvent = false;
-					input.mouse.middle.clickEvent = input.mouse.middle.doubleClickEvent = false;
-
-					for (uint32 i = 0; i < arraysize(user_input::keyboard); ++i)
-					{
-						if (!ImGui::IsKeyDown(i))
-						{
-							input.keyboard[i].down = false;
-						}
-						input.keyboard[i].pressEvent = false;
-					}
-
-					input.overWindow = false;
 				}
+				input.mouse.x = (int32)mousePos.x;
+				input.mouse.y = (int32)mousePos.y;
+				input.mouse.relX = mousePos.x / (renderWidth - 1);
+				input.mouse.relY = mousePos.y / (renderHeight - 1);
+				input.mouse.left = { ImGui::IsMouseDown(ImGuiMouseButton_Left), ImGui::IsMouseClicked(ImGuiMouseButton_Left), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) };
+				input.mouse.right = { ImGui::IsMouseDown(ImGuiMouseButton_Right), ImGui::IsMouseClicked(ImGuiMouseButton_Right), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Right) };
+				input.mouse.middle = { ImGui::IsMouseDown(ImGuiMouseButton_Middle), ImGui::IsMouseClicked(ImGuiMouseButton_Middle), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Middle) };
+
+				for (uint32 i = 0; i < arraysize(user_input::keyboard); ++i)
+				{
+					input.keyboard[i] = { ImGui::IsKeyDown(i), ImGui::IsKeyPressed(i, false) };
+				}
+
+				input.overWindow = true;
 			}
 
 			ImGui::SetCursorPos(ImVec2(4.5f, 4.5f));
@@ -258,7 +221,7 @@ int main(int argc, char** argv)
 	catch (std::exception ex)
 	{
 		std::cout << ex.what() << "\n";
-		std::this_thread::sleep_for(std::chrono::duration<float>(2000.f));
+		std::this_thread::sleep_for(std::chrono::duration<float>(2500.f));
 		return EXIT_FAILURE;
 	}
 	

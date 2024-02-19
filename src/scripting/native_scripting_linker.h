@@ -16,6 +16,7 @@ typedef void (CORECLR_DELEGATE_CALLTYPE* scr_fn)();
 typedef void (CORECLR_DELEGATE_CALLTYPE* update_fn)(float);
 typedef void (CORECLR_DELEGATE_CALLTYPE* handle_collisions_fn)(int, int);
 typedef void (CORECLR_DELEGATE_CALLTYPE* handle_trs_fn)(intptr_t, int);
+typedef void (CORECLR_DELEGATE_CALLTYPE* handle_input_fn)(intptr_t);
 
 struct application;
 
@@ -42,6 +43,8 @@ struct enative_scripting_linker
 	void init_src();
 	void release_src();
 	void reload_src();
+
+	void handleInput(uintptr_t input);
 
 	static void createScript(int id, const char* comp);
 	static void removeScript(int id, const char* comp);

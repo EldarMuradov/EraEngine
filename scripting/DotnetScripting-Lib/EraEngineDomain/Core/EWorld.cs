@@ -14,6 +14,7 @@ public static class EWorld
     private static Dictionary<int, HashSet<int>> _includeUpdateSets = [];
     private static Dictionary<int, HashSet<int>> _excludeUpdateSets = [];
     private static FiltersCollection _filtersCollection = new();
+
     private static Dictionary<int, BitMask> _masks = [];
 
     public static EEntity GetEntity(int id)
@@ -96,17 +97,17 @@ public static class EWorld
     {
         var componentId = ComponentMeta<T>.Id;
 
-        if (_excludeUpdateSets.TryGetValue(componentId, out HashSet<int>? value))
-            RemoveIdFromFilters(id, value);
+        if (_excludeUpdateSets.TryGetValue(componentId, out HashSet<int>? filter))
+            RemoveIdFromFilters(id, filter);
 
         _masks[id] = _masks[id].Set(componentId);
-        if (!_includeUpdateSets.TryGetValue(componentId, out HashSet<int>? value1))
+        if (!_includeUpdateSets.TryGetValue(componentId, out HashSet<int>? value))
         {
-            value1 = new HashSet<int>(EcsCacheSettings.UpdateSetSize);
-            _includeUpdateSets.Add(componentId, value1);
+            value = new HashSet<int>(EcsCacheSettings.UpdateSetSize);
+            _includeUpdateSets.Add(componentId, value);
         }
 
-        AddIdToFlters(id, value1);
+        AddIdToFlters(id, value);
     }
 
     public static void UpdateFiltersOnRemove(int componentId, int id)

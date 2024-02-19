@@ -30,7 +30,7 @@ NODISCARD bool editFireParticleSystem(fire_particle_system& particleSystem);
 NODISCARD bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
 struct updatePhysicsAndScriptingData;
-void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt);
+void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt, const user_input& in);
 void updateScripting(updatePhysicsAndScriptingData& data);
 
 struct application

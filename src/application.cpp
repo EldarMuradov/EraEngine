@@ -92,11 +92,12 @@ struct updatePhysicsAndScriptingData
 	enative_scripting_linker core;
 	escene& scene;
 	float deltaTime;
+	const user_input& input;
 };
 
-void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt)
+void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt, const user_input& in)
 {
-	updatePhysicsAndScriptingData data = { core, currentScene, dt};
+	updatePhysicsAndScriptingData data = { core, currentScene, dt, in};
 
 	highPriorityJobQueue.createJob<updatePhysicsAndScriptingData>([](updatePhysicsAndScriptingData& data, job_handle)
 	{
@@ -112,6 +113,8 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 		}
 
 		updateScripting(data);
+
+		data.core.handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
 	}, data).submitNow();
 
 	const auto& nav_objects = data.scene.group(component_group<navigation_component, transform_component>);
@@ -532,7 +535,7 @@ void application::update(const user_input& input, float dt)
 
 	if (this->scene.isPausable())
 	{
-		updatePhysXPhysicsAndScripting(scene, linker, dt);
+		updatePhysXPhysicsAndScripting(scene, linker, dt, input);
 	}
 
 	// Particles
@@ -563,7 +566,6 @@ void application::update(const user_input& input, float dt)
 	eentity selectedEntity{};
 
 #endif
-
 
 	if (renderer->mode != renderer_mode_pathtraced)
 	{

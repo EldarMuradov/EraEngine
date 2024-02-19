@@ -1,12 +1,10 @@
-﻿using EraEngine;
+﻿using System.Runtime.CompilerServices;
 namespace EraEngine;
 
 public static class EcsCacheSettings
 {
-    public static int UpdateSetSize = 4;
-    public static int PoolSize = 512;
-    public static int FilteredEntitiesSize = 128;
-    public static int PoolsCount = 16;
+    public const int UpdateSetSize = 4;
+    public const int FilteredEntitiesSize = 128;
 }
 
 public struct EcsFilter
@@ -14,24 +12,18 @@ public struct EcsFilter
     public BitMask Includes;
     public BitMask Excludes;
 
-    private Dictionary<int, int> _filteredEntities = [];
-
-    private EList<int> _entitiesVector;
-
-    private HashSet<int> _addSet = [];
-
-    private HashSet<int> _removeSet = [];
-
     public delegate void IteartionDelegate(int[] entities, int count);
 
     public int Length => _entitiesVector.Length;
+
     public int this[int i] => _entitiesVector[i];
 
-    private class BoxedInt { public int Value = 0; }
+    public EList<int> Entities
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _entitiesVector;
+    }
 
-    private BoxedInt _lockCount;
-
-    private int? _cachedHash;
     public int HashCode
     {
         get
@@ -42,6 +34,21 @@ public struct EcsFilter
         }
     }
 
+    private Dictionary<int, int> _filteredEntities = [];
+
+    private EList<int> _entitiesVector;
+
+    private HashSet<int> _addSet = [];
+
+    private HashSet<int> _removeSet = [];
+
+    private BoxedInt _lockCount;
+
+    private int? _cachedHash;
+
+    private class BoxedInt { public int Value = 0; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetHashFromMasks(in BitMask includes, in BitMask excludes)
     {
         int hash = 17;
@@ -84,7 +91,8 @@ public struct EcsFilter
 
     public int Current
     {
-        get => _entitiesVector._elements[currentEntityIndex];
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _entitiesVector.Elements[currentEntityIndex];
     }
 
     public void Lock() => _lockCount.Value++;
@@ -92,7 +100,7 @@ public struct EcsFilter
     public bool MoveNext()
     {
         currentEntityIndex++;
-        return currentEntityIndex < _entitiesVector._end;
+        return currentEntityIndex < _entitiesVector.End;
     }
 
     public void Cleanup()
@@ -107,7 +115,7 @@ public struct EcsFilter
                 if (!_filteredEntities.ContainsKey(id))
                 {
                     _entitiesVector.Add(id);
-                    _filteredEntities.Add(id, _entitiesVector._end - 1);
+                    _filteredEntities.Add(id, _entitiesVector.End - 1);
                 }
             }
 
@@ -117,10 +125,10 @@ public struct EcsFilter
             {
                 if (_filteredEntities.TryGetValue(id, out int idx))
                 {
-                    var lastEntity = _entitiesVector._elements[_entitiesVector._end - 1];
+                    var lastEntity = _entitiesVector.Elements[_entitiesVector.End - 1];
                     _entitiesVector.Remove(idx);
 
-                    if (idx < _entitiesVector._end)
+                    if (idx < _entitiesVector.End)
                     {
                         _filteredEntities[lastEntity] = _filteredEntities[id];
                         _filteredEntities.Remove(id);
@@ -134,6 +142,7 @@ public struct EcsFilter
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public EcsFilter GetEnumerator() => this;
 
     #endregion
@@ -145,7 +154,7 @@ public struct EcsFilter
         else if (!_filteredEntities.ContainsKey(id))
         {
             _entitiesVector.Add(id);
-            _filteredEntities.Add(id, _entitiesVector._end - 1);
+            _filteredEntities.Add(id, _entitiesVector.End - 1);
         }
     }
 
@@ -155,9 +164,10 @@ public struct EcsFilter
             _removeSet.Add(id);
         else if (_filteredEntities.TryGetValue(id, out int idx))
         {
-            var lastEntity = _entitiesVector._elements[_entitiesVector._end - 1];
+            var lastEntity = _entitiesVector.Elements[_entitiesVector.End - 1];
             _entitiesVector.Remove(idx);
-            if (idx < _entitiesVector._end)
+
+            if (idx < _entitiesVector.End)
             {
                 _filteredEntities[lastEntity] = _filteredEntities[id];
                 _filteredEntities.Remove(id);
@@ -180,7 +190,7 @@ public struct EcsFilter
         foreach (var entity in other._filteredEntities)
             _filteredEntities.Add(entity.Key, entity.Value);
 
-        _entitiesVector ??= new EList<int>(other._entitiesVector._elements.Length);
+        _entitiesVector ??= new EList<int>(other._entitiesVector.Elements.Length);
         _entitiesVector.Copy(other._entitiesVector);
 
         _lockCount = other._lockCount;

@@ -13,6 +13,8 @@ public delegate void CallHandleTrs(IntPtr trs, int id);
 public delegate void CallAddComp(int id, IntPtr comp);
 public delegate void CallRemoveComp(int id, IntPtr comp);
 
+public delegate void CallHandleInput(IntPtr comp);
+
 public class ScriptingCore
 {
     internal static UserScriptingLauncher UserScriptingObj = new();
