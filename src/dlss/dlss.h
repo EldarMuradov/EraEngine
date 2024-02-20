@@ -1,6 +1,10 @@
 #pragma once
 
+#ifdef ERA_RUNTIME
 #define ENABLE_DLSS 0
+#else
+#define ENABLE_DLSS 1
+#endif
 
 #if ENABLE_DLSS
 

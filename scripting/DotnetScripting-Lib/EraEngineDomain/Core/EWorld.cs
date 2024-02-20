@@ -3,7 +3,7 @@ namespace EraEngine;
 
 using EEntityFilter = Int32;
 
-public static class EWorld
+public class EWorld
 {
     public static Dictionary<int, EEntity> Entities = [];
 
@@ -45,6 +45,26 @@ public static class EWorld
         }
     }
 
+    public static void Clear()
+    {
+        Entities.Clear();
+
+        _entities.Clear();
+
+        _masks.Clear();
+
+        _excludeUpdateSets.Clear();
+        _includeUpdateSets.Clear();
+
+        _filterEntities.Clear();
+
+        _filtersCollection = new();
+
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+    }
+
     private static void AddFilterToUpdateSets(in BitMask components, int filterIdx,
         Dictionary<int, HashSet<int>> sets)
     {
@@ -54,7 +74,7 @@ public static class EWorld
             if (!sets.TryGetValue(nextSetBit, out HashSet<int>? value))
             {
                 value = new HashSet<int>(EcsCacheSettings.UpdateSetSize);
-                sets.Add(nextSetBit, value);
+                sets.TryAdd(nextSetBit, value);
             }
 
             value.Add(filterIdx);
@@ -104,7 +124,7 @@ public static class EWorld
         if (!_includeUpdateSets.TryGetValue(componentId, out HashSet<int>? value))
         {
             value = new HashSet<int>(EcsCacheSettings.UpdateSetSize);
-            _includeUpdateSets.Add(componentId, value);
+            _includeUpdateSets.TryAdd(componentId, value);
         }
 
         AddIdToFlters(id, value);
@@ -119,7 +139,7 @@ public static class EWorld
         if (!_excludeUpdateSets.TryGetValue(componentId, out HashSet<int>? value))
         {
             value = new HashSet<int>(EcsCacheSettings.UpdateSetSize);
-            _excludeUpdateSets.Add(componentId, value);
+            _excludeUpdateSets.TryAdd(componentId, value);
         }
 
         AddIdToFlters(id, value);
@@ -132,9 +152,9 @@ public static class EWorld
             if (_filterEntities.TryGetValue(entity.Filter, out List<EEntity>? value))
                 value.Add(entity);
             else
-                _filterEntities.Add(entity.Filter, new(16) {entity});
+                _filterEntities.TryAdd(entity.Filter, [entity]);
 
-            _masks.Add(entity.Id, new BitMask());
+            _masks.TryAdd(entity.Id, new BitMask());
         }
     }
 

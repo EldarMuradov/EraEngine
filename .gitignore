@@ -14,6 +14,11 @@ scripting/DotnetScripting-Lib/EraScriptingProjectTemplate/obj
 scripting/EraScriptingLauncher-Lib/Release
 scripting/EraScriptingLauncher-Lib/x64
 
+tests/EraCoreEngineUnitTests/x64
+
+scripting/tests/EraCoreScriptingUnitTests/bin
+scripting/tests/EraCoreScriptingUnitTests/obj
+
 Temp/
 
 packages/

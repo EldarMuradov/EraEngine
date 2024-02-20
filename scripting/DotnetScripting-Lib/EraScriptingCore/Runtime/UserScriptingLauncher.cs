@@ -10,7 +10,7 @@ namespace EraEngine.Core;
 
 public class HostAssemblyLoadContext : AssemblyLoadContext
 {
-    private AssemblyDependencyResolver _resolver;
+    private readonly AssemblyDependencyResolver _resolver;
 
     public HostAssemblyLoadContext(string pluginPath) : base(isCollectible: true)
     {
@@ -38,7 +38,7 @@ public sealed class UserScriptingLauncher
     internal void UnloadAssembly(HostAssemblyLoadContext context)
     {
         _userTypes.Clear();
-        _userTypes = new();
+        _userTypes = [];
 
         Parallel.ForEach(EWorld.Entities.Values, (e) => 
         {
@@ -54,7 +54,7 @@ public sealed class UserScriptingLauncher
         });
 
         bool unloading = true;
-        context.Unloading += (alc) => { unloading = false; Console.WriteLine("Unloaded"); };
+        context.Unloading += (alc) => { unloading = false; };
         context.Unload();
 
         while (unloading);
@@ -95,10 +95,10 @@ public sealed class UserScriptingLauncher
             {
                 try
                 {
-                    Console.WriteLine(e.Components.TempCompData is null);
                     if (e is null)
                         return;
-                    if (e.Components.TempCompData.Count > 0)
+
+                    if (e.Components?.TempCompData?.Count > 0)
                     {
                         foreach (var data in e.Components.TempCompData)
                         {
@@ -141,12 +141,15 @@ public sealed class UserScriptingLauncher
 
         if (_alc is not null)
         {
+            WeakReference alcWeakReference = new(_alc);
             UnloadAssembly(_alc);
             _alc = new(tempDllPath);
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
+
+            Debug.Log($"Unload user dll success: {!alcWeakReference.IsAlive}");
         }
 
         Debug.Log("Before cleaning");
@@ -163,7 +166,7 @@ public sealed class UserScriptingLauncher
             GC.WaitForPendingFinalizers();
             GC.Collect();
 
-            Console.WriteLine($"Unload success: {!hostAlcWeakRef.IsAlive}");
+            Debug.Log($"Load user dll success: {hostAlcWeakRef.IsAlive}");
         }
         catch (Exception e)
         {
@@ -175,6 +178,7 @@ public sealed class UserScriptingLauncher
     {
         if(_userTypes.TryGetValue(name, out var type))
             return Unsafe.As<EComponent>(Activator.CreateInstance(type));
+
         Debug.LogError("Failed to get a type!");
         return null!;
     }
@@ -185,7 +189,10 @@ public sealed class UserScriptingLauncher
         {
             LoadDll();
         }
-        catch (Exception e) { Console.WriteLine(e.Message); }
+        catch (Exception e) 
+        { 
+            Console.WriteLine(e.Message); 
+        }
     }
 
     [DllImport("EraScriptingCPPDecls.dll", CharSet = CharSet.Ansi)]

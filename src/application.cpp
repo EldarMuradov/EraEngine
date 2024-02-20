@@ -540,11 +540,6 @@ void application::update(const user_input& input, float dt)
 
 	// Particles
 #if 0
-	if (input.keyboard['T'].pressEvent)
-	{
-		debrisParticleSystem.burst(camera.position + camera.rotation * vec3(0.f, 0.f, -3.f));
-	}
-
 	computePass.dt = dt;
 	//computePass.updateParticleSystem(&boidParticleSystem);
 	computePass.updateParticleSystem(&fireParticleSystem);
