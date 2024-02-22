@@ -97,7 +97,7 @@ public class InputSystem : IESystem
         Priority = ESystemPriority.High;
     }
 
-    public void Update(float dt)
+    public void Update(World world, float dt)
     {
 
     }

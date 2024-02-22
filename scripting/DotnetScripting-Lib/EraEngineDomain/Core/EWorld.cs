@@ -1,23 +1,46 @@
 ﻿using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 namespace EraEngine;
 
 using EEntityFilter = Int32;
 
-public class EWorld
+public static class EWorld
 {
-    public static Dictionary<int, EEntity> Entities = [];
+    public static World SceneWorld
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private set;
+    } = new();
 
-    private static Dictionary<int, EEntity> _entities = [];
+    public static void SetWorld(in World world)
+    {
+        SceneWorld.Clear();
+        SceneWorld = world;
+    }
+}
 
-    private static Dictionary<EEntityFilter, List<EEntity>> _filterEntities = [];
+public class World
+{
+    public Dictionary<int, EEntity> Entities = [];
 
-    private static Dictionary<int, HashSet<int>> _includeUpdateSets = [];
-    private static Dictionary<int, HashSet<int>> _excludeUpdateSets = [];
-    private static FiltersCollection _filtersCollection = new();
+    private Dictionary<int, EEntity> _entities = [];
 
-    private static Dictionary<int, BitMask> _masks = [];
+    private Dictionary<EEntityFilter, List<EEntity>> _filterEntities = [];
 
-    public static EEntity GetEntity(int id)
+    private Dictionary<int, HashSet<int>> _includeUpdateSets = [];
+    private Dictionary<int, HashSet<int>> _excludeUpdateSets = [];
+    private FiltersCollection _filtersCollection = new();
+
+    private Dictionary<int, BitMask> _masks = [];
+
+    public World()
+    {
+
+    }
+
+    public EEntity GetEntity(int id)
     {
         if (_entities.TryGetValue(id, out EEntity? value))
             return value;
@@ -29,7 +52,7 @@ public class EWorld
         }
     }
 
-    private static void AddIdToFlters(int id, HashSet<int> filterIds)
+    private void AddIdToFlters(int id, HashSet<int> filterIds)
     {
         foreach (var filterId in filterIds)
         {
@@ -45,7 +68,7 @@ public class EWorld
         }
     }
 
-    public static void Clear()
+    public void Clear()
     {
         Entities.Clear();
 
@@ -65,7 +88,7 @@ public class EWorld
         GC.Collect();
     }
 
-    private static void AddFilterToUpdateSets(in BitMask components, int filterIdx,
+    private void AddFilterToUpdateSets(in BitMask components, int filterIdx,
         Dictionary<int, HashSet<int>> sets)
     {
         var nextSetBit = components.GetEnumerator().GetNextSetBit(0);
@@ -83,7 +106,7 @@ public class EWorld
         }
     }
 
-    public static int RegisterFilter(in BitMask includes, in BitMask excludes)
+    public int RegisterFilter(in BitMask includes, in BitMask excludes)
     {
         if (_filtersCollection.TryAdd(in includes, in excludes, out int filterId))
         {
@@ -95,7 +118,7 @@ public class EWorld
         return filterId;
     }
 
-    private static void RemoveIdFromFilters(int id, HashSet<int> filterIds)
+    private void RemoveIdFromFilters(int id, HashSet<int> filterIds)
     {
         foreach (var filterId in filterIds)
         {
@@ -111,9 +134,9 @@ public class EWorld
         }
     }
 
-    public static EcsFilter GetFilter(int id) => _filtersCollection[id];
+    public EcsFilter GetFilter(int id) => _filtersCollection[id];
 
-    public static void UpdateFiltersOnAdd<T>(int id)
+    public void UpdateFiltersOnAdd<T>(int id)
     {
         var componentId = ComponentMeta<T>.Id;
 
@@ -130,7 +153,7 @@ public class EWorld
         AddIdToFlters(id, value);
     }
 
-    public static void UpdateFiltersOnRemove(int componentId, int id)
+    public void UpdateFiltersOnRemove(int componentId, int id)
     {
         RemoveIdFromFilters(id, _includeUpdateSets[componentId]);
 
@@ -145,7 +168,7 @@ public class EWorld
         AddIdToFlters(id, value);
     }
 
-    public static void Add(EEntity entity)
+    public void Add(EEntity entity)
     {
         if (_entities.TryAdd(entity.Id, entity))
         {
@@ -158,7 +181,7 @@ public class EWorld
         }
     }
 
-    public static void RefreshScene()
+    public void RefreshScene()
     {
         var entities = _entities.Values.Where(e => e.Filter == -1).ToImmutableList();
 
@@ -168,7 +191,7 @@ public class EWorld
         SyncEntities();
     }
 
-    public static void Remove(EEntity entity)
+    public void Remove(EEntity entity)
     {
         if (_entities.Remove(entity.Id))
         {
@@ -177,26 +200,26 @@ public class EWorld
         }
     }
 
-    public static IEnumerable<EEntity>? GetFilterEntities(EEntityFilter filter)
+    public IEnumerable<EEntity>? GetFilterEntities(EEntityFilter filter)
     {
         if(_filterEntities.TryGetValue(filter, out var entities))
             return entities.AsEnumerable();
         return Enumerable.Empty<EEntity>();
     }
 
-    public static void IterateAll(Action<EEntity> action)
+    public void IterateAll(Action<EEntity> action)
     { 
         var entities = Entities.Values;
         Parallel.ForEach(entities, action);
     }
 
-    public static void Iterate(Action<EEntity> action, EEntityFilter filter)
+    public void Iterate(Action<EEntity> action, EEntityFilter filter)
     {
         if (_filterEntities.TryGetValue(filter, out List<EEntity>? entities))
             Parallel.ForEach(entities, action);
     }
 
-    public static void Iterate(Action<EEntity> action, EcsFilter filter)
+    public void Iterate(Action<EEntity> action, EcsFilter filter)
     {
         foreach (var id in filter)
         {
@@ -205,7 +228,7 @@ public class EWorld
         }
     }
 
-    public static void SyncEntities()
+    public void SyncEntities()
     {
         Entities = new(_entities);
     }

@@ -10,5 +10,5 @@ public interface IESystem
         get;
     }
 
-    void Update(float dt);
+    void Update(World world, float dt);
 }

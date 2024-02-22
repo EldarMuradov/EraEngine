@@ -40,7 +40,7 @@ public sealed class UserScriptingLauncher
         _userTypes.Clear();
         _userTypes = [];
 
-        Parallel.ForEach(EWorld.Entities.Values, (e) => 
+        Parallel.ForEach(EWorld.SceneWorld.Entities.Values, (e) => 
         {
             foreach (var comp in e.Components.Values)
             {
@@ -89,9 +89,9 @@ public sealed class UserScriptingLauncher
 
         try
         {
-            EWorld.RefreshScene();
+            EWorld.SceneWorld.RefreshScene();
 
-            Parallel.ForEach(EWorld.Entities.Values, (e) =>
+            Parallel.ForEach(EWorld.SceneWorld.Entities.Values, (e) =>
             {
                 try
                 {

@@ -15,7 +15,7 @@ public class BackgroundServiceSystem : IESystem
         Priority = ESystemPriority.Low;
     }
 
-    public void Update(float dt)
+    public void Update(World world, float dt)
     {
     }
 }

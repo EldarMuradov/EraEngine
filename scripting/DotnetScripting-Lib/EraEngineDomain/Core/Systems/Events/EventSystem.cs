@@ -40,7 +40,7 @@ public class EventSystem : IESystem, IEHandler<EventRequest>
         return _events.TryGetValue(signal, out _);
     }
 
-    public void Update(float dt)
+    public void Update(World world, float dt)
     {
     }
 }

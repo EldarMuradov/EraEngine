@@ -21,7 +21,7 @@ public class TransformHandler : IEHandler
                 index++;
             }
         }
-        EWorld.GetEntity(id).GetComponent<TransformComponent>().SetTransformMatrix(transforms, false);
+        EWorld.SceneWorld.GetEntity(id).GetComponent<TransformComponent>().SetTransformMatrix(transforms, false);
 
         Marshal.FreeHGlobal(transformPtr);
     }

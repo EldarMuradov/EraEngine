@@ -23,7 +23,7 @@ public static class ELevel
                 BitMask exclude = new();
                 exclude.Set(ComponentMeta<RigidbodyComponent>.Id);
 
-                var filterId = EWorld.RegisterFilter(include, exclude);
+                var filterId = EWorld.SceneWorld.RegisterFilter(include, exclude);
 
                 EEntity nav_target = new(59, "SpherePX1");
                 nav_target.CreateComponent<RigidbodyComponent>(RigidbodyType.Dynamic);
@@ -33,16 +33,16 @@ public static class ELevel
 
                 EEntity e1 = new();
 
-                var filter = EWorld.GetFilter(filterId);
+                var filter = EWorld.SceneWorld.GetFilter(filterId);
 
-                EWorld.Iterate((entity) => { Console.WriteLine(entity.Id); }, filter);
+                EWorld.SceneWorld.Iterate((entity) => { Console.WriteLine(entity.Id); }, filter);
 
-                EWorld.SyncEntities();
+                EWorld.SceneWorld.SyncEntities();
             }
 
             _syncObj.Wait();
 
-            EWorld.IterateAll((entity) => { entity.Start(); });
+            EWorld.SceneWorld.IterateAll((entity) => { entity.Start(); });
 
             _syncObj.Release();
         }
@@ -62,9 +62,9 @@ public static class ELevel
             UpdateDelegate?.Invoke(dt);
             UpdateSystems(dt);
 
-            EWorld.IterateAll((entity) => { entity.Update(dt); });
+            EWorld.SceneWorld.IterateAll((entity) => { entity.Update(dt); });
 
-            EWorld.SyncEntities();
+            EWorld.SceneWorld.SyncEntities();
 
             _syncObj.Release();
         }
@@ -97,7 +97,7 @@ public static class ELevel
         var systems = ESystemManager.GetSystemsQueue();
         while (systems.TryDequeue(out var system, out _))
         {
-            system.Update(dt);
+            system.Update(EWorld.SceneWorld, dt);
         }
     }
 }

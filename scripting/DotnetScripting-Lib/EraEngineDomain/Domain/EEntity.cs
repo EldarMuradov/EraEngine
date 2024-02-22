@@ -10,36 +10,44 @@ using EEntityFilter = Int32;
 
 public class EEntity
 {
-    public EEntity(int id, string name, EEntityFilter filter = default)
+    public EEntity(int id, string name, EEntityFilter filter = default, World world = null!)
     {
         (Id, Name, Filter) = (id, name, filter);
 
-        EWorld.Add(this);
+        _world = world is null ? EWorld.SceneWorld : world;
+
+        _world.Add(this);
 
         CreateComponentInternal<TransformComponent>();
     }
 
-    public EEntity()
+    public EEntity(World world = null!)
     {
         Name = Guid.NewGuid().ToString();
         Filter = default;
         Id = EEntityManager.CreateEntity(Name);
 
-        EWorld.Add(this);
+        _world = world is null ? EWorld.SceneWorld : world;
+
+        _world.Add(this);
 
         CreateComponentInternal<TransformComponent>();
     }
 
-    public EEntity(string name, EEntityFilter filter)
+    public EEntity(string name, EEntityFilter filter, World world = null!)
     {
         Name = name;
         Filter = filter;
         Id = EEntityManager.CreateEntity(Name);
 
-        EWorld.Add(this);
+        _world = world is null ? EWorld.SceneWorld : world;
+
+        _world.Add(this);
 
         CreateComponentInternal<TransformComponent>();
     }
+
+    private World _world = null!;
 
     public int Id
     {
@@ -129,7 +137,7 @@ public class EEntity
 
     public T CreateComponent<T>(params object[] args) where T : EComponent, new()
     {
-        EWorld.UpdateFiltersOnAdd<T>(Id);
+        _world.UpdateFiltersOnAdd<T>(Id);
         var comp = GetComponent<T>();
 
         if (comp != null)
@@ -159,7 +167,7 @@ public class EEntity
 
     public void RemoveComponent<T>(bool sync = false) where T : EComponent, new()
     {
-        EWorld.UpdateFiltersOnRemove(ComponentMeta<T>.Id, Id);
+        _world.UpdateFiltersOnRemove(ComponentMeta<T>.Id, Id);
         var comp = GetComponent<T>() ??
             throw new NullReferenceException("Runtime> Failed to remove component! Value is null.");
 
@@ -199,7 +207,7 @@ public class EEntity
         transform.SetPosition(position);
         transform.SetRotation(rotation);
 
-        EWorld.Entities.Add(newId, instance);
+        EWorld.SceneWorld.Entities.Add(newId, instance);
 
         return instance;
     }
@@ -221,7 +229,7 @@ public class EEntity
         foreach (var comp in original.Components.ActiveValues)
             instance.CopyComponent(comp);
 
-        EWorld.Entities.Add(newId, instance);
+        EWorld.SceneWorld.Entities.Add(newId, instance);
 
         return instance;
     }
@@ -255,14 +263,14 @@ public class EEntity
     public void Release()
     {
         release(Id);
-        EWorld.Remove(this);
+        _world.Remove(this);
     } 
 
     #endregion
 
     internal T CreateComponentInternal<T>(params object[] args) where T : EComponent, new()
     {
-        EWorld.UpdateFiltersOnAdd<T>(Id);
+        _world.UpdateFiltersOnAdd<T>(Id);
         var comp = GetComponent<T>();
 
         if (comp != null)

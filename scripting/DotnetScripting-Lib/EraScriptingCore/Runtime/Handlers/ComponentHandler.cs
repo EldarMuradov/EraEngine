@@ -10,7 +10,7 @@ public class ComponentHandler : IEHandler
         try
         {
             string result = Marshal.PtrToStringAnsi(comp);
-            var entity = EWorld.GetEntity(id);
+            var entity = EWorld.SceneWorld.GetEntity(id);
             var c = ScriptingCore.UserScriptingObj.GetComponent(result);
             entity.CopyComponent(c);
         }
@@ -24,7 +24,7 @@ public class ComponentHandler : IEHandler
         try
         {
             string result = Marshal.PtrToStringAnsi(comp);
-            var entity = EWorld.GetEntity(id);
+            var entity = EWorld.SceneWorld.GetEntity(id);
             entity.RemoveComponent(result);
         }
         catch (Exception e) { Console.WriteLine(e.Message); }
