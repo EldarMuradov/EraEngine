@@ -120,7 +120,7 @@ public:
 	}
 
 protected:
-	NODISCARD PxAgain processTouches(const HitType* buffer, PxU32 nbHits) override
+	PxAgain processTouches(const HitType* buffer, PxU32 nbHits) override
 	{
 		nbHits = min(nbHits, PX_CONTACT_BUFFER_SIZE - _count);
 		for (PxU32 i = 0; i < nbHits; i++)
@@ -383,6 +383,7 @@ struct px_profiler_callback : PxProfilerCallback
 
 	void zoneEnd(void* profilerData, const char* eventName, bool detached, uint64_t contextId) override
 	{
+		LOG_MESSAGE(eventName);
 	}
 };
 
@@ -402,11 +403,11 @@ struct px_error_reporter : PxErrorCallback
 
 struct px_collision_contact_callback : PxSimulationEventCallback
 {
-	void onConstraintBreak(physx::PxConstraintInfo* constraints, physx::PxU32 count) override { /*std::cout << "onConstraintBreak\n";*/ }
-	void onWake(physx::PxActor** actors, physx::PxU32 count) override { /*std::cout << "onWake\n";*/ }
-	void onSleep(physx::PxActor** actors, physx::PxU32 count) override { /*std::cout << "onSleep\n";*/ }
-	void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) override { /*std::cout << "onTrigger\n";*/ }
-	void onAdvance(const physx::PxRigidBody* const* bodyBuffer, const physx::PxTransform* poseBuffer, const physx::PxU32 count) override { /*std::cout << "onAdvance\n";*/ }
+	void onConstraintBreak(physx::PxConstraintInfo* constraints, physx::PxU32 count) override { std::cout << "onConstraintBreak\n"; }
+	void onWake(physx::PxActor** actors, physx::PxU32 count) override { std::cout << "onWake\n"; }
+	void onSleep(physx::PxActor** actors, physx::PxU32 count) override { std::cout << "onSleep\n"; }
+	void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) override { std::cout << "onTrigger\n"; }
+	void onAdvance(const physx::PxRigidBody* const* bodyBuffer, const physx::PxTransform* poseBuffer, const physx::PxU32 count) override { std::cout << "onAdvance\n"; }
 	void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override;
 };
 

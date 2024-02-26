@@ -17,7 +17,7 @@ struct nav_node
     nav_node() = default;
     nav_node(vec2 pos) { position = pos; }
 	vec2 position = vec2(NAV_INF_POS);
-	vec2 parentPosition = vec2(NAV_INF_POS);;
+	vec2 parentPosition = vec2(NAV_INF_POS);
 	float gCost = 0.0f;
 	float hCost = 0.0f;
 	float fCost = 0.0f;

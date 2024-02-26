@@ -111,6 +111,14 @@ void px_rigidbody_component::onCollisionEnter(px_rigidbody_component* collision)
 
 }
 
+void px_rigidbody_component::onCollisionExit(px_rigidbody_component* collision) const
+{
+}
+
+void px_rigidbody_component::onCollisionStay(px_rigidbody_component* collision) const
+{
+}
+
 void px_rigidbody_component::createPhysics(bool addToScene)
 {
 	actor = createActor();
@@ -143,18 +151,18 @@ NODISCARD physx::PxRigidActor* px_rigidbody_component::createActor()
 		coll = (px_collider_component_base*)&entity.getComponent<px_capsule_collider_component>();
 	}
 
-	auto tranaform = entity.getComponentIfExists<transform_component>();
+	auto transform = entity.getComponentIfExists<transform_component>();
 
-	if (!tranaform)
+	if (!transform)
 	{
 		entity.addComponent<transform_component>(vec3(0.0f), quat::identity);
-		tranaform = &entity.getComponent<transform_component>();
+		transform = &entity.getComponent<transform_component>();
 	}
 
-	vec3 pos = tranaform->position;
+	vec3 pos = transform->position;
 	PxVec3 pospx = physx::createPxVec3(pos);
 
-	quat q = tranaform->rotation;
+	quat q = transform->rotation;
 	PxQuat rotpx = physx::createPxQuat(q);
 	rotpx = rotpx.getConjugate();
 

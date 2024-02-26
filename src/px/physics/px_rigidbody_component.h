@@ -52,6 +52,8 @@ struct px_rigidbody_component
 	NODISCARD px_rigidbody_type getType() const noexcept { return type; }
 
 	void onCollisionEnter(px_rigidbody_component* collision) const;
+	void onCollisionExit(px_rigidbody_component* collision) const;
+	void onCollisionStay(px_rigidbody_component* collision) const;
 
 	uint32_t handle {};
 
