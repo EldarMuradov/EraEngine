@@ -24,7 +24,9 @@ struct main_renderer;
 struct dlss_feature_adapter
 {
 	dlss_feature_adapter() = default;
+
 	void initialize(main_renderer* rbd);
+
 	~dlss_feature_adapter()
 	{ 
 #if ENABLE_DLSS

@@ -50,9 +50,9 @@ struct enative_scripting_linker
 	static void removeScript(int id, const char* comp);
 
 	template<typename Func, typename... Args, IsCallableFunc<Func, Args...> = true>
-	static void call_static_method(Func f, Args... args)
+	static void call_static_method(Func f, Args&&... args)
 	{
-		f(args...);
+		f(std::forward<Args>(args)...);
 	}
 
 	template<typename Func, typename... Args, IsCallableFunc<Func, Args...> = true>

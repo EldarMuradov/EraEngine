@@ -24,7 +24,7 @@
 #define PX_NB_MAX_RAYCAST_HITS 64
 #define PX_NB_MAX_RAYCAST_DISTANCE 128
 
-#define PX_VEHICLE 0
+#define PX_VEHICLE 1
 #define PX_CLOTH 0
 
 #define PX_RELEASE(x)	if(x)	{ x->release(); x = nullptr;}
@@ -502,10 +502,7 @@ private:
 	px_physics_engine(application* application) noexcept;
 	~px_physics_engine();
 
-	px_physics_engine(const px_physics_engine&) = delete;
-	px_physics_engine& operator=(const px_physics_engine&) = delete;
-	px_physics_engine& operator=(px_physics_engine&&) = delete;
-	px_physics_engine(px_physics_engine&&) = delete;
+	NO_COPY(px_physics_engine)
 
 public:
 	static void initialize(application* application);

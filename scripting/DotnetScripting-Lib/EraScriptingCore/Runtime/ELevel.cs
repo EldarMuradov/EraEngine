@@ -89,7 +89,10 @@ public static class ELevel
         var types = assembly.GetTypes().Where(IsSystemType).ToImmutableList();
 
         foreach (var type in types)
+        {
             ESystemManager.RegisterSystem((IESystem)Activator.CreateInstance(type)!);
+            Console.WriteLine(type.Name);
+        }
     }
 
     private static void UpdateSystems(float dt)

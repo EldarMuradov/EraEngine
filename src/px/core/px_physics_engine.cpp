@@ -648,6 +648,7 @@ PxVehicleDriveNW* physx::instantiate4WVersion(const PxVehicleDriveNW& vehicle18W
 		suspData.setMassAndPreserveNaturalFrequency(sprungMasses[i]);
 		wheelsSimData4W->setSuspensionData(i, suspData);
 	}
+
 	wheelsSimData4W->setTireLoadFilterData(vehicle18W.mWheelsSimData.getTireLoadFilterData());
 
 	wheelsSimData4W->setWheelShapeMapping(0, 0);

@@ -51,10 +51,10 @@ static void get_all_functions_and_start()
 {
 	{
 #if _DEBUG
-		std::ofstream file((eproject::path + "\\bin\\Debug_x86_64\\core.cfg");
+		std::ofstream file((eproject::engine_path + "\\bin\\Debug_x86_64\\core.cfg");
 		file << eproject::name << "," << eproject::path;
 #else
-		std::ofstream file(eproject::path + "\\bin\\Release_x86_64\\core.cfg");
+		std::ofstream file(eproject::engine_path + "\\bin\\Release_x86_64\\core.cfg");
 		file << eproject::name << "," << eproject::path;
 #endif
 	}
@@ -454,7 +454,6 @@ void enative_scripting_linker::handleInput(uintptr_t input)
 	{
 		std::cout << ex.what() << "\n";
 	}
-
 }
 
 void enative_scripting_linker::createScript(int id, const char* comp)

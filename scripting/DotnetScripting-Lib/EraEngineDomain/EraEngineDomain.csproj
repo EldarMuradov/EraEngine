@@ -19,8 +19,4 @@
 		<Optimize>True</Optimize>
 	</PropertyGroup>
 
-	<ItemGroup>
-	  <None Include="..\..\..\src\dlss\dlss.h" Link="dlss.h" />
-	</ItemGroup>
-
 </Project>

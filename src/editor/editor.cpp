@@ -28,6 +28,7 @@
 #include <px/physics/px_collider_component.h>
 #include <stack>
 #include <EraScriptingLauncher-Lib/src/script.h>
+#include <core/builder.h>
 
 static vec3 getEuler(quat q)
 {
@@ -416,6 +417,16 @@ bool eeditor::drawMainMenuBar()
 			if (ImGui::MenuItem(ICON_FA_SAVE "  Save scene", "Ctrl+S"))
 			{
 				serializeToFile();
+			}
+
+			if (ImGui::MenuItem(ICON_FA_SAVE "  Build", "Ctrl+B"))
+			{
+				struct build_data {} bd;
+				lowPriorityJobQueue.createJob<build_data>([](build_data& data, job_handle)
+				{
+					if (!ebuilder::build())
+						LOG_ERROR("Building> Failed to build the game.");
+				}, bd).submitNow();
 			}
 
 			if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN "  Load scene", "Ctrl+O"))

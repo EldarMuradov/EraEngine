@@ -65,6 +65,7 @@ public class ScriptingCore
             Console.WriteLine("Reloading user dll");
             ESystemManager.ReleaseSystems();
             UserScriptingObj.ReloadScripting();
+            ELevel.RegisterSystemsWithReflection();
         }
         catch (Exception ex)
         {
