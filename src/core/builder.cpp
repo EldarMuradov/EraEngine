@@ -3,6 +3,7 @@
 #include <editor/file_dialog.h>
 #include "log.h"
 #include <core/project.h>
+#include <editor/system_calls.h>
 
 NODISCARD std::optional<std::string> ebuilder::selectBuildFolder()
 {
@@ -77,10 +78,23 @@ bool ebuilder::buildAtLocation(std::string_view configuration, std::string_view 
 
 	std::error_code err;
 
+	std::filesystem::copy(eproject::engine_path + "\\runtime\\x64\\Release", buildPath + "\\Data\\User", std::filesystem::copy_options::recursive, err);
+	eproject::exe_path = buildPath + "\\Data\\User\\";
+
+	if (err)
+		return false;
+
+	LOG_MESSAGE("Building .exe finished.");
+
 	std::filesystem::copy(eproject::path + "\\Game.eproj", buildPath + "\\Data\\User\\Game.eproj", err);
 
 	if (err)
 		return false;
+
+	std::filesystem::remove_all(buildPath + "\\Data\\User\\assets");
+	std::filesystem::remove_all(buildPath + "\\Data\\User\\asset_cache");
+	std::filesystem::remove_all(buildPath + "\\Data\\User\\resources");
+	std::filesystem::remove_all(buildPath + "\\Data\\User\\shaders");
 
 	std::filesystem::copy(eproject::path + "\\assets", buildPath + "\\Data\\User\\assets\\", std::filesystem::copy_options::recursive, err);
 
@@ -95,26 +109,34 @@ bool ebuilder::buildAtLocation(std::string_view configuration, std::string_view 
 
 	LOG_MESSAGE("Data\\User\\assets\\ directory copied");
 
-	std::filesystem::copy(eproject::path + "\\asset_cache", buildPath + "\\Data\\User\\asset_cache", err);
+	std::filesystem::copy(eproject::path + "\\asset_cache", buildPath + "\\Data\\User\\asset_cache", std::filesystem::copy_options::recursive, err);
 
 	if (err)
 		return false;
 
 	LOG_MESSAGE("Data\\User\\asset_cache\\ directory copied");
 
-	std::filesystem::copy(eproject::path + "\\resources", buildPath + "\\Data\\User\\resources", err);
+	std::filesystem::copy(eproject::path + "\\resources", buildPath + "\\Data\\User\\resources", std::filesystem::copy_options::recursive, err);
 
 	if (err)
 		return false;
 
 	LOG_MESSAGE("Data\\User\\resources\\ directory copied");
 
-	std::filesystem::copy(eproject::path + "\\shaders", buildPath + "\\Data\\User\\shaders", err);
+	std::filesystem::copy(eproject::path + "\\shaders", buildPath + "\\Data\\User\\shaders", std::filesystem::copy_options::recursive, err);
 
 	if (err)
 		return false;
 
 	LOG_MESSAGE("Data\\User\\shaders\\ directory copied");
+
+	LOG_MESSAGE("Builder> builded successfuly.");
+
+	if (autoRun)
+	{
+		std::filesystem::path exe_path = eproject::exe_path + "EraRuntime.exe";
+		os::system_calls::openFile(exe_path);
+	}
 
 	return !failed;
 }

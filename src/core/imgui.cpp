@@ -68,7 +68,7 @@ static void setStyle()
 	style.FramePadding = ImVec2(5.f, 2.f);
 }
 
-NODISCARD ImGuiContext* initializeImGui(struct dx_window& window)
+ImGuiContext* initializeImGui(struct dx_window& window)
 {
 	IMGUI_CHECKVERSION();
 	auto imguiContext = ImGui::CreateContext();

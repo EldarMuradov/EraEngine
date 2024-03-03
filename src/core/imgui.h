@@ -7,7 +7,7 @@
 #include "dx/dx.h"
 #include "math.h"
 
-NODISCARD ImGuiContext* initializeImGui(struct dx_window& window);
+ImGuiContext* initializeImGui(struct dx_window& window);
 void newImGuiFrame(float dt);
 void renderImGui(struct dx_command_list* cl);
 

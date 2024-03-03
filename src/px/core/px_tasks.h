@@ -20,6 +20,7 @@ struct px_task : physx::PxLightCpuTask
 {
 	px_task() = default;
 
+	template<IsCallableFunc<Func, Args...> = true>
 	px_task(std::function<Func(Args...)> f, Args&&... ars)
 		: func(f),
 		args(std::forward<Args>(ars)...) {}
