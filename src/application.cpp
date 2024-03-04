@@ -37,6 +37,8 @@
 #include "core/coroutine.h"
 #include <ai/navigation.h>
 #include <ai/navigation_component.h>
+#include <px/features/px_particles.h>
+#include "px/features/cloth/px_clothing_factory.h"
 
 static raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh)
 {

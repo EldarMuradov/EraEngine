@@ -68,9 +68,11 @@ void px_physics::initialize()
 {
 	foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocatorCallback, errorReporter);
 
-	if (!foundation)
+	if (PxGetSuggestedCudaDeviceOrdinal(foundation->getErrorCallback()) < 0)
 		throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
 
+	if (!foundation)
+		throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
 
 	pvd = PxCreatePvd(*foundation);
 
@@ -251,6 +253,7 @@ void px_physics_engine::update(float dt)
 	physics->scene->fetchResults(true);
 
 	physics->scene->flushSimulation();
+	physics->scene->fetchResultsParticleSystem();
 	physics->scene->getTaskManager()->stopSimulation();
 	physics->scene->unlockWrite();
 

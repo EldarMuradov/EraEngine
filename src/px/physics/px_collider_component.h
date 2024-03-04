@@ -38,6 +38,8 @@ struct px_collider_component_base
 
 	NODISCARD px_collider_type getType() const noexcept { return type; }
 
+	virtual void release() { PX_RELEASE(shape) }
+
 protected:
 	px_collider_type type = px_collider_type::Box;
 
@@ -116,6 +118,8 @@ struct px_bounding_box_collider_component : px_collider_component_base
 
 	bool createShape() override;
 
+	void release() override { PX_RELEASE(shape) RELEASE_PTR(asset) }
+
 private:
 	mesh_asset* asset = nullptr;
 	unsigned int modelSize = 0;
@@ -131,6 +135,8 @@ struct px_triangle_mesh_collider_component : px_collider_component_base
 	~px_triangle_mesh_collider_component();
 
 	bool createShape() override;
+
+	void release() override { PX_RELEASE(shape) RELEASE_PTR(asset) }
 
 private:
 	mesh_asset* asset = nullptr;

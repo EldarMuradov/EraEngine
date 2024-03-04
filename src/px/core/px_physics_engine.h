@@ -30,10 +30,15 @@
 #define PX_RELEASE(x)	if(x)	{ x->release(); x = nullptr;}
 #define UNUSED(x) (void)(x)
 
+#include "extensions/PxRaycastCCD.h"
+#include <cudamanager/PxCudaContextManager.h>
+#include <extensions/PxParticleExt.h>
+#include <PxPBDParticleSystem.h>
+#include <extensions/PxParticleClothCooker.h>
+#include <cudamanager/PxCudaContext.h>
 #include <cuda.h>
 #include <PxPhysics.h>
 #include <PxPhysicsAPI.h>
-#include "extensions/PxRaycastCCD.h"
 
 #include <px/physics/px_rigidbody_component.h>
 #include <set>
@@ -42,8 +47,6 @@
 #include <core/memory.h>
 #include <core/log.h>
 #include <queue>
-
-#include <px/features/cloth/px_clothing_factory.h>
 
 struct application;
 struct eallocator;
@@ -187,6 +190,11 @@ struct px_overlap_info
 
 namespace physx
 {
+	static PX_FORCE_INLINE PxU32 id(PxU32 x, PxU32 y, PxU32 numY)
+	{
+		return x * numY + y;
+	}
+
 	NODISCARD static PxVec3 createPxVec3(const vec3& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
 	NODISCARD static PxVec2 createPxVec2(const vec2& vec) noexcept { return PxVec2(vec.x, vec.y); }
 	NODISCARD static PxVec3 createPxVec3(vec3&& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
