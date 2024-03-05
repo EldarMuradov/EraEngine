@@ -1,4 +1,6 @@
-﻿namespace EraEngine;
+﻿using SimpleInjector;
+
+namespace EraEngine;
 
 public enum ESystemPriority
 {
@@ -6,6 +8,31 @@ public enum ESystemPriority
     High,
     Normal,
     Low
+}
+
+public class EDIContainer : IEManager
+{
+    private static readonly Container _container = new();
+
+    public static void Register<T>() where T : class
+    {
+        _container.Register<T>();
+    }
+
+    public static void RegisterDecorator<T, D>() where T : class where D : class, T
+    {
+        _container.RegisterDecorator<T, D>();
+    }
+
+    public static void RegisterSingleton<T, D>() where T : class where D : class, T
+    {
+        _container.RegisterSingleton<T, D>();
+    }
+
+    public static T GetInstance<T, D>() where T : class
+    {
+        return _container.GetInstance<T>();
+    }
 }
 
 public class ESystemManager : IEManager

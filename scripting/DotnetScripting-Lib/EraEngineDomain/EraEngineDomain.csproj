@@ -19,4 +19,8 @@
 		<Optimize>True</Optimize>
 	</PropertyGroup>
 
+	<ItemGroup>
+	  <PackageReference Include="SimpleInjector" Version="5.4.4" />
+	</ItemGroup>
+
 </Project>
