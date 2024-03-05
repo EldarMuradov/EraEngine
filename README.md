@@ -132,8 +132,6 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 
 # TODO:
 
--Building
-
 -Console support
 
 -Project hub
