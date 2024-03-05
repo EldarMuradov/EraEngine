@@ -179,6 +179,10 @@ void application::loadCustomShaders()
 	}
 }
 
+px_particle_system* particleSystem = nullptr;
+PxVec4* diffuseLifeBuffer = nullptr;
+PxVec4* posBuffer = nullptr;
+
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
 	this->renderer = renderer;
@@ -270,7 +274,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
 		auto px_sphere = &scene.createEntity("SpherePX", (entity_handle)60)
-			.addComponent<transform_component>(vec3(20.f, 10.f * 3.f, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<transform_component>(vec3(0, 2.f, 0), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
 			//.addComponent<px_triangle_mesh_collider_component>(&(ass.meshes[0]))
 			//.addComponent<px_bounding_box_collider_component>(&(ass.meshes[0]))
@@ -278,7 +282,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);
 
 		auto px_sphere1 = &scene.createEntity("SpherePX1")
-			.addComponent<transform_component>(vec3(20.f, 12.f * 3.f, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<transform_component>(vec3(0, 5.f, 0), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
 			.addComponent<px_sphere_collider_component>(1.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);
@@ -293,6 +297,23 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<transform_component>(vec3(0.f, -5.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
 			.addComponent<px_box_collider_component>(100.0f, 5.0f, 100.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Static);
+
+		particleSystem = new px_particle_system(10, 10, 10, PxVec3(0, 10.f, 0));
+
+		{
+			PxScene* scene;
+			PxPhysics* physics = &PxGetPhysics();
+			physics->getScenes(&scene, 1);
+			PxCudaContextManager* cudaContextManager = scene->getCudaContextManager();
+
+			PxParticleAndDiffuseBuffer* userBuffer = particleSystem->particleBuffer;
+
+			const PxU32 maxParticles = userBuffer->getMaxParticles();
+			const PxU32 maxDiffuseParticles = userBuffer->getMaxDiffuseParticles();
+
+			diffuseLifeBuffer = (PxVec4*)malloc(maxDiffuseParticles * sizeof(PxVec4));
+			posBuffer = (PxVec4*)malloc(maxParticles * sizeof(PxVec4));
+		}
 
 		px_raycast_info rci = px_physics_engine::get()->raycast(&px_sphere1->getComponent<px_rigidbody_component>(), vec3(0, -1, 0));
 		if (rci.actor)
@@ -626,6 +647,54 @@ void application::update(const user_input& input, float dt)
 	}
 
 #endif
+
+		//if (this->scene.isPausable())
+		//{
+			// Test particles
+			{
+				PxParticleAndDiffuseBuffer* userBuffer = particleSystem->particleBuffer;
+				PxVec4* positions = userBuffer->getPositionInvMasses();
+				PxVec4* diffusePositions = userBuffer->getDiffusePositionLifeTime();
+
+				const PxU32 numParticles = userBuffer->getNbActiveParticles();
+				const PxU32 numDiffuseParticles = userBuffer->getNbActiveDiffuseParticles();
+
+				PxScene* scene;
+				PxGetPhysics().getScenes(&scene, 1);
+				PxCudaContextManager* cudaContextManager = scene->getCudaContextManager();
+
+				cudaContextManager->acquireContext();
+
+				PxCudaContext* cudaContext = cudaContextManager->getCudaContext();
+				cudaContext->memcpyDtoH(posBuffer, CUdeviceptr(positions), sizeof(PxVec4) * numParticles);
+				cudaContext->memcpyDtoH(diffuseLifeBuffer, CUdeviceptr(diffusePositions), sizeof(PxVec4) * numDiffuseParticles);
+
+				cudaContextManager->releaseContext();
+
+				for (int i = 0; i < numParticles; i++)
+				{
+					PxVec4 p_i = (PxVec4)posBuffer[i];
+					vec3 pos_i = vec3(p_i.x, p_i.y, p_i.z);
+					renderPoint(pos_i, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass, true);
+				}
+
+				const PxU32 numActiveDiffuseParticles = userBuffer->getNbActiveDiffuseParticles();
+
+				printf("NumActiveDiffuse = %i\n", numActiveDiffuseParticles);
+
+				if (numActiveDiffuseParticles > 0)
+				{
+					PxVec3 colorDiffuseParticles(1, 1, 1);
+
+					for (int i = 0; i < numActiveDiffuseParticles; i++)
+					{
+						PxVec4 p_i = (PxVec4)diffuseLifeBuffer[i];
+						vec3 pos_i = vec3(p_i.x, p_i.y, p_i.z);
+						renderPoint(pos_i, vec4(1, 0, 0, 1), &ldrRenderPass, true);
+					}
+				}
+			}
+		//}
 
 		submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
 	}
