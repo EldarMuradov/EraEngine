@@ -38,7 +38,9 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 
 -ImGUI
 
--.NET 8.0 Native AOT
+-CUDA
+
+-.NET 8.0 (Native AOT and Runtime)
 
 ![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/ea2b31115dbb7467764a7cccf4714b33589a31da/EngineSC3.png)
 
@@ -55,6 +57,18 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 -Rigidbodies and colliders
 
 -PBR
+
+-GPU PBD Particle Systems
+
+-GPU PBD Clothing Systems
+
+-Physics Joints
+
+-Physics Aggregates
+
+-CPU Tasks
+
+-GPU Physics
 
 -Forward rendering
 
@@ -75,6 +89,8 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 -Editor
 
 -MSAA
+
+-Building
 
 -Spot lights
 
@@ -115,8 +131,6 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 ![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/02d7801170a48c62c13e82ff4261d3a94ee91df3/NORMALS.png)
 
 # TODO:
-
--Building
 
 -Console support
 
