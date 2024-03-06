@@ -1,6 +1,8 @@
 #pragma once
 #include <core/math.h>
 #include <px/core/px_physics_engine.h>
+#include <core/memory.h>
+#include <rendering/debug_visualization.h>
 
 struct px_cloth_system
 {
@@ -122,6 +124,17 @@ struct px_cloth_system
 		cudaCM->freePinnedHostBuffer(positionInvMass);
 		cudaCM->freePinnedHostBuffer(velocity);
 		cudaCM->freePinnedHostBuffer(phase);
+
+#if PX_PARTICLE_USE_ALLOCATOR
+
+		allocator.initialize(0, maxDiffuseParticles * sizeof(PxVec4) * maxDiffuseParticles * sizeof(PxVec4) * 4);
+		posBuffer = allocator.allocate<PxVec4>(maxDiffuseParticles * sizeof(PxVec4), true);
+
+#else
+
+		posBuffer = (PxVec4*)malloc(numParticles * sizeof(PxVec4));
+
+#endif
 	}
 
 	~px_cloth_system()
@@ -132,7 +145,92 @@ struct px_cloth_system
 		PX_RELEASE(particleSystem)
 		PX_RELEASE(material)
 		PX_RELEASE(clothBuffer)
+
+#if PX_PARTICLE_USE_ALLOCATOR
+
+		allocator.reset(true);
+
+#else
+
+		free(posBuffer);
+
+#endif
 	}
+
+	void setWind(const PxVec3& wind) noexcept
+	{
+		particleSystem->setWind(wind);
+	}
+
+	PxVec3 getWind() const noexcept
+	{
+		return particleSystem->getWind();
+	}
+
+	void setPosition(const PxVec4& position) noexcept
+	{
+		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
+		PxVec4* bufferPos = clothBuffer->getPositionInvMasses();
+		const PxU32 numParticles = clothBuffer->getNbActiveParticles();
+
+		cudaCM->acquireContext();
+
+		PxCudaContext* cudaContext = cudaCM->getCudaContext();
+
+		PxVec4* hostBuffer = nullptr;
+		cudaCM->allocPinnedHostBuffer(hostBuffer, numParticles * sizeof(PxVec4));
+
+		cudaContext->memcpyDtoH(hostBuffer, CUdeviceptr(bufferPos), numParticles * sizeof(PxVec4));
+
+		for (size_t i = 0; i < numParticles; i += 4)
+		{
+			hostBuffer[i + 0] = hostBuffer[i + 0] + position;
+			hostBuffer[i + 1] = hostBuffer[i + 1] + position;
+			hostBuffer[i + 2] = hostBuffer[i + 2] + position;
+			hostBuffer[i + 3] = hostBuffer[i + 3] + position;
+		}
+
+		cudaContext->memcpyHtoD(CUdeviceptr(bufferPos), hostBuffer, numParticles * sizeof(PxVec4));
+
+		cudaCM->releaseContext();
+
+		clothBuffer->raiseFlags(PxParticleBufferFlag::eUPDATE_POSITION);
+
+		cudaCM->freePinnedHostBuffer(hostBuffer);
+	}
+
+	void debugVisualize(ldr_render_pass& ldrRenderPass) noexcept
+	{
+		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
+
+		PxVec4* positions = clothBuffer->getPositionInvMasses();
+
+		const PxU32 numParticles = clothBuffer->getNbActiveParticles();
+
+		cudaCM->acquireContext();
+
+		PxCudaContext* cudaContext = cudaCM->getCudaContext();
+		cudaContext->memcpyDtoH(posBuffer, CUdeviceptr(positions), sizeof(PxVec4) * numParticles);
+
+		cudaCM->releaseContext();
+
+		for (size_t i = 0; i < numParticles; i++)
+		{
+			PxVec4 p_i = (PxVec4)posBuffer[i];
+			vec3 pos_i = vec3(p_i.x, p_i.y, p_i.z);
+			renderPoint(pos_i, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass, false);
+		}
+	}
+
+	PxVec4* posBuffer = nullptr;
+
+private:
+
+#if PX_PARTICLE_USE_ALLOCATOR
+
+	eallocator allocator;
+
+#endif
 
 	PxPBDMaterial* material = nullptr;
 	PxPBDParticleSystem* particleSystem = nullptr;

@@ -1,6 +1,8 @@
 #pragma once
 #include <core/math.h>
 #include <px/core/px_physics_engine.h>
+#include <core/memory.h>
+#include <rendering/debug_visualization.h>
 
 struct px_particle_system
 {
@@ -8,7 +10,7 @@ struct px_particle_system
 	px_particle_system(PxU32 numX, PxU32 numY, PxU32 numZ, const PxVec3& position = PxVec3(0, 0, 0), PxU32 maxVols = 1, PxU32 maxNh = 96) noexcept
 		: maxNeighborhood(maxNh), maxParticles(numX * numY * numZ), maxVolumes(maxVols)
 	{
-		const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
+		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
 
 		particleSystem = px_physics_engine::getPhysics()->
 			createPBDParticleSystem(*cudaCM, maxNeighborhood);
@@ -101,25 +103,157 @@ struct px_particle_system
 		cudaCM->freePinnedHostBuffer(positionInvMass);
 		cudaCM->freePinnedHostBuffer(velocity);
 		cudaCM->freePinnedHostBuffer(phase);
+
+#if PX_PARTICLE_USE_ALLOCATOR
+
+		allocator.initialize(0, maxDiffuseParticles * sizeof(PxVec4) * maxDiffuseParticles * sizeof(PxVec4) * 4);
+
+		diffuseLifeBuffer = allocator.allocate<PxVec4>(maxDiffuseParticles * sizeof(PxVec4), true);
+		posBuffer = allocator.allocate<PxVec4>(maxDiffuseParticles * sizeof(PxVec4), true);
+
+#else
+
+		diffuseLifeBuffer = (PxVec4*)malloc(maxDiffuseParticles * sizeof(PxVec4));
+		posBuffer = (PxVec4*)malloc(maxParticles * sizeof(PxVec4));
+
+#endif
+
 	}
 
 	~px_particle_system()
 	{
 		px_physics_engine::get()->getPhysicsAdapter()->scene->removeActor(*particleSystem);
 		particleSystem->removeParticleBuffer(particleBuffer);
-
 		PX_RELEASE(particleSystem)
 		PX_RELEASE(material)
 		PX_RELEASE(particleBuffer)
+
+#if PX_PARTICLE_USE_ALLOCATOR
+
+		allocator.reset(true);
+
+#else
+
+		free(diffuseLifeBuffer);
+		free(posBuffer);
+
+#endif
 	}
 
-	void setPositions(PxVec4* positionsHost) noexcept
+	void setWind(const PxVec3& wind) noexcept
 	{
-		const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
-		PxVec4* bufferPos = particleBuffer->getPositionInvMasses();
-		cudaCM->copyHToDAsync(bufferPos, positionsHost, maxParticles * sizeof(PxVec4), 0);
-		particleBuffer->raiseFlags(PxParticleBufferFlag::eUPDATE_POSITION);
+		particleSystem->setWind(wind);
 	}
+
+	PxVec3 getWind() const noexcept
+	{
+		return particleSystem->getWind();
+	}
+
+	void setPosition(const PxVec4& position) noexcept
+	{
+		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
+		PxVec4* bufferPos = particleBuffer->getPositionInvMasses();
+		PxVec4* bufferDiffPos = particleBuffer->getDiffusePositionLifeTime();
+		const PxU32 numParticles = particleBuffer->getNbActiveParticles();
+
+		cudaCM->acquireContext();
+
+		PxCudaContext* cudaContext = cudaCM->getCudaContext();
+
+		PxVec4* hostBuffer = nullptr;
+		cudaCM->allocPinnedHostBuffer(hostBuffer, numParticles * sizeof(PxVec4));
+
+		const PxU32 numActiveDiffuseParticles = particleBuffer->getNbActiveDiffuseParticles();
+		PxVec4* hostDiffBuffer = nullptr;
+		cudaCM->allocPinnedHostBuffer(hostDiffBuffer, numActiveDiffuseParticles * sizeof(PxVec4));
+
+		cudaContext->memcpyDtoH(hostBuffer, CUdeviceptr(bufferPos), numParticles * sizeof(PxVec4));
+		cudaContext->memcpyDtoH(hostDiffBuffer, CUdeviceptr(bufferDiffPos), numActiveDiffuseParticles * sizeof(PxVec4));
+
+		for (size_t i = 0; i < numParticles; i += 4)
+		{
+			hostBuffer[i + 0] = hostBuffer[i + 0] + position;
+			hostBuffer[i + 1] = hostBuffer[i + 1] + position;
+			hostBuffer[i + 2] = hostBuffer[i + 2] + position;
+			hostBuffer[i + 3] = hostBuffer[i + 3] + position;
+		}
+
+		for (size_t i = 0; i < numActiveDiffuseParticles; i += 4)
+		{
+			hostDiffBuffer[i + 0] = hostDiffBuffer[i + 0] + position;
+			hostDiffBuffer[i + 1] = hostDiffBuffer[i + 1] + position;
+			hostDiffBuffer[i + 2] = hostDiffBuffer[i + 2] + position;
+			hostDiffBuffer[i + 3] = hostDiffBuffer[i + 3] + position;
+		}
+
+		cudaContext->memcpyHtoD(CUdeviceptr(bufferPos), hostBuffer, numParticles * sizeof(PxVec4));
+		cudaContext->memcpyHtoD(CUdeviceptr(bufferDiffPos), hostBuffer, numActiveDiffuseParticles * sizeof(PxVec4));
+
+		cudaCM->releaseContext();
+
+		particleBuffer->raiseFlags(PxParticleBufferFlag::eUPDATE_POSITION);
+
+		cudaCM->freePinnedHostBuffer(hostBuffer);
+		cudaCM->freePinnedHostBuffer(hostDiffBuffer);
+	}
+
+	void debugVisualize(ldr_render_pass& ldrRenderPass) noexcept
+	{
+		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
+
+		PxVec4* positions = particleBuffer->getPositionInvMasses();
+		PxVec4* diffusePositions = particleBuffer->getDiffusePositionLifeTime();
+
+		const PxU32 numParticles = particleBuffer->getNbActiveParticles();
+		const PxU32 numDiffuseParticles = particleBuffer->getNbActiveDiffuseParticles();
+
+		cudaCM->acquireContext();
+
+		PxCudaContext* cudaContext = cudaCM->getCudaContext();
+		cudaContext->memcpyDtoH(posBuffer, CUdeviceptr(positions), sizeof(PxVec4) * numParticles);
+		cudaContext->memcpyDtoH(diffuseLifeBuffer, CUdeviceptr(diffusePositions), sizeof(PxVec4) * numDiffuseParticles);
+
+		cudaCM->releaseContext();
+
+		for (size_t i = 0; i < numParticles; i++)
+		{
+			PxVec4 p_i = (PxVec4)posBuffer[i];
+			vec3 pos_i = vec3(p_i.x, p_i.y, p_i.z);
+			renderPoint(pos_i, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass, false);
+		}
+
+		const PxU32 numActiveDiffuseParticles = particleBuffer->getNbActiveDiffuseParticles();
+
+		LOG_MESSAGE("NumActiveDiffuse = %i\n", numActiveDiffuseParticles);
+
+		PxVec3 colorDiffuseParticles(1, 1, 1);
+
+		if (numActiveDiffuseParticles > 0)
+		{
+			for (size_t i = 0; i < numActiveDiffuseParticles; i++)
+			{
+				PxVec4 p_i = (PxVec4)diffuseLifeBuffer[i];
+				vec3 pos_i = vec3(p_i.x, p_i.y, p_i.z);
+				renderPoint(pos_i, vec4(1, 0, 0, 1), &ldrRenderPass, false);
+			}
+		}
+	}
+
+	constexpr uint32 getMaxVolumes() const noexcept { return maxVolumes; }
+	constexpr uint32 getMaxNeighborhood() const noexcept { return maxNeighborhood; }
+	constexpr uint32 getMaxParticles() const noexcept { return maxParticles; }
+
+	PxVec4* diffuseLifeBuffer = nullptr;
+	PxVec4* posBuffer = nullptr;
+
+private:
+
+#if PX_PARTICLE_USE_ALLOCATOR
+
+	eallocator allocator;
+
+#endif
 
 	PxPBDParticleSystem* particleSystem = nullptr;
 	PxParticleAndDiffuseBuffer* particleBuffer = nullptr;
