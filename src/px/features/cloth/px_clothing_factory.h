@@ -3,6 +3,7 @@
 #include <px/core/px_physics_engine.h>
 #include <core/memory.h>
 #include <rendering/debug_visualization.h>
+#include <core/math.h>
 
 struct px_cloth_system
 {
@@ -10,7 +11,7 @@ struct px_cloth_system
 	{
 		const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
 
-		const PxU32 numParticles = numX * numZ;
+		numParticles = numX * numZ;
 		const PxU32 numSprings = (numX - 1) * (numZ - 1) * 4 + (numX - 1) + (numZ - 1);
 		const PxU32 numTriangles = (numX - 1) * (numZ - 1) * 2;
 
@@ -127,8 +128,9 @@ struct px_cloth_system
 
 #if PX_PARTICLE_USE_ALLOCATOR
 
-		allocator.initialize(0, maxDiffuseParticles * sizeof(PxVec4) * maxDiffuseParticles * sizeof(PxVec4) * 4);
-		posBuffer = allocator.allocate<PxVec4>(maxDiffuseParticles * sizeof(PxVec4), true);
+		uint32 size = numParticles * sizeof(PxVec4);
+		allocator.initialize(0, size + sizeof(PxVec4));
+		posBuffer = allocator.allocate<PxVec4>(numParticles, true);
 
 #else
 
@@ -167,6 +169,22 @@ struct px_cloth_system
 		return particleSystem->getWind();
 	}
 
+	void syncPositionBuffer()
+	{
+		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
+
+		PxVec4* positions = clothBuffer->getPositionInvMasses();
+
+		const PxU32 numParticles = clothBuffer->getNbActiveParticles();
+
+		cudaCM->acquireContext();
+
+		PxCudaContext* cudaContext = cudaCM->getCudaContext();
+		cudaContext->memcpyDtoH(posBuffer, CUdeviceptr(positions), sizeof(PxVec4) * numParticles);
+
+		cudaCM->releaseContext();
+	}
+
 	void setPosition(const PxVec4& position) noexcept
 	{
 		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
@@ -199,26 +217,25 @@ struct px_cloth_system
 		cudaCM->freePinnedHostBuffer(hostBuffer);
 	}
 
-	void debugVisualize(ldr_render_pass& ldrRenderPass) noexcept
+	void setPosition(const vec3& position) noexcept
 	{
-		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
+		setPosition(PxVec4(position.x, position.y, position.z, 0));
+	}
 
-		PxVec4* positions = clothBuffer->getPositionInvMasses();
+	void update(bool visualize = false, ldr_render_pass* ldrRenderPass = nullptr)
+	{
+		syncPositionBuffer();
+		if (visualize && ldrRenderPass)
+			debugVisualize(ldrRenderPass);
+	}
 
-		const PxU32 numParticles = clothBuffer->getNbActiveParticles();
-
-		cudaCM->acquireContext();
-
-		PxCudaContext* cudaContext = cudaCM->getCudaContext();
-		cudaContext->memcpyDtoH(posBuffer, CUdeviceptr(positions), sizeof(PxVec4) * numParticles);
-
-		cudaCM->releaseContext();
-
+	void debugVisualize(ldr_render_pass* ldrRenderPass) const noexcept
+	{
 		for (size_t i = 0; i < numParticles; i++)
 		{
 			PxVec4 p_i = (PxVec4)posBuffer[i];
 			vec3 pos_i = vec3(p_i.x, p_i.y, p_i.z);
-			renderPoint(pos_i, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass, false);
+			renderPoint(pos_i, vec4(0.107f, 1.0f, 0.0f, 1.0f), ldrRenderPass, false);
 		}
 	}
 
@@ -232,7 +249,48 @@ private:
 
 #endif
 
+	PxU32 numParticles{};
+
 	PxPBDMaterial* material = nullptr;
 	PxPBDParticleSystem* particleSystem = nullptr;
 	PxParticleClothBuffer* clothBuffer = nullptr;
+};
+
+struct px_cloth_component
+{
+	px_cloth_component() = default;
+	px_cloth_component(int nX, int nZ, const vec3& position = vec3(0, 0, 0)) noexcept : numX(nX), numZ(nZ)
+	{
+		clothSystem = make_ref<px_cloth_system>(numX, numZ, physx::createPxVec3(position) );
+		positions = (vec3*)malloc(numX * numZ * sizeof(vec3));
+		clothSystem->setPosition(PxVec4(position.x, position.y, position.z, 0));
+	}
+
+	~px_cloth_component() {}
+
+	vec3* getPositions() const noexcept;
+
+	void release() noexcept { clothSystem.reset(); free(positions); }
+
+	uint32 numX{};
+	uint32 numZ{};
+
+	ref<px_cloth_system> clothSystem;
+
+private:
+	vec3* positions = nullptr;
+};
+
+#include "geometry/mesh_builder.h"
+#include "dx/dx_buffer.h"
+#include "dx/dx_context.h"
+
+struct px_cloth_render_component
+{
+	px_cloth_render_component() = default;
+
+	NODISCARD std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, submesh_info> getRenderData(const px_cloth_component& cloth);
+
+	ref<dx_index_buffer> indexBuffer;
+	dx_vertex_buffer_group_view prevFrameVB;
 };

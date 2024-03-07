@@ -64,6 +64,8 @@ void escene::cloneTo(escene& target)
 		px_cct_component_base,
 		px_capsule_cct_component,
 		px_box_cct_component,
+		px_cloth_component,
+		px_cloth_render_component,
 
 		navigation_component,
 		script_component,

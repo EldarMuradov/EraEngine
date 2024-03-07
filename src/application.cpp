@@ -180,7 +180,8 @@ void application::loadCustomShaders()
 }
 
 //px_particle_system* particleSystem = nullptr;
-px_cloth_system* clothSystem = nullptr;
+//px_cloth_system* clothSystem = nullptr;
+entity_handle cloth{};
 
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
@@ -297,8 +298,9 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<px_box_collider_component>(100.0f, 5.0f, 100.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Static);
 
-		//particleSystem = new px_particle_system(10, 10, 10, PxVec3(0, 10.f, 0));
-		clothSystem = new px_cloth_system(10, 10, PxVec3(0, 10.f, 0));
+		cloth = scene.createEntity("ClothPX")
+			.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
+			.addComponent<px_cloth_component>(10, 10, vec3(0.f, 15.0f, 0.0f)).handle;
 
 		px_raycast_info rci = px_physics_engine::get()->raycast(&px_sphere1->getComponent<px_rigidbody_component>(), vec3(0, -1, 0));
 		if (rci.actor)
@@ -632,9 +634,16 @@ void application::update(const user_input& input, float dt)
 	}
 
 #endif
+		eentity entity{ cloth, &scene.registry };
+		entity.getComponent<px_cloth_component>().clothSystem->update(true, &ldrRenderPass);
 
-		clothSystem->debugVisualize(ldrRenderPass);
-		//particleSystem->debugVisualize(ldrRenderPass);
+		if (input.keyboard['G'].down)
+		{
+			entity.getComponent<px_cloth_component>().clothSystem->setPosition(PxVec4(0.f, 2.f, 0.f, 0.f));
+			//particleSystem->setPosition(PxVec4(0.f, 20.f, 0.f, 0.f));
+		}
+
+		//particleSystem->update(true, &ldrRenderPass);
 
 		submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
 	}
@@ -642,12 +651,6 @@ void application::update(const user_input& input, float dt)
 	for (auto [entityHandle, transform, dynamic] : scene.group(component_group<transform_component, dynamic_transform_component>).each())
 	{
 		dynamic = transform;
-	}
-
-	if (input.keyboard['G'].down)
-	{
-		clothSystem->setPosition(PxVec4(0.f, 20.f, 0.f, 0.f));
-		//particleSystem->setPosition(PxVec4(0.f, 20.f, 0.f, 0.f));
 	}
 
 	performSkinning(&computePass);

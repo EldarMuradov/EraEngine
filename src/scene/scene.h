@@ -18,6 +18,7 @@
 #include "terrain/water.h"
 #include "terrain/tree.h"
 #include <px/core/px_physics_engine.h>
+#include <px/features/cloth/px_clothing_factory.h>
 #endif
 
 struct escene;
@@ -179,6 +180,16 @@ struct eentity
 
 			if (!hasComponent<dynamic_transform_component>())
 				addComponent<dynamic_transform_component>();
+		}
+		else if	constexpr (std::is_same_v<component_t, px_cloth_component>)
+		{
+			auto& component = registry->emplace_or_replace<component_t>(handle, std::forward<args>(a)...);
+
+			if (!hasComponent<dynamic_transform_component>())
+				addComponent<dynamic_transform_component>();
+
+			if (!hasComponent<px_cloth_render_component>())
+				addComponent<px_cloth_render_component>();
 		}
 		else if	constexpr (std::is_same_v<component_t, struct px_capsule_cct_component>)
 		{

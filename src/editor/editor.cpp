@@ -1003,6 +1003,16 @@ bool eeditor::drawSceneHierarchy()
 						ImGui::Text("Controller type: Box");
 					});
 
+					drawComponent<px_cloth_component>(selectedEntity, "Cloth (PhysX)", [](px_cloth_component& cloth)
+					{
+						ImGui::Text("Cloth");
+					});
+
+					drawComponent<px_cloth_render_component>(selectedEntity, "Cloth Renderer (PhysX)", [](px_cloth_render_component& cloth)
+					{
+						ImGui::Text("Cloth Renderer");
+					});
+
 					drawComponent<tree_component>(selectedEntity, "Tree", [](tree_component& tree)
 					{
 						ImGui::Text("Tree mesh");
@@ -1274,20 +1284,20 @@ bool eeditor::drawSceneHierarchy()
 							{
 								ImGui::PropertyValue("Mass", 1.f / rb.getMass(), "%.3fkg");
 								bool dynamic = rb.getType() == px_rigidbody_type::Dynamic;
-								if (dynamic)
-								{
-									vec3 lv = rb.getLinearVelocity();
-									vec3 lt = lv;
-									ImGui::PropertyValue("Linear velocity", lv);
-									if (lv != lt)
-										rb.setLinearVelocity(lv);
+								//if (dynamic)
+								//{
+								//	vec3 lv = rb.getLinearVelocity();
+								//	vec3 lt = lv;
+								//	ImGui::PropertyValue("Linear velocity", lv);
+								//	if (lv != lt)
+								//		rb.setLinearVelocity(lv);
 
-									vec3 av = rb.getAngularVelocity();
-									vec3 at = av;
-									ImGui::PropertyValue("Angular velocity", av);
-									if (av != at)
-										rb.setLinearVelocity(av);
-								}
+								//	vec3 av = rb.getAngularVelocity();
+								//	vec3 at = av;
+								//	ImGui::PropertyValue("Angular velocity", av);
+								//	if (av != at)
+								//		rb.setLinearVelocity(av);
+								//}
 
 								if (dynamic)
 								{
@@ -1923,6 +1933,10 @@ void eeditor::onObjectMoved()
 		{
 			cloth->setWorldPositionOfFixedVertices(selectedEntity.getComponent<transform_component>(), false);
 		}
+		else if (px_cloth_component* cloth = selectedEntity.getComponentIfExists<px_cloth_component>())
+		{
+			cloth->clothSystem->setPosition(selectedEntity.getComponent<transform_component>().position);
+		}
 	}
 }
 
@@ -2120,6 +2134,10 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 			{
 				if(auto rb = selectedEntity.getComponentIfExists<px_rigidbody_component>())
 					rb->setPhysicsPositionAndRotation(transform->position, transform->rotation);
+
+				if (px_cloth_component* cloth = selectedEntity.getComponentIfExists<px_cloth_component>())
+					cloth->clothSystem->setPosition(selectedEntity.getComponent<transform_component>().position);
+
 				updateSelectedEntityUIRotation();
 				inputCaptured = true;
 				objectMovedByGizmo = true;
@@ -2323,7 +2341,7 @@ bool eeditor::drawEntityCreationPopup()
 	{
 		if (ImGui::MenuItem("Point light", "P") || ImGui::IsKeyPressed('P'))
 		{
-			auto pl = scene->createEntity("Point light")
+			auto& pl = scene->createEntity("Point light")
 				.addComponent<position_component>(camera.position + camera.rotation * vec3(0.f, 0.f, -3.f))
 				.addComponent<point_light_component>(
 					vec3(1.f, 1.f, 1.f),
@@ -2341,7 +2359,7 @@ bool eeditor::drawEntityCreationPopup()
 
 		if (ImGui::MenuItem("Spot light", "S") || ImGui::IsKeyPressed('S'))
 		{
-			auto sl = scene->createEntity("Spot light")
+			auto& sl = scene->createEntity("Spot light")
 				.addComponent<position_rotation_component>(camera.position + camera.rotation * vec3(0.f, 0.f, -3.f), quat::identity)
 				.addComponent<spot_light_component>(
 					vec3(1.f, 1.f, 1.f),
@@ -2363,7 +2381,7 @@ bool eeditor::drawEntityCreationPopup()
 
 		if (ImGui::MenuItem("Cloth", "C") || ImGui::IsKeyPressed('C'))
 		{
-			auto cloth = scene->createEntity("Cloth")
+			auto& cloth = scene->createEntity("Cloth")
 				.addComponent<transform_component>(camera.position + camera.rotation * vec3(0.f, 0.f, -3.f), camera.rotation)
 				.addComponent<cloth_component>(10.f, 10.f, 20u, 20u, 8.f)
 				.addComponent<cloth_render_component>();
