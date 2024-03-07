@@ -1,10 +1,10 @@
 #include "pch.h"
 #include "px_collider_component.h"
 #include <asset/file_registry.h>
+#include <extensions/PxTetMakerExt.h>
 
 px_collider_component_base::~px_collider_component_base()
 {
-	//PX_RELEASE(shape)
 }
 
 NODISCARD PxTriangleMesh* px_triangle_mesh_collider_builder::createMeshShape(mesh_asset* asset, unsigned int size)
@@ -17,37 +17,43 @@ NODISCARD PxTriangleMesh* px_triangle_mesh_collider_builder::createMeshShape(mes
 	size_t trianglesCount = triangles.size();
 	size_t verticesCount = positions.size();
 
-	std::vector<physx::PxU32> indices;
+	PxArray<PxU32> indices;
 
 	for (size_t i = 0; i < trianglesCount; i += 3)
 	{
-		indices.push_back(triangles[i + 0].a);
-		indices.push_back(triangles[i + 0].b);		
-		indices.push_back(triangles[i + 0].c);
+		indices.pushBack(triangles[i + 0].a);
+		indices.pushBack(triangles[i + 0].b);
+		indices.pushBack(triangles[i + 0].c);
 
-		indices.push_back(triangles[i + 1].a);
-		indices.push_back(triangles[i + 1].b);
-		indices.push_back(triangles[i + 1].c);
+		indices.pushBack(triangles[i + 1].a);
+		indices.pushBack(triangles[i + 1].b);
+		indices.pushBack(triangles[i + 1].c);
 
-		indices.push_back(triangles[i + 2].a);
-		indices.push_back(triangles[i + 2].b);
-		indices.push_back(triangles[i + 2].c);
+		indices.pushBack(triangles[i + 2].a);
+		indices.pushBack(triangles[i + 2].b);
+		indices.pushBack(triangles[i + 2].c);
 	}
 
-	std::vector<physx::PxVec3> vertices;
+	PxArray<PxVec3> vertices;
 	for (size_t i = 0; i < verticesCount; i++)
 	{
-		vertices.push_back(PxVec3(positions[i].x, positions[i].y, positions[i].z) * size);
+		vertices.pushBack(PxVec3(positions[i].x, positions[i].y, positions[i].z) * size);
 	}
 
-	PxTriangleMeshDesc meshDesc;
-	meshDesc.points.count = vertices.size();
-	meshDesc.points.stride = sizeof(physx::PxVec3);
-	meshDesc.points.data = vertices.data();
+	PxArray<PxVec3> outputVertices;
+	PxArray<PxU32> outputIndices;
+	PxI32 targetTriangleCount = 500;
+	PxReal maximalTriangleEdgeLength = 0.0f;
+	PxTetMaker::simplifyTriangleMesh(vertices, indices, targetTriangleCount, maximalTriangleEdgeLength, outputVertices, outputIndices);
 
-	meshDesc.triangles.count = indices.size() / 3;
+	PxTriangleMeshDesc meshDesc;
+	meshDesc.points.count = outputVertices.size();
+	meshDesc.points.stride = sizeof(physx::PxVec3);
+	meshDesc.points.data = &outputVertices[0];
+
+	meshDesc.triangles.count = outputIndices.size() / 3;
 	meshDesc.triangles.stride = 3 * sizeof(PxU32);
-	meshDesc.triangles.data = indices.data();
+	meshDesc.triangles.data = &outputIndices[0];
 
 	px_triangle_mesh mesh_adapter;
 
@@ -96,11 +102,7 @@ bool px_capsule_collider_component::createShape()
 
 px_triangle_mesh_collider_component::~px_triangle_mesh_collider_component()
 {
-	//if (asset)
-	//{
-	//	delete asset;
-	//	asset = nullptr;
-	//}
+
 }
 
 bool px_triangle_mesh_collider_component::createShape()
@@ -119,11 +121,6 @@ bool px_triangle_mesh_collider_component::createShape()
 
 px_bounding_box_collider_component::~px_bounding_box_collider_component()
 {
-	//if (asset)
-	//{
-	//	delete asset;
-	//	asset = nullptr;
-	//}
 }
 
 bool px_bounding_box_collider_component::createShape()

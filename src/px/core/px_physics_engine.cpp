@@ -68,9 +68,11 @@ void px_physics::initialize()
 {
 	foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocatorCallback, errorReporter);
 
-	if (!foundation)
+	if (PxGetSuggestedCudaDeviceOrdinal(foundation->getErrorCallback()) < 0)
 		throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
 
+	if (!foundation)
+		throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
 
 	pvd = PxCreatePvd(*foundation);
 
@@ -91,36 +93,39 @@ void px_physics::initialize()
 
 	dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
 
-	PxSceneDesc sceneDesc(toleranceScale);
+
+	PxCudaContextManagerDesc cudaContextManagerDesc;
+	cudaContextManagerDesc.graphicsDevice = dxContext.device.Get();
+	cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profilerCallback);
+
+	PxSceneDesc sceneDesc(physics->getTolerancesScale());
 	sceneDesc.gravity = gravity;
 	sceneDesc.cpuDispatcher = dispatcher;
-	sceneDesc.filterShader = contactReportFilterShader;
+	sceneDesc.filterShader = PxDefaultSimulationFilterShader;
+	sceneDesc.cudaContextManager = cudaContextManager;
+	sceneDesc.staticStructure = PxPruningStructureType::eDYNAMIC_AABB_TREE;
+	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
+
+	sceneDesc.solverType = PxSolverType::eTGS;
+
 	sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneDesc.simulationEventCallback = &collisionCallback;
-
-	PxCudaContextManagerDesc cudaContextManagerDesc;
 
 #if PX_GPU_BROAD_PHASE
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
 	sceneDesc.gpuMaxNumPartitions = 8;
 	sceneDesc.gpuDynamicsConfig = PxgDynamicsMemoryConfig();
-	//sceneDesc.flags |= PxSceneFlag::eENABLE_DIRECT_GPU_API;
 #else
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::ePABP;
 #endif
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
 	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
-	cudaContextManagerDesc.graphicsDevice = dxContext.device.Get();
-	cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profilerCallback);
-	sceneDesc.cudaContextManager = cudaContextManager;
 	sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
-	sceneDesc.staticStructure = PxPruningStructureType::eDYNAMIC_AABB_TREE;
-	sceneDesc.solverType = PxSolverType::eTGS;
+
 	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
@@ -251,6 +256,7 @@ void px_physics_engine::update(float dt)
 	physics->scene->fetchResults(true);
 
 	physics->scene->flushSimulation();
+	physics->scene->fetchResultsParticleSystem();
 	physics->scene->getTaskManager()->stopSimulation();
 	physics->scene->unlockWrite();
 
@@ -648,6 +654,7 @@ PxVehicleDriveNW* physx::instantiate4WVersion(const PxVehicleDriveNW& vehicle18W
 		suspData.setMassAndPreserveNaturalFrequency(sprungMasses[i]);
 		wheelsSimData4W->setSuspensionData(i, suspData);
 	}
+
 	wheelsSimData4W->setTireLoadFilterData(vehicle18W.mWheelsSimData.getTireLoadFilterData());
 
 	wheelsSimData4W->setWheelShapeMapping(0, 0);

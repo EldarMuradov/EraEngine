@@ -3,21 +3,16 @@
 #include <editor/file_dialog.h>
 #include "log.h"
 #include <core/project.h>
+#include <editor/system_calls.h>
 
 NODISCARD std::optional<std::string> ebuilder::selectBuildFolder()
 {
-	const std::string result = openFileDialog("Build location", "..");
+	const std::string result = directoryDialog();
 	if (!result.empty())
 	{
 		eproject::exe_path = result;
 
-		if (!std::filesystem::exists(result))
-			return result;
-		else
-		{
-			LOG_ERROR("Building> Folder already exists!");
-			return {};
-		}
+		return result;
 	}
 	else
 	{
@@ -47,15 +42,17 @@ bool ebuilder::build(bool autoRun, bool tempFolder)
 	else
 		return false;
 
-	if(eproject::config == configuration::Debug)
-		return buildAtLocation("Debug", destinationFolder, autoRun);
-	else
-		return buildAtLocation("Release", destinationFolder, autoRun);
+	std::string config = eproject::config == configuration::Debug ? "Debug" : "Release";
+
+	bool result = buildAtLocation(config, destinationFolder, autoRun);
+	if(!result)
+		std::filesystem::remove_all(destinationFolder);
+	return result;
 }
 
-bool ebuilder::buildAtLocation(const std::string& configuration, const std::string pbuildPath, bool autoRun)
+bool ebuilder::buildAtLocation(std::string_view configuration, std::string_view pbuildPath, bool autoRun)
 {
-	std::string buildPath(pbuildPath);
+	std::string buildPath = pbuildPath.data();
 	std::string executableName = eproject::exe_path + ".exe";
 
 	bool failed = false;
@@ -64,14 +61,81 @@ bool ebuilder::buildAtLocation(const std::string& configuration, const std::stri
 
 	std::filesystem::remove_all(buildPath);
 
-	if (std::filesystem::create_directory(buildPath))
-	{
-		LOG_MESSAGE("Build directory created");
+	if (!std::filesystem::create_directory(buildPath))
+		return false;
 
-		if (std::filesystem::create_directory(buildPath + "Data\\"))
-		{
-			LOG_MESSAGE("Data directory created");
-		}
+	LOG_MESSAGE("Build directory created");
+
+	if (!std::filesystem::create_directory(buildPath + "\\Data\\"))
+		return false;
+
+	LOG_MESSAGE("Data directory created");
+
+	if (!std::filesystem::create_directory(buildPath + "\\Data\\User\\"))
+		return false;
+
+	LOG_MESSAGE("Data\\User directory created");
+
+	std::error_code err;
+
+	std::filesystem::copy(eproject::engine_path + "\\runtime\\x64\\Release", buildPath + "\\Data\\User", std::filesystem::copy_options::recursive, err);
+	eproject::exe_path = buildPath + "\\Data\\User\\";
+
+	if (err)
+		return false;
+
+	LOG_MESSAGE("Building .exe finished.");
+
+	std::filesystem::copy(eproject::path + "\\Game.eproj", buildPath + "\\Data\\User\\Game.eproj", err);
+
+	if (err)
+		return false;
+
+	std::filesystem::remove_all(buildPath + "\\Data\\User\\assets");
+	std::filesystem::remove_all(buildPath + "\\Data\\User\\asset_cache");
+	std::filesystem::remove_all(buildPath + "\\Data\\User\\resources");
+	std::filesystem::remove_all(buildPath + "\\Data\\User\\shaders");
+
+	std::filesystem::copy(eproject::path + "\\assets", buildPath + "\\Data\\User\\assets\\", std::filesystem::copy_options::recursive, err);
+
+	if (!std::filesystem::exists(buildPath + "\\Data\\User\\assets\\"))
+	{
+		LOG_ERROR("Building> Failed to find Start Scene at expected path. Verify your Project Setings.");
+		return false;
+	}
+
+	if (err)
+		return false;
+
+	LOG_MESSAGE("Data\\User\\assets\\ directory copied");
+
+	std::filesystem::copy(eproject::path + "\\asset_cache", buildPath + "\\Data\\User\\asset_cache", std::filesystem::copy_options::recursive, err);
+
+	if (err)
+		return false;
+
+	LOG_MESSAGE("Data\\User\\asset_cache\\ directory copied");
+
+	std::filesystem::copy(eproject::path + "\\resources", buildPath + "\\Data\\User\\resources", std::filesystem::copy_options::recursive, err);
+
+	if (err)
+		return false;
+
+	LOG_MESSAGE("Data\\User\\resources\\ directory copied");
+
+	std::filesystem::copy(eproject::path + "\\shaders", buildPath + "\\Data\\User\\shaders", std::filesystem::copy_options::recursive, err);
+
+	if (err)
+		return false;
+
+	LOG_MESSAGE("Data\\User\\shaders\\ directory copied");
+
+	LOG_MESSAGE("Builder> builded successfuly.");
+
+	if (autoRun)
+	{
+		std::filesystem::path exe_path = eproject::exe_path + "EraRuntime.exe";
+		os::system_calls::openFile(exe_path);
 	}
 
 	return !failed;

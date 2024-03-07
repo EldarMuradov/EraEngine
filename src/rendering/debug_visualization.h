@@ -76,6 +76,7 @@ static void renderDebug(const mat4& transform, const struct dx_dynamic_vertex_bu
 		renderPass->renderObject<pipeline_t>(data);
 }
 
+void renderPoint(vec3 pos, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
 void renderTriangle(vec3 a, vec3 b, vec3 c, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
 void renderDisk(vec3 position, vec3 upAxis, float radius, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
 void renderRing(vec3 position, vec3 upAxis, float outerRadius, float innerRadius, vec4 color, ldr_render_pass* renderPass, bool overlay = false);

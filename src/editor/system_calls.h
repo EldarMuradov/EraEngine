@@ -46,8 +46,6 @@ namespace os
 		static void openURL(std::string_view url);
 
 	private:
-		system_calls() = delete;
-		system_calls(system_calls&) = delete;
-		system_calls(system_calls&&) = delete;
+		NO_COPY(system_calls)
 	};
 }

@@ -22,6 +22,16 @@ struct indexed_line32
 	uint32 a, b;
 };
 
+struct index_point32
+{
+	uint32 a;
+};
+
+struct index_point16
+{
+	uint16 a;
+};
+
 struct line_segment
 {
 	vec3 a, b;

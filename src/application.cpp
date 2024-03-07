@@ -37,6 +37,8 @@
 #include "core/coroutine.h"
 #include <ai/navigation.h>
 #include <ai/navigation_component.h>
+#include <px/features/px_particles.h>
+#include "px/features/cloth/px_clothing_factory.h"
 
 static raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh)
 {
@@ -177,6 +179,9 @@ void application::loadCustomShaders()
 	}
 }
 
+//px_particle_system* particleSystem = nullptr;
+px_cloth_system* clothSystem = nullptr;
+
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
 	this->renderer = renderer;
@@ -213,14 +218,14 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	px_physics_engine::initialize(this);
 
 #ifndef ERA_RUNTIME
-	if (auto mesh = loadMeshFromFileAsync("assets/Sponza/Sponza.obj"))
+	/*if (auto mesh = loadMeshFromFileAsync("assets/Sponza/Sponza.obj"))
 	{
 		const auto& sponza = scene.createEntity("Sponza")
 			.addComponent<transform_component>(vec3(0.f, 1.f, 0.f), quat::identity, 0.01f)
 			.addComponent<mesh_component>(mesh);
 
 		addRaytracingComponentAsync(sponza, mesh);
-	}
+	}*/
 #endif
 
 #if 0
@@ -268,7 +273,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
 		auto px_sphere = &scene.createEntity("SpherePX", (entity_handle)60)
-			.addComponent<transform_component>(vec3(20.f, 10.f * 3.f, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<transform_component>(vec3(0, 2.f, 0), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
 			//.addComponent<px_triangle_mesh_collider_component>(&(ass.meshes[0]))
 			//.addComponent<px_bounding_box_collider_component>(&(ass.meshes[0]))
@@ -276,7 +281,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);
 
 		auto px_sphere1 = &scene.createEntity("SpherePX1")
-			.addComponent<transform_component>(vec3(20.f, 12.f * 3.f, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<transform_component>(vec3(0, 5.f, 0), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
 			.addComponent<px_sphere_collider_component>(1.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Dynamic);
@@ -291,6 +296,9 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<transform_component>(vec3(0.f, -5.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
 			.addComponent<px_box_collider_component>(100.0f, 5.0f, 100.0f)
 			.addComponent<px_rigidbody_component>(px_rigidbody_type::Static);
+
+		//particleSystem = new px_particle_system(10, 10, 10, PxVec3(0, 10.f, 0));
+		clothSystem = new px_cloth_system(10, 10, PxVec3(0, 10.f, 0));
 
 		px_raycast_info rci = px_physics_engine::get()->raycast(&px_sphere1->getComponent<px_rigidbody_component>(), vec3(0, -1, 0));
 		if (rci.actor)
@@ -625,12 +633,21 @@ void application::update(const user_input& input, float dt)
 
 #endif
 
+		clothSystem->debugVisualize(ldrRenderPass);
+		//particleSystem->debugVisualize(ldrRenderPass);
+
 		submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
 	}
 
 	for (auto [entityHandle, transform, dynamic] : scene.group(component_group<transform_component, dynamic_transform_component>).each())
 	{
 		dynamic = transform;
+	}
+
+	if (input.keyboard['G'].down)
+	{
+		clothSystem->setPosition(PxVec4(0.f, 20.f, 0.f, 0.f));
+		//particleSystem->setPosition(PxVec4(0.f, 20.f, 0.f, 0.f));
 	}
 
 	performSkinning(&computePass);

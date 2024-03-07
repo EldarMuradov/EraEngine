@@ -10,8 +10,11 @@ public static class InputHandler
         void* ptr = inputPtr.ToPointer();
 
         InputKey[] keys = Memory.Create<InputKey>(ptr, 128);
-        Input input = new();
-        input.Keyboard = keys;
-        ESystemManager.GetSystem<InputSystem>().HandleUserInput(input);
+        Input input = new()
+        {
+            Keyboard = keys
+        };
+
+        ESystemManager.GetSystem<InputSystem>()?.HandleUserInput(input);
     }
 }

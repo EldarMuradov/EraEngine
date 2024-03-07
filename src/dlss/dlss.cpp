@@ -36,6 +36,15 @@ bool checkDLSSStatus(IDXGIAdapter* adapter)
 
 void dlss_feature_adapter::initialize(main_renderer* rnd)
 {
+#ifndef ENABLE_FSR_WRAPPER
+
+	if (checkDLSSStatus(dxContext.adapter.Get()))
+	{
+		LOG_ERROR("Graphics> DLSS 3.5 is not supported by this GPU.");
+		return;
+	}
+
+#endif
 
 #if ENABLE_DLSS
 

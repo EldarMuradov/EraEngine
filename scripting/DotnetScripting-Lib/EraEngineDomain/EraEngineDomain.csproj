@@ -20,7 +20,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Include="..\..\..\src\dlss\dlss.h" Link="dlss.h" />
+	  <PackageReference Include="SimpleInjector" Version="5.4.4" />
 	</ItemGroup>
 
 </Project>

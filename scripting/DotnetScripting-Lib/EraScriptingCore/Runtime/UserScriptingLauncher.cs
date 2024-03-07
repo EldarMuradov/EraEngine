@@ -129,7 +129,7 @@ public sealed class UserScriptingLauncher
 
     internal void LoadDll()
     {
-        string projectPath = Path.Combine(Project.Path, "assets", "scripts", Project.Name, Project.Name, "bin", "Release", "net8.0");
+        string projectDllPath = Path.Combine(Project.Path, "assets", "scripts", Project.Name, Project.Name, "bin", "Release", "net8.0");
         string tempPath = Path.Combine(Project.Path, Project.TempDllPath);
         string tempDllPath = Path.Combine(Project.Path, Project.TempDllPath, $"{Project.Name}.dll");
 
@@ -157,7 +157,7 @@ public sealed class UserScriptingLauncher
 
         try
         {
-            fileCloner.Clone(projectPath, tempPath);
+            fileCloner.Clone(projectDllPath, tempPath);
             Debug.Log("Cloned all files");
 
             ExecuteAndUnload(tempDllPath, out WeakReference hostAlcWeakRef);

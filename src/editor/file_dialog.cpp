@@ -34,6 +34,7 @@ NODISCARD std::string openFileDialog(const std::string& fileDescription, const s
 	ofn.nFilterIndex = 1;
 	ofn.lpstrInitialDir = ".";
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
 	if (GetOpenFileNameA(&ofn) == TRUE)
 	{
 		std::string result = ofn.lpstrFile;

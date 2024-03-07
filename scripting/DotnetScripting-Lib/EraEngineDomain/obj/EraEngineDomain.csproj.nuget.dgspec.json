@@ -51,6 +51,10 @@
               "target": "Package",
               "version": "[8.0.1, )",
               "autoReferenced": true
+            },
+            "SimpleInjector": {
+              "target": "Package",
+              "version": "[5.4.4, )"
             }
           },
           "imports": [

@@ -115,6 +115,11 @@ PIPELINE_RENDER_IMPL(debug_unlit_line_pipeline, debug_render_data)
 	cl->drawIndexed(data.submesh.numIndices, 1, data.submesh.firstIndex, data.submesh.baseVertex, 0);
 }
 
+void renderPoint(vec3 pos, vec4 color, ldr_render_pass* renderPass, bool overlay)
+{
+	renderWireSphere(pos, 0.05f, color, renderPass, overlay);
+}
+
 void renderTriangle(vec3 a, vec3 b, vec3 c, vec4 color, ldr_render_pass* renderPass, bool overlay)
 {
 	auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), 3);
