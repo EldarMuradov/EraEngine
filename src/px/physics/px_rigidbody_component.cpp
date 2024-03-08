@@ -106,6 +106,14 @@ void px_rigidbody_component::setAngularDamping(float damping)
 		actor->is<PxRigidDynamic>()->setAngularDamping(damping);
 }
 
+void px_rigidbody_component::release()
+{
+	px_physics_engine::get()->removeActor(this);
+
+	PX_RELEASE(material)
+	PX_RELEASE(actor)
+}
+
 void px_rigidbody_component::onCollisionEnter(px_rigidbody_component* collision) const
 {
 

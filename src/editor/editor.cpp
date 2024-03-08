@@ -1935,7 +1935,7 @@ void eeditor::onObjectMoved()
 		}
 		else if (px_cloth_component* cloth = selectedEntity.getComponentIfExists<px_cloth_component>())
 		{
-			cloth->clothSystem->setPosition(selectedEntity.getComponent<transform_component>().position);
+			cloth->clothSystem->translate(selectedEntity.getComponent<transform_component>().position);
 		}
 	}
 }
@@ -2136,7 +2136,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 					rb->setPhysicsPositionAndRotation(transform->position, transform->rotation);
 
 				if (px_cloth_component* cloth = selectedEntity.getComponentIfExists<px_cloth_component>())
-					cloth->clothSystem->setPosition(selectedEntity.getComponent<transform_component>().position);
+					cloth->clothSystem->translate(selectedEntity.getComponent<transform_component>().position);
 
 				updateSelectedEntityUIRotation();
 				inputCaptured = true;

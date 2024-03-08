@@ -1,14 +1,15 @@
 #include "pch.h"
 #include "px/physics/px_character_controller_component.h"
 #include <scene/scene.h>
+#include <application.h>
 
-px_capsule_cct_component::px_capsule_cct_component(eentity* entt) noexcept : px_cct_component_base(entt)
+px_capsule_cct_component::px_capsule_cct_component(uint32_t entt) noexcept : px_cct_component_base(entt)
 {
 	type = px_cct_type::px_capsule;
 	createCharacterController();
-	uint32_t* handle = new uint32_t[1];
-	handle[0] = (uint32_t)entity->handle;
-	controller->getActor()->userData = handle;
+	uint32_t* h = new uint32_t[1];
+	h[0] = handle;
+	controller->getActor()->userData = h;
 	px_physics_engine::get()->addActor(this, controller->getActor(), false);
 }
 
@@ -18,6 +19,8 @@ void px_capsule_cct_component::createCharacterController() noexcept
 
 	material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 
+	eentity entity = { handle, &px_physics_engine::get()->app->getCurrentScene()->registry };
+
 	physx::PxCapsuleControllerDesc desc;
 
 	desc.height = height;
@@ -26,54 +29,63 @@ void px_capsule_cct_component::createCharacterController() noexcept
 	desc.radius = radius;
 	desc.slopeLimit = cosf(deg2rad(45.0f));
 	desc.invisibleWallHeight = height * 0.5f;
-	auto trsPos = transform->position;
+	auto trsPos = entity.getComponent<transform_component>().position;
 	physx::PxExtendedVec3 pos = physx::PxExtendedVec3(trsPos.x, trsPos.y, trsPos.z);
 	desc.position = pos;
 	desc.climbingMode = physx::PxCapsuleClimbingMode::eCONSTRAINED;
-	uint32_t* handle = new uint32_t[1];
-	handle[0] = (uint32_t)entity->handle;
-	desc.userData = handle;
+	uint32_t* h = new uint32_t[1];
+	h[0] = handle;
+	desc.userData = h;
 	controller = manager->createController(desc);
 	
 	controller->getActor()->setMass(mass);
 	controller->getActor()->setRigidBodyFlags(physx::PxRigidBodyFlag::eKINEMATIC);
 }
 
-px_capsule_cct_component::px_capsule_cct_component(eentity* entt, float h, float r, float m) noexcept : px_cct_component_base(entt), height(h), radius(r)
+px_capsule_cct_component::px_capsule_cct_component(uint32_t entt, float h, float r, float m) noexcept : px_cct_component_base(entt), height(h), radius(r)
 {
 	mass = m;
 	type = px_cct_type::px_capsule;
 	createCharacterController();
-	uint32_t* handle = new uint32_t[1];
-	handle[0] = (uint32_t)entity->handle;
-	controller->getActor()->userData = handle;
+	uint32_t* hndl = new uint32_t[1];
+	hndl[0] = handle;
+	controller->getActor()->userData = hndl;
 	px_physics_engine::get()->addActor(this, controller->getActor(), false);
 }
 
-px_cct_component_base::px_cct_component_base(eentity* entt) noexcept
+px_cct_component_base::px_cct_component_base(uint32_t entt) noexcept
 {
-	entity = entt;
-	transform = entity->getComponentIfExists<transform_component>();
+	handle = entt;
 }
 
-px_box_cct_component::px_box_cct_component(eentity* entt) noexcept : px_cct_component_base(entt)
+void px_cct_component_base::release()
+{
+	px_physics_engine::get()->removeActor(this);
+
+	PX_RELEASE(controller)
+	PX_RELEASE(manager)
+	PX_RELEASE(material)
+	PX_RELEASE(actor)
+}
+
+px_box_cct_component::px_box_cct_component(uint32_t entt) noexcept : px_cct_component_base(entt)
 {
 	type = px_cct_type::px_box;
 	createCharacterController();
-	uint32_t* handle = new uint32_t[1];
-	handle[0] = (uint32_t)entity->handle;
-	controller->getActor()->userData = handle;
+	uint32_t* h = new uint32_t[1];
+	h[0] = handle;
+	controller->getActor()->userData = h;
 	px_physics_engine::get()->addActor(this, controller->getActor(), false);
 }
 
-px_box_cct_component::px_box_cct_component(eentity* entt, float hh, float hs, float m) noexcept : px_cct_component_base(entt)
+px_box_cct_component::px_box_cct_component(uint32_t entt, float hh, float hs, float m) noexcept : px_cct_component_base(entt)
 {
 	mass = m;
 	type = px_cct_type::px_box;
 	createCharacterController();
-	uint32_t* handle = new uint32_t[1];
-	handle[0] = (uint32_t)entity->handle;
-	controller->getActor()->userData = handle;
+	uint32_t* h = new uint32_t[1];
+	h[0] = handle;
+	controller->getActor()->userData = h;
 	px_physics_engine::get()->addActor(this, controller->getActor(), false);
 }
 
@@ -82,6 +94,7 @@ void px_box_cct_component::createCharacterController() noexcept
 	manager = PxCreateControllerManager(*px_physics_engine::get()->getPhysicsAdapter()->scene);
 
 	material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
+	eentity entity = { handle, &px_physics_engine::get()->app->getCurrentScene()->registry };
 
 	physx::PxBoxControllerDesc desc;
 
@@ -91,12 +104,12 @@ void px_box_cct_component::createCharacterController() noexcept
 	desc.halfSideExtent = halfSideExtent;
 	desc.slopeLimit = cosf(deg2rad(45.0f));
 	desc.invisibleWallHeight = halfHeight;
-	auto trsPos = transform->position;
+	auto trsPos = entity.getComponent<transform_component>().position;
 	physx::PxExtendedVec3 pos = physx::PxExtendedVec3(trsPos.x, trsPos.y, trsPos.z);
 	desc.position = pos;
-	uint32_t* handle = new uint32_t[1];
-	handle[0] = (uint32_t)entity->handle;
-	desc.userData = handle;
+	uint32_t* h = new uint32_t[1];
+	h[0] = handle;
+	desc.userData = h;
 	controller = manager->createController(desc);
 
 	controller->getActor()->setMass(mass);

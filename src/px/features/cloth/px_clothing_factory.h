@@ -185,7 +185,7 @@ struct px_cloth_system
 		cudaCM->releaseContext();
 	}
 
-	void setPosition(const PxVec4& position) noexcept
+	void translate(const PxVec4& position) noexcept
 	{
 		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
 		PxVec4* bufferPos = clothBuffer->getPositionInvMasses();
@@ -217,9 +217,9 @@ struct px_cloth_system
 		cudaCM->freePinnedHostBuffer(hostBuffer);
 	}
 
-	void setPosition(const vec3& position) noexcept
+	void translate(const vec3& position) noexcept
 	{
-		setPosition(PxVec4(position.x, position.y, position.z, 0));
+		translate(physx::createPxVec4(position));
 	}
 
 	void update(bool visualize = false, ldr_render_pass* ldrRenderPass = nullptr)
@@ -263,7 +263,7 @@ struct px_cloth_component
 	{
 		clothSystem = make_ref<px_cloth_system>(numX, numZ, physx::createPxVec3(position) );
 		positions = (vec3*)malloc(numX * numZ * sizeof(vec3));
-		clothSystem->setPosition(PxVec4(position.x, position.y, position.z, 0));
+		//clothSystem->translate(PxVec4(position.x, position.y, position.z, 0));
 	}
 
 	~px_cloth_component() {}

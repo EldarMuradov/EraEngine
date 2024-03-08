@@ -150,7 +150,12 @@ struct px_particle_system
 		return particleSystem->getWind();
 	}
 
-	void setPosition(const PxVec4& position) noexcept
+	void translate(const vec3& position) noexcept
+	{
+		translate(physx::createPxVec4(position));
+	}
+
+	void translate(const PxVec4& position) noexcept
 	{
 		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
 		PxVec4* bufferPos = particleBuffer->getPositionInvMasses();
@@ -278,7 +283,7 @@ struct px_particles_component
 	px_particles_component(int nX, int nY, int nZ, const vec3& position = vec3(0, 0, 0)) noexcept : numX(nX), numY(nY), numZ(nZ)
 	{
 		particleSystem = make_ref<px_particle_system>(numX, numY, numZ, physx::createPxVec3(position));
-		particleSystem->setPosition(PxVec4(position.x, position.y, position.z, 0));
+		//particleSystem->translate(PxVec4(position.x, position.y, position.z, 0));
 	}
 
 	~px_particles_component() {}

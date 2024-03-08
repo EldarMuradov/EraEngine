@@ -51,6 +51,8 @@ struct px_rigidbody_component
 
 	NODISCARD px_rigidbody_type getType() const noexcept { return type; }
 
+	virtual void release();
+
 	void onCollisionEnter(px_rigidbody_component* collision) const;
 	void onCollisionExit(px_rigidbody_component* collision) const;
 	void onCollisionStay(px_rigidbody_component* collision) const;
@@ -61,7 +63,7 @@ private:
 	void createPhysics(bool addToScene);
 	NODISCARD physx::PxRigidActor* createActor();
 
-private:
+protected:
 	physx::PxMaterial* material = nullptr;
 
 	physx::PxRigidActor* actor = nullptr;

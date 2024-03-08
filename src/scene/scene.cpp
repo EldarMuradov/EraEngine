@@ -136,6 +136,7 @@ eentity escene::copyEntity(eentity src)
 	if (auto* c = src.getComponentIfExists<cloth_render_component>()) { dest.addComponent<cloth_render_component>(*c); }
 
 	if (auto* c = src.getComponentIfExists<terrain_component>()) { dest.addComponent<terrain_component>(*c); }
+
 #endif
 
 	if (auto* c = src.getComponentIfExists<animation_component>()) { dest.addComponent<animation_component>(*c); }
@@ -174,6 +175,37 @@ void escene::deleteEntity(eentity e)
 
 		deleteAllConstraintsFromEntity(e);
 	}
+
+#ifndef PHYSICS_ONLY
+	if (px_rigidbody_component* reference = e.getComponentIfExists<px_rigidbody_component>())
+	{
+		reference->release();
+	}
+	if(px_collider_component_base* reference = e.getComponentIfExists<px_box_collider_component>())
+	{
+		reference->release();
+	}
+	if (px_collider_component_base* reference = e.getComponentIfExists<px_sphere_collider_component>())
+	{
+		reference->release();
+	}
+	if (px_collider_component_base* reference = e.getComponentIfExists<px_capsule_collider_component>())
+	{
+		reference->release();
+	}
+	if (px_collider_component_base* reference = e.getComponentIfExists<px_triangle_mesh_collider_component>())
+	{
+		reference->release();
+	}
+	if (px_collider_component_base* reference = e.getComponentIfExists<px_bounding_box_collider_component>())
+	{
+		reference->release();
+	}
+	if (px_cct_component_base* reference = e.getComponentIfExists<px_capsule_cct_component>())
+	{
+		reference->release();
+	}
+#endif
 
 	// TODO: make it thread-safe
 	auto childs = e.getChilds();

@@ -639,8 +639,8 @@ void application::update(const user_input& input, float dt)
 
 		if (input.keyboard['G'].down)
 		{
-			entity.getComponent<px_cloth_component>().clothSystem->setPosition(PxVec4(0.f, 2.f, 0.f, 0.f));
-			//particleSystem->setPosition(PxVec4(0.f, 20.f, 0.f, 0.f));
+			entity.getComponent<px_cloth_component>().clothSystem->translate(PxVec4(0.f, 2.f, 0.f, 0.f));
+			//translate->setPosition(PxVec4(0.f, 20.f, 0.f, 0.f));
 		}
 
 		//particleSystem->update(true, &ldrRenderPass);
