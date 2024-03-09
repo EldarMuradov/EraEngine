@@ -280,7 +280,7 @@ private:
 struct px_particles_component
 {
 	px_particles_component() = default;
-	px_particles_component(int nX, int nY, int nZ, const vec3& position = vec3(0, 0, 0)) noexcept : numX(nX), numY(nY), numZ(nZ)
+	px_particles_component(const vec3& position, int nX, int nY, int nZ) noexcept : numX(nX), numY(nY), numZ(nZ)
 	{
 		particleSystem = make_ref<px_particle_system>(numX, numY, numZ, physx::createPxVec3(position));
 		//particleSystem->translate(PxVec4(position.x, position.y, position.z, 0));
@@ -295,4 +295,9 @@ struct px_particles_component
 	uint32 numZ{};
 
 	ref<px_particle_system> particleSystem;
+};
+
+struct px_particles_renderer_component
+{
+	px_particles_renderer_component() = default;
 };

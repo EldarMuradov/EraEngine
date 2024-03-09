@@ -77,8 +77,7 @@ void px_physics::initialize()
 	pvd = PxCreatePvd(*foundation);
 
 #if PX_ENABLE_PVD
-	PxPvdTransport* transport = physx::PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
-
+	PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
 	if (transport == NULL)
 		throw std::exception("Failed to create {PxPvdTransport}. Error in {PhysicsEngine} ctor.");
 
@@ -92,7 +91,6 @@ void px_physics::initialize()
 		LOG_ERROR("Physics> Failed to initialize extensions.");
 
 	dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
-
 
 	PxCudaContextManagerDesc cudaContextManagerDesc;
 	cudaContextManagerDesc.graphicsDevice = dxContext.device.Get();
@@ -122,7 +120,7 @@ void px_physics::initialize()
 #endif
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
-	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
+	//sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
 	sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 
@@ -239,8 +237,8 @@ void px_physics_engine::start()
 void px_physics_engine::update(float dt)
 {
 	float stepSize = 1.0f / frameRate;
-
-	physics->scene->lockWrite();
+	sync.lock();
+	//physics->scene->lockWrite();
 	physics->scene->getTaskManager()->startSimulation();
 
 	void* scratchMemBlock = allocator.allocate(MB(16), 16U, true);
@@ -258,8 +256,9 @@ void px_physics_engine::update(float dt)
 	physics->scene->flushSimulation();
 	physics->scene->fetchResultsParticleSystem();
 	physics->scene->getTaskManager()->stopSimulation();
-	physics->scene->unlockWrite();
+	//physics->scene->unlockWrite();
 
+	//physics->scene->lockRead();
 	PxActor** activeActors = physics->scene->getActiveActors(nbActiveActors);
 
 	auto scene = &app->scene.getCurrentScene();
@@ -279,17 +278,20 @@ void px_physics_engine::update(float dt)
 			transform->rotation = createQuat(rot);
 		}
 	}
+	//physics->scene->unlockRead();
 
 #if PX_ENABLE_RAYCAST_CCD
 	physics->raycastCCD->doRaycastCCD(true);
 #endif
 
 	allocator.reset();
+	sync.unlock();
 }
 
 void px_physics_engine::resetActorsVelocityAndInertia()
 {
-	physics->scene->lockWrite();
+	sync.lock();
+	//physics->scene->lockWrite();
 	PxU32 nbActiveActors;
 	PxActor** activeActors = physics->scene->getActiveActors(nbActiveActors);
 
@@ -303,7 +305,8 @@ void px_physics_engine::resetActorsVelocityAndInertia()
 	}
 
 	physics->scene->flushSimulation();
-	physics->scene->unlockWrite();
+	//physics->scene->unlockWrite();
+	sync.unlock();
 }
 
 void px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene)
@@ -490,6 +493,7 @@ NODISCARD PxTriangleMesh* px_triangle_mesh::createTriangleMesh(PxTriangleMeshDes
 #if PX_GPU_BROAD_PHASE
 			cookingParams.buildGPUData = true;
 #endif
+			cookingParams.gaussMapLimit = 256;
 			cookingParams.suppressTriangleMeshRemapTable = true;
 			cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
 			cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
@@ -715,3 +719,29 @@ void physx::swapToHighLowVersion(const PxVehicleDriveNW& vehicle4W, PxVehicleDri
 }
 
 #endif
+
+NODISCARD PxConvexMesh* px_convex_mesh::createConvexMesh(PxConvexMeshDesc desc)
+{
+	try
+	{
+		auto adapter = px_physics_engine::get()->getPhysicsAdapter();
+		if (desc.isValid())
+		{
+			auto cookingParams = PxCookingParams(px_physics_engine::get()->getPhysicsAdapter()->toleranceScale);
+#if PX_GPU_BROAD_PHASE
+			cookingParams.buildGPUData = true;
+#endif
+			cookingParams.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
+			cookingParams.gaussMapLimit = 256;
+			cookingParams.suppressTriangleMeshRemapTable = true;
+			cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
+			cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
+			return PxCreateConvexMesh(cookingParams, desc);
+		}
+	}
+	catch (...)
+	{
+		LOG_ERROR("Physics> Failed to create physics triangle mesh");
+	}
+	return nullptr;
+}

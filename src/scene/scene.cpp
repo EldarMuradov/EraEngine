@@ -11,6 +11,7 @@
 #include <px/core/px_physics_engine.h>
 #include <px/physics/px_rigidbody_component.h>
 #include <px/physics/px_collider_component.h>
+#include <px/features/px_particles.h>
 #include <px/physics/px_character_controller_component.h>
 #include <EraScriptingLauncher-Lib/src/script.h>
 #include <ai/navigation_component.h>
@@ -29,6 +30,8 @@ escene::escene()
 #ifndef PHYSICS_ONLY
 	(void)registry.group<position_component, point_light_component>();
 	(void)registry.group<position_rotation_component, spot_light_component>();
+	//(void)registry.group<navigation_component, transform_component>();
+	//(void)registry.group<transform_component, script_component>();
 #endif
 }
 
@@ -61,11 +64,16 @@ void escene::cloneTo(escene& target)
 		px_capsule_collider_component,
 		px_triangle_mesh_collider_component,
 		px_bounding_box_collider_component,
+		px_convex_mesh_collider_component,
+		px_plane_collider_component,
 		px_cct_component_base,
 		px_capsule_cct_component,
 		px_box_cct_component,
 		px_cloth_component,
 		px_cloth_render_component,
+
+		px_particles_component,
+		//px_particles_renderer_component,
 
 		navigation_component,
 		script_component,
@@ -194,6 +202,14 @@ void escene::deleteEntity(eentity e)
 		reference->release();
 	}
 	if (px_collider_component_base* reference = e.getComponentIfExists<px_triangle_mesh_collider_component>())
+	{
+		reference->release();
+	}
+	if (px_collider_component_base* reference = e.getComponentIfExists<px_plane_collider_component>())
+	{
+		reference->release();
+	}
+	if (px_collider_component_base* reference = e.getComponentIfExists<px_convex_mesh_collider_component>())
 	{
 		reference->release();
 	}

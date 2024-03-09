@@ -17,6 +17,8 @@
 
 #define PX_CONTACT_BUFFER_SIZE 64
 
+#define PVD_HOST "127.0.0.1"
+
 #define PX_ENABLE_RAYCAST_CCD 0
 
 #define PX_PARTICLE_USE_ALLOCATOR 1
@@ -385,17 +387,27 @@ class px_character_controller_filter_callback : public PxControllerFilterCallbac
 	}
 };
 
+#include <core/cpu_profiling.h>
+
 struct px_profiler_callback : PxProfilerCallback
 {
 	void* zoneStart(const char* eventName, bool detached, uint64_t contextId) override
 	{
-		LOG_MESSAGE(eventName);
+#if ENABLE_CPU_PROFILING
+		recordProfileEvent(profile_event_begin_block, eventName);
+#endif
+
+		LOG_MESSAGE("%s %s", eventName, "started");
 		return nullptr;
 	}
 
 	void zoneEnd(void* profilerData, const char* eventName, bool detached, uint64_t contextId) override
 	{
-		LOG_MESSAGE(eventName);
+		LOG_MESSAGE("%s %s", eventName, "finished");
+
+#if ENABLE_CPU_PROFILING
+		recordProfileEvent(profile_event_end_block, eventName);
+#endif
 	}
 };
 
@@ -478,6 +490,11 @@ private:
 struct px_triangle_mesh
 {
 	NODISCARD PxTriangleMesh* createTriangleMesh(PxTriangleMeshDesc desc);
+};
+
+struct px_convex_mesh
+{
+	NODISCARD PxConvexMesh* createConvexMesh(PxConvexMeshDesc desc);
 };
 
 #if PX_VEHICLE

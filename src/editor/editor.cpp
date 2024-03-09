@@ -1940,6 +1940,8 @@ void eeditor::onObjectMoved()
 	}
 }
 
+volatile bool paused = false;
+
 bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRenderPass, float dt)
 {
 	escene* scene = &this->scene->getCurrentScene();
@@ -2236,12 +2238,16 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 				rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
 			}
 
-			app->linker.start();
+			if (!paused)
+				app->linker.start();
+			else
+				paused = false;
 		}
 		ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
 		if (ImGui::IconButton(imgui_icon_pause, imgui_icon_pause, IMGUI_ICON_DEFAULT_SIZE, this->scene->isPausable()))
 		{
 			this->scene->pause();
+			paused = true;
 		}
 		ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
 		if (ImGui::IconButton(imgui_icon_stop, imgui_icon_stop, IMGUI_ICON_DEFAULT_SIZE, this->scene->isStoppable()))
@@ -2251,7 +2257,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 			setSelectedEntity({});
 			app->linker.reload_src();
 			px_physics_engine::get()->resetActorsVelocityAndInertia();
-
+			paused = false;
 			this->scene->editor_camera.setPositionAndRotation(vec3(0.0f), quat::identity);
 		}
 
@@ -2455,6 +2461,9 @@ bool eeditor::editCamera(render_camera& camera)
 	bool result = false;
 	if (ImGui::BeginTree("Camera"))
 	{
+		UNDOABLE_SETTING("position", camera.position,
+			result |= ImGui::DragFloat3("Position", camera.position.data));
+
 		if (ImGui::BeginProperties())
 		{
 			UNDOABLE_SETTING("field of view", camera.verticalFOV,
@@ -2799,7 +2808,10 @@ void eeditor::drawSettings(float dt)
 			ImGui::EndProperties();
 		}
 
-		editCamera(this->scene->camera);
+		if (!this->scene->isPausable())
+			editCamera(this->scene->camera);
+		else
+			editCamera(this->scene->editor_camera);
 		editTonemapping(renderer->settings.tonemapSettings);
 		editSunShadowParameters(this->scene->sun);
 
@@ -3001,7 +3013,7 @@ void eeditor::drawSettings(float dt)
 #if PX_GPU_BROAD_PHASE
 				ImGui::PropertyValue("Broad phase", "GPU");
 #else
-				ImGui::PropertyValue("Broad phase", "ABP (CPU)");
+				ImGui::PropertyValue("Broad phase", "PABP (CPU)");
 #endif
 				// TODO: Physics undoable properties
 				ImGui::EndProperties();

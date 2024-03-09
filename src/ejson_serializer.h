@@ -15,7 +15,7 @@ struct ejson_serializer
 	static void serializeObject(T object)
 	{
 		json node = object;
-		std::string name = eproject::path + (std::string)"\\data\\Preferences\\" + std::string(node.type_name()) + std::string(".eobject");
+		std::string name = eproject::path + (std::string)"\\Data\\Preferences\\" + std::string(node.type_name()) + std::string(".eobject");
 		std::ofstream o(name.c_str());
 		o << node << std::endl;
 	}
@@ -23,7 +23,7 @@ struct ejson_serializer
 	template<typename T>
 	NODISCARD static T deserializeObject(std::string_view name)
 	{
-		std::ifstream file(eproject::path + (std::string)"\\data\\Preferences\\" + name.data());
+		std::ifstream file(eproject::path + (std::string)"\\Data\\Preferences\\" + name.data());
 		json object;
 		file >> object;
 

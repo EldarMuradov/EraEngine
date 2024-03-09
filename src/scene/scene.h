@@ -157,6 +157,12 @@ struct eentity
 
 			auto& component = registry->emplace_or_replace<component_t>(handle, size, std::forward<args>(a)...);
 		}
+		else if	constexpr (std::is_same_v<component_t, struct px_convex_mesh_collider_component>)
+		{
+			unsigned int size = (unsigned int)getComponent<transform_component>().scale.x;
+
+			auto& component = registry->emplace_or_replace<component_t>(handle, size, std::forward<args>(a)...);
+		}
 		else if	constexpr (std::is_same_v<component_t, struct px_bounding_box_collider_component>)
 		{
 			unsigned int size = (unsigned int)getComponent<transform_component>().scale.x;
@@ -181,15 +187,27 @@ struct eentity
 			if (!hasComponent<dynamic_transform_component>())
 				addComponent<dynamic_transform_component>();
 		}
-		else if	constexpr (std::is_same_v<component_t, px_cloth_component>)
+#ifndef PHYSICS ONLY
+		else if	constexpr (std::is_same_v<component_t, struct px_cloth_component>)
 		{
 			auto& component = registry->emplace_or_replace<component_t>(handle, std::forward<args>(a)...);
 
 			if (!hasComponent<dynamic_transform_component>())
 				addComponent<dynamic_transform_component>();
 
-			if (!hasComponent<px_cloth_render_component>())
-				addComponent<px_cloth_render_component>();
+			if (!hasComponent<struct px_cloth_render_component>())
+				addComponent<struct px_cloth_render_component>();
+		}
+#endif // !PHYSICS ONLY
+		else if	constexpr (std::is_same_v<component_t, struct px_plane_collider_component>)
+		{
+			auto& position = getComponent<transform_component>().position;
+			auto& component = registry->emplace_or_replace<component_t>(handle, position, std::forward<args>(a)...);
+		}
+		else if	constexpr (std::is_same_v<component_t, struct px_particles_component>)
+		{
+			auto& position = getComponent<transform_component>().position;
+			auto& component = registry->emplace_or_replace<component_t>(handle, position, std::forward<args>(a)...);
 		}
 		else if	constexpr (std::is_same_v<component_t, struct px_capsule_cct_component>)
 		{

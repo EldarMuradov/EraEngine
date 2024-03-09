@@ -106,7 +106,7 @@ inline void CPU_PROFILE_STAT(const char* label, const char* value) { _CPU_PROFIL
 
 void cpuProfilingResolveTimeStamps();
 
-#undef recordProfileEvent
+//#undef recordProfileEvent
 
 #define _CPU_PRINT_PROFILE_BLOCK_(counter, name) cpu_print_profile_block_recorder COMPOSITE_VARNAME(__PROFILE_BLOCK, counter)(name)
 #define CPU_PRINT_PROFILE_BLOCK(name) _CPU_PRINT_PROFILE_BLOCK_(__COUNTER__, name)
