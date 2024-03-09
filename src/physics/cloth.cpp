@@ -345,7 +345,7 @@ NODISCARD std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, d
 	memcpy(positionPtr, cloth.positions.data(), numVertices * sizeof(vec3));
 
 	dx_vertex_buffer_group_view vb = skinCloth(positionVertexBuffer, cloth.gridSizeX, cloth.gridSizeY);
-	submesh_info sm;
+	submesh_info sm{};
 	sm.baseVertex = 0;
 	sm.firstIndex = 0;
 	sm.numIndices = numTriangles * 3;

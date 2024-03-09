@@ -7,7 +7,7 @@ px_collider_component_base::~px_collider_component_base()
 {
 }
 
-NODISCARD PxTriangleMesh* px_triangle_mesh_collider_builder::createMeshShape(mesh_asset* asset, unsigned int size)
+NODISCARD PxTriangleMesh* px_triangle_mesh_collider_builder::buildMesh(mesh_asset* asset, unsigned int size)
 {
 	submesh_asset root = asset->submeshes[0];
 
@@ -66,7 +66,7 @@ px_box_collider_component::~px_box_collider_component()
 
 bool px_box_collider_component::createShape()
 {
-	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
+	material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	shape = px_physics_engine::getPhysics()->createShape(physx::PxBoxGeometry(height, length, width), *material);
 	enableShapeInSceneQueryTests(shape);
 	enableShapeInContactTests(shape);
@@ -80,7 +80,7 @@ px_sphere_collider_component::~px_sphere_collider_component()
 
 bool px_sphere_collider_component::createShape()
 {
-	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
+	material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	shape = px_physics_engine::getPhysics()->createShape(physx::PxSphereGeometry(radius), *material);
 	enableShapeInSceneQueryTests(shape);
 	enableShapeInContactTests(shape);
@@ -93,7 +93,7 @@ px_capsule_collider_component::~px_capsule_collider_component()
 
 bool px_capsule_collider_component::createShape()
 {
-	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
+	material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	shape = px_physics_engine::getPhysics()->createShape(physx::PxCapsuleGeometry(radius, height / 2.0f), *material);
 	enableShapeInSceneQueryTests(shape);
 	enableShapeInContactTests(shape);
@@ -108,9 +108,9 @@ px_triangle_mesh_collider_component::~px_triangle_mesh_collider_component()
 bool px_triangle_mesh_collider_component::createShape()
 {
 	px_triangle_mesh_collider_builder builder;
-	PxTriangleMesh* mesh = builder.createMeshShape(asset, modelSize);
+	PxTriangleMesh* mesh = builder.buildMesh(asset, modelSize);
 
-	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
+	material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	auto physics = px_physics_engine::getPhysics();
 	shape = physics->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(modelSize)), *material);
 	enableShapeInSceneQueryTests(shape);
@@ -155,7 +155,7 @@ bool px_bounding_box_collider_component::createShape()
 	px_triangle_mesh mesh_adapter;
 	auto mesh = mesh_adapter.createTriangleMesh(meshDesc);
 
-	auto material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
+	material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	shape = px_physics_engine::getPhysics()->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(modelSize)), *material);
 
 	PX_RELEASE(mesh);
@@ -238,4 +238,62 @@ void createMeshFromBoundingBox(const px_bounding_box& box, std::vector<physx::Px
 
 	for (int i = 0; i < 36; i++)
 		indices.push_back(boxIndices[i]);
+}
+
+px_convex_mesh_collider_component::~px_convex_mesh_collider_component()
+{
+}
+
+bool px_convex_mesh_collider_component::createShape()
+{
+	px_convex_mesh_collider_builder builder;
+	PxConvexMesh* mesh = builder.buildMesh(asset, modelSize);
+
+	material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
+	auto physics = px_physics_engine::getPhysics();
+	shape = physics->createShape(PxConvexMeshGeometry(mesh, PxMeshScale(modelSize)), *material);
+	enableShapeInSceneQueryTests(shape);
+	enableShapeInContactTests(shape);
+	PX_RELEASE(mesh);
+	return true;
+}
+
+px_plane_collider_component::~px_plane_collider_component()
+{
+}
+
+bool px_plane_collider_component::createShape()
+{
+	material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
+	plane = PxCreatePlane(*px_physics_engine::getPhysics(), PxPlane(createPxVec3(position), createPxVec3(normal)), *material);
+	px_physics_engine::get()->getPhysicsAdapter()->scene->addActor(*plane);
+
+	return true;
+}
+
+NODISCARD PxConvexMesh* px_convex_mesh_collider_builder::buildMesh(mesh_asset* asset, unsigned int size)
+{
+	submesh_asset root = asset->submeshes[0];
+
+	const auto& positions = root.positions;
+
+	size_t verticesCount = positions.size();
+
+	PxArray<PxVec3> vertices;
+	for (size_t i = 0; i < verticesCount; i++)
+		vertices.pushBack(PxVec3(positions[i].x, positions[i].y, positions[i].z) * size);
+
+	PxConvexMeshDesc meshDesc;
+	meshDesc.points.count = vertices.size();
+	meshDesc.points.stride = sizeof(PxVec3);
+	meshDesc.points.data = &vertices[0];
+	meshDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX | PxConvexFlag::eQUANTIZE_INPUT;
+
+#if PX_GPU_BROAD_PHASE
+	meshDesc.flags |= PxConvexFlag::eGPU_COMPATIBLE;
+#endif
+
+	px_convex_mesh mesh_adapter;
+
+	return mesh_adapter.createConvexMesh(meshDesc);
 }

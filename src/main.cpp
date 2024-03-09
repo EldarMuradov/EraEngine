@@ -117,7 +117,7 @@ int main(int argc, char** argv)
 		}
 
 		dx_window window;
-		window.initialize(TEXT("  New Project - Era Engine - 0.096v0 - <DX12>"), 1920, 1080);
+		window.initialize(TEXT("  New Project - Era Engine - 0.0978v0 - <DX12>"), 1920, 1080);
 		window.setIcon("resources/icons/Logo.ico");
 		window.setCustomWindowStyle();
 		window.maximize();

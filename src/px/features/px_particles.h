@@ -106,10 +106,10 @@ struct px_particle_system
 
 #if PX_PARTICLE_USE_ALLOCATOR
 
-		allocator.initialize(0, maxDiffuseParticles * sizeof(PxVec4) * maxDiffuseParticles * sizeof(PxVec4) * 4);
+		allocator.initialize(0, maxParticles * sizeof(PxVec4) + maxDiffuseParticles * sizeof(PxVec4) + sizeof(PxVec4));
 
-		diffuseLifeBuffer = allocator.allocate<PxVec4>(maxDiffuseParticles * sizeof(PxVec4), true);
-		posBuffer = allocator.allocate<PxVec4>(maxDiffuseParticles * sizeof(PxVec4), true);
+		diffuseLifeBuffer = allocator.allocate<PxVec4>(maxDiffuseParticles, true);
+		posBuffer = allocator.allocate<PxVec4>(maxParticles, true);
 
 #else
 
@@ -150,7 +150,12 @@ struct px_particle_system
 		return particleSystem->getWind();
 	}
 
-	void setPosition(const PxVec4& position) noexcept
+	void translate(const vec3& position) noexcept
+	{
+		translate(physx::createPxVec4(position));
+	}
+
+	void translate(const PxVec4& position) noexcept
 	{
 		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
 		PxVec4* bufferPos = particleBuffer->getPositionInvMasses();
@@ -198,7 +203,7 @@ struct px_particle_system
 		cudaCM->freePinnedHostBuffer(hostDiffBuffer);
 	}
 
-	void debugVisualize(ldr_render_pass& ldrRenderPass) noexcept
+	void syncPositionBuffer()
 	{
 		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
 
@@ -215,19 +220,27 @@ struct px_particle_system
 		cudaContext->memcpyDtoH(diffuseLifeBuffer, CUdeviceptr(diffusePositions), sizeof(PxVec4) * numDiffuseParticles);
 
 		cudaCM->releaseContext();
+	}
 
-		for (size_t i = 0; i < numParticles; i++)
+	void update(bool visualize = false, ldr_render_pass* ldrRenderPass = nullptr)
+	{
+		syncPositionBuffer();
+		if (visualize && ldrRenderPass)
+			debugVisualize(ldrRenderPass);
+	}
+
+	void debugVisualize(ldr_render_pass* ldrRenderPass) noexcept
+	{
+		for (size_t i = 0; i < maxParticles; i++)
 		{
 			PxVec4 p_i = (PxVec4)posBuffer[i];
 			vec3 pos_i = vec3(p_i.x, p_i.y, p_i.z);
-			renderPoint(pos_i, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass, false);
+			renderPoint(pos_i, vec4(0.107f, 1.0f, 0.0f, 1.0f), ldrRenderPass, false);
 		}
 
 		const PxU32 numActiveDiffuseParticles = particleBuffer->getNbActiveDiffuseParticles();
 
-		LOG_MESSAGE("NumActiveDiffuse = %i\n", numActiveDiffuseParticles);
-
-		PxVec3 colorDiffuseParticles(1, 1, 1);
+		static PxVec3 colorDiffuseParticles(1, 1, 1);
 
 		if (numActiveDiffuseParticles > 0)
 		{
@@ -235,7 +248,7 @@ struct px_particle_system
 			{
 				PxVec4 p_i = (PxVec4)diffuseLifeBuffer[i];
 				vec3 pos_i = vec3(p_i.x, p_i.y, p_i.z);
-				renderPoint(pos_i, vec4(1, 0, 0, 1), &ldrRenderPass, false);
+				renderPoint(pos_i, vec4(1, 0, 0, 1), ldrRenderPass, false);
 			}
 		}
 	}
@@ -262,4 +275,29 @@ private:
 	PxU32 maxNeighborhood{};
 	PxU32 maxVolumes{};
 	PxU32 maxParticles{};
+};
+
+struct px_particles_component
+{
+	px_particles_component() = default;
+	px_particles_component(const vec3& position, int nX, int nY, int nZ) noexcept : numX(nX), numY(nY), numZ(nZ)
+	{
+		particleSystem = make_ref<px_particle_system>(numX, numY, numZ, physx::createPxVec3(position));
+		//particleSystem->translate(PxVec4(position.x, position.y, position.z, 0));
+	}
+
+	~px_particles_component() {}
+
+	void release() noexcept { particleSystem.reset(); }
+
+	uint32 numX{};
+	uint32 numY{};
+	uint32 numZ{};
+
+	ref<px_particle_system> particleSystem;
+};
+
+struct px_particles_renderer_component
+{
+	px_particles_renderer_component() = default;
 };

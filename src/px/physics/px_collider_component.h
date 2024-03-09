@@ -17,7 +17,12 @@ enum class px_collider_type : uint8
 
 struct px_triangle_mesh_collider_builder
 {
-	NODISCARD PxTriangleMesh* createMeshShape(mesh_asset* asset, unsigned int size);
+	NODISCARD PxTriangleMesh* buildMesh(mesh_asset* asset, unsigned int size);
+};
+
+struct px_convex_mesh_collider_builder
+{
+	NODISCARD PxConvexMesh* buildMesh(mesh_asset* asset, unsigned int size);
 };
 
 void enableShapeInContactTests(PxShape* shape) noexcept;
@@ -38,12 +43,13 @@ struct px_collider_component_base
 
 	NODISCARD px_collider_type getType() const noexcept { return type; }
 
-	virtual void release() { PX_RELEASE(shape) }
+	virtual void release() { PX_RELEASE(shape) PX_RELEASE(material) }
 
 protected:
 	px_collider_type type = px_collider_type::Box;
 
 	physx::PxShape* shape = nullptr;
+	physx::PxMaterial* material = nullptr;
 };
 
 struct px_box_collider_component : px_collider_component_base 
@@ -118,7 +124,7 @@ struct px_bounding_box_collider_component : px_collider_component_base
 
 	bool createShape() override;
 
-	void release() override { PX_RELEASE(shape) RELEASE_PTR(asset) }
+	void release() override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) }
 
 private:
 	mesh_asset* asset = nullptr;
@@ -136,7 +142,45 @@ struct px_triangle_mesh_collider_component : px_collider_component_base
 
 	bool createShape() override;
 
-	void release() override { PX_RELEASE(shape) RELEASE_PTR(asset) }
+	void release() override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) }
+
+private:
+	mesh_asset* asset = nullptr;
+	unsigned int modelSize = 0;
+};
+
+struct px_plane_collider_component : px_collider_component_base
+{
+	px_plane_collider_component(const vec3& pos, const vec3& norm = vec3(0.f, 1.f, 0.f)) noexcept : position(pos), normal(norm)
+	{
+		type = px_collider_type::Plane;
+		createShape();
+	};
+
+	~px_plane_collider_component();
+
+	bool createShape() override;
+
+	void release() override { PX_RELEASE(shape) PX_RELEASE(plane) PX_RELEASE(material) }
+
+private:
+	PxRigidStatic* plane = nullptr;
+	vec3 position{};
+	vec3 normal{};
+};
+
+struct px_convex_mesh_collider_component : px_collider_component_base
+{
+	px_convex_mesh_collider_component(unsigned int size, mesh_asset* as) noexcept : asset(as), modelSize(size)
+	{
+		type = px_collider_type::ConvexMesh;
+	};
+
+	~px_convex_mesh_collider_component();
+
+	bool createShape() override;
+
+	void release() override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) }
 
 private:
 	mesh_asset* asset = nullptr;

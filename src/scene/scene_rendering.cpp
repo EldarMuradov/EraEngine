@@ -9,6 +9,7 @@
 #include "dx/dx_context.h"
 #include "physics/cloth.h"
 #include "core/cpu_profiling.h"
+#include <px/features/cloth/px_clothing_factory.h>
 
 struct offset_count
 {
@@ -712,6 +713,63 @@ static void renderCloth(escene& scene, entity_handle selectedObjectID,
 
 	uint32 index = 0;
 	for (auto [entityHandle, cloth, render] : scene.group<cloth_component, cloth_render_component>().each())
+	{
+		pbr_material_desc desc;
+		desc.albedo = "assets/Sponza/textures/sponza_curtain_diff.png";
+		desc.normal = "assets/Sponza/textures/sponza_fabric_ddn.jpg";
+		desc.roughness = "assets/Sponza/textures/sponza_curtain_diff.png";
+		desc.metallic = "";
+		desc.shader = pbr_material_shader_double_sided;
+
+		static auto clothMaterial = createPBRMaterial(desc);
+
+		objectIDs[index] = (uint32)entityHandle;
+		D3D12_GPU_VIRTUAL_ADDRESS baseObjectID = objectIDAddress + (index * sizeof(uint32));
+
+		auto [vb, prevFrameVB, ib, sm] = render.getRenderData(cloth);
+
+		pbr_render_data data;
+		data.transformPtr = transformAllocation.gpuPtr;
+		data.vertexBuffer = vb;
+		data.indexBuffer = ib;
+		data.submesh = sm;
+		data.material = clothMaterial;
+		data.numInstances = 1;
+
+		depth_prepass_data depthPrepassData;
+		depthPrepassData.transformPtr = transformAllocation.gpuPtr;
+		depthPrepassData.prevFrameTransformPtr = transformAllocation.gpuPtr;
+		depthPrepassData.objectIDPtr = baseObjectID;
+		depthPrepassData.vertexBuffer = vb;
+		depthPrepassData.prevFrameVertexBuffer = prevFrameVB.positions ? prevFrameVB.positions : vb.positions;
+		depthPrepassData.indexBuffer = ib;
+		depthPrepassData.submesh = sm;
+		depthPrepassData.numInstances = 1;
+		depthPrepassData.alphaCutoutTextureSRV = (clothMaterial && clothMaterial->albedo) ? clothMaterial->albedo->defaultSRV : dx_cpu_descriptor_handle{};
+
+		addToRenderPass(clothMaterial->shader, data, depthPrepassData, opaqueRenderPass, transparentRenderPass);
+
+		if (sunShadowRenderPass)
+		{
+			shadow_render_data shadowData;
+			shadowData.transformPtr = transformAllocation.gpuPtr;
+			shadowData.vertexBuffer = vb.positions;
+			shadowData.indexBuffer = ib;
+			shadowData.numInstances = 1;
+			shadowData.submesh = data.submesh;
+
+			addToDynamicRenderPass(clothMaterial->shader, shadowData, &sunShadowRenderPass->cascades[0], false);
+		}
+
+		if (entityHandle == selectedObjectID)
+		{
+			renderOutline(ldrRenderPass, mat4::identity, vb, ib, sm);
+		}
+
+		++index;
+	}
+	
+	for (auto [entityHandle, cloth, render] : scene.group<px_cloth_component, px_cloth_render_component>().each())
 	{
 		pbr_material_desc desc;
 		desc.albedo = "assets/Sponza/textures/sponza_curtain_diff.png";

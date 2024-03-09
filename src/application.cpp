@@ -180,7 +180,9 @@ void application::loadCustomShaders()
 }
 
 //px_particle_system* particleSystem = nullptr;
-px_cloth_system* clothSystem = nullptr;
+//px_cloth_system* clothSystem = nullptr;
+entity_handle cloth{};
+entity_handle particles{};
 
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
@@ -275,6 +277,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		auto px_sphere = &scene.createEntity("SpherePX", (entity_handle)60)
 			.addComponent<transform_component>(vec3(0, 2.f, 0), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
+			//.addComponent<px_convex_mesh_collider_component>(&(ass.meshes[0]))
 			//.addComponent<px_triangle_mesh_collider_component>(&(ass.meshes[0]))
 			//.addComponent<px_bounding_box_collider_component>(&(ass.meshes[0]))
 			.addComponent<px_sphere_collider_component>(1.0f)
@@ -293,12 +296,20 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		//	.addComponent<px_box_cct_component>();
 
 		auto px_plane = &scene.createEntity("PlanePX")
-			.addComponent<transform_component>(vec3(0.f, -5.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
-			.addComponent<px_box_collider_component>(100.0f, 5.0f, 100.0f)
-			.addComponent<px_rigidbody_component>(px_rigidbody_type::Static);
+			.addComponent<transform_component>(vec3(0.f, 0.0f, 0.0f), quat::identity, vec3(1.f))
+			.addComponent<px_plane_collider_component>();
 
-		//particleSystem = new px_particle_system(10, 10, 10, PxVec3(0, 10.f, 0));
-		clothSystem = new px_cloth_system(10, 10, PxVec3(0, 10.f, 0));
+		/*auto px_plane_wall1 = &scene.createEntity("PlanePX_Wall1")
+			.addComponent<transform_component>(vec3(0.f, 0.0f, 0.0f), quat::identity, vec3(1.f))
+			.addComponent<px_plane_collider_component>(vec3(0.f, 0.f, 0.f));*/
+
+		/*particles = scene.createEntity("ParticlesPX")
+			.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
+			.addComponent<px_particles_component>(10, 10, 10).handle;
+
+		cloth = scene.createEntity("ClothPX")
+			.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
+			.addComponent<px_cloth_component>(10, 10, vec3(0.f, 15.0f, 0.0f)).handle;*/
 
 		px_raycast_info rci = px_physics_engine::get()->raycast(&px_sphere1->getComponent<px_rigidbody_component>(), vec3(0, -1, 0));
 		if (rci.actor)
@@ -575,8 +586,8 @@ void application::update(const user_input& input, float dt)
 		for (auto [entityHandle, anim, mesh, transform] : scene.group(component_group<animation_component, mesh_component, transform_component>).each())
 		{
 			anim.update(mesh.mesh, stackArena, dt, &transform);
-			
-			if(anim.drawSceleton)
+
+			if (anim.drawSceleton)
 				anim.drawCurrentSkeleton(mesh.mesh, transform, &ldrRenderPass);
 		}
 
@@ -590,7 +601,7 @@ void application::update(const user_input& input, float dt)
 		lighting.maxNumSpotShadowRenderPasses = arraysize(spotShadowRenderPasses);
 		lighting.maxNumPointShadowRenderPasses = arraysize(pointShadowRenderPasses);
 
-		renderScene(camera, scene, stackArena, selectedEntity.handle, sun, lighting, !renderer->settings.cacheShadowMap, 
+		renderScene(camera, scene, stackArena, selectedEntity.handle, sun, lighting, !renderer->settings.cacheShadowMap,
 			&opaqueRenderPass, &transparentRenderPass, &ldrRenderPass, &sunShadowRenderPass, &computePass, unscaledDt);
 
 		renderer->setSpotLights(spotLightBuffer[dxContext.bufferedFrameID], scene.numberOfComponentsOfType<spot_light_component>(), spotLightShadowInfoBuffer[dxContext.bufferedFrameID]);
@@ -629,12 +640,29 @@ void application::update(const user_input& input, float dt)
 				dynamic_transform_component& dtc = selectedEntity.getComponent<dynamic_transform_component>();
 				renderWireBox(dtc.position, vec3(cct->getHalfSideExtent(), cct->getHalfHeight() * 2, cct->getHalfSideExtent()), dtc.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
 			}
-	}
+		}
 
 #endif
+	
+		//// Tests
+		//{
+		//	eentity entityCloth{ cloth, &scene.registry };
+		//	entityCloth.getComponent<px_cloth_component>().clothSystem->update(true, &ldrRenderPass);
 
-		clothSystem->debugVisualize(ldrRenderPass);
-		//particleSystem->debugVisualize(ldrRenderPass);
+		//	eentity entityParticles{ particles, &scene.registry };
+		//	entityParticles.getComponent<px_particles_component>().particleSystem->update(true, &ldrRenderPass);
+
+		//	if (input.keyboard['G'].down)
+		//	{
+		//		entityCloth.getComponent<px_cloth_component>().clothSystem->translate(PxVec4(0.f, 2.f, 0.f, 0.f));
+		//		//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
+		//	}
+		//}
+
+		//if (input.keyboard['G'].down)
+		//{
+		//	//px_physics_engine::get()->getPhysicsAdapter()->pvd->disconnect();
+		//}
 
 		submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
 	}
@@ -642,12 +670,6 @@ void application::update(const user_input& input, float dt)
 	for (auto [entityHandle, transform, dynamic] : scene.group(component_group<transform_component, dynamic_transform_component>).each())
 	{
 		dynamic = transform;
-	}
-
-	if (input.keyboard['G'].down)
-	{
-		clothSystem->setPosition(PxVec4(0.f, 20.f, 0.f, 0.f));
-		//particleSystem->setPosition(PxVec4(0.f, 20.f, 0.f, 0.f));
 	}
 
 	performSkinning(&computePass);
@@ -684,7 +706,7 @@ void application::handleFileDrop(const fs::path& filename)
 			fs::path path = filename;
 			path = path.stem();
 
-			auto en = scene.getCurrentScene().createEntity(path.string().c_str())
+			auto& en = scene.getCurrentScene().createEntity(path.string().c_str())
 				.addComponent<transform_component>(vec3(0.f), quat::identity)
 				.addComponent<animation_component>()
 				.addComponent<dynamic_transform_component>()
@@ -697,7 +719,7 @@ void application::handleFileDrop(const fs::path& filename)
 			fs::path path = filename;
 			path = path.stem();
 
-			auto en = scene.getCurrentScene().createEntity(path.string().c_str())
+			auto& en = scene.getCurrentScene().createEntity(path.string().c_str())
 				.addComponent<transform_component>(vec3(0.f), quat::identity)
 				.addComponent<mesh_component>(mesh);
 

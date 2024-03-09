@@ -17,9 +17,11 @@
 
 #define PX_CONTACT_BUFFER_SIZE 64
 
+#define PVD_HOST "127.0.0.1"
+
 #define PX_ENABLE_RAYCAST_CCD 0
 
-#define PX_PARTICLE_USE_ALLOCATOR 0
+#define PX_PARTICLE_USE_ALLOCATOR 1
 
 #define PX_PHYSICS_ENABLED = 1
 
@@ -27,7 +29,6 @@
 #define PX_NB_MAX_RAYCAST_DISTANCE 128
 
 #define PX_VEHICLE 0
-#define PX_CLOTH 0
 
 #define PX_RELEASE(x)	if(x)	{ x->release(); x = nullptr;}
 #define UNUSED(x) (void)(x)
@@ -196,6 +197,9 @@ namespace physx
 	{
 		return x * numY + y;
 	}
+
+	NODISCARD static PxVec4 createPxVec4(const vec3& vec) noexcept { return PxVec4(vec.x, vec.y, vec.z, 0); }
+	NODISCARD static PxVec4 createPxVec4(const vec4& vec) noexcept { return PxVec4(vec.x, vec.y, vec.z, vec.w); }
 
 	NODISCARD static PxVec3 createPxVec3(const vec3& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
 	NODISCARD static PxVec2 createPxVec2(const vec2& vec) noexcept { return PxVec2(vec.x, vec.y); }
@@ -383,17 +387,27 @@ class px_character_controller_filter_callback : public PxControllerFilterCallbac
 	}
 };
 
+#include <core/cpu_profiling.h>
+
 struct px_profiler_callback : PxProfilerCallback
 {
 	void* zoneStart(const char* eventName, bool detached, uint64_t contextId) override
 	{
-		LOG_MESSAGE(eventName);
+#if ENABLE_CPU_PROFILING
+		recordProfileEvent(profile_event_begin_block, eventName);
+#endif
+
+		LOG_MESSAGE("%s %s", eventName, "started");
 		return nullptr;
 	}
 
 	void zoneEnd(void* profilerData, const char* eventName, bool detached, uint64_t contextId) override
 	{
-		LOG_MESSAGE(eventName);
+		LOG_MESSAGE("%s %s", eventName, "finished");
+
+#if ENABLE_CPU_PROFILING
+		recordProfileEvent(profile_event_end_block, eventName);
+#endif
 	}
 };
 
@@ -478,6 +492,11 @@ struct px_triangle_mesh
 	NODISCARD PxTriangleMesh* createTriangleMesh(PxTriangleMeshDesc desc);
 };
 
+struct px_convex_mesh
+{
+	NODISCARD PxConvexMesh* createConvexMesh(PxConvexMeshDesc desc);
+};
+
 #if PX_VEHICLE
 
 struct px_wheel_filter : PxQueryFilterCallback
@@ -537,15 +556,12 @@ public:
 
 	uint32_t nbActiveActors{};
 
-#if PX_CLOTH
-	px_clothing_factory clothing_factory{};
-#endif
-
 	px_physics* getPhysicsAdapter() const noexcept { return physics; }
 
 	std::set<px_rigidbody_component*> actors;
 	std::unordered_map<PxRigidActor*, px_rigidbody_component*> actors_map;
 	static std::queue<collision_handling_data> collisionQueue;
+	application* app = nullptr;
 
 	// Raycasting
 	px_raycast_info raycast(px_rigidbody_component* rb, const vec3& dir, int maxDist = PX_NB_MAX_RAYCAST_DISTANCE, bool hitTriggers = true, uint32_t layerMask = 0, int maxHits = PX_NB_MAX_RAYCAST_HITS);
@@ -628,8 +644,6 @@ public:
 private:
 	px_physics* physics = nullptr;
 
-	application* app = nullptr;
-
 	eallocator allocator;
 
 	bool released = false;
@@ -640,5 +654,4 @@ private:
 
 	friend struct px_CCD_contact_modification;
 	friend struct px_collision_contact_callback;
-	friend struct px_rigidbody_component;
 };
