@@ -5,7 +5,7 @@
 #include "px/core/px_aggregate.h"
 #include "px/physics/px_joint.h"
 
-#define RG_NB_ACTORS 14
+#/*define RG_NB_ACTORS 14
 #define RG_NB_JOINTS 13
 
 struct px_ragdoll
@@ -75,4 +75,4 @@ private:
 	std::unordered_map<const char*, px_rigidbody_component*> rigidbodies;
 
 	ref<multi_mesh> meshBase;
-};
+};*/

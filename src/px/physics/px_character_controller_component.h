@@ -4,62 +4,67 @@
 
 #include "px/core/px_physics_engine.h"
 
-enum class px_cct_type : uint8
+namespace physics
 {
-	px_none,
-	px_box,
-	px_capsule
-};
+	using namespace physx;
 
-struct px_cct_component_base : px_rigidbody_component
-{
-	px_cct_component_base(uint32_t entt) noexcept;
-	virtual ~px_cct_component_base() {}
+	enum class px_cct_type : uint8
+	{
+		None,
+		Box,
+		Capsule
+	};
 
-	void release() override;
+	struct px_cct_component_base : px_rigidbody_component
+	{
+		px_cct_component_base(uint32_t entt) noexcept;
+		virtual ~px_cct_component_base() {}
 
-protected:
-	virtual void createCharacterController() noexcept {};
+		void release() override;
 
-protected:
-	physx::PxControllerManager* manager = nullptr;
-	physx::PxController* controller = nullptr;
+	protected:
+		virtual void createCharacterController() noexcept {};
 
-	px_cct_type type = px_cct_type::px_none;
-	float mass = 1.0f;
-};
+	protected:
+		physx::PxControllerManager* manager = nullptr;
+		physx::PxController* controller = nullptr;
 
-struct px_box_cct_component : px_cct_component_base
-{
-	px_box_cct_component() = default;
-	px_box_cct_component(uint32_t entt) noexcept;
-	px_box_cct_component(uint32_t entt, float hh, float hs, float m = 1.0f) noexcept;
+		px_cct_type type = px_cct_type::None;
+		float mass = 1.0f;
+	};
 
-	NODISCARD float getHalfHeight() const noexcept { return halfHeight; }
-	NODISCARD float getHalfSideExtent() const noexcept { return halfSideExtent; }
+	struct px_box_cct_component : px_cct_component_base
+	{
+		px_box_cct_component() = default;
+		px_box_cct_component(uint32_t entt) noexcept;
+		px_box_cct_component(uint32_t entt, float hh, float hs, float m = 1.0f) noexcept;
 
-protected:
-	void createCharacterController() noexcept override;
+		NODISCARD float getHalfHeight() const noexcept { return halfHeight; }
+		NODISCARD float getHalfSideExtent() const noexcept { return halfSideExtent; }
 
-private:
-	float halfHeight = 1.0f;
-	float halfSideExtent = 0.5f;
-};
+	protected:
+		void createCharacterController() noexcept override;
 
-struct px_capsule_cct_component : px_cct_component_base
-{
-	px_capsule_cct_component() = default;
-	px_capsule_cct_component(uint32_t entt) noexcept;
-	px_capsule_cct_component(uint32_t entt, float h, float r, float m = 1.0f) noexcept;
-	~px_capsule_cct_component() {}
+	private:
+		float halfHeight = 1.0f;
+		float halfSideExtent = 0.5f;
+	};
 
-	NODISCARD float getHeight() const noexcept { return height; }
-	NODISCARD float getRadius() const noexcept { return radius; }
+	struct px_capsule_cct_component : px_cct_component_base
+	{
+		px_capsule_cct_component() = default;
+		px_capsule_cct_component(uint32_t entt) noexcept;
+		px_capsule_cct_component(uint32_t entt, float h, float r, float m = 1.0f) noexcept;
+		~px_capsule_cct_component() {}
 
-protected:
-	void createCharacterController() noexcept override;
+		NODISCARD float getHeight() const noexcept { return height; }
+		NODISCARD float getRadius() const noexcept { return radius; }
 
-private:
-	float height = 2.0f;
-	float radius = 0.5f;
-};
+	protected:
+		void createCharacterController() noexcept override;
+
+	private:
+		float height = 2.0f;
+		float radius = 0.5f;
+	};
+}

@@ -1,87 +1,92 @@
 #pragma once
 #include <px/core/px_physics_engine.h>
 
-enum class px_rigidbody_type : uint8
+namespace physics
 {
-	None,
-	Static,
-	Dynamic,
-	Kinematic
-};
+	using namespace physx;
 
-enum class px_force_mode : uint8
-{
-	None,
-	Force,
-	Impulse
-};
+	enum class px_rigidbody_type : uint8
+	{
+		None,
+		Static,
+		Dynamic,
+		Kinematic
+	};
 
-struct px_rigidbody_component
-{
-	px_rigidbody_component() {};
-	px_rigidbody_component(uint32_t entt, px_rigidbody_type rbtype, bool addToScene = true) noexcept;
-	virtual ~px_rigidbody_component();
+	enum class px_force_mode : uint8
+	{
+		None,
+		Force,
+		Impulse
+	};
 
-	void addForce(vec3 force, px_force_mode mode = px_force_mode::Impulse) noexcept;
+	struct px_rigidbody_component
+	{
+		px_rigidbody_component() {};
+		px_rigidbody_component(uint32_t entt, px_rigidbody_type rbtype, bool addToScene = true) noexcept;
+		virtual ~px_rigidbody_component();
 
-	NODISCARD physx::PxRigidActor* getRigidActor() const noexcept { return actor; }
+		void addForce(vec3 force, px_force_mode mode = px_force_mode::Impulse) noexcept;
 
-	void setDisableGravity() noexcept;
-	void setEnableGravity() noexcept;
+		NODISCARD PxRigidActor* getRigidActor() const noexcept { return actor; }
 
-	void setMass(float mass) noexcept;
-	NODISCARD float getMass() const noexcept { return mass; }
+		void setDisableGravity() noexcept;
+		void setEnableGravity() noexcept;
 
-	void setConstraints(uint8 constraints) noexcept;
-	NODISCARD uint8 getConstraints() const noexcept;
+		void setMass(float mass) noexcept;
+		NODISCARD float getMass() const noexcept { return mass; }
 
-	void setLinearVelocity(vec3 velocity);
+		void setConstraints(uint8 constraints) noexcept;
+		NODISCARD uint8 getConstraints() const noexcept;
 
-	NODISCARD vec3 getLinearVelocity() const noexcept;
+		void setLinearVelocity(vec3 velocity);
 
-	void setAngularVelocity(vec3 velocity);
+		NODISCARD vec3 getLinearVelocity() const noexcept;
 
-	NODISCARD vec3 getAngularVelocity() const noexcept;
+		void setAngularVelocity(vec3 velocity);
 
-	NODISCARD vec3 getPhysicsPosition() const noexcept;
+		NODISCARD vec3 getAngularVelocity() const noexcept;
 
-	void setPhysicsPositionAndRotation(vec3& pos, quat& rot);
+		NODISCARD vec3 getPhysicsPosition() const noexcept;
 
-	void setAngularDamping(float damping);
+		void setPhysicsPositionAndRotation(vec3& pos, quat& rot);
 
-	NODISCARD px_rigidbody_type getType() const noexcept { return type; }
+		void setAngularDamping(float damping);
 
-	virtual void release();
+		NODISCARD px_rigidbody_type getType() const noexcept { return type; }
 
-	void onCollisionEnter(px_rigidbody_component* collision) const;
-	void onCollisionExit(px_rigidbody_component* collision) const;
-	void onCollisionStay(px_rigidbody_component* collision) const;
+		virtual void release();
 
-	uint32_t handle {};
+		void onCollisionEnter(px_rigidbody_component* collision) const;
+		void onCollisionExit(px_rigidbody_component* collision) const;
+		void onCollisionStay(px_rigidbody_component* collision) const;
 
-private:
-	void createPhysics(bool addToScene);
-	NODISCARD physx::PxRigidActor* createActor();
+		uint32_t handle{};
 
-protected:
-	physx::PxMaterial* material = nullptr;
+	private:
+		void createPhysics(bool addToScene);
+		NODISCARD PxRigidActor* createActor();
 
-	physx::PxRigidActor* actor = nullptr;
+	protected:
+		PxMaterial* material = nullptr;
 
-	float restitution = 0.6f;
+		PxRigidActor* actor = nullptr;
 
-	float mass = 1;
+		float restitution = 0.6f;
 
-	float dynamicFriction = 0.8f;
-	float staticFriction = 0.8f;
- 
- 	physx::PxU32 filterGroup = -1;
-	physx::PxU32 filterMask = -1;
+		float mass = 1;
 
-	physx::PxRigidDynamicLockFlags rotLockNative;
-	physx::PxRigidDynamicLockFlags posLockNative;
+		float dynamicFriction = 0.8f;
+		float staticFriction = 0.8f;
 
-	bool useGravity = true;
+		PxU32 filterGroup = -1;
+		PxU32 filterMask = -1;
 
-	px_rigidbody_type type = px_rigidbody_type::None;
-}; 
+		PxRigidDynamicLockFlags rotLockNative;
+		PxRigidDynamicLockFlags posLockNative;
+
+		bool useGravity = true;
+
+		px_rigidbody_type type = px_rigidbody_type::None;
+	};
+}
