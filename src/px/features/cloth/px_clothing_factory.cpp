@@ -2,7 +2,7 @@
 #include "px/features/cloth/px_clothing_factory.h"
 #include <animation/skinning.h>
 
-NODISCARD std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, submesh_info> px_cloth_render_component::getRenderData(const px_cloth_component& cloth)
+NODISCARD std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, submesh_info> physics::px_cloth_render_component::getRenderData(const px_cloth_component& cloth)
 {
 	CPU_PROFILE_BLOCK("Get cloth render data");
 
@@ -24,7 +24,7 @@ NODISCARD std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, d
 
 	if (!indexBuffer)
 	{
-		std::vector<indexed_triangle16> triangles;
+		::std::vector<indexed_triangle16> triangles;
 		triangles.reserve(numTriangles);
 		for (uint32 y = 0; y < cloth.numZ - 1; ++y)
 		{
@@ -46,7 +46,7 @@ NODISCARD std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, d
 	return { vb, prev, indexBuffer, sm };
 }
 
-vec3* px_cloth_component::getPositions() const noexcept
+vec3* physics::px_cloth_component::getPositions() const noexcept
 {
 	PxVec4* bufferPos = clothSystem->posBuffer;
 	

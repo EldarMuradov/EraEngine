@@ -1,21 +1,26 @@
 #pragma once
 #include "px/core/px_physics_engine.h"
 
-struct px_aggregate 
+namespace physics 
 {
-	px_aggregate() = default;
-	px_aggregate(uint8 nb, bool sc = true) noexcept;
-	~px_aggregate() { px_physics_engine::get()->getPhysicsAdapter()->scene->removeAggregate(*aggregate); PX_RELEASE(aggregate) }
+	using namespace physx;
 
-	void addActor(physx::PxActor* actor) noexcept;
-	void removeActor(physx::PxActor* actor) noexcept;
+	struct px_aggregate
+	{
+		px_aggregate() = default;
+		px_aggregate(uint8 nb, bool sc = true) noexcept;
+		~px_aggregate() { physics_holder::physicsRef->getScene()->removeAggregate(*aggregate); PX_RELEASE(aggregate) }
 
-	NODISCARD uint8 getNbActors() const noexcept { return nbActors; }
-	NODISCARD bool isSelfCollision() const noexcept { return selfCollisions; }
+		void addActor(PxActor* actor) noexcept;
+		void removeActor(PxActor* actor) noexcept;
 
-private:
-	physx::PxAggregate* aggregate = nullptr;
+		NODISCARD uint8 getNbActors() const noexcept { return nbActors; }
+		NODISCARD bool isSelfCollision() const noexcept { return selfCollisions; }
 
-	uint8 nbActors = 0;
-	bool selfCollisions = true;
-};
+	private:
+		PxAggregate* aggregate = nullptr;
+
+		uint8 nbActors = 0;
+		bool selfCollisions = true;
+	};
+}

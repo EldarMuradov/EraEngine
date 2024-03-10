@@ -8,11 +8,6 @@
 #include "rendering/raytracing.h"
 
 #ifndef PHYSICS_ONLY
-#include <px/core/px_physics_engine.h>
-#include <px/physics/px_rigidbody_component.h>
-#include <px/physics/px_collider_component.h>
-#include <px/features/px_particles.h>
-#include <px/physics/px_character_controller_component.h>
 #include <EraScriptingLauncher-Lib/src/script.h>
 #include <ai/navigation_component.h>
 #endif
@@ -57,23 +52,22 @@ void escene::cloneTo(escene& target)
 		dynamic_transform_component,
 
 #ifndef PHYSICS_ONLY
-		px_rigidbody_component,
-		px_box_collider_component,
-		px_collider_component_base,
-		px_sphere_collider_component,
-		px_capsule_collider_component,
-		px_triangle_mesh_collider_component,
-		px_bounding_box_collider_component,
-		px_convex_mesh_collider_component,
-		px_plane_collider_component,
-		px_cct_component_base,
-		px_capsule_cct_component,
-		px_box_cct_component,
-		px_cloth_component,
-		px_cloth_render_component,
-
-		px_particles_component,
-		//px_particles_renderer_component,
+		physics::px_rigidbody_component,
+		physics::px_box_collider_component,
+		physics::px_collider_component_base,
+		physics::px_sphere_collider_component,
+		physics::px_capsule_collider_component,
+		physics::px_triangle_mesh_collider_component,
+		physics::px_bounding_box_collider_component,
+		physics::px_convex_mesh_collider_component,
+		physics::px_plane_collider_component,
+		physics::px_cct_component_base,
+		physics::px_capsule_cct_component,
+		physics::px_box_cct_component,
+		physics::px_cloth_component,
+		physics::px_cloth_render_component,
+		physics::px_particles_component,
+		//physics::px_particles_renderer_component,
 
 		navigation_component,
 		script_component,
@@ -185,39 +179,39 @@ void escene::deleteEntity(eentity e)
 	}
 
 #ifndef PHYSICS_ONLY
-	if (px_rigidbody_component* reference = e.getComponentIfExists<px_rigidbody_component>())
+	if (physics::px_rigidbody_component* reference = e.getComponentIfExists<physics::px_rigidbody_component>())
 	{
 		reference->release();
 	}
-	if(px_collider_component_base* reference = e.getComponentIfExists<px_box_collider_component>())
+	if(physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_box_collider_component>())
 	{
 		reference->release();
 	}
-	if (px_collider_component_base* reference = e.getComponentIfExists<px_sphere_collider_component>())
+	if (physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_sphere_collider_component>())
 	{
 		reference->release();
 	}
-	if (px_collider_component_base* reference = e.getComponentIfExists<px_capsule_collider_component>())
+	if (physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_capsule_collider_component>())
 	{
 		reference->release();
 	}
-	if (px_collider_component_base* reference = e.getComponentIfExists<px_triangle_mesh_collider_component>())
+	if (physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_triangle_mesh_collider_component>())
 	{
 		reference->release();
 	}
-	if (px_collider_component_base* reference = e.getComponentIfExists<px_plane_collider_component>())
+	if (physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_plane_collider_component>())
 	{
 		reference->release();
 	}
-	if (px_collider_component_base* reference = e.getComponentIfExists<px_convex_mesh_collider_component>())
+	if (physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_convex_mesh_collider_component>())
 	{
 		reference->release();
 	}
-	if (px_collider_component_base* reference = e.getComponentIfExists<px_bounding_box_collider_component>())
+	if (physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_bounding_box_collider_component>())
 	{
 		reference->release();
 	}
-	if (px_cct_component_base* reference = e.getComponentIfExists<px_capsule_cct_component>())
+	if (physics::px_cct_component_base* reference = e.getComponentIfExists<physics::px_capsule_cct_component>())
 	{
 		reference->release();
 	}

@@ -50,7 +50,7 @@ typedef uint64_t uint64;
 typedef wchar_t wchar;
 
 #define ASSERT(cond) \
-	(void)((!!(cond)) || (std::cout << "Assertion '" << #cond "' failed [" __FILE__ " : " << __LINE__ << "].\n", ::__debugbreak(), 0))
+	(void)((!!(cond)) || (::std::cout << "Assertion '" << #cond "' failed [" __FILE__ " : " << __LINE__ << "].\n", ::__debugbreak(), 0))
 
 template <typename T> using ref = std::shared_ptr<T>;
 template <typename T> using weakref = std::weak_ptr<T>;

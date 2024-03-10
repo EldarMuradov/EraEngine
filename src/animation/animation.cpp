@@ -755,7 +755,7 @@ const vec3 limbTypeColors[] =
 	vec3(1.f, 1.f, 1.f),
 };
 
-void animation_component::drawCurrentSkeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* renderPass)
+void animation_component::drawCurrentSkeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* renderPass) const
 {
 	const dx_mesh& dxMesh = mesh->mesh;
 	animation_skeleton& skeleton = mesh->skeleton;
@@ -782,8 +782,21 @@ void animation_component::drawCurrentSkeleton(const ref<multi_mesh>& mesh, const
 			}
 			else
 			{
+#if ROW_MAJOR
+				vec3 vrt1 = vec3(skeleton.joints[joint.parentID].bindTransform.m03,
+								 skeleton.joints[joint.parentID].bindTransform.m13,
+								 skeleton.joints[joint.parentID].bindTransform.m23);
+
+				vec3 vrt2 = vec3(joint.bindTransform.m03,
+								 joint.bindTransform.m13,
+								 joint.bindTransform.m23);
+
+				*vertices++ = { vrt1, limbTypeColors[parentJoint.limbType] };
+				*vertices++ = { vrt2, limbTypeColors[parentJoint.limbType] };
+#else
 				*vertices++ = { skeleton.joints[joint.parentID].bindTransform.col3.xyz, limbTypeColors[parentJoint.limbType] };
 				*vertices++ = { joint.bindTransform.col3.xyz, limbTypeColors[parentJoint.limbType] };
+#endif
 			}
 		}
 		else
