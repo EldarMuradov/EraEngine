@@ -224,10 +224,10 @@ namespace bind
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
 
-		if (auto rb = entity.getComponentIfExists<px_rigidbody_component>())
+		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 		{
 			vec3 f = vec3(force[0], force[1], force[2]);
-			rb->addForce(f, (px_force_mode)mode);
+			rb->addForce(f, (physics::px_force_mode)mode);
 			std::cout << "Force" << "\n";
 		}
 		else
@@ -239,8 +239,8 @@ namespace bind
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
 
-		if (!entity.hasComponent<px_rigidbody_component>())
-			entity.addComponent<px_rigidbody_component>((px_rigidbody_type)type);
+		if (!entity.hasComponent<physics::px_rigidbody_component>())
+			entity.addComponent<physics::px_rigidbody_component>((physics::px_rigidbody_type)type);
 	}
 
 	static float get_mass_internal(uint32_t id)
@@ -248,7 +248,7 @@ namespace bind
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
 
-		if (auto rb = entity.getComponentIfExists<px_rigidbody_component>())
+		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 			return rb->getMass();
 		else
 			return -1.0f;
@@ -259,7 +259,7 @@ namespace bind
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
 
-		if (auto rb = entity.getComponentIfExists<px_rigidbody_component>())
+		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 			rb->setMass(mass);
 		else
 			std::cerr << "bliaaaa";
@@ -270,7 +270,7 @@ namespace bind
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
 
-		if (auto rb = entity.getComponentIfExists<px_rigidbody_component>())
+		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 		{
 			float* f = new float[3];
 			f[0] = rb->getLinearVelocity().data[0];
@@ -295,7 +295,7 @@ namespace bind
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
 
-		if (auto rb = entity.getComponentIfExists<px_rigidbody_component>())
+		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 		{
 			float* f = new float[3];
 			f[0] = rb->getAngularVelocity().data[0];

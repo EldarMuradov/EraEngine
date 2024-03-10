@@ -769,7 +769,7 @@ static void renderCloth(escene& scene, entity_handle selectedObjectID,
 		++index;
 	}
 	
-	for (auto [entityHandle, cloth, render] : scene.group<px_cloth_component, px_cloth_render_component>().each())
+	for (auto [entityHandle, cloth, render] : scene.group<physics::px_cloth_component, physics::px_cloth_render_component>().each())
 	{
 		pbr_material_desc desc;
 		desc.albedo = "assets/Sponza/textures/sponza_curtain_diff.png";

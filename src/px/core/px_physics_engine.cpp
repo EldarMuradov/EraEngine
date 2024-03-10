@@ -15,22 +15,18 @@
 #include <application.h>
 #include <scene/scene.h>
 
-px_physics_engine* px_physics_engine::engine = nullptr;
-std::queue<collision_handling_data> px_physics_engine::collisionQueue;
-std::mutex px_physics_engine::sync;
+physics::px_collision_contact_callback collisionCallback;
 
-px_collision_contact_callback collisionCallback;
-
-px_CCD_contact_modification contactModification;
+physics::px_CCD_contact_modification contactModification;
 
 physx::PxFilterFlags contactReportFilterShader(
-	PxFilterObjectAttributes attributes0,
-	PxFilterData filterData0,
-	PxFilterObjectAttributes attributes1,
-	PxFilterData filterData1,
-	PxPairFlags& pairFlags,
+	physx::PxFilterObjectAttributes attributes0,
+	physx::PxFilterData filterData0,
+	physx::PxFilterObjectAttributes attributes1,
+	physx::PxFilterData filterData1,
+	physx::PxPairFlags& pairFlags,
 	const void* constantBlock,
-	PxU32 constantBlockSize)
+	physx::PxU32 constantBlockSize)
 {
 	UNUSED(constantBlockSize);
 	UNUSED(constantBlock);
@@ -41,7 +37,7 @@ physx::PxFilterFlags contactReportFilterShader(
 		return physx::PxFilterFlag::eDEFAULT;
 	}
 
-	pairFlags |= PxPairFlag::eDETECT_CCD_CONTACT;
+	pairFlags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
 
 	pairFlags = physx::PxPairFlag::eNOTIFY_CONTACT_POINTS | physx::PxPairFlag::eDETECT_DISCRETE_CONTACT;
 
@@ -51,28 +47,23 @@ physx::PxFilterFlags contactReportFilterShader(
 	pairFlags = physx::PxPairFlag::eSOLVE_CONTACT | physx::PxPairFlag::eDETECT_DISCRETE_CONTACT
 		| physx::PxPairFlag::eNOTIFY_TOUCH_FOUND
 		| physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS
-		| physx::PxPairFlag::eNOTIFY_CONTACT_POINTS | PxPairFlag::eMODIFY_CONTACTS;
+		| physx::PxPairFlag::eNOTIFY_CONTACT_POINTS | physx::PxPairFlag::eMODIFY_CONTACTS;
 	return physx::PxFilterFlag::eNOTIFY;
 }
 
-px_physics::~px_physics()
+physics::px_physics_engine::px_physics_engine(application* application) noexcept
 {
-	if (!released)
-	{
-		release();
-		released = true;
-	}
-}
+	app = application;
+	allocator.initialize(MB(256));
 
-void px_physics::initialize()
-{
+	sync.lock();
 	foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocatorCallback, errorReporter);
 
 	if (PxGetSuggestedCudaDeviceOrdinal(foundation->getErrorCallback()) < 0)
-		throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
+		throw ::std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
 
 	if (!foundation)
-		throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
+		throw ::std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
 
 	pvd = PxCreatePvd(*foundation);
 
@@ -131,7 +122,7 @@ void px_physics::initialize()
 	sceneDesc.ccdContactModifyCallback = &contactModification;
 
 	scene = physics->createScene(sceneDesc);
-	
+
 #if PX_ENABLE_PVD
 	PxPvdSceneClient* client = scene->getScenePvdClient();
 
@@ -153,16 +144,24 @@ void px_physics::initialize()
 #endif
 
 #if PX_VEHICLE
-	if(!PxInitVehicleSDK(*physics))
+	if (!PxInitVehicleSDK(*physics))
 		LOG_ERROR("Physics> Failed to initialize PxVehicleSDK.");
 
 	PxVehicleSetBasisVectors(PxVec3(0, 1, 0), PxVec3(0, 0, 1));
 	PxVehicleSetUpdateMode(PxVehicleUpdateMode::eVELOCITY_CHANGE);
 #endif
+	sync.unlock();
 }
 
-void px_physics::release()
+physics::px_physics_engine::~px_physics_engine()
 {
+	if (!released)
+		release();
+}
+
+void physics::px_physics_engine::release() noexcept
+{
+	sync.lock();
 #if PX_VEHICLE
 	PxCloseVehicleSDK();
 #endif
@@ -181,87 +180,41 @@ void px_physics::release()
 #endif
 
 	released = true;
-}
-
-void px_physics::releaseScene()
-{
-	PxU32 size;
-	auto actors = scene->getActiveActors(size);
-	scene->removeActors(actors, size);
-}
-
-px_physics_engine::px_physics_engine(application* application) noexcept
-{
-	app = application;
-	physics = new px_physics();
-	physics->initialize();
-	allocator.initialize(MB(256));
-}
-
-px_physics_engine::~px_physics_engine()
-{
-	releaseActors();
-	if (!released)
-		release();
-
-	allocator.reset(true);
-	physics->release();
-
-	RELEASE_PTR(physics)
-}
-
-void px_physics_engine::initialize(application* application)
-{
-	if (engine)
-		throw std::exception("Failed to create {px_physics_engine}. Error in {px_physics_engine::initialize()}. {px_physics_engine} is already created.");
-	sync.lock();
-	px_physics_engine::engine = new px_physics_engine(application);
 	sync.unlock();
 }
 
-void px_physics_engine::release()
-{
-	sync.lock();
-	if (engine)
-	{
-		delete engine;
-		engine = nullptr;
-	}
-	sync.unlock();
-}
-
-void px_physics_engine::start()
+void physics::px_physics_engine::start() noexcept
 {
 }
 
-void px_physics_engine::update(float dt)
+void physics::px_physics_engine::update(float dt) noexcept
 {
 	float stepSize = 1.0f / frameRate;
 	sync.lock();
-	//physics->scene->lockWrite();
-	physics->scene->getTaskManager()->startSimulation();
+	//scene->lockWrite();
+	scene->getTaskManager()->startSimulation();
 
 	void* scratchMemBlock = allocator.allocate(MB(16), 16U, true);
 
 #if PX_GPU_BROAD_PHASE
-	physics->scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
+	scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
 #else
-	physics->scene->collide(std::max(dt, stepSize), NULL, scratchMemBlock, MB(16));
-	physics->scene->fetchCollision(true);
-	physics->scene->advance();
+	scene->collide(std::max(dt, stepSize), NULL, scratchMemBlock, MB(16));
+	scene->fetchCollision(true);
+	scene->advance();
 #endif
 
-	physics->scene->fetchResults(true);
+	scene->fetchResults(true);
 
-	physics->scene->flushSimulation();
-	physics->scene->fetchResultsParticleSystem();
-	physics->scene->getTaskManager()->stopSimulation();
-	//physics->scene->unlockWrite();
+	scene->flushSimulation();
+	scene->fetchResultsParticleSystem();
+	scene->getTaskManager()->stopSimulation();
+	//scene->unlockWrite();
 
-	//physics->scene->lockRead();
-	PxActor** activeActors = physics->scene->getActiveActors(nbActiveActors);
+	//scene->lockRead();
+	PxActor** activeActors = scene->getActiveActors(nbActiveActors);
 
-	auto scene = &app->scene.getCurrentScene();
+	auto scene = app->getCurrentScene();
 
 	for (size_t i = 0; i < nbActiveActors; i++)
 	{
@@ -278,22 +231,22 @@ void px_physics_engine::update(float dt)
 			transform->rotation = createQuat(rot);
 		}
 	}
-	//physics->scene->unlockRead();
+	//scene->unlockRead();
 
 #if PX_ENABLE_RAYCAST_CCD
-	physics->raycastCCD->doRaycastCCD(true);
+	raycastCCD->doRaycastCCD(true);
 #endif
 
 	allocator.reset();
 	sync.unlock();
 }
 
-void px_physics_engine::resetActorsVelocityAndInertia()
+void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
 {
 	sync.lock();
-	//physics->scene->lockWrite();
+	//scene->lockWrite();
 	PxU32 nbActiveActors;
-	PxActor** activeActors = physics->scene->getActiveActors(nbActiveActors);
+	PxActor** activeActors = scene->getActiveActors(nbActiveActors);
 
 	for (size_t i = 0; i < nbActiveActors; i++)
 	{
@@ -304,16 +257,16 @@ void px_physics_engine::resetActorsVelocityAndInertia()
 		}
 	}
 
-	physics->scene->flushSimulation();
-	//physics->scene->unlockWrite();
+	scene->flushSimulation();
+	//scene->unlockWrite();
 	sync.unlock();
 }
 
-void px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene)
+void physics::px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene) noexcept
 {
 	sync.lock();
 	if(addToScene)
-		physics->scene->addActor(*ractor);
+		scene->addActor(*ractor);
 
 #if PX_ENABLE_RAYCAST_CCD
 	if (auto r = ractor->is<PxRigidDynamic>())
@@ -337,51 +290,48 @@ void px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ra
 #endif
 
 	actors.emplace(actor);
-	actors_map.insert(std::make_pair(ractor, actor));
+	actors_map.insert(::std::make_pair(ractor, actor));
 	sync.unlock();
 }
 
-void px_physics_engine::removeActor(px_rigidbody_component* actor)
+void physics::px_physics_engine::removeActor(px_rigidbody_component* actor) noexcept
 {
 	sync.lock();
 	actors.erase(actor);
 	actors_map.erase(actor->getRigidActor());
-	physics->scene->removeActor(*actor->getRigidActor());
+	scene->removeActor(*actor->getRigidActor());
 	sync.unlock();
 }
 
-px_physics_engine* px_physics_engine::get()
-{
-	return engine;
-}
-
-PxPhysics* px_physics_engine::getPhysics()
-{
-	return engine->physics->physics;
-}
-
-void px_physics_engine::releaseActors() noexcept
+void physics::px_physics_engine::releaseActors() noexcept
 {
 	sync.lock();
 	actors.clear();
 	actors_map.clear();
-	physics->scene->flushSimulation();
+	scene->flushSimulation();
 	sync.unlock();
 }
 
-px_raycast_info px_physics_engine::raycast(px_rigidbody_component* rb, const vec3& dir, int maxDist, bool hitTriggers, uint32_t layerMask, int maxHits)
+void physics::px_physics_engine::releaseScene() noexcept
+{
+	PxU32 size;
+	auto actors = scene->getActiveActors(size);
+	scene->removeActors(actors, size);
+}
+
+physics::px_raycast_info physics::px_physics_engine::raycast(px_rigidbody_component* rb, const vec3& dir, int maxDist, bool hitTriggers, uint32_t layerMask, int maxHits)
 {
 	const auto& pose = rb->getRigidActor()->getGlobalPose().p - PxVec3(0.0f, 1.5f, 0.0f);
 
 	PX_SCENE_QUERY_SETUP(true);
 	PxRaycastBuffer buffer;
 	PxVec3 d = createPxVec3(dir);
-	bool status = physics->scene->raycast(pose, d, maxDist, buffer, hitFlags, PxQueryFilterData(), &engine->physics->queryFilter);
+	bool status = scene->raycast(pose, d, maxDist, buffer, hitFlags, PxQueryFilterData(), &queryFilter);
 
 	if (status)
 	{
 		uint32 nb = buffer.getNbAnyHits();
-		std::cout << "Hits: " << nb << "\n";
+		::std::cout << "Hits: " << nb << "\n";
 		uint32 index = 0;
 		if (nb > 1)
 			index = 1;
@@ -416,7 +366,7 @@ px_raycast_info px_physics_engine::raycast(px_rigidbody_component* rb, const vec
 	return px_raycast_info();
 }
 
-void px_CCD_contact_modification::onCCDContactModify(PxContactModifyPair* const pairs, PxU32 count)
+void physics::px_CCD_contact_modification::onCCDContactModify(PxContactModifyPair* const pairs, PxU32 count)
 {
 	UNUSED(pairs);
 
@@ -427,8 +377,8 @@ void px_CCD_contact_modification::onCCDContactModify(PxContactModifyPair* const 
 		PxRigidActor* actor1 = (PxRigidActor*)cp.actor[0];
 		PxRigidActor* actor2 = (PxRigidActor*)cp.actor[1];
 
-		auto rb1 = px_physics_engine::get()->actors_map[actor1];
-		auto rb2 = px_physics_engine::get()->actors_map[actor2];
+		auto rb1 = physics::physics_holder::physicsRef->actors_map[actor1];
+		auto rb2 = physics::physics_holder::physicsRef->actors_map[actor2];
 
 		if (rb1 && rb2)
 		{
@@ -438,7 +388,7 @@ void px_CCD_contact_modification::onCCDContactModify(PxContactModifyPair* const 
 	}
 }
 
-void px_collision_contact_callback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
+void physics::px_collision_contact_callback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
 {
 	UNUSED(pairHeader);
 	
@@ -469,27 +419,26 @@ void px_collision_contact_callback::onContact(const PxContactPairHeader& pairHea
 			PxRigidActor* actor1 = r1;
 			PxRigidActor* actor2 = r2;
 
-			auto rb1 = px_physics_engine::get()->actors_map[actor1];
-			auto rb2 = px_physics_engine::get()->actors_map[actor2];
+			auto rb1 = physics::physics_holder::physicsRef->actors_map[actor1];
+			auto rb2 = physics::physics_holder::physicsRef->actors_map[actor2];
 
 			if (rb1 && rb2)
 			{
 				rb1->onCollisionEnter(rb2);
 				rb2->onCollisionEnter(rb1);
-				px_physics_engine::collisionQueue.emplace(rb1->handle, rb2->handle);
+				physics::physics_holder::physicsRef->collisionQueue.emplace(rb1->handle, rb2->handle);
 			}
 		}
 	}
 }
 
-NODISCARD PxTriangleMesh* px_triangle_mesh::createTriangleMesh(PxTriangleMeshDesc desc)
+NODISCARD physx::PxTriangleMesh* physics::px_triangle_mesh::createTriangleMesh(PxTriangleMeshDesc desc)
 {
 	try
 	{
-		auto adapter = px_physics_engine::get()->getPhysicsAdapter();
 		if (desc.triangles.count > 0 && desc.isValid())
 		{
-			auto cookingParams = PxCookingParams(px_physics_engine::get()->getPhysicsAdapter()->toleranceScale);
+			auto cookingParams = PxCookingParams(physics::physics_holder::physicsRef->getTolerancesScale());
 #if PX_GPU_BROAD_PHASE
 			cookingParams.buildGPUData = true;
 #endif
@@ -720,14 +669,13 @@ void physx::swapToHighLowVersion(const PxVehicleDriveNW& vehicle4W, PxVehicleDri
 
 #endif
 
-NODISCARD PxConvexMesh* px_convex_mesh::createConvexMesh(PxConvexMeshDesc desc)
+NODISCARD physx::PxConvexMesh* physics::px_convex_mesh::createConvexMesh(PxConvexMeshDesc desc)
 {
 	try
 	{
-		auto adapter = px_physics_engine::get()->getPhysicsAdapter();
 		if (desc.isValid())
 		{
-			auto cookingParams = PxCookingParams(px_physics_engine::get()->getPhysicsAdapter()->toleranceScale);
+			auto cookingParams = PxCookingParams(physics::physics_holder::physicsRef->getTolerancesScale());
 #if PX_GPU_BROAD_PHASE
 			cookingParams.buildGPUData = true;
 #endif
