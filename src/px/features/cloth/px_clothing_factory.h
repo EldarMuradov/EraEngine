@@ -9,7 +9,7 @@ struct px_cloth_system
 {
 	px_cloth_system(PxU32 numX, PxU32 numZ, const PxVec3& position = PxVec3(0, 0, 0), PxReal particleSpacing = 0.2f, PxReal totalClothMass = 10.f) noexcept
 	{
-		const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
+		const auto cudaCM = px_physics_engine::getPhysicsAdapter()->cudaContextManager;
 
 		numParticles = numX * numZ;
 		const PxU32 numSprings = (numX - 1) * (numZ - 1) * 4 + (numX - 1) + (numZ - 1);
@@ -34,7 +34,7 @@ struct px_cloth_system
 		particleSystem->setSolidRestOffset(restOffset);
 		particleSystem->setFluidRestOffset(0.0f);
 
-		px_physics_engine::get()->getPhysicsAdapter()->scene->addActor(*particleSystem);
+		px_physics_engine::getPhysicsAdapter()->scene->addActor(*particleSystem);
 
 		const PxU32 particlePhase = particleSystem->createPhase(material, PxParticlePhaseFlags(PxParticlePhaseFlag::eParticlePhaseSelfCollideFilter | PxParticlePhaseFlag::eParticlePhaseSelfCollide));
 
@@ -141,7 +141,7 @@ struct px_cloth_system
 
 	~px_cloth_system()
 	{
-		px_physics_engine::get()->getPhysicsAdapter()->scene->removeActor(*particleSystem);
+		px_physics_engine::getPhysicsAdapter()->scene->removeActor(*particleSystem);
 		particleSystem->removeParticleBuffer(clothBuffer);
 
 		PX_RELEASE(particleSystem)
@@ -171,7 +171,7 @@ struct px_cloth_system
 
 	void syncPositionBuffer()
 	{
-		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
+		static const auto cudaCM = px_physics_engine::getPhysicsAdapter()->cudaContextManager;
 
 		PxVec4* positions = clothBuffer->getPositionInvMasses();
 
@@ -187,7 +187,7 @@ struct px_cloth_system
 
 	void translate(const PxVec4& position) noexcept
 	{
-		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
+		static const auto cudaCM = px_physics_engine::getPhysicsAdapter()->cudaContextManager;
 		PxVec4* bufferPos = clothBuffer->getPositionInvMasses();
 		const PxU32 numParticles = clothBuffer->getNbActiveParticles();
 

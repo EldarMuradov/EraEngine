@@ -416,10 +416,7 @@ struct px_error_reporter : PxErrorCallback
 	void reportError(PxErrorCode::Enum code, const char* message, const char* file, int line) override
 	{
 		if (message)
-		{
-			LOG_ERROR("PhysX Error! Message: ");
-			LOG_ERROR(message, " Code: ", static_cast<int32>(code), " Source: ", file, " : ", line);
-		}
+			LOG_ERROR("%s %s %u %s %s %s %u", message, "Code:", static_cast<int32>(code), "Source:", file, ":", line);
 		else
 			std::cerr << "PhysX Error! \n";
 	}
@@ -539,16 +536,21 @@ public:
 	static void release();
 
 	void start();
-	void update(float dt);
+	static void update(float dt);
 
-	void resetActorsVelocityAndInertia();
+	static void resetActorsVelocityAndInertia();
 
-	void addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene);
-	void removeActor(px_rigidbody_component* actor);
+	static void addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene);
+	static void removeActor(px_rigidbody_component* actor);
 
 	static px_physics_engine* get();
 
 	static PxPhysics* getPhysics();
+
+	static void lockRead() noexcept;
+	static void unlockRead() noexcept;
+	static void lockWrite() noexcept;
+	static void unlockWrite() noexcept;
 
 	void releaseActors() noexcept;
 
@@ -556,7 +558,7 @@ public:
 
 	uint32_t nbActiveActors{};
 
-	px_physics* getPhysicsAdapter() const noexcept { return physics; }
+	static px_physics* getPhysicsAdapter() noexcept { return engine->physics; }
 
 	std::set<px_rigidbody_component*> actors;
 	std::unordered_map<PxRigidActor*, px_rigidbody_component*> actors_map;

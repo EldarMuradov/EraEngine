@@ -16,7 +16,7 @@ enum class px_force_mode : uint8
 	Impulse
 };
 
-struct px_rigidbody_component 
+struct px_rigidbody_component
 {
 	px_rigidbody_component() {};
 	px_rigidbody_component(uint32_t entt, px_rigidbody_type rbtype, bool addToScene = true) noexcept;

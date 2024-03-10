@@ -104,7 +104,7 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 	highPriorityJobQueue.createJob<updatePhysicsAndScriptingData>([](updatePhysicsAndScriptingData& data, job_handle)
 	{
 		{
-			px_physics_engine::get()->update(data.deltaTime);
+			px_physics_engine::update(data.deltaTime);
 
 			while (px_physics_engine::collisionQueue.size())
 			{

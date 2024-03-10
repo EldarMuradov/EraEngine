@@ -10,12 +10,12 @@ px_capsule_cct_component::px_capsule_cct_component(uint32_t entt) noexcept : px_
 	uint32_t* h = new uint32_t[1];
 	h[0] = handle;
 	controller->getActor()->userData = h;
-	px_physics_engine::get()->addActor(this, controller->getActor(), false);
+	px_physics_engine::addActor(this, controller->getActor(), false);
 }
 
 void px_capsule_cct_component::createCharacterController() noexcept
 {
-	manager = PxCreateControllerManager(*px_physics_engine::get()->getPhysicsAdapter()->scene);
+	manager = PxCreateControllerManager(*px_physics_engine::getPhysicsAdapter()->scene);
 
 	material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 
@@ -50,7 +50,7 @@ px_capsule_cct_component::px_capsule_cct_component(uint32_t entt, float h, float
 	uint32_t* hndl = new uint32_t[1];
 	hndl[0] = handle;
 	controller->getActor()->userData = hndl;
-	px_physics_engine::get()->addActor(this, controller->getActor(), false);
+	px_physics_engine::addActor(this, controller->getActor(), false);
 }
 
 px_cct_component_base::px_cct_component_base(uint32_t entt) noexcept
@@ -60,7 +60,7 @@ px_cct_component_base::px_cct_component_base(uint32_t entt) noexcept
 
 void px_cct_component_base::release()
 {
-	px_physics_engine::get()->removeActor(this);
+	px_physics_engine::removeActor(this);
 
 	PX_RELEASE(controller)
 	PX_RELEASE(manager)
@@ -75,7 +75,7 @@ px_box_cct_component::px_box_cct_component(uint32_t entt) noexcept : px_cct_comp
 	uint32_t* h = new uint32_t[1];
 	h[0] = handle;
 	controller->getActor()->userData = h;
-	px_physics_engine::get()->addActor(this, controller->getActor(), false);
+	px_physics_engine::addActor(this, controller->getActor(), false);
 }
 
 px_box_cct_component::px_box_cct_component(uint32_t entt, float hh, float hs, float m) noexcept : px_cct_component_base(entt)
@@ -86,12 +86,12 @@ px_box_cct_component::px_box_cct_component(uint32_t entt, float hh, float hs, fl
 	uint32_t* h = new uint32_t[1];
 	h[0] = handle;
 	controller->getActor()->userData = h;
-	px_physics_engine::get()->addActor(this, controller->getActor(), false);
+	px_physics_engine::addActor(this, controller->getActor(), false);
 }
 
 void px_box_cct_component::createCharacterController() noexcept
 {
-	manager = PxCreateControllerManager(*px_physics_engine::get()->getPhysicsAdapter()->scene);
+	manager = PxCreateControllerManager(*px_physics_engine::getPhysicsAdapter()->scene);
 
 	material = px_physics_engine::getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 	eentity entity = { handle, &px_physics_engine::get()->app->getCurrentScene()->registry };

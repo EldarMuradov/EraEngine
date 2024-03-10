@@ -10,7 +10,7 @@ struct px_particle_system
 	px_particle_system(PxU32 numX, PxU32 numY, PxU32 numZ, const PxVec3& position = PxVec3(0, 0, 0), PxU32 maxVols = 1, PxU32 maxNh = 96) noexcept
 		: maxNeighborhood(maxNh), maxParticles(numX * numY * numZ), maxVolumes(maxVols)
 	{
-		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
+		static const auto cudaCM = px_physics_engine::getPhysicsAdapter()->cudaContextManager;
 
 		particleSystem = px_physics_engine::getPhysics()->
 			createPBDParticleSystem(*cudaCM, maxNeighborhood);
@@ -41,7 +41,7 @@ struct px_particle_system
 		particleSystem->setMaxVelocity(solidRestOffset * 100.f);
 		particleSystem->enableCCD(true);
 
-		px_physics_engine::get()->getPhysicsAdapter()->scene->addActor(*particleSystem);
+		px_physics_engine::getPhysicsAdapter()->scene->addActor(*particleSystem);
 
 		PxDiffuseParticleParams dpParams;
 		dpParams.threshold = 300.0f;
@@ -122,7 +122,7 @@ struct px_particle_system
 
 	~px_particle_system()
 	{
-		px_physics_engine::get()->getPhysicsAdapter()->scene->removeActor(*particleSystem);
+		px_physics_engine::getPhysicsAdapter()->scene->removeActor(*particleSystem);
 		particleSystem->removeParticleBuffer(particleBuffer);
 		PX_RELEASE(particleSystem)
 		PX_RELEASE(material)
@@ -157,7 +157,7 @@ struct px_particle_system
 
 	void translate(const PxVec4& position) noexcept
 	{
-		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
+		static const auto cudaCM = px_physics_engine::getPhysicsAdapter()->cudaContextManager;
 		PxVec4* bufferPos = particleBuffer->getPositionInvMasses();
 		PxVec4* bufferDiffPos = particleBuffer->getDiffusePositionLifeTime();
 		const PxU32 numParticles = particleBuffer->getNbActiveParticles();
@@ -205,7 +205,7 @@ struct px_particle_system
 
 	void syncPositionBuffer()
 	{
-		static const auto cudaCM = px_physics_engine::get()->getPhysicsAdapter()->cudaContextManager;
+		static const auto cudaCM = px_physics_engine::getPhysicsAdapter()->cudaContextManager;
 
 		PxVec4* positions = particleBuffer->getPositionInvMasses();
 		PxVec4* diffusePositions = particleBuffer->getDiffusePositionLifeTime();

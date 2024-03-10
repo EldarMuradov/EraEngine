@@ -236,34 +236,34 @@ void px_physics_engine::start()
 
 void px_physics_engine::update(float dt)
 {
-	float stepSize = 1.0f / frameRate;
+	float stepSize = 1.0f / engine->frameRate;
 	sync.lock();
-	//physics->scene->lockWrite();
-	physics->scene->getTaskManager()->startSimulation();
+	//engine->physics->scene->lockWrite();
+	engine->physics->scene->getTaskManager()->startSimulation();
 
-	void* scratchMemBlock = allocator.allocate(MB(16), 16U, true);
+	void* scratchMemBlock = engine->allocator.allocate(MB(16), 16U, true);
 
 #if PX_GPU_BROAD_PHASE
-	physics->scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
+	engine->physics->scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
 #else
-	physics->scene->collide(std::max(dt, stepSize), NULL, scratchMemBlock, MB(16));
-	physics->scene->fetchCollision(true);
-	physics->scene->advance();
+	engine->physics->scene->collide(std::max(dt, stepSize), NULL, scratchMemBlock, MB(16));
+	engine->physics->scene->fetchCollision(true);
+	engine->physics->scene->advance();
 #endif
 
-	physics->scene->fetchResults(true);
+	engine->physics->scene->fetchResults(true);
 
-	physics->scene->flushSimulation();
-	physics->scene->fetchResultsParticleSystem();
-	physics->scene->getTaskManager()->stopSimulation();
-	//physics->scene->unlockWrite();
+	engine->physics->scene->flushSimulation();
+	engine->physics->scene->fetchResultsParticleSystem();
+	engine->physics->scene->getTaskManager()->stopSimulation();
+	//engine->physics->scene->unlockWrite();
 
-	//physics->scene->lockRead();
-	PxActor** activeActors = physics->scene->getActiveActors(nbActiveActors);
+	//engine->physics->scene->lockRead();
+	PxActor** activeActors = engine->physics->scene->getActiveActors(engine->nbActiveActors);
 
-	auto scene = &app->scene.getCurrentScene();
+	auto scene = &engine->app->scene.getCurrentScene();
 
-	for (size_t i = 0; i < nbActiveActors; i++)
+	for (size_t i = 0; i < engine->nbActiveActors; i++)
 	{
 		if (auto rb = activeActors[i]->is<PxRigidDynamic>())
 		{
@@ -278,13 +278,13 @@ void px_physics_engine::update(float dt)
 			transform->rotation = createQuat(rot);
 		}
 	}
-	//physics->scene->unlockRead();
+	//engine->physics->scene->unlockRead();
 
 #if PX_ENABLE_RAYCAST_CCD
-	physics->raycastCCD->doRaycastCCD(true);
+	engine->physics->raycastCCD->doRaycastCCD(true);
 #endif
 
-	allocator.reset();
+	engine->allocator.reset();
 	sync.unlock();
 }
 
@@ -293,7 +293,7 @@ void px_physics_engine::resetActorsVelocityAndInertia()
 	sync.lock();
 	//physics->scene->lockWrite();
 	PxU32 nbActiveActors;
-	PxActor** activeActors = physics->scene->getActiveActors(nbActiveActors);
+	PxActor** activeActors = engine->physics->scene->getActiveActors(nbActiveActors);
 
 	for (size_t i = 0; i < nbActiveActors; i++)
 	{
@@ -304,7 +304,7 @@ void px_physics_engine::resetActorsVelocityAndInertia()
 		}
 	}
 
-	physics->scene->flushSimulation();
+	engine->physics->scene->flushSimulation();
 	//physics->scene->unlockWrite();
 	sync.unlock();
 }
@@ -313,7 +313,7 @@ void px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ra
 {
 	sync.lock();
 	if(addToScene)
-		physics->scene->addActor(*ractor);
+		engine->physics->scene->addActor(*ractor);
 
 #if PX_ENABLE_RAYCAST_CCD
 	if (auto r = ractor->is<PxRigidDynamic>())
@@ -336,17 +336,17 @@ void px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ra
 	}
 #endif
 
-	actors.emplace(actor);
-	actors_map.insert(std::make_pair(ractor, actor));
+	engine->actors.emplace(actor);
+	engine->actors_map.insert(std::make_pair(ractor, actor));
 	sync.unlock();
 }
 
 void px_physics_engine::removeActor(px_rigidbody_component* actor)
 {
 	sync.lock();
-	actors.erase(actor);
-	actors_map.erase(actor->getRigidActor());
-	physics->scene->removeActor(*actor->getRigidActor());
+	engine->actors.erase(actor);
+	engine->actors_map.erase(actor->getRigidActor());
+	engine->physics->scene->removeActor(*actor->getRigidActor());
 	sync.unlock();
 }
 
@@ -358,6 +358,26 @@ px_physics_engine* px_physics_engine::get()
 PxPhysics* px_physics_engine::getPhysics()
 {
 	return engine->physics->physics;
+}
+
+void px_physics_engine::lockRead() noexcept
+{
+	engine->physics->scene->lockRead();
+}
+
+void px_physics_engine::unlockRead() noexcept
+{
+	engine->physics->scene->unlockRead();
+}
+
+void px_physics_engine::lockWrite() noexcept
+{
+	engine->physics->scene->lockWrite();
+}
+
+void px_physics_engine::unlockWrite() noexcept
+{
+	engine->physics->scene->unlockWrite();
 }
 
 void px_physics_engine::releaseActors() noexcept

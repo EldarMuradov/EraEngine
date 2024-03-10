@@ -55,15 +55,21 @@ NODISCARD uint8 px_rigidbody_component::getConstraints() const noexcept
 
 void px_rigidbody_component::setLinearVelocity(vec3 velocity)
 {
-	if(actor->is<PxRigidDynamic>())
+	if (actor->is<PxRigidDynamic>())
+	{
+		px_physics_engine::lockWrite();
 		actor->is<PxRigidDynamic>()->setLinearVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
+		px_physics_engine::unlockWrite();
+	}
 }
 
 NODISCARD vec3 px_rigidbody_component::getLinearVelocity() const noexcept
 {
 	if (actor->is<PxRigidDynamic>())
 	{
+		px_physics_engine::lockRead();
 		PxVec3 vel = actor->is<PxRigidDynamic>()->getLinearVelocity();
+		px_physics_engine::unlockRead();
 		return vec3(vel.x, vel.y, vel.z);
 	}
 	return vec3();
@@ -72,14 +78,20 @@ NODISCARD vec3 px_rigidbody_component::getLinearVelocity() const noexcept
 void px_rigidbody_component::setAngularVelocity(vec3 velocity)
 {
 	if (actor->is<PxRigidDynamic>())
+	{
+		px_physics_engine::lockWrite();
 		actor->is<PxRigidDynamic>()->setAngularVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
+		px_physics_engine::unlockWrite();
+	}
 }
 
 NODISCARD vec3 px_rigidbody_component::getAngularVelocity() const noexcept
 {
 	if (actor->is<PxRigidDynamic>())
 	{
+		px_physics_engine::lockRead();
 		PxVec3 vel = actor->is<PxRigidDynamic>()->getAngularVelocity();
+		px_physics_engine::unlockRead();
 		return vec3(vel.x, vel.y, vel.z);
 	}
 	return vec3();
@@ -87,23 +99,29 @@ NODISCARD vec3 px_rigidbody_component::getAngularVelocity() const noexcept
 
 NODISCARD vec3 px_rigidbody_component::getPhysicsPosition() const noexcept
 {
+	px_physics_engine::lockRead();
 	PxVec3 pos = actor->getGlobalPose().p;
+	px_physics_engine::unlockRead();
 	return vec3(pos.x, pos.y, pos.z);
 }
 
 void px_rigidbody_component::setPhysicsPositionAndRotation(vec3& pos, quat& rot)
 {
+	px_physics_engine::lockWrite();
 	setAngularVelocity(vec3(0.0f));
 	setLinearVelocity(vec3(0.0f));
 	PxQuat nq = physx::createPxQuat(rot);
 
 	actor->setGlobalPose(PxTransform(physx::createPxVec3(pos), nq.getConjugate()));
+	px_physics_engine::unlockWrite();
 }
 
 void px_rigidbody_component::setAngularDamping(float damping)
 {
+	px_physics_engine::lockWrite();
 	if(damping > 0.0f)
 		actor->is<PxRigidDynamic>()->setAngularDamping(damping);
+	px_physics_engine::unlockWrite();
 }
 
 void px_rigidbody_component::release()
@@ -134,7 +152,7 @@ void px_rigidbody_component::createPhysics(bool addToScene)
 	h[0] = (uint32_t)handle;
 	actor->userData = h;
 
-	px_physics_engine::get()->addActor(this, actor, addToScene);
+	px_physics_engine::addActor(this, actor, addToScene);
 
 #if PX_ENABLE_PVD
 	actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
