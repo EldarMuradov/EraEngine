@@ -466,7 +466,7 @@ bool deserializeSceneFromYAMLFile(editor_scene& scene, renderer_settings& render
 	YAML_LOAD(n, rendererSettings, "Rendering");
 	YAML_LOAD(n, scene.sun, "Sun");
 
-	YAML_LOAD(n, environmentName, "Environment");
+	//YAML_LOAD(n, environmentName, "Environment");
 
 	auto entitiesNode = n["Entities"];
 	for (auto entityNode : entitiesNode)

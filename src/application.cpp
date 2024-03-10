@@ -39,6 +39,7 @@
 #include <ai/navigation_component.h>
 #include <px/features/px_particles.h>
 #include "px/features/cloth/px_clothing_factory.h"
+#include <ejson_serializer.h>
 
 static raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh)
 {
@@ -304,13 +305,13 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<transform_component>(vec3(0.f, 0.0f, 0.0f), quat::identity, vec3(1.f))
 			.addComponent<px_plane_collider_component>(vec3(0.f, 0.f, 0.f));*/
 
-		particles = scene.createEntity("ParticlesPX")
-			.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
-			.addComponent<physics::px_particles_component>(10, 10, 10).handle;
+		//particles = scene.createEntity("ParticlesPX")
+		//	.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
+		//	.addComponent<physics::px_particles_component>(10, 10, 10).handle;
 
-		cloth = scene.createEntity("ClothPX")
-			.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
-			.addComponent<physics::px_cloth_component>(10, 10, vec3(0.f, 15.0f, 0.0f)).handle;
+		//cloth = scene.createEntity("ClothPX")
+		//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
+		//	.addComponent<physics::px_cloth_component>(10, 10, vec3(0.f, 15.0f, 0.0f)).handle;
 
 		physics::px_raycast_info rci = physics::physics_holder::physicsRef->raycast(&px_sphere1->getComponent<physics::px_rigidbody_component>(), vec3(0, -1, 0));
 		if (rci.actor)
@@ -645,20 +646,20 @@ void application::update(const user_input& input, float dt)
 
 #endif
 	
-		// Tests
-		{
-			eentity entityCloth{ cloth, &scene.registry };
-			entityCloth.getComponent<physics::px_cloth_component>().clothSystem->update(true, &ldrRenderPass);
+		//// Tests
+		//{
+		//	eentity entityCloth{ cloth, &scene.registry };
+		//	entityCloth.getComponent<physics::px_cloth_component>().clothSystem->update(true, &ldrRenderPass);
 
-			eentity entityParticles{ particles, &scene.registry };
-			entityParticles.getComponent<physics::px_particles_component>().particleSystem->update(true, &ldrRenderPass);
+		//	eentity entityParticles{ particles, &scene.registry };
+		//	entityParticles.getComponent<physics::px_particles_component>().particleSystem->update(true, &ldrRenderPass);
 
-			if (input.keyboard['G'].down)
-			{
-				entityCloth.getComponent<physics::px_cloth_component>().clothSystem->translate(vec3(0.f, 2.f, 0.f));
-				//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
-			}
-		}
+		//	if (input.keyboard['G'].down)
+		//	{
+		//		entityCloth.getComponent<physics::px_cloth_component>().clothSystem->translate(vec3(0.f, 2.f, 0.f));
+		//		//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
+		//	}
+		//}
 
 		submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
 	}
