@@ -222,14 +222,14 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>(this);
 
 #ifndef ERA_RUNTIME
-	/*if (auto mesh = loadMeshFromFileAsync("assets/Sponza/Sponza.obj"))
+	if (auto mesh = loadMeshFromFileAsync("assets/Sponza/sponza.obj"))
 	{
 		const auto& sponza = scene.createEntity("Sponza")
 			.addComponent<transform_component>(vec3(0.f, 1.f, 0.f), quat::identity, 0.01f)
 			.addComponent<mesh_component>(mesh);
 
 		addRaytracingComponentAsync(sponza, mesh);
-	}*/
+	}
 #endif
 
 #if 0
@@ -635,12 +635,12 @@ void application::update(const user_input& input, float dt)
 			else if (physics::px_capsule_cct_component* cct = selectedEntity.getComponentIfExists<physics::px_capsule_cct_component>())
 			{
 				dynamic_transform_component& dtc = selectedEntity.getComponent<dynamic_transform_component>();
-				renderWireCapsule(dtc.position, dtc.position + vec3(0, cct->getHeight(), 0), cct->getRadius(), vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
+				renderWireCapsule(dtc.position, dtc.position + vec3(0, cct->height, 0), cct->radius, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
 			}
 			else if (physics::px_box_cct_component* cct = selectedEntity.getComponentIfExists<physics::px_box_cct_component>())
 			{
 				dynamic_transform_component& dtc = selectedEntity.getComponent<dynamic_transform_component>();
-				renderWireBox(dtc.position, vec3(cct->getHalfSideExtent(), cct->getHalfHeight() * 2, cct->getHalfSideExtent()), dtc.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
+				renderWireBox(dtc.position, vec3(cct->halfSideExtent, cct->halfHeight * 2, cct->halfSideExtent), dtc.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
 			}
 		}
 

@@ -30,6 +30,10 @@ private:
 	eentity selectedColliderEntity;
 	eentity selectedConstraintEntity;
 
+	void forceStart();
+	void forcePause();
+	void forceStop();
+
 	void drawSettings(float dt);
 	bool drawMainMenuBar();
 	bool drawSceneHierarchy();

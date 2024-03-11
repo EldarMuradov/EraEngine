@@ -162,6 +162,10 @@ physics::px_physics_engine::~px_physics_engine()
 void physics::px_physics_engine::release() noexcept
 {
 	sync.lock();
+
+	releaseActors();
+	releaseScene();
+
 #if PX_VEHICLE
 	PxCloseVehicleSDK();
 #endif

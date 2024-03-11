@@ -158,19 +158,19 @@ struct eentity
 		}
 		else if	constexpr (std::is_same_v<component_t, physics::px_triangle_mesh_collider_component>)
 		{
-			unsigned int size = (unsigned int)getComponent<transform_component>().scale.x;
+			float size = getComponent<transform_component>().scale.x;
 
 			auto& component = registry->emplace_or_replace<component_t>(handle, size, std::forward<args>(a)...);
 		}
 		else if	constexpr (std::is_same_v<component_t, physics::px_convex_mesh_collider_component>)
 		{
-			unsigned int size = (unsigned int)getComponent<transform_component>().scale.x;
+			float size = getComponent<transform_component>().scale.x;
 
 			auto& component = registry->emplace_or_replace<component_t>(handle, size, std::forward<args>(a)...);
 		}
 		else if	constexpr (std::is_same_v<component_t, physics::px_bounding_box_collider_component>)
 		{
-			unsigned int size = (unsigned int)getComponent<transform_component>().scale.x;
+			float size = getComponent<transform_component>().scale.x;
 
 			auto& component = registry->emplace_or_replace<component_t>(handle, size, std::forward<args>(a)...);
 		}

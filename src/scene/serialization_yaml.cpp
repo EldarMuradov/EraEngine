@@ -10,6 +10,7 @@
 #include "terrain/grass.h"
 #include "terrain/water.h"
 #include "terrain/proc_placement.h"
+#include <application.h>
 
 namespace YAML
 {

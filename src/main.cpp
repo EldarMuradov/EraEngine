@@ -16,6 +16,7 @@
 #include "rendering/main_renderer.h"
 #include "audio/audio.h"
 #include "editor/asset_editor_panel.h"
+#include <fstream>
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui/imgui_internal.h>
@@ -309,7 +310,6 @@ int main(int argc, char** argv)
 
 			cpuProfilingFrameEndMarker();
 
-
 			++frameID;
 		}
 
@@ -318,10 +318,17 @@ int main(int argc, char** argv)
 		dxContext.quit();
 
 		shutdownAudio();
+
+		physics::physics_holder::physicsRef->release();
 	}
 	catch (std::exception ex)
 	{
 		std::cout << ex.what() << "\n";
+
+		std::ofstream o("logs/error_log.txt");
+		o << "Runtime Error> " << ex.what() << std::endl;
+		o.close();
+
 		std::this_thread::sleep_for(std::chrono::duration<float>(2000.f));
 		return EXIT_FAILURE;
 	}

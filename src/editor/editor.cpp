@@ -431,6 +431,7 @@ bool eeditor::drawMainMenuBar()
 
 			if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN "  Load scene", "Ctrl+O"))
 			{
+				forceStop();
 				deserializeFromFile();
 			}
 
@@ -1283,7 +1284,8 @@ bool eeditor::drawSceneHierarchy()
 							if (ImGui::BeginProperties())
 							{
 								ImGui::PropertyValue("Mass", 1.f / rb.getMass(), "%.3fkg");
-								bool dynamic = rb.getType() == physics::px_rigidbody_type::Dynamic;
+								bool dynamic = rb.type == physics::px_rigidbody_type::Dynamic;
+
 								//if (dynamic)
 								//{
 								//	vec3 lv = rb.getLinearVelocity();
@@ -1940,8 +1942,6 @@ void eeditor::onObjectMoved()
 	}
 }
 
-volatile bool paused = false;
-
 bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRenderPass, float dt)
 {
 	escene* scene = &this->scene->getCurrentScene();
@@ -2229,36 +2229,17 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 
 		if (ImGui::IconButton(imgui_icon_play, imgui_icon_play, IMGUI_ICON_DEFAULT_SIZE, this->scene->isPlayable()))
 		{
-			this->scene->play();
-			undoStacks[1].reset();
-			setSelectedEntity({});
-
-			for (auto [entityHandle, rigidbody, transform] : this->scene->getCurrentScene().group(component_group<physics::px_rigidbody_component, transform_component>).each())
-			{
-				rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
-			}
-
-			if (!paused)
-				app->linker.start();
-			else
-				paused = false;
+			forceStart();
 		}
 		ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
 		if (ImGui::IconButton(imgui_icon_pause, imgui_icon_pause, IMGUI_ICON_DEFAULT_SIZE, this->scene->isPausable()))
 		{
-			this->scene->pause();
-			paused = true;
+			forcePause();
 		}
 		ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
 		if (ImGui::IconButton(imgui_icon_stop, imgui_icon_stop, IMGUI_ICON_DEFAULT_SIZE, this->scene->isStoppable()))
 		{
-			this->scene->stop();
-			this->scene->environment.forceUpdate(this->scene->sun.direction);
-			setSelectedEntity({});
-			app->linker.reload_src();
-			physics::physics_holder::physicsRef->resetActorsVelocityAndInertia();
-			paused = false;
-			this->scene->editor_camera.setPositionAndRotation(vec3(0.0f), quat::identity);
+			forceStop();
 		}
 
 		scene = &this->scene->getCurrentScene();
@@ -2414,7 +2395,7 @@ bool eeditor::drawEntityCreationPopup()
 
 		if (ImGui::MenuItem("Empty", "E") || ImGui::IsKeyPressed('E'))
 		{
-			auto empty = scene->createEntity("Empty")
+			auto& empty = scene->createEntity("Empty")
 				.addComponent<transform_component>(camera.position + camera.rotation * vec3(0.f, 0.f, -3.f), quat::identity);
 
 			currentUndoStack->pushAction("entity creation", entity_existence_undo(*scene, empty));
@@ -2768,6 +2749,42 @@ bool eeditor::editSharpen(bool& enable, sharpen_settings& settings)
 		ImGui::EndProperties();
 	}
 	return result;
+}
+
+volatile bool paused = false;
+
+void eeditor::forceStart()
+{
+	this->scene->play();
+	undoStacks[1].reset();
+	setSelectedEntity({});
+
+	for (auto [entityHandle, rigidbody, transform] : this->scene->getCurrentScene().group(component_group<physics::px_rigidbody_component, transform_component>).each())
+	{
+		rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
+	}
+
+	if (!paused)
+		app->linker.start();
+	else
+		paused = false;
+}
+
+void eeditor::forcePause()
+{
+	this->scene->pause();
+	paused = true;
+}
+
+void eeditor::forceStop()
+{
+	this->scene->stop();
+	this->scene->environment.forceUpdate(this->scene->sun.direction);
+	setSelectedEntity({});
+	app->linker.reload_src();
+	physics::physics_holder::physicsRef->resetActorsVelocityAndInertia();
+	paused = false;
+	this->scene->editor_camera.setPositionAndRotation(vec3(0.0f), quat::identity);
 }
 
 void eeditor::drawSettings(float dt)

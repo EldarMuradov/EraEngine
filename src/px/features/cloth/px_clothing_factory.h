@@ -244,6 +244,7 @@ namespace physics
 		}
 
 		PxVec4* posBuffer = nullptr;
+		PxU32 numParticles{};
 
 	private:
 
@@ -252,8 +253,6 @@ namespace physics
 		eallocator allocator;
 
 #endif
-
-		PxU32 numParticles{};
 
 		PxPBDMaterial* material = nullptr;
 		PxPBDParticleSystem* particleSystem = nullptr;
@@ -299,3 +298,10 @@ namespace physics
 		dx_vertex_buffer_group_view prevFrameVB;
 	};
 }
+
+#include "core/reflect.h"
+
+REFLECT_STRUCT(physics::px_cloth_component,
+	(numX, "NumX"),
+	(numZ, "numZ")
+);
