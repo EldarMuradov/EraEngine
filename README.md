@@ -23,6 +23,9 @@ Integration with PhysX 5.3.1 and CUDA provides realistic simulation of game phys
 ### User Interface: 
 ImGui is integrated into the engine to create intuitive and customizable user interfaces in games. 
 
+## Audio:
+Engine provides API and tools to work with 3D Audio. You can customize all audio settings and preferences to create realistic high quality sounds. 
+
 ### Scripting: 
 Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write scripts in C# with all the benefits of .NET, including high performance and a rich class library.
 
