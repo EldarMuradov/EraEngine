@@ -111,7 +111,6 @@ private:
 	float oldVolume = -1.f;
 	float oldPitch = -1.f;
 
-
 	struct voice_callback : IXAudio2VoiceCallback
 	{
 		audio_channel* channel;

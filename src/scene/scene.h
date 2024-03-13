@@ -31,25 +31,6 @@ struct escene;
 using entity_handle = entt::entity;
 static const auto null_entity = entt::null;
 
-#include <vector>
-#include <unordered_map>
-#include <mutex>
-
-struct lock
-{
-	lock(std::mutex& mutex) : sync(&mutex)
-	{
-		sync->lock();
-	}
-
-	~lock()
-	{
-		sync->unlock();
-	}
-
-	std::mutex* sync = nullptr;
-};
-
 struct eentity_node
 {
 	eentity_node() = default;

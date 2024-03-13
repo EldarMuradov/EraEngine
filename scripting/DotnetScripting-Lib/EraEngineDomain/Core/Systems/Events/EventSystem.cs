@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Channels;
 
@@ -12,14 +13,16 @@ public struct EventRequest
     public string Name;
 }
 
-public class EventChannel<T> : IDisposable
+public sealed class EventChannel<T> : IDisposable
 {
     private readonly Channel<T> _channel = Channel.CreateUnbounded<T>();
+    public event Action<T> Subscribers = null!;
 
     public Task Completion => _channel.Reader.Completion;
 
     public bool Post(T item)
     {
+        Subscribers?.Invoke(item);
         return _channel.Writer.TryWrite(item);
     }
 
@@ -28,32 +31,35 @@ public class EventChannel<T> : IDisposable
         return _channel.Reader.ReadAllAsync(token);
     }
 
-    internal struct EventSubscription<TEventHandler> : IDisposable
-        where TEventHandler : Delegate
+    internal class EventSubscription<TEventArg> : IDisposable
     {
+        private readonly Action<TEventArg> _subscribe;
         private readonly Action _unsubscribe;
 
+        private readonly EventChannel<TEventArg> _channel;
+
         public EventSubscription(
-            TEventHandler handler,
-            Action<TEventHandler> subscribe,
-            Action<TEventHandler> unsubscribe)
+            EventChannel<TEventArg> channel,
+            Action<TEventArg> subscribe,
+            Action unsubscribe)
         {
-            subscribe(handler);
-            _unsubscribe = () => unsubscribe(handler);
+            _subscribe = subscribe;
+            _unsubscribe = unsubscribe;
+
+            _channel = channel;
+            _channel.Subscribers += _subscribe;
         }
 
         public void Dispose()
         {
+            _channel.Subscribers -= _subscribe;
             _unsubscribe();
         }
     }
 
-    public IDisposable Subscribe<TEventHandler>(
-        TEventHandler handler,
-        Action<TEventHandler> subscribe,
-        Action<TEventHandler> unsubscribe) where TEventHandler : Delegate
+    public IDisposable Subscribe(Action<T> subscribe, Action unsubscribe)
     {
-        return new EventSubscription<TEventHandler>(handler, subscribe, unsubscribe);
+        return new EventSubscription<T>(this, subscribe, unsubscribe);
     }
 
     public void Dispose()
@@ -70,9 +76,9 @@ public class EventSystem : IESystem, IEHandler<EventRequest>
         get;
     }
 
-    private Dictionary<string, EventRequest> _events = [];
+    public readonly EventChannel<EventRequest> Channel = new();
 
-    private readonly EventChannel<EventRequest> Channel = new();
+    private Dictionary<string, EventRequest> _events = [];
 
     private readonly SemaphoreSlim _sync = new(1, 1);
 

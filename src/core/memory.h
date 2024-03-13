@@ -8,7 +8,7 @@
 #define BYTE_TO_MB(b) ((b) / (1024 * 1024))
 #define BYTE_TO_GB(b) ((b) / (1024 * 1024))
 
-NODISCARD static uint32 alignTo(uint32 currentOffset, uint32 alignment)
+NODISCARD inline uint32 alignTo(uint32 currentOffset, uint32 alignment)
 {
 	uint32 mask = alignment - 1;
 	uint32 misalignment = currentOffset & mask;
@@ -16,7 +16,7 @@ NODISCARD static uint32 alignTo(uint32 currentOffset, uint32 alignment)
 	return currentOffset + adjustment;
 }
 
-NODISCARD static uint64 alignTo(uint64 currentOffset, uint64 alignment)
+NODISCARD inline uint64 alignTo(uint64 currentOffset, uint64 alignment)
 {
 	uint64 mask = alignment - 1;
 	uint64 misalignment = currentOffset & mask;
@@ -24,7 +24,7 @@ NODISCARD static uint64 alignTo(uint64 currentOffset, uint64 alignment)
 	return currentOffset + adjustment;
 }
 
-NODISCARD static void* alignTo(void* currentAddress, uint64 alignment)
+NODISCARD inline void* alignTo(void* currentAddress, uint64 alignment)
 {
 	uint64 mask = alignment - 1;
 	uint64 misalignment = (uint64)(currentAddress)&mask;
@@ -32,18 +32,14 @@ NODISCARD static void* alignTo(void* currentAddress, uint64 alignment)
 	return (uint8*)currentAddress + adjustment;
 }
 
-static bool rangesOverlap(uint64 fromA, uint64 toA, uint64 fromB, uint64 toB)
+inline bool rangesOverlap(uint64 fromA, uint64 toA, uint64 fromB, uint64 toB)
 {
-	if (toA <= fromB || fromA >= toA)
-		return false;
-	return true;
+	return !(toA <= fromB || fromA >= toA);
 }
 
-static bool rangesOverlap(void* fromA, void* toA, void* fromB, void* toB)
+inline bool rangesOverlap(void* fromA, void* toA, void* fromB, void* toB)
 {
-	if (toA <= fromB || fromA >= toB)
-		return false;
-	return true;
+	return !(toA <= fromB || fromA >= toB);
 }
 
 struct memory_marker
@@ -111,6 +107,6 @@ struct scope_temp_memory
 	eallocator& arena;
 	memory_marker marker;
 
-	scope_temp_memory(eallocator& arena) : arena(arena), marker(arena.getMarker()) {}
+	scope_temp_memory(eallocator& arena) noexcept : arena(arena), marker(arena.getMarker()) {}
 	~scope_temp_memory() { arena.resetToMarker(marker); }
 };

@@ -21,7 +21,7 @@ struct entire_file
 	}
 };
 
-NODISCARD static entire_file loadFile(const fs::path& path)
+NODISCARD inline entire_file loadFile(const fs::path& path)
 {
 	FILE* f = fopen(path.string().c_str(), "rb");
 	if (!f)
@@ -44,7 +44,7 @@ NODISCARD static entire_file loadFile(const fs::path& path)
 	return { buffer, fileSize };
 }
 
-static void freeFile(entire_file file)
+inline void freeFile(entire_file file)
 {
 	free(file.content);
 }
@@ -59,12 +59,12 @@ struct sized_string
 	template<uint32 len> sized_string(const char(&str)[len]) : str(str), length(len - 1) {}
 };
 
-static bool operator==(sized_string a, sized_string b)
+inline bool operator==(sized_string a, sized_string b)
 {
 	return a.length == b.length && strncmp(a.str, b.str, a.length) == 0;
 }
 
-NODISCARD static std::string nameToString(sized_string str)
+NODISCARD inline std::string nameToString(sized_string str)
 {
 	std::string name;
 	name.reserve(str.length);
@@ -86,7 +86,7 @@ NODISCARD static std::string nameToString(sized_string str)
 	return name;
 }
 
-NODISCARD static std::string relativeFilepath(sized_string str, const fs::path& scenePath)
+NODISCARD inline std::string relativeFilepath(sized_string str, const fs::path& scenePath)
 {
 	fs::path p = std::string(str.str, str.length);
 	fs::path abs = (p.is_absolute()) ? p : scenePath.parent_path() / p;
