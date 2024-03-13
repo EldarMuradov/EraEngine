@@ -22,15 +22,16 @@ namespace physics
 
 		void release() override;
 
+		px_cct_type type = px_cct_type::None;
+
+		float mass = 1.0f;
+
 	protected:
 		virtual void createCharacterController() noexcept {};
 
 	protected:
 		physx::PxControllerManager* manager = nullptr;
 		physx::PxController* controller = nullptr;
-
-		px_cct_type type = px_cct_type::None;
-		float mass = 1.0f;
 	};
 
 	struct px_box_cct_component : px_cct_component_base
@@ -39,15 +40,11 @@ namespace physics
 		px_box_cct_component(uint32_t entt) noexcept;
 		px_box_cct_component(uint32_t entt, float hh, float hs, float m = 1.0f) noexcept;
 
-		NODISCARD float getHalfHeight() const noexcept { return halfHeight; }
-		NODISCARD float getHalfSideExtent() const noexcept { return halfSideExtent; }
+		float halfHeight = 1.0f;
+		float halfSideExtent = 0.5f;
 
 	protected:
 		void createCharacterController() noexcept override;
-
-	private:
-		float halfHeight = 1.0f;
-		float halfSideExtent = 0.5f;
 	};
 
 	struct px_capsule_cct_component : px_cct_component_base
@@ -57,14 +54,29 @@ namespace physics
 		px_capsule_cct_component(uint32_t entt, float h, float r, float m = 1.0f) noexcept;
 		~px_capsule_cct_component() {}
 
-		NODISCARD float getHeight() const noexcept { return height; }
-		NODISCARD float getRadius() const noexcept { return radius; }
+		float height = 2.0f;
+		float radius = 0.5f;
 
 	protected:
 		void createCharacterController() noexcept override;
-
-	private:
-		float height = 2.0f;
-		float radius = 0.5f;
 	};
 }
+
+#include "core/reflect.h"
+
+REFLECT_STRUCT(physics::px_cct_component_base,
+	(type, "Type"),
+	(mass, "Mass")
+);
+
+REFLECT_STRUCT(physics::px_box_cct_component,
+	(type, "Type"),
+	(halfHeight, "HalfHeight"),
+	(halfSideExtent, "HalfSideExtent")
+);
+
+REFLECT_STRUCT(physics::px_capsule_cct_component,
+	(type, "Type"),
+	(height, "Height"),
+	(radius, "Radius")
+);

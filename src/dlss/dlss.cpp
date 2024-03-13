@@ -51,9 +51,15 @@ void dlss_feature_adapter::initialize(main_renderer* rnd)
 	if (rnd->dlssInited)
 		return;
 	renderer = rnd;
+
 	initializeDLSS();
+
 	renderer->dlssInited = true;
+#ifndef ENABLE_FSR_WRAPPER
 	LOG_MESSAGE("Graphics> DLSS 3.5 Initialized succefffuly.");
+#else
+	LOG_MESSAGE("Graphics> FSR 2.0 Initialized succefffuly.");
+#endif
 
 	tonemapSettings.A = 0.191f;
 	tonemapSettings.B = 0.082f;
@@ -123,7 +129,7 @@ void dlss_feature_adapter::updateDLSS(ID3D12GraphicsCommandList* cmdList, float 
 
 }
 
-void NGXResourceReleaseCallback(IUnknown* InResource)
+static void NGXResourceReleaseCallback(IUnknown* InResource)
 {
 	SAFE_RELEASE(InResource);
 }

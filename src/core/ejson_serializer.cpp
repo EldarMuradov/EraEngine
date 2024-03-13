@@ -25,6 +25,7 @@ void ejson_serializer::serializePrefab(eentity* entity)
 	std::string filename = eproject::path + "\\assets\\prefabs\\" + name + ".eprefab";
 	std::ofstream o(filename.c_str());
 	o << obj << std::endl;
+	o.close();
 }
 
 NODISCARD json ejson_serializer::convert2Json(eentity* entity)
@@ -72,6 +73,7 @@ NODISCARD eentity ejson_serializer::deserializePrefab(std::string_view name, esc
 	std::ifstream file(path);
 	json object;
 	file >> object;
+	file.close();
 
 	json jname = object["Name"];
 	json jid = object["Id"];
@@ -80,7 +82,7 @@ NODISCARD eentity ejson_serializer::deserializePrefab(std::string_view name, esc
 	return result;
 }
 
-void ejson_serializer::serializeScene(escene* scene, const char* name)
+const char* ejson_serializer::serializeScene(escene* scene, const char* name)
 {
 	json result;
 	int nb = 0;
@@ -88,7 +90,7 @@ void ejson_serializer::serializeScene(escene* scene, const char* name)
 	{
 		eentity entity {handle, &scene->registry};
 		json obj = convert2JsonWithNb(&entity, nb++);
-		merge(result, obj);
+		result = std::move(merge(result, obj));
 	}
 
 	json obj =
@@ -96,11 +98,14 @@ void ejson_serializer::serializeScene(escene* scene, const char* name)
 		{"Count", nb}
 	};
 
-	merge(result, obj);
+	result = std::move(merge(result, obj));
 
 	std::string filename = eproject::path + "\\assets\\scenes\\" + name + ".escene";
 	std::ofstream o(filename.c_str());
 	o << result << std::endl;
+	o.close();
+
+	return filename.c_str();
 }
 
 NODISCARD escene ejson_serializer::deserializeScene(std::string_view name)
@@ -112,11 +117,15 @@ NODISCARD escene ejson_serializer::deserializeScene(std::string_view name)
 	std::ifstream file(path);
 	json object;
 	file >> object;
+	file.close();
 
+	//entities deserialization
 	int count = object["Count"].get<int>();
-	for (int i = 0; i < count; i++)
+	for (size_t i = 0; i < count; i++)
 	{
-
+		json jname = object["Name" + std::to_string(i)];
+		json jid = object["Id" + std::to_string(i)];
+		eentity result = scene.createEntity((jname.get<std::string>()).c_str(), jid.get<entity_handle>());
 	}
 
 	return scene;

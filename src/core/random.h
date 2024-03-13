@@ -80,7 +80,7 @@ struct random_number_generator
 	}
 };
 
-NODISCARD static float halton(uint32 index, uint32 base)
+NODISCARD inline float halton(uint32 index, uint32 base)
 {
 	float fraction = 1.f;
 	float result = 0.f;
@@ -93,12 +93,12 @@ NODISCARD static float halton(uint32 index, uint32 base)
 	return result;
 }
 
-NODISCARD static vec2 halton23(uint32 index)
+NODISCARD inline vec2 halton23(uint32 index)
 {
 	return vec2(halton(index, 2), halton(index, 3));
 }
 
-NODISCARD static uint32 hash(uint32 x)
+NODISCARD inline uint32 hash(uint32 x)
 {
 	x += (x << 10u);
 	x ^= (x >> 6u);
@@ -109,16 +109,16 @@ NODISCARD static uint32 hash(uint32 x)
 }
 
 // Compound versions of the hashing algorithm I whipped together.
-NODISCARD static uint32 hash(uint32 x, uint32 y) { return hash(x ^ hash(y)); }
-NODISCARD static uint32 hash(uint32 x, uint32 y, uint32 z) { return hash(x ^ hash(y) ^ hash(z)); }
-NODISCARD static uint32 hash(uint32 x, uint32 y, uint32 z, uint32 w) { return hash(x ^ hash(y) ^ hash(z) ^ hash(w)); }
+NODISCARD inline uint32 hash(uint32 x, uint32 y) { return hash(x ^ hash(y)); }
+NODISCARD inline uint32 hash(uint32 x, uint32 y, uint32 z) { return hash(x ^ hash(y) ^ hash(z)); }
+NODISCARD inline uint32 hash(uint32 x, uint32 y, uint32 z, uint32 w) { return hash(x ^ hash(y) ^ hash(z) ^ hash(w)); }
 
 inline NODISCARD float asfloat(uint32 u) { return *(float*)&u; }
 inline NODISCARD uint32 asuint(float f) { return *(uint32*)&f; }
 
 // Construct a float with half-open range [0:1] using low 23 bits.
 // All zeroes yields 0.0, all ones yields the next smallest representable value below 1.0.
-NODISCARD static float floatConstruct(uint32 m)
+NODISCARD inline float floatConstruct(uint32 m)
 {
 	const uint32 ieeeMantissa = 0x007FFFFFu; // binary32 mantissa bitmask
 	const uint32 ieeeOne = 0x3F800000u; // 1.0 in IEEE binary32
@@ -131,15 +131,15 @@ NODISCARD static float floatConstruct(uint32 m)
 }
 
 // Pseudo-random value in half-open range [0:1].
-NODISCARD static float random1(float x) { return floatConstruct(hash(asuint(x))); }
-NODISCARD static float random1(vec2 v)  { return floatConstruct(hash(asuint(v.x), asuint(v.y))); }
-NODISCARD static float random1(vec3 v)  { return floatConstruct(hash(asuint(v.x), asuint(v.y), asuint(v.z))); }
-NODISCARD static float random1(vec4 v)  { return floatConstruct(hash(asuint(v.x), asuint(v.y), asuint(v.z), asuint(v.w))); }
+NODISCARD inline float random1(float x) { return floatConstruct(hash(asuint(x))); }
+NODISCARD inline float random1(vec2 v)  { return floatConstruct(hash(asuint(v.x), asuint(v.y))); }
+NODISCARD inline float random1(vec3 v)  { return floatConstruct(hash(asuint(v.x), asuint(v.y), asuint(v.z))); }
+NODISCARD inline float random1(vec4 v)  { return floatConstruct(hash(asuint(v.x), asuint(v.y), asuint(v.z), asuint(v.w))); }
 
-NODISCARD static vec2 random2(vec2 v) { return vec2(floatConstruct(hash(asuint(v.x * 15123.6989f))), floatConstruct(hash(asuint(v.y * 6192.234f)))); }
-NODISCARD static vec3 random3(vec3 v) { return vec3(floatConstruct(hash(asuint(v.x * 15123.6989f))), floatConstruct(hash(asuint(v.y * 6192.234f))), floatConstruct(hash(asuint(v.z * 31923.123f)))); }
+NODISCARD inline vec2 random2(vec2 v) { return vec2(floatConstruct(hash(asuint(v.x * 15123.6989f))), floatConstruct(hash(asuint(v.y * 6192.234f)))); }
+NODISCARD inline vec3 random3(vec3 v) { return vec3(floatConstruct(hash(asuint(v.x * 15123.6989f))), floatConstruct(hash(asuint(v.y * 6192.234f))), floatConstruct(hash(asuint(v.z * 31923.123f)))); }
 
-NODISCARD static vec3 valueNoise(vec2 x)
+NODISCARD inline vec3 valueNoise(vec2 x)
 {
 	vec2 p = floor(x);
 	vec2 w = frac(x);
@@ -166,7 +166,7 @@ NODISCARD static vec3 valueNoise(vec2 x)
 	return vec3(value, deriv.x, deriv.y);
 }
 
-NODISCARD static vec4 valueNoise(vec3 x)
+NODISCARD inline vec4 valueNoise(vec3 x)
 {
 	vec3 p = floor(x);
 	vec3 w = frac(x);
@@ -202,7 +202,7 @@ NODISCARD static vec4 valueNoise(vec3 x)
 	return vec4(value, deriv.x, deriv.y, deriv.z);
 }
 
-NODISCARD static vec3 gradientNoise(vec2 x)
+NODISCARD inline vec3 gradientNoise(vec2 x)
 {
 	vec2 p = floor(x);
 	vec2 w = frac(x);
@@ -243,7 +243,7 @@ NODISCARD static vec3 gradientNoise(vec2 x)
 	return vec3(v, d.x, d.y);
 }
 
-NODISCARD static vec4 gradientNoise(vec3 x)
+NODISCARD inline vec4 gradientNoise(vec3 x)
 {
 	vec3 p = floor(x);
 	vec3 w = frac(x);
@@ -304,7 +304,7 @@ NODISCARD static vec4 gradientNoise(vec3 x)
 typedef vec3(*fbm_noise_2D)(vec2);
 typedef vec4(*fbm_noise_3D)(vec3);
 
-NODISCARD static vec3 fbm(fbm_noise_2D noiseFunc, vec2 x, uint32 numOctaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
+NODISCARD inline vec3 fbm(fbm_noise_2D noiseFunc, vec2 x, uint32 numOctaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
 {
 	float value = 0.f;
 	float amplitude = 0.5f;
@@ -330,7 +330,7 @@ NODISCARD static vec3 fbm(fbm_noise_2D noiseFunc, vec2 x, uint32 numOctaves = 6,
 	return vec3(value, deriv.x, deriv.y);
 }
 
-NODISCARD static vec4 fbm(fbm_noise_3D noiseFunc, vec3 x, uint32 numOctaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
+NODISCARD inline vec4 fbm(fbm_noise_3D noiseFunc, vec3 x, uint32 numOctaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
 {
 	float value = 0.f;
 	float amplitude = 0.5;

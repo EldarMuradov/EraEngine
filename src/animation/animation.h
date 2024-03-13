@@ -186,4 +186,3 @@ struct animation_component
 	void update(const ref<struct multi_mesh>& mesh, eallocator& arena, float dt, trs* transform = 0);
 	void drawCurrentSkeleton(const ref<struct multi_mesh>& mesh, const trs& transform, struct ldr_render_pass* renderPass) const;
 };
-

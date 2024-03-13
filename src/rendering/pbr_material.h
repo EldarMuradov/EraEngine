@@ -14,7 +14,7 @@ enum pbr_material_shader
 	pbr_material_shader_count,
 };
 
-static const char* pbrMaterialShaderNames[] =
+static inline const char* pbrMaterialShaderNames[] =
 {
 	"Default",
 	"Double sided",

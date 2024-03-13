@@ -10,6 +10,7 @@
 #include "terrain/grass.h"
 #include "terrain/water.h"
 #include "terrain/proc_placement.h"
+#include <application.h>
 
 namespace YAML
 {
@@ -466,7 +467,7 @@ bool deserializeSceneFromYAMLFile(editor_scene& scene, renderer_settings& render
 	YAML_LOAD(n, rendererSettings, "Rendering");
 	YAML_LOAD(n, scene.sun, "Sun");
 
-	YAML_LOAD(n, environmentName, "Environment");
+	//YAML_LOAD(n, environmentName, "Environment");
 
 	auto entitiesNode = n["Entities"];
 	for (auto entityNode : entitiesNode)

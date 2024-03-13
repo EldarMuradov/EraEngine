@@ -306,3 +306,11 @@ namespace physics
 		px_particles_renderer_component() = default;
 	};
 }
+
+#include "core/reflect.h"
+
+REFLECT_STRUCT(physics::px_particles_component,
+	(numX, "NumX"),
+	(numY, "numY"),
+	(numZ, "numZ")
+);

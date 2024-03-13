@@ -49,12 +49,12 @@ private:
 		}
 	};
 
-	uint8* memory;
-	uint32 memorySize;
+	uint8* memory = nullptr;
+	uint32 memorySize{};
 
-	uint8* nextToWrite;
-	entry_header* oldest;
-	entry_header* newest;
+	uint8* nextToWrite = nullptr;
+	entry_header* oldest = nullptr;
+	entry_header* newest = nullptr;
 };
 
 template<typename T>

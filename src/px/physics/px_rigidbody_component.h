@@ -53,8 +53,6 @@ namespace physics
 
 		void setAngularDamping(float damping);
 
-		NODISCARD px_rigidbody_type getType() const noexcept { return type; }
-
 		virtual void release();
 
 		void onCollisionEnter(px_rigidbody_component* collision) const;
@@ -62,6 +60,7 @@ namespace physics
 		void onCollisionStay(px_rigidbody_component* collision) const;
 
 		uint32_t handle{};
+		px_rigidbody_type type = px_rigidbody_type::None;
 
 	private:
 		void createPhysics(bool addToScene);
@@ -86,7 +85,12 @@ namespace physics
 		PxRigidDynamicLockFlags posLockNative;
 
 		bool useGravity = true;
-
-		px_rigidbody_type type = px_rigidbody_type::None;
 	};
 }
+
+#include "core/reflect.h"
+
+REFLECT_STRUCT(physics::px_rigidbody_component,
+	(handle, "Handle"),
+	(type, "Type")
+);

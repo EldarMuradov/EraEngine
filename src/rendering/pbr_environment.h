@@ -10,7 +10,7 @@ enum environment_gi_mode
 	environment_gi_raytraced,
 };
 
-static const char* environmentGIModeNames[] =
+static inline const char* environmentGIModeNames[] =
 {
 	"Baked",
 	"Raytraced",
