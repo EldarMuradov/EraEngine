@@ -677,7 +677,7 @@ void application::update(const user_input& input, float dt)
 
 		for (auto [entityHandle, transform, raytrace] : scene.group(component_group<transform_component, raytrace_component>).each())
 		{
-			raytracingTLAS.instantiate(raytrace.type, transform);
+			auto handle = raytracingTLAS.instantiate(raytrace.type, transform);
 		}
 
 		renderer->setRaytracingScene(&raytracingTLAS);

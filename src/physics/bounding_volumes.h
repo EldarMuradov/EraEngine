@@ -343,21 +343,21 @@ inline NODISCARD bool sphereVsOBB(const bounding_sphere& s, const bounding_orien
 	return sphereVsAABB(s_, aabb);
 }
 
-inline NODISCARD bool capsuleVsCapsule(const bounding_capsule& a, const bounding_capsule& b)
+inline bool capsuleVsCapsule(const bounding_capsule& a, const bounding_capsule& b)
 {
 	vec3 closestPoint1, closestPoint2;
 	closestPoint_SegmentSegment(line_segment{ a.positionA, a.positionB }, line_segment{ b.positionA, b.positionB }, closestPoint1, closestPoint2);
 	return sphereVsSphere(bounding_sphere{ closestPoint1, a.radius }, bounding_sphere{ closestPoint2, b.radius });
 }
 
-inline NODISCARD bool capsuleVsCylinder(const bounding_capsule& a, const bounding_cylinder& b)
+inline bool capsuleVsCylinder(const bounding_capsule& a, const bounding_cylinder& b)
 {
 	vec3 closestPoint1, closestPoint2;
 	closestPoint_SegmentSegment(line_segment{ a.positionA, a.positionB }, line_segment{ b.positionA, b.positionB }, closestPoint1, closestPoint2);
 	return sphereVsCylinder(bounding_sphere{ closestPoint1, a.radius }, b);
 }
 
-inline NODISCARD bool aabbVsAABB(const bounding_box& a, const bounding_box& b)
+inline bool aabbVsAABB(const bounding_box& a, const bounding_box& b)
 {
 	if (a.maxCorner.x < b.minCorner.x || a.minCorner.x > b.maxCorner.x) return false;
 	if (a.maxCorner.y < b.minCorner.y || a.minCorner.y > b.maxCorner.y) return false;
@@ -370,7 +370,7 @@ inline NODISCARD bool aabbVsOBB(const bounding_box& a, const bounding_oriented_b
 	return obbVsOBB(bounding_oriented_box{ quat::identity, a.getCenter(), a.getRadius() }, o);
 }
 
-inline NODISCARD vec3 closestPoint_PointSegment(const vec3& q, const line_segment& l)
+inline vec3 closestPoint_PointSegment(const vec3& q, const line_segment& l)
 {
 	vec3 ab = l.b - l.a;
 	float t = dot(q - l.a, ab) / squaredLength(ab);
@@ -378,7 +378,7 @@ inline NODISCARD vec3 closestPoint_PointSegment(const vec3& q, const line_segmen
 	return l.a + t * ab;
 }
 
-inline NODISCARD vec3 closestPoint_PointAABB(const vec3& q, const bounding_box& aabb)
+inline vec3 closestPoint_PointAABB(const vec3& q, const bounding_box& aabb)
 {
 	vec3 result;
 	for (uint32 i = 0; i < 3; ++i)

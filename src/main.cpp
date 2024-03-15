@@ -169,7 +169,7 @@ int main(int argc, char** argv)
 				CPU_PROFILE_BLOCK("Collect user input");
 
 				ImGuiIO& io = ImGui::GetIO();
-				if (ImGui::IsItemHovered())
+				if (ImGui::IsItemHovered() && !editorPanels.meshEditor.isHovered())
 				{
 					ImVec2 relativeMouse = ImGui::GetMousePos() - ImGui::GetItemRectMin();
 					vec2 mousePos = { relativeMouse.x, relativeMouse.y };
@@ -267,7 +267,6 @@ int main(int argc, char** argv)
 			if (ImGui::IsKeyPressed(key_enter) && ImGui::IsKeyDown(key_alt))
 				window.toggleFullscreen(); // Also allowed if not focused on main window.
 
-			// Update and render
 			renderer.beginFrame(renderWidth, renderHeight);
 
 			editorPanels.meshEditor.beginFrame();
@@ -275,7 +274,7 @@ int main(int argc, char** argv)
 			app.update(input, dt);
 
 			endFrameCommon();
-			renderer.endFrame(&input, dt);
+			renderer.endFrame(&input);
 
 			editorPanels.meshEditor.endFrame();
 
