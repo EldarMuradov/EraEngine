@@ -59,7 +59,7 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 
 -Rigidbodies and colliders
 
--PBR
+-PBR Rendering 
 
 -GPU PBD Particle Systems
 
