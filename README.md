@@ -51,8 +51,6 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 
 -Real-time raytracing (DXR)
 
--TAA
-
 -DLSS 3.5
 
 -FSR 2.0
@@ -103,13 +101,13 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 
 -Mesh shaders
 
+-Mesh and Audio Editors
+
 -Scene management
 
 -Saving system
 
 -Undoable components
-
--PhysX physics
 
 -Custom physics engine
 
@@ -122,6 +120,8 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 -Path tracing
 
 -Cascaded shadow maps
+
+- GI
 
 -Point lights
 
