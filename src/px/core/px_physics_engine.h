@@ -54,35 +54,35 @@
 
 namespace physx
 {
-	static PX_FORCE_INLINE PxU32 id(PxU32 x, PxU32 y, PxU32 numY)
+	PX_FORCE_INLINE PxU32 id(PxU32 x, PxU32 y, PxU32 numY)
 	{
 		return x * numY + y;
 	}
 
-	NODISCARD static PxVec4 createPxVec4(const vec3& vec) noexcept { return PxVec4(vec.x, vec.y, vec.z, 0); }
-	NODISCARD static PxVec4 createPxVec4(const vec4& vec) noexcept { return PxVec4(vec.x, vec.y, vec.z, vec.w); }
-
-	NODISCARD static PxVec3 createPxVec3(const vec3& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
-	NODISCARD static PxVec2 createPxVec2(const vec2& vec) noexcept { return PxVec2(vec.x, vec.y); }
-	NODISCARD static PxVec3 createPxVec3(vec3&& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
-	NODISCARD static PxVec2 createPxVec2(vec2&& vec) noexcept { return PxVec2(vec.x, vec.y); }
-
-	NODISCARD static PxQuat createPxQuat(const quat& q) noexcept { return PxQuat(q.x, q.y, q.z, q.w); }
-	NODISCARD static PxQuat createPxQuat(quat&& q) noexcept { return PxQuat(q.x, q.y, q.z, q.w); }
-
-	NODISCARD static vec3 createVec3(const PxVec3& vec) noexcept { return vec3(vec.x, vec.y, vec.z); }
-	NODISCARD static vec2 createVec2(const PxVec2& vec) noexcept { return vec2(vec.x, vec.y); }
-	NODISCARD static vec3 createVec3(PxVec3&& vec) noexcept { return vec3(vec.x, vec.y, vec.z); }
-	NODISCARD static vec2 createVec2(PxVec2&& vec) noexcept { return vec2(vec.x, vec.y); }
-
-	NODISCARD static quat createQuat(const PxQuat& q) noexcept { return quat(q.x, q.y, q.z, q.w); }
-	NODISCARD static quat createQuat(PxQuat&& q) noexcept { return quat(q.x, q.y, q.z, q.w); }
-
-	NODISCARD static PxVec2 min(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::min(a.x, b.x), std::min(a.y, b.y)); }
-	NODISCARD static PxVec3 min(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z)); }
-
-	NODISCARD static PxVec2 max(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::max(a.x, b.x), std::max(a.y, b.y)); }
-	NODISCARD static PxVec3 max(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)); }
+	NODISCARD PX_FORCE_INLINE PxVec4 createPxVec4(const vec3& vec) noexcept { return PxVec4(vec.x, vec.y, vec.z, 0); }
+	NODISCARD PX_FORCE_INLINE PxVec4 createPxVec4(const vec4& vec) noexcept { return PxVec4(vec.x, vec.y, vec.z, vec.w); }
+			  
+	NODISCARD PX_FORCE_INLINE PxVec3 createPxVec3(const vec3& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
+	NODISCARD PX_FORCE_INLINE PxVec2 createPxVec2(const vec2& vec) noexcept { return PxVec2(vec.x, vec.y); }
+	NODISCARD PX_FORCE_INLINE PxVec3 createPxVec3(vec3&& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
+	NODISCARD PX_FORCE_INLINE PxVec2 createPxVec2(vec2&& vec) noexcept { return PxVec2(vec.x, vec.y); }
+			  
+	NODISCARD PX_FORCE_INLINE PxQuat createPxQuat(const quat& q) noexcept { return PxQuat(q.x, q.y, q.z, q.w); }
+	NODISCARD PX_FORCE_INLINE PxQuat createPxQuat(quat&& q) noexcept { return PxQuat(q.x, q.y, q.z, q.w); }
+			  
+	NODISCARD PX_FORCE_INLINE vec3 createVec3(const PxVec3& vec) noexcept { return vec3(vec.x, vec.y, vec.z); }
+	NODISCARD PX_FORCE_INLINE vec2 createVec2(const PxVec2& vec) noexcept { return vec2(vec.x, vec.y); }
+	NODISCARD PX_FORCE_INLINE vec3 createVec3(PxVec3&& vec) noexcept { return vec3(vec.x, vec.y, vec.z); }
+	NODISCARD PX_FORCE_INLINE vec2 createVec2(PxVec2&& vec) noexcept { return vec2(vec.x, vec.y); }
+			  
+	NODISCARD PX_FORCE_INLINE quat createQuat(const PxQuat& q) noexcept { return quat(q.x, q.y, q.z, q.w); }
+	NODISCARD PX_FORCE_INLINE quat createQuat(PxQuat&& q) noexcept { return quat(q.x, q.y, q.z, q.w); }
+			  
+	NODISCARD PX_FORCE_INLINE PxVec2 min(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::min(a.x, b.x), std::min(a.y, b.y)); }
+	NODISCARD PX_FORCE_INLINE PxVec3 min(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z)); }
+			  
+	NODISCARD PX_FORCE_INLINE PxVec2 max(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::max(a.x, b.x), std::max(a.y, b.y)); }
+	NODISCARD PX_FORCE_INLINE PxVec3 max(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)); }
 
 #if PX_VEHICLE
 
@@ -161,7 +161,7 @@ namespace physics
 {
 	using namespace physx;
 
-	static PxVec3 gravity(0.0f, -9.8f, 0.0f);
+	static inline PxVec3 gravity(0.0f, -9.8f, 0.0f);
 
 	struct px_allocator_callback : PxAllocatorCallback
 	{

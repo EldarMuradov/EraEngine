@@ -188,11 +188,61 @@ void mesh_editor_panel::edit(uint32 renderWidth, uint32 renderHeight)
 			ImGui::EndTabItem();
 		}
 
-		if (this->mesh && !this->mesh->skeleton.joints.empty() && ImGui::BeginTabItem("Animations"))
+		if (this->mesh && ImGui::BeginTabItem("Animations"))
 		{
 			if (ImGui::BeginChild("AnimationSettings"))
 			{
-				// TODO
+				animation_skeleton& skeleton = this->mesh->skeleton;
+				if (skeleton.joints.size() > 0)
+				{
+					if (ImGui::BeginTree("Skeleton"))
+					{
+						if (ImGui::BeginTree("Limbs"))
+						{
+							for (uint32 i = 0; i < limb_type_count; ++i)
+							{
+								if (i != limb_type_unknown)
+								{
+									skeleton_limb& l = skeleton.limbs[i];
+									vec3 c = limbTypeColors[i];
+									if (ImGui::BeginTreeColoredText(limbTypeNames[i], c))
+									{
+										if (ImGui::BeginProperties())
+										{
+											limb_dimensions& d = l.dimensions;
+											ImGui::PropertyDrag("Min Y", d.minY, 0.01f);
+											ImGui::PropertyDrag("Max Y", d.maxY, 0.01f);
+											ImGui::PropertyDrag("Radius", d.radius, 0.01f);
+
+											ImGui::PropertyDrag("Offset X", d.xOffset, 0.01f);
+											ImGui::PropertyDrag("Offset Z", d.zOffset, 0.01f);
+
+											ImGui::EndProperties();
+										}
+
+										ImGui::EndTree();
+									}
+								}
+							}
+
+							ImGui::EndTree();
+						}
+
+						if (ImGui::BeginTree("Joints"))
+						{
+							for (uint32 i = 0; i < (uint32)skeleton.joints.size(); ++i)
+							{
+								const skeleton_joint& j = skeleton.joints[i];
+								vec3 c = limbTypeColors[j.limbType];
+								ImGui::TextColored(ImVec4(c.x, c.y, c.z, 1.f), j.name.c_str());
+							}
+
+							ImGui::EndTree();
+						}
+
+						ImGui::EndTree();
+					}
+				}
 
 				ImGui::EndChild();
 			}

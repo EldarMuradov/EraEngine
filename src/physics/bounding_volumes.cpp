@@ -163,38 +163,38 @@ void bounding_rectangle::pad(vec2 p)
 	maxCorner += p;
 }
 
-NODISCARD vec2 bounding_rectangle::getCenter() const
+vec2 bounding_rectangle::getCenter() const
 {
 	return (minCorner + maxCorner) * 0.5f;
 }
 
-NODISCARD vec2 bounding_rectangle::getRadius() const
+vec2 bounding_rectangle::getRadius() const
 {
 	return (maxCorner - minCorner) * 0.5f;
 }
 
-NODISCARD bool bounding_rectangle::contains(vec2 p) const
+bool bounding_rectangle::contains(vec2 p) const
 {
 	return p.x >= minCorner.x && p.x <= maxCorner.x
 		&& p.y >= minCorner.y && p.y <= maxCorner.y;
 }
 
-NODISCARD bounding_rectangle bounding_rectangle::negativeInfinity()
+bounding_rectangle bounding_rectangle::negativeInfinity()
 {
 	return bounding_rectangle{ vec2(FLT_MAX, FLT_MAX), vec2(-FLT_MAX, -FLT_MAX) };
 }
 
-NODISCARD bounding_rectangle bounding_rectangle::fromMinMax(vec2 minCorner, vec2 maxCorner)
+bounding_rectangle bounding_rectangle::fromMinMax(vec2 minCorner, vec2 maxCorner)
 {
 	return bounding_rectangle{ minCorner, maxCorner };
 }
 
-NODISCARD bounding_rectangle bounding_rectangle::fromCenterRadius(vec2 center, vec2 radius)
+bounding_rectangle bounding_rectangle::fromCenterRadius(vec2 center, vec2 radius)
 {
 	return bounding_rectangle{ center - radius, center + radius };
 }
 
-NODISCARD bool ray::intersectPlane(vec3 normal, float d, float& outT) const
+bool ray::intersectPlane(vec3 normal, float d, float& outT) const
 {
 	float ndotd = dot(direction, normal);
 	if (abs(ndotd) < 1e-6f)
@@ -206,13 +206,13 @@ NODISCARD bool ray::intersectPlane(vec3 normal, float d, float& outT) const
 	return true;
 }
 
-NODISCARD bool ray::intersectPlane(vec3 normal, vec3 point, float& outT) const
+bool ray::intersectPlane(vec3 normal, vec3 point, float& outT) const
 {
 	float d = -dot(normal, point);
 	return intersectPlane(normal, d, outT);
 }
 
-NODISCARD bool ray::intersectAABB(const bounding_box& a, float& outT) const
+bool ray::intersectAABB(const bounding_box& a, float& outT) const
 {
 	vec3 invDir = vec3(1.f / direction.x, 1.f / direction.y, 1.f / direction.z); // This can be Inf (when one direction component is 0) but still works.
 
@@ -239,14 +239,14 @@ NODISCARD bool ray::intersectAABB(const bounding_box& a, float& outT) const
 	return result;
 }
 
-NODISCARD bool ray::intersectOBB(const bounding_oriented_box& a, float& outT) const
+bool ray::intersectOBB(const bounding_oriented_box& a, float& outT) const
 {
 	//return (conjugate(m.rotation) * (pos - m.position)) / m.scale;
 	ray localR = { conjugate(a.rotation) * (origin - a.center), conjugate(a.rotation) * direction };
 	return localR.intersectAABB(bounding_box::fromCenterRadius(0.f, a.radius), outT);
 }
 
-NODISCARD bool ray::intersectTriangle(vec3 a, vec3 b, vec3 c, float& outT, bool& outFrontFacing) const
+bool ray::intersectTriangle(vec3 a, vec3 b, vec3 c, float& outT, bool& outFrontFacing) const
 {
 	vec3 normal = noz(cross(b - a, c - a));
 	float d = -dot(normal, a);
@@ -262,7 +262,7 @@ NODISCARD bool ray::intersectTriangle(vec3 a, vec3 b, vec3 c, float& outT, bool&
 	return outT >= 0.f && pointInTriangle(q, a, b, c);
 }
 
-NODISCARD bool ray::intersectSphere(vec3 center, float radius, float& outT) const
+bool ray::intersectSphere(vec3 center, float radius, float& outT) const
 {
 	vec3 m = origin - center;
 	float b = dot(m, direction);
@@ -284,7 +284,7 @@ NODISCARD bool ray::intersectSphere(vec3 center, float radius, float& outT) cons
 	return true;
 }
 
-NODISCARD bool ray::intersectCylinder(const bounding_cylinder& cylinder, float& outT) const
+bool ray::intersectCylinder(const bounding_cylinder& cylinder, float& outT) const
 {
 	vec3 d = direction;
 	vec3 o = origin;
@@ -343,7 +343,7 @@ NODISCARD bool ray::intersectCylinder(const bounding_cylinder& cylinder, float& 
 	return y > -epsilon && y < height + epsilon;
 }
 
-NODISCARD bool ray::intersectCapsule(const bounding_capsule& capsule, float& outT) const
+bool ray::intersectCapsule(const bounding_capsule& capsule, float& outT) const
 {
 	outT = FLT_MAX;
 	float t;
@@ -366,7 +366,7 @@ NODISCARD bool ray::intersectCapsule(const bounding_capsule& capsule, float& out
 	return result;
 }
 
-NODISCARD bool ray::intersectDisk(vec3 pos, vec3 normal, float radius, float& outT) const
+bool ray::intersectDisk(vec3 pos, vec3 normal, float radius, float& outT) const
 {
 	bool intersectsPlane = intersectPlane(normal, pos, outT);
 	if (intersectsPlane)
@@ -374,7 +374,7 @@ NODISCARD bool ray::intersectDisk(vec3 pos, vec3 normal, float radius, float& ou
 	return false;
 }
 
-NODISCARD bool ray::intersectRectangle(vec3 pos, vec3 tangent, vec3 bitangent, vec2 radius, float& outT) const
+bool ray::intersectRectangle(vec3 pos, vec3 tangent, vec3 bitangent, vec2 radius, float& outT) const
 {
 	vec3 normal = cross(tangent, bitangent);
 	bool intersectsPlane = intersectPlane(normal, pos, outT);
@@ -1395,12 +1395,12 @@ static bounding_hull_geometry hullFromMesh(vec3* vertices, uint32 numVertices, t
 	return hull;
 }
 
-NODISCARD bounding_hull_geometry bounding_hull_geometry::fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle16* triangles, uint32 numTriangles)
+bounding_hull_geometry bounding_hull_geometry::fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle16* triangles, uint32 numTriangles)
 {
 	return hullFromMesh(vertices, numVertices, triangles, numTriangles);
 }
 
-NODISCARD bounding_hull_geometry bounding_hull_geometry::fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle32* triangles, uint32 numTriangles)
+bounding_hull_geometry bounding_hull_geometry::fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle32* triangles, uint32 numTriangles)
 {
 	return hullFromMesh(vertices, numVertices, triangles, numTriangles);
 }

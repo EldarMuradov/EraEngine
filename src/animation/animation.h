@@ -5,6 +5,7 @@
 #include "core/memory.h"
 #include "dx/dx_buffer.h"
 #include <unordered_map>
+#include <ai/state_machine.h>
 
 #define INVALID_JOINT 0xFFFFFFFF
 
@@ -109,8 +110,20 @@ struct skeleton_limb
 	limb_dimensions dimensions;
 };
 
+struct animation_state
+{
+	animation_clip* clip = nullptr;
+};
+
+struct animation_controller
+{
+	state_machine<animation_state> stateMachine;
+};
+
 struct animation_skeleton
 {
+	animation_controller controller;
+
 	std::vector<skeleton_joint> joints;
 	std::unordered_map<std::string, uint32> nameToJointID;
 
