@@ -1,0 +1,13 @@
+{
+  "registrations": [
+    {
+      "system": "EraEngine.BackgroundServiceSystem"
+    },
+    {
+      "system": "EraEngine.EventSystem"
+    },
+    {
+      "system": "EraEngine.InputSystem"
+    }
+  ]
+}

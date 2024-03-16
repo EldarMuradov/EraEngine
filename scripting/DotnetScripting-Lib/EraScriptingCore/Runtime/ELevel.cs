@@ -101,27 +101,6 @@ public static class ELevel
         }
     }
 
-    public static void RegisterCommonSystems()
-    {
-        ESystemManager.RegisterSystem<BackgroundServiceSystem>();
-        ESystemManager.RegisterSystem<InputSystem>();
-        ESystemManager.RegisterSystem<EventSystem>();
-    }
-
-    public static void RegisterSystemsWithReflection()
-    {
-        static bool IsSystemType(Type type) => type.GetInterface("IESystem") is not null && type.IsClass;
-
-        var assembly = Assembly.GetAssembly(typeof(EEntity));
-        var types = assembly.GetTypes().Where(IsSystemType).ToImmutableList();
-
-        foreach (var type in types)
-        {
-            ESystemManager.RegisterSystem((IESystem)Activator.CreateInstance(type)!);
-            Console.WriteLine(type.Name);
-        }
-    }
-
     private static void UpdateSystems(float dt)
     {
         var systems = ESystemManager.GetSystemsQueue();

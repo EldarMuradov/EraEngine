@@ -46,9 +46,16 @@ public class ScriptingCore
     [UnmanagedCaller]
     public static void InitializeScripting()
     {
-        Debug.Log("Loading user dll");
-        UserScriptingObj.LoadDll();
-        ELevel.RegisterSystemsWithReflection();
+        try
+        {
+            Debug.Log("Loading user dll");
+            UserScriptingObj.LoadDll();
+            DependencyResolver.RegisterSystemsWithReflection();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
     }
 
     [UnmanagedCaller]
@@ -65,7 +72,7 @@ public class ScriptingCore
             Console.WriteLine("Reloading user dll");
             ESystemManager.ReleaseSystems();
             UserScriptingObj.ReloadScripting();
-            ELevel.RegisterSystemsWithReflection();
+            DependencyResolver.RegisterSystemsWithReflection();
         }
         catch (Exception ex)
         {
