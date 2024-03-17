@@ -219,39 +219,39 @@ struct cone_twist_constraint_handle { entity_handle entity; };
 struct slider_constraint_handle { entity_handle entity; };
 
 // Local anchors are always in the space of the entities.
-NODISCARD distance_constraint_handle addDistanceConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB, float distance);
-NODISCARD distance_constraint_handle addDistanceConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchorA, vec3 globalAnchorB); // Calculates distance from current configuration.
+distance_constraint_handle addDistanceConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB, float distance);
+distance_constraint_handle addDistanceConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchorA, vec3 globalAnchorB); // Calculates distance from current configuration.
 
-NODISCARD ball_constraint_handle addBallConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB);
-NODISCARD ball_constraint_handle addBallConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
+ball_constraint_handle addBallConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB);
+ball_constraint_handle addBallConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
 
-NODISCARD fixed_constraint_handle addFixedConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
+fixed_constraint_handle addFixedConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
 
 // The min limit is in the range [-pi, 0], the max limit in the range [0, pi]. 
 // If the specified values are not in this range, the limits are disabled.
 // Limits are specified as allowed deviations from the initial relative rotation.
 // Usually the absolute of each limit should be a lot smaller than pi.
-NODISCARD hinge_constraint_handle addHingeConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalHingeAxis,
+hinge_constraint_handle addHingeConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalHingeAxis,
 	float minLimit = 1.f, float maxLimit = -1.f);
 
-NODISCARD cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis,
+cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis,
 	float swingLimit, float twistLimit);
 
-NODISCARD slider_constraint_handle addSliderConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, float minLimit = 1.f, float maxLimit = -1.f);
+slider_constraint_handle addSliderConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, float minLimit = 1.f, float maxLimit = -1.f);
 
-NODISCARD distance_constraint_handle addConstraint(eentity& a, eentity& b, const distance_constraint& c);
-NODISCARD ball_constraint_handle addConstraint(eentity& a, eentity& b, const ball_constraint& c);
-NODISCARD fixed_constraint_handle addConstraint(eentity& a, eentity& b, const fixed_constraint& c);
-NODISCARD hinge_constraint_handle addConstraint(eentity& a, eentity& b, const hinge_constraint& c);
-NODISCARD cone_twist_constraint_handle addConstraint(eentity& a, eentity& b, const cone_twist_constraint& c);
-NODISCARD slider_constraint_handle addConstraint(eentity& a, eentity& b, const slider_constraint& c);
+distance_constraint_handle addConstraint(eentity& a, eentity& b, const distance_constraint& c);
+ball_constraint_handle addConstraint(eentity& a, eentity& b, const ball_constraint& c);
+fixed_constraint_handle addConstraint(eentity& a, eentity& b, const fixed_constraint& c);
+hinge_constraint_handle addConstraint(eentity& a, eentity& b, const hinge_constraint& c);
+cone_twist_constraint_handle addConstraint(eentity& a, eentity& b, const cone_twist_constraint& c);
+slider_constraint_handle addConstraint(eentity& a, eentity& b, const slider_constraint& c);
 
-NODISCARD distance_constraint& getConstraint(escene& scene, distance_constraint_handle handle);
-NODISCARD ball_constraint& getConstraint(escene& scene, ball_constraint_handle handle);
-NODISCARD fixed_constraint& getConstraint(escene& scene, fixed_constraint_handle handle);
-NODISCARD hinge_constraint& getConstraint(escene& scene, hinge_constraint_handle handle);
-NODISCARD cone_twist_constraint& getConstraint(escene& scene, cone_twist_constraint_handle handle);
-NODISCARD slider_constraint& getConstraint(escene& scene, slider_constraint_handle handle);
+distance_constraint& getConstraint(escene& scene, distance_constraint_handle handle);
+ball_constraint& getConstraint(escene& scene, ball_constraint_handle handle);
+fixed_constraint& getConstraint(escene& scene, fixed_constraint_handle handle);
+hinge_constraint& getConstraint(escene& scene, hinge_constraint_handle handle);
+cone_twist_constraint& getConstraint(escene& scene, cone_twist_constraint_handle handle);
+slider_constraint& getConstraint(escene& scene, slider_constraint_handle handle);
 
 void deleteAllConstraints(escene& scene);
 
@@ -264,7 +264,7 @@ void deleteConstraint(escene& scene, slider_constraint_handle handle);
 
 void deleteAllConstraintsFromEntity(eentity& entity);
 
-NODISCARD static eentity getOtherEntity(const constraint_entity_reference_component& constraint, eentity first)
+NODISCARD inline eentity getOtherEntity(const constraint_entity_reference_component& constraint, eentity first)
 {
 	entity_handle result = (first == constraint.entityA) ? constraint.entityB : constraint.entityA;
 	return { result, first.registry };

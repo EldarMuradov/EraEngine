@@ -68,7 +68,7 @@ struct eallocator
 
 	void ensureFreeSize(uint64 size);
 
-	NODISCARD void* allocate(uint64 size, uint64 alignment = 1, bool clearToZero = false);
+	void* allocate(uint64 size, uint64 alignment = 1, bool clearToZero = false);
 
 	template <typename T>
 	NODISCARD T* allocate(uint32 count = 1, bool clearToZero = false)
