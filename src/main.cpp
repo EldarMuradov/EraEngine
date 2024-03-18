@@ -16,6 +16,7 @@
 #include "rendering/main_renderer.h"
 #include "audio/audio.h"
 #include "editor/asset_editor_panel.h"
+#include <fstream>
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui/imgui_internal.h>
@@ -168,7 +169,7 @@ int main(int argc, char** argv)
 				CPU_PROFILE_BLOCK("Collect user input");
 
 				ImGuiIO& io = ImGui::GetIO();
-				if (ImGui::IsItemHovered())
+				if (ImGui::IsItemHovered() && !editorPanels.meshEditor.isHovered())
 				{
 					ImVec2 relativeMouse = ImGui::GetMousePos() - ImGui::GetItemRectMin();
 					vec2 mousePos = { relativeMouse.x, relativeMouse.y };
@@ -266,7 +267,6 @@ int main(int argc, char** argv)
 			if (ImGui::IsKeyPressed(key_enter) && ImGui::IsKeyDown(key_alt))
 				window.toggleFullscreen(); // Also allowed if not focused on main window.
 
-			// Update and render
 			renderer.beginFrame(renderWidth, renderHeight);
 
 			editorPanels.meshEditor.beginFrame();
@@ -274,7 +274,7 @@ int main(int argc, char** argv)
 			app.update(input, dt);
 
 			endFrameCommon();
-			renderer.endFrame(&input, dt);
+			renderer.endFrame(&input);
 
 			editorPanels.meshEditor.endFrame();
 
@@ -309,7 +309,6 @@ int main(int argc, char** argv)
 
 			cpuProfilingFrameEndMarker();
 
-
 			++frameID;
 		}
 
@@ -318,10 +317,17 @@ int main(int argc, char** argv)
 		dxContext.quit();
 
 		shutdownAudio();
+
+		physics::physics_holder::physicsRef->release();
 	}
 	catch (std::exception ex)
 	{
 		std::cout << ex.what() << "\n";
+
+		std::ofstream o("logs/error_log.txt");
+		o << "Runtime Error> " << ex.what() << std::endl;
+		o.close();
+
 		std::this_thread::sleep_for(std::chrono::duration<float>(2000.f));
 		return EXIT_FAILURE;
 	}

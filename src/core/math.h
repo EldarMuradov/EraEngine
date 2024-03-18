@@ -21,26 +21,26 @@
 #define deg2rad(deg) ((deg) * M_PI_OVER_180)
 #define rad2deg(rad) ((rad) * M_180_OVER_PI)
 
-static constexpr float lerp(float l, float u, float t) { return l + t * (u - l); }
-static constexpr float inverseLerp(float l, float u, float v) { return (v - l) / (u - l); }
-static constexpr float remap(float v, float oldL, float oldU, float newL, float newU) { return lerp(newL, newU, inverseLerp(oldL, oldU, v)); }
-static constexpr float clamp(float v, float l, float u) { float r = max(l, v); r = min(u, r); return r; }
-static constexpr uint32 clamp(uint32 v, uint32 l, uint32 u) { uint32 r = max(l, v); r = min(u, r); return r; }
-static constexpr int32 clamp(int32 v, int32 l, int32 u) { int32 r = max(l, v); r = min(u, r); return r; }
-static constexpr float clamp01(float v) { return clamp(v, 0.f, 1.f); }
-static constexpr float saturate(float v) { return clamp01(v); }
-static constexpr float smoothstep(float t) { return t * t * (3.f - 2.f * t); }
-static constexpr float smoothstep(float l, float u, float v) { return smoothstep(clamp01(inverseLerp(l, u, v))); }
-static constexpr uint32 bucketize(uint32 problemSize, uint32 bucketSize) { return (problemSize + bucketSize - 1) / bucketSize; }
-static constexpr uint64 bucketize(uint64 problemSize, uint64 bucketSize) { return (problemSize + bucketSize - 1) / bucketSize; }
+inline constexpr float lerp(float l, float u, float t) { return l + t * (u - l); }
+inline constexpr float inverseLerp(float l, float u, float v) { return (v - l) / (u - l); }
+inline constexpr float remap(float v, float oldL, float oldU, float newL, float newU) { return lerp(newL, newU, inverseLerp(oldL, oldU, v)); }
+inline constexpr float clamp(float v, float l, float u) { float r = max(l, v); r = min(u, r); return r; }
+inline constexpr uint32 clamp(uint32 v, uint32 l, uint32 u) { uint32 r = max(l, v); r = min(u, r); return r; }
+inline constexpr int32 clamp(int32 v, int32 l, int32 u) { int32 r = max(l, v); r = min(u, r); return r; }
+inline constexpr float clamp01(float v) { return clamp(v, 0.f, 1.f); }
+inline constexpr float saturate(float v) { return clamp01(v); }
+inline constexpr float smoothstep(float t) { return t * t * (3.f - 2.f * t); }
+inline constexpr float smoothstep(float l, float u, float v) { return smoothstep(clamp01(inverseLerp(l, u, v))); }
+inline constexpr uint32 bucketize(uint32 problemSize, uint32 bucketSize) { return (problemSize + bucketSize - 1) / bucketSize; }
+inline constexpr uint64 bucketize(uint64 problemSize, uint64 bucketSize) { return (problemSize + bucketSize - 1) / bucketSize; }
 
-static float frac(float v) { return fmodf(v, 1.f); }
-static void copySign(float from, float& to) { to = copysign(to, from); }
+inline float frac(float v) { return fmodf(v, 1.f); }
+inline void copySign(float from, float& to) { to = copysign(to, from); }
 
-static void flushDenormalsToZero() { _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON); }
+inline void flushDenormalsToZero() { _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON); }
 
 // Constexpr-version of _BitScanForward. Returns -1 if mask is zero.
-static constexpr uint32 indexOfLeastSignificantSetBit(uint32 i)
+inline constexpr uint32 indexOfLeastSignificantSetBit(uint32 i)
 {
 	if (i == 0)
 	{
@@ -58,7 +58,7 @@ static constexpr uint32 indexOfLeastSignificantSetBit(uint32 i)
 }
 
 // Constexpr-version of _BitScanReverse. Returns -1 if mask is zero.
-static constexpr uint32 indexOfMostSignificantSetBit(uint32 i)
+inline constexpr uint32 indexOfMostSignificantSetBit(uint32 i)
 {
 	if (i == 0)
 	{
@@ -75,7 +75,7 @@ static constexpr uint32 indexOfMostSignificantSetBit(uint32 i)
 	return count;
 }
 
-static constexpr int32 log2(int32 i)
+inline constexpr int32 log2(int32 i)
 {
 	ASSERT(i >= 0);
 
@@ -92,7 +92,7 @@ static constexpr int32 log2(int32 i)
 	return (int32)mssb + (mssb == lssb ? 0 : 1);
 }
 
-static constexpr uint32 log2(uint32 i) 
+inline constexpr uint32 log2(uint32 i)
 { 
 	uint32 mssb = indexOfMostSignificantSetBit(i);
 	uint32 lssb = indexOfLeastSignificantSetBit(i);
@@ -107,51 +107,51 @@ static constexpr uint32 log2(uint32 i)
 	return mssb + (mssb == lssb ? 0 : 1);
 }
 
-static constexpr bool isPowerOfTwo(uint32 i)
+inline constexpr bool isPowerOfTwo(uint32 i)
 {
 	return (i & (i - 1)) == 0;
 }
 
-static constexpr uint32 alignToPowerOfTwo(uint32 i)
+inline constexpr uint32 alignToPowerOfTwo(uint32 i)
 {
 	return i == 0u ? 0u : 1u << log2(i);
 }
 
-static float easeInQuadratic(float t)		{ return t * t; }
-static float easeOutQuadratic(float t)		{ return t * (2.f - t); }
-static float easeInOutQuadratic(float t)	{ return (t < 0.5f) ? (2.f * t * t) : (-1.f + (4.f - 2.f * t) * t); }
+inline float easeInQuadratic(float t)		{ return t * t; }
+inline float easeOutQuadratic(float t)		{ return t * (2.f - t); }
+inline float easeInOutQuadratic(float t)	{ return (t < 0.5f) ? (2.f * t * t) : (-1.f + (4.f - 2.f * t) * t); }
 
-static float easeInCubic(float t)			{ return t * t * t; }
-static float easeOutCubic(float t)			{ float tmin1 = t - 1.f; return tmin1 * tmin1 * tmin1 + 1.f; }
-static float easeInOutCubic(float t)		{ return (t < 0.5f) ? (4.f * t * t * t) : ((t - 1.f) * (2.f * t - 2.f) * (2.f * t - 2.f) + 1.f); }
+inline float easeInCubic(float t)			{ return t * t * t; }
+inline float easeOutCubic(float t)			{ float tmin1 = t - 1.f; return tmin1 * tmin1 * tmin1 + 1.f; }
+inline float easeInOutCubic(float t)		{ return (t < 0.5f) ? (4.f * t * t * t) : ((t - 1.f) * (2.f * t - 2.f) * (2.f * t - 2.f) + 1.f); }
 
-static float easeInQuartic(float t)			{ return t * t * t * t; }
-static float easeOutQuartic(float t)		{ float tmin1 = t - 1.f; return 1.f - tmin1 * tmin1 * tmin1 * tmin1; }
-static float easeInOutQuartic(float t)		{ float tmin1 = t - 1.f; return (t < 0.5f) ? (8.f * t * t * t * t) : (1.f - 8.f * tmin1 * tmin1 * tmin1 * tmin1); }
+inline float easeInQuartic(float t)			{ return t * t * t * t; }
+inline float easeOutQuartic(float t)		{ float tmin1 = t - 1.f; return 1.f - tmin1 * tmin1 * tmin1 * tmin1; }
+inline float easeInOutQuartic(float t)		{ float tmin1 = t - 1.f; return (t < 0.5f) ? (8.f * t * t * t * t) : (1.f - 8.f * tmin1 * tmin1 * tmin1 * tmin1); }
 
-static float easeInQuintic(float t)			{ return t * t * t * t * t; }
-static float easeOutQuintic(float t)		{ float tmin1 = t - 1.f; return 1.f + tmin1 * tmin1 * tmin1 * tmin1 * tmin1; }
-static float easeInOutQuintic(float t)		{ float tmin1 = t - 1.f; return t < 0.5 ? 16.f * t * t * t * t * t : 1.f + 16.f * tmin1 * tmin1 * tmin1 * tmin1 * tmin1; }
+inline float easeInQuintic(float t)			{ return t * t * t * t * t; }
+inline float easeOutQuintic(float t)		{ float tmin1 = t - 1.f; return 1.f + tmin1 * tmin1 * tmin1 * tmin1 * tmin1; }
+inline float easeInOutQuintic(float t)		{ float tmin1 = t - 1.f; return t < 0.5 ? 16.f * t * t * t * t * t : 1.f + 16.f * tmin1 * tmin1 * tmin1 * tmin1 * tmin1; }
 
-static float easeInSine(float t)			{ return sin((t - 1.f) * M_PI_OVER_2) + 1.f; }
-static float easeOutSine(float t)			{ return sin(t * M_PI_OVER_2); }
-static float easeInOutSine(float t)			{ return 0.5f * (1 - cos(t * M_PI)); }
+inline float easeInSine(float t)			{ return sin((t - 1.f) * M_PI_OVER_2) + 1.f; }
+inline float easeOutSine(float t)			{ return sin(t * M_PI_OVER_2); }
+inline float easeInOutSine(float t)			{ return 0.5f * (1 - cos(t * M_PI)); }
 
-static float easeInCircular(float t)		{ return 1.f - sqrt(1.f - (t * t)); }
-static float easeOutCircular(float t)		{ return sqrt((2.f - t) * t); }
-static float easeInOutCircular(float t)		{ return (t < 0.5f) ? (0.5f * (1.f - sqrt(1.f - 4.f * (t * t)))) : (0.5f * (sqrt(-((2.f * t) - 3.f) * ((2.f * t) - 1.f)) + 1.f)); }
+inline float easeInCircular(float t)		{ return 1.f - sqrt(1.f - (t * t)); }
+inline float easeOutCircular(float t)		{ return sqrt((2.f - t) * t); }
+inline float easeInOutCircular(float t)		{ return (t < 0.5f) ? (0.5f * (1.f - sqrt(1.f - 4.f * (t * t)))) : (0.5f * (sqrt(-((2.f * t) - 3.f) * ((2.f * t) - 1.f)) + 1.f)); }
 
-static float easeInExponential(float t)		{ return (t == 0.f) ? t : powf(2.f, 10.f * (t - 1.f)); }
-static float easeOutExponential(float t)	{ return (t == 1.f) ? t : 1.f - powf(2.f, -10.f * t); }
-static float easeInOutExponential(float t)	{ if (t == 0.f || t == 1.f) { return t; } return (t < 0.5f) ? (0.5f * powf(2.f, (20.f * t) - 10.f)) : (-0.5f * powf(2.f, (-20.f * t) + 10.f) + 1.f); }
+inline float easeInExponential(float t)		{ return (t == 0.f) ? t : powf(2.f, 10.f * (t - 1.f)); }
+inline float easeOutExponential(float t)	{ return (t == 1.f) ? t : 1.f - powf(2.f, -10.f * t); }
+inline float easeInOutExponential(float t)	{ if (t == 0.f || t == 1.f) { return t; } return (t < 0.5f) ? (0.5f * powf(2.f, (20.f * t) - 10.f)) : (-0.5f * powf(2.f, (-20.f * t) + 10.f) + 1.f); }
 
-static float inElastic(float t)				{ return sin(13.f * M_PI_OVER_2 * t) * powf(2.f, 10.f * (t - 1.f)); }
-static float outElastic(float t)			{ return sin(-13.f * M_PI_OVER_2 * (t + 1.f)) * powf(2.f, -10.f * t) + 1.f; }
-static float inOutElastic(float t)			{ return (t < 0.5f) ? (0.5f * sin(13.f * M_PI_OVER_2 * (2.f * t)) * powf(2.f, 10.f * ((2.f * t) - 1.f))) : (0.5f * (sin(-13.f * M_PI_OVER_2 * ((2.f * t - 1.f) + 1.f)) * powf(2.f, -10.f * (2.f * t - 1.f)) + 2.f)); }
+inline float inElastic(float t)				{ return sin(13.f * M_PI_OVER_2 * t) * powf(2.f, 10.f * (t - 1.f)); }
+inline float outElastic(float t)			{ return sin(-13.f * M_PI_OVER_2 * (t + 1.f)) * powf(2.f, -10.f * t) + 1.f; }
+inline float inOutElastic(float t)			{ return (t < 0.5f) ? (0.5f * sin(13.f * M_PI_OVER_2 * (2.f * t)) * powf(2.f, 10.f * ((2.f * t) - 1.f))) : (0.5f * (sin(-13.f * M_PI_OVER_2 * ((2.f * t - 1.f) + 1.f)) * powf(2.f, -10.f * (2.f * t - 1.f)) + 2.f)); }
 
-static float inBack(float t)				{ const float s = 1.70158f; return t * t * ((s + 1.f) * t - s); }
-static float outBack(float t)				{ const float s = 1.70158f; return --t, 1.f * (t * t * ((s + 1.f) * t + s) + 1.f); }
-static float inOutBack(float t)				{ const float s = 1.70158f * 1.525f; return (t < 0.5f) ? (t *= 2.f, 0.5f * t * t * (t * s + t - s)) : (t = t * 2.f - 2.f, 0.5f * (2.f + t * t * (t * s + t + s))); }
+inline float inBack(float t)				{ const float s = 1.70158f; return t * t * ((s + 1.f) * t - s); }
+inline float outBack(float t)				{ const float s = 1.70158f; return --t, 1.f * (t * t * ((s + 1.f) * t + s) + 1.f); }
+inline float inOutBack(float t)				{ const float s = 1.70158f * 1.525f; return (t < 0.5f) ? (t *= 2.f, 0.5f * t * t * (t * s + t - s)) : (t = t * 2.f - 2.f, 0.5f * (2.f + t * t * (t * s + t + s))); }
 
 #define bounceout(p) ( \
     (t) < 4.f/11.f ? (121.f * (t) * (t))/16.f : \
@@ -159,13 +159,13 @@ static float inOutBack(float t)				{ const float s = 1.70158f * 1.525f; return (
     (t) < 9.f/10.f ? (4356.f/361.f * (t) * (t)) - (35442.f/1805.f * (t)) + 16061.f/1805.f \
                 : (54.f/5.f * (t) * (t)) - (513.f/25.f * (t)) + 268.f/25.f )
 
-static float inBounce(float t)				{ return 1.f - bounceout(1.f - t); }
-static float outBounce(float t)				{ return bounceout(t); }
-static float inOutBounce(float t)			{ return (t < 0.5f) ? (0.5f * (1.f - bounceout(1.f - t * 2.f))) : (0.5f * bounceout((t * 2.f - 1.f)) + 0.5f); }
+inline float inBounce(float t)				{ return 1.f - bounceout(1.f - t); }
+inline float outBounce(float t)				{ return bounceout(t); }
+inline float inOutBounce(float t)			{ return (t < 0.5f) ? (0.5f * (1.f - bounceout(1.f - t * 2.f))) : (0.5f * bounceout((t * 2.f - 1.f)) + 0.5f); }
 
 #undef bounceout
 
-static float getFramerateIndependentT(float speed, float dt)
+inline float getFramerateIndependentT(float speed, float dt)
 {
 	return 1.f - expf(-speed * dt);
 }
@@ -463,21 +463,21 @@ union mat4
 static_assert(sizeof(mat4) == 16 * sizeof(float), "");
 
 #if ROW_MAJOR
-static vec2 row(const mat2& a, uint32 r) { return a.rows[r]; }
-static vec3 row(const mat3& a, uint32 r) { return a.rows[r]; }
-static vec4 row(const mat4& a, uint32 r) { return a.rows[r]; }
+inline vec2 row(const mat2& a, uint32 r) { return a.rows[r]; }
+inline vec3 row(const mat3& a, uint32 r) { return a.rows[r]; }
+inline vec4 row(const mat4& a, uint32 r) { return a.rows[r]; }
 
-static vec2 col(const mat2& a, uint32 c) { return { a.m[c], a.m[c + 2] }; }
-static vec3 col(const mat3& a, uint32 c) { return { a.m[c], a.m[c + 3], a.m[c + 6] }; }
-static vec4 col(const mat4& a, uint32 c) { return { a.m[c], a.m[c + 4], a.m[c + 8], a.m[c + 12] }; }
+inline vec2 col(const mat2& a, uint32 c) { return { a.m[c], a.m[c + 2] }; }
+inline vec3 col(const mat3& a, uint32 c) { return { a.m[c], a.m[c + 3], a.m[c + 6] }; }
+inline vec4 col(const mat4& a, uint32 c) { return { a.m[c], a.m[c + 4], a.m[c + 8], a.m[c + 12] }; }
 #else
-static vec2 row(const mat2& a, uint32 r) { return { a.m[r], a.m[r + 2] }; }
-static vec3 row(const mat3& a, uint32 r) { return { a.m[r], a.m[r + 3], a.m[r + 6] }; }
-static vec4 row(const mat4& a, uint32 r) { return { a.m[r], a.m[r + 4], a.m[r + 8], a.m[r + 12] }; }
-	   
-static vec2 col(const mat2& a, uint32 c) { return a.cols[c]; }
-static vec3 col(const mat3& a, uint32 c) { return a.cols[c]; }
-static vec4 col(const mat4& a, uint32 c) { return a.cols[c]; }
+inline vec2 row(const mat2& a, uint32 r) { return { a.m[r], a.m[r + 2] }; }
+inline vec3 row(const mat3& a, uint32 r) { return { a.m[r], a.m[r + 3], a.m[r + 6] }; }
+inline vec4 row(const mat4& a, uint32 r) { return { a.m[r], a.m[r + 4], a.m[r + 8], a.m[r + 12] }; }
+
+inline vec2 col(const mat2& a, uint32 c) { return a.cols[c]; }
+inline vec3 col(const mat3& a, uint32 c) { return a.cols[c]; }
+inline vec4 col(const mat4& a, uint32 c) { return a.cols[c]; }
 #endif
 
 struct trs
@@ -493,121 +493,121 @@ struct trs
 };
 
 // Vec2 operators
-static vec2 operator+(vec2 a, vec2 b) { vec2 result = { a.x + b.x, a.y + b.y }; return result; }
-static vec2& operator+=(vec2& a, vec2 b) { a = a + b; return a; }
-static vec2 operator-(vec2 a, vec2 b) { vec2 result = { a.x - b.x, a.y - b.y }; return result; }
-static vec2& operator-=(vec2& a, vec2 b) { a = a - b; return a; }
-static vec2 operator*(vec2 a, vec2 b) { vec2 result = { a.x * b.x, a.y * b.y }; return result; }
-static vec2& operator*=(vec2& a, vec2 b) { a = a * b; return a; }
-static vec2 operator/(vec2 a, vec2 b) { vec2 result = { a.x / b.x, a.y / b.y }; return result; }
-static vec2& operator/=(vec2& a, vec2 b) { a = a / b; return a; }
+inline vec2 operator+(vec2 a, vec2 b) { vec2 result = { a.x + b.x, a.y + b.y }; return result; }
+inline vec2& operator+=(vec2& a, vec2 b) { a = a + b; return a; }
+inline vec2 operator-(vec2 a, vec2 b) { vec2 result = { a.x - b.x, a.y - b.y }; return result; }
+inline vec2& operator-=(vec2& a, vec2 b) { a = a - b; return a; }
+inline vec2 operator*(vec2 a, vec2 b) { vec2 result = { a.x * b.x, a.y * b.y }; return result; }
+inline vec2& operator*=(vec2& a, vec2 b) { a = a * b; return a; }
+inline vec2 operator/(vec2 a, vec2 b) { vec2 result = { a.x / b.x, a.y / b.y }; return result; }
+inline vec2& operator/=(vec2& a, vec2 b) { a = a / b; return a; }
 
-static vec2 operator*(vec2 a, float b) { vec2 result = { a.x * b, a.y * b }; return result; }
-static vec2 operator*(float a, vec2 b) { return b * a; }
-static vec2& operator*=(vec2& a, float b) { a = a * b; return a; }
-static vec2 operator/(vec2 a, float b) { vec2 result = { a.x / b, a.y / b }; return result; }
-static vec2& operator/=(vec2& a, float b) { a = a / b; return a; }
+inline vec2 operator*(vec2 a, float b) { vec2 result = { a.x * b, a.y * b }; return result; }
+inline vec2 operator*(float a, vec2 b) { return b * a; }
+inline vec2& operator*=(vec2& a, float b) { a = a * b; return a; }
+inline vec2 operator/(vec2 a, float b) { vec2 result = { a.x / b, a.y / b }; return result; }
+inline vec2& operator/=(vec2& a, float b) { a = a / b; return a; }
 
-static vec2 operator-(vec2 a) { return vec2(-a.x, -a.y); }
+inline vec2 operator-(vec2 a) { return vec2(-a.x, -a.y); }
 
-static bool operator==(vec2 a, vec2 b) { return a.x == b.x && a.y == b.y; }
-static bool operator!=(vec2 a, vec2 b) { return !(a == b); }
+inline bool operator==(vec2 a, vec2 b) { return a.x == b.x && a.y == b.y; }
+inline bool operator!=(vec2 a, vec2 b) { return !(a == b); }
 
 // Vec3 operators
-static vec3 operator+(vec3 a, vec3 b) { vec3 result = { a.x + b.x, a.y + b.y, a.z + b.z }; return result; }
-static vec3& operator+=(vec3& a, vec3 b) { a = a + b; return a; }
-static vec3 operator-(vec3 a, vec3 b) { vec3 result = { a.x - b.x, a.y - b.y, a.z - b.z }; return result; }
-static vec3& operator-=(vec3& a, vec3 b) { a = a - b; return a; }
-static vec3 operator*(vec3 a, vec3 b) { vec3 result = { a.x * b.x, a.y * b.y, a.z * b.z }; return result; }
-static vec3& operator*=(vec3& a, vec3 b) { a = a * b; return a; }
-static vec3 operator/(vec3 a, vec3 b) { vec3 result = { a.x / b.x, a.y / b.y, a.z / b.z }; return result; }
-static vec3& operator/=(vec3& a, vec3 b) { a = a / b; return a; }
+inline vec3 operator+(vec3 a, vec3 b) { vec3 result = { a.x + b.x, a.y + b.y, a.z + b.z }; return result; }
+inline vec3& operator+=(vec3& a, vec3 b) { a = a + b; return a; }
+inline vec3 operator-(vec3 a, vec3 b) { vec3 result = { a.x - b.x, a.y - b.y, a.z - b.z }; return result; }
+inline vec3& operator-=(vec3& a, vec3 b) { a = a - b; return a; }
+inline vec3 operator*(vec3 a, vec3 b) { vec3 result = { a.x * b.x, a.y * b.y, a.z * b.z }; return result; }
+inline vec3& operator*=(vec3& a, vec3 b) { a = a * b; return a; }
+inline vec3 operator/(vec3 a, vec3 b) { vec3 result = { a.x / b.x, a.y / b.y, a.z / b.z }; return result; }
+inline vec3& operator/=(vec3& a, vec3 b) { a = a / b; return a; }
 
-static vec3 operator*(vec3 a, float b) { vec3 result = { a.x * b, a.y * b, a.z * b }; return result; }
-static vec3 operator*(float a, vec3 b) { return b * a; }
-static vec3& operator*=(vec3& a, float b) { a = a * b; return a; }
-static vec3 operator/(vec3 a, float b) { vec3 result = { a.x / b, a.y / b, a.z / b }; return result; }
-static vec3& operator/=(vec3& a, float b) { a = a / b; return a; }
+inline vec3 operator*(vec3 a, float b) { vec3 result = { a.x * b, a.y * b, a.z * b }; return result; }
+inline vec3 operator*(float a, vec3 b) { return b * a; }
+inline vec3& operator*=(vec3& a, float b) { a = a * b; return a; }
+inline vec3 operator/(vec3 a, float b) { vec3 result = { a.x / b, a.y / b, a.z / b }; return result; }
+inline vec3& operator/=(vec3& a, float b) { a = a / b; return a; }
 
-static vec3 operator-(vec3 a) { return vec3(-a.x, -a.y, -a.z); }
+inline vec3 operator-(vec3 a) { return vec3(-a.x, -a.y, -a.z); }
 
-static bool operator==(vec3 a, vec3 b) { return a.x == b.x && a.y == b.y && a.z == b.z; }
-static bool operator!=(vec3 a, vec3 b) { return !(a == b); }
+inline bool operator==(vec3 a, vec3 b) { return a.x == b.x && a.y == b.y && a.z == b.z; }
+inline bool operator!=(vec3 a, vec3 b) { return !(a == b); }
 
 // Vec4 operators
-static vec4 operator+(vec4 a, vec4 b) { vec4 result = { a.f4 + b.f4 }; return result; }
-static vec4& operator+=(vec4& a, vec4 b) { a = a + b; return a; }
-static vec4 operator-(vec4 a, vec4 b) { vec4 result = { a.f4 - b.f4 }; return result; }
-static vec4& operator-=(vec4& a, vec4 b) { a = a - b; return a; }
-static vec4 operator*(vec4 a, vec4 b) { vec4 result = { a.f4 * b.f4 }; return result; }
-static vec4& operator*=(vec4& a, vec4 b) { a = a * b; return a; }
-static vec4 operator/(vec4 a, vec4 b) { vec4 result = { a.f4 / b.f4 }; return result; }
-static vec4& operator/=(vec4& a, vec4 b) { a = a / b; return a; }
+inline vec4 operator+(vec4 a, vec4 b) { vec4 result = { a.f4 + b.f4 }; return result; }
+inline vec4& operator+=(vec4& a, vec4 b) { a = a + b; return a; }
+inline vec4 operator-(vec4 a, vec4 b) { vec4 result = { a.f4 - b.f4 }; return result; }
+inline vec4& operator-=(vec4& a, vec4 b) { a = a - b; return a; }
+inline vec4 operator*(vec4 a, vec4 b) { vec4 result = { a.f4 * b.f4 }; return result; }
+inline vec4& operator*=(vec4& a, vec4 b) { a = a * b; return a; }
+inline vec4 operator/(vec4 a, vec4 b) { vec4 result = { a.f4 / b.f4 }; return result; }
+inline vec4& operator/=(vec4& a, vec4 b) { a = a / b; return a; }
 
-static vec4 operator*(vec4 a, float b) { vec4 result = { a.f4 * w4_float(b) }; return result; }
-static vec4 operator*(float a, vec4 b) { return b * a; }
-static vec4& operator*=(vec4& a, float b) { a = a * b; return a; }
-static vec4 operator/(vec4 a, float b) { vec4 result = { a.f4 / w4_float(b) }; return result; }
-static vec4& operator/=(vec4& a, float b) { a = a / b; return a; }
+inline vec4 operator*(vec4 a, float b) { vec4 result = { a.f4 * w4_float(b) }; return result; }
+inline vec4 operator*(float a, vec4 b) { return b * a; }
+inline vec4& operator*=(vec4& a, float b) { a = a * b; return a; }
+inline vec4 operator/(vec4 a, float b) { vec4 result = { a.f4 / w4_float(b) }; return result; }
+inline vec4& operator/=(vec4& a, float b) { a = a / b; return a; }
 
-static vec4 operator-(vec4 a) { return vec4(-a.f4); }
+inline vec4 operator-(vec4 a) { return vec4(-a.f4); }
 
-static bool operator==(vec4 a, vec4 b) { return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w; }
-static bool operator!=(vec4 a, vec4 b) { return !(a == b); }
+inline bool operator==(vec4 a, vec4 b) { return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w; }
+inline bool operator!=(vec4 a, vec4 b) { return !(a == b); }
 
-static vec2 diagonal(const mat2& m) { return vec2(m.m00, m.m11); }
-static vec3 diagonal(const mat3& m) { return vec3(m.m00, m.m11, m.m22); }
-static vec4 diagonal(const mat4& m) { return vec4(m.m00, m.m11, m.m22, m.m33); }
+inline vec2 diagonal(const mat2& m) { return vec2(m.m00, m.m11); }
+inline vec3 diagonal(const mat3& m) { return vec3(m.m00, m.m11, m.m22); }
+inline vec4 diagonal(const mat4& m) { return vec4(m.m00, m.m11, m.m22, m.m33); }
 
-static float dot(vec2 a, vec2 b) { float result = a.x * b.x + a.y * b.y; return result; }
-static float dot(vec3 a, vec3 b) { float result = a.x * b.x + a.y * b.y + a.z * b.z; return result; }
-static float dot(vec4 a, vec4 b) { w4_float m = a.f4 * b.f4; return addElements(m); }
+inline float dot(vec2 a, vec2 b) { float result = a.x * b.x + a.y * b.y; return result; }
+inline float dot(vec3 a, vec3 b) { float result = a.x * b.x + a.y * b.y + a.z * b.z; return result; }
+inline float dot(vec4 a, vec4 b) { w4_float m = a.f4 * b.f4; return addElements(m); }
 
-static float cross(vec2 a, vec2 b) { return a.x * b.y - a.y * b.x; }
-static vec3 cross(vec3 a, vec3 b) { vec3 result = { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x }; return result; }
+inline float cross(vec2 a, vec2 b) { return a.x * b.y - a.y * b.x; }
+inline vec3 cross(vec3 a, vec3 b) { vec3 result = { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x }; return result; }
 
-static float squaredLength(vec2 a) { return dot(a, a); }
-static float squaredLength(vec3 a) { return dot(a, a); }
-static float squaredLength(vec4 a) { return dot(a, a); }
+inline float squaredLength(vec2 a) { return dot(a, a); }
+inline float squaredLength(vec3 a) { return dot(a, a); }
+inline float squaredLength(vec4 a) { return dot(a, a); }
 
-static float length(vec2 a) { return sqrt(squaredLength(a)); }
-static float length(vec3 a) { return sqrt(squaredLength(a)); }
-static float length(vec4 a) { return sqrt(squaredLength(a)); }
+inline float length(vec2 a) { return sqrt(squaredLength(a)); }
+inline float length(vec3 a) { return sqrt(squaredLength(a)); }
+inline float length(vec4 a) { return sqrt(squaredLength(a)); }
 
-static vec2 noz(vec2 a) { float sl = squaredLength(a); return (sl < 1e-8f) ? vec2(0.f, 0.f) : (a * (1.f / sqrt(sl))); }
-static vec3 noz(vec3 a) { float sl = squaredLength(a); return (sl < 1e-8f) ? vec3(0.f, 0.f, 0.f) : (a * (1.f / sqrt(sl))); }
-static vec4 noz(vec4 a) { float sl = squaredLength(a); return (sl < 1e-8f) ? vec4(0.f, 0.f, 0.f, 0.f) : (a * (1.f / sqrt(sl))); }
+inline vec2 noz(vec2 a) { float sl = squaredLength(a); return (sl < 1e-8f) ? vec2(0.f, 0.f) : (a * (1.f / sqrt(sl))); }
+inline vec3 noz(vec3 a) { float sl = squaredLength(a); return (sl < 1e-8f) ? vec3(0.f, 0.f, 0.f) : (a * (1.f / sqrt(sl))); }
+inline vec4 noz(vec4 a) { float sl = squaredLength(a); return (sl < 1e-8f) ? vec4(0.f, 0.f, 0.f, 0.f) : (a * (1.f / sqrt(sl))); }
 
-static vec2 normalize(vec2 a) { float l = length(a); return a * (1.f / l); }
-static vec3 normalize(vec3 a) { float l = length(a); return a * (1.f / l); }
-static vec4 normalize(vec4 a) { float l = length(a); return a * (1.f / l); }
+inline vec2 normalize(vec2 a) { float l = length(a); return a * (1.f / l); }
+inline vec3 normalize(vec3 a) { float l = length(a); return a * (1.f / l); }
+inline vec4 normalize(vec4 a) { float l = length(a); return a * (1.f / l); }
 
-static void copySign(vec2 from, vec2& to) { copySign(from.x, to.x); copySign(from.y, to.y); }
-static void copySign(vec3 from, vec3& to) { copySign(from.x, to.x); copySign(from.y, to.y); copySign(from.z, to.z); }
-static void copySign(vec4 from, vec4& to) { copySign(from.x, to.x); copySign(from.y, to.y); copySign(from.z, to.z); copySign(from.w, to.w); }
+inline void copySign(vec2 from, vec2& to) { copySign(from.x, to.x); copySign(from.y, to.y); }
+inline void copySign(vec3 from, vec3& to) { copySign(from.x, to.x); copySign(from.y, to.y); copySign(from.z, to.z); }
+inline void copySign(vec4 from, vec4& to) { copySign(from.x, to.x); copySign(from.y, to.y); copySign(from.z, to.z); copySign(from.w, to.w); }
 
-static vec2 abs(vec2 a) { return vec2(abs(a.x), abs(a.y)); }
-static vec3 abs(vec3 a) { return vec3(abs(a.x), abs(a.y), abs(a.z)); }
-static vec4 abs(vec4 a) { return vec4(abs(a.f4)); }
+inline vec2 abs(vec2 a) { return vec2(abs(a.x), abs(a.y)); }
+inline vec3 abs(vec3 a) { return vec3(abs(a.x), abs(a.y), abs(a.z)); }
+inline vec4 abs(vec4 a) { return vec4(abs(a.f4)); }
 
-static vec2 floor(vec2 a) { return vec2(floor(a.x), floor(a.y)); }
-static vec3 floor(vec3 a) { return vec3(floor(a.x), floor(a.y), floor(a.z)); }
-static vec4 floor(vec4 a) { return vec4(floor(a.f4)); }
+inline vec2 floor(vec2 a) { return vec2(floor(a.x), floor(a.y)); }
+inline vec3 floor(vec3 a) { return vec3(floor(a.x), floor(a.y), floor(a.z)); }
+inline vec4 floor(vec4 a) { return vec4(floor(a.f4)); }
 
-static vec2 round(vec2 a) { return vec2(round(a.x), round(a.y)); }
-static vec3 round(vec3 a) { return vec3(round(a.x), round(a.y), round(a.z)); }
-static vec4 round(vec4 a) { return vec4(round(a.f4)); }
+inline vec2 round(vec2 a) { return vec2(round(a.x), round(a.y)); }
+inline vec3 round(vec3 a) { return vec3(round(a.x), round(a.y), round(a.z)); }
+inline vec4 round(vec4 a) { return vec4(round(a.f4)); }
 
-static vec2 frac(vec2 a) { return vec2(frac(a.x), frac(a.y)); }
-static vec3 frac(vec3 a) { return vec3(frac(a.x), frac(a.y), frac(a.z)); }
-static vec4 frac(vec4 a) { return vec4(frac(a.x), frac(a.y), frac(a.z), frac(a.w)); }
+inline vec2 frac(vec2 a) { return vec2(frac(a.x), frac(a.y)); }
+inline vec3 frac(vec3 a) { return vec3(frac(a.x), frac(a.y), frac(a.z)); }
+inline vec4 frac(vec4 a) { return vec4(frac(a.x), frac(a.y), frac(a.z), frac(a.w)); }
 
-static quat normalize(quat a) { return { normalize(a.v4).f4 }; }
-static quat conjugate(quat a) { return { -a.x, -a.y, -a.z, a.w }; }
+inline quat normalize(quat a) { return { normalize(a.v4).f4 }; }
+inline quat conjugate(quat a) { return { -a.x, -a.y, -a.z, a.w }; }
 
-static quat operator+(quat a, quat b) { quat result = { a.f4 + b.f4 }; return result; }
+inline quat operator+(quat a, quat b) { quat result = { a.f4 + b.f4 }; return result; }
 
-static quat operator*(quat a, quat b)
+inline quat operator*(quat a, quat b)
 {
 	quat result;
 	result.w = a.w * b.w - dot(a.v, b.v);
@@ -615,46 +615,46 @@ static quat operator*(quat a, quat b)
 	return result;
 }
 
-static quat operator*(quat q, float s)
+inline quat operator*(quat q, float s)
 {
 	quat result;
 	result.v4 = q.v4 * s;
 	return result;
 }
 
-static vec3 operator*(quat q, vec3 v)
+inline vec3 operator*(quat q, vec3 v)
 {
 	quat p(v.x, v.y, v.z, 0.f);
 	return (q * p * conjugate(q)).v;
 }
 
-static dual_quat operator+(const dual_quat& a, const dual_quat& b) { return { a.real + b.real, a.dual + b.dual }; }
-static dual_quat& operator+=(dual_quat& a, const dual_quat& b) { a = a + b; return a; }
-static dual_quat operator*(const dual_quat& a, const dual_quat& b) { return { a.real * b.real, a.dual * b.real + b.dual * a.real }; }
-static dual_quat operator*(const dual_quat& a, float b) { return { a.real * b, a.dual * b }; }
-static dual_quat operator*(float b, const dual_quat& a) { return a * b; }
-static dual_quat& operator*=(dual_quat& q, float v) { q = q * v; return q; }
-static dual_quat normalize(const dual_quat& q) { float n = 1.f / length(q.real.v4); return q * n; }
+inline dual_quat operator+(const dual_quat& a, const dual_quat& b) { return { a.real + b.real, a.dual + b.dual }; }
+inline dual_quat& operator+=(dual_quat& a, const dual_quat& b) { a = a + b; return a; }
+inline dual_quat operator*(const dual_quat& a, const dual_quat& b) { return { a.real * b.real, a.dual * b.real + b.dual * a.real }; }
+inline dual_quat operator*(const dual_quat& a, float b) { return { a.real * b, a.dual * b }; }
+inline dual_quat operator*(float b, const dual_quat& a) { return a * b; }
+inline dual_quat& operator*=(dual_quat& q, float v) { q = q * v; return q; }
+inline dual_quat normalize(const dual_quat& q) { float n = 1.f / length(q.real.v4); return q * n; }
 
-static bool operator==(quat a, quat b) { return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w; }
-static bool operator!=(quat a, quat b) { return !(a == b); }
+inline bool operator==(quat a, quat b) { return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w; }
+inline bool operator!=(quat a, quat b) { return !(a == b); }
 
-static vec2 operator*(mat2 a, vec2 b) { vec2 result = { dot(row(a, 0), b), dot(row(a, 1), b) }; return result; }
-static vec3 operator*(mat3 a, vec3 b) { vec3 result = { dot(row(a, 0), b), dot(row(a, 1), b), dot(row(a, 2), b) }; return result; }
+inline vec2 operator*(mat2 a, vec2 b) { vec2 result = { dot(row(a, 0), b), dot(row(a, 1), b) }; return result; }
+inline vec3 operator*(mat3 a, vec3 b) { vec3 result = { dot(row(a, 0), b), dot(row(a, 1), b), dot(row(a, 2), b) }; return result; }
 
 #if ROW_MAJOR
-static vec4 operator*(mat4 a, vec4 b) { vec4 result = { dot(row(a, 0), b), dot(row(a, 1), b), dot(row(a, 2), b), dot(row(a, 3), b) }; return result; }
+inline vec4 operator*(mat4 a, vec4 b) { vec4 result = { dot(row(a, 0), b), dot(row(a, 1), b), dot(row(a, 2), b), dot(row(a, 3), b) }; return result; }
 #else
-static vec4 operator*(mat4 a, vec4 b) { vec4 result = col(a, 0) * b.x + col(a, 1) * b.y + col(a, 2) * b.z + col(a, 3) * b.w; return result; }
+inline vec4 operator*(mat4 a, vec4 b) { vec4 result = col(a, 0) * b.x + col(a, 1) * b.y + col(a, 2) * b.z + col(a, 3) * b.w; return result; }
 #endif
 
-static vec2 lerp(vec2 l, vec2 u, float t) { return l + t * (u - l); }
-static vec3 lerp(vec3 l, vec3 u, float t) { return l + t * (u - l); }
-static vec4 lerp(vec4 l, vec4 u, float t) { return l + t * (u - l); }
-static quat lerp(quat l, quat u, float t) { quat result; result.v4 = lerp(l.v4, u.v4, t); return normalize(result); }
-static dual_quat lerp(const dual_quat& l, const dual_quat& u, float t) { return { quat(lerp(l.real.v4, u.real.v4, t)), quat(lerp(l.dual.v4, u.dual.v4, t)) }; }
+inline vec2 lerp(vec2 l, vec2 u, float t) { return l + t * (u - l); }
+inline vec3 lerp(vec3 l, vec3 u, float t) { return l + t * (u - l); }
+inline vec4 lerp(vec4 l, vec4 u, float t) { return l + t * (u - l); }
+inline quat lerp(quat l, quat u, float t) { quat result; result.v4 = lerp(l.v4, u.v4, t); return normalize(result); }
+inline dual_quat lerp(const dual_quat& l, const dual_quat& u, float t) { return { quat(lerp(l.real.v4, u.real.v4, t)), quat(lerp(l.dual.v4, u.dual.v4, t)) }; }
 
-static trs lerp(const trs& l, const trs& u, float t)
+inline trs lerp(const trs& l, const trs& u, float t)
 {
 	trs result;
 	result.position = lerp(l.position, u.position, t);
@@ -663,34 +663,34 @@ static trs lerp(const trs& l, const trs& u, float t)
 	return result;
 }
 
-static vec2 exp(vec2 v) { return vec2(exp(v.x), exp(v.y)); }
-static vec3 exp(vec3 v) { return vec3(exp(v.x), exp(v.y), exp(v.z)); }
-static vec4 exp(vec4 v) { return vec4(exp(v.f4)); }
+inline vec2 exp(vec2 v) { return vec2(exp(v.x), exp(v.y)); }
+inline vec3 exp(vec3 v) { return vec3(exp(v.x), exp(v.y), exp(v.z)); }
+inline vec4 exp(vec4 v) { return vec4(exp(v.f4)); }
 
-static vec2 pow(vec2 v, float e) { return vec2(pow(v.x, e), pow(v.y, e)); }
-static vec3 pow(vec3 v, float e) { return vec3(pow(v.x, e), pow(v.y, e), pow(v.z, e)); }
-static vec4 pow(vec4 v, float e) { return vec4(pow(v.f4, w4_float(e))); }
+inline vec2 pow(vec2 v, float e) { return vec2(pow(v.x, e), pow(v.y, e)); }
+inline vec3 pow(vec3 v, float e) { return vec3(pow(v.x, e), pow(v.y, e), pow(v.z, e)); }
+inline vec4 pow(vec4 v, float e) { return vec4(pow(v.f4, w4_float(e))); }
 
-static vec2 min(vec2 a, vec2 b) { return vec2(min(a.x, b.x), min(a.y, b.y)); }
-static vec3 min(vec3 a, vec3 b) { return vec3(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)); }
-static vec4 min(vec4 a, vec4 b) { return vec4(minimum(a.f4, b.f4)); }
+inline vec2 min(vec2 a, vec2 b) { return vec2(min(a.x, b.x), min(a.y, b.y)); }
+inline vec3 min(vec3 a, vec3 b) { return vec3(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)); }
+inline vec4 min(vec4 a, vec4 b) { return vec4(minimum(a.f4, b.f4)); }
 
-static vec2 max(vec2 a, vec2 b) { return vec2(max(a.x, b.x), max(a.y, b.y)); }
-static vec3 max(vec3 a, vec3 b) { return vec3(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)); }
-static vec4 max(vec4 a, vec4 b) { return vec4(maximum(a.f4, b.f4)); }
+inline vec2 max(vec2 a, vec2 b) { return vec2(max(a.x, b.x), max(a.y, b.y)); }
+inline vec3 max(vec3 a, vec3 b) { return vec3(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)); }
+inline vec4 max(vec4 a, vec4 b) { return vec4(maximum(a.f4, b.f4)); }
 
-static float maxElement(vec2 a) { return max(a.x, a.y); }
-static float maxElement(vec3 a) { return max(a.x, max(a.y, a.z)); }
-static float maxElement(vec4 a) { return max(a.x, max(a.y, max(a.z, a.w))); }
+inline float maxElement(vec2 a) { return max(a.x, a.y); }
+inline float maxElement(vec3 a) { return max(a.x, max(a.y, a.z)); }
+inline float maxElement(vec4 a) { return max(a.x, max(a.y, max(a.z, a.w))); }
 
-static uint32 maxElementIndex(vec2 a) { return (a.x > a.y) ? 0 : 1; }
-static uint32 maxElementIndex(vec3 a) { return (a.x > a.y) ? ((a.x > a.z) ? 0 : 2) : ((a.y > a.z) ? 1 : 2); }
-static uint32 maxElementIndex(vec4 a) { return (a.x > a.y)	? ((a.x > a.z)	? ((a.x > a.w) ? 0 : 3) 
+inline uint32 maxElementIndex(vec2 a) { return (a.x > a.y) ? 0 : 1; }
+inline uint32 maxElementIndex(vec3 a) { return (a.x > a.y) ? ((a.x > a.z) ? 0 : 2) : ((a.y > a.z) ? 1 : 2); }
+inline uint32 maxElementIndex(vec4 a) { return (a.x > a.y)	? ((a.x > a.z)	? ((a.x > a.w) ? 0 : 3) 
 																			: ((a.z > a.w) ? 2 : 3)) 
 															: ((a.y > a.z)	? ((a.y > a.w) ? 1 : 3) 
 																			: ((a.z > a.w) ? 2 : 3)); }
 
-static vec2 remap(vec2 v, vec2 oldL, vec2 oldU, vec2 newL, vec2 newU)
+inline vec2 remap(vec2 v, vec2 oldL, vec2 oldU, vec2 newL, vec2 newU)
 {
 	return
 	{
@@ -699,7 +699,7 @@ static vec2 remap(vec2 v, vec2 oldL, vec2 oldU, vec2 newL, vec2 newU)
 	};
 }
 
-static vec3 remap(vec3 v, vec3 oldL, vec3 oldU, vec3 newL, vec3 newU)
+inline vec3 remap(vec3 v, vec3 oldL, vec3 oldU, vec3 newL, vec3 newU)
 {
 	return
 	{
@@ -709,7 +709,7 @@ static vec3 remap(vec3 v, vec3 oldL, vec3 oldU, vec3 newL, vec3 newU)
 	};
 }
 
-static vec4 remap(vec4 v, vec4 oldL, vec4 oldU, vec4 newL, vec4 newU)
+inline vec4 remap(vec4 v, vec4 oldL, vec4 oldU, vec4 newL, vec4 newU)
 {
 	return
 	{
@@ -853,13 +853,13 @@ T sum(const T* input, uint32 count)
 	return result;
 }
 
-static bool fuzzyEquals(float a, float b, float threshold = 1e-4f) { return abs(a - b) < threshold; }
-static bool fuzzyEquals(vec2 a, vec2 b, float threshold = 1e-4f) { return fuzzyEquals(a.x, b.x, threshold) && fuzzyEquals(a.y, b.y, threshold); }
-static bool fuzzyEquals(vec3 a, vec3 b, float threshold = 1e-4f) { return fuzzyEquals(a.x, b.x, threshold) && fuzzyEquals(a.y, b.y, threshold) && fuzzyEquals(a.z, b.z, threshold); }
-static bool fuzzyEquals(vec4 a, vec4 b, float threshold = 1e-4f) { return fuzzyEquals(a.x, b.x, threshold) && fuzzyEquals(a.y, b.y, threshold) && fuzzyEquals(a.z, b.z, threshold) && fuzzyEquals(a.w, b.w, threshold); }
-static bool fuzzyEquals(quat a, quat b, float threshold = 1e-4f) { if (dot(a.v4, b.v4) < 0.f) { a.v4 *= -1.f; } return fuzzyEquals(a.x, b.x, threshold) && fuzzyEquals(a.y, b.y, threshold) && fuzzyEquals(a.z, b.z, threshold) && fuzzyEquals(a.w, b.w, threshold); }
+inline bool fuzzyEquals(float a, float b, float threshold = 1e-4f) { return abs(a - b) < threshold; }
+inline bool fuzzyEquals(vec2 a, vec2 b, float threshold = 1e-4f) { return fuzzyEquals(a.x, b.x, threshold) && fuzzyEquals(a.y, b.y, threshold); }
+inline bool fuzzyEquals(vec3 a, vec3 b, float threshold = 1e-4f) { return fuzzyEquals(a.x, b.x, threshold) && fuzzyEquals(a.y, b.y, threshold) && fuzzyEquals(a.z, b.z, threshold); }
+inline bool fuzzyEquals(vec4 a, vec4 b, float threshold = 1e-4f) { return fuzzyEquals(a.x, b.x, threshold) && fuzzyEquals(a.y, b.y, threshold) && fuzzyEquals(a.z, b.z, threshold) && fuzzyEquals(a.w, b.w, threshold); }
+inline bool fuzzyEquals(quat a, quat b, float threshold = 1e-4f) { if (dot(a.v4, b.v4) < 0.f) { a.v4 *= -1.f; } return fuzzyEquals(a.x, b.x, threshold) && fuzzyEquals(a.y, b.y, threshold) && fuzzyEquals(a.z, b.z, threshold) && fuzzyEquals(a.w, b.w, threshold); }
 
-static bool fuzzyEquals(const mat2& a, const mat2& b, float threshold = 1e-4f)
+inline bool fuzzyEquals(const mat2& a, const mat2& b, float threshold = 1e-4f)
 {
 	bool result = true;
 	for (uint32 i = 0; i < 4; ++i)
@@ -868,7 +868,7 @@ static bool fuzzyEquals(const mat2& a, const mat2& b, float threshold = 1e-4f)
 	return result;
 }
 
-static bool fuzzyEquals(const mat3& a, const mat3& b, float threshold = 1e-4f)
+inline bool fuzzyEquals(const mat3& a, const mat3& b, float threshold = 1e-4f)
 {
 	bool result = true;
 	for (uint32 i = 0; i < 9; ++i)
@@ -877,7 +877,7 @@ static bool fuzzyEquals(const mat3& a, const mat3& b, float threshold = 1e-4f)
 	return result;
 }
 
-static bool fuzzyEquals(const mat4& a, const mat4& b, float threshold = 1e-4f)
+inline bool fuzzyEquals(const mat4& a, const mat4& b, float threshold = 1e-4f)
 {
 	bool result = true;
 	for (uint32 i = 0; i < 16; ++i)
@@ -886,7 +886,7 @@ static bool fuzzyEquals(const mat4& a, const mat4& b, float threshold = 1e-4f)
 	return result;
 }
 
-static bool fuzzyEquals(const trs& a, const trs& b, float threshold = 1e-4f)
+inline bool fuzzyEquals(const trs& a, const trs& b, float threshold = 1e-4f)
 {
 	bool result = true;
 	result &= fuzzyEquals(a.position, b.position, threshold);
@@ -895,9 +895,9 @@ static bool fuzzyEquals(const trs& a, const trs& b, float threshold = 1e-4f)
 	return result;
 }
 
-static bool isUniform(vec2 v) { return fuzzyEquals(v.x, v.y); }
-static bool isUniform(vec3 v) { return fuzzyEquals(v.x, v.y) && fuzzyEquals(v.x, v.z); }
-static bool isUniform(vec4 v) { return fuzzyEquals(v.x, v.y) && fuzzyEquals(v.x, v.z) && fuzzyEquals(v.x, v.w); }
+inline bool isUniform(vec2 v) { return fuzzyEquals(v.x, v.y); }
+inline bool isUniform(vec3 v) { return fuzzyEquals(v.x, v.y) && fuzzyEquals(v.x, v.z); }
+inline bool isUniform(vec4 v) { return fuzzyEquals(v.x, v.y) && fuzzyEquals(v.x, v.z) && fuzzyEquals(v.x, v.w); }
 
 inline quat::quat(vec3 axis, float angle)
 {
@@ -1011,7 +1011,7 @@ inline std::ostream& operator<<(std::ostream& s, const trs& m)
 }
 
 template <typename T>
-static T evaluateSpline(const float* ts, const T* values, int32 num, float t)
+inline T evaluateSpline(const float* ts, const T* values, int32 num, float t)
 {
 	ASSERT(num >= 2);
 

@@ -113,7 +113,7 @@ struct main_renderer
 	void initialize(color_depth colorDepth, uint32 windowWidth, uint32 windowHeight, renderer_spec spec, float initDLSS = false);
 
 	void beginFrame(uint32 windowWidth, uint32 windowHeight);
-	void endFrame(const user_input* input, float dt);
+	void endFrame(const user_input* input);
 
 	void setCamera(const render_camera& camera);
 

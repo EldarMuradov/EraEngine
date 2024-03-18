@@ -83,9 +83,9 @@ public sealed class UserScriptingLauncher
             _userTypes.Add(type.Name, type);
             if(type.IsSubclassOf(typeof(EScript)))
                 sendType(type.Name);
-            if (type.GetInterface("IESystem") is not null)
-                ESystemManager.RegisterSystem((IESystem)Activator.CreateInstance(type)!);
         }
+
+        DependencyResolver.RegisterUserSystemsWithReflection(assembly);
 
         try
         {

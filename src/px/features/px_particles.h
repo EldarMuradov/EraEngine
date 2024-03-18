@@ -239,7 +239,7 @@ namespace physics
 			{
 				PxVec4 p_i = (PxVec4)posBuffer[i];
 				vec3 pos_i = vec3(p_i.x, p_i.y, p_i.z);
-				renderPoint(pos_i, vec4(0.107f, 1.0f, 0.0f, 1.0f), ldrRenderPass, false);
+				renderPoint(pos_i, vec4(0.107f, 1.0f, 0.0f, 1.0f), ldrRenderPass, true);
 			}
 
 			const PxU32 numActiveDiffuseParticles = particleBuffer->getNbActiveDiffuseParticles();
@@ -306,3 +306,11 @@ namespace physics
 		px_particles_renderer_component() = default;
 	};
 }
+
+#include "core/reflect.h"
+
+REFLECT_STRUCT(physics::px_particles_component,
+	(numX, "NumX"),
+	(numY, "numY"),
+	(numZ, "numZ")
+);

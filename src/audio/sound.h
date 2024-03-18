@@ -76,7 +76,7 @@ void unloadAllSounds();
 bool loadFileSound(sound_id id);
 
 template <typename synth_t, typename... args>
-static bool loadSynthSound(const char* idStr, sound_type type, bool stream, const args&... a)
+inline bool loadSynthSound(const char* idStr, sound_type type, bool stream, const args&... a)
 {
     static_assert(std::is_base_of_v<audio_synth, synth_t>, "Synthesizer must inherit from audio_synth");
     static_assert(sizeof(synth_t) <= MAX_SYNTH_SIZE);

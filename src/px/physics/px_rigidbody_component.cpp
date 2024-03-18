@@ -25,6 +25,10 @@ namespace physics
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eFORCE);
 		else if (mode == px_force_mode::Impulse)
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eIMPULSE);
+		else if (mode == px_force_mode::VelocityChange)
+			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eVELOCITY_CHANGE);
+		else if (mode == px_force_mode::Acceleration)
+			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eACCELERATION);
 	}
 
 	void px_rigidbody_component::setDisableGravity() noexcept
@@ -131,20 +135,22 @@ namespace physics
 		physics_holder::physicsRef->removeActor(this);
 
 		PX_RELEASE(material)
-			PX_RELEASE(actor)
+		PX_RELEASE(actor)
 	}
 
 	void px_rigidbody_component::onCollisionEnter(px_rigidbody_component* collision) const
 	{
-
+		std::cout << "enter";
 	}
 
 	void px_rigidbody_component::onCollisionExit(px_rigidbody_component* collision) const
 	{
+		std::cout << "exit";
 	}
 
 	void px_rigidbody_component::onCollisionStay(px_rigidbody_component* collision) const
 	{
+
 	}
 
 	void px_rigidbody_component::createPhysics(bool addToScene)
@@ -171,6 +177,8 @@ namespace physics
 			coll = (px_collider_component_base*)entity.getComponentIfExists<px_capsule_collider_component>();
 		if (!coll)
 			coll = (px_collider_component_base*)entity.getComponentIfExists<px_triangle_mesh_collider_component>();
+		if (!coll)
+			coll = (px_collider_component_base*)entity.getComponentIfExists<px_convex_mesh_collider_component>();
 		if (!coll)
 			coll = (px_collider_component_base*)entity.getComponentIfExists<px_bounding_box_collider_component>();
 		if (!coll)
@@ -213,15 +221,12 @@ namespace physics
 		else
 		{
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
+
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
-
-#if PX_GPU_BROAD_PHASE
-			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
-#else
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
+			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
-#endif
 
 			coll->createShape();
 			uint32_t* h = new uint32_t[1];

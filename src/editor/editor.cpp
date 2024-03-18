@@ -1,10 +1,7 @@
 #include "pch.h"
 #include "editor.h"
-#include "editor_icons.h"
 #include "core/cpu_profiling.h"
 #include "core/log.h"
-#include "asset/file_registry.h"
-#include "core/imgui.h"
 #include "dx/dx_profiling.h"
 #include "scene/components.h"
 #include "animation/animation.h"
@@ -29,23 +26,6 @@
 #include <stack>
 #include <EraScriptingLauncher-Lib/src/script.h>
 #include <core/builder.h>
-
-static vec3 getEuler(quat q)
-{
-	vec3 euler = quatToEuler(q);
-	euler.x = rad2deg(angleToZeroToTwoPi(euler.x));
-	euler.y = rad2deg(angleToZeroToTwoPi(euler.y));
-	euler.z = rad2deg(angleToZeroToTwoPi(euler.z));
-	return euler;
-}
-
-static quat getQuat(vec3 euler)
-{
-	euler.x = deg2rad(euler.x);
-	euler.y = deg2rad(euler.y);
-	euler.z = deg2rad(euler.z);
-	return eulerToQuat(euler);
-}
 
 template <typename component_t, typename member_t>
 struct component_member_undo
@@ -431,6 +411,7 @@ bool eeditor::drawMainMenuBar()
 
 			if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN "  Load scene", "Ctrl+O"))
 			{
+				forceStop();
 				deserializeFromFile();
 			}
 
@@ -478,6 +459,17 @@ bool eeditor::drawMainMenuBar()
 			if (ImGui::MenuItem(soundEditorWindowOpen ? (EDITOR_ICON_AUDIO "  Hide sound editor") : (EDITOR_ICON_AUDIO "  Show sound editor")))
 			{
 				soundEditorWindowOpen = !soundEditorWindowOpen;
+			}
+
+			if (ImGui::MenuItem(editorPanels->meshEditor.isOpen() ? (EDITOR_ICON_MESH "  Hide mesh editor") : (EDITOR_ICON_MESH "  Show mesh editor")))
+			{
+				if (editorPanels->meshEditor.isOpen())
+					editorPanels->meshEditor.close();
+				else
+				{
+					editorPanels->meshEditor.open();
+					editorPanels->meshEditor.setScene(scene);
+				}
 			}
 
 			ImGui::Separator();
@@ -613,83 +605,6 @@ static bounding_box getObjectBoundingBox(eentity entity, bool applyPosition)
 	}
 
 	return aabb;
-}
-
-static void editTexture(const char* name, ref<dx_texture>& tex, uint32 loadFlags)
-{
-	asset_handle asset = {};
-	if (tex)
-	{
-		asset = tex->handle;
-	}
-	if (ImGui::PropertyTextureAssetHandle(name, EDITOR_ICON_IMAGE, asset, tex))
-	{
-		fs::path path = getPathFromAssetHandle(asset);
-		fs::path relative = fs::relative(path, fs::current_path());
-		if (auto newTex = loadTextureFromFileAsync(relative.string(), loadFlags))
-		{
-			tex = newTex;
-		}
-	}
-}
-
-static void editMesh(const char* name, ref<multi_mesh>& mesh, uint32 loadFlags)
-{
-	asset_handle asset = {};
-	if (mesh)
-	{
-		asset = mesh->handle;
-	}
-	if (ImGui::PropertyAssetHandle(name, EDITOR_ICON_MESH, asset))
-	{
-		fs::path path = getPathFromAssetHandle(asset);
-		fs::path relative = fs::relative(path, fs::current_path());
-		if (auto newMesh = loadMeshFromFile(relative.string(), loadFlags))
-		{
-			mesh = newMesh;
-		}
-	}
-}
-
-static void editMaterial(const ref<pbr_material>& material)
-{
-	if (ImGui::BeginProperties())
-	{
-		asset_handle dummy = {};
-
-		editTexture("Albedo", material->albedo, image_load_flags_default);
-		editTexture("Normal", material->normal, image_load_flags_default_noncolor);
-		editTexture("Roughness", material->roughness, image_load_flags_default_noncolor);
-		editTexture("Metallic", material->metallic, image_load_flags_default_noncolor);
-
-		ImGui::PropertyColor("Emission", material->emission);
-		ImGui::PropertyColor("Albedo tint", material->albedoTint);
-		ImGui::PropertyDropdown("Shader", pbrMaterialShaderNames, pbr_material_shader_count, (uint32&)material->shader);
-		ImGui::PropertySlider("UV scale", material->uvScale, 0.0f, 15.0f);
-		ImGui::PropertySlider("Translucency", material->translucency);
-
-		if (!material->roughness)
-		{
-			ImGui::PropertySlider("Roughness override", material->roughnessOverride);
-		}
-		if (!material->metallic)
-		{
-			ImGui::PropertySlider("Metallic override", material->metallicOverride);
-		}
-
-		ImGui::EndProperties();
-	}
-}
-
-static void editSubmeshTransform(trs* transform)
-{
-	ImGui::Drag("Position", transform->position, 0.1f);
-	vec3 selectedEntityEulerRotation = getEuler(transform->rotation);
-	if (ImGui::Drag("Rotation", selectedEntityEulerRotation, 0.1f))
-	{
-		transform->rotation = getQuat(selectedEntityEulerRotation);
-	}
-	ImGui::Drag("Scale", transform->scale, 0.1f);
 }
 
 void eeditor::renderChilds(eentity& entity)
@@ -1180,16 +1095,19 @@ bool eeditor::drawSceneHierarchy()
 
 								bool animationChanged = ImGui::PropertyDropdown("Currently playing", [](uint32 index, void* data)
 								{
-									if (index == -1) { return "---"; }
+									if (index == -1)
+										return "---";
 
 									animation_skeleton& skeleton = *(animation_skeleton*)data;
 									const char* result = 0;
+
 									if (index < (uint32)skeleton.clips.size())
 									{
 										result = skeleton.clips[index].name.c_str();
 									}
+
 									return result;
-								}, animationIndex, & mesh->mesh->skeleton);
+								}, animationIndex, &mesh->mesh->skeleton);
 
 								if (animationChanged)
 								{
@@ -1283,7 +1201,8 @@ bool eeditor::drawSceneHierarchy()
 							if (ImGui::BeginProperties())
 							{
 								ImGui::PropertyValue("Mass", 1.f / rb.getMass(), "%.3fkg");
-								bool dynamic = rb.getType() == physics::px_rigidbody_type::Dynamic;
+								bool dynamic = rb.type == physics::px_rigidbody_type::Dynamic;
+
 								//if (dynamic)
 								//{
 								//	vec3 lv = rb.getLinearVelocity();
@@ -1940,8 +1859,6 @@ void eeditor::onObjectMoved()
 	}
 }
 
-volatile bool paused = false;
-
 bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRenderPass, float dt)
 {
 	escene* scene = &this->scene->getCurrentScene();
@@ -2229,36 +2146,17 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 
 		if (ImGui::IconButton(imgui_icon_play, imgui_icon_play, IMGUI_ICON_DEFAULT_SIZE, this->scene->isPlayable()))
 		{
-			this->scene->play();
-			undoStacks[1].reset();
-			setSelectedEntity({});
-
-			for (auto [entityHandle, rigidbody, transform] : this->scene->getCurrentScene().group(component_group<physics::px_rigidbody_component, transform_component>).each())
-			{
-				rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
-			}
-
-			if (!paused)
-				app->linker.start();
-			else
-				paused = false;
+			forceStart();
 		}
 		ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
 		if (ImGui::IconButton(imgui_icon_pause, imgui_icon_pause, IMGUI_ICON_DEFAULT_SIZE, this->scene->isPausable()))
 		{
-			this->scene->pause();
-			paused = true;
+			forcePause();
 		}
 		ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
 		if (ImGui::IconButton(imgui_icon_stop, imgui_icon_stop, IMGUI_ICON_DEFAULT_SIZE, this->scene->isStoppable()))
 		{
-			this->scene->stop();
-			this->scene->environment.forceUpdate(this->scene->sun.direction);
-			setSelectedEntity({});
-			app->linker.reload_src();
-			physics::physics_holder::physicsRef->resetActorsVelocityAndInertia();
-			paused = false;
-			this->scene->editor_camera.setPositionAndRotation(vec3(0.0f), quat::identity);
+			forceStop();
 		}
 
 		scene = &this->scene->getCurrentScene();
@@ -2414,7 +2312,7 @@ bool eeditor::drawEntityCreationPopup()
 
 		if (ImGui::MenuItem("Empty", "E") || ImGui::IsKeyPressed('E'))
 		{
-			auto empty = scene->createEntity("Empty")
+			auto& empty = scene->createEntity("Empty")
 				.addComponent<transform_component>(camera.position + camera.rotation * vec3(0.f, 0.f, -3.f), quat::identity);
 
 			currentUndoStack->pushAction("entity creation", entity_existence_undo(*scene, empty));
@@ -2768,6 +2666,42 @@ bool eeditor::editSharpen(bool& enable, sharpen_settings& settings)
 		ImGui::EndProperties();
 	}
 	return result;
+}
+
+volatile bool paused = false;
+
+void eeditor::forceStart()
+{
+	this->scene->play();
+	undoStacks[1].reset();
+	setSelectedEntity({});
+
+	for (auto [entityHandle, rigidbody, transform] : this->scene->getCurrentScene().group(component_group<physics::px_rigidbody_component, transform_component>).each())
+	{
+		rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
+	}
+
+	if (!paused)
+		app->linker.start();
+	else
+		paused = false;
+}
+
+void eeditor::forcePause()
+{
+	this->scene->pause();
+	paused = true;
+}
+
+void eeditor::forceStop()
+{
+	this->scene->stop();
+	this->scene->environment.forceUpdate(this->scene->sun.direction);
+	setSelectedEntity({});
+	app->linker.reload_src();
+	physics::physics_holder::physicsRef->resetActorsVelocityAndInertia();
+	paused = false;
+	this->scene->editor_camera.setPositionAndRotation(vec3(0.0f), quat::identity);
 }
 
 void eeditor::drawSettings(float dt)

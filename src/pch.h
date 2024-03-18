@@ -20,6 +20,7 @@
 namespace fs = std::filesystem;
 
 #include <mutex>
+#include <unordered_map>
 #include <wrl.h> 
 
 #define RELEASE_PTR(ptr) if(ptr) { delete ptr; ptr = nullptr; }
@@ -86,6 +87,21 @@ NODISCARD constexpr inline auto max(T a, T b)
 {
 	return (a < b) ? b : a;
 }
+
+struct lock
+{
+	lock(std::mutex& mutex) : sync(&mutex)
+	{
+		sync->lock();
+	}
+
+	~lock()
+	{
+		sync->unlock();
+	}
+
+	std::mutex* sync = nullptr;
+};
 
 template <auto V> static constexpr auto force_consteval = V;
 

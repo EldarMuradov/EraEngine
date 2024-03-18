@@ -142,6 +142,7 @@ struct light_culling
 	// Opaque is in R,G.
 	// Transparent is in B,A.
 	// For more info, see light_culling_cs.hlsl.
+
 	ref<dx_texture> tiledCullingGrid;
 
 	uint32 numCullingTilesX{};

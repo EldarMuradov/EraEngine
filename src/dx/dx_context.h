@@ -51,10 +51,10 @@ struct dx_feature_support
 	dx_tiling_tier tilingTier = dx_tiling_1;
 	DLSS_status dlss_status = DLSS_status_3_5;
 
-	constexpr bool raytracing() { return raytracingTier >= dx_raytracing_1_0; }
-	constexpr bool meshShaders() { return meshShaderTier >= dx_mesh_shader_1_0; }
-	constexpr bool tiling() { return tilingTier >= dx_tiling_1; }
-	constexpr bool dlss() { return dlss_status >= DLSS_status_3_0; }
+	constexpr bool raytracing() const { return raytracingTier >= dx_raytracing_1_0; }
+	constexpr bool meshShaders() const { return meshShaderTier >= dx_mesh_shader_1_0; }
+	constexpr bool tiling() const { return tilingTier >= dx_tiling_1; }
+	constexpr bool dlss() const { return dlss_status >= DLSS_status_3_0; }
 };
 
 struct dx_context

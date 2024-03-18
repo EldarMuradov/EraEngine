@@ -15,21 +15,22 @@
 #include <application.h>
 #include <scene/scene.h>
 
-physics::px_collision_contact_callback collisionCallback;
+namespace
+{
+	physics::px_simulation_event_callback simulationEventCallback;
 
-physics::px_CCD_contact_modification contactModification;
+	physics::px_CCD_contact_modification contactModification;
+}
 
-physx::PxFilterFlags contactReportFilterShader(
-	physx::PxFilterObjectAttributes attributes0,
-	physx::PxFilterData filterData0,
-	physx::PxFilterObjectAttributes attributes1,
-	physx::PxFilterData filterData1,
-	physx::PxPairFlags& pairFlags,
-	const void* constantBlock,
-	physx::PxU32 constantBlockSize)
+static physx::PxFilterFlags contactReportFilterShader(
+	physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
+	physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
+	physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize)
 {
 	UNUSED(constantBlockSize);
 	UNUSED(constantBlock);
+
+	const bool maskTest = (filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1);
 
 	if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1))
 	{
@@ -37,18 +38,35 @@ physx::PxFilterFlags contactReportFilterShader(
 		return physx::PxFilterFlag::eDEFAULT;
 	}
 
+	if (maskTest)
+		return physx::PxFilterFlag::eSUPPRESS;
+
+	pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
 	pairFlags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
+	pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
+	pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
+	pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
+	pairFlags |= physx::PxPairFlag::ePOST_SOLVER_VELOCITY;
+	pairFlags |= physx::PxPairFlag::eNOTIFY_CONTACT_POINTS;
+	pairFlags |= physx::PxPairFlag::eSOLVE_CONTACT;
+	pairFlags |= physx::PxPairFlag::eDETECT_DISCRETE_CONTACT;
 
-	pairFlags = physx::PxPairFlag::eNOTIFY_CONTACT_POINTS | physx::PxPairFlag::eDETECT_DISCRETE_CONTACT;
+	return physx::PxFilterFlag::eDEFAULT;
+}
 
-	if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
-		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
-
-	pairFlags = physx::PxPairFlag::eSOLVE_CONTACT | physx::PxPairFlag::eDETECT_DISCRETE_CONTACT
-		| physx::PxPairFlag::eNOTIFY_TOUCH_FOUND
-		| physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS
-		| physx::PxPairFlag::eNOTIFY_CONTACT_POINTS | physx::PxPairFlag::eMODIFY_CONTACTS;
-	return physx::PxFilterFlag::eNOTIFY;
+static void clearColliderFromCollection(const physics::px_rigidbody_component* collider, physx::PxArray<physics::px_simulation_event_callback::colliders_pair>& collection)
+{
+	const auto c = &collection[0];
+	for (int32 i = 0; i < collection.size(); i++)
+	{
+		const physics::px_simulation_event_callback::colliders_pair cc = c[i];
+		if (cc.first == collider || cc.second == collider)
+		{
+			collection.remove(i--);
+			if (collection.empty())
+				break;
+		}
+	}
 }
 
 physics::px_physics_engine::px_physics_engine(application* application) noexcept
@@ -60,19 +78,29 @@ physics::px_physics_engine::px_physics_engine(application* application) noexcept
 	foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocatorCallback, errorReporter);
 
 	if (PxGetSuggestedCudaDeviceOrdinal(foundation->getErrorCallback()) < 0)
+	{
+		sync.unlock();
 		throw ::std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
+	}
 
 	if (!foundation)
+	{
+		sync.unlock();
 		throw ::std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
+	}
 
 	pvd = PxCreatePvd(*foundation);
 
 #if PX_ENABLE_PVD
 	PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
 	if (transport == NULL)
+	{
+		sync.unlock();
 		throw std::exception("Failed to create {PxPvdTransport}. Error in {PhysicsEngine} ctor.");
+	}
 
 	pvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
+
 #endif
 	toleranceScale.length = 1.0;
 	toleranceScale.speed = 10.0;
@@ -89,17 +117,16 @@ physics::px_physics_engine::px_physics_engine(application* application) noexcept
 
 	PxSceneDesc sceneDesc(physics->getTolerancesScale());
 	sceneDesc.gravity = gravity;
-	sceneDesc.cpuDispatcher = dispatcher;
-	sceneDesc.filterShader = PxDefaultSimulationFilterShader;
 	sceneDesc.cudaContextManager = cudaContextManager;
+	sceneDesc.cpuDispatcher = dispatcher;
+
+	sceneDesc.filterShader = contactReportFilterShader;
 	sceneDesc.staticStructure = PxPruningStructureType::eDYNAMIC_AABB_TREE;
-	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
 
 	sceneDesc.solverType = PxSolverType::eTGS;
 
 	sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
-	sceneDesc.simulationEventCallback = &collisionCallback;
 
 #if PX_GPU_BROAD_PHASE
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
@@ -118,6 +145,9 @@ physics::px_physics_engine::px_physics_engine(application* application) noexcept
 	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
+	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
+
+	sceneDesc.simulationEventCallback = &simulationEventCallback;
 	sceneDesc.filterCallback = &simulationFilterCallback;
 	sceneDesc.ccdContactModifyCallback = &contactModification;
 
@@ -132,9 +162,7 @@ physics::px_physics_engine::px_physics_engine(application* application) noexcept
 		client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
 		client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
 	}
-#endif
 
-#if PX_ENABLE_PVD
 	if (pvd->isConnected())
 		LOG_MESSAGE("Physics> PVD Connection enabled.");
 #endif
@@ -150,6 +178,7 @@ physics::px_physics_engine::px_physics_engine(application* application) noexcept
 	PxVehicleSetBasisVectors(PxVec3(0, 1, 0), PxVec3(0, 0, 1));
 	PxVehicleSetUpdateMode(PxVehicleUpdateMode::eVELOCITY_CHANGE);
 #endif
+
 	sync.unlock();
 }
 
@@ -162,6 +191,10 @@ physics::px_physics_engine::~px_physics_engine()
 void physics::px_physics_engine::release() noexcept
 {
 	sync.lock();
+
+	releaseActors();
+	releaseScene();
+
 #if PX_VEHICLE
 	PxCloseVehicleSDK();
 #endif
@@ -169,13 +202,13 @@ void physics::px_physics_engine::release() noexcept
 	PxCloseExtensions();
 
 	PX_RELEASE(physics)
-	PX_RELEASE(pvd)
-	PX_RELEASE(foundation)
-	PX_RELEASE(scene)
-	PX_RELEASE(cudaContextManager)
+		PX_RELEASE(pvd)
+		PX_RELEASE(foundation)
+		PX_RELEASE(scene)
+		PX_RELEASE(cudaContextManager)
 
 #if PX_ENABLE_RAYCAST_CCD
-	delete raycastCCD;
+		delete raycastCCD;
 	raycastCCD = nullptr;
 #endif
 
@@ -197,12 +230,14 @@ void physics::px_physics_engine::update(float dt) noexcept
 	void* scratchMemBlock = allocator.allocate(MB(16), 16U, true);
 
 #if PX_GPU_BROAD_PHASE
-	scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
+	//scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
 #else
-	scene->collide(std::max(dt, stepSize), NULL, scratchMemBlock, MB(16));
-	scene->fetchCollision(true);
-	scene->advance();
+	//scene->collide(std::max(dt, stepSize), NULL, scratchMemBlock, MB(16));
+	//scene->fetchCollision(true);
+	//scene->advance();
 #endif
+
+	scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
 
 	scene->fetchResults(true);
 
@@ -237,6 +272,11 @@ void physics::px_physics_engine::update(float dt) noexcept
 	raycastCCD->doRaycastCCD(true);
 #endif
 
+	simulationEventCallback.sendCollisionEvents();
+	simulationEventCallback.sendTriggerEvents();
+
+	simulationEventCallback.clear();
+
 	allocator.reset();
 	sync.unlock();
 }
@@ -265,7 +305,7 @@ void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
 void physics::px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene) noexcept
 {
 	sync.lock();
-	if(addToScene)
+	if (addToScene)
 		scene->addActor(*ractor);
 
 #if PX_ENABLE_RAYCAST_CCD
@@ -284,7 +324,7 @@ void physics::px_physics_engine::addActor(px_rigidbody_component* actor, PxRigid
 		if (!coll)
 			coll = (px_collider_component_base*)entity.getComponentIfExists<px_bounding_box_collider_component>();
 
-		if(coll)
+		if (coll)
 			physics->raycastCCD->registerRaycastCCDObject(r, coll->getShape());
 	}
 #endif
@@ -341,12 +381,12 @@ physics::px_raycast_info physics::px_physics_engine::raycast(px_rigidbody_compon
 
 		if (actor != rb)
 			return
-			{
-				actor,
-				hitInfo1.distance,
-				buffer.getNbAnyHits(),
-				vec3(hitInfo1.position.x, hitInfo1.position.y, hitInfo1.position.z)
-			};
+		{
+			actor,
+			hitInfo1.distance,
+			buffer.getNbAnyHits(),
+			vec3(hitInfo1.position.x, hitInfo1.position.y, hitInfo1.position.z)
+		};
 		else if (buffer.getNbAnyHits() > 1)
 		{
 			const auto& hitInfo2 = buffer.getAnyHit(1);
@@ -388,51 +428,145 @@ void physics::px_CCD_contact_modification::onCCDContactModify(PxContactModifyPai
 	}
 }
 
-void physics::px_collision_contact_callback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
+void physics::px_simulation_event_callback::clear()
+{
+	newCollisions.clear();
+	removedCollisions.clear();
+
+	newTriggerPairs.clear();
+	lostTriggerPairs.clear();
+}
+
+void physics::px_simulation_event_callback::sendCollisionEvents()
+{
+	for (auto& c : removedCollisions)
+	{
+		c.thisActor->onCollisionExit(c.otherActor);
+		c.swapObjects();
+		LOG_MESSAGE("VISHEL");
+		c.thisActor->onCollisionExit(c.otherActor);
+		c.swapObjects();
+	}
+
+	for (auto& c : newCollisions)
+	{
+		c.thisActor->onCollisionEnter(c.otherActor);
+		c.swapObjects();
+		LOG_MESSAGE("VOSHOL");
+		c.thisActor->onCollisionEnter(c.otherActor);
+		c.swapObjects();
+		physics::physics_holder::physicsRef->collisionQueue.emplace(c.thisActor->handle, c.otherActor->handle);
+	}
+}
+
+void physics::px_simulation_event_callback::sendTriggerEvents()
+{
+}
+
+void physics::px_simulation_event_callback::onColliderRemoved(px_rigidbody_component* collider)
+{
+	clearColliderFromCollection(collider, newTriggerPairs);
+	clearColliderFromCollection(collider, lostTriggerPairs);
+}
+
+void physics::px_simulation_event_callback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
 {
 	UNUSED(pairHeader);
-	
+
 	const physx::PxU32 bufferSize = PX_CONTACT_BUFFER_SIZE;
 	physx::PxContactPairPoint contacts[bufferSize];
+
+	px_collision collision{};
+	PxContactPairExtraDataIterator iter(pairHeader.extraDataStream, pairHeader.extraDataStreamSize);
+
 	for (physx::PxU32 i = 0; i < nbPairs; i++)
 	{
 		const physx::PxContactPair& cp = pairs[i];
 		physx::PxU32 nbContacts = pairs[i].extractContacts(contacts, bufferSize);
+
+		const bool hasPostVelocities = !cp.flags.isSet(PxContactPairFlag::eACTOR_PAIR_LOST_TOUCH);
+
 		for (physx::PxU32 j = 0; j < nbContacts; j++)
 		{
 			physx::PxVec3 point = contacts[j].position;
 			physx::PxVec3 impulse = contacts[j].impulse;
 			physx::PxU32 internalFaceIndex0 = contacts[j].internalFaceIndex0;
 			physx::PxU32 internalFaceIndex1 = contacts[j].internalFaceIndex1;
+
+			collision.impulse += impulse;
+
 			UNUSED(point);
 			UNUSED(impulse);
 			UNUSED(internalFaceIndex0);
 			UNUSED(internalFaceIndex1);
 		}
 
+		collision.thisVelocity = collision.otherVelocity = PxVec3(0.0f);
+
+		if (hasPostVelocities && iter.nextItemSet())
+		{
+			ASSERT(iter.contactPairIndex == i);
+			if (iter.postSolverVelocity)
+			{
+				collision.thisVelocity = iter.postSolverVelocity->linearVelocity[0];
+				collision.otherVelocity = iter.postSolverVelocity->linearVelocity[1];
+			}
+		}
+
 		if (cp.events & physx::PxPairFlag::eNOTIFY_TOUCH_FOUND)
 		{
 			auto r1 = pairHeader.actors[0]->is<PxRigidActor>();
 			auto r2 = pairHeader.actors[1]->is<PxRigidActor>();
+
 			if (!r1 || !r2)
 				return;
+
 			PxRigidActor* actor1 = r1;
 			PxRigidActor* actor2 = r2;
 
 			auto rb1 = physics::physics_holder::physicsRef->actors_map[actor1];
 			auto rb2 = physics::physics_holder::physicsRef->actors_map[actor2];
 
-			if (rb1 && rb2)
+			if (!rb1 || !rb2)
+				return;
+
+			collision.thisActor = rb1;
+			collision.otherActor = rb2;
+
+			if (cp.flags & PxContactPairFlag::eACTOR_PAIR_HAS_FIRST_TOUCH)
 			{
-				rb1->onCollisionEnter(rb2);
-				rb2->onCollisionEnter(rb1);
-				physics::physics_holder::physicsRef->collisionQueue.emplace(rb1->handle, rb2->handle);
+				newCollisions.pushBack(collision);
+			}
+		}
+		else if (cp.events & physx::PxPairFlag::eNOTIFY_TOUCH_LOST)
+		{
+			auto r1 = pairHeader.actors[0]->is<PxRigidActor>();
+			auto r2 = pairHeader.actors[1]->is<PxRigidActor>();
+
+			if (!r1 || !r2)
+				return;
+
+			PxRigidActor* actor1 = r1;
+			PxRigidActor* actor2 = r2;
+
+			auto rb1 = physics::physics_holder::physicsRef->actors_map[actor1];
+			auto rb2 = physics::physics_holder::physicsRef->actors_map[actor2];
+
+			if (!rb1 || !rb2)
+				return;
+
+			collision.thisActor = rb1;
+			collision.otherActor = rb2;
+
+			if (cp.flags & PxContactPairFlag::eACTOR_PAIR_LOST_TOUCH)
+			{
+				removedCollisions.pushBack(collision);
 			}
 		}
 	}
 }
 
-NODISCARD physx::PxTriangleMesh* physics::px_triangle_mesh::createTriangleMesh(PxTriangleMeshDesc desc)
+NODISCARD physx::PxTriangleMesh* physics::px_triangle_mesh_builder::createTriangleMesh(PxTriangleMeshDesc desc)
 {
 	try
 	{
@@ -669,7 +803,7 @@ void physx::swapToHighLowVersion(const PxVehicleDriveNW& vehicle4W, PxVehicleDri
 
 #endif
 
-NODISCARD physx::PxConvexMesh* physics::px_convex_mesh::createConvexMesh(PxConvexMeshDesc desc)
+NODISCARD physx::PxConvexMesh* physics::px_convex_mesh_builder::createConvexMesh(PxConvexMeshDesc desc)
 {
 	try
 	{

@@ -702,7 +702,7 @@ NODISCARD dx_command_list* main_renderer::renderThread3(common_render_data commo
 	return cl;
 }
 
-void main_renderer::endFrame(const user_input* input, float dt)
+void main_renderer::endFrame(const user_input* input)
 {
 	bool aspectRatioModeChanged = aspectRatioMode != oldAspectRatioMode;
 	oldAspectRatioMode = aspectRatioMode;
@@ -721,19 +721,19 @@ void main_renderer::endFrame(const user_input* input, float dt)
 	settings.enableBloom &= spec.allowBloom;
 	settings.enableTAA &= spec.allowTAA;
 
-	lighting_cb lightingCB = 
+	lighting_cb lightingCB =
 	{
 		sun,
-		environment->lightProbeGrid.getCB(),
+		environment ? environment->lightProbeGrid.getCB() : light_probe_grid_cb{},
 		vec2(1.f / SHADOW_MAP_WIDTH, 1.f / SHADOW_MAP_HEIGHT),
-		environment ? environment->globalIlluminationIntensity : 1.f, 
+		environment ? environment->globalIlluminationIntensity : 1.f,
 		(environment && environment->giMode == environment_gi_raytraced),
 	};
 
 	dx_dynamic_constant_buffer lightingCBV = dxContext.uploadDynamicConstantBuffer(lightingCB);
 
 	common_render_data commonRenderData;
-
+	commonRenderData.lightingCBV = lightingCBV;
 	commonRenderData.proceduralSky = !(environment && environment->sky);
 	commonRenderData.sky = (environment && environment->sky) ? environment->sky : render_resources::blackCubeTexture;
 	commonRenderData.irradiance = (environment && environment->irradiance) ? environment->irradiance : render_resources::blackCubeTexture;
@@ -755,7 +755,7 @@ void main_renderer::endFrame(const user_input* input, float dt)
 	commonRenderData.spotLightShadowInfoBuffer = spotLightShadowInfoBuffer;
 	commonRenderData.volumetricsTexture = 0;
 	commonRenderData.cameraCBV = jitteredCameraCBV;
-	commonRenderData.lightingCBV = lightingCBV;
+
 	commonRenderData.lightProbeIrradiance = (environment && environment->giMode == environment_gi_raytraced) ? environment->lightProbeGrid.irradiance : 0;
 	commonRenderData.lightProbeDepth = (environment && environment->giMode == environment_gi_raytraced) ? environment->lightProbeGrid.depth : 0;
 	commonRenderData.opaqueColor = hdrPostProcessingTexture;
@@ -876,7 +876,7 @@ void main_renderer::endFrame(const user_input* input, float dt)
 		if (dxContext.featureSupport.dlss() && settings.enableDLSS)
 		{
 			PROFILE_ALL(cl3, "DLSS Evaluation");
-			dlss_adapter.updateDLSS(cl3->commandList.Get(), dt);
+			dlss_adapter.updateDLSS(cl3->commandList.Get(), computePass->dt);
 		}
 
 		dxContext.executeCommandList(cl3);
@@ -913,7 +913,7 @@ void main_renderer::endFrame(const user_input* input, float dt)
 		barrier_batcher(cl)
 			.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
 			.transition(frameResult, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-
+		
 		visualizeSunShadowCascades(cl, depthStencilBuffer, frameResult, lightingCBV, unjitteredCamera.invViewProj, unjitteredCamera.position.xyz, unjitteredCamera.forward.xyz);
 
 		barrier_batcher(cl)

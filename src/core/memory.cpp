@@ -38,7 +38,7 @@ void eallocator::ensureFreeSizeInternal(uint64 size)
 	}
 }
 
-NODISCARD void* eallocator::allocate(uint64 size, uint64 alignment, bool clearToZero)
+void* eallocator::allocate(uint64 size, uint64 alignment, bool clearToZero)
 {
 	if (size == 0)
 		return 0;

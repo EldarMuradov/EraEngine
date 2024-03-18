@@ -11,7 +11,7 @@ public static class ELevel
     internal static UpdateDelegates? UpdateDelegate;
 
     [UnmanagedCaller]
-    public static unsafe void Start()
+    public static void Start()
     {
         try
         {
@@ -45,6 +45,33 @@ public static class ELevel
             EWorld.SceneWorld.IterateAll((entity) => { entity.Start(); });
 
             _syncObj.Release();
+
+            // Channel tests
+            {
+                var eventChannel = ESystemManager.GetSystem<EventSystem>().Channel;
+
+                var subscribe = (EventRequest req) => { Console.WriteLine(req.Name); };
+                var unsubscribe = () => { Console.WriteLine("Completed"); };
+
+                {
+                    using var subscription = eventChannel.Subscribe(subscribe, unsubscribe);
+
+                    eventChannel.Post(new EventRequest() { Name = "REQ1" });
+                    eventChannel.Post(new EventRequest() { Name = "REQ2" });
+                    eventChannel.Post(new EventRequest() { Name = "REQ3" });
+                }
+
+                eventChannel.Post(new EventRequest() { Name = "REQ4" });
+
+                Task.Run(
+                    async () =>
+                    {
+                        await foreach (var req in eventChannel.ToAsyncEnumerable(CancellationToken.None))
+                        {
+                            await Console.Out.WriteLineAsync(req.Name + " " + req.IsCompleted);
+                        }
+                    });
+            }
         }
         catch (Exception ex)
         {
@@ -71,27 +98,6 @@ public static class ELevel
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
-        }
-    }
-
-    public static void RegisterCommonSystems()
-    {
-        ESystemManager.RegisterSystem<BackgroundServiceSystem>();
-        ESystemManager.RegisterSystem<InputSystem>();
-        ESystemManager.RegisterSystem<EventSystem>();
-    }
-
-    public static void RegisterSystemsWithReflection()
-    {
-        static bool IsSystemType(Type type) => type.GetInterface("IESystem") is not null && type.IsClass;
-
-        var assembly = Assembly.GetAssembly(typeof(EEntity));
-        var types = assembly.GetTypes().Where(IsSystemType).ToImmutableList();
-
-        foreach (var type in types)
-        {
-            ESystemManager.RegisterSystem((IESystem)Activator.CreateInstance(type)!);
-            Console.WriteLine(type.Name);
         }
     }
 

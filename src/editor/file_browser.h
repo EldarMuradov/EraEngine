@@ -17,6 +17,7 @@ struct file_browser
 		dir_entry_type_image_hdr,
 		dir_entry_type_font,
 		dir_entry_type_audio,
+		dir_entry_type_code
 	};
 
 private:

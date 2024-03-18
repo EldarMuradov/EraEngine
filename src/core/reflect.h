@@ -50,7 +50,7 @@ template <typename T> struct is_reflected : std::is_base_of<member_list_base, ty
 template <typename T> inline constexpr bool is_reflected_v = is_reflected<T>::value;
 
 template <typename T, typename = std::enable_if_t<is_reflected_v<T>>>
-static std::ostream& operator<<(std::ostream& o, const T& v)
+inline std::ostream& operator<<(std::ostream& o, const T& v)
 {
 	o << type_descriptor<T>::structName << " = {\n";
 	type_descriptor<T>::apply(
