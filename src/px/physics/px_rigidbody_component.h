@@ -17,7 +17,9 @@ namespace physics
 	{
 		None,
 		Force,
-		Impulse
+		Impulse,
+		VelocityChange,
+		Acceleration
 	};
 
 	struct px_rigidbody_component

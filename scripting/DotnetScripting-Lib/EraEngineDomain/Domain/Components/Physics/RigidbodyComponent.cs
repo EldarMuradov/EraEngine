@@ -9,7 +9,9 @@ public enum ForceMode : byte
 {
     None,
     Force,
-    Impulse
+    Impulse,
+    VelocityChange,
+    Acceleration
 }
 
 public enum RigidbodyType : byte
