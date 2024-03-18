@@ -174,9 +174,9 @@ struct mesh_builder
 
 	void pushMesh(const struct submesh_asset& mesh, float scale, bounding_box* aabb = 0);
 
-	NODISCARD submesh_info endSubmesh();
+	submesh_info endSubmesh();
 
-	NODISCARD dx_mesh createDXMesh();
+	dx_mesh createDXMesh();
 
 	NODISCARD vec3* getPositions() { return (vec3*)positionArena.base(); }
 	NODISCARD void* getOthers() { return othersArena.base(); }

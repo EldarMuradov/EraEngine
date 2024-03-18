@@ -59,7 +59,7 @@ NODISCARD inline constexpr uint64 hashString64(const char* s)
 #define COMPILE_TIME_STRING_HASH_32(str) (force_consteval<hashString32(str)>)
 #define COMPILE_TIME_STRING_HASH_64(str) (force_consteval<hashString64(str)>)
 
-NODISCARD inline inline std::string getTimeString()
+NODISCARD inline std::string getTimeString()
 {
 	time_t now = time(0);
 	char nowString[100];
@@ -72,12 +72,12 @@ NODISCARD inline inline std::string getTimeString()
 	return time;
 }
 
-NODISCARD inline inline bool contains(const std::string_view& s, const char* sub)
+NODISCARD inline bool contains(const std::string_view& s, const char* sub)
 {
 	return s.find(sub) != std::string::npos;
 }
 
-NODISCARD inline inline bool endsWith(const std::string_view& s, const std::string_view& sub)
+NODISCARD inline bool endsWith(const std::string_view& s, const std::string_view& sub)
 {
 	if (s.length() >= sub.length())
 		return s.compare(s.length() - sub.length(), sub.length(), sub) == 0;

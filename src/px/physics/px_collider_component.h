@@ -22,16 +22,20 @@ namespace physics
 
 	struct px_triangle_mesh_collider_builder
 	{
-		NODISCARD PxTriangleMesh* buildMesh(mesh_asset* asset, unsigned int size);
+		NODISCARD PxTriangleMesh* buildMesh(mesh_asset* asset, float size);
 	};
 
 	struct px_convex_mesh_collider_builder
 	{
-		NODISCARD PxConvexMesh* buildMesh(mesh_asset* asset, unsigned int size);
+		NODISCARD PxConvexMesh* buildMesh(mesh_asset* asset, float size);
 	};
+
+	void enableShapeVisualization(PxShape* shape) noexcept;
+	void disableShapeVisualization(PxShape* shape) noexcept;
 
 	void enableShapeInContactTests(PxShape* shape) noexcept;
 	void disableShapeInContactTests(PxShape* shape) noexcept;
+
 	void enableShapeInSceneQueryTests(PxShape* shape) noexcept;
 	void disableShapeInSceneQueryTests(PxShape* shape) noexcept;
 
@@ -190,6 +194,19 @@ namespace physics
 		float modelSize = 1.0f;
 		::std::string name;
 	};
+
+	inline bool isTrigger(const PxFilterData& data)
+	{
+		if(data.word0 != 0xffffffff)
+			return false;
+		if(data.word1 != 0xffffffff)
+			return false;
+		if(data.word2 != 0xffffffff)
+			return false;
+		if(data.word3 != 0xffffffff)
+			return false;
+		return true;
+	}
 }
 
 #include "core/reflect.h"

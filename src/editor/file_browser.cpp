@@ -8,10 +8,12 @@
 #include <shellapi.h>
 #include <imgui/imgui_internal.h>
 #include <editor/system_calls.h>
+#include <core/project.h>
 
 file_browser::file_browser()
 {
-	changeCurrentPath("assets");
+	std::string path = eproject::path + "\\assets";
+	changeCurrentPath(path);
 }
 
 static const char* getTypeIcon(file_browser::dir_entry_type type)
@@ -36,6 +38,9 @@ static const char* getTypeIcon(file_browser::dir_entry_type type)
 
 	if (type == file_browser::dir_entry_type_audio)
 		return EDITOR_ICON_AUDIO;
+
+	if (type == file_browser::dir_entry_type_code)
+		return ICON_FA_FILE_CODE;
 
 	return ICON_FA_FILE;
 }
@@ -70,7 +75,13 @@ void file_browser::draw()
 		fs::path accPath;
 		for (auto p : currentPath)
 		{
-			accPath = accPath.empty() ? p : (accPath / p);
+			if (p == "\\")
+			{
+				accPath = std::move(accPath / p);
+				continue;
+			}
+
+			accPath = accPath.empty() ? p : std::move((accPath / p));
 			ImGui::SameLine(0, 0);
 			if (ImGui::SmallButton(p.string().c_str()))
 			{
@@ -83,7 +94,6 @@ void file_browser::draw()
 		}
 		ImGui::PopStyleColor();
 
-		// Some attempts to align the selectable and the text input vertically.
 		ImGui::Dummy(ImVec2(0.f, ImGui::GetStyle().FramePadding.y));
 		ImGui::Selectable(ICON_FA_FILTER, &showOnlyPassingItems, 0, ImGui::CalcTextSize(ICON_FA_FILTER));
 		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Show only items passing the filter search"); }
@@ -254,6 +264,10 @@ void file_browser::refresh()
 			else if (extension == ".ttf")
 			{
 				type = dir_entry_type_font;
+			}
+			else if (extension == ".cs")
+			{
+				type = dir_entry_type_code;
 			}
 			else if (isSoundExtension(extension))
 			{

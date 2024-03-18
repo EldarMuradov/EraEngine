@@ -18,7 +18,7 @@ Era Engine uses ECS to manage game objects and their behavior. This allows devel
 The engine uses DirectX 12 to provide high-quality and efficient rendering, allowing you to create visually appealing games with advanced graphical effects. DLSS 3.5 and FSR 2.0 supported.
 
 ### Physics: 
-Integration with PhysX 5.3.1 and CUDA provides realistic simulation of game physics, including collisions, gravity, aggregates, joints, ragdoll, vehicles, GPU-based tasks and other physical interactions.
+Integration with PhysX 5.3.1 and CUDA provides realistic simulation of game physics, including collisions, gravity, aggregates, joints, ragdoll, vehicles, CPU-based tasks and other physical interactions.
 
 ### User Interface: 
 ImGui is integrated into the engine to create intuitive and customizable user interfaces in games. 
@@ -51,15 +51,13 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 
 -Real-time raytracing (DXR)
 
--TAA
-
 -DLSS 3.5
 
 -FSR 2.0
 
 -Rigidbodies and colliders
 
--PBR
+-PBR Rendering 
 
 -GPU PBD Particle Systems
 
@@ -103,13 +101,13 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 
 -Mesh shaders
 
+-Mesh and Audio Editors
+
 -Scene management
 
 -Saving system
 
 -Undoable components
-
--PhysX physics
 
 -Custom physics engine
 
@@ -122,6 +120,8 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 -Path tracing
 
 -Cascaded shadow maps
+
+- GI
 
 -Point lights
 

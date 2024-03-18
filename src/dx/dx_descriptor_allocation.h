@@ -27,7 +27,7 @@ struct dx_descriptor_heap
 {
 	void initialize(D3D12_DESCRIPTOR_HEAP_TYPE type, bool shaderVisible, uint64 pageSize = 1024);
 
-	NODISCARD dx_descriptor_allocation allocate(uint64 count = 1);
+	dx_descriptor_allocation allocate(uint64 count = 1);
 	void free(dx_descriptor_allocation allocation);
 
 	D3D12_DESCRIPTOR_HEAP_TYPE type;
@@ -41,7 +41,7 @@ private:
 
 struct dx_descriptor_range
 {
-	inline NODISCARD dx_double_descriptor_handle pushHandle()
+	inline dx_double_descriptor_handle pushHandle()
 	{
 		dx_double_descriptor_handle result =
 		{
@@ -78,14 +78,14 @@ struct dx_frame_descriptor_allocator
 
 	void initialize();
 	void newFrame(uint32 bufferedFrameID);
-	NODISCARD dx_descriptor_range allocateContiguousDescriptorRange(uint32 count);
+	dx_descriptor_range allocateContiguousDescriptorRange(uint32 count);
 };
 
 struct dx_pushable_descriptor_heap
 {
 	void initialize(uint32 maxSize, bool shaderVisible = true);
 	void reset();
-	NODISCARD dx_cpu_descriptor_handle push();
+	dx_cpu_descriptor_handle push();
 
 	com<ID3D12DescriptorHeap> descriptorHeap;
 	dx_cpu_descriptor_handle currentCPU;

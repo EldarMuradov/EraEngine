@@ -105,6 +105,8 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 	highPriorityJobQueue.createJob<updatePhysicsAndScriptingData>([](updatePhysicsAndScriptingData& data, job_handle)
 	{
 		{
+			CPU_PROFILE_BLOCK("PhysX steps");
+
 			const auto& physicsRef = physics::physics_holder::physicsRef;
 			physicsRef->update(data.deltaTime);
 
@@ -118,7 +120,10 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 
 		updateScripting(data);
 
-		data.core.handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
+		{
+			CPU_PROFILE_BLOCK(".NET 8 Input sync step");
+			data.core.handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
+		}
 	}, data).submitNow();
 
 	const auto& nav_objects = data.scene.group(component_group<navigation_component, transform_component>);
@@ -134,6 +139,7 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 
 		lowPriorityJobQueue.createJob<nav_process_data>([](nav_process_data& data, job_handle)
 		{
+			CPU_PROFILE_BLOCK("Navigation step");
 			for (auto [entityHandle, nav, transform] : data.objects.each())
 			{
 				nav.processPath();
@@ -144,7 +150,7 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 
 void updateScripting(updatePhysicsAndScriptingData& data)
 {
-	CPU_PROFILE_BLOCK(".NET 8.0 Native AOT scripting step");
+	CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
 	for (auto [entityHandle, transform, script] : data.scene.group(component_group<transform_component, script_component>).each())
 	{
 		const auto& mat = trsToMat4(transform);
@@ -181,10 +187,8 @@ void application::loadCustomShaders()
 	}
 }
 
-//px_particle_system* particleSystem = nullptr;
-//px_cloth_system* clothSystem = nullptr;
-entity_handle cloth{};
-entity_handle particles{};
+//entity_handle cloth{};
+//entity_handle particles{};
 
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
@@ -224,9 +228,12 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 #ifndef ERA_RUNTIME
 	if (auto mesh = loadMeshFromFileAsync("assets/Sponza/sponza.obj"))
 	{
+		//model_asset ass = load3DModelFromFile("assets/Sponza/sponza.obj");
 		const auto& sponza = scene.createEntity("Sponza")
-			.addComponent<transform_component>(vec3(0.f, 1.f, 0.f), quat::identity, 0.01f)
+			.addComponent<transform_component>(vec3(0.f, 0.f, 0.f), quat::identity, 0.01f)
+			//.addComponent<physics::px_triangle_mesh_collider_component>(&(ass.meshes[0]))
 			.addComponent<mesh_component>(mesh);
+			//.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Static);
 
 		addRaytracingComponentAsync(sponza, mesh);
 	}
@@ -268,20 +275,13 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
 		groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
 
-		//for (uint32 i = 0; i < 3; ++i)
-		//{
-		//	scene.createEntity("Sphere")
-		//		.addComponent<transform_component>(vec3(15.0f, 10.f + i * 3.f, 15.0f), quat(vec3(0.f, 0.f, 1.f), deg2rad(1.f)), vec3(1.f))
-		//		.addComponent<mesh_component>(sphereMesh);
-		//}
-
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
 		auto px_sphere = &scene.createEntity("SpherePX", (entity_handle)60)
 			.addComponent<transform_component>(vec3(0, 2.f, 0), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
-			//.addComponent<px_convex_mesh_collider_component>(&(ass.meshes[0]))
-			//.addComponent<px_triangle_mesh_collider_component>(&(ass.meshes[0]))
-			//.addComponent<px_bounding_box_collider_component>(&(ass.meshes[0]))
+			//.addComponent<physics::px_convex_mesh_collider_component>(&(ass.meshes[0]))
+			//.addComponent<physics::px_triangle_mesh_collider_component>(&(ass.meshes[0]))
+			//.addComponent<physics::px_bounding_box_collider_component>(&(ass.meshes[0]))
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
 
@@ -293,6 +293,23 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		px_sphere1->addChild(*px_sphere);
 
+		/*{
+			for (int i = 0; i < 10; i++)
+			{
+				for (int j = 0; j < 10; j++)
+				{
+					for (int k = 0; k < 10; k++)
+					{
+						auto sphr = &scene.createEntity((std::to_string(i) + std::to_string(j) + std::to_string(k)).c_str())
+							.addComponent<transform_component>(vec3(2.0f * i, 2.0f * j + 5, 2.0f * k), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+							.addComponent<mesh_component>(sphereMesh)
+							.addComponent<physics::px_sphere_collider_component>(1.0f)
+							.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
+					}
+				}
+			}
+		}*/
+
 		//auto px_cct = &scene.createEntity("CharacterControllerPx")
 		//	.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 		//	.addComponent<px_box_cct_component>();
@@ -301,52 +318,17 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<transform_component>(vec3(0.f, 0.0f, 0.0f), quat::identity, vec3(1.f))
 			.addComponent<physics::px_plane_collider_component>();
 
-		/*auto px_plane_wall1 = &scene.createEntity("PlanePX_Wall1")
-			.addComponent<transform_component>(vec3(0.f, 0.0f, 0.0f), quat::identity, vec3(1.f))
-			.addComponent<px_plane_collider_component>(vec3(0.f, 0.f, 0.f));*/
-
-		//particles = scene.createEntity("ParticlesPX")
-		//	.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
-		//	.addComponent<physics::px_particles_component>(10, 10, 10).handle;
+		/*particles = scene.createEntity("ParticlesPX")
+			.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
+			.addComponent<physics::px_particles_component>(10, 10, 10).handle;*/
 
 		//cloth = scene.createEntity("ClothPX")
 		//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
 		//	.addComponent<physics::px_cloth_component>(10, 10, vec3(0.f, 15.0f, 0.0f)).handle;
 
-		physics::px_raycast_info rci = physics::physics_holder::physicsRef->raycast(&px_sphere1->getComponent<physics::px_rigidbody_component>(), vec3(0, -1, 0));
-		if (rci.actor)
-		{
-			std::cout << "Raycast. Dist: " << rci.distance << '\n';
-		}
-		else
-		{
-			std::cout << "Raycast. Dist: " << rci.distance << "\n";
-		}
-
-		const auto& overlap_info = physics::physics_holder::physicsRef->overlapCapsule(vec3(0, -5, 0), 1.5f, 3.0f, quat::identity, false);
-
-		std::cout << "Overlapping: " << overlap_info.isOverlapping << "\n";
-		std::cout << "Results: " << overlap_info.results.size() << "\n";
-
-		editor.physicsSettings.collisionBeginCallback = [rng = random_number_generator{ 519431 }](const collision_begin_event& e) mutable
-		{
-			float speed = length(e.relativeVelocity);
-
-			sound_settings settings;
-			settings.pitch = rng.randomFloatBetween(0.5f, 1.5f);
-			settings.volume = saturate(remap(speed, 0.2f, 20.f, 0.f, 1.f));
-
-			play3DSound(SOUND_ID("punch"), e.position, settings);
-		};
-
-		editor.physicsSettings.collisionEndCallback = [](const collision_end_event& e) mutable
-		{
-		};
-
 		scene.createEntity("Platform")
 			.addComponent<transform_component>(vec3(10, -4.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
-			.addComponent<mesh_component>(groundMesh)
-			.addComponent<collider_component>(collider_component::asAABB(bounding_box::fromCenterRadius(vec3(0.f, 0.f, 0.f), vec3(30.f, 4.f, 30.f)), { physics_material_type_metal, 0.1f, 1.f, 4.f }));
+			.addComponent<mesh_component>(groundMesh);
 
 		auto chainMesh = make_ref<multi_mesh>();
 
@@ -505,6 +487,9 @@ void application::submitRendererParams(uint32 numSpotLightShadowPasses, uint32 n
 	}
 }
 
+#include <PxPhysics.h>
+#include <PxPhysicsAPI.h>
+
 void application::update(const user_input& input, float dt)
 {
 	resetRenderPasses();
@@ -642,24 +627,48 @@ void application::update(const user_input& input, float dt)
 				dynamic_transform_component& dtc = selectedEntity.getComponent<dynamic_transform_component>();
 				renderWireBox(dtc.position, vec3(cct->halfSideExtent, cct->halfHeight * 2, cct->halfSideExtent), dtc.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
 			}
+			//else if (physics::px_triangle_mesh_collider_component* tm = selectedEntity.getComponentIfExists<physics::px_triangle_mesh_collider_component>())
+			//{
+			//	auto triangles = tm->mesh->getTriangles();
+			//	auto vertices = tm->mesh->getVertices();
+			//	auto nbv = tm->mesh->getNbVertices();
+			//	auto nbt = tm->mesh->getNbTriangles();
+
+			//	auto type = tm->mesh->getTriangleMeshFlags();
+
+			//	/*for (size_t i = 0; i < nbt; i+=5)
+			//	{
+			//		auto ti = ((indexed_triangle16*)triangles)[i];
+			//		vec3 a = physx::createVec3(vertices[ti.a]);
+			//		vec3 b = physx::createVec3(vertices[ti.b]);
+			//		vec3 c = physx::createVec3(vertices[ti.c]);
+			//		renderTriangle(a, b, c, vec4(1, 0, 0, 1), &ldrRenderPass, true);
+			//	}*/
+
+			//	for (size_t i = 0; i < nbv; i++)
+			//	{
+			//		vec3 a = physx::createVec3(vertices[i]);
+			//		renderPoint(a, vec4(1, 0, 0, 1), &ldrRenderPass, true);
+			//	}
+			//}
 		}
 
 #endif
 	
-		//// Tests
-		//{
-		//	eentity entityCloth{ cloth, &scene.registry };
-		//	entityCloth.getComponent<physics::px_cloth_component>().clothSystem->update(true, &ldrRenderPass);
+		// Tests
+		{
+			//eentity entityCloth{ cloth, &scene.registry };
+			//entityCloth.getComponent<physics::px_cloth_component>().clothSystem->update(true, &ldrRenderPass);
 
-		//	eentity entityParticles{ particles, &scene.registry };
-		//	entityParticles.getComponent<physics::px_particles_component>().particleSystem->update(true, &ldrRenderPass);
+			//eentity entityParticles{ particles, &scene.registry };
+			//entityParticles.getComponent<physics::px_particles_component>().particleSystem->update(true, &ldrRenderPass);
 
-		//	if (input.keyboard['G'].down)
-		//	{
-		//		entityCloth.getComponent<physics::px_cloth_component>().clothSystem->translate(vec3(0.f, 2.f, 0.f));
-		//		//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
-		//	}
-		//}
+			//if (input.keyboard['G'].down)
+			//{
+			//	//entityCloth.getComponent<physics::px_cloth_component>().clothSystem->translate(vec3(0.f, 2.f, 0.f));
+			//	//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
+			//}
+		}
 
 		submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
 	}
@@ -677,7 +686,7 @@ void application::update(const user_input& input, float dt)
 
 		for (auto [entityHandle, transform, raytrace] : scene.group(component_group<transform_component, raytrace_component>).each())
 		{
-			raytracingTLAS.instantiate(raytrace.type, transform);
+			auto handle = raytracingTLAS.instantiate(raytrace.type, transform);
 		}
 
 		renderer->setRaytracingScene(&raytracingTLAS);

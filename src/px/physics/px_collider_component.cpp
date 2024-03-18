@@ -9,43 +9,54 @@ namespace physics
 	{
 	}
 
-	NODISCARD PxTriangleMesh* px_triangle_mesh_collider_builder::buildMesh(mesh_asset* asset, unsigned int size)
+	NODISCARD PxTriangleMesh* px_triangle_mesh_collider_builder::buildMesh(mesh_asset* asset, float size)
 	{
-		submesh_asset root = asset->submeshes[0];
-
-		const auto& triangles = root.triangles;
-		const auto& positions = root.positions;
-
-		size_t trianglesCount = triangles.size();
-		size_t verticesCount = positions.size();
-
-		PxArray<PxU32> indices;
-
-		for (size_t i = 0; i < trianglesCount; i += 3)
-		{
-			indices.pushBack(triangles[i + 0].a);
-			indices.pushBack(triangles[i + 0].b);
-			indices.pushBack(triangles[i + 0].c);
-
-			indices.pushBack(triangles[i + 1].a);
-			indices.pushBack(triangles[i + 1].b);
-			indices.pushBack(triangles[i + 1].c);
-
-			indices.pushBack(triangles[i + 2].a);
-			indices.pushBack(triangles[i + 2].b);
-			indices.pushBack(triangles[i + 2].c);
-		}
+		size_t submeshesCount = asset->submeshes.size();
 
 		PxArray<PxVec3> vertices;
-		for (size_t i = 0; i < verticesCount; i++)
-		{
-			vertices.pushBack(PxVec3(positions[i].x, positions[i].y, positions[i].z) * size);
-		}
+		PxArray<PxU32> indices;
 
 		PxArray<PxVec3> outputVertices;
 		PxArray<PxU32> outputIndices;
-		PxI32 targetTriangleCount = 500;
 		PxReal maximalTriangleEdgeLength = 0.0f;
+
+		size_t totalTrianglesCount = 0;
+
+		for (size_t s = 0; s < submeshesCount; s++)
+		{
+			submesh_asset root = asset->submeshes[s];
+
+			const auto& triangles = root.triangles;
+			const auto& positions = root.positions;
+
+			size_t trianglesCount = triangles.size();
+			size_t verticesCount = positions.size();
+
+			totalTrianglesCount += trianglesCount;
+
+			for (size_t i = 0; i < trianglesCount; i += 3)
+			{
+				indices.pushBack(triangles[i + 0].a);
+				indices.pushBack(triangles[i + 0].b);
+				indices.pushBack(triangles[i + 0].c);
+
+				indices.pushBack(triangles[i + 1].a);
+				indices.pushBack(triangles[i + 1].b);
+				indices.pushBack(triangles[i + 1].c);
+
+				indices.pushBack(triangles[i + 2].a);
+				indices.pushBack(triangles[i + 2].b);
+				indices.pushBack(triangles[i + 2].c);
+			}
+
+			for (size_t i = 0; i < verticesCount; i++)
+			{
+				vertices.pushBack(PxVec3(positions[i].x, positions[i].y, positions[i].z) * size);
+			}
+		}
+
+		PxI32 targetTriangleCount = totalTrianglesCount < 5000 ? totalTrianglesCount : totalTrianglesCount * 0.66f;
+		
 		PxTetMaker::simplifyTriangleMesh(vertices, indices, targetTriangleCount, maximalTriangleEdgeLength, outputVertices, outputIndices);
 
 		PxTriangleMeshDesc meshDesc;
@@ -57,7 +68,7 @@ namespace physics
 		meshDesc.triangles.stride = 3 * sizeof(PxU32);
 		meshDesc.triangles.data = &outputIndices[0];
 
-		px_triangle_mesh mesh_adapter;
+		px_triangle_mesh_builder mesh_adapter;
 
 		return mesh_adapter.createTriangleMesh(meshDesc);
 	}
@@ -118,8 +129,10 @@ namespace physics
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		shape = physics->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(modelSize)), *material);
+
 		enableShapeInSceneQueryTests(shape);
 		enableShapeInContactTests(shape);
+
 		PX_RELEASE(mesh);
 		return true;
 	}
@@ -157,7 +170,7 @@ namespace physics
 		meshDesc.triangles.stride = 3 * sizeof(PxU32);
 		meshDesc.triangles.data = inds.data();
 
-		px_triangle_mesh mesh_adapter;
+		px_triangle_mesh_builder mesh_adapter;
 		auto mesh = mesh_adapter.createTriangleMesh(meshDesc);
 
 		const auto& physics = physics_holder::physicsRef->getPhysics();
@@ -166,6 +179,16 @@ namespace physics
 
 		PX_RELEASE(mesh);
 		return true;
+	}
+
+	void enableShapeVisualization(PxShape* shape) noexcept
+	{
+		shape->setFlag(PxShapeFlag::eVISUALIZATION, true);
+	}
+
+	void disableShapeVisualization(PxShape* shape) noexcept
+	{
+		shape->setFlag(PxShapeFlag::eVISUALIZATION, false);
 	}
 
 	void enableShapeInContactTests(PxShape* shape) noexcept
@@ -278,7 +301,7 @@ namespace physics
 		return true;
 	}
 
-	NODISCARD PxConvexMesh* px_convex_mesh_collider_builder::buildMesh(mesh_asset* asset, unsigned int size)
+	NODISCARD PxConvexMesh* px_convex_mesh_collider_builder::buildMesh(mesh_asset* asset, float size)
 	{
 		submesh_asset root = asset->submeshes[0];
 
@@ -300,7 +323,7 @@ namespace physics
 		meshDesc.flags |= PxConvexFlag::eGPU_COMPATIBLE;
 #endif
 
-		px_convex_mesh mesh_adapter;
+		px_convex_mesh_builder mesh_adapter;
 
 		return mesh_adapter.createConvexMesh(meshDesc);
 	}

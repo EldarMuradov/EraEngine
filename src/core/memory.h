@@ -1,12 +1,22 @@
 #pragma once
 
-#define KB(n) (1024ull * (n))
-#define MB(n) (1024ull * KB(n))
-#define GB(n) (1024ull * MB(n))
+template<typename T>
+constexpr auto KB(T n) { return (1024ull * (n)); }
 
-#define BYTE_TO_KB(b) ((b) / 1024)
-#define BYTE_TO_MB(b) ((b) / (1024 * 1024))
-#define BYTE_TO_GB(b) ((b) / (1024 * 1024))
+template<typename T>
+constexpr auto MB(T n) { return (1024ull * KB(n)); }
+
+template<typename T>
+constexpr auto GB(T n) { return (1024ull * MB(n)); }
+
+template<typename T>
+constexpr auto BYTE_TO_KB(T b) { return ((b) / 1024); }
+
+template<typename T>
+constexpr auto BYTE_TO_MB(T b) { return ((b) / (1024 * 1024)); }
+
+template<typename T>
+constexpr auto BYTE_TO_GB(T b) { return ((b) / (1024 * 1024)); }
 
 NODISCARD inline uint32 alignTo(uint32 currentOffset, uint32 alignment)
 {
@@ -58,7 +68,7 @@ struct eallocator
 
 	void ensureFreeSize(uint64 size);
 
-	NODISCARD void* allocate(uint64 size, uint64 alignment = 1, bool clearToZero = false);
+	void* allocate(uint64 size, uint64 alignment = 1, bool clearToZero = false);
 
 	template <typename T>
 	NODISCARD T* allocate(uint32 count = 1, bool clearToZero = false)

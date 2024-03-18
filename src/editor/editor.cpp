@@ -1,10 +1,7 @@
 #include "pch.h"
 #include "editor.h"
-#include "editor_icons.h"
 #include "core/cpu_profiling.h"
 #include "core/log.h"
-#include "asset/file_registry.h"
-#include "core/imgui.h"
 #include "dx/dx_profiling.h"
 #include "scene/components.h"
 #include "animation/animation.h"
@@ -29,23 +26,6 @@
 #include <stack>
 #include <EraScriptingLauncher-Lib/src/script.h>
 #include <core/builder.h>
-
-static vec3 getEuler(quat q)
-{
-	vec3 euler = quatToEuler(q);
-	euler.x = rad2deg(angleToZeroToTwoPi(euler.x));
-	euler.y = rad2deg(angleToZeroToTwoPi(euler.y));
-	euler.z = rad2deg(angleToZeroToTwoPi(euler.z));
-	return euler;
-}
-
-static quat getQuat(vec3 euler)
-{
-	euler.x = deg2rad(euler.x);
-	euler.y = deg2rad(euler.y);
-	euler.z = deg2rad(euler.z);
-	return eulerToQuat(euler);
-}
 
 template <typename component_t, typename member_t>
 struct component_member_undo
@@ -481,6 +461,17 @@ bool eeditor::drawMainMenuBar()
 				soundEditorWindowOpen = !soundEditorWindowOpen;
 			}
 
+			if (ImGui::MenuItem(editorPanels->meshEditor.isOpen() ? (EDITOR_ICON_MESH "  Hide mesh editor") : (EDITOR_ICON_MESH "  Show mesh editor")))
+			{
+				if (editorPanels->meshEditor.isOpen())
+					editorPanels->meshEditor.close();
+				else
+				{
+					editorPanels->meshEditor.open();
+					editorPanels->meshEditor.setScene(scene);
+				}
+			}
+
 			ImGui::Separator();
 
 			if (ImGui::MenuItem(ICON_FA_DESKTOP "  System"))
@@ -614,83 +605,6 @@ static bounding_box getObjectBoundingBox(eentity entity, bool applyPosition)
 	}
 
 	return aabb;
-}
-
-static void editTexture(const char* name, ref<dx_texture>& tex, uint32 loadFlags)
-{
-	asset_handle asset = {};
-	if (tex)
-	{
-		asset = tex->handle;
-	}
-	if (ImGui::PropertyTextureAssetHandle(name, EDITOR_ICON_IMAGE, asset, tex))
-	{
-		fs::path path = getPathFromAssetHandle(asset);
-		fs::path relative = fs::relative(path, fs::current_path());
-		if (auto newTex = loadTextureFromFileAsync(relative.string(), loadFlags))
-		{
-			tex = newTex;
-		}
-	}
-}
-
-static void editMesh(const char* name, ref<multi_mesh>& mesh, uint32 loadFlags)
-{
-	asset_handle asset = {};
-	if (mesh)
-	{
-		asset = mesh->handle;
-	}
-	if (ImGui::PropertyAssetHandle(name, EDITOR_ICON_MESH, asset))
-	{
-		fs::path path = getPathFromAssetHandle(asset);
-		fs::path relative = fs::relative(path, fs::current_path());
-		if (auto newMesh = loadMeshFromFile(relative.string(), loadFlags))
-		{
-			mesh = newMesh;
-		}
-	}
-}
-
-static void editMaterial(const ref<pbr_material>& material)
-{
-	if (ImGui::BeginProperties())
-	{
-		asset_handle dummy = {};
-
-		editTexture("Albedo", material->albedo, image_load_flags_default);
-		editTexture("Normal", material->normal, image_load_flags_default_noncolor);
-		editTexture("Roughness", material->roughness, image_load_flags_default_noncolor);
-		editTexture("Metallic", material->metallic, image_load_flags_default_noncolor);
-
-		ImGui::PropertyColor("Emission", material->emission);
-		ImGui::PropertyColor("Albedo tint", material->albedoTint);
-		ImGui::PropertyDropdown("Shader", pbrMaterialShaderNames, pbr_material_shader_count, (uint32&)material->shader);
-		ImGui::PropertySlider("UV scale", material->uvScale, 0.0f, 15.0f);
-		ImGui::PropertySlider("Translucency", material->translucency);
-
-		if (!material->roughness)
-		{
-			ImGui::PropertySlider("Roughness override", material->roughnessOverride);
-		}
-		if (!material->metallic)
-		{
-			ImGui::PropertySlider("Metallic override", material->metallicOverride);
-		}
-
-		ImGui::EndProperties();
-	}
-}
-
-static void editSubmeshTransform(trs* transform)
-{
-	ImGui::Drag("Position", transform->position, 0.1f);
-	vec3 selectedEntityEulerRotation = getEuler(transform->rotation);
-	if (ImGui::Drag("Rotation", selectedEntityEulerRotation, 0.1f))
-	{
-		transform->rotation = getQuat(selectedEntityEulerRotation);
-	}
-	ImGui::Drag("Scale", transform->scale, 0.1f);
 }
 
 void eeditor::renderChilds(eentity& entity)
@@ -1181,16 +1095,19 @@ bool eeditor::drawSceneHierarchy()
 
 								bool animationChanged = ImGui::PropertyDropdown("Currently playing", [](uint32 index, void* data)
 								{
-									if (index == -1) { return "---"; }
+									if (index == -1)
+										return "---";
 
 									animation_skeleton& skeleton = *(animation_skeleton*)data;
 									const char* result = 0;
+
 									if (index < (uint32)skeleton.clips.size())
 									{
 										result = skeleton.clips[index].name.c_str();
 									}
+
 									return result;
-								}, animationIndex, & mesh->mesh->skeleton);
+								}, animationIndex, &mesh->mesh->skeleton);
 
 								if (animationChanged)
 								{

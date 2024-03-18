@@ -29,7 +29,7 @@ public class EDIContainer : IEManager
         _container.RegisterSingleton<T, D>();
     }
 
-    public static T GetInstance<T, D>() where T : class
+    public static T GetInstance<T>() where T : class
     {
         return _container.GetInstance<T>();
     }
