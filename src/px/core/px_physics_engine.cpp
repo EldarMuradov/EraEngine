@@ -30,44 +30,26 @@ static physx::PxFilterFlags contactReportFilterShader(
 	UNUSED(constantBlockSize);
 	UNUSED(constantBlock);
 
-	auto const layerMaskA = filterData0.word0;
-	auto const layerA = filterData0.word1;
-
-	auto const layerMaskB = filterData1.word0;
-	auto const layerB = filterData1.word1;
-
-	auto const aCollision = layerMaskA & layerB;
-	auto const bCollision = layerMaskB & layerA;
-
-	const bool maskTest = (filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1);
-
 	if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1))
 	{
 		pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
 		return physx::PxFilterFlag::eDEFAULT;
 	}
 
-	if (maskTest)
-		return physx::PxFilterFlag::eSUPPRESS;
-
 	if (physx::PxFilterObjectIsKinematic(attributes0) || physx::PxFilterObjectIsKinematic(attributes1))
 		return physx::PxFilterFlag::eKILL;
 
-	if ((aCollision == 0 || bCollision == 0))
-	{
-		pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
-		pairFlags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
-		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
-		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
-		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
-		pairFlags |= physx::PxPairFlag::ePOST_SOLVER_VELOCITY;
-		pairFlags |= physx::PxPairFlag::eNOTIFY_CONTACT_POINTS;
-		pairFlags |= physx::PxPairFlag::eSOLVE_CONTACT;
-		pairFlags |= physx::PxPairFlag::eDETECT_DISCRETE_CONTACT;
-		return physx::PxFilterFlag::eDEFAULT;
-	}
+	pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
+	pairFlags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
+	pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
+	pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
+	pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
+	pairFlags |= physx::PxPairFlag::ePOST_SOLVER_VELOCITY;
+	pairFlags |= physx::PxPairFlag::eNOTIFY_CONTACT_POINTS;
+	pairFlags |= physx::PxPairFlag::eSOLVE_CONTACT;
+	pairFlags |= physx::PxPairFlag::eDETECT_DISCRETE_CONTACT;
 
-	return physx::PxFilterFlag::eSUPPRESS;
+	return physx::PxFilterFlag::eDEFAULT;
 }
 
 static void clearColliderFromCollection(const physics::px_rigidbody_component* collider, physx::PxArray<physics::px_simulation_event_callback::colliders_pair>& collection)

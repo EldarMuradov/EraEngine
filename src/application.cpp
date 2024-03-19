@@ -117,7 +117,7 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 				data.core.handle_coll(c.id1, c.id2);
 			}
 
-			while (physicsRef->collisionQueue.size())
+			while (physicsRef->collisionExitQueue.size())
 			{
 				const auto& c = physicsRef->collisionExitQueue.back();
 				physicsRef->collisionExitQueue.pop();
