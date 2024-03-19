@@ -30,6 +30,15 @@ static physx::PxFilterFlags contactReportFilterShader(
 	UNUSED(constantBlockSize);
 	UNUSED(constantBlock);
 
+	auto const layerMaskA = filterData0.word0;
+	auto const layerA = filterData0.word1;
+
+	auto const layerMaskB = filterData1.word0;
+	auto const layerB = filterData1.word1;
+
+	auto const aCollision = layerMaskA & layerB;
+	auto const bCollision = layerMaskB & layerA;
+
 	const bool maskTest = (filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1);
 
 	if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1))
@@ -41,17 +50,24 @@ static physx::PxFilterFlags contactReportFilterShader(
 	if (maskTest)
 		return physx::PxFilterFlag::eSUPPRESS;
 
-	pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
-	pairFlags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
-	pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
-	pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
-	pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
-	pairFlags |= physx::PxPairFlag::ePOST_SOLVER_VELOCITY;
-	pairFlags |= physx::PxPairFlag::eNOTIFY_CONTACT_POINTS;
-	pairFlags |= physx::PxPairFlag::eSOLVE_CONTACT;
-	pairFlags |= physx::PxPairFlag::eDETECT_DISCRETE_CONTACT;
+	if (physx::PxFilterObjectIsKinematic(attributes0) || physx::PxFilterObjectIsKinematic(attributes1))
+		return physx::PxFilterFlag::eKILL;
 
-	return physx::PxFilterFlag::eDEFAULT;
+	if ((aCollision == 0 || bCollision == 0))
+	{
+		pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
+		pairFlags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
+		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
+		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
+		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
+		pairFlags |= physx::PxPairFlag::ePOST_SOLVER_VELOCITY;
+		pairFlags |= physx::PxPairFlag::eNOTIFY_CONTACT_POINTS;
+		pairFlags |= physx::PxPairFlag::eSOLVE_CONTACT;
+		pairFlags |= physx::PxPairFlag::eDETECT_DISCRETE_CONTACT;
+		return physx::PxFilterFlag::eDEFAULT;
+	}
+
+	return physx::PxFilterFlag::eSUPPRESS;
 }
 
 static void clearColliderFromCollection(const physics::px_rigidbody_component* collider, physx::PxArray<physics::px_simulation_event_callback::colliders_pair>& collection)
@@ -202,10 +218,10 @@ void physics::px_physics_engine::release() noexcept
 	PxCloseExtensions();
 
 	PX_RELEASE(physics)
-		PX_RELEASE(pvd)
-		PX_RELEASE(foundation)
-		PX_RELEASE(scene)
-		PX_RELEASE(cudaContextManager)
+	PX_RELEASE(pvd)
+	PX_RELEASE(foundation)
+	PX_RELEASE(scene)
+	PX_RELEASE(cudaContextManager)
 
 #if PX_ENABLE_RAYCAST_CCD
 		delete raycastCCD;
@@ -228,14 +244,6 @@ void physics::px_physics_engine::update(float dt) noexcept
 	scene->getTaskManager()->startSimulation();
 
 	void* scratchMemBlock = allocator.allocate(MB(16), 16U, true);
-
-#if PX_GPU_BROAD_PHASE
-	//scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
-#else
-	//scene->collide(std::max(dt, stepSize), NULL, scratchMemBlock, MB(16));
-	//scene->fetchCollision(true);
-	//scene->advance();
-#endif
 
 	scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
 
@@ -323,6 +331,8 @@ void physics::px_physics_engine::addActor(px_rigidbody_component* actor, PxRigid
 			coll = (px_collider_component_base*)entity.getComponentIfExists<px_triangle_mesh_collider_component>();
 		if (!coll)
 			coll = (px_collider_component_base*)entity.getComponentIfExists<px_bounding_box_collider_component>();
+		if (!coll)
+			coll = (px_collider_component_base*)entity.getComponentIfExists<px_convex_mesh_collider_component>();
 
 		if (coll)
 			physics->raycastCCD->registerRaycastCCDObject(r, coll->getShape());
@@ -414,17 +424,7 @@ void physics::px_CCD_contact_modification::onCCDContactModify(PxContactModifyPai
 	{
 		physx::PxContactModifyPair& cp = pairs[i];
 
-		PxRigidActor* actor1 = (PxRigidActor*)cp.actor[0];
-		PxRigidActor* actor2 = (PxRigidActor*)cp.actor[1];
-
-		auto rb1 = physics::physics_holder::physicsRef->actors_map[actor1];
-		auto rb2 = physics::physics_holder::physicsRef->actors_map[actor2];
-
-		if (rb1 && rb2)
-		{
-			rb1->onCollisionEnter(rb2);
-			rb2->onCollisionEnter(rb1);
-		}
+		// TODO
 	}
 }
 
@@ -446,6 +446,7 @@ void physics::px_simulation_event_callback::sendCollisionEvents()
 		LOG_MESSAGE("VISHEL");
 		c.thisActor->onCollisionExit(c.otherActor);
 		c.swapObjects();
+		physics::physics_holder::physicsRef->collisionExitQueue.emplace(c.thisActor->handle, c.otherActor->handle);
 	}
 
 	for (auto& c : newCollisions)

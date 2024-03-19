@@ -159,20 +159,6 @@ struct eentity
 		{
 			auto& component = registry->emplace_or_replace<component_t>(handle, handle, std::forward<args>(a)...);
 		}
-		else if	constexpr (std::is_same_v<component_t, physics::px_cct_component_base>)
-		{
-			auto& component = registry->emplace_or_replace<component_t>(handle, this, std::forward<args>(a)...);
-
-			if (!hasComponent<dynamic_transform_component>())
-				addComponent<dynamic_transform_component>();
-		}
-		else if	constexpr (std::is_same_v<component_t, physics::px_box_cct_component>)
-		{
-			auto& component = registry->emplace_or_replace<component_t>(handle, this, std::forward<args>(a)...);
-
-			if (!hasComponent<dynamic_transform_component>())
-				addComponent<dynamic_transform_component>();
-		}
 #ifndef PHYSICS ONLY
 		else if	constexpr (std::is_same_v<component_t, physics::px_cloth_component>)
 		{
@@ -197,7 +183,21 @@ struct eentity
 		}
 		else if	constexpr (std::is_same_v<component_t, physics::px_capsule_cct_component>)
 		{
-			auto& component = registry->emplace_or_replace<component_t>(handle, this, std::forward<args>(a)...);
+			auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
+
+			if (!hasComponent<dynamic_transform_component>())
+				addComponent<dynamic_transform_component>();
+		}
+		else if	constexpr (std::is_same_v<component_t, physics::px_cct_component_base>)
+		{
+			auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
+
+			if (!hasComponent<dynamic_transform_component>())
+				addComponent<dynamic_transform_component>();
+		}
+		else if	constexpr (std::is_same_v<component_t, physics::px_box_cct_component>)
+		{
+			auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
 
 			if (!hasComponent<dynamic_transform_component>())
 				addComponent<dynamic_transform_component>();

@@ -535,6 +535,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 	{
 	private:
 		NO_COPY(px_physics_engine)
+
 	public:
 		px_physics_engine(application* application) noexcept;
 		~px_physics_engine();

@@ -2,6 +2,7 @@
 #include "px_collider_component.h"
 #include <asset/file_registry.h>
 #include <extensions/PxTetMakerExt.h>
+#include <px/core/px_extensions.h>
 
 namespace physics 
 {

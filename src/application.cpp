@@ -116,6 +116,13 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 				physicsRef->collisionQueue.pop();
 				data.core.handle_coll(c.id1, c.id2);
 			}
+
+			while (physicsRef->collisionQueue.size())
+			{
+				const auto& c = physicsRef->collisionExitQueue.back();
+				physicsRef->collisionExitQueue.pop();
+				data.core.handle_exit_coll(c.id1, c.id2);
+			}
 		}
 
 		updateScripting(data);
@@ -310,9 +317,9 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			}
 		}*/
 
-		//auto px_cct = &scene.createEntity("CharacterControllerPx")
-		//	.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-		//	.addComponent<px_box_cct_component>();
+		auto px_cct = &scene.createEntity("CharacterControllerPx")
+			.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
 
 		auto px_plane = &scene.createEntity("PlanePX")
 			.addComponent<transform_component>(vec3(0.f, 0.0f, 0.0f), quat::identity, vec3(1.f))
