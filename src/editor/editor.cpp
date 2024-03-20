@@ -2942,7 +2942,7 @@ void eeditor::drawSettings(float dt)
 				}
 
 				uint32 nbaa = physicsRef->nbActiveActors;;
-				uint32 nba = physicsRef->actors_map.size();
+				uint32 nba = physicsRef->actorsMap.size();
 				ImGui::PropertyValue("Number of active actors", std::to_string(nbaa).c_str());
 				ImGui::PropertyValue("Number of actors", std::to_string(nba).c_str());
 #if PX_GPU_BROAD_PHASE

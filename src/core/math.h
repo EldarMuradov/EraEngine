@@ -16,6 +16,11 @@
 #define M_TAU 6.28318530718f
 #define INV_TAU 0.159154943091895335f
 
+constexpr float oneDiv6 = 1.0f / 6.0f;
+constexpr float oneDiv24 = 1.0f / 24.0f;
+constexpr float oneDiv60 = 1.0f / 60.0f;
+constexpr float oneDiv120 = 1.0f / 120.0f;
+
 #define EPSILON 1e-6f
 
 #define deg2rad(deg) ((deg) * M_PI_OVER_180)

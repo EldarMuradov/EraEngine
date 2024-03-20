@@ -1,0 +1,5 @@
+build/
+/tags
+/bazel-*
+*.vcxproj
+*.filters

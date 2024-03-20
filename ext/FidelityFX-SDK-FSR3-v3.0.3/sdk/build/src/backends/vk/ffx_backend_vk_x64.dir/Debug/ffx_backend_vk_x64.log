@@ -1,0 +1,33 @@
+﻿  Building Custom Rule E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeLists.txt
+  ffx_shader_blobs.cpp
+  ffx_vk.cpp
+  ffx_assert.cpp
+  ffx_fsr1_shaderblobs.cpp
+  ffx_fsr2_shaderblobs.cpp
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_fsr1_shaderblobs.cpp(27,10): error C1083: Не удается открыть файл включение: ffx_fsr1_easu_pass_permutations.h: No such file or directory,
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_fsr2_shaderblobs.cpp(27,10): error C1083: Не удается открыть файл включение: ffx_fsr2_autogen_reactive_pass_permutations.h: No such file or directory,
+  ffx_spd_shaderblobs.cpp
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_spd_shaderblobs.cpp(27,10): error C1083: Не удается открыть файл включение: ffx_spd_downsample_pass_permutations.h: No such file or directory,
+  ffx_lpm_shaderblobs.cpp
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_lpm_shaderblobs.cpp(27,10): error C1083: Не удается открыть файл включение: ffx_lpm_filter_pass_permutations.h: No such file or directory,
+  ffx_blur_shaderblobs.cpp
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_blur_shaderblobs.cpp(27,10): error C1083: Не удается открыть файл включение: ffx_blur_pass_permutations.h: No such file or directory,
+  ffx_cacao_shaderblobs.cpp
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_cacao_shaderblobs.cpp(27,10): error C1083: Не удается открыть файл включение: ffx_cacao_apply_non_smart_half_pass_permutations.h: No such file or directory,
+  ffx_vrs_shaderblobs.cpp
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_vrs_shaderblobs.cpp(27,10): error C1083: Не удается открыть файл включение: ffx_vrs_imagegen_pass_permutations.h: No such file or directory,
+  ffx_cas_shaderblobs.cpp
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_cas_shaderblobs.cpp(27,10): error C1083: Не удается открыть файл включение: ffx_cas_sharpen_pass_permutations.h: No such file or directory,
+  ffx_dof_shaderblobs.cpp
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_dof_shaderblobs.cpp(27,10): error C1083: Не удается открыть файл включение: ffx_dof_downsample_depth_pass_permutations.h: No such file or directory,
+  ffx_lens_shaderblobs.cpp
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_lens_shaderblobs.cpp(27,10): error C1083: Не удается открыть файл включение: ffx_lens_pass_permutations.h: No such file or directory,
+  ffx_parallelsort_shaderblobs.cpp
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_parallelsort_shaderblobs.cpp(27,10): error C1083: Не удается открыть файл включение: ffx_parallelsort_setup_indirect_args_pass_permutations.h: No such file or directory,
+  ffx_denoiser_shaderblobs.cpp
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_denoiser_shaderblobs.cpp(27,11): error C1083: Не удается открыть файл включение: ffx_denoiser_prepare_shadow_mask_pass_permutations.h: No such file or directory,
+  ffx_classifier_shaderblobs.cpp
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_classifier_shaderblobs.cpp(27,10): error C1083: Не удается открыть файл включение: ffx_classifier_shadows_pass_permutations.h: No such file or directory,
+  ffx_sssr_shaderblobs.cpp
+E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_sssr_shaderblobs.cpp(27,10): error C1083: Не удается открыть файл включение: ffx_sssr_prepare_blue_noise_texture_pass_permutations.h: No such file or directory,
+  Создание кода...

@@ -1,0 +1,16 @@
+﻿  FrameInterpolationSwapchainDX12.cpp
+  FrameInterpolationSwapchainDX12_Helpers.cpp
+  FrameInterpolationSwapchainDX12_UiComposition.cpp
+  ffx_dx12.cpp
+  ffx_blur_shaderblobs.cpp
+  ffx_cacao_shaderblobs.cpp
+  ffx_cas_shaderblobs.cpp
+  ffx_classifier_shaderblobs.cpp
+  ffx_denoiser_shaderblobs.cpp
+  ffx_dof_shaderblobs.cpp
+  ffx_frameinterpolation_shaderblobs.cpp
+  ffx_fsr1_shaderblobs.cpp
+  ffx_fsr2_shaderblobs.cpp
+  ffx_fsr3upscaler_shaderblobs.cpp
+  Создание кода...
+  ffx_backend_dx12_x64.vcxproj -> E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\dx12\Debug\ffx_backend_dx12_x64d.dll

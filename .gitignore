@@ -53,7 +53,6 @@ assets/
 asset_cache/
 x64/
 resources/
-ext/
 
 # Learning
 learning/

@@ -8,6 +8,8 @@ namespace physics
 {
 	using namespace physx;
 
+	struct px_rigidbody_component;
+
 	enum class px_cct_type : uint8
 	{
 		None,
@@ -20,7 +22,7 @@ namespace physics
 		px_cct_component_base(uint32_t entt) noexcept;
 		virtual ~px_cct_component_base() {}
 
-		void release() override;
+		void release(bool releaseActor = false) override;
 
 		px_cct_type type = px_cct_type::None;
 

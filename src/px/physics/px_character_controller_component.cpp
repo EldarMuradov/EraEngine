@@ -1,4 +1,5 @@
 #include "pch.h"
+#include <px/physics/px_rigidbody_component.h>
 #include "px/physics/px_character_controller_component.h"
 #include <scene/scene.h>
 #include <application.h>
@@ -60,14 +61,15 @@ namespace physics
 		handle = entt;
 	}
 
-	void px_cct_component_base::release()
+	void px_cct_component_base::release(bool releaseActor)
 	{
 		physics_holder::physicsRef->removeActor(this);
 
 		PX_RELEASE(controller)
 		PX_RELEASE(manager)
 		PX_RELEASE(material)
-		PX_RELEASE(actor)
+		if(releaseActor)
+			PX_RELEASE(actor)
 	}
 
 	px_box_cct_component::px_box_cct_component(uint32_t entt) noexcept : px_cct_component_base(entt)

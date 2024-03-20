@@ -33,6 +33,7 @@ namespace
 	start_fn startf;
 	update_fn updatef;
 	handle_collisions_fn handle_collisionsf;
+	handle_collisions_fn handle_exit_collisionsf;
 	handle_trs_fn handle_trsf;
 
 	scr_fn init_scrf;
@@ -82,6 +83,8 @@ static void get_all_functions_and_start()
 	const char_t* dotnet_type_hc = STR("EraEngine.Core.CollisionHandler, EraScriptingCore");
 	const char_t* dotnet_type_method_c = STR("HandleCollision");
 	handle_collisionsf = enative_scripting_linker::get_static_method<handle_collisions_fn, int, int>(dotnet_type_hc, dotnet_type_method_c, STR("EraEngine.CallHandleColls, EraScriptingCore"));
+	const char_t* dotnet_type_method_c_e = STR("HandleExitCollision");
+	handle_exit_collisionsf = enative_scripting_linker::get_static_method<handle_collisions_fn, int, int>(dotnet_type_hc, dotnet_type_method_c_e, STR("EraEngine.CallHandleColls, EraScriptingCore"));
 
 	const char_t* dotnet_type_tr = STR("EraEngine.Core.TransformHandler, EraScriptingCore");
 	const char_t* dotnet_type_method_t = STR("ProcessTransform");
@@ -421,6 +424,11 @@ void enative_scripting_linker::update(float dt)
 void enative_scripting_linker::handle_coll(int id1, int id2)
 {
 	handle_collisionsf(id1, id2);
+}
+
+void enative_scripting_linker::handle_exit_coll(int id1, int id2)
+{
+	handle_exit_collisionsf(id1, id2);
 }
 
 void enative_scripting_linker::process_trs(intptr_t ptr, int id)

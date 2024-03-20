@@ -1,0 +1,231 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "E:/Cmake/share/cmake-3.28/Modules/CMakeDetermineSystem.cmake:233 (message)"
+      - "CMakeLists.txt:158 (project)"
+    message: |
+      The system is: Windows - 10.0.19045 - AMD64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "E:/Cmake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "E:/Cmake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "E:/Cmake/share/cmake-3.28/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:158 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler:  
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      Версия MSBuild 17.8.3+195e7f5a3 для .NET Framework
+      Сборка начата 15.12.2023 18:13:33.
+      
+      Проект "E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\3.28.0\\CompilerIdC\\CompilerIdC.vcxproj" в узле 1 (целевые объекты по умолчанию).
+      PrepareForBuild:
+        Создание каталога "Debug\\".
+        Структурированный вывод включен. Форматирование диагностики компилятора будет отражать иерархию ошибок. Подробнее см. https://aka.ms/cpp/structured-output.
+        Создание каталога "Debug\\CompilerIdC.tlog\\".
+      InitializeBuildStatus:
+        Создание "Debug\\CompilerIdC.tlog\\unsuccessfulbuild", так как было задано "AlwaysCreate".
+        Обращение к "Debug\\CompilerIdC.tlog\\unsuccessfulbuild".
+      ClCompile:
+        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.38.33130\\bin\\HostX64\\x64\\CL.exe /c /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc143.pdb" /external:W0 /Gd /TC /FC /errorReport:queue CMakeCCompilerId.c
+        CMakeCCompilerId.c
+      Link:
+        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.38.33130\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdC.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdC.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdC.lib" /MACHINE:X64 Debug\\CMakeCCompilerId.obj
+        CompilerIdC.vcxproj -> E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\3.28.0\\CompilerIdC\\CompilerIdC.exe
+      PostBuildEvent:
+        for %%i in (cl.exe) do @echo CMAKE_C_COMPILER=%%~$PATH:i
+        :VCEnd
+        CMAKE_C_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.38.33130\\bin\\Hostx64\\x64\\cl.exe
+      FinalizeBuildStatus:
+        Файл "Debug\\CompilerIdC.tlog\\unsuccessfulbuild" удаляется.
+        Обращение к "Debug\\CompilerIdC.tlog\\CompilerIdC.lastbuildstate".
+      Сборка проекта "E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\3.28.0\\CompilerIdC\\CompilerIdC.vcxproj" завершена (целевые объекты по умолчанию).
+      
+      Сборка успешно завершена.
+          Предупреждений: 0
+          Ошибок: 0
+      
+      Прошло времени 00:00:01.10
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.vcxproj"
+      
+      The C compiler identification is MSVC, found in:
+        E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/CMakeFiles/3.28.0/CompilerIdC/CompilerIdC.exe
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "E:/Cmake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "E:/Cmake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "E:/Cmake/share/cmake-3.28/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:158 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler:  
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      Версия MSBuild 17.8.3+195e7f5a3 для .NET Framework
+      Сборка начата 15.12.2023 18:13:34.
+      
+      Проект "E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\3.28.0\\CompilerIdCXX\\CompilerIdCXX.vcxproj" в узле 1 (целевые объекты по умолчанию).
+      PrepareForBuild:
+        Создание каталога "Debug\\".
+        Структурированный вывод включен. Форматирование диагностики компилятора будет отражать иерархию ошибок. Подробнее см. https://aka.ms/cpp/structured-output.
+        Создание каталога "Debug\\CompilerIdCXX.tlog\\".
+      InitializeBuildStatus:
+        Создание "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild", так как было задано "AlwaysCreate".
+        Обращение к "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild".
+      ClCompile:
+        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.38.33130\\bin\\HostX64\\x64\\CL.exe /c /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc143.pdb" /external:W0 /Gd /TP /FC /errorReport:queue CMakeCXXCompilerId.cpp
+        CMakeCXXCompilerId.cpp
+      Link:
+        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.38.33130\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdCXX.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdCXX.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdCXX.lib" /MACHINE:X64 Debug\\CMakeCXXCompilerId.obj
+        CompilerIdCXX.vcxproj -> E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\3.28.0\\CompilerIdCXX\\CompilerIdCXX.exe
+      PostBuildEvent:
+        for %%i in (cl.exe) do @echo CMAKE_CXX_COMPILER=%%~$PATH:i
+        :VCEnd
+        CMAKE_CXX_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.38.33130\\bin\\Hostx64\\x64\\cl.exe
+      FinalizeBuildStatus:
+        Файл "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild" удаляется.
+        Обращение к "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.lastbuildstate".
+      Сборка проекта "E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\3.28.0\\CompilerIdCXX\\CompilerIdCXX.vcxproj" завершена (целевые объекты по умолчанию).
+      
+      Сборка успешно завершена.
+          Предупреждений: 0
+          Ошибок: 0
+      
+      Прошло времени 00:00:00.88
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.vcxproj"
+      
+      The CXX compiler identification is MSVC, found in:
+        E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/CMakeFiles/3.28.0/CompilerIdCXX/CompilerIdCXX.exe
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "E:/Cmake/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "E:/Cmake/share/cmake-3.28/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:158 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/CMakeFiles/CMakeScratch/TryCompile-1vyqqj"
+      binary: "E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/CMakeFiles/CMakeScratch/TryCompile-1vyqqj"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/CMakeFiles/CMakeScratch/TryCompile-1vyqqj'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_c6dec.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Версия MSBuild 17.8.3+195e7f5a3 для .NET Framework
+        Сборка начата 15.12.2023 18:13:36.
+        
+        Проект "E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\CMakeScratch\\TryCompile-1vyqqj\\cmTC_c6dec.vcxproj" в узле 1 (целевые объекты по умолчанию).
+        PrepareForBuild:
+          Создание каталога "cmTC_c6dec.dir\\Debug\\".
+          Структурированный вывод включен. Форматирование диагностики компилятора будет отражать иерархию ошибок. Подробнее см. https://aka.ms/cpp/structured-output.
+          Создание каталога "E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\CMakeScratch\\TryCompile-1vyqqj\\Debug\\".
+          Создание каталога "cmTC_c6dec.dir\\Debug\\cmTC_c6dec.tlog\\".
+        InitializeBuildStatus:
+          Создание "cmTC_c6dec.dir\\Debug\\cmTC_c6dec.tlog\\unsuccessfulbuild", так как было задано "AlwaysCreate".
+          Обращение к "cmTC_c6dec.dir\\Debug\\cmTC_c6dec.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.38.33130\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_c6dec.dir\\Debug\\\\" /Fd"cmTC_c6dec.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "E:\\Cmake\\share\\cmake-3.28\\Modules\\CMakeCCompilerABI.c"
+          Оптимизирующий компилятор Microsoft (R) C/C++ версии 19.38.33130 для x64
+          (C) Корпорация Майкрософт (Microsoft Corporation).  Все права защищены.
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_c6dec.dir\\Debug\\\\" /Fd"cmTC_c6dec.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "E:\\Cmake\\share\\cmake-3.28\\Modules\\CMakeCCompilerABI.c"
+          CMakeCCompilerABI.c
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.38.33130\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\CMakeScratch\\TryCompile-1vyqqj\\Debug\\cmTC_c6dec.exe" /INCREMENTAL /ILK:"cmTC_c6dec.dir\\Debug\\cmTC_c6dec.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/CMakeFiles/CMakeScratch/TryCompile-1vyqqj/Debug/cmTC_c6dec.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/CMakeFiles/CMakeScratch/TryCompile-1vyqqj/Debug/cmTC_c6dec.lib" /MACHINE:X64  /machine:x64 cmTC_c6dec.dir\\Debug\\CMakeCCompilerABI.obj
+          cmTC_c6dec.vcxproj -> E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\CMakeScratch\\TryCompile-1vyqqj\\Debug\\cmTC_c6dec.exe
+        FinalizeBuildStatus:
+          Файл "cmTC_c6dec.dir\\Debug\\cmTC_c6dec.tlog\\unsuccessfulbuild" удаляется.
+          Обращение к "cmTC_c6dec.dir\\Debug\\cmTC_c6dec.tlog\\cmTC_c6dec.lastbuildstate".
+        Сборка проекта "E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\CMakeScratch\\TryCompile-1vyqqj\\cmTC_c6dec.vcxproj" завершена (целевые объекты по умолчанию).
+        
+        Сборка успешно завершена.
+            Предупреждений: 0
+            Ошибок: 0
+        
+        Прошло времени 00:00:00.78
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "E:/Cmake/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "E:/Cmake/share/cmake-3.28/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:158 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/CMakeFiles/CMakeScratch/TryCompile-uqkl9l"
+      binary: "E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/CMakeFiles/CMakeScratch/TryCompile-uqkl9l"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: " /Z7"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/CMakeFiles/CMakeScratch/TryCompile-uqkl9l'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_f72c0.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Версия MSBuild 17.8.3+195e7f5a3 для .NET Framework
+        Сборка начата 15.12.2023 18:13:37.
+        
+        Проект "E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\CMakeScratch\\TryCompile-uqkl9l\\cmTC_f72c0.vcxproj" в узле 1 (целевые объекты по умолчанию).
+        PrepareForBuild:
+          Создание каталога "cmTC_f72c0.dir\\Debug\\".
+          Структурированный вывод включен. Форматирование диагностики компилятора будет отражать иерархию ошибок. Подробнее см. https://aka.ms/cpp/structured-output.
+          Создание каталога "E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\CMakeScratch\\TryCompile-uqkl9l\\Debug\\".
+          Создание каталога "cmTC_f72c0.dir\\Debug\\cmTC_f72c0.tlog\\".
+        InitializeBuildStatus:
+          Создание "cmTC_f72c0.dir\\Debug\\cmTC_f72c0.tlog\\unsuccessfulbuild", так как было задано "AlwaysCreate".
+          Обращение к "cmTC_f72c0.dir\\Debug\\cmTC_f72c0.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.38.33130\\bin\\HostX64\\x64\\CL.exe /c /Z7 /W1 /WX- /diagnostics:column /O2 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_f72c0.dir\\Debug\\\\" /Fd"cmTC_f72c0.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "E:\\Cmake\\share\\cmake-3.28\\Modules\\CMakeCXXCompilerABI.cpp"
+          Оптимизирующий компилятор Microsoft (R) C/C++ версии 19.38.33130 для x64
+          (C) Корпорация Майкрософт (Microsoft Corporation).  Все права защищены.
+          cl /c /Z7 /W1 /WX- /diagnostics:column /O2 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_f72c0.dir\\Debug\\\\" /Fd"cmTC_f72c0.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "E:\\Cmake\\share\\cmake-3.28\\Modules\\CMakeCXXCompilerABI.cpp"
+          CMakeCXXCompilerABI.cpp
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.38.33130\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\CMakeScratch\\TryCompile-uqkl9l\\Debug\\cmTC_f72c0.exe" /INCREMENTAL /ILK:"cmTC_f72c0.dir\\Debug\\cmTC_f72c0.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/CMakeFiles/CMakeScratch/TryCompile-uqkl9l/Debug/cmTC_f72c0.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/CMakeFiles/CMakeScratch/TryCompile-uqkl9l/Debug/cmTC_f72c0.lib" /MACHINE:X64  /machine:x64 cmTC_f72c0.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_f72c0.vcxproj -> E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\CMakeScratch\\TryCompile-uqkl9l\\Debug\\cmTC_f72c0.exe
+        FinalizeBuildStatus:
+          Файл "cmTC_f72c0.dir\\Debug\\cmTC_f72c0.tlog\\unsuccessfulbuild" удаляется.
+          Обращение к "cmTC_f72c0.dir\\Debug\\cmTC_f72c0.tlog\\cmTC_f72c0.lastbuildstate".
+        Сборка проекта "E:\\Era Engine\\ext\\FidelityFX-SDK-FSR3-v3.0.3\\sdk\\build\\CMakeFiles\\CMakeScratch\\TryCompile-uqkl9l\\cmTC_f72c0.vcxproj" завершена (целевые объекты по умолчанию).
+        
+        Сборка успешно завершена.
+            Предупреждений: 0
+            Ошибок: 0
+        
+        Прошло времени 00:00:00.74
+        
+      exitCode: 0
+...

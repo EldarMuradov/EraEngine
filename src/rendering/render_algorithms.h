@@ -83,7 +83,7 @@ struct sss_settings
     float thickness = 0.05f;
 	float maxDistanceFromCamera = 5.0f;
 	float distanceFadeoutRange = 2.f;
-	float borderFadeout = 0.1f; // In UV-space.
+	float borderFadeout = 0.1f; // In UV-space
 };
 REFLECT_STRUCT(sss_settings,
 	(numSteps, "Num steps"),
@@ -100,9 +100,9 @@ struct tonemap_settings
 	float B = 0.134f; // Linear strength. 0.3
 	float C = 0.11f; // Linear angle. 0.1
 	float D = 0.375f; // Toe strength. 0.2
-	float E = 0.01f; // Toe Numerator.
-	float F = 0.34f; // Toe denominator.
-	// Note E/F = Toe angle.
+	float E = 0.01f; // Toe Numerator
+	float F = 0.34f; // Toe denominator
+	// Note E/F = Toe angle
 	float linearWhite = 11.2f;
 
 	float exposure = -0.30f; //0.2
@@ -136,12 +136,12 @@ struct light_culling
 	ref<dx_buffer> tiledCullingIndexCounter;
 	ref<dx_buffer> tiledObjectsIndexList;
 
-	// DXGI_FORMAT_R32G32B32A32_UINT. 
-	// The R&B channel contains the offset into tiledObjectsIndexList. 
-	// The G&A channel contains the number of point lights and spot lights in 10 bit each, so there is space for more info.
-	// Opaque is in R,G.
-	// Transparent is in B,A.
-	// For more info, see light_culling_cs.hlsl.
+	// DXGI_FORMAT_R32G32B32A32_UINT
+	// The R&B channel contains the offset into tiledObjectsIndexList
+	// The G&A channel contains the number of point lights and spot lights in 10 bit each, so there is space for more info
+	// Opaque is in R,G
+	// Transparent is in B,A
+	// For more info, see light_culling_cs.hlsl
 
 	ref<dx_texture> tiledCullingGrid;
 
@@ -246,19 +246,19 @@ void screenSpaceReflections(dx_command_list* cl,
 	ref<dx_texture> worldNormalsRoughnessTexture,	// NON_PIXEL_SHADER_RESOURCE
 	ref<dx_texture> screenVelocitiesTexture,		// NON_PIXEL_SHADER_RESOURCE
 	ref<dx_texture> raycastTexture,					// UNORDERED_ACCESS
-	ref<dx_texture> resolveTexture,					// UNORDERED_ACCESS. After call D3D12_RESOURCE_STATE_GENERIC_READ. Also output of this algorithm.
-	ref<dx_texture> ssrTemporalHistory,				// NON_PIXEL_SHADER_RESOURCE. After call UNORDERED_ACCESS.
-	ref<dx_texture> ssrTemporalOutput,				// UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE.
+	ref<dx_texture> resolveTexture,					// UNORDERED_ACCESS. After call D3D12_RESOURCE_STATE_GENERIC_READ. Also output of this algorithm
+	ref<dx_texture> ssrTemporalHistory,				// NON_PIXEL_SHADER_RESOURCE. After call UNORDERED_ACCESS
+	ref<dx_texture> ssrTemporalOutput,				// UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE
 	ssr_settings settings,
 	dx_dynamic_constant_buffer cameraCBV);
 
 void specularAmbient(dx_command_list* cl,
 	ref<dx_texture> hdrInput,						// NON_PIXEL_SHADER_RESOURCE
-	ref<dx_texture> ssr,							// NON_PIXEL_SHADER_RESOURCE. Can be null.
+	ref<dx_texture> ssr,							// NON_PIXEL_SHADER_RESOURCE. Can be null
 	ref<dx_texture> worldNormalsTexture,			// NON_PIXEL_SHADER_RESOURCE
 	ref<dx_texture> reflectanceTexture,				// NON_PIXEL_SHADER_RESOURCE
-	ref<dx_texture> environment,					// NON_PIXEL_SHADER_RESOURCE. Can be null.
-	ref<dx_texture> ao,								// NON_PIXEL_SHADER_RESOURCE. Can be null.
+	ref<dx_texture> environment,					// NON_PIXEL_SHADER_RESOURCE. Can be null
+	ref<dx_texture> ao,								// NON_PIXEL_SHADER_RESOURCE. Can be null
 	ref<dx_texture> output,							// UNORDERED_ACCESS
 	dx_dynamic_constant_buffer cameraCBV);
 
@@ -266,8 +266,8 @@ void temporalAntiAliasing(dx_command_list* cl,
 	ref<dx_texture> hdrInput,						// NON_PIXEL_SHADER_RESOURCE
 	ref<dx_texture> screenVelocitiesTexture,		// NON_PIXEL_SHADER_RESOURCE
 	ref<dx_texture> depthStencilBuffer,				// NON_PIXEL_SHADER_RESOURCE
-	ref<dx_texture> history,						// NON_PIXEL_SHADER_RESOURCE. After call UNORDERED_ACCESS.
-	ref<dx_texture> output,							// UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE.
+	ref<dx_texture> history,						// NON_PIXEL_SHADER_RESOURCE. After call UNORDERED_ACCESS
+	ref<dx_texture> output,							// UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE
 	vec4 jitteredCameraProjectionParams);
 
 void downsample(dx_command_list* cl,
@@ -277,7 +277,7 @@ void downsample(dx_command_list* cl,
 
 void bloom(dx_command_list* cl,
 	ref<dx_texture> hdrInput,						// NON_PIXEL_SHADER_RESOURCE
-	ref<dx_texture> output,							// Input as UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE.
+	ref<dx_texture> output,							// Input as UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE
 	ref<dx_texture> bloomTexture,					// UNORDERED_ACCESS
 	ref<dx_texture> bloomTempTexture,				// UNORDERED_ACCESS
 	bloom_settings settings);

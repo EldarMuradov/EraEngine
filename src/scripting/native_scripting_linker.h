@@ -38,6 +38,7 @@ struct enative_scripting_linker
 	void update(float dt);
 
 	void handle_coll(int id1, int id2);
+	void handle_exit_coll(int id1, int id2);
 	void process_trs(intptr_t ptr, int id);
 
 	void init_src();

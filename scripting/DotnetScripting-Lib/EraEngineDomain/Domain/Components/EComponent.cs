@@ -9,7 +9,10 @@ public abstract class EComponent
 
     public virtual void OnCollisionEnter(EEntity collision) { Debug.Log($"Collision with {collision.Id}"); }
 
+    public virtual void OnCollisionExit(EEntity collision) { Debug.Log($"Collision exit with {collision.Id}"); }
+
     public virtual void OnTriggerEnter(EEntity trigger) { }
+    public virtual void OnTriggerExit(EEntity trigger) { }
 
     public static void Signal(string signal) { ESystemManager.GetSystem<EventSystem>().Handle(new EventRequest { Name = signal }); }
 

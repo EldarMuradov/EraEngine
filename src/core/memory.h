@@ -18,7 +18,7 @@ constexpr auto BYTE_TO_MB(T b) { return ((b) / (1024 * 1024)); }
 template<typename T>
 constexpr auto BYTE_TO_GB(T b) { return ((b) / (1024 * 1024)); }
 
-NODISCARD inline uint32 alignTo(uint32 currentOffset, uint32 alignment)
+NODISCARD inline uint32 alignTo(uint32 currentOffset, uint32 alignment) noexcept
 {
 	uint32 mask = alignment - 1;
 	uint32 misalignment = currentOffset & mask;
@@ -26,7 +26,7 @@ NODISCARD inline uint32 alignTo(uint32 currentOffset, uint32 alignment)
 	return currentOffset + adjustment;
 }
 
-NODISCARD inline uint64 alignTo(uint64 currentOffset, uint64 alignment)
+NODISCARD inline uint64 alignTo(uint64 currentOffset, uint64 alignment) noexcept
 {
 	uint64 mask = alignment - 1;
 	uint64 misalignment = currentOffset & mask;
@@ -34,7 +34,7 @@ NODISCARD inline uint64 alignTo(uint64 currentOffset, uint64 alignment)
 	return currentOffset + adjustment;
 }
 
-NODISCARD inline void* alignTo(void* currentAddress, uint64 alignment)
+NODISCARD inline void* alignTo(void* currentAddress, uint64 alignment) noexcept
 {
 	uint64 mask = alignment - 1;
 	uint64 misalignment = (uint64)(currentAddress)&mask;
@@ -42,12 +42,12 @@ NODISCARD inline void* alignTo(void* currentAddress, uint64 alignment)
 	return (uint8*)currentAddress + adjustment;
 }
 
-inline bool rangesOverlap(uint64 fromA, uint64 toA, uint64 fromB, uint64 toB)
+inline bool rangesOverlap(uint64 fromA, uint64 toA, uint64 fromB, uint64 toB) noexcept
 {
 	return !(toA <= fromB || fromA >= toA);
 }
 
-inline bool rangesOverlap(void* fromA, void* toA, void* fromB, void* toB)
+inline bool rangesOverlap(void* fromA, void* toA, void* fromB, void* toB) noexcept
 {
 	return !(toA <= fromB || fromA >= toB);
 }
@@ -66,35 +66,53 @@ struct eallocator
 
 	void initialize(uint64 minimumBlockSize = 0, uint64 reserveSize = GB(8));
 
-	void ensureFreeSize(uint64 size);
+	void ensureFreeSize(uint64 size) noexcept
+	{
+		mutex.lock();
+		ensureFreeSizeInternal(size);
+		mutex.unlock();
+	}
 
-	void* allocate(uint64 size, uint64 alignment = 1, bool clearToZero = false);
+	void* allocate(uint64 size, uint64 alignment = 1, bool clearToZero = false) noexcept;
 
 	template <typename T>
-	NODISCARD T* allocate(uint32 count = 1, bool clearToZero = false)
+	NODISCARD T* allocate(uint32 count = 1, bool clearToZero = false) noexcept
 	{
 		return (T*)allocate(sizeof(T) * count, alignof(T), clearToZero);
 	}
 
 	// Get and set current are not thread safe.
-	NODISCARD void* getCurrent(uint64 alignment = 1);
+	NODISCARD void* getCurrent(uint64 alignment = 1) const noexcept
+	{
+		return memory + alignTo(current, alignment);
+	}
 
 	template <typename T>
-	NODISCARD T* getCurrent()
+	NODISCARD T* getCurrent() const noexcept
 	{
 		return (T*)getCurrent(alignof(T));
 	}
 
-	void setCurrentTo(void* ptr);
+	void setCurrentTo(void* ptr) noexcept
+	{
+		current = (uint8*)ptr - memory;
+		sizeLeftCurrent = committedMemory - current;
+		sizeLeftTotal = reserveSize - current;
+	}
 
-	void reset(bool freeMemory = false);
+	void reset(bool freeMemory = false) noexcept;
 
-	NODISCARD memory_marker getMarker() const;
-	void resetToMarker(memory_marker marker);
+	NODISCARD memory_marker getMarker() noexcept
+	{
+		return { current };
+	}
 
-	NODISCARD uint8* base() const { return memory; }
+	void resetToMarker(memory_marker marker) noexcept;
+
+	NODISCARD uint8* base() const noexcept { return memory; }
+
 protected:
-	void ensureFreeSizeInternal(uint64 size);
+	void ensureFreeSizeInternal(uint64 size) noexcept;
 
 	uint8* memory = 0;
 	uint64 committedMemory = 0;

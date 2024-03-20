@@ -11,9 +11,9 @@ struct raytracing_tlas
 {
 	void initialize(raytracing_as_rebuild_mode rebuildMode = raytracing_as_rebuild);
 
-	// Call these each frame to rebuild the structure.
+	// Call these each frame to rebuild the structure
 	void reset();
-	NODISCARD raytracing_instance_handle instantiate(raytracing_object_type type, const trs& transform);
+	raytracing_instance_handle instantiate(raytracing_object_type type, const trs& transform);
 	void build(struct dx_command_list* cl);
 
 	std::vector<D3D12_RAYTRACING_INSTANCE_DESC> allInstances;
