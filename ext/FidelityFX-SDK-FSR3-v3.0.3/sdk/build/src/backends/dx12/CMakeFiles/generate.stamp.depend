@@ -1,0 +1,19 @@
+# CMake generation dependency list for this directory.
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeLists.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersBlur.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersCACAO.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersCAS.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersClassifier.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersDOF.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersDenoiser.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersFSR1.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersFSR2.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersFSR3Upscaler.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersFrameinterpolation.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersLENS.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersLPM.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersOpticalflow.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersParallelSort.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersSPD.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersSSSR.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeShadersVRS.txt

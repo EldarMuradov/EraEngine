@@ -1,0 +1,19 @@
+# CMake generation dependency list for this directory.
+E:/Cmake/share/cmake-3.28/Modules/FindPackageHandleStandardArgs.cmake
+E:/Cmake/share/cmake-3.28/Modules/FindPackageMessage.cmake
+E:/Cmake/share/cmake-3.28/Modules/FindVulkan.cmake
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeLists.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersBLUR.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersCACAO.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersCAS.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersClassifier.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersDOF.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersDenoiser.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersFSR1.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersFSR2.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersLENS.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersLPM.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersParallelSort.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersSPD.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersSSSR.txt
+E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/vk/CMakeShadersVRS.txt

@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\x64\Debug\ZERO_CHECK</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\x64\Debug\ffx_shader_permutations_dx12</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\dx12\Debug\ffx_backend_dx12_x64d.dll</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles />
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>
