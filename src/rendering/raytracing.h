@@ -21,7 +21,7 @@ struct raytracing_blas_geometry
 {
 	raytracing_geometry_type type;
 
-	// Only valid for mesh geometry.
+	// Only valid for mesh geometry
 	vertex_buffer_group vertexBuffer;
 	ref<dx_index_buffer> indexBuffer;
 	submesh_info submesh;
@@ -46,8 +46,8 @@ private:
 
 	std::vector<raytracing_blas_geometry> geometries;
 
-	std::vector<mat4> localTransforms;				// For meshes.
-	std::vector<D3D12_RAYTRACING_AABB> aabbDescs;	// For procedurals.
+	std::vector<mat4> localTransforms;				// For meshes
+	std::vector<D3D12_RAYTRACING_AABB> aabbDescs;	// For procedurals
 };
 
 struct raytracing_object_type
@@ -90,15 +90,15 @@ struct dx_raytracing_pipeline
 
 struct raytracing_mesh_hitgroup
 {
-	const wchar* closestHit;	// Optional.
-	const wchar* anyHit;		// Optional.
+	const wchar* closestHit;	// Optional
+	const wchar* anyHit;		// Optional
 };
 
 struct raytracing_procedural_hitgroup
 {
 	const wchar* intersection;
-	const wchar* closestHit;	// Optional.
-	const wchar* anyHit;		// Optional.
+	const wchar* closestHit;	// Optional
+	const wchar* anyHit;		// Optional
 };
 
 struct raytracing_pipeline_builder
@@ -108,7 +108,7 @@ struct raytracing_pipeline_builder
 	raytracing_pipeline_builder& globalRootSignature(D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc);
 	raytracing_pipeline_builder& raygen(const wchar* entryPoint, D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {});
 
-	// The root signature describes parameters for both hit shaders. Miss will not get any arguments for now.
+	// The root signature describes parameters for both hit shaders. Miss will not get any arguments for now
 	raytracing_pipeline_builder& hitgroup(const wchar* groupName, const wchar* miss, 
 		raytracing_mesh_hitgroup mesh, D3D12_ROOT_SIGNATURE_DESC meshRootSignatureDesc = {}, 
 		raytracing_procedural_hitgroup procedural = {}, D3D12_ROOT_SIGNATURE_DESC proceduralRootSignatureDesc = {});
@@ -145,7 +145,7 @@ private:
 
 	const wchar* shaderFilename;
 
-	// Since these store pointers to each other, they are not resizable arrays.
+	// Since these store pointers to each other, they are not resizable arrays
 	D3D12_STATE_SUBOBJECT subobjects[512];
 	uint32 numSubobjects = 0;
 

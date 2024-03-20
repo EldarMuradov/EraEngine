@@ -8,6 +8,8 @@ namespace physics
 {
 	using namespace physx;
 
+	struct px_rigidbody_component;
+
 	enum class px_cct_type : uint8
 	{
 		None,

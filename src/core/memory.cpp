@@ -17,19 +17,19 @@ void eallocator::initialize(uint64 minimumBlockSize, uint64 reserveSize)
 	this->reserveSize = reserveSize;
 }
 
-void eallocator::ensureFreeSize(uint64 size)
+void eallocator::resetToMarker(memory_marker marker) noexcept
 {
-	mutex.lock();
-	ensureFreeSizeInternal(size);
-	mutex.unlock();
+	current = marker.before;
+	sizeLeftCurrent = committedMemory - current;
+	sizeLeftTotal = reserveSize - current;
 }
 
-void eallocator::ensureFreeSizeInternal(uint64 size)
+void eallocator::ensureFreeSizeInternal(uint64 size) noexcept
 {
 	if (sizeLeftCurrent < size)
 	{
 		uint64 allocationSize = max(size, minimumBlockSize);
-		allocationSize = pageSize * bucketize(allocationSize, pageSize); // Round up to next page boundary.
+		allocationSize = pageSize * bucketize(allocationSize, pageSize);
 		VirtualAlloc(memory + committedMemory, allocationSize, MEM_COMMIT, PAGE_READWRITE);
 
 		sizeLeftTotal += allocationSize;
@@ -38,7 +38,7 @@ void eallocator::ensureFreeSizeInternal(uint64 size)
 	}
 }
 
-void* eallocator::allocate(uint64 size, uint64 alignment, bool clearToZero)
+void* eallocator::allocate(uint64 size, uint64 alignment, bool clearToZero) noexcept
 {
 	if (size == 0)
 		return 0;
@@ -70,19 +70,7 @@ void* eallocator::allocate(uint64 size, uint64 alignment, bool clearToZero)
 	return result;
 }
 
-NODISCARD void* eallocator::getCurrent(uint64 alignment)
-{
-	return memory + alignTo(current, alignment);
-}
-
-void eallocator::setCurrentTo(void* ptr)
-{
-	current = (uint8*)ptr - memory;
-	sizeLeftCurrent = committedMemory - current;
-	sizeLeftTotal = reserveSize - current;
-}
-
-void eallocator::reset(bool freeMemory)
+void eallocator::reset(bool freeMemory) noexcept
 {
 	if (memory && freeMemory)
 	{
@@ -92,16 +80,4 @@ void eallocator::reset(bool freeMemory)
 	}
 
 	resetToMarker(memory_marker{ 0 });
-}
-
-NODISCARD memory_marker eallocator::getMarker() const
-{
-	return { current };
-}
-
-void eallocator::resetToMarker(memory_marker marker)
-{
-	current = marker.before;
-	sizeLeftCurrent = committedMemory - current;
-	sizeLeftTotal = reserveSize - current;
 }

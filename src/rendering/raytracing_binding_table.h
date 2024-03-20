@@ -7,7 +7,7 @@ struct raytracing_binding_table
 {
     void initialize(const dx_raytracing_pipeline* pipeline);
 
-    // This expects an array of length numRayTypes, i.e. shader data for all hit groups.
+    // This expects an array of length numRayTypes, i.e. shader data for all hit groups
     void push(const shader_data* sd);
 
     void build();

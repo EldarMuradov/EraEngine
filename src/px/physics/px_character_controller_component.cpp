@@ -1,4 +1,5 @@
 #include "pch.h"
+#include <px/physics/px_rigidbody_component.h>
 #include "px/physics/px_character_controller_component.h"
 #include <scene/scene.h>
 #include <application.h>

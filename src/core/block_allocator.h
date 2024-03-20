@@ -7,7 +7,7 @@ struct block_allocator
 
 	void initialize(uint64 capacity);
 
-	// Returns the offset.
+	// Returns the offset
 	NODISCARD uint64 allocate(uint64 requestedSize);
 	void free(uint64 offset, uint64 size);
 
@@ -15,7 +15,7 @@ private:
 	struct offset_value;
 	struct size_value;
 
-	// Referencing each-other.
+	// Referencing each-other
 	using block_by_offset_map = std::map<uint64, offset_value>;
 	using block_by_size_map = std::multimap<uint64, size_value>;
 

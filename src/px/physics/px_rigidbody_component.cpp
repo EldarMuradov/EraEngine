@@ -130,22 +130,23 @@ namespace physics
 		physics_holder::physicsRef->unlockWrite();
 	}
 
-	void px_rigidbody_component::release()
+	void px_rigidbody_component::release(bool releaseActor)
 	{
 		physics_holder::physicsRef->removeActor(this);
 
 		PX_RELEASE(material)
-		PX_RELEASE(actor)
+		if(releaseActor)
+			PX_RELEASE(actor)
 	}
 
 	void px_rigidbody_component::onCollisionEnter(px_rigidbody_component* collision) const
 	{
-		std::cout << "enter";
+		std::cout << "enter\n";
 	}
 
 	void px_rigidbody_component::onCollisionExit(px_rigidbody_component* collision) const
 	{
-		std::cout << "exit";
+		std::cout << "exit\n";
 	}
 
 	void px_rigidbody_component::onCollisionStay(px_rigidbody_component* collision) const

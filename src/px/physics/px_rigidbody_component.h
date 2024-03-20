@@ -55,7 +55,7 @@ namespace physics
 
 		void setAngularDamping(float damping);
 
-		virtual void release();
+		virtual void release(bool releaseActor = false);
 
 		void onCollisionEnter(px_rigidbody_component* collision) const;
 		void onCollisionExit(px_rigidbody_component* collision) const;

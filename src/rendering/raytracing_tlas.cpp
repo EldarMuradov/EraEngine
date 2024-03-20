@@ -14,7 +14,7 @@ void raytracing_tlas::reset()
     allInstances.clear();
 }
 
-NODISCARD raytracing_instance_handle raytracing_tlas::instantiate(raytracing_object_type type, const trs& transform)
+raytracing_instance_handle raytracing_tlas::instantiate(raytracing_object_type type, const trs& transform)
 {
     uint32 result = (uint32)allInstances.size();
     D3D12_RAYTRACING_INSTANCE_DESC& instance = allInstances.emplace_back();
@@ -26,7 +26,7 @@ NODISCARD raytracing_instance_handle raytracing_tlas::instantiate(raytracing_obj
     memcpy(instance.Transform, &m, sizeof(instance.Transform));
     instance.AccelerationStructure = type.blas->blas->gpuVirtualAddress;
     instance.InstanceMask = 0xFF;
-    instance.InstanceID = 0; // This value will be exposed to the shader via InstanceID().
+    instance.InstanceID = 0; // This value will be exposed to the shader via InstanceID()
 
     return { result };
 }

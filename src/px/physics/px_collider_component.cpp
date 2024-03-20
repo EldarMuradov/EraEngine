@@ -83,8 +83,12 @@ namespace physics
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		shape = physics->createShape(PxBoxGeometry(height, length, width), *material);
+
 		enableShapeInSceneQueryTests(shape);
 		enableShapeInContactTests(shape);
+
+		physics_holder::physicsRef->colliders.emplace(this);
+
 		return true;
 	}
 
@@ -98,8 +102,12 @@ namespace physics
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		shape = physics->createShape(PxSphereGeometry(radius), *material);
+
 		enableShapeInSceneQueryTests(shape);
 		enableShapeInContactTests(shape);
+
+		physics_holder::physicsRef->colliders.emplace(this);
+
 		return true;
 	}
 
@@ -112,8 +120,12 @@ namespace physics
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		shape = physics->createShape(PxCapsuleGeometry(radius, height / 2.0f), *material);
+
 		enableShapeInSceneQueryTests(shape);
 		enableShapeInContactTests(shape);
+
+		physics_holder::physicsRef->colliders.emplace(this);
+
 		return true;
 	}
 
@@ -135,6 +147,9 @@ namespace physics
 		enableShapeInContactTests(shape);
 
 		PX_RELEASE(mesh);
+
+		physics_holder::physicsRef->colliders.emplace(this);
+
 		return true;
 	}
 
@@ -179,6 +194,9 @@ namespace physics
 		shape = physics->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(modelSize)), *material);
 
 		PX_RELEASE(mesh);
+
+		physics_holder::physicsRef->colliders.emplace(this);
+
 		return true;
 	}
 
@@ -282,9 +300,14 @@ namespace physics
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		shape = physics->createShape(PxConvexMeshGeometry(mesh, PxMeshScale(modelSize)), *material);
+
 		enableShapeInSceneQueryTests(shape);
 		enableShapeInContactTests(shape);
+
 		PX_RELEASE(mesh);
+
+		physics_holder::physicsRef->colliders.emplace(this);
+
 		return true;
 	}
 
@@ -297,6 +320,7 @@ namespace physics
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		plane = PxCreatePlane(*physics, PxPlane(createPxVec3(position), createPxVec3(normal)), *material);
+
 		physics_holder::physicsRef->getScene()->addActor(*plane);
 
 		return true;

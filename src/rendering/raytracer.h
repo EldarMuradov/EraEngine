@@ -15,7 +15,7 @@ protected:
 		uint32 numRayTypes, uint32 numHitGroups);
 
 	template <typename input_resources, typename output_resources>
-	NODISCARD dx_gpu_descriptor_handle copyGlobalResourcesToDescriptorHeap(const input_resources& in, const output_resources& out);
+	dx_gpu_descriptor_handle copyGlobalResourcesToDescriptorHeap(const input_resources& in, const output_resources& out);
 
 	template <typename input_resources, typename output_resources>
 	void allocateDescriptorHeapSpaceForGlobalResources(dx_pushable_descriptor_heap& descriptorHeap);
@@ -27,7 +27,7 @@ protected:
 };
 
 template<typename input_resources, typename output_resources>
-NODISCARD inline dx_gpu_descriptor_handle dx_raytracer::copyGlobalResourcesToDescriptorHeap(const input_resources& in, const output_resources& out)
+inline dx_gpu_descriptor_handle dx_raytracer::copyGlobalResourcesToDescriptorHeap(const input_resources& in, const output_resources& out)
 {
 	dx_cpu_descriptor_handle cpuHandle = resourceCPUBase[dxContext.bufferedFrameID];
 	dx_gpu_descriptor_handle gpuHandle = resourceGPUBase[dxContext.bufferedFrameID];

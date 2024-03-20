@@ -14,6 +14,10 @@
 #define PX_ENABLE_PVD 1
 #endif
 
+#ifndef PX_PHYSX_STATIC_LIB
+#define PX_PHYSX_STATIC_LIB
+#endif
+
 #define PX_GPU_BROAD_PHASE 1
 
 #define PX_CONTACT_BUFFER_SIZE 64
@@ -44,7 +48,6 @@
 #include <PxPhysics.h>
 #include <PxPhysicsAPI.h>
 
-#include <px/physics/px_rigidbody_component.h>
 #include <set>
 #include <unordered_map>
 #include <iostream>
@@ -163,6 +166,9 @@ namespace physics
 	using namespace physx;
 
 	static inline PxVec3 gravity(0.0f, -9.8f, 0.0f);
+
+	struct px_rigidbody_component;
+	struct px_collider_component_base;
 
 	struct px_allocator_callback : PxAllocatorCallback
 	{
@@ -646,7 +652,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		uint32_t nbActiveActors{};
 
 		::std::set<px_rigidbody_component*> actors;
-		::std::unordered_map<PxRigidActor*, px_rigidbody_component*> actors_map;
+		::std::set<px_collider_component_base*> colliders;
+		::std::unordered_map<PxRigidActor*, px_rigidbody_component*> actorsMap;
 		::std::queue<collision_handling_data> collisionQueue;
 		::std::queue<collision_handling_data> collisionExitQueue;
 
