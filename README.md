@@ -123,7 +123,7 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 
 -Cascaded shadow maps
 
-- GI
+-GI
 
 -Point lights
 
