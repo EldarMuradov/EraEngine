@@ -1,11 +1,13 @@
 ![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/02d7801170a48c62c13e82ff4261d3a94ee91df3/DLSS_ON.png)
 
+![EraEngine Logo](https://github.com/EldarMuradov/EldarMuradov/blob/99a6272b7b5f123c8f20b7c39f773714f79810cd/MESH_EDITOR.png)
+
 # Era Game Engine
 
 [![C++](https://img.shields.io/badge/language-C%2B%2B-%23f34b7d.svg?style=plastic)](https://en.wikipedia.org/wiki/C%2B%2B) 
 [![x64](https://img.shields.io/badge/arch-x64-red.svg?style=plastic)](https://en.wikipedia.org/wiki/X64) 
 
-<a href="https://github.com/EldarMuradov/EraGameEngine"><img alt="platforms" src="https://img.shields.io/badge/platforms-Windows-blue?style=flat-square"/></a>
+<a href="https://github.com/EldarMuradov/EraEngine"><img alt="platforms" src="https://img.shields.io/badge/platforms-Windows-blue?style=flat-square"/></a>
 
 # About
 
