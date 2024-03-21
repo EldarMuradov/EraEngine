@@ -54,6 +54,11 @@ asset_cache/
 x64/
 resources/
 
+# External
+ext/entt/test
+ext/yaml-cpp/test
+ext/entt/conan
+
 # Learning
 learning/
 /shot1.png
