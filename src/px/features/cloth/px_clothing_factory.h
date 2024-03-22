@@ -275,12 +275,21 @@ namespace physics
 
 		void release() noexcept { clothSystem.reset(); free(positions); }
 
+		void update(bool visualize = false, ldr_render_pass* ldrRenderPass = nullptr) const noexcept
+		{
+			clothSystem->update(visualize, ldrRenderPass);
+		}
+
+		void translate(const vec3& position) noexcept
+		{
+			clothSystem->translate(position);
+		}
+
 		uint32 numX{};
 		uint32 numZ{};
 
-		ref<px_cloth_system> clothSystem;
-
 	private:
+		ref<px_cloth_system> clothSystem;
 		vec3* positions = nullptr;
 	};
 

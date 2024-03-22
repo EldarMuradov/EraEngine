@@ -294,16 +294,30 @@ namespace physics
 
 		void release() noexcept { particleSystem.reset(); }
 
+		void update(bool visualize = false, ldr_render_pass* ldrRenderPass = nullptr) const noexcept
+		{
+			particleSystem->update(visualize, ldrRenderPass);
+		}
+
 		uint32 numX{};
 		uint32 numY{};
 		uint32 numZ{};
 
+	private:
 		ref<px_particle_system> particleSystem;
 	};
 
-	struct px_particles_renderer_component
+#include "geometry/mesh_builder.h"
+#include "dx/dx_buffer.h"
+#include "dx/dx_context.h"
+
+	struct px_particles_render_component
 	{
-		px_particles_renderer_component() = default;
+		px_particles_render_component() = default;
+		~px_particles_render_component() {}
+
+		ref<dx_index_buffer> indexBuffer;
+		dx_vertex_buffer_group_view prevFrameVB;
 	};
 }
 

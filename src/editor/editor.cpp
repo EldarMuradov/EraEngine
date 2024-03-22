@@ -761,7 +761,7 @@ bool eeditor::drawSceneHierarchy()
 		}
 		ImGui::EndChild();
 
-		if (selectedEntity)
+		if (selectedEntity && selectedEntity.valid())
 		{
 			if (ImGui::Begin("Components"))
 			{
@@ -1854,7 +1854,7 @@ void eeditor::onObjectMoved()
 		}
 		else if (physics::px_cloth_component* cloth = selectedEntity.getComponentIfExists<physics::px_cloth_component>())
 		{
-			cloth->clothSystem->translate(selectedEntity.getComponent<transform_component>().position);
+			cloth->translate(selectedEntity.getComponent<transform_component>().position);
 		}
 	}
 }
@@ -2055,7 +2055,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 					rb->setPhysicsPositionAndRotation(transform->position, transform->rotation);
 
 				if (physics::px_cloth_component* cloth = selectedEntity.getComponentIfExists<physics::px_cloth_component>())
-					cloth->clothSystem->translate(selectedEntity.getComponent<transform_component>().position);
+					cloth->translate(selectedEntity.getComponent<transform_component>().position);
 
 				updateSelectedEntityUIRotation();
 				inputCaptured = true;

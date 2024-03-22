@@ -12,7 +12,7 @@
 
 file_browser::file_browser()
 {
-	std::string path = eproject::path + "\\assets";
+	std::string path = "assets";
 	changeCurrentPath(path);
 }
 

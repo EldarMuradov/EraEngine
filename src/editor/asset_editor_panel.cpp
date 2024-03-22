@@ -69,7 +69,7 @@ void asset_editor_panel::close()
 
 mesh_editor_panel::mesh_editor_panel()
 {
-	title = EDITOR_ICON_MESH "  Mesh editor";
+	title = EDITOR_ICON_MESH "  Mesh Editor";
 	dragDropTarget = EDITOR_ICON_MESH;
 
 	renderer_spec spec = { false, false, false, false, false, false };

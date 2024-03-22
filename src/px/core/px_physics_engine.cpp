@@ -205,7 +205,8 @@ void physics::px_physics_engine::start() noexcept
 
 void physics::px_physics_engine::update(float dt) noexcept
 {
-	float stepSize = 1.0f / frameRate;
+	const float stepSize = 1.0f / frameRate;
+
 	scene->lockWrite();
 	scene->getTaskManager()->startSimulation();
 

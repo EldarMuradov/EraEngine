@@ -26,8 +26,8 @@
 
 void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh);
 
-NODISCARD bool editFireParticleSystem(fire_particle_system& particleSystem);
-NODISCARD bool editBoidParticleSystem(boid_particle_system& particleSystem);
+bool editFireParticleSystem(fire_particle_system& particleSystem);
+bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
 struct updatePhysicsAndScriptingData;
 void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt, const user_input& in);

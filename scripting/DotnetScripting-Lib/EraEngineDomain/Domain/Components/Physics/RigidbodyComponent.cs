@@ -60,6 +60,13 @@ public sealed class RigidbodyComponent : EComponent
         Memory.ReleaseIntPtr(vec);
     }
 
+    public void AddTorque(Vector3 torque, ForceMode mode)
+    {
+        IntPtr vec = Memory.StructToIntPtr(torque);
+        addTorque(Entity.Id, (byte)mode, vec);
+        Memory.ReleaseIntPtr(vec);
+    }
+
     public unsafe Vector3 GetLinearVelocity() 
     {
         IntPtr ptrn = getLinearVelocity(Entity.Id);
@@ -107,6 +114,9 @@ public sealed class RigidbodyComponent : EComponent
 
     [DllImport("EraScriptingCPPDecls.dll")]
     private static extern void addForce(int id, byte mode, IntPtr force);
+
+    [DllImport("EraScriptingCPPDecls.dll")]
+    private static extern void addTorque(int id, byte mode, IntPtr torque);
 
     [DllImport("EraScriptingCPPDecls.dll")]
     private static extern IntPtr getLinearVelocity(int id);

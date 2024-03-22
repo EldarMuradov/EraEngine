@@ -15,6 +15,11 @@ ERASCRIPTINGCPPDECLS_API void addForce(uint32_t id, uint8_t mode, float* force)
     enative_caller::call("addForce", id, mode, force);
 }
 
+ERASCRIPTINGCPPDECLS_API void addTorque(uint32_t id, uint8_t mode, float* torque)
+{
+    enative_caller::call("addTorque", id, mode, torque);
+}
+
 ERASCRIPTINGCPPDECLS_API float getMass(uint32_t id)
 {
     return enative_caller::call<float>("getMass", id);

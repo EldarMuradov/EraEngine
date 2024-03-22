@@ -237,6 +237,21 @@ namespace bind
 			std::cerr << "bliaaaa addForce";
 	}
 
+	static void add_torque_internal(uint32_t id, uint8_t mode, float* torque)
+	{
+		entity_handle hid = (entity_handle)id;
+		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+
+		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
+		{
+			vec3 f = vec3(torque[0], torque[1], torque[2]);
+			rb->addTorque(f, (physics::px_force_mode)mode);
+			std::cout << "Torque" << "\n";
+		}
+		else
+			std::cerr << "bliaaaa addTorque";
+	}
+
 	static void initialize_rigidbody_internal(uint32_t id, uint8_t type)
 	{
 		entity_handle hid = (entity_handle)id;
@@ -486,6 +501,7 @@ void enative_scripting_linker::bindFunctions()
 			builder->functions.emplace("getMass", BIND(bind::get_mass_internal, float, uint32_t));
 			builder->functions.emplace("setMass", BIND(bind::set_mass_internal, void, uint32_t, float));
 			builder->functions.emplace("addForce", BIND(bind::add_force_internal, void, uint32_t, uint8_t, float*));
+			builder->functions.emplace("addTorque", BIND(bind::add_torque_internal, void, uint32_t, uint8_t, float*));
 		}
 
 		// Navigation

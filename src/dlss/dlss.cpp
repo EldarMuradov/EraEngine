@@ -73,7 +73,7 @@ void dlss_feature_adapter::initialize(main_renderer* rnd)
 
 }
 
-void NGXResourceAllocCallback(D3D12_RESOURCE_DESC* InDesc, int InState,
+static void NGXResourceAllocCallback(D3D12_RESOURCE_DESC* InDesc, int InState,
 	CD3DX12_HEAP_PROPERTIES* InHeap, ID3D12Resource** OutResource)
 {
 
@@ -117,10 +117,10 @@ void dlss_feature_adapter::updateDLSS(ID3D12GraphicsCommandList* cmdList, float 
 	evalsParams.pInMotionVectors = renderer->screenVelocitiesTexture->resource.Get();
 	evalsParams.InMVScaleX = renderer->screenVelocitiesTexture->width;
 	evalsParams.InMVScaleY = renderer->screenVelocitiesTexture->height;
-	evalsParams.pInDepth = renderer->depthStencilBuffer->resource.Get();
+	evalsParams.pInDepth = renderer->opaqueDepthBuffer->resource.Get();
 	evalsParams.InRenderSubrectDimensions.Width = renderer->renderWidth;
 	evalsParams.InRenderSubrectDimensions.Height = renderer->renderHeight;
-	evalsParams.InPreExposure = 0.0f;
+	evalsParams.InPreExposure = 0.10f;
 	evalsParams.InFrameTimeDeltaInMsec = dt;
 	
 	NVSDK_NGX_Result EvalDLSSFeatureRes = NGX_D3D12_EVALUATE_DLSS_EXT(cmdList, handle, params, &evalsParams);

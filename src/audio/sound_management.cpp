@@ -55,7 +55,7 @@ void drawSoundEditor(bool& open)
 {
     if (open)
     {
-        if (ImGui::Begin(EDITOR_ICON_AUDIO "  Sound Editing", &open))
+        if (ImGui::Begin(EDITOR_ICON_AUDIO "  Sound Editor", &open))
         {
             static ImGuiTextFilter filter;
             filter.Draw();

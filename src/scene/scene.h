@@ -170,13 +170,15 @@ struct eentity
 			if (!hasComponent<physics::px_cloth_render_component>())
 				addComponent<physics::px_cloth_render_component>();
 		}
-#endif // !PHYSICS ONLY
-		else if	constexpr (std::is_same_v<component_t, physics::px_plane_collider_component>)
+		else if	constexpr (std::is_same_v<component_t, physics::px_particles_component>)
 		{
 			auto& position = getComponent<transform_component>().position;
 			auto& component = registry->emplace_or_replace<component_t>(handle, position, std::forward<args>(a)...);
+			if (!hasComponent<physics::px_particles_render_component>())
+				addComponent<physics::px_particles_render_component>();
 		}
-		else if	constexpr (std::is_same_v<component_t, physics::px_particles_component>)
+#endif // !PHYSICS ONLY
+		else if	constexpr (std::is_same_v<component_t, physics::px_plane_collider_component>)
 		{
 			auto& position = getComponent<transform_component>().position;
 			auto& component = registry->emplace_or_replace<component_t>(handle, position, std::forward<args>(a)...);

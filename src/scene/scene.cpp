@@ -67,7 +67,7 @@ void escene::cloneTo(escene& target)
 		physics::px_cloth_component,
 		physics::px_cloth_render_component,
 		physics::px_particles_component,
-		//physics::px_particles_renderer_component,
+		physics::px_particles_render_component,
 
 		navigation_component,
 		script_component,
@@ -212,6 +212,14 @@ void escene::deleteEntity(eentity e)
 		reference->release();
 	}
 	if (physics::px_cct_component_base* reference = e.getComponentIfExists<physics::px_capsule_cct_component>())
+	{
+		reference->release();
+	}
+	if (physics::px_cloth_component* reference = e.getComponentIfExists<physics::px_cloth_component>())
+	{
+		reference->release();
+	}
+	if (physics::px_particles_component* reference = e.getComponentIfExists<physics::px_particles_component>())
 	{
 		reference->release();
 	}

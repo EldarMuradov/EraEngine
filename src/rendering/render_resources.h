@@ -28,7 +28,7 @@ struct render_resources
 	static void evaluate();
 
 	// Call from renderer in endFrame().
-	NODISCARD static const std::vector<ref<dx_texture>>& getTemporaryResources(uint64 id, dx_command_list* cl);
+	static const std::vector<ref<dx_texture>>& getTemporaryResources(uint64 id, dx_command_list* cl);
 
 	static dx_cpu_descriptor_handle nullTextureSRV;
 	static dx_cpu_descriptor_handle nullBufferSRV;

@@ -29,6 +29,7 @@ namespace physics
 		virtual ~px_rigidbody_component();
 
 		void addForce(vec3 force, px_force_mode mode = px_force_mode::Impulse) noexcept;
+		void addTorque(vec3 torque, px_force_mode mode = px_force_mode::Impulse) noexcept;
 
 		NODISCARD PxRigidActor* getRigidActor() const noexcept { return actor; }
 

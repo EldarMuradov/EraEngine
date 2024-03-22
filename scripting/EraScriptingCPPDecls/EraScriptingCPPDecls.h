@@ -73,6 +73,7 @@ EEXTERN ERASCRIPTINGCPPDECLS_API enative_scripting_builder* createNativeScriptin
 
 // Rigidbody
 EEXTERN ERASCRIPTINGCPPDECLS_API void addForce(uint32_t id, uint8_t mode, float* force);
+EEXTERN ERASCRIPTINGCPPDECLS_API void addTorque(uint32_t id, uint8_t mode, float* torque);
 EEXTERN ERASCRIPTINGCPPDECLS_API float getMass(uint32_t id);
 EEXTERN ERASCRIPTINGCPPDECLS_API void setMass(uint32_t id, float mass);
 EEXTERN ERASCRIPTINGCPPDECLS_API void initializeRigidbody(uint32_t id, uint8_t type);

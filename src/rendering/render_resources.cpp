@@ -124,7 +124,7 @@ void render_resources::evaluate()
 	}
 }
 
-NODISCARD const std::vector<ref<dx_texture>>& render_resources::getTemporaryResources(uint64 id, dx_command_list* cl)
+const std::vector<ref<dx_texture>>& render_resources::getTemporaryResources(uint64 id, dx_command_list* cl)
 {
 	ASSERT(!dirty);
 

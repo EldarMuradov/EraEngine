@@ -92,15 +92,15 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
 
 struct updatePhysicsAndScriptingData
 {
-	enative_scripting_linker core;
+	float deltaTime{};
+	enative_scripting_linker& core;
 	escene& scene;
-	float deltaTime;
 	const user_input& input;
 };
 
 void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt, const user_input& in)
 {
-	updatePhysicsAndScriptingData data = { core, currentScene, dt, in};
+	updatePhysicsAndScriptingData data = { dt, core, currentScene, in};
 
 	highPriorityJobQueue.createJob<updatePhysicsAndScriptingData>([](updatePhysicsAndScriptingData& data, job_handle)
 	{
@@ -110,18 +110,22 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 			const auto& physicsRef = physics::physics_holder::physicsRef;
 			physicsRef->update(data.deltaTime);
 
-			while (physicsRef->collisionQueue.size())
 			{
-				const auto& c = physicsRef->collisionQueue.back();
-				physicsRef->collisionQueue.pop();
-				data.core.handle_coll(c.id1, c.id2);
-			}
+				CPU_PROFILE_BLOCK("PhysX collision events step");
 
-			while (physicsRef->collisionExitQueue.size())
-			{
-				const auto& c = physicsRef->collisionExitQueue.back();
-				physicsRef->collisionExitQueue.pop();
-				data.core.handle_exit_coll(c.id1, c.id2);
+				while (physicsRef->collisionQueue.size())
+				{
+					const auto& c = physicsRef->collisionQueue.back();
+					physicsRef->collisionQueue.pop();
+					data.core.handle_coll(c.id1, c.id2);
+				}
+
+				while (physicsRef->collisionExitQueue.size())
+				{
+					const auto& c = physicsRef->collisionExitQueue.back();
+					physicsRef->collisionExitQueue.pop();
+					data.core.handle_exit_coll(c.id1, c.id2);
+				}
 			}
 		}
 
@@ -194,7 +198,7 @@ void application::loadCustomShaders()
 	}
 }
 
-//entity_handle cloth{};
+entity_handle cloth{};
 //entity_handle particles{};
 
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
@@ -329,9 +333,9 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
 			.addComponent<physics::px_particles_component>(10, 10, 10).handle;*/
 
-		//cloth = scene.createEntity("ClothPX")
-		//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
-		//	.addComponent<physics::px_cloth_component>(10, 10, vec3(0.f, 15.0f, 0.0f)).handle;
+		cloth = scene.createEntity("ClothPX")
+			.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
+			.addComponent<physics::px_cloth_component>(10, 10, vec3(0.f, 15.0f, 0.0f)).handle;
 
 		scene.createEntity("Platform")
 			.addComponent<transform_component>(vec3(10, -4.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
@@ -391,7 +395,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 }
 
 #if 0
-NODISCARD bool editFireParticleSystem(fire_particle_system& particleSystem)
+bool editFireParticleSystem(fire_particle_system& particleSystem)
 {
 	bool result = false;
 	if (ImGui::BeginTree("Fire particles"))
@@ -413,7 +417,7 @@ NODISCARD bool editFireParticleSystem(fire_particle_system& particleSystem)
 	return result;
 }
 
-NODISCARD bool editBoidParticleSystem(boid_particle_system& particleSystem)
+bool editBoidParticleSystem(boid_particle_system& particleSystem)
 {
 	bool result = false;
 	if (ImGui::BeginTree("Boid particles"))
@@ -494,9 +498,6 @@ void application::submitRendererParams(uint32 numSpotLightShadowPasses, uint32 n
 	}
 }
 
-#include <PxPhysics.h>
-#include <PxPhysicsAPI.h>
-
 void application::update(const user_input& input, float dt)
 {
 	resetRenderPasses();
@@ -549,6 +550,22 @@ void application::update(const user_input& input, float dt)
 	if (this->scene.isPausable())
 	{
 		updatePhysXPhysicsAndScripting(scene, linker, dt, input);
+	}
+
+	{
+		CPU_PROFILE_BLOCK("PhysX GPU clothes render step");
+		for (auto [entityHandle, cloth, render] : scene.group(component_group<physics::px_cloth_component, physics::px_cloth_render_component>).each())
+		{
+			cloth.update(true, &ldrRenderPass);
+		}
+	}
+
+	{
+		CPU_PROFILE_BLOCK("PhysX GPU particles render step");
+		for (auto [entityHandle, particles, render] : scene.group(component_group<physics::px_particles_component, physics::px_particles_render_component>).each())
+		{
+			particles.update(true, &ldrRenderPass);
+		}
 	}
 
 	// Particles
@@ -672,8 +689,8 @@ void application::update(const user_input& input, float dt)
 
 			//if (input.keyboard['G'].down)
 			//{
-			//	//entityCloth.getComponent<physics::px_cloth_component>().clothSystem->translate(vec3(0.f, 2.f, 0.f));
-			//	//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
+				//entityCloth.getComponent<physics::px_cloth_component>().clothSystem->translate(vec3(0.f, 2.f, 0.f));
+				//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
 			//}
 		}
 
