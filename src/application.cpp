@@ -288,7 +288,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
 		auto px_sphere = &scene.createEntity("SpherePX", (entity_handle)60)
-			.addComponent<transform_component>(vec3(0, 2.f, 0), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<transform_component>(vec3(5, 2.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
 			//.addComponent<physics::px_convex_mesh_collider_component>(&(ass.meshes[0]))
 			//.addComponent<physics::px_triangle_mesh_collider_component>(&(ass.meshes[0]))
@@ -297,7 +297,25 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
 
 		auto px_sphere1 = &scene.createEntity("SpherePX1")
-			.addComponent<transform_component>(vec3(0, 5.f, 0), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<transform_component>(vec3(5, 5.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<mesh_component>(sphereMesh)
+			.addComponent<physics::px_sphere_collider_component>(1.0f)
+			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
+
+		auto px_sphere2 = &scene.createEntity("SpherePX1")
+			.addComponent<transform_component>(vec3(8, 5.f, 8), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<mesh_component>(sphereMesh)
+			.addComponent<physics::px_sphere_collider_component>(1.0f)
+			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
+
+		auto px_sphere3 = &scene.createEntity("SpherePX1")
+			.addComponent<transform_component>(vec3(8, 5.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<mesh_component>(sphereMesh)
+			.addComponent<physics::px_sphere_collider_component>(1.0f)
+			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
+
+		auto px_sphere4 = &scene.createEntity("SpherePX1")
+			.addComponent<transform_component>(vec3(10, 5.f, 12), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
@@ -335,7 +353,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		cloth = scene.createEntity("ClothPX")
 			.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
-			.addComponent<physics::px_cloth_component>(10, 10, vec3(0.f, 15.0f, 0.0f)).handle;
+			.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f)).handle;
 
 		scene.createEntity("Platform")
 			.addComponent<transform_component>(vec3(10, -4.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
@@ -544,8 +562,8 @@ void application::update(const user_input& input, float dt)
 		terrain.update(position.position, collider);
 	}
 
-	static float physicsTimer = 0.f;
-	physicsStep(scene, stackArena, physicsTimer, physics_settings(), dt);
+	//static float physicsTimer = 0.f;
+	//physicsStep(scene, stackArena, physicsTimer, physics_settings(), dt);
 
 	if (this->scene.isPausable())
 	{
@@ -556,7 +574,7 @@ void application::update(const user_input& input, float dt)
 		CPU_PROFILE_BLOCK("PhysX GPU clothes render step");
 		for (auto [entityHandle, cloth, render] : scene.group(component_group<physics::px_cloth_component, physics::px_cloth_render_component>).each())
 		{
-			cloth.update(true, &ldrRenderPass);
+			cloth.update(false, &ldrRenderPass);
 		}
 	}
 
@@ -564,7 +582,7 @@ void application::update(const user_input& input, float dt)
 		CPU_PROFILE_BLOCK("PhysX GPU particles render step");
 		for (auto [entityHandle, particles, render] : scene.group(component_group<physics::px_particles_component, physics::px_particles_render_component>).each())
 		{
-			particles.update(true, &ldrRenderPass);
+			particles.update(false, &ldrRenderPass);
 		}
 	}
 

@@ -134,6 +134,14 @@ static void NGXResourceReleaseCallback(IUnknown* InResource)
 	SAFE_RELEASE(InResource);
 }
 
+dlss_feature_adapter::~dlss_feature_adapter()
+{
+#if ENABLE_DLSS
+	NVSDK_NGX_D3D12_Shutdown1(dxContext.device.Get());
+	NVSDK_NGX_D3D12_DestroyParameters(params);
+#endif
+}
+
 void dlss_feature_adapter::initializeDLSS() noexcept
 {
 

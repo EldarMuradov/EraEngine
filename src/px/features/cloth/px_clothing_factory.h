@@ -149,16 +149,16 @@ namespace physics
 			particleSystem->removeParticleBuffer(clothBuffer);
 
 			PX_RELEASE(particleSystem)
-				PX_RELEASE(material)
-				PX_RELEASE(clothBuffer)
+			PX_RELEASE(material)
+			PX_RELEASE(clothBuffer)
 
 #if PX_PARTICLE_USE_ALLOCATOR
 
-				allocator.reset(true);
+			allocator.reset(true);
 
 #else
 
-				free(posBuffer);
+			free(posBuffer);
 
 #endif
 		}
