@@ -590,7 +590,6 @@ struct simd_slider_constraint_solver
 	uint32 numBatches;
 };
 
-
 // Collision constraint
 struct collision_constraint
 {

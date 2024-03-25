@@ -1,9 +1,18 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #pragma once
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 
 #define LOG_LEVEL_PROFILE 0
+
+#ifndef _DEBUG
+#define NDEBUG 0
+#define PX_ENABLE_PVD 0
+#else
+#define PX_ENABLE_PVD 1
+#endif
 
 #include <Windows.h>
 #include <windowsx.h>

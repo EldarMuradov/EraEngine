@@ -1,4 +1,3 @@
-
 #pragma once
 
 #ifdef setBit
@@ -6,13 +5,6 @@
 #endif // setBit
 
 #include <core/math.h>
-
-#ifndef _DEBUG
-#define NDEBUG 0
-#define PX_ENABLE_PVD 0
-#else
-#define PX_ENABLE_PVD 1
-#endif
 
 #ifndef PX_PHYSX_STATIC_LIB
 #define PX_PHYSX_STATIC_LIB
@@ -33,10 +25,18 @@
 #define PX_NB_MAX_RAYCAST_HITS 64
 #define PX_NB_MAX_RAYCAST_DISTANCE 128
 
-#define PX_VEHICLE 0
+#define PX_VEHICLE 1
 
 #define PX_RELEASE(x)	if(x)	{ x->release(); x = nullptr;}
 #define UNUSED(x) (void)(x)
+
+#define PX_DEVICE_ALLOC(cudaContextManager, deviceBuffer, numElements) cudaContextManager->allocDeviceBuffer(deviceBuffer, numElements, PX_FL)
+#define PX_DEVICE_ALLOC_T(T, cudaContextManager, numElements) cudaContextManager->allocDeviceBuffer<T>(numElements, PX_FL)
+#define PX_DEVICE_FREE(cudaContextManager, deviceBuffer) cudaContextManager->freeDeviceBuffer(deviceBuffer);
+
+#define PX_PINNED_HOST_ALLOC(cudaContextManager, pinnedHostBuffer, numElements) cudaContextManager->allocPinnedHostBuffer(pinnedHostBuffer, numElements, PX_FL)
+#define PX_PINNED_HOST_ALLOC_T(T, cudaContextManager, numElements) cudaContextManager->allocPinnedHostBuffer<T>(numElements, PX_FL)
+#define PX_PINNED_HOST_FREE(cudaContextManager, pinnedHostBuffer) cudaContextManager->freePinnedHostBuffer(pinnedHostBuffer);
 
 #include "extensions/PxRaycastCCD.h"
 #include <cudamanager/PxCudaContextManager.h>
@@ -47,6 +47,17 @@
 #include <cuda.h>
 #include <PxPhysics.h>
 #include <PxPhysicsAPI.h>
+#include "extensions/PxRemeshingExt.h"
+#include "extensions/PxSoftBodyExt.h"
+
+#if PX_VEHICLE
+#include "vehicle/PxVehicleUtil.h"
+#include "snippetutils/SnippetUtils.h"
+#include "snippetvehicle2common/enginedrivetrain/EngineDrivetrain.h"
+#include "snippetvehicle2common/serialization/BaseSerialization.h"
+#include "snippetvehicle2common/serialization/EngineDrivetrainSerialization.h"
+#include "snippetvehicle2common/SnippetVehicleHelpers.h"
+#endif
 
 #include <set>
 #include <unordered_map>
@@ -169,6 +180,7 @@ namespace physics
 
 	struct px_rigidbody_component;
 	struct px_collider_component_base;
+	struct px_soft_body;
 
 	struct px_allocator_callback : PxAllocatorCallback
 	{
@@ -556,6 +568,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		void addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene) noexcept;
 		void removeActor(px_rigidbody_component* actor) noexcept;
 
+		void addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount) noexcept;
+
 		PxPhysics* getPhysics() const noexcept { return physics; }
 		inline PxTolerancesScale getTolerancesScale() const noexcept { return toleranceScale; }
 		PxScene* getScene() const noexcept { return scene; }
@@ -687,6 +701,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		PxDefaultCpuDispatcher* dispatcher = nullptr;
 
 		const uint32_t nbCPUDispatcherThreads = 4;
+
+		::std::vector<px_soft_body> softBodies;
 
 		eallocator allocator;
 

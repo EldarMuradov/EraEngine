@@ -8,6 +8,8 @@
 #include <px/physics/px_collider_component.h>
 #include <application.h>
 #include <scene/scene.h>
+#include <px/physics/px_soft_body.h>
+#include <px/features/px_vehicles.h>
 
 #pragma comment(lib, "PhysXCooking_64.lib")
 
@@ -163,6 +165,11 @@ physics::px_physics_engine::px_physics_engine(application* application) noexcept
 
 	PxVehicleSetBasisVectors(PxVec3(0, 1, 0), PxVec3(0, 0, 1));
 	PxVehicleSetUpdateMode(PxVehicleUpdateMode::eVELOCITY_CHANGE);
+
+	//bool res = initVehicle(this);
+
+	//if(!res)
+		//LOG_ERROR("Physics> Failed to initialize PxVehicles.");
 #endif
 }
 
@@ -181,6 +188,7 @@ void physics::px_physics_engine::release() noexcept
 
 #if PX_VEHICLE
 	PxCloseVehicleSDK();
+	//cleanupVehicle();
 #endif
 
 	PxCloseExtensions();
@@ -210,6 +218,10 @@ void physics::px_physics_engine::update(float dt) noexcept
 	scene->lockWrite();
 	scene->getTaskManager()->startSimulation();
 
+#if PX_VEHICLE
+	//vehicleStep(stepSize);
+#endif
+
 	void* scratchMemBlock = allocator.allocate(MB(16), 16U, true);
 
 	scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
@@ -219,6 +231,11 @@ void physics::px_physics_engine::update(float dt) noexcept
 	scene->flushSimulation();
 	scene->fetchResultsParticleSystem();
 	scene->getTaskManager()->stopSimulation();
+
+#if PX_VEHICLE
+	//vehiclePostStep(stepSize);
+#endif
+
 	scene->unlockWrite();
 
 	scene->lockRead();
@@ -230,6 +247,8 @@ void physics::px_physics_engine::update(float dt) noexcept
 	{
 		if (auto rb = activeActors[i]->is<PxRigidDynamic>())
 		{
+			if (!activeActors[i]->userData)
+				continue;
 			entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
 			eentity renderObject = { *handle, &gameScene->registry };
 			const auto transform = &renderObject.getComponent<transform_component>();
@@ -386,6 +405,34 @@ physics::px_raycast_info physics::px_physics_engine::raycast(px_rigidbody_compon
 	}
 
 	return px_raycast_info();
+}
+
+void physics::px_physics_engine::addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount) noexcept
+{
+	PxVec4* simPositionInvMassPinned;
+	PxVec4* simVelocityPinned;
+	PxVec4* collPositionInvMassPinned;
+	PxVec4* restPositionPinned;
+
+	PxSoftBodyExt::allocateAndInitializeHostMirror(*softBody, cudaContextManager, simPositionInvMassPinned, simVelocityPinned, collPositionInvMassPinned, restPositionPinned);
+
+	const PxReal maxInvMassRatio = 50.f;
+
+	softBody->setParameter(femParams);
+	softBody->setSolverIterationCounts(iterCount);
+
+	PxSoftBodyExt::transform(*softBody, transform, scale, simPositionInvMassPinned, simVelocityPinned, collPositionInvMassPinned, restPositionPinned);
+	PxSoftBodyExt::updateMass(*softBody, density, maxInvMassRatio, simPositionInvMassPinned);
+	PxSoftBodyExt::copyToDevice(*softBody, PxSoftBodyDataFlag::eALL, simPositionInvMassPinned, simVelocityPinned, collPositionInvMassPinned, restPositionPinned);
+
+	px_soft_body sBody(softBody, cudaContextManager);
+
+	softBodies.push_back(sBody);
+
+	PX_PINNED_HOST_FREE(cudaContextManager, simPositionInvMassPinned);
+	PX_PINNED_HOST_FREE(cudaContextManager, simVelocityPinned);
+	PX_PINNED_HOST_FREE(cudaContextManager, collPositionInvMassPinned);
+	PX_PINNED_HOST_FREE(cudaContextManager, restPositionPinned);
 }
 
 void physics::px_CCD_contact_modification::onCCDContactModify(PxContactModifyPair* const pairs, PxU32 count)
@@ -655,7 +702,7 @@ void physx::setupWheelsSimulationData(const PxF32 wheelMass, const PxF32 wheelMO
 	}
 }
 
-PxRigidDynamic* physx::createVehicleActor(const PxVehicleChassisData& chassisData, PxMaterial** wheelMaterials, PxConvexMesh** wheelConvexMeshes, const PxU32 numWheels, const PxFilterData& wheelSimFilterData, PxMaterial** chassisMaterials, PxConvexMesh** chassisConvexMeshes, const PxU32 numChassisMeshes, const PxFilterData& chassisSimFilterData, PxPhysics& physics)
+physx::PxRigidDynamic* physx::createVehicleActor(const PxVehicleChassisData& chassisData, PxMaterial** wheelMaterials, PxConvexMesh** wheelConvexMeshes, const PxU32 numWheels, const PxFilterData& wheelSimFilterData, PxMaterial** chassisMaterials, PxConvexMesh** chassisConvexMeshes, const PxU32 numChassisMeshes, const PxFilterData& chassisSimFilterData, PxPhysics& physics)
 {
 	PxRigidDynamic* vehActor = physics.createRigidDynamic(PxTransform(PxIdentity));
 
@@ -688,7 +735,7 @@ PxRigidDynamic* physx::createVehicleActor(const PxVehicleChassisData& chassisDat
 	return vehActor;
 }
 
-PxVehicleDriveNW* physx::instantiate4WVersion(const PxVehicleDriveNW& vehicle18W, PxPhysics& physics)
+physx::PxVehicleDriveNW* physx::instantiate4WVersion(const PxVehicleDriveNW& vehicle18W, PxPhysics& physics)
 {
 	PxReal sprungMasses[4];
 	{

@@ -37,6 +37,7 @@ namespace physics
 			particleSystem->setParticleContactOffset(restOffset + 0.02f);
 			particleSystem->setSolidRestOffset(restOffset);
 			particleSystem->setFluidRestOffset(0.0f);
+			particleSystem->enableCCD(true);
 
 			physics_holder::physicsRef->getScene()->addActor(*particleSystem);
 

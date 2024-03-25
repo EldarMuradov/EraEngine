@@ -302,7 +302,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
 
-		auto px_sphere2 = &scene.createEntity("SpherePX1")
+		/*auto px_sphere2 = &scene.createEntity("SpherePX1")
 			.addComponent<transform_component>(vec3(8, 5.f, 8), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
@@ -318,7 +318,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<transform_component>(vec3(10, 5.f, 12), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
-			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
+			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);*/
 
 		px_sphere1->addChild(*px_sphere);
 
@@ -330,7 +330,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 					for (int k = 0; k < 10; k++)
 					{
 						auto sphr = &scene.createEntity((std::to_string(i) + std::to_string(j) + std::to_string(k)).c_str())
-							.addComponent<transform_component>(vec3(2.0f * i, 2.0f * j + 5, 2.0f * k), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+							.addComponent<transform_component>(vec3(2.0f * i, 5 + 2.0f * j + 5, 2.0f * k), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 							.addComponent<mesh_component>(sphereMesh)
 							.addComponent<physics::px_sphere_collider_component>(1.0f)
 							.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
@@ -351,9 +351,9 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
 			.addComponent<physics::px_particles_component>(10, 10, 10).handle;*/
 
-		cloth = scene.createEntity("ClothPX")
-			.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
-			.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f)).handle;
+		//cloth = scene.createEntity("ClothPX")
+		//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
+		//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f)).handle;
 
 		scene.createEntity("Platform")
 			.addComponent<transform_component>(vec3(10, -4.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
