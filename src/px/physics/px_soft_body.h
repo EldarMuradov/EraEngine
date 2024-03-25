@@ -8,6 +8,8 @@ namespace physics
 
 	struct px_soft_body
 	{
+		px_soft_body() = default;
+
 		px_soft_body(PxSoftBody* softBody, PxCudaContextManager* cudaContextManager) :
 			softBody(softBody),
 			cudaContextManager(cudaContextManager)
@@ -41,6 +43,10 @@ namespace physics
 			cudaContextManager->getCudaContext()->memcpyDtoH(positionsInvMass, reinterpret_cast<CUdeviceptr>(softBody->getPositionInvMassBufferD()), tetMesh->getNbVertices() * sizeof(PxVec4));
 		}
 
+		uint32 getNbVertices() const noexcept
+		{
+			return softBody->getCollisionMesh()->getNbVertices();
+		}
 
 		PxVec4* positionsInvMass = nullptr;
 		PxSoftBody* softBody = nullptr;
@@ -98,5 +104,48 @@ namespace physics
 			softBody->setSoftBodyFlag(PxSoftBodyFlag::eDISABLE_SELF_COLLISION, true);
 		}
 		return softBody;
+	}
+
+	inline PxRigidDynamic* createRigidCube(PxReal halfExtent, const PxVec3& position)
+	{
+		const auto physics = physics_holder::physicsRef->getPhysics();
+
+		PxMaterial* material = physics->createMaterial(0.8f, 0.8f, 0.6f);
+
+		PxShape* shape = physics->createShape(PxBoxGeometry(halfExtent, halfExtent, halfExtent), *material);
+
+		shape->setSimulationFilterData(PxFilterData(0, 0, 1, 0));
+
+		PxTransform localTm(position);
+		PxRigidDynamic* body = physics->createRigidDynamic(localTm);
+		body->attachShape(*shape);
+		PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
+		physics_holder::physicsRef->getScene()->addActor(*body);
+
+		shape->release();
+
+		return body;
+	}
+
+	inline void connectCubeToSoftBody(PxRigidDynamic* cube, PxReal cubeHalfExtent, const PxVec3& cubePosition, PxSoftBody* softBody, PxU32 pointGridResolution = 10)
+	{
+		float f = 2.0f * cubeHalfExtent / (pointGridResolution - 1);
+		for (PxU32 ix = 0; ix < pointGridResolution; ++ix)
+		{
+			PxReal x = ix * f - cubeHalfExtent;
+			for (PxU32 iy = 0; iy < pointGridResolution; ++iy)
+			{
+				PxReal y = iy * f - cubeHalfExtent;
+				for (PxU32 iz = 0; iz < pointGridResolution; ++iz)
+				{
+					PxReal z = iz * f - cubeHalfExtent;
+					PxVec3 p(x, y, z);
+					PxVec4 bary;
+					PxI32 tet = PxTetrahedronMeshExt::findTetrahedronContainingPoint(softBody->getCollisionMesh(), p + cubePosition, bary);
+					if (tet >= 0)
+						softBody->addTetRigidAttachment(cube, tet, bary, p);
+				}
+			}
+		}
 	}
 }

@@ -666,6 +666,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		uint32_t nbActiveActors{};
 
 		::std::set<px_rigidbody_component*> actors;
+		::std::vector<px_soft_body> softBodies;
 		::std::set<px_collider_component_base*> colliders;
 		::std::unordered_map<PxRigidActor*, px_rigidbody_component*> actorsMap;
 		::std::queue<collision_handling_data> collisionQueue;
@@ -701,8 +702,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		PxDefaultCpuDispatcher* dispatcher = nullptr;
 
 		const uint32_t nbCPUDispatcherThreads = 4;
-
-		::std::vector<px_soft_body> softBodies;
 
 		eallocator allocator;
 

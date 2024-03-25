@@ -6,9 +6,7 @@
 
 #include "../snippetvehicle2common/SnippetVehicleHelpers.h"
 
-
 using namespace physx;
-
 
 namespace snippetvehicle2
 {

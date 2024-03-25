@@ -10,6 +10,7 @@
 #include <scene/scene.h>
 #include <px/physics/px_soft_body.h>
 #include <px/features/px_vehicles.h>
+#include <px/temp/px_mesh_generator.h>
 
 #pragma comment(lib, "PhysXCooking_64.lib")
 
@@ -209,6 +210,26 @@ void physics::px_physics_engine::release() noexcept
 
 void physics::px_physics_engine::start() noexcept
 {
+	PxArray<PxVec3> triVerts;
+	PxArray<PxU32> triIndices;
+
+	PxReal maxEdgeLength = 1;
+
+	PxCookingParams params(toleranceScale);
+	params.meshWeldTolerance = 0.001f;
+	params.meshPreprocessParams = PxMeshPreprocessingFlags(PxMeshPreprocessingFlag::eWELD_VERTICES);
+	params.buildTriangleAdjacencies = false;
+	params.buildGPUData = true;
+
+	meshgenerator::createCube(triVerts, triIndices, PxVec3(0, 0, 0), 1.0f);
+	PxRemeshingExt::limitMaxEdgeLength(triIndices, triVerts, maxEdgeLength);
+	PxSoftBody* softBodyCube = createSoftBody(params, triVerts, triIndices);
+
+	PxReal halfExtent = 1;
+	PxVec3 cubePosA(0, 20, 0);
+	PxRigidDynamic* rigidCubeA = createRigidCube(halfExtent, cubePosA);
+
+	connectCubeToSoftBody(rigidCubeA, 2 * halfExtent, cubePosA, softBodyCube);
 }
 
 void physics::px_physics_engine::update(float dt) noexcept
@@ -219,6 +240,7 @@ void physics::px_physics_engine::update(float dt) noexcept
 	scene->getTaskManager()->startSimulation();
 
 #if PX_VEHICLE
+	// Test
 	//vehicleStep(stepSize);
 #endif
 
@@ -232,7 +254,14 @@ void physics::px_physics_engine::update(float dt) noexcept
 	scene->fetchResultsParticleSystem();
 	scene->getTaskManager()->stopSimulation();
 
+	for (size_t i = 0; i < softBodies.size(); i++)
+	{
+		px_soft_body* sb = &softBodies[i];
+		sb->copyDeformedVerticesFromGPUAsync(0);
+	}
+
 #if PX_VEHICLE
+	// Test
 	//vehiclePostStep(stepSize);
 #endif
 
