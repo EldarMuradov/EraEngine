@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #pragma once
 
 #ifdef setBit
@@ -181,6 +183,12 @@ namespace physics
 	struct px_rigidbody_component;
 	struct px_collider_component_base;
 	struct px_soft_body;
+
+	struct px_physics_component_base
+	{
+		virtual ~px_physics_component_base() {}
+		virtual void release(bool release = false) noexcept {};
+	};
 
 	struct px_allocator_callback : PxAllocatorCallback
 	{

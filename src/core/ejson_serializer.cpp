@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #include "pch.h"
 #include "ejson_serializer.h"
 #include <scene/scene.h>

@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #include "pch.h"
 #include "particle_systems.h"
 #include "fire_particle_system.h"

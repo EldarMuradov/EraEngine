@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #pragma once
 #include <core/math.h>
 #include <px/core/px_physics_engine.h>
@@ -260,7 +262,7 @@ namespace physics
 		PxParticleClothBuffer* clothBuffer = nullptr;
 	};
 
-	struct px_cloth_component
+	struct px_cloth_component : px_physics_component_base
 	{
 		px_cloth_component() = default;
 		px_cloth_component(int nX, int nZ, const vec3& position = vec3(0, 0, 0)) noexcept : numX(nX), numZ(nZ)
@@ -270,11 +272,11 @@ namespace physics
 			//clothSystem->translate(PxVec4(position.x, position.y, position.z, 0));
 		}
 
-		~px_cloth_component() {}
+		virtual ~px_cloth_component() {}
 
 		vec3* getPositions() const noexcept;
 
-		void release() noexcept { clothSystem.reset(); free(positions); }
+		virtual void release(bool release = true) noexcept { clothSystem.reset(); free(positions); }
 
 		void update(bool visualize = false, ldr_render_pass* ldrRenderPass = nullptr) const noexcept
 		{

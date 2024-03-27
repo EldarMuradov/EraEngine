@@ -27,6 +27,7 @@ enum DLSS_status
 	DLSS_status_not_available,
 	DLSS_status_3_0,
 	DLSS_status_3_5,
+	DLSS_status_FSR_wrapper,
 };
 
 enum dx_mesh_shader_tier
@@ -49,7 +50,7 @@ struct dx_feature_support
 	dx_raytracing_tier raytracingTier = dx_raytracing_1_0;
 	dx_mesh_shader_tier meshShaderTier = dx_mesh_shader_1_0;
 	dx_tiling_tier tilingTier = dx_tiling_1;
-	DLSS_status dlss_status = DLSS_status_3_5;
+	DLSS_status dlss_status = DLSS_status_FSR_wrapper;
 
 	constexpr bool raytracing() const { return raytracingTier >= dx_raytracing_1_0; }
 	constexpr bool meshShaders() const { return meshShaderTier >= dx_mesh_shader_1_0; }

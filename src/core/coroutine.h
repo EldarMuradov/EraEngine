@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #pragma once
 
 #if _MSVC_LANG >= 202002L

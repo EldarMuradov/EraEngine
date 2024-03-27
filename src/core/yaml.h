@@ -1,4 +1,7 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #pragma once
+
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 #include "math.h"

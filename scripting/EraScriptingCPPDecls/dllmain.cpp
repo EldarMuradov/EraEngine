@@ -1,4 +1,6 @@
-﻿#include "pch.h"
+﻿// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
+#include "pch.h"
 #include "EraScriptingCPPDecls.h"
 
 BOOL APIENTRY DllMain( HMODULE hModule,

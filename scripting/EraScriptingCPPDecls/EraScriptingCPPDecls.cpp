@@ -1,4 +1,6 @@
-﻿#include "pch.h"
+﻿// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
+#include "pch.h"
 #include "framework.h"
 #include "EraScriptingCPPDecls.h"
 #include <cstdint>

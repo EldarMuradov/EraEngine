@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #include "pch.h"
 #include "file_browser.h"
 #include "editor_icons.h"

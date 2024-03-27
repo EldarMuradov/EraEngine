@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #include "pch.h"
 #include "tree.h"
 #include "core/color.h"

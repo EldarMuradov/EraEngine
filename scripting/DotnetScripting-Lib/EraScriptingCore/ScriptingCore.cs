@@ -31,6 +31,7 @@ public class ScriptingCore
         var str = res.Split(',');
         Project.Name = str[0];
         Project.Path = str[1];
+        Project.EnginePath = str[2];
         InitializeScripting();
     }
 

@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #pragma once
 
 #include <px/core/px_physics_engine.h>
@@ -101,7 +103,8 @@ namespace physics
 
 			PxFEMParameters femParams;
 			physics_holder::physicsRef->addSoftBody(softBody, femParams, PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(PxIdentity)), 100.f, 1.0f, 30);
-			softBody->setSoftBodyFlag(PxSoftBodyFlag::eDISABLE_SELF_COLLISION, true);
+			softBody->setSoftBodyFlag(PxSoftBodyFlag::eDISABLE_SELF_COLLISION, false);
+			softBody->setSoftBodyFlag(PxSoftBodyFlag::eENABLE_CCD, true);
 		}
 		return softBody;
 	}
@@ -148,4 +151,11 @@ namespace physics
 			}
 		}
 	}
+
+	struct px_soft_body_component : px_physics_component_base
+	{
+		virtual ~px_soft_body_component() {}
+
+		virtual void release(bool release = true) noexcept override {}
+	};
 }

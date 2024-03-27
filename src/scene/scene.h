@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #pragma once
 
 #define ENTT_ASSERT(condition, ...) ASSERT(condition)
@@ -130,6 +132,7 @@ struct eentity
 			if (struct rigid_body_component* rb = getComponentIfExists<struct rigid_body_component>())
 				rb->recalculateProperties(registry, reference);
 		}
+#ifndef PHYSICS_ONLY
 		else if	constexpr (std::is_same_v<component_t, physics::px_rigidbody_component>)
 		{
 			auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
@@ -159,7 +162,6 @@ struct eentity
 		{
 			auto& component = registry->emplace_or_replace<component_t>(handle, handle, std::forward<args>(a)...);
 		}
-#ifndef PHYSICS ONLY
 		else if	constexpr (std::is_same_v<component_t, physics::px_cloth_component>)
 		{
 			auto& component = registry->emplace_or_replace<component_t>(handle, std::forward<args>(a)...);
@@ -177,7 +179,6 @@ struct eentity
 			if (!hasComponent<physics::px_particles_render_component>())
 				addComponent<physics::px_particles_render_component>();
 		}
-#endif // !PHYSICS ONLY
 		else if	constexpr (std::is_same_v<component_t, physics::px_plane_collider_component>)
 		{
 			auto& position = getComponent<transform_component>().position;
@@ -204,6 +205,7 @@ struct eentity
 			if (!hasComponent<dynamic_transform_component>())
 				addComponent<dynamic_transform_component>();
 		}
+#endif // !PHYSICS ONLY
 		else
 		{
 			auto& component = registry->emplace_or_replace<component_t>(handle, std::forward<args>(a)...);

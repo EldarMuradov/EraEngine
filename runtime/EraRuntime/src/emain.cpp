@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #include <pch.h>
 #include "dx/dx_context.h"
 #include "window/dx_window.h"
@@ -199,7 +201,7 @@ int main(int argc, char** argv)
 			app.update(input, dt);
 
 			endFrameCommon();
-			renderer.endFrame(&input, dt);
+			renderer.endFrame(&input);
 
 			updateAudio(dt);
 
@@ -217,6 +219,8 @@ int main(int argc, char** argv)
 		dxContext.quit();
 
 		shutdownAudio();
+
+		physics::physics_holder::physicsRef->release();
 	}
 	catch (std::exception ex)
 	{

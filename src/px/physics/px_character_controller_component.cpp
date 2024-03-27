@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #include "pch.h"
 #include <px/physics/px_rigidbody_component.h>
 #include "px/physics/px_character_controller_component.h"
@@ -61,7 +63,7 @@ namespace physics
 		handle = entt;
 	}
 
-	void px_cct_component_base::release(bool releaseActor)
+	void px_cct_component_base::release(bool releaseActor) noexcept
 	{
 		physics_holder::physicsRef->removeActor(this);
 

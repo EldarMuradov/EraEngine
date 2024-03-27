@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #pragma once
 
 #define PX_PHYSX_CHARACTER_STATIC_LIB
@@ -22,7 +24,7 @@ namespace physics
 		px_cct_component_base(uint32_t entt) noexcept;
 		virtual ~px_cct_component_base() {}
 
-		void release(bool releaseActor = false) override;
+		virtual void release(bool releaseActor = true) noexcept override;
 
 		px_cct_type type = px_cct_type::None;
 

@@ -1,4 +1,6 @@
-﻿#ifndef PCH_H
+﻿// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
+#ifndef PCH_H
 #define PCH_H
 
 #include "framework.h"

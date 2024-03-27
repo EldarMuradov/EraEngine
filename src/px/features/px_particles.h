@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #pragma once
 #include <core/math.h>
 #include <px/core/px_physics_engine.h>
@@ -281,7 +283,7 @@ namespace physics
 		PxU32 maxParticles{};
 	};
 
-	struct px_particles_component
+	struct px_particles_component : px_physics_component_base
 	{
 		px_particles_component() = default;
 		px_particles_component(const vec3& position, int nX, int nY, int nZ) noexcept : numX(nX), numY(nY), numZ(nZ)
@@ -290,9 +292,9 @@ namespace physics
 			//particleSystem->translate(PxVec4(position.x, position.y, position.z, 0));
 		}
 
-		~px_particles_component() {}
+		virtual ~px_particles_component() {}
 
-		void release() noexcept { particleSystem.reset(); }
+		virtual void release(bool release = true) noexcept { particleSystem.reset(); }
 
 		void update(bool visualize = false, ldr_render_pass* ldrRenderPass = nullptr) const noexcept
 		{

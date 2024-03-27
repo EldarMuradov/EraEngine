@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
+#pragma once
 
 #ifdef ERASCRIPTINGCPPDECLS_EXPORTS
 #define ERASCRIPTINGCPPDECLS_API __declspec(dllexport)

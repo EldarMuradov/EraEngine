@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #pragma once
 #include <px/core/px_physics_engine.h>
 
@@ -22,7 +24,7 @@ namespace physics
 		Acceleration
 	};
 
-	struct px_rigidbody_component
+	struct px_rigidbody_component : px_physics_component_base
 	{
 		px_rigidbody_component() {};
 		px_rigidbody_component(uint32_t entt, px_rigidbody_type rbtype, bool addToScene = true) noexcept;
@@ -56,7 +58,7 @@ namespace physics
 
 		void setAngularDamping(float damping);
 
-		virtual void release(bool releaseActor = false);
+		virtual void release(bool releaseActor = false) noexcept override;
 
 		void onCollisionEnter(px_rigidbody_component* collision) const;
 		void onCollisionExit(px_rigidbody_component* collision) const;

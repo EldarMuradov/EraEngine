@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #include "pch.h"
 #include "native_scripting_linker.h"
 #include <core/log.h>
@@ -56,8 +58,17 @@ static void get_all_functions_and_start()
 #else
 		std::ofstream file(eproject::engine_path + "\\bin\\Release_x86_64\\core.cfg");
 #endif
-		file << eproject::name << "," << eproject::path;
+		std::ofstream file_rt(eproject::engine_path + "\\runtime\\x64\Release\\core.cfg");
+		std::ofstream file_rt_bin(eproject::engine_path + "\\runtime\\EraRuntime\\bin\\Release_x86_64\\core.cfg");
+
+		file << eproject::name << "," << eproject::path << "," << eproject::engine_path;
 		file.close();
+
+		file_rt << eproject::name << "," << eproject::path << "," << eproject::engine_path;
+		file_rt.close();
+
+		file_rt_bin << eproject::name << "," << eproject::path << "," << eproject::engine_path;
+		file_rt_bin.close();
 	}
 
 	const char_t* dotnet_type_init = STR("EraEngine.ScriptingCore, EraScriptingCore");

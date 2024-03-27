@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #pragma once
 #include <EraScriptingLauncher-Lib/scripting_core.h>
 #include "EraScriptingCPPDecls/EraScriptingCPPDecls.h"

@@ -32,7 +32,7 @@ internal static class DependencyResolver
         try
         {
             var config = new ConfigurationBuilder()
-            .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "scripting", "DotnetScripting-Lib", "EraScriptingCore", "systems_injection.json"))
+            .AddJsonFile(Path.Combine(Project.EnginePath, "scripting", "DotnetScripting-Lib", "EraScriptingCore", "systems_injection.json"))
             .Build();
 
             var registration = config.GetSection("registrations").GetChildren();

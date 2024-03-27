@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #include "pch.h"
 #include "px/core/px_physics_engine.h"
 #include <scene/scene.h>
@@ -146,7 +148,7 @@ namespace physics
 		physics_holder::physicsRef->unlockWrite();
 	}
 
-	void px_rigidbody_component::release(bool releaseActor)
+	void px_rigidbody_component::release(bool releaseActor) noexcept
 	{
 		physics_holder::physicsRef->removeActor(this);
 

@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
+#pragma once
 #include <core/math.h>
 #include <core/math_simd.h>
 
