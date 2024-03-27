@@ -7,7 +7,7 @@ namespace EraEngine.Core;
 [StructLayout(LayoutKind.Sequential)]
 public struct RaycastInfo
 {
-    public uint Id;
+    public int Id;
     public float Distance;
     public uint HitCount;
     public Vector3 Position;

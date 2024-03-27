@@ -35,7 +35,7 @@
 #include <px/core/px_tasks.h>
 #include <px/core/px_aggregate.h>
 #include <px/features/px_ragdoll.h>
-#include <EraScriptingLauncher-Lib/src/script.h>
+#include <scripting/script.h>
 #include "core/coroutine.h"
 #include <ai/navigation.h>
 #include <ai/navigation_component.h>

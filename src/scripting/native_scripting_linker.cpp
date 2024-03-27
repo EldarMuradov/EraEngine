@@ -5,7 +5,7 @@
 #include <core/log.h>
 #include <scene/scene.h>
 #include "application.h"
-#include <EraScriptingLauncher-Lib/src/script.h>
+#include <scripting/script.h>
 #include <ai/navigation_component.h>
 #include <fstream>
 #include <core/project.h>
@@ -58,7 +58,7 @@ static void get_all_functions_and_start()
 #else
 		std::ofstream file(eproject::engine_path + "\\bin\\Release_x86_64\\core.cfg");
 #endif
-		std::ofstream file_rt(eproject::engine_path + "\\runtime\\x64\Release\\core.cfg");
+		std::ofstream file_rt(eproject::engine_path + "\\runtime\\x64\\Release\\bin\\Release_x86_64\\core.cfg");
 		std::ofstream file_rt_bin(eproject::engine_path + "\\runtime\\EraRuntime\\bin\\Release_x86_64\\core.cfg");
 
 		file << eproject::name << "," << eproject::path << "," << eproject::engine_path;

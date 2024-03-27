@@ -19,7 +19,7 @@ public struct BitMask
         private set;
     }
 
-    public BitMask(MaskInternal m1 = 0, MaskInternal[] mn = null)
+    public BitMask(MaskInternal m1 = 0, MaskInternal[] mn = null!)
     {
         _m1 = m1;
         _mn = mn;

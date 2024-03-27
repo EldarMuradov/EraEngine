@@ -10,7 +10,7 @@
 #include "rendering/raytracing.h"
 
 #ifndef PHYSICS_ONLY
-#include <EraScriptingLauncher-Lib/src/script.h>
+#include <scripting/script.h>
 #include <ai/navigation_component.h>
 #endif
 
