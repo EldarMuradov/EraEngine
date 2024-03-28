@@ -69,6 +69,8 @@ static void clearColliderFromCollection(const physics::px_rigidbody_component* c
 	}
 }
 
+#include <px/blast/px_blast_core.h>
+
 physics::px_physics_engine::px_physics_engine(application* application) noexcept
 {
 	app = application;
@@ -174,6 +176,9 @@ physics::px_physics_engine::px_physics_engine(application* application) noexcept
 	//if(!res)
 		//LOG_ERROR("Physics> Failed to initialize PxVehicles.");
 #endif
+
+	px_blast* blast = new px_blast();
+	blast->onSampleStart();
 }
 
 physics::px_physics_engine::~px_physics_engine()

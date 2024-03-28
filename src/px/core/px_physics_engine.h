@@ -76,6 +76,9 @@ namespace physx
 		return x * numY + y;
 	}
 
+	inline PxVec3 operator*(PxVec3 a, PxVec3 b) { return PxVec3(a.x * b.x, a.y * b.y, a.z * b.z); }
+	inline PxVec4 operator*(PxVec4 a, PxVec4 b) { return PxVec4(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w); }
+
 	NODISCARD PX_FORCE_INLINE PxVec4 createPxVec4(const vec3& vec) noexcept { return PxVec4(vec.x, vec.y, vec.z, 0); }
 	NODISCARD PX_FORCE_INLINE PxVec4 createPxVec4(const vec4& vec) noexcept { return PxVec4(vec.x, vec.y, vec.z, vec.w); }
 
@@ -210,15 +213,37 @@ namespace physics
 		uint32_t id2;
 	};
 
+	class px_overlap_callback : public PxOverlapBufferN<32>
+	{
+	public:
+		px_overlap_callback() : hitActor(nullptr) {}
+
+		PxAgain processTouches(const PxOverlapHit* buffer, PxU32 nbHits)
+		{
+			for (PxU32 i = 0; i < nbHits; ++i)
+			{
+				PxRigidDynamic* rigidDynamic = buffer[i].actor->is<PxRigidDynamic>();
+				if (rigidDynamic)
+				{
+					hitActor = rigidDynamic;
+					break;
+				}
+			}
+			return true;
+		}
+
+		PxRigidDynamic* hitActor;
+	};
+
 	template<typename HitType>
-	class DynamicHitBuffer : public PxHitCallback<HitType>
+	class px_dynamic_hit_buffer : public PxHitCallback<HitType>
 	{
 	private:
 		uint32 _count;
 		HitType _buffer[PX_CONTACT_BUFFER_SIZE];
 
 	public:
-		DynamicHitBuffer() : PxHitCallback<HitType>(_buffer, PX_CONTACT_BUFFER_SIZE), _count(0)
+		px_dynamic_hit_buffer() : PxHitCallback<HitType>(_buffer, PX_CONTACT_BUFFER_SIZE), _count(0)
 		{
 		}
 
@@ -288,13 +313,13 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		physx::PxSweepBufferN<1> buffer
 
 #define PX_SCENE_QUERY_SETUP_SWEEP_CAST() PX_SCENE_QUERY_SETUP(false); \
-		DynamicHitBuffer<physx::PxSweepHit> buffer
+		px_dynamic_hit_buffer<physx::PxSweepHit> buffer
 
 #define PX_SCENE_QUERY_SETUP_CHECK() PX_SCENE_QUERY_SETUP(false); \
 		physx::PxOverlapBufferN<1> buffer
 
 #define PX_SCENE_QUERY_SETUP_OVERLAP() PX_SCENE_QUERY_SETUP(false); \
-		DynamicHitBuffer<physx::PxOverlapHit> buffer
+		px_dynamic_hit_buffer<physx::PxOverlapHit> buffer
 
 #define PX_SCENE_QUERY_COLLECT_OVERLAP() results.clear(); \
 		results.resize(buffer.getNbTouches()); \
@@ -580,6 +605,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		PxPhysics* getPhysics() const noexcept { return physics; }
 		inline PxTolerancesScale getTolerancesScale() const noexcept { return toleranceScale; }
+		PxCpuDispatcher* getCPUDispatcher() const noexcept { return dispatcher; }
 		PxScene* getScene() const noexcept { return scene; }
 		PxCudaContextManager* getCudaContextManager() const noexcept { return cudaContextManager; }
 

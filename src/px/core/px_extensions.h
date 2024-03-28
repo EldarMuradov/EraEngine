@@ -121,4 +121,87 @@ namespace physics
 		inertia.m12 += mass * cm.y * cm.z;
 		inertia.m02 += mass * cm.z * cm.x;
 	}
+
+	struct px_explode_overlap_callback : PxOverlapCallback
+	{
+		px_explode_overlap_callback(PxVec3 worldPos, float radius, float explosiveImpulse)
+			: worldPosition(worldPos)
+			, radius(radius)
+			, explosiveImpulse(explosiveImpulse)
+			, PxOverlapCallback(hitBuffer, sizeof(hitBuffer) / sizeof(hitBuffer[0])) {}
+
+		PxAgain processTouches(const PxOverlapHit* buffer, PxU32 nbHits)
+		{
+			for (PxU32 i = 0; i < nbHits; ++i)
+			{
+				PxRigidActor* actor = buffer[i].actor;
+				PxRigidDynamic* rigidDynamic = actor->is<PxRigidDynamic>();
+				if (rigidDynamic && !(rigidDynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC))
+				{
+					if (actorBuffer.find(rigidDynamic) == actorBuffer.end())
+					{
+						actorBuffer.insert(rigidDynamic);
+						PxVec3 dr = rigidDynamic->getGlobalPose().transform(rigidDynamic->getCMassLocalPose()).p - worldPosition;
+						float distance = dr.magnitude();
+						float factor = PxClamp(1.0f - (distance * distance) / (radius * radius), 0.0f, 1.0f);
+						float impulse = factor * explosiveImpulse * 1000.0f;
+						PxVec3 vel = dr.getNormalized() * impulse / rigidDynamic->getMass();
+						rigidDynamic->setLinearVelocity(rigidDynamic->getLinearVelocity() + vel);
+					}
+				}
+			}
+			return true;
+		}
+
+	private:
+		PxOverlapHit hitBuffer[1000];
+		float explosiveImpulse;
+		::std::set<PxRigidDynamic*> actorBuffer;
+		PxVec3 worldPosition;
+		float radius;
+	};
+
+	struct px_debug_render_buffer : PxRenderBuffer
+	{
+		~px_debug_render_buffer() {}
+
+		virtual PxU32 getNbPoints() const { return 0; }
+		virtual const PxDebugPoint* getPoints() const { return nullptr; }
+
+		virtual PxU32 getNbLines() const { return static_cast<PxU32>(lines.size()); }
+		virtual const PxDebugLine* getLines() const { return lines.data(); }
+
+		virtual PxU32 getNbTriangles() const { return 0; }
+		virtual const PxDebugTriangle* getTriangles() const { return nullptr; }
+
+		virtual PxU32 getNbTexts() const { return 0; }
+		virtual const PxDebugText* getTexts() const { return nullptr; }
+
+		virtual void append(const PxRenderBuffer& other) {}
+		virtual void clear()
+		{
+			lines.clear();
+		}
+
+		virtual PxDebugLine* reserveLines(const PxU32 nbLines) { lines.reserve(nbLines); return &lines[0]; }
+
+		virtual bool empty() const { return lines.empty(); }
+
+		::std::vector<PxDebugLine> lines;
+
+		// Unused
+		virtual void addPoint(const PxDebugPoint& point) {}
+
+		// Unused
+		virtual void addLine(const PxDebugLine& line) {}
+
+		// Unused
+		virtual PxDebugPoint* reservePoints(const PxU32 nbLines) { return nullptr; }
+
+		// Unused
+		virtual void addTriangle(const PxDebugTriangle& triangle) {}
+
+		// Unused
+		virtual void shift(const PxVec3& delta) {}
+	};
 }

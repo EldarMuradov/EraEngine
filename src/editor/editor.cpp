@@ -26,7 +26,7 @@
 #include <imgui/imgui_internal.h>
 #include <px/physics/px_collider_component.h>
 #include <stack>
-#include <EraScriptingLauncher-Lib/src/script.h>
+#include <scripting/script.h>
 #include <core/builder.h>
 
 template <typename component_t, typename member_t>
