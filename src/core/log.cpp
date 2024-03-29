@@ -122,11 +122,11 @@ void updateMessageLog(float dt)
 		ImGui::End();
 	}
 
-	if (messages.size() > MAX_NB_MESSAGES)
+	/*if (messages.size() > MAX_NB_MESSAGES)
 	{
 		messages.clear();
 		arena.reset();
-	}
+	}*/
 }
 
 #endif

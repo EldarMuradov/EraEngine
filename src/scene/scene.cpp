@@ -13,6 +13,8 @@
 #include <scripting/script.h>
 #include <ai/navigation_component.h>
 #endif
+#include <px/blast/px_blast_core.h>
+#include <px/physics/px_soft_body.h>
 
 std::mutex eentity_container::sync;
 std::unordered_map<entity_handle, eentity_node> eentity_container::container;
@@ -70,6 +72,10 @@ void escene::cloneTo(escene& target)
 		physics::px_cloth_render_component,
 		physics::px_particles_component,
 		physics::px_particles_render_component,
+
+		physics::px_blast_rigidbody_component,
+
+		physics::px_soft_body_component,
 
 		navigation_component,
 		script_component,
@@ -222,6 +228,14 @@ void escene::deleteEntity(eentity e)
 		reference->release();
 	}
 	if (physics::px_particles_component* reference = e.getComponentIfExists<physics::px_particles_component>())
+	{
+		reference->release();
+	}
+	if (physics::px_blast_rigidbody_component* reference = e.getComponentIfExists<physics::px_blast_rigidbody_component>())
+	{
+		reference->release();
+	}
+	if (physics::px_soft_body_component* reference = e.getComponentIfExists<physics::px_soft_body_component>())
 	{
 		reference->release();
 	}

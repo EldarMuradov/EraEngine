@@ -14,12 +14,12 @@
 #include <px/features/px_vehicles.h>
 #include <px/temp/px_mesh_generator.h>
 
+#include <px/blast/px_blast_core.h>
+
 #pragma comment(lib, "PhysXCooking_64.lib")
 
 namespace
 {
-	physics::px_simulation_event_callback simulationEventCallback;
-
 	physics::px_CCD_contact_modification contactModification;
 }
 
@@ -69,11 +69,9 @@ static void clearColliderFromCollection(const physics::px_rigidbody_component* c
 	}
 }
 
-#include <px/blast/px_blast_core.h>
-
-physics::px_physics_engine::px_physics_engine(application* application) noexcept
+physics::px_physics_engine::px_physics_engine(application& a) noexcept
+	: app(a)
 {
-	app = application;
 	allocator.initialize(MB(256));
 
 	foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocatorCallback, errorReporter);
@@ -140,7 +138,7 @@ physics::px_physics_engine::px_physics_engine(application* application) noexcept
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
 
-	sceneDesc.simulationEventCallback = &simulationEventCallback;
+	sceneDesc.simulationEventCallback = simulationEventCallback;
 	sceneDesc.filterCallback = &simulationFilterCallback;
 	sceneDesc.ccdContactModifyCallback = &contactModification;
 
@@ -176,9 +174,6 @@ physics::px_physics_engine::px_physics_engine(application* application) noexcept
 	//if(!res)
 		//LOG_ERROR("Physics> Failed to initialize PxVehicles.");
 #endif
-
-	px_blast* blast = new px_blast();
-	blast->onSampleStart();
 }
 
 physics::px_physics_engine::~px_physics_engine()
@@ -217,26 +212,11 @@ void physics::px_physics_engine::release() noexcept
 
 void physics::px_physics_engine::start() noexcept
 {
-	PxArray<PxVec3> triVerts;
-	PxArray<PxU32> triIndices;
+	blast = make_ref<px_blast>();
+	blast->onSampleStart();
 
-	PxReal maxEdgeLength = 1;
-
-	PxCookingParams params(toleranceScale);
-	params.meshWeldTolerance = 0.001f;
-	params.meshPreprocessParams = PxMeshPreprocessingFlags(PxMeshPreprocessingFlag::eWELD_VERTICES);
-	params.buildTriangleAdjacencies = false;
-	params.buildGPUData = true;
-
-	meshgenerator::createCube(triVerts, triIndices, PxVec3(0, 0, 0), 1.0f);
-	PxRemeshingExt::limitMaxEdgeLength(triIndices, triVerts, maxEdgeLength);
-	PxSoftBody* softBodyCube = createSoftBody(params, triVerts, triIndices);
-
-	PxReal halfExtent = 1;
-	PxVec3 cubePosA(0, 20, 0);
-	PxRigidDynamic* rigidCubeA = createRigidCube(halfExtent, cubePosA);
-
-	connectCubeToSoftBody(rigidCubeA, 2 * halfExtent, cubePosA, softBodyCube);
+	simulationEventCallback = new px_simulation_event_callback(blast->getExtImpactDamageManager());
+	scene->setSimulationEventCallback(simulationEventCallback);
 }
 
 void physics::px_physics_engine::update(float dt) noexcept
@@ -263,7 +243,7 @@ void physics::px_physics_engine::update(float dt) noexcept
 
 	for (size_t i = 0; i < softBodies.size(); i++)
 	{
-		px_soft_body* sb = &softBodies[i];
+		ref<px_soft_body> sb = softBodies[i];
 		sb->copyDeformedVerticesFromGPUAsync(0);
 	}
 
@@ -277,7 +257,7 @@ void physics::px_physics_engine::update(float dt) noexcept
 	scene->lockRead();
 	PxActor** activeActors = scene->getActiveActors(nbActiveActors);
 
-	auto gameScene = app->getCurrentScene();
+	auto gameScene = app.getCurrentScene();
 
 	for (size_t i = 0; i < nbActiveActors; i++)
 	{
@@ -303,10 +283,12 @@ void physics::px_physics_engine::update(float dt) noexcept
 	raycastCCD->doRaycastCCD(true);
 #endif
 
-	simulationEventCallback.sendCollisionEvents();
-	simulationEventCallback.sendTriggerEvents();
+	simulationEventCallback->sendCollisionEvents();
+	simulationEventCallback->sendTriggerEvents();
 
-	simulationEventCallback.clear();
+	simulationEventCallback->clear();
+
+	blast->animate(dt);
 
 	allocator.reset();
 }
@@ -376,7 +358,7 @@ void physics::px_physics_engine::removeActor(px_rigidbody_component* actor) noex
 void physics::px_physics_engine::releaseActors() noexcept
 {
 	scene->lockWrite();
-	auto gameScene = app->getCurrentScene();
+	auto gameScene = app.getCurrentScene();
 
 	for (auto& actor : actors)
 		actor->release();
@@ -394,6 +376,13 @@ void physics::px_physics_engine::releaseScene() noexcept
 	PxU32 size;
 	auto actors = scene->getActiveActors(size);
 	scene->removeActors(actors, size);
+}
+
+void physics::px_physics_engine::explode(const vec3& worldPos, float damageRadius, float explosiveImpulse) noexcept
+{
+	PxVec3 pos = createPxVec3(worldPos);
+	px_explode_overlap_callback overlapCallback(pos, damageRadius, explosiveImpulse);
+	scene->overlap(PxSphereGeometry(damageRadius), PxTransform(pos), overlapCallback);
 }
 
 physics::px_raycast_info physics::px_physics_engine::raycast(px_rigidbody_component* rb, const vec3& dir, int maxDist, bool hitTriggers, uint32_t layerMask, int maxHits)
@@ -443,7 +432,7 @@ physics::px_raycast_info physics::px_physics_engine::raycast(px_rigidbody_compon
 	return px_raycast_info();
 }
 
-void physics::px_physics_engine::addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount) noexcept
+ref<physics::px_soft_body> physics::px_physics_engine::addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount) noexcept
 {
 	PxVec4* simPositionInvMassPinned;
 	PxVec4* simVelocityPinned;
@@ -461,7 +450,7 @@ void physics::px_physics_engine::addSoftBody(PxSoftBody* softBody, const PxFEMPa
 	PxSoftBodyExt::updateMass(*softBody, density, maxInvMassRatio, simPositionInvMassPinned);
 	PxSoftBodyExt::copyToDevice(*softBody, PxSoftBodyDataFlag::eALL, simPositionInvMassPinned, simVelocityPinned, collPositionInvMassPinned, restPositionPinned);
 
-	px_soft_body sBody(softBody, cudaContextManager);
+	ref<px_soft_body> sBody = make_ref<px_soft_body>(softBody, cudaContextManager);
 
 	softBodies.push_back(sBody);
 
@@ -469,6 +458,8 @@ void physics::px_physics_engine::addSoftBody(PxSoftBody* softBody, const PxFEMPa
 	PX_PINNED_HOST_FREE(cudaContextManager, simVelocityPinned);
 	PX_PINNED_HOST_FREE(cudaContextManager, collPositionInvMassPinned);
 	PX_PINNED_HOST_FREE(cudaContextManager, restPositionPinned);
+
+	return sBody;
 }
 
 void physics::px_CCD_contact_modification::onCCDContactModify(PxContactModifyPair* const pairs, PxU32 count)
@@ -527,7 +518,7 @@ void physics::px_simulation_event_callback::onColliderRemoved(px_rigidbody_compo
 
 void physics::px_simulation_event_callback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
 {
-	UNUSED(pairHeader);
+	impactManager->onContact(pairHeader, pairs, nbPairs);
 
 	const physx::PxU32 bufferSize = PX_CONTACT_BUFFER_SIZE;
 	physx::PxContactPairPoint contacts[bufferSize];

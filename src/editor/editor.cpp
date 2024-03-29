@@ -28,6 +28,8 @@
 #include <stack>
 #include <scripting/script.h>
 #include <core/builder.h>
+#include <px/physics/px_soft_body.h>
+#include <px/blast/px_blast_core.h>
 
 template <typename component_t, typename member_t>
 struct component_member_undo
@@ -886,6 +888,16 @@ bool eeditor::drawSceneHierarchy()
 					drawComponent<physics::px_box_collider_component>(selectedEntity, "Box Collider (PhysX)", [](physics::px_box_collider_component& trace)
 					{
 						ImGui::Text("Box collider component");
+					});
+
+					drawComponent<physics::px_soft_body_component>(selectedEntity, "Soft Body (PhysX)", [](physics::px_soft_body_component& trace)
+					{
+						ImGui::Text("Soft Body component");
+					});
+
+					drawComponent<physics::px_blast_rigidbody_component>(selectedEntity, "Blast Destructable Body (PhysX)", [](physics::px_blast_rigidbody_component& trace)
+					{
+						ImGui::Text("Blast Destructable Body component");
 					});
 
 					drawComponent<physics::px_sphere_collider_component>(selectedEntity, "Sphere Collider (PhysX)", [](physics::px_sphere_collider_component& trace)
@@ -2356,6 +2368,23 @@ bool eeditor::deserializeFromFile()
 	return false;
 }
 
+bool eeditor::deserializeFromCurrentFile(const fs::path& path)
+{
+	std::string environmentName;
+	if (deserializeSceneFromCurrentYAMLFile(path, *scene, renderer->settings, environmentName))
+	{
+		scene->stop();
+
+		setSelectedEntity({});
+		scene->environment.setFromTexture(environmentName);
+		scene->environment.forceUpdate(this->scene->sun.direction);
+		renderer->pathTracer.resetRendering();
+
+		return true;
+	}
+	return false;
+}
+
 bool eeditor::editCamera(render_camera& camera)
 {
 	bool result = false;
@@ -2706,6 +2735,8 @@ void eeditor::forceStop()
 	this->scene->editor_camera.setPositionAndRotation(vec3(0.0f), quat::identity);
 }
 
+#include <px/blast/px_blast_core.h>
+
 void eeditor::drawSettings(float dt)
 {
 	escene* scene = &this->scene->getCurrentScene();
@@ -2955,6 +2986,9 @@ void eeditor::drawSettings(float dt)
 				// TODO: Physics undoable properties
 				ImGui::EndProperties();
 			}
+
+			physics::physics_holder::physicsRef->blast->drawUI();
+
 			ImGui::EndTree();
 		}
 

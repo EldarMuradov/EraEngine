@@ -455,13 +455,18 @@ bool deserializeSceneFromYAMLFile(editor_scene& scene, renderer_settings& render
 	if (filename.empty())
 		return false;
 
-	std::ifstream stream(filename);
+	return deserializeSceneFromCurrentYAMLFile(filename, scene, rendererSettings, environmentName);
+}
+
+bool deserializeSceneFromCurrentYAMLFile(const fs::path& path, editor_scene& scene, renderer_settings& rendererSettings, std::string& environmentName)
+{
+	std::ifstream stream(path);
 	YAML::Node n = YAML::Load(stream);
 	if (!n["Scene"])
 		return false;
 
 	scene.editorScene = escene();
-	scene.savePath = std::move(filename);
+	scene.savePath = std::move(path);
 
 	std::string sceneName = n["Scene"].as<std::string>();
 

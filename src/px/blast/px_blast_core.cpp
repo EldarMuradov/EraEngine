@@ -1,14 +1,18 @@
 #include <pch.h>
 #include <px/blast/px_blast_core.h>
-#include <../ext/PhysX/blast/sdk/extensions/serialization/include/NvBlastExtPxSerialization.h>
+#include <NvBlastExtPxSerialization.h>
 #include <numeric>
 #include <cooking/PxCooking.h>
+#include <core/imgui.h>
+#include <scene/components.h>
+#include <scene/scene.h>
+
+using namespace std::chrono;
 
 static const float RIGIDBODY_DENSITY = 2000.0f;
 
 physics::px_blast::px_blast()
-	: eventCallback(nullptr)
-	, debugRenderMode(px_blast_family::DEBUG_RENDER_DISABLED)
+	: debugRenderMode(px_blast_family::DEBUG_RENDER_DISABLED)
 	, impactDamageEnabled(true)
 	, impactDamageToStressEnabled(false)
 	, rigidBodyLimitEnabled(true)
@@ -44,10 +48,10 @@ void physics::px_blast::onSampleStart()
 	gdesc.workerCount = taskManager->getCpuDispatcher()->getWorkerCount();
 	tkGroup = framework->createGroup(gdesc);
 
-	extPxManager = ExtPxManager::create(PxGetPhysics(), *framework, createPxJointCallback);
+	extPxManager = ExtPxManager::create(PxGetPhysics(), *framework, createPxJointCallback, false);
 	extPxManager->setActorCountLimit(rigidBodyLimitEnabled ? rigidBodyLimit : 0);
+
 	extImpactDamageManager = ExtImpactDamageManager::create(extPxManager, extImpactDamageManagerSettings);
-	eventCallback = new px_blast_event_callback(extImpactDamageManager);
 
 	extGroupTaskManager = ExtGroupTaskManager::create(*taskManager);
 	extGroupTaskManager->setGroup(tkGroup);
@@ -63,6 +67,76 @@ void physics::px_blast::onSampleStart()
 		/*NvBlastExtPxSerializerLoadSet(*framework, PxGetPhysics(),
 			, *extSerialization);*/
 	}
+
+	px_asset_list list;
+
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Wall (3 depth, 625 nodes)";
+		box.extents = PxVec3(20, 20, 2);
+		box.bondFlags = 0b1000111;
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
+
+		list.boxes.push_back(box);
+	}
+
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Wall (2 depth, 625 nodes, no root chunk)";
+		box.extents = PxVec3(20, 20, 2);
+		box.bondFlags = 0b1000111;
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
+
+		list.boxes.push_back(box);
+	}
+
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Static Frame";
+		box.extents = PxVec3(20, 20, 2);
+		box.bondFlags = 0b1111111;
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
+
+		list.boxes.push_back(box);
+	}
+
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Poor Man's Cloth";
+		box.extents = PxVec3(20, 20, 0.2f);
+		box.jointAllBonds = true;
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 20, 20, 1, true });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 1, false });
+
+		list.boxes.push_back(box);
+	}
+
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Cube (4 depth, 1728 nodes)";
+		box.extents = PxVec3(20, 20, 20);
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 2, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 2, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 3, 3, 3, true });
+
+		list.boxes.push_back(box);
+	}
+
+
+	for (const auto& box : list.boxes)
+	{
+		px_blast_boxes_asset_scene* asset = new px_blast_boxes_asset_scene(box);
+		addAsset(asset);
+	}
+
+	spawnAsset(0);
 }
 
 void physics::px_blast::onSampleStop()
@@ -71,7 +145,6 @@ void physics::px_blast::onSampleStop()
 
 	PX_RELEASE(extImpactDamageManager);
 	RELEASE_PTR(extPxManager);
-	RELEASE_PTR(eventCallback);
 	PX_RELEASE(tkGroup);
 	RELEASE_PTR(replay);
 	PX_RELEASE(framework);
@@ -82,10 +155,97 @@ void physics::px_blast::onSampleStop()
 
 void physics::px_blast::animate(double dt)
 {
+	extImpactDamageManager->applyDamage();
+
+	updateDraggingStress();
+
+	fillDebugRender();
+
+	updateImpactDamage();
+
+	for (uint32_t i = 0; i < families.size(); ++i)
+	{
+		if (families[i])
+		{
+			families[i]->updatePreSplit(dt);
+		}
+	}
+
+	replay->update();
+
+#if 0
+
+	extGroupTaskManager->process();
+	extGroupTaskManager->wait();
+
+#else  // process group on main thread
+
+	tkGroup->endProcess();
+	tkGroup->process();
+
+#endif
+
+	damageParamsBuffer.clear();
+	damageDescBuffer.clear();
+
+	TkGroupStats gstats;
+	tkGroup->getStats(gstats);
+
+	this->lastBlastTimers.damageMaterial = NvBlastTicksToSeconds(gstats.timers.material);
+	this->lastBlastTimers.damageFracture = NvBlastTicksToSeconds(gstats.timers.fracture);
+	this->lastBlastTimers.splitIsland = NvBlastTicksToSeconds(gstats.timers.island);
+	this->lastBlastTimers.splitPartition = NvBlastTicksToSeconds(gstats.timers.partition);
+	this->lastBlastTimers.splitVisibility = NvBlastTicksToSeconds(gstats.timers.visibility);
+
+	for (uint32_t i = 0; i < families.size(); ++i)
+	{
+		if (families[i])
+		{
+			families[i]->updateAfterSplit(dt);
+		}
+	}
 }
 
 void physics::px_blast::drawUI()
 {
+	if(ImGui::BeginTree("Blast"))
+	{
+		// impact damage
+		bool impactEnabled = getImpactDamageEnabled();
+		if (ImGui::Checkbox("Impact Damage", &impactEnabled))
+		{
+			setImpactDamageEnabled(impactEnabled);
+		}
+		{
+			bool refresh = false;
+			refresh |= ImGui::Checkbox("Use Shear Damage", &extImpactDamageManagerSettings.shearDamage);
+			refresh |= ImGui::DragFloat("Material Hardness", &extImpactDamageManagerSettings.hardness);
+			refresh |= ImGui::DragFloat("Damage Radius (Max)", &extImpactDamageManagerSettings.damageRadiusMax);
+			refresh |= ImGui::DragFloat("Damage Threshold (Min)", &extImpactDamageManagerSettings.damageThresholdMin,
+				1.0f, 0.0f, 1.0f);
+			refresh |= ImGui::DragFloat("Damage Threshold (Max)", &extImpactDamageManagerSettings.damageThresholdMax,
+				1.0f, 0.0f, 1.0f);
+			refresh |= ImGui::DragFloat("Damage Falloff Radius Factor",
+				&extImpactDamageManagerSettings.damageFalloffRadiusFactor, 1.0f, 0.0f, 32.0f);
+			refresh |= ImGui::Checkbox("Impact Damage To Stress Solver", &impactDamageToStressEnabled);
+
+			if (refresh)
+			{
+				refreshImpactDamageSettings();
+			}
+		}
+
+		ImGui::DragFloat("Impact Damage To Stress Factor", &impactDamageToStressFactor, 0.001f, 0.0f, 1000.0f, "%.4f");
+		ImGui::DragFloat("Dragging To Stress Factor", &draggingToStressFactor, 0.1f, 0.0f, 1000.0f, "%.3f");
+
+		ImGui::Checkbox("Limit Rigid Body Count", &rigidBodyLimitEnabled);
+		if (rigidBodyLimitEnabled)
+		{
+			ImGui::DragInt("Rigid Body Limit", (int*)&rigidBodyLimit, 100, 1000, 100000);
+		}
+		extPxManager->setActorCountLimit(rigidBodyLimitEnabled ? rigidBodyLimit : 0);
+		ImGui::EndTree();
+	}
 }
 
 bool physics::px_blast::overlap(const PxGeometry& geometry, const PxTransform& pose, std::function<void(ExtPxActor*, px_blast_family&)> hitCall)
@@ -234,8 +394,6 @@ void physics::px_blast::updateImpactDamage()
 {
 	if (impactDamageUpdatePending)
 	{
-		physics_holder::physicsRef->getScene()->setSimulationEventCallback(impactDamageEnabled ? eventCallback :
-			nullptr);
 		refreshImpactDamageSettings();
 		impactDamageUpdatePending = false;
 	}
@@ -434,7 +592,7 @@ void physics::px_cube_asset_generator::fillBondDesc(std::vector<NvBlastBondDesc>
 	bondDescs.push_back(bondDesc);
 }
 
-physics::px_blast_asset_boxes::px_blast_asset_boxes(TkFramework& framework, PxPhysics& physics, PxCooking& cooking, main_renderer& renderer, const desc& desc)
+physics::px_blast_asset_boxes::px_blast_asset_boxes(TkFramework& framework, PxPhysics& physics, main_renderer& renderer, const desc& desc)
 	: px_blast_asset(renderer)
 {
 	// generate boxes slices procedurally
@@ -527,7 +685,27 @@ size_t physics::px_blast_asset::getBlastAssetSize() const
 void physics::px_blast_asset::initialize()
 {
 	// calc max healths
-	const auto& actorDesc = pxAsset->getDefaultActorDesc();
+	auto& actorDesc = pxAsset->getDefaultActorDesc();
+
+	auto nbbh = NvBlastAssetGetBondCount(pxAsset->getTkAsset().getAssetLL(), nullptr);
+	auto nbch = NvBlastAssetGetSupportChunkCount(pxAsset->getTkAsset().getAssetLL(), nullptr);
+
+	float* nbbhp = new float[nbbh];
+	float* nbchp = new float[nbch];
+
+	for (size_t i = 0; i < nbbh; i++)
+	{
+		nbbhp[i] = 1.0f;
+	}
+
+	for (size_t i = 0; i < nbch; i++)
+	{
+		nbchp[i] = 1.0f;
+	}
+
+	actorDesc.initialBondHealths = nbbhp;
+	actorDesc.initialSupportChunkHealths = nbchp;
+
 	if (actorDesc.initialBondHealths)
 	{
 		bondHealthMax = FLT_MIN;
@@ -618,6 +796,11 @@ void physics::px_blast_family::updateAfterSplit(float dt)
 		{
 			onActorHealthUpdate(*actor);
 		}
+
+		// !!!!!!!!!!!!!!!!!
+		//NvBlastDamageProgram damageProgram = { NvBlastExtShearGraphShader, NvBlastExtShearSubgraphShader };
+		//NvBlastExtRadialDamageDesc damageDesc = { 0.8, 0, 0, 0, 0, 5 };
+		//physics_holder::physicsRef->blast->immediateDamage(actor, *this, damageProgram, &damageDesc);
 	}
 
 	// update stress
@@ -634,10 +817,85 @@ void physics::px_blast_family::updateAfterSplit(float dt)
 
 void physics::px_blast_family::drawUI()
 {
+	// Blast Material
+	ImGui::Spacing();
+	ImGui::Text("Blast Material:");
+	ImGui::DragFloat("Health", &settings.material.health);
+	ImGui::DragFloat("Min Damage Threshold", &settings.material.minDamageThreshold, 0.01f, 0.f, settings.material.maxDamageThreshold);
+	ImGui::DragFloat("Max Damage Threshold", &settings.material.maxDamageThreshold, 0.01f, settings.material.minDamageThreshold, 1.f);
+
+	if (ImGui::Checkbox("AABB Tree (Damage Accelerator)", &settings.damageAcceleratorEnabled))
+	{
+		refreshDamageAcceleratorSettings();
+	}
+	if (settings.damageAcceleratorEnabled)
+	{
+		ImGui::DragInt("AABB Tree debug depth", &debugRenderDepth);
+	}
+
+	ImGui::Spacing();
+
+	// Stress Solver Settings
+	if (ImGui::Checkbox("Stress Solver Enabled", &settings.stressSolverEnabled))
+	{
+		reloadStressSolver();
+	}
+
+	if (settings.stressSolverEnabled)
+	{
+		// Settings
+		bool changed = false;
+
+		//changed |= ImGui::DragInt("Bond Iterations Per Frame", (int*)&settings.stressSolverSettings.bondIterationsPerFrame, 100, 0, 500000);
+		//changed |= ImGui::DragFloat("Material Hardness", &settings.stressSolverSettings.hardness, 10.0f, 0.01f, 100000.0f, "%.2f");
+		//changed |= ImGui::DragFloat("Stress Linear Factor", &settings.stressSolverSettings.stressLinearFactor, 0.01f, 0.0f, 100.0f, "%.2f");
+		//changed |= ImGui::DragFloat("Stress Angular Factor", &settings.stressSolverSettings.stressAngularFactor, 0.01f, 0.0f, 100.0f, "%.2f");
+		changed |= ImGui::SliderInt("Graph Reduction Level", (int*)&settings.stressSolverSettings.graphReductionLevel, 0, 32);
+		if (changed)
+		{
+			refreshStressSolverSettings();
+		}
+
+		ImGui::Checkbox("Stress Damage Enabled", &settings.stressDamageEnabled);
+
+		if (ImGui::Button("Recalculate Stress"))
+		{
+			resetStress();
+		}
+	}
 }
 
 void physics::px_blast_family::drawStatsUI()
 {
+	if (stressSolver)
+	{
+		const ExtStressSolver& solver = stressSolver->getSolver();
+		const float errorLinear = solver.getStressErrorLinear();
+		const float errorAngular = solver.getStressErrorAngular();
+
+		ImGui::Text("Stress Bond Count:               %d", solver.getBondCount());
+		ImGui::Text("Stress Frames:                   %d", solver.getFrameCount());
+		ImGui::Text("Stress Error Lin / Ang:          %.4f / %.4f", errorLinear, errorAngular);
+		ImGui::Text("Stress Solve Time:               %.3f ms", stressSolveTime * 1000);
+
+		// plot errors
+		{
+			static float scale = 1.0f;
+			scale = solver.getFrameCount() <= 1 ? 1.0f : scale;
+			scale = std::max<float>(scale, errorLinear);
+			scale = std::max<float>(scale, errorAngular);
+
+			static ImGui::PlotLinesInstance<> linearErrorPlot;
+			linearErrorPlot.plot("Stress Linear Error", errorLinear, "error/frame", 0.0f, 1.0f * scale);
+			static ImGui::PlotLinesInstance<> angularErrorPlot;
+			angularErrorPlot.plot("Stress Angular Error", errorAngular, "error/frame", 0.0f, 1.0f * scale);
+		}
+	}
+	else
+	{
+		ImGui::Text("No Stress Solver");
+	}
+	ImGui::PopStyleColor();
 }
 
 void physics::px_blast_family::fillDebugRender(px_debug_render_buffer& debugRenderBuffer, debug_render_mode mode, float renderScale)
@@ -738,7 +996,6 @@ void physics::px_blast_family::initialize(const px_blast_asset::actor_desc& desc
 	pxFamily = pxManager.createFamily(familyDesc);
 	pxFamily->setMaterial(&settings.material);
 
-
 	tkFamily = &pxFamily->getTkFamily();
 	tkFamily->setID(desc.id);
 
@@ -773,6 +1030,35 @@ void physics::px_blast_family::processActorDestroyed(ExtPxFamily&, ExtPxActor& a
 physics::px_blast_family_boxes::px_blast_family_boxes(ExtPxManager& pxManager, main_renderer& rend, const px_blast_asset_boxes& blastAsset, const px_blast_asset::actor_desc& desc)
 	: px_blast_family(pxManager, blastAsset), renderer(rend)
 {
+	// prepare renderables
+	//IRenderMesh* boxRenderMesh = renderer.getPrimitiveRenderMesh(PrimitiveRenderMeshType::Box);
+	//RenderMaterial* primitiveRenderMaterial = physXController.getPrimitiveRenderMaterial();
+
+	const ExtPxAsset* pxAsset = blastAsset.getPxAsset();
+	const uint32_t chunkCount = pxAsset->getChunkCount();
+	const ExtPxChunk* chunks = pxAsset->getChunks();
+	const ExtPxSubchunk* subChunks = pxAsset->getSubchunks();
+	chunkRenderables.resize(chunkCount);
+	for (uint32_t i = 0; i < chunkCount; i++)
+	{
+		//auto& geom = subChunks[chunks[i].firstSubchunkIndex].geometry;
+		//auto nbp = geom.convexMesh->getNbVertices();
+
+		//auto verts = geom.convexMesh->getVertices();
+
+		//for (int i = 0; i < nbp; i++)
+		//{
+		//	enative_scripting_linker::app->points.push_back(createVec3(verts[i]) + createVec3(subChunks[chunks[i].firstSubchunkIndex].transform.p));
+		//}
+
+		//Renderable* renderable = renderer.createRenderable(*boxRenderMesh, *primitiveRenderMaterial);
+		//renderable->setHidden(true);
+		//renderable->setScale(subChunks[chunks[i].firstSubchunkIndex].geometry.scale.scale);
+		//chunkRenderables[i] = renderable;
+	}
+
+	// initialize in position
+	initialize(desc);
 }
 
 physics::px_blast_family_boxes::~px_blast_family_boxes()
@@ -785,6 +1071,29 @@ void physics::px_blast_family_boxes::onActorCreated(const ExtPxActor& actor)
 
 void physics::px_blast_family_boxes::onActorUpdate(const ExtPxActor& actor)
 {
+	const ExtPxChunk* chunks = blastAsset.getPxAsset()->getChunks();
+	const ExtPxSubchunk* subChunks = blastAsset.getPxAsset()->getSubchunks();
+	const uint32_t* chunkIndices = actor.getChunkIndices();
+	uint32_t chunkCount = actor.getChunkCount();
+	for (uint32_t i = 0; i < chunkCount; i++)
+	{
+		//const uint32_t chunkIndex = chunkIndices[i];
+		//auto p = (actor.getPhysXActor().getGlobalPose().p);
+		//enative_scripting_linker::app->renderObjectPoint(p.x, p.y, p.z);
+
+		//auto& geom = subChunks[chunks[i].firstSubchunkIndex].geometry;
+		//auto nbp = geom.convexMesh->getNbVertices();
+
+		//auto verts = geom.convexMesh->getVertices();
+
+		//for (int i = 0; i < nbp; i++)
+		//{
+		//	auto ps = createVec3(subChunks[chunks[i].firstSubchunkIndex].transform.p);
+		//	enative_scripting_linker::app->renderObjectPoint(ps.x, ps.y, ps.z);
+		//}
+
+		//chunkRenderables[chunkIndex]->setTransform(actor.getPhysXActor().getGlobalPose() * subChunks[chunks[chunkIndex].firstSubchunkIndex].transform);
+	}
 }
 
 void physics::px_blast_family_boxes::onActorDestroyed(const ExtPxActor& actor)
@@ -793,44 +1102,169 @@ void physics::px_blast_family_boxes::onActorDestroyed(const ExtPxActor& actor)
 
 physics::px_blast_replay::px_blast_replay()
 {
+	sync = ExtSync::create();
+	reset();
 }
 
 physics::px_blast_replay::~px_blast_replay()
 {
+	sync->release();
+	clearBuffer();
 }
 
-void physics::px_blast_replay::addFamily(TkFamily* family)
+void physics::px_blast_replay::addFamily(TkFamily* family) const
 {
+	family->addListener(*sync);
 }
 
-void physics::px_blast_replay::removeFamily(TkFamily* family)
+void physics::px_blast_replay::removeFamily(TkFamily* family) const
 {
+	family->removeListener(*sync);
 }
 
 void physics::px_blast_replay::startRecording(ExtPxManager& manager, bool syncFamily, bool syncPhysics)
 {
+	if (isRecording)
+		return;
+
+	sync->releaseSyncBuffer();
+
+	if (syncFamily || syncPhysics)
+	{
+		std::vector<ExtPxFamily*> families(manager.getFamilyCount());
+		manager.getFamilies(families.data(), (uint32_t)families.size());
+		for (ExtPxFamily* family : families)
+		{
+			if (syncPhysics)
+			{
+				sync->syncFamily(*family);
+			}
+			else if (syncFamily)
+			{
+				sync->syncFamily(family->getTkFamily());
+			}
+		}
+	}
+
+	isRecording = true;
 }
 
 void physics::px_blast_replay::stopRecording()
 {
+	if (!isRecording)
+		return;
+
+	const ExtSyncEvent* const* buff;
+	uint32_t size;
+	sync->acquireSyncBuffer(buff, size);
+
+	clearBuffer();
+	buffer.resize(size);
+	for (uint32_t i = 0; i < size; ++i)
+	{
+		buffer[i] = buff[i]->clone();
+	}
+
+	// TODO: sort by ts ? make sure?
+	//m_buffer.sort
+
+	sync->releaseSyncBuffer();
+
+	isRecording = false;
 }
 
 void physics::px_blast_replay::startPlayback(ExtPxManager& manager, TkGroup* group)
 {
+	if (isPlaying || !hasRecord())
+		return;
+
+	isPlaying = true;
+	startTime = steady_clock::now();
+	nextEventIndex = 0;
+	firstEventTs = buffer[0]->timestamp;
+	pxManager = &manager;
+	group = group;
 }
 
 void physics::px_blast_replay::stopPlayback()
 {
+	if (!isPlaying)
+		return;
+
+	isPlaying = false;
+	pxManager = nullptr;
+	group = nullptr;
 }
 
 void physics::px_blast_replay::update()
 {
+	if (isPlaying)
+	{
+		auto now = steady_clock::now();
+		auto mil = duration_cast<milliseconds>((now - startTime));
+		bool stop = true;
+		while (nextEventIndex < buffer.size())
+		{
+			const ExtSyncEvent* e = buffer[nextEventIndex];
+			auto t = e->timestamp - firstEventTs;
+			if (t < (uint64_t)mil.count())
+			{
+				sync->applySyncBuffer(pxManager->getFramework(), &e, 1, group, pxManager);
+				nextEventIndex++;
+			}
+			else
+			{
+				stop = false;
+				break;
+			}
+		}
+
+		if (stop)
+			stopPlayback();
+	}
 }
 
 void physics::px_blast_replay::reset()
 {
+	isPlaying = false;
+	isRecording = false;
+	sync->releaseSyncBuffer();
 }
 
 void physics::px_blast_replay::clearBuffer()
 {
+	for (auto e : buffer)
+	{
+		e->release();
+	}
+	buffer.clear();
+}
+
+physics::px_blast_asset_model::px_blast_asset_model(TkFramework& framework, PxPhysics& physics, ExtSerialization& serialization, main_renderer& rndr, const char* modelName)
+	: px_blast_asset(rndr)
+{
+	// TODO: load physics asset
+
+	initialize();
+}
+
+physics::px_blast_asset_model::~px_blast_asset_model()
+{
+	pxAsset->release();
+}
+
+void physics::px_blast_single_scene_asset::spawn(PxVec3 shift)
+{
+	load();
+
+	enative_scripting_linker::app->getCurrentScene()->createEntity("blast_entity")
+		.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
+		.addComponent<px_blast_rigidbody_component>(std::string("blast_entity"), this);
+}
+
+void physics::px_blast_single_scene_asset::spawnOnObject(PxVec3 shift, eentity& entity)
+{
+	load();
+	auto name = entity.getComponent<tag_component>().name;
+	entity.addComponent<px_blast_rigidbody_component>(std::string(name), this);
 }

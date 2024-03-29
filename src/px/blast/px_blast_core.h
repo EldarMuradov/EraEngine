@@ -1,8 +1,11 @@
 #pragma once
 
+#include <map>
+
 #include <px/core/px_physics_engine.h>
 #include <rendering/main_renderer.h>
 #include <px/core/px_extensions.h>
+#include <application.h>
 
 #include <NvBlast.h>
 #include <NvBlastTk.h>
@@ -22,6 +25,8 @@
 #include <NvBlastExtPxAsset.h>
 #include <NvBlastExtSync.h>
 
+#include <scripting/native_scripting_linker.h>
+
 namespace physics
 {
 	using namespace Nv::Blast;
@@ -34,6 +39,17 @@ namespace physics
 		double splitPartition;
 		double splitVisibility;
 	};
+
+	inline NvBlastID generateIDFromString(const char* str)
+	{
+		uint32_t h[4] = { 5381, 5381, 5381, 5381 };
+		int i = 0;
+		for (const char* ptr = str; *ptr; i = ((i + 1) & 3), ++ptr)
+		{
+			h[i] = ((h[i] << 5) + h[i]) ^ static_cast<uint32_t>(*ptr);
+		}
+		return *reinterpret_cast<NvBlastID*>(h);
+	}
 
 	struct px_blast_overlap_callback : PxOverlapCallback
 	{
@@ -179,11 +195,11 @@ namespace physics
 
 		struct family_settings
 		{
-			bool						stressSolverEnabled;
-			ExtStressSolverSettings		stressSolverSettings;
-			bool						stressDamageEnabled;
-			bool						damageAcceleratorEnabled;
-			NvBlastExtMaterial			material;
+			bool stressSolverEnabled;
+			ExtStressSolverSettings stressSolverSettings;
+			bool stressDamageEnabled;
+			bool damageAcceleratorEnabled;
+			NvBlastExtMaterial material;
 		};
 
 		void setSettings(const family_settings& setts);
@@ -192,6 +208,7 @@ namespace physics
 		{
 			return settings;
 		}
+
 		virtual ~px_blast_family();
 
 	protected:
@@ -266,6 +283,7 @@ namespace physics
 
 			struct level
 			{
+				level(int x_, int y_, int z_, bool isSupport_) :x(x_), y(y_), z(z_), isSupport(isSupport_) {};
 				level() :x(0), y(0), z(0), isSupport(0) {};
 
 				int x, y, z;
@@ -403,7 +421,7 @@ namespace physics
 			bool jointAllBonds;
 		};
 
-		px_blast_asset_boxes(TkFramework& framework, PxPhysics& physics, PxCooking& cooking, main_renderer& renderer, const desc& desc);
+		px_blast_asset_boxes(TkFramework& framework, PxPhysics& physics, main_renderer& renderer, const desc& desc);
 		virtual ~px_blast_asset_boxes();
 
 		ref<px_blast_family> createFamily(ExtPxManager& pxManager, const actor_desc& desc);
@@ -411,6 +429,20 @@ namespace physics
 	private:
 		PxConvexMesh* boxMesh = nullptr;
 		px_asset_generator generatorAsset;
+	};
+
+	struct px_blast_asset_model : px_blast_asset
+	{
+		px_blast_asset_model(TkFramework& framework, PxPhysics& physics, ExtSerialization& serialization, main_renderer& rndr, const char* modelName);
+		virtual ~px_blast_asset_model();
+
+		const ref<multi_mesh>& getModel() const
+		{
+			return model;
+		}
+
+	private:
+		ref<multi_mesh> model;
 	};
 
 	struct px_blast_family_boxes : px_blast_family
@@ -459,8 +491,8 @@ namespace physics
 			return nextEventIndex;
 		}
 
-		void addFamily(TkFamily* family);
-		void removeFamily(TkFamily* family);
+		void addFamily(TkFamily* family) const;
+		void removeFamily(TkFamily* family) const;
 
 		void startRecording(ExtPxManager& manager, bool syncFamily, bool syncPhysics);
 		void stopRecording();
@@ -485,6 +517,61 @@ namespace physics
 		bool isPlaying;
 
 		::std::vector<ExtSyncEvent*> buffer;
+	};
+
+	struct px_blast_rigidbody_component;
+
+	struct px_blast_scene_asset
+	{
+		virtual ~px_blast_scene_asset() {}
+
+		virtual const char* getID() const = 0;
+		virtual const char* getName() const = 0;
+
+		virtual void spawn(PxVec3 shift) = 0;
+
+		uint32_t spawnCount{};
+	};
+
+	struct px_blast_single_scene_asset : px_blast_scene_asset
+	{
+		px_blast_single_scene_asset() : asset(nullptr) {}
+		virtual ~px_blast_single_scene_asset() { unload(); }
+
+		virtual void spawn(PxVec3 shift) override;
+
+		void spawnOnObject(PxVec3 shift, eentity& entity);
+
+		void load()
+		{
+			if (!asset)
+			{
+				asset = createAsset();
+			}
+		}
+
+		void unload()
+		{
+			RELEASE_PTR(asset)
+		}
+
+		bool isLoaded() const
+		{
+			return asset != nullptr;
+		}
+
+		px_blast_asset* getAsset() const
+		{
+			return asset;
+		}
+
+		virtual PxTransform getInitialTransform() = 0;
+
+	protected:
+		virtual px_blast_asset* createAsset() = 0;
+
+	private:
+		px_blast_asset* asset = nullptr;
 	};
 
 	struct px_blast
@@ -590,29 +677,26 @@ namespace physics
 			SUPPRESS_CONTACT_NOTIFY = 1,
 		};
 
+		void addAsset(px_blast_scene_asset* asset)
+		{
+			assets.push_back(asset);
+		}
+
+		void spawnAsset(uint32_t id)
+		{
+			PxVec3 shift(PxZero);
+			px_blast_scene_asset* asset = assets[id];
+			asset->spawn(shift);
+		}
+
 		px_blast_family::debug_render_mode debugRenderMode;
 		float debugRenderScale;
 
+		::std::vector<px_blast_scene_asset*> assets;
+		::std::vector<px_blast_rigidbody_component*> sceneActors;
+		::std::map<const TkAsset*, px_blast_single_scene_asset*> tkAssetMap;
+
 	private:
-
-		struct px_blast_event_callback : PxSimulationEventCallback
-		{
-			px_blast_event_callback(ExtImpactDamageManager* manager) : impactManager(manager) {}
-
-			virtual void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, uint32_t nbPairs)
-			{
-				impactManager->onContact(pairHeader, pairs, nbPairs);
-			}
-
-		private:
-			void onConstraintBreak(PxConstraintInfo*, PxU32) {}
-			void onWake(PxActor**, PxU32) {}
-			void onSleep(PxActor**, PxU32) {}
-			void onTrigger(PxTriggerPair*, PxU32) {}
-			void onAdvance(const PxRigidBody* const*, const PxTransform*, const PxU32) {}
-
-			ExtImpactDamageManager* impactManager;
-		};
 
 		struct px_blast_fixed_buffer
 		{
@@ -671,8 +755,6 @@ namespace physics
 		ExtGroupTaskManager* extGroupTaskManager = nullptr;
 		ExtSerialization* extSerialization = nullptr;
 
-		px_blast_event_callback* eventCallback = nullptr;
-
 		px_error_reporter errorReporter;
 
 		ExtStressSolverSettings extStressSolverSettings;
@@ -704,6 +786,110 @@ namespace physics
 		size_t blastAssetsSize;
 
 		bool released = false;
+	};
+
+	class px_blast_boxes_asset_scene : public px_blast_single_scene_asset
+	{
+	public:
+		px_blast_boxes_asset_scene(const px_asset_list::px_box_asset& d) : desc(d)
+		{
+			for (uint32_t lv = 0; lv < desc.levels.size(); ++lv)
+			{
+				const px_asset_list::px_box_asset::level& level = desc.levels[lv];
+				NvBlastChunkDesc::Flags fl = (level.isSupport) ? NvBlastChunkDesc::Flags::SupportFlag : NvBlastChunkDesc::Flags::NoFlags;
+				assetDesc.generatorSettings.depths.push_back({ PxVec3(level.x, level.y, level.z), fl });
+			}
+			assetDesc.generatorSettings.extents = PxVec3(desc.extents.x, desc.extents.y, desc.extents.z);
+			assetDesc.staticHeight = desc.staticHeight;
+			assetDesc.jointAllBonds = desc.jointAllBonds;
+			assetDesc.generatorSettings.bondFlags = (px_cube_asset_generator::bound_flags)desc.bondFlags;
+		}
+
+		virtual const char* getID() const override { return desc.id.c_str(); }
+		virtual const char* getName() const override { return desc.name.c_str(); }
+
+
+		px_asset_list::px_box_asset desc;
+		px_blast_asset_boxes::desc assetDesc;
+
+		virtual px_blast_asset* createAsset()
+		{
+			const auto& physics = physics_holder::physicsRef;
+
+			return new px_blast_asset_boxes(physics->blast->getTkFramework(), *physics->getPhysics(),
+				*enative_scripting_linker::app->getRenderer(), assetDesc);
+		}
+
+		virtual PxTransform getInitialTransform() { return PxTransform(PxVec3(0, assetDesc.generatorSettings.extents.y / 2, 0)); }
+	};
+
+	struct px_blast_rigidbody_component : px_physics_component_base
+	{
+		px_blast_rigidbody_component() = default;
+		px_blast_rigidbody_component(std::string nm, px_blast_single_scene_asset* ast) noexcept
+			: asset(ast), name(nm)
+		{
+			index = asset->spawnCount++;
+			spawn();
+		}
+
+		~px_blast_rigidbody_component() {}
+
+		void release(bool release = false) noexcept override 
+		{
+			remove();
+		}
+
+		void drawUI(int) noexcept
+		{
+			actor->drawUI();
+		}
+
+		void drawStatsUI(int) noexcept
+		{
+			actor->drawStatsUI();
+		}
+
+		void reload() noexcept
+		{
+			auto& settings = actor->getSettings();
+			remove();
+			spawn();
+			actor->setSettings(settings);
+		}
+
+	private:
+		void remove() noexcept
+		{
+			physics_holder::physicsRef->blast->removeFamily(actor);
+			actor = nullptr;
+		}
+
+		void spawn() noexcept
+		{
+			const auto& blast = physics_holder::physicsRef->blast;
+
+			PxTransform pose = asset->getInitialTransform();
+			pose.p += shift;
+
+			px_blast_asset::actor_desc actorDesc = 
+			{
+				actorDesc.id = generateIDFromString(name.c_str()),
+				pose,
+				blast->getTkGroup()
+			};
+
+			actor = blast->spawnFamily(asset->getAsset(), actorDesc);
+		}
+
+		PxVec3 shift;
+
+		::std::string name;
+
+		uint32_t index{};
+
+		ref<px_blast_family> actor;
+		px_blast_single_scene_asset* asset = nullptr;
 	};
 
 	static physx::PxJoint*

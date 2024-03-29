@@ -46,7 +46,23 @@ struct application
 	NODISCARD escene* getCurrentScene() { return &scene.getCurrentScene(); }
 	NODISCARD editor_scene* getScene() { return &scene; }
 
+	void renderObjectPoint(float x, float y, float z);
+
 	eallocator stackArena;
+
+	main_renderer* getRenderer() const noexcept
+	{
+		return renderer;
+	}
+
+#ifndef ERA_RUNTIME
+
+	eeditor* getEditor() noexcept
+	{
+		return &editor;
+	}
+
+#endif
 
 private:
 	void resetRenderPasses();

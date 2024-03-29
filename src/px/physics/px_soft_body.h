@@ -3,6 +3,7 @@
 #pragma once
 
 #include <px/core/px_physics_engine.h>
+#include <px/temp/px_mesh_generator.h>
 
 namespace physics
 {
@@ -55,7 +56,7 @@ namespace physics
 		PxCudaContextManager* cudaContextManager = nullptr;
 	};
 
-	inline PxSoftBody* createSoftBody(const PxCookingParams& params, const PxArray<PxVec3>& triVerts, const PxArray<PxU32>& triIndices, bool useCollisionMeshForSimulation = false)
+	inline ref<px_soft_body> createSoftBody(const PxCookingParams& params, const PxArray<PxVec3>& triVerts, const PxArray<PxU32>& triIndices, bool useCollisionMeshForSimulation = false)
 	{
 		const auto physics = physics_holder::physicsRef->getPhysics();
 
@@ -102,11 +103,14 @@ namespace physics
 			physics_holder::physicsRef->getScene()->addActor(*softBody);
 
 			PxFEMParameters femParams;
-			physics_holder::physicsRef->addSoftBody(softBody, femParams, PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(PxIdentity)), 100.f, 1.0f, 30);
+			auto sb = physics_holder::physicsRef->addSoftBody(softBody, femParams, PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(PxIdentity)), 100.f, 1.0f, 30);
 			softBody->setSoftBodyFlag(PxSoftBodyFlag::eDISABLE_SELF_COLLISION, false);
 			softBody->setSoftBodyFlag(PxSoftBodyFlag::eENABLE_CCD, true);
+
+			return sb;
 		}
-		return softBody;
+
+		return nullptr;
 	}
 
 	inline PxRigidDynamic* createRigidCube(PxReal halfExtent, const PxVec3& position)
@@ -154,8 +158,37 @@ namespace physics
 
 	struct px_soft_body_component : px_physics_component_base
 	{
+		px_soft_body_component() noexcept
+		{
+			// Test
+			{
+				PxArray<PxVec3> triVerts;
+				PxArray<PxU32> triIndices;
+
+				PxReal maxEdgeLength = 1;
+
+				PxCookingParams params(physics_holder::physicsRef->getTolerancesScale());
+				params.meshWeldTolerance = 0.001f;
+				params.meshPreprocessParams = PxMeshPreprocessingFlags(PxMeshPreprocessingFlag::eWELD_VERTICES);
+				params.buildTriangleAdjacencies = false;
+				params.buildGPUData = true;
+
+				meshgenerator::createCube(triVerts, triIndices, PxVec3(0, 0, 0), 1.0f);
+				PxRemeshingExt::limitMaxEdgeLength(triIndices, triVerts, maxEdgeLength);
+				ref<px_soft_body> softBodyCube = createSoftBody(params, triVerts, triIndices);
+
+				PxReal halfExtent = 1;
+				PxVec3 cubePosA(0, 20, 0);
+				PxRigidDynamic* rigidCubeA = createRigidCube(halfExtent, cubePosA);
+
+				connectCubeToSoftBody(rigidCubeA, 2 * halfExtent, cubePosA, softBodyCube->softBody);
+			}
+		}
+
 		virtual ~px_soft_body_component() {}
 
-		virtual void release(bool release = true) noexcept override {}
+		virtual void release(bool release = true) noexcept override { body->release(); body.reset(); }
+
+		ref<px_soft_body> body;
 	};
 }

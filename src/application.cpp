@@ -237,8 +237,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		linker.init();
 	}
 
-	physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>(this);
-	physics::physics_holder::physicsRef->start();
+	physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>(*this);
 
 #ifndef ERA_RUNTIME
 	if (auto mesh = loadMeshFromFileAsync("assets/Sponza/sponza.obj"))
@@ -306,6 +305,10 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
 
+		auto soft_body = &scene.createEntity("SoftBody")
+			.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
+			.addComponent<physics::px_soft_body_component>();
+
 		/*auto px_sphere2 = &scene.createEntity("SpherePX1")
 			.addComponent<transform_component>(vec3(8, 5.f, 8), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
@@ -348,7 +351,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
 
 		auto px_plane = &scene.createEntity("PlanePX")
-			.addComponent<transform_component>(vec3(0.f, 0.0f, 0.0f), quat::identity, vec3(1.f))
+			.addComponent<transform_component>(vec3(0.f, -10.0f, 0.0f), quat::identity, vec3(1.f))
 			.addComponent<physics::px_plane_collider_component>();
 
 		/*particles = scene.createEntity("ParticlesPX")
@@ -414,6 +417,8 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		core = std::make_shared<escripting_core>();
 		core->init();
 	}
+
+	physics::physics_holder::physicsRef->start();
 }
 
 #if 0
@@ -711,19 +716,19 @@ void application::update(const user_input& input, float dt)
 
 			//if (input.keyboard['G'].down)
 			//{
-				//entityCloth.getComponent<physics::px_cloth_component>().clothSystem->translate(vec3(0.f, 2.f, 0.f));
-				//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
+			//	physics::physics_holder::physicsRef->explode(vec3(5.0f, -1.0f, 5.0f), 3.0f, 2.0f);
+			//	//entityCloth.getComponent<physics::px_cloth_component>().clothSystem->translate(vec3(0.f, 2.f, 0.f));
+			//	//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
 			//}
 
-			const auto positions = physics::physics_holder::physicsRef->softBodies[0].positionsInvMass;
-			const auto nbVerts = physics::physics_holder::physicsRef->softBodies[0].getNbVertices();
+			const auto positions = physics::physics_holder::physicsRef->softBodies[0]->positionsInvMass;
+			const auto nbVerts = physics::physics_holder::physicsRef->softBodies[0]->getNbVertices();
 
 			for (size_t i = 0; i < nbVerts; i++)
 			{
 				vec3 pos = vec3(positions[i].x, positions[i].y, positions[i].z);
 				renderPoint(pos, vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
 			}
-
 		}
 
 		submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
@@ -792,4 +797,9 @@ void application::handleFileDrop(const fs::path& filename)
 	{
 		scene.environment.setFromTexture(relative);
 	}
+}
+
+void application::renderObjectPoint(float x, float y, float z)
+{
+	renderPoint(vec3(x, y, z), vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
 }

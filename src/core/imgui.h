@@ -8,6 +8,7 @@
 
 #include "dx/dx.h"
 #include "math.h"
+#include "foundation/PxVec3.h"
 
 ImGuiContext* initializeImGui(struct dx_window& window);
 void newImGuiFrame(float dt);
@@ -188,4 +189,42 @@ namespace ImGui
 	static const ImColor green(0.f, 1.f, 0.f, 1.f);
 	static const ImColor red(1.f, 0.f, 0.f, 1.f);
 	static const ImColor blue(0.f, 0.f, 1.f, 1.f);
+
+	static void ImGui_DragFloat3Dir(const char* label, float v[3])
+	{
+		if (ImGui::Button("Normalize"))
+		{
+			((physx::PxVec3*)v)->normalize();
+		}
+		ImGui::SameLine();
+		ImGui::DragFloat3(label, v);
+	};
+
+
+#define IM_ARRAYSIZE(_ARR)  ((int)(sizeof(_ARR)/sizeof(*_ARR)))
+
+	template<int valuesCount = 90>
+	class PlotLinesInstance
+	{
+	public:
+		PlotLinesInstance()
+		{
+			memset(values, 0, sizeof(float) * valuesCount);
+		}
+
+		void plot(const char* label, float newValue, const char* overlay_text, float scale_min = FLT_MAX, float scale_max = FLT_MAX, ImVec2 graph_size = ImVec2(0, 80))
+		{
+			for (; ImGui::GetTime() > time + 1.0f / 60.0f; time += 1.0f / 60.0f)
+			{
+				values[offset] = newValue;
+				offset = (offset + 1) % valuesCount;
+			}
+			ImGui::PlotLines(label, values, valuesCount, offset, overlay_text, scale_min, scale_max, graph_size);
+		}
+
+	private:
+		float values[valuesCount];
+		int offset;
+		float time = ImGui::GetTime();
+	};
 }

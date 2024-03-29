@@ -24,7 +24,7 @@ namespace physics
 
 		material = physics_holder::physicsRef->getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 
-		eentity entity = { handle, &physics_holder::physicsRef->app->getCurrentScene()->registry };
+		eentity entity = { handle, &physics_holder::physicsRef->app.getCurrentScene()->registry };
 
 		PxCapsuleControllerDesc desc;
 
@@ -100,7 +100,7 @@ namespace physics
 		manager = PxCreateControllerManager(*physics_holder::physicsRef->getScene());
 
 		material = physics_holder::physicsRef->getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
-		eentity entity = { handle, &physics_holder::physicsRef->app->getCurrentScene()->registry };
+		eentity entity = { handle, &physics_holder::physicsRef->app.getCurrentScene()->registry };
 
 		physx::PxBoxControllerDesc desc;
 

@@ -188,7 +188,7 @@ namespace physics
 
 	NODISCARD PxRigidActor* px_rigidbody_component::createActor()
 	{
-		eentity entity = { handle, &physics_holder::physicsRef->app->getCurrentScene()->registry };
+		eentity entity = { handle, &physics_holder::physicsRef->app.getCurrentScene()->registry };
 		px_collider_component_base* coll = (px_collider_component_base*)entity.getComponentIfExists<px_sphere_collider_component>();
 		if (!coll)
 			coll = (px_collider_component_base*)entity.getComponentIfExists<px_box_collider_component>();

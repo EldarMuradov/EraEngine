@@ -69,6 +69,14 @@
 #include <core/cpu_profiling.h>
 #include <queue>
 
+namespace Nv
+{
+	namespace Blast
+	{
+		class ExtImpactDamageManager;
+	}
+}
+
 namespace physx
 {
 	PX_FORCE_INLINE PxU32 id(PxU32 x, PxU32 y, PxU32 numY)
@@ -186,6 +194,10 @@ namespace physics
 	struct px_rigidbody_component;
 	struct px_collider_component_base;
 	struct px_soft_body;
+
+	struct px_simulation_event_callback;
+
+	struct px_blast;
 
 	struct px_physics_component_base
 	{
@@ -513,6 +525,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 	struct px_simulation_event_callback : PxSimulationEventCallback
 	{
+		px_simulation_event_callback(Nv::Blast::ExtImpactDamageManager* manager) : impactManager(manager) {}
+
 		typedef ::std::pair<px_rigidbody_component*, px_rigidbody_component*> colliders_pair;
 
 		void clear();
@@ -529,7 +543,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		void onTrigger(PxTriggerPair* pairs, PxU32 count) override { ::std::cout << "onTrigger\n"; }
 		void onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count) override { ::std::cout << "onAdvance\n"; }
 		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override;
-	
+
 		PxArray<px_collision> newCollisions;
 
 		PxArray<px_collision> removedCollisions;
@@ -537,6 +551,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		PxArray<colliders_pair> newTriggerPairs;
 
 		PxArray<colliders_pair> lostTriggerPairs;
+
+		Nv::Blast::ExtImpactDamageManager* impactManager = nullptr;
 	};
 
 	struct px_CCD_contact_modification : PxCCDContactModifyCallback
@@ -588,7 +604,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		NO_COPY(px_physics_engine)
 
 	public:
-		px_physics_engine(application* application) noexcept;
+		px_physics_engine(application& a) noexcept;
 		~px_physics_engine();
 
 		void release() noexcept;
@@ -601,7 +617,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		void addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene) noexcept;
 		void removeActor(px_rigidbody_component* actor) noexcept;
 
-		void addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount) noexcept;
+		ref<px_soft_body> addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount) noexcept;
 
 		PxPhysics* getPhysics() const noexcept { return physics; }
 		inline PxTolerancesScale getTolerancesScale() const noexcept { return toleranceScale; }
@@ -616,6 +632,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		void releaseActors() noexcept;
 		void releaseScene() noexcept;
+
+		void explode(const vec3& worldPos, float damageRadius, float explosiveImpulse) noexcept;
 
 		// Raycasting
 		px_raycast_info raycast(px_rigidbody_component* rb, const vec3& dir, int maxDist = PX_NB_MAX_RAYCAST_DISTANCE, bool hitTriggers = true, uint32_t layerMask = 0, int maxHits = PX_NB_MAX_RAYCAST_HITS);
@@ -699,14 +717,18 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		uint32_t nbActiveActors{};
 
+		ref<px_blast> blast;
+
 		::std::set<px_rigidbody_component*> actors;
-		::std::vector<px_soft_body> softBodies;
+		::std::vector<ref<px_soft_body>> softBodies;
 		::std::set<px_collider_component_base*> colliders;
 		::std::unordered_map<PxRigidActor*, px_rigidbody_component*> actorsMap;
 		::std::queue<collision_handling_data> collisionQueue;
 		::std::queue<collision_handling_data> collisionExitQueue;
 
-		application* app = nullptr;
+		application& app;
+
+		px_simulation_event_callback* simulationEventCallback = nullptr;
 
 	private:
 		PxScene* scene = nullptr;
@@ -744,7 +766,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		::std::mutex sync;
 
 		friend struct px_CCD_contact_modification;
-		friend struct px_collision_contact_callback;
 	};
 
 	struct physics_holder

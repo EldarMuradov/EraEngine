@@ -132,6 +132,7 @@ namespace physics
 
 		PxAgain processTouches(const PxOverlapHit* buffer, PxU32 nbHits)
 		{
+			physics_holder::physicsRef->lockWrite();
 			for (PxU32 i = 0; i < nbHits; ++i)
 			{
 				PxRigidActor* actor = buffer[i].actor;
@@ -150,6 +151,7 @@ namespace physics
 					}
 				}
 			}
+			physics_holder::physicsRef->unlockWrite();
 			return true;
 		}
 

@@ -64,6 +64,7 @@ private:
 
 	void serializeToFile();
 	bool deserializeFromFile();
+	bool deserializeFromCurrentFile(const fs::path& path);
 
 	template <typename value_t, typename action_t, typename... args_t>
 	void undoable(const char* undoLabel, value_t before, value_t& now, args_t... args);

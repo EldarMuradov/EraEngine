@@ -176,12 +176,14 @@ void ExtImpactDamageManagerImpl::onContact(const PxContactPairHeader& pairHeader
 		actors[1] = rigidDynamic1 ? m_pxManager->getActorFromPhysXActor(*rigidDynamic1) : nullptr;
 	}
 	
-
 	// check one of them is blast actor
 	if (actors[0] == nullptr && actors[1] == nullptr)
 	{
 		return;
 	}
+
+	if (!actors[0]->getChunkCount() || !actors[1]->getChunkCount())
+		return;
 
 	// self-collision check
 	if (actors[0] != nullptr && actors[1] != nullptr)
