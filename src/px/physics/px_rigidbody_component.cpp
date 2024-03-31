@@ -23,6 +23,7 @@ namespace physics
 
 	void px_rigidbody_component::addForce(vec3 force, px_force_mode mode) noexcept
 	{
+		physics_holder::physicsRef->lockWrite();
 		if (mode == px_force_mode::Force)
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eFORCE);
 		else if (mode == px_force_mode::Impulse)
@@ -33,10 +34,13 @@ namespace physics
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eACCELERATION);
 		else
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eFORCE);
+		physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::addTorque(vec3 torque, px_force_mode mode) noexcept
 	{
+		physics_holder::physicsRef->lockWrite();
+
 		if (mode == px_force_mode::Force)
 			actor->is<PxRigidDynamic>()->addTorque(PxVec3(torque.x, torque.y, torque.z), PxForceMode::eFORCE);
 		else if (mode == px_force_mode::Impulse)
@@ -47,6 +51,8 @@ namespace physics
 			actor->is<PxRigidDynamic>()->addTorque(PxVec3(torque.x, torque.y, torque.z), PxForceMode::eACCELERATION);
 		else
 			actor->is<PxRigidDynamic>()->addTorque(PxVec3(torque.x, torque.y, torque.z), PxForceMode::eFORCE);
+
+		physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::setDisableGravity() noexcept

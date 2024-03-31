@@ -9,7 +9,7 @@ bool logWindowOpen = true;
 
 #if ENABLE_MESSAGE_LOG
 
-#define MAX_NB_MESSAGES 32
+#define MAX_NB_MESSAGES 512
 
 struct log_message
 {
@@ -122,11 +122,11 @@ void updateMessageLog(float dt)
 		ImGui::End();
 	}
 
-	/*if (messages.size() > MAX_NB_MESSAGES)
+	if (messages.size() > MAX_NB_MESSAGES)
 	{
 		messages.clear();
 		arena.reset();
-	}*/
+	}
 }
 
 #endif

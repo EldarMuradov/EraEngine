@@ -202,7 +202,8 @@ void application::loadCustomShaders()
 }
 
 entity_handle cloth{};
-//entity_handle particles{};
+entity_handle particles{};
+entity_handle px_sphere{};
 
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
@@ -290,14 +291,14 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
-		auto px_sphere = &scene.createEntity("SpherePX", (entity_handle)60)
-			.addComponent<transform_component>(vec3(5, 2.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+		px_sphere = scene.createEntity("SpherePX", (entity_handle)60)
+			.addComponent<transform_component>(vec3(0, 5.f, -10.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
 			//.addComponent<physics::px_convex_mesh_collider_component>(&(ass.meshes[0]))
 			//.addComponent<physics::px_triangle_mesh_collider_component>(&(ass.meshes[0]))
 			//.addComponent<physics::px_bounding_box_collider_component>(&(ass.meshes[0]))
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
-			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
+			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic).handle;
 
 		auto px_sphere1 = &scene.createEntity("SpherePX1")
 			.addComponent<transform_component>(vec3(5, 5.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
@@ -305,9 +306,9 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
 
-		auto soft_body = &scene.createEntity("SoftBody")
-			.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
-			.addComponent<physics::px_soft_body_component>();
+		//auto soft_body = &scene.createEntity("SoftBody")
+		//	.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
+		//	.addComponent<physics::px_soft_body_component>();
 
 		/*auto px_sphere2 = &scene.createEntity("SpherePX1")
 			.addComponent<transform_component>(vec3(8, 5.f, 8), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
@@ -327,7 +328,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);*/
 
-		px_sphere1->addChild(*px_sphere);
+		//px_sphere1->addChild(*px_sphere);
 
 		/*{
 			for (int i = 0; i < 10; i++)
@@ -354,9 +355,9 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<transform_component>(vec3(0.f, -10.0f, 0.0f), quat::identity, vec3(1.f))
 			.addComponent<physics::px_plane_collider_component>();
 
-		/*particles = scene.createEntity("ParticlesPX")
-			.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
-			.addComponent<physics::px_particles_component>(10, 10, 10).handle;*/
+		//particles = scene.createEntity("ParticlesPX")
+		//	.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
+		//	.addComponent<physics::px_particles_component>(30, 60, 30).handle;
 
 		//cloth = scene.createEntity("ClothPX")
 		//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
@@ -524,6 +525,8 @@ void application::submitRendererParams(uint32 numSpotLightShadowPasses, uint32 n
 		renderer->submitShadowRenderPass(&pointShadowRenderPasses[i]);
 	}
 }
+
+bool shoted = false;
 
 void application::update(const user_input& input, float dt)
 {
@@ -711,24 +714,35 @@ void application::update(const user_input& input, float dt)
 			//eentity entityCloth{ cloth, &scene.registry };
 			//entityCloth.getComponent<physics::px_cloth_component>().clothSystem->update(true, &ldrRenderPass);
 
-			//eentity entityParticles{ particles, &scene.registry };
-			//entityParticles.getComponent<physics::px_particles_component>().particleSystem->update(true, &ldrRenderPass);
+			/*eentity entityParticles{ particles, &scene.registry };
+			entityParticles.getComponent<physics::px_particles_component>().particleSystem->update(true, &ldrRenderPass);*/
+			eentity sphere{ px_sphere, &scene.registry };
+			if (input.keyboard['G'].down)
+			{
+				//if (!shoted)
+				//{
+					sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(0.f, 1.0f, 50.0f), physics::px_force_mode::Force);
 
-			//if (input.keyboard['G'].down)
-			//{
+					//shoted = true;
+				//}
 			//	physics::physics_holder::physicsRef->explode(vec3(5.0f, -1.0f, 5.0f), 3.0f, 2.0f);
 			//	//entityCloth.getComponent<physics::px_cloth_component>().clothSystem->translate(vec3(0.f, 2.f, 0.f));
 			//	//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
-			//}
-
-			const auto positions = physics::physics_holder::physicsRef->softBodies[0]->positionsInvMass;
-			const auto nbVerts = physics::physics_holder::physicsRef->softBodies[0]->getNbVertices();
-
-			for (size_t i = 0; i < nbVerts; i++)
-			{
-				vec3 pos = vec3(positions[i].x, positions[i].y, positions[i].z);
-				renderPoint(pos, vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
 			}
+
+			if (!physics::physics_holder::physicsRef->softBodies.empty())
+			{
+				const auto positions = physics::physics_holder::physicsRef->softBodies[0]->positionsInvMass;
+				const auto nbVerts = physics::physics_holder::physicsRef->softBodies[0]->getNbVertices();
+
+				for (size_t i = 0; i < nbVerts; i++)
+				{
+					vec3 pos = vec3(positions[i].x, positions[i].y, positions[i].z);
+					renderPoint(pos, vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
+				}
+			}
+
+			processPoints();
 		}
 
 		submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
@@ -802,4 +816,10 @@ void application::handleFileDrop(const fs::path& filename)
 void application::renderObjectPoint(float x, float y, float z)
 {
 	renderPoint(vec3(x, y, z), vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
+}
+
+void application::processPoints()
+{
+	for(auto p : points)
+	renderPoint(p, vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
 }

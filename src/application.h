@@ -55,6 +55,9 @@ struct application
 		return renderer;
 	}
 
+	std::vector<vec3> points;
+	void processPoints();
+
 #ifndef ERA_RUNTIME
 
 	eeditor* getEditor() noexcept

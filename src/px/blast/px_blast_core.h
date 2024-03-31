@@ -6,9 +6,12 @@
 #include <rendering/main_renderer.h>
 #include <px/core/px_extensions.h>
 #include <application.h>
+#include <scripting/native_scripting_linker.h>
 
 #include <NvBlast.h>
+
 #include <NvBlastTk.h>
+#include <NvBlastExtTkSerialization.h>
 
 #include <NvBlastExtDamageShaders.h>
 #include <NvBlastExtStressSolver.h>
@@ -17,7 +20,6 @@
 #include <NvBlastExtPxAsset.h>
 #include <NvBlastExtPxTask.h>
 #include <NvBlastExtSerialization.h>
-#include <NvBlastExtTkSerialization.h>
 #include <NvBlastExtPxActor.h>
 #include <NvBlastExtPxFamily.h>
 #include <NvBlastExtPxStressSolver.h>
@@ -25,11 +27,11 @@
 #include <NvBlastExtPxAsset.h>
 #include <NvBlastExtSync.h>
 
-#include <scripting/native_scripting_linker.h>
-
 namespace physics
 {
 	using namespace Nv::Blast;
+
+	static const float RIGIDBODY_DENSITY = 2000.0f;
 
 	struct px_blast_timers
 	{
@@ -38,6 +40,23 @@ namespace physics
 		double splitIsland;
 		double splitPartition;
 		double splitVisibility;
+	};
+
+	struct px_blast_ext_listener : ExtPxListener
+	{
+		px_blast_ext_listener() {}
+
+		virtual void onActorCreated(ExtPxFamily& fam, ExtPxActor& actor)
+		{
+			int chunkCount = actor.getChunkCount();
+			auto pxactor = &actor.getPhysXActor();
+			std::cout << "blast family actor's chunkCount = " << chunkCount << "\n";
+		}
+
+		virtual void onActorDestroyed(ExtPxFamily& fam, ExtPxActor& actor)
+		{
+			
+		}
 	};
 
 	inline NvBlastID generateIDFromString(const char* str)
@@ -567,11 +586,11 @@ namespace physics
 
 		virtual PxTransform getInitialTransform() = 0;
 
+		px_blast_asset* asset = nullptr;
+
 	protected:
 		virtual px_blast_asset* createAsset() = 0;
 
-	private:
-		px_blast_asset* asset = nullptr;
 	};
 
 	struct px_blast
@@ -592,7 +611,7 @@ namespace physics
 
 		void reinitialize();
 
-		void onSampleStart();
+		void onSampleStart(PxPhysics* physics, PxScene* scene);
 		void onSampleStop();
 
 		void animate(double dt);

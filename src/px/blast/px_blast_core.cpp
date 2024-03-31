@@ -9,8 +9,6 @@
 
 using namespace std::chrono;
 
-static const float RIGIDBODY_DENSITY = 2000.0f;
-
 physics::px_blast::px_blast()
 	: debugRenderMode(px_blast_family::DEBUG_RENDER_DISABLED)
 	, impactDamageEnabled(true)
@@ -24,32 +22,34 @@ physics::px_blast::px_blast()
 	, damageDescBuffer(64 * 1024)
 	, damageParamsBuffer(1024)
 {
-	impactDamageToStressFactor = 0.01f;
+	impactDamageToStressFactor = 0.001f;
 	draggingToStressFactor = 100.0f;
 }
 
 void physics::px_blast::reinitialize()
 {
 	onSampleStop();
-	onSampleStart();
 }
 
-void physics::px_blast::onSampleStart()
+void physics::px_blast::onSampleStart(PxPhysics* physics, PxScene* scene)
 {
 	framework = NvBlastTkFrameworkCreate();
 
 	replay = new px_blast_replay();
-	PxScene* scene[1];
-	PxGetPhysics().getScenes(scene, 1);
 
-	taskManager = PxTaskManager::createTaskManager(errorReporter, scene[0]->getCpuDispatcher());
+	taskManager = PxTaskManager::createTaskManager(errorReporter, scene->getCpuDispatcher());
 
 	TkGroupDesc gdesc{};
 	gdesc.workerCount = taskManager->getCpuDispatcher()->getWorkerCount();
 	tkGroup = framework->createGroup(gdesc);
 
-	extPxManager = ExtPxManager::create(PxGetPhysics(), *framework, createPxJointCallback, false);
+	extPxManager = ExtPxManager::create(*physics, *framework, createPxJointCallback, false);
 	extPxManager->setActorCountLimit(rigidBodyLimitEnabled ? rigidBodyLimit : 0);
+	extImpactDamageManagerSettings.isSelfCollissionEnabled = false;
+	extImpactDamageManagerSettings.shearDamage = true;
+	extImpactDamageManagerSettings.hardness = 2.f;
+	extImpactDamageManagerSettings.damageRadiusMax = 3.f;
+	extImpactDamageManagerSettings.damageThresholdMin = 0.001f;
 
 	extImpactDamageManager = ExtImpactDamageManager::create(extPxManager, extImpactDamageManagerSettings);
 
@@ -67,76 +67,6 @@ void physics::px_blast::onSampleStart()
 		/*NvBlastExtPxSerializerLoadSet(*framework, PxGetPhysics(),
 			, *extSerialization);*/
 	}
-
-	px_asset_list list;
-
-	{
-		px_asset_list::px_box_asset box;
-		box.name = "Wall (3 depth, 625 nodes)";
-		box.extents = PxVec3(20, 20, 2);
-		box.bondFlags = 0b1000111;
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, false });
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
-
-		list.boxes.push_back(box);
-	}
-
-	{
-		px_asset_list::px_box_asset box;
-		box.name = "Wall (2 depth, 625 nodes, no root chunk)";
-		box.extents = PxVec3(20, 20, 2);
-		box.bondFlags = 0b1000111;
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, false });
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
-
-		list.boxes.push_back(box);
-	}
-
-	{
-		px_asset_list::px_box_asset box;
-		box.name = "Static Frame";
-		box.extents = PxVec3(20, 20, 2);
-		box.bondFlags = 0b1111111;
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, false });
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
-
-		list.boxes.push_back(box);
-	}
-
-	{
-		px_asset_list::px_box_asset box;
-		box.name = "Poor Man's Cloth";
-		box.extents = PxVec3(20, 20, 0.2f);
-		box.jointAllBonds = true;
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 20, 20, 1, true });
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 1, false });
-
-		list.boxes.push_back(box);
-	}
-
-	{
-		px_asset_list::px_box_asset box;
-		box.name = "Cube (4 depth, 1728 nodes)";
-		box.extents = PxVec3(20, 20, 20);
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 2, false });
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 2, false });
-		box.levels.push_back(px_asset_list::px_box_asset::level{ 3, 3, 3, true });
-
-		list.boxes.push_back(box);
-	}
-
-
-	for (const auto& box : list.boxes)
-	{
-		px_blast_boxes_asset_scene* asset = new px_blast_boxes_asset_scene(box);
-		addAsset(asset);
-	}
-
-	spawnAsset(0);
 }
 
 void physics::px_blast::onSampleStop()
@@ -155,6 +85,8 @@ void physics::px_blast::onSampleStop()
 
 void physics::px_blast::animate(double dt)
 {
+	physics_holder::physicsRef->lockWrite();
+
 	extImpactDamageManager->applyDamage();
 
 	updateDraggingStress();
@@ -173,14 +105,13 @@ void physics::px_blast::animate(double dt)
 
 	replay->update();
 
-#if 0
+#if 1
 
 	extGroupTaskManager->process();
 	extGroupTaskManager->wait();
 
 #else  // process group on main thread
 
-	tkGroup->endProcess();
 	tkGroup->process();
 
 #endif
@@ -204,6 +135,10 @@ void physics::px_blast::animate(double dt)
 			families[i]->updateAfterSplit(dt);
 		}
 	}
+
+	tkGroup->endProcess();
+
+	physics_holder::physicsRef->unlockWrite();
 }
 
 void physics::px_blast::drawUI()
@@ -687,25 +622,6 @@ void physics::px_blast_asset::initialize()
 	// calc max healths
 	auto& actorDesc = pxAsset->getDefaultActorDesc();
 
-	auto nbbh = NvBlastAssetGetBondCount(pxAsset->getTkAsset().getAssetLL(), nullptr);
-	auto nbch = NvBlastAssetGetSupportChunkCount(pxAsset->getTkAsset().getAssetLL(), nullptr);
-
-	float* nbbhp = new float[nbbh];
-	float* nbchp = new float[nbch];
-
-	for (size_t i = 0; i < nbbh; i++)
-	{
-		nbbhp[i] = 1.0f;
-	}
-
-	for (size_t i = 0; i < nbch; i++)
-	{
-		nbchp[i] = 1.0f;
-	}
-
-	actorDesc.initialBondHealths = nbbhp;
-	actorDesc.initialSupportChunkHealths = nbchp;
-
 	if (actorDesc.initialBondHealths)
 	{
 		bondHealthMax = FLT_MIN;
@@ -776,8 +692,39 @@ void physics::px_blast_family::updatePreSplit(float dt)
 
 	// collect potential actors to health update
 	actorsToUpdateHealth.clear();
+
+	// draw 
+	enative_scripting_linker::app->points.clear();
+
 	for (ExtPxActor* actor : actors)
 	{
+		auto pxactor = &actor->getPhysXActor();
+
+		int nbShapes = pxactor->getNbShapes();
+		std::cout << "blast family ext actor shapes count = " << nbShapes << "\n";
+
+		PxShape* shapes[1024];
+		nbShapes = pxactor->getShapes(shapes, 1024);
+
+		for (int j = 0; j < nbShapes; j++)
+		{
+			auto geom = &shapes[j]->getGeometry();
+			auto geomType = geom->getType();
+
+			auto convexMeshGeom = (PxConvexMeshGeometry*)geom;
+
+			auto convexMesh = convexMeshGeom->convexMesh;
+
+			auto nbVerts = convexMesh->getNbVertices();
+			auto verts = convexMesh->getVertices();
+
+			for (int i = 0; i < nbVerts; i++)
+			{
+				auto v3 = createVec3(verts[i] * convexMeshGeom->scale.scale + pxactor->getGlobalPose().p);
+				enative_scripting_linker::app->points.push_back(v3);
+			}
+		}
+
 		if (actor->getTkActor().isPending())
 		{
 			actorsToUpdateHealth.emplace(actor);
@@ -796,11 +743,6 @@ void physics::px_blast_family::updateAfterSplit(float dt)
 		{
 			onActorHealthUpdate(*actor);
 		}
-
-		// !!!!!!!!!!!!!!!!!
-		//NvBlastDamageProgram damageProgram = { NvBlastExtShearGraphShader, NvBlastExtShearSubgraphShader };
-		//NvBlastExtRadialDamageDesc damageDesc = { 0.8, 0, 0, 0, 0, 5 };
-		//physics_holder::physicsRef->blast->immediateDamage(actor, *this, damageProgram, &damageDesc);
 	}
 
 	// update stress

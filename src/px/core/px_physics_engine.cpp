@@ -37,8 +37,8 @@ static physx::PxFilterFlags contactReportFilterShader(
 		return physx::PxFilterFlag::eDEFAULT;
 	}
 
-	if (physx::PxFilterObjectIsKinematic(attributes0) || physx::PxFilterObjectIsKinematic(attributes1))
-		return physx::PxFilterFlag::eKILL;
+	//if (physx::PxFilterObjectIsKinematic(attributes0) || physx::PxFilterObjectIsKinematic(attributes1))
+	//	return physx::PxFilterFlag::eKILL;
 
 	pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
 	pairFlags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
@@ -86,11 +86,12 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 
 #if PX_ENABLE_PVD
 
-	PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
+	PxPvdTransport* transport = PxDefaultPvdFileTransportCreate("E:\\test.pxd2"/*PVD_HOST, 5425, 10*/);
 	if (transport == NULL)
 		throw std::exception("Failed to create {PxPvdTransport}. Error in {PhysicsEngine} ctor.");
 
-	pvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
+	if(pvd->connect(*transport, PxPvdInstrumentationFlag::eALL))
+		std::cout << "Physics> PVD Connected.\n";
 
 #endif
 	toleranceScale.length = 1.0;
@@ -145,6 +146,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	scene = physics->createScene(sceneDesc);
 
 #if PX_ENABLE_PVD
+
 	PxPvdSceneClient* client = scene->getScenePvdClient();
 
 	if (client)
@@ -155,7 +157,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	}
 
 	if (pvd->isConnected())
-		LOG_MESSAGE("Physics> PVD Connection enabled.");
+		std::cout << "Physics> PVD Connection enabled.\n";
 #endif
 
 #if PX_ENABLE_RAYCAST_CCD
@@ -210,10 +212,196 @@ void physics::px_physics_engine::release() noexcept
 	released = true;
 }
 
+physx::PxRigidDynamic* pxactor;
+
 void physics::px_physics_engine::start() noexcept
 {
 	blast = make_ref<px_blast>();
-	blast->onSampleStart();
+	blast->onSampleStart(physics, scene);
+
+	auto pmaterial = physics->createMaterial(0.8, 0.8, 0.6);
+
+	//scene->addActor(*PxCreatePlane(*physics, PxPlane(0.f, 1.f, 0.f, 0.0f), *pmaterial));
+	//scene->addActor(*PxCreatePlane(*physics, PxPlane(-1.f, 0.f, 0.f, 7.5f), *pmaterial));
+	//scene->addActor(*PxCreatePlane(*physics, PxPlane(1.f, 0.f, 0.f, 7.5f), *pmaterial));
+	//scene->addActor(*PxCreatePlane(*physics, PxPlane(0.f, 0.f, 1.f, 7.5f), *pmaterial));
+	//scene->addActor(*PxCreatePlane(*physics, PxPlane(0.f, 0.f, -1.f, 7.5f), *pmaterial));
+
+	px_asset_list list;
+
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Wall (3 depth, 625 nodes)";
+		box.extents = PxVec3(20, 20, 2);
+		box.bondFlags = 0b1000111;
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
+
+		list.boxes.push_back(box);
+	}
+
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Wall (2 depth, 625 nodes, no root chunk)";
+		box.extents = PxVec3(20, 20, 2);
+		box.bondFlags = 0b1000111;
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
+
+		list.boxes.push_back(box);
+	}
+
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Static Frame";
+		box.extents = PxVec3(20, 20, 2);
+		box.bondFlags = 0b1111111;
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
+
+		list.boxes.push_back(box);
+	}
+
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Poor Man's Cloth";
+		box.extents = PxVec3(20, 20, 0.2f);
+		box.jointAllBonds = true;
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 20, 20, 1, true });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 1, false });
+
+		list.boxes.push_back(box);
+	}
+
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Cube (4 depth, 1728 nodes)";
+		box.extents = PxVec3(20, 20, 20);
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 2, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 2, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 3, 3, 3, true });
+
+		list.boxes.push_back(box);
+	}
+
+	for (const auto& box : list.boxes)
+	{
+		px_blast_boxes_asset_scene* asset = new px_blast_boxes_asset_scene(box);
+		blast->addAsset(asset);
+	}
+
+	//px_blast_boxes_asset_scene* boxAsset = (px_blast_boxes_asset_scene*)blast->assets[0];
+
+	//boxAsset->asset = new px_blast_asset_boxes(blast->getTkFramework(), *physics,
+	//	*enative_scripting_linker::app->getRenderer(), boxAsset->assetDesc);
+
+	blast->spawnAsset(0);
+
+	{
+		//auto asset = boxAsset->getAsset()->getPxAsset();
+		//int cc = asset->getChunkCount();
+		//int scc = asset->getSubchunkCount();
+		//auto chuncks = asset->getChunks();
+		//auto subchancks = asset->getSubchunks();
+		//auto tkAsset = &asset->getTkAsset();
+		//std::cout << cc << " " << scc << "\n";
+
+		//auto pmaterial = physics->createMaterial(0.8, 0.8, 0.6);
+
+		////for (int i = 0; i < scc; i++)
+		////{
+		////	auto g = subchancks[i].geometry;
+		////	auto vn = g.convexMesh->getNbVertices();
+		////	auto v = g.convexMesh->getVertices();
+		////	for (int i = 0; i < vn; i++)
+		////	{
+		////		enative_scripting_linker::app->points.push_back(createVec3(v[i]));
+		////	}
+
+		////	auto tp = physics->createRigidStatic(PxTransform(subchancks[i].transform));
+		////	bool res = tp->attachShape(*physics->createShape(g, *pmaterial));
+
+		////	scene->addActor(*tp);
+		////}
+
+		//NvBlastActorDesc actorDesc = asset->getDefaultActorDesc();
+
+		//ExtPxFamilyDesc familyDesc{};
+		//familyDesc.actorDesc = &actorDesc; // if you use it one day, consider changing code which needs getBondHealthMax() from BlastAsset.
+		//familyDesc.group = blast->getTkGroup();
+		//familyDesc.pxAsset = asset;
+
+		//px_blast_ext_listener* listener = new px_blast_ext_listener();
+
+		//NvBlastExtMaterial* material = new NvBlastExtMaterial();
+
+		//ExtPxFamily* family = blast->getExtPxManager().createFamily(familyDesc);
+		//family->setMaterial(material);
+		//family->subscribe(*listener);
+
+		//PxTransform pose = PxTransform(PxVec3(0.0f));
+		//ExtPxSpawnSettings settings{};
+		//settings.scene = scene;
+		//settings.density = RIGIDBODY_DENSITY;
+		//settings.material = pmaterial;
+
+		//if (family->spawn(pose, PxVec3(1.0f), settings))
+		//{
+		//	std::cout << "blast family spawned\n";
+		//}
+
+		//const int actorsCount = family->getActorCount();
+
+		//std::cout << "blast family actors count = " << actorsCount << "\n";
+
+		//ExtPxActor* actors[5];
+		//int nba = family->getActors(actors, 5);
+
+		//std::cout << "blast family ext actors count = " << nba << "\n";
+
+		//auto actor = actors[0];
+		//pxactor = &actor->getPhysXActor();
+		////pxactor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+		//int nbShapes = pxactor->getNbShapes();
+		//std::cout << "blast family ext actor shapes count = " << nbShapes << "\n";
+
+		//PxShape* shapes[1024];
+		//nbShapes = pxactor->getShapes(shapes, 1024);
+
+		//auto geom = &shapes[0]->getGeometry();
+		//auto geomType = geom->getType();
+
+		//auto convexMeshGeom = (PxConvexMeshGeometry*)geom;
+
+		//auto convexMesh = convexMeshGeom->convexMesh;
+
+		//auto nbVerts = convexMesh->getNbVertices();
+		//auto verts = convexMesh->getVertices();
+
+		//for (int i = 0; i < nbVerts; i++)
+		//{
+		//	enative_scripting_linker::app->points.push_back(createVec3(verts[i] * convexMeshGeom->scale.scale));
+		//}
+
+		//ExtPxActor* tempactor = extPxManager->getActorFromPhysXActor(*pxactor);
+
+		//NvBlastDamageProgram damageProgram = { NvBlastExtShearGraphShader, NvBlastExtShearSubgraphShader };
+
+		//NvBlastExtRadialDamageDesc  damageDesc;
+
+		//damageDesc.damage = 10.0f;
+		//damageDesc.position[0] = 1.0f;
+		//damageDesc.position[1] = 2.0f;
+		//damageDesc.position[2] = 3.0f;
+		//damageDesc.minRadius = 0.0f;
+		//damageDesc.maxRadius = 1.0f;
+
+		//actor->getTkActor().damage(damageProgram, &damageDesc);
+	}
 
 	simulationEventCallback = new px_simulation_event_callback(blast->getExtImpactDamageManager());
 	scene->setSimulationEventCallback(simulationEventCallback);
@@ -267,6 +455,8 @@ void physics::px_physics_engine::update(float dt) noexcept
 				continue;
 			entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
 			eentity renderObject = { *handle, &gameScene->registry };
+			if (!renderObject.valid())
+				continue;
 			const auto transform = &renderObject.getComponent<transform_component>();
 
 			const auto& pxt = rb->getGlobalPose();
@@ -276,6 +466,11 @@ void physics::px_physics_engine::update(float dt) noexcept
 			transform->rotation = createQuat(rot);
 		}
 	}
+
+	//PxVec3 p = pxactor->getGlobalPose().p;
+	//int nbShapes = pxactor->getNbShapes();
+	//std::cout << "blast family ext actor shapes count = " << nbShapes << "\n";
+	//std::cout << p.x << " " << p.y << " " << p.z << "\n";
 
 	scene->unlockRead();
 
@@ -552,7 +747,9 @@ void physics::px_simulation_event_callback::onContact(const PxContactPairHeader&
 
 		if (hasPostVelocities && iter.nextItemSet())
 		{
-			ASSERT(iter.contactPairIndex == i);
+			//ASSERT(iter.contactPairIndex == i);
+			if (iter.contactPairIndex != i)
+				continue;
 			if (iter.postSolverVelocity)
 			{
 				collision.thisVelocity = iter.postSolverVelocity->linearVelocity[0];

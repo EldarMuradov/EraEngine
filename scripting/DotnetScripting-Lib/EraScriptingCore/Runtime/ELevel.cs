@@ -31,8 +31,6 @@ public static class ELevel
                 EEntity e = new(60, "SpherePX");
                 e.CreateComponent<RigidbodyComponent>(RigidbodyType.Dynamic);
 
-                EEntity e1 = new();
-
                 var filter = EWorld.SceneWorld.GetFilter(filterId);
 
                 EWorld.SceneWorld.Iterate((entity) => { Console.WriteLine(entity.Id); }, filter);

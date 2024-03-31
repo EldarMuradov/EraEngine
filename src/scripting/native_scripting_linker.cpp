@@ -272,6 +272,15 @@ namespace bind
 			entity.addComponent<physics::px_rigidbody_component>((physics::px_rigidbody_type)type);
 	}
 
+	static void overlap_sphere_internal(uint32_t id, uint8_t type)
+	{
+		entity_handle hid = (entity_handle)id;
+		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+
+		if (!entity.hasComponent<physics::px_rigidbody_component>())
+			entity.addComponent<physics::px_rigidbody_component>((physics::px_rigidbody_type)type);
+	}
+
 	static float get_mass_internal(uint32_t id)
 	{
 		entity_handle hid = (entity_handle)id;
