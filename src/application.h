@@ -47,6 +47,14 @@ struct application
 	NODISCARD editor_scene* getScene() { return &scene; }
 
 	void renderObjectPoint(float x, float y, float z);
+	void renderObjectBox(vec3 pos, float x, float y, float z);
+	void renderObjectSphere(vec3 pos, float radius);
+
+	//void renderObjectCapsule(vec3 pos, float radius);
+
+
+	std::vector<vec3> points;
+	void processPoints();
 
 	eallocator stackArena;
 
@@ -54,9 +62,6 @@ struct application
 	{
 		return renderer;
 	}
-
-	std::vector<vec3> points;
-	void processPoints();
 
 #ifndef ERA_RUNTIME
 

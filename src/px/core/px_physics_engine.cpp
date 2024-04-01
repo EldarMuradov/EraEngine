@@ -212,7 +212,7 @@ void physics::px_physics_engine::release() noexcept
 	released = true;
 }
 
-physx::PxRigidDynamic* pxactor;
+//physx::PxRigidDynamic* pxactor;
 
 void physics::px_physics_engine::start() noexcept
 {
@@ -299,7 +299,7 @@ void physics::px_physics_engine::start() noexcept
 	//boxAsset->asset = new px_blast_asset_boxes(blast->getTkFramework(), *physics,
 	//	*enative_scripting_linker::app->getRenderer(), boxAsset->assetDesc);
 
-	blast->spawnAsset(0);
+	blast->spawnAsset(3);
 
 	{
 		//auto asset = boxAsset->getAsset()->getPxAsset();
@@ -467,10 +467,39 @@ void physics::px_physics_engine::update(float dt) noexcept
 		}
 	}
 
-	//PxVec3 p = pxactor->getGlobalPose().p;
-	//int nbShapes = pxactor->getNbShapes();
-	//std::cout << "blast family ext actor shapes count = " << nbShapes << "\n";
-	//std::cout << p.x << " " << p.y << " " << p.z << "\n";
+	// render physics
+	/*{
+		PxU32 nbActors{};
+		PxActor** actors = scene->getActiveActors(nbActors);
+
+		for (PxU32 i = 0; i < nbActors; i++)
+		{
+			const size_t maxShapes = 1024;
+
+			if (auto actor = actors[i]->is<PxRigidDynamic>())
+			{
+				PxShape* shapes[maxShapes];
+				memset(shapes, 0, maxShapes * sizeof(PxShape*));
+
+				PxU32 nbShapes = actor->getShapes(shapes, maxShapes);
+				for (PxU32 j = 0; j < nbShapes; j++)
+				{
+					renderGeometry(createVec3(actor->getGlobalPose().p), shapes[j]->getGeometry());
+				}
+			}
+			else if (auto actor = actors[i]->is<PxRigidStatic>())
+			{
+				PxShape* shapes[maxShapes];
+				memset(shapes, 0, maxShapes * sizeof(PxShape));
+
+				PxU32 nbShapes = actor->getShapes(shapes, maxShapes);
+				for (PxU32 j = 0; j < nbShapes; j++)
+				{
+					renderGeometry(createVec3(actor->getGlobalPose().p), shapes[j]->getGeometry());
+				}
+			}
+		}
+	}*/
 
 	scene->unlockRead();
 
@@ -738,7 +767,7 @@ void physics::px_simulation_event_callback::onContact(const PxContactPairHeader&
 			collision.impulse += impulse;
 
 			UNUSED(point);
-			UNUSED(impulse);
+			//UNUSED(impulse);
 			UNUSED(internalFaceIndex0);
 			UNUSED(internalFaceIndex1);
 		}
@@ -820,10 +849,10 @@ NODISCARD physx::PxTriangleMesh* physics::px_triangle_mesh_builder::createTriang
 #if PX_GPU_BROAD_PHASE
 			cookingParams.buildGPUData = true;
 #endif
-			cookingParams.gaussMapLimit = 256;
-			cookingParams.suppressTriangleMeshRemapTable = true;
+			cookingParams.gaussMapLimit = 32;
+			cookingParams.suppressTriangleMeshRemapTable = false;
 			cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
-			cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
+			//cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
 			return PxCreateTriangleMesh(cookingParams, desc);
 		}
 	}
@@ -1058,10 +1087,10 @@ NODISCARD physx::PxConvexMesh* physics::px_convex_mesh_builder::createConvexMesh
 			cookingParams.buildGPUData = true;
 #endif
 			cookingParams.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
-			cookingParams.gaussMapLimit = 256;
-			cookingParams.suppressTriangleMeshRemapTable = true;
+			cookingParams.gaussMapLimit = 32;
+			cookingParams.suppressTriangleMeshRemapTable = false;
 			cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
-			cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
+			//cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
 			return PxCreateConvexMesh(cookingParams, desc);
 		}
 	}

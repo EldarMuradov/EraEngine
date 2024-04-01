@@ -81,13 +81,16 @@ CollisionHull* ExtPxCollisionBuilderImpl::buildCollisionGeometry(uint32_t vertic
 
 	auto cookingParams = PxCookingParams(PxGetPhysics().getTolerancesScale());
 
+
+#if PX_GPU_BROAD_PHASE
 	cookingParams.buildGPUData = true;
+#endif
 
 	cookingParams.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
-	cookingParams.gaussMapLimit = 256;
-	cookingParams.suppressTriangleMeshRemapTable = true;
+	cookingParams.gaussMapLimit = 32;
+	cookingParams.suppressTriangleMeshRemapTable = false;
 	cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
-	cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
+	//cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
 
 	resultConvexMesh = PxCreateConvexMesh(cookingParams, convexMeshDescr);
 
@@ -104,16 +107,6 @@ CollisionHull* ExtPxCollisionBuilderImpl::buildCollisionGeometry(uint32_t vertic
 		vertexData.push_back(PxVec3(bounds.maximum.x, bounds.minimum.y, bounds.maximum.z));
 		convexMeshDescr.points.data  = vertexData.data();
 		convexMeshDescr.points.count = (uint32_t)vertexData.size();
-
-		auto cookingParams = PxCookingParams(PxGetPhysics().getTolerancesScale());
-
-		cookingParams.buildGPUData = true;
-
-		cookingParams.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
-		cookingParams.gaussMapLimit = 256;
-		cookingParams.suppressTriangleMeshRemapTable = true;
-		cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
-		cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
 
 		resultConvexMesh = PxCreateConvexMesh(cookingParams, convexMeshDescr);
 	}
@@ -196,13 +189,15 @@ physx::PxConvexMesh* ExtPxCollisionBuilderImpl::buildConvexMesh(const CollisionH
 
 	auto cookingParams = PxCookingParams(PxGetPhysics().getTolerancesScale());
 
+#if PX_GPU_BROAD_PHASE
 	cookingParams.buildGPUData = true;
+#endif
 
 	cookingParams.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
-	cookingParams.gaussMapLimit = 256;
-	cookingParams.suppressTriangleMeshRemapTable = true;
+	cookingParams.gaussMapLimit = 32;
+	cookingParams.suppressTriangleMeshRemapTable = false;
 	cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
-	cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
+	//cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
 
 	return PxCreateConvexMesh(cookingParams, convexMeshDescr);
 }

@@ -186,13 +186,15 @@ NV_INLINE bool serializeConvexMesh(const PxConvexMesh& convexMesh, PxCooking& co
 
 	auto cookingParams = PxCookingParams(PxGetPhysics().getTolerancesScale());
 
+#if PX_GPU_BROAD_PHASE
 	cookingParams.buildGPUData = true;
+#endif
 
 	cookingParams.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
-	cookingParams.gaussMapLimit = 256;
-	cookingParams.suppressTriangleMeshRemapTable = true;
+	cookingParams.gaussMapLimit = 32;
+	cookingParams.suppressTriangleMeshRemapTable = false;
 	cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
-	cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
+	//cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
 
 	return PxCreateConvexMesh(cookingParams, desc);
 }

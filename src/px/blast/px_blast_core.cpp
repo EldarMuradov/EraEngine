@@ -694,7 +694,7 @@ void physics::px_blast_family::updatePreSplit(float dt)
 	actorsToUpdateHealth.clear();
 
 	// draw 
-	enative_scripting_linker::app->points.clear();
+	physics_holder::physicsRef->app.points.clear();
 
 	for (ExtPxActor* actor : actors)
 	{
@@ -706,23 +706,14 @@ void physics::px_blast_family::updatePreSplit(float dt)
 		PxShape* shapes[1024];
 		nbShapes = pxactor->getShapes(shapes, 1024);
 
+		pxactor->addForce(gravity * pxactor->getMass());
+
 		for (int j = 0; j < nbShapes; j++)
 		{
-			auto geom = &shapes[j]->getGeometry();
-			auto geomType = geom->getType();
-
-			auto convexMeshGeom = (PxConvexMeshGeometry*)geom;
-
-			auto convexMesh = convexMeshGeom->convexMesh;
-
-			auto nbVerts = convexMesh->getNbVertices();
-			auto verts = convexMesh->getVertices();
-
-			for (int i = 0; i < nbVerts; i++)
-			{
-				auto v3 = createVec3(verts[i] * convexMeshGeom->scale.scale + pxactor->getGlobalPose().p);
-				enative_scripting_linker::app->points.push_back(v3);
-			}
+			auto& geom = shapes[j]->getGeometry();
+			
+			physics_holder::physicsRef->app.points.push_back(createVec3(pxactor->getGlobalPose().p + shapes[j]->getLocalPose().p));
+			//renderGeometry(createVec3(pxactor->getGlobalPose().p + shapes[j]->getLocalPose().p), geom);
 		}
 
 		if (actor->getTkActor().isPending())
@@ -988,11 +979,6 @@ physics::px_blast_family_boxes::px_blast_family_boxes(ExtPxManager& pxManager, m
 
 		//auto verts = geom.convexMesh->getVertices();
 
-		//for (int i = 0; i < nbp; i++)
-		//{
-		//	enative_scripting_linker::app->points.push_back(createVec3(verts[i]) + createVec3(subChunks[chunks[i].firstSubchunkIndex].transform.p));
-		//}
-
 		//Renderable* renderable = renderer.createRenderable(*boxRenderMesh, *primitiveRenderMaterial);
 		//renderable->setHidden(true);
 		//renderable->setScale(subChunks[chunks[i].firstSubchunkIndex].geometry.scale.scale);
@@ -1019,27 +1005,14 @@ void physics::px_blast_family_boxes::onActorUpdate(const ExtPxActor& actor)
 	uint32_t chunkCount = actor.getChunkCount();
 	for (uint32_t i = 0; i < chunkCount; i++)
 	{
-		//const uint32_t chunkIndex = chunkIndices[i];
-		//auto p = (actor.getPhysXActor().getGlobalPose().p);
-		//enative_scripting_linker::app->renderObjectPoint(p.x, p.y, p.z);
-
-		//auto& geom = subChunks[chunks[i].firstSubchunkIndex].geometry;
-		//auto nbp = geom.convexMesh->getNbVertices();
-
-		//auto verts = geom.convexMesh->getVertices();
-
-		//for (int i = 0; i < nbp; i++)
-		//{
-		//	auto ps = createVec3(subChunks[chunks[i].firstSubchunkIndex].transform.p);
-		//	enative_scripting_linker::app->renderObjectPoint(ps.x, ps.y, ps.z);
-		//}
-
+		
 		//chunkRenderables[chunkIndex]->setTransform(actor.getPhysXActor().getGlobalPose() * subChunks[chunks[chunkIndex].firstSubchunkIndex].transform);
 	}
 }
 
 void physics::px_blast_family_boxes::onActorDestroyed(const ExtPxActor& actor)
 {
+	LOG_MESSAGE("ACTOR destroyed");
 }
 
 physics::px_blast_replay::px_blast_replay()
@@ -1199,7 +1172,7 @@ void physics::px_blast_single_scene_asset::spawn(PxVec3 shift)
 {
 	load();
 
-	enative_scripting_linker::app->getCurrentScene()->createEntity("blast_entity")
+	physics_holder::physicsRef->app.getCurrentScene()->createEntity("blast_entity")
 		.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
 		.addComponent<px_blast_rigidbody_component>(std::string("blast_entity"), this);
 }

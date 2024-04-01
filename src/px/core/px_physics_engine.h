@@ -12,8 +12,6 @@
 #define PX_PHYSX_STATIC_LIB
 #endif
 
-#define PX_GPU_BROAD_PHASE 1
-
 #define PX_CONTACT_BUFFER_SIZE 64
 
 #define PVD_HOST "127.0.0.1"
@@ -189,7 +187,7 @@ namespace physics
 {
 	using namespace physx;
 
-	static inline PxVec3 gravity(0.0f, -9.8f, 0.0f);
+	static inline PxVec3 gravity(0.0f, -9.81f, 0.0f);
 
 	struct px_rigidbody_component;
 	struct px_collider_component_base;

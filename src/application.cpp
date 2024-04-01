@@ -352,7 +352,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
 
 		auto px_plane = &scene.createEntity("PlanePX")
-			.addComponent<transform_component>(vec3(0.f, -10.0f, 0.0f), quat::identity, vec3(1.f))
+			.addComponent<transform_component>(vec3(0.f, 0.0, 0.0f), quat::identity, vec3(1.f))
 			.addComponent<physics::px_plane_collider_component>();
 
 		//particles = scene.createEntity("ParticlesPX")
@@ -721,7 +721,7 @@ void application::update(const user_input& input, float dt)
 			{
 				//if (!shoted)
 				//{
-					sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(0.f, 1.0f, 50.0f), physics::px_force_mode::Force);
+					sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(0.f, 1.0f, 50.0f), physics::px_force_mode::Impulse);
 
 					//shoted = true;
 				//}
@@ -816,6 +816,16 @@ void application::handleFileDrop(const fs::path& filename)
 void application::renderObjectPoint(float x, float y, float z)
 {
 	renderPoint(vec3(x, y, z), vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
+}
+
+void application::renderObjectBox(vec3 pos, float x, float y, float z)
+{
+	renderWireBox(pos, vec3(x, y, z), quat::identity, vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
+}
+
+void application::renderObjectSphere(vec3 pos, float radius)
+{
+	renderWireSphere(pos, radius, vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
 }
 
 void application::processPoints()
