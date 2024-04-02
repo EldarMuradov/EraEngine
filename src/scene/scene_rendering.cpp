@@ -250,6 +250,9 @@ static void renderStaticObjectsToMainCamera(group_t group, std::unordered_map<mu
 
 		const dx_mesh& dxMesh = mesh->mesh;
 
+		if (!dxMesh.indexBuffer || !dxMesh.vertexBuffer.positions)
+			continue;
+
 		pbr_render_data data;
 		data.transformPtr = baseM;
 		data.vertexBuffer = dxMesh.vertexBuffer;
@@ -316,6 +319,9 @@ static void renderStaticObjectsToShadowMap(group_t group, std::unordered_map<mul
 		D3D12_GPU_VIRTUAL_ADDRESS baseM = transformsAddress + (oc.offset * sizeof(mat4));
 
 		const dx_mesh& dxMesh = mesh->mesh;
+
+		if (!dxMesh.indexBuffer || !dxMesh.vertexBuffer.positions)
+			continue;
 
 		shadow_render_data data;
 		data.transformPtr = baseM;
@@ -413,6 +419,9 @@ static void renderDynamicObjectsToMainCamera(group_t group, std::unordered_map<m
 
 		const dx_mesh& dxMesh = mesh->mesh;
 
+		if (!dxMesh.indexBuffer || !dxMesh.vertexBuffer.positions)
+			continue;
+
 		pbr_render_data data;
 		data.transformPtr = baseM;
 		data.vertexBuffer = dxMesh.vertexBuffer;
@@ -479,6 +488,9 @@ static void renderDynamicObjectsToShadowMap(group_t group, std::unordered_map<mu
 		D3D12_GPU_VIRTUAL_ADDRESS baseM = transformsAddress + (oc.offset * sizeof(mat4));
 
 		const dx_mesh& dxMesh = mesh->mesh;
+
+		if (!dxMesh.indexBuffer || !dxMesh.vertexBuffer.positions)
+			continue;
 
 		shadow_render_data data;
 		data.transformPtr = baseM;

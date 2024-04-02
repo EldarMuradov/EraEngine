@@ -130,7 +130,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 #endif
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
-	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
+	//sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
 	sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 
@@ -423,6 +423,104 @@ void physics::px_physics_engine::update(float dt) noexcept
 
 	scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
 
+#if PX_VEHICLE
+	// Test
+	//vehiclePostStep(stepSize);
+#endif
+
+	struct px_render_data { PxScene* pxscene; uint32& pxnbActiveActors; application* applic; } renderData{ scene, nbActiveActors, &app };
+
+	lowPriorityJobQueue.createJob<px_render_data>([](px_render_data& data, job_handle)
+		{
+			data.pxscene->lockRead();
+			PxActor** activeActors = data.pxscene->getActiveActors(data.pxnbActiveActors);
+
+			auto gameScene = data.applic->getCurrentScene();
+
+			for (size_t i = 0; i < data.pxnbActiveActors; i++)
+			{
+				if (auto rb = activeActors[i]->is<PxRigidDynamic>())
+				{
+					if (!activeActors[i]->userData)
+						continue;
+					entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
+					eentity renderObject = { *handle, &gameScene->registry };
+					if (!renderObject.valid())
+						continue;
+					const auto transform = &renderObject.getComponent<transform_component>();
+
+					if (auto shapeHolder = renderObject.getComponentIfExists<px_rigid_shape_holder_component>())
+					{
+						PxShape* shapes[1024];
+						PxU32 nbShapes = rb->getShapes(shapes, 1024);
+
+						for (int j = 0; j < nbShapes; j++)
+						{
+							if (!shapes[j]->userData)
+								continue;
+							entity_handle* shape_handle = static_cast<entity_handle*>(shapes[j]->userData);
+							eentity renderShape = { *shape_handle, &gameScene->registry };
+							if (!renderShape.valid())
+								continue;
+
+							const auto renderShapeTrs = &renderShape.getComponent<transform_component>();
+
+							const auto& pxt = rb->getGlobalPose();
+							const auto& pos = pxt.p + shapes[j]->getLocalPose().p;
+							const auto& rot = (shapes[j]->getLocalPose().q * pxt.q * shapes[j]->getLocalPose().q.getConjugate()).getConjugate();
+							renderShapeTrs->position = createVec3(pos);
+							renderShapeTrs->rotation = createQuat(rot);
+						}
+					}
+					else
+					{
+						const auto& pxt = rb->getGlobalPose();
+						const auto& pos = pxt.p;
+						const auto& rot = pxt.q.getConjugate();
+						transform->position = createVec3(pos);
+						transform->rotation = createQuat(rot);
+					}
+				}
+			}
+
+			// render physics
+			/*{
+				PxU32 nbActors{};
+				PxActor** actors = scene->getActiveActors(nbActors);
+
+				for (PxU32 i = 0; i < nbActors; i++)
+				{
+					const size_t maxShapes = 1024;
+
+					if (auto actor = actors[i]->is<PxRigidDynamic>())
+					{
+						PxShape* shapes[maxShapes];
+						memset(shapes, 0, maxShapes * sizeof(PxShape*));
+
+						PxU32 nbShapes = actor->getShapes(shapes, maxShapes);
+						for (PxU32 j = 0; j < nbShapes; j++)
+						{
+							renderGeometry(createVec3(actor->getGlobalPose().p), shapes[j]->getGeometry());
+						}
+					}
+					else if (auto actor = actors[i]->is<PxRigidStatic>())
+					{
+						PxShape* shapes[maxShapes];
+						memset(shapes, 0, maxShapes * sizeof(PxShape));
+
+						PxU32 nbShapes = actor->getShapes(shapes, maxShapes);
+						for (PxU32 j = 0; j < nbShapes; j++)
+						{
+							renderGeometry(createVec3(actor->getGlobalPose().p), shapes[j]->getGeometry());
+						}
+					}
+				}
+			}*/
+
+			data.pxscene->unlockRead();
+		}, renderData).submitNow();
+
+
 	scene->fetchResults(true);
 
 	scene->flushSimulation();
@@ -435,73 +533,7 @@ void physics::px_physics_engine::update(float dt) noexcept
 		sb->copyDeformedVerticesFromGPUAsync(0);
 	}
 
-#if PX_VEHICLE
-	// Test
-	//vehiclePostStep(stepSize);
-#endif
-
 	scene->unlockWrite();
-
-	scene->lockRead();
-	PxActor** activeActors = scene->getActiveActors(nbActiveActors);
-
-	auto gameScene = app.getCurrentScene();
-
-	for (size_t i = 0; i < nbActiveActors; i++)
-	{
-		if (auto rb = activeActors[i]->is<PxRigidDynamic>())
-		{
-			if (!activeActors[i]->userData)
-				continue;
-			entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
-			eentity renderObject = { *handle, &gameScene->registry };
-			if (!renderObject.valid())
-				continue;
-			const auto transform = &renderObject.getComponent<transform_component>();
-
-			const auto& pxt = rb->getGlobalPose();
-			const auto& pos = pxt.p;
-			const auto& rot = pxt.q.getConjugate();
-			transform->position = createVec3(pos);
-			transform->rotation = createQuat(rot);
-		}
-	}
-
-	// render physics
-	/*{
-		PxU32 nbActors{};
-		PxActor** actors = scene->getActiveActors(nbActors);
-
-		for (PxU32 i = 0; i < nbActors; i++)
-		{
-			const size_t maxShapes = 1024;
-
-			if (auto actor = actors[i]->is<PxRigidDynamic>())
-			{
-				PxShape* shapes[maxShapes];
-				memset(shapes, 0, maxShapes * sizeof(PxShape*));
-
-				PxU32 nbShapes = actor->getShapes(shapes, maxShapes);
-				for (PxU32 j = 0; j < nbShapes; j++)
-				{
-					renderGeometry(createVec3(actor->getGlobalPose().p), shapes[j]->getGeometry());
-				}
-			}
-			else if (auto actor = actors[i]->is<PxRigidStatic>())
-			{
-				PxShape* shapes[maxShapes];
-				memset(shapes, 0, maxShapes * sizeof(PxShape));
-
-				PxU32 nbShapes = actor->getShapes(shapes, maxShapes);
-				for (PxU32 j = 0; j < nbShapes; j++)
-				{
-					renderGeometry(createVec3(actor->getGlobalPose().p), shapes[j]->getGeometry());
-				}
-			}
-		}
-	}*/
-
-	scene->unlockRead();
 
 #if PX_ENABLE_RAYCAST_CCD
 	raycastCCD->doRaycastCCD(true);

@@ -1324,7 +1324,6 @@ submesh_info mesh_builder::endSubmesh()
 	result.baseVertex = firstVertex;
 	result.numVertices = numVerticesInCurrentSubmesh;
 
-
 	totalNumVertices += numVerticesInCurrentSubmesh;
 	totalNumTriangles += numTrianglesInCurrentSubmesh;
 

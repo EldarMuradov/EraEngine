@@ -23,6 +23,8 @@ namespace physics
 
 	void px_rigidbody_component::addForce(vec3 force, px_force_mode mode) noexcept
 	{
+		if (!actor)
+			return;
 		physics_holder::physicsRef->lockWrite();
 		if (mode == px_force_mode::Force)
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eFORCE);
@@ -39,6 +41,8 @@ namespace physics
 
 	void px_rigidbody_component::addTorque(vec3 torque, px_force_mode mode) noexcept
 	{
+		if (!actor)
+			return;
 		physics_holder::physicsRef->lockWrite();
 
 		if (mode == px_force_mode::Force)
@@ -57,34 +61,48 @@ namespace physics
 
 	void px_rigidbody_component::setDisableGravity() noexcept
 	{
+		if (!actor)
+			return;
 		actor->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, true);
 		useGravity = false;
 	}
 
 	void px_rigidbody_component::setEnableGravity() noexcept
 	{
+		if (!actor)
+			return;
 		actor->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, false);
 		useGravity = true;
 	}
 
 	void px_rigidbody_component::setMass(float mass) noexcept
 	{
+		if (!actor)
+			return;
+		physics_holder::physicsRef->lockWrite();
 		this->mass = mass;
 		actor->is<PxRigidDynamic>()->setMass(mass);
+		physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::setConstraints(uint8 constraints) noexcept
 	{
+		if (!actor)
+			return;
 		actor->is<PxRigidDynamic>()->setRigidDynamicLockFlags((physx::PxRigidDynamicLockFlags)constraints);
 	}
 
 	NODISCARD uint8 px_rigidbody_component::getConstraints() const noexcept
 	{
+		if (!actor)
+			return 0;
 		return (uint8)actor->is<PxRigidDynamic>()->getRigidDynamicLockFlags();
 	}
 
 	void px_rigidbody_component::setLinearVelocity(vec3 velocity)
 	{
+		if (!actor)
+			return;
 		if (actor->is<PxRigidDynamic>())
 		{
 			physics_holder::physicsRef->lockWrite();
@@ -95,6 +113,8 @@ namespace physics
 
 	NODISCARD vec3 px_rigidbody_component::getLinearVelocity() const noexcept
 	{
+		if (!actor)
+			return vec3();
 		if (actor->is<PxRigidDynamic>())
 		{
 			physics_holder::physicsRef->lockRead();
@@ -107,6 +127,8 @@ namespace physics
 
 	void px_rigidbody_component::setAngularVelocity(vec3 velocity)
 	{
+		if (!actor)
+			return;
 		if (actor->is<PxRigidDynamic>())
 		{
 			physics_holder::physicsRef->lockWrite();
@@ -117,6 +139,8 @@ namespace physics
 
 	NODISCARD vec3 px_rigidbody_component::getAngularVelocity() const noexcept
 	{
+		if (!actor)
+			return vec3();
 		if (actor->is<PxRigidDynamic>())
 		{
 			physics_holder::physicsRef->lockRead();
@@ -129,6 +153,8 @@ namespace physics
 
 	NODISCARD vec3 px_rigidbody_component::getPhysicsPosition() const noexcept
 	{
+		if (!actor)
+			return vec3();
 		physics_holder::physicsRef->lockRead();
 		PxVec3 pos = actor->getGlobalPose().p;
 		physics_holder::physicsRef->unlockRead();
@@ -137,6 +163,8 @@ namespace physics
 
 	void px_rigidbody_component::setPhysicsPositionAndRotation(vec3& pos, quat& rot)
 	{
+		if (!actor)
+			return;
 		physics_holder::physicsRef->lockWrite();
 		setAngularVelocity(vec3(0.0f));
 		setLinearVelocity(vec3(0.0f));
@@ -148,6 +176,8 @@ namespace physics
 
 	void px_rigidbody_component::setAngularDamping(float damping)
 	{
+		if (!actor)
+			return;
 		physics_holder::physicsRef->lockWrite();
 		if (damping > 0.0f)
 			actor->is<PxRigidDynamic>()->setAngularDamping(damping);
@@ -156,6 +186,8 @@ namespace physics
 
 	void px_rigidbody_component::release(bool releaseActor) noexcept
 	{
+		if (!actor)
+			return;
 		physics_holder::physicsRef->removeActor(this);
 
 		PX_RELEASE(material)

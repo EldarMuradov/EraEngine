@@ -32,6 +32,8 @@ escene::escene()
 	//(void)registry.group<navigation_component, transform_component>();
 	//(void)registry.group<transform_component, script_component>();
 #endif
+
+	registry.reserve(64000);
 }
 
 void escene::clearAll()
@@ -76,6 +78,8 @@ void escene::cloneTo(escene& target)
 		physics::px_blast_rigidbody_component,
 
 		physics::px_soft_body_component,
+		physics::px_rigid_shape_holder_component,
+		physics::px_shape_holder_component,
 
 		navigation_component,
 		script_component,
@@ -239,6 +243,10 @@ void escene::deleteEntity(eentity e)
 	{
 		reference->release();
 	}
+	if (physics::px_shape_holder_component* reference = e.getComponentIfExists<physics::px_shape_holder_component>())
+	{
+		reference->release();
+	}
 #endif
 
 	// TODO: make it thread-safe
@@ -249,4 +257,11 @@ void escene::deleteEntity(eentity e)
 		deleteEntity(*iter);
 
 	registry.destroy(e.handle);
+}
+
+void escene::deleteEntity(entity_handle handle)
+{
+	eentity e{handle, &registry};
+	if(e.valid())
+		deleteEntity(e);
 }

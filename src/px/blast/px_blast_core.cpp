@@ -703,18 +703,18 @@ void physics::px_blast_family::updatePreSplit(float dt)
 		int nbShapes = pxactor->getNbShapes();
 		std::cout << "blast family ext actor shapes count = " << nbShapes << "\n";
 
-		PxShape* shapes[1024];
-		nbShapes = pxactor->getShapes(shapes, 1024);
+		//PxShape* shapes[1024];
+		//nbShapes = pxactor->getShapes(shapes, 1024);
 
-		pxactor->addForce(gravity * pxactor->getMass());
+		////pxactor->addForce(gravity * pxactor->getMass());
 
-		for (int j = 0; j < nbShapes; j++)
-		{
-			auto& geom = shapes[j]->getGeometry();
-			
-			physics_holder::physicsRef->app.points.push_back(createVec3(pxactor->getGlobalPose().p + shapes[j]->getLocalPose().p));
-			//renderGeometry(createVec3(pxactor->getGlobalPose().p + shapes[j]->getLocalPose().p), geom);
-		}
+		//for (int j = 0; j < nbShapes; j++)
+		//{
+		//	auto& geom = shapes[j]->getGeometry();
+		//	
+		//	physics_holder::physicsRef->app.points.push_back(createVec3(pxactor->getGlobalPose().p + shapes[j]->getLocalPose().p));
+		//	//renderGeometry(createVec3(pxactor->getGlobalPose().p + shapes[j]->getLocalPose().p), geom);
+		//}
 
 		if (actor->getTkActor().isPending())
 		{

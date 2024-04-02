@@ -103,6 +103,9 @@ struct updatePhysicsAndScriptingData
 
 void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt, const user_input& in)
 {
+	if (currentScene.registry.size() == 0)
+		return;
+
 	updatePhysicsAndScriptingData data = { dt, core, currentScene, in};
 
 	highPriorityJobQueue.createJob<updatePhysicsAndScriptingData>([](updatePhysicsAndScriptingData& data, job_handle)
@@ -241,17 +244,17 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>(*this);
 
 #ifndef ERA_RUNTIME
-	if (auto mesh = loadMeshFromFileAsync("assets/Sponza/sponza.obj"))
-	{
-		//model_asset ass = load3DModelFromFile("assets/Sponza/sponza.obj");
-		const auto& sponza = scene.createEntity("Sponza")
-			.addComponent<transform_component>(vec3(0.f, 0.f, 0.f), quat::identity, 0.01f)
-			//.addComponent<physics::px_triangle_mesh_collider_component>(&(ass.meshes[0]))
-			.addComponent<mesh_component>(mesh);
-			//.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Static);
+	//if (auto mesh = loadMeshFromFileAsync("assets/Sponza/sponza.obj"))
+	//{
+	//	//model_asset ass = load3DModelFromFile("assets/Sponza/sponza.obj");
+	//	const auto& sponza = scene.createEntity("Sponza")
+	//		.addComponent<transform_component>(vec3(0.f, 0.f, 0.f), quat::identity, 0.01f)
+	//		//.addComponent<physics::px_triangle_mesh_collider_component>(&(ass.meshes[0]))
+	//		.addComponent<mesh_component>(mesh);
+	//		//.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Static);
 
-		addRaytracingComponentAsync(sponza, mesh);
-	}
+	//	addRaytracingComponentAsync(sponza, mesh);
+	//}
 #endif
 
 #if 0
@@ -291,14 +294,16 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
-		px_sphere = scene.createEntity("SpherePX", (entity_handle)60)
+		auto px_sphere_entt = scene.createEntity("SpherePX", (entity_handle)60)
 			.addComponent<transform_component>(vec3(0, 5.f, -10.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
 			//.addComponent<physics::px_convex_mesh_collider_component>(&(ass.meshes[0]))
 			//.addComponent<physics::px_triangle_mesh_collider_component>(&(ass.meshes[0]))
 			//.addComponent<physics::px_bounding_box_collider_component>(&(ass.meshes[0]))
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
-			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic).handle;
+			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
+		px_sphere_entt.getComponent<physics::px_rigidbody_component>().setMass(20.f);
+		px_sphere = px_sphere_entt.handle;
 
 		auto px_sphere1 = &scene.createEntity("SpherePX1")
 			.addComponent<transform_component>(vec3(5, 5.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
@@ -347,9 +352,9 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			}
 		}*/
 
-		auto px_cct = &scene.createEntity("CharacterControllerPx")
-			.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-			.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
+		//auto px_cct = &scene.createEntity("CharacterControllerPx")
+		//	.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+		//	.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
 
 		auto px_plane = &scene.createEntity("PlanePX")
 			.addComponent<transform_component>(vec3(0.f, 0.0, 0.0f), quat::identity, vec3(1.f))

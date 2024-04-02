@@ -24,6 +24,24 @@ namespace physics
 		Acceleration
 	};
 
+	struct px_shape_holder_component : px_physics_component_base
+	{
+		px_shape_holder_component() = default;
+		px_shape_holder_component(PxShape* argShape) : shape(argShape) {};
+		~px_shape_holder_component() {}
+
+		virtual void release(bool releaseActor = false) noexcept override { PX_RELEASE(shape) }
+
+		PxShape* shape = nullptr;
+	};
+
+	struct px_rigid_shape_holder_component 
+	{
+		px_rigid_shape_holder_component() = default;
+		~px_rigid_shape_holder_component() {}
+		size_t data;
+	};
+
 	struct px_rigidbody_component : px_physics_component_base
 	{
 		px_rigidbody_component() {};

@@ -42,10 +42,8 @@ namespace fs = std::filesystem;
 #define NODISCARD [[nodiscard]]
 
 #define NO_COPY(typename_) \
-typename_& operator=(const typename_&) = delete; \
-typename_& operator=(typename_&&) = delete; \
-typename_(const typename_&) = delete; \
-typename_(typename_&&) = delete;
+    typename_(const typename_&);\
+    typename_& operator=(const typename_&);
 
 #define EEXTERN extern "C"
 

@@ -135,7 +135,12 @@ struct eentity
 #ifndef PHYSICS_ONLY
 		else if	constexpr (std::is_same_v<component_t, physics::px_rigidbody_component>)
 		{
-			auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
+			constexpr auto size = sizeof...(args);
+
+			if constexpr(size == 0)
+				auto& component = registry->emplace_or_replace<component_t>(handle, std::forward<args>(a)...);
+			else
+				auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
 			
 			if (!hasComponent<dynamic_transform_component>())
 				addComponent<dynamic_transform_component>();
@@ -437,6 +442,7 @@ struct escene
 	NODISCARD eentity copyEntity(eentity src); // Source can be either from the same scene or from another.
 
 	void deleteEntity(eentity e);
+	void deleteEntity(entity_handle handle);
 	void clearAll();
 
 	template <typename component_t>

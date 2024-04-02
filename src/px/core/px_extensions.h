@@ -333,7 +333,7 @@ namespace physics
 
 			const PxTetrahedronMesh& mesh = *tetGeom.tetrahedronMesh;
 
-			//Get the deformed vertices			
+			//Get the deformed vertices
 			const PxVec3* vertices = mesh.getVertices();
 			const PxU32 tetCount = mesh.getNbTetrahedrons();
 			const PxU32 has16BitIndices = mesh.getTetrahedronMeshFlags() & PxTetrahedronMeshFlag::e16_BIT_INDICES;
