@@ -380,4 +380,22 @@ namespace physics
 			break;
 		}
 	}
+
+	struct px_simple_mesh
+	{
+		struct vertex
+		{
+			physx::PxVec3 position;
+			physx::PxVec3 normal;
+			physx::PxVec2 uv;
+		};
+
+		virtual uint32_t getVertexStride() { return sizeof(vertex); }
+
+		std::vector<vertex> vertices;
+		std::vector<uint32_t> indices;
+
+		physx::PxVec3 extents;
+		physx::PxVec3 center;
+	};
 }

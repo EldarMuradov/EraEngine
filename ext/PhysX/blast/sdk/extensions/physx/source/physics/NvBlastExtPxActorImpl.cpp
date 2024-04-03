@@ -14,18 +14,12 @@
 #include "NvBlastTkAsset.h"
 
 #include "extensions/PxRigidBodyExt.h"
-#include <rendering/pbr_material.h>
-#include <asset/model_asset.h>
-#include <px/core/px_extensions.h>
 
 
 namespace Nv
 {
 namespace Blast
 {
-
-static int id = 0;
-
 
 ExtPxActorImpl::ExtPxActorImpl(ExtPxFamilyImpl* family, TkActor* tkActor, const PxActorCreateInfo& pxActorInfo)
 	: m_family(family), m_tkActor(tkActor)
@@ -89,83 +83,6 @@ ExtPxActorImpl::ExtPxActorImpl(ExtPxFamilyImpl* family, TkActor* tkActor, const 
 			auto& subchunk = pxSubchunks[subchunkIndex];
 			PxShape* shape = physics.createShape(subchunk.geometry, *material);
 
-			{
-				auto defaultmat = createPBRMaterialAsync({ "", "" });
-
-				mesh_builder builder;
-
-				//submesh_asset asset{};
-
-				const PxConvexMeshGeometry& convexGeom = subchunk.geometry;
-
-				//Compute triangles for each polygon.
-				const PxVec3& scale = convexGeom.scale.scale;
-				PxConvexMesh* mesh = convexGeom.convexMesh;
-				const PxU32 nbPolys = mesh->getNbPolygons();
-				const PxU8* polygons = mesh->getIndexBuffer();
-				const PxVec3* verts = mesh->getVertices();
-				PxU32 nbVerts = mesh->getNbVertices();
-
-				PxU32 numTotalTriangles = 0;
-				for (PxU32 i = 0; i < nbPolys; i++)
-				{
-					PxHullPolygon data;
-					mesh->getPolygonData(i, data);
-
-					const PxU32 nbTris = PxU32(data.mNbVerts - 2);
-					const PxU8 vref0 = polygons[data.mIndexBase + 0];
-					PX_ASSERT(vref0 < nbVerts);
-					for (PxU32 j = 0; j < nbTris; j++)
-					{
-						const PxU32 vref1 = polygons[data.mIndexBase + 0 + j + 1];
-						const PxU32 vref2 = polygons[data.mIndexBase + 0 + j + 2];
-
-						//generate face normal:
-						PxVec3 e0 = verts[vref1] - verts[vref0];
-						PxVec3 e1 = verts[vref2] - verts[vref0];
-
-						PX_ASSERT(vref1 < nbVerts);
-						PX_ASSERT(vref2 < nbVerts);
-
-						PxVec3 fnormal = e0.cross(e1);
-						fnormal.normalize();
-
-						/*asset.normals.push_back(createVec3(fnormal));	asset.positions.push_back(createVec3(verts[vref0]));
-						asset.normals.push_back(createVec3(fnormal));	asset.positions.push_back(createVec3(verts[vref1]));
-						asset.normals.push_back(createVec3(fnormal));	asset.positions.push_back(createVec3(verts[vref2]));
-
-						asset.triangles.push_back(indexed_triangle16{ vref0 , (PxU8)vref1, (PxU8)vref2 });*/
-
-						numTotalTriangles++;
-					}
-				}
-
-				auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
-
-				if (enttScene->registry.size() > 0)
-				{
-					builder.pushBox({ vec3(0.f), vec3(scale.x, scale.y, scale.z) });
-
-					auto mm = make_ref<multi_mesh>();
-
-					//builder.pushMesh(asset, 1.0f);
-
-					mm->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
-
-					eentity entt = enttScene->
-						createEntity(("BlastEntity_" + std::to_string(id++)).c_str())
-						.addComponent<transform_component>(vec3(physx::createVec3(pxActorInfo.m_transform.p + shape->getLocalPose().p)), quat::identity, vec3(1.f))
-						.addComponent<physics::px_shape_holder_component>()
-						.addComponent<mesh_component>(mm);
-
-					uint32_t* h = new uint32_t[1];
-					h[0] = (uint32_t)entt.handle;
-					shape->userData = h;
-
-					mm->mesh = builder.createDXMesh();
-				}
-			}
-
 			shape->setLocalPose(subchunk.transform);
 
 			const ExtPxShapeDescTemplate* pxShapeDesc = m_family->m_pxShapeDescTemplate;
@@ -189,18 +106,6 @@ ExtPxActorImpl::ExtPxActorImpl(ExtPxFamilyImpl* family, TkActor* tkActor, const 
 		}
 	}
 
-	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
-	if (enttScene->registry.size() > 0)
-	{
-		eentity rbe = enttScene->
-			createEntity(("BlastEntity_Core_" + std::to_string(id++)).c_str())
-			.addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f))
-			.addComponent<physics::px_rigid_shape_holder_component>();
-		uint32_t* h = new uint32_t[1];
-		h[0] = (uint32_t)rbe.handle;
-		m_rigidDynamic->userData = h;
-	}
-
 	// search for static chunk in actor's graph (make actor static if it contains static chunk)
 	bool staticFound = m_tkActor->isBoundToWorld();
 	if (nodeCount > 0)
@@ -217,7 +122,7 @@ ExtPxActorImpl::ExtPxActorImpl(ExtPxFamilyImpl* family, TkActor* tkActor, const 
 			staticFound = chunk.isStatic;
 		}
 	}
-	m_rigidDynamic->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, staticFound);
+	//m_rigidDynamic->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, staticFound);
 
 	// store pointer to actor in px userData
 	m_family->m_manager.registerActor(m_rigidDynamic, this);
@@ -243,17 +148,6 @@ void ExtPxActorImpl::release()
 {
 	if (m_rigidDynamic != nullptr)
 	{
-		PxShape* shapes[1024];
-		PxU32 nbShapes = m_rigidDynamic->getShapes(shapes, 1024);
-
-		for (int j = 0; j < nbShapes; j++)
-		{
-			if(shapes[j]->userData)
-				physics::physics_holder::physicsRef->app.getCurrentScene()->deleteEntity((entity_handle)((uint32*)shapes[j]->userData)[0]);
-		}
-
-		if (m_rigidDynamic->userData)
-			physics::physics_holder::physicsRef->app.getCurrentScene()->deleteEntity((entity_handle)((uint32*)m_rigidDynamic->userData)[0]);
 		m_family->m_manager.unregisterActor(m_rigidDynamic);
 		m_rigidDynamic->release();
 		m_rigidDynamic = nullptr;

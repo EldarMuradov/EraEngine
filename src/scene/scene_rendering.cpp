@@ -59,12 +59,12 @@ static bool shouldRender(bounding_sphere s, bounding_box aabb, const trs& transf
 
 static bool shouldRender(const camera_frustum_planes& frustum, const mesh_component& mesh, const transform_component& transform)
 {
-	return mesh.mesh && (mesh.mesh->loadState.load() == asset_loaded) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || !frustum.cullModelSpaceAABB(mesh.mesh->aabb, transform));
+	return mesh.mesh && !mesh.isHidden && (mesh.mesh->loadState.load() == asset_loaded) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || !frustum.cullModelSpaceAABB(mesh.mesh->aabb, transform));
 }
 
 static bool shouldRender(const bounding_sphere& frustum, const mesh_component& mesh, const transform_component& transform)
 {
-	return mesh.mesh && (mesh.mesh->loadState.load() == asset_loaded) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || shouldRender(frustum, mesh.mesh->aabb, transform));
+	return mesh.mesh && !mesh.isHidden && (mesh.mesh->loadState.load() == asset_loaded) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || shouldRender(frustum, mesh.mesh->aabb, transform));
 }
 
 static bool shouldRender(const light_frustum& frustum, const mesh_component& mesh, const transform_component& transform)

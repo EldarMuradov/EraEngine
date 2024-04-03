@@ -103,9 +103,6 @@ struct updatePhysicsAndScriptingData
 
 void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt, const user_input& in)
 {
-	if (currentScene.registry.size() == 0)
-		return;
-
 	updatePhysicsAndScriptingData data = { dt, core, currentScene, in};
 
 	highPriorityJobQueue.createJob<updatePhysicsAndScriptingData>([](updatePhysicsAndScriptingData& data, job_handle)
@@ -302,7 +299,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			//.addComponent<physics::px_bounding_box_collider_component>(&(ass.meshes[0]))
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
-		px_sphere_entt.getComponent<physics::px_rigidbody_component>().setMass(20.f);
+		px_sphere_entt.getComponent<physics::px_rigidbody_component>().setMass(2000.f);
 		px_sphere = px_sphere_entt.handle;
 
 		auto px_sphere1 = &scene.createEntity("SpherePX1")
@@ -726,11 +723,11 @@ void application::update(const user_input& input, float dt)
 			{
 				//if (!shoted)
 				//{
-					sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(0.f, 1.0f, 50.0f), physics::px_force_mode::Impulse);
+					sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(0.f, 1.0f, 50000.0f), physics::px_force_mode::Force);
 
 					//shoted = true;
 				//}
-			//	physics::physics_holder::physicsRef->explode(vec3(5.0f, -1.0f, 5.0f), 3.0f, 2.0f);
+				//physics::physics_holder::physicsRef->explode(vec3(0.0f, 5.0f, 3.0f), 15.0f, 300.0f);
 			//	//entityCloth.getComponent<physics::px_cloth_component>().clothSystem->translate(vec3(0.f, 2.f, 0.f));
 			//	//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
 			}

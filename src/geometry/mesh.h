@@ -71,4 +71,5 @@ inline NODISCARD ref<multi_mesh> loadAnimatedMeshFromHandleAsync(asset_handle ha
 struct mesh_component
 {
 	ref<multi_mesh> mesh;
+	bool isHidden = false;
 };

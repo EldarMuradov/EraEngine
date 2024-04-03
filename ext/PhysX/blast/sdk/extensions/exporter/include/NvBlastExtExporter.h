@@ -31,6 +31,7 @@
 
 #include "NvBlastTypes.h"
 #include "NvCTypes.h"
+#include "NvBlastPreprocessor.h"
 
 struct NvBlastAsset;
 

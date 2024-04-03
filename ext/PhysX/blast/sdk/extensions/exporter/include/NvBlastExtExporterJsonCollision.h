@@ -30,6 +30,7 @@
 #define NVBLASTEXTEXPORTERJSONCOLLISION_H
 
 #include "NvBlastTypes.h"
+#include <NvBlastExtExporter.h>
 
 namespace Nv
 {

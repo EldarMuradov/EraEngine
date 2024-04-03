@@ -119,7 +119,7 @@ class NV_DLL_EXPORT ExtPxManager
 	/**
 	Create PhysX based convex mesh builder.
 	*/
-	static ExtPxCollisionBuilder* createCollisionBuilder(physx::PxPhysics& physics, physx::PxCooking& cooking);
+	static ExtPxCollisionBuilder* createCollisionBuilder(physx::PxPhysics& physics);
 
 	/**
 	Release this manager.

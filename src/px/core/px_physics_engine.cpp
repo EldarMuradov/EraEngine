@@ -130,7 +130,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 #endif
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
-	//sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
+	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
 	sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 
@@ -212,8 +212,6 @@ void physics::px_physics_engine::release() noexcept
 	released = true;
 }
 
-//physx::PxRigidDynamic* pxactor;
-
 void physics::px_physics_engine::start() noexcept
 {
 	blast = make_ref<px_blast>();
@@ -294,114 +292,7 @@ void physics::px_physics_engine::start() noexcept
 		blast->addAsset(asset);
 	}
 
-	//px_blast_boxes_asset_scene* boxAsset = (px_blast_boxes_asset_scene*)blast->assets[0];
-
-	//boxAsset->asset = new px_blast_asset_boxes(blast->getTkFramework(), *physics,
-	//	*enative_scripting_linker::app->getRenderer(), boxAsset->assetDesc);
-
-	blast->spawnAsset(3);
-
-	{
-		//auto asset = boxAsset->getAsset()->getPxAsset();
-		//int cc = asset->getChunkCount();
-		//int scc = asset->getSubchunkCount();
-		//auto chuncks = asset->getChunks();
-		//auto subchancks = asset->getSubchunks();
-		//auto tkAsset = &asset->getTkAsset();
-		//std::cout << cc << " " << scc << "\n";
-
-		//auto pmaterial = physics->createMaterial(0.8, 0.8, 0.6);
-
-		////for (int i = 0; i < scc; i++)
-		////{
-		////	auto g = subchancks[i].geometry;
-		////	auto vn = g.convexMesh->getNbVertices();
-		////	auto v = g.convexMesh->getVertices();
-		////	for (int i = 0; i < vn; i++)
-		////	{
-		////		enative_scripting_linker::app->points.push_back(createVec3(v[i]));
-		////	}
-
-		////	auto tp = physics->createRigidStatic(PxTransform(subchancks[i].transform));
-		////	bool res = tp->attachShape(*physics->createShape(g, *pmaterial));
-
-		////	scene->addActor(*tp);
-		////}
-
-		//NvBlastActorDesc actorDesc = asset->getDefaultActorDesc();
-
-		//ExtPxFamilyDesc familyDesc{};
-		//familyDesc.actorDesc = &actorDesc; // if you use it one day, consider changing code which needs getBondHealthMax() from BlastAsset.
-		//familyDesc.group = blast->getTkGroup();
-		//familyDesc.pxAsset = asset;
-
-		//px_blast_ext_listener* listener = new px_blast_ext_listener();
-
-		//NvBlastExtMaterial* material = new NvBlastExtMaterial();
-
-		//ExtPxFamily* family = blast->getExtPxManager().createFamily(familyDesc);
-		//family->setMaterial(material);
-		//family->subscribe(*listener);
-
-		//PxTransform pose = PxTransform(PxVec3(0.0f));
-		//ExtPxSpawnSettings settings{};
-		//settings.scene = scene;
-		//settings.density = RIGIDBODY_DENSITY;
-		//settings.material = pmaterial;
-
-		//if (family->spawn(pose, PxVec3(1.0f), settings))
-		//{
-		//	std::cout << "blast family spawned\n";
-		//}
-
-		//const int actorsCount = family->getActorCount();
-
-		//std::cout << "blast family actors count = " << actorsCount << "\n";
-
-		//ExtPxActor* actors[5];
-		//int nba = family->getActors(actors, 5);
-
-		//std::cout << "blast family ext actors count = " << nba << "\n";
-
-		//auto actor = actors[0];
-		//pxactor = &actor->getPhysXActor();
-		////pxactor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
-		//int nbShapes = pxactor->getNbShapes();
-		//std::cout << "blast family ext actor shapes count = " << nbShapes << "\n";
-
-		//PxShape* shapes[1024];
-		//nbShapes = pxactor->getShapes(shapes, 1024);
-
-		//auto geom = &shapes[0]->getGeometry();
-		//auto geomType = geom->getType();
-
-		//auto convexMeshGeom = (PxConvexMeshGeometry*)geom;
-
-		//auto convexMesh = convexMeshGeom->convexMesh;
-
-		//auto nbVerts = convexMesh->getNbVertices();
-		//auto verts = convexMesh->getVertices();
-
-		//for (int i = 0; i < nbVerts; i++)
-		//{
-		//	enative_scripting_linker::app->points.push_back(createVec3(verts[i] * convexMeshGeom->scale.scale));
-		//}
-
-		//ExtPxActor* tempactor = extPxManager->getActorFromPhysXActor(*pxactor);
-
-		//NvBlastDamageProgram damageProgram = { NvBlastExtShearGraphShader, NvBlastExtShearSubgraphShader };
-
-		//NvBlastExtRadialDamageDesc  damageDesc;
-
-		//damageDesc.damage = 10.0f;
-		//damageDesc.position[0] = 1.0f;
-		//damageDesc.position[1] = 2.0f;
-		//damageDesc.position[2] = 3.0f;
-		//damageDesc.minRadius = 0.0f;
-		//damageDesc.maxRadius = 1.0f;
-
-		//actor->getTkActor().damage(damageProgram, &damageDesc);
-	}
+	blast->spawnAsset(0);
 
 	simulationEventCallback = new px_simulation_event_callback(blast->getExtImpactDamageManager());
 	scene->setSimulationEventCallback(simulationEventCallback);
@@ -411,7 +302,7 @@ void physics::px_physics_engine::update(float dt) noexcept
 {
 	const float stepSize = 1.0f / frameRate;
 
-	scene->lockWrite();
+	lockWrite();
 	scene->getTaskManager()->startSimulation();
 
 #if PX_VEHICLE
@@ -423,109 +314,43 @@ void physics::px_physics_engine::update(float dt) noexcept
 
 	scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
 
-#if PX_VEHICLE
-	// Test
-	//vehiclePostStep(stepSize);
-#endif
-
-	struct px_render_data { PxScene* pxscene; uint32& pxnbActiveActors; application* applic; } renderData{ scene, nbActiveActors, &app };
-
-	lowPriorityJobQueue.createJob<px_render_data>([](px_render_data& data, job_handle)
-		{
-			data.pxscene->lockRead();
-			PxActor** activeActors = data.pxscene->getActiveActors(data.pxnbActiveActors);
-
-			auto gameScene = data.applic->getCurrentScene();
-
-			for (size_t i = 0; i < data.pxnbActiveActors; i++)
-			{
-				if (auto rb = activeActors[i]->is<PxRigidDynamic>())
-				{
-					if (!activeActors[i]->userData)
-						continue;
-					entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
-					eentity renderObject = { *handle, &gameScene->registry };
-					if (!renderObject.valid())
-						continue;
-					const auto transform = &renderObject.getComponent<transform_component>();
-
-					if (auto shapeHolder = renderObject.getComponentIfExists<px_rigid_shape_holder_component>())
-					{
-						PxShape* shapes[1024];
-						PxU32 nbShapes = rb->getShapes(shapes, 1024);
-
-						for (int j = 0; j < nbShapes; j++)
-						{
-							if (!shapes[j]->userData)
-								continue;
-							entity_handle* shape_handle = static_cast<entity_handle*>(shapes[j]->userData);
-							eentity renderShape = { *shape_handle, &gameScene->registry };
-							if (!renderShape.valid())
-								continue;
-
-							const auto renderShapeTrs = &renderShape.getComponent<transform_component>();
-
-							const auto& pxt = rb->getGlobalPose();
-							const auto& pos = pxt.p + shapes[j]->getLocalPose().p;
-							const auto& rot = (shapes[j]->getLocalPose().q * pxt.q * shapes[j]->getLocalPose().q.getConjugate()).getConjugate();
-							renderShapeTrs->position = createVec3(pos);
-							renderShapeTrs->rotation = createQuat(rot);
-						}
-					}
-					else
-					{
-						const auto& pxt = rb->getGlobalPose();
-						const auto& pos = pxt.p;
-						const auto& rot = pxt.q.getConjugate();
-						transform->position = createVec3(pos);
-						transform->rotation = createQuat(rot);
-					}
-				}
-			}
-
-			// render physics
-			/*{
-				PxU32 nbActors{};
-				PxActor** actors = scene->getActiveActors(nbActors);
-
-				for (PxU32 i = 0; i < nbActors; i++)
-				{
-					const size_t maxShapes = 1024;
-
-					if (auto actor = actors[i]->is<PxRigidDynamic>())
-					{
-						PxShape* shapes[maxShapes];
-						memset(shapes, 0, maxShapes * sizeof(PxShape*));
-
-						PxU32 nbShapes = actor->getShapes(shapes, maxShapes);
-						for (PxU32 j = 0; j < nbShapes; j++)
-						{
-							renderGeometry(createVec3(actor->getGlobalPose().p), shapes[j]->getGeometry());
-						}
-					}
-					else if (auto actor = actors[i]->is<PxRigidStatic>())
-					{
-						PxShape* shapes[maxShapes];
-						memset(shapes, 0, maxShapes * sizeof(PxShape));
-
-						PxU32 nbShapes = actor->getShapes(shapes, maxShapes);
-						for (PxU32 j = 0; j < nbShapes; j++)
-						{
-							renderGeometry(createVec3(actor->getGlobalPose().p), shapes[j]->getGeometry());
-						}
-					}
-				}
-			}*/
-
-			data.pxscene->unlockRead();
-		}, renderData).submitNow();
-
-
 	scene->fetchResults(true);
 
 	scene->flushSimulation();
 	scene->fetchResultsParticleSystem();
 	scene->getTaskManager()->stopSimulation();
+
+#if PX_VEHICLE
+	// Test
+	//vehiclePostStep(stepSize);
+#endif
+
+	unlockWrite();
+
+	lockRead();
+	PxActor** activeActors =scene->getActiveActors(nbActiveActors);
+
+	auto gameScene = app.getCurrentScene();
+
+	for (size_t i = 0; i < nbActiveActors; i++)
+	{
+		if (auto rb = activeActors[i]->is<PxRigidDynamic>())
+		{
+			if (!activeActors[i]->userData)
+				continue;
+			entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
+			eentity renderObject = { *handle, &gameScene->registry };
+			if (!renderObject.valid())
+				continue;
+			const auto transform = &renderObject.getComponent<transform_component>();
+
+			const auto& pxt = rb->getGlobalPose();
+			const auto& pos = pxt.p;
+			const auto& rot = pxt.q.getConjugate();
+			transform->position = createVec3(pos);
+			transform->rotation = createQuat(rot);
+		}
+	}
 
 	for (size_t i = 0; i < softBodies.size(); i++)
 	{
@@ -533,7 +358,7 @@ void physics::px_physics_engine::update(float dt) noexcept
 		sb->copyDeformedVerticesFromGPUAsync(0);
 	}
 
-	scene->unlockWrite();
+	unlockRead();
 
 #if PX_ENABLE_RAYCAST_CCD
 	raycastCCD->doRaycastCCD(true);
@@ -551,7 +376,7 @@ void physics::px_physics_engine::update(float dt) noexcept
 
 void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
 {
-	scene->lockWrite();
+	lockWrite();
 	PxU32 nbActiveActors;
 	PxActor** activeActors = scene->getActiveActors(nbActiveActors);
 
@@ -565,12 +390,12 @@ void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
 	}
 
 	scene->flushSimulation();
-	scene->unlockWrite();
+	unlockWrite();
 }
 
 void physics::px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene) noexcept
 {
-	scene->lockWrite();
+	lockWrite();
 	if (addToScene)
 		scene->addActor(*ractor);
 
@@ -599,21 +424,21 @@ void physics::px_physics_engine::addActor(px_rigidbody_component* actor, PxRigid
 
 	actors.emplace(actor);
 	actorsMap.insert(::std::make_pair(ractor, actor));
-	scene->unlockWrite();
+	unlockWrite();
 }
 
 void physics::px_physics_engine::removeActor(px_rigidbody_component* actor) noexcept
 {
-	scene->lockWrite();
+	lockWrite();
 	actors.erase(actor);
 	actorsMap.erase(actor->getRigidActor());
 	scene->removeActor(*actor->getRigidActor());
-	scene->unlockWrite();
+	unlockWrite();
 }
 
 void physics::px_physics_engine::releaseActors() noexcept
 {
-	scene->lockWrite();
+	lockWrite();
 	auto gameScene = app.getCurrentScene();
 
 	for (auto& actor : actors)
@@ -624,7 +449,7 @@ void physics::px_physics_engine::releaseActors() noexcept
 	actors.clear();
 	actorsMap.clear();
 	scene->flushSimulation();
-	scene->unlockWrite();
+	unlockWrite();
 }
 
 void physics::px_physics_engine::releaseScene() noexcept

@@ -7,6 +7,7 @@
 #include <px/core/px_extensions.h>
 #include <application.h>
 #include <scripting/native_scripting_linker.h>
+#include <scene/scene.h>
 
 #include <NvBlast.h>
 
@@ -147,6 +148,33 @@ namespace physics
 		float supportChunkHealthMax;
 
 		NvBlastExtDamageAccelerator* damageAccelerator = nullptr;
+	};
+
+	struct px_blast_model
+	{
+		px_blast_model() {}
+
+		struct material
+		{
+			std::string diffuseTexture;
+		};
+
+		struct chunk
+		{
+			struct mesh
+			{
+				uint32_t materialIndex;
+				px_simple_mesh mesh;
+			};
+
+			std::vector<mesh> meshes;
+		};
+
+		std::vector<material> materials;
+		std::vector<chunk> chunks;
+
+		//static ref<px_blast_model> loadFromFbxFile(const char* path);
+		static ref<px_blast_model> loadFromTinyLoader(const char* path);
 	};
 
 	struct px_blast_family
@@ -455,13 +483,13 @@ namespace physics
 		px_blast_asset_model(TkFramework& framework, PxPhysics& physics, ExtSerialization& serialization, main_renderer& rndr, const char* modelName);
 		virtual ~px_blast_asset_model();
 
-		const ref<multi_mesh>& getModel() const
+		const ref<px_blast_model>& getModel() const
 		{
 			return model;
 		}
 
 	private:
-		ref<multi_mesh> model;
+		ref<px_blast_model> model;
 	};
 
 	struct px_blast_family_boxes : px_blast_family
@@ -477,7 +505,7 @@ namespace physics
 
 	private:
 		main_renderer& renderer;
-		std::vector<mesh_component*> chunkRenderables;
+		std::vector<entity_handle> chunkRenderables;
 	};
 
 	struct px_blast_replay

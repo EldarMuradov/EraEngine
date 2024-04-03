@@ -47,7 +47,7 @@ void job_queue::submit(int32 handle)
 {
     if (handle != -1)
     {
-        while (!queue.try_enqueue(handle)) 
+        while (!queue.try_enqueue(handle))
         {
             executeNextJob();
         }

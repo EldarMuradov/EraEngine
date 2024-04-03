@@ -29,7 +29,7 @@ ExtPxManager* ExtPxManager::create(PxPhysics& physics, TkFramework& framework, E
 	return NVBLAST_NEW(ExtPxManagerImpl)(physics, framework, createFn, useUserData);
 }
 
-ExtPxCollisionBuilder* ExtPxManager::createCollisionBuilder(PxPhysics& physics, PxCooking& cooking)
+ExtPxCollisionBuilder* ExtPxManager::createCollisionBuilder(PxPhysics& physics)
 {
 	return NVBLAST_NEW(ExtPxCollisionBuilderImpl);
 }
