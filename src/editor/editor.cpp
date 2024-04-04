@@ -1894,7 +1894,10 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 
 	bool objectMovedByGizmo = false;
 
-	render_camera& camera = this->scene->camera;
+	render_camera& camera = this->scene->isPausable() ? this->scene->editor_camera : this->scene->camera;
+
+	if (&camera != cameraController.camera)
+		cameraController.camera = &camera;
 
 	bool gizmoDrawn = false;
 
@@ -2173,8 +2176,8 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 			forceStop();
 		}
 
-		scene = &this->scene->getCurrentScene();
-		cameraController.camera = &camera;
+		//scene = &this->scene->getCurrentScene();
+		//cameraController.camera = &camera;
 
 		currentUndoStack = &undoStacks[this->scene->mode > 0];
 		currentUndoBuffer = &undoBuffers[this->scene->mode > 0];

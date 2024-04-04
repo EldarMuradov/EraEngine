@@ -10,6 +10,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 #include <NvBlastExtPxCollisionBuilder.h>
+#include <asset/mesh_postprocessing.h>
 
 using namespace std::chrono;
 
@@ -981,7 +982,6 @@ physics::px_blast_family_boxes::px_blast_family_boxes(ExtPxManager& pxManager, m
 		chunkRenderables[i] = entt.handle;
 
 		mm->mesh = builder.createDXMesh();
-		
 	}
 
 	// initialize in position
@@ -1002,9 +1002,7 @@ void physics::px_blast_family_boxes::onActorCreated(const ExtPxActor& actor)
 	for (uint32_t i = 0; i < chunkCount; i++)
 	{
 		const uint32_t chunkIndex = chunkIndices[i];
-
-		eentity renderEntity{ chunkRenderables[chunkIndex], &enttScene->registry };
-		renderEntity.getComponent<mesh_component>().isHidden = false;
+		enttScene->registry.get<mesh_component>(chunkRenderables[chunkIndex]).isHidden = false;
 	}
 }
 
@@ -1046,9 +1044,7 @@ void physics::px_blast_family_boxes::onActorDestroyed(const ExtPxActor& actor)
 	for (uint32_t i = 0; i < chunkCount; i++)
 	{
 		const uint32_t chunkIndex = chunkIndices[i];
-
-		eentity renderEntity{ chunkRenderables[chunkIndex], &enttScene->registry };
-		renderEntity.getComponent<mesh_component>().isHidden = true;
+		enttScene->registry.get<mesh_component>(chunkRenderables[chunkIndex]).isHidden = true;
 	}
 }
 
@@ -1118,7 +1114,7 @@ void physics::px_blast_replay::stopRecording()
 	}
 
 	// TODO: sort by ts ? make sure?
-	//m_buffer.sort
+	//buffer.sort
 
 	sync->releaseSyncBuffer();
 
@@ -1226,7 +1222,6 @@ physics::px_blast_asset_model::px_blast_asset_model(TkFramework& framework, PxPh
 	}
 
 	// Physics Asset
-
 	// Read file into buffer
 	std::ostringstream blastFileName;
 	blastFileName << modelName << ".blast";
@@ -1286,6 +1281,11 @@ physics::px_blast_asset_model::px_blast_asset_model(TkFramework& framework, PxPh
 physics::px_blast_asset_model::~px_blast_asset_model()
 {
 	pxAsset->release();
+}
+
+ref<physics::px_blast_family> physics::px_blast_asset_model::createFamily(ExtPxManager& pxManager, const actor_desc& desc)
+{
+	return ref<px_blast_family>(new px_blast_family_simple_mesh(pxManager, renderer, *this, desc));
 }
 
 void physics::px_blast_single_scene_asset::spawn(PxVec3 shift)
@@ -1390,7 +1390,8 @@ ref<physics::px_blast_model> physics::px_blast_model::loadFromTinyLoader(const c
 	std::vector<tinyobj::material_t> mats;
 	std::string err;
 	std::string mtlPath;
-	for (size_t i = strnlen(path, 255) - 1; i >= 0; --i)
+
+	for(size_t i = strnlen(path, 255) - 1; i >= 0; --i)
 	{
 		if (path[i] == '\\')
 		{
@@ -1399,7 +1400,6 @@ ref<physics::px_blast_model> physics::px_blast_model::loadFromTinyLoader(const c
 			break;
 		}
 	}
-
 
 	bool ret = tinyobj::LoadObj(shapes, mats, err, path, mtlPath.data());
 
@@ -1447,4 +1447,193 @@ ref<physics::px_blast_model> physics::px_blast_model::loadFromTinyLoader(const c
 	}
 
 	return model;
+}
+
+static submesh_asset& createGraphycsMesh(const physics::px_simple_mesh& simpleMesh)
+{
+	// TODO
+	submesh_asset* asset = nullptr;
+	return *asset;
+}
+
+physics::px_blast_family_simple_mesh::px_blast_family_simple_mesh(ExtPxManager& pxManager, main_renderer& rndr, const px_blast_asset_model& blastAsset, const px_blast_asset::actor_desc& desc)
+	: px_blast_family(pxManager, blastAsset), renderer(rndr)
+{
+	// materials
+	auto defaultmat = createPBRMaterialAsync({ "", "" });
+
+	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+	// model
+	const px_blast_model& model = *blastAsset.getModel();
+
+	// create render mesh for every BlastModel::Chunk::Mesh and renderable with it
+	const std::vector<px_blast_model::chunk>& modelChunks = model.chunks;
+	chunks.resize(modelChunks.size());
+	for (uint32_t chunkIndex = 0; chunkIndex < modelChunks.size(); chunkIndex++)
+	{
+		const std::vector<px_blast_model::chunk::mesh>& meshes = modelChunks[chunkIndex].meshes;
+		std::vector<ref<multi_mesh>>& renderMeshes = chunks[chunkIndex].renderMeshes;
+		std::vector<entity_handle>& renderables = chunks[chunkIndex].renderables;
+
+		renderMeshes.resize(meshes.size());
+		renderables.resize(meshes.size());
+
+		for (uint32_t i = 0; i < meshes.size(); i++)
+		{
+			mesh_builder builder;
+
+			builder.pushMesh(createGraphycsMesh(meshes[i].mesh), 1.0f);
+
+			renderMeshes[i] = make_ref<multi_mesh>();
+
+			uint32_t materialIndex = model.chunks[chunkIndex].meshes[i].materialIndex;
+
+			eentity entt = enttScene->
+				createEntity(("BlastEntity_" + std::to_string(::id++)).c_str())
+				.addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f))
+				.addComponent<physics::px_shape_holder_component>()
+				.addComponent<mesh_component>(renderMeshes[i], true);
+
+			renderables[i] = entt.handle;
+
+			renderMeshes[i]->mesh = builder.createDXMesh();
+		}
+	}
+
+	// initialize in position
+	initialize(desc);
+}
+
+physics::px_blast_family_simple_mesh::~px_blast_family_simple_mesh()
+{
+
+}
+
+void physics::px_blast_family_simple_mesh::onActorCreated(const ExtPxActor& actor)
+{
+	const uint32_t* chunkIndices = actor.getChunkIndices();
+	uint32_t chunkCount = actor.getChunkCount();
+	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+	for (uint32_t i = 0; i < chunkCount; i++)
+	{
+		uint32_t chunkIndex = chunkIndices[i];
+		std::vector<entity_handle>& renderables = chunks[chunkIndex].renderables;
+		for (uint32_t r = 0; r < renderables.size(); r++)
+		{
+			enttScene->registry.get<mesh_component>(renderables[r]).isHidden = false;
+		}
+	}
+}
+
+void physics::px_blast_family_simple_mesh::onActorUpdate(const ExtPxActor& actor)
+{
+	const ExtPxChunk* pxchunks = blastAsset.getPxAsset()->getChunks();
+	const ExtPxSubchunk* subChunks = blastAsset.getPxAsset()->getSubchunks();
+	const uint32_t* chunkIndices = actor.getChunkIndices();
+	uint32_t chunkCount = actor.getChunkCount();
+	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+	for (uint32_t i = 0; i < chunkCount; i++)
+	{
+		uint32_t chunkIndex = chunkIndices[i];
+		std::vector<entity_handle>& renderables = chunks[chunkIndex].renderables;
+		for (const entity_handle& r : renderables)
+		{
+			eentity renderEntity{ r, &enttScene->registry };
+
+			auto pose = actor.getPhysXActor().getGlobalPose() * subChunks[pxchunks[chunkIndex].firstSubchunkIndex].transform;
+
+			renderEntity.getComponent<transform_component>().position = createVec3(pose.p);
+			renderEntity.getComponent<transform_component>().rotation = createQuat(pose.q);
+		}
+	}
+}
+
+void physics::px_blast_family_simple_mesh::onActorDestroyed(const ExtPxActor& actor)
+{
+	const uint32_t* chunkIndices = actor.getChunkIndices();
+	uint32_t chunkCount = actor.getChunkCount();
+	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+	for (uint32_t i = 0; i < chunkCount; i++)
+	{
+		uint32_t chunkIndex = chunkIndices[i];
+		std::vector<entity_handle>& renderables = chunks[chunkIndex].renderables;
+		for (const entity_handle& r : renderables)
+		{
+			enttScene->registry.get<mesh_component>(r).isHidden = true;
+		}
+	}
+}
+
+void physics::px_blast_family_simple_mesh::onActorHealthUpdate(const ExtPxActor& pxActor)
+{
+	TkActor& tkActor = pxActor.getTkActor();
+	const TkAsset* tkAsset = tkActor.getAsset();
+
+	const float* bondHealths = tkActor.getBondHealths();
+	uint32_t nodeCount = tkActor.getGraphNodeCount();
+	if (nodeCount == 0) // subsupport chunks don't have graph nodes
+		return;
+
+	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+	std::vector<uint32_t> nodes(tkActor.getGraphNodeCount());
+	tkActor.getGraphNodeIndices(nodes.data(), static_cast<uint32_t>(nodes.size()));
+
+	const NvBlastChunk* pxchunks = tkAsset->getChunks();
+	const NvBlastBond* bonds = tkAsset->getBonds();
+
+	const NvBlastSupportGraph graph = tkAsset->getGraph();
+	const float bondHealthMax = blastAsset.getBondHealthMax();
+
+	std::vector<float> healthBuffer;
+
+	for (uint32_t node0 : nodes)
+	{
+		uint32_t chunkIndex = graph.chunkIndices[node0];
+
+		if (chunkIndex >= chunks.size())
+			continue;
+
+		std::vector<ref<multi_mesh>>& meshes = chunks[chunkIndex].renderMeshes;
+		const auto& renderables = chunks[chunkIndex].renderables;
+		for (uint32_t i = 0; i < meshes.size(); ++i)
+		{
+			if (enttScene->registry.get<mesh_component>(renderables[i]).isHidden)
+				continue;
+
+			ref<multi_mesh> renderMesh = meshes[i];
+
+			/*const px_simple_mesh* mesh = renderMesh->getMesh();
+			healthBuffer.resize(mesh->vertices.size());
+
+			for (uint32_t vertexIndex = 0; vertexIndex < mesh->vertices.size(); vertexIndex++)
+			{
+				PxVec3 position = mesh->vertices[vertexIndex].position;
+				float health = 0.0f;
+				float healthDenom = 0.0f;
+
+				for (uint32_t adjacencyIndex = graph.adjacencyPartition[node0]; adjacencyIndex < graph.adjacencyPartition[node0 + 1]; adjacencyIndex++)
+				{
+					uint32_t node1 = graph.adjacentNodeIndices[adjacencyIndex];
+					uint32_t bondIndex = graph.adjacentBondIndices[adjacencyIndex];
+					float bondHealth = PxClamp(bondHealths[bondIndex] / bondHealthMax, 0.0f, 1.0f);
+					const NvBlastBond& solverBond = bonds[bondIndex];
+					const PxVec3& centroid = reinterpret_cast<const PxVec3&>(solverBond.centroid);
+
+					float factor = 1.0f / (centroid - position).magnitudeSquared();
+
+					health += bondHealth * factor;
+					healthDenom += factor;
+				}
+
+				healthBuffer[vertexIndex] = healthDenom > 0.0f ? health / healthDenom : 1.0f;
+			}*/
+
+			//renderMesh->updateHealths(healthBuffer);
+		}
+	}
 }

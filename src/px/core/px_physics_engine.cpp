@@ -94,8 +94,8 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 		std::cout << "Physics> PVD Connected.\n";
 
 #endif
-	toleranceScale.length = 1.0;
-	toleranceScale.speed = 10.0;
+	toleranceScale.length = 1.0f;
+	toleranceScale.speed = 1.0f;
 	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, pvd);
 
 	if (!PxInitExtensions(*physics, pvd))
@@ -286,9 +286,71 @@ void physics::px_physics_engine::start() noexcept
 		list.boxes.push_back(box);
 	}
 
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Column (3 depth, 50 nodes)";
+		box.extents = PxVec3(2, 20, 2);
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 5, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 10, 1, true });
+
+		list.boxes.push_back(box);
+	}
+
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Column (3 depth, 50 nodes, support depth = 1)";
+		box.extents = PxVec3(2, 20, 2);
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 5, 1, true });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 10, 1, false });
+
+		list.boxes.push_back(box);
+	}
+
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Cube of Layers (3 depth, 1250 nodes)";
+		box.extents = PxVec3(20, 20, 20);
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 10, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
+
+		list.boxes.push_back(box);
+	}
+
+	{
+		px_asset_list::px_box_asset box;
+		box.name = "Brittle Wall";
+		box.extents = PxVec3(40, 20, 1);
+		box.bondFlags = 0b1000111;
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 1, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 1, true });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 2, false });
+		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 2, false });
+
+		list.boxes.push_back(box);
+	}
+
+	{
+		px_asset_list::px_model_asset model;
+		model.name = "Bunny (Simple)";
+		model.id = "Bunny (Simple)";
+		model.file = "bunny";
+
+		list.models.push_back(model);
+	}
+
 	for (const auto& box : list.boxes)
 	{
 		px_blast_boxes_asset_scene* asset = new px_blast_boxes_asset_scene(box);
+		blast->addAsset(asset);
+	}
+
+	for (const auto& model : list.models)
+	{
+		px_blast_simple_scene_asset* asset = new px_blast_simple_scene_asset(model);
 		blast->addAsset(asset);
 	}
 

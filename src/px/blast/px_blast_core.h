@@ -488,6 +488,8 @@ namespace physics
 			return model;
 		}
 
+		ref<px_blast_family> createFamily(ExtPxManager& pxManager, const actor_desc& desc);
+
 	private:
 		ref<px_blast_model> model;
 	};
@@ -506,6 +508,29 @@ namespace physics
 	private:
 		main_renderer& renderer;
 		std::vector<entity_handle> chunkRenderables;
+	};
+
+	struct px_blast_family_simple_mesh : px_blast_family
+	{
+		px_blast_family_simple_mesh(ExtPxManager& pxManager, main_renderer& rndr, const px_blast_asset_model& blastAsset, const px_blast_asset::actor_desc& desc);
+		virtual ~px_blast_family_simple_mesh();
+
+	protected:
+		virtual void onActorCreated(const ExtPxActor& actor);
+		virtual void onActorUpdate(const ExtPxActor& actor);
+		virtual void onActorDestroyed(const ExtPxActor& actor);
+		virtual void onActorHealthUpdate(const ExtPxActor& pxActor);
+
+	private:
+		main_renderer& renderer;
+
+		struct chunk
+		{
+			std::vector<ref<multi_mesh>> renderMeshes;
+			std::vector<entity_handle> renderables;
+		};
+
+		std::vector<chunk> chunks;
 	};
 
 	struct px_blast_replay
@@ -618,7 +643,6 @@ namespace physics
 
 	protected:
 		virtual px_blast_asset* createAsset() = 0;
-
 	};
 
 	struct px_blast
@@ -864,10 +888,40 @@ namespace physics
 			const auto& physics = physics_holder::physicsRef;
 
 			return new px_blast_asset_boxes(physics->blast->getTkFramework(), *physics->getPhysics(),
-				*enative_scripting_linker::app->getRenderer(), assetDesc);
+				*physics->app.getRenderer(), assetDesc);
 		}
 
 		virtual PxTransform getInitialTransform() { return PxTransform(PxVec3(0, assetDesc.generatorSettings.extents.y / 2, 0)); }
+	};
+
+	struct px_blast_model_scene_asset : px_blast_single_scene_asset
+	{
+		px_blast_model_scene_asset(px_asset_list::px_model_asset d) : desc(d) {}
+
+		virtual const char* getID() const override { return desc.id.c_str(); }
+		virtual const char* getName() const override { return desc.name.c_str(); }
+
+		px_asset_list::px_model_asset desc;
+
+		virtual PxTransform getInitialTransform() { return desc.transform; }
+	};
+
+	struct px_blast_simple_scene_asset : px_blast_model_scene_asset
+	{
+		px_blast_simple_scene_asset(px_asset_list::px_model_asset d) : px_blast_model_scene_asset(d) {}
+
+		virtual px_blast_asset* createAsset()
+		{
+			const auto& physics = physics_holder::physicsRef;
+
+			return new px_blast_asset_model(physics->blast->getTkFramework(), *physics->getPhysics(),
+				*physics->blast->getExtSerialization(), *physics->app.getRenderer(), desc.file.c_str());
+		}
+
+		virtual ImVec4 getUIColor() const
+		{
+			return ImColor(255, 255, 200, 255);
+		}
 	};
 
 	struct px_blast_rigidbody_component : px_physics_component_base

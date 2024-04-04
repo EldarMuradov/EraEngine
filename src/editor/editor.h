@@ -164,7 +164,7 @@ inline void editMaterial(const ref<pbr_material>& material)
 		ImGui::PropertyColor("Emission", material->emission);
 		ImGui::PropertyColor("Albedo tint", material->albedoTint);
 		ImGui::PropertyDropdown("Shader", pbrMaterialShaderNames, pbr_material_shader_count, (uint32&)material->shader);
-		ImGui::PropertySlider("UV scale", material->uvScale, 0.0f, 15.0f);
+		ImGui::PropertySlider("UV scale", material->uvScale, 0.0f, 150.0f);
 		ImGui::PropertySlider("Translucency", material->translucency);
 
 		if (!material->roughness)

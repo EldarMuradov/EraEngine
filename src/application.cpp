@@ -299,7 +299,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			//.addComponent<physics::px_bounding_box_collider_component>(&(ass.meshes[0]))
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
-		px_sphere_entt.getComponent<physics::px_rigidbody_component>().setMass(2000.f);
+		px_sphere_entt.getComponent<physics::px_rigidbody_component>().setMass(1000.f);
 		px_sphere = px_sphere_entt.handle;
 
 		auto px_sphere1 = &scene.createEntity("SpherePX1")
@@ -542,9 +542,6 @@ void application::update(const user_input& input, float dt)
 	editor.render(&ldrRenderPass, dt);
 
 	render_camera& camera = this->scene.isPausable() ? scene.editor_camera : scene.camera;
-
-	if (&camera != editor.cameraController.camera)
-		editor.cameraController.camera = &camera;
 
 #else
 
