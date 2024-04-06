@@ -62,6 +62,8 @@ namespace physics
 		void setConstraints(uint8 constraints) noexcept;
 		NODISCARD uint8 getConstraints() const noexcept;
 
+		void setKinematic(bool kinematic);
+
 		void setLinearVelocity(vec3 velocity);
 
 		NODISCARD vec3 getLinearVelocity() const noexcept;

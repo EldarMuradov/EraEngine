@@ -74,7 +74,7 @@ public:
 		  * - \e eFrames50          50 frames/s
 		  * - \e eFrames48          48 frame/s
 		  * - \e eFrames30          30 frames/s (black and white NTSC)
-		  * - \e eFrames30Drop		30 frames/s (use when display in frame is selected, equivalent to NTSC drop)
+		  * - \e eFrames30Drop		Kept for legacy reasons. Being equivalent to NTSC drop, use eNTSCDropFrame instead.
 		  * - \e eNTSCDropFrame		~29.97 frames/s drop color NTSC
 		  * - \e eNTSCFullFrame		~29.97 frames/s color NTSC
 		  * - \e ePAL				25 frames/s	PAL/SECAM

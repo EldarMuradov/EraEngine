@@ -69,11 +69,14 @@ TObject* ExtSerializationCAPN<TObject, TSerializationReader, TSerializationBuild
 	kj::ArrayInputStream inputStream(source);
 
 	Nv::Blast::Array<uint64_t>::type scratch(static_cast<uint32_t>(size));
-	kj::ArrayPtr<capnp::word> scratchArray((capnp::word*) scratch.begin(), size);
+	kj::ArrayPtr<capnp::word>* scratchArray = new kj::ArrayPtr<capnp::word>((capnp::word*) scratch.begin(), size);
 
-	capnp::InputStreamMessageReader message(inputStream, capnp::ReaderOptions(), scratchArray);
+	capnp::InputStreamMessageReader* message = new capnp::InputStreamMessageReader(inputStream, capnp::ReaderOptions(), *scratchArray);
+	TObject* obj = deserializeFromStreamReader(*message);
 
-	return deserializeFromStreamReader(message);
+	delete scratchArray;
+	delete message;
+	return obj;
 }
 
 

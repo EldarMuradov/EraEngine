@@ -17,6 +17,11 @@
 
 #include <fbxsdk/fbxsdk_nsbegin.h>
 
+#if defined(FBXSDK_COMPILER_MSC) && _MSC_VER < 1900
+#pragma warning(push)
+#pragma warning(disable : 4512) // to avoid: assignment operator could not be generated
+#endif
+
 /** An allocator class for use as a template parameter to one of the
   * container class (FbxMap, FbxSet, FbxDynamicArray...) must implement these.
   */
@@ -207,6 +212,10 @@ private:
 	size_t			mRecordPoolSize;
 	MemoryBlock*	mData;
 };
+
+#if defined(FBXSDK_COMPILER_MSC) && _MSC_VER < 1900
+#pragma warning(pop)
+#endif
 
 #include <fbxsdk/fbxsdk_nsend.h>
 

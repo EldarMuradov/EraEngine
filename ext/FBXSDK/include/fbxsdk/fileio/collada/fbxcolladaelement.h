@@ -110,7 +110,7 @@ template <typename TYPE>
 struct SourceElementContentAccessor : public ElementContentAccessor
 {
     SourceElementContentAccessor(xmlNode * pSourceElement)
-        : mCount(0), mStride(1), mOffset(0)
+        : mCount(0), mStride(1), mOffset(0), mInconsistent(false)
     {
         bool lReadCount = true;
         xmlNode* lTechniqueElement = DAE_FindChildElementByTag(pSourceElement, COLLADA_TECHNIQUE_COMMON_ELEMENT);
@@ -119,9 +119,9 @@ struct SourceElementContentAccessor : public ElementContentAccessor
             xmlNode* lAccessorElement = DAE_FindChildElementByTag(lTechniqueElement, COLLADA_ACCESSOR_STRUCTURE);
             if (lAccessorElement)
 			{
-				DAE_GetElementAttributeValue(lAccessorElement, COLLADA_COUNT_PROPERTY, mCount);
-				DAE_GetElementAttributeValue(lAccessorElement, COLLADA_STRIDE_PROPERTY, mStride);
-				DAE_GetElementAttributeValue(lAccessorElement, COLLADA_OFFSET_PROPERTY, mOffset);
+                DAE_GetElementAttributeValue(lAccessorElement, COLLADA_COUNT_PROPERTY, mCount);
+                DAE_GetElementAttributeValue(lAccessorElement, COLLADA_STRIDE_PROPERTY, mStride);
+                DAE_GetElementAttributeValue(lAccessorElement, COLLADA_OFFSET_PROPERTY, mOffset);
 			}
             lReadCount = false;
         }
@@ -132,16 +132,29 @@ struct SourceElementContentAccessor : public ElementContentAccessor
             lDataArrayElement = DAE_FindChildElementByTag(pSourceElement, COLLADA_IDREF_ARRAY_STRUCTURE);
         FBX_ASSERT(lDataArrayElement);
 
-        if (lDataArrayElement && lReadCount)
-            DAE_GetElementAttributeValue(lDataArrayElement, COLLADA_COUNT_PROPERTY, mCount);
+        if (lDataArrayElement)
+        {
+            int arrayCount = 0;
+            DAE_GetElementAttributeValue(lDataArrayElement, COLLADA_COUNT_PROPERTY, arrayCount);
+            if (arrayCount > 0 && mCount > 0)
+            {
+                // validate that the numbers we get from the 'technique' make sense for the array
+                int s = arrayCount / mCount;
+                mInconsistent = (s != mStride);
+            }
+
+            if (lReadCount)
+                mCount = arrayCount;
+        }
 
         mContent = xmlNodeGetContent(lDataArrayElement);
         mPointer = (const char *)mContent;
     }
 
-    int mCount;
-    int mStride;
-    int mOffset;
+    int  mCount;
+    int  mStride;
+    int  mOffset;
+    bool mInconsistent;
 };
 
 //----------------------------------------------------------------------------//

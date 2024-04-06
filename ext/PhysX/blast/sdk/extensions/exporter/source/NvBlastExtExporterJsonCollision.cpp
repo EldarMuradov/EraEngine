@@ -25,10 +25,11 @@
 //
 // Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
 
+#include <pch.h>
 
 #include "NvBlastExtExporterJsonCollision.h"
 #include "NvBlastExtAuthoringTypes.h"
-#include <PxVec3.h>
+#include <foundation/PxVec3.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>

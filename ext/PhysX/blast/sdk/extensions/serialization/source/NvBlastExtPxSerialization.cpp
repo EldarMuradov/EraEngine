@@ -24,6 +24,7 @@
 // NVIDIA Corporation.
 //
 // Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
+#include <pch.h>
 
 
 #include "NvBlastExtSerializationInternal.h"
@@ -39,7 +40,6 @@ namespace Blast
 
 TkFramework*		sExtPxSerializerFramework = nullptr;
 physx::PxPhysics*	sExtPxSerializerPhysics = nullptr;
-physx::PxCooking*	sExtPxSerializerCooking = nullptr;
 
 
 class ExtPxSerializerAsset_CPNB : public ExtSerializer
@@ -50,7 +50,8 @@ public:
 
 	virtual void* deserializeFromBuffer(const void* buffer, uint64_t size) override
 	{
-		return ExtSerializationCAPN<ExtPxAsset, Serialization::ExtPxAsset::Reader, Serialization::ExtPxAsset::Builder>::deserializeFromBuffer(reinterpret_cast<const unsigned char*>(buffer), size);
+		void* mem = ExtSerializationCAPN<ExtPxAsset, Serialization::ExtPxAsset::Reader, Serialization::ExtPxAsset::Builder>::deserializeFromBuffer(reinterpret_cast<const unsigned char*>(buffer), size);
+		return mem;
 	}
 
 	virtual uint64_t serializeIntoBuffer(void*& buffer, ExtSerialization::BufferProvider& bufferProvider, const void* object, uint64_t offset = 0) override
@@ -87,11 +88,10 @@ public:
 ///////////////////////////////////////
 
 
-size_t NvBlastExtPxSerializerLoadSet(Nv::Blast::TkFramework& framework, physx::PxPhysics& physics, physx::PxCooking& cooking, Nv::Blast::ExtSerialization& serialization)
+size_t NvBlastExtPxSerializerLoadSet(Nv::Blast::TkFramework& framework, physx::PxPhysics& physics, Nv::Blast::ExtSerialization& serialization)
 {
 	Nv::Blast::sExtPxSerializerFramework = &framework;
 	Nv::Blast::sExtPxSerializerPhysics = &physics;
-	Nv::Blast::sExtPxSerializerCooking = &cooking;
 
 	Nv::Blast::ExtSerializer* (*factories[])() =
 	{

@@ -1,4 +1,7 @@
 #include <pch.h>
+
+#define TINYOBJLOADER_IMPLEMENTATION
+
 #include <px/blast/px_blast_core.h>
 #include <NvBlastExtPxSerialization.h>
 #include <numeric>
@@ -6,11 +9,13 @@
 #include <core/imgui.h>
 #include <scene/components.h>
 #include <NvBlastExtAssetUtils.h>
+#include <sstream>
+#include <fstream>
 
-#define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 #include <NvBlastExtPxCollisionBuilder.h>
 #include <asset/mesh_postprocessing.h>
+#include <NvBlastExtExporter.h>
 
 using namespace std::chrono;
 
@@ -68,11 +73,13 @@ void physics::px_blast::onSampleStart(PxPhysics* physics, PxScene* scene)
 	extSerialization = NvBlastExtSerializationCreate();
 	if (extSerialization != nullptr)
 	{
-		NvBlastExtTkSerializerLoadSet(*framework, *extSerialization);
+		size_t nb = NvBlastExtTkSerializerLoadSet(*framework, *extSerialization);
 
 		// TODO: Switch serialization to PhysX 5.3.1
-		/*NvBlastExtPxSerializerLoadSet(*framework, PxGetPhysics(),
-			, *extSerialization);*/
+		//NvBlastExtLlSerializerLoadSet(*extSerialization);
+		
+		NvBlastExtPxSerializerLoadSet(*framework, *physics,
+			*extSerialization);
 	}
 }
 
@@ -1188,6 +1195,8 @@ void physics::px_blast_replay::clearBuffer()
 	buffer.clear();
 }
 
+
+
 physics::px_blast_asset_model::px_blast_asset_model(TkFramework& framework, PxPhysics& physics, ExtSerialization& serialization, main_renderer& rndr, const char* modelName)
 	: px_blast_asset(rndr)
 {
@@ -1199,9 +1208,11 @@ physics::px_blast_asset_model::px_blast_asset_model(TkFramework& framework, PxPh
 
 	// load obj file
 	std::ostringstream objFileName;
-	objFileName << modelName << ".obj";
+	std::ostringstream mtlFileName;
+	objFileName << "assets\\obj\\" << modelName << ".obj";
+	mtlFileName << "assets\\obj\\" << modelName << ".mtl";
 
-	model = px_blast_model::loadFromTinyLoader(path.c_str());
+	model = px_blast_model::loadFromTinyLoader(objFileName.str().c_str(), mtlFileName.str().c_str());
 	if (!model)
 	{
 		LOG_ERROR("Blast> Obj load failed.");
@@ -1221,13 +1232,10 @@ physics::px_blast_asset_model::px_blast_asset_model(TkFramework& framework, PxPh
 		}
 	}
 
-	// Physics Asset
-	// Read file into buffer
 	std::ostringstream blastFileName;
-	blastFileName << modelName << ".blast";
-	//if (findFile(blastFileName.str(), path)) // load file
+	blastFileName << "assets/obj/" << modelName << ".blast";
 	{
-		std::ifstream stream(path.c_str(), std::ios::binary);
+		std::fstream stream(blastFileName.str().c_str(), std::ios::binary | std::ios::in);
 		std::streampos size = stream.tellg();
 		stream.seekg(0, std::ios::end);
 		size = stream.tellg() - size;
@@ -1241,7 +1249,8 @@ physics::px_blast_asset_model::px_blast_asset_model(TkFramework& framework, PxPh
 		{
 			LOG_ERROR("Blast> Can't load .blast file.");
 		}
-		else if (objectTypeID == Nv::Blast::ExtPxObjectTypeID::Asset)
+
+		if (objectTypeID == Nv::Blast::ExtPxObjectTypeID::Asset)
 		{
 			pxAsset = reinterpret_cast<ExtPxAsset*>(asset);
 			const TkAsset& tkAsset = pxAsset->getTkAsset();
@@ -1262,7 +1271,7 @@ physics::px_blast_asset_model::px_blast_asset_model(TkFramework& framework, PxPh
 				NvBlastAsset* llasset = const_cast<NvBlastAsset*>(tkAsset->getAssetLL());
 				NvBlastExtAssetTransformInPlace(llasset, &inputScale, nullptr, nullptr);
 			}
-			else if (objectTypeID == Nv::Blast::ExtPxObjectTypeID::Asset) // check it right
+			else if (objectTypeID == Nv::Blast::LlObjectTypeID::Asset)
 			{
 				NvBlastAsset* llasset = reinterpret_cast<NvBlastAsset*>(asset);
 				NvBlastExtAssetTransformInPlace(llasset, &inputScale, nullptr, nullptr);
@@ -1271,6 +1280,65 @@ physics::px_blast_asset_model::px_blast_asset_model(TkFramework& framework, PxPh
 			else
 			{
 				LOG_ERROR("Blast> .blast file contains unknown object.");
+			}
+
+			if (tkAsset != nullptr)
+			{
+				std::vector<ExtPxAssetDesc::ChunkDesc> physicsChunks;
+				std::vector<std::vector<ExtPxAssetDesc::SubchunkDesc> > physicsSubchunks;
+
+				objFileName.str("");
+				objFileName << "assets\\obj\\" << modelName << ".fbx";
+				{
+					std::shared_ptr<IFbxFileReader> rdr(NvBlastExtExporterCreateFbxFileReader(),
+						[](IFbxFileReader* p) { p->release(); });
+					rdr->loadFromFile(objFileName.str().c_str());
+					if (rdr->isCollisionLoaded() == 0)
+					{
+						LOG_ERROR("Blast> fbx doesn't contain collision geometry");
+					}
+					uint32_t* hullsOffsets = nullptr;
+					CollisionHull** hulls = nullptr;
+					uint32_t meshCount = rdr->getCollision(hullsOffsets, hulls);
+
+					physicsChunks.resize(meshCount);
+					physicsSubchunks.resize(meshCount);
+
+					std::shared_ptr<ExtPxCollisionBuilder> collisionBuilder(
+						ExtPxManager::createCollisionBuilder(physics),
+						[](Nv::Blast::ExtPxCollisionBuilder* cmb) { cmb->release(); });
+
+					for (uint32_t i = 0; i < meshCount; ++i)
+					{
+						for (uint32_t sbHulls = hullsOffsets[i]; sbHulls < hullsOffsets[i + 1]; ++sbHulls)
+						{
+							PxConvexMeshGeometry temp =
+								physx::PxConvexMeshGeometry(collisionBuilder.get()->buildConvexMesh(*hulls[sbHulls]));
+							if (temp.isValid())
+							{
+								physicsSubchunks[i].push_back(ExtPxAssetDesc::SubchunkDesc());
+								physicsSubchunks[i].back().geometry = temp;
+								physicsSubchunks[i].back().transform = physx::PxTransform(physx::PxIdentity);
+							}
+						}
+					}
+					for (uint32_t i = 0; i < meshCount; ++i)
+					{
+						physicsChunks[i].isStatic = false;
+						physicsChunks[i].subchunkCount = (uint32_t)physicsSubchunks[i].size();
+						physicsChunks[i].subchunks = physicsSubchunks[i].data();
+					}
+					if (hulls && hullsOffsets)
+					{
+						for (uint32_t h = 0; h < hullsOffsets[meshCount]; h++)
+						{
+							collisionBuilder->releaseCollisionHull(hulls[h]);
+						}
+						NVBLAST_FREE(hulls);
+						NVBLAST_FREE(hullsOffsets);
+					}
+				}
+				pxAsset = ExtPxAsset::create(tkAsset, physicsChunks.data(), (uint32_t)physicsChunks.size());
 			}
 		}
 	}
@@ -1292,9 +1360,16 @@ void physics::px_blast_single_scene_asset::spawn(PxVec3 shift)
 {
 	load();
 
+	trs t0 = trs(vec3(0.f, 0.0f, 0.0f), quat::identity, vec3(1.f));
+
 	physics_holder::physicsRef->app.getCurrentScene()->createEntity("blast_entity")
 		.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
 		.addComponent<px_blast_rigidbody_component>(std::string("blast_entity"), this);
+
+	trs t1 = trs(vec3(50.f, 0.0f, 0.0f), quat::identity, vec3(1.f));
+	physics_holder::physicsRef->app.getCurrentScene()->createEntity("blast_entity1")
+		.addComponent<transform_component>(vec3(5.0f, 0.0f, 0.0f), quat::identity, vec3(1.f))
+		.addComponent<px_blast_rigidbody_component>(std::string("blast_entity1"), this);
 }
 
 void physics::px_blast_single_scene_asset::spawnOnObject(PxVec3 shift, eentity& entity)
@@ -1382,16 +1457,16 @@ static void loadMeshes(std::vector<physics::px_blast_model::chunk::mesh>& meshes
 	}
 }
 
-ref<physics::px_blast_model> physics::px_blast_model::loadFromTinyLoader(const char* path)
+ref<physics::px_blast_model> physics::px_blast_model::loadFromTinyLoader(const char* path, const char* pathMtl)
 {
 	ref<px_blast_model> model = make_ref<px_blast_model>();
 
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> mats;
 	std::string err;
-	std::string mtlPath;
+	std::string mtlPath = pathMtl;
 
-	for(size_t i = strnlen(path, 255) - 1; i >= 0; --i)
+	/*for(size_t i = strnlen(path, 255) - 1; i >= 0; --i)
 	{
 		if (path[i] == '\\')
 		{
@@ -1399,7 +1474,7 @@ ref<physics::px_blast_model> physics::px_blast_model::loadFromTinyLoader(const c
 			strncpy(&mtlPath[0], path, i + 1);
 			break;
 		}
-	}
+	}*/
 
 	bool ret = tinyobj::LoadObj(shapes, mats, err, path, mtlPath.data());
 
@@ -1424,7 +1499,7 @@ ref<physics::px_blast_model> physics::px_blast_model::loadFromTinyLoader(const c
 
 	// estimate
 	model->chunks.reserve(shapes.size() / materialsCount + 1);
-
+	uint32_t chunkIndex = 1;
 	if (shapes.size() > 0)
 	{
 		uint32_t meshIndex = 0;
@@ -1432,28 +1507,58 @@ ref<physics::px_blast_model> physics::px_blast_model::loadFromTinyLoader(const c
 		{
 			tinyobj::shape_t& pMesh = shapes[m];
 			int32_t materialIndex = 0;	// This is actually not set
-			uint32_t chunkIndex;
-			int32_t sc = sscanf(pMesh.name.data(), "%d_%d", &chunkIndex, &materialIndex);
-			if (sc == 0)
-			{
-				return nullptr;
-			}
+			//uint32_t chunkIndex;
+			//int32_t sc = sscanf(pMesh.name.data(), "%d_%d", &chunkIndex, &materialIndex);
+			//if (sc == 0)
+			//{
+			//	return nullptr;
+			//}
 			if (model->chunks.size() <= chunkIndex)
 			{
-				model->chunks.resize(chunkIndex + 1);
+				model->chunks.resize(chunkIndex);
 			}
 			loadMeshes(model->chunks.back().meshes, pMesh.mesh);
+
+			chunkIndex++;
 		}
 	}
 
 	return model;
 }
 
-static submesh_asset& createGraphycsMesh(const physics::px_simple_mesh& simpleMesh)
+static ref<submesh_asset> createGraphicsMesh(const physics::px_simple_mesh& simpleMesh)
 {
-	// TODO
-	submesh_asset* asset = nullptr;
-	return *asset;
+	ref<submesh_asset> asset = make_ref<submesh_asset>();
+	auto defaultmat = createPBRMaterialAsync({ "", "" });
+
+	std::vector<vec3> positions; positions.reserve(1 << 16);
+	std::vector<vec2> uvs; uvs.reserve(1 << 16);
+	std::vector<vec3> normals; normals.reserve(1 << 16);
+
+	std::vector<vec3> positionCache; positionCache.reserve(16);
+	std::vector<vec2> uvCache; uvCache.reserve(16);
+	std::vector<vec3> normalCache; normalCache.reserve(16);
+
+	size_t nbTriangles = simpleMesh.indices.size() / 3;
+
+	for (const auto& pos : simpleMesh.vertices)
+	{
+		asset->positions.push_back(physx::createVec3(pos.position));
+		//asset->normals.push_back(physx::createVec3(pos.normal));
+		asset->uvs.push_back(physx::createVec2(pos.uv));
+	}
+
+	for (uint32_t i = 0; i < simpleMesh.indices.size(); i += 3)
+	{
+		asset->triangles.push_back(indexed_triangle16{
+			(uint16)simpleMesh.indices[i + 0],
+			(uint16)simpleMesh.indices[i + 1],
+			(uint16)simpleMesh.indices[i + 2] });
+	}
+
+	generateNormalsAndTangents(asset, mesh_flag_default);
+
+	return asset;
 }
 
 physics::px_blast_family_simple_mesh::px_blast_family_simple_mesh(ExtPxManager& pxManager, main_renderer& rndr, const px_blast_asset_model& blastAsset, const px_blast_asset::actor_desc& desc)
@@ -1483,11 +1588,10 @@ physics::px_blast_family_simple_mesh::px_blast_family_simple_mesh(ExtPxManager& 
 		{
 			mesh_builder builder;
 
-			builder.pushMesh(createGraphycsMesh(meshes[i].mesh), 1.0f);
+			builder.pushMesh(*createGraphicsMesh(meshes[i].mesh), 1.0f);
 
 			renderMeshes[i] = make_ref<multi_mesh>();
-
-			uint32_t materialIndex = model.chunks[chunkIndex].meshes[i].materialIndex;
+			renderMeshes[i]->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
 
 			eentity entt = enttScene->
 				createEntity(("BlastEntity_" + std::to_string(::id++)).c_str())

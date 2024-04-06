@@ -24,7 +24,7 @@
 // NVIDIA Corporation.
 //
 // Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
-
+#include <pch.h>
 
 #include "AssetDTO.h"
 #include "NvBlastGlobals.h"
@@ -113,7 +113,13 @@ Nv::Blast::Asset* AssetDTO::deserialize(Nv::Blast::Serialization::Asset::Reader 
 
 	void* mem = NVBLAST_ALLOC(reader.totalSize().wordCount * sizeof(uint64_t));
 
-	auto asset = Nv::Blast::initializeAsset(mem, EmptyId, reader.getChunkCount(), reader.getGraph().getNodeCount(), reader.getLeafChunkCount(), reader.getFirstSubsupportChunkIndex(), reader.getBondCount(), logLL);
+	uint32_t chunkCount = reader.getChunkCount();
+	uint32_t nodeCount = reader.getGraph().getNodeCount();
+	uint32_t leafCount = reader.getLeafChunkCount();
+	uint32_t bondCound = reader.getBondCount();
+	uint32_t support = reader.getFirstSubsupportChunkIndex();
+
+	auto asset = Nv::Blast::initializeAsset(mem, EmptyId, chunkCount, nodeCount, leafCount, support, bondCound, logLL);
 
 	bool result = deserializeInto(reader, asset);
 

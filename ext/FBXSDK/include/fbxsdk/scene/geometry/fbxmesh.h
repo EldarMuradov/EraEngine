@@ -16,6 +16,7 @@
 #include <fbxsdk/fbxsdk_def.h>
 
 #include <fbxsdk/core/base/fbxarray.h>
+#include <fbxsdk/core/base/fbxset.h>
 #include <fbxsdk/scene/geometry/fbxgeometry.h>
 
 #include <fbxsdk/fbxsdk_nsbegin.h>
@@ -368,18 +369,23 @@ public:
 
 	/** \name Point Splitting/Merging utility functions */
 	//@{
-		/** Split points.
+		/** Split all the control points of the mesh to obtain detached polygons. 
+        * Normals and selected UVs are updated accordingly.     
 		* \param pTypeIdentifier Specify which UVs are processed.
 		* \return \c true if a split occurred, false otherwise.
-		* \remark This method replaces the BuildSplitList and SplitPointsForHardEdge. */
+        * \remark This method only processes Uvs & Normals defined on Layer 0.
+		* \remark This method replaces the old BuildSplitList and SplitPointsForHardEdge. */
 		bool SplitPoints(FbxLayerElement::EType pTypeIdentifier=FbxLayerElement::eTextureDiffuse);
 
-		/** Insert the new indexes of the object that have to be merged.
-		* \param pMergeList The list that will contain the indexes of the objects to merge.
-		* \param pExport If set to \c true, include the duplicate indexes in the merge list. */
-		bool BuildMergeList(FbxArray<int>& pMergeList, bool pExport=false);
+		/** Scan the mesh control points and fill the \c pMergeList array. 
+        * When two or more control points have the same 3D coordinate, the same index is inserted in \c pMergeList to indicate
+        * overlapping 3D coordinates. The filled list can be used with the MergePointsForPolygonVerteNormal to "collapse" the 
+        * overlapping control points into a single one.
+		* \param pMergeList The list that will contain the indices of the control points to merge.
+        * \return \c true if overlapping control points have been detected, \c false, otherwise. */
+		bool BuildMergeList(FbxArray<int>& pMergeList);
 
-		/** Merge the points specified in the list.
+		/** Merge the control points specified in the list and update the mesh definition accordingly.
 		* \param pMergeList List containing the information on the points that will be merged. */
 		void MergePointsForPolygonVerteNormals(FbxArray<int> &pMergeList);
 	//@}
@@ -442,8 +448,9 @@ public:
 
 		/** Sets element in edge array to specific value.
 		* \param pEdgeIndex The edge index
-		* \param pValue The edge data */
-		inline void SetMeshEdge(int pEdgeIndex, int pValue)
+		* \param pValue The edge data
+		* \return false if pValue represent an invalid value. */
+		inline bool SetMeshEdge(int pEdgeIndex, int pValue)
 		{ 
 			if (pEdgeIndex >= 0 && pEdgeIndex < mEdgeArray.GetCount())
 			{
@@ -452,10 +459,12 @@ public:
 				if (pValue < 0 || pValue >= mPolygonVertices.GetCount())
 				{
 					pValue = 0;
+					return false;
 				}
 
 				mEdgeArray[pEdgeIndex] = pValue;
 			}
+			return true;
 		}
 
 		/** Add an edge with the given start/end points. Note that the inserted edge
@@ -754,28 +763,27 @@ public:
         int GetComponentCount() { return mOffsets.GetCount() - 1; }
     };
     void ComputeComponentMaps(ComponentMap& pEdgeToPolyMap, ComponentMap& pPolyToEdgeMap);
-	
-	// Internal structure used to keep the mapping information between the control points and the
-	// vertices referencing them
-	class FBXSDK_DLL ControlPointToVerticesMap
-	{
-	public:
-		ControlPointToVerticesMap();
-		~ControlPointToVerticesMap();
-		bool Valid();		
 
-		void Fill(FbxMesh* pMesh);
+    // Internal structure used to keep the mapping information between the control points and the
+    // vertices referencing them
+    class FBXSDK_DLL ControlPointToVerticesMap
+    {
+    public:
+        bool Valid();
 
-		int  GetCount();
-		bool Init(int pNbEntries);
-		void Clear();
+        void FillWithControlPointInfo(FbxMesh* pMesh);
+        bool FillWithAdjacencyInfo(FbxMesh* pMesh, int pNbControlPoints);
 
-		FbxArray<int>* GetVerticesArray(int pControlPoint);
-		FbxArray<int>* operator[](int pControlPoint);
+        int  GetCount();
+        void Clear();
 
-	private:
-		FbxArray< FbxArray<int>* > mMap;
-	};
+        int GetCount(int pControlPoint) const;
+        int GetVertex(int pControlPoint, int pVertex) const;
+
+    private:
+        FbxArray<int> mStartIndices;
+        FbxArray<int> mVertexIndices;
+    };
 	void ComputeControlPointToVerticesMap(ControlPointToVerticesMap& pMap);
 
 	// this function will compare the vertex normals with the corresponding ones in pMesh and 
@@ -809,10 +817,20 @@ protected:
 
 	struct V2PVMap
 	{
+		struct EdgeCompare
+		{
+			inline int operator()(FbxPair<int, int> const& pKeyA, FbxPair<int, int> const& pKeyB) const
+			{
+				int lResult = pKeyA.mSecond - pKeyB.mSecond;
+				if (lResult == 0) return pKeyA.mFirst - pKeyB.mFirst;
+				else return lResult;
+			}
+		};
+
 		PolygonIndexDef* mV2PV;
 		int* mV2PVOffset;
 		int* mV2PVCount;
-		FbxArray<FbxSet<int>* > mPVEdge;
+		FbxSet<FbxPair<int, int>, EdgeCompare, FbxHungryAllocator> mPVEdges;
 		bool mValid;
 
 		//Used for fast search in GetMeshEdgeIndexForPolygon this array does not follow the same allocation as the above ones because

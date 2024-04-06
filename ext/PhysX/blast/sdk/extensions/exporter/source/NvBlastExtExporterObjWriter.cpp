@@ -25,9 +25,10 @@
 //
 // Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
 
+#include <pch.h>
 
 #include "NvBlastExtExporterObjWriter.h"
-#include <PxVec3.h>
+#include <foundation/PxVec3.h>
 #include <sstream>
 #include "NvBlastExtAuthoringTypes.h"
 #include "NvBlastExtAuthoringMesh.h"
@@ -37,7 +38,7 @@
 using namespace physx;
 using namespace Nv::Blast;
 
-char* gTexPath = "";
+char* gTexPath = (char*)"";
 
 void ObjFileWriter::release()
 {

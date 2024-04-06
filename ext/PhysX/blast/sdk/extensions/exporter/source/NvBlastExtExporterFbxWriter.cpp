@@ -25,6 +25,7 @@
 //
 // Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
 
+#include <pch.h>
 
 #include "fbxsdk.h"
 #include <iostream>
@@ -37,7 +38,7 @@
 #include "NvBlastGlobals.h"
 #include "NvBlastTkFramework.h"
 #include "NvBlast.h"
-#include "PxVec3.h"
+#include "foundation/PxVec3.h"
 #include "NvBlastAssert.h"
 #include <unordered_set>
 #include <functional>

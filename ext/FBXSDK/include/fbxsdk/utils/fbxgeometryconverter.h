@@ -340,6 +340,10 @@ private:
     FbxManager* mManager;
 
 	friend class FbxWriter3ds;
+
+public:
+	static bool mValidateTriangulation;
+
 #endif /* !DOXYGEN_SHOULD_SKIP_THIS *****************************************************************************************/
 };
 

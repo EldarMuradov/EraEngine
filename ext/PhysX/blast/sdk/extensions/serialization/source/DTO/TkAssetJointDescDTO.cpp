@@ -24,6 +24,7 @@
 // NVIDIA Corporation.
 //
 // Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
+#include <pch.h>
 
 
 #include "TkAssetJointDescDTO.h"
@@ -43,7 +44,9 @@ bool TkAssetJointDescDTO::serialize(Nv::Blast::Serialization::TkAssetJointDesc::
 
 	for (int i = 0; i < 2; i++)
 	{
-		PxVec3DTO::serialize(builder.getAttachPositions()[i], &poco->attachPositions[i]);
+		auto& vec = poco->attachPositions[i];
+		physx::PxVec3 v3{vec.x, vec.y, vec.z};
+		PxVec3DTO::serialize(builder.getAttachPositions()[i], &v3);
 	}
 
 	return true;
@@ -63,8 +66,12 @@ Nv::Blast::TkAssetJointDesc* TkAssetJointDescDTO::deserialize(Nv::Blast::Seriali
 bool TkAssetJointDescDTO::deserializeInto(Nv::Blast::Serialization::TkAssetJointDesc::Reader reader, Nv::Blast::TkAssetJointDesc * poco)
 {
 	auto readerAttachPositions = reader.getAttachPositions();
-	PxVec3DTO::deserializeInto(readerAttachPositions[0], &poco->attachPositions[0]);
-	PxVec3DTO::deserializeInto(readerAttachPositions[1], &poco->attachPositions[1]);
+	auto& vec0 = poco->attachPositions[0];
+	physx::PxVec3 v30{ vec0.x, vec0.y, vec0.z };
+	auto& vec1 = poco->attachPositions[1];
+	physx::PxVec3 v31{ vec1.x, vec1.y, vec1.z };
+	PxVec3DTO::deserializeInto(readerAttachPositions[0], &v30);
+	PxVec3DTO::deserializeInto(readerAttachPositions[1], &v31);
 
 	auto readerNodeIndices = reader.getNodeIndices();
 	poco->nodeIndices[0] = readerNodeIndices[0];

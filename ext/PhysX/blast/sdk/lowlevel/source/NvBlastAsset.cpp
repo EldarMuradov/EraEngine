@@ -24,6 +24,7 @@
 // NVIDIA Corporation.
 //
 // Copyright (c) 2016-2020 NVIDIA Corporation. All rights reserved.
+#include <pch.h>
 
 
 #include "NvBlastAssert.h"
@@ -184,13 +185,13 @@ NV_INLINE bool testForLoop(const NvBlastChunkDesc* chunkDescs, uint32_t chunkInd
 {
 	NVBLAST_ASSERT(!isInvalidIndex(chunkIndex));
 
-	uint32_t chunkIndex1 = chunkDescs[chunkIndex].parentChunkIndex;
+	uint32_t chunkIndex1 = chunkDescs[chunkIndex].parentChunkDescIndex;
 	if (isInvalidIndex(chunkIndex1))
 	{
 		return false;
 	}
 
-	uint32_t chunkIndex2 = chunkDescs[chunkIndex1].parentChunkIndex;
+	uint32_t chunkIndex2 = chunkDescs[chunkIndex1].parentChunkDescIndex;
 	if (isInvalidIndex(chunkIndex2))
 	{
 		return false;
@@ -199,10 +200,10 @@ NV_INLINE bool testForLoop(const NvBlastChunkDesc* chunkDescs, uint32_t chunkInd
 	do
 	{
 		// advance index 1
-		chunkIndex1 = chunkDescs[chunkIndex1].parentChunkIndex;	// No need to check for termination here.  index 2 would find it first.
+		chunkIndex1 = chunkDescs[chunkIndex1].parentChunkDescIndex;	// No need to check for termination here.  index 2 would find it first.
 
 		// advance index 2 twice and check for incidence with index 1 as well as termination
-		if ((chunkIndex2 = chunkDescs[chunkIndex2].parentChunkIndex) == chunkIndex1)
+		if ((chunkIndex2 = chunkDescs[chunkIndex2].parentChunkDescIndex) == chunkIndex1)
 		{
 			return true;
 		}
@@ -210,7 +211,7 @@ NV_INLINE bool testForLoop(const NvBlastChunkDesc* chunkDescs, uint32_t chunkInd
 		{
 			return false;
 		}
-		if ((chunkIndex2 = chunkDescs[chunkIndex2].parentChunkIndex) == chunkIndex1)
+		if ((chunkIndex2 = chunkDescs[chunkIndex2].parentChunkDescIndex) == chunkIndex1)
 		{
 			return true;
 		}
@@ -522,7 +523,7 @@ Asset* Asset::create(void* mem, const NvBlastAssetDesc* desc, void* scratch, NvB
 		NvBlastChunk& assetChunk = chunks[i];
 		memcpy(assetChunk.centroid, chunkDesc.centroid, 3 * sizeof(float));
 		assetChunk.volume = chunkDesc.volume;
-		assetChunk.parentChunkIndex = isInvalidIndex(chunkDesc.parentChunkIndex) ? chunkDesc.parentChunkIndex : chunkDesc.parentChunkIndex;
+		assetChunk.parentChunkIndex = isInvalidIndex(chunkDesc.parentChunkDescIndex) ? chunkDesc.parentChunkDescIndex : chunkDesc.parentChunkDescIndex;
 		assetChunk.firstChildIndex = invalidIndex<uint32_t>();	// Will be filled in below
 		assetChunk.childIndexStop = assetChunk.firstChildIndex;
 		assetChunk.userData = chunkDesc.userData;
@@ -626,7 +627,7 @@ bool Asset::ensureExactSupportCoverage(uint32_t& supportChunkCount, uint32_t& le
 			continue;
 		}
 		uint32_t chunkIndex = i;
-		while (!isInvalidIndex(chunkIndex = chunkDescs[chunkIndex].parentChunkIndex))
+		while (!isInvalidIndex(chunkIndex = chunkDescs[chunkIndex].parentChunkDescIndex))
 		{
 			chunkAnnotation[chunkIndex] = Asset::ChunkAnnotation::Parent;	// Note as non-leaf
 		}
@@ -667,7 +668,7 @@ bool Asset::ensureExactSupportCoverage(uint32_t& supportChunkCount, uint32_t& le
 					chunkAnnotation[supportChunkIndex] &= ~Asset::ChunkAnnotation::Support;	// Remove support marking
 					do	// Run up the hierarchy from supportChunkIndex to chunkIndex and remove the supersupport markings
 					{
-						supportChunkIndex = chunkDescs[supportChunkIndex].parentChunkIndex;
+						supportChunkIndex = chunkDescs[supportChunkIndex].parentChunkDescIndex;
 						chunkAnnotation[supportChunkIndex] &= ~Asset::ChunkAnnotation::SuperSupport;	// Remove supersupport marking
 					} while (supportChunkIndex != chunkIndex);
 				}
@@ -678,7 +679,7 @@ bool Asset::ensureExactSupportCoverage(uint32_t& supportChunkCount, uint32_t& le
 			{
 				chunkAnnotation[chunkIndex] |= Asset::ChunkAnnotation::SuperSupport;	// Not a support chunk and we've already found a support chunk, so this is super-support
 			}
-		} while (!doneWithChain && !isInvalidIndex(chunkIndex = chunkDescs[chunkIndex].parentChunkIndex));
+		} while (!doneWithChain && !isInvalidIndex(chunkIndex = chunkDescs[chunkIndex].parentChunkDescIndex));
 		if (isInvalidIndex(supportChunkIndex))
 		{
 			if (testOnly)
@@ -717,7 +718,7 @@ bool Asset::ensureExactSupportCoverage(uint32_t& supportChunkCount, uint32_t& le
 				{
 					chunkAnnotation[chunkIndex] |= Asset::ChunkAnnotation::SuperSupport;	// Note that a descendant has support
 				}
-			} while (!isInvalidIndex(chunkIndex = chunkDescs[chunkIndex].parentChunkIndex));
+			} while (!isInvalidIndex(chunkIndex = chunkDescs[chunkIndex].parentChunkDescIndex));
 		}
 
 		// Now walk up the hierarchy from each leaf one more time, and make sure there is coverage
@@ -743,7 +744,7 @@ bool Asset::ensureExactSupportCoverage(uint32_t& supportChunkCount, uint32_t& le
 					break;
 				}
 				previousChunkIndex = chunkIndex;
-				chunkIndex = chunkDescs[chunkIndex].parentChunkIndex;
+				chunkIndex = chunkDescs[chunkIndex].parentChunkDescIndex;
 				if (isInvalidIndex(chunkIndex))
 				{
 					chunkAnnotation[previousChunkIndex] |= Asset::ChunkAnnotation::Support;	// There was no support found anywhere in the hierarchy, so we add it at the root
@@ -782,7 +783,7 @@ bool Asset::testForValidChunkOrder(uint32_t chunkCount, const NvBlastChunkDesc* 
     uint32_t currentParentChunkIndex = invalidIndex<uint32_t>();
     for (uint32_t i = 0; i < chunkCount; ++i)
     {
-        const uint32_t parentChunkIndex = chunkDescs[i].parentChunkIndex;
+        const uint32_t parentChunkIndex = chunkDescs[i].parentChunkDescIndex;
 
         if (!isInvalidIndex(parentChunkIndex) && parentChunkIndex >= i) // 'chunks should come after their parents'
         {

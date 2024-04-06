@@ -30,6 +30,7 @@
 #define NVBLASTATOMIC_H
 
 #include "NvBlastTypes.h"
+#include <foundation/PxAtomic.h>
 
 
 namespace Nv
@@ -37,12 +38,22 @@ namespace Nv
 namespace Blast
 {
 
-/* increment the specified location. Return the incremented value */
-int32_t atomicIncrement(volatile int32_t* val);
+///* increment the specified location. Return the incremented value */
+//int32_t atomicIncrement(volatile int32_t* val);
+//
+//
+///* decrement the specified location. Return the decremented value */
+//int32_t atomicDecrement(volatile int32_t* val);
 
+inline int32_t atomicIncrement(volatile int32_t* val)
+{
+	return physx::PxAtomicIncrement(val);
+}
 
-/* decrement the specified location. Return the decremented value */
-int32_t atomicDecrement(volatile int32_t* val);
+inline int32_t atomicDecrement(volatile int32_t* val)
+{
+	return physx::PxAtomicDecrement(val);
+}
 
 } // namespace Blast
 } // namespace Nv

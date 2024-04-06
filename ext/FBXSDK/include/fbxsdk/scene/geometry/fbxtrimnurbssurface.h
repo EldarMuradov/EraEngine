@@ -93,11 +93,10 @@ public:
     void CopyCurves( FbxBoundary const& pOther );
     bool IsValid(bool mustClosed = true);
     bool IsCounterClockwise();
+    void Reset();
 
 protected:
     void ConstructProperties(bool pForceSet) override;
-
-    void Reset();
     bool LineSegmentIntersect(const FbxVector4 & pStart1, const FbxVector4 & pEnd1, const FbxVector4 & pStart2, const FbxVector4 & pEnd2 ) const;
 #endif /* !DOXYGEN_SHOULD_SKIP_THIS *****************************************************************************************/
 };
@@ -224,6 +223,7 @@ public:
     void CopyBoundaries( FbxTrimNurbsSurface const& pOther );
     bool IsValid(int pRegion, bool mustClosed = true);
     void RebuildRegions();
+    void Reset();
 
 protected:
 	void Construct(const FbxObject* pFrom) override;

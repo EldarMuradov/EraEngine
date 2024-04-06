@@ -1,6 +1,6 @@
 /****************************************************************************************
  
-   Copyright (C) 2015 Autodesk, Inc.
+   Copyright (C) 2019 Autodesk, Inc.
    All rights reserved.
  
    Use of this software is subject to the terms of the Autodesk license agreement
@@ -31,6 +31,7 @@ class FbxDocumentInfo;
 class FbxTakeInfo;
 class FbxReader;
 class FbxThread;
+class FbxEmbeddedFileCallback;
 
 struct FbxImportThreadArg;
 
@@ -216,6 +217,19 @@ public:
 	  */
 	const char* GetEmbeddingExtractionFolder();
 
+    /** Register a callback object for reading embedded data.
+      *	\param pCallback Pointer to the callback object.
+      * \remark The FbxEmbeddefFileCallback object can have the Mode and DataHint members changed
+      *         by the FBX SDK, however the callback function and the user data pointers are guaranteed
+      *         to remain unaffected therefore they must be properly configured during the object creation.
+      * \remark This function must be called after the FbxImporter::Initialize().
+      */
+    void SetEmbeddedFileReadCallback(FbxEmbeddedFileCallback* pCallback);
+
+    /** Retrieve the currently registered FbxEmbeddedFileCallback object.
+      */
+    FbxEmbeddedFileCallback* GetEmbeddedFileReadCallback();
+
 	/** Access to a IOSettings object.
       * \return The pointer to IOSettings or \c NULL \c if the object has not been allocated.
       */
@@ -356,6 +370,8 @@ private:
 	FbxIOFileHeaderInfo*	mHeaderInfo;
 	FbxIOSettings*			mIOSettings;
 	bool					mClientIOSettings;
+
+    FbxEmbeddedFileCallback* mEmbeddedFileCallbackObj;
 
 	//For Initialize and Import
 	friend class FbxReaderFbx5;

@@ -94,3 +94,90 @@ void generateNormalsAndTangents(std::vector<submesh_asset>& submeshes, uint32 fl
 		}
 	}
 }
+
+void generateNormalsAndTangents(ref<submesh_asset> submesh, uint32 flags)
+{
+	if (flags & mesh_flag_gen_tangents)
+	{
+		flags |= mesh_flag_gen_normals;
+	}
+
+	if (submesh->normals.empty() && flags & mesh_flag_gen_normals)
+	{
+		printf("Generating normals\n");
+		CPU_PRINT_PROFILE_BLOCK("Generating normals");
+
+		submesh->normals.resize(submesh->positions.size(), vec3(0.f));
+		for (indexed_triangle16 tri : submesh->triangles)
+		{
+			vec3 a = submesh->positions[tri.a];
+			vec3 b = submesh->positions[tri.b];
+			vec3 c = submesh->positions[tri.c];
+
+			vec3 n = cross(b - a, c - a);
+			submesh->normals[tri.a] += n;
+			submesh->normals[tri.b] += n;
+			submesh->normals[tri.c] += n;
+		}
+		for (vec3& n : submesh->normals)
+		{
+			n = normalize(n);
+		}
+	}
+
+	if (submesh->tangents.empty() && flags & mesh_flag_gen_tangents)
+	{
+		printf("Generating tangents\n");
+		CPU_PRINT_PROFILE_BLOCK("Generating tangents");
+
+		submesh->tangents.resize(submesh->positions.size(), vec3(0.f));
+		if (!submesh->uvs.empty())
+		{
+			for (indexed_triangle16 tri : submesh->triangles)
+			{
+				vec3 a = submesh->positions[tri.a];
+				vec3 b = submesh->positions[tri.b];
+				vec3 c = submesh->positions[tri.c];
+
+				vec2 h = submesh->uvs[tri.a];
+				vec2 k = submesh->uvs[tri.b];
+				vec2 l = submesh->uvs[tri.c];
+
+				vec3 d = b - a;
+				vec3 e = c - a;
+
+				vec2 f = k - h;
+				vec2 g = l - h;
+
+				float invDet = 1.f / (f.x * g.y - f.y * g.x);
+
+				vec3 t;
+				t.x = g.y * d.x - f.y * e.x;
+				t.y = g.y * d.y - f.y * e.y;
+				t.z = g.y * d.z - f.y * e.z;
+				t *= invDet;
+				submesh->tangents[tri.a] += t;
+				submesh->tangents[tri.b] += t;
+				submesh->tangents[tri.c] += t;
+			}
+			for (uint32 i = 0; i < (uint32)submesh->positions.size(); ++i)
+			{
+				vec3 t =submesh->tangents[i];
+				vec3 n = submesh->normals[i];
+
+				vec3 b = cross(t, n);
+				t = cross(n, b);
+
+				submesh->tangents[i] = normalize(t);
+			}
+		}
+		else
+		{
+			printf("Mesh has no UVs. Generating suboptimal tangents.\n");
+			for (uint32 i = 0; i < (uint32)submesh->positions.size(); ++i)
+			{
+				submesh->tangents[i] = getTangent(submesh->normals[i]);
+			}
+		}
+	}
+}

@@ -66,10 +66,10 @@ public:
           */
         enum EDeformerType
         {
-            eUnknown,		//!< Unknown deformer type
-            eSkin,			//!< Type FbxSkin
-			eBlendShape,	//!< Type FbxBlendShape
-            eVertexCache	//!< Type FbxVertexCacheDeformer
+            eUnknown,    //!< Unknown deformer type
+            eSkin,       //!< Type FbxSkin
+            eBlendShape, //!< Type FbxBlendShape
+            eVertexCache //!< Type FbxVertexCacheDeformer
         };
 
         /** Get the deformer type.

@@ -70,6 +70,12 @@ public:
 	//! Query whether user canceled this progress.
 	inline bool IsCanceled() const { return mCanceled; }
 
+	//! Retrieve the current total of this progress.
+	inline float GetTotal() const { return mTotal; }
+
+	//! Retrieve the current threshold of this progress.
+	inline float GetThreshold() const { return mThreshold; }
+
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
 *****************************************************************************************************************************/

@@ -236,7 +236,7 @@ public:
           * \param pTimeInterval Reference to receive start time and end time.
           * \return \c true on success, \c false otherwise.
           */
-        virtual bool GetTimeInterval(FbxTimeSpan& pTimeInterval);
+        virtual bool GetTimeInterval(FbxTimeSpan& pTimeInterval) const;
     //@}
 
 /*****************************************************************************************************************************

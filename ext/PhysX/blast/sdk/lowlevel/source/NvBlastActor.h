@@ -36,6 +36,7 @@
 #include "NvBlastSupportGraph.h"
 #include "NvBlastFamilyGraph.h"
 #include "NvBlastPreprocessorInternal.h"
+#include "NvBlastExtAuthoringTypes.h"
 
 #include <cstring>
 

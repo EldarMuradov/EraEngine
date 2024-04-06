@@ -259,6 +259,21 @@ typedef FbxVectorTemplate3<FbxDouble> FbxDouble3;
 typedef FbxVectorTemplate4<FbxDouble> FbxDouble4;
 typedef FbxVectorTemplate4<FbxDouble4> FbxDouble4x4;
 
+#if defined(FBXSDK_CPU_32)
+	typedef FbxInt FbxSSize_t;
+	typedef FbxInt FbxIndex;
+	#define FBXSDK_SSIZE_T(x) (x)
+	#define FBXSDK_SSIZE_T_MAX FBXSDK_INT_MAX
+#elif defined(FBXSDK_CPU_64)
+	typedef FbxInt64 FbxSSize_t;
+	typedef FbxInt64 FbxIndex;
+	#define FBXSDK_SSIZE_T(x) FBXSDK_LONGLONG(x)
+	#define FBXSDK_SSIZE_T_MAX FBXSDK_LONGLONG_MAX
+#endif
+
+//template<typename T> T FBXSDK_DLL cast_to(FbxSSize_t value);
+int FBXSDK_DLL downcast_to_int(FbxSSize_t value);
+
 #include <fbxsdk/fbxsdk_nsend.h>
 
 #endif /* _FBXSDK_CORE_ARCH_TYPES_H_ */

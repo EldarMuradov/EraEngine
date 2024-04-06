@@ -276,10 +276,15 @@ public:
 		* \return The number of objects that are reference clones of this object. */
 		int GetReferencedByCount() const;
 
-		/** Returns a reference clone of this object at the specified index.
+		/** Returns a reference clone of this object at the specified index. This method has been deprecated in favor of retrieving the entire array with the function overload that takes an FbxArray.
 		* \param pIndex	The specified index, valid values are [0, GetReferencedByCount())
 		* \return		The reference clone, or NULL (if pIndex is out of range). */
-		FbxObject* GetReferencedBy(int pIndex) const;
+		FBX_DEPRECATED FbxObject* GetReferencedBy(int pIndex) const;
+
+		/** Returns an array containing all the reference clones of this object.
+		* \param pReferencedBy	The array of refeerences populated by this function.
+		* \return The number of objects that are reference clones of this object. */
+		int GetReferencedBy(FbxArray<FbxObject*>& pReferencedBy) const;
 	//@}
 
 	/**

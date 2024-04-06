@@ -24,15 +24,25 @@
 // NVIDIA Corporation.
 //
 // Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
+#include <pch.h>
 
 
 #include "ExtPxAssetDTO.h"
 #include "TkAssetDTO.h"
 #include "ExtPxChunkDTO.h"
 #include "ExtPxSubchunkDTO.h"
-#include "physics/NvBlastExtPxAssetImpl.h"
+#include "NvBlastExtPxAssetImpl.h"
 #include "NvBlastAssert.h"
 #include "NvBlast.h"
+
+#include "ExtPxSubchunkDTO.h"
+#include "PxTransformDTO.h"
+#include "PxConvexMeshGeometryDTO.h"
+#include "PxMeshScaleDTO.h"
+#include <NvBlastExtKJPxInputStream.h>
+#include <foundation/PxUtilities.h>
+#include <NvBlastExtKJPxOutputStream.h>
+#include <PxPhysics.h>
 
 
 namespace Nv
@@ -83,6 +93,46 @@ bool ExtPxAssetDTO::serialize(Nv::Blast::Serialization::ExtPxAsset::Builder buil
 	return true;
 }
 
+static void writeChunk(PxI8 a, PxI8 b, PxI8 c, PxI8 d, PxOutputStream& stream)
+{
+	stream.write(&a, sizeof(PxI8));
+	stream.write(&b, sizeof(PxI8));
+	stream.write(&c, sizeof(PxI8));
+	stream.write(&d, sizeof(PxI8));
+}
+
+static void flip(PxU32& v)
+{
+	PxU8* b = reinterpret_cast<PxU8*>(&v);
+
+	PxU8 temp = b[0];
+	b[0] = b[3];
+	b[3] = temp;
+	temp = b[1];
+	b[1] = b[2];
+	b[2] = temp;
+}
+
+static void writeDword(PxU32 value, bool mismatch, PxOutputStream& stream)
+{
+	if (mismatch)
+		flip(value);
+	stream.write(&value, sizeof(PxU32));
+}
+
+static bool writeHeader(PxI8 a, PxI8 b, PxI8 c, PxI8 d, PxU32 version, bool mismatch, PxOutputStream& stream)
+{
+	// Store endianness
+	PxI8 streamFlags = physx::PxLittleEndian();
+	if (mismatch)
+		streamFlags ^= 1;
+
+	// Export header
+	writeChunk('N', 'X', 'S', streamFlags, stream);	// "Novodex stream" identifier
+	writeChunk(a, b, c, d, stream);					// Chunk identifier
+	writeDword(version, mismatch, stream);
+	return true;
+}
 
 Nv::Blast::ExtPxAsset* ExtPxAssetDTO::deserialize(Nv::Blast::Serialization::ExtPxAsset::Reader reader)
 {
@@ -107,7 +157,21 @@ Nv::Blast::ExtPxAsset* ExtPxAssetDTO::deserialize(Nv::Blast::Serialization::ExtP
 	auto readerSubchunks = reader.getSubchunks();
 	for (uint32_t i = 0; i < subChunkCount; i++)
 	{
-		ExtPxSubchunkDTO::deserializeInto(readerSubchunks[i], &subchunks[i]);
+		PxTransformDTO::deserializeInto(readerSubchunks[i].getTransform(), &subchunks[i].transform);
+
+		//PxMeshScaleDTO::deserializeInto(readerSubchunks[i].getGeometry().getScale(), &subchunks[i].geometry.scale);
+
+		//Nv::Blast::ExtKJPxInputStream inputStream(readerSubchunks[i].getGeometry().getConvexMesh());
+		//auto bytes = readerSubchunks[i].getGeometry().getConvexMesh().asBytes();
+		//kj::ArrayPtr<unsigned char> b = {(kj::byte*)bytes.begin(), (kj::byte*)bytes.end() };
+		//Nv::Blast::ExtKJPxOutputStream stream(b);
+
+		//writeHeader('C', 'V', 'X', 'M', 14, false, stream);
+		//Nv::Blast::ExtKJPxInputStream inputStream(b);
+		//ExtPxSubchunkDTO::deserializeInto(readerSubchunks[i], &subchunks[i]);
+		//subchunks[i].geometry.convexMesh = PxGetPhysics().createConvexMesh(inputStream);
+		PxConvexMeshGeometryDTO::deserializeInto(readerSubchunks[i].getGeometry(), &subchunks[i].geometry);
+
 	}
 
 	NvBlastActorDesc& actorDesc = asset->getDefaultActorDesc();

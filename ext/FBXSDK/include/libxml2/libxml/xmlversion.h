@@ -1,6 +1,6 @@
 /*
- * Summary: compile-time version informations
- * Description: compile-time version informations for the XML library
+ * Summary: compile-time version information
+ * Description: compile-time version information for the XML library
  *
  * Copy: See Copyright for the status of this software.
  *
@@ -29,26 +29,26 @@ XMLPUBFUN void XMLCALL xmlCheckVersion(int version);
  *
  * the version string like "1.2.3"
  */
-#define LIBXML_DOTTED_VERSION "2.9.7"
+#define LIBXML_DOTTED_VERSION "2.10.4"
 
 /**
  * LIBXML_VERSION:
  *
  * the version number: 1.2.3 value is 10203
  */
-#define LIBXML_VERSION 20907
+#define LIBXML_VERSION 201004
 
 /**
  * LIBXML_VERSION_STRING:
  *
  * the version number string, 1.2.3 value is "10203"
  */
-#define LIBXML_VERSION_STRING "20907"
+#define LIBXML_VERSION_STRING "201004"
 
 /**
  * LIBXML_VERSION_EXTRA:
  *
- * extra version information, used to show a CVS compilation
+ * extra version information, used to show a git commit description
  */
 #define LIBXML_VERSION_EXTRA ""
 
@@ -58,7 +58,7 @@ XMLPUBFUN void XMLCALL xmlCheckVersion(int version);
  * Macro to check that the libxml version in use is compatible with
  * the version the software has been compiled against
  */
-#define LIBXML_TEST_VERSION xmlCheckVersion(20907);
+#define LIBXML_TEST_VERSION xmlCheckVersion(201004);
 
 #ifndef VMS
 #if 0
@@ -91,10 +91,7 @@ XMLPUBFUN void XMLCALL xmlCheckVersion(int version);
  * Whether the thread support is configured in
  */
 #if 0
-#if defined(_REENTRANT) || defined(__MT__) || \
-    (defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE - 0 >= 199506L))
 #define LIBXML_THREAD_ENABLED
-#endif
 #endif
 
 /**
@@ -192,7 +189,7 @@ XMLPUBFUN void XMLCALL xmlCheckVersion(int version);
  *
  * Whether the DTD validation support is configured in
  */
-#if 0
+#if 1
 #define LIBXML_VALID_ENABLED
 #endif
 
@@ -233,15 +230,6 @@ XMLPUBFUN void XMLCALL xmlCheckVersion(int version);
 #endif
 
 /**
- * LIBXML_DOCB_ENABLED:
- *
- * Whether the SGML Docbook support is configured in
- */
-#if 0
-#define LIBXML_DOCB_ENABLED
-#endif
-
-/**
  * LIBXML_XPATH_ENABLED:
  *
  * Whether XPath is configured in
@@ -257,6 +245,15 @@ XMLPUBFUN void XMLCALL xmlCheckVersion(int version);
  */
 #if 1
 #define LIBXML_XPTR_ENABLED
+#endif
+
+/**
+ * LIBXML_XPTR_LOCS_ENABLED:
+ *
+ * Whether support for XPointer locations is configured in
+ */
+#if 0
+#define LIBXML_XPTR_LOCS_ENABLED
 #endif
 
 /**
@@ -353,8 +350,10 @@ XMLPUBFUN void XMLCALL xmlCheckVersion(int version);
  * LIBXML_EXPR_ENABLED:
  *
  * Whether the formal expressions interfaces are compiled in
+ *
+ * This code is unused and disabled unconditionally for now.
  */
-#if 1
+#if 0
 #define LIBXML_EXPR_ENABLED
 #endif
 
@@ -410,9 +409,6 @@ XMLPUBFUN void XMLCALL xmlCheckVersion(int version);
 #endif
 
 #ifdef __GNUC__
-#ifdef HAVE_ANSIDECL_H
-#include <ansidecl.h>
-#endif
 
 /**
  * ATTRIBUTE_UNUSED:
@@ -460,6 +456,15 @@ XMLPUBFUN void XMLCALL xmlCheckVersion(int version);
 # define LIBXML_ATTR_FORMAT(fmt,args)
 #endif
 
+#ifndef XML_DEPRECATED
+#  ifdef IN_LIBXML
+#    define XML_DEPRECATED
+#  else
+/* Available since at least GCC 3.1 */
+#    define XML_DEPRECATED __attribute__((deprecated))
+#  endif
+#endif
+
 #else /* ! __GNUC__ */
 /**
  * ATTRIBUTE_UNUSED:
@@ -479,6 +484,15 @@ XMLPUBFUN void XMLCALL xmlCheckVersion(int version);
  * Macro used to indicate to GCC the parameter are printf like
  */
 #define LIBXML_ATTR_FORMAT(fmt,args)
+/**
+ * XML_DEPRECATED:
+ *
+ * Macro used to indicate that a function, variable, type or struct member
+ * is deprecated.
+ */
+#ifndef XML_DEPRECATED
+#define XML_DEPRECATED
+#endif
 #endif /* __GNUC__ */
 
 #ifdef __cplusplus

@@ -29,6 +29,7 @@
 #pragma once
 
 #include "NvBlastGlobals.h"
+#include <NvBlastExtPxAsset.h>
 
 
 /**
@@ -79,7 +80,7 @@ It does no harm to call this function more than once; serializers already loaded
 
 \return the number of serializers loaded.
 */
-NVBLAST_API	size_t		NvBlastExtPxSerializerLoadSet(Nv::Blast::TkFramework& framework, physx::PxPhysics& physics, physx::PxCooking& cooking, Nv::Blast::ExtSerialization& serialization);
+NVBLAST_API	size_t		NvBlastExtPxSerializerLoadSet(Nv::Blast::TkFramework& framework, physx::PxPhysics& physics, Nv::Blast::ExtSerialization& serialization);
 
 
 /**

@@ -1,6 +1,6 @@
 /****************************************************************************************
  
-   Copyright (C) 2015 Autodesk, Inc.
+   Copyright (C) 2019 Autodesk, Inc.
    All rights reserved.
  
    Use of this software is subject to the terms of the Autodesk license agreement
@@ -28,6 +28,7 @@ class FbxIO;
 class FbxIOFileHeaderInfo;
 class FbxThread;
 class FbxWriter;
+class FbxEmbeddedFileCallback;
 
 struct FbxExportThreadArg;
 
@@ -167,6 +168,19 @@ public:
 		  * \param pArgs Pointer to the arguments passed to the callback function.
 		  */
 		void SetProgressCallback(FbxProgressCallback pCallback, void* pArgs=NULL);
+
+        /** Register a callback object for reading embedded data.
+          *	\param pCallback Pointer to the callback object.
+          * \remark The FbxEmbeddefFileCallback object can have the Mode and DataHint members changed
+          *         by the FBX SDK, however the callback function and the user data pointers are guaranteed
+          *         to remain unaffected therefore they must be properly configured during the object creation.
+          * \remark This function must be called after the FbxExporter::Initialize().
+          */
+        void SetEmbeddedFileWriteCallback(FbxEmbeddedFileCallback* pCallback);
+
+        /** Retrieve the currently registered FbxEmbeddedFileCallback object.
+          */
+        FbxEmbeddedFileCallback* GetEmbeddedFileWriteCallback();
 	//@}
 
 	/** 
@@ -271,6 +285,7 @@ private:
 	FbxIOFileHeaderInfo*			mHeaderInfo;
 	FbxIOSettings*					mIOSettings;
 	bool							mClientIOSettings;
+    FbxEmbeddedFileCallback*        mEmbeddedFileCallback;
 
 	friend void ExportThread(void*);
 #endif /* !DOXYGEN_SHOULD_SKIP_THIS *****************************************************************************************/

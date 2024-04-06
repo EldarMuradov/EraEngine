@@ -22,6 +22,15 @@
     #pragma warning( disable : 4201 ) // nonstandard extension used: nameless struct/union
 #endif
 
+#ifdef THROW_EXCEPTIONS
+	#define FBX_THROW(x) throw std::runtime_error(x)
+	#define FBX_ARRAY_INLINE __forceinline
+#else
+	#define FBX_THROW(x) FBX_ASSERT_NOW(x)
+	#define FBX_ARRAY_INLINE inline
+#endif
+
+
 /** Class for array of basic elements such as pointers and basic types. This class will not
 * call constructor and destructor for elements, thus it is not suitable for object references.
 * Memory allocations are always done in a single contiguous memory region. */
@@ -94,10 +103,26 @@ public:
 
     /** Append an element at the end of the array, doubling the array if capacity is not sufficient.
     * \param pElement Element to append to the array.
-    * \return -1 if add failed, otherwise the position of the added element in the array. */
+    * \return -1 if add failed, otherwise the position of the added element in the array. 
+    * \remark This function is the optimized version of InsertAt(GetSize(), pElement) which, by skipping some validation tests, can provide up to 33% speed gains. */
     inline int Add(const T& pElement)
     {
-        return InsertAt(GetSize(), pElement);
+        int lIndex = GetSize();
+
+        if (lIndex >= GetCapacity())
+        {
+            T lElement = pElement;    //Copy element because we might move memory
+            int lNewCapacity = FbxMax(GetCapacity() * 2, 1);    //We always double capacity
+            Allocate(lNewCapacity);
+            FBX_ASSERT_RETURN_VALUE(mData, -1);
+            mData->mCapacity = lNewCapacity;
+            return Add(lElement);    //Insert copied element because reference might be moved
+        }
+
+        memcpy(&GetArray()[lIndex], &pElement, sizeof(T));
+        mData->mSize++;
+
+        return lIndex;
     }
 
     /** Append an element at the end of array, if not already present, doubling the array if capacity is not sufficient.
@@ -131,21 +156,21 @@ public:
     * \param pIndex Position of element in the array.
     * \return A reference to the element at the specified position in the array.
     * \remark No error will be thrown if the index is out of bounds. */
-    inline T& operator[](const int pIndex) const
+	FBX_ARRAY_INLINE T& operator[](const int pIndex) const
     {
         if (pIndex < 0)
         {
-            throw std::runtime_error("Index is out of range!");
+            FBX_THROW("Index is out of range!");
         }
 
         if (pIndex >= GetSize())
         {
             if (pIndex < GetCapacity())
             {
-                throw std::runtime_error("Index is out of range, but not outside of capacity! Call SetAt() to use reserved memory.");
+				FBX_THROW("Index is out of range, but not outside of capacity! Call SetAt() to use reserved memory.");
             }
 
-            throw std::runtime_error("Index is out of range!");
+			FBX_THROW("Index is out of range!");
         }
 
         return GetArray()[pIndex];
@@ -165,13 +190,6 @@ public:
     * \remark The array should have at least one element and no error will be thrown if the array is empty. */
     inline T GetFirst() const
     {
-        const int size = GetSize();
-
-        if (size <= 0)
-        {
-            throw std::runtime_error("FbxArray is empty");
-        }
-
         return GetAt(0);
     }
 
@@ -180,14 +198,7 @@ public:
     * \remark The array should have at least one element and no error will be thrown if the array is empty. */
     inline T GetLast() const
     {
-        const int size = GetSize();
-
-        if (size <= 0)
-        {
-            throw std::runtime_error("FbxArray is empty");
-        }
-
-        return GetAt(size - 1);
+        return GetAt(GetSize() - 1);
     }
 
     /** Find first matching element, from first to last.
@@ -203,7 +214,7 @@ public:
 
         for (int i = pStartIndex; i < size; ++i)
         {
-            if (operator[](i) == pElement) return i;
+            if (GetArray()[i] == pElement) return i;
         }
         return -1;
     }
@@ -220,7 +231,7 @@ public:
 
         for (int i = FbxMin(pStartIndex, size - 1); i >= 0; --i)
         {
-            if (operator[](i) == pElement) return i;
+            if (GetArray()[i] == pElement) return i;
         }
         return -1;
     }
@@ -231,7 +242,7 @@ public:
     * \remark If the requested capacity is less than or equal to the current capacity, this call has no effect. In either case, Size() is unchanged. */
     inline bool Reserve(const int pCapacity)
     {
-        FBX_ASSERT_RETURN_VALUE(pCapacity > 0, false);
+        FBX_ASSERT_RETURN_VALUE(pCapacity >= 0, false);
         if( pCapacity > GetCapacity() )
         {
             Allocate(pCapacity);
@@ -263,13 +274,6 @@ public:
     * \remark The array should have at least one element and no error will be thrown if the array is empty. */
     inline void SetFirst(const T& pElement)
     {
-        const int size = GetSize();
-
-        if (size <= 0)
-        {
-            throw std::runtime_error("FbxArray is empty");
-        }
-
         SetAt(0, pElement);
     }
 
@@ -278,33 +282,26 @@ public:
     * \remark The array should have at least one element and no error will be thrown if the array is empty. */
     inline void SetLast(const T& pElement)
     {
-        const int size = GetSize();
-
-        if (size <= 0)
-        {
-            throw std::runtime_error("FbxArray is empty");
-        }
-
-        SetAt(size - 1, pElement);
+        SetAt(GetSize() - 1, pElement);
     }
 
     /** Remove an element at the given position in the array.
     * \param pIndex Position of the element to remove.
     * \return Removed element.
     * \remark No error will be thrown if the index is out of bounds. */
-    inline T RemoveAt(const int pIndex)
+	FBX_ARRAY_INLINE T RemoveAt(const int pIndex)
     {
         const int size = GetSize();
-
-        if (pIndex < 0 || pIndex >= size)
-        {
-            throw std::runtime_error("Index is out of range!");
-        }
+		const int index = pIndex + 1;
+		if (index < 0 || index > size)
+		{
+			FBX_THROW("Index is out of range!");
+		}
 
         T lElement = GetAt(pIndex);
-        if (pIndex + 1 < size)
+        if (index < size)
         {
-            memmove(&GetArray()[pIndex], &GetArray()[pIndex + 1], (size - pIndex - 1) * sizeof(T));
+            memmove(&GetArray()[pIndex], &GetArray()[index], (size - pIndex - 1) * sizeof(T));
         }
         mData->mSize--;
         return lElement;
@@ -315,13 +312,6 @@ public:
     * \remark The array should have at least one element and no error will be thrown if the array is empty. */
     inline T RemoveFirst()
     {
-        const int size = GetSize();
-
-        if (size <= 0)
-        {
-            throw std::runtime_error("FbxArray is empty");
-        }
-
         return RemoveAt(0);
     }
 
@@ -330,14 +320,7 @@ public:
     * \remark The array should have at least one element and no error will be thrown if the array is empty. */
     inline T RemoveLast()
     {
-        const int size = GetSize();
-
-        if (size <= 0)
-        {
-            throw std::runtime_error("FbxArray is empty");
-        }
-
-        return RemoveAt(size - 1);
+        return RemoveAt(GetSize() - 1);
     }
 
     /** Remove first matching element in the array.
@@ -371,13 +354,14 @@ public:
         FBX_ASSERT_RETURN(pCount >  0);
         FBX_ASSERT_RETURN(pIndex >= 0);
 
-        int lastItem = pIndex + pCount;
+        size_t lastItem = (size_t)pIndex + (size_t)pCount;
         FBX_ASSERT_RETURN(lastItem >= 0);
-        FBX_ASSERT_RETURN(lastItem <= size);
+        FBX_ASSERT_RETURN(lastItem <= (size_t)size);
+        FBX_ASSERT_RETURN(lastItem < FBXSDK_INT_MAX);
 
-        if (lastItem < size)
+        if (lastItem < (size_t)size)
         {
-            memmove(&GetArray()[pIndex], &GetArray()[pIndex + pCount], (size - pIndex - pCount) * sizeof(T));
+            memmove(&GetArray()[pIndex], &GetArray()[pIndex + pCount], (size - pIndex - pCount) * (unsigned)sizeof(T));
         }
 
         if (mData)
@@ -388,9 +372,10 @@ public:
 
     /** Inserts or erases elements at the end such that Size() becomes pSize, increasing capacity if needed. Please use SetAt() to initialize any new elements.
     * \param pSize The new count of elements to set the array to. Must be greater or equal to zero.
+    * \param pPreserveCapacityIfPossible If the new count will fit into the existing allocation, do not adjust the capacity.
     * \return \c true if the memory (re)allocation succeeded, \c false otherwise.
-    * \remark If the requested element count is less than or equal to the current count, elements are freed from memory. Otherwise, the array grows and elements are unchanged. */
-    inline bool Resize(const int pSize)
+    * \remark If the requested element count is less than or equal to the current count, elements are freed from memory. Otherwise, the array grows and elements are unchanged. The new array memory is not cleared to 0. */
+    inline bool ResizeUninitialized(const int pSize, bool pPreserveCapacityIfPossible = false)
     {
         if( pSize == GetSize() && GetSize() == GetCapacity() ) return true;
 
@@ -401,19 +386,61 @@ public:
         }
 
         FBX_ASSERT_RETURN_VALUE(pSize > 0, false);
-        if( pSize != GetCapacity() )
+
+        bool lReallocate;
+        if (pPreserveCapacityIfPossible)
+            lReallocate = pSize > GetCapacity();
+        else
+            lReallocate = pSize != GetCapacity();
+        
+        if (lReallocate)
         {
             Allocate(pSize);
             FBX_ASSERT_RETURN_VALUE(mData, false);
-        }
-
-        if( pSize > GetCapacity() )    //Initialize new memory to zero
-        {
-            memset(&GetArray()[GetSize()], 0, (pSize - GetSize()) * sizeof(T));
+            mData->mCapacity = pSize;
         }
 
         mData->mSize = pSize;
-        mData->mCapacity = pSize;
+        return true;
+    }
+
+    /** Inserts or erases elements at the end such that Size() becomes pSize, increasing capacity if needed. Please use SetAt() to initialize any new elements.
+    * \param pSize The new count of elements to set the array to. Must be greater or equal to zero.
+    * \param pPreserveCapacityIfPossible If the new count will fit into the existing allocation, do not adjust the capacity.
+    * \return \c true if the memory (re)allocation succeeded, \c false otherwise.
+    * \remark If the requested element count is less than or equal to the current count, elements are freed from memory. Otherwise, the array grows and elements are unchanged. */
+    inline bool Resize(const int pSize, bool pPreserveCapacityIfPossible = false)
+    {
+        if (pSize == GetSize() && GetSize() == GetCapacity()) return true;
+
+        if (pSize == 0)
+        {
+            Clear();
+            return true;
+        }
+
+        FBX_ASSERT_RETURN_VALUE(pSize > 0, false);
+
+        bool lReallocate;
+        if (pPreserveCapacityIfPossible)
+            lReallocate = pSize > GetCapacity();
+        else
+            lReallocate = pSize != GetCapacity();
+
+        if (lReallocate)
+        {
+            Allocate(pSize);
+            FBX_ASSERT_RETURN_VALUE(mData, false);
+
+            if (pSize > GetCapacity())    //Initialize new memory to zero
+            {
+                memset(&GetArray()[GetSize()], 0, (pSize - GetSize()) * sizeof(T));
+            }
+        
+            mData->mCapacity = pSize;
+        }
+
+        mData->mSize = pSize;
         return true;
     }
 
@@ -428,7 +455,7 @@ public:
         FbxLongLong newSize = static_cast<FbxLongLong>(size) + static_cast<FbxLongLong>(pSize);
         if (newSize > INT_MAX)
         {
-            throw std::runtime_error("Grow - Int overflow!");
+			return false;
         }
 
         return Resize(size + pSize);
@@ -441,9 +468,11 @@ public:
     {
         const int size = GetSize();
 
-        if (pSize < 0 || size - pSize < 0)
+		// Check int32 paramater does not overflow
+		FbxLongLong newSize = static_cast<FbxLongLong>(size) - static_cast<FbxLongLong>(pSize);
+        if (pSize < 0 || newSize < 0 || newSize > size)
         {
-            throw std::runtime_error("Shrink - Int underflow!");
+			return false;
         }
 
         return Resize(size - pSize);
@@ -516,7 +545,7 @@ public:
     {
         if( this != &pOther )
         {
-            if( Resize(pOther.GetSize()) )
+            if( Resize(pOther.GetSize()) && pOther.GetSize() > 0)
             {
                 memcpy(GetArray(), pOther.GetArray(), pOther.GetSize() * sizeof(T));
             }
@@ -556,8 +585,6 @@ private:
         else
         {
             mData = NULL;
-
-            throw std::runtime_error("FbxArray Allocate failed");
         }
     }
 
@@ -611,5 +638,8 @@ template <class T> inline void FbxArrayDestroy(FbxArray<T>& pArray)
 template <class T> FBXSDK_INCOMPATIBLE_WITH_ARRAY_TEMPLATE(FbxArray<T>);
 
 #include <fbxsdk/fbxsdk_nsend.h>
+
+#undef FBX_ARRAY_INLINE
+#undef FBX_THROW
 
 #endif /* _FBXSDK_CORE_BASE_ARRAY_H_ */

@@ -1318,7 +1318,7 @@ public:
 		  * \param pTimeInterval Reference to receive start and end time.
 		  * \return \c true on success, \c false otherwise.
 		  */
-        bool GetTimeInterval(FbxTimeSpan& pTimeInterval) override = 0;
+        bool GetTimeInterval(FbxTimeSpan& pTimeInterval) const override = 0;
 
 		/** Copy animation curve content into current animation curve.
 		  * \param pSource Animation curve to be copied (which will not be modified).

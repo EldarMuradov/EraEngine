@@ -24,20 +24,24 @@
 // NVIDIA Corporation.
 //
 // Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
+#include <pch.h>
 
+#include "NvAllocatorCallback.h"
 
 #include "NvBlastExtSerialization.h"
 #include "NvBlastExtTkSerializerRAW.h"
 #include "NvBlastExtPxAsset.h"
 #include "NvBlastTkAsset.h"
-#include "physics/NvBlastExtPxAssetImpl.h"
+#include "NvBlastExtPxAssetImpl.h"
 #include "NvBlastIndexFns.h"
 #include "NvBlastAssert.h"
 #include "NvBlastExtSerializationInternal.h"
 
 #include "PxPhysics.h"
-#include "PsMemoryBuffer.h"
-#include "PxIO.h"
+#include "NsMemoryBuffer.h"
+#include "NvFileBuf.h"
+#include "foundation/PxIO.h"
+#include "filebuf/PxFileBuf.h"
 
 
 namespace Nv
@@ -81,7 +85,7 @@ struct ExtPxSerializationLegacyAssetVersion
 class FileBufToPxInputStream final : public PxInputStream
 {
 public:
-	FileBufToPxInputStream(PxFileBuf& filebuf) : m_filebuf(filebuf) {}
+	FileBufToPxInputStream(nvidia::general_NvIOStream2::NvFileBuf& filebuf) : m_filebuf(filebuf) {}
 
 	virtual uint32_t read(void* dest, uint32_t count)
 	{
@@ -91,14 +95,14 @@ public:
 private:
 	FileBufToPxInputStream& operator=(const FileBufToPxInputStream&);
 
-	PxFileBuf& m_filebuf;
+	nvidia::general_NvIOStream2::NvFileBuf& m_filebuf;
 };
 
 
 class FileBufToPxOutputStream final : public PxOutputStream
 {
 public:
-	FileBufToPxOutputStream(PxFileBuf& filebuf) : m_filebuf(filebuf) {}
+	FileBufToPxOutputStream(nvidia::general_NvIOStream2::NvFileBuf& filebuf) : m_filebuf(filebuf) {}
 
 	virtual uint32_t write(const void* src, uint32_t count) override
 	{
@@ -108,7 +112,7 @@ public:
 private:
 	FileBufToPxOutputStream& operator=(const FileBufToPxOutputStream&);
 
-	PxFileBuf& m_filebuf;
+	nvidia::general_NvIOStream2::NvFileBuf& m_filebuf;
 };
 
 
@@ -168,10 +172,11 @@ ExtPxAsset* deserializeExtPxAsset(ExtIStream& stream, TkFramework& framework, ph
 		stream >> convexReuseIndex;
 		if (isInvalidIndex(convexReuseIndex))
 		{
-			physx::PsMemoryBuffer memBuf(stream.view(), stream.left());
-			FileBufToPxInputStream inputStream(memBuf);
-			subchunk.geometry.convexMesh = physics.createConvexMesh(inputStream);
-			stream.advance(memBuf.tellRead());
+			//nvidia::general_NvIOStream2::NsMemoryBuffer memBuf();
+			//physx::PxStreamFromFileBuf
+			//FileBufToPxInputStream inputStream(PxFileBuf(stream.view(), stream.left()));
+			//subchunk.geometry.convexMesh = physics.createConvexMesh(inputStream);
+			//stream.advance(memBuf.tellRead());
 		}
 		else
 		{

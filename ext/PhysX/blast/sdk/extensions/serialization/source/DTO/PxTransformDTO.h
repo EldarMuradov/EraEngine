@@ -28,8 +28,8 @@
 
 #pragma once
 #include "DTOMacros.h"
-#include "PxTransform.h"
+#include "foundation/PxTransform.h"
 #include "generated/NvBlastExtPxSerialization.capn.h"
-#include "PxCooking.h"
+#include "cooking/PxCooking.h"
 
 DTO_CLASS(PxTransform, physx::PxTransform, Nv::Blast::Serialization::PxTransform)

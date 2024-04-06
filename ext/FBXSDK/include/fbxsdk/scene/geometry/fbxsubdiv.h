@@ -115,6 +115,7 @@ public:
 	FbxSubDiv::EDisplaySmoothness GetDisplaySmoothness() const;
 
 	void SetDisplaySmoothness(FbxSubDiv::EDisplaySmoothness pSmoothness);
+    void Reset() { /* no-op*/ };
 
 protected:
 	void Construct(const FbxObject* pFrom) override;

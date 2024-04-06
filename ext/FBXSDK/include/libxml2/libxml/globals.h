@@ -17,7 +17,6 @@
 #include <libxml/xmlversion.h>
 #include <libxml/parser.h>
 #include <libxml/xmlerror.h>
-#include <libxml/SAX.h>
 #include <libxml/SAX2.h>
 #include <libxml/xmlmemory.h>
 
@@ -25,7 +24,9 @@
 extern "C" {
 #endif
 
+XML_DEPRECATED
 XMLPUBFUN void XMLCALL xmlInitGlobals(void);
+XML_DEPRECATED
 XMLPUBFUN void XMLCALL xmlCleanupGlobals(void);
 
 /**
@@ -68,7 +69,6 @@ XMLCALL xmlOutputBufferCreateFilenameDefault (xmlOutputBufferCreateFilenameFunc 
  * compatibility support.
  */
 
-#undef	docbDefaultSAXHandler
 #undef	htmlDefaultSAXHandler
 #undef	oldXMLWDcompatibility
 #undef	xmlBufferAllocScheme
@@ -125,7 +125,7 @@ struct _xmlGlobalState
 
 	xmlSAXLocator xmlDefaultSAXLocator;
 	xmlSAXHandlerV1 xmlDefaultSAXHandler;
-	xmlSAXHandlerV1 docbDefaultSAXHandler;
+	xmlSAXHandlerV1 docbDefaultSAXHandler; /* unused */
 	xmlSAXHandlerV1 htmlDefaultSAXHandler;
 
 	xmlFreeFunc xmlFree;
@@ -251,16 +251,6 @@ XMLPUBVAR xmlReallocFunc xmlRealloc;
 XMLPUBVAR xmlFreeFunc xmlFree;
 XMLPUBVAR xmlStrdupFunc xmlMemStrdup;
 #endif /* LIBXML_THREAD_ALLOC_ENABLED */
-
-#ifdef LIBXML_DOCB_ENABLED
-XMLPUBFUN  xmlSAXHandlerV1 * XMLCALL __docbDefaultSAXHandler(void);
-#ifdef LIBXML_THREAD_ENABLED
-#define docbDefaultSAXHandler \
-(*(__docbDefaultSAXHandler()))
-#else
-XMLPUBVAR xmlSAXHandlerV1 docbDefaultSAXHandler;
-#endif
-#endif
 
 #ifdef LIBXML_HTML_ENABLED
 XMLPUBFUN xmlSAXHandlerV1 * XMLCALL __htmlDefaultSAXHandler(void);

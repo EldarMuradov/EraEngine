@@ -219,10 +219,6 @@
 	#define _MAX_PATH 260
 #endif
 
-#if defined(FBXSDK_ENV_WIN)
-	#define snprintf _snprintf //for stdio.h platform compatibility
-#endif
-
 #if !defined(FBXSDK_COMPILER_MSC)
 	#ifndef strcmpi
 		#define strcmpi strcasecmp

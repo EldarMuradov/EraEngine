@@ -338,10 +338,10 @@ public:
 	  * \param pResult A pointer to a buffer that can hold the result.
 	  * \return \c true on success, \c false otherwise.
 	  */
-	virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
+	bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
 	
 	//! Inverse evaluation for this binding function is not implemented yet.
-	virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+	bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
 
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -370,10 +370,10 @@ public:
 	  * \param pResult A pointer to a buffer that can hold the result.
 	  * \return \c true on success, \c false otherwise.
 	  */
-	virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
+	bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
 	
 	//! Inverse evaluation for this binding function is not implemented yet.
-	virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+	bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
 
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -398,10 +398,10 @@ public:
     * \param pResultType Will be filled by the type of the result.
     * \param pResult Will be filled by a pointer to a buffer that hold the result.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
     
 	//! Inverse evaluation for this binding function is not implemented yet.
-	virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+	bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
 
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -435,8 +435,8 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
-    virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
+    bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
 
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -470,8 +470,8 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
-    virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
+    bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
 
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -498,8 +498,8 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
-    virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
+    bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
 
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -526,8 +526,8 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
-    virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
+    bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
 
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -554,8 +554,8 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
-    virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
+    bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
     
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -582,9 +582,9 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
     //Set index to 1 to get realWorldScale.  
-	virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+	bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
     
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -611,8 +611,8 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
-    virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
+    bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
     
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -638,8 +638,8 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
-    virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
+    bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
 
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -665,8 +665,8 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
-    virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
+    bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
 
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -692,8 +692,8 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
-    virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
+    bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
     
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -720,8 +720,8 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
-    virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
+    bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
     
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -749,8 +749,8 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
-    virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
+    bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
     
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -778,8 +778,8 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
-    virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
+	bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
     
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -809,8 +809,8 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
-    virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
+    bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
     
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
@@ -840,10 +840,10 @@ public:
     * \param pResult A pointer to a buffer that can hold the result.
     * \return \c true on success, \c false otherwise.
     */
-    virtual bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const;
+    bool Evaluate(const FbxBindingOperator* pOperator, const FbxObject* pObject, EFbxType* pResultType, void** pResult) const override;
     
 	//! Inverse evaluation for this binding function is not implemented yet.
-	virtual bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const;
+	bool ReverseEvaluate(const FbxBindingOperator* pOperator, const FbxObject* pTarget, const void* pIn, void** pOut, EFbxType* pOutType, bool setObj, int index) const override;
     
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **

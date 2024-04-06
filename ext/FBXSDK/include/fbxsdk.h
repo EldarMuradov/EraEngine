@@ -129,6 +129,7 @@
 #include <fbxsdk/fileio/fbxiosettings.h>
 #include <fbxsdk/fileio/fbxstatisticsfbx.h>
 #include <fbxsdk/fileio/fbxstatistics.h>
+#include <fbxsdk/fileio/fbxcallbacks.h>
 
 //---------------------------------------------------------------------------------------
 //Scene Includes
@@ -244,6 +245,7 @@
 #include <fbxsdk/scene/shading/fbxsemanticentryview.h>
 #include <fbxsdk/scene/shading/fbxsurfacelambert.h>
 #include <fbxsdk/scene/shading/fbxsurfacematerial.h>
+#include <fbxsdk/scene/shading/fbxsurfacematerialutils.h>
 #include <fbxsdk/scene/shading/fbxsurfacephong.h>
 #include <fbxsdk/scene/shading/fbxtexture.h>
 

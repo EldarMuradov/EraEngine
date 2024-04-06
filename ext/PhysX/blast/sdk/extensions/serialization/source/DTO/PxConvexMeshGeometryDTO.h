@@ -29,7 +29,7 @@
 #pragma once
 #include "DTOMacros.h"
 #include "generated/NvBlastExtPxSerialization.capn.h"
-#include "PxConvexMeshGeometry.h"
-#include "PxCooking.h"
+#include "geometry/PxConvexMeshGeometry.h"
+#include "cooking/PxCooking.h"
 
 DTO_CLASS(PxConvexMeshGeometry, physx::PxConvexMeshGeometry, Nv::Blast::Serialization::PxConvexMeshGeometry)

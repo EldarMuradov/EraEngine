@@ -135,3 +135,4 @@ private:
 };
 
 void generateNormalsAndTangents(std::vector<submesh_asset>& submeshes, uint32 flags);
+void generateNormalsAndTangents(ref<submesh_asset> submesh, uint32 flags);

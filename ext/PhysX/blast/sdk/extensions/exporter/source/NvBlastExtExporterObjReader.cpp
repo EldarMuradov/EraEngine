@@ -25,20 +25,22 @@
 //
 // Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
 
+#include <pch.h>
 
 #include "NvBlastExtExporterObjReader.h"
 
 #pragma warning(push)
 #pragma warning(disable:4706)
 #pragma warning(disable:4702)
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h"
+#include <tiny_obj_loader.h>
+
+//#include "tiny_obj_loader.h"
 #pragma warning(pop)
 
 
 #include <iostream>
-#include "PxVec3.h"
-#include "PxVec2.h"
+#include "foundation/PxVec3.h"
+#include "foundation/PxVec2.h"
 #include "NvBlastExtAuthoringMesh.h"
 
 using physx::PxVec3;

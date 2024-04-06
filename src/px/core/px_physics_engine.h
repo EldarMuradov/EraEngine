@@ -207,7 +207,7 @@ namespace physics
 	{
 		NODISCARD void* allocate(size_t size, const char* typeName, const char* filename, int line) override
 		{
-			ASSERT(size < GB(1));
+			//ASSERT(size < GB(1));
 			return _aligned_malloc(size, 16);
 		}
 
@@ -478,7 +478,13 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		void reportError(PxErrorCode::Enum code, const char* message, const char* file, int line) override
 		{
 			if (message)
+			{
 				LOG_ERROR("%s %s %u %s %s %s %u", message, "Code:", static_cast<int32>(code), "Source:", file, ":", line);
+				
+				std::ostringstream stream;
+				stream << message;
+				::std::cout << stream.str() << "\n";
+			}
 			else
 				::std::cerr << "PhysX Error! \n";
 		}
@@ -504,7 +510,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		PxVec3 thisVelocity;
 
 		PxVec3 otherVelocity;
-
+		
 		int32 contactsCount;
 
 		px_contact_point contacts[PX_CONTACT_BUFFER_SIZE];

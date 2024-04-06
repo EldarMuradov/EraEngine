@@ -16,6 +16,8 @@
 
 #include <px/blast/px_blast_core.h>
 
+#include <px/blast/px_blast_destructions.h>
+
 #pragma comment(lib, "PhysXCooking_64.lib")
 
 namespace
@@ -354,6 +356,7 @@ void physics::px_physics_engine::start() noexcept
 		blast->addAsset(asset);
 	}
 
+	//blast->spawnAsset(0);
 	blast->spawnAsset(0);
 
 	simulationEventCallback = new px_simulation_event_callback(blast->getExtImpactDamageManager());

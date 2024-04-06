@@ -1,6 +1,6 @@
 /****************************************************************************************
  
-   Copyright (C) 2018 Autodesk, Inc.
+   Copyright (C) 2019 Autodesk, Inc.
    All rights reserved.
  
    Use of this software is subject to the terms of the Autodesk license agreement
@@ -18,6 +18,7 @@
 #include <fbxsdk/core/base/fbxstring.h>
 #include <fbxsdk/core/base/fbxtime.h>
 #include <fbxsdk/core/base/fbxstatus.h>
+#include <fbxsdk/fileio/fbxcallbacks.h>
 
 #include <fbxsdk/fbxsdk_nsbegin.h>
 
@@ -146,7 +147,7 @@ class FbxXRefManager;
 #define FBX_FILE_VERSION_7300		7300	//FBX 7.3 (guarantee compatibility with Autodesk 2013 products)
 #define FBX_FILE_VERSION_7400		7400	//FBX 7.4 (guarantee compatibility with Autodesk 2014/2015 products)
 #define FBX_FILE_VERSION_7500		7500	//FBX 7.5 (guarantee compatibility with Autodesk 2016/2017/2018 products)
-#define FBX_FILE_VERSION_7700		7700	//FBX 7.7 (guarantee compatibility with Autodesk 2019 products)
+#define FBX_FILE_VERSION_7700		7700	//FBX 7.7 (guarantee compatibility with Autodesk 2019/2020 products)
 
 #define FBX_FILE_VERSION_7600       7600    // Needed to support the few existing files generated with this version.
 // Files with this version, are written using the new FBXSDK_TC_MILLISECOND but without the flag to identify this.
@@ -171,10 +172,11 @@ class FbxXRefManager;
 #define FBX_2016_00_COMPATIBLE		"FBX201600"
 #define FBX_2018_00_COMPATIBLE      "FBX201800"
 #define FBX_2019_00_COMPATIBLE      "FBX201900"
+#define FBX_2020_00_COMPATIBLE      "FBX202000"
 
 //Default file version number used when writing new FBX files
 #define FBX_DEFAULT_FILE_VERSION		FBX_FILE_VERSION_7700
-#define FBX_DEFAULT_FILE_COMPATIBILITY	FBX_2019_00_COMPATIBLE
+#define FBX_DEFAULT_FILE_COMPATIBILITY	FBX_2020_00_COMPATIBLE
 
 /** Convert the FBX file version string to an integral number for <= or >= tests purposes.
   * \param pFileVersion File version string.
@@ -294,6 +296,10 @@ public:
 	/** The flag indicates that the header was created by a personal learning edition (PLE) of FBX. */
     bool                        mPLE;
 	//@}
+
+    /** Indicates whether the file is in binary or ASCII format.
+        This variable is only relevant in memory and is not expected to be saved in the FBX file. */
+    bool                        mBinary;
 };
 
 /** FbxIO represents an FBX file. 
@@ -531,6 +537,7 @@ public:
       * \param pData
       * \param pSize
       * \return \c true on success, \c false otherwise.
+      * \remark Caller is responsible for releasing pData
       */
     bool ProjectClose(void** pData=0, size_t* pSize=0);
 
@@ -1056,7 +1063,7 @@ public:
       * \param pFieldName
       * \param pByteSize
       */
-    void* FieldReadR(const char* pFieldName,int* pByteSize);
+    void* FieldReadR(const char* pFieldName, int* pByteSize);
 
 	/**
 	  * \name FBX SDK 2009.3 and later
@@ -1164,13 +1171,18 @@ public:
 
     /** Read field and copy it into a file.
     * \param pFileName Embedded file full path+name.
-    *\param pRelativeFileName Relative path+name of the embedded file.
+    * \param pRelativeFileName Relative path+name of the embedded file.
     * \param pEmbeddedMediaDirectory Directory of the embedded media.
     * \param pIsFileCreated Status of the extraction of the embedded data. Set to \c true if the embedded media is correctly extracted in the media directory.
-    * \remarks Only works when file is binary. This function is not related to flag mEmbedded.
+    * \param pExpectedTypeHint Hint that specify the container type of the processed data (for example, the container of a bitmap is an FbxVideo object).
     * \return \c false if operation failed.
+    * \remarks \c pExpectedTypeHint is only provided for the callback (when set) and can be used as a guess of what the buffer pointer is holding.
+    * \remarks This function is not related to flag mEmbedded.
+    * \see  FbxEmbeddedFileCallback
     */
-    virtual bool FieldReadEmbeddedFile (FbxString& pFileName, FbxString& pRelativeFileName, const char* pEmbeddedMediaDirectory = "", bool *pIsFileCreated=NULL);
+    virtual bool FieldReadEmbeddedFile(FbxString& pFileName, FbxString& pRelativeFileName, 
+                                       const char* pEmbeddedMediaDirectory = "", bool *pIsFileCreated = NULL,
+                                       FbxClassId pExpectedTypeHint = FbxClassId());
 
     /** Read the whole array and return the pointer to it.
       * \param pCount Nb of items in the array.
@@ -1640,12 +1652,15 @@ public:
     void FieldWriteObjectReference(const char* pFieldName, const char* pName);
 
     /** Write field with file content as a value.
-    * \param pFileName
-    * \param pRelativeFileName
-    * \remarks Only works when file is binary. This function is not related to flag mEmbedded.
-    * \return \c false if operation failed.
-    */
-    bool FieldWriteEmbeddedFile (FbxString pFileName, FbxString pRelativeFileName);
+      * \param pFileName
+      * \param pRelativeFileName
+      * \param pTypeHint Hint that specify the container type that will receive the data (for example, the container of a bitmap is an FbxVideo object).
+      * \return \c false if operation failed.
+      * \remarks \c pTypeHint is only provided for the callback (when set) so it knows which container is going to receive the data
+      * \remarks This function is not related to flag mEmbedded.
+      * \see FbxEmbeddedFileCallback
+      */
+    bool FieldWriteEmbeddedFile (FbxString pFileName, FbxString pRelativeFileName, FbxClassId pTypeHint = FbxClassId());
 
     /** Write comments, only effective in ASCII mode. 
       * \param pFieldName
@@ -1658,30 +1673,39 @@ public:
     // Dump function for debugging purpose only
     void StdoutDump();
 #endif
+    /** Set the callback object to operate on the embedded data while it is processed.
+      * \remark The same object is called while reading or writing embedded data.
+      */
+    void SetEmbeddedFileCallback(FbxEmbeddedFileCallback* pCallbackObj);
+
+    /** Get if an EmbeddedFileCallback has been set.
+      * return true if a callback object has been set, false otherwise
+      */
+    bool GetHaveEmbeddedFileCallback() const;
 
 	/** Get if the embedded file is currently loaded
-	* \return true if loaded, false otherwise
-	* \remarks  An embedded file is a file like a JPEG image used for texture or an AVI file for video.
-	*           When files are embedded, the size of the FBX file can be very large since other files are embedded in it.
-	*           FBX Version 6 and lower cannot embed files when saved in ASCII.
-	*			FBX Version 7 and over can embed files even when saved in ASCII mode.
-	*/
+	  * \return true if loaded, false otherwise
+	  * \remarks  An embedded file is a file like a JPEG image used for texture or an AVI file for video.
+	  *           When files are embedded, the size of the FBX file can be very large since other files are embedded in it.
+	  *           FBX Version 6 and lower cannot embed files when saved in ASCII.
+	  *			FBX Version 7 and over can embed files even when saved in ASCII mode.
+	  */
     bool GetHaveLoadedEmbededFile() const;
 
 	/** Get the maximum byte count written
-	* \param pMemPtr The address of the memory file
-	* \param[out] pSize Stores the maximum byte count written
-	*/
+	  * \param pMemPtr The address of the memory file
+	  * \param[out] pSize Stores the maximum byte count written
+	  */
     void GetMemoryFileInfo(void** pMemPtr, size_t& pSize) const;
 
 	/** Get a internal flag to manage pre FBX version 6 data format
-	*   Used for backwards compatibility
-	*/
+	  *   Used for backwards compatibility
+	  */
     bool    IsBeforeVersion6() const;
 
 	/** Set a internal flag to manage pre FBX version 6 data format
-	*   Used for backwards compatibility
-	*/
+	  *   Used for backwards compatibility
+	  */
     void    SetIsBeforeVersion6(bool pIsBeforeVersion6);
 
 /*****************************************************************************************************************************

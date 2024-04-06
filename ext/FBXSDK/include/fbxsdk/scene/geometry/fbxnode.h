@@ -49,9 +49,9 @@ class FbxAnimCurveFilterMatrixConverter;
 /** Represents an element in the scene graph. A scene graph is a tree of FbxNode 
   * objects. The tree management services are self contained in this class.
   *
-  * \note The FBX SDK does not test the validity of the constructed scene graph. It 
+  * \note The FBX SDK does not test the validity of the constructed scene graph by default. It 
   * is the responsibility of the caller to make sure that it does not generate cyclic 
-  * graphs in a node hierarchy.
+  * graphs in a node hierarchy. The class FbxSceneCheckUtility can be used for this test.
   *
   * Besides the tree management, this class defines all the properties required to describe
   * the position of the object in the scene. This information include the basic Translation,

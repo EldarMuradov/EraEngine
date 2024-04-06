@@ -66,7 +66,7 @@ class FBXSDK_DLL FbxEventBase
 // the proper name by making the call from FbxEvent<> go through the private static
 // method.
 #define FBXSDK_EVENT_DECLARE(Class)												\
-	public: virtual const char* GetEventName() const { return FbxEventName(); }	\
+	public: const char* GetEventName() const override { return FbxEventName(); }	\
 	private: static const char* FbxEventName() { return #Class; }				\
 	friend class FbxEvent<Class>;												\
 
@@ -75,7 +75,7 @@ class FBXSDK_DLL FbxEventBase
 // type is something know to FBX
 //
 #define FBXSDK_EVENT_TYPE_DECLARE(Class, FBXType)                                  \
-  public: virtual const char* GetEventName() const { return FbxEventName(); }      \
+  public: const char* GetEventName() const override { return FbxEventName(); }      \
   private:                                                                         \
      static const char* FbxEventName() {                                           \
          static FbxString lEventName = FbxString(#Class) + FbxString("<") +        \
@@ -98,7 +98,7 @@ class FBXSDK_DLL FbxEventBase
 template < class TemplateName, const char* T > \
 class ClassName: public  FbxEvent< ClassName <TemplateName,T> >\
 {\
-    public: virtual const char* GetEventName() const {return FbxEventName();}\
+    public: const char* GetEventName() const override {return FbxEventName();}\
     private: static const char* FbxEventName() {\
     static FbxString lEventName = (FbxString(#ClassName) +"<"+ FbxString(T) +">");\
     return lEventName.Buffer();\
@@ -152,7 +152,7 @@ public:
     * \note This may be called from multiple threads.
     * \return            type id
     */
-    virtual int GetTypeId() const 
+    int GetTypeId() const override
     {
 		return GetStaticTypeId();
     }

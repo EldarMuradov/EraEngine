@@ -28,10 +28,13 @@
 
 #ifndef NVBLASTPXCALLBACKS_H
 #define NVBLASTPXCALLBACKS_H
+#ifdef ErrorCode
+#undef ErrorCode
+#endif
 
 #include "NvBlastGlobals.h"
-#include "PxErrorCallback.h"
-#include "PxAllocatorCallback.h"
+#include "foundation/PxErrorCallback.h"
+#include "foundation/PxAllocatorCallback.h"
 
 /**
 This file contains helper functions to get PxShared compatible versions of global AllocatorCallback and ErrorCallback.
@@ -44,7 +47,7 @@ NV_INLINE physx::PxErrorCallback& NvBlastGetPxErrorCallback()
 	{
 		virtual void reportError(physx::PxErrorCode::Enum code, const char* message, const char* file, int line) override
 		{
-			NvBlastGlobalGetErrorCallback()->reportError((Nv::Blast::ErrorCode::Enum)code, message, file, line);
+			NvBlastGlobalGetErrorCallback()->reportError((nvidia::NvErrorCode::Enum)code, message, file, line);
 		}
 	};
 	static PxErrorCallbackWrapper wrapper;

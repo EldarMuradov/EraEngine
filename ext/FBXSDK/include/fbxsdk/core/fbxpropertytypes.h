@@ -1064,6 +1064,11 @@ template<class T> inline bool FbxTypeCopy(T& pDst, const void* pSrc, EFbxType pS
 			FBX_ASSERT_NOW("Trying to set value on a void Reference type" );
 			break;
 
+		case eFbxUndefined:
+			// can't know for sure what to copy if the src is of Undefined type
+			// but we don't need to raise an exception for this. Just do nothing!
+			break;
+
 		default:
 			FBX_ASSERT_NOW("Trying to assign an unknown type" );
 			break;
@@ -1101,6 +1106,12 @@ template<class T> inline bool FbxTypeCopy(void* pDst, EFbxType pDstType, const T
 
 		case eFbxReference:
 			FBX_ASSERT_NOW("Trying to set value on a void Reference type" );
+			break;
+
+		case eFbxUndefined:
+			// we should never get here, but if we do, let's raise
+			// a meaningful assert
+			FBX_ASSERT_NOW("Trying to set value on an Undefined type");
 			break;
 
 		default:
@@ -1142,6 +1153,11 @@ inline bool FbxTypeCopy(void* pDst, EFbxType pDstType, const void* pSrc, EFbxTyp
 			FBX_ASSERT_NOW("Trying to set value on a void Reference type" );
 			break;
 
+		case eFbxUndefined:
+			// can't know for sure what to copy if the src is of Undefined type
+			// but we don't need to raise an exception for this. Just do nothing!
+			break;
+
 		default:
 			FBX_ASSERT_NOW("Trying to assign an unknown type" );
 			break;
@@ -1156,6 +1172,14 @@ inline bool FbxTypeCopy(void* pDst, EFbxType pDstType, const void* pSrc, EFbxTyp
   */
 FBXSDK_DLL void* FbxTypeAllocate(const EFbxType pType);
 
+/** Creates a fbx primitive type and initializes its memory; in place if possible.
+  * \param pType The type of object to create.
+  * \param pData Pointer to the object being created.
+  * \param pDataSize Data size at pData.
+  * \return true if allocation was successful. if the size of pType is larger than pDataSize pData is allocated otherwise inplace constructor is called.
+  */
+FBXSDK_DLL bool FbxTypeAllocate(const EFbxType pType, void* &pData, size_t pDataSize);
+
 /** Destroys an fbx primitive type. If the return value is true
   * the memory pointed to by pData has been deleted and should
   * no longer be accessed.
@@ -1164,6 +1188,16 @@ FBXSDK_DLL void* FbxTypeAllocate(const EFbxType pType);
   * \return true if the object was destroyed, false otherwise.
   */
 FBXSDK_DLL bool FbxTypeDeallocate(const EFbxType pType, void* pData);
+
+/** Destroys an fbx primitive type. If the return value is true
+  * the memory pointed to by pData has been deleted and should
+  * no longer be accessed.
+  * \param pType The type of object being deleted
+  * \param pData Pointer to the object being deleted.
+  * \param pDataSize Data size at pData.
+  * \return true if the object was destroyed, false otherwise.
+  */
+FBXSDK_DLL bool FbxTypeDeallocate(const EFbxType pType, void* &pData, size_t pDataSize);
 
 /** Compare two values of the same type
   * \param pA first value

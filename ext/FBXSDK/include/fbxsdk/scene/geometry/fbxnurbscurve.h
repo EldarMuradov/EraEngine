@@ -212,12 +212,11 @@ public:
 
     void SetControlPointAt(const FbxVector4 &pCtrlPoint , int pIndex) override { ParentClass::SetControlPointAt(pCtrlPoint, pIndex); }
     void InitControlPoints(int pCount) override                                { ParentClass::InitControlPoints(pCount);             }
+	void Reset();
 
 protected:
 	void Construct(const FbxObject* pFrom) override;
 	void Destruct(bool pRecursive) override;
-
-	void Reset();
 
 private:
 	double*		mKnotVector;

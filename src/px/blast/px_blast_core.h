@@ -14,6 +14,8 @@
 #include <NvBlastTk.h>
 #include <NvBlastExtTkSerialization.h>
 
+#include "NvBlastGlobals.h"
+
 #include <NvBlastExtDamageShaders.h>
 #include <NvBlastExtStressSolver.h>
 #include "NvBlastExtImpactDamageManager.h"
@@ -25,7 +27,9 @@
 #include <NvBlastExtPxFamily.h>
 #include <NvBlastExtPxStressSolver.h>
 #include <NvBlastExtPxListener.h>
+#include "NvBlastExtAuthoring.h"
 #include <NvBlastExtPxAsset.h>
+#include "NvBlastExtLlSerialization.h"
 #include <NvBlastExtSync.h>
 
 namespace physics
@@ -174,7 +178,7 @@ namespace physics
 		std::vector<chunk> chunks;
 
 		//static ref<px_blast_model> loadFromFbxFile(const char* path);
-		static ref<px_blast_model> loadFromTinyLoader(const char* path);
+		static ref<px_blast_model> loadFromTinyLoader(const char* path, const char* pathMtl);
 	};
 
 	struct px_blast_family
@@ -931,6 +935,7 @@ namespace physics
 			: asset(ast), name(nm)
 		{
 			index = asset->spawnCount++;
+
 			spawn();
 		}
 
@@ -971,6 +976,7 @@ namespace physics
 			const auto& blast = physics_holder::physicsRef->blast;
 
 			PxTransform pose = asset->getInitialTransform();
+
 			pose.p += shift;
 
 			px_blast_asset::actor_desc actorDesc = 

@@ -24,6 +24,7 @@
 // NVIDIA Corporation.
 //
 // Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
+#include <pch.h>
 
 
 #include "PxConvexMeshGeometryDTO.h"
@@ -31,14 +32,14 @@
 #include "NvBlastAssert.h"
 #include "NvBlastExtKJPxInputStream.h"
 #include "NvBlastExtKJPxOutputStream.h"
-#include "PxConvexMeshDesc.h"
+#include "cooking/PxConvexMeshDesc.h"
 #include "NvBlastExtSerialization.h"
-#include "PxVec3.h"
+#include "foundation/PxVec3.h"
 #include <algorithm>
 #include <vector>
 #include "PxPhysics.h"
 #include "NvBlastPxCallbacks.h"
-#include "PxDefaultStreams.h"
+#include "extensions/PxDefaultStreams.h"
 
 
 namespace Nv
@@ -47,13 +48,10 @@ namespace Blast
 {
 
 extern physx::PxPhysics* sExtPxSerializerPhysics;
-extern physx::PxCooking* sExtPxSerializerCooking;
 
 
 bool PxConvexMeshGeometryDTO::serialize(Nv::Blast::Serialization::PxConvexMeshGeometry::Builder builder, const physx::PxConvexMeshGeometry * poco)
 {
-	NVBLAST_ASSERT(sExtPxSerializerCooking != nullptr);
-
 	PxMeshScaleDTO::serialize(builder.getScale(), &poco->scale);
 
 	//TODO: Use cooking.cookConvexMesh to cook the mesh to a stream - then get that backing buffer and put it into the Data field
@@ -101,7 +99,20 @@ bool PxConvexMeshGeometryDTO::serialize(Nv::Blast::Serialization::PxConvexMeshGe
 	desc.polygons.stride = sizeof(physx::PxHullPolygon);
 		
 	physx::PxDefaultMemoryOutputStream outStream(NvBlastGetPxAllocatorCallback());
-	if (!sExtPxSerializerCooking->cookConvexMesh(desc, outStream))
+
+	auto cookingParams = physx::PxCookingParams(PxGetPhysics().getTolerancesScale());
+
+
+#if PX_GPU_BROAD_PHASE
+	cookingParams.buildGPUData = true;
+#endif
+
+	cookingParams.convexMeshCookingType = physx::PxConvexMeshCookingType::eQUICKHULL;
+	cookingParams.gaussMapLimit = 32;
+	cookingParams.suppressTriangleMeshRemapTable = false;
+	cookingParams.midphaseDesc = physx::PxMeshMidPhase::eBVH34;
+
+	if (!PxCookConvexMesh(cookingParams, desc, outStream))
 	{
 		return false;
 	}
@@ -116,8 +127,6 @@ bool PxConvexMeshGeometryDTO::serialize(Nv::Blast::Serialization::PxConvexMeshGe
 
 physx::PxConvexMeshGeometry* PxConvexMeshGeometryDTO::deserialize(Nv::Blast::Serialization::PxConvexMeshGeometry::Reader reader)
 {
-	NVBLAST_ASSERT(sExtPxSerializerCooking != nullptr);
-
 	NV_UNUSED(reader);
 
 	return nullptr;

@@ -99,6 +99,13 @@ namespace physics
 		return (uint8)actor->is<PxRigidDynamic>()->getRigidDynamicLockFlags();
 	}
 
+	void px_rigidbody_component::setKinematic(bool kinematic)
+	{
+		if (!actor)
+			return;
+		actor->is<PxRigidDynamic>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, kinematic);
+	}
+
 	void px_rigidbody_component::setLinearVelocity(vec3 velocity)
 	{
 		if (!actor)

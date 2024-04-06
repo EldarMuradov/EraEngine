@@ -12,9 +12,10 @@
 #ifndef PHYSICS_ONLY
 #include <scripting/script.h>
 #include <ai/navigation_component.h>
-#endif
 #include <px/blast/px_blast_core.h>
 #include <px/physics/px_soft_body.h>
+#include <px/blast/px_blast_destructions.h>
+#endif
 
 std::mutex eentity_container::sync;
 std::unordered_map<entity_handle, eentity_node> eentity_container::container;
@@ -74,7 +75,8 @@ void escene::cloneTo(escene& target)
 		physics::px_cloth_render_component,
 		physics::px_particles_component,
 		physics::px_particles_render_component,
-
+		physics::chunk_graph_manager,
+		physics::chunk_node,
 		physics::px_blast_rigidbody_component,
 
 		physics::px_soft_body_component,

@@ -63,7 +63,7 @@ public:
       * \remarks          The normals initialized with this function will have the ReferenceMode set to eDirect. Also,
       *                   the array will always be defined on layer 0.
       */
-    void InitNormals(int pCount = 0 );
+    void InitNormals(int pCount = 0, EFbxMemoryClearMode pInitializeMode = eClearToZero);
 
     /** Allocates memory space for the array of normals cloned from the pSrc.
       * \param pSrc       The source geometry from which the normals information is cloned.

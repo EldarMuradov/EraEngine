@@ -28,7 +28,6 @@
 
 #pragma once
 
-
 /**
 Raw serialization function declarations for BlastExtPx
 */

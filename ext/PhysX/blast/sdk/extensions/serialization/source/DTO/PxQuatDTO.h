@@ -28,8 +28,8 @@
 
 #pragma once
 #include "DTOMacros.h"
-#include "PxQuat.h"
+#include "foundation/PxQuat.h"
 #include "generated/NvBlastExtPxSerialization.capn.h"
-#include "PxCooking.h"
+#include "cooking/PxCooking.h"
 
 DTO_CLASS(PxQuat, physx::PxQuat, Nv::Blast::Serialization::PxQuat)

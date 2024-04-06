@@ -363,9 +363,9 @@ template<typename T> void FbxDelete(const T* p)
 #define MALLOC_HEADER_SIZE 16
 #endif
 
-template<typename T> T* FbxNewArray(const int n)
+template<typename T,typename I> T* FbxNewArray(const I n)
 {
-	const size_t lSize = FbxAllocSize((size_t)n, sizeof(T));
+	const size_t lSize = FbxAllocSize(n, sizeof(T));
 	if( FBXSDK_IS_SIMPLE_TYPE(T) )
 	{
 		return (T*)FbxMalloc(lSize);
@@ -376,15 +376,20 @@ template<typename T> T* FbxNewArray(const int n)
 		// respectively. By allocating 8 or 16 bytes for the header info, rather than sizeof(int),
 		// we ensure this function maintains the same alignment behaviour as malloc.
 		void* const pTmp = FbxMalloc(lSize + MALLOC_HEADER_SIZE);
-		*static_cast<int*>(pTmp) = n;
+		*static_cast<size_t*>(pTmp) = n;
 		T* const p = reinterpret_cast<T*>(static_cast<char*>(pTmp) + MALLOC_HEADER_SIZE);
 
-		for( int i = 0; i < n; ++i )
+		for(size_t i = 0; i < n; ++i )
 		{
 			new(p+i)T; // in-place new, not allocating memory so it is safe.
 		}
 		return p;
 	}
+}
+
+template<typename T> T* FbxNewArray(const int n)
+{
+	return FbxNewArray<T,size_t>((size_t)n);
 }
 
 template<typename T> void FbxDeleteArray(T* p)

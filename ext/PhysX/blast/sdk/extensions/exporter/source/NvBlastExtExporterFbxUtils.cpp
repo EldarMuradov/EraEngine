@@ -25,6 +25,7 @@
 //
 // Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
 
+#include <pch.h>
 
 #include "fbxsdk.h"
 #include "NvBlastExtExporterFbxUtils.h"

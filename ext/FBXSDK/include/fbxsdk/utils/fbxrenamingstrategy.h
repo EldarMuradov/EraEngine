@@ -140,15 +140,15 @@ public:
       * \param pName The name to be renamed.
       * \return Return \c true on success, \c false otherwise.
       */
-    virtual bool Rename(FbxNameHandler& pName);
+    bool Rename(FbxNameHandler& pName) override;
 
     //! Resets internal state regarding assigned names.
-    virtual void Clear();
+    void Clear() override;
     
     /** Create a dynamic renaming strategy instance of the same type as the child class.
       * \return New instance.
       */
-    virtual FbxRenamingStrategyInterface* Clone();
+    FbxRenamingStrategyInterface* Clone() override;
 
     /** \enum EClashType
       * - \e eNameClashAuto
