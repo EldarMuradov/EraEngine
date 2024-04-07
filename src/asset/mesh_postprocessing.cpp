@@ -160,9 +160,10 @@ void generateNormalsAndTangents(ref<submesh_asset> submesh, uint32 flags)
 				submesh->tangents[tri.b] += t;
 				submesh->tangents[tri.c] += t;
 			}
+
 			for (uint32 i = 0; i < (uint32)submesh->positions.size(); ++i)
 			{
-				vec3 t =submesh->tangents[i];
+				vec3 t = submesh->tangents[i];
 				vec3 n = submesh->normals[i];
 
 				vec3 b = cross(t, n);

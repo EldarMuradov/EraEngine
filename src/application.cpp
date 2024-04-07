@@ -117,7 +117,7 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 			{
 				CPU_PROFILE_BLOCK("PhysX collision events step");
 
-				while (physicsRef->collisionQueue.size())
+				/*while (physicsRef->collisionQueue.size())
 				{
 					const auto& c = physicsRef->collisionQueue.back();
 					physicsRef->collisionQueue.pop();
@@ -129,15 +129,15 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 					const auto& c = physicsRef->collisionExitQueue.back();
 					physicsRef->collisionExitQueue.pop();
 					data.core.handle_exit_coll(c.id1, c.id2);
-				}
+				}*/
 			}
 		}
 
-		updateScripting(data);
+		//updateScripting(data);
 
 		{
-			CPU_PROFILE_BLOCK(".NET 8 Input sync step");
-			data.core.handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
+			//CPU_PROFILE_BLOCK(".NET 8 Input sync step");
+			//data.core.handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
 		}
 	}, data).submitNow();
 
@@ -310,16 +310,16 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
 
-		/*model_asset ass = load3DModelFromFile("assets/sphere.fbx");
-		auto px_sphere_entt1 = scene.createEntity("SpherePX", (entity_handle)60)
+		model_asset ass = load3DModelFromFile("assets/sphere.fbx");
+		auto px_sphere_entt1 = scene.createEntity("SpherePXTest", (entity_handle)60)
 			.addComponent<transform_component>(vec3(0, 5.f, -10.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-			.addComponent<mesh_component>(sphereMesh);
+			.addComponent<mesh_component>(boxMesh);
 
 		physics::fracture fracture;
 		auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
 
-		manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::Bottom, 10, 50, defaultmat, defaultmat, 1.0f, 1000);*/
-
+		manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::Bottom, 10, 50, defaultmat, defaultmat, 1.0f, 1000);
+		scene.deleteEntity(px_sphere_entt1.handle);
 		//auto soft_body = &scene.createEntity("SoftBody")
 		//	.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
 		//	.addComponent<physics::px_soft_body_component>();
@@ -366,7 +366,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		//	.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
 
 		auto px_plane = &scene.createEntity("PlanePX")
-			.addComponent<transform_component>(vec3(0.f, 0.0, 0.0f), quat::identity, vec3(1.f))
+			.addComponent<transform_component>(vec3(0.f, -4.0, 0.0f), quat::identity, vec3(1.f))
 			.addComponent<physics::px_plane_collider_component>();
 
 		//particles = scene.createEntity("ParticlesPX")
@@ -378,7 +378,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f)).handle;
 
 		scene.createEntity("Platform")
-			.addComponent<transform_component>(vec3(10, -4.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
+			.addComponent<transform_component>(vec3(10, -8.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
 			.addComponent<mesh_component>(groundMesh);
 
 		auto chainMesh = make_ref<multi_mesh>();
@@ -741,14 +741,14 @@ void application::update(const user_input& input, float dt)
 			//	//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
 			}
 
-			/*eentity entt{ manager, &scene.registry };
+			eentity entt{ manager, &scene.registry };
 			auto& chunkManager = entt.getComponent<physics::chunk_graph_manager>();
 			chunkManager.update();
 
 			for (size_t i = 0; i < chunkManager.nbNodes; i++)
 			{
 				chunkManager.nodes[i].update();
-			}*/
+			}
 
 			if (!physics::physics_holder::physicsRef->softBodies.empty())
 			{

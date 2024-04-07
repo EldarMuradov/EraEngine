@@ -357,7 +357,7 @@ void physics::px_physics_engine::start() noexcept
 	}
 
 	//blast->spawnAsset(0);
-	blast->spawnAsset(0);
+	//blast->spawnAsset(0);
 
 	simulationEventCallback = new px_simulation_event_callback(blast->getExtImpactDamageManager());
 	scene->setSimulationEventCallback(simulationEventCallback);
@@ -411,7 +411,7 @@ void physics::px_physics_engine::update(float dt) noexcept
 
 			const auto& pxt = rb->getGlobalPose();
 			const auto& pos = pxt.p;
-			const auto& rot = pxt.q.getConjugate();
+			const auto& rot = pxt.q;
 			transform->position = createVec3(pos);
 			transform->rotation = createQuat(rot);
 		}
@@ -631,25 +631,25 @@ void physics::px_simulation_event_callback::clear()
 
 void physics::px_simulation_event_callback::sendCollisionEvents()
 {
-	for (auto& c : removedCollisions)
-	{
-		c.thisActor->onCollisionExit(c.otherActor);
-		c.swapObjects();
-		LOG_MESSAGE("VISHEL");
-		c.thisActor->onCollisionExit(c.otherActor);
-		c.swapObjects();
-		physics::physics_holder::physicsRef->collisionExitQueue.emplace(c.thisActor->handle, c.otherActor->handle);
-	}
+	//for (auto& c : removedCollisions)
+	//{
+	//	c.thisActor->onCollisionExit(c.otherActor);
+	//	c.swapObjects();
+	//	LOG_MESSAGE("VISHEL");
+	//	c.thisActor->onCollisionExit(c.otherActor);
+	//	c.swapObjects();
+	//	//physics::physics_holder::physicsRef->collisionExitQueue.emplace(c.thisActor->handle, c.otherActor->handle);
+	//}
 
-	for (auto& c : newCollisions)
-	{
-		c.thisActor->onCollisionEnter(c.otherActor);
-		c.swapObjects();
-		LOG_MESSAGE("VOSHOL");
-		c.thisActor->onCollisionEnter(c.otherActor);
-		c.swapObjects();
-		physics::physics_holder::physicsRef->collisionQueue.emplace(c.thisActor->handle, c.otherActor->handle);
-	}
+	//for (auto& c : newCollisions)
+	//{
+	//	c.thisActor->onCollisionEnter(c.otherActor);
+	//	c.swapObjects();
+	//	LOG_MESSAGE("VOSHOL");
+	//	c.thisActor->onCollisionEnter(c.otherActor);
+	//	c.swapObjects();
+	//	//physics::physics_holder::physicsRef->collisionQueue.emplace(c.thisActor->handle, c.otherActor->handle);
+	//}
 }
 
 void physics::px_simulation_event_callback::sendTriggerEvents()

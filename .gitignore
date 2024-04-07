@@ -38,6 +38,7 @@ runtime/EraRuntime/x64
 *.pdb
 *.ini
 *.png
+*.lib
 
 # Visual studio files
 .vs/

@@ -282,7 +282,7 @@ namespace physics
 
 			return actor;
 		}
-		else
+		else if(type == px_rigidbody_type::Dynamic)
 		{
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
 
@@ -291,6 +291,22 @@ namespace physics
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
+
+			coll->createShape();
+			uint32_t* h = new uint32_t[1];
+			h[0] = (uint32_t)handle;
+			coll->getShape()->userData = h;
+			actor->attachShape(*coll->getShape());
+
+			return actor;
+		}
+		else
+		{
+			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
+
+			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
+			actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
+			setKinematic(true);
 
 			coll->createShape();
 			uint32_t* h = new uint32_t[1];

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <unordered_set>
 
 #include <px/core/px_physics_engine.h>
 #include <rendering/main_renderer.h>
@@ -138,13 +139,19 @@ namespace physics
 
         size_t nbTriangles = simpleMesh.indices.size() / 3;
 
-        for (auto vert : simpleMesh.vertices)
+        for (auto& vert : simpleMesh.vertices)
         {
             asset->positions.push_back(physx::createVec3(vert));
         }
-        for (auto uv : simpleMesh.uvs)
+        for (auto& uv : simpleMesh.uvs)
         {
             asset->uvs.push_back(physx::createVec2(uv));
+        }
+
+        for (auto& norm : simpleMesh.normals)
+        {
+            asset->normals.push_back(physx::createVec3(norm));
+            //asset->tangents.push_back(getTangent(physx::createVec3(norm)));
         }
 
         for (uint32_t i = 0; i < simpleMesh.indices.size(); i += 3)
@@ -172,17 +179,17 @@ namespace physics
 
     struct randomGenerator : Nv::Blast::RandomGeneratorBase
     {
-        ::std::random_device rd;
         //static inline ::std::mt19937::result_type seedResult;
         static inline int seedResult;
 
         virtual float getRandomValue()
         {
+            ::std::random_device rd;
             ::std::mt19937 eng(rd());
-            eng.seed(seedResult);
+            //eng.seed(seedResult);
             ::std::uniform_real_distribution<float> distr(0.0f, 1.0f);
-
-            return distr(eng);
+            float nb = distr(eng);
+            return nb;
         }
 
         virtual void seed(int32_t seed)
@@ -533,7 +540,7 @@ namespace physics
             randomGenerator::seedResult = seed;
 
             ::std::vector<uint32_t> indices;
-            for (int i = 0; i < meshAsset->triangles.size(); i++)
+            for (size_t i = 0; i < meshAsset->triangles.size(); i++)
             {
                 indices.push_back(meshAsset->triangles[i].a);
                 indices.push_back(meshAsset->triangles[i].b);
@@ -553,14 +560,11 @@ namespace physics
             float chunkMass = volumeOfMesh(meshAsset) * density / totalChunks;
             auto chunks = buildChunks(insideMaterial, outsideMaterial, meshes, chunkMass);
 
-            //// Connect blocks that are touching with fixed joints
-            //for(auto chunk : chunks)
-            //{
-            //    connectTouchingChunks(chunk, jointBreakForce);
-            //}
-
-            // Set anchored chunks as kinematic
-            anchorChunks(gameObject, anchor);
+            // Connect blocks that are touching with fixed joints
+            for(auto chunk : chunks)
+            {
+                connectTouchingChunks(chunk, jointBreakForce);
+            }
 
             auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
@@ -573,6 +577,8 @@ namespace physics
                 renderEntity.setParent(fractureGameObject);
             }
 
+            anchorChunks(fractureGameObject.handle, anchor);
+
             // Graph manager freezes/unfreezes blocks depending on whether they are connected to the graph or not
             auto graphManager = fractureGameObject.addComponent<chunk_graph_manager>().getComponent<chunk_graph_manager>();
             graphManager.setup(chunks);
@@ -580,9 +586,20 @@ namespace physics
             return fractureGameObject.handle;
         }
 
-        void anchorChunks(const eentity& gameObject, anchor anchor)
+        void anchorChunks(entity_handle gameObject, anchor anchor)
         {
+            auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
+            eentity entt{ gameObject, &enttScene->registry };
+
+            auto& transform = entt.getComponent<transform_component>();
+            //auto bounds = gameObject.GetCompositeMeshBounds();
+            //auto anchoredColliders = getAnchoredColliders(anchor, transform, bounds);
+
+            /*for(auto& collider : entt.getChilds())
+            {
+                collider.getComponent<physics::px_rigidbody_component>().setKinematic(true);
+            }*/
         }
 
         ::std::vector<entity_handle> buildChunks(ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, ::std::vector<ref<submesh_asset>> meshes, float chunkMass)
@@ -603,15 +620,12 @@ namespace physics
             fractureTool->fractureTool->setRemoveIslands(false);
             fractureTool->fractureTool->setSourceMeshes(&nvMesh->mesh, 1);
             voronoi_sites_generator* generator = new voronoi_sites_generator(nvMesh);
-
+            generator->generator->setBaseMesh(nvMesh->mesh);
             generator->generator->uniformlyGenerateSitesInMesh(totalChunks);
-
             const NvcVec3* sites;
             size_t nbSites = generator->generator->getVoronoiSites(sites);
-            for (size_t i = 0; i < fractureTool->fractureTool->getChunkCount(); i++)
-            {
-                int result = fractureTool->fractureTool->voronoiFracturing(0, nbSites, sites, false);
-            }
+
+            int result = fractureTool->fractureTool->voronoiFracturing(0, nbSites, sites, false);
 
             fractureTool->fractureTool->finalizeFracturing();
 
@@ -619,9 +633,57 @@ namespace physics
             size_t meshCount = fractureTool->fractureTool->getChunkCount();
             ::std::vector<ref<submesh_asset>> meshes;
             meshes.reserve(meshCount);
-            for (size_t i = 0; i < meshCount; i++)
+
+            std::vector<std::vector<Nv::Blast::Triangle>> chunkMeshes;
+            Nv::Blast::Triangle* trigs;
+
+            chunkMeshes.reserve(fractureTool->fractureTool->getChunkCount());
+            for (uint32_t i = 1; i < fractureTool->fractureTool->getChunkCount(); ++i)
             {
-                meshes.push_back(extractChunkMesh(fractureTool, i));
+                uint32_t nbTrigs = fractureTool->fractureTool->getBaseMesh(i, trigs);
+                std::vector<Nv::Blast::Triangle> trigList;
+                for (size_t j = 0; j < nbTrigs; j++)
+                {
+                    trigList.push_back(trigs[j]);
+                }
+
+                chunkMeshes.push_back(trigList);
+            }
+
+            for (size_t i = 0; i < chunkMeshes.size(); i++)
+            {
+                std::vector<physx::PxVec3> pos;
+                std::vector<physx::PxVec3> norm;
+                std::vector<physx::PxVec2> tex;
+                std::vector<uint32_t> indexs;
+
+                uint32_t index = 0;
+                std::vector<Nv::Blast::Triangle>& chunk = chunkMeshes[i];
+
+                for (size_t j = 0; j < chunk.size(); ++j)
+                {
+                    pos.push_back({ chunk[j].a.p.x, chunk[j].a.p.y, chunk[j].a.p.z });
+                    pos.push_back({ chunk[j].b.p.x, chunk[j].b.p.y, chunk[j].b.p.z });
+                    pos.push_back({ chunk[j].c.p.x, chunk[j].c.p.y, chunk[j].c.p.z });
+
+                    norm.push_back({ chunk[j].a.n.x, chunk[j].a.n.y, chunk[j].a.n.z });
+                    norm.push_back({ chunk[j].b.n.x, chunk[j].b.n.y, chunk[j].b.n.z });
+                    norm.push_back({ chunk[j].c.n.x, chunk[j].c.n.y, chunk[j].c.n.z });
+
+                    tex.push_back({ chunk[j].a.uv[0].x, chunk[j].a.uv[0].y });
+                    tex.push_back({ chunk[j].b.uv[0].x, chunk[j].b.uv[0].y });
+                    tex.push_back({ chunk[j].c.uv[0].x, chunk[j].c.uv[0].y });
+
+                    indexs.push_back(index++);
+                    indexs.push_back(index++);
+                    indexs.push_back(index++);
+                }
+
+                nvmesh* mesh = new nvmesh(pos, norm, tex, indexs);
+
+                auto chunkMesh = createRenderMesh(*mesh);
+
+                meshes.push_back(chunkMesh);
             }
 
             return { meshes };
@@ -632,39 +694,9 @@ namespace physics
             ::std::unordered_set<entity_handle> anchoredChunks;
             float frameWidth = 0.01f;
           
+            // TODO
+
             return anchoredChunks;
-        }
-
-        ref<submesh_asset> extractChunkMesh(fracture_tool* fractureTool, int index)
-        {
-            Nv::Blast::Triangle* trigs;
-            size_t nbTrigs = fractureTool->fractureTool->getBaseMesh(index, trigs);
-            nvmesh* mesh;
-
-            ::std::vector<physx::PxVec3> poss;
-            ::std::vector<physx::PxVec3> norms;
-            ::std::vector<physx::PxVec2> uvs;
-
-            for (size_t i = 0; i < nbTrigs; i++)
-            {
-                poss.push_back(PxVec3(trigs[i].a.p.x, trigs[i].a.p.y, trigs[i].a.p.z));
-                poss.push_back(PxVec3(trigs[i].b.p.x, trigs[i].b.p.y, trigs[i].b.p.z));
-                poss.push_back(PxVec3(trigs[i].c.p.x, trigs[i].c.p.y, trigs[i].c.p.z));
-
-                norms.push_back(PxVec3(trigs[i].a.n.x, trigs[i].a.n.y, trigs[i].a.n.z));
-                norms.push_back(PxVec3(trigs[i].b.n.x, trigs[i].b.n.y, trigs[i].b.n.z));
-                norms.push_back(PxVec3(trigs[i].c.n.x, trigs[i].c.n.y, trigs[i].c.n.z));
-
-                uvs.push_back(PxVec2(trigs[i].a.uv->x, trigs[i].a.uv->y));
-                uvs.push_back(PxVec2(trigs[i].b.uv->x, trigs[i].b.uv->y));
-                uvs.push_back(PxVec2(trigs[i].c.uv->x, trigs[i].c.uv->y));
-            }
-
-            mesh = new nvmesh(poss, norms, uvs, generateIndices(trigs, nbTrigs));
-
-            auto chunkMesh = createRenderMesh(*mesh);
-
-            return chunkMesh;
         }
 
         bool validateMesh(ref<submesh_asset> mesh)
@@ -711,9 +743,17 @@ namespace physics
             return chunk;
         }
 
-        void connectTouchingChunks(const eentity& chunk, float jointBreakForce, float touchRadius = .01f)
+        void connectTouchingChunks(entity_handle chunk, float jointBreakForce, float touchRadius = .01f)
         {
+            auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+            eentity entt{ chunk, &enttScene->registry };
+
+            auto& rb = entt.getComponent<physics::px_rigidbody_component>();
+            auto& mesh = entt.getComponent<mesh_component>().mesh;
+
+            //::std::unordered_set<physics::px_rigidbody_component> overlaps;
             
+            // TODO
         }
     };
 }
