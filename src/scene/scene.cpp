@@ -76,7 +76,7 @@ void escene::cloneTo(escene& target)
 		physics::px_particles_component,
 		physics::px_particles_render_component,
 		physics::chunk_graph_manager,
-		physics::chunk_node,
+		physics::chunk_graph_manager::chunk_node,
 		physics::px_blast_rigidbody_component,
 
 		physics::px_soft_body_component,

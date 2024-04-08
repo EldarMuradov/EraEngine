@@ -775,6 +775,8 @@ quat slerp(quat from, quat to, float t);
 quat nlerp(quat* qs, float* weights, uint32 count);
 
 mat3 quaternionToMat3(quat q);
+mat4 quaternionToMat4(quat q);
+
 quat mat3ToQuaternion(const mat3& m);
 
 vec3 quatToEuler(quat q);

@@ -12,6 +12,7 @@
 #include <asset/mesh_postprocessing.h>
 #include <random>
 #include <iomanip>
+#include <px/physics/px_joint.h>
 
 #include <NvBlast.h>
 
@@ -44,10 +45,11 @@
 namespace physics
 {
     struct nvmesh;
+    struct chunk_graph_manager;
 
     static inline int id = 0;
 
-    enum class anchor
+    enum class anchor : uint8_t
     {
         None = 0,
         Left = 1,
@@ -58,11 +60,71 @@ namespace physics
         Back = 32
     };
 
+    inline anchor operator|(anchor lhs, anchor rhs)
+    {
+        return static_cast<anchor>(static_cast<char>(lhs) | static_cast<char>(rhs));
+    }
+
+    inline bool operator&(anchor lhs, anchor rhs)
+    {
+        return (static_cast<char>(lhs) & static_cast<char>(rhs));
+    }
+
     struct bounds
     {
         vec3 center;
         vec3 extents;
+
+        void setMinMax(const vec3& min, const vec3& max)
+        {
+            extents = (max - min) * 0.5f;
+            center = min + extents;
+        }
+
+        void encapsulate(const vec3& point)
+        {
+            setMinMax(::min(center - extents, point), ::max(center + extents, point));
+        }
+
+        void encapsulate(const bounds& bounds)
+        {
+            encapsulate(bounds.center - bounds.extents);
+            encapsulate(bounds.center + bounds.extents);
+        }
     };
+
+    inline bounds getCompositeMeshBounds(eentity& entt)
+    {
+        auto childs = entt.getChilds();
+
+        ::std::vector<bounds> meshBounds;
+        meshBounds.reserve(childs.size());
+
+        for (auto& c : childs)
+        {
+            if (auto mesh = c.getComponentIfExists<mesh_component>())
+            {
+                auto& aabb = mesh->mesh->aabb;
+
+                meshBounds.push_back({ (aabb.maxCorner + aabb.minCorner) / 2.0f, (aabb.maxCorner - aabb.minCorner) / 2.0f });
+            }
+        }
+
+        if (meshBounds.size() == 0)
+            return {};
+
+        if (meshBounds.size() == 1)
+            return meshBounds[0];
+
+        auto& compositeBounds = meshBounds[0];
+
+        for (size_t i = 1; i < meshBounds.size(); i++)
+        {
+            compositeBounds.encapsulate(meshBounds[i]);
+        }
+
+        return compositeBounds;
+    }
 
     struct nvmesh
     {
@@ -75,7 +137,7 @@ namespace physics
 
         nvmesh(::std::vector<physx::PxVec3> verts, ::std::vector<physx::PxVec3> norms,
             ::std::vector<physx::PxVec2> uvis, ::std::vector<uint32_t> inds)
-          : vertices(verts),
+            : vertices(verts),
             normals(norms),
             uvs(uvis),
             indices(inds)
@@ -212,106 +274,210 @@ namespace physics
         void release()
         {
             RELEASE_PTR(rndGen)
-            RELEASE_PTR(generator)
-        }
-    };
-
-    struct chunk_node
-    {
-        ::std::unordered_set<chunk_node*> neighbours;
-        chunk_node** neighboursArray = nullptr;
-
-        entity_handle handle;
-
-        bool frozen;
-
-        vec3 frozenPos;
-        quat forzenRot;
-
-        chunk_node() = default;
-
-        chunk_node(entity_handle handl) : handle(handl) {}
-
-        bool contains(chunk_node* chunkNode) const
-        {
-            return neighbours.contains(chunkNode);
-        }
-
-        void update()
-        {
-            if (frozen)
-            {
-                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
-
-                eentity renderEntity{ handle, &enttScene->registry };
-
-                renderEntity.getComponent<transform_component>().position = frozenPos;
-                renderEntity.getComponent<transform_component>().rotation = forzenRot;
-            }
-        }
-
-        void setup()
-        {
-            freeze();
-        }
-
-        void unfreeze()
-        {
-            frozen = false;
-        }
-
-        void remove(chunk_node* chunkNode)
-        {
-            neighbours.erase(chunkNode);
-        }
-
-        void freeze()
-        {
-            frozen = true;
-
-            auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
-
-            eentity renderEntity{ handle, &enttScene->registry };
-
-            frozenPos = renderEntity.getComponent<transform_component>().position;
-            forzenRot = renderEntity.getComponent<transform_component>().rotation;
+                RELEASE_PTR(generator)
         }
     };
 
     struct chunk_graph_manager
     {
+        struct chunk_node
+        {
+            ::std::unordered_set<entity_handle> neighbours;
+            entity_handle* neighboursArray = nullptr;
+
+            bool hasBrokenLinks = false;
+
+            ::std::unordered_map<px_fixed_joint*, entity_handle> jointToChunk;
+            ::std::unordered_map<entity_handle, px_fixed_joint*> chunkToJoint;
+
+            entity_handle handle;
+
+            bool frozen= false;
+            bool isKinematic = false;
+
+            vec3 frozenPos{};
+            quat forzenRot{};
+
+            chunk_node() = default;
+
+            chunk_node(entity_handle handl) : handle(handl) {}
+
+            bool contains(entity_handle chunkNode) const
+            {
+                return neighbours.contains(chunkNode);
+            }
+
+            void onJointBreak()
+            {
+                hasBrokenLinks = true;
+            }
+
+            void update()
+            {
+                //if (frozen)
+                //{
+                //    auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+                //    eentity renderEntity{ handle, &enttScene->registry };
+
+                //    renderEntity.getComponent<transform_component>().position = frozenPos;
+                //    renderEntity.getComponent<transform_component>().rotation = forzenRot;
+                //}
+                //else
+                //    unfreeze();
+            }
+
+            void setup(chunk_graph_manager* manager)
+            {
+                freeze();
+
+                jointToChunk.clear();
+                chunkToJoint.clear();
+
+                if (!manager->joints.contains(handle))
+                    return;
+
+                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+                for (auto joint : manager->joints[handle])
+                {
+                    auto chunk = *reinterpret_cast<entity_handle*>(joint->first->userData);
+                    jointToChunk.emplace(joint, chunk);
+                    chunkToJoint.emplace(chunk, joint);
+                }
+
+                for (auto& chunkNode : chunkToJoint)
+                {
+                    neighbours.emplace(chunkNode.first);
+
+                    eentity renderEntity{ chunkNode.first, &enttScene->registry };
+                    auto& chunk =  renderEntity.getComponent<physics::chunk_graph_manager::chunk_node>();
+                    if (chunk.contains(handle) == false)
+                    {
+                        chunk.neighbours.emplace(handle);
+                    }
+                }
+            }
+
+            void unfreeze()
+            {
+                //frozen = false;
+
+                //auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+                //eentity renderEntity{ handle, &enttScene->registry };
+
+                //renderEntity.getComponent<physics::px_rigidbody_component>().setKinematic(false);
+            }
+
+            void remove(entity_handle chunkNode)
+            {
+                chunkToJoint.erase(chunkNode);
+                neighbours.erase(chunkNode);
+            }
+
+            void cleanBrokenLinks()
+            {
+                ::std::vector<px_fixed_joint*> brokenLinks;
+                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+                for (auto& joint : jointToChunk)
+                {
+                    if (joint.first->joint->getConstraintFlags() & PxConstraintFlag::eBROKEN)
+                    {
+                        brokenLinks.push_back(joint.first);
+                    }
+                }
+
+                for(auto link : brokenLinks)
+                {
+                    auto body = jointToChunk[link];
+
+                    jointToChunk.erase(link);
+                    chunkToJoint.erase(body);
+
+                    eentity renderEntity{ handle, &enttScene->registry };
+
+                    renderEntity.getComponent<physics::chunk_graph_manager::chunk_node>().remove(handle);
+                    neighbours.erase(body);
+                }
+
+                hasBrokenLinks = false;
+            }
+
+            void freeze()
+            {
+                //frozen = true;
+
+                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+                eentity renderEntity{ handle, &enttScene->registry };
+
+                frozenPos = renderEntity.getComponent<transform_component>().position;
+                forzenRot = renderEntity.getComponent<transform_component>().rotation;
+
+                //renderEntity.getComponent<physics::px_rigidbody_component>().setKinematic(true);
+            }
+        };
+
         chunk_node* nodes = nullptr;
         size_t nbNodes{};
+
+        ::std::unordered_map<entity_handle, ::std::vector<px_fixed_joint*>> joints;
 
         void setup(::std::vector<entity_handle> bodies)
         {
             nbNodes = bodies.size();
             nodes = new chunk_node[nbNodes];
-            for (int i = 0; i < bodies.size(); i++)
-            {
-                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
+            auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+            for (size_t i = 0; i < bodies.size(); i++)
+            {
                 eentity renderEntity{ bodies[i], &enttScene->registry };
 
-                if (auto node = renderEntity.getComponentIfExists<chunk_node>())
-                {
-                    node->setup();
-                    nodes[i] = *node;
-                }
-                else
+                if (!renderEntity.hasComponent<chunk_node>())
                 {
                     renderEntity.addComponent<chunk_node>(bodies[i]);
-
-                    auto newNode = renderEntity.getComponentIfExists<chunk_node>();
-                    newNode->setup();
-                    nodes[i] = *newNode;
                 }
+            }
+
+            for (size_t i = 0; i < bodies.size(); i++)
+            {
+                eentity renderEntity{ bodies[i], &enttScene->registry };
+
+                auto newNode = renderEntity.getComponentIfExists<chunk_node>();
+                newNode->setup(this);
+                nodes[i] = *newNode;
             }
         }
 
         void update()
         {
+            auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+            for (auto& node : joints)
+            {
+                eentity renderEntity{ node.first, &enttScene->registry };
+                
+                for (auto& joint : node.second)
+                {
+                    if (joint->joint->getConstraintFlags() & PxConstraintFlag::eBROKEN)
+                        renderEntity.getComponent<physics::chunk_graph_manager::chunk_node>().onJointBreak();
+                }
+            }
+
             bool runSearch = false;
+
+            for (size_t i = 0; i < nbNodes; i++)
+            {
+                auto& node = nodes[i];
+                if (nodes->hasBrokenLinks)
+                {
+                    node.cleanBrokenLinks();
+                    runSearch = true;
+                }
+            }
 
             if (runSearch)
                 searchGraph(nodes);
@@ -365,11 +531,14 @@ namespace physics
         {
             if (search.contains(o) && visited.contains(o) == false)
             {
+                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
                 visited.emplace(o);
 
                 for (auto n : o->neighbours)
                 {
-                    traverse(n, search, visited);
+                    eentity renderEntity{ n, &enttScene->registry };
+                    traverse(&renderEntity.getComponent<physics::chunk_graph_manager::chunk_node>(), search, visited);
                 }
             }
         }
@@ -428,10 +597,10 @@ namespace physics
     {
         float volume = 0.0f;
 
-        auto vertices = mesh->positions;
-        auto triangles = mesh->triangles;
+        auto& vertices = mesh->positions;
+        auto& triangles = mesh->triangles;
 
-        for (int i = 0; i < mesh->triangles.size(); i ++)
+        for (int i = 0; i < mesh->triangles.size(); i++)
         {
             vec3 p1 = vertices[triangles[i].a];
             vec3 p2 = vertices[triangles[i].b];
@@ -467,7 +636,7 @@ namespace physics
             auto& triangle = triangles[i];
 
             {
-                vertex vertex = { 
+                vertex vertex = {
                     vec3(triangle.a.p.x, triangle.a.p.y, triangle.a.p.z),
                     vec3(triangle.a.n.x, triangle.a.n.y, triangle.a.n.z),
                     vec2(triangle.a.uv->x, triangle.a.uv->y) };
@@ -537,6 +706,12 @@ namespace physics
             // Translate all meshes to one world mesh
             //auto mesh = getWorldMesh(gameObject);
 
+            auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+            eentity fractureGameObject = enttScene->createEntity("Fracture")
+                .addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
+            auto& graphManager = fractureGameObject.addComponent<chunk_graph_manager>().getComponent<chunk_graph_manager>();
+
             randomGenerator::seedResult = seed;
 
             ::std::vector<uint32_t> indices;
@@ -561,17 +736,12 @@ namespace physics
             auto chunks = buildChunks(insideMaterial, outsideMaterial, meshes, chunkMass);
 
             // Connect blocks that are touching with fixed joints
-            for(auto chunk : chunks)
+            for (size_t i = 0; i < chunks.size(); i++)
             {
-                connectTouchingChunks(chunk, jointBreakForce);
+                connectTouchingChunks(graphManager, meshes[i], chunks[i], jointBreakForce);
             }
 
-            auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
-
-            eentity fractureGameObject = enttScene->createEntity("Fracture")
-                .addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
-
-            for(auto chunk : chunks)
+            for (auto chunk : chunks)
             {
                 eentity renderEntity{ chunk, &enttScene->registry };
                 renderEntity.setParent(fractureGameObject);
@@ -580,7 +750,6 @@ namespace physics
             anchorChunks(fractureGameObject.handle, anchor);
 
             // Graph manager freezes/unfreezes blocks depending on whether they are connected to the graph or not
-            auto graphManager = fractureGameObject.addComponent<chunk_graph_manager>().getComponent<chunk_graph_manager>();
             graphManager.setup(chunks);
 
             return fractureGameObject.handle;
@@ -593,13 +762,14 @@ namespace physics
             eentity entt{ gameObject, &enttScene->registry };
 
             auto& transform = entt.getComponent<transform_component>();
-            //auto bounds = gameObject.GetCompositeMeshBounds();
-            //auto anchoredColliders = getAnchoredColliders(anchor, transform, bounds);
+            auto bounds = getCompositeMeshBounds(entt);
+            auto anchoredColliders = getAnchoredColliders(anchor, transform, bounds);
 
-            /*for(auto& collider : entt.getChilds())
+            for (auto& collider : entt.getChilds())
             {
-                collider.getComponent<physics::px_rigidbody_component>().setKinematic(true);
-            }*/
+                //collider.getComponent<physics::px_rigidbody_component>().setDisableGravity();
+                //collider.getComponent<physics::px_rigidbody_component>().setKinematic(true);
+            }
         }
 
         ::std::vector<entity_handle> buildChunks(ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, ::std::vector<ref<submesh_asset>> meshes, float chunkMass)
@@ -693,8 +863,111 @@ namespace physics
         {
             ::std::unordered_set<entity_handle> anchoredChunks;
             float frameWidth = 0.01f;
-          
-            // TODO
+
+            auto meshWorldCenter = localToWorld(bounds.center, meshTransform);
+            auto meshWorldExtents = bounds.extents * meshTransform.scale;
+
+            if (anchor & anchor::Left)
+            {
+                auto right = transformDirection(meshTransform, vec3(1.0f, 0.0f, 0.0f));
+
+                auto center = meshWorldCenter - right * meshWorldExtents.x;
+                auto abs = ::abs(meshWorldExtents);
+                vec3 halfExtents = { frameWidth , abs.y, abs.z };
+
+                px_overlap_info overlapResult = physics::physics_holder::physicsRef->
+                    overlapBox(center, halfExtents, meshTransform.rotation);
+
+                for (auto& res : overlapResult.results)
+                {
+                    anchoredChunks.emplace((entity_handle)res);
+                }
+            }
+
+            if (anchor & anchor::Right)
+            {
+                auto right = transformDirection(meshTransform, vec3(1.0f, 0.0f, 0.0f));
+
+                auto center = meshWorldCenter + right * meshWorldExtents.x;
+                auto abs = ::abs(meshWorldExtents);
+                vec3 halfExtents = { frameWidth , abs.y, abs.z };
+
+                px_overlap_info overlapResult = physics::physics_holder::physicsRef->
+                    overlapBox(center, halfExtents, meshTransform.rotation);
+
+                for (auto& res : overlapResult.results)
+                {
+                    anchoredChunks.emplace((entity_handle)res);
+                }
+            }
+
+            if (anchor & anchor::Bottom)
+            {
+                auto up = transformDirection(meshTransform, vec3(0.0f, 1.0f, 0.0f));
+
+                auto center = meshWorldCenter - up * meshWorldExtents.y;
+                auto abs = ::abs(meshWorldExtents);
+                vec3 halfExtents = { frameWidth , abs.y, abs.z };
+
+                px_overlap_info overlapResult = physics::physics_holder::physicsRef->
+                    overlapBox(center, halfExtents, meshTransform.rotation);
+
+                for (auto& res : overlapResult.results)
+                {
+                    anchoredChunks.emplace((entity_handle)res);
+                }
+            }
+
+            if (anchor & anchor::Top)
+            {
+                auto up = transformDirection(meshTransform, vec3(0.0f, 1.0f, 0.0f));
+
+                auto center = meshWorldCenter + up * meshWorldExtents.y;
+                auto abs = ::abs(meshWorldExtents);
+                vec3 halfExtents = { frameWidth , abs.y, abs.z };
+
+                px_overlap_info overlapResult = physics::physics_holder::physicsRef->
+                    overlapBox(center, halfExtents, meshTransform.rotation);
+
+                for (auto& res : overlapResult.results)
+                {
+                    anchoredChunks.emplace((entity_handle)res);
+                }
+            }
+
+            if (anchor & anchor::Front)
+            {
+                auto forward = transformDirection(meshTransform, vec3(0.0f, 0.0f, 1.0f));
+
+                auto center = meshWorldCenter - forward * meshWorldExtents.z;
+                auto abs = ::abs(meshWorldExtents);
+                vec3 halfExtents = { frameWidth , abs.y, abs.z };
+
+                px_overlap_info overlapResult = physics::physics_holder::physicsRef->
+                    overlapBox(center, halfExtents, meshTransform.rotation);
+
+                for (auto& res : overlapResult.results)
+                {
+                    anchoredChunks.emplace((entity_handle)res);
+                }
+            }
+
+            if (anchor & anchor::Back)
+            {
+                auto forward = transformDirection(meshTransform, vec3(0.0f, 0.0f, 1.0f));
+
+                auto center = meshWorldCenter + forward * meshWorldExtents.z;
+                auto abs = ::abs(meshWorldExtents);
+                vec3 halfExtents = { frameWidth , abs.y, abs.z };
+
+                px_overlap_info overlapResult = physics::physics_holder::physicsRef->
+                    overlapBox(center, halfExtents, meshTransform.rotation);
+
+                for (auto& res : overlapResult.results)
+                {
+                    anchoredChunks.emplace((entity_handle)res);
+                }
+            }
 
             return anchoredChunks;
         }
@@ -738,22 +1011,65 @@ namespace physics
                 .addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic)
                 .addComponent<mesh_component>(mm);
 
+            auto& rb = chunk.getComponent<physics::px_rigidbody_component>();
+
+            rb.setMass(mass);
+            rb.setThreshold(0.03f, 0.03f);
             mm->mesh = builder.createDXMesh();
 
             return chunk;
         }
 
-        void connectTouchingChunks(entity_handle chunk, float jointBreakForce, float touchRadius = .01f)
+        void connectTouchingChunks(chunk_graph_manager& manager, ref<submesh_asset> asset, entity_handle chunk, float jointBreakForce, float touchRadius = .01f)
         {
             auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
             eentity entt{ chunk, &enttScene->registry };
 
             auto& rb = entt.getComponent<physics::px_rigidbody_component>();
+            auto& transform = entt.getComponent<transform_component>();
             auto& mesh = entt.getComponent<mesh_component>().mesh;
 
-            //::std::unordered_set<physics::px_rigidbody_component> overlaps;
-            
-            // TODO
+            ::std::unordered_set<entity_handle> overlaps;
+
+            auto& vertices = asset->positions;
+
+            for (size_t i = 0; i < vertices.size(); i++)
+            {
+                auto dir = transformDirection(transform, vertices[i]);
+
+                vec3 worldPosition = dir;
+
+                px_overlap_info overlapResult = physics::physics_holder::physicsRef->
+                    overlapSphere(worldPosition, touchRadius);
+
+                for (size_t j = 0; j < overlapResult.results.size(); j++)
+                {
+                    overlaps.emplace((entity_handle)overlapResult.results[j]);
+                }
+            }
+
+            for (auto overlap : overlaps)
+            {
+                if (overlap != chunk)
+                {
+                    eentity body{ overlap, &enttScene->registry };
+
+                    auto& rbOverlap = body.getComponent<physics::px_rigidbody_component>();
+
+                    px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{0.1f, 0.1f, 100000.0f, 50000.0f}, rb.getRigidActor(), rbOverlap.getRigidActor());
+                    
+                    if (manager.joints.contains(overlap))
+                    {
+                        manager.joints[overlap].push_back(joint);
+                    }
+                    else
+                    {
+                        ::std::vector<px_fixed_joint*> jointVec;
+                        jointVec.push_back(joint);
+                        manager.joints.emplace(overlap, jointVec);
+                    }
+                }
+            }
         }
     };
 }

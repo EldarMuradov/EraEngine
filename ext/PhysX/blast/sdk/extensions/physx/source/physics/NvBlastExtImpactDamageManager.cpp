@@ -182,9 +182,6 @@ void ExtImpactDamageManagerImpl::onContact(const PxContactPairHeader& pairHeader
 		return;
 	}
 
-	//if ((actors[0] && !actors[0]->getChunkCount()) || (actors[1] && !actors[1]->getChunkCount()))
-	//	return;
-
 	// self-collision check
 	if (actors[0] != nullptr && actors[1] != nullptr)
 	{

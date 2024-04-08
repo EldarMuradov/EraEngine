@@ -611,10 +611,12 @@ quat slerp(quat from, quat to, float t)
 	{
 		scale1 = -scale1;
 	}
+
 	float newX = (scale0 * from.x) + (scale1 * to.x);
 	float newY = (scale0 * from.y) + (scale1 * to.y);
 	float newZ = (scale0 * from.z) + (scale1 * to.z);
 	float newW = (scale0 * from.w) + (scale1 * to.w);
+
 	return normalize(quat(newX, newY, newZ, newW));
 }
 
@@ -651,6 +653,40 @@ mat3 quaternionToMat3(quat q)
 	float qwz = q.w * q.z;
 
 	mat3 result;
+
+	result.m00 = 1.f - 2.f * (qyy + qzz);
+	result.m10 = 2.f * (qxy + qwz);
+	result.m20 = 2.f * (qxz - qwy);
+
+	result.m01 = 2.f * (qxy - qwz);
+	result.m11 = 1.f - 2.f * (qxx + qzz);
+	result.m21 = 2.f * (qyz + qwx);
+
+	result.m02 = 2.f * (qxz + qwy);
+	result.m12 = 2.f * (qyz - qwx);
+	result.m22 = 1.f - 2.f * (qxx + qyy);
+
+	return result;
+}
+
+mat4 quaternionToMat4(quat q)
+{
+	if (q.w == 1.f)
+	{
+		return mat4::identity;
+	}
+
+	float qxx = q.x * q.x;
+	float qyy = q.y * q.y;
+	float qzz = q.z * q.z;
+	float qxz = q.x * q.z;
+	float qxy = q.x * q.y;
+	float qyz = q.y * q.z;
+	float qwx = q.w * q.x;
+	float qwy = q.w * q.y;
+	float qwz = q.w * q.z;
+
+	mat4 result;
 
 	result.m00 = 1.f - 2.f * (qyy + qzz);
 	result.m10 = 2.f * (qxy + qwz);

@@ -93,6 +93,9 @@ namespace physics
 	{
 		float projectionLinearTolerance = 0.1f;
 		float projectionAngularTolerance = 0.1f;
+
+		float torqueThreshold = 2000.0f;
+		float forceThreshold = 1000.0f;
 	};
 
 	struct px_distance_joint_desc
@@ -183,7 +186,6 @@ namespace physics
 
 		px_joint_type type = px_joint_type::None;
 
-	protected:
 		PxJoint* joint = nullptr;
 	};
 

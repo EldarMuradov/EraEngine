@@ -78,6 +78,8 @@ namespace physics
 
 		void setAngularDamping(float damping);
 
+		void setThreshold(float stabilization = 0.01f, float sleep = 0.01f);
+
 		virtual void release(bool releaseActor = false) noexcept override;
 
 		void onCollisionEnter(px_rigidbody_component* collision) const;

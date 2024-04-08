@@ -123,6 +123,45 @@ namespace physics
 		inertia.m02 += mass * cm.z * cm.x;
 	}
 
+	inline vec3 localToWorld(const vec3& localPos, const trs& transform)
+	{
+		mat4 model =
+		{
+			1, 0, 0, transform.position.x,
+			0, 1, 0, transform.position.y,
+			0, 0, 1, transform.position.z,
+			0, 0, 0, 1
+		};
+		
+		mat4 rot = quaternionToMat4(transform.rotation);
+
+		mat4 scaleMatrix =
+		{
+			transform.scale.x, 0, 0, 0,
+			0, transform.scale.y, 0, 0,
+			0, 0, transform.scale.z, 0,
+			0, 0, 0, 1
+		};
+
+		mat4 modelMatrix = model * rot * scaleMatrix;
+
+		vec4 localPos4 = { localPos.x, localPos.y, localPos.z, 1 };
+		vec4 worldPos4 = modelMatrix * localPos4;
+
+		return { worldPos4.x, worldPos4.y, worldPos4.z };
+	}
+
+	inline vec3 getWorldLossyScale(const trs& transform, const trs& parentTransform)
+	{
+		vec3 worldScale;
+
+		worldScale.x = transform.scale.x * parentTransform.scale.x;
+		worldScale.y = transform.scale.y * parentTransform.scale.y;
+		worldScale.z = transform.scale.z * parentTransform.scale.z;
+
+		return worldScale;
+	}
+
 	struct px_explode_overlap_callback : PxOverlapCallback
 	{
 		px_explode_overlap_callback(PxVec3 worldPos, float radius, float explosiveImpulse)

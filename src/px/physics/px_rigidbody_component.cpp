@@ -103,7 +103,9 @@ namespace physics
 	{
 		if (!actor)
 			return;
+		physics_holder::physicsRef->lockWrite();
 		actor->is<PxRigidDynamic>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, kinematic);
+		physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::setLinearVelocity(vec3 velocity)
@@ -188,6 +190,16 @@ namespace physics
 		physics_holder::physicsRef->lockWrite();
 		if (damping > 0.0f)
 			actor->is<PxRigidDynamic>()->setAngularDamping(damping);
+		physics_holder::physicsRef->unlockWrite();
+	}
+
+	void px_rigidbody_component::setThreshold(float stabilization, float sleep)
+	{
+		if (!actor)
+			return;
+		physics_holder::physicsRef->lockWrite();
+		actor->is<PxRigidDynamic>()->setStabilizationThreshold(stabilization);
+		actor->is<PxRigidDynamic>()->setSleepThreshold(sleep);
 		physics_holder::physicsRef->unlockWrite();
 	}
 
@@ -285,7 +297,6 @@ namespace physics
 		else if(type == px_rigidbody_type::Dynamic)
 		{
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
-
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);

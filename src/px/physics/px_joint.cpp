@@ -68,6 +68,8 @@ namespace physics
 	px_revolute_joint::px_revolute_joint(px_revolute_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept : px_joint(f, s)
 	{
 		joint = createRevoluteJoint(f, s);
+		first = f;
+		second = s;
 		type = px_joint_type::Revolute;
 		PxJointAngularLimitPair limitPair(desc.angularPair.lower,
 			desc.angularPair.upper);
@@ -94,6 +96,8 @@ namespace physics
 	px_spherical_joint::px_spherical_joint(px_spherical_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept
 	{
 		joint = createSphericalJoint(f, s);
+		first = f;
+		second = s;
 		type = px_joint_type::Spherical;
 
 		PxJointLimitCone limitCone(desc.limitCone.yAngle,
@@ -115,6 +119,8 @@ namespace physics
 	px_prismatic_joint::px_prismatic_joint(px_prismatic_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept
 	{
 		joint = createPrismaticJoint(f, s);
+		first = f;
+		second = s;
 		type = px_joint_type::Prismatic;
 		PxTolerancesScale ts;
 		ts.length = 1.0;
@@ -140,6 +146,8 @@ namespace physics
 	px_distance_joint::px_distance_joint(px_distance_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept
 	{
 		joint = createDistanceJoint(f, s);
+		first = f;
+		second = s;
 		type = px_joint_type::Distance;
 		auto jInstance = joint->is<PxDistanceJoint>();
 		jInstance->setDamping(desc.damping);
@@ -157,10 +165,15 @@ namespace physics
 
 	px_fixed_joint::px_fixed_joint(px_fixed_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept
 	{
+		first = f;
+		second = s;
 		joint = createFixedJoint(f, s);
 		type = px_joint_type::Fixed;
 		auto jInstance = joint->is<PxFixedJoint>();
 		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
+		jInstance->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, true);
+
+		jInstance->setBreakForce(desc.forceThreshold, desc.torqueThreshold);
 	}
 
 	px_fixed_joint::~px_fixed_joint()
@@ -170,6 +183,8 @@ namespace physics
 	px_d6_joint::px_d6_joint(px_d6_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept
 	{
 		joint = createD6Joint(f, s);
+		first = f;
+		second = s;
 		type = px_joint_type::D6;
 		auto jInstance = joint->is<PxD6Joint>();
 		if (desc.drive.anabledDrive)

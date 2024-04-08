@@ -223,9 +223,8 @@ namespace physics
 		uint32_t id2;
 	};
 
-	class px_overlap_callback : public PxOverlapBufferN<32>
+	struct px_overlap_callback : PxOverlapBufferN<32>
 	{
-	public:
 		px_overlap_callback() : hitActor(nullptr) {}
 
 		PxAgain processTouches(const PxOverlapHit* buffer, PxU32 nbHits)
@@ -336,9 +335,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		size_t resultSize = results.size(); \
 		for (int32 i = 0; i < resultSize; i++) \
 		{ \
-			auto& hitInfo = results[i]; \
 			const auto& hit = buffer.getTouch(i); \
-			hitInfo = hit.shape ? static_cast<uint32_t*>(hit.shape->userData) : nullptr; \
+			results[i] = hit.shape ? *reinterpret_cast<uint32_t*>(hit.shape->userData) : 0; \
 		}
 
 	struct px_raycast_info
@@ -353,7 +351,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 	struct px_overlap_info
 	{
 		bool isOverlapping;
-		::std::vector<uint32_t*> results;
+		::std::vector<uint32_t> results;
 	};
 
 	struct px_simulation_filter_callback : PxSimulationFilterCallback
@@ -646,7 +644,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		bool checkBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
 		{
 			PX_SCENE_QUERY_SETUP_CHECK();
-			::std::vector<uint32_t*> results;
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
 			const PxBoxGeometry geometry(createPxVec3(halfExtents));
 
@@ -656,7 +653,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		bool checkSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0)
 		{
 			PX_SCENE_QUERY_SETUP_CHECK();
-			::std::vector<uint32_t*> results;
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)));
 			const PxSphereGeometry geometry(radius);
 
@@ -666,7 +662,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		bool checkCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
 		{
 			PX_SCENE_QUERY_SETUP_CHECK();
-			::std::vector<uint32_t*> results;
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
 			const PxCapsuleGeometry geometry(radius, halfHeight);
 			return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
@@ -676,7 +671,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		px_overlap_info overlapCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
 		{
 			PX_SCENE_QUERY_SETUP_OVERLAP();
-			::std::vector<uint32_t*> results;
+			::std::vector<uint32_t> results;
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
 			const PxCapsuleGeometry geometry(radius, halfHeight);
 			if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
@@ -690,7 +685,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		px_overlap_info overlapBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
 		{
 			PX_SCENE_QUERY_SETUP_OVERLAP();
-			::std::vector<uint32_t*> results;
+			::std::vector<uint32_t> results;
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
 			const PxBoxGeometry geometry(createPxVec3(halfExtents));
 
@@ -705,7 +700,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		px_overlap_info overlapSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0)
 		{
 			PX_SCENE_QUERY_SETUP_OVERLAP();
-			::std::vector<uint32_t*> results;
+			::std::vector<uint32_t> results;
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)));
 			const PxSphereGeometry geometry(radius);
 
