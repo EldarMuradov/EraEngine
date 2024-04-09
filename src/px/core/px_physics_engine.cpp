@@ -136,7 +136,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 
-	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
+	//sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
@@ -624,6 +624,7 @@ void physics::px_simulation_event_callback::clear()
 {
 	newCollisions.clear();
 	removedCollisions.clear();
+	kinematicsToRemoveFlag.clear();
 
 	newTriggerPairs.clear();
 	lostTriggerPairs.clear();
@@ -649,6 +650,11 @@ void physics::px_simulation_event_callback::sendCollisionEvents()
 	//	c.thisActor->onCollisionEnter(c.otherActor);
 	//	c.swapObjects();
 	//	//physics::physics_holder::physicsRef->collisionQueue.emplace(c.thisActor->handle, c.otherActor->handle);
+	//}
+
+	//for (auto& c : kinematicsToRemoveFlag)
+	//{
+	//	c->setKinematic(false);
 	//}
 }
 
@@ -698,7 +704,6 @@ void physics::px_simulation_event_callback::onContact(const PxContactPairHeader&
 
 		if (hasPostVelocities && iter.nextItemSet())
 		{
-			//ASSERT(iter.contactPairIndex == i);
 			if (iter.contactPairIndex != i)
 				continue;
 			if (iter.postSolverVelocity)
@@ -724,6 +729,22 @@ void physics::px_simulation_event_callback::onContact(const PxContactPairHeader&
 
 			if (!rb1 || !rb2)
 				return;
+
+			/*if (auto kin1 = actor1->is<PxRigidDynamic>())
+			{
+				if ((kin1->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC) && collision.impulse.magnitude() > 300.f)
+				{
+					kinematicsToRemoveFlag.pushBack(rb1);
+				}
+			}
+
+			if (auto kin2 = actor2->is<PxRigidDynamic>())
+			{
+				if ((kin2->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC) && collision.impulse.magnitude() > 300.f)
+				{
+					kinematicsToRemoveFlag.pushBack(rb2);
+				}
+			}*/
 
 			collision.thisActor = rb1;
 			collision.otherActor = rb2;

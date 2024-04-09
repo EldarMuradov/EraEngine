@@ -292,7 +292,7 @@ namespace physics
 
             entity_handle handle;
 
-            bool frozen= false;
+            bool frozen = false;
             bool isKinematic = false;
 
             vec3 frozenPos{};
@@ -351,7 +351,7 @@ namespace physics
                     neighbours.emplace(chunkNode.first);
 
                     eentity renderEntity{ chunkNode.first, &enttScene->registry };
-                    auto& chunk =  renderEntity.getComponent<physics::chunk_graph_manager::chunk_node>();
+                    auto& chunk = renderEntity.getComponent<physics::chunk_graph_manager::chunk_node>();
                     if (chunk.contains(handle) == false)
                     {
                         chunk.neighbours.emplace(handle);
@@ -361,13 +361,15 @@ namespace physics
 
             void unfreeze()
             {
-                //frozen = false;
+                frozen = false;
 
-                //auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
-                //eentity renderEntity{ handle, &enttScene->registry };
+                eentity renderEntity{ handle, &enttScene->registry };
 
-                //renderEntity.getComponent<physics::px_rigidbody_component>().setKinematic(false);
+                renderEntity.getComponent<physics::px_rigidbody_component>().setEnableGravity();
+
+                renderEntity.getComponent<physics::px_rigidbody_component>().setConstraints(0);
             }
 
             void remove(entity_handle chunkNode)
@@ -389,7 +391,7 @@ namespace physics
                     }
                 }
 
-                for(auto link : brokenLinks)
+                for (auto link : brokenLinks)
                 {
                     auto body = jointToChunk[link];
 
@@ -407,7 +409,7 @@ namespace physics
 
             void freeze()
             {
-                //frozen = true;
+                frozen = true;
 
                 auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
@@ -416,7 +418,13 @@ namespace physics
                 frozenPos = renderEntity.getComponent<transform_component>().position;
                 forzenRot = renderEntity.getComponent<transform_component>().rotation;
 
-                //renderEntity.getComponent<physics::px_rigidbody_component>().setKinematic(true);
+
+                renderEntity.getComponent<physics::px_rigidbody_component>().setDisableGravity();
+
+                renderEntity.getComponent<physics::px_rigidbody_component>().setConstraints(
+                    PxRigidDynamicLockFlag::eLOCK_ANGULAR_X | PxRigidDynamicLockFlag::eLOCK_ANGULAR_Y | PxRigidDynamicLockFlag::eLOCK_ANGULAR_Z
+                    /*| PxRigidDynamicLockFlag::eLOCK_LINEAR_X | PxRigidDynamicLockFlag::eLOCK_LINEAR_Y | PxRigidDynamicLockFlag::eLOCK_LINEAR_Z*/
+                );
             }
         };
 
@@ -459,11 +467,15 @@ namespace physics
             for (auto& node : joints)
             {
                 eentity renderEntity{ node.first, &enttScene->registry };
-                
+
                 for (auto& joint : node.second)
                 {
                     if (joint->joint->getConstraintFlags() & PxConstraintFlag::eBROKEN)
-                        renderEntity.getComponent<physics::chunk_graph_manager::chunk_node>().onJointBreak();
+                    {
+                        auto& chunk = renderEntity.getComponent<physics::chunk_graph_manager::chunk_node>();
+                        chunk.onJointBreak();
+                        chunk.unfreeze();
+                    }
                 }
             }
 
@@ -1056,8 +1068,8 @@ namespace physics
 
                     auto& rbOverlap = body.getComponent<physics::px_rigidbody_component>();
 
-                    px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{0.1f, 0.1f, 100000.0f, 50000.0f}, rb.getRigidActor(), rbOverlap.getRigidActor());
-                    
+                    px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{ 0.1f, 0.1f, 1000.0f, 500.0f }, rb.getRigidActor(), rbOverlap.getRigidActor());
+
                     if (manager.joints.contains(overlap))
                     {
                         manager.joints[overlap].push_back(joint);

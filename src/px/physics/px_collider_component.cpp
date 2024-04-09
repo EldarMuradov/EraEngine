@@ -301,7 +301,7 @@ namespace physics
 
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
-		shape = physics->createShape(PxConvexMeshGeometry(mesh, PxMeshScale(modelSize)), *material);
+		shape = physics->createShape(PxConvexMeshGeometry(mesh, PxMeshScale(createPxVec3(modelSize))), *material);
 
 		enableShapeInSceneQueryTests(shape);
 		enableShapeInContactTests(shape);
@@ -328,7 +328,7 @@ namespace physics
 		return true;
 	}
 
-	NODISCARD PxConvexMesh* px_convex_mesh_collider_builder::buildMesh(mesh_asset* asset, float size)
+	NODISCARD PxConvexMesh* px_convex_mesh_collider_builder::buildMesh(mesh_asset* asset, vec3 size)
 	{
 		submesh_asset root = asset->submeshes[0];
 
@@ -338,7 +338,7 @@ namespace physics
 
 		PxArray<PxVec3> vertices;
 		for (size_t i = 0; i < verticesCount; i++)
-			vertices.pushBack(PxVec3(positions[i].x, positions[i].y, positions[i].z) * size);
+			vertices.pushBack(PxVec3(positions[i].x, positions[i].y, positions[i].z) * createPxVec3(size));
 
 		PxConvexMeshDesc meshDesc;
 		meshDesc.points.count = vertices.size();

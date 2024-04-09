@@ -104,7 +104,8 @@ namespace physics
 		if (!actor)
 			return;
 		physics_holder::physicsRef->lockWrite();
-		actor->is<PxRigidDynamic>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, kinematic);
+		if(auto dyn = actor->is<PxRigidDynamic>())
+			dyn->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, kinematic);
 		physics_holder::physicsRef->unlockWrite();
 	}
 
@@ -302,6 +303,8 @@ namespace physics
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
+			actor->setMaxAngularVelocity(20);
+			actor->setMaxLinearVelocity(100);
 
 			coll->createShape();
 			uint32_t* h = new uint32_t[1];

@@ -499,9 +499,9 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 	struct px_collision
 	{
-		px_rigidbody_component* thisActor;
+		px_rigidbody_component* thisActor = nullptr;
 
-		px_rigidbody_component* otherActor;
+		px_rigidbody_component* otherActor = nullptr;
 
 		PxVec3 impulse;
 
@@ -520,6 +520,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		void swapObjects()
 		{
+			if (!thisActor || !otherActor)
+				return;
 			::std::swap(thisActor, otherActor);
 			::std::swap(thisVelocity, otherVelocity);
 		}
@@ -547,6 +549,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override;
 
 		PxArray<px_collision> newCollisions;
+
+		PxArray<px_rigidbody_component*> kinematicsToRemoveFlag;
 
 		PxArray<px_collision> removedCollisions;
 

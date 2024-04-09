@@ -29,7 +29,7 @@ namespace physics
 
 	struct px_convex_mesh_collider_builder
 	{
-		NODISCARD PxConvexMesh* buildMesh(mesh_asset* asset, float size);
+		NODISCARD PxConvexMesh* buildMesh(mesh_asset* asset, vec3 size);
 	};
 
 	void enableShapeVisualization(PxShape* shape) noexcept;
@@ -180,7 +180,7 @@ namespace physics
 
 	struct px_convex_mesh_collider_component : px_collider_component_base
 	{
-		px_convex_mesh_collider_component(float size, mesh_asset* as) noexcept : asset(as), modelSize(size)
+		px_convex_mesh_collider_component(vec3 size, mesh_asset* as) noexcept : asset(as), modelSize(size)
 		{
 			type = px_collider_type::ConvexMesh;
 			name = asset->name;
@@ -193,7 +193,7 @@ namespace physics
 		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) }
 
 		mesh_asset* asset = nullptr;
-		float modelSize = 1.0f;
+		vec3 modelSize = vec3(1.0f);
 		::std::string name;
 	};
 

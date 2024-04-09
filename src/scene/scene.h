@@ -153,7 +153,7 @@ struct eentity
 		}
 		else if	constexpr (std::is_same_v<component_t, physics::px_convex_mesh_collider_component>)
 		{
-			float size = getComponent<transform_component>().scale.x;
+			vec3 size = getComponent<transform_component>().scale;
 
 			auto& component = registry->emplace_or_replace<component_t>(handle, size, std::forward<args>(a)...);
 		}
