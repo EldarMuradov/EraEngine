@@ -135,7 +135,6 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
 	sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-
 	//sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
@@ -375,9 +374,9 @@ void physics::px_physics_engine::update(float dt) noexcept
 	//vehicleStep(stepSize);
 #endif
 
-	void* scratchMemBlock = allocator.allocate(MB(16), 16U, true);
+	void* scratchMemBlock = allocator.allocate(MB(32), 16U, true);
 
-	scene->simulate(stepSize, NULL, scratchMemBlock, MB(16));
+	scene->simulate(stepSize, NULL, scratchMemBlock, MB(32));
 
 	scene->fetchResults(true);
 
@@ -393,7 +392,7 @@ void physics::px_physics_engine::update(float dt) noexcept
 	unlockWrite();
 
 	lockRead();
-	PxActor** activeActors =scene->getActiveActors(nbActiveActors);
+	PxActor** activeActors = scene->getActiveActors(nbActiveActors);
 
 	auto gameScene = app.getCurrentScene();
 
@@ -429,10 +428,28 @@ void physics::px_physics_engine::update(float dt) noexcept
 	raycastCCD->doRaycastCCD(true);
 #endif
 
+	for (auto handle : unfreezeBlastQueue)
+	{
+		auto enttScene = app.getCurrentScene();
+
+		eentity renderEntity{ (entity_handle)handle, &enttScene->registry };
+
+		if (auto rb = renderEntity.getComponentIfExists<physics::px_rigidbody_component>())
+		{
+			rb->setConstraints(0);
+
+			rb->setEnableGravity();
+		}
+	}
+
+	//physics::processUnfreezeBlastQueue();
+
 	simulationEventCallback->sendCollisionEvents();
 	simulationEventCallback->sendTriggerEvents();
 
 	simulationEventCallback->clear();
+
+	unfreezeBlastQueue.clear();
 
 	blast->animate(dt);
 
@@ -666,6 +683,39 @@ void physics::px_simulation_event_callback::onColliderRemoved(px_rigidbody_compo
 {
 	clearColliderFromCollection(collider, newTriggerPairs);
 	clearColliderFromCollection(collider, lostTriggerPairs);
+}
+
+void physics::px_simulation_event_callback::onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)
+{
+	PxRigidActor* act1;
+	PxRigidActor* act2;
+	constraints->constraint->getActors(act1, act2);
+
+	if (!act1 || !act1)
+		return;
+
+	auto rb1 = physics::physics_holder::physicsRef->actorsMap[act1];
+	auto rb2 = physics::physics_holder::physicsRef->actorsMap[act1];
+
+	if (!rb1 || !rb2)
+		return;
+
+	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+	eentity entt1{ (entity_handle)rb1->handle, &enttScene->registry };
+	eentity entt2{ (entity_handle)rb2->handle, &enttScene->registry };
+
+	if (auto node1 = entt1.getComponentIfExists<physics::chunk_graph_manager::chunk_node>())
+	{
+		node1->onJointBreak();
+		node1->unfreeze();
+	}
+
+	if (auto node2 = entt2.getComponentIfExists<physics::chunk_graph_manager::chunk_node>())
+	{
+		node2->onJointBreak();
+		node2->unfreeze();
+	}
 }
 
 void physics::px_simulation_event_callback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)

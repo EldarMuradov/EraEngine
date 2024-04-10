@@ -91,8 +91,8 @@ namespace physics
 
 	struct px_fixed_joint_desc
 	{
-		float projectionLinearTolerance = 0.1f;
-		float projectionAngularTolerance = 0.1f;
+		float projectionLinearTolerance = 10.0f;
+		float projectionAngularTolerance = 10.0f;
 
 		float torqueThreshold = 2000.0f;
 		float forceThreshold = 1000.0f;

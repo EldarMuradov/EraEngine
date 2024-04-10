@@ -171,8 +171,7 @@ namespace physics
 		type = px_joint_type::Fixed;
 		auto jInstance = joint->is<PxFixedJoint>();
 		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
-		jInstance->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, true);
-
+		//jInstance->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, true);
 		jInstance->setBreakForce(desc.forceThreshold, desc.torqueThreshold);
 	}
 

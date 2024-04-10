@@ -65,6 +65,7 @@
 #include <core/memory.h>
 #include <core/log.h>
 #include <core/cpu_profiling.h>
+#include <unordered_set>
 #include <queue>
 
 namespace Nv
@@ -541,7 +542,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		void onColliderRemoved(px_rigidbody_component* collider);
 
-		void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) override { ::std::cout << "onConstraintBreak\n"; }
+		void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) override;
 		void onWake(PxActor** actors, PxU32 count) override { ::std::cout << "onWake\n"; }
 		void onSleep(PxActor** actors, PxU32 count) override { ::std::cout << "onSleep\n"; }
 		void onTrigger(PxTriggerPair* pairs, PxU32 count) override { ::std::cout << "onTrigger\n"; }
@@ -729,9 +730,13 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		::std::queue<collision_handling_data> collisionQueue;
 		::std::queue<collision_handling_data> collisionExitQueue;
 
+		::std::unordered_set<uint32_t> unfreezeBlastQueue;
+
 		application& app;
 
 		px_simulation_event_callback* simulationEventCallback = nullptr;
+
+		::std::mutex sync;
 
 	private:
 		PxScene* scene = nullptr;
@@ -765,8 +770,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		eallocator allocator;
 
 		bool released = false;
-
-		::std::mutex sync;
 
 		friend struct px_CCD_contact_modification;
 	};

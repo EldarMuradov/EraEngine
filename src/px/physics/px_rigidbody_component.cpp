@@ -44,7 +44,6 @@ namespace physics
 		if (!actor)
 			return;
 		physics_holder::physicsRef->lockWrite();
-
 		if (mode == px_force_mode::Force)
 			actor->is<PxRigidDynamic>()->addTorque(PxVec3(torque.x, torque.y, torque.z), PxForceMode::eFORCE);
 		else if (mode == px_force_mode::Impulse)
@@ -191,6 +190,16 @@ namespace physics
 		physics_holder::physicsRef->lockWrite();
 		if (damping > 0.0f)
 			actor->is<PxRigidDynamic>()->setAngularDamping(damping);
+		physics_holder::physicsRef->unlockWrite();
+	}
+
+	void px_rigidbody_component::setLinearDamping(float damping)
+	{
+		if (!actor)
+			return;
+		physics_holder::physicsRef->lockWrite();
+		if (damping > 0.0f)
+			actor->is<PxRigidDynamic>()->setLinearDamping(damping);
 		physics_holder::physicsRef->unlockWrite();
 	}
 

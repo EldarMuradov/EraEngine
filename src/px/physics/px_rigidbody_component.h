@@ -77,6 +77,7 @@ namespace physics
 		void setPhysicsPositionAndRotation(vec3& pos, quat& rot);
 
 		void setAngularDamping(float damping);
+		void setLinearDamping(float damping);
 
 		void setThreshold(float stabilization = 0.01f, float sleep = 0.01f);
 
