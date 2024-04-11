@@ -103,8 +103,14 @@ namespace physics
 		if (!actor)
 			return;
 		physics_holder::physicsRef->lockWrite();
-		if(auto dyn = actor->is<PxRigidDynamic>())
+		if (auto dyn = actor->is<PxRigidDynamic>())
+		{
+			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, !kinematic);
+			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, !kinematic);
+			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, !kinematic);
 			dyn->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, kinematic);
+			isKinematic = kinematic;
+		}
 		physics_holder::physicsRef->unlockWrite();
 	}
 
@@ -142,6 +148,30 @@ namespace physics
 		{
 			physics_holder::physicsRef->lockWrite();
 			actor->is<PxRigidDynamic>()->setAngularVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
+			physics_holder::physicsRef->unlockWrite();
+		}
+	}
+
+	void px_rigidbody_component::setMaxLinearVelosity(float velocity) noexcept
+	{
+		if (!actor)
+			return;
+		if (actor->is<PxRigidDynamic>())
+		{
+			physics_holder::physicsRef->lockWrite();
+			actor->is<PxRigidDynamic>()->setMaxLinearVelocity(velocity);
+			physics_holder::physicsRef->unlockWrite();
+		}
+	}
+
+	void px_rigidbody_component::setMaxAngularVelosity(float velocity) noexcept
+	{
+		if (!actor)
+			return;
+		if (actor->is<PxRigidDynamic>())
+		{
+			physics_holder::physicsRef->lockWrite();
+			actor->is<PxRigidDynamic>()->setMaxAngularVelocity(velocity);
 			physics_holder::physicsRef->unlockWrite();
 		}
 	}
@@ -307,13 +337,11 @@ namespace physics
 		else if(type == px_rigidbody_type::Dynamic)
 		{
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
-			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
-			actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
+			//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
+			//actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
-			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
-			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
-			actor->setMaxAngularVelocity(20);
-			actor->setMaxLinearVelocity(100);
+			//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
+			//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
 
 			coll->createShape();
 			uint32_t* h = new uint32_t[1];
@@ -327,8 +355,8 @@ namespace physics
 		{
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
 
-			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
-			actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
+			//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
+			//actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
 			setKinematic(true);
 
 			coll->createShape();

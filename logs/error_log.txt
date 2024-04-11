@@ -1,1 +1,1 @@
-Runtime Error> vector too long
+Runtime Error> bad allocation

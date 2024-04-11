@@ -306,12 +306,29 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		px_sphere = px_sphere_entt.handle;
 
 		auto px_sphere1 = &scene.createEntity("SpherePX1")
-			.addComponent<transform_component>(vec3(5, 5.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<transform_component>(vec3(5, 155.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(5.f))
 			.addComponent<mesh_component>(sphereMesh)
-			.addComponent<physics::px_sphere_collider_component>(1.0f)
+			.addComponent<physics::px_sphere_collider_component>(5.0f)
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
-
+		px_sphere1->getComponent<physics::px_rigidbody_component>().setMass(500.0f);
 		{
+			if (auto mesh = loadMeshFromFileAsync("assets/obj/wall.obj"))
+			{
+				model_asset ass = load3DModelFromFile("assets/obj/wall.obj");
+
+				auto px_sphere_entt1 = scene.createEntity("SpherePXTest", (entity_handle)60)
+					.addComponent<transform_component>(vec3(0, 0.f, 0.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.0f))
+					.addComponent<mesh_component>(mesh);
+
+				physics::fracture fracture;
+				auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
+
+				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::Bottom, 10, 100, defaultmat, defaultmat, 1.0f, 5000);
+				scene.deleteEntity(px_sphere_entt1.handle);
+			}
+		}
+
+		/*{
 			model_asset ass = load3DModelFromFile("assets/box.fbx");
 			auto px_sphere_entt1 = scene.createEntity("SpherePXTest", (entity_handle)60)
 				.addComponent<transform_component>(vec3(0, 0.f, 0.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.0f))
@@ -320,22 +337,9 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			physics::fracture fracture;
 			auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
 
-			manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::Bottom, 10, 50, defaultmat, defaultmat, 1.0f, 50);
+			manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::Bottom, 10, 50, defaultmat, defaultmat, 1.0f, 5000);
 			scene.deleteEntity(px_sphere_entt1.handle);
-		}
-
-		{
-			model_asset ass = load3DModelFromFile("assets/box.fbx");
-			auto px_sphere_entt1 = scene.createEntity("SpherePXTest", (entity_handle)60)
-				.addComponent<transform_component>(vec3(2, 0.f, 0.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.0f))
-				.addComponent<mesh_component>(boxMesh);
-
-			physics::fracture fracture;
-			auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
-
-			manager2 = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::Bottom, 10, 50, defaultmat, defaultmat, 1.0f, 50);
-			scene.deleteEntity(px_sphere_entt1.handle);
-		}
+		}*/
 
 		//auto soft_body = &scene.createEntity("SoftBody")
 		//	.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
@@ -756,18 +760,9 @@ void application::update(const user_input& input, float dt)
 
 				for (size_t i = 0; i < chunkManager.nbNodes; i++)
 				{
-					chunkManager.nodes[i].update();
-				}
-			}
+					eentity node{ chunkManager.nodes[i], &scene.registry };
 
-			{
-				eentity entt{ manager2, &scene.registry };
-				auto& chunkManager = entt.getComponent<physics::chunk_graph_manager>();
-				chunkManager.update();
-
-				for (size_t i = 0; i < chunkManager.nbNodes; i++)
-				{
-					chunkManager.nodes[i].update();
+					node.getComponent<physics::chunk_graph_manager::chunk_node>().update();
 				}
 			}
 

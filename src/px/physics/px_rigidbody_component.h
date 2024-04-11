@@ -63,12 +63,16 @@ namespace physics
 		NODISCARD uint8 getConstraints() const noexcept;
 
 		void setKinematic(bool kinematic);
+		bool isKinematicBody() const noexcept { return isKinematic; }
 
 		void setLinearVelocity(vec3 velocity);
 
 		NODISCARD vec3 getLinearVelocity() const noexcept;
 
 		void setAngularVelocity(vec3 velocity);
+
+		void setMaxLinearVelosity(float velocity) noexcept;
+		void setMaxAngularVelosity(float velocity) noexcept;
 
 		NODISCARD vec3 getAngularVelocity() const noexcept;
 
@@ -113,6 +117,7 @@ namespace physics
 		PxRigidDynamicLockFlags posLockNative;
 
 		bool useGravity = true;
+		bool isKinematic = false;
 	};
 }
 

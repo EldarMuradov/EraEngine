@@ -115,7 +115,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	sceneDesc.cpuDispatcher = dispatcher;
 
 	sceneDesc.filterShader = contactReportFilterShader;
-	sceneDesc.staticStructure = PxPruningStructureType::eDYNAMIC_AABB_TREE;
+	//sceneDesc.staticStructure = PxPruningStructureType::eDYNAMIC_AABB_TREE;
 
 	sceneDesc.solverType = PxSolverType::eTGS;
 
@@ -135,7 +135,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
 	sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-	//sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
+	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
@@ -428,20 +428,28 @@ void physics::px_physics_engine::update(float dt) noexcept
 	raycastCCD->doRaycastCCD(true);
 #endif
 
-	for (auto handle : unfreezeBlastQueue)
+	sync.lock();
+	if (unfreezeBlastQueue.size() > 0)
 	{
-		auto enttScene = app.getCurrentScene();
-
-		eentity renderEntity{ (entity_handle)handle, &enttScene->registry };
-
-		if (auto rb = renderEntity.getComponentIfExists<physics::px_rigidbody_component>())
+		for (auto iter = unfreezeBlastQueue.begin(); iter != unfreezeBlastQueue.end(); ++iter)
 		{
-			rb->setConstraints(0);
+			auto enttScene = app.getCurrentScene();
 
-			rb->setEnableGravity();
+			eentity renderEntity{ (entity_handle)*iter, &enttScene->registry };
+
+			if (auto rb = renderEntity.getComponentIfExists<physics::px_rigidbody_component>())
+			{
+				rb->setConstraints(0);
+
+				rb->setEnableGravity();
+
+				rb->setAngularVelocity(0.0f);
+				rb->setLinearVelocity(0.0f);
+			}
 		}
 	}
-
+	
+	sync.unlock();
 	//physics::processUnfreezeBlastQueue();
 
 	simulationEventCallback->sendCollisionEvents();
@@ -708,13 +716,11 @@ void physics::px_simulation_event_callback::onConstraintBreak(PxConstraintInfo* 
 	if (auto node1 = entt1.getComponentIfExists<physics::chunk_graph_manager::chunk_node>())
 	{
 		node1->onJointBreak();
-		node1->unfreeze();
 	}
 
 	if (auto node2 = entt2.getComponentIfExists<physics::chunk_graph_manager::chunk_node>())
 	{
 		node2->onJointBreak();
-		node2->unfreeze();
 	}
 }
 
