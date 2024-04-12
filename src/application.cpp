@@ -270,6 +270,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 #ifndef ERA_RUNTIME
 	{
 		auto defaultmat = createPBRMaterialAsync({ "", "" });
+		defaultmat->shader = pbr_material_shader_double_sided;
 
 		mesh_builder builder;
 
@@ -295,7 +296,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
 		auto px_sphere_entt = scene.createEntity("SpherePX", (entity_handle)60)
-			.addComponent<transform_component>(vec3(0, 5.f, -10.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			.addComponent<transform_component>(vec3(-10.0f, 5.0f, -3.0f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
 			//.addComponent<physics::px_convex_mesh_collider_component>(&(ass.meshes[0]))
 			//.addComponent<physics::px_triangle_mesh_collider_component>(&(ass.meshes[0]))
@@ -312,18 +313,17 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
 		px_sphere1->getComponent<physics::px_rigidbody_component>().setMass(500.0f);
 		{
-			if (auto mesh = loadMeshFromFileAsync("assets/obj/wall.obj"))
+			if (auto mesh = loadMeshFromFileAsync("assets/obj/bunny.obj"))
 			{
-				model_asset ass = load3DModelFromFile("assets/obj/wall.obj");
+				model_asset ass = load3DModelFromFile("assets/obj/bunny.obj");
 
-				auto px_sphere_entt1 = scene.createEntity("SpherePXTest", (entity_handle)60)
-					.addComponent<transform_component>(vec3(0, 0.f, 0.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.0f))
+				auto px_sphere_entt1 = scene.createEntity("SpherePXTest")
+					.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
 					.addComponent<mesh_component>(mesh);
 
 				physics::fracture fracture;
 				auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
-
-				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::Bottom, 10, 100, defaultmat, defaultmat, 1.0f, 5000);
+				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, 10, 50, defaultmat, defaultmat, 1.0f, 200);
 				scene.deleteEntity(px_sphere_entt1.handle);
 			}
 		}
@@ -744,7 +744,7 @@ void application::update(const user_input& input, float dt)
 			{
 				//if (!shoted)
 				//{
-				sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(0.f, 1.0f, 500.0f), physics::px_force_mode::Impulse);
+				sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(500.f, 1.0f, 0.0f), physics::px_force_mode::Impulse);
 
 				//shoted = true;
 			//}

@@ -98,6 +98,19 @@ namespace physics
 		return (uint8)actor->is<PxRigidDynamic>()->getRigidDynamicLockFlags();
 	}
 
+	void px_rigidbody_component::clearForceAndTorque() noexcept
+	{
+		if (!actor)
+			return;
+		physics_holder::physicsRef->lockWrite();
+		if (auto dyn = actor->is<PxRigidDynamic>())
+		{
+			dyn->clearForce();
+			dyn->clearTorque();
+		}
+		physics_holder::physicsRef->unlockWrite();
+	}
+
 	void px_rigidbody_component::setKinematic(bool kinematic)
 	{
 		if (!actor)
@@ -337,11 +350,11 @@ namespace physics
 		else if(type == px_rigidbody_type::Dynamic)
 		{
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
-			//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
-			//actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
+			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
+		    actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
-			//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
-			//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
+			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
+			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
 
 			coll->createShape();
 			uint32_t* h = new uint32_t[1];
@@ -355,8 +368,8 @@ namespace physics
 		{
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
 
-			//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
-			//actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
+			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
+			actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
 			setKinematic(true);
 
 			coll->createShape();

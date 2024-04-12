@@ -62,6 +62,8 @@ namespace physics
 		void setConstraints(uint8 constraints) noexcept;
 		NODISCARD uint8 getConstraints() const noexcept;
 
+		void clearForceAndTorque() noexcept;
+
 		void setKinematic(bool kinematic);
 		bool isKinematicBody() const noexcept { return isKinematic; }
 

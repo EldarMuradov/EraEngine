@@ -115,7 +115,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	sceneDesc.cpuDispatcher = dispatcher;
 
 	sceneDesc.filterShader = contactReportFilterShader;
-	//sceneDesc.staticStructure = PxPruningStructureType::eDYNAMIC_AABB_TREE;
+	sceneDesc.staticStructure = PxPruningStructureType::eDYNAMIC_AABB_TREE;
 
 	sceneDesc.solverType = PxSolverType::eTGS;
 
@@ -135,7 +135,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
 	sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
 	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
+	//sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
@@ -443,11 +443,14 @@ void physics::px_physics_engine::update(float dt) noexcept
 
 				rb->setEnableGravity();
 
-				rb->setAngularVelocity(0.0f);
-				rb->setLinearVelocity(0.0f);
+				lockWrite();
+				PxRigidBodyExt::updateMassAndInertia(*rb->getRigidActor()->is<PxRigidDynamic>(), rb->getMass());
+				unlockWrite();
 			}
 		}
 	}
+
+	unfreezeBlastQueue.clear();
 	
 	sync.unlock();
 	//physics::processUnfreezeBlastQueue();
@@ -456,8 +459,6 @@ void physics::px_physics_engine::update(float dt) noexcept
 	simulationEventCallback->sendTriggerEvents();
 
 	simulationEventCallback->clear();
-
-	unfreezeBlastQueue.clear();
 
 	blast->animate(dt);
 
@@ -492,23 +493,11 @@ void physics::px_physics_engine::addActor(px_rigidbody_component* actor, PxRigid
 #if PX_ENABLE_RAYCAST_CCD
 	if (auto r = ractor->is<PxRigidDynamic>())
 	{
-		auto handle = (entity_handle)actor->handle;
-		auto scene = &app->scene.getCurrentScene();
-		eentity entity = { handle, &scene->registry };
-		px_collider_component_base* coll = (px_collider_component_base*)entity.getComponentIfExists<px_sphere_collider_component>();
-		if (!coll)
-			coll = (px_collider_component_base*)entity.getComponentIfExists<px_box_collider_component>();
-		if (!coll)
-			coll = (px_collider_component_base*)entity.getComponentIfExists<px_capsule_collider_component>();
-		if (!coll)
-			coll = (px_collider_component_base*)entity.getComponentIfExists<px_triangle_mesh_collider_component>();
-		if (!coll)
-			coll = (px_collider_component_base*)entity.getComponentIfExists<px_bounding_box_collider_component>();
-		if (!coll)
-			coll = (px_collider_component_base*)entity.getComponentIfExists<px_convex_mesh_collider_component>();
+		PxShape* shape = nullptr;
 
-		if (coll)
-			physics->raycastCCD->registerRaycastCCDObject(r, coll->getShape());
+		r->getShapes(&shape, 1);
+
+		raycastCCD->registerRaycastCCDObject(r, shape);
 	}
 #endif
 

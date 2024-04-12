@@ -44,6 +44,40 @@
 
 namespace physics
 {
+    struct chunkPair
+    {
+        entity_handle chunk1{};
+        entity_handle chunk2{};
+
+        chunkPair(uint32 c1, uint32 c2) : chunk1((entity_handle)c1), chunk2((entity_handle)c2) {}
+        chunkPair(entity_handle c1, entity_handle c2) : chunk1(c1), chunk2(c2) {}
+    };
+
+    inline bool operator==(const chunkPair& lhs, const chunkPair& rhs)
+    {
+        return (rhs.chunk1 == lhs.chunk1 || rhs.chunk1 == lhs.chunk2) && (rhs.chunk2 == lhs.chunk2 || rhs.chunk2 == lhs.chunk1);
+    }
+}
+
+namespace std
+{
+    template<>
+    struct hash<physics::chunkPair>
+    {
+        size_t operator()(const physics::chunkPair& pair) const
+        {
+            size_t seed = 0;
+
+            hash_combine(seed, (uint32)pair.chunk1);
+            hash_combine(seed, (uint32)pair.chunk2);
+
+            return seed;
+        }
+    };
+}
+
+namespace physics
+{
     struct nvmesh;
     struct chunk_graph_manager;
 
@@ -317,16 +351,26 @@ namespace physics
                 hasBrokenLinks = true;
             }
 
-            void update()
+            void update() const
             {
-                //if (frozen)
-                //{
-                //    auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+                if (!frozen)
+                {
+                    auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
-                //    eentity renderEntity{ handle, &enttScene->registry };
-                //    renderEntity.getComponent<transform_component>().position = frozenPos;
-                //    renderEntity.getComponent<transform_component>().rotation = forzenRot;
-                //}
+                    eentity renderEntity{ handle, &enttScene->registry };
+
+                    if (auto rb = renderEntity.getComponentIfExists<physics::px_rigidbody_component>())
+                    {
+                        physics::physics_holder::physicsRef->lockWrite();
+                        PxRigidBodyExt::updateMassAndInertia(*rb->getRigidActor()->is<PxRigidDynamic>(), rb->getMass());
+                        rb->getRigidActor()->is<PxRigidDynamic>()->setMassSpaceInertiaTensor(PxVec3(0.0f));
+                        physics::physics_holder::physicsRef->unlockWrite();
+
+                        //rb->setAngularVelocity(0.0f);
+                        //rb->setLinearVelocity(0.0f);
+                        //rb->clearForceAndTorque();
+                    }
+                }
             }
 
             void setup(chunk_graph_manager* manager)
@@ -363,6 +407,8 @@ namespace physics
 
             void unfreeze()
             {
+                if (physics_holder::physicsRef->unfreezeBlastQueue.contains((uint32)handle))
+                    return;
                 ::std::lock_guard<::std::mutex> lock (physics_holder::physicsRef->sync);
                 uint32 value = (uint32)handle;
                 physics_holder::physicsRef->unfreezeBlastQueue.emplace(value);
@@ -392,6 +438,9 @@ namespace physics
                 {
                     auto body = jointToChunk[link];
 
+                    link->joint->setInvInertiaScale0(0.0f);
+                    link->joint->setInvInertiaScale1(0.0f);
+
                     jointToChunk.erase(link);
                     chunkToJoint.erase(body);
 
@@ -418,11 +467,11 @@ namespace physics
                 if (renderEntity.getComponent<physics::px_rigidbody_component>().isKinematicBody())
                     isKinematic = true;
 
-                renderEntity.getComponent<px_rigidbody_component>().setMaxAngularVelosity(10.0f);
-                renderEntity.getComponent<px_rigidbody_component>().setMaxAngularVelosity(100.0f);
+                renderEntity.getComponent<px_rigidbody_component>().setMaxAngularVelosity(20.0f);
+                renderEntity.getComponent<px_rigidbody_component>().setMaxAngularVelosity(20.0f);
 
-                renderEntity.getComponent<px_rigidbody_component>().setThreshold(0.03f, 0.03f);
-                //renderEntity.getComponent<px_rigidbody_component>().setLinearDamping(5.0f);
+                renderEntity.getComponent<px_rigidbody_component>().setAngularDamping(5.0f);
+                renderEntity.getComponent<px_rigidbody_component>().setLinearDamping(0.50f);
                 
                 renderEntity.getComponent<physics::px_rigidbody_component>().setDisableGravity();
 
@@ -764,6 +813,9 @@ namespace physics
 
         void anchorChunks(entity_handle gameObject, anchor anchor)
         {
+            if (anchor == anchor::None)
+                return;
+
             auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
             eentity entt{ gameObject, &enttScene->registry };
@@ -803,6 +855,7 @@ namespace physics
             const NvcVec3* sites;
             size_t nbSites = generator->generator->getVoronoiSites(sites);
 
+            //int result = fractureTool->fractureTool->cut(0, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, {}, false, generator->rndGen);
             int result = fractureTool->fractureTool->voronoiFracturing(0, nbSites, sites, false);
 
             fractureTool->fractureTool->finalizeFracturing();
@@ -1026,13 +1079,18 @@ namespace physics
             mm->aabb.grow(aabb.maxCorner);
 
             auto& rb = chunk.getComponent<physics::px_rigidbody_component>();
+            physics_holder::physicsRef->lockWrite();
+            rb.getRigidActor()->is<PxRigidDynamic>()->setMaxContactImpulse(500.0f);
+            physics_holder::physicsRef->unlockWrite();
 
             rb.setMass(mass);
-            rb.setThreshold(0.3f, 0.3f);
+            //rb.setThreshold(0.03f, 0.03f);
             mm->mesh = builder.createDXMesh();
 
             return chunk;
         }
+
+        ::std::unordered_set<chunkPair> jointPairs;
 
         void connectTouchingChunks(chunk_graph_manager& manager, ref<submesh_asset> asset, entity_handle chunk, float jointBreakForce, float touchRadius = .01f)
         {
@@ -1064,21 +1122,36 @@ namespace physics
             {
                 if (overlap != chunk)
                 {
-                    eentity body{ overlap, &enttScene->registry };
-
-                    auto& rbOverlap = body.getComponent<physics::px_rigidbody_component>();
-
-                    px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{ 0.1f, 0.1f, 1000.0f, 500.0f }, rb.getRigidActor(), rbOverlap.getRigidActor());
-
-                    if (manager.joints.contains(chunk))
+                    if (!jointPairs.contains(chunkPair{ overlap, chunk }) && !jointPairs.contains(chunkPair{ chunk, overlap }))
                     {
-                        manager.joints[chunk].push_back(joint);
-                    }
-                    else
-                    {
-                        ::std::vector<px_fixed_joint*> jointVec;
-                        jointVec.push_back(joint);
-                        manager.joints.emplace(chunk, jointVec);
+                        eentity body{ overlap, &enttScene->registry };
+
+                        auto& rbOverlap = body.getComponent<physics::px_rigidbody_component>();
+
+                        std::vector<PxFilterData> fd1 = getFilterData(rb.getRigidActor());
+                        std::vector<PxFilterData> fd2 = getFilterData(rbOverlap.getRigidActor());
+
+                        px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{ 0.1f, 0.1f, 400.0f, 200.0f }, rb.getRigidActor(), rbOverlap.getRigidActor());
+                        joint->joint->setInvInertiaScale0(0.0f);
+                        joint->joint->setInvInertiaScale1(0.0f);
+                        joint->joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, false);
+
+                        setFilterData(rb.getRigidActor(), fd1);
+                        setFilterData(rbOverlap.getRigidActor(), fd2);
+
+                        if (manager.joints.contains(chunk))
+                        {
+                            manager.joints[chunk].push_back(joint);
+                        }
+                        else
+                        {
+                            ::std::vector<px_fixed_joint*> jointVec;
+                            jointVec.push_back(joint);
+                            manager.joints.emplace(chunk, jointVec);
+                        }
+
+
+                        jointPairs.emplace(chunkPair{ overlap, chunk });
                     }
                 }
             }

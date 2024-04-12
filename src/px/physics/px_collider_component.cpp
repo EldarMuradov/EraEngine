@@ -215,11 +215,13 @@ namespace physics
 	void enableShapeInContactTests(PxShape* shape) noexcept
 	{
 		shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
+		shape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, false);
 	}
 
 	void disableShapeInContactTests(PxShape* shape) noexcept
 	{
 		shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+		shape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
 	}
 
 	void enableShapeInSceneQueryTests(PxShape* shape) noexcept

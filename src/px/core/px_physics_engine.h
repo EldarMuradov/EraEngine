@@ -204,6 +204,29 @@ namespace physics
 		virtual void release(bool release = false) noexcept {};
 	};
 
+	inline ::std::vector<PxFilterData> getFilterData(PxRigidActor* actor) noexcept
+	{
+		::std::vector<PxShape*> shapes(actor->getNbShapes(), nullptr);
+		::std::vector<PxFilterData> out(shapes.size());
+
+		actor->getShapes(&shapes[0], shapes.size());
+
+		for (int i = 0; i < shapes.size(); ++i)
+			out[i] = shapes[i]->getSimulationFilterData();
+
+		return out;
+	}
+
+	inline void setFilterData(PxRigidActor* actor,
+		const std::vector<PxFilterData>& filterData) noexcept
+	{
+		::std::vector<PxShape*> shapes(actor->getNbShapes(), nullptr);
+
+		actor->getShapes(&shapes[0], shapes.size());
+		for (int i = 0; i < shapes.size(); ++i)
+			shapes[i]->setSimulationFilterData(filterData[i]);
+	}
+
 	struct px_allocator_callback : PxAllocatorCallback
 	{
 		NODISCARD void* allocate(size_t size, const char* typeName, const char* filename, int line) override
@@ -756,7 +779,9 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		px_simulation_filter_callback simulationFilterCallback;
 
+#if PX_ENABLE_RAYCAST_CCD
 		RaycastCCDManager* raycastCCD = nullptr;
+#endif
 
 		PxFoundation* foundation = nullptr;
 
