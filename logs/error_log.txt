@@ -1,1 +1,1 @@
-Runtime Error> bad allocation
+Runtime Error> bad array new length

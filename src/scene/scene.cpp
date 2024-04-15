@@ -82,6 +82,7 @@ void escene::cloneTo(escene& target)
 		physics::px_soft_body_component,
 		physics::px_rigid_shape_holder_component,
 		physics::px_shape_holder_component,
+		physics::nvmesh_chunk_component,
 
 		navigation_component,
 		script_component,

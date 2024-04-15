@@ -78,6 +78,8 @@ namespace Nv
 
 namespace physx
 {
+	constexpr float PX_HALF_MAX_F32 = PX_MAX_F32 / 2.0f;
+
 	PX_FORCE_INLINE PxU32 id(PxU32 x, PxU32 y, PxU32 numY)
 	{
 		return x * numY + y;
@@ -760,6 +762,15 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		px_simulation_event_callback* simulationEventCallback = nullptr;
 
 		::std::mutex sync;
+
+	private:
+		void stepPhysics(float stepSize) noexcept;
+
+		void syncTransforms() noexcept;
+
+		void processBlastQueue() noexcept;
+
+		void processSimulationEventCallbacks() noexcept;
 
 	private:
 		PxScene* scene = nullptr;

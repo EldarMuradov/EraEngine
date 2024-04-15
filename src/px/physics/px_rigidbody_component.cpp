@@ -7,6 +7,7 @@
 #include <core/log.h>
 #include "core/math.h"
 #include "application.h"
+#include "px_rigidbody_component.h"
 
 namespace physics
 {
@@ -109,6 +110,28 @@ namespace physics
 			dyn->clearTorque();
 		}
 		physics_holder::physicsRef->unlockWrite();
+	}
+
+	void px_rigidbody_component::setMassSpaceInertiaTensor(const vec3& tensor) noexcept
+	{
+		if (!actor)
+			return;
+		physics::physics_holder::physicsRef->lockWrite();
+		if (auto dyn = actor->is<PxRigidDynamic>())
+		{
+			dyn->setMassSpaceInertiaTensor(physx::createPxVec3(tensor));
+		}
+		physics::physics_holder::physicsRef->unlockWrite();
+	}
+
+	void px_rigidbody_component::updateMassAndInertia(float density) noexcept
+	{
+		if (!actor)
+			return;
+		physics::physics_holder::physicsRef->lockWrite();
+		if (auto dyn = actor->is<PxRigidDynamic>())
+			PxRigidBodyExt::updateMassAndInertia(*dyn, density);
+		physics::physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::setKinematic(bool kinematic)
@@ -279,7 +302,6 @@ namespace physics
 
 	void px_rigidbody_component::onCollisionStay(px_rigidbody_component* collision) const
 	{
-
 	}
 
 	void px_rigidbody_component::createPhysics(bool addToScene)
@@ -329,8 +351,6 @@ namespace physics
 
 		quat q = transform->rotation;
 		PxQuat rotpx = physx::createPxQuat(q);
-		rotpx = rotpx.getConjugate();
-
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 
 		material = physics->createMaterial(staticFriction, dynamicFriction, restitution);
@@ -343,6 +363,7 @@ namespace physics
 			uint32_t* h = new uint32_t[1];
 			h[0] = (uint32_t)handle;
 			coll->getShape()->userData = h;
+
 			actor->attachShape(*coll->getShape());
 
 			return actor;
@@ -359,8 +380,10 @@ namespace physics
 			coll->createShape();
 			uint32_t* h = new uint32_t[1];
 			h[0] = (uint32_t)handle;
-			coll->getShape()->userData = h;
-			actor->attachShape(*coll->getShape());
+
+			const auto& physics = physics_holder::physicsRef->getPhysics();
+			PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor, *coll->getGeometry(), *material);
+			shape->userData = h;
 
 			return actor;
 		}
