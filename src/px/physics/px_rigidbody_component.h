@@ -64,10 +64,6 @@ namespace physics
 
 		void clearForceAndTorque() noexcept;
 
-		void setMassSpaceInertiaTensor(const vec3& tensor) noexcept;
-
-		void updateMassAndInertia(float density) noexcept;
-
 		void setKinematic(bool kinematic);
 		bool isKinematicBody() const noexcept { return isKinematic; }
 

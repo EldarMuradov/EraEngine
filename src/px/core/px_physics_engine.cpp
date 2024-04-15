@@ -44,7 +44,6 @@ static physx::PxFilterFlags contactReportFilterShader(
 
 	pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
 	pairFlags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
-	//pairFlags |= physx::PxPairFlag::eMODIFY_CONTACTS;
 	pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
 	pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
 	pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
@@ -98,7 +97,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 
 #endif
 	toleranceScale.length = 1.0f;
-	toleranceScale.speed = 9.81f;
+	toleranceScale.speed = 1.0f;
 	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, pvd);
 
 	if (!PxInitExtensions(*physics, pvd))
@@ -116,6 +115,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	sceneDesc.cpuDispatcher = dispatcher;
 
 	sceneDesc.filterShader = contactReportFilterShader;
+	sceneDesc.staticStructure = PxPruningStructureType::eDYNAMIC_AABB_TREE;
 
 	sceneDesc.solverType = PxSolverType::eTGS;
 
@@ -127,25 +127,22 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
 	sceneDesc.gpuMaxNumPartitions = 8;
 	sceneDesc.gpuDynamicsConfig = PxgDynamicsMemoryConfig();
-	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
 #else
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::ePABP;
 #endif
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
-	//sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
-	sceneDesc.frictionType = PxFrictionType::ePATCH;
-	//sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
-	//sceneDesc.flags |= PxSceneFlag::eENABLE_AVERAGE_POINT;
-	sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
+	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
+	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
+	sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
+	sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+	//sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
-	sceneDesc.ccdMaxPasses = 4;
 
 	sceneDesc.simulationEventCallback = simulationEventCallback;
 	sceneDesc.filterCallback = &simulationFilterCallback;
-	//sceneDesc.ccdContactModifyCallback = &contactModification;
+	sceneDesc.ccdContactModifyCallback = &contactModification;
 
 	scene = physics->createScene(sceneDesc);
 
@@ -190,33 +187,30 @@ physics::px_physics_engine::~px_physics_engine()
 
 void physics::px_physics_engine::release() noexcept
 {
-	if (!released)
-	{
-		lock lock{ sync };
+	lock lock{ sync };
 
-		releaseActors();
-		releaseScene();
+	releaseActors();
+	releaseScene();
 
 #if PX_VEHICLE
-		PxCloseVehicleSDK();
-		//cleanupVehicle();
+	PxCloseVehicleSDK();
+	//cleanupVehicle();
 #endif
 
-		PxCloseExtensions();
+	PxCloseExtensions();
 
-		PX_RELEASE(physics)
-		PX_RELEASE(pvd)
-		PX_RELEASE(foundation)
-		PX_RELEASE(scene)
-		PX_RELEASE(cudaContextManager)
+	PX_RELEASE(physics)
+	PX_RELEASE(pvd)
+	PX_RELEASE(foundation)
+	PX_RELEASE(scene)
+	PX_RELEASE(cudaContextManager)
 
 #if PX_ENABLE_RAYCAST_CCD
-		delete raycastCCD;
-		raycastCCD = nullptr;
+	delete raycastCCD;
+	raycastCCD = nullptr;
 #endif
 
-		released = true;
-	}
+	released = true;
 }
 
 void physics::px_physics_engine::start() noexcept
@@ -362,6 +356,7 @@ void physics::px_physics_engine::start() noexcept
 	}
 
 	//blast->spawnAsset(0);
+	//blast->spawnAsset(0);
 
 	simulationEventCallback = new px_simulation_event_callback(blast->getExtImpactDamageManager());
 	scene->setSimulationEventCallback(simulationEventCallback);
@@ -369,25 +364,105 @@ void physics::px_physics_engine::start() noexcept
 
 void physics::px_physics_engine::update(float dt) noexcept
 {
-	static const float stepSize = 1.0f / frameRate;
+	const float stepSize = 1.0f / frameRate;
 
-	stepPhysics(stepSize);
+	lockWrite();
+	scene->getTaskManager()->startSimulation();
 
-	syncTransforms();
+#if PX_VEHICLE
+	// Test
+	//vehicleStep(stepSize);
+#endif
 
+	void* scratchMemBlock = allocator.allocate(MB(32), 16U, true);
+
+	scene->simulate(stepSize, NULL, scratchMemBlock, MB(32));
+
+	scene->fetchResults(true);
+
+	scene->flushSimulation();
+	scene->fetchResultsParticleSystem();
+	scene->getTaskManager()->stopSimulation();
+
+#if PX_VEHICLE
+	// Test
+	//vehiclePostStep(stepSize);
+#endif
+
+	unlockWrite();
+
+	lockRead();
+	PxActor** activeActors = scene->getActiveActors(nbActiveActors);
+
+	auto gameScene = app.getCurrentScene();
+
+	for (size_t i = 0; i < nbActiveActors; i++)
 	{
-		lockWrite();
+		if (auto rb = activeActors[i]->is<PxRigidDynamic>())
+		{
+			if (!activeActors[i]->userData)
+				continue;
+			entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
+			eentity renderObject = { *handle, &gameScene->registry };
+			if (!renderObject.valid())
+				continue;
+			const auto transform = &renderObject.getComponent<transform_component>();
 
-		//::std::lock_guard<::std::mutex> lock{ sync };
-		processBlastQueue();
-
-		processSimulationEventCallbacks();
-
-		// Needs to be tested
-		blast->animate(dt);
-
-		unlockWrite();
+			const auto& pxt = rb->getGlobalPose();
+			const auto& pos = pxt.p;
+			const auto& rot = pxt.q;
+			transform->position = createVec3(pos);
+			transform->rotation = createQuat(rot);
+		}
 	}
+
+	for (size_t i = 0; i < softBodies.size(); i++)
+	{
+		ref<px_soft_body> sb = softBodies[i];
+		sb->copyDeformedVerticesFromGPUAsync(0);
+	}
+
+	unlockRead();
+
+#if PX_ENABLE_RAYCAST_CCD
+	raycastCCD->doRaycastCCD(true);
+#endif
+
+	sync.lock();
+	if (unfreezeBlastQueue.size() > 0)
+	{
+		for (auto iter = unfreezeBlastQueue.begin(); iter != unfreezeBlastQueue.end(); ++iter)
+		{
+			auto enttScene = app.getCurrentScene();
+
+			eentity renderEntity{ (entity_handle)*iter, &enttScene->registry };
+
+			if (auto rb = renderEntity.getComponentIfExists<physics::px_rigidbody_component>())
+			{
+				rb->setConstraints(0);
+
+				rb->setEnableGravity();
+
+				lockWrite();
+				PxRigidBodyExt::updateMassAndInertia(*rb->getRigidActor()->is<PxRigidDynamic>(), rb->getMass());
+				unlockWrite();
+			}
+		}
+	}
+
+	unfreezeBlastQueue.clear();
+	
+	sync.unlock();
+	//physics::processUnfreezeBlastQueue();
+
+	simulationEventCallback->sendCollisionEvents();
+	simulationEventCallback->sendTriggerEvents();
+
+	simulationEventCallback->clear();
+
+	blast->animate(dt);
+
+	allocator.reset();
 }
 
 void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
@@ -517,103 +592,6 @@ physics::px_raycast_info physics::px_physics_engine::raycast(px_rigidbody_compon
 	return px_raycast_info();
 }
 
-void physics::px_physics_engine::stepPhysics(float stepSize) noexcept
-{
-	static constexpr uint64 align = 16U;
-
-	static constexpr uint64 scratchMemBlockSize = MB(32U);
-
-	void* scratchMemBlock = allocator.allocate(scratchMemBlockSize, align, true);
-
-	lockWrite();
-	scene->getTaskManager()->startSimulation();
-
-	scene->simulate(stepSize, NULL, scratchMemBlock, MB(32U));
-
-	scene->fetchResults(true);
-
-	scene->flushSimulation();
-	scene->fetchResultsParticleSystem();
-	scene->getTaskManager()->stopSimulation();
-
-#if PX_ENABLE_RAYCAST_CCD
-	raycastCCD->doRaycastCCD(true);
-#endif
-	allocator.reset();
-
-	unlockWrite();
-}
-
-void physics::px_physics_engine::syncTransforms() noexcept
-{
-	lockRead();
-	PxActor** activeActors = scene->getActiveActors(nbActiveActors);
-
-	auto gameScene = app.getCurrentScene();
-
-	for (size_t i = 0; i < nbActiveActors; i++)
-	{
-		if (auto rb = activeActors[i]->is<PxRigidDynamic>())
-		{
-			if (!activeActors[i]->userData)
-				continue;
-			entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
-			eentity renderObject = { *handle, &gameScene->registry };
-			if (!renderObject.valid())
-				continue;
-			const auto transform = &renderObject.getComponent<transform_component>();
-
-			const auto& pxt = rb->getGlobalPose();
-			const auto& pos = pxt.p;
-			const auto& rot = pxt.q;
-			transform->position = createVec3(pos);
-			transform->rotation = createQuat(rot);
-		}
-	}
-
-	for (size_t i = 0; i < softBodies.size(); i++)
-	{
-		ref<px_soft_body> sb = softBodies[i];
-		sb->copyDeformedVerticesFromGPUAsync(0);
-	}
-
-	unlockRead();
-}
-
-void physics::px_physics_engine::processBlastQueue() noexcept
-{
-	if (unfreezeBlastQueue.size() > 0)
-	{
-		for (auto iter = unfreezeBlastQueue.begin(); iter != unfreezeBlastQueue.end(); ++iter)
-		{
-			auto enttScene = app.getCurrentScene();
-
-			eentity renderEntity{ (entity_handle)*iter, &enttScene->registry };
-
-			if (auto rb = renderEntity.getComponentIfExists<physics::px_rigidbody_component>())
-			{
-				rb->setConstraints(0);
-
-				rb->setEnableGravity();
-
-				rb->updateMassAndInertia(rb->getMass());
-
-				rb->clearForceAndTorque();
-			}
-		}
-	}
-
-	unfreezeBlastQueue.clear();
-}
-
-void physics::px_physics_engine::processSimulationEventCallbacks() noexcept
-{
-	simulationEventCallback->sendCollisionEvents();
-	simulationEventCallback->sendTriggerEvents();
-
-	simulationEventCallback->clear();
-}
-
 ref<physics::px_soft_body> physics::px_physics_engine::addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount) noexcept
 {
 	PxVec4* simPositionInvMassPinned;
@@ -668,43 +646,30 @@ void physics::px_simulation_event_callback::clear()
 
 void physics::px_simulation_event_callback::sendCollisionEvents()
 {
-	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
-
 	//for (auto& c : removedCollisions)
 	//{
-		//c.thisActor->onCollisionExit(c.otherActor);
-		//c.swapObjects();
-		//LOG_MESSAGE("VISHEL");
-		//c.thisActor->onCollisionExit(c.otherActor);
-		//c.swapObjects();
-		//physics::physics_holder::physicsRef->collisionExitQueue.emplace(c.thisActor->handle, c.otherActor->handle);
+	//	c.thisActor->onCollisionExit(c.otherActor);
+	//	c.swapObjects();
+	//	LOG_MESSAGE("VISHEL");
+	//	c.thisActor->onCollisionExit(c.otherActor);
+	//	c.swapObjects();
+	//	//physics::physics_holder::physicsRef->collisionExitQueue.emplace(c.thisActor->handle, c.otherActor->handle);
 	//}
 
-	for (auto& c : newCollisions)
-	{
-		eentity rb1{ c.thisActor->handle, &enttScene->registry };
-		eentity rb2{ c.otherActor->handle, &enttScene->registry };
+	//for (auto& c : newCollisions)
+	//{
+	//	c.thisActor->onCollisionEnter(c.otherActor);
+	//	c.swapObjects();
+	//	LOG_MESSAGE("VOSHOL");
+	//	c.thisActor->onCollisionEnter(c.otherActor);
+	//	c.swapObjects();
+	//	//physics::physics_holder::physicsRef->collisionQueue.emplace(c.thisActor->handle, c.otherActor->handle);
+	//}
 
-		auto chunk1 = rb1.getComponentIfExists<physics::chunk_graph_manager::chunk_node>();
-
-		auto chunk2 = rb2.getComponentIfExists<physics::chunk_graph_manager::chunk_node>();
-
-		if (chunk1 && !chunk2)
-		{
-			chunk1->processDamage(c.impulse);
-		}
-		else if (chunk2 && !chunk1)
-		{
-			chunk2->processDamage(c.impulse);
-		}
-
-		/*c.thisActor->onCollisionEnter(c.otherActor);
-		c.swapObjects();
-		LOG_MESSAGE("VOSHOL");
-		c.thisActor->onCollisionEnter(c.otherActor);
-		c.swapObjects();*/
-		//physics::physics_holder::physicsRef->collisionQueue.emplace(c.thisActor->handle, c.otherActor->handle);
-	}
+	//for (auto& c : kinematicsToRemoveFlag)
+	//{
+	//	c->setKinematic(false);
+	//}
 }
 
 void physics::px_simulation_event_callback::sendTriggerEvents()
@@ -809,6 +774,22 @@ void physics::px_simulation_event_callback::onContact(const PxContactPairHeader&
 
 			if (!rb1 || !rb2)
 				return;
+
+			/*if (auto kin1 = actor1->is<PxRigidDynamic>())
+			{
+				if ((kin1->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC) && collision.impulse.magnitude() > 300.f)
+				{
+					kinematicsToRemoveFlag.pushBack(rb1);
+				}
+			}
+
+			if (auto kin2 = actor2->is<PxRigidDynamic>())
+			{
+				if ((kin2->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC) && collision.impulse.magnitude() > 300.f)
+				{
+					kinematicsToRemoveFlag.pushBack(rb2);
+				}
+			}*/
 
 			collision.thisActor = rb1;
 			collision.otherActor = rb2;
@@ -1097,7 +1078,7 @@ NODISCARD physx::PxConvexMesh* physics::px_convex_mesh_builder::createConvexMesh
 			cookingParams.gaussMapLimit = 32;
 			cookingParams.suppressTriangleMeshRemapTable = false;
 			cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
-			cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
+			//cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
 			return PxCreateConvexMesh(cookingParams, desc);
 		}
 	}

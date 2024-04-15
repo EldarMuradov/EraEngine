@@ -99,6 +99,8 @@ void physics::px_blast::onSampleStop()
 
 void physics::px_blast::animate(double dt)
 {
+	physics::physics_holder::physicsRef->lockWrite();
+
 	extImpactDamageManager->applyDamage();
 
 	updateDraggingStress();
@@ -149,6 +151,8 @@ void physics::px_blast::animate(double dt)
 	}
 
 	tkGroup->endProcess();
+
+	physics::physics_holder::physicsRef->unlockWrite();
 }
 
 void physics::px_blast::drawUI()
