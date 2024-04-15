@@ -47,16 +47,18 @@ namespace physics
 		px_collider_component_base() = default;
 		virtual ~px_collider_component_base();
 
+		NODISCARD PxGeometry* getGeometry() noexcept { return geometry; }
 		NODISCARD PxShape* getShape() const noexcept { return shape; }
 		void setShape(PxShape* newShape) noexcept { shape = newShape; }
 
 		virtual bool createShape() { return false; }
 
-		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) PX_RELEASE(material) }
+		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) PX_RELEASE(material) RELEASE_PTR(geometry) }
 
 		px_collider_type type = px_collider_type::None;
 
 	protected:
+		PxGeometry* geometry = nullptr;
 		PxShape* shape = nullptr;
 		PxMaterial* material = nullptr;
 	};
@@ -131,7 +133,7 @@ namespace physics
 
 		bool createShape() override;
 
-		void release(bool release = true) noexcept override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) }
+		void release(bool release = true) noexcept override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) RELEASE_PTR(geometry) }
 
 		mesh_asset* asset = nullptr;
 		float modelSize = 1.0f;
@@ -150,7 +152,8 @@ namespace physics
 
 		bool createShape() override;
 
-		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) }
+		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) RELEASE_PTR(geometry)
+		}
 
 		mesh_asset* asset = nullptr;
 		float modelSize = 1.0f;
@@ -169,7 +172,7 @@ namespace physics
 
 		bool createShape() override;
 
-		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) PX_RELEASE(plane) PX_RELEASE(material) }
+		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) PX_RELEASE(plane) PX_RELEASE(material) RELEASE_PTR(geometry) }
 
 		vec3 position{};
 		vec3 normal{};
@@ -190,7 +193,7 @@ namespace physics
 
 		bool createShape() override;
 
-		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) }
+		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) PX_RELEASE(material) RELEASE_PTR(geometry) }
 
 		mesh_asset* asset = nullptr;
 		vec3 modelSize = vec3(1.0f);

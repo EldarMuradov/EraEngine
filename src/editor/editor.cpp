@@ -30,6 +30,7 @@
 #include <core/builder.h>
 #include <px/physics/px_soft_body.h>
 #include <px/blast/px_blast_core.h>
+#include <px/blast/px_blast_destructions.h>
 
 template <typename component_t, typename member_t>
 struct component_member_undo
@@ -885,6 +886,11 @@ bool eeditor::drawSceneHierarchy()
 						ImGui::Text("Ray-tracing component ON");
 					});
 
+					drawComponent<physics::nvmesh_chunk_component>(selectedEntity, "NvMesh Chunk", [](physics::nvmesh_chunk_component& chunkMesh)
+					{
+						ImGui::Text("NvMesh Chunk component");
+					});
+
 					drawComponent<physics::px_box_collider_component>(selectedEntity, "Box Collider (PhysX)", [](physics::px_box_collider_component& trace)
 					{
 						ImGui::Text("Box collider component");
@@ -1214,7 +1220,7 @@ bool eeditor::drawSceneHierarchy()
 
 							if (ImGui::BeginProperties())
 							{
-								ImGui::PropertyValue("Mass", 1.f / rb.getMass(), "%.3fkg");
+								ImGui::PropertyValue("Mass", rb.getMass(), "%.3fkg");
 								bool dynamic = rb.type == physics::px_rigidbody_type::Dynamic;
 
 								//if (dynamic)
