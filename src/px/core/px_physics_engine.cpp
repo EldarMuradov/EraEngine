@@ -547,7 +547,10 @@ void physics::px_physics_engine::stepPhysics(float stepSize) noexcept
 void physics::px_physics_engine::syncTransforms() noexcept
 {
 	lockRead();
-	PxActor** activeActors = scene->getActiveActors(nbActiveActors);
+	uint32_t tempNb;
+	PxActor** activeActors = scene->getActiveActors(tempNb);
+
+	nbActiveActors.store(tempNb, ::std::memory_order_relaxed);
 
 	auto gameScene = app.getCurrentScene();
 
@@ -596,7 +599,7 @@ void physics::px_physics_engine::processBlastQueue() noexcept
 
 				rb->setEnableGravity();
 
-				rb->updateMassAndInertia(rb->getMass());
+				rb->updateMassAndInertia(::std::max(rb->getMass(), 3.0f));
 
 				rb->clearForceAndTorque();
 			}

@@ -744,7 +744,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		float frameRate = 60.0f;
 
-		uint32_t nbActiveActors{};
+		::std::atomic_uint32_t nbActiveActors{};
 
 		ref<px_blast> blast;
 
@@ -758,8 +758,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		::std::unordered_set<uint32_t> unfreezeBlastQueue;
 
 		application& app;
-
-		px_simulation_event_callback* simulationEventCallback = nullptr;
 
 		::std::mutex sync;
 
@@ -779,16 +777,18 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		PxPvd* pvd = nullptr;
 
-		PxDefaultAllocator defaultAllocatorCallback;
+		//PxDefaultErrorCallback defaultErrorCallback;
+		//PxDefaultAllocator defaultAllocatorCallback;
+
 		px_allocator_callback allocatorCallback;
 		px_error_reporter errorReporter;
+
 		px_profiler_callback profilerCallback;
 
 		PxCudaContextManager* cudaContextManager = nullptr;
 
-		PxDefaultErrorCallback defaultErrorCallback;
-
 		px_simulation_filter_callback simulationFilterCallback;
+		px_simulation_event_callback* simulationEventCallback = nullptr;
 
 #if PX_ENABLE_RAYCAST_CCD
 		RaycastCCDManager* raycastCCD = nullptr;
@@ -806,8 +806,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		eallocator allocator;
 
 		bool released = false;
-
-		friend struct px_CCD_contact_modification;
 	};
 
 	struct physics_holder

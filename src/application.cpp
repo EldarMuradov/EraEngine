@@ -314,17 +314,18 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		px_sphere1->getComponent<physics::px_rigidbody_component>().setMass(500.0f);
 
 		{
-			if (auto mesh = loadMeshFromFileAsync("assets/box.fbx"))
+			if (auto mesh = loadMeshFromFileAsync("assets/obj/bunny.obj"))
 			{
-				model_asset ass = load3DModelFromFile("assets/box.fbx");
+				model_asset ass = load3DModelFromFile("assets/obj/bunny.obj");
 
 				auto px_sphere_entt1 = scene.createEntity("BlastPXTest")
-					.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
+					.addComponent<transform_component>(vec3(0.0f, 0.0f, 0.0f), quat::identity, vec3(1.0f))
 					.addComponent<mesh_component>(mesh);
 
 				physics::fracture fracture;
 				auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
-				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, 10, 2, defaultmat, defaultmat, 1.0f, 5.0f);
+				int seed = 10;
+				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 4, defaultmat, defaultmat, 1.0f, 5.0f);
 				scene.deleteEntity(px_sphere_entt1.handle);
 			}
 		}

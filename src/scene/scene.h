@@ -515,8 +515,6 @@ struct escene
 		return (uint32)v.size();
 	}
 
-	struct f {};
-
 	template <typename component_t>
 	NODISCARD component_t& getComponentAtIndex(uint32 index)
 	{

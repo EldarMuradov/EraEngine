@@ -31,7 +31,7 @@ eentity physics::buildChunk(const trs& transform, ref<pbr_material> insideMateri
     mm->aabb.grow(aabb.maxCorner);
 
     auto& rb = chunk.getComponent<physics::px_rigidbody_component>();
-    rb.setMass(10.0f);
+    rb.setMass(5.0f);
     rb.setThreshold(0.10f, 0.10f);
     mm->mesh = builder.createDXMesh();
 

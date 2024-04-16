@@ -2983,7 +2983,7 @@ void eeditor::drawSettings(float dt)
 					ImGui::PopStyleColor();
 				}
 
-				uint32 nbaa = physicsRef->nbActiveActors;;
+				uint32 nbaa = physicsRef->nbActiveActors.load(::std::memory_order_relaxed);
 				uint32 nba = physicsRef->actorsMap.size();
 				ImGui::PropertyValue("Number of active actors", std::to_string(nbaa).c_str());
 				ImGui::PropertyValue("Number of actors", std::to_string(nba).c_str());
