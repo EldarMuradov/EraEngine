@@ -134,6 +134,18 @@ namespace physics
 		physics::physics_holder::physicsRef->unlockWrite();
 	}
 
+	void px_rigidbody_component::setMaxContactImpulseFlag(bool state) noexcept
+	{
+		if (!actor)
+			return;
+		physics_holder::physicsRef->lockWrite();
+		if (auto dyn = actor->is<PxRigidDynamic>())
+		{
+			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_MAX_CONTACT_IMPULSE, state);
+		}
+		physics_holder::physicsRef->unlockWrite();
+	}
+
 	void px_rigidbody_component::setKinematic(bool kinematic)
 	{
 		if (!actor)
@@ -372,7 +384,7 @@ namespace physics
 		{
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
-		    actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
+		    //actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);

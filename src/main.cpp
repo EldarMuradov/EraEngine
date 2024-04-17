@@ -102,8 +102,8 @@ static void renderToMainWindow(dx_window& window)
 
 int main(int argc, char** argv)
 {
-	try
-	{
+	//try
+	//{
 		if (!dxContext.initialize())
 			return EXIT_FAILURE;
 
@@ -321,18 +321,18 @@ int main(int argc, char** argv)
 		shutdownAudio();
 
 		physics::physics_holder::physicsRef->release();
-	}
-	catch (std::exception ex)
-	{
-		std::cout << ex.what() << "\n";
+	//}
+	//catch (std::exception ex)
+	//{
+	//	std::cout << ex.what() << "\n";
 
-		std::ofstream o("logs/error_log.txt");
-		o << "Runtime Error> " << ex.what() << std::endl;
-		o.close();
+	//	std::ofstream o("logs/error_log.txt");
+	//	o << "Runtime Error> " << ex.what() << std::endl;
+	//	o.close();
 
-		std::this_thread::sleep_for(std::chrono::duration<float>(2000.f));
-		return EXIT_FAILURE;
-	}
+	//	std::this_thread::sleep_for(std::chrono::duration<float>(2000.f));
+	//	return EXIT_FAILURE;
+	//}
 
 	return EXIT_SUCCESS;
 }

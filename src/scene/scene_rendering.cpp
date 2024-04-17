@@ -469,7 +469,8 @@ static void renderDynamicObjectsToShadowMap(group_t group, std::unordered_map<mu
 			continue;
 
 		const dx_mesh& dxMesh = mesh.mesh->mesh;
-
+		if (!ocPerMesh.contains(mesh.mesh.get()))
+			continue;
 		offset_count& oc = ocPerMesh.at(mesh.mesh.get());
 
 		uint32 index = oc.offset + oc.count;

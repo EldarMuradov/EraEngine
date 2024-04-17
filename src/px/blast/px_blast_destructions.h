@@ -293,12 +293,13 @@ namespace physics
 
     struct randomGenerator : Nv::Blast::RandomGeneratorBase
     {
-        static inline int seedResult;
+        static inline unsigned int seedResult = 5489U;
 
         virtual float getRandomValue()
         {
             ::std::random_device rd;
             ::std::mt19937 eng(rd());
+            //eng.seed(seedResult);
             ::std::uniform_real_distribution<float> distr(0.0f, 1.0f);
             float nb = distr(eng);
             return nb;
@@ -424,22 +425,24 @@ namespace physics
 
     static inline uint32 maxSpliteGeneration = 3U;
 
+    static inline ::std::mutex fractureSyncObj;
+
     struct chunk_graph_manager
     {
         struct chunk_node
         {
             ::std::unordered_set<entity_handle> neighbours;
-            entity_handle* neighboursArray = nullptr;
-
-            bool hasBrokenLinks = false;
 
             ::std::unordered_map<px_fixed_joint*, entity_handle> jointToChunk;
             ::std::unordered_map<entity_handle, px_fixed_joint*> chunkToJoint;
+
+            entity_handle* neighboursArray = nullptr;
 
             entity_handle handle{};
 
             bool frozen = true;
             bool isKinematic = false;
+            bool hasBrokenLinks = false;
 
             vec3 frozenPos{};
             quat forzenRot{};
@@ -462,19 +465,12 @@ namespace physics
 
             void update() noexcept
             {
-                //auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
-                //
-                //eentity renderEntity{ handle, &enttScene->registry };
-                //
-                //if (auto rb = renderEntity.getComponentIfExists<physics::px_rigidbody_component>())
-                //{
-                //    rb->updateMassAndInertia(7.5f);
-                //}
+
             }
 
             void setup(chunk_graph_manager* manager) noexcept
             {
-                freeze();
+                setupRigidbody();
 
                 jointToChunk.clear();
                 chunkToJoint.clear();
@@ -504,7 +500,7 @@ namespace physics
                 }
             }
 
-            void unfreeze() noexcept
+            void addToUnfreezeQueue() noexcept
             {
                 if (physics_holder::physicsRef->unfreezeBlastQueue.contains((uint32)handle))
                     return;
@@ -524,12 +520,15 @@ namespace physics
             {
                 if (spliteGeneration < maxSpliteGeneration)
                 {
-                    if (impulse.magnitude() > 5.0f)
+                    if (impulse.magnitude() > 1.0f)
                     {
                         auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
                         if (!enttScene->registry.size())
                             return;
+
+                        fractureSyncObj.lock();
+                        physics_holder::physicsRef->lockWrite();
 
                         eentity fractureGameObject = enttScene->createEntity("Fracture")
                             .addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
@@ -541,17 +540,20 @@ namespace physics
                         auto defaultmat = createPBRMaterialAsync({ "", "" });
                         defaultmat->shader = pbr_material_shader_double_sided;
 
-                        auto meshes = fractureMeshesInNvblast(5, mesh.mesh, false);
+                        auto meshes = fractureMeshesInNvblast(3, mesh.mesh, false);
 
                         auto chunks = buildChunks(renderEntity.getComponentIfExists<transform_component>() ? *renderEntity.getComponentIfExists<transform_component>() : trs::identity, defaultmat, defaultmat, meshes, 7.5f);
 
                         graphManager.setup(chunks, ++spliteGeneration);
 
                         enttScene->deleteEntity(handle);
+                        physics_holder::physicsRef->unlockWrite();
+
+                        fractureSyncObj.unlock();
 
                         // Multithreaded version. Not tested!
-                        /*
-                        struct fracture_data
+                        
+                        /*struct fracture_data
                         {
                         escene* scene;
                         entity_handle handle;
@@ -564,8 +566,14 @@ namespace physics
                     
                             if (!data.scene->registry.size())
                                 return;
+
+                            fractureSyncObj.lock();
                     
                             physics_holder::physicsRef->lockWrite();
+
+                            if (!data.scene->registry.size())
+                                return;
+
                             eentity fractureGameObject = data.scene->createEntity("Fracture")
                                 .addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
                             auto& graphManager = fractureGameObject.addComponent<chunk_graph_manager>().getComponent<chunk_graph_manager>();
@@ -576,7 +584,7 @@ namespace physics
                             auto defaultmat = createPBRMaterialAsync({ "", "" });
                             defaultmat->shader = pbr_material_shader_double_sided;
                     
-                            auto meshes = fractureMeshesInNvblast(5, mesh.mesh, false);
+                            auto meshes = fractureMeshesInNvblast(3, mesh.mesh, false);
                     
                             auto chunks = buildChunks(renderEntity.getComponentIfExists<transform_component>() ? *renderEntity.getComponentIfExists<transform_component>() : trs::identity, defaultmat, defaultmat, meshes, 7.5f);
                     
@@ -585,6 +593,8 @@ namespace physics
                             data.scene->deleteEntity(data.handle);
                     
                             physics_holder::physicsRef->unlockWrite();
+
+                            fractureSyncObj.unlock();
                         }, data).submitNow();*/
                     }
                 }
@@ -622,9 +632,12 @@ namespace physics
                 hasBrokenLinks = false;
             }
 
-            void freeze() noexcept
+            void setupRigidbody() noexcept
             {
                 auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+                if (!enttScene->registry.size())
+                    return;
 
                 eentity renderEntity{ handle, &enttScene->registry };
 
@@ -632,16 +645,16 @@ namespace physics
 
                 rb.setMaxAngularVelosity(1000.0f);
                 rb.setMaxLinearVelosity(1000.0f);
-
+                rb.setMaxContactImpulseFlag(true);
                 rb.setAngularDamping(0.01f);
                 rb.setLinearDamping(0.01f);
 
                 auto dyn = rb.getRigidActor()->is<PxRigidDynamic>();
-                
-                dyn->setSolverIterationCounts(4, 16);
+                dyn->setSolverIterationCounts(8, 16);
 
                 dyn->setCMassLocalPose(PxTransform(PxVec3(0.0f)));
 
+                dyn->setMaxContactImpulse(1000.0f);
                 dyn->clearTorque();
                 dyn->clearForce();
 
@@ -668,6 +681,9 @@ namespace physics
 
             for (size_t i = 0; i < bodies.size(); i++)
             {
+                if (bodies[i] == null_entity)
+                    continue;
+
                 eentity renderEntity{ bodies[i], &enttScene->registry };
 
                 if (!renderEntity.hasComponent<chunk_node>())
@@ -749,7 +765,7 @@ namespace physics
             }
             for (auto sub : search)
             {
-                sub->unfreeze();
+                sub->addToUnfreezeQueue();
             }
         }
 
@@ -929,7 +945,7 @@ namespace physics
     {
         ::std::unordered_set<chunkPair> jointPairs;
 
-        entity_handle fractureGameObject(ref<submesh_asset> meshAsset, const eentity& gameObject, anchor anchor, int seed, int totalChunks, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, float jointBreakForce, float density)
+        entity_handle fractureGameObject(ref<submesh_asset> meshAsset, const eentity& gameObject, anchor anchor, unsigned int seed, int totalChunks, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, float jointBreakForce, float density)
         {
             // Translate all meshes to one world mesh
             //auto mesh = getWorldMesh(gameObject);
@@ -972,10 +988,10 @@ namespace physics
             auto chunks = buildChunks(gameObject.getComponent<transform_component>(), insideMaterial, outsideMaterial, meshes, chunkMass);
 
             // Connect blocks that are touching with fixed joints
-            for (size_t i = 0; i < chunks.size(); i++)
-            {
-                connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce);
-            }
+            //for (size_t i = 0; i < chunks.size(); i++)
+            //{
+            //    connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce);
+            //}
 
             for (auto chunk : chunks)
             {

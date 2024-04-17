@@ -5,6 +5,9 @@ eentity physics::buildChunk(const trs& transform, ref<pbr_material> insideMateri
 {
     auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
+    if (!enttScene->registry.size())
+        return eentity{};
+
     mesh_builder builder{ mesh_creation_flags_default, mesh_index_uint32 };
 
     auto mm = make_ref<multi_mesh>();
@@ -31,8 +34,8 @@ eentity physics::buildChunk(const trs& transform, ref<pbr_material> insideMateri
     mm->aabb.grow(aabb.maxCorner);
 
     auto& rb = chunk.getComponent<physics::px_rigidbody_component>();
-    rb.setMass(5.0f);
-    rb.setThreshold(0.10f, 0.10f);
+    rb.setMass(3.0f);
+    //rb.setThreshold(0.10f, 0.10f);
     mm->mesh = builder.createDXMesh();
 
     return chunk;

@@ -68,6 +68,8 @@ namespace physics
 
 		void updateMassAndInertia(float density) noexcept;
 
+		void setMaxContactImpulseFlag(bool state) noexcept;
+
 		void setKinematic(bool kinematic);
 		bool isKinematicBody() const noexcept { return isKinematic; }
 

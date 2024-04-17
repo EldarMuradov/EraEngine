@@ -132,7 +132,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::ePABP;
 #endif
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
-	//sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
+	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
 	sceneDesc.frictionType = PxFrictionType::ePATCH;
 	//sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
 	//sceneDesc.flags |= PxSceneFlag::eENABLE_AVERAGE_POINT;
@@ -405,7 +405,7 @@ void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
 		}
 	}
 
-	scene->flushSimulation();
+	//scene->flushSimulation();
 	unlockWrite();
 }
 
@@ -532,7 +532,7 @@ void physics::px_physics_engine::stepPhysics(float stepSize) noexcept
 
 	scene->fetchResults(true);
 
-	scene->flushSimulation();
+	//scene->flushSimulation();
 	scene->fetchResultsParticleSystem();
 	scene->getTaskManager()->stopSimulation();
 
@@ -672,7 +672,8 @@ void physics::px_simulation_event_callback::clear()
 void physics::px_simulation_event_callback::sendCollisionEvents()
 {
 	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
-
+	if (!enttScene->registry.size())
+		return;
 	//for (auto& c : removedCollisions)
 	//{
 		//c.thisActor->onCollisionExit(c.otherActor);
