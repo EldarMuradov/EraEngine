@@ -112,12 +112,15 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 				CPU_PROFILE_BLOCK("PhysX steps");
 
 				const auto& physicsRef = physics::physics_holder::physicsRef;
+
+				lock lock{ physicsRef->sync };
+
 				physicsRef->update(data.deltaTime);
 
 				{
 					CPU_PROFILE_BLOCK("PhysX collision events step");
 
-					/*while (physicsRef->collisionQueue.size())
+					while (physicsRef->collisionQueue.size())
 					{
 						const auto& c = physicsRef->collisionQueue.back();
 						physicsRef->collisionQueue.pop();
@@ -129,15 +132,15 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 						const auto& c = physicsRef->collisionExitQueue.back();
 						physicsRef->collisionExitQueue.pop();
 						data.core.handle_exit_coll(c.id1, c.id2);
-					}*/
+					}
 				}
 			}
 
-			//updateScripting(data);
+			updateScripting(data);
 
 			{
-				//CPU_PROFILE_BLOCK(".NET 8 Input sync step");
-				//data.core.handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
+				CPU_PROFILE_BLOCK(".NET 8 Input sync step");
+				data.core.handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
 			}
 		}, data).submitNow();
 
@@ -306,7 +309,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		px_sphere_entt.getComponent<physics::px_rigidbody_component>().setMass(1000.f);
 		px_sphere = px_sphere_entt.handle;
 
-		auto px_sphere1 = &scene.createEntity("SpherePX1")
+		auto px_sphere1 = &scene.createEntity("SpherePX1", (entity_handle)59)
 			.addComponent<transform_component>(vec3(5, 155.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(5.f))
 			.addComponent<mesh_component>(sphereMesh)
 			.addComponent<physics::px_sphere_collider_component>(5.0f)
@@ -314,9 +317,9 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		px_sphere1->getComponent<physics::px_rigidbody_component>().setMass(500.0f);
 
 		{
-			if (auto mesh = loadMeshFromFileAsync("assets/obj/bunny.obj"))
+			if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
 			{
-				model_asset ass = load3DModelFromFile("assets/obj/bunny.obj");
+				model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
 
 				auto px_sphere_entt1 = scene.createEntity("BlastPXTest")
 					.addComponent<transform_component>(vec3(0.0f, 0.0f, 0.0f), quat::identity, vec3(1.0f))
@@ -656,7 +659,7 @@ void application::update(const user_input& input, float dt)
 
 #endif
 
-	if (renderer->mode != renderer_mode_pathtraced)
+	//if (renderer->mode != renderer_mode_pathtraced)
 	{
 		for (auto [entityHandle, anim, mesh, transform] : scene.group(component_group<animation_component, mesh_component, transform_component>).each())
 		{

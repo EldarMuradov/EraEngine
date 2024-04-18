@@ -1,6 +1,4 @@
 ﻿using EraEngine.Components;
-using System.Collections.Immutable;
-using System.Reflection;
 
 namespace EraEngine;
 public static class ELevel
@@ -21,7 +19,7 @@ public static class ELevel
                 include.Set(ComponentMeta<TransformComponent>.Id);
 
                 BitMask exclude = new();
-                exclude.Set(ComponentMeta<RigidbodyComponent>.Id);
+                //exclude.Set(ComponentMeta<RigidbodyComponent>.Id);
 
                 var filterId = EWorld.SceneWorld.RegisterFilter(include, exclude);
 

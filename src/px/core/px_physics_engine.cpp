@@ -672,17 +672,19 @@ void physics::px_simulation_event_callback::clear()
 void physics::px_simulation_event_callback::sendCollisionEvents()
 {
 	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
 	if (!enttScene->registry.size())
 		return;
-	//for (auto& c : removedCollisions)
-	//{
-		//c.thisActor->onCollisionExit(c.otherActor);
-		//c.swapObjects();
-		//LOG_MESSAGE("VISHEL");
-		//c.thisActor->onCollisionExit(c.otherActor);
-		//c.swapObjects();
-		//physics::physics_holder::physicsRef->collisionExitQueue.emplace(c.thisActor->handle, c.otherActor->handle);
-	//}
+
+	for (auto& c : removedCollisions)
+	{
+		c.thisActor->onCollisionExit(c.otherActor);
+		c.swapObjects();
+		LOG_MESSAGE("VISHEL");
+		c.thisActor->onCollisionExit(c.otherActor);
+		c.swapObjects();
+		physics::physics_holder::physicsRef->collisionExitQueue.emplace(c.thisActor->handle, c.otherActor->handle);
+	}
 
 	for (auto& c : newCollisions)
 	{
@@ -702,12 +704,12 @@ void physics::px_simulation_event_callback::sendCollisionEvents()
 			chunk2->processDamage(c.impulse);
 		}
 
-		/*c.thisActor->onCollisionEnter(c.otherActor);
+		c.thisActor->onCollisionEnter(c.otherActor);
 		c.swapObjects();
 		LOG_MESSAGE("VOSHOL");
 		c.thisActor->onCollisionEnter(c.otherActor);
-		c.swapObjects();*/
-		//physics::physics_holder::physicsRef->collisionQueue.emplace(c.thisActor->handle, c.otherActor->handle);
+		c.swapObjects();
+		physics::physics_holder::physicsRef->collisionQueue.emplace(c.thisActor->handle, c.otherActor->handle);
 	}
 }
 

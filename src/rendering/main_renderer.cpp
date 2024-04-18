@@ -976,6 +976,12 @@ void main_renderer::endFrame(const user_input* input)
 			.transition(ldrPostProcessingTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 			.transition(frameResult, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
 
+		if (dxContext.featureSupport.dlss() && settings.enableDLSS)
+		{
+			PROFILE_ALL(cl3, "DLSS Evaluation");
+			dlss_adapter.updateDLSS(cl->commandList.Get(), computePass->dt);
+		}
+
 		dxContext.executeCommandList(cl);
 	}
 

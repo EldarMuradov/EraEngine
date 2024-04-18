@@ -23,6 +23,8 @@ struct pbr_pipeline
 {
 	static void initialize();
 
+	static void initialize(std::string_view vsPath, std::string_view pbrPsPath, std::string_view prbTransparentPsPath);
+
 	PIPELINE_RENDER_DECL(pbr_render_data);
 
 	struct opaque;

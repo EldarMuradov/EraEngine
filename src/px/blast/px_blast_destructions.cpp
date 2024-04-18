@@ -1,3 +1,5 @@
+// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
+
 #include <pch.h>
 #include <px/blast/px_blast_destructions.h>
 
@@ -34,7 +36,7 @@ eentity physics::buildChunk(const trs& transform, ref<pbr_material> insideMateri
     mm->aabb.grow(aabb.maxCorner);
 
     auto& rb = chunk.getComponent<physics::px_rigidbody_component>();
-    rb.setMass(3.0f);
+    rb.setMass(3.00f);
     //rb.setThreshold(0.10f, 0.10f);
     mm->mesh = builder.createDXMesh();
 

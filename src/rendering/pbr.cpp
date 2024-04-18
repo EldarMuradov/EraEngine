@@ -49,6 +49,30 @@ void pbr_pipeline::initialize()
 	}
 }
 
+void pbr_pipeline::initialize(std::string_view vsPath, std::string_view pbrPsPath, std::string_view prbTransparentPsPath)
+{
+	{
+		auto desc = CREATE_GRAPHICS_PIPELINE
+			.inputLayout(inputLayout_position_uv_normal_tangent)
+			.renderTargets(opaqueLightPassFormats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depthStencilFormat)
+			.depthSettings(true, false, D3D12_COMPARISON_FUNC_EQUAL);
+
+		opaquePBRPipeline = createReloadablePipeline(desc, { vsPath.data(), pbrPsPath.data() });
+
+		desc.cullingOff();
+		opaqueDoubleSidedPBRPipeline = createReloadablePipeline(desc, { vsPath.data(), pbrPsPath.data() });
+	}
+
+	{
+		auto desc = CREATE_GRAPHICS_PIPELINE
+			.inputLayout(inputLayout_position_uv_normal_tangent)
+			.renderTargets(transparentLightPassFormats, arraysize(transparentLightPassFormats), depthStencilFormat)
+			.alphaBlending(0);
+
+		transparentPBRPipeline = createReloadablePipeline(desc, { vsPath.data(), prbTransparentPsPath.data() });
+	}
+}
+
 void pbr_pipeline::setupPBRCommon(dx_command_list* cl, const common_render_data& common)
 {
 	cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
