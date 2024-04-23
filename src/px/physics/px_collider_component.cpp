@@ -328,10 +328,14 @@ namespace physics
 	bool px_plane_collider_component::createShape()
 	{
 		const auto& physics = physics_holder::physicsRef->getPhysics();
+		physics_holder::physicsRef->lockWrite();
+
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		plane = PxCreatePlane(*physics, PxPlane(createPxVec3(position), createPxVec3(normal)), *material);
 
 		physics_holder::physicsRef->getScene()->addActor(*plane);
+
+		physics_holder::physicsRef->unlockWrite();
 
 		return true;
 	}

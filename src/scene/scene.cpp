@@ -75,14 +75,17 @@ void escene::cloneTo(escene& target)
 		physics::px_cloth_render_component,
 		physics::px_particles_component,
 		physics::px_particles_render_component,
-		physics::chunk_graph_manager,
-		physics::chunk_graph_manager::chunk_node,
-		physics::px_blast_rigidbody_component,
-
 		physics::px_soft_body_component,
 		physics::px_rigid_shape_holder_component,
 		physics::px_shape_holder_component,
+
+#if !_DEBUG
+		physics::chunk_graph_manager,
+		physics::chunk_graph_manager::chunk_node,
+		physics::px_blast_rigidbody_component,
 		physics::nvmesh_chunk_component,
+
+#endif
 
 		navigation_component,
 		script_component,
@@ -238,10 +241,12 @@ void escene::deleteEntity(eentity e)
 	{
 		reference->release();
 	}
+#if !_DEBUG
 	if (physics::px_blast_rigidbody_component* reference = e.getComponentIfExists<physics::px_blast_rigidbody_component>())
 	{
 		reference->release();
 	}
+#endif
 	if (physics::px_soft_body_component* reference = e.getComponentIfExists<physics::px_soft_body_component>())
 	{
 		reference->release();

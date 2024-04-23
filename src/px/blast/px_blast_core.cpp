@@ -5,6 +5,9 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 
 #include <px/blast/px_blast_core.h>
+
+#if !_DEBUG
+
 #include <NvBlastExtPxSerialization.h>
 #include <numeric>
 #include <cooking/PxCooking.h>
@@ -1739,3 +1742,5 @@ void physics::px_blast_family_simple_mesh::onActorHealthUpdate(const ExtPxActor&
 		}
 	}
 }
+
+#endif

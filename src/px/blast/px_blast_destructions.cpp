@@ -3,6 +3,8 @@
 #include <pch.h>
 #include <px/blast/px_blast_destructions.h>
 
+#if !_DEBUG
+
 eentity physics::buildChunk(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, ::std::pair<ref<submesh_asset>, nvmesh*> mesh, float mass, uint32 generation)
 {
     auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
@@ -42,3 +44,5 @@ eentity physics::buildChunk(const trs& transform, ref<pbr_material> insideMateri
 
     return chunk;
 }
+
+#endif

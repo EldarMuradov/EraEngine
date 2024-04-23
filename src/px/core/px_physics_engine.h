@@ -555,7 +555,11 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 	struct px_simulation_event_callback : PxSimulationEventCallback
 	{
+#if !_DEBUG
 		px_simulation_event_callback(Nv::Blast::ExtImpactDamageManager* manager) : impactManager(manager) {}
+#else
+		px_simulation_event_callback() = default;
+#endif
 
 		typedef ::std::pair<px_rigidbody_component*, px_rigidbody_component*> colliders_pair;
 
@@ -584,7 +588,9 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		PxArray<colliders_pair> lostTriggerPairs;
 
+#if !_DEBUG
 		Nv::Blast::ExtImpactDamageManager* impactManager = nullptr;
+#endif
 	};
 
 	struct px_CCD_contact_modification : PxCCDContactModifyCallback

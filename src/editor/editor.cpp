@@ -886,10 +886,12 @@ bool eeditor::drawSceneHierarchy()
 						ImGui::Text("Ray-tracing component ON");
 					});
 
+#if !_DEBUG
 					drawComponent<physics::nvmesh_chunk_component>(selectedEntity, "NvMesh Chunk", [](physics::nvmesh_chunk_component& chunkMesh)
 					{
 						ImGui::Text("NvMesh Chunk component");
 					});
+#endif
 
 					drawComponent<physics::px_box_collider_component>(selectedEntity, "Box Collider (PhysX)", [](physics::px_box_collider_component& trace)
 					{
@@ -901,10 +903,12 @@ bool eeditor::drawSceneHierarchy()
 						ImGui::Text("Soft Body component");
 					});
 
+#if !_DEBUG
 					drawComponent<physics::px_blast_rigidbody_component>(selectedEntity, "Blast Destructable Body (PhysX)", [](physics::px_blast_rigidbody_component& trace)
 					{
 						ImGui::Text("Blast Destructable Body component");
 					});
+#endif
 
 					drawComponent<physics::px_sphere_collider_component>(selectedEntity, "Sphere Collider (PhysX)", [](physics::px_sphere_collider_component& trace)
 					{
@@ -2995,9 +2999,10 @@ void eeditor::drawSettings(float dt)
 				// TODO: Physics undoable properties
 				ImGui::EndProperties();
 			}
+#if !_DEBUG
 
 			physics::physics_holder::physicsRef->blast->drawUI();
-
+#endif
 			ImGui::EndTree();
 		}
 

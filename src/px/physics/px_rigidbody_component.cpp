@@ -310,6 +310,8 @@ namespace physics
 
 	void px_rigidbody_component::createPhysics(bool addToScene)
 	{
+		physics_holder::physicsRef->lockWrite();
+
 		actor = createActor();
 		uint32_t* h = new uint32_t[1];
 		h[0] = (uint32_t)handle;
@@ -320,6 +322,8 @@ namespace physics
 #if PX_ENABLE_PVD
 		actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
 #endif
+
+		physics_holder::physicsRef->unlockWrite();
 	}
 
 	NODISCARD PxRigidActor* px_rigidbody_component::createActor()

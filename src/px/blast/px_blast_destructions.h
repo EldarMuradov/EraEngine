@@ -16,6 +16,8 @@
 #include <iomanip>
 #include <px/physics/px_joint.h>
 
+#if !_DEBUG
+
 #include <NvBlast.h>
 
 #include <NvBlastTk.h>
@@ -791,7 +793,7 @@ namespace physics
     NODISCARD inline bounds toBounds(::std::vector<vec3> vertices) noexcept
     {
         auto min = vec3(INFINITE);
-        auto max = vec3(-INFINITE);
+        auto max = vec3(-(int)INFINITE);
 
         for (int i = 0; i < vertices.size(); i++)
         {
@@ -1223,3 +1225,5 @@ namespace physics
         }
     };
 }
+
+#endif

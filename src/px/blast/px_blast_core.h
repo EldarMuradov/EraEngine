@@ -11,6 +11,8 @@
 #include <scripting/native_scripting_linker.h>
 #include <scene/scene.h>
 
+#if !_DEBUG
+
 #include <NvBlast.h>
 
 #include <NvBlastTk.h>
@@ -1011,3 +1013,5 @@ namespace physics
 		return pxJoint;
 	}
 }
+
+#endif

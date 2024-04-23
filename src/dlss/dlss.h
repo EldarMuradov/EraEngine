@@ -3,14 +3,13 @@
 #pragma once
 
 #ifdef ERA_RUNTIME
+#define ENABLE_DLSS 1
+#elif DEBUG
 #define ENABLE_DLSS 0
-#else
-#ifdef DEBUG
+#elif _DEBUG
 #define ENABLE_DLSS 0
 #else
 #define ENABLE_DLSS 1
-#endif
-
 #endif
 
 #if ENABLE_DLSS
@@ -21,6 +20,7 @@
 #include <nvsdk_ngx_helpers.h>
 
 #endif
+
 #include <dx/dx_context.h>
 #include "rendering/render_algorithms.h"
 

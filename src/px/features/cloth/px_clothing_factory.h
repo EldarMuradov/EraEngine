@@ -41,7 +41,9 @@ namespace physics
 			particleSystem->setFluidRestOffset(0.0f);
 			particleSystem->enableCCD(true);
 
+			physics_holder::physicsRef->lockWrite();
 			physics_holder::physicsRef->getScene()->addActor(*particleSystem);
+			physics_holder::physicsRef->unlockWrite();
 
 			const PxU32 particlePhase = particleSystem->createPhase(material, PxParticlePhaseFlags(PxParticlePhaseFlag::eParticlePhaseSelfCollideFilter | PxParticlePhaseFlag::eParticlePhaseSelfCollide));
 
@@ -125,7 +127,10 @@ namespace physics
 			clothPreProcessor->release();
 
 			clothBuffer = ExtGpu::PxCreateAndPopulateParticleClothBuffer(bufferDesc, clothDesc, output, cudaCM);
+
+			physics_holder::physicsRef->lockWrite();
 			particleSystem->addParticleBuffer(clothBuffer);
+			physics_holder::physicsRef->unlockWrite();
 
 			clothBuffers->release();
 
@@ -148,8 +153,10 @@ namespace physics
 
 		~px_cloth_system()
 		{
+			physics_holder::physicsRef->lockWrite();
 			physics_holder::physicsRef->getScene()->removeActor(*particleSystem);
 			particleSystem->removeParticleBuffer(clothBuffer);
+			physics_holder::physicsRef->unlockWrite();
 
 			PX_RELEASE(particleSystem)
 			PX_RELEASE(material)

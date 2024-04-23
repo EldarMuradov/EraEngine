@@ -720,6 +720,9 @@ void application::update(const user_input& input, float dt)
 			else if (physics::px_convex_mesh_collider_component* cm = selectedEntity.getComponentIfExists<physics::px_convex_mesh_collider_component>())
 			{
 				auto& rb = selectedEntity.getComponent<physics::px_rigidbody_component>();
+
+				physics::physics_holder::physicsRef->lockRead();
+
 				physx::PxShape* shape[1];
 				rb.getRigidActor()->getShapes(shape, 1);
 				auto geom = (physx::PxConvexMeshGeometry*)cm->getGeometry();
@@ -733,6 +736,8 @@ void application::update(const user_input& input, float dt)
 					vec3 a = physx::createVec3(vertices[i] + shape[0]->getLocalPose().p) + selectedEntity.getComponent<transform_component>().position;
 					renderPoint(a, vec4(1, 0, 0, 1), &ldrRenderPass, true);
 				}
+
+				physics::physics_holder::physicsRef->unlockRead();
 			}
 		}
 

@@ -221,6 +221,8 @@ void physics::px_physics_engine::release() noexcept
 
 void physics::px_physics_engine::start() noexcept
 {
+#if !_DEBUG
+
 	blast = make_ref<px_blast>();
 	blast->onSampleStart(physics, scene);
 
@@ -364,13 +366,21 @@ void physics::px_physics_engine::start() noexcept
 	//blast->spawnAsset(0);
 
 	simulationEventCallback = new px_simulation_event_callback(blast->getExtImpactDamageManager());
+
+#else
+
+	simulationEventCallback = new px_simulation_event_callback();
+
+#endif
+
+	lockWrite();
 	scene->setSimulationEventCallback(simulationEventCallback);
+	unlockWrite();
 }
 
 void physics::px_physics_engine::update(float dt) noexcept
 {
 	static const float stepSize = 1.0f / frameRate;
-	lockWrite();
 
 	stepPhysics(stepSize);
 
@@ -381,11 +391,12 @@ void physics::px_physics_engine::update(float dt) noexcept
 	{
 		//processBlastQueue();
 
+#if !_DEBUG
+
 		// Needs to be tested
 		blast->animate(dt);
+#endif
 	}
-	unlockWrite();
-
 }
 
 void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
@@ -517,6 +528,8 @@ physics::px_raycast_info physics::px_physics_engine::raycast(px_rigidbody_compon
 
 void physics::px_physics_engine::stepPhysics(float stepSize) noexcept
 {
+	lockWrite();
+
 	static constexpr uint64 align = 16U;
 
 	static constexpr uint64 scratchMemBlockSize = MB(32U);
@@ -537,10 +550,14 @@ void physics::px_physics_engine::stepPhysics(float stepSize) noexcept
 	raycastCCD->doRaycastCCD(true);
 #endif
 	allocator.reset();
+
+	unlockWrite();
 }
 
 void physics::px_physics_engine::syncTransforms() noexcept
 {
+	lockRead();
+
 	uint32_t tempNb;
 	PxActor** activeActors = scene->getActiveActors(tempNb);
 
@@ -573,6 +590,8 @@ void physics::px_physics_engine::syncTransforms() noexcept
 		ref<px_soft_body> sb = softBodies[i];
 		sb->copyDeformedVerticesFromGPUAsync(0);
 	}
+
+	unlockRead();
 }
 
 void physics::px_physics_engine::processBlastQueue() noexcept
@@ -680,6 +699,9 @@ void physics::px_simulation_event_callback::sendCollisionEvents()
 
 	for (auto& c : newCollisions)
 	{
+
+#if !_DEBUG
+
 		eentity rb1{ c.thisActor->handle, &enttScene->registry };
 		eentity rb2{ c.otherActor->handle, &enttScene->registry };
 
@@ -695,6 +717,8 @@ void physics::px_simulation_event_callback::sendCollisionEvents()
 		{
 			chunk2->processDamage(c.impulse);
 		}
+
+#endif
 
 		c.thisActor->onCollisionEnter(c.otherActor);
 		c.swapObjects();
@@ -717,6 +741,7 @@ void physics::px_simulation_event_callback::onColliderRemoved(px_rigidbody_compo
 
 void physics::px_simulation_event_callback::onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)
 {
+#if !_DEBUG
 	PxRigidActor* act1;
 	PxRigidActor* act2;
 	constraints->constraint->getActors(act1, act2);
@@ -744,11 +769,16 @@ void physics::px_simulation_event_callback::onConstraintBreak(PxConstraintInfo* 
 	{
 		node2->onJointBreak();
 	}
+#endif
 }
 
 void physics::px_simulation_event_callback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
 {
+#if !_DEBUG
+
 	impactManager->onContact(pairHeader, pairs, nbPairs);
+
+#endif
 
 	const physx::PxU32 bufferSize = PX_CONTACT_BUFFER_SIZE;
 	physx::PxContactPairPoint contacts[bufferSize];

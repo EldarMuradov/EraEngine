@@ -56,7 +56,9 @@ namespace physics
 				particleSystem->enableCCD(false);
 				particleSystem->setMaxVelocity(solidRestOffset * 100.f);
 
+				physics_holder::physicsRef->lockWrite();
 				physics_holder::physicsRef->getScene()->addActor(*particleSystem);
+				physics_holder::physicsRef->unlockWrite();
 
 				// Diffuse particles setting
 				PxDiffuseParticleParams dpParams;
@@ -118,7 +120,10 @@ namespace physics
 				bufferDesc.phases = phase;
 
 				particleBuffer = physx::ExtGpu::PxCreateAndPopulateParticleAndDiffuseBuffer(bufferDesc, cudaContextManager);
+
+				physics_holder::physicsRef->lockWrite();
 				particleSystem->addParticleBuffer(particleBuffer);
+				physics_holder::physicsRef->unlockWrite();
 
 				cudaContextManager->freePinnedHostBuffer(positionInvMass);
 				cudaContextManager->freePinnedHostBuffer(velocity);
@@ -239,8 +244,11 @@ namespace physics
 
 		~px_particle_system()
 		{
+			physics_holder::physicsRef->lockWrite();
 			physics_holder::physicsRef->getScene()->removeActor(*particleSystem);
 			particleSystem->removeParticleBuffer(particleBuffer);
+			physics_holder::physicsRef->lockWrite();
+
 			PX_RELEASE(particleSystem)
 			PX_RELEASE(material)
 			PX_RELEASE(particleBuffer)
