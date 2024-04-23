@@ -53,8 +53,11 @@ namespace physics
 
 		NODISCARD PxRigidActor* getRigidActor() const noexcept { return actor; }
 
-		void setDisableGravity() noexcept;
-		void setEnableGravity() noexcept;
+		NODISCARD PxRigidDynamic* getRigidDynamic() const noexcept { return actor->is<PxRigidDynamic>(); }
+
+		NODISCARD PxRigidStatic* getRigidStatic() const noexcept { return actor->is<PxRigidStatic>(); }
+
+		void setGravity(bool useGravityFlag) noexcept;
 
 		void setMass(float mass) noexcept;
 		NODISCARD float getMass() const noexcept { return mass; }

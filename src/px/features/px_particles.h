@@ -13,209 +13,214 @@ namespace physics
 	struct px_particle_system
 	{
 		px_particle_system() = default;
-		px_particle_system(PxU32 numX, PxU32 numY, PxU32 numZ, const PxVec3& position = PxVec3(0, 0, 0), PxU32 maxVols = 1, PxU32 maxNh = 96) noexcept
+		px_particle_system(PxU32 numX, PxU32 numY, PxU32 numZ, bool fluid, const PxVec3& position = PxVec3(0, 0, 0), PxU32 maxVols = 1, PxU32 maxNh = 96) noexcept
 			: maxNeighborhood(maxNh), maxParticles(numX* numY* numZ), maxVolumes(maxVols)
 		{
-			/*static const auto cudaCM = physics_holder::physicsRef->getCudaContextManager();
-
-			particleSystem = physics_holder::physicsRef->getPhysics()->
-				createPBDParticleSystem(*cudaCM, maxNeighborhood);
-
-			const PxReal particleSpacing = 0.2f;
-			const PxReal fluidDensity = 1000.f;
-			const PxReal restOffset = 0.5f * particleSpacing / 0.6f;
-			const PxReal solidRestOffset = restOffset;
-			const PxReal fluidRestOffset = restOffset * 0.6f;
-			const PxReal renderRadius = fluidRestOffset;
-			const PxReal particleMass = fluidDensity * 1.333f * M_PI * renderRadius * renderRadius * renderRadius;
-
-			PxU32 maxDiffuseParticles = maxParticles;
-
-			material = physics_holder::physicsRef->getPhysics()->
-				createPBDMaterial(0.05f, 0.05f, 0.f, 0.001f, 0.5f, 0.005f, 0.01f, 0.f, 0.f);
-
-			material->setViscosity(0.001f);
-			material->setSurfaceTension(0.00704f);
-			material->setCohesion(0.0704f);
-			material->setVorticityConfinement(10.f);
-
-			particleSystem->setRestOffset(restOffset);
-			particleSystem->setContactOffset(restOffset + 0.01f);
-			particleSystem->setParticleContactOffset(PxMax(solidRestOffset + 0.01f, fluidRestOffset / 0.6f));
-			particleSystem->setSolidRestOffset(solidRestOffset);
-			particleSystem->setFluidRestOffset(fluidRestOffset);
-			particleSystem->setMaxVelocity(solidRestOffset * 100.f);
-			particleSystem->enableCCD(true);
-
-			physics_holder::physicsRef->getScene()->addActor(*particleSystem);
-
-			PxDiffuseParticleParams dpParams;
-			dpParams.threshold = 300.0f;
-			dpParams.bubbleDrag = 0.9f;
-			dpParams.buoyancy = 0.9f;
-			dpParams.airDrag = 0.0f;
-			dpParams.kineticEnergyWeight = 0.01f;
-			dpParams.pressureWeight = 1.0f;
-			dpParams.divergenceWeight = 10.f;
-			dpParams.lifetime = 1.0f;
-			dpParams.useAccurateVelocity = false;
-
-			const PxU32 particlePhase = particleSystem->createPhase(material, PxParticlePhaseFlags(PxParticlePhaseFlag::eParticlePhaseFluid | PxParticlePhaseFlag::eParticlePhaseSelfCollide));
-
-			PxU32* phase = cudaCM->allocPinnedHostBuffer<PxU32>(maxParticles);
-			PxVec4* positionInvMass = cudaCM->allocPinnedHostBuffer<PxVec4>(maxParticles);
-			PxVec4* velocity = cudaCM->allocPinnedHostBuffer<PxVec4>(maxParticles);
-
-			PxReal x = position.x;
-			PxReal y = position.y;
-			PxReal z = position.z;
-
-			for (PxU32 i = 0; i < numX; ++i)
-			{
-				for (PxU32 j = 0; j < numY; ++j)
-				{
-					for (PxU32 k = 0; k < numZ; ++k)
-					{
-						const PxU32 index = i * (numY * numZ) + j * numZ + k;
-
-						PxVec4 pos(x, y, z, 1.0f / particleMass);
-						phase[index] = particlePhase;
-						positionInvMass[index] = pos;
-						velocity[index] = PxVec4(0.0f);
-
-						z += particleSpacing;
-					}
-					z = position.z;
-					y += particleSpacing;
-				}
-				y = position.y;
-				x += particleSpacing;
-			}
-
-			ExtGpu::PxParticleAndDiffuseBufferDesc bufferDesc;
-			bufferDesc.maxParticles = maxParticles;
-			bufferDesc.numActiveParticles = maxParticles;
-			bufferDesc.maxDiffuseParticles = maxDiffuseParticles;
-			bufferDesc.maxActiveDiffuseParticles = maxDiffuseParticles;
-			bufferDesc.diffuseParams = dpParams;
-
-			bufferDesc.positions = positionInvMass;
-			bufferDesc.velocities = velocity;
-			bufferDesc.phases = phase;
-
-			particleBuffer = ExtGpu::PxCreateAndPopulateParticleAndDiffuseBuffer(bufferDesc, cudaCM);
-			particleSystem->addParticleBuffer(particleBuffer);
-
-			cudaCM->freePinnedHostBuffer(positionInvMass);
-			cudaCM->freePinnedHostBuffer(velocity);
-			cudaCM->freePinnedHostBuffer(phase);*/
-
-			// Setup PBF
-			bool useLargeFluid = false;
-			const PxReal particleSpacing = 0.2f;
-
-			const PxReal fluidDensity = 1000.0f;
-
-			PxCudaContextManager* cudaContextManager = physics_holder::physicsRef->getCudaContextManager();
-			if (cudaContextManager == NULL)
-				return;
-
 			maxParticles = numX * numY * numZ;
 			const PxU32 maxDiffuseParticles = maxParticles;
 
-			const PxReal restOffset = 0.5f * particleSpacing / 0.6f;
-
-			// Material setup
-			material = physics_holder::physicsRef->getPhysics()->createPBDMaterial(0.05f, 0.05f, 0.f, 0.001f, 0.5f, 0.005f, 0.01f, 0.f, 0.f);
-
-			material->setViscosity(0.001f);
-			material->setSurfaceTension(0.00704f);
-			material->setCohesion(0.0704f);
-			material->setVorticityConfinement(10.f);
-
-			particleSystem = physics_holder::physicsRef->getPhysics()->createPBDParticleSystem(*cudaContextManager, 96);
-
-			// General particle system setting
-
-			const PxReal solidRestOffset = restOffset;
-			const PxReal fluidRestOffset = restOffset * 0.6f;
-			const PxReal particleMass = fluidDensity * 1.333f * 3.14159f * particleSpacing * particleSpacing * particleSpacing;
-			particleSystem->setRestOffset(restOffset);
-			particleSystem->setContactOffset(restOffset + 0.01f);
-			particleSystem->setParticleContactOffset(fluidRestOffset / 0.6f);
-			particleSystem->setSolidRestOffset(solidRestOffset);
-			particleSystem->setFluidRestOffset(fluidRestOffset);
-			particleSystem->enableCCD(false);
-			particleSystem->setMaxVelocity(solidRestOffset * 100.f);
-
-			physics_holder::physicsRef->getScene()->addActor(*particleSystem);
-
-			// Diffuse particles setting
-			PxDiffuseParticleParams dpParams;
-			dpParams.threshold = 300.0f;
-			dpParams.bubbleDrag = 0.9f;
-			dpParams.buoyancy = 0.9f;
-			dpParams.airDrag = 0.0f;
-			dpParams.kineticEnergyWeight = 0.01f;
-			dpParams.pressureWeight = 1.0f;
-			dpParams.divergenceWeight = 10.f;
-			dpParams.lifetime = 1.0f;
-			dpParams.useAccurateVelocity = false;
-
-			//maxDiffuseParticles = maxDiffuseParticles;
-
-			// Create particles and add them to the particle system
-			const PxU32 particlePhase = particleSystem->createPhase(material, PxParticlePhaseFlags(PxParticlePhaseFlag::eParticlePhaseFluid | PxParticlePhaseFlag::eParticlePhaseSelfCollide));
-
-			PxU32* phase = cudaContextManager->allocPinnedHostBuffer<PxU32>(maxParticles);
-			PxVec4* positionInvMass = cudaContextManager->allocPinnedHostBuffer<PxVec4>(maxParticles);
-			PxVec4* velocity = cudaContextManager->allocPinnedHostBuffer<PxVec4>(maxParticles);
-
-			PxReal x = position.x;
-			PxReal y = position.y;
-			PxReal z = position.z;
-
-			for (PxU32 i = 0; i < numX; ++i)
+			if (fluid)
 			{
-				for (PxU32 j = 0; j < numY; ++j)
+				// Setup PBF
+				bool useLargeFluid = false;
+				const PxReal particleSpacing = 0.2f;
+
+				const PxReal fluidDensity = 1000.0f;
+
+				PxCudaContextManager* cudaContextManager = physics_holder::physicsRef->getCudaContextManager();
+
+				if (cudaContextManager == nullptr)
+					return;
+
+				const PxReal restOffset = 0.5f * particleSpacing / 0.6f;
+
+				// Material setup
+				material = physics_holder::physicsRef->getPhysics()->createPBDMaterial(0.05f, 0.05f, 0.f, 0.001f, 0.5f, 0.005f, 0.01f, 0.f, 0.f);
+
+				material->setViscosity(0.001f);
+				material->setSurfaceTension(0.00704f);
+				material->setCohesion(0.0704f);
+				material->setVorticityConfinement(10.f);
+
+				particleSystem = physics_holder::physicsRef->getPhysics()->createPBDParticleSystem(*cudaContextManager, 96);
+
+				// General particle system setting
+				const PxReal solidRestOffset = restOffset;
+				const PxReal fluidRestOffset = restOffset * 0.6f;
+				const PxReal particleMass = fluidDensity * 1.333f * 3.14159f * particleSpacing * particleSpacing * particleSpacing;
+				particleSystem->setRestOffset(restOffset);
+				particleSystem->setContactOffset(restOffset + 0.01f);
+				particleSystem->setParticleContactOffset(fluidRestOffset / 0.6f);
+				particleSystem->setSolidRestOffset(solidRestOffset);
+				particleSystem->setFluidRestOffset(fluidRestOffset);
+				particleSystem->enableCCD(false);
+				particleSystem->setMaxVelocity(solidRestOffset * 100.f);
+
+				physics_holder::physicsRef->getScene()->addActor(*particleSystem);
+
+				// Diffuse particles setting
+				PxDiffuseParticleParams dpParams;
+				dpParams.threshold = 300.0f;
+				dpParams.bubbleDrag = 0.9f;
+				dpParams.buoyancy = 0.9f;
+				dpParams.airDrag = 0.0f;
+				dpParams.kineticEnergyWeight = 0.01f;
+				dpParams.pressureWeight = 1.0f;
+				dpParams.divergenceWeight = 10.f;
+				dpParams.lifetime = 1.0f;
+				dpParams.useAccurateVelocity = false;
+
+				//maxDiffuseParticles = maxDiffuseParticles;
+
+				// Create particles and add them to the particle system
+				const PxU32 particlePhase = particleSystem->createPhase(material, PxParticlePhaseFlags(PxParticlePhaseFlag::eParticlePhaseFluid | PxParticlePhaseFlag::eParticlePhaseSelfCollide));
+
+				PxU32* phase = cudaContextManager->allocPinnedHostBuffer<PxU32>(maxParticles);
+				PxVec4* positionInvMass = cudaContextManager->allocPinnedHostBuffer<PxVec4>(maxParticles);
+				PxVec4* velocity = cudaContextManager->allocPinnedHostBuffer<PxVec4>(maxParticles);
+
+				PxReal x = position.x;
+				PxReal y = position.y;
+				PxReal z = position.z;
+
+				for (PxU32 i = 0; i < numX; ++i)
 				{
-					for (PxU32 k = 0; k < numZ; ++k)
+					for (PxU32 j = 0; j < numY; ++j)
 					{
-						const PxU32 index = i * (numY * numZ) + j * numZ + k;
+						for (PxU32 k = 0; k < numZ; ++k)
+						{
+							const PxU32 index = i * (numY * numZ) + j * numZ + k;
 
-						PxVec4 pos(x, y, z, 1.0f / particleMass);
-						phase[index] = particlePhase;
-						positionInvMass[index] = pos;
-						velocity[index] = PxVec4(0.0f);
+							PxVec4 pos(x, y, z, 1.0f / particleMass);
+							phase[index] = particlePhase;
+							positionInvMass[index] = pos;
+							velocity[index] = PxVec4(0.0f);
 
-						z += particleSpacing;
+							z += particleSpacing;
+						}
+						z = position.z;
+						y += particleSpacing;
 					}
-					z = position.z;
-					y += particleSpacing;
+					y = position.y;
+					x += particleSpacing;
 				}
-				y = position.y;
-				x += particleSpacing;
+
+
+				ExtGpu::PxParticleAndDiffuseBufferDesc bufferDesc;
+				bufferDesc.maxParticles = maxParticles;
+				bufferDesc.numActiveParticles = maxParticles;
+				bufferDesc.maxDiffuseParticles = maxDiffuseParticles;
+				bufferDesc.maxActiveDiffuseParticles = maxDiffuseParticles;
+				bufferDesc.diffuseParams = dpParams;
+
+				bufferDesc.positions = positionInvMass;
+				bufferDesc.velocities = velocity;
+				bufferDesc.phases = phase;
+
+				particleBuffer = physx::ExtGpu::PxCreateAndPopulateParticleAndDiffuseBuffer(bufferDesc, cudaContextManager);
+				particleSystem->addParticleBuffer(particleBuffer);
+
+				cudaContextManager->freePinnedHostBuffer(positionInvMass);
+				cudaContextManager->freePinnedHostBuffer(velocity);
+				cudaContextManager->freePinnedHostBuffer(phase);
 			}
+			else
+			{
+				static const auto cudaCM = physics_holder::physicsRef->getCudaContextManager();
 
+				particleSystem = physics_holder::physicsRef->getPhysics()->
+					createPBDParticleSystem(*cudaCM, maxNeighborhood);
 
-			ExtGpu::PxParticleAndDiffuseBufferDesc bufferDesc;
-			bufferDesc.maxParticles = maxParticles;
-			bufferDesc.numActiveParticles = maxParticles;
-			bufferDesc.maxDiffuseParticles = maxDiffuseParticles;
-			bufferDesc.maxActiveDiffuseParticles = maxDiffuseParticles;
-			bufferDesc.diffuseParams = dpParams;
+				const PxReal particleSpacing = 0.2f;
+				const PxReal fluidDensity = 1000.f;
+				const PxReal restOffset = 0.5f * particleSpacing / 0.6f;
+				const PxReal solidRestOffset = restOffset;
+				const PxReal fluidRestOffset = restOffset * 0.6f;
+				const PxReal renderRadius = fluidRestOffset;
+				const PxReal particleMass = fluidDensity * 1.333f * M_PI * renderRadius * renderRadius * renderRadius;
 
-			bufferDesc.positions = positionInvMass;
-			bufferDesc.velocities = velocity;
-			bufferDesc.phases = phase;
+				PxU32 maxDiffuseParticles = maxParticles;
 
-			particleBuffer = physx::ExtGpu::PxCreateAndPopulateParticleAndDiffuseBuffer(bufferDesc, cudaContextManager);
-			particleSystem->addParticleBuffer(particleBuffer);
+				material = physics_holder::physicsRef->getPhysics()->
+					createPBDMaterial(0.05f, 0.05f, 0.f, 0.001f, 0.5f, 0.005f, 0.01f, 0.f, 0.f);
 
-			cudaContextManager->freePinnedHostBuffer(positionInvMass);
-			cudaContextManager->freePinnedHostBuffer(velocity);
-			cudaContextManager->freePinnedHostBuffer(phase);
+				material->setViscosity(0.001f);
+				material->setSurfaceTension(0.00704f);
+				material->setCohesion(0.0704f);
+				material->setVorticityConfinement(10.f);
 
+				particleSystem->setRestOffset(restOffset);
+				particleSystem->setContactOffset(restOffset + 0.01f);
+				particleSystem->setParticleContactOffset(PxMax(solidRestOffset + 0.01f, fluidRestOffset / 0.6f));
+				particleSystem->setSolidRestOffset(solidRestOffset);
+				particleSystem->setFluidRestOffset(fluidRestOffset);
+				particleSystem->setMaxVelocity(solidRestOffset * 100.f);
+				particleSystem->enableCCD(true);
+
+				physics_holder::physicsRef->getScene()->addActor(*particleSystem);
+
+				PxDiffuseParticleParams dpParams;
+				dpParams.threshold = 300.0f;
+				dpParams.bubbleDrag = 0.9f;
+				dpParams.buoyancy = 0.9f;
+				dpParams.airDrag = 0.0f;
+				dpParams.kineticEnergyWeight = 0.01f;
+				dpParams.pressureWeight = 1.0f;
+				dpParams.divergenceWeight = 10.f;
+				dpParams.lifetime = 1.0f;
+				dpParams.useAccurateVelocity = false;
+
+				const PxU32 particlePhase = particleSystem->createPhase(material, PxParticlePhaseFlags(PxParticlePhaseFlag::eParticlePhaseFluid | PxParticlePhaseFlag::eParticlePhaseSelfCollide));
+
+				PxU32* phase = cudaCM->allocPinnedHostBuffer<PxU32>(maxParticles);
+				PxVec4* positionInvMass = cudaCM->allocPinnedHostBuffer<PxVec4>(maxParticles);
+				PxVec4* velocity = cudaCM->allocPinnedHostBuffer<PxVec4>(maxParticles);
+
+				PxReal x = position.x;
+				PxReal y = position.y;
+				PxReal z = position.z;
+
+				for (PxU32 i = 0; i < numX; ++i)
+				{
+					for (PxU32 j = 0; j < numY; ++j)
+					{
+						for (PxU32 k = 0; k < numZ; ++k)
+						{
+							const PxU32 index = i * (numY * numZ) + j * numZ + k;
+
+							PxVec4 pos(x, y, z, 1.0f / particleMass);
+							phase[index] = particlePhase;
+							positionInvMass[index] = pos;
+							velocity[index] = PxVec4(0.0f);
+
+							z += particleSpacing;
+						}
+						z = position.z;
+						y += particleSpacing;
+					}
+					y = position.y;
+					x += particleSpacing;
+				}
+
+				ExtGpu::PxParticleAndDiffuseBufferDesc bufferDesc;
+				bufferDesc.maxParticles = maxParticles;
+				bufferDesc.numActiveParticles = maxParticles;
+				bufferDesc.maxDiffuseParticles = maxDiffuseParticles;
+				bufferDesc.maxActiveDiffuseParticles = maxDiffuseParticles;
+				bufferDesc.diffuseParams = dpParams;
+
+				bufferDesc.positions = positionInvMass;
+				bufferDesc.velocities = velocity;
+				bufferDesc.phases = phase;
+
+				particleBuffer = ExtGpu::PxCreateAndPopulateParticleAndDiffuseBuffer(bufferDesc, cudaCM);
+				particleSystem->addParticleBuffer(particleBuffer);
+
+				cudaCM->freePinnedHostBuffer(positionInvMass);
+				cudaCM->freePinnedHostBuffer(velocity);
+				cudaCM->freePinnedHostBuffer(phase);
+			}
+			
 #if PX_PARTICLE_USE_ALLOCATOR
 
 			allocator.initialize(0, maxParticles * sizeof(PxVec4) + maxDiffuseParticles * sizeof(PxVec4) + sizeof(PxVec4));
@@ -392,9 +397,9 @@ namespace physics
 	struct px_particles_component : px_physics_component_base
 	{
 		px_particles_component() = default;
-		px_particles_component(const vec3& position, int nX, int nY, int nZ) noexcept : numX(nX), numY(nY), numZ(nZ)
+		px_particles_component(const vec3& position, int nX, int nY, int nZ, bool fluid = false) noexcept : numX(nX), numY(nY), numZ(nZ)
 		{
-			particleSystem = make_ref<px_particle_system>(numX, numY, numZ, physx::createPxVec3(position));
+			particleSystem = make_ref<px_particle_system>(numX, numY, numZ, fluid, physx::createPxVec3(position));
 			//particleSystem->translate(PxVec4(position.x, position.y, position.z, 0));
 		}
 

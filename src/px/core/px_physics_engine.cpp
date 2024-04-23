@@ -370,24 +370,22 @@ void physics::px_physics_engine::start() noexcept
 void physics::px_physics_engine::update(float dt) noexcept
 {
 	static const float stepSize = 1.0f / frameRate;
+	lockWrite();
 
 	stepPhysics(stepSize);
+
+	processSimulationEventCallbacks();
 
 	syncTransforms();
 
 	{
-		lockWrite();
-
-		//::std::lock_guard<::std::mutex> lock{ sync };
-		processBlastQueue();
-
-		processSimulationEventCallbacks();
+		//processBlastQueue();
 
 		// Needs to be tested
 		blast->animate(dt);
-
-		unlockWrite();
 	}
+	unlockWrite();
+
 }
 
 void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
@@ -405,7 +403,7 @@ void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
 		}
 	}
 
-	//scene->flushSimulation();
+	scene->flushSimulation();
 	unlockWrite();
 }
 
@@ -525,7 +523,6 @@ void physics::px_physics_engine::stepPhysics(float stepSize) noexcept
 
 	void* scratchMemBlock = allocator.allocate(scratchMemBlockSize, align, true);
 
-	lockWrite();
 	scene->getTaskManager()->startSimulation();
 
 	scene->simulate(stepSize, NULL, scratchMemBlock, MB(32U));
@@ -540,13 +537,10 @@ void physics::px_physics_engine::stepPhysics(float stepSize) noexcept
 	raycastCCD->doRaycastCCD(true);
 #endif
 	allocator.reset();
-
-	unlockWrite();
 }
 
 void physics::px_physics_engine::syncTransforms() noexcept
 {
-	lockRead();
 	uint32_t tempNb;
 	PxActor** activeActors = scene->getActiveActors(tempNb);
 
@@ -579,8 +573,6 @@ void physics::px_physics_engine::syncTransforms() noexcept
 		ref<px_soft_body> sb = softBodies[i];
 		sb->copyDeformedVerticesFromGPUAsync(0);
 	}
-
-	unlockRead();
 }
 
 void physics::px_physics_engine::processBlastQueue() noexcept
@@ -597,7 +589,7 @@ void physics::px_physics_engine::processBlastQueue() noexcept
 			{
 				rb->setConstraints(0);
 
-				rb->setEnableGravity();
+				rb->setGravity(true);
 
 				rb->updateMassAndInertia(::std::max(rb->getMass(), 3.0f));
 

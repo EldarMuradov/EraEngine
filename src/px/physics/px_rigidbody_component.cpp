@@ -59,20 +59,12 @@ namespace physics
 		physics_holder::physicsRef->unlockWrite();
 	}
 
-	void px_rigidbody_component::setDisableGravity() noexcept
+	void px_rigidbody_component::setGravity(bool useGravityFlag) noexcept
 	{
 		if (!actor)
 			return;
-		actor->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, true);
-		useGravity = false;
-	}
-
-	void px_rigidbody_component::setEnableGravity() noexcept
-	{
-		if (!actor)
-			return;
-		actor->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, false);
-		useGravity = true;
+		actor->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, useGravityFlag);
+		useGravity = useGravityFlag;
 	}
 
 	void px_rigidbody_component::setMass(float mass) noexcept
@@ -374,9 +366,10 @@ namespace physics
 			coll->createShape();
 			uint32_t* h = new uint32_t[1];
 			h[0] = (uint32_t)handle;
-			coll->getShape()->userData = h;
 
-			actor->attachShape(*coll->getShape());
+			const auto& physics = physics_holder::physicsRef->getPhysics();
+			PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor, *coll->getGeometry(), *material);
+			shape->userData = h;
 
 			return actor;
 		}
@@ -404,7 +397,7 @@ namespace physics
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
 
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
-			actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
+			//actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
 			setKinematic(true);
 
 			coll->createShape();

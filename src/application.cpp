@@ -113,7 +113,7 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 
 				const auto& physicsRef = physics::physics_holder::physicsRef;
 
-				lock lock{ physicsRef->sync };
+				//lock lock{ physicsRef->sync };
 
 				physicsRef->update(data.deltaTime);
 
@@ -209,7 +209,6 @@ entity_handle cloth{};
 entity_handle particles{};
 entity_handle px_sphere{};
 entity_handle manager{};
-entity_handle manager2{};
 
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
@@ -247,17 +246,17 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>(*this);
 
 #ifndef ERA_RUNTIME
-	//if (auto mesh = loadMeshFromFileAsync("assets/Sponza/sponza.obj"))
-	//{
-	//	//model_asset ass = load3DModelFromFile("assets/Sponza/sponza.obj");
-	//	const auto& sponza = scene.createEntity("Sponza")
-	//		.addComponent<transform_component>(vec3(0.f, 0.f, 0.f), quat::identity, 0.01f)
-	//		//.addComponent<physics::px_triangle_mesh_collider_component>(&(ass.meshes[0]))
-	//		.addComponent<mesh_component>(mesh);
-	//		//.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Static);
+	if (auto mesh = loadMeshFromFileAsync("assets/Sponza/sponza.obj"))
+	{
+		model_asset ass = load3DModelFromFile("assets/Sponza/sponza.obj");
+		const auto& sponza = scene.createEntity("Sponza")
+			.addComponent<transform_component>(vec3(0.f, 0.f, 0.f), quat::identity, 0.01f)
+			.addComponent<physics::px_convex_mesh_collider_component>(&(ass.meshes[0]))
+			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Static)
+			.addComponent<mesh_component>(mesh);
 
-	//	addRaytracingComponentAsync(sponza, mesh);
-	//}
+		addRaytracingComponentAsync(sponza, mesh);
+	}
 #endif
 
 #if 0
@@ -286,10 +285,12 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		boxMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
 
 		pbr_material_desc defaultPlaneMatDesc;
-		defaultPlaneMatDesc.albedo = "";
+		defaultPlaneMatDesc.albedo = "assets/uv.jpg";
 		defaultPlaneMatDesc.normal = "";
 		defaultPlaneMatDesc.roughness = "";
-		defaultPlaneMatDesc.uvScale = 3.f;
+		defaultPlaneMatDesc.uvScale = 15.0f;
+		defaultPlaneMatDesc.metallicOverride = 0.35f;
+		defaultPlaneMatDesc.roughnessOverride = 0.01f;
 
 		auto defaultPlaneMat = createPBRMaterialAsync(defaultPlaneMatDesc);
 
@@ -316,7 +317,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
 		px_sphere1->getComponent<physics::px_rigidbody_component>().setMass(500.0f);
 
-		{
+		/*{
 			if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
 			{
 				model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
@@ -331,7 +332,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 1, defaultmat, defaultmat, 1.0f, 3.0f);
 				scene.deleteEntity(px_sphere_entt1.handle);
 			}
-		}
+		}*/
 
 		/*{
 			model_asset ass = load3DModelFromFile("assets/box.fbx");
@@ -395,13 +396,13 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<transform_component>(vec3(0.f, -2.0, 0.0f), quat::identity, vec3(1.f))
 			.addComponent<physics::px_plane_collider_component>();
 
-		//particles = scene.createEntity("ParticlesPX")
-		//	.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
-		//	.addComponent<physics::px_particles_component>(30, 60, 30).handle;
+		/*particles = scene.createEntity("ParticlesPX")
+			.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
+			.addComponent<physics::px_particles_component>(10, 10, 10, false).handle;*/
 
-		//cloth = scene.createEntity("ClothPX")
-		//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
-		//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f)).handle;
+		cloth = scene.createEntity("ClothPX")
+			.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
+			.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f)).handle;
 
 		scene.createEntity("Platform")
 			.addComponent<transform_component>(vec3(10, -6.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
@@ -566,8 +567,6 @@ void application::submitRendererParams(uint32 numSpotLightShadowPasses, uint32 n
 	}
 }
 
-bool started = false;
-
 void application::update(const user_input& input, float dt)
 {
 	resetRenderPasses();
@@ -603,13 +602,13 @@ void application::update(const user_input& input, float dt)
 	float unscaledDt = dt;
 	dt *= this->scene.getTimestepScale();
 
-	for (auto [entityHandle, terrain, position] : scene.group(component_group<terrain_component, position_component>).each())
-	{
-		eentity entity = { entityHandle, scene };
-		heightmap_collider_component* collider = entity.getComponentIfExists<heightmap_collider_component>();
+	//for (auto [entityHandle, terrain, position] : scene.group(component_group<terrain_component, position_component>).each())
+	//{
+	//	eentity entity = { entityHandle, scene };
+	//	heightmap_collider_component* collider = entity.getComponentIfExists<heightmap_collider_component>();
 
-		terrain.update(position.position, collider);
-	}
+	//	terrain.update(position.position, collider);
+	//}
 
 	//static float physicsTimer = 0.f;
 	//physicsStep(scene, stackArena, physicsTimer, physics_settings(), dt);
@@ -631,7 +630,7 @@ void application::update(const user_input& input, float dt)
 		CPU_PROFILE_BLOCK("PhysX GPU particles render step");
 		for (auto [entityHandle, particles, render] : scene.group(component_group<physics::px_particles_component, physics::px_particles_render_component>).each())
 		{
-			particles.update(false, &ldrRenderPass);
+			particles.update(true, &ldrRenderPass);
 		}
 	}
 
@@ -720,18 +719,20 @@ void application::update(const user_input& input, float dt)
 			}
 			else if (physics::px_convex_mesh_collider_component* cm = selectedEntity.getComponentIfExists<physics::px_convex_mesh_collider_component>())
 			{
-				//auto shape = cm->getShape();
-				//auto geom = (physx::PxConvexMeshGeometry*)cm->getGeometry();
-				//auto mesh = geom->convexMesh;
-
-				//auto vertices = mesh->getVertices();
-				//auto nbv = mesh->getNbVertices();
-
-				//for (size_t i = 0; i < nbv; i++)
-				//{
-				//	vec3 a = physx::createVec3(vertices[i] + shape->getLocalPose().p) + selectedEntity.getComponent<transform_component>().position;
-				//	renderPoint(a, vec4(1, 0, 0, 1), &ldrRenderPass, true);
-				//}
+				auto& rb = selectedEntity.getComponent<physics::px_rigidbody_component>();
+				physx::PxShape* shape[1];
+				rb.getRigidActor()->getShapes(shape, 1);
+				auto geom = (physx::PxConvexMeshGeometry*)cm->getGeometry();
+				auto mesh = geom->convexMesh;
+				
+				auto vertices = mesh->getVertices();
+				auto nbv = mesh->getNbVertices();
+				
+				for (size_t i = 0; i < nbv; i++)
+				{
+					vec3 a = physx::createVec3(vertices[i] + shape[0]->getLocalPose().p) + selectedEntity.getComponent<transform_component>().position;
+					renderPoint(a, vec4(1, 0, 0, 1), &ldrRenderPass, true);
+				}
 			}
 		}
 
@@ -749,16 +750,14 @@ void application::update(const user_input& input, float dt)
 			{
 				//if (!shoted)
 				//{
-				sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(500.f, 1.0f, 0.0f), physics::px_force_mode::Impulse);
-
-				//shoted = true;
+					sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(500.f, 1.0f, 0.0f), physics::px_force_mode::Impulse);
 			    //}
-			//physics::physics_holder::physicsRef->explode(vec3(0.0f, 5.0f, 3.0f), 15.0f, 300.0f);
-			//entityCloth.getComponent<physics::px_cloth_component>().clothSystem->translate(vec3(0.f, 2.f, 0.f));
-			//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
+				//physics::physics_holder::physicsRef->explode(vec3(0.0f, 5.0f, 3.0f), 15.0f, 300.0f);
+				//entityCloth.getComponent<physics::px_cloth_component>().clothSystem->translate(vec3(0.f, 2.f, 0.f));
+				//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
 			}
 
-			{
+			//{
 				/*eentity entt{ manager, &scene.registry };
 				auto& chunkManager = entt.getComponent<physics::chunk_graph_manager>();
 				chunkManager.update();
@@ -769,7 +768,7 @@ void application::update(const user_input& input, float dt)
 
 					node.getComponent<physics::chunk_graph_manager::chunk_node>().update();
 				}*/
-			}
+			//}
 
 			// Render soft bodies
 			if (!physics::physics_holder::physicsRef->softBodies.empty())
