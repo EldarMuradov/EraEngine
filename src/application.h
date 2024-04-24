@@ -50,9 +50,6 @@ struct application
 	void renderObjectBox(vec3 pos, float x, float y, float z);
 	void renderObjectSphere(vec3 pos, float radius);
 
-	//void renderObjectCapsule(vec3 pos, float radius);
-
-
 	std::vector<vec3> points;
 	void processPoints();
 
@@ -93,7 +90,7 @@ private:
 
 	enative_scripting_linker linker;
 
-	std::shared_ptr<escripting_core> core;
+	ref<escripting_core> core;
 
 	editor_scene scene;
 

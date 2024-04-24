@@ -41,6 +41,11 @@ namespace physics
 	void enableShapeInSceneQueryTests(PxShape* shape) noexcept;
 	void disableShapeInSceneQueryTests(PxShape* shape) noexcept;
 
+	struct px_collider_component_base;
+
+	template<typename T_>
+	using ColliderType = std::enable_if_t<std::is_base_of_v<struct px_collider_component_base, T_>, bool>;
+
 	struct px_collider_component_base : px_physics_component_base
 	{
 		px_collider_component_base(px_collider_type collType) noexcept : type(collType) {};
@@ -52,6 +57,12 @@ namespace physics
 		void setShape(PxShape* newShape) noexcept { shape = newShape; }
 
 		virtual bool createShape() { return false; }
+
+		template<typename T, ColliderType<T> = true>
+		NODISCARD T* is()
+		{
+			return static_cast<const T*>(this);
+		}
 
 		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) PX_RELEASE(material) RELEASE_PTR(geometry) }
 

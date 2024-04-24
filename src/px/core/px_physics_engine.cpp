@@ -134,8 +134,6 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
 	sceneDesc.frictionType = PxFrictionType::ePATCH;
-	//sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
-	//sceneDesc.flags |= PxSceneFlag::eENABLE_AVERAGE_POINT;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
@@ -145,7 +143,6 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 
 	sceneDesc.simulationEventCallback = simulationEventCallback;
 	sceneDesc.filterCallback = &simulationFilterCallback;
-	//sceneDesc.ccdContactModifyCallback = &contactModification;
 
 	scene = physics->createScene(sceneDesc);
 
@@ -745,9 +742,6 @@ void physics::px_simulation_event_callback::onConstraintBreak(PxConstraintInfo* 
 	PxRigidActor* act1;
 	PxRigidActor* act2;
 	constraints->constraint->getActors(act1, act2);
-
-	if (!act1 || !act1)
-		return;
 
 	auto rb1 = physics::physics_holder::physicsRef->actorsMap[act1];
 	auto rb2 = physics::physics_holder::physicsRef->actorsMap[act1];

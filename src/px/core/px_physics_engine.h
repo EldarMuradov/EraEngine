@@ -752,18 +752,20 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		::std::atomic_uint32_t nbActiveActors{};
 
+		application& app;
+
 		ref<px_blast> blast;
 
 		::std::set<px_rigidbody_component*> actors;
-		::std::vector<ref<px_soft_body>> softBodies;
 		::std::set<px_collider_component_base*> colliders;
-		::std::unordered_map<PxRigidActor*, px_rigidbody_component*> actorsMap;
+
+		::std::vector<ref<px_soft_body>> softBodies;
+
 		::std::queue<collision_handling_data> collisionQueue;
 		::std::queue<collision_handling_data> collisionExitQueue;
 
+		::std::unordered_map<PxRigidActor*, px_rigidbody_component*> actorsMap;
 		::std::unordered_set<uint32_t> unfreezeBlastQueue;
-
-		application& app;
 
 		::std::mutex sync;
 
@@ -782,9 +784,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		PxPhysics* physics = nullptr;
 
 		PxPvd* pvd = nullptr;
-
-		//PxDefaultErrorCallback defaultErrorCallback;
-		//PxDefaultAllocator defaultAllocatorCallback;
 
 		px_allocator_callback allocatorCallback;
 		px_error_reporter errorReporter;
@@ -808,10 +807,9 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		PxDefaultCpuDispatcher* dispatcher = nullptr;
 
 		const uint32_t nbCPUDispatcherThreads = 4;
+		bool released = false;
 
 		eallocator allocator;
-
-		bool released = false;
 	};
 
 	struct physics_holder

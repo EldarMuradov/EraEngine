@@ -1,11 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "Nhg/wbmOWLFE1M9K2/ohwnObW50q3r3nxiPBmW6cbk6Qv2f+zaI0yFuJ1SVz9B5i31+bcXKlQbi6HxDBuCt6Zw==",
+  "dgSpecHash": "PtJ6w9i9+OXANbYOce1Z/aF9vxPdo616E2CIt7jwl3/FxB6kJozxhZ9hg4JaXXzgzX8yoYTiry1ZEMjJ8rbmRw==",
   "success": true,
   "projectFilePath": "E:\\Era Engine\\scripting\\DotnetScripting-Lib\\EraEngineDomain\\EraEngineDomain.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Эльдар\\.nuget\\packages\\microsoft.dotnet.ilcompiler\\8.0.1\\microsoft.dotnet.ilcompiler.8.0.1.nupkg.sha512",
-    "C:\\Users\\Эльдар\\.nuget\\packages\\microsoft.net.illink.tasks\\8.0.1\\microsoft.net.illink.tasks.8.0.1.nupkg.sha512",
+    "C:\\Users\\Эльдар\\.nuget\\packages\\microsoft.net.illink.tasks\\8.0.4\\microsoft.net.illink.tasks.8.0.4.nupkg.sha512",
     "C:\\Users\\Эльдар\\.nuget\\packages\\microsoft.netcore.platforms\\1.0.1\\microsoft.netcore.platforms.1.0.1.nupkg.sha512",
     "C:\\Users\\Эльдар\\.nuget\\packages\\microsoft.netcore.targets\\1.0.1\\microsoft.netcore.targets.1.0.1.nupkg.sha512",
     "C:\\Users\\Эльдар\\.nuget\\packages\\simpleinjector\\5.4.4\\simpleinjector.5.4.4.nupkg.sha512",

@@ -205,10 +205,10 @@ void application::loadCustomShaders()
 	}
 }
 
-entity_handle cloth{};
-entity_handle particles{};
-entity_handle px_sphere{};
-entity_handle manager{};
+static entity_handle cloth{};
+static entity_handle particles{};
+static entity_handle px_sphere{};
+static entity_handle manager{};
 
 void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 {
@@ -456,7 +456,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	stackArena.initialize();
 
 	{
-		core = std::make_shared<escripting_core>();
+		core = make_ref<escripting_core>();
 		core->init();
 	}
 
