@@ -251,8 +251,8 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		model_asset ass = load3DModelFromFile("assets/Sponza/sponza.obj");
 		const auto& sponza = scene.createEntity("Sponza")
 			.addComponent<transform_component>(vec3(0.f, 0.f, 0.f), quat::identity, 0.01f)
-			.addComponent<physics::px_convex_mesh_collider_component>(&(ass.meshes[0]))
-			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Static)
+			//.addComponent<physics::px_convex_mesh_collider_component>(&(ass.meshes[0]))
+			//.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Static)
 			.addComponent<mesh_component>(mesh);
 
 		addRaytracingComponentAsync(sponza, mesh);
@@ -317,10 +317,10 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
 		px_sphere1->getComponent<physics::px_rigidbody_component>().setMass(500.0f);
 
-		/*{
-			if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
+		{
+			if (auto mesh = loadMeshFromFileAsync("assets/obj/bunny.obj"))
 			{
-				model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
+				model_asset ass = load3DModelFromFile("assets/obj/bunny.obj");
 
 				auto px_sphere_entt1 = scene.createEntity("BlastPXTest")
 					.addComponent<transform_component>(vec3(0.0f, 0.0f, 0.0f), quat::identity, vec3(1.0f))
@@ -332,7 +332,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 1, defaultmat, defaultmat, 1.0f, 3.0f);
 				scene.deleteEntity(px_sphere_entt1.handle);
 			}
-		}*/
+		}
 
 		/*{
 			model_asset ass = load3DModelFromFile("assets/box.fbx");
@@ -400,9 +400,9 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
 			.addComponent<physics::px_particles_component>(10, 10, 10, false).handle;*/
 
-		cloth = scene.createEntity("ClothPX")
-			.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
-			.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f)).handle;
+		//cloth = scene.createEntity("ClothPX")
+		//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
+		//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f)).handle;
 
 		scene.createEntity("Platform")
 			.addComponent<transform_component>(vec3(10, -6.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))

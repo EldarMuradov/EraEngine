@@ -338,7 +338,7 @@ namespace physics
     inline ::std::vector<::std::pair<ref<submesh_asset>, nvmesh*>> fractureMeshesInNvblast(int totalChunks, nvmesh* nvMesh, bool replace = false)
     {
         fracture_tool* fractureTool = new fracture_tool();
-        fractureTool->fractureTool->setRemoveIslands(false);
+        fractureTool->fractureTool->setRemoveIslands(true);
         fractureTool->fractureTool->setSourceMeshes(&nvMesh->mesh, 1);
         voronoi_sites_generator* generator = new voronoi_sites_generator(nvMesh);
         generator->generator->setBaseMesh(nvMesh->mesh);

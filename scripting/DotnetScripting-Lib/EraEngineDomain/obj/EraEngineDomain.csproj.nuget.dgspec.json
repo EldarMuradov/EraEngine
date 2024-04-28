@@ -48,7 +48,7 @@
             "Microsoft.DotNet.ILCompiler": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[8.0.1, )",
+              "version": "[8.0.4, )",
               "autoReferenced": true
             },
             "Microsoft.NET.ILLink.Tasks": {
@@ -76,7 +76,7 @@
           "downloadDependencies": [
             {
               "name": "runtime.win-x64.Microsoft.DotNet.ILCompiler",
-              "version": "[8.0.1, 8.0.1]"
+              "version": "[8.0.4, 8.0.4]"
             }
           ],
           "frameworkReferences": {

@@ -2,7 +2,7 @@
   "version": 3,
   "targets": {
     "net8.0": {
-      "Microsoft.DotNet.ILCompiler/8.0.1": {
+      "Microsoft.DotNet.ILCompiler/8.0.4": {
         "type": "package",
         "build": {
           "build/Microsoft.DotNet.ILCompiler.props": {}
@@ -77,10 +77,10 @@
     }
   },
   "libraries": {
-    "Microsoft.DotNet.ILCompiler/8.0.1": {
-      "sha512": "vEmBtYRsH2gpnUJ9p7ElgB2UZSx5+CF2nHVr2QJ/3kzlfAYBxqXMx3VmQcxOcrsDEuF4/n1VH95qobrj8xnPdw==",
+    "Microsoft.DotNet.ILCompiler/8.0.4": {
+      "sha512": "bVK6XD5E/BpkPmdrx99ZkloZZX3nOvTAcW+W6jW4cs8elWlLFAc9BXHk2esxSVHMiaCLiLdIJAyhUfhV50TW+Q==",
       "type": "package",
-      "path": "microsoft.dotnet.ilcompiler/8.0.1",
+      "path": "microsoft.dotnet.ilcompiler/8.0.4",
       "hasTools": true,
       "files": [
         ".nupkg.metadata",
@@ -99,7 +99,7 @@
         "build/NativeAOT.natvis",
         "build/WindowsAPIs.txt",
         "build/findvcvarsall.bat",
-        "microsoft.dotnet.ilcompiler.8.0.1.nupkg.sha512",
+        "microsoft.dotnet.ilcompiler.8.0.4.nupkg.sha512",
         "microsoft.dotnet.ilcompiler.nuspec",
         "runtime.json",
         "tools/netstandard/ILCompiler.Build.Tasks.deps.json",
@@ -366,7 +366,7 @@
   },
   "projectFileDependencyGroups": {
     "net8.0": [
-      "Microsoft.DotNet.ILCompiler >= 8.0.1",
+      "Microsoft.DotNet.ILCompiler >= 8.0.4",
       "Microsoft.NET.ILLink.Tasks >= 8.0.4",
       "SimpleInjector >= 5.4.4"
     ]
@@ -418,7 +418,7 @@
           "Microsoft.DotNet.ILCompiler": {
             "suppressParent": "All",
             "target": "Package",
-            "version": "[8.0.1, )",
+            "version": "[8.0.4, )",
             "autoReferenced": true
           },
           "Microsoft.NET.ILLink.Tasks": {
@@ -446,7 +446,7 @@
         "downloadDependencies": [
           {
             "name": "runtime.win-x64.Microsoft.DotNet.ILCompiler",
-            "version": "[8.0.1, 8.0.1]"
+            "version": "[8.0.4, 8.0.4]"
           }
         ],
         "frameworkReferences": {
