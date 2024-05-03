@@ -658,10 +658,16 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		ref<px_soft_body> addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount) noexcept;
 
 		PxPhysics* getPhysics() const noexcept { return physics; }
-		inline PxTolerancesScale getTolerancesScale() const noexcept { return toleranceScale; }
+
+		PxTolerancesScale getTolerancesScale() const noexcept { return toleranceScale; }
+
 		PxCpuDispatcher* getCPUDispatcher() const noexcept { return dispatcher; }
+
 		PxScene* getScene() const noexcept { return scene; }
+
 		PxCudaContextManager* getCudaContextManager() const noexcept { return cudaContextManager; }
+
+		PxMaterial* getDefaultMaterial() const noexcept { return defaultMaterial; }
 
 		void lockRead() noexcept { scene->lockRead(); }
 		void unlockRead() noexcept { scene->unlockRead(); }
@@ -767,7 +773,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		::std::unordered_map<PxRigidActor*, px_rigidbody_component*> actorsMap;
 		::std::unordered_set<uint32_t> unfreezeBlastQueue;
 
-		::std::mutex sync;
+		spin_lock sync;
 
 	private:
 		void stepPhysics(float stepSize) noexcept;
@@ -784,6 +790,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		PxPhysics* physics = nullptr;
 
 		PxPvd* pvd = nullptr;
+
+		PxMaterial* defaultMaterial = nullptr;
 
 		px_allocator_callback allocatorCallback;
 		px_error_reporter errorReporter;

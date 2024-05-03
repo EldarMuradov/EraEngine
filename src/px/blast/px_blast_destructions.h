@@ -429,7 +429,7 @@ namespace physics
 
     static inline uint32 maxSpliteGeneration = 3U;
 
-    static inline ::std::mutex fractureSyncObj;
+    static inline spin_lock fractureSyncObj;
 
     struct chunk_graph_manager
     {
@@ -508,7 +508,7 @@ namespace physics
             {
                 if (physics_holder::physicsRef->unfreezeBlastQueue.contains((uint32)handle))
                     return;
-                ::std::lock_guard<::std::mutex> lock (physics_holder::physicsRef->sync);
+                shared_spin_lock lock(physics_holder::physicsRef->sync);
                 uint32 value = (uint32)handle;
                 physics_holder::physicsRef->unfreezeBlastQueue.emplace(value);
                 frozen = false;

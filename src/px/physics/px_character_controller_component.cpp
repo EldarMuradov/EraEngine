@@ -12,9 +12,11 @@ namespace physics
 	{
 		type = px_cct_type::Capsule;
 		createCharacterController();
+
 		uint32_t* h = new uint32_t[1];
 		h[0] = handle;
 		controller->getActor()->userData = h;
+
 		physics_holder::physicsRef->addActor(this, controller->getActor(), false);
 	}
 
@@ -52,9 +54,11 @@ namespace physics
 		mass = m;
 		type = px_cct_type::Capsule;
 		createCharacterController();
+
 		uint32_t* hndl = new uint32_t[1];
 		hndl[0] = handle;
 		controller->getActor()->userData = hndl;
+
 		physics_holder::physicsRef->addActor(this, controller->getActor(), false);
 	}
 
@@ -70,6 +74,7 @@ namespace physics
 		PX_RELEASE(controller)
 		PX_RELEASE(manager)
 		PX_RELEASE(material)
+
 		if(releaseActor)
 			PX_RELEASE(actor)
 	}
@@ -78,9 +83,11 @@ namespace physics
 	{
 		type = px_cct_type::Box;
 		createCharacterController();
+
 		uint32_t* h = new uint32_t[1];
 		h[0] = handle;
 		controller->getActor()->userData = h;
+
 		physics_holder::physicsRef->addActor(this, controller->getActor(), false);
 	}
 
@@ -89,9 +96,11 @@ namespace physics
 		mass = m;
 		type = px_cct_type::Box;
 		createCharacterController();
+
 		uint32_t* h = new uint32_t[1];
 		h[0] = handle;
 		controller->getActor()->userData = h;
+
 		physics_holder::physicsRef->addActor(this, controller->getActor(), false);
 	}
 

@@ -1227,20 +1227,20 @@ bool eeditor::drawSceneHierarchy()
 								ImGui::PropertyValue("Mass", rb.getMass(), "%.3fkg");
 								bool dynamic = rb.type == physics::px_rigidbody_type::Dynamic;
 
-								//if (dynamic)
-								//{
-								//	vec3 lv = rb.getLinearVelocity();
-								//	vec3 lt = lv;
-								//	ImGui::PropertyValue("Linear velocity", lv);
-								//	if (lv != lt)
-								//		rb.setLinearVelocity(lv);
+								if (dynamic)
+								{
+									vec3 lv = rb.getLinearVelocity();
+									vec3 lt = lv;
+									ImGui::PropertyValue("Linear velocity", lv);
+									if (lv != lt)
+										rb.setLinearVelocity(lv);
 
-								//	vec3 av = rb.getAngularVelocity();
-								//	vec3 at = av;
-								//	ImGui::PropertyValue("Angular velocity", av);
-								//	if (av != at)
-								//		rb.setLinearVelocity(av);
-								//}
+									vec3 av = rb.getAngularVelocity();
+									vec3 at = av;
+									ImGui::PropertyValue("Angular velocity", av);
+									if (av != at)
+										rb.setLinearVelocity(av);
+								}
 
 								if (dynamic)
 								{

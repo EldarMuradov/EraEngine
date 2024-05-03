@@ -146,6 +146,8 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 
 	scene = physics->createScene(sceneDesc);
 
+	defaultMaterial = physics->createMaterial(0.7f, 0.7f, 0.8f);
+
 #if PX_ENABLE_PVD
 
 	PxPvdSceneClient* client = scene->getScenePvdClient();
@@ -189,7 +191,7 @@ void physics::px_physics_engine::release() noexcept
 {
 	if (!released)
 	{
-		lock lock{ sync };
+		sync.lock();
 
 		releaseActors();
 		releaseScene();
@@ -213,6 +215,8 @@ void physics::px_physics_engine::release() noexcept
 #endif
 
 		released = true;
+
+		sync.unlock();
 	}
 }
 
@@ -370,9 +374,8 @@ void physics::px_physics_engine::start() noexcept
 
 #endif
 
-	lockWrite();
+	physics_lock_write lock{};
 	scene->setSimulationEventCallback(simulationEventCallback);
-	unlockWrite();
 }
 
 void physics::px_physics_engine::update(float dt) noexcept
@@ -398,7 +401,7 @@ void physics::px_physics_engine::update(float dt) noexcept
 
 void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
 {
-	lockWrite();
+	physics_lock_write lock{};
 	PxU32 nbActiveActors;
 	PxActor** activeActors = scene->getActiveActors(nbActiveActors);
 
@@ -412,12 +415,11 @@ void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
 	}
 
 	scene->flushSimulation();
-	unlockWrite();
 }
 
 void physics::px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene) noexcept
 {
-	lockWrite();
+	physics_lock_write lock{};
 	if (addToScene)
 		scene->addActor(*ractor);
 
@@ -434,21 +436,19 @@ void physics::px_physics_engine::addActor(px_rigidbody_component* actor, PxRigid
 
 	actors.emplace(actor);
 	actorsMap.insert(::std::make_pair(ractor, actor));
-	unlockWrite();
 }
 
 void physics::px_physics_engine::removeActor(px_rigidbody_component* actor) noexcept
 {
-	lockWrite();
+	physics_lock_write lock{};
 	actors.erase(actor);
 	actorsMap.erase(actor->getRigidActor());
 	scene->removeActor(*actor->getRigidActor());
-	unlockWrite();
 }
 
 void physics::px_physics_engine::releaseActors() noexcept
 {
-	lockWrite();
+	physics_lock_write lock{};
 	auto gameScene = app.getCurrentScene();
 
 	for (auto& actor : actors)
@@ -459,7 +459,6 @@ void physics::px_physics_engine::releaseActors() noexcept
 	actors.clear();
 	actorsMap.clear();
 	scene->flushSimulation();
-	unlockWrite();
 }
 
 void physics::px_physics_engine::releaseScene() noexcept
@@ -539,13 +538,13 @@ void physics::px_physics_engine::stepPhysics(float stepSize) noexcept
 
 	scene->fetchResults(true);
 
-	//scene->flushSimulation();
 	scene->fetchResultsParticleSystem();
 	scene->getTaskManager()->stopSimulation();
 
 #if PX_ENABLE_RAYCAST_CCD
 	raycastCCD->doRaycastCCD(true);
 #endif
+
 	allocator.reset();
 
 	unlockWrite();

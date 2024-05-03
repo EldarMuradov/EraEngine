@@ -85,10 +85,6 @@ namespace physics
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		geometry = new PxBoxGeometry(height, length, width);
-		//shape = physics->createShape(*geometry, *material);
-
-		//enableShapeInSceneQueryTests(shape);
-		//enableShapeInContactTests(shape);
 
 		physics_holder::physicsRef->colliders.emplace(this);
 
@@ -105,10 +101,6 @@ namespace physics
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		geometry = new PxSphereGeometry(radius);
-		//shape = physics->createShape(*geometry, *material);
-
-		//enableShapeInSceneQueryTests(shape);
-		//enableShapeInContactTests(shape);
 
 		physics_holder::physicsRef->colliders.emplace(this);
 
@@ -124,10 +116,6 @@ namespace physics
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		geometry = new PxCapsuleGeometry(radius, height / 2.0f);
-		//shape = physics->createShape(*geometry, *material);
-
-		//enableShapeInSceneQueryTests(shape);
-		//enableShapeInContactTests(shape);
 
 		physics_holder::physicsRef->colliders.emplace(this);
 
@@ -147,10 +135,6 @@ namespace physics
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		geometry = new PxTriangleMeshGeometry(mesh, PxMeshScale(modelSize));
-		//shape = physics->createShape(*geometry, *material);
-
-		//enableShapeInSceneQueryTests(shape);
-		//enableShapeInContactTests(shape);
 
 		PX_RELEASE(mesh);
 
@@ -198,7 +182,6 @@ namespace physics
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		geometry = new PxTriangleMeshGeometry(mesh, PxMeshScale(modelSize));
-		//shape = physics->createShape(*geometry, *material);
 
 		PX_RELEASE(mesh);
 
@@ -309,12 +292,6 @@ namespace physics
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		geometry = new PxConvexMeshGeometry(mesh, PxMeshScale(createPxVec3(modelSize)));
-		//shape = physics->createShape(*geometry, *material);
-
-		//enableShapeInSceneQueryTests(shape);
-		//enableShapeInContactTests(shape);
-
-		//PX_RELEASE(mesh);
 
 		physics_holder::physicsRef->colliders.emplace(this);
 
@@ -366,5 +343,4 @@ namespace physics
 
 		return mesh_adapter.createConvexMesh(meshDesc);
 	}
-
 }

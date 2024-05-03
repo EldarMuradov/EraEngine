@@ -7,6 +7,60 @@
 
 namespace physics
 {
+	struct physics_lock
+	{
+		virtual void lock() noexcept = 0;
+		virtual void unlock() noexcept = 0;
+
+		virtual ~physics_lock() {}
+	};
+
+	struct physics_lock_read : physics_lock
+	{
+		physics_lock_read() noexcept
+		{
+			lock();
+		}
+
+		~physics_lock_read()
+		{
+			unlock();
+		}
+
+		virtual void lock() noexcept
+		{
+			physics_holder::physicsRef->lockRead();
+		}
+
+		virtual void unlock() noexcept
+		{
+			physics_holder::physicsRef->unlockRead();
+		}
+	};
+
+	struct physics_lock_write : physics_lock
+	{
+		physics_lock_write() noexcept
+		{
+			lock();
+		}
+
+		~physics_lock_write()
+		{
+			unlock();
+		}
+
+		virtual void lock() noexcept
+		{
+			physics_holder::physicsRef->lockWrite();
+		}
+
+		virtual void unlock() noexcept
+		{
+			physics_holder::physicsRef->unlockWrite();
+		}
+	};
+
 	// Computation by Direct Parameterization of Triangles
 	inline void computeIntegralTerm(float w0, float w1, float w2, float& f1, float& f2, float& f3, float& g0, float& g1, float& g2) noexcept
 	{
@@ -172,6 +226,7 @@ namespace physics
 
 		PxAgain processTouches(const PxOverlapHit* buffer, PxU32 nbHits)
 		{
+			physics_lock_write lock{};
 			physics_holder::physicsRef->lockWrite();
 			for (PxU32 i = 0; i < nbHits; ++i)
 			{
@@ -191,16 +246,15 @@ namespace physics
 					}
 				}
 			}
-			physics_holder::physicsRef->unlockWrite();
 			return true;
 		}
 
 	private:
-		PxOverlapHit hitBuffer[1000];
-		float explosiveImpulse;
 		::std::set<PxRigidDynamic*> actorBuffer;
-		PxVec3 worldPosition;
+		float explosiveImpulse;
 		float radius;
+		PxVec3 worldPosition;
+		PxOverlapHit hitBuffer[512];
 	};
 
 	struct px_debug_render_buffer : PxRenderBuffer

@@ -13,6 +13,7 @@ internal static class DependencyResolver
         ESystemManager.RegisterSystem<InputSystem>();
         ESystemManager.RegisterSystem<EventSystem>();
     }
+
     private static bool IsSystemType(Type type) => type.GetInterface("IESystem") is not null && type.IsClass;
 
     public static void RegisterAllSystemsWithReflection() 

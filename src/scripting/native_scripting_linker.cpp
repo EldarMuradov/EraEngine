@@ -9,14 +9,11 @@
 #include <ai/navigation_component.h>
 #include <fstream>
 #include <core/project.h>
+#include <semaphore>
+#include <core/string.h>
 
 application* enative_scripting_linker::app;
 std::vector<std::string> enative_scripting_linker::script_types;
-
-#include <Windows.h>
-#include <semaphore>
-#include <core/project.h>
-#include <core/string.h>
 
 namespace
 {
@@ -47,7 +44,7 @@ namespace
 	comp_fn create_compf;
 	comp_fn remove_compf;
 
-	std::binary_semaphore s(1);
+	spin_lock slock;
 }
 
 static void get_all_functions_and_start()
@@ -150,7 +147,7 @@ static void exec()
 
 	get_all_functions_and_start();
 	
-	s.release();
+	slock.unlock();
 }
 
 static void load()
@@ -225,7 +222,7 @@ namespace
 
 static int init_dotnet()
 {
-	s.acquire();
+	slock.lock();
 
 	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)load, NULL, NULL, NULL);
 	return 0;
@@ -233,7 +230,7 @@ static int init_dotnet()
 
 namespace bind
 {
-	static void add_force_internal(uint32_t id, uint8_t mode, float* force)
+	static void add_force_internal(uint32_t id, uint8_t mode, float* force) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -248,7 +245,7 @@ namespace bind
 			std::cerr << "bliaaaa addForce";
 	}
 
-	static void add_torque_internal(uint32_t id, uint8_t mode, float* torque)
+	static void add_torque_internal(uint32_t id, uint8_t mode, float* torque) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -263,7 +260,7 @@ namespace bind
 			std::cerr << "bliaaaa addTorque";
 	}
 
-	static void initialize_rigidbody_internal(uint32_t id, uint8_t type)
+	static void initialize_rigidbody_internal(uint32_t id, uint8_t type) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -272,7 +269,7 @@ namespace bind
 			entity.addComponent<physics::px_rigidbody_component>((physics::px_rigidbody_type)type);
 	}
 
-	static void overlap_sphere_internal(uint32_t id, uint8_t type)
+	static void overlap_sphere_internal(uint32_t id, uint8_t type) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -281,7 +278,7 @@ namespace bind
 			entity.addComponent<physics::px_rigidbody_component>((physics::px_rigidbody_type)type);
 	}
 
-	static float get_mass_internal(uint32_t id)
+	static float get_mass_internal(uint32_t id) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -292,7 +289,7 @@ namespace bind
 			return -1.0f;
 	}
 
-	static void set_mass_internal(uint32_t id, float mass)
+	static void set_mass_internal(uint32_t id, float mass) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -303,7 +300,7 @@ namespace bind
 			std::cerr << "bliaaaa";
 	}
 
-	static float* get_linear_velocity_internal(uint32_t id)
+	static float* get_linear_velocity_internal(uint32_t id) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -320,7 +317,7 @@ namespace bind
 			return new float[3];
 	}
 
-	static uint32_t create_entity_internal(const char* name)
+	static uint32_t create_entity_internal(const char* name) noexcept
 	{
 	    auto scene = enative_scripting_linker::app->getCurrentScene();
 		return (uint32_t)scene->createEntity(name)
@@ -328,7 +325,7 @@ namespace bind
 			.handle;
 	}
 
-	static float* get_angular_velocity_internal(uint32_t id)
+	static float* get_angular_velocity_internal(uint32_t id) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -345,7 +342,7 @@ namespace bind
 			return new float[3];
 	}
 
-	static void create_script_internal(uint32_t id, const char* name)
+	static void create_script_internal(uint32_t id, const char* name) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -360,7 +357,7 @@ namespace bind
 		}
 	}
 
-	static void remove_component_internal(uint32_t id, const char* name)
+	static void remove_component_internal(uint32_t id, const char* name) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -372,12 +369,12 @@ namespace bind
 		}
 	}
 
-	static void create_component_internal(uint32_t id, const char* name)
+	static void create_component_internal(uint32_t id, const char* name) noexcept
 	{
 		
 	}
 
-	static void initialize_navigation_internal(uint32_t id, uint8_t type)
+	static void initialize_navigation_internal(uint32_t id, uint8_t type) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -386,7 +383,7 @@ namespace bind
 			entity.addComponent<navigation_component>((nav_type)type);
 	}
 
-	static void set_destination_internal(uint32_t id, float* destPtr)
+	static void set_destination_internal(uint32_t id, float* destPtr) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
@@ -402,7 +399,7 @@ namespace bind
 		}
 	}
 
-	static void log_message_internal(uint8_t mode, const char* message)
+	static void log_message_internal(uint8_t mode, const char* message) noexcept
 	{
 		message_type type = (message_type)mode;
 
@@ -414,7 +411,7 @@ namespace bind
 			LOG_MESSAGE(message);
 	}
 
-	static void send_type_internal(const char* type)
+	static void send_type_internal(const char* type) noexcept
 	{
 		std::cout << "Type found: " << type << "\n";
 		enative_scripting_linker::script_types.push_back(type);
@@ -436,7 +433,7 @@ void enative_scripting_linker::init()
 	bindFunctions();
 
 	init_dotnet();
-	s.acquire();
+	slock.lock();
 }
 
 void enative_scripting_linker::release()

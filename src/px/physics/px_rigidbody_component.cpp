@@ -8,6 +8,7 @@
 #include "core/math.h"
 #include "application.h"
 #include "px_rigidbody_component.h"
+#include <px/core/px_extensions.h>
 
 namespace physics
 {
@@ -26,7 +27,7 @@ namespace physics
 	{
 		if (!actor)
 			return;
-		physics_holder::physicsRef->lockWrite();
+		physics_lock_write lock{};
 		if (mode == px_force_mode::Force)
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eFORCE);
 		else if (mode == px_force_mode::Impulse)
@@ -37,14 +38,13 @@ namespace physics
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eACCELERATION);
 		else
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eFORCE);
-		physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::addTorque(vec3 torque, px_force_mode mode) noexcept
 	{
 		if (!actor)
 			return;
-		physics_holder::physicsRef->lockWrite();
+		physics_lock_write lock{};
 		if (mode == px_force_mode::Force)
 			actor->is<PxRigidDynamic>()->addTorque(PxVec3(torque.x, torque.y, torque.z), PxForceMode::eFORCE);
 		else if (mode == px_force_mode::Impulse)
@@ -55,8 +55,6 @@ namespace physics
 			actor->is<PxRigidDynamic>()->addTorque(PxVec3(torque.x, torque.y, torque.z), PxForceMode::eACCELERATION);
 		else
 			actor->is<PxRigidDynamic>()->addTorque(PxVec3(torque.x, torque.y, torque.z), PxForceMode::eFORCE);
-
-		physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::setGravity(bool useGravityFlag) noexcept
@@ -71,98 +69,108 @@ namespace physics
 	{
 		if (!actor)
 			return;
-		physics_holder::physicsRef->lockWrite();
-		this->mass = mass;
-		actor->is<PxRigidDynamic>()->setMass(mass);
-		physics_holder::physicsRef->unlockWrite();
+
+		if (auto dyn = actor->is<PxRigidDynamic>())
+		{
+			physics_lock_write lock{};
+			dyn->setMass(mass);
+			this->mass = mass;
+		}
 	}
 
 	void px_rigidbody_component::setConstraints(uint8 constraints) noexcept
 	{
 		if (!actor)
 			return;
-		actor->is<PxRigidDynamic>()->setRigidDynamicLockFlags((physx::PxRigidDynamicLockFlags)constraints);
+
+		if (auto dyn = actor->is<PxRigidDynamic>())
+		{
+			physics_lock_write lock{};
+			dyn->setRigidDynamicLockFlags((physx::PxRigidDynamicLockFlags)constraints);
+		}
 	}
 
 	NODISCARD uint8 px_rigidbody_component::getConstraints() const noexcept
 	{
 		if (!actor)
 			return 0;
-		return (uint8)actor->is<PxRigidDynamic>()->getRigidDynamicLockFlags();
+
+		if (auto dyn = actor->is<PxRigidDynamic>())
+		{
+			physics_lock_read lock{};
+			return dyn->getRigidDynamicLockFlags();
+		}
+		return 0;
 	}
 
 	void px_rigidbody_component::clearForceAndTorque() noexcept
 	{
 		if (!actor)
 			return;
-		physics_holder::physicsRef->lockWrite();
 		if (auto dyn = actor->is<PxRigidDynamic>())
 		{
+			physics_lock_write lock{};
 			dyn->clearForce();
 			dyn->clearTorque();
 		}
-		physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::setMassSpaceInertiaTensor(const vec3& tensor) noexcept
 	{
 		if (!actor)
 			return;
-		physics::physics_holder::physicsRef->lockWrite();
 		if (auto dyn = actor->is<PxRigidDynamic>())
 		{
+			physics_lock_write lock{};
 			dyn->setMassSpaceInertiaTensor(physx::createPxVec3(tensor));
 		}
-		physics::physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::updateMassAndInertia(float density) noexcept
 	{
 		if (!actor)
 			return;
-		physics::physics_holder::physicsRef->lockWrite();
 		if (auto dyn = actor->is<PxRigidDynamic>())
+		{
+			physics_lock_write lock{};
 			PxRigidBodyExt::updateMassAndInertia(*dyn, density);
-		physics::physics_holder::physicsRef->unlockWrite();
+		}
 	}
 
 	void px_rigidbody_component::setMaxContactImpulseFlag(bool state) noexcept
 	{
 		if (!actor)
 			return;
-		physics_holder::physicsRef->lockWrite();
 		if (auto dyn = actor->is<PxRigidDynamic>())
 		{
+			physics_lock_write lock{};
 			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_MAX_CONTACT_IMPULSE, state);
 		}
-		physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::setKinematic(bool kinematic)
 	{
 		if (!actor)
 			return;
-		physics_holder::physicsRef->lockWrite();
 		if (auto dyn = actor->is<PxRigidDynamic>())
 		{
+			physics_lock_write lock{};
 			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, !kinematic);
 			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, !kinematic);
 			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, !kinematic);
 			dyn->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, kinematic);
 			isKinematic = kinematic;
 		}
-		physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::setLinearVelocity(vec3 velocity)
 	{
 		if (!actor)
 			return;
-		if (actor->is<PxRigidDynamic>())
+		if (auto dyn = actor->is<PxRigidDynamic>())
 		{
-			physics_holder::physicsRef->lockWrite();
-			actor->is<PxRigidDynamic>()->setLinearVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
-			physics_holder::physicsRef->unlockWrite();
+			physics_lock_write lock{};
+			dyn->setLinearVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
 		}
 	}
 
@@ -170,11 +178,10 @@ namespace physics
 	{
 		if (!actor)
 			return vec3();
-		if (actor->is<PxRigidDynamic>())
+		if (auto dyn = actor->is<PxRigidDynamic>())
 		{
-			physics_holder::physicsRef->lockRead();
-			PxVec3 vel = actor->is<PxRigidDynamic>()->getLinearVelocity();
-			physics_holder::physicsRef->unlockRead();
+			physics_lock_read lock{};
+			PxVec3 vel = dyn->getLinearVelocity();
 			return vec3(vel.x, vel.y, vel.z);
 		}
 		return vec3();
@@ -184,11 +191,10 @@ namespace physics
 	{
 		if (!actor)
 			return;
-		if (actor->is<PxRigidDynamic>())
+		if (auto dyn = actor->is<PxRigidDynamic>())
 		{
-			physics_holder::physicsRef->lockWrite();
-			actor->is<PxRigidDynamic>()->setAngularVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
-			physics_holder::physicsRef->unlockWrite();
+			physics_lock_write lock{};
+			dyn->setAngularVelocity(PxVec3(velocity.x, velocity.y, velocity.z));
 		}
 	}
 
@@ -196,11 +202,10 @@ namespace physics
 	{
 		if (!actor)
 			return;
-		if (actor->is<PxRigidDynamic>())
+		if (auto dyn = actor->is<PxRigidDynamic>())
 		{
-			physics_holder::physicsRef->lockWrite();
-			actor->is<PxRigidDynamic>()->setMaxLinearVelocity(velocity);
-			physics_holder::physicsRef->unlockWrite();
+			physics_lock_write lock{};
+			dyn->setMaxLinearVelocity(velocity);
 		}
 	}
 
@@ -208,11 +213,10 @@ namespace physics
 	{
 		if (!actor)
 			return;
-		if (actor->is<PxRigidDynamic>())
+		if (auto dyn = actor->is<PxRigidDynamic>())
 		{
-			physics_holder::physicsRef->lockWrite();
-			actor->is<PxRigidDynamic>()->setMaxAngularVelocity(velocity);
-			physics_holder::physicsRef->unlockWrite();
+			physics_lock_write lock{};
+			dyn->setMaxAngularVelocity(velocity);
 		}
 	}
 
@@ -220,11 +224,11 @@ namespace physics
 	{
 		if (!actor)
 			return vec3();
-		if (actor->is<PxRigidDynamic>())
+
+		if (auto dyn = actor->is<PxRigidDynamic>())
 		{
-			physics_holder::physicsRef->lockRead();
-			PxVec3 vel = actor->is<PxRigidDynamic>()->getAngularVelocity();
-			physics_holder::physicsRef->unlockRead();
+			physics_lock_read lock{};
+			PxVec3 vel = dyn->getAngularVelocity();
 			return vec3(vel.x, vel.y, vel.z);
 		}
 		return vec3();
@@ -234,9 +238,8 @@ namespace physics
 	{
 		if (!actor)
 			return vec3();
-		physics_holder::physicsRef->lockRead();
+		physics_lock_read lock{};
 		PxVec3 pos = actor->getGlobalPose().p;
-		physics_holder::physicsRef->unlockRead();
 		return vec3(pos.x, pos.y, pos.z);
 	}
 
@@ -244,49 +247,46 @@ namespace physics
 	{
 		if (!actor)
 			return;
-		physics_holder::physicsRef->lockWrite();
+		physics_lock_write lock{};
+
 		setAngularVelocity(vec3(0.0f));
 		setLinearVelocity(vec3(0.0f));
-		PxQuat nq = physx::createPxQuat(rot);
 
-		actor->setGlobalPose(PxTransform(physx::createPxVec3(pos), nq.getConjugate()));
-		physics_holder::physicsRef->unlockWrite();
+		actor->setGlobalPose(PxTransform(physx::createPxVec3(pos), physx::createPxQuat(rot)));
 	}
 
 	void px_rigidbody_component::setAngularDamping(float damping)
 	{
 		if (!actor)
 			return;
-		physics_holder::physicsRef->lockWrite();
+		physics_lock_write lock{};
 		if (damping > 0.0f)
 			actor->is<PxRigidDynamic>()->setAngularDamping(damping);
-		physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::setLinearDamping(float damping)
 	{
 		if (!actor)
 			return;
-		physics_holder::physicsRef->lockWrite();
+		physics_lock_write lock{};
 		if (damping > 0.0f)
 			actor->is<PxRigidDynamic>()->setLinearDamping(damping);
-		physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::setThreshold(float stabilization, float sleep)
 	{
 		if (!actor)
 			return;
-		physics_holder::physicsRef->lockWrite();
+		physics_lock_write lock{};
 		actor->is<PxRigidDynamic>()->setStabilizationThreshold(stabilization);
 		actor->is<PxRigidDynamic>()->setSleepThreshold(sleep);
-		physics_holder::physicsRef->unlockWrite();
 	}
 
 	void px_rigidbody_component::release(bool releaseActor) noexcept
 	{
 		if (!actor)
 			return;
+
 		physics_holder::physicsRef->removeActor(this);
 
 		PX_RELEASE(material)
@@ -310,7 +310,7 @@ namespace physics
 
 	void px_rigidbody_component::createPhysics(bool addToScene)
 	{
-		physics_holder::physicsRef->lockWrite();
+		physics_lock_write lock{};
 
 		actor = createActor();
 		uint32_t* h = new uint32_t[1];
@@ -322,8 +322,6 @@ namespace physics
 #if PX_ENABLE_PVD
 		actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
 #endif
-
-		physics_holder::physicsRef->unlockWrite();
 	}
 
 	NODISCARD PxRigidActor* px_rigidbody_component::createActor()

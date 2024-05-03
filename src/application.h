@@ -14,17 +14,17 @@
 #include "particles/boid_particle_system.h"
 #include "particles/debris_particle_system.h"
 #include "rendering/raytracing.h"
-#include "editor/editor.h"
 #include "learning/learned_locomotion.h"
 #include <px/core/px_physics_engine.h>
 #include <EraScriptingLauncher-Lib/scripting_core.h>
 #include <scripting/native_scripting_linker.h>
 
-#if ERA_RUNTIME
-
+#ifdef ERA_RUNTIME
 #include "core/runtime.h"
-
+#else
+#include "editor/editor.h"
 #endif
+
 
 void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh);
 

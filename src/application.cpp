@@ -224,6 +224,16 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	scene.environment.setFromTexture("assets/sky/sunset_in_the_chalk_quarry_4k.hdr");
 	scene.environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
 
+	physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>(*this);
+
+	escene& scene = this->scene.getCurrentScene();
+
+	{
+		CPU_PROFILE_BLOCK("Binding for scripting initialization");
+		linker.app = this;
+		linker.init();
+	}
+
 #ifndef ERA_RUNTIME
 
 	editor.initialize(&this->scene, renderer, editorPanels);
@@ -234,16 +244,6 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	rt.initialize(&this->scene, renderer);
 
 #endif
-
-	escene& scene = this->scene.getCurrentScene();
-
-	{
-		CPU_PROFILE_BLOCK("Binding for scripting initialization");
-		linker.app = this;
-		linker.init();
-	}
-
-	physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>(*this);
 
 #ifndef ERA_RUNTIME
 	if (auto mesh = loadMeshFromFileAsync("assets/Sponza/sponza.obj"))
@@ -299,7 +299,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
 
 		//model_asset ass = load3DModelFromFile("assets/sphere.fbx");
-		auto px_sphere_entt = scene.createEntity("SpherePX", (entity_handle)60)
+		auto& px_sphere_entt = scene.createEntity("SpherePX", (entity_handle)60)
 			.addComponent<transform_component>(vec3(-10.0f, 5.0f, -3.0f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			.addComponent<mesh_component>(sphereMesh)
 			//.addComponent<physics::px_convex_mesh_collider_component>(&(ass.meshes[0]))
@@ -322,7 +322,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			{
 				model_asset ass = load3DModelFromFile("assets/obj/bunny.obj");
 
-				auto px_sphere_entt1 = scene.createEntity("BlastPXTest")
+				auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
 					.addComponent<transform_component>(vec3(0.0f, 0.0f, 0.0f), quat::identity, vec3(1.0f))
 					.addComponent<mesh_component>(mesh);
 

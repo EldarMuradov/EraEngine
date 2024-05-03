@@ -3,12 +3,27 @@
 #include <pch.h>
 #include "runtime.h"
 #include <core/imgui.h>
+#include <scene/serialization_yaml.h>
 
 void runtime::initialize(editor_scene* scene, main_renderer* renderer)
 {
 	this->scene = scene;
 	this->renderer = renderer;
 	cameraController.initialize(&scene->camera);
+
+	std::string environmentName;
+	if (deserializeSceneFromCurrentYAMLFile("assets/sample_scene.sc", *scene, renderer->settings, environmentName))
+	{
+		scene->stop();
+
+		scene->environment.setFromTexture(environmentName);
+		scene->environment.forceUpdate(this->scene->sun.direction);
+		renderer->pathTracer.resetRendering();
+
+		::std::cout << "load scene\n";
+	}
+	else
+		::std::cout << "Error\n";
 }
 
 void runtime::update()
@@ -16,4 +31,6 @@ void runtime::update()
 	CPU_PROFILE_BLOCK("Update runtime");
 
 	cameraController.update(renderer->renderWidth, renderer->renderHeight);
+
+	::std::cout << "update\n";
 }
