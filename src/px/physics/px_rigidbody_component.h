@@ -114,6 +114,8 @@ namespace physics
 
 		PxRigidActor* actor = nullptr;
 
+		uint32_t* userData = new uint32_t[1];
+
 		float restitution = 0.6f;
 
 		float mass = 1;

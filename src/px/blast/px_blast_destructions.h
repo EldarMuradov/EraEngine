@@ -2,9 +2,6 @@
 
 #pragma once
 
-#include <map>
-#include <unordered_set>
-
 #include <px/core/px_physics_engine.h>
 #include <rendering/main_renderer.h>
 #include <px/core/px_extensions.h>
@@ -12,8 +9,6 @@
 #include <scripting/native_scripting_linker.h>
 #include <scene/scene.h>
 #include <asset/mesh_postprocessing.h>
-#include <random>
-#include <iomanip>
 #include <px/physics/px_joint.h>
 
 #if !_DEBUG
@@ -53,8 +48,8 @@ namespace physics
         entity_handle chunk1{};
         entity_handle chunk2{};
 
-        chunkPair(uint32 c1, uint32 c2) : chunk1((entity_handle)c1), chunk2((entity_handle)c2) {}
-        chunkPair(entity_handle c1, entity_handle c2) : chunk1(c1), chunk2(c2) {}
+        chunkPair(uint32 c1, uint32 c2) noexcept : chunk1((entity_handle)c1), chunk2((entity_handle)c2) {}
+        chunkPair(entity_handle c1, entity_handle c2) noexcept : chunk1(c1), chunk2(c2) {}
     };
 
     inline bool operator==(const chunkPair& lhs, const chunkPair& rhs)
@@ -113,18 +108,18 @@ namespace physics
         vec3 center;
         vec3 extents;
 
-        void setMinMax(const vec3& min, const vec3& max)
+        void setMinMax(const vec3& min, const vec3& max) noexcept
         {
             extents = (max - min) * 0.5f;
             center = min + extents;
         }
 
-        void encapsulate(const vec3& point)
+        void encapsulate(const vec3& point) noexcept
         {
             setMinMax(::min(center - extents, point), ::max(center + extents, point));
         }
 
-        void encapsulate(const bounds& bounds)
+        void encapsulate(const bounds& bounds) noexcept
         {
             encapsulate(bounds.center - bounds.extents);
             encapsulate(bounds.center + bounds.extents);
@@ -181,7 +176,7 @@ namespace physics
         Nv::Blast::Mesh* mesh = nullptr;
 
         nvmesh(::std::vector<physx::PxVec3> verts, ::std::vector<physx::PxVec3> norms,
-            ::std::vector<physx::PxVec2> uvis, ::std::vector<uint32_t> inds)
+            ::std::vector<physx::PxVec2> uvis, ::std::vector<uint32_t> inds) noexcept
             : vertices(verts),
             normals(norms),
             uvs(uvis),
@@ -191,13 +186,13 @@ namespace physics
                 vertices.size(), indices.data(), indices.size());
         }
 
-        nvmesh()
+        nvmesh() noexcept
         {
             mesh = NvBlastExtAuthoringCreateMesh((NvcVec3*)vertices.data(), (NvcVec3*)normals.data(), (NvcVec2*)uvs.data(),
                 vertices.size(), indices.data(), indices.size());
         }
 
-        nvmesh(Nv::Blast::Mesh* inMesh)
+        nvmesh(Nv::Blast::Mesh* inMesh) noexcept
         {
             mesh = inMesh;
 
@@ -213,7 +208,12 @@ namespace physics
             }
         }
 
-        void release()
+        ~nvmesh()
+        {
+            release();
+        }
+
+        void release() noexcept
         {
             vertices.clear();
             normals.clear();
@@ -223,25 +223,27 @@ namespace physics
             RELEASE_PTR(mesh);
         }
 
-        void cleanMesh()
+        void cleanMesh() noexcept
         {
             Nv::Blast::MeshCleaner* cleaner = NvBlastExtAuthoringCreateMeshCleaner();
             mesh = cleaner->cleanMesh(mesh);
+
+            RELEASE_PTR(cleaner)
         }
     };
 
     struct nvmesh_chunk_component : px_physics_component_base
     {
         nvmesh_chunk_component() = default;
-        nvmesh_chunk_component(nvmesh* inputMesh) : mesh(inputMesh) {}
+        nvmesh_chunk_component(ref<nvmesh> inputMesh) : mesh(inputMesh) {}
         ~nvmesh_chunk_component() {}
 
         virtual void release(bool release = false) noexcept override { PX_RELEASE(mesh) }
 
-        nvmesh* mesh = nullptr;
+        ref<nvmesh> mesh = nullptr;
     };
 
-    inline ref<submesh_asset> createRenderMesh(const physics::nvmesh& simpleMesh)
+    inline NODISCARD ref<submesh_asset> createRenderMesh(const physics::nvmesh& simpleMesh)
     {
         ref<submesh_asset> asset = make_ref<submesh_asset>();
 
@@ -261,6 +263,7 @@ namespace physics
         {
             asset->positions.push_back(physx::createVec3(vert));
         }
+
         for (auto& uv : simpleMesh.uvs)
         {
             asset->uvs.push_back(physx::createVec2(uv));
@@ -269,7 +272,6 @@ namespace physics
         for (auto& norm : simpleMesh.normals)
         {
             asset->normals.push_back(physx::createVec3(norm));
-            //asset->tangents.push_back(getTangent(physx::createVec3(norm)));
         }
 
         for (uint32_t i = 0; i < simpleMesh.indices.size(); i += 3)
@@ -289,9 +291,14 @@ namespace physics
     {
         Nv::Blast::FractureTool* fractureTool = nullptr;
 
-        fracture_tool()
+        fracture_tool() noexcept
         {
             fractureTool = NvBlastExtAuthoringCreateFractureTool();
+        }
+
+        ~fracture_tool()
+        {
+            PX_RELEASE(fractureTool)
         }
     };
 
@@ -317,56 +324,119 @@ namespace physics
 
     struct voronoi_sites_generator
     {
-        randomGenerator* rndGen = nullptr;
+        ref<randomGenerator> rndGen = nullptr;
         Nv::Blast::VoronoiSitesGenerator* generator = nullptr;
 
-        voronoi_sites_generator(nvmesh* mesh)
+        voronoi_sites_generator(ref<nvmesh> mesh) noexcept
         {
-            rndGen = new randomGenerator();
-            generator = NvBlastExtAuthoringCreateVoronoiSitesGenerator(mesh->mesh, rndGen);
+            rndGen = make_ref<randomGenerator>();
+            generator = NvBlastExtAuthoringCreateVoronoiSitesGenerator(mesh->mesh, rndGen.get());
         }
 
         void release()
         {
-            RELEASE_PTR(rndGen)
             RELEASE_PTR(generator)
         }
     };
 
-    static inline int maxSplitting = 1;
-
-    inline ::std::vector<::std::pair<ref<submesh_asset>, nvmesh*>> fractureMeshesInNvblast(int totalChunks, nvmesh* nvMesh, bool replace = false)
+    struct int_pair_hash
     {
-        fracture_tool* fractureTool = new fracture_tool();
+        template <class T1, class T2>
+        std::size_t operator () (const std::pair<T1, T2>& p) const
+        {
+            auto h1 = std::hash<T1>{}(p.first);
+            auto h2 = std::hash<T2>{}(p.second);
+            return h1 ^ h2;
+        }
+    };
+
+    inline void solveOpenEdges(::std::vector<uint32_t> indices) noexcept
+    {
+        ::std::unordered_map<::std::pair<uint32_t, uint32_t>, int, int_pair_hash> edgeCounts;
+        ::std::unordered_map<uint32_t, ::std::vector<uint32_t>> openEdges;
+
+        for (size_t i = 0; i < indices.size(); i += 3)
+        {
+            uint32_t v1 = indices[i];
+            uint32_t v2 = indices[i + 1];
+            uint32_t v3 = indices[i + 2];
+
+            edgeCounts[{v1, v2}]++;
+            edgeCounts[{v2, v3}]++;
+            edgeCounts[{v3, v1}]++;
+        }
+
+        for (const auto& pair : edgeCounts)
+        {
+            if (pair.second == 1)
+            {
+                openEdges[pair.first.first].push_back(pair.first.second);
+                openEdges[pair.first.second].push_back(pair.first.first);
+            }
+        }
+
+        for (const auto& pair : openEdges)
+        {
+            if (pair.second.size() == 2)
+            {
+                // This vertex is shared by two open edges
+                // Add a new triangle to close the gap
+                indices.push_back(pair.first);
+                indices.push_back(pair.second[0]);
+                indices.push_back(pair.second[1]);
+            }
+        }
+    }
+
+    inline NODISCARD::std::vector<::std::pair<ref<submesh_asset>, ref<nvmesh>>> fractureMeshesInNvblast(int totalChunks, ref<nvmesh> nvMesh, bool replace = false)
+    {
+        ref<fracture_tool> fractureTool = make_ref<fracture_tool>();
         fractureTool->fractureTool->setRemoveIslands(true);
         fractureTool->fractureTool->setSourceMeshes(&nvMesh->mesh, 1);
-        voronoi_sites_generator* generator = new voronoi_sites_generator(nvMesh);
+        ref<voronoi_sites_generator> generator = make_ref<voronoi_sites_generator>(nvMesh);
         generator->generator->setBaseMesh(nvMesh->mesh);
 
-        {
-            generator->generator->uniformlyGenerateSitesInMesh(totalChunks);
-            const NvcVec3* sites;
-            size_t nbSites = generator->generator->getVoronoiSites(sites);
-            //int result = fractureTool->fractureTool->cut(0, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, {}, false, generator->rndGen);
-            int result = fractureTool->fractureTool->voronoiFracturing(0, nbSites, sites, replace);
+        auto fractureFunc = [&]()
+            {
+                generator->generator->uniformlyGenerateSitesInMesh(totalChunks);
 
-            fractureTool->fractureTool->finalizeFracturing();
-        }
+                const NvcVec3* sites;
+                size_t nbSites = generator->generator->getVoronoiSites(sites);
+
+                int result = fractureTool->fractureTool->voronoiFracturing(0, nbSites, sites, replace);
+
+                //fractureTool->fractureTool->uniteChunks(0.1f, totalChunks, nullptr, 0, nullptr, 0);
+
+                if (result != 0)
+                {
+                    LOG_ERROR("NvBlast> Failed to fracture mesh!");
+                    return;
+                }
+
+                fractureTool->fractureTool->finalizeFracturing();
+            };
+
+        ::std::packaged_task<void()> task{ fractureFunc };
+        ::std::future<void> future = task.get_future();
+
+        ::std::jthread thread{ ::std::move(task) };
+
+        future.get();
 
         // Extract meshes
         size_t meshCount = fractureTool->fractureTool->getChunkCount();
-        ::std::vector<::std::pair<ref<submesh_asset>, nvmesh*>> meshes;
+        ::std::vector<::std::pair<ref<submesh_asset>, ref<nvmesh>>> meshes;
         meshes.reserve(meshCount);
 
         std::vector<std::vector<Nv::Blast::Triangle>> chunkMeshes;
         Nv::Blast::Triangle* trigs;
 
-        chunkMeshes.reserve(fractureTool->fractureTool->getChunkCount());
-        for (uint32_t i = 1; i < fractureTool->fractureTool->getChunkCount(); ++i)
+        chunkMeshes.reserve(meshCount);
+        for (size_t i = 1; i < meshCount; ++i)
         {
             uint32_t nbTrigs = fractureTool->fractureTool->getBaseMesh(i, trigs);
             std::vector<Nv::Blast::Triangle> trigList;
-            for (size_t j = 0; j < nbTrigs; j++)
+            for (size_t j = 0; j < nbTrigs; ++j)
             {
                 trigList.push_back(trigs[j]);
             }
@@ -374,7 +444,7 @@ namespace physics
             chunkMeshes.push_back(trigList);
         }
 
-        for (size_t i = 0; i < chunkMeshes.size(); i++)
+        for (size_t i = 0; i < chunkMeshes.size(); ++i)
         {
             std::vector<physx::PxVec3> pos;
             std::vector<physx::PxVec3> norm;
@@ -403,7 +473,10 @@ namespace physics
                 indexs.push_back(index++);
             }
 
-            nvmesh* mesh = new nvmesh(pos, norm, tex, indexs);
+            ref<nvmesh> mesh = make_ref<nvmesh>(pos, norm, tex, indexs);
+
+            if (fractureTool->fractureTool->isMeshContainOpenEdges(mesh->mesh))
+                LOG_WARNING("NvBlast> Mesh contains open edges!");
 
             auto chunkMesh = createRenderMesh(*mesh);
 
@@ -413,18 +486,173 @@ namespace physics
         return { meshes };
     }
 
-    eentity buildChunk(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, ::std::pair<ref<submesh_asset>, nvmesh*> mesh, float mass, uint32 generation);
+    NODISCARD eentity buildChunk(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, ::std::pair<ref<submesh_asset>, ref<nvmesh>> mesh, float mass, uint32 generation);
 
-    inline ::std::vector<entity_handle> buildChunks(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, ::std::vector<::std::pair<ref<submesh_asset>, nvmesh*>> meshes, float chunkMass, uint32 generation = 0)
+    inline NODISCARD::std::vector<entity_handle> buildChunks(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, ::std::vector<::std::pair<ref<submesh_asset>, ref<nvmesh>>> meshes, float chunkMass, uint32 generation = 0)
     {
         ::std::vector<entity_handle> handles;
 
-        for (size_t i = 0; i < meshes.size(); i++)
+        for (size_t i = 0; i < meshes.size(); ++i)
         {
             handles.push_back(buildChunk(transform, insideMaterial, outsideMaterial, meshes[i], chunkMass, generation).handle);
         }
 
         return handles;
+    }
+
+    NODISCARD inline bounds toBounds(::std::vector<vec3> vertices) noexcept
+    {
+        auto min = vec3(INFINITE);
+        auto max = vec3(-(int)INFINITE);
+
+        for (int i = 0; i < vertices.size(); i++)
+        {
+            min = ::min(vertices[i], min);
+            max = ::min(vertices[i], max);
+        }
+
+        return bounds((max - min) / 2 + min, max - min);
+    }
+
+    NODISCARD inline ::std::vector<physx::PxVec3> createStdVectorPxVec3(const ::std::vector<vec3> vec) noexcept
+    {
+        ::std::vector<physx::PxVec3> v;
+        v.reserve(vec.size());
+        for (size_t i = 0; i < vec.size(); i++)
+        {
+            v.push_back(physx::createPxVec3(vec[i]));
+        }
+
+        return v;
+    }
+
+    NODISCARD inline ::std::vector<physx::PxVec2> createStdVectorPxVec2(const ::std::vector<vec2> vec) noexcept
+    {
+        ::std::vector<physx::PxVec2> v;
+        v.reserve(vec.size());
+        for (size_t i = 0; i < vec.size(); i++)
+        {
+            v.push_back(physx::createPxVec2(vec[i]));
+        }
+
+        return v;
+    }
+
+    NODISCARD inline float signedVolumeOfTriangle(const vec3& p1, const vec3& p2, const vec3& p3) noexcept
+    {
+        float v321 = p3.x * p2.y * p1.z;
+        float v231 = p2.x * p3.y * p1.z;
+        float v312 = p3.x * p1.y * p2.z;
+        float v132 = p1.x * p3.y * p2.z;
+        float v213 = p2.x * p1.y * p3.z;
+        float v123 = p1.x * p2.y * p3.z;
+        return (1.0f / 6.0f) * (-v321 + v231 + v312 - v132 - v213 + v123);
+    }
+
+    NODISCARD inline float volumeOfMesh(ref<submesh_asset> mesh) noexcept
+    {
+        float volume = 0.0f;
+
+        auto& vertices = mesh->positions;
+        auto& triangles = mesh->triangles;
+
+        for (int i = 0; i < mesh->triangles.size(); i++)
+        {
+            vec3 p1 = vertices[triangles[i].a];
+            vec3 p2 = vertices[triangles[i].b];
+            vec3 p3 = vertices[triangles[i].c];
+
+            volume += signedVolumeOfTriangle(p1, p2, p3);
+        }
+
+        return ::abs(volume);
+    }
+
+    NODISCARD inline ::std::vector<uint32_t> generateIndices(Nv::Blast::Triangle* triangles, size_t nbTriangles) noexcept
+    {
+        struct vertex
+        {
+            vec3 position;
+            vec3 normal;
+            vec2 uv;
+
+            bool operator==(const vertex& other) const
+            {
+                return position.x == other.position.x && position.y == other.position.y && position.z == other.position.z
+                    && normal.x == other.normal.x && normal.y == other.normal.y && normal.z == other.normal.z
+                    && uv.x == other.uv.x && uv.y == other.uv.y;
+            }
+        };
+
+        ::std::vector<vertex> vertices;
+        ::std::vector<uint32_t> indices;
+
+        for (size_t i = 0; i < nbTriangles; i++)
+        {
+            auto& triangle = triangles[i];
+
+            {
+                vertex vertex = {
+                    vec3(triangle.a.p.x, triangle.a.p.y, triangle.a.p.z),
+                    vec3(triangle.a.n.x, triangle.a.n.y, triangle.a.n.z),
+                    vec2(triangle.a.uv->x, triangle.a.uv->y) };
+
+                auto it = std::find(vertices.begin(), vertices.end(), vertex);
+                if (it != vertices.end())
+                {
+                    // Vertex already exists in the vertices vector, so we just need to add the index
+                    indices.push_back(std::distance(vertices.begin(), it));
+                }
+                else
+                {
+                    // New vertex, so we need to add it to the vertices vector and add the index
+                    vertices.push_back(vertex);
+                    indices.push_back(vertices.size() - 1);
+                }
+            }
+
+            {
+                vertex vertex = {
+                    vec3(triangle.b.p.x, triangle.b.p.y, triangle.b.p.z),
+                    vec3(triangle.b.n.x, triangle.b.n.y, triangle.b.n.z),
+                    vec2(triangle.b.uv->x, triangle.b.uv->y) };
+
+                auto it = std::find(vertices.begin(), vertices.end(), vertex);
+                if (it != vertices.end())
+                {
+                    // Vertex already exists in the vertices vector, so we just need to add the index
+                    indices.push_back(std::distance(vertices.begin(), it));
+                }
+                else
+                {
+                    // New vertex, so we need to add it to the vertices vector and add the index
+                    vertices.push_back(vertex);
+                    indices.push_back(vertices.size() - 1);
+                }
+            }
+
+            {
+                vertex vertex = {
+                    vec3(triangle.c.p.x, triangle.c.p.y, triangle.c.p.z),
+                    vec3(triangle.c.n.x, triangle.c.n.y, triangle.c.n.z),
+                    vec2(triangle.c.uv->x, triangle.c.uv->y) };
+
+                auto it = std::find(vertices.begin(), vertices.end(), vertex);
+                if (it != vertices.end())
+                {
+                    // Vertex already exists in the vertices vector, so we just need to add the index
+                    indices.push_back(std::distance(vertices.begin(), it));
+                }
+                else
+                {
+                    // New vertex, so we need to add it to the vertices vector and add the index
+                    vertices.push_back(vertex);
+                    indices.push_back(vertices.size() - 1);
+                }
+            }
+        }
+
+        return indices;
     }
 
     static inline uint32 maxSpliteGeneration = 3U;
@@ -526,13 +754,14 @@ namespace physics
                 {
                     if (impulse.magnitude() > 1.0f)
                     {
+                        shared_spin_lock lock{ fractureSyncObj };
+                        shared_spin_lock globalLock{ physics_holder::physicsRef->sync };
+                        physics_lock_write lockWrite{};
+
                         auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
                         if (!enttScene->registry.size())
                             return;
-
-                        fractureSyncObj.lock();
-                        physics_holder::physicsRef->lockWrite();
 
                         eentity fractureGameObject = enttScene->createEntity("Fracture")
                             .addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
@@ -544,62 +773,13 @@ namespace physics
                         auto defaultmat = createPBRMaterialAsync({ "", "" });
                         defaultmat->shader = pbr_material_shader_double_sided;
 
-                        auto meshes = fractureMeshesInNvblast(3, mesh.mesh, false);
+                        auto meshes = fractureMeshesInNvblast(3, mesh.mesh);
 
                         auto chunks = buildChunks(renderEntity.getComponentIfExists<transform_component>() ? *renderEntity.getComponentIfExists<transform_component>() : trs::identity, defaultmat, defaultmat, meshes, 7.5f);
 
                         graphManager.setup(chunks, ++spliteGeneration);
 
                         enttScene->deleteEntity(handle);
-                        physics_holder::physicsRef->unlockWrite();
-
-                        fractureSyncObj.unlock();
-
-                        // Multithreaded version. Not tested!
-                        
-                        /*struct fracture_data
-                        {
-                        escene* scene;
-                        entity_handle handle;
-                        uint32& generation;
-                        } data{ enttScene, handle, spliteGeneration };
-                    
-                        lowPriorityJobQueue.createJob<fracture_data>([](fracture_data& data, job_handle)
-                        {
-                            CPU_PROFILE_BLOCK("Fracture step");
-                    
-                            if (!data.scene->registry.size())
-                                return;
-
-                            fractureSyncObj.lock();
-                    
-                            physics_holder::physicsRef->lockWrite();
-
-                            if (!data.scene->registry.size())
-                                return;
-
-                            eentity fractureGameObject = data.scene->createEntity("Fracture")
-                                .addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
-                            auto& graphManager = fractureGameObject.addComponent<chunk_graph_manager>().getComponent<chunk_graph_manager>();
-                    
-                            eentity renderEntity{ data.handle, &data.scene->registry };
-                            auto& mesh = renderEntity.getComponent<nvmesh_chunk_component>();
-                    
-                            auto defaultmat = createPBRMaterialAsync({ "", "" });
-                            defaultmat->shader = pbr_material_shader_double_sided;
-                    
-                            auto meshes = fractureMeshesInNvblast(3, mesh.mesh, false);
-                    
-                            auto chunks = buildChunks(renderEntity.getComponentIfExists<transform_component>() ? *renderEntity.getComponentIfExists<transform_component>() : trs::identity, defaultmat, defaultmat, meshes, 7.5f);
-                    
-                            graphManager.setup(chunks, ++data.generation);
-                    
-                            data.scene->deleteEntity(data.handle);
-                    
-                            physics_holder::physicsRef->unlockWrite();
-
-                            fractureSyncObj.unlock();
-                        }, data).submitNow();*/
                     }
                 }
             }
@@ -790,170 +970,12 @@ namespace physics
         }
     };
 
-    NODISCARD inline bounds toBounds(::std::vector<vec3> vertices) noexcept
-    {
-        auto min = vec3(INFINITE);
-        auto max = vec3(-(int)INFINITE);
-
-        for (int i = 0; i < vertices.size(); i++)
-        {
-            min = ::min(vertices[i], min);
-            max = ::min(vertices[i], max);
-        }
-
-        return bounds((max - min) / 2 + min, max - min);
-    }
-
-    NODISCARD inline ::std::vector<physx::PxVec3> createStdVectorPxVec3(const ::std::vector<vec3> vec) noexcept
-    {
-        ::std::vector<physx::PxVec3> v;
-        v.reserve(vec.size());
-        for (size_t i = 0; i < vec.size(); i++)
-        {
-            v.push_back(physx::createPxVec3(vec[i]));
-        }
-
-        return v;
-    }
-
-    NODISCARD inline ::std::vector<physx::PxVec2> createStdVectorPxVec2(const ::std::vector<vec2> vec) noexcept
-    {
-        ::std::vector<physx::PxVec2> v;
-        v.reserve(vec.size());
-        for (size_t i = 0; i < vec.size(); i++)
-        {
-            v.push_back(physx::createPxVec2(vec[i]));
-        }
-
-        return v;
-    }
-
-    NODISCARD inline float signedVolumeOfTriangle(const vec3& p1, const vec3& p2, const vec3& p3) noexcept
-    {
-        float v321 = p3.x * p2.y * p1.z;
-        float v231 = p2.x * p3.y * p1.z;
-        float v312 = p3.x * p1.y * p2.z;
-        float v132 = p1.x * p3.y * p2.z;
-        float v213 = p2.x * p1.y * p3.z;
-        float v123 = p1.x * p2.y * p3.z;
-        return (1.0f / 6.0f) * (-v321 + v231 + v312 - v132 - v213 + v123);
-    }
-
-    NODISCARD inline float volumeOfMesh(ref<submesh_asset> mesh) noexcept
-    {
-        float volume = 0.0f;
-
-        auto& vertices = mesh->positions;
-        auto& triangles = mesh->triangles;
-
-        for (int i = 0; i < mesh->triangles.size(); i++)
-        {
-            vec3 p1 = vertices[triangles[i].a];
-            vec3 p2 = vertices[triangles[i].b];
-            vec3 p3 = vertices[triangles[i].c];
-
-            volume += signedVolumeOfTriangle(p1, p2, p3);
-        }
-
-        return ::abs(volume);
-    }
-
-    NODISCARD inline ::std::vector<uint32_t> generateIndices(Nv::Blast::Triangle* triangles, size_t nbTriangles) noexcept
-    {
-        struct vertex
-        {
-            vec3 position;
-            vec3 normal;
-            vec2 uv;
-
-            bool operator==(const vertex& other) const
-            {
-                return position.x == other.position.x && position.y == other.position.y && position.z == other.position.z
-                    && normal.x == other.normal.x && normal.y == other.normal.y && normal.z == other.normal.z
-                    && uv.x == other.uv.x && uv.y == other.uv.y;
-            }
-        };
-
-        ::std::vector<vertex> vertices;
-        ::std::vector<uint32_t> indices;
-
-        for (size_t i = 0; i < nbTriangles; i++)
-        {
-            auto& triangle = triangles[i];
-
-            {
-                vertex vertex = {
-                    vec3(triangle.a.p.x, triangle.a.p.y, triangle.a.p.z),
-                    vec3(triangle.a.n.x, triangle.a.n.y, triangle.a.n.z),
-                    vec2(triangle.a.uv->x, triangle.a.uv->y) };
-
-                auto it = std::find(vertices.begin(), vertices.end(), vertex);
-                if (it != vertices.end())
-                {
-                    // Vertex already exists in the vertices vector, so we just need to add the index
-                    indices.push_back(std::distance(vertices.begin(), it));
-                }
-                else
-                {
-                    // New vertex, so we need to add it to the vertices vector and add the index
-                    vertices.push_back(vertex);
-                    indices.push_back(vertices.size() - 1);
-                }
-            }
-
-            {
-                vertex vertex = {
-                    vec3(triangle.b.p.x, triangle.b.p.y, triangle.b.p.z),
-                    vec3(triangle.b.n.x, triangle.b.n.y, triangle.b.n.z),
-                    vec2(triangle.b.uv->x, triangle.b.uv->y) };
-
-                auto it = std::find(vertices.begin(), vertices.end(), vertex);
-                if (it != vertices.end())
-                {
-                    // Vertex already exists in the vertices vector, so we just need to add the index
-                    indices.push_back(std::distance(vertices.begin(), it));
-                }
-                else
-                {
-                    // New vertex, so we need to add it to the vertices vector and add the index
-                    vertices.push_back(vertex);
-                    indices.push_back(vertices.size() - 1);
-                }
-            }
-
-            {
-                vertex vertex = {
-                    vec3(triangle.c.p.x, triangle.c.p.y, triangle.c.p.z),
-                    vec3(triangle.c.n.x, triangle.c.n.y, triangle.c.n.z),
-                    vec2(triangle.c.uv->x, triangle.c.uv->y) };
-
-                auto it = std::find(vertices.begin(), vertices.end(), vertex);
-                if (it != vertices.end())
-                {
-                    // Vertex already exists in the vertices vector, so we just need to add the index
-                    indices.push_back(std::distance(vertices.begin(), it));
-                }
-                else
-                {
-                    // New vertex, so we need to add it to the vertices vector and add the index
-                    vertices.push_back(vertex);
-                    indices.push_back(vertices.size() - 1);
-                }
-            }
-        }
-
-        return indices;
-    }
-
     struct fracture
     {
         ::std::unordered_set<chunkPair> jointPairs;
 
         entity_handle fractureGameObject(ref<submesh_asset> meshAsset, const eentity& gameObject, anchor anchor, unsigned int seed, int totalChunks, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, float jointBreakForce, float density)
         {
-            // Translate all meshes to one world mesh
-            //auto mesh = getWorldMesh(gameObject);
-
             if (totalChunks <= 0)
                 return null_entity;
 
@@ -973,14 +995,14 @@ namespace physics
                 indices.push_back(meshAsset->triangles[i].c);
             }
 
-            auto nvMesh = new nvmesh(
+            ref<nvmesh> nvMesh = make_ref<nvmesh>(
                 createStdVectorPxVec3(meshAsset->positions),
                 createStdVectorPxVec3(meshAsset->normals),
                 createStdVectorPxVec2(meshAsset->uvs),
                 indices
             );
 
-            ::std::vector<::std::pair<ref<submesh_asset>, nvmesh*>> meshes;
+            ::std::vector<::std::pair<ref<submesh_asset>, ref<nvmesh>>> meshes;
 
             if (totalChunks == 1)
                 meshes.push_back({ meshAsset, nvMesh });
@@ -1192,7 +1214,7 @@ namespace physics
             {
                 if (overlap != chunk)
                 {
-                    {
+                    /*{
                         eentity body{ overlap, &enttScene->registry };
 
                         auto& rbOverlap = body.getComponent<physics::px_rigidbody_component>();
@@ -1219,7 +1241,7 @@ namespace physics
                             jointVec.push_back(joint);
                             manager.joints.emplace(chunk, jointVec);
                         }
-                    }
+                    }*/
                 }
             }
         }

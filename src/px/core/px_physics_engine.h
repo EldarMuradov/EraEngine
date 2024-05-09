@@ -429,7 +429,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 			const bool blockSingle = filterData.word1 != 0;
 			return blockSingle ? PxQueryHitType::eBLOCK : PxQueryHitType::eTOUCH;
-			return PxQueryHitType::eNONE;
 		}
 
 		PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit, const PxShape* shape, const PxRigidActor* actor) override
@@ -518,9 +517,9 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 	{
 		PxVec3 Point;
 
-		float separation;
-
 		PxVec3 normal;
+
+		float separation;
 	};
 
 	struct px_collision
@@ -539,12 +538,12 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		px_contact_point contacts[PX_CONTACT_BUFFER_SIZE];
 
-		PxVec3 getRelativeVelocity() const
+		PxVec3 getRelativeVelocity() const noexcept
 		{
 			return thisVelocity - otherVelocity;
 		}
 
-		void swapObjects()
+		void swapObjects() noexcept
 		{
 			if (!thisActor || !otherActor)
 				return;
@@ -556,20 +555,20 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 	struct px_simulation_event_callback : PxSimulationEventCallback
 	{
 #if !_DEBUG
-		px_simulation_event_callback(Nv::Blast::ExtImpactDamageManager* manager) : impactManager(manager) {}
+		px_simulation_event_callback(Nv::Blast::ExtImpactDamageManager* manager) noexcept : impactManager(manager) {}
 #else
 		px_simulation_event_callback() = default;
 #endif
 
 		typedef ::std::pair<px_rigidbody_component*, px_rigidbody_component*> colliders_pair;
 
-		void clear();
+		void clear() noexcept;
 
-		void sendCollisionEvents();
+		void sendCollisionEvents() noexcept;
 
-		void sendTriggerEvents();
+		void sendTriggerEvents() noexcept;
 
-		void onColliderRemoved(px_rigidbody_component* collider);
+		void onColliderRemoved(px_rigidbody_component* collider) noexcept;
 
 		void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) override;
 		void onWake(PxActor** actors, PxU32 count) override { ::std::cout << "onWake\n"; }
@@ -638,7 +637,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 	class px_physics_engine
 	{
-	private:
 		NO_COPY(px_physics_engine)
 
 	public:
@@ -683,7 +681,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		px_raycast_info raycast(px_rigidbody_component* rb, const vec3& dir, int maxDist = PX_NB_MAX_RAYCAST_DISTANCE, bool hitTriggers = true, uint32_t layerMask = 0, int maxHits = PX_NB_MAX_RAYCAST_HITS);
 
 		// Checking
-		bool checkBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
+		bool checkBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0) noexcept
 		{
 			PX_SCENE_QUERY_SETUP_CHECK();
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
@@ -692,7 +690,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 			return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
 		}
 
-		bool checkSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0)
+		bool checkSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0) noexcept
 		{
 			PX_SCENE_QUERY_SETUP_CHECK();
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)));
@@ -701,7 +699,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 			return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
 		}
 
-		bool checkCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
+		bool checkCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0) noexcept
 		{
 			PX_SCENE_QUERY_SETUP_CHECK();
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
@@ -710,7 +708,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		}
 
 		// Overlapping
-		px_overlap_info overlapCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
+		px_overlap_info overlapCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0) noexcept
 		{
 			PX_SCENE_QUERY_SETUP_OVERLAP();
 			::std::vector<uint32_t> results;
@@ -724,7 +722,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 			return px_overlap_info(true, results);
 		}
 
-		px_overlap_info overlapBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
+		px_overlap_info overlapBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0) noexcept
 		{
 			PX_SCENE_QUERY_SETUP_OVERLAP();
 			::std::vector<uint32_t> results;
@@ -739,7 +737,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 			return px_overlap_info(true, results);
 		}
 
-		px_overlap_info overlapSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0)
+		px_overlap_info overlapSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0) noexcept
 		{
 			PX_SCENE_QUERY_SETUP_OVERLAP();
 			::std::vector<uint32_t> results;
@@ -793,31 +791,33 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		PxMaterial* defaultMaterial = nullptr;
 
-		px_allocator_callback allocatorCallback;
-		px_error_reporter errorReporter;
+		PxFoundation* foundation = nullptr;
 
-		px_profiler_callback profilerCallback;
+		PxDefaultCpuDispatcher* dispatcher = nullptr;
 
 		PxCudaContextManager* cudaContextManager = nullptr;
-
-		px_simulation_filter_callback simulationFilterCallback;
-		px_simulation_event_callback* simulationEventCallback = nullptr;
 
 #if PX_ENABLE_RAYCAST_CCD
 		RaycastCCDManager* raycastCCD = nullptr;
 #endif
 
-		PxFoundation* foundation = nullptr;
+		px_allocator_callback allocatorCallback;
+		px_error_reporter errorReporter;
+
+		px_profiler_callback profilerCallback;
+
+		px_simulation_filter_callback simulationFilterCallback;
+		ref<px_simulation_event_callback> simulationEventCallback = nullptr;
 
 		px_query_filter queryFilter;
 
 		PxTolerancesScale toleranceScale;
-		PxDefaultCpuDispatcher* dispatcher = nullptr;
 
 		const uint32_t nbCPUDispatcherThreads = 4;
-		bool released = false;
 
 		eallocator allocator;
+
+		bool released = false;
 	};
 
 	struct physics_holder

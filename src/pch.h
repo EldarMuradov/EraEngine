@@ -32,6 +32,11 @@ namespace fs = std::filesystem;
 #include <unordered_map>
 #include <wrl.h>
 
+#include <map>
+#include <future>
+#include <random>
+#include <iomanip>
+
 #include <core/sync.h>
 
 #define RELEASE_PTR(ptr) if(ptr) { delete ptr; ptr = nullptr; }

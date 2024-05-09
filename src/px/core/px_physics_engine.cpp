@@ -141,8 +141,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
 	sceneDesc.ccdMaxPasses = 4;
 
-	sceneDesc.simulationEventCallback = simulationEventCallback;
-	sceneDesc.filterCallback = &simulationFilterCallback;
+	//sceneDesc.filterCallback = &simulationFilterCallback;
 
 	scene = physics->createScene(sceneDesc);
 
@@ -191,7 +190,7 @@ void physics::px_physics_engine::release() noexcept
 {
 	if (!released)
 	{
-		sync.lock();
+		shared_spin_lock lock{ sync };
 
 		releaseActors();
 		releaseScene();
@@ -208,6 +207,8 @@ void physics::px_physics_engine::release() noexcept
 		PX_RELEASE(foundation)
 		PX_RELEASE(scene)
 		PX_RELEASE(cudaContextManager)
+		PX_RELEASE(defaultMaterial)
+		PX_RELEASE(dispatcher)
 
 #if PX_ENABLE_RAYCAST_CCD
 		delete raycastCCD;
@@ -215,8 +216,6 @@ void physics::px_physics_engine::release() noexcept
 #endif
 
 		released = true;
-
-		sync.unlock();
 	}
 }
 
@@ -249,7 +248,7 @@ void physics::px_physics_engine::start() noexcept
 		list.boxes.push_back(box);
 	}
 
-	{
+	/*{
 		px_asset_list::px_box_asset box;
 		box.name = "Wall (2 depth, 625 nodes, no root chunk)";
 		box.extents = PxVec3(20, 20, 2);
@@ -341,7 +340,7 @@ void physics::px_physics_engine::start() noexcept
 		box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 2, false });
 
 		list.boxes.push_back(box);
-	}
+	}*/
 
 	{
 		px_asset_list::px_model_asset model;
@@ -366,7 +365,7 @@ void physics::px_physics_engine::start() noexcept
 
 	//blast->spawnAsset(0);
 
-	simulationEventCallback = new px_simulation_event_callback(blast->getExtImpactDamageManager());
+	simulationEventCallback = make_ref<px_simulation_event_callback>(blast->getExtImpactDamageManager());
 
 #else
 
@@ -375,7 +374,7 @@ void physics::px_physics_engine::start() noexcept
 #endif
 
 	physics_lock_write lock{};
-	scene->setSimulationEventCallback(simulationEventCallback);
+	scene->setSimulationEventCallback(simulationEventCallback.get());
 }
 
 void physics::px_physics_engine::update(float dt) noexcept
@@ -666,7 +665,7 @@ void physics::px_CCD_contact_modification::onCCDContactModify(PxContactModifyPai
 	}
 }
 
-void physics::px_simulation_event_callback::clear()
+void physics::px_simulation_event_callback::clear() noexcept
 {
 	newCollisions.clear();
 	removedCollisions.clear();
@@ -676,7 +675,7 @@ void physics::px_simulation_event_callback::clear()
 	lostTriggerPairs.clear();
 }
 
-void physics::px_simulation_event_callback::sendCollisionEvents()
+void physics::px_simulation_event_callback::sendCollisionEvents() noexcept
 {
 	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
@@ -728,11 +727,11 @@ void physics::px_simulation_event_callback::sendCollisionEvents()
 	}
 }
 
-void physics::px_simulation_event_callback::sendTriggerEvents()
+void physics::px_simulation_event_callback::sendTriggerEvents() noexcept
 {
 }
 
-void physics::px_simulation_event_callback::onColliderRemoved(px_rigidbody_component* collider)
+void physics::px_simulation_event_callback::onColliderRemoved(px_rigidbody_component* collider) noexcept
 {
 	clearColliderFromCollection(collider, newTriggerPairs);
 	clearColliderFromCollection(collider, lostTriggerPairs);

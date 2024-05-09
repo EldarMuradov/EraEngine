@@ -93,7 +93,6 @@ private:
     job_queue_entry allJobs[capacity];
     std::atomic<uint32> nextFreeJob = 0;
 
-
     std::condition_variable wakeCondition;
     std::mutex wakeMutex;
 };

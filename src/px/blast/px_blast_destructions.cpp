@@ -5,7 +5,7 @@
 
 #if !_DEBUG
 
-eentity physics::buildChunk(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, ::std::pair<ref<submesh_asset>, nvmesh*> mesh, float mass, uint32 generation)
+NODISCARD eentity physics::buildChunk(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, ::std::pair<ref<submesh_asset>, ref<nvmesh>> mesh, float mass, uint32 generation)
 {
     auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
@@ -40,6 +40,7 @@ eentity physics::buildChunk(const trs& transform, ref<pbr_material> insideMateri
     auto& rb = chunk.getComponent<physics::px_rigidbody_component>();
     rb.setMass(3.00f);
     //rb.setThreshold(0.10f, 0.10f);
+
     mm->mesh = builder.createDXMesh();
 
     return chunk;

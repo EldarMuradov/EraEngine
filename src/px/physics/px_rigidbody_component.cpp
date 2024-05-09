@@ -313,9 +313,8 @@ namespace physics
 		physics_lock_write lock{};
 
 		actor = createActor();
-		uint32_t* h = new uint32_t[1];
-		h[0] = (uint32_t)handle;
-		actor->userData = h;
+		userData[0] = (uint32_t)handle;
+		actor->userData = userData;
 
 		physics_holder::physicsRef->addActor(this, actor, addToScene);
 
@@ -366,12 +365,10 @@ namespace physics
 			PxRigidStatic* actor = physics->createRigidStatic(PxTransform(pospx, rotpx));
 
 			coll->createShape();
-			uint32_t* h = new uint32_t[1];
-			h[0] = (uint32_t)handle;
 
 			const auto& physics = physics_holder::physicsRef->getPhysics();
 			PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor, *coll->getGeometry(), *material);
-			shape->userData = h;
+			shape->userData = userData;
 
 			return actor;
 		}
@@ -379,18 +376,14 @@ namespace physics
 		{
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
-		    //actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
 
 			coll->createShape();
-			uint32_t* h = new uint32_t[1];
-			h[0] = (uint32_t)handle;
 
-			const auto& physics = physics_holder::physicsRef->getPhysics();
 			PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor, *coll->getGeometry(), *material);
-			shape->userData = h;
+			shape->userData = userData;
 
 			return actor;
 		}
@@ -399,13 +392,10 @@ namespace physics
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
 
 			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
-			//actor->setRigidBodyFlag(PxRigidBodyFlag::eRETAIN_ACCELERATIONS, true);
 			setKinematic(true);
 
 			coll->createShape();
-			uint32_t* h = new uint32_t[1];
-			h[0] = (uint32_t)handle;
-			coll->getShape()->userData = h;
+			coll->getShape()->userData = userData;
 			actor->attachShape(*coll->getShape());
 
 			return actor;

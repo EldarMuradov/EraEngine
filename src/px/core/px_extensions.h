@@ -483,7 +483,7 @@ namespace physics
 			physx::PxVec2 uv;
 		};
 
-		virtual uint32_t getVertexStride() { return sizeof(vertex); }
+		constexpr uint32_t getVertexStride() const noexcept { return sizeof(vertex); }
 
 		std::vector<vertex> vertices;
 		std::vector<uint32_t> indices;
