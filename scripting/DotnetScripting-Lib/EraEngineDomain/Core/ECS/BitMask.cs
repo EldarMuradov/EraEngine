@@ -49,8 +49,10 @@ public struct BitMask
         {
             if (_mn == null || _mn.Length < otherArrLength)
                 _mn = new MaskInternal[other._mn.Length];
+
             for (int i = 0; i < other._mn.Length; i++)
                 _mn[i] = other._mn[i];
+
             for (int i = other._mn.Length; i < _mn.Length; i++)
                 _mn[i] = 0;
         }
@@ -208,6 +210,7 @@ public struct BitMask
         var m = _m1;
         if (chunkIdx > 0)
             m = _mn[chunkIdx - 1];
+
         int position = i % SizeOfPartInBits;
         return (m & (1 << position)) != 0;
     }

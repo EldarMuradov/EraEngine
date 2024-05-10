@@ -15,6 +15,7 @@ static void meshLoaderThread(ref<multi_mesh> result, const fs::path& sceneFilena
 
 	model_asset asset = load3DModelFromFile(sceneFilename);
 	mesh_builder builder(flags | mesh_creation_flags_with_skin);
+
 	for (auto& mesh : asset.meshes)
 	{
 		for (auto& sub : mesh.submeshes)
@@ -108,15 +109,15 @@ static ref<multi_mesh> loadMeshFromFileInternal(const fs::path& sceneFilename, a
 	{
 		struct mesh_loading_data
 		{
-			ref<multi_mesh> mesh;
-			fs::path path;
-			uint32 flags;
 			mesh_load_callback cb;
+			fs::path path;
+			ref<multi_mesh> mesh;
+			uint32 flags;
 		};
 
 		constexpr int a = sizeof(mesh_loading_data);
 
-		mesh_loading_data data = { result, sceneFilename, flags, cb };
+		mesh_loading_data data = { cb, sceneFilename, result, flags };
 
 		job_handle job = lowPriorityJobQueue.createJob<mesh_loading_data>([](mesh_loading_data& data, job_handle job)
 		{

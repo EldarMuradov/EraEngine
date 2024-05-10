@@ -374,6 +374,21 @@ namespace bind
 		
 	}
 
+	static void instantiate_internal(uint32_t id, uint32_t newId, uint32_t parentId) noexcept
+	{
+
+	}
+
+	static void release_internal(uint32_t id) noexcept
+	{
+
+	}
+
+	static void setActive_internal(uint32_t id, bool active) noexcept
+	{
+
+	}
+
 	static void initialize_navigation_internal(uint32_t id, uint8_t type) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
@@ -542,6 +557,9 @@ void enative_scripting_linker::bindFunctions()
 			builder->functions.emplace("createScript", BIND(bind::create_script_internal, void, uint32_t, const char*));
 			builder->functions.emplace("createComponent", BIND(bind::create_component_internal, void, uint32_t, const char*));
 			builder->functions.emplace("removeComponent", BIND(bind::remove_component_internal, void, uint32_t, const char*));
+			builder->functions.emplace("instantiate", BIND(bind::instantiate_internal, void, uint32_t, uint32_t, uint32_t));
+			builder->functions.emplace("release", BIND(bind::release_internal, void, uint32_t));
+			builder->functions.emplace("setActive", BIND(bind::setActive_internal, void, uint32_t, bool));
 		}
 
 		// EEntityManager

@@ -20,7 +20,7 @@ NODISCARD eentity physics::buildChunk(const trs& transform, ref<pbr_material> in
     builder.pushMesh(*mesh.first, 1.0f, &aabb);
 
     mesh_asset asset;
-    asset.name = ("Chunk" + ::std::to_string(id));
+    asset.name = ("Chunk_" + ::std::to_string(id));
     asset.submeshes.push_back(*mesh.first);
 
     mm->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, outsideMaterial });
@@ -38,8 +38,9 @@ NODISCARD eentity physics::buildChunk(const trs& transform, ref<pbr_material> in
     mm->aabb.grow(aabb.maxCorner);
 
     auto& rb = chunk.getComponent<physics::px_rigidbody_component>();
+
     rb.setMass(3.00f);
-    //rb.setThreshold(0.10f, 0.10f);
+    rb.setThreshold(0.02f, 0.02f);
 
     mm->mesh = builder.createDXMesh();
 

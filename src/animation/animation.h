@@ -190,13 +190,11 @@ private:
 struct animation_component
 {
 	animation_instance animation;
-	float timeScale = 1.f;
-
-	bool drawSceleton = false;
-
 	dx_vertex_buffer_group_view currentVertexBuffer;
 	dx_vertex_buffer_group_view prevFrameVertexBuffer;
 	trs* currentGlobalTransforms = 0;
+	float timeScale = 1.f;
+	bool drawSceleton = false;
 
 	void update(const ref<struct multi_mesh>& mesh, eallocator& arena, float dt, trs* transform = 0);
 	void drawCurrentSkeleton(const ref<struct multi_mesh>& mesh, const trs& transform, struct ldr_render_pass* renderPass) const;

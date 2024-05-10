@@ -39,8 +39,8 @@ static physx::PxFilterFlags contactReportFilterShader(
 		return physx::PxFilterFlag::eDEFAULT;
 	}
 
-	//if (physx::PxFilterObjectIsKinematic(attributes0) || physx::PxFilterObjectIsKinematic(attributes1))
-	//	return physx::PxFilterFlag::eKILL;
+	if (physx::PxFilterObjectIsKinematic(attributes0) || physx::PxFilterObjectIsKinematic(attributes1))
+		return physx::PxFilterFlag::eKILL;
 
 	pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
 	pairFlags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
@@ -523,7 +523,7 @@ physics::px_raycast_info physics::px_physics_engine::raycast(px_rigidbody_compon
 
 void physics::px_physics_engine::stepPhysics(float stepSize) noexcept
 {
-	lockWrite();
+	physics_lock_write lock{};
 
 	static constexpr uint64 align = 16U;
 
@@ -545,13 +545,11 @@ void physics::px_physics_engine::stepPhysics(float stepSize) noexcept
 #endif
 
 	allocator.reset();
-
-	unlockWrite();
 }
 
 void physics::px_physics_engine::syncTransforms() noexcept
 {
-	lockRead();
+	physics_lock_read lock{};
 
 	uint32_t tempNb;
 	PxActor** activeActors = scene->getActiveActors(tempNb);
@@ -585,8 +583,6 @@ void physics::px_physics_engine::syncTransforms() noexcept
 		ref<px_soft_body> sb = softBodies[i];
 		sb->copyDeformedVerticesFromGPUAsync(0);
 	}
-
-	unlockRead();
 }
 
 void physics::px_physics_engine::processBlastQueue() noexcept
@@ -697,23 +693,30 @@ void physics::px_simulation_event_callback::sendCollisionEvents() noexcept
 
 #if !_DEBUG
 
-		eentity rb1{ c.thisActor->handle, &enttScene->registry };
-		eentity rb2{ c.otherActor->handle, &enttScene->registry };
-
-		if (!rb1.valid() || !rb2.valid())
-			continue;
-
-		auto chunk1 = rb1.getComponentIfExists<physics::chunk_graph_manager::chunk_node>();
-
-		auto chunk2 = rb2.getComponentIfExists<physics::chunk_graph_manager::chunk_node>();
-
-		if (chunk1 && !chunk2)
+		try
 		{
-			chunk1->processDamage(c.impulse);
+			eentity rb1{ c.thisActor->handle, &enttScene->registry };
+			eentity rb2{ c.otherActor->handle, &enttScene->registry };
+
+			if (!rb1.valid() || !rb2.valid())
+				continue;
+
+			auto chunk1 = rb1.getComponentIfExists<physics::chunk_graph_manager::chunk_node>();
+
+			auto chunk2 = rb2.getComponentIfExists<physics::chunk_graph_manager::chunk_node>();
+
+			if (chunk1 && !chunk2)
+			{
+				chunk1->processDamage(c.impulse);
+			}
+			else if (chunk2 && !chunk1)
+			{
+				chunk2->processDamage(c.impulse);
+			}
 		}
-		else if (chunk2 && !chunk1)
+		catch (...)
 		{
-			chunk2->processDamage(c.impulse);
+			LOG_WARNING("Blast> Entity has already been destroyed!");
 		}
 
 #endif

@@ -78,6 +78,8 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
 
 	lowPriorityJobQueue.createJob<add_ray_tracing_data>([](add_ray_tracing_data& data, job_handle)
 		{
+			data.mesh->loadJob.waitForCompletion();
+
 			struct create_component_data
 			{
 				eentity entity;
@@ -91,7 +93,7 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
 					data.entity.addComponent<raytrace_component>(data.blas);
 				}, createData).submitNow();
 
-		}, data).submitAfter(mesh->loadJob);
+		}, data).submitNow();
 }
 
 struct updatePhysicsAndScriptingData
@@ -193,8 +195,9 @@ static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> me
 
 	mainThreadJobQueue.createJob<add_animation_data>([](add_animation_data& data, job_handle job)
 		{
+			data.mesh->loadJob.waitForCompletion();
 			data.entity.getComponent<animation_component>().animation.set(&data.mesh->skeleton.clips[0]);
-		}, data).submitAfter(mesh->loadJob);
+		}, data).submitNow();
 }
 
 void application::loadCustomShaders()
@@ -317,22 +320,33 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
 		px_sphere1->getComponent<physics::px_rigidbody_component>().setMass(500.0f);
 
+		if (auto mesh = loadAnimatedMeshFromFileAsync("assets/veribot/source/VERIBOT_final.fbx"))
 		{
-			if (auto mesh = loadMeshFromFileAsync("assets/obj/bunny.obj"))
-			{
-				model_asset ass = load3DModelFromFile("assets/obj/bunny.obj");
-
-				auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
-					.addComponent<transform_component>(vec3(0.0f, 0.0f, 0.0f), quat::identity, vec3(1.0f))
-					.addComponent<mesh_component>(mesh);
-
-				physics::fracture fracture;
-				auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
-				unsigned int seed = 7249U;
-				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 1, defaultmat, defaultmat, 1.0f, 3.0f);
-				scene.deleteEntity(px_sphere_entt1.handle);
-			}
+			auto& en = scene.createEntity("Veribot", (entity_handle)15)
+				.addComponent<transform_component>(vec3(0.f), quat::identity)
+				.addComponent<animation_component>()
+				.addComponent<dynamic_transform_component>()
+				.addComponent<mesh_component>(mesh);
+			initializeAnimationComponentAsync(en, mesh);
+			addRaytracingComponentAsync(en, mesh);
 		}
+
+		//{
+		//	if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
+		//	{
+		//		model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
+
+		//		auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
+		//			.addComponent<transform_component>(vec3(0.0f, 0.0f, 0.0f), quat::identity, vec3(1.0f))
+		//			.addComponent<mesh_component>(mesh);
+
+		//		physics::fracture fracture;
+		//		auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
+		//		unsigned int seed = 7249U;
+		//		manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 1, defaultmat, defaultmat, 1.0f, 3.0f);
+		//		scene.deleteEntity(px_sphere_entt1.handle);
+		//	}
+		//}
 
 		/*{
 			model_asset ass = load3DModelFromFile("assets/box.fbx");

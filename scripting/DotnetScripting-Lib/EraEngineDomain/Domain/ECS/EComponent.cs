@@ -1,4 +1,4 @@
-﻿namespace EraEngine.Components;
+﻿namespace EraEngine;
 
 public abstract class EComponent
 {

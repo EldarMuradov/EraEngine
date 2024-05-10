@@ -379,8 +379,6 @@ namespace physics
         {
             if (pair.second.size() == 2)
             {
-                // This vertex is shared by two open edges
-                // Add a new triangle to close the gap
                 indices.push_back(pair.first);
                 indices.push_back(pair.second[0]);
                 indices.push_back(pair.second[1]);
@@ -405,8 +403,6 @@ namespace physics
 
                 int result = fractureTool->fractureTool->voronoiFracturing(0, nbSites, sites, replace);
 
-                //fractureTool->fractureTool->uniteChunks(0.1f, totalChunks, nullptr, 0, nullptr, 0);
-
                 if (result != 0)
                 {
                     LOG_ERROR("NvBlast> Failed to fracture mesh!");
@@ -414,6 +410,8 @@ namespace physics
                 }
 
                 fractureTool->fractureTool->finalizeFracturing();
+
+                //fractureTool->fractureTool->uniteChunks(0.001f, 10, nullptr, 0, nullptr, 0);
             };
 
         ::std::packaged_task<void()> task{ fractureFunc };
@@ -425,13 +423,15 @@ namespace physics
 
         // Extract meshes
         size_t meshCount = fractureTool->fractureTool->getChunkCount();
+
         ::std::vector<::std::pair<ref<submesh_asset>, ref<nvmesh>>> meshes;
         meshes.reserve(meshCount);
 
         std::vector<std::vector<Nv::Blast::Triangle>> chunkMeshes;
+        chunkMeshes.reserve(meshCount);
+
         Nv::Blast::Triangle* trigs;
 
-        chunkMeshes.reserve(meshCount);
         for (size_t i = 1; i < meshCount; ++i)
         {
             uint32_t nbTrigs = fractureTool->fractureTool->getBaseMesh(i, trigs);
@@ -476,7 +476,10 @@ namespace physics
             ref<nvmesh> mesh = make_ref<nvmesh>(pos, norm, tex, indexs);
 
             if (fractureTool->fractureTool->isMeshContainOpenEdges(mesh->mesh))
+            {
                 LOG_WARNING("NvBlast> Mesh contains open edges!");
+                return {};
+            }
 
             auto chunkMesh = createRenderMesh(*mesh);
 
@@ -679,7 +682,7 @@ namespace physics
             vec3 frozenPos{};
             quat forzenRot{};
 
-            uint32 spliteGeneration = 0;
+            volatile uint32 spliteGeneration = 0;
 
             chunk_node() = default;
 
@@ -754,14 +757,12 @@ namespace physics
                 {
                     if (impulse.magnitude() > 1.0f)
                     {
-                        shared_spin_lock lock{ fractureSyncObj };
-                        shared_spin_lock globalLock{ physics_holder::physicsRef->sync };
-                        physics_lock_write lockWrite{};
-
                         auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
                         if (!enttScene->registry.size())
                             return;
+
+                        physics_lock_write lockWrite{};
 
                         eentity fractureGameObject = enttScene->createEntity("Fracture")
                             .addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
@@ -1214,7 +1215,7 @@ namespace physics
             {
                 if (overlap != chunk)
                 {
-                    /*{
+                    {
                         eentity body{ overlap, &enttScene->registry };
 
                         auto& rbOverlap = body.getComponent<physics::px_rigidbody_component>();
@@ -1241,7 +1242,7 @@ namespace physics
                             jointVec.push_back(joint);
                             manager.joints.emplace(chunk, jointVec);
                         }
-                    }*/
+                    }
                 }
             }
         }

@@ -98,7 +98,7 @@ public class EEntity
         set
         {
             _activeSelf = value;
-            //setActive(Id, _activeSelf);
+            setActive(Id, _activeSelf);
         }
     }
 
