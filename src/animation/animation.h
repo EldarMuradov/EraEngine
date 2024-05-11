@@ -112,20 +112,8 @@ struct skeleton_limb
 	limb_dimensions dimensions;
 };
 
-struct animation_state
-{
-	animation_clip* clip = nullptr;
-};
-
-struct animation_controller
-{
-	state_machine<animation_state> stateMachine;
-};
-
 struct animation_skeleton
 {
-	animation_controller controller;
-
 	std::vector<skeleton_joint> joints;
 	std::unordered_map<std::string, uint32> nameToJointID;
 
@@ -162,6 +150,114 @@ struct animation_instance
 	float time = 0.f;
 
 	trs lastRootMotion;
+
+	bool paused = false;
+};
+
+struct animation_blackboard
+{
+	animation_clip* clip = nullptr;
+};
+
+struct animation_state : state_base<animation_blackboard>
+{
+	animation_state(animation_instance& inst) noexcept : instance(inst)
+	{
+	}
+
+	virtual void enter(animation_blackboard& state) override
+	{
+		instance.set(state.clip);
+	}
+
+	virtual void exit(animation_blackboard& state) override
+	{
+		if (instance.clip == state.clip)
+			instance.clip = nullptr;
+	}
+
+	virtual void pause(animation_blackboard& state) override
+	{
+		instance.paused = true;
+	}
+
+	virtual void resume(animation_blackboard& state) override
+	{
+		instance.paused = false;
+	}
+
+private:
+	animation_instance& instance;
+};
+
+struct animation_state_machine
+{
+	void set_state(ref<animation_state> state, animation_blackboard& blackboard) noexcept
+	{
+		if (currentState)
+		{
+			currentState->exit(blackboard);
+		}
+
+		currentState = state;
+
+		if (currentState)
+		{
+			currentState->enter(blackboard);
+
+			if (paused)
+			{
+				currentState->pause(blackboard);
+			}
+		}
+	}
+
+	void enter(animation_blackboard& blackboard) noexcept
+	{
+		if (currentState)
+		{
+			currentState->enter(blackboard);
+
+			if (paused)
+			{
+				currentState->pause(blackboard);
+			}
+		}
+	}
+
+	void pause(animation_blackboard& blackboard) noexcept
+	{
+		paused = true;
+
+		if (currentState)
+			currentState->pause(blackboard);
+	}
+
+	void resume(animation_blackboard& blackboard) noexcept
+	{
+		paused = false;
+
+		if (currentState)
+			currentState->resume(blackboard);
+	}
+
+	void update(animation_blackboard& blackboard) noexcept
+	{
+		if (paused)
+			return;
+
+		if (currentState)
+			currentState->update(blackboard);
+	}
+
+private:
+	ref<animation_state> currentState{ nullptr };
+	bool paused{ false };
+};
+
+struct animation_controller
+{
+	animation_state_machine stateMachine;
 };
 
 #if 0
@@ -190,12 +286,14 @@ private:
 struct animation_component
 {
 	animation_instance animation;
+	animation_controller controller;
 	dx_vertex_buffer_group_view currentVertexBuffer;
 	dx_vertex_buffer_group_view prevFrameVertexBuffer;
 	trs* currentGlobalTransforms = 0;
 	float timeScale = 1.f;
 	bool drawSceleton = false;
 
+	void initialize(std::vector<animation_clip>& clips, size_t startIndex = 0);
 	void update(const ref<struct multi_mesh>& mesh, eallocator& arena, float dt, trs* transform = 0);
 	void drawCurrentSkeleton(const ref<struct multi_mesh>& mesh, const trs& transform, struct ldr_render_pass* renderPass) const;
 };

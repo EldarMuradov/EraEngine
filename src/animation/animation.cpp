@@ -570,6 +570,9 @@ void animation_instance::set(const animation_clip* clip, float startTime)
 
 void animation_instance::update(const animation_skeleton& skeleton, float dt, trs* outLocalTransforms, trs& outDeltaRootMotion)
 {
+	if (paused)
+		return;
+
 	if (valid())
 	{
 		time += dt;
@@ -668,6 +671,24 @@ void animation_blend_tree_1d::setBlendValue(float value)
 	this->value = value;
 }
 #endif
+
+void animation_component::initialize(std::vector<animation_clip>& clips, size_t startIndex)
+{
+	ref<animation_state> state = make_ref<animation_state>(animation);
+
+	animation_blackboard endBlackboard = { &clips[clips.size() - 1]};
+
+	controller.stateMachine.set_state(state, endBlackboard);
+
+	for (int i = clips.size() - 2; i >= 0; ++i)
+	{
+		animation_blackboard blackboard = { &clips[i] };
+		controller.stateMachine.enter(blackboard);
+	}
+
+	animation_blackboard startBlackboard = { &clips[startIndex] };
+	controller.stateMachine.enter(startBlackboard);
+}
 
 void animation_component::update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform)
 {

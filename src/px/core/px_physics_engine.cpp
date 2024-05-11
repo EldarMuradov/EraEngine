@@ -234,7 +234,7 @@ void physics::px_physics_engine::start() noexcept
 	//scene->addActor(*PxCreatePlane(*physics, PxPlane(0.f, 0.f, 1.f, 7.5f), *pmaterial));
 	//scene->addActor(*PxCreatePlane(*physics, PxPlane(0.f, 0.f, -1.f, 7.5f), *pmaterial));
 
-	px_asset_list list;
+	/*px_asset_list list;
 
 	{
 		px_asset_list::px_box_asset box;
@@ -246,7 +246,7 @@ void physics::px_physics_engine::start() noexcept
 		box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
 
 		list.boxes.push_back(box);
-	}
+	}*/
 
 	/*{
 		px_asset_list::px_box_asset box;
@@ -342,7 +342,7 @@ void physics::px_physics_engine::start() noexcept
 		list.boxes.push_back(box);
 	}*/
 
-	{
+	/*{
 		px_asset_list::px_model_asset model;
 		model.name = "Bunny (Simple)";
 		model.id = "Bunny (Simple)";
@@ -361,7 +361,7 @@ void physics::px_physics_engine::start() noexcept
 	{
 		px_blast_simple_scene_asset* asset = new px_blast_simple_scene_asset(model);
 		blast->addAsset(asset);
-	}
+	}*/
 
 	//blast->spawnAsset(0);
 
@@ -393,7 +393,7 @@ void physics::px_physics_engine::update(float dt) noexcept
 #if !_DEBUG
 
 		// Needs to be tested
-		blast->animate(dt);
+		//blast->animate(dt);
 #endif
 	}
 }

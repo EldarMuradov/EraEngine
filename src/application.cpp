@@ -115,8 +115,6 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 
 				const auto& physicsRef = physics::physics_holder::physicsRef;
 
-				//lock lock{ physicsRef->sync };
-
 				physicsRef->update(data.deltaTime);
 
 				{
@@ -196,7 +194,7 @@ static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> me
 	mainThreadJobQueue.createJob<add_animation_data>([](add_animation_data& data, job_handle job)
 		{
 			data.mesh->loadJob.waitForCompletion();
-			data.entity.getComponent<animation_component>().animation.set(&data.mesh->skeleton.clips[0]);
+			data.entity.getComponent<animation_component>().initialize(data.mesh->skeleton.clips);
 		}, data).submitNow();
 }
 
@@ -320,16 +318,16 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
 		px_sphere1->getComponent<physics::px_rigidbody_component>().setMass(500.0f);
 
-		if (auto mesh = loadAnimatedMeshFromFileAsync("assets/veribot/source/VERIBOT_final.fbx"))
-		{
-			auto& en = scene.createEntity("Veribot", (entity_handle)15)
-				.addComponent<transform_component>(vec3(0.f), quat::identity)
-				.addComponent<animation_component>()
-				.addComponent<dynamic_transform_component>()
-				.addComponent<mesh_component>(mesh);
-			initializeAnimationComponentAsync(en, mesh);
-			addRaytracingComponentAsync(en, mesh);
-		}
+		//if (auto mesh = loadAnimatedMeshFromFileAsync("assets/veribot/source/VERIBOT_final.fbx"))
+		//{
+		//	auto& en = scene.createEntity("Veribot", (entity_handle)15)
+		//		.addComponent<transform_component>(vec3(0.f), quat::identity)
+		//		.addComponent<animation_component>()
+		//		.addComponent<dynamic_transform_component>()
+		//		.addComponent<mesh_component>(mesh);
+		//	initializeAnimationComponentAsync(en, mesh);
+		//	addRaytracingComponentAsync(en, mesh);
+		//}
 
 		//{
 		//	if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))

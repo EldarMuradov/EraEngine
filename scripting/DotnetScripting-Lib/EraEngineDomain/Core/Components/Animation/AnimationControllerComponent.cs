@@ -5,13 +5,13 @@ namespace EraEngine;
 
 public sealed class Animation
 {
-    private readonly ulong _resourceId;
+    public readonly ulong ResourceId;
 
     public string Name { get; set; }
 
     public Animation(ulong resourceId, string name = "DefaultAnimation")
     {
-        _resourceId = resourceId;
+        ResourceId = resourceId;
 
         Name = name;
     }
@@ -32,13 +32,29 @@ public class AnimationControllerComponent : EComponent
             Debug.LogError($"Animation> Failed to set animation with {index} index");
     }
 
+    public void SetAnimation(in Animation animation)
+    {
+        if (!setAnimationByResourceHandle(Entity.Id, animation.ResourceId))
+            Debug.LogError($"Animation> Failed to set animation with {animation.ResourceId} resource handle");
+    }
+
+    internal override void InitializeComponentInternal(params object[] args)
+    {
+        base.InitializeComponentInternal(args);
+
+        LoadAnimations();
+    }
+
     private void LoadAnimations()
     {
-        loadAnimationsFromMeshSkeleton(Entity.Id);
+        loadAnimationsFromMeshSkeleton(Entity.Id); // TODO
     }
 
     [DllImport("EraScriptingCPPDecls.dll")]
     private static extern bool setAnimationByIndex(int id, int state);
+
+    [DllImport("EraScriptingCPPDecls.dll")]
+    private static extern bool setAnimationByResourceHandle(int id, ulong handle);
 
     [DllImport("EraScriptingCPPDecls.dll", CharSet = CharSet.Ansi)]
     private static extern string loadAnimationsFromMeshSkeleton(int id);
