@@ -44,6 +44,7 @@
 #include <ejson_serializer.h>
 #include <px/physics/px_soft_body.h>
 #include <px/blast/px_blast_destructions.h>
+#include <core/event_queue.h>
 
 static raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh)
 {
@@ -383,7 +384,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 			//px_sphere1->addChild(*px_sphere);
 
-			/*{
+			{
 				for (int i = 0; i < 10; i++)
 				{
 					for (int j = 0; j < 10; j++)
@@ -398,7 +399,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 						}
 					}
 				}
-			}*/
+			}
 
 			//auto px_cct = &scene.createEntity("CharacterControllerPx")
 			//	.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))

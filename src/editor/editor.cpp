@@ -2857,8 +2857,18 @@ void eeditor::drawSettings(float dt)
 				UNDOABLE_SETTING("GI intensity", environment.globalIlluminationIntensity,
 					ImGui::PropertySlider("GI intensity", environment.globalIlluminationIntensity, 0.f, 2.f));
 
-				UNDOABLE_SETTING("GI mode", environment.giMode,
-					ImGui::PropertyDropdown("GI mode", environmentGIModeNames, 1 + dxContext.featureSupport.raytracing(), (uint32&)environment.giMode));
+				environment_gi_mode tempMode = environment.giMode;
+
+				ImGui::PropertyDropdown("GI mode", environmentGIModeNames, 1 + 1, (uint32&)tempMode);
+
+				if (tempMode != environment.giMode)
+				{
+					struct change_gi_mode_data { environment_gi_mode mode; environment_gi_mode& destMode; } data{ tempMode, this->scene->environment.giMode };
+					mainThreadJobQueue.createJob<change_gi_mode_data>([](change_gi_mode_data& data, job_handle job)
+						{
+							data.destMode = data.mode;
+						}, data).submitNow();
+				}
 
 				ImGui::EndProperties();
 			}

@@ -25,6 +25,11 @@ namespace
 	physics::px_CCD_contact_modification contactModification;
 }
 
+namespace physics
+{
+	concurrent_event_queue<blast_fracture_event> blastFractureQueue;
+}
+
 static physx::PxFilterFlags contactReportFilterShader(
 	physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
 	physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
@@ -119,8 +124,8 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 
 	sceneDesc.solverType = PxSolverType::eTGS;
 
-	sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
-	sceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
+	//sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
+	//sceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 
 #if PX_GPU_BROAD_PHASE
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
@@ -139,7 +144,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
-	sceneDesc.ccdMaxPasses = 4;
+	//sceneDesc.ccdMaxPasses = 4;
 
 	//sceneDesc.filterCallback = &simulationFilterCallback;
 
@@ -381,14 +386,24 @@ void physics::px_physics_engine::update(float dt) noexcept
 {
 	static const float stepSize = 1.0f / frameRate;
 
-	stepPhysics(stepSize);
-
-	processSimulationEventCallbacks();
-
-	syncTransforms();
+	{
+		CPU_PROFILE_BLOCK("PhysX physics process steps");
+		stepPhysics(stepSize);
+	}
 
 	{
-		//processBlastQueue();
+		CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");
+		processSimulationEventCallbacks();
+	}
+
+	{
+		CPU_PROFILE_BLOCK("PhysX sync transforms steps");
+		syncTransforms();
+	}
+
+	{
+		CPU_PROFILE_BLOCK("PhysX blast steps");
+		processBlastQueue();
 
 #if !_DEBUG
 
@@ -587,28 +602,57 @@ void physics::px_physics_engine::syncTransforms() noexcept
 
 void physics::px_physics_engine::processBlastQueue() noexcept
 {
-	if (unfreezeBlastQueue.size() > 0)
-	{
-		for (auto iter = unfreezeBlastQueue.begin(); iter != unfreezeBlastQueue.end(); ++iter)
+	//if (unfreezeBlastQueue.size() > 0)
+	//{
+	//	for (auto iter = unfreezeBlastQueue.begin(); iter != unfreezeBlastQueue.end(); ++iter)
+	//	{
+	//		auto enttScene = app.getCurrentScene();
+
+	//		eentity renderEntity{ (entity_handle)*iter, &enttScene->registry };
+
+	//		if (auto rb = renderEntity.getComponentIfExists<physics::px_rigidbody_component>())
+	//		{
+	//			rb->setConstraints(0);
+
+	//			rb->setGravity(true);
+
+	//			rb->updateMassAndInertia(::std::max(rb->getMass(), 3.0f));
+
+	//			rb->clearForceAndTorque();
+	//		}
+	//	}
+	//}
+
+	//unfreezeBlastQueue.clear();
+
+	if(!blastFractureQueue.empty())
+		blastFractureQueue.processQueue([](blast_fracture_event& event)
 		{
-			auto enttScene = app.getCurrentScene();
+			auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
-			eentity renderEntity{ (entity_handle)*iter, &enttScene->registry };
+			if (!enttScene->registry.size())
+				return;
 
-			if (auto rb = renderEntity.getComponentIfExists<physics::px_rigidbody_component>())
-			{
-				rb->setConstraints(0);
+			physics_lock_write lockWrite{};
 
-				rb->setGravity(true);
+			eentity fractureGameObject = enttScene->createEntity("Fracture")
+				.addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
+			auto& graphManager = fractureGameObject.addComponent<chunk_graph_manager>().getComponent<chunk_graph_manager>();
 
-				rb->updateMassAndInertia(::std::max(rb->getMass(), 3.0f));
+			eentity renderEntity{ (entity_handle)event.handle, &enttScene->registry };
+			auto& mesh = renderEntity.getComponent<nvmesh_chunk_component>();
 
-				rb->clearForceAndTorque();
-			}
-		}
-	}
+			auto defaultmat = createPBRMaterialAsync({ "", "" });
+			defaultmat->shader = pbr_material_shader_double_sided;
 
-	unfreezeBlastQueue.clear();
+			auto meshes = fractureMeshesInNvblast(3, mesh.mesh);
+
+			auto chunks = buildChunks(renderEntity.getComponentIfExists<transform_component>() ? *renderEntity.getComponentIfExists<transform_component>() : trs::identity, defaultmat, defaultmat, meshes, 7.5f);
+
+			graphManager.setup(chunks, ++renderEntity.getComponent<chunk_graph_manager::chunk_node>().spliteGeneration);
+
+			enttScene->deleteEntity((entity_handle)event.handle);
+		});
 }
 
 void physics::px_physics_engine::processSimulationEventCallbacks() noexcept

@@ -37,8 +37,6 @@ namespace fs = std::filesystem;
 #include <random>
 #include <iomanip>
 
-#include <core/sync.h>
-
 #define RELEASE_PTR(ptr) if(ptr) { delete ptr; ptr = nullptr; }
 #define RELEASE_ARRAY_PTR(arrayPtr) if(arrayPtr) { delete[] arrayPtr; arrayPtr = nullptr; } 
 
@@ -127,3 +125,6 @@ static void checkResultInternal(HRESULT hr, const char* file, int32 line)
 }
 
 #define checkResult(hr) checkResultInternal(hr, __FILE__, __LINE__)
+
+#include <core/sync.h>
+#include <core/log.h>

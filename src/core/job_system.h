@@ -15,7 +15,7 @@ struct job_handle
 };
 
 template <typename data_t>
-using job_function = void (*)(data_t&, job_handle);
+using JobFunction = void (*)(data_t&, job_handle);
 
 struct job_queue
 {
@@ -43,7 +43,7 @@ struct job_queue
 
     template <typename data_t,
         ValidJobDataType<data_t> = true>
-        job_handle createJob(job_function<data_t> function, const data_t& data, job_handle parent = {})
+        job_handle createJob(JobFunction<data_t> function, const data_t& data, job_handle parent = {})
     {
         int32 handle = allocateJob();
         auto& job = allJobs[handle];
@@ -59,7 +59,7 @@ struct job_queue
         {
             data_t& data = *(data_t*)rawData;
 
-            auto function = (job_function<data_t>)templatedFunction;
+            auto function = (JobFunction<data_t>)templatedFunction;
             function(data, job);
 
             data.~data_t();

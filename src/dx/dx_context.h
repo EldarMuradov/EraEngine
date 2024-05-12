@@ -19,21 +19,21 @@ enum dx_raytracing_tier
 {
 	dx_raytracing_not_available,
 	dx_raytracing_1_0,
-	dx_raytracing_1_1,
+	dx_raytracing_1_1
 };
 
 enum DLSS_status
 {
 	DLSS_status_not_available,
-	DLSS_status_3_0,
-	DLSS_status_3_5,
 	DLSS_status_FSR_wrapper,
+	DLSS_status_3_0,
+	DLSS_status_3_5
 };
 
 enum dx_mesh_shader_tier
 {
 	dx_mesh_shader_not_available,
-	dx_mesh_shader_1_0,
+	dx_mesh_shader_1_0
 };
 
 enum dx_tiling_tier
@@ -42,7 +42,7 @@ enum dx_tiling_tier
 	dx_tiling_1,
 	dx_tiling_2,
 	dx_tiling_3,
-	dx_tiling_4,
+	dx_tiling_4
 };
 
 struct dx_feature_support
@@ -55,7 +55,7 @@ struct dx_feature_support
 	constexpr bool raytracing() const { return raytracingTier >= dx_raytracing_1_0; }
 	constexpr bool meshShaders() const { return meshShaderTier >= dx_mesh_shader_1_0; }
 	constexpr bool tiling() const { return tilingTier >= dx_tiling_1; }
-	constexpr bool dlss() const { return dlss_status >= DLSS_status_3_0; }
+	constexpr bool dlss() const { return dlss_status >= DLSS_status_FSR_wrapper; }
 };
 
 struct dx_context

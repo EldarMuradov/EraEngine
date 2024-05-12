@@ -7,6 +7,7 @@
 #endif // setBit
 
 #include <core/math.h>
+#include <core/event_queue.h>
 
 #ifndef PX_PHYSX_STATIC_LIB
 #define PX_PHYSX_STATIC_LIB
@@ -634,6 +635,10 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 	};
 
 #endif
+
+	struct blast_fracture_event { uint32_t handle; };
+
+	extern concurrent_event_queue<blast_fracture_event> blastFractureQueue;
 
 	class px_physics_engine
 	{

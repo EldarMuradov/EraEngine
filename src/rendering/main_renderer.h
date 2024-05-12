@@ -112,7 +112,7 @@ struct renderer_spec
 struct main_renderer
 {
 	main_renderer() {}
-	void initialize(color_depth colorDepth, uint32 windowWidth, uint32 windowHeight, renderer_spec spec, float initDLSS = false);
+	void initialize(color_depth colorDepth, uint32 windowWidth, uint32 windowHeight, renderer_spec spec, bool initDLSS = false);
 
 	void beginFrame(uint32 windowWidth, uint32 windowHeight);
 	void endFrame(const user_input* input);

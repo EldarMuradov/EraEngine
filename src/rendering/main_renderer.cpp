@@ -20,7 +20,7 @@
 #define SSR_RESOLVE_WIDTH (renderWidth / 2)
 #define SSR_RESOLVE_HEIGHT (renderHeight / 2)
 
-void main_renderer::initialize(color_depth colorDepth, uint32 windowWidth, uint32 windowHeight, renderer_spec spec, float initDLSS)
+void main_renderer::initialize(color_depth colorDepth, uint32 windowWidth, uint32 windowHeight, renderer_spec spec, bool initDLSS)
 {
 	this->windowWidth = windowWidth;
 	this->windowHeight = windowHeight;
