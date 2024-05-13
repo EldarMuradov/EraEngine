@@ -330,22 +330,22 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		//	addRaytracingComponentAsync(en, mesh);
 		//}
 
-		//{
-		//	if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
-		//	{
-		//		model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
+		{
+			if (auto mesh = loadMeshFromFileAsync("assets/obj/bunny.obj"))
+			{
+				model_asset ass = load3DModelFromFile("assets/obj/bunny.obj");
 
-		//		auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
-		//			.addComponent<transform_component>(vec3(0.0f, 0.0f, 0.0f), quat::identity, vec3(1.0f))
-		//			.addComponent<mesh_component>(mesh);
+				auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
+					.addComponent<transform_component>(vec3(0.0f, 0.0f, 0.0f), quat::identity, vec3(1.0f))
+					.addComponent<mesh_component>(mesh);
 
-		//		physics::fracture fracture;
-		//		auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
-		//		unsigned int seed = 7249U;
-		//		manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 1, defaultmat, defaultmat, 1.0f, 3.0f);
-		//		scene.deleteEntity(px_sphere_entt1.handle);
-		//	}
-		//}
+				physics::fracture fracture;
+				auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
+				unsigned int seed = 7249U;
+				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 1, defaultmat, defaultmat, 1.0f, 3.0f);
+				scene.deleteEntity(px_sphere_entt1.handle);
+			}
+		}
 
 		/*{
 			model_asset ass = load3DModelFromFile("assets/box.fbx");
@@ -384,22 +384,22 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 			//px_sphere1->addChild(*px_sphere);
 
-			{
-				for (int i = 0; i < 10; i++)
-				{
-					for (int j = 0; j < 10; j++)
-					{
-						for (int k = 0; k < 10; k++)
-						{
-							auto sphr = &scene.createEntity((std::to_string(i) + std::to_string(j) + std::to_string(k)).c_str())
-								.addComponent<transform_component>(vec3(2.0f * i, 5 + 2.0f * j + 5, 2.0f * k), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-								.addComponent<mesh_component>(sphereMesh)
-								.addComponent<physics::px_sphere_collider_component>(1.0f)
-								.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
-						}
-					}
-				}
-			}
+			//{
+			//	for (int i = 0; i < 10; i++)
+			//	{
+			//		for (int j = 0; j < 10; j++)
+			//		{
+			//			for (int k = 0; k < 10; k++)
+			//			{
+			//				auto sphr = &scene.createEntity((std::to_string(i) + std::to_string(j) + std::to_string(k)).c_str())
+			//					.addComponent<transform_component>(vec3(2.0f * i, 5 + 2.0f * j + 5, 2.0f * k), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			//					.addComponent<mesh_component>(sphereMesh)
+			//					.addComponent<physics::px_sphere_collider_component>(1.0f)
+			//					.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
+			//			}
+			//		}
+			//	}
+			//}
 
 			//auto px_cct = &scene.createEntity("CharacterControllerPx")
 			//	.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))

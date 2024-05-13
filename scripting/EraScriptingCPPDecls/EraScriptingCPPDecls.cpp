@@ -92,9 +92,9 @@ ERASCRIPTINGCPPDECLS_API void initializeNavigationComponent(uint32_t id, uint8_t
     return enative_caller::call("initializeNavigationComponent", id, type);
 }
 
-ERASCRIPTINGCPPDECLS_API void log_message(uint8_t mode, const char* message) noexcept
+ERASCRIPTINGCPPDECLS_API void logMessage(uint8_t mode, const char* message) noexcept
 {
-    enative_caller::call("log_message", mode, message);
+    enative_caller::call("logMessage", mode, message);
 }
 
 ERASCRIPTINGCPPDECLS_API void sendType(const char* type) noexcept

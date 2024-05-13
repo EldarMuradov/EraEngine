@@ -1,5 +1,4 @@
-﻿using EraEngine.Components;
-using EraEngine.Configuration;
+﻿using EraEngine.Configuration;
 using EraEngine.FileSystem;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -37,31 +36,39 @@ public sealed class UserScriptingLauncher
 
     internal void UnloadAssembly(HostAssemblyLoadContext context)
     {
-        _userTypes.Clear();
-        _userTypes = [];
-
-        Parallel.ForEach(EWorld.SceneWorld.Entities.Values, (e) => 
+        try
         {
-            foreach (var comp in e.Components.Values)
+            _userTypes.Clear();
+            _userTypes = [];
+
+            Parallel.ForEach(EWorld.SceneWorld.Entities.Values, (e) =>
             {
-                if (comp is EScript)
+                foreach (var comp in e.Components.Values)
                 {
-                    var name = comp.GetType().Name;
-                    e.Components.TempCompData.Add(name);
-                    e.RemoveComponent(name, false);
+                    if (comp is EScript)
+                    {
+                        var name = comp.GetType().Name;
+                        e.Components.TempCompData.Add(name);
+                        e.RemoveComponent(name, false);
+                    }
                 }
-            }
-        });
+            });
 
-        bool unloading = true;
-        context.Unloading += (alc) => { unloading = false; };
-        context.Unload();
+            bool unloading = true;
+            context.Unloading += (alc) => { unloading = false; };
+            context.Unload();
 
-        while (unloading);
+            while (unloading);
 
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            Debug.LogError(e.Message);
+        }
     }
 
     public void ExecuteAndUnload(string assemblyPath, out WeakReference alcWeakRef)
@@ -117,46 +124,47 @@ public sealed class UserScriptingLauncher
         {
             Console.WriteLine(ex.Message);
         }
+        finally
+        {
+            bool unloading = true;
+            _alc.Unloading += (alc) => { unloading = false; };
+            _alc.Unload();
 
-        bool unloading = true;
-        _alc.Unloading += (alc) => { unloading = false; };
-        _alc.Unload();
+            while (unloading) ;
 
-        while (unloading);
-
-        _alc = new(assemblyPath);
+            _alc = new(assemblyPath);
+        }
     }
 
     internal void LoadDll()
     {
-        string projectDllPath = Path.Combine(Project.Path, "assets", "scripts", Project.Name, Project.Name, "bin", "Release", "net8.0");
-        string tempPath = Path.Combine(Project.Path, Project.TempDllPath);
-        string tempDllPath = Path.Combine(Project.Path, Project.TempDllPath, $"{Project.Name}.dll");
-
-        if (!Directory.Exists(Project.TempDllPath))
-        {
-            Directory.CreateDirectory(tempPath);
-            Debug.Log("Created temp path");
-        }
-
-        if (_alc is not null)
-        {
-            WeakReference alcWeakReference = new(_alc);
-            UnloadAssembly(_alc);
-            _alc = new(tempDllPath);
-
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
-
-            Debug.Log($"Unload user dll success: {!alcWeakReference.IsAlive}");
-        }
-
-        Debug.Log("Before cleaning");
-        FileCloner fileCloner = new();
-
         try
         {
+            string projectDllPath = Path.Combine(Project.Path, "assets", "scripts", Project.Name, Project.Name, "bin", "Release", "net8.0");
+            string tempPath = Path.Combine(Project.Path, Project.TempDllPath);
+            string tempDllPath = Path.Combine(Project.Path, Project.TempDllPath, $"{Project.Name}.dll");
+
+            if (!Directory.Exists(Project.TempDllPath))
+            {
+                Directory.CreateDirectory(tempPath);
+                Debug.Log("Created temp path");
+            }
+
+            if (_alc is not null)
+            {
+                WeakReference alcWeakReference = new(_alc);
+                UnloadAssembly(_alc);
+                _alc = new(tempDllPath);
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+
+                Debug.Log($"Unload user dll success: {!alcWeakReference.IsAlive}");
+            }
+
+            Debug.Log("Before cleaning");
+            FileCloner fileCloner = new();
             fileCloner.Clone(projectDllPath, tempPath);
             Debug.Log("Cloned all files");
 
@@ -170,17 +178,18 @@ public sealed class UserScriptingLauncher
         }
         catch (Exception e)
         {
+            Console.WriteLine(e.Message);
             Debug.Log(e.Message);
         }
     }
 
-    internal EComponent GetComponent(string name)
+    internal EComponent? GetComponent(string name)
     {
         if(_userTypes.TryGetValue(name, out var type))
             return Unsafe.As<EComponent>(Activator.CreateInstance(type));
 
         Debug.LogError("Failed to get a type!");
-        return null!;
+        return null;
     }
 
     internal void ReloadScripting()
@@ -191,7 +200,8 @@ public sealed class UserScriptingLauncher
         }
         catch (Exception e) 
         { 
-            Console.WriteLine(e.Message); 
+            Console.WriteLine(e.Message);
+            Debug.LogError(e.Message);
         }
     }
 

@@ -381,7 +381,9 @@ namespace bind
 
 	static void release_internal(uint32_t id) noexcept
 	{
+		entity_handle hid = (entity_handle)id;
 
+		enative_scripting_linker::app->getCurrentScene()->deleteEntity(hid);
 	}
 
 	static void setActive_internal(uint32_t id, bool active) noexcept
@@ -544,7 +546,7 @@ void enative_scripting_linker::bindFunctions()
 
 		// Debug
 		{
-			builder->functions.emplace("log_message", BIND(bind::log_message_internal, void, uint8_t, const char*));
+			builder->functions.emplace("logMessage", BIND(bind::log_message_internal, void, uint8_t, const char*));
 		}
 
 		// User Scripting

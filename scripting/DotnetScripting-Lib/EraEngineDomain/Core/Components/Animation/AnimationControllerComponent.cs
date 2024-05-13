@@ -3,15 +3,11 @@ using System.Runtime.InteropServices;
 
 namespace EraEngine;
 
-public sealed class Animation
+public sealed class EAnimation : EResource
 {
-    public readonly ulong ResourceId;
-
-    public string Name { get; set; }
-
-    public Animation(ulong resourceId, string name = "DefaultAnimation")
+    public EAnimation(ulong resourceId, string name = "DefaultAnimation")
     {
-        ResourceId = resourceId;
+        Id = resourceId;
 
         Name = name;
     }
@@ -20,9 +16,9 @@ public sealed class Animation
 [RequireComponent<MeshRendererComponent>]
 public class AnimationControllerComponent : EComponent
 {
-    private List<Animation> _animations = [];
+    private List<EAnimation> _animations = [];
 
-    public Animation CurrentAnimation { get; private set; } = default!;
+    public EAnimation CurrentAnimation { get; private set; } = default!;
 
     public void SetAnimationByIndex(int index)
     {
@@ -32,10 +28,10 @@ public class AnimationControllerComponent : EComponent
             Debug.LogError($"Animation> Failed to set animation with {index} index");
     }
 
-    public void SetAnimation(in Animation animation)
+    public void SetAnimation(in EAnimation animation)
     {
-        if (!setAnimationByResourceHandle(Entity.Id, animation.ResourceId))
-            Debug.LogError($"Animation> Failed to set animation with {animation.ResourceId} resource handle");
+        if (!setAnimationByResourceHandle(Entity.Id, animation.Id))
+            Debug.LogError($"Animation> Failed to set animation with {animation.Id} resource handle");
     }
 
     internal override void InitializeComponentInternal(params object[] args)
@@ -51,7 +47,7 @@ public class AnimationControllerComponent : EComponent
     }
 
     [DllImport("EraScriptingCPPDecls.dll")]
-    private static extern bool setAnimationByIndex(int id, int state);
+    private static extern bool setAnimationByIndex(int id, int index);
 
     [DllImport("EraScriptingCPPDecls.dll")]
     private static extern bool setAnimationByResourceHandle(int id, ulong handle);

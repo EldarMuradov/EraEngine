@@ -1,4 +1,4 @@
-﻿namespace EraEngine.Components.Audio;
+﻿namespace EraEngine;
 
 public sealed class AudioListener : EComponent
 {

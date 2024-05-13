@@ -478,7 +478,7 @@ namespace physics
             if (fractureTool->fractureTool->isMeshContainOpenEdges(mesh->mesh))
             {
                 LOG_WARNING("NvBlast> Mesh contains open edges!");
-                return {};
+                //return {};
             }
 
             auto chunkMesh = createRenderMesh(*mesh);

@@ -1,6 +1,4 @@
-﻿using EraEngine.Components;
-
-namespace EraEngine;
+﻿namespace EraEngine;
 
 public class EScript : EComponent
 {

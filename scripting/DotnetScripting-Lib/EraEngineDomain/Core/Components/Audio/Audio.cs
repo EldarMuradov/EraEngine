@@ -1,5 +1,5 @@
-﻿namespace EraEngine.Components.Audio;
+﻿namespace EraEngine;
 
-public struct Audio
+public sealed class Audio : EResource
 {
 }

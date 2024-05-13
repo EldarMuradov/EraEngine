@@ -14,8 +14,11 @@ public class ComponentHandler : IEHandler
             var c = ScriptingCore.UserScriptingObj.GetComponent(result);
             entity.CopyComponent(c);
         }
-        catch(Exception e) { Console.WriteLine(e.Message); }
-
+        catch(Exception e)
+        {
+            Console.WriteLine(e.Message);
+            Debug.LogError(e.Message);
+        }
     }
 
     [UnmanagedCaller]
@@ -27,6 +30,10 @@ public class ComponentHandler : IEHandler
             var entity = EWorld.SceneWorld.GetEntity(id);
             entity.RemoveComponent(result);
         }
-        catch (Exception e) { Console.WriteLine(e.Message); }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            Debug.LogError(e.Message);
+        }
     }
 }

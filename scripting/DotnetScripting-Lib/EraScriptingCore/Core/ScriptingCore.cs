@@ -26,13 +26,23 @@ public class ScriptingCore
 
     private static async Task InitAsync()
     {
-        using StreamReader sr = new(Path.Combine(Environment.CurrentDirectory, "bin", "Release_x86_64", "core.cfg"));
-        var res = await sr.ReadToEndAsync();
-        var str = res.Split(',');
-        Project.Name = str[0];
-        Project.Path = str[1];
-        Project.EnginePath = str[2];
-        InitializeScripting();
+        try
+        {
+            using StreamReader sr = new(Path.Combine(Environment.CurrentDirectory, "bin", "Release_x86_64", "core.cfg"));
+            var res = await sr.ReadToEndAsync();
+            var str = res.Split(',');
+
+            Project.Name = str[0];
+            Project.Path = str[1];
+            Project.EnginePath = str[2];
+
+            InitializeScripting();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            Debug.LogError(e.Message);
+        }
     }
 
     #region Invoke from C++

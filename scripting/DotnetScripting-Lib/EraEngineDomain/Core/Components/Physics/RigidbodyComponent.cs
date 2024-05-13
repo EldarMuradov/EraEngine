@@ -107,7 +107,6 @@ public sealed class RigidbodyComponent : EComponent
             throw new ArgumentException("Wrong number of arguments!");
         Type = (RigidbodyType)args[0];
         initializeRigidbody(Entity.Id, (byte)Type);
-        
     }
 
     #region P/I

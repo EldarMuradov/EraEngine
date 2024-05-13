@@ -1,4 +1,5 @@
 ﻿using EraEngine.Components;
+using System.Diagnostics.Tracing;
 
 namespace EraEngine;
 public static class ELevel
@@ -46,29 +47,28 @@ public static class ELevel
 
             // Channel tests
             {
-                var eventChannel = ESystemManager.GetSystem<EventSystem>().Channel;
-
-                var subscribe = (EventRequest req) => { Console.WriteLine(req.Name); };
-                var unsubscribe = () => { Console.WriteLine("Completed"); };
-
+                ESystemManager.GetSystem<BackgroundServiceSystem>().QueueTask(async () =>
                 {
-                    using var subscription = eventChannel.Subscribe(subscribe, unsubscribe);
+                    var eventChannel = ESystemManager.GetSystem<EventSystem>().Channel;
 
-                    eventChannel.Post(new EventRequest() { Name = "REQ1" });
-                    eventChannel.Post(new EventRequest() { Name = "REQ2" });
-                    eventChannel.Post(new EventRequest() { Name = "REQ3" });
-                }
+                    var subscribe = (EventRequest req) => { Console.WriteLine(req.Name); };
+                    var unsubscribe = () => { Console.WriteLine("Completed"); };
 
-                eventChannel.Post(new EventRequest() { Name = "REQ4" });
-
-                Task.Run(
-                    async () =>
                     {
-                        await foreach (var req in eventChannel.ToAsyncEnumerable(CancellationToken.None))
-                        {
-                            await Console.Out.WriteLineAsync(req.Name + " " + req.IsCompleted);
-                        }
-                    });
+                        using var subscription = eventChannel.Subscribe(subscribe, unsubscribe);
+
+                        eventChannel.Post(new EventRequest() { Name = "REQ1" });
+                        eventChannel.Post(new EventRequest() { Name = "REQ2" });
+                        eventChannel.Post(new EventRequest() { Name = "REQ3" });
+                    }
+
+                    eventChannel.Post(new EventRequest() { Name = "REQ4" });
+
+                    await foreach (var req in eventChannel.ToAsyncEnumerable(CancellationToken.None))
+                    {
+                        await Console.Out.WriteLineAsync(req.Name + " " + req.IsCompleted);
+                    }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
             }
         }
         catch (Exception ex)

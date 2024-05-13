@@ -635,23 +635,27 @@ void physics::px_physics_engine::processBlastQueue() noexcept
 
 			physics_lock_write lockWrite{};
 
-			eentity fractureGameObject = enttScene->createEntity("Fracture")
-				.addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
-			auto& graphManager = fractureGameObject.addComponent<chunk_graph_manager>().getComponent<chunk_graph_manager>();
+			shared_spin_lock lock{ physics::physics_holder::physicsRef->sync};
+
 
 			eentity renderEntity{ (entity_handle)event.handle, &enttScene->registry };
-			auto& mesh = renderEntity.getComponent<nvmesh_chunk_component>();
+			if (auto mesh = renderEntity.getComponentIfExists<nvmesh_chunk_component>())
+			{
+				eentity fractureGameObject = enttScene->createEntity("Fracture")
+					.addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
+				auto& graphManager = fractureGameObject.addComponent<chunk_graph_manager>().getComponent<chunk_graph_manager>();
 
-			auto defaultmat = createPBRMaterialAsync({ "", "" });
-			defaultmat->shader = pbr_material_shader_double_sided;
+				auto defaultmat = createPBRMaterialAsync({ "", "" });
+				defaultmat->shader = pbr_material_shader_double_sided;
 
-			auto meshes = fractureMeshesInNvblast(3, mesh.mesh);
+				auto meshes = fractureMeshesInNvblast(3, mesh->mesh);
 
-			auto chunks = buildChunks(renderEntity.getComponentIfExists<transform_component>() ? *renderEntity.getComponentIfExists<transform_component>() : trs::identity, defaultmat, defaultmat, meshes, 7.5f);
+				auto chunks = buildChunks(renderEntity.getComponentIfExists<transform_component>() ? *renderEntity.getComponentIfExists<transform_component>() : trs::identity, defaultmat, defaultmat, meshes, 7.5f);
 
-			graphManager.setup(chunks, ++renderEntity.getComponent<chunk_graph_manager::chunk_node>().spliteGeneration);
+				graphManager.setup(chunks, ++renderEntity.getComponent<chunk_graph_manager::chunk_node>().spliteGeneration);
 
-			enttScene->deleteEntity((entity_handle)event.handle);
+				enttScene->deleteEntity((entity_handle)event.handle);
+			}
 		});
 }
 

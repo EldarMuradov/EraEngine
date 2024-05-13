@@ -3,7 +3,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace EraEngine.Components;
+namespace EraEngine;
 
 public enum CharacterControllerType 
 {
@@ -25,14 +25,14 @@ public abstract class CharacterController : EComponent
     public virtual void Move(Vector3 position) 
     {
         IntPtr vec = Memory.StructToIntPtr(position);
-        move(Entity.Id, vec);
+        moveCCT(Entity.Id, vec);
         Memory.ReleaseIntPtr(vec);
     }
 
     #region P/I
 
     [DllImport("EraScriptingCPPDecls.dll")]
-    private static extern float move(int id, IntPtr position);
+    private static extern float moveCCT(int id, IntPtr position);
 
     #endregion
 }

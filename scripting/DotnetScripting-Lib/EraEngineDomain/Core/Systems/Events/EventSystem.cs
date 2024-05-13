@@ -4,12 +4,11 @@ using System.Threading.Channels;
 
 namespace EraEngine;
 
-[StructLayout(LayoutKind.Sequential)]
-public struct EventRequest
+public class EventRequest
 {
-    public bool IsCompleted;
+    public bool IsCompleted { get; set; } = false;
 
-    public string Name;
+    public string Name { get; set; } = "Event";
 }
 
 public sealed class EventChannel<T> : IDisposable

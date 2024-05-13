@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace EraEngine.Components;
+namespace EraEngine;
 
 public sealed class CapsuleCharacterController : CharacterController
 {

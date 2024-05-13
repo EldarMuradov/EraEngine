@@ -1,5 +1,4 @@
 ﻿using EraEngine.Extensions;
-using System;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -23,10 +22,11 @@ public sealed class TransformComponent : EComponent
     public void SetPosition(Vector3 position, bool sync = true)
     {
         _position = position;
-        if (Entity.Parent is null)
-            LocalPosition = position;
-        else
-            LocalPosition = Entity.Parent.GetComponent<TransformComponent>().GetPosition() - _position;
+
+        LocalPosition = Entity.Parent is null 
+            ? LocalPosition = position
+            : Entity.Parent.GetComponent<TransformComponent>().GetPosition() - _position;
+
         if (sync)
         {
             IntPtr vec = Memory.StructToIntPtr(position);
@@ -39,6 +39,7 @@ public sealed class TransformComponent : EComponent
     {
         _rotation = rotation;
         LocalRotation = rotation;
+
         if (sync)
         {
             IntPtr q = Memory.StructToIntPtr(rotation);
@@ -76,7 +77,7 @@ public sealed class TransformComponent : EComponent
 
     public void SetParent(TransformComponent transform)
     {
-    
+        // TODO
     }
 
     public static Vector3 ToEulerAngles(Quaternion q)
