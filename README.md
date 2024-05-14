@@ -1,4 +1,4 @@
-![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/02d7801170a48c62c13e82ff4261d3a94ee91df3/DLSS_ON.png)
+![EraEngine Logo](https://github.com/EldarMuradov/EldarMuradov/blob/a4d76f9ec241f35d76237f3e637cbf1921de5d2d/Editor.png)
 
 ![EraEngine Logo](https://github.com/EldarMuradov/EldarMuradov/blob/99a6272b7b5f123c8f20b7c39f773714f79810cd/MESH_EDITOR.png)
 
@@ -31,8 +31,6 @@ Engine provides API and tools to work with 3D Audio. You can customize all audio
 ### Scripting: 
 Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write scripts in C# with all the benefits of .NET, including high performance and a rich class library.
 
-![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/ea2b31115dbb7467764a7cccf4714b33589a31da/EngineSC4.png)
-
 # Dependencies
 
 -PhysX 5.3.1
@@ -48,8 +46,6 @@ Era Engine uses .NET 8.0 Native AOT and Runtime. This allows developers to write
 -Blast
 
 -.NET 8.0 (Native AOT and Runtime)
-
-![EraEngine Logo](https://github.com/EldarMuradov/EraGameEngine/blob/ea2b31115dbb7467764a7cccf4714b33589a31da/EngineSC3.png)
 
 # Features
 
