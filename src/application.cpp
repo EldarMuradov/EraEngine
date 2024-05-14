@@ -145,32 +145,32 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 			}
 		}, data).submitNow();
 
-		const auto& nav_objects = data.scene.group(component_group<navigation_component, transform_component>);
+	const auto& nav_objects = data.scene.group(component_group<navigation_component, transform_component>);
 
-		if (nav_objects.size())
+	if (nav_objects.size())
+	{
+		struct nav_process_data
 		{
-			struct nav_process_data
+			decltype(nav_objects) objects;
+		};
+
+		nav_process_data nav_data{ nav_objects };
+
+		lowPriorityJobQueue.createJob<nav_process_data>([](nav_process_data& data, job_handle)
 			{
-				decltype(nav_objects) objects;
-			};
-
-			nav_process_data nav_data{ nav_objects };
-
-			lowPriorityJobQueue.createJob<nav_process_data>([](nav_process_data& data, job_handle)
+				CPU_PROFILE_BLOCK("Navigation step");
+				for (auto [entityHandle, nav, transform] : data.objects.each())
 				{
-					CPU_PROFILE_BLOCK("Navigation step");
-					for (auto [entityHandle, nav, transform] : data.objects.each())
-					{
-						nav.processPath();
-					}
-				}, nav_data).submitNow();
-		}
+					nav.processPath();
+				}
+			}, nav_data).submitNow();
+	}
 }
 
 void updateScripting(updatePhysicsAndScriptingData& data)
 {
 	CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
-	for (auto [entityHandle, transform, script] : data.scene.group(component_group<transform_component, script_component>).each())
+	for (auto [entityHandle, script, transform] : data.scene.group(component_group<script_component, transform_component>).each())
 	{
 		const auto& mat = trsToMat4(transform);
 		constexpr size_t mat_size = 16;
@@ -178,6 +178,7 @@ void updateScripting(updatePhysicsAndScriptingData& data)
 		for (size_t i = 0; i < mat_size; i++)
 			ptr[i] = mat.m[i];
 		data.core.process_trs(reinterpret_cast<uintptr_t>(ptr), (int)entityHandle);
+		delete[] ptr;
 	}
 	data.core.update(data.deltaTime);
 }
@@ -331,18 +332,18 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		//}
 
 		{
-			if (auto mesh = loadMeshFromFileAsync("assets/obj/bunny.obj"))
+			if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
 			{
-				model_asset ass = load3DModelFromFile("assets/obj/bunny.obj");
+				model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
 
 				auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
-					.addComponent<transform_component>(vec3(0.0f, 0.0f, 0.0f), quat::identity, vec3(1.0f))
+					.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
 					.addComponent<mesh_component>(mesh);
 
 				physics::fracture fracture;
 				auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
 				unsigned int seed = 7249U;
-				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 1, defaultmat, defaultmat, 1.0f, 3.0f);
+				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::Bottom, seed, 50, defaultmat, defaultmat, 1.0f, 3.0f);
 				scene.deleteEntity(px_sphere_entt1.handle);
 			}
 		}

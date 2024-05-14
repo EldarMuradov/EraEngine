@@ -997,13 +997,13 @@ namespace physics
             //    connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce);
             //}
 
-            for (auto chunk : chunks)
-            {
-                eentity renderEntity{ chunk, &enttScene->registry };
-                renderEntity.setParent(fractureGameObject);
-            }
+            ///*for (auto chunk : chunks)
+            //{
+            //    eentity renderEntity{ chunk, &enttScene->registry };
+            //    renderEntity.setParent(fractureGameObject);
+            //}*/
 
-            anchorChunks(fractureGameObject.handle, anchor);
+            //anchorChunks(gameObject.handle, anchor);
 
             // Graph manager freezes/unfreezes blocks depending on whether they are connected to the graph or not
             graphManager.setup(chunks);
@@ -1200,7 +1200,7 @@ namespace physics
                         std::vector<PxFilterData> fd1 = getFilterData(rb.getRigidActor());
                         std::vector<PxFilterData> fd2 = getFilterData(rbOverlap.getRigidActor());
 
-                        px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{ 0.1f, 0.1f, 2000.0f, 1000.0f }, rb.getRigidActor(), rbOverlap.getRigidActor());
+                        px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{ 0.1f, 0.1f, 200.0f, 100.0f }, rb.getRigidActor(), rbOverlap.getRigidActor());
                         
                         joint->joint->setInvInertiaScale0(0.0f);
                         joint->joint->setInvInertiaScale1(0.0f);

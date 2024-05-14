@@ -2821,8 +2821,8 @@ void eeditor::drawSettings(float dt)
 						renderer->dlss_adapter.initialize(renderer);
 					}
 				}
-				else
-					renderer->settings.tonemapSettings = renderer->settings.defaultTonemapSettings;
+				//else
+					//renderer->settings.tonemapSettings = renderer->settings.defaultTonemapSettings;
 				ImGui::Separator();
 
 #endif

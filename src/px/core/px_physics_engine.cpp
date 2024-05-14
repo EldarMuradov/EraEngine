@@ -210,7 +210,11 @@ void physics::px_physics_engine::release() noexcept
 		PX_RELEASE(physics)
 		PX_RELEASE(pvd)
 		PX_RELEASE(foundation)
+
+		if(scene)
+			scene->flushSimulation();
 		PX_RELEASE(scene)
+
 		PX_RELEASE(cudaContextManager)
 		PX_RELEASE(defaultMaterial)
 		PX_RELEASE(dispatcher)
@@ -628,7 +632,7 @@ void physics::px_physics_engine::processBlastQueue() noexcept
 	if(!blastFractureQueue.empty())
 		blastFractureQueue.processQueue([](blast_fracture_event& event)
 		{
-			auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+			/*auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
 			if (!enttScene->registry.size())
 				return;
@@ -655,7 +659,7 @@ void physics::px_physics_engine::processBlastQueue() noexcept
 				graphManager.setup(chunks, ++renderEntity.getComponent<chunk_graph_manager::chunk_node>().spliteGeneration);
 
 				enttScene->deleteEntity((entity_handle)event.handle);
-			}
+			}*/
 		});
 }
 

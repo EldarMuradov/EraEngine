@@ -38,9 +38,8 @@ NODISCARD eentity physics::buildChunk(const trs& transform, ref<pbr_material> in
     mm->aabb.grow(aabb.maxCorner);
 
     auto& rb = chunk.getComponent<physics::px_rigidbody_component>();
-
     rb.setMass(3.00f);
-    rb.setThreshold(0.02f, 0.02f);
+    rb.setThreshold(0.02f, 1.00f);
 
     mm->mesh = builder.createDXMesh();
 
