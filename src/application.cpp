@@ -105,7 +105,7 @@ struct updatePhysicsAndScriptingData
 	const user_input& input;
 };
 
-void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt, const user_input& in)
+void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt, const user_input& in) noexcept
 {
 	updatePhysicsAndScriptingData data = { dt, core, currentScene, in };
 
@@ -167,7 +167,7 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 	}
 }
 
-void updateScripting(updatePhysicsAndScriptingData& data)
+void updateScripting(updatePhysicsAndScriptingData& data) noexcept
 {
 	CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
 	for (auto [entityHandle, script, transform] : data.scene.group(component_group<script_component, transform_component>).each())
@@ -183,7 +183,7 @@ void updateScripting(updatePhysicsAndScriptingData& data)
 	data.core.update(data.deltaTime);
 }
 
-static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> mesh)
+static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> mesh) noexcept
 {
 	struct add_animation_data
 	{

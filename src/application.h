@@ -32,8 +32,8 @@ bool editFireParticleSystem(fire_particle_system& particleSystem);
 bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
 struct updatePhysicsAndScriptingData;
-void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt, const user_input& in);
-void updateScripting(updatePhysicsAndScriptingData& data);
+void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt, const user_input& in) noexcept;
+void updateScripting(updatePhysicsAndScriptingData& data) noexcept;
 
 struct application
 {
@@ -43,8 +43,8 @@ struct application
 
 	void handleFileDrop(const fs::path& filename);
 
-	NODISCARD escene* getCurrentScene() { return &scene.getCurrentScene(); }
-	NODISCARD editor_scene* getScene() { return &scene; }
+	NODISCARD escene* getCurrentScene() noexcept { return &scene.getCurrentScene(); }
+	NODISCARD editor_scene* getScene() noexcept { return &scene; }
 
 	void renderObjectPoint(float x, float y, float z);
 	void renderObjectBox(vec3 pos, float x, float y, float z);

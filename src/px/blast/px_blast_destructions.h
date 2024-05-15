@@ -497,7 +497,8 @@ namespace physics
 
         for (size_t i = 0; i < meshes.size(); ++i)
         {
-            handles.push_back(buildChunk(transform, insideMaterial, outsideMaterial, meshes[i], chunkMass, generation).handle);
+            auto chunk = buildChunk(transform, insideMaterial, outsideMaterial, meshes[i], chunkMass, generation);
+            handles.push_back(chunk.handle);
         }
 
         return handles;
@@ -705,8 +706,6 @@ namespace physics
 
             void setup(chunk_graph_manager* manager) noexcept
             {
-                setupRigidbody();
-
                 jointToChunk.clear();
                 chunkToJoint.clear();
 
@@ -792,38 +791,6 @@ namespace physics
                 }
 
                 hasBrokenLinks = false;
-            }
-
-            void setupRigidbody() noexcept
-            {
-                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
-
-                if (!enttScene->registry.size())
-                    return;
-
-                eentity renderEntity{ handle, &enttScene->registry };
-
-                auto& rb = renderEntity.getComponent<px_rigidbody_component>();
-
-                rb.setMaxAngularVelosity(1000.0f);
-                rb.setMaxLinearVelosity(1000.0f);
-                rb.setMaxContactImpulseFlag(true);
-                rb.setAngularDamping(0.01f);
-                rb.setLinearDamping(0.01f);
-
-                auto dyn = rb.getRigidActor()->is<PxRigidDynamic>();
-                dyn->setSolverIterationCounts(8, 16);
-
-                dyn->setCMassLocalPose(PxTransform(PxVec3(0.0f)));
-
-                dyn->setMaxContactImpulse(1000.0f);
-                dyn->clearTorque();
-                dyn->clearForce();
-
-                dyn->setLinearVelocity(PxVec3(0.0f));
-                dyn->setAngularVelocity(PxVec3(0.0f));
-
-                rb.updateMassAndInertia(3.0f);
             }
         };
 
@@ -992,16 +959,16 @@ namespace physics
             auto chunks = buildChunks(gameObject.getComponent<transform_component>(), insideMaterial, outsideMaterial, meshes, chunkMass);
 
             // Connect blocks that are touching with fixed joints
-            //for (size_t i = 0; i < chunks.size(); i++)
-            //{
-            //    connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce);
-            //}
+            /*for (size_t i = 0; i < chunks.size(); i++)
+            {
+                connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce);
+            }*/
 
-            ///*for (auto chunk : chunks)
-            //{
-            //    eentity renderEntity{ chunk, &enttScene->registry };
-            //    renderEntity.setParent(fractureGameObject);
-            //}*/
+            for (auto chunk : chunks)
+            {
+                eentity renderEntity{ chunk, &enttScene->registry };
+                renderEntity.setParent(fractureGameObject);
+            }
 
             //anchorChunks(gameObject.handle, anchor);
 
