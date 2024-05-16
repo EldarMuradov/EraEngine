@@ -776,8 +776,8 @@ void application::update(const user_input& input, float dt)
 				//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
 			}
 
-			//{
-				/*eentity entt{ manager, &scene.registry };
+			{
+				eentity entt{ manager, &scene.registry };
 				auto& chunkManager = entt.getComponent<physics::chunk_graph_manager>();
 				chunkManager.update();
 
@@ -786,8 +786,8 @@ void application::update(const user_input& input, float dt)
 					eentity node{ chunkManager.nodes[i], &scene.registry };
 
 					node.getComponent<physics::chunk_graph_manager::chunk_node>().update();
-				}*/
-			//}
+				}
+			}
 
 			// Render soft bodies
 			if (!physics::physics_holder::physicsRef->softBodies.empty())

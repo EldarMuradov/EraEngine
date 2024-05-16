@@ -1,3 +1,4 @@
+
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
@@ -98,7 +99,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	if (transport == NULL)
 		throw std::exception("Failed to create {PxPvdTransport}. Error in {PhysicsEngine} ctor.");
 
-	if(pvd->connect(*transport, PxPvdInstrumentationFlag::eALL))
+	if (pvd->connect(*transport, PxPvdInstrumentationFlag::eALL))
 		std::cout << "Physics> PVD Connected.\n";
 
 #endif
@@ -122,6 +123,8 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 
 	sceneDesc.filterShader = contactReportFilterShader;
 
+	//sceneDesc.bounceThresholdVelocity = 0.4 * toleranceScale.speed;
+
 	sceneDesc.solverType = PxSolverType::eTGS;
 
 	//sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
@@ -137,14 +140,14 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::ePABP;
 #endif
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
-	sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
-	sceneDesc.frictionType = PxFrictionType::ePATCH;
+	//sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
+	//sceneDesc.frictionType = PxFrictionType::ePATCH;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-	sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
-	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
+	//sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
+	//sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
-	//sceneDesc.ccdMaxPasses = 4;
+	//sceneDesc.ccdMaxPasses = 1;
 
 	//sceneDesc.filterCallback = &simulationFilterCallback;
 
@@ -211,7 +214,7 @@ void physics::px_physics_engine::release() noexcept
 		PX_RELEASE(pvd)
 		PX_RELEASE(foundation)
 
-		if(scene)
+		if (scene)
 			scene->flushSimulation();
 		PX_RELEASE(scene)
 
@@ -220,7 +223,7 @@ void physics::px_physics_engine::release() noexcept
 		PX_RELEASE(dispatcher)
 
 #if PX_ENABLE_RAYCAST_CCD
-		delete raycastCCD;
+			delete raycastCCD;
 		raycastCCD = nullptr;
 #endif
 
@@ -235,7 +238,7 @@ void physics::px_physics_engine::start() noexcept
 	blast = make_ref<px_blast>();
 	blast->onSampleStart(physics, scene);
 
-	auto pmaterial = physics->createMaterial(0.8, 0.8, 0.6);
+	//auto pmaterial = physics->createMaterial(0.8, 0.8, 0.6);
 
 	//scene->addActor(*PxCreatePlane(*physics, PxPlane(0.f, 1.f, 0.f, 0.0f), *pmaterial));
 	//scene->addActor(*PxCreatePlane(*physics, PxPlane(-1.f, 0.f, 0.f, 7.5f), *pmaterial));
@@ -629,38 +632,38 @@ void physics::px_physics_engine::processBlastQueue() noexcept
 
 	//unfreezeBlastQueue.clear();
 
-	if(!blastFractureQueue.empty())
+	if (!blastFractureQueue.empty())
 		blastFractureQueue.processQueue([](blast_fracture_event& event)
-		{
-			/*auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
-
-			if (!enttScene->registry.size())
-				return;
-
-			physics_lock_write lockWrite{};
-
-			shared_spin_lock lock{ physics::physics_holder::physicsRef->sync};
-
-
-			eentity renderEntity{ (entity_handle)event.handle, &enttScene->registry };
-			if (auto mesh = renderEntity.getComponentIfExists<nvmesh_chunk_component>())
 			{
-				eentity fractureGameObject = enttScene->createEntity("Fracture")
-					.addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
-				auto& graphManager = fractureGameObject.addComponent<chunk_graph_manager>().getComponent<chunk_graph_manager>();
+				/*auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
-				auto defaultmat = createPBRMaterialAsync({ "", "" });
-				defaultmat->shader = pbr_material_shader_double_sided;
+				if (!enttScene->registry.size())
+					return;
 
-				auto meshes = fractureMeshesInNvblast(3, mesh->mesh);
+				physics_lock_write lockWrite{};
 
-				auto chunks = buildChunks(renderEntity.getComponentIfExists<transform_component>() ? *renderEntity.getComponentIfExists<transform_component>() : trs::identity, defaultmat, defaultmat, meshes, 7.5f);
+				shared_spin_lock lock{ physics::physics_holder::physicsRef->sync};
 
-				graphManager.setup(chunks, ++renderEntity.getComponent<chunk_graph_manager::chunk_node>().spliteGeneration);
 
-				enttScene->deleteEntity((entity_handle)event.handle);
-			}*/
-		});
+				eentity renderEntity{ (entity_handle)event.handle, &enttScene->registry };
+				if (auto mesh = renderEntity.getComponentIfExists<nvmesh_chunk_component>())
+				{
+					eentity fractureGameObject = enttScene->createEntity("Fracture")
+						.addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
+					auto& graphManager = fractureGameObject.addComponent<chunk_graph_manager>().getComponent<chunk_graph_manager>();
+
+					auto defaultmat = createPBRMaterialAsync({ "", "" });
+					defaultmat->shader = pbr_material_shader_double_sided;
+
+					auto meshes = fractureMeshesInNvblast(3, mesh->mesh);
+
+					auto chunks = buildChunks(renderEntity.getComponentIfExists<transform_component>() ? *renderEntity.getComponentIfExists<transform_component>() : trs::identity, defaultmat, defaultmat, meshes, 7.5f);
+
+					graphManager.setup(chunks, ++renderEntity.getComponent<chunk_graph_manager::chunk_node>().spliteGeneration);
+
+					enttScene->deleteEntity((entity_handle)event.handle);
+				}*/
+			});
 }
 
 void physics::px_physics_engine::processSimulationEventCallbacks() noexcept

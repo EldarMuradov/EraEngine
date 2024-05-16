@@ -375,10 +375,7 @@ namespace physics
 		else if(type == px_rigidbody_type::Dynamic)
 		{
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
-			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
-			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
-			actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
-			//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
+			//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 
 			coll->createShape();
 
@@ -391,7 +388,6 @@ namespace physics
 		{
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
 
-			//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
 			setKinematic(true);
 
 			coll->createShape();

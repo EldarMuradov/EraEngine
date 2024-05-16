@@ -497,8 +497,7 @@ namespace physics
 
         for (size_t i = 0; i < meshes.size(); ++i)
         {
-            auto chunk = buildChunk(transform, insideMaterial, outsideMaterial, meshes[i], chunkMass, generation);
-            handles.push_back(chunk.handle);
+            handles.push_back(buildChunk(transform, insideMaterial, outsideMaterial, meshes[i], chunkMass, generation).handle);
         }
 
         return handles;
@@ -687,7 +686,7 @@ namespace physics
 
             chunk_node() = default;
 
-            chunk_node(entity_handle handl, uint32 generation) : handle(handl), spliteGeneration(generation){}
+            chunk_node(entity_handle handl, uint32 generation) : handle(handl), spliteGeneration(generation) {}
 
             bool contains(entity_handle chunkNode) const noexcept
             {
@@ -706,6 +705,8 @@ namespace physics
 
             void setup(chunk_graph_manager* manager) noexcept
             {
+                setupRigidbody();
+
                 jointToChunk.clear();
                 chunkToJoint.clear();
 
@@ -756,7 +757,7 @@ namespace physics
                 {
                     if (impulse.magnitude() > 1.0f)
                     {
-                        blastFractureQueue.pushEvent({(uint32_t)handle});
+                        blastFractureQueue.pushEvent({ (uint32_t)handle });
                     }
                 }
             }
@@ -791,6 +792,31 @@ namespace physics
                 }
 
                 hasBrokenLinks = false;
+            }
+
+            void setupRigidbody() noexcept
+            {
+                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+                if (!enttScene->registry.size())
+                    return;
+
+                eentity renderEntity{ handle, &enttScene->registry };
+
+                auto& rb = renderEntity.getComponent<px_rigidbody_component>();
+
+                constexpr float chunkMass = 3.0f;
+
+                rb.setMaxAngularVelosity(100.0f);
+                rb.setAngularDamping(0.01f);
+                rb.setLinearDamping(0.01f);
+
+                auto dyn = rb.getRigidDynamic();
+                dyn->setSolverIterationCounts(4, 4);
+                dyn->setMaxDepenetrationVelocity(3.0f);
+                dyn->setMaxContactImpulse(1000.0f);
+
+                rb.updateMassAndInertia(chunkMass);
             }
         };
 
@@ -959,10 +985,10 @@ namespace physics
             auto chunks = buildChunks(gameObject.getComponent<transform_component>(), insideMaterial, outsideMaterial, meshes, chunkMass);
 
             // Connect blocks that are touching with fixed joints
-            /*for (size_t i = 0; i < chunks.size(); i++)
-            {
-                connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce);
-            }*/
+            //for (size_t i = 0; i < chunks.size(); i++)
+            //{
+            //    connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce);
+            //}
 
             for (auto chunk : chunks)
             {
@@ -1167,8 +1193,8 @@ namespace physics
                         std::vector<PxFilterData> fd1 = getFilterData(rb.getRigidActor());
                         std::vector<PxFilterData> fd2 = getFilterData(rbOverlap.getRigidActor());
 
-                        px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{ 0.1f, 0.1f, 200.0f, 100.0f }, rb.getRigidActor(), rbOverlap.getRigidActor());
-                        
+                        px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{ 0.1f, 0.1f, 400.0f, 200.0f }, rb.getRigidActor(), rbOverlap.getRigidActor());
+
                         joint->joint->setInvInertiaScale0(0.0f);
                         joint->joint->setInvInertiaScale1(0.0f);
                         joint->joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, false);
