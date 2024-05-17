@@ -20,7 +20,7 @@ NODISCARD eentity physics::buildChunk(const trs& transform, ref<pbr_material> in
     builder.pushMesh(*mesh.first, 1.0f, &aabb);
 
     mesh_asset asset;
-    asset.name = ("Chunk_" + ::std::to_string(id++));
+    asset.name = ("Chunk__" + ::std::to_string(id++));
     asset.submeshes.push_back(*mesh.first);
 
     mm->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, outsideMaterial });

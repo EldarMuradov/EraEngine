@@ -700,12 +700,23 @@ namespace physics
 
             void update() noexcept
             {
-
+                if (frozen)
+                {
+                    auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+                
+                    eentity renderEntity{ handle, &enttScene->registry };
+                
+                    renderEntity.getComponent<transform_component>().position = frozenPos;
+                    renderEntity.getComponent<transform_component>().rotation = forzenRot;
+                }
             }
 
             void setup(chunk_graph_manager* manager) noexcept
             {
                 setupRigidbody();
+
+                if(!isKinematic)
+                    freeze();
 
                 jointToChunk.clear();
                 chunkToJoint.clear();
@@ -739,7 +750,7 @@ namespace physics
             {
                 if (physics_holder::physicsRef->unfreezeBlastQueue.contains((uint32)handle))
                     return;
-                shared_spin_lock lock(physics_holder::physicsRef->sync);
+                lock lock{ physics_holder::physicsRef->blastSync };
                 uint32 value = (uint32)handle;
                 physics_holder::physicsRef->unfreezeBlastQueue.emplace(value);
                 frozen = false;
@@ -818,6 +829,31 @@ namespace physics
 
                 rb.updateMassAndInertia(chunkMass);
             }
+
+            void unfreeze() noexcept
+            {
+                frozen = false;
+
+                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+                eentity renderEntity{ handle, &enttScene->registry };
+
+                renderEntity.getComponent<physics::px_rigidbody_component>().setConstraints(0);
+            }
+
+            void freeze() noexcept
+            {
+                frozen = true;
+
+                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+                eentity renderEntity{ handle, &enttScene->registry };
+
+                frozenPos = renderEntity.getComponent<transform_component>().position;
+                forzenRot = renderEntity.getComponent<transform_component>().rotation;
+
+                renderEntity.getComponent<physics::px_rigidbody_component>().setConstraints(PX_FREEZE_ALL);
+            }
         };
 
         ::std::vector<entity_handle> nodes;
@@ -859,7 +895,18 @@ namespace physics
 
         void update() noexcept
         {
-            /*auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+            auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+
+            for (auto& node : joints)
+            {
+                eentity renderEntity{ node.first, &enttScene->registry };
+
+                for (auto& joint : node.second)
+                {
+                    if (joint->joint->getConstraintFlags() & PxConstraintFlag::eBROKEN)
+                        renderEntity.getComponent<physics::chunk_graph_manager::chunk_node>().onJointBreak();
+                }
+            }
 
             bool runSearch = false;
 
@@ -879,7 +926,7 @@ namespace physics
             }
 
             if (runSearch)
-                searchGraph(nodes);*/
+                searchGraph(nodes);
         }
 
         void searchGraph(::std::vector<entity_handle> objects) noexcept
@@ -985,10 +1032,10 @@ namespace physics
             auto chunks = buildChunks(gameObject.getComponent<transform_component>(), insideMaterial, outsideMaterial, meshes, chunkMass);
 
             // Connect blocks that are touching with fixed joints
-            //for (size_t i = 0; i < chunks.size(); i++)
-            //{
-            //    connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce);
-            //}
+            for (size_t i = 0; i < chunks.size(); i++)
+            {
+                connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce);
+            }
 
             for (auto chunk : chunks)
             {
@@ -996,7 +1043,7 @@ namespace physics
                 renderEntity.setParent(fractureGameObject);
             }
 
-            //anchorChunks(gameObject.handle, anchor);
+            anchorChunks(gameObject.handle, anchor);
 
             // Graph manager freezes/unfreezes blocks depending on whether they are connected to the graph or not
             graphManager.setup(chunks);
@@ -1193,7 +1240,7 @@ namespace physics
                         std::vector<PxFilterData> fd1 = getFilterData(rb.getRigidActor());
                         std::vector<PxFilterData> fd2 = getFilterData(rbOverlap.getRigidActor());
 
-                        px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{ 0.1f, 0.1f, 400.0f, 200.0f }, rb.getRigidActor(), rbOverlap.getRigidActor());
+                        px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{ 0.1f, 0.1f, 100.0f, 50.0f }, rb.getRigidActor(), rbOverlap.getRigidActor());
 
                         joint->joint->setInvInertiaScale0(0.0f);
                         joint->joint->setInvInertiaScale1(0.0f);

@@ -45,8 +45,8 @@ static physx::PxFilterFlags contactReportFilterShader(
 		return physx::PxFilterFlag::eDEFAULT;
 	}
 
-	if (physx::PxFilterObjectIsKinematic(attributes0) || physx::PxFilterObjectIsKinematic(attributes1))
-		return physx::PxFilterFlag::eKILL;
+	//if (physx::PxFilterObjectIsKinematic(attributes0) || physx::PxFilterObjectIsKinematic(attributes1))
+	//	return physx::PxFilterFlag::eKILL;
 
 	pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
 	pairFlags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
@@ -127,7 +127,7 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 
 	sceneDesc.solverType = PxSolverType::eTGS;
 
-	//sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
+	sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	//sceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 
 #if PX_GPU_BROAD_PHASE
@@ -609,32 +609,28 @@ void physics::px_physics_engine::syncTransforms() noexcept
 
 void physics::px_physics_engine::processBlastQueue() noexcept
 {
-	//if (unfreezeBlastQueue.size() > 0)
-	//{
-	//	for (auto iter = unfreezeBlastQueue.begin(); iter != unfreezeBlastQueue.end(); ++iter)
-	//	{
-	//		auto enttScene = app.getCurrentScene();
+	if (unfreezeBlastQueue.size() > 0)
+	{
+		lock lock{ blastSync };
+		auto enttScene = app.getCurrentScene();
 
-	//		eentity renderEntity{ (entity_handle)*iter, &enttScene->registry };
+		for (auto iter = unfreezeBlastQueue.begin(); iter != unfreezeBlastQueue.end(); ++iter)
+		{
+			auto handle = (entity_handle)*iter;
+			eentity renderEntity{ handle, &enttScene->registry };
 
-	//		if (auto rb = renderEntity.getComponentIfExists<physics::px_rigidbody_component>())
-	//		{
-	//			rb->setConstraints(0);
-
-	//			rb->setGravity(true);
-
-	//			rb->updateMassAndInertia(::std::max(rb->getMass(), 3.0f));
-
-	//			rb->clearForceAndTorque();
-	//		}
-	//	}
-	//}
-
-	//unfreezeBlastQueue.clear();
-
-	if (!blastFractureQueue.empty())
-		blastFractureQueue.processQueue([](blast_fracture_event& event)
+			if (auto rb = renderEntity.getComponentIfExists<physics::px_rigidbody_component>())
 			{
+				rb->setConstraints(0);
+			}
+			
+		}
+		unfreezeBlastQueue.clear();
+	}
+
+	//if (!blastFractureQueue.empty())
+		//blastFractureQueue.processQueue([](blast_fracture_event& event)
+			//{
 				/*auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
 
 				if (!enttScene->registry.size())
@@ -663,7 +659,7 @@ void physics::px_physics_engine::processBlastQueue() noexcept
 
 					enttScene->deleteEntity((entity_handle)event.handle);
 				}*/
-			});
+			//});
 }
 
 void physics::px_physics_engine::processSimulationEventCallbacks() noexcept
@@ -743,36 +739,36 @@ void physics::px_simulation_event_callback::sendCollisionEvents() noexcept
 	//	physics::physics_holder::physicsRef->collisionExitQueue.emplace(c.thisActor->handle, c.otherActor->handle);
 	//}
 
-	for (auto& c : newCollisions)
-	{
+	//for (auto& c : newCollisions)
+	//{
 
 #if !_DEBUG
 
-		try
-		{
-			eentity rb1{ c.thisActor->handle, &enttScene->registry };
-			eentity rb2{ c.otherActor->handle, &enttScene->registry };
+		//try
+		//{
+		//	eentity rb1{ c.thisActor->handle, &enttScene->registry };
+		//	eentity rb2{ c.otherActor->handle, &enttScene->registry };
 
-			if (!rb1.valid() || !rb2.valid())
-				continue;
+		//	if (!rb1.valid() || !rb2.valid())
+		//		continue;
 
-			auto chunk1 = rb1.getComponentIfExists<physics::chunk_graph_manager::chunk_node>();
+		//	auto chunk1 = rb1.getComponentIfExists<physics::chunk_graph_manager::chunk_node>();
 
-			auto chunk2 = rb2.getComponentIfExists<physics::chunk_graph_manager::chunk_node>();
+		//	auto chunk2 = rb2.getComponentIfExists<physics::chunk_graph_manager::chunk_node>();
 
-			if (chunk1 && !chunk2)
-			{
-				chunk1->processDamage(c.impulse);
-			}
-			else if (chunk2 && !chunk1)
-			{
-				chunk2->processDamage(c.impulse);
-			}
-		}
-		catch (...)
-		{
-			LOG_WARNING("Blast> Entity has already been destroyed!");
-		}
+		//	if (chunk1 && !chunk2)
+		//	{
+		//		chunk1->processDamage(c.impulse);
+		//	}
+		//	else if (chunk2 && !chunk1)
+		//	{
+		//		chunk2->processDamage(c.impulse);
+		//	}
+		//}
+		//catch (...)
+		//{
+		//	LOG_WARNING("Blast> Entity has already been destroyed!");
+		//}
 
 #endif
 
@@ -782,7 +778,7 @@ void physics::px_simulation_event_callback::sendCollisionEvents() noexcept
 		//c.thisActor->onCollisionEnter(c.otherActor);
 		//c.swapObjects();
 		//physics::physics_holder::physicsRef->collisionQueue.emplace(c.thisActor->handle, c.otherActor->handle);
-	}
+	//}
 }
 
 void physics::px_simulation_event_callback::sendTriggerEvents() noexcept

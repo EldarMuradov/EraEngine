@@ -343,7 +343,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 				physics::fracture fracture;
 				auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
 				unsigned int seed = 7249U;
-				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::Bottom, seed, 50, defaultmat, defaultmat, 1.0f, 3.0f);
+				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 50, defaultmat, defaultmat, 1.0f, 3.0f);
 				scene.deleteEntity(px_sphere_entt1.handle);
 			}
 		}

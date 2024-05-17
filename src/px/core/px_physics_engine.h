@@ -776,6 +776,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		::std::unordered_map<PxRigidActor*, px_rigidbody_component*> actorsMap;
 		::std::unordered_set<uint32_t> unfreezeBlastQueue;
 
+		::std::mutex blastSync;
 		spin_lock sync;
 
 	private:
