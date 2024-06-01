@@ -1248,7 +1248,7 @@ static fbx_material readMaterial(const fbx_node& node, const std::vector<fbx_nod
 		if (child.name == "ShadingModel")
 		{
 			sized_string shadingModel = readString(*child.getFirstProperty(properties));
-			ASSERT(shadingModel == "Phong" || shadingModel == "phong");
+			//ASSERT(shadingModel == "Phong" || shadingModel == "phong");
 		}
 		else if (child.name == "MultiLayer")
 		{
@@ -1297,7 +1297,7 @@ static fbx_material readMaterial(const fbx_node& node, const std::vector<fbx_nod
 				}
 				else
 				{
-					//printf("Material property '%.*s' not handled.\n", name.length, name.str);
+					printf("Material property '%.*s' not handled.\n", name.length, name.str);
 				}
 			}
 		}

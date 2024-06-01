@@ -34,8 +34,8 @@ struct pbr_environment
 	void update(vec3 sunDirection);
 	void forceUpdate(vec3 sunDirection);
 
-	float globalIlluminationIntensity = 1.f;
-	float skyIntensity = 1.f;
+	float globalIlluminationIntensity = 0.340f;
+	float skyIntensity = 1.85f;
 
 	light_probe_grid lightProbeGrid;
 

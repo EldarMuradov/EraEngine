@@ -331,22 +331,22 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		//	addRaytracingComponentAsync(en, mesh);
 		//}
 
-		{
-			if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
-			{
-				model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
+		//{
+		//	if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
+		//	{
+		//		model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
 
-				auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
-					.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
-					.addComponent<mesh_component>(mesh);
+		//		auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
+		//			.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
+		//			.addComponent<mesh_component>(mesh);
 
-				physics::fracture fracture;
-				auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
-				unsigned int seed = 7249U;
-				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 50, defaultmat, defaultmat, 1.0f, 3.0f);
-				scene.deleteEntity(px_sphere_entt1.handle);
-			}
-		}
+		//		physics::fracture fracture;
+		//		auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
+		//		unsigned int seed = 7249U;
+		//		manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 50, defaultmat, defaultmat, 1.0f, 3.0f);
+		//		scene.deleteEntity(px_sphere_entt1.handle);
+		//	}
+		//}
 
 		/*{
 			model_asset ass = load3DModelFromFile("assets/box.fbx");
@@ -776,18 +776,18 @@ void application::update(const user_input& input, float dt)
 				//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
 			}
 
-			{
-				eentity entt{ manager, &scene.registry };
-				auto& chunkManager = entt.getComponent<physics::chunk_graph_manager>();
-				chunkManager.update();
+			//{
+			//	eentity entt{ manager, &scene.registry };
+			//	auto& chunkManager = entt.getComponent<physics::chunk_graph_manager>();
+			//	chunkManager.update();
 
-				for (size_t i = 0; i < chunkManager.nbNodes; i++)
-				{
-					eentity node{ chunkManager.nodes[i], &scene.registry };
+			//	for (size_t i = 0; i < chunkManager.nbNodes; i++)
+			//	{
+			//		eentity node{ chunkManager.nodes[i], &scene.registry };
 
-					node.getComponent<physics::chunk_graph_manager::chunk_node>().update();
-				}
-			}
+			//		node.getComponent<physics::chunk_graph_manager::chunk_node>().update();
+			//	}
+			//}
 
 			// Render soft bodies
 			if (!physics::physics_holder::physicsRef->softBodies.empty())

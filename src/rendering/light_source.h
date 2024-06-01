@@ -24,7 +24,7 @@ struct directional_light
 	vec4 blendDistances;
 	uint32 shadowDimensions = 2048;
 
-	float negativeZOffset = 500.f;
+	float negativeZOffset = 750.0f;
 
 	bool stabilize;
 

@@ -700,23 +700,23 @@ namespace physics
 
             void update() noexcept
             {
-                if (frozen)
-                {
-                    auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
-                
-                    eentity renderEntity{ handle, &enttScene->registry };
-                
-                    renderEntity.getComponent<transform_component>().position = frozenPos;
-                    renderEntity.getComponent<transform_component>().rotation = forzenRot;
-                }
+                //if (frozen)
+                //{
+                //    auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+                //
+                //    eentity renderEntity{ handle, &enttScene->registry };
+                //
+                //    renderEntity.getComponent<transform_component>().position = frozenPos;
+                //    renderEntity.getComponent<transform_component>().rotation = forzenRot;
+                //}
             }
 
             void setup(chunk_graph_manager* manager) noexcept
             {
                 setupRigidbody();
 
-                if(!isKinematic)
-                    freeze();
+                //if(!isKinematic)
+                //    freeze();
 
                 jointToChunk.clear();
                 chunkToJoint.clear();
@@ -1031,6 +1031,9 @@ namespace physics
             float chunkMass = volumeOfMesh(meshAsset) * density / totalChunks;
             auto chunks = buildChunks(gameObject.getComponent<transform_component>(), insideMaterial, outsideMaterial, meshes, chunkMass);
 
+            // Graph manager freezes/unfreezes blocks depending on whether they are connected to the graph or not
+            graphManager.setup(chunks);
+
             // Connect blocks that are touching with fixed joints
             for (size_t i = 0; i < chunks.size(); i++)
             {
@@ -1044,9 +1047,6 @@ namespace physics
             }
 
             anchorChunks(gameObject.handle, anchor);
-
-            // Graph manager freezes/unfreezes blocks depending on whether they are connected to the graph or not
-            graphManager.setup(chunks);
 
             return fractureGameObject.handle;
         }
@@ -1242,9 +1242,9 @@ namespace physics
 
                         px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{ 0.1f, 0.1f, 100.0f, 50.0f }, rb.getRigidActor(), rbOverlap.getRigidActor());
 
-                        joint->joint->setInvInertiaScale0(0.0f);
-                        joint->joint->setInvInertiaScale1(0.0f);
-                        joint->joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, false);
+                        //joint->joint->setInvInertiaScale0(0.0f);
+                        //joint->joint->setInvInertiaScale1(0.0f);
+                        //joint->joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, false);
 
                         setFilterData(rb.getRigidActor(), fd1);
                         setFilterData(rbOverlap.getRigidActor(), fd2);

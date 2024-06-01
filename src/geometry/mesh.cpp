@@ -53,9 +53,9 @@ static void meshLoaderThread(ref<multi_mesh> result, const fs::path& sceneFilena
 	}
 
 	// Load animations
-	if (!asset.animations.empty())
+	for (auto& anim : asset.animations)
 	{
-		animation_asset& in = asset.animations.front();
+		animation_asset& in = anim;
 
 		animation_clip& clip = skeleton.clips.emplace_back();
 		clip.name = std::move(in.name);
@@ -70,7 +70,7 @@ static void meshLoaderThread(ref<multi_mesh> result, const fs::path& sceneFilena
 		clip.scaleKeyframes = std::move(in.scaleKeyframes);
 		clip.scaleTimestamps = std::move(in.scaleTimestamps);
 
-		for (auto [name, joint] : in.joints)
+		for (auto& [name, joint] : in.joints)
 		{
 			auto it = skeleton.nameToJointID.find(name);
 			if (it != skeleton.nameToJointID.end())

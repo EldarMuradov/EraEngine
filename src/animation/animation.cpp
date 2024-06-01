@@ -676,15 +676,15 @@ void animation_component::initialize(std::vector<animation_clip>& clips, size_t 
 {
 	ref<animation_state> state = make_ref<animation_state>(animation);
 
-	animation_blackboard endBlackboard = { &clips[clips.size() - 1]};
+	//animation_blackboard endBlackboard = { &clips[clips.size() - 1]};
 
-	controller.stateMachine.set_state(state, endBlackboard);
+	//controller.stateMachine.set_state(state, endBlackboard);
 
-	for (int i = clips.size() - 2; i >= 0; ++i)
-	{
-		animation_blackboard blackboard = { &clips[i] };
-		controller.stateMachine.enter(blackboard);
-	}
+	//for (int i = clips.size() - 2; i >= 0; ++i)
+	//{
+	//	animation_blackboard blackboard = { &clips[i] };
+	//	controller.stateMachine.enter(blackboard);
+	//}
 
 	animation_blackboard startBlackboard = { &clips[startIndex] };
 	controller.stateMachine.enter(startBlackboard);

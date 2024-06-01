@@ -48,8 +48,8 @@ REFLECT_STRUCT(taa_settings,
 
 struct bloom_settings
 {
-	float threshold = 70.f;
-	float strength = 0.5f; //0.05
+	float threshold = 0.500f;
+	float strength = 0.450f; //0.05
 };
 REFLECT_STRUCT(bloom_settings,
 	(threshold, "Threshold"),
@@ -72,7 +72,7 @@ REFLECT_STRUCT(hbao_settings,
 
 struct sharpen_settings
 {
-	float strength = 0.1f; //0.5
+	float strength = 0.230f; //0.5
 };
 REFLECT_STRUCT(sharpen_settings,
 	(strength, "Strength")
@@ -98,16 +98,16 @@ REFLECT_STRUCT(sss_settings,
 
 struct tonemap_settings
 {
-	float A = 0.176f; // Shoulder strength. 0.22
-	float B = 0.134f; // Linear strength. 0.3
-	float C = 0.11f; // Linear angle. 0.1
+	float A = 0.340f; // Shoulder strength. 0.22
+	float B = 0.150f; // Linear strength. 0.3
+	float C = 0.077f; // Linear angle. 0.1
 	float D = 0.375f; // Toe strength. 0.2
 	float E = 0.01f; // Toe Numerator
 	float F = 0.34f; // Toe denominator
 	// Note E/F = Toe angle
 	float linearWhite = 11.2f;
 
-	float exposure = -0.30f; //0.2
+	float exposure = -0.080f; //0.2
 
 	NODISCARD float tonemap(float color) const
 	{
