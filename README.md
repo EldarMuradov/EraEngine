@@ -2,6 +2,9 @@
 
 ![EraEngine Logo](https://github.com/EldarMuradov/EldarMuradov/blob/99a6272b7b5f123c8f20b7c39f773714f79810cd/MESH_EDITOR.png)
 
+![EraEngine Logo](https://github.com/EldarMuradov/EldarMuradov/blob/56c453501a5edb8bdbd7747548e99b94ff188e14/AKT2.png)
+
+
 # Era Game Engine
 
 [![C++](https://img.shields.io/badge/language-C%2B%2B-%23f34b7d.svg?style=plastic)](https://en.wikipedia.org/wiki/C%2B%2B) 
