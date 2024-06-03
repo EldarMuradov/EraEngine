@@ -1115,7 +1115,7 @@ bool eeditor::drawSceneHierarchy()
 						{
 							if (ImGui::BeginProperties())
 							{
-								uint32 animationIndex = anim.animation.clip ? (uint32)(anim.animation.clip - mesh->mesh->skeleton.clips.data()) : -1;
+								uint32 animationIndex = anim.animation->clip ? (uint32)(anim.animation->clip - mesh->mesh->skeleton.clips.data()) : -1;
 
 								bool animationChanged = ImGui::PropertyDropdown("Currently playing", [](uint32 index, void* data)
 								{
@@ -1135,7 +1135,7 @@ bool eeditor::drawSceneHierarchy()
 
 								if (animationChanged)
 								{
-									anim.animation.set(&mesh->mesh->skeleton.clips[animationIndex]);
+									anim.animation->set(&mesh->mesh->skeleton.clips[animationIndex]);
 								}
 
 								ImGui::EndProperties();

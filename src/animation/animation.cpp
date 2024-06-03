@@ -586,6 +586,7 @@ void animation_instance::update(const animation_skeleton& skeleton, float dt, tr
 			else
 			{
 				time = clip->lengthInSeconds;
+				finished = true;
 			}
 		}
 
@@ -674,20 +675,20 @@ void animation_blend_tree_1d::setBlendValue(float value)
 
 void animation_component::initialize(std::vector<animation_clip>& clips, size_t startIndex)
 {
+	animation = make_ref<animation_instance>();
 	ref<animation_state> state = make_ref<animation_state>(animation);
 
-	//animation_blackboard endBlackboard = { &clips[clips.size() - 1]};
-
-	//controller.stateMachine.set_state(state, endBlackboard);
-
-	//for (int i = clips.size() - 2; i >= 0; ++i)
-	//{
-	//	animation_blackboard blackboard = { &clips[i] };
-	//	controller.stateMachine.enter(blackboard);
-	//}
+	controller = make_ref<animation_controller>();
 
 	animation_blackboard startBlackboard = { &clips[startIndex] };
-	controller.stateMachine.enter(startBlackboard);
+	controller->stateMachine.set_state(state, startBlackboard);
+
+	for (int i = clips.size() - 1; i >= 0; --i)
+	{
+		animation_blackboard blackboard = { &clips[i] };
+		clips[i].looping = false;
+		controller->stateMachine.enter(blackboard);
+	}
 }
 
 void animation_component::update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform)
@@ -697,7 +698,7 @@ void animation_component::update(const ref<multi_mesh>& mesh, eallocator& arena,
 
 	currentGlobalTransforms = 0;
 
-	if (animation.valid())
+	if (animation && animation->valid())
 	{
 		auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
 
@@ -706,7 +707,7 @@ void animation_component::update(const ref<multi_mesh>& mesh, eallocator& arena,
 
 		trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
 		trs deltaRootMotion;
-		animation.update(skeleton, dt * timeScale, localTransforms, deltaRootMotion);
+		animation->update(skeleton, dt * timeScale, localTransforms, deltaRootMotion);
 
 		trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
 
@@ -719,6 +720,9 @@ void animation_component::update(const ref<multi_mesh>& mesh, eallocator& arena,
 		}
 
 		currentGlobalTransforms = globalTransforms;
+
+		if (animation->finished)
+			controller->stateMachine.update();
 	}
 	else
 	{

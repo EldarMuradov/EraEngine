@@ -8,6 +8,7 @@
 #include "dx/dx_buffer.h"
 #include <unordered_map>
 #include <ai/state_machine.h>
+#include <stack>
 
 #define INVALID_JOINT 0xFFFFFFFF
 
@@ -152,6 +153,7 @@ struct animation_instance
 	trs lastRootMotion;
 
 	bool paused = false;
+	bool finished = false;
 };
 
 struct animation_blackboard
@@ -161,33 +163,34 @@ struct animation_blackboard
 
 struct animation_state : state_base<animation_blackboard>
 {
-	animation_state(animation_instance& inst) noexcept : instance(inst)
+	animation_state(ref<animation_instance> inst) noexcept : instance(inst)
 	{
 	}
 
 	virtual void enter(animation_blackboard& state) override
 	{
-		instance.set(state.clip);
+		instance->set(state.clip);
+		instance->finished = false;
 	}
 
 	virtual void exit(animation_blackboard& state) override
 	{
-		if (instance.clip == state.clip)
-			instance.clip = nullptr;
+		if (instance->clip == state.clip)
+			instance->clip = nullptr;
 	}
 
 	virtual void pause(animation_blackboard& state) override
 	{
-		instance.paused = true;
+		instance->paused = true;
 	}
 
 	virtual void resume(animation_blackboard& state) override
 	{
-		instance.paused = false;
+		instance->paused = false;
 	}
 
 private:
-	animation_instance& instance;
+	ref<animation_instance> instance;
 };
 
 struct animation_state_machine
@@ -217,7 +220,7 @@ struct animation_state_machine
 		if (currentState)
 		{
 			currentState->enter(blackboard);
-
+			input.push(blackboard);
 			if (paused)
 			{
 				currentState->pause(blackboard);
@@ -247,11 +250,27 @@ struct animation_state_machine
 			return;
 
 		if (currentState)
+		{
+			input.push(blackboard);
 			currentState->update(blackboard);
+		}
+	}
+
+	void update() noexcept
+	{
+		if (paused)
+			return;
+
+		if (currentState && input.size())
+		{
+			currentState->enter(input.top());
+			input.pop();
+		}
 	}
 
 private:
 	ref<animation_state> currentState{ nullptr };
+	::std::stack<animation_blackboard> input;
 	bool paused{ false };
 };
 
@@ -285,8 +304,10 @@ private:
 
 struct animation_component
 {
-	animation_instance animation;
-	animation_controller controller;
+	ref<animation_instance> animation = nullptr;
+
+	ref<animation_controller> controller = nullptr;
+
 	dx_vertex_buffer_group_view currentVertexBuffer;
 	dx_vertex_buffer_group_view prevFrameVertexBuffer;
 	trs* currentGlobalTransforms = 0;
