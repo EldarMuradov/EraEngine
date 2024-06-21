@@ -168,6 +168,11 @@ physics::px_physics_engine::px_physics_engine(application& a) noexcept
 
 	if (pvd->isConnected())
 		std::cout << "Physics> PVD Connection enabled.\n";
+	scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
+	scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, 1.0f);
+	scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LOCAL_FRAMES, 1.0f);
+
+	scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
 #endif
 
 #if PX_ENABLE_RAYCAST_CCD

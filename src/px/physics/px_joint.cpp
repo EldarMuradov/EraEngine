@@ -77,6 +77,7 @@ namespace physics
 		limitPair.damping = desc.angularPair.damping;
 
 		auto jInstance = joint->is<PxRevoluteJoint>();
+		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 		if (desc.drive.anabledDrive)
 		{
 			jInstance->setDriveVelocity(desc.drive.driveVelocity);
@@ -107,6 +108,7 @@ namespace physics
 		limitCone.damping = desc.limitCone.damping;
 
 		auto jInstance = joint->is<PxSphericalJoint>();
+		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 		jInstance->setLimitCone(limitCone);
 		jInstance->setSphericalJointFlag(PxSphericalJointFlag::eLIMIT_ENABLED, true);
@@ -134,6 +136,7 @@ namespace physics
 		limitPair.damping = desc.linearPair.damping;
 
 		auto jInstance = joint->is<PxPrismaticJoint>();
+		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 		jInstance->setLimit(limitPair);
 		jInstance->setPrismaticJointFlag(PxPrismaticJointFlag::eLIMIT_ENABLED, true);
@@ -150,6 +153,7 @@ namespace physics
 		second = s;
 		type = px_joint_type::Distance;
 		auto jInstance = joint->is<PxDistanceJoint>();
+		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 		jInstance->setDamping(desc.damping);
 		jInstance->setStiffness(desc.stiffness);
 		jInstance->setDistanceJointFlag(PxDistanceJointFlag::eSPRING_ENABLED, true);
@@ -170,6 +174,8 @@ namespace physics
 		joint = createFixedJoint(f, s);
 		type = px_joint_type::Fixed;
 		auto jInstance = joint->is<PxFixedJoint>();
+		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
+		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
 #if PX_GPU_BROAD_PHASE
 		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 #endif
@@ -188,13 +194,13 @@ namespace physics
 		second = s;
 		type = px_joint_type::D6;
 		auto jInstance = joint->is<PxD6Joint>();
+		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 		if (desc.drive.anabledDrive)
 		{
 			auto jointDrive = PxD6JointDrive();
 
 			if (desc.drive.acceleration)
 				jointDrive.flags = PxD6JointDriveFlag::eACCELERATION;
-
 			jointDrive.damping = desc.drive.damping;
 			jointDrive.forceLimit = desc.drive.forceLimit;
 			jointDrive.stiffness = desc.drive.stiffness;

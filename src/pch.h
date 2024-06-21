@@ -9,7 +9,7 @@
 
 #ifndef _DEBUG
 #define NDEBUG 0
-#define PX_ENABLE_PVD 0
+#define PX_ENABLE_PVD 1
 #else
 #define PX_ENABLE_PVD 1
 #endif

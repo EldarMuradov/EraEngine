@@ -363,12 +363,13 @@ namespace physics
 		if (type == px_rigidbody_type::Static)
 		{
 			PxRigidStatic* actor = physics->createRigidStatic(PxTransform(pospx, rotpx));
-
+			actor->setActorFlag(PxActorFlag::eVISUALIZATION, true);
 			coll->createShape();
 
 			const auto& physics = physics_holder::physicsRef->getPhysics();
 			PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor, *coll->getGeometry(), *material);
 			shape->userData = userData;
+			enableShapeVisualization(shape);
 
 			return actor;
 		}
@@ -376,23 +377,25 @@ namespace physics
 		{
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
 			//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
-
+			actor->setActorFlag(PxActorFlag::eVISUALIZATION, true);
 			coll->createShape();
 
 			PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor, *coll->getGeometry(), *material);
 			shape->userData = userData;
+			enableShapeVisualization(shape);
 
 			return actor;
 		}
 		else
 		{
 			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
-
+			actor->setActorFlag(PxActorFlag::eVISUALIZATION, true);
 			setKinematic(true);
 
 			coll->createShape();
 			coll->getShape()->userData = userData;
 			actor->attachShape(*coll->getShape());
+			enableShapeVisualization(coll->getShape());
 
 			return actor;
 		}

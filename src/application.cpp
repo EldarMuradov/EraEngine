@@ -331,22 +331,22 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		//	addRaytracingComponentAsync(en, mesh);
 		//}
 
-		//{
-		//	if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
-		//	{
-		//		model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
+		{
+			if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
+			{
+				model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
 
-		//		auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
-		//			.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
-		//			.addComponent<mesh_component>(mesh);
+				auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
+					.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
+					.addComponent<mesh_component>(mesh);
 
-		//		physics::fracture fracture;
-		//		auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
-		//		unsigned int seed = 7249U;
-		//		manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 50, defaultmat, defaultmat, 1.0f, 3.0f);
-		//		scene.deleteEntity(px_sphere_entt1.handle);
-		//	}
-		//}
+				physics::fracture fracture;
+				auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
+				unsigned int seed = 7249U;
+				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 50, defaultmat, defaultmat, 1.0f, 3.0f);
+				scene.deleteEntity(px_sphere_entt1.handle);
+			}
+		}
 
 		/*{
 			model_asset ass = load3DModelFromFile("assets/box.fbx");
@@ -789,18 +789,18 @@ void application::update(const user_input& input, float dt)
 			//	}
 			//}
 
-			// Render soft bodies
-			if (!physics::physics_holder::physicsRef->softBodies.empty())
-			{
-				const auto positions = physics::physics_holder::physicsRef->softBodies[0]->positionsInvMass;
-				const auto nbVerts = physics::physics_holder::physicsRef->softBodies[0]->getNbVertices();
+			//// Render soft bodies
+			//if (!physics::physics_holder::physicsRef->softBodies.empty())
+			//{
+			//	const auto positions = physics::physics_holder::physicsRef->softBodies[0]->positionsInvMass;
+			//	const auto nbVerts = physics::physics_holder::physicsRef->softBodies[0]->getNbVertices();
 
-				for (size_t i = 0; i < nbVerts; i++)
-				{
-					vec3 pos = vec3(positions[i].x, positions[i].y, positions[i].z);
-					renderPoint(pos, vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
-				}
-			}
+			//	for (size_t i = 0; i < nbVerts; i++)
+			//	{
+			//		vec3 pos = vec3(positions[i].x, positions[i].y, positions[i].z);
+			//		renderPoint(pos, vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
+			//	}
+			//}
 
 			processPoints();
 		}
@@ -890,6 +890,21 @@ void application::renderObjectSphere(vec3 pos, float radius)
 
 void application::processPoints()
 {
-	for (auto p : points)
-		renderPoint(p, vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
+	physics::physics_holder::physicsRef->lockWrite();
+	auto scene = physics::physics_holder::physicsRef->getScene();
+	const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
+
+	for (physx::PxU32 i = 0; i < rb.getNbPoints(); i++)
+	{
+		const physx::PxDebugPoint& point = rb.getPoints()[i];
+		renderPoint(physx::createVec3(point.pos), vec4(point.color), &ldrRenderPass);
+	}
+
+	for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
+	{
+		const physx::PxDebugLine& line = rb.getLines()[i];
+		renderLine(physx::createVec3(line.pos0), physx::createVec3(line.pos1), vec4(line.color0), &ldrRenderPass);
+	}
+
+	physics::physics_holder::physicsRef->unlockWrite();
 }

@@ -1237,17 +1237,17 @@ namespace physics
 
                         auto& rbOverlap = body.getComponent<physics::px_rigidbody_component>();
 
-                        std::vector<PxFilterData> fd1 = getFilterData(rb.getRigidActor());
-                        std::vector<PxFilterData> fd2 = getFilterData(rbOverlap.getRigidActor());
+                        //std::vector<PxFilterData> fd1 = getFilterData(rb.getRigidActor());
+                        //std::vector<PxFilterData> fd2 = getFilterData(rbOverlap.getRigidActor());
 
-                        px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{ 0.1f, 0.1f, 100.0f, 50.0f }, rb.getRigidActor(), rbOverlap.getRigidActor());
+                        px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{ 0.1f, 0.1f, 200.0f, 100.0f }, rb.getRigidActor(), rbOverlap.getRigidActor());
 
                         //joint->joint->setInvInertiaScale0(0.0f);
                         //joint->joint->setInvInertiaScale1(0.0f);
                         //joint->joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, false);
 
-                        setFilterData(rb.getRigidActor(), fd1);
-                        setFilterData(rbOverlap.getRigidActor(), fd2);
+                        //setFilterData(rb.getRigidActor(), fd1);
+                        //setFilterData(rbOverlap.getRigidActor(), fd2);
 
                         if (manager.joints.contains(chunk))
                         {
