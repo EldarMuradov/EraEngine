@@ -22,7 +22,7 @@ enum constraint_type
 	constraint_type_cone_twist,
 	constraint_type_slider,
 
-	constraint_type_collision, // This is a bit of a special case, because it is generated in each frame.
+	constraint_type_collision, // This is a bit of a special case, because it is generated in each frame
 
 	constraint_type_count,
 };
@@ -64,7 +64,7 @@ struct constraint_entity_reference_component
 
 #define CONSTRAINT_CAPACITY (2 * 1024)
 
-// Distance constraint.
+// Distance constraint
 
 struct distance_constraint
 {
@@ -119,8 +119,7 @@ struct simd_distance_constraint_solver
 	uint32 numBatches;
 };
 
-
-// Ball constraint.
+// Ball constraint
 struct ball_constraint
 {
 	static constexpr std::size_t page_size = CONSTRAINT_CAPACITY;
@@ -164,8 +163,7 @@ struct simd_ball_constraint_solver
 	uint32 numBatches;
 };
 
-
-// Fixed constraint.
+// Fixed constraint
 struct fixed_constraint
 {
 	static constexpr std::size_t page_size = CONSTRAINT_CAPACITY;
@@ -217,7 +215,7 @@ struct simd_fixed_constraint_solver
 	uint32 numBatches;
 };
 
-// Hinge constraint.
+// Hinge constraint
 struct hinge_constraint
 {
 	static constexpr std::size_t page_size = CONSTRAINT_CAPACITY;
@@ -227,12 +225,12 @@ struct hinge_constraint
 	vec3 localHingeAxisA;
 	vec3 localHingeAxisB;
 
-	// Limits. The rotation limits are the allowed deviations in radians from the initial relative rotation.
-	// If the limits are not in the specified range, they are disabled.
+	// Limits. The rotation limits are the allowed deviations in radians from the initial relative rotation
+	// If the limits are not in the specified range, they are disabled
 	float minRotationLimit; // [-pi, 0]
 	float maxRotationLimit; // [0, pi]
 
-	// Motor.
+	// Motor
 	float maxMotorTorque;
 	constraint_motor_type motorType;
 	union
@@ -241,7 +239,7 @@ struct hinge_constraint
 		float motorTargetAngle;
 	};
 
-	// Used for limits and motor.
+	// Used for limits and motor
 	vec3 localHingeTangentA;
 	vec3 localHingeBitangentA;
 	vec3 localHingeTangentB;
@@ -264,13 +262,13 @@ struct hinge_constraint_update
 	vec3 cxa;
 
 	vec3 globalRotationAxis;
-	float effectiveAxialMass; // Same for min and max limit and for motor.
+	float effectiveAxialMass; // Same for min and max limit and for motor
 
 	bool solveLimit;
 	bool solveMotor;
 
-	// Since at a single time, only one limit constraint can be violated, we only store this stuff once. 
-	// 'limitSign' is positive for min- and negative for max-limit-violations.
+	// Since at a single time, only one limit constraint can be violated, we only store this stuff once
+	// 'limitSign' is positive for min- and negative for max-limit-violations
 	float limitImpulse;
 	float limitBias;
 	float limitSign;
@@ -329,7 +327,6 @@ struct simd_hinge_constraint_solver
 	simd_hinge_constraint_batch* batches;
 	uint32 numBatches;
 };
-
 
 // Cone-twist constraint
 struct cone_twist_constraint
@@ -489,8 +486,8 @@ struct slider_constraint
 	vec3 localAxisA;
 
 	// Limit
-	float negDistanceLimit; // Body b cannot go farther to the "left" (negative slider axis) than this value. [-inf, 0] if active, positive if no limit.
-	float posDistanceLimit; // Body b cannot go farther to the "right" (positive slider axis) than this value. [0, inf] if active, negative if no limit.
+	float negDistanceLimit; // Body b cannot go farther to the "left" (negative slider axis) than this value. [-inf, 0] if active, positive if no limit
+	float posDistanceLimit; // Body b cannot go farther to the "right" (positive slider axis) than this value. [0, inf] if active, negative if no limit
 
 	// Motor
 	float maxMotorForce;

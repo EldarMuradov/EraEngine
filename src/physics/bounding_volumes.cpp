@@ -216,7 +216,7 @@ bool ray::intersectPlane(vec3 normal, vec3 point, float& outT) const
 
 bool ray::intersectAABB(const bounding_box& a, float& outT) const
 {
-	vec3 invDir = vec3(1.f / direction.x, 1.f / direction.y, 1.f / direction.z); // This can be Inf (when one direction component is 0) but still works.
+	vec3 invDir = vec3(1.f / direction.x, 1.f / direction.y, 1.f / direction.z); // This can be Inf (when one direction component is 0) but still works
 
 	float tx1 = (a.minCorner.x - origin.x) * invDir.x;
 	float tx2 = (a.maxCorner.x - origin.x) * invDir.x;
@@ -296,7 +296,7 @@ bool ray::intersectCylinder(const bounding_cylinder& cylinder, float& outT) cons
 
 	quat q = rotateFromTo(axis, vec3(0.f, 1.f, 0.f));
 
-	// Cylinder base is at 0,0,0. Second point is above it.
+	// Cylinder base is at 0,0,0. Second point is above it
 	o = q * (o - cylinder.positionA);
 	d = q * d;
 
@@ -305,7 +305,7 @@ bool ray::intersectCylinder(const bounding_cylinder& cylinder, float& outT) cons
 	float y = -1.f;
 	if (squaredLength(vec2(o.x, o.z)) > cylinder.radius * cylinder.radius)
 	{
-		// We are outside the infinite cylinder. Only in this case it is possible to hit the sides.
+		// We are outside the infinite cylinder. Only in this case it is possible to hit the sides
 
 		float a = d.x * d.x + d.z * d.z;
 		float b = d.x * o.x + d.z * o.z;
@@ -318,12 +318,12 @@ bool ray::intersectCylinder(const bounding_cylinder& cylinder, float& outT) cons
 
 		outT = (-b - sqrt(delta)) / a;
 		if (outT <= epsilon)
-			return false; // Behind ray.
+			return false; // Behind ray
 
 		y = o.y + outT * d.y;
 	}
 
-	// Check bases. Always true if the above if is not taken.
+	// Check bases. Always true if the above if is not taken
 	if (y > height + epsilon || y < -epsilon) 
 	{
 		vec3 posA = vec3(0.f, 0.f, 0.f);
@@ -1064,9 +1064,9 @@ bool obbVsOBB(const bounding_oriented_box& a, const bounding_oriented_box& b)
 
 	mat3 absR;
 	for (uint32 i = 0; i < 9; ++i)
-		absR.m[i] = abs(r.m[i]) + EPSILON; // Add in an epsilon term to counteract arithmetic errors when two edges are parallel and their cross product is (near) 0.
+		absR.m[i] = abs(r.m[i]) + EPSILON; // Add in an epsilon term to counteract arithmetic errors when two edges are parallel and their cross product is (near) 0
 
-	// Test a's faces.
+	// Test a's faces
 	for (uint32 i = 0; i < 3; ++i)
 	{
 		ra = a.radius.data[i];
@@ -1077,7 +1077,7 @@ bool obbVsOBB(const bounding_oriented_box& a, const bounding_oriented_box& b)
 			return false;
 	}
 
-	// Test b's faces.
+	// Test b's faces
 	for (uint32 i = 0; i < 3; ++i)
 	{
 		ra = dot(col(absR, i), a.radius);
@@ -1088,7 +1088,7 @@ bool obbVsOBB(const bounding_oriented_box& a, const bounding_oriented_box& b)
 			return false;
 	}
 
-	// Test a.x x b.x.
+	// Test a.x x b.x
 	ra = a.radius.y * absR.m20 + a.radius.z * absR.m10;
 	rb = b.radius.y * absR.m02 + b.radius.z * absR.m01;
 	penetration = ra + rb - abs(t.z * r.m10 - t.y * r.m20);
@@ -1102,14 +1102,14 @@ bool obbVsOBB(const bounding_oriented_box& a, const bounding_oriented_box& b)
 	if (penetration < 0.f)
 		return false;
 
-	// Test a.x x b.z.
+	// Test a.x x b.z
 	ra = a.radius.y * absR.m22 + a.radius.z * absR.m12;
 	rb = b.radius.x * absR.m01 + b.radius.y * absR.m00;
 	penetration = ra + rb - abs(t.z * r.m12 - t.y * r.m22);
 	if (penetration < 0.f)
 		return false;
 
-	// Test a.y x b.x.
+	// Test a.y x b.x
 	ra = a.radius.x * absR.m20 + a.radius.z * absR.m00;
 	rb = b.radius.y * absR.m12 + b.radius.z * absR.m11;
 	penetration = ra + rb - abs(t.x * r.m20 - t.z * r.m00);
@@ -1123,28 +1123,28 @@ bool obbVsOBB(const bounding_oriented_box& a, const bounding_oriented_box& b)
 	if (penetration < 0.f)
 		return false;
 
-	// Test a.y x b.z.
+	// Test a.y x b.z
 	ra = a.radius.x * absR.m22 + a.radius.z * absR.m02;
 	rb = b.radius.x * absR.m11 + b.radius.y * absR.m10;
 	penetration = ra + rb - abs(t.x * r.m22 - t.z * r.m02);
 	if (penetration < 0.f)
 		return false;
 
-	// Test a.z x b.x.
+	// Test a.z x b.x
 	ra = a.radius.x * absR.m10 + a.radius.y * absR.m00;
 	rb = b.radius.y * absR.m22 + b.radius.z * absR.m21;
 	penetration = ra + rb - abs(t.y * r.m00 - t.x * r.m10);
 	if (penetration < 0.f)
 		return false;
 
-	// Test a.z x b.y.
+	// Test a.z x b.y
 	ra = a.radius.x * absR.m11 + a.radius.y * absR.m01;
 	rb = b.radius.x * absR.m22 + b.radius.z * absR.m20;
 	penetration = ra + rb - abs(t.y * r.m01 - t.x * r.m11);
 	if (penetration < 0.f)
 		return false;
 
-	// Test a.z x b.z.
+	// Test a.z x b.z
 	ra = a.radius.x * absR.m12 + a.radius.y * absR.m02;
 	rb = b.radius.x * absR.m21 + b.radius.y * absR.m20;
 	penetration = ra + rb - abs(t.y * r.m02 - t.x * r.m12);
@@ -1352,7 +1352,7 @@ static bounding_hull_geometry hullFromMesh(vec3* vertices, uint32 numVertices, t
 {
 	bounding_hull_geometry hull;
 
-	uint32 numEdges = numVertices + numTriangles - 2; // Euler characteristic for convex polyhedra.
+	uint32 numEdges = numVertices + numTriangles - 2; // Euler characteristic for convex polyhedra
 
 	hull.vertices.resize(numVertices);
 	hull.faces.resize(numTriangles);

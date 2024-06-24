@@ -128,5 +128,5 @@ NODISCARD os::path_parser::file_type os::path_parser::getFileType(std::string_vi
 	else if (ext == "lua")														return os::path_parser::file_type::script;
 	else if (ext == "ttf")														return os::path_parser::file_type::font;
 
-	return os::path_parser::file_type::unknown;
+	return os::path_parser::file_type::none;
 }

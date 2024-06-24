@@ -13,7 +13,7 @@ void buildIslands(eallocator& arena, constraint_body_pair* bodyPairs, uint32 num
 
 	memory_marker marker = arena.getMarker();
 
-	uint32 count = numRigidBodies + 1; // 1 for the dummy.
+	uint32 count = numRigidBodies + 1; // 1 for the dummy
 
 	uint16* numConstraintsPerBody = arena.allocate<uint16>(count, true);
 
@@ -86,7 +86,7 @@ void buildIslands(eallocator& arena, constraint_body_pair* bodyPairs, uint32 num
 			{
 				body_pair_reference ref = pairReferences[i];
 				uint16 other = ref.otherBody;
-				if (!alreadyOnStack[other] && other != dummyRigidBodyIndex) // Don't push dummy to stack. We don't want to grow islands over the dummy.
+				if (!alreadyOnStack[other] && other != dummyRigidBodyIndex) // Don't push dummy to stack. We don't want to grow islands over the dummy
 				{
 					alreadyOnStack[other] = true;
 					rbStack[stackPtr++] = other;
@@ -94,7 +94,7 @@ void buildIslands(eallocator& arena, constraint_body_pair* bodyPairs, uint32 num
 
 				if (!alreadyVisited[other])
 				{
-					// Add constraint to island.
+					// Add constraint to island
 					ASSERT(islandPtr < islandCapacity);
 					allIslands[islandPtr++] = ref.pairIndex;
 				}
@@ -102,7 +102,7 @@ void buildIslands(eallocator& arena, constraint_body_pair* bodyPairs, uint32 num
 			}
 		}
 
-		// Process island.
+		// Process island
 		uint32 islandSize = islandPtr - islandStart;
 		if (islandSize > 0)
 		{

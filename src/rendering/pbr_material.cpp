@@ -49,7 +49,7 @@ static std::mutex mutex;
 
 NODISCARD ref<pbr_material> createPBRMaterial(const pbr_material_desc& desc)
 {
-	mutex.lock();
+	lock lock{ mutex };
 
 	auto sp = materialCache[desc].lock();
 	if (!sp)
@@ -71,13 +71,12 @@ NODISCARD ref<pbr_material> createPBRMaterial(const pbr_material_desc& desc)
 		materialCache[desc] = sp = material;
 	}
 
-	mutex.unlock();
 	return sp;
 }
 
 NODISCARD ref<pbr_material> createPBRMaterialAsync(const pbr_material_desc& desc, job_handle parentJob)
 {
-	mutex.lock();
+	lock lock { mutex };
 
 	auto sp = materialCache[desc].lock();
 	if (!sp)
@@ -99,7 +98,6 @@ NODISCARD ref<pbr_material> createPBRMaterialAsync(const pbr_material_desc& desc
 		materialCache[desc] = sp = material;
 	}
 
-	mutex.unlock();
 	return sp;
 }
 

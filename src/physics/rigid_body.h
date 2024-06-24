@@ -7,7 +7,7 @@
 
 struct rigid_body_global_state
 {
-	// Don't change the order here. It's currently required by the SIMD code.
+	// Don't change the order here. It's currently required by the SIMD code
 	quat rotation;
 	vec3 localCOGPosition;
 	vec3 position;
@@ -28,7 +28,7 @@ struct rigid_body_component
 	void applyGravityAndIntegrateForces(rigid_body_global_state& global, const trs& transform, float dt);
 	void integrateVelocity(const rigid_body_global_state& global, trs& transform, float dt);
 
-	// In entity's local space.
+	// In entity's local space
 	vec3 localCOGPosition;
 	float invMass;
 	mat3 invInertia;
@@ -37,7 +37,7 @@ struct rigid_body_component
 	float linearDamping;
 	float angularDamping;
 
-	// In global space.
+	// In global space
 	vec3 linearVelocity;
 	vec3 angularVelocity;
 

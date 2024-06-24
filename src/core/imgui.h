@@ -224,7 +224,7 @@ namespace ImGui
 
 	private:
 		float values[valuesCount];
-		int offset;
 		float time = ImGui::GetTime();
+		int offset;
 	};
 }

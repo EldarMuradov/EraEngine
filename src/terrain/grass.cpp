@@ -18,9 +18,7 @@
 #include "grass_rs.hlsli"
 #include "depth_only_rs.hlsli"
 
-
 static const uint32 numSegmentsLOD0 = 4;
-
 
 static dx_pipeline grassPipeline;
 static dx_pipeline grassDepthOnlyPipeline;
@@ -35,7 +33,7 @@ static dx_command_signature grassCommandSignature;
 void initializeGrassPipelines()
 {
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			.depthSettings(true, false, D3D12_COMPARISON_FUNC_EQUAL)
 			.cullingOff()
 			.renderTargets(opaqueLightPassFormats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depthStencilFormat);
@@ -43,14 +41,14 @@ void initializeGrassPipelines()
 		grassPipeline = createReloadablePipeline(desc, { "grass_vs", "grass_ps" });
 	}
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			.cullingOff()
 			.renderTargets(depthOnlyFormat, arraysize(depthOnlyFormat), depthStencilFormat);
 
 		grassDepthOnlyPipeline = createReloadablePipeline(desc, { "grass_depth_only_vs", "depth_only_ps" }, rs_in_vertex_shader);
 	}
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			.cullingOff()
 			.renderTargets(opaqueLightPassFormats, OPQAUE_LIGHT_PASS_FULL, depthStencilFormat);
 
@@ -324,7 +322,6 @@ struct grass_update_pipeline
 		}
 	}
 };
-
 
 grass_component::grass_component(grass_settings settings)
 {

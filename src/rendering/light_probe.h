@@ -10,6 +10,13 @@
 
 struct light_probe_grid
 {
+	void initialize(vec3 minCorner, vec3 dimensions, float cellSize);
+	void visualize(opaque_render_pass* renderPass);
+
+	void updateProbes(dx_command_list* cl, const struct raytracing_tlas& lightProbeTlas, const common_render_data& common) const;
+
+	NODISCARD light_probe_grid_cb getCB() const { return { minCorner, cellSize, numNodesX, numNodesY, numNodesZ }; }
+
 	vec3 minCorner;
 	float cellSize;
 
@@ -23,13 +30,6 @@ struct light_probe_grid
 
 	ref<dx_texture> raytracedRadiance;
 	ref<dx_texture> raytracedDirectionAndDistance;
-
-	void initialize(vec3 minCorner, vec3 dimensions, float cellSize);
-	void visualize(opaque_render_pass* renderPass);
-
-	void updateProbes(dx_command_list* cl, const struct raytracing_tlas& lightProbeTlas, const common_render_data& common) const;
-
-	NODISCARD light_probe_grid_cb getCB() const { return { minCorner, cellSize, numNodesX, numNodesY, numNodesZ }; }
 
 private:
 	bool visualizeProbes = false;

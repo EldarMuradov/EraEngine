@@ -14,7 +14,7 @@ static dx_pipeline outlinePipeline;
 
 void initializeOutlinePipelines()
 {
-	auto markerDesc = CREATE_GRAPHICS_PIPELINE
+	auto& markerDesc = CREATE_GRAPHICS_PIPELINE
 		.inputLayout(inputLayout_position)
 		.renderTargets(0, 0, depthStencilFormat)
 		.stencilSettings(D3D12_COMPARISON_FUNC_ALWAYS,

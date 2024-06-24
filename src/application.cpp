@@ -100,12 +100,12 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
 struct updatePhysicsAndScriptingData
 {
 	float deltaTime{};
-	enative_scripting_linker& core;
+	ref<enative_scripting_linker> core;
 	escene& scene;
 	const user_input& input;
 };
 
-void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt, const user_input& in) noexcept
+void updatePhysXPhysicsAndScripting(escene& currentScene, ref<enative_scripting_linker> core, float dt, const user_input& in) noexcept
 {
 	updatePhysicsAndScriptingData data = { dt, core, currentScene, in };
 
@@ -125,14 +125,14 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 					{
 						const auto& c = physicsRef->collisionQueue.back();
 						physicsRef->collisionQueue.pop();
-						data.core.handle_coll(c.id1, c.id2);
+						data.core->handle_coll(c.id1, c.id2);
 					}
 
 					while (physicsRef->collisionExitQueue.size())
 					{
 						const auto& c = physicsRef->collisionExitQueue.back();
 						physicsRef->collisionExitQueue.pop();
-						data.core.handle_exit_coll(c.id1, c.id2);
+						data.core->handle_exit_coll(c.id1, c.id2);
 					}
 				}
 			}
@@ -141,7 +141,7 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 
 			{
 				CPU_PROFILE_BLOCK(".NET 8 Input sync step");
-				data.core.handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
+				data.core->handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
 			}
 		}, data).submitNow();
 
@@ -170,17 +170,17 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_link
 void updateScripting(updatePhysicsAndScriptingData& data) noexcept
 {
 	CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
-	for (auto [entityHandle, script, transform] : data.scene.group(component_group<script_component, transform_component>).each())
+	for (auto [entityHandle, script, transform] : data.scene.group(component_group<scripts_component, transform_component>).each())
 	{
 		const auto& mat = trsToMat4(transform);
 		constexpr size_t mat_size = 16;
 		float* ptr = new float[mat_size];
 		for (size_t i = 0; i < mat_size; i++)
 			ptr[i] = mat.m[i];
-		data.core.process_trs(reinterpret_cast<uintptr_t>(ptr), (int)entityHandle);
+		data.core->process_trs(reinterpret_cast<uintptr_t>(ptr), (int)entityHandle);
 		delete[] ptr;
 	}
-	data.core.update(data.deltaTime);
+	data.core->update(data.deltaTime);
 }
 
 static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> mesh) noexcept
@@ -208,54 +208,16 @@ void application::loadCustomShaders()
 	}
 }
 
-static entity_handle cloth{};
-static entity_handle particles{};
-static entity_handle px_sphere{};
-static entity_handle manager{};
+static entity_handle sphere{};
 
-void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
+static void initTestScene(escene& scene)
 {
-	this->renderer = renderer;
-
-	if (dxContext.featureSupport.raytracing())
-	{
-		raytracingTLAS.initialize();
-	}
-
-	scene.camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
-	scene.editor_camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
-	scene.environment.setFromTexture("assets/sky/sunset_in_the_chalk_quarry_4k.hdr");
-	scene.environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
-
-	physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>(*this);
-
-	escene& scene = this->scene.getCurrentScene();
-
-	{
-		CPU_PROFILE_BLOCK("Binding for scripting initialization");
-		linker.app = this;
-		linker.init();
-	}
-
-#ifndef ERA_RUNTIME
-
-	editor.initialize(&this->scene, renderer, editorPanels);
-	editor.app = this;
-
-#else
-
-	rt.initialize(&this->scene, renderer);
-
-#endif
-
 #ifndef ERA_RUNTIME
 	if (auto mesh = loadMeshFromFileAsync("assets/Sponza/sponza.obj"))
 	{
 		model_asset ass = load3DModelFromFile("assets/Sponza/sponza.obj");
 		const auto& sponza = scene.createEntity("Sponza")
 			.addComponent<transform_component>(vec3(0.f, 0.f, 0.f), quat::identity, 0.01f)
-			//.addComponent<physics::px_convex_mesh_collider_component>(&(ass.meshes[0]))
-			//.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Static)
 			.addComponent<mesh_component>(mesh);
 
 		addRaytracingComponentAsync(sponza, mesh);
@@ -311,7 +273,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
 			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
 		px_sphere_entt.getComponent<physics::px_rigidbody_component>().setMass(1000.f);
-		px_sphere = px_sphere_entt.handle;
+		sphere = px_sphere_entt.handle;
 
 		auto px_sphere1 = &scene.createEntity("SpherePX1", (entity_handle)59)
 			.addComponent<transform_component>(vec3(5, 155.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(5.f))
@@ -331,22 +293,22 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		//	addRaytracingComponentAsync(en, mesh);
 		//}
 
-		{
-			if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
-			{
-				model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
+		//{
+		//	if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
+		//	{
+		//		model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
 
-				auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
-					.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
-					.addComponent<mesh_component>(mesh);
+		//		auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
+		//			.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
+		//			.addComponent<mesh_component>(mesh);
 
-				physics::fracture fracture;
-				auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
-				unsigned int seed = 7249U;
-				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 50, defaultmat, defaultmat, 1.0f, 3.0f);
-				scene.deleteEntity(px_sphere_entt1.handle);
-			}
-		}
+		//		physics::fracture fracture;
+		//		auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
+		//		unsigned int seed = 7249U;
+		//		manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 50, defaultmat, defaultmat, 1.0f, 3.0f);
+		//		scene.deleteEntity(px_sphere_entt1.handle);
+		//	}
+		//}
 
 		/*{
 			model_asset ass = load3DModelFromFile("assets/box.fbx");
@@ -365,46 +327,28 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		//	.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
 		//	.addComponent<physics::px_soft_body_component>();
 
-		/*auto px_sphere2 = &scene.createEntity("SpherePX1")
-			.addComponent<transform_component>(vec3(8, 5.f, 8), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-			.addComponent<mesh_component>(sphereMesh)
-			.addComponent<physics::px_sphere_collider_component>(1.0f)
-			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
+		//px_sphere1->addChild(*px_sphere);
 
-		auto px_sphere3 = &scene.createEntity("SpherePX1")
-			.addComponent<transform_component>(vec3(8, 5.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-			.addComponent<mesh_component>(sphereMesh)
-			.addComponent<physics::px_sphere_collider_component>(1.0f)
-			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
+		//{
+		//	for (int i = 0; i < 10; i++)
+		//	{
+		//		for (int j = 0; j < 10; j++)
+		//		{
+		//			for (int k = 0; k < 10; k++)
+		//			{
+		//				auto sphr = &scene.createEntity((std::to_string(i) + std::to_string(j) + std::to_string(k)).c_str())
+		//					.addComponent<transform_component>(vec3(2.0f * i, 5 + 2.0f * j + 5, 2.0f * k), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+		//					.addComponent<mesh_component>(sphereMesh)
+		//					.addComponent<physics::px_sphere_collider_component>(1.0f)
+		//					.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
+		//			}
+		//		}
+		//	}
+		//}
 
-		auto px_sphere4 = &scene.createEntity("SpherePX1")
-			.addComponent<transform_component>(vec3(10, 5.f, 12), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-			.addComponent<mesh_component>(sphereMesh)
-			.addComponent<physics::px_sphere_collider_component>(1.0f)
-			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);*/
-
-			//px_sphere1->addChild(*px_sphere);
-
-			//{
-			//	for (int i = 0; i < 10; i++)
-			//	{
-			//		for (int j = 0; j < 10; j++)
-			//		{
-			//			for (int k = 0; k < 10; k++)
-			//			{
-			//				auto sphr = &scene.createEntity((std::to_string(i) + std::to_string(j) + std::to_string(k)).c_str())
-			//					.addComponent<transform_component>(vec3(2.0f * i, 5 + 2.0f * j + 5, 2.0f * k), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-			//					.addComponent<mesh_component>(sphereMesh)
-			//					.addComponent<physics::px_sphere_collider_component>(1.0f)
-			//					.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
-			//			}
-			//		}
-			//	}
-			//}
-
-			//auto px_cct = &scene.createEntity("CharacterControllerPx")
-			//	.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-			//	.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
+		//auto px_cct = &scene.createEntity("CharacterControllerPx")
+		//	.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+		//	.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
 
 		auto px_plane = &scene.createEntity("PlanePX")
 			.addComponent<transform_component>(vec3(0.f, -2.0, 0.0f), quat::identity, vec3(1.f))
@@ -414,9 +358,9 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
 			.addComponent<physics::px_particles_component>(10, 10, 10, false).handle;*/
 
-		//cloth = scene.createEntity("ClothPX")
-		//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
-		//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f)).handle;
+			//cloth = scene.createEntity("ClothPX")
+			//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
+			//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f)).handle;
 
 		scene.createEntity("Platform")
 			.addComponent<transform_component>(vec3(10, -6.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
@@ -431,6 +375,51 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 			builder.createDXMesh();
 	}
 #endif
+
+#if 0
+	fireParticleSystem.initialize(10000, 50.f, "assets/particles/fire_explosion.png", 6, 6, vec3(0, 1, 30));
+	smokeParticleSystem.initialize(10000, 500.f, "assets/particles/smoke1.tif", 5, 5, vec3(0, 1, 15));
+	//boidParticleSystem.initialize(10000, 2000.f);
+	debrisParticleSystem.initialize(10000);
+#endif
+}
+
+void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
+{
+	this->renderer = renderer;
+
+	if (dxContext.featureSupport.raytracing())
+	{
+		raytracingTLAS.initialize();
+	}
+
+	scene.camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
+	scene.editorCamera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
+	scene.environment.setFromTexture("assets/sky/sunset_in_the_chalk_quarry_4k.hdr");
+	scene.environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
+
+	physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>(*this);
+
+	escene& scene = this->scene.getCurrentScene();
+
+	{
+		CPU_PROFILE_BLOCK("Binding for scripting initialization");
+		linker = make_ref<enative_scripting_linker>(&this->scene.runtimeScene);
+		linker->init();
+	}
+
+#ifndef ERA_RUNTIME
+
+	editor.initialize(&this->scene, renderer, editorPanels);
+	editor.app = this;
+
+#else
+
+	rt.initialize(&this->scene, renderer);
+
+#endif
+
+	initTestScene(scene);
 
 	this->scene.sun.direction = normalize(vec3(-0.6f, -1.f, -0.3f));
 	this->scene.sun.color = vec3(1.f, 0.93f, 0.76f);
@@ -460,19 +449,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 		SET_NAME(pointLightShadowInfoBuffer[i]->resource, "Point light shadow infos");
 	}
 
-#if 0
-	fireParticleSystem.initialize(10000, 50.f, "assets/particles/fire_explosion.png", 6, 6, vec3(0, 1, 30));
-	smokeParticleSystem.initialize(10000, 500.f, "assets/particles/smoke1.tif", 5, 5, vec3(0, 1, 15));
-	//boidParticleSystem.initialize(10000, 2000.f);
-	debrisParticleSystem.initialize(10000);
-#endif
-
 	stackArena.initialize();
-
-	{
-		core = make_ref<escripting_core>();
-		core->init();
-	}
 
 	physics::physics_holder::physicsRef->start();
 }
@@ -581,6 +558,32 @@ void application::submitRendererParams(uint32 numSpotLightShadowPasses, uint32 n
 	}
 }
 
+static void updateTestScene(float dt, escene& scene, const user_input& input)
+{
+	// Particles
+#if 0
+	computePass.dt = dt;
+	//computePass.updateParticleSystem(&boidParticleSystem);
+	computePass.updateParticleSystem(&fireParticleSystem);
+	computePass.updateParticleSystem(&smokeParticleSystem);
+	computePass.updateParticleSystem(&debrisParticleSystem);
+
+	//boidParticleSystem.render(&transparentRenderPass);
+	fireParticleSystem.render(&transparentRenderPass);
+	smokeParticleSystem.render(&transparentRenderPass);
+	debrisParticleSystem.render(&transparentRenderPass);
+#endif
+
+	// Tests
+	{
+		eentity sphere{ sphere, &scene.registry };
+		if (input.keyboard['G'].pressEvent)
+		{
+			sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(500.f, 1.0f, 0.0f), physics::px_force_mode::Impulse);
+		}
+	}
+}
+
 void application::update(const user_input& input, float dt)
 {
 	resetRenderPasses();
@@ -592,7 +595,7 @@ void application::update(const user_input& input, float dt)
 	bool objectDragged = editor.update(input, &ldrRenderPass, dt);
 	editor.render(&ldrRenderPass, dt);
 
-	render_camera& camera = this->scene.isPausable() ? scene.editor_camera : scene.camera;
+	render_camera& camera = this->scene.isPausable() ? scene.editorCamera : scene.camera;
 
 #else
 
@@ -648,19 +651,7 @@ void application::update(const user_input& input, float dt)
 		}
 	}
 
-	// Particles
-#if 0
-	computePass.dt = dt;
-	//computePass.updateParticleSystem(&boidParticleSystem);
-	computePass.updateParticleSystem(&fireParticleSystem);
-	computePass.updateParticleSystem(&smokeParticleSystem);
-	computePass.updateParticleSystem(&debrisParticleSystem);
-
-	//boidParticleSystem.render(&transparentRenderPass);
-	fireParticleSystem.render(&transparentRenderPass);
-	smokeParticleSystem.render(&transparentRenderPass);
-	debrisParticleSystem.render(&transparentRenderPass);
-#endif
+	updateTestScene(dt, scene, input);
 
 #ifndef ERA_RUNTIME
 
@@ -735,7 +726,7 @@ void application::update(const user_input& input, float dt)
 			{
 				auto& rb = selectedEntity.getComponent<physics::px_rigidbody_component>();
 
-				physics::physics_holder::physicsRef->lockRead();
+				physics::physics_lock_read lock{};
 
 				physx::PxShape* shape[1];
 				rb.getRigidActor()->getShapes(shape, 1);
@@ -750,60 +741,9 @@ void application::update(const user_input& input, float dt)
 					vec3 a = physx::createVec3(vertices[i] + shape[0]->getLocalPose().p) + selectedEntity.getComponent<transform_component>().position;
 					renderPoint(a, vec4(1, 0, 0, 1), &ldrRenderPass, true);
 				}
-
-				physics::physics_holder::physicsRef->unlockRead();
 			}
 		}
-
 #endif
-
-		// Tests
-		{
-			//eentity entityCloth{ cloth, &scene.registry };
-			//entityCloth.getComponent<physics::px_cloth_component>().clothSystem->update(true, &ldrRenderPass);
-
-			/*eentity entityParticles{ particles, &scene.registry };
-			entityParticles.getComponent<physics::px_particles_component>().particleSystem->update(true, &ldrRenderPass);*/
-			eentity sphere{ px_sphere, &scene.registry };
-			if (input.keyboard['G'].pressEvent)
-			{
-				//if (!shoted)
-				//{
-					sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(500.f, 1.0f, 0.0f), physics::px_force_mode::Impulse);
-			    //}
-				//physics::physics_holder::physicsRef->explode(vec3(0.0f, 5.0f, 3.0f), 15.0f, 300.0f);
-				//entityCloth.getComponent<physics::px_cloth_component>().clothSystem->translate(vec3(0.f, 2.f, 0.f));
-				//entityParticles.getComponent<px_particles_component>().particleSystem->translate(PxVec4(0.f, 20.f, 0.f, 0.f));
-			}
-
-			//{
-			//	eentity entt{ manager, &scene.registry };
-			//	auto& chunkManager = entt.getComponent<physics::chunk_graph_manager>();
-			//	chunkManager.update();
-
-			//	for (size_t i = 0; i < chunkManager.nbNodes; i++)
-			//	{
-			//		eentity node{ chunkManager.nodes[i], &scene.registry };
-
-			//		node.getComponent<physics::chunk_graph_manager::chunk_node>().update();
-			//	}
-			//}
-
-			//// Render soft bodies
-			//if (!physics::physics_holder::physicsRef->softBodies.empty())
-			//{
-			//	const auto positions = physics::physics_holder::physicsRef->softBodies[0]->positionsInvMass;
-			//	const auto nbVerts = physics::physics_holder::physicsRef->softBodies[0]->getNbVertices();
-
-			//	for (size_t i = 0; i < nbVerts; i++)
-			//	{
-			//		vec3 pos = vec3(positions[i].x, positions[i].y, positions[i].z);
-			//		renderPoint(pos, vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
-			//	}
-			//}
-
-			processPoints();
-		}
 
 		submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
 	}
@@ -871,40 +811,4 @@ void application::handleFileDrop(const fs::path& filename)
 	{
 		scene.environment.setFromTexture(relative);
 	}
-}
-
-void application::renderObjectPoint(float x, float y, float z)
-{
-	renderPoint(vec3(x, y, z), vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
-}
-
-void application::renderObjectBox(vec3 pos, float x, float y, float z)
-{
-	renderWireBox(pos, vec3(x, y, z), quat::identity, vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
-}
-
-void application::renderObjectSphere(vec3 pos, float radius)
-{
-	renderWireSphere(pos, radius, vec4(1.0f, 0.0f, 0.0f, 1.f), &ldrRenderPass);
-}
-
-void application::processPoints()
-{
-	physics::physics_holder::physicsRef->lockWrite();
-	auto scene = physics::physics_holder::physicsRef->getScene();
-	const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
-
-	for (physx::PxU32 i = 0; i < rb.getNbPoints(); i++)
-	{
-		const physx::PxDebugPoint& point = rb.getPoints()[i];
-		renderPoint(physx::createVec3(point.pos), vec4(point.color), &ldrRenderPass);
-	}
-
-	for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
-	{
-		const physx::PxDebugLine& line = rb.getLines()[i];
-		renderLine(physx::createVec3(line.pos0), physx::createVec3(line.pos1), vec4(line.color0), &ldrRenderPass);
-	}
-
-	physics::physics_holder::physicsRef->unlockWrite();
 }

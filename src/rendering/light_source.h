@@ -9,26 +9,25 @@
 
 struct directional_light
 {
-	vec3 color;
-	float intensity;
-
-	vec3 direction;
-	uint32 numShadowCascades;
+	void updateMatrices(const render_camera& camera);
 
 	vec4 cascadeDistances;
 	vec4 bias;
-
+	vec4 blendDistances;
 	vec4 shadowMapViewports[MAX_NUM_SUN_SHADOW_CASCADES];
+
 	mat4 viewProjs[MAX_NUM_SUN_SHADOW_CASCADES];
 
-	vec4 blendDistances;
-	uint32 shadowDimensions = 2048;
+	vec3 color;
+	vec3 direction;
 
+	float intensity;
 	float negativeZOffset = 750.0f;
 
-	bool stabilize;
+	uint32 shadowDimensions = 2048;
+	uint32 numShadowCascades;
 
-	void updateMatrices(const render_camera& camera);
+	bool stabilize;
 };
 REFLECT_STRUCT(directional_light,
 	(color, "Color"),
@@ -44,16 +43,19 @@ REFLECT_STRUCT(directional_light,
 
 struct point_light_component
 {
-	vec3 color{};
-	float intensity{};
-	float radius{};
-	bool castsShadow{};
-	uint32 shadowMapResolution{};
-
 	point_light_component() {}
 	point_light_component(vec3 color, float intensity, float radius, bool castsShadow = false, uint32 shadowMapResolution = 512)
 		: color(color), intensity(intensity), radius(radius), castsShadow(castsShadow), shadowMapResolution(shadowMapResolution) {}
 	point_light_component(const point_light_component&) = default;
+
+	vec3 color{};
+
+	float intensity{};
+	float radius{};
+
+	uint32 shadowMapResolution{};
+
+	bool castsShadow{};
 };
 REFLECT_STRUCT(point_light_component,
 	(color, "Color"),
@@ -65,18 +67,21 @@ REFLECT_STRUCT(point_light_component,
 
 struct spot_light_component
 {
-	vec3 color;
-	float intensity;
-	float distance;
-	float innerAngle;
-	float outerAngle;
-	bool castsShadow;
-	uint32 shadowMapResolution;
-
 	spot_light_component() {}
 	spot_light_component(vec3 color, float intensity, float distance, float innerAngle, float outerAngle, bool castsShadow = false, uint32 shadowMapResolution = 512)
 		: color(color), intensity(intensity), distance(distance), innerAngle(innerAngle), outerAngle(outerAngle), castsShadow(castsShadow), shadowMapResolution(shadowMapResolution) {}
 	spot_light_component(const spot_light_component&) = default;
+
+	vec3 color;
+
+	float intensity;
+	float distance;
+	float innerAngle;
+	float outerAngle;
+
+	uint32 shadowMapResolution;
+
+	bool castsShadow;
 };
 REFLECT_STRUCT(spot_light_component,
 	(color, "Color"),

@@ -21,7 +21,6 @@ bool isImageExtension(const fs::path& extension)
 		extension == ".hdr" ||
 		extension == ".dds";
 }
-
 bool isImageExtension(const std::string& extension)
 {
 	return extension == ".jpg" ||

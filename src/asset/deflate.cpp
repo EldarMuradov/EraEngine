@@ -5,13 +5,6 @@
 
 struct bit_stream
 {
-	uint8* data;
-	uint64 size;
-	uint64 readOffset;
-
-	uint32 bitCount;
-	uint32 bitBuffer;
-
 	template <typename T>
 	T* consume(uint32 count = 1)
 	{
@@ -58,13 +51,20 @@ struct bit_stream
 		consumeBits(flushCount);
 	}
 
-	uint64 bytesRemaining()
+	uint64 bytesRemaining() const
 	{
 		return size - readOffset;
 	}
+
+	uint8* data;
+	uint64 size;
+	uint64 readOffset;
+
+	uint32 bitCount;
+	uint32 bitBuffer;
 };
 
-static uint32 reverseBits(uint32 value, uint32 bitCount)
+inline constexpr uint32 reverseBits(uint32 value, uint32 bitCount)
 {
 	uint32 result = 0;
 

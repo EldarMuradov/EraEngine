@@ -32,16 +32,15 @@ struct dlss_feature_adapter
 {
 	dlss_feature_adapter() = default;
 
-	void initialize(main_renderer* rbd);
-
 	~dlss_feature_adapter();
+
+	void initialize(main_renderer* rbd);
 
 	void updateDLSS(ID3D12GraphicsCommandList* cmdList, float dt);
 
 private:
 	void initializeDLSS() noexcept;
 
-private:
 	main_renderer* renderer = nullptr;
 
 #if ENABLE_DLSS

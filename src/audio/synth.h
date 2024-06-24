@@ -27,9 +27,6 @@ struct audio_synth
 
 struct sine_synth : audio_synth
 {
-	static const uint32 numChannels = 1;
-	static const uint32 sampleHz = 44100;
-
 	sine_synth(float duration = 10.f, float hz = C_HZ)
 		: audio_synth()
 	{
@@ -59,6 +56,9 @@ struct sine_synth : audio_synth
 	}
 
 	NODISCARD virtual float getDuration() const override { return duration; }
+
+	static const uint32 numChannels = 1;
+	static const uint32 sampleHz = 44100;
 
 private:
 	uint32 totalNumSamples;

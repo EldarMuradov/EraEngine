@@ -69,8 +69,6 @@ struct vertex_buffer_group
 
 struct dx_vertex_buffer_view
 {
-	D3D12_VERTEX_BUFFER_VIEW view;
-
 	dx_vertex_buffer_view() { view.SizeInBytes = 0; }
 	dx_vertex_buffer_view(const ref<dx_vertex_buffer>& vb) : view(vb ? vb->view : D3D12_VERTEX_BUFFER_VIEW{ 0 }) {}
 	dx_vertex_buffer_view(const dx_dynamic_vertex_buffer& vb) : view(vb.view) {}
@@ -82,13 +80,12 @@ struct dx_vertex_buffer_view
 
 	operator bool() const { return view.SizeInBytes > 0; }
 	operator const D3D12_VERTEX_BUFFER_VIEW& () const { return view; }
+
+	D3D12_VERTEX_BUFFER_VIEW view;
 };
 
 struct dx_vertex_buffer_group_view
 {
-	dx_vertex_buffer_view positions;
-	dx_vertex_buffer_view others;
-
 	dx_vertex_buffer_group_view() { positions.view.SizeInBytes = 0; others.view.SizeInBytes = 0; }
 	dx_vertex_buffer_group_view(const dx_vertex_buffer_view& positions, const dx_vertex_buffer_view& others = {}) : positions(positions), others(others) {}
 	dx_vertex_buffer_group_view(const vertex_buffer_group& vb) : positions(vb.positions), others(vb.others) {}
@@ -99,12 +96,13 @@ struct dx_vertex_buffer_group_view
 	dx_vertex_buffer_group_view& operator=(dx_vertex_buffer_group_view&&) = default;
 
 	operator bool() const { return positions && others; }
+
+	dx_vertex_buffer_view positions;
+	dx_vertex_buffer_view others;
 };
 
 struct dx_index_buffer_view
 {
-	D3D12_INDEX_BUFFER_VIEW view;
-
 	dx_index_buffer_view() { view.SizeInBytes = 0; }
 	dx_index_buffer_view(const ref<dx_index_buffer>& vb) : view(vb->view) {}
 	dx_index_buffer_view(const dx_dynamic_index_buffer& vb) : view(vb.view) {}
@@ -116,6 +114,8 @@ struct dx_index_buffer_view
 
 	operator bool() const { return view.SizeInBytes > 0; }
 	operator const D3D12_INDEX_BUFFER_VIEW& () const { return view; }
+
+	D3D12_INDEX_BUFFER_VIEW view;
 };
 
 struct dx_mesh
@@ -126,11 +126,6 @@ struct dx_mesh
 
 struct buffer_grave
 {
-	dx_resource resource;
-
-	dx_descriptor_allocation descriptorAllocation = {};
-	dx_descriptor_allocation shaderVisibleDescriptorAllocation = {};
-
 	buffer_grave() {}
 	buffer_grave(const buffer_grave& o) = delete;
 	buffer_grave(buffer_grave&& o) = default;
@@ -139,6 +134,11 @@ struct buffer_grave
 	buffer_grave& operator=(buffer_grave&& o) = default;
 
 	~buffer_grave();
+
+	dx_resource resource;
+
+	dx_descriptor_allocation descriptorAllocation = {};
+	dx_descriptor_allocation shaderVisibleDescriptorAllocation = {};
 };
 
 DXGI_FORMAT getIndexBufferFormat(uint32 elementSize);

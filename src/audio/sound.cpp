@@ -24,13 +24,13 @@ static bool readChunkData(HANDLE fileHandle, void* buffer, uint32 buffersize, ui
 static std::unordered_map<uint64, ref<audio_sound>> fileSounds;
 static std::unordered_map<uint64, ref<audio_sound>> synthSounds;
 
-bool checkForExistingFileSound(sound_id id) 
+static bool checkForExistingFileSound(sound_id id)
 { 
     auto it = fileSounds.find(id.hash);
     return (it != fileSounds.end()) && it->second != 0;
 }
 
-bool checkForExistingSynthSound(sound_id id) 
+static bool checkForExistingSynthSound(sound_id id)
 { 
     auto it = synthSounds.find(id.hash);
     return (it != synthSounds.end()) && it->second != 0;

@@ -28,27 +28,26 @@ struct renderer_settings
 	tonemap_settings tonemapSettings;
 	tonemap_settings defaultTonemapSettings;
 
-	bool enableAO = true;
 	hbao_settings aoSettings;
 
-	bool enableSSS = true;
 	sss_settings sssSettings;
 
-	bool enableSSR = true;
 	ssr_settings ssrSettings;
 
-	bool enableTAA = true;
 	taa_settings taaSettings;
 
-	bool enableDLSS = false;
-
-	bool cacheShadowMap = false;
-
-	bool enableBloom = true;
 	bloom_settings bloomSettings;
 
-	bool enableSharpen = true;
 	sharpen_settings sharpenSettings;
+
+	bool enableAO = true;
+	bool enableSSS = true;
+	bool enableSSR = true;
+	bool enableTAA = true;
+	bool enableDLSS = false;
+	bool enableSharpen = true;
+	bool cacheShadowMap = false;
+	bool enableBloom = true;
 };
 REFLECT_STRUCT(renderer_settings,
 	(tonemapSettings, "Tonemap"),
@@ -139,7 +138,13 @@ struct main_renderer
 	void setSpotLights(const ref<dx_buffer>& lights, uint32 numLights, const ref<dx_buffer>& shadowInfoBuffer);
 	void setDecals(const ref<dx_buffer>& decals, uint32 numDecals, const ref<dx_texture>& textureAtlas);
 
-	// Settings.
+	NODISCARD const ref<dx_texture>& getAOResult() const { return aoTextures[aoHistoryIndex]; }
+	NODISCARD const ref<dx_texture>& getSSSResult() const { return sssTextures[sssHistoryIndex]; }
+	NODISCARD const ref<dx_texture>& getSSRResult() const { return ssrResolveTexture; }
+	NODISCARD const ref<dx_texture>& getBloomResult() const { return bloomTexture; }
+	NODISCARD const ref<dx_texture>& getScreenVelocities() const { return screenVelocitiesTexture; }
+
+	// Settings
 	renderer_mode mode = renderer_mode_rasterized;
 	aspect_ratio_mode aspectRatioMode = aspect_ratio_free;
 
@@ -155,12 +160,6 @@ struct main_renderer
 
 	path_tracer pathTracer{};
 
-	NODISCARD const ref<dx_texture>& getAOResult() const { return aoTextures[aoHistoryIndex]; }
-	NODISCARD const ref<dx_texture>& getSSSResult() const { return sssTextures[sssHistoryIndex]; }
-	NODISCARD const ref<dx_texture>& getSSRResult() const { return ssrResolveTexture; }
-	NODISCARD const ref<dx_texture>& getBloomResult() const { return bloomTexture; }
-	NODISCARD const ref<dx_texture>& getScreenVelocities() const { return screenVelocitiesTexture; }
-
 private:
 	template <typename func_t = std::nullptr_t>
 	uint64 executeComputeTasks(compute_pass_event eventTime, const func_t& additionalTasksCallback = nullptr);
@@ -169,6 +168,8 @@ private:
 	NODISCARD dx_command_list* renderThread1(const common_render_data& commonRenderData, bool aspectRatioModeChanged);
 	NODISCARD dx_command_list* renderThread2(const common_render_data& commonRenderData, const user_input* input);
 	NODISCARD dx_command_list* renderThread3(common_render_data commonRenderData, dx_dynamic_constant_buffer unjitteredCameraCBV);
+
+	void recalculateViewport(bool resizeTextures);
 
 	const sun_shadow_render_pass* sunShadowRenderPasses[MAX_NUM_SUN_LIGHT_SHADOW_PASSES];
 	const spot_shadow_render_pass* spotLightShadowRenderPasses[MAX_NUM_SPOT_LIGHT_SHADOW_PASSES];
@@ -203,8 +204,6 @@ private:
 	int32 windowXOffset{};
 	int32 windowYOffset{};
 
-	bool windowHovered = false;
-
 	ref<dx_texture> hdrColorTexture;
 	ref<dx_texture> worldNormalsRoughnessTexture;
 	ref<dx_texture> screenVelocitiesTexture;
@@ -217,13 +216,11 @@ private:
 	ref<dx_texture> aoBlurTempTexture;
 	ref<dx_texture> aoTextures[2]; // These get flip-flopped from frame to frame.
 	volatile uint32 aoHistoryIndex = 0;
-	bool aoWasOnLastFrame = false;
 
 	ref<dx_texture> sssCalculationTexture;
 	ref<dx_texture> sssBlurTempTexture;
 	ref<dx_texture> sssTextures[2]; // These get flip-flopped from frame to frame.
 	uint32 sssHistoryIndex = 0;
-	bool sssWasOnLastFrame = false;
 
 	ref<dx_texture> ssrRaycastTexture;
 	ref<dx_texture> ssrResolveTexture;
@@ -249,12 +246,14 @@ private:
 	light_culling culling{};
 
 	dlss_feature_adapter dlss_adapter{};
-	bool dlssInited = false;
 
 	aspect_ratio_mode oldAspectRatioMode = aspect_ratio_free;
 	renderer_mode oldMode = renderer_mode_rasterized;
 
-	void recalculateViewport(bool resizeTextures);
+	bool dlssInited = false;
+	bool aoWasOnLastFrame = false;
+	bool windowHovered = false;
+	bool sssWasOnLastFrame = false;
 
 	friend dlss_feature_adapter;
 	friend struct eeditor;

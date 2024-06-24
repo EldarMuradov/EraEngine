@@ -7,8 +7,6 @@
 struct random_number_generator
 {
 	// XOR shift generator.
-	uint64 state;
-
 	random_number_generator() {}
 	random_number_generator(uint64 seed) { state = seed; }
 
@@ -80,6 +78,8 @@ struct random_number_generator
 	{
 		return quat(randomPointOnUnitSphere(), randomFloatBetween(-maxAngle, maxAngle));
 	}
+
+	uint64 state;
 };
 
 NODISCARD inline float halton(uint32 index, uint32 base)

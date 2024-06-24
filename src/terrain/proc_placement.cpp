@@ -30,7 +30,6 @@ static dx_mesh visualizePointsMesh;
 static submesh_info visualizePointsSubmesh;
 static dx_command_signature visualizePointsCommandSignature;
 
-
 void initializeProceduralPlacementPipelines()
 {
 	generatePointsPipeline = createReloadablePipeline("proc_placement_generate_points_cs");
@@ -39,7 +38,7 @@ void initializeProceduralPlacementPipelines()
 	createTransformsPipeline = createReloadablePipeline("proc_placement_create_transforms_cs");
 
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			.inputLayout(inputLayout_position_uv_normal_tangent)
 			.renderTargets(ldrFormat, depthStencilFormat);
 
@@ -97,8 +96,6 @@ PIPELINE_RENDER_IMPL(render_proc_placement_layer_pipeline, render_proc_placement
 	cl->drawIndirect(visualizePointsCommandSignature, 1, data.commandBuffer, data.commandBufferOffset * sizeof(placement_draw));
 }
 
-
-
 #define READBACK 0
 
 #if READBACK
@@ -122,7 +119,6 @@ proc_placement_component::proc_placement_component(const std::vector<proc_placem
 
 		submeshToMesh.push_back(0);
 	}
-
 
 	uint32 globalMeshOffset = 1;
 
@@ -246,7 +242,6 @@ void proc_placement_component::generate(const render_camera& camera, const terra
 								cb.densities.data[i] = layer.densities[i];
 							}
 
-							
 							cb.uvScale = 1.f / scaling;
 							cb.numMeshes = layer.numMeshes;
 							cb.globalMeshOffset = layer.globalMeshOffset;
@@ -338,7 +333,6 @@ void proc_placement_component::generate(const render_camera& camera, const terra
 
 	dxContext.executeCommandList(cl);
 
-
 #if READBACK
 	dxContext.flushApplication();
 
@@ -374,8 +368,10 @@ void proc_placement_component::generate(const render_camera& camera, const terra
 void proc_placement_component::render(ldr_render_pass* renderPass)
 {
 #if 0
+
 	render_proc_placement_layer_data data = { transformBuffer, drawIndirectBuffer, 0, visualizePointsMesh.vertexBuffer, visualizePointsMesh.indexBuffer };
 	renderPass->renderObject<render_proc_placement_layer_pipeline>(data);
+
 #else
 	
 	uint32 drawCallOffset = 1;

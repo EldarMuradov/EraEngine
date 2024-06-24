@@ -40,6 +40,10 @@ struct sound_spec
 
 struct audio_sound
 {
+    virtual ~audio_sound();
+
+    virtual audio_synth* createSynth(void* buffer) const { return 0; }
+
     sound_id id;
 
     fs::path path;
@@ -54,9 +58,6 @@ struct audio_sound
 
     sound_type type;
 
-    virtual ~audio_sound();
-
-    virtual audio_synth* createSynth(void* buffer) const { return 0; }
 };
 
 struct sound_settings

@@ -10,13 +10,6 @@ struct dx_texture;
 
 struct dx_render_target
 {
-	uint32 numAttachments = 0;
-	D3D12_VIEWPORT viewport;
-
-	dx_rtv_descriptor_handle rtv[8];
-	dx_dsv_descriptor_handle dsv = CD3DX12_DEFAULT();
-
-
 	dx_render_target(uint32 width, uint32 height)
 	{
 		viewport = { 0.f, 0.f, (float)width, (float)height, 0.f, 1.f };
@@ -42,6 +35,12 @@ struct dx_render_target
 		dsv = attachment ? attachment->defaultDSV : useIfNull;
 		return *this;
 	}
+
+	uint32 numAttachments = 0;
+	D3D12_VIEWPORT viewport;
+
+	dx_rtv_descriptor_handle rtv[8];
+	dx_dsv_descriptor_handle dsv = CD3DX12_DEFAULT();
 
 private:
 	uint32 pushIndex = 0;

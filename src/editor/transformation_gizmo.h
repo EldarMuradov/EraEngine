@@ -46,12 +46,12 @@ private:
 		transformation_local,
 	};
 
-	transformation_type type = transformation_type_translation;
-	transformation_space space = transformation_global;
-
 	uint32 handleTranslation(trs& transform, ray r, const user_input& input, float snapping, float scaling);
 	uint32 handleRotation(trs& transform, ray r, const user_input& input, float snapping, float scaling);
 	uint32 handleScaling(trs& transform, ray r, const user_input& input, float scaling, const render_camera& camera, bool allowNonUniform);
+
+	transformation_type type = transformation_type_translation;
+	transformation_space space = transformation_global;
 
 	uint32 axisIndex;
 	float anchor;

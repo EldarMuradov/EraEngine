@@ -3,12 +3,12 @@
 #pragma once
 #include <unordered_set>
 
-struct script_component
+struct scripts_component
 {
-	script_component() = default;
-	script_component(std::string name) { typeNames.emplace(name); };
-	script_component(const std::unordered_set<std::string>& name) : typeNames(name) {};
-	script_component(std::unordered_set<std::string>&& name) : typeNames(std::move(name)) {};
+	scripts_component() = default;
+	scripts_component(std::string name) { typeNames.emplace(name); };
+	scripts_component(const std::unordered_set<std::string>& name) : typeNames(name) {};
+	scripts_component(std::unordered_set<std::string>&& name) : typeNames(std::move(name)) {};
 
 	std::unordered_set<std::string> typeNames;
 };

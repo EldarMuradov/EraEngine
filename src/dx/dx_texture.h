@@ -14,6 +14,12 @@ struct dx_texture
 {
 	virtual ~dx_texture();
 
+	dx_cpu_descriptor_handle uavAt(uint32 index) { return srvUavAllocation.cpuAt(1 + index); }
+	dx_rtv_descriptor_handle rtvAt(uint32 index) { return rtvAllocation.cpuAt(index); }
+
+	void setName(const wchar* name) const;
+	std::wstring getName() const;
+
 	dx_resource resource;
 	D3D12MA::Allocation* allocation = 0;
 
@@ -23,12 +29,10 @@ struct dx_texture
 
 	dx_cpu_descriptor_handle defaultSRV; // SRV for the whole texture (all mip levels).
 	dx_cpu_descriptor_handle defaultUAV; // UAV for the first mip level.
-	dx_cpu_descriptor_handle uavAt(uint32 index) { return srvUavAllocation.cpuAt(1 + index); }
 
 	dx_cpu_descriptor_handle stencilSRV; // For depth stencil textures.
 
 	dx_rtv_descriptor_handle defaultRTV;
-	dx_rtv_descriptor_handle rtvAt(uint32 index) { return rtvAllocation.cpuAt(index); }
 
 	dx_dsv_descriptor_handle defaultDSV;
 
@@ -50,18 +54,10 @@ struct dx_texture
 
 	std::atomic<asset_load_state> loadState = asset_loaded;
 	job_handle loadJob;
-
-	void setName(const wchar* name) const;
-	std::wstring getName() const;
 };
 
 struct dx_texture_atlas
 {
-	ref<dx_texture> texture;
-
-	uint32 cols;
-	uint32 rows;
-
 	NODISCARD std::pair<vec2, vec2> getUVs(uint32 x, uint32 y) const
 	{
 		ASSERT(x < cols);
@@ -81,10 +77,17 @@ struct dx_texture_atlas
 		uint32 y = i / cols;
 		return getUVs(x, y);
 	}
+
+	ref<dx_texture> texture;
+
+	uint32 cols;
+	uint32 rows;
 };
 
 struct dx_tiled_texture
 {
+	inline NODISCARD bool isMipPacked(uint32 index) const { return index >= numStandard; }
+
 	struct tiled_texture_mip_desc
 	{
 		CD3DX12_TILED_RESOURCE_COORDINATE startCoordinate;
@@ -97,18 +100,10 @@ struct dx_tiled_texture
 
 	uint32 numStandard;
 	uint32 numPacked;
-
-	inline NODISCARD bool isMipPacked(uint32 index) const { return index >= numStandard; }
 };
 
 struct texture_grave
 {
-	dx_resource resource;
-
-	dx_descriptor_allocation srvUavAllocation = {};
-	dx_descriptor_allocation rtvAllocation = {};
-	dx_descriptor_allocation dsvAllocation = {};
-
 	texture_grave() {}
 	texture_grave(const texture_grave& o) = delete;
 	texture_grave(texture_grave&& o) = default;
@@ -117,6 +112,12 @@ struct texture_grave
 	texture_grave& operator=(texture_grave&& o) = default;
 
 	~texture_grave();
+
+	dx_resource resource;
+
+	dx_descriptor_allocation srvUavAllocation = {};
+	dx_descriptor_allocation rtvAllocation = {};
+	dx_descriptor_allocation dsvAllocation = {};
 };
 
 NODISCARD D3D12_RESOURCE_ALLOCATION_INFO getTextureAllocationInfo(uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips, D3D12_RESOURCE_FLAGS flags);

@@ -4,10 +4,6 @@
 
 struct entire_file
 {
-	uint8* content;
-	uint64 size;
-	uint64 readOffset;
-
 	template <typename T>
 	NODISCARD T* consume(uint32 count = 1)
 	{
@@ -21,6 +17,10 @@ struct entire_file
 		readOffset += readSize;
 		return result;
 	}
+
+	uint8* content;
+	uint64 size;
+	uint64 readOffset;
 };
 
 NODISCARD inline entire_file loadFile(const fs::path& path)
@@ -53,12 +53,12 @@ inline void freeFile(entire_file file)
 
 struct sized_string
 {
-	const char* str;
-	uint32 length;
-
 	sized_string() : str(0), length(0) {}
 	sized_string(const char* str, uint32 length) : str(str), length(length) {}
 	template<uint32 len> sized_string(const char(&str)[len]) : str(str), length(len - 1) {}
+
+	const char* str;
+	uint32 length;
 };
 
 inline bool operator==(sized_string a, sized_string b)

@@ -30,8 +30,6 @@ escene::escene()
 #ifndef PHYSICS_ONLY
 	(void)registry.group<position_component, point_light_component>();
 	(void)registry.group<position_rotation_component, spot_light_component>();
-	//(void)registry.group<navigation_component, transform_component>();
-	//(void)registry.group<transform_component, script_component>();
 #endif
 
 	registry.reserve(64000);
@@ -80,6 +78,7 @@ void escene::cloneTo(escene& target)
 		physics::px_shape_holder_component,
 
 #if !_DEBUG
+
 		physics::chunk_graph_manager,
 		physics::chunk_graph_manager::chunk_node,
 		physics::px_blast_rigidbody_component,
@@ -88,7 +87,7 @@ void escene::cloneTo(escene& target)
 #endif
 
 		navigation_component,
-		script_component,
+		scripts_component,
 #endif
 
 		child_component,
@@ -151,6 +150,7 @@ eentity escene::copyEntity(eentity src)
 	if (auto* c = src.getComponentIfExists<dynamic_transform_component>()) { dest.addComponent<dynamic_transform_component>(*c); }
 
 #ifndef PHYSICS_ONLY
+
 	if (auto* c = src.getComponentIfExists<point_light_component>()) { dest.addComponent<point_light_component>(*c); }
 	if (auto* c = src.getComponentIfExists<spot_light_component>()) { dest.addComponent<spot_light_component>(*c); }
 	if (auto* c = src.getComponentIfExists<cloth_render_component>()) { dest.addComponent<cloth_render_component>(*c); }

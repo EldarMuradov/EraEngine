@@ -14,6 +14,7 @@ struct dx_descriptor_allocation
 	inline NODISCARD CD3DX12_GPU_DESCRIPTOR_HANDLE gpuAt(uint32 index = 0) const { ASSERT(index < count); return CD3DX12_GPU_DESCRIPTOR_HANDLE(gpuBase, index, descriptorSize); }
 
 	NODISCARD inline bool valid() const { return count > 0; }
+
 	uint64 count = 0;
 
 private:

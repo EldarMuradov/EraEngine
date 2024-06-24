@@ -15,7 +15,7 @@ static dx_pipeline treePipeline;
 void initializeTreePipelines()
 {
     {
-        auto desc = CREATE_GRAPHICS_PIPELINE
+        auto& desc = CREATE_GRAPHICS_PIPELINE
             .inputLayout(inputLayout_position_uv_normal_tangent_colors)
             //.depthSettings(true, false, D3D12_COMPARISON_FUNC_EQUAL)
             .cullingOff()
@@ -105,8 +105,6 @@ struct tree_pipeline
             pbr_material_cb(mat->albedoTint, mat->emission.xyz, mat->roughnessOverride, mat->metallicOverride, flags, 1.f, mat->translucency, mat->uvScale)
         );
 
-
-
         const submesh_info& submesh = data.submesh;
 
         cl->setRootGraphicsSRV(TREE_RS_TRANSFORM, data.transformPtr);
@@ -123,7 +121,6 @@ void renderTree(opaque_render_pass* renderPass, D3D12_GPU_VIRTUAL_ADDRESS transf
 {
     static float time = 0.f;
     time += dt;
-
 
     const dx_mesh& dxMesh = mesh->mesh;
 

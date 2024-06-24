@@ -68,18 +68,6 @@ struct fbx_property;
 
 struct fbx_node
 {
-	sized_string name;
-
-	uint32 parent;
-	uint32 next;
-	uint32 firstChild;
-	uint32 lastChild;
-	uint32 level;
-	uint32 numChildren;
-
-	uint32 firstProperty;
-	uint32 numProperties;
-
 	const fbx_node* findChild(const std::vector<fbx_node>& nodes, sized_string name) const
 	{
 		uint32 currentNode = firstChild;
@@ -102,6 +90,18 @@ struct fbx_node
 	{
 		return numProperties ? &properties[firstProperty] : 0;
 	}
+
+	sized_string name;
+
+	uint32 parent;
+	uint32 next;
+	uint32 firstChild;
+	uint32 lastChild;
+	uint32 level;
+	uint32 numChildren;
+
+	uint32 firstProperty;
+	uint32 numProperties;
 };
 
 enum fbx_property_type
@@ -851,7 +851,7 @@ static fbx_global_settings readGlobalSettings(const fbx_node& node, const std::v
 
 enum fbx_object_type
 {
-	fbx_object_type_unknown,
+	fbx_object_type_none,
 
 	fbx_object_type_global,
 	fbx_object_type_model,
@@ -1518,22 +1518,6 @@ struct fbx_object_lut
 {
 	using fbx_object_index = std::pair<fbx_object_type, uint32>;
 
-	std::unordered_map<int64, fbx_object_index> idToObject;
-
-	std::vector<fbx_model> models;
-	std::vector<fbx_mesh> meshes;
-	std::vector<fbx_material> materials;
-	std::vector<fbx_texture> textures;
-	std::vector<fbx_deformer> deformers;
-
-	std::vector<fbx_animation_stack> animationStacks;
-	std::vector<fbx_animation_layer> animationLayers;
-	std::vector<fbx_animation_curve_node> animationCurveNodes;
-	std::vector<fbx_animation_curve> animationCurves;
-
-	std::unordered_map<int64, fbx_skeleton> skeletons;
-	std::vector<fbx_animation> animations;
-
 	void reserve(const fbx_definitions& definitions)
 	{
 		models.reserve(definitions.numModels);
@@ -1579,10 +1563,26 @@ struct fbx_object_lut
 		auto it = idToObject.find(id);
 		if (it == idToObject.end())
 		{
-			return { fbx_object_type_unknown, 0 };
+			return { fbx_object_type_none, 0 };
 		}
 		return it->second; 
 	}
+
+	std::unordered_map<int64, fbx_object_index> idToObject;
+
+	std::vector<fbx_model> models;
+	std::vector<fbx_mesh> meshes;
+	std::vector<fbx_material> materials;
+	std::vector<fbx_texture> textures;
+	std::vector<fbx_deformer> deformers;
+
+	std::vector<fbx_animation_stack> animationStacks;
+	std::vector<fbx_animation_layer> animationLayers;
+	std::vector<fbx_animation_curve_node> animationCurveNodes;
+	std::vector<fbx_animation_curve> animationCurves;
+
+	std::unordered_map<int64, fbx_skeleton> skeletons;
+	std::vector<fbx_animation> animations;
 };
 
 static void resolveConnections(const fbx_node* connectionsNode, const std::vector<fbx_node>& nodes, const std::vector<fbx_property>& properties,
@@ -2171,7 +2171,7 @@ NODISCARD model_asset loadFBX(const fs::path& path, uint32 flags)
 			std::string name = nameToString(joint->model->name);
 
 			out.nameToJointID[name] = i;
-			out.joints.push_back({ std::move(name), limb_type_unknown, false, joint->invBindMatrix, invert(joint->invBindMatrix), joint->parentID });
+			out.joints.push_back({ std::move(name), limb_type_none, false, joint->invBindMatrix, invert(joint->invBindMatrix), joint->parentID });
 		}
 
 		ASSERT(out.joints.size() == out.nameToJointID.size());

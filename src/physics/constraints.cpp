@@ -68,7 +68,7 @@ static uint32 scheduleConstraintsSIMD(eallocator& arena, const constraint_body_p
 		pairBuckets[i] = arena.allocate<simd_constraint_body_pair>(numAllocationsPerBucket + 1);
 		slotBuckets[i] = arena.allocate<simd_constraint_slot>(numAllocationsPerBucket);
 
-		// Add padding with invalid data so we don't have to range check.
+		// Add padding with invalid data so we don't have to range check
 		invalid.store((int*)pairBuckets[i]->ab);
 	}
 
@@ -76,7 +76,7 @@ static uint32 scheduleConstraintsSIMD(eallocator& arena, const constraint_body_p
 	{
 		constraint_body_pair bodyPair = bodyPairs[i];
 
-		// If one of the bodies is the dummy, just set it to the other for the comparison below.
+		// If one of the bodies is the dummy, just set it to the other for the comparison below
 		uint16 rbA = (bodyPair.rbA == dummyRigidBodyIndex) ? bodyPair.rbB : bodyPair.rbA;
 		uint16 rbB = (bodyPair.rbB == dummyRigidBodyIndex) ? bodyPair.rbA : bodyPair.rbB;
 
@@ -123,35 +123,35 @@ static uint32 scheduleConstraintsSIMD(eallocator& arena, const constraint_body_p
 		simd_constraint_slot* slot = slots + j;
 
 		slot->indices[lane] = i;
-		pair->ab[lane] = ((uint32)bodyPair.rbA << 16) | bodyPair.rbB; // Use the original indices here.
+		pair->ab[lane] = ((uint32)bodyPair.rbA << 16) | bodyPair.rbB; // Use the original indices here
 
 		uint32& count = numEntriesPerBucket[bucket];
 		if (j == count)
 		{
-			// We used a new entry.
+			// We used a new entry
 			++count;
 
-			// Set entry at end to invalid.
+			// Set entry at end to invalid
 			invalid.store((int*)pairs[count].ab);
 		}
 		else if (lane == CONSTRAINT_SIMD_WIDTH - 1)
 		{
-			// This entry is full -> commit it.
+			// This entry is full -> commit it
 			w_int indices = (int32*)slot->indices;
 
-			// Swap and pop.
+			// Swap and pop
 			--count;
 			*pair = pairs[count];
 			*slot = slots[count];
 
 			indices.store((int32*)outConstraintSlots[numConstraintSlots++].indices);
 
-			// Set entry at end to invalid.
+			// Set entry at end to invalid
 			invalid.store((int*)pairs[count].ab);
 		}
 	}
 
-	// There are still entries left, where not all lanes are filled. We replace these indices with the first in this entry.
+	// There are still entries left, where not all lanes are filled. We replace these indices with the first in this entry
 
 	for (uint32 bucket = 0; bucket < numBuckets; ++bucket)
 	{
@@ -196,11 +196,11 @@ NODISCARD distance_constraint_solver initializeDistanceVelocityConstraints(eallo
 		const rigid_body_global_state& globalA = rbs[out.rigidBodyIndexA];
 		const rigid_body_global_state& globalB = rbs[out.rigidBodyIndexB];
 
-		// Relative to COG.
+		// Relative to COG
 		out.relGlobalAnchorA = globalA.rotation * (in.localAnchorA - globalA.localCOGPosition);
 		out.relGlobalAnchorB = globalB.rotation * (in.localAnchorB - globalB.localCOGPosition);
 
-		// Global.
+		// Global
 		vec3 globalAnchorA = globalA.position + out.relGlobalAnchorA;
 		vec3 globalAnchorB = globalB.position + out.relGlobalAnchorB;
 
@@ -287,7 +287,7 @@ NODISCARD simd_distance_constraint_solver initializeDistanceVelocityConstraintsS
 			localAnchorA.x, localAnchorA.y, localAnchorA.z, localAnchorB.x, localAnchorB.y, localAnchorB.z, globalLength, dummy);
 
 
-		// Load body A.
+		// Load body A
 		w_vec3 localCOGPositionA;
 		w_quat rotationA;
 		w_vec3 positionA;
@@ -1138,8 +1138,8 @@ NODISCARD hinge_constraint_solver initializeHingeVelocityConstraints(eallocator&
 				out.motorVelocity = in.motorVelocity;
 				if (in.motorType == constraint_position_motor)
 				{
-					// Inspired by Bullet Engine. We set the velocity such that the target angle is reached within one frame.
-					// This will later get clamped to the maximum motor impulse.
+					// Inspired by Bullet Engine. We set the velocity such that the target angle is reached within one frame
+					// This will later get clamped to the maximum motor impulse
 					float minLimit = (in.minRotationLimit <= 0.f) ? in.minRotationLimit : -M_PI;
 					float maxLimit = (in.maxRotationLimit >= 0.f) ? in.maxRotationLimit : M_PI;
 					float targetAngle = clamp(in.motorTargetAngle, minLimit, maxLimit);
@@ -1178,13 +1178,13 @@ void solveHingeVelocityConstraints(hinge_constraint_solver constraints, rigid_bo
 		vec3 vB = rbB.linearVelocity;
 		vec3 wB = rbB.angularVelocity;
 
-		// Solve in order of importance (most important last): Motor -> Limits -> Rotation -> Position.
+		// Solve in order of importance (most important last): Motor -> Limits -> Rotation -> Position
 		vec3 globalRotationAxis = con.globalRotationAxis;
 
 		// Motor
 		if (con.solveMotor)
 		{
-			float aDotWA = dot(globalRotationAxis, wA); // How fast are we turning about the axis.
+			float aDotWA = dot(globalRotationAxis, wA); // How fast are we turning about the axis
 			float aDotWB = dot(globalRotationAxis, wB);
 
 			float relAngularVelocity = (aDotWB - aDotWA);
@@ -1204,7 +1204,7 @@ void solveHingeVelocityConstraints(hinge_constraint_solver constraints, rigid_bo
 		{
 			float limitSign = con.limitSign;
 
-			float aDotWA = dot(globalRotationAxis, wA); // How fast are we turning about the axis.
+			float aDotWA = dot(globalRotationAxis, wA); // How fast are we turning about the axis
 			float aDotWB = dot(globalRotationAxis, wB);
 			float relAngularVelocity = limitSign * (aDotWB - aDotWA);
 
@@ -1498,9 +1498,9 @@ NODISCARD simd_hinge_constraint_solver initializeHingeVelocityConstraintsSIMD(ea
 
 					if (anyFalse(isVelocityMotor))
 					{
-						// Inspired by Bullet Engine. We set the velocity such that the target angle is reached within one frame.
-						// This will later get clamped to the maximum motor impulse.
-						w_float motorTargetAngle = motorVelocity; // This is a union.
+						// Inspired by Bullet Engine. We set the velocity such that the target angle is reached within one frame
+						// This will later get clamped to the maximum motor impulse
+						w_float motorTargetAngle = motorVelocity; // This is a union
 
 						w_float minLimit = ifThen(minLimitActive, minRotationLimit, -M_PI);
 						w_float maxLimit = ifThen(maxLimitActive, maxRotationLimit, M_PI);
@@ -1584,7 +1584,7 @@ void solveHingeVelocityConstraintsSIMD(simd_hinge_constraint_solver constraints,
 		load8(&rbs->invInertia.m22, batch.rbBIndices, (uint32)sizeof(rigid_body_global_state),
 			invInertiaB.m22, invMassB, vB.x, vB.y, vB.z, wB.x, wB.y, wB.z);
 
-		// Solve in order of importance (most important last): Motor -> Limits -> Rotation -> Position.
+		// Solve in order of importance (most important last): Motor -> Limits -> Rotation -> Position
 		w_vec3 globalRotationAxis(batch.globalRotationAxis[0], batch.globalRotationAxis[1], batch.globalRotationAxis[2]);
 		w_vec3 motorAndLimitImpulseToAngularVelocityA(batch.motorAndLimitImpulseToAngularVelocityA[0], batch.motorAndLimitImpulseToAngularVelocityA[1], batch.motorAndLimitImpulseToAngularVelocityA[2]);
 		w_vec3 motorAndLimitImpulseToAngularVelocityB(batch.motorAndLimitImpulseToAngularVelocityB[0], batch.motorAndLimitImpulseToAngularVelocityB[1], batch.motorAndLimitImpulseToAngularVelocityB[2]);
@@ -1597,7 +1597,7 @@ void solveHingeVelocityConstraintsSIMD(simd_hinge_constraint_solver constraints,
 			w_float motorImpulse(batch.motorImpulse);
 			w_float maxMotorImpulse(batch.maxMotorImpulse);
 
-			w_float aDotWA = dot(globalRotationAxis, wA); // How fast are we turning about the axis.
+			w_float aDotWA = dot(globalRotationAxis, wA); // How fast are we turning about the axis
 			w_float aDotWB = dot(globalRotationAxis, wB);
 
 			w_float relAngularVelocity = (aDotWB - aDotWA);
@@ -1622,7 +1622,7 @@ void solveHingeVelocityConstraintsSIMD(simd_hinge_constraint_solver constraints,
 			w_float limitImpulse(batch.limitImpulse);
 			w_float effectiveLimitAxialMass(batch.effectiveLimitAxialMass);
 
-			w_float aDotWA = dot(globalRotationAxis, wA); // How fast are we turning about the axis.
+			w_float aDotWA = dot(globalRotationAxis, wA); // How fast are we turning about the axis
 			w_float aDotWB = dot(globalRotationAxis, wB);
 			w_float relAngularVelocity = limitSign * (aDotWB - aDotWA);
 
@@ -1847,8 +1847,8 @@ NODISCARD cone_twist_constraint_solver initializeConeTwistVelocityConstraints(ea
 			out.twistMotorVelocity = in.twistMotorVelocity;
 			if (in.twistMotorType == constraint_position_motor)
 			{
-				// Inspired by Bullet Engine. We set the velocity such that the target angle is reached within one frame.
-				// This will later get clamped to the maximum motor impulse.
+				// Inspired by Bullet Engine. We set the velocity such that the target angle is reached within one frame
+				// This will later get clamped to the maximum motor impulse
 				float limit = (in.twistLimit >= 0.f) ? in.twistLimit : M_PI;
 				float targetAngle = clamp(in.twistMotorTargetAngle, -limit, limit);
 				out.twistMotorVelocity = (dt > DT_THRESHOLD) ? ((targetAngle - twistAngle) * invDt) : 0.f;
@@ -2173,7 +2173,7 @@ NODISCARD simd_cone_twist_constraint_solver initializeConeTwistVelocityConstrain
 			w_float invEffectiveLimitMass = dot(globalSwingAxis, invInertiaA * globalSwingAxis)
 										 + dot(globalSwingAxis, invInertiaB * globalSwingAxis);
 			w_float effectiveSwingLimitMass = ifThen(invEffectiveLimitMass != zero, 1.f / invEffectiveLimitMass, zero);
-			effectiveSwingLimitMass = ifThen(solveSwingLimit, effectiveSwingLimitMass, zero); // Set to zero for constraints, which aren't at the limit.
+			effectiveSwingLimitMass = ifThen(solveSwingLimit, effectiveSwingLimitMass, zero); // Set to zero for constraints, which aren't at the limit
 
 			w_float swingLimitBias = zero;
 			if (dt > DT_THRESHOLD)
@@ -2215,9 +2215,9 @@ NODISCARD simd_cone_twist_constraint_solver initializeConeTwistVelocityConstrain
 			auto isVelocityMotor = swingMotorType == constraint_velocity_motor;
 			w_vec3 globalSwingMotorAxis = rotationA * localSwingMotorAxis;
 
-			if (anyFalse(isVelocityMotor)) // At least one position motor.
+			if (anyFalse(isVelocityMotor)) // At least one position motor
 			{
-				w_float targetAngle = swingMotorVelocity; // This is a union.
+				w_float targetAngle = swingMotorVelocity; // This is a union
 				targetAngle = ifThen(swingLimit >= zero, clamp(targetAngle, -swingLimit, swingLimit), targetAngle);
 
 				w_vec3 localTargetDirection = w_quat(localSwingMotorAxis, targetAngle) * localLimitAxisA;
@@ -2238,7 +2238,7 @@ NODISCARD simd_cone_twist_constraint_solver initializeConeTwistVelocityConstrain
 			w_float invEffectiveMotorMass = dot(globalSwingMotorAxis, invInertiaA * globalSwingMotorAxis)
 										 + dot(globalSwingMotorAxis, invInertiaB * globalSwingMotorAxis);
 			w_float effectiveSwingMotorMass = ifThen(invEffectiveMotorMass != zero, 1.f / invEffectiveMotorMass, zero);
-			effectiveSwingMotorMass = ifThen(solveSwingMotor, effectiveSwingMotorMass, zero); // Set to zero for constraints, which have no motor.
+			effectiveSwingMotorMass = ifThen(solveSwingMotor, effectiveSwingMotorMass, zero); // Set to zero for constraints, which have no motor
 
 			
 			zero.store(batch.swingMotorImpulse);
@@ -2275,8 +2275,8 @@ NODISCARD simd_cone_twist_constraint_solver initializeConeTwistVelocityConstrain
 									+ dot(globalTwistAxis, invInertiaB * globalTwistAxis);
 			w_float effectiveTwistMass = ifThen(invEffectiveMass != zero, 1.f / invEffectiveMass, zero);
 
-			w_float effectiveTwistLimitMass = ifThen(solveTwistLimit, effectiveTwistMass, zero); // Set to zero for constraints, which aren't at the limit.
-			w_float effectiveTwistMotorMass = ifThen(solveTwistMotor, effectiveTwistMass, zero); // Set to zero for constraints, which have no motor.
+			w_float effectiveTwistLimitMass = ifThen(solveTwistLimit, effectiveTwistMass, zero); // Set to zero for constraints, which aren't at the limit
+			w_float effectiveTwistMotorMass = ifThen(solveTwistMotor, effectiveTwistMass, zero); // Set to zero for constraints, which have no motor
 
 			w_float twistLimitSign = ifThen(mw_intistLimitViolated, 1.f, -1.f);
 
@@ -2292,7 +2292,7 @@ NODISCARD simd_cone_twist_constraint_solver initializeConeTwistVelocityConstrain
 
 				if (anyFalse(isVelocityMotor)) // At least one position motor
 				{
-					// Inspired by Bullet Engine. We set the velocity such that the target angle is reached within one frame.
+					// Inspired by Bullet Engine. We set the velocity such that the target angle is reached within one frame
 					// This will later get clamped to the maximum motor impulse
 					w_float limit = ifThen(twistLimit >= zero, twistLimit, M_PI);
 					w_float twistMotorTargetAngle = twistMotorVelocity; // This is a union
@@ -2375,7 +2375,7 @@ void solveConeTwistVelocityConstraintsSIMD(simd_cone_twist_constraint_solver con
 		load8(&rbs->invInertia.m22, batch.rbBIndices, (uint32)sizeof(rigid_body_global_state),
 			invInertiaB.m22, invMassB, vB.x, vB.y, vB.z, wB.x, wB.y, wB.z);
 
-		// Solve in order of importance (most important last): Motors -> Limits -> Position.
+		// Solve in order of importance (most important last): Motors -> Limits -> Position
 		w_vec3 globalTwistAxis(batch.globalTwistAxis[0], batch.globalTwistAxis[1], batch.globalTwistAxis[2]);
 		w_vec3 twistMotorAndLimitImpulseToAngularVelocityA(batch.twistMotorAndLimitImpulseToAngularVelocityA[0], batch.twistMotorAndLimitImpulseToAngularVelocityA[1], batch.twistMotorAndLimitImpulseToAngularVelocityA[2]);
 		w_vec3 twistMotorAndLimitImpulseToAngularVelocityB(batch.twistMotorAndLimitImpulseToAngularVelocityB[0], batch.twistMotorAndLimitImpulseToAngularVelocityB[1], batch.twistMotorAndLimitImpulseToAngularVelocityB[2]);
@@ -2629,8 +2629,8 @@ NODISCARD slider_constraint_solver initializeSliderVelocityConstraints(eallocato
 			out.motorVelocity = in.motorVelocity;
 			if (in.motorType == constraint_position_motor)
 			{
-				// Inspired by Bullet Engine. We set the velocity such that the target angle is reached within one frame.
-				// This will later get clamped to the maximum motor impulse.
+				// Inspired by Bullet Engine. We set the velocity such that the target angle is reached within one frame
+				// This will later get clamped to the maximum motor impulse
 				float minLimit = (in.negDistanceLimit <= 0.f) ? in.negDistanceLimit : -INFINITY;
 				float maxLimit = (in.posDistanceLimit >= 0.f) ? in.posDistanceLimit : INFINITY;
 				float targetDistance = clamp(in.motorTargetDistance, minLimit, maxLimit);
@@ -2990,10 +2990,10 @@ NODISCARD simd_slider_constraint_solver initializeSliderVelocityConstraintsSIMD(
 
 			if (anyFalse(isVelocityMotor))
 			{
-				// Inspired by Bullet Engine. We set the velocity such that the target angle is reached within one frame.
-				// This will later get clamped to the maximum motor impulse.
+				// Inspired by Bullet Engine. We set the velocity such that the target angle is reached within one frame
+				// This will later get clamped to the maximum motor impulse
 
-				w_float motorTargetDistance = motorVelocity; // This is a union.
+				w_float motorTargetDistance = motorVelocity; // This is a union
 
 				w_float minLimit = ifThen(negDistanceLimit <= zero, negDistanceLimit, -INFINITY);
 				w_float maxLimit = ifThen(posDistanceLimit >= zero, posDistanceLimit, INFINITY);
@@ -3202,7 +3202,8 @@ NODISCARD collision_constraint_solver initializeCollisionVelocityConstraints(eal
 		constraint.tangent = relVelocity - dot(contact.normal, relVelocity) * contact.normal;
 		constraint.tangent = noz(constraint.tangent);
 
-		{ // Tangent direction
+		{
+			// Tangent direction
 			vec3 crAt = cross(constraint.relGlobalAnchorA, constraint.tangent);
 			vec3 crBt = cross(constraint.relGlobalAnchorB, constraint.tangent);
 			float invMassInTangentDir = rbA.invMass + dot(crAt, rbA.invInertia * crAt)
@@ -3213,7 +3214,8 @@ NODISCARD collision_constraint_solver initializeCollisionVelocityConstraints(eal
 			constraint.tangentImpulseToAngularVelocityB = rbB.invInertia * crBt;
 		}
 
-		{ // Normal direction
+		{
+			// Normal direction
 			vec3 crAn = cross(constraint.relGlobalAnchorA, contact.normal);
 			vec3 crBn = cross(constraint.relGlobalAnchorB, contact.normal);
 			float invMassInNormalDir = rbA.invMass + dot(crAn, rbA.invInertia * crAn)
@@ -3267,7 +3269,8 @@ void solveCollisionVelocityConstraints(collision_constraint_solver constraints, 
 		vec3 vB = rbB.linearVelocity;
 		vec3 wB = rbB.angularVelocity;
 
-		{ // Tangent dir
+		{
+			// Tangent dir
 			vec3 anchorVelocityA = vA + cross(wA, constraint.relGlobalAnchorA);
 			vec3 anchorVelocityB = vB + cross(wB, constraint.relGlobalAnchorB);
 
@@ -3289,7 +3292,8 @@ void solveCollisionVelocityConstraints(collision_constraint_solver constraints, 
 			wB += constraint.tangentImpulseToAngularVelocityB * lambda;
 		}
 
-		{ // Normal dir
+		{ 
+			// Normal dir
 			vec3 anchorVelocityA = vA + cross(wA, constraint.relGlobalAnchorA);
 			vec3 anchorVelocityB = vB + cross(wB, constraint.relGlobalAnchorB);
 
@@ -3415,7 +3419,8 @@ NODISCARD simd_collision_constraint_solver initializeCollisionVelocityConstraint
 		zero.store(batch.impulseInTangentDir);
 		friction.store(batch.friction);
 
-		{ // Tangent direction
+		{
+			// Tangent direction
 			w_vec3 crAt = cross(relGlobalAnchorA, tangent);
 			w_vec3 crBt = cross(relGlobalAnchorB, tangent);
 			w_float invMassInTangentDir = invMassA + dot(crAt, invInertiaA * crAt)
@@ -3434,7 +3439,8 @@ NODISCARD simd_collision_constraint_solver initializeCollisionVelocityConstraint
 			tangentImpulseToAngularVelocityB.z.store(batch.tangentImpulseToAngularVelocityB[2]);
 		}
 
-		{ // Normal direction
+		{
+			// Normal direction
 			w_vec3 crAn = cross(relGlobalAnchorA, normal);
 			w_vec3 crBn = cross(relGlobalAnchorB, normal);
 			w_float invMassInNormalDir = invMassA + dot(crAn, invInertiaA * crAn)

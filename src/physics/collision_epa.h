@@ -45,16 +45,6 @@ struct epa_triangle_info
 
 struct epa_simplex
 {
-	// TODO: Find better array sizes.
-	gjk_support_point points[1024];
-	epa_triangle triangles[1024];
-	epa_edge edges[1024];
-
-	uint32 activeTrianglesMask[1024 / 32];
-	uint16 numTriangles;
-	uint16 numPoints;
-	uint16 numEdges;
-
 	bool isTriangleActive(uint32 index);
 	void setTriangleActive(uint32 index);
 	void setTriangleInactive(uint32 index);
@@ -65,6 +55,16 @@ struct epa_simplex
 	bool addNewPointAndUpdate(const gjk_support_point& newPoint);
 
 	static epa_triangle_info getTriangleInfo(const gjk_support_point& a, const gjk_support_point& b, const gjk_support_point& c);
+
+	// TODO: Find better array sizes
+	gjk_support_point points[1024];
+	epa_triangle triangles[1024];
+	epa_edge edges[1024];
+
+	uint32 activeTrianglesMask[1024 / 32];
+	uint16 numTriangles;
+	uint16 numPoints;
+	uint16 numEdges;
 };
 
 struct epa_result

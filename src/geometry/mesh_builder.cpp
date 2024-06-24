@@ -1285,18 +1285,22 @@ void mesh_builder::pushMesh(const submesh_asset& mesh, float scale, bounding_box
 		{
 			uv = mesh.uvs[i];
 		}
+
 		if (hasNormals)
 		{
 			normal = mesh.normals[i];
 		}
+
 		if (hasTangents)
 		{
 			tangent = mesh.tangents[i];
 		}
+
 		if (hasVertexColors)
 		{
 			vertexColor = mesh.colors[i];
 		}
+
 		if (hasSkin)
 		{
 			skin = mesh.skin[i];

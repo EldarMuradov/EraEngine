@@ -8,6 +8,7 @@
 	  <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	  <BaseOutputPath>E:\Era Engine\bin\Dotnet</BaseOutputPath>
 	  <PlatformTarget>x64</PlatformTarget>
+	  <Configurations>Debug;Release;Release_NoOptim</Configurations>
   </PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -18,6 +19,11 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<IsAotCompatible>True</IsAotCompatible>
 		<Optimize>False</Optimize>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_NoOptim|AnyCPU'">
+	  <IsAotCompatible>True</IsAotCompatible>
+	  <Optimize>False</Optimize>
 	</PropertyGroup>
 
 	<ItemGroup>

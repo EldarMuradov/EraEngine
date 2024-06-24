@@ -81,6 +81,7 @@ dx_descriptor_allocation dx_descriptor_heap::allocate(uint64 count)
 	
 	ASSERT(count <= pageSize);
 
+	// Lock section
 	mutex.lock();
 
 	for (uint32 i = 0; i < (uint32)allPages.size(); ++i)
@@ -110,9 +111,8 @@ void dx_descriptor_heap::free(dx_descriptor_allocation allocation)
 {
 	if (allocation.valid())
 	{
-		mutex.lock();
+		lock lock { mutex };
 		allPages[allocation.pageIndex]->free(allocation);
-		mutex.unlock();
 	}
 }
 
@@ -134,7 +134,7 @@ void dx_frame_descriptor_allocator::initialize()
 
 void dx_frame_descriptor_allocator::newFrame(uint32 bufferedFrameID)
 {
-	mutex.lock();
+	lock lock{ mutex };
 
 	currentFrame = bufferedFrameID;
 
@@ -145,12 +145,11 @@ void dx_frame_descriptor_allocator::newFrame(uint32 bufferedFrameID)
 		page->next = freePages;
 		freePages = page;
 	}
-
-	mutex.unlock();
 }
 
 dx_descriptor_range dx_frame_descriptor_allocator::allocateContiguousDescriptorRange(uint32 count)
 {
+	// Lock section
 	mutex.lock();
 
 	dx_frame_descriptor_page* current = usedPages[currentFrame];
@@ -203,6 +202,7 @@ void dx_pushable_descriptor_heap::initialize(uint32 maxSize, bool shaderVisible)
 	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 	desc.NumDescriptors = maxSize;
 	desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+
 	if (shaderVisible)
 	{
 		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;

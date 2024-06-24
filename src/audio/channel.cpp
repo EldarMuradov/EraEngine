@@ -234,9 +234,6 @@ void audio_channel::updateSoundSettings(const audio_context& context, float dt)
 			emitter.InnerRadiusAngle = X3DAUDIO_PI / 4.f;
 			emitter.pChannelAzimuths = channelAzimuths;
 
-			// A physically correct model would have CurveDistanceScaler=1 and pVolumeCurve=nullptr.
-			// However the default reverb curve is linear, which sounds very weird, because it just stops way before the sound stops being audible.
-			// Thus we just set both curves to linear and use CurveDistanceScaler to scale the curve to the desired radius.
 #if 1
 			emitter.CurveDistanceScaler = userSettings.radius;
 			emitter.pVolumeCurve = (X3DAUDIO_DISTANCE_CURVE*)&X3DAudioDefault_LinearCurve;

@@ -89,7 +89,7 @@ void initializeTerrainPipelines()
 	terrainGenerationPipeline = createReloadablePipeline("terrain_generation_cs");
 
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			//.wireframe()
 			.renderTargets(opaqueLightPassFormats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depthStencilFormat)
 			.depthSettings(true, false, D3D12_COMPARISON_FUNC_EQUAL);
@@ -97,20 +97,20 @@ void initializeTerrainPipelines()
 		terrainPipeline = createReloadablePipeline(desc, { "terrain_vs", "terrain_ps" });
 	}
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			.renderTargets(depthOnlyFormat, arraysize(depthOnlyFormat), depthStencilFormat);
 
 		terrainDepthOnlyPipeline = createReloadablePipeline(desc, { "terrain_depth_only_vs", "depth_only_ps" }, rs_in_vertex_shader);
 	}
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			.renderTargets(0, 0, shadowDepthFormat);
 
 		terrainShadowPipeline = createReloadablePipeline(desc, { "terrain_shadow_vs" }, rs_in_vertex_shader);
 		//pointLightShadowPipeline = createReloadablePipeline(desc, { "shadow_point_light_vs", "shadow_point_light_ps" }, rs_in_vertex_shader);
 	}
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			.renderTargets(0, 0, depthStencilFormat)
 			.stencilSettings(D3D12_COMPARISON_FUNC_ALWAYS,
 				D3D12_STENCIL_OP_REPLACE,

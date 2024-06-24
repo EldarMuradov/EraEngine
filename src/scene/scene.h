@@ -50,7 +50,7 @@ struct child_component
 
 struct eentity_container
 {
-	static void emplacePair(entity_handle parent, entity_handle child) noexcept
+	static void emplacePair(entity_handle parent, entity_handle child)
 	{
 		lock l(sync);
 
@@ -59,7 +59,7 @@ struct eentity_container
 		container.at(parent).childs.push_back(child);
 	}
 
-	static void erase(entity_handle parent) noexcept
+	static void erase(entity_handle parent)
 	{
 		lock l(sync);
 
@@ -69,7 +69,7 @@ struct eentity_container
 		container.erase(parent);
 	}
 
-	static void erasePair(entity_handle parent, entity_handle child) noexcept
+	static void erasePair(entity_handle parent, entity_handle child)
 	{
 		lock l(sync);
 
@@ -646,7 +646,7 @@ struct editor_scene
 #ifndef PHYSICS_ONLY
 	render_camera camera;
 
-	render_camera editor_camera;
+	render_camera editorCamera;
 
 	directional_light sun;
 	pbr_environment environment;

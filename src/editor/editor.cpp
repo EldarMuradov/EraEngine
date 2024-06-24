@@ -325,6 +325,9 @@ void eeditor::render(ldr_render_pass* ldrRenderPass, float dt)
 			}
 		}
 	}
+
+	if (renderPhysicsShapes)
+		drawPhysicsShapes(ldrRenderPass);
 }
 
 static void drawIconsWindow(bool& open)
@@ -538,7 +541,6 @@ bool eeditor::drawMainMenuBar()
 	{
 		ImGui::Dummy(ImVec2(300.f, 1.f));
 		ImGui::CenteredText("Era Engine");
-		ImGui::CenteredText("by ESGS Studio");
 		ImGui::CenteredText("by Eldar Muradov");
 
 		ImGui::Separator();
@@ -871,7 +873,7 @@ bool eeditor::drawSceneHierarchy()
 						ImGui::Text("Dynamic entity");
 					});
 
-					drawComponent<script_component>(selectedEntity, "Script", [](script_component& script)
+					drawComponent<scripts_component>(selectedEntity, "Script", [](scripts_component& script)
 					{
 						auto iter = script.typeNames.begin();
 						const auto& end = script.typeNames.end();
@@ -979,7 +981,6 @@ bool eeditor::drawSceneHierarchy()
 								ImGui::PushID(&sub);
 								if (ImGui::BeginTree(sub.name.c_str()))
 								{
-									//editSubmeshTransform(&sub.transform);
 									editMaterial(sub.material);
 									ImGui::EndTree();
 								}
@@ -1150,7 +1151,7 @@ bool eeditor::drawSceneHierarchy()
 									{
 										for (uint32 i = 0; i < limb_type_count; ++i)
 										{
-											if (i != limb_type_unknown)
+											if (i != limb_type_none)
 											{
 												skeleton_limb& l = skeleton.limbs[i];
 												vec3 c = limbTypeColors[i];
@@ -1849,7 +1850,7 @@ bool eeditor::drawSceneHierarchy()
 
 						ImGui::EndMenu();
 					}
-					for (const auto& script : enative_scripting_linker::script_types)
+					for (const auto& script : enative_scripting_linker::scriptTypes)
 					{
 						if (ImGui::MenuItem(script.c_str()))
 						{
@@ -1904,7 +1905,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 
 	bool objectMovedByGizmo = false;
 
-	render_camera& camera = this->scene->isPausable() ? this->scene->editor_camera : this->scene->camera;
+	render_camera& camera = this->scene->isPausable() ? this->scene->editorCamera : this->scene->camera;
 
 	if (&camera != cameraController.camera)
 		cameraController.camera = &camera;
@@ -2234,7 +2235,7 @@ bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRende
 		// Temporary.
 		if (input.keyboard[key_shift].down)
 		{
-			testPhysicsInteraction(*scene, camera.generateWorldSpaceRay(input.mouse.relX, input.mouse.relY), physicsTestForce);
+			testPhysicsInteraction(*scene, camera.generateWorldSpaceRay(input.mouse.relX, input.mouse.relY), 1000.0f);
 		}
 		else if (input.keyboard[key_ctrl].down)
 		{
@@ -2357,6 +2358,25 @@ bool eeditor::drawEntityCreationPopup()
 	}
 
 	return clicked;
+}
+
+void eeditor::drawPhysicsShapes(ldr_render_pass* renderPass)
+{
+	physics::physics_lock_read lock{};
+	auto scene = physics::physics_holder::physicsRef->getScene();
+	const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
+
+	for (physx::PxU32 i = 0; i < rb.getNbPoints(); i++)
+	{
+		const physx::PxDebugPoint& point = rb.getPoints()[i];
+		renderPoint(physx::createVec3(point.pos), vec4(point.color), renderPass);
+	}
+
+	for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
+	{
+		const physx::PxDebugLine& line = rb.getLines()[i];
+		renderLine(physx::createVec3(line.pos0), physx::createVec3(line.pos1), vec4(line.color0), renderPass);
+	}
 }
 
 void eeditor::serializeToFile()
@@ -2726,7 +2746,7 @@ void eeditor::forceStart()
 	}
 
 	if (!paused)
-		app->linker.start();
+		app->linker->start();
 	else
 		paused = false;
 }
@@ -2742,10 +2762,10 @@ void eeditor::forceStop()
 	this->scene->stop();
 	this->scene->environment.forceUpdate(this->scene->sun.direction);
 	setSelectedEntity({});
-	app->linker.reload_src();
+	app->linker->reload_src();
 	physics::physics_holder::physicsRef->resetActorsVelocityAndInertia();
 	paused = false;
-	this->scene->editor_camera.setPositionAndRotation(vec3(0.0f), quat::identity);
+	this->scene->editorCamera.setPositionAndRotation(vec3(0.0f), quat::identity);
 }
 
 #include <px/blast/px_blast_core.h>
@@ -2791,7 +2811,7 @@ void eeditor::drawSettings(float dt)
 		if (!this->scene->isPausable())
 			editCamera(this->scene->camera);
 		else
-			editCamera(this->scene->editor_camera);
+			editCamera(this->scene->editorCamera);
 		editTonemapping(renderer->settings.tonemapSettings);
 		editSunShadowParameters(this->scene->sun);
 
@@ -2968,9 +2988,6 @@ void eeditor::drawSettings(float dt)
 				UNDOABLE_SETTING("cloth drift iterations", physicsSettings.numClothDriftIterations,
 					ImGui::PropertySlider("Cloth drift iterations", physicsSettings.numClothDriftIterations, 0, 10));
 
-				UNDOABLE_SETTING("test force", physicsTestForce,
-					ImGui::PropertySlider("Test force", physicsTestForce, 1.f, 10000.f));
-
 				UNDOABLE_SETTING("SIMD broad phase", physicsSettings.simdBroadPhase,
 					ImGui::PropertyCheckbox("SIMD broad phase", physicsSettings.simdBroadPhase));
 				UNDOABLE_SETTING("SIMD narrow phase", physicsSettings.simdNarrowPhase,
@@ -3006,12 +3023,12 @@ void eeditor::drawSettings(float dt)
 #else
 				ImGui::PropertyValue("Broad phase", "PABP (CPU)");
 #endif
-				// TODO: Physics undoable properties
+				ImGui::PropertyCheckbox("Render physics shapes", renderPhysicsShapes);
 				ImGui::EndProperties();
 			}
 #if !_DEBUG
 
-			physics::physics_holder::physicsRef->blast->drawUI();
+			//physics::physics_holder::physicsRef->blast->drawUI();
 #endif
 			ImGui::EndTree();
 		}

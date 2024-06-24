@@ -20,7 +20,7 @@ struct skinning_weights
 
 enum limb_type
 {
-	limb_type_unknown,
+	limb_type_none,
 
 	limb_type_torso,
 	limb_type_head,
@@ -74,6 +74,10 @@ struct animation_joint
 
 struct animation_clip
 {
+	void edit();
+	NODISCARD trs getFirstRootTransform() const;
+	NODISCARD trs getLastRootTransform() const;
+
 	std::string name;
 	fs::path filename;
 
@@ -88,16 +92,12 @@ struct animation_clip
 	std::vector<animation_joint> joints;
 
 	animation_joint rootMotionJoint;
-	
+
 	float lengthInSeconds;
 	bool looping = true;
 	bool bakeRootRotationIntoPose = false;
 	bool bakeRootXZTranslationIntoPose = false;
 	bool bakeRootYTranslationIntoPose = false;
-
-	void edit();
-	NODISCARD trs getFirstRootTransform() const;
-	NODISCARD trs getLastRootTransform() const;
 };
 
 struct limb_dimensions
@@ -115,14 +115,6 @@ struct skeleton_limb
 
 struct animation_skeleton
 {
-	std::vector<skeleton_joint> joints;
-	std::unordered_map<std::string, uint32> nameToJointID;
-
-	std::vector<animation_clip> clips;
-	std::vector<fs::path> files;
-
-	skeleton_limb limbs[limb_type_count];
-
 	void analyzeJoints(const vec3* positions, const void* others, uint32 otherStride, uint32 numVertices);
 
 	void sampleAnimation(const animation_clip& clip, float time, trs* outLocalTransforms, trs* outRootMotion = 0) const;
@@ -135,6 +127,14 @@ struct animation_skeleton
 	std::vector<uint32> getClipsByName(const std::string& name);
 
 	void prettyPrintHierarchy() const;
+
+	std::vector<skeleton_joint> joints;
+	std::unordered_map<std::string, uint32> nameToJointID;
+
+	std::vector<animation_clip> clips;
+	std::vector<fs::path> files;
+
+	skeleton_limb limbs[limb_type_count];
 };
 
 struct animation_instance
@@ -269,9 +269,9 @@ struct animation_state_machine
 	}
 
 private:
-	ref<animation_state> currentState{ nullptr };
+	ref<animation_state> currentState = nullptr;
 	::std::stack<animation_blackboard> input;
-	bool paused{ false };
+	bool paused = false;
 };
 
 struct animation_controller
@@ -279,7 +279,7 @@ struct animation_controller
 	animation_state_machine stateMachine;
 };
 
-#if 0
+#if 1
 struct animation_blend_tree_1d
 {
 	animation_blend_tree_1d() { }
@@ -292,9 +292,9 @@ private:
 	animation_clip* clips[8];
 	uint32 numClips = 0;
 
-	float value;
 	uint32 first;
 	uint32 second;
+	float value;
 	float relTime;
 	float blendValue;
 
@@ -304,6 +304,10 @@ private:
 
 struct animation_component
 {
+	void initialize(std::vector<animation_clip>& clips, size_t startIndex = 0);
+	void update(const ref<struct multi_mesh>& mesh, eallocator& arena, float dt, trs* transform = 0);
+	void drawCurrentSkeleton(const ref<struct multi_mesh>& mesh, const trs& transform, struct ldr_render_pass* renderPass) const;
+
 	ref<animation_instance> animation = nullptr;
 
 	ref<animation_controller> controller = nullptr;
@@ -313,8 +317,4 @@ struct animation_component
 	trs* currentGlobalTransforms = 0;
 	float timeScale = 1.f;
 	bool drawSceleton = false;
-
-	void initialize(std::vector<animation_clip>& clips, size_t startIndex = 0);
-	void update(const ref<struct multi_mesh>& mesh, eallocator& arena, float dt, trs* transform = 0);
-	void drawCurrentSkeleton(const ref<struct multi_mesh>& mesh, const trs& transform, struct ldr_render_pass* renderPass) const;
 };

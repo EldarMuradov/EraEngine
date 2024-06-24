@@ -280,18 +280,18 @@ struct sun_shadow_render_pass
 
 struct spot_shadow_render_pass : shadow_render_pass_base
 {
-	mat4 viewProjMatrix;
-	shadow_map_viewport viewport;
-	bool copyFromStaticCache;
-
 	void reset()
 	{
 		shadow_render_pass_base::reset();
 		copyFromStaticCache = false;
 	}
+
+	mat4 viewProjMatrix;
+	shadow_map_viewport viewport;
+	bool copyFromStaticCache;
 };
 
-// TODO: Split this into positive and negative direction for frustum culling.
+// TODO: Split this into positive and negative direction for frustum culling
 struct point_shadow_render_pass : shadow_render_pass_base
 {
 	shadow_map_viewport viewport0;

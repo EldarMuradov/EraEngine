@@ -203,7 +203,7 @@ void mesh_editor_panel::edit(uint32 renderWidth, uint32 renderHeight)
 						{
 							for (uint32 i = 0; i < limb_type_count; ++i)
 							{
-								if (i != limb_type_unknown)
+								if (i != limb_type_none)
 								{
 									skeleton_limb& l = skeleton.limbs[i];
 									vec3 c = limbTypeColors[i];

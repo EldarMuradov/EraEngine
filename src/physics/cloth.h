@@ -28,9 +28,6 @@ struct cloth_component
 	float width, height;
 
 private:
-	float oldTotalMass;
-	float oldStiffness;
-
 	void recalculateProperties();
 
 	struct cloth_constraint
@@ -40,19 +37,22 @@ private:
 		float inverseMassSum;
 	};
 
-	std::vector<vec3> positions;
-	std::vector<vec3> prevPositions;
-	std::vector<vec3> velocities;
-	std::vector<vec3> forceAccumulators;
-	std::vector<float> invMasses;
-	std::vector<cloth_constraint> constraints;
-
 	void solveVelocities(const std::vector<struct cloth_constraint_temp>& constraintsTemp);
 	void solvePositions();
 
 	NODISCARD vec3 getParticlePosition(float relX, float relY);
 
 	void addConstraint(uint32 a, uint32 b);
+
+	float oldTotalMass;
+	float oldStiffness;
+
+	std::vector<vec3> positions;
+	std::vector<vec3> prevPositions;
+	std::vector<vec3> velocities;
+	std::vector<vec3> forceAccumulators;
+	std::vector<float> invMasses;
+	std::vector<cloth_constraint> constraints;
 
 	friend struct cloth_render_component;
 };

@@ -787,6 +787,7 @@ static void renderCloth(escene& scene, entity_handle selectedObjectID,
 	for (auto [entityHandle, cloth, render] : scene.group<physics::px_cloth_component, physics::px_cloth_render_component>().each())
 	{
 		pbr_material_desc desc;
+		// TODO: change it. Temporal solution
 		desc.albedo = "assets/Sponza/textures/sponza_curtain_diff.png";
 		desc.normal = "assets/Sponza/textures/sponza_fabric_ddn.jpg";
 		desc.roughness = "assets/Sponza/textures/sponza_curtain_diff.png";

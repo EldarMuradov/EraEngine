@@ -16,12 +16,11 @@ struct coroutine_return
 {
 	struct promise_type
 	{
-		param_t value;
-
 		coroutine_return get_return_object()
 		{
 			return { .handle = std::coroutine_handle<promise_type>::from_promise(*this) };
 		}
+
 		std::suspend_never initial_suspend() { return {}; }
 		std::suspend_always final_suspend() noexcept { return {}; } // Don't destroy after co_return. This means the caller must destroy, but he can check for .done().
 		
@@ -34,40 +33,42 @@ struct coroutine_return
 			this->value = value;
 			return {};
 		}
+
+		param_t value;
 	};
 
 	std::coroutine_handle<promise_type> handle;
-	cancellation_token* token = new cancellation_token();
+	ref<cancellation_token> token = ref<cancellation_token>(new cancellation_token);
 };
 
 template <typename value_t>
 struct coroutine
 {
-	std::coroutine_handle<typename coroutine_return<value_t>::promise_type> h;
+	std::coroutine_handle<typename coroutine_return<value_t>::promise_type> handle;
 	coroutine_return<value_t>::promise_type& promise;
-	cancellation_token* token = nullptr;
+	ref<cancellation_token> token = nullptr;
 
 	coroutine(coroutine_return<value_t> ret)
-		: h(ret.handle), promise(h.promise()), token(ret.token) {}
+		: handle(ret.handle), promise(handle.promise()), token(ret.token) {}
 
 	const auto& value() const { return promise.value; }
 
-	void operator()() 
+	void operator()()
 	{ 
 		while (!token->cancelled)
 		{
-			h();
+			handle();
 			return;
 		}
 	}
 
-	void destroy() { h.destroy(); token->cancelled = true; }
+	void destroy() { handle.destroy(); token->cancelled = true; }
 
 	operator bool() const
 	{
 		if (token->cancelled)
 			return false;
-		return !h.done();
+		return !handle.done();
 	}
 };
 

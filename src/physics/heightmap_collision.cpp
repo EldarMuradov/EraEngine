@@ -438,7 +438,7 @@ static uint32 intersection(const bounding_sphere& s, const bounding_box& aabb, c
 		numContacts += collideSphereVsTriangle(s.center, s.radius, a, b, c, outContacts + numContacts);
 	});
 
-	// TODO: De-duplicate contacts (for if we hit triangle edges or vertices).
+	// TODO: De-duplicate contacts (for if we hit triangle edges or vertices)
 	return numContacts;
 }
 
@@ -466,7 +466,7 @@ static uint32 intersection(const bounding_capsule& capsule, const bounding_box& 
 		numContacts += collideSphereVsTriangle(reference, capsule.radius, a, b, c, outContacts + numContacts);
 	});
 
-	// TODO: De-duplicate contacts (for if we hit triangle edges or vertices).
+	// TODO: De-duplicate contacts (for if we hit triangle edges or vertices)
 	return numContacts;
 }
 
@@ -483,7 +483,7 @@ static uint32 intersection(const bounding_box& box, const bounding_box& aabb, co
 		numContacts += collideAABBvsTriangle(center, radius, a, b, c, outContacts + numContacts);
 	});
 
-	// TODO: De-duplicate contacts (for if we hit triangle edges or vertices).
+	// TODO: De-duplicate contacts (for if we hit triangle edges or vertices)
 	return numContacts;
 }
 
@@ -501,7 +501,7 @@ static uint32 intersection(const bounding_oriented_box& obb, const bounding_box&
 		numContacts += collideAABBvsTriangle(vec3(0.f, 0.f, 0.f), obb.radius, a, b, c, outContacts + numContacts);
 	});
 
-	// TODO: De-duplicate contacts (for if we hit triangle edges or vertices).
+	// TODO: De-duplicate contacts (for if we hit triangle edges or vertices)
 	for (uint32 i = 0; i < numContacts; ++i)
 	{
 		outContacts[i].normal = obb.rotation * outContacts[i].normal;
@@ -511,7 +511,7 @@ static uint32 intersection(const bounding_oriented_box& obb, const bounding_box&
 	return numContacts;
 }
 
-NODISCARD narrowphase_result heightmapCollision(const heightmap_collider_component& heightmap,
+narrowphase_result heightmapCollision(const heightmap_collider_component& heightmap,
 	const collider_union* worldSpaceColliders, const bounding_box* worldSpaceAABBs, uint32 numColliders, 
 	collision_contact* outContacts, constraint_body_pair* outBodyPairs, collider_pair* outColliderPairs, uint8* outContactCountPerCollision, 
 	eallocator& arena, uint16 dummyRigidBodyIndex)

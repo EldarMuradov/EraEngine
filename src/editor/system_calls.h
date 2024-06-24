@@ -8,7 +8,7 @@ namespace os
 	{
 		enum class file_type
 		{
-			unknown,
+			none,
 			model,
 			texture,
 			shader,
@@ -36,7 +36,6 @@ namespace os
 		NODISCARD static file_type getFileType(std::string_view path);
 	};
 
-
 	struct system_calls
 	{
 		static void showInExplorer(std::string_view path);
@@ -46,8 +45,5 @@ namespace os
 		static void editFile(std::string_view file);
 
 		static void openURL(std::string_view url);
-
-	private:
-		NO_COPY(system_calls)
 	};
 }

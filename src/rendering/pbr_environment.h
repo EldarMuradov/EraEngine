@@ -20,12 +20,6 @@ static inline const char* environmentGIModeNames[] =
 
 struct pbr_environment
 {
-	environment_gi_mode giMode = environment_gi_baked;
-
-	ref<dx_texture> sky;
-	ref<dx_texture> irradiance;
-	ref<dx_texture> prefilteredRadiance;
-
 	NODISCARD bool isProcedural() const { return sky == 0; }
 
 	void setFromTexture(const fs::path& filename);
@@ -33,6 +27,14 @@ struct pbr_environment
 
 	void update(vec3 sunDirection);
 	void forceUpdate(vec3 sunDirection);
+
+	void allocate();
+
+	environment_gi_mode giMode = environment_gi_baked;
+
+	ref<dx_texture> sky;
+	ref<dx_texture> irradiance;
+	ref<dx_texture> prefilteredRadiance;
 
 	float globalIlluminationIntensity = 0.340f;
 	float skyIntensity = 1.85f;
@@ -44,6 +46,4 @@ struct pbr_environment
 	static const uint32 prefilteredRadianceResolution = 128;
 
 	vec3 lastSunDirection = { -1, -1, -1 };
-
-	void allocate();
 };

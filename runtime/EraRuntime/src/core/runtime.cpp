@@ -4,6 +4,8 @@
 #include "runtime.h"
 #include <core/imgui.h>
 #include <scene/serialization_yaml.h>
+#include <scene/scene.h>
+#include <rendering/main_renderer.h>
 
 void runtime::initialize(editor_scene* scene, main_renderer* renderer)
 {
@@ -20,7 +22,7 @@ void runtime::initialize(editor_scene* scene, main_renderer* renderer)
 		scene->environment.forceUpdate(this->scene->sun.direction);
 		renderer->pathTracer.resetRendering();
 
-		::std::cout << "load scene\n";
+		::std::cout << "Scene loaded\n";
 	}
 	else
 		::std::cout << "Error\n";
@@ -28,9 +30,9 @@ void runtime::initialize(editor_scene* scene, main_renderer* renderer)
 
 void runtime::update()
 {
-	CPU_PROFILE_BLOCK("Update runtime");
+	CPU_PROFILE_BLOCK("Runtime update");
 
 	cameraController.update(renderer->renderWidth, renderer->renderHeight);
 
-	::std::cout << "update\n";
+	::std::cout << "Runtime update\n";
 }

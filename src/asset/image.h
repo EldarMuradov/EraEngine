@@ -48,7 +48,7 @@ bool loadSVGFromFile(const fs::path& filepath, uint32 flags, DirectX::ScratchIma
 
 bool saveImageToFile(const fs::path& filepath, DirectX::Image image);
 
-NODISCARD inline bool isUAVCompatibleFormat(DXGI_FORMAT format)
+NODISCARD inline constexpr bool isUAVCompatibleFormat(DXGI_FORMAT format)
 {
 	switch (format)
 	{
@@ -76,7 +76,7 @@ NODISCARD inline bool isUAVCompatibleFormat(DXGI_FORMAT format)
 	}
 }
 
-NODISCARD inline bool isSRGBFormat(DXGI_FORMAT format)
+NODISCARD inline constexpr bool isSRGBFormat(DXGI_FORMAT format)
 {
 	switch (format)
 	{
@@ -93,7 +93,7 @@ NODISCARD inline bool isSRGBFormat(DXGI_FORMAT format)
 	}
 }
 
-NODISCARD inline bool isBGRFormat(DXGI_FORMAT format)
+NODISCARD inline constexpr bool isBGRFormat(DXGI_FORMAT format)
 {
 	switch (format)
 	{
@@ -109,7 +109,7 @@ NODISCARD inline bool isBGRFormat(DXGI_FORMAT format)
 	}
 }
 
-NODISCARD inline bool isDepthFormat(DXGI_FORMAT format)
+NODISCARD inline constexpr bool isDepthFormat(DXGI_FORMAT format)
 {
 	switch (format)
 	{
@@ -123,7 +123,7 @@ NODISCARD inline bool isDepthFormat(DXGI_FORMAT format)
 	}
 }
 
-NODISCARD inline bool isStencilFormat(DXGI_FORMAT format)
+NODISCARD inline constexpr bool isStencilFormat(DXGI_FORMAT format)
 {
 	switch (format)
 	{
@@ -135,7 +135,7 @@ NODISCARD inline bool isStencilFormat(DXGI_FORMAT format)
 	}
 }
 
-NODISCARD inline DXGI_FORMAT getSRGBFormat(DXGI_FORMAT format)
+NODISCARD inline constexpr DXGI_FORMAT getSRGBFormat(DXGI_FORMAT format)
 {
 	DXGI_FORMAT srgbFormat = format;
 	switch (format)
@@ -166,7 +166,7 @@ NODISCARD inline DXGI_FORMAT getSRGBFormat(DXGI_FORMAT format)
 	return srgbFormat;
 }
 
-NODISCARD inline DXGI_FORMAT getUAVCompatibleFormat(DXGI_FORMAT format)
+NODISCARD inline constexpr DXGI_FORMAT getUAVCompatibleFormat(DXGI_FORMAT format)
 {
 	DXGI_FORMAT uavFormat = format;
 
@@ -191,7 +191,7 @@ NODISCARD inline DXGI_FORMAT getUAVCompatibleFormat(DXGI_FORMAT format)
 	return uavFormat;
 }
 
-NODISCARD inline DXGI_FORMAT getDepthReadFormat(DXGI_FORMAT format)
+NODISCARD inline constexpr DXGI_FORMAT getDepthReadFormat(DXGI_FORMAT format)
 {
 	switch (format)
 	{
@@ -204,7 +204,7 @@ NODISCARD inline DXGI_FORMAT getDepthReadFormat(DXGI_FORMAT format)
 	return format;
 }
 
-NODISCARD inline DXGI_FORMAT getStencilReadFormat(DXGI_FORMAT format)
+NODISCARD inline constexpr DXGI_FORMAT getStencilReadFormat(DXGI_FORMAT format)
 {
 	switch (format)
 	{
@@ -215,7 +215,7 @@ NODISCARD inline DXGI_FORMAT getStencilReadFormat(DXGI_FORMAT format)
 	return format;
 }
 
-NODISCARD inline uint32 getFormatSize(DXGI_FORMAT format)
+NODISCARD inline constexpr uint32 getFormatSize(DXGI_FORMAT format)
 {
 	uint32 size = 0;
 
@@ -312,7 +312,7 @@ NODISCARD inline uint32 getFormatSize(DXGI_FORMAT format)
 	return size;
 }
 
-NODISCARD inline DXGI_FORMAT getTypelessFormat(DXGI_FORMAT format)
+NODISCARD inline constexpr DXGI_FORMAT getTypelessFormat(DXGI_FORMAT format)
 {
 	DXGI_FORMAT typelessFormat = format;
 
@@ -429,7 +429,7 @@ NODISCARD inline DXGI_FORMAT getTypelessFormat(DXGI_FORMAT format)
 	return typelessFormat;
 }
 
-NODISCARD inline uint32 getNumberOfChannels(DXGI_FORMAT format)
+NODISCARD inline constexpr uint32 getNumberOfChannels(DXGI_FORMAT format)
 {
 	switch (format)
 	{
@@ -491,8 +491,6 @@ NODISCARD inline uint32 getNumberOfChannels(DXGI_FORMAT format)
 		case DXGI_FORMAT_R8G8B8A8_SNORM:
 		case DXGI_FORMAT_R8G8B8A8_SINT:
 			return 4;
-
-
 		case DXGI_FORMAT_BC4_UNORM:
 			return 1;
 		case DXGI_FORMAT_BC5_UNORM:

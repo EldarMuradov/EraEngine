@@ -29,6 +29,7 @@ static property_fader soundTypeVolumeFaders[sound_type_count];
 static audio_context context;
 
 typedef std::unordered_map<uint32, ref<audio_channel>> channel_map;
+
 static channel_map channels;
 static uint32 nextChannelID = 1;
 
@@ -206,8 +207,6 @@ void updateAudio(float dt)
 	masterVolumeFader.update(dt);
 	context.masterVoice->SetVolume(masterVolumeFader.current);
 
-
-
 	for (uint32 i = 0; i < sound_type_count; ++i)
 	{
 		soundTypeVolumes[i] = max(0.f, soundTypeVolumes[i]);
@@ -222,13 +221,6 @@ void updateAudio(float dt)
 		soundTypeVolumeFaders[i].update(dt);
 		context.soundTypeSubmixVoices[i]->SetVolume(soundTypeVolumeFaders[i].current);
 	}
-
-
-
-
-
-
-
 
 	channel_map::iterator stoppedChannels[64];
 	uint32 numStoppedChannels = 0;
@@ -248,7 +240,6 @@ void updateAudio(float dt)
 		channels.erase(stoppedChannels[i]);
 	}
 }
-
 
 sound_handle play2DSound(const sound_id& id, const sound_settings& settings)
 {
@@ -368,8 +359,3 @@ float volumeToDB(float volume)
 {
 	return XAudio2AmplitudeRatioToDecibels(volume);
 }
-
-
-
-
-

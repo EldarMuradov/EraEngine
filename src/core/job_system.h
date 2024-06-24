@@ -6,12 +6,12 @@
 
 struct job_handle
 {
-    int32 index = -1;
-    struct job_queue* queue;
-
     void submitNow();
     void submitAfter(job_handle before);
     void waitForCompletion();
+
+    int32 index = -1;
+    struct job_queue* queue;
 };
 
 template <typename data_t>

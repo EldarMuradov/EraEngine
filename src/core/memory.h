@@ -70,9 +70,8 @@ struct eallocator
 
 	void ensureFreeSize(uint64 size) noexcept
 	{
-		mutex.lock();
+		lock lock{ mutex };
 		ensureFreeSizeInternal(size);
-		mutex.unlock();
 	}
 
 	void* allocate(uint64 size, uint64 alignment = 1, bool clearToZero = false) noexcept;

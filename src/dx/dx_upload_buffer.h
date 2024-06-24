@@ -30,6 +30,10 @@ struct dx_page_pool
 {
 	void initialize(uint32 sizeInBytes);
 
+	NODISCARD dx_page* getFreePage();
+	void returnPage(dx_page* page);
+	void reset();
+
 	eallocator arena;
 
 	std::mutex mutex;
@@ -39,19 +43,15 @@ struct dx_page_pool
 	dx_page* usedPages;
 	dx_page* lastUsedPage;
 
-	NODISCARD dx_page* getFreePage();
-	void returnPage(dx_page* page);
-	void reset();
-
 private:
 	NODISCARD dx_page* allocateNewPage();
 };
 
 struct dx_upload_buffer
 {
-	dx_page_pool* pagePool = 0;
-	dx_page* currentPage = 0;
-
 	NODISCARD dx_allocation allocate(uint64 size, uint64 alignment);
 	void reset();
+
+	dx_page_pool* pagePool = 0;
+	dx_page* currentPage = 0;
 };

@@ -7,11 +7,12 @@
 
 enum profile_event_type : uint16
 {
+	profile_event_none,
 	profile_event_frame_marker,
 	profile_event_begin_block,
 	profile_event_end_block,
 
-	profile_event_none,
+	profile_event_count
 };
 
 struct profile_event

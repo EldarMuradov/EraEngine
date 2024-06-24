@@ -12,228 +12,96 @@
 #include <semaphore>
 #include <core/string.h>
 
-application* enative_scripting_linker::app;
-std::vector<std::string> enative_scripting_linker::script_types;
+std::vector<std::string> enative_scripting_linker::scriptTypes;
 
 namespace
 {
-	hostfxr_initialize_for_runtime_config_fn init_fptr;
-	hostfxr_initialize_for_dotnet_command_line_fn initialize_for_dotnet_command_line;
-	hostfxr_get_runtime_delegate_fn get_delegate_fptr;
-	hostfxr_close_fn close_fptr;
-	hostfxr_handle cxt = nullptr;
+	start_fn startF;
+	update_fn updateF;
+	handle_collisions_fn handleCollisionsF;
+	handle_collisions_fn handleExitCollisionsF;
+	handle_trs_fn handleTrsF;
 
-	bool load_hostfxr();
-	load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const char_t* assembly);
+	scr_fn initScrF;
+	scr_fn releaseSrcF;
+	scr_fn reloadSrcF;
 
-	void* load_library(const char_t*);
-	void* get_export(void*, const char*);
+	handle_input_fn inputF;
 
-	start_fn startf;
-	update_fn updatef;
-	handle_collisions_fn handle_collisionsf;
-	handle_collisions_fn handle_exit_collisionsf;
-	handle_trs_fn handle_trsf;
-
-	scr_fn init_scrf;
-	scr_fn release_srcf;
-	scr_fn reload_srcf;
-
-	handle_input_fn inputf;
-
-	comp_fn create_compf;
-	comp_fn remove_compf;
-
-	spin_lock slock;
+	comp_fn createCompF;
+	comp_fn removeCompF;
 }
 
-static void get_all_functions_and_start()
+void getAllNativeFunctionsAndStart()
 {
 	{
 #if _DEBUG
-		std::ofstream file((eproject::engine_path + "\\bin\\Debug_x86_64\\core.cfg"));
+		std::ofstream file((eproject::enginePath + "\\bin\\Debug_x86_64\\core.cfg"));
 #else
-		std::ofstream file(eproject::engine_path + "\\bin\\Release_x86_64\\core.cfg");
+		std::ofstream file(eproject::enginePath + "\\bin\\Release_x86_64\\core.cfg");
 #endif
-		std::ofstream file_rt(eproject::engine_path + "\\runtime\\x64\\Release\\bin\\Release_x86_64\\core.cfg");
-		std::ofstream file_rt_bin(eproject::engine_path + "\\runtime\\EraRuntime\\bin\\Release_x86_64\\core.cfg");
+		std::ofstream file_rt(eproject::enginePath + "\\runtime\\x64\\Release\\bin\\Release_x86_64\\core.cfg");
+		std::ofstream file_rt_bin(eproject::enginePath + "\\runtime\\EraRuntime\\bin\\Release_x86_64\\core.cfg");
 
-		file << eproject::name << "," << eproject::path << "," << eproject::engine_path;
+		file << eproject::name << "," << eproject::path << "," << eproject::enginePath;
 		file.close();
 
-		file_rt << eproject::name << "," << eproject::path << "," << eproject::engine_path;
+		file_rt << eproject::name << "," << eproject::path << "," << eproject::enginePath;
 		file_rt.close();
 
-		file_rt_bin << eproject::name << "," << eproject::path << "," << eproject::engine_path;
+		file_rt_bin << eproject::name << "," << eproject::path << "," << eproject::enginePath;
 		file_rt_bin.close();
 	}
 
 	const char_t* dotnet_type_init = STR("EraEngine.ScriptingCore, EraScriptingCore");
 	const char_t* dotnet_type_method_main = STR("MainFunc");
-	init_fn f = enative_scripting_linker::get_static_method<init_fn>(dotnet_type_init, dotnet_type_method_main, STR("EraEngine.Call, EraScriptingCore"));
+	init_fn f = dotnet_host::getStaticMethod<init_fn>(dotnet_type_init, dotnet_type_method_main, STR("EraEngine.Call, EraScriptingCore"));
 	f();
 
 	const char_t* dotnet_type_method_init = STR("InitializeScripting");
-	init_scrf = enative_scripting_linker::get_static_method<scr_fn>(dotnet_type_init, dotnet_type_method_init, STR("EraEngine.Call, EraScriptingCore"));;
-	
+	initScrF = dotnet_host::getStaticMethod<scr_fn>(dotnet_type_init, dotnet_type_method_init, STR("EraEngine.Call, EraScriptingCore"));;
+
 	const char_t* dotnet_type_method_rel = STR("ShutdownScripting");
-	release_srcf = enative_scripting_linker::get_static_method<scr_fn>(dotnet_type_init, dotnet_type_method_rel, STR("EraEngine.Call, EraScriptingCore"));;
+	releaseSrcF = dotnet_host::getStaticMethod<scr_fn>(dotnet_type_init, dotnet_type_method_rel, STR("EraEngine.Call, EraScriptingCore"));;
 
 	const char_t* dotnet_type_method_relo = STR("ReloadScripting");
-	reload_srcf = enative_scripting_linker::get_static_method<scr_fn>(dotnet_type_init, dotnet_type_method_relo, STR("EraEngine.Call, EraScriptingCore"));;
+	reloadSrcF = dotnet_host::getStaticMethod<scr_fn>(dotnet_type_init, dotnet_type_method_relo, STR("EraEngine.Call, EraScriptingCore"));;
 
 	const char_t* dotnet_type = STR("EraEngine.ELevel, EraScriptingCore");
 	const char_t* dotnet_type_method_st = STR("Start");
-	startf = enative_scripting_linker::get_static_method<start_fn>(dotnet_type, dotnet_type_method_st, STR("EraEngine.Call, EraScriptingCore"));
+	startF = dotnet_host::getStaticMethod<start_fn>(dotnet_type, dotnet_type_method_st, STR("EraEngine.Call, EraScriptingCore"));
 	const char_t* dotnet_type_method_up = STR("Update");
-	updatef = enative_scripting_linker::get_static_method<update_fn, float>(dotnet_type, dotnet_type_method_up, STR("EraEngine.CallUpdate, EraScriptingCore"));
+	updateF = dotnet_host::getStaticMethod<update_fn, float>(dotnet_type, dotnet_type_method_up, STR("EraEngine.CallUpdate, EraScriptingCore"));
 
 	const char_t* dotnet_type_hc = STR("EraEngine.Core.CollisionHandler, EraScriptingCore");
 	const char_t* dotnet_type_method_c = STR("HandleCollision");
-	handle_collisionsf = enative_scripting_linker::get_static_method<handle_collisions_fn, int, int>(dotnet_type_hc, dotnet_type_method_c, STR("EraEngine.CallHandleColls, EraScriptingCore"));
+	handleCollisionsF = dotnet_host::getStaticMethod<handle_collisions_fn, int, int>(dotnet_type_hc, dotnet_type_method_c, STR("EraEngine.CallHandleColls, EraScriptingCore"));
 	const char_t* dotnet_type_method_c_e = STR("HandleExitCollision");
-	handle_exit_collisionsf = enative_scripting_linker::get_static_method<handle_collisions_fn, int, int>(dotnet_type_hc, dotnet_type_method_c_e, STR("EraEngine.CallHandleColls, EraScriptingCore"));
+	handleExitCollisionsF = dotnet_host::getStaticMethod<handle_collisions_fn, int, int>(dotnet_type_hc, dotnet_type_method_c_e, STR("EraEngine.CallHandleColls, EraScriptingCore"));
 
 	const char_t* dotnet_type_tr = STR("EraEngine.Core.TransformHandler, EraScriptingCore");
 	const char_t* dotnet_type_method_t = STR("ProcessTransform");
-	handle_trsf = enative_scripting_linker::get_static_method<handle_trs_fn, intptr_t, int>(dotnet_type_tr, dotnet_type_method_t, STR("EraEngine.CallHandleTrs, EraScriptingCore"));
+	handleTrsF = dotnet_host::getStaticMethod<handle_trs_fn, intptr_t, int>(dotnet_type_tr, dotnet_type_method_t, STR("EraEngine.CallHandleTrs, EraScriptingCore"));
 
 	const char_t* dotnet_type_input = STR("EraEngine.Core.InputHandler, EraScriptingCore");
 	const char_t* dotnet_type_method_input = STR("HandleInput");
-	inputf = enative_scripting_linker::get_static_method<handle_input_fn, intptr_t>(dotnet_type_input, dotnet_type_method_input, STR("EraEngine.CallHandleInput, EraScriptingCore"));
+	inputF = dotnet_host::getStaticMethod<handle_input_fn, intptr_t>(dotnet_type_input, dotnet_type_method_input, STR("EraEngine.CallHandleInput, EraScriptingCore"));
 
 	const char_t* dotnet_type_cc = STR("EraEngine.Runtime.ComponentHandler, EraScriptingCore");
 	const char_t* dotnet_type_method_cc = STR("AddComponent");
-	create_compf = enative_scripting_linker::get_static_method<comp_fn, int, uintptr_t>(dotnet_type_cc, dotnet_type_method_cc, STR("EraEngine.CallAddComp, EraScriptingCore"));
+	createCompF = dotnet_host::getStaticMethod<comp_fn, int, uintptr_t>(dotnet_type_cc, dotnet_type_method_cc, STR("EraEngine.CallAddComp, EraScriptingCore"));
 	const char_t* dotnet_type_method_rc = STR("RemoveComponent");
-	remove_compf = enative_scripting_linker::get_static_method<comp_fn, int, uintptr_t>(dotnet_type_cc, dotnet_type_method_rc, STR("EraEngine.CallRemoveComp, EraScriptingCore"));
-}
-
-static void exec()
-{
-	if (!load_hostfxr())
-	{
-		assert(false && "Failure: load_hostfxr()");
-	}
-
-	const string_t root = stringToWstring(eproject::dotnet_path);
-	const string_t cfg = STR("EraScriptingCore.runtimeconfig.json");
-	const string_t lib = STR("EraScriptingCore.dll");
-
-	const string_t cfg_path = root + cfg;
-	const string_t lib_path = root + lib;
-
-	hostfxr_handle dotnetHostContext = nullptr;
-
-	int launchArgumentsCount = 1;
-	wchar_t** launchArguments = new wchar_t* [launchArgumentsCount];
-	launchArguments[0] = (wchar_t*)lib_path.c_str();
-	int result = initialize_for_dotnet_command_line(launchArgumentsCount, (const wchar_t**)launchArguments, nullptr, &dotnetHostContext);
-	if ((result != 0) || (dotnetHostContext == nullptr))
-	{
-		std::cerr
-			<< "Dotnet host init failed (failed to initialize managed library; error code - "
-			<< std::hex << std::showbase << result
-			<< ")" << std::endl;
-		return;
-	}
-
-	get_delegate_fptr(
-		dotnetHostContext,
-		hdt_get_function_pointer,
-		(void**)&get_function_pointer);
-
-	close_fptr(dotnetHostContext);
-
-	get_all_functions_and_start();
-	
-	slock.unlock();
-}
-
-static void load()
-{
-	try 
-	{
-		exec();
-	}
-	catch (std::exception ex) 
-	{
-		LOG_ERROR(ex.what());
-	}
-}
-
-static void unload()
-{
-
-}
-
-namespace
-{
-	void* load_library(const char_t* path)
-	{
-		HMODULE h = ::LoadLibraryW(path);
-		assert(h != nullptr);
-		return (void*)h;
-	}
-
-	void* get_export(void* h, const char* name)
-	{
-		void* f = ::GetProcAddress((HMODULE)h, name);
-		assert(f != nullptr);
-		return f;
-	}
-
-	bool load_hostfxr()
-	{
-		char_t buffer[MAX_PATH];
-		size_t buffer_size = sizeof(buffer) / sizeof(char_t);
-		int rc = get_hostfxr_path(buffer, &buffer_size, nullptr);
-		if (rc != 0)
-			return false;
-		void* lib = load_library(buffer);
-		init_fptr = (hostfxr_initialize_for_runtime_config_fn)get_export(lib, "hostfxr_initialize_for_runtime_config");
-		get_delegate_fptr = (hostfxr_get_runtime_delegate_fn)get_export(lib, "hostfxr_get_runtime_delegate");
-		close_fptr = (hostfxr_close_fn)get_export(lib, "hostfxr_close");
-		initialize_for_dotnet_command_line = (hostfxr_initialize_for_dotnet_command_line_fn)get_export(lib, "hostfxr_initialize_for_dotnet_command_line");
-
-		return (init_fptr && get_delegate_fptr && close_fptr);
-	}
-
-	load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const char_t* config_path)
-	{
-		void* load_assembly_and_get_function_pointer = nullptr;
-		int rc = init_fptr(config_path, nullptr, &cxt);
-		if (rc != 0 || cxt == nullptr)
-		{
-			std::cerr << "Init failed: " << std::hex << std::showbase << rc << std::endl;
-			close_fptr(cxt);
-			return nullptr;
-		}
-		rc = get_delegate_fptr(
-			cxt,
-			hdt_load_assembly_and_get_function_pointer,
-			&load_assembly_and_get_function_pointer);
-		if (rc != 0 || load_assembly_and_get_function_pointer == nullptr)
-			std::cerr << "Get delegate failed: " << std::hex << std::showbase << rc << std::endl;
-
-		return (load_assembly_and_get_function_pointer_fn)load_assembly_and_get_function_pointer;
-	}
-}
-
-static int init_dotnet()
-{
-	slock.lock();
-
-	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)load, NULL, NULL, NULL);
-	return 0;
+	removeCompF = dotnet_host::getStaticMethod<comp_fn, int, uintptr_t>(dotnet_type_cc, dotnet_type_method_rc, STR("EraEngine.CallRemoveComp, EraScriptingCore"));
 }
 
 namespace bind
 {
+	static escene* scene = nullptr;
+
 	static void add_force_internal(uint32_t id, uint8_t mode, float* force) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+		eentity entity{ hid, &scene->registry };
 
 		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 		{
@@ -242,13 +110,13 @@ namespace bind
 			std::cout << "Force" << "\n";
 		}
 		else
-			std::cerr << "bliaaaa addForce";
+			std::cerr << "Failed to call function addForce";
 	}
 
 	static void add_torque_internal(uint32_t id, uint8_t mode, float* torque) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+		eentity entity{ hid, &scene->registry };
 
 		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 		{
@@ -257,13 +125,13 @@ namespace bind
 			std::cout << "Torque" << "\n";
 		}
 		else
-			std::cerr << "bliaaaa addTorque";
+			std::cerr << "Failed to call function addTorque";
 	}
 
 	static void initialize_rigidbody_internal(uint32_t id, uint8_t type) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+		eentity entity{ hid, &scene->registry };
 
 		if (!entity.hasComponent<physics::px_rigidbody_component>())
 			entity.addComponent<physics::px_rigidbody_component>((physics::px_rigidbody_type)type);
@@ -272,7 +140,7 @@ namespace bind
 	static void overlap_sphere_internal(uint32_t id, uint8_t type) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+		eentity entity{ hid, &scene->registry };
 
 		if (!entity.hasComponent<physics::px_rigidbody_component>())
 			entity.addComponent<physics::px_rigidbody_component>((physics::px_rigidbody_type)type);
@@ -281,7 +149,7 @@ namespace bind
 	static float get_mass_internal(uint32_t id) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+		eentity entity{ hid, &scene->registry };
 
 		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 			return rb->getMass();
@@ -292,18 +160,18 @@ namespace bind
 	static void set_mass_internal(uint32_t id, float mass) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+		eentity entity{ hid, &scene->registry };
 
 		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 			rb->setMass(mass);
 		else
-			std::cerr << "bliaaaa";
+			std::cerr << "Failed to call function";
 	}
 
 	static float* get_linear_velocity_internal(uint32_t id) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+		eentity entity{ hid, &scene->registry };
 
 		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 		{
@@ -319,7 +187,6 @@ namespace bind
 
 	static uint32_t create_entity_internal(const char* name) noexcept
 	{
-	    auto scene = enative_scripting_linker::app->getCurrentScene();
 		return (uint32_t)scene->createEntity(name)
 			.addComponent<transform_component>(vec3(0.f), quat::identity)
 			.handle;
@@ -328,7 +195,7 @@ namespace bind
 	static float* get_angular_velocity_internal(uint32_t id) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+		eentity entity{ hid, &scene->registry };
 
 		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 		{
@@ -345,25 +212,25 @@ namespace bind
 	static void create_script_internal(uint32_t id, const char* name) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+		eentity entity{ hid, &scene->registry };
 
-		if (auto script = entity.getComponentIfExists<script_component>())
+		if (auto script = entity.getComponentIfExists<scripts_component>())
 		{
 			script->typeNames.emplace(name);
 		}
 		else
 		{
-			entity.addComponent<script_component>(name);
+			entity.addComponent<scripts_component>(name);
 		}
 	}
 
 	static void remove_component_internal(uint32_t id, const char* name) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+		eentity entity{ hid, &scene->registry };
 
 		// TODO: Removing all internal components
-		if (auto comp = entity.getComponentIfExists<script_component>())
+		if (auto comp = entity.getComponentIfExists<scripts_component>())
 		{
 			comp->typeNames.clear();
 		}
@@ -371,7 +238,7 @@ namespace bind
 
 	static void create_component_internal(uint32_t id, const char* name) noexcept
 	{
-		
+
 	}
 
 	static void instantiate_internal(uint32_t id, uint32_t newId, uint32_t parentId) noexcept
@@ -383,7 +250,7 @@ namespace bind
 	{
 		entity_handle hid = (entity_handle)id;
 
-		enative_scripting_linker::app->getCurrentScene()->deleteEntity(hid);
+		scene->deleteEntity(hid);
 	}
 
 	static void setActive_internal(uint32_t id, bool active) noexcept
@@ -394,7 +261,7 @@ namespace bind
 	static void initialize_navigation_internal(uint32_t id, uint8_t type) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+		eentity entity{ hid, &scene->registry };
 
 		if (!entity.hasComponent<navigation_component>())
 			entity.addComponent<navigation_component>((nav_type)type);
@@ -403,7 +270,7 @@ namespace bind
 	static void set_destination_internal(uint32_t id, float* destPtr) noexcept
 	{
 		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &enative_scripting_linker::app->getCurrentScene()->registry };
+		eentity entity{ hid, &scene->registry };
 
 		if (auto nav_comp = entity.getComponentIfExists<navigation_component>())
 		{
@@ -412,7 +279,7 @@ namespace bind
 		}
 		else
 		{
-			std::cerr << "bliaaaaaaa\n";
+			std::cerr << "Failed to call function\n";
 		}
 	}
 
@@ -431,8 +298,13 @@ namespace bind
 	static void send_type_internal(const char* type) noexcept
 	{
 		std::cout << "Type found: " << type << "\n";
-		enative_scripting_linker::script_types.push_back(type);
+		enative_scripting_linker::scriptTypes.push_back(type);
 	}
+}
+
+enative_scripting_linker::~enative_scripting_linker()
+{
+	release();
 }
 
 void enative_scripting_linker::init()
@@ -440,17 +312,16 @@ void enative_scripting_linker::init()
 	lib = LoadLibraryA("EraScriptingCPPDecls.dll");
 	if (!lib || lib == INVALID_HANDLE_VALUE)
 	{
-		std::cerr << "bliaaaa";
+		std::cerr << "Failed to load scripting impl library";
 		return;
 	}
 
-	get_builder get_builder_func_instance = (get_builder)GetProcAddress(lib, "createNativeScriptingBuilder");
-	builder = get_builder_func_instance();
+	get_builder getBuilderFuncInstance = (get_builder)GetProcAddress(lib, "createNativeScriptingBuilder");
+	builder = getBuilderFuncInstance();
 
 	bindFunctions();
 
-	init_dotnet();
-	slock.lock();
+	host.initHost();
 }
 
 void enative_scripting_linker::release()
@@ -458,54 +329,64 @@ void enative_scripting_linker::release()
 	RELEASE_PTR(builder)
 	if (lib)
 		FreeLibrary(lib);
+	host.releaseHost();
 }
 
 void enative_scripting_linker::start()
 {
-	startf();
+	if (startF)
+		startF();
 }
 
 void enative_scripting_linker::update(float dt)
 {
-	updatef(dt);
+	if (updateF)
+		updateF(dt);
 }
 
 void enative_scripting_linker::handle_coll(int id1, int id2)
 {
-	handle_collisionsf(id1, id2);
+	if (handleCollisionsF)
+		handleCollisionsF(id1, id2);
 }
 
 void enative_scripting_linker::handle_exit_coll(int id1, int id2)
 {
-	handle_exit_collisionsf(id1, id2);
+	if (handleExitCollisionsF)
+		handleExitCollisionsF(id1, id2);
 }
 
 void enative_scripting_linker::process_trs(intptr_t ptr, int id)
 {
-	handle_trsf(ptr, id);
+	if (handleTrsF)
+		handleTrsF(ptr, id);
 }
 
 void enative_scripting_linker::init_src()
 {
-	init_scrf();
+	if (initScrF)
+		initScrF();
 }
 
 void enative_scripting_linker::release_src()
 {
-	release_srcf();
+	if (releaseSrcF)
+		releaseSrcF();
 }
 
 void enative_scripting_linker::reload_src()
 {
-	script_types.clear();
-	reload_srcf();
+	scriptTypes.clear();
+	if (reloadSrcF)
+		reloadSrcF();
 }
 
 void enative_scripting_linker::handleInput(uintptr_t input)
 {
 	try
 	{
-		inputf(input);
+		if (inputF)
+			inputF(input);
 	}
 	catch (const std::exception& ex)
 	{
@@ -515,18 +396,22 @@ void enative_scripting_linker::handleInput(uintptr_t input)
 
 void enative_scripting_linker::createScript(int id, const char* comp)
 {
-	create_compf(id, reinterpret_cast<uintptr_t>(comp));
+	if (createCompF)
+		createCompF(id, reinterpret_cast<uintptr_t>(comp));
 }
 
 void enative_scripting_linker::removeScript(int id, const char* comp)
 {
-	remove_compf(id, reinterpret_cast<uintptr_t>(comp));
+	if (removeCompF)
+		removeCompF(id, reinterpret_cast<uintptr_t>(comp));
 }
 
 void enative_scripting_linker::bindFunctions()
 {
 	if (builder)
 	{
+		bind::scene = runtimeScene;
+
 		// Rigidbody
 		{
 			builder->functions.emplace("getLinearVelocity", BIND(bind::get_linear_velocity_internal, float*, uint32_t));
@@ -553,7 +438,7 @@ void enative_scripting_linker::bindFunctions()
 		{
 			builder->functions.emplace("sendType", BIND(bind::send_type_internal, void, const char*));
 		}
-		
+
 		// EEntity
 		{
 			builder->functions.emplace("createScript", BIND(bind::create_script_internal, void, uint32_t, const char*));

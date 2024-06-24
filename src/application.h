@@ -16,7 +16,6 @@
 #include "rendering/raytracing.h"
 #include "learning/learned_locomotion.h"
 #include <px/core/px_physics_engine.h>
-#include <EraScriptingLauncher-Lib/scripting_core.h>
 #include <scripting/native_scripting_linker.h>
 
 #ifdef ERA_RUNTIME
@@ -25,18 +24,18 @@
 #include "editor/editor.h"
 #endif
 
-
 void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh);
 
 bool editFireParticleSystem(fire_particle_system& particleSystem);
 bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
 struct updatePhysicsAndScriptingData;
-void updatePhysXPhysicsAndScripting(escene& currentScene, enative_scripting_linker core, float dt, const user_input& in) noexcept;
+void updatePhysXPhysicsAndScripting(escene& currentScene, ref<enative_scripting_linker> core, float dt, const user_input& in) noexcept;
 void updateScripting(updatePhysicsAndScriptingData& data) noexcept;
 
 struct application
 {
+	application() {}
 	void loadCustomShaders();
 	void initialize(main_renderer* renderer, editor_panels* editorPanels);
 	void update(const user_input& input, float dt);
@@ -45,15 +44,6 @@ struct application
 
 	NODISCARD escene* getCurrentScene() noexcept { return &scene.getCurrentScene(); }
 	NODISCARD editor_scene* getScene() noexcept { return &scene; }
-
-	void renderObjectPoint(float x, float y, float z);
-	void renderObjectBox(vec3 pos, float x, float y, float z);
-	void renderObjectSphere(vec3 pos, float radius);
-
-	std::vector<vec3> points;
-	void processPoints();
-
-	eallocator stackArena;
 
 	main_renderer* getRenderer() const noexcept
 	{
@@ -68,6 +58,8 @@ struct application
 	}
 
 #endif
+
+	eallocator stackArena;
 
 private:
 	void resetRenderPasses();
@@ -88,9 +80,7 @@ private:
 
 	main_renderer* renderer;
 
-	enative_scripting_linker linker;
-
-	ref<escripting_core> core;
+	ref<enative_scripting_linker> linker;
 
 	editor_scene scene;
 

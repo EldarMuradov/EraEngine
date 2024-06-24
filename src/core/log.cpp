@@ -34,7 +34,7 @@ static std::mutex mutex;
 
 void logMessageInternal(message_type type, const char* file, const char* function, uint32 line, const char* format, ...)
 {
-	mutex.lock();
+	lock lock{ mutex };
 	arena.ensureFreeSize(1024);
 
 	char* buffer = (char*)arena.getCurrent();
@@ -47,12 +47,11 @@ void logMessageInternal(message_type type, const char* file, const char* functio
 	messages.push_back({ buffer, type, 5.f, file, function, line });
 
 	arena.setCurrentTo(buffer + countWritten + 1);
-	mutex.unlock();
 }
 
 void logMessage(message_type type, const char* format, ...)
 {
-	mutex.lock();
+	lock lock{ mutex };
 	arena.ensureFreeSize(KB(1));
 
 	char* buffer = (char*)arena.getCurrent();
@@ -65,7 +64,6 @@ void logMessage(message_type type, const char* format, ...)
 	messages.push_back({ buffer, type, 5.f, nullptr, nullptr, 0 });
 
 	arena.setCurrentTo(buffer + countWritten + 1);
-	mutex.unlock();
 }
 
 void initializeMessageLog()

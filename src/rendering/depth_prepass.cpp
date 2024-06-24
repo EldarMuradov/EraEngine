@@ -26,7 +26,7 @@ static D3D12_INPUT_ELEMENT_DESC alphaCutoutLayout[] =
 
 void initializeDepthPrepassPipelines()
 {
-	auto desc = CREATE_GRAPHICS_PIPELINE
+	auto& desc = CREATE_GRAPHICS_PIPELINE
 		.renderTargets(depthOnlyFormat, arraysize(depthOnlyFormat), depthStencilFormat)
 		.inputLayout(layout);
 

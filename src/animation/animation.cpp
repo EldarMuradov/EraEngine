@@ -32,7 +32,7 @@ void animation_skeleton::analyzeJoints(const vec3* positions, const void* others
 		std::string name = j.name;
 		std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
-		limb_type c = limb_type_unknown;
+		limb_type c = limb_type_none;
 
 		bool left = contains(name, "left") || endsWith(name, ".l") || endsWith(name, "_l");
 
@@ -40,7 +40,7 @@ void animation_skeleton::analyzeJoints(const vec3* positions, const void* others
 		else if (contains(name, "head") || contains(name, "neck")) { c = limb_type_head; }
 		else if (contains(name, "arm"))
 		{
-			limb_type parentType = (j.parentID != INVALID_JOINT) ? joints[j.parentID].limbType : limb_type_unknown;
+			limb_type parentType = (j.parentID != INVALID_JOINT) ? joints[j.parentID].limbType : limb_type_none;
 
 			if (contains(name, "lower") || contains(name, "lo") || contains(name, "fore")) { c = left ? limb_type_lower_arm_left : limb_type_lower_arm_right; }
 			else if (contains(name, "upper") || contains(name, "up")) { c = left ? limb_type_upper_arm_left : limb_type_upper_arm_right; }
@@ -53,7 +53,7 @@ void animation_skeleton::analyzeJoints(const vec3* positions, const void* others
 		}
 		else if (contains(name, "leg") || contains(name, "thigh") || contains(name, "shin") || contains(name, "calf"))
 		{
-			limb_type parentType = (j.parentID != INVALID_JOINT) ? joints[j.parentID].limbType : limb_type_unknown;
+			limb_type parentType = (j.parentID != INVALID_JOINT) ? joints[j.parentID].limbType : limb_type_none;
 
 			if (contains(name, "lower") || contains(name, "lo") || contains(name, "shin") || contains(name, "calf")) { c = left ? limb_type_lower_leg_left : limb_type_lower_leg_right; }
 			else if (contains(name, "upper") || contains(name, "up") || contains(name, "thigh")) { c = left ? limb_type_upper_leg_left : limb_type_upper_leg_right; }
@@ -181,7 +181,7 @@ void animation_skeleton::analyzeJoints(const vec3* positions, const void* others
 			if (w.skinWeights[j] > 200)
 			{
 				limb_type type = joints[w.skinIndices[j]].limbType;
-				if (type != limb_type_unknown)
+				if (type != limb_type_none)
 				{
 					if (limbs[type].representativeJoint != INVALID_JOINT)
 					{
@@ -598,7 +598,7 @@ void animation_instance::update(const animation_skeleton& skeleton, float dt, tr
 	}
 }
 
-#if 0
+#if 1
 animation_blend_tree_1d::animation_blend_tree_1d(std::initializer_list<animation_clip*> clips, float startBlendValue, float startRelTime)
 {
 	ASSERT(clips.size() <= arraysize(this->clips));

@@ -45,12 +45,12 @@ struct common_render_data
 	dx_dynamic_constant_buffer cameraCBV;
 	dx_dynamic_constant_buffer lightingCBV;
 
+	vec2 cameraJitter;
+	vec2 prevFrameCameraJitter;
+
 	float globalIlluminationIntensity;
 	float skyIntensity;
 	bool proceduralSky;
-
-	vec2 cameraJitter;
-	vec2 prevFrameCameraJitter;
 };
 
 #define _PIPELINE_SETUP_DECL(name)					void name(dx_command_list* cl, const common_render_data& common)

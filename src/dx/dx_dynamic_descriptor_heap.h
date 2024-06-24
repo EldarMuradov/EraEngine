@@ -33,8 +33,6 @@ private:
 
 	void commitStagedDescriptors(dx_command_list* commandList, bool graphics);
 
-	static const uint32 maxDescriptorTables = 32;
-
 	struct descriptor_table_cache
 	{
 		descriptor_table_cache()
@@ -53,6 +51,8 @@ private:
 		D3D12_CPU_DESCRIPTOR_HANDLE* baseDescriptor;
 	};
 
+	static const uint32 maxDescriptorTables = 32;
+
 	uint32 numDescriptorsPerHeap;
 
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> descriptorHandleCache;
@@ -64,7 +64,6 @@ private:
 
 	std::vector<com<ID3D12DescriptorHeap>> descriptorHeapPool;
 	std::vector<com<ID3D12DescriptorHeap>> freeDescriptorHeaps;
-
 
 	com<ID3D12DescriptorHeap> currentDescriptorHeap;
 	dx_gpu_descriptor_handle currentGPUDescriptorHandle;

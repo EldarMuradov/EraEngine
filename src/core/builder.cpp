@@ -12,7 +12,7 @@ NODISCARD std::optional<std::string> ebuilder::selectBuildFolder()
 	const std::string result = directoryDialog();
 	if (!result.empty())
 	{
-		eproject::exe_path = result;
+		eproject::exePath = result;
 
 		return result;
 	}
@@ -44,7 +44,7 @@ bool ebuilder::build(bool autoRun, bool tempFolder)
 	else
 		return false;
 
-	std::string config = eproject::config == configuration::Debug ? "Debug" : "Release";
+	std::string config = eproject::config == configuration_type_debug ? "Debug" : "Release";
 
 	bool result = buildAtLocation(config, destinationFolder, autoRun);
 	if(!result)
@@ -55,7 +55,7 @@ bool ebuilder::build(bool autoRun, bool tempFolder)
 bool ebuilder::buildAtLocation(std::string_view configuration, std::string_view pbuildPath, bool autoRun)
 {
 	std::string buildPath = pbuildPath.data();
-	std::string executableName = eproject::exe_path + ".exe";
+	std::string executableName = eproject::exePath + ".exe";
 
 	bool failed = false;
 
@@ -80,8 +80,8 @@ bool ebuilder::buildAtLocation(std::string_view configuration, std::string_view 
 
 	std::error_code err;
 
-	std::filesystem::copy(eproject::engine_path + "\\runtime\\x64\\Release", buildPath + "\\Data\\User", std::filesystem::copy_options::recursive, err);
-	eproject::exe_path = buildPath + "\\Data\\User\\";
+	std::filesystem::copy(eproject::enginePath + "\\runtime\\x64\\Release", buildPath + "\\Data\\User", std::filesystem::copy_options::recursive, err);
+	eproject::exePath = buildPath + "\\Data\\User\\";
 
 	if (err)
 		return false;
@@ -136,7 +136,7 @@ bool ebuilder::buildAtLocation(std::string_view configuration, std::string_view 
 
 	if (autoRun)
 	{
-		std::filesystem::path exe_path = eproject::exe_path + "EraRuntime.exe";
+		std::filesystem::path exe_path = eproject::exePath + "EraRuntime.exe";
 		os::system_calls::openFile(exe_path);
 	}
 

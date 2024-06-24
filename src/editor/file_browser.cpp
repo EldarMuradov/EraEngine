@@ -241,7 +241,7 @@ void file_browser::refresh()
 	currentPathEntries.clear();
 	for (auto p : fs::directory_iterator(currentPath))
 	{
-		dir_entry_type type = dir_entry_type_unknown;
+		dir_entry_type type = dir_entry_type_none;
 
 		if (fs::is_directory(p.path()))
 		{

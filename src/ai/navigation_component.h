@@ -8,9 +8,10 @@
 
 enum class nav_type
 {
-	None,
-	A_Star,
-	Dijkstra
+	nav_type_none,
+	nav_type_a_Star,
+	nav_type_dijkstra,
+	nav_type_count
 };
 
 NODISCARD static coroutine_return<nav_node> navigate(vec2 pos, vec2 target) noexcept
@@ -51,7 +52,7 @@ private:
 private:
 	entity_handle handle;
 
-	coroutine_return<nav_node> nav_coroutine;
+	coroutine_return<nav_node> navCoroutine;
 
 	vec3 previousDestination = vec3(NAV_INF_POS);
 };

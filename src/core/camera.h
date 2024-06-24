@@ -8,7 +8,7 @@
 
 union camera_frustum_corners
 {
-	vec3 eye;
+	camera_frustum_corners() {};
 
 	struct
 	{
@@ -21,16 +21,24 @@ union camera_frustum_corners
 		vec3 farBottomLeft;
 		vec3 farBottomRight;
 	};
+
 	struct
 	{
 		vec3 corners[8];
 	};
 
-	camera_frustum_corners() {}
+	vec3 eye;
 };
 
 union camera_frustum_planes
 {
+	camera_frustum_planes() {};
+
+	// Returns true, if object should be culled.
+	NODISCARD bool cullWorldSpaceAABB(const bounding_box& aabb) const;
+	NODISCARD bool cullModelSpaceAABB(const bounding_box& aabb, const trs& transform) const;
+	NODISCARD bool cullModelSpaceAABB(const bounding_box& aabb, const mat4& transform) const;
+
 	struct
 	{
 		vec4 nearPlane;
@@ -40,14 +48,8 @@ union camera_frustum_planes
 		vec4 topPlane;
 		vec4 bottomPlane;
 	};
+
 	vec4 planes[6];
-
-	camera_frustum_planes() {}
-
-	// Returns true, if object should be culled.
-	NODISCARD bool cullWorldSpaceAABB(const bounding_box& aabb) const;
-	NODISCARD bool cullModelSpaceAABB(const bounding_box& aabb, const trs& transform) const;
-	NODISCARD bool cullModelSpaceAABB(const bounding_box& aabb, const mat4& transform) const;
 };
 
 enum camera_type
@@ -63,31 +65,6 @@ struct camera_projection_extents
 
 struct render_camera
 {
-	quat rotation;
-	vec3 position;
-
-	float nearPlane;
-	float farPlane = -1.f;
-
-	uint32 width, height;
-
-	camera_type type;
-
-	float verticalFOV;
-	float fx, fy, cx, cy; // For calibrated cameras.
-
-	// Derived values.
-	mat4 view;
-	mat4 invView;
-
-	mat4 proj;
-	mat4 invProj;
-
-	mat4 viewProj;
-	mat4 invViewProj;
-	
-	float aspect;
-
 	void setPositionAndRotation(vec3 position, quat rotation);
 	void initializeIngame(vec3 position, quat rotation, float verticalFOV, float nearPlane, float farPlane = -1.f);
 	void initializeCalibrated(vec3 position, quat rotation, uint32 width, uint32 height, float fx, float fy, float cx, float cy, float nearPlane, float farPlane = -1.f);
@@ -114,6 +91,31 @@ struct render_camera
 	float getMinProjectionExtent() const;
 
 	render_camera getJitteredVersion(vec2 offset) const;
+
+	quat rotation;
+	vec3 position;
+
+	float nearPlane;
+	float farPlane = -1.f;
+
+	uint32 width, height;
+
+	camera_type type;
+
+	float verticalFOV;
+	float fx, fy, cx, cy; // For calibrated cameras.
+
+	// Derived values.
+	mat4 view;
+	mat4 invView;
+
+	mat4 proj;
+	mat4 invProj;
+
+	mat4 viewProj;
+	mat4 invViewProj;
+
+	float aspect;
 };
 REFLECT_STRUCT(render_camera,
 	(rotation, "Rotation"),

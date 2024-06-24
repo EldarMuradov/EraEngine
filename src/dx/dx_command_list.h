@@ -20,18 +20,6 @@ struct dx_command_list
 {
 	dx_command_list(D3D12_COMMAND_LIST_TYPE type);
 
-	D3D12_COMMAND_LIST_TYPE type;
-	dx_command_allocator commandAllocator;
-	dx_graphics_command_list commandList;
-	uint64 lastExecutionFenceValue;
-	dx_command_list* next;
-
-	dx_dynamic_descriptor_heap dynamicDescriptorHeap;
-
-	dx_query_heap timeStampQueryHeap;
-
-	ID3D12DescriptorHeap* descriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] = {};
-
 	void barriers(CD3DX12_RESOURCE_BARRIER* barriers, uint32 numBarriers);
 
 	// Avoid calling these. Instead, use the dx_barrier_batcher interface to batch multiple barriers into a single submission.
@@ -167,6 +155,18 @@ struct dx_command_list
 	void queryTimestamp(uint32 index);
 
 	void reset();
+
+	D3D12_COMMAND_LIST_TYPE type;
+	dx_command_allocator commandAllocator;
+	dx_graphics_command_list commandList;
+	uint64 lastExecutionFenceValue;
+	dx_command_list* next;
+
+	dx_dynamic_descriptor_heap dynamicDescriptorHeap;
+
+	dx_query_heap timeStampQueryHeap;
+
+	ID3D12DescriptorHeap* descriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] = {};
 };
 
 template<typename T>

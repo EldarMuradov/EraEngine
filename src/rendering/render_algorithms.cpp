@@ -88,7 +88,7 @@ void loadCommonShaders()
 {
 	// Sky
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			.renderTargets(skyPassFormats, arraysize(skyPassFormats), depthStencilFormat)
 			.depthSettings(true, false)
 			.cullFrontFaces();
@@ -99,7 +99,7 @@ void loadCommonShaders()
 
 	// Outline
 	{
-		auto drawerDesc = CREATE_GRAPHICS_PIPELINE
+		auto& drawerDesc = CREATE_GRAPHICS_PIPELINE
 			.renderTargets(ldrFormat, depthStencilFormat)
 			.stencilSettings(D3D12_COMPARISON_FUNC_EQUAL,
 				D3D12_STENCIL_OP_KEEP,
@@ -114,7 +114,7 @@ void loadCommonShaders()
 
 	// Shadow map copy
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			.renderTargets(0, 0, shadowDepthFormat)
 			.depthSettings(true, true, D3D12_COMPARISON_FUNC_ALWAYS)
 			.cullingOff();
@@ -609,7 +609,7 @@ void copyShadowMapParts(dx_command_list* cl,
 	// Since copies from or to parts of a depth-stencil texture are not allowed (even though they work on at least some hardware),
 	// we copy to and from the static shadow map cache via a shader, and not via CopyTextureRegion.
 
-	auto shadowRenderTarget = dx_render_target(to->width, to->height)
+	auto& shadowRenderTarget = dx_render_target(to->width, to->height)
 		.depthAttachment(to);
 
 	cl->setRenderTarget(shadowRenderTarget);

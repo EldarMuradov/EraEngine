@@ -27,7 +27,7 @@ static ref<dx_texture> noiseTexture;
 void initializeWaterPipelines()
 {
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			.cullingOff()
 			.renderTargets(transparentLightPassFormats, arraysize(transparentLightPassFormats), depthStencilFormat);
 

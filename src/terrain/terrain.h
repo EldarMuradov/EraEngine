@@ -41,16 +41,6 @@ struct terrain_component
 	terrain_chunk& chunk(uint32 x, uint32 z) { return chunks[z * chunksPerDim + x]; }
 	const terrain_chunk& chunk(uint32 x, uint32 z) const { return chunks[z * chunksPerDim + x]; }
 
-	uint32 chunksPerDim;
-	float chunkSize;
-	float amplitudeScale;
-
-	terrain_generation_settings genSettings;
-
-	ref<pbr_material> groundMaterial;
-	ref<pbr_material> rockMaterial;
-	ref<pbr_material> mudMaterial;
-
 	vec3 getMinCorner(vec3 positionOffset) const
 	{
 		float xzOffset = -(chunkSize * chunksPerDim) * 0.5f; // Offsets entire terrain by half.
@@ -61,6 +51,16 @@ struct terrain_component
 	void render(const render_camera& camera, struct opaque_render_pass* renderPass, struct sun_shadow_render_pass* shadowPass, struct ldr_render_pass* ldrPass,
 		vec3 positionOffset, uint32 entityID = -1, bool selected = false,
 		struct position_scale_component* waterPlaneTransforms = 0, uint32 numWaters = 0);
+
+	uint32 chunksPerDim;
+	float chunkSize;
+	float amplitudeScale;
+
+	terrain_generation_settings genSettings;
+
+	ref<pbr_material> groundMaterial;
+	ref<pbr_material> rockMaterial;
+	ref<pbr_material> mudMaterial;
 
 private:
 	void generateChunksCPU();

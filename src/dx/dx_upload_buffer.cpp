@@ -51,14 +51,13 @@ NODISCARD dx_page* dx_page_pool::getFreePage()
 
 void dx_page_pool::returnPage(dx_page* page)
 {
-	mutex.lock();
+	lock lock{ mutex };
 	page->next = usedPages;
 	usedPages = page;
 	if (!lastUsedPage)
 	{
 		lastUsedPage = page;
 	}
-	mutex.unlock();
 }
 
 void dx_page_pool::reset()

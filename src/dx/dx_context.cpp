@@ -353,30 +353,26 @@ void dx_context::quit()
 
 void dx_context::retire(texture_grave&& texture)
 {
-	mutex.lock();
+	lock lock { mutex };
 	textureGraveyard[bufferedFrameID].push_back(std::move(texture));
-	mutex.unlock();
 }
 
 void dx_context::retire(buffer_grave&& buffer)
 {
-	mutex.lock();
+	lock lock{ mutex };
 	bufferGraveyard[bufferedFrameID].push_back(std::move(buffer));
-	mutex.unlock();
 }
 
 void dx_context::retire(dx_object obj)
 {
-	mutex.lock();
+	lock lock{ mutex };
 	objectGraveyard[bufferedFrameID].push_back(obj);
-	mutex.unlock();
 }
 
 void dx_context::retire(D3D12MA::Allocation* allocation)
 {
-	mutex.lock();
+	lock lock{ mutex };
 	allocationGraveyard[bufferedFrameID].push_back(allocation);
-	mutex.unlock();
 }
 
 dx_command_queue& dx_context::getQueue(D3D12_COMMAND_LIST_TYPE type)
@@ -455,10 +451,12 @@ uint64 dx_context::executeCommandList(dx_command_list* commandList)
 
 	commandList->lastExecutionFenceValue = fenceValue;
 
-	queue.commandListMutex.lock();
-	enqueueRunningCommandList(queue, commandList);
-	atomicIncrement(queue.numRunningCommandLists);
-	queue.commandListMutex.unlock();
+	{
+		lock lock{ queue.commandListMutex };
+		enqueueRunningCommandList(queue, commandList);
+		atomicIncrement(queue.numRunningCommandLists);
+	}
+
 
 	return fenceValue;
 }
@@ -484,14 +482,14 @@ uint64 dx_context::executeCommandLists(dx_command_list** commandLists, uint32 co
 		commandLists[i]->lastExecutionFenceValue = fenceValue;
 	}
 
-	queue.commandListMutex.lock();
-	for (uint32 i = 0; i < count; ++i)
 	{
-		enqueueRunningCommandList(queue, commandLists[i]);
+		lock lock{ queue.commandListMutex };
+		for (uint32 i = 0; i < count; ++i)
+		{
+			enqueueRunningCommandList(queue, commandLists[i]);
+		}
+		atomicAdd(queue.numRunningCommandLists, count);
 	}
-	atomicAdd(queue.numRunningCommandLists, count);
-
-	queue.commandListMutex.unlock();
 
 	return fenceValue;
 }
@@ -555,7 +553,7 @@ void dx_context::newFrame(uint64 frameID)
 {
 	this->frameID = frameID;
 
-	mutex.lock();
+	lock lock{ mutex };
 	bufferedFrameID = (uint32)(frameID % NUM_BUFFERED_FRAMES);
 
 #if ENABLE_DX_PROFILING
@@ -580,6 +578,4 @@ void dx_context::newFrame(uint64 frameID)
 
 	pagePools[bufferedFrameID].reset();
 	frameDescriptorAllocator.newFrame(bufferedFrameID);
-
-	mutex.unlock();
 }

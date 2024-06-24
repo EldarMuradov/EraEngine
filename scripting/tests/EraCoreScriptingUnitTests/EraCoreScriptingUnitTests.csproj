@@ -8,9 +8,14 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <Configurations>Debug;Release;Release_NoOptim</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_NoOptim|AnyCPU'">
     <Optimize>False</Optimize>
   </PropertyGroup>
 

@@ -21,7 +21,7 @@ static D3D12_INPUT_ELEMENT_DESC inputLayout_position_color[] =
 
 void debug_simple_pipeline::initialize()
 {
-	auto desc = CREATE_GRAPHICS_PIPELINE
+	auto& desc = CREATE_GRAPHICS_PIPELINE
 		.inputLayout(inputLayout_position_normal)
 		.renderTargets(ldrFormat, depthStencilFormat);
 
@@ -49,7 +49,7 @@ PIPELINE_RENDER_IMPL(debug_simple_pipeline, debug_render_data)
 
 void debug_unlit_pipeline::initialize()
 {
-	auto desc = CREATE_GRAPHICS_PIPELINE
+	auto& desc = CREATE_GRAPHICS_PIPELINE
 		.inputLayout(inputLayout_position)
 		.cullingOff()
 		.renderTargets(ldrFormat, depthStencilFormat);
@@ -84,7 +84,7 @@ PIPELINE_RENDER_IMPL(debug_unlit_pipeline, debug_render_data)
 
 void debug_unlit_line_pipeline::initialize()
 {
-	auto desc = CREATE_GRAPHICS_PIPELINE
+	auto& desc = CREATE_GRAPHICS_PIPELINE
 		.inputLayout(inputLayout_position)
 		.renderTargets(ldrFormat, depthStencilFormat)
 		.primitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);

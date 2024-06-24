@@ -235,7 +235,7 @@ NODISCARD static ref<dx_texture> loadTextureFromFileAndHandle(const fs::path& fi
 
 	texture_key key = { handle, flags };
 
-	mutex.lock();
+	lock lock{ mutex };
 
 	ref<dx_texture> result = textureCache[key].lock();
 	if (!result)
@@ -243,8 +243,6 @@ NODISCARD static ref<dx_texture> loadTextureFromFileAndHandle(const fs::path& fi
 		result = loadTextureInternal(filename, handle, flags, async, parentJob);
 		textureCache[key] = result;
 	}
-
-	mutex.unlock();
 	return result;
 }
 

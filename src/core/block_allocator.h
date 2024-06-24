@@ -5,13 +5,13 @@
 
 struct block_allocator
 {
-	uint64 availableSize;
-
 	void initialize(uint64 capacity);
 
 	// Returns the offset
 	NODISCARD uint64 allocate(uint64 requestedSize);
 	void free(uint64 offset, uint64 size);
+
+	uint64 availableSize;
 
 private:
 	struct offset_value;
@@ -37,13 +37,13 @@ private:
 		NODISCARD uint64 getOffset() const { return offsetIterator->first; }
 	};
 
-	block_by_offset_map blocksByOffset;
-	block_by_size_map blocksBySize;
-
 	void addNewBlock(uint64 offset, uint64 size)
 	{
 		auto newBlockIt = blocksByOffset.emplace(offset, offset_value());
 		auto orderIt = blocksBySize.emplace(size, newBlockIt.first);
 		newBlockIt.first->second.sizeIterator = orderIt;
 	}
+
+	block_by_offset_map blocksByOffset;
+	block_by_size_map blocksBySize;
 };

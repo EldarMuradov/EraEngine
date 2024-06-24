@@ -2,9 +2,9 @@
 
 struct scene_manager
 {
-	static inline std::vector<fs::path> scenePathes;
-
 	void loadScene(std::string_view name);
+
+	static inline std::vector<fs::path> scenePathes;
 
 private:
 	NO_COPY(scene_manager)

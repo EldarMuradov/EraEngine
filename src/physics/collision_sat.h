@@ -79,7 +79,7 @@ NODISCARD static bool isMinkowskiFace(vec3 a, vec3 b, vec3 c, vec3 d)
 }
 
 template <typename shape_t>
-NODISCARD static sat_status satEdgeIntersectionTest(sat_edge* edgesA, uint32 numEdgesA, vec3 centerA, sat_edge* edgesB, uint32 numEdgesB, const shape_t& shapeB, sat_result& outResult)
+static sat_status satEdgeIntersectionTest(sat_edge* edgesA, uint32 numEdgesA, vec3 centerA, sat_edge* edgesB, uint32 numEdgesB, const shape_t& shapeB, sat_result& outResult)
 {
 	float minPenetration = outResult.minPenetration;
 	vec4 minPlane;

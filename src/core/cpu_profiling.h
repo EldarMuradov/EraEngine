@@ -38,8 +38,6 @@ extern bool cpuProfilerWindowOpen;
 
 struct cpu_profile_block_recorder
 {
-	const char* name;
-
 	cpu_profile_block_recorder(const char* name)
 		: name(name)
 	{
@@ -50,6 +48,8 @@ struct cpu_profile_block_recorder
 	{
 		recordProfileEvent(profile_event_end_block, name);
 	}
+
+	const char* name;
 };
 
 inline void cpuProfilingFrameEndMarker()
@@ -115,9 +115,6 @@ void cpuProfilingResolveTimeStamps();
 
 struct cpu_print_profile_block_recorder
 {
-	const char* name;
-	uint64 start;
-
 	cpu_print_profile_block_recorder(const char* name)
 		: name(name)
 	{
@@ -135,6 +132,9 @@ struct cpu_print_profile_block_recorder
 		float duration = (float)(end - start) / clockFrequency * 1000.f;
 		std::cout << "Profile block '" << name << "' took " << duration << "ms.\n";
 	}
+
+	const char* name;
+	uint64 start;
 };
 
 #else

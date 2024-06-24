@@ -12,7 +12,7 @@ typedef std::unordered_map<asset_handle, fs::path> handle_to_path;
 static path_to_handle pathToHandle;
 static handle_to_path handleToPath;
 
-static std::mutex mutex;
+static std::mutex fileRegistryMutex;
 static const fs::path registryPath = fs::path(L"resources/files.yaml").lexically_normal();
 
 static path_to_handle loadRegistryFromDisk()
@@ -82,9 +82,10 @@ static void handleAssetChange(const file_system_event& e)
 {
 	if (!fs::is_directory(e.path) && e.path != registryPath)
 	{
-		mutex.lock();
-		switch (e.change)
 		{
+			lock lock{ fileRegistryMutex };
+			switch (e.change)
+			{
 			case file_system_change_add:
 			{
 				LOG_MESSAGE("Asset '%ws' added", e.path.c_str());
@@ -128,8 +129,8 @@ static void handleAssetChange(const file_system_event& e)
 				pathToHandle.insert({ e.path, handle });
 				handleToPath[handle] = e.path; // Replace.
 			} break;
+			}
 		}
-		mutex.unlock();
 
 		// During runtime the registry is only written to in this function, so no need to protect the read with mutex.
 		LOG_MESSAGE("Rewriting file registry");
@@ -139,7 +140,7 @@ static void handleAssetChange(const file_system_event& e)
 
 NODISCARD asset_handle getAssetHandleFromPath(const fs::path& path)
 {
-	const std::lock_guard<std::mutex> lock(mutex);
+	const std::lock_guard<std::mutex> lock(fileRegistryMutex);
 
 	auto it = pathToHandle.find(path);
 	if (it == pathToHandle.end())
@@ -151,7 +152,7 @@ NODISCARD asset_handle getAssetHandleFromPath(const fs::path& path)
 
 NODISCARD fs::path getPathFromAssetHandle(asset_handle handle)
 {
-	const std::lock_guard<std::mutex> lock(mutex);
+	const std::lock_guard<std::mutex> lock(fileRegistryMutex);
 
 	auto it = handleToPath.find(handle);
 	if (it == handleToPath.end())

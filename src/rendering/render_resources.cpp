@@ -99,7 +99,7 @@ void render_resources::evaluate()
 
 		uint64 maxAlignment = 0;
 		uint64 maxSize = 0;
-		for (auto it : resourceMap)
+		for (auto& it : resourceMap)
 		{
 			maxAlignment = max(maxAlignment, it.second.alignment);
 			maxSize = max(maxSize, it.second.totalAllocationSize);
@@ -116,7 +116,7 @@ void render_resources::evaluate()
 		checkResult(dxContext.device->CreateHeap(&heapDesc, IID_PPV_ARGS(&resourceHeap)));
 
 
-		for (auto it : resourceMap)
+		for (auto& it : resourceMap)
 		{
 			temporary_render_resources& resources = it.second;
 			allocateResources(resources);

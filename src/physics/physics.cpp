@@ -18,7 +18,7 @@ static std::vector<bounding_hull_geometry> boundingHullGeometries;
 struct constraint_context
 {
 	std::vector<constraint_edge> constraintEdges;
-	uint16 firstFreeConstraintEdge = INVALID_CONSTRAINT_EDGE; // Free-list in constraintEdges array.
+	uint16 firstFreeConstraintEdge = INVALID_CONSTRAINT_EDGE; // Free-list in constraintEdges array
 
 
 	constraint_edge& getFreeConstraintEdge()
@@ -51,7 +51,7 @@ struct force_field_global_state
 };
 
 #ifndef PHYSICS_ONLY
-// This is a bit dirty. PHYSICS_ONLY is defined when building the learning DLL, where we don't need bounding hulls.
+// This is a bit dirty. PHYSICS_ONLY is defined when building the learning DLL, where we don't need bounding hulls
 
 #include "geometry/mesh_builder.h"
 #include "asset/model_asset.h"
@@ -756,7 +756,7 @@ static void getWorldSpaceColliders(escene& scene, bounding_box* outWorldspaceAAB
 	}
 }
 
-// Returns the accumulated force from all global force fields and writes localized forces (from force fields with colliders) in outLocalizedForceFields.
+// Returns the accumulated force from all global force fields and writes localized forces (from force fields with colliders) in outLocalizedForceFields
 static vec3 getForceFieldStates(escene& scene, force_field_global_state* outLocalForceFields)
 {
 	vec3 globalForceField(0.f);
@@ -773,13 +773,13 @@ static vec3 getForceFieldStates(escene& scene, force_field_global_state* outLoca
 
 		if (entity.hasComponent<collider_component>())
 		{
-			// Localized force field.
+			// Localized force field
 			uint16 index = (uint16)entity.getComponentIndex<force_field_component>();
 			outLocalForceFields[index].force = force;
 		}
 		else
 		{
-			// Global force field.
+			// Global force field
 			globalForceField += force;
 		}
 	}
@@ -979,7 +979,7 @@ static void handleNonCollisionInteractions(escene& scene,
 
 	std::sort(triggerOverlaps.begin(), triggerOverlaps.end());
 
-	// De-duplicate. Since we operate on entities here, multiple colliders may report the same overlap.
+	// De-duplicate. Since we operate on entities here, multiple colliders may report the same overlap
 	triggerOverlaps.erase(std::unique(triggerOverlaps.begin(), triggerOverlaps.end()), triggerOverlaps.end());
 
 	event_context& context = scene.createOrGetContextVariable<event_context>();
@@ -1200,12 +1200,12 @@ static void physicsStepInternal(escene& scene, eallocator& arena, const physics_
 
 	memory_marker marker = arena.getMarker();
 
-	rigid_body_global_state* rbGlobal = arena.allocate<rigid_body_global_state>(numRigidBodies + 1); // Reserve one slot for dummy.
+	rigid_body_global_state* rbGlobal = arena.allocate<rigid_body_global_state>(numRigidBodies + 1); // Reserve one slot for dummy
 	force_field_global_state* ffGlobal = arena.allocate<force_field_global_state>(numForceFields);
 	bounding_box* worldSpaceAABBs = arena.allocate<bounding_box>(numColliders);
 	collider_union* worldSpaceColliders = arena.allocate<collider_union>(numColliders);
 
-	collider_pair* overlappingColliderPairs = arena.allocate<collider_pair>(numColliders * numColliders + 5000); // Conservative estimate.
+	collider_pair* overlappingColliderPairs = arena.allocate<collider_pair>(numColliders * numColliders + 5000); // Conservative estimate
 
 	uint32 dummyRigidBodyIndex = numRigidBodies;
 
@@ -1218,9 +1218,9 @@ static void physicsStepInternal(escene& scene, eallocator& arena, const physics_
 	uint32 numBroadphaseOverlaps = broadphase(scene, worldSpaceAABBs, arena, overlappingColliderPairs, settings.simdBroadPhase);
 
 	non_collision_interaction* nonCollisionInteractions = arena.allocate<non_collision_interaction>(numBroadphaseOverlaps);
-	collision_contact* contacts = arena.allocate<collision_contact>(numBroadphaseOverlaps * 4 + 5000); // Each collision can have up to 4 contact points.
+	collision_contact* contacts = arena.allocate<collision_contact>(numBroadphaseOverlaps * 4 + 5000); // Each collision can have up to 4 contact points
 	constraint_body_pair* allConstraintBodyPairs = arena.allocate<constraint_body_pair>(numConstraints + numBroadphaseOverlaps * 4 + 5000);
-	collider_pair* collidingColliderPairs = overlappingColliderPairs; // We reuse this buffer.
+	collider_pair* collidingColliderPairs = overlappingColliderPairs; // We reuse this buffer
 	uint8* contactCountPerCollision = arena.allocate<uint8>(numColliders * numColliders + 5000);
 
 	constraint_body_pair* collisionBodyPairs = allConstraintBodyPairs + numConstraints;
@@ -1268,7 +1268,7 @@ static void physicsStepInternal(escene& scene, eallocator& arena, const physics_
 		}
 	}
 
-	// Kinematic rigid body. This is used in collision constraint solving, when a collider has no rigid body.
+	// Kinematic rigid body. This is used in collision constraint solving, when a collider has no rigid body
 	memset(&rbGlobal[dummyRigidBodyIndex], 0, sizeof(rigid_body_global_state));
 
 	VALIDATE(rbGlobal, numRigidBodies);
@@ -1398,8 +1398,8 @@ void physicsStep(escene& scene, eallocator& arena, float& timer, const physics_s
 	}
 }
 
-// This function returns the inertia tensors with respect to the center of gravity, so with a coordinate system centered at the COG.
-NODISCARD physics_properties collider_union::calculatePhysicsProperties()
+// This function returns the inertia tensors with respect to the center of gravity, so with a coordinate system centered at the COG
+physics_properties collider_union::calculatePhysicsProperties()
 {
 	physics_properties result;
 	switch (type)
@@ -1512,7 +1512,7 @@ NODISCARD physics_properties collider_union::calculatePhysicsProperties()
 			const float s60 = 1.f / 60.f;
 			const float s120 = 1.f / 120.f;
 
-			// Covariance-matrix of a tetrahedron with v0 = (0, 0, 0), v1 = (1, 0, 0), v2 = (0, 1, 0), v3 = (0, 0, 1).
+			// Covariance-matrix of a tetrahedron with v0 = (0, 0, 0), v1 = (1, 0, 0), v2 = (0, 1, 0), v3 = (0, 0, 1)
 			const mat3 Ccanonical(
 				s60, s120, s120,
 				s120, s60, s120,
@@ -1554,7 +1554,7 @@ NODISCARD physics_properties collider_union::calculatePhysicsProperties()
 
 			totalCOG /= totalMass;
 
-			// This is actually different in the Blow-paper, but this one is correct.
+			// This is actually different in the Blow-paper, but this one is correct
 			mat3 CprimeTotal = totalCovariance - totalMass * outerProduct(totalCOG, totalCOG);
 
 			result.cog = totalCOG;

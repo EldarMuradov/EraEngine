@@ -108,7 +108,7 @@ uint32 epa_simplex::findTriangleClosestToOrigin()
 
 bool epa_simplex::addNewPointAndUpdate(const gjk_support_point& newPoint)
 {
-	// This function removes all triangles which point towards the new point and replaces them with a triangle fan connecting the new point to the simplex.
+	// This function removes all triangles which point towards the new point and replaces them with a triangle fan connecting the new point to the simplex
 
 	uint8 edgeReferences[arraysize(edges)] = { 0 };
 
@@ -120,7 +120,7 @@ bool epa_simplex::addNewPointAndUpdate(const gjk_support_point& newPoint)
 			float d = dot(tri.normal, newPoint.minkowski - points[tri.a].minkowski);
 			if (d > 0.f)
 			{
-				// Remove triangle and mark edges.
+				// Remove triangle and mark edges
 #define REFERENCE_EDGE(e) ASSERT(e < numEdges); ++edgeReferences[e];
 
 				REFERENCE_EDGE(tri.edgeOppositeA);
@@ -161,7 +161,7 @@ bool epa_simplex::addNewPointAndUpdate(const gjk_support_point& newPoint)
 
 	for (uint32 i = 0; i < numBorderEdges; ++i)
 	{
-		// Add a triangle for each border edge connecting it to the new point.
+		// Add a triangle for each border edge connecting it to the new point
 
 		uint16 edgeIndex = borderEdgeIndices[i];
 		epa_edge& edge = edges[edgeIndex];
@@ -174,7 +174,7 @@ bool epa_simplex::addNewPointAndUpdate(const gjk_support_point& newPoint)
 
 		uint16 triangleIndex = numTriangles;
 
-		// Push edge from border edge start to new point. The other edge will be added later, which is why we set its index to -1 here temporarily.
+		// Push edge from border edge start to new point. The other edge will be added later, which is why we set its index to -1 here temporarily
 		uint16 newEdgeIndex = pushEdge(pointToConnect, newPointIndex, -1, numTriangles);
 		if (newEdgeIndex == UINT16_MAX)
 			return false;
@@ -188,19 +188,19 @@ bool epa_simplex::addNewPointAndUpdate(const gjk_support_point& newPoint)
 		const gjk_support_point& b = points[bIndex];
 		const gjk_support_point& c = points[cIndex];
 
-		// Index of edge opposite B is again -1.
+		// Index of edge opposite B is again -1
 		uint16 triangleIndexTest = pushTriangle(newPointIndex, bIndex, cIndex, edgeIndex, -1, newEdgeIndex, getTriangleInfo(newPoint, b, c));
 		if (triangleIndexTest == UINT16_MAX)
 			return false;
 
 		ASSERT(triangleIndex == triangleIndexTest);
 
-		// Set edge's new neighbor triangle.
+		// Set edge's new neighbor triangle
 		uint16& edgeInactiveTriangle = triAActive ? edge.triangleB : edge.triangleA;
 		edgeInactiveTriangle = triangleIndex;
 	}
 
-	// Fix up missing indices.
+	// Fix up missing indices
 	for (uint32 i = 0; i < numBorderEdges; ++i)
 	{
 		uint16 edgeIndex = borderEdgeIndices[i];
@@ -210,7 +210,7 @@ bool epa_simplex::addNewPointAndUpdate(const gjk_support_point& newPoint)
 		bool triangleBNew = edge.triangleB >= triangleOffset;
 		ASSERT(triangleANew != triangleBNew);
 
-		uint16 pointToConnect = triangleBNew ? edge.a : edge.b; // Other way around than above. This is the point which was connected by another loop iteration above.
+		uint16 pointToConnect = triangleBNew ? edge.a : edge.b; // Other way around than above. This is the point which was connected by another loop iteration above
 
 		uint16 otherEdgeIndex = newEdgePerPoint[pointToConnect];
 		epa_edge& otherEdge = edges[otherEdgeIndex];

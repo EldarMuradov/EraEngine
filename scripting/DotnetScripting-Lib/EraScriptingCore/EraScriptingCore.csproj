@@ -9,6 +9,7 @@
 	<OutputType>Exe</OutputType>
 	<EnableDynamicLoading>true</EnableDynamicLoading>
 	<PlatformTarget>x64</PlatformTarget>
+	<Configurations>Debug;Release;Release_NoOptim</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -21,6 +22,11 @@
     <Optimize>False</Optimize>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_NoOptim|AnyCPU'">
+    <IsAotCompatible>True</IsAotCompatible>
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
 		<IsAotCompatible>True</IsAotCompatible>
 	</PropertyGroup>
@@ -28,6 +34,11 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
 		<IsAotCompatible>True</IsAotCompatible>
 		<Optimize>False</Optimize>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_NoOptim|x64'">
+	  <IsAotCompatible>True</IsAotCompatible>
+	  <Optimize>False</Optimize>
 	</PropertyGroup>
 
 	<ItemGroup>

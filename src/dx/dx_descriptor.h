@@ -26,8 +26,6 @@ struct dx_cpu_descriptor_handle
 	dx_cpu_descriptor_handle(D3D12_CPU_DESCRIPTOR_HANDLE handle) : cpuHandle(handle) {}
 	dx_cpu_descriptor_handle(CD3DX12_DEFAULT) : cpuHandle(D3D12_DEFAULT) {}
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle;
-
 	inline operator CD3DX12_CPU_DESCRIPTOR_HANDLE() const { return cpuHandle; }
 	inline operator bool() const { return cpuHandle.ptr != 0; }
 
@@ -57,6 +55,8 @@ struct dx_cpu_descriptor_handle
 	dx_cpu_descriptor_handle& operator+=(uint32 i);
 	dx_cpu_descriptor_handle& operator++();
 	dx_cpu_descriptor_handle operator++(int);
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle;
 };
 
 struct dx_gpu_descriptor_handle
@@ -66,8 +66,6 @@ struct dx_gpu_descriptor_handle
 	dx_gpu_descriptor_handle(D3D12_GPU_DESCRIPTOR_HANDLE handle) : gpuHandle(handle) {}
 	dx_gpu_descriptor_handle(CD3DX12_DEFAULT) : gpuHandle(D3D12_DEFAULT) {}
 
-	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle;
-
 	inline operator CD3DX12_GPU_DESCRIPTOR_HANDLE() const { return gpuHandle; }
 	inline operator bool() const { return gpuHandle.ptr != 0; }
 
@@ -75,6 +73,8 @@ struct dx_gpu_descriptor_handle
 	dx_gpu_descriptor_handle& operator+=(uint32 i);
 	dx_gpu_descriptor_handle& operator++();
 	dx_gpu_descriptor_handle operator++(int);
+
+	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle;
 };
 
 struct dx_double_descriptor_handle : dx_cpu_descriptor_handle, dx_gpu_descriptor_handle
@@ -88,13 +88,13 @@ struct dx_rtv_descriptor_handle
 	dx_rtv_descriptor_handle(D3D12_CPU_DESCRIPTOR_HANDLE handle) : cpuHandle(handle) {}
 	dx_rtv_descriptor_handle(CD3DX12_DEFAULT) : cpuHandle(D3D12_DEFAULT) {}
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle;
-
 	inline operator CD3DX12_CPU_DESCRIPTOR_HANDLE() const { return cpuHandle; }
 	inline operator bool() const { return cpuHandle.ptr != 0; }
 
 	dx_rtv_descriptor_handle& create2DTextureRTV(const ref<dx_texture>& texture, uint32 arraySlice = 0, uint32 mipSlice = 0);
 	dx_rtv_descriptor_handle& createNullTextureRTV(DXGI_FORMAT format);
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle;
 };
 
 struct dx_dsv_descriptor_handle
@@ -104,10 +104,10 @@ struct dx_dsv_descriptor_handle
 	dx_dsv_descriptor_handle(D3D12_CPU_DESCRIPTOR_HANDLE handle) : cpuHandle(handle) {}
 	dx_dsv_descriptor_handle(CD3DX12_DEFAULT) : cpuHandle(D3D12_DEFAULT) {}
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle;
-
 	inline operator CD3DX12_CPU_DESCRIPTOR_HANDLE() const { return cpuHandle; }
 	inline operator bool() const { return cpuHandle.ptr != 0; }
 
 	dx_dsv_descriptor_handle& create2DTextureDSV(const ref<dx_texture>& texture, uint32 arraySlice = 0, uint32 mipSlice = 0);
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle;
 };

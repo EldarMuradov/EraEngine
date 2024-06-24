@@ -277,7 +277,7 @@ dx_pipeline createReloadablePipeline(const char* csFile, bool loadImmediately)
 	return result;
 }
 
-dx_pipeline createReloadablePipeline(const D3D12_PIPELINE_STATE_STREAM_DESC& desc, dx_pipeline_stream_base* stream, const graphics_pipeline_files& files, 
+dx_pipeline createReloadablePipeline(const D3D12_PIPELINE_STATE_STREAM_DESC& desc, dx_pipeline_stream_base* stream, const graphics_pipeline_files& files,
 	dx_root_signature userRootSignature, bool loadImmediately)
 {
 	auto& state = pipelines.emplace_back();
@@ -306,7 +306,7 @@ dx_pipeline createReloadablePipeline(const D3D12_PIPELINE_STATE_STREAM_DESC& des
 	return result;
 }
 
-dx_pipeline createReloadablePipeline(const D3D12_PIPELINE_STATE_STREAM_DESC& desc, dx_pipeline_stream_base* stream, const graphics_pipeline_files& files, 
+dx_pipeline createReloadablePipeline(const D3D12_PIPELINE_STATE_STREAM_DESC& desc, dx_pipeline_stream_base* stream, const graphics_pipeline_files& files,
 	rs_file rootSignatureFile, bool loadImmediately)
 {
 	pipelines.emplace_back();
@@ -425,6 +425,7 @@ static void handlePipelineChanges(const file_system_event& e)
 
 		if (isFile)
 		{
+			// Lock section
 			mutex.lock();
 			auto it = shaderBlobs.find(e.path.stem().string());
 			if (it != shaderBlobs.end())
@@ -461,7 +462,7 @@ static void handlePipelineChanges(const file_system_event& e)
 
 void checkForChangedPipelines()
 {
-	mutex.lock();
+	lock lock{ mutex };
 
 	for (uint32 i = 0; i < (uint32)dirtyRootSignatures.size(); ++i)
 	{
@@ -475,7 +476,6 @@ void checkForChangedPipelines()
 
 	dirtyRootSignatures.clear();
 	dirtyPipelines.clear();
-	mutex.unlock();
 }
 
 static void copyRootSignatureDesc(const D3D12_ROOT_SIGNATURE_DESC* desc, dx_root_signature& result)

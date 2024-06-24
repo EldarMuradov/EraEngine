@@ -61,7 +61,7 @@ void rigid_body_component::recalculateProperties(entt::registry* registry, const
 	}
 
 	invMass = 1.f / mass;
-	localCOGPosition = cog = cog * invMass; // TODO: Update linear velocity, since thats given at the COG.
+	localCOGPosition = cog = cog * invMass; // TODO: Update linear velocity, since thats given at the COG
 
 	for (uint32 i = 0; i < numColliders; ++i)
 	{

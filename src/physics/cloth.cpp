@@ -28,7 +28,7 @@ cloth_component::cloth_component(float width, float height, uint32 gridSizeX, ui
 
 	for (uint32 y = 0; y < gridSizeY; ++y)
 	{
-		float invMass = (y == 0) ? 0.f : invMassPerParticle; // Lock upper row.
+		float invMass = (y == 0) ? 0.f : invMassPerParticle; // Lock upper row
 
 		for (uint32 x = 0; x < gridSizeX; ++x)
 		{
@@ -48,13 +48,13 @@ cloth_component::cloth_component(float width, float height, uint32 gridSizeX, ui
 		{
 			uint32 index = y * gridSizeX + x;
 
-			// Stretch constraints: direct right and bottom neighbor.
+			// Stretch constraints: direct right and bottom neighbor
 			if (x < gridSizeX - 1)
 				addConstraint(index, index + 1);
 			if (y < gridSizeY - 1)
 				addConstraint(index, index + gridSizeX);
 
-			// Shear constraints: direct diagonal neighbor.
+			// Shear constraints: direct diagonal neighbor
 			if (x < gridSizeX - 1 && y < gridSizeY - 1)
 			{
 				addConstraint(index, index + gridSizeX + 1);
@@ -101,7 +101,7 @@ void cloth_component::setWorldPositionOfFixedVertices(const trs& transform, bool
 		}
 	}
 
-	// Currently the top row is fixed, so transform this.
+	// Currently the top row is fixed, so transform this
 	for (uint32 x = 0; x < gridSizeX; ++x)
 	{
 		float relX = x / (float)(gridSizeX - 1);
@@ -204,7 +204,7 @@ void cloth_component::simulate(uint32 velocityIterations, uint32 positionIterati
 
 	float invDt = (dt > 1e-5f) ? (1.f / dt) : 1.f;
 	
-	// Solve velocities.
+	// Solve velocities
 	if (velocityIterations > 0)
 	{
 		std::vector<cloth_constraint_temp> constraintsTemp;
@@ -232,7 +232,7 @@ void cloth_component::simulate(uint32 velocityIterations, uint32 positionIterati
 		}
 	}
 
-	// Solve positions.
+	// Solve positions
 	if (positionIterations > 0)
 	{
 		for (uint32 it = 0; it < positionIterations; ++it)
@@ -246,7 +246,7 @@ void cloth_component::simulate(uint32 velocityIterations, uint32 positionIterati
 		}
 	}
 
-	// Solve drift.
+	// Solve drift
 	if (driftIterations > 0)
 	{
 		for (uint32 i = 0; i < numParticles; ++i)
@@ -265,7 +265,7 @@ void cloth_component::simulate(uint32 velocityIterations, uint32 positionIterati
 		}
 	}
 
-	// Damping.
+	// Damping
 	float dampingFactor = 1.f / (1.f + dt * damping);
 	for (uint32 i = 0; i < numParticles; ++i)
 	{

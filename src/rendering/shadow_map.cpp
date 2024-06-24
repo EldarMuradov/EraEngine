@@ -82,7 +82,7 @@ static dx_pipeline doubleSidedPointLightShadowPipeline;
 
 void initializeShadowPipelines()
 {
-	auto desc = CREATE_GRAPHICS_PIPELINE
+	auto& desc = CREATE_GRAPHICS_PIPELINE
 		.renderTargets(0, 0, shadowDepthFormat)
 		.inputLayout(inputLayout_position);
 

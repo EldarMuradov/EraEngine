@@ -27,14 +27,6 @@ private:
 
 	struct alignas(16) entry_header
 	{
-		toggle_func toggle;
-
-		entry_header* newer;
-		entry_header* older;
-
-		uint64 nameLength; // Includes null-terminator.
-		uint64 entrySize;
-
 		NODISCARD char* getName() const
 		{
 			return (char*)(this + 1);
@@ -49,6 +41,14 @@ private:
 		{
 			return (uint8*)getData() + entrySize;
 		}
+
+		toggle_func toggle;
+
+		entry_header* newer;
+		entry_header* older;
+
+		uint64 nameLength; // Includes null-terminator.
+		uint64 entrySize;
 	};
 
 	uint8* memory = nullptr;

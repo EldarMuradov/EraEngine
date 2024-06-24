@@ -45,28 +45,28 @@ void* eallocator::allocate(uint64 size, uint64 alignment, bool clearToZero) noex
 	if (size == 0)
 		return 0;
 
-	mutex.lock();
+	uint8* result = nullptr;
+	{
+		lock lock { mutex };
+		uint64 mask = alignment - 1;
+		uint64 misalignment = current & mask;
+		uint64 adjustment = (misalignment == 0) ? 0 : (alignment - misalignment);
+		current += adjustment;
 
-	uint64 mask = alignment - 1;
-	uint64 misalignment = current & mask;
-	uint64 adjustment = (misalignment == 0) ? 0 : (alignment - misalignment);
-	current += adjustment;
+		sizeLeftCurrent -= adjustment;
+		sizeLeftTotal -= adjustment;
 
-	sizeLeftCurrent -= adjustment;
-	sizeLeftTotal -= adjustment;
+		ASSERT(sizeLeftTotal >= size);
 
-	ASSERT(sizeLeftTotal >= size);
+		ensureFreeSizeInternal(size);
 
-	ensureFreeSizeInternal(size);
+		result = memory + current;
+		current += size;
+		sizeLeftCurrent -= size;
+		sizeLeftTotal -= size;
+	}
 
-	uint8* result = memory + current;
-	current += size;
-	sizeLeftCurrent -= size;
-	sizeLeftTotal -= size;
-
-	mutex.unlock();
-
-	if (clearToZero)
+	if (clearToZero && result)
 		memset(result, 0, size);
 
 	return result;

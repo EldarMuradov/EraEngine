@@ -129,10 +129,11 @@ private:
 	voice_callback voiceCallback;
 
 	HANDLE threadHandle = INVALID_HANDLE_VALUE;
-	friend DWORD WINAPI streamFileAudio(void* parameter);
-	friend DWORD WINAPI streamSynthAudio(void* parameter);
 
 	HANDLE bufferEndSemaphore;
 
 	bool threadStopped = true;
+
+	friend DWORD WINAPI streamFileAudio(void* parameter);
+	friend DWORD WINAPI streamSynthAudio(void* parameter);
 };

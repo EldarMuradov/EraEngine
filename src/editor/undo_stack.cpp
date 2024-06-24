@@ -185,7 +185,6 @@ bool undo_stack::showHistory(bool& open)
 				direction = -1;
 			}
 
-
 			for (entry_header* entry = oldest; entry; entry = entry->newer)
 			{
 				ImGui::PushID(entry);

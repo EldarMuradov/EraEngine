@@ -67,7 +67,7 @@ void initializeLightProbePipelines()
 		return;
 
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			.inputLayout(inputLayout_position)
 			.renderTargets(hdrFormat, depthStencilFormat);
 
@@ -75,7 +75,7 @@ void initializeLightProbePipelines()
 	}
 
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			.primitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE)
 			.renderTargets(hdrFormat, depthStencilFormat);
 
@@ -83,7 +83,7 @@ void initializeLightProbePipelines()
 	}
 
 	{
-		auto desc = CREATE_GRAPHICS_PIPELINE
+		auto& desc = CREATE_GRAPHICS_PIPELINE
 			.inputLayout(inputLayout_position)
 			.renderTargets(hdrFormat, depthStencilFormat);
 

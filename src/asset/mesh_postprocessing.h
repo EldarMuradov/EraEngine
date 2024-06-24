@@ -46,9 +46,6 @@ static bool operator==(const full_vertex& a, const full_vertex& b)
 
 struct per_material
 {
-	std::unordered_map<full_vertex, uint16> vertexToIndex;
-	submesh_asset sub;
-
 	void addTriangles(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals,
 		const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<skinning_weights>& skins,
 		int32 firstIndex, int32 faceSize, std::vector<submesh_asset>& outSubmeshes)
@@ -89,6 +86,9 @@ struct per_material
 			vertexToIndex.clear();
 		}
 	}
+
+	std::unordered_map<full_vertex, uint16> vertexToIndex;
+	submesh_asset sub;
 
 private:
 	struct add_vertex_result

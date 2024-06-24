@@ -6,7 +6,7 @@
 #include "dx_texture.h"
 #include "dx_buffer.h"
 
-inline uint32 getShader4ComponentMapping(DXGI_FORMAT format)
+inline constexpr uint32 getShader4ComponentMapping(DXGI_FORMAT format)
 {
 	switch (getNumberOfChannels(format))
 	{

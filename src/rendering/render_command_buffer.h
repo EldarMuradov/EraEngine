@@ -24,9 +24,6 @@ private:
 		virtual ~command_wrapper_base() {}
 	};
 
-	std::vector<command_key> keys;
-	eallocator arena;
-
 	template <typename pipeline_t, typename command_t>
 	command_t& pushInternal(key_t sortKey)
 	{
@@ -47,6 +44,9 @@ private:
 		keys.push_back(key);
 		return commandWrapper->command;
 	}
+
+	std::vector<command_key> keys;
+	eallocator arena;
 
 public:
 	render_command_buffer()
@@ -124,9 +124,6 @@ struct default_command_header
 {
 	typedef void (*generic_pipeline_render_func)(dx_command_list*, const mat4&, void*);
 
-	pipeline_setup_func setup;
-	generic_pipeline_render_func render;
-
 	template <typename pipeline_t, typename command_wrapper>
 	void initialize()
 	{
@@ -137,6 +134,9 @@ struct default_command_header
 			pipeline_t::render(cl, viewProj, wrapper->command);
 		};
 	}
+
+	pipeline_setup_func setup;
+	generic_pipeline_render_func render;
 };
 
 template <typename key_t>
@@ -145,9 +145,6 @@ struct default_render_command_buffer : render_command_buffer<key_t, default_comm
 struct depth_prepass_command_header
 {
 	typedef void (*generic_pipeline_render_func)(dx_command_list*, const mat4&, const mat4&, void*);
-
-	pipeline_setup_func setup;
-	generic_pipeline_render_func render;
 
 	template <typename pipeline_t, typename command_wrapper>
 	void initialize()
@@ -159,6 +156,9 @@ struct depth_prepass_command_header
 			pipeline_t::render(cl, viewProj, prevFrameViewProj, wrapper->command);
 		};
 	}
+
+	pipeline_setup_func setup;
+	generic_pipeline_render_func render;
 };
 
 template <typename key_t>
@@ -167,8 +167,6 @@ struct depth_prepass_render_command_buffer : render_command_buffer<key_t, depth_
 struct compute_command_header
 {
 	typedef void (*generic_compute_func)(dx_command_list*, void*);
-
-	generic_compute_func compute;
 
 	template <typename pipeline_t, typename command_wrapper>
 	void initialize()
@@ -179,6 +177,8 @@ struct compute_command_header
 			pipeline_t::compute(cl, wrapper->command);
 		};
 	}
+
+	generic_compute_func compute;
 };
 
 template <typename key_t>

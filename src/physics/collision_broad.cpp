@@ -10,13 +10,13 @@
 
 struct sap_endpoint
 {
+	sap_endpoint(entity_handle entity, bool start) : entity(entity), start(start) { }
+	sap_endpoint(const sap_endpoint&) = default;
+
 	float value;
 	entity_handle entity = entt::null;
 	bool start;
-	uint16 colliderIndex; // Set each frame.
-
-	sap_endpoint(entity_handle entity, bool start) : entity(entity), start(start) { }
-	sap_endpoint(const sap_endpoint&) = default;
+	uint16 colliderIndex; // Set each frame
 };
 
 struct sap_context
@@ -24,7 +24,6 @@ struct sap_context
 	std::vector<sap_endpoint> endpoints;
 	uint32 sortingAxis = 0;
 };
-
 
 void addColliderToBroadphase(eentity entity)
 {
@@ -46,7 +45,7 @@ static void removeEndpoint(uint16 endpointIndex, entt::registry& registry, sap_c
 	sap_endpoint last = context.endpoints.back();
 	context.endpoints[endpointIndex] = last;
 
-	// Point moved entity to correct slot.
+	// Point moved entity to correct slot
 	sap_endpoint_indirection_component& in = registry.get<sap_endpoint_indirection_component>(last.entity);
 		
 	if (last.start) 
@@ -95,8 +94,7 @@ static uint32 determineOverlapsScalar(const sap_endpoint* endpoints, uint32 numE
 
 #define CACHE_AABBS 1
 
-
-	uint32 activeListCapacity = numColliders; // Conservative estimate.
+	uint32 activeListCapacity = numColliders; // Conservative estimate
 
 	uint32 numActive = 0;
 	uint16* activeList = arena.allocate<uint16>(activeListCapacity);
@@ -256,7 +254,6 @@ static uint32 determineOverlapsSIMD(const sap_endpoint* endpoints, uint32 numEnd
 			outBB.maxY[outBBSlot] = a.maxCorner.y;
 			outBB.maxZ[outBBSlot] = a.maxCorner.z;
 
-
 			activeList[numActive++] = ep.colliderIndex;
 
 			maxNumActive = max(maxNumActive, numActive);
@@ -313,7 +310,7 @@ uint32 broadphase(escene& scene, bounding_box* worldSpaceAABBs, eallocator& aren
 	uint32 numCollisions = 0;
 
 #if 0
-	// Disable broadphase.
+	// Disable broadphase
 
 	uint16 collider0Index = 0;
 	for (auto [entityHandle0, collider0] : scene.view<collider_component>().each())
@@ -348,8 +345,8 @@ uint32 broadphase(escene& scene, bounding_box* worldSpaceAABBs, eallocator& aren
 	{
 		CPU_PROFILE_BLOCK("Update endpoints");
 
-		// Index of each collider in the scene. 
-		// We iterate over the endpoint indirections, which are sorted the exact same way as the colliders.
+		// Index of each collider in the scene
+		// We iterate over the endpoint indirections, which are sorted the exact same way as the colliders
 		uint16 index = 0;
 
 		for (auto [entityHandle, indirection] : scene.view<sap_endpoint_indirection_component>().each())
@@ -382,7 +379,7 @@ uint32 broadphase(escene& scene, bounding_box* worldSpaceAABBs, eallocator& aren
 		CPU_PROFILE_BLOCK("Sort endpoints");
 
 #if 1
-		// Insertion sort.
+		// Insertion sort
 		for (uint32 i = 1; i < numEndpoints; ++i)
 		{
 			sap_endpoint key = endpoints[i];
@@ -413,7 +410,7 @@ uint32 broadphase(escene& scene, bounding_box* worldSpaceAABBs, eallocator& aren
 
 	arena.resetToMarker(marker);
 
-	// Fix up indirections.
+	// Fix up indirections
 	{
 		CPU_PROFILE_BLOCK("Fix up indirections");
 
@@ -433,7 +430,6 @@ uint32 broadphase(escene& scene, bounding_box* worldSpaceAABBs, eallocator& aren
 			}
 		}
 	}
-
 
 	vec3 variance = s2 - s * s / (float)numColliders;
 	context.sortingAxis = (variance.x > variance.y) ? ((variance.x > variance.z) ? 0 : 2) : ((variance.y > variance.z) ? 1 : 2);

@@ -6,18 +6,16 @@
 
 struct sphere_support_fn
 {
-	const bounding_sphere& s;
-
 	vec3 operator()(vec3 dir) const
 	{
 		return normalize(dir) * s.radius + s.center;
 	}
+
+	const bounding_sphere& s;
 };
 
 struct capsule_support_fn
 {
-	const bounding_capsule& c;
-
 	vec3 operator()(const vec3& dir) const
 	{
 		float distA = dot(dir, c.positionA);
@@ -25,12 +23,12 @@ struct capsule_support_fn
 		vec3 fartherPoint = distA > distB ? c.positionA : c.positionB;
 		return normalize(dir) * c.radius + fartherPoint;
 	}
+
+	const bounding_capsule& c;
 };
 
 struct cylinder_support_fn
 {
-	const bounding_cylinder& c;
-
 	vec3 operator()(const vec3& dir) const
 	{
 		float distA = dot(dir, c.positionA);
@@ -42,12 +40,12 @@ struct cylinder_support_fn
 		vec3 projectedDir = noz(cross(cross(n, dir), n));
 		return fartherPoint + projectedDir * c.radius;
 	}
+
+	const bounding_cylinder& c;
 };
 
 struct aabb_support_fn
 {
-	const bounding_box& b;
-
 	vec3 operator()(vec3 dir) const
 	{
 		return vec3(
@@ -56,12 +54,12 @@ struct aabb_support_fn
 			(dir.z < 0.f) ? b.minCorner.z : b.maxCorner.z
 		);
 	}
+
+	const bounding_box& b;
 };
 
 struct obb_support_fn
 {
-	const bounding_oriented_box& b;
-
 	vec3 operator()(vec3 dir) const
 	{
 		dir = conjugate(b.rotation) * dir;
@@ -73,12 +71,12 @@ struct obb_support_fn
 
 		return b.center + b.rotation * r;
 	}
+
+	const bounding_oriented_box& b;
 };
 
 struct hull_support_fn
 {
-	const bounding_hull& h;
-
 	vec3 operator()(vec3 dir) const
 	{
 		dir = conjugate(h.rotation) * dir;
@@ -98,6 +96,8 @@ struct hull_support_fn
 
 		return h.position + h.rotation * result;
 	};
+
+	const bounding_hull& h;
 };
 
 union extruded_triangle_support_fn
@@ -107,7 +107,6 @@ union extruded_triangle_support_fn
 		vec3 a, b, c;
 		vec3 d, e, f;
 	};
-	vec3 points[6];
 
 	extruded_triangle_support_fn(vec3 a, vec3 b, vec3 c, float extrusion = 10.f)
 		: a(a), b(b), c(c),
@@ -133,14 +132,12 @@ union extruded_triangle_support_fn
 
 		return result;
 	}
+
+	vec3 points[6];
 };
 
 struct gjk_support_point
 {
-	vec3 shapeAPoint;
-	vec3 shapeBPoint;
-	vec3 minkowski;
-
 	gjk_support_point()
 	{
 	}
@@ -151,6 +148,10 @@ struct gjk_support_point
 		shapeBPoint = b;
 		minkowski = a - b;
 	}
+
+	vec3 shapeAPoint;
+	vec3 shapeBPoint;
+	vec3 minkowski;
 };
 
 struct gjk_simplex
@@ -181,7 +182,7 @@ enum gjk_internal_success
 };
 
 template <typename shapeA_t, typename shapeB_t>
-NODISCARD static bool gjkIntersectionTest(const shapeA_t& shapeA, const shapeB_t& shapeB, gjk_simplex& outSimplex)
+static bool gjkIntersectionTest(const shapeA_t& shapeA, const shapeB_t& shapeB, gjk_simplex& outSimplex)
 {
 	gjk_internal_success updateGJKSimplex(gjk_simplex& s, const gjk_support_point& a, vec3& dir);
 

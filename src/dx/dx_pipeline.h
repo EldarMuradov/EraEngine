@@ -32,8 +32,6 @@ dx_command_signature createCommandSignature(dx_root_signature rootSignature, D3D
 
 struct dx_graphics_pipeline_generator
 {
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC desc;
-
 	operator const D3D12_GRAPHICS_PIPELINE_STATE_DESC& () const
 	{
 		return desc;
@@ -238,6 +236,8 @@ struct dx_graphics_pipeline_generator
 		desc.SampleDesc = { count, quality };
 		return *this;
 	}
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC desc;
 };
 
 struct root_descriptor_table : CD3DX12_ROOT_PARAMETER

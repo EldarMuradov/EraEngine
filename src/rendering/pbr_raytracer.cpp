@@ -62,7 +62,7 @@ NODISCARD raytracing_object_type pbr_raytracer::defineObjectType(const ref<raytr
 
     shader_data* hitData = (shader_data*)alloca(sizeof(shader_data) * numRayTypes);
 
-    mutex.lock();
+    lock lock { mutex };
 
     for (uint32 i = 0; i < numGeometries; ++i)
     {
@@ -111,8 +111,6 @@ NODISCARD raytracing_object_type pbr_raytracer::defineObjectType(const ref<raytr
     {
         rt->dirty = true;
     }
-
-    mutex.unlock();
 
     return result;
 }

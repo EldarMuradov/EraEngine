@@ -6,7 +6,7 @@
 
 struct constraint_offsets
 {
-	// Must be in order.
+	// Must be in order
 	uint32 constraintOffsets[constraint_type_count];
 };
 

@@ -386,7 +386,7 @@ static ref<mesh_shader_mesh> loadMeshShaderMeshFromFile(const char* filename)
 		return 0; // Version mismatch between export and import serialization code
 	}
 
-	// Read mesh metdata.
+	// Read mesh metdata
 	meshHeaders.resize(header.meshCount);
 	stream.read((char*)meshHeaders.data(), meshHeaders.size() * sizeof(meshHeaders[0]));
 
@@ -422,7 +422,7 @@ static ref<mesh_shader_mesh> loadMeshShaderMeshFromFile(const char* filename)
 		mesh_shader_submesh_info& sm = submeshes[i];
 
 #if 0
-		// Index data.
+		// Index data
 		{
 			buffer_accessor& accessor = accessors[meshView.indices];
 			buffer_view& bufferView = bufferViews[accessor.bufferView];
@@ -440,7 +440,7 @@ static ref<mesh_shader_mesh> loadMeshShaderMeshFromFile(const char* filename)
 #endif
 
 #if 0
-		// Index Subset data.
+		// Index Subset data
 		{
 			buffer_accessor& accessor = accessors[meshView.indexSubsets];
 			buffer_view& bufferView = bufferViews[accessor.bufferView];

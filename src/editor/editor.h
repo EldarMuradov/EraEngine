@@ -32,9 +32,6 @@ private:
 		template <typename T> inline T& as() { return *(T*)before; }
 	};
 
-	eentity selectedColliderEntity;
-	eentity selectedConstraintEntity;
-
 	void forceStart();
 	void forcePause();
 	void forceStop();
@@ -45,6 +42,7 @@ private:
 	void renderChilds(eentity& entity);
 	bool handleUserInput(const user_input& input, ldr_render_pass* ldrRenderPass, float dt);
 	bool drawEntityCreationPopup();
+	void drawPhysicsShapes(ldr_render_pass* renderPass);
 
 	void updateSelectedEntityUIRotation();
 
@@ -69,6 +67,9 @@ private:
 	template <typename value_t, typename action_t, typename... args_t>
 	void undoable(const char* undoLabel, value_t before, value_t& now, args_t... args);
 
+	eentity selectedColliderEntity;
+	eentity selectedConstraintEntity;
+
 	editor_scene* scene = nullptr;
 	main_renderer* renderer = nullptr;
 	editor_panels* editorPanels = nullptr;
@@ -83,13 +84,12 @@ private:
 
 	transformation_gizmo gizmo;
 
-	float physicsTestForce = 1000.f;
-
 	camera_controller cameraController;
 
 	vec3 selectedEntityEulerRotation;
 
 	system_info systemInfo;
+	bool renderPhysicsShapes = false;
 
 	friend struct selection_undo;
 	friend struct application;

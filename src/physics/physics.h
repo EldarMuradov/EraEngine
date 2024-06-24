@@ -41,7 +41,7 @@ static_assert(arraysize(physicsMaterialTypeNames) == physics_material_type_count
 
 struct physics_material
 {
-	physics_material_type type; // Currently only used for sound selection.
+	physics_material_type type; // Currently only used for sound selection
 
 	float restitution;
 	float friction;
@@ -60,7 +60,7 @@ enum physics_object_type : uint8
 
 enum collider_type : uint8
 {
-	// The order here is important. See collision_narrow.cpp.
+	// The order here is important. See collision_narrow.cpp
 	collider_type_sphere,
 	collider_type_capsule,
 	collider_type_cylinder,
@@ -86,7 +86,7 @@ static_assert(arraysize(colliderTypeNames) == collider_type_count, "Missing coll
 struct collider_union
 {
 	collider_union() {}
-	NODISCARD physics_properties calculatePhysicsProperties();
+	physics_properties calculatePhysicsProperties();
 
 	union
 	{
@@ -102,7 +102,7 @@ struct collider_union
 
 	collider_type type;
 
-	// These two are only used internally and should not be read outside.
+	// These two are only used internally and should not be read outside
 	physics_object_type objectType;
 	uint16 objectIndex; // Depending on objectType: Rigid body index, force field index, ...
 };
@@ -172,7 +172,7 @@ struct collider_component : collider_union
 
 	collider_component() = default;
 
-	// Set by scene on component creation.
+	// Set by scene on component creation
 	entity_handle parentEntity;
 	entity_handle nextEntity;
 };
@@ -220,19 +220,19 @@ struct hinge_constraint_handle { entity_handle entity; };
 struct cone_twist_constraint_handle { entity_handle entity; };
 struct slider_constraint_handle { entity_handle entity; };
 
-// Local anchors are always in the space of the entities.
+// Local anchors are always in the space of the entities
 distance_constraint_handle addDistanceConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB, float distance);
-distance_constraint_handle addDistanceConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchorA, vec3 globalAnchorB); // Calculates distance from current configuration.
+distance_constraint_handle addDistanceConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchorA, vec3 globalAnchorB); // Calculates distance from current configuration
 
 ball_constraint_handle addBallConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB);
-ball_constraint_handle addBallConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
+ball_constraint_handle addBallConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration
 
-fixed_constraint_handle addFixedConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration.
+fixed_constraint_handle addFixedConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor); // Calculates local anchors from current configuration
 
-// The min limit is in the range [-pi, 0], the max limit in the range [0, pi]. 
-// If the specified values are not in this range, the limits are disabled.
-// Limits are specified as allowed deviations from the initial relative rotation.
-// Usually the absolute of each limit should be a lot smaller than pi.
+// The min limit is in the range [-pi, 0], the max limit in the range [0, pi]
+// If the specified values are not in this range, the limits are disabled
+// Limits are specified as allowed deviations from the initial relative rotation
+// Usually the absolute of each limit should be a lot smaller than pi
 hinge_constraint_handle addHingeConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalHingeAxis,
 	float minLimit = 1.f, float maxLimit = -1.f);
 
@@ -341,16 +341,16 @@ struct constraint_entity_iterator
 struct contact_info
 {
 	vec3 point;
-	float penetrationDepth; // Positive.
+	float penetrationDepth; // Positive
 };
 
 struct collision_contact
 {
-	// Don't change the order here.
+	// Don't change the order here
 	vec3 point;
 	float penetrationDepth;
 	vec3 normal;
-	uint32 friction_restitution; // Packed as 16 bit int each. The packing makes it more convenient for the SIMD code to load the contact data.
+	uint32 friction_restitution; // Packed as 16 bit int each. The packing makes it more convenient for the SIMD code to load the contact data
 };
 
 struct collision_begin_event

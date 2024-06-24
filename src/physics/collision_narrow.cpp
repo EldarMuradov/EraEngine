@@ -39,7 +39,7 @@ struct contact_manifold
 {
 	contact_info contacts[4];
 
-	vec3 collisionNormal; // From a to b.
+	vec3 collisionNormal; // From a to b
 	uint32 numContacts;
 };
 
@@ -55,7 +55,7 @@ static void findStableContactManifold(vertex_penetration_pair* vertices, uint32 
 {
 	if (numVertices > 4)
 	{
-		// Find first vertex along some fixed distance.
+		// Find first vertex along some fixed distance
 		vec3 searchDir = getTangent(normal);
 		float bestDistance = dot(searchDir, vertices[0].vertex);
 		uint32 resultIndex = 0;
@@ -72,7 +72,7 @@ static void findStableContactManifold(vertex_penetration_pair* vertices, uint32 
 		outContact.contacts[0].penetrationDepth = vertices[resultIndex].penetrationDepth;
 		outContact.contacts[0].point = vertices[resultIndex].vertex;
 
-		// Find second point which is furthest away from first.
+		// Find second point which is furthest away from first
 		bestDistance = 0.f;
 		resultIndex = 0;
 		for (uint32 i = 0; i < numVertices; ++i)
@@ -88,7 +88,7 @@ static void findStableContactManifold(vertex_penetration_pair* vertices, uint32 
 		outContact.contacts[1].penetrationDepth = vertices[resultIndex].penetrationDepth;
 		outContact.contacts[1].point = vertices[resultIndex].vertex;
 
-		// Find third point which maximizes the area of the resulting triangle.
+		// Find third point which maximizes the area of the resulting triangle
 		float bestArea = 0.f;
 		resultIndex = 0;
 		for (uint32 i = 0; i < numVertices; ++i)
@@ -106,7 +106,7 @@ static void findStableContactManifold(vertex_penetration_pair* vertices, uint32 
 		outContact.contacts[2].penetrationDepth = vertices[resultIndex].penetrationDepth;
 		outContact.contacts[2].point = vertices[resultIndex].vertex;
 
-		// Find fourth point.
+		// Find fourth point
 		bestArea = 0.f;
 		resultIndex = 0;
 		for (uint32 i = 0; i < numVertices; ++i)
@@ -158,7 +158,7 @@ static vertex_penetration_pair clipAgainstPlane(vertex_penetration_pair a, verte
 	return { lerp(a.vertex, b.vertex, t), lerp(a.penetrationDepth, b.penetrationDepth, t) };
 }
 
-// Planes must point inside.
+// Planes must point inside
 static void sutherlandHodgmanClipping(clipping_polygon& input, const vec4* clipPlanes, uint32 numClipPlanes, clipping_polygon& output)
 {
 	clipping_polygon* in = &input;
@@ -217,7 +217,7 @@ static void sutherlandHodgmanClipping(clipping_polygon& input, const vec4* clipP
 	}
 }
 
-// Returns points and normals in AABB's local space. The caller must transform them to world space if needed.
+// Returns points and normals in AABB's local space. The caller must transform them to world space if needed
 static void getAABBClippingPlanes(vec3 aabbRadius, vec3 normal, vec3* clipPlanePoints, vec3* clipPlaneNormals)
 {
 	vec3 p = abs(normal);
@@ -249,13 +249,13 @@ static void getAABBClippingPlanes(vec3 aabbRadius, vec3 normal, vec3* clipPlaneP
 	}
 }
 
-// Returns points in AABB's local space. The caller must transform them to world space if needed.
+// Returns points in AABB's local space. The caller must transform them to world space if needed
 static void getAABBIncidentVertices(vec3 aabbRadius, vec3 normal, clipping_polygon& polygon)
 {
 	vec3 p = abs(normal);
 
 	uint32 maxElement = (p.x > p.y) ? ((p.x > p.z) ? 0 : 2) : ((p.y > p.z) ? 1 : 2);
-	float s = normal.data[maxElement] < 0.f ? 1.f : -1.f; // Flipped sign.
+	float s = normal.data[maxElement] < 0.f ? 1.f : -1.f; // Flipped sign
 
 	uint32 axis0 = (maxElement + 1) % 3;
 	uint32 axis1 = (maxElement + 2) % 3;
@@ -331,7 +331,7 @@ static void getAABBIncidentEdge(vec3 aabbRadius, vec3 normal, vec3& outA, vec3& 
 	outB *= vec3(sx, sy, sz);
 }
 
-// Expects that normal and tangents are already set in contact.
+// Expects that normal and tangents are already set in contact
 static bool clipPointsAndBuildContact(clipping_polygon& polygon, const vec4* clipPlanes, uint32 numClipPlanes, const vec4& referencePlane, contact_manifold& outContact)
 {
 	clipping_polygon clippedPolygon;
@@ -339,7 +339,7 @@ static bool clipPointsAndBuildContact(clipping_polygon& polygon, const vec4* cli
 
 	if (clippedPolygon.numPoints > 0)
 	{
-		// Project onto plane and remove everything below plane.
+		// Project onto plane and remove everything below plane
 		for (uint32 i = 0; i < clippedPolygon.numPoints; ++i)
 		{
 			if (clippedPolygon.points[i].penetrationDepth < 0.f)
@@ -364,7 +364,7 @@ static bool clipPointsAndBuildContact(clipping_polygon& polygon, const vec4* cli
 	return false;
 }
 
-// Sphere tests.
+// Sphere tests
 static bool intersection(const bounding_sphere& s1, const bounding_sphere& s2, contact_manifold& outContact)
 {
 	vec3 n = s2.center - s1.center;
@@ -373,10 +373,10 @@ static bool intersection(const bounding_sphere& s1, const bounding_sphere& s2, c
 	if (sqDistance <= radiusSum * radiusSum)
 	{
 		float distance;
-		if (sqDistance == 0.f) // Degenerate case.
+		if (sqDistance == 0.f) // Degenerate case
 		{
 			distance = 0.f;
-			outContact.collisionNormal = vec3(0.f, 1.f, 0.f); // Up.
+			outContact.collisionNormal = vec3(0.f, 1.f, 0.f); // Up
 		}
 		else
 		{
@@ -385,7 +385,7 @@ static bool intersection(const bounding_sphere& s1, const bounding_sphere& s2, c
 		}
 
 		outContact.numContacts = 1;
-		outContact.contacts[0].penetrationDepth = radiusSum - distance; // Flipped to change sign.
+		outContact.contacts[0].penetrationDepth = radiusSum - distance; // Flipped to change sign
 		ASSERT(outContact.contacts[0].penetrationDepth >= 0.f);
 		outContact.contacts[0].point = 0.5f * (s1.center + s1.radius * outContact.collisionNormal + s2.center - s2.radius * outContact.collisionNormal);
 		return true;
@@ -416,16 +416,16 @@ static bool intersection(const bounding_sphere& s, const bounding_cylinder& c, c
 	vec3 endB = p - projectedDirToCenter * c.radius;
 
 	vec3 closestToSphere = closestPoint_PointSegment(s.center, line_segment{ endA, endB });
-	vec3 normal = closestToSphere - s.center; // From sphere to cylinder.
+	vec3 normal = closestToSphere - s.center; // From sphere to cylinder
 	float sqDistance = squaredLength(normal);
 
 	if (sqDistance <= s.radius * s.radius)
 	{
 		float distance;
-		if (sqDistance == 0.f) // Degenerate case.
+		if (sqDistance == 0.f) // Degenerate case
 		{
 			distance = 0.f;
-			outContact.collisionNormal = -normalize(up); // Flipped, so that from sphere to cylinder.
+			outContact.collisionNormal = -normalize(up); // Flipped, so that from sphere to cylinder
 		}
 		else
 		{
@@ -463,7 +463,7 @@ static bool intersection(const bounding_sphere& s, const bounding_box& a, contac
 		outContact.numContacts = 1;
 
 		outContact.collisionNormal = n;
-		outContact.contacts[0].penetrationDepth = s.radius - dist; // Flipped to change sign.
+		outContact.contacts[0].penetrationDepth = s.radius - dist; // Flipped to change sign
 		outContact.contacts[0].point = 0.5f * (p + s.center + n * s.radius);
 
 		return true;
@@ -513,7 +513,7 @@ static bool intersection(const bounding_sphere& s, const bounding_hull& h, conta
 	return true;
 }
 
-// Capsule tests.
+// Capsule tests
 static bool intersection(const bounding_capsule& a, const bounding_capsule& b, contact_manifold& outContact)
 {
 	vec3 aDir = a.positionB - a.positionA;
@@ -525,7 +525,7 @@ static bool intersection(const bounding_capsule& a, const bounding_capsule& b, c
 	float parallel = dot(aDir, bDir);
 	if (abs(parallel) > 0.99f)
 	{
-		// Parallel case.
+		// Parallel case
 
 		vec3 pAa = a.positionA;
 		vec3 pAb = a.positionB;
@@ -616,7 +616,7 @@ static bool intersection(const bounding_capsule& a, const bounding_cylinder& b, 
 	float parallel = dot(aDir, bDir);
 	if (abs(parallel) > 0.99f)
 	{
-		// Parallel case.
+		// Parallel case
 
 		vec3 pAa = a.positionA;
 		vec3 pAb = a.positionB;
@@ -724,12 +724,12 @@ static bool intersection(const bounding_capsule& c, const bounding_box& a, conta
 
 	if (abs(normal.x) > 0.99f || abs(normal.y) > 0.99f || abs(normal.z) > 0.99f)
 	{
-		// Probably AABB face.
+		// Probably AABB face
 
 		vec3 axis = normalize(c.positionB - c.positionA);
 		if (abs(dot(normal, axis)) < 0.01f)
 		{
-			// Capsule is parallel to AABB face (perpendicular to normal).
+			// Capsule is parallel to AABB face (perpendicular to normal)
 
 			vec3 clipPlanePoints[4];
 			vec3 clipPlaneNormals[4];
@@ -785,7 +785,7 @@ static bool intersection(const bounding_capsule& c, const bounding_oriented_box&
 
 static bool intersection(const bounding_capsule& c, const bounding_hull& h, contact_manifold& outContact)
 {
-	// TODO: Handle multiple-contact-points case.
+	// TODO: Handle multiple-contact-points case
 
 	capsule_support_fn capsuleSupport{ c };
 	hull_support_fn hullSupport{ h };
@@ -811,7 +811,7 @@ static bool intersection(const bounding_capsule& c, const bounding_hull& h, cont
 	return true;
 }
 
-// Cylinder tests.
+// Cylinder tests
 static bool intersection(const bounding_cylinder& a, const bounding_cylinder& b, contact_manifold& outContact)
 {
 	vec3 aDir = a.positionB - a.positionA;
@@ -823,7 +823,7 @@ static bool intersection(const bounding_cylinder& a, const bounding_cylinder& b,
 	float parallel = dot(aDir, bDir);
 	if (abs(parallel) > 0.99f)
 	{
-		// Parallel case.
+		// Parallel case
 
 		vec3 pAa = a.positionA;
 		vec3 pAb = a.positionB;
@@ -874,26 +874,26 @@ static bool intersection(const bounding_cylinder& a, const bounding_cylinder& b,
 
 		if (capPenetration < penetration)
 		{
-			// Cylinders touch cap to cap. TODO: Find stable contact manifold.
+			// Cylinders touch cap to cap. TODO: Find stable contact manifold
 			outContact.numContacts = 1;
 			outContact.contacts[0].penetrationDepth = capPenetration;
 
 			if (b0 > a0)
 			{ 
-				// B is "right" of A.
+				// B is "right" of A
 				outContact.collisionNormal = aDir;
 				outContact.contacts[0].point = a.positionB - capPenetration * 0.5f;
 			}
 			else
 			{
-				// B is "left" of A.
+				// B is "left" of A
 				outContact.collisionNormal = -aDir;
 				outContact.contacts[0].point = a.positionA + capPenetration * 0.5f;
 			}
 		}
 		else
 		{
-			// Cylinders touch tube to tube.
+			// Cylinders touch tube to tube
 
 			if (d < EPSILON)
 			{
@@ -917,7 +917,7 @@ static bool intersection(const bounding_cylinder& a, const bounding_cylinder& b,
 	}
 	else
 	{
-		// TODO: Implement a less generic collision test.
+		// TODO: Implement a less generic collision test
 
 		cylinder_support_fn cylinderSupportA{ a };
 		cylinder_support_fn cylinderSupportB{ b };
@@ -972,13 +972,13 @@ static bool intersection(const bounding_cylinder& c, const bounding_box& a, cont
 
 	if (abs(normal.x) > 0.99f || abs(normal.y) > 0.99f || abs(normal.z) > 0.99f)
 	{
-		// Probably AABB face.
+		// Probably AABB face
 
 		vec3 axis = normalize(c.positionB - c.positionA);
 		float cosAngle = abs(dot(normal, axis));
 		if (cosAngle < 0.01f)
 		{
-			// Cylinder is parallel to AABB face (perpendicular to normal).
+			// Cylinder is parallel to AABB face (perpendicular to normal)
 
 			vec3 clipPlanePoints[4];
 			vec3 clipPlaneNormals[4];
@@ -1008,7 +1008,7 @@ static bool intersection(const bounding_cylinder& c, const bounding_box& a, cont
 		}
 		else if (cosAngle > 0.99f)
 		{
-			// Cylinder touches AABB with cap. TODO: Find stable contact manifold.
+			// Cylinder touches AABB with cap. TODO: Find stable contact manifold
 		}
 	}
 
@@ -1038,7 +1038,7 @@ static bool intersection(const bounding_cylinder& c, const bounding_oriented_box
 
 static bool intersection(const bounding_cylinder& c, const bounding_hull& h, contact_manifold& outContact)
 {
-	// TODO: Handle multiple-contact-points case.
+	// TODO: Handle multiple-contact-points case
 
 	cylinder_support_fn cylinderSupport{ c };
 	hull_support_fn hullSupport{ h };
@@ -1064,7 +1064,7 @@ static bool intersection(const bounding_cylinder& c, const bounding_hull& h, con
 	return true;
 }
 
-// AABB tests.
+// AABB tests
 static bool intersection(const bounding_box& a, const bounding_box& b, contact_manifold& outContact)
 {
 	vec3 centerA = a.getCenter();
@@ -1136,14 +1136,14 @@ static bool intersection(const bounding_box& a, const bounding_box& b, contact_m
 static bool intersection(const bounding_box& a, const bounding_oriented_box& b, contact_manifold& outContact)
 {
 	// We forward to the more general case OBB vs OBB here. This is not ideal, since this test then again transforms to a space local
-	// to one OOB.
-	// However, I don't expect this function to be called very often, as AABBs are uncommon, so this is probably fine.
+	// to one OOB
+	// However, I don't expect this function to be called very often, as AABBs are uncommon, so this is probably fine
 	return intersection(bounding_oriented_box{ quat::identity, a.getCenter(), a.getRadius() }, b, outContact);
 }
 
 static bool intersection(const bounding_box& a, const bounding_hull& h, contact_manifold& outContact)
 {
-	// TODO: Handle multiple-contact-points case.
+	// TODO: Handle multiple-contact-points case
 
 	aabb_support_fn aabbSupport{ a };
 	hull_support_fn hullSupport{ h };
@@ -1212,7 +1212,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 	mat3 absR;
 	for (uint32 i = 0; i < 9; ++i)
 	{
-		absR.m[i] = abs(r.m[i]) + EPSILON; // Add in an epsilon term to counteract arithmetic errors when two edges are parallel and their cross product is (near) 0.
+		absR.m[i] = abs(r.m[i]) + EPSILON; // Add in an epsilon term to counteract arithmetic errors when two edges are parallel and their cross product is (near) 0
 		if (absR.m[i] >= 0.99f)
 		{
 			parallel = true;
@@ -1226,7 +1226,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 	bool bFace = false;
 
 
-	// Test a's faces.
+	// Test a's faces
 	for (uint32 i = 0; i < 3; ++i)
 	{
 		ra = a.radius.data[i];
@@ -1241,7 +1241,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 		}
 	}
 
-	// Test b's faces.
+	// Test b's faces
 	for (uint32 i = 0; i < 3; ++i)
 	{
 		ra = dot(col(absR, i), a.radius);
@@ -1266,7 +1266,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 		vec3 normal;
 		float l;
 
-		// Test a.x x b.x.
+		// Test a.x x b.x
 		ra = a.radius.y * absR.m20 + a.radius.z * absR.m10;
 		rb = b.radius.y * absR.m02 + b.radius.z * absR.m01;
 		penetration = ra + rb - abs(t.z * r.m10 - t.y * r.m20);
@@ -1281,7 +1281,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 			edgeCollision = true;
 		}
 
-		// Test a.x x b.y.
+		// Test a.x x b.y
 		ra = a.radius.y * absR.m21 + a.radius.z * absR.m11;
 		rb = b.radius.x * absR.m02 + b.radius.z * absR.m00;
 		penetration = ra + rb - abs(t.z * r.m11 - t.y * r.m21);
@@ -1296,7 +1296,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 			edgeCollision = true;
 		}
 
-		// Test a.x x b.z.
+		// Test a.x x b.z
 		ra = a.radius.y * absR.m22 + a.radius.z * absR.m12;
 		rb = b.radius.x * absR.m01 + b.radius.y * absR.m00;
 		penetration = ra + rb - abs(t.z * r.m12 - t.y * r.m22);
@@ -1311,7 +1311,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 			edgeCollision = true;
 		}
 
-		// Test a.y x b.x.
+		// Test a.y x b.x
 		ra = a.radius.x * absR.m20 + a.radius.z * absR.m00;
 		rb = b.radius.y * absR.m12 + b.radius.z * absR.m11;
 		penetration = ra + rb - abs(t.x * r.m20 - t.z * r.m00);
@@ -1326,7 +1326,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 			edgeCollision = true;
 		}
 
-		// Test a.y x b.y.
+		// Test a.y x b.y
 		ra = a.radius.x * absR.m21 + a.radius.z * absR.m01;
 		rb = b.radius.x * absR.m12 + b.radius.z * absR.m10;
 		penetration = ra + rb - abs(t.x * r.m21 - t.z * r.m01);
@@ -1341,7 +1341,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 			edgeCollision = true;
 		}
 
-		// Test a.y x b.z.
+		// Test a.y x b.z
 		ra = a.radius.x * absR.m22 + a.radius.z * absR.m02;
 		rb = b.radius.x * absR.m11 + b.radius.y * absR.m10;
 		penetration = ra + rb - abs(t.x * r.m22 - t.z * r.m02);
@@ -1356,7 +1356,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 			edgeCollision = true;
 		}
 
-		// Test a.z x b.x.
+		// Test a.z x b.x
 		ra = a.radius.x * absR.m10 + a.radius.y * absR.m00;
 		rb = b.radius.y * absR.m22 + b.radius.z * absR.m21;
 		penetration = ra + rb - abs(t.y * r.m00 - t.x * r.m10);
@@ -1371,7 +1371,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 			edgeCollision = true;
 		}
 
-		// Test a.z x b.y.
+		// Test a.z x b.y
 		ra = a.radius.x * absR.m11 + a.radius.y * absR.m01;
 		rb = b.radius.x * absR.m22 + b.radius.z * absR.m20;
 		penetration = ra + rb - abs(t.y * r.m01 - t.x * r.m11);
@@ -1386,7 +1386,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 			edgeCollision = true;
 		}
 
-		// Test a.z x b.z.
+		// Test a.z x b.z
 		ra = a.radius.x * absR.m12 + a.radius.y * absR.m02;
 		rb = b.radius.x * absR.m21 + b.radius.y * absR.m20;
 		penetration = ra + rb - abs(t.y * r.m02 - t.x * r.m12);
@@ -1401,7 +1401,6 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 			edgeCollision = true;
 		}
 	}
-
 
 	bool faceCollision = !edgeCollision;
 	if (faceCollision)
@@ -1425,7 +1424,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 		normal = -normal;
 	}
 
-	// Normal is now in world space and points from a to b.
+	// Normal is now in world space and points from a to b
 
 	outContact.collisionNormal = normal;
 
@@ -1440,7 +1439,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 
 		if (!bFace)
 		{
-			// A's face -> A is reference and B is incidence.
+			// A's face -> A is reference and B is incidence
 
 			getAABBClippingPlanes(a.radius, conjugate(a.rotation) * normal, clipPlanePoints, clipPlaneNormals);
 			getAABBIncidentVertices(b.radius, conjugate(b.rotation) * normal, polygon);
@@ -1458,7 +1457,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 		}
 		else
 		{
-			// B's face -> B is reference and A is incidence.
+			// B's face -> B is reference and A is incidence
 
 			getAABBClippingPlanes(b.radius, conjugate(b.rotation) * -normal, clipPlanePoints, clipPlaneNormals);
 			getAABBIncidentVertices(a.radius, conjugate(a.rotation) * -normal, polygon);
@@ -1522,7 +1521,7 @@ static bool intersection(const bounding_oriented_box& a, const bounding_oriented
 
 static bool intersection(const bounding_oriented_box& o, const bounding_hull& h, contact_manifold& outContact)
 {
-	// TODO: Handle multiple-contact-points case.
+	// TODO: Handle multiple-contact-points case
 
 	obb_support_fn obbSupport{ o };
 	hull_support_fn hullSupport{ h };
@@ -1548,10 +1547,10 @@ static bool intersection(const bounding_oriented_box& o, const bounding_hull& h,
 	return true;
 }
 
-// Hull tests.
+// Hull tests
 static bool intersection(const bounding_hull& a, const bounding_hull& b, contact_manifold& outContact)
 {
-	// TODO: Handle multiple-contact-points case.
+	// TODO: Handle multiple-contact-points case
 
 	hull_support_fn hullSupport1{ a };
 	hull_support_fn hullSupport2{ b };
@@ -1576,13 +1575,6 @@ static bool intersection(const bounding_hull& a, const bounding_hull& b, contact
 
 	return true;
 }
-
-
-
-
-
-
-
 
 static bool overlapCheck(const collider_union* worldSpaceColliders, collider_pair pair, non_collision_interaction& interaction)
 {
@@ -1609,7 +1601,7 @@ static bool overlapCheck(const collider_union* worldSpaceColliders, collider_pai
 
 	switch (colliderA->type)
 	{
-		// Sphere tests.
+		// Sphere tests
 		case collider_type_sphere:
 		{
 			switch (colliderB->type)
@@ -1623,7 +1615,7 @@ static bool overlapCheck(const collider_union* worldSpaceColliders, collider_pai
 			}
 		} break;
 
-		// Capsule tests.
+		// Capsule tests
 		case collider_type_capsule:
 		{
 			switch (colliderB->type)
@@ -1636,7 +1628,7 @@ static bool overlapCheck(const collider_union* worldSpaceColliders, collider_pai
 			}
 		} break;
 
-		// Cylinder tests.
+		// Cylinder tests
 		case collider_type_cylinder:
 		{
 			switch (colliderB->type)
@@ -1648,7 +1640,7 @@ static bool overlapCheck(const collider_union* worldSpaceColliders, collider_pai
 			}
 		} break;
 
-		// AABB tests.
+		// AABB tests
 		case collider_type_aabb:
 		{
 			switch (colliderB->type)
@@ -1659,7 +1651,7 @@ static bool overlapCheck(const collider_union* worldSpaceColliders, collider_pai
 			}
 		} break;
 
-		// OBB tests.
+		// OBB tests
 		case collider_type_obb:
 		{
 			switch (colliderB->type)
@@ -1669,7 +1661,7 @@ static bool overlapCheck(const collider_union* worldSpaceColliders, collider_pai
 			}
 		} break;
 
-		// Hull tests.
+		// Hull tests
 		case collider_type_hull:
 		{
 			switch (colliderB->type)
@@ -1681,15 +1673,6 @@ static bool overlapCheck(const collider_union* worldSpaceColliders, collider_pai
 
 	return overlaps;
 }
-
-
-
-
-
-
-
-
-
 
 template <typename collider_t>
 static collider_t loadBoundingVolumeSIMD(const collider_union* worldSpaceColliders, uint16* indices) { /*static_assert(false);*/ }
@@ -1762,7 +1745,6 @@ template <> static const bounding_box& loadBoundingVolumeScalar<bounding_box>(co
 template <> static const bounding_oriented_box& loadBoundingVolumeScalar<bounding_oriented_box>(const collider_union* worldSpaceColliders, uint32 index) { return worldSpaceColliders[index].obb; }
 template <> static const bounding_hull& loadBoundingVolumeScalar<bounding_hull>(const collider_union* worldSpaceColliders, uint32 index) { return worldSpaceColliders[index].hull; }
 
-
 struct w_collision_contact
 {
 	w_vec3 point;
@@ -1771,8 +1753,7 @@ struct w_collision_contact
 	uint32 mask;
 };
 
-
-// Sphere tests.
+// Sphere tests
 static uint32 intersectionSIMD(const w_bounding_sphere& s1, const w_bounding_sphere& s2, w_collision_contact* outContacts)
 {
 	w_vec3 n = s2.center - s1.center;
@@ -1789,7 +1770,7 @@ static uint32 intersectionSIMD(const w_bounding_sphere& s1, const w_bounding_sph
 		w_float distance = ifThen(degenerate, 0.f, sqrt(sqDistance));
 		w_vec3 collisionNormal = ifThen(degenerate, w_vec3(0.f, 1.f, 0.f), n / distance);
 
-		w_float penetrationDepth = radiusSum - distance; // Flipped to change sign.
+		w_float penetrationDepth = radiusSum - distance; // Flipped to change sign
 		w_vec3 point = w_float(0.5f) * (s1.center + s1.radius * collisionNormal + s2.center - s2.radius * collisionNormal);
 
 		outContacts[0].point = point;
@@ -1829,8 +1810,6 @@ static uint32 intersectionSIMD(const w_bounding_sphere& s, const w_bounding_cyli
 		}
 	}
 
-
-
 	w_vec3 p = ifThen(t <= 0.f, c.positionA, c.positionB);
 	w_vec3 up = ifThen(t <= 0.f, -ab, ab);
 
@@ -1839,7 +1818,7 @@ static uint32 intersectionSIMD(const w_bounding_sphere& s, const w_bounding_cyli
 	w_vec3 endB = p - projectedDirToCenter * c.radius;
 
 	w_vec3 closestToSphere = closestPoint_PointSegment(s.center, w_line_segment{ endA, endB });
-	w_vec3 normal = closestToSphere - s.center; // From sphere to cylinder.
+	w_vec3 normal = closestToSphere - s.center; // From sphere to cylinder
 	w_float sqDistance = squaredLength(normal);
 
 	auto intersects = (sqDistance <= s.radius * s.radius);
@@ -1893,7 +1872,7 @@ static uint32 intersectionSIMD(const w_bounding_sphere& s, const w_bounding_box&
 		n = ifThen(valid, n / dist, w_vec3(0.f, 1.f, 0.f));
 
 		outContacts[0].point = w_float(0.5f) * (p + s.center + n * s.radius);
-		outContacts[0].penetrationDepth = s.radius - dist; // Flipped to change sign.
+		outContacts[0].penetrationDepth = s.radius - dist; // Flipped to change sign
 		outContacts[0].normal = n;
 		outContacts[0].mask = mask;
 
@@ -1920,7 +1899,7 @@ static uint32 intersectionSIMD(const w_bounding_sphere& s, const w_bounding_orie
 	return 0;
 }
 
-// Capsule tests.
+// Capsule tests
 static uint32 intersectionSIMD(const w_bounding_capsule& a, const w_bounding_capsule& b, w_collision_contact* outContacts)
 {
 	w_vec3 aDir = a.positionB - a.positionA;
@@ -1949,7 +1928,7 @@ static uint32 intersectionSIMD(const w_bounding_capsule& a, const w_bounding_cap
 		}
 	}
 
-	// Parallel case.
+	// Parallel case
 
 	w_vec3 pAa = a.positionA;
 	w_vec3 pAb = a.positionB;
@@ -2056,14 +2035,6 @@ static uint32 intersectionSIMD(const w_bounding_capsule& a, const w_bounding_cap
 	return 2;
 }
 
-
-
-
-
-
-
-
-
 template <typename collider_a, typename collider_b, typename = void>
 struct simd_intersection_available : std::false_type {};
 
@@ -2078,18 +2049,8 @@ template <> struct scalar_to_wide<bounding_cylinder> { using type = w_bounding_c
 template <> struct scalar_to_wide<bounding_box> { using type = w_bounding_box; };
 template <> struct scalar_to_wide<bounding_oriented_box> { using type = w_bounding_oriented_box; };
 
-
 struct collision_write_context
 {
-	collision_contact* outContacts;
-	constraint_body_pair* outBodyPairs;
-
-	collider_pair* outColliderPairs;
-	uint8* outContactCountPerCollision;
-
-	uint32 numContacts;
-	uint32 numCollisions;
-
 	std::pair<collision_contact&, constraint_body_pair&> pushContact()
 	{
 		std::pair<collision_contact&, constraint_body_pair&> result = { outContacts[numContacts], outBodyPairs[numContacts] };
@@ -2103,6 +2064,15 @@ struct collision_write_context
 		outContactCountPerCollision[numCollisions] = (uint8)numContacts;
 		++numCollisions;
 	}
+
+	collision_contact* outContacts;
+	constraint_body_pair* outBodyPairs;
+
+	collider_pair* outColliderPairs;
+	uint8* outContactCountPerCollision;
+
+	uint32 numContacts;
+	uint32 numCollisions;
 };
 
 static void writeWideContact(const collider_union* worldSpaceColliders, const w_collision_contact* wideContacts, uint32 numWideContacts,
@@ -2257,7 +2227,7 @@ static void collisionSIMD(const collider_union* worldSpaceColliders, collider_pa
 		uint16 aIndices[COLLISION_SIMD_WIDTH] = {};
 		uint16 bIndices[COLLISION_SIMD_WIDTH] = {};
 
-		// TODO: This could be done with SIMD.
+		// TODO: This could be done with SIMD
 		for (uint32 j = 0; j < numValidLanes; ++j)
 		{
 			collider_pair pair = colliderPairs[i + j];
@@ -2340,7 +2310,7 @@ NODISCARD narrowphase_result narrowphase(const collider_union* worldSpaceCollide
 	{
 		CPU_PROFILE_BLOCK("Prune, classify and count");
 
-		// Prune collision pairs based on type and RB index.
+		// Prune collision pairs based on type and RB index
 
 		uint32 count = numCollisionPairs;
 		for (uint32 i = 0; i < count; ++i)
@@ -2351,25 +2321,25 @@ NODISCARD narrowphase_result narrowphase(const collider_union* worldSpaceCollide
 
 			if (colliderA->objectType != physics_object_type_rigid_body && colliderB->objectType != physics_object_type_rigid_body)
 			{
-				// If none of the objects is a rigid body, no collision is generated.
+				// If none of the objects is a rigid body, no collision is generated
 				continue;
 			}
 
 			if (colliderA->objectType == physics_object_type_rigid_body && colliderB->objectType == physics_object_type_rigid_body
 				&& colliderA->objectIndex == colliderB->objectIndex)
 			{
-				// If both colliders belong to the same rigid body, no collision is generated.
+				// If both colliders belong to the same rigid body, no collision is generated
 				continue;
 			}
 
-			// At this point, either one or both colliders belong to a rigid body. One of them could be a force field, trigger or a solo collider still.
+			// At this point, either one or both colliders belong to a rigid body. One of them could be a force field, trigger or a solo collider still
 
 			pair = (colliderA->type < colliderB->type) ? pair : collider_pair{ pair.colliderB, pair.colliderA };
 			colliderA = worldSpaceColliders + pair.colliderA;
 			colliderB = worldSpaceColliders + pair.colliderB;
 
-			if (colliderA->objectType == physics_object_type_rigid_body && colliderB->objectType == physics_object_type_rigid_body // Both rigid bodies.
-				|| colliderA->objectType == physics_object_type_static_collider || colliderB->objectType == physics_object_type_static_collider) // One is a static collider.
+			if (colliderA->objectType == physics_object_type_rigid_body && colliderB->objectType == physics_object_type_rigid_body // Both rigid bodies
+				|| colliderA->objectType == physics_object_type_static_collider || colliderB->objectType == physics_object_type_static_collider) // One is a static collider
 			{
 				++collisionCountMatrix[colliderA->type][colliderB->type];
 
@@ -2568,7 +2538,7 @@ NODISCARD narrowphase_result narrowphase(const collider_union* worldSpaceCollide
 		}
 	}
 
-	// TODO: Write valid collision pairs and numCollisions.
+	// TODO: Write valid collision pairs and numCollisions
 	arena.resetToMarker(marker);
 
 	return narrowphase_result{ writeContext.numCollisions, writeContext.numContacts, numNonCollisionInteractions };

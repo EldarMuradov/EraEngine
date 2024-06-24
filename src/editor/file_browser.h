@@ -10,7 +10,7 @@ struct file_browser
 
 	enum dir_entry_type
 	{
-		dir_entry_type_unknown,
+		dir_entry_type_none,
 
 		dir_entry_type_directory,
 		dir_entry_type_empty_directory,
@@ -29,9 +29,9 @@ private:
 		dir_entry_type type;
 	};
 
-	fs::path currentPath;
-	std::vector<dir_entry> currentPathEntries;
-
 	void changeCurrentPath(const fs::path& path);
 	void refresh();
+
+	fs::path currentPath;
+	std::vector<dir_entry> currentPathEntries;
 };

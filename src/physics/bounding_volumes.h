@@ -41,25 +41,21 @@ struct line_segment
 
 struct bounding_sphere
 {
-	vec3 center;
-	float radius;
-
-	float volume()
+	float volume() const
 	{
 		float sqRadius = radius * radius;
 		float sqRadiusPI = M_PI * sqRadius;
 		float sphereVolume = 4.f / 3.f * sqRadiusPI * radius;
 		return sphereVolume;
 	}
+
+	vec3 center;
+	float radius;
 };
 
 struct bounding_capsule
 {
-	vec3 positionA;
-	vec3 positionB;
-	float radius;
-
-	float volume()
+	float volume() const
 	{
 		float sqRadius = radius * radius;
 		float sqRadiusPI = M_PI * sqRadius;
@@ -68,21 +64,25 @@ struct bounding_capsule
 		float cylinderVolume = sqRadiusPI * height;
 		return sphereVolume + cylinderVolume;
 	}
+
+	vec3 positionA;
+	vec3 positionB;
+	float radius;
 };
 
 struct bounding_cylinder
 {
-	vec3 positionA;
-	vec3 positionB;
-	float radius;
-
-	float volume()
+	float volume() const
 	{
 		float sqRadiusPI = M_PI * radius * radius;
 		float height = length(positionA - positionB);
 		float cylinderVolume = sqRadiusPI * height;
 		return cylinderVolume;
 	}
+
+	vec3 positionA;
+	vec3 positionB;
+	float radius;
 };
 
 struct bounding_torus
@@ -95,6 +95,8 @@ struct bounding_torus
 
 union bounding_box_corners
 {
+	bounding_box_corners() {}
+
 	struct
 	{
 		vec3 i;
@@ -107,17 +109,12 @@ union bounding_box_corners
 		vec3 xyz;
 	};
 	vec3 corners[8];
-
-	bounding_box_corners() {}
 };
 
 struct bounding_oriented_box;
 
 struct bounding_box
 {
-	vec3 minCorner;
-	vec3 maxCorner;
-
 	void grow(vec3 o);
 	void pad(vec3 p);
 	NODISCARD vec3 getCenter() const;
@@ -134,20 +131,19 @@ struct bounding_box
 	NODISCARD static bounding_box fromMinMax(vec3 minCorner, vec3 maxCorner);
 	NODISCARD static bounding_box fromCenterRadius(vec3 center, vec3 radius);
 
-	NODISCARD float volume()
+	float volume() const
 	{
 		vec3 diameter = maxCorner - minCorner;
 		return diameter.x * diameter.y * diameter.z;
 	}
+
+	vec3 minCorner;
+	vec3 maxCorner;
 };
 
 struct bounding_oriented_box
 {
-	quat rotation;
-	vec3 center;
-	vec3 radius;
-
-	NODISCARD float volume()
+	float volume() const
 	{
 		vec3 diameter = radius * 2.f;
 		return diameter.x * diameter.y * diameter.z;
@@ -157,13 +153,14 @@ struct bounding_oriented_box
 	NODISCARD bounding_box transformToAABB(quat rotation, vec3 translation) const;
 	NODISCARD bounding_oriented_box transformToOBB(quat rotation, vec3 translation) const;
 	NODISCARD bounding_box_corners getCorners() const;
+
+	quat rotation;
+	vec3 center;
+	vec3 radius;
 };
 
 struct bounding_rectangle
 {
-	vec2 minCorner;
-	vec2 maxCorner;
-
 	void grow(vec2 o);
 	void pad(vec2 p);
 	vec2 getCenter() const;
@@ -173,6 +170,9 @@ struct bounding_rectangle
 	NODISCARD static bounding_rectangle negativeInfinity();
 	NODISCARD static bounding_rectangle fromMinMax(vec2 minCorner, vec2 maxCorner);
 	NODISCARD static bounding_rectangle fromCenterRadius(vec2 center, vec2 radius);
+
+	vec2 minCorner;
+	vec2 maxCorner;
 };
 
 inline NODISCARD vec4 createPlane(vec3 point, vec3 normal)
@@ -191,8 +191,6 @@ float signedDistanceToPlane(const vec3& p, const vec4& plane);
 
 struct bounding_plane
 {
-	vec4 plane;
-
 	bounding_plane() {}
 	bounding_plane(vec3 point, vec3 normal)
 	{
@@ -203,6 +201,8 @@ struct bounding_plane
 	{
 		return signedDistanceToPlane(p, plane);
 	}
+
+	vec4 plane;
 };
 
 struct bounding_hull_edge
@@ -219,14 +219,14 @@ struct bounding_hull_face
 
 struct bounding_hull_geometry
 {
+	static bounding_hull_geometry fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle16* triangles, uint32 numTriangles);
+	static bounding_hull_geometry fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle32* triangles, uint32 numTriangles);
+
 	std::vector<vec3> vertices;
 	std::vector<bounding_hull_edge> edges;
 	std::vector<bounding_hull_face> faces;
 
 	bounding_box aabb;
-
-	static bounding_hull_geometry fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle16* triangles, uint32 numTriangles);
-	static bounding_hull_geometry fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle32* triangles, uint32 numTriangles);
 };
 
 // MUST be convex.
@@ -244,9 +244,6 @@ struct bounding_hull
 
 struct ray
 {
-	vec3 origin;
-	vec3 direction;
-
 	bool intersectPlane(vec3 normal, float d, float& outT) const;
 	bool intersectPlane(vec3 normal, vec3 point, float& outT) const;
 	bool intersectAABB(const bounding_box& a, float& outT) const;
@@ -260,6 +257,9 @@ struct ray
 	bool intersectRectangle(vec3 pos, vec3 tangent, vec3 bitangent, vec2 radius, float& outT) const;
 	bool intersectTorus(const bounding_torus& torus, float& outT) const;
 	bool intersectHull(const bounding_hull& hull, const bounding_hull_geometry& geometry, float& outT) const;
+
+	vec3 origin;
+	vec3 direction;
 };
 
 bool sphereVsSphere(const bounding_sphere& a, const bounding_sphere& b);

@@ -76,14 +76,8 @@ struct icosphere_mesh_desc
 // All meshes are standing upright by default.
 struct capsule_mesh_desc
 {
-	vec3 center = 0.f;
-	float height = 1.f;
-	float radius = 0.4f;
-	quat rotation = quat::identity;
-	uint32 slices = 15;
-	uint32 rows = 15;
-
 	capsule_mesh_desc() {}
+
 	capsule_mesh_desc(vec3 posA, vec3 posB, float radius)
 	{
 		center = (posA + posB) * 0.5f;
@@ -91,6 +85,13 @@ struct capsule_mesh_desc
 		this->radius = radius;
 		rotation = rotateFromTo(vec3(0.f, 1.f, 0.f), posB - posA);
 	}
+
+	vec3 center = 0.f;
+	float height = 1.f;
+	float radius = 0.4f;
+	quat rotation = quat::identity;
+	uint32 slices = 15;
+	uint32 rows = 15;
 };
 
 struct cylinder_mesh_desc
@@ -144,7 +145,7 @@ struct mace_mesh_desc
 	uint32 slices = 15;
 };
 
-NODISCARD static uint32 getVertexOthersSize(uint32 meshFlags)
+NODISCARD inline constexpr uint32 getVertexOthersSize(uint32 meshFlags)
 {
 	uint32 size = 0;
 	if (meshFlags & mesh_creation_flags_with_uvs) { size += sizeof(vec2); }

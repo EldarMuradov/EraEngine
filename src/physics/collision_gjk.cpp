@@ -7,7 +7,7 @@ gjk_internal_success updateGJKSimplex(gjk_simplex& s, const gjk_support_point& a
 {
 	if (s.numPoints == 2)
 	{
-		// Triangle case.
+		// Triangle case
 		vec3 ao = -a.minkowski;
 		vec3 ab = s.b.minkowski - a.minkowski;
 		vec3 ac = s.c.minkowski - a.minkowski;
@@ -28,7 +28,7 @@ gjk_internal_success updateGJKSimplex(gjk_simplex& s, const gjk_support_point& a
 			return gjk_dont_stop;
 		}
 
-		// Sort so that normal abc of triangle points outside (negative new search dir).
+		// Sort so that normal abc of triangle points outside (negative new search dir)
 		if (dot(ao, abc) >= 0.f)
 		{
 			s.d = s.b;
@@ -53,7 +53,7 @@ gjk_internal_success updateGJKSimplex(gjk_simplex& s, const gjk_support_point& a
 	}
 	if (s.numPoints == 3)
 	{
-		// Tetrahedron case.
+		// Tetrahedron case
 		vec3 ao = -a.minkowski;
 		vec3 ab = s.b.minkowski - a.minkowski;
 		vec3 ac = s.c.minkowski - a.minkowski;
@@ -66,7 +66,7 @@ gjk_internal_success updateGJKSimplex(gjk_simplex& s, const gjk_support_point& a
 			return gjk_unexpected_error;
 		}
 
-		// Normals of faces (point outside).
+		// Normals of faces (point outside)
 		vec3 abc = cross(ac, ab);
 		vec3 abd = cross(ab, ad);
 		vec3 adc = cross(ad, ac);
