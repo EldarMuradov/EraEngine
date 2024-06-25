@@ -98,12 +98,14 @@ static void renderToMainWindow(dx_window& window)
 	fenceValues[window.currentBackbufferIndex] = result;
 }
 
+application globalApp;
+
 #ifndef ERA_RUNTIME
 
 int main(int argc, char** argv)
 {
-	//try
-	//{
+	try
+	{
 		if (!dxContext.initialize())
 			return EXIT_FAILURE;
 
@@ -120,15 +122,14 @@ int main(int argc, char** argv)
 		}
 
 		dx_window window;
-		window.initialize(TEXT("  New Project - Era Engine - 0.0978v0 - <DX12>"), 1920, 1080);
+		window.initialize(TEXT("  New Project - Era Engine - 0.1432v1 - <DX12>"), 1920, 1080);
 		window.setIcon("resources/icons/Logo.ico");
 		window.setCustomWindowStyle();
 		window.maximize();
 
-		application app = {};
-		app.loadCustomShaders();
+		globalApp.loadCustomShaders();
 
-		window.setFileDropCallback([&app](const fs::path& s) { app.handleFileDrop(s); });
+		window.setFileDropCallback([](const fs::path& s) { globalApp.handleFileDrop(s); });
 
 		initializeTransformationGizmos();
 		initializeRenderUtils();
@@ -148,7 +149,7 @@ int main(int argc, char** argv)
 
 		editor_panels editorPanels;
 
-		app.initialize(&renderer, &editorPanels);
+		globalApp.initialize(&renderer, &editorPanels);
 
 		file_browser fileBrowser;
 
@@ -251,11 +252,11 @@ int main(int argc, char** argv)
 			{
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_MESH))
 				{
-					app.handleFileDrop((const char*)payload->Data);
+					globalApp.handleFileDrop((const char*)payload->Data);
 				}
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_IMAGE_HDR))
 				{
-					app.handleFileDrop((const char*)payload->Data);
+					globalApp.handleFileDrop((const char*)payload->Data);
 				}
 				ImGui::EndDragDropTarget();
 			}
@@ -273,7 +274,7 @@ int main(int argc, char** argv)
 
 			editorPanels.meshEditor.beginFrame();
 
-			app.update(input, dt);
+			globalApp.update(input, dt);
 
 			endFrameCommon();
 			renderer.endFrame(&input);
@@ -321,18 +322,18 @@ int main(int argc, char** argv)
 		shutdownAudio();
 
 		physics::physics_holder::physicsRef->release();
-	//}
-	//catch (std::exception ex)
-	//{
-	//	std::cout << ex.what() << "\n";
+	}
+	catch (std::exception ex)
+	{
+		std::cerr << ex.what() << "\n";
 
-	//	std::ofstream o("logs/error_log.txt");
-	//	o << "Runtime Error> " << ex.what() << std::endl;
-	//	o.close();
+		std::ofstream o("logs/error_log.txt");
+		o << "Runtime Error> " << ex.what() << std::endl;
+		o.close();
 
-	//	std::this_thread::sleep_for(std::chrono::duration<float>(2000.f));
-	//	return EXIT_FAILURE;
-	//}
+		std::this_thread::sleep_for(std::chrono::duration<float>(5000.f));
+		return EXIT_FAILURE;
+	}
 
 	return EXIT_SUCCESS;
 }

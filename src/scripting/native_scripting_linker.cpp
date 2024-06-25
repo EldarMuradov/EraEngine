@@ -11,6 +11,8 @@
 #include <core/project.h>
 #include <semaphore>
 #include <core/string.h>
+#include <scripting/dotnet_utils.h>
+#include <scripting/dotnet_types.h>
 
 std::vector<std::string> enative_scripting_linker::scriptTypes;
 
@@ -34,6 +36,7 @@ namespace
 
 void getAllNativeFunctionsAndStart()
 {
+	// Log config
 	{
 #if _DEBUG
 		std::ofstream file((eproject::enginePath + "\\bin\\Debug_x86_64\\core.cfg"));
@@ -53,45 +56,142 @@ void getAllNativeFunctionsAndStart()
 		file_rt_bin.close();
 	}
 
-	const char_t* dotnet_type_init = STR("EraEngine.ScriptingCore, EraScriptingCore");
-	const char_t* dotnet_type_method_main = STR("MainFunc");
-	init_fn f = dotnet_host::getStaticMethod<init_fn>(dotnet_type_init, dotnet_type_method_main, STR("EraEngine.Call, EraScriptingCore"));
-	f();
+	const char_t* scriptingCoreLibName = STR("EraScriptingCore");
+	const char_t* defaultDelegateNativeName = STR("EraEngine.Call, EraScriptingCore");
 
-	const char_t* dotnet_type_method_init = STR("InitializeScripting");
-	initScrF = dotnet_host::getStaticMethod<scr_fn>(dotnet_type_init, dotnet_type_method_init, STR("EraEngine.Call, EraScriptingCore"));;
+	{
+		const char_t* scriptingCoreClassName = STR("EraEngine.ScriptingCore");
+		const char_t* scriptingCoreFullTypeName = STR("EraEngine.ScriptingCore, EraScriptingCore");
 
-	const char_t* dotnet_type_method_rel = STR("ShutdownScripting");
-	releaseSrcF = dotnet_host::getStaticMethod<scr_fn>(dotnet_type_init, dotnet_type_method_rel, STR("EraEngine.Call, EraScriptingCore"));;
+		dotnet::type_name scriptingCoreTypeName{ scriptingCoreClassName, scriptingCoreLibName };
 
-	const char_t* dotnet_type_method_relo = STR("ReloadScripting");
-	reloadSrcF = dotnet_host::getStaticMethod<scr_fn>(dotnet_type_init, dotnet_type_method_relo, STR("EraEngine.Call, EraScriptingCore"));;
+		const char_t* scriptingCoreMainFuncName = STR("MainFunc");
+		init_fn mainFunc = dotnet_host::getStaticMethod<init_fn>(scriptingCoreFullTypeName, scriptingCoreMainFuncName, defaultDelegateNativeName);
 
-	const char_t* dotnet_type = STR("EraEngine.ELevel, EraScriptingCore");
-	const char_t* dotnet_type_method_st = STR("Start");
-	startF = dotnet_host::getStaticMethod<start_fn>(dotnet_type, dotnet_type_method_st, STR("EraEngine.Call, EraScriptingCore"));
-	const char_t* dotnet_type_method_up = STR("Update");
-	updateF = dotnet_host::getStaticMethod<update_fn, float>(dotnet_type, dotnet_type_method_up, STR("EraEngine.CallUpdate, EraScriptingCore"));
+		dotnet::delegate mainFuncDelegate{ scriptingCoreTypeName, scriptingCoreMainFuncName, defaultDelegateNativeName, (void*)mainFunc };
 
-	const char_t* dotnet_type_hc = STR("EraEngine.Core.CollisionHandler, EraScriptingCore");
-	const char_t* dotnet_type_method_c = STR("HandleCollision");
-	handleCollisionsF = dotnet_host::getStaticMethod<handle_collisions_fn, int, int>(dotnet_type_hc, dotnet_type_method_c, STR("EraEngine.CallHandleColls, EraScriptingCore"));
-	const char_t* dotnet_type_method_c_e = STR("HandleExitCollision");
-	handleExitCollisionsF = dotnet_host::getStaticMethod<handle_collisions_fn, int, int>(dotnet_type_hc, dotnet_type_method_c_e, STR("EraEngine.CallHandleColls, EraScriptingCore"));
+		const char_t* initializeScriptingFuncName = STR("InitializeScripting");
+		initScrF = dotnet_host::getStaticMethod<scr_fn>(scriptingCoreFullTypeName, initializeScriptingFuncName, defaultDelegateNativeName);
+		dotnet::delegate initializeScriptingDelegate{ scriptingCoreTypeName, initializeScriptingFuncName, defaultDelegateNativeName, (void*)initScrF };
 
-	const char_t* dotnet_type_tr = STR("EraEngine.Core.TransformHandler, EraScriptingCore");
-	const char_t* dotnet_type_method_t = STR("ProcessTransform");
-	handleTrsF = dotnet_host::getStaticMethod<handle_trs_fn, intptr_t, int>(dotnet_type_tr, dotnet_type_method_t, STR("EraEngine.CallHandleTrs, EraScriptingCore"));
+		const char_t* shutdownScriptingFuncName = STR("ShutdownScripting");
+		releaseSrcF = dotnet_host::getStaticMethod<scr_fn>(scriptingCoreFullTypeName, shutdownScriptingFuncName, defaultDelegateNativeName);
+		dotnet::delegate shutdownScriptingDelegate{ scriptingCoreTypeName, shutdownScriptingFuncName, defaultDelegateNativeName, (void*)releaseSrcF };
 
-	const char_t* dotnet_type_input = STR("EraEngine.Core.InputHandler, EraScriptingCore");
-	const char_t* dotnet_type_method_input = STR("HandleInput");
-	inputF = dotnet_host::getStaticMethod<handle_input_fn, intptr_t>(dotnet_type_input, dotnet_type_method_input, STR("EraEngine.CallHandleInput, EraScriptingCore"));
+		const char_t* reloadScriptingFuncName = STR("ReloadScripting");
+		reloadSrcF = dotnet_host::getStaticMethod<scr_fn>(scriptingCoreFullTypeName, reloadScriptingFuncName, defaultDelegateNativeName);
+		dotnet::delegate reloadScriptingDelegate{ scriptingCoreTypeName, reloadScriptingFuncName, defaultDelegateNativeName, (void*)reloadSrcF };
 
-	const char_t* dotnet_type_cc = STR("EraEngine.Runtime.ComponentHandler, EraScriptingCore");
-	const char_t* dotnet_type_method_cc = STR("AddComponent");
-	createCompF = dotnet_host::getStaticMethod<comp_fn, int, uintptr_t>(dotnet_type_cc, dotnet_type_method_cc, STR("EraEngine.CallAddComp, EraScriptingCore"));
-	const char_t* dotnet_type_method_rc = STR("RemoveComponent");
-	removeCompF = dotnet_host::getStaticMethod<comp_fn, int, uintptr_t>(dotnet_type_cc, dotnet_type_method_rc, STR("EraEngine.CallRemoveComp, EraScriptingCore"));
+		dotnet::core_type scriptingCoreType;
+		scriptingCoreType.typeName = scriptingCoreTypeName;
+		scriptingCoreType.methods.emplace(scriptingCoreMainFuncName, mainFuncDelegate);
+		scriptingCoreType.methods.emplace(initializeScriptingFuncName, initializeScriptingDelegate);
+		scriptingCoreType.methods.emplace(shutdownScriptingFuncName, shutdownScriptingDelegate);
+		scriptingCoreType.methods.emplace(reloadScriptingFuncName, reloadScriptingDelegate);
+
+		dotnet::storage.types.emplace(scriptingCoreClassName, scriptingCoreType);
+
+		// Startup
+		mainFunc();
+	}
+
+	{
+		const char_t* elevelClassName = STR("EraEngine.ELevel");
+		const char_t* elevelFullTypeName = STR("EraEngine.ELevel, EraScriptingCore");
+
+		dotnet::type_name elevelTypeName{ elevelClassName, scriptingCoreLibName };
+
+		const char_t* elevelStartFuncName = STR("Start");
+		startF = dotnet_host::getStaticMethod<start_fn>(elevelFullTypeName, elevelStartFuncName, defaultDelegateNativeName);
+		dotnet::delegate elevelStartDelegate{ elevelTypeName, elevelStartFuncName, defaultDelegateNativeName, (void*)startF };
+
+		const char_t* elevelUpdateFuncName = STR("Update");
+		updateF = dotnet_host::getStaticMethod<update_fn, float>(elevelFullTypeName, elevelUpdateFuncName, STR("EraEngine.CallUpdate, EraScriptingCore"));
+		dotnet::delegate elevelUpdateDelegate{ elevelTypeName, elevelUpdateFuncName, STR("EraEngine.CallUpdate, EraScriptingCore"), (void*)updateF };
+
+		dotnet::core_type elevelType;
+		elevelType.typeName = elevelTypeName;
+		elevelType.methods.emplace(elevelStartFuncName, elevelStartDelegate);
+		elevelType.methods.emplace(elevelUpdateFuncName, elevelUpdateDelegate);
+
+		dotnet::storage.types.emplace(elevelClassName, elevelType);
+	}
+
+	{
+		const char_t* collisionHandlerClassName = STR("EraEngine.Core.CollisionHandler");
+		const char_t* collisionHandlerFullTypeName = STR("EraEngine.Core.CollisionHandler, EraScriptingCore");
+		dotnet::type_name collisionHandlerTypeName{ collisionHandlerClassName, scriptingCoreLibName };
+
+		const char_t* chDelegateNativeName = STR("EraEngine.CallHandleColls, EraScriptingCore");
+
+		const char_t* chHandleCollisionFuncName = STR("HandleCollision");
+		handleCollisionsF = dotnet_host::getStaticMethod<handle_collisions_fn, int, int>(collisionHandlerFullTypeName, chHandleCollisionFuncName, chDelegateNativeName);
+		dotnet::delegate chHandleCollisionDelegate{ collisionHandlerTypeName, chHandleCollisionFuncName, chDelegateNativeName, (void*)handleCollisionsF };
+
+		const char_t* chHandleCollisionExitFuncName = STR("HandleExitCollision");
+		handleExitCollisionsF = dotnet_host::getStaticMethod<handle_collisions_fn, int, int>(collisionHandlerFullTypeName, chHandleCollisionExitFuncName, chDelegateNativeName);
+		dotnet::delegate chHandleCollisionExitDelegate{ collisionHandlerTypeName, chHandleCollisionExitFuncName, chDelegateNativeName, (void*)handleExitCollisionsF };
+
+		dotnet::core_type collisionHandlerType;
+		collisionHandlerType.typeName = collisionHandlerTypeName;
+		collisionHandlerType.methods.emplace(chHandleCollisionFuncName, chHandleCollisionDelegate);
+		collisionHandlerType.methods.emplace(chHandleCollisionExitFuncName, chHandleCollisionExitDelegate);
+
+		dotnet::storage.types.emplace(collisionHandlerClassName, collisionHandlerType);
+	}
+
+	{
+		const char_t* transformHandlerClassName = STR("EraEngine.Core.TransformHandler");
+		const char_t* transformHandlerFullTypeName = STR("EraEngine.Core.TransformHandler, EraScriptingCore");
+		dotnet::type_name transformHandlerTypeName{ transformHandlerClassName, scriptingCoreLibName};
+
+		const char_t* thProcessTransformFuncName = STR("ProcessTransform");
+		handleTrsF = dotnet_host::getStaticMethod<handle_trs_fn, intptr_t, int>(transformHandlerFullTypeName, thProcessTransformFuncName, STR("EraEngine.CallHandleTrs, EraScriptingCore"));
+		dotnet::delegate thProcessTransformDelegate{ transformHandlerTypeName, thProcessTransformFuncName, STR("EraEngine.CallHandleTrs, EraScriptingCore"), (void*)handleTrsF };
+		
+		dotnet::core_type transformHandlerType;
+		transformHandlerType.typeName = transformHandlerTypeName;
+		transformHandlerType.methods.emplace(thProcessTransformFuncName, thProcessTransformDelegate);
+
+		dotnet::storage.types.emplace(transformHandlerClassName, transformHandlerType);
+	}
+
+	{
+		const char_t* inputHandlerFullTypeName = STR("EraEngine.Core.InputHandler, EraScriptingCore");
+		const char_t* inputHandlerClassName = STR("EraEngine.Core.InputHandler");
+		dotnet::type_name inputHandlerTypeName{ inputHandlerClassName, scriptingCoreLibName };
+
+		const char_t* ihHandleInputFuncName = STR("HandleInput");
+		inputF = dotnet_host::getStaticMethod<handle_input_fn, intptr_t>(inputHandlerFullTypeName, ihHandleInputFuncName, STR("EraEngine.CallHandleInput, EraScriptingCore"));
+		dotnet::delegate ihHandleInputDelegate{ inputHandlerTypeName, ihHandleInputFuncName, STR("EraEngine.CallHandleInput, EraScriptingCore"), (void*)inputF };
+
+		dotnet::core_type inputHandlerType;
+		inputHandlerType.typeName = inputHandlerTypeName;
+		inputHandlerType.methods.emplace(ihHandleInputFuncName, ihHandleInputDelegate);
+
+		dotnet::storage.types.emplace(inputHandlerClassName, inputHandlerType);
+	}
+
+	{
+		const char_t* componentHandlerClassName = STR("EraEngine.Runtime.ComponentHandler");
+		const char_t* componentHandlerFullTypeName = STR("EraEngine.Runtime.ComponentHandler, EraScriptingCore");
+		dotnet::type_name componentHandlerTypeName { componentHandlerClassName, scriptingCoreLibName};
+		
+		const char_t* chAddComponentFuncName = STR("AddComponent");
+		createCompF = dotnet_host::getStaticMethod<comp_fn, int, uintptr_t>(componentHandlerFullTypeName, chAddComponentFuncName, STR("EraEngine.CallAddComp, EraScriptingCore"));
+		dotnet::delegate chAddComponentDelegate{ componentHandlerTypeName, chAddComponentFuncName, STR("EraEngine.CallAddComp, EraScriptingCore"), (void*)createCompF };
+
+		const char_t* chRemoveComponentFuncName = STR("RemoveComponent");
+		removeCompF = dotnet_host::getStaticMethod<comp_fn, int, uintptr_t>(componentHandlerFullTypeName, chRemoveComponentFuncName, STR("EraEngine.CallRemoveComp, EraScriptingCore"));
+		dotnet::delegate chRemoveComponentDelegate{ componentHandlerTypeName, chRemoveComponentFuncName, STR("EraEngine.CallRemoveComp, EraScriptingCore"), (void*)removeCompF };
+		
+		dotnet::core_type componentHandlerType;
+		componentHandlerType.typeName = componentHandlerTypeName;
+		componentHandlerType.methods.emplace(chAddComponentFuncName, chAddComponentDelegate);
+		componentHandlerType.methods.emplace(chRemoveComponentFuncName, chRemoveComponentDelegate);
+
+		dotnet::storage.types.emplace(componentHandlerClassName, componentHandlerType);
+	}
 }
 
 namespace bind

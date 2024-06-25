@@ -178,11 +178,11 @@ namespace physics
 			std::vector<mesh> meshes;
 		};
 
-		std::vector<material> materials;
-		std::vector<chunk> chunks;
-
 		//static ref<px_blast_model> loadFromFbxFile(const char* path);
 		static ref<px_blast_model> loadFromTinyLoader(const char* path, const char* pathMtl);
+
+		std::vector<material> materials;
+		std::vector<chunk> chunks;
 	};
 
 	struct px_blast_family
@@ -325,8 +325,8 @@ namespace physics
 		int debugRenderDepth;
 		double stressSolveTime;
 
-		::std::set<ExtPxActor*> actors;
-		::std::set<ExtPxActor*> actorsToUpdateHealth;
+		std::set<ExtPxActor*> actors;
+		std::set<ExtPxActor*> actorsToUpdateHealth;
 	};
 
 	struct px_asset_list
@@ -345,8 +345,8 @@ namespace physics
 				bool isSupport;
 			};
 
-			::std::string id;
-			::std::string name;
+			std::string id;
+			std::string name;
 
 			PxVec3 extents;
 
@@ -355,16 +355,16 @@ namespace physics
 
 			uint32_t bondFlags;
 
-			::std::vector<level> levels;
+			std::vector<level> levels;
 		};
 
 		struct px_model_asset
 		{
 			px_model_asset() : isSkinned(false), transform(PxIdentity) {}
 
-			::std::string id;
-			::std::string file;
-			::std::string name;
+			std::string id;
+			std::string file;
+			std::string name;
 			PxTransform	transform;
 			bool isSkinned;
 		};
@@ -375,7 +375,7 @@ namespace physics
 
 			struct asset_ref
 			{
-				::std::string id;
+				std::string id;
 				PxTransform	transform;
 			};
 
@@ -386,18 +386,18 @@ namespace physics
 				PxVec3 attachPositions[2];
 			};
 
-			::std::string id;
-			::std::string name;
+			std::string id;
+			std::string name;
 
 			PxTransform transform;
 
-			::std::vector<asset_ref> assetRefs;
-			::std::vector<joint> joints;
+			std::vector<asset_ref> assetRefs;
+			std::vector<joint> joints;
 		};
 
-		::std::vector<px_model_asset> models;
-		::std::vector<px_composite_asset> composites;
-		::std::vector<px_box_asset>	boxes;
+		std::vector<px_model_asset> models;
+		std::vector<px_composite_asset> composites;
+		std::vector<px_box_asset>	boxes;
 	};
 
 	struct px_asset_generator
@@ -588,7 +588,7 @@ namespace physics
 		TkGroup* group = nullptr;
 		ExtSync* sync = nullptr;
 
-		::std::chrono::steady_clock::time_point startTime;
+		std::chrono::steady_clock::time_point startTime;
 
 		uint64_t firstEventTs;
 		uint32_t nextEventIndex;
@@ -596,7 +596,7 @@ namespace physics
 		bool isRecording;
 		bool isPlaying;
 
-		::std::vector<ExtSyncEvent*> buffer;
+		std::vector<ExtSyncEvent*> buffer;
 	};
 
 	struct px_blast_rigidbody_component;
@@ -771,12 +771,11 @@ namespace physics
 		px_blast_family::debug_render_mode debugRenderMode;
 		float debugRenderScale;
 
-		::std::vector<px_blast_scene_asset*> assets;
-		::std::vector<px_blast_rigidbody_component*> sceneActors;
-		::std::map<const TkAsset*, px_blast_single_scene_asset*> tkAssetMap;
+		std::vector<px_blast_scene_asset*> assets;
+		std::vector<px_blast_rigidbody_component*> sceneActors;
+		std::map<const TkAsset*, px_blast_single_scene_asset*> tkAssetMap;
 
 	private:
-
 		struct px_blast_fixed_buffer
 		{
 			px_blast_fixed_buffer(const uint32_t size)
@@ -807,7 +806,7 @@ namespace physics
 			}
 
 		private:
-			::std::vector<char> buffer;
+			std::vector<char> buffer;
 			uint32_t index;
 		};
 
@@ -839,14 +838,14 @@ namespace physics
 		ExtStressSolverSettings extStressSolverSettings;
 		ExtImpactSettings extImpactDamageManagerSettings;
 
-		::std::vector<ref<px_blast_family>> families;
+		std::vector<ref<px_blast_family>> families;
 		px_debug_render_buffer debugRenderBuffer;
 
 		px_blast_fixed_buffer damageDescBuffer;
 		px_blast_fixed_buffer damageParamsBuffer;
 
 		NvBlastFractureBuffers fractureBuffers;
-		::std::vector<char> fractureData;
+		std::vector<char> fractureData;
 
 		bool impactDamageEnabled;
 		bool impactDamageUpdatePending;
@@ -887,19 +886,18 @@ namespace physics
 		virtual const char* getID() const override { return desc.id.c_str(); }
 		virtual const char* getName() const override { return desc.name.c_str(); }
 
-
-		px_asset_list::px_box_asset desc;
-		px_blast_asset_boxes::desc assetDesc;
-
 		virtual px_blast_asset* createAsset()
 		{
 			const auto& physics = physics_holder::physicsRef;
 
 			return new px_blast_asset_boxes(physics->blast->getTkFramework(), *physics->getPhysics(),
-				*physics->app.getRenderer(), assetDesc);
+				*globalApp.getRenderer(), assetDesc);
 		}
 
 		virtual PxTransform getInitialTransform() { return PxTransform(PxVec3(0, assetDesc.generatorSettings.extents.y / 2, 0)); }
+
+		px_asset_list::px_box_asset desc;
+		px_blast_asset_boxes::desc assetDesc;
 	};
 
 	struct px_blast_model_scene_asset : px_blast_single_scene_asset
@@ -909,9 +907,9 @@ namespace physics
 		virtual const char* getID() const override { return desc.id.c_str(); }
 		virtual const char* getName() const override { return desc.name.c_str(); }
 
-		px_asset_list::px_model_asset desc;
-
 		virtual PxTransform getInitialTransform() { return desc.transform; }
+
+		px_asset_list::px_model_asset desc;
 	};
 
 	struct px_blast_simple_scene_asset : px_blast_model_scene_asset
@@ -923,7 +921,7 @@ namespace physics
 			const auto& physics = physics_holder::physicsRef;
 
 			return new px_blast_asset_model(physics->blast->getTkFramework(), *physics->getPhysics(),
-				*physics->blast->getExtSerialization(), *physics->app.getRenderer(), desc.file.c_str());
+				*physics->blast->getExtSerialization(), *globalApp.getRenderer(), desc.file.c_str());
 		}
 
 		virtual ImVec4 getUIColor() const
@@ -995,7 +993,7 @@ namespace physics
 
 		PxVec3 shift;
 
-		::std::string name;
+		std::string name;
 
 		uint32_t index{};
 

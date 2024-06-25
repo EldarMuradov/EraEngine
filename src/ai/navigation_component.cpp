@@ -16,9 +16,8 @@ static bool equalIn2d(vec3 rhs, vec3 lhs)
 
 void navigation_component::processPath()
 {
-	// TODO
-	/*
-	
+	eentity entity { handle, &globalApp.getCurrentScene()->registry };
+
 	auto& transform = entity.getComponent<transform_component>();
 	const auto& pos = transform.position;
 
@@ -46,7 +45,7 @@ void navigation_component::processPath()
 			nav_cor.token->cancelled = true;
 			nav_cor.destroy();
 		}
-	}*/
+	}
 }
 
 void navigation_component::createPath(vec3 to, vec3 from)

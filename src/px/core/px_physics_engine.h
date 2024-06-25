@@ -152,12 +152,12 @@ namespace physx
 		MAX_NUM_TIRE_TYPES
 	};
 
-	static inline void setupDrivableSurface(PxFilterData& filterData)
+	inline void setupDrivableSurface(PxFilterData& filterData)
 	{
 		filterData.word3 = (PxU32)DRIVABLE_SURFACE;
 	}
 
-	static inline void setupNonDrivableSurface(PxFilterData& filterData)
+	inline void setupNonDrivableSurface(PxFilterData& filterData)
 	{
 		filterData.word3 = UNDRIVABLE_SURFACE;
 	}
@@ -204,7 +204,7 @@ namespace physics
 	struct px_physics_component_base
 	{
 		virtual ~px_physics_component_base() {}
-		virtual void release(bool release = false) noexcept {};
+		virtual void release(bool release = false) noexcept = 0;
 	};
 
 	inline ::std::vector<PxFilterData> getFilterData(PxRigidActor* actor) noexcept
@@ -232,7 +232,7 @@ namespace physics
 
 	struct px_allocator_callback : PxAllocatorCallback
 	{
-		NODISCARD void* allocate(size_t size, const char* typeName, const char* filename, int line) override
+		void* allocate(size_t size, const char* typeName, const char* filename, int line) override
 		{
 			//ASSERT(size < GB(1));
 			return _aligned_malloc(size, 16);
@@ -274,12 +274,8 @@ namespace physics
 	template<typename HitType>
 	class px_dynamic_hit_buffer : public PxHitCallback<HitType>
 	{
-	private:
-		uint32 _count;
-		HitType _buffer[PX_CONTACT_BUFFER_SIZE];
-
 	public:
-		px_dynamic_hit_buffer() : PxHitCallback<HitType>(_buffer, PX_CONTACT_BUFFER_SIZE), _count(0)
+		px_dynamic_hit_buffer() : PxHitCallback<HitType>(buffer, PX_CONTACT_BUFFER_SIZE), count(0)
 		{
 		}
 
@@ -297,18 +293,18 @@ namespace physics
 
 		NODISCARD PX_INLINE PxU32 getNbTouches() const
 		{
-			return _count;
+			return count;
 		}
 
 		NODISCARD PX_INLINE const HitType* getTouches() const
 		{
-			return _buffer;
+			return buffer;
 		}
 
 		NODISCARD PX_INLINE const HitType& getTouch(const PxU32 index) const
 		{
 			PX_ASSERT(index < getNbTouches());
-			return _buffer[index];
+			return buffer[index];
 		}
 
 		NODISCARD PX_INLINE PxU32 getMaxNbTouches() const
@@ -317,14 +313,14 @@ namespace physics
 		}
 
 	protected:
-		PxAgain processTouches(const HitType* buffer, PxU32 nbHits) override
+		PxAgain processTouches(const HitType* inBuffer, PxU32 nbHits) override
 		{
-			nbHits = min(nbHits, PX_CONTACT_BUFFER_SIZE - _count);
+			nbHits = min(nbHits, PX_CONTACT_BUFFER_SIZE - count);
 			for (PxU32 i = 0; i < nbHits; i++)
 			{
-				_buffer[_count + i] = buffer[i];
+				buffer[count + i] = inBuffer[i];
 			}
-			_count += nbHits;
+			count += nbHits;
 			return true;
 		}
 
@@ -335,6 +331,10 @@ namespace physics
 				processTouches(&this->block, 1);
 			}
 		}
+
+	private:
+		uint32 count;
+		HitType buffer[PX_CONTACT_BUFFER_SIZE];
 	};
 
 #define PX_SCENE_QUERY_SETUP(blockSingle) \
@@ -440,7 +440,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 	class px_character_controller_filter_callback : public PxControllerFilterCallback
 	{
-		NODISCARD static PxShape* getShape(const PxController& controller)
+		static PxShape* getShape(const PxController& controller)
 		{
 			PxRigidDynamic* actor = controller.getActor();
 
@@ -483,13 +483,13 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 			recordProfileEvent(profile_event_begin_block, eventName);
 #endif
 
-			LOG_MESSAGE("%s %s", eventName, "started");
+			LOG_MESSAGE("[%s] %s", eventName, "started");
 			return nullptr;
 		}
 
 		void zoneEnd(void* profilerData, const char* eventName, bool detached, uint64_t contextId) override
 		{
-			LOG_MESSAGE("%s %s", eventName, "finished");
+			LOG_MESSAGE("[%s] %s", eventName, "finished");
 
 #if ENABLE_CPU_PROFILING
 			recordProfileEvent(profile_event_end_block, eventName);
@@ -503,7 +503,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		{
 			if (message)
 			{
-				LOG_ERROR("%s %s %u %s %s %s %u", message, "Code:", static_cast<int32>(code), "Source:", file, ":", line);
+				LOG_ERROR("PhysX Error> %s %s %u %s %s %s %u", message, "Code:", static_cast<int32>(code), "Source:", file, ":", line);
 				
 				std::ostringstream stream;
 				stream << message;
@@ -525,20 +525,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 	struct px_collision
 	{
-		px_rigidbody_component* thisActor = nullptr;
-
-		px_rigidbody_component* otherActor = nullptr;
-
-		PxVec3 impulse;
-
-		PxVec3 thisVelocity;
-
-		PxVec3 otherVelocity;
-		
-		int32 contactsCount;
-
-		px_contact_point contacts[PX_CONTACT_BUFFER_SIZE];
-
 		PxVec3 getRelativeVelocity() const noexcept
 		{
 			return thisVelocity - otherVelocity;
@@ -551,6 +537,20 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 			::std::swap(thisActor, otherActor);
 			::std::swap(thisVelocity, otherVelocity);
 		}
+
+		px_rigidbody_component* thisActor = nullptr;
+
+		px_rigidbody_component* otherActor = nullptr;
+
+		PxVec3 impulse;
+
+		PxVec3 thisVelocity;
+
+		PxVec3 otherVelocity;
+
+		int32 contactsCount;
+
+		px_contact_point contacts[PX_CONTACT_BUFFER_SIZE];
 	};
 
 	struct px_simulation_event_callback : PxSimulationEventCallback
@@ -645,7 +645,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		NO_COPY(px_physics_engine)
 
 	public:
-		px_physics_engine(application& a) noexcept;
+		px_physics_engine() noexcept;
 		~px_physics_engine();
 
 		void release() noexcept;
@@ -761,12 +761,11 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		::std::atomic_uint32_t nbActiveActors{};
 
-		application& app;
-
 		ref<px_blast> blast;
 
 		::std::set<px_rigidbody_component*> actors;
-		::std::set<px_collider_component_base*> colliders;
+
+		::std::unordered_map<uint32, std::vector<px_collider_component_base*>> collidersMap;
 
 		::std::vector<ref<px_soft_body>> softBodies;
 
@@ -777,6 +776,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		::std::unordered_set<uint32_t> unfreezeBlastQueue;
 
 		::std::mutex blastSync;
+
 		spin_lock sync;
 
 	private:

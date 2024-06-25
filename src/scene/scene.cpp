@@ -217,7 +217,7 @@ void escene::deleteEntity(eentity e)
 	{
 		reference->release();
 	}
-	if (physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_plane_collider_component>())
+	if (physics::px_physics_component_base* reference = e.getComponentIfExists<physics::px_plane_collider_component>())
 	{
 		reference->release();
 	}

@@ -967,7 +967,7 @@ physics::px_blast_family_boxes::px_blast_family_boxes(ExtPxManager& pxManager, m
 
 	auto defaultmat = createPBRMaterialAsync({ "", "" });
 
-	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+	auto enttScene = globalApp.getCurrentScene();
 
 	mesh_builder builder;
 
@@ -1005,7 +1005,7 @@ void physics::px_blast_family_boxes::onActorCreated(const ExtPxActor& actor)
 	const uint32_t* chunkIndices = actor.getChunkIndices();
 	uint32_t chunkCount = actor.getChunkCount();
 
-	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+	auto enttScene = globalApp.getCurrentScene();
 
 	for (uint32_t i = 0; i < chunkCount; i++)
 	{
@@ -1026,7 +1026,7 @@ void physics::px_blast_family_boxes::onActorUpdate(const ExtPxActor& actor)
 	const uint32_t* chunkIndices = actor.getChunkIndices();
 	uint32_t chunkCount = actor.getChunkCount();
 
-	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+	auto enttScene = globalApp.getCurrentScene();
 
 	for (uint32_t i = 0; i < chunkCount; i++)
 	{
@@ -1047,7 +1047,7 @@ void physics::px_blast_family_boxes::onActorDestroyed(const ExtPxActor& actor)
 	const uint32_t* chunkIndices = actor.getChunkIndices();
 	uint32_t chunkCount = actor.getChunkCount();
 
-	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+	auto enttScene = globalApp.getCurrentScene();
 
 	for (uint32_t i = 0; i < chunkCount; i++)
 	{
@@ -1363,12 +1363,12 @@ void physics::px_blast_single_scene_asset::spawn(PxVec3 shift)
 
 	trs t0 = trs(vec3(0.f, 0.0f, 0.0f), quat::identity, vec3(1.f));
 
-	physics_holder::physicsRef->app.getCurrentScene()->createEntity("blast_entity")
+	globalApp.getCurrentScene()->createEntity("blast_entity")
 		.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
 		.addComponent<px_blast_rigidbody_component>(std::string("blast_entity"), this);
 
 	trs t1 = trs(vec3(50.f, 0.0f, 0.0f), quat::identity, vec3(1.f));
-	physics_holder::physicsRef->app.getCurrentScene()->createEntity("blast_entity1")
+	globalApp.getCurrentScene()->createEntity("blast_entity1")
 		.addComponent<transform_component>(vec3(5.0f, 0.0f, 0.0f), quat::identity, vec3(1.f))
 		.addComponent<px_blast_rigidbody_component>(std::string("blast_entity1"), this);
 }
@@ -1568,7 +1568,7 @@ physics::px_blast_family_simple_mesh::px_blast_family_simple_mesh(ExtPxManager& 
 	// materials
 	auto defaultmat = createPBRMaterialAsync({ "", "" });
 
-	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+	auto enttScene = globalApp.getCurrentScene();
 
 	// model
 	const px_blast_model& model = *blastAsset.getModel();
@@ -1619,7 +1619,7 @@ void physics::px_blast_family_simple_mesh::onActorCreated(const ExtPxActor& acto
 {
 	const uint32_t* chunkIndices = actor.getChunkIndices();
 	uint32_t chunkCount = actor.getChunkCount();
-	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+	auto enttScene = globalApp.getCurrentScene();
 
 	for (uint32_t i = 0; i < chunkCount; i++)
 	{
@@ -1638,7 +1638,7 @@ void physics::px_blast_family_simple_mesh::onActorUpdate(const ExtPxActor& actor
 	const ExtPxSubchunk* subChunks = blastAsset.getPxAsset()->getSubchunks();
 	const uint32_t* chunkIndices = actor.getChunkIndices();
 	uint32_t chunkCount = actor.getChunkCount();
-	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+	auto enttScene = globalApp.getCurrentScene();
 
 	for (uint32_t i = 0; i < chunkCount; i++)
 	{
@@ -1660,7 +1660,7 @@ void physics::px_blast_family_simple_mesh::onActorDestroyed(const ExtPxActor& ac
 {
 	const uint32_t* chunkIndices = actor.getChunkIndices();
 	uint32_t chunkCount = actor.getChunkCount();
-	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+	auto enttScene = globalApp.getCurrentScene();
 
 	for (uint32_t i = 0; i < chunkCount; i++)
 	{
@@ -1683,7 +1683,7 @@ void physics::px_blast_family_simple_mesh::onActorHealthUpdate(const ExtPxActor&
 	if (nodeCount == 0) // subsupport chunks don't have graph nodes
 		return;
 
-	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+	auto enttScene = globalApp.getCurrentScene();
 
 	std::vector<uint32_t> nodes(tkActor.getGraphNodeCount());
 	tkActor.getGraphNodeIndices(nodes.data(), static_cast<uint32_t>(nodes.size()));

@@ -9,16 +9,23 @@ namespace physics
 
 	enum class px_articulation_cache_flags
 	{
-		None,
-		Velocity = (1 << 0),
-		Acceleration = (1 << 1),
-		Position = (1 << 2),
-		Force = (1 << 3),
-		LinkVelocity = (1 << 4),
-		LinkAcceleration = (1 << 5),
-		RootTransform = (1 << 6),
-		RootVelocities = (1 << 7),
-		All = (Velocity | Acceleration | Position | LinkVelocity | LinkAcceleration | RootTransform | RootVelocities)
+		articulation_cache_flag_none,
+		articulation_cache_flag_velocity = (1 << 0),
+		articulation_cache_flag_acceleration = (1 << 1),
+		articulation_cache_flag_position = (1 << 2),
+		articulation_cache_flag_force = (1 << 3),
+		articulation_cache_flag_link_velocity = (1 << 4),
+		articulation_cache_flag_link_acceleration = (1 << 5),
+		articulation_cache_flag_root_transform = (1 << 6),
+		articulation_cache_flag_root_velocities = (1 << 7),
+		articulation_cache_flag_all = (articulation_cache_flag_velocity |
+			articulation_cache_flag_acceleration | 
+			articulation_cache_flag_position |
+			articulation_cache_flag_force |
+			articulation_cache_flag_link_velocity |
+			articulation_cache_flag_link_acceleration |
+			articulation_cache_flag_root_transform |
+			articulation_cache_flag_root_velocities)
 	};
 
 	struct px_articulation
@@ -37,7 +44,7 @@ namespace physics
 			PX_RELEASE(material)
 		}
 
-		PxArticulationCache* createCache(px_articulation_cache_flags flags = px_articulation_cache_flags::All) noexcept
+		PxArticulationCache* createCache(px_articulation_cache_flags flags = px_articulation_cache_flags::articulation_cache_flag_all) noexcept
 		{
 			PX_RELEASE(cache)
 
@@ -46,7 +53,7 @@ namespace physics
 			return cache;
 		}
 
-		void applyCache(px_articulation_cache_flags flags = px_articulation_cache_flags::All, PxArticulationCache* inCache = nullptr)
+		void applyCache(px_articulation_cache_flags flags = px_articulation_cache_flags::articulation_cache_flag_all, PxArticulationCache* inCache = nullptr)
 		{
 			if (inCache)
 				articulation->applyCache(*inCache, (PxArticulationCacheFlags)((uint32)flags));

@@ -26,6 +26,7 @@
 #include <px/physics/px_collider_component.h>
 #include <px/features/px_particles.h>
 #include <px/physics/px_character_controller_component.h>
+#include <px/physics/px_collider_component.h>
 #endif
 
 struct escene;
@@ -145,24 +146,6 @@ struct eentity
 			if (!hasComponent<dynamic_transform_component>())
 				addComponent<dynamic_transform_component>();
 		}
-		else if	constexpr (std::is_same_v<component_t, physics::px_triangle_mesh_collider_component>)
-		{
-			float size = getComponent<transform_component>().scale.x;
-
-			auto& component = registry->emplace_or_replace<component_t>(handle, size, std::forward<args>(a)...);
-		}
-		else if	constexpr (std::is_same_v<component_t, physics::px_convex_mesh_collider_component>)
-		{
-			vec3 size = getComponent<transform_component>().scale;
-
-			auto& component = registry->emplace_or_replace<component_t>(handle, size, std::forward<args>(a)...);
-		}
-		else if	constexpr (std::is_same_v<component_t, physics::px_bounding_box_collider_component>)
-		{
-			float size = getComponent<transform_component>().scale.x;
-
-			auto& component = registry->emplace_or_replace<component_t>(handle, size, std::forward<args>(a)...);
-		}
 		else if	constexpr (std::is_same_v<component_t, struct navigation_component>)
 		{
 			auto& component = registry->emplace_or_replace<component_t>(handle, handle, std::forward<args>(a)...);
@@ -184,11 +167,6 @@ struct eentity
 			if (!hasComponent<physics::px_particles_render_component>())
 				addComponent<physics::px_particles_render_component>();
 		}
-		else if	constexpr (std::is_same_v<component_t, physics::px_plane_collider_component>)
-		{
-			auto& position = getComponent<transform_component>().position;
-			auto& component = registry->emplace_or_replace<component_t>(handle, position, std::forward<args>(a)...);
-		}
 		else if	constexpr (std::is_same_v<component_t, physics::px_capsule_cct_component>)
 		{
 			auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
@@ -202,6 +180,35 @@ struct eentity
 
 			if (!hasComponent<dynamic_transform_component>())
 				addComponent<dynamic_transform_component>();
+		}
+		else if	constexpr (std::is_base_of_v<physics::px_collider_component_base, component_t>)
+		{
+			if	constexpr (std::is_same_v<component_t, struct px_triangle_mesh_collider_component>)
+			{
+				float size = getComponent<transform_component>().scale.x;
+
+				auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, size, std::forward<args>(a)...);
+				component.registerCollider();
+			}
+			else if	constexpr (std::is_same_v<component_t, struct px_convex_mesh_collider_component>)
+			{
+				vec3 size = getComponent<transform_component>().scale;
+
+				auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, size, std::forward<args>(a)...);
+				component.registerCollider();
+			}
+			else if	constexpr (std::is_same_v<component_t, struct px_bounding_box_collider_component>)
+			{
+				float size = getComponent<transform_component>().scale.x;
+
+				auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, size, std::forward<args>(a)...);
+				component.registerCollider();
+			}
+			else
+			{
+				auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
+				component.registerCollider();
+			}
 		}
 		else if	constexpr (std::is_same_v<component_t, physics::px_box_cct_component>)
 		{

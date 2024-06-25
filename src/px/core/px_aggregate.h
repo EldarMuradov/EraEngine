@@ -16,8 +16,8 @@ namespace physics
 		void addActor(PxActor* actor) noexcept;
 		void removeActor(PxActor* actor) noexcept;
 
-		NODISCARD uint8 getNbActors() const noexcept { return nbActors; }
-		NODISCARD bool isSelfCollision() const noexcept { return selfCollisions; }
+		uint8 getNbActors() const noexcept { return nbActors; }
+		bool isSelfCollision() const noexcept { return selfCollisions; }
 
 	private:
 		PxAggregate* aggregate = nullptr;

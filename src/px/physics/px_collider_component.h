@@ -5,6 +5,7 @@
 #include <dx/dx_buffer.h>
 #include <geometry/mesh.h>
 #include <asset/model_asset.h>
+#include <scene/scene.h>
 
 namespace physics
 {
@@ -12,14 +13,14 @@ namespace physics
 
 	enum class px_collider_type : uint8
 	{
-		None,
-		Box,
-		Sphere,
-		Capsule,
-		TriangleMesh,
-		ConvexMesh,
-		Plane,
-		BoundingBox
+		collider_type_none,
+		collider_type_box,
+		collider_type_sphere,
+		collider_type_capsule,
+		collider_type_triangle_mesh,
+		collider_type_convex_mesh,
+		collider_type_plane,
+		collider_type_bounding_box
 	};
 
 	struct px_triangle_mesh_collider_builder
@@ -44,29 +45,32 @@ namespace physics
 	struct px_collider_component_base;
 
 	template<typename T_>
-	using ColliderType = std::enable_if_t<std::is_base_of_v<struct px_collider_component_base, T_>, bool>;
+	using IsColliderType = std::enable_if_t<std::is_base_of_v<struct px_collider_component_base, T_>, bool>;
 
 	struct px_collider_component_base : px_physics_component_base
 	{
-		px_collider_component_base(px_collider_type collType) noexcept : type(collType) {};
+		px_collider_component_base(uint32 handleParam, px_collider_type collType) noexcept : handle(handleParam), type(collType) {};
 		px_collider_component_base() = default;
 		virtual ~px_collider_component_base();
 
-		NODISCARD PxGeometry* getGeometry() noexcept { return geometry; }
+		NODISCARD PxGeometry* getGeometry() const noexcept { return geometry; }
 		NODISCARD PxShape* getShape() const noexcept { return shape; }
 		void setShape(PxShape* newShape) noexcept { shape = newShape; }
 
-		virtual bool createShape() { return false; }
+		virtual bool createGeometry() { return false; }
 
-		template<typename T, ColliderType<T> = true>
+		template<typename T, IsColliderType<T> = true>
 		NODISCARD T* is()
 		{
 			return static_cast<const T*>(this);
 		}
 
+		virtual void registerCollider() { physics_holder::physicsRef->collidersMap[handle].push_back(this); }
+
 		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) PX_RELEASE(material) RELEASE_PTR(geometry) }
 
-		px_collider_type type = px_collider_type::None;
+		px_collider_type type = px_collider_type::collider_type_none;
+		uint32 handle;
 
 	protected:
 		PxGeometry* geometry = nullptr;
@@ -76,48 +80,57 @@ namespace physics
 
 	struct px_box_collider_component : px_collider_component_base
 	{
-		px_box_collider_component(float h, float l, float w) noexcept
+		px_box_collider_component(uint32 handleParam, float h, float l, float w) noexcept
 		{
-			type = px_collider_type::Box;
+			type = px_collider_type::collider_type_box;
 			height = h;
 			length = l;
 			width = w;
+			handle = handleParam;
 		};
 
 		~px_box_collider_component();
 
-		bool createShape() override;
+		virtual bool createGeometry() override;
+
+		void registerCollider() override { physics_holder::physicsRef->collidersMap[handle].push_back(this); }
 
 		float height{}, length{}, width{};
 	};
 
 	struct px_sphere_collider_component : px_collider_component_base
 	{
-		px_sphere_collider_component(float r) noexcept
+		px_sphere_collider_component(uint32 handleParam, float r) noexcept
 		{
 			radius = r;
-			type = px_collider_type::Sphere;
+			type = px_collider_type::collider_type_sphere;
+			handle = handleParam;
 		};
 
 		~px_sphere_collider_component();
 
-		bool createShape() override;
+		virtual bool createGeometry() override;
+
+		void registerCollider() override { physics_holder::physicsRef->collidersMap[handle].push_back(this); }
 
 		float radius{};
 	};
 
 	struct px_capsule_collider_component : px_collider_component_base
 	{
-		px_capsule_collider_component(float r, float h) noexcept
+		px_capsule_collider_component(uint32 handleParam, float r, float h) noexcept
 		{
-			type = px_collider_type::Capsule;
+			type = px_collider_type::collider_type_capsule;
 			radius = r;
 			height = h;
+			handle = handleParam;
 		};
 
 		~px_capsule_collider_component();
 
-		bool createShape() override;
+		virtual bool createGeometry() override;
+
+		void registerCollider() override { physics_holder::physicsRef->collidersMap[handle].push_back(this); }
 
 		float height{}, radius{};
 	};
@@ -134,17 +147,20 @@ namespace physics
 
 	struct px_bounding_box_collider_component : px_collider_component_base
 	{
-		px_bounding_box_collider_component(float size, mesh_asset* as) noexcept : asset(as), modelSize(size)
+		px_bounding_box_collider_component(uint32 handleParam, float size, mesh_asset* as) noexcept : asset(as), modelSize(size)
 		{
-			type = px_collider_type::BoundingBox;
+			type = px_collider_type::collider_type_bounding_box;
 			name = asset->name;
+			handle = handleParam;
 		};
 
 		~px_bounding_box_collider_component();
 
-		bool createShape() override;
+		virtual bool createGeometry() override;
 
 		void release(bool release = true) noexcept override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) RELEASE_PTR(geometry) }
+
+		void registerCollider() override { physics_holder::physicsRef->collidersMap[handle].push_back(this); }
 
 		mesh_asset* asset = nullptr;
 		float modelSize = 1.0f;
@@ -153,58 +169,63 @@ namespace physics
 
 	struct px_triangle_mesh_collider_component : px_collider_component_base
 	{
-		px_triangle_mesh_collider_component(float size, mesh_asset* as) noexcept : asset(as), modelSize(size)
+		px_triangle_mesh_collider_component(uint32 handleParam, float size, mesh_asset* as) noexcept : asset(as), modelSize(size)
 		{
-			type = px_collider_type::TriangleMesh;
+			type = px_collider_type::collider_type_triangle_mesh;
 			name = asset->name;
+			handle = handleParam;
 		};
 
 		~px_triangle_mesh_collider_component();
 
-		bool createShape() override;
+		virtual bool createGeometry() override;
 
-		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) RELEASE_PTR(geometry)
-		}
+		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) RELEASE_PTR(geometry) }
+
+		void registerCollider() override { physics_holder::physicsRef->collidersMap[handle].push_back(this); }
 
 		mesh_asset* asset = nullptr;
 		float modelSize = 1.0f;
 		::std::string name;
 	};
 
-	struct px_plane_collider_component : px_collider_component_base
+	struct px_plane_collider_component : px_physics_component_base
 	{
 		px_plane_collider_component(const vec3& pos, const vec3& norm = vec3(0.f, 1.f, 0.f)) noexcept : position(pos), normal(norm)
 		{
-			type = px_collider_type::Plane;
-			createShape();
+			createGeometry();
 		};
 
-		~px_plane_collider_component();
+		~px_plane_collider_component() {};
 
-		bool createShape() override;
+		bool createGeometry();
 
-		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) PX_RELEASE(plane) PX_RELEASE(material) RELEASE_PTR(geometry) }
+		virtual void release(bool release = true) noexcept override { PX_RELEASE(plane) PX_RELEASE(material) }
 
 		vec3 position{};
 		vec3 normal{};
 
 	private:
 		PxRigidStatic* plane = nullptr;
+		PxMaterial* material = nullptr;
 	};
 
 	struct px_convex_mesh_collider_component : px_collider_component_base
 	{
-		px_convex_mesh_collider_component(vec3 size, mesh_asset* as) noexcept : asset(as), modelSize(size)
+		px_convex_mesh_collider_component(uint32 handleParam, vec3 size, mesh_asset* as) noexcept : asset(as), modelSize(size)
 		{
-			type = px_collider_type::ConvexMesh;
+			type = px_collider_type::collider_type_convex_mesh;
 			name = asset->name;
+			handle = handleParam;
 		};
 
 		~px_convex_mesh_collider_component();
 
-		bool createShape() override;
+		virtual bool createGeometry() override;
 
 		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) PX_RELEASE(material) RELEASE_PTR(geometry) }
+
+		void registerCollider() override { physics_holder::physicsRef->collidersMap[handle].push_back(this); }
 
 		mesh_asset* asset = nullptr;
 		vec3 modelSize = vec3(1.0f);
@@ -259,10 +280,6 @@ REFLECT_STRUCT(physics::px_triangle_mesh_collider_component,
 	(type, "Type"),
 	(modelSize, "Size"),
 	(name, "Name")
-);
-
-REFLECT_STRUCT(physics::px_plane_collider_component,
-	(type, "Type")
 );
 
 REFLECT_STRUCT(physics::px_convex_mesh_collider_component,

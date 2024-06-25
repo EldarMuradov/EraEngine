@@ -271,7 +271,7 @@ static void initTestScene(escene& scene)
 			//.addComponent<physics::px_triangle_mesh_collider_component>(&(ass.meshes[0]))
 			//.addComponent<physics::px_bounding_box_collider_component>(&(ass.meshes[0]))
 			.addComponent<physics::px_sphere_collider_component>(1.0f)
-			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
+			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::rigidbody_type_dynamic);
 		px_sphere_entt.getComponent<physics::px_rigidbody_component>().setMass(1000.f);
 		sphere = px_sphere_entt.handle;
 
@@ -279,7 +279,7 @@ static void initTestScene(escene& scene)
 			.addComponent<transform_component>(vec3(5, 155.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(5.f))
 			.addComponent<mesh_component>(sphereMesh)
 			.addComponent<physics::px_sphere_collider_component>(5.0f)
-			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
+			.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::rigidbody_type_dynamic);
 		px_sphere1->getComponent<physics::px_rigidbody_component>().setMass(500.0f);
 
 		//if (auto mesh = loadAnimatedMeshFromFileAsync("assets/veribot/source/VERIBOT_final.fbx"))
@@ -352,7 +352,7 @@ static void initTestScene(escene& scene)
 
 		auto px_plane = &scene.createEntity("PlanePX")
 			.addComponent<transform_component>(vec3(0.f, -2.0, 0.0f), quat::identity, vec3(1.f))
-			.addComponent<physics::px_plane_collider_component>();
+			.addComponent<physics::px_plane_collider_component>(vec3(0.f, -2.0, 0.0f));
 
 		/*particles = scene.createEntity("ParticlesPX")
 			.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
@@ -398,7 +398,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 	scene.environment.setFromTexture("assets/sky/sunset_in_the_chalk_quarry_4k.hdr");
 	scene.environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
 
-	physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>(*this);
+	physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>();
 
 	escene& scene = this->scene.getCurrentScene();
 
@@ -579,7 +579,7 @@ static void updateTestScene(float dt, escene& scene, const user_input& input)
 		eentity sphere{ sphere, &scene.registry };
 		if (input.keyboard['G'].pressEvent)
 		{
-			sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(500.f, 1.0f, 0.0f), physics::px_force_mode::Impulse);
+			sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(500.f, 1.0f, 0.0f), physics::px_force_mode::force_mode_impulse);
 		}
 	}
 }

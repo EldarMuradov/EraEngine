@@ -84,13 +84,13 @@ namespace physics
 
     enum class anchor : uint8_t
     {
-        None = 0,
-        Left = 1,
-        Right = 2,
-        Bottom = 4,
-        Top = 8,
-        Front = 16,
-        Back = 32
+        anchor_none = 0,
+        anchor_left = 1,
+        anchor_right = 2,
+        anchor_bottom = 4,
+        anchor_top = 8,
+        anchor_front = 16,
+        anchor_back = 32
     };
 
     inline anchor operator|(anchor lhs, anchor rhs)
@@ -105,9 +105,6 @@ namespace physics
 
     struct bounds
     {
-        vec3 center;
-        vec3 extents;
-
         void setMinMax(const vec3& min, const vec3& max) noexcept
         {
             extents = (max - min) * 0.5f;
@@ -124,6 +121,9 @@ namespace physics
             encapsulate(bounds.center - bounds.extents);
             encapsulate(bounds.center + bounds.extents);
         }
+
+        vec3 center;
+        vec3 extents;
     };
 
     inline bounds getCompositeMeshBounds(eentity& entt)
@@ -168,13 +168,6 @@ namespace physics
 
     struct nvmesh
     {
-        ::std::vector<physx::PxVec3> vertices;
-        ::std::vector<physx::PxVec3> normals;
-        ::std::vector<physx::PxVec2> uvs;
-        ::std::vector<uint32_t> indices;
-
-        Nv::Blast::Mesh* mesh = nullptr;
-
         nvmesh(::std::vector<physx::PxVec3> verts, ::std::vector<physx::PxVec3> norms,
             ::std::vector<physx::PxVec2> uvis, ::std::vector<uint32_t> inds) noexcept
             : vertices(verts),
@@ -230,6 +223,13 @@ namespace physics
 
             RELEASE_PTR(cleaner)
         }
+
+        std::vector<physx::PxVec3> vertices;
+        std::vector<physx::PxVec3> normals;
+        std::vector<physx::PxVec2> uvs;
+        std::vector<uint32_t> indices;
+
+        Nv::Blast::Mesh* mesh = nullptr;
     };
 
     struct nvmesh_chunk_component : px_physics_component_base
@@ -304,8 +304,6 @@ namespace physics
 
     struct randomGenerator : Nv::Blast::RandomGeneratorBase
     {
-        static inline unsigned int seedResult = 5489U;
-
         virtual float getRandomValue()
         {
             ::std::random_device rd;
@@ -320,13 +318,12 @@ namespace physics
         {
             seedResult = seed;
         }
+
+        static inline unsigned int seedResult = 5489U;
     };
 
     struct voronoi_sites_generator
     {
-        ref<randomGenerator> rndGen = nullptr;
-        Nv::Blast::VoronoiSitesGenerator* generator = nullptr;
-
         voronoi_sites_generator(ref<nvmesh> mesh) noexcept
         {
             rndGen = make_ref<randomGenerator>();
@@ -337,6 +334,9 @@ namespace physics
         {
             RELEASE_PTR(generator)
         }
+
+        ref<randomGenerator> rndGen = nullptr;
+        Nv::Blast::VoronoiSitesGenerator* generator = nullptr;
     };
 
     struct int_pair_hash
@@ -666,24 +666,6 @@ namespace physics
     {
         struct chunk_node
         {
-            ::std::unordered_set<entity_handle> neighbours;
-
-            ::std::unordered_map<px_fixed_joint*, entity_handle> jointToChunk;
-            ::std::unordered_map<entity_handle, px_fixed_joint*> chunkToJoint;
-
-            entity_handle* neighboursArray = nullptr;
-
-            entity_handle handle{};
-
-            bool frozen = true;
-            bool isKinematic = false;
-            bool hasBrokenLinks = false;
-
-            vec3 frozenPos{};
-            quat forzenRot{};
-
-            volatile uint32 spliteGeneration = 0;
-
             chunk_node() = default;
 
             chunk_node(entity_handle handl, uint32 generation) : handle(handl), spliteGeneration(generation) {}
@@ -724,7 +706,7 @@ namespace physics
                 if (!manager->joints.contains(handle))
                     return;
 
-                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+                auto enttScene = globalApp.getCurrentScene();
 
                 for (auto joint : manager->joints[handle])
                 {
@@ -776,7 +758,7 @@ namespace physics
             void cleanBrokenLinks() noexcept
             {
                 ::std::vector<px_fixed_joint*> brokenLinks;
-                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+                auto enttScene = globalApp.getCurrentScene();
 
                 for (auto& joint : jointToChunk)
                 {
@@ -807,7 +789,7 @@ namespace physics
 
             void setupRigidbody() noexcept
             {
-                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+                auto enttScene = globalApp.getCurrentScene();
 
                 if (!enttScene->registry.size())
                     return;
@@ -834,7 +816,7 @@ namespace physics
             {
                 frozen = false;
 
-                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+                auto enttScene = globalApp.getCurrentScene();
 
                 eentity renderEntity{ handle, &enttScene->registry };
 
@@ -845,7 +827,7 @@ namespace physics
             {
                 frozen = true;
 
-                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+                auto enttScene = globalApp.getCurrentScene();
 
                 eentity renderEntity{ handle, &enttScene->registry };
 
@@ -854,12 +836,25 @@ namespace physics
 
                 renderEntity.getComponent<physics::px_rigidbody_component>().setConstraints(PX_FREEZE_ALL);
             }
+
+            std::unordered_set<entity_handle> neighbours;
+
+            std::unordered_map<px_fixed_joint*, entity_handle> jointToChunk;
+            std::unordered_map<entity_handle, px_fixed_joint*> chunkToJoint;
+
+            entity_handle* neighboursArray = nullptr;
+
+            entity_handle handle{};
+
+            bool frozen = true;
+            bool isKinematic = false;
+            bool hasBrokenLinks = false;
+
+            vec3 frozenPos{};
+            quat forzenRot{};
+
+            volatile uint32 spliteGeneration = 0;
         };
-
-        ::std::vector<entity_handle> nodes;
-        size_t nbNodes{};
-
-        ::std::unordered_map<entity_handle, ::std::vector<px_fixed_joint*>> joints;
 
         void setup(::std::vector<entity_handle> bodies, uint32 generation = 0) noexcept
         {
@@ -868,7 +863,7 @@ namespace physics
 
             physics_holder::physicsRef->unfreezeBlastQueue.reserve(nbNodes * 5);
 
-            auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+            auto enttScene = globalApp.getCurrentScene();
 
             for (size_t i = 0; i < bodies.size(); i++)
             {
@@ -895,7 +890,7 @@ namespace physics
 
         void update() noexcept
         {
-            auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+            auto enttScene = globalApp.getCurrentScene();
 
             for (auto& node : joints)
             {
@@ -936,7 +931,7 @@ namespace physics
 
             for (size_t i = 0; i < nbNodes; i++)
             {
-                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+                auto enttScene = globalApp.getCurrentScene();
 
                 eentity renderEntity{ objects[i], &enttScene->registry };
                 if (auto rb = renderEntity.getComponentIfExists<px_rigidbody_component>())
@@ -975,7 +970,7 @@ namespace physics
         {
             if (search.contains(o) && visited.contains(o) == false)
             {
-                auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+                auto enttScene = globalApp.getCurrentScene();
 
                 visited.emplace(o);
 
@@ -986,18 +981,21 @@ namespace physics
                 }
             }
         }
+
+        std::vector<entity_handle> nodes;
+        size_t nbNodes{};
+
+        std::unordered_map<entity_handle, ::std::vector<px_fixed_joint*>> joints;
     };
 
     struct fracture
     {
-        ::std::unordered_set<chunkPair> jointPairs;
-
         entity_handle fractureGameObject(ref<submesh_asset> meshAsset, const eentity& gameObject, anchor anchor, unsigned int seed, int totalChunks, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, float jointBreakForce, float density)
         {
             if (totalChunks <= 0)
                 return null_entity;
 
-            auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+            auto enttScene = globalApp.getCurrentScene();
 
             eentity fractureGameObject = enttScene->createEntity("Fracture")
                 .addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
@@ -1053,10 +1051,10 @@ namespace physics
 
         void anchorChunks(entity_handle gameObject, anchor anchor)
         {
-            if (anchor == anchor::None)
+            if (anchor == anchor::anchor_none)
                 return;
 
-            auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+            auto enttScene = globalApp.getCurrentScene();
 
             eentity entt{ gameObject, &enttScene->registry };
 
@@ -1080,7 +1078,7 @@ namespace physics
             auto meshWorldCenter = localToWorld(bounds.center, meshTransform);
             auto meshWorldExtents = bounds.extents * meshTransform.scale;
 
-            if (anchor & anchor::Left)
+            if (anchor & anchor::anchor_left)
             {
                 auto right = transformDirection(meshTransform, vec3(1.0f, 0.0f, 0.0f));
 
@@ -1097,7 +1095,7 @@ namespace physics
                 }
             }
 
-            if (anchor & anchor::Right)
+            if (anchor & anchor::anchor_right)
             {
                 auto right = transformDirection(meshTransform, vec3(1.0f, 0.0f, 0.0f));
 
@@ -1114,7 +1112,7 @@ namespace physics
                 }
             }
 
-            if (anchor & anchor::Bottom)
+            if (anchor & anchor::anchor_bottom)
             {
                 auto up = transformDirection(meshTransform, vec3(0.0f, 1.0f, 0.0f));
 
@@ -1131,7 +1129,7 @@ namespace physics
                 }
             }
 
-            if (anchor & anchor::Top)
+            if (anchor & anchor::anchor_top)
             {
                 auto up = transformDirection(meshTransform, vec3(0.0f, 1.0f, 0.0f));
 
@@ -1148,7 +1146,7 @@ namespace physics
                 }
             }
 
-            if (anchor & anchor::Front)
+            if (anchor & anchor::anchor_front)
             {
                 auto forward = transformDirection(meshTransform, vec3(0.0f, 0.0f, 1.0f));
 
@@ -1165,7 +1163,7 @@ namespace physics
                 }
             }
 
-            if (anchor & anchor::Back)
+            if (anchor & anchor::anchor_back)
             {
                 auto forward = transformDirection(meshTransform, vec3(0.0f, 0.0f, 1.0f));
 
@@ -1204,7 +1202,7 @@ namespace physics
 
         void connectTouchingChunks(chunk_graph_manager& manager, ref<submesh_asset> asset, entity_handle chunk, float jointBreakForce, float touchRadius = .01f)
         {
-            auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+            auto enttScene = globalApp.getCurrentScene();
             eentity entt{ chunk, &enttScene->registry };
 
             auto& rb = entt.getComponent<physics::px_rigidbody_component>();
@@ -1263,6 +1261,8 @@ namespace physics
                 }
             }
         }
+
+        std::unordered_set<chunkPair> jointPairs;
     };
 }
 

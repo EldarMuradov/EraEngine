@@ -386,7 +386,6 @@ namespace physics
 		PxVec4* posBuffer = nullptr;
 
 	private:
-
 #if PX_PARTICLE_USE_ALLOCATOR
 
 		eallocator allocator;

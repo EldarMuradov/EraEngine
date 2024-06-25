@@ -78,8 +78,7 @@ static void clearColliderFromCollection(const physics::px_rigidbody_component* c
 	}
 }
 
-physics::px_physics_engine::px_physics_engine(application& a) noexcept
-	: app(a)
+physics::px_physics_engine::px_physics_engine() noexcept
 {
 	allocator.initialize(MB(256));
 
@@ -475,15 +474,22 @@ void physics::px_physics_engine::removeActor(px_rigidbody_component* actor) noex
 void physics::px_physics_engine::releaseActors() noexcept
 {
 	physics_lock_write lock{};
-	auto gameScene = app.getCurrentScene();
+	auto gameScene = globalApp.getCurrentScene();
+
+	for (auto& pair : collidersMap)
+	{
+		for (auto& coll : pair.second)
+		{
+			coll->release();
+		}
+	}
 
 	for (auto& actor : actors)
 		actor->release();
-	for (auto& coll : colliders)
-		coll->release();
 
 	actors.clear();
 	actorsMap.clear();
+	collidersMap.clear();
 	scene->flushSimulation();
 }
 
@@ -583,7 +589,7 @@ void physics::px_physics_engine::syncTransforms() noexcept
 
 	nbActiveActors.store(tempNb, ::std::memory_order_relaxed);
 
-	auto gameScene = app.getCurrentScene();
+	auto gameScene = globalApp.getCurrentScene();
 
 	for (size_t i = 0; i < nbActiveActors; i++)
 	{
@@ -617,7 +623,7 @@ void physics::px_physics_engine::processBlastQueue() noexcept
 	if (unfreezeBlastQueue.size() > 0)
 	{
 		lock lock{ blastSync };
-		auto enttScene = app.getCurrentScene();
+		auto enttScene = globalApp.getCurrentScene();
 
 		for (auto iter = unfreezeBlastQueue.begin(); iter != unfreezeBlastQueue.end(); ++iter)
 		{
@@ -729,7 +735,7 @@ void physics::px_simulation_event_callback::clear() noexcept
 
 void physics::px_simulation_event_callback::sendCollisionEvents() noexcept
 {
-	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+	auto enttScene = globalApp.getCurrentScene();
 
 	if (!enttScene->registry.size())
 		return;
@@ -809,7 +815,7 @@ void physics::px_simulation_event_callback::onConstraintBreak(PxConstraintInfo* 
 	if (!rb1 || !rb2)
 		return;
 
-	auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
+	auto enttScene = globalApp.getCurrentScene();
 
 	eentity entt1{ (entity_handle)rb1->handle, &enttScene->registry };
 	eentity entt2{ (entity_handle)rb2->handle, &enttScene->registry };

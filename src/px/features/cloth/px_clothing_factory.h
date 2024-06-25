@@ -257,7 +257,6 @@ namespace physics
 		PxU32 numParticles{};
 
 	private:
-
 #if PX_PARTICLE_USE_ALLOCATOR
 
 		eallocator allocator;

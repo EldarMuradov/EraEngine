@@ -14,9 +14,9 @@ namespace physics
 
 	enum class px_cct_type : uint8
 	{
-		None,
-		Box,
-		Capsule
+		cct_type_none,
+		cct_type_box,
+		cct_type_capsule
 	};
 
 	struct px_cct_component_base : px_rigidbody_component
@@ -26,14 +26,13 @@ namespace physics
 
 		virtual void release(bool releaseActor = true) noexcept override;
 
-		px_cct_type type = px_cct_type::None;
+		px_cct_type type = px_cct_type::cct_type_none;
 
 		float mass = 1.0f;
 
 	protected:
 		virtual void createCharacterController() noexcept {};
 
-	protected:
 		physx::PxControllerManager* manager = nullptr;
 		physx::PxController* controller = nullptr;
 	};

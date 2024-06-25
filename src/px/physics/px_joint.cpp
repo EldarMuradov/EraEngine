@@ -70,7 +70,7 @@ namespace physics
 		joint = createRevoluteJoint(f, s);
 		first = f;
 		second = s;
-		type = px_joint_type::Revolute;
+		type = px_joint_type::joint_type_revolute;
 		PxJointAngularLimitPair limitPair(desc.angularPair.lower,
 			desc.angularPair.upper);
 		limitPair.stiffness = desc.angularPair.stiffness;
@@ -99,7 +99,7 @@ namespace physics
 		joint = createSphericalJoint(f, s);
 		first = f;
 		second = s;
-		type = px_joint_type::Spherical;
+		type = px_joint_type::joint_type_spherical;
 
 		PxJointLimitCone limitCone(desc.limitCone.yAngle,
 			desc.limitCone.zAngle);
@@ -123,7 +123,7 @@ namespace physics
 		joint = createPrismaticJoint(f, s);
 		first = f;
 		second = s;
-		type = px_joint_type::Prismatic;
+		type = px_joint_type::joint_type_prismatic;
 		PxTolerancesScale ts;
 		ts.length = 1.0;
 		ts.speed = 981;
@@ -151,7 +151,7 @@ namespace physics
 		joint = createDistanceJoint(f, s);
 		first = f;
 		second = s;
-		type = px_joint_type::Distance;
+		type = px_joint_type::joint_type_distance;
 		auto jInstance = joint->is<PxDistanceJoint>();
 		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 		jInstance->setDamping(desc.damping);
@@ -172,7 +172,7 @@ namespace physics
 		first = f;
 		second = s;
 		joint = createFixedJoint(f, s);
-		type = px_joint_type::Fixed;
+		type = px_joint_type::joint_type_fixed;
 		auto jInstance = joint->is<PxFixedJoint>();
 		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
@@ -192,7 +192,7 @@ namespace physics
 		joint = createD6Joint(f, s);
 		first = f;
 		second = s;
-		type = px_joint_type::D6;
+		type = px_joint_type::joint_type_d6;
 		auto jInstance = joint->is<PxD6Joint>();
 		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 		if (desc.drive.anabledDrive)

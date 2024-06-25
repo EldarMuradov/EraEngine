@@ -3,8 +3,8 @@
 #include "pch.h"
 #include "px_collider_component.h"
 #include <asset/file_registry.h>
-#include <extensions/PxTetMakerExt.h>
 #include <px/core/px_extensions.h>
+#include <extensions/PxTetMakerExt.h>
 
 namespace physics 
 {
@@ -80,13 +80,11 @@ namespace physics
 	{
 	}
 
-	bool px_box_collider_component::createShape()
+	bool px_box_collider_component::createGeometry()
 	{
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		geometry = new PxBoxGeometry(height, length, width);
-
-		physics_holder::physicsRef->colliders.emplace(this);
 
 		return true;
 	}
@@ -96,13 +94,11 @@ namespace physics
 
 	}
 
-	bool px_sphere_collider_component::createShape()
+	bool px_sphere_collider_component::createGeometry()
 	{
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		geometry = new PxSphereGeometry(radius);
-
-		physics_holder::physicsRef->colliders.emplace(this);
 
 		return true;
 	}
@@ -111,13 +107,11 @@ namespace physics
 	{
 	}
 
-	bool px_capsule_collider_component::createShape()
+	bool px_capsule_collider_component::createGeometry()
 	{
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		geometry = new PxCapsuleGeometry(radius, height / 2.0f);
-
-		physics_holder::physicsRef->colliders.emplace(this);
 
 		return true;
 	}
@@ -127,7 +121,7 @@ namespace physics
 
 	}
 
-	bool px_triangle_mesh_collider_component::createShape()
+	bool px_triangle_mesh_collider_component::createGeometry()
 	{
 		px_triangle_mesh_collider_builder builder;
 		PxTriangleMesh* mesh = builder.buildMesh(asset, modelSize);
@@ -138,8 +132,6 @@ namespace physics
 
 		PX_RELEASE(mesh);
 
-		physics_holder::physicsRef->colliders.emplace(this);
-
 		return true;
 	}
 
@@ -147,7 +139,7 @@ namespace physics
 	{
 	}
 
-	bool px_bounding_box_collider_component::createShape()
+	bool px_bounding_box_collider_component::createGeometry()
 	{
 		submesh_asset root = asset->submeshes[0];
 
@@ -185,19 +177,21 @@ namespace physics
 
 		PX_RELEASE(mesh);
 
-		physics_holder::physicsRef->colliders.emplace(this);
-
 		return true;
 	}
 
 	void enableShapeVisualization(PxShape* shape) noexcept
 	{
+#ifndef PX_GPU_BROAD_PHASE
 		shape->setFlag(PxShapeFlag::eVISUALIZATION, true);
+#endif
 	}
 
 	void disableShapeVisualization(PxShape* shape) noexcept
 	{
+#ifndef PX_GPU_BROAD_PHASE
 		shape->setFlag(PxShapeFlag::eVISUALIZATION, false);
+#endif
 	}
 
 	void enableShapeInContactTests(PxShape* shape) noexcept
@@ -284,7 +278,7 @@ namespace physics
 	{
 	}
 
-	bool px_convex_mesh_collider_component::createShape()
+	bool px_convex_mesh_collider_component::createGeometry()
 	{
 		px_convex_mesh_collider_builder builder;
 		PxConvexMesh* mesh = builder.buildMesh(asset, modelSize);
@@ -293,26 +287,18 @@ namespace physics
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		geometry = new PxConvexMeshGeometry(mesh, PxMeshScale(createPxVec3(modelSize)));
 
-		physics_holder::physicsRef->colliders.emplace(this);
-
 		return true;
 	}
 
-	px_plane_collider_component::~px_plane_collider_component()
-	{
-	}
-
-	bool px_plane_collider_component::createShape()
+	bool px_plane_collider_component::createGeometry()
 	{
 		const auto& physics = physics_holder::physicsRef->getPhysics();
-		physics_holder::physicsRef->lockWrite();
+		physics_lock_write lock{};
 
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		plane = PxCreatePlane(*physics, PxPlane(createPxVec3(position), createPxVec3(normal)), *material);
 
 		physics_holder::physicsRef->getScene()->addActor(*plane);
-
-		physics_holder::physicsRef->unlockWrite();
 
 		return true;
 	}

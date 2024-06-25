@@ -283,8 +283,6 @@ namespace physics
 
 		virtual bool empty() const { return lines.empty(); }
 
-		::std::vector<PxDebugLine> lines;
-
 		// Unused
 		virtual void addPoint(const PxDebugPoint& point) {}
 
@@ -299,6 +297,8 @@ namespace physics
 
 		// Unused
 		virtual void shift(const PxVec3& delta) {}
+
+		::std::vector<PxDebugLine> lines;
 	};
 
 	static PX_FORCE_INLINE void pushVertex(::std::vector<vec3>* vertexBuffer, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, const PxVec3& n)

@@ -10,7 +10,7 @@ namespace physics
 {
 	px_capsule_cct_component::px_capsule_cct_component(uint32_t entt) noexcept : px_cct_component_base(entt)
 	{
-		type = px_cct_type::Capsule;
+		type = px_cct_type::cct_type_capsule;
 		createCharacterController();
 
 		uint32_t* h = new uint32_t[1];
@@ -26,7 +26,7 @@ namespace physics
 
 		material = physics_holder::physicsRef->getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 
-		eentity entity = { handle, &physics_holder::physicsRef->app.getCurrentScene()->registry };
+		eentity entity = { handle, &globalApp.getCurrentScene()->registry };
 
 		PxCapsuleControllerDesc desc;
 
@@ -52,7 +52,7 @@ namespace physics
 	px_capsule_cct_component::px_capsule_cct_component(uint32_t entt, float h, float r, float m) noexcept : px_cct_component_base(entt), height(h), radius(r)
 	{
 		mass = m;
-		type = px_cct_type::Capsule;
+		type = px_cct_type::cct_type_capsule;
 		createCharacterController();
 
 		uint32_t* hndl = new uint32_t[1];
@@ -81,7 +81,7 @@ namespace physics
 
 	px_box_cct_component::px_box_cct_component(uint32_t entt) noexcept : px_cct_component_base(entt)
 	{
-		type = px_cct_type::Box;
+		type = px_cct_type::cct_type_box;
 		createCharacterController();
 
 		uint32_t* h = new uint32_t[1];
@@ -94,7 +94,7 @@ namespace physics
 	px_box_cct_component::px_box_cct_component(uint32_t entt, float hh, float hs, float m) noexcept : px_cct_component_base(entt)
 	{
 		mass = m;
-		type = px_cct_type::Box;
+		type = px_cct_type::cct_type_box;
 		createCharacterController();
 
 		uint32_t* h = new uint32_t[1];
@@ -109,7 +109,7 @@ namespace physics
 		manager = PxCreateControllerManager(*physics_holder::physicsRef->getScene());
 
 		material = physics_holder::physicsRef->getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
-		eentity entity = { handle, &physics_holder::physicsRef->app.getCurrentScene()->registry };
+		eentity entity = { handle, &globalApp.getCurrentScene()->registry };
 
 		physx::PxBoxControllerDesc desc;
 

@@ -15,7 +15,7 @@ namespace physics
 	px_rigidbody_component::px_rigidbody_component(uint32_t entt, px_rigidbody_type rbtype, bool addToScene) noexcept : type(rbtype)
 	{
 		handle = entt;
-		if (rbtype != px_rigidbody_type::None)
+		if (rbtype != px_rigidbody_type::rigidbody_type_none)
 			createPhysics(addToScene);
 	}
 
@@ -28,13 +28,13 @@ namespace physics
 		if (!actor)
 			return;
 		physics_lock_write lock{};
-		if (mode == px_force_mode::Force)
+		if (mode == px_force_mode::force_mode_force)
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eFORCE);
-		else if (mode == px_force_mode::Impulse)
+		else if (mode == px_force_mode::force_mode_impulse)
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eIMPULSE);
-		else if (mode == px_force_mode::VelocityChange)
+		else if (mode == px_force_mode::force_mode_velocity_change)
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eVELOCITY_CHANGE);
-		else if (mode == px_force_mode::Acceleration)
+		else if (mode == px_force_mode::force_mode_acceleration)
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eACCELERATION);
 		else
 			actor->is<PxRigidDynamic>()->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eFORCE);
@@ -45,13 +45,13 @@ namespace physics
 		if (!actor)
 			return;
 		physics_lock_write lock{};
-		if (mode == px_force_mode::Force)
+		if (mode == px_force_mode::force_mode_force)
 			actor->is<PxRigidDynamic>()->addTorque(PxVec3(torque.x, torque.y, torque.z), PxForceMode::eFORCE);
-		else if (mode == px_force_mode::Impulse)
+		else if (mode == px_force_mode::force_mode_impulse)
 			actor->is<PxRigidDynamic>()->addTorque(PxVec3(torque.x, torque.y, torque.z), PxForceMode::eIMPULSE);
-		else if (mode == px_force_mode::VelocityChange)
+		else if (mode == px_force_mode::force_mode_velocity_change)
 			actor->is<PxRigidDynamic>()->addTorque(PxVec3(torque.x, torque.y, torque.z), PxForceMode::eVELOCITY_CHANGE);
-		else if (mode == px_force_mode::Acceleration)
+		else if (mode == px_force_mode::force_mode_acceleration)
 			actor->is<PxRigidDynamic>()->addTorque(PxVec3(torque.x, torque.y, torque.z), PxForceMode::eACCELERATION);
 		else
 			actor->is<PxRigidDynamic>()->addTorque(PxVec3(torque.x, torque.y, torque.z), PxForceMode::eFORCE);
@@ -260,8 +260,10 @@ namespace physics
 		if (!actor)
 			return;
 		physics_lock_write lock{};
-		if (damping > 0.0f)
-			actor->is<PxRigidDynamic>()->setAngularDamping(damping);
+		if (auto dyn = actor->is<PxRigidDynamic>())
+		{
+			dyn->setAngularDamping(damping);
+		}
 	}
 
 	void px_rigidbody_component::setLinearDamping(float damping)
@@ -269,8 +271,10 @@ namespace physics
 		if (!actor)
 			return;
 		physics_lock_write lock{};
-		if (damping > 0.0f)
-			actor->is<PxRigidDynamic>()->setLinearDamping(damping);
+		if (auto dyn = actor->is<PxRigidDynamic>())
+		{
+			dyn->setLinearDamping(damping);
+		}
 	}
 
 	void px_rigidbody_component::setThreshold(float stabilization, float sleep)
@@ -278,8 +282,11 @@ namespace physics
 		if (!actor)
 			return;
 		physics_lock_write lock{};
-		actor->is<PxRigidDynamic>()->setStabilizationThreshold(stabilization);
-		actor->is<PxRigidDynamic>()->setSleepThreshold(sleep);
+		if (auto dyn = actor->is<PxRigidDynamic>())
+		{
+			dyn->setStabilizationThreshold(stabilization);
+			dyn->setSleepThreshold(sleep);
+		}
 	}
 
 	void px_rigidbody_component::release(bool releaseActor) noexcept
@@ -318,29 +325,23 @@ namespace physics
 
 		physics_holder::physicsRef->addActor(this, actor, addToScene);
 
-#if PX_ENABLE_PVD
+#if PX_ENABLE_PVD && !PX_GPU_BROAD_PHASE
 		actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
 #endif
 	}
 
 	NODISCARD PxRigidActor* px_rigidbody_component::createActor()
 	{
-		eentity entity = { handle, &physics_holder::physicsRef->app.getCurrentScene()->registry };
-		px_collider_component_base* coll = (px_collider_component_base*)entity.getComponentIfExists<px_sphere_collider_component>();
-		if (!coll)
-			coll = (px_collider_component_base*)entity.getComponentIfExists<px_box_collider_component>();
-		if (!coll)
-			coll = (px_collider_component_base*)entity.getComponentIfExists<px_capsule_collider_component>();
-		if (!coll)
-			coll = (px_collider_component_base*)entity.getComponentIfExists<px_triangle_mesh_collider_component>();
-		if (!coll)
-			coll = (px_collider_component_base*)entity.getComponentIfExists<px_convex_mesh_collider_component>();
-		if (!coll)
-			coll = (px_collider_component_base*)entity.getComponentIfExists<px_bounding_box_collider_component>();
-		if (!coll)
+		eentity entity = { handle, &globalApp.getCurrentScene()->registry };
+
+		auto& physicsRef = physics_holder::physicsRef;
+		const auto& physics = physicsRef->getPhysics();
+
+		auto& colliders = physicsRef->collidersMap[handle];
+		if (colliders.empty())
 		{
 			entity.addComponent<px_capsule_collider_component>(1.0f, 2.0f);
-			coll = (px_collider_component_base*)&entity.getComponent<px_capsule_collider_component>();
+			colliders.push_back(&entity.getComponent<px_capsule_collider_component>());
 		}
 
 		auto transform = entity.getComponentIfExists<transform_component>();
@@ -356,48 +357,49 @@ namespace physics
 
 		quat q = transform->rotation;
 		PxQuat rotpx = physx::createPxQuat(q);
-		const auto& physics = physics_holder::physicsRef->getPhysics();
 
 		material = physics->createMaterial(staticFriction, dynamicFriction, restitution);
 
-		if (type == px_rigidbody_type::Static)
+		PxRigidActor* actor = nullptr;
+
+		if (type == px_rigidbody_type::rigidbody_type_static)
 		{
-			PxRigidStatic* actor = physics->createRigidStatic(PxTransform(pospx, rotpx));
+			actor = physics->createRigidStatic(PxTransform(pospx, rotpx));
+
+#if PX_ENABLE_PVD && !PX_GPU_BROAD_PHASE
 			actor->setActorFlag(PxActorFlag::eVISUALIZATION, true);
-			coll->createShape();
-
-			const auto& physics = physics_holder::physicsRef->getPhysics();
-			PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor, *coll->getGeometry(), *material);
-			shape->userData = userData;
 			enableShapeVisualization(shape);
-
-			return actor;
+#endif
 		}
-		else if(type == px_rigidbody_type::Dynamic)
+		else if(type == px_rigidbody_type::rigidbody_type_dynamic)
 		{
-			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
+			actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
 			//actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
+
+#if PX_ENABLE_PVD && !PX_GPU_BROAD_PHASE
 			actor->setActorFlag(PxActorFlag::eVISUALIZATION, true);
-			coll->createShape();
-
-			PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor, *coll->getGeometry(), *material);
-			shape->userData = userData;
 			enableShapeVisualization(shape);
-
-			return actor;
+#endif
 		}
 		else
 		{
-			PxRigidDynamic* actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
-			actor->setActorFlag(PxActorFlag::eVISUALIZATION, true);
+			actor = physics->createRigidDynamic(PxTransform(pospx, rotpx));
+
 			setKinematic(true);
 
-			coll->createShape();
-			coll->getShape()->userData = userData;
-			actor->attachShape(*coll->getShape());
+#if PX_ENABLE_PVD && !PX_GPU_BROAD_PHASE
+			actor->setActorFlag(PxActorFlag::eVISUALIZATION, true);
 			enableShapeVisualization(coll->getShape());
-
-			return actor;
+#endif
 		}
+
+		for (auto& coll : colliders)
+		{
+			coll->createGeometry();
+			PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor, *coll->getGeometry(), *material);
+			shape->userData = userData;
+		}
+
+		return actor;
 	}
 }

@@ -9,13 +9,13 @@ namespace physics
 
 	enum class px_joint_type : uint8
 	{
-		None,
-		Revolute,
-		Fixed,
-		D6,
-		Prismatic,
-		Distance,
-		Spherical
+		joint_type_none,
+		joint_type_revolute,
+		joint_type_fixed,
+		joint_type_d6,
+		joint_type_prismatic,
+		joint_type_distance,
+		joint_type_spherical
 	};
 
 	struct px_angular_limit_pair
@@ -108,31 +108,31 @@ namespace physics
 
 	enum class px_d6_axis
 	{
-		X = 0,		// Motion along the X axis
-		Y = 1,		// Motion along the Y axis
-		Z = 2,		// Motion along the Z axis
-		Twist = 3,	// Motion around the X axis
-		Swing1 = 4,	// Motion around the Y axis
-		Swing2 = 5,	// Motion around the Z axis
-		All = 6
+		d6_axis_x = 0,		// Motion along the X axis
+		d6_axis_y = 1,		// Motion along the Y axis
+		d6_axis_z = 2,		// Motion along the Z axis
+		d6_axis_twist = 3,	// Motion around the X axis
+		d6_axis_swing1 = 4,	// Motion around the Y axis
+		d6_axis_swing2 = 5,	// Motion around the Z axis
+		d6_axis_all = 6
 	};
 
 	enum class px_d6_motion
 	{
-		Locked,	// The DOF is locked, it does not allow relative motion.
-		Limited,	// The DOF is limited, it only allows motion within a specific range.
-		Free
+		d6_motion_locked,	// The DOF is locked, it does not allow relative motion.
+		d6_motion_limited,	// The DOF is limited, it only allows motion within a specific range.
+		d6_motion_free
 	};
 
 	enum class px_d6_drive
 	{
-		X = 0,		// Drive along the X-axis
-		Y = 1,		// Drive along the Y-axis
-		Z = 2,		// Drive along the Z-axis
-		Swing = 3,	// Drive of displacement from the X-axis
-		Twist = 4,	// Drive of the displacement around the X-axis
-		Slerp = 5,	// Drive of all three angular degrees along a SLERP-path
-		All = 6
+		d6_drive_x = 0,		// Drive along the X-axis
+		d6_drive_y = 1,		// Drive along the Y-axis
+		d6_drive_z = 2,		// Drive along the Z-axis
+		d6_drive_swing = 3,	// Drive of displacement from the X-axis
+		d6_drive_twist = 4,	// Drive of the displacement around the X-axis
+		d6_drive_slerp = 5,	// Drive of all three angular degrees along a SLERP-path
+		d6_drive_all = 6
 	};
 
 	struct px_d6_joint_drive
@@ -150,9 +150,9 @@ namespace physics
 
 	enum class px_joint_actor_index
 	{
-		Actor1,
-		Actor2,
-		All
+		joint_actor_index_actor1,
+		joint_actor_index_actor2,
+		joint_actor_index_all
 	};
 
 	struct px_d6_joint_desc
@@ -184,7 +184,7 @@ namespace physics
 		PxRigidActor* first = nullptr;
 		PxRigidActor* second = nullptr;
 
-		px_joint_type type = px_joint_type::None;
+		px_joint_type type = px_joint_type::joint_type_none;
 
 		PxJoint* joint = nullptr;
 	};

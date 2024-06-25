@@ -15,19 +15,19 @@ namespace physics
 
 	enum class px_rigidbody_type : uint8
 	{
-		None,
-		Static,
-		Dynamic,
-		Kinematic
+		rigidbody_type_none,
+		rigidbody_type_static,
+		rigidbody_type_dynamic,
+		rigidbody_type_kinematic
 	};
 
 	enum class px_force_mode : uint8
 	{
-		None,
-		Force,
-		Impulse,
-		VelocityChange,
-		Acceleration
+		force_mode_none,
+		force_mode_force,
+		force_mode_impulse,
+		force_mode_velocity_change,
+		force_mode_acceleration
 	};
 
 	struct px_shape_holder_component : px_physics_component_base
@@ -54,8 +54,8 @@ namespace physics
 		px_rigidbody_component(uint32_t entt, px_rigidbody_type rbtype, bool addToScene = true) noexcept;
 		virtual ~px_rigidbody_component();
 
-		void addForce(vec3 force, px_force_mode mode = px_force_mode::Impulse) noexcept;
-		void addTorque(vec3 torque, px_force_mode mode = px_force_mode::Impulse) noexcept;
+		void addForce(vec3 force, px_force_mode mode = px_force_mode::force_mode_impulse) noexcept;
+		void addTorque(vec3 torque, px_force_mode mode = px_force_mode::force_mode_impulse) noexcept;
 
 		NODISCARD PxRigidActor* getRigidActor() const noexcept { return actor; }
 
@@ -109,7 +109,7 @@ namespace physics
 		void onCollisionStay(px_rigidbody_component* collision) const;
 
 		uint32_t handle{};
-		px_rigidbody_type type = px_rigidbody_type::None;
+		px_rigidbody_type type = px_rigidbody_type::rigidbody_type_none;
 
 	private:
 		void createPhysics(bool addToScene);

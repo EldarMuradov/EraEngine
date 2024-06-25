@@ -112,3 +112,5 @@ private:
 	friend class px_physics_engine;
 	friend class eeditor;
 };
+
+extern application globalApp;

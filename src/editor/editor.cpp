@@ -1226,7 +1226,7 @@ bool eeditor::drawSceneHierarchy()
 							if (ImGui::BeginProperties())
 							{
 								ImGui::PropertyValue("Mass", rb.getMass(), "%.3fkg");
-								bool dynamic = rb.type == physics::px_rigidbody_type::Dynamic;
+								bool dynamic = rb.type == physics::px_rigidbody_type::rigidbody_type_dynamic;
 
 								if (dynamic)
 								{
