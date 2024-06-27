@@ -10,8 +10,6 @@ namespace physics
 {
 	using namespace physx;
 
-	struct px_rigidbody_component;
-
 	enum class px_cct_type : uint8
 	{
 		cct_type_none,
@@ -21,7 +19,7 @@ namespace physics
 
 	struct px_cct_component_base : px_rigidbody_component
 	{
-		px_cct_component_base(uint32_t entt) noexcept;
+		px_cct_component_base(uint32 handle);
 		virtual ~px_cct_component_base() {}
 
 		virtual void release(bool releaseActor = true) noexcept override;
@@ -40,8 +38,8 @@ namespace physics
 	struct px_box_cct_component : px_cct_component_base
 	{
 		px_box_cct_component() = default;
-		px_box_cct_component(uint32_t entt) noexcept;
-		px_box_cct_component(uint32_t entt, float hh, float hs, float m = 1.0f) noexcept;
+		px_box_cct_component(uint32 handle);
+		px_box_cct_component(uint32 handle, float hh, float hs, float m = 1.0f);
 
 		float halfHeight = 1.0f;
 		float halfSideExtent = 0.5f;
@@ -53,8 +51,8 @@ namespace physics
 	struct px_capsule_cct_component : px_cct_component_base
 	{
 		px_capsule_cct_component() = default;
-		px_capsule_cct_component(uint32_t entt) noexcept;
-		px_capsule_cct_component(uint32_t entt, float h, float r, float m = 1.0f) noexcept;
+		px_capsule_cct_component(uint32 handle);
+		px_capsule_cct_component(uint32 handle, float h, float r, float m = 1.0f);
 		~px_capsule_cct_component() {}
 
 		float height = 2.0f;

@@ -12,9 +12,9 @@
 #ifndef PHYSICS_ONLY
 #include <scripting/script.h>
 #include <ai/navigation_component.h>
-#include <px/blast/px_blast_core.h>
 #include <px/physics/px_soft_body.h>
 #include <px/blast/px_blast_destructions.h>
+#include <px/core/px_physics_engine.h>
 #endif
 
 std::mutex eentity_container::sync;
@@ -55,8 +55,10 @@ void escene::cloneTo(escene& target)
 		position_rotation_component,
 		position_scale_component,
 		dynamic_transform_component,
+		entity_handle_component_base,
 
 #ifndef PHYSICS_ONLY
+
 		physics::px_rigidbody_component,
 		physics::px_box_collider_component,
 		physics::px_collider_component_base,
@@ -74,14 +76,11 @@ void escene::cloneTo(escene& target)
 		physics::px_particles_component,
 		physics::px_particles_render_component,
 		physics::px_soft_body_component,
-		physics::px_rigid_shape_holder_component,
-		physics::px_shape_holder_component,
 
 #if !_DEBUG
 
 		physics::chunk_graph_manager,
 		physics::chunk_graph_manager::chunk_node,
-		physics::px_blast_rigidbody_component,
 		physics::nvmesh_chunk_component,
 
 #endif
@@ -241,17 +240,7 @@ void escene::deleteEntity(eentity e)
 	{
 		reference->release();
 	}
-#if !_DEBUG
-	if (physics::px_blast_rigidbody_component* reference = e.getComponentIfExists<physics::px_blast_rigidbody_component>())
-	{
-		reference->release();
-	}
-#endif
 	if (physics::px_soft_body_component* reference = e.getComponentIfExists<physics::px_soft_body_component>())
-	{
-		reference->release();
-	}
-	if (physics::px_shape_holder_component* reference = e.getComponentIfExists<physics::px_shape_holder_component>())
 	{
 		reference->release();
 	}

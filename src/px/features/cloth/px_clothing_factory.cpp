@@ -3,6 +3,7 @@
 #include "pch.h"
 #include "px/features/cloth/px_clothing_factory.h"
 #include <animation/skinning.h>
+#include "application.h"
 
 NODISCARD std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, submesh_info> physics::px_cloth_render_component::getRenderData(const px_cloth_component& cloth)
 {
@@ -46,6 +47,16 @@ NODISCARD std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, d
 	}
 
 	return { vb, prev, indexBuffer, sm };
+}
+
+physics::px_cloth_component::px_cloth_component(uint32 handle, int nX, int nZ, const vec3& position) noexcept : px_physics_component_base(handle), numX(nX), numZ(nZ)
+{
+	clothSystem = make_ref<px_cloth_system>(numX, numZ, physx::createPxVec3(position));
+	positions = (vec3*)malloc(numX * numZ * sizeof(vec3));
+	//clothSystem->translate(PxVec4(position.x, position.y, position.z, 0));
+	eentity entity{ (entity_handle)entityHandle, &globalApp.getCurrentScene()->registry };
+	if (!entity.hasComponent<physics::px_cloth_render_component>())
+		entity.addComponent<physics::px_cloth_render_component>();
 }
 
 vec3* physics::px_cloth_component::getPositions() const noexcept

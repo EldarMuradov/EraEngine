@@ -5,6 +5,16 @@
 #include "core/math.h"
 #include "core/reflect.h"
 
+struct entity_handle_component_base
+{
+	entity_handle_component_base() {}
+	entity_handle_component_base(uint32 handle) : entityHandle(handle) {}
+
+	virtual ~entity_handle_component_base() {};
+
+	uint32 entityHandle{};
+};
+
 struct tag_component
 {
 	char name[32]{};

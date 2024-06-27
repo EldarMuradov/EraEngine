@@ -19,14 +19,6 @@
 #include "terrain/grass.h"
 #include "terrain/water.h"
 #include "terrain/tree.h"
-#include <px/core/px_physics_engine.h>
-#include <px/features/cloth/px_clothing_factory.h>
-#include <px/core/px_physics_engine.h>
-#include <px/physics/px_rigidbody_component.h>
-#include <px/physics/px_collider_component.h>
-#include <px/features/px_particles.h>
-#include <px/physics/px_character_controller_component.h>
-#include <px/physics/px_collider_component.h>
 #endif
 
 struct escene;
@@ -112,150 +104,13 @@ struct eentity
 	template <typename component_t, typename... args>
 	eentity& addComponent(args&&... a)
 	{
-		if constexpr (std::is_same_v<component_t, struct collider_component>)
-		{
-			void addColliderToBroadphase(eentity eentity);
-
-			if (!hasComponent<struct physics_reference_component>())
-				addComponent<struct physics_reference_component>();
-
-			struct physics_reference_component& reference = getComponent<struct physics_reference_component>();
-			++reference.numColliders;
-
-			entity_handle child = registry->create();
-			struct collider_component& collider = registry->emplace<struct collider_component>(child, std::forward<args>(a)...);
-			addColliderToBroadphase(eentity(child, registry));
-
-			collider.parentEntity = handle;
-			collider.nextEntity = reference.firstColliderEntity;
-			reference.firstColliderEntity = child;
-
-			if (struct rigid_body_component* rb = getComponentIfExists<struct rigid_body_component>())
-				rb->recalculateProperties(registry, reference);
-		}
 #ifndef PHYSICS_ONLY
-		else if	constexpr (std::is_same_v<component_t, physics::px_rigidbody_component>)
-		{
-			constexpr auto size = sizeof...(args);
-
-			if constexpr(size == 0)
-				auto& component = registry->emplace_or_replace<component_t>(handle, std::forward<args>(a)...);
-			else
-				auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
-			
-			if (!hasComponent<dynamic_transform_component>())
-				addComponent<dynamic_transform_component>();
-		}
-		else if	constexpr (std::is_same_v<component_t, struct navigation_component>)
-		{
-			auto& component = registry->emplace_or_replace<component_t>(handle, handle, std::forward<args>(a)...);
-		}
-		else if	constexpr (std::is_same_v<component_t, physics::px_cloth_component>)
-		{
-			auto& component = registry->emplace_or_replace<component_t>(handle, std::forward<args>(a)...);
-
-			if (!hasComponent<dynamic_transform_component>())
-				addComponent<dynamic_transform_component>();
-
-			if (!hasComponent<physics::px_cloth_render_component>())
-				addComponent<physics::px_cloth_render_component>();
-		}
-		else if	constexpr (std::is_same_v<component_t, physics::px_particles_component>)
-		{
-			auto& position = getComponent<transform_component>().position;
-			auto& component = registry->emplace_or_replace<component_t>(handle, position, std::forward<args>(a)...);
-			if (!hasComponent<physics::px_particles_render_component>())
-				addComponent<physics::px_particles_render_component>();
-		}
-		else if	constexpr (std::is_same_v<component_t, physics::px_capsule_cct_component>)
-		{
-			auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
-
-			if (!hasComponent<dynamic_transform_component>())
-				addComponent<dynamic_transform_component>();
-		}
-		else if	constexpr (std::is_same_v<component_t, physics::px_cct_component_base>)
-		{
-			auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
-
-			if (!hasComponent<dynamic_transform_component>())
-				addComponent<dynamic_transform_component>();
-		}
-		else if	constexpr (std::is_base_of_v<physics::px_collider_component_base, component_t>)
-		{
-			if	constexpr (std::is_same_v<component_t, struct px_triangle_mesh_collider_component>)
-			{
-				float size = getComponent<transform_component>().scale.x;
-
-				auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, size, std::forward<args>(a)...);
-				component.registerCollider();
-			}
-			else if	constexpr (std::is_same_v<component_t, struct px_convex_mesh_collider_component>)
-			{
-				vec3 size = getComponent<transform_component>().scale;
-
-				auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, size, std::forward<args>(a)...);
-				component.registerCollider();
-			}
-			else if	constexpr (std::is_same_v<component_t, struct px_bounding_box_collider_component>)
-			{
-				float size = getComponent<transform_component>().scale.x;
-
-				auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, size, std::forward<args>(a)...);
-				component.registerCollider();
-			}
-			else
-			{
-				auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
-				component.registerCollider();
-			}
-		}
-		else if	constexpr (std::is_same_v<component_t, physics::px_box_cct_component>)
-		{
-			auto& component = registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
-
-			if (!hasComponent<dynamic_transform_component>())
-				addComponent<dynamic_transform_component>();
-		}
-#endif // !PHYSICS ONLY
+		if	constexpr (std::is_base_of_v<entity_handle_component_base, component_t>)
+			registry->emplace_or_replace<component_t>(handle, (uint32_t)handle, std::forward<args>(a)...);
 		else
-		{
-			auto& component = registry->emplace_or_replace<component_t>(handle, std::forward<args>(a)...);
-
-			if constexpr (std::is_same_v<component_t, struct rigid_body_component>)
-			{
-				if (struct physics_reference_component* ref = getComponentIfExists<struct physics_reference_component>())
-					component.recalculateProperties(registry, *ref);
-				
-				if (!hasComponent<dynamic_transform_component>())
-					addComponent<dynamic_transform_component>();
-				
-				if (auto* transform = getComponentIfExists<transform_component>())
-				{
-					addComponent<struct physics_transform0_component>(*transform);
-					addComponent<struct physics_transform1_component>(*transform);
-				}
-			}
-
-			// If component is cloth, transform to correct position.
-			if constexpr (std::is_same_v<component_t, struct cloth_component>)
-			{
-				if (transform_component* transform = getComponentIfExists<transform_component>())
-					component.setWorldPositionOfFixedVertices(*transform, true);
-			}
-
-			if constexpr (std::is_same_v<component_t, struct transform_component>)
-			{
-				if (struct cloth_component* cloth = getComponentIfExists<struct cloth_component>())
-					cloth->setWorldPositionOfFixedVertices(component, true);
-				
-				if (hasComponent<struct rigid_body_component>())
-				{
-					addComponent<struct physics_transform0_component>(component);
-					addComponent<struct physics_transform1_component>(component);
-				}
-			}
-		}
+#endif
+			registry->emplace_or_replace<component_t>(handle, std::forward<args>(a)...);
+		
 
 		return *this;
 	}
@@ -361,7 +216,7 @@ struct eentity
 		return handle != entt::null;
 	}
 
-	inline NODISCARD bool valid() const
+	inline bool valid() const
 	{
 		return registry->valid(handle);
 	}

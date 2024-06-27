@@ -15,8 +15,6 @@
 #include <px/features/px_vehicles.h>
 #include <px/temp/px_mesh_generator.h>
 
-#include <px/blast/px_blast_core.h>
-
 #include <px/blast/px_blast_destructions.h>
 
 #pragma comment(lib, "PhysXCooking_64.lib")
@@ -237,11 +235,6 @@ void physics::px_physics_engine::release() noexcept
 
 void physics::px_physics_engine::start() noexcept
 {
-#if !_DEBUG
-
-	blast = make_ref<px_blast>();
-	blast->onSampleStart(physics, scene);
-
 	//auto pmaterial = physics->createMaterial(0.8, 0.8, 0.6);
 
 	//scene->addActor(*PxCreatePlane(*physics, PxPlane(0.f, 1.f, 0.f, 0.0f), *pmaterial));
@@ -381,13 +374,7 @@ void physics::px_physics_engine::start() noexcept
 
 	//blast->spawnAsset(0);
 
-	simulationEventCallback = make_ref<px_simulation_event_callback>(blast->getExtImpactDamageManager());
-
-#else
-
-	simulationEventCallback = new px_simulation_event_callback();
-
-#endif
+	simulationEventCallback = make_ref<px_simulation_event_callback>();
 
 	physics_lock_write lock{};
 	scene->setSimulationEventCallback(simulationEventCallback.get());
@@ -747,7 +734,7 @@ void physics::px_simulation_event_callback::sendCollisionEvents() noexcept
 	//	LOG_MESSAGE("VISHEL");
 	//	c.thisActor->onCollisionExit(c.otherActor);
 	//	c.swapObjects();
-	//	physics::physics_holder::physicsRef->collisionExitQueue.emplace(c.thisActor->handle, c.otherActor->handle);
+	//	physics::physics_holder::physicsRef->collisionExitQueue.emplace(c.thisActor->entityHandle, c.otherActor->entityHandle);
 	//}
 
 	//for (auto& c : newCollisions)
@@ -757,8 +744,8 @@ void physics::px_simulation_event_callback::sendCollisionEvents() noexcept
 
 		//try
 		//{
-		//	eentity rb1{ c.thisActor->handle, &enttScene->registry };
-		//	eentity rb2{ c.otherActor->handle, &enttScene->registry };
+		//	eentity rb1{ c.thisActor->entityHandle, &enttScene->registry };
+		//	eentity rb2{ c.otherActor->entityHandle, &enttScene->registry };
 
 		//	if (!rb1.valid() || !rb2.valid())
 		//		continue;
@@ -788,7 +775,7 @@ void physics::px_simulation_event_callback::sendCollisionEvents() noexcept
 		//LOG_MESSAGE("VOSHOL");
 		//c.thisActor->onCollisionEnter(c.otherActor);
 		//c.swapObjects();
-		//physics::physics_holder::physicsRef->collisionQueue.emplace(c.thisActor->handle, c.otherActor->handle);
+		//physics::physics_holder::physicsRef->collisionQueue.emplace(c.thisActor->entityHandle, c.otherActor->entityHandle);
 	//}
 }
 
@@ -817,8 +804,8 @@ void physics::px_simulation_event_callback::onConstraintBreak(PxConstraintInfo* 
 
 	auto enttScene = globalApp.getCurrentScene();
 
-	eentity entt1{ (entity_handle)rb1->handle, &enttScene->registry };
-	eentity entt2{ (entity_handle)rb2->handle, &enttScene->registry };
+	eentity entt1{ (entity_handle)rb1->entityHandle, &enttScene->registry };
+	eentity entt2{ (entity_handle)rb2->entityHandle, &enttScene->registry };
 
 	if (auto node1 = entt1.getComponentIfExists<physics::chunk_graph_manager::chunk_node>())
 	{
@@ -834,12 +821,6 @@ void physics::px_simulation_event_callback::onConstraintBreak(PxConstraintInfo* 
 
 void physics::px_simulation_event_callback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
 {
-#if !_DEBUG
-
-	impactManager->onContact(pairHeader, pairs, nbPairs);
-
-#endif
-
 	const physx::PxU32 bufferSize = PX_CONTACT_BUFFER_SIZE;
 	physx::PxContactPairPoint contacts[bufferSize];
 

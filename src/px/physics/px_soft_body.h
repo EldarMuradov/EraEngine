@@ -1,9 +1,8 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-
-#include <px/core/px_physics_engine.h>
 #include <px/temp/px_mesh_generator.h>
+#include <px/core/px_physics_engine.h>
 
 namespace physics
 {
@@ -158,7 +157,7 @@ namespace physics
 
 	struct px_soft_body_component : px_physics_component_base
 	{
-		px_soft_body_component() noexcept
+		px_soft_body_component(uint32 handle) noexcept : px_physics_component_base(handle)
 		{
 			// Test
 			{

@@ -2,13 +2,29 @@
 
 #pragma once
 #include <core/math.h>
-#include <px/core/px_physics_engine.h>
 #include <core/memory.h>
 #include <rendering/debug_visualization.h>
+
+#include "geometry/mesh_builder.h"
+#include "dx/dx_buffer.h"
+#include "dx/dx_context.h"
+#include "scene/scene.h"
+#include <px/core/px_physics_engine.h>
 
 namespace physics
 {
 	using namespace physx;
+
+	struct px_particles_component;
+
+	struct px_particles_render_component
+	{
+		px_particles_render_component() = default;
+		~px_particles_render_component() {}
+
+		ref<dx_index_buffer> indexBuffer;
+		dx_vertex_buffer_group_view prevFrameVB;
+	};
 
 	struct px_particle_system
 	{
@@ -404,11 +420,7 @@ namespace physics
 	struct px_particles_component : px_physics_component_base
 	{
 		px_particles_component() = default;
-		px_particles_component(const vec3& position, int nX, int nY, int nZ, bool fluid = false) noexcept : numX(nX), numY(nY), numZ(nZ)
-		{
-			particleSystem = make_ref<px_particle_system>(numX, numY, numZ, fluid, physx::createPxVec3(position));
-			//particleSystem->translate(PxVec4(position.x, position.y, position.z, 0));
-		}
+		px_particles_component(uint32 handle, const vec3& position, int nX, int nY, int nZ, bool fluid = false) noexcept;
 
 		virtual ~px_particles_component() {}
 
@@ -424,19 +436,6 @@ namespace physics
 		uint32 numZ{};
 
 		ref<px_particle_system> particleSystem;
-	};
-
-#include "geometry/mesh_builder.h"
-#include "dx/dx_buffer.h"
-#include "dx/dx_context.h"
-
-	struct px_particles_render_component
-	{
-		px_particles_render_component() = default;
-		~px_particles_render_component() {}
-
-		ref<dx_index_buffer> indexBuffer;
-		dx_vertex_buffer_group_view prevFrameVB;
 	};
 }
 

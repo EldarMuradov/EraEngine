@@ -24,6 +24,11 @@
 #include <vector>
 #include <iostream>
 #include <memory>
+#include <stack>
+
+#include <set>
+#include <unordered_set>
+#include <queue>
 
 #include <filesystem>
 namespace fs = std::filesystem;

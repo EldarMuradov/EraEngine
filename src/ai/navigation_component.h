@@ -4,7 +4,7 @@
 #include <core/math.h>
 #include "navigation.h"
 #include <core/coroutine.h>
-#include <scene/scene.h>
+#include <scene/components.h>
 
 enum class nav_type
 {
@@ -34,10 +34,10 @@ NODISCARD static coroutine_return<nav_node> navigate(vec2 pos, vec2 target) noex
 	co_return nav_node(vec2(NAV_INF_POS));
 }
 
-struct navigation_component
+struct navigation_component : entity_handle_component_base
 {
 	navigation_component() = default;
-	navigation_component(entity_handle h, nav_type tp) noexcept;
+	navigation_component(uint32 h, nav_type tp) noexcept;
 	~navigation_component() { }
 
 	void processPath();
@@ -50,8 +50,6 @@ private:
 	void createPath(vec3 to, vec3 from);
 
 private:
-	entity_handle handle;
-
 	coroutine_return<nav_node> navCoroutine;
 
 	vec3 previousDestination = vec3(NAV_INF_POS);

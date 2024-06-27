@@ -12,7 +12,7 @@ namespace physics
 	{
 	}
 
-	NODISCARD PxTriangleMesh* px_triangle_mesh_collider_builder::buildMesh(mesh_asset* asset, float size)
+	NODISCARD PxTriangleMesh* px_triangle_mesh_collider_builder::buildMesh(mesh_asset* asset, const vec3& size)
 	{
 		size_t submeshesCount = asset->submeshes.size();
 
@@ -22,6 +22,8 @@ namespace physics
 		PxArray<PxVec3> outputVertices;
 		PxArray<PxU32> outputIndices;
 		PxReal maximalTriangleEdgeLength = 0.0f;
+
+		PxVec3 pxmodelSize = createPxVec3(size);
 
 		size_t totalTrianglesCount = 0;
 
@@ -54,7 +56,7 @@ namespace physics
 
 			for (size_t i = 0; i < verticesCount; i++)
 			{
-				vertices.pushBack(PxVec3(positions[i].x, positions[i].y, positions[i].z) * size);
+				vertices.pushBack(PxVec3(positions[i].x, positions[i].y, positions[i].z) * pxmodelSize);
 			}
 		}
 
@@ -128,7 +130,7 @@ namespace physics
 
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
-		geometry = new PxTriangleMeshGeometry(mesh, PxMeshScale(modelSize));
+		geometry = new PxTriangleMeshGeometry(mesh, PxMeshScale(createPxVec3(modelSize)));
 
 		PX_RELEASE(mesh);
 
@@ -147,15 +149,17 @@ namespace physics
 
 		size_t verticesCount = positions.size();
 
-		::std::vector<PxVec3> vertices;
+		PxVec3 pxMeshSize = createPxVec3(modelSize);
+
+		std::vector<PxVec3> vertices;
 		for (size_t i = 0; i < verticesCount; i++)
 		{
-			vertices.push_back(PxVec3(positions[i].x, positions[i].y, positions[i].z) * modelSize);
+			vertices.push_back(PxVec3(positions[i].x, positions[i].y, positions[i].z) * pxMeshSize);
 		}
 
 		auto result = calculateBoundingBox(vertices);
-		::std::vector<PxVec3> vts;
-		::std::vector<uint32_t> inds;
+		std::vector<PxVec3> vts;
+		std::vector<uint32_t> inds;
 
 		createMeshFromBoundingBox(result, vts, inds);
 
@@ -173,7 +177,7 @@ namespace physics
 
 		const auto& physics = physics_holder::physicsRef->getPhysics();
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
-		geometry = new PxTriangleMeshGeometry(mesh, PxMeshScale(modelSize));
+		geometry = new PxTriangleMeshGeometry(mesh, PxMeshScale(pxMeshSize));
 
 		PX_RELEASE(mesh);
 
@@ -303,7 +307,7 @@ namespace physics
 		return true;
 	}
 
-	NODISCARD PxConvexMesh* px_convex_mesh_collider_builder::buildMesh(mesh_asset* asset, vec3 size)
+	NODISCARD PxConvexMesh* px_convex_mesh_collider_builder::buildMesh(mesh_asset* asset, const vec3& size)
 	{
 		submesh_asset root = asset->submeshes[0];
 

@@ -6,9 +6,6 @@
 #undef setBit
 #endif // setBit
 
-#include <core/math.h>
-#include <core/event_queue.h>
-
 #ifndef PX_PHYSX_STATIC_LIB
 #define PX_PHYSX_STATIC_LIB
 #endif
@@ -39,17 +36,38 @@
 #define PX_PINNED_HOST_ALLOC_T(T, cudaContextManager, numElements) cudaContextManager->allocPinnedHostBuffer<T>(numElements, PX_FL)
 #define PX_PINNED_HOST_FREE(cudaContextManager, pinnedHostBuffer) cudaContextManager->freePinnedHostBuffer(pinnedHostBuffer);
 
+#define PX_SCENE_QUERY_SETUP_SWEEP_CAST_ALL() PX_SCENE_QUERY_SETUP(true); \
+		physx::PxSweepBufferN<1> buffer
+
+#define PX_SCENE_QUERY_SETUP_SWEEP_CAST() PX_SCENE_QUERY_SETUP(false); \
+		px_dynamic_hit_buffer<physx::PxSweepHit> buffer
+
+#define PX_SCENE_QUERY_SETUP_CHECK() PX_SCENE_QUERY_SETUP(false); \
+		physx::PxOverlapBufferN<1> buffer
+
+#define PX_SCENE_QUERY_SETUP_OVERLAP() PX_SCENE_QUERY_SETUP(false); \
+		px_dynamic_hit_buffer<physx::PxOverlapHit> buffer
+
+#define PX_SCENE_QUERY_COLLECT_OVERLAP() results.clear(); \
+		results.resize(buffer.getNbTouches()); \
+		size_t resultSize = results.size(); \
+		for (int32 i = 0; i < resultSize; i++) \
+		{ \
+			const auto& hit = buffer.getTouch(i); \
+			results[i] = hit.shape ? *reinterpret_cast<uint32_t*>(hit.shape->userData) : 0; \
+		}
+
+#include <cuda.h>
+#include <PxPhysics.h>
+#include <PxPhysicsAPI.h>
 #include "extensions/PxRaycastCCD.h"
+#include "extensions/PxRemeshingExt.h"
+#include "extensions/PxSoftBodyExt.h"
 #include <cudamanager/PxCudaContextManager.h>
 #include <extensions/PxParticleExt.h>
 #include <PxPBDParticleSystem.h>
 #include <extensions/PxParticleClothCooker.h>
 #include <cudamanager/PxCudaContext.h>
-#include <cuda.h>
-#include <PxPhysics.h>
-#include <PxPhysicsAPI.h>
-#include "extensions/PxRemeshingExt.h"
-#include "extensions/PxSoftBodyExt.h"
 
 #if PX_VEHICLE
 #include "vehicle/PxVehicleUtil.h"
@@ -60,14 +78,12 @@
 #include "snippetvehicle2common/SnippetVehicleHelpers.h"
 #endif
 
-#include <set>
-#include <unordered_map>
-#include <iostream>
 #include <core/memory.h>
 #include <core/log.h>
 #include <core/cpu_profiling.h>
-#include <unordered_set>
-#include <queue>
+#include <scene/components.h>
+#include <core/math.h>
+#include <core/event_queue.h>
 
 namespace Nv
 {
@@ -199,18 +215,18 @@ namespace physics
 
 	struct px_simulation_event_callback;
 
-	struct px_blast;
-
-	struct px_physics_component_base
+	struct px_physics_component_base : entity_handle_component_base
 	{
+		px_physics_component_base() {}
+		px_physics_component_base(uint32_t handle) : entity_handle_component_base(handle){}
 		virtual ~px_physics_component_base() {}
-		virtual void release(bool release = false) noexcept = 0;
+		virtual void release(bool release = false) noexcept {};
 	};
 
-	inline ::std::vector<PxFilterData> getFilterData(PxRigidActor* actor) noexcept
+	inline std::vector<PxFilterData> getFilterData(PxRigidActor* actor) noexcept
 	{
-		::std::vector<PxShape*> shapes(actor->getNbShapes(), nullptr);
-		::std::vector<PxFilterData> out(shapes.size());
+		std::vector<PxShape*> shapes(actor->getNbShapes(), nullptr);
+		std::vector<PxFilterData> out(shapes.size());
 
 		actor->getShapes(&shapes[0], shapes.size());
 
@@ -220,10 +236,23 @@ namespace physics
 		return out;
 	}
 
+	inline bool isTrigger(const PxFilterData& data)
+	{
+		if (data.word0 != 0xffffffff)
+			return false;
+		if (data.word1 != 0xffffffff)
+			return false;
+		if (data.word2 != 0xffffffff)
+			return false;
+		if (data.word3 != 0xffffffff)
+			return false;
+		return true;
+	}
+
 	inline void setFilterData(PxRigidActor* actor,
 		const std::vector<PxFilterData>& filterData) noexcept
 	{
-		::std::vector<PxShape*> shapes(actor->getNbShapes(), nullptr);
+		std::vector<PxShape*> shapes(actor->getNbShapes(), nullptr);
 
 		actor->getShapes(&shapes[0], shapes.size());
 		for (int i = 0; i < shapes.size(); ++i)
@@ -234,7 +263,7 @@ namespace physics
 	{
 		void* allocate(size_t size, const char* typeName, const char* filename, int line) override
 		{
-			//ASSERT(size < GB(1));
+			ASSERT(size < GB(1));
 			return _aligned_malloc(size, 16);
 		}
 
@@ -344,27 +373,6 @@ filterData.flags |= physx::PxQueryFlag::eDYNAMIC | physx::PxQueryFlag::eSTATIC; 
 filterData.data.word0 = layerMask; \
 filterData.data.word1 = blockSingle ? 1 : 0; \
 filterData.data.word2 = hitTriggers ? 1 : 0
-
-#define PX_SCENE_QUERY_SETUP_SWEEP_CAST_ALL() PX_SCENE_QUERY_SETUP(true); \
-		physx::PxSweepBufferN<1> buffer
-
-#define PX_SCENE_QUERY_SETUP_SWEEP_CAST() PX_SCENE_QUERY_SETUP(false); \
-		px_dynamic_hit_buffer<physx::PxSweepHit> buffer
-
-#define PX_SCENE_QUERY_SETUP_CHECK() PX_SCENE_QUERY_SETUP(false); \
-		physx::PxOverlapBufferN<1> buffer
-
-#define PX_SCENE_QUERY_SETUP_OVERLAP() PX_SCENE_QUERY_SETUP(false); \
-		px_dynamic_hit_buffer<physx::PxOverlapHit> buffer
-
-#define PX_SCENE_QUERY_COLLECT_OVERLAP() results.clear(); \
-		results.resize(buffer.getNbTouches()); \
-		size_t resultSize = results.size(); \
-		for (int32 i = 0; i < resultSize; i++) \
-		{ \
-			const auto& hit = buffer.getTouch(i); \
-			results[i] = hit.shape ? *reinterpret_cast<uint32_t*>(hit.shape->userData) : 0; \
-		}
 
 	struct px_raycast_info
 	{
@@ -555,11 +563,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 	struct px_simulation_event_callback : PxSimulationEventCallback
 	{
-#if !_DEBUG
-		px_simulation_event_callback(Nv::Blast::ExtImpactDamageManager* manager) noexcept : impactManager(manager) {}
-#else
 		px_simulation_event_callback() = default;
-#endif
 
 		typedef ::std::pair<px_rigidbody_component*, px_rigidbody_component*> colliders_pair;
 
@@ -587,10 +591,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		PxArray<colliders_pair> newTriggerPairs;
 
 		PxArray<colliders_pair> lostTriggerPairs;
-
-#if !_DEBUG
-		Nv::Blast::ExtImpactDamageManager* impactManager = nullptr;
-#endif
 	};
 
 	struct px_CCD_contact_modification : PxCCDContactModifyCallback
@@ -761,8 +761,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		::std::atomic_uint32_t nbActiveActors{};
 
-		ref<px_blast> blast;
-
 		::std::set<px_rigidbody_component*> actors;
 
 		::std::unordered_map<uint32, std::vector<px_collider_component_base*>> collidersMap;
@@ -831,3 +829,10 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		static inline ref<px_physics_engine> physicsRef = nullptr;
 	};
 }
+
+#include "px/physics/px_rigidbody_component.h"
+#include "px/physics/px_collider_component.h"
+#include "px/physics/px_character_controller_component.h"
+#include "px/features/px_particles.h"
+#include "px/features/cloth/px_clothing_factory.h"
+#include "px/core/px_extensions.h"

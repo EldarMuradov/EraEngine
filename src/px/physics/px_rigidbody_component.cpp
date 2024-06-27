@@ -12,9 +12,8 @@
 
 namespace physics
 {
-	px_rigidbody_component::px_rigidbody_component(uint32_t entt, px_rigidbody_type rbtype, bool addToScene) noexcept : type(rbtype)
+	px_rigidbody_component::px_rigidbody_component(uint32_t handle, px_rigidbody_type rbtype, bool addToScene) : px_physics_component_base(handle), type(rbtype)
 	{
-		handle = entt;
 		if (rbtype != px_rigidbody_type::rigidbody_type_none)
 			createPhysics(addToScene);
 	}
@@ -320,7 +319,7 @@ namespace physics
 		physics_lock_write lock{};
 
 		actor = createActor();
-		userData[0] = (uint32_t)handle;
+		userData[0] = (uint32_t)entityHandle;
 		actor->userData = userData;
 
 		physics_holder::physicsRef->addActor(this, actor, addToScene);
@@ -332,12 +331,12 @@ namespace physics
 
 	NODISCARD PxRigidActor* px_rigidbody_component::createActor()
 	{
-		eentity entity = { handle, &globalApp.getCurrentScene()->registry };
+		eentity entity = { entityHandle, &globalApp.getCurrentScene()->registry };
 
 		auto& physicsRef = physics_holder::physicsRef;
 		const auto& physics = physicsRef->getPhysics();
 
-		auto& colliders = physicsRef->collidersMap[handle];
+		auto& colliders = physicsRef->collidersMap[entityHandle];
 		if (colliders.empty())
 		{
 			entity.addComponent<px_capsule_collider_component>(1.0f, 2.0f);

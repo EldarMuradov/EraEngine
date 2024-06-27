@@ -235,7 +235,7 @@ namespace physics
     struct nvmesh_chunk_component : px_physics_component_base
     {
         nvmesh_chunk_component() = default;
-        nvmesh_chunk_component(ref<nvmesh> inputMesh) : mesh(inputMesh) {}
+        nvmesh_chunk_component(uint32 handle, ref<nvmesh> inputMesh) : px_physics_component_base(handle), mesh(inputMesh) {}
         ~nvmesh_chunk_component() {}
 
         virtual void release(bool release = false) noexcept override { PX_RELEASE(mesh) }

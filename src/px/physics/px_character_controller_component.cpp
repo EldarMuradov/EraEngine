@@ -1,23 +1,23 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include <px/physics/px_rigidbody_component.h>
 #include "px/physics/px_character_controller_component.h"
+#include <px/physics/px_rigidbody_component.h>
 #include <scene/scene.h>
 #include <application.h>
 
 namespace physics
 {
-	px_capsule_cct_component::px_capsule_cct_component(uint32_t entt) noexcept : px_cct_component_base(entt)
+	px_capsule_cct_component::px_capsule_cct_component(uint32 handle) : px_cct_component_base(handle)
 	{
 		type = px_cct_type::cct_type_capsule;
 		createCharacterController();
 
 		uint32_t* h = new uint32_t[1];
-		h[0] = handle;
+		h[0] = entityHandle;
 		controller->getActor()->userData = h;
 
-		physics_holder::physicsRef->addActor(this, controller->getActor(), false);
+		physics_holder::physicsRef->addActor((px_rigidbody_component*)this, controller->getActor(), false);
 	}
 
 	void px_capsule_cct_component::createCharacterController() noexcept
@@ -26,7 +26,7 @@ namespace physics
 
 		material = physics_holder::physicsRef->getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
 
-		eentity entity = { handle, &globalApp.getCurrentScene()->registry };
+		eentity entity = { entityHandle, &globalApp.getCurrentScene()->registry };
 
 		PxCapsuleControllerDesc desc;
 
@@ -41,7 +41,7 @@ namespace physics
 		desc.position = pos;
 		desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
 		uint32_t* h = new uint32_t[1];
-		h[0] = handle;
+		h[0] = entityHandle;
 		desc.userData = h;
 		controller = manager->createController(desc);
 
@@ -49,27 +49,26 @@ namespace physics
 		controller->getActor()->setRigidBodyFlags(physx::PxRigidBodyFlag::eKINEMATIC);
 	}
 
-	px_capsule_cct_component::px_capsule_cct_component(uint32_t entt, float h, float r, float m) noexcept : px_cct_component_base(entt), height(h), radius(r)
+	px_capsule_cct_component::px_capsule_cct_component(uint32 handle, float h, float r, float m) : px_cct_component_base(handle), height(h), radius(r)
 	{
 		mass = m;
 		type = px_cct_type::cct_type_capsule;
 		createCharacterController();
 
 		uint32_t* hndl = new uint32_t[1];
-		hndl[0] = handle;
+		hndl[0] = entityHandle;
 		controller->getActor()->userData = hndl;
 
-		physics_holder::physicsRef->addActor(this, controller->getActor(), false);
+		physics_holder::physicsRef->addActor((px_rigidbody_component*)this, controller->getActor(), false);
 	}
 
-	px_cct_component_base::px_cct_component_base(uint32_t entt) noexcept
+	px_cct_component_base::px_cct_component_base(uint32 handle) : px_rigidbody_component(handle)
 	{
-		handle = entt;
 	}
 
 	void px_cct_component_base::release(bool releaseActor) noexcept
 	{
-		physics_holder::physicsRef->removeActor(this);
+		physics_holder::physicsRef->removeActor((px_rigidbody_component*)this);
 
 		PX_RELEASE(controller)
 		PX_RELEASE(manager)
@@ -79,29 +78,29 @@ namespace physics
 			PX_RELEASE(actor)
 	}
 
-	px_box_cct_component::px_box_cct_component(uint32_t entt) noexcept : px_cct_component_base(entt)
+	px_box_cct_component::px_box_cct_component(uint32 handle) : px_cct_component_base(handle)
 	{
 		type = px_cct_type::cct_type_box;
 		createCharacterController();
 
 		uint32_t* h = new uint32_t[1];
-		h[0] = handle;
+		h[0] = entityHandle;
 		controller->getActor()->userData = h;
 
-		physics_holder::physicsRef->addActor(this, controller->getActor(), false);
+		physics_holder::physicsRef->addActor((px_rigidbody_component*)this, controller->getActor(), false);
 	}
 
-	px_box_cct_component::px_box_cct_component(uint32_t entt, float hh, float hs, float m) noexcept : px_cct_component_base(entt)
+	px_box_cct_component::px_box_cct_component(uint32_t handle, float hh, float hs, float m) : px_cct_component_base(handle)
 	{
 		mass = m;
 		type = px_cct_type::cct_type_box;
 		createCharacterController();
 
 		uint32_t* h = new uint32_t[1];
-		h[0] = handle;
+		h[0] = entityHandle;
 		controller->getActor()->userData = h;
 
-		physics_holder::physicsRef->addActor(this, controller->getActor(), false);
+		physics_holder::physicsRef->addActor((px_rigidbody_component*)this, controller->getActor(), false);
 	}
 
 	void px_box_cct_component::createCharacterController() noexcept
@@ -109,7 +108,7 @@ namespace physics
 		manager = PxCreateControllerManager(*physics_holder::physicsRef->getScene());
 
 		material = physics_holder::physicsRef->getPhysics()->createMaterial(0.5f, 0.5f, 0.6f);
-		eentity entity = { handle, &globalApp.getCurrentScene()->registry };
+		eentity entity = { entityHandle, &globalApp.getCurrentScene()->registry };
 
 		physx::PxBoxControllerDesc desc;
 
@@ -123,7 +122,7 @@ namespace physics
 		physx::PxExtendedVec3 pos = physx::PxExtendedVec3(trsPos.x, trsPos.y, trsPos.z);
 		desc.position = pos;
 		uint32_t* h = new uint32_t[1];
-		h[0] = handle;
+		h[0] = entityHandle;
 		desc.userData = h;
 		controller = manager->createController(desc);
 

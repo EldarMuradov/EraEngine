@@ -2,10 +2,10 @@
 
 #include "pch.h"
 #include "navigation_component.h"
-#include <scripting/native_scripting_linker.h>
 #include <application.h>
+#include <scene/scene.h>
 
-navigation_component::navigation_component(entity_handle h, nav_type tp) noexcept : handle(h), type(tp)
+navigation_component::navigation_component(uint32 h, nav_type tp) noexcept : entity_handle_component_base(h), type(tp)
 {
 }
 
@@ -16,7 +16,7 @@ static bool equalIn2d(vec3 rhs, vec3 lhs)
 
 void navigation_component::processPath()
 {
-	eentity entity { handle, &globalApp.getCurrentScene()->registry };
+	eentity entity { (entity_handle)entityHandle, &globalApp.getCurrentScene()->registry };
 
 	auto& transform = entity.getComponent<transform_component>();
 	const auto& pos = transform.position;

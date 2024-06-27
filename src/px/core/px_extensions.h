@@ -4,6 +4,7 @@
 #include <core/math.h>
 #include <core/math_simd.h>
 #include <application.h>
+#include "px/core/px_physics_engine.h"
 
 namespace physics
 {
@@ -250,7 +251,7 @@ namespace physics
 		}
 
 	private:
-		::std::set<PxRigidDynamic*> actorBuffer;
+		std::set<PxRigidDynamic*> actorBuffer;
 		float explosiveImpulse;
 		float radius;
 		PxVec3 worldPosition;
@@ -298,7 +299,7 @@ namespace physics
 		// Unused
 		virtual void shift(const PxVec3& delta) {}
 
-		::std::vector<PxDebugLine> lines;
+		std::vector<PxDebugLine> lines;
 	};
 
 	static PX_FORCE_INLINE void pushVertex(::std::vector<vec3>* vertexBuffer, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, const PxVec3& n)

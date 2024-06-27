@@ -2,9 +2,7 @@
 
 #pragma once
 #include <core/math.h>
-#include <stack>
 #include <core/memory.h>
-#include <unordered_map>
 #include <core/hash.h>
 
 #define NAV_X_MAX 100

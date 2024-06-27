@@ -68,7 +68,7 @@ namespace physics
 
 		PxMaterial* material = nullptr;
 
-		::std::vector<PxArticulationJointReducedCoordinate*> joints;
-		::std::vector<PxArticulationLink*> links;
+		std::vector<PxArticulationJointReducedCoordinate*> joints;
+		std::vector<PxArticulationLink*> links;
 	};
 }

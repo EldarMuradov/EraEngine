@@ -30,28 +30,10 @@ namespace physics
 		force_mode_acceleration
 	};
 
-	struct px_shape_holder_component : px_physics_component_base
-	{
-		px_shape_holder_component() = default;
-		px_shape_holder_component(PxShape* argShape) : shape(argShape) {};
-		~px_shape_holder_component() {}
-
-		virtual void release(bool releaseActor = false) noexcept override { PX_RELEASE(shape) }
-
-		PxShape* shape = nullptr;
-	};
-
-	struct px_rigid_shape_holder_component 
-	{
-		px_rigid_shape_holder_component() = default;
-		~px_rigid_shape_holder_component() {}
-		size_t data;
-	};
-
 	struct px_rigidbody_component : px_physics_component_base
 	{
 		px_rigidbody_component() {};
-		px_rigidbody_component(uint32_t entt, px_rigidbody_type rbtype, bool addToScene = true) noexcept;
+		px_rigidbody_component(uint32 handle, px_rigidbody_type rbtype = px_rigidbody_type::rigidbody_type_none, bool addToScene = true);
 		virtual ~px_rigidbody_component();
 
 		void addForce(vec3 force, px_force_mode mode = px_force_mode::force_mode_impulse) noexcept;
@@ -108,7 +90,6 @@ namespace physics
 		void onCollisionExit(px_rigidbody_component* collision) const;
 		void onCollisionStay(px_rigidbody_component* collision) const;
 
-		uint32_t handle{};
 		px_rigidbody_type type = px_rigidbody_type::rigidbody_type_none;
 
 	private:
@@ -143,6 +124,5 @@ namespace physics
 #include "core/reflect.h"
 
 REFLECT_STRUCT(physics::px_rigidbody_component,
-	(handle, "Handle"),
 	(type, "Type")
 );

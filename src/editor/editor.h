@@ -14,6 +14,8 @@
 #include <asset/file_registry.h>
 #include "core/imgui.h"
 
+struct application;
+
 struct eeditor
 {
 	void initialize(editor_scene* scene, main_renderer* renderer, editor_panels* editorPanels);

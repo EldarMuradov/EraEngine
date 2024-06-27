@@ -6,10 +6,26 @@
 #include <core/memory.h>
 #include <rendering/debug_visualization.h>
 #include <core/math.h>
+#include "geometry/mesh_builder.h"
+#include "dx/dx_buffer.h"
+#include "dx/dx_context.h"
+#include "scene/scene.h"
 
 namespace physics
 {
 	using namespace physx;
+
+	struct px_cloth_component;
+
+	struct px_cloth_render_component
+	{
+		px_cloth_render_component() = default;
+
+		NODISCARD::std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, submesh_info> getRenderData(const px_cloth_component& cloth);
+
+		ref<dx_index_buffer> indexBuffer;
+		dx_vertex_buffer_group_view prevFrameVB;
+	};
 
 	struct px_cloth_system
 	{
@@ -271,12 +287,7 @@ namespace physics
 	struct px_cloth_component : px_physics_component_base
 	{
 		px_cloth_component() = default;
-		px_cloth_component(int nX, int nZ, const vec3& position = vec3(0, 0, 0)) noexcept : numX(nX), numZ(nZ)
-		{
-			clothSystem = make_ref<px_cloth_system>(numX, numZ, physx::createPxVec3(position));
-			positions = (vec3*)malloc(numX * numZ * sizeof(vec3));
-			//clothSystem->translate(PxVec4(position.x, position.y, position.z, 0));
-		}
+		px_cloth_component(uint32 handle, int nX, int nZ, const vec3& position = vec3(0, 0, 0)) noexcept;
 
 		virtual ~px_cloth_component() {}
 
@@ -300,20 +311,6 @@ namespace physics
 	private:
 		ref<px_cloth_system> clothSystem;
 		vec3* positions = nullptr;
-	};
-
-#include "geometry/mesh_builder.h"
-#include "dx/dx_buffer.h"
-#include "dx/dx_context.h"
-
-	struct px_cloth_render_component
-	{
-		px_cloth_render_component() = default;
-
-		NODISCARD ::std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, submesh_info> getRenderData(const px_cloth_component& cloth);
-
-		ref<dx_index_buffer> indexBuffer;
-		dx_vertex_buffer_group_view prevFrameVB;
 	};
 }
 

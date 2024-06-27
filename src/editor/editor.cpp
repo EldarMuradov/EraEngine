@@ -22,14 +22,9 @@
 #include <sstream>
 #include "application.h"
 #include <editor/system_calls.h>
-#include <px/physics/px_character_controller_component.h>
 #include <imgui/imgui_internal.h>
-#include <px/physics/px_collider_component.h>
-#include <stack>
 #include <scripting/script.h>
 #include <core/builder.h>
-#include <px/physics/px_soft_body.h>
-#include <px/blast/px_blast_core.h>
 #include <px/blast/px_blast_destructions.h>
 
 template <typename component_t, typename member_t>
@@ -904,13 +899,6 @@ bool eeditor::drawSceneHierarchy()
 					{
 						ImGui::Text("Soft Body component");
 					});
-
-#if !_DEBUG
-					drawComponent<physics::px_blast_rigidbody_component>(selectedEntity, "Blast Destructable Body (PhysX)", [](physics::px_blast_rigidbody_component& trace)
-					{
-						ImGui::Text("Blast Destructable Body component");
-					});
-#endif
 
 					drawComponent<physics::px_sphere_collider_component>(selectedEntity, "Sphere Collider (PhysX)", [](physics::px_sphere_collider_component& trace)
 					{
@@ -2767,8 +2755,6 @@ void eeditor::forceStop()
 	paused = false;
 	this->scene->editorCamera.setPositionAndRotation(vec3(0.0f), quat::identity);
 }
-
-#include <px/blast/px_blast_core.h>
 
 void eeditor::drawSettings(float dt)
 {
