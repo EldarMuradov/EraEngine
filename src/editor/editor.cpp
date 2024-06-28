@@ -26,6 +26,7 @@
 #include <scripting/script.h>
 #include <core/builder.h>
 #include <px/blast/px_blast_destructions.h>
+#include <px/physics/px_soft_body.h>
 
 template <typename component_t, typename member_t>
 struct component_member_undo

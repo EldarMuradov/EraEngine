@@ -360,6 +360,8 @@ namespace bind
 
 	static void initialize_navigation_internal(uint32_t id, uint8_t type) noexcept
 	{
+		using namespace era_engine::ai;
+
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &scene->registry };
 
@@ -369,6 +371,8 @@ namespace bind
 
 	static void set_destination_internal(uint32_t id, float* destPtr) noexcept
 	{
+		using namespace era_engine::ai;
+
 		entity_handle hid = (entity_handle)id;
 		eentity entity{ hid, &scene->registry };
 

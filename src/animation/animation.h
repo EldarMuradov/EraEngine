@@ -161,7 +161,7 @@ struct animation_blackboard
 	animation_clip* clip = nullptr;
 };
 
-struct animation_state : state_base<animation_blackboard>
+struct animation_state : era_engine::ai::state_base<animation_blackboard>
 {
 	animation_state(ref<animation_instance> inst) noexcept : instance(inst)
 	{

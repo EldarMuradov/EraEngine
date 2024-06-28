@@ -85,7 +85,7 @@ void escene::cloneTo(escene& target)
 
 #endif
 
-		navigation_component,
+		era_engine::ai::navigation_component,
 		scripts_component,
 #endif
 

@@ -145,7 +145,7 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, ref<enative_scripting_
 			}
 		}, data).submitNow();
 
-	const auto& nav_objects = data.scene.group(component_group<navigation_component, transform_component>);
+	const auto& nav_objects = data.scene.group(component_group<era_engine::ai::navigation_component, transform_component>);
 
 	if (nav_objects.size())
 	{
