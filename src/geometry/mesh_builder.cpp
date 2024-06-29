@@ -5,6 +5,8 @@
 #include "core/color.h"
 #include "asset/model_asset.h"
 
+using namespace era_engine::animation;
+
 struct vertex_info
 {
 	uint32 othersSize;

@@ -27,6 +27,33 @@ namespace
 namespace physics
 {
 	concurrent_event_queue<blast_fracture_event> blastFractureQueue;
+
+	static px_physics_engine::px_sync* syncCreate()
+	{
+		return new px_physics_engine::px_sync();
+	}
+
+	static void syncWait(px_physics_engine::px_sync* sync)
+	{
+		sync->wait();
+	}
+
+	static void syncSet(px_physics_engine::px_sync* sync)
+	{
+		sync->set();
+	}
+
+	static void syncReset(px_physics_engine::px_sync* sync)
+	{
+		sync->reset();
+	}
+
+	static void syncRelease(px_physics_engine::px_sync* sync)
+	{
+		delete sync;
+	}
+
+	px_physics_engine::px_sync* syncObj = nullptr;
 }
 
 static physx::PxFilterFlags contactReportFilterShader(
@@ -82,11 +109,11 @@ physics::px_physics_engine::px_physics_engine() noexcept
 
 	foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocatorCallback, errorReporter);
 
-	if (PxGetSuggestedCudaDeviceOrdinal(foundation->getErrorCallback()) < 0)
-		throw ::std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
-
 	if (!foundation)
-		throw ::std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
+		throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
+
+	if (PxGetSuggestedCudaDeviceOrdinal(foundation->getErrorCallback()) < 0)
+		throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
 
 	pvd = PxCreatePvd(*foundation);
 
@@ -100,6 +127,7 @@ physics::px_physics_engine::px_physics_engine() noexcept
 		std::cout << "Physics> PVD Connected.\n";
 
 #endif
+
 	toleranceScale.length = 1.0f;
 	toleranceScale.speed = 9.81f;
 	physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, pvd);
@@ -117,22 +145,18 @@ physics::px_physics_engine::px_physics_engine() noexcept
 	sceneDesc.gravity = gravity;
 	sceneDesc.cudaContextManager = cudaContextManager;
 	sceneDesc.cpuDispatcher = dispatcher;
+	sceneDesc.staticStructure = PxPruningStructureType::eDYNAMIC_AABB_TREE;
 
 	sceneDesc.filterShader = contactReportFilterShader;
 
-	//sceneDesc.bounceThresholdVelocity = 0.4 * toleranceScale.speed;
-
 	sceneDesc.solverType = PxSolverType::eTGS;
 
-	sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
+	//sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	//sceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 
 #if PX_GPU_BROAD_PHASE
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
-	sceneDesc.gpuMaxNumPartitions = 8;
-	sceneDesc.gpuDynamicsConfig = PxgDynamicsMemoryConfig();
-	sceneDesc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
 #else
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::ePABP;
 #endif
@@ -141,7 +165,7 @@ physics::px_physics_engine::px_physics_engine() noexcept
 	//sceneDesc.frictionType = PxFrictionType::ePATCH;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 	//sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
-	//sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
+	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
 	//sceneDesc.ccdMaxPasses = 1;
@@ -188,6 +212,8 @@ physics::px_physics_engine::px_physics_engine() noexcept
 	//if(!res)
 		//LOG_ERROR("Physics> Failed to initialize PxVehicles.");
 #endif
+
+	syncObj = syncCreate();
 }
 
 physics::px_physics_engine::~px_physics_engine()
@@ -201,6 +227,8 @@ void physics::px_physics_engine::release() noexcept
 	if (!released)
 	{
 		shared_spin_lock lock{ sync };
+
+		syncRelease(syncObj);
 
 		releaseActors();
 		releaseScene();
@@ -383,32 +411,34 @@ void physics::px_physics_engine::start() noexcept
 void physics::px_physics_engine::update(float dt) noexcept
 {
 	static const float stepSize = 1.0f / frameRate;
+	//syncSet(syncObj);
 
 	{
 		CPU_PROFILE_BLOCK("PhysX physics process steps");
-		stepPhysics(stepSize);
+		stepPhysics(std::max(stepSize, dt));
 	}
 
-	{
-		CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");
-		processSimulationEventCallbacks();
-	}
+	//{
+	//	CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");
+	//	processSimulationEventCallbacks();
+	//}
 
 	{
 		CPU_PROFILE_BLOCK("PhysX sync transforms steps");
 		syncTransforms();
 	}
 
-	{
+	//syncWait(syncObj);
+	/*{
 		CPU_PROFILE_BLOCK("PhysX blast steps");
 		processBlastQueue();
 
 #if !_DEBUG
 
-		// Needs to be tested
-		//blast->animate(dt);
+		 Needs to be tested
+		blast->animate(dt);
 #endif
-	}
+	}*/
 }
 
 void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
@@ -506,7 +536,7 @@ physics::px_raycast_info physics::px_physics_engine::raycast(px_rigidbody_compon
 	if (status)
 	{
 		uint32 nb = buffer.getNbAnyHits();
-		::std::cout << "Hits: " << nb << "\n";
+		std::cout << "Hits: " << nb << "\n";
 		uint32 index = 0;
 		if (nb > 1)
 			index = 1;
@@ -550,15 +580,14 @@ void physics::px_physics_engine::stepPhysics(float stepSize) noexcept
 	static constexpr uint64 scratchMemBlockSize = MB(32U);
 
 	void* scratchMemBlock = allocator.allocate(scratchMemBlockSize, align, true);
-
-	scene->getTaskManager()->startSimulation();
+	//scene->getTaskManager()->startSimulation();
 
 	scene->simulate(stepSize, NULL, scratchMemBlock, MB(32U));
 
 	scene->fetchResults(true);
 
-	scene->fetchResultsParticleSystem();
-	scene->getTaskManager()->stopSimulation();
+	//scene->fetchResultsParticleSystem();
+	//scene->getTaskManager()->stopSimulation();
 
 #if PX_ENABLE_RAYCAST_CCD
 	raycastCCD->doRaycastCCD(true);
@@ -574,20 +603,23 @@ void physics::px_physics_engine::syncTransforms() noexcept
 	uint32_t tempNb;
 	PxActor** activeActors = scene->getActiveActors(tempNb);
 
-	nbActiveActors.store(tempNb, ::std::memory_order_relaxed);
+	nbActiveActors.store(tempNb, std::memory_order_relaxed);
 
 	auto gameScene = globalApp.getCurrentScene();
 
-	for (size_t i = 0; i < nbActiveActors; i++)
+	for (size_t i = 0; i < nbActiveActors; ++i)
 	{
+		if (!activeActors[i]->userData)
+			continue;
+
 		if (auto rb = activeActors[i]->is<PxRigidDynamic>())
 		{
-			if (!activeActors[i]->userData)
-				continue;
 			entity_handle* handle = static_cast<entity_handle*>(activeActors[i]->userData);
 			eentity renderObject = { *handle, &gameScene->registry };
+
 			if (!renderObject.valid())
 				continue;
+
 			const auto transform = &renderObject.getComponent<transform_component>();
 
 			const auto& pxt = rb->getGlobalPose();
@@ -598,7 +630,7 @@ void physics::px_physics_engine::syncTransforms() noexcept
 		}
 	}
 
-	for (size_t i = 0; i < softBodies.size(); i++)
+	for (size_t i = 0; i < softBodies.size(); ++i)
 	{
 		ref<px_soft_body> sb = softBodies[i];
 		sb->copyDeformedVerticesFromGPUAsync(0);

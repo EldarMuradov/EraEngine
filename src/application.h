@@ -30,7 +30,7 @@ bool editFireParticleSystem(fire_particle_system& particleSystem);
 bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
 struct updatePhysicsAndScriptingData;
-void updatePhysXPhysicsAndScripting(escene& currentScene, ref<enative_scripting_linker> core, float dt, const user_input& in) noexcept;
+void updatePhysXPhysicsAndScripting(escene& currentScene, ref<era_engine::dotnet::enative_scripting_linker> core, float dt, const user_input& in) noexcept;
 void updateScripting(updatePhysicsAndScriptingData& data) noexcept;
 
 struct application
@@ -80,7 +80,7 @@ private:
 
 	main_renderer* renderer;
 
-	ref<enative_scripting_linker> linker;
+	ref<era_engine::dotnet::enative_scripting_linker> linker;
 
 	editor_scene scene;
 
@@ -90,7 +90,7 @@ private:
 
 #else
 
-	runtime rt;
+	era_engine::runtime::runtime rt;
 
 #endif
 

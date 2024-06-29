@@ -24,7 +24,7 @@ struct submesh
 struct multi_mesh
 {
 	std::vector<submesh> submeshes;
-	animation_skeleton skeleton;
+	era_engine::animation::animation_skeleton skeleton;
 	dx_mesh mesh;
 	bounding_box aabb = { vec3(0.f), vec3(0.f) };
 

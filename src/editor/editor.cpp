@@ -408,7 +408,7 @@ bool eeditor::drawMainMenuBar()
 				struct build_data {} bd;
 				lowPriorityJobQueue.createJob<build_data>([](build_data& data, job_handle)
 				{
-					if (!ebuilder::build())
+					if (!era_engine::build::ebuilder::build())
 						LOG_ERROR("Building> Failed to build the game.");
 				}, bd).submitNow();
 			}
@@ -869,7 +869,7 @@ bool eeditor::drawSceneHierarchy()
 						ImGui::Text("Dynamic entity");
 					});
 
-					drawComponent<scripts_component>(selectedEntity, "Script", [](scripts_component& script)
+					drawComponent<era_engine::ecs::scripts_component>(selectedEntity, "Script", [](era_engine::ecs::scripts_component& script)
 					{
 						auto iter = script.typeNames.begin();
 						const auto& end = script.typeNames.end();
@@ -1098,6 +1098,8 @@ bool eeditor::drawSceneHierarchy()
 							ImGui::EndProperties();
 						}
 					});
+
+					using namespace era_engine::animation;
 
 					drawComponent<animation_component>(selectedEntity, "Animation", [this](animation_component& anim)
 					{
@@ -1839,11 +1841,12 @@ bool eeditor::drawSceneHierarchy()
 
 						ImGui::EndMenu();
 					}
-					for (const auto& script : enative_scripting_linker::scriptTypes)
+
+					for (const auto& script : era_engine::dotnet::enative_scripting_linker::scriptTypes)
 					{
 						if (ImGui::MenuItem(script.c_str()))
 						{
-							enative_scripting_linker::createScript((int)selectedEntity.handle, script.c_str());
+							era_engine::dotnet::enative_scripting_linker::createScript((int)selectedEntity.handle, script.c_str());
 						}
 					}
 

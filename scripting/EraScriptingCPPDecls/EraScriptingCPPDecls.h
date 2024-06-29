@@ -2,17 +2,19 @@
 
 #pragma once
 
+#include <functional>
+#include <any>
+#include <string>
+
 #ifdef ERASCRIPTINGCPPDECLS_EXPORTS
 #define ERASCRIPTINGCPPDECLS_API __declspec(dllexport)
 #else
 #define ERASCRIPTINGCPPDECLS_API __declspec(dllimport)
 #endif
 
+#ifndef EEXTERN
 #define EEXTERN extern "C"
-
-#include <functional>
-#include <any>
-#include <string>
+#endif
 
 template<typename... Args>
 using void_func = std::function<void(Args&&...)>;

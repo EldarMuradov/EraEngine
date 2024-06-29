@@ -40,7 +40,7 @@ static void meshLoaderThread(ref<multi_mesh> result, const fs::path& sceneFilena
 		}
 	}
 
-	animation_skeleton& skeleton = result->skeleton;
+	era_engine::animation::animation_skeleton& skeleton = result->skeleton;
 
 	// Load skeleton
 	if (!asset.skeletons.empty()/* && flags & mesh_creation_flags_with_skin*/)
@@ -57,7 +57,7 @@ static void meshLoaderThread(ref<multi_mesh> result, const fs::path& sceneFilena
 	{
 		animation_asset& in = anim;
 
-		animation_clip& clip = skeleton.clips.emplace_back();
+		era_engine::animation::animation_clip& clip = skeleton.clips.emplace_back();
 		clip.name = std::move(in.name);
 		clip.filename = sceneFilename;
 		clip.lengthInSeconds = in.duration;
@@ -75,7 +75,7 @@ static void meshLoaderThread(ref<multi_mesh> result, const fs::path& sceneFilena
 			auto it = skeleton.nameToJointID.find(name);
 			if (it != skeleton.nameToJointID.end())
 			{
-				animation_joint& j = clip.joints[it->second];
+				era_engine::animation::animation_joint& j = clip.joints[it->second];
 				j = joint;
 			}
 		}

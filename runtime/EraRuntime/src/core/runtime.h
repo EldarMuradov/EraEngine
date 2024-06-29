@@ -7,17 +7,20 @@
 struct editor_scene;
 struct main_renderer;
 
-struct runtime
+namespace era_engine::runtime
 {
-	void initialize(editor_scene* scene, main_renderer* renderer);
+	struct runtime
+	{
+		void initialize(editor_scene* scene, main_renderer* renderer);
 
-	void update();
+		void update();
 
-private:
-	editor_scene* scene;
-	main_renderer* renderer;
+	private:
+		editor_scene* scene;
+		main_renderer* renderer;
 
-	runtime_camera_controller cameraController;
+		runtime_camera_controller cameraController;
 
-	friend struct application;
-};
+		friend struct application;
+	};
+}

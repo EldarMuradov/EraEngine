@@ -2,7 +2,6 @@
 
 #include "pch.h"
 #include "native_scripting_linker.h"
-#include <core/log.h>
 #include <scene/scene.h>
 #include "application.h"
 #include <scripting/script.h>
@@ -13,549 +12,554 @@
 #include <core/string.h>
 #include <scripting/dotnet_utils.h>
 #include <scripting/dotnet_types.h>
+#include "EraScriptingCPPDecls/EraScriptingCPPDecls.h"
 
-std::vector<std::string> enative_scripting_linker::scriptTypes;
-
-namespace
+namespace era_engine::dotnet
 {
-	start_fn startF;
-	update_fn updateF;
-	handle_collisions_fn handleCollisionsF;
-	handle_collisions_fn handleExitCollisionsF;
-	handle_trs_fn handleTrsF;
+	std::vector<std::string> enative_scripting_linker::scriptTypes;
 
-	scr_fn initScrF;
-	scr_fn releaseSrcF;
-	scr_fn reloadSrcF;
-
-	handle_input_fn inputF;
-
-	comp_fn createCompF;
-	comp_fn removeCompF;
-}
-
-void getAllNativeFunctionsAndStart()
-{
-	// Log config
+	namespace
 	{
+		start_fn startF;
+		update_fn updateF;
+		handle_collisions_fn handleCollisionsF;
+		handle_collisions_fn handleExitCollisionsF;
+		handle_trs_fn handleTrsF;
+
+		scr_fn initScrF;
+		scr_fn releaseSrcF;
+		scr_fn reloadSrcF;
+
+		handle_input_fn inputF;
+
+		comp_fn createCompF;
+		comp_fn removeCompF;
+	}
+
+	void getAllNativeFunctionsAndStart()
+	{
+		// Log config
+		{
 #if _DEBUG
-		std::ofstream file((eproject::enginePath + "\\bin\\Debug_x86_64\\core.cfg"));
+			std::ofstream file((eproject::enginePath + "\\bin\\Debug_x86_64\\core.cfg"));
 #else
-		std::ofstream file(eproject::enginePath + "\\bin\\Release_x86_64\\core.cfg");
+			std::ofstream file(eproject::enginePath + "\\bin\\Release_x86_64\\core.cfg");
 #endif
-		std::ofstream file_rt(eproject::enginePath + "\\runtime\\x64\\Release\\bin\\Release_x86_64\\core.cfg");
-		std::ofstream file_rt_bin(eproject::enginePath + "\\runtime\\EraRuntime\\bin\\Release_x86_64\\core.cfg");
+			std::ofstream file_rt(eproject::enginePath + "\\runtime\\x64\\Release\\bin\\Release_x86_64\\core.cfg");
+			std::ofstream file_rt_bin(eproject::enginePath + "\\runtime\\EraRuntime\\bin\\Release_x86_64\\core.cfg");
 
-		file << eproject::name << "," << eproject::path << "," << eproject::enginePath;
-		file.close();
+			file << eproject::name << "," << eproject::path << "," << eproject::enginePath;
+			file.close();
 
-		file_rt << eproject::name << "," << eproject::path << "," << eproject::enginePath;
-		file_rt.close();
+			file_rt << eproject::name << "," << eproject::path << "," << eproject::enginePath;
+			file_rt.close();
 
-		file_rt_bin << eproject::name << "," << eproject::path << "," << eproject::enginePath;
-		file_rt_bin.close();
-	}
-
-	const char_t* scriptingCoreLibName = STR("EraScriptingCore");
-	const char_t* defaultDelegateNativeName = STR("EraEngine.Call, EraScriptingCore");
-
-	{
-		const char_t* scriptingCoreClassName = STR("EraEngine.ScriptingCore");
-		const char_t* scriptingCoreFullTypeName = STR("EraEngine.ScriptingCore, EraScriptingCore");
-
-		dotnet::type_name scriptingCoreTypeName{ scriptingCoreClassName, scriptingCoreLibName };
-
-		const char_t* scriptingCoreMainFuncName = STR("MainFunc");
-		init_fn mainFunc = dotnet_host::getStaticMethod<init_fn>(scriptingCoreFullTypeName, scriptingCoreMainFuncName, defaultDelegateNativeName);
-
-		dotnet::delegate mainFuncDelegate{ scriptingCoreTypeName, scriptingCoreMainFuncName, defaultDelegateNativeName, (void*)mainFunc };
-
-		const char_t* initializeScriptingFuncName = STR("InitializeScripting");
-		initScrF = dotnet_host::getStaticMethod<scr_fn>(scriptingCoreFullTypeName, initializeScriptingFuncName, defaultDelegateNativeName);
-		dotnet::delegate initializeScriptingDelegate{ scriptingCoreTypeName, initializeScriptingFuncName, defaultDelegateNativeName, (void*)initScrF };
-
-		const char_t* shutdownScriptingFuncName = STR("ShutdownScripting");
-		releaseSrcF = dotnet_host::getStaticMethod<scr_fn>(scriptingCoreFullTypeName, shutdownScriptingFuncName, defaultDelegateNativeName);
-		dotnet::delegate shutdownScriptingDelegate{ scriptingCoreTypeName, shutdownScriptingFuncName, defaultDelegateNativeName, (void*)releaseSrcF };
-
-		const char_t* reloadScriptingFuncName = STR("ReloadScripting");
-		reloadSrcF = dotnet_host::getStaticMethod<scr_fn>(scriptingCoreFullTypeName, reloadScriptingFuncName, defaultDelegateNativeName);
-		dotnet::delegate reloadScriptingDelegate{ scriptingCoreTypeName, reloadScriptingFuncName, defaultDelegateNativeName, (void*)reloadSrcF };
-
-		dotnet::core_type scriptingCoreType;
-		scriptingCoreType.typeName = scriptingCoreTypeName;
-		scriptingCoreType.methods.emplace(scriptingCoreMainFuncName, mainFuncDelegate);
-		scriptingCoreType.methods.emplace(initializeScriptingFuncName, initializeScriptingDelegate);
-		scriptingCoreType.methods.emplace(shutdownScriptingFuncName, shutdownScriptingDelegate);
-		scriptingCoreType.methods.emplace(reloadScriptingFuncName, reloadScriptingDelegate);
-
-		dotnet::storage.types.emplace(scriptingCoreClassName, scriptingCoreType);
-
-		// Startup
-		mainFunc();
-	}
-
-	{
-		const char_t* elevelClassName = STR("EraEngine.ELevel");
-		const char_t* elevelFullTypeName = STR("EraEngine.ELevel, EraScriptingCore");
-
-		dotnet::type_name elevelTypeName{ elevelClassName, scriptingCoreLibName };
-
-		const char_t* elevelStartFuncName = STR("Start");
-		startF = dotnet_host::getStaticMethod<start_fn>(elevelFullTypeName, elevelStartFuncName, defaultDelegateNativeName);
-		dotnet::delegate elevelStartDelegate{ elevelTypeName, elevelStartFuncName, defaultDelegateNativeName, (void*)startF };
-
-		const char_t* elevelUpdateFuncName = STR("Update");
-		updateF = dotnet_host::getStaticMethod<update_fn, float>(elevelFullTypeName, elevelUpdateFuncName, STR("EraEngine.CallUpdate, EraScriptingCore"));
-		dotnet::delegate elevelUpdateDelegate{ elevelTypeName, elevelUpdateFuncName, STR("EraEngine.CallUpdate, EraScriptingCore"), (void*)updateF };
-
-		dotnet::core_type elevelType;
-		elevelType.typeName = elevelTypeName;
-		elevelType.methods.emplace(elevelStartFuncName, elevelStartDelegate);
-		elevelType.methods.emplace(elevelUpdateFuncName, elevelUpdateDelegate);
-
-		dotnet::storage.types.emplace(elevelClassName, elevelType);
-	}
-
-	{
-		const char_t* collisionHandlerClassName = STR("EraEngine.Core.CollisionHandler");
-		const char_t* collisionHandlerFullTypeName = STR("EraEngine.Core.CollisionHandler, EraScriptingCore");
-		dotnet::type_name collisionHandlerTypeName{ collisionHandlerClassName, scriptingCoreLibName };
-
-		const char_t* chDelegateNativeName = STR("EraEngine.CallHandleColls, EraScriptingCore");
-
-		const char_t* chHandleCollisionFuncName = STR("HandleCollision");
-		handleCollisionsF = dotnet_host::getStaticMethod<handle_collisions_fn, int, int>(collisionHandlerFullTypeName, chHandleCollisionFuncName, chDelegateNativeName);
-		dotnet::delegate chHandleCollisionDelegate{ collisionHandlerTypeName, chHandleCollisionFuncName, chDelegateNativeName, (void*)handleCollisionsF };
-
-		const char_t* chHandleCollisionExitFuncName = STR("HandleExitCollision");
-		handleExitCollisionsF = dotnet_host::getStaticMethod<handle_collisions_fn, int, int>(collisionHandlerFullTypeName, chHandleCollisionExitFuncName, chDelegateNativeName);
-		dotnet::delegate chHandleCollisionExitDelegate{ collisionHandlerTypeName, chHandleCollisionExitFuncName, chDelegateNativeName, (void*)handleExitCollisionsF };
-
-		dotnet::core_type collisionHandlerType;
-		collisionHandlerType.typeName = collisionHandlerTypeName;
-		collisionHandlerType.methods.emplace(chHandleCollisionFuncName, chHandleCollisionDelegate);
-		collisionHandlerType.methods.emplace(chHandleCollisionExitFuncName, chHandleCollisionExitDelegate);
-
-		dotnet::storage.types.emplace(collisionHandlerClassName, collisionHandlerType);
-	}
-
-	{
-		const char_t* transformHandlerClassName = STR("EraEngine.Core.TransformHandler");
-		const char_t* transformHandlerFullTypeName = STR("EraEngine.Core.TransformHandler, EraScriptingCore");
-		dotnet::type_name transformHandlerTypeName{ transformHandlerClassName, scriptingCoreLibName};
-
-		const char_t* thProcessTransformFuncName = STR("ProcessTransform");
-		handleTrsF = dotnet_host::getStaticMethod<handle_trs_fn, intptr_t, int>(transformHandlerFullTypeName, thProcessTransformFuncName, STR("EraEngine.CallHandleTrs, EraScriptingCore"));
-		dotnet::delegate thProcessTransformDelegate{ transformHandlerTypeName, thProcessTransformFuncName, STR("EraEngine.CallHandleTrs, EraScriptingCore"), (void*)handleTrsF };
-		
-		dotnet::core_type transformHandlerType;
-		transformHandlerType.typeName = transformHandlerTypeName;
-		transformHandlerType.methods.emplace(thProcessTransformFuncName, thProcessTransformDelegate);
-
-		dotnet::storage.types.emplace(transformHandlerClassName, transformHandlerType);
-	}
-
-	{
-		const char_t* inputHandlerFullTypeName = STR("EraEngine.Core.InputHandler, EraScriptingCore");
-		const char_t* inputHandlerClassName = STR("EraEngine.Core.InputHandler");
-		dotnet::type_name inputHandlerTypeName{ inputHandlerClassName, scriptingCoreLibName };
-
-		const char_t* ihHandleInputFuncName = STR("HandleInput");
-		inputF = dotnet_host::getStaticMethod<handle_input_fn, intptr_t>(inputHandlerFullTypeName, ihHandleInputFuncName, STR("EraEngine.CallHandleInput, EraScriptingCore"));
-		dotnet::delegate ihHandleInputDelegate{ inputHandlerTypeName, ihHandleInputFuncName, STR("EraEngine.CallHandleInput, EraScriptingCore"), (void*)inputF };
-
-		dotnet::core_type inputHandlerType;
-		inputHandlerType.typeName = inputHandlerTypeName;
-		inputHandlerType.methods.emplace(ihHandleInputFuncName, ihHandleInputDelegate);
-
-		dotnet::storage.types.emplace(inputHandlerClassName, inputHandlerType);
-	}
-
-	{
-		const char_t* componentHandlerClassName = STR("EraEngine.Runtime.ComponentHandler");
-		const char_t* componentHandlerFullTypeName = STR("EraEngine.Runtime.ComponentHandler, EraScriptingCore");
-		dotnet::type_name componentHandlerTypeName { componentHandlerClassName, scriptingCoreLibName};
-		
-		const char_t* chAddComponentFuncName = STR("AddComponent");
-		createCompF = dotnet_host::getStaticMethod<comp_fn, int, uintptr_t>(componentHandlerFullTypeName, chAddComponentFuncName, STR("EraEngine.CallAddComp, EraScriptingCore"));
-		dotnet::delegate chAddComponentDelegate{ componentHandlerTypeName, chAddComponentFuncName, STR("EraEngine.CallAddComp, EraScriptingCore"), (void*)createCompF };
-
-		const char_t* chRemoveComponentFuncName = STR("RemoveComponent");
-		removeCompF = dotnet_host::getStaticMethod<comp_fn, int, uintptr_t>(componentHandlerFullTypeName, chRemoveComponentFuncName, STR("EraEngine.CallRemoveComp, EraScriptingCore"));
-		dotnet::delegate chRemoveComponentDelegate{ componentHandlerTypeName, chRemoveComponentFuncName, STR("EraEngine.CallRemoveComp, EraScriptingCore"), (void*)removeCompF };
-		
-		dotnet::core_type componentHandlerType;
-		componentHandlerType.typeName = componentHandlerTypeName;
-		componentHandlerType.methods.emplace(chAddComponentFuncName, chAddComponentDelegate);
-		componentHandlerType.methods.emplace(chRemoveComponentFuncName, chRemoveComponentDelegate);
-
-		dotnet::storage.types.emplace(componentHandlerClassName, componentHandlerType);
-	}
-}
-
-namespace bind
-{
-	static escene* scene = nullptr;
-
-	static void add_force_internal(uint32_t id, uint8_t mode, float* force) noexcept
-	{
-		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &scene->registry };
-
-		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
-		{
-			vec3 f = vec3(force[0], force[1], force[2]);
-			rb->addForce(f, (physics::px_force_mode)mode);
-			std::cout << "Force" << "\n";
+			file_rt_bin << eproject::name << "," << eproject::path << "," << eproject::enginePath;
+			file_rt_bin.close();
 		}
-		else
-			std::cerr << "Failed to call function addForce";
-	}
 
-	static void add_torque_internal(uint32_t id, uint8_t mode, float* torque) noexcept
-	{
-		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &scene->registry };
+		const char_t* scriptingCoreLibName = STR("EraScriptingCore");
+		const char_t* defaultDelegateNativeName = STR("EraEngine.Call, EraScriptingCore");
 
-		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 		{
-			vec3 f = vec3(torque[0], torque[1], torque[2]);
-			rb->addTorque(f, (physics::px_force_mode)mode);
-			std::cout << "Torque" << "\n";
+			const char_t* scriptingCoreClassName = STR("EraEngine.ScriptingCore");
+			const char_t* scriptingCoreFullTypeName = STR("EraEngine.ScriptingCore, EraScriptingCore");
+
+			dotnet::type_name scriptingCoreTypeName{ scriptingCoreClassName, scriptingCoreLibName };
+
+			const char_t* scriptingCoreMainFuncName = STR("MainFunc");
+			init_fn mainFunc = dotnet_host::getStaticMethod<init_fn>(scriptingCoreFullTypeName, scriptingCoreMainFuncName, defaultDelegateNativeName);
+
+			dotnet::delegate mainFuncDelegate{ scriptingCoreTypeName, scriptingCoreMainFuncName, defaultDelegateNativeName, (void*)mainFunc };
+
+			const char_t* initializeScriptingFuncName = STR("InitializeScripting");
+			initScrF = dotnet_host::getStaticMethod<scr_fn>(scriptingCoreFullTypeName, initializeScriptingFuncName, defaultDelegateNativeName);
+			dotnet::delegate initializeScriptingDelegate{ scriptingCoreTypeName, initializeScriptingFuncName, defaultDelegateNativeName, (void*)initScrF };
+
+			const char_t* shutdownScriptingFuncName = STR("ShutdownScripting");
+			releaseSrcF = dotnet_host::getStaticMethod<scr_fn>(scriptingCoreFullTypeName, shutdownScriptingFuncName, defaultDelegateNativeName);
+			dotnet::delegate shutdownScriptingDelegate{ scriptingCoreTypeName, shutdownScriptingFuncName, defaultDelegateNativeName, (void*)releaseSrcF };
+
+			const char_t* reloadScriptingFuncName = STR("ReloadScripting");
+			reloadSrcF = dotnet_host::getStaticMethod<scr_fn>(scriptingCoreFullTypeName, reloadScriptingFuncName, defaultDelegateNativeName);
+			dotnet::delegate reloadScriptingDelegate{ scriptingCoreTypeName, reloadScriptingFuncName, defaultDelegateNativeName, (void*)reloadSrcF };
+
+			dotnet::core_type scriptingCoreType;
+			scriptingCoreType.typeName = scriptingCoreTypeName;
+			scriptingCoreType.methods.emplace(scriptingCoreMainFuncName, mainFuncDelegate);
+			scriptingCoreType.methods.emplace(initializeScriptingFuncName, initializeScriptingDelegate);
+			scriptingCoreType.methods.emplace(shutdownScriptingFuncName, shutdownScriptingDelegate);
+			scriptingCoreType.methods.emplace(reloadScriptingFuncName, reloadScriptingDelegate);
+
+			dotnet::storage.types.emplace(scriptingCoreClassName, scriptingCoreType);
+
+			// Startup
+			mainFunc();
 		}
-		else
-			std::cerr << "Failed to call function addTorque";
-	}
 
-	static void initialize_rigidbody_internal(uint32_t id, uint8_t type) noexcept
-	{
-		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &scene->registry };
-
-		if (!entity.hasComponent<physics::px_rigidbody_component>())
-			entity.addComponent<physics::px_rigidbody_component>((physics::px_rigidbody_type)type);
-	}
-
-	static void overlap_sphere_internal(uint32_t id, uint8_t type) noexcept
-	{
-		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &scene->registry };
-
-		if (!entity.hasComponent<physics::px_rigidbody_component>())
-			entity.addComponent<physics::px_rigidbody_component>((physics::px_rigidbody_type)type);
-	}
-
-	static float get_mass_internal(uint32_t id) noexcept
-	{
-		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &scene->registry };
-
-		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
-			return rb->getMass();
-		else
-			return -1.0f;
-	}
-
-	static void set_mass_internal(uint32_t id, float mass) noexcept
-	{
-		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &scene->registry };
-
-		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
-			rb->setMass(mass);
-		else
-			std::cerr << "Failed to call function";
-	}
-
-	static float* get_linear_velocity_internal(uint32_t id) noexcept
-	{
-		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &scene->registry };
-
-		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 		{
-			float* f = new float[3];
-			f[0] = rb->getLinearVelocity().data[0];
-			f[1] = rb->getLinearVelocity().data[1];
-			f[2] = rb->getLinearVelocity().data[2];
-			return f;
+			const char_t* elevelClassName = STR("EraEngine.ELevel");
+			const char_t* elevelFullTypeName = STR("EraEngine.ELevel, EraScriptingCore");
+
+			dotnet::type_name elevelTypeName{ elevelClassName, scriptingCoreLibName };
+
+			const char_t* elevelStartFuncName = STR("Start");
+			startF = dotnet_host::getStaticMethod<start_fn>(elevelFullTypeName, elevelStartFuncName, defaultDelegateNativeName);
+			dotnet::delegate elevelStartDelegate{ elevelTypeName, elevelStartFuncName, defaultDelegateNativeName, (void*)startF };
+
+			const char_t* elevelUpdateFuncName = STR("Update");
+			updateF = dotnet_host::getStaticMethod<update_fn, float>(elevelFullTypeName, elevelUpdateFuncName, STR("EraEngine.CallUpdate, EraScriptingCore"));
+			dotnet::delegate elevelUpdateDelegate{ elevelTypeName, elevelUpdateFuncName, STR("EraEngine.CallUpdate, EraScriptingCore"), (void*)updateF };
+
+			dotnet::core_type elevelType;
+			elevelType.typeName = elevelTypeName;
+			elevelType.methods.emplace(elevelStartFuncName, elevelStartDelegate);
+			elevelType.methods.emplace(elevelUpdateFuncName, elevelUpdateDelegate);
+
+			dotnet::storage.types.emplace(elevelClassName, elevelType);
 		}
-		else
-			return new float[3];
-	}
 
-	static uint32_t create_entity_internal(const char* name) noexcept
-	{
-		return (uint32_t)scene->createEntity(name)
-			.addComponent<transform_component>(vec3(0.f), quat::identity)
-			.handle;
-	}
-
-	static float* get_angular_velocity_internal(uint32_t id) noexcept
-	{
-		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &scene->registry };
-
-		if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
 		{
-			float* f = new float[3];
-			f[0] = rb->getAngularVelocity().data[0];
-			f[1] = rb->getAngularVelocity().data[1];
-			f[2] = rb->getAngularVelocity().data[2];
-			return f;
+			const char_t* collisionHandlerClassName = STR("EraEngine.Core.CollisionHandler");
+			const char_t* collisionHandlerFullTypeName = STR("EraEngine.Core.CollisionHandler, EraScriptingCore");
+			dotnet::type_name collisionHandlerTypeName{ collisionHandlerClassName, scriptingCoreLibName };
+
+			const char_t* chDelegateNativeName = STR("EraEngine.CallHandleColls, EraScriptingCore");
+
+			const char_t* chHandleCollisionFuncName = STR("HandleCollision");
+			handleCollisionsF = dotnet_host::getStaticMethod<handle_collisions_fn, int, int>(collisionHandlerFullTypeName, chHandleCollisionFuncName, chDelegateNativeName);
+			dotnet::delegate chHandleCollisionDelegate{ collisionHandlerTypeName, chHandleCollisionFuncName, chDelegateNativeName, (void*)handleCollisionsF };
+
+			const char_t* chHandleCollisionExitFuncName = STR("HandleExitCollision");
+			handleExitCollisionsF = dotnet_host::getStaticMethod<handle_collisions_fn, int, int>(collisionHandlerFullTypeName, chHandleCollisionExitFuncName, chDelegateNativeName);
+			dotnet::delegate chHandleCollisionExitDelegate{ collisionHandlerTypeName, chHandleCollisionExitFuncName, chDelegateNativeName, (void*)handleExitCollisionsF };
+
+			dotnet::core_type collisionHandlerType;
+			collisionHandlerType.typeName = collisionHandlerTypeName;
+			collisionHandlerType.methods.emplace(chHandleCollisionFuncName, chHandleCollisionDelegate);
+			collisionHandlerType.methods.emplace(chHandleCollisionExitFuncName, chHandleCollisionExitDelegate);
+
+			dotnet::storage.types.emplace(collisionHandlerClassName, collisionHandlerType);
 		}
-		else
-			return new float[3];
-	}
 
-	static void create_script_internal(uint32_t id, const char* name) noexcept
-	{
-		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &scene->registry };
-
-		if (auto script = entity.getComponentIfExists<scripts_component>())
 		{
-			script->typeNames.emplace(name);
+			const char_t* transformHandlerClassName = STR("EraEngine.Core.TransformHandler");
+			const char_t* transformHandlerFullTypeName = STR("EraEngine.Core.TransformHandler, EraScriptingCore");
+			dotnet::type_name transformHandlerTypeName{ transformHandlerClassName, scriptingCoreLibName };
+
+			const char_t* thProcessTransformFuncName = STR("ProcessTransform");
+			handleTrsF = dotnet_host::getStaticMethod<handle_trs_fn, intptr_t, int>(transformHandlerFullTypeName, thProcessTransformFuncName, STR("EraEngine.CallHandleTrs, EraScriptingCore"));
+			dotnet::delegate thProcessTransformDelegate{ transformHandlerTypeName, thProcessTransformFuncName, STR("EraEngine.CallHandleTrs, EraScriptingCore"), (void*)handleTrsF };
+
+			dotnet::core_type transformHandlerType;
+			transformHandlerType.typeName = transformHandlerTypeName;
+			transformHandlerType.methods.emplace(thProcessTransformFuncName, thProcessTransformDelegate);
+
+			dotnet::storage.types.emplace(transformHandlerClassName, transformHandlerType);
 		}
-		else
+
 		{
-			entity.addComponent<scripts_component>(name);
+			const char_t* inputHandlerFullTypeName = STR("EraEngine.Core.InputHandler, EraScriptingCore");
+			const char_t* inputHandlerClassName = STR("EraEngine.Core.InputHandler");
+			dotnet::type_name inputHandlerTypeName{ inputHandlerClassName, scriptingCoreLibName };
+
+			const char_t* ihHandleInputFuncName = STR("HandleInput");
+			inputF = dotnet_host::getStaticMethod<handle_input_fn, intptr_t>(inputHandlerFullTypeName, ihHandleInputFuncName, STR("EraEngine.CallHandleInput, EraScriptingCore"));
+			dotnet::delegate ihHandleInputDelegate{ inputHandlerTypeName, ihHandleInputFuncName, STR("EraEngine.CallHandleInput, EraScriptingCore"), (void*)inputF };
+
+			dotnet::core_type inputHandlerType;
+			inputHandlerType.typeName = inputHandlerTypeName;
+			inputHandlerType.methods.emplace(ihHandleInputFuncName, ihHandleInputDelegate);
+
+			dotnet::storage.types.emplace(inputHandlerClassName, inputHandlerType);
+		}
+
+		{
+			const char_t* componentHandlerClassName = STR("EraEngine.Runtime.ComponentHandler");
+			const char_t* componentHandlerFullTypeName = STR("EraEngine.Runtime.ComponentHandler, EraScriptingCore");
+			dotnet::type_name componentHandlerTypeName{ componentHandlerClassName, scriptingCoreLibName };
+
+			const char_t* chAddComponentFuncName = STR("AddComponent");
+			createCompF = dotnet_host::getStaticMethod<comp_fn, int, uintptr_t>(componentHandlerFullTypeName, chAddComponentFuncName, STR("EraEngine.CallAddComp, EraScriptingCore"));
+			dotnet::delegate chAddComponentDelegate{ componentHandlerTypeName, chAddComponentFuncName, STR("EraEngine.CallAddComp, EraScriptingCore"), (void*)createCompF };
+
+			const char_t* chRemoveComponentFuncName = STR("RemoveComponent");
+			removeCompF = dotnet_host::getStaticMethod<comp_fn, int, uintptr_t>(componentHandlerFullTypeName, chRemoveComponentFuncName, STR("EraEngine.CallRemoveComp, EraScriptingCore"));
+			dotnet::delegate chRemoveComponentDelegate{ componentHandlerTypeName, chRemoveComponentFuncName, STR("EraEngine.CallRemoveComp, EraScriptingCore"), (void*)removeCompF };
+
+			dotnet::core_type componentHandlerType;
+			componentHandlerType.typeName = componentHandlerTypeName;
+			componentHandlerType.methods.emplace(chAddComponentFuncName, chAddComponentDelegate);
+			componentHandlerType.methods.emplace(chRemoveComponentFuncName, chRemoveComponentDelegate);
+
+			dotnet::storage.types.emplace(componentHandlerClassName, componentHandlerType);
 		}
 	}
 
-	static void remove_component_internal(uint32_t id, const char* name) noexcept
+	namespace bind
 	{
-		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &scene->registry };
+		static escene* scene = nullptr;
 
-		// TODO: Removing all internal components
-		if (auto comp = entity.getComponentIfExists<scripts_component>())
+		static void add_force_internal(uint32_t id, uint8_t mode, float* force) noexcept
 		{
-			comp->typeNames.clear();
+			entity_handle hid = (entity_handle)id;
+			eentity entity{ hid, &scene->registry };
+
+			if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
+			{
+				vec3 f = vec3(force[0], force[1], force[2]);
+				rb->addForce(f, (physics::px_force_mode)mode);
+				std::cout << "Force" << "\n";
+			}
+			else
+				std::cerr << "Failed to call function addForce";
+		}
+
+		static void add_torque_internal(uint32_t id, uint8_t mode, float* torque) noexcept
+		{
+			entity_handle hid = (entity_handle)id;
+			eentity entity{ hid, &scene->registry };
+
+			if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
+			{
+				vec3 f = vec3(torque[0], torque[1], torque[2]);
+				rb->addTorque(f, (physics::px_force_mode)mode);
+				std::cout << "Torque" << "\n";
+			}
+			else
+				std::cerr << "Failed to call function addTorque";
+		}
+
+		static void initialize_rigidbody_internal(uint32_t id, uint8_t type) noexcept
+		{
+			entity_handle hid = (entity_handle)id;
+			eentity entity{ hid, &scene->registry };
+
+			if (!entity.hasComponent<physics::px_rigidbody_component>())
+				entity.addComponent<physics::px_rigidbody_component>((physics::px_rigidbody_type)type);
+		}
+
+		static void overlap_sphere_internal(uint32_t id, uint8_t type) noexcept
+		{
+			entity_handle hid = (entity_handle)id;
+			eentity entity{ hid, &scene->registry };
+
+			if (!entity.hasComponent<physics::px_rigidbody_component>())
+				entity.addComponent<physics::px_rigidbody_component>((physics::px_rigidbody_type)type);
+		}
+
+		static float get_mass_internal(uint32_t id) noexcept
+		{
+			entity_handle hid = (entity_handle)id;
+			eentity entity{ hid, &scene->registry };
+
+			if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
+				return rb->getMass();
+			else
+				return -1.0f;
+		}
+
+		static void set_mass_internal(uint32_t id, float mass) noexcept
+		{
+			entity_handle hid = (entity_handle)id;
+			eentity entity{ hid, &scene->registry };
+
+			if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
+				rb->setMass(mass);
+			else
+				std::cerr << "Failed to call function";
+		}
+
+		static float* get_linear_velocity_internal(uint32_t id) noexcept
+		{
+			entity_handle hid = (entity_handle)id;
+			eentity entity{ hid, &scene->registry };
+
+			if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
+			{
+				float* f = new float[3];
+				f[0] = rb->getLinearVelocity().data[0];
+				f[1] = rb->getLinearVelocity().data[1];
+				f[2] = rb->getLinearVelocity().data[2];
+				return f;
+			}
+			else
+				return new float[3];
+		}
+
+		static uint32_t create_entity_internal(const char* name) noexcept
+		{
+			return (uint32_t)scene->createEntity(name)
+				.addComponent<transform_component>(vec3(0.f), quat::identity)
+				.handle;
+		}
+
+		static float* get_angular_velocity_internal(uint32_t id) noexcept
+		{
+			entity_handle hid = (entity_handle)id;
+			eentity entity{ hid, &scene->registry };
+
+			if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
+			{
+				float* f = new float[3];
+				f[0] = rb->getAngularVelocity().data[0];
+				f[1] = rb->getAngularVelocity().data[1];
+				f[2] = rb->getAngularVelocity().data[2];
+				return f;
+			}
+			else
+				return new float[3];
+		}
+
+		static void create_script_internal(uint32_t id, const char* name) noexcept
+		{
+			entity_handle hid = (entity_handle)id;
+			eentity entity{ hid, &scene->registry };
+
+			if (auto script = entity.getComponentIfExists<era_engine::ecs::scripts_component>())
+			{
+				script->typeNames.emplace(name);
+			}
+			else
+			{
+				entity.addComponent<era_engine::ecs::scripts_component>(name);
+			}
+		}
+
+		static void remove_component_internal(uint32_t id, const char* name) noexcept
+		{
+			entity_handle hid = (entity_handle)id;
+			eentity entity{ hid, &scene->registry };
+
+			// TODO: Removing all internal components
+			if (auto comp = entity.getComponentIfExists<era_engine::ecs::scripts_component>())
+			{
+				comp->typeNames.clear();
+			}
+		}
+
+		static void create_component_internal(uint32_t id, const char* name) noexcept
+		{
+
+		}
+
+		static void instantiate_internal(uint32_t id, uint32_t newId, uint32_t parentId) noexcept
+		{
+
+		}
+
+		static void release_internal(uint32_t id) noexcept
+		{
+			entity_handle hid = (entity_handle)id;
+
+			scene->deleteEntity(hid);
+		}
+
+		static void setActive_internal(uint32_t id, bool active) noexcept
+		{
+
+		}
+
+		static void initialize_navigation_internal(uint32_t id, uint8_t type) noexcept
+		{
+			using namespace era_engine::ai;
+
+			entity_handle hid = (entity_handle)id;
+			eentity entity{ hid, &scene->registry };
+
+			if (!entity.hasComponent<navigation_component>())
+				entity.addComponent<navigation_component>((nav_type)type);
+		}
+
+		static void set_destination_internal(uint32_t id, float* destPtr) noexcept
+		{
+			using namespace era_engine::ai;
+
+			entity_handle hid = (entity_handle)id;
+			eentity entity{ hid, &scene->registry };
+
+			if (auto nav_comp = entity.getComponentIfExists<navigation_component>())
+			{
+				vec3 pos = vec3(destPtr[0], 0.0f, destPtr[2]);
+				nav_comp->destination = pos;
+			}
+			else
+			{
+				std::cerr << "Failed to call function\n";
+			}
+		}
+
+		static void log_message_internal(uint8_t mode, const char* message) noexcept
+		{
+			message_type type = (message_type)mode;
+
+			if (type == message_type_warning)
+				LOG_WARNING(message);
+			else if (type == message_type_error)
+				LOG_ERROR(message);
+			else
+				LOG_MESSAGE(message);
+		}
+
+		static void send_type_internal(const char* type) noexcept
+		{
+			std::cout << "Type found: " << type << "\n";
+			enative_scripting_linker::scriptTypes.push_back(type);
 		}
 	}
 
-	static void create_component_internal(uint32_t id, const char* name) noexcept
+	enative_scripting_linker::~enative_scripting_linker()
 	{
-
+		release();
 	}
 
-	static void instantiate_internal(uint32_t id, uint32_t newId, uint32_t parentId) noexcept
+	void enative_scripting_linker::init()
 	{
-
-	}
-
-	static void release_internal(uint32_t id) noexcept
-	{
-		entity_handle hid = (entity_handle)id;
-
-		scene->deleteEntity(hid);
-	}
-
-	static void setActive_internal(uint32_t id, bool active) noexcept
-	{
-
-	}
-
-	static void initialize_navigation_internal(uint32_t id, uint8_t type) noexcept
-	{
-		using namespace era_engine::ai;
-
-		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &scene->registry };
-
-		if (!entity.hasComponent<navigation_component>())
-			entity.addComponent<navigation_component>((nav_type)type);
-	}
-
-	static void set_destination_internal(uint32_t id, float* destPtr) noexcept
-	{
-		using namespace era_engine::ai;
-
-		entity_handle hid = (entity_handle)id;
-		eentity entity{ hid, &scene->registry };
-
-		if (auto nav_comp = entity.getComponentIfExists<navigation_component>())
+		lib = LoadLibraryA("EraScriptingCPPDecls.dll");
+		if (!lib || lib == INVALID_HANDLE_VALUE)
 		{
-			vec3 pos = vec3(destPtr[0], 0.0f, destPtr[2]);
-			nav_comp->destination = pos;
-		}
-		else
-		{
-			std::cerr << "Failed to call function\n";
-		}
-	}
-
-	static void log_message_internal(uint8_t mode, const char* message) noexcept
-	{
-		message_type type = (message_type)mode;
-
-		if (type == message_type_warning)
-			LOG_WARNING(message);
-		else if (type == message_type_error)
-			LOG_ERROR(message);
-		else
-			LOG_MESSAGE(message);
-	}
-
-	static void send_type_internal(const char* type) noexcept
-	{
-		std::cout << "Type found: " << type << "\n";
-		enative_scripting_linker::scriptTypes.push_back(type);
-	}
-}
-
-enative_scripting_linker::~enative_scripting_linker()
-{
-	release();
-}
-
-void enative_scripting_linker::init()
-{
-	lib = LoadLibraryA("EraScriptingCPPDecls.dll");
-	if (!lib || lib == INVALID_HANDLE_VALUE)
-	{
-		std::cerr << "Failed to load scripting impl library";
-		return;
-	}
-
-	get_builder getBuilderFuncInstance = (get_builder)GetProcAddress(lib, "createNativeScriptingBuilder");
-	builder = getBuilderFuncInstance();
-
-	bindFunctions();
-
-	host.initHost();
-}
-
-void enative_scripting_linker::release()
-{
-	RELEASE_PTR(builder)
-	if (lib)
-		FreeLibrary(lib);
-	host.releaseHost();
-}
-
-void enative_scripting_linker::start()
-{
-	if (startF)
-		startF();
-}
-
-void enative_scripting_linker::update(float dt)
-{
-	if (updateF)
-		updateF(dt);
-}
-
-void enative_scripting_linker::handle_coll(int id1, int id2)
-{
-	if (handleCollisionsF)
-		handleCollisionsF(id1, id2);
-}
-
-void enative_scripting_linker::handle_exit_coll(int id1, int id2)
-{
-	if (handleExitCollisionsF)
-		handleExitCollisionsF(id1, id2);
-}
-
-void enative_scripting_linker::process_trs(intptr_t ptr, int id)
-{
-	if (handleTrsF)
-		handleTrsF(ptr, id);
-}
-
-void enative_scripting_linker::init_src()
-{
-	if (initScrF)
-		initScrF();
-}
-
-void enative_scripting_linker::release_src()
-{
-	if (releaseSrcF)
-		releaseSrcF();
-}
-
-void enative_scripting_linker::reload_src()
-{
-	scriptTypes.clear();
-	if (reloadSrcF)
-		reloadSrcF();
-}
-
-void enative_scripting_linker::handleInput(uintptr_t input)
-{
-	try
-	{
-		if (inputF)
-			inputF(input);
-	}
-	catch (const std::exception& ex)
-	{
-		std::cout << ex.what() << "\n";
-	}
-}
-
-void enative_scripting_linker::createScript(int id, const char* comp)
-{
-	if (createCompF)
-		createCompF(id, reinterpret_cast<uintptr_t>(comp));
-}
-
-void enative_scripting_linker::removeScript(int id, const char* comp)
-{
-	if (removeCompF)
-		removeCompF(id, reinterpret_cast<uintptr_t>(comp));
-}
-
-void enative_scripting_linker::bindFunctions()
-{
-	if (builder)
-	{
-		bind::scene = runtimeScene;
-
-		// Rigidbody
-		{
-			builder->functions.emplace("getLinearVelocity", BIND(bind::get_linear_velocity_internal, float*, uint32_t));
-			builder->functions.emplace("getAngularVelocity", BIND(bind::get_angular_velocity_internal, float*, uint32_t));
-			builder->functions.emplace("initializeRigidbody", BIND(bind::initialize_rigidbody_internal, void, uint32_t, uint8_t));
-			builder->functions.emplace("getMass", BIND(bind::get_mass_internal, float, uint32_t));
-			builder->functions.emplace("setMass", BIND(bind::set_mass_internal, void, uint32_t, float));
-			builder->functions.emplace("addForce", BIND(bind::add_force_internal, void, uint32_t, uint8_t, float*));
-			builder->functions.emplace("addTorque", BIND(bind::add_torque_internal, void, uint32_t, uint8_t, float*));
+			std::cerr << "Failed to load scripting impl library";
+			return;
 		}
 
-		// Navigation
-		{
-			builder->functions.emplace("initializeNavigationComponent", BIND(bind::initialize_navigation_internal, void, uint32_t, int8_t));
-			builder->functions.emplace("setDestination", BIND(bind::set_destination_internal, void, uint32_t, float*));
-		}
+		get_builder getBuilderFuncInstance = (get_builder)GetProcAddress(lib, "createNativeScriptingBuilder");
+		builder = getBuilderFuncInstance();
 
-		// Debug
-		{
-			builder->functions.emplace("logMessage", BIND(bind::log_message_internal, void, uint8_t, const char*));
-		}
+		bindFunctions();
 
-		// User Scripting
-		{
-			builder->functions.emplace("sendType", BIND(bind::send_type_internal, void, const char*));
-		}
+		host.initHost();
+	}
 
-		// EEntity
-		{
-			builder->functions.emplace("createScript", BIND(bind::create_script_internal, void, uint32_t, const char*));
-			builder->functions.emplace("createComponent", BIND(bind::create_component_internal, void, uint32_t, const char*));
-			builder->functions.emplace("removeComponent", BIND(bind::remove_component_internal, void, uint32_t, const char*));
-			builder->functions.emplace("instantiate", BIND(bind::instantiate_internal, void, uint32_t, uint32_t, uint32_t));
-			builder->functions.emplace("release", BIND(bind::release_internal, void, uint32_t));
-			builder->functions.emplace("setActive", BIND(bind::setActive_internal, void, uint32_t, bool));
-		}
+	void enative_scripting_linker::release()
+	{
+		RELEASE_PTR(builder)
+			if (lib)
+				FreeLibrary(lib);
+		host.releaseHost();
+	}
 
-		// EEntityManager
+	void enative_scripting_linker::start()
+	{
+		if (startF)
+			startF();
+	}
+
+	void enative_scripting_linker::update(float dt)
+	{
+		if (updateF)
+			updateF(dt);
+	}
+
+	void enative_scripting_linker::handle_coll(int id1, int id2)
+	{
+		if (handleCollisionsF)
+			handleCollisionsF(id1, id2);
+	}
+
+	void enative_scripting_linker::handle_exit_coll(int id1, int id2)
+	{
+		if (handleExitCollisionsF)
+			handleExitCollisionsF(id1, id2);
+	}
+
+	void enative_scripting_linker::process_trs(intptr_t ptr, int id)
+	{
+		if (handleTrsF)
+			handleTrsF(ptr, id);
+	}
+
+	void enative_scripting_linker::init_src()
+	{
+		if (initScrF)
+			initScrF();
+	}
+
+	void enative_scripting_linker::release_src()
+	{
+		if (releaseSrcF)
+			releaseSrcF();
+	}
+
+	void enative_scripting_linker::reload_src()
+	{
+		scriptTypes.clear();
+		if (reloadSrcF)
+			reloadSrcF();
+	}
+
+	void enative_scripting_linker::handleInput(uintptr_t input)
+	{
+		try
 		{
-			builder->functions.emplace("createEntity", BIND(bind::create_entity_internal, uint32_t, const char*));
+			if (inputF)
+				inputF(input);
+		}
+		catch (const std::exception& ex)
+		{
+			std::cout << ex.what() << "\n";
 		}
 	}
+
+	void enative_scripting_linker::createScript(int id, const char* comp)
+	{
+		if (createCompF)
+			createCompF(id, reinterpret_cast<uintptr_t>(comp));
+	}
+
+	void enative_scripting_linker::removeScript(int id, const char* comp)
+	{
+		if (removeCompF)
+			removeCompF(id, reinterpret_cast<uintptr_t>(comp));
+	}
+
+	void enative_scripting_linker::bindFunctions()
+	{
+		if (builder)
+		{
+			bind::scene = runtimeScene;
+
+			// Rigidbody
+			{
+				builder->functions.emplace("getLinearVelocity", BIND(bind::get_linear_velocity_internal, float*, uint32_t));
+				builder->functions.emplace("getAngularVelocity", BIND(bind::get_angular_velocity_internal, float*, uint32_t));
+				builder->functions.emplace("initializeRigidbody", BIND(bind::initialize_rigidbody_internal, void, uint32_t, uint8_t));
+				builder->functions.emplace("getMass", BIND(bind::get_mass_internal, float, uint32_t));
+				builder->functions.emplace("setMass", BIND(bind::set_mass_internal, void, uint32_t, float));
+				builder->functions.emplace("addForce", BIND(bind::add_force_internal, void, uint32_t, uint8_t, float*));
+				builder->functions.emplace("addTorque", BIND(bind::add_torque_internal, void, uint32_t, uint8_t, float*));
+			}
+
+			// Navigation
+			{
+				builder->functions.emplace("initializeNavigationComponent", BIND(bind::initialize_navigation_internal, void, uint32_t, int8_t));
+				builder->functions.emplace("setDestination", BIND(bind::set_destination_internal, void, uint32_t, float*));
+			}
+
+			// Debug
+			{
+				builder->functions.emplace("logMessage", BIND(bind::log_message_internal, void, uint8_t, const char*));
+			}
+
+			// User Scripting
+			{
+				builder->functions.emplace("sendType", BIND(bind::send_type_internal, void, const char*));
+			}
+
+			// EEntity
+			{
+				builder->functions.emplace("createScript", BIND(bind::create_script_internal, void, uint32_t, const char*));
+				builder->functions.emplace("createComponent", BIND(bind::create_component_internal, void, uint32_t, const char*));
+				builder->functions.emplace("removeComponent", BIND(bind::remove_component_internal, void, uint32_t, const char*));
+				builder->functions.emplace("instantiate", BIND(bind::instantiate_internal, void, uint32_t, uint32_t, uint32_t));
+				builder->functions.emplace("release", BIND(bind::release_internal, void, uint32_t));
+				builder->functions.emplace("setActive", BIND(bind::setActive_internal, void, uint32_t, bool));
+			}
+
+			// EEntityManager
+			{
+				builder->functions.emplace("createEntity", BIND(bind::create_entity_internal, uint32_t, const char*));
+			}
+		}
+	}
+
 }

@@ -3,11 +3,14 @@
 #pragma once
 #include <optional>
 
-struct ebuilder
+namespace era_engine::build
 {
-	NODISCARD static std::optional<std::string> selectBuildFolder();
+	struct ebuilder
+	{
+		NODISCARD static std::optional<std::string> selectBuildFolder();
 
-	static bool build(bool autoRun = true, bool tempFolder = false);
+		static bool build(bool autoRun = true, bool tempFolder = false);
 
-	static bool buildAtLocation(std::string_view configuration, std::string_view pbuildPath, bool autoRun = false);
-};
+		static bool buildAtLocation(std::string_view configuration, std::string_view pbuildPath, bool autoRun = false);
+	};
+}

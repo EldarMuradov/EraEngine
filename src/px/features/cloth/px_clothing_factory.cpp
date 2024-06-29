@@ -15,7 +15,7 @@ NODISCARD std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, d
 	auto [positionVertexBuffer, positionPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), numVertices);
 	memcpy(positionPtr, cloth.getPositions(), numVertices * sizeof(vec3));
 
-	dx_vertex_buffer_group_view vb = skinCloth(positionVertexBuffer, cloth.numX, cloth.numZ);
+	dx_vertex_buffer_group_view vb = era_engine::animation::skinCloth(positionVertexBuffer, cloth.numX, cloth.numZ);
 	submesh_info sm{};
 	sm.baseVertex = 0;
 	sm.firstIndex = 0;

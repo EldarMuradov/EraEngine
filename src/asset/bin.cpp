@@ -160,7 +160,7 @@ static void writeSkeleton(const skeleton_asset& skeleton, FILE* file)
 		uint32 nameLength = (uint32)skeleton.joints[i].name.length();
 		fwrite(&nameLength, sizeof(uint32), 1, file);
 		fwrite(skeleton.joints[i].name.c_str(), sizeof(char), nameLength, file);
-		fwrite(&skeleton.joints[i].limbType, sizeof(limb_type), 1, file);
+		fwrite(&skeleton.joints[i].limbType, sizeof(era_engine::animation::limb_type), 1, file);
 		fwrite(&skeleton.joints[i].ik, sizeof(bool), 1, file);
 		fwrite(&skeleton.joints[i].invBindTransform, sizeof(mat4), 1, file);
 		fwrite(&skeleton.joints[i].bindTransform, sizeof(mat4), 1, file);
@@ -187,7 +187,7 @@ static void writeAnimation(const animation_asset& animation, FILE* file)
 		fwrite(&nameLength, sizeof(uint32), 1, file);
 		fwrite(name.c_str(), sizeof(char), nameLength, file);
 
-		fwrite(&joint, sizeof(animation_joint), 1, file);
+		fwrite(&joint, sizeof(era_engine::animation::animation_joint), 1, file);
 	}
 
 	writeArray(animation.positionTimestamps, file);
@@ -312,7 +312,7 @@ static skeleton_asset readSkeleton(entire_file& file)
 		char* name = file.consume<char>(nameLength);
 
 		result.joints[i].name = std::string(name, nameLength);
-		result.joints[i].limbType = *file.consume<limb_type>();
+		result.joints[i].limbType = *file.consume<era_engine::animation::limb_type>();
 		result.joints[i].ik = *file.consume<bool>();
 		result.joints[i].invBindTransform = *file.consume<mat4>();
 		result.joints[i].bindTransform = *file.consume<mat4>();
@@ -341,7 +341,7 @@ static animation_asset readAnimation(entire_file& file)
 		uint32 nameLength = *file.consume<uint32>();
 		char* name = file.consume<char>(nameLength);
 
-		animation_joint joint = *file.consume<animation_joint>();
+		era_engine::animation::animation_joint joint = *file.consume<era_engine::animation::animation_joint>();
 		result.joints[std::string(name, nameLength)] = joint;
 	}
 

@@ -14,7 +14,7 @@ struct full_vertex
 	vec3 normal;
 	vec3 tangent;
 	uint32 color;
-	skinning_weights skin;
+	era_engine::animation::skinning_weights skin;
 };
 
 namespace std
@@ -47,7 +47,7 @@ static bool operator==(const full_vertex& a, const full_vertex& b)
 struct per_material
 {
 	void addTriangles(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals,
-		const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<skinning_weights>& skins,
+		const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<era_engine::animation::skinning_weights>& skins,
 		int32 firstIndex, int32 faceSize, std::vector<submesh_asset>& outSubmeshes)
 	{
 		if (faceSize < 3)
@@ -98,7 +98,7 @@ private:
 	};
 
 	add_vertex_result addVertex(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals,
-		const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<skinning_weights>& skins,
+		const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<era_engine::animation::skinning_weights>& skins,
 		int32 index)
 	{
 		vec3 position = positions[index];
@@ -106,7 +106,7 @@ private:
 		vec3 normal = !normals.empty() ? normals[index] : vec3(0.f, 0.f, 0.f);
 		vec3 tangent = !tangents.empty() ? tangents[index] : vec3(0.f, 0.f, 0.f);
 		uint32 color = !colors.empty() ? colors[index] : 0;
-		skinning_weights skin = !skins.empty() ? skins[index] : skinning_weights{};
+		era_engine::animation::skinning_weights skin = !skins.empty() ? skins[index] : era_engine::animation::skinning_weights{};
 
 		full_vertex vertex = { position, uv, normal, tangent, color, skin, };
 		auto it = vertexToIndex.find(vertex);

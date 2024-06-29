@@ -1,7 +1,7 @@
 #include <pch.h>
 #include <scripting/dotnet_types.h>
 
-namespace dotnet
+namespace era_engine::dotnet
 {
 	reflect_storage storage;
 }

@@ -151,7 +151,7 @@ NODISCARD inline constexpr uint32 getVertexOthersSize(uint32 meshFlags)
 	if (meshFlags & mesh_creation_flags_with_uvs) { size += sizeof(vec2); }
 	if (meshFlags & mesh_creation_flags_with_normals) { size += sizeof(vec3); }
 	if (meshFlags & mesh_creation_flags_with_tangents) { size += sizeof(vec3); }
-	if (meshFlags & mesh_creation_flags_with_skin) { size += sizeof(skinning_weights); }
+	if (meshFlags & mesh_creation_flags_with_skin) { size += sizeof(era_engine::animation::skinning_weights); }
 	if (meshFlags & mesh_creation_flags_with_colors) { size += sizeof(uint32); }
 	return size;
 }

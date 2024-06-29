@@ -343,7 +343,7 @@ static void renderStaticObjects(escene& scene, const camera_frustum_planes& frus
 	CPU_PROFILE_BLOCK("Static objects");
 
 	using specialized_components = component_group_t<
-		animation_component,
+		era_engine::animation::animation_component,
 		dynamic_transform_component,
 		tree_component
 	>;
@@ -514,7 +514,7 @@ static void renderDynamicObjects(escene& scene, const camera_frustum_planes& fru
 
 	auto group = scene.group(
 		component_group<transform_component, dynamic_transform_component, mesh_component>,
-		component_group<animation_component>);
+		component_group<era_engine::animation::animation_component>);
 
 	std::unordered_map<multi_mesh*, offset_count> ocPerMesh = getOffsetsPerMesh(group);
 	renderDynamicObjectsToMainCamera(group, ocPerMesh, frustum, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass);
@@ -532,7 +532,7 @@ static void renderAnimatedObjects(escene& scene, const camera_frustum_planes& fr
 	CPU_PROFILE_BLOCK("Animated objects");
 
 	auto group = scene.group(
-		component_group<transform_component, dynamic_transform_component, mesh_component, animation_component>);
+		component_group<transform_component, dynamic_transform_component, mesh_component, era_engine::animation::animation_component>);
 
 	uint32 groupSize = (uint32)group.size();
 

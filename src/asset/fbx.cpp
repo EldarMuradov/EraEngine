@@ -900,7 +900,7 @@ struct fbx_mesh : fbx_object
 	std::vector<vec3> normals;
 	std::vector<vec3> tangents;
 	std::vector<uint32> colors;
-	std::vector<skinning_weights> skin;
+	std::vector<era_engine::animation::skinning_weights> skin;
 	std::vector<uint8> faceSizes;
 
 	std::vector<offset_count> vertexOffsetCounts;
@@ -1793,7 +1793,7 @@ static void finishMesh(fbx_mesh& mesh, uint32 flags, std::unordered_map<int64, f
 				{
 					uint32 vertexIndex = mesh.originalToNewVertex[j + offset];
 
-					skinning_weights& skin = mesh.skin[vertexIndex];
+					era_engine::animation::skinning_weights& skin = mesh.skin[vertexIndex];
 
 					int32 slot = -1;
 					for (int32 k = 0; k < 4; ++k)
@@ -2171,7 +2171,7 @@ NODISCARD model_asset loadFBX(const fs::path& path, uint32 flags)
 			std::string name = nameToString(joint->model->name);
 
 			out.nameToJointID[name] = i;
-			out.joints.push_back({ std::move(name), limb_type_none, false, joint->invBindMatrix, invert(joint->invBindMatrix), joint->parentID });
+			out.joints.push_back({ std::move(name), era_engine::animation::limb_type_none, false, joint->invBindMatrix, invert(joint->invBindMatrix), joint->parentID });
 		}
 
 		ASSERT(out.joints.size() == out.nameToJointID.size());
@@ -2206,7 +2206,7 @@ NODISCARD model_asset loadFBX(const fs::path& path, uint32 flags)
 				fbx_model& model = objectLUT.models[modelIndex];
 				std::string name = nameToString(model.name);
 
-				animation_joint& joint = out.joints[name];
+				era_engine::animation::animation_joint& joint = out.joints[name];
 				joint.isAnimated = true;
 
 				if (j.curveNodes[0])

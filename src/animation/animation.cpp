@@ -1,882 +1,960 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "animation.h"
+#include "animation/animation.h"
+#include "core/memory.h"
+#include "core/random.h"
 #include "core/imgui.h"
 #include "core/string.h"
 #include "geometry/mesh.h"
-#include "skinning.h"
+#include "animation/skinning.h"
 #include "dx/dx_context.h"
 #include "rendering/debug_visualization.h"
 #include <algorithm>
-#include <core/log.h>
 
-static void scaleKeyframes(animation_clip& clip, animation_joint& joint, float scale)
+namespace era_engine::animation
 {
-	for (uint32 keyID = 0; keyID < joint.numPositionKeyframes; ++keyID)
+	static void scaleKeyframes(animation_clip& clip, animation_joint& joint, float scale)
 	{
-		clip.positionKeyframes[joint.firstPositionKeyframe + keyID] *= scale;
-	}
-	for (uint32 keyID = 0; keyID < joint.numScaleKeyframes; ++keyID)
-	{
-		clip.scaleKeyframes[joint.firstScaleKeyframe + keyID] *= scale;
-	}
-}
-
-void animation_skeleton::analyzeJoints(const vec3* positions, const void* others, uint32 otherStride, uint32 numVertices)
-{
-	for (uint32 jointID = 0; jointID < (uint32)joints.size(); ++jointID)
-	{
-		skeleton_joint& j = joints[jointID];
-
-		std::string name = j.name;
-		std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-
-		limb_type c = limb_type_none;
-
-		bool left = contains(name, "left") || endsWith(name, ".l") || endsWith(name, "_l");
-
-		if (contains(name, "spine") || contains(name, "hip") || contains(name, "rib") || contains(name, "pelvis") || contains(name, "shoulder") || contains(name, "clavicle")) { c = limb_type_torso; }
-		else if (contains(name, "head") || contains(name, "neck")) { c = limb_type_head; }
-		else if (contains(name, "arm"))
+		for (uint32 keyID = 0; keyID < joint.numPositionKeyframes; ++keyID)
 		{
-			limb_type parentType = (j.parentID != INVALID_JOINT) ? joints[j.parentID].limbType : limb_type_none;
-
-			if (contains(name, "lower") || contains(name, "lo") || contains(name, "fore")) { c = left ? limb_type_lower_arm_left : limb_type_lower_arm_right; }
-			else if (contains(name, "upper") || contains(name, "up")) { c = left ? limb_type_upper_arm_left : limb_type_upper_arm_right; }
-			else if (parentType == limb_type_torso) { c = left ? limb_type_upper_arm_left : limb_type_upper_arm_right; }
-			else { c = left ? limb_type_lower_arm_left : limb_type_lower_arm_right; }
+			clip.positionKeyframes[joint.firstPositionKeyframe + keyID] *= scale;
 		}
-		else if (contains(name, "hand") || contains(name, "finger") || contains(name, "thumb") || contains(name, "index") || contains(name, "middle") || contains(name, "ring") || contains(name, "pinky"))
+		for (uint32 keyID = 0; keyID < joint.numScaleKeyframes; ++keyID)
 		{
-			c = left ? limb_type_hand_left : limb_type_hand_right;
-		}
-		else if (contains(name, "leg") || contains(name, "thigh") || contains(name, "shin") || contains(name, "calf"))
-		{
-			limb_type parentType = (j.parentID != INVALID_JOINT) ? joints[j.parentID].limbType : limb_type_none;
-
-			if (contains(name, "lower") || contains(name, "lo") || contains(name, "shin") || contains(name, "calf")) { c = left ? limb_type_lower_leg_left : limb_type_lower_leg_right; }
-			else if (contains(name, "upper") || contains(name, "up") || contains(name, "thigh")) { c = left ? limb_type_upper_leg_left : limb_type_upper_leg_right; }
-			else if (parentType == limb_type_torso) { c = left ? limb_type_upper_leg_left : limb_type_upper_leg_right; }
-			else { c = left ? limb_type_lower_leg_left : limb_type_lower_leg_right; }
-		}
-		else if (contains(name, "foot") || contains(name, "toe") || contains(name, "ball"))
-		{
-			c = left ? limb_type_foot_left : limb_type_foot_right;
-		}
-
-		j.limbType = c;
-		j.ik = contains(name, "ik");
-
-		if (limbs[c].representativeJoint == INVALID_JOINT)
-		{
-			// The highest joint in the hierarchy for this type is chosen as the representative.
-			// Because we order the joints, the first joint we encounter is automatically the highest in the hierarchy.
-			limbs[c].representativeJoint = jointID;
+			clip.scaleKeyframes[joint.firstScaleKeyframe + keyID] *= scale;
 		}
 	}
+
+	void animation_skeleton::analyzeJoints(const vec3* positions, const void* others, uint32 otherStride, uint32 numVertices)
+	{
+		for (uint32 jointID = 0; jointID < (uint32)joints.size(); ++jointID)
+		{
+			skeleton_joint& j = joints[jointID];
+
+			std::string name = j.name;
+			std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+
+			limb_type c = limb_type_none;
+
+			bool left = contains(name, "left") || endsWith(name, ".l") || endsWith(name, "_l");
+
+			if (contains(name, "spine") || contains(name, "hip") || contains(name, "rib") || contains(name, "pelvis") || contains(name, "shoulder") || contains(name, "clavicle")) { c = limb_type_torso; }
+			else if (contains(name, "head") || contains(name, "neck")) { c = limb_type_head; }
+			else if (contains(name, "arm"))
+			{
+				limb_type parentType = (j.parentID != INVALID_JOINT) ? joints[j.parentID].limbType : limb_type_none;
+
+				if (contains(name, "lower") || contains(name, "lo") || contains(name, "fore")) { c = left ? limb_type_lower_arm_left : limb_type_lower_arm_right; }
+				else if (contains(name, "upper") || contains(name, "up")) { c = left ? limb_type_upper_arm_left : limb_type_upper_arm_right; }
+				else if (parentType == limb_type_torso) { c = left ? limb_type_upper_arm_left : limb_type_upper_arm_right; }
+				else { c = left ? limb_type_lower_arm_left : limb_type_lower_arm_right; }
+			}
+			else if (contains(name, "hand") || contains(name, "finger") || contains(name, "thumb") || contains(name, "index") || contains(name, "middle") || contains(name, "ring") || contains(name, "pinky"))
+			{
+				c = left ? limb_type_hand_left : limb_type_hand_right;
+			}
+			else if (contains(name, "leg") || contains(name, "thigh") || contains(name, "shin") || contains(name, "calf"))
+			{
+				limb_type parentType = (j.parentID != INVALID_JOINT) ? joints[j.parentID].limbType : limb_type_none;
+
+				if (contains(name, "lower") || contains(name, "lo") || contains(name, "shin") || contains(name, "calf")) { c = left ? limb_type_lower_leg_left : limb_type_lower_leg_right; }
+				else if (contains(name, "upper") || contains(name, "up") || contains(name, "thigh")) { c = left ? limb_type_upper_leg_left : limb_type_upper_leg_right; }
+				else if (parentType == limb_type_torso) { c = left ? limb_type_upper_leg_left : limb_type_upper_leg_right; }
+				else { c = left ? limb_type_lower_leg_left : limb_type_lower_leg_right; }
+			}
+			else if (contains(name, "foot") || contains(name, "toe") || contains(name, "ball"))
+			{
+				c = left ? limb_type_foot_left : limb_type_foot_right;
+			}
+
+			j.limbType = c;
+			j.ik = contains(name, "ik");
+
+			if (limbs[c].representativeJoint == INVALID_JOINT)
+			{
+				// The highest joint in the hierarchy for this type is chosen as the representative.
+				// Because we order the joints, the first joint we encounter is automatically the highest in the hierarchy.
+				limbs[c].representativeJoint = jointID;
+			}
+		}
 
 #if 0
 
-	struct limb_analysis
-	{
-		vec3 vertexMean;
-		uint32 numVertices;
-		mat3 covariance;
-	};
-
-	limb_analysis analysis[limb_type_count] = {};
-
-	for (uint32 i = 0; i < numVertices; ++i)
-	{
-		vec3 p = positions[i];
-		skinning_weights w = *(skinning_weights*)((uint8*)others + i * otherStride);
-		for (uint32 j = 0; j < 4; ++j)
+		struct limb_analysis
 		{
-			if (w.skinWeights[j] > 150)
+			vec3 vertexMean;
+			uint32 numVertices;
+			mat3 covariance;
+		};
+
+		limb_analysis analysis[limb_type_count] = {};
+
+		for (uint32 i = 0; i < numVertices; ++i)
+		{
+			vec3 p = positions[i];
+			skinning_weights w = *(skinning_weights*)((uint8*)others + i * otherStride);
+			for (uint32 j = 0; j < 4; ++j)
 			{
-				const auto& joint = joints[w.skinIndices[j]];
-				limb_type c = joint.limbType;
-				if (c != limb_type_unknown)
+				if (w.skinWeights[j] > 150)
 				{
-					limb_analysis& a = analysis[c];
-					a.vertexMean += p;
-					++a.numVertices;
+					const auto& joint = joints[w.skinIndices[j]];
+					limb_type c = joint.limbType;
+					if (c != limb_type_unknown)
+					{
+						limb_analysis& a = analysis[c];
+						a.vertexMean += p;
+						++a.numVertices;
+					}
 				}
 			}
 		}
-	}
 
-	for (uint32 i = 0; i < limb_type_count; ++i)
-	{
-		if (analysis[i].numVertices)
+		for (uint32 i = 0; i < limb_type_count; ++i)
 		{
-			analysis[i].vertexMean /= (float)analysis[i].numVertices;
-		}
-	}
-
-
-	for (uint32 i = 0; i < numVertices; ++i)
-	{
-		vec3 p = positions[i];
-		skinning_weights w = *(skinning_weights*)((uint8*)others + i * otherStride);
-		for (uint32 j = 0; j < 4; ++j)
-		{
-			if (w.skinWeights[j] > 150)
+			if (analysis[i].numVertices)
 			{
-				const auto& joint = joints[w.skinIndices[j]];
-				limb_type c = joint.limbType;
-				if (c != limb_type_unknown)
-				{
-					limb_analysis& a = analysis[c];
-					vec3 m = a.vertexMean;
+				analysis[i].vertexMean /= (float)analysis[i].numVertices;
+			}
+		}
 
-					for (uint32 y = 0; y < 3; ++y)
+
+		for (uint32 i = 0; i < numVertices; ++i)
+		{
+			vec3 p = positions[i];
+			skinning_weights w = *(skinning_weights*)((uint8*)others + i * otherStride);
+			for (uint32 j = 0; j < 4; ++j)
+			{
+				if (w.skinWeights[j] > 150)
+				{
+					const auto& joint = joints[w.skinIndices[j]];
+					limb_type c = joint.limbType;
+					if (c != limb_type_unknown)
 					{
-						for (uint32 x = 0; x < 3; ++x)
+						limb_analysis& a = analysis[c];
+						vec3 m = a.vertexMean;
+
+						for (uint32 y = 0; y < 3; ++y)
 						{
-							a.covariance.m[3 * y + x] += (m.data[y] - p.data[y]) * (m.data[x] - p.data[x]);
+							for (uint32 x = 0; x < 3; ++x)
+							{
+								a.covariance.m[3 * y + x] += (m.data[y] - p.data[y]) * (m.data[x] - p.data[x]);
+							}
 						}
 					}
 				}
 			}
 		}
-	}
 
-	for (uint32 i = 0; i < limb_type_count; ++i)
-	{
-		if (analysis[i].numVertices)
+		for (uint32 i = 0; i < limb_type_count; ++i)
 		{
-			analysis[i].covariance *= 1.f / (float)analysis[i].numVertices;
+			if (analysis[i].numVertices)
+			{
+				analysis[i].covariance *= 1.f / (float)analysis[i].numVertices;
 
-			//singular_value_decomposition svd = computeSVD(analysis[i].covariance);
-			//vec3 principalAxis = col(svd.U, 0);
+				//singular_value_decomposition svd = computeSVD(analysis[i].covariance);
+				//vec3 principalAxis = col(svd.U, 0);
 
-			vec3 eigenValues;
-			mat3 eigenVectors;
+				vec3 eigenValues;
+				mat3 eigenVectors;
 
-			getEigen(analysis[i].covariance, eigenValues, eigenVectors);
-			uint32 maxComponent = (eigenValues.x > eigenValues.y) ? (eigenValues.x > eigenValues.z) ? 0 : 2 : (eigenValues.y > eigenValues.z) ? 1 : 2;
+				getEigen(analysis[i].covariance, eigenValues, eigenVectors);
+				uint32 maxComponent = (eigenValues.x > eigenValues.y) ? (eigenValues.x > eigenValues.z) ? 0 : 2 : (eigenValues.y > eigenValues.z) ? 1 : 2;
 
-			vec3 principalAxis = col(eigenVectors, maxComponent);
+				vec3 principalAxis = col(eigenVectors, maxComponent);
 
-			limbs[i].mean = analysis[i].vertexMean;
-			limbs[i].principalAxis = principalAxis;
+				limbs[i].mean = analysis[i].vertexMean;
+				limbs[i].principalAxis = principalAxis;
+			}
 		}
-	}
 
 #else
 
-	for (uint32 i = 0; i < limb_type_count; ++i)
-	{
-		limbs[i].dimensions = { FLT_MAX, -FLT_MAX, -FLT_MAX };
-	}
-
-	for (uint32 i = 0; i < numVertices; ++i)
-	{
-		vec3 p = positions[i];
-		skinning_weights w = *(skinning_weights*)((uint8*)others + i * otherStride);
-		for (uint32 j = 0; j < 4; ++j)
+		for (uint32 i = 0; i < limb_type_count; ++i)
 		{
-			if (w.skinWeights[j] > 200)
+			limbs[i].dimensions = { FLT_MAX, -FLT_MAX, -FLT_MAX };
+		}
+
+		for (uint32 i = 0; i < numVertices; ++i)
+		{
+			vec3 p = positions[i];
+			skinning_weights w = *(skinning_weights*)((uint8*)others + i * otherStride);
+			for (uint32 j = 0; j < 4; ++j)
 			{
-				limb_type type = joints[w.skinIndices[j]].limbType;
-				if (type != limb_type_none)
+				if (w.skinWeights[j] > 200)
 				{
-					if (limbs[type].representativeJoint != INVALID_JOINT)
+					limb_type type = joints[w.skinIndices[j]].limbType;
+					if (type != limb_type_none)
 					{
-						const skeleton_joint& j = joints[limbs[type].representativeJoint];
-						limb_dimensions& d = limbs[type].dimensions;
+						if (limbs[type].representativeJoint != INVALID_JOINT)
+						{
+							const skeleton_joint& j = joints[limbs[type].representativeJoint];
+							limb_dimensions& d = limbs[type].dimensions;
 
-						p = transformPosition(j.invBindTransform, p);
+							p = transformPosition(j.invBindTransform, p);
 
-						d.minY = min(d.minY, p.y);
-						d.maxY = max(d.maxY, p.y);
-						d.radius = max(d.radius, squaredLength(vec2(p.x, p.z)));
+							d.minY = min(d.minY, p.y);
+							d.maxY = max(d.maxY, p.y);
+							d.radius = max(d.radius, squaredLength(vec2(p.x, p.z)));
+						}
 					}
 				}
 			}
 		}
-	}
 
-	for (uint32 i = 0; i < limb_type_count; ++i)
-	{
-		limb_dimensions& d = limbs[i].dimensions;
-
-		d.radius = sqrt(d.radius); // Above, we calculate the squared radius.
-
-		float c = 0.5f * (d.minY + d.maxY);
-
-		const float scaleFactor = 0.8f;
-		d.minY = (d.minY - c) * scaleFactor + c;
-		d.maxY = (d.maxY - c) * scaleFactor + c;
-		d.radius *= scaleFactor;
-
-		d.minY += d.radius;
-		d.maxY -= d.radius;
-		if (d.minY > d.maxY)
+		for (uint32 i = 0; i < limb_type_count; ++i)
 		{
-			d.minY = c - EPSILON;
-			d.maxY = c + EPSILON;
+			limb_dimensions& d = limbs[i].dimensions;
+
+			d.radius = sqrt(d.radius); // Above, we calculate the squared radius.
+
+			float c = 0.5f * (d.minY + d.maxY);
+
+			const float scaleFactor = 0.8f;
+			d.minY = (d.minY - c) * scaleFactor + c;
+			d.maxY = (d.maxY - c) * scaleFactor + c;
+			d.radius *= scaleFactor;
+
+			d.minY += d.radius;
+			d.maxY -= d.radius;
+			if (d.minY > d.maxY)
+			{
+				d.minY = c - EPSILON;
+				d.maxY = c + EPSILON;
+			}
 		}
-	}
 
 #endif
-}
-
-static vec3 samplePosition(const animation_clip& clip, const animation_joint& animJoint, float time)
-{
-	if (time >= clip.lengthInSeconds)
-	{
-		return clip.positionKeyframes[animJoint.firstPositionKeyframe + animJoint.numPositionKeyframes - 1];
 	}
 
-	if (animJoint.numPositionKeyframes == 1)
+	static vec3 samplePosition(const animation_clip& clip, const animation_joint& animJoint, float time)
 	{
-		return clip.positionKeyframes[animJoint.firstPositionKeyframe];
-	}
-
-	uint32 firstKeyframeIndex = -1;
-	for (uint32 i = 0; i < animJoint.numPositionKeyframes - 1; ++i)
-	{
-		uint32 j = i + animJoint.firstPositionKeyframe;
-		if (time < clip.positionTimestamps[j + 1])
+		if (time >= clip.lengthInSeconds)
 		{
-			firstKeyframeIndex = j;
-			break;
-		}
-	}
-	ASSERT(firstKeyframeIndex != -1);
-
-	uint32 secondKeyframeIndex = firstKeyframeIndex + 1;
-
-	float t = inverseLerp(clip.positionTimestamps[firstKeyframeIndex], clip.positionTimestamps[secondKeyframeIndex], time);
-;
-	vec3 a = clip.positionKeyframes[firstKeyframeIndex];
-	vec3 b = clip.positionKeyframes[secondKeyframeIndex];
-
-	return lerp(a, b, t);
-}
-
-static quat sampleRotation(const animation_clip& clip, const animation_joint& animJoint, float time)
-{
-	if (time >= clip.lengthInSeconds)
-	{
-		return clip.rotationKeyframes[animJoint.firstRotationKeyframe + animJoint.numRotationKeyframes - 1];
-	}
-
-	if (animJoint.numRotationKeyframes == 1)
-	{
-		return clip.rotationKeyframes[animJoint.firstRotationKeyframe];
-	}
-
-	uint32 firstKeyframeIndex = -1;
-	for (uint32 i = 0; i < animJoint.numRotationKeyframes - 1; ++i)
-	{
-		uint32 j = i + animJoint.firstRotationKeyframe;
-		if (time < clip.rotationTimestamps[j + 1])
-		{
-			firstKeyframeIndex = j;
-			break;
-		}
-	}
-	ASSERT(firstKeyframeIndex != -1);
-
-	uint32 secondKeyframeIndex = firstKeyframeIndex + 1;
-
-	float t = inverseLerp(clip.rotationTimestamps[firstKeyframeIndex], clip.rotationTimestamps[secondKeyframeIndex], time);
-
-	quat a = clip.rotationKeyframes[firstKeyframeIndex];
-	quat b = clip.rotationKeyframes[secondKeyframeIndex];
-
-	if (dot(a.v4, b.v4) < 0.f)
-	{
-		b.v4 *= -1.f;
-	}
-
-	return lerp(a, b, t);
-}
-
-static vec3 sampleScale(const animation_clip& clip, const animation_joint& animJoint, float time)
-{
-	if (time >= clip.lengthInSeconds)
-		return clip.scaleKeyframes[animJoint.firstScaleKeyframe + animJoint.numScaleKeyframes - 1];
-
-	if (animJoint.numScaleKeyframes == 1)
-		return clip.scaleKeyframes[animJoint.firstScaleKeyframe];
-
-	if (!clip.scaleTimestamps.size())
-		return vec3(1.0f);
-
-	uint32 firstKeyframeIndex = -1;
-	for (uint32 i = 0; i < animJoint.numScaleKeyframes - 1; ++i)
-	{
-		uint32 j = i + animJoint.firstScaleKeyframe;
-
-		if (time < clip.scaleTimestamps[j + 1])
-		{
-			firstKeyframeIndex = j;
-			break;
-		}
-	}
-	ASSERT(firstKeyframeIndex != -1);
-
-	uint32 secondKeyframeIndex = firstKeyframeIndex + 1;
-
-	float t = inverseLerp(clip.scaleTimestamps[firstKeyframeIndex], clip.scaleTimestamps[secondKeyframeIndex], time);
-
-	vec3 a = clip.scaleKeyframes[firstKeyframeIndex];
-	vec3 b = clip.scaleKeyframes[secondKeyframeIndex];
-
-	return lerp(a, b, t);
-}
-
-void animation_skeleton::sampleAnimation(const animation_clip& clip, float time, trs* outLocalTransforms, trs* outRootMotion) const
-{
-	ASSERT(clip.joints.size() == joints.size());
-
-	time = clamp(time, 0.f, clip.lengthInSeconds);
-
-	uint32 numJoints = (uint32)joints.size();
-	for (uint32 i = 0; i < numJoints; ++i)
-	{
-		const animation_joint& animJoint = clip.joints[i];
-
-		if (animJoint.isAnimated)
-		{
-			outLocalTransforms[i].position = samplePosition(clip, animJoint, time);
-			outLocalTransforms[i].rotation = sampleRotation(clip, animJoint, time);
-			outLocalTransforms[i].scale = sampleScale(clip, animJoint, time);
-		}
-		else
-		{
-			outLocalTransforms[i] = trs::identity;
-		}
-	}
-
-	trs rootMotion;
-	if (clip.rootMotionJoint.isAnimated)
-	{
-		rootMotion.position = samplePosition(clip, clip.rootMotionJoint, time);
-		rootMotion.rotation = sampleRotation(clip, clip.rootMotionJoint, time);
-		rootMotion.scale = sampleScale(clip, clip.rootMotionJoint, time);
-	}
-	else
-	{
-		rootMotion = trs::identity;
-	}
-
-	if (outRootMotion)
-	{
-		if (clip.bakeRootRotationIntoPose)
-		{
-			outLocalTransforms[0] = trs(0.f, rootMotion.rotation) * outLocalTransforms[0];
-			rootMotion.rotation = quat::identity;
+			return clip.positionKeyframes[animJoint.firstPositionKeyframe + animJoint.numPositionKeyframes - 1];
 		}
 
-		if (clip.bakeRootXZTranslationIntoPose)
+		if (animJoint.numPositionKeyframes == 1)
 		{
-			outLocalTransforms[0].position.x += rootMotion.position.x;
-			outLocalTransforms[0].position.z += rootMotion.position.z;
-			rootMotion.position.x = 0.f;
-			rootMotion.position.z = 0.f;
+			return clip.positionKeyframes[animJoint.firstPositionKeyframe];
 		}
 
-		if (clip.bakeRootYTranslationIntoPose)
+		uint32 firstKeyframeIndex = -1;
+		for (uint32 i = 0; i < animJoint.numPositionKeyframes - 1; ++i)
 		{
-			outLocalTransforms[0].position.y += rootMotion.position.y;
-			rootMotion.position.y = 0.f;
-		}
-
-		*outRootMotion = rootMotion;
-	}
-	else
-	{
-		outLocalTransforms[0] = rootMotion * outLocalTransforms[0];
-	}
-}
-
-void animation_skeleton::sampleAnimation(uint32 index, float time, trs* outLocalTransforms, trs* outRootMotion) const
-{
-	sampleAnimation(clips[index], time, outLocalTransforms, outRootMotion);
-}
-
-void animation_skeleton::blendLocalTransforms(const trs* localTransforms1, const trs* localTransforms2, float t, trs* outBlendedLocalTransforms) const
-{
-	t = clamp01(t);
-	for (uint32 jointID = 0; jointID < (uint32)joints.size(); ++jointID)
-	{
-		outBlendedLocalTransforms[jointID] = lerp(localTransforms1[jointID], localTransforms2[jointID], t);
-	}
-}
-
-void animation_skeleton::getSkinningMatricesFromLocalTransforms(const trs* localTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
-{
-	uint32 numJoints = (uint32)joints.size();
-	trs* globalTransforms = (trs*)alloca(sizeof(trs) * numJoints);
-
-	for (uint32 i = 0; i < numJoints; ++i)
-	{
-		const skeleton_joint& skelJoint = joints[i];
-		if (skelJoint.parentID != INVALID_JOINT)
-		{
-			ASSERT(i > skelJoint.parentID); // Parent already processed.
-			globalTransforms[i] = globalTransforms[skelJoint.parentID] * localTransforms[i];
-		}
-		else
-		{
-			globalTransforms[i] = worldTransform * localTransforms[i];
-		}
-
-		outSkinningMatrices[i] = trsToMat4(globalTransforms[i]) * joints[i].invBindTransform;
-	}
-}
-
-void animation_skeleton::getSkinningMatricesFromLocalTransforms(const trs* localTransforms, trs* outGlobalTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
-{
-	uint32 numJoints = (uint32)joints.size();
-
-	for (uint32 i = 0; i < numJoints; ++i)
-	{
-		const skeleton_joint& skelJoint = joints[i];
-		if (skelJoint.parentID != INVALID_JOINT)
-		{
-			ASSERT(i > skelJoint.parentID); // Parent already processed
-			outGlobalTransforms[i] = outGlobalTransforms[skelJoint.parentID] * localTransforms[i];
-		}
-		else
-		{
-			outGlobalTransforms[i] = worldTransform * localTransforms[i];
-		}
-
-		outSkinningMatrices[i] = trsToMat4(outGlobalTransforms[i]) * joints[i].invBindTransform;
-	}
-}
-
-void animation_skeleton::getSkinningMatricesFromGlobalTransforms(const trs* globalTransforms, mat4* outSkinningMatrices) const
-{
-	uint32 numJoints = (uint32)joints.size();
-
-	for (uint32 i = 0; i < numJoints; ++i)
-	{
-		outSkinningMatrices[i] = trsToMat4(globalTransforms[i]) * joints[i].invBindTransform;
-	}
-}
-
-std::vector<uint32> animation_skeleton::getClipsByName(const std::string& name)
-{
-	std::vector<uint32> result;
-	for (uint32 i = 0; i < (uint32)clips.size(); ++i)
-	{
-		if (clips[i].name == name)
-		{
-			result.push_back(i);
-		}
-	}
-	return result;
-}
-
-static void prettyPrint(const animation_skeleton& skeleton, uint32 parent, uint32 indent)
-{
-	for (uint32 i = 0; i < (uint32)skeleton.joints.size(); ++i)
-	{
-		if (skeleton.joints[i].parentID == parent)
-		{
-			std::cout << std::string(indent, ' ') << skeleton.joints[i].name << '\n';
-			prettyPrint(skeleton, i, indent + 1);
-		}
-	}
-}
-
-void animation_skeleton::prettyPrintHierarchy() const
-{
-	prettyPrint(*this, INVALID_JOINT, 0);
-}
-
-void animation_clip::edit()
-{
-	ImGui::Checkbox("Bake root rotation into pose", &bakeRootRotationIntoPose);
-	ImGui::Checkbox("Bake xz translation into pose", &bakeRootXZTranslationIntoPose);
-	ImGui::Checkbox("Bake y translation into pose", &bakeRootYTranslationIntoPose);
-}
-
-NODISCARD trs animation_clip::getFirstRootTransform() const
-{
-	if (rootMotionJoint.isAnimated)
-	{
-		trs t;
-		t.position = positionKeyframes[rootMotionJoint.firstPositionKeyframe];
-		t.rotation = rotationKeyframes[rootMotionJoint.firstRotationKeyframe];
-		t.scale = scaleKeyframes[rootMotionJoint.firstScaleKeyframe];
-
-		if (bakeRootRotationIntoPose)
-		{
-			t.rotation = quat::identity;
-		}
-		if (bakeRootXZTranslationIntoPose)
-		{
-			t.position.x = 0.f;
-			t.position.z = 0.f;
-		}
-		if (bakeRootYTranslationIntoPose)
-		{
-			t.position.y = 0.f;
-		}
-
-		return t;
-	}
-	return trs::identity;
-}
-
-NODISCARD trs animation_clip::getLastRootTransform() const
-{
-	if (rootMotionJoint.isAnimated)
-	{
-		trs t;
-		t.position = positionKeyframes[rootMotionJoint.firstPositionKeyframe + rootMotionJoint.numPositionKeyframes - 1];
-		t.rotation = rotationKeyframes[rootMotionJoint.firstRotationKeyframe + rootMotionJoint.numRotationKeyframes - 1];
-		t.scale = scaleKeyframes[rootMotionJoint.firstScaleKeyframe + rootMotionJoint.numScaleKeyframes - 1];
-
-		if (bakeRootRotationIntoPose)
-		{
-			t.rotation = quat::identity;
-		}
-		if (bakeRootXZTranslationIntoPose)
-		{
-			t.position.x = 0.f;
-			t.position.z = 0.f;
-		}
-		if (bakeRootYTranslationIntoPose)
-		{
-			t.position.y = 0.f;
-		}
-
-		return t;
-	}
-	return trs::identity;
-}
-
-animation_instance::animation_instance(const animation_clip* clip, float startTime)
-{
-	set(clip, startTime);
-}
-
-void animation_instance::set(const animation_clip* clip, float startTime)
-{
-	this->clip = clip;
-	time = startTime;
-	lastRootMotion = clip->getFirstRootTransform();
-}
-
-void animation_instance::update(const animation_skeleton& skeleton, float dt, trs* outLocalTransforms, trs& outDeltaRootMotion)
-{
-	if (paused)
-		return;
-
-	if (valid())
-	{
-		time += dt;
-		if (time >= clip->lengthInSeconds)
-		{
-			if (clip->looping)
+			uint32 j = i + animJoint.firstPositionKeyframe;
+			if (time < clip.positionTimestamps[j + 1])
 			{
-				time = fmod(time, clip->lengthInSeconds);
-				lastRootMotion = clip->getFirstRootTransform();
+				firstKeyframeIndex = j;
+				break;
+			}
+		}
+		ASSERT(firstKeyframeIndex != -1);
+
+		uint32 secondKeyframeIndex = firstKeyframeIndex + 1;
+
+		float t = inverseLerp(clip.positionTimestamps[firstKeyframeIndex], clip.positionTimestamps[secondKeyframeIndex], time);
+		;
+		vec3 a = clip.positionKeyframes[firstKeyframeIndex];
+		vec3 b = clip.positionKeyframes[secondKeyframeIndex];
+
+		return lerp(a, b, t);
+	}
+
+	static quat sampleRotation(const animation_clip& clip, const animation_joint& animJoint, float time)
+	{
+		if (time >= clip.lengthInSeconds)
+		{
+			return clip.rotationKeyframes[animJoint.firstRotationKeyframe + animJoint.numRotationKeyframes - 1];
+		}
+
+		if (animJoint.numRotationKeyframes == 1)
+		{
+			return clip.rotationKeyframes[animJoint.firstRotationKeyframe];
+		}
+
+		uint32 firstKeyframeIndex = -1;
+		for (uint32 i = 0; i < animJoint.numRotationKeyframes - 1; ++i)
+		{
+			uint32 j = i + animJoint.firstRotationKeyframe;
+			if (time < clip.rotationTimestamps[j + 1])
+			{
+				firstKeyframeIndex = j;
+				break;
+			}
+		}
+		ASSERT(firstKeyframeIndex != -1);
+
+		uint32 secondKeyframeIndex = firstKeyframeIndex + 1;
+
+		float t = inverseLerp(clip.rotationTimestamps[firstKeyframeIndex], clip.rotationTimestamps[secondKeyframeIndex], time);
+
+		quat a = clip.rotationKeyframes[firstKeyframeIndex];
+		quat b = clip.rotationKeyframes[secondKeyframeIndex];
+
+		if (dot(a.v4, b.v4) < 0.f)
+		{
+			b.v4 *= -1.f;
+		}
+
+		return lerp(a, b, t);
+	}
+
+	static vec3 sampleScale(const animation_clip& clip, const animation_joint& animJoint, float time)
+	{
+		if (time >= clip.lengthInSeconds)
+			return clip.scaleKeyframes[animJoint.firstScaleKeyframe + animJoint.numScaleKeyframes - 1];
+
+		if (animJoint.numScaleKeyframes == 1)
+			return clip.scaleKeyframes[animJoint.firstScaleKeyframe];
+
+		if (!clip.scaleTimestamps.size())
+			return vec3(1.0f);
+
+		uint32 firstKeyframeIndex = -1;
+		for (uint32 i = 0; i < animJoint.numScaleKeyframes - 1; ++i)
+		{
+			uint32 j = i + animJoint.firstScaleKeyframe;
+
+			if (time < clip.scaleTimestamps[j + 1])
+			{
+				firstKeyframeIndex = j;
+				break;
+			}
+		}
+		ASSERT(firstKeyframeIndex != -1);
+
+		uint32 secondKeyframeIndex = firstKeyframeIndex + 1;
+
+		float t = inverseLerp(clip.scaleTimestamps[firstKeyframeIndex], clip.scaleTimestamps[secondKeyframeIndex], time);
+
+		vec3 a = clip.scaleKeyframes[firstKeyframeIndex];
+		vec3 b = clip.scaleKeyframes[secondKeyframeIndex];
+
+		return lerp(a, b, t);
+	}
+
+	void animation_skeleton::sampleAnimation(const animation_clip& clip, float time, trs* outLocalTransforms, trs* outRootMotion) const
+	{
+		ASSERT(clip.joints.size() == joints.size());
+
+		time = clamp(time, 0.f, clip.lengthInSeconds);
+
+		uint32 numJoints = (uint32)joints.size();
+		for (uint32 i = 0; i < numJoints; ++i)
+		{
+			const animation_joint& animJoint = clip.joints[i];
+
+			if (animJoint.isAnimated)
+			{
+				outLocalTransforms[i].position = samplePosition(clip, animJoint, time);
+				outLocalTransforms[i].rotation = sampleRotation(clip, animJoint, time);
+				outLocalTransforms[i].scale = sampleScale(clip, animJoint, time);
 			}
 			else
 			{
-				time = clip->lengthInSeconds;
-				finished = true;
+				outLocalTransforms[i] = trs::identity;
 			}
 		}
 
 		trs rootMotion;
-		skeleton.sampleAnimation(*clip, time, outLocalTransforms, &rootMotion);
+		if (clip.rootMotionJoint.isAnimated)
+		{
+			rootMotion.position = samplePosition(clip, clip.rootMotionJoint, time);
+			rootMotion.rotation = sampleRotation(clip, clip.rootMotionJoint, time);
+			rootMotion.scale = sampleScale(clip, clip.rootMotionJoint, time);
+		}
+		else
+		{
+			rootMotion = trs::identity;
+		}
+
+		if (outRootMotion)
+		{
+			if (clip.bakeRootRotationIntoPose)
+			{
+				outLocalTransforms[0] = trs(0.f, rootMotion.rotation) * outLocalTransforms[0];
+				rootMotion.rotation = quat::identity;
+			}
+
+			if (clip.bakeRootXZTranslationIntoPose)
+			{
+				outLocalTransforms[0].position.x += rootMotion.position.x;
+				outLocalTransforms[0].position.z += rootMotion.position.z;
+				rootMotion.position.x = 0.f;
+				rootMotion.position.z = 0.f;
+			}
+
+			if (clip.bakeRootYTranslationIntoPose)
+			{
+				outLocalTransforms[0].position.y += rootMotion.position.y;
+				rootMotion.position.y = 0.f;
+			}
+
+			*outRootMotion = rootMotion;
+		}
+		else
+		{
+			outLocalTransforms[0] = rootMotion * outLocalTransforms[0];
+		}
+	}
+
+	void animation_skeleton::sampleAnimation(uint32 index, float time, trs* outLocalTransforms, trs* outRootMotion) const
+	{
+		sampleAnimation(clips[index], time, outLocalTransforms, outRootMotion);
+	}
+
+	void animation_skeleton::blendLocalTransforms(const trs* localTransforms1, const trs* localTransforms2, float t, trs* outBlendedLocalTransforms) const
+	{
+		t = clamp01(t);
+		for (uint32 jointID = 0; jointID < (uint32)joints.size(); ++jointID)
+		{
+			outBlendedLocalTransforms[jointID] = lerp(localTransforms1[jointID], localTransforms2[jointID], t);
+		}
+	}
+
+	void animation_skeleton::getSkinningMatricesFromLocalTransforms(const trs* localTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
+	{
+		uint32 numJoints = (uint32)joints.size();
+		trs* globalTransforms = (trs*)alloca(sizeof(trs) * numJoints);
+
+		for (uint32 i = 0; i < numJoints; ++i)
+		{
+			const skeleton_joint& skelJoint = joints[i];
+			if (skelJoint.parentID != INVALID_JOINT)
+			{
+				ASSERT(i > skelJoint.parentID); // Parent already processed.
+				globalTransforms[i] = globalTransforms[skelJoint.parentID] * localTransforms[i];
+			}
+			else
+			{
+				globalTransforms[i] = worldTransform * localTransforms[i];
+			}
+
+			outSkinningMatrices[i] = trsToMat4(globalTransforms[i]) * joints[i].invBindTransform;
+		}
+	}
+
+	void animation_skeleton::getSkinningMatricesFromLocalTransforms(const trs* localTransforms, trs* outGlobalTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
+	{
+		uint32 numJoints = (uint32)joints.size();
+
+		for (uint32 i = 0; i < numJoints; ++i)
+		{
+			const skeleton_joint& skelJoint = joints[i];
+			if (skelJoint.parentID != INVALID_JOINT)
+			{
+				ASSERT(i > skelJoint.parentID); // Parent already processed
+				outGlobalTransforms[i] = outGlobalTransforms[skelJoint.parentID] * localTransforms[i];
+			}
+			else
+			{
+				outGlobalTransforms[i] = worldTransform * localTransforms[i];
+			}
+
+			outSkinningMatrices[i] = trsToMat4(outGlobalTransforms[i]) * joints[i].invBindTransform;
+		}
+	}
+
+	void animation_skeleton::getSkinningMatricesFromGlobalTransforms(const trs* globalTransforms, mat4* outSkinningMatrices) const
+	{
+		uint32 numJoints = (uint32)joints.size();
+
+		for (uint32 i = 0; i < numJoints; ++i)
+		{
+			outSkinningMatrices[i] = trsToMat4(globalTransforms[i]) * joints[i].invBindTransform;
+		}
+	}
+
+	std::vector<uint32> animation_skeleton::getClipsByName(const std::string& name)
+	{
+		std::vector<uint32> result;
+		for (uint32 i = 0; i < (uint32)clips.size(); ++i)
+		{
+			if (clips[i].name == name)
+			{
+				result.push_back(i);
+			}
+		}
+		return result;
+	}
+
+	static void prettyPrint(const animation_skeleton& skeleton, uint32 parent, uint32 indent)
+	{
+		for (uint32 i = 0; i < (uint32)skeleton.joints.size(); ++i)
+		{
+			if (skeleton.joints[i].parentID == parent)
+			{
+				std::cout << std::string(indent, ' ') << skeleton.joints[i].name << '\n';
+				prettyPrint(skeleton, i, indent + 1);
+			}
+		}
+	}
+
+	void animation_skeleton::prettyPrintHierarchy() const
+	{
+		prettyPrint(*this, INVALID_JOINT, 0);
+	}
+
+	void animation_clip::edit()
+	{
+		ImGui::Checkbox("Bake root rotation into pose", &bakeRootRotationIntoPose);
+		ImGui::Checkbox("Bake xz translation into pose", &bakeRootXZTranslationIntoPose);
+		ImGui::Checkbox("Bake y translation into pose", &bakeRootYTranslationIntoPose);
+	}
+
+	NODISCARD trs animation_clip::getFirstRootTransform() const
+	{
+		if (rootMotionJoint.isAnimated)
+		{
+			trs t;
+			t.position = positionKeyframes[rootMotionJoint.firstPositionKeyframe];
+			t.rotation = rotationKeyframes[rootMotionJoint.firstRotationKeyframe];
+			t.scale = scaleKeyframes[rootMotionJoint.firstScaleKeyframe];
+
+			if (bakeRootRotationIntoPose)
+			{
+				t.rotation = quat::identity;
+			}
+			if (bakeRootXZTranslationIntoPose)
+			{
+				t.position.x = 0.f;
+				t.position.z = 0.f;
+			}
+			if (bakeRootYTranslationIntoPose)
+			{
+				t.position.y = 0.f;
+			}
+
+			return t;
+		}
+		return trs::identity;
+	}
+
+	NODISCARD trs animation_clip::getLastRootTransform() const
+	{
+		if (rootMotionJoint.isAnimated)
+		{
+			trs t;
+			t.position = positionKeyframes[rootMotionJoint.firstPositionKeyframe + rootMotionJoint.numPositionKeyframes - 1];
+			t.rotation = rotationKeyframes[rootMotionJoint.firstRotationKeyframe + rootMotionJoint.numRotationKeyframes - 1];
+			t.scale = scaleKeyframes[rootMotionJoint.firstScaleKeyframe + rootMotionJoint.numScaleKeyframes - 1];
+
+			if (bakeRootRotationIntoPose)
+			{
+				t.rotation = quat::identity;
+			}
+			if (bakeRootXZTranslationIntoPose)
+			{
+				t.position.x = 0.f;
+				t.position.z = 0.f;
+			}
+			if (bakeRootYTranslationIntoPose)
+			{
+				t.position.y = 0.f;
+			}
+
+			return t;
+		}
+		return trs::identity;
+	}
+
+	animation_instance::animation_instance(const animation_clip* clip, float startTime)
+	{
+		set(clip, startTime);
+	}
+
+	void animation_instance::set(const animation_clip* clip, float startTime)
+	{
+		this->clip = clip;
+		time = startTime;
+		lastRootMotion = clip->getFirstRootTransform();
+	}
+
+	void animation_instance::update(const animation_skeleton& skeleton, float dt, trs* outLocalTransforms, trs& outDeltaRootMotion)
+	{
+		if (paused)
+			return;
+
+		if (valid())
+		{
+			time += dt;
+			if (time >= clip->lengthInSeconds)
+			{
+				if (clip->looping)
+				{
+					time = fmod(time, clip->lengthInSeconds);
+					lastRootMotion = clip->getFirstRootTransform();
+				}
+				else
+				{
+					time = clip->lengthInSeconds;
+					finished = true;
+				}
+			}
+
+			trs rootMotion;
+			skeleton.sampleAnimation(*clip, time, outLocalTransforms, &rootMotion);
+
+			outDeltaRootMotion = invert(lastRootMotion) * rootMotion;
+			lastRootMotion = rootMotion;
+		}
+	}
+
+#if 1
+	animation_blend_tree_1d::animation_blend_tree_1d(std::initializer_list<animation_clip*> clips, float startBlendValue, float startRelTime)
+	{
+		ASSERT(clips.size() <= arraysize(this->clips));
+		ASSERT(clips.size() > 1);
+
+		numClips = 0;
+		for (animation_clip* clip : clips)
+		{
+			this->clips[numClips++] = clip;
+		}
+
+		first = 0;
+		second = 1;
+		relTime = startRelTime;
+
+		setBlendValue(startBlendValue);
+
+		lastRootMotion = lerp(this->clips[first]->getFirstRootTransform(), this->clips[second]->getFirstRootTransform(), blendValue);
+	}
+
+	void animation_blend_tree_1d::update(const animation_skeleton& skeleton, float dt, trs* outLocalTransforms, trs& outDeltaRootMotion)
+	{
+		const animation_clip* first = clips[this->first];
+		const animation_clip* second = clips[this->second];
+
+		float firstLength = first->lengthInSeconds;
+		float secondLength = second->lengthInSeconds;
+
+		float lengthDist = secondLength - firstLength;
+		float targetLength = firstLength + lengthDist * blendValue;
+
+		float start = relTime;
+		relTime += dt / targetLength;
+		relTime = fmodf(relTime, 1.f);
+
+
+		trs* totalLocalTransforms = (trs*)alloca(sizeof(trs) * skeleton.joints.size() * 2);
+		trs* localTransforms1 = totalLocalTransforms;
+		trs* localTransforms2 = totalLocalTransforms + skeleton.joints.size();
+
+		trs rootMotion1, rootMotion2;
+		skeleton.sampleAnimation(*first, first->lengthInSeconds * relTime, localTransforms1, &rootMotion1);
+		skeleton.sampleAnimation(*second, second->lengthInSeconds * relTime, localTransforms2, &rootMotion2);
+
+		skeleton.blendLocalTransforms(localTransforms1, localTransforms2, blendValue, outLocalTransforms);
+
+		trs rootMotion = lerp(rootMotion1, rootMotion2, blendValue);
 
 		outDeltaRootMotion = invert(lastRootMotion) * rootMotion;
 		lastRootMotion = rootMotion;
 	}
-}
 
-#if 1
-animation_blend_tree_1d::animation_blend_tree_1d(std::initializer_list<animation_clip*> clips, float startBlendValue, float startRelTime)
-{
-	ASSERT(clips.size() <= arraysize(this->clips));
-	ASSERT(clips.size() > 1);
-
-	numClips = 0;
-	for (animation_clip* clip : clips)
+	void animation_blend_tree_1d::setBlendValue(float value)
 	{
-		this->clips[numClips++] = clip;
-	}
+		value = clamp01(value);
 
-	first = 0;
-	second = 1;
-	relTime = startRelTime;
+		float step = 1.f / (numClips - 1);
 
-	setBlendValue(startBlendValue);
-
-	lastRootMotion = lerp(this->clips[first]->getFirstRootTransform(), this->clips[second]->getFirstRootTransform(), blendValue);
-}
-
-void animation_blend_tree_1d::update(const animation_skeleton& skeleton, float dt, trs* outLocalTransforms, trs& outDeltaRootMotion)
-{
-	const animation_clip* first = clips[this->first];
-	const animation_clip* second = clips[this->second];
-
-	float firstLength = first->lengthInSeconds;
-	float secondLength = second->lengthInSeconds;
-
-	float lengthDist = secondLength - firstLength;
-	float targetLength = firstLength + lengthDist * blendValue;
-
-	float start = relTime;
-	relTime += dt / targetLength;
-	relTime = fmodf(relTime, 1.f);
-
-
-	trs* totalLocalTransforms = (trs*)alloca(sizeof(trs) * skeleton.joints.size() * 2);
-	trs* localTransforms1 = totalLocalTransforms;
-	trs* localTransforms2 = totalLocalTransforms + skeleton.joints.size();
-
-	trs rootMotion1, rootMotion2;
-	skeleton.sampleAnimation(*first, first->lengthInSeconds * relTime, localTransforms1, &rootMotion1);
-	skeleton.sampleAnimation(*second, second->lengthInSeconds * relTime, localTransforms2, &rootMotion2);
-
-	skeleton.blendLocalTransforms(localTransforms1, localTransforms2, blendValue, outLocalTransforms);
-	
-	trs rootMotion = lerp(rootMotion1, rootMotion2, blendValue);
-
-	outDeltaRootMotion = invert(lastRootMotion) * rootMotion;
-	lastRootMotion = rootMotion;
-}
-
-void animation_blend_tree_1d::setBlendValue(float value)
-{
-	value = clamp01(value);
-
-	float step = 1.f / (numClips - 1);
-
-	uint32 newFirstAnimationIndex = numClips - 2, newSecondAnimationIndex = numClips - 1;
-	if (value < 1.f)
-	{
-		newFirstAnimationIndex = (uint32)(value / step);
-		newSecondAnimationIndex = newFirstAnimationIndex + 1;
-	}
-
-	first = newFirstAnimationIndex;
-	second = newSecondAnimationIndex;
-
-	float begin = newFirstAnimationIndex * step;
-	this->blendValue = (value - begin) / step;
-	this->value = value;
-}
-#endif
-
-void animation_component::initialize(std::vector<animation_clip>& clips, size_t startIndex)
-{
-	animation = make_ref<animation_instance>();
-	ref<animation_state> state = make_ref<animation_state>(animation);
-
-	controller = make_ref<animation_controller>();
-
-	animation_blackboard startBlackboard = { &clips[startIndex] };
-	controller->stateMachine.set_state(state, startBlackboard);
-
-	for (int i = clips.size() - 1; i >= 0; --i)
-	{
-		animation_blackboard blackboard = { &clips[i] };
-		clips[i].looping = false;
-		controller->stateMachine.enter(blackboard);
-	}
-}
-
-void animation_component::update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform)
-{
-	const dx_mesh& dxMesh = mesh->mesh;
-	animation_skeleton& skeleton = mesh->skeleton;
-
-	currentGlobalTransforms = 0;
-
-	if (animation && animation->valid())
-	{
-		auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
-
-		prevFrameVertexBuffer = currentVertexBuffer;
-		currentVertexBuffer = vb;
-
-		trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-		trs deltaRootMotion;
-		animation->update(skeleton, dt * timeScale, localTransforms, deltaRootMotion);
-
-		trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-
-		skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
-
-		if (transform)
+		uint32 newFirstAnimationIndex = numClips - 2, newSecondAnimationIndex = numClips - 1;
+		if (value < 1.f)
 		{
-			*transform = *transform * deltaRootMotion;
-			transform->rotation = normalize(transform->rotation);
+			newFirstAnimationIndex = (uint32)(value / step);
+			newSecondAnimationIndex = newFirstAnimationIndex + 1;
 		}
 
-		currentGlobalTransforms = globalTransforms;
+		first = newFirstAnimationIndex;
+		second = newSecondAnimationIndex;
 
-		if (animation->finished)
-			controller->stateMachine.update();
+		float begin = newFirstAnimationIndex * step;
+		this->blendValue = (value - begin) / step;
+		this->value = value;
 	}
-	else
+#endif
+
+	void animation_component::initialize(std::vector<animation_clip>& clips, size_t startIndex)
 	{
-		currentVertexBuffer = dxMesh.vertexBuffer;
-		if (!prevFrameVertexBuffer)
+		animation = make_ref<animation_instance>();
+		ref<animation_state> state = make_ref<animation_state>(animation);
+
+		controller = make_ref<animation_controller>();
+
+		animation_blackboard startBlackboard = { &clips[startIndex] };
+		controller->stateMachine.set_state(state, startBlackboard);
+
+		for (int i = clips.size() - 1; i >= 0; --i)
 		{
+			animation_blackboard blackboard = { &clips[i] };
+			clips[i].looping = false;
+			controller->stateMachine.enter(blackboard);
+		}
+	}
+
+	void animation_component::update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform)
+	{
+		const dx_mesh& dxMesh = mesh->mesh;
+		animation_skeleton& skeleton = mesh->skeleton;
+
+		currentGlobalTransforms = 0;
+
+		if (animation && animation->valid())
+		{
+			auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
+
 			prevFrameVertexBuffer = currentVertexBuffer;
-		}
-	}
-}
+			currentVertexBuffer = vb;
 
-const char* limbTypeNames[] =
-{
-	"Unknown",
+			trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
+			trs deltaRootMotion;
+			animation->update(skeleton, dt * timeScale, localTransforms, deltaRootMotion);
 
-	"Torso",
-	"Head",
+			trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
 
-	"Upper arm right",
-	"Lower arm right",
-	"Hand right",
+			skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
 
-	"Upper arm left",
-	"Lower arm left",
-	"Hand left",
-
-	"Upper leg right",
-	"Lower leg right",
-	"Foot right",
-
-	"Upper leg left",
-	"Lower leg left",
-	"Foot left",
-};
-
-const vec3 limbTypeColors[] =
-{
-	vec3(1.f, 0.f, 1.f),
-
-	vec3(1.f, 0.f, 0.f),
-	vec3(0.f, 1.f, 0.f),
-
-	vec3(1.f, 1.f, 0.f),
-	vec3(0.f, 1.f, 1.f),
-	vec3(1.f, 1.f, 1.f),
-
-	vec3(1.f, 1.f, 0.f),
-	vec3(0.f, 1.f, 1.f),
-	vec3(1.f, 1.f, 1.f),
-
-	vec3(1.f, 1.f, 0.f),
-	vec3(0.f, 1.f, 1.f),
-	vec3(1.f, 1.f, 1.f),
-
-	vec3(1.f, 1.f, 0.f),
-	vec3(0.f, 1.f, 1.f),
-	vec3(1.f, 1.f, 1.f),
-};
-
-void animation_component::drawCurrentSkeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* renderPass) const
-{
-	const dx_mesh& dxMesh = mesh->mesh;
-	animation_skeleton& skeleton = mesh->skeleton;
-
-#if 1
-	uint32 numJoints = (uint32)skeleton.joints.size();
-
-	auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(position_color), numJoints * 2);
-	auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), numJoints * 2);
-
-	position_color* vertices = (position_color*)vertexPtr;
-	indexed_line16* lines = (indexed_line16*)indexPtr;
-
-	for (uint32 i = 0; i < numJoints; ++i)
-	{
-		const auto& joint = skeleton.joints[i];
-		if (joint.parentID != INVALID_JOINT && !joint.ik)
-		{
-			const auto& parentJoint = skeleton.joints[joint.parentID];
-			if (currentGlobalTransforms)
+			if (transform)
 			{
-				*vertices++ = { currentGlobalTransforms[joint.parentID].position, limbTypeColors[parentJoint.limbType] };
-				*vertices++ = { currentGlobalTransforms[i].position, limbTypeColors[parentJoint.limbType] };
+				*transform = *transform * deltaRootMotion;
+				transform->rotation = normalize(transform->rotation);
 			}
-			else
-			{
-#if ROW_MAJOR
-				vec3 vrt1 = vec3(skeleton.joints[joint.parentID].bindTransform.m03,
-								 skeleton.joints[joint.parentID].bindTransform.m13,
-								 skeleton.joints[joint.parentID].bindTransform.m23);
 
-				vec3 vrt2 = vec3(joint.bindTransform.m03,
-								 joint.bindTransform.m13,
-								 joint.bindTransform.m23);
+			currentGlobalTransforms = globalTransforms;
 
-				*vertices++ = { vrt1, limbTypeColors[parentJoint.limbType] };
-				*vertices++ = { vrt2, limbTypeColors[parentJoint.limbType] };
-#else
-				*vertices++ = { skeleton.joints[joint.parentID].bindTransform.col3.xyz, limbTypeColors[parentJoint.limbType] };
-				*vertices++ = { joint.bindTransform.col3.xyz, limbTypeColors[parentJoint.limbType] };
-#endif
-			}
+			if (animation->finished)
+				controller->stateMachine.update();
 		}
 		else
 		{
-			*vertices++ = { vec3(0.f, 0.f, 0.f), vec3(1.f, 1.f, 1.f) };
-			*vertices++ = { vec3(0.f, 0.f, 0.f), vec3(1.f, 1.f, 1.f) };
+			currentVertexBuffer = dxMesh.vertexBuffer;
+			if (!prevFrameVertexBuffer)
+			{
+				prevFrameVertexBuffer = currentVertexBuffer;
+			}
 		}
-
-		*lines++ = { (uint16)(2 * i), (uint16)(2 * i + 1) };
 	}
 
-	renderDebug<debug_unlit_line_pipeline::position_color>(trsToMat4(transform), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), renderPass, true);
+	const char* limbTypeNames[] =
+	{
+		"Unknown",
+
+		"Torso",
+		"Head",
+
+		"Upper arm right",
+		"Lower arm right",
+		"Hand right",
+
+		"Upper arm left",
+		"Lower arm left",
+		"Hand left",
+
+		"Upper leg right",
+		"Lower leg right",
+		"Foot right",
+
+		"Upper leg left",
+		"Lower leg left",
+		"Foot left",
+	};
+
+	const vec3 limbTypeColors[] =
+	{
+		vec3(1.f, 0.f, 1.f),
+
+		vec3(1.f, 0.f, 0.f),
+		vec3(0.f, 1.f, 0.f),
+
+		vec3(1.f, 1.f, 0.f),
+		vec3(0.f, 1.f, 1.f),
+		vec3(1.f, 1.f, 1.f),
+
+		vec3(1.f, 1.f, 0.f),
+		vec3(0.f, 1.f, 1.f),
+		vec3(1.f, 1.f, 1.f),
+
+		vec3(1.f, 1.f, 0.f),
+		vec3(0.f, 1.f, 1.f),
+		vec3(1.f, 1.f, 1.f),
+
+		vec3(1.f, 1.f, 0.f),
+		vec3(0.f, 1.f, 1.f),
+		vec3(1.f, 1.f, 1.f),
+	};
+
+	void animation_component::drawCurrentSkeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* renderPass) const
+	{
+		const dx_mesh& dxMesh = mesh->mesh;
+		animation_skeleton& skeleton = mesh->skeleton;
+
+#if 1
+		uint32 numJoints = (uint32)skeleton.joints.size();
+
+		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(position_color), numJoints * 2);
+		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), numJoints * 2);
+
+		position_color* vertices = (position_color*)vertexPtr;
+		indexed_line16* lines = (indexed_line16*)indexPtr;
+
+		for (uint32 i = 0; i < numJoints; ++i)
+		{
+			const auto& joint = skeleton.joints[i];
+			if (joint.parentID != INVALID_JOINT && !joint.ik)
+			{
+				const auto& parentJoint = skeleton.joints[joint.parentID];
+				if (currentGlobalTransforms)
+				{
+					*vertices++ = { currentGlobalTransforms[joint.parentID].position, limbTypeColors[parentJoint.limbType] };
+					*vertices++ = { currentGlobalTransforms[i].position, limbTypeColors[parentJoint.limbType] };
+				}
+				else
+				{
+#if ROW_MAJOR
+					vec3 vrt1 = vec3(skeleton.joints[joint.parentID].bindTransform.m03,
+						skeleton.joints[joint.parentID].bindTransform.m13,
+						skeleton.joints[joint.parentID].bindTransform.m23);
+
+					vec3 vrt2 = vec3(joint.bindTransform.m03,
+						joint.bindTransform.m13,
+						joint.bindTransform.m23);
+
+					*vertices++ = { vrt1, limbTypeColors[parentJoint.limbType] };
+					*vertices++ = { vrt2, limbTypeColors[parentJoint.limbType] };
+#else
+					* vertices++ = { skeleton.joints[joint.parentID].bindTransform.col3.xyz, limbTypeColors[parentJoint.limbType] };
+					*vertices++ = { joint.bindTransform.col3.xyz, limbTypeColors[parentJoint.limbType] };
+#endif
+				}
+			}
+			else
+			{
+				*vertices++ = { vec3(0.f, 0.f, 0.f), vec3(1.f, 1.f, 1.f) };
+				*vertices++ = { vec3(0.f, 0.f, 0.f), vec3(1.f, 1.f, 1.f) };
+			}
+
+			*lines++ = { (uint16)(2 * i), (uint16)(2 * i + 1) };
+		}
+
+		renderDebug<debug_unlit_line_pipeline::position_color>(trsToMat4(transform), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), renderPass, true);
 
 #else
 #if 0
 
-	auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(position_color), limb_type_count * 2);
-	auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), limb_type_count * 2);
+		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(position_color), limb_type_count * 2);
+		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), limb_type_count * 2);
 
-	position_color* vertices = (position_color*)vertexPtr;
-	indexed_line16* lines = (indexed_line16*)indexPtr;
+		position_color* vertices = (position_color*)vertexPtr;
+		indexed_line16* lines = (indexed_line16*)indexPtr;
 
-	for (uint32 i = 0; i < limb_type_count; ++i)
-	{
-		const auto& limb = skeleton.limbs[i];
-		*vertices++ = { limb.mean - limb.principalAxis / transform.scale * 0.2f, limbTypeColors[i] };
-		*vertices++ = { limb.mean + limb.principalAxis / transform.scale * 0.2f, limbTypeColors[i] };
+		for (uint32 i = 0; i < limb_type_count; ++i)
+		{
+			const auto& limb = skeleton.limbs[i];
+			*vertices++ = { limb.mean - limb.principalAxis / transform.scale * 0.2f, limbTypeColors[i] };
+			*vertices++ = { limb.mean + limb.principalAxis / transform.scale * 0.2f, limbTypeColors[i] };
 
-		*lines++ = { (uint16)(2 * i), (uint16)(2 * i + 1) };
-	}
+			*lines++ = { (uint16)(2 * i), (uint16)(2 * i + 1) };
+		}
 
-	renderDebug<debug_unlit_line_pipeline::position_color>(trsToMat4(transform), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), renderPass, true);
+		renderDebug<debug_unlit_line_pipeline::position_color>(trsToMat4(transform), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), renderPass, true);
 
 #else
 
-	for (uint32 i = 0; i < limb_type_count; ++i)
-	{
-		const auto& limb = skeleton.limbs[i];
-
-		if (limb.representativeJoint != INVALID_JOINT)
+		for (uint32 i = 0; i < limb_type_count; ++i)
 		{
-			const auto& joint = skeleton.joints[limb.representativeJoint];
-			vec3 a = vec3(limb.dimensions.xOffset, limb.dimensions.minY, limb.dimensions.zOffset);
-			vec3 b = vec3(limb.dimensions.xOffset, limb.dimensions.maxY, limb.dimensions.zOffset);
-			a = transformPosition(joint.bindTransform, a);
-			b = transformPosition(joint.bindTransform, b);
-			a = transformPosition(transform, a);
-			b = transformPosition(transform, b);
+			const auto& limb = skeleton.limbs[i];
 
-			renderWireCapsule(a, b, limb.dimensions.radius * transform.scale.x, vec4(limbTypeColors[i], 1.f), renderPass, true);
+			if (limb.representativeJoint != INVALID_JOINT)
+			{
+				const auto& joint = skeleton.joints[limb.representativeJoint];
+				vec3 a = vec3(limb.dimensions.xOffset, limb.dimensions.minY, limb.dimensions.zOffset);
+				vec3 b = vec3(limb.dimensions.xOffset, limb.dimensions.maxY, limb.dimensions.zOffset);
+				a = transformPosition(joint.bindTransform, a);
+				b = transformPosition(joint.bindTransform, b);
+				a = transformPosition(transform, a);
+				b = transformPosition(transform, b);
+
+				renderWireCapsule(a, b, limb.dimensions.radius * transform.scale.x, vec4(limbTypeColors[i], 1.f), renderPass, true);
+			}
+		}
+#endif
+
+#endif
+	}
+
+	void animation_state_machine::set_state(ref<animation_state> state, animation_blackboard& blackboard) noexcept
+	{
+		if (currentState)
+		{
+			currentState->exit(blackboard);
+		}
+
+		currentState = state;
+
+		if (currentState)
+		{
+			currentState->enter(blackboard);
+
+			if (paused)
+			{
+				currentState->pause(blackboard);
+			}
 		}
 	}
-#endif
 
-#endif
+	void animation_state_machine::enter(animation_blackboard& blackboard) noexcept
+	{
+		if (currentState)
+		{
+			currentState->enter(blackboard);
+			input.push(blackboard);
+			if (paused)
+			{
+				currentState->pause(blackboard);
+			}
+		}
+	}
+
+	void animation_state_machine::pause(animation_blackboard& blackboard) noexcept
+	{
+		paused = true;
+
+		if (currentState)
+			currentState->pause(blackboard);
+	}
+
+	void animation_state_machine::resume(animation_blackboard& blackboard) noexcept
+	{
+		paused = false;
+
+		if (currentState)
+			currentState->resume(blackboard);
+	}
+
+	void animation_state_machine::update(animation_blackboard& blackboard) noexcept
+	{
+		if (paused)
+			return;
+
+		if (currentState)
+		{
+			input.push(blackboard);
+			currentState->update(blackboard);
+		}
+	}
+
+	void animation_state_machine::update() noexcept
+	{
+		if (paused)
+			return;
+
+		if (currentState && input.size())
+		{
+			currentState->enter(input.top());
+			input.pop();
+		}
+	}
+
 }

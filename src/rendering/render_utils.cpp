@@ -33,7 +33,7 @@ void initializeRenderUtils()
 	initializeTexturePreprocessing();
 	initializeDepthPrepassPipelines();
 	initializeOutlinePipelines();
-	initializeSkinning();
+	era_engine::animation::initializeSkinning();
 	initializeShadowPipelines();
 	initializeTerrainPipelines();
 	initializeLightProbePipelines();

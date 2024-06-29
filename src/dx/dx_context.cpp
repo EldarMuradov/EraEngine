@@ -276,7 +276,7 @@ bool dx_context::initialize()
 
 	featureSupport = checkFeatureSupport(device);
 
-	if (!checkDLSSStatus(adapter.Get()))
+	if (!era_engine::dlss::checkDLSSStatus(adapter.Get()))
 		featureSupport.dlss_status = DLSS_status_not_available;
 
 	bufferedFrameID = NUM_BUFFERED_FRAMES - 1;

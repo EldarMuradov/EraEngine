@@ -1,11 +1,11 @@
 #pragma once
 #include <scripting/dotnet_host.h>
 
-namespace dotnet
-{
 #define MIN_OBJECT_SIZE 24
 #define MIN_CLASS_SIZE 1
 
+namespace era_engine::dotnet
+{
     enum class visibility
     {
         v_private,
@@ -65,11 +65,6 @@ namespace dotnet
     };
 
 #if USE_NETCORE
-
-    // TODO
-    //enum class type_attributes : uint32;
-    //enum class method_attributes : uint32;
-    //enum class field_attributes : uint32;
 
     typedef unsigned long long gc_handle;
     typedef unsigned long long vtable_ptr;

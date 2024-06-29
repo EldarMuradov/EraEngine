@@ -86,7 +86,7 @@ void escene::cloneTo(escene& target)
 #endif
 
 		era_engine::ai::navigation_component,
-		scripts_component,
+		era_engine::ecs::scripts_component,
 #endif
 
 		child_component,
@@ -108,7 +108,7 @@ void escene::cloneTo(escene& target)
 
 		raytrace_component,
 
-		animation_component,
+		era_engine::animation::animation_component,
 
 		collider_component,
 		rigid_body_component,
@@ -158,7 +158,7 @@ eentity escene::copyEntity(eentity src)
 
 #endif
 
-	if (auto* c = src.getComponentIfExists<animation_component>()) { dest.addComponent<animation_component>(*c); }
+	if (auto* c = src.getComponentIfExists<era_engine::animation::animation_component>()) { dest.addComponent<era_engine::animation::animation_component>(*c); }
 	if (auto* c = src.getComponentIfExists<mesh_component>()) { dest.addComponent<mesh_component>(*c); }
 	if (auto* c = src.getComponentIfExists<raytrace_component>()) { dest.addComponent<raytrace_component>(*c); }
 

@@ -367,7 +367,6 @@ namespace physics
 
 #if PX_ENABLE_PVD && !PX_GPU_BROAD_PHASE
 			actor->setActorFlag(PxActorFlag::eVISUALIZATION, true);
-			enableShapeVisualization(shape);
 #endif
 		}
 		else if(type == px_rigidbody_type::rigidbody_type_dynamic)
@@ -377,7 +376,6 @@ namespace physics
 
 #if PX_ENABLE_PVD && !PX_GPU_BROAD_PHASE
 			actor->setActorFlag(PxActorFlag::eVISUALIZATION, true);
-			enableShapeVisualization(shape);
 #endif
 		}
 		else
@@ -388,7 +386,6 @@ namespace physics
 
 #if PX_ENABLE_PVD && !PX_GPU_BROAD_PHASE
 			actor->setActorFlag(PxActorFlag::eVISUALIZATION, true);
-			enableShapeVisualization(coll->getShape());
 #endif
 		}
 
@@ -397,6 +394,7 @@ namespace physics
 			coll->createGeometry();
 			PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor, *coll->getGeometry(), *material);
 			shape->userData = userData;
+			enableShapeVisualization(shape);
 		}
 
 		return actor;

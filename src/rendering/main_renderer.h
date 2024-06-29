@@ -245,7 +245,7 @@ private:
 
 	light_culling culling{};
 
-	dlss_feature_adapter dlss_adapter{};
+	era_engine::dlss::dlss_feature_adapter dlss_adapter{};
 
 	aspect_ratio_mode oldAspectRatioMode = aspect_ratio_free;
 	renderer_mode oldMode = renderer_mode_rasterized;
@@ -255,6 +255,6 @@ private:
 	bool windowHovered = false;
 	bool sssWasOnLastFrame = false;
 
-	friend dlss_feature_adapter;
+	friend era_engine::dlss::dlss_feature_adapter;
 	friend struct eeditor;
 };

@@ -100,12 +100,12 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
 struct updatePhysicsAndScriptingData
 {
 	float deltaTime{};
-	ref<enative_scripting_linker> core;
+	ref<era_engine::dotnet::enative_scripting_linker> core;
 	escene& scene;
 	const user_input& input;
 };
 
-void updatePhysXPhysicsAndScripting(escene& currentScene, ref<enative_scripting_linker> core, float dt, const user_input& in) noexcept
+void updatePhysXPhysicsAndScripting(escene& currentScene, ref<era_engine::dotnet::enative_scripting_linker> core, float dt, const user_input& in) noexcept
 {
 	updatePhysicsAndScriptingData data = { dt, core, currentScene, in };
 
@@ -118,7 +118,7 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, ref<enative_scripting_
 
 				physicsRef->update(data.deltaTime);
 
-				{
+				/*{
 					CPU_PROFILE_BLOCK("PhysX collision events step");
 
 					while (physicsRef->collisionQueue.size())
@@ -134,18 +134,18 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, ref<enative_scripting_
 						physicsRef->collisionExitQueue.pop();
 						data.core->handle_exit_coll(c.id1, c.id2);
 					}
-				}
+				}*/
 			}
 
-			updateScripting(data);
+			//updateScripting(data);
 
-			{
-				CPU_PROFILE_BLOCK(".NET 8 Input sync step");
-				data.core->handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
-			}
+			//{
+			//	CPU_PROFILE_BLOCK(".NET 8 Input sync step");
+			//	data.core->handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
+			//}
 		}, data).submitNow();
 
-	const auto& nav_objects = data.scene.group(component_group<era_engine::ai::navigation_component, transform_component>);
+	/*const auto& nav_objects = data.scene.group(component_group<era_engine::ai::navigation_component, transform_component>);
 
 	if (nav_objects.size())
 	{
@@ -164,13 +164,13 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, ref<enative_scripting_
 					nav.processPath();
 				}
 			}, nav_data).submitNow();
-	}
+	}*/
 }
 
 void updateScripting(updatePhysicsAndScriptingData& data) noexcept
 {
 	CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
-	for (auto [entityHandle, script, transform] : data.scene.group(component_group<scripts_component, transform_component>).each())
+	for (auto [entityHandle, script, transform] : data.scene.group(component_group<era_engine::ecs::scripts_component, transform_component>).each())
 	{
 		const auto& mat = trsToMat4(transform);
 		constexpr size_t mat_size = 16;
@@ -196,7 +196,7 @@ static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> me
 	mainThreadJobQueue.createJob<add_animation_data>([](add_animation_data& data, job_handle job)
 		{
 			data.mesh->loadJob.waitForCompletion();
-			data.entity.getComponent<animation_component>().initialize(data.mesh->skeleton.clips);
+			data.entity.getComponent<era_engine::animation::animation_component>().initialize(data.mesh->skeleton.clips);
 		}, data).submitNow();
 }
 
@@ -404,7 +404,7 @@ void application::initialize(main_renderer* renderer, editor_panels* editorPanel
 
 	{
 		CPU_PROFILE_BLOCK("Binding for scripting initialization");
-		linker = make_ref<enative_scripting_linker>(&this->scene.runtimeScene);
+		linker = make_ref<era_engine::dotnet::enative_scripting_linker>(&this->scene.runtimeScene);
 		linker->init();
 	}
 
@@ -665,7 +665,7 @@ void application::update(const user_input& input, float dt)
 
 	//if (renderer->mode != renderer_mode_pathtraced)
 	{
-		for (auto [entityHandle, anim, mesh, transform] : scene.group(component_group<animation_component, mesh_component, transform_component>).each())
+		for (auto [entityHandle, anim, mesh, transform] : scene.group(component_group<era_engine::animation::animation_component, mesh_component, transform_component>).each())
 		{
 			anim.update(mesh.mesh, stackArena, dt, &transform);
 
@@ -753,7 +753,7 @@ void application::update(const user_input& input, float dt)
 		dynamic = transform;
 	}
 
-	performSkinning(&computePass);
+	era_engine::animation::performSkinning(&computePass);
 
 	if (dxContext.featureSupport.raytracing())
 	{
@@ -789,7 +789,7 @@ void application::handleFileDrop(const fs::path& filename)
 
 			auto& en = scene.getCurrentScene().createEntity(path.string().c_str())
 				.addComponent<transform_component>(vec3(0.f), quat::identity)
-				.addComponent<animation_component>()
+				.addComponent<era_engine::animation::animation_component>()
 				.addComponent<dynamic_transform_component>()
 				.addComponent<mesh_component>(mesh);
 			initializeAnimationComponentAsync(en, mesh);

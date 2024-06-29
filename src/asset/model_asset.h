@@ -9,7 +9,7 @@
 
 struct skeleton_asset
 {
-	std::vector<skeleton_joint> joints;
+	std::vector<era_engine::animation::skeleton_joint> joints;
 	std::unordered_map<std::string, uint32> nameToJointID;
 };
 
@@ -18,7 +18,7 @@ struct animation_asset
 	std::string name;
 	float duration;
 
-	std::unordered_map<std::string, animation_joint> joints;
+	std::unordered_map<std::string, era_engine::animation::animation_joint> joints;
 
 	std::vector<float> positionTimestamps;
 	std::vector<float> rotationTimestamps;
@@ -38,7 +38,7 @@ struct submesh_asset
 	std::vector<vec3> normals;
 	std::vector<vec3> tangents;
 	std::vector<uint32> colors;
-	std::vector<skinning_weights> skin;
+	std::vector<era_engine::animation::skinning_weights> skin;
 
 	std::vector<indexed_triangle16> triangles;
 };

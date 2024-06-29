@@ -190,6 +190,8 @@ void mesh_editor_panel::edit(uint32 renderWidth, uint32 renderHeight)
 			ImGui::EndTabItem();
 		}
 
+		using namespace era_engine::animation;
+
 		if (this->mesh && ImGui::BeginTabItem("Animations"))
 		{
 			if (ImGui::BeginChild("AnimationSettings"))

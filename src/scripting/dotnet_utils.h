@@ -1,10 +1,9 @@
 #pragma once
 
-#include <format>
-#include <scripting/dotnet_host.h>
 #include <scripting/dotnet_types.h>
+#include <format>
 
-namespace dotnet
+namespace era_engine::dotnet
 {
     template <typename... Funcs_>
     core_type createType(type_name typeName, Funcs_... funcs)

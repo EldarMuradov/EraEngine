@@ -97,7 +97,7 @@ namespace physx
 {
 	constexpr float PX_HALF_MAX_F32 = PX_MAX_F32 / 2.0f;
 
-	PX_FORCE_INLINE PxU32 id(PxU32 x, PxU32 y, PxU32 numY)
+	PX_FORCE_INLINE constexpr PxU32 id(PxU32 x, PxU32 y, PxU32 numY) noexcept
 	{
 		return x * numY + y;
 	}
@@ -123,10 +123,10 @@ namespace physx
 
 	NODISCARD PX_FORCE_INLINE quat createQuat(const PxQuat& q) noexcept { return quat(q.x, q.y, q.z, q.w); }
 	NODISCARD PX_FORCE_INLINE quat createQuat(PxQuat&& q) noexcept { return quat(q.x, q.y, q.z, q.w); }
-
+							 
 	NODISCARD PX_FORCE_INLINE PxVec2 min(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::min(a.x, b.x), std::min(a.y, b.y)); }
 	NODISCARD PX_FORCE_INLINE PxVec3 min(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z)); }
-
+							 
 	NODISCARD PX_FORCE_INLINE PxVec2 max(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::max(a.x, b.x), std::max(a.y, b.y)); }
 	NODISCARD PX_FORCE_INLINE PxVec3 max(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)); }
 
@@ -220,7 +220,7 @@ namespace physics
 		px_physics_component_base() {}
 		px_physics_component_base(uint32_t handle) : entity_handle_component_base(handle){}
 		virtual ~px_physics_component_base() {}
-		virtual void release(bool release = false) noexcept {};
+		virtual void release(bool release = false) noexcept {}
 	};
 
 	inline std::vector<PxFilterData> getFilterData(PxRigidActor* actor) noexcept
@@ -386,7 +386,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 	struct px_overlap_info
 	{
 		bool isOverlapping;
-		::std::vector<uint32_t> results;
+		std::vector<uint32_t> results;
 	};
 
 	struct px_simulation_filter_callback : PxSimulationFilterCallback
@@ -476,10 +476,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 			const PxFilterData shapeFilterA = shapeA->getQueryFilterData();
 			const PxFilterData shapeFilterB = shapeB->getQueryFilterData();
-			if (shapeFilterA.word0 & shapeFilterB.word1)
-				return true;
 
-			return false;
+			return shapeFilterA.word0 & shapeFilterB.word1;
 		}
 	};
 
@@ -515,10 +513,10 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 				
 				std::ostringstream stream;
 				stream << message;
-				::std::cout << stream.str() << "\n";
+				std::cout << stream.str() << "\n";
 			}
 			else
-				::std::cerr << "PhysX Error! \n";
+				std::cerr << "PhysX Error! \n";
 		}
 	};
 
@@ -542,8 +540,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		{
 			if (!thisActor || !otherActor)
 				return;
-			::std::swap(thisActor, otherActor);
-			::std::swap(thisVelocity, otherVelocity);
+			std::swap(thisActor, otherActor);
+			std::swap(thisVelocity, otherVelocity);
 		}
 
 		px_rigidbody_component* thisActor = nullptr;
@@ -565,7 +563,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 	{
 		px_simulation_event_callback() = default;
 
-		typedef ::std::pair<px_rigidbody_component*, px_rigidbody_component*> colliders_pair;
+		typedef std::pair<px_rigidbody_component*, px_rigidbody_component*> colliders_pair;
 
 		void clear() noexcept;
 
@@ -576,10 +574,10 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		void onColliderRemoved(px_rigidbody_component* collider) noexcept;
 
 		void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) override;
-		void onWake(PxActor** actors, PxU32 count) override { ::std::cout << "onWake\n"; }
-		void onSleep(PxActor** actors, PxU32 count) override { ::std::cout << "onSleep\n"; }
-		void onTrigger(PxTriggerPair* pairs, PxU32 count) override { ::std::cout << "onTrigger\n"; }
-		void onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count) override { ::std::cout << "onAdvance\n"; }
+		void onWake(PxActor** actors, PxU32 count) override { std::cout << "onWake\n"; }
+		void onSleep(PxActor** actors, PxU32 count) override { std::cout << "onSleep\n"; }
+		void onTrigger(PxTriggerPair* pairs, PxU32 count) override { std::cout << "onTrigger\n"; }
+		void onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count) override { std::cout << "onAdvance\n"; }
 		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override;
 
 		PxArray<px_collision> newCollisions;
@@ -645,6 +643,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		NO_COPY(px_physics_engine)
 
 	public:
+		struct px_sync : public PxSyncT<> {};
+
 		px_physics_engine() noexcept;
 		~px_physics_engine();
 
@@ -716,7 +716,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		px_overlap_info overlapCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0) noexcept
 		{
 			PX_SCENE_QUERY_SETUP_OVERLAP();
-			::std::vector<uint32_t> results;
+			std::vector<uint32_t> results;
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
 			const PxCapsuleGeometry geometry(radius, halfHeight);
 			if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
@@ -730,7 +730,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		px_overlap_info overlapBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0) noexcept
 		{
 			PX_SCENE_QUERY_SETUP_OVERLAP();
-			::std::vector<uint32_t> results;
+			std::vector<uint32_t> results;
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
 			const PxBoxGeometry geometry(createPxVec3(halfExtents));
 
@@ -745,7 +745,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		px_overlap_info overlapSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0) noexcept
 		{
 			PX_SCENE_QUERY_SETUP_OVERLAP();
-			::std::vector<uint32_t> results;
+			std::vector<uint32_t> results;
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)));
 			const PxSphereGeometry geometry(radius);
 
@@ -759,21 +759,21 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		float frameRate = 60.0f;
 
-		::std::atomic_uint32_t nbActiveActors{};
+		std::atomic_uint32_t nbActiveActors{};
 
-		::std::set<px_rigidbody_component*> actors;
+		std::set<px_rigidbody_component*> actors;
 
-		::std::unordered_map<uint32, std::vector<px_collider_component_base*>> collidersMap;
+		std::unordered_map<uint32, std::vector<px_collider_component_base*>> collidersMap;
 
-		::std::vector<ref<px_soft_body>> softBodies;
+		std::vector<ref<px_soft_body>> softBodies;
 
-		::std::queue<collision_handling_data> collisionQueue;
-		::std::queue<collision_handling_data> collisionExitQueue;
+		std::queue<collision_handling_data> collisionQueue;
+		std::queue<collision_handling_data> collisionExitQueue;
 
-		::std::unordered_map<PxRigidActor*, px_rigidbody_component*> actorsMap;
-		::std::unordered_set<uint32_t> unfreezeBlastQueue;
+		std::unordered_map<PxRigidActor*, px_rigidbody_component*> actorsMap;
+		std::unordered_set<uint32_t> unfreezeBlastQueue;
 
-		::std::mutex blastSync;
+		std::mutex blastSync;
 
 		spin_lock sync;
 

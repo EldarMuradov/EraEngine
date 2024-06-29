@@ -56,12 +56,12 @@ void boid_particle_system::update(struct dx_command_list* cl, const common_parti
 	if (cartoonMesh)
 	{
 		const dx_mesh& mesh = cartoonMesh->mesh;
-		animation_skeleton& skeleton = cartoonMesh->skeleton;
+		era_engine::animation::animation_skeleton& skeleton = cartoonMesh->skeleton;
 
 		time += dt;
 		time = fmod(time, skeleton.clips[0].lengthInSeconds);
 
-		auto [skinnedVertexBuffer, skinningMatrices] = skinObject(mesh.vertexBuffer, cartoonMesh->submeshes[0].info, (uint32)skeleton.joints.size());
+		auto [skinnedVertexBuffer, skinningMatrices] = era_engine::animation::skinObject(mesh.vertexBuffer, cartoonMesh->submeshes[0].info, (uint32)skeleton.joints.size());
 
 		trs localTransforms[128];
 		skeleton.sampleAnimation(0, time, localTransforms);
