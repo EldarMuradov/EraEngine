@@ -29,9 +29,9 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh);
 bool editFireParticleSystem(fire_particle_system& particleSystem);
 bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
-struct updatePhysicsAndScriptingData;
-void updatePhysXPhysicsAndScripting(escene& currentScene, ref<era_engine::dotnet::enative_scripting_linker> core, float dt, const user_input& in) noexcept;
-void updateScripting(updatePhysicsAndScriptingData& data) noexcept;
+struct update_scripting_data;
+void updatePhysXCallbacksAndScripting(escene& currentScene, ref<era_engine::dotnet::enative_scripting_linker> core, float dt, const user_input& in) noexcept;
+void updateScripting(update_scripting_data& data) noexcept;
 
 struct application
 {

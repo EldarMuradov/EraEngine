@@ -97,7 +97,7 @@ void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
 		}, data).submitNow();
 }
 
-struct updatePhysicsAndScriptingData
+struct update_scripting_data
 {
 	float deltaTime{};
 	ref<era_engine::dotnet::enative_scripting_linker> core;
@@ -105,47 +105,41 @@ struct updatePhysicsAndScriptingData
 	const user_input& input;
 };
 
-void updatePhysXPhysicsAndScripting(escene& currentScene, ref<era_engine::dotnet::enative_scripting_linker> core, float dt, const user_input& in) noexcept
+void updatePhysXCallbacksAndScripting(escene& currentScene, ref<era_engine::dotnet::enative_scripting_linker> core, float dt, const user_input& in) noexcept
 {
-	updatePhysicsAndScriptingData data = { dt, core, currentScene, in };
+	update_scripting_data data = { dt, core, currentScene, in };
 
-	highPriorityJobQueue.createJob<updatePhysicsAndScriptingData>([](updatePhysicsAndScriptingData& data, job_handle)
+	highPriorityJobQueue.createJob<update_scripting_data>([](update_scripting_data& data, job_handle)
 		{
 			{
-				CPU_PROFILE_BLOCK("PhysX steps");
-
 				const auto& physicsRef = physics::physics_holder::physicsRef;
 
-				physicsRef->update(data.deltaTime);
-
-				/*{
+				{
 					CPU_PROFILE_BLOCK("PhysX collision events step");
 
-					while (physicsRef->collisionQueue.size())
 					{
-						const auto& c = physicsRef->collisionQueue.back();
-						physicsRef->collisionQueue.pop();
-						data.core->handle_coll(c.id1, c.id2);
+						physics::collision_handling_data* collData = nullptr;
+						while(physicsRef->collisionQueue.try_dequeue(*collData))
+							data.core->handle_coll(collData->id1, collData->id2);
 					}
 
-					while (physicsRef->collisionExitQueue.size())
 					{
-						const auto& c = physicsRef->collisionExitQueue.back();
-						physicsRef->collisionExitQueue.pop();
-						data.core->handle_exit_coll(c.id1, c.id2);
+						physics::collision_handling_data* collData = nullptr;
+						while (physicsRef->collisionExitQueue.try_dequeue(*collData))
+							data.core->handle_exit_coll(collData->id1, collData->id2);
 					}
-				}*/
+				}
 			}
 
-			//updateScripting(data);
+			updateScripting(data);
 
-			//{
-			//	CPU_PROFILE_BLOCK(".NET 8 Input sync step");
-			//	data.core->handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
-			//}
+			{
+				CPU_PROFILE_BLOCK(".NET 8 Input sync step");
+				data.core->handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
+			}
 		}, data).submitNow();
 
-	/*const auto& nav_objects = data.scene.group(component_group<era_engine::ai::navigation_component, transform_component>);
+	const auto& nav_objects = data.scene.group(component_group<era_engine::ai::navigation_component, transform_component>);
 
 	if (nav_objects.size())
 	{
@@ -164,10 +158,10 @@ void updatePhysXPhysicsAndScripting(escene& currentScene, ref<era_engine::dotnet
 					nav.processPath();
 				}
 			}, nav_data).submitNow();
-	}*/
+	}
 }
 
-void updateScripting(updatePhysicsAndScriptingData& data) noexcept
+void updateScripting(update_scripting_data& data) noexcept
 {
 	CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
 	for (auto [entityHandle, script, transform] : data.scene.group(component_group<era_engine::ecs::scripts_component, transform_component>).each())
@@ -619,22 +613,15 @@ void application::update(const user_input& input, float dt)
 	float unscaledDt = dt;
 	dt *= this->scene.getTimestepScale();
 
-	//for (auto [entityHandle, terrain, position] : scene.group(component_group<terrain_component, position_component>).each())
-	//{
-	//	eentity entity = { entityHandle, scene };
-	//	heightmap_collider_component* collider = entity.getComponentIfExists<heightmap_collider_component>();
+	bool running = this->scene.isPausable();
 
-	//	terrain.update(position.position, collider);
-	//}
+	if(running)
+		physics::physics_holder::physicsRef->startSimulation(dt);
 
-	//static float physicsTimer = 0.f;
-	//physicsStep(scene, stackArena, physicsTimer, physics_settings(), dt);
+	if (running)
+		updatePhysXCallbacksAndScripting(scene, linker, dt, input);
 
-	if (this->scene.isPausable())
-	{
-		updatePhysXPhysicsAndScripting(scene, linker, dt, input);
-	}
-
+#if PX_GPU_BROAD_PHASE
 	{
 		CPU_PROFILE_BLOCK("PhysX GPU clothes render step");
 		for (auto [entityHandle, cloth, render] : scene.group(component_group<physics::px_cloth_component, physics::px_cloth_render_component>).each())
@@ -650,6 +637,8 @@ void application::update(const user_input& input, float dt)
 			particles.update(true, &ldrRenderPass);
 		}
 	}
+
+#endif
 
 	updateTestScene(dt, scene, input);
 
@@ -770,6 +759,10 @@ void application::update(const user_input& input, float dt)
 	renderer->setEnvironment(environment);
 	renderer->setSun(sun);
 	renderer->setCamera(camera);
+
+
+	if (running)
+		physics::physics_holder::physicsRef->endSimulation();
 
 	executeMainThreadJobs();
 }

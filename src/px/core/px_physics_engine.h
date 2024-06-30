@@ -85,6 +85,8 @@
 #include <core/math.h>
 #include <core/event_queue.h>
 
+#include <concurrentqueue/concurrentqueue.h>
+
 namespace Nv
 {
 	namespace Blast
@@ -643,8 +645,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		NO_COPY(px_physics_engine)
 
 	public:
-		struct px_sync : public PxSyncT<> {};
-
 		px_physics_engine() noexcept;
 		~px_physics_engine();
 
@@ -652,6 +652,9 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		void start() noexcept;
 		void update(float dt) noexcept;
+
+		void startSimulation(float dt);
+		void endSimulation();
 
 		void resetActorsVelocityAndInertia() noexcept;
 
@@ -767,8 +770,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		std::vector<ref<px_soft_body>> softBodies;
 
-		std::queue<collision_handling_data> collisionQueue;
-		std::queue<collision_handling_data> collisionExitQueue;
+		moodycamel::ConcurrentQueue<collision_handling_data> collisionQueue;
+		moodycamel::ConcurrentQueue<collision_handling_data> collisionExitQueue;
 
 		std::unordered_map<PxRigidActor*, px_rigidbody_component*> actorsMap;
 		std::unordered_set<uint32_t> unfreezeBlastQueue;

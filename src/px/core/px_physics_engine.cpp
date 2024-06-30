@@ -1,10 +1,8 @@
-
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
 
 #include "px_physics_engine.h"
-#include <core/log.h>
 #include <scene/scene.h>
 #include <px/features/cloth/px_clothing_factory.h>
 #include <px/physics/px_rigidbody_component.h>
@@ -14,7 +12,7 @@
 #include <px/physics/px_soft_body.h>
 #include <px/features/px_vehicles.h>
 #include <px/temp/px_mesh_generator.h>
-
+#include <px/core/px_stepper.h>
 #include <px/blast/px_blast_destructions.h>
 
 #pragma comment(lib, "PhysXCooking_64.lib")
@@ -28,32 +26,7 @@ namespace physics
 {
 	concurrent_event_queue<blast_fracture_event> blastFractureQueue;
 
-	static px_physics_engine::px_sync* syncCreate()
-	{
-		return new px_physics_engine::px_sync();
-	}
-
-	static void syncWait(px_physics_engine::px_sync* sync)
-	{
-		sync->wait();
-	}
-
-	static void syncSet(px_physics_engine::px_sync* sync)
-	{
-		sync->set();
-	}
-
-	static void syncReset(px_physics_engine::px_sync* sync)
-	{
-		sync->reset();
-	}
-
-	static void syncRelease(px_physics_engine::px_sync* sync)
-	{
-		delete sync;
-	}
-
-	px_physics_engine::px_sync* syncObj = nullptr;
+	era_engine::physics::px_fixed_stepper stepper;
 }
 
 static physx::PxFilterFlags contactReportFilterShader(
@@ -151,9 +124,6 @@ physics::px_physics_engine::px_physics_engine() noexcept
 
 	sceneDesc.solverType = PxSolverType::eTGS;
 
-	//sceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
-	//sceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
-
 #if PX_GPU_BROAD_PHASE
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
@@ -161,16 +131,10 @@ physics::px_physics_engine::px_physics_engine() noexcept
 	sceneDesc.broadPhaseType = physx::PxBroadPhaseType::ePABP;
 #endif
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
-	//sceneDesc.flags |= PxSceneFlag::eDISABLE_CCD_RESWEEP;
-	//sceneDesc.frictionType = PxFrictionType::ePATCH;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-	//sceneDesc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
-	//sceneDesc.ccdMaxPasses = 1;
-
-	//sceneDesc.filterCallback = &simulationFilterCallback;
 
 	scene = physics->createScene(sceneDesc);
 
@@ -189,6 +153,7 @@ physics::px_physics_engine::px_physics_engine() noexcept
 
 	if (pvd->isConnected())
 		std::cout << "Physics> PVD Connection enabled.\n";
+
 	scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
 	scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, 1.0f);
 	scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LOCAL_FRAMES, 1.0f);
@@ -212,8 +177,6 @@ physics::px_physics_engine::px_physics_engine() noexcept
 	//if(!res)
 		//LOG_ERROR("Physics> Failed to initialize PxVehicles.");
 #endif
-
-	syncObj = syncCreate();
 }
 
 physics::px_physics_engine::~px_physics_engine()
@@ -227,8 +190,6 @@ void physics::px_physics_engine::release() noexcept
 	if (!released)
 	{
 		shared_spin_lock lock{ sync };
-
-		syncRelease(syncObj);
 
 		releaseActors();
 		releaseScene();
@@ -410,35 +371,58 @@ void physics::px_physics_engine::start() noexcept
 
 void physics::px_physics_engine::update(float dt) noexcept
 {
-	static const float stepSize = 1.0f / frameRate;
-	//syncSet(syncObj);
+	startSimulation(dt);
+	endSimulation();
+}
+
+void physics::px_physics_engine::startSimulation(float dt)
+{
+	recordProfileEvent(profile_event_begin_block, "PhysX update");
+
+	const float stepSize = 1.0f / frameRate;
+
+	static constexpr uint64 align = 16U;
+
+	static constexpr uint64 scratchMemBlockSize = MB(32U);
+
+	static void* scratchMemBlock = allocator.allocate(scratchMemBlockSize, align, true);
+
+#if PX_GPU_BROAD_PHASE
 
 	{
-		CPU_PROFILE_BLOCK("PhysX physics process steps");
-		stepPhysics(std::max(stepSize, dt));
+		physics_lock_write lock{};
+
+		scene->simulate(stepSize, NULL, scratchMemBlock, scratchMemBlockSize);
+		scene->fetchResults(true);
 	}
 
-	//{
-	//	CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");
-	//	processSimulationEventCallbacks();
-	//}
+#else
+
+	stepper.setup(stepSize);
+
+	if (!stepper.advance(scene, stepSize, scratchMemBlock, scratchMemBlockSize))
+		return;
+
+	stepper.renderDone();
+
+#endif
+}
+
+void physics::px_physics_engine::endSimulation()
+{
+	stepper.wait(scene);
+
+	{
+		CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");
+		processSimulationEventCallbacks();
+	}
 
 	{
 		CPU_PROFILE_BLOCK("PhysX sync transforms steps");
 		syncTransforms();
 	}
 
-	//syncWait(syncObj);
-	/*{
-		CPU_PROFILE_BLOCK("PhysX blast steps");
-		processBlastQueue();
-
-#if !_DEBUG
-
-		 Needs to be tested
-		blast->animate(dt);
-#endif
-	}*/
+	recordProfileEvent(profile_event_end_block, "PhysX update");
 }
 
 void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
@@ -573,32 +557,31 @@ physics::px_raycast_info physics::px_physics_engine::raycast(px_rigidbody_compon
 
 void physics::px_physics_engine::stepPhysics(float stepSize) noexcept
 {
-	physics_lock_write lock{};
+	stepper.setup(stepSize);
 
 	static constexpr uint64 align = 16U;
 
 	static constexpr uint64 scratchMemBlockSize = MB(32U);
 
-	void* scratchMemBlock = allocator.allocate(scratchMemBlockSize, align, true);
-	//scene->getTaskManager()->startSimulation();
+	static void* scratchMemBlock = allocator.allocate(scratchMemBlockSize, align, true);
 
-	scene->simulate(stepSize, NULL, scratchMemBlock, MB(32U));
+	if (!stepper.advance(scene, stepSize, scratchMemBlock, scratchMemBlockSize))
+		return;
 
-	scene->fetchResults(true);
+	stepper.renderDone();
 
-	//scene->fetchResultsParticleSystem();
-	//scene->getTaskManager()->stopSimulation();
+	stepper.wait(scene);
 
 #if PX_ENABLE_RAYCAST_CCD
 	raycastCCD->doRaycastCCD(true);
 #endif
-
-	allocator.reset();
 }
 
 void physics::px_physics_engine::syncTransforms() noexcept
 {
+#if PX_GPU_BROAD_PHASE
 	physics_lock_read lock{};
+#endif
 
 	uint32_t tempNb;
 	PxActor** activeActors = scene->getActiveActors(tempNb);
@@ -759,56 +742,25 @@ void physics::px_simulation_event_callback::sendCollisionEvents() noexcept
 	if (!enttScene->registry.size())
 		return;
 
-	//for (auto& c : removedCollisions)
-	//{
-	//	c.thisActor->onCollisionExit(c.otherActor);
-	//	c.swapObjects();
-	//	LOG_MESSAGE("VISHEL");
-	//	c.thisActor->onCollisionExit(c.otherActor);
-	//	c.swapObjects();
-	//	physics::physics_holder::physicsRef->collisionExitQueue.emplace(c.thisActor->entityHandle, c.otherActor->entityHandle);
-	//}
+	for (auto& c : removedCollisions)
+	{
+		c.thisActor->onCollisionExit(c.otherActor);
+		c.swapObjects();
+		LOG_MESSAGE("VISHEL");
+		c.thisActor->onCollisionExit(c.otherActor);
+		c.swapObjects();
+		physics_holder::physicsRef->collisionExitQueue.enqueue({ c.thisActor->entityHandle, c.otherActor->entityHandle });
+	}
 
-	//for (auto& c : newCollisions)
-	//{
-
-#if !_DEBUG
-
-		//try
-		//{
-		//	eentity rb1{ c.thisActor->entityHandle, &enttScene->registry };
-		//	eentity rb2{ c.otherActor->entityHandle, &enttScene->registry };
-
-		//	if (!rb1.valid() || !rb2.valid())
-		//		continue;
-
-		//	auto chunk1 = rb1.getComponentIfExists<physics::chunk_graph_manager::chunk_node>();
-
-		//	auto chunk2 = rb2.getComponentIfExists<physics::chunk_graph_manager::chunk_node>();
-
-		//	if (chunk1 && !chunk2)
-		//	{
-		//		chunk1->processDamage(c.impulse);
-		//	}
-		//	else if (chunk2 && !chunk1)
-		//	{
-		//		chunk2->processDamage(c.impulse);
-		//	}
-		//}
-		//catch (...)
-		//{
-		//	LOG_WARNING("Blast> Entity has already been destroyed!");
-		//}
-
-#endif
-
-		//c.thisActor->onCollisionEnter(c.otherActor);
-		//c.swapObjects();
-		//LOG_MESSAGE("VOSHOL");
-		//c.thisActor->onCollisionEnter(c.otherActor);
-		//c.swapObjects();
-		//physics::physics_holder::physicsRef->collisionQueue.emplace(c.thisActor->entityHandle, c.otherActor->entityHandle);
-	//}
+	for (auto& c : newCollisions)
+	{
+		c.thisActor->onCollisionEnter(c.otherActor);
+		c.swapObjects();
+		LOG_MESSAGE("VOSHOL");
+		c.thisActor->onCollisionEnter(c.otherActor);
+		c.swapObjects();
+		physics_holder::physicsRef->collisionQueue.enqueue({ c.thisActor->entityHandle, c.otherActor->entityHandle });
+	}
 }
 
 void physics::px_simulation_event_callback::sendTriggerEvents() noexcept
