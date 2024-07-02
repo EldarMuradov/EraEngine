@@ -5,7 +5,7 @@
 
 #if PX_VEHICLE
 
-namespace physics
+namespace era_engine::physics
 {
 #if PX_VEHICLE
 	using namespace physx;

@@ -3,7 +3,7 @@
 #pragma once
 #include <extensions/PxGjkQueryExt.h>
 
-namespace physics
+namespace era_engine::physics
 {
 	using namespace physx;
 

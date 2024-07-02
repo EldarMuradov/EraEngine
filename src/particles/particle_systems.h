@@ -2,4 +2,7 @@
 
 #pragma once
 
-void loadAllParticleSystemPipelines();
+namespace era_engine
+{
+	void loadAllParticleSystemPipelines();
+}

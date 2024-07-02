@@ -2,37 +2,40 @@
 
 #pragma once
 
-#include "dx.h"
+#include "dx/dx.h"
 
-struct dx_command_list;
-
-struct dx_command_queue
+namespace era_engine
 {
-	void initialize(dx_device device, D3D12_COMMAND_LIST_TYPE type);
+	struct dx_command_list;
 
-	uint64 signal();
-	NODISCARD bool isFenceComplete(uint64 fenceValue) const;
-	void waitForFence(uint64 fenceValue);
-	void waitForOtherQueue(dx_command_queue& other);
-	void waitForOtherQueue(dx_command_queue& other, uint64 fenceValue);
-	void flush();
+	struct dx_command_queue
+	{
+		void initialize(dx_device device, D3D12_COMMAND_LIST_TYPE type);
 
-	uint64 timeStampFrequency; // In Hz.
-	int64 timeStampToCPU; // GPU queue - CPU.
+		uint64 signal();
+		NODISCARD bool isFenceComplete(uint64 fenceValue) const;
+		void waitForFence(uint64 fenceValue);
+		void waitForOtherQueue(dx_command_queue& other);
+		void waitForOtherQueue(dx_command_queue& other, uint64 fenceValue);
+		void flush();
 
-	D3D12_COMMAND_LIST_TYPE commandListType;
-	com<ID3D12CommandQueue>	commandQueue;
-	com<ID3D12Fence> fence;
-	volatile uint64 fenceValue;
+		uint64 timeStampFrequency; // In Hz.
+		int64 timeStampToCPU; // GPU queue - CPU.
 
-	dx_command_list* runningCommandLists;
-	dx_command_list* newestRunningCommandList;
-	dx_command_list* freeCommandLists;
+		D3D12_COMMAND_LIST_TYPE commandListType;
+		com<ID3D12CommandQueue>	commandQueue;
+		com<ID3D12Fence> fence;
+		volatile uint64 fenceValue;
 
-	volatile uint32 numRunningCommandLists;
-	volatile uint32 totalNumCommandLists; // Used only for validation.
+		dx_command_list* runningCommandLists;
+		dx_command_list* newestRunningCommandList;
+		dx_command_list* freeCommandLists;
 
-	HANDLE processThreadHandle;
+		volatile uint32 numRunningCommandLists;
+		volatile uint32 totalNumCommandLists; // Used only for validation.
 
-	std::mutex commandListMutex;
-};
+		HANDLE processThreadHandle;
+
+		std::mutex commandListMutex;
+	};
+}

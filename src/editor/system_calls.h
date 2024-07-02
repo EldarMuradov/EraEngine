@@ -2,7 +2,7 @@
 
 #pragma once
 
-namespace os
+namespace era_engine::os
 {
 	struct path_parser
 	{
@@ -19,8 +19,6 @@ namespace os
 			font
 		};
 
-		path_parser() = delete;
-
 		NODISCARD static std::string makeWindowsStyle(std::string_view path);
 
 		NODISCARD static std::string makeNonWindowsStyle(std::string_view path);
@@ -34,6 +32,9 @@ namespace os
 		NODISCARD static std::string fileTypeToString(file_type fileType);
 
 		NODISCARD static file_type getFileType(std::string_view path);
+
+	private:
+		path_parser() = delete;
 	};
 
 	struct system_calls
@@ -45,5 +46,8 @@ namespace os
 		static void editFile(std::string_view file);
 
 		static void openURL(std::string_view url);
+
+	private:
+		system_calls() = delete;
 	};
 }

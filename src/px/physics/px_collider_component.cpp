@@ -6,7 +6,7 @@
 #include <px/core/px_extensions.h>
 #include <extensions/PxTetMakerExt.h>
 
-namespace physics 
+namespace era_engine::physics 
 {
 	px_collider_component_base::~px_collider_component_base()
 	{

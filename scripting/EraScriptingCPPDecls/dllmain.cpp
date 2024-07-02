@@ -17,7 +17,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
         break;
     }
 
-    enative_scripting_factory* factory = new enative_scripting_factory();
+    era_engine::enative_scripting_factory* factory = new era_engine::enative_scripting_factory();
 
     return TRUE;
 }

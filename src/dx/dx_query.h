@@ -1,11 +1,14 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include "dx.h"
+#include "dx/dx.h"
 
-struct dx_timestamp_query_heap
+namespace era_engine
 {
-	void initialize(uint32 maxCount);
+	struct dx_timestamp_query_heap
+	{
+		void initialize(uint32 maxCount);
 
-	dx_query_heap heap;
-};
+		dx_query_heap heap;
+	};
+}

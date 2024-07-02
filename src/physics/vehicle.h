@@ -4,39 +4,43 @@
 
 #include "physics.h"
 
-struct vehicle
+namespace era_engine
 {
-	vehicle() {}
-
-	void initialize(escene& scene, vec3 initialMotorPosition, float initialRotation = 0.f);
-	static vehicle create(escene& scene, vec3 initialMotorPosition, float initialRotation = 0.f);
-
-	union
+	struct vehicle
 	{
-		struct
+		vehicle() {}
+
+		void initialize(escene& scene, vec3 initialMotorPosition, float initialRotation = 0.f);
+		static vehicle create(escene& scene, vec3 initialMotorPosition, float initialRotation = 0.f);
+
+		union
 		{
-			eentity motor;
-			eentity motorGear;
-			eentity driveAxis;
-			eentity frontAxis;
-			eentity steeringWheel;
-			eentity steeringAxis;
+			struct
+			{
+				eentity motor;
+				eentity motorGear;
+				eentity driveAxis;
+				eentity frontAxis;
+				eentity steeringWheel;
+				eentity steeringAxis;
 
-			eentity leftWheelSuspension;
-			eentity rightWheelSuspension;
+				eentity leftWheelSuspension;
+				eentity rightWheelSuspension;
 
-			eentity leftFrontWheel;
-			eentity rightFrontWheel;
+				eentity leftFrontWheel;
+				eentity rightFrontWheel;
 
-			eentity leftWheelArm;
-			eentity rightWheelArm;
+				eentity leftWheelArm;
+				eentity rightWheelArm;
 
-			eentity differentialSunGear;
-			eentity differentialSpiderGear;
+				eentity differentialSunGear;
+				eentity differentialSpiderGear;
 
-			eentity leftRearWheel;
-			eentity rightRearWheel;
+				eentity leftRearWheel;
+				eentity rightRearWheel;
+			};
+			eentity parts[16];
 		};
-		eentity parts[16];
 	};
-};
+
+}

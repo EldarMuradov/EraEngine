@@ -3,7 +3,7 @@
 #include "pch.h"
 #include "px/physics/px_joint.h"
 
-namespace physics
+namespace era_engine::physics
 {
 	px_joint::~px_joint()
 	{

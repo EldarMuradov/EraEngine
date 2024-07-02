@@ -19,7 +19,10 @@
 #include "sigh_storage_mixin.hpp"
 #include "sparse_set.hpp"
 
+namespace era_engine
+{
 struct escene;
+}
 
 namespace entt {
 
@@ -234,7 +237,7 @@ template<typename... CLhs, typename... CRhs>
  */
 template<typename Type, typename Entity, typename Allocator, typename>
 class basic_storage: public basic_sparse_set<Entity, typename std::allocator_traits<Allocator>::template rebind_alloc<Entity>> {
-    friend struct ::escene;
+    friend struct era_engine::escene;
 
     using alloc_traits = std::allocator_traits<Allocator>;
     static_assert(std::is_same_v<typename alloc_traits::value_type, Type>, "Invalid value type");

@@ -7,43 +7,8 @@
 #include <fontawesome/IconsFontAwesome5.h>
 
 #include "dx/dx.h"
-#include "math.h"
+#include "core/math.h"
 #include "foundation/PxVec3.h"
-
-ImGuiContext* initializeImGui(struct dx_window& window);
-void newImGuiFrame(float dt);
-void renderImGui(struct dx_command_list* cl);
-
-LRESULT handleImGuiInput(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-struct dx_texture;
-struct asset_handle;
-
-enum imgui_icon
-{
-	imgui_icon_global,
-	imgui_icon_local,
-	imgui_icon_translate,
-	imgui_icon_rotate,
-	imgui_icon_scale,
-	imgui_icon_cross,
-	imgui_icon_play,
-	imgui_icon_stop,
-	imgui_icon_pause,
-};
-
-static const char* imguiIconNames[] =
-{
-	"Transform in global coordinate system (G)",
-	"Transform in local coordinate system (G)",
-	"Translate (W)",
-	"Rotate (E)",
-	"Scale (R)",
-	"No gizmo (Q)",
-	"Play",
-	"Stop",
-	"Pause",
-};
 
 #define IMGUI_ICON_COLS 4
 #define IMGUI_ICON_ROWS 4
@@ -51,8 +16,49 @@ static const char* imguiIconNames[] =
 #define IMGUI_ICON_DEFAULT_SIZE 35
 #define IMGUI_ICON_DEFAULT_SPACING 3.f
 
+namespace era_engine
+{
+	ImGuiContext* initializeImGui(struct dx_window& window);
+	void newImGuiFrame(float dt);
+	void renderImGui(struct dx_command_list* cl);
+
+	LRESULT handleImGuiInput(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+	struct dx_texture;
+	struct asset_handle;
+
+	enum imgui_icon
+	{
+		imgui_icon_global,
+		imgui_icon_local,
+		imgui_icon_translate,
+		imgui_icon_rotate,
+		imgui_icon_scale,
+		imgui_icon_cross,
+		imgui_icon_play,
+		imgui_icon_stop,
+		imgui_icon_pause,
+	};
+
+	static const char* imguiIconNames[] =
+	{
+		"Transform in global coordinate system (G)",
+		"Transform in local coordinate system (G)",
+		"Translate (W)",
+		"Rotate (E)",
+		"Scale (R)",
+		"No gizmo (Q)",
+		"Play",
+		"Stop",
+		"Pause",
+	};
+
+}
+
 namespace ImGui
 {
+	using namespace era_engine;
+
 	bool AnyModifiersDown();
 
 	bool IsItemActiveLastFrame();
@@ -170,7 +176,7 @@ namespace ImGui
 
 	bool Spline(const char* label, ImVec2 size, uint32 maxNumPoints, float* x, float* y, uint32 drawResolution = 256);
 
-	template <uint32 maxNumPoints> 
+	template <uint32 maxNumPoints>
 	bool Spline(const char* label, ImVec2 size, catmull_rom_spline<float, maxNumPoints>& s, uint32 drawResolution = 256)
 	{
 		return Spline(label, size, maxNumPoints, s.ts, s.values, drawResolution);

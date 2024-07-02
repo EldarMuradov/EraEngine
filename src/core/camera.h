@@ -4,130 +4,133 @@
 
 #include "math.h"
 #include "physics/bounding_volumes.h"
-#include "reflect.h"
+#include "core/reflect.h"
 
-union camera_frustum_corners
+namespace era_engine
 {
-	camera_frustum_corners() {};
-
-	struct
+	union camera_frustum_corners
 	{
-		vec3 nearTopLeft;
-		vec3 nearTopRight;
-		vec3 nearBottomLeft;
-		vec3 nearBottomRight;
-		vec3 farTopLeft;
-		vec3 farTopRight;
-		vec3 farBottomLeft;
-		vec3 farBottomRight;
+		camera_frustum_corners() {};
+
+		struct
+		{
+			vec3 nearTopLeft;
+			vec3 nearTopRight;
+			vec3 nearBottomLeft;
+			vec3 nearBottomRight;
+			vec3 farTopLeft;
+			vec3 farTopRight;
+			vec3 farBottomLeft;
+			vec3 farBottomRight;
+		};
+
+		struct
+		{
+			vec3 corners[8];
+		};
+
+		vec3 eye;
 	};
 
-	struct
+	union camera_frustum_planes
 	{
-		vec3 corners[8];
+		camera_frustum_planes() {};
+
+		// Returns true, if object should be culled.
+		NODISCARD bool cullWorldSpaceAABB(const bounding_box& aabb) const;
+		NODISCARD bool cullModelSpaceAABB(const bounding_box& aabb, const trs& transform) const;
+		NODISCARD bool cullModelSpaceAABB(const bounding_box& aabb, const mat4& transform) const;
+
+		struct
+		{
+			vec4 nearPlane;
+			vec4 farPlane;
+			vec4 leftPlane;
+			vec4 rightPlane;
+			vec4 topPlane;
+			vec4 bottomPlane;
+		};
+
+		vec4 planes[6];
 	};
 
-	vec3 eye;
-};
-
-union camera_frustum_planes
-{
-	camera_frustum_planes() {};
-
-	// Returns true, if object should be culled.
-	NODISCARD bool cullWorldSpaceAABB(const bounding_box& aabb) const;
-	NODISCARD bool cullModelSpaceAABB(const bounding_box& aabb, const trs& transform) const;
-	NODISCARD bool cullModelSpaceAABB(const bounding_box& aabb, const mat4& transform) const;
-
-	struct
+	enum camera_type
 	{
-		vec4 nearPlane;
-		vec4 farPlane;
-		vec4 leftPlane;
-		vec4 rightPlane;
-		vec4 topPlane;
-		vec4 bottomPlane;
+		camera_type_ingame,
+		camera_type_calibrated,
 	};
 
-	vec4 planes[6];
-};
+	struct camera_projection_extents
+	{
+		float left, right, top, bottom; // Extents of frustum at distance 1.
+	};
 
-enum camera_type
-{
-	camera_type_ingame,
-	camera_type_calibrated,
-};
+	struct render_camera
+	{
+		void setPositionAndRotation(vec3 position, quat rotation);
+		void initializeIngame(vec3 position, quat rotation, float verticalFOV, float nearPlane, float farPlane = -1.f);
+		void initializeCalibrated(vec3 position, quat rotation, uint32 width, uint32 height, float fx, float fy, float cx, float cy, float nearPlane, float farPlane = -1.f);
 
-struct camera_projection_extents
-{
-	float left, right, top, bottom; // Extents of frustum at distance 1.
-};
+		void setViewport(uint32 width, uint32 height);
 
-struct render_camera
-{
-	void setPositionAndRotation(vec3 position, quat rotation);
-	void initializeIngame(vec3 position, quat rotation, float verticalFOV, float nearPlane, float farPlane = -1.f);
-	void initializeCalibrated(vec3 position, quat rotation, uint32 width, uint32 height, float fx, float fy, float cx, float cy, float nearPlane, float farPlane = -1.f);
+		void updateMatrices();
 
-	void setViewport(uint32 width, uint32 height);
+		ray generateWorldSpaceRay(float relX, float relY) const;
+		ray generateViewSpaceRay(float relX, float relY) const;
 
-	void updateMatrices();
+		vec3 restoreViewSpacePosition(vec2 uv, float depthBufferDepth) const;
+		vec3 restoreWorldSpacePosition(vec2 uv, float depthBufferDepth) const;
+		float depthBufferDepthToEyeDepth(float depthBufferDepth) const;
+		float eyeDepthToDepthBufferDepth(float eyeDepth) const;
+		float linearizeDepthBuffer(float depthBufferDepth) const;
 
-	ray generateWorldSpaceRay(float relX, float relY) const;
-	ray generateViewSpaceRay(float relX, float relY) const;
+		camera_frustum_corners getWorldSpaceFrustumCorners(float alternativeFarPlane = 0.f) const;
+		camera_frustum_planes getWorldSpaceFrustumPlanes() const;
 
-	vec3 restoreViewSpacePosition(vec2 uv, float depthBufferDepth) const;
-	vec3 restoreWorldSpacePosition(vec2 uv, float depthBufferDepth) const;
-	float depthBufferDepthToEyeDepth(float depthBufferDepth) const;
-	float eyeDepthToDepthBufferDepth(float eyeDepth) const;
-	float linearizeDepthBuffer(float depthBufferDepth) const;
+		camera_frustum_corners getViewSpaceFrustumCorners(float alternativeFarPlane = 0.f) const;
 
-	camera_frustum_corners getWorldSpaceFrustumCorners(float alternativeFarPlane = 0.f) const;
-	camera_frustum_planes getWorldSpaceFrustumPlanes() const;
+		camera_projection_extents getProjectionExtents() const;
+		float getMinProjectionExtent() const;
 
-	camera_frustum_corners getViewSpaceFrustumCorners(float alternativeFarPlane = 0.f) const;
+		render_camera getJitteredVersion(vec2 offset) const;
 
-	camera_projection_extents getProjectionExtents() const;
-	float getMinProjectionExtent() const;
+		quat rotation;
+		vec3 position;
 
-	render_camera getJitteredVersion(vec2 offset) const;
+		float nearPlane;
+		float farPlane = -1.f;
 
-	quat rotation;
-	vec3 position;
+		uint32 width, height;
 
-	float nearPlane;
-	float farPlane = -1.f;
+		camera_type type;
 
-	uint32 width, height;
+		float verticalFOV;
+		float fx, fy, cx, cy; // For calibrated cameras.
 
-	camera_type type;
+		// Derived values.
+		mat4 view;
+		mat4 invView;
 
-	float verticalFOV;
-	float fx, fy, cx, cy; // For calibrated cameras.
+		mat4 proj;
+		mat4 invProj;
 
-	// Derived values.
-	mat4 view;
-	mat4 invView;
+		mat4 viewProj;
+		mat4 invViewProj;
 
-	mat4 proj;
-	mat4 invProj;
+		float aspect;
+	};
+	REFLECT_STRUCT(render_camera,
+		(rotation, "Rotation"),
+		(position, "Position"),
+		(nearPlane, "Near plane"),
+		(farPlane, "Far plane"),
+		(type, "Type"),
+		(verticalFOV, "Vertical FOV"),
+		(fx, "Fx"),
+		(fy, "Fy"),
+		(cx, "Cx"),
+		(cy, "Cy")
+	);
 
-	mat4 viewProj;
-	mat4 invViewProj;
-
-	float aspect;
-};
-REFLECT_STRUCT(render_camera,
-	(rotation, "Rotation"),
-	(position, "Position"),
-	(nearPlane, "Near plane"),
-	(farPlane, "Far plane"),
-	(type, "Type"),
-	(verticalFOV, "Vertical FOV"),
-	(fx, "Fx"),
-	(fy, "Fy"),
-	(cx, "Cx"),
-	(cy, "Cy")
-);
-
-camera_frustum_planes getWorldSpaceFrustumPlanes(const mat4& viewProj);
+	camera_frustum_planes getWorldSpaceFrustumPlanes(const mat4& viewProj);
+}

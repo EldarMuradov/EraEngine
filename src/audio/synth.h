@@ -19,51 +19,54 @@
 
 #define MAX_SYNTH_SIZE 1024
 
-struct audio_synth
+namespace era_engine
 {
-	NODISCARD virtual uint32 getSamples(float* buffer, uint32 numSamples) = 0;
-	NODISCARD virtual float getDuration() const { return 0.f; } // You only need to override this, if you don't stream the audio.
-};
-
-struct sine_synth : audio_synth
-{
-	sine_synth(float duration = 10.f, float hz = C_HZ)
-		: audio_synth()
+	struct audio_synth
 	{
-		this->hz = hz;
+		NODISCARD virtual uint32 getSamples(float* buffer, uint32 numSamples) = 0;
+		NODISCARD virtual float getDuration() const { return 0.f; } // You only need to override this, if you don't stream the audio.
+	};
 
-		// Round duration such that there is an integer amount of waves over the runtime. This prevents clicking for looping sounds.
-		float waves = duration * hz;
-		duration = floor(waves) / hz;
-
-		this->duration = duration;
-		this->totalNumSamples = (uint32)(duration * numChannels * sampleHz);
-	}
-
-	NODISCARD virtual uint32 getSamples(float* buffer, uint32 numSamples) override
+	struct sine_synth : audio_synth
 	{
-		if (offset + numSamples > totalNumSamples)
+		sine_synth(float duration = 10.f, float hz = C_HZ)
+			: audio_synth()
 		{
-			numSamples = totalNumSamples - offset;
+			this->hz = hz;
+
+			// Round duration such that there is an integer amount of waves over the runtime. This prevents clicking for looping sounds.
+			float waves = duration * hz;
+			duration = floor(waves) / hz;
+
+			this->duration = duration;
+			this->totalNumSamples = (uint32)(duration * numChannels * sampleHz);
 		}
 
-		float factor = M_TAU / sampleHz * hz;
-		for (uint32 i = 0; i < numSamples; ++i, ++offset)
+		NODISCARD virtual uint32 getSamples(float* buffer, uint32 numSamples) override
 		{
-			buffer[i] = sin(offset * factor);
+			if (offset + numSamples > totalNumSamples)
+			{
+				numSamples = totalNumSamples - offset;
+			}
+
+			float factor = M_TAU / sampleHz * hz;
+			for (uint32 i = 0; i < numSamples; ++i, ++offset)
+			{
+				buffer[i] = sin(offset * factor);
+			}
+			return numSamples;
 		}
-		return numSamples;
-	}
 
-	NODISCARD virtual float getDuration() const override { return duration; }
+		NODISCARD virtual float getDuration() const override { return duration; }
 
-	static const uint32 numChannels = 1;
-	static const uint32 sampleHz = 44100;
+		static const uint32 numChannels = 1;
+		static const uint32 sampleHz = 44100;
 
-private:
-	uint32 totalNumSamples;
-	float hz;
-	float duration;
+	private:
+		uint32 totalNumSamples;
+		float hz;
+		float duration;
 
-	uint32 offset = 0;
-};
+		uint32 offset = 0;
+	};
+}

@@ -4,23 +4,26 @@
 
 #include "core/camera_controller.h"
 
-struct editor_scene;
-struct main_renderer;
-
-namespace era_engine::runtime
+namespace era_engine
 {
-	struct runtime
+	struct editor_scene;
+	struct main_renderer;
+
+	namespace runtime
 	{
-		void initialize(editor_scene* scene, main_renderer* renderer);
+		struct runtime
+		{
+			void initialize(editor_scene* scene, main_renderer* renderer);
 
-		void update();
+			void update();
 
-	private:
-		editor_scene* scene;
-		main_renderer* renderer;
+		private:
+			editor_scene* scene;
+			main_renderer* renderer;
 
-		runtime_camera_controller cameraController;
+			runtime_camera_controller cameraController;
 
-		friend struct application;
-	};
+			friend struct application;
+		};
+	}
 }

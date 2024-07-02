@@ -30,7 +30,7 @@ static CD3DX12_GPU_DESCRIPTOR_HANDLE startGPUDescriptor;
 static uint32 descriptorHandleIncrementSize;
 static uint32 numImagesThisFrame;
 
-static ref<dx_texture> iconsTexture;
+static ref<era_engine::dx_texture> iconsTexture;
 static ImTextureID iconsTextureID;
 
 static void setStyle()
@@ -70,113 +70,116 @@ static void setStyle()
 	style.FramePadding = ImVec2(5.f, 2.f);
 }
 
-ImGuiContext* initializeImGui(struct dx_window& window)
+namespace era_engine
 {
-	IMGUI_CHECKVERSION();
-	auto imguiContext = ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
-	//io.ConfigViewportsNoAutoMerge = true;
-	//io.ConfigViewportsNoTaskBarIcon = true;
-
-	ImGui::StyleColorsDark();
-
-	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
-	ImGuiStyle& style = ImGui::GetStyle();
-	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	ImGuiContext* initializeImGui(struct dx_window& window)
 	{
-		style.WindowRounding = 0.f;
-		style.Colors[ImGuiCol_WindowBg].w = 1.f;
+		IMGUI_CHECKVERSION();
+		auto imguiContext = ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+		//io.ConfigViewportsNoAutoMerge = true;
+		//io.ConfigViewportsNoTaskBarIcon = true;
+
+		ImGui::StyleColorsDark();
+
+		// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+		ImGuiStyle& style = ImGui::GetStyle();
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			style.WindowRounding = 0.f;
+			style.Colors[ImGuiCol_WindowBg].w = 1.f;
+		}
+
+		setStyle();
+
+		io.FontDefault = io.Fonts->AddFontFromFileTTF("resources/fonts/opensans/OpenSans-Regular.ttf", 18.f);
+
+		// Merge in icons.
+		static const ImWchar iconsRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+		ImFontConfig iconsConfig;
+		iconsConfig.MergeMode = true;
+		iconsConfig.PixelSnapH = true;
+		io.FontDefault = io.Fonts->AddFontFromFileTTF("resources/fonts/icons/" FONT_ICON_FILE_NAME_FAS, 16.f, &iconsConfig, iconsRanges);
+
+		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+		desc.NumDescriptors = NUM_BUFFERED_FRAMES * MAX_NUM_IMGUI_IMAGES_PER_FRAME + 2;
+		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+		checkResult(dxContext.device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&imguiDescriptorHeap)));
+
+		startCPUDescriptor = imguiDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		startGPUDescriptor = imguiDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+		descriptorHandleIncrementSize = dxContext.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		DXGI_FORMAT screenFormat = (window.colorDepth == color_depth_8) ? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R10G10B10A2_UNORM;
+
+		ImGui_ImplWin32_Init(window.windowHandle);
+		ImGui_ImplDX12_Init(dxContext.device.Get(), NUM_BUFFERED_FRAMES,
+			screenFormat, imguiDescriptorHeap.Get(),
+			startCPUDescriptor,
+			startGPUDescriptor);
+
+		{
+			iconsTexture = loadTextureFromFile("resources/icons/icons_ui.svg", image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
+
+			CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(startCPUDescriptor, 1, descriptorHandleIncrementSize);
+			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(startGPUDescriptor, 1, descriptorHandleIncrementSize);
+			dxContext.device->CopyDescriptorsSimple(1, cpuHandle, iconsTexture->defaultSRV.cpuHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+			iconsTextureID = (ImTextureID)gpuHandle.ptr;
+		}
+
+		return imguiContext;
 	}
 
-	setStyle();
-
-	io.FontDefault = io.Fonts->AddFontFromFileTTF("resources/fonts/opensans/OpenSans-Regular.ttf", 18.f);
-
-	// Merge in icons.
-	static const ImWchar iconsRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-	ImFontConfig iconsConfig;
-	iconsConfig.MergeMode = true; 
-	iconsConfig.PixelSnapH = true;
-	io.FontDefault = io.Fonts->AddFontFromFileTTF("resources/fonts/icons/" FONT_ICON_FILE_NAME_FAS, 16.f, &iconsConfig, iconsRanges);
-
-	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-	desc.NumDescriptors = NUM_BUFFERED_FRAMES * MAX_NUM_IMGUI_IMAGES_PER_FRAME + 2;
-	desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-
-	checkResult(dxContext.device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&imguiDescriptorHeap)));
-
-	startCPUDescriptor = imguiDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	startGPUDescriptor = imguiDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
-	descriptorHandleIncrementSize = dxContext.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	DXGI_FORMAT screenFormat = (window.colorDepth == color_depth_8) ? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R10G10B10A2_UNORM;
-
-	ImGui_ImplWin32_Init(window.windowHandle);
-	ImGui_ImplDX12_Init(dxContext.device.Get(), NUM_BUFFERED_FRAMES,
-		screenFormat, imguiDescriptorHeap.Get(),
-		startCPUDescriptor,
-		startGPUDescriptor);
-
+	void newImGuiFrame(float dt)
 	{
-		iconsTexture = loadTextureFromFile("resources/icons/icons_ui.svg", image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
-
-		CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(startCPUDescriptor, 1, descriptorHandleIncrementSize);
-		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(startGPUDescriptor, 1, descriptorHandleIncrementSize);
-		dxContext.device->CopyDescriptorsSimple(1, cpuHandle, iconsTexture->defaultSRV.cpuHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-		iconsTextureID = (ImTextureID)gpuHandle.ptr;
+		ImGui_ImplDX12_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
 	}
 
-	return imguiContext;
-}
-
-void newImGuiFrame(float dt)
-{
-	ImGui_ImplDX12_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-}
-
-void renderImGui(dx_command_list* cl)
-{
-	DX_PROFILE_BLOCK(cl, "ImGui");
-
-	ImGui::Render();
-	if (cl)
+	void renderImGui(dx_command_list* cl)
 	{
-		cl->setDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, imguiDescriptorHeap);
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cl->commandList.Get());
-	}
+		DX_PROFILE_BLOCK(cl, "ImGui");
 
-	auto& io = ImGui::GetIO();
-	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-	{
-		ImGui::UpdatePlatformWindows();
+		ImGui::Render();
 		if (cl)
 		{
-			ImGui::RenderPlatformWindowsDefault(0, cl->commandList.Get());
+			cl->setDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, imguiDescriptorHeap);
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cl->commandList.Get());
 		}
+
+		auto& io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			if (cl)
+			{
+				ImGui::RenderPlatformWindowsDefault(0, cl->commandList.Get());
+			}
+		}
+
+		numImagesThisFrame = 0;
 	}
 
-	numImagesThisFrame = 0;
+	LRESULT handleImGuiInput(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	{
+		return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam);
+	}
 }
 
-LRESULT handleImGuiInput(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+static ImTextureID pushTexture(era_engine::dx_cpu_descriptor_handle handle)
 {
-	return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam);
-}
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(startCPUDescriptor, 2 + era_engine::dxContext.bufferedFrameID * MAX_NUM_IMGUI_IMAGES_PER_FRAME + numImagesThisFrame, descriptorHandleIncrementSize);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(startGPUDescriptor, 2 + era_engine::dxContext.bufferedFrameID * MAX_NUM_IMGUI_IMAGES_PER_FRAME + numImagesThisFrame, descriptorHandleIncrementSize);
 
-static ImTextureID pushTexture(dx_cpu_descriptor_handle handle)
-{
-	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(startCPUDescriptor, 2 + dxContext.bufferedFrameID * MAX_NUM_IMGUI_IMAGES_PER_FRAME + numImagesThisFrame, descriptorHandleIncrementSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(startGPUDescriptor, 2 + dxContext.bufferedFrameID * MAX_NUM_IMGUI_IMAGES_PER_FRAME + numImagesThisFrame, descriptorHandleIncrementSize);
-
-	dxContext.device->CopyDescriptorsSimple(1, cpuHandle, handle.cpuHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	era_engine::dxContext.device->CopyDescriptorsSimple(1, cpuHandle, handle.cpuHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	++numImagesThisFrame;
 
@@ -185,6 +188,8 @@ static ImTextureID pushTexture(dx_cpu_descriptor_handle handle)
 
 namespace ImGui
 {
+	using namespace era_engine;
+
 	bool AnyModifiersDown()
 	{
 		return ImGui::IsKeyDown(key_ctrl) || ImGui::IsKeyDown(key_shift) || ImGui::IsKeyDown(key_alt);
@@ -226,13 +231,13 @@ namespace ImGui
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 10.f);
 		ImGui::SetNextWindowSize(ImVec2(0.f, 0.f)); // Auto-resize to content.
 		bool result = ImGui::Begin(name, 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoMove
-		 | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoSavedSettings);
+			| ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoSavedSettings);
 		ImGui::PopStyleVar();
 
 		return result;
 	}
 
-	static void Image(::dx_cpu_descriptor_handle& handle, ImVec2 size, ImVec2 uv0, ImVec2 uv1)
+	static void Image(era_engine::dx_cpu_descriptor_handle& handle, ImVec2 size, ImVec2 uv0, ImVec2 uv1)
 	{
 		if (numImagesThisFrame < MAX_NUM_IMGUI_IMAGES_PER_FRAME)
 		{
@@ -240,7 +245,7 @@ namespace ImGui
 		}
 	}
 
-	static void Image(::dx_cpu_descriptor_handle& handle, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1)
+	static void Image(era_engine::dx_cpu_descriptor_handle& handle, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1)
 	{
 		ImGui::Image(handle, ImVec2((float)width, (float)height), uv0, uv1);
 	}
@@ -268,7 +273,7 @@ namespace ImGui
 		ImGui::Image(texture, ImVec2((float)width, (float)height), uv0, uv1);
 	}
 
-	static bool ImageButton(::dx_cpu_descriptor_handle& handle, ImVec2 size, ImVec2 uvTopLeft, ImVec2 uvBottomRight)
+	static bool ImageButton(era_engine::dx_cpu_descriptor_handle& handle, ImVec2 size, ImVec2 uvTopLeft, ImVec2 uvBottomRight)
 	{
 		if (numImagesThisFrame < MAX_NUM_IMGUI_IMAGES_PER_FRAME)
 		{
@@ -277,7 +282,7 @@ namespace ImGui
 		return false;
 	}
 
-	static bool ImageButton(::dx_cpu_descriptor_handle& handle, uint32 width, uint32 height, ImVec2 uvTopLeft, ImVec2 uvBottomRight)
+	static bool ImageButton(era_engine::dx_cpu_descriptor_handle& handle, uint32 width, uint32 height, ImVec2 uvTopLeft, ImVec2 uvBottomRight)
 	{
 		return ImGui::ImageButton(handle, ImVec2((float)width, (float)height), uvTopLeft, uvBottomRight);
 	}
@@ -309,7 +314,7 @@ namespace ImGui
 		}
 	}
 
-	bool IconButton(uint32 id, imgui_icon icon, uint32 size, bool enabled)
+	bool IconButton(uint32 id, era_engine::imgui_icon icon, uint32 size, bool enabled)
 	{
 		float row = (float)(icon / IMGUI_ICON_COLS);
 		float col = (float)(icon % IMGUI_ICON_COLS);
@@ -339,7 +344,7 @@ namespace ImGui
 		return result;
 	}
 
-	bool IconRadioButton(imgui_icon icon, int* current, int value, uint32 size, bool enabled)
+	bool IconRadioButton(era_engine::imgui_icon icon, int* current, int value, uint32 size, bool enabled)
 	{
 		float row = (float)(icon / IMGUI_ICON_COLS);
 		float col = (float)(icon % IMGUI_ICON_COLS);
@@ -747,7 +752,7 @@ namespace ImGui
 	{
 		return ImGui::PropertyInputInternal(ImGuiDataType_Float, 4, label, f.data, format);
 	}
-	
+
 	bool PropertyInput(const char* label, int32& f, const char* format)
 	{
 		return ImGui::PropertyInputInternal(ImGuiDataType_S32, 1, label, &f, format);
@@ -851,7 +856,7 @@ namespace ImGui
 		static const char* names[] =
 		{
 			"1", "2", "4", "8", "16", "32", "64", "128", "256", "512", "1,024", "2,048", "4,096", "8,192", "16,384", "32,768", "65,536",
-			"131,072", "262,144", "524,288", "1,048,576", "2,097,152", "4,194,304", "8,388,608", "16,777,216", "33,554,432", 
+			"131,072", "262,144", "524,288", "1,048,576", "2,097,152", "4,194,304", "8,388,608", "16,777,216", "33,554,432",
 			"67,108,864", "134,217,728", "268,435,456", "536,870,912", "1,073,741,824", "2,147,483,648"
 		};
 
@@ -865,7 +870,7 @@ namespace ImGui
 
 	static constexpr int32 colorEditFlags = ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel |
 		ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoDragDrop | ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_Float;
-	
+
 	bool PropertyColor(const char* label, vec3& f)
 	{
 		pre(label);
@@ -955,10 +960,10 @@ namespace ImGui
 		ImGui::InputText("", value.data(), value.length(), ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::BeginDragDropTarget())
 		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(dragDropID)) 
-			{ 
-				value = (const char*)payload->Data; 
-				result = true; 
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(dragDropID))
+			{
+				value = (const char*)payload->Data;
+				result = true;
 			}
 
 			ImGui::EndDragDropTarget();
@@ -986,7 +991,7 @@ namespace ImGui
 	}
 }
 
-namespace tween 
+namespace tween
 {
 	enum TYPE
 	{
@@ -1028,38 +1033,38 @@ namespace tween
 	{
 		switch (easetype)
 		{
-			default:
-			case LINEAR: return t;
-			case QUADIN: return easeInQuadratic(t);
-			case QUADOUT: return easeOutQuadratic(t);
-			case QUADINOUT: return easeInOutQuadratic(t);
-			case CUBICIN: return easeInCubic(t);
-			case CUBICOUT: return easeOutCubic(t);
-			case CUBICINOUT: return easeInOutCubic(t);
-			case QUARTIN: return easeInQuartic(t);
-			case QUARTOUT: return easeOutQuartic(t);
-			case QUARTINOUT: return easeInOutQuartic(t);
-			case QUINTIN: return easeInQuintic(t);
-			case QUINTOUT: return easeOutQuintic(t);
-			case QUINTINOUT: return easeInOutQuintic(t);
-			case SINEIN: return easeInSine(t);
-			case SINEOUT: return easeOutSine(t);
-			case SINEINOUT: return easeInOutSine(t);
-			case CIRCIN: return easeInCircular(t);
-			case CIRCOUT: return easeOutCircular(t);
-			case CIRCINOUT: return easeInOutCircular(t);
-			case EXPOIN: return easeInExponential(t);
-			case EXPOOUT: return easeOutExponential(t);
-			case EXPOINOUT: return easeInOutExponential(t);
-			case ELASTICIN: return inElastic(t);
-			case ELASTICOUT: return outElastic(t);
-			case ELASTICINOUT: return inOutElastic(t);
-			case BACKIN: return inBack(t);
-			case BACKOUT: return outBack(t);
-			case BACKINOUT: return inOutBack(t);
-			case BOUNCEIN: return inBounce(t);
-			case BOUNCEOUT: return outBounce(t);
-			case BOUNCEINOUT: return inOutBounce(t);
+		default:
+		case LINEAR: return t;
+		case QUADIN: return easeInQuadratic(t);
+		case QUADOUT: return easeOutQuadratic(t);
+		case QUADINOUT: return easeInOutQuadratic(t);
+		case CUBICIN: return easeInCubic(t);
+		case CUBICOUT: return easeOutCubic(t);
+		case CUBICINOUT: return easeInOutCubic(t);
+		case QUARTIN: return easeInQuartic(t);
+		case QUARTOUT: return easeOutQuartic(t);
+		case QUARTINOUT: return easeInOutQuartic(t);
+		case QUINTIN: return easeInQuintic(t);
+		case QUINTOUT: return easeOutQuintic(t);
+		case QUINTINOUT: return easeInOutQuintic(t);
+		case SINEIN: return easeInSine(t);
+		case SINEOUT: return easeOutSine(t);
+		case SINEINOUT: return easeInOutSine(t);
+		case CIRCIN: return easeInCircular(t);
+		case CIRCOUT: return easeOutCircular(t);
+		case CIRCINOUT: return easeInOutCircular(t);
+		case EXPOIN: return easeInExponential(t);
+		case EXPOOUT: return easeOutExponential(t);
+		case EXPOINOUT: return easeInOutExponential(t);
+		case ELASTICIN: return inElastic(t);
+		case ELASTICOUT: return outElastic(t);
+		case ELASTICINOUT: return inOutElastic(t);
+		case BACKIN: return inBack(t);
+		case BACKOUT: return outBack(t);
+		case BACKINOUT: return inOutBack(t);
+		case BOUNCEIN: return inBounce(t);
+		case BOUNCEOUT: return outBounce(t);
+		case BOUNCEINOUT: return inOutBounce(t);
 		}
 	}
 }
@@ -1202,12 +1207,12 @@ namespace ImGui
 				}
 
 				// Snap first/last to min/max
-				if (x[0] < x[max - 1]) 
+				if (x[0] < x[max - 1])
 				{
 					x[0] = 0;
 					x[max - 1] = 1;
 				}
-				else 
+				else
 				{
 					x[0] = 1;
 					x[max - 1] = 0;
@@ -1305,7 +1310,7 @@ namespace ImGui
 			}
 		}
 
-		if (ImGui::Button("Flip")) 
+		if (ImGui::Button("Flip"))
 		{
 			for (int i = 0; i < max; ++i)
 			{
@@ -1334,7 +1339,7 @@ namespace ImGui
 		ImGui::SameLine();
 
 		// Preset selector
-		const char* items[] = 
+		const char* items[] =
 		{
 			"Choose preset",
 
@@ -1372,10 +1377,10 @@ namespace ImGui
 		};
 
 		int item = 0;
-		if (ImGui::Combo("##preset", &item, items, arraysize(items))) 
+		if (ImGui::Combo("##preset", &item, items, arraysize(items)))
 		{
 			max = maxpoints;
-			if (item > 0) 
+			if (item > 0)
 			{
 				for (int i = 0; i < max; ++i)
 				{
@@ -1389,7 +1394,7 @@ namespace ImGui
 		char buf[128];
 		const char* str = label;
 
-		if (hovered) 
+		if (hovered)
 		{
 			ImVec2 pos = (io.MousePos - bb.Min) / (bb.Max - bb.Min);
 			pos.y = 1 - pos.y;

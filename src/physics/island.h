@@ -4,10 +4,14 @@
 
 #include "constraints.h"
 
-struct constraint_offsets
+namespace era_engine
 {
-	// Must be in order
-	uint32 constraintOffsets[constraint_type_count];
-};
+	struct constraint_offsets
+	{
+		// Must be in order
+		uint32 constraintOffsets[constraint_type_count];
+	};
 
-void buildIslands(eallocator& arena, constraint_body_pair* bodyPairs, uint32 numBodyPairs, uint32 numRigidBodies, uint16 dummyRigidBodyIndex, const constraint_offsets& offsets);
+	void buildIslands(eallocator& arena, constraint_body_pair* bodyPairs, uint32 numBodyPairs, uint32 numRigidBodies, uint16 dummyRigidBodyIndex, const constraint_offsets& offsets);
+
+}

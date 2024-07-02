@@ -24,35 +24,38 @@
 #include <dx/dx_context.h>
 #include "rendering/render_algorithms.h"
 
-struct main_renderer;
-
-namespace era_engine::dlss
+namespace era_engine
 {
-	bool checkDLSSStatus(IDXGIAdapter* adapter);
+	struct main_renderer;
 
-	struct dlss_feature_adapter
+	namespace dlss
 	{
-		dlss_feature_adapter() = default;
+		bool checkDLSSStatus(IDXGIAdapter* adapter);
 
-		~dlss_feature_adapter();
+		struct dlss_feature_adapter
+		{
+			dlss_feature_adapter() = default;
 
-		void initialize(main_renderer* rbd);
+			~dlss_feature_adapter();
 
-		void updateDLSS(ID3D12GraphicsCommandList* cmdList, float dt);
+			void initialize(main_renderer* rbd);
 
-	private:
-		void initializeDLSS() noexcept;
+			void updateDLSS(ID3D12GraphicsCommandList* cmdList, float dt);
 
-		main_renderer* renderer = nullptr;
+		private:
+			void initializeDLSS() noexcept;
+
+			main_renderer* renderer = nullptr;
 
 #if ENABLE_DLSS
-		NVSDK_NGX_Handle* handle = nullptr;
-		NVSDK_NGX_Parameter* params = nullptr;
+			NVSDK_NGX_Handle* handle = nullptr;
+			NVSDK_NGX_Parameter* params = nullptr;
 #endif
 
-		tonemap_settings tonemapSettings{};
+			tonemap_settings tonemapSettings{};
 
-		unsigned int renderOptimalWidth = 0;
-		unsigned int renderOptimalHeight = 0;
-	};
+			unsigned int renderOptimalWidth = 0;
+			unsigned int renderOptimalHeight = 0;
+		};
+	}
 }

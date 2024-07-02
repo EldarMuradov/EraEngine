@@ -11,570 +11,573 @@
 #include "core/log.h"
 #endif
 
-#include <unordered_set>
-
-static std::vector<bounding_hull_geometry> boundingHullGeometries;
-
-struct constraint_context
+namespace era_engine
 {
-	std::vector<constraint_edge> constraintEdges;
-	uint16 firstFreeConstraintEdge = INVALID_CONSTRAINT_EDGE; // Free-list in constraintEdges array
+	static std::vector<bounding_hull_geometry> boundingHullGeometries;
 
-
-	constraint_edge& getFreeConstraintEdge()
+	struct constraint_context
 	{
-		if (firstFreeConstraintEdge == INVALID_CONSTRAINT_EDGE)
+		std::vector<constraint_edge> constraintEdges;
+		uint16 firstFreeConstraintEdge = INVALID_CONSTRAINT_EDGE; // Free-list in constraintEdges array
+
+
+		constraint_edge& getFreeConstraintEdge()
 		{
-			firstFreeConstraintEdge = (uint16)constraintEdges.size();
-			constraintEdges.push_back(constraint_edge{ entt::null, constraint_type_none, INVALID_CONSTRAINT_EDGE, INVALID_CONSTRAINT_EDGE });
+			if (firstFreeConstraintEdge == INVALID_CONSTRAINT_EDGE)
+			{
+				firstFreeConstraintEdge = (uint16)constraintEdges.size();
+				constraintEdges.push_back(constraint_edge{ entt::null, constraint_type_none, INVALID_CONSTRAINT_EDGE, INVALID_CONSTRAINT_EDGE });
+			}
+
+			constraint_edge& edge = constraintEdges[firstFreeConstraintEdge];
+
+			firstFreeConstraintEdge = edge.nextConstraintEdge;
+
+			// Edge will be initialized by caller
+			return edge;
 		}
 
-		constraint_edge& edge = constraintEdges[firstFreeConstraintEdge];
+		void freeConstraintEdge(constraint_edge& edge)
+		{
+			uint16 index = (uint16)(&edge - constraintEdges.data());
+			edge.nextConstraintEdge = firstFreeConstraintEdge;
+			firstFreeConstraintEdge = index;
+		}
+	};
 
-		firstFreeConstraintEdge = edge.nextConstraintEdge;
-
-		// Edge will be initialized by caller
-		return edge;
-	}
-
-	void freeConstraintEdge(constraint_edge& edge)
+	struct force_field_global_state
 	{
-		uint16 index = (uint16)(&edge - constraintEdges.data());
-		edge.nextConstraintEdge = firstFreeConstraintEdge;
-		firstFreeConstraintEdge = index;
-	}
-};
-
-struct force_field_global_state
-{
-	vec3 force;
-};
+		vec3 force;
+	};
+}
 
 #ifndef PHYSICS_ONLY
-// This is a bit dirty. PHYSICS_ONLY is defined when building the learning DLL, where we don't need bounding hulls
+	// This is a bit dirty. PHYSICS_ONLY is defined when building the learning DLL, where we don't need bounding hulls
 
 #include "geometry/mesh_builder.h"
 #include "asset/model_asset.h"
 
-NODISCARD uint32 allocateBoundingHullGeometry(const std::string& meshFilepath)
+namespace era_engine
 {
-	model_asset asset = load3DModelFromFile(meshFilepath);
-
-	if (asset.meshes.empty())
+	NODISCARD uint32 allocateBoundingHullGeometry(const std::string& meshFilepath)
 	{
-		return INVALID_BOUNDING_HULL_INDEX;
-	}
+		model_asset asset = load3DModelFromFile(meshFilepath);
 
-	mesh_builder builder(mesh_creation_flags_with_positions);
-
-	for (auto& mesh : asset.meshes)
-	{
-		for (auto& sub : mesh.submeshes)
+		if (asset.meshes.empty())
 		{
-			builder.pushMesh(sub, 1.f);
+			return INVALID_BOUNDING_HULL_INDEX;
 		}
-	}
 
-	uint32 index = (uint32)boundingHullGeometries.size();
-	boundingHullGeometries.push_back(bounding_hull_geometry::fromMesh(
-		builder.getPositions(),
-		builder.getNumVertices(),
-		(indexed_triangle16*)builder.getTriangles(),
-		builder.getNumTriangles()));
-	return index;
-}
+		mesh_builder builder(mesh_creation_flags_with_positions);
+
+		for (auto& mesh : asset.meshes)
+		{
+			for (auto& sub : mesh.submeshes)
+			{
+				builder.pushMesh(sub, 1.f);
+			}
+		}
+
+		uint32 index = (uint32)boundingHullGeometries.size();
+		boundingHullGeometries.push_back(bounding_hull_geometry::fromMesh(
+			builder.getPositions(),
+			builder.getNumVertices(),
+			(indexed_triangle16*)builder.getTriangles(),
+			builder.getNumTriangles()));
+		return index;
+	}
 #endif
 
-static void addConstraintEdge(eentity& e, constraint_entity_reference_component& constraintEntityReference, entity_handle constraintEntity, constraint_type type)
-{
-	if (!e.hasComponent<physics_reference_component>())
+	static void addConstraintEdge(eentity& e, constraint_entity_reference_component& constraintEntityReference, entity_handle constraintEntity, constraint_type type)
 	{
-		e.addComponent<physics_reference_component>();
-	}
-
-	physics_reference_component& reference = e.getComponent<physics_reference_component>();
-
-	constraint_context& context = createOrGetContextVariable<constraint_context>(*e.registry);
-
-	constraint_edge& edge = context.getFreeConstraintEdge();
-	uint16 edgeIndex = (uint16)(&edge - context.constraintEdges.data());
-
-	edge.constraintEntity = constraintEntity;
-	edge.type = type;
-	edge.prevConstraintEdge = INVALID_CONSTRAINT_EDGE;
-	edge.nextConstraintEdge = reference.firstConstraintEdge;
-
-	if (reference.firstConstraintEdge != INVALID_CONSTRAINT_EDGE)
-	{
-		context.constraintEdges[reference.firstConstraintEdge].prevConstraintEdge = edgeIndex;
-	}
-
-	reference.firstConstraintEdge = edgeIndex;
-
-	if (constraintEntityReference.edgeA == INVALID_CONSTRAINT_EDGE)
-	{
-		constraintEntityReference.edgeA = edgeIndex;
-		constraintEntityReference.entityA = e.handle;
-	}
-	else
-	{
-		ASSERT(constraintEntityReference.edgeB == INVALID_CONSTRAINT_EDGE);
-		constraintEntityReference.edgeB = edgeIndex;
-		constraintEntityReference.entityB = e.handle;
-	}
-
-	++reference.numConstraints;
-}
-
-distance_constraint_handle addDistanceConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB, float distance)
-{
-	ASSERT(a.registry == b.registry);
-
-	entt::registry& registry = *a.registry;
-	entity_handle constraintEntity = registry.create();
-	distance_constraint& constraint = registry.emplace<distance_constraint>(constraintEntity);
-	constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
-
-	constraint.localAnchorA = localAnchorA;
-	constraint.localAnchorB = localAnchorB;
-	constraint.globalLength = distance;
-
-	addConstraintEdge(a, ref, constraintEntity, constraint_type_distance);
-	addConstraintEdge(b, ref, constraintEntity, constraint_type_distance);
-
-	return { constraintEntity };
-}
-
-distance_constraint_handle addDistanceConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchorA, vec3 globalAnchorB)
-{
-	ASSERT(a.registry == b.registry);
-
-	vec3 localAnchorA = inverseTransformPosition(a.getComponent<transform_component>(), globalAnchorA);
-	vec3 localAnchorB = inverseTransformPosition(b.getComponent<transform_component>(), globalAnchorB);
-	float distance = length(globalAnchorA - globalAnchorB);
-
-	return addDistanceConstraintFromLocalPoints(a, b, localAnchorA, localAnchorB, distance);
-}
-
-ball_constraint_handle addBallConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB)
-{
-	ASSERT(a.registry == b.registry);
-
-	entt::registry& registry = *a.registry;
-	entity_handle constraintEntity = registry.create();
-	ball_constraint& constraint = registry.emplace<ball_constraint>(constraintEntity);
-	constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
-
-	constraint.localAnchorA = localAnchorA;
-	constraint.localAnchorB = localAnchorB;
-
-	addConstraintEdge(a, ref, constraintEntity, constraint_type_ball);
-	addConstraintEdge(b, ref, constraintEntity, constraint_type_ball);
-
-	return { constraintEntity };
-}
-
-ball_constraint_handle addBallConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor)
-{
-	ASSERT(a.registry == b.registry);
-
-	vec3 localAnchorA = inverseTransformPosition(a.getComponent<transform_component>(), globalAnchor);
-	vec3 localAnchorB = inverseTransformPosition(b.getComponent<transform_component>(), globalAnchor);
-
-	return addBallConstraintFromLocalPoints(a, b, localAnchorA, localAnchorB);
-}
-
-fixed_constraint_handle addFixedConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB)
-{
-	ASSERT(a.registry == b.registry);
-
-	entt::registry& registry = *a.registry;
-	entity_handle constraintEntity = registry.create();
-	fixed_constraint& constraint = registry.emplace<fixed_constraint>(constraintEntity);
-	constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
-
-	constraint.localAnchorA = localAnchorA;
-	constraint.localAnchorB = localAnchorB;
-
-	addConstraintEdge(a, ref, constraintEntity, constraint_type_fixed);
-	addConstraintEdge(b, ref, constraintEntity, constraint_type_fixed);
-
-	return { constraintEntity };
-}
-
-fixed_constraint_handle addFixedConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor)
-{
-	ASSERT(a.registry == b.registry);
-
-	entt::registry& registry = *a.registry;
-	entity_handle constraintEntity = registry.create();
-	fixed_constraint& constraint = registry.emplace<fixed_constraint>(constraintEntity);
-	constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
-
-	const transform_component& transformA = a.getComponent<transform_component>();
-	const transform_component& transformB = b.getComponent<transform_component>();
-
-	constraint.localAnchorA = inverseTransformPosition(transformA, globalAnchor);
-	constraint.localAnchorB = inverseTransformPosition(transformB, globalAnchor);
-
-	constraint.initialInvRotationDifference = conjugate(transformB.rotation) * transformA.rotation;
-
-	addConstraintEdge(a, ref, constraintEntity, constraint_type_fixed);
-	addConstraintEdge(b, ref, constraintEntity, constraint_type_fixed);
-
-	return { constraintEntity };
-}
-
-hinge_constraint_handle addHingeConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalHingeAxis,
-	float minLimit, float maxLimit)
-{
-	ASSERT(a.registry == b.registry);
-
-	entt::registry& registry = *a.registry;
-	entity_handle constraintEntity = registry.create();
-	hinge_constraint& constraint = registry.emplace<hinge_constraint>(constraintEntity);
-	constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
-
-	const transform_component& transformA = a.getComponent<transform_component>();
-	const transform_component& transformB = b.getComponent<transform_component>();
-
-	constraint.localAnchorA = inverseTransformPosition(transformA, globalAnchor);
-	constraint.localAnchorB = inverseTransformPosition(transformB, globalAnchor);
-	constraint.localHingeAxisA = inverseTransformDirection(transformA, globalHingeAxis);
-	constraint.localHingeAxisB = inverseTransformDirection(transformB, globalHingeAxis);
-
-	getTangents(constraint.localHingeAxisA, constraint.localHingeTangentA, constraint.localHingeBitangentA);
-	constraint.localHingeTangentB = conjugate(transformB.rotation) * (transformA.rotation * constraint.localHingeTangentA);
-
-	// Limits
-	constraint.minRotationLimit = minLimit;
-	constraint.maxRotationLimit = maxLimit;
-
-	// Motor
-	constraint.motorType = constraint_velocity_motor;
-	constraint.motorVelocity = 0.f;
-	constraint.maxMotorTorque = -1.f; // Disabled by default
-
-	addConstraintEdge(a, ref, constraintEntity, constraint_type_hinge);
-	addConstraintEdge(b, ref, constraintEntity, constraint_type_hinge);
-
-	return { constraintEntity };
-}
-
-cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis,
-	float swingLimit, float twistLimit)
-{
-	ASSERT(a.registry == b.registry);
-
-	entt::registry& registry = *a.registry;
-	entity_handle constraintEntity = registry.create();
-	cone_twist_constraint& constraint = registry.emplace<cone_twist_constraint>(constraintEntity);
-	constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
-
-	const transform_component& transformA = a.getComponent<transform_component>();
-	const transform_component& transformB = b.getComponent<transform_component>();
-
-	constraint.localAnchorA = inverseTransformPosition(transformA, globalAnchor);
-	constraint.localAnchorB = inverseTransformPosition(transformB, globalAnchor);
-
-	// Limits
-	constraint.swingLimit = swingLimit;
-	constraint.twistLimit = twistLimit;
-	constraint.localLimitAxisA = inverseTransformDirection(transformA, globalAxis);
-	constraint.localLimitAxisB = inverseTransformDirection(transformB, globalAxis);
-
-	getTangents(constraint.localLimitAxisA, constraint.localLimitTangentA, constraint.localLimitBitangentA);
-	constraint.localLimitTangentB = conjugate(transformB.rotation) * (transformA.rotation * constraint.localLimitTangentA);
-
-	// Motor
-	constraint.swingMotorType = constraint_velocity_motor;
-	constraint.swingMotorVelocity = 0.f;
-	constraint.maxSwingMotorTorque = -1.f; // Disabled by default
-	constraint.swingMotorAxis = 0.f;
-
-	constraint.twistMotorType = constraint_velocity_motor;
-	constraint.twistMotorVelocity = 0.f;
-	constraint.maxTwistMotorTorque = -1.f; // Disabled by default
-
-	addConstraintEdge(a, ref, constraintEntity, constraint_type_cone_twist);
-	addConstraintEdge(b, ref, constraintEntity, constraint_type_cone_twist);
-
-	return { constraintEntity };
-}
-
-slider_constraint_handle addSliderConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, float minLimit, float maxLimit)
-{
-	ASSERT(a.registry == b.registry);
-
-	entt::registry& registry = *a.registry;
-	entity_handle constraintEntity = registry.create();
-	slider_constraint& constraint = registry.emplace<slider_constraint>(constraintEntity);
-	constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
-
-	const transform_component& transformA = a.getComponent<transform_component>();
-	const transform_component& transformB = b.getComponent<transform_component>();
-
-	constraint.localAnchorA = inverseTransformPosition(transformA, globalAnchor);
-	constraint.localAnchorB = inverseTransformPosition(transformB, globalAnchor);
-
-	constraint.localAxisA = inverseTransformDirection(transformA, globalAxis);
-	constraint.initialInvRotationDifference = conjugate(transformB.rotation) * transformA.rotation;
-
-	constraint.negDistanceLimit = minLimit;
-	constraint.posDistanceLimit = maxLimit;
-
-	constraint.motorType = constraint_velocity_motor;
-	constraint.motorVelocity = 0.f;
-	constraint.maxMotorForce = -1.f; // Disabled by default
-
-	addConstraintEdge(a, ref, constraintEntity, constraint_type_slider);
-	addConstraintEdge(b, ref, constraintEntity, constraint_type_slider);
-
-	return { constraintEntity };
-}
-
-distance_constraint_handle addConstraint(eentity& a, eentity& b, const distance_constraint& c)
-{
-	entt::registry& registry = *a.registry;
-	entity_handle constraintEntity = registry.create();
-	registry.emplace<distance_constraint>(constraintEntity, c);
-	constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
-
-	addConstraintEdge(a, ref, constraintEntity, constraint_type_distance);
-	addConstraintEdge(b, ref, constraintEntity, constraint_type_distance);
-
-	return { constraintEntity };
-}
-
-ball_constraint_handle addConstraint(eentity& a, eentity& b, const ball_constraint& c)
-{
-	entt::registry& registry = *a.registry;
-	entity_handle constraintEntity = registry.create();
-	registry.emplace<ball_constraint>(constraintEntity, c);
-	constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
-
-	addConstraintEdge(a, ref, constraintEntity, constraint_type_ball);
-	addConstraintEdge(b, ref, constraintEntity, constraint_type_ball);
-
-	return { constraintEntity };
-}
-
-fixed_constraint_handle addConstraint(eentity& a, eentity& b, const fixed_constraint& c)
-{
-	entt::registry& registry = *a.registry;
-	entity_handle constraintEntity = registry.create();
-	registry.emplace<fixed_constraint>(constraintEntity, c);
-	constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
-
-	addConstraintEdge(a, ref, constraintEntity, constraint_type_fixed);
-	addConstraintEdge(b, ref, constraintEntity, constraint_type_fixed);
-
-	return { constraintEntity };
-}
-
-hinge_constraint_handle addConstraint(eentity& a, eentity& b, const hinge_constraint& c)
-{
-	entt::registry& registry = *a.registry;
-	entity_handle constraintEntity = registry.create();
-	registry.emplace<hinge_constraint>(constraintEntity, c);
-	constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
-
-	addConstraintEdge(a, ref, constraintEntity, constraint_type_hinge);
-	addConstraintEdge(b, ref, constraintEntity, constraint_type_hinge);
-
-	return { constraintEntity };
-}
-
-cone_twist_constraint_handle addConstraint(eentity& a, eentity& b, const cone_twist_constraint& c)
-{
-	entt::registry& registry = *a.registry;
-	entity_handle constraintEntity = registry.create();
-	registry.emplace<cone_twist_constraint>(constraintEntity, c);
-	constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
-
-	addConstraintEdge(a, ref, constraintEntity, constraint_type_cone_twist);
-	addConstraintEdge(b, ref, constraintEntity, constraint_type_cone_twist);
-
-	return { constraintEntity };
-}
-
-slider_constraint_handle addConstraint(eentity& a, eentity& b, const slider_constraint& c)
-{
-	entt::registry& registry = *a.registry;
-	entity_handle constraintEntity = registry.create();
-	registry.emplace<slider_constraint>(constraintEntity, c);
-	constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
-
-	addConstraintEdge(a, ref, constraintEntity, constraint_type_slider);
-	addConstraintEdge(b, ref, constraintEntity, constraint_type_slider);
-
-	return { constraintEntity };
-}
-
-distance_constraint& getConstraint(escene& scene, distance_constraint_handle handle)
-{
-	return eentity{ handle.entity, scene }.getComponent<distance_constraint>();
-}
-
-ball_constraint& getConstraint(escene& scene, ball_constraint_handle handle)
-{
-	return eentity{ handle.entity, scene }.getComponent<ball_constraint>();
-}
-
-fixed_constraint& getConstraint(escene& scene, fixed_constraint_handle handle)
-{
-	return eentity{ handle.entity, scene }.getComponent<fixed_constraint>();
-}
-
-hinge_constraint& getConstraint(escene& scene, hinge_constraint_handle handle)
-{
-	return eentity{ handle.entity, scene }.getComponent<hinge_constraint>();
-}
-
-cone_twist_constraint& getConstraint(escene& scene, cone_twist_constraint_handle handle)
-{
-	return eentity{ handle.entity, scene }.getComponent<cone_twist_constraint>();
-}
-
-slider_constraint& getConstraint(escene& scene, slider_constraint_handle handle)
-{
-	return eentity{ handle.entity, scene }.getComponent<slider_constraint>();
-}
-
-void deleteAllConstraints(escene& scene)
-{
-	scene.deleteAllComponents<distance_constraint>();
-	scene.deleteAllComponents<ball_constraint>();
-	scene.deleteAllComponents<fixed_constraint>();
-	scene.deleteAllComponents<hinge_constraint>();
-	scene.deleteAllComponents<cone_twist_constraint>();
-	scene.deleteAllComponents<slider_constraint>();
-}
-
-static void removeConstraintEdge(eentity entity, constraint_edge& edge, constraint_context& context)
-{
-	physics_reference_component& ref = entity.getComponent<physics_reference_component>();
-	if (edge.prevConstraintEdge != INVALID_CONSTRAINT_EDGE)
-	{
-		context.constraintEdges[edge.prevConstraintEdge].nextConstraintEdge = edge.nextConstraintEdge;
-	}
-	else
-	{
-		ref.firstConstraintEdge = edge.nextConstraintEdge;
-	}
-	--ref.numConstraints;
-
-	if (edge.nextConstraintEdge != INVALID_CONSTRAINT_EDGE)
-	{
-		context.constraintEdges[edge.nextConstraintEdge].prevConstraintEdge = edge.prevConstraintEdge;
-	}
-
-	context.freeConstraintEdge(edge);
-}
-
-static void deleteConstraint(entt::registry* registry, entity_handle constraintEntityHandle)
-{
-	eentity constraintEntity = { constraintEntityHandle, registry };
-	constraint_entity_reference_component& constraint = constraintEntity.getComponent<constraint_entity_reference_component>();
-
-	eentity parentEntityA = { constraint.entityA, registry };
-	eentity parentEntityB = { constraint.entityB, registry };
-
-	constraint_context& context = getContextVariable<constraint_context>(*registry);
-
-	constraint_edge& edgeA = context.constraintEdges[constraint.edgeA];
-	constraint_edge& edgeB = context.constraintEdges[constraint.edgeB];
-
-	removeConstraintEdge(parentEntityA, edgeA, context);
-	removeConstraintEdge(parentEntityB, edgeB, context);
-
-	registry->destroy(constraintEntity.handle);
-}
-
-void deleteConstraint(escene& scene, distance_constraint_handle handle)
-{
-	deleteConstraint(&scene.registry, handle.entity);
-}
-
-void deleteConstraint(escene& scene, ball_constraint_handle handle)
-{
-	deleteConstraint(&scene.registry, handle.entity);
-}
-
-void deleteConstraint(escene& scene, fixed_constraint_handle handle)
-{
-	deleteConstraint(&scene.registry, handle.entity);
-}
-
-void deleteConstraint(escene& scene, hinge_constraint_handle handle)
-{
-	deleteConstraint(&scene.registry, handle.entity);
-}
-
-void deleteConstraint(escene& scene, cone_twist_constraint_handle handle)
-{
-	deleteConstraint(&scene.registry, handle.entity);
-}
-
-void deleteConstraint(escene& scene, slider_constraint_handle handle)
-{
-	deleteConstraint(&scene.registry, handle.entity);
-}
-
-void deleteAllConstraintsFromEntity(eentity& entity)
-{
-	entt::registry* registry = entity.registry;
-	if (constraint_context* context = tryGetContextVariable<constraint_context>(*registry))
-	{
-		if (physics_reference_component* ref = entity.getComponentIfExists<physics_reference_component>())
+		if (!e.hasComponent<physics_reference_component>())
 		{
-			for (auto edgeIndex = ref->firstConstraintEdge; edgeIndex != INVALID_CONSTRAINT_EDGE; )
-			{
-				constraint_edge& edge = context->constraintEdges[edgeIndex];
-				edgeIndex = edge.nextConstraintEdge;
+			e.addComponent<physics_reference_component>();
+		}
 
-				deleteConstraint(registry, edge.constraintEntity);
+		physics_reference_component& reference = e.getComponent<physics_reference_component>();
+
+		constraint_context& context = createOrGetContextVariable<constraint_context>(*e.registry);
+
+		constraint_edge& edge = context.getFreeConstraintEdge();
+		uint16 edgeIndex = (uint16)(&edge - context.constraintEdges.data());
+
+		edge.constraintEntity = constraintEntity;
+		edge.type = type;
+		edge.prevConstraintEdge = INVALID_CONSTRAINT_EDGE;
+		edge.nextConstraintEdge = reference.firstConstraintEdge;
+
+		if (reference.firstConstraintEdge != INVALID_CONSTRAINT_EDGE)
+		{
+			context.constraintEdges[reference.firstConstraintEdge].prevConstraintEdge = edgeIndex;
+		}
+
+		reference.firstConstraintEdge = edgeIndex;
+
+		if (constraintEntityReference.edgeA == INVALID_CONSTRAINT_EDGE)
+		{
+			constraintEntityReference.edgeA = edgeIndex;
+			constraintEntityReference.entityA = e.handle;
+		}
+		else
+		{
+			ASSERT(constraintEntityReference.edgeB == INVALID_CONSTRAINT_EDGE);
+			constraintEntityReference.edgeB = edgeIndex;
+			constraintEntityReference.entityB = e.handle;
+		}
+
+		++reference.numConstraints;
+	}
+
+	distance_constraint_handle addDistanceConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB, float distance)
+	{
+		ASSERT(a.registry == b.registry);
+
+		entt::registry& registry = *a.registry;
+		entity_handle constraintEntity = registry.create();
+		distance_constraint& constraint = registry.emplace<distance_constraint>(constraintEntity);
+		constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
+
+		constraint.localAnchorA = localAnchorA;
+		constraint.localAnchorB = localAnchorB;
+		constraint.globalLength = distance;
+
+		addConstraintEdge(a, ref, constraintEntity, constraint_type_distance);
+		addConstraintEdge(b, ref, constraintEntity, constraint_type_distance);
+
+		return { constraintEntity };
+	}
+
+	distance_constraint_handle addDistanceConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchorA, vec3 globalAnchorB)
+	{
+		ASSERT(a.registry == b.registry);
+
+		vec3 localAnchorA = inverseTransformPosition(a.getComponent<transform_component>(), globalAnchorA);
+		vec3 localAnchorB = inverseTransformPosition(b.getComponent<transform_component>(), globalAnchorB);
+		float distance = length(globalAnchorA - globalAnchorB);
+
+		return addDistanceConstraintFromLocalPoints(a, b, localAnchorA, localAnchorB, distance);
+	}
+
+	ball_constraint_handle addBallConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB)
+	{
+		ASSERT(a.registry == b.registry);
+
+		entt::registry& registry = *a.registry;
+		entity_handle constraintEntity = registry.create();
+		ball_constraint& constraint = registry.emplace<ball_constraint>(constraintEntity);
+		constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
+
+		constraint.localAnchorA = localAnchorA;
+		constraint.localAnchorB = localAnchorB;
+
+		addConstraintEdge(a, ref, constraintEntity, constraint_type_ball);
+		addConstraintEdge(b, ref, constraintEntity, constraint_type_ball);
+
+		return { constraintEntity };
+	}
+
+	ball_constraint_handle addBallConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor)
+	{
+		ASSERT(a.registry == b.registry);
+
+		vec3 localAnchorA = inverseTransformPosition(a.getComponent<transform_component>(), globalAnchor);
+		vec3 localAnchorB = inverseTransformPosition(b.getComponent<transform_component>(), globalAnchor);
+
+		return addBallConstraintFromLocalPoints(a, b, localAnchorA, localAnchorB);
+	}
+
+	fixed_constraint_handle addFixedConstraintFromLocalPoints(eentity& a, eentity& b, vec3 localAnchorA, vec3 localAnchorB)
+	{
+		ASSERT(a.registry == b.registry);
+
+		entt::registry& registry = *a.registry;
+		entity_handle constraintEntity = registry.create();
+		fixed_constraint& constraint = registry.emplace<fixed_constraint>(constraintEntity);
+		constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
+
+		constraint.localAnchorA = localAnchorA;
+		constraint.localAnchorB = localAnchorB;
+
+		addConstraintEdge(a, ref, constraintEntity, constraint_type_fixed);
+		addConstraintEdge(b, ref, constraintEntity, constraint_type_fixed);
+
+		return { constraintEntity };
+	}
+
+	fixed_constraint_handle addFixedConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor)
+	{
+		ASSERT(a.registry == b.registry);
+
+		entt::registry& registry = *a.registry;
+		entity_handle constraintEntity = registry.create();
+		fixed_constraint& constraint = registry.emplace<fixed_constraint>(constraintEntity);
+		constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
+
+		const transform_component& transformA = a.getComponent<transform_component>();
+		const transform_component& transformB = b.getComponent<transform_component>();
+
+		constraint.localAnchorA = inverseTransformPosition(transformA, globalAnchor);
+		constraint.localAnchorB = inverseTransformPosition(transformB, globalAnchor);
+
+		constraint.initialInvRotationDifference = conjugate(transformB.rotation) * transformA.rotation;
+
+		addConstraintEdge(a, ref, constraintEntity, constraint_type_fixed);
+		addConstraintEdge(b, ref, constraintEntity, constraint_type_fixed);
+
+		return { constraintEntity };
+	}
+
+	hinge_constraint_handle addHingeConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalHingeAxis,
+		float minLimit, float maxLimit)
+	{
+		ASSERT(a.registry == b.registry);
+
+		entt::registry& registry = *a.registry;
+		entity_handle constraintEntity = registry.create();
+		hinge_constraint& constraint = registry.emplace<hinge_constraint>(constraintEntity);
+		constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
+
+		const transform_component& transformA = a.getComponent<transform_component>();
+		const transform_component& transformB = b.getComponent<transform_component>();
+
+		constraint.localAnchorA = inverseTransformPosition(transformA, globalAnchor);
+		constraint.localAnchorB = inverseTransformPosition(transformB, globalAnchor);
+		constraint.localHingeAxisA = inverseTransformDirection(transformA, globalHingeAxis);
+		constraint.localHingeAxisB = inverseTransformDirection(transformB, globalHingeAxis);
+
+		getTangents(constraint.localHingeAxisA, constraint.localHingeTangentA, constraint.localHingeBitangentA);
+		constraint.localHingeTangentB = conjugate(transformB.rotation) * (transformA.rotation * constraint.localHingeTangentA);
+
+		// Limits
+		constraint.minRotationLimit = minLimit;
+		constraint.maxRotationLimit = maxLimit;
+
+		// Motor
+		constraint.motorType = constraint_velocity_motor;
+		constraint.motorVelocity = 0.f;
+		constraint.maxMotorTorque = -1.f; // Disabled by default
+
+		addConstraintEdge(a, ref, constraintEntity, constraint_type_hinge);
+		addConstraintEdge(b, ref, constraintEntity, constraint_type_hinge);
+
+		return { constraintEntity };
+	}
+
+	cone_twist_constraint_handle addConeTwistConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis,
+		float swingLimit, float twistLimit)
+	{
+		ASSERT(a.registry == b.registry);
+
+		entt::registry& registry = *a.registry;
+		entity_handle constraintEntity = registry.create();
+		cone_twist_constraint& constraint = registry.emplace<cone_twist_constraint>(constraintEntity);
+		constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
+
+		const transform_component& transformA = a.getComponent<transform_component>();
+		const transform_component& transformB = b.getComponent<transform_component>();
+
+		constraint.localAnchorA = inverseTransformPosition(transformA, globalAnchor);
+		constraint.localAnchorB = inverseTransformPosition(transformB, globalAnchor);
+
+		// Limits
+		constraint.swingLimit = swingLimit;
+		constraint.twistLimit = twistLimit;
+		constraint.localLimitAxisA = inverseTransformDirection(transformA, globalAxis);
+		constraint.localLimitAxisB = inverseTransformDirection(transformB, globalAxis);
+
+		getTangents(constraint.localLimitAxisA, constraint.localLimitTangentA, constraint.localLimitBitangentA);
+		constraint.localLimitTangentB = conjugate(transformB.rotation) * (transformA.rotation * constraint.localLimitTangentA);
+
+		// Motor
+		constraint.swingMotorType = constraint_velocity_motor;
+		constraint.swingMotorVelocity = 0.f;
+		constraint.maxSwingMotorTorque = -1.f; // Disabled by default
+		constraint.swingMotorAxis = 0.f;
+
+		constraint.twistMotorType = constraint_velocity_motor;
+		constraint.twistMotorVelocity = 0.f;
+		constraint.maxTwistMotorTorque = -1.f; // Disabled by default
+
+		addConstraintEdge(a, ref, constraintEntity, constraint_type_cone_twist);
+		addConstraintEdge(b, ref, constraintEntity, constraint_type_cone_twist);
+
+		return { constraintEntity };
+	}
+
+	slider_constraint_handle addSliderConstraintFromGlobalPoints(eentity& a, eentity& b, vec3 globalAnchor, vec3 globalAxis, float minLimit, float maxLimit)
+	{
+		ASSERT(a.registry == b.registry);
+
+		entt::registry& registry = *a.registry;
+		entity_handle constraintEntity = registry.create();
+		slider_constraint& constraint = registry.emplace<slider_constraint>(constraintEntity);
+		constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
+
+		const transform_component& transformA = a.getComponent<transform_component>();
+		const transform_component& transformB = b.getComponent<transform_component>();
+
+		constraint.localAnchorA = inverseTransformPosition(transformA, globalAnchor);
+		constraint.localAnchorB = inverseTransformPosition(transformB, globalAnchor);
+
+		constraint.localAxisA = inverseTransformDirection(transformA, globalAxis);
+		constraint.initialInvRotationDifference = conjugate(transformB.rotation) * transformA.rotation;
+
+		constraint.negDistanceLimit = minLimit;
+		constraint.posDistanceLimit = maxLimit;
+
+		constraint.motorType = constraint_velocity_motor;
+		constraint.motorVelocity = 0.f;
+		constraint.maxMotorForce = -1.f; // Disabled by default
+
+		addConstraintEdge(a, ref, constraintEntity, constraint_type_slider);
+		addConstraintEdge(b, ref, constraintEntity, constraint_type_slider);
+
+		return { constraintEntity };
+	}
+
+	distance_constraint_handle addConstraint(eentity& a, eentity& b, const distance_constraint& c)
+	{
+		entt::registry& registry = *a.registry;
+		entity_handle constraintEntity = registry.create();
+		registry.emplace<distance_constraint>(constraintEntity, c);
+		constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
+
+		addConstraintEdge(a, ref, constraintEntity, constraint_type_distance);
+		addConstraintEdge(b, ref, constraintEntity, constraint_type_distance);
+
+		return { constraintEntity };
+	}
+
+	ball_constraint_handle addConstraint(eentity& a, eentity& b, const ball_constraint& c)
+	{
+		entt::registry& registry = *a.registry;
+		entity_handle constraintEntity = registry.create();
+		registry.emplace<ball_constraint>(constraintEntity, c);
+		constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
+
+		addConstraintEdge(a, ref, constraintEntity, constraint_type_ball);
+		addConstraintEdge(b, ref, constraintEntity, constraint_type_ball);
+
+		return { constraintEntity };
+	}
+
+	fixed_constraint_handle addConstraint(eentity& a, eentity& b, const fixed_constraint& c)
+	{
+		entt::registry& registry = *a.registry;
+		entity_handle constraintEntity = registry.create();
+		registry.emplace<fixed_constraint>(constraintEntity, c);
+		constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
+
+		addConstraintEdge(a, ref, constraintEntity, constraint_type_fixed);
+		addConstraintEdge(b, ref, constraintEntity, constraint_type_fixed);
+
+		return { constraintEntity };
+	}
+
+	hinge_constraint_handle addConstraint(eentity& a, eentity& b, const hinge_constraint& c)
+	{
+		entt::registry& registry = *a.registry;
+		entity_handle constraintEntity = registry.create();
+		registry.emplace<hinge_constraint>(constraintEntity, c);
+		constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
+
+		addConstraintEdge(a, ref, constraintEntity, constraint_type_hinge);
+		addConstraintEdge(b, ref, constraintEntity, constraint_type_hinge);
+
+		return { constraintEntity };
+	}
+
+	cone_twist_constraint_handle addConstraint(eentity& a, eentity& b, const cone_twist_constraint& c)
+	{
+		entt::registry& registry = *a.registry;
+		entity_handle constraintEntity = registry.create();
+		registry.emplace<cone_twist_constraint>(constraintEntity, c);
+		constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
+
+		addConstraintEdge(a, ref, constraintEntity, constraint_type_cone_twist);
+		addConstraintEdge(b, ref, constraintEntity, constraint_type_cone_twist);
+
+		return { constraintEntity };
+	}
+
+	slider_constraint_handle addConstraint(eentity& a, eentity& b, const slider_constraint& c)
+	{
+		entt::registry& registry = *a.registry;
+		entity_handle constraintEntity = registry.create();
+		registry.emplace<slider_constraint>(constraintEntity, c);
+		constraint_entity_reference_component& ref = registry.emplace<constraint_entity_reference_component>(constraintEntity);
+
+		addConstraintEdge(a, ref, constraintEntity, constraint_type_slider);
+		addConstraintEdge(b, ref, constraintEntity, constraint_type_slider);
+
+		return { constraintEntity };
+	}
+
+	distance_constraint& getConstraint(escene& scene, distance_constraint_handle handle)
+	{
+		return eentity{ handle.entity, scene }.getComponent<distance_constraint>();
+	}
+
+	ball_constraint& getConstraint(escene& scene, ball_constraint_handle handle)
+	{
+		return eentity{ handle.entity, scene }.getComponent<ball_constraint>();
+	}
+
+	fixed_constraint& getConstraint(escene& scene, fixed_constraint_handle handle)
+	{
+		return eentity{ handle.entity, scene }.getComponent<fixed_constraint>();
+	}
+
+	hinge_constraint& getConstraint(escene& scene, hinge_constraint_handle handle)
+	{
+		return eentity{ handle.entity, scene }.getComponent<hinge_constraint>();
+	}
+
+	cone_twist_constraint& getConstraint(escene& scene, cone_twist_constraint_handle handle)
+	{
+		return eentity{ handle.entity, scene }.getComponent<cone_twist_constraint>();
+	}
+
+	slider_constraint& getConstraint(escene& scene, slider_constraint_handle handle)
+	{
+		return eentity{ handle.entity, scene }.getComponent<slider_constraint>();
+	}
+
+	void deleteAllConstraints(escene& scene)
+	{
+		scene.deleteAllComponents<distance_constraint>();
+		scene.deleteAllComponents<ball_constraint>();
+		scene.deleteAllComponents<fixed_constraint>();
+		scene.deleteAllComponents<hinge_constraint>();
+		scene.deleteAllComponents<cone_twist_constraint>();
+		scene.deleteAllComponents<slider_constraint>();
+	}
+
+	static void removeConstraintEdge(eentity entity, constraint_edge& edge, constraint_context& context)
+	{
+		physics_reference_component& ref = entity.getComponent<physics_reference_component>();
+		if (edge.prevConstraintEdge != INVALID_CONSTRAINT_EDGE)
+		{
+			context.constraintEdges[edge.prevConstraintEdge].nextConstraintEdge = edge.nextConstraintEdge;
+		}
+		else
+		{
+			ref.firstConstraintEdge = edge.nextConstraintEdge;
+		}
+		--ref.numConstraints;
+
+		if (edge.nextConstraintEdge != INVALID_CONSTRAINT_EDGE)
+		{
+			context.constraintEdges[edge.nextConstraintEdge].prevConstraintEdge = edge.prevConstraintEdge;
+		}
+
+		context.freeConstraintEdge(edge);
+	}
+
+	static void deleteConstraint(entt::registry* registry, entity_handle constraintEntityHandle)
+	{
+		eentity constraintEntity = { constraintEntityHandle, registry };
+		constraint_entity_reference_component& constraint = constraintEntity.getComponent<constraint_entity_reference_component>();
+
+		eentity parentEntityA = { constraint.entityA, registry };
+		eentity parentEntityB = { constraint.entityB, registry };
+
+		constraint_context& context = getContextVariable<constraint_context>(*registry);
+
+		constraint_edge& edgeA = context.constraintEdges[constraint.edgeA];
+		constraint_edge& edgeB = context.constraintEdges[constraint.edgeB];
+
+		removeConstraintEdge(parentEntityA, edgeA, context);
+		removeConstraintEdge(parentEntityB, edgeB, context);
+
+		registry->destroy(constraintEntity.handle);
+	}
+
+	void deleteConstraint(escene& scene, distance_constraint_handle handle)
+	{
+		deleteConstraint(&scene.registry, handle.entity);
+	}
+
+	void deleteConstraint(escene& scene, ball_constraint_handle handle)
+	{
+		deleteConstraint(&scene.registry, handle.entity);
+	}
+
+	void deleteConstraint(escene& scene, fixed_constraint_handle handle)
+	{
+		deleteConstraint(&scene.registry, handle.entity);
+	}
+
+	void deleteConstraint(escene& scene, hinge_constraint_handle handle)
+	{
+		deleteConstraint(&scene.registry, handle.entity);
+	}
+
+	void deleteConstraint(escene& scene, cone_twist_constraint_handle handle)
+	{
+		deleteConstraint(&scene.registry, handle.entity);
+	}
+
+	void deleteConstraint(escene& scene, slider_constraint_handle handle)
+	{
+		deleteConstraint(&scene.registry, handle.entity);
+	}
+
+	void deleteAllConstraintsFromEntity(eentity& entity)
+	{
+		entt::registry* registry = entity.registry;
+		if (constraint_context* context = tryGetContextVariable<constraint_context>(*registry))
+		{
+			if (physics_reference_component* ref = entity.getComponentIfExists<physics_reference_component>())
+			{
+				for (auto edgeIndex = ref->firstConstraintEdge; edgeIndex != INVALID_CONSTRAINT_EDGE; )
+				{
+					constraint_edge& edge = context->constraintEdges[edgeIndex];
+					edgeIndex = edge.nextConstraintEdge;
+
+					deleteConstraint(registry, edge.constraintEntity);
+				}
 			}
 		}
 	}
-}
 
-constraint_entity_iterator::iterator& constraint_entity_iterator::iterator::operator++()
-{
-	constraint_context& context = getContextVariable<constraint_context>(*registry);
-	constraintEdgeIndex = context.constraintEdges[constraintEdgeIndex].nextConstraintEdge;
-	return *this;
-}
-
-std::pair<eentity, constraint_type> constraint_entity_iterator::iterator::operator*()
-{
-	constraint_context& context = getContextVariable<constraint_context>(*registry);
-	return { { context.constraintEdges[constraintEdgeIndex].constraintEntity, registry }, context.constraintEdges[constraintEdgeIndex].type };
-}
-
-
-void testPhysicsInteraction(escene& scene, ray r, float strength)
-{
-	float minT = FLT_MAX;
-	rigid_body_component* minRB = 0;
-	vec3 force;
-	vec3 torque;
-
-	for (auto [entityHandle, collider] : scene.view<collider_component>().each())
+	constraint_entity_iterator::iterator& constraint_entity_iterator::iterator::operator++()
 	{
-		eentity entity = { collider.parentEntity, scene };
-		if (rigid_body_component* rb = entity.getComponentIfExists<rigid_body_component>())
+		constraint_context& context = getContextVariable<constraint_context>(*registry);
+		constraintEdgeIndex = context.constraintEdges[constraintEdgeIndex].nextConstraintEdge;
+		return *this;
+	}
+
+	std::pair<eentity, constraint_type> constraint_entity_iterator::iterator::operator*()
+	{
+		constraint_context& context = getContextVariable<constraint_context>(*registry);
+		return { { context.constraintEdges[constraintEdgeIndex].constraintEntity, registry }, context.constraintEdges[constraintEdgeIndex].type };
+	}
+
+
+	void testPhysicsInteraction(escene& scene, ray r, float strength)
+	{
+		float minT = FLT_MAX;
+		rigid_body_component* minRB = 0;
+		vec3 force;
+		vec3 torque;
+
+		for (auto [entityHandle, collider] : scene.view<collider_component>().each())
 		{
-			physics_transform1_component* physicsTransformComponent = entity.getComponentIfExists<physics_transform1_component>();
-			transform_component* transformComponent = entity.getComponentIfExists<transform_component>();
-			const trs& transform = physicsTransformComponent ? *physicsTransformComponent : transformComponent ? *transformComponent : trs::identity;
-
-			ray localR = { conjugate(transform.rotation) * (r.origin - transform.position), conjugate(transform.rotation) * r.direction };
-			float t;
-			bool hit = false;
-
-			switch (collider.type)
+			eentity entity = { collider.parentEntity, scene };
+			if (rigid_body_component* rb = entity.getComponentIfExists<rigid_body_component>())
 			{
+				physics_transform1_component* physicsTransformComponent = entity.getComponentIfExists<physics_transform1_component>();
+				transform_component* transformComponent = entity.getComponentIfExists<transform_component>();
+				const trs& transform = physicsTransformComponent ? *physicsTransformComponent : transformComponent ? *transformComponent : trs::identity;
+
+				ray localR = { conjugate(transform.rotation) * (r.origin - transform.position), conjugate(transform.rotation) * r.direction };
+				float t;
+				bool hit = false;
+
+				switch (collider.type)
+				{
 				case collider_type_sphere:
 				{
 					hit = localR.intersectSphere(collider.sphere, t);
@@ -604,75 +607,75 @@ void testPhysicsInteraction(escene& scene, ray r, float strength)
 				{
 					hit = localR.intersectHull(collider.hull, boundingHullGeometries[collider.hull.geometryIndex], t);
 				} break;
-			}
+				}
 
-			if (hit && t < minT)
+				if (hit && t < minT)
+				{
+					minT = t;
+					minRB = rb;
+
+					vec3 localHit = localR.origin + t * localR.direction;
+					vec3 globalHit = transformPosition(transform, localHit);
+
+					vec3 cogPosition = rb->getGlobalCOGPosition(transform);
+
+					force = r.direction * strength;
+					torque = cross(globalHit - cogPosition, force);
+				}
+			}
+		}
+
+		if (minRB)
+		{
+			minRB->torqueAccumulator += torque;
+			minRB->forceAccumulator += force;
+		}
+	}
+
+	static void getWorldSpaceColliders(escene& scene, bounding_box* outWorldspaceAABBs, collider_union* outWorldSpaceColliders, uint16 dummyRigidBodyIndex)
+	{
+		CPU_PROFILE_BLOCK("Get world space colliders");
+
+		uint32 pushIndex = 0;
+
+		for (auto [entityHandle, collider] : scene.view<collider_component>().each())
+		{
+			bounding_box& bb = outWorldspaceAABBs[pushIndex];
+			collider_union& col = outWorldSpaceColliders[pushIndex];
+			++pushIndex;
+
+			eentity entity = { collider.parentEntity, scene };
+
+			physics_transform1_component* physicsTransformComponent = entity.getComponentIfExists<physics_transform1_component>();
+			transform_component* transformComponent = entity.getComponentIfExists<transform_component>();
+			const trs& transform = physicsTransformComponent ? *physicsTransformComponent : transformComponent ? *transformComponent : trs::identity;
+
+			col.type = collider.type;
+			col.material = collider.material;
+
+			if (entity.hasComponent<rigid_body_component>())
 			{
-				minT = t;
-				minRB = rb;
-
-				vec3 localHit = localR.origin + t * localR.direction;
-				vec3 globalHit = transformPosition(transform, localHit);
-
-				vec3 cogPosition = rb->getGlobalCOGPosition(transform);
-
-				force = r.direction * strength;
-				torque = cross(globalHit - cogPosition, force);
+				col.objectIndex = (uint16)entity.getComponentIndex<rigid_body_component>();
+				col.objectType = physics_object_type_rigid_body;
 			}
-		}
-	}
+			else if (entity.hasComponent<force_field_component>())
+			{
+				col.objectIndex = (uint16)entity.getComponentIndex<force_field_component>();
+				col.objectType = physics_object_type_force_field;
+			}
+			else if (entity.hasComponent<trigger_component>())
+			{
+				col.objectIndex = (uint16)entity.getComponentIndex<trigger_component>();
+				col.objectType = physics_object_type_trigger;
+			}
+			else
+			{
+				col.objectIndex = dummyRigidBodyIndex;
+				col.objectType = physics_object_type_static_collider;
+			}
 
-	if (minRB)
-	{
-		minRB->torqueAccumulator += torque;
-		minRB->forceAccumulator += force;
-	}
-}
-
-static void getWorldSpaceColliders(escene& scene, bounding_box* outWorldspaceAABBs, collider_union* outWorldSpaceColliders, uint16 dummyRigidBodyIndex)
-{
-	CPU_PROFILE_BLOCK("Get world space colliders");
-
-	uint32 pushIndex = 0;
-
-	for (auto [entityHandle, collider] : scene.view<collider_component>().each())
-	{
-		bounding_box& bb = outWorldspaceAABBs[pushIndex];
-		collider_union& col = outWorldSpaceColliders[pushIndex];
-		++pushIndex;
-
-		eentity entity = { collider.parentEntity, scene };
-
-		physics_transform1_component* physicsTransformComponent = entity.getComponentIfExists<physics_transform1_component>();
-		transform_component* transformComponent = entity.getComponentIfExists<transform_component>();
-		const trs& transform = physicsTransformComponent ? *physicsTransformComponent : transformComponent ? *transformComponent : trs::identity;
-
-		col.type = collider.type;
-		col.material = collider.material;
-
-		if (entity.hasComponent<rigid_body_component>())
-		{
-			col.objectIndex = (uint16)entity.getComponentIndex<rigid_body_component>();
-			col.objectType = physics_object_type_rigid_body;
-		}
-		else if (entity.hasComponent<force_field_component>())
-		{
-			col.objectIndex = (uint16)entity.getComponentIndex<force_field_component>();
-			col.objectType = physics_object_type_force_field;
-		}
-		else if (entity.hasComponent<trigger_component>())
-		{
-			col.objectIndex = (uint16)entity.getComponentIndex<trigger_component>();
-			col.objectType = physics_object_type_trigger;
-		}
-		else
-		{
-			col.objectIndex = dummyRigidBodyIndex;
-			col.objectType = physics_object_type_static_collider;
-		}
-
-		switch (collider.type)
-		{
+			switch (collider.type)
+			{
 			case collider_type_sphere:
 			{
 				vec3 center = transform.position + transform.rotation * collider.sphere.center;
@@ -752,173 +755,173 @@ static void getWorldSpaceColliders(escene& scene, bounding_box* outWorldspaceAAB
 				col.hull.position = position;
 				col.hull.geometryPtr = &geometry;
 			} break;
+			}
 		}
 	}
-}
 
-// Returns the accumulated force from all global force fields and writes localized forces (from force fields with colliders) in outLocalizedForceFields
-static vec3 getForceFieldStates(escene& scene, force_field_global_state* outLocalForceFields)
-{
-	vec3 globalForceField(0.f);
-
-	for (auto [entityHandle, forceField] : scene.view<force_field_component>().each())
+	// Returns the accumulated force from all global force fields and writes localized forces (from force fields with colliders) in outLocalizedForceFields
+	static vec3 getForceFieldStates(escene& scene, force_field_global_state* outLocalForceFields)
 	{
-		eentity entity = { entityHandle, scene };
+		vec3 globalForceField(0.f);
 
-		vec3 force = forceField.force; 
-		if (transform_component* transform = entity.getComponentIfExists<transform_component>())
+		for (auto [entityHandle, forceField] : scene.view<force_field_component>().each())
 		{
-			force = transform->rotation * force;
+			eentity entity = { entityHandle, scene };
+
+			vec3 force = forceField.force;
+			if (transform_component* transform = entity.getComponentIfExists<transform_component>())
+			{
+				force = transform->rotation * force;
+			}
+
+			if (entity.hasComponent<collider_component>())
+			{
+				// Localized force field
+				uint16 index = (uint16)entity.getComponentIndex<force_field_component>();
+				outLocalForceFields[index].force = force;
+			}
+			else
+			{
+				// Global force field
+				globalForceField += force;
+			}
 		}
 
-		if (entity.hasComponent<collider_component>())
-		{
-			// Localized force field
-			uint16 index = (uint16)entity.getComponentIndex<force_field_component>();
-			outLocalForceFields[index].force = force;
-		}
-		else
-		{
-			// Global force field
-			globalForceField += force;
-		}
+		return globalForceField;
 	}
 
-	return globalForceField;
-}
-
-template <typename constraint_t>
-static void getConstraintBodyPairs(escene& scene, constraint_body_pair* bodyPairs)
-{
-	uint32 i = scene.numberOfComponentsOfType<constraint_t>() - 1;
-	for (auto [entityHandle, _] : scene.view<constraint_t>().each())
+	template <typename constraint_t>
+	static void getConstraintBodyPairs(escene& scene, constraint_body_pair* bodyPairs)
 	{
-		eentity entity = { entityHandle, scene };
-		constraint_entity_reference_component& reference = entity.getComponent<constraint_entity_reference_component>();
+		uint32 i = scene.numberOfComponentsOfType<constraint_t>() - 1;
+		for (auto [entityHandle, _] : scene.view<constraint_t>().each())
+		{
+			eentity entity = { entityHandle, scene };
+			constraint_entity_reference_component& reference = entity.getComponent<constraint_entity_reference_component>();
 
-		constraint_body_pair& pair = bodyPairs[i--];
+			constraint_body_pair& pair = bodyPairs[i--];
 
-		eentity rbAEntity = { reference.entityA, scene };
-		eentity rbBEntity = { reference.entityB, scene };
-		pair.rbA = (uint16)rbAEntity.getComponentIndex<rigid_body_component>();
-		pair.rbB = (uint16)rbBEntity.getComponentIndex<rigid_body_component>();
+			eentity rbAEntity = { reference.entityA, scene };
+			eentity rbBEntity = { reference.entityB, scene };
+			pair.rbA = (uint16)rbAEntity.getComponentIndex<rigid_body_component>();
+			pair.rbB = (uint16)rbBEntity.getComponentIndex<rigid_body_component>();
+		}
 	}
-}
 
 #if 0
 #define VALIDATE1(line, prefix, value) if (!isfinite(value)) { bool nan = isnan(value); std::cout << prefix << "(" << line << "): " << #value << " is " << (nan ? "NaN" : "Inf") << '\n'; }
 #define VALIDATE3(line, prefix, value) VALIDATE1(line, prefix, value.x); VALIDATE1(line, prefix, value.y); VALIDATE1(line, prefix, value.z);
 #define VALIDATE4(line, prefix, value) VALIDATE1(line, prefix, value.x); VALIDATE1(line, prefix, value.y); VALIDATE1(line, prefix, value.z); VALIDATE1(line, prefix, value.w);
 
-void validate(uint32 line, collider_union* colliders, uint32 count)
-{
-	for (uint32 i = 0; i < count; ++i)
+	void validate(uint32 line, collider_union* colliders, uint32 count)
 	{
-		collider_union& c = colliders[i];
-		switch (c.type)
+		for (uint32 i = 0; i < count; ++i)
 		{
+			collider_union& c = colliders[i];
+			switch (c.type)
+			{
 			case collider_type_sphere: VALIDATE3(line, "Collider", c.sphere.center); VALIDATE1(line, "Collider", c.sphere.radius); break;
 			case collider_type_capsule: VALIDATE3(line, "Collider", c.capsule.positionA); VALIDATE3(line, "Collider", c.capsule.positionB); VALIDATE1(line, "Collider", c.capsule.radius); break;
 			case collider_type_aabb: VALIDATE3(line, "Collider", c.aabb.minCorner); VALIDATE3(line, "Collider", c.aabb.maxCorner); break;
 			case collider_type_obb: VALIDATE3(line, "Collider", c.obb.center); VALIDATE3(line, "Collider", c.obb.radius); VALIDATE4(line, "Collider", c.obb.rotation); break;
 			case collider_type_hull: break;
+			}
 		}
 	}
-}
-void validate(uint32 line, bounding_box* colliders, uint32 count)
-{
-	for (uint32 i = 0; i < count; ++i)
+	void validate(uint32 line, bounding_box* colliders, uint32 count)
 	{
-		bounding_box& c = colliders[i];
-		VALIDATE3(line, "World space BB", c.minCorner);
-		VALIDATE3(line, "World space BB", c.maxCorner);
-	}
-}
-void validate(uint32 line, rigid_body_global_state* rbs, uint32 count)
-{
-	for (uint32 i = 0; i < count; ++i)
-	{
-		rigid_body_global_state& r = rbs[i];
-		VALIDATE4(line, "RB update", r.rotation);
-		VALIDATE3(line, "RB update", r.localCOGPosition);
-		VALIDATE3(line, "RB update", r.position);
-		VALIDATE3(line, "RB update", r.invInertia.col0);
-		VALIDATE3(line, "RB update", r.invInertia.col1);
-		VALIDATE3(line, "RB update", r.invInertia.col2);
-		VALIDATE1(line, "RB update", r.invMass);
-		VALIDATE3(line, "RB update", r.linearVelocity);
-		VALIDATE3(line, "RB update", r.angularVelocity);
-	}
-}
-void validate(uint32 line, collision_contact* contacts, uint32 count)
-{
-	for (uint32 i = 0; i < count; ++i)
-	{
-		collision_contact& c = contacts[i];
-		VALIDATE3(line, "Contact", c.point);
-		VALIDATE1(line, "Contact", c.penetrationDepth);
-		VALIDATE3(line, "Contact", c.normal);
-	}
-}
-void validate(uint32 line, collision_constraint* constraints, uint32 count)
-{
-	for (uint32 i = 0; i < count; ++i)
-	{
-		collision_constraint& c = constraints[i];
-		VALIDATE3(line, "Collision", c.relGlobalAnchorA);
-		VALIDATE3(line, "Collision", c.relGlobalAnchorB);
-		VALIDATE3(line, "Collision", c.tangent);
-		VALIDATE3(line, "Collision", c.tangentImpulseToAngularVelocityA);
-		VALIDATE3(line, "Collision", c.tangentImpulseToAngularVelocityB);
-		VALIDATE3(line, "Collision", c.normalImpulseToAngularVelocityA);
-		VALIDATE3(line, "Collision", c.normalImpulseToAngularVelocityB);
-		VALIDATE1(line, "Collision", c.impulseInNormalDir);
-		VALIDATE1(line, "Collision", c.impulseInTangentDir);
-		VALIDATE1(line, "Collision", c.effectiveMassInNormalDir);
-		VALIDATE1(line, "Collision", c.effectiveMassInTangentDir);
-		VALIDATE1(line, "Collision", c.bias);
-	}
-}
-void validate(uint32 line, simd_collision_constraint_batch* constraints, uint32 count)
-{
-	for (uint32 i = 0; i < count; ++i)
-	{
-		simd_collision_constraint_batch& c = constraints[i];
-		for (uint32 j = 0; j < CONSTRAINT_SIMD_WIDTH; ++j)
+		for (uint32 i = 0; i < count; ++i)
 		{
-			VALIDATE1(line, "Collision", c.relGlobalAnchorA[0][j]);
-			VALIDATE1(line, "Collision", c.relGlobalAnchorA[1][j]);
-			VALIDATE1(line, "Collision", c.relGlobalAnchorA[2][j]);
-			VALIDATE1(line, "Collision", c.relGlobalAnchorB[0][j]);
-			VALIDATE1(line, "Collision", c.relGlobalAnchorB[1][j]);
-			VALIDATE1(line, "Collision", c.relGlobalAnchorB[2][j]);
-			VALIDATE1(line, "Collision", c.normal[0][j]);
-			VALIDATE1(line, "Collision", c.normal[1][j]);
-			VALIDATE1(line, "Collision", c.normal[2][j]);
-			VALIDATE1(line, "Collision", c.tangent[0][j]);
-			VALIDATE1(line, "Collision", c.tangent[1][j]);
-			VALIDATE1(line, "Collision", c.tangent[2][j]);
-			VALIDATE1(line, "Collision", c.normalImpulseToAngularVelocityA[0][j]);
-			VALIDATE1(line, "Collision", c.normalImpulseToAngularVelocityA[1][j]);
-			VALIDATE1(line, "Collision", c.normalImpulseToAngularVelocityA[2][j]);
-			VALIDATE1(line, "Collision", c.tangentImpulseToAngularVelocityA[0][j]);
-			VALIDATE1(line, "Collision", c.tangentImpulseToAngularVelocityA[1][j]);
-			VALIDATE1(line, "Collision", c.tangentImpulseToAngularVelocityA[2][j]);
-			VALIDATE1(line, "Collision", c.normalImpulseToAngularVelocityB[0][j]);
-			VALIDATE1(line, "Collision", c.normalImpulseToAngularVelocityB[1][j]);
-			VALIDATE1(line, "Collision", c.normalImpulseToAngularVelocityB[2][j]);
-			VALIDATE1(line, "Collision", c.tangentImpulseToAngularVelocityB[0][j]);
-			VALIDATE1(line, "Collision", c.tangentImpulseToAngularVelocityB[1][j]);
-			VALIDATE1(line, "Collision", c.tangentImpulseToAngularVelocityB[2][j]);
-			VALIDATE1(line, "Collision", c.effectiveMassInNormalDir[j]);
-			VALIDATE1(line, "Collision", c.effectiveMassInTangentDir[j]);
-			VALIDATE1(line, "Collision", c.friction[j]);
-			VALIDATE1(line, "Collision", c.impulseInNormalDir[j]);
-			VALIDATE1(line, "Collision", c.impulseInTangentDir[j]);
-			VALIDATE1(line, "Collision", c.bias[j]);
+			bounding_box& c = colliders[i];
+			VALIDATE3(line, "World space BB", c.minCorner);
+			VALIDATE3(line, "World space BB", c.maxCorner);
 		}
 	}
-}
+	void validate(uint32 line, rigid_body_global_state* rbs, uint32 count)
+	{
+		for (uint32 i = 0; i < count; ++i)
+		{
+			rigid_body_global_state& r = rbs[i];
+			VALIDATE4(line, "RB update", r.rotation);
+			VALIDATE3(line, "RB update", r.localCOGPosition);
+			VALIDATE3(line, "RB update", r.position);
+			VALIDATE3(line, "RB update", r.invInertia.col0);
+			VALIDATE3(line, "RB update", r.invInertia.col1);
+			VALIDATE3(line, "RB update", r.invInertia.col2);
+			VALIDATE1(line, "RB update", r.invMass);
+			VALIDATE3(line, "RB update", r.linearVelocity);
+			VALIDATE3(line, "RB update", r.angularVelocity);
+		}
+	}
+	void validate(uint32 line, collision_contact* contacts, uint32 count)
+	{
+		for (uint32 i = 0; i < count; ++i)
+		{
+			collision_contact& c = contacts[i];
+			VALIDATE3(line, "Contact", c.point);
+			VALIDATE1(line, "Contact", c.penetrationDepth);
+			VALIDATE3(line, "Contact", c.normal);
+		}
+	}
+	void validate(uint32 line, collision_constraint* constraints, uint32 count)
+	{
+		for (uint32 i = 0; i < count; ++i)
+		{
+			collision_constraint& c = constraints[i];
+			VALIDATE3(line, "Collision", c.relGlobalAnchorA);
+			VALIDATE3(line, "Collision", c.relGlobalAnchorB);
+			VALIDATE3(line, "Collision", c.tangent);
+			VALIDATE3(line, "Collision", c.tangentImpulseToAngularVelocityA);
+			VALIDATE3(line, "Collision", c.tangentImpulseToAngularVelocityB);
+			VALIDATE3(line, "Collision", c.normalImpulseToAngularVelocityA);
+			VALIDATE3(line, "Collision", c.normalImpulseToAngularVelocityB);
+			VALIDATE1(line, "Collision", c.impulseInNormalDir);
+			VALIDATE1(line, "Collision", c.impulseInTangentDir);
+			VALIDATE1(line, "Collision", c.effectiveMassInNormalDir);
+			VALIDATE1(line, "Collision", c.effectiveMassInTangentDir);
+			VALIDATE1(line, "Collision", c.bias);
+		}
+	}
+	void validate(uint32 line, simd_collision_constraint_batch* constraints, uint32 count)
+	{
+		for (uint32 i = 0; i < count; ++i)
+		{
+			simd_collision_constraint_batch& c = constraints[i];
+			for (uint32 j = 0; j < CONSTRAINT_SIMD_WIDTH; ++j)
+			{
+				VALIDATE1(line, "Collision", c.relGlobalAnchorA[0][j]);
+				VALIDATE1(line, "Collision", c.relGlobalAnchorA[1][j]);
+				VALIDATE1(line, "Collision", c.relGlobalAnchorA[2][j]);
+				VALIDATE1(line, "Collision", c.relGlobalAnchorB[0][j]);
+				VALIDATE1(line, "Collision", c.relGlobalAnchorB[1][j]);
+				VALIDATE1(line, "Collision", c.relGlobalAnchorB[2][j]);
+				VALIDATE1(line, "Collision", c.normal[0][j]);
+				VALIDATE1(line, "Collision", c.normal[1][j]);
+				VALIDATE1(line, "Collision", c.normal[2][j]);
+				VALIDATE1(line, "Collision", c.tangent[0][j]);
+				VALIDATE1(line, "Collision", c.tangent[1][j]);
+				VALIDATE1(line, "Collision", c.tangent[2][j]);
+				VALIDATE1(line, "Collision", c.normalImpulseToAngularVelocityA[0][j]);
+				VALIDATE1(line, "Collision", c.normalImpulseToAngularVelocityA[1][j]);
+				VALIDATE1(line, "Collision", c.normalImpulseToAngularVelocityA[2][j]);
+				VALIDATE1(line, "Collision", c.tangentImpulseToAngularVelocityA[0][j]);
+				VALIDATE1(line, "Collision", c.tangentImpulseToAngularVelocityA[1][j]);
+				VALIDATE1(line, "Collision", c.tangentImpulseToAngularVelocityA[2][j]);
+				VALIDATE1(line, "Collision", c.normalImpulseToAngularVelocityB[0][j]);
+				VALIDATE1(line, "Collision", c.normalImpulseToAngularVelocityB[1][j]);
+				VALIDATE1(line, "Collision", c.normalImpulseToAngularVelocityB[2][j]);
+				VALIDATE1(line, "Collision", c.tangentImpulseToAngularVelocityB[0][j]);
+				VALIDATE1(line, "Collision", c.tangentImpulseToAngularVelocityB[1][j]);
+				VALIDATE1(line, "Collision", c.tangentImpulseToAngularVelocityB[2][j]);
+				VALIDATE1(line, "Collision", c.effectiveMassInNormalDir[j]);
+				VALIDATE1(line, "Collision", c.effectiveMassInTangentDir[j]);
+				VALIDATE1(line, "Collision", c.friction[j]);
+				VALIDATE1(line, "Collision", c.impulseInNormalDir[j]);
+				VALIDATE1(line, "Collision", c.impulseInTangentDir[j]);
+				VALIDATE1(line, "Collision", c.bias[j]);
+			}
+		}
+	}
 
 #define VALIDATE(arr, count) validate(__LINE__, arr, count)
 
@@ -927,216 +930,81 @@ void validate(uint32 line, simd_collision_constraint_batch* constraints, uint32 
 #endif
 
 
-struct entity_pair
-{
-	entity_handle a;
-	entity_handle b;
-
-	operator uint64() const { return ((uint64)a << 32) | (uint64)b; }
-	bool operator<(entity_pair o) const { return (uint64)*this < (uint64)o; }
-	bool operator==(entity_pair o) const { return a == o.a && b == o.b; }
-	bool operator!=(entity_pair o) const { return !(*this == o); }
-};
-
-struct collision_entity_pair : entity_pair
-{
-	uint16 contactOffset;
-	uint16 numContacts;
-};
-
-struct event_context
-{
-	std::vector<entity_pair> prevFrameTriggerOverlaps;
-	std::vector<collision_entity_pair> prevFrameCollisions;
-};
-
-static void handleNonCollisionInteractions(escene& scene, 
-	const force_field_global_state* ffGlobal, const non_collision_interaction* nonCollisionInteractions, uint32 numNonCollisionInteractions,
-	uint32 numRigidBodies, uint32 numTriggers)
-{
-	std::vector<entity_pair> triggerOverlaps;
-
-	for (uint32 i = 0; i < numNonCollisionInteractions; ++i)
+	struct entity_pair
 	{
-		non_collision_interaction interaction = nonCollisionInteractions[i];
-		rigid_body_component& rb = scene.getComponentAtIndex<rigid_body_component>(numRigidBodies - 1 - interaction.rigidBodyIndex);
+		entity_handle a;
+		entity_handle b;
 
-		if (interaction.otherType == physics_object_type_force_field)
-		{
-			const force_field_global_state& ff = ffGlobal[interaction.otherIndex];
-			rb.forceAccumulator += ff.force;
-		}
-		else if (interaction.otherType == physics_object_type_trigger)
-		{
-			eentity triggerEntity = scene.getEntityFromComponentAtIndex<trigger_component>(numTriggers - 1 - interaction.otherIndex);
-			eentity rbEntity = scene.getEntityFromComponent(rb);
-
-			entity_pair overlap = { triggerEntity.handle, rbEntity.handle };
-
-			triggerOverlaps.push_back(overlap);
-		}
-	}
-
-	std::sort(triggerOverlaps.begin(), triggerOverlaps.end());
-
-	// De-duplicate. Since we operate on entities here, multiple colliders may report the same overlap
-	triggerOverlaps.erase(std::unique(triggerOverlaps.begin(), triggerOverlaps.end()), triggerOverlaps.end());
-
-	event_context& context = scene.createOrGetContextVariable<event_context>();
-
-	auto prevIterator = context.prevFrameTriggerOverlaps.begin();
-	auto thisIterator = triggerOverlaps.begin();
-
-	auto prevEnd = context.prevFrameTriggerOverlaps.end();
-	auto thisEnd = triggerOverlaps.end();
-
-	auto triggerEvent = [&scene](entity_pair pair, trigger_event_type type)
-	{
-		eentity triggerEntity = { pair.a, scene };
-		eentity otherEntity = { pair.b, scene };
-		const trigger_component& triggerComp = triggerEntity.getComponent<trigger_component>();
-		triggerComp.callback(trigger_event{ triggerEntity, otherEntity, type });
+		operator uint64() const { return ((uint64)a << 32) | (uint64)b; }
+		bool operator<(entity_pair o) const { return (uint64)*this < (uint64)o; }
+		bool operator==(entity_pair o) const { return a == o.a && b == o.b; }
+		bool operator!=(entity_pair o) const { return !(*this == o); }
 	};
 
-	while (prevIterator != prevEnd && thisIterator != thisEnd)
+	struct collision_entity_pair : entity_pair
 	{
-		entity_pair p = *prevIterator;
-		entity_pair t = *thisIterator;
+		uint16 contactOffset;
+		uint16 numContacts;
+	};
 
-		if (p == t)
-		{
-			++prevIterator;
-			++thisIterator;
-			continue;
-		}
-
-		if (p < t)
-		{
-			triggerEvent(p, trigger_event_leave);
-			++prevIterator;
-		}
-		else
-		{
-			triggerEvent(t, trigger_event_enter);
-			++thisIterator;
-		}
-	}
-
-	while (prevIterator != prevEnd)
+	struct event_context
 	{
-		triggerEvent(*(prevIterator++), trigger_event_leave);
-	}
+		std::vector<entity_pair> prevFrameTriggerOverlaps;
+		std::vector<collision_entity_pair> prevFrameCollisions;
+	};
 
-	while (thisIterator != thisEnd)
+	static void handleNonCollisionInteractions(escene& scene,
+		const force_field_global_state* ffGlobal, const non_collision_interaction* nonCollisionInteractions, uint32 numNonCollisionInteractions,
+		uint32 numRigidBodies, uint32 numTriggers)
 	{
-		triggerEvent(*(thisIterator++), trigger_event_enter);
-	}
+		std::vector<entity_pair> triggerOverlaps;
 
-	context.prevFrameTriggerOverlaps = std::move(triggerOverlaps);
-}
-
-static void handleCollisionCallbacks(escene& scene, const collider_pair* colliderPairs, uint8* contactCountPerCollision, uint32 numColliderPairs,
-	uint32 numColliders, const collision_contact* contacts, const rigid_body_global_state* rbGlobal, uint32 dummyRigidBodyIndex,
-	const collision_begin_event_func& collisionBeginCallback, const collision_end_event_func& collisionEndCallback)
-{
-	std::vector<collision_entity_pair> collisions;
-
-	uint16 contactOffset = 0;
-
-	for (uint32 i = 0; i < numColliderPairs; ++i)
-	{
-		collider_pair colliderPair = colliderPairs[i];
-
-		if (colliderPair.colliderB < numColliders)
+		for (uint32 i = 0; i < numNonCollisionInteractions; ++i)
 		{
-			uint16 numContacts = contactCountPerCollision[i];
+			non_collision_interaction interaction = nonCollisionInteractions[i];
+			rigid_body_component& rb = scene.getComponentAtIndex<rigid_body_component>(numRigidBodies - 1 - interaction.rigidBodyIndex);
 
-			eentity aEntity = scene.getEntityFromComponentAtIndex<collider_component>(numColliders - 1 - colliderPair.colliderA);
-			eentity bEntity = scene.getEntityFromComponentAtIndex<collider_component>(numColliders - 1 - colliderPair.colliderB);
-
-			collision_entity_pair overlap = { aEntity.handle, bEntity.handle, contactOffset, numContacts };
-
-			collisions.push_back(overlap);
-			contactOffset += numContacts;
-		}
-	}
-
-	std::sort(collisions.begin(), collisions.end());
-
-	event_context& context = scene.createOrGetContextVariable<event_context>();
-
-	if (collisionBeginCallback || collisionEndCallback)
-	{
-		auto prevIterator = context.prevFrameCollisions.begin();
-		auto thisIterator = collisions.begin();
-
-		auto prevEnd = context.prevFrameCollisions.end();
-		auto thisEnd = collisions.end();
-
-		auto beginEvent = [contacts, rbGlobal, &collisionBeginCallback, &scene, dummyRigidBodyIndex](collision_entity_pair pair)
-		{
-			if (collisionBeginCallback)
+			if (interaction.otherType == physics_object_type_force_field)
 			{
-				eentity colliderAEntity = { pair.a, scene };
-				eentity colliderBEntity = { pair.b, scene };
-
-				const collider_component& colliderA = colliderAEntity.getComponent<collider_component>();
-				const collider_component& colliderB = colliderBEntity.getComponent<collider_component>();
-
-				eentity rbAEntity = { colliderA.parentEntity, scene };
-				eentity rbBEntity = { colliderB.parentEntity, scene };
-
-				const collision_contact* c = contacts + pair.contactOffset;
-				uint32 numContacts = pair.numContacts;
-				ASSERT(numContacts > 0);
-
-				float norm = 1.f / numContacts;
-
-				vec3 point(0.f);
-				vec3 normal(0.f);
-				for (uint32 i = 0; i < numContacts; ++i)
-				{
-					point += c[i].point;
-					normal += c[i].normal;
-				}
-
-				point *= norm;
-				normal *= norm;
-
-
-				auto& rbAGlobal = rbGlobal[rbAEntity.hasComponent<rigid_body_component>() ? rbAEntity.getComponentIndex<rigid_body_component>() : dummyRigidBodyIndex];
-				auto& rbBGlobal = rbGlobal[rbBEntity.hasComponent<rigid_body_component>() ? rbBEntity.getComponentIndex<rigid_body_component>() : dummyRigidBodyIndex];
-
-				vec3 velA = rbAGlobal.linearVelocity + cross(rbAGlobal.angularVelocity, point - rbAGlobal.position);
-				vec3 velB = rbBGlobal.linearVelocity + cross(rbBGlobal.angularVelocity, point - rbBGlobal.position);
-
-				collision_begin_event e = { rbAEntity, rbBEntity, colliderA, colliderB, point, normal, velB - velA };
-				collisionBeginCallback(e);
+				const force_field_global_state& ff = ffGlobal[interaction.otherIndex];
+				rb.forceAccumulator += ff.force;
 			}
-		};
-
-		auto endEvent = [&collisionEndCallback, &scene](collision_entity_pair pair)
-		{
-			if (collisionEndCallback)
+			else if (interaction.otherType == physics_object_type_trigger)
 			{
-				eentity colliderAEntity = { pair.a, scene };
-				eentity colliderBEntity = { pair.b, scene };
+				eentity triggerEntity = scene.getEntityFromComponentAtIndex<trigger_component>(numTriggers - 1 - interaction.otherIndex);
+				eentity rbEntity = scene.getEntityFromComponent(rb);
 
-				const collider_component& colliderA = colliderAEntity.getComponent<collider_component>();
-				const collider_component& colliderB = colliderBEntity.getComponent<collider_component>();
+				entity_pair overlap = { triggerEntity.handle, rbEntity.handle };
 
-				eentity rbAEntity = { colliderA.parentEntity, scene };
-				eentity rbBEntity = { colliderB.parentEntity, scene };
-
-				collision_end_event e = { rbAEntity, rbBEntity, colliderA, colliderB };
-				collisionEndCallback(e);
+				triggerOverlaps.push_back(overlap);
 			}
-		};
+		}
+
+		std::sort(triggerOverlaps.begin(), triggerOverlaps.end());
+
+		// De-duplicate. Since we operate on entities here, multiple colliders may report the same overlap
+		triggerOverlaps.erase(std::unique(triggerOverlaps.begin(), triggerOverlaps.end()), triggerOverlaps.end());
+
+		event_context& context = scene.createOrGetContextVariable<event_context>();
+
+		auto prevIterator = context.prevFrameTriggerOverlaps.begin();
+		auto thisIterator = triggerOverlaps.begin();
+
+		auto prevEnd = context.prevFrameTriggerOverlaps.end();
+		auto thisEnd = triggerOverlaps.end();
+
+		auto triggerEvent = [&scene](entity_pair pair, trigger_event_type type)
+			{
+				eentity triggerEntity = { pair.a, scene };
+				eentity otherEntity = { pair.b, scene };
+				const trigger_component& triggerComp = triggerEntity.getComponent<trigger_component>();
+				triggerComp.callback(trigger_event{ triggerEntity, otherEntity, type });
+			};
 
 		while (prevIterator != prevEnd && thisIterator != thisEnd)
 		{
-			collision_entity_pair p = *prevIterator;
-			collision_entity_pair t = *thisIterator;
+			entity_pair p = *prevIterator;
+			entity_pair t = *thisIterator;
 
 			if (p == t)
 			{
@@ -1147,263 +1015,398 @@ static void handleCollisionCallbacks(escene& scene, const collider_pair* collide
 
 			if (p < t)
 			{
-				endEvent(p);
+				triggerEvent(p, trigger_event_leave);
 				++prevIterator;
 			}
 			else
 			{
-				beginEvent(t);
+				triggerEvent(t, trigger_event_enter);
 				++thisIterator;
 			}
 		}
 
-		if (collisionEndCallback)
+		while (prevIterator != prevEnd)
 		{
-			while (prevIterator != prevEnd)
+			triggerEvent(*(prevIterator++), trigger_event_leave);
+		}
+
+		while (thisIterator != thisEnd)
+		{
+			triggerEvent(*(thisIterator++), trigger_event_enter);
+		}
+
+		context.prevFrameTriggerOverlaps = std::move(triggerOverlaps);
+	}
+
+	static void handleCollisionCallbacks(escene& scene, const collider_pair* colliderPairs, uint8* contactCountPerCollision, uint32 numColliderPairs,
+		uint32 numColliders, const collision_contact* contacts, const rigid_body_global_state* rbGlobal, uint32 dummyRigidBodyIndex,
+		const collision_begin_event_func& collisionBeginCallback, const collision_end_event_func& collisionEndCallback)
+	{
+		std::vector<collision_entity_pair> collisions;
+
+		uint16 contactOffset = 0;
+
+		for (uint32 i = 0; i < numColliderPairs; ++i)
+		{
+			collider_pair colliderPair = colliderPairs[i];
+
+			if (colliderPair.colliderB < numColliders)
 			{
-				endEvent(*(prevIterator++));
+				uint16 numContacts = contactCountPerCollision[i];
+
+				eentity aEntity = scene.getEntityFromComponentAtIndex<collider_component>(numColliders - 1 - colliderPair.colliderA);
+				eentity bEntity = scene.getEntityFromComponentAtIndex<collider_component>(numColliders - 1 - colliderPair.colliderB);
+
+				collision_entity_pair overlap = { aEntity.handle, bEntity.handle, contactOffset, numContacts };
+
+				collisions.push_back(overlap);
+				contactOffset += numContacts;
 			}
 		}
 
-		if (collisionBeginCallback)
+		std::sort(collisions.begin(), collisions.end());
+
+		event_context& context = scene.createOrGetContextVariable<event_context>();
+
+		if (collisionBeginCallback || collisionEndCallback)
 		{
-			while (thisIterator != thisEnd)
+			auto prevIterator = context.prevFrameCollisions.begin();
+			auto thisIterator = collisions.begin();
+
+			auto prevEnd = context.prevFrameCollisions.end();
+			auto thisEnd = collisions.end();
+
+			auto beginEvent = [contacts, rbGlobal, &collisionBeginCallback, &scene, dummyRigidBodyIndex](collision_entity_pair pair)
+				{
+					if (collisionBeginCallback)
+					{
+						eentity colliderAEntity = { pair.a, scene };
+						eentity colliderBEntity = { pair.b, scene };
+
+						const collider_component& colliderA = colliderAEntity.getComponent<collider_component>();
+						const collider_component& colliderB = colliderBEntity.getComponent<collider_component>();
+
+						eentity rbAEntity = { colliderA.parentEntity, scene };
+						eentity rbBEntity = { colliderB.parentEntity, scene };
+
+						const collision_contact* c = contacts + pair.contactOffset;
+						uint32 numContacts = pair.numContacts;
+						ASSERT(numContacts > 0);
+
+						float norm = 1.f / numContacts;
+
+						vec3 point(0.f);
+						vec3 normal(0.f);
+						for (uint32 i = 0; i < numContacts; ++i)
+						{
+							point += c[i].point;
+							normal += c[i].normal;
+						}
+
+						point *= norm;
+						normal *= norm;
+
+
+						auto& rbAGlobal = rbGlobal[rbAEntity.hasComponent<rigid_body_component>() ? rbAEntity.getComponentIndex<rigid_body_component>() : dummyRigidBodyIndex];
+						auto& rbBGlobal = rbGlobal[rbBEntity.hasComponent<rigid_body_component>() ? rbBEntity.getComponentIndex<rigid_body_component>() : dummyRigidBodyIndex];
+
+						vec3 velA = rbAGlobal.linearVelocity + cross(rbAGlobal.angularVelocity, point - rbAGlobal.position);
+						vec3 velB = rbBGlobal.linearVelocity + cross(rbBGlobal.angularVelocity, point - rbBGlobal.position);
+
+						collision_begin_event e = { rbAEntity, rbBEntity, colliderA, colliderB, point, normal, velB - velA };
+						collisionBeginCallback(e);
+					}
+				};
+
+			auto endEvent = [&collisionEndCallback, &scene](collision_entity_pair pair)
+				{
+					if (collisionEndCallback)
+					{
+						eentity colliderAEntity = { pair.a, scene };
+						eentity colliderBEntity = { pair.b, scene };
+
+						const collider_component& colliderA = colliderAEntity.getComponent<collider_component>();
+						const collider_component& colliderB = colliderBEntity.getComponent<collider_component>();
+
+						eentity rbAEntity = { colliderA.parentEntity, scene };
+						eentity rbBEntity = { colliderB.parentEntity, scene };
+
+						collision_end_event e = { rbAEntity, rbBEntity, colliderA, colliderB };
+						collisionEndCallback(e);
+					}
+				};
+
+			while (prevIterator != prevEnd && thisIterator != thisEnd)
 			{
-				beginEvent(*(thisIterator++));
-			}
-		}
-	}
+				collision_entity_pair p = *prevIterator;
+				collision_entity_pair t = *thisIterator;
 
-	context.prevFrameCollisions = std::move(collisions);
-}
+				if (p == t)
+				{
+					++prevIterator;
+					++thisIterator;
+					continue;
+				}
 
-static void physicsStepInternal(escene& scene, eallocator& arena, const physics_settings& settings, float dt)
-{
-	CPU_PROFILE_BLOCK("Physics step");
-
-	uint32 numRigidBodies = scene.numberOfComponentsOfType<rigid_body_component>();
-	uint32 numCloths = scene.numberOfComponentsOfType<cloth_component>();
-	if (numRigidBodies == 0 && numCloths == 0)
-		return;
-
-	uint32 numForceFields = scene.numberOfComponentsOfType<force_field_component>();
-	uint32 numTriggers = scene.numberOfComponentsOfType<trigger_component>();
-	uint32 numColliders = scene.numberOfComponentsOfType<collider_component>();
-
-	uint32 numDistanceConstraints = scene.numberOfComponentsOfType<distance_constraint>();
-	uint32 numBallConstraints = scene.numberOfComponentsOfType<ball_constraint>();
-	uint32 numFixedConstraints = scene.numberOfComponentsOfType<fixed_constraint>();
-	uint32 numHingeConstraints = scene.numberOfComponentsOfType<hinge_constraint>();
-	uint32 numConeTwistConstraints = scene.numberOfComponentsOfType<cone_twist_constraint>();
-	uint32 numSliderConstraints = scene.numberOfComponentsOfType<slider_constraint>();
-	uint32 numConstraints = numDistanceConstraints + numBallConstraints + numFixedConstraints + numHingeConstraints + numConeTwistConstraints + numSliderConstraints;
-
-	memory_marker marker = arena.getMarker();
-
-	rigid_body_global_state* rbGlobal = arena.allocate<rigid_body_global_state>(numRigidBodies + 1); // Reserve one slot for dummy
-	force_field_global_state* ffGlobal = arena.allocate<force_field_global_state>(numForceFields);
-	bounding_box* worldSpaceAABBs = arena.allocate<bounding_box>(numColliders);
-	collider_union* worldSpaceColliders = arena.allocate<collider_union>(numColliders);
-
-	collider_pair* overlappingColliderPairs = arena.allocate<collider_pair>(numColliders * numColliders + 5000); // Conservative estimate
-
-	uint32 dummyRigidBodyIndex = numRigidBodies;
-
-	// Collision detection
-	getWorldSpaceColliders(scene, worldSpaceAABBs, worldSpaceColliders, dummyRigidBodyIndex);
-	VALIDATE(worldSpaceColliders, numColliders);
-	VALIDATE(worldSpaceAABBs, numColliders);
-
-	// Broad phase
-	uint32 numBroadphaseOverlaps = broadphase(scene, worldSpaceAABBs, arena, overlappingColliderPairs, settings.simdBroadPhase);
-
-	non_collision_interaction* nonCollisionInteractions = arena.allocate<non_collision_interaction>(numBroadphaseOverlaps);
-	collision_contact* contacts = arena.allocate<collision_contact>(numBroadphaseOverlaps * 4 + 5000); // Each collision can have up to 4 contact points
-	constraint_body_pair* allConstraintBodyPairs = arena.allocate<constraint_body_pair>(numConstraints + numBroadphaseOverlaps * 4 + 5000);
-	collider_pair* collidingColliderPairs = overlappingColliderPairs; // We reuse this buffer
-	uint8* contactCountPerCollision = arena.allocate<uint8>(numColliders * numColliders + 5000);
-
-	constraint_body_pair* collisionBodyPairs = allConstraintBodyPairs + numConstraints;
-
-	// Narrow phase
-	narrowphase_result narrowPhaseResult = narrowphase(worldSpaceColliders, overlappingColliderPairs, numBroadphaseOverlaps, arena,
-		contacts, collisionBodyPairs, collidingColliderPairs, contactCountPerCollision, nonCollisionInteractions, settings.simdNarrowPhase);
-	
-	// Heightmap collisions
-	for (auto [entityHandle, heightmap] : scene.view<heightmap_collider_component>().each())
-	{
-		narrowphase_result heightmapCollisionResult = heightmapCollision(heightmap, worldSpaceColliders, worldSpaceAABBs, numColliders,
-			contacts + narrowPhaseResult.numContacts, collisionBodyPairs + narrowPhaseResult.numContacts,
-			collidingColliderPairs + narrowPhaseResult.numCollisions, contactCountPerCollision + narrowPhaseResult.numCollisions,
-			arena, (uint16)dummyRigidBodyIndex);
-
-		narrowPhaseResult.numCollisions += heightmapCollisionResult.numCollisions;
-		narrowPhaseResult.numContacts += heightmapCollisionResult.numContacts;
-		narrowPhaseResult.numNonCollisionInteractions += heightmapCollisionResult.numNonCollisionInteractions;
-	}
-
-	VALIDATE(contacts, narrowPhaseResult.numContacts);
-
-	vec3 globalForceField = getForceFieldStates(scene, ffGlobal);
-
-	handleNonCollisionInteractions(scene, ffGlobal, nonCollisionInteractions, narrowPhaseResult.numNonCollisionInteractions,
-		numRigidBodies, numTriggers);
-
-	CPU_PROFILE_STAT("Num rigid bodies", numRigidBodies);
-	CPU_PROFILE_STAT("Num colliders", numColliders);
-	CPU_PROFILE_STAT("Num broadphase overlaps", numBroadphaseOverlaps);
-	CPU_PROFILE_STAT("Num narrowphase collisions", narrowPhaseResult.numCollisions);
-	CPU_PROFILE_STAT("Num narrowphase contacts", narrowPhaseResult.numContacts);
-
-	//  Apply global forces (including gravity) and air drag and integrate forces
-	{
-		CPU_PROFILE_BLOCK("Integrate rigid body forces");
-
-		uint32 rbIndex = numRigidBodies - 1; // EnTT iterates back to front
-		for (auto [entityHandle, rb, transform] : scene.group<rigid_body_component, physics_transform1_component>().each())
-		{
-			rigid_body_global_state& global = rbGlobal[rbIndex--];
-			rb.forceAccumulator += globalForceField;
-			rb.applyGravityAndIntegrateForces(global, transform, dt);
-		}
-	}
-
-	// Kinematic rigid body. This is used in collision constraint solving, when a collider has no rigid body
-	memset(&rbGlobal[dummyRigidBodyIndex], 0, sizeof(rigid_body_global_state));
-
-	VALIDATE(rbGlobal, numRigidBodies);
-
-	handleCollisionCallbacks(scene, collidingColliderPairs, contactCountPerCollision, narrowPhaseResult.numCollisions, numColliders, contacts, rbGlobal, dummyRigidBodyIndex,
-		settings.collisionBeginCallback, settings.collisionEndCallback);
-
-	// Collect constraints
-	uint32 numContacts = narrowPhaseResult.numContacts;
-
-	distance_constraint* distanceConstraints = scene.raw<distance_constraint>();
-	ball_constraint* ballConstraints = scene.raw<ball_constraint>();
-	fixed_constraint* fixedConstraints = scene.raw<fixed_constraint>();
-	hinge_constraint* hingeConstraints = scene.raw<hinge_constraint>();
-	cone_twist_constraint* coneTwistConstraints = scene.raw<cone_twist_constraint>();
-	slider_constraint* sliderConstraints = scene.raw<slider_constraint>();
-
-	constraint_body_pair* distanceConstraintBodyPairs = allConstraintBodyPairs + 0;
-	constraint_body_pair* ballConstraintBodyPairs = distanceConstraintBodyPairs + numDistanceConstraints;
-	constraint_body_pair* fixedConstraintBodyPairs = ballConstraintBodyPairs + numBallConstraints;
-	constraint_body_pair* hingeConstraintBodyPairs = fixedConstraintBodyPairs + numFixedConstraints;
-	constraint_body_pair* coneTwistConstraintBodyPairs = hingeConstraintBodyPairs + numHingeConstraints;
-	constraint_body_pair* sliderConstraintBodyPairs = coneTwistConstraintBodyPairs + numConeTwistConstraints;
-
-	getConstraintBodyPairs<distance_constraint>(scene, distanceConstraintBodyPairs);
-	getConstraintBodyPairs<ball_constraint>(scene, ballConstraintBodyPairs);
-	getConstraintBodyPairs<fixed_constraint>(scene, fixedConstraintBodyPairs);
-	getConstraintBodyPairs<hinge_constraint>(scene, hingeConstraintBodyPairs);
-	getConstraintBodyPairs<cone_twist_constraint>(scene, coneTwistConstraintBodyPairs);
-	getConstraintBodyPairs<slider_constraint>(scene, sliderConstraintBodyPairs);
-
-	// Solve constraints
-	constraint_solver constraintSolver;
-	constraintSolver.initialize(arena, rbGlobal,
-		distanceConstraints, distanceConstraintBodyPairs, numDistanceConstraints,
-		ballConstraints, ballConstraintBodyPairs, numBallConstraints,
-		fixedConstraints, fixedConstraintBodyPairs, numFixedConstraints,
-		hingeConstraints, hingeConstraintBodyPairs, numHingeConstraints,
-		coneTwistConstraints, coneTwistConstraintBodyPairs, numConeTwistConstraints,
-		sliderConstraints, sliderConstraintBodyPairs, numSliderConstraints,
-		contacts, collisionBodyPairs, numContacts,
-		dummyRigidBodyIndex, settings.simdConstraintSolver, dt);
-
-	{
-		CPU_PROFILE_BLOCK("Solve constraints");
-
-		for (uint32 it = 0; it < settings.numRigidSolverIterations; ++it)
-		{
-			constraintSolver.solveOneIteration();
-		}
-	}
-
-	// Integrate velocities
-	{
-		CPU_PROFILE_BLOCK("Integrate rigid body velocities");
-
-		uint32 rbIndex = numRigidBodies - 1; // EnTT iterates back to front
-		for (auto [entityHandle, rb, transform] : scene.group<rigid_body_component, physics_transform1_component>().each())
-		{
-			rigid_body_global_state& global = rbGlobal[rbIndex--];
-
-			rb.integrateVelocity(global, transform, dt);
-		}
-	}
-
-	VALIDATE(rbGlobal, numRigidBodies);
-
-	// Cloth. This needs to get integrated with the rest of the system
-
-	for (auto [entityHandle, cloth] : scene.view<cloth_component>().each())
-	{
-		cloth.applyWindForce(globalForceField);
-		cloth.simulate(settings.numClothVelocityIterations, settings.numClothPositionIterations, settings.numClothDriftIterations, dt);
-	}
-
-	arena.resetToMarker(marker);
-}
-
-void physicsStep(escene& scene, eallocator& arena, float& timer, const physics_settings& settings, float dt)
-{
-	if (settings.fixedFrameRate)
-	{
-		const float physicsFixedTimeStep = 1.f / (float)settings.frameRate;
-		const uint32 maxPhysicsIterationsPerFrame = settings.maxPhysicsIterationsPerFrame;
-
-		timer += dt;
-		uint32 physicsIterations = 0;
-		if (timer >= physicsFixedTimeStep)
-		{
-			for (auto [entityHandle, transform0, transform1] : scene.group(component_group<physics_transform0_component, physics_transform1_component>).each())
-			{
-				transform0 = transform1;
+				if (p < t)
+				{
+					endEvent(p);
+					++prevIterator;
+				}
+				else
+				{
+					beginEvent(t);
+					++thisIterator;
+				}
 			}
 
-			while (timer >= physicsFixedTimeStep && physicsIterations++ < maxPhysicsIterationsPerFrame)
+			if (collisionEndCallback)
 			{
-				physicsStepInternal(scene, arena, settings, physicsFixedTimeStep);
-				timer -= physicsFixedTimeStep;
+				while (prevIterator != prevEnd)
+				{
+					endEvent(*(prevIterator++));
+				}
+			}
+
+			if (collisionBeginCallback)
+			{
+				while (thisIterator != thisEnd)
+				{
+					beginEvent(*(thisIterator++));
+				}
 			}
 		}
 
-		if (timer >= physicsFixedTimeStep)
+		context.prevFrameCollisions = std::move(collisions);
+	}
+
+	static void physicsStepInternal(escene& scene, eallocator& arena, const physics_settings& settings, float dt)
+	{
+		CPU_PROFILE_BLOCK("Physics step");
+
+		uint32 numRigidBodies = scene.numberOfComponentsOfType<rigid_body_component>();
+		uint32 numCloths = scene.numberOfComponentsOfType<cloth_component>();
+		if (numRigidBodies == 0 && numCloths == 0)
+			return;
+
+		uint32 numForceFields = scene.numberOfComponentsOfType<force_field_component>();
+		uint32 numTriggers = scene.numberOfComponentsOfType<trigger_component>();
+		uint32 numColliders = scene.numberOfComponentsOfType<collider_component>();
+
+		uint32 numDistanceConstraints = scene.numberOfComponentsOfType<distance_constraint>();
+		uint32 numBallConstraints = scene.numberOfComponentsOfType<ball_constraint>();
+		uint32 numFixedConstraints = scene.numberOfComponentsOfType<fixed_constraint>();
+		uint32 numHingeConstraints = scene.numberOfComponentsOfType<hinge_constraint>();
+		uint32 numConeTwistConstraints = scene.numberOfComponentsOfType<cone_twist_constraint>();
+		uint32 numSliderConstraints = scene.numberOfComponentsOfType<slider_constraint>();
+		uint32 numConstraints = numDistanceConstraints + numBallConstraints + numFixedConstraints + numHingeConstraints + numConeTwistConstraints + numSliderConstraints;
+
+		memory_marker marker = arena.getMarker();
+
+		rigid_body_global_state* rbGlobal = arena.allocate<rigid_body_global_state>(numRigidBodies + 1); // Reserve one slot for dummy
+		force_field_global_state* ffGlobal = arena.allocate<force_field_global_state>(numForceFields);
+		bounding_box* worldSpaceAABBs = arena.allocate<bounding_box>(numColliders);
+		collider_union* worldSpaceColliders = arena.allocate<collider_union>(numColliders);
+
+		collider_pair* overlappingColliderPairs = arena.allocate<collider_pair>(numColliders * numColliders + 5000); // Conservative estimate
+
+		uint32 dummyRigidBodyIndex = numRigidBodies;
+
+		// Collision detection
+		getWorldSpaceColliders(scene, worldSpaceAABBs, worldSpaceColliders, dummyRigidBodyIndex);
+		VALIDATE(worldSpaceColliders, numColliders);
+		VALIDATE(worldSpaceAABBs, numColliders);
+
+		// Broad phase
+		uint32 numBroadphaseOverlaps = broadphase(scene, worldSpaceAABBs, arena, overlappingColliderPairs, settings.simdBroadPhase);
+
+		non_collision_interaction* nonCollisionInteractions = arena.allocate<non_collision_interaction>(numBroadphaseOverlaps);
+		collision_contact* contacts = arena.allocate<collision_contact>(numBroadphaseOverlaps * 4 + 5000); // Each collision can have up to 4 contact points
+		constraint_body_pair* allConstraintBodyPairs = arena.allocate<constraint_body_pair>(numConstraints + numBroadphaseOverlaps * 4 + 5000);
+		collider_pair* collidingColliderPairs = overlappingColliderPairs; // We reuse this buffer
+		uint8* contactCountPerCollision = arena.allocate<uint8>(numColliders * numColliders + 5000);
+
+		constraint_body_pair* collisionBodyPairs = allConstraintBodyPairs + numConstraints;
+
+		// Narrow phase
+		narrowphase_result narrowPhaseResult = narrowphase(worldSpaceColliders, overlappingColliderPairs, numBroadphaseOverlaps, arena,
+			contacts, collisionBodyPairs, collidingColliderPairs, contactCountPerCollision, nonCollisionInteractions, settings.simdNarrowPhase);
+
+		// Heightmap collisions
+		for (auto [entityHandle, heightmap] : scene.view<heightmap_collider_component>().each())
 		{
-			timer = fmod(timer, physicsFixedTimeStep);
+			narrowphase_result heightmapCollisionResult = heightmapCollision(heightmap, worldSpaceColliders, worldSpaceAABBs, numColliders,
+				contacts + narrowPhaseResult.numContacts, collisionBodyPairs + narrowPhaseResult.numContacts,
+				collidingColliderPairs + narrowPhaseResult.numCollisions, contactCountPerCollision + narrowPhaseResult.numCollisions,
+				arena, (uint16)dummyRigidBodyIndex);
+
+			narrowPhaseResult.numCollisions += heightmapCollisionResult.numCollisions;
+			narrowPhaseResult.numContacts += heightmapCollisionResult.numContacts;
+			narrowPhaseResult.numNonCollisionInteractions += heightmapCollisionResult.numNonCollisionInteractions;
+		}
+
+		VALIDATE(contacts, narrowPhaseResult.numContacts);
+
+		vec3 globalForceField = getForceFieldStates(scene, ffGlobal);
+
+		handleNonCollisionInteractions(scene, ffGlobal, nonCollisionInteractions, narrowPhaseResult.numNonCollisionInteractions,
+			numRigidBodies, numTriggers);
+
+		CPU_PROFILE_STAT("Num rigid bodies", numRigidBodies);
+		CPU_PROFILE_STAT("Num colliders", numColliders);
+		CPU_PROFILE_STAT("Num broadphase overlaps", numBroadphaseOverlaps);
+		CPU_PROFILE_STAT("Num narrowphase collisions", narrowPhaseResult.numCollisions);
+		CPU_PROFILE_STAT("Num narrowphase contacts", narrowPhaseResult.numContacts);
+
+		//  Apply global forces (including gravity) and air drag and integrate forces
+		{
+			CPU_PROFILE_BLOCK("Integrate rigid body forces");
+
+			uint32 rbIndex = numRigidBodies - 1; // EnTT iterates back to front
+			for (auto [entityHandle, rb, transform] : scene.group<rigid_body_component, physics_transform1_component>().each())
+			{
+				rigid_body_global_state& global = rbGlobal[rbIndex--];
+				rb.forceAccumulator += globalForceField;
+				rb.applyGravityAndIntegrateForces(global, transform, dt);
+			}
+		}
+
+		// Kinematic rigid body. This is used in collision constraint solving, when a collider has no rigid body
+		memset(&rbGlobal[dummyRigidBodyIndex], 0, sizeof(rigid_body_global_state));
+
+		VALIDATE(rbGlobal, numRigidBodies);
+
+		handleCollisionCallbacks(scene, collidingColliderPairs, contactCountPerCollision, narrowPhaseResult.numCollisions, numColliders, contacts, rbGlobal, dummyRigidBodyIndex,
+			settings.collisionBeginCallback, settings.collisionEndCallback);
+
+		// Collect constraints
+		uint32 numContacts = narrowPhaseResult.numContacts;
+
+		distance_constraint* distanceConstraints = scene.raw<distance_constraint>();
+		ball_constraint* ballConstraints = scene.raw<ball_constraint>();
+		fixed_constraint* fixedConstraints = scene.raw<fixed_constraint>();
+		hinge_constraint* hingeConstraints = scene.raw<hinge_constraint>();
+		cone_twist_constraint* coneTwistConstraints = scene.raw<cone_twist_constraint>();
+		slider_constraint* sliderConstraints = scene.raw<slider_constraint>();
+
+		constraint_body_pair* distanceConstraintBodyPairs = allConstraintBodyPairs + 0;
+		constraint_body_pair* ballConstraintBodyPairs = distanceConstraintBodyPairs + numDistanceConstraints;
+		constraint_body_pair* fixedConstraintBodyPairs = ballConstraintBodyPairs + numBallConstraints;
+		constraint_body_pair* hingeConstraintBodyPairs = fixedConstraintBodyPairs + numFixedConstraints;
+		constraint_body_pair* coneTwistConstraintBodyPairs = hingeConstraintBodyPairs + numHingeConstraints;
+		constraint_body_pair* sliderConstraintBodyPairs = coneTwistConstraintBodyPairs + numConeTwistConstraints;
+
+		getConstraintBodyPairs<distance_constraint>(scene, distanceConstraintBodyPairs);
+		getConstraintBodyPairs<ball_constraint>(scene, ballConstraintBodyPairs);
+		getConstraintBodyPairs<fixed_constraint>(scene, fixedConstraintBodyPairs);
+		getConstraintBodyPairs<hinge_constraint>(scene, hingeConstraintBodyPairs);
+		getConstraintBodyPairs<cone_twist_constraint>(scene, coneTwistConstraintBodyPairs);
+		getConstraintBodyPairs<slider_constraint>(scene, sliderConstraintBodyPairs);
+
+		// Solve constraints
+		constraint_solver constraintSolver;
+		constraintSolver.initialize(arena, rbGlobal,
+			distanceConstraints, distanceConstraintBodyPairs, numDistanceConstraints,
+			ballConstraints, ballConstraintBodyPairs, numBallConstraints,
+			fixedConstraints, fixedConstraintBodyPairs, numFixedConstraints,
+			hingeConstraints, hingeConstraintBodyPairs, numHingeConstraints,
+			coneTwistConstraints, coneTwistConstraintBodyPairs, numConeTwistConstraints,
+			sliderConstraints, sliderConstraintBodyPairs, numSliderConstraints,
+			contacts, collisionBodyPairs, numContacts,
+			dummyRigidBodyIndex, settings.simdConstraintSolver, dt);
+
+		{
+			CPU_PROFILE_BLOCK("Solve constraints");
+
+			for (uint32 it = 0; it < settings.numRigidSolverIterations; ++it)
+			{
+				constraintSolver.solveOneIteration();
+			}
+		}
+
+		// Integrate velocities
+		{
+			CPU_PROFILE_BLOCK("Integrate rigid body velocities");
+
+			uint32 rbIndex = numRigidBodies - 1; // EnTT iterates back to front
+			for (auto [entityHandle, rb, transform] : scene.group<rigid_body_component, physics_transform1_component>().each())
+			{
+				rigid_body_global_state& global = rbGlobal[rbIndex--];
+
+				rb.integrateVelocity(global, transform, dt);
+			}
+		}
+
+		VALIDATE(rbGlobal, numRigidBodies);
+
+		// Cloth. This needs to get integrated with the rest of the system
+
+		for (auto [entityHandle, cloth] : scene.view<cloth_component>().each())
+		{
+			cloth.applyWindForce(globalForceField);
+			cloth.simulate(settings.numClothVelocityIterations, settings.numClothPositionIterations, settings.numClothDriftIterations, dt);
+		}
+
+		arena.resetToMarker(marker);
+	}
+
+	void physicsStep(escene& scene, eallocator& arena, float& timer, const physics_settings& settings, float dt)
+	{
+		if (settings.fixedFrameRate)
+		{
+			const float physicsFixedTimeStep = 1.f / (float)settings.frameRate;
+			const uint32 maxPhysicsIterationsPerFrame = settings.maxPhysicsIterationsPerFrame;
+
+			timer += dt;
+			uint32 physicsIterations = 0;
+			if (timer >= physicsFixedTimeStep)
+			{
+				for (auto [entityHandle, transform0, transform1] : scene.group(component_group<physics_transform0_component, physics_transform1_component>).each())
+				{
+					transform0 = transform1;
+				}
+
+				while (timer >= physicsFixedTimeStep && physicsIterations++ < maxPhysicsIterationsPerFrame)
+				{
+					physicsStepInternal(scene, arena, settings, physicsFixedTimeStep);
+					timer -= physicsFixedTimeStep;
+				}
+			}
+
+			if (timer >= physicsFixedTimeStep)
+			{
+				timer = fmod(timer, physicsFixedTimeStep);
 
 #ifndef PHYSICS_ONLY
-			LOG_WARNING("Dropping physics frames");
+				LOG_WARNING("Dropping physics frames");
 #endif
+			}
+
+			float physicsInterpolationT = timer / physicsFixedTimeStep;
+			ASSERT(physicsInterpolationT >= 0.f && physicsInterpolationT <= 1.f);
+
+			for (auto [entityHandle, transform, physicsTransform0, physicsTransform1] : scene.group(component_group<transform_component, physics_transform0_component, physics_transform1_component>).each())
+			{
+				transform = lerp(physicsTransform0, physicsTransform1, physicsInterpolationT);
+			}
 		}
-
-		float physicsInterpolationT = timer / physicsFixedTimeStep;
-		ASSERT(physicsInterpolationT >= 0.f && physicsInterpolationT <= 1.f);
-
-		for (auto [entityHandle, transform, physicsTransform0, physicsTransform1] : scene.group(component_group<transform_component, physics_transform0_component, physics_transform1_component>).each())
+		else
 		{
-			transform = lerp(physicsTransform0, physicsTransform1, physicsInterpolationT);
+			physicsStepInternal(scene, arena, settings, dt);
+
+			for (auto [entityHandle, transform, physicsTransform1] : scene.group(component_group<transform_component, physics_transform1_component>).each())
+			{
+				transform = physicsTransform1;
+			}
 		}
 	}
-	else
-	{
-		physicsStepInternal(scene, arena, settings, dt);
 
-		for (auto [entityHandle, transform, physicsTransform1] : scene.group(component_group<transform_component, physics_transform1_component>).each())
+	// This function returns the inertia tensors with respect to the center of gravity, so with a coordinate system centered at the COG
+	physics_properties collider_union::calculatePhysicsProperties()
+	{
+		physics_properties result;
+		switch (type)
 		{
-			transform = physicsTransform1;
-		}
-	}
-}
-
-// This function returns the inertia tensors with respect to the center of gravity, so with a coordinate system centered at the COG
-physics_properties collider_union::calculatePhysicsProperties()
-{
-	physics_properties result;
-	switch (type)
-	{
 		case collider_type_sphere:
 		{
 			result.mass = sphere.volume() * material.density;
@@ -1426,7 +1429,7 @@ physics_properties collider_union::calculatePhysicsProperties()
 
 			result.mass = capsule.volume() * material.density;
 			result.cog = (capsule.positionA + capsule.positionB) * 0.5f;
-			
+
 			// Inertia
 			float sqRadius = capsule.radius * capsule.radius;
 			float sqRadiusPI = M_PI * sqRadius;
@@ -1567,6 +1570,7 @@ physics_properties collider_union::calculatePhysicsProperties()
 		{
 			ASSERT(false);
 		} break;
+		}
+		return result;
 	}
-	return result;
 }

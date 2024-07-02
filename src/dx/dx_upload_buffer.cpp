@@ -1,117 +1,120 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "dx_upload_buffer.h"
+#include "dx/dx_upload_buffer.h"
 #include "core/memory.h"
-#include "dx_context.h"
+#include "dx/dx_context.h"
 
-NODISCARD dx_page* dx_page_pool::allocateNewPage()
+namespace era_engine
 {
-	mutex.lock();
-	dx_page* result = arena.allocate<dx_page>(1, true);
-	mutex.unlock();
-
-	auto desc = CD3DX12_RESOURCE_DESC::Buffer(pageSize);
-	CD3DX12_HEAP_PROPERTIES props(D3D12_HEAP_TYPE_UPLOAD);
-	checkResult(dxContext.device->CreateCommittedResource(
-		&props,
-		D3D12_HEAP_FLAG_NONE,
-		&desc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&result->buffer)
-	));
-
-	result->gpuBasePtr = result->buffer->GetGPUVirtualAddress();
-	result->buffer->Map(0, 0, (void**)&result->cpuBasePtr);
-	result->pageSize = pageSize;
-
-	return result;
-}
-
-NODISCARD dx_page* dx_page_pool::getFreePage()
-{
-	mutex.lock();
-	dx_page* result = freePages;
-	if (result)
+	NODISCARD dx_page* dx_page_pool::allocateNewPage()
 	{
-		freePages = result->next;
-	}
-	mutex.unlock();
+		mutex.lock();
+		dx_page* result = arena.allocate<dx_page>(1, true);
+		mutex.unlock();
 
-	if (!result)
-	{
-		result = allocateNewPage();
+		auto desc = CD3DX12_RESOURCE_DESC::Buffer(pageSize);
+		CD3DX12_HEAP_PROPERTIES props(D3D12_HEAP_TYPE_UPLOAD);
+		checkResult(dxContext.device->CreateCommittedResource(
+			&props,
+			D3D12_HEAP_FLAG_NONE,
+			&desc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&result->buffer)
+		));
+
+		result->gpuBasePtr = result->buffer->GetGPUVirtualAddress();
+		result->buffer->Map(0, 0, (void**)&result->cpuBasePtr);
+		result->pageSize = pageSize;
+
+		return result;
 	}
 
-	result->currentOffset = 0;
-
-	return result;
-}
-
-void dx_page_pool::returnPage(dx_page* page)
-{
-	lock lock{ mutex };
-	page->next = usedPages;
-	usedPages = page;
-	if (!lastUsedPage)
+	NODISCARD dx_page* dx_page_pool::getFreePage()
 	{
-		lastUsedPage = page;
+		mutex.lock();
+		dx_page* result = freePages;
+		if (result)
+		{
+			freePages = result->next;
+		}
+		mutex.unlock();
+
+		if (!result)
+		{
+			result = allocateNewPage();
+		}
+
+		result->currentOffset = 0;
+
+		return result;
 	}
-}
 
-void dx_page_pool::reset()
-{
-	if (lastUsedPage)
+	void dx_page_pool::returnPage(dx_page* page)
 	{
-		lastUsedPage->next = freePages;
+		lock lock{ mutex };
+		page->next = usedPages;
+		usedPages = page;
+		if (!lastUsedPage)
+		{
+			lastUsedPage = page;
+		}
 	}
-	freePages = usedPages;
-	usedPages = 0;
-	lastUsedPage = 0;
-}
 
-NODISCARD dx_allocation dx_upload_buffer::allocate(uint64 size, uint64 alignment)
-{
-	ASSERT(size <= pagePool->pageSize);
-
-	uint64 alignedOffset = currentPage ? alignTo(currentPage->currentOffset, alignment) : 0;
-
-	dx_page* page = currentPage;
-	if (!page || alignedOffset + size > page->pageSize)
+	void dx_page_pool::reset()
 	{
-		page = pagePool->getFreePage();
-		alignedOffset = 0;
+		if (lastUsedPage)
+		{
+			lastUsedPage->next = freePages;
+		}
+		freePages = usedPages;
+		usedPages = 0;
+		lastUsedPage = 0;
+	}
 
-		if (currentPage)
+	NODISCARD dx_allocation dx_upload_buffer::allocate(uint64 size, uint64 alignment)
+	{
+		ASSERT(size <= pagePool->pageSize);
+
+		uint64 alignedOffset = currentPage ? alignTo(currentPage->currentOffset, alignment) : 0;
+
+		dx_page* page = currentPage;
+		if (!page || alignedOffset + size > page->pageSize)
+		{
+			page = pagePool->getFreePage();
+			alignedOffset = 0;
+
+			if (currentPage)
+			{
+				pagePool->returnPage(currentPage);
+			}
+			currentPage = page;
+		}
+
+		dx_allocation result;
+		result.cpuPtr = page->cpuBasePtr + alignedOffset;
+		result.gpuPtr = page->gpuBasePtr + alignedOffset;
+		result.resource = page->buffer;
+		result.offsetInResource = (uint32)alignedOffset;
+
+		page->currentOffset = alignedOffset + size;
+
+		return result;
+	}
+
+	void dx_upload_buffer::reset()
+	{
+		if (currentPage && pagePool)
 		{
 			pagePool->returnPage(currentPage);
 		}
-		currentPage = page;
+		currentPage = 0;
 	}
 
-	dx_allocation result;
-	result.cpuPtr = page->cpuBasePtr + alignedOffset;
-	result.gpuPtr = page->gpuBasePtr + alignedOffset;
-	result.resource = page->buffer;
-	result.offsetInResource = (uint32)alignedOffset;
-
-	page->currentOffset = alignedOffset + size;
-
-	return result;
-}
-
-void dx_upload_buffer::reset()
-{
-	if (currentPage && pagePool)
+	void dx_page_pool::initialize(uint32 sizeInBytes)
 	{
-		pagePool->returnPage(currentPage);
+		pageSize = sizeInBytes;
+		arena.initialize(0, sizeof(dx_page) * 512);
 	}
-	currentPage = 0;
-}
-
-void dx_page_pool::initialize(uint32 sizeInBytes)
-{
-	pageSize = sizeInBytes;
-	arena.initialize(0, sizeof(dx_page) * 512);
 }

@@ -7,10 +7,13 @@
 #include "boid_particle_system.h"
 #include "debris_particle_system.h"
 
-void loadAllParticleSystemPipelines()
+namespace era_engine
 {
-	fire_particle_system::initializePipeline();
-	smoke_particle_system::initializePipeline();
-	boid_particle_system::initializePipeline();
-	debris_particle_system::initializePipeline();
+	void loadAllParticleSystemPipelines()
+	{
+		fire_particle_system::initializePipeline();
+		smoke_particle_system::initializePipeline();
+		boid_particle_system::initializePipeline();
+		debris_particle_system::initializePipeline();
+	}
 }

@@ -6,7 +6,7 @@
 #include <scene/scene.h>
 #include <application.h>
 
-namespace physics
+namespace era_engine::physics
 {
 	px_capsule_cct_component::px_capsule_cct_component(uint32 handle) : px_cct_component_base(handle)
 	{

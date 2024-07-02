@@ -2,16 +2,19 @@
 
 #pragma once
 
-extern bool logWindowOpen;
-
-enum message_type
+namespace era_engine
 {
-	message_type_normal,
-	message_type_warning,
-	message_type_error,
+	extern bool logWindowOpen;
 
-	message_type_count,
-};
+	enum message_type
+	{
+		message_type_normal,
+		message_type_warning,
+		message_type_error,
+
+		message_type_count,
+	};
+}
 
 #if ENABLE_MESSAGE_LOG
 
@@ -25,11 +28,14 @@ enum message_type
 #define LOG_ERROR(message, ...) logMessage(message_type_error, message, __VA_ARGS__)
 #endif
 
-void logMessageInternal(message_type type, const char* file, const char* function, uint32 line, const char* format, ...);
-void logMessage(message_type type, const char* format, ...);
+namespace era_engine
+{
+	void logMessageInternal(message_type type, const char* file, const char* function, uint32 line, const char* format, ...);
+	void logMessage(message_type type, const char* format, ...);
 
-void initializeMessageLog();
-void updateMessageLog(float dt);
+	void initializeMessageLog();
+	void updateMessageLog(float dt);
+}
 
 #else
 #define LOG_MESSAGE(...)

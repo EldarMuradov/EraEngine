@@ -7,65 +7,68 @@
 #include <scene/scene.h>
 #include <core/camera_controller.h>
 
-struct asset_editor_panel
+namespace era_engine
 {
-	virtual void beginFrame();
-	virtual void endFrame() {}
+	struct asset_editor_panel
+	{
+		virtual void beginFrame();
+		virtual void endFrame() {}
 
-	bool isOpen() const { return windowOpen; }
-	void open();
-	void close();
+		bool isOpen() const { return windowOpen; }
+		void open();
+		void close();
 
-private:
-	virtual void edit(uint32 renderWidth, uint32 renderHeight) = 0;
-	virtual ref<dx_texture> getRendering() = 0;
-	virtual void setDragDropData(void* data, uint32 size) {}
+	private:
+		virtual void edit(uint32 renderWidth, uint32 renderHeight) = 0;
+		virtual ref<dx_texture> getRendering() = 0;
+		virtual void setDragDropData(void* data, uint32 size) {}
 
-protected:
-	const char* title;
-	const char* dragDropTarget;
+	protected:
+		const char* title;
+		const char* dragDropTarget;
 
-	bool windowOpen = false;
-	bool windowOpenInternal = false;
-};
+		bool windowOpen = false;
+		bool windowOpenInternal = false;
+	};
 
-struct mesh_editor_panel : asset_editor_panel
-{
-	mesh_editor_panel();
+	struct mesh_editor_panel : asset_editor_panel
+	{
+		mesh_editor_panel();
 
-	virtual void beginFrame() override;
-	virtual void endFrame() override;
+		virtual void beginFrame() override;
+		virtual void endFrame() override;
 
-	void setMesh(ref<multi_mesh> m) noexcept { mesh = m; }
-	void setScene(editor_scene* scene) noexcept { this->scene = scene; }
+		void setMesh(ref<multi_mesh> m) noexcept { mesh = m; }
+		void setScene(editor_scene* scene) noexcept { this->scene = scene; }
 
-	bool isHovered() const noexcept { return hovered; }
+		bool isHovered() const noexcept { return hovered; }
 
-	render_camera camera;
+		render_camera camera;
 
-private:
-	virtual void edit(uint32 renderWidth, uint32 renderHeight) override;
-	virtual ref<dx_texture> getRendering() override;
-	virtual void setDragDropData(void* data, uint32 size) override;
+	private:
+		virtual void edit(uint32 renderWidth, uint32 renderHeight) override;
+		virtual ref<dx_texture> getRendering() override;
+		virtual void setDragDropData(void* data, uint32 size) override;
 
-	ref<multi_mesh> mesh;
-	editor_scene* scene = nullptr;
-	main_renderer renderer;
+		ref<multi_mesh> mesh;
+		editor_scene* scene = nullptr;
+		main_renderer renderer;
 
-	user_input input = {};
+		user_input input = {};
 
-	camera_controller controller;
+		camera_controller controller;
 
-	opaque_render_pass renderPass;
+		opaque_render_pass renderPass;
 
-	uint32 width;
-	uint32 height;
+		uint32 width;
+		uint32 height;
 
-	bool appFocusedLastFrame = true;
-	bool hovered = false;
-};
+		bool appFocusedLastFrame = true;
+		bool hovered = false;
+	};
 
-struct editor_panels
-{
-	mesh_editor_panel meshEditor;
-};
+	struct editor_panels
+	{
+		mesh_editor_panel meshEditor;
+	};
+}

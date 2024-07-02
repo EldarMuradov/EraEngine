@@ -23,87 +23,92 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui/imgui_internal.h>
 
-bool handleWindowsMessages();
-
-static uint64 fenceValues[NUM_BUFFERED_FRAMES];
-static uint64 frameID;
-
-static bool newFrame(float& dt, dx_window& window)
+namespace era_engine
 {
-	static bool first = true;
-	static float perfFreq;
-	static LARGE_INTEGER lastTime;
+	bool handleWindowsMessages();
 
-	if (first)
+	static uint64 fenceValues[NUM_BUFFERED_FRAMES];
+	static uint64 frameID;
+
+	static bool newFrame(float& dt, dx_window& window)
 	{
-		LARGE_INTEGER perfFreqResult;
-		QueryPerformanceFrequency(&perfFreqResult);
-		perfFreq = (float)perfFreqResult.QuadPart;
+		static bool first = true;
+		static float perfFreq;
+		static LARGE_INTEGER lastTime;
 
-		QueryPerformanceCounter(&lastTime);
+		if (first)
+		{
+			LARGE_INTEGER perfFreqResult;
+			QueryPerformanceFrequency(&perfFreqResult);
+			perfFreq = (float)perfFreqResult.QuadPart;
 
-		first = false;
+			QueryPerformanceCounter(&lastTime);
+
+			first = false;
+		}
+
+		LARGE_INTEGER currentTime;
+		QueryPerformanceCounter(&currentTime);
+		dt = ((float)(currentTime.QuadPart - lastTime.QuadPart) / perfFreq);
+		lastTime = currentTime;
+
+		bool result = handleWindowsMessages();
+
+		newImGuiFrame(dt);
+		ImGui::DockSpaceOverViewport();
+
+		cpuProfilingResolveTimeStamps();
+
+		{
+			CPU_PROFILE_BLOCK("Wait for queued frame to finish rendering");
+			dxContext.renderQueue.waitForFence(fenceValues[window.currentBackbufferIndex]);
+		}
+
+		dxContext.newFrame(frameID);
+
+		return result;
 	}
 
-	LARGE_INTEGER currentTime;
-	QueryPerformanceCounter(&currentTime);
-	dt = ((float)(currentTime.QuadPart - lastTime.QuadPart) / perfFreq);
-	lastTime = currentTime;
-
-	bool result = handleWindowsMessages();
-
-	newImGuiFrame(dt);
-	ImGui::DockSpaceOverViewport();
-
-	cpuProfilingResolveTimeStamps();
-
+	static void renderToMainWindow(dx_window& window)
 	{
-		CPU_PROFILE_BLOCK("Wait for queued frame to finish rendering");
-		dxContext.renderQueue.waitForFence(fenceValues[window.currentBackbufferIndex]);
+		dx_resource backbuffer = window.backBuffers[window.currentBackbufferIndex];
+		dx_rtv_descriptor_handle rtv = window.backBufferRTVs[window.currentBackbufferIndex];
+
+		dx_command_list* cl = dxContext.getFreeRenderCommandList();
+
+		{
+			DX_PROFILE_BLOCK(cl, "Blit to backbuffer");
+
+			CD3DX12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.f, 0.f, (float)window.clientWidth, (float)window.clientHeight);
+			cl->setViewport(viewport);
+
+			cl->transitionBarrier(backbuffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+			cl->clearRTV(rtv, 0.f, 0.f, 0.f);
+			cl->setRenderTarget(&rtv, 1, 0);
+
+			renderImGui(cl);
+
+			cl->transitionBarrier(backbuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+		}
+		dxContext.endFrame(cl);
+
+		uint64 result = dxContext.executeCommandList(cl);
+
+		window.swapBuffers();
+
+		fenceValues[window.currentBackbufferIndex] = result;
 	}
 
-	dxContext.newFrame(frameID);
-
-	return result;
-}
-
-static void renderToMainWindow(dx_window& window)
-{
-	dx_resource backbuffer = window.backBuffers[window.currentBackbufferIndex];
-	dx_rtv_descriptor_handle rtv = window.backBufferRTVs[window.currentBackbufferIndex];
-
-	dx_command_list* cl = dxContext.getFreeRenderCommandList();
-
-	{
-		DX_PROFILE_BLOCK(cl, "Blit to backbuffer");
-
-		CD3DX12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.f, 0.f, (float)window.clientWidth, (float)window.clientHeight);
-		cl->setViewport(viewport);
-
-		cl->transitionBarrier(backbuffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-		cl->clearRTV(rtv, 0.f, 0.f, 0.f);
-		cl->setRenderTarget(&rtv, 1, 0);
-
-		renderImGui(cl);
-
-		cl->transitionBarrier(backbuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-	}
-	dxContext.endFrame(cl);
-
-	uint64 result = dxContext.executeCommandList(cl);
-
-	window.swapBuffers();
-
-	fenceValues[window.currentBackbufferIndex] = result;
-}
-
-application globalApp;
+	application globalApp;
 
 #ifndef ERA_RUNTIME
+}
 
 int main(int argc, char** argv)
 {
+	using namespace era_engine;
+
 	try
 	{
 		if (!dxContext.initialize())

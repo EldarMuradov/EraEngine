@@ -6,7 +6,7 @@
 
 #include "px/core/px_physics_engine.h"
 
-namespace physics
+namespace era_engine::physics
 {
 	using namespace physx;
 
@@ -65,19 +65,22 @@ namespace physics
 
 #include "core/reflect.h"
 
-REFLECT_STRUCT(physics::px_cct_component_base,
-	(type, "Type"),
-	(mass, "Mass")
-);
+namespace era_engine
+{
+	REFLECT_STRUCT(physics::px_cct_component_base,
+		(type, "Type"),
+		(mass, "Mass")
+	);
 
-REFLECT_STRUCT(physics::px_box_cct_component,
-	(type, "Type"),
-	(halfHeight, "HalfHeight"),
-	(halfSideExtent, "HalfSideExtent")
-);
+	REFLECT_STRUCT(physics::px_box_cct_component,
+		(type, "Type"),
+		(halfHeight, "HalfHeight"),
+		(halfSideExtent, "HalfSideExtent")
+	);
 
-REFLECT_STRUCT(physics::px_capsule_cct_component,
-	(type, "Type"),
-	(height, "Height"),
-	(radius, "Radius")
-);
+	REFLECT_STRUCT(physics::px_capsule_cct_component,
+		(type, "Type"),
+		(height, "Height"),
+		(radius, "Radius")
+	);
+}

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "simd.h"
-#include "soa.h"
+#include "core/simd.h"
+#include "core/soa.h"
 
 struct w4_float;
 struct w8_float;
@@ -243,19 +243,19 @@ template <typename simd_t> inline wN_vec3<simd_t> cross(wN_vec3<simd_t> a, wN_ve
 template <typename simd_t> inline simd_t squaredLength(wN_vec2<simd_t> a) { return dot(a, a); }
 template <typename simd_t> inline simd_t squaredLength(wN_vec3<simd_t> a) { return dot(a, a); }
 template <typename simd_t> inline simd_t squaredLength(wN_vec4<simd_t> a) { return dot(a, a); }
-						   
+
 template <typename simd_t> inline simd_t length(wN_vec2<simd_t> a) { return sqrt(squaredLength(a)); }
 template <typename simd_t> inline simd_t length(wN_vec3<simd_t> a) { return sqrt(squaredLength(a)); }
 template <typename simd_t> inline simd_t length(wN_vec4<simd_t> a) { return sqrt(squaredLength(a)); }
-						   
+
 template <typename simd_t> inline wN_vec2<simd_t> fmadd(wN_vec2<simd_t> a, wN_vec2<simd_t> b, wN_vec2<simd_t> c) { return { fmadd(a.x, b.x, c.x), fmadd(a.y, b.y, c.y) }; }
 template <typename simd_t> inline wN_vec3<simd_t> fmadd(wN_vec3<simd_t> a, wN_vec3<simd_t> b, wN_vec3<simd_t> c) { return { fmadd(a.x, b.x, c.x), fmadd(a.y, b.y, c.y), fmadd(a.z, b.z, c.z) }; }
 template <typename simd_t> inline wN_vec4<simd_t> fmadd(wN_vec4<simd_t> a, wN_vec4<simd_t> b, wN_vec4<simd_t> c) { return { fmadd(a.x, b.x, c.x), fmadd(a.y, b.y, c.y), fmadd(a.z, b.z, c.z), fmadd(a.w, b.w, c.w) }; }
 
 template <typename simd_t, typename cmp_t>
 NODISCARD inline wN_vec2<simd_t> ifThen(cmp_t cond, wN_vec2<simd_t> ifCase, wN_vec2<simd_t> thenCase)
-{ 
-	return { ifThen(cond, ifCase.x, thenCase.x), ifThen(cond, ifCase.y, thenCase.y) }; 
+{
+	return { ifThen(cond, ifCase.x, thenCase.x), ifThen(cond, ifCase.y, thenCase.y) };
 }
 
 template <typename simd_t, typename cmp_t>
@@ -279,22 +279,22 @@ NODISCARD inline wN_quat<simd_t> ifThen(cmp_t cond, wN_quat<simd_t> ifCase, wN_q
 template <typename simd_t> inline NODISCARD wN_vec2<simd_t> noz(wN_vec2<simd_t> a) { simd_t sl = squaredLength(a); return ifThen(sl < 1e-8f, wN_vec2<simd_t>::zero(), a * rsqrt(sl)); }
 template <typename simd_t> inline NODISCARD wN_vec3<simd_t> noz(wN_vec3<simd_t> a) { simd_t sl = squaredLength(a); return ifThen(sl < 1e-8f, wN_vec3<simd_t>::zero(), a * rsqrt(sl)); }
 template <typename simd_t> inline NODISCARD wN_vec4<simd_t> noz(wN_vec4<simd_t> a) { simd_t sl = squaredLength(a); return ifThen(sl < 1e-8f, wN_vec4<simd_t>::zero(), a * rsqrt(sl)); }
-						   
+
 template <typename simd_t> inline NODISCARD wN_vec2<simd_t> normalize(wN_vec2<simd_t> a) { simd_t l2 = squaredLength(a); return a * rsqrt(l2); }
 template <typename simd_t> inline NODISCARD wN_vec3<simd_t> normalize(wN_vec3<simd_t> a) { simd_t l2 = squaredLength(a); return a * rsqrt(l2); }
 template <typename simd_t> inline NODISCARD wN_vec4<simd_t> normalize(wN_vec4<simd_t> a) { simd_t l2 = squaredLength(a); return a * rsqrt(l2); }
-						   
+
 template <typename simd_t> inline NODISCARD wN_vec2<simd_t> abs(wN_vec2<simd_t> a) { return wN_vec2(abs(a.x), abs(a.y)); }
 template <typename simd_t> inline NODISCARD wN_vec3<simd_t> abs(wN_vec3<simd_t> a) { return wN_vec3(abs(a.x), abs(a.y), abs(a.z)); }
 template <typename simd_t> inline NODISCARD wN_vec4<simd_t> abs(wN_vec4<simd_t> a) { return wN_vec4(abs(a.x), abs(a.y), abs(a.z), abs(a.w)); }
-						   
+
 template <typename simd_t> inline NODISCARD wN_vec2<simd_t> round(wN_vec2<simd_t> a) { return wN_vec2(round(a.x), round(a.y)); }
 template <typename simd_t> inline NODISCARD wN_vec3<simd_t> round(wN_vec3<simd_t> a) { return wN_vec3(round(a.x), round(a.y), round(a.z)); }
 template <typename simd_t> inline NODISCARD wN_vec4<simd_t> round(wN_vec4<simd_t> a) { return wN_vec4(round(a.x), round(a.y), round(a.z), round(a.w)); }
-						   
+
 template <typename simd_t> inline NODISCARD wN_quat<simd_t> normalize(wN_quat<simd_t> a) { wN_quat<simd_t> result; result.v4 = normalize(a.v4); return result; }
 template <typename simd_t> inline NODISCARD wN_quat<simd_t> conjugate(wN_quat<simd_t> a) { return { -a.x, -a.y, -a.z, a.w }; }
-						   
+
 template <typename simd_t> inline NODISCARD wN_quat<simd_t> operator+(wN_quat<simd_t> a, wN_quat<simd_t> b) { wN_quat result; result.v4 = a.v4 + b.v4; return result; }
 
 template <typename simd_t>
@@ -319,7 +319,7 @@ template <typename simd_t> inline NODISCARD wN_quat<simd_t> lerp(wN_quat<simd_t>
 template <typename simd_t> inline NODISCARD wN_vec2<simd_t> exp(wN_vec2<simd_t> v) { return wN_vec2(exp(v.x), exp(v.y)); }
 template <typename simd_t> inline NODISCARD wN_vec3<simd_t> exp(wN_vec3<simd_t> v) { return wN_vec3(exp(v.x), exp(v.y), exp(v.z)); }
 template <typename simd_t> inline NODISCARD wN_vec4<simd_t> exp(wN_vec4<simd_t> v) { return wN_vec4(exp(v.x), exp(v.y), exp(v.z), exp(v.w)); }
-						   
+
 template <typename simd_t> inline NODISCARD wN_vec2<simd_t> pow(wN_vec2<simd_t> v, simd_t e) { return wN_vec2(pow(v.x, e), pow(v.y, e)); }
 template <typename simd_t> inline NODISCARD wN_vec3<simd_t> pow(wN_vec3<simd_t> v, simd_t e) { return wN_vec3(pow(v.x, e), pow(v.y, e), pow(v.z, e)); }
 template <typename simd_t> inline NODISCARD wN_vec4<simd_t> pow(wN_vec4<simd_t> v, simd_t e) { return wN_vec4(pow(v.x, e), pow(v.y, e), pow(v.z, e), pow(v.w, e)); }
@@ -327,7 +327,7 @@ template <typename simd_t> inline NODISCARD wN_vec4<simd_t> pow(wN_vec4<simd_t> 
 
 template <typename simd_t>
 inline wN_vec2<simd_t> operator*(const wN_mat2<simd_t>& a, wN_vec2<simd_t> b)
-{ 
+{
 	wN_vec2<simd_t> result;
 	result.x = fmadd(a.m00, b.x, a.m01 * b.y);
 	result.y = fmadd(a.m10, b.x, a.m11 * b.y);
@@ -385,7 +385,7 @@ inline wN_mat3<simd_t> operator*(const wN_mat3<simd_t>& a, const wN_mat3<simd_t>
 	result.m20 = fmadd(a.m20, b.m00, fmadd(a.m21, b.m10, a.m22 * b.m20));
 	result.m21 = fmadd(a.m20, b.m01, fmadd(a.m21, b.m11, a.m22 * b.m21));
 	result.m22 = fmadd(a.m20, b.m02, fmadd(a.m21, b.m12, a.m22 * b.m22));
-	
+
 	return result;
 }
 
@@ -420,15 +420,15 @@ inline wN_mat4<simd_t> operator*(const wN_mat4<simd_t>& a, const wN_mat4<simd_t>
 template <typename simd_t> inline wN_mat2<simd_t> operator*(const wN_mat2<simd_t>& a, simd_t b) { wN_mat2<simd_t> result; for (uint32 i = 0; i < 4; ++i) { result.m[i] = a.m[i] * b; } return result; }
 template <typename simd_t> inline wN_mat3<simd_t> operator*(const wN_mat3<simd_t>& a, simd_t b) { wN_mat3<simd_t> result; for (uint32 i = 0; i < 9; ++i) { result.m[i] = a.m[i] * b; } return result; }
 template <typename simd_t> inline wN_mat4<simd_t> operator*(const wN_mat4<simd_t>& a, simd_t b) { wN_mat4<simd_t> result; for (uint32 i = 0; i < 16; ++i) { result.m[i] = a.m[i] * b; } return result; }
-						   
+
 template <typename simd_t> inline wN_mat2<simd_t> operator*(simd_t b, const wN_mat2<simd_t>& a) { return a * b; }
 template <typename simd_t> inline wN_mat3<simd_t> operator*(simd_t b, const wN_mat3<simd_t>& a) { return a * b; }
 template <typename simd_t> inline wN_mat4<simd_t> operator*(simd_t b, const wN_mat4<simd_t>& a) { return a * b; }
-						   
+
 template <typename simd_t> inline wN_mat2<simd_t> operator+(const wN_mat2<simd_t>& a, const wN_mat2<simd_t>& b) { wN_mat2<simd_t> result; for (uint32 i = 0; i < 4; ++i) { result.m[i] = a.m[i] + b.m[i]; } return result; }
 template <typename simd_t> inline wN_mat3<simd_t> operator+(const wN_mat3<simd_t>& a, const wN_mat3<simd_t>& b) { wN_mat3<simd_t> result; for (uint32 i = 0; i < 9; ++i) { result.m[i] = a.m[i] + b.m[i]; } return result; }
 template <typename simd_t> inline wN_mat4<simd_t> operator+(const wN_mat4<simd_t>& a, const wN_mat4<simd_t>& b) { wN_mat4<simd_t> result; for (uint32 i = 0; i < 16; ++i) { result.m[i] = a.m[i] + b.m[i]; } return result; }
-						   
+
 template <typename simd_t>
 NODISCARD inline wN_mat2<simd_t> transpose(const wN_mat2<simd_t>& a)
 {
@@ -596,7 +596,7 @@ inline wN_quat<simd_t>::wN_quat(wN_vec3<simd_t> axis, simd_t angle)
 
 template<typename simd_t>
 inline wN_mat2<simd_t>::wN_mat2(
-	simd_t m00, simd_t m01, 
+	simd_t m00, simd_t m01,
 	simd_t m10, simd_t m11)
 	:
 	m00(m00), m01(m01),
@@ -604,8 +604,8 @@ inline wN_mat2<simd_t>::wN_mat2(
 
 template<typename simd_t>
 inline wN_mat3<simd_t>::wN_mat3(
-	simd_t m00, simd_t m01, simd_t m02, 
-	simd_t m10, simd_t m11, simd_t m12, 
+	simd_t m00, simd_t m01, simd_t m02,
+	simd_t m10, simd_t m11, simd_t m12,
 	simd_t m20, simd_t m21, simd_t m22)
 	:
 	m00(m00), m01(m01), m02(m02),
@@ -614,9 +614,9 @@ inline wN_mat3<simd_t>::wN_mat3(
 
 template<typename simd_t>
 inline wN_mat4<simd_t>::wN_mat4(
-	simd_t m00, simd_t m01, simd_t m02, simd_t m03, 
-	simd_t m10, simd_t m11, simd_t m12, simd_t m13, 
-	simd_t m20, simd_t m21, simd_t m22, simd_t m23, 
+	simd_t m00, simd_t m01, simd_t m02, simd_t m03,
+	simd_t m10, simd_t m11, simd_t m12, simd_t m13,
+	simd_t m20, simd_t m21, simd_t m22, simd_t m23,
 	simd_t m30, simd_t m31, simd_t m32, simd_t m33)
 	:
 	m00(m00), m01(m01), m02(m02), m03(m03),

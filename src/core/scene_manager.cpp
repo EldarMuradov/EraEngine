@@ -3,7 +3,10 @@
 #include <scripting/native_scripting_linker.h>
 #include <application.h>
 
-void scene_manager::loadScene(std::string_view name)
+namespace era_engine
 {
+	void scene_manager::loadScene(std::string_view name)
+	{
 
+	}
 }

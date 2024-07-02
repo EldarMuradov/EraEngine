@@ -4,102 +4,105 @@
 
 #include <concurrentqueue/concurrentqueue.h>
 
-struct job_handle
+namespace era_engine
 {
-    void submitNow();
-    void submitAfter(job_handle before);
-    void waitForCompletion();
-
-    int32 index = -1;
-    struct job_queue* queue;
-};
-
-template <typename data_t>
-using JobFunction = void (*)(data_t&, job_handle);
-
-struct job_queue
-{
-    struct job_queue_entry
+    struct job_handle
     {
-        void (*function)(void*, void*, job_handle);
-        void* templatedFunction;
+        void submitNow();
+        void submitAfter(job_handle before);
+        void waitForCompletion();
 
-        std::atomic<int32> numUnfinishedJobs;
-        int32 parent;
-        job_handle continuation;
-
-        static constexpr uint64 SIZE = sizeof(function) + sizeof(templatedFunction) + sizeof(numUnfinishedJobs) + sizeof(parent) + sizeof(continuation);
-        static constexpr uint64 DATA_SIZE = (3 * 64) - SIZE;
-
-        uint8 data[DATA_SIZE];
+        int32 index = -1;
+        struct job_queue* queue;
     };
 
-    template<typename T_>
-    using ValidJobDataType = std::enable_if_t<sizeof(T_) <= job_queue_entry::DATA_SIZE, bool>;
+    template <typename Data_>
+    using JobFunction = void (*)(Data_&, job_handle);
 
-    static_assert(sizeof(job_queue_entry) % 64 == 0);
-
-    void initialize(uint32 numThreads, uint32 threadOffset, int threadPriority, const wchar* description);
-
-    template <typename data_t,
-        ValidJobDataType<data_t> = true>
-        job_handle createJob(JobFunction<data_t> function, const data_t& data, job_handle parent = {})
+    struct job_queue
     {
-        int32 handle = allocateJob();
-        auto& job = allJobs[handle];
-        job.numUnfinishedJobs = 1;
-        job.parent = parent.index;
-        job.continuation.index = -1;
-
-        if (parent.index != -1)
-            ++allJobs[parent.index].numUnfinishedJobs;
-
-        job.templatedFunction = function;
-        job.function = [](void* templatedFunction, void* rawData, job_handle job)
+        struct job_queue_entry
         {
-            data_t& data = *(data_t*)rawData;
+            void (*function)(void*, void*, job_handle);
+            void* templatedFunction;
 
-            auto function = (JobFunction<data_t>)templatedFunction;
-            function(data, job);
+            std::atomic<int32> numUnfinishedJobs;
+            int32 parent;
+            job_handle continuation;
 
-            data.~data_t();
+            static constexpr uint64 SIZE = sizeof(function) + sizeof(templatedFunction) + sizeof(numUnfinishedJobs) + sizeof(parent) + sizeof(continuation);
+            static constexpr uint64 DATA_SIZE = (3 * 64) - SIZE;
+
+            uint8 data[DATA_SIZE];
         };
 
-        new(job.data) data_t(data);
+        template<typename T_>
+        using ValidJobDataType = std::enable_if_t<sizeof(T_) <= job_queue_entry::DATA_SIZE, bool>;
 
-        return job_handle{ handle, this };
-    }
+        static_assert(sizeof(job_queue_entry) % 64 == 0);
 
-    void waitForCompletion();
+        void initialize(uint32 numThreads, uint32 threadOffset, int threadPriority, const wchar* description);
 
-private:
-    friend struct job_handle;
+        template <typename Data_,
+            ValidJobDataType<Data_> = true>
+        job_handle createJob(JobFunction<Data_> function, const Data_& data, job_handle parent = {})
+        {
+            int32 handle = allocateJob();
+            auto& job = allJobs[handle];
+            job.numUnfinishedJobs = 1;
+            job.parent = parent.index;
+            job.continuation.index = -1;
 
-    void addContinuation(int32 first, job_handle second);
-    void submit(int32 handle);
-    void waitForCompletion(int32 handle);
+            if (parent.index != -1)
+                ++allJobs[parent.index].numUnfinishedJobs;
 
-    int32 allocateJob();
-    void finishJob(int32 handle);
-    bool executeNextJob();
-    void threadFunc(int32 threadIndex);
+            job.templatedFunction = function;
+            job.function = [](void* templatedFunction, void* rawData, job_handle job)
+                {
+                    Data_& data = *(Data_*)rawData;
 
-    moodycamel::ConcurrentQueue<int32> queue;
-    std::atomic<uint32> runningJobs = 0;
+                    auto function = (JobFunction<Data_>)templatedFunction;
+                    function(data, job);
 
-    static constexpr uint32 capacity = 4096;
-    static constexpr uint32 indexMask = capacity - 1;
+                    data.~Data_();
+                };
 
-    job_queue_entry allJobs[capacity];
-    std::atomic<uint32> nextFreeJob = 0;
+            new(job.data) Data_(data);
 
-    std::condition_variable wakeCondition;
-    std::mutex wakeMutex;
-};
+            return job_handle{ handle, this };
+        }
 
-extern job_queue highPriorityJobQueue;
-extern job_queue lowPriorityJobQueue;
-extern job_queue mainThreadJobQueue;
+        void waitForCompletion();
 
-void initializeJobSystem();
-void executeMainThreadJobs();
+    private:
+        friend struct job_handle;
+
+        void addContinuation(int32 first, job_handle second);
+        void submit(int32 handle);
+        void waitForCompletion(int32 handle);
+
+        int32 allocateJob();
+        void finishJob(int32 handle);
+        bool executeNextJob();
+        void threadFunc(int32 threadIndex);
+
+        moodycamel::ConcurrentQueue<int32> queue;
+        std::atomic<uint32> runningJobs = 0;
+
+        static constexpr uint32 capacity = 4096;
+        static constexpr uint32 indexMask = capacity - 1;
+
+        job_queue_entry allJobs[capacity];
+        std::atomic<uint32> nextFreeJob = 0;
+
+        std::condition_variable wakeCondition;
+        std::mutex wakeMutex;
+    };
+
+    extern job_queue highPriorityJobQueue;
+    extern job_queue lowPriorityJobQueue;
+    extern job_queue mainThreadJobQueue;
+
+    void initializeJobSystem();
+    void executeMainThreadJobs();
+}

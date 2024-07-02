@@ -41,7 +41,7 @@
 #include <NvBlastExtAuthoringTypes.h>
 #include <NvBlastExtAuthoringBondGenerator.h>
 
-namespace physics
+namespace era_engine::physics
 {
     struct chunkPair
     {
@@ -61,9 +61,9 @@ namespace physics
 namespace std
 {
     template<>
-    struct hash<physics::chunkPair>
+    struct hash<era_engine::physics::chunkPair>
     {
-        size_t operator()(const physics::chunkPair& pair) const
+        size_t operator()(const era_engine::physics::chunkPair& pair) const
         {
             size_t seed = 0;
 
@@ -75,7 +75,7 @@ namespace std
     };
 }
 
-namespace physics
+namespace era_engine::physics
 {
     struct nvmesh;
     struct chunk_graph_manager;

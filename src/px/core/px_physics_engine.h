@@ -97,6 +97,7 @@ namespace Nv
 
 namespace physx
 {
+	using namespace era_engine;
 	constexpr float PX_HALF_MAX_F32 = PX_MAX_F32 / 2.0f;
 
 	PX_FORCE_INLINE constexpr PxU32 id(PxU32 x, PxU32 y, PxU32 numY) noexcept
@@ -202,10 +203,13 @@ namespace physx
 #endif
 }
 
-struct application;
-struct eallocator;
+namespace era_engine
+{
+	struct application;
+	struct eallocator;
+}
 
-namespace physics
+namespace era_engine::physics
 {
 	using namespace physx;
 

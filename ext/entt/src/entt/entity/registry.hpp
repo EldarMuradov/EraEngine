@@ -26,8 +26,11 @@
 #include "storage.hpp"
 #include "view.hpp"
 
+namespace era_engine
+{
 struct escene;
 struct eentity;
+}
 
 namespace entt {
 
@@ -250,8 +253,8 @@ private:
  */
 template<typename Entity>
 class basic_registry {
-    friend struct ::escene;
-    friend struct ::eentity;
+    friend struct era_engine::escene;
+    friend struct era_engine::eentity;
 
     using entity_traits = entt_traits<Entity>;
     using basic_common_type = basic_sparse_set<Entity>;

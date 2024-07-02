@@ -9,8 +9,11 @@
 
 #define INVALID_JOINT 0xFFFFFFFF
 
-struct multi_mesh;
-struct ldr_render_pass;
+namespace era_engine
+{
+	struct multi_mesh;
+	struct ldr_render_pass;
+}
 
 namespace era_engine::animation
 {

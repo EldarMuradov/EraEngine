@@ -5,46 +5,49 @@
 #include <atomic>
 #include <mutex>
 
-struct lock
+namespace era_engine
 {
-	lock(std::mutex& mutex) noexcept : sync(mutex)
+	struct lock
 	{
-		sync.lock();
-	}
+		lock(std::mutex& mutex) noexcept : sync(mutex)
+		{
+			sync.lock();
+		}
 
-	~lock()
+		~lock()
+		{
+			sync.unlock();
+		}
+
+		std::mutex& sync;
+	};
+
+	class spin_lock
 	{
-		sync.unlock();
-	}
+		std::atomic_flag flag;
 
-	std::mutex& sync;
-};
+	public:
+		spin_lock() = default;
 
-class spin_lock
-{
-	std::atomic_flag flag;
+		~spin_lock() { unlock(); }
 
-public:
-	spin_lock() = default;
+		void lock() noexcept
+		{
+			while (!flag.test_and_set(std::memory_order_acquire));
+		}
 
-	~spin_lock() { unlock(); }
+		void unlock() noexcept
+		{
+			flag.clear(std::memory_order_release);
+		}
+	};
 
-	void lock() noexcept
+	class shared_spin_lock
 	{
-		while (!flag.test_and_set(std::memory_order_acquire));
-	}
+		spin_lock& lock;
 
-	void unlock() noexcept
-	{
-		flag.clear(std::memory_order_release);
-	}
-};
-
-class shared_spin_lock
-{
-	spin_lock& lock;
-
-public:
-	shared_spin_lock(spin_lock& toLock) noexcept : lock(toLock) { lock.lock(); }
-	~shared_spin_lock() { lock.unlock(); }
-};
+	public:
+		shared_spin_lock(spin_lock& toLock) noexcept : lock(toLock) { lock.lock(); }
+		~shared_spin_lock() { lock.unlock(); }
+	};
+}

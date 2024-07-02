@@ -24,7 +24,7 @@
 #include <iostream>
 #include <memory>
 #include <stack>
-
+#include <deque>
 #include <set>
 #include <unordered_set>
 #include <queue>
@@ -56,6 +56,9 @@ namespace fs = std::filesystem;
 
 #define EEXTERN extern "C"
 
+#define ASSERT(cond) \
+	(void)((!!(cond)) || (::std::cout << "Assertion '" << #cond "' failed [" __FILE__ " : " << __LINE__ << "].\n", ::__debugbreak(), 0))
+
 typedef int8_t int8;
 typedef uint8_t uint8;
 typedef int16_t int16;
@@ -66,9 +69,6 @@ typedef int64_t int64;
 typedef uint64_t uint64;
 typedef wchar_t wchar;
 
-#define ASSERT(cond) \
-	(void)((!!(cond)) || (::std::cout << "Assertion '" << #cond "' failed [" __FILE__ " : " << __LINE__ << "].\n", ::__debugbreak(), 0))
-
 template <typename T> using ref = std::shared_ptr<T>;
 template <typename T> using weakref = std::weak_ptr<T>;
 
@@ -77,8 +77,8 @@ using IsCallableFunc = std::enable_if_t<std::is_invocable_v<Func_, Args_...>, bo
 
 template <typename T, typename... Args>
 NODISCARD inline ref<T> make_ref(Args&&... args)
-{ 
-	return std::make_shared<T>(std::forward<Args>(args)...); 
+{
+	return std::make_shared<T>(std::forward<Args>(args)...);
 }
 
 template <typename T> struct is_ref : std::false_type {};
@@ -86,11 +86,8 @@ template <typename T> struct is_ref<ref<T>> : std::true_type {};
 
 template <typename T> inline constexpr bool is_ref_v = is_ref<T>::value;
 
-
 template <typename T>
 using com = Microsoft::WRL::ComPtr<T>;
-
-#define arraysize(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 template <typename T>
 NODISCARD constexpr inline auto min(T a, T b)
@@ -105,9 +102,6 @@ NODISCARD constexpr inline auto max(T a, T b)
 }
 
 template <auto V> static constexpr auto force_consteval = V;
-
-#define setBit(mask, bit) (mask) |= (1 << (bit))
-#define unsetBit(mask, bit) (mask) ^= (1 << (bit))
 
 static void checkResultInternal(HRESULT hr, const char* file, int32 line)
 {
@@ -127,6 +121,11 @@ static void checkResultInternal(HRESULT hr, const char* file, int32 line)
 		__debugbreak();
 	}
 }
+
+#define arraysize(arr) (sizeof(arr) / sizeof((arr)[0]))
+
+#define setBit(mask, bit) (mask) |= (1 << (bit))
+#define unsetBit(mask, bit) (mask) ^= (1 << (bit))
 
 #define checkResult(hr) checkResultInternal(hr, __FILE__, __LINE__)
 

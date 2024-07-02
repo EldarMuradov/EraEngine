@@ -4,42 +4,45 @@
 #include <px/blast/px_blast_destructions.h>
 
 #if !_DEBUG
-
-NODISCARD eentity physics::buildChunk(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, ::std::pair<ref<submesh_asset>, ref<nvmesh>> mesh, float mass, uint32 generation)
+namespace era_engine
 {
-    auto enttScene = globalApp.getCurrentScene();
 
-    if (!enttScene->registry.size())
-        return eentity{};
+    NODISCARD eentity physics::buildChunk(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, ::std::pair<ref<submesh_asset>, ref<nvmesh>> mesh, float mass, uint32 generation)
+    {
+        auto enttScene = globalApp.getCurrentScene();
 
-    mesh_builder builder{ mesh_creation_flags_default, mesh_index_uint32 };
+        if (!enttScene->registry.size())
+            return eentity{};
 
-    auto mm = make_ref<multi_mesh>();
+        mesh_builder builder{ mesh_creation_flags_default, mesh_index_uint32 };
 
-    bounding_box aabb;
-    builder.pushMesh(*mesh.first, 1.0f, &aabb);
+        auto mm = make_ref<multi_mesh>();
 
-    mesh_asset asset;
-    asset.name = ("Chunk_" + ::std::to_string(id++));
-    asset.submeshes.push_back(*mesh.first);
+        bounding_box aabb;
+        builder.pushMesh(*mesh.first, 1.0f, &aabb);
 
-    mm->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, outsideMaterial });
+        mesh_asset asset;
+        asset.name = ("Chunk_" + ::std::to_string(id++));
+        asset.submeshes.push_back(*mesh.first);
 
-    mm->aabb = bounding_box::negativeInfinity();
+        mm->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, outsideMaterial });
 
-    eentity chunk = enttScene->createEntity(asset.name.c_str())
-        .addComponent<transform_component>(transform)
-        //.addComponent<physics::px_convex_mesh_collider_component>(&asset)
-        .addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::rigidbody_type_dynamic)
-        .addComponent<nvmesh_chunk_component>(mesh.second)
-        .addComponent<mesh_component>(mm);
+        mm->aabb = bounding_box::negativeInfinity();
 
-    mm->aabb.grow(aabb.minCorner);
-    mm->aabb.grow(aabb.maxCorner);
+        eentity chunk = enttScene->createEntity(asset.name.c_str())
+            .addComponent<transform_component>(transform)
+            //.addComponent<physics::px_convex_mesh_collider_component>(&asset)
+            .addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::rigidbody_type_dynamic)
+            .addComponent<nvmesh_chunk_component>(mesh.second)
+            .addComponent<mesh_component>(mm);
 
-    mm->mesh = builder.createDXMesh();
+        mm->aabb.grow(aabb.minCorner);
+        mm->aabb.grow(aabb.maxCorner);
 
-    return chunk;
+        mm->mesh = builder.createDXMesh();
+
+        return chunk;
+    }
+
 }
-
 #endif

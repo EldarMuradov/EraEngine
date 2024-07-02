@@ -2,14 +2,18 @@
 
 #pragma once
 
-struct system_info
+namespace era_engine
 {
-	std::string cpuName;
-	std::string gpuName;
 
-	// In bytes.
-	uint64 mainMemory;
-	uint64 videoMemory;
-};
+	struct system_info
+	{
+		std::string cpuName;
+		std::string gpuName;
 
-system_info getSystemInfo();
+		// In bytes.
+		uint64 mainMemory;
+		uint64 videoMemory;
+	};
+
+	system_info getSystemInfo();
+}

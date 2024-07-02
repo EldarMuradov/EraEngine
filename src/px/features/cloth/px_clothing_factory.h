@@ -11,7 +11,7 @@
 #include "dx/dx_context.h"
 #include "scene/scene.h"
 
-namespace physics
+namespace era_engine::physics
 {
 	using namespace physx;
 
@@ -316,7 +316,10 @@ namespace physics
 
 #include "core/reflect.h"
 
-REFLECT_STRUCT(physics::px_cloth_component,
-	(numX, "NumX"),
-	(numZ, "numZ")
-);
+namespace era_engine
+{
+	REFLECT_STRUCT(physics::px_cloth_component,
+		(numX, "NumX"),
+		(numZ, "numZ")
+	);
+}

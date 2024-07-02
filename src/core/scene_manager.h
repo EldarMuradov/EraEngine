@@ -1,11 +1,14 @@
 #pragma once
 
-struct scene_manager
+namespace era_engine
 {
-	void loadScene(std::string_view name);
+	struct scene_manager
+	{
+		void loadScene(std::string_view name);
 
-	static inline std::vector<fs::path> scenePathes;
+		static inline std::vector<fs::path> scenePathes;
 
-private:
-	NO_COPY(scene_manager)
-};
+	private:
+		NO_COPY(scene_manager)
+	};
+}

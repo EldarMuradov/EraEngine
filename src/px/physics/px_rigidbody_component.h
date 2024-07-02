@@ -3,7 +3,7 @@
 #pragma once
 #include <px/core/px_physics_engine.h>
 
-namespace physics
+namespace era_engine::physics
 {
 	using namespace physx;
 
@@ -123,6 +123,9 @@ namespace physics
 
 #include "core/reflect.h"
 
-REFLECT_STRUCT(physics::px_rigidbody_component,
-	(type, "Type")
-);
+namespace era_engine
+{
+	REFLECT_STRUCT(physics::px_rigidbody_component,
+		(type, "Type")
+	);
+}

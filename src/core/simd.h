@@ -41,10 +41,10 @@ inline float_t cosInternal(float_t x)
 	return x;
 }
 
-template <typename float_t> 
+template <typename float_t>
 NODISCARD inline float_t sinInternal(float_t x)
-{ 
-	return cosInternal(x - (3.14159265359f * 0.5f)); 
+{
+	return cosInternal(x - (3.14159265359f * 0.5f));
 }
 
 template <typename float_t, typename int_t>
@@ -175,7 +175,7 @@ struct w4_float
 	w4_float(const float* baseAddress, __m128i indices) { f = _mm_i32gather_ps(baseAddress, indices, 4); }
 	w4_float(const float* baseAddress, int a, int b, int c, int d) : w4_float(baseAddress, _mm_setr_epi32(a, b, c, d)) {}
 #else
-	w4_float(const float* baseAddress, int a, int b, int c, int d) { f = _mm_setr_ps(baseAddress[a], baseAddress[b], baseAddress[c], baseAddress[d]);  }
+	w4_float(const float* baseAddress, int a, int b, int c, int d) { f = _mm_setr_ps(baseAddress[a], baseAddress[b], baseAddress[c], baseAddress[d]); }
 	w4_float(const float* baseAddress, __m128i indices) : w4_float(baseAddress, indices.m128i_i32[0], indices.m128i_i32[1], indices.m128i_i32[2], indices.m128i_i32[3]) {}
 #endif
 
@@ -338,41 +338,41 @@ inline float addElements(w4_float a) { __m128 aa = _mm_hadd_ps(a, a); aa = _mm_h
 
 NODISCARD inline w4_float fmadd(w4_float a, w4_float b, w4_float c) { return _mm_fmadd_ps(a, b, c); }
 NODISCARD inline w4_float fmsub(w4_float a, w4_float b, w4_float c) { return _mm_fmsub_ps(a, b, c); }
-		  
+
 NODISCARD inline w4_float sqrt(w4_float a) { return _mm_sqrt_ps(a); }
 NODISCARD inline w4_float rsqrt(w4_float a) { return _mm_rsqrt_ps(a); }
-		  
+
 NODISCARD inline w4_float ifThen(w4_float cond, w4_float ifCase, w4_float elseCase) { return _mm_blendv_ps(elseCase, ifCase, cond); }
 NODISCARD inline w4_int ifThen(w4_int cond, w4_int ifCase, w4_int elseCase) { return reinterpret(ifThen(reinterpret(cond), reinterpret(ifCase), reinterpret(elseCase))); }
-		  
+
 NODISCARD inline int toBitMask(w4_float a) { return _mm_movemask_ps(a); }
 NODISCARD inline int toBitMask(w4_int a) { return toBitMask(reinterpret(a)); }
-		  
+
 NODISCARD inline bool allTrue(w4_float a) { return toBitMask(a) == (1 << 4) - 1; }
 NODISCARD inline bool allFalse(w4_float a) { return toBitMask(a) == 0; }
 NODISCARD inline bool anyTrue(w4_float a) { return toBitMask(a) > 0; }
 NODISCARD inline bool anyFalse(w4_float a) { return !allTrue(a); }
-		  
+
 NODISCARD inline bool allTrue(w4_int a) { return allTrue(reinterpret(a)); }
 NODISCARD inline bool allFalse(w4_int a) { return allFalse(reinterpret(a)); }
 NODISCARD inline bool anyTrue(w4_int a) { return anyTrue(reinterpret(a)); }
 NODISCARD inline bool anyFalse(w4_int a) { return anyFalse(reinterpret(a)); }
-		  
+
 NODISCARD inline w4_float abs(w4_float a) { w4_float result = andNot(-0.f, a); return result; }
 NODISCARD inline w4_float floor(w4_float a) { return _mm_floor_ps(a); }
 NODISCARD inline w4_float round(w4_float a) { return _mm_round_ps(a, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC); }
 NODISCARD inline w4_float minimum(w4_float a, w4_float b) { return _mm_min_ps(a, b); }
 NODISCARD inline w4_float maximum(w4_float a, w4_float b) { return _mm_max_ps(a, b); }
-		  
+
 NODISCARD inline w4_float lerp(w4_float l, w4_float u, w4_float t) { return fmadd(t, u - l, l); }
 NODISCARD inline w4_float inverseLerp(w4_float l, w4_float u, w4_float v) { return (v - l) / (u - l); }
 NODISCARD inline w4_float remap(w4_float v, w4_float oldL, w4_float oldU, w4_float newL, w4_float newU) { return lerp(newL, newU, inverseLerp(oldL, oldU, v)); }
 NODISCARD inline w4_float clamp(w4_float v, w4_float l, w4_float u) { return minimum(u, maximum(l, v)); }
 NODISCARD inline w4_float clamp01(w4_float v) { return clamp(v, 0.f, 1.f); }
-		  
+
 NODISCARD inline w4_float signOf(w4_float f) { w4_float z = w4_float::zero(); return ifThen(f < z, w4_float(-1), ifThen(f == z, z, w4_float(1))); }
 NODISCARD inline w4_float signbit(w4_float f) { return (f & -0.f) >> 31; }
-		  
+
 NODISCARD inline w4_float cos(w4_float x) { return cosInternal(x); }
 NODISCARD inline w4_float sin(w4_float x) { return sinInternal(x); }
 NODISCARD inline w4_float exp2(w4_float x) { return exp2Internal<w4_float, w4_int>(x); }
@@ -383,7 +383,7 @@ NODISCARD inline w4_float tanh(w4_float x) { return tanhInternal(x); }
 NODISCARD inline w4_float atan(w4_float x) { return atanInternal<w4_float, w4_int>(x); }
 NODISCARD inline w4_float atan2(w4_float y, w4_float x) { return atan2Internal<w4_float, w4_int>(y, x); }
 NODISCARD inline w4_float acos(w4_float x) { return acosInternal(x); }
-		  
+
 NODISCARD inline w4_int fillWithFirstLane(w4_int a)
 {
 	w4_int first = _mm_shuffle_epi32(a, _MM_SHUFFLE(0, 0, 0, 0));
@@ -688,12 +688,12 @@ inline bool anyFalse(uint8 a) { return !allTrue(a); }
 #else
 NODISCARD inline w8_float ifThen(w8_float cond, w8_float ifCase, w8_float elseCase) { return _mm256_blendv_ps(elseCase, ifCase, cond); }
 NODISCARD inline w8_int ifThen(w8_int cond, w8_int ifCase, w8_int elseCase) { return reinterpret(ifThen(reinterpret(cond), reinterpret(ifCase), reinterpret(elseCase))); }
-		  
+
 NODISCARD inline bool allTrue(w8_float a) { return toBitMask(a) == (1 << 8) - 1; }
 NODISCARD inline bool allFalse(w8_float a) { return toBitMask(a) == 0; }
 NODISCARD inline bool anyTrue(w8_float a) { return toBitMask(a) > 0; }
 NODISCARD inline bool anyFalse(w8_float a) { return !allTrue(a); }
-		  
+
 NODISCARD inline bool allTrue(w8_int a) { return allTrue(reinterpret(a)); }
 NODISCARD inline bool allFalse(w8_int a) { return allFalse(reinterpret(a)); }
 NODISCARD inline bool anyTrue(w8_int a) { return anyTrue(reinterpret(a)); }
@@ -704,16 +704,16 @@ NODISCARD inline w8_float abs(w8_float a) { w8_float result = andNot(-0.f, a); r
 NODISCARD inline w8_float floor(w8_float a) { return _mm256_floor_ps(a); }
 NODISCARD inline w8_float minimum(w8_float a, w8_float b) { return _mm256_min_ps(a, b); }
 NODISCARD inline w8_float maximum(w8_float a, w8_float b) { return _mm256_max_ps(a, b); }
-		  
+
 NODISCARD inline w8_float lerp(w8_float l, w8_float u, w8_float t) { return fmadd(t, u - l, l); }
 NODISCARD inline w8_float inverseLerp(w8_float l, w8_float u, w8_float v) { return (v - l) / (u - l); }
 NODISCARD inline w8_float remap(w8_float v, w8_float oldL, w8_float oldU, w8_float newL, w8_float newU) { return lerp(newL, newU, inverseLerp(oldL, oldU, v)); }
 NODISCARD inline w8_float clamp(w8_float v, w8_float l, w8_float u) { return minimum(u, maximum(l, v)); }
 NODISCARD inline w8_float clamp01(w8_float v) { return clamp(v, 0.f, 1.f); }
-		  
+
 NODISCARD inline w8_float signOf(w8_float f) { w8_float z = w8_float::zero(); return ifThen(f < z, w8_float(-1), ifThen(f == z, z, w8_float(1))); }
 NODISCARD inline w8_float signbit(w8_float f) { return (f & -0.f) >> 31; }
-		  
+
 NODISCARD inline w8_float cos(w8_float x) { return cosInternal(x); }
 NODISCARD inline w8_float sin(w8_float x) { return sinInternal(x); }
 NODISCARD inline w8_float exp2(w8_float x) { return exp2Internal<w8_float, w8_int>(x); }
@@ -724,7 +724,7 @@ NODISCARD inline w8_float tanh(w8_float x) { return tanhInternal(x); }
 NODISCARD inline w8_float atan(w8_float x) { return atanInternal<w8_float, w8_int>(x); }
 NODISCARD inline w8_float atan2(w8_float y, w8_float x) { return atan2Internal<w8_float, w8_int>(y, x); }
 NODISCARD inline w8_float acos(w8_float x) { return acosInternal(x); }
-		  
+
 NODISCARD inline w8_float concat(w4_float a, w4_float b)
 {
 	return _mm256_insertf128_ps(_mm256_castps128_ps256(a), b, 1);

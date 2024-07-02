@@ -3,72 +3,75 @@
 #pragma once
 #include "core/memory.h"
 
-struct undo_stack
+namespace era_engine
 {
-	undo_stack();
-
-	template <typename T>
-	void pushAction(const char* name, const T& entry); // Type T must have member function void toggle().
-
-	std::pair<bool, const char*> undoPossible();
-	std::pair<bool, const char*> redoPossible();
-
-	void undo();
-	void redo();
-
-	void reset();
-	bool showHistory(bool& open);
-	void verify();
-
-private:
-	typedef void (*toggle_func)(void*);
-
-	void pushAction(const char* name, const void* entry, uint64 entrySize, toggle_func toggle);
-
-	struct alignas(16) entry_header
+	struct undo_stack
 	{
-		NODISCARD char* getName() const
+		undo_stack();
+
+		template <typename T>
+		void pushAction(const char* name, const T& entry); // Type T must have member function void toggle().
+
+		std::pair<bool, const char*> undoPossible();
+		std::pair<bool, const char*> redoPossible();
+
+		void undo();
+		void redo();
+
+		void reset();
+		bool showHistory(bool& open);
+		void verify();
+
+	private:
+		typedef void (*toggle_func)(void*);
+
+		void pushAction(const char* name, const void* entry, uint64 entrySize, toggle_func toggle);
+
+		struct alignas(16) entry_header
 		{
-			return (char*)(this + 1);
-		}
+			NODISCARD char* getName() const
+			{
+				return (char*)(this + 1);
+			}
 
-		NODISCARD void* getData()
-		{
-			return (uint8*)getName() + nameLength;
-		}
+			NODISCARD void* getData()
+			{
+				return (uint8*)getName() + nameLength;
+			}
 
-		NODISCARD void* getOneAfterEnd()
-		{
-			return (uint8*)getData() + entrySize;
-		}
+			NODISCARD void* getOneAfterEnd()
+			{
+				return (uint8*)getData() + entrySize;
+			}
 
-		toggle_func toggle;
+			toggle_func toggle;
 
-		entry_header* newer;
-		entry_header* older;
+			entry_header* newer;
+			entry_header* older;
 
-		uint64 nameLength; // Includes null-terminator.
-		uint64 entrySize;
+			uint64 nameLength; // Includes null-terminator.
+			uint64 entrySize;
+		};
+
+		uint8* memory = nullptr;
+		uint32 memorySize{};
+
+		uint8* nextToWrite = nullptr;
+		entry_header* oldest = nullptr;
+		entry_header* newest = nullptr;
 	};
 
-	uint8* memory = nullptr;
-	uint32 memorySize{};
-
-	uint8* nextToWrite = nullptr;
-	entry_header* oldest = nullptr;
-	entry_header* newest = nullptr;
-};
-
-template<typename T>
-inline void undo_stack::pushAction(const char* name, const T& entry)
-{
-	static_assert(std::is_trivially_destructible_v<T>, "Undo entries must be trivially destructible.");
-
-	toggle_func toggle = [](void* data)
+	template<typename T>
+	inline void undo_stack::pushAction(const char* name, const T& entry)
 	{
-		T* t = (T*)data;
-		t->toggle();
-	};
+		static_assert(std::is_trivially_destructible_v<T>, "Undo entries must be trivially destructible.");
 
-	pushAction(name, &entry, sizeof(T), toggle);
+		toggle_func toggle = [](void* data)
+			{
+				T* t = (T*)data;
+				t->toggle();
+			};
+
+		pushAction(name, &entry, sizeof(T), toggle);
+	}
 }

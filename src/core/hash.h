@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "math.h"
+#include "core/math.h"
 #include <functional>
 
 template <typename T>
@@ -13,6 +13,8 @@ inline void hash_combine(size_t& seed, const T& v)
 
 namespace std
 {
+	using namespace era_engine;
+
 	template<>
 	struct hash<vec2>
 	{

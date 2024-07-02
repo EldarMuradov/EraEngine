@@ -10,7 +10,7 @@
 #include "px_rigidbody_component.h"
 #include <px/core/px_extensions.h>
 
-namespace physics
+namespace era_engine::physics
 {
 	px_rigidbody_component::px_rigidbody_component(uint32_t handle, px_rigidbody_type rbtype, bool addToScene) : px_physics_component_base(handle), type(rbtype)
 	{

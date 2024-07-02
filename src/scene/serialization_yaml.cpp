@@ -14,8 +14,11 @@
 #include "terrain/proc_placement.h"
 #include <application.h>
 
+
 namespace YAML
 {
+	using namespace era_engine;
+
 	template<typename T>
 	struct convert
 	{
@@ -65,10 +68,7 @@ namespace YAML
 			return true;
 		}
 	};
-}
 
-namespace YAML
-{
 	template<>
 	struct convert<rigid_body_component>
 	{
@@ -131,35 +131,35 @@ namespace YAML
 
 			switch (c.type)
 			{
-				case collider_type_sphere:
-				{
-					n["Center"] = c.sphere.center;
-					n["Radius"] = c.sphere.radius;
-				} break;
+			case collider_type_sphere:
+			{
+				n["Center"] = c.sphere.center;
+				n["Radius"] = c.sphere.radius;
+			} break;
 
-				case collider_type_capsule:
-				{
-					n["Position A"] = c.capsule.positionA;
-					n["Position B"] = c.capsule.positionB;
-					n["Radius"] = c.capsule.radius;
-				} break;
+			case collider_type_capsule:
+			{
+				n["Position A"] = c.capsule.positionA;
+				n["Position B"] = c.capsule.positionB;
+				n["Radius"] = c.capsule.radius;
+			} break;
 
-				case collider_type_aabb:
-				{
-					n["Min corner"] = c.aabb.minCorner;
-					n["Max corner"] = c.aabb.maxCorner;
-				} break;
+			case collider_type_aabb:
+			{
+				n["Min corner"] = c.aabb.minCorner;
+				n["Max corner"] = c.aabb.maxCorner;
+			} break;
 
-				case collider_type_obb:
-				{
-					n["Center"] = c.obb.center;
-					n["Radius"] = c.obb.radius;
-					n["Rotation"] = c.obb.rotation;
-				} break;
+			case collider_type_obb:
+			{
+				n["Center"] = c.obb.center;
+				n["Radius"] = c.obb.radius;
+				n["Rotation"] = c.obb.rotation;
+			} break;
 
-				case collider_type_hull:
-				{
-				} break;
+			case collider_type_hull:
+			{
+			} break;
 			}
 
 			n["Restitution"] = c.material.restitution;
@@ -191,50 +191,50 @@ namespace YAML
 
 			switch (c.type)
 			{
-				case collider_type_sphere:
-				{
-					vec3 center;
-					float radius;
-					YAML_LOAD(n, center, "Center");
-					YAML_LOAD(n, radius, "Radius");
-					c = collider_component::asSphere({ center, radius }, material);
-				} break;
+			case collider_type_sphere:
+			{
+				vec3 center;
+				float radius;
+				YAML_LOAD(n, center, "Center");
+				YAML_LOAD(n, radius, "Radius");
+				c = collider_component::asSphere({ center, radius }, material);
+			} break;
 
-				case collider_type_capsule:
-				{
-					vec3 positionA, positionB;
-					float radius;
-					YAML_LOAD(n, positionA, "Position A");
-					YAML_LOAD(n, positionB, "Position B");
-					YAML_LOAD(n, radius, "Radius");
-					c = collider_component::asCapsule({ positionA, positionB, radius }, material);
-				} break;
+			case collider_type_capsule:
+			{
+				vec3 positionA, positionB;
+				float radius;
+				YAML_LOAD(n, positionA, "Position A");
+				YAML_LOAD(n, positionB, "Position B");
+				YAML_LOAD(n, radius, "Radius");
+				c = collider_component::asCapsule({ positionA, positionB, radius }, material);
+			} break;
 
-				case collider_type_aabb:
-				{
-					vec3 minCorner, maxCorner;
-					YAML_LOAD(n, minCorner, "Min corner");
-					YAML_LOAD(n, maxCorner, "Max corner");
-					c = collider_component::asAABB(bounding_box::fromMinMax(minCorner, maxCorner), material);
-				} break;
+			case collider_type_aabb:
+			{
+				vec3 minCorner, maxCorner;
+				YAML_LOAD(n, minCorner, "Min corner");
+				YAML_LOAD(n, maxCorner, "Max corner");
+				c = collider_component::asAABB(bounding_box::fromMinMax(minCorner, maxCorner), material);
+			} break;
 
-				case collider_type_obb:
-				{
-					vec3 center, radius;
-					quat rotation;
-					YAML_LOAD(n, center, "Center");
-					YAML_LOAD(n, radius, "Radius");
-					YAML_LOAD(n, rotation, "Rotation");
+			case collider_type_obb:
+			{
+				vec3 center, radius;
+				quat rotation;
+				YAML_LOAD(n, center, "Center");
+				YAML_LOAD(n, radius, "Radius");
+				YAML_LOAD(n, rotation, "Rotation");
 
-					c = collider_component::asOBB({ rotation, center, radius }, material);
-				} break;
+				c = collider_component::asOBB({ rotation, center, radius }, material);
+			} break;
 
-				case collider_type_hull:
-				{
-					return false;
-				} break;
+			case collider_type_hull:
+			{
+				return false;
+			} break;
 
-				default: ASSERT(false); break;
+			default: ASSERT(false); break;
 			}
 
 			return true;
@@ -362,161 +362,164 @@ namespace YAML
 	};
 }
 
-void serializeSceneToYAMLFile(editor_scene& scene, const renderer_settings& rendererSettings)
+namespace era_engine
 {
-	if (scene.savePath.empty())
+	void serializeSceneToYAMLFile(editor_scene& scene, const renderer_settings& rendererSettings)
 	{
-		fs::path filename = saveFileDialog("Scene files", "sc");
-		if (filename.empty())
-			return;
+		if (scene.savePath.empty())
+		{
+			fs::path filename = saveFileDialog("Scene files", "sc");
+			if (filename.empty())
+				return;
 
-		scene.savePath = filename;
+			scene.savePath = filename;
+		}
+
+		YAML::Node out;
+		out["Scene"] = "My scene";
+		out["Camera"] = scene.camera;
+		out["Rendering"] = rendererSettings;
+		out["Sun"] = scene.sun;
+		out["Environment"] = scene.environment;
+
+		YAML::Node entityNode;
+
+		scene.editorScene.forEachEntity([&entityNode, &scene = scene.editorScene](entity_handle entityID)
+			{
+				eentity entity = { entityID, scene };
+
+				// Only entities with tags are valid top level entities. All others are helpers like colliders and constraints.
+				if (tag_component* tag = entity.getComponentIfExists<tag_component>())
+				{
+					YAML::Node n;
+					n["Tag"] = tag->name;
+
+					// Transforms
+					if (auto* c = entity.getComponentIfExists<transform_component>()) { n["Transform"] = *c; }
+					if (auto* c = entity.getComponentIfExists<position_component>()) { n["Position"] = *c; }
+					if (auto* c = entity.getComponentIfExists<position_rotation_component>()) { n["Position/Rotation"] = *c; }
+					if (auto* c = entity.getComponentIfExists<position_scale_component>()) { n["Position/Scale"] = *c; }
+					if (auto* c = entity.getComponentIfExists<dynamic_transform_component>()) { n["Dynamic"] = true; }
+
+					// Rendering
+					if (auto* c = entity.getComponentIfExists<mesh_component>()) { n["Mesh"] = *c; }
+					if (auto* c = entity.getComponentIfExists<point_light_component>()) { n["Point light"] = *c; }
+					if (auto* c = entity.getComponentIfExists<spot_light_component>()) { n["Spot light"] = *c; }
+
+					// Physics
+					if (auto* c = entity.getComponentIfExists<rigid_body_component>()) { n["Rigid body"] = *c; }
+					if (auto* c = entity.getComponentIfExists<force_field_component>()) { n["Force field"] = *c; }
+					if (auto* c = entity.getComponentIfExists<cloth_component>()) { n["Cloth"] = *c; }
+					if (auto* c = entity.getComponentIfExists<cloth_render_component>()) { n["Cloth render"] = true; }
+					if (auto* c = entity.getComponentIfExists<physics_reference_component>())
+					{
+						if (c->numColliders)
+						{
+							YAML::Node c;
+							for (collider_component& collider : collider_component_iterator(entity))
+							{
+								c.push_back(collider);
+							}
+							n["Colliders"] = c;
+						}
+					}
+
+					// Terrain.
+					//if (auto* c = entity.getComponentIfExists<terrain_component>()) { n["Terrain"] = *c; }
+					//if (auto* c = entity.getComponentIfExists<grass_component>()) { n["Grass"] = *c; }
+					//if (auto* c = entity.getComponentIfExists<proc_placement_component>()) { n["Procedural placement"] = *c; }
+					//if (auto* c = entity.getComponentIfExists<water_component>()) { n["Water"] = *c; }
+
+					/*
+					TODO:
+						- Animation
+						- Raytrace
+						- Constraints
+					*/
+
+					entityNode.push_back(n);
+				}
+			});
+
+		out["Entities"] = entityNode;
+
+		fs::create_directories(scene.savePath.parent_path());
+
+		std::ofstream fout(scene.savePath);
+		fout << out;
+
+		LOG_MESSAGE("Scene saved to '%ws'", scene.savePath.c_str());
 	}
 
-	YAML::Node out;
-	out["Scene"] = "My scene";
-	out["Camera"] = scene.camera;
-	out["Rendering"] = rendererSettings;
-	out["Sun"] = scene.sun;
-	out["Environment"] = scene.environment;
-
-	YAML::Node entityNode;
-
-	scene.editorScene.forEachEntity([&entityNode, &scene = scene.editorScene](entity_handle entityID)
+	bool deserializeSceneFromYAMLFile(editor_scene& scene, renderer_settings& rendererSettings, std::string& environmentName)
 	{
-		eentity entity = { entityID, scene };
+		fs::path filename = openFileDialog("Scene files", "sc");
+		if (filename.empty())
+			return false;
 
-		// Only entities with tags are valid top level entities. All others are helpers like colliders and constraints.
-		if (tag_component* tag = entity.getComponentIfExists<tag_component>())
+		return deserializeSceneFromCurrentYAMLFile(filename, scene, rendererSettings, environmentName);
+	}
+
+	bool deserializeSceneFromCurrentYAMLFile(const fs::path& path, editor_scene& scene, renderer_settings& rendererSettings, std::string& environmentName)
+	{
+		std::ifstream stream(path);
+		YAML::Node n = YAML::Load(stream);
+		if (!n["Scene"])
+			return false;
+
+		scene.editorScene = escene();
+		scene.savePath = std::move(path);
+
+		std::string sceneName = n["Scene"].as<std::string>();
+
+		YAML_LOAD(n, scene.camera, "Camera");
+		YAML_LOAD(n, rendererSettings, "Rendering");
+		YAML_LOAD(n, scene.sun, "Sun");
+
+		//YAML_LOAD(n, environmentName, "Environment");
+
+		auto entitiesNode = n["Entities"];
+		for (auto entityNode : entitiesNode)
 		{
-			YAML::Node n;
-			n["Tag"] = tag->name;
+			std::string name = entityNode["Tag"].as<std::string>();
+			eentity entity = scene.editorScene.createEntity(name.c_str());
 
-			// Transforms
-			if (auto* c = entity.getComponentIfExists<transform_component>()) { n["Transform"] = *c; }
-			if (auto* c = entity.getComponentIfExists<position_component>()) { n["Position"] = *c; }
-			if (auto* c = entity.getComponentIfExists<position_rotation_component>()) { n["Position/Rotation"] = *c; }
-			if (auto* c = entity.getComponentIfExists<position_scale_component>()) { n["Position/Scale"] = *c; }
-			if (auto* c = entity.getComponentIfExists<dynamic_transform_component>()) { n["Dynamic"] = true; }
+#define LOAD_COMPONENT(type, name) if (auto node = entityNode[name]) { entity.addComponent<type>(node.as<type>()); }
 
-			// Rendering
-			if (auto* c = entity.getComponentIfExists<mesh_component>()) { n["Mesh"] = *c; }
-			if (auto* c = entity.getComponentIfExists<point_light_component>()) { n["Point light"] = *c; }
-			if (auto* c = entity.getComponentIfExists<spot_light_component>()) { n["Spot light"] = *c; }
+			// Transforms.
+			LOAD_COMPONENT(transform_component, "Transform");
+			LOAD_COMPONENT(position_component, "Position");
+			LOAD_COMPONENT(position_rotation_component, "Position/Rotation");
+			LOAD_COMPONENT(position_scale_component, "Position/Scale");
+			if (entityNode["Dynamic"]) { entity.addComponent<dynamic_transform_component>(); }
 
-			// Physics
-			if (auto* c = entity.getComponentIfExists<rigid_body_component>()) { n["Rigid body"] = *c; }
-			if (auto* c = entity.getComponentIfExists<force_field_component>()) { n["Force field"] = *c; }
-			if (auto* c = entity.getComponentIfExists<cloth_component>()) { n["Cloth"] = *c; }
-			if (auto* c = entity.getComponentIfExists<cloth_render_component>()) { n["Cloth render"] = true; }
-			if (auto* c = entity.getComponentIfExists<physics_reference_component>())
+			// Rendering.
+			LOAD_COMPONENT(mesh_component, "Mesh");
+			LOAD_COMPONENT(point_light_component, "Point light");
+			LOAD_COMPONENT(spot_light_component, "Spot light");
+
+			// Physics.
+			LOAD_COMPONENT(rigid_body_component, "Rigid body");
+			LOAD_COMPONENT(force_field_component, "Force field");
+			LOAD_COMPONENT(cloth_component, "Cloth");
+			if (entityNode["Cloth render"]) { entity.addComponent<cloth_render_component>(); }
+			if (auto collidersNode = entityNode["Colliders"])
 			{
-				if (c->numColliders)
+				for (uint32 i = 0; i < collidersNode.size(); ++i)
 				{
-					YAML::Node c;
-					for (collider_component& collider : collider_component_iterator(entity))
-					{
-						c.push_back(collider);
-					}
-					n["Colliders"] = c;
+					entity.addComponent<collider_component>(collidersNode[i].as<collider_component>());
 				}
 			}
 
 			// Terrain.
-			//if (auto* c = entity.getComponentIfExists<terrain_component>()) { n["Terrain"] = *c; }
-			//if (auto* c = entity.getComponentIfExists<grass_component>()) { n["Grass"] = *c; }
-			//if (auto* c = entity.getComponentIfExists<proc_placement_component>()) { n["Procedural placement"] = *c; }
-			//if (auto* c = entity.getComponentIfExists<water_component>()) { n["Water"] = *c; }
-
-			/*
-			TODO:
-				- Animation
-				- Raytrace
-				- Constraints
-			*/
-
-			entityNode.push_back(n);
-		}
-	});
-
-	out["Entities"] = entityNode;
-
-	fs::create_directories(scene.savePath.parent_path());
-
-	std::ofstream fout(scene.savePath);
-	fout << out;
-
-	LOG_MESSAGE("Scene saved to '%ws'", scene.savePath.c_str());
-}
-
-bool deserializeSceneFromYAMLFile(editor_scene& scene, renderer_settings& rendererSettings, std::string& environmentName)
-{
-	fs::path filename = openFileDialog("Scene files", "sc");
-	if (filename.empty())
-		return false;
-
-	return deserializeSceneFromCurrentYAMLFile(filename, scene, rendererSettings, environmentName);
-}
-
-bool deserializeSceneFromCurrentYAMLFile(const fs::path& path, editor_scene& scene, renderer_settings& rendererSettings, std::string& environmentName)
-{
-	std::ifstream stream(path);
-	YAML::Node n = YAML::Load(stream);
-	if (!n["Scene"])
-		return false;
-
-	scene.editorScene = escene();
-	scene.savePath = std::move(path);
-
-	std::string sceneName = n["Scene"].as<std::string>();
-
-	YAML_LOAD(n, scene.camera, "Camera");
-	YAML_LOAD(n, rendererSettings, "Rendering");
-	YAML_LOAD(n, scene.sun, "Sun");
-
-	//YAML_LOAD(n, environmentName, "Environment");
-
-	auto entitiesNode = n["Entities"];
-	for (auto entityNode : entitiesNode)
-	{
-		std::string name = entityNode["Tag"].as<std::string>();
-		eentity entity = scene.editorScene.createEntity(name.c_str());
-
-#define LOAD_COMPONENT(type, name) if (auto node = entityNode[name]) { entity.addComponent<type>(node.as<type>()); }
-
-		// Transforms.
-		LOAD_COMPONENT(transform_component, "Transform");
-		LOAD_COMPONENT(position_component, "Position");
-		LOAD_COMPONENT(position_rotation_component, "Position/Rotation");
-		LOAD_COMPONENT(position_scale_component, "Position/Scale");
-		if (entityNode["Dynamic"]) { entity.addComponent<dynamic_transform_component>(); }
-
-		// Rendering.
-		LOAD_COMPONENT(mesh_component, "Mesh");
-		LOAD_COMPONENT(point_light_component, "Point light");
-		LOAD_COMPONENT(spot_light_component, "Spot light");
-
-		// Physics.
-		LOAD_COMPONENT(rigid_body_component, "Rigid body");
-		LOAD_COMPONENT(force_field_component, "Force field");
-		LOAD_COMPONENT(cloth_component, "Cloth");
-		if (entityNode["Cloth render"]) { entity.addComponent<cloth_render_component>(); }
-		if (auto collidersNode = entityNode["Colliders"])
-		{
-			for (uint32 i = 0; i < collidersNode.size(); ++i)
-			{
-				entity.addComponent<collider_component>(collidersNode[i].as<collider_component>());
-			}
+			//LOAD_COMPONENT(terrain_component, "Terrain");
+			//LOAD_COMPONENT(grass_component, "Grass");
+			//LOAD_COMPONENT(proc_placement_component, "Procedural placement");
+			//LOAD_COMPONENT(water_component, "Water");
 		}
 
-		// Terrain.
-		//LOAD_COMPONENT(terrain_component, "Terrain");
-		//LOAD_COMPONENT(grass_component, "Grass");
-		//LOAD_COMPONENT(proc_placement_component, "Procedural placement");
-		//LOAD_COMPONENT(water_component, "Water");
+		LOG_MESSAGE("Scene loaded from '%ws'", scene.savePath.c_str());
+
+		return true;
 	}
-
-	LOG_MESSAGE("Scene loaded from '%ws'", scene.savePath.c_str());
-
-	return true;
 }

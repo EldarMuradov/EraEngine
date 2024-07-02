@@ -5,83 +5,86 @@
 #include "core/math.h"
 #include "core/reflect.h"
 
-struct entity_handle_component_base
+namespace era_engine
 {
-	entity_handle_component_base() {}
-	entity_handle_component_base(uint32 handle) : entityHandle(handle) {}
-
-	virtual ~entity_handle_component_base() {};
-
-	uint32 entityHandle{};
-};
-
-struct tag_component
-{
-	char name[32]{};
-
-	tag_component() {}
-
-	tag_component(const char* n)
+	struct entity_handle_component_base
 	{
-		strncpy(name, n, sizeof(name));
-		name[sizeof(name) - 1] = 0;
-	}
-};
-REFLECT_STRUCT(tag_component,
-	(name, "Name")
-);
+		entity_handle_component_base() {}
+		entity_handle_component_base(uint32 handle) : entityHandle(handle) {}
 
-struct transform_component : trs
-{
-	transform_component() {}
-	transform_component(const trs& t) : trs(t) {}
-	transform_component(vec3 position, quat rotation, vec3 scale = vec3(1.f, 1.f, 1.f)) : trs(position, rotation, scale) {}
-	transform_component& operator=(const trs& t) { trs::operator=(t); return *this; }
-};
-REFLECT_STRUCT(transform_component,
-	(position, "Position"),
-	(rotation, "Rotation"),
-	(scale, "Scale")
-);
+		virtual ~entity_handle_component_base() {};
 
-struct dynamic_transform_component : trs
-{
-	dynamic_transform_component() {}
-	dynamic_transform_component(const trs& t) : trs(t) {}
-	dynamic_transform_component(vec3 position, quat rotation, vec3 scale = vec3(1.f, 1.f, 1.f)) : trs(position, rotation, scale) {}
-	dynamic_transform_component& operator=(const trs& t) { trs::operator=(t); return *this; }
-};
+		uint32 entityHandle{};
+	};
 
-struct position_component
-{
-	vec3 position;
-};
-REFLECT_STRUCT(position_component,
-	(position, "Position")
-);
+	struct tag_component
+	{
+		char name[32]{};
 
-struct position_rotation_component
-{
-	vec3 position;
-	quat rotation;
-};
-REFLECT_STRUCT(position_rotation_component,
-	(position, "Position"),
-	(rotation, "Rotation")
-);
+		tag_component() {}
 
-struct position_scale_component
-{
-	vec3 position;
-	vec3 scale;
-};
-REFLECT_STRUCT(position_scale_component,
-	(position, "Position"),
-	(scale, "Scale")
-);
+		tag_component(const char* n)
+		{
+			strncpy(name, n, sizeof(name));
+			name[sizeof(name) - 1] = 0;
+		}
+	};
+	REFLECT_STRUCT(tag_component,
+		(name, "Name")
+	);
 
-template <typename... component_t>
-struct component_group_t {};
+	struct transform_component : trs
+	{
+		transform_component() {}
+		transform_component(const trs& t) : trs(t) {}
+		transform_component(vec3 position, quat rotation, vec3 scale = vec3(1.f, 1.f, 1.f)) : trs(position, rotation, scale) {}
+		transform_component& operator=(const trs& t) { trs::operator=(t); return *this; }
+	};
+	REFLECT_STRUCT(transform_component,
+		(position, "Position"),
+		(rotation, "Rotation"),
+		(scale, "Scale")
+	);
 
-template<typename... Type>
-inline constexpr component_group_t<Type...> component_group{};
+	struct dynamic_transform_component : trs
+	{
+		dynamic_transform_component() {}
+		dynamic_transform_component(const trs& t) : trs(t) {}
+		dynamic_transform_component(vec3 position, quat rotation, vec3 scale = vec3(1.f, 1.f, 1.f)) : trs(position, rotation, scale) {}
+		dynamic_transform_component& operator=(const trs& t) { trs::operator=(t); return *this; }
+	};
+
+	struct position_component
+	{
+		vec3 position;
+	};
+	REFLECT_STRUCT(position_component,
+		(position, "Position")
+	);
+
+	struct position_rotation_component
+	{
+		vec3 position;
+		quat rotation;
+	};
+	REFLECT_STRUCT(position_rotation_component,
+		(position, "Position"),
+		(rotation, "Rotation")
+	);
+
+	struct position_scale_component
+	{
+		vec3 position;
+		vec3 scale;
+	};
+	REFLECT_STRUCT(position_scale_component,
+		(position, "Position"),
+		(scale, "Scale")
+	);
+
+	template <typename... component_t>
+	struct component_group_t {};
+
+	template<typename... Type>
+	inline constexpr component_group_t<Type...> component_group{};
+}

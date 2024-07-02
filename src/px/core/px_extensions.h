@@ -6,7 +6,7 @@
 #include <application.h>
 #include "px/core/px_physics_engine.h"
 
-namespace physics
+namespace era_engine::physics
 {
 	struct physics_lock
 	{

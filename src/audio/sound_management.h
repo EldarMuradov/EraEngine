@@ -1,9 +1,12 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include "sound.h"
+#include "audio/sound.h"
 
-void loadSoundRegistry();
-void drawSoundEditor(bool& open);
+namespace era_engine
+{
+	void loadSoundRegistry();
+	void drawSoundEditor(bool& open);
 
-NODISCARD const sound_spec& getSoundSpec(const sound_id& id);
+	NODISCARD const sound_spec& getSoundSpec(const sound_id& id);
+}

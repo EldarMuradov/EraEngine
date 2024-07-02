@@ -2,31 +2,34 @@
 
 #pragma once
 
-#include "preprocessor_for_each.h"
+#include "core/preprocessor_for_each.h"
 
 #include <type_traits>
 #include <ostream>
 
-template <typename T> struct type_descriptor {};
-
-struct member_list_base {};
-
-template <auto... member_pointers>
-struct member_list : member_list_base
+namespace era_engine
 {
-	static inline const uint32 numMembers = sizeof...(member_pointers);
+	template <typename T> struct type_descriptor {};
 
-	template <typename T, typename F>
-	constexpr static auto applyImpl(F f, T& v, const char* memberNames[numMembers])
+	struct member_list_base {};
+
+	template <auto... member_pointers>
+	struct member_list : member_list_base
 	{
-		uint32 i = 0;
-		([&]
+		static inline const uint32 numMembers = sizeof...(member_pointers);
+
+		template <typename T, typename F>
+		constexpr static auto applyImpl(F f, T& v, const char* memberNames[numMembers])
 		{
-			f(memberNames[i], v.*member_pointers);
-			++i;
-		} (), ...);
-	}
-};
+			uint32 i = 0;
+			([&]
+				{
+					f(memberNames[i], v.*member_pointers);
+					++i;
+				} (), ...);
+		}
+	};
+}
 
 #define EXTRACT_MEMBER(member, ...) member			// Extract the member from the tuple.
 #define EXTRACT_MEMBER_NAME_1(member) #member		// If no name is supplied, extract and stringify the member name.
@@ -48,20 +51,23 @@ struct member_list : member_list_base
 		template <typename T, typename F> constexpr static auto apply(F f, T& v) { return applyImpl(f, v, memberNames); }			\
     };
 
-template <typename T> struct is_reflected : std::is_base_of<member_list_base, type_descriptor<T>> {};
-template <typename T> inline constexpr bool is_reflected_v = is_reflected<T>::value;
-
-template <typename T, typename = std::enable_if_t<is_reflected_v<T>>>
-inline std::ostream& operator<<(std::ostream& o, const T& v)
+namespace era_engine
 {
-	o << type_descriptor<T>::structName << " = {\n";
-	type_descriptor<T>::apply(
-		[&o](const char* name, const auto& member)
-		{
-			o << "   " << name << " = " << member << ";\n";
-		},
-		v
-	);
-	o << "}\n";
-	return o;
+	template <typename T> struct is_reflected : std::is_base_of<member_list_base, type_descriptor<T>> {};
+	template <typename T> inline constexpr bool is_reflected_v = is_reflected<T>::value;
+
+	template <typename T, typename = std::enable_if_t<is_reflected_v<T>>>
+	inline std::ostream& operator<<(std::ostream& o, const T& v)
+	{
+		o << type_descriptor<T>::structName << " = {\n";
+		type_descriptor<T>::apply(
+			[&o](const char* name, const auto& member)
+			{
+				o << "   " << name << " = " << member << ";\n";
+			},
+			v
+		);
+		o << "}\n";
+		return o;
+	}
 }

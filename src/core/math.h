@@ -18,15 +18,15 @@
 #define M_TAU 6.28318530718f
 #define INV_TAU 0.159154943091895335f
 
-constexpr float oneDiv6 = 1.0f / 6.0f;
-constexpr float oneDiv24 = 1.0f / 24.0f;
-constexpr float oneDiv60 = 1.0f / 60.0f;
-constexpr float oneDiv120 = 1.0f / 120.0f;
-
 #define EPSILON 1e-6f
 
 #define deg2rad(deg) ((deg) * M_PI_OVER_180)
 #define rad2deg(rad) ((rad) * M_180_OVER_PI)
+
+constexpr float oneDiv6 = 1.0f / 6.0f;
+constexpr float oneDiv24 = 1.0f / 24.0f;
+constexpr float oneDiv60 = 1.0f / 60.0f;
+constexpr float oneDiv120 = 1.0f / 120.0f;
 
 inline constexpr float lerp(float l, float u, float t) { return l + t * (u - l); }
 inline constexpr float inverseLerp(float l, float u, float v) { return (v - l) / (u - l); }
@@ -100,7 +100,7 @@ inline constexpr int32 log2(int32 i)
 }
 
 inline constexpr uint32 log2(uint32 i)
-{ 
+{
 	uint32 mssb = indexOfMostSignificantSetBit(i);
 	uint32 lssb = indexOfLeastSignificantSetBit(i);
 
@@ -124,41 +124,41 @@ inline constexpr uint32 alignToPowerOfTwo(uint32 i)
 	return i == 0u ? 0u : 1u << log2(i);
 }
 
-inline float easeInQuadratic(float t)		{ return t * t; }
-inline float easeOutQuadratic(float t)		{ return t * (2.f - t); }
-inline float easeInOutQuadratic(float t)	{ return (t < 0.5f) ? (2.f * t * t) : (-1.f + (4.f - 2.f * t) * t); }
+inline float easeInQuadratic(float t) { return t * t; }
+inline float easeOutQuadratic(float t) { return t * (2.f - t); }
+inline float easeInOutQuadratic(float t) { return (t < 0.5f) ? (2.f * t * t) : (-1.f + (4.f - 2.f * t) * t); }
 
-inline float easeInCubic(float t)			{ return t * t * t; }
-inline float easeOutCubic(float t)			{ float tmin1 = t - 1.f; return tmin1 * tmin1 * tmin1 + 1.f; }
-inline float easeInOutCubic(float t)		{ return (t < 0.5f) ? (4.f * t * t * t) : ((t - 1.f) * (2.f * t - 2.f) * (2.f * t - 2.f) + 1.f); }
+inline float easeInCubic(float t) { return t * t * t; }
+inline float easeOutCubic(float t) { float tmin1 = t - 1.f; return tmin1 * tmin1 * tmin1 + 1.f; }
+inline float easeInOutCubic(float t) { return (t < 0.5f) ? (4.f * t * t * t) : ((t - 1.f) * (2.f * t - 2.f) * (2.f * t - 2.f) + 1.f); }
 
-inline float easeInQuartic(float t)			{ return t * t * t * t; }
-inline float easeOutQuartic(float t)		{ float tmin1 = t - 1.f; return 1.f - tmin1 * tmin1 * tmin1 * tmin1; }
-inline float easeInOutQuartic(float t)		{ float tmin1 = t - 1.f; return (t < 0.5f) ? (8.f * t * t * t * t) : (1.f - 8.f * tmin1 * tmin1 * tmin1 * tmin1); }
+inline float easeInQuartic(float t) { return t * t * t * t; }
+inline float easeOutQuartic(float t) { float tmin1 = t - 1.f; return 1.f - tmin1 * tmin1 * tmin1 * tmin1; }
+inline float easeInOutQuartic(float t) { float tmin1 = t - 1.f; return (t < 0.5f) ? (8.f * t * t * t * t) : (1.f - 8.f * tmin1 * tmin1 * tmin1 * tmin1); }
 
-inline float easeInQuintic(float t)			{ return t * t * t * t * t; }
-inline float easeOutQuintic(float t)		{ float tmin1 = t - 1.f; return 1.f + tmin1 * tmin1 * tmin1 * tmin1 * tmin1; }
-inline float easeInOutQuintic(float t)		{ float tmin1 = t - 1.f; return t < 0.5 ? 16.f * t * t * t * t * t : 1.f + 16.f * tmin1 * tmin1 * tmin1 * tmin1 * tmin1; }
+inline float easeInQuintic(float t) { return t * t * t * t * t; }
+inline float easeOutQuintic(float t) { float tmin1 = t - 1.f; return 1.f + tmin1 * tmin1 * tmin1 * tmin1 * tmin1; }
+inline float easeInOutQuintic(float t) { float tmin1 = t - 1.f; return t < 0.5 ? 16.f * t * t * t * t * t : 1.f + 16.f * tmin1 * tmin1 * tmin1 * tmin1 * tmin1; }
 
-inline float easeInSine(float t)			{ return sin((t - 1.f) * M_PI_OVER_2) + 1.f; }
-inline float easeOutSine(float t)			{ return sin(t * M_PI_OVER_2); }
-inline float easeInOutSine(float t)			{ return 0.5f * (1 - cos(t * M_PI)); }
+inline float easeInSine(float t) { return sin((t - 1.f) * M_PI_OVER_2) + 1.f; }
+inline float easeOutSine(float t) { return sin(t * M_PI_OVER_2); }
+inline float easeInOutSine(float t) { return 0.5f * (1 - cos(t * M_PI)); }
 
-inline float easeInCircular(float t)		{ return 1.f - sqrt(1.f - (t * t)); }
-inline float easeOutCircular(float t)		{ return sqrt((2.f - t) * t); }
-inline float easeInOutCircular(float t)		{ return (t < 0.5f) ? (0.5f * (1.f - sqrt(1.f - 4.f * (t * t)))) : (0.5f * (sqrt(-((2.f * t) - 3.f) * ((2.f * t) - 1.f)) + 1.f)); }
+inline float easeInCircular(float t) { return 1.f - sqrt(1.f - (t * t)); }
+inline float easeOutCircular(float t) { return sqrt((2.f - t) * t); }
+inline float easeInOutCircular(float t) { return (t < 0.5f) ? (0.5f * (1.f - sqrt(1.f - 4.f * (t * t)))) : (0.5f * (sqrt(-((2.f * t) - 3.f) * ((2.f * t) - 1.f)) + 1.f)); }
 
-inline float easeInExponential(float t)		{ return (t == 0.f) ? t : powf(2.f, 10.f * (t - 1.f)); }
-inline float easeOutExponential(float t)	{ return (t == 1.f) ? t : 1.f - powf(2.f, -10.f * t); }
-inline float easeInOutExponential(float t)	{ if (t == 0.f || t == 1.f) { return t; } return (t < 0.5f) ? (0.5f * powf(2.f, (20.f * t) - 10.f)) : (-0.5f * powf(2.f, (-20.f * t) + 10.f) + 1.f); }
+inline float easeInExponential(float t) { return (t == 0.f) ? t : powf(2.f, 10.f * (t - 1.f)); }
+inline float easeOutExponential(float t) { return (t == 1.f) ? t : 1.f - powf(2.f, -10.f * t); }
+inline float easeInOutExponential(float t) { if (t == 0.f || t == 1.f) { return t; } return (t < 0.5f) ? (0.5f * powf(2.f, (20.f * t) - 10.f)) : (-0.5f * powf(2.f, (-20.f * t) + 10.f) + 1.f); }
 
-inline float inElastic(float t)				{ return sin(13.f * M_PI_OVER_2 * t) * powf(2.f, 10.f * (t - 1.f)); }
-inline float outElastic(float t)			{ return sin(-13.f * M_PI_OVER_2 * (t + 1.f)) * powf(2.f, -10.f * t) + 1.f; }
-inline float inOutElastic(float t)			{ return (t < 0.5f) ? (0.5f * sin(13.f * M_PI_OVER_2 * (2.f * t)) * powf(2.f, 10.f * ((2.f * t) - 1.f))) : (0.5f * (sin(-13.f * M_PI_OVER_2 * ((2.f * t - 1.f) + 1.f)) * powf(2.f, -10.f * (2.f * t - 1.f)) + 2.f)); }
+inline float inElastic(float t) { return sin(13.f * M_PI_OVER_2 * t) * powf(2.f, 10.f * (t - 1.f)); }
+inline float outElastic(float t) { return sin(-13.f * M_PI_OVER_2 * (t + 1.f)) * powf(2.f, -10.f * t) + 1.f; }
+inline float inOutElastic(float t) { return (t < 0.5f) ? (0.5f * sin(13.f * M_PI_OVER_2 * (2.f * t)) * powf(2.f, 10.f * ((2.f * t) - 1.f))) : (0.5f * (sin(-13.f * M_PI_OVER_2 * ((2.f * t - 1.f) + 1.f)) * powf(2.f, -10.f * (2.f * t - 1.f)) + 2.f)); }
 
-inline float inBack(float t)				{ const float s = 1.70158f; return t * t * ((s + 1.f) * t - s); }
-inline float outBack(float t)				{ const float s = 1.70158f; return --t, 1.f * (t * t * ((s + 1.f) * t + s) + 1.f); }
-inline float inOutBack(float t)				{ const float s = 1.70158f * 1.525f; return (t < 0.5f) ? (t *= 2.f, 0.5f * t * t * (t * s + t - s)) : (t = t * 2.f - 2.f, 0.5f * (2.f + t * t * (t * s + t + s))); }
+inline float inBack(float t) { const float s = 1.70158f; return t * t * ((s + 1.f) * t - s); }
+inline float outBack(float t) { const float s = 1.70158f; return --t, 1.f * (t * t * ((s + 1.f) * t + s) + 1.f); }
+inline float inOutBack(float t) { const float s = 1.70158f * 1.525f; return (t < 0.5f) ? (t *= 2.f, 0.5f * t * t * (t * s + t - s)) : (t = t * 2.f - 2.f, 0.5f * (2.f + t * t * (t * s + t + s))); }
 
 #define bounceout(p) ( \
     (t) < 4.f/11.f ? (121.f * (t) * (t))/16.f : \
@@ -166,9 +166,9 @@ inline float inOutBack(float t)				{ const float s = 1.70158f * 1.525f; return (
     (t) < 9.f/10.f ? (4356.f/361.f * (t) * (t)) - (35442.f/1805.f * (t)) + 16061.f/1805.f \
                 : (54.f/5.f * (t) * (t)) - (513.f/25.f * (t)) + 268.f/25.f )
 
-inline float inBounce(float t)				{ return 1.f - bounceout(1.f - t); }
-inline float outBounce(float t)				{ return bounceout(t); }
-inline float inOutBounce(float t)			{ return (t < 0.5f) ? (0.5f * (1.f - bounceout(1.f - t * 2.f))) : (0.5f * bounceout((t * 2.f - 1.f)) + 0.5f); }
+inline float inBounce(float t) { return 1.f - bounceout(1.f - t); }
+inline float outBounce(float t) { return bounceout(t); }
+inline float inOutBounce(float t) { return (t < 0.5f) ? (0.5f * (1.f - bounceout(1.f - t * 2.f))) : (0.5f * bounceout((t * 2.f - 1.f)) + 0.5f); }
 
 #undef bounceout
 
@@ -692,10 +692,12 @@ inline float maxElement(vec4 a) { return max(a.x, max(a.y, max(a.z, a.w))); }
 
 inline uint32 maxElementIndex(vec2 a) { return (a.x > a.y) ? 0 : 1; }
 inline uint32 maxElementIndex(vec3 a) { return (a.x > a.y) ? ((a.x > a.z) ? 0 : 2) : ((a.y > a.z) ? 1 : 2); }
-inline uint32 maxElementIndex(vec4 a) { return (a.x > a.y)	? ((a.x > a.z)	? ((a.x > a.w) ? 0 : 3) 
-																			: ((a.z > a.w) ? 2 : 3)) 
-															: ((a.y > a.z)	? ((a.y > a.w) ? 1 : 3) 
-																			: ((a.z > a.w) ? 2 : 3)); }
+inline uint32 maxElementIndex(vec4 a) {
+	return (a.x > a.y) ? ((a.x > a.z) ? ((a.x > a.w) ? 0 : 3)
+		: ((a.z > a.w) ? 2 : 3))
+		: ((a.y > a.z) ? ((a.y > a.w) ? 1 : 3)
+			: ((a.z > a.w) ? 2 : 3));
+}
 
 inline vec2 remap(vec2 v, vec2 oldL, vec2 oldU, vec2 newL, vec2 newU)
 {
@@ -858,7 +860,7 @@ T sum(const T* input, uint32 count)
 	T result = 0;
 	for (uint32 i = 0; i < count; ++i)
 		result += input[i];
-	
+
 	return result;
 }
 

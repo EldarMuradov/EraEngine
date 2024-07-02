@@ -1,8 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "math.h"
+#include "core/math.h"
 #include <half/half.c>
+
 
 const half half::minValue = (uint16)0b1111101111111111;
 const half half::maxValue = (uint16)0b0111101111111111;
@@ -78,11 +79,11 @@ half::operator float()
 }
 
 half operator+(half a, half b) { half result; result.h = half_add(a.h, b.h); return result; }
-half& operator+=(half& a, half b) {	a = a + b; return a; }
+half& operator+=(half& a, half b) { a = a + b; return a; }
 half operator-(half a, half b) { half result; result.h = half_sub(a.h, b.h); return result; }
-half& operator-=(half& a, half b) {	a = a - b; return a; }
+half& operator-=(half& a, half b) { a = a - b; return a; }
 half operator*(half a, half b) { half result; result.h = half_mul(a.h, b.h); return result; }
-half& operator*=(half& a, half b) {	a = a * b; return a; }
+half& operator*=(half& a, half b) { a = a * b; return a; }
 half operator/(half a, half b) { half result; result.h = half_div(a.h, b.h); return result; }
 half& operator/=(half& a, half b) { a = a / b; return a; }
 
@@ -934,16 +935,16 @@ mat4 createPerspectiveProjectionMatrix(float r, float l, float t, float b, float
 	mat4 result;
 
 	result.m00 = (2.f * nearPlane) / (r - l);
-	result.m01 = 0.f; 
+	result.m01 = 0.f;
 	result.m02 = (r + l) / (r - l);
 	result.m03 = 0.f;
 
-	result.m10 = 0.f; 
+	result.m10 = 0.f;
 	result.m11 = (2.f * nearPlane) / (t - b);
 	result.m12 = (t + b) / (t - b);
 	result.m13 = 0.f;
 
-	result.m20 = 0; 
+	result.m20 = 0;
 	result.m21 = 0;
 
 	if (farPlane > 0.f)
@@ -966,9 +967,9 @@ mat4 createPerspectiveProjectionMatrix(float r, float l, float t, float b, float
 #endif
 	}
 
-	result.m30 = 0.f; 
-	result.m31 = 0.f; 
-	result.m32 = -1.f; 
+	result.m30 = 0.f;
+	result.m31 = 0.f;
+	result.m32 = -1.f;
 	result.m33 = 0.f;
 
 	return result;
@@ -1010,7 +1011,7 @@ mat4 createOrthographicProjectionMatrix(float r, float l, float t, float b, floa
 mat4 invertPerspectiveProjectionMatrix(const mat4& m)
 {
 	mat4 inv;
-	
+
 	inv.m00 = 1.f / m.m00;
 	inv.m01 = 0.f;
 	inv.m02 = 0.f;
@@ -1492,7 +1493,7 @@ static void approximateGivensQuaternion(float a11, float a12, float a22, float& 
 	// compute the corresponding rotation quaternion
 	ch = 2 * (a11 - a22);
 	sh = a12;
-	bool b = _gamma * sh * sh < ch* ch;
+	bool b = _gamma * sh * sh < ch * ch;
 	float w = 1.f / sqrt(ch * ch + sh * sh);
 	ch = b ? w * ch : _cstar;
 	sh = b ? w * sh : _sstar;

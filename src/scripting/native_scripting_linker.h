@@ -6,8 +6,11 @@
 //Inject function into scripting endpoints
 #define BIND(fn, result, ...) enative_scripting_builder::func{ new enative_scripting_builder::func_obj<result, __VA_ARGS__>(fn)}
 
-struct escene;
-struct enative_scripting_builder;
+namespace era_engine
+{
+	struct escene;
+	struct enative_scripting_builder;
+}
 
 namespace era_engine::dotnet
 {

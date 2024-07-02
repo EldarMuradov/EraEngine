@@ -4,7 +4,7 @@
 #include <px/temp/px_mesh_generator.h>
 #include <px/core/px_physics_engine.h>
 
-namespace physics
+namespace era_engine::physics
 {
 	using namespace physx;
 

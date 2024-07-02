@@ -1,774 +1,776 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "window.h"
+#include "window/window.h"
 #include <Windowsx.h>
 #include <shellapi.h>
 #include <uxtheme.h>
 #include <vssym32.h>
 #include <algorithm>
-#include "software_window.h"
+#include "window/software_window.h"
 #include "core/imgui.h"
 #include "core/string.h"
 #include "asset/image.h"
 #include <DirectXTex/DirectXTex.h>
 
-bool handleWindowsMessages();
-
-static bool running = true;
-win32_window* win32_window::mainWindow = 0;
-
-static bool windowClassInitialized;
-static const TCHAR* windowClassName = TEXT("APP WINDOW");
-
-static bool atLeastOneWindowWasOpened;
-static uint32 numOpenWindows;
-
-static LRESULT CALLBACK windowCallBack(
-	_In_ HWND   hwnd,
-	_In_ UINT   msg,
-	_In_ WPARAM wParam,
-	_In_ LPARAM lParam
-);
-
-static void setFullscreen(HWND windowHandle, bool fullscreen, WINDOWPLACEMENT& windowPosition)
+namespace era_engine
 {
-	DWORD style = GetWindowLong(windowHandle, GWL_STYLE);
+	bool handleWindowsMessages();
 
-	if (fullscreen)
+	static bool running = true;
+	win32_window* win32_window::mainWindow = 0;
+
+	static bool windowClassInitialized;
+	static const TCHAR* windowClassName = TEXT("APP WINDOW");
+
+	static bool atLeastOneWindowWasOpened;
+	static uint32 numOpenWindows;
+
+	static LRESULT CALLBACK windowCallBack(
+		_In_ HWND   hwnd,
+		_In_ UINT   msg,
+		_In_ WPARAM wParam,
+		_In_ LPARAM lParam
+	);
+
+	static void setFullscreen(HWND windowHandle, bool fullscreen, WINDOWPLACEMENT& windowPosition)
 	{
-		if (style & WS_OVERLAPPEDWINDOW)
+		DWORD style = GetWindowLong(windowHandle, GWL_STYLE);
+
+		if (fullscreen)
 		{
-			MONITORINFO monitorInfo = { sizeof(MONITORINFO) };
-			if (GetWindowPlacement(windowHandle, &windowPosition) &&
-				GetMonitorInfo(MonitorFromWindow(windowHandle, MONITOR_DEFAULTTOPRIMARY), &monitorInfo))
+			if (style & WS_OVERLAPPEDWINDOW)
 			{
-				SetWindowLong(windowHandle, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
-				SetWindowPos(windowHandle, HWND_TOP,
-					monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top,
-					monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left,
-					monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top,
+				MONITORINFO monitorInfo = { sizeof(MONITORINFO) };
+				if (GetWindowPlacement(windowHandle, &windowPosition) &&
+					GetMonitorInfo(MonitorFromWindow(windowHandle, MONITOR_DEFAULTTOPRIMARY), &monitorInfo))
+				{
+					SetWindowLong(windowHandle, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
+					SetWindowPos(windowHandle, HWND_TOP,
+						monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top,
+						monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left,
+						monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top,
+						SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+				}
+			}
+		}
+		else
+		{
+			if (!(style & WS_OVERLAPPEDWINDOW))
+			{
+				SetWindowLong(windowHandle, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
+				SetWindowPlacement(windowHandle, &windowPosition);
+				SetWindowPos(windowHandle, 0, 0, 0, 0, 0,
+					SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
 					SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 			}
 		}
 	}
-	else
+
+	static int dpiScale(int value, UINT dpi)
 	{
-		if (!(style & WS_OVERLAPPEDWINDOW))
+		return (int)((float)value * dpi / 96);
+	}
+
+	static int getDefaultTitleBarHeight(HWND handle)
+	{
+		SIZE titleBarSize = { };
+		const int topAndBottomBorders = 2;
+		HTHEME theme = OpenThemeData(handle, L"WINDOW");
+		UINT dpi = GetDpiForWindow(handle);
+		GetThemePartSize(theme, NULL, WP_CAPTION, CS_ACTIVE, NULL, TS_TRUE, &titleBarSize);
+		CloseThemeData(theme);
+
+		int height = dpiScale(titleBarSize.cy, dpi) + topAndBottomBorders;
+
+		return height;
+	}
+
+	static RECT getTitleBarRect(HWND handle, int32 titleBarHeight)
+	{
+		RECT rect;
+		GetClientRect(handle, &rect);
+		rect.bottom = rect.top + titleBarHeight;
+		return rect;
+	}
+
+	static void centerRectInRect(RECT& to_center, const RECT& outer_rect)
+	{
+		int toWidth = to_center.right - to_center.left;
+		int toHeight = to_center.bottom - to_center.top;
+		int outerWidth = outer_rect.right - outer_rect.left;
+		int outerHeight = outer_rect.bottom - outer_rect.top;
+
+		int paddingX = (outerWidth - toWidth) / 2;
+		int paddingY = (outerHeight - toHeight) / 2;
+
+		to_center.left = outer_rect.left + paddingX;
+		to_center.top = outer_rect.top + paddingY;
+		to_center.right = to_center.left + toWidth;
+		to_center.bottom = to_center.top + toHeight;
+	}
+
+	struct custom_titlebar_button_rects
+	{
+		RECT close;
+		RECT maximize;
+		RECT minimize;
+	};
+
+	enum titlebar_button_name
+	{
+		titlebar_button_none = -1,
+		titlebar_button_close,
+		titlebar_button_minimize,
+		titlebar_button_maximize,
+	};
+
+	static custom_titlebar_button_rects getTitleBarButtonRects(HWND handle, int32 buttonHeight)
+	{
+		UINT dpi = GetDpiForWindow(handle);
+		custom_titlebar_button_rects result;
+		int buttonWidth = dpiScale(47, dpi);
+		result.close = getTitleBarRect(handle, buttonHeight);
+
+		result.close.left = result.close.right - buttonWidth;
+		result.maximize = result.close;
+		result.maximize.left -= buttonWidth;
+		result.maximize.right -= buttonWidth;
+		result.minimize = result.maximize;
+		result.minimize.left -= buttonWidth;
+		result.minimize.right -= buttonWidth;
+		return result;
+	}
+
+	static int hitTest(POINT point, win32_window* window)
+	{
+		if (!window->fullscreen)
 		{
-			SetWindowLong(windowHandle, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
-			SetWindowPlacement(windowHandle, &windowPosition);
-			SetWindowPos(windowHandle, 0, 0, 0, 0, 0,
-				SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
-				SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
-		}
-	}
-}
+			RECT frameRect;
+			GetWindowRect(window->windowHandle, &frameRect);
 
-static int dpiScale(int value, UINT dpi) 
-{
-	return (int)((float)value * dpi / 96);
-}
+			int32 border = 5;
+			int32 corner = 10;
 
-static int getDefaultTitleBarHeight(HWND handle)
-{
-	SIZE titleBarSize = { };
-	const int topAndBottomBorders = 2;
-	HTHEME theme = OpenThemeData(handle, L"WINDOW");
-	UINT dpi = GetDpiForWindow(handle);
-	GetThemePartSize(theme, NULL, WP_CAPTION, CS_ACTIVE, NULL, TS_TRUE, &titleBarSize);
-	CloseThemeData(theme);
-
-	int height = dpiScale(titleBarSize.cy, dpi) + topAndBottomBorders;
-	
-	return height;
-}
-
-static RECT getTitleBarRect(HWND handle, int32 titleBarHeight)
-{
-	RECT rect;
-	GetClientRect(handle, &rect);
-	rect.bottom = rect.top + titleBarHeight;
-	return rect;
-}
-
-static void centerRectInRect(RECT& to_center, const RECT& outer_rect) 
-{
-	int toWidth = to_center.right - to_center.left;
-	int toHeight = to_center.bottom - to_center.top;
-	int outerWidth = outer_rect.right - outer_rect.left;
-	int outerHeight = outer_rect.bottom - outer_rect.top;
-
-	int paddingX = (outerWidth - toWidth) / 2;
-	int paddingY = (outerHeight - toHeight) / 2;
-
-	to_center.left = outer_rect.left + paddingX;
-	to_center.top = outer_rect.top + paddingY;
-	to_center.right = to_center.left + toWidth;
-	to_center.bottom = to_center.top + toHeight;
-}
-
-struct custom_titlebar_button_rects 
-{
-	RECT close;
-	RECT maximize;
-	RECT minimize;
-};
-
-enum titlebar_button_name
-{
-	titlebar_button_none = -1,
-	titlebar_button_close,
-	titlebar_button_minimize,
-	titlebar_button_maximize,
-};
-
-static custom_titlebar_button_rects getTitleBarButtonRects(HWND handle, int32 buttonHeight) 
-{
-	UINT dpi = GetDpiForWindow(handle);
-	custom_titlebar_button_rects result;
-	int buttonWidth = dpiScale(47, dpi);
-	result.close = getTitleBarRect(handle, buttonHeight);
-
-	result.close.left = result.close.right - buttonWidth;
-	result.maximize = result.close;
-	result.maximize.left -= buttonWidth;
-	result.maximize.right -= buttonWidth;
-	result.minimize = result.maximize;
-	result.minimize.left -= buttonWidth;
-	result.minimize.right -= buttonWidth;
-	return result;
-}
-
-static int hitTest(POINT point, win32_window* window)
-{
-	if (!window->fullscreen)
-	{
-		RECT frameRect;
-		GetWindowRect(window->windowHandle, &frameRect);
-
-		int32 border = 5;
-		int32 corner = 10;
-
-		if (point.x < frameRect.left + border)
-		{
-			if (point.y < frameRect.top + corner)
-				return HTTOPLEFT;
-			if (point.y > frameRect.bottom - corner)
-				return HTBOTTOMLEFT;
-			return HTLEFT;
-		}
-		if (point.x > frameRect.right - border)
-		{
-			if (point.y < frameRect.top + corner)
-				return HTTOPRIGHT;
-			if (point.y > frameRect.bottom - corner)
-				return HTBOTTOMRIGHT;
-			return HTRIGHT;
-		}
-		if (point.y < frameRect.top + border)
-		{
-			if (point.x < frameRect.left + corner)
-				return HTTOPLEFT;
-			if (point.x > frameRect.right - corner)
-				return HTTOPRIGHT;
-			return HTTOP;
-		}
-		if (point.y > frameRect.bottom - border)
-		{
-			if (point.x < frameRect.left + corner)
-				return HTBOTTOMLEFT;
-			if (point.x > frameRect.right - corner)
-				return HTBOTTOMRIGHT;
-			return HTBOTTOM;
-		}
-
-		custom_titlebar_button_rects buttonRects = getTitleBarButtonRects(window->windowHandle, window->style.buttonHeight);
-		OffsetRect(&buttonRects.close, frameRect.left, frameRect.top);
-		OffsetRect(&buttonRects.minimize, frameRect.left, frameRect.top);
-		OffsetRect(&buttonRects.maximize, frameRect.left, frameRect.top);
-
-		if (PtInRect(&buttonRects.close, point))
-			return HTCLOSE;
-		else if (PtInRect(&buttonRects.maximize, point))
-			return HTMAXBUTTON;
-		else if (PtInRect(&buttonRects.minimize, point))
-			return HTMINBUTTON;
-
-		if (point.y < frameRect.top + window->style.titleBarHeight)
-		{
-			int32 iconPadding = window->style.iconPadding;
-			int32 iconSize = window->style.titleBarHeight - iconPadding * 2;
-
-			RECT iconRect = { iconPadding, iconPadding, iconPadding + iconSize, iconPadding + iconSize };
-			OffsetRect(&iconRect, frameRect.left, frameRect.top);
-			if (PtInRect(&iconRect, point))
-				return HTSYSMENU;
-
-			return HTCAPTION;
-		}
-	}
-
-	return HTCLIENT;
-}
-
-static HICON createIcon(const uint8* image, uint32 width, uint32 height)
-{
-	BITMAPV5HEADER bi;
-
-	ZeroMemory(&bi, sizeof(bi));
-	bi.bV5Size = sizeof(bi);
-	bi.bV5Width = width;
-	bi.bV5Height = -(int32)height;
-	bi.bV5Planes = 1;
-	bi.bV5BitCount = 32;
-	bi.bV5Compression = BI_BITFIELDS;
-	bi.bV5RedMask = 0x00ff0000;
-	bi.bV5GreenMask = 0x0000ff00;
-	bi.bV5BlueMask = 0x000000ff;
-	bi.bV5AlphaMask = 0xff000000;
-
-	uint8* target = NULL;
-	HDC dc = GetDC(NULL);
-	HBITMAP color = CreateDIBSection(dc,
-		(BITMAPINFO*)&bi,
-		DIB_RGB_COLORS,
-		(void**)&target,
-		NULL,
-		(DWORD)0);
-	ReleaseDC(NULL, dc);
-
-	if (!color)
-	{
-		std::cerr << "Win32: Failed to create RGBA bitmap.\n";
-		return NULL;
-	}
-
-	HBITMAP mask = CreateBitmap(width, height, 1, 1, NULL);
-	if (!mask)
-	{
-		std::cerr << "Failed to create mask bitmap.\n";
-		DeleteObject(color);
-		return NULL;
-	}
-
-	for (uint32 i = 0; i < width * height; ++i)
-	{
-		target[0] = image[2];
-		target[1] = image[1];
-		target[2] = image[0];
-		target[3] = image[3];
-		target += 4;
-		image += 4;
-	}
-
-	ICONINFO ii = {};
-	ii.fIcon = true;
-	ii.hbmMask = mask;
-	ii.hbmColor = color;
-
-	HICON handle = CreateIconIndirect(&ii);
-
-	DeleteObject(color);
-	DeleteObject(mask);
-
-	if (!handle)
-	{
-		std::cerr << "Failed to create icon.\n";
-	}
-
-	return handle;
-}
-
-bool win32_window::initialize(const TCHAR* name, uint32 clientWidth, uint32 clientHeight, bool visible)
-{
-	if (!windowClassInitialized)
-	{
-		WNDCLASSEX wndClass;
-		ZeroMemory(&wndClass, sizeof(WNDCLASSEX));
-		wndClass.cbSize = sizeof(WNDCLASSEX);
-		wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
-		wndClass.lpfnWndProc = windowCallBack;
-		wndClass.hInstance = GetModuleHandle(NULL);
-		wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-		wndClass.lpszClassName = windowClassName;
-
-		if (!RegisterClassEx(&wndClass))
-		{
-			std::cerr << "Failed to create window class.\n";
-			return false;
-		}
-
-		RegisterHotKey(0, 0, 0, VK_SNAPSHOT);
-		RegisterHotKey(0, 1, MOD_CONTROL, VK_SNAPSHOT);
-
-		windowClassInitialized = true;
-	}
-
-	if (!windowHandle)
-	{
-		++numOpenWindows;
-
-		this->clientWidth = clientWidth;
-		this->clientHeight = clientHeight;
-
-		DWORD windowStyle = WS_OVERLAPPEDWINDOW;
-
-		RECT r = { 0, 0, (LONG)clientWidth, (LONG)clientHeight };
-		AdjustWindowRect(&r, windowStyle, FALSE);
-		int width = r.right - r.left;
-		int height = r.bottom - r.top;
-
-		windowHandle = CreateWindowEx(0, windowClassName, name, windowStyle,
-#if 1
-			CW_USEDEFAULT, CW_USEDEFAULT,
-#else
-			0, 0
-#endif
-			width, height,
-			0, 0, 0, 0);
-
-		fullscreen = false;
-
-		SetWindowLongPtr(windowHandle, GWLP_USERDATA, (LONG_PTR)this);
-
-		if (!windowHandle)
-		{
-			std::cerr << "Failed to create window.\n";
-			return false;
-		}
-
-		atLeastOneWindowWasOpened = true;
-	}
-
-	if (!mainWindow)
-	{
-		mainWindow = this;
-	}
-
-	open = true;
-	this->visible = visible;
-	if (visible)
-	{
-		ShowWindow(windowHandle, SW_SHOW);
-	}
-
-	return true;
-}
-
-bool win32_window::initialize(HINSTANCE hInst, const TCHAR* name, uint32 clientWidth, uint32 clientHeight, bool visible)
-{
-	if (!windowClassInitialized)
-	{
-		WNDCLASSEX wndClass;
-		ZeroMemory(&wndClass, sizeof(WNDCLASSEX));
-		wndClass.cbSize = sizeof(WNDCLASSEX);
-		wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
-		wndClass.lpfnWndProc = windowCallBack;
-		wndClass.hInstance = hInst;
-		wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-		wndClass.lpszClassName = windowClassName;
-
-		if (!RegisterClassEx(&wndClass))
-		{
-			std::cerr << "Failed to create window class.\n";
-			return false;
-		}
-
-		RegisterHotKey(0, 0, 0, VK_SNAPSHOT);
-		RegisterHotKey(0, 1, MOD_CONTROL, VK_SNAPSHOT);
-
-		windowClassInitialized = true;
-	}
-
-	if (!windowHandle)
-	{
-		++numOpenWindows;
-
-		this->clientWidth = clientWidth;
-		this->clientHeight = clientHeight;
-
-		DWORD windowStyle = WS_OVERLAPPEDWINDOW;
-
-		RECT r = { 0, 0, (LONG)clientWidth, (LONG)clientHeight };
-		AdjustWindowRect(&r, windowStyle, FALSE);
-		int width = r.right - r.left;
-		int height = r.bottom - r.top;
-
-		windowHandle = CreateWindowEx(0, windowClassName, name, windowStyle,
-#if 1
-			CW_USEDEFAULT, CW_USEDEFAULT,
-#else
-			0, 0
-#endif
-			width, height,
-			0, 0, 0, 0);
-
-		fullscreen = false;
-
-		SetWindowLongPtr(windowHandle, GWLP_USERDATA, (LONG_PTR)this);
-
-		if (!windowHandle)
-		{
-			std::cerr << "Failed to create window.\n";
-			return false;
-		}
-
-		atLeastOneWindowWasOpened = true;
-	}
-
-	if (!mainWindow)
-	{
-		mainWindow = this;
-	}
-
-	open = true;
-	this->visible = visible;
-	/*if (visible)
-	{
-		ShowWindow(windowHandle, SW_SHOW);
-	}*/
-
-	return true;
-}
-
-void win32_window::shutdown()
-{
-	if (windowHandle)
-	{
-		HWND handle = windowHandle;
-		windowHandle = 0;
-		DestroyWindow(handle);
-	}
-
-	fullscreen = false;
-	open = false;
-	visible = false;
-}
-
-void win32_window::toggleFullscreen()
-{
-	fullscreen = !fullscreen;
-	setFullscreen(windowHandle, fullscreen, windowPosition);
-}
-
-void win32_window::setFileDropCallback(std::function<void(const fs::path&)> cb)
-{
-	if (!fileDropCallback)
-	{
-		DragAcceptFiles(windowHandle, true);
-	}
-	fileDropCallback = cb;
-}
-
-win32_window::win32_window(win32_window&& o) noexcept
-{
-	open = o.open;
-	windowHandle = o.windowHandle;
-	clientWidth = o.clientWidth;
-	clientHeight = o.clientHeight;
-	windowPosition = o.windowPosition;
-	fullscreen = o.fullscreen;
-
-	o.windowHandle = 0;
-
-	if (windowHandle && open)
-	{
-		SetWindowLongPtr(windowHandle, GWLP_USERDATA, (LONG_PTR)this);
-	}
-
-	if (mainWindow == &o)
-	{
-		mainWindow = this;
-	}
-}
-
-win32_window::~win32_window()
-{
-	shutdown();
-}
-
-void win32_window::makeActive()
-{
-	SetForegroundWindow(windowHandle);
-}
-
-static void redrawWindowFrame(HWND windowHandle)
-{
-	RECT rect;
-	GetClientRect(windowHandle, &rect);
-
-	AdjustWindowRectExForDpi(&rect, GetWindowLong(windowHandle, GWL_STYLE), FALSE,
-		0,
-		GetDpiForWindow(windowHandle));
-
-	ClientToScreen(windowHandle, (POINT*)&rect.left);
-	ClientToScreen(windowHandle, (POINT*)&rect.right);
-	SetWindowPos(windowHandle, HWND_TOP,
-		rect.left, rect.top,
-		rect.right - rect.left, rect.bottom - rect.top,
-		SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOZORDER);
-
-	handleWindowsMessages(); // Handle messages, so that frame is custom right from the start
-}
-
-void win32_window::setCustomWindowStyle(custom_window_style style)
-{
-	customWindowStyle = true;
-
-	if (style.titleBarHeight == -1)
-	{
-		style.titleBarHeight = getDefaultTitleBarHeight(windowHandle);
-	}
-	if (style.buttonHeight == -1)
-	{
-		style.buttonHeight = style.titleBarHeight;
-	}
-	if (style.borderWidthLeftAndRight == -1)
-	{
-		UINT dpi = GetDpiForWindow(windowHandle);
-		style.borderWidthLeftAndRight = GetSystemMetricsForDpi(SM_CXFRAME, dpi);
-	}
-	if (style.borderWidthBottom == -1)
-	{
-		UINT dpi = GetDpiForWindow(windowHandle);
-		style.borderWidthBottom = GetSystemMetricsForDpi(SM_CYFRAME, dpi);
-	}
-	this->style = style;
-
-	redrawWindowFrame(windowHandle);
-}
-
-void win32_window::resetToDefaultWindowStyle()
-{
-	customWindowStyle = false;
-	redrawWindowFrame(windowHandle);
-}
-
-void win32_window::setIcon(const fs::path& filepath)
-{
-	DirectX::ScratchImage scratchImage;
-	D3D12_RESOURCE_DESC desc;
-
-	if (loadImageFromFile(filepath, image_load_flags_cache_to_dds, scratchImage, desc) && scratchImage.GetImageCount() > 0)
-	{
-		const auto& image = scratchImage.GetImages()[0];
-		ASSERT(getNumberOfChannels(image.format) == 4);
-		uint8* pixels = image.pixels;
-		uint32 width = (uint32)image.width;
-		uint32 height = (uint32)image.height;
-
-		HICON icon = createIcon(pixels, width, height);
-
-		if (customIcon)
-			DestroyIcon(customIcon);
-		customIcon = icon;
-
-		SendMessage(windowHandle, WM_SETICON, ICON_BIG, (LPARAM)icon);
-		SendMessage(windowHandle, WM_SETICON, ICON_SMALL, (LPARAM)icon);
-	}
-}
-
-void win32_window::changeTitle(const TCHAR* format, ...)
-{
-	TCHAR titleBuffer[128];
-
-	va_list arg;
-	va_start(arg, format);
-	_vstprintf_s(titleBuffer, format, arg);
-	va_end(arg);
-
-	SetWindowText(windowHandle, titleBuffer);
-}
-
-void win32_window::toggleVisibility()
-{
-	visible = !visible;
-	if (visible)
-	{
-		ShowWindow(windowHandle, SW_SHOW);
-	}
-	else
-	{
-		ShowWindow(windowHandle, SW_HIDE);
-	}
-}
-
-void win32_window::maximize()
-{
-	ShowWindow(windowHandle, SW_MAXIMIZE);
-}
-
-void win32_window::setMinimumSize(int32 minimumWidth, int32 minimumHeight)
-{
-	this->minimumWidth = minimumWidth;
-	this->minimumHeight = minimumHeight;
-}
-
-void win32_window::moveTo(int x, int y)
-{
-	SetWindowPos(windowHandle, HWND_TOP, x, y, clientWidth, clientHeight, SWP_NOSIZE);
-}
-
-void win32_window::moveToScreenID(int screenID)
-{
-	DISPLAY_DEVICEA dispDevice = { 0 };
-	dispDevice.cb = sizeof(dispDevice);
-
-	DEVMODEA devMode = { 0 };
-	devMode.dmSize = sizeof(devMode);
-
-	if (EnumDisplayDevicesA(NULL, screenID, &dispDevice, 0))
-	{
-		if (EnumDisplaySettingsExA(dispDevice.DeviceName, ENUM_CURRENT_SETTINGS, &devMode, NULL))
-		{
-			moveTo(devMode.dmPosition.x, devMode.dmPosition.y);
-		}
-	}
-}
-
-struct monitor_iterator
-{
-	DISPLAY_DEVICEA dispDevice;
-	DEVMODEA devMode;
-	DWORD screenID;
-
-	monitor_iterator();
-
-	bool step(monitor_info& info);
-};
-
-void win32_window::moveToMonitor(const std::string& uniqueID)
-{
-	monitor_iterator it;
-	monitor_info monitor;
-	while (it.step(monitor))
-	{
-		if (monitor.uniqueID == uniqueID)
-		{
-			moveTo(monitor.x, monitor.y);
-			return;
-		}
-	}
-}
-
-void win32_window::moveToMonitor(const monitor_info& monitor)
-{
-	moveTo(monitor.x, monitor.y);
-}
-
-monitor_iterator::monitor_iterator()
-{
-	ZeroMemory(&dispDevice, sizeof(dispDevice));
-	ZeroMemory(&devMode, sizeof(devMode));
-	dispDevice.cb = sizeof(dispDevice);
-	devMode.dmSize = sizeof(devMode);
-	screenID = 0;
-}
-
-static std::string convertUniqueIDToFolderFriendlyName(const std::string& uniqueID)
-{
-	std::string result = uniqueID;
-	std::replace(result.begin(), result.end(), '\\', '_');
-	std::replace(result.begin(), result.end(), '?', '_');
-	return result;
-}
-
-bool monitor_iterator::step(monitor_info& info)
-{
-	bool result = false;
-
-	if (EnumDisplayDevicesA(NULL, screenID, &dispDevice, 0))
-	{
-		char name[sizeof(dispDevice.DeviceName)];
-		strcpy_s(name, dispDevice.DeviceName);
-		if (EnumDisplayDevicesA(name, 0, &dispDevice, EDD_GET_DEVICE_INTERFACE_NAME))
-		{
-			if (EnumDisplaySettingsExA(name, ENUM_CURRENT_SETTINGS, &devMode, NULL))
+			if (point.x < frameRect.left + border)
 			{
-				info.x = devMode.dmPosition.x;
-				info.y = devMode.dmPosition.y;
-				info.width = devMode.dmPelsWidth;
-				info.height = devMode.dmPelsHeight;
-				info.screenID = screenID;
-				info.uniqueID = convertUniqueIDToFolderFriendlyName(dispDevice.DeviceID);
-				info.name = dispDevice.DeviceString;
-				result = true;
+				if (point.y < frameRect.top + corner)
+					return HTTOPLEFT;
+				if (point.y > frameRect.bottom - corner)
+					return HTBOTTOMLEFT;
+				return HTLEFT;
+			}
+			if (point.x > frameRect.right - border)
+			{
+				if (point.y < frameRect.top + corner)
+					return HTTOPRIGHT;
+				if (point.y > frameRect.bottom - corner)
+					return HTBOTTOMRIGHT;
+				return HTRIGHT;
+			}
+			if (point.y < frameRect.top + border)
+			{
+				if (point.x < frameRect.left + corner)
+					return HTTOPLEFT;
+				if (point.x > frameRect.right - corner)
+					return HTTOPRIGHT;
+				return HTTOP;
+			}
+			if (point.y > frameRect.bottom - border)
+			{
+				if (point.x < frameRect.left + corner)
+					return HTBOTTOMLEFT;
+				if (point.x > frameRect.right - corner)
+					return HTBOTTOMRIGHT;
+				return HTBOTTOM;
+			}
+
+			custom_titlebar_button_rects buttonRects = getTitleBarButtonRects(window->windowHandle, window->style.buttonHeight);
+			OffsetRect(&buttonRects.close, frameRect.left, frameRect.top);
+			OffsetRect(&buttonRects.minimize, frameRect.left, frameRect.top);
+			OffsetRect(&buttonRects.maximize, frameRect.left, frameRect.top);
+
+			if (PtInRect(&buttonRects.close, point))
+				return HTCLOSE;
+			else if (PtInRect(&buttonRects.maximize, point))
+				return HTMAXBUTTON;
+			else if (PtInRect(&buttonRects.minimize, point))
+				return HTMINBUTTON;
+
+			if (point.y < frameRect.top + window->style.titleBarHeight)
+			{
+				int32 iconPadding = window->style.iconPadding;
+				int32 iconSize = window->style.titleBarHeight - iconPadding * 2;
+
+				RECT iconRect = { iconPadding, iconPadding, iconPadding + iconSize, iconPadding + iconSize };
+				OffsetRect(&iconRect, frameRect.left, frameRect.top);
+				if (PtInRect(&iconRect, point))
+					return HTSYSMENU;
+
+				return HTCAPTION;
+			}
+		}
+
+		return HTCLIENT;
+	}
+
+	static HICON createIcon(const uint8* image, uint32 width, uint32 height)
+	{
+		BITMAPV5HEADER bi;
+
+		ZeroMemory(&bi, sizeof(bi));
+		bi.bV5Size = sizeof(bi);
+		bi.bV5Width = width;
+		bi.bV5Height = -(int32)height;
+		bi.bV5Planes = 1;
+		bi.bV5BitCount = 32;
+		bi.bV5Compression = BI_BITFIELDS;
+		bi.bV5RedMask = 0x00ff0000;
+		bi.bV5GreenMask = 0x0000ff00;
+		bi.bV5BlueMask = 0x000000ff;
+		bi.bV5AlphaMask = 0xff000000;
+
+		uint8* target = NULL;
+		HDC dc = GetDC(NULL);
+		HBITMAP color = CreateDIBSection(dc,
+			(BITMAPINFO*)&bi,
+			DIB_RGB_COLORS,
+			(void**)&target,
+			NULL,
+			(DWORD)0);
+		ReleaseDC(NULL, dc);
+
+		if (!color)
+		{
+			std::cerr << "Win32: Failed to create RGBA bitmap.\n";
+			return NULL;
+		}
+
+		HBITMAP mask = CreateBitmap(width, height, 1, 1, NULL);
+		if (!mask)
+		{
+			std::cerr << "Failed to create mask bitmap.\n";
+			DeleteObject(color);
+			return NULL;
+		}
+
+		for (uint32 i = 0; i < width * height; ++i)
+		{
+			target[0] = image[2];
+			target[1] = image[1];
+			target[2] = image[0];
+			target[3] = image[3];
+			target += 4;
+			image += 4;
+		}
+
+		ICONINFO ii = {};
+		ii.fIcon = true;
+		ii.hbmMask = mask;
+		ii.hbmColor = color;
+
+		HICON handle = CreateIconIndirect(&ii);
+
+		DeleteObject(color);
+		DeleteObject(mask);
+
+		if (!handle)
+		{
+			std::cerr << "Failed to create icon.\n";
+		}
+
+		return handle;
+	}
+
+	bool win32_window::initialize(const TCHAR* name, uint32 clientWidth, uint32 clientHeight, bool visible)
+	{
+		if (!windowClassInitialized)
+		{
+			WNDCLASSEX wndClass;
+			ZeroMemory(&wndClass, sizeof(WNDCLASSEX));
+			wndClass.cbSize = sizeof(WNDCLASSEX);
+			wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
+			wndClass.lpfnWndProc = windowCallBack;
+			wndClass.hInstance = GetModuleHandle(NULL);
+			wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+			wndClass.lpszClassName = windowClassName;
+
+			if (!RegisterClassEx(&wndClass))
+			{
+				std::cerr << "Failed to create window class.\n";
+				return false;
+			}
+
+			RegisterHotKey(0, 0, 0, VK_SNAPSHOT);
+			RegisterHotKey(0, 1, MOD_CONTROL, VK_SNAPSHOT);
+
+			windowClassInitialized = true;
+		}
+
+		if (!windowHandle)
+		{
+			++numOpenWindows;
+
+			this->clientWidth = clientWidth;
+			this->clientHeight = clientHeight;
+
+			DWORD windowStyle = WS_OVERLAPPEDWINDOW;
+
+			RECT r = { 0, 0, (LONG)clientWidth, (LONG)clientHeight };
+			AdjustWindowRect(&r, windowStyle, FALSE);
+			int width = r.right - r.left;
+			int height = r.bottom - r.top;
+
+			windowHandle = CreateWindowEx(0, windowClassName, name, windowStyle,
+#if 1
+				CW_USEDEFAULT, CW_USEDEFAULT,
+#else
+				0, 0
+#endif
+				width, height,
+				0, 0, 0, 0);
+
+			fullscreen = false;
+
+			SetWindowLongPtr(windowHandle, GWLP_USERDATA, (LONG_PTR)this);
+
+			if (!windowHandle)
+			{
+				std::cerr << "Failed to create window.\n";
+				return false;
+			}
+
+			atLeastOneWindowWasOpened = true;
+		}
+
+		if (!mainWindow)
+		{
+			mainWindow = this;
+		}
+
+		open = true;
+		this->visible = visible;
+		if (visible)
+		{
+			ShowWindow(windowHandle, SW_SHOW);
+		}
+
+		return true;
+	}
+
+	bool win32_window::initialize(HINSTANCE hInst, const TCHAR* name, uint32 clientWidth, uint32 clientHeight, bool visible)
+	{
+		if (!windowClassInitialized)
+		{
+			WNDCLASSEX wndClass;
+			ZeroMemory(&wndClass, sizeof(WNDCLASSEX));
+			wndClass.cbSize = sizeof(WNDCLASSEX);
+			wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
+			wndClass.lpfnWndProc = windowCallBack;
+			wndClass.hInstance = hInst;
+			wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+			wndClass.lpszClassName = windowClassName;
+
+			if (!RegisterClassEx(&wndClass))
+			{
+				std::cerr << "Failed to create window class.\n";
+				return false;
+			}
+
+			RegisterHotKey(0, 0, 0, VK_SNAPSHOT);
+			RegisterHotKey(0, 1, MOD_CONTROL, VK_SNAPSHOT);
+
+			windowClassInitialized = true;
+		}
+
+		if (!windowHandle)
+		{
+			++numOpenWindows;
+
+			this->clientWidth = clientWidth;
+			this->clientHeight = clientHeight;
+
+			DWORD windowStyle = WS_OVERLAPPEDWINDOW;
+
+			RECT r = { 0, 0, (LONG)clientWidth, (LONG)clientHeight };
+			AdjustWindowRect(&r, windowStyle, FALSE);
+			int width = r.right - r.left;
+			int height = r.bottom - r.top;
+
+			windowHandle = CreateWindowEx(0, windowClassName, name, windowStyle,
+#if 1
+				CW_USEDEFAULT, CW_USEDEFAULT,
+#else
+				0, 0
+#endif
+				width, height,
+				0, 0, 0, 0);
+
+			fullscreen = false;
+
+			SetWindowLongPtr(windowHandle, GWLP_USERDATA, (LONG_PTR)this);
+
+			if (!windowHandle)
+			{
+				std::cerr << "Failed to create window.\n";
+				return false;
+			}
+
+			atLeastOneWindowWasOpened = true;
+		}
+
+		if (!mainWindow)
+		{
+			mainWindow = this;
+		}
+
+		open = true;
+		this->visible = visible;
+		/*if (visible)
+		{
+			ShowWindow(windowHandle, SW_SHOW);
+		}*/
+
+		return true;
+	}
+
+	void win32_window::shutdown()
+	{
+		if (windowHandle)
+		{
+			HWND handle = windowHandle;
+			windowHandle = 0;
+			DestroyWindow(handle);
+		}
+
+		fullscreen = false;
+		open = false;
+		visible = false;
+	}
+
+	void win32_window::toggleFullscreen()
+	{
+		fullscreen = !fullscreen;
+		setFullscreen(windowHandle, fullscreen, windowPosition);
+	}
+
+	void win32_window::setFileDropCallback(std::function<void(const fs::path&)> cb)
+	{
+		if (!fileDropCallback)
+		{
+			DragAcceptFiles(windowHandle, true);
+		}
+		fileDropCallback = cb;
+	}
+
+	win32_window::win32_window(win32_window&& o) noexcept
+	{
+		open = o.open;
+		windowHandle = o.windowHandle;
+		clientWidth = o.clientWidth;
+		clientHeight = o.clientHeight;
+		windowPosition = o.windowPosition;
+		fullscreen = o.fullscreen;
+
+		o.windowHandle = 0;
+
+		if (windowHandle && open)
+		{
+			SetWindowLongPtr(windowHandle, GWLP_USERDATA, (LONG_PTR)this);
+		}
+
+		if (mainWindow == &o)
+		{
+			mainWindow = this;
+		}
+	}
+
+	win32_window::~win32_window()
+	{
+		shutdown();
+	}
+
+	void win32_window::makeActive()
+	{
+		SetForegroundWindow(windowHandle);
+	}
+
+	static void redrawWindowFrame(HWND windowHandle)
+	{
+		RECT rect;
+		GetClientRect(windowHandle, &rect);
+
+		AdjustWindowRectExForDpi(&rect, GetWindowLong(windowHandle, GWL_STYLE), FALSE,
+			0,
+			GetDpiForWindow(windowHandle));
+
+		ClientToScreen(windowHandle, (POINT*)&rect.left);
+		ClientToScreen(windowHandle, (POINT*)&rect.right);
+		SetWindowPos(windowHandle, HWND_TOP,
+			rect.left, rect.top,
+			rect.right - rect.left, rect.bottom - rect.top,
+			SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOZORDER);
+
+		handleWindowsMessages(); // Handle messages, so that frame is custom right from the start
+	}
+
+	void win32_window::setCustomWindowStyle(custom_window_style style)
+	{
+		customWindowStyle = true;
+
+		if (style.titleBarHeight == -1)
+		{
+			style.titleBarHeight = getDefaultTitleBarHeight(windowHandle);
+		}
+		if (style.buttonHeight == -1)
+		{
+			style.buttonHeight = style.titleBarHeight;
+		}
+		if (style.borderWidthLeftAndRight == -1)
+		{
+			UINT dpi = GetDpiForWindow(windowHandle);
+			style.borderWidthLeftAndRight = GetSystemMetricsForDpi(SM_CXFRAME, dpi);
+		}
+		if (style.borderWidthBottom == -1)
+		{
+			UINT dpi = GetDpiForWindow(windowHandle);
+			style.borderWidthBottom = GetSystemMetricsForDpi(SM_CYFRAME, dpi);
+		}
+		this->style = style;
+
+		redrawWindowFrame(windowHandle);
+	}
+
+	void win32_window::resetToDefaultWindowStyle()
+	{
+		customWindowStyle = false;
+		redrawWindowFrame(windowHandle);
+	}
+
+	void win32_window::setIcon(const fs::path& filepath)
+	{
+		DirectX::ScratchImage scratchImage;
+		D3D12_RESOURCE_DESC desc;
+
+		if (loadImageFromFile(filepath, image_load_flags_cache_to_dds, scratchImage, desc) && scratchImage.GetImageCount() > 0)
+		{
+			const auto& image = scratchImage.GetImages()[0];
+			ASSERT(getNumberOfChannels(image.format) == 4);
+			uint8* pixels = image.pixels;
+			uint32 width = (uint32)image.width;
+			uint32 height = (uint32)image.height;
+
+			HICON icon = createIcon(pixels, width, height);
+
+			if (customIcon)
+				DestroyIcon(customIcon);
+			customIcon = icon;
+
+			SendMessage(windowHandle, WM_SETICON, ICON_BIG, (LPARAM)icon);
+			SendMessage(windowHandle, WM_SETICON, ICON_SMALL, (LPARAM)icon);
+		}
+	}
+
+	void win32_window::changeTitle(const TCHAR* format, ...)
+	{
+		TCHAR titleBuffer[128];
+
+		va_list arg;
+		va_start(arg, format);
+		_vstprintf_s(titleBuffer, format, arg);
+		va_end(arg);
+
+		SetWindowText(windowHandle, titleBuffer);
+	}
+
+	void win32_window::toggleVisibility()
+	{
+		visible = !visible;
+		if (visible)
+		{
+			ShowWindow(windowHandle, SW_SHOW);
+		}
+		else
+		{
+			ShowWindow(windowHandle, SW_HIDE);
+		}
+	}
+
+	void win32_window::maximize()
+	{
+		ShowWindow(windowHandle, SW_MAXIMIZE);
+	}
+
+	void win32_window::setMinimumSize(int32 minimumWidth, int32 minimumHeight)
+	{
+		this->minimumWidth = minimumWidth;
+		this->minimumHeight = minimumHeight;
+	}
+
+	void win32_window::moveTo(int x, int y)
+	{
+		SetWindowPos(windowHandle, HWND_TOP, x, y, clientWidth, clientHeight, SWP_NOSIZE);
+	}
+
+	void win32_window::moveToScreenID(int screenID)
+	{
+		DISPLAY_DEVICEA dispDevice = { 0 };
+		dispDevice.cb = sizeof(dispDevice);
+
+		DEVMODEA devMode = { 0 };
+		devMode.dmSize = sizeof(devMode);
+
+		if (EnumDisplayDevicesA(NULL, screenID, &dispDevice, 0))
+		{
+			if (EnumDisplaySettingsExA(dispDevice.DeviceName, ENUM_CURRENT_SETTINGS, &devMode, NULL))
+			{
+				moveTo(devMode.dmPosition.x, devMode.dmPosition.y);
 			}
 		}
 	}
 
-	++screenID;
-
-	return result;
-}
-
-NODISCARD std::vector<monitor_info> getAllDisplayDevices()
-{
-	std::vector<monitor_info> result;
-
-	monitor_iterator it;
-	monitor_info monitor;
-	while (it.step(monitor))
+	struct monitor_iterator
 	{
-		result.push_back(monitor);
+		DISPLAY_DEVICEA dispDevice;
+		DEVMODEA devMode;
+		DWORD screenID;
+
+		monitor_iterator();
+
+		bool step(monitor_info& info);
+	};
+
+	void win32_window::moveToMonitor(const std::string& uniqueID)
+	{
+		monitor_iterator it;
+		monitor_info monitor;
+		while (it.step(monitor))
+		{
+			if (monitor.uniqueID == uniqueID)
+			{
+				moveTo(monitor.x, monitor.y);
+				return;
+			}
+		}
 	}
 
-	return result;
-}
-
-NODISCARD std::vector<monitor_info> getAllDisplayDevices(uint32 width, uint32 height)
-{
-	std::vector<monitor_info> result;
-
-	for (monitor_info& monitor : getAllDisplayDevices())
+	void win32_window::moveToMonitor(const monitor_info& monitor)
 	{
-		if (width == monitor.width && height == monitor.height)
+		moveTo(monitor.x, monitor.y);
+	}
+
+	monitor_iterator::monitor_iterator()
+	{
+		ZeroMemory(&dispDevice, sizeof(dispDevice));
+		ZeroMemory(&devMode, sizeof(devMode));
+		dispDevice.cb = sizeof(dispDevice);
+		devMode.dmSize = sizeof(devMode);
+		screenID = 0;
+	}
+
+	static std::string convertUniqueIDToFolderFriendlyName(const std::string& uniqueID)
+	{
+		std::string result = uniqueID;
+		std::replace(result.begin(), result.end(), '\\', '_');
+		std::replace(result.begin(), result.end(), '?', '_');
+		return result;
+	}
+
+	bool monitor_iterator::step(monitor_info& info)
+	{
+		bool result = false;
+
+		if (EnumDisplayDevicesA(NULL, screenID, &dispDevice, 0))
+		{
+			char name[sizeof(dispDevice.DeviceName)];
+			strcpy_s(name, dispDevice.DeviceName);
+			if (EnumDisplayDevicesA(name, 0, &dispDevice, EDD_GET_DEVICE_INTERFACE_NAME))
+			{
+				if (EnumDisplaySettingsExA(name, ENUM_CURRENT_SETTINGS, &devMode, NULL))
+				{
+					info.x = devMode.dmPosition.x;
+					info.y = devMode.dmPosition.y;
+					info.width = devMode.dmPelsWidth;
+					info.height = devMode.dmPelsHeight;
+					info.screenID = screenID;
+					info.uniqueID = convertUniqueIDToFolderFriendlyName(dispDevice.DeviceID);
+					info.name = dispDevice.DeviceString;
+					result = true;
+				}
+			}
+		}
+
+		++screenID;
+
+		return result;
+	}
+
+	NODISCARD std::vector<monitor_info> getAllDisplayDevices()
+	{
+		std::vector<monitor_info> result;
+
+		monitor_iterator it;
+		monitor_info monitor;
+		while (it.step(monitor))
 		{
 			result.push_back(monitor);
 		}
+
+		return result;
 	}
 
-	return result;
-}
-
-void setMainWindow(win32_window* window)
-{
-	win32_window::mainWindow = window;
-}
-
-static LRESULT CALLBACK windowCallBack(
-	_In_ HWND   hwnd,
-	_In_ UINT   msg,
-	_In_ WPARAM wParam,
-	_In_ LPARAM lParam
-)
-{
-	LRESULT result = 0;
-
-	win32_window* window = (win32_window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-
-	if ((msg == WM_MOUSELEAVE || msg == WM_NCMOUSELEAVE || msg == WM_MOUSEMOVE) 
-		&& window && window->customWindowStyle)
+	NODISCARD std::vector<monitor_info> getAllDisplayDevices(uint32 width, uint32 height)
 	{
-		if (window->hoveredButton != titlebar_button_none)
+		std::vector<monitor_info> result;
+
+		for (monitor_info& monitor : getAllDisplayDevices())
 		{
-			window->hoveredButton = titlebar_button_none;
-			//InvalidateRect(0, 0, FALSE);
-			RedrawWindow(hwnd, 0, 0, RDW_INVALIDATE | RDW_FRAME);
+			if (width == monitor.width && height == monitor.height)
+			{
+				result.push_back(monitor);
+			}
 		}
 
-		window->trackingMouse = false;
+		return result;
 	}
 
-	if (handleImGuiInput(hwnd, msg, wParam, lParam))
-		return true;
-
-	switch (msg)
+	void setMainWindow(win32_window* window)
 	{
-		// The default window procedure will play a system notification sound 
-		// when pressing the Alt+Enter keyboard combination if this message is 
-		// not handled.
+		win32_window::mainWindow = window;
+	}
+
+	static LRESULT CALLBACK windowCallBack(
+		_In_ HWND   hwnd,
+		_In_ UINT   msg,
+		_In_ WPARAM wParam,
+		_In_ LPARAM lParam
+	)
+	{
+		LRESULT result = 0;
+
+		win32_window* window = (win32_window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+
+		if ((msg == WM_MOUSELEAVE || msg == WM_NCMOUSELEAVE || msg == WM_MOUSEMOVE)
+			&& window && window->customWindowStyle)
+		{
+			if (window->hoveredButton != titlebar_button_none)
+			{
+				window->hoveredButton = titlebar_button_none;
+				//InvalidateRect(0, 0, FALSE);
+				RedrawWindow(hwnd, 0, 0, RDW_INVALIDATE | RDW_FRAME);
+			}
+
+			window->trackingMouse = false;
+		}
+
+		if (handleImGuiInput(hwnd, msg, wParam, lParam))
+			return true;
+
+		switch (msg)
+		{
+			// The default window procedure will play a system notification sound 
+			// when pressing the Alt+Enter keyboard combination if this message is 
+			// not handled.
 		case WM_SYSCHAR:
 			break;
 		case WM_SIZE:
@@ -868,11 +870,11 @@ static LRESULT CALLBACK windowCallBack(
 		case WM_GETMINMAXINFO:
 		{
 			MINMAXINFO* info = (MINMAXINFO*)lParam;
-		
+
 			if (window)
 			{
 				if (window->minimumWidth != -1)
-					info->ptMinTrackSize.x = window->minimumWidth; 
+					info->ptMinTrackSize.x = window->minimumWidth;
 				if (window->minimumHeight != -1)
 					info->ptMinTrackSize.y = window->minimumHeight;
 			}
@@ -931,7 +933,7 @@ static LRESULT CALLBACK windowCallBack(
 
 			// Minimize button
 			{
-				if (window->hoveredButton == titlebar_button_minimize) 
+				if (window->hoveredButton == titlebar_button_minimize)
 				{
 					FillRect(hdc, &buttonRects.minimize, hoverBrush);
 				}
@@ -945,7 +947,7 @@ static LRESULT CALLBACK windowCallBack(
 			// Maximize button.
 			{
 				HBRUSH frontBrush = titleBarBrush;
-				if (window->hoveredButton == titlebar_button_maximize) 
+				if (window->hoveredButton == titlebar_button_maximize)
 				{
 					FillRect(hdc, &buttonRects.maximize, hoverBrush);
 					frontBrush = hoverBrush;
@@ -1009,7 +1011,7 @@ static LRESULT CALLBACK windowCallBack(
 			// Draw window title
 			LOGFONT logicalFont;
 			HFONT oldFont = NULL;
-			if (SUCCEEDED(GetThemeSysFont(theme, TMT_CAPTIONFONT, &logicalFont))) 
+			if (SUCCEEDED(GetThemeSysFont(theme, TMT_CAPTIONFONT, &logicalFont)))
 			{
 				HFONT themeFont = CreateFontIndirect(&logicalFont);
 				oldFont = (HFONT)SelectObject(hdc, themeFont);
@@ -1040,9 +1042,9 @@ static LRESULT CALLBACK windowCallBack(
 
 			// Draw window icon
 			HICON icon = window->customIcon;
-			if (!icon) 
-			{ 
-				icon = LoadIcon(NULL, IDI_APPLICATION); 
+			if (!icon)
+			{
+				icon = LoadIcon(NULL, IDI_APPLICATION);
 			}
 
 			if (icon)
@@ -1069,13 +1071,13 @@ static LRESULT CALLBACK windowCallBack(
 			return hitTest(point, window);
 		} break;
 
-		case WM_NCCALCSIZE: 
+		case WM_NCCALCSIZE:
 		{
 			if (!window || !window->customWindowStyle)
 			{
 				return DefWindowProc(hwnd, msg, wParam, lParam);
 			}
-			
+
 			RECT* rect = (RECT*)lParam;
 			if (rect->top > -10000) // Minimized windows seem to have a top of -32000.
 			{
@@ -1094,7 +1096,7 @@ static LRESULT CALLBACK windowCallBack(
 			}
 		} break;
 
-		case WM_NCMOUSEMOVE: 
+		case WM_NCMOUSEMOVE:
 		{
 			if (window && window->customWindowStyle)
 			{
@@ -1115,7 +1117,7 @@ static LRESULT CALLBACK windowCallBack(
 				{
 					hoveredButton = titlebar_button_minimize;
 				}
-				
+
 				if (hoveredButton != window->hoveredButton)
 				{
 					window->hoveredButton = hoveredButton;
@@ -1139,33 +1141,33 @@ static LRESULT CALLBACK windowCallBack(
 			return DefWindowProc(hwnd, msg, wParam, lParam);
 		}
 
-		case WM_NCLBUTTONDOWN: 
+		case WM_NCLBUTTONDOWN:
 		{
 			// Clicks on buttons will be handled in WM_NCLBUTTONUP, but we still need
 			// to remove default handling of the click to avoid it counting as drag
-			if (window && window->customWindowStyle && window->hoveredButton != titlebar_button_none) 
+			if (window && window->customWindowStyle && window->hoveredButton != titlebar_button_none)
 				return 0;
 			// Default handling allows for dragging and double click to maximize
 			return DefWindowProc(hwnd, msg, wParam, lParam);
 		}
 
-		case WM_NCLBUTTONUP: 
+		case WM_NCLBUTTONUP:
 		{
 			if (window && window->customWindowStyle)
 			{
-				if (window->hoveredButton == titlebar_button_close) 
+				if (window->hoveredButton == titlebar_button_close)
 				{
 					window->hoveredButton = titlebar_button_none;
 					PostMessage(hwnd, WM_CLOSE, 0, 0);
 					return 0;
 				}
-				else if (window->hoveredButton == titlebar_button_minimize) 
+				else if (window->hoveredButton == titlebar_button_minimize)
 				{
 					window->hoveredButton = titlebar_button_none;
 					ShowWindow(hwnd, SW_MINIMIZE);
 					return 0;
 				}
-				else if (window->hoveredButton == titlebar_button_maximize) 
+				else if (window->hoveredButton == titlebar_button_maximize)
 				{
 					window->hoveredButton = titlebar_button_none;
 					int mode = IsZoomed(hwnd) ? SW_NORMAL : SW_MAXIMIZE;
@@ -1216,39 +1218,40 @@ static LRESULT CALLBACK windowCallBack(
 		{
 			result = DefWindowProc(hwnd, msg, wParam, lParam);
 		} break;
+		}
+
+		return result;
 	}
 
-	return result;
-}
-
-bool handleWindowsMessages()
-{
-	MSG msg = { 0 };
-	while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
+	bool handleWindowsMessages()
 	{
-		if (msg.message == WM_HOTKEY)
+		MSG msg = { 0 };
+		while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
 		{
-			ImGui::GetIO().KeysDown[VK_SNAPSHOT] = true;
+			if (msg.message == WM_HOTKEY)
+			{
+				ImGui::GetIO().KeysDown[VK_SNAPSHOT] = true;
+			}
+			if (msg.message == WM_QUIT)
+			{
+				running = false;
+				break;
+			}
+
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
 		}
-		if (msg.message == WM_QUIT)
+
+		if (atLeastOneWindowWasOpened && numOpenWindows == 0)
 		{
 			running = false;
-			break;
 		}
 
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
+		if (win32_window::mainWindow && !win32_window::mainWindow->open)
+		{
+			running = false;
+		}
 
-	if (atLeastOneWindowWasOpened && numOpenWindows == 0)
-	{
-		running = false;
+		return running;
 	}
-
-	if (win32_window::mainWindow && !win32_window::mainWindow->open)
-	{
-		running = false;
-	}
-
-	return running;
 }

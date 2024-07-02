@@ -4,11 +4,12 @@
 
 #include <yaml-cpp/yaml.h>
 #include <fstream>
-#include "math.h"
+#include "core/math.h"
 #include "asset/asset.h"
 
 namespace YAML
 {
+	using namespace era_engine;
 	template<>
 	struct convert<vec2>
 	{

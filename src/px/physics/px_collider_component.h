@@ -7,7 +7,7 @@
 #include <asset/model_asset.h>
 #include <scene/scene.h>
 
-namespace physics
+namespace era_engine::physics
 {
 	using namespace physx;
 
@@ -234,42 +234,45 @@ namespace physics
 
 #include "core/reflect.h"
 
-REFLECT_STRUCT(physics::px_collider_component_base,
-	(type, "Type")
-);
+namespace era_engine
+{
+	REFLECT_STRUCT(physics::px_collider_component_base,
+		(type, "Type")
+	);
 
-REFLECT_STRUCT(physics::px_box_collider_component,
-	(type, "Type"),
-	(height, "Height"),
-	(length, "Length"),
-	(width, "Width")
-);
+	REFLECT_STRUCT(physics::px_box_collider_component,
+		(type, "Type"),
+		(height, "Height"),
+		(length, "Length"),
+		(width, "Width")
+	);
 
-REFLECT_STRUCT(physics::px_sphere_collider_component,
-	(type, "Type"),
-	(radius, "Radius")
-);
+	REFLECT_STRUCT(physics::px_sphere_collider_component,
+		(type, "Type"),
+		(radius, "Radius")
+	);
 
-REFLECT_STRUCT(physics::px_capsule_collider_component,
-	(type, "Type"),
-	(height, "Height"),
-	(radius, "Radius")
-);
+	REFLECT_STRUCT(physics::px_capsule_collider_component,
+		(type, "Type"),
+		(height, "Height"),
+		(radius, "Radius")
+	);
 
-REFLECT_STRUCT(physics::px_bounding_box_collider_component,
-	(type, "Type"),
-	(modelSize, "Size"),
-	(name, "Name")
-);
+	REFLECT_STRUCT(physics::px_bounding_box_collider_component,
+		(type, "Type"),
+		(modelSize, "Size"),
+		(name, "Name")
+	);
 
-REFLECT_STRUCT(physics::px_triangle_mesh_collider_component,
-	(type, "Type"),
-	(modelSize, "Size"),
-	(name, "Name")
-);
+	REFLECT_STRUCT(physics::px_triangle_mesh_collider_component,
+		(type, "Type"),
+		(modelSize, "Size"),
+		(name, "Name")
+	);
 
-REFLECT_STRUCT(physics::px_convex_mesh_collider_component,
-	(type, "Type"),
-	(modelSize, "Size"),
-	(name, "Name")
-);
+	REFLECT_STRUCT(physics::px_convex_mesh_collider_component,
+		(type, "Type"),
+		(modelSize, "Size"),
+		(name, "Name")
+	);
+}
