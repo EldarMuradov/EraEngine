@@ -1,9 +1,11 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "constraints.h"
-#include "physics.h"
-#include "collision_narrow.h"
+
+#include "physics/constraints.h"
+#include "physics/physics.h"
+#include "physics/collision_narrow.h"
+
 #include "core/cpu_profiling.h"
 #include "core/math_simd.h"
 

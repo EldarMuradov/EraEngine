@@ -1,15 +1,20 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "deflate.h"
-#include "io.h"
-#include "model_asset.h"
+
+#include "asset/deflate.h"
+#include "asset/io.h"
+#include "asset/model_asset.h"
+
 #include "core/math.h"
 #include "core/cpu_profiling.h"
 #include "core/color.h"
+#include "core/yaml.h" 
+
 #include "geometry/mesh.h"
+
 #include "mesh_postprocessing.h"
-#include "core/yaml.h"
+
 #include "rendering/pbr_material.h"
 
 //#define PROFILE(name) CPU_PRINT_PROFILE_BLOCK(name)

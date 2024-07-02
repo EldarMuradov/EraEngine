@@ -4,11 +4,13 @@
 
 #include "core/math.h"
 #include "core/memory.h"
-#include "bounding_volumes.h"
+
 #include "scene/scene.h"
-#include "constraints.h"
-#include "rigid_body.h"
-#include "cloth.h"
+
+#include "physics/bounding_volumes.h"
+#include "physics/constraints.h"
+#include "physics/rigid_body.h"
+#include "physics/cloth.h"
 
 #define GRAVITY -9.81f
 

@@ -1,10 +1,13 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
-#include <pch.h>
-#include "navigation_component.h"
-#include <application.h>
-#include "navigation.h"
-#include <scene/scene.h>
+#include "pch.h"
+
+#include "ai/navigation_component.h"
+#include "ai/navigation.h"
+
+#include "application.h"
+
+#include "scene/scene.h"
 
 namespace era_engine::ai
 {

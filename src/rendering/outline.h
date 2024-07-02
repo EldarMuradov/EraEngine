@@ -3,6 +3,7 @@
 #pragma once
 
 #include "core/math.h"
+
 #include "geometry/mesh.h"
 
 namespace era_engine

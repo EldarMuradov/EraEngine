@@ -1,9 +1,12 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "model_asset.h"
-#include "io.h"
+
+#include "asset/model_asset.h"
+#include "asset/io.h"
+
 #include "core/cpu_profiling.h"
+
 #include "rendering/pbr_material.h"
 
 //#define PROFILE(name) CPU_PRINT_PROFILE_BLOCK(name)

@@ -3,8 +3,11 @@
 #pragma once
 
 #include "core/math.h"
+
 #include "rendering/render_pass.h"
+
 #include "dx/dx_command_list.h"
+
 #include "particles_rs.hlsli"
 
 namespace era_engine

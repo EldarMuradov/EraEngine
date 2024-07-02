@@ -1,16 +1,23 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "editor/file_browser.h"
+#include "editor/asset_editor_panel.h"
 #include "editor/editor_icons.h"
+#include "editor/system_calls.h"
+
 #include "core/imgui.h"
+#include "core/project.h"
+
 #include "audio/sound.h"
+
 #include "asset/image.h"
 #include "asset/model_asset.h"
-#include <shellapi.h>
+
 #include <imgui/imgui_internal.h>
-#include <editor/system_calls.h>
-#include <core/project.h>
+
+#include <shellapi.h>
 
 namespace era_engine
 {

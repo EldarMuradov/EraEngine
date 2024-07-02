@@ -1,6 +1,7 @@
 #pragma once
 
-#include <scripting/dotnet_types.h>
+#include "scripting/dotnet_types.h"
+
 #include <format>
 
 namespace era_engine::dotnet

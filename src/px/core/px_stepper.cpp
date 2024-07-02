@@ -50,9 +50,7 @@ namespace era_engine::physics
     void px_multithread_stepper::substepDone(px_stepper_task* ownerTask)
     {
         {
-#ifndef PX_PROFILE
-            PxSceneWriteLock writeLock(*mScene);
-#endif
+            PxSceneWriteLock writeLock(*physicsScene);
             physicsScene->fetchResults(true);
         }
 
@@ -98,11 +96,8 @@ namespace era_engine::physics
 
     void px_multithread_stepper::substep(px_stepper_task& completionTask)
     {
-        // step
-        {
-            simulateTask.setContinuation(&completionTask);
-            simulateTask.removeReference();
-        }
+        simulateTask.setContinuation(&completionTask);
+        simulateTask.removeReference();
     }
 
     void px_fixed_stepper::substepStrategy(const PxReal stepSize, PxU32& substepCount, PxReal& substepSize)

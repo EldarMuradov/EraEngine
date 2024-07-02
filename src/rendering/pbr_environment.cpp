@@ -1,12 +1,16 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "pbr_environment.h"
-#include "texture_preprocessing.h"
-#include "render_resources.h"
-#include "dx/dx_context.h"
-#include "asset/file_registry.h"
+
+#include "rendering/pbr_environment.h"
+#include "rendering/texture_preprocessing.h"
+#include "rendering/render_resources.h"
+
 #include "core/job_system.h"
+
+#include "dx/dx_context.h"
+
+#include "asset/file_registry.h"
 
 namespace era_engine
 {

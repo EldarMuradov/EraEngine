@@ -3,15 +3,21 @@
 #include "pch.h"
 
 #include "scene/scene_rendering.h"
+
+#include "core/cpu_profiling.h"
+
 #include "rendering/pbr.h"
 #include "rendering/depth_prepass.h"
 #include "rendering/outline.h"
 #include "rendering/shadow_map.h"
+
 #include "geometry/mesh.h"
+
 #include "dx/dx_context.h"
+
 #include "physics/cloth.h"
-#include "core/cpu_profiling.h"
-#include <px/features/cloth/px_clothing_factory.h>
+
+#include "px/features/cloth/px_clothing_factory.h"
 
 namespace era_engine
 {

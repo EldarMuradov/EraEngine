@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include "core/threading.h"
+
 #include "dx/dx.h"
 #include "dx/dx_descriptor.h"
-#include "core/threading.h"
 
 namespace era_engine
 {

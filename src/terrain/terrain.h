@@ -4,7 +4,9 @@
 
 #include "core/math.h"
 #include "core/camera.h"
+
 #include "dx/dx_texture.h"
+
 #include "rendering/material.h"
 #include "rendering/render_command.h"
 

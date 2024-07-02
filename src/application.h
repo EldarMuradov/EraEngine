@@ -2,20 +2,26 @@
 
 #pragma once
 
+#include "core/math.h"
 #include "core/input.h"
 #include "core/camera.h"
 #include "core/camera_controller.h"
+
 #include "geometry/mesh.h"
-#include "core/math.h"
+
 #include "scene/scene.h"
-#include "rendering/main_renderer.h"
+
 #include "particles/fire_particle_system.h"
 #include "particles/smoke_particle_system.h"
 #include "particles/boid_particle_system.h"
 #include "particles/debris_particle_system.h"
+
 #include "rendering/raytracing.h"
+#include "rendering/main_renderer.h"
+
 #include "learning/learned_locomotion.h"
-#include <px/core/px_physics_engine.h>
+
+#include "px/core/px_physics_engine.h"
 
 #ifdef ERA_RUNTIME
 #include "core/runtime.h"

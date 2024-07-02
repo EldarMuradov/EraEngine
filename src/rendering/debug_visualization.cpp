@@ -1,10 +1,13 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "debug_visualization.h"
+
+#include "rendering/debug_visualization.h"
+#include "rendering/render_utils.h"
+#include "rendering/render_resources.h"
+
 #include "core/cpu_profiling.h"
-#include "render_utils.h"
-#include "render_resources.h"
+
 #include "transform.hlsli"
 
 namespace era_engine

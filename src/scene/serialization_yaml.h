@@ -1,8 +1,10 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include "scene/scene.h"
 #include "core/camera.h"
+
+#include "scene/scene.h"
+
 #include "rendering/main_renderer.h"
 
 namespace era_engine

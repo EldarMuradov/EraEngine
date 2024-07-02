@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "light_source.h"
 #include "dx/dx_buffer.h"
 #include "dx/dx_texture.h"
-#include "render_command.h"
+
+#include "rendering/light_source.h"
+#include "rendering/render_command.h"
 
 namespace era_engine
 {

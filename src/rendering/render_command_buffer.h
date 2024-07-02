@@ -2,7 +2,8 @@
 
 #pragma once
 #include "core/memory.h"
-#include "material.h"
+
+#include "rendering/material.h"
 
 namespace era_engine
 {

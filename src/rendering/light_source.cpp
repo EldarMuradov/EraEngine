@@ -1,7 +1,8 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "light_source.h"
+
+#include "rendering/light_source.h"
 
 namespace era_engine
 {

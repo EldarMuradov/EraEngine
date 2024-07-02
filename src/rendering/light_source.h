@@ -5,6 +5,7 @@
 #include "core/math.h"
 #include "core/camera.h"
 #include "core/reflect.h"
+
 #include "light_source.hlsli"
 
 namespace era_engine

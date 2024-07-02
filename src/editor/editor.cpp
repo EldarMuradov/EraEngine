@@ -1,42 +1,56 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "editor/editor.h"
+#include "editor/system_calls.h"
+
+#include "core/builder.h"
 #include "core/cpu_profiling.h"
-#include "core/log.h"
+
 #include "dx/dx_profiling.h"
+
 #include "scene/components.h"
-#include "animation/animation.h"
-#include "geometry/mesh.h"
-#include "physics/ragdoll.h"
-#include "physics/vehicle.h"
 #include "scene/serialization_yaml.h"
 #include "scene/serialization_binary.h"
+
+#include "animation/animation.h"
+
+#include "geometry/mesh.h"
+
+#include "physics/ragdoll.h"
+#include "physics/vehicle.h"
+
 #include "audio/audio.h"
+
 #include "rendering/debug_visualization.h"
+
 #include "terrain/terrain.h"
 #include "terrain/proc_placement.h"
 #include "terrain/grass.h"
 #include "terrain/water.h"
-#include <fontawesome/list.h>
-#include <sstream>
+
 #include "application.h"
-#include <editor/system_calls.h>
-#include <imgui/imgui_internal.h>
-#include <scripting/script.h>
-#include <core/builder.h>
-#include <px/blast/px_blast_destructions.h>
-#include <px/physics/px_soft_body.h>
+
+#include "imgui/imgui_internal.h"
+#include "scripting/script.h"
+
+#include "px/blast/px_blast_destructions.h"
+#include "px/physics/px_soft_body.h"
+
+#include <fontawesome/list.h>
+
+#include <sstream>
 
 namespace era_engine
 {
-	template <typename component_t, typename member_t>
+	template <typename Component_, typename Member_>
 	struct component_member_undo
 	{
-		component_member_undo(member_t& member, member_t before, eentity entity, void (*callback)(component_t&, member_t, void*) = 0, void* userData = 0)
+		component_member_undo(Member_& member, Member_ before, eentity entity, void (*callback)(Component_&, Member_, void*) = 0, void* userData = 0)
 		{
 			this->entity = entity;
-			this->byteOffset = (uint8*)&member - (uint8*)&entity.getComponent<component_t>();
+			this->byteOffset = (uint8*)&member - (uint8*)&entity.getComponent<Component_>();
 			this->before = before;
 			this->callback = callback;
 			this->userData = userData;
@@ -46,8 +60,8 @@ namespace era_engine
 		{
 			if (entity.valid())
 			{
-				component_t& comp = entity.getComponent<component_t>();
-				auto& member = *(member_t*)((uint8*)&comp + byteOffset);
+				Component_& comp = entity.getComponent<Component_>();
+				auto& member = *(Member_*)((uint8*)&comp + byteOffset);
 				std::swap(member, before);
 
 				if (callback)
@@ -61,16 +75,16 @@ namespace era_engine
 		eentity entity;
 		uint64 byteOffset;
 
-		member_t before;
+		Member_ before;
 
-		void (*callback)(component_t&, member_t, void*) = 0;
+		void (*callback)(Component_&, Member_, void*) = 0;
 		void* userData = 0;
 	};
 
-	template <typename... component_t>
+	template <typename... Component_>
 	struct component_undo
 	{
-		component_undo(eentity entity, component_t... before)
+		component_undo(eentity entity, Component_... before)
 		{
 			this->entity = entity;
 			this->before = std::make_tuple(before...);
@@ -93,21 +107,21 @@ namespace era_engine
 
 		eentity entity;
 
-		std::tuple<component_t...> before;
+		std::tuple<Component_...> before;
 	};
 
-	template <typename value_t>
+	template <typename Value_>
 	struct settings_undo
 	{
-		settings_undo(value_t& value, value_t before)
+		settings_undo(Value_& value, Value_ before)
 			: value(value), before(before) {}
 
 		void toggle() { std::swap(value, before); }
 
 	private:
-		value_t& value;
+		Value_& value;
 
-		value_t before;
+		Value_ before;
 	};
 
 	struct entity_existence_undo
@@ -147,17 +161,17 @@ namespace era_engine
 		uint64 size;
 	};
 
-	template <typename value_t, typename action_t, typename... args_t>
-	void eeditor::undoable(const char* undoLabel, value_t before, value_t& value,
-		args_t... args)
+	template <typename Value_, typename Action_, typename... Args_>
+	void eeditor::undoable(const char* undoLabel, Value_ before, Value_& value,
+		Args_... args)
 	{
 		if (ImGui::IsItemActive() && !ImGui::IsItemActiveLastFrame())
 		{
-			currentUndoBuffer->as<value_t>() = before;
+			currentUndoBuffer->as<Value_>() = before;
 		}
 
 		bool changed = ImGui::IsItemDeactivatedAfterEdit();
-		if constexpr (std::is_enum_v<value_t> || std::is_integral_v<value_t>)
+		if constexpr (std::is_enum_v<Value_> || std::is_integral_v<Value_>)
 		{
 			changed |= (!ImGui::IsItemActive() && (before != value));
 		}
@@ -166,8 +180,8 @@ namespace era_engine
 		{
 			std::stringstream s;
 			s << std::setprecision(4) << std::boolalpha;
-			s << undoLabel << " from " << currentUndoBuffer->as<value_t>() << " to " << value;
-			action_t action(value, currentUndoBuffer->as<value_t>(), std::forward<args_t>(args)...);
+			s << undoLabel << " from " << currentUndoBuffer->as<Value_>() << " to " << value;
+			Action_ action(value, currentUndoBuffer->as<Value_>(), std::forward<Args_>(args)...);
 			currentUndoStack->pushAction(s.str().c_str(), action);
 		}
 	}
@@ -190,7 +204,6 @@ namespace era_engine
 			before, val);															\
 	}
 
-
 	void eeditor::updateSelectedEntityUIRotation()
 	{
 		if (selectedEntity)
@@ -206,7 +219,7 @@ namespace era_engine
 				rotation = prc->rotation;
 			}
 
-			selectedEntityEulerRotation = getEuler(rotation);
+			selectedEntityEulerRotation = quatToEuler(rotation);
 		}
 	}
 
@@ -292,14 +305,6 @@ namespace era_engine
 
 					renderLine(a, b, constraintColor, ldrRenderPass, true);
 				}
-				else if (ball_constraint* c = selectedConstraintEntity.getComponentIfExists<ball_constraint>())
-				{
-
-				}
-				else if (fixed_constraint* c = selectedConstraintEntity.getComponentIfExists<fixed_constraint>())
-				{
-
-				}
 				else if (hinge_constraint* c = selectedConstraintEntity.getComponentIfExists<hinge_constraint>())
 				{
 					vec3 pos = transformPosition(transformA, c->localAnchorA);
@@ -312,14 +317,6 @@ namespace era_engine
 
 					renderAngleRing(pos, hingeAxis, 0.2f, 0.17f, zeroDegAxis, minAngle, maxAngle, constraintColor, ldrRenderPass, true);
 					renderLine(pos, pos + hingeAxis * 0.2f, constraintColor, ldrRenderPass, true);
-				}
-				else if (cone_twist_constraint* c = selectedConstraintEntity.getComponentIfExists<cone_twist_constraint>())
-				{
-
-				}
-				else if (slider_constraint* c = selectedConstraintEntity.getComponentIfExists<slider_constraint>())
-				{
-
 				}
 			}
 		}
@@ -559,11 +556,11 @@ namespace era_engine
 		return objectPotentiallyMoved;
 	}
 
-	template<typename component_t, typename ui_func>
-	static void drawComponent(eentity entity, const char* componentName, ui_func func)
+	template<typename Component_, typename UiFunc_>
+	static void drawComponent(eentity entity, const char* componentName, UiFunc_ func)
 	{
 		const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
-		if (auto* component = entity.getComponentIfExists<component_t>())
+		if (auto* component = entity.getComponentIfExists<Component_>())
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
 			bool open = ImGui::TreeNodeEx(componentName, treeNodeFlags, componentName);
@@ -665,7 +662,6 @@ namespace era_engine
 		ImGui::DragFloat(label, v, v_speed, v_min, v_max, format, flags);
 		ImGui::PopID();
 	}
-
 
 	static void showVector3(const char* label, vec3& vector, float wdt)
 	{
@@ -809,15 +805,15 @@ namespace era_engine
 					{
 						drawComponent<transform_component>(selectedEntity, "Transform", [this, &objectMovedByWidget](transform_component& transform)
 							{
-								using component_t = transform_component;
+								//using component_t = transform_component;
 
 								float wdt = renderer->renderWidth;
 
 								showVector3("Position", transform.position, wdt);
 								ImGui::SameLine();
-								selectedEntityEulerRotation = getEuler(transform.rotation);
+								selectedEntityEulerRotation = quatToEuler(transform.rotation);
 								showVector3("Rotation", selectedEntityEulerRotation, wdt);
-								transform.rotation = getQuat(selectedEntityEulerRotation);
+								transform.rotation = eulerToQuat(selectedEntityEulerRotation);
 								ImGui::SameLine();
 								showVector3("Scale", transform.scale, wdt);
 
@@ -851,9 +847,9 @@ namespace era_engine
 								UNDOABLE_COMPONENT_SETTING("entity rotation", transform.rotation,
 									if (ImGui::Drag("Rotation", selectedEntityEulerRotation, 0.1f))
 									{
-										transform.rotation = getQuat(selectedEntityEulerRotation);
+										transform.rotation = eulerToQuat(selectedEntityEulerRotation);
 										objectMovedByWidget = true;
-									}, [](position_rotation_component&, quat rot, void* userData) { *(vec3*)userData = getEuler(rot); }, & selectedEntityEulerRotation);
+									}, [](position_rotation_component&, quat rot, void* userData) { *(vec3*)userData = quatToEuler(rot); }, & selectedEntityEulerRotation);
 							});
 
 						drawComponent<position_scale_component>(selectedEntity, "Transform", [this, &objectMovedByWidget](position_scale_component& transform)
@@ -871,7 +867,7 @@ namespace era_engine
 								ImGui::Text("Dynamic entity");
 							});
 
-						drawComponent<era_engine::ecs::scripts_component>(selectedEntity, "Script", [](era_engine::ecs::scripts_component& script)
+						drawComponent<ecs::scripts_component>(selectedEntity, "Script", [](ecs::scripts_component& script)
 							{
 								auto iter = script.typeNames.begin();
 								const auto& end = script.typeNames.end();
@@ -957,8 +953,6 @@ namespace era_engine
 
 						drawComponent<mesh_component>(selectedEntity, "Mesh", [this](mesh_component& raster)
 							{
-								using component_t = mesh_component;
-
 								if (ImGui::BeginProperties())
 								{
 									ImGui::PropertyValue("Load state", assetLoadStateNames[raster.mesh->loadState.load()]);
@@ -1214,8 +1208,6 @@ namespace era_engine
 
 						drawComponent<physics::px_rigidbody_component>(selectedEntity, "Rigidbody (PhysX)", [this, &scene](physics::px_rigidbody_component& rb)
 							{
-								using component_t = physics::px_rigidbody_component;
-
 								if (ImGui::BeginProperties())
 								{
 									ImGui::PropertyValue("Mass", rb.getMass(), "%.3fkg");
@@ -2226,12 +2218,7 @@ namespace era_engine
 
 		if (!inputCaptured && input.mouse.left.clickEvent)
 		{
-			// Temporary.
-			if (input.keyboard[key_shift].down)
-			{
-				testPhysicsInteraction(*scene, camera.generateWorldSpaceRay(input.mouse.relX, input.mouse.relY), 1000.0f);
-			}
-			else if (input.keyboard[key_ctrl].down)
+			if (input.keyboard[key_ctrl].down)
 			{
 				vec3 dir = -camera.generateWorldSpaceRay(input.mouse.relX, input.mouse.relY).direction;
 				vec3 beforeDir = this->scene->sun.direction;
@@ -2304,33 +2291,6 @@ namespace era_engine
 			}
 
 			ImGui::Separator();
-
-			if (ImGui::MenuItem("Cloth", "C") || ImGui::IsKeyPressed('C'))
-			{
-				auto& cloth = scene->createEntity("Cloth")
-					.addComponent<transform_component>(camera.position + camera.rotation * vec3(0.f, 0.f, -3.f), camera.rotation)
-					.addComponent<cloth_component>(10.f, 10.f, 20u, 20u, 8.f)
-					.addComponent<cloth_render_component>();
-
-				currentUndoStack->pushAction("entity creation", entity_existence_undo(*scene, cloth));
-
-				setSelectedEntity(cloth);
-				clicked = true;
-			}
-
-			if (ImGui::MenuItem("Humanoid ragdoll", "R") || ImGui::IsKeyPressed('R'))
-			{
-				auto ragdoll = humanoid_ragdoll::create(*scene, camera.position + camera.rotation * vec3(0.f, 0.f, -3.f));
-				setSelectedEntity(ragdoll.torso);
-				clicked = true;
-			}
-
-			if (ImGui::MenuItem("Vehicle", "V") || ImGui::IsKeyPressed('V'))
-			{
-				auto vehicle = vehicle::create(*scene, camera.position + camera.rotation * vec3(0.f, 0.f, -4.f));
-				setSelectedEntity(vehicle.motor);
-				clicked = true;
-			}
 
 			if (ImGui::MenuItem("Empty", "E") || ImGui::IsKeyPressed('E'))
 			{
@@ -3109,4 +3069,87 @@ namespace era_engine
 
 		ImGui::End();
 	}
+
+	void editTexture(const char* name, ref<dx_texture>& tex, uint32 loadFlags)
+	{
+		asset_handle asset = {};
+		if (tex)
+		{
+			asset = tex->handle;
+		}
+
+		if (ImGui::PropertyTextureAssetHandle(name, EDITOR_ICON_IMAGE, asset, tex))
+		{
+			fs::path path = getPathFromAssetHandle(asset);
+			fs::path relative = fs::relative(path, fs::current_path());
+			if (auto newTex = loadTextureFromFileAsync(relative.string(), loadFlags))
+			{
+				tex = newTex;
+			}
+		}
+	}
+
+	void editMesh(const char* name, ref<multi_mesh>& mesh, uint32 loadFlags)
+	{
+		asset_handle asset = {};
+		if (mesh)
+		{
+			asset = mesh->handle;
+		}
+
+		if (ImGui::PropertyAssetHandle(name, EDITOR_ICON_MESH, asset))
+		{
+			fs::path path = getPathFromAssetHandle(asset);
+			fs::path relative = fs::relative(path, fs::current_path());
+			if (auto newMesh = loadMeshFromFile(relative.string(), loadFlags))
+			{
+				mesh = newMesh;
+			}
+		}
+	}
+
+	void editMaterial(const ref<pbr_material>& material)
+	{
+		if (ImGui::BeginProperties())
+		{
+			asset_handle dummy = {};
+
+			editTexture("Albedo", material->albedo, image_load_flags_default);
+			editTexture("Normal", material->normal, image_load_flags_default_noncolor);
+			editTexture("Roughness", material->roughness, image_load_flags_default_noncolor);
+			editTexture("Metallic", material->metallic, image_load_flags_default_noncolor);
+
+			ImGui::PropertyColor("Emission", material->emission);
+			ImGui::PropertyColor("Albedo tint", material->albedoTint);
+			ImGui::PropertyDropdown("Shader", pbrMaterialShaderNames, pbr_material_shader_count, (uint32&)material->shader);
+			ImGui::PropertySlider("UV scale", material->uvScale, 0.0f, 150.0f);
+			ImGui::PropertySlider("Translucency", material->translucency);
+
+			if (!material->roughness)
+			{
+				ImGui::PropertySlider("Roughness override", material->roughnessOverride);
+			}
+
+			if (!material->metallic)
+			{
+				ImGui::PropertySlider("Metallic override", material->metallicOverride);
+			}
+
+			ImGui::EndProperties();
+		}
+	}
+
+	void editSubmeshTransform(trs* transform)
+	{
+		ImGui::Drag("Position", transform->position, 0.1f);
+		vec3 selectedEntityEulerRotation = quatToEuler(transform->rotation);
+
+		if (ImGui::Drag("Rotation", selectedEntityEulerRotation, 0.1f))
+		{
+			transform->rotation = eulerToQuat(selectedEntityEulerRotation);
+		}
+
+		ImGui::Drag("Scale", transform->scale, 0.1f);
+	}
+
 }

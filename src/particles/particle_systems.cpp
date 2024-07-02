@@ -1,11 +1,12 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "particle_systems.h"
-#include "fire_particle_system.h"
-#include "smoke_particle_system.h"
-#include "boid_particle_system.h"
-#include "debris_particle_system.h"
+
+#include "particles/particle_systems.h"
+#include "particles/fire_particle_system.h"
+#include "particles/smoke_particle_system.h"
+#include "particles/boid_particle_system.h"
+#include "particles/debris_particle_system.h"
 
 namespace era_engine
 {

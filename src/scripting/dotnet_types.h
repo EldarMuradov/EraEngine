@@ -1,5 +1,5 @@
 #pragma once
-#include <scripting/dotnet_host.h>
+#include "scripting/dotnet_host.h"
 
 #define MIN_OBJECT_SIZE 24
 #define MIN_CLASS_SIZE 1

@@ -1,13 +1,17 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "animation/skinning.h"
+
 #include "dx/dx_command_list.h"
 #include "dx/dx_barrier_batcher.h"
 #include "dx/dx_profiling.h"
+#include "dx/dx_buffer.h"
+
 #include "rendering/material.h"
 #include "rendering/render_pass.h"
-#include "dx/dx_buffer.h"
+
 #include "skinning_rs.hlsli"
 
 namespace era_engine::animation

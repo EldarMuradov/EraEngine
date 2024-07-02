@@ -1,10 +1,14 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "boid_particle_system.h"
+
+#include "particles/boid_particle_system.h"
+
 #include "dx/dx_pipeline.h"
+
 #include "rendering/render_resources.h"
 #include "rendering/render_utils.h"
+
 #include "animation/skinning.h"
 
 namespace era_engine

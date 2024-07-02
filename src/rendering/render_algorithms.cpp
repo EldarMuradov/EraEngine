@@ -1,12 +1,15 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "render_algorithms.h"
+
+#include "rendering/render_algorithms.h"
+#include "rendering/render_resources.h"
+#include "rendering/render_utils.h"
+
+#include "core/cpu_profiling.h"
+
 #include "dx/dx_profiling.h"
 #include "dx/dx_barrier_batcher.h"
-#include "core/cpu_profiling.h"
-#include "render_resources.h"
-#include "render_utils.h"
 
 #include "post_processing_rs.hlsli"
 #include "ssr_rs.hlsli"

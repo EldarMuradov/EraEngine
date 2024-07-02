@@ -1,18 +1,27 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "native_scripting_linker.h"
-#include <scene/scene.h>
+
+#include "scripting/native_scripting_linker.h"
+
+#include "core/project.h"
+#include "core/string.h"
+
+#include "scene/scene.h"
+
+#include "ai/navigation_component.h"
+
+#include "scripting/script.h"
+#include "scripting/dotnet_utils.h"
+#include "scripting/dotnet_types.h"
+
 #include "application.h"
-#include <scripting/script.h>
-#include <ai/navigation_component.h>
+
+#include <EraScriptingCPPDecls/EraScriptingCPPDecls.h>
+
 #include <fstream>
-#include <core/project.h>
+
 #include <semaphore>
-#include <core/string.h>
-#include <scripting/dotnet_utils.h>
-#include <scripting/dotnet_types.h>
-#include "EraScriptingCPPDecls/EraScriptingCPPDecls.h"
 
 namespace era_engine::dotnet
 {

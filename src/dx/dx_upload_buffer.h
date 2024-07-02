@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "dx/dx.h"
 #include "core/memory.h"
+
+#include "dx/dx.h"
 
 namespace era_engine
 {

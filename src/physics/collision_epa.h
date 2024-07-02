@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "collision_gjk.h"
+#include "physics/collision_gjk.h"
 
 namespace era_engine
 {

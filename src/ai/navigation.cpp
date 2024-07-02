@@ -1,9 +1,11 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
-#include <pch.h>
-#include "navigation.h"
-#include <core/memory.h>
-#include <core/hash.h>
+#include "pch.h"
+
+#include "ai/navigation.h"
+
+#include "core/memory.h"
+#include "core/hash.h"
 
 namespace era_engine::ai
 {

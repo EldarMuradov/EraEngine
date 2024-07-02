@@ -1,10 +1,13 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "serialization_binary.h"
+
+#include "scene/serialization_binary.h"
+
 #include "asset/file_registry.h"
 
 #include "physics/physics.h"
+
 #include "terrain/heightmap_collider.h"
 
 namespace era_engine

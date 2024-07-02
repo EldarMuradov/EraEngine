@@ -1,8 +1,11 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "asset/image.h"
+
 #include "core/memory.h"
+
 #include <DirectXTex/DirectXTex.h>
 
 #define NANOSVG_IMPLEMENTATION

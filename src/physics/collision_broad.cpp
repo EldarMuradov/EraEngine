@@ -1,12 +1,14 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "collision_broad.h"
-#include "scene/scene.h"
-#include "physics.h"
-#include "core/cpu_profiling.h"
 
-#include "bounding_volumes_simd.h"
+#include "physics/collision_broad.h"
+#include "physics/physics.h"
+#include "physics/bounding_volumes_simd.h"
+
+#include "scene/scene.h"
+
+#include "core/cpu_profiling.h"
 
 namespace era_engine
 {

@@ -1,6 +1,7 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "px/physics/px_joint.h"
 
 namespace era_engine::physics
@@ -10,13 +11,13 @@ namespace era_engine::physics
 		PX_RELEASE(joint)
 	}
 
-	void px_joint::init(PxRigidActor* f, PxRigidActor* s) noexcept
+	void px_joint::init(PxRigidActor* f, PxRigidActor* s)
 	{
 		first = f;
 		second = s;
 	}
 
-	NODISCARD PxRevoluteJoint* createRevoluteJoint(PxRigidActor* f, PxRigidActor* s) noexcept
+	NODISCARD PxRevoluteJoint* createRevoluteJoint(PxRigidActor* f, PxRigidActor* s)
 	{
 		PxRevoluteJoint* joint = PxRevoluteJointCreate(*physics_holder::physicsRef->getPhysics(),
 			f, f->getGlobalPose(),
@@ -25,7 +26,7 @@ namespace era_engine::physics
 		return joint;
 	}
 
-	NODISCARD PxDistanceJoint* createDistanceJoint(PxRigidActor* f, PxRigidActor* s) noexcept
+	NODISCARD PxDistanceJoint* createDistanceJoint(PxRigidActor* f, PxRigidActor* s)
 	{
 		PxDistanceJoint* joint = PxDistanceJointCreate(*physics_holder::physicsRef->getPhysics(),
 			f, f->getGlobalPose(),
@@ -33,7 +34,7 @@ namespace era_engine::physics
 		return joint;
 	}
 
-	NODISCARD PxSphericalJoint* createSphericalJoint(PxRigidActor* f, PxRigidActor* s) noexcept
+	NODISCARD PxSphericalJoint* createSphericalJoint(PxRigidActor* f, PxRigidActor* s)
 	{
 		PxSphericalJoint* joint = PxSphericalJointCreate(*physics_holder::physicsRef->getPhysics(),
 			f, f->getGlobalPose(),
@@ -41,7 +42,7 @@ namespace era_engine::physics
 		return joint;
 	}
 
-	NODISCARD PxFixedJoint* createFixedJoint(PxRigidActor* f, PxRigidActor* s) noexcept
+	NODISCARD PxFixedJoint* createFixedJoint(PxRigidActor* f, PxRigidActor* s)
 	{
 		PxFixedJoint* joint = PxFixedJointCreate(*physics_holder::physicsRef->getPhysics(),
 			f, f->getGlobalPose(),
@@ -49,7 +50,7 @@ namespace era_engine::physics
 		return joint;
 	}
 
-	NODISCARD PxPrismaticJoint* createPrismaticJoint(PxRigidActor* f, PxRigidActor* s) noexcept
+	NODISCARD PxPrismaticJoint* createPrismaticJoint(PxRigidActor* f, PxRigidActor* s)
 	{
 		PxPrismaticJoint* joint = PxPrismaticJointCreate(*physics_holder::physicsRef->getPhysics(),
 			f, f->getGlobalPose(),
@@ -57,7 +58,7 @@ namespace era_engine::physics
 		return joint;
 	}
 
-	NODISCARD PxD6Joint* createD6Joint(PxRigidActor* f, PxRigidActor* s) noexcept
+	NODISCARD PxD6Joint* createD6Joint(PxRigidActor* f, PxRigidActor* s)
 	{
 		PxD6Joint* joint = PxD6JointCreate(*physics_holder::physicsRef->getPhysics(),
 			f, f->getGlobalPose(),

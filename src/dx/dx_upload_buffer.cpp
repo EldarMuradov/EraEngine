@@ -1,9 +1,11 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "dx/dx_upload_buffer.h"
-#include "core/memory.h"
 #include "dx/dx_context.h"
+
+#include "core/memory.h"
 
 namespace era_engine
 {

@@ -1,17 +1,22 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "window/window.h"
+#include "window/software_window.h"
+
+#include "core/imgui.h"
+#include "core/string.h"
+
+#include "asset/image.h"
+
+#include <DirectXTex/DirectXTex.h>
+
 #include <Windowsx.h>
 #include <shellapi.h>
 #include <uxtheme.h>
 #include <vssym32.h>
 #include <algorithm>
-#include "window/software_window.h"
-#include "core/imgui.h"
-#include "core/string.h"
-#include "asset/image.h"
-#include <DirectXTex/DirectXTex.h>
 
 namespace era_engine
 {

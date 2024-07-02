@@ -1,10 +1,12 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "ragdoll.h"
+
+#include "physics/ragdoll.h"
 
 #ifndef PHYSICS_ONLY
 #include "rendering/pbr.h"
+
 #include "geometry/mesh.h"
 #include "geometry/mesh_builder.h"
 #endif

@@ -1,7 +1,8 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "channel.h"
+
+#include "audio/channel.h"
 
 #define MAX_BUFFER_COUNT 3
 #define STREAMING_BUFFER_SIZE (1024 * 8 * 6)

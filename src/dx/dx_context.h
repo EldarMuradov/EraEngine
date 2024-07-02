@@ -1,12 +1,13 @@
 #pragma once
 
+#include "core/threading.h"
+
 #include "dx/dx.h"
 #include "dx/dx_command_queue.h"
 #include "dx/dx_upload_buffer.h"
 #include "dx/dx_descriptor_allocation.h"
 #include "dx/dx_buffer.h"
 #include "dx/dx_query.h"
-#include "core/threading.h"
 
 namespace era_engine
 {

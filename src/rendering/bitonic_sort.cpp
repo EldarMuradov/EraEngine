@@ -1,12 +1,16 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "bitonic_sort.h"
+
+#include "rendering/bitonic_sort.h"
+
+#include "core/random.h"
+
 #include "dx/dx_pipeline.h"
 #include "dx/dx_command_list.h"
 #include "dx/dx_barrier_batcher.h"
 #include "dx/dx_profiling.h"
-#include "core/random.h"
+
 #include "bitonic_sort_rs.hlsli"
 
 namespace era_engine

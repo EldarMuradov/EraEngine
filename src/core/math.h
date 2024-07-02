@@ -5,9 +5,10 @@
 #define ROW_MAJOR 0
 #define DIRECTX_COORDINATE_SYSTEM 1
 
+#include "core/simd.h"
+
 #include <cmath>
 #include <cfloat>
-#include "simd.h"
 
 #define M_PI 3.14159265359f
 #define M_PI_OVER_2 (M_PI * 0.5f)

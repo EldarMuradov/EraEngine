@@ -2,10 +2,13 @@
 
 #pragma once
 
-#include "particles.h"
-#include "fire_particle_system.hlsli"
+#include "particles/particles.h"
+
 #include "dx/dx_texture.h"
+
 #include "rendering/material.h"
+
+#include "fire_particle_system.hlsli"
 
 namespace era_engine
 {

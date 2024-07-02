@@ -5,7 +5,9 @@
 #include "core/math.h"
 #include "core/input.h"
 #include "core/camera.h"
+
 #include "rendering/render_pass.h"
+
 #include "physics/bounding_volumes.h"
 
 namespace era_engine

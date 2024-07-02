@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "synth.h"
+#include "audio/synth.h"
 #include "core/string.h"
 #include "asset/asset.h"
 

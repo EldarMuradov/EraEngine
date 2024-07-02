@@ -3,6 +3,7 @@
 #pragma once
 
 #include "core/math.h"
+
 #include "scene/scene.h"
 
 namespace era_engine

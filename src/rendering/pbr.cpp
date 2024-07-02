@@ -1,16 +1,20 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "pbr.h"
-#include "dx/dx_texture.h"
-#include "texture_preprocessing.h"
-#include "dx/dx_context.h"
-#include "dx/dx_command_list.h"
-#include "geometry/mesh_builder.h"
+
+#include "rendering/pbr.h"
+#include "rendering/render_resources.h"
+#include "rendering/render_utils.h"
+#include "rendering/texture_preprocessing.h"
+
 #include "core/color.h"
 #include "core/hash.h"
-#include "render_resources.h"
-#include "render_utils.h"
+
+#include "dx/dx_texture.h"
+#include "dx/dx_context.h"
+#include "dx/dx_command_list.h"
+
+#include "geometry/mesh_builder.h"
 
 #include "default_pbr_rs.hlsli"
 #include "material.hlsli"

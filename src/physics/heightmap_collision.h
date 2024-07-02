@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "collision_narrow.h"
-#include "collision_broad.h"
+#include "physics/collision_narrow.h"
+#include "physics/collision_broad.h"
+
 #include "terrain/heightmap_collider.h"
 
 namespace era_engine

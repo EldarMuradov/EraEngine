@@ -1,14 +1,17 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "shadow_map_cache.h"
-#include "dx/dx_texture.h"
-#include "dx/dx_command_list.h"
-#include "core/hash.h"
-#include "render_resources.h"
-#include "light_source.h"
+
+#include "rendering/shadow_map_cache.h"
+#include "rendering/render_resources.h"
+#include "rendering/light_source.h"
+
 #include "core/camera.h"
 #include "core/imgui.h"
+#include "core/hash.h"
+
+#include "dx/dx_texture.h"
+#include "dx/dx_command_list.h"
 
 #define DEBUG_VISUALIZATION 0
 

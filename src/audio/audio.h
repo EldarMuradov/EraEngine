@@ -5,6 +5,7 @@
 #include "audio/sound.h"
 #include "audio/sound_management.h"
 #include "audio/reverb.h"
+
 #include "core/math.h"
 
 #include <xaudio2.h>

@@ -1,22 +1,28 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "render_utils.h"
+
+#include "rendering/render_utils.h"
+#include "rendering/texture_preprocessing.h"
+#include "rendering/render_resources.h"
+#include "rendering/render_algorithms.h"
+#include "rendering/outline.h"
+#include "rendering/pbr.h"
+#include "rendering/bitonic_sort.h"
+#include "rendering/debug_visualization.h"
+#include "rendering/light_probe.h"
+#include "rendering/raytraced_reflections.h"
+#include "rendering/shadow_map.h"
+
 #include "core/random.h"
+
 #include "dx/dx_context.h"
+
 #include "animation/skinning.h"
-#include "texture_preprocessing.h"
-#include "render_resources.h"
-#include "render_algorithms.h"
-#include "outline.h"
-#include "pbr.h"
+
 #include "particles/particles.h"
 #include "particles/particle_systems.h"
-#include "bitonic_sort.h"
-#include "debug_visualization.h"
-#include "light_probe.h"
-#include "raytraced_reflections.h"
-#include "shadow_map.h"
+
 #include "terrain/terrain.h"
 #include "terrain/proc_placement.h"
 #include "terrain/grass.h"

@@ -4,20 +4,23 @@
 
 #include "core/math.h"
 #include "core/camera.h"
-#include "render_pass.h"
-#include "light_source.h"
-#include "pbr.h"
 #include "core/input.h"
-#include "raytracer.h"
-#include "render_algorithms.h"
-#include "render_resources.h"
-#include "render_utils.h"
-#include "path_tracing.h"
-#include "light_probe.h"
-#include "pbr_environment.h"
+
+#include "rendering/pbr.h"
+#include "rendering/render_pass.h"
+#include "rendering/light_source.h"
+#include "rendering/raytracer.h"
+#include "rendering/render_algorithms.h"
+#include "rendering/render_resources.h"
+#include "rendering/render_utils.h"
+#include "rendering/path_tracing.h"
+#include "rendering/light_probe.h"
+#include "rendering/pbr_environment.h"
+
+#include "dlss/dlss.h"
+
 #include "light_source.hlsli"
 #include "camera.hlsli"
-#include <dlss/dlss.h>
 
 #define MAX_NUM_SUN_LIGHT_SHADOW_PASSES 16
 #define MAX_NUM_SPOT_LIGHT_SHADOW_PASSES 16

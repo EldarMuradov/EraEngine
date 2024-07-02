@@ -3,7 +3,9 @@
 #pragma once
 
 #include "dx/dx_texture.h"
+
 #include "rendering/light_probe.h"
+
 #include "asset/asset.h"
 
 namespace era_engine

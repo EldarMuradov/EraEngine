@@ -1,12 +1,15 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "mesh_shader.h"
+
+#include "rendering/mesh_shader.h"
+#include "rendering/material.h"
+#include "rendering/render_utils.h"
+
 #include "dx/dx_pipeline.h"
 #include "dx/dx_command_list.h"
 #include "dx/dx_profiling.h"
-#include "material.h"
-#include "render_utils.h"
+
 #include <fstream>
 
 #if defined(SDK_SUPPORTS_MESH_SHADERS) && defined(MESH_SHADER_SUPPORTED)

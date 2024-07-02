@@ -1,6 +1,7 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
+
 #include "px/core/px_physics_engine.h"
 
 namespace era_engine::physics
@@ -166,12 +167,12 @@ namespace era_engine::physics
 		px_angular_limit_pair angularLimitPair;
 	};
 
-	NODISCARD PxRevoluteJoint* createRevoluteJoint(PxRigidActor* f, PxRigidActor* s) noexcept;
-	NODISCARD PxDistanceJoint* createDistanceJoint(PxRigidActor* f, PxRigidActor* s) noexcept;
-	NODISCARD PxSphericalJoint* createSphericalJoint(PxRigidActor* f, PxRigidActor* s) noexcept;
-	NODISCARD PxFixedJoint* createFixedJoint(PxRigidActor* f, PxRigidActor* s) noexcept;
-	NODISCARD PxPrismaticJoint* createPrismaticJoint(PxRigidActor* f, PxRigidActor* s) noexcept;
-	NODISCARD PxD6Joint* createD6Joint(PxRigidActor* f, PxRigidActor* s) noexcept;
+	NODISCARD PxRevoluteJoint* createRevoluteJoint(PxRigidActor* f, PxRigidActor* s);
+	NODISCARD PxDistanceJoint* createDistanceJoint(PxRigidActor* f, PxRigidActor* s);
+	NODISCARD PxSphericalJoint* createSphericalJoint(PxRigidActor* f, PxRigidActor* s);
+	NODISCARD PxFixedJoint* createFixedJoint(PxRigidActor* f, PxRigidActor* s);
+	NODISCARD PxPrismaticJoint* createPrismaticJoint(PxRigidActor* f, PxRigidActor* s);
+	NODISCARD PxD6Joint* createD6Joint(PxRigidActor* f, PxRigidActor* s);
 
 	struct px_joint
 	{
@@ -179,7 +180,7 @@ namespace era_engine::physics
 		px_joint(PxRigidActor* f, PxRigidActor* s) noexcept : first(f), second(s) {};
 		virtual ~px_joint();
 
-		void init(PxRigidActor* f, PxRigidActor* s) noexcept;
+		void init(PxRigidActor* f, PxRigidActor* s);
 
 		PxRigidActor* first = nullptr;
 		PxRigidActor* second = nullptr;

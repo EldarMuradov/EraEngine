@@ -1,15 +1,21 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "animation/animation.h"
+#include "animation/skinning.h"
+
 #include "core/memory.h"
 #include "core/random.h"
 #include "core/imgui.h"
 #include "core/string.h"
+
 #include "geometry/mesh.h"
-#include "animation/skinning.h"
+
 #include "dx/dx_context.h"
+
 #include "rendering/debug_visualization.h"
+
 #include <algorithm>
 
 namespace era_engine::animation

@@ -3,8 +3,11 @@
 #pragma once
 
 #include "core/memory.h"
+
 #include "physics/bounding_volumes.h"
+
 #include "animation/animation.h"
+
 #include "dx/dx_buffer.h"
 
 namespace era_engine

@@ -12,6 +12,10 @@
 #define ENABLE_DLSS 1
 #endif
 
+#include "dx/dx_context.h"
+
+#include "rendering/render_algorithms.h"
+
 #if ENABLE_DLSS
 
 #include <nvsdk_ngx.h>
@@ -20,9 +24,6 @@
 #include <nvsdk_ngx_helpers.h>
 
 #endif
-
-#include <dx/dx_context.h>
-#include "rendering/render_algorithms.h"
 
 namespace era_engine
 {

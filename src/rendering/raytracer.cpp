@@ -1,7 +1,8 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "raytracer.h"
+
+#include "rendering/raytracer.h"
 
 namespace era_engine
 {

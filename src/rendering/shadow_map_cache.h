@@ -3,12 +3,14 @@
 #pragma once
 
 #include "core/math.h"
-struct directional_light;
+
 struct spot_light_cb;
 struct point_light_cb;
 
 namespace era_engine
 {
+	struct directional_light;
+
 	struct shadow_map_viewport
 	{
 		uint16 x, y;

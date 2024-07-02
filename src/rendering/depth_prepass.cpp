@@ -1,10 +1,13 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "depth_prepass.h"
-#include "render_utils.h"
-#include "render_resources.h"
+
+#include "rendering/depth_prepass.h"
+#include "rendering/render_utils.h"
+#include "rendering/render_resources.h"
+
 #include "dx/dx_command_list.h"
+
 #include "depth_only_rs.hlsli"
 
 namespace era_engine

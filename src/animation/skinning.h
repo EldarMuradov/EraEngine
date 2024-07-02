@@ -3,11 +3,15 @@
 #pragma once
 
 #include "core/math.h"
+
 #include "geometry/mesh_builder.h"
 
-struct dx_vertex_buffer_group_view;
-struct dx_vertex_buffer_view;
-struct compute_pass;
+namespace era_engine
+{
+	struct dx_vertex_buffer_group_view;
+	struct dx_vertex_buffer_view;
+	struct compute_pass;
+}
 
 namespace era_engine::animation
 {

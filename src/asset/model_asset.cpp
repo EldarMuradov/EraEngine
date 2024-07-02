@@ -1,7 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "model_asset.h"
+
+#include "asset/model_asset.h"
+
 #include "rendering/pbr_material.h"
 
 namespace era_engine

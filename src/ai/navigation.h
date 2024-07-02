@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <core/math.h>
+#include "core/math.h"
 
 #define NAV_X_MAX 100
 #define NAV_X_STEP 1

@@ -4,7 +4,8 @@
 
 #include "core/math.h"
 #include "core/job_system.h"
-#include "material.h"
+
+#include "rendering/material.h"
 
 namespace era_engine
 {

@@ -1,14 +1,18 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include "dx/dx_texture.h"
+
 #include "core/camera.h"
+#include "core/camera_controller.h"
+
+#include "dx/dx_texture.h"
+
 #include "rendering/main_renderer.h"
-#include <scene/scene.h>
-#include <core/camera_controller.h>
 
 namespace era_engine
 {
+	struct editor_scene;
+
 	struct asset_editor_panel
 	{
 		virtual void beginFrame();

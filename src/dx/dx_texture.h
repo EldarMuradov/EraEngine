@@ -2,10 +2,12 @@
 
 #pragma once
 
-#include "dx/dx_descriptor.h"
-#include "dx/dx_descriptor_allocation.h"
 #include "core/math.h"
 #include "core/job_system.h"
+
+#include "dx/dx_descriptor.h"
+#include "dx/dx_descriptor_allocation.h"
+
 #include "asset/asset.h"
 #include "asset/image.h"
 

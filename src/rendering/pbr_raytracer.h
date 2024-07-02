@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include "raytracer.h"
+#include "rendering/raytracer.h"
+#include "rendering/pbr.h"
+
 #include "material.hlsli"
-#include "pbr.h"
 
 namespace era_engine
 {

@@ -1,14 +1,20 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "transformation_gizmo.h"
+
+#include "editor/transformation_gizmo.h"
+
+#include "core/imgui.h"
+
 #include "dx/dx_command_list.h"
 #include "dx/dx_pipeline.h"
+
 #include "geometry/mesh_builder.h"
+
 #include "physics/bounding_volumes.h"
+
 #include "rendering/render_utils.h"
 #include "rendering/debug_visualization.h"
-#include "core/imgui.h"
 
 namespace era_engine
 {

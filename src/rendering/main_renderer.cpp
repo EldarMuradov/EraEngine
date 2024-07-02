@@ -1,17 +1,22 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "main_renderer.h"
+
+#include "rendering/main_renderer.h"
+#include "rendering/raytracing.h"
+#include "rendering/raytraced_reflections.h"
+
+#include "core/job_system.h"
+
 #include "dx/dx_command_list.h"
 #include "dx/dx_render_target.h"
 #include "dx/dx_pipeline.h"
 #include "dx/dx_texture.h"
 #include "dx/dx_barrier_batcher.h"
 #include "dx/dx_profiling.h"
-#include "raytracing.h"
-#include "raytraced_reflections.h"
+
 #include "particles/particles.h"
-#include "core/job_system.h"
+
 #include "light_source.hlsli"
 
 #define SSR_RAYCAST_WIDTH (renderWidth / 2)

@@ -2,14 +2,16 @@
 
 #pragma once
 
+#include "core/reflect.h"
+
 #include "dx/dx_command_list.h"
 #include "dx/dx_texture.h"
 #include "dx/dx_render_target.h"
-#include "shadow_map_cache.h"
-#include "render_pass.h"
-#include "material.h"
-#include "light_source.h"
-#include "core/reflect.h"
+
+#include "rendering/shadow_map_cache.h"
+#include "rendering/render_pass.h"
+#include "rendering/material.h"
+#include "rendering/light_source.h"
 
 #define MAX_NUM_TOTAL_DECALS 256   // Total per frame (not per tile). MUST MATCH light_culling_rs.hlsli
 

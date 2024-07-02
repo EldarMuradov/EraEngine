@@ -1,11 +1,14 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "debris_particle_system.h"
+
+#include "particles/debris_particle_system.h"
+
 #include "dx/dx_pipeline.h"
+#include "dx/dx_profiling.h"
+
 #include "rendering/render_resources.h"
 #include "rendering/render_utils.h"
-#include "dx/dx_profiling.h"
 
 namespace era_engine
 {

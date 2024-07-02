@@ -4,8 +4,11 @@
 
 #include "core/math.h"
 #include "core/random.h"
+
 #include "dx/dx_texture.h"
-#include "render_pass.h"
+
+#include "rendering/render_pass.h"
+
 #include "light_probe.hlsli"
 
 namespace era_engine

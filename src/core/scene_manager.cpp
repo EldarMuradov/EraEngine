@@ -1,7 +1,10 @@
-#include <pch.h>
-#include <core/scene_manager.h>
-#include <scripting/native_scripting_linker.h>
-#include <application.h>
+#include "pch.h"
+
+#include "core/scene_manager.h"
+
+#include "scripting/native_scripting_linker.h"
+
+#include "application.h"
 
 namespace era_engine
 {

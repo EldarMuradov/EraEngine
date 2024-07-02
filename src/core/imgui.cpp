@@ -1,7 +1,17 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "imgui.h"
+#include "core/imgui.h"
+#include "core/input.h"
+
+#include "dx/dx_context.h"
+#include "dx/dx_command_list.h"
+#include "dx/dx_profiling.h"
+
+#include "window/dx_window.h"
+
+#include "asset/asset.h"
+#include "asset/file_registry.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui/imgui_draw.cpp>
@@ -13,14 +23,6 @@
 
 #include <imgui/backends/imgui_impl_win32.cpp>
 #include <imgui/backends/imgui_impl_dx12.cpp>
-
-#include "input.h"
-#include "dx/dx_context.h"
-#include "dx/dx_command_list.h"
-#include "dx/dx_profiling.h"
-#include "window/dx_window.h"
-#include "asset/asset.h"
-#include "asset/file_registry.h"
 
 #define MAX_NUM_IMGUI_IMAGES_PER_FRAME 128
 

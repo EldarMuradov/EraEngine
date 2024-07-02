@@ -2,7 +2,9 @@
 
 #include "pch.h"
 #define PROFILING_INTERNAL
+
 #include "dx/dx_profiling.h"
+
 #include "core/imgui.h"
 #include "core/math.h"
 
@@ -13,8 +15,9 @@ namespace era_engine
 
 #if ENABLE_DX_PROFILING
 
-#include <algorithm>
 #include <fontawesome/IconsFontAwesome5.h>
+
+#include <algorithm>
 
 namespace era_engine
 {

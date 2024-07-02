@@ -1,12 +1,15 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "render_resources.h"
+
+#include "rendering/render_resources.h"
+#include "rendering/texture_preprocessing.h"
+#include "rendering/render_algorithms.h"
+
+#include "core/hash.h"
+
 #include "dx/dx_context.h"
 #include "dx/dx_barrier_batcher.h"
-#include "texture_preprocessing.h"
-#include "core/hash.h"
-#include "render_algorithms.h"
 
 namespace era_engine
 {

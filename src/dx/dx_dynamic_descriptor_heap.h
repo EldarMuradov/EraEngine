@@ -4,7 +4,6 @@
 
 #include "dx/dx.h"
 #include "dx/dx_descriptor.h"
-#include <deque>
 
 namespace era_engine
 {

@@ -1,10 +1,13 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include "particles.h"
-#include "boid_particle_system.hlsli"
+#include "particles/particles.h"
+
 #include "dx/dx_texture.h"
+
 #include "rendering/material.h"
+
+#include "boid_particle_system.hlsli"
 
 namespace era_engine
 {

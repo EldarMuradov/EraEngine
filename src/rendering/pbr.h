@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "pbr_material.h"
-#include "render_command.h"
+#include "rendering/pbr_material.h"
+#include "rendering/render_command.h"
 
 namespace era_engine
 {

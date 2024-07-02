@@ -1,11 +1,12 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include "camera.h"
-#include "core/input.h"
+#include "core/camera.h"
 
 namespace era_engine
 {
+	struct user_input;
+
 	struct runtime_camera_controller
 	{
 		void initialize(render_camera* camera) { this->camera = camera; }

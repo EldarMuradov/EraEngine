@@ -3,7 +3,7 @@
 #pragma once
 
 #include "core/math.h"
-#include "physics.h"
+#include "physics/physics.h"
 
 namespace era_engine
 {

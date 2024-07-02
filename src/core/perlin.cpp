@@ -1,9 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "core/perlin.h"
 #include "core/math.h"
-#include <array>
 
 namespace era_engine
 {

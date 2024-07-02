@@ -1,15 +1,13 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "physics.h"
-#include "collision_broad.h"
-#include "collision_narrow.h"
-#include "heightmap_collision.h"
-#include "core/cpu_profiling.h"
 
-#ifndef PHYSICS_ONLY
-#include "core/log.h"
-#endif
+#include "physics/physics.h"
+#include "physics/collision_broad.h"
+#include "physics/collision_narrow.h"
+#include "physics/heightmap_collision.h"
+
+#include "core/cpu_profiling.h"
 
 namespace era_engine
 {

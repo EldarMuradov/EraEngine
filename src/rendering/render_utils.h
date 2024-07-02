@@ -1,10 +1,13 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include "dx/dx_pipeline.h"
 #include "core/camera.h"
-#include "light_source.h"
-#include "render_pass.h"
+
+#include "dx/dx_pipeline.h"
+
+#include "rendering/light_source.h"
+#include "rendering/render_pass.h"
+
 #include "camera.hlsli"
 
 namespace era_engine

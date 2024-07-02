@@ -2,9 +2,11 @@
 
 #include "pch.h"
 #define PROFILING_INTERNAL
+
 #include "core/cpu_profiling.h"
-#include "dx/dx_context.h"
 #include "core/imgui.h"
+
+#include "dx/dx_context.h"
 
 namespace era_engine
 {

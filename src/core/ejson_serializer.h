@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <nlohmann/json.hpp>
 #include "core/project.h"
+
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::basic_json<>;
 

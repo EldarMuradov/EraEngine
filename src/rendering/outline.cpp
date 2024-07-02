@@ -1,11 +1,13 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "outline.h"
-#include "render_pass.h"
-#include "material.h"
-#include "render_resources.h"
-#include "render_algorithms.h"
+
+#include "rendering/outline.h"
+#include "rendering/render_pass.h"
+#include "rendering/material.h"
+#include "rendering/render_resources.h"
+#include "rendering/render_algorithms.h"
+
 #include "dx/dx_pipeline.h"
 
 #include "outline_rs.hlsli"

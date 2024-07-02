@@ -3,7 +3,8 @@
 #pragma once
 
 #include "dx/dx.h"
-#include "light_source.h"
+
+#include "rendering/light_source.h"
 
 namespace era_engine
 {

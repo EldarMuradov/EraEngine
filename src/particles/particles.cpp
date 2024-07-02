@@ -1,13 +1,18 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "particles.h"
+
+#include "particles/particles.h"
+
 #include "core/camera.h"
+
 #include "geometry/mesh_builder.h"
+
 #include "dx/dx_context.h"
 #include "dx/dx_command_list.h"
 #include "dx/dx_barrier_batcher.h"
 #include "dx/dx_profiling.h"
+
 #include "rendering/bitonic_sort.h"
 
 namespace era_engine

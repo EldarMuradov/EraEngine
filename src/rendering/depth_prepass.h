@@ -1,8 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include "material.h"
-#include "render_command.h"
+
+#include "rendering/material.h"
+#include "rendering/render_command.h"
 
 namespace era_engine
 {

@@ -1,9 +1,10 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "core/math.h"
-#include <half/half.c>
 
+#include "core/math.h"
+
+#include <half/half.c>
 
 const half half::minValue = (uint16)0b1111101111111111;
 const half half::maxValue = (uint16)0b0111101111111111;

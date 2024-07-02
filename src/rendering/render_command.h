@@ -3,7 +3,8 @@
 #pragma once
 
 #include "geometry/mesh.h"
-#include "shadow_map_cache.h"
+
+#include "rendering/shadow_map_cache.h"
 
 namespace era_engine
 {

@@ -3,9 +3,11 @@
 #pragma once
 
 #include "core/math.h"
-#include "dx/dx_buffer.h"
 #include "core/memory.h"
-#include <ai/state_machine.h>
+
+#include "dx/dx_buffer.h"
+
+#include "ai/state_machine.h"
 
 #define INVALID_JOINT 0xFFFFFFFF
 

@@ -1,8 +1,11 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "path_tracing.h"
+
+#include "rendering/path_tracing.h"
+
 #include "core/color.h"
+
 #include "raytracing.hlsli"
 
 #define PATH_TRACING_RS_RESOURCES   0

@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include "geometry/mesh.h"
-#include "dx/dx_buffer.h"
 #include "core/math.h"
+
+#include "geometry/mesh.h"
+
+#include "dx/dx_buffer.h"
 #include "dx/dx_pipeline.h"
 
 namespace era_engine

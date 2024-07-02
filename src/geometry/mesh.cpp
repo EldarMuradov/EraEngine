@@ -1,10 +1,13 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "geometry/mesh.h"
-#include "geometry/mesh_builder.h"
+
 #include "rendering/pbr.h"
+
 #include "core/hash.h"
+
 #include "asset/file_registry.h"
 #include "asset/model_asset.h"
 
@@ -219,7 +222,7 @@ namespace era_engine
 
 namespace era_engine
 {
-	NODISCARD eentity loadEntityMeshFromFile(escene scene, const fs::path& filename, uint32 flags, mesh_load_callback cb)
+	NODISCARD eentity loadEntityMeshFromFile(escene& scene, const fs::path& filename, uint32 flags, mesh_load_callback cb)
 	{
 		auto& registry = scene.registry;
 		eentity parent(registry.create(), &registry);

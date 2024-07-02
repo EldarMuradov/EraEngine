@@ -2,13 +2,13 @@
 
 #pragma once
 
-#define IM_ASSERT(condition) ASSERT(condition)
-#include <imgui/imgui.h>
-#include <fontawesome/IconsFontAwesome5.h>
-
 #include "dx/dx.h"
 #include "core/math.h"
 #include "foundation/PxVec3.h"
+
+#define IM_ASSERT(condition) ASSERT(condition)
+#include <imgui/imgui.h>
+#include <fontawesome/IconsFontAwesome5.h>
 
 #define IMGUI_ICON_COLS 4
 #define IMGUI_ICON_ROWS 4

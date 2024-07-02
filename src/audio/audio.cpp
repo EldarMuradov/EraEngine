@@ -8,12 +8,12 @@
 
 #undef M_PI
 
-#include "audio.h"
-#include "sound.h"
-#include "channel.h"
-#include "core/log.h"
+#include "audio/audio.h"
+#include "audio/sound.h"
+#include "audio/channel.h"
+
 #include "core/cpu_profiling.h"
-#include <unordered_map>
+
 #include <x3daudio.h>
 
 namespace era_engine

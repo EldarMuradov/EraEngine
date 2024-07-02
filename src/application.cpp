@@ -1,51 +1,67 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "application.h"
-#include "geometry/mesh_builder.h"
-#include "dx/dx_texture.h"
+
 #include "core/random.h"
 #include "core/color.h"
 #include "core/imgui.h"
-#include "core/log.h"
+#include "core/threading.h"
+#include "core/coroutine.h"
+#include "core/event_queue.h"
+#include "core/ejson_serializer.h"
+
+#include "geometry/mesh_builder.h"
+
+#include "dx/dx_texture.h"
 #include "dx/dx_context.h"
 #include "dx/dx_profiling.h"
+
 #include "physics/physics.h"
 #include "physics/ragdoll.h"
 #include "physics/vehicle.h"
-#include "core/threading.h"
+
 #include "rendering/outline.h"
 #include "rendering/mesh_shader.h"
 #include "rendering/shadow_map.h"
 #include "rendering/debug_visualization.h"
+
 #include "scene/scene_rendering.h"
+
 #include "audio/audio.h"
+
 #include "terrain/terrain.h"
 #include "terrain/heightmap_collider.h"
 #include "terrain/proc_placement.h"
 #include "terrain/grass.h"
 #include "terrain/water.h"
 #include "terrain/tree.h"
+
 #include "animation/skinning.h"
+
 #include "asset/model_asset.h"
-#include <px/physics/px_collider_component.h>
-#include <asset/file_registry.h>
-#include <px/physics/px_joint.h>
-#include <px/physics/px_character_controller_component.h>
-#include <px/core/px_tasks.h>
-#include <px/core/px_aggregate.h>
-#include <px/features/px_ragdoll.h>
-#include <scripting/script.h>
-#include "core/coroutine.h"
-#include <ai/navigation.h>
-#include <ai/navigation_component.h>
-#include <px/features/px_particles.h>
+#include "asset/file_registry.h"
+
+#include "px/core/px_tasks.h"
+#include "px/core/px_aggregate.h"
+
+#include "px/physics/px_collider_component.h"
+#include "px/physics/px_joint.h"
+#include "px/physics/px_character_controller_component.h"
+#include "px/physics/px_soft_body.h"
+
+#include "px/features/px_ragdoll.h"
+#include "px/features/px_particles.h"
 #include "px/features/cloth/px_clothing_factory.h"
-#include <core/ejson_serializer.h>
-#include <px/physics/px_soft_body.h>
-#include <px/blast/px_blast_destructions.h>
-#include <core/event_queue.h>
-#include <scripting/native_scripting_linker.h>
+
+#include "px/blast/px_blast_destructions.h"
+
+#include "ai/navigation.h"
+#include "ai/navigation_component.h"
+
+#include "scripting/script.h"
+#include "scripting/native_scripting_linker.h"
 
 namespace era_engine
 {
@@ -103,46 +119,53 @@ namespace era_engine
 	struct update_scripting_data
 	{
 		float deltaTime{};
-		ref<era_engine::dotnet::enative_scripting_linker> core;
+		ref<dotnet::enative_scripting_linker> core;
 		escene& scene;
 		const user_input& input;
 	};
 
-	void updatePhysXCallbacksAndScripting(escene& currentScene, ref<era_engine::dotnet::enative_scripting_linker> core, float dt, const user_input& in) noexcept
+	void updatePhysXCallbacksAndScripting(escene& currentScene, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in) noexcept
 	{
 		update_scripting_data data = { dt, core, currentScene, in };
 
 		highPriorityJobQueue.createJob<update_scripting_data>([](update_scripting_data& data, job_handle)
 			{
+				try
 				{
-					const auto& physicsRef = physics::physics_holder::physicsRef;
-
 					{
-						CPU_PROFILE_BLOCK("PhysX collision events step");
+						const auto& physicsRef = physics::physics_holder::physicsRef;
 
 						{
-							physics::collision_handling_data* collData = nullptr;
-							while (physicsRef->collisionQueue.try_dequeue(*collData))
-								data.core->handle_coll(collData->id1, collData->id2);
-						}
+							CPU_PROFILE_BLOCK("PhysX collision events step");
 
-						{
-							physics::collision_handling_data* collData = nullptr;
-							while (physicsRef->collisionExitQueue.try_dequeue(*collData))
-								data.core->handle_exit_coll(collData->id1, collData->id2);
+							{
+								physics::collision_handling_data* collData = nullptr;
+								while (physicsRef->collisionQueue.try_dequeue(*collData))
+									data.core->handle_coll(collData->id1, collData->id2);
+							}
+
+							{
+								physics::collision_handling_data* collData = nullptr;
+								while (physicsRef->collisionExitQueue.try_dequeue(*collData))
+									data.core->handle_exit_coll(collData->id1, collData->id2);
+							}
 						}
 					}
+
+					updateScripting(data);
+
+					{
+						CPU_PROFILE_BLOCK(".NET 8 Input sync step");
+						data.core->handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
+					}
 				}
-
-				updateScripting(data);
-
+				catch(std::exception& ex)
 				{
-					CPU_PROFILE_BLOCK(".NET 8 Input sync step");
-					data.core->handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
+					LOG_ERROR(ex.what());
 				}
 			}, data).submitNow();
 
-			const auto& nav_objects = data.scene.group(component_group<era_engine::ai::navigation_component, transform_component>);
+			const auto& nav_objects = data.scene.group(component_group<ai::navigation_component, transform_component>);
 
 			if (nav_objects.size())
 			{
@@ -167,7 +190,9 @@ namespace era_engine
 	void updateScripting(update_scripting_data& data) noexcept
 	{
 		CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
-		for (auto [entityHandle, script, transform] : data.scene.group(component_group<era_engine::ecs::scripts_component, transform_component>).each())
+		if (!data.scene.registry.size())
+			return;
+		for (auto [entityHandle, script, transform] : data.scene.group(component_group<ecs::scripts_component, transform_component>).each())
 		{
 			const auto& mat = trsToMat4(transform);
 			constexpr size_t mat_size = 16;
@@ -193,7 +218,7 @@ namespace era_engine
 		mainThreadJobQueue.createJob<add_animation_data>([](add_animation_data& data, job_handle job)
 			{
 				data.mesh->loadJob.waitForCompletion();
-				data.entity.getComponent<era_engine::animation::animation_component>().initialize(data.mesh->skeleton.clips);
+				data.entity.getComponent<animation::animation_component>().initialize(data.mesh->skeleton.clips);
 			}, data).submitNow();
 	}
 
@@ -347,20 +372,17 @@ namespace era_engine
 			//	.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			//	.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
 
-			auto px_plane = &scene.createEntity("PlanePX")
-				.addComponent<transform_component>(vec3(0.f, -2.0, 0.0f), quat::identity, vec3(1.f))
-				.addComponent<physics::px_plane_collider_component>(vec3(0.f, -2.0, 0.0f));
-
-			/*particles = scene.createEntity("ParticlesPX")
+			/*auto particles = scene.createEntity("ParticlesPX")
 				.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
-				.addComponent<physics::px_particles_component>(10, 10, 10, false).handle;*/
+				.addComponent<physics::px_particles_component>(10, 10, 10, false);*/
 
-				//cloth = scene.createEntity("ClothPX")
-				//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
-				//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f)).handle;
+			//auto cloth = scene.createEntity("ClothPX")
+			//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
+			//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f));
 
 			scene.createEntity("Platform")
 				.addComponent<transform_component>(vec3(10, -6.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
+				.addComponent<physics::px_plane_collider_component>(vec3(0.f, -2.0, 0.0f))
 				.addComponent<mesh_component>(groundMesh);
 
 			auto chainMesh = make_ref<multi_mesh>();
@@ -657,7 +679,7 @@ namespace era_engine
 
 		//if (renderer->mode != renderer_mode_pathtraced)
 		{
-			for (auto [entityHandle, anim, mesh, transform] : scene.group(component_group<era_engine::animation::animation_component, mesh_component, transform_component>).each())
+			for (auto [entityHandle, anim, mesh, transform] : scene.group(component_group<animation::animation_component, mesh_component, transform_component>).each())
 			{
 				anim.update(mesh.mesh, stackArena, dt, &transform);
 

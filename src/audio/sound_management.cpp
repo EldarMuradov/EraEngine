@@ -1,9 +1,13 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "audio/sound_management.h"
 #include "audio/audio.h"
+#include "audio/sound.h"
+
 #include "editor/editor_icons.h"
+
 #include "core/imgui.h"
 #include "core/yaml.h"
 

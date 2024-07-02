@@ -4,7 +4,9 @@
 
 #include "core/math.h"
 #include "core/hash.h"
+
 #include "geometry/mesh.h"
+
 #include "asset/model_asset.h"
 
 namespace era_engine
@@ -23,7 +25,6 @@ namespace era_engine
 	{
 		return memcmp(&a, &b, sizeof(full_vertex)) == 0;
 	}
-
 }
 
 namespace std

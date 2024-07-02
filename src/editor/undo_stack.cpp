@@ -1,7 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "editor/undo_stack.h"
+
 #include "core/imgui.h"
 
 namespace era_engine

@@ -665,6 +665,9 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		void addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene) noexcept;
 		void removeActor(px_rigidbody_component* actor) noexcept;
 
+		void addActor(px_body_component* actor, PxRigidActor* ractor, bool addToScene);
+		void removeActor(px_body_component* actor);
+
 		ref<px_soft_body> addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount) noexcept;
 
 		PxPhysics* getPhysics() const noexcept { return physics; }

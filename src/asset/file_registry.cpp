@@ -1,7 +1,10 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "file_registry.h"
+
+#include "asset/file_registry.h"
+#include "asset/asset.h"
+
 #include "core/file_system.h"
 #include "core/yaml.h"
 

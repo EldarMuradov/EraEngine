@@ -5,9 +5,8 @@
 #include "dx/dx.h"
 #include "dx/dx_texture.h"
 #include "dx/dx_command_list.h"
-#include "render_utils.h"
 
-#include <unordered_map>
+#include "rendering/render_utils.h"
 
 #define SHADOW_MAP_WIDTH 6144
 #define SHADOW_MAP_HEIGHT 6144

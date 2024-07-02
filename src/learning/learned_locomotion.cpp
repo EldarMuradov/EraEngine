@@ -1,9 +1,10 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "learned_locomotion.h"
-#include "core/random.h"
 
+#include "learned_locomotion.h"
+
+#include "core/random.h"
 
 #if __has_include("../tmp/network.h")
 #define INFERENCE_POSSIBLE

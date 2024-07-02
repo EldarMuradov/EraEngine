@@ -129,5 +129,5 @@ static void checkResultInternal(HRESULT hr, const char* file, int32 line)
 
 #define checkResult(hr) checkResultInternal(hr, __FILE__, __LINE__)
 
-#include <core/sync.h>
-#include <core/log.h>
+#include "core/sync.h"
+#include "core/log.h"

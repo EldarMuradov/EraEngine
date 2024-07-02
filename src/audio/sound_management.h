@@ -1,10 +1,12 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include "audio/sound.h"
 
 namespace era_engine
 {
+	struct sound_spec;
+	struct sound_id;
+
 	void loadSoundRegistry();
 	void drawSoundEditor(bool& open);
 

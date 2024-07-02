@@ -1,7 +1,7 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include <scripting/dotnet_host.h>
+#include "scripting/dotnet_host.h"
 
 //Inject function into scripting endpoints
 #define BIND(fn, result, ...) enative_scripting_builder::func{ new enative_scripting_builder::func_obj<result, __VA_ARGS__>(fn)}

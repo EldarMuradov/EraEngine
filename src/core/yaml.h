@@ -2,10 +2,13 @@
 
 #pragma once
 
-#include <yaml-cpp/yaml.h>
-#include <fstream>
 #include "core/math.h"
+
 #include "asset/asset.h"
+
+#include <yaml-cpp/yaml.h>
+
+#include <fstream>
 
 namespace YAML
 {

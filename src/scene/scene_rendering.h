@@ -1,8 +1,10 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include "scene.h"
 #include "core/memory.h"
+
+#include "scene/scene.h"
+
 #include "rendering/render_pass.h"
 
 namespace era_engine

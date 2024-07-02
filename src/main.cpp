@@ -1,27 +1,35 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "dx/dx_context.h"
-#include "window/dx_window.h"
-#include "dx/dx_command_list.h"
-#include "dx/dx_profiling.h"
+
 #include "core/input.h"
 #include "core/imgui.h"
-#include "core/log.h"
 #include "core/cpu_profiling.h"
 #include "core/job_system.h"
+
+#include "dx/dx_context.h"
+#include "dx/dx_command_list.h"
+#include "dx/dx_profiling.h"
+
+#include "window/dx_window.h"
+
 #include "asset/file_registry.h"
+
 #include "editor/file_browser.h"
-#include "application.h"
+#include "editor/asset_editor_panel.h"
 #include "editor/editor_icons.h"
+
+#include "application.h"
+
 #include "rendering/render_utils.h"
 #include "rendering/main_renderer.h"
+
 #include "audio/audio.h"
-#include "editor/asset_editor_panel.h"
-#include <fstream>
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui/imgui_internal.h>
+
+#include <fstream>
 
 namespace era_engine
 {

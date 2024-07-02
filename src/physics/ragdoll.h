@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "physics.h"
 #include "scene/scene.h"
+
+#include "physics/physics.h"
 
 namespace era_engine
 {

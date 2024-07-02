@@ -140,7 +140,6 @@ namespace era_engine
 		const char* name;
 		uint64 start;
 	};
-
 }
 
 #else

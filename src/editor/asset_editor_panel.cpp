@@ -1,15 +1,22 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "editor/asset_editor_panel.h"
+
 #include "core/imgui.h"
+
 #include "geometry/mesh.h"
+
 #include "animation/animation.h"
+
 #include "editor/editor_icons.h"
+#include "editor/editor.h"
+
+#include "scene/scene.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui/imgui_internal.h>
-#include "editor/editor.h"
 
 namespace era_engine
 {

@@ -1,8 +1,10 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "cloth.h"
-#include "physics.h"
+
+#include "physics/cloth.h"
+#include "physics/physics.h"
+
 #include "core/random.h"
 #include "core/cpu_profiling.h"
 

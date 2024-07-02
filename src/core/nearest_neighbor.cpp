@@ -1,7 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "core/nearest_neighbor.h"
+
 #include <nanoflann/nanoflann.hpp>
 
 namespace era_engine

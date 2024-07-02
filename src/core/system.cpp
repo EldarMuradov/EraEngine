@@ -1,9 +1,12 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "core/system.h"
 #include "core/string.h"
+
 #include "dx/dx_context.h"
+
 #include <intrin.h>
 
 namespace era_engine

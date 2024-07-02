@@ -4,6 +4,7 @@
 
 #include "core/math.h"
 #include "core/memory.h"
+
 #include "scene/scene.h"
 
 #define CONSTRAINT_SIMD_WIDTH 8

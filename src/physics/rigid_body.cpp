@@ -1,8 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "rigid_body.h"
-#include "physics.h"
+
+#include "physics/rigid_body.h"
+#include "physics/physics.h"
 
 namespace era_engine
 {

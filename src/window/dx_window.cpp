@@ -1,7 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "window/dx_window.h"
+
 #include "dx/dx_context.h"
 
 namespace era_engine

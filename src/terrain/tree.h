@@ -2,10 +2,12 @@
 
 #pragma once
 
+#include "core/job_system.h"
+
 #include "geometry/mesh.h"
+
 #include "rendering/material.h"
 #include "rendering/pbr.h"
-#include "core/job_system.h"
 
 namespace era_engine
 {

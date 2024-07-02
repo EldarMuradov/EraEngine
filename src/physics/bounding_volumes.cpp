@@ -1,8 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "bounding_volumes.h"
-#include "collision_gjk.h"
+
+#include "physics/bounding_volumes.h"
+#include "physics/collision_gjk.h"
 
 namespace era_engine
 {

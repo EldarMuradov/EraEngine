@@ -1,15 +1,16 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "collision_narrow.h"
-#include "physics.h"
-#include "collision_broad.h"
-#include "collision_gjk.h"
-#include "collision_epa.h"
-#include "collision_sat.h"
-#include "core/cpu_profiling.h"
 
-#include "bounding_volumes_simd.h"
+#include "physics/collision_narrow.h"
+#include "physics/physics.h"
+#include "physics/collision_broad.h"
+#include "physics/collision_gjk.h"
+#include "physics/collision_epa.h"
+#include "physics/collision_sat.h"
+#include "physics/bounding_volumes_simd.h"
+
+#include "core/cpu_profiling.h"
 
 #define COLLISION_SIMD_WIDTH 8u
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "audio/sound.h"
+
 #include "core/math.h"
 
 #include <x3daudio.h>

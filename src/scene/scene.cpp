@@ -4,18 +4,25 @@
 #include "pch.h"
 
 #include "scene/scene.h"
+
 #include "physics/physics.h"
 #include "physics/collision_broad.h"
+
 #include "terrain/heightmap_collider.h"
+
 #include "rendering/raytracing.h"
 
 #ifndef PHYSICS_ONLY
-#include <scripting/script.h>
-#include <ai/navigation_component.h>
-#include <px/physics/px_soft_body.h>
-#include <px/blast/px_blast_destructions.h>
-#include <px/core/px_physics_engine.h>
-#include <px/physics/px_soft_body.h>
+#include "scripting/script.h"
+
+#include "ai/navigation_component.h"
+
+#include "px/core/px_physics_engine.h"
+
+#include "px/physics/px_soft_body.h"
+
+#include "px/blast/px_blast_destructions.h"
+
 #endif
 
 namespace era_engine
@@ -174,19 +181,8 @@ namespace era_engine
 
 	void escene::deleteEntity(eentity e)
 	{
-		if (physics_reference_component* reference = e.getComponentIfExists<physics_reference_component>())
-		{
-			eentity colliderEntity = { reference->firstColliderEntity, &registry };
-			while (colliderEntity)
-			{
-				collider_component& collider = colliderEntity.getComponent<collider_component>();
-				entity_handle next = collider.nextEntity;
-
-				registry.destroy(colliderEntity.handle);
-
-				colliderEntity = { next, &registry };
-			}
-		}
+		if (e.handle == null_entity)
+			return;
 
 #ifndef PHYSICS_ONLY
 		if (physics::px_rigidbody_component* reference = e.getComponentIfExists<physics::px_rigidbody_component>())

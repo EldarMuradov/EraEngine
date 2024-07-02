@@ -4,10 +4,11 @@
 
 #include "core/math.h"
 #include "core/cpu_profiling.h"
-#include "material.h"
-#include "render_command.h"
-#include "render_command_buffer.h"
-#include "depth_prepass.h"
+
+#include "rendering/material.h"
+#include "rendering/render_command.h"
+#include "rendering/render_command_buffer.h"
+#include "rendering/depth_prepass.h"
 
 namespace era_engine
 {

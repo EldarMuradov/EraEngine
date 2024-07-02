@@ -7,13 +7,16 @@
 #include <entt/entity/entity.hpp>
 #include <entt/entity/registry.hpp>
 #include <entt/entity/helper.hpp>
+
 #include "scene/components.h"
 
 #ifndef PHYSICS_ONLY
 #include "rendering/light_source.h"
 #include "rendering/pbr.h"
 #include "rendering/pbr_environment.h"
+
 #include "core/camera.h"
+
 #include "terrain/terrain.h"
 #include "terrain/proc_placement.h"
 #include "terrain/grass.h"

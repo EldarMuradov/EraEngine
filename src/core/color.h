@@ -4,6 +4,7 @@
 
 #include "core/math.h"
 #include "core/random.h"
+
 #include "material.hlsli"
 
 // RGB is in [0,1]^3.

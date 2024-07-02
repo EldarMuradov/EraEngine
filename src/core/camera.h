@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include "math.h"
-#include "physics/bounding_volumes.h"
+#include "core/math.h"
+
 #include "core/reflect.h"
+
+#include "physics/bounding_volumes.h"
 
 namespace era_engine
 {

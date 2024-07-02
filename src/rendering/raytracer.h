@@ -1,12 +1,14 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include "raytracing.h"
-#include "raytracing_tlas.h"
-#include "raytracing_binding_table.h"
+
 #include "dx/dx_descriptor_allocation.h"
 #include "dx/dx_command_list.h"
-#include "material.h"
+
+#include "rendering/raytracing.h"
+#include "rendering/raytracing_tlas.h"
+#include "rendering/raytracing_binding_table.h"
+#include "rendering/material.h"
 
 namespace era_engine
 {

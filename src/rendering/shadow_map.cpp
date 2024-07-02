@@ -1,9 +1,10 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "shadow_map.h"
-#include "render_resources.h"
-#include "shadow_map_cache.h"
+
+#include "rendering/shadow_map.h"
+#include "rendering/render_resources.h"
+#include "rendering/shadow_map_cache.h"
 
 #include "depth_only_rs.hlsli"
 

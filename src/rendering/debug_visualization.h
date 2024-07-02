@@ -2,9 +2,12 @@
 
 #pragma once
 
-#include "render_pass.h"
-#include "dx/dx_command_list.h"
 #include "core/camera.h"
+
+#include "rendering/render_pass.h"
+
+#include "dx/dx_command_list.h"
+
 #include "visualization_rs.hlsli"
 
 namespace era_engine

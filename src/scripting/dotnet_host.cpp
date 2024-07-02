@@ -1,8 +1,11 @@
-#include <pch.h>
-#include <scripting/dotnet_host.h>
+#include "pch.h"
+
+#include "scripting/dotnet_host.h"
+
+#include "core/project.h"
+#include "core/string.h"
+
 #include <cassert>
-#include <core/project.h>
-#include <core/string.h>
 
 namespace era_engine::dotnet
 {

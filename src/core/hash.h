@@ -3,6 +3,7 @@
 #pragma once
 
 #include "core/math.h"
+
 #include <functional>
 
 template <typename T>

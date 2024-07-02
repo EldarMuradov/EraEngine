@@ -1,7 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "island.h"
+
+#include "physics/island.h"
+
 #include "core/cpu_profiling.h"
 
 namespace era_engine

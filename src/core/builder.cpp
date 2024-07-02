@@ -1,10 +1,12 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
-#include <pch.h>
+#include "pch.h"
+
 #include "core/builder.h"
-#include <editor/file_dialog.h>
-#include <editor/system_calls.h>
-#include <core/project.h>
+#include "core/project.h"
+
+#include "editor/file_dialog.h"
+#include "editor/system_calls.h"
 
 namespace era_engine::build
 {
@@ -29,12 +31,12 @@ namespace era_engine::build
 
 		if (tempFolder)
 		{
-			destinationFolder = std::string(std::filesystem::current_path().string()) + std::string("Editor\\TempBuild\\");
+			destinationFolder = std::string(fs::current_path().string()) + std::string("Editor\\TempBuild\\");
 			try
 			{
-				std::filesystem::remove_all(destinationFolder);
+				fs::remove_all(destinationFolder);
 			}
-			catch (std::filesystem::filesystem_error error)
+			catch (fs::filesystem_error error)
 			{
 				LOG_ERROR("Building> Temporary build failed!");
 				return false;
@@ -49,7 +51,7 @@ namespace era_engine::build
 
 		bool result = buildAtLocation(config, destinationFolder, autoRun);
 		if (!result)
-			std::filesystem::remove_all(destinationFolder);
+			fs::remove_all(destinationFolder);
 		return result;
 	}
 
@@ -62,26 +64,26 @@ namespace era_engine::build
 
 		LOG_MESSAGE("Preparing to build at location: \"", buildPath, "\"");
 
-		std::filesystem::remove_all(buildPath);
+		fs::remove_all(buildPath);
 
-		if (!std::filesystem::create_directory(buildPath))
+		if (!fs::create_directory(buildPath))
 			return false;
 
 		LOG_MESSAGE("Build directory created");
 
-		if (!std::filesystem::create_directory(buildPath + "\\Data\\"))
+		if (!fs::create_directory(buildPath + "\\Data\\"))
 			return false;
 
 		LOG_MESSAGE("Data directory created");
 
-		if (!std::filesystem::create_directory(buildPath + "\\Data\\User\\"))
+		if (!fs::create_directory(buildPath + "\\Data\\User\\"))
 			return false;
 
 		LOG_MESSAGE("Data\\User directory created");
 
 		std::error_code err;
 
-		std::filesystem::copy(eproject::enginePath + "\\runtime\\x64\\Release", buildPath + "\\Data\\User", std::filesystem::copy_options::recursive, err);
+		fs::copy(eproject::enginePath + "\\runtime\\x64\\Release", buildPath + "\\Data\\User", fs::copy_options::recursive, err);
 		eproject::exePath = buildPath + "\\Data\\User\\";
 
 		if (err)
@@ -89,19 +91,19 @@ namespace era_engine::build
 
 		LOG_MESSAGE("Building .exe finished.");
 
-		std::filesystem::copy(eproject::path + "\\Game.eproj", buildPath + "\\Data\\User\\Game.eproj", err);
+		fs::copy(eproject::path + "\\Game.eproj", buildPath + "\\Data\\User\\Game.eproj", err);
 
 		if (err)
 			return false;
 
-		std::filesystem::remove_all(buildPath + "\\Data\\User\\assets");
-		std::filesystem::remove_all(buildPath + "\\Data\\User\\asset_cache");
-		std::filesystem::remove_all(buildPath + "\\Data\\User\\resources");
-		std::filesystem::remove_all(buildPath + "\\Data\\User\\shaders");
+		fs::remove_all(buildPath + "\\Data\\User\\assets");
+		fs::remove_all(buildPath + "\\Data\\User\\asset_cache");
+		fs::remove_all(buildPath + "\\Data\\User\\resources");
+		fs::remove_all(buildPath + "\\Data\\User\\shaders");
+		
+		fs::copy(eproject::path + "\\assets", buildPath + "\\Data\\User\\assets\\", fs::copy_options::recursive, err);
 
-		std::filesystem::copy(eproject::path + "\\assets", buildPath + "\\Data\\User\\assets\\", std::filesystem::copy_options::recursive, err);
-
-		if (!std::filesystem::exists(buildPath + "\\Data\\User\\assets\\"))
+		if (!fs::exists(buildPath + "\\Data\\User\\assets\\"))
 		{
 			LOG_ERROR("Building> Failed to find Start Scene at expected path. Verify your Project Setings.");
 			return false;
@@ -112,21 +114,21 @@ namespace era_engine::build
 
 		LOG_MESSAGE("Data\\User\\assets\\ directory copied");
 
-		std::filesystem::copy(eproject::path + "\\asset_cache", buildPath + "\\Data\\User\\asset_cache", std::filesystem::copy_options::recursive, err);
+		fs::copy(eproject::path + "\\asset_cache", buildPath + "\\Data\\User\\asset_cache", fs::copy_options::recursive, err);
 
 		if (err)
 			return false;
 
 		LOG_MESSAGE("Data\\User\\asset_cache\\ directory copied");
 
-		std::filesystem::copy(eproject::path + "\\resources", buildPath + "\\Data\\User\\resources", std::filesystem::copy_options::recursive, err);
+		fs::copy(eproject::path + "\\resources", buildPath + "\\Data\\User\\resources", fs::copy_options::recursive, err);
 
 		if (err)
 			return false;
 
 		LOG_MESSAGE("Data\\User\\resources\\ directory copied");
 
-		std::filesystem::copy(eproject::path + "\\shaders", buildPath + "\\Data\\User\\shaders", std::filesystem::copy_options::recursive, err);
+		fs::copy(eproject::path + "\\shaders", buildPath + "\\Data\\User\\shaders", fs::copy_options::recursive, err);
 
 		if (err)
 			return false;
@@ -137,7 +139,7 @@ namespace era_engine::build
 
 		if (autoRun)
 		{
-			std::filesystem::path exe_path = eproject::exePath + "EraRuntime.exe";
+			fs::path exe_path = eproject::exePath + "EraRuntime.exe";
 			os::system_calls::openFile(exe_path);
 		}
 

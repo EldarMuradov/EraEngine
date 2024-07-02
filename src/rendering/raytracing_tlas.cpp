@@ -1,7 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "raytracing_tlas.h"
+
+#include "rendering/raytracing_tlas.h"
+
 #include "dx/dx_command_list.h"
 #include "dx/dx_barrier_batcher.h"
 

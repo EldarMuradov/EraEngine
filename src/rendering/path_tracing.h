@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "pbr_raytracer.h"
+#include "rendering/pbr_raytracer.h"
 
 namespace era_engine
 {

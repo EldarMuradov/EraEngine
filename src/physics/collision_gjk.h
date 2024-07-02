@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "bounding_volumes.h"
+#include "physics/bounding_volumes.h"
 
 namespace era_engine
 {

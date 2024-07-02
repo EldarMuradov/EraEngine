@@ -1,7 +1,8 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "log.h"
+
+#include "core/log.h"
 #include "core/imgui.h"
 #include "core/memory.h"
 

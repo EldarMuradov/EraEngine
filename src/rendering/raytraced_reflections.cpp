@@ -1,10 +1,13 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "raytraced_reflections.h"
+
+#include "rendering/raytraced_reflections.h"
+#include "rendering/render_resources.h"
+#include "rendering/pbr_raytracer.h"
+
 #include "core/color.h"
-#include "render_resources.h"
-#include "pbr_raytracer.h"
+
 #include "dx/dx_profiling.h"
 #include "dx/dx_barrier_batcher.h"
 

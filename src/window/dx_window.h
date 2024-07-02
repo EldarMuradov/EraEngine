@@ -2,10 +2,12 @@
 
 #pragma once
 
+#include "window/window.h"
+
 #include "dx/dx.h"
 #include "dx/dx_descriptor.h"
+
 #include "rendering/render_utils.h"
-#include "window/window.h"
 
 namespace era_engine
 {

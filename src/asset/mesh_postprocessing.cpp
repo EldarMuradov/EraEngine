@@ -1,9 +1,10 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "mesh_postprocessing.h"
+
+#include "asset/mesh_postprocessing.h"
+
 #include "core/cpu_profiling.h"
-#include <unordered_map>
 
 namespace era_engine
 {

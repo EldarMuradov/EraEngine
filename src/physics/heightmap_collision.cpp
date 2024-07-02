@@ -1,9 +1,11 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "heightmap_collision.h"
+
+#include "physics/heightmap_collision.h"
+#include "physics/collision_gjk.h"
+
 #include "core/cpu_profiling.h"
-#include "collision_gjk.h"
 
 namespace era_engine
 {
