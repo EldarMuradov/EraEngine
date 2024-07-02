@@ -1,11 +1,18 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
+
 #include "px/core/px_physics_engine.h"
-#include <dx/dx_buffer.h>
-#include <geometry/mesh.h>
-#include <asset/model_asset.h>
-#include <scene/scene.h>
+
+#include "core/math.h"
+
+#include "dx/dx_buffer.h"
+
+#include "geometry/mesh.h"
+
+#include "asset/model_asset.h"
+
+#include "scene/scene.h"
 
 namespace era_engine::physics
 {
@@ -49,7 +56,7 @@ namespace era_engine::physics
 
 	struct px_collider_component_base : px_physics_component_base
 	{
-		px_collider_component_base(uint32 handle, px_collider_type collType) noexcept : px_physics_component_base(handle), type(collType) { }
+		px_collider_component_base(uint32 handle) noexcept : px_physics_component_base(handle) { }
 		px_collider_component_base() = default;
 		virtual ~px_collider_component_base();
 
@@ -69,8 +76,6 @@ namespace era_engine::physics
 
 		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) PX_RELEASE(material) RELEASE_PTR(geometry) }
 
-		px_collider_type type = px_collider_type::collider_type_none;
-
 	protected:
 		PxGeometry* geometry = nullptr;
 		PxShape* shape = nullptr;
@@ -80,7 +85,7 @@ namespace era_engine::physics
 	struct px_box_collider_component : px_collider_component_base
 	{
 		px_box_collider_component(uint32 handle, float h, float l, float w) noexcept 
-			: px_collider_component_base(handle, px_collider_type::collider_type_box)
+			: px_collider_component_base(handle)
 		{
 			height = h;
 			length = l;
@@ -100,7 +105,7 @@ namespace era_engine::physics
 	struct px_sphere_collider_component : px_collider_component_base
 	{
 		px_sphere_collider_component(uint32 handle, float r) noexcept 
-			: px_collider_component_base(handle, px_collider_type::collider_type_sphere)
+			: px_collider_component_base(handle)
 		{
 			radius = r;
 			registerCollider();
@@ -118,7 +123,7 @@ namespace era_engine::physics
 	struct px_capsule_collider_component : px_collider_component_base
 	{
 		px_capsule_collider_component(uint32 handle, float r, float h) noexcept 
-			: px_collider_component_base(handle, px_collider_type::collider_type_capsule)
+			: px_collider_component_base(handle)
 		{
 			radius = r;
 			height = h;
@@ -147,7 +152,7 @@ namespace era_engine::physics
 	struct px_bounding_box_collider_component : px_collider_component_base
 	{
 		px_bounding_box_collider_component(uint32 handle, vec3 size, mesh_asset* as) noexcept
-			: px_collider_component_base(handle, px_collider_type::collider_type_bounding_box), asset(as), modelSize(size)
+			: px_collider_component_base(handle), asset(as), modelSize(size)
 		{
 			name = asset->name;
 			registerCollider();
@@ -169,7 +174,7 @@ namespace era_engine::physics
 	struct px_triangle_mesh_collider_component : px_collider_component_base
 	{
 		px_triangle_mesh_collider_component(uint32 handle, vec3 size, mesh_asset* as) noexcept 
-			: px_collider_component_base(handle, px_collider_type::collider_type_triangle_mesh), asset(as), modelSize(size)
+			: px_collider_component_base(handle), asset(as), modelSize(size)
 		{
 			name = asset->name;
 			registerCollider();
@@ -191,7 +196,7 @@ namespace era_engine::physics
 	struct px_convex_mesh_collider_component : px_collider_component_base
 	{
 		px_convex_mesh_collider_component(uint32 handle, vec3 size, mesh_asset* as) noexcept 
-			: px_collider_component_base(handle, px_collider_type::collider_type_convex_mesh), asset(as), modelSize(size)
+			: px_collider_component_base(handle), asset(as), modelSize(size)
 		{
 			name = asset->name;
 			registerCollider();
@@ -236,42 +241,32 @@ namespace era_engine::physics
 
 namespace era_engine
 {
-	REFLECT_STRUCT(physics::px_collider_component_base,
-		(type, "Type")
-	);
-
 	REFLECT_STRUCT(physics::px_box_collider_component,
-		(type, "Type"),
 		(height, "Height"),
 		(length, "Length"),
 		(width, "Width")
 	);
 
 	REFLECT_STRUCT(physics::px_sphere_collider_component,
-		(type, "Type"),
 		(radius, "Radius")
 	);
 
 	REFLECT_STRUCT(physics::px_capsule_collider_component,
-		(type, "Type"),
 		(height, "Height"),
 		(radius, "Radius")
 	);
 
 	REFLECT_STRUCT(physics::px_bounding_box_collider_component,
-		(type, "Type"),
 		(modelSize, "Size"),
 		(name, "Name")
 	);
 
 	REFLECT_STRUCT(physics::px_triangle_mesh_collider_component,
-		(type, "Type"),
 		(modelSize, "Size"),
 		(name, "Name")
 	);
 
 	REFLECT_STRUCT(physics::px_convex_mesh_collider_component,
-		(type, "Type"),
 		(modelSize, "Size"),
 		(name, "Name")
 	);

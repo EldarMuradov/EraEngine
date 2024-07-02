@@ -1,8 +1,11 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "px/features/cloth/px_clothing_factory.h"
-#include <animation/skinning.h>
+
+#include "animation/skinning.h"
+
 #include "application.h"
 
 namespace era_engine

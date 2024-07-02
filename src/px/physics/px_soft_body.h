@@ -1,8 +1,12 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include <px/temp/px_mesh_generator.h>
-#include <px/core/px_physics_engine.h>
+
+#include "px/temp/px_mesh_generator.h"
+
+#include "px/core/px_physics_engine.h"
+
+#include "px/physics/px_rigidbody_component.h"
 
 namespace era_engine::physics
 {
@@ -155,38 +159,13 @@ namespace era_engine::physics
 		}
 	}
 
-	struct px_soft_body_component : px_physics_component_base
+	struct px_soft_body_component : px_body_component
 	{
-		px_soft_body_component(uint32 handle) noexcept : px_physics_component_base(handle)
-		{
-			// Test
-			{
-				PxArray<PxVec3> triVerts;
-				PxArray<PxU32> triIndices;
-
-				PxReal maxEdgeLength = 1;
-
-				PxCookingParams params(physics_holder::physicsRef->getTolerancesScale());
-				params.meshWeldTolerance = 0.001f;
-				params.meshPreprocessParams = PxMeshPreprocessingFlags(PxMeshPreprocessingFlag::eWELD_VERTICES);
-				params.buildTriangleAdjacencies = false;
-				params.buildGPUData = true;
-
-				meshgenerator::createCube(triVerts, triIndices, PxVec3(0, 0, 0), 1.0f);
-				PxRemeshingExt::limitMaxEdgeLength(triIndices, triVerts, maxEdgeLength);
-				ref<px_soft_body> softBodyCube = createSoftBody(params, triVerts, triIndices);
-
-				PxReal halfExtent = 1;
-				PxVec3 cubePosA(0, 20, 0);
-				PxRigidDynamic* rigidCubeA = createRigidCube(halfExtent, cubePosA);
-
-				connectCubeToSoftBody(rigidCubeA, 2 * halfExtent, cubePosA, softBodyCube->softBody);
-			}
-		}
+		px_soft_body_component(uint32 handle);
 
 		virtual ~px_soft_body_component() {}
 
-		virtual void release(bool release = true) noexcept override { body->release(); body.reset(); }
+		virtual void release(bool release = true) noexcept override;
 
 		ref<px_soft_body> body;
 	};

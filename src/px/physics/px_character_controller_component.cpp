@@ -1,10 +1,13 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
+
 #include "px/physics/px_character_controller_component.h"
-#include <px/physics/px_rigidbody_component.h>
-#include <scene/scene.h>
-#include <application.h>
+#include "px/physics/px_rigidbody_component.h"
+
+#include "scene/scene.h"
+
+#include "application.h"
 
 namespace era_engine::physics
 {
@@ -17,7 +20,7 @@ namespace era_engine::physics
 		h[0] = entityHandle;
 		controller->getActor()->userData = h;
 
-		physics_holder::physicsRef->addActor((px_rigidbody_component*)this, controller->getActor(), false);
+		physics_holder::physicsRef->addActor((px_body_component*)this, controller->getActor(), false);
 	}
 
 	void px_capsule_cct_component::createCharacterController() noexcept
@@ -59,16 +62,16 @@ namespace era_engine::physics
 		hndl[0] = entityHandle;
 		controller->getActor()->userData = hndl;
 
-		physics_holder::physicsRef->addActor((px_rigidbody_component*)this, controller->getActor(), false);
+		physics_holder::physicsRef->addActor((px_body_component*)this, controller->getActor(), false);
 	}
 
-	px_cct_component_base::px_cct_component_base(uint32 handle) : px_rigidbody_component(handle)
+	px_cct_component_base::px_cct_component_base(uint32 handle) : px_body_component(handle)
 	{
 	}
 
 	void px_cct_component_base::release(bool releaseActor) noexcept
 	{
-		physics_holder::physicsRef->removeActor((px_rigidbody_component*)this);
+		physics_holder::physicsRef->removeActor((px_body_component*)this);
 
 		PX_RELEASE(controller)
 		PX_RELEASE(manager)
@@ -87,7 +90,7 @@ namespace era_engine::physics
 		h[0] = entityHandle;
 		controller->getActor()->userData = h;
 
-		physics_holder::physicsRef->addActor((px_rigidbody_component*)this, controller->getActor(), false);
+		physics_holder::physicsRef->addActor((px_body_component*)this, controller->getActor(), false);
 	}
 
 	px_box_cct_component::px_box_cct_component(uint32_t handle, float hh, float hs, float m) : px_cct_component_base(handle)
@@ -100,7 +103,7 @@ namespace era_engine::physics
 		h[0] = entityHandle;
 		controller->getActor()->userData = h;
 
-		physics_holder::physicsRef->addActor((px_rigidbody_component*)this, controller->getActor(), false);
+		physics_holder::physicsRef->addActor((px_body_component*)this, controller->getActor(), false);
 	}
 
 	void px_box_cct_component::createCharacterController() noexcept

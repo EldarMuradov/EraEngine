@@ -35,12 +35,8 @@ namespace era_engine
 			return physx::PxFilterFlag::eDEFAULT;
 		}
 
-		//if (physx::PxFilterObjectIsKinematic(attributes0) || physx::PxFilterObjectIsKinematic(attributes1))
-		//	return physx::PxFilterFlag::eKILL;
-
 		pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
 		pairFlags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
-		//pairFlags |= physx::PxPairFlag::eMODIFY_CONTACTS;
 		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
 		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
 		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
@@ -52,7 +48,7 @@ namespace era_engine
 		return physx::PxFilterFlag::eDEFAULT;
 	}
 
-	static void clearColliderFromCollection(const physics::px_rigidbody_component* collider,
+	static void clearColliderFromCollection(const physics::px_body_component* collider,
 		physx::PxArray<physics::px_simulation_event_callback::colliders_pair>& collection) noexcept
 	{
 		const auto c = &collection[0];
@@ -80,7 +76,7 @@ namespace era_engine
 {
 	physics::px_physics_engine::px_physics_engine() noexcept
 	{
-		allocator.initialize(MB(256));
+		allocator.initialize(MB(256U));
 
 		foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocatorCallback, errorReporter);
 
@@ -129,6 +125,7 @@ namespace era_engine
 #if PX_GPU_BROAD_PHASE
 		sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
+		sceneDesc.gpuMaxNumPartitions = 8;
 #else
 		sceneDesc.broadPhaseType = physx::PxBroadPhaseType::ePABP;
 #endif
@@ -203,20 +200,21 @@ namespace era_engine
 
 			PxCloseExtensions();
 
-			PX_RELEASE(physics)
-				PX_RELEASE(pvd)
-				PX_RELEASE(foundation)
+			if (scene)
+				scene->flushSimulation();
 
-				if (scene)
-					scene->flushSimulation();
+			PX_RELEASE(physics)
+			PX_RELEASE(pvd)
+			PX_RELEASE(foundation)
+
 			PX_RELEASE(scene)
 
-				PX_RELEASE(cudaContextManager)
-				PX_RELEASE(defaultMaterial)
-				PX_RELEASE(dispatcher)
+			PX_RELEASE(cudaContextManager)
+			PX_RELEASE(defaultMaterial)
+			PX_RELEASE(dispatcher)
 
 #if PX_ENABLE_RAYCAST_CCD
-				delete raycastCCD;
+			delete raycastCCD;
 			raycastCCD = nullptr;
 #endif
 
@@ -226,145 +224,6 @@ namespace era_engine
 
 	void physics::px_physics_engine::start() noexcept
 	{
-		//auto pmaterial = physics->createMaterial(0.8, 0.8, 0.6);
-
-		//scene->addActor(*PxCreatePlane(*physics, PxPlane(0.f, 1.f, 0.f, 0.0f), *pmaterial));
-		//scene->addActor(*PxCreatePlane(*physics, PxPlane(-1.f, 0.f, 0.f, 7.5f), *pmaterial));
-		//scene->addActor(*PxCreatePlane(*physics, PxPlane(1.f, 0.f, 0.f, 7.5f), *pmaterial));
-		//scene->addActor(*PxCreatePlane(*physics, PxPlane(0.f, 0.f, 1.f, 7.5f), *pmaterial));
-		//scene->addActor(*PxCreatePlane(*physics, PxPlane(0.f, 0.f, -1.f, 7.5f), *pmaterial));
-
-		/*px_asset_list list;
-
-		{
-			px_asset_list::px_box_asset box;
-			box.name = "Wall (3 depth, 625 nodes)";
-			box.extents = PxVec3(20, 20, 2);
-			box.bondFlags = 0b1000111;
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
-
-			list.boxes.push_back(box);
-		}*/
-
-		/*{
-			px_asset_list::px_box_asset box;
-			box.name = "Wall (2 depth, 625 nodes, no root chunk)";
-			box.extents = PxVec3(20, 20, 2);
-			box.bondFlags = 0b1000111;
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
-
-			list.boxes.push_back(box);
-		}
-
-		{
-			px_asset_list::px_box_asset box;
-			box.name = "Static Frame";
-			box.extents = PxVec3(20, 20, 2);
-			box.bondFlags = 0b1111111;
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
-
-			list.boxes.push_back(box);
-		}
-
-		{
-			px_asset_list::px_box_asset box;
-			box.name = "Poor Man's Cloth";
-			box.extents = PxVec3(20, 20, 0.2f);
-			box.jointAllBonds = true;
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 20, 20, 1, true });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 1, false });
-
-			list.boxes.push_back(box);
-		}
-
-		{
-			px_asset_list::px_box_asset box;
-			box.name = "Cube (4 depth, 1728 nodes)";
-			box.extents = PxVec3(20, 20, 20);
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 2, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 2, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 3, 3, 3, true });
-
-			list.boxes.push_back(box);
-		}
-
-		{
-			px_asset_list::px_box_asset box;
-			box.name = "Column (3 depth, 50 nodes)";
-			box.extents = PxVec3(2, 20, 2);
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 5, 1, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 10, 1, true });
-
-			list.boxes.push_back(box);
-		}
-
-		{
-			px_asset_list::px_box_asset box;
-			box.name = "Column (3 depth, 50 nodes, support depth = 1)";
-			box.extents = PxVec3(2, 20, 2);
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 5, 1, true });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 10, 1, false });
-
-			list.boxes.push_back(box);
-		}
-
-		{
-			px_asset_list::px_box_asset box;
-			box.name = "Cube of Layers (3 depth, 1250 nodes)";
-			box.extents = PxVec3(20, 20, 20);
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 10, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 5, 5, 1, true });
-
-			list.boxes.push_back(box);
-		}
-
-		{
-			px_asset_list::px_box_asset box;
-			box.name = "Brittle Wall";
-			box.extents = PxVec3(40, 20, 1);
-			box.bondFlags = 0b1000111;
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 1, 1, 1, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 1, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 1, true });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 2, false });
-			box.levels.push_back(px_asset_list::px_box_asset::level{ 2, 2, 2, false });
-
-			list.boxes.push_back(box);
-		}*/
-
-		/*{
-			px_asset_list::px_model_asset model;
-			model.name = "Bunny (Simple)";
-			model.id = "Bunny (Simple)";
-			model.file = "bunny";
-
-			list.models.push_back(model);
-		}
-
-		for (const auto& box : list.boxes)
-		{
-			px_blast_boxes_asset_scene* asset = new px_blast_boxes_asset_scene(box);
-			blast->addAsset(asset);
-		}
-
-		for (const auto& model : list.models)
-		{
-			px_blast_simple_scene_asset* asset = new px_blast_simple_scene_asset(model);
-			blast->addAsset(asset);
-		}*/
-
-		//blast->spawnAsset(0);
-
 		simulationEventCallback = make_ref<px_simulation_event_callback>();
 
 		physics_lock_write lock{};
@@ -445,7 +304,7 @@ namespace era_engine
 		scene->flushSimulation();
 	}
 
-	void physics::px_physics_engine::addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene) noexcept
+	void physics::px_physics_engine::addActor(px_body_component* actor, PxRigidActor* ractor, bool addToScene)
 	{
 		physics_lock_write lock{};
 		if (addToScene)
@@ -466,7 +325,7 @@ namespace era_engine
 		actorsMap.insert(::std::make_pair(ractor, actor));
 	}
 
-	void physics::px_physics_engine::removeActor(px_rigidbody_component* actor) noexcept
+	void physics::px_physics_engine::removeActor(px_body_component* actor)
 	{
 		physics_lock_write lock{};
 		actors.erase(actor);
@@ -510,7 +369,7 @@ namespace era_engine
 		scene->overlap(PxSphereGeometry(damageRadius), PxTransform(pos), overlapCallback);
 	}
 
-	physics::px_raycast_info physics::px_physics_engine::raycast(px_rigidbody_component* rb, const vec3& dir, int maxDist, bool hitTriggers, uint32_t layerMask, int maxHits)
+	physics::px_raycast_info physics::px_physics_engine::raycast(px_body_component* rb, const vec3& dir, int maxDist, bool hitTriggers, uint32_t layerMask, int maxHits)
 	{
 		const auto& pose = rb->getRigidActor()->getGlobalPose().p - PxVec3(0.0f, 1.5f, 0.0f);
 
@@ -634,7 +493,7 @@ namespace era_engine
 				auto handle = (entity_handle)*iter;
 				eentity renderEntity{ handle, &enttScene->registry };
 
-				if (auto rb = renderEntity.getComponentIfExists<physics::px_rigidbody_component>())
+				if (auto rb = renderEntity.getComponentIfExists<physics::px_dynamic_body_component>())
 				{
 					rb->setConstraints(0);
 				}
@@ -642,39 +501,6 @@ namespace era_engine
 			}
 			unfreezeBlastQueue.clear();
 		}
-
-		//if (!blastFractureQueue.empty())
-			//blastFractureQueue.processQueue([](blast_fracture_event& event)
-				//{
-					/*auto enttScene = physics::physics_holder::physicsRef->app.getCurrentScene();
-
-					if (!enttScene->registry.size())
-						return;
-
-					physics_lock_write lockWrite{};
-
-					shared_spin_lock lock{ physics::physics_holder::physicsRef->sync};
-
-
-					eentity renderEntity{ (entity_handle)event.handle, &enttScene->registry };
-					if (auto mesh = renderEntity.getComponentIfExists<nvmesh_chunk_component>())
-					{
-						eentity fractureGameObject = enttScene->createEntity("Fracture")
-							.addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(1.f));
-						auto& graphManager = fractureGameObject.addComponent<chunk_graph_manager>().getComponent<chunk_graph_manager>();
-
-						auto defaultmat = createPBRMaterialAsync({ "", "" });
-						defaultmat->shader = pbr_material_shader_double_sided;
-
-						auto meshes = fractureMeshesInNvblast(3, mesh->mesh);
-
-						auto chunks = buildChunks(renderEntity.getComponentIfExists<transform_component>() ? *renderEntity.getComponentIfExists<transform_component>() : trs::identity, defaultmat, defaultmat, meshes, 7.5f);
-
-						graphManager.setup(chunks, ++renderEntity.getComponent<chunk_graph_manager::chunk_node>().spliteGeneration);
-
-						enttScene->deleteEntity((entity_handle)event.handle);
-					}*/
-					//});
 	}
 
 	void physics::px_physics_engine::processSimulationEventCallbacks() noexcept
@@ -769,7 +595,7 @@ namespace era_engine
 	{
 	}
 
-	void physics::px_simulation_event_callback::onColliderRemoved(px_rigidbody_component* collider) noexcept
+	void physics::px_simulation_event_callback::onColliderRemoved(px_body_component* collider) noexcept
 	{
 		clearColliderFromCollection(collider, newTriggerPairs);
 		clearColliderFromCollection(collider, lostTriggerPairs);

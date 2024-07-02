@@ -2,14 +2,20 @@
 
 #pragma once
 
-#include <px/core/px_physics_engine.h>
-#include <rendering/main_renderer.h>
-#include <px/core/px_extensions.h>
-#include <application.h>
-#include <scripting/native_scripting_linker.h>
-#include <scene/scene.h>
-#include <asset/mesh_postprocessing.h>
-#include <px/physics/px_joint.h>
+#include "px/core/px_physics_engine.h"
+#include "px/core/px_extensions.h"
+
+#include "px/physics/px_joint.h"
+
+#include "rendering/main_renderer.h"
+
+#include "application.h"
+
+#include "scripting/native_scripting_linker.h"
+
+#include "scene/scene.h"
+
+#include "asset/mesh_postprocessing.h"
 
 #if !_DEBUG
 
@@ -18,7 +24,7 @@
 #include <NvBlastTk.h>
 #include <NvBlastExtTkSerialization.h>
 
-#include "NvBlastGlobals.h"
+#include <NvBlastGlobals.h>
 
 #include <NvBlastExtDamageShaders.h>
 #include <NvBlastExtStressSolver.h>
@@ -31,9 +37,9 @@
 #include <NvBlastExtPxFamily.h>
 #include <NvBlastExtPxStressSolver.h>
 #include <NvBlastExtPxListener.h>
-#include "NvBlastExtAuthoring.h"
+#include <NvBlastExtAuthoring.h>
 #include <NvBlastExtPxAsset.h>
-#include "NvBlastExtLlSerialization.h"
+#include <NvBlastExtLlSerialization.h>
 #include <NvBlastExtSync.h>
 #include <NvBlastExtAuthoringMesh.h>
 #include <NvBlastExtAuthoringFractureTool.h>
@@ -796,7 +802,7 @@ namespace era_engine::physics
 
                 eentity renderEntity{ handle, &enttScene->registry };
 
-                auto& rb = renderEntity.getComponent<px_rigidbody_component>();
+                auto& rb = renderEntity.getComponent<px_dynamic_body_component>();
 
                 constexpr float chunkMass = 3.0f;
 
@@ -820,7 +826,7 @@ namespace era_engine::physics
 
                 eentity renderEntity{ handle, &enttScene->registry };
 
-                renderEntity.getComponent<physics::px_rigidbody_component>().setConstraints(0);
+                renderEntity.getComponent<physics::px_dynamic_body_component>().setConstraints(0);
             }
 
             void freeze() noexcept
@@ -834,7 +840,7 @@ namespace era_engine::physics
                 frozenPos = renderEntity.getComponent<transform_component>().position;
                 forzenRot = renderEntity.getComponent<transform_component>().rotation;
 
-                renderEntity.getComponent<physics::px_rigidbody_component>().setConstraints(PX_FREEZE_ALL);
+                renderEntity.getComponent<physics::px_dynamic_body_component>().setConstraints(PX_FREEZE_ALL);
             }
 
             std::unordered_set<entity_handle> neighbours;
@@ -934,7 +940,7 @@ namespace era_engine::physics
                 auto enttScene = globalApp.getCurrentScene();
 
                 eentity renderEntity{ objects[i], &enttScene->registry };
-                if (auto rb = renderEntity.getComponentIfExists<px_rigidbody_component>())
+                if (auto rb = renderEntity.getComponentIfExists<px_dynamic_body_component>())
                 {
                     if (renderEntity.getComponentIfExists<chunk_graph_manager::chunk_node>()->isKinematic)
                         anchors.push_back(renderEntity.getComponentIfExists<chunk_graph_manager::chunk_node>());
@@ -1066,7 +1072,7 @@ namespace era_engine::physics
             {
                 eentity coll{ collider, &enttScene->registry };
 
-                coll.getComponent<physics::px_rigidbody_component>().setKinematic(true);
+                coll.getComponent<physics::px_dynamic_body_component>().setKinematic(true);
             }
         }
 
@@ -1205,7 +1211,7 @@ namespace era_engine::physics
             auto enttScene = globalApp.getCurrentScene();
             eentity entt{ chunk, &enttScene->registry };
 
-            auto& rb = entt.getComponent<physics::px_rigidbody_component>();
+            auto& rb = entt.getComponent<physics::px_dynamic_body_component>();
             auto& transform = entt.getComponent<transform_component>();
             auto& mesh = entt.getComponent<mesh_component>().mesh;
 
@@ -1233,7 +1239,7 @@ namespace era_engine::physics
                     {
                         eentity body{ overlap, &enttScene->registry };
 
-                        auto& rbOverlap = body.getComponent<physics::px_rigidbody_component>();
+                        auto& rbOverlap = body.getComponent<physics::px_dynamic_body_component>();
 
                         //std::vector<PxFilterData> fd1 = getFilterData(rb.getRigidActor());
                         //std::vector<PxFilterData> fd2 = getFilterData(rbOverlap.getRigidActor());

@@ -1,9 +1,12 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "px_collider_component.h"
-#include <asset/file_registry.h>
-#include <px/core/px_extensions.h>
+
+#include "px/physics/px_collider_component.h"
+#include "px/core/px_extensions.h"
+
+#include "asset/file_registry.h"
+
 #include <extensions/PxTetMakerExt.h>
 
 namespace era_engine::physics 
@@ -186,16 +189,12 @@ namespace era_engine::physics
 
 	void enableShapeVisualization(PxShape* shape) noexcept
 	{
-#ifndef PX_GPU_BROAD_PHASE
 		shape->setFlag(PxShapeFlag::eVISUALIZATION, true);
-#endif
 	}
 
 	void disableShapeVisualization(PxShape* shape) noexcept
 	{
-#ifndef PX_GPU_BROAD_PHASE
 		shape->setFlag(PxShapeFlag::eVISUALIZATION, false);
-#endif
 	}
 
 	void enableShapeInContactTests(PxShape* shape) noexcept

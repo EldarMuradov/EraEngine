@@ -31,96 +31,6 @@ namespace era_engine::physics
 		force_mode_acceleration
 	};
 
-	struct px_rigidbody_component : px_physics_component_base
-	{
-		px_rigidbody_component() {};
-		px_rigidbody_component(uint32 handle, px_rigidbody_type rbtype = px_rigidbody_type::rigidbody_type_none, bool addToScene = true);
-		virtual ~px_rigidbody_component();
-
-		void addForce(vec3 force, px_force_mode mode = px_force_mode::force_mode_impulse) noexcept;
-		void addTorque(vec3 torque, px_force_mode mode = px_force_mode::force_mode_impulse) noexcept;
-
-		NODISCARD PxRigidActor* getRigidActor() const noexcept { return actor; }
-
-		NODISCARD PxRigidDynamic* getRigidDynamic() const noexcept { return actor->is<PxRigidDynamic>(); }
-
-		NODISCARD PxRigidStatic* getRigidStatic() const noexcept { return actor->is<PxRigidStatic>(); }
-
-		void setGravity(bool useGravityFlag) noexcept;
-
-		void setMass(float mass) noexcept;
-		NODISCARD float getMass() const noexcept { return mass; }
-
-		void setConstraints(uint8 constraints) noexcept;
-		NODISCARD uint8 getConstraints() const noexcept;
-
-		void clearForceAndTorque() noexcept;
-
-		void setMassSpaceInertiaTensor(const vec3& tensor) noexcept;
-
-		void updateMassAndInertia(float density) noexcept;
-
-		void setMaxContactImpulseFlag(bool state) noexcept;
-
-		void setKinematic(bool kinematic);
-		bool isKinematicBody() const noexcept { return isKinematic; }
-
-		void setLinearVelocity(vec3 velocity);
-
-		NODISCARD vec3 getLinearVelocity() const noexcept;
-
-		void setAngularVelocity(vec3 velocity);
-
-		void setMaxLinearVelosity(float velocity) noexcept;
-		void setMaxAngularVelosity(float velocity) noexcept;
-
-		NODISCARD vec3 getAngularVelocity() const noexcept;
-
-		NODISCARD vec3 getPhysicsPosition() const noexcept;
-
-		void setPhysicsPositionAndRotation(vec3& pos, quat& rot);
-
-		void setAngularDamping(float damping);
-		void setLinearDamping(float damping);
-
-		void setThreshold(float stabilization = 0.01f, float sleep = 0.01f);
-
-		virtual void release(bool releaseActor = false) noexcept override;
-
-		void onCollisionEnter(px_rigidbody_component* collision) const;
-		void onCollisionExit(px_rigidbody_component* collision) const;
-		void onCollisionStay(px_rigidbody_component* collision) const;
-
-		px_rigidbody_type type = px_rigidbody_type::rigidbody_type_none;
-
-	private:
-		void createPhysics(bool addToScene);
-		NODISCARD PxRigidActor* createActor();
-
-	protected:
-		PxMaterial* material = nullptr;
-
-		PxRigidActor* actor = nullptr;
-
-		uint32_t* userData = new uint32_t[1];
-
-		float restitution = 0.6f;
-
-		float mass = 1;
-
-		float dynamicFriction = 0.8f;
-		float staticFriction = 0.8f;
-
-		PxU32 filterGroup = -1;
-		PxU32 filterMask = -1;
-
-		PxRigidDynamicLockFlags rotLockNative;
-		PxRigidDynamicLockFlags posLockNative;
-
-		bool useGravity = true;
-		bool isKinematic = false;
-	};
-
 	struct px_body_component : px_physics_component_base
 	{
 		px_body_component() {};
@@ -132,7 +42,11 @@ namespace era_engine::physics
 		void setMass(float mass);
 		NODISCARD float getMass() const { return mass; }
 
-		void setPhysicsPositionAndRotation(vec3& pos, quat& rot);
+		void setPhysicsPositionAndRotation(const vec3& pos, const quat& rot);
+
+		void onCollisionEnter(px_body_component* collision) const;
+		void onCollisionExit(px_body_component* collision) const;
+		void onCollisionStay(px_body_component* collision) const;
 
 	protected:
 		PxRigidActor* actor = nullptr;
@@ -157,8 +71,8 @@ namespace era_engine::physics
 		px_dynamic_body_component(uint32 handle, bool addToScene = true);
 		virtual ~px_dynamic_body_component();
 
-		void addForce(vec3 force, px_force_mode mode = px_force_mode::force_mode_impulse);
-		void addTorque(vec3 torque, px_force_mode mode = px_force_mode::force_mode_impulse);
+		void addForce(const vec3& force, px_force_mode mode = px_force_mode::force_mode_impulse);
+		void addTorque(const vec3& torque, px_force_mode mode = px_force_mode::force_mode_impulse);
 
 		NODISCARD PxRigidDynamic* getRigidDynamic() const { return actor->is<PxRigidDynamic>(); }
 
@@ -180,11 +94,11 @@ namespace era_engine::physics
 		void setKinematic(bool kinematic);
 		bool isKinematicBody() const noexcept { return isKinematic; }
 
-		void setLinearVelocity(vec3 velocity);
+		void setLinearVelocity(const vec3& velocity);
 
 		NODISCARD vec3 getLinearVelocity() const;
 
-		void setAngularVelocity(vec3 velocity);
+		void setAngularVelocity(const vec3& velocity);
 
 		void setMaxLinearVelosity(float velocity);
 		void setMaxAngularVelosity(float velocity);
@@ -199,10 +113,6 @@ namespace era_engine::physics
 		void setThreshold(float stabilization = 0.01f, float sleep = 0.01f);
 
 		virtual void release(bool releaseActor = false) noexcept override;
-
-		void onCollisionEnter(px_dynamic_body_component* collision) const;
-		void onCollisionExit(px_dynamic_body_component* collision) const;
-		void onCollisionStay(px_dynamic_body_component* collision) const;
 
 	protected:
 		PxRigidDynamicLockFlags rotLockNative;
@@ -233,7 +143,5 @@ namespace era_engine::physics
 
 namespace era_engine
 {
-	REFLECT_STRUCT(physics::px_rigidbody_component,
-		(type, "Type")
-	);
+	// TODO body reflect
 }

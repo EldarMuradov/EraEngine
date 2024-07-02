@@ -1,12 +1,12 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
-#include <pch.h>
-#include <px/blast/px_blast_destructions.h>
+#include "pch.h"
+
+#include "px/blast/px_blast_destructions.h"
 
 #if !_DEBUG
 namespace era_engine
 {
-
     NODISCARD eentity physics::buildChunk(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, ::std::pair<ref<submesh_asset>, ref<nvmesh>> mesh, float mass, uint32 generation)
     {
         auto enttScene = globalApp.getCurrentScene();
@@ -32,7 +32,7 @@ namespace era_engine
         eentity chunk = enttScene->createEntity(asset.name.c_str())
             .addComponent<transform_component>(transform)
             //.addComponent<physics::px_convex_mesh_collider_component>(&asset)
-            .addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::rigidbody_type_dynamic)
+            .addComponent<physics::px_dynamic_body_component>()
             .addComponent<nvmesh_chunk_component>(mesh.second)
             .addComponent<mesh_component>(mm);
 

@@ -32,14 +32,12 @@ namespace era_engine
 
 	escene::escene()
 	{
-		// Construct groups early. Ignore the return types.
-		(void)registry.group<collider_component, sap_endpoint_indirection_component>(); // Colliders and SAP endpoints are always sorted in the same order.
-		(void)registry.group<transform_component, dynamic_transform_component, rigid_body_component, physics_transform0_component, physics_transform1_component>();
-		(void)registry.group<transform_component, rigid_body_component, physics_transform0_component, physics_transform1_component>();
-
 #ifndef PHYSICS_ONLY
 		(void)registry.group<position_component, point_light_component>();
 		(void)registry.group<position_rotation_component, spot_light_component>();
+		(void)registry.group<ecs::scripts_component, transform_component>();
+		(void)registry.group<physics::px_cloth_component, physics::px_cloth_render_component>();
+		(void)registry.group<physics::px_particles_component, physics::px_particles_render_component > ();
 #endif
 
 		registry.reserve(64000);
@@ -65,7 +63,9 @@ namespace era_engine
 
 #ifndef PHYSICS_ONLY
 
-			physics::px_rigidbody_component,
+			physics::px_body_component,
+			physics::px_dynamic_body_component,
+			physics::px_static_body_component,
 			physics::px_box_collider_component,
 			physics::px_collider_component_base,
 			physics::px_sphere_collider_component,
@@ -185,7 +185,11 @@ namespace era_engine
 			return;
 
 #ifndef PHYSICS_ONLY
-		if (physics::px_rigidbody_component* reference = e.getComponentIfExists<physics::px_rigidbody_component>())
+		if (physics::px_dynamic_body_component* reference = e.getComponentIfExists<physics::px_dynamic_body_component>())
+		{
+			reference->release();
+		}
+		if (physics::px_static_body_component* reference = e.getComponentIfExists<physics::px_static_body_component>())
 		{
 			reference->release();
 		}

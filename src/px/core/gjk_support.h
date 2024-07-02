@@ -1,6 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
+
+#include <core/math.h>
+
 #include <extensions/PxGjkQueryExt.h>
 
 namespace era_engine::physics
@@ -15,7 +18,7 @@ namespace era_engine::physics
 
     struct px_gjk_query
     {
-        bool overlapSphere(const vec3& center1, float radius1, const vec3& center2, float radius2) noexcept
+        bool overlapSphere(const vec3& center1, float radius1, const vec3& center2, float radius2)
         {
             px_sphere_support support1, support2;
 
@@ -25,7 +28,7 @@ namespace era_engine::physics
             return overlapImpl(support1, support2, PxTransform(createPxVec3(center1)), PxTransform(createPxVec3(center2)));
         }
 
-        bool overlapBox(const vec3& center1, const vec3& halfExtents1, const vec3& center2, const vec3& halfExtents2) noexcept
+        bool overlapBox(const vec3& center1, const vec3& halfExtents1, const vec3& center2, const vec3& halfExtents2)
         {
             px_box_support support1, support2;
 
@@ -36,7 +39,7 @@ namespace era_engine::physics
         }
 
         bool overlapCapsule(const vec3& center1, float halfHeight1, float radius1, 
-            const vec3& center2, float halfHeight2, float radius2) noexcept
+            const vec3& center2, float halfHeight2, float radius2)
         {
             px_capsule_support support1, support2;
 
@@ -49,7 +52,7 @@ namespace era_engine::physics
         }
 
         bool raycastShape(const px_gjk_support& supportShape, const vec3& shapePose, 
-            const vec3& rayStart, const vec3& direction, float maxDist, float& hitDist) noexcept
+            const vec3& rayStart, const vec3& direction, float maxDist, float& hitDist)
         {
             PxVec3 normal, point;
             return raycastImpl(supportShape, PxTransform(createPxVec3(shapePose)), 
@@ -58,7 +61,7 @@ namespace era_engine::physics
 
     private:
         bool overlapImpl(const PxGjkQuery::Support& a, const PxGjkQuery::Support& b,
-            const PxTransform& poseA, const PxTransform& poseB) noexcept
+            const PxTransform& poseA, const PxTransform& poseB)
         {
             return PxGjkQuery::overlap(a, b, poseA, poseB);
         }
@@ -66,14 +69,14 @@ namespace era_engine::physics
         bool sweepImpl(const PxGjkQuery::Support& a, const PxGjkQuery::Support& b,
             const PxTransform& poseA, const PxTransform& poseB,
             const PxVec3& unitDir, PxReal maxDist,
-            PxReal& hitDist, PxVec3& n, PxVec3& p) noexcept
+            PxReal& hitDist, PxVec3& n, PxVec3& p)
         {
             return PxGjkQuery::sweep(a, b, poseA, poseB, unitDir, maxDist, hitDist, n, p);
         }
 
         bool raycastImpl(const PxGjkQuery::Support& shape, const PxTransform& pose,
             const PxVec3& rayStart, const PxVec3& unitDir, PxReal maxDist,
-            PxReal& hitDist, PxVec3& n, PxVec3& p) noexcept
+            PxReal& hitDist, PxVec3& n, PxVec3& p)
         {
             return PxGjkQuery::raycast(shape, pose, rayStart, unitDir, maxDist, hitDist, n, p);
         }
@@ -82,7 +85,7 @@ namespace era_engine::physics
             const PxTransform& poseA, const PxTransform& poseB,
             PxReal contactDistance, PxReal toleranceLength,
             PxVec3& pointA, PxVec3& pointB, PxVec3& separatingAxis,
-            PxReal& separation) noexcept
+            PxReal& separation)
         {
             return PxGjkQuery::proximityInfo(a, b, poseA, poseB, contactDistance, toleranceLength, 
                 pointA, pointB, separatingAxis, separation);
@@ -92,7 +95,7 @@ namespace era_engine::physics
             const PxGjkQuery::Support& a, const PxGjkQuery::Support& b,
             const PxTransform& poseA, const PxTransform& poseB,
             PxReal contactDistance, PxReal toleranceLength,
-            PxContactBuffer& contactBuffer) noexcept
+            PxContactBuffer& contactBuffer)
         {
             return PxGjkQueryExt::generateContacts(a, b, poseA, poseB,
                 contactDistance, toleranceLength, contactBuffer);

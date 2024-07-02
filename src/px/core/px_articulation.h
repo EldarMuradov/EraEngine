@@ -1,7 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include <px/core/px_physics_engine.h>
+
+#include "px/core/px_physics_engine.h"
+#include "core/math.h"
 
 namespace era_engine::physics
 {

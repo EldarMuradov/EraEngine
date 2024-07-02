@@ -124,6 +124,8 @@ namespace era_engine
 		const user_input& input;
 	};
 
+	spin_lock scriptingSync;
+
 	void updatePhysXCallbacksAndScripting(escene& currentScene, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in) noexcept
 	{
 		update_scripting_data data = { dt, core, currentScene, in };
@@ -132,6 +134,7 @@ namespace era_engine
 			{
 				try
 				{
+					shared_spin_lock lock{ scriptingSync };
 					{
 						const auto& physicsRef = physics::physics_holder::physicsRef;
 
@@ -293,16 +296,16 @@ namespace era_engine
 				//.addComponent<physics::px_triangle_mesh_collider_component>(&(ass.meshes[0]))
 				//.addComponent<physics::px_bounding_box_collider_component>(&(ass.meshes[0]))
 				.addComponent<physics::px_sphere_collider_component>(1.0f)
-				.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::rigidbody_type_dynamic);
-			px_sphere_entt.getComponent<physics::px_rigidbody_component>().setMass(1000.f);
+				.addComponent<physics::px_dynamic_body_component>();
+			px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setMass(1000.f);
 			sphere = px_sphere_entt.handle;
 
 			auto px_sphere1 = &scene.createEntity("SpherePX1", (entity_handle)59)
 				.addComponent<transform_component>(vec3(5, 155.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(5.f))
 				.addComponent<mesh_component>(sphereMesh)
 				.addComponent<physics::px_sphere_collider_component>(5.0f)
-				.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::rigidbody_type_dynamic);
-			px_sphere1->getComponent<physics::px_rigidbody_component>().setMass(500.0f);
+				.addComponent<physics::px_dynamic_body_component>();
+			px_sphere1->getComponent<physics::px_dynamic_body_component>().setMass(500.0f);
 
 			//if (auto mesh = loadAnimatedMeshFromFileAsync("assets/veribot/source/VERIBOT_final.fbx"))
 			//{
@@ -351,32 +354,32 @@ namespace era_engine
 
 			//px_sphere1->addChild(*px_sphere);
 
-			//{
-			//	for (int i = 0; i < 10; i++)
-			//	{
-			//		for (int j = 0; j < 10; j++)
-			//		{
-			//			for (int k = 0; k < 10; k++)
-			//			{
-			//				auto sphr = &scene.createEntity((std::to_string(i) + std::to_string(j) + std::to_string(k)).c_str())
-			//					.addComponent<transform_component>(vec3(2.0f * i, 5 + 2.0f * j + 5, 2.0f * k), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-			//					.addComponent<mesh_component>(sphereMesh)
-			//					.addComponent<physics::px_sphere_collider_component>(1.0f)
-			//					.addComponent<physics::px_rigidbody_component>(physics::px_rigidbody_type::Dynamic);
-			//			}
-			//		}
-			//	}
-			//}
+			{
+				for (int i = 0; i < 10; i++)
+				{
+					for (int j = 0; j < 10; j++)
+					{
+						for (int k = 0; k < 10; k++)
+						{
+							auto sphr = &scene.createEntity((std::to_string(i) + std::to_string(j) + std::to_string(k)).c_str())
+								.addComponent<transform_component>(vec3(2.0f * i, 5 + 2.0f * j + 5, 2.0f * k), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+								.addComponent<mesh_component>(sphereMesh)
+								.addComponent<physics::px_sphere_collider_component>(1.0f)
+								.addComponent<physics::px_dynamic_body_component>();
+						}
+					}
+				}
+			}
 
 			//auto px_cct = &scene.createEntity("CharacterControllerPx")
 			//	.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
 			//	.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
 
-			/*auto particles = scene.createEntity("ParticlesPX")
-				.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
-				.addComponent<physics::px_particles_component>(10, 10, 10, false);*/
+			//auto& particles = scene.createEntity("ParticlesPX")
+			//	.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
+			//	.addComponent<physics::px_particles_component>(vec3(0.f, 10.0f, 0.0f), 10, 10, 10, false);
 
-			//auto cloth = scene.createEntity("ClothPX")
+			//auto& cloth = scene.createEntity("ClothPX")
 			//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
 			//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f));
 
@@ -598,7 +601,7 @@ namespace era_engine
 			eentity sphere{ sphere, &scene.registry };
 			if (input.keyboard['G'].pressEvent)
 			{
-				sphere.getComponent<physics::px_rigidbody_component>().addForce(vec3(500.f, 1.0f, 0.0f), physics::px_force_mode::force_mode_impulse);
+				sphere.getComponent<physics::px_dynamic_body_component>().addForce(vec3(500.f, 1.0f, 0.0f), physics::px_force_mode::force_mode_impulse);
 			}
 		}
 	}
@@ -738,12 +741,17 @@ namespace era_engine
 				}
 				else if (physics::px_convex_mesh_collider_component* cm = selectedEntity.getComponentIfExists<physics::px_convex_mesh_collider_component>())
 				{
-					auto& rb = selectedEntity.getComponent<physics::px_rigidbody_component>();
+					physics::px_body_component* body = nullptr;
+					body = selectedEntity.getComponentIfExists<physics::px_dynamic_body_component>();
+					if(!body)
+						body = selectedEntity.getComponentIfExists<physics::px_static_body_component>();
+
+					ASSERT(body != nullptr);
 
 					physics::physics_lock_read lock{};
 
 					physx::PxShape* shape[1];
-					rb.getRigidActor()->getShapes(shape, 1);
+					body->getRigidActor()->getShapes(shape, 1);
 					auto geom = (physx::PxConvexMeshGeometry*)cm->getGeometry();
 					auto mesh = geom->convexMesh;
 
@@ -767,7 +775,7 @@ namespace era_engine
 			dynamic = transform;
 		}
 
-		era_engine::animation::performSkinning(&computePass);
+		animation::performSkinning(&computePass);
 
 		if (dxContext.featureSupport.raytracing())
 		{
@@ -807,7 +815,7 @@ namespace era_engine
 
 				auto& en = scene.getCurrentScene().createEntity(path.string().c_str())
 					.addComponent<transform_component>(vec3(0.f), quat::identity)
-					.addComponent<era_engine::animation::animation_component>()
+					.addComponent<animation::animation_component>()
 					.addComponent<dynamic_transform_component>()
 					.addComponent<mesh_component>(mesh);
 				initializeAnimationComponentAsync(en, mesh);

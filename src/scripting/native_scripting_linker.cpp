@@ -214,7 +214,7 @@ namespace era_engine::dotnet
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
-			if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
+			if (auto rb = entity.getComponentIfExists<physics::px_dynamic_body_component>())
 			{
 				vec3 f = vec3(force[0], force[1], force[2]);
 				rb->addForce(f, (physics::px_force_mode)mode);
@@ -229,7 +229,7 @@ namespace era_engine::dotnet
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
-			if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
+			if (auto rb = entity.getComponentIfExists<physics::px_dynamic_body_component>())
 			{
 				vec3 f = vec3(torque[0], torque[1], torque[2]);
 				rb->addTorque(f, (physics::px_force_mode)mode);
@@ -244,17 +244,28 @@ namespace era_engine::dotnet
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
-			if (!entity.hasComponent<physics::px_rigidbody_component>())
-				entity.addComponent<physics::px_rigidbody_component>((physics::px_rigidbody_type)type);
+			if ((physics::px_rigidbody_type)type == physics::px_rigidbody_type::rigidbody_type_dynamic)
+			{
+				if (!entity.hasComponent<physics::px_dynamic_body_component>())
+					entity.addComponent<physics::px_dynamic_body_component>();
+			}
+			else if ((physics::px_rigidbody_type)type == physics::px_rigidbody_type::rigidbody_type_static)
+			{
+				if (!entity.hasComponent<physics::px_static_body_component>())
+					entity.addComponent<physics::px_static_body_component>();
+			}
+			else if ((physics::px_rigidbody_type)type == physics::px_rigidbody_type::rigidbody_type_kinematic)
+			{
+				if (!entity.hasComponent<physics::px_dynamic_body_component>())
+					entity.addComponent<physics::px_dynamic_body_component>();
+
+				entity.getComponent<physics::px_dynamic_body_component>().setKinematic(true);
+			}
 		}
 
 		static void overlap_sphere_internal(uint32_t id, uint8_t type) noexcept
 		{
-			entity_handle hid = (entity_handle)id;
-			eentity entity{ hid, &scene->registry };
 
-			if (!entity.hasComponent<physics::px_rigidbody_component>())
-				entity.addComponent<physics::px_rigidbody_component>((physics::px_rigidbody_type)type);
 		}
 
 		static float get_mass_internal(uint32_t id) noexcept
@@ -262,7 +273,9 @@ namespace era_engine::dotnet
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
-			if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
+			if (auto rb = entity.getComponentIfExists<physics::px_dynamic_body_component>())
+				return rb->getMass();
+			else if (auto rb = entity.getComponentIfExists<physics::px_static_body_component>())
 				return rb->getMass();
 			else
 				return -1.0f;
@@ -273,7 +286,9 @@ namespace era_engine::dotnet
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
-			if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
+			if (auto rb = entity.getComponentIfExists<physics::px_dynamic_body_component>())
+				rb->setMass(mass);
+			else if (auto rb = entity.getComponentIfExists<physics::px_static_body_component>())
 				rb->setMass(mass);
 			else
 				std::cerr << "Failed to call function";
@@ -284,7 +299,7 @@ namespace era_engine::dotnet
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
-			if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
+			if (auto rb = entity.getComponentIfExists<physics::px_dynamic_body_component>())
 			{
 				float* f = new float[3];
 				f[0] = rb->getLinearVelocity().data[0];
@@ -308,7 +323,7 @@ namespace era_engine::dotnet
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
-			if (auto rb = entity.getComponentIfExists<physics::px_rigidbody_component>())
+			if (auto rb = entity.getComponentIfExists<physics::px_dynamic_body_component>())
 			{
 				float* f = new float[3];
 				f[0] = rb->getAngularVelocity().data[0];
@@ -325,13 +340,13 @@ namespace era_engine::dotnet
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
-			if (auto script = entity.getComponentIfExists<era_engine::ecs::scripts_component>())
+			if (auto script = entity.getComponentIfExists<ecs::scripts_component>())
 			{
 				script->typeNames.emplace(name);
 			}
 			else
 			{
-				entity.addComponent<era_engine::ecs::scripts_component>(name);
+				entity.addComponent<ecs::scripts_component>(name);
 			}
 		}
 
@@ -341,7 +356,7 @@ namespace era_engine::dotnet
 			eentity entity{ hid, &scene->registry };
 
 			// TODO: Removing all internal components
-			if (auto comp = entity.getComponentIfExists<era_engine::ecs::scripts_component>())
+			if (auto comp = entity.getComponentIfExists<ecs::scripts_component>())
 			{
 				comp->typeNames.clear();
 			}

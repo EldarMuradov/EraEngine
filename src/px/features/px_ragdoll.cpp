@@ -1,8 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "pch.h"
-#include "px_ragdoll.h"
-#include <px/physics/px_collider_component.h>
+
+#include "px/features/px_ragdoll.h"
+#include "px/physics/px_collider_component.h"
 
 //px_ragdoll::px_ragdoll(escene* sc) : scene(sc)
 //{

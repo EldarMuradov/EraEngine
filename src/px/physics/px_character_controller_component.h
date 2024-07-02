@@ -17,7 +17,7 @@ namespace era_engine::physics
 		cct_type_capsule
 	};
 
-	struct px_cct_component_base : px_rigidbody_component
+	struct px_cct_component_base : px_body_component
 	{
 		px_cct_component_base(uint32 handle);
 		virtual ~px_cct_component_base() {}

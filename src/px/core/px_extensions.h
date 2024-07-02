@@ -1,9 +1,12 @@
 ﻿// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include <core/math.h>
-#include <core/math_simd.h>
-#include <application.h>
+
+#include "core/math.h"
+#include "core/math_simd.h"
+
+#include "application.h"
+
 #include "px/core/px_physics_engine.h"
 
 namespace era_engine::physics

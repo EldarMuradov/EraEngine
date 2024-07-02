@@ -1206,72 +1206,77 @@ namespace era_engine
 								}
 							});
 
-						drawComponent<physics::px_rigidbody_component>(selectedEntity, "Rigidbody (PhysX)", [this, &scene](physics::px_rigidbody_component& rb)
+						drawComponent<physics::px_dynamic_body_component>(selectedEntity, "Dynamic Body (PhysX)", [this, &scene](physics::px_dynamic_body_component& rb)
 							{
 								if (ImGui::BeginProperties())
 								{
 									ImGui::PropertyValue("Mass", rb.getMass(), "%.3fkg");
-									bool dynamic = rb.type == physics::px_rigidbody_type::rigidbody_type_dynamic;
 
-									if (dynamic)
+									vec3 lv = rb.getLinearVelocity();
+									vec3 lt = lv;
+									ImGui::PropertyValue("Linear velocity", lv);
+									if (lv != lt)
+										rb.setLinearVelocity(lv);
+
+									vec3 av = rb.getAngularVelocity();
+									vec3 at = av;
+									ImGui::PropertyValue("Angular velocity", av);
+									if (av != at)
+										rb.setLinearVelocity(av);
+
+									ImGui::Separator();
+
+									uint8 prevConstraints = rb.getConstraints();
+									uint8 newConstraints = prevConstraints;
+
+									bool lx = prevConstraints & 1;
+									bool ly = prevConstraints & 2;
+									bool lz = prevConstraints & 4;
+
+									bool rx = prevConstraints & 8;
+									bool ry = prevConstraints & 16;
+									bool rz = prevConstraints & 32;
+
+									if (ImGui::PropertyCheckbox("Lock position X ", lx))
 									{
-										vec3 lv = rb.getLinearVelocity();
-										vec3 lt = lv;
-										ImGui::PropertyValue("Linear velocity", lv);
-										if (lv != lt)
-											rb.setLinearVelocity(lv);
-
-										vec3 av = rb.getAngularVelocity();
-										vec3 at = av;
-										ImGui::PropertyValue("Angular velocity", av);
-										if (av != at)
-											rb.setLinearVelocity(av);
+										newConstraints ^= (-lx ^ newConstraints) & 1;
+									}
+									if (ImGui::PropertyCheckbox("Lock position Y ", ly))
+									{
+										newConstraints ^= (-ly ^ newConstraints) & 2;
+									}
+									if (ImGui::PropertyCheckbox("Lock position Z ", lz))
+									{
+										newConstraints ^= (-lz ^ newConstraints) & 4;
 									}
 
-									if (dynamic)
+									ImGui::Separator();
+
+									if (ImGui::PropertyCheckbox("Lock rotation X ", rx))
 									{
-										uint8 prevConstraints = rb.getConstraints();
-										uint8 newConstraints = prevConstraints;
-
-										bool lx = prevConstraints & 1;
-										bool ly = prevConstraints & 2;
-										bool lz = prevConstraints & 4;
-
-										bool rx = prevConstraints & 8;
-										bool ry = prevConstraints & 16;
-										bool rz = prevConstraints & 32;
-
-										if (ImGui::PropertyCheckbox("Lock position X ", lx))
-										{
-											newConstraints ^= (-lx ^ newConstraints) & 1;
-										}
-										if (ImGui::PropertyCheckbox("Lock position Y ", ly))
-										{
-											newConstraints ^= (-ly ^ newConstraints) & 2;
-										}
-										if (ImGui::PropertyCheckbox("Lock position Z ", lz))
-										{
-											newConstraints ^= (-lz ^ newConstraints) & 4;
-										}
-
-										ImGui::Separator();
-
-										if (ImGui::PropertyCheckbox("Lock rotation X ", rx))
-										{
-											newConstraints ^= (-rx ^ newConstraints) & 8;
-										}
-										if (ImGui::PropertyCheckbox("Lock rotation Y ", ry))
-										{
-											newConstraints ^= (-ry ^ newConstraints) & 16;
-										}
-										if (ImGui::PropertyCheckbox("Lock rotation Z ", rz))
-										{
-											newConstraints ^= (-rz ^ newConstraints) & 32;
-										}
-
-										if (newConstraints != prevConstraints)
-											rb.setConstraints(newConstraints);
+										newConstraints ^= (-rx ^ newConstraints) & 8;
 									}
+									if (ImGui::PropertyCheckbox("Lock rotation Y ", ry))
+									{
+										newConstraints ^= (-ry ^ newConstraints) & 16;
+									}
+									if (ImGui::PropertyCheckbox("Lock rotation Z ", rz))
+									{
+										newConstraints ^= (-rz ^ newConstraints) & 32;
+									}
+
+									if (newConstraints != prevConstraints)
+										rb.setConstraints(newConstraints);
+
+									ImGui::EndProperties();
+								}
+							});
+
+						drawComponent<physics::px_static_body_component>(selectedEntity, "Static Body (PhysX)", [this, &scene](physics::px_static_body_component& rb)
+							{
+								if (ImGui::BeginProperties())
+								{
+									ImGui::PropertyValue("Mass", rb.getMass(), "%.3fkg");
 
 									ImGui::EndProperties();
 								}
@@ -2065,7 +2070,9 @@ namespace era_engine
 			{
 				if (gizmo.manipulateTransformation(*transform, camera, input, !inputCaptured, ldrRenderPass))
 				{
-					if (auto rb = selectedEntity.getComponentIfExists<physics::px_rigidbody_component>())
+					if (auto rb = selectedEntity.getComponentIfExists<physics::px_dynamic_body_component>())
+						rb->setPhysicsPositionAndRotation(transform->position, transform->rotation);
+					else if (auto rb = selectedEntity.getComponentIfExists<physics::px_static_body_component>())
 						rb->setPhysicsPositionAndRotation(transform->position, transform->rotation);
 
 					if (physics::px_cloth_component* cloth = selectedEntity.getComponentIfExists<physics::px_cloth_component>())
@@ -2694,7 +2701,12 @@ namespace era_engine
 		undoStacks[1].reset();
 		setSelectedEntity({});
 
-		for (auto [entityHandle, rigidbody, transform] : this->scene->getCurrentScene().group(component_group<physics::px_rigidbody_component, transform_component>).each())
+		for (auto [entityHandle, rigidbody, transform] : this->scene->getCurrentScene().group(component_group<physics::px_dynamic_body_component, transform_component>).each())
+		{
+			rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
+		}
+
+		for (auto [entityHandle, rigidbody, transform] : this->scene->getCurrentScene().group(component_group<physics::px_static_body_component, transform_component>).each())
 		{
 			rigidbody.setPhysicsPositionAndRotation(transform.position, transform.rotation);
 		}

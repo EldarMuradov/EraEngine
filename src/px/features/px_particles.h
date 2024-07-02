@@ -1,15 +1,19 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
-#include <core/math.h>
-#include <core/memory.h>
-#include <rendering/debug_visualization.h>
+#include "core/math.h"
+#include "core/memory.h"
+
+#include "rendering/debug_visualization.h"
 
 #include "geometry/mesh_builder.h"
+
 #include "dx/dx_buffer.h"
 #include "dx/dx_context.h"
+
 #include "scene/scene.h"
-#include <px/core/px_physics_engine.h>
+
+#include "px/core/px_physics_engine.h"
 
 namespace era_engine::physics
 {

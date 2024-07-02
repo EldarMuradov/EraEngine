@@ -60,9 +60,9 @@
 #include <cuda.h>
 #include <PxPhysics.h>
 #include <PxPhysicsAPI.h>
-#include "extensions/PxRaycastCCD.h"
-#include "extensions/PxRemeshingExt.h"
-#include "extensions/PxSoftBodyExt.h"
+#include <extensions/PxRaycastCCD.h>
+#include <extensions/PxRemeshingExt.h>
+#include <extensions/PxSoftBodyExt.h>
 #include <cudamanager/PxCudaContextManager.h>
 #include <extensions/PxParticleExt.h>
 #include <PxPBDParticleSystem.h>
@@ -70,20 +70,20 @@
 #include <cudamanager/PxCudaContext.h>
 
 #if PX_VEHICLE
-#include "vehicle/PxVehicleUtil.h"
-#include "snippetutils/SnippetUtils.h"
-#include "snippetvehicle2common/enginedrivetrain/EngineDrivetrain.h"
-#include "snippetvehicle2common/serialization/BaseSerialization.h"
-#include "snippetvehicle2common/serialization/EngineDrivetrainSerialization.h"
-#include "snippetvehicle2common/SnippetVehicleHelpers.h"
+#include <vehicle/PxVehicleUtil.h>
+#include <snippetutils/SnippetUtils.h>
+#include <snippetvehicle2common/enginedrivetrain/EngineDrivetrain.h>
+#include <snippetvehicle2common/serialization/BaseSerialization.h>
+#include <snippetvehicle2common/serialization/EngineDrivetrainSerialization.h>
+#include <snippetvehicle2common/SnippetVehicleHelpers.h>
 #endif
 
-#include <core/memory.h>
-#include <core/log.h>
-#include <core/cpu_profiling.h>
-#include <scene/components.h>
-#include <core/math.h>
-#include <core/event_queue.h>
+#include "core/memory.h"
+#include "core/cpu_profiling.h"
+#include "core/math.h"
+#include "core/event_queue.h"
+
+#include "scene/components.h"
 
 #include <concurrentqueue/concurrentqueue.h>
 
@@ -215,7 +215,7 @@ namespace era_engine::physics
 
 	static inline PxVec3 gravity(0.0f, -9.81f, 0.0f);
 
-	struct px_rigidbody_component;
+	struct px_body_component;
 	struct px_collider_component_base;
 	struct px_soft_body;
 
@@ -382,7 +382,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 	struct px_raycast_info
 	{
-		px_rigidbody_component* actor = nullptr;
+		px_body_component* actor = nullptr;
 
 		float distance = 0.0f;
 		unsigned int hitCount = 0;
@@ -550,9 +550,9 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 			std::swap(thisVelocity, otherVelocity);
 		}
 
-		px_rigidbody_component* thisActor = nullptr;
+		px_body_component* thisActor = nullptr;
 
-		px_rigidbody_component* otherActor = nullptr;
+		px_body_component* otherActor = nullptr;
 
 		PxVec3 impulse;
 
@@ -569,7 +569,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 	{
 		px_simulation_event_callback() = default;
 
-		typedef std::pair<px_rigidbody_component*, px_rigidbody_component*> colliders_pair;
+		typedef std::pair<px_body_component*, px_body_component*> colliders_pair;
 
 		void clear() noexcept;
 
@@ -577,7 +577,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		void sendTriggerEvents() noexcept;
 
-		void onColliderRemoved(px_rigidbody_component* collider) noexcept;
+		void onColliderRemoved(px_body_component* collider) noexcept;
 
 		void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) override;
 		void onWake(PxActor** actors, PxU32 count) override { std::cout << "onWake\n"; }
@@ -588,7 +588,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		PxArray<px_collision> newCollisions;
 
-		PxArray<px_rigidbody_component*> kinematicsToRemoveFlag;
+		PxArray<px_body_component*> kinematicsToRemoveFlag;
 
 		PxArray<px_collision> removedCollisions;
 
@@ -662,9 +662,6 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		void resetActorsVelocityAndInertia() noexcept;
 
-		void addActor(px_rigidbody_component* actor, PxRigidActor* ractor, bool addToScene) noexcept;
-		void removeActor(px_rigidbody_component* actor) noexcept;
-
 		void addActor(px_body_component* actor, PxRigidActor* ractor, bool addToScene);
 		void removeActor(px_body_component* actor);
 
@@ -693,10 +690,10 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		void explode(const vec3& worldPos, float damageRadius, float explosiveImpulse) noexcept;
 
 		// Raycasting
-		px_raycast_info raycast(px_rigidbody_component* rb, const vec3& dir, int maxDist = PX_NB_MAX_RAYCAST_DISTANCE, bool hitTriggers = true, uint32_t layerMask = 0, int maxHits = PX_NB_MAX_RAYCAST_HITS);
+		px_raycast_info raycast(px_body_component* rb, const vec3& dir, int maxDist = PX_NB_MAX_RAYCAST_DISTANCE, bool hitTriggers = true, uint32_t layerMask = 0, int maxHits = PX_NB_MAX_RAYCAST_HITS);
 
 		// Checking
-		bool checkBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0) noexcept
+		bool checkBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
 		{
 			PX_SCENE_QUERY_SETUP_CHECK();
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
@@ -705,7 +702,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 			return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
 		}
 
-		bool checkSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0) noexcept
+		bool checkSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0)
 		{
 			PX_SCENE_QUERY_SETUP_CHECK();
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)));
@@ -714,7 +711,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 			return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
 		}
 
-		bool checkCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0) noexcept
+		bool checkCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
 		{
 			PX_SCENE_QUERY_SETUP_CHECK();
 			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
@@ -723,7 +720,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		}
 
 		// Overlapping
-		px_overlap_info overlapCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0) noexcept
+		px_overlap_info overlapCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
 		{
 			PX_SCENE_QUERY_SETUP_OVERLAP();
 			std::vector<uint32_t> results;
@@ -737,7 +734,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 			return px_overlap_info(true, results);
 		}
 
-		px_overlap_info overlapBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0) noexcept
+		px_overlap_info overlapBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
 		{
 			PX_SCENE_QUERY_SETUP_OVERLAP();
 			std::vector<uint32_t> results;
@@ -752,7 +749,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 			return px_overlap_info(true, results);
 		}
 
-		px_overlap_info overlapSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0) noexcept
+		px_overlap_info overlapSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0)
 		{
 			PX_SCENE_QUERY_SETUP_OVERLAP();
 			std::vector<uint32_t> results;
@@ -771,7 +768,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		std::atomic_uint32_t nbActiveActors{};
 
-		std::set<px_rigidbody_component*> actors;
+		std::set<px_body_component*> actors;
 
 		std::unordered_map<uint32, std::vector<px_collider_component_base*>> collidersMap;
 
@@ -780,7 +777,7 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		moodycamel::ConcurrentQueue<collision_handling_data> collisionQueue;
 		moodycamel::ConcurrentQueue<collision_handling_data> collisionExitQueue;
 
-		std::unordered_map<PxRigidActor*, px_rigidbody_component*> actorsMap;
+		std::unordered_map<PxRigidActor*, px_body_component*> actorsMap;
 		std::unordered_set<uint32_t> unfreezeBlastQueue;
 
 		std::mutex blastSync;

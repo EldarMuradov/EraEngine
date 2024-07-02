@@ -3,8 +3,10 @@
 #pragma once
 
 #include "application.h"
+
 #include "px/core/px_physics_engine.h"
 #include "px/core/px_aggregate.h"
+
 #include "px/physics/px_joint.h"
 
 #/*define RG_NB_ACTORS 14
