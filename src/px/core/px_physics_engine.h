@@ -23,7 +23,7 @@
 #define PX_NB_MAX_RAYCAST_HITS 64
 #define PX_NB_MAX_RAYCAST_DISTANCE 128
 
-#define PX_VEHICLE 1
+#define PX_VEHICLE 0
 
 #define PX_RELEASE(x)	if(x)	{ x->release(); x = nullptr;}
 #define UNUSED(x) (void)(x)

@@ -142,15 +142,15 @@ namespace era_engine
 							CPU_PROFILE_BLOCK("PhysX collision events step");
 
 							{
-								physics::collision_handling_data* collData = nullptr;
-								while (physicsRef->collisionQueue.try_dequeue(*collData))
-									data.core->handle_coll(collData->id1, collData->id2);
+								physics::collision_handling_data collData;
+								while (physicsRef->collisionQueue.try_dequeue(collData))
+									data.core->handle_coll(collData.id1, collData.id2);
 							}
 
 							{
-								physics::collision_handling_data* collData = nullptr;
-								while (physicsRef->collisionExitQueue.try_dequeue(*collData))
-									data.core->handle_exit_coll(collData->id1, collData->id2);
+								physics::collision_handling_data collData;
+								while (physicsRef->collisionExitQueue.try_dequeue(collData))
+									data.core->handle_exit_coll(collData.id1, collData.id2);
 							}
 						}
 					}
@@ -195,7 +195,13 @@ namespace era_engine
 		CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
 		if (!data.scene.registry.size())
 			return;
-		for (auto [entityHandle, script, transform] : data.scene.group(component_group<ecs::scripts_component, transform_component>).each())
+
+		auto group = data.scene.group(component_group<ecs::scripts_component, transform_component>);
+
+		if (group.empty())
+			return;
+
+		for (auto [entityHandle, script, transform] : group.each())
 		{
 			const auto& mat = trsToMat4(transform);
 			constexpr size_t mat_size = 16;
@@ -354,22 +360,22 @@ namespace era_engine
 
 			//px_sphere1->addChild(*px_sphere);
 
-			{
-				for (int i = 0; i < 10; i++)
-				{
-					for (int j = 0; j < 10; j++)
-					{
-						for (int k = 0; k < 10; k++)
-						{
-							auto sphr = &scene.createEntity((std::to_string(i) + std::to_string(j) + std::to_string(k)).c_str())
-								.addComponent<transform_component>(vec3(2.0f * i, 5 + 2.0f * j + 5, 2.0f * k), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-								.addComponent<mesh_component>(sphereMesh)
-								.addComponent<physics::px_sphere_collider_component>(1.0f)
-								.addComponent<physics::px_dynamic_body_component>();
-						}
-					}
-				}
-			}
+			//{
+			//	for (int i = 0; i < 10; i++)
+			//	{
+			//		for (int j = 0; j < 10; j++)
+			//		{
+			//			for (int k = 0; k < 10; k++)
+			//			{
+			//				auto sphr = &scene.createEntity((std::to_string(i) + std::to_string(j) + std::to_string(k)).c_str())
+			//					.addComponent<transform_component>(vec3(2.0f * i, 5 + 2.0f * j + 5, 2.0f * k), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			//					.addComponent<mesh_component>(sphereMesh)
+			//					.addComponent<physics::px_sphere_collider_component>(1.0f)
+			//					.addComponent<physics::px_dynamic_body_component>();
+			//			}
+			//		}
+			//	}
+			//}
 
 			//auto px_cct = &scene.createEntity("CharacterControllerPx")
 			//	.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))

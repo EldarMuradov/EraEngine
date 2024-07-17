@@ -5,7 +5,7 @@
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 
-#define LOG_LEVEL_PROFILE 0
+#define LOG_LEVEL_PROFILE 1
 
 #ifndef _DEBUG
 #define PX_ENABLE_PVD 1

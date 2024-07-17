@@ -2,23 +2,32 @@
 
 #include "pch.h"
 
-#include "px_physics_engine.h"
-#include <scene/scene.h>
-#include <px/features/cloth/px_clothing_factory.h>
-#include <px/physics/px_rigidbody_component.h>
-#include <px/physics/px_collider_component.h>
-#include <application.h>
-#include <scene/scene.h>
-#include <px/physics/px_soft_body.h>
-#include <px/features/px_vehicles.h>
-#include <px/temp/px_mesh_generator.h>
-#include <px/core/px_stepper.h>
-#include <px/blast/px_blast_destructions.h>
+#include "px/core/px_physics_engine.h"
+#include "px/physics/px_rigidbody_component.h"
+#include "px/physics/px_collider_component.h"
+#include "px/physics/px_soft_body.h"
+#include "px/features/px_vehicles.h"
+#include "px/temp/px_mesh_generator.h"
+#include "px/core/px_stepper.h"
+#include "px/blast/px_blast_destructions.h"
+#include "px/features/cloth/px_clothing_factory.h"
+		 
+#include "scene/scene.h"
+#include "scene/scene.h"
+		 
+#include "application.h"
+
+#include "omnipvd/PxOmniPvd.h"
+#include "pvdruntime/include/OmniPvdWriter.h"
+#include "pvdruntime/include/OmniPvdFileWriteStream.h"
 
 #pragma comment(lib, "PhysXCooking_64.lib")
 
 namespace era_engine
 {
+	static physx::PxOmniPvd* omniPvd = NULL;
+	const char* omniPvdPath = "E:/OmniPVD/out.ovd";
+
 	physics::px_CCD_contact_modification contactModification;
 
 	static physx::PxFilterFlags contactReportFilterShader(
@@ -90,18 +99,39 @@ namespace era_engine
 
 #if PX_ENABLE_PVD
 
-		PxPvdTransport* transport = PxDefaultPvdFileTransportCreate("E:\\test.pxd2"/*PVD_HOST, 5425, 10*/);
-		if (transport == NULL)
-			throw std::exception("Failed to create {PxPvdTransport}. Error in {PhysicsEngine} ctor.");
+		omniPvd = PxCreateOmniPvd(*foundation);
+		if (!omniPvd)
+		{
+			printf("Error : could not create PxOmniPvd!");
+			return;
+		}
+		OmniPvdWriter* omniWriter = omniPvd->getWriter();
+		if (!omniWriter)
+		{
+			printf("Error : could not get an instance of PxOmniPvdWriter!");
+			return;
+		}
+		OmniPvdFileWriteStream* fStream = omniPvd->getFileWriteStream();
+		if (!fStream)
+		{
+			printf("Error : could not get an instance of PxOmniPvdFileWriteStream!");
+			return;
+		}
+		fStream->setFileName(omniPvdPath);
+		omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*fStream));
 
-		if (pvd->connect(*transport, PxPvdInstrumentationFlag::eALL))
-			std::cout << "Physics> PVD Connected.\n";
+		//PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
+		//if (transport == NULL)
+		//	throw std::exception("Failed to create {PxPvdTransport}. Error in {PhysicsEngine} ctor.");
+
+		//if (pvd->connect(*transport, PxPvdInstrumentationFlag::eALL))
+		//	std::cout << "Physics> PVD Connected.\n";
 
 #endif
 
 		toleranceScale.length = 1.0f;
 		toleranceScale.speed = 9.81f;
-		physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, pvd);
+		physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, nullptr, omniPvd);
 
 		if (!PxInitExtensions(*physics, pvd))
 			LOG_ERROR("Physics> Failed to initialize extensions.");
@@ -140,24 +170,28 @@ namespace era_engine
 		defaultMaterial = physics->createMaterial(0.7f, 0.7f, 0.8f);
 
 #if PX_ENABLE_PVD
-
-		PxPvdSceneClient* client = scene->getScenePvdClient();
-
-		if (client)
+		if (physics->getOmniPvd())
 		{
-			client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
-			client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
-			client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
+			omniPvd->startSampling();
 		}
 
-		if (pvd->isConnected())
-			std::cout << "Physics> PVD Connection enabled.\n";
+		//PxPvdSceneClient* client = scene->getScenePvdClient();
 
-		scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
-		scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, 1.0f);
-		scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LOCAL_FRAMES, 1.0f);
+		//if (client)
+		//{
+		//	client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
+		//	client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
+		//	client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
+		//}
 
-		scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
+		////if (pvd->isConnected())
+		//	//std::cout << "Physics> PVD Connection enabled.\n";
+
+		//scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
+		//scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, 1.0f);
+		//scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LOCAL_FRAMES, 1.0f);
+
+		//scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
 #endif
 
 #if PX_ENABLE_RAYCAST_CCD
@@ -190,9 +224,6 @@ namespace era_engine
 		{
 			shared_spin_lock lock{ sync };
 
-			releaseActors();
-			releaseScene();
-
 #if PX_VEHICLE
 			PxCloseVehicleSDK();
 			//cleanupVehicle();
@@ -205,13 +236,14 @@ namespace era_engine
 
 			PX_RELEASE(physics)
 			PX_RELEASE(pvd)
-			PX_RELEASE(foundation)
+			PX_RELEASE(omniPvd);
 
 			PX_RELEASE(scene)
 
 			PX_RELEASE(cudaContextManager)
 			PX_RELEASE(defaultMaterial)
 			PX_RELEASE(dispatcher)
+			PX_RELEASE(foundation)
 
 #if PX_ENABLE_RAYCAST_CCD
 			delete raycastCCD;

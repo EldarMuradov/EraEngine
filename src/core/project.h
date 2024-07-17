@@ -18,6 +18,6 @@ namespace era_engine
 		static inline std::string dotnetPath = enginePath + "\\bin\\Dotnet\\Release\\net8.0\\";
 		static inline std::string exePath = "";
 		static inline configuration_type config = configuration_type_release_no_optim;
-		static inline std::string name = "NewProject";;
+		static inline std::string name = "NewProject";
 	};
 }
