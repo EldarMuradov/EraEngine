@@ -154,13 +154,6 @@ namespace era_engine
 							}
 						}
 					}
-
-					updateScripting(data);
-
-					{
-						CPU_PROFILE_BLOCK(".NET 8 Input sync step");
-						data.core->handleInput(reinterpret_cast<uintptr_t>(&data.input.keyboard[0]));
-					}
 				}
 				catch(std::exception& ex)
 				{
@@ -168,26 +161,33 @@ namespace era_engine
 				}
 			}, data).submitNow();
 
-			const auto& nav_objects = data.scene.group(component_group<ai::navigation_component, transform_component>);
+		updateScripting(data);
 
-			if (nav_objects.size())
-			{
-				struct nav_process_data
-				{
-					decltype(nav_objects) objects;
-				};
+		{
+			CPU_PROFILE_BLOCK(".NET 8 Input sync step");
+			core->handleInput(reinterpret_cast<uintptr_t>(&in.keyboard[0]));
+		}
 
-				nav_process_data nav_data{ nav_objects };
+		//const auto& nav_objects = data.scene.group(component_group<ai::navigation_component, transform_component>);
 
-				lowPriorityJobQueue.createJob<nav_process_data>([](nav_process_data& data, job_handle)
-					{
-						CPU_PROFILE_BLOCK("Navigation step");
-						for (auto [entityHandle, nav, transform] : data.objects.each())
-						{
-							nav.processPath();
-						}
-					}, nav_data).submitNow();
-			}
+		//if (nav_objects.size())
+		//{
+		//	struct nav_process_data
+		//	{
+		//		decltype(nav_objects) objects;
+		//	};
+
+		//	nav_process_data nav_data{ nav_objects };
+
+		//	lowPriorityJobQueue.createJob<nav_process_data>([](nav_process_data& data, job_handle)
+		//		{
+		//			CPU_PROFILE_BLOCK("Navigation step");
+		//			for (auto [entityHandle, nav, transform] : data.objects.each())
+		//			{
+		//				nav.processPath();
+		//			}
+		//		}, nav_data).submitNow();
+		//}
 	}
 
 	void updateScripting(update_scripting_data& data) noexcept
@@ -354,9 +354,9 @@ namespace era_engine
 				scene.deleteEntity(px_sphere_entt1.handle);
 			}*/
 
-			//auto soft_body = &scene.createEntity("SoftBody")
-			//	.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
-			//	.addComponent<physics::px_soft_body_component>();
+			auto soft_body = &scene.createEntity("SoftBody")
+				.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
+				.addComponent<physics::px_soft_body_component>();
 
 			//px_sphere1->addChild(*px_sphere);
 
@@ -377,9 +377,9 @@ namespace era_engine
 			//	}
 			//}
 
-			//auto px_cct = &scene.createEntity("CharacterControllerPx")
-			//	.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-			//	.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
+			auto px_cct = &scene.createEntity("CharacterControllerPx")
+				.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+				.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
 
 			//auto& particles = scene.createEntity("ParticlesPX")
 			//	.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))

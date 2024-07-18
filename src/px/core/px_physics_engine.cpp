@@ -131,48 +131,17 @@ namespace era_engine
 
 		toleranceScale.length = 1.0f;
 		toleranceScale.speed = 9.81f;
-		physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, nullptr, omniPvd);
+		physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, toleranceScale, true, pvd, omniPvd);
 
 		if (!PxInitExtensions(*physics, pvd))
 			LOG_ERROR("Physics> Failed to initialize extensions.");
-
-		dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
-
-		PxCudaContextManagerDesc cudaContextManagerDesc;
-		cudaContextManagerDesc.graphicsDevice = dxContext.device.Get();
-		cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profilerCallback);
-
-		PxSceneDesc sceneDesc(physics->getTolerancesScale());
-		sceneDesc.gravity = gravity;
-		sceneDesc.cudaContextManager = cudaContextManager;
-		sceneDesc.cpuDispatcher = dispatcher;
-		sceneDesc.staticStructure = PxPruningStructureType::eDYNAMIC_AABB_TREE;
-
-		sceneDesc.filterShader = contactReportFilterShader;
-
-		sceneDesc.solverType = PxSolverType::eTGS;
-
-#if PX_GPU_BROAD_PHASE
-		sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
-		sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
-		sceneDesc.gpuMaxNumPartitions = 8;
-#else
-		sceneDesc.broadPhaseType = physx::PxBroadPhaseType::ePABP;
-#endif
-		sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
-		sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-		sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
-		sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
-		sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
-
-		scene = physics->createScene(sceneDesc);
 
 		defaultMaterial = physics->createMaterial(0.7f, 0.7f, 0.8f);
 
 #if PX_ENABLE_PVD
 		if (physics->getOmniPvd())
 		{
-			omniPvd->startSampling();
+			ASSERT(omniPvd->startSampling());
 		}
 
 		//PxPvdSceneClient* client = scene->getScenePvdClient();
@@ -184,8 +153,8 @@ namespace era_engine
 		//	client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
 		//}
 
-		////if (pvd->isConnected())
-		//	//std::cout << "Physics> PVD Connection enabled.\n";
+		//if (pvd->isConnected())
+			//std::cout << "Physics> PVD Connection enabled.\n";
 
 		//scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
 		//scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, 1.0f);
@@ -193,6 +162,31 @@ namespace era_engine
 
 		//scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
 #endif
+
+		PxCudaContextManagerDesc cudaContextManagerDesc;
+		cudaContextManagerDesc.graphicsDevice = dxContext.device.Get();
+		cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profilerCallback);
+
+		PxSceneDesc sceneDesc(physics->getTolerancesScale());
+		sceneDesc.gravity = gravity;
+		dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
+		sceneDesc.cpuDispatcher = dispatcher;
+		sceneDesc.solverType = PxSolverType::eTGS;
+		sceneDesc.cudaContextManager = cudaContextManager;
+		sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
+		sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+		sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
+		sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
+		sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
+#if PX_GPU_BROAD_PHASE
+		sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
+		sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
+		sceneDesc.gpuMaxNumPartitions = 8;
+#else
+		sceneDesc.broadPhaseType = physx::PxBroadPhaseType::ePABP;
+#endif
+		sceneDesc.filterShader = contactReportFilterShader;
+		scene = physics->createScene(sceneDesc);
 
 #if PX_ENABLE_RAYCAST_CCD
 		raycastCCD = new RaycastCCDManager(scene);
@@ -234,15 +228,13 @@ namespace era_engine
 			if (scene)
 				scene->flushSimulation();
 
-			PX_RELEASE(physics)
+			PX_RELEASE(defaultMaterial)
+			PX_RELEASE(scene)
+			PX_RELEASE(dispatcher)
 			PX_RELEASE(pvd)
 			PX_RELEASE(omniPvd);
-
-			PX_RELEASE(scene)
-
+			PX_RELEASE(physics)
 			PX_RELEASE(cudaContextManager)
-			PX_RELEASE(defaultMaterial)
-			PX_RELEASE(dispatcher)
 			PX_RELEASE(foundation)
 
 #if PX_ENABLE_RAYCAST_CCD
@@ -256,10 +248,6 @@ namespace era_engine
 
 	void physics::px_physics_engine::start() noexcept
 	{
-		simulationEventCallback = make_ref<px_simulation_event_callback>();
-
-		physics_lock_write lock{};
-		scene->setSimulationEventCallback(simulationEventCallback.get());
 	}
 
 	void physics::px_physics_engine::update(float dt) noexcept
@@ -305,10 +293,10 @@ namespace era_engine
 	{
 		stepper.wait(scene);
 
-		{
-			CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");
-			processSimulationEventCallbacks();
-		}
+		//{
+		//	CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");
+		//	processSimulationEventCallbacks();
+		//}
 
 		{
 			CPU_PROFILE_BLOCK("PhysX sync transforms steps");

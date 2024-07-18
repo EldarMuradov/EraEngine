@@ -90,6 +90,7 @@ namespace era_engine::physics
 		{
 			coll->createGeometry();
 			PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor, *coll->getGeometry(), *material);
+			enableShapeVisualization(shape);
 			shape->userData = userData;
 		}
 
