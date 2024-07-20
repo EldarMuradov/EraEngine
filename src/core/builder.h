@@ -7,7 +7,7 @@ namespace era_engine::build
 {
 	struct ebuilder
 	{
-		NODISCARD static std::optional<std::string> selectBuildFolder();
+		static std::optional<std::string> selectBuildFolder();
 
 		static bool build(bool autoRun = true, bool tempFolder = false);
 

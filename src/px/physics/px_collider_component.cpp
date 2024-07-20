@@ -187,35 +187,41 @@ namespace era_engine::physics
 		return true;
 	}
 
-	void enableShapeVisualization(PxShape* shape) noexcept
+	void enableShapeVisualization(PxShape* shape)
 	{
+		ASSERT(shape != nullptr);
 		shape->setFlag(PxShapeFlag::eVISUALIZATION, true);
 	}
 
-	void disableShapeVisualization(PxShape* shape) noexcept
+	void disableShapeVisualization(PxShape* shape)
 	{
+		ASSERT(shape != nullptr);
 		shape->setFlag(PxShapeFlag::eVISUALIZATION, false);
 	}
 
-	void enableShapeInContactTests(PxShape* shape) noexcept
+	void enableShapeInContactTests(PxShape* shape)
 	{
+		ASSERT(shape != nullptr);
 		shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
 		shape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, false);
 	}
 
-	void disableShapeInContactTests(PxShape* shape) noexcept
+	void disableShapeInContactTests(PxShape* shape)
 	{
+		ASSERT(shape != nullptr);
 		shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
 		shape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
 	}
 
-	void enableShapeInSceneQueryTests(PxShape* shape) noexcept
+	void enableShapeInSceneQueryTests(PxShape* shape)
 	{
+		ASSERT(shape != nullptr);
 		shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
 	}
 
-	void disableShapeInSceneQueryTests(PxShape* shape) noexcept
+	void disableShapeInSceneQueryTests(PxShape* shape)
 	{
+		ASSERT(shape != nullptr);
 		shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
 	}
 

@@ -177,7 +177,7 @@ namespace era_engine::physics
 	struct px_joint
 	{
 		px_joint() = default;
-		px_joint(PxRigidActor* f, PxRigidActor* s) noexcept : first(f), second(s) {};
+		px_joint(PxRigidActor* f, PxRigidActor* s) : first(f), second(s) {};
 		virtual ~px_joint();
 
 		void init(PxRigidActor* f, PxRigidActor* s);
@@ -193,42 +193,42 @@ namespace era_engine::physics
 	struct px_revolute_joint : px_joint
 	{
 		px_revolute_joint() = default;
-		px_revolute_joint(px_revolute_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept;
+		px_revolute_joint(px_revolute_joint_desc desc, PxRigidActor* f, PxRigidActor* s);
 		~px_revolute_joint();
 	};
 
 	struct px_spherical_joint : px_joint
 	{
 		px_spherical_joint() = default;
-		px_spherical_joint(px_spherical_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept;
+		px_spherical_joint(px_spherical_joint_desc desc, PxRigidActor* f, PxRigidActor* s);
 		~px_spherical_joint();
 	};
 
 	struct px_fixed_joint : px_joint
 	{
 		px_fixed_joint() = default;
-		px_fixed_joint(px_fixed_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept;
+		px_fixed_joint(px_fixed_joint_desc desc, PxRigidActor* f, PxRigidActor* s);
 		~px_fixed_joint();
 	};
 
 	struct px_prismatic_joint : px_joint
 	{
 		px_prismatic_joint() = default;
-		px_prismatic_joint(px_prismatic_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept;
+		px_prismatic_joint(px_prismatic_joint_desc desc, PxRigidActor* f, PxRigidActor* s);
 		~px_prismatic_joint();
 	};
 
 	struct px_d6_joint : px_joint
 	{
 		px_d6_joint() = default;
-		px_d6_joint(px_d6_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept;
+		px_d6_joint(px_d6_joint_desc desc, PxRigidActor* f, PxRigidActor* s);
 		~px_d6_joint();
 	};
 
 	struct px_distance_joint : px_joint
 	{
 		px_distance_joint() = default;
-		px_distance_joint(px_distance_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept;
+		px_distance_joint(px_distance_joint_desc desc, PxRigidActor* f, PxRigidActor* s);
 		~px_distance_joint();
 	};
 }

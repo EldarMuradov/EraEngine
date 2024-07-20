@@ -22,14 +22,14 @@ namespace era_engine::physics
 		px_cct_component_base(uint32 handle);
 		virtual ~px_cct_component_base() {}
 
-		virtual void release(bool releaseActor = true) noexcept override;
+		virtual void release(bool releaseActor = true) override;
 
 		px_cct_type type = px_cct_type::cct_type_none;
 
 		float mass = 1.0f;
 
 	protected:
-		virtual void createCharacterController() noexcept {};
+		virtual void createCharacterController() {};
 
 		physx::PxControllerManager* manager = nullptr;
 		physx::PxController* controller = nullptr;
@@ -45,7 +45,7 @@ namespace era_engine::physics
 		float halfSideExtent = 0.5f;
 
 	protected:
-		void createCharacterController() noexcept override;
+		void createCharacterController() override;
 	};
 
 	struct px_capsule_cct_component : px_cct_component_base
@@ -59,7 +59,7 @@ namespace era_engine::physics
 		float radius = 0.5f;
 
 	protected:
-		void createCharacterController() noexcept override;
+		void createCharacterController() override;
 	};
 }
 

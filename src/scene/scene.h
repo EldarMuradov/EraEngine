@@ -122,37 +122,37 @@ namespace era_engine
 		}
 
 		template <typename Component_>
-		NODISCARD bool hasComponent() const
+		bool hasComponent() const
 		{
 			return registry->any_of<Component_>(handle);
 		}
 
 		template <typename Component_>
-		NODISCARD Component_& getComponent()
+		Component_& getComponent()
 		{
 			return registry->get<Component_>(handle);
 		}
 
 		template <typename Component_>
-		NODISCARD const Component_& getComponent() const
+		const Component_& getComponent() const
 		{
 			return registry->get<Component_>(handle);
 		}
 
 		template <typename Component_>
-		NODISCARD Component_* getComponentIfExists()
+		Component_* getComponentIfExists()
 		{
 			return registry->try_get<Component_>(handle);
 		}
 
 		template <typename Component_>
-		NODISCARD const Component_* getComponentIfExists() const
+		const Component_* getComponentIfExists() const
 		{
 			return registry->try_get<Component_>(handle);
 		}
 
 		template <typename Component_>
-		NODISCARD uint32 getComponentIndex() const
+		uint32 getComponentIndex() const
 		{
 			auto& s = registry->storage<Component_>();
 			return (uint32)s.index(handle);
@@ -164,7 +164,7 @@ namespace era_engine
 			registry->remove<Component_>(handle);
 		}
 
-		NODISCARD entity_handle getParentHandle() const noexcept
+		entity_handle getParentHandle() const
 		{
 			auto child = getComponentIfExists<child_component>();
 			if (child)
@@ -172,38 +172,38 @@ namespace era_engine
 			return null_entity;
 		}
 
-		void setParent(entity_handle prnt) noexcept
+		void setParent(entity_handle prnt)
 		{
 			addComponent<child_component>(prnt);
 
 			eentity_container::emplacePair(prnt, handle);
 		}
 
-		void setParent(eentity& prnt) noexcept
+		void setParent(eentity& prnt)
 		{
 			addComponent<child_component>(prnt.handle);
 
 			eentity_container::emplacePair(prnt.handle, handle);
 		}
 
-		void addChild(eentity& child) noexcept
+		void addChild(eentity& child)
 		{
 			child.addComponent<child_component>(handle);
 			eentity_container::emplacePair(handle, child.handle);
 		}
 
-		void deleteChild(eentity& child) noexcept
+		void deleteChild(eentity& child)
 		{
 			child.removeComponent<child_component>();
 			eentity_container::erasePair(handle, child.handle);
 		}
 
-		NODISCARD std::vector<entity_handle> getChildsHandles() noexcept
+		std::vector<entity_handle> getChildsHandles()
 		{
 			return eentity_container::getChilds(handle);
 		}
 
-		NODISCARD std::vector<eentity> getChilds() noexcept
+		std::vector<eentity> getChilds()
 		{
 			const auto& collection = getChildsHandles();
 			std::vector<eentity> result;
@@ -247,7 +247,7 @@ namespace era_engine
 	};
 
 	template <typename Context_, typename... Args_>
-	inline NODISCARD Context_& createOrGetContextVariable(entt::registry& registry, Args_&&... a)
+	inline Context_& createOrGetContextVariable(entt::registry& registry, Args_&&... a)
 	{
 		auto& c = registry.ctx();
 		Context_* context = c.find<Context_>();
@@ -258,21 +258,21 @@ namespace era_engine
 	}
 
 	template <typename Context_>
-	inline NODISCARD Context_& getContextVariable(entt::registry& registry)
+	inline Context_& getContextVariable(entt::registry& registry)
 	{
 		auto& c = registry.ctx();
 		return *c.find<Context_>();
 	}
 
 	template <typename Context_>
-	inline NODISCARD Context_* tryGetContextVariable(entt::registry& registry)
+	inline Context_* tryGetContextVariable(entt::registry& registry)
 	{
 		auto& c = registry.ctx();
 		return c.find<Context_>();
 	}
 
 	template <typename Context_>
-	inline NODISCARD bool doesContextVariableExist(entt::registry& registry)
+	inline bool doesContextVariableExist(entt::registry& registry)
 	{
 		auto& c = registry.ctx();
 		return c.contains<Context_>();
@@ -289,25 +289,25 @@ namespace era_engine
 	{
 		escene();
 
-		NODISCARD eentity createEntity(const char* name)
+		eentity createEntity(const char* name)
 		{
 			return eentity(registry.create(), &registry)
 				.addComponent<tag_component>(name);
 		}
 
-		NODISCARD eentity createEntity(const char* name, entity_handle id)
+		eentity createEntity(const char* name, entity_handle id)
 		{
 			return eentity(registry.create(id), &registry)
 				.addComponent<tag_component>(name);
 		}
 
-		NODISCARD eentity tryCreateEntityInPlace(eentity place, const char* name)
+		eentity tryCreateEntityInPlace(eentity place, const char* name)
 		{
 			return eentity(registry.create(place.handle), &registry)
 				.addComponent<tag_component>(name);
 		}
 
-		NODISCARD eentity copyEntity(eentity src); // Source can be either from the same scene or from another.
+		eentity copyEntity(eentity src); // Source can be either from the same scene or from another.
 
 		void deleteEntity(eentity e);
 		void deleteEntity(entity_handle handle);
@@ -319,13 +319,13 @@ namespace era_engine
 			registry.clear<Component_>();
 		}
 
-		NODISCARD bool isEntityValid(eentity e)
+		bool isEntityValid(const eentity& e)
 		{
 			return &registry == e.registry && registry.valid(e.handle);
 		}
 
 		template <typename Component_>
-		NODISCARD eentity getEntityFromComponent(const Component_& c)
+		eentity getEntityFromComponent(const Component_& c)
 		{
 			entity_handle e = entt::to_entity(registry, c);
 			return { e, &registry };
@@ -351,19 +351,19 @@ namespace era_engine
 		}
 
 		template <typename... Component_>
-		NODISCARD auto view()
+		auto view()
 		{
 			return registry.view<Component_...>();
 		}
 
 		template<typename... OwnedComponent_, typename... NonOwnedComponent_, typename... ExcludedComponents>
-		NODISCARD auto group(component_group_t<NonOwnedComponent_...> = {}, component_group_t<ExcludedComponents...> = {})
+		auto group(component_group_t<NonOwnedComponent_...> = {}, component_group_t<ExcludedComponents...> = {})
 		{
 			return registry.group<OwnedComponent_...>(entt::get<NonOwnedComponent_...>, entt::exclude<ExcludedComponents...>);
 		}
 
 		template <typename Component_>
-		NODISCARD auto raw()
+		auto raw()
 		{
 			auto& s = registry.storage<Component_>();
 			Component_** r = s.raw();
@@ -377,39 +377,39 @@ namespace era_engine
 		}
 
 		template <typename Component_>
-		NODISCARD uint32 numberOfComponentsOfType()
+		uint32 numberOfComponentsOfType()
 		{
 			auto v = view<Component_>();
 			return (uint32)v.size();
 		}
 
 		template <typename Component_>
-		NODISCARD Component_& getComponentAtIndex(uint32 index)
+		Component_& getComponentAtIndex(uint32 index)
 		{
 			auto& s = registry.storage<Component_>();
 			return s.element_at(index);
 		}
 
 		template <typename Component_>
-		NODISCARD eentity getEntityFromComponentAtIndex(uint32 index)
+		eentity getEntityFromComponentAtIndex(uint32 index)
 		{
 			return getEntityFromComponent(getComponentAtIndex<Component_>(index));
 		}
 
 		template <typename Context_, typename... Args_>
-		NODISCARD Context_& createOrGetContextVariable(Args_&&... a)
+		Context_& createOrGetContextVariable(Args_&&... a)
 		{
 			return era_engine::createOrGetContextVariable<Context_, Args_...>(registry, std::forward<Args_>(a)...);
 		}
 
 		template <typename Context_>
-		NODISCARD Context_& getContextVariable()
+		Context_& getContextVariable()
 		{
 			return era_engine::getContextVariable<Context_>(registry);
 		}
 
 		template <typename Context_>
-		NODISCARD bool doesContextVariableExist()
+		bool doesContextVariableExist()
 		{
 			return era_engine::doesContextVariableExist<Context_>(registry);
 		}
@@ -458,12 +458,12 @@ namespace era_engine
 
 	struct editor_scene
 	{
-		NODISCARD escene& getCurrentScene()
+		escene& getCurrentScene()
 		{
 			return (mode == scene_mode_editor) ? editorScene : runtimeScene;
 		}
 
-		NODISCARD float getTimestepScale() const
+		float getTimestepScale() const
 		{
 			return (mode == scene_mode_editor || mode == scene_mode_runtime_paused) ? 0.f : timestepScale;
 		}
@@ -490,17 +490,17 @@ namespace era_engine
 			mode = scene_mode_editor;
 		}
 
-		NODISCARD bool isPlayable() const
+		bool isPlayable() const
 		{
 			return mode == scene_mode_editor || mode == scene_mode_runtime_paused;
 		}
 
-		NODISCARD bool isPausable() const
+		bool isPausable() const
 		{
 			return mode == scene_mode_runtime_playing;
 		}
 
-		NODISCARD bool isStoppable() const
+		bool isStoppable() const
 		{
 			return mode == scene_mode_runtime_playing || mode == scene_mode_runtime_paused;
 		}

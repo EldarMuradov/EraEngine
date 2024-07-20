@@ -6,7 +6,7 @@
 
 namespace era_engine
 {
-	physics::px_articulation::px_articulation(const vec3& rootPose, bool fixedBase, bool selfCollision) noexcept
+	physics::px_articulation::px_articulation(const vec3& rootPose, bool fixedBase, bool selfCollision)
 	{
 		const auto physics = physics_holder::physicsRef->getPhysics();
 

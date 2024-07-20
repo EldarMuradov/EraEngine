@@ -38,7 +38,7 @@ namespace era_engine
 	{
 		camera_frustum_planes() {};
 
-		// Returns true, if object should be culled.
+		// Returns true, if object should be culled
 		NODISCARD bool cullWorldSpaceAABB(const bounding_box& aabb) const;
 		NODISCARD bool cullModelSpaceAABB(const bounding_box& aabb, const trs& transform) const;
 		NODISCARD bool cullModelSpaceAABB(const bounding_box& aabb, const mat4& transform) const;
@@ -64,7 +64,7 @@ namespace era_engine
 
 	struct camera_projection_extents
 	{
-		float left, right, top, bottom; // Extents of frustum at distance 1.
+		float left, right, top, bottom; // Extents of frustum at distance 1
 	};
 
 	struct render_camera
@@ -107,9 +107,9 @@ namespace era_engine
 		camera_type type;
 
 		float verticalFOV;
-		float fx, fy, cx, cy; // For calibrated cameras.
+		float fx, fy, cx, cy; // For calibrated cameras
 
-		// Derived values.
+		// Derived values
 		mat4 view;
 		mat4 invView;
 

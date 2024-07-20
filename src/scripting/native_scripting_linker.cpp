@@ -209,7 +209,7 @@ namespace era_engine::dotnet
 	{
 		static escene* scene = nullptr;
 
-		static void add_force_internal(uint32_t id, uint8_t mode, float* force) noexcept
+		static void add_force_internal(uint32_t id, uint8_t mode, float* force)
 		{
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
@@ -224,7 +224,7 @@ namespace era_engine::dotnet
 				std::cerr << "Failed to call function addForce";
 		}
 
-		static void add_torque_internal(uint32_t id, uint8_t mode, float* torque) noexcept
+		static void add_torque_internal(uint32_t id, uint8_t mode, float* torque)
 		{
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
@@ -239,7 +239,7 @@ namespace era_engine::dotnet
 				std::cerr << "Failed to call function addTorque";
 		}
 
-		static void initialize_rigidbody_internal(uint32_t id, uint8_t type) noexcept
+		static void initialize_rigidbody_internal(uint32_t id, uint8_t type)
 		{
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
@@ -263,12 +263,12 @@ namespace era_engine::dotnet
 			}
 		}
 
-		static void overlap_sphere_internal(uint32_t id, uint8_t type) noexcept
+		static void overlap_sphere_internal(uint32_t id, uint8_t type)
 		{
 
 		}
 
-		static float get_mass_internal(uint32_t id) noexcept
+		static float get_mass_internal(uint32_t id)
 		{
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
@@ -281,7 +281,7 @@ namespace era_engine::dotnet
 				return -1.0f;
 		}
 
-		static void set_mass_internal(uint32_t id, float mass) noexcept
+		static void set_mass_internal(uint32_t id, float mass)
 		{
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
@@ -294,7 +294,7 @@ namespace era_engine::dotnet
 				std::cerr << "Failed to call function";
 		}
 
-		static float* get_linear_velocity_internal(uint32_t id) noexcept
+		static float* get_linear_velocity_internal(uint32_t id)
 		{
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
@@ -311,14 +311,14 @@ namespace era_engine::dotnet
 				return new float[3];
 		}
 
-		static uint32_t create_entity_internal(const char* name) noexcept
+		static uint32_t create_entity_internal(const char* name)
 		{
 			return (uint32_t)scene->createEntity(name)
 				.addComponent<transform_component>(vec3(0.f), quat::identity)
 				.handle;
 		}
 
-		static float* get_angular_velocity_internal(uint32_t id) noexcept
+		static float* get_angular_velocity_internal(uint32_t id)
 		{
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
@@ -335,7 +335,7 @@ namespace era_engine::dotnet
 				return new float[3];
 		}
 
-		static void create_script_internal(uint32_t id, const char* name) noexcept
+		static void create_script_internal(uint32_t id, const char* name)
 		{
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
@@ -350,7 +350,7 @@ namespace era_engine::dotnet
 			}
 		}
 
-		static void remove_component_internal(uint32_t id, const char* name) noexcept
+		static void remove_component_internal(uint32_t id, const char* name)
 		{
 			entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
@@ -362,29 +362,29 @@ namespace era_engine::dotnet
 			}
 		}
 
-		static void create_component_internal(uint32_t id, const char* name) noexcept
+		static void create_component_internal(uint32_t id, const char* name)
 		{
 
 		}
 
-		static void instantiate_internal(uint32_t id, uint32_t newId, uint32_t parentId) noexcept
+		static void instantiate_internal(uint32_t id, uint32_t newId, uint32_t parentId)
 		{
 
 		}
 
-		static void release_internal(uint32_t id) noexcept
+		static void release_internal(uint32_t id)
 		{
 			entity_handle hid = (entity_handle)id;
 
 			scene->deleteEntity(hid);
 		}
 
-		static void setActive_internal(uint32_t id, bool active) noexcept
+		static void setActive_internal(uint32_t id, bool active)
 		{
 
 		}
 
-		static void initialize_navigation_internal(uint32_t id, uint8_t type) noexcept
+		static void initialize_navigation_internal(uint32_t id, uint8_t type)
 		{
 			using namespace era_engine::ai;
 
@@ -395,7 +395,7 @@ namespace era_engine::dotnet
 				entity.addComponent<navigation_component>((nav_type)type);
 		}
 
-		static void set_destination_internal(uint32_t id, float* destPtr) noexcept
+		static void set_destination_internal(uint32_t id, float* destPtr)
 		{
 			using namespace era_engine::ai;
 
@@ -413,7 +413,7 @@ namespace era_engine::dotnet
 			}
 		}
 
-		static void log_message_internal(uint8_t mode, const char* message) noexcept
+		static void log_message_internal(uint8_t mode, const char* message)
 		{
 			message_type type = (message_type)mode;
 
@@ -425,7 +425,7 @@ namespace era_engine::dotnet
 				LOG_MESSAGE(message);
 		}
 
-		static void send_type_internal(const char* type) noexcept
+		static void send_type_internal(const char* type)
 		{
 			std::cout << "Type found: " << type << "\n";
 			enative_scripting_linker::scriptTypes.push_back(type);
@@ -457,15 +457,18 @@ namespace era_engine::dotnet
 	void enative_scripting_linker::release()
 	{
 		RELEASE_PTR(builder)
-			if (lib)
-				FreeLibrary(lib);
+		if (lib)
+			FreeLibrary(lib);
 		host.releaseHost();
 	}
 
 	void enative_scripting_linker::start()
 	{
-		if (startF)
+		if (startF && !started)
+		{
 			startF();
+			started = true;
+		}
 	}
 
 	void enative_scripting_linker::update(float dt)
@@ -500,6 +503,8 @@ namespace era_engine::dotnet
 
 	void enative_scripting_linker::release_src()
 	{
+		if (!started)
+			return;
 		if (releaseSrcF)
 			releaseSrcF();
 	}

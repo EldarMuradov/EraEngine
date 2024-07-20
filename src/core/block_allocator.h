@@ -9,7 +9,7 @@ namespace era_engine
 		void initialize(uint64 capacity);
 
 		// Returns the offset
-		NODISCARD uint64 allocate(uint64 requestedSize);
+		uint64 allocate(uint64 requestedSize);
 		void free(uint64 offset, uint64 size);
 
 		uint64 availableSize;

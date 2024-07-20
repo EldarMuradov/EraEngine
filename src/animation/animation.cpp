@@ -890,7 +890,7 @@ namespace era_engine::animation
 #endif
 	}
 
-	void animation_state_machine::set_state(ref<animation_state> state, animation_blackboard& blackboard) noexcept
+	void animation_state_machine::set_state(ref<animation_state> state, animation_blackboard& blackboard)
 	{
 		if (currentState)
 		{
@@ -910,7 +910,7 @@ namespace era_engine::animation
 		}
 	}
 
-	void animation_state_machine::enter(animation_blackboard& blackboard) noexcept
+	void animation_state_machine::enter(animation_blackboard& blackboard)
 	{
 		if (currentState)
 		{
@@ -923,7 +923,7 @@ namespace era_engine::animation
 		}
 	}
 
-	void animation_state_machine::pause(animation_blackboard& blackboard) noexcept
+	void animation_state_machine::pause(animation_blackboard& blackboard)
 	{
 		paused = true;
 
@@ -931,7 +931,7 @@ namespace era_engine::animation
 			currentState->pause(blackboard);
 	}
 
-	void animation_state_machine::resume(animation_blackboard& blackboard) noexcept
+	void animation_state_machine::resume(animation_blackboard& blackboard)
 	{
 		paused = false;
 
@@ -939,7 +939,7 @@ namespace era_engine::animation
 			currentState->resume(blackboard);
 	}
 
-	void animation_state_machine::update(animation_blackboard& blackboard) noexcept
+	void animation_state_machine::update(animation_blackboard& blackboard)
 	{
 		if (paused)
 			return;
@@ -951,7 +951,7 @@ namespace era_engine::animation
 		}
 	}
 
-	void animation_state_machine::update() noexcept
+	void animation_state_machine::update()
 	{
 		if (paused)
 			return;

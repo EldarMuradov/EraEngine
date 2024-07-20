@@ -170,7 +170,7 @@ namespace era_engine::animation
 
 	struct animation_state : era_engine::ai::state_base<animation_blackboard>
 	{
-		animation_state(ref<animation_instance> inst) noexcept : instance(inst)
+		animation_state(ref<animation_instance> inst) : instance(inst)
 		{
 		}
 
@@ -202,17 +202,17 @@ namespace era_engine::animation
 
 	struct animation_state_machine
 	{
-		void set_state(ref<animation_state> state, animation_blackboard& blackboard) noexcept;
+		void set_state(ref<animation_state> state, animation_blackboard& blackboard);
 
-		void enter(animation_blackboard& blackboard) noexcept;
+		void enter(animation_blackboard& blackboard);
 		
-		void pause(animation_blackboard& blackboard) noexcept;
+		void pause(animation_blackboard& blackboard);
 
-		void resume(animation_blackboard& blackboard) noexcept;
+		void resume(animation_blackboard& blackboard);
 
-		void update(animation_blackboard& blackboard) noexcept;
+		void update(animation_blackboard& blackboard);
 
-		void update() noexcept;
+		void update();
 
 	private:
 		ref<animation_state> currentState = nullptr;

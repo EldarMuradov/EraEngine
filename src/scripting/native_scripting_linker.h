@@ -54,6 +54,8 @@ namespace era_engine::dotnet
 
 		elib lib = nullptr;
 
+		volatile bool started = false;
+
 		enative_scripting_builder* builder = nullptr;
 	};
 }

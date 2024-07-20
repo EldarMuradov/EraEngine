@@ -148,7 +148,7 @@ namespace era_engine::dlss
 #endif
 	}
 
-	void dlss_feature_adapter::initializeDLSS() noexcept
+	void dlss_feature_adapter::initializeDLSS()
 	{
 
 #if ENABLE_DLSS

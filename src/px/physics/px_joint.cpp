@@ -66,11 +66,9 @@ namespace era_engine::physics
 		return joint;
 	}
 
-	px_revolute_joint::px_revolute_joint(px_revolute_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept : px_joint(f, s)
+	px_revolute_joint::px_revolute_joint(px_revolute_joint_desc desc, PxRigidActor* f, PxRigidActor* s) : px_joint(f, s)
 	{
 		joint = createRevoluteJoint(f, s);
-		first = f;
-		second = s;
 		type = px_joint_type::joint_type_revolute;
 		PxJointAngularLimitPair limitPair(desc.angularPair.lower,
 			desc.angularPair.upper);
@@ -95,11 +93,9 @@ namespace era_engine::physics
 	{
 	}
 
-	px_spherical_joint::px_spherical_joint(px_spherical_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept
+	px_spherical_joint::px_spherical_joint(px_spherical_joint_desc desc, PxRigidActor* f, PxRigidActor* s) : px_joint(f, s)
 	{
 		joint = createSphericalJoint(f, s);
-		first = f;
-		second = s;
 		type = px_joint_type::joint_type_spherical;
 
 		PxJointLimitCone limitCone(desc.limitCone.yAngle,
@@ -119,11 +115,9 @@ namespace era_engine::physics
 	{
 	}
 
-	px_prismatic_joint::px_prismatic_joint(px_prismatic_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept
+	px_prismatic_joint::px_prismatic_joint(px_prismatic_joint_desc desc, PxRigidActor* f, PxRigidActor* s) : px_joint(f, s)
 	{
 		joint = createPrismaticJoint(f, s);
-		first = f;
-		second = s;
 		type = px_joint_type::joint_type_prismatic;
 		PxTolerancesScale ts;
 		ts.length = 1.0;
@@ -147,11 +141,9 @@ namespace era_engine::physics
 	{
 	}
 
-	px_distance_joint::px_distance_joint(px_distance_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept
+	px_distance_joint::px_distance_joint(px_distance_joint_desc desc, PxRigidActor* f, PxRigidActor* s) : px_joint(f, s)
 	{
 		joint = createDistanceJoint(f, s);
-		first = f;
-		second = s;
 		type = px_joint_type::joint_type_distance;
 		auto jInstance = joint->is<PxDistanceJoint>();
 		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
@@ -168,10 +160,8 @@ namespace era_engine::physics
 	{
 	}
 
-	px_fixed_joint::px_fixed_joint(px_fixed_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept
+	px_fixed_joint::px_fixed_joint(px_fixed_joint_desc desc, PxRigidActor* f, PxRigidActor* s) : px_joint(f, s)
 	{
-		first = f;
-		second = s;
 		joint = createFixedJoint(f, s);
 		type = px_joint_type::joint_type_fixed;
 		auto jInstance = joint->is<PxFixedJoint>();
@@ -188,11 +178,9 @@ namespace era_engine::physics
 	{
 	}
 
-	px_d6_joint::px_d6_joint(px_d6_joint_desc desc, PxRigidActor* f, PxRigidActor* s) noexcept
+	px_d6_joint::px_d6_joint(px_d6_joint_desc desc, PxRigidActor* f, PxRigidActor* s) : px_joint(f, s)
 	{
 		joint = createD6Joint(f, s);
-		first = f;
-		second = s;
 		type = px_joint_type::joint_type_d6;
 		auto jInstance = joint->is<PxD6Joint>();
 		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);

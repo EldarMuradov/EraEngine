@@ -92,7 +92,7 @@ namespace era_engine::physics
 		void setMaxContactImpulseFlag(bool state);
 
 		void setKinematic(bool kinematic);
-		bool isKinematicBody() const noexcept { return isKinematic; }
+		bool isKinematicBody() const { return isKinematic; }
 
 		void setLinearVelocity(const vec3& velocity);
 
@@ -112,7 +112,7 @@ namespace era_engine::physics
 
 		void setThreshold(float stabilization = 0.01f, float sleep = 0.01f);
 
-		virtual void release(bool releaseActor = false) noexcept override;
+		virtual void release(bool releaseActor = false) override;
 
 	protected:
 		PxRigidDynamicLockFlags rotLockNative;
@@ -132,7 +132,7 @@ namespace era_engine::physics
 
 		NODISCARD PxRigidStatic* getRigidStatic() const { return actor->is<PxRigidStatic>(); }
 
-		virtual void release(bool releaseActor = false) noexcept override;
+		virtual void release(bool releaseActor = false) override;
 	};
 
 	PxRigidDynamic* createRigidDynamic(const PxTransform& transform, void* userData);

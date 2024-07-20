@@ -9,7 +9,7 @@ namespace era_engine
 {
 	struct lock
 	{
-		lock(std::mutex& mutex) noexcept : sync(mutex)
+		lock(std::mutex& mutex) : sync(mutex)
 		{
 			sync.lock();
 		}
@@ -31,12 +31,12 @@ namespace era_engine
 
 		~spin_lock() { unlock(); }
 
-		void lock() noexcept
+		void lock()
 		{
 			while (!flag.test_and_set(std::memory_order_acquire));
 		}
 
-		void unlock() noexcept
+		void unlock()
 		{
 			flag.clear(std::memory_order_release);
 		}
@@ -47,7 +47,7 @@ namespace era_engine
 		spin_lock& lock;
 
 	public:
-		shared_spin_lock(spin_lock& toLock) noexcept : lock(toLock) { lock.lock(); }
+		shared_spin_lock(spin_lock& toLock) : lock(toLock) { lock.lock(); }
 		~shared_spin_lock() { lock.unlock(); }
 	};
 }

@@ -42,8 +42,8 @@ namespace era_engine
 	bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
 	struct update_scripting_data;
-	void updatePhysXCallbacksAndScripting(escene& currentScene, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in) noexcept;
-	void updateScripting(update_scripting_data& data) noexcept;
+	void updatePhysXCallbacksAndScripting(escene& currentScene, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in);
+	void updateScripting(update_scripting_data& data);
 
 	struct application
 	{
@@ -54,17 +54,19 @@ namespace era_engine
 
 		void handleFileDrop(const fs::path& filename);
 
-		NODISCARD escene* getCurrentScene() noexcept { return &scene.getCurrentScene(); }
-		NODISCARD editor_scene* getScene() noexcept { return &scene; }
+		void visualizePhysics();
 
-		main_renderer* getRenderer() const noexcept
+		NODISCARD escene* getCurrentScene() { return &scene.getCurrentScene(); }
+		NODISCARD editor_scene* getScene() { return &scene; }
+
+		main_renderer* getRenderer() const
 		{
 			return renderer;
 		}
 
 #ifndef ERA_RUNTIME
 
-		eeditor* getEditor() noexcept
+		eeditor* getEditor()
 		{
 			return &editor;
 		}

@@ -12,7 +12,7 @@ namespace era_engine
 		addNewBlock(0, capacity);
 	}
 
-	NODISCARD uint64 block_allocator::allocate(uint64 requestedSize)
+	uint64 block_allocator::allocate(uint64 requestedSize)
 	{
 		auto smallestBlockItIt = blocksBySize.lower_bound(requestedSize);
 		if (smallestBlockItIt == blocksBySize.end())

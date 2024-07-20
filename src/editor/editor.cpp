@@ -320,9 +320,6 @@ namespace era_engine
 				}
 			}
 		}
-
-		if (renderPhysicsShapes)
-			drawPhysicsShapes(ldrRenderPass);
 	}
 
 	static void drawIconsWindow(bool& open)
@@ -2321,25 +2318,6 @@ namespace era_engine
 		return clicked;
 	}
 
-	void eeditor::drawPhysicsShapes(ldr_render_pass* renderPass)
-	{
-		physics::physics_lock_read lock{};
-		auto scene = physics::physics_holder::physicsRef->getScene();
-		const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
-
-		for (physx::PxU32 i = 0; i < rb.getNbPoints(); i++)
-		{
-			const physx::PxDebugPoint& point = rb.getPoints()[i];
-			renderPoint(physx::createVec3(point.pos), vec4(point.color), renderPass);
-		}
-
-		for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
-		{
-			const physx::PxDebugLine& line = rb.getLines()[i];
-			renderLine(physx::createVec3(line.pos0), physx::createVec3(line.pos1), vec4(line.color0), renderPass);
-		}
-	}
-
 	void eeditor::serializeToFile()
 	{
 		serializeSceneToYAMLFile(*scene, renderer->settings);
@@ -2987,7 +2965,6 @@ namespace era_engine
 #else
 					ImGui::PropertyValue("Broad phase", "PABP (CPU)");
 #endif
-					ImGui::PropertyCheckbox("Render physics shapes", renderPhysicsShapes);
 					ImGui::EndProperties();
 				}
 #if !_DEBUG

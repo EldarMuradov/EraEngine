@@ -9,18 +9,18 @@
 
 namespace era_engine::ai
 {
-    static bool isDestination(vec2 pos, nav_node dest) noexcept
+    static bool isDestination(vec2 pos, nav_node dest)
     {
         return pos == dest.position;
     }
 
-    static float calculateH(vec2 pos, nav_node dest) noexcept
+    static float calculateH(vec2 pos, nav_node dest)
     {
         return length(pos - dest.position);
     }
 
     // TODO: Obstacle checking
-    static bool isValid(vec2 pos) noexcept
+    static bool isValid(vec2 pos)
     {
         return true;
     }

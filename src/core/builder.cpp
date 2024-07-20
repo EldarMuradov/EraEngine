@@ -10,7 +10,7 @@
 
 namespace era_engine::build
 {
-	NODISCARD std::optional<std::string> ebuilder::selectBuildFolder()
+	std::optional<std::string> ebuilder::selectBuildFolder()
 	{
 		const std::string result = directoryDialog();
 		if (!result.empty())

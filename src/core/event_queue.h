@@ -13,7 +13,7 @@ namespace era_engine
 	template <typename Event, EventType<Event> = true>
 	struct event_queue
 	{
-		virtual void pushEvent(const Event& event) noexcept
+		virtual void pushEvent(const Event& event)
 		{
 			if (num < MAX_PENDING - 1)
 				pending[num++] = event;
@@ -21,7 +21,7 @@ namespace era_engine
 				LOG_WARNING("Event Queue> Can't push event in queue!");
 		}
 
-		virtual void processQueue(ProcessEventFunction<Event> func) noexcept
+		virtual void processQueue(ProcessEventFunction<Event> func)
 		{
 			for (size_t i = 0; i < num; ++i)
 			{
@@ -40,13 +40,13 @@ namespace era_engine
 	template <typename Event, EventType<Event> = true>
 	struct concurrent_event_queue : event_queue<Event>
 	{
-		virtual void pushEvent(const Event& event) noexcept
+		virtual void pushEvent(const Event& event)
 		{
 			shared_spin_lock lock{ sync };
 			queue.pushEvent(event);
 		}
 
-		virtual void processQueue(ProcessEventFunction<Event> func) noexcept
+		virtual void processQueue(ProcessEventFunction<Event> func)
 		{
 			shared_spin_lock lock{ sync };
 			queue.processQueue(func);

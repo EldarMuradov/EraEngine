@@ -25,8 +25,13 @@
 
 #define PX_VEHICLE 0
 
+#ifndef PX_RELEASE
 #define PX_RELEASE(x)	if(x)	{ x->release(); x = nullptr;}
+#endif
+
+#ifndef UNUSED
 #define UNUSED(x) (void)(x)
+#endif
 
 #define PX_DEVICE_ALLOC(cudaContextManager, deviceBuffer, numElements) cudaContextManager->allocDeviceBuffer(deviceBuffer, numElements, PX_FL)
 #define PX_DEVICE_ALLOC_T(T, cudaContextManager, numElements) cudaContextManager->allocDeviceBuffer<T>(numElements, PX_FL)
@@ -100,7 +105,7 @@ namespace physx
 	using namespace era_engine;
 	constexpr float PX_HALF_MAX_F32 = PX_MAX_F32 / 2.0f;
 
-	PX_FORCE_INLINE constexpr PxU32 id(PxU32 x, PxU32 y, PxU32 numY) noexcept
+	PX_FORCE_INLINE constexpr PxU32 id(PxU32 x, PxU32 y, PxU32 numY)
 	{
 		return x * numY + y;
 	}
@@ -108,30 +113,30 @@ namespace physx
 	inline PxVec3 operator*(PxVec3 a, PxVec3 b) { return PxVec3(a.x * b.x, a.y * b.y, a.z * b.z); }
 	inline PxVec4 operator*(PxVec4 a, PxVec4 b) { return PxVec4(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w); }
 
-	NODISCARD PX_FORCE_INLINE PxVec4 createPxVec4(const vec3& vec) noexcept { return PxVec4(vec.x, vec.y, vec.z, 0); }
-	NODISCARD PX_FORCE_INLINE PxVec4 createPxVec4(const vec4& vec) noexcept { return PxVec4(vec.x, vec.y, vec.z, vec.w); }
+	NODISCARD PX_FORCE_INLINE PxVec4 createPxVec4(const vec3& vec) { return PxVec4(vec.x, vec.y, vec.z, 0); }
+	NODISCARD PX_FORCE_INLINE PxVec4 createPxVec4(const vec4& vec) { return PxVec4(vec.x, vec.y, vec.z, vec.w); }
 
-	NODISCARD PX_FORCE_INLINE PxVec3 createPxVec3(const vec3& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
-	NODISCARD PX_FORCE_INLINE PxVec2 createPxVec2(const vec2& vec) noexcept { return PxVec2(vec.x, vec.y); }
-	NODISCARD PX_FORCE_INLINE PxVec3 createPxVec3(vec3&& vec) noexcept { return PxVec3(vec.x, vec.y, vec.z); }
-	NODISCARD PX_FORCE_INLINE PxVec2 createPxVec2(vec2&& vec) noexcept { return PxVec2(vec.x, vec.y); }
+	NODISCARD PX_FORCE_INLINE PxVec3 createPxVec3(const vec3& vec) { return PxVec3(vec.x, vec.y, vec.z); }
+	NODISCARD PX_FORCE_INLINE PxVec2 createPxVec2(const vec2& vec) { return PxVec2(vec.x, vec.y); }
+	NODISCARD PX_FORCE_INLINE PxVec3 createPxVec3(vec3&& vec) { return PxVec3(vec.x, vec.y, vec.z); }
+	NODISCARD PX_FORCE_INLINE PxVec2 createPxVec2(vec2&& vec) { return PxVec2(vec.x, vec.y); }
 
-	NODISCARD PX_FORCE_INLINE PxQuat createPxQuat(const quat& q) noexcept { return PxQuat(q.x, q.y, q.z, q.w); }
-	NODISCARD PX_FORCE_INLINE PxQuat createPxQuat(quat&& q) noexcept { return PxQuat(q.x, q.y, q.z, q.w); }
+	NODISCARD PX_FORCE_INLINE PxQuat createPxQuat(const quat& q) { return PxQuat(q.x, q.y, q.z, q.w); }
+	NODISCARD PX_FORCE_INLINE PxQuat createPxQuat(quat&& q) { return PxQuat(q.x, q.y, q.z, q.w); }
 
-	NODISCARD PX_FORCE_INLINE vec3 createVec3(const PxVec3& vec) noexcept { return vec3(vec.x, vec.y, vec.z); }
-	NODISCARD PX_FORCE_INLINE vec2 createVec2(const PxVec2& vec) noexcept { return vec2(vec.x, vec.y); }
-	NODISCARD PX_FORCE_INLINE vec3 createVec3(PxVec3&& vec) noexcept { return vec3(vec.x, vec.y, vec.z); }
-	NODISCARD PX_FORCE_INLINE vec2 createVec2(PxVec2&& vec) noexcept { return vec2(vec.x, vec.y); }
+	NODISCARD PX_FORCE_INLINE vec3 createVec3(const PxVec3& vec) { return vec3(vec.x, vec.y, vec.z); }
+	NODISCARD PX_FORCE_INLINE vec2 createVec2(const PxVec2& vec) { return vec2(vec.x, vec.y); }
+	NODISCARD PX_FORCE_INLINE vec3 createVec3(PxVec3&& vec) { return vec3(vec.x, vec.y, vec.z); }
+	NODISCARD PX_FORCE_INLINE vec2 createVec2(PxVec2&& vec) { return vec2(vec.x, vec.y); }
 
-	NODISCARD PX_FORCE_INLINE quat createQuat(const PxQuat& q) noexcept { return quat(q.x, q.y, q.z, q.w); }
-	NODISCARD PX_FORCE_INLINE quat createQuat(PxQuat&& q) noexcept { return quat(q.x, q.y, q.z, q.w); }
+	NODISCARD PX_FORCE_INLINE quat createQuat(const PxQuat& q) { return quat(q.x, q.y, q.z, q.w); }
+	NODISCARD PX_FORCE_INLINE quat createQuat(PxQuat&& q) { return quat(q.x, q.y, q.z, q.w); }
 							 
-	NODISCARD PX_FORCE_INLINE PxVec2 min(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::min(a.x, b.x), std::min(a.y, b.y)); }
-	NODISCARD PX_FORCE_INLINE PxVec3 min(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z)); }
+	NODISCARD PX_FORCE_INLINE PxVec2 min(const PxVec2& a, const PxVec2& b) { return PxVec2(std::min(a.x, b.x), std::min(a.y, b.y)); }
+	NODISCARD PX_FORCE_INLINE PxVec3 min(const PxVec3& a, const PxVec3& b) { return PxVec3(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z)); }
 							 
-	NODISCARD PX_FORCE_INLINE PxVec2 max(const PxVec2& a, const PxVec2& b) noexcept { return PxVec2(std::max(a.x, b.x), std::max(a.y, b.y)); }
-	NODISCARD PX_FORCE_INLINE PxVec3 max(const PxVec3& a, const PxVec3& b) noexcept { return PxVec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)); }
+	NODISCARD PX_FORCE_INLINE PxVec2 max(const PxVec2& a, const PxVec2& b) { return PxVec2(std::max(a.x, b.x), std::max(a.y, b.y)); }
+	NODISCARD PX_FORCE_INLINE PxVec3 max(const PxVec3& a, const PxVec3& b) { return PxVec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)); }
 
 #if PX_VEHICLE
 
@@ -226,44 +231,15 @@ namespace era_engine::physics
 		px_physics_component_base() {}
 		px_physics_component_base(uint32_t handle) : entity_handle_component_base(handle){}
 		virtual ~px_physics_component_base() {}
-		virtual void release(bool release = false) noexcept {}
+		virtual void release(bool release = false) {}
 	};
 
-	inline std::vector<PxFilterData> getFilterData(PxRigidActor* actor) noexcept
-	{
-		std::vector<PxShape*> shapes(actor->getNbShapes(), nullptr);
-		std::vector<PxFilterData> out(shapes.size());
+	std::vector<PxFilterData> getFilterData(PxRigidActor* actor);
 
-		actor->getShapes(&shapes[0], shapes.size());
+	bool isTrigger(const PxFilterData& data);
 
-		for (int i = 0; i < shapes.size(); ++i)
-			out[i] = shapes[i]->getSimulationFilterData();
-
-		return out;
-	}
-
-	inline bool isTrigger(const PxFilterData& data)
-	{
-		if (data.word0 != 0xffffffff)
-			return false;
-		if (data.word1 != 0xffffffff)
-			return false;
-		if (data.word2 != 0xffffffff)
-			return false;
-		if (data.word3 != 0xffffffff)
-			return false;
-		return true;
-	}
-
-	inline void setFilterData(PxRigidActor* actor,
-		const std::vector<PxFilterData>& filterData) noexcept
-	{
-		std::vector<PxShape*> shapes(actor->getNbShapes(), nullptr);
-
-		actor->getShapes(&shapes[0], shapes.size());
-		for (int i = 0; i < shapes.size(); ++i)
-			shapes[i]->setSimulationFilterData(filterData[i]);
-	}
+	void setFilterData(PxRigidActor* actor,
+		const std::vector<PxFilterData>& filterData);
 
 	struct px_allocator_callback : PxAllocatorCallback
 	{
@@ -315,34 +291,34 @@ namespace era_engine::physics
 		}
 
 	public:
-		NODISCARD PX_INLINE PxU32 getNbAnyHits() const
+		PX_INLINE PxU32 getNbAnyHits() const
 		{
 			return getNbTouches();
 		}
 
-		NODISCARD PX_INLINE const HitType& getAnyHit(const PxU32 index) const
+		PX_INLINE const HitType& getAnyHit(const PxU32 index) const
 		{
 			PX_ASSERT(index < getNbTouches() + PxU32(this->hasBlock));
 			return index < getNbTouches() ? getTouches()[index] : this->block;
 		}
 
-		NODISCARD PX_INLINE PxU32 getNbTouches() const
+		PX_INLINE PxU32 getNbTouches() const
 		{
 			return count;
 		}
 
-		NODISCARD PX_INLINE const HitType* getTouches() const
+		PX_INLINE const HitType* getTouches() const
 		{
 			return buffer;
 		}
 
-		NODISCARD PX_INLINE const HitType& getTouch(const PxU32 index) const
+		PX_INLINE const HitType& getTouch(const PxU32 index) const
 		{
 			PX_ASSERT(index < getNbTouches());
 			return buffer[index];
 		}
 
-		NODISCARD PX_INLINE PxU32 getMaxNbTouches() const
+		PX_INLINE PxU32 getMaxNbTouches() const
 		{
 			return PX_CONTACT_BUFFER_SIZE;
 		}
@@ -429,101 +405,28 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 	struct px_query_filter : public PxQueryFilterCallback
 	{
-		PxQueryHitType::Enum preFilter(const PxFilterData& filterData, const PxShape* shape, const PxRigidActor* actor, PxHitFlags& queryFlags) override
-		{
-			if (!shape)
-				return PxQueryHitType::eNONE;
+		PxQueryHitType::Enum preFilter(const PxFilterData& filterData, const PxShape* shape, const PxRigidActor* actor, PxHitFlags& queryFlags) override;
 
-			const PxFilterData shapeFilter = shape->getQueryFilterData();
-			if ((filterData.word0 & shapeFilter.word0) == 0)
-				return PxQueryHitType::eNONE;
-
-			const bool hitTriggers = filterData.word2 != 0;
-			if (!hitTriggers && shape->getFlags() & PxShapeFlag::eTRIGGER_SHAPE)
-				return PxQueryHitType::eNONE;
-
-			const bool blockSingle = filterData.word1 != 0;
-			return blockSingle ? PxQueryHitType::eBLOCK : PxQueryHitType::eTOUCH;
-		}
-
-		PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit, const PxShape* shape, const PxRigidActor* actor) override
-		{
-			return PxQueryHitType::eNONE;
-		}
+		PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit, const PxShape* shape, const PxRigidActor* actor) override;
 	};
 
 	class px_character_controller_filter_callback : public PxControllerFilterCallback
 	{
-		static PxShape* getShape(const PxController& controller)
-		{
-			PxRigidDynamic* actor = controller.getActor();
+		static PxShape* getShape(const PxController& controller);
 
-			if (!actor || actor->getNbShapes() < 1)
-				return nullptr;
-
-			PxShape* shape = nullptr;
-			actor->getShapes(&shape, 1);
-
-			return shape;
-		}
-
-		bool filter(const PxController& a, const PxController& b) override
-		{
-			PxShape* shapeA = getShape(a);
-			if (!shapeA)
-				return false;
-
-			PxShape* shapeB = getShape(b);
-			if (!shapeB)
-				return false;
-
-			if (PxFilterObjectIsTrigger(shapeB->getFlags()))
-				return false;
-
-			const PxFilterData shapeFilterA = shapeA->getQueryFilterData();
-			const PxFilterData shapeFilterB = shapeB->getQueryFilterData();
-
-			return shapeFilterA.word0 & shapeFilterB.word1;
-		}
+		bool filter(const PxController& a, const PxController& b) override;
 	};
 
 	struct px_profiler_callback : PxProfilerCallback
 	{
-		void* zoneStart(const char* eventName, bool detached, uint64_t contextId) override
-		{
-#if ENABLE_CPU_PROFILING
-			recordProfileEvent(profile_event_begin_block, eventName);
-#endif
+		void* zoneStart(const char* eventName, bool detached, uint64_t contextId) override;
 
-			LOG_MESSAGE("[%s] %s", eventName, "started");
-			return nullptr;
-		}
-
-		void zoneEnd(void* profilerData, const char* eventName, bool detached, uint64_t contextId) override
-		{
-			LOG_MESSAGE("[%s] %s", eventName, "finished");
-
-#if ENABLE_CPU_PROFILING
-			recordProfileEvent(profile_event_end_block, eventName);
-#endif
-		}
+		void zoneEnd(void* profilerData, const char* eventName, bool detached, uint64_t contextId) override;
 	};
 
 	struct px_error_reporter : PxErrorCallback
 	{
-		void reportError(PxErrorCode::Enum code, const char* message, const char* file, int line) override
-		{
-			if (message)
-			{
-				LOG_ERROR("PhysX Error> %s %s %u %s %s %s %u", message, "Code:", static_cast<int32>(code), "Source:", file, ":", line);
-				
-				std::ostringstream stream;
-				stream << message;
-				std::cout << stream.str() << "\n";
-			}
-			else
-				std::cerr << "PhysX Error! \n";
-		}
+		void reportError(PxErrorCode::Enum code, const char* message, const char* file, int line) override;
 	};
 
 	struct px_contact_point
@@ -537,18 +440,9 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 	struct px_collision
 	{
-		PxVec3 getRelativeVelocity() const noexcept
-		{
-			return thisVelocity - otherVelocity;
-		}
+		PxVec3 getRelativeVelocity() const;
 
-		void swapObjects() noexcept
-		{
-			if (!thisActor || !otherActor)
-				return;
-			std::swap(thisActor, otherActor);
-			std::swap(thisVelocity, otherVelocity);
-		}
+		void swapObjects();
 
 		px_body_component* thisActor = nullptr;
 
@@ -571,13 +465,13 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		typedef std::pair<px_body_component*, px_body_component*> colliders_pair;
 
-		void clear() noexcept;
+		void clear();
 
-		void sendCollisionEvents() noexcept;
+		void sendCollisionEvents();
 
-		void sendTriggerEvents() noexcept;
+		void sendTriggerEvents();
 
-		void onColliderRemoved(px_body_component* collider) noexcept;
+		void onColliderRemoved(px_body_component* collider);
 
 		void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) override;
 		void onWake(PxActor** actors, PxU32 count) override { std::cout << "onWake\n"; }
@@ -649,120 +543,62 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		NO_COPY(px_physics_engine)
 
 	public:
-		px_physics_engine() noexcept;
+		px_physics_engine();
 		~px_physics_engine();
 
-		void release() noexcept;
+		void release();
 
-		void start() noexcept;
-		void update(float dt) noexcept;
+		void start();
+		void update(float dt);
 
 		void startSimulation(float dt);
 		void endSimulation();
 
-		void resetActorsVelocityAndInertia() noexcept;
+		void resetActorsVelocityAndInertia();
 
 		void addActor(px_body_component* actor, PxRigidActor* ractor, bool addToScene);
 		void removeActor(px_body_component* actor);
 
-		ref<px_soft_body> addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount) noexcept;
+		ref<px_soft_body> addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount);
 
-		PxPhysics* getPhysics() const noexcept { return physics; }
+		PxPhysics* getPhysics() const { return physics; }
 
-		PxTolerancesScale getTolerancesScale() const noexcept { return toleranceScale; }
+		PxTolerancesScale getTolerancesScale() const { return toleranceScale; }
 
-		PxCpuDispatcher* getCPUDispatcher() const noexcept { return dispatcher; }
+		PxCpuDispatcher* getCPUDispatcher() const { return dispatcher; }
 
-		PxScene* getScene() const noexcept { return scene; }
+		PxScene* getScene() const { return scene; }
 
-		PxCudaContextManager* getCudaContextManager() const noexcept { return cudaContextManager; }
+		PxCudaContextManager* getCudaContextManager() const { return cudaContextManager; }
 
-		PxMaterial* getDefaultMaterial() const noexcept { return defaultMaterial; }
+		PxMaterial* getDefaultMaterial() const { return defaultMaterial; }
 
-		void lockRead() noexcept { scene->lockRead(); }
-		void unlockRead() noexcept { scene->unlockRead(); }
-		void lockWrite() noexcept { scene->lockWrite(); }
-		void unlockWrite() noexcept { scene->unlockWrite(); }
+		void lockRead() { scene->lockRead(); }
+		void unlockRead() { scene->unlockRead(); }
+		void lockWrite() { scene->lockWrite(); }
+		void unlockWrite() { scene->unlockWrite(); }
 
-		void releaseActors() noexcept;
-		void releaseScene() noexcept;
+		void releaseActors();
+		void releaseScene();
 
-		void explode(const vec3& worldPos, float damageRadius, float explosiveImpulse) noexcept;
+		void explode(const vec3& worldPos, float damageRadius, float explosiveImpulse);
 
 		// Raycasting
 		px_raycast_info raycast(px_body_component* rb, const vec3& dir, int maxDist = PX_NB_MAX_RAYCAST_DISTANCE, bool hitTriggers = true, uint32_t layerMask = 0, int maxHits = PX_NB_MAX_RAYCAST_HITS);
 
 		// Checking
-		bool checkBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
-		{
-			PX_SCENE_QUERY_SETUP_CHECK();
-			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
-			const PxBoxGeometry geometry(createPxVec3(halfExtents));
+		bool checkBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0);
 
-			return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
-		}
+		bool checkSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0);
 
-		bool checkSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0)
-		{
-			PX_SCENE_QUERY_SETUP_CHECK();
-			const PxTransform pose(createPxVec3(center - vec3(0.0f)));
-			const PxSphereGeometry geometry(radius);
-
-			return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
-		}
-
-		bool checkCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
-		{
-			PX_SCENE_QUERY_SETUP_CHECK();
-			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
-			const PxCapsuleGeometry geometry(radius, halfHeight);
-			return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
-		}
+		bool checkCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0);
 
 		// Overlapping
-		px_overlap_info overlapCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
-		{
-			PX_SCENE_QUERY_SETUP_OVERLAP();
-			std::vector<uint32_t> results;
-			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
-			const PxCapsuleGeometry geometry(radius, halfHeight);
-			if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
-				return px_overlap_info(false, results);
+		px_overlap_info overlapCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0);
 
-			PX_SCENE_QUERY_COLLECT_OVERLAP();
+		px_overlap_info overlapBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0);
 
-			return px_overlap_info(true, results);
-		}
-
-		px_overlap_info overlapBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers = false, uint32 layerMask = 0)
-		{
-			PX_SCENE_QUERY_SETUP_OVERLAP();
-			std::vector<uint32_t> results;
-			const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
-			const PxBoxGeometry geometry(createPxVec3(halfExtents));
-
-			if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
-				return px_overlap_info(false, results);
-
-			PX_SCENE_QUERY_COLLECT_OVERLAP();
-
-			return px_overlap_info(true, results);
-		}
-
-		px_overlap_info overlapSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0)
-		{
-			PX_SCENE_QUERY_SETUP_OVERLAP();
-			std::vector<uint32_t> results;
-			const PxTransform pose(createPxVec3(center - vec3(0.0f)));
-			const PxSphereGeometry geometry(radius);
-
-			if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
-				return px_overlap_info(false, results);
-
-			PX_SCENE_QUERY_COLLECT_OVERLAP();
-
-			return px_overlap_info(true, results);
-		}
+		px_overlap_info overlapSphere(const vec3& center, const float radius, bool hitTriggers = false, uint32 layerMask = 0);
 
 		float frameRate = 60.0f;
 
@@ -785,13 +621,13 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		spin_lock sync;
 
 	private:
-		void stepPhysics(float stepSize) noexcept;
+		void stepPhysics(float stepSize);
 
-		void syncTransforms() noexcept;
+		void syncTransforms();
 
-		void processBlastQueue() noexcept;
+		void processBlastQueue();
 
-		void processSimulationEventCallbacks() noexcept;
+		void processSimulationEventCallbacks();
 
 	private:
 		PxScene* scene = nullptr;

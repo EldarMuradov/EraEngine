@@ -23,7 +23,7 @@ namespace era_engine::physics
 		physics_holder::physicsRef->addActor((px_body_component*)this, controller->getActor(), false);
 	}
 
-	void px_capsule_cct_component::createCharacterController() noexcept
+	void px_capsule_cct_component::createCharacterController()
 	{
 		manager = PxCreateControllerManager(*physics_holder::physicsRef->getScene());
 
@@ -69,7 +69,7 @@ namespace era_engine::physics
 	{
 	}
 
-	void px_cct_component_base::release(bool releaseActor) noexcept
+	void px_cct_component_base::release(bool releaseActor)
 	{
 		physics_holder::physicsRef->removeActor((px_body_component*)this);
 
@@ -106,7 +106,7 @@ namespace era_engine::physics
 		physics_holder::physicsRef->addActor((px_body_component*)this, controller->getActor(), false);
 	}
 
-	void px_box_cct_component::createCharacterController() noexcept
+	void px_box_cct_component::createCharacterController()
 	{
 		manager = PxCreateControllerManager(*physics_holder::physicsRef->getScene());
 

@@ -11,14 +11,14 @@ namespace era_engine::physics
 	struct px_aggregate
 	{
 		px_aggregate() = default;
-		px_aggregate(uint8 nb, bool sc = true) noexcept;
+		px_aggregate(uint8 nb, bool sc = true);
 		~px_aggregate() { physics_holder::physicsRef->getScene()->removeAggregate(*aggregate); PX_RELEASE(aggregate) }
 
-		void addActor(PxActor* actor) noexcept;
-		void removeActor(PxActor* actor) noexcept;
+		void addActor(PxActor* actor);
+		void removeActor(PxActor* actor);
 
-		uint8 getNbActors() const noexcept { return nbActors; }
-		bool isSelfCollision() const noexcept { return selfCollisions; }
+		uint8 getNbActors() const { return nbActors; }
+		bool isSelfCollision() const { return selfCollisions; }
 
 	private:
 		PxAggregate* aggregate = nullptr;

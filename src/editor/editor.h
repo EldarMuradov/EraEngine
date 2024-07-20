@@ -51,7 +51,6 @@ namespace era_engine
 		void renderChilds(eentity& entity);
 		bool handleUserInput(const user_input& input, ldr_render_pass* ldrRenderPass, float dt);
 		bool drawEntityCreationPopup();
-		void drawPhysicsShapes(ldr_render_pass* renderPass);
 
 		void updateSelectedEntityUIRotation();
 
@@ -98,7 +97,6 @@ namespace era_engine
 		vec3 selectedEntityEulerRotation;
 
 		system_info systemInfo;
-		bool renderPhysicsShapes = false;
 
 		friend struct selection_undo;
 		friend struct application;

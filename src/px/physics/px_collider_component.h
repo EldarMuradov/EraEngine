@@ -40,14 +40,14 @@ namespace era_engine::physics
 		NODISCARD PxConvexMesh* buildMesh(mesh_asset* asset, const vec3& size);
 	};
 
-	void enableShapeVisualization(PxShape* shape) noexcept;
-	void disableShapeVisualization(PxShape* shape) noexcept;
+	void enableShapeVisualization(PxShape* shape);
+	void disableShapeVisualization(PxShape* shape);
 
-	void enableShapeInContactTests(PxShape* shape) noexcept;
-	void disableShapeInContactTests(PxShape* shape) noexcept;
+	void enableShapeInContactTests(PxShape* shape);
+	void disableShapeInContactTests(PxShape* shape);
 
-	void enableShapeInSceneQueryTests(PxShape* shape) noexcept;
-	void disableShapeInSceneQueryTests(PxShape* shape) noexcept;
+	void enableShapeInSceneQueryTests(PxShape* shape);
+	void disableShapeInSceneQueryTests(PxShape* shape);
 
 	struct px_collider_component_base;
 
@@ -56,13 +56,13 @@ namespace era_engine::physics
 
 	struct px_collider_component_base : px_physics_component_base
 	{
-		px_collider_component_base(uint32 handle) noexcept : px_physics_component_base(handle) { }
+		px_collider_component_base(uint32 handle) : px_physics_component_base(handle) { }
 		px_collider_component_base() = default;
 		virtual ~px_collider_component_base();
 
-		NODISCARD PxGeometry* getGeometry() const noexcept { return geometry; }
-		NODISCARD PxShape* getShape() const noexcept { return shape; }
-		void setShape(PxShape* newShape) noexcept { shape = newShape; }
+		NODISCARD PxGeometry* getGeometry() const { return geometry; }
+		NODISCARD PxShape* getShape() const { return shape; }
+		void setShape(PxShape* newShape) { shape = newShape; }
 
 		virtual bool createGeometry() { return false; }
 
@@ -74,7 +74,7 @@ namespace era_engine::physics
 
 		virtual void registerCollider() { physics_holder::physicsRef->collidersMap[entityHandle].push_back(this); }
 
-		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) PX_RELEASE(material) RELEASE_PTR(geometry) }
+		virtual void release(bool release = true) override { PX_RELEASE(shape) PX_RELEASE(material) RELEASE_PTR(geometry) }
 
 	protected:
 		PxGeometry* geometry = nullptr;
@@ -84,7 +84,7 @@ namespace era_engine::physics
 
 	struct px_box_collider_component : px_collider_component_base
 	{
-		px_box_collider_component(uint32 handle, float h, float l, float w) noexcept 
+		px_box_collider_component(uint32 handle, float h, float l, float w)
 			: px_collider_component_base(handle)
 		{
 			height = h;
@@ -104,7 +104,7 @@ namespace era_engine::physics
 
 	struct px_sphere_collider_component : px_collider_component_base
 	{
-		px_sphere_collider_component(uint32 handle, float r) noexcept 
+		px_sphere_collider_component(uint32 handle, float r)
 			: px_collider_component_base(handle)
 		{
 			radius = r;
@@ -122,7 +122,7 @@ namespace era_engine::physics
 
 	struct px_capsule_collider_component : px_collider_component_base
 	{
-		px_capsule_collider_component(uint32 handle, float r, float h) noexcept 
+		px_capsule_collider_component(uint32 handle, float r, float h)
 			: px_collider_component_base(handle)
 		{
 			radius = r;
@@ -151,7 +151,7 @@ namespace era_engine::physics
 
 	struct px_bounding_box_collider_component : px_collider_component_base
 	{
-		px_bounding_box_collider_component(uint32 handle, vec3 size, mesh_asset* as) noexcept
+		px_bounding_box_collider_component(uint32 handle, vec3 size, mesh_asset* as)
 			: px_collider_component_base(handle), asset(as), modelSize(size)
 		{
 			name = asset->name;
@@ -162,7 +162,7 @@ namespace era_engine::physics
 
 		virtual bool createGeometry() override;
 
-		void release(bool release = true) noexcept override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) RELEASE_PTR(geometry) }
+		void release(bool release = true) override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) RELEASE_PTR(geometry) }
 
 		void registerCollider() override { physics_holder::physicsRef->collidersMap[entityHandle].push_back(this); }
 
@@ -173,8 +173,7 @@ namespace era_engine::physics
 
 	struct px_triangle_mesh_collider_component : px_collider_component_base
 	{
-		px_triangle_mesh_collider_component(uint32 handle, vec3 size, mesh_asset* as) noexcept 
-			: px_collider_component_base(handle), asset(as), modelSize(size)
+		px_triangle_mesh_collider_component(uint32 handle, vec3 size, mesh_asset* as) : px_collider_component_base(handle), asset(as), modelSize(size)
 		{
 			name = asset->name;
 			registerCollider();
@@ -184,7 +183,7 @@ namespace era_engine::physics
 
 		virtual bool createGeometry() override;
 
-		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) RELEASE_PTR(geometry) }
+		virtual void release(bool release = true) override { PX_RELEASE(shape) RELEASE_PTR(asset) PX_RELEASE(material) RELEASE_PTR(geometry) }
 
 		void registerCollider() override { physics_holder::physicsRef->collidersMap[entityHandle].push_back(this); }
 
@@ -195,7 +194,7 @@ namespace era_engine::physics
 
 	struct px_convex_mesh_collider_component : px_collider_component_base
 	{
-		px_convex_mesh_collider_component(uint32 handle, vec3 size, mesh_asset* as) noexcept 
+		px_convex_mesh_collider_component(uint32 handle, mesh_asset* as, vec3 size = vec3(1.0f))
 			: px_collider_component_base(handle), asset(as), modelSize(size)
 		{
 			name = asset->name;
@@ -206,7 +205,7 @@ namespace era_engine::physics
 
 		virtual bool createGeometry() override;
 
-		virtual void release(bool release = true) noexcept override { PX_RELEASE(shape) PX_RELEASE(material) RELEASE_PTR(geometry) }
+		virtual void release(bool release = true) override { PX_RELEASE(shape) PX_RELEASE(material) RELEASE_PTR(geometry) }
 
 		void registerCollider() override { physics_holder::physicsRef->collidersMap[entityHandle].push_back(this); }
 
@@ -217,7 +216,7 @@ namespace era_engine::physics
 
 	struct px_plane_collider_component : px_physics_component_base
 	{
-		px_plane_collider_component(uint32 handle, const vec3& pos, const vec3& norm = vec3(0.f, 1.f, 0.f)) noexcept : px_physics_component_base(handle), position(pos), normal(norm)
+		px_plane_collider_component(uint32 handle, const vec3& pos, const vec3& norm = vec3(0.f, 1.f, 0.f)) : px_physics_component_base(handle), position(pos), normal(norm)
 		{
 			createGeometry();
 		};
@@ -226,7 +225,7 @@ namespace era_engine::physics
 
 		bool createGeometry();
 
-		virtual void release(bool release = true) noexcept override { PX_RELEASE(plane) PX_RELEASE(material) }
+		virtual void release(bool release = true) override { PX_RELEASE(plane) PX_RELEASE(material) }
 
 		vec3 position{};
 		vec3 normal{};

@@ -24,7 +24,7 @@ namespace era_engine::ai
 	struct navigation_component : entity_handle_component_base
 	{
 		navigation_component() = default;
-		navigation_component(uint32 h, nav_type tp) noexcept;
+		navigation_component(uint32 h, nav_type tp);
 		~navigation_component() { }
 
 		void processPath();

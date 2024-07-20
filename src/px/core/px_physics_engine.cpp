@@ -33,7 +33,7 @@ namespace era_engine
 	static physx::PxFilterFlags contactReportFilterShader(
 		physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
 		physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
-		physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize) noexcept
+		physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize)
 	{
 		UNUSED(constantBlockSize);
 		UNUSED(constantBlock);
@@ -58,7 +58,7 @@ namespace era_engine
 	}
 
 	static void clearColliderFromCollection(const physics::px_body_component* collider,
-		physx::PxArray<physics::px_simulation_event_callback::colliders_pair>& collection) noexcept
+		physx::PxArray<physics::px_simulation_event_callback::colliders_pair>& collection)
 	{
 		const auto c = &collection[0];
 		for (int32 i = 0; i < collection.size(); i++)
@@ -79,11 +79,147 @@ namespace era_engine::physics
 	concurrent_event_queue<blast_fracture_event> blastFractureQueue;
 
 	era_engine::physics::px_fixed_stepper stepper;
+
+	std::vector<PxFilterData> getFilterData(PxRigidActor* actor)
+	{
+		std::vector<PxShape*> shapes(actor->getNbShapes(), nullptr);
+		std::vector<PxFilterData> out(shapes.size());
+
+		actor->getShapes(&shapes[0], shapes.size());
+
+		for (int i = 0; i < shapes.size(); ++i)
+			out[i] = shapes[i]->getSimulationFilterData();
+
+		return out;
+	}
+
+	bool isTrigger(const PxFilterData& data)
+	{
+		if (data.word0 != 0xffffffff)
+			return false;
+		if (data.word1 != 0xffffffff)
+			return false;
+		if (data.word2 != 0xffffffff)
+			return false;
+		if (data.word3 != 0xffffffff)
+			return false;
+		return true;
+	}
+
+	void setFilterData(PxRigidActor* actor, const std::vector<PxFilterData>& filterData)
+	{
+		std::vector<PxShape*> shapes(actor->getNbShapes(), nullptr);
+
+		actor->getShapes(&shapes[0], shapes.size());
+		for (int i = 0; i < shapes.size(); ++i)
+			shapes[i]->setSimulationFilterData(filterData[i]);
+	}
+
+	PxVec3 px_collision::getRelativeVelocity() const
+	{
+		return thisVelocity - otherVelocity;
+	}
+
+	void px_collision::swapObjects()
+	{
+		if (!thisActor || !otherActor)
+			return;
+		std::swap(thisActor, otherActor);
+		std::swap(thisVelocity, otherVelocity);
+	}
+
+	void px_error_reporter::reportError(PxErrorCode::Enum code, const char* message, const char* file, int line)
+	{
+		if (message)
+		{
+			LOG_ERROR("PhysX Error> %s %s %u %s %s %s %u", message, "Code:", static_cast<int32>(code), "Source:", file, ":", line);
+
+			std::ostringstream stream;
+			stream << message;
+			std::cout << stream.str() << "\n";
+		}
+		else
+			std::cerr << "PhysX Error! \n";
+	}
+
+	void* px_profiler_callback::zoneStart(const char* eventName, bool detached, uint64_t contextId)
+	{
+#if ENABLE_CPU_PROFILING
+		recordProfileEvent(profile_event_begin_block, eventName);
+#endif
+
+		LOG_MESSAGE("[%s] %s", eventName, "started");
+		return nullptr;
+	}
+
+	void px_profiler_callback::zoneEnd(void* profilerData, const char* eventName, bool detached, uint64_t contextId)
+	{
+		LOG_MESSAGE("[%s] %s", eventName, "finished");
+
+#if ENABLE_CPU_PROFILING
+		recordProfileEvent(profile_event_end_block, eventName);
+#endif
+	}
+
+	PxShape* px_character_controller_filter_callback::getShape(const PxController& controller)
+	{
+		PxRigidDynamic* actor = controller.getActor();
+
+		if (!actor || actor->getNbShapes() < 1)
+			return nullptr;
+
+		PxShape* shape = nullptr;
+		actor->getShapes(&shape, 1);
+
+		return shape;
+	}
+
+	bool px_character_controller_filter_callback::filter(const PxController& a, const PxController& b)
+	{
+		PxShape* shapeA = getShape(a);
+		if (!shapeA)
+			return false;
+
+		PxShape* shapeB = getShape(b);
+		if (!shapeB)
+			return false;
+
+		if (PxFilterObjectIsTrigger(shapeB->getFlags()))
+			return false;
+
+		const PxFilterData shapeFilterA = shapeA->getQueryFilterData();
+		const PxFilterData shapeFilterB = shapeB->getQueryFilterData();
+
+		return shapeFilterA.word0 & shapeFilterB.word1;
+	}
+
+	PxQueryHitType::Enum px_query_filter::preFilter(const PxFilterData& filterData, const PxShape* shape, const PxRigidActor* actor, PxHitFlags& queryFlags)
+	{
+		if (!shape)
+			return PxQueryHitType::eNONE;
+
+		const PxFilterData shapeFilter = shape->getQueryFilterData();
+		if ((filterData.word0 & shapeFilter.word0) == 0)
+			return PxQueryHitType::eNONE;
+
+		const bool hitTriggers = filterData.word2 != 0;
+		if (!hitTriggers && shape->getFlags() & PxShapeFlag::eTRIGGER_SHAPE)
+			return PxQueryHitType::eNONE;
+
+		const bool blockSingle = filterData.word1 != 0;
+		return blockSingle ? PxQueryHitType::eBLOCK : PxQueryHitType::eTOUCH;
+	}
+
+	PxQueryHitType::Enum px_query_filter::postFilter(const PxFilterData& filterData, const PxQueryHit& hit, const PxShape* shape, const PxRigidActor* actor)
+	{
+		return PxQueryHitType::eNONE;
+	}
+
 }
 
 namespace era_engine
 {
-	physics::px_physics_engine::px_physics_engine() noexcept
+	physics::px_physics_engine::px_physics_engine()
 	{
 		allocator.initialize(MB(256U));
 
@@ -155,12 +291,6 @@ namespace era_engine
 
 		//if (pvd->isConnected())
 			//std::cout << "Physics> PVD Connection enabled.\n";
-
-		//scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
-		//scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, 1.0f);
-		//scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LOCAL_FRAMES, 1.0f);
-
-		//scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
 #endif
 
 		PxCudaContextManagerDesc cudaContextManagerDesc;
@@ -186,7 +316,18 @@ namespace era_engine
 		sceneDesc.broadPhaseType = physx::PxBroadPhaseType::ePABP;
 #endif
 		sceneDesc.filterShader = contactReportFilterShader;
+
+		simulationEventCallback = make_ref<px_simulation_event_callback>();
+
+		sceneDesc.simulationEventCallback = simulationEventCallback.get();
+
 		scene = physics->createScene(sceneDesc);
+
+		scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
+		scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, 1.0f);
+		scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LOCAL_FRAMES, 1.0f);
+
+		scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
 
 #if PX_ENABLE_RAYCAST_CCD
 		raycastCCD = new RaycastCCDManager(scene);
@@ -212,7 +353,7 @@ namespace era_engine
 			release();
 	}
 
-	void physics::px_physics_engine::release() noexcept
+	void physics::px_physics_engine::release()
 	{
 		if (!released)
 		{
@@ -246,11 +387,11 @@ namespace era_engine
 		}
 	}
 
-	void physics::px_physics_engine::start() noexcept
+	void physics::px_physics_engine::start()
 	{
 	}
 
-	void physics::px_physics_engine::update(float dt) noexcept
+	void physics::px_physics_engine::update(float dt)
 	{
 		startSimulation(dt);
 		endSimulation();
@@ -293,10 +434,10 @@ namespace era_engine
 	{
 		stepper.wait(scene);
 
-		//{
-		//	CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");
-		//	processSimulationEventCallbacks();
-		//}
+		{
+			CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");
+			processSimulationEventCallbacks();
+		}
 
 		{
 			CPU_PROFILE_BLOCK("PhysX sync transforms steps");
@@ -306,7 +447,7 @@ namespace era_engine
 		recordProfileEvent(profile_event_end_block, "PhysX update");
 	}
 
-	void physics::px_physics_engine::resetActorsVelocityAndInertia() noexcept
+	void physics::px_physics_engine::resetActorsVelocityAndInertia()
 	{
 		physics_lock_write lock{};
 		PxU32 nbActiveActors;
@@ -353,7 +494,7 @@ namespace era_engine
 		scene->removeActor(*actor->getRigidActor());
 	}
 
-	void physics::px_physics_engine::releaseActors() noexcept
+	void physics::px_physics_engine::releaseActors()
 	{
 		physics_lock_write lock{};
 		auto gameScene = globalApp.getCurrentScene();
@@ -375,14 +516,14 @@ namespace era_engine
 		scene->flushSimulation();
 	}
 
-	void physics::px_physics_engine::releaseScene() noexcept
+	void physics::px_physics_engine::releaseScene()
 	{
 		PxU32 size;
 		auto actors = scene->getActiveActors(size);
 		scene->removeActors(actors, size);
 	}
 
-	void physics::px_physics_engine::explode(const vec3& worldPos, float damageRadius, float explosiveImpulse) noexcept
+	void physics::px_physics_engine::explode(const vec3& worldPos, float damageRadius, float explosiveImpulse)
 	{
 		PxVec3 pos = createPxVec3(worldPos);
 		px_explode_overlap_callback overlapCallback(pos, damageRadius, explosiveImpulse);
@@ -436,7 +577,77 @@ namespace era_engine
 		return px_raycast_info();
 	}
 
-	void physics::px_physics_engine::stepPhysics(float stepSize) noexcept
+	bool physics::px_physics_engine::checkBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers, uint32 layerMask)
+	{
+		PX_SCENE_QUERY_SETUP_CHECK();
+		const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
+		const PxBoxGeometry geometry(createPxVec3(halfExtents));
+
+		return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
+	}
+
+	bool physics::px_physics_engine::checkSphere(const vec3& center, const float radius, bool hitTriggers, uint32 layerMask)
+	{
+		PX_SCENE_QUERY_SETUP_CHECK();
+		const PxTransform pose(createPxVec3(center - vec3(0.0f)));
+		const PxSphereGeometry geometry(radius);
+
+		return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
+	}
+
+	bool physics::px_physics_engine::checkCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers, uint32 layerMask)
+	{
+		PX_SCENE_QUERY_SETUP_CHECK();
+		const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
+		const PxCapsuleGeometry geometry(radius, halfHeight);
+		return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
+	}
+
+	physics::px_overlap_info physics::px_physics_engine::overlapCapsule(const vec3& center, const float radius, const float halfHeight, const quat& rotation, bool hitTriggers, uint32 layerMask)
+	{
+		PX_SCENE_QUERY_SETUP_OVERLAP();
+		std::vector<uint32_t> results;
+		const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
+		const PxCapsuleGeometry geometry(radius, halfHeight);
+		if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
+			return px_overlap_info(false, results);
+
+		PX_SCENE_QUERY_COLLECT_OVERLAP();
+
+		return px_overlap_info(true, results);
+	}
+
+	physics::px_overlap_info physics::px_physics_engine::overlapBox(const vec3& center, const vec3& halfExtents, const quat& rotation, bool hitTriggers, uint32 layerMask)
+	{
+		PX_SCENE_QUERY_SETUP_OVERLAP();
+		std::vector<uint32_t> results;
+		const PxTransform pose(createPxVec3(center - vec3(0.0f)), createPxQuat(rotation));
+		const PxBoxGeometry geometry(createPxVec3(halfExtents));
+
+		if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
+			return px_overlap_info(false, results);
+
+		PX_SCENE_QUERY_COLLECT_OVERLAP();
+
+		return px_overlap_info(true, results);
+	}
+
+	physics::px_overlap_info physics::px_physics_engine::overlapSphere(const vec3& center, const float radius, bool hitTriggers, uint32 layerMask)
+	{
+		PX_SCENE_QUERY_SETUP_OVERLAP();
+		std::vector<uint32_t> results;
+		const PxTransform pose(createPxVec3(center - vec3(0.0f)));
+		const PxSphereGeometry geometry(radius);
+
+		if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
+			return px_overlap_info(false, results);
+
+		PX_SCENE_QUERY_COLLECT_OVERLAP();
+
+		return px_overlap_info(true, results);
+	}
+
+	void physics::px_physics_engine::stepPhysics(float stepSize)
 	{
 		stepper.setup(stepSize);
 
@@ -458,7 +669,7 @@ namespace era_engine
 #endif
 	}
 
-	void physics::px_physics_engine::syncTransforms() noexcept
+	void physics::px_physics_engine::syncTransforms()
 	{
 #if PX_GPU_BROAD_PHASE
 		physics_lock_read lock{};
@@ -501,7 +712,7 @@ namespace era_engine
 		}
 	}
 
-	void physics::px_physics_engine::processBlastQueue() noexcept
+	void physics::px_physics_engine::processBlastQueue()
 	{
 		if (unfreezeBlastQueue.size() > 0)
 		{
@@ -523,7 +734,7 @@ namespace era_engine
 		}
 	}
 
-	void physics::px_physics_engine::processSimulationEventCallbacks() noexcept
+	void physics::px_physics_engine::processSimulationEventCallbacks()
 	{
 		simulationEventCallback->sendCollisionEvents();
 		simulationEventCallback->sendTriggerEvents();
@@ -531,7 +742,7 @@ namespace era_engine
 		simulationEventCallback->clear();
 	}
 
-	ref<physics::px_soft_body> physics::px_physics_engine::addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount) noexcept
+	ref<physics::px_soft_body> physics::px_physics_engine::addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount)
 	{
 		PxVec4* simPositionInvMassPinned;
 		PxVec4* simVelocityPinned;
@@ -573,7 +784,7 @@ namespace era_engine
 		}
 	}
 
-	void physics::px_simulation_event_callback::clear() noexcept
+	void physics::px_simulation_event_callback::clear()
 	{
 		newCollisions.clear();
 		removedCollisions.clear();
@@ -583,7 +794,7 @@ namespace era_engine
 		lostTriggerPairs.clear();
 	}
 
-	void physics::px_simulation_event_callback::sendCollisionEvents() noexcept
+	void physics::px_simulation_event_callback::sendCollisionEvents()
 	{
 		auto enttScene = globalApp.getCurrentScene();
 
@@ -611,11 +822,11 @@ namespace era_engine
 		}
 	}
 
-	void physics::px_simulation_event_callback::sendTriggerEvents() noexcept
+	void physics::px_simulation_event_callback::sendTriggerEvents()
 	{
 	}
 
-	void physics::px_simulation_event_callback::onColliderRemoved(px_body_component* collider) noexcept
+	void physics::px_simulation_event_callback::onColliderRemoved(px_body_component* collider)
 	{
 		clearColliderFromCollection(collider, newTriggerPairs);
 		clearColliderFromCollection(collider, lostTriggerPairs);

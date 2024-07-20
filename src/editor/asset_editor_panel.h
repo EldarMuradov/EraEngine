@@ -42,10 +42,10 @@ namespace era_engine
 		virtual void beginFrame() override;
 		virtual void endFrame() override;
 
-		void setMesh(ref<multi_mesh> m) noexcept { mesh = m; }
-		void setScene(editor_scene* scene) noexcept { this->scene = scene; }
+		void setMesh(ref<multi_mesh> m) { mesh = m; }
+		void setScene(editor_scene* scene) { this->scene = scene; }
 
-		bool isHovered() const noexcept { return hovered; }
+		bool isHovered() const { return hovered; }
 
 		render_camera camera;
 

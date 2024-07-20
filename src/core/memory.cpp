@@ -22,14 +22,14 @@ namespace era_engine
 		this->reserveSize = reserveSize;
 	}
 
-	void eallocator::resetToMarker(memory_marker marker) noexcept
+	void eallocator::resetToMarker(memory_marker marker)
 	{
 		current = marker.before;
 		sizeLeftCurrent = committedMemory - current;
 		sizeLeftTotal = reserveSize - current;
 	}
 
-	void eallocator::ensureFreeSizeInternal(uint64 size) noexcept
+	void eallocator::ensureFreeSizeInternal(uint64 size)
 	{
 		if (sizeLeftCurrent < size)
 		{
@@ -43,7 +43,7 @@ namespace era_engine
 		}
 	}
 
-	void* eallocator::allocate(uint64 size, uint64 alignment, bool clearToZero) noexcept
+	void* eallocator::allocate(uint64 size, uint64 alignment, bool clearToZero)
 	{
 		if (size == 0)
 			return 0;
@@ -75,7 +75,7 @@ namespace era_engine
 		return result;
 	}
 
-	void eallocator::reset(bool freeMemory) noexcept
+	void eallocator::reset(bool freeMemory)
 	{
 		if (memory && freeMemory)
 		{

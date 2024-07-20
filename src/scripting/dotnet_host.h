@@ -64,6 +64,7 @@ namespace era_engine::dotnet
 				std::cerr << "Runtime error! Failed to get function from dotnet host.";
 			return f;
 		}
+
 	private:
 		static void execute();
 		static void wrappedExecute();

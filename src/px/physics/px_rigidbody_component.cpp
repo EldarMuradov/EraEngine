@@ -315,7 +315,7 @@ namespace era_engine::physics
 		}
 	}
 
-	void px_dynamic_body_component::release(bool releaseActor) noexcept
+	void px_dynamic_body_component::release(bool releaseActor)
 	{
 		physics_holder::physicsRef->removeActor(this);
 
@@ -374,7 +374,7 @@ namespace era_engine::physics
 	{
 	}
 
-	void px_static_body_component::release(bool releaseActor) noexcept
+	void px_static_body_component::release(bool releaseActor)
 	{
 		physics_holder::physicsRef->removeActor(this);
 

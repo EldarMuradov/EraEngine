@@ -8,7 +8,7 @@ namespace era_engine::ai
     template <typename Type>
     struct behaviour_tree
     {
-        behaviour_tree() noexcept
+        behaviour_tree()
         {
             tree = aitoolkit::bt::sel<Type>::make(
                 {

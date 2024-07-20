@@ -126,7 +126,7 @@ namespace era_engine
 
 	spin_lock scriptingSync;
 
-	void updatePhysXCallbacksAndScripting(escene& currentScene, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in) noexcept
+	void updatePhysXCallbacksAndScripting(escene& currentScene, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in)
 	{
 		update_scripting_data data = { dt, core, currentScene, in };
 
@@ -190,7 +190,7 @@ namespace era_engine
 		//}
 	}
 
-	void updateScripting(update_scripting_data& data) noexcept
+	void updateScripting(update_scripting_data& data)
 	{
 		CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
 		if (!data.scene.registry.size())
@@ -214,7 +214,7 @@ namespace era_engine
 		data.core->update(data.deltaTime);
 	}
 
-	static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> mesh) noexcept
+	static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> mesh)
 	{
 		struct add_animation_data
 		{
@@ -244,15 +244,15 @@ namespace era_engine
 	static void initTestScene(escene& scene)
 	{
 #ifndef ERA_RUNTIME
-		if (auto mesh = loadMeshFromFileAsync("assets/Sponza/sponza.obj"))
-		{
-			model_asset ass = load3DModelFromFile("assets/Sponza/sponza.obj");
-			const auto& sponza = scene.createEntity("Sponza")
-				.addComponent<transform_component>(vec3(0.f, 0.f, 0.f), quat::identity, 0.01f)
-				.addComponent<mesh_component>(mesh);
+		//if (auto mesh = loadMeshFromFileAsync("assets/Sponza/sponza.obj"))
+		//{
+		//	model_asset ass = load3DModelFromFile("assets/Sponza/sponza.obj");
+		//	const auto& sponza = scene.createEntity("Sponza")
+		//		.addComponent<transform_component>(vec3(0.f, 0.f, 0.f), quat::identity, 0.01f)
+		//		.addComponent<mesh_component>(mesh);
 
-			addRaytracingComponentAsync(sponza, mesh);
-		}
+		//	addRaytracingComponentAsync(sponza, mesh);
+		//}
 #endif
 
 #if 0
@@ -324,22 +324,22 @@ namespace era_engine
 			//	addRaytracingComponentAsync(en, mesh);
 			//}
 
-			//{
-			//	if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
-			//	{
-			//		model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
+			{
+				if (auto mesh = loadMeshFromFileAsync("assets/obj/untitled.obj"))
+				{
+					model_asset ass = load3DModelFromFile("assets/obj/untitled.obj");
 
-			//		auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
-			//			.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
-			//			.addComponent<mesh_component>(mesh);
+					auto& px_sphere_entt1 = scene.createEntity("BlastPXTest")
+						.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
+						.addComponent<mesh_component>(mesh);
 
-			//		physics::fracture fracture;
-			//		auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
-			//		unsigned int seed = 7249U;
-			//		manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::None, seed, 50, defaultmat, defaultmat, 1.0f, 3.0f);
-			//		scene.deleteEntity(px_sphere_entt1.handle);
-			//	}
-			//}
+					physics::fracture fracture;
+					auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
+					unsigned int seed = 7249U;
+					fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::anchor_none, seed, 15, defaultmat, defaultmat, 1.0f, 3.0f);
+					scene.deleteEntity(px_sphere_entt1.handle);
+				}
+			}
 
 			/*{
 				model_asset ass = load3DModelFromFile("assets/box.fbx");
@@ -354,9 +354,9 @@ namespace era_engine
 				scene.deleteEntity(px_sphere_entt1.handle);
 			}*/
 
-			auto soft_body = &scene.createEntity("SoftBody")
-				.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
-				.addComponent<physics::px_soft_body_component>();
+			//auto soft_body = &scene.createEntity("SoftBody")
+			//	.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
+			//	.addComponent<physics::px_soft_body_component>();
 
 			//px_sphere1->addChild(*px_sphere);
 
@@ -377,9 +377,9 @@ namespace era_engine
 			//	}
 			//}
 
-			auto px_cct = &scene.createEntity("CharacterControllerPx")
-				.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-				.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
+			//auto px_cct = &scene.createEntity("CharacterControllerPx")
+			//	.addComponent<transform_component>(vec3(20.f, 5, -5.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			//	.addComponent<physics::px_box_cct_component>(1.0f, 0.5f, 1.0f);
 
 			//auto& particles = scene.createEntity("ParticlesPX")
 			//	.addComponent<transform_component>(vec3(0.f, 10.0f, 0.0f), quat::identity, vec3(1.f))
@@ -604,10 +604,10 @@ namespace era_engine
 
 		// Tests
 		{
-			eentity sphere{ sphere, &scene.registry };
+			eentity sphereEntity{ sphere, &scene.registry };
 			if (input.keyboard['G'].pressEvent)
 			{
-				sphere.getComponent<physics::px_dynamic_body_component>().addForce(vec3(500.f, 1.0f, 0.0f), physics::px_force_mode::force_mode_impulse);
+				sphereEntity.getComponent<physics::px_dynamic_body_component>().addForce(vec3(20.0f, 1.0f, 0.0f), physics::px_force_mode::force_mode_impulse);
 			}
 		}
 	}
@@ -650,7 +650,8 @@ namespace era_engine
 		bool running = this->scene.isPausable();
 
 		if (running)
-			physics::physics_holder::physicsRef->startSimulation(dt);
+			//physics::physics_holder::physicsRef->startSimulation(dt);
+			physics::physics_holder::physicsRef->update(dt);
 
 		if (running)
 			updatePhysXCallbacksAndScripting(scene, linker, dt, input);
@@ -673,6 +674,14 @@ namespace era_engine
 		}
 
 #endif
+
+		//{
+		//	CPU_PROFILE_BLOCK("PhysX blast chuncks");
+		//	for (auto [entityHandle, cgm, _] : scene.group(component_group<physics::chunk_graph_manager, transform_component>).each())
+		//	{
+		//		cgm.update();
+		//	}
+		//}
 
 		updateTestScene(dt, scene, input);
 
@@ -799,9 +808,10 @@ namespace era_engine
 		renderer->setSun(sun);
 		renderer->setCamera(camera);
 
+		//if (running)
+		//	physics::physics_holder::physicsRef->endSimulation();
 
-		if (running)
-			physics::physics_holder::physicsRef->endSimulation();
+		visualizePhysics();
 
 		executeMainThreadJobs();
 	}
@@ -842,6 +852,25 @@ namespace era_engine
 		else if (ext == ".hdr")
 		{
 			scene.environment.setFromTexture(relative);
+		}
+	}
+
+	void application::visualizePhysics()
+	{
+		physics::physics_lock_read lock{};
+		auto scene = physics::physics_holder::physicsRef->getScene();
+		const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
+
+		for (physx::PxU32 i = 0; i < rb.getNbPoints(); i++)
+		{
+			const physx::PxDebugPoint& point = rb.getPoints()[i];
+			renderPoint(physx::createVec3(point.pos), vec4(1.0f), &ldrRenderPass);
+		}
+
+		for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
+		{
+			const physx::PxDebugLine& line = rb.getLines()[i];
+			renderLine(physx::createVec3(line.pos0), physx::createVec3(line.pos1), vec4(1.0f), &ldrRenderPass);
 		}
 	}
 }

@@ -32,7 +32,7 @@ namespace era_engine::physics
 
 	struct px_articulation
 	{
-		px_articulation(const vec3& rootPose = vec3(0.0f), bool fixedBase = true, bool selfCollision = true) noexcept;
+		px_articulation(const vec3& rootPose = vec3(0.0f), bool fixedBase = true, bool selfCollision = true);
 
 		virtual ~px_articulation()
 		{
@@ -46,7 +46,7 @@ namespace era_engine::physics
 			PX_RELEASE(material)
 		}
 
-		PxArticulationCache* createCache(px_articulation_cache_flags flags = px_articulation_cache_flags::articulation_cache_flag_all) noexcept
+		PxArticulationCache* createCache(px_articulation_cache_flags flags = px_articulation_cache_flags::articulation_cache_flag_all)
 		{
 			PX_RELEASE(cache)
 

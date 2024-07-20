@@ -44,7 +44,7 @@ namespace era_engine
 			void updateDLSS(ID3D12GraphicsCommandList* cmdList, float dt);
 
 		private:
-			void initializeDLSS() noexcept;
+			void initializeDLSS();
 
 			main_renderer* renderer = nullptr;
 

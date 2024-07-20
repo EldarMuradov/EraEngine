@@ -338,7 +338,7 @@ namespace era_engine
 
 	void renderLine(vec3 positionA, vec3 positionB, vec4 color, ldr_render_pass* renderPass, bool overlay)
 	{
-		CPU_PROFILE_BLOCK("Render line");
+		//CPU_PROFILE_BLOCK("Render line");
 
 		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), 2);
 		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), 2);

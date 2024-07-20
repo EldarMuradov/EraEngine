@@ -11,7 +11,7 @@
 
 namespace era_engine::ai
 {
-	NODISCARD static coroutine_return<nav_node> navigate(vec2 pos, vec2 target) noexcept
+	NODISCARD static coroutine_return<nav_node> navigate(vec2 pos, vec2 target)
 	{
 		nav_node player;
 		player.position = pos / (float)NAV_X_STEP;
@@ -31,7 +31,7 @@ namespace era_engine::ai
 		co_return nav_node(vec2(NAV_INF_POS));
 	}
 
-	navigation_component::navigation_component(uint32 h, nav_type tp) noexcept : entity_handle_component_base(h), type(tp)
+	navigation_component::navigation_component(uint32 h, nav_type tp) : entity_handle_component_base(h), type(tp)
 	{
 	}
 
