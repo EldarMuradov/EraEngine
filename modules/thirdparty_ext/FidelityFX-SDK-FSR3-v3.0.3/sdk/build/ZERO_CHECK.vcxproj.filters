@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\CMakeFiles\4352215d6fadef93f10d6c101e1f2522\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{401E66E9-E175-3730-A402-4741F4559850}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,16 @@
+E:\Era Engine\assets\scripts\NewProject\NewProject\bin\Release\net8.0\NewProject.deps.json
+E:\Era Engine\assets\scripts\NewProject\NewProject\bin\Release\net8.0\NewProject.dll
+E:\Era Engine\assets\scripts\NewProject\NewProject\bin\Release\net8.0\NewProject.pdb
+E:\Era Engine\assets\scripts\NewProject\NewProject\bin\Release\net8.0\EraEngineDomain.dll
+E:\Era Engine\assets\scripts\NewProject\NewProject\bin\Release\net8.0\EraEngineDomain.pdb
+E:\Era Engine\assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.csproj.AssemblyReference.cache
+E:\Era Engine\assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.GeneratedMSBuildEditorConfig.editorconfig
+E:\Era Engine\assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.AssemblyInfoInputs.cache
+E:\Era Engine\assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.AssemblyInfo.cs
+E:\Era Engine\assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.csproj.CoreCompileInputs.cache
+E:\Era Engine\assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.sourcelink.json
+E:\Era Engine\assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.csproj.CopyComplete
+E:\Era Engine\assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.dll
+E:\Era Engine\assets\scripts\NewProject\NewProject\obj\Release\net8.0\refint\NewProject.dll
+E:\Era Engine\assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.pdb
+E:\Era Engine\assets\scripts\NewProject\NewProject\obj\Release\net8.0\ref\NewProject.dll

@@ -1,0 +1,54 @@
+E:\Era Engine\bin\Release_x86_64\Release\net8.0\EraScriptingCore.deps.json
+E:\Era Engine\bin\Release_x86_64\Release\net8.0\EraScriptingCore.dll
+E:\Era Engine\bin\Release_x86_64\Release\net8.0\EraScriptingCore.pdb
+E:\Era Engine\bin\Release_x86_64\Release\net8.0\EraScriptingCore.runtimeconfig.json
+E:\Era Engine\bin\Release_x86_64\Release\net8.0\EraScriptingCore.exe
+E:\Era Engine\bin\Dotnet\Release\net8.0\EraScriptingCore.exe
+E:\Era Engine\bin\Dotnet\Release\net8.0\EraScriptingCore.deps.json
+E:\Era Engine\bin\Dotnet\Release\net8.0\EraScriptingCore.runtimeconfig.json
+E:\Era Engine\bin\Dotnet\Release\net8.0\EraScriptingCore.dll
+E:\Era Engine\bin\Dotnet\Release\net8.0\EraScriptingCore.pdb
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.csproj.AssemblyReference.cache
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.GeneratedMSBuildEditorConfig.editorconfig
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.AssemblyInfoInputs.cache
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.AssemblyInfo.cs
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.csproj.CoreCompileInputs.cache
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.sourcelink.json
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.dll
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\refint\EraScriptingCore.dll
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.pdb
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.genruntimeconfig.cache
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\ref\EraScriptingCore.dll
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScrip.C6674D70.Up2Date
+E:\EraEngine\modules\dotnet\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.csproj.AssemblyReference.cache
+E:\EraEngine\modules\dotnet\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.GeneratedMSBuildEditorConfig.editorconfig
+E:\EraEngine\modules\dotnet\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.AssemblyInfoInputs.cache
+E:\EraEngine\modules\dotnet\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.AssemblyInfo.cs
+E:\EraEngine\modules\dotnet\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.csproj.CoreCompileInputs.cache
+E:\EraEngine\modules\dotnet\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScrip.C6674D70.Up2Date
+E:\EraEngine\modules\dotnet\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.dll
+E:\EraEngine\modules\dotnet\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\refint\EraScriptingCore.dll
+E:\EraEngine\modules\dotnet\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.pdb
+E:\EraEngine\modules\dotnet\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.genruntimeconfig.cache
+E:\EraEngine\modules\dotnet\DotnetScripting-Lib\EraScriptingCore\obj\Release\net8.0\ref\EraScriptingCore.dll
+E:\EraEngine\_build\Release\Release\net8.0\EraScriptingCore.exe
+E:\EraEngine\_build\Release\Release\net8.0\EraScriptingCore.deps.json
+E:\EraEngine\_build\Release\Release\net8.0\EraScriptingCore.runtimeconfig.json
+E:\EraEngine\_build\Release\Release\net8.0\EraScriptingCore.dll
+E:\EraEngine\_build\Release\Release\net8.0\EraScriptingCore.pdb
+E:\EraEngine\resources\bin\Dotnet\Release\net8.0\EraScriptingCore.exe
+E:\EraEngine\resources\bin\Dotnet\Release\net8.0\EraScriptingCore.deps.json
+E:\EraEngine\resources\bin\Dotnet\Release\net8.0\EraScriptingCore.runtimeconfig.json
+E:\EraEngine\resources\bin\Dotnet\Release\net8.0\EraScriptingCore.dll
+E:\EraEngine\resources\bin\Dotnet\Release\net8.0\EraScriptingCore.pdb
+E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.csproj.AssemblyReference.cache
+E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.GeneratedMSBuildEditorConfig.editorconfig
+E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.AssemblyInfoInputs.cache
+E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.AssemblyInfo.cs
+E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.csproj.CoreCompileInputs.cache
+E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScrip.C6674D70.Up2Date
+E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.dll
+E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\refint\EraScriptingCore.dll
+E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.pdb
+E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.genruntimeconfig.cache
+E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\ref\EraScriptingCore.dll

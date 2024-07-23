@@ -1,0 +1,10 @@
+EXPORTS
+   start
+   update
+   init_scripting
+   handle_collision
+   handle_transforms
+   process_transform
+   handle_positions
+   handle_rotations
+   handle_scales

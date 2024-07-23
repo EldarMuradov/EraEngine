@@ -1,0 +1,10 @@
+^E:\ERA ENGINE\EXT\FIDELITYFX-SDK-FSR3-V3.0.3\SDK\BUILD\CMAKEFILES\4352215D6FADEF93F10D6C101E1F2522\GENERATE.STAMP.RULE
+setlocal
+E:\Cmake\bin\cmake.exe "-SE:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk" "-BE:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/FidelityFX-SDK.sln"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

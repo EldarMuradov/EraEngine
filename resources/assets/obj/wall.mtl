@@ -1,0 +1,6 @@
+newmtl mat0
+	map_Kd TileWall.dds
+
+newmtl mat1
+	map_Kd Plaster_Tileable.dds
+

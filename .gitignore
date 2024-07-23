@@ -1,69 +1,16 @@
-# Binaries
-bin/
-bin_int/
-shaders/bin/
-shaders/
+projects/
 
-scripting/DotnetScripting-Lib/EraScriptingCore/bin
-scripting/DotnetScripting-Lib/EraScriptingCore/obj
-scripting/DotnetScripting-Lib/Test
+_build/
 
-scripting/DotnetScripting-Lib/EraScriptingProjectTemplate/bin
-scripting/DotnetScripting-Lib/EraScriptingProjectTemplate/obj
-
-scripting/EraScriptingLauncher-Lib/Release
-scripting/EraScriptingLauncher-Lib/x64
-
-tests/EraCoreEngineUnitTests/x64
-
-scripting/tests/EraCoreScriptingUnitTests/bin
-scripting/tests/EraCoreScriptingUnitTests/obj
-
-Temp/
-
-packages/
-
-runtime/x64
-runtime/EraRuntime/asset_cache
-runtime/EraRuntime/asset
-runtime/EraRuntime/bin
-runtime/EraRuntime/bin_int
-runtime/EraRuntime/res
-runtime/EraRuntime/resources
-runtime/EraRuntime/shaders
-runtime/EraRuntime/x64
-
-*.dll
-*.exe
-*.pdb
-*.ini
-*.png
-*.lib
-
-# Visual studio files
-.vs/
-*.sln
-*.vcxproj
-*.filters
-*.user
-*.nvuser
-
-shaders/generated/
-resources/files.yaml
-assets/
 asset_cache/
-x64/
-resources/
-
-# External
-ext/entt/test
-ext/yaml-cpp/test
-ext/entt/conan
-
-# Learning
-learning/
-/shot1.png
-/shot2.png
 
 # Roadmap
 roadmap.txt
+
+# lf
+libfbxsdk-mt.lib
+libfbxsdk-md.lib
+PhysXGpu_64.dll
+hugeAsset.obj
+nvrtc_static.lib
+nvJitLink_static.lib

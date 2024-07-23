@@ -1,0 +1,3 @@
+E:\Era Engine\bin\Release_x86_64\Release\net8.0\win-x64\publish\EraScriptingCore.dll
+E:\Era Engine\bin\Release_x86_64\Release\net8.0\win-x64\publish\EraScriptingCore.pdb
+E:\Era Engine\bin\Release_x86_64\Release\net8.0\win-x64\publish\EraEngineDomain.pdb

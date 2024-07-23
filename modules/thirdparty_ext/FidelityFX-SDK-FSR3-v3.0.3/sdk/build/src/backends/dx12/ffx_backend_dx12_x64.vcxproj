@@ -1,0 +1,537 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{955CF725-9877-36F1-8C48-652B15E76236}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.22621.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>ffx_backend_dx12_x64</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\dx12\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ffx_backend_dx12_x64.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ffx_backend_dx12_x64d</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\dx12\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ffx_backend_dx12_x64.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ffx_backend_dx12_x64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\dx12\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">ffx_backend_dx12_x64.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">ffx_backend_dx12_x64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</GenerateManifest>
+  </PropertyGroup>
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\shaders\dx12;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\components;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\shared;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;FFX_FSR;FFX_FSR3;FFX_SPD;FFX_CACAO;FFX_LPM;FFX_BLUR;FFX_VRS;FFX_CAS;FFX_DOF;FFX_LENS;FFX_PARALLEL_SORT;FFX_DENOISER;FFX_CLASSIFIER;FFX_SSSR;_UNICODE;UNICODE;CMAKE_INTDIR="Debug";ffx_backend_dx12_x64_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;FFX_FSR;FFX_FSR3;FFX_SPD;FFX_CACAO;FFX_LPM;FFX_BLUR;FFX_VRS;FFX_CAS;FFX_DOF;FFX_LENS;FFX_PARALLEL_SORT;FFX_DENOISER;FFX_CLASSIFIER;FFX_SSSR;_UNICODE;UNICODE;CMAKE_INTDIR=\"Debug\";ffx_backend_dx12_x64_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\shaders\dx12;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\components;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\shared;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\shaders\dx12;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\components;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\shared;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/bin/ffx_sdk/ffx_backend_dx12_x64d.lib</ImportLibrary>
+      <ProgramDataBaseFile>E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/src/backends/dx12/Debug/ffx_backend_dx12_x64d.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\shaders\dx12;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\components;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\shared;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;FFX_FSR;FFX_FSR3;FFX_SPD;FFX_CACAO;FFX_LPM;FFX_BLUR;FFX_VRS;FFX_CAS;FFX_DOF;FFX_LENS;FFX_PARALLEL_SORT;FFX_DENOISER;FFX_CLASSIFIER;FFX_SSSR;_UNICODE;UNICODE;CMAKE_INTDIR="Release";ffx_backend_dx12_x64_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;FFX_FSR;FFX_FSR3;FFX_SPD;FFX_CACAO;FFX_LPM;FFX_BLUR;FFX_VRS;FFX_CAS;FFX_DOF;FFX_LENS;FFX_PARALLEL_SORT;FFX_DENOISER;FFX_CLASSIFIER;FFX_SSSR;_UNICODE;UNICODE;CMAKE_INTDIR=\"Release\";ffx_backend_dx12_x64_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\shaders\dx12;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\components;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\shared;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\shaders\dx12;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\components;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\shared;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/bin/ffx_sdk/ffx_backend_dx12_x64.lib</ImportLibrary>
+      <ProgramDataBaseFile>E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/src/backends/dx12/Release/ffx_backend_dx12_x64.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\shaders\dx12;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\components;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\shared;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;FFX_FSR;FFX_FSR3;FFX_SPD;FFX_CACAO;FFX_LPM;FFX_BLUR;FFX_VRS;FFX_CAS;FFX_DOF;FFX_LENS;FFX_PARALLEL_SORT;FFX_DENOISER;FFX_CLASSIFIER;FFX_SSSR;_UNICODE;UNICODE;CMAKE_INTDIR="RelWithDebInfo";ffx_backend_dx12_x64_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;FFX_FSR;FFX_FSR3;FFX_SPD;FFX_CACAO;FFX_LPM;FFX_BLUR;FFX_VRS;FFX_CAS;FFX_DOF;FFX_LENS;FFX_PARALLEL_SORT;FFX_DENOISER;FFX_CLASSIFIER;FFX_SSSR;_UNICODE;UNICODE;CMAKE_INTDIR=\"RelWithDebInfo\";ffx_backend_dx12_x64_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\shaders\dx12;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\components;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\shared;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\shaders\dx12;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\components;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\shared;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/bin/ffx_sdk/ffx_backend_dx12_x64.lib</ImportLibrary>
+      <ProgramDataBaseFile>E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/src/backends/dx12/RelWithDebInfo/ffx_backend_dx12_x64.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+E:\Cmake\bin\cmake.exe "-SE:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk" "-BE:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build" --check-stamp-file "E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/src/backends/dx12/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersBlur.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersCACAO.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersCAS.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersClassifier.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersDOF.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersDenoiser.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersFSR1.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersFSR2.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersFSR3Upscaler.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersFrameinterpolation.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersLENS.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersLPM.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersOpticalflow.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersParallelSort.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersSPD.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersSSSR.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersVRS.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\dx12\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+E:\Cmake\bin\cmake.exe "-SE:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk" "-BE:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build" --check-stamp-file "E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/src/backends/dx12/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersBlur.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersCACAO.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersCAS.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersClassifier.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersDOF.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersDenoiser.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersFSR1.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersFSR2.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersFSR3Upscaler.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersFrameinterpolation.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersLENS.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersLPM.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersOpticalflow.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersParallelSort.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersSPD.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersSSSR.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersVRS.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\dx12\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/src/backends/dx12/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+E:\Cmake\bin\cmake.exe "-SE:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk" "-BE:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build" --check-stamp-file "E:/Era Engine/ext/FidelityFX-SDK-FSR3-v3.0.3/sdk/build/src/backends/dx12/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersBlur.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersCACAO.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersCAS.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersClassifier.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersDOF.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersDenoiser.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersFSR1.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersFSR2.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersFSR3Upscaler.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersFrameinterpolation.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersLENS.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersLPM.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersOpticalflow.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersParallelSort.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersSPD.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersSSSR.txt;E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\CMakeShadersVRS.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\dx12\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_Helpers.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_Helpers.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_UiComposition.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_UiComposition.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainUiCompositionPS.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainUiCompositionVS.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\GPUTimestamps.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\GPUTimestamps.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\ffx_dx12.cpp" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\ffx_shader_blobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\ffx_shader_blobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\shared\ffx_assert.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_fsr1_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_fsr1_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_fsr2_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_fsr2_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_fsr3upscaler_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_fsr3upscaler_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_frameinterpolation_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_frameinterpolation_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_opticalflow_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_opticalflow_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_spd_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_spd_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_cacao_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_cacao_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_lpm_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_lpm_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_blur_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_blur_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_vrs_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_vrs_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_cas_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_cas_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_dof_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_dof_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_lens_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_lens_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_parallelsort_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_parallelsort_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_denoiser_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_denoiser_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_classifier_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_classifier_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_sssr_shaderblobs.h" />
+    <ClCompile Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\shared\blob_accessors\ffx_sssr_shaderblobs.cpp" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\host\backends\dx12\d3dx12.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\host\backends\dx12\ffx_dx12.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\blur\ffx_blur_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_apply_non_smart_half_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_apply_non_smart_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_apply_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_clear_load_counter_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_edge_sensitive_blur_1_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_edge_sensitive_blur_2_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_edge_sensitive_blur_3_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_edge_sensitive_blur_4_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_edge_sensitive_blur_5_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_edge_sensitive_blur_6_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_edge_sensitive_blur_7_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_edge_sensitive_blur_8_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_generate_importance_map_a_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_generate_importance_map_b_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_generate_importance_map_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_generate_q0_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_generate_q1_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_generate_q2_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_generate_q3_base_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_generate_q3_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_prepare_downsampled_depths_and_mips_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_prepare_downsampled_depths_half_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_prepare_downsampled_depths_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_prepare_downsampled_normals_from_input_normals_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_prepare_downsampled_normals_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_prepare_native_depths_and_mips_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_prepare_native_depths_half_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_prepare_native_depths_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_prepare_native_normals_from_input_normals_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_prepare_native_normals_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cacao\ffx_cacao_upscale_bilateral_5x5_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\cas\ffx_cas_sharpen_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\classifier\ffx_classifier_reflections_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\classifier\ffx_classifier_shadows_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\denoiser\ffx_denoiser_filter_soft_shadows_0_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\denoiser\ffx_denoiser_filter_soft_shadows_1_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\denoiser\ffx_denoiser_filter_soft_shadows_2_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\denoiser\ffx_denoiser_prefilter_reflections_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\denoiser\ffx_denoiser_prepare_shadow_mask_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\denoiser\ffx_denoiser_reproject_reflections_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\denoiser\ffx_denoiser_resolve_temporal_reflections_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\denoiser\ffx_denoiser_shadows_tile_classification_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\dof\ffx_dof_blur_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\dof\ffx_dof_composite_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\dof\ffx_dof_dilate_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\dof\ffx_dof_downsample_color_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\dof\ffx_dof_downsample_depth_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\frameinterpolation\ffx_frameinterpolation_compute_game_vector_field_inpainting_pyramid_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\frameinterpolation\ffx_frameinterpolation_compute_inpainting_pyramid_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\frameinterpolation\ffx_frameinterpolation_debug_view_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\frameinterpolation\ffx_frameinterpolation_disocclusion_mask_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\frameinterpolation\ffx_frameinterpolation_game_motion_vector_field_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\frameinterpolation\ffx_frameinterpolation_inpainting_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\frameinterpolation\ffx_frameinterpolation_optical_flow_vector_field_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\frameinterpolation\ffx_frameinterpolation_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\frameinterpolation\ffx_frameinterpolation_reconstruct_previous_depth_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\frameinterpolation\ffx_frameinterpolation_setup_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr1\ffx_fsr1_easu_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr1\ffx_fsr1_rcas_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr2\ffx_fsr2_accumulate_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr2\ffx_fsr2_autogen_reactive_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr2\ffx_fsr2_compute_luminance_pyramid_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr2\ffx_fsr2_debug_blit.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr2\ffx_fsr2_depth_clip_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr2\ffx_fsr2_lock_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr2\ffx_fsr2_rcas_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr2\ffx_fsr2_reconstruct_previous_depth_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr2\ffx_fsr2_tcr_autogen_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr3upscaler\ffx_fsr3upscaler_accumulate_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr3upscaler\ffx_fsr3upscaler_autogen_reactive_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr3upscaler\ffx_fsr3upscaler_compute_luminance_pyramid_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr3upscaler\ffx_fsr3upscaler_depth_clip_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr3upscaler\ffx_fsr3upscaler_lock_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr3upscaler\ffx_fsr3upscaler_rcas_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\fsr3upscaler\ffx_fsr3upscaler_reconstruct_previous_depth_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\lens\ffx_lens_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\lpm\ffx_lpm_filter_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_compute_luminance_pyramid_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_compute_optical_flow_advanced_pass_v5.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_compute_scd_divergence_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_filter_optical_flow_pass_v5.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_generate_scd_histogram_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_prepare_luma_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_scale_optical_flow_advanced_pass_v5.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\parallelsort\ffx_parallelsort_reduce_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\parallelsort\ffx_parallelsort_scan_add_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\parallelsort\ffx_parallelsort_scan_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\parallelsort\ffx_parallelsort_scatter_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\parallelsort\ffx_parallelsort_setup_indirect_args_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\parallelsort\ffx_parallelsort_sum_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\spd\ffx_spd_downsample_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\sssr\ffx_sssr_classify_tiles_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\sssr\ffx_sssr_depth_downsample_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\sssr\ffx_sssr_intersect_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\sssr\ffx_sssr_prepare_blue_noise_texture_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\sssr\ffx_sssr_prepare_indirect_args_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\src\backends\dx12\shaders\vrs\ffx_vrs_imagegen_pass.hlsl" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\blur\ffx_blur.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\blur\ffx_blur_blur.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\blur\ffx_blur_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\blur\ffx_blur_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\blur\ffx_blur_resources.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\cacao\ffx_cacao_apply.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\cacao\ffx_cacao_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\cacao\ffx_cacao_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\cacao\ffx_cacao_defines.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\cacao\ffx_cacao_edge_sensitive_blur.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\cacao\ffx_cacao_importance_map.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\cacao\ffx_cacao_prepare.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\cacao\ffx_cacao_resources.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\cacao\ffx_cacao_ssao_generation.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\cacao\ffx_cacao_upscale.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\cacao\ffx_cacao_utils.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\classifier\ffx_classifier_common.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\classifier\ffx_classifier_reflections.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\classifier\ffx_classifier_reflections_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\classifier\ffx_classifier_reflections_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\classifier\ffx_classifier_reflections_common.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\classifier\ffx_classifier_resources.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\classifier\ffx_classifier_shadows.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\classifier\ffx_classifier_shadows_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\classifier\ffx_classifier_shadows_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_reflections_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_reflections_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_reflections_common.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_reflections_config.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_reflections_prefilter.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_reflections_reproject.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_reflections_resolve_temporal.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_resources.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_shadows_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_shadows_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_shadows_filter.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_shadows_prepare.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_shadows_tileclassification.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\denoiser\ffx_denoiser_shadows_util.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\frameinterpolation\ffx_frameinterpolation.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\frameinterpolation\ffx_frameinterpolation_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\frameinterpolation\ffx_frameinterpolation_common.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\frameinterpolation\ffx_frameinterpolation_compute_game_vector_field_inpainting_pyramid.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\frameinterpolation\ffx_frameinterpolation_compute_inpainting_pyramid.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\frameinterpolation\ffx_frameinterpolation_debug_view.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\frameinterpolation\ffx_frameinterpolation_disocclusion_mask.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\frameinterpolation\ffx_frameinterpolation_game_motion_vector_field.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\frameinterpolation\ffx_frameinterpolation_inpainting.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\frameinterpolation\ffx_frameinterpolation_optical_flow_vector_field.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\frameinterpolation\ffx_frameinterpolation_reconstruct_previous_depth.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\frameinterpolation\ffx_frameinterpolation_resources.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\frameinterpolation\ffx_frameinterpolation_setup.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr1\ffx_fsr1.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr1\ffx_fsr1_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr1\ffx_fsr1_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr1\ffx_fsr1_easu.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr1\ffx_fsr1_rcas.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr1\ffx_fsr1_resources.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_accumulate.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_common.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_compute_luminance_pyramid.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_depth_clip.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_lock.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_postprocess_lock_status.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_rcas.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_reconstruct_dilated_velocity_and_previous_depth.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_reproject.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_resources.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_sample.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_tcr_autogen.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr2\ffx_fsr2_upsample.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_accumulate.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_common.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_compute_luminance_pyramid.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_depth_clip.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_lock.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_postprocess_lock_status.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_rcas.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_reconstruct_dilated_velocity_and_previous_depth.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_reproject.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_resources.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_sample.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\fsr3upscaler\ffx_fsr3upscaler_upsample.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\lens\ffx_lens.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\lens\ffx_lens_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\lens\ffx_lens_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\lens\ffx_lens_resources.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\lpm\ffx_lpm.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\lpm\ffx_lpm_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\lpm\ffx_lpm_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\lpm\ffx_lpm_filter.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\lpm\ffx_lpm_resources.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_common.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_compute_luminance_pyramid.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_compute_optical_flow_v5.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_compute_scd_divergence.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_filter_optical_flow_v5.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_generate_scd_histogram.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_prepare_luma.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_resources.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_scale_optical_flow_advanced_v5.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\parallelsort\ffx_parallelsort.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\parallelsort\ffx_parallelsort_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\parallelsort\ffx_parallelsort_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\parallelsort\ffx_parallelsort_common.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\parallelsort\ffx_parallelsort_reduce.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\parallelsort\ffx_parallelsort_resources.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\parallelsort\ffx_parallelsort_scan.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\parallelsort\ffx_parallelsort_scan_add.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\parallelsort\ffx_parallelsort_scatter.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\parallelsort\ffx_parallelsort_setup_indirect_args.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\parallelsort\ffx_parallelsort_sum.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\spd\ffx_spd.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\spd\ffx_spd_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\spd\ffx_spd_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\spd\ffx_spd_downsample.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\spd\ffx_spd_resources.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\sssr\ffx_sssr_callbacks_glsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\sssr\ffx_sssr_callbacks_hlsl.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\sssr\ffx_sssr_classify_tiles.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\sssr\ffx_sssr_common.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\sssr\ffx_sssr_depth_downsample.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\sssr\ffx_sssr_intersect.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\sssr\ffx_sssr_prepare_blue_noise_texture.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\sssr\ffx_sssr_prepare_indirect_args.h" />
+    <ClInclude Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\include\FidelityFX\gpu\sssr\ffx_sssr_resources.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\ZERO_CHECK.vcxproj">
+      <Project>{FB8B5C63-24F1-368D-A13A-DD792A2EA24F}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="E:\Era Engine\ext\FidelityFX-SDK-FSR3-v3.0.3\sdk\build\src\backends\dx12\ffx_shader_permutations_dx12.vcxproj">
+      <Project>{7D1117CE-FB94-3DA4-A8CB-B311827B15BC}</Project>
+      <Name>ffx_shader_permutations_dx12</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

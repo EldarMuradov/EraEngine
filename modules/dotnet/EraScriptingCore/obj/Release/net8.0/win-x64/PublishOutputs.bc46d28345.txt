@@ -1,0 +1,2 @@
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\bin\Release\net8.0\win-x64\publish\EraScriptingCore.dll
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\bin\Release\net8.0\win-x64\publish\EraScriptingCore.pdb

@@ -1,0 +1,17 @@
+E:\Era Engine\bin\Dotnet\Debug\net8.0\EraScriptingCore.exe
+E:\Era Engine\bin\Dotnet\Debug\net8.0\EraScriptingCore.deps.json
+E:\Era Engine\bin\Dotnet\Debug\net8.0\EraScriptingCore.runtimeconfig.json
+E:\Era Engine\bin\Dotnet\Debug\net8.0\EraScriptingCore.dll
+E:\Era Engine\bin\Dotnet\Debug\net8.0\EraScriptingCore.pdb
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Debug\net8.0\EraScriptingCore.csproj.AssemblyReference.cache
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Debug\net8.0\EraScriptingCore.GeneratedMSBuildEditorConfig.editorconfig
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Debug\net8.0\EraScriptingCore.AssemblyInfoInputs.cache
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Debug\net8.0\EraScriptingCore.AssemblyInfo.cs
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Debug\net8.0\EraScriptingCore.csproj.CoreCompileInputs.cache
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Debug\net8.0\EraScriptingCore.sourcelink.json
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Debug\net8.0\EraScriptingCore.csproj.CopyComplete
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Debug\net8.0\EraScriptingCore.dll
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Debug\net8.0\refint\EraScriptingCore.dll
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Debug\net8.0\EraScriptingCore.pdb
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Debug\net8.0\EraScriptingCore.genruntimeconfig.cache
+E:\Era Engine\scripting\DotnetScripting-Lib\EraScriptingCore\obj\Debug\net8.0\ref\EraScriptingCore.dll
