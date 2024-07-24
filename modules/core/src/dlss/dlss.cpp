@@ -4,6 +4,8 @@
 
 #include "dx/dx_command_list.h"
 
+#include "core/project.h"
+
 #include "rendering/main_renderer.h"
 
 namespace era_engine::dlss
@@ -15,7 +17,7 @@ namespace era_engine::dlss
 		NVSDK_NGX_FeatureDiscoveryInfo dlssInfo{};
 		NVSDK_NGX_FeatureRequirement outSupported{};
 		dlssInfo.FeatureID = NVSDK_NGX_Feature_SuperSampling;
-		dlssInfo.ApplicationDataPath = L"E:\\Era Engine\\logs";
+		dlssInfo.ApplicationDataPath = (eproject::enginePath + std::wstring(L"/logs")).c_str();
 		dlssInfo.Identifier.v.ProjectDesc.EngineType = NVSDK_NGX_ENGINE_TYPE_CUSTOM;
 
 		if (NVSDK_NGX_D3D12_GetFeatureRequirements(adapter, &dlssInfo, &outSupported) != NVSDK_NGX_Result_Success)

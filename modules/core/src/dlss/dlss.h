@@ -9,7 +9,7 @@
 #elif _DEBUG
 #define ENABLE_DLSS 0
 #else
-#define ENABLE_DLSS 0
+#define ENABLE_DLSS 1
 #endif
 
 #include "dx/dx_context.h"

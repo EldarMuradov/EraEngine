@@ -12,6 +12,7 @@ era_begin(EraEngine)
     add_subdirectory(programs/EraEditor)
     add_subdirectory(programs/EraRuntime)
     add_subdirectory(programs/EraUnitTests)
+    add_subdirectory(programs/EraLauncher)
 era_end(EraEngine)
 
 

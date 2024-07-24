@@ -51,6 +51,7 @@ function(require_module project module_name)
     message("Adding target ${module_name} to ${project} program...")
 
     # Link dependencies (if any)
+    add_dependencies(${project} ${module_name})
     target_link_directories(${project} PUBLIC modules/${module_name}/Release)
 endfunction()
 
@@ -63,6 +64,7 @@ function(require_module_internal module module_name)
     add_subdirectory(${ERA_ENGINE_PATH}/modules/${module_name} build)
 
     # Link dependencies (if any)
+    add_dependencies(${project} ${module_name})
     target_link_directories(${module} PUBLIC modules/${module_name}/Release)
 endfunction()
 

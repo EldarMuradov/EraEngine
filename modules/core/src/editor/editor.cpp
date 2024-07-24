@@ -2794,7 +2794,8 @@ namespace era_engine
 
 					if (ImGui::BeginProperties())
 					{
-						ImGui::PropertyCheckbox("Enable DLSS", renderer->settings.enableDLSS);
+						// For now it's only fsr2 wrapper. I do not have rtx gpu now :(((
+						ImGui::PropertyCheckbox("Enable FSR 2.0", renderer->settings.enableDLSS);
 
 						ImGui::EndProperties();
 					}
