@@ -12,6 +12,8 @@
 
 <a href="https://github.com/EldarMuradov/EraEngine"><img alt="platforms" src="https://img.shields.io/badge/platforms-Windows-blue?style=flat-square"/></a>
 
+![Build workflow](https://github.com/EldarMuradov/EraEngine/actions/workflows/cmake-windows-platform.yml/badge.svg)
+
 # About
 
 Era Engine is a modern ECS-based game engine that provides developers with powerful tools for creating 2D/3D games. It includes the following features and functionality:
