@@ -3,6 +3,7 @@ projects/
 _build/
 
 asset_cache/
+resources/assets
 
 # Roadmap
 roadmap.txt
