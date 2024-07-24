@@ -1,3 +1,5 @@
+
+
 name: CMake on Windows
 
 on:
@@ -37,4 +39,5 @@ jobs:
 
     - name: Build
       run: |
+        cd _build
         cmake --build . --config ${{ matrix.build_type }}
