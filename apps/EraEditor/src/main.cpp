@@ -115,6 +115,10 @@ int main(int argc, char** argv)
 {
 	using namespace era_engine;
 
+#ifndef _DEBUG || DEBUG
+	::ShowWindow(::GetConsoleWindow(), SW_HIDE);
+#endif
+
 	try
 	{
 		if (!dxContext.initialize())
@@ -154,6 +158,7 @@ int main(int argc, char** argv)
 		spec.allowSSR = true;
 		spec.allowTAA = true;
 		spec.allowBloom = true;
+		spec.allowDLSS = true;
 
 		main_renderer renderer;
 		renderer.initialize(window.colorDepth, window.clientWidth, window.clientHeight, spec);

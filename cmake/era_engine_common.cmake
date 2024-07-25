@@ -239,13 +239,6 @@ function(declare_support_program program_name)
         _CRT_SECURE_NO_WARNINGS
         ENABLE_CPU_PROFILING=1
         ENABLE_DX_PROFILING=0
-        PX_GPU_BROAD_PHASE=0
-        SHADER_BIN_DIR=L"${ERA_ENGINE_PATH}/modules/shaders/bin/Release/"
-        ENGINE_PATH=L"${ERA_ENGINE_PATH}"
-        MESH_SHADER_SUPPORTED
-        PX_PHYSX_STATIC_LIB
-        ENABLE_FSR_WRAPPER
-        FBXSDK_SHAREDd
-        USE_NETCORE)
+        ENGINE_PATH=L"${ERA_ENGINE_PATH}")
 
 endfunction()
