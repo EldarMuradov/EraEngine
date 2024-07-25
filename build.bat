@@ -31,8 +31,8 @@ mkdir _build
 
 echo Copiyng external resources...
 
-xcopy resources\imgui.ini _build\programs\EraEditor\ /Q
-xcopy resources\imgui.ini _build\programs\EraRuntime\ /Q
+xcopy resources\imgui.ini _build\apps\EraEditor\ /Q
+xcopy resources\imgui.ini _build\apps\EraRuntime\ /Q
 xcopy resources\imgui.ini _build\ /Q
 
 xcopy /s /i resources\bin\Debug _build\Debug /Q

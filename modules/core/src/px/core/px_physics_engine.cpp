@@ -226,8 +226,10 @@ namespace era_engine
 		if (!foundation)
 			throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
 
+#if PX_GPU_BROAD_PHASE
 		if (PxGetSuggestedCudaDeviceOrdinal(foundation->getErrorCallback()) < 0)
 			throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
+#endif
 
 		pvd = PxCreatePvd(*foundation);
 
@@ -254,13 +256,6 @@ namespace era_engine
 		fStream->setFileName(omniPvdPath);
 		omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*fStream));
 
-		//PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
-		//if (transport == NULL)
-		//	throw std::exception("Failed to create {PxPvdTransport}. Error in {PhysicsEngine} ctor.");
-
-		//if (pvd->connect(*transport, PxPvdInstrumentationFlag::eALL))
-		//	std::cout << "Physics> PVD Connected.\n";
-
 #endif
 
 		toleranceScale.length = 1.0f;
@@ -278,35 +273,35 @@ namespace era_engine
 			ASSERT(omniPvd->startSampling());
 		}
 
-		//PxPvdSceneClient* client = scene->getScenePvdClient();
+		PxPvdSceneClient* client = scene->getScenePvdClient();
 
-		//if (client)
-		//{
-		//	client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
-		//	client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
-		//	client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
-		//}
+		if (client)
+		{
+			client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
+			client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
+			client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
+		}
 
-		//if (pvd->isConnected())
-			//std::cout << "Physics> PVD Connection enabled.\n";
+		if (pvd->isConnected())
+			std::cout << "Physics> PVD Connection enabled.\n";
 #endif
 
-		PxCudaContextManagerDesc cudaContextManagerDesc;
-		cudaContextManagerDesc.graphicsDevice = dxContext.device.Get();
-		cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profilerCallback);
+		dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
 
 		PxSceneDesc sceneDesc(physics->getTolerancesScale());
 		sceneDesc.gravity = gravity;
-		dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
 		sceneDesc.cpuDispatcher = dispatcher;
 		sceneDesc.solverType = PxSolverType::eTGS;
-		sceneDesc.cudaContextManager = cudaContextManager;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
 #if PX_GPU_BROAD_PHASE
+		PxCudaContextManagerDesc cudaContextManagerDesc;
+		cudaContextManagerDesc.graphicsDevice = dxContext.device.Get();
+		cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profilerCallback);
+		sceneDesc.cudaContextManager = cudaContextManager;
 		sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
 		sceneDesc.gpuMaxNumPartitions = 8;
@@ -430,8 +425,9 @@ namespace era_engine
 
 	void physics::px_physics_engine::endSimulation()
 	{
+#if PX_GPU_BROAD_PHASE
 		stepper.wait(scene);
-
+#endif
 		{
 			CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");
 			processSimulationEventCallbacks();

@@ -9,10 +9,10 @@ era_begin(EraEngine)
     add_subdirectory(modules/EraScriptingCPPDecls)
 
     # programs
-    add_subdirectory(programs/EraEditor)
-    add_subdirectory(programs/EraRuntime)
-    add_subdirectory(programs/EraUnitTests)
-    add_subdirectory(programs/EraLauncher)
+    add_subdirectory(apps/EraEditor)
+    add_subdirectory(apps/EraRuntime)
+    add_subdirectory(apps/EraUnitTests)
+    add_subdirectory(apps/EraLauncher)
 era_end(EraEngine)
 
 

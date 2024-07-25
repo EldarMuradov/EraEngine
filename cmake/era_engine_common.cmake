@@ -24,12 +24,9 @@ ${ERA_ENGINE_PATH}/resources/lib/Release/libxml2.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/yaml-cpp.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/DirectXTex.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/nvsdk_ngx_d.lib
-${ERA_ENGINE_PATH}/resources/lib/Release/nvsdk_ngx_d_dbg.lib
-${ERA_ENGINE_PATH}/resources/lib/Release/nvsdk_ngx_s.lib
-${ERA_ENGINE_PATH}/resources/lib/Release/nvsdk_ngx_s_dbg.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/nethost.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/libnethost.lib
-${ERA_ENGINE_PATH}/modules/thirdparty_ext/CUDA/lib/x64/cuda.lib)
+${ERA_ENGINE_PATH}/resources/lib/Release/cuda.lib)
 
 function(assign_source_group)
     foreach(_source IN ITEMS ${ARGN})
@@ -189,15 +186,15 @@ function(declare_module module_name)
 endfunction()
 
 function(declare_engine_program program_name)
-    file(GLOB_RECURSE SOURCES_${program_name} ${ERA_ENGINE_PATH}/programs/${program_name}/src/*.cpp ${ERA_ENGINE_PATH}/modules/core/src/*.cpp)
+    file(GLOB_RECURSE SOURCES_${program_name} ${ERA_ENGINE_PATH}/apps/${program_name}/src/*.cpp ${ERA_ENGINE_PATH}/modules/core/src/*.cpp)
 
-    file(GLOB_RECURSE HEADERS_${program_name} ${ERA_ENGINE_PATH}/programs/${program_name}/src/*.h ${ERA_ENGINE_PATH}/modules/core/src/*.h)
+    file(GLOB_RECURSE HEADERS_${program_name} ${ERA_ENGINE_PATH}/apps/${program_name}/src/*.h ${ERA_ENGINE_PATH}/modules/core/src/*.h)
 
     set(sources_${program_name} ${SOURCES_${program_name}})
     set(headers_${program_name} ${HEADERS_${program_name}})
     set_source_files_properties(${SOURCES_${program_name}} ${HEADERS_${program_name}} PROPERTIES COMPILE_FLAGS -Od)
     add_executable(${program_name} ${SOURCES_${program_name}} ${HEADERS_${program_name}})
-    target_include_directories(${program_name} PRIVATE ${ERA_ENGINE_PATH}/programs/${program_name}/src)
+    target_include_directories(${program_name} PRIVATE ${ERA_ENGINE_PATH}/apps/${program_name}/src)
     target_include_directories(${program_name} PRIVATE ${ERA_ENGINE_PATH}/modules/core/src)
     target_link_directories(${program_name} PUBLIC ${ERA_ENGINE_PATH}/_build/Release)
 
@@ -223,15 +220,15 @@ function(declare_engine_program program_name)
 endfunction()
 
 function(declare_support_program program_name)
-    file(GLOB_RECURSE SOURCES_${program_name} ${ERA_ENGINE_PATH}/programs/${program_name}/src/*.cpp)
+    file(GLOB_RECURSE SOURCES_${program_name} ${ERA_ENGINE_PATH}/apps/${program_name}/src/*.cpp)
 
-    file(GLOB_RECURSE HEADERS_${program_name} ${ERA_ENGINE_PATH}/programs/${program_name}/src/*.h)
+    file(GLOB_RECURSE HEADERS_${program_name} ${ERA_ENGINE_PATH}/apps/${program_name}/src/*.h)
 
     set(sources_${program_name} ${SOURCES_${program_name}})
     set(headers_${program_name} ${HEADERS_${program_name}})
     set_source_files_properties(${SOURCES_${program_name}} ${HEADERS_${program_name}} PROPERTIES COMPILE_FLAGS -Od)
     add_executable(${program_name} ${SOURCES_${program_name}} ${HEADERS_${program_name}})
-    target_include_directories(${program_name} PRIVATE ${ERA_ENGINE_PATH}/programs/${program_name}/src)
+    target_include_directories(${program_name} PRIVATE ${ERA_ENGINE_PATH}/apps/${program_name}/src)
     target_link_directories(${program_name} PUBLIC ${ERA_ENGINE_PATH}/_build/Release)
     set_target_properties(${program_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${ERA_ENGINE_PATH}/_build)
     set_target_properties(${program_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${ERA_ENGINE_PATH}/_build)
