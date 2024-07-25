@@ -31,7 +31,9 @@
 #include "application.h"
 
 #include "imgui/imgui_internal.h"
+
 #include "scripting/script.h"
+#include "scripting/native_scripting_linker.h"
 
 #include "px/blast/px_blast_destructions.h"
 #include "px/physics/px_soft_body.h"

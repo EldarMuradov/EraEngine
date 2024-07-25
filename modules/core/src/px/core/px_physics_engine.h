@@ -25,6 +25,14 @@
 
 #define PX_VEHICLE 0
 
+#if DEBUG
+#define PX_BLAST_ENABLE 0
+#elif _DEBUG
+#define PX_BLAST_ENABLE 0
+#else
+#define PX_BLAST_ENABLE 1
+#endif
+
 #ifndef PX_RELEASE
 #define PX_RELEASE(x)	if(x)	{ x->release(); x = nullptr;}
 #endif

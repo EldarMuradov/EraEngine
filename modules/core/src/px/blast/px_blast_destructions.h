@@ -3,6 +3,9 @@
 #pragma once
 
 #include "px/core/px_physics_engine.h"
+
+#if PX_BLAST_ENABLE
+
 #include "px/core/px_extensions.h"
 #include "px/physics/px_joint.h"
 #include "px/blast/px_blast_utils.h"
@@ -18,8 +21,6 @@
 #include "asset/mesh_postprocessing.h"
 
 #include "application.h"
-
-#if !_DEBUG
 
 #include <NvBlast.h>
 

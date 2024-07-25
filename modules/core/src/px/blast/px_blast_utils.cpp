@@ -1,5 +1,7 @@
-
 #include "px/blast/px_blast_utils.h"
+
+#if PX_BLAST_ENABLE
+
 #include "px/blast/px_nvmesh.h"
 
 #include "asset/mesh_postprocessing.h"
@@ -215,3 +217,5 @@ namespace era_engine::physics
         return indices;
     }
 }
+
+#endif

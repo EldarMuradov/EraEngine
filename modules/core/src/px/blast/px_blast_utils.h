@@ -1,9 +1,12 @@
 #pragma once
 
-#include "scene/scene.h"
-
 #include "px/core/px_physics_engine.h"
+
+#if PX_BLAST_ENABLE
+
 #include "px/core/px_extensions.h"
+
+#include "scene/scene.h"
 
 namespace era_engine::physics
 {
@@ -95,3 +98,5 @@ namespace era_engine::physics
         return (static_cast<char>(lhs) & static_cast<char>(rhs));
     }
 }
+
+#endif

@@ -1,6 +1,9 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "px/blast/px_blast_fracture.h"
+
+#if PX_BLAST_ENABLE
+
 #include "px/blast/px_nvmesh.h"
 #include "px/blast/px_blast_destructions.h"
 #include "px/core/px_extensions.h"
@@ -404,3 +407,5 @@ namespace era_engine::physics
         }
     }
 }
+
+#endif

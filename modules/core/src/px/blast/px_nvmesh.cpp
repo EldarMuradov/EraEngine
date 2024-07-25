@@ -1,5 +1,6 @@
-
 #include "px/blast/px_nvmesh.h"
+
+#if PX_BLAST_ENABLE
 
 namespace era_engine::physics
 {
@@ -61,5 +62,6 @@ namespace era_engine::physics
             cleaner->release();
         }
     }
-
 }
+
+#endif

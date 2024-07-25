@@ -322,6 +322,8 @@ namespace era_engine
 			//	addRaytracingComponentAsync(en, mesh);
 			//}
 
+#if PX_BLAST_ENABLE
+
 			{
 				if (auto mesh = loadMeshFromFileAsync(getAssetPath("/resources/assets/obj/untitled.obj")))
 				{
@@ -338,6 +340,8 @@ namespace era_engine
 					scene.deleteEntity(px_sphere_entt1.handle);
 				}
 			}
+
+#endif
 
 			/*{
 				model_asset ass = load3DModelFromFile(getAssetPath("/resources/assets/box.fbx"));

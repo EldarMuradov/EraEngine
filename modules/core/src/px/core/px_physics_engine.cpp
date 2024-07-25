@@ -273,7 +273,7 @@ namespace era_engine
 			ASSERT(omniPvd->startSampling());
 		}
 
-		PxPvdSceneClient* client = scene->getScenePvdClient();
+		/*PxPvdSceneClient* client = scene->getScenePvdClient();
 
 		if (client)
 		{
@@ -283,7 +283,7 @@ namespace era_engine
 		}
 
 		if (pvd->isConnected())
-			std::cout << "Physics> PVD Connection enabled.\n";
+			std::cout << "Physics> PVD Connection enabled.\n";*/
 #endif
 
 		dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
@@ -425,7 +425,7 @@ namespace era_engine
 
 	void physics::px_physics_engine::endSimulation()
 	{
-#if PX_GPU_BROAD_PHASE
+#if !PX_GPU_BROAD_PHASE
 		stepper.wait(scene);
 #endif
 		{

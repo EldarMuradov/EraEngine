@@ -2,7 +2,8 @@
 
 #include "px/blast/px_blast_destructions.h"
 
-#if !_DEBUG
+#if PX_BLAST_ENABLE
+
 namespace era_engine::physics
 {
     eentity buildChunk(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, std::pair<ref<submesh_asset>, ref<nvmesh>> mesh, float mass, uint32 generation)

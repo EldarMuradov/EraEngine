@@ -6,6 +6,8 @@
 
 #include "px/blast/px_blast_utils.h"
 
+#if PX_BLAST_ENABLE
+
 #include <NvBlastExtAuthoringFractureTool.h>
 
 namespace era_engine
@@ -62,5 +64,6 @@ namespace era_engine::physics
 
         std::unordered_set<chunkPair> jointPairs;
     };
-    
 }
+
+#endif

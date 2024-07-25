@@ -2,6 +2,8 @@
 
 #include "px/core/px_physics_engine.h"
 
+#if PX_BLAST_ENABLE
+
 #include <NvBlast.h>
 
 #include <NvBlastExtAuthoring.h>
@@ -46,3 +48,5 @@ namespace era_engine::physics
         ref<nvmesh> mesh = nullptr;
     };
 }
+
+#endif
