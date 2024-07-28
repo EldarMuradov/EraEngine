@@ -1,4 +1,5 @@
 #pragma once
+
 #include <d3d12.h>
 #include <dxgi1_5.h>
 
@@ -10,13 +11,21 @@ namespace era_engine::launcher
 		UINT64 fenceValue;
 	};
 
+	struct era_hub;
+
 	class d3d12_hub_renderer
 	{
 	public:
 		d3d12_hub_renderer();
 		~d3d12_hub_renderer();
 
+		void setHub(ref<era_hub> hub_);
 		void render();
+
+		void finalize();
+
+		void beginFrame();
+		void endFrame();
 
 	private:
 		void init(HWND hWnd, WNDCLASSEXW wc);
@@ -60,6 +69,8 @@ namespace era_engine::launcher
 		IDXGISwapChain3* swapChain = nullptr;
 
 		ID3D12Resource* mainRenderTargetResources[3] = {};
+
+		ref<era_hub> hub = nullptr;
 
 		friend LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 		friend struct hub_win_app;

@@ -1,6 +1,5 @@
 #include "launcher/hub_win_app.h"
-
-#include "launcher/render/gui_hub_renderer.h"
+#include "launcher/render/hub_renderer.h"
 
 namespace era_engine::launcher
 {
@@ -50,10 +49,11 @@ namespace era_engine::launcher
         ::RegisterClassExW(&wc);
         HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"EraLauncher", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
-        hub = make_ref<era_hub>();
         renderer = make_ref<d3d12_hub_renderer>();
         renderer->init(hwnd, wc);
-        gui_hub_renderer::init(hub);
+
+        hub = make_ref<era_hub>(renderer);
+        renderer->setHub(hub);
 
         run(hwnd, wc);
     }
@@ -79,16 +79,12 @@ namespace era_engine::launcher
             if (done)
                 break;
 
-            gui_hub_renderer::beginFrame();
-
-            renderer->render();
-
-            gui_hub_renderer::endFrame();
+            hub->render();
         }
 
         renderer->waitForLastSubmittedFrame();
 
-        gui_hub_renderer::finalize();
+        renderer->finalize();
 
         renderer->cleanupDeviceD3D();
         ::DestroyWindow(hWnd);

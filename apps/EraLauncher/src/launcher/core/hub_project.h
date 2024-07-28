@@ -18,4 +18,6 @@ namespace era_engine::launcher
 
 		hub_project_type type = hub_project_type::default_3D_Demo;
 	};
+
+	void renderProject(const hub_project& project);
 }
