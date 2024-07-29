@@ -44,6 +44,9 @@ namespace era_engine::physics
 
 		void setPhysicsPositionAndRotation(const vec3& pos, const quat& rot);
 
+		uint32 getFilterMask() const;
+		void setFilterMask(uint32 group, uint32 mask);
+
 		void onCollisionEnter(px_body_component* collision) const;
 		void onCollisionExit(px_body_component* collision) const;
 		void onCollisionStay(px_body_component* collision) const;

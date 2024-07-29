@@ -302,6 +302,7 @@ namespace era_engine
 				.addComponent<physics::px_sphere_collider_component>(1.0f)
 				.addComponent<physics::px_dynamic_body_component>();
 			px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setMass(1000.f);
+			//px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setFilterMask(1, 2);
 			sphere = px_sphere_entt.handle;
 
 			auto px_sphere1 = &scene.createEntity("SpherePX1", (entity_handle)59)
@@ -310,7 +311,9 @@ namespace era_engine
 				.addComponent<physics::px_sphere_collider_component>(5.0f)
 				.addComponent<physics::px_dynamic_body_component>();
 			px_sphere1->getComponent<physics::px_dynamic_body_component>().setMass(500.0f);
+			//px_sphere1->getComponent<physics::px_dynamic_body_component>().setFilterMask(2, 1 | 3);
 
+			//px_sphere1->getComponent<physics::px_dynamic_body_component>().setFilterMask(3, 1);
 			//if (auto mesh = loadAnimatedMeshFromFileAsync(getAssetPath("/resources/assets/veribot/source/VERIBOT_final.fbx")))
 			//{
 			//	auto& en = scene.createEntity("Veribot", (entity_handle)15)

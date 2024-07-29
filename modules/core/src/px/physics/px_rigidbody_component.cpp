@@ -38,6 +38,25 @@ namespace era_engine::physics
 		actor->setGlobalPose(PxTransform(createPxVec3(pos), createPxQuat(rot)));
 	}
 
+	uint32 px_body_component::getFilterMask() const
+	{
+		return filterMask;
+	}
+
+	void px_body_component::setFilterMask(uint32 group, uint32 mask)
+	{
+		auto& physicsRef = physics_holder::physicsRef;
+
+		filterMask = mask;
+		filterGroup = group;
+		auto& colliders = physicsRef->collidersMap[entityHandle];
+
+		for (auto& collider : colliders)
+		{
+			setupFiltering(collider->getShape(), filterGroup, filterMask);
+		}
+	}
+
 	void px_body_component::onCollisionEnter(px_body_component* collision) const
 	{
 	}
@@ -90,7 +109,11 @@ namespace era_engine::physics
 			PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor, *coll->getGeometry(), *material);
 			enableShapeVisualization(shape);
 			shape->userData = userData;
+
+			coll->setShape(shape);
 		}
+
+		setFilterMask(filterGroup, filterMask);
 
 		physicsRef->addActor(this, actor, addToScene);
 	}
@@ -363,7 +386,11 @@ namespace era_engine::physics
 			PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor, *coll->getGeometry(), *material);
 			enableShapeVisualization(shape);
 			shape->userData = userData;
+
+			coll->setShape(shape);
 		}
+
+		setFilterMask(filterGroup, filterMask);
 
 		physicsRef->addActor(this, actor, addToScene);
 	}

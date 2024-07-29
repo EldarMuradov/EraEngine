@@ -185,6 +185,15 @@ namespace era_engine::physics
 		return true;
 	}
 
+	void setupFiltering(PxShape* shape, PxU32 filterGroup, PxU32 filterMask)
+	{
+		PxFilterData filterData;
+		filterData.word0 = filterGroup; // word0 = own ID
+		filterData.word1 = filterMask;  // word1 = ID mask to filter pairs that trigger a contact callback
+		shape->setSimulationFilterData(filterData);
+		shape->setQueryFilterData(filterData);
+	}
+
 	void enableShapeVisualization(PxShape* shape)
 	{
 		ASSERT(shape != nullptr);
@@ -304,7 +313,9 @@ namespace era_engine::physics
 
 		material = physics->createMaterial(0.5f, 0.5f, 0.6f);
 		plane = PxCreatePlane(*physics, PxPlane(createPxVec3(position), createPxVec3(normal)), *material);
-
+		PxShape* buffer[1];
+		plane->getShapes(buffer, 1);
+		setupFiltering(buffer[0], -1, -1);
 		physics_holder::physicsRef->getScene()->addActor(*plane);
 
 		return true;

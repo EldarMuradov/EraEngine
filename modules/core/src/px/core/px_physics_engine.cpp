@@ -42,16 +42,19 @@ namespace era_engine
 			return physx::PxFilterFlag::eDEFAULT;
 		}
 
-		pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
-		pairFlags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
-		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
-		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
-		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
-		pairFlags |= physx::PxPairFlag::ePOST_SOLVER_VELOCITY;
-		pairFlags |= physx::PxPairFlag::eNOTIFY_CONTACT_POINTS;
-		pairFlags |= physx::PxPairFlag::eSOLVE_CONTACT;
-		pairFlags |= physx::PxPairFlag::eDETECT_DISCRETE_CONTACT;
-
+		if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
+		{
+			pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
+			pairFlags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
+			pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
+			pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
+			pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
+			pairFlags |= physx::PxPairFlag::ePOST_SOLVER_VELOCITY;
+			pairFlags |= physx::PxPairFlag::eNOTIFY_CONTACT_POINTS;
+			pairFlags |= physx::PxPairFlag::eSOLVE_CONTACT;
+			pairFlags |= physx::PxPairFlag::eDETECT_DISCRETE_CONTACT;
+		}
+		
 		return physx::PxFilterFlag::eDEFAULT;
 	}
 

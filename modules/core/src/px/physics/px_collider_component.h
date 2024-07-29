@@ -40,6 +40,8 @@ namespace era_engine::physics
 		NODISCARD PxConvexMesh* buildMesh(mesh_asset* asset, const vec3& size);
 	};
 
+	void setupFiltering(PxShape* shape, PxU32 filterGroup, PxU32 filterMask);
+
 	void enableShapeVisualization(PxShape* shape);
 	void disableShapeVisualization(PxShape* shape);
 
@@ -60,14 +62,14 @@ namespace era_engine::physics
 		px_collider_component_base() = default;
 		virtual ~px_collider_component_base();
 
-		NODISCARD PxGeometry* getGeometry() const { return geometry; }
-		NODISCARD PxShape* getShape() const { return shape; }
+		PxGeometry* getGeometry() const { return geometry; }
+		PxShape* getShape() const { return shape; }
 		void setShape(PxShape* newShape) { shape = newShape; }
 
 		virtual bool createGeometry() { return false; }
 
 		template<typename T, IsColliderType<T> = true>
-		NODISCARD T* is()
+		T* is()
 		{
 			return static_cast<const T*>(this);
 		}
