@@ -53,9 +53,11 @@ namespace era_engine
 			pairFlags |= physx::PxPairFlag::eNOTIFY_CONTACT_POINTS;
 			pairFlags |= physx::PxPairFlag::eSOLVE_CONTACT;
 			pairFlags |= physx::PxPairFlag::eDETECT_DISCRETE_CONTACT;
+
+			return physx::PxFilterFlag::eDEFAULT;
 		}
-		
-		return physx::PxFilterFlag::eDEFAULT;
+	
+		return physx::PxFilterFlag::eSUPPRESS;
 	}
 
 	static void clearColliderFromCollection(const physics::px_body_component* collider,
@@ -789,6 +791,8 @@ namespace era_engine
 
 		newTriggerPairs.clear();
 		lostTriggerPairs.clear();
+
+		brokenJoints.clear();
 	}
 
 	void physics::px_simulation_event_callback::sendCollisionEvents()
@@ -823,40 +827,37 @@ namespace era_engine
 	{
 	}
 
+	void physics::px_simulation_event_callback::sendJointEvents()
+	{
+		for (auto* joint : brokenJoints)
+		{
+			if (joint->onJointBreakCallback)
+				joint->onJointBreakCallback(joint);
+		}
+	}
+
 	void physics::px_simulation_event_callback::onColliderRemoved(px_body_component* collider)
 	{
 		clearColliderFromCollection(collider, newTriggerPairs);
 		clearColliderFromCollection(collider, lostTriggerPairs);
 	}
 
+	void physics::px_simulation_event_callback::onJointRemoved(px_joint* joint)
+	{
+		brokenJoints.findAndReplaceWithLast(joint);
+		brokenJoints.popBack();
+	}
+
 	void physics::px_simulation_event_callback::onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)
 	{
-#if !_DEBUG
-		PxRigidActor* act1;
-		PxRigidActor* act2;
-		constraints->constraint->getActors(act1, act2);
-
-		auto rb1 = physics::physics_holder::physicsRef->actorsMap[act1];
-		auto rb2 = physics::physics_holder::physicsRef->actorsMap[act1];
-
-		if (!rb1 || !rb2)
-			return;
-
-		auto enttScene = globalApp.getCurrentScene();
-
-		eentity entt1{ (entity_handle)rb1->entityHandle, &enttScene->registry };
-		eentity entt2{ (entity_handle)rb2->entityHandle, &enttScene->registry };
-
-		if (auto node1 = entt1.getComponentIfExists<physics::chunk_graph_manager::chunk_node>())
+		for (uint32 i = 0; i < count; i++)
 		{
-			node1->onJointBreak();
+			PxJoint* joint = reinterpret_cast<PxJoint*>(constraints[i].externalReference);
+			if (joint->userData)
+			{
+				brokenJoints.pushBack(static_cast<px_joint*>(joint->userData));
+			}
 		}
-
-		if (auto node2 = entt2.getComponentIfExists<physics::chunk_graph_manager::chunk_node>())
-		{
-			node2->onJointBreak();
-		}
-#endif
 	}
 
 	void physics::px_simulation_event_callback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)

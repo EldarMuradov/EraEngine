@@ -16,7 +16,7 @@ namespace era_engine::physics
 
 	enum class px_rigidbody_type : uint8
 	{
-		rigidbody_type_none,
+		rigidbody_type_none = 0,
 		rigidbody_type_static,
 		rigidbody_type_dynamic,
 		rigidbody_type_kinematic
@@ -24,7 +24,7 @@ namespace era_engine::physics
 
 	enum class px_force_mode : uint8
 	{
-		force_mode_none,
+		force_mode_none = 0,
 		force_mode_force,
 		force_mode_impulse,
 		force_mode_velocity_change,

@@ -7,6 +7,7 @@
 #include "px/blast/px_nvmesh.h"
 #include "px/blast/px_blast_destructions.h"
 #include "px/core/px_extensions.h"
+#include "px/physics/px_joint_component.h"
 
 #include <NvBlastExtAuthoring.h>
 
@@ -195,10 +196,10 @@ namespace era_engine::physics
         graphManager.setup(chunks);
 
         // Connect blocks that are touching with fixed joints
-        //for (size_t i = 0; i < chunks.size(); i++)
-        //{
-        //    connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce);
-        //}
+        for (size_t i = 0; i < chunks.size(); i++)
+        {
+            connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce);
+        }
 
         for (auto chunk : chunks)
         {
@@ -206,7 +207,7 @@ namespace era_engine::physics
             renderEntity.setParent(fractureGameObject);
         }
 
-        //anchorChunks(gameObject.handle, anchor);
+        anchorChunks(gameObject.handle, anchor);
 
         return fractureGameObject.handle;
     }
@@ -375,33 +376,23 @@ namespace era_engine::physics
         {
             if (overlap != chunk)
             {
+                eentity body{ overlap, &enttScene->registry };
+
+                auto& rbOverlap = body.getComponent<physics::px_dynamic_body_component>();
+
+                body.addComponent<px_fixed_joint_component>(jointBreakForce);
+                auto& joint = body.getComponent<px_fixed_joint_component>();
+                joint.setPair(rbOverlap.getRigidActor(), rb.getRigidActor());
+
+                if (manager.joints.contains(chunk))
                 {
-                    eentity body{ overlap, &enttScene->registry };
-
-                    auto& rbOverlap = body.getComponent<physics::px_dynamic_body_component>();
-
-                    std::vector<PxFilterData> fd1 = getFilterData(rb.getRigidActor());
-                    std::vector<PxFilterData> fd2 = getFilterData(rbOverlap.getRigidActor());
-
-                    px_fixed_joint* joint = new px_fixed_joint(px_fixed_joint_desc{ 0.1f, 0.1f, 200.0f, 100.0f }, rb.getRigidActor(), rbOverlap.getRigidActor());
-
-                    joint->joint->setInvInertiaScale0(0.0f);
-                    joint->joint->setInvInertiaScale1(0.0f);
-                    joint->joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, false);
-
-                    setFilterData(rb.getRigidActor(), fd1);
-                    setFilterData(rbOverlap.getRigidActor(), fd2);
-
-                    if (manager.joints.contains(chunk))
-                    {
-                        manager.joints[chunk].push_back(joint);
-                    }
-                    else
-                    {
-                        std::vector<px_fixed_joint*> jointVec;
-                        jointVec.push_back(joint);
-                        manager.joints.emplace(chunk, jointVec);
-                    }
+                    manager.joints[chunk].push_back(joint.getJoint());
+                }
+                else
+                {
+                    std::vector<px_fixed_joint*> jointVec;
+                    jointVec.push_back(joint.getJoint());
+                    manager.joints.emplace(chunk, jointVec);
                 }
             }
         }

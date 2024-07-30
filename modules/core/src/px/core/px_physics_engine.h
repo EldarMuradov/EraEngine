@@ -231,6 +231,7 @@ namespace era_engine::physics
 	struct px_body_component;
 	struct px_collider_component_base;
 	struct px_soft_body;
+	struct px_joint;
 
 	struct px_simulation_event_callback;
 
@@ -479,7 +480,11 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 
 		void sendTriggerEvents();
 
+		void sendJointEvents();
+
 		void onColliderRemoved(px_body_component* collider);
+
+		void onJointRemoved(px_joint* joint);
 
 		void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) override;
 		void onWake(PxActor** actors, PxU32 count) override { std::cout << "onWake\n"; }
@@ -491,6 +496,8 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 		PxArray<px_collision> newCollisions;
 
 		PxArray<px_body_component*> kinematicsToRemoveFlag;
+
+		PxArray<px_joint*> brokenJoints;
 
 		PxArray<px_collision> removedCollisions;
 
@@ -687,3 +694,5 @@ filterData.data.word2 = hitTriggers ? 1 : 0
 #include "px/features/px_particles.h"
 #include "px/features/cloth/px_clothing_factory.h"
 #include "px/core/px_extensions.h"
+#include "px/physics/px_joint.h"
+#include "px/physics/px_joint_component.h"

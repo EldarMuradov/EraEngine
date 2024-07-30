@@ -87,14 +87,11 @@ namespace era_engine::physics
     {
         setupRigidbody();
 
-        //if(!isKinematic)
-        //    freeze();
+        if(!isKinematic)
+            freeze();
 
         jointToChunk.clear();
         chunkToJoint.clear();
-
-        if (!manager->joints.contains(handle))
-            return;
 
         auto enttScene = globalApp.getCurrentScene();
 
@@ -210,8 +207,10 @@ namespace era_engine::physics
         auto enttScene = globalApp.getCurrentScene();
 
         eentity renderEntity{ handle, &enttScene->registry };
-
-        renderEntity.getComponent<physics::px_dynamic_body_component>().setConstraints(0);
+        auto& rb = renderEntity.getComponent<physics::px_dynamic_body_component>();
+        rb.setConstraints(0);
+        rb.setGravity(true);
+        rb.setFilterMask(-1, -1);
     }
 
     void chunk_graph_manager::chunk_node::freeze()
@@ -221,19 +220,21 @@ namespace era_engine::physics
         auto enttScene = globalApp.getCurrentScene();
 
         eentity renderEntity{ handle, &enttScene->registry };
+        auto& transform = renderEntity.getComponent<transform_component>();
 
-        frozenPos = renderEntity.getComponent<transform_component>().position;
-        frozenRot = renderEntity.getComponent<transform_component>().rotation;
+        frozenPos = transform.position;
+        frozenRot = transform.rotation;
 
-        renderEntity.getComponent<physics::px_dynamic_body_component>().setConstraints(PX_FREEZE_ALL);
+        auto& rb = renderEntity.getComponent<physics::px_dynamic_body_component>();
+        rb.setGravity(false);
+        rb.setConstraints(PX_FREEZE_ALL);
+        rb.setFilterMask(16, 16);
     }
 
     void chunk_graph_manager::setup(std::vector<entity_handle> bodies, uint32 generation)
     {
         nbNodes = bodies.size();
         nodes.reserve(nbNodes);
-
-        physics_holder::physicsRef->unfreezeBlastQueue.reserve(nbNodes * 5);
 
         auto enttScene = globalApp.getCurrentScene();
 

@@ -4,6 +4,8 @@
 
 #include "px/core/px_physics_engine.h"
 
+#include <functional>
+
 namespace era_engine::physics
 {
 	using namespace physx;
@@ -188,6 +190,8 @@ namespace era_engine::physics
 		px_joint_type type = px_joint_type::joint_type_none;
 
 		PxJoint* joint = nullptr;
+
+		std::function<void(px_joint*)> onJointBreakCallback;
 	};
 
 	struct px_revolute_joint : px_joint

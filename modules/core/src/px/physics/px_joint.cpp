@@ -67,6 +67,7 @@ namespace era_engine::physics
 	px_revolute_joint::px_revolute_joint(px_revolute_joint_desc desc, PxRigidActor* f, PxRigidActor* s) : px_joint(f, s)
 	{
 		joint = createRevoluteJoint(f, s);
+		joint->userData = this;
 		type = px_joint_type::joint_type_revolute;
 		PxJointAngularLimitPair limitPair(desc.angularPair.lower,
 			desc.angularPair.upper);
@@ -74,7 +75,7 @@ namespace era_engine::physics
 		limitPair.damping = desc.angularPair.damping;
 
 		auto jInstance = joint->is<PxRevoluteJoint>();
-		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
+
 		if (desc.drive.anabledDrive)
 		{
 			jInstance->setDriveVelocity(desc.drive.driveVelocity);
@@ -82,7 +83,9 @@ namespace era_engine::physics
 			jInstance->setDriveForceLimit(desc.drive.driveForceLimit);
 			jInstance->setRevoluteJointFlag(PxRevoluteJointFlag::eDRIVE_ENABLED, true);
 		}
+#if PX_GPU_BROAD_PHASE
 		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
+#endif
 		jInstance->setLimit(limitPair);
 		jInstance->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, true);
 	}
@@ -95,7 +98,7 @@ namespace era_engine::physics
 	{
 		joint = createSphericalJoint(f, s);
 		type = px_joint_type::joint_type_spherical;
-
+		joint->userData = this;
 		PxJointLimitCone limitCone(desc.limitCone.yAngle,
 			desc.limitCone.zAngle);
 
@@ -103,8 +106,9 @@ namespace era_engine::physics
 		limitCone.damping = desc.limitCone.damping;
 
 		auto jInstance = joint->is<PxSphericalJoint>();
-		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
+#if PX_GPU_BROAD_PHASE
 		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
+#endif
 		jInstance->setLimitCone(limitCone);
 		jInstance->setSphericalJointFlag(PxSphericalJointFlag::eLIMIT_ENABLED, true);
 	}
@@ -116,6 +120,7 @@ namespace era_engine::physics
 	px_prismatic_joint::px_prismatic_joint(px_prismatic_joint_desc desc, PxRigidActor* f, PxRigidActor* s) : px_joint(f, s)
 	{
 		joint = createPrismaticJoint(f, s);
+		joint->userData = this;
 		type = px_joint_type::joint_type_prismatic;
 		PxTolerancesScale ts;
 		ts.length = 1.0;
@@ -129,8 +134,9 @@ namespace era_engine::physics
 		limitPair.damping = desc.linearPair.damping;
 
 		auto jInstance = joint->is<PxPrismaticJoint>();
-		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
+#if PX_GPU_BROAD_PHASE
 		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
+#endif
 		jInstance->setLimit(limitPair);
 		jInstance->setPrismaticJointFlag(PxPrismaticJointFlag::eLIMIT_ENABLED, true);
 	}
@@ -142,9 +148,9 @@ namespace era_engine::physics
 	px_distance_joint::px_distance_joint(px_distance_joint_desc desc, PxRigidActor* f, PxRigidActor* s) : px_joint(f, s)
 	{
 		joint = createDistanceJoint(f, s);
+		joint->userData = this;
 		type = px_joint_type::joint_type_distance;
 		auto jInstance = joint->is<PxDistanceJoint>();
-		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 		jInstance->setDamping(desc.damping);
 		jInstance->setStiffness(desc.stiffness);
 		jInstance->setDistanceJointFlag(PxDistanceJointFlag::eSPRING_ENABLED, true);
@@ -161,10 +167,9 @@ namespace era_engine::physics
 	px_fixed_joint::px_fixed_joint(px_fixed_joint_desc desc, PxRigidActor* f, PxRigidActor* s) : px_joint(f, s)
 	{
 		joint = createFixedJoint(f, s);
+		joint->userData = this;
 		type = px_joint_type::joint_type_fixed;
 		auto jInstance = joint->is<PxFixedJoint>();
-		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
-		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
 #if PX_GPU_BROAD_PHASE
 		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 #endif
@@ -179,9 +184,9 @@ namespace era_engine::physics
 	px_d6_joint::px_d6_joint(px_d6_joint_desc desc, PxRigidActor* f, PxRigidActor* s) : px_joint(f, s)
 	{
 		joint = createD6Joint(f, s);
+		joint->userData = this;
 		type = px_joint_type::joint_type_d6;
 		auto jInstance = joint->is<PxD6Joint>();
-		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 		if (desc.drive.anabledDrive)
 		{
 			auto jointDrive = PxD6JointDrive();
