@@ -15,7 +15,7 @@ namespace era_engine::physics
 
 	void px_fixed_joint_component::setPair(PxRigidActor* f, PxRigidActor* s)
 	{
-		joint = new px_fixed_joint(px_fixed_joint_desc{10.0f, 10.0f, jointBreakForce, jointBreakForce}, f, s);
+		joint = new px_fixed_joint(px_fixed_joint_desc{10.0f, 10.0f, jointBreakForce, jointBreakForce * 2.0f}, f, s);
 	}
 
 	void px_fixed_joint_component::release(bool releaseActor)

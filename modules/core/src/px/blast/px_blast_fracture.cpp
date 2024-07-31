@@ -192,9 +192,6 @@ namespace era_engine::physics
         float chunkMass = volumeOfMesh(meshAsset) * density / totalChunks;
         auto chunks = buildChunks(gameObject.getComponent<transform_component>(), insideMaterial, outsideMaterial, meshes, chunkMass);
 
-        // Graph manager freezes/unfreezes blocks depending on whether they are connected to the graph or not
-        graphManager.setup(chunks);
-
         // Connect blocks that are touching with fixed joints
         for (size_t i = 0; i < chunks.size(); i++)
         {
@@ -208,6 +205,9 @@ namespace era_engine::physics
         }
 
         anchorChunks(gameObject.handle, anchor);
+
+        // Graph manager freezes/unfreezes blocks depending on whether they are connected to the graph or not
+        graphManager.setup(chunks);
 
         return fractureGameObject.handle;
     }
@@ -384,15 +384,15 @@ namespace era_engine::physics
                 auto& joint = body.getComponent<px_fixed_joint_component>();
                 joint.setPair(rbOverlap.getRigidActor(), rb.getRigidActor());
 
-                if (manager.joints.contains(chunk))
+                if (manager.joints.contains(overlap))
                 {
-                    manager.joints[chunk].push_back(joint.getJoint());
+                    manager.joints[overlap].push_back(joint.getJoint());
                 }
                 else
                 {
                     std::vector<px_fixed_joint*> jointVec;
                     jointVec.push_back(joint.getJoint());
-                    manager.joints.emplace(chunk, jointVec);
+                    manager.joints.emplace(overlap, jointVec);
                 }
             }
         }

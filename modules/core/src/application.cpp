@@ -302,6 +302,7 @@ namespace era_engine
 				.addComponent<physics::px_sphere_collider_component>(1.0f)
 				.addComponent<physics::px_dynamic_body_component>();
 			px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setMass(1000.f);
+			px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setCCD(true);
 			//px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setFilterMask(1, 2);
 			sphere = px_sphere_entt.handle;
 
@@ -339,7 +340,7 @@ namespace era_engine
 					physics::fracture fracture;
 					auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
 					unsigned int seed = 7249U;
-					fracture.fractureGameObject(ref, px_blast_entt1, physics::anchor::anchor_none, seed, 15, defaultmat, defaultmat, 100.0f, 3.0f);
+					fracture.fractureGameObject(ref, px_blast_entt1, physics::anchor::anchor_bottom, seed, 50, defaultmat, defaultmat, 2500.0f, 1.0f);
 					scene.deleteEntity(px_blast_entt1.handle);
 				}
 			}
@@ -612,7 +613,7 @@ namespace era_engine
 			eentity sphereEntity{ sphere, &scene.registry };
 			if (input.keyboard['G'].pressEvent)
 			{
-				sphereEntity.getComponent<physics::px_dynamic_body_component>().addForce(vec3(20.0f, 1.0f, 0.0f), physics::px_force_mode::force_mode_impulse);
+				sphereEntity.getComponent<physics::px_dynamic_body_component>().addForce(vec3(200.0f, 1.0f, 0.0f), physics::px_force_mode::force_mode_impulse);
 			}
 		}
 	}
@@ -679,15 +680,15 @@ namespace era_engine
 		}
 
 #endif
-
-		//{
-		//	CPU_PROFILE_BLOCK("PhysX blast chuncks");
-		//	for (auto [entityHandle, cgm, _] : scene.group(component_group<physics::chunk_graph_manager, transform_component>).each())
-		//	{
-		//		cgm.update();
-		//	}
-		//}
-
+#if PX_BLAST_ENABLE
+		{
+			CPU_PROFILE_BLOCK("PhysX blast chuncks");
+			for (auto [entityHandle, cgm, _] : scene.group(component_group<physics::chunk_graph_manager, transform_component>).each())
+			{
+				cgm.update();
+			}
+		}
+#endif
 		updateTestScene(dt, scene, input);
 
 #ifndef ERA_RUNTIME

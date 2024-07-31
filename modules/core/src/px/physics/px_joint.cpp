@@ -173,7 +173,8 @@ namespace era_engine::physics
 #if PX_GPU_BROAD_PHASE
 		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 #endif
-		//jInstance->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, true);
+		jInstance->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, false);
+		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 		jInstance->setBreakForce(desc.forceThreshold, desc.torqueThreshold);
 	}
 

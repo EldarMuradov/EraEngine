@@ -67,7 +67,7 @@ namespace era_engine::physics
 
     void chunk_graph_manager::chunk_node::update()
     {
-        if (frozen)
+        if (frozen && !isKinematic)
         {
             auto enttScene = globalApp.getCurrentScene();
 
@@ -160,9 +160,6 @@ namespace era_engine::physics
         {
             auto body = jointToChunk[link];
 
-            link->joint->setInvInertiaScale0(0.0f);
-            link->joint->setInvInertiaScale1(0.0f);
-
             jointToChunk.erase(link);
             chunkToJoint.erase(body);
 
@@ -186,31 +183,34 @@ namespace era_engine::physics
 
         auto& rb = renderEntity.getComponent<px_dynamic_body_component>();
 
-        constexpr float chunkMass = 3.0f;
+        constexpr float chunkMass = 1.0f;
 
         rb.setMaxAngularVelosity(100.0f);
         rb.setAngularDamping(0.01f);
         rb.setLinearDamping(0.01f);
 
         auto dyn = rb.getRigidDynamic();
-        dyn->setSolverIterationCounts(4, 4);
         dyn->setMaxDepenetrationVelocity(3.0f);
-        dyn->setMaxContactImpulse(1000.0f);
 
         rb.updateMassAndInertia(chunkMass);
+
+        if (rb.isKinematicBody())
+            isKinematic = true;
     }
 
     void chunk_graph_manager::chunk_node::unfreeze()
     {
-        frozen = false;
-
         auto enttScene = globalApp.getCurrentScene();
 
         eentity renderEntity{ handle, &enttScene->registry };
         auto& rb = renderEntity.getComponent<physics::px_dynamic_body_component>();
+        if (rb.isKinematicBody())
+            return;
         rb.setConstraints(0);
         rb.setGravity(true);
         rb.setFilterMask(-1, -1);
+
+        frozen = false;
     }
 
     void chunk_graph_manager::chunk_node::freeze()
@@ -284,7 +284,7 @@ namespace era_engine::physics
 
             eentity renderEntity{ node, &enttScene->registry };
             auto nodeComponent = renderEntity.getComponentIfExists<chunk_node>();
-
+            nodeComponent->update();
             if (nodeComponent->hasBrokenLinks)
             {
                 nodeComponent->cleanBrokenLinks();
@@ -335,7 +335,7 @@ namespace era_engine::physics
         }
         for (auto sub : search)
         {
-            sub->addToUnfreezeQueue();
+            sub->unfreeze();
         }
     }
 

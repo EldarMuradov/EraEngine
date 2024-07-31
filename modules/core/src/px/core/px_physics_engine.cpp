@@ -737,6 +737,7 @@ namespace era_engine
 	{
 		simulationEventCallback->sendCollisionEvents();
 		simulationEventCallback->sendTriggerEvents();
+		simulationEventCallback->sendJointEvents();
 
 		simulationEventCallback->clear();
 	}

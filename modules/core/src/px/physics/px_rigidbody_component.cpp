@@ -29,13 +29,15 @@ namespace era_engine::physics
 	{
 		physics_lock_write lock{};
 
+		actor->setGlobalPose(PxTransform(createPxVec3(pos), createPxQuat(rot)));
+
 		if (auto dyn = actor->is<PxRigidDynamic>())
 		{
+			if (dyn->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
+				return;
 			dyn->setAngularVelocity(PxVec3(0.0f));
 			dyn->setLinearVelocity(PxVec3(0.0f));
 		}
-
-		actor->setGlobalPose(PxTransform(createPxVec3(pos), createPxQuat(rot)));
 	}
 
 	uint32 px_body_component::getFilterMask() const
