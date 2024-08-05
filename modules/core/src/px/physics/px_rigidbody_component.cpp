@@ -3,6 +3,7 @@
 #include "px/core/px_physics_engine.h"
 #include "px/physics/px_rigidbody_component.h"
 #include "px/physics/px_collider_component.h"
+#include "px/physics/px_character_controller_component.h"
 #include "px/core/px_extensions.h"
 
 #include "core/math.h"
@@ -439,6 +440,33 @@ namespace era_engine::physics
 		actor->userData = userData;
 
 		return actor;
+	}
+
+	px_body_component* getBodyComponent(eentity& entity)
+	{
+		if (auto* dynamicBody = entity.getComponentIfExists<px_dynamic_body_component>())
+		{
+			return dynamicBody;
+		}
+		else if(auto* staticBody = entity.getComponentIfExists<px_static_body_component>())
+		{
+			return staticBody;
+		}
+		else if (auto* boxCCT = entity.getComponentIfExists<px_box_cct_component>())
+		{
+			return boxCCT;
+		}
+		else if (auto* capsuleCCT = entity.getComponentIfExists<px_capsule_cct_component>())
+		{
+			return capsuleCCT;
+		}
+		return nullptr;
+	}
+
+	px_body_component* getBodyComponent(uint32_t handle)
+	{
+		eentity entity = { (entity_handle)handle, &globalApp.getCurrentScene()->registry };
+		return getBodyComponent(entity);
 	}
 
 }

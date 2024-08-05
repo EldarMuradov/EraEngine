@@ -63,16 +63,30 @@ namespace era_engine::physics
 
 		PxI32 targetTriangleCount = totalTrianglesCount < 5000 ? totalTrianglesCount : totalTrianglesCount * 0.66f;
 		
-		PxTetMaker::simplifyTriangleMesh(vertices, indices, targetTriangleCount, maximalTriangleEdgeLength, outputVertices, outputIndices);
-
 		PxTriangleMeshDesc meshDesc;
-		meshDesc.points.count = outputVertices.size();
-		meshDesc.points.stride = sizeof(physx::PxVec3);
-		meshDesc.points.data = &outputVertices[0];
 
-		meshDesc.triangles.count = outputIndices.size() / 3;
-		meshDesc.triangles.stride = 3 * sizeof(PxU32);
-		meshDesc.triangles.data = &outputIndices[0];
+		if (targetTriangleCount != totalTrianglesCount)
+		{
+			PxTetMaker::simplifyTriangleMesh(vertices, indices, targetTriangleCount, maximalTriangleEdgeLength, outputVertices, outputIndices);
+
+			meshDesc.points.count = outputVertices.size();
+			meshDesc.points.stride = sizeof(physx::PxVec3);
+			meshDesc.points.data = &outputVertices[0];
+
+			meshDesc.triangles.count = outputIndices.size() / 3;
+			meshDesc.triangles.stride = 3 * sizeof(PxU32);
+			meshDesc.triangles.data = &outputIndices[0];
+		}
+		else
+		{
+			meshDesc.points.count = vertices.size();
+			meshDesc.points.stride = sizeof(physx::PxVec3);
+			meshDesc.points.data = &vertices[0];
+
+			meshDesc.triangles.count = indices.size() / 3;
+			meshDesc.triangles.stride = 3 * sizeof(PxU32);
+			meshDesc.triangles.data = &indices[0];
+		}
 
 		px_triangle_mesh_builder mesh_adapter;
 
@@ -337,11 +351,7 @@ namespace era_engine::physics
 		meshDesc.points.count = vertices.size();
 		meshDesc.points.stride = sizeof(PxVec3);
 		meshDesc.points.data = &vertices[0];
-		meshDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX | PxConvexFlag::eQUANTIZE_INPUT;
-		
-#if PX_GPU_BROAD_PHASE
-		meshDesc.flags |= PxConvexFlag::eGPU_COMPATIBLE;
-#endif
+		meshDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX | PxConvexFlag::eDISABLE_MESH_VALIDATION | PxConvexFlag::eFAST_INERTIA_COMPUTATION;
 
 		px_convex_mesh_builder mesh_adapter;
 

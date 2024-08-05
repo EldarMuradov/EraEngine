@@ -277,18 +277,6 @@ namespace era_engine
 		{
 			ASSERT(omniPvd->startSampling());
 		}
-
-		/*PxPvdSceneClient* client = scene->getScenePvdClient();
-
-		if (client)
-		{
-			client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
-			client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
-			client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
-		}
-
-		if (pvd->isConnected())
-			std::cout << "Physics> PVD Connection enabled.\n";*/
 #endif
 
 		dispatcher = PxDefaultCpuDispatcherCreate(nbCPUDispatcherThreads);
@@ -299,7 +287,6 @@ namespace era_engine
 		sceneDesc.solverType = PxSolverType::eTGS;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-		sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
 #if PX_GPU_BROAD_PHASE
@@ -322,9 +309,8 @@ namespace era_engine
 		scene = physics->createScene(sceneDesc);
 
 		scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
-		scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, 1.0f);
-		scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LOCAL_FRAMES, 1.0f);
-
+		scene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 1.0f);
+		scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_FNORMALS, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
 
 #if PX_ENABLE_RAYCAST_CCD
@@ -857,6 +843,7 @@ namespace era_engine
 			if (joint->userData)
 			{
 				brokenJoints.pushBack(static_cast<px_joint*>(joint->userData));
+				std::cout << "pizda\n";
 			}
 		}
 	}
@@ -992,11 +979,8 @@ namespace era_engine
 				cookingParams.buildGPUData = true;
 #endif
 				cookingParams.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
-				cookingParams.gaussMapLimit = 32;
-				cookingParams.suppressTriangleMeshRemapTable = false;
-				cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
-				cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
-				return PxCreateConvexMesh(cookingParams, desc);
+				cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eENABLE_INERTIA;
+				return PxCreateConvexMesh(cookingParams, desc, physics::physics_holder::physicsRef->getPhysics()->getPhysicsInsertionCallback());
 			}
 		}
 		catch (...)

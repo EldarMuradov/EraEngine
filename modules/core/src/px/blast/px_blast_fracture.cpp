@@ -380,9 +380,18 @@ namespace era_engine::physics
 
                 auto& rbOverlap = body.getComponent<physics::px_dynamic_body_component>();
 
+                std::vector<PxFilterData> fd1 = getFilterData(rb.getRigidActor());
+                std::vector<PxFilterData> fd2 = getFilterData(rbOverlap.getRigidActor());
+
                 body.addComponent<px_fixed_joint_component>(jointBreakForce);
                 auto& joint = body.getComponent<px_fixed_joint_component>();
                 joint.setPair(rbOverlap.getRigidActor(), rb.getRigidActor());
+
+                joint.getJoint()->joint->setInvInertiaScale0(0.0f);
+                joint.getJoint()->joint->setInvInertiaScale1(0.0f);
+
+                setFilterData(rb.getRigidActor(), fd1);
+                setFilterData(rbOverlap.getRigidActor(), fd2);
 
                 if (manager.joints.contains(overlap))
                 {

@@ -83,9 +83,6 @@ namespace era_engine::physics
 			jInstance->setDriveForceLimit(desc.drive.driveForceLimit);
 			jInstance->setRevoluteJointFlag(PxRevoluteJointFlag::eDRIVE_ENABLED, true);
 		}
-#if PX_GPU_BROAD_PHASE
-		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
-#endif
 		jInstance->setLimit(limitPair);
 		jInstance->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, true);
 	}
@@ -106,9 +103,6 @@ namespace era_engine::physics
 		limitCone.damping = desc.limitCone.damping;
 
 		auto jInstance = joint->is<PxSphericalJoint>();
-#if PX_GPU_BROAD_PHASE
-		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
-#endif
 		jInstance->setLimitCone(limitCone);
 		jInstance->setSphericalJointFlag(PxSphericalJointFlag::eLIMIT_ENABLED, true);
 	}
@@ -134,9 +128,6 @@ namespace era_engine::physics
 		limitPair.damping = desc.linearPair.damping;
 
 		auto jInstance = joint->is<PxPrismaticJoint>();
-#if PX_GPU_BROAD_PHASE
-		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
-#endif
 		jInstance->setLimit(limitPair);
 		jInstance->setPrismaticJointFlag(PxPrismaticJointFlag::eLIMIT_ENABLED, true);
 	}
@@ -170,11 +161,7 @@ namespace era_engine::physics
 		joint->userData = this;
 		type = px_joint_type::joint_type_fixed;
 		auto jInstance = joint->is<PxFixedJoint>();
-#if PX_GPU_BROAD_PHASE
-		jInstance->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
-#endif
 		jInstance->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, false);
-		jInstance->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 		jInstance->setBreakForce(desc.forceThreshold, desc.torqueThreshold);
 	}
 

@@ -4,6 +4,11 @@
 
 #include "px/core/px_physics_engine.h"
 
+namespace era_engine
+{
+	struct eentity;
+}
+
 namespace era_engine::physics
 {
 	using namespace physx;
@@ -140,6 +145,9 @@ namespace era_engine::physics
 
 	PxRigidDynamic* createRigidDynamic(const PxTransform& transform, void* userData);
 	PxRigidStatic* createRigidStatic(const PxTransform& transform, void* userData);
+
+	px_body_component* getBodyComponent(eentity& entity);
+	px_body_component* getBodyComponent(uint32_t handle);
 }
 
 #include "core/reflect.h"

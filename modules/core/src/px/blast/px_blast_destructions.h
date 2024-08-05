@@ -91,6 +91,8 @@ namespace era_engine::physics
 
         void searchGraph(std::vector<entity_handle> objects);
 
+        void remove(entity_handle handle, px_fixed_joint* joint);
+
         void traverse(chunk_node* o, std::unordered_set<chunk_node*>& search, std::unordered_set<chunk_node*>& visited);
 
         std::vector<entity_handle> nodes;

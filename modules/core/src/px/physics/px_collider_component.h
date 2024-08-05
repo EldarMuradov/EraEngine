@@ -175,7 +175,7 @@ namespace era_engine::physics
 
 	struct px_triangle_mesh_collider_component : px_collider_component_base
 	{
-		px_triangle_mesh_collider_component(uint32 handle, vec3 size, mesh_asset* as) : px_collider_component_base(handle), asset(as), modelSize(size)
+		px_triangle_mesh_collider_component(uint32 handle, mesh_asset* as, vec3 size = vec3(1.0f)) : px_collider_component_base(handle), asset(as), modelSize(size)
 		{
 			name = asset->name;
 			registerCollider();

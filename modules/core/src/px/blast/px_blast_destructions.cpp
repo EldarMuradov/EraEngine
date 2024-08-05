@@ -30,8 +30,8 @@ namespace era_engine::physics
 
         eentity chunk = enttScene->createEntity(asset.name.c_str())
             .addComponent<transform_component>(transform)
-            .addComponent<physics::px_convex_mesh_collider_component>(&asset)
-            .addComponent<physics::px_dynamic_body_component>()
+            .addComponent<px_convex_mesh_collider_component>(&asset)
+            .addComponent<px_dynamic_body_component>()
             .addComponent<nvmesh_chunk_component>(mesh.second)
             .addComponent<mesh_component>(mm);
 
@@ -166,6 +166,7 @@ namespace era_engine::physics
             eentity renderEntity{ body, &enttScene->registry };
 
             renderEntity.getComponent<chunk_graph_manager::chunk_node>().remove(handle);
+
             neighbours.erase(body);
         }
 
@@ -183,16 +184,13 @@ namespace era_engine::physics
 
         auto& rb = renderEntity.getComponent<px_dynamic_body_component>();
 
-        constexpr float chunkMass = 1.0f;
-
-        rb.setMaxAngularVelosity(100.0f);
-        rb.setAngularDamping(0.01f);
-        rb.setLinearDamping(0.01f);
+        rb.setAngularDamping(0.1f);
+        rb.setLinearDamping(0.2f);
 
         auto dyn = rb.getRigidDynamic();
         dyn->setMaxDepenetrationVelocity(3.0f);
-
-        rb.updateMassAndInertia(chunkMass);
+        dyn->setSolverIterationCounts(16);
+        rb.updateMassAndInertia(rb.getMass());
 
         if (rb.isKinematicBody())
             isKinematic = true;
@@ -203,7 +201,7 @@ namespace era_engine::physics
         auto enttScene = globalApp.getCurrentScene();
 
         eentity renderEntity{ handle, &enttScene->registry };
-        auto& rb = renderEntity.getComponent<physics::px_dynamic_body_component>();
+        auto& rb = renderEntity.getComponent<px_dynamic_body_component>();
         if (rb.isKinematicBody())
             return;
         rb.setConstraints(0);
@@ -265,6 +263,8 @@ namespace era_engine::physics
     {
         auto enttScene = globalApp.getCurrentScene();
 
+        std::vector<std::pair<entity_handle, px_fixed_joint*>> brokenLinks;
+
         for (auto& node : joints)
         {
             eentity renderEntity{ node.first, &enttScene->registry };
@@ -272,7 +272,11 @@ namespace era_engine::physics
             for (auto& joint : node.second)
             {
                 if (joint->joint->getConstraintFlags() & PxConstraintFlag::eBROKEN)
+                {
+                    brokenLinks.push_back({node.first, joint});
                     renderEntity.getComponent<chunk_graph_manager::chunk_node>().onJointBreak();
+                }
+
             }
         }
 
@@ -291,6 +295,11 @@ namespace era_engine::physics
 
                 runSearch = true;
             }
+        }
+
+        for (auto&[h, j] : brokenLinks)
+        {
+            remove(h, j);
         }
 
         if (runSearch)
@@ -339,6 +348,17 @@ namespace era_engine::physics
         }
     }
 
+    void chunk_graph_manager::remove(entity_handle handle, px_fixed_joint* joint)
+    {
+        auto& jointsList = joints[handle];
+        auto end = jointsList.end();
+        for (auto iter = jointsList.begin(); iter != end; ++iter)
+        {
+            if (*iter == joint)
+                jointsList.erase(iter);
+        }
+    }
+
     void chunk_graph_manager::traverse(chunk_node* o, std::unordered_set<chunk_node*>& search, std::unordered_set<chunk_node*>& visited)
     {
         if (search.contains(o) && visited.contains(o) == false)
@@ -350,7 +370,7 @@ namespace era_engine::physics
             for (auto n : o->neighbours)
             {
                 eentity renderEntity{ n, &enttScene->registry };
-                traverse(renderEntity.getComponentIfExists<physics::chunk_graph_manager::chunk_node>(), search, visited);
+                traverse(renderEntity.getComponentIfExists<chunk_graph_manager::chunk_node>(), search, visited);
             }
         }
     }
