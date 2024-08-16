@@ -1,6 +1,7 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "px/blast/px_blast_destructions.h"
+#include "px/core/px_aggregate.h"
 
 #if PX_BLAST_ENABLE
 
@@ -28,11 +29,14 @@ namespace era_engine::physics
 
         mm->aabb = bounding_box::negativeInfinity();
 
+        float calculatedMass = volumeOfMesh(mesh.first);
+        std::cout << (std::to_string(calculatedMass).c_str()) << "\n";
+
         eentity chunk = enttScene->createEntity(asset.name.c_str())
             .addComponent<transform_component>(transform)
             .addComponent<px_convex_mesh_collider_component>(&asset)
             .addComponent<px_dynamic_body_component>()
-            .addComponent<nvmesh_chunk_component>(mesh.second)
+            .addComponent<nvmesh_chunk_component>(mesh.second, calculatedMass)
             .addComponent<mesh_component>(mm);
 
         mm->aabb.grow(aabb.minCorner);
@@ -47,9 +51,13 @@ namespace era_engine::physics
     {
         std::vector<entity_handle> handles;
 
+        //px_aggregate* aggregate = new px_aggregate(meshes.size(), false);
+
         for (size_t i = 0; i < meshes.size(); ++i)
         {
-            handles.push_back(buildChunk(transform, insideMaterial, outsideMaterial, meshes[i], chunkMass, generation).handle);
+            eentity entity = buildChunk(transform, insideMaterial, outsideMaterial, meshes[i], chunkMass, generation);
+            handles.push_back(entity.handle);
+            //aggregate->addActor(entity.getComponent<px_dynamic_body_component>().getRigidActor());
         }
 
         return handles;
@@ -190,7 +198,7 @@ namespace era_engine::physics
         auto dyn = rb.getRigidDynamic();
         dyn->setMaxDepenetrationVelocity(3.0f);
         dyn->setSolverIterationCounts(16);
-        rb.updateMassAndInertia(rb.getMass());
+        rb.updateMassAndInertia(renderEntity.getComponent<nvmesh_chunk_component>().mass);
 
         if (rb.isKinematicBody())
             isKinematic = true;

@@ -327,6 +327,8 @@ namespace era_engine
 			//	addRaytracingComponentAsync(en, mesh);
 			//}
 
+
+
 #if PX_BLAST_ENABLE
 
 			{
@@ -341,7 +343,7 @@ namespace era_engine
 					physics::fracture fracture;
 					auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
 					unsigned int seed = 7249U;
-					fracture.fractureGameObject(ref, px_blast_entt1, physics::anchor::anchor_bottom, seed, 50, defaultmat, defaultmat, 400.0f, 1.0f);
+					fracture.fractureGameObject(ref, px_blast_entt1, physics::anchor::anchor_bottom, seed, 10, defaultmat, defaultmat, 400.0f, 1.0f);
 					scene.deleteEntity(px_blast_entt1.handle);
 				}
 			}

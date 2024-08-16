@@ -6,7 +6,7 @@ namespace era_engine
 {
 	physics::px_aggregate::px_aggregate(uint8 nb, bool sc) : nbActors(nb), selfCollisions(sc)
 	{
-		aggregate = physics_holder::physicsRef->getPhysics()->createAggregate(nbActors, selfCollisions, PxAggregateFilterHint());
+		aggregate = physics_holder::physicsRef->getPhysics()->createAggregate(nbActors, nbActors, PxGetAggregateFilterHint(PxAggregateType::eGENERIC, true));
 		physics_holder::physicsRef->getScene()->addAggregate(*aggregate);
 	}
 

@@ -40,12 +40,13 @@ namespace era_engine::physics
     struct nvmesh_chunk_component : px_physics_component_base
     {
         nvmesh_chunk_component() = default;
-        nvmesh_chunk_component(uint32 handle, ref<nvmesh> inputMesh) : px_physics_component_base(handle), mesh(inputMesh) {}
+        nvmesh_chunk_component(uint32 handle, ref<nvmesh> inputMesh, float chunkMass) : px_physics_component_base(handle), mesh(inputMesh), mass(chunkMass) {}
         ~nvmesh_chunk_component() {}
 
         virtual void release(bool release = false) override { PX_RELEASE(mesh) }
 
         ref<nvmesh> mesh = nullptr;
+        float mass = 1.0f;
     };
 }
 

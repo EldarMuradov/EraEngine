@@ -161,7 +161,7 @@ namespace era_engine::physics
 		joint->userData = this;
 		type = px_joint_type::joint_type_fixed;
 		auto jInstance = joint->is<PxFixedJoint>();
-		jInstance->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, false);
+		jInstance->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, true);
 		jInstance->setBreakForce(desc.forceThreshold, desc.torqueThreshold);
 	}
 
