@@ -2,6 +2,8 @@
 
 #pragma once
 #include "px/core/px_physics_engine.h"
+#include "core/project.h"
+#include "core/string.h"
 
 #if PX_VEHICLE
 
@@ -12,8 +14,6 @@ namespace era_engine::physics
 	using namespace physx::vehicle2;
 	using namespace snippetvehicle2;
 #endif
-
-	static inline const char* vehicleDataPath = "E:\\Era Engine\\ext\\PhysX\\physx\\vehicledata";
 
 	static inline EngineDriveVehicle vehicle;
 
@@ -63,22 +63,23 @@ namespace era_engine::physics
 
 	inline bool initVehicle(px_physics_engine* physics)
 	{
+		const char* path = wstringToString((eproject::enginePath + L"/resources/vehicledata")).c_str();
 		BaseVehicleParams baseParams;
-		if (!readBaseParamsFromJsonFile(vehicleDataPath, "Base.json", baseParams))
+		if (!readBaseParamsFromJsonFile(path, "Base.json", baseParams))
 			return false;
 
 		EngineDrivetrainParams engineDrivetrainParams;
-		if (!readEngineDrivetrainParamsFromJsonFile(vehicleDataPath, "EngineDrive.json",
+		if (!readEngineDrivetrainParamsFromJsonFile(path, "EngineDrive.json",
 			engineDrivetrainParams))
 			return false;
 
 		initMaterialFrictionTable(physics);
 
-		readBaseParamsFromJsonFile(vehicleDataPath, "Base.json", vehicle.mBaseParams);
+		readBaseParamsFromJsonFile(path, "Base.json", vehicle.mBaseParams);
 		setPhysXIntegrationParams(vehicle.mBaseParams.axleDescription,
 			materialFrictions, nbMaterialFrictions, defaultMaterialFriction,
 			vehicle.mPhysXParams);
-		readEngineDrivetrainParamsFromJsonFile(vehicleDataPath, "EngineDrive.json",
+		readEngineDrivetrainParamsFromJsonFile(path, "EngineDrive.json",
 			vehicle.mEngineDriveParams);
 
 		if (!vehicle.initialize(*physics->getPhysics(), PxCookingParams(PxTolerancesScale()), *material, EngineDriveVehicle::eDIFFTYPE_FOURWHEELDRIVE))

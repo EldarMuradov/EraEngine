@@ -332,20 +332,20 @@ namespace era_engine
 #if PX_BLAST_ENABLE
 
 			{
-				if (auto mesh = loadMeshFromFileAsync(getAssetPath("/resources/assets/obj/untitled.obj")))
-				{
-					model_asset ass = load3DModelFromFile(getAssetPath("/resources/assets/obj/untitled.obj"));
+				//if (auto mesh = loadMeshFromFileAsync(getAssetPath("/resources/assets/obj/untitled.obj")))
+				//{
+				//	model_asset ass = load3DModelFromFile(getAssetPath("/resources/assets/obj/untitled.obj"));
 
-					auto& px_blast_entt1 = scene.createEntity("BlastPXTest")
-						.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
-						.addComponent<mesh_component>(mesh);
+				//	auto& px_blast_entt1 = scene.createEntity("BlastPXTest")
+				//		.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
+				//		.addComponent<mesh_component>(mesh);
 
-					physics::fracture fracture;
-					auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
-					unsigned int seed = 7249U;
-					fracture.fractureGameObject(ref, px_blast_entt1, physics::anchor::anchor_bottom, seed, 10, defaultmat, defaultmat, 400.0f, 1.0f);
-					scene.deleteEntity(px_blast_entt1.handle);
-				}
+				//	physics::fracture fracture;
+				//	auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
+				//	unsigned int seed = 7249U;
+				//	fracture.fractureGameObject(ref, px_blast_entt1, physics::anchor::anchor_bottom, seed, 3, defaultmat, defaultmat, 10.0f, 1.0f);
+				//	scene.deleteEntity(px_blast_entt1.handle);
+				//}
 			}
 
 #endif
@@ -853,7 +853,7 @@ namespace era_engine
 		renderer->setCamera(camera);
 
 		//if (running)
-		//	physics::physics_holder::physicsRef->endSimulation();
+		//	physics::physics_holder::physicsRef->endSimulation(dt);
 #ifndef ERA_RUNTIME
 		editor.visualizePhysics(&ldrRenderPass);
 #endif

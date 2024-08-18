@@ -324,10 +324,10 @@ namespace era_engine
 		PxVehicleSetBasisVectors(PxVec3(0, 1, 0), PxVec3(0, 0, 1));
 		PxVehicleSetUpdateMode(PxVehicleUpdateMode::eVELOCITY_CHANGE);
 
-		//bool res = initVehicle(this);
+		bool res = initVehicle(this);
 
-		//if(!res)
-			//LOG_ERROR("Physics> Failed to initialize PxVehicles.");
+		if(!res)
+			LOG_ERROR("Physics> Failed to initialize PxVehicles.");
 #endif
 	}
 
@@ -345,7 +345,7 @@ namespace era_engine
 
 #if PX_VEHICLE
 			PxCloseVehicleSDK();
-			//cleanupVehicle();
+			cleanupVehicle();
 #endif
 
 			PxCloseExtensions();
@@ -378,7 +378,7 @@ namespace era_engine
 	void physics::px_physics_engine::update(float dt)
 	{
 		startSimulation(dt);
-		endSimulation();
+		endSimulation(dt);
 	}
 
 	void physics::px_physics_engine::startSimulation(float dt)
@@ -393,11 +393,14 @@ namespace era_engine
 
 		static void* scratchMemBlock = allocator.allocate(scratchMemBlockSize, align, true);
 
+#if PX_VEHICLE
+		vehicleStep(dt);
+#endif
+
 #if PX_GPU_BROAD_PHASE
 
 		{
 			physics_lock_write lock{};
-
 			scene->simulate(stepSize, NULL, scratchMemBlock, scratchMemBlockSize);
 			scene->fetchResults(true);
 		}
@@ -410,14 +413,16 @@ namespace era_engine
 			return;
 
 		stepper.renderDone();
-
 #endif
 	}
 
-	void physics::px_physics_engine::endSimulation()
+	void physics::px_physics_engine::endSimulation(float dt)
 	{
 #if !PX_GPU_BROAD_PHASE
 		stepper.wait(scene);
+#endif
+#if PX_VEHICLE
+		vehiclePostStep(dt);
 #endif
 		{
 			CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");

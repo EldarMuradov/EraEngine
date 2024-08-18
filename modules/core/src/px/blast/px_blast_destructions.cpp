@@ -194,10 +194,11 @@ namespace era_engine::physics
 
         rb.setAngularDamping(0.1f);
         rb.setLinearDamping(0.2f);
+        rb.setThreshold(0.02f, 0.02f);
 
         auto dyn = rb.getRigidDynamic();
         dyn->setMaxDepenetrationVelocity(3.0f);
-        dyn->setSolverIterationCounts(16);
+        dyn->setSolverIterationCounts(32, 32);
         rb.updateMassAndInertia(renderEntity.getComponent<nvmesh_chunk_component>().mass);
 
         if (rb.isKinematicBody())

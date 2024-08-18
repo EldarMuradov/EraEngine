@@ -195,6 +195,7 @@ namespace era_engine::physics
         // Graph manager freezes/unfreezes blocks depending on whether they are connected to the graph or not
         graphManager.setup(chunks);
 
+        physics::physics_holder::physicsRef->update(0.016f);
         // Connect blocks that are touching with fixed joints
         for (size_t i = 0; i < chunks.size(); i++)
         {
