@@ -7,7 +7,14 @@
 
 namespace era_engine::physics
 {
-    eentity buildChunk(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, std::pair<ref<submesh_asset>, ref<nvmesh>> mesh, float mass, uint32 generation)
+    eentity buildChunk(const trs& transform,
+        ref<pbr_material> insideMaterial,
+        ref<pbr_material> outsideMaterial,
+        std::pair<ref<submesh_asset>,
+        ref<nvmesh>> mesh,
+        float mass,
+        float& radius,
+        uint32 generation)
     {
         auto enttScene = globalApp.getCurrentScene();
 
@@ -42,12 +49,21 @@ namespace era_engine::physics
         mm->aabb.grow(aabb.minCorner);
         mm->aabb.grow(aabb.maxCorner);
 
+        radius = mm->aabb.volume();
+
         mm->mesh = builder.createDXMesh();
 
         return chunk;
     }
 
-    std::vector<entity_handle> buildChunks(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, std::vector<::std::pair<ref<submesh_asset>, ref<nvmesh>>> meshes, float chunkMass, uint32 generation)
+    std::vector<entity_handle> buildChunks(const trs& transform,
+                                           ref<pbr_material> insideMaterial,
+                                           ref<pbr_material> outsideMaterial,
+                                           std::vector<::std::pair<ref<submesh_asset>,
+                                           ref<nvmesh>>> meshes,
+                                           float chunkMass,
+                                           std::vector<float>& radiuses,
+                                           uint32 generation)
     {
         std::vector<entity_handle> handles;
 
@@ -55,7 +71,7 @@ namespace era_engine::physics
 
         for (size_t i = 0; i < meshes.size(); ++i)
         {
-            eentity entity = buildChunk(transform, insideMaterial, outsideMaterial, meshes[i], chunkMass, generation);
+            eentity entity = buildChunk(transform, insideMaterial, outsideMaterial, meshes[i], chunkMass, radiuses[i], generation);
             handles.push_back(entity.handle);
             //aggregate->addActor(entity.getComponent<px_dynamic_body_component>().getRigidActor());
         }
@@ -95,8 +111,8 @@ namespace era_engine::physics
     {
         setupRigidbody();
 
-        if(!isKinematic)
-            freeze();
+        /*if(!isKinematic)
+            freeze();*/
 
         jointToChunk.clear();
         chunkToJoint.clear();
@@ -270,7 +286,7 @@ namespace era_engine::physics
 
     void chunk_graph_manager::update()
     {
-        auto enttScene = globalApp.getCurrentScene();
+        /*auto enttScene = globalApp.getCurrentScene();
 
         std::vector<std::pair<entity_handle, px_fixed_joint*>> brokenLinks;
 
@@ -312,7 +328,7 @@ namespace era_engine::physics
         }
 
         if (runSearch)
-            searchGraph(nodes);
+            searchGraph(nodes);*/
     }
 
     void chunk_graph_manager::searchGraph(std::vector<entity_handle> objects)

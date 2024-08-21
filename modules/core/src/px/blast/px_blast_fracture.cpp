@@ -188,19 +188,21 @@ namespace era_engine::physics
         else
             meshes = fractureMeshesInNvblast(totalChunks, nvMesh);
 
+        std::vector<float> radiusArray(totalChunks);
+
         // Build chunks gameobjects
         float chunkMass = volumeOfMesh(meshAsset) * density / totalChunks;
-        auto chunks = buildChunks(gameObject.getComponent<transform_component>(), insideMaterial, outsideMaterial, meshes, chunkMass);
+        auto chunks = buildChunks(gameObject.getComponent<transform_component>(), insideMaterial, outsideMaterial, meshes, chunkMass, radiusArray);
 
         // Graph manager freezes/unfreezes blocks depending on whether they are connected to the graph or not
         graphManager.setup(chunks);
 
-        physics::physics_holder::physicsRef->update(0.016f);
+        //physics::physics_holder::physicsRef->update(0.016f);
         // Connect blocks that are touching with fixed joints
-        for (size_t i = 0; i < chunks.size(); i++)
-        {
-            connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce);
-        }
+        //for (size_t i = 0; i < chunks.size(); i++)
+        //{
+        //    connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce, radiusArray, i);
+        //}
 
         for (auto chunk : chunks)
         {
@@ -347,7 +349,7 @@ namespace era_engine::physics
         return anchoredChunks;
     }
 
-    void fracture::connectTouchingChunks(chunk_graph_manager& manager, ref<submesh_asset> asset, entity_handle chunk, float jointBreakForce, float touchRadius)
+    void fracture::connectTouchingChunks(chunk_graph_manager& manager, ref<submesh_asset> asset, entity_handle chunk, float jointBreakForce, std::vector<float>& radiuses, int index, float touchRadius)
     {
         auto enttScene = globalApp.getCurrentScene();
         eentity entt{ chunk, &enttScene->registry };
@@ -380,6 +382,7 @@ namespace era_engine::physics
                 eentity body{ overlap, &enttScene->registry };
 
                 auto& rbOverlap = body.getComponent<physics::px_dynamic_body_component>();
+                auto& trsOverlap = body.getComponent<transform_component>();
 
                 std::vector<PxFilterData> fd1 = getFilterData(rb.getRigidActor());
                 std::vector<PxFilterData> fd2 = getFilterData(rbOverlap.getRigidActor());

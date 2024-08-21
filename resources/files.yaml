@@ -1,7 +1,3 @@
-- Handle: 15189601630968607387
-  Path: E:/Era Engine/resources/assets\obj\bunny.fbx
-- Handle: 1843227552832675128
-  Path: E:/Era Engine/resources/assets\box.fbx
 - Handle: 6940914832491519400
   Path: E:/Era Engine/resources/assets\dark-knight\textures\T_cloth_M.png
 - Handle: 15079249607081802657
@@ -10,6 +6,8 @@
   Path: E:/Era Engine/resources/assets\fps-ak-74m-animations\textures\ak74m_AlbedoTransparency.png
 - Handle: 11288124859961220417
   Path: E:/Era Engine/resources/assets\dark-knight\source\Knight_All.fbx
+- Handle: 1838192526137763131
+  Path: E:/Era Engine/resources/assets\box.255.cache.bin
 - Handle: 1464681640447771208
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.dll
 - Handle: 5421368899106477139
@@ -22,6 +20,10 @@
   Path: E:/Era Engine/resources/assets\cameraman\source\CameraManWhite.fbx
 - Handle: 11765951030938717829
   Path: E:/Era Engine/resources/assets\nemesis-re3\source\nemesis_-_resident_evil_3_remake_re3\textures\material_0_metallicRoughness.png
+- Handle: 15189601630968607387
+  Path: E:/Era Engine/resources/assets\obj\bunny.fbx
+- Handle: 1843227552832675128
+  Path: E:/Era Engine/resources/assets\box.fbx
 - Handle: 7024802555298856979
   Path: E:/Era Engine/resources/assets\cameraman\textures\CameraMan_packed0_diffuse.png
 - Handle: 13537452638996123579
@@ -128,8 +130,6 @@
   Path: E:/Era Engine/resources/assets\obj\bunny.mtl
 - Handle: 6519988523569539798
   Path: E:/Era Engine/resources/assets\nemesis-re3\source\nemesis_-_resident_evil_3_remake_re3\scene.gltf
-- Handle: 6698839368495404016
-  Path: E:/Era Engine/resources/assets\obj\towerSupport.obj
 - Handle: 4750180745924103835
   Path: E:/Era Engine/resources/assets\nemesis-re3\source\nemesis_-_resident_evil_3_remake_re3\textures\em9001_head_eye_baseColor.png
 - Handle: 6537724239724295000
@@ -176,6 +176,8 @@
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.assets.cache
 - Handle: 10191810456721912310
   Path: E:/Era Engine/resources/assets\obj\hugeAsset.obj
+- Handle: 6698839368495404016
+  Path: E:/Era Engine/resources/assets\obj\towerSupport.obj
 - Handle: 908259775060008794
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_floor_ddn.jpg
 - Handle: 6117140654154730122

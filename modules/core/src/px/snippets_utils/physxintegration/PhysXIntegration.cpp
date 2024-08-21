@@ -168,6 +168,8 @@ void PhysXActorVehicle::setUpActor(PxScene& scene, const PxTransform& pose, cons
 	for (PxU32 i = 0; i < nbShapes; ++i)
 	{
 		shapes[i]->setFlag(PxShapeFlag::eVISUALIZATION, true);
+		shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
+		shapes[i]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
 
 		PxFilterData filterData;
 		filterData.word0 = (PxU32)(-1); // word0 = own ID

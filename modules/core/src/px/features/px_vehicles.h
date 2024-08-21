@@ -50,92 +50,15 @@ namespace era_engine::physics
 	static inline PxReal commandTime = 0.0f;
 	static inline PxU32 commandProgress = 0;
 
-	inline void initMaterialFrictionTable(px_physics_engine* physics)
-	{
-		material = physics->getPhysics()->
-			createMaterial(0.8f, 0.8f, 0.6f);
+	void initMaterialFrictionTable(px_physics_engine* physics);
 
-		materialFrictions[0].friction = 1.0f;
-		materialFrictions[0].material = material;
-		defaultMaterialFriction = 1.0f;
-		nbMaterialFrictions = 1;
-	}
+	bool initVehicle(px_physics_engine* physics);
 
-	inline bool initVehicle(px_physics_engine* physics)
-	{
-		const char* path = wstringToString((eproject::enginePath + L"/resources/vehicledata")).c_str();
-		BaseVehicleParams baseParams;
-		if (!readBaseParamsFromJsonFile(path, "Base.json", baseParams))
-			return false;
+	void vehicleStep(float dt);
 
-		EngineDrivetrainParams engineDrivetrainParams;
-		if (!readEngineDrivetrainParamsFromJsonFile(path, "EngineDrive.json",
-			engineDrivetrainParams))
-			return false;
+	void vehiclePostStep(float dt);
 
-		initMaterialFrictionTable(physics);
-
-		readBaseParamsFromJsonFile(path, "Base.json", vehicle.mBaseParams);
-		setPhysXIntegrationParams(vehicle.mBaseParams.axleDescription,
-			materialFrictions, nbMaterialFrictions, defaultMaterialFriction,
-			vehicle.mPhysXParams);
-		readEngineDrivetrainParamsFromJsonFile(path, "EngineDrive.json",
-			vehicle.mEngineDriveParams);
-
-		if (!vehicle.initialize(*physics->getPhysics(), PxCookingParams(PxTolerancesScale()), *material, EngineDriveVehicle::eDIFFTYPE_FOURWHEELDRIVE))
-			return false;
-
-		PxTransform pose(PxVec3(0.000000000f, -0.0500000119f, -1.59399998f), PxQuat(PxIdentity));
-		vehicle.setUpActor(*physics->getScene(), pose, vehicleName);
-
-		vehicle.mEngineDriveState.gearboxState.currentGear = vehicle.mEngineDriveParams.gearBoxParams.neutralGear + 1;
-		vehicle.mEngineDriveState.gearboxState.targetGear = vehicle.mEngineDriveParams.gearBoxParams.neutralGear + 1;
-
-		vehicle.mTransmissionCommandState.targetGear = PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR;
-
-		vehicleSimulationContext.setToDefault();
-		vehicleSimulationContext.frame.lngAxis = PxVehicleAxes::ePosZ;
-		vehicleSimulationContext.frame.latAxis = PxVehicleAxes::ePosX;
-		vehicleSimulationContext.frame.vrtAxis = PxVehicleAxes::ePosY;
-		vehicleSimulationContext.scale.scale = 1.0f;
-		vehicleSimulationContext.gravity = physics::gravity;
-		vehicleSimulationContext.physxScene = physics->getScene();
-		vehicleSimulationContext.physxActorUpdateMode = PxVehiclePhysXActorUpdateMode::eAPPLY_ACCELERATION;
-
-		return true;
-	}
-
-	inline void vehicleStep(float dt)
-	{
-		const px_command& command = commands[commandProgress];
-		vehicle.mCommandState.brakes[0] = command.brake;
-		vehicle.mCommandState.nbBrakes = 1;
-		vehicle.mCommandState.throttle = command.throttle;
-		vehicle.mCommandState.steer = command.steer;
-		vehicle.mTransmissionCommandState.targetGear = command.gear;
-
-		const PxVec3 linVel = vehicle.mPhysXState.physxActor.rigidBody->getLinearVelocity();
-		const PxVec3 forwardDir = vehicle.mPhysXState.physxActor.rigidBody->getGlobalPose().q.getBasisVector2();
-		const PxReal forwardSpeed = linVel.dot(forwardDir);
-		const PxU8 nbSubsteps = (forwardSpeed < 5.0f ? 3 : 1);
-		vehicle.mComponentSequence.setSubsteps(vehicle.mComponentSequenceSubstepGroupHandle, nbSubsteps);
-		vehicle.step(dt, vehicleSimulationContext);
-	}
-
-	inline void vehiclePostStep(float dt)
-	{
-		commandTime += dt;
-		if (commandTime > commands[commandProgress].duration)
-		{
-			commandProgress++;
-			commandTime = 0.0f;
-		}
-	}
-
-	inline void cleanupVehicle()
-	{
-		vehicle.destroy();
-	}
+	void cleanupVehicle();
 }
 
 #endif

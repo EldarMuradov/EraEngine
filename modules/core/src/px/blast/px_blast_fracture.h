@@ -60,7 +60,7 @@ namespace era_engine::physics
 
         std::unordered_set<entity_handle> getAnchoredColliders(anchor anchor, const trs& meshTransform, const bounds& bounds);
 
-        void connectTouchingChunks(chunk_graph_manager& manager, ref<submesh_asset> asset, entity_handle chunk, float jointBreakForce, float touchRadius = 0.01f);
+        void connectTouchingChunks(chunk_graph_manager& manager, ref<submesh_asset> asset, entity_handle chunk, float jointBreakForce, std::vector<float>& radiuses, int index, float touchRadius = 0.01f);
 
         std::unordered_set<chunkPair> jointPairs;
     };

@@ -331,37 +331,37 @@ namespace era_engine
 
 #if PX_BLAST_ENABLE
 
-			{
-				//if (auto mesh = loadMeshFromFileAsync(getAssetPath("/resources/assets/obj/untitled.obj")))
-				//{
-				//	model_asset ass = load3DModelFromFile(getAssetPath("/resources/assets/obj/untitled.obj"));
+			//{
+			//	if (auto mesh = loadMeshFromFileAsync(getAssetPath("/resources/assets/obj/untitled.obj")))
+			//	{
+			//		model_asset ass = load3DModelFromFile(getAssetPath("/resources/assets/obj/untitled.obj"));
 
-				//	auto& px_blast_entt1 = scene.createEntity("BlastPXTest")
-				//		.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
-				//		.addComponent<mesh_component>(mesh);
+			//		auto& px_blast_entt1 = scene.createEntity("BlastPXTest")
+			//			.addComponent<transform_component>(vec3(0.0f, 5.0f, 0.0f), quat::identity, vec3(1.0f))
+			//			.addComponent<mesh_component>(mesh);
 
-				//	physics::fracture fracture;
-				//	auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
-				//	unsigned int seed = 7249U;
-				//	fracture.fractureGameObject(ref, px_blast_entt1, physics::anchor::anchor_bottom, seed, 3, defaultmat, defaultmat, 10.0f, 1.0f);
-				//	scene.deleteEntity(px_blast_entt1.handle);
-				//}
-			}
+			//		physics::fracture fracture;
+			//		auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
+			//		unsigned int seed = 7249U;
+			//		fracture.fractureGameObject(ref, px_blast_entt1, physics::anchor::anchor_none, seed, 15, defaultmat, defaultmat, 20.0f, 1.0f);
+			//		scene.deleteEntity(px_blast_entt1.handle);
+			//	}
+			//}
 
 #endif
 
-			/*{
-				model_asset ass = load3DModelFromFile(getAssetPath("/resources/assets/box.fbx"));
-				auto px_sphere_entt1 = scene.createEntity("SpherePXTest", (entity_handle)60)
-					.addComponent<transform_component>(vec3(0, 0.f, 0.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.0f))
-					.addComponent<mesh_component>(boxMesh);
+			//{
+			//	model_asset ass = load3DModelFromFile(getAssetPath("/resources/assets/box.fbx"));
+			//	auto& px_sphere_entt1 = scene.createEntity("BoxPXTest")
+			//		.addComponent<transform_component>(vec3(0, 0.f, 0.f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.0f))
+			//		.addComponent<mesh_component>(boxMesh);
 
-				physics::fracture fracture;
-				auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
-
-				manager = fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::Bottom, 10, 50, defaultmat, defaultmat, 1.0f, 5000);
-				scene.deleteEntity(px_sphere_entt1.handle);
-			}*/
+			//	physics::fracture fracture;
+			//	auto ref = make_ref<submesh_asset>(ass.meshes[0].submeshes[0]);
+			//	unsigned int seed = 7249U;
+			//	fracture.fractureGameObject(ref, px_sphere_entt1, physics::anchor::anchor_bottom, seed, 50, defaultmat, defaultmat, 0.75f, 0.1f);
+			//	scene.deleteEntity(px_sphere_entt1.handle);
+			//}
 
 			//auto soft_body = &scene.createEntity("SoftBody")
 			//	.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
@@ -700,40 +700,40 @@ namespace era_engine
 			for (auto [entityHandle, cgm, _] : scene.group(component_group<physics::chunk_graph_manager, transform_component>).each())
 			{
 				cgm.update();
-				for (auto&[handle, joints] : cgm.joints)
-				{
-					if (joints.empty())
-						continue;
-					//if (selectedEntity != handle)
-						//continue;
-					for (auto& joint : joints)
-					{
-						entity_handle h = *(entity_handle*)joint->second->userData;
-						eentity entity{ h, &scene.registry };
-						if (physics::px_convex_mesh_collider_component* cm = entity.getComponentIfExists<physics::px_convex_mesh_collider_component>())
-						{
-							physics::px_body_component* body = physics::getBodyComponent(entity);
+				//for (auto&[handle, joints] : cgm.joints)
+				//{
+				//	if (joints.empty())
+				//		continue;
+				//	//if (selectedEntity != handle)
+				//		//continue;
+				//	for (auto& joint : joints)
+				//	{
+				//		entity_handle h = *(entity_handle*)joint->second->userData;
+				//		eentity entity{ h, &scene.registry };
+				//		if (physics::px_convex_mesh_collider_component* cm = entity.getComponentIfExists<physics::px_convex_mesh_collider_component>())
+				//		{
+				//			physics::px_body_component* body = physics::getBodyComponent(entity);
 
-							ASSERT(body != nullptr);
+				//			ASSERT(body != nullptr);
 
-							physics::physics_lock_read lock{};
+				//			physics::physics_lock_read lock{};
 
-							physx::PxShape* shape[1];
-							body->getRigidActor()->getShapes(shape, 1);
-							auto geom = (physx::PxConvexMeshGeometry*)cm->getGeometry();
-							auto mesh = geom->convexMesh;
+				//			physx::PxShape* shape[1];
+				//			body->getRigidActor()->getShapes(shape, 1);
+				//			auto geom = (physx::PxConvexMeshGeometry*)cm->getGeometry();
+				//			auto mesh = geom->convexMesh;
 
-							auto vertices = mesh->getVertices();
-							auto nbv = mesh->getNbVertices();
+				//			auto vertices = mesh->getVertices();
+				//			auto nbv = mesh->getNbVertices();
 
-							for (size_t i = 0; i < nbv; i++)
-							{
-								vec3 a = physx::createVec3(vertices[i] + shape[0]->getLocalPose().p) + entity.getComponent<transform_component>().position;
-								renderPoint(a, vec4(1, 0, 0, 1), &ldrRenderPass, true);
-							}
-						}
-					}
-				}
+				//			for (size_t i = 0; i < nbv; i++)
+				//			{
+				//				vec3 a = physx::createVec3(vertices[i] + shape[0]->getLocalPose().p) + entity.getComponent<transform_component>().position;
+				//				renderPoint(a, vec4(1, 0, 0, 1), &ldrRenderPass, true);
+				//			}
+				//		}
+				//	}
+				//}
 			}
 		}
 #endif

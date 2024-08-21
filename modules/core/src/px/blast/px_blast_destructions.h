@@ -26,9 +26,22 @@
 
 namespace era_engine::physics
 {
-    eentity buildChunk(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, std::pair<ref<submesh_asset>, ref<nvmesh>> mesh, float mass, uint32 generation);
+    eentity buildChunk(const trs& transform,
+        ref<pbr_material> insideMaterial,
+        ref<pbr_material> outsideMaterial,
+        std::pair<ref<submesh_asset>,
+        ref<nvmesh>> mesh,
+        float mass,
+        float& radius,
+        uint32 generation);
 
-    std::vector<entity_handle> buildChunks(const trs& transform, ref<pbr_material> insideMaterial, ref<pbr_material> outsideMaterial, std::vector<::std::pair<ref<submesh_asset>, ref<nvmesh>>> meshes, float chunkMass, uint32 generation = 0);
+    std::vector<entity_handle> buildChunks(const trs& transform, ref<pbr_material> insideMaterial,
+                                           ref<pbr_material> outsideMaterial, 
+                                           std::vector<::std::pair<ref<submesh_asset>,
+                                           ref<nvmesh>>> meshes, 
+                                           float chunkMass,
+                                           std::vector<float>& radiuses,
+                                           uint32 generation = 0);
 
     static inline uint32 id = 0;
     
