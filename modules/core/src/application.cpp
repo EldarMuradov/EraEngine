@@ -399,8 +399,8 @@ namespace era_engine
 			//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f));
 
 			scene.createEntity("Platform")
-				.addComponent<transform_component>(vec3(10, -6.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
-				.addComponent<physics::px_plane_collider_component>(vec3(0.f, -2.0, 0.0f))
+				.addComponent<transform_component>(vec3(10, -7.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
+				.addComponent<physics::px_plane_collider_component>(vec3(0.f, -3.0, 0.0f))
 				.addComponent<mesh_component>(groundMesh);
 
 			auto chainMesh = make_ref<multi_mesh>();
