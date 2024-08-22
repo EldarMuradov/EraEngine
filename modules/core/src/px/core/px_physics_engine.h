@@ -140,6 +140,60 @@ namespace physx
 	NODISCARD PX_FORCE_INLINE vec3 createVec3(PxVec3&& vec) { return vec3(vec.x, vec.y, vec.z); }
 	NODISCARD PX_FORCE_INLINE vec2 createVec2(PxVec2&& vec) { return vec2(vec.x, vec.y); }
 
+	NODISCARD PX_FORCE_INLINE PxMat44 createPxMat44(const mat4& mat)
+	{
+		PxMat44 newMat;
+
+		newMat[0][0] = mat.m00;
+		newMat[0][1] = mat.m01;
+		newMat[0][2] = mat.m02;
+		newMat[0][3] = mat.m03;
+
+		newMat[1][0] = mat.m10;
+		newMat[1][1] = mat.m11;
+		newMat[1][2] = mat.m12;
+		newMat[1][3] = mat.m13;
+
+		newMat[2][0] = mat.m20;
+		newMat[2][1] = mat.m21;
+		newMat[2][2] = mat.m22;
+		newMat[2][3] = mat.m23;
+
+		newMat[3][0] = mat.m30;
+		newMat[3][1] = mat.m31;
+		newMat[3][2] = mat.m32;
+		newMat[3][3] = mat.m33;
+
+		return newMat;
+	}
+
+	NODISCARD PX_FORCE_INLINE mat4 createMat44(const PxMat44& mat)
+	{
+		mat4 newMat;
+
+		newMat.m00 = mat[0][0];
+		newMat.m01 = mat[0][1];
+		newMat.m02 = mat[0][2];
+		newMat.m03 = mat[0][3];
+
+		newMat.m10 = mat[1][0];
+		newMat.m11 = mat[1][1];
+		newMat.m12 = mat[1][2];
+		newMat.m13 = mat[1][3];
+
+		newMat.m20 = mat[2][0];
+		newMat.m21 = mat[2][1];
+		newMat.m22 = mat[2][2];
+		newMat.m23 = mat[2][3];
+
+		newMat.m30 = mat[3][0];
+		newMat.m31 = mat[3][1];
+		newMat.m32 = mat[3][2];
+		newMat.m33 = mat[3][3];
+
+		return newMat;
+	}
+
 	NODISCARD PX_FORCE_INLINE quat createQuat(const PxQuat& q) { return quat(q.x, q.y, q.z, q.w); }
 	NODISCARD PX_FORCE_INLINE quat createQuat(PxQuat&& q) { return quat(q.x, q.y, q.z, q.w); }
 							 

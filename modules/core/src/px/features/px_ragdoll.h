@@ -2,81 +2,43 @@
 
 #pragma once
 
-#include "application.h"
-
 #include "px/core/px_physics_engine.h"
 #include "px/core/px_aggregate.h"
-
 #include "px/physics/px_joint.h"
 
-#/*define RG_NB_ACTORS 14
-#define RG_NB_JOINTS 13
-
-struct px_ragdoll
+namespace era_engine::animation
 {
-	px_ragdoll() = default;
-	px_ragdoll(escene* sc);
-	px_ragdoll(eentity rt, escene* sc) : root(rt), scene(sc) { init(); };
-	~px_ragdoll() {}
+	struct animation_skeleton;
+}
 
-	void init() noexcept;
-	void release() noexcept;
-
-	union
+namespace era_engine::physics
+{
+	struct px_ragdoll
 	{
-		struct
-		{
-			eentity torso;
-			eentity head;
-			eentity leftUpperArm;
-			eentity leftLowerArm;
-			eentity rightUpperArm;
-			eentity rightLowerArm;
-			eentity leftUpperLeg;
-			eentity leftLowerLeg;
-			eentity leftFoot;
-			eentity leftToes;
-			eentity rightUpperLeg;
-			eentity rightLowerLeg;
-			eentity rightFoot;
-			eentity rightToes;
-		};
-		eentity bodyParts[RG_NB_ACTORS];
+		std::vector<PxRigidDynamic*> rigidBodies;
+		std::vector<vec3> relativeJointPoses;
+		std::vector<quat> originalBodyRotations;
+
+		std::vector<vec3> bodyPosRelativeToJoint;
+		std::vector<quat> originalJointRotations;
+
+		PxRigidDynamic* findRecentBody(uint32_t idx, ref<animation::animation_skeleton> skeleton, uint32_t& chosenIdx);
+		void setKinematic(bool state);
 	};
 
-	union
+	struct px_ragdoll_component : px_physics_component_base
 	{
-		struct
-		{
-			px_joint* torsoHead;
-			px_joint* leftArm;
-			px_joint* leftArmTorso;
-			px_joint* rightArm;
-			px_joint* rightArmTorso;
-			px_joint* leftLeg;
-			px_joint* leftLegTorso;
-			px_joint* rightLeg;
-			px_joint* rightLegTorso;
-			px_joint* leftFootLeg;
-			px_joint* rigthFootLeg;
-			px_joint* leftToesArm;
-			px_joint* rightToesArm;
-		};
-		px_joint* joints = new px_joint[RG_NB_JOINTS];
+		px_ragdoll_component() = default;
+		px_ragdoll_component(uint32 handle, const vec3& pos = vec3(0.0f));
+
+		~px_ragdoll_component();
+
+		std::vector<trs> apply(const mat4& modelScale, const mat4& modelRotation);
+
+		virtual void release(bool releaseActor = false) override;
+
+		ref<px_ragdoll> ragdoll = nullptr;
+		ref<animation::animation_skeleton> skeleton = nullptr;
+		std::vector<trs> transforms;
 	};
-
-private:
-	void createActors();
-	void createBaseMesh();
-
-private:
-	eentity root;
-
-	escene* scene = nullptr;
-
-	px_aggregate* group = nullptr;
-
-	std::unordered_map<const char*, px_rigidbody_component*> rigidbodies;
-
-	ref<multi_mesh> meshBase;
-};*/
+}

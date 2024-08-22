@@ -16,9 +16,13 @@
 
 #include "px/core/px_physics_engine.h"
 
+#include "px/features/px_ragdoll.h"
+
 #include "px/physics/px_soft_body.h"
 
 #include "px/blast/px_blast_destructions.h"
+
+#include "px/features/px_vehicle_component.h"
 
 #endif
 
@@ -79,6 +83,13 @@ namespace era_engine
 			physics::px_particles_component,
 			physics::px_particles_render_component,
 			physics::px_soft_body_component,
+			physics::px_ragdoll_component,
+
+#if PX_VEHICLE
+			physics::px_vehicle_base_component,
+			physics::px_4_wheels_vehicle_component,
+			physics::px_tank_vehicle_component,
+#endif
 
 #if !_DEBUG
 
@@ -182,6 +193,7 @@ namespace era_engine
 			return;
 
 #ifndef PHYSICS_ONLY
+
 		if (physics::px_dynamic_body_component* reference = e.getComponentIfExists<physics::px_dynamic_body_component>())
 		{
 			reference->release();
@@ -231,6 +243,22 @@ namespace era_engine
 			reference->release();
 		}
 		if (physics::px_soft_body_component* reference = e.getComponentIfExists<physics::px_soft_body_component>())
+		{
+			reference->release();
+		}
+		if (physics::px_vehicle_base_component* reference = e.getComponentIfExists<physics::px_vehicle_base_component>())
+		{
+			reference->release();
+		}
+		if (physics::px_4_wheels_vehicle_component* reference = e.getComponentIfExists<physics::px_4_wheels_vehicle_component>())
+		{
+			reference->release();
+		}
+		if (physics::px_tank_vehicle_component* reference = e.getComponentIfExists<physics::px_tank_vehicle_component>())
+		{
+			reference->release();
+		}
+		if (physics::px_ragdoll_component* reference = e.getComponentIfExists<physics::px_ragdoll_component>())
 		{
 			reference->release();
 		}

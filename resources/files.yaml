@@ -490,6 +490,8 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\vase_plant_spec.png
 - Handle: 16338698124701242100
   Path: E:/Era Engine/resources/assets\Sponza\textures\vase_round_bump.png
+- Handle: 1838103046654994745
+  Path: E:/Era Engine/resources/assets\vehicledata\Base.json
 - Handle: 2704294096857398993
   Path: E:/Era Engine/resources/assets\Sponza\textures\vase_round_ddn.png
 - Handle: 13680210610905012076
@@ -498,6 +500,10 @@
   Path: E:/Era Engine/resources/assets\terrain\rock.bmp
 - Handle: 6495783256589778011
   Path: E:/Era Engine/resources/assets\vehicle\vehicle_a.png
+- Handle: 8749065807394019627
+  Path: E:/Era Engine/resources/assets\vehicledata\DirectDrive.json
+- Handle: 18075679194013092569
+  Path: E:/Era Engine/resources/assets\vehicledata\EngineDrive.json
 - Handle: 909328066782707052
   Path: E:/Era Engine/resources/assets\veribot\source\VERIBOT_final.fbx
 - Handle: 14806537783740933654

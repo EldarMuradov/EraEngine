@@ -37,6 +37,7 @@
 
 #include "px/blast/px_blast_destructions.h"
 #include "px/physics/px_soft_body.h"
+#include "px/features/px_vehicle_component.h"
 
 #include <fontawesome/list.h>
 
@@ -866,6 +867,16 @@ namespace era_engine
 						drawComponent<dynamic_transform_component>(selectedEntity, "Dynamic Transform", [](dynamic_transform_component& dynamic)
 							{
 								ImGui::Text("Dynamic entity");
+							});
+
+						drawComponent<physics::px_4_wheels_vehicle_component>(selectedEntity, "4 Wheel Vehicle", [](physics::px_4_wheels_vehicle_component& vehicle)
+							{
+								ImGui::Text("4 Wheel Vehicle");
+							});
+
+						drawComponent<physics::px_tank_vehicle_component>(selectedEntity, "Tank Vehicle", [](physics::px_tank_vehicle_component& vehicle)
+							{
+								ImGui::Text("Tank Vehicle");
 							});
 
 						drawComponent<ecs::scripts_component>(selectedEntity, "Script", [](ecs::scripts_component& script)
@@ -2075,6 +2086,11 @@ namespace era_engine
 						rb->setPhysicsPositionAndRotation(transform->position, transform->rotation);
 					else if (auto rb = selectedEntity.getComponentIfExists<physics::px_static_body_component>())
 						rb->setPhysicsPositionAndRotation(transform->position, transform->rotation);
+
+					if (auto vehicle = physics::getVehicleComponent(selectedEntity))
+					{
+						vehicle->setTransform(transform->position, transform->rotation);
+					}
 
 					if (physics::px_cloth_component* cloth = selectedEntity.getComponentIfExists<physics::px_cloth_component>())
 						cloth->translate(selectedEntity.getComponent<transform_component>().position);

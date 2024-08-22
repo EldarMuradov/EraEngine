@@ -324,10 +324,10 @@ namespace era_engine
 		PxVehicleSetBasisVectors(PxVec3(0, 1, 0), PxVec3(0, 0, 1));
 		PxVehicleSetUpdateMode(PxVehicleUpdateMode::eVELOCITY_CHANGE);
 
-		bool res = initVehicle(this);
+		//bool res = initVehicle(this);
 
-		if(!res)
-			LOG_ERROR("Physics> Failed to initialize PxVehicles.");
+		//if(!res)
+			//LOG_ERROR("Physics> Failed to initialize PxVehicles.");
 #endif
 	}
 
@@ -345,7 +345,6 @@ namespace era_engine
 
 #if PX_VEHICLE
 			PxCloseVehicleSDK();
-			cleanupVehicle();
 #endif
 
 			PxCloseExtensions();
@@ -393,10 +392,6 @@ namespace era_engine
 
 		static void* scratchMemBlock = allocator.allocate(scratchMemBlockSize, align, true);
 
-#if PX_VEHICLE
-		vehicleStep(dt);
-#endif
-
 #if PX_GPU_BROAD_PHASE
 
 		{
@@ -422,7 +417,7 @@ namespace era_engine
 		stepper.wait(scene);
 #endif
 #if PX_VEHICLE
-		vehiclePostStep(dt);
+		//vehiclePostStep(dt);
 #endif
 		{
 			CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");

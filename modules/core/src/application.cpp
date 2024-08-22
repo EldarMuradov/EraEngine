@@ -52,6 +52,7 @@
 #include "px/features/px_ragdoll.h"
 #include "px/features/px_particles.h"
 #include "px/features/cloth/px_clothing_factory.h"
+#include "px/features/px_vehicle_component.h"
 
 #include "px/blast/px_blast_destructions.h"
 
@@ -363,6 +364,12 @@ namespace era_engine
 			//	scene.deleteEntity(px_sphere_entt1.handle);
 			//}
 
+			auto& vehicle = scene.createEntity("Vehicle")
+				.addComponent<transform_component>(vec3(2.f), quat::identity, vec3(1.f))
+				.addComponent<physics::px_4_wheels_vehicle_component>(vec3(2.f));
+
+			vehicle.getComponent<physics::px_4_wheels_vehicle_component>().setupVehicle();
+
 			//auto soft_body = &scene.createEntity("SoftBody")
 			//	.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
 			//	.addComponent<physics::px_soft_body_component>();
@@ -658,12 +665,57 @@ namespace era_engine
 
 		bool running = this->scene.isPausable();
 
+#if PX_VEHICLE
+		{
+			if (running)
+			{
+				CPU_PROFILE_BLOCK("PhysX vehicles step");
+				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_vehicle_base_component, transform_component>).each())
+				{
+					vehicleStep(&vehicle, &trs, dt);
+				}
+
+				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_4_wheels_vehicle_component, transform_component>).each())
+				{
+					vehicleStep(&vehicle, &trs, dt);
+				}
+
+				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_tank_vehicle_component, transform_component>).each())
+				{
+					vehicleStep(&vehicle, &trs, dt);
+				}
+			}
+		}
+#endif
+
 		if (running)
-			//physics::physics_holder::physicsRef->startSimulation(dt);
 			physics::physics_holder::physicsRef->update(dt);
 
 		if (running)
 			updatePhysXCallbacksAndScripting(scene, linker, dt, input);
+
+#if PX_VEHICLE
+		{
+			if (running)
+			{
+				CPU_PROFILE_BLOCK("PhysX vehicles post step");
+				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_vehicle_base_component, transform_component>).each())
+				{
+					vehiclePostStep(&vehicle, dt);
+				}
+
+				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_4_wheels_vehicle_component, transform_component>).each())
+				{
+					vehiclePostStep(&vehicle, dt);
+				}
+
+				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_tank_vehicle_component, transform_component>).each())
+				{
+					vehiclePostStep(&vehicle, dt);
+				}
+			}
+		}
+#endif
 
 #ifndef ERA_RUNTIME
 
