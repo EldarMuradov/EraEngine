@@ -239,6 +239,7 @@ namespace era_engine
 	}
 
 	static entity_handle sphere{};
+	static entity_handle ragdoll{};
 
 	static void initTestScene(escene& scene)
 	{
@@ -328,6 +329,19 @@ namespace era_engine
 			//	addRaytracingComponentAsync(en, mesh);
 			//}
 
+			if (auto mesh = loadAnimatedMeshFromFileAsync(getAssetPath("/resources/assets/resident-evil-tyrant/source/UmodelExport.fbx")))
+			{
+				auto& en = scene.createEntity("Tiran")
+					.addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(0.1f))
+					.addComponent<animation::animation_component>()
+					.addComponent<dynamic_transform_component>()
+					.addComponent<mesh_component>(mesh)
+					.addComponent<physics::px_ragdoll_component>(vec3(0.0f));
+				initializeAnimationComponentAsync(en, mesh);
+				addRaytracingComponentAsync(en, mesh);
+
+				ragdoll = en.handle;
+			}
 
 
 #if PX_BLAST_ENABLE
@@ -364,11 +378,11 @@ namespace era_engine
 			//	scene.deleteEntity(px_sphere_entt1.handle);
 			//}
 
-			auto& vehicle = scene.createEntity("Vehicle")
-				.addComponent<transform_component>(vec3(2.f), quat::identity, vec3(1.f))
-				.addComponent<physics::px_4_wheels_vehicle_component>(vec3(2.f));
+			//auto& vehicle = scene.createEntity("Vehicle")
+			//	.addComponent<transform_component>(vec3(2.f), quat::identity, vec3(1.f))
+			//	.addComponent<physics::px_4_wheels_vehicle_component>(vec3(2.f));
 
-			vehicle.getComponent<physics::px_4_wheels_vehicle_component>().setupVehicle();
+			//vehicle.getComponent<physics::px_4_wheels_vehicle_component>().setupVehicle();
 
 			//auto soft_body = &scene.createEntity("SoftBody")
 			//	.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
@@ -406,8 +420,8 @@ namespace era_engine
 			//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f));
 
 			scene.createEntity("Platform")
-				.addComponent<transform_component>(vec3(10, -7.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
-				.addComponent<physics::px_plane_collider_component>(vec3(0.f, -3.0, 0.0f))
+				.addComponent<transform_component>(vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
+				.addComponent<physics::px_plane_collider_component>(vec3(0.f, -5.0, 0.0f))
 				.addComponent<mesh_component>(groundMesh);
 
 			auto chainMesh = make_ref<multi_mesh>();
@@ -903,6 +917,21 @@ namespace era_engine
 		renderer->setEnvironment(environment);
 		renderer->setSun(sun);
 		renderer->setCamera(camera);
+
+		if (ImGui::Begin("Ragdoll"))
+		{
+			static bool init = false;
+
+			if (ImGui::Checkbox("Build", &init))
+			{
+				init = false;
+
+				eentity rag{ ragdoll, &scene.registry };
+
+				rag.getComponent<physics::px_ragdoll_component>().initRagdoll(make_ref<animation::animation_skeleton>(rag.getComponent<mesh_component>().mesh->skeleton));
+			}
+			ImGui::End();
+		}
 
 		//if (running)
 		//	physics::physics_holder::physicsRef->endSimulation(dt);

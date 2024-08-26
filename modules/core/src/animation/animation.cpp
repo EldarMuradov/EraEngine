@@ -641,7 +641,6 @@ namespace era_engine::animation
 		relTime += dt / targetLength;
 		relTime = fmodf(relTime, 1.f);
 
-
 		trs* totalLocalTransforms = (trs*)alloca(sizeof(trs) * skeleton.joints.size() * 2);
 		trs* localTransforms1 = totalLocalTransforms;
 		trs* localTransforms2 = totalLocalTransforms + skeleton.joints.size();
@@ -686,6 +685,9 @@ namespace era_engine::animation
 		ref<animation_state> state = make_ref<animation_state>(animation);
 
 		controller = make_ref<animation_controller>();
+
+		if (clips.empty())
+			return;
 
 		animation_blackboard startBlackboard = { &clips[startIndex] };
 		controller->stateMachine.set_state(state, startBlackboard);
