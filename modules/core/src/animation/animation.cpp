@@ -14,6 +14,8 @@
 
 #include "rendering/debug_visualization.h"
 
+#include "px/features/px_ragdoll.h"
+
 #include <algorithm>
 
 namespace era_engine::animation
@@ -700,14 +702,14 @@ namespace era_engine::animation
 		}
 	}
 
-	void animation_component::update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform)
+	void animation_component::update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform, physics::px_ragdoll_component* ragdoll)
 	{
 		const dx_mesh& dxMesh = mesh->mesh;
 		animation_skeleton& skeleton = mesh->skeleton;
 
 		currentGlobalTransforms = 0;
 
-		if (animation && animation->valid())
+		if ((!ragdoll || !ragdoll->simulated) && animation && animation->valid())
 		{
 			auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
 
@@ -732,6 +734,22 @@ namespace era_engine::animation
 
 			if (animation->finished)
 				controller->stateMachine.update();
+		}
+		else if (ragdoll && ragdoll->ragdoll && ragdoll->simulated)
+		{
+			auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
+
+			prevFrameVertexBuffer = currentVertexBuffer;
+			currentVertexBuffer = vb;
+
+			static std::vector<trs> transforms = ragdoll->apply();
+
+			for (int i = 0; i < skeleton.joints.size(); ++i)
+			{
+				skinningMatrices[i] = trsToMat4(transforms[i]) * skeleton.joints[i].invBindTransform;
+			}
+
+			currentGlobalTransforms = &transforms[0];
 		}
 		else
 		{
@@ -830,7 +848,7 @@ namespace era_engine::animation
 					*vertices++ = { vrt1, limbTypeColors[parentJoint.limbType] };
 					*vertices++ = { vrt2, limbTypeColors[parentJoint.limbType] };
 #else
-					* vertices++ = { skeleton.joints[joint.parentID].bindTransform.col3.xyz, limbTypeColors[parentJoint.limbType] };
+					*vertices++ = { skeleton.joints[joint.parentID].bindTransform.col3.xyz, limbTypeColors[parentJoint.limbType] };
 					*vertices++ = { joint.bindTransform.col3.xyz, limbTypeColors[parentJoint.limbType] };
 #endif
 				}
@@ -847,27 +865,6 @@ namespace era_engine::animation
 		renderDebug<debug_unlit_line_pipeline::position_color>(trsToMat4(transform), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), renderPass, true);
 
 #else
-#if 0
-
-		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(position_color), limb_type_count * 2);
-		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), limb_type_count * 2);
-
-		position_color* vertices = (position_color*)vertexPtr;
-		indexed_line16* lines = (indexed_line16*)indexPtr;
-
-		for (uint32 i = 0; i < limb_type_count; ++i)
-		{
-			const auto& limb = skeleton.limbs[i];
-			*vertices++ = { limb.mean - limb.principalAxis / transform.scale * 0.2f, limbTypeColors[i] };
-			*vertices++ = { limb.mean + limb.principalAxis / transform.scale * 0.2f, limbTypeColors[i] };
-
-			*lines++ = { (uint16)(2 * i), (uint16)(2 * i + 1) };
-		}
-
-		renderDebug<debug_unlit_line_pipeline::position_color>(trsToMat4(transform), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), renderPass, true);
-
-#else
-
 		for (uint32 i = 0; i < limb_type_count; ++i)
 		{
 			const auto& limb = skeleton.limbs[i];
@@ -885,8 +882,6 @@ namespace era_engine::animation
 				renderWireCapsule(a, b, limb.dimensions.radius * transform.scale.x, vec4(limbTypeColors[i], 1.f), renderPass, true);
 			}
 		}
-#endif
-
 #endif
 	}
 

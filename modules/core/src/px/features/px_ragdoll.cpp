@@ -28,9 +28,9 @@ namespace era_engine::physics
 		joint->setTwistLimit(PxJointAngularLimitPair(twistLo, twistHi));
 	}
 
-    static vec3 bindPosWs(mat4& inverseBindPose, mat4& model)
+    static vec3 bindPosWs(mat4& bindPose, mat4& model)
     {
-        mat4 m = model * invert(inverseBindPose);
+        mat4 m = model * bindPose;
         return vec3(m.m03, m.m13, m.m23);
     }
 
@@ -51,16 +51,18 @@ namespace era_engine::physics
 
         auto& joints = skeleton->joints;
 
-        vec3 parentPos = bindPosWs(joints[parentIdx].invBindTransform, model) * modelWithScale.m00;
-        vec3 childPos = bindPosWs(joints[childIdx].invBindTransform, model) * modelWithScale.m00;
+        vec3 parentPos = bindPosWs(joints[parentIdx].bindTransform, model);
+        vec3 childPos = bindPosWs(joints[childIdx].bindTransform, model);
 
         float len = length(parentPos - childPos);
 
         // shorten by 0.1 times to prevent overlap
         len -= len * 0.1f;
 
-        float lenMinus2r = len - 2.0f * r;
-        float halfHeight = lenMinus2r / 2.0f;
+        if(len - 2.0f * r > 0)
+            len = len - 2.0f * r;
+
+        float halfHeight = len / 2.0f;
 
         vec3 bodyPos = (parentPos + childPos) / 2.0f;
 
@@ -75,7 +77,7 @@ namespace era_engine::physics
         shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
 
         mat4 invBindPose = joints[parentIdx].invBindTransform;
-        mat4 bindPose = invert(invBindPose);
+        mat4 bindPose = joints[parentIdx].bindTransform;
         mat4 bindPoseWs = modelWithoutScale * bindPose;
 
         PxTransform px_transform(createPxVec3(bodyPos), createPxQuat(mat4ToTRS(bindPoseWs).rotation));
@@ -111,7 +113,7 @@ namespace era_engine::physics
 
         auto& joints = skeleton->joints;
 
-        vec3 parentPos = (bindPosWs(joints[parentIdx].invBindTransform, model) + offset) * modelWithScale.m00;
+        vec3 parentPos = (bindPosWs(joints[parentIdx].bindTransform, model) + offset);
 
         PxShape* shape = physics->getPhysics()->createShape(PxCapsuleGeometry(r, l / 2.0f), *material);
 
@@ -123,7 +125,7 @@ namespace era_engine::physics
         shape->setSimulationFilterData(PxFilterData(-1, -1, 0, 0));
         shape->setQueryFilterData(PxFilterData(-1, -1, 0, 0));
         mat4 invBindPose = joints[parentIdx].invBindTransform;
-        mat4 bindPose = invert(invBindPose);
+        mat4 bindPose = joints[parentIdx].bindTransform;
         mat4 bindPoseWs = modelWithoutScale * bindPose;
 
         PxTransform px_transform(createPxVec3(parentPos), createPxQuat(mat4ToTRS(bindPoseWs).rotation));
@@ -145,14 +147,13 @@ namespace era_engine::physics
         float r,
         ref<animation::animation_skeleton> skeleton,
         mat4 model = mat4::identity,
-        float mass = 1.0f,
-        float scale = 0.1f)
+        float mass = 1.0f)
     {
         const auto& physics = physics_holder::physicsRef;
 
         auto& joints = skeleton->joints;
 
-        vec3 parentPos = bindPosWs(joints[parentIdx].invBindTransform, model) * scale;
+        vec3 parentPos = bindPosWs(joints[parentIdx].bindTransform, model);
 
         PxShape* shape = physics->getPhysics()->createShape(PxSphereGeometry(r), *material);
         shape->setFlag(PxShapeFlag::eVISUALIZATION, true);
@@ -175,14 +176,13 @@ namespace era_engine::physics
         PxRigidDynamic* child,
         ref<animation::animation_skeleton> skeleton,
         uint32_t jointPos,
-        mat4 model = mat4::identity,
-        float scale = 0.1f)
+        mat4 model = mat4::identity)
     {
         const auto& physics = physics_holder::physicsRef;
 
         auto& joints = skeleton->joints;
-        vec3 p = bindPosWs(joints[jointPos].invBindTransform, model) * scale;
-        quat q = mat4ToTRS(invert(joints[jointPos].invBindTransform)).rotation;
+        vec3 p = bindPosWs(joints[jointPos].bindTransform, model);
+        quat q = mat4ToTRS(joints[jointPos].bindTransform).rotation;
 
         PxD6Joint* joint = PxD6JointCreate(*physics->getPhysics(),
             parent,
@@ -201,13 +201,12 @@ namespace era_engine::physics
         ref<animation::animation_skeleton> skeleton,
         uint32_t jointPos,
         mat4 rotation = mat4::identity,
-        mat4 model = mat4::identity,
-        float scale = 0.1f)
+        mat4 model = mat4::identity)
     {
         const auto& physics = physics_holder::physicsRef;
 
         auto& joints = skeleton->joints;
-        vec3 p = bindPosWs(joints[jointPos].invBindTransform, model) * scale;
+        vec3 p = bindPosWs(joints[jointPos].bindTransform, model);
 
         mat4 parentPoseInv = invert(createMat44(parent->getGlobalPose()));
         mat4 childPoseInv = invert(createMat44(child->getGlobalPose()));
@@ -276,13 +275,15 @@ namespace era_engine::physics
         uint32_t j_hand_r_idx = skeleton->nameToJointID["hand_r"];
         uint32_t j_middle_01_r_idx = skeleton->nameToJointID["middle_01_r"];
 
-       ragdoll->rigidBodies.resize(100);
-       ragdoll->relativeJointPoses.resize(100);
-       ragdoll->originalBodyRotations.resize(100);
-       ragdoll->bodyPosRelativeToJoint.resize(100);
-       ragdoll->originalJointRotations.resize(100);
+        transforms.resize(joints.size());
 
-        for (int i = 0; i < 100; i++)
+        ragdoll->rigidBodies.resize(joints.size());
+        ragdoll->relativeJointPoses.resize(joints.size());
+        ragdoll->originalBodyRotations.resize(joints.size());
+        ragdoll->bodyPosRelativeToJoint.resize(joints.size());
+        ragdoll->originalJointRotations.resize(joints.size());
+
+        for (int i = 0; i < joints.size(); i++)
             ragdoll->rigidBodies[i] = nullptr;
 
         float r = 5.0f * scale;
@@ -412,8 +413,7 @@ namespace era_engine::physics
             r,
             skeleton,
             model,
-            1.0f,
-            scale);
+            1.0f);
 
         PxRigidDynamic* r_hand = createSphereBone(
             j_middle_01_r_idx,
@@ -422,8 +422,7 @@ namespace era_engine::physics
             r,
             skeleton,
             model,
-            1.0f,
-            scale);
+            1.0f);
 
         rot = mat4::identity;
 
@@ -459,8 +458,8 @@ namespace era_engine::physics
             PxTransform pxPose = body->getGlobalPose();
             mat4 bodyGlobalTransform = trsToMat4(trs{ createVec3(pxPose.p), createQuat(pxPose.q) });
             mat4 invBodyGlobalTransform = invert(bodyGlobalTransform);
-            mat4 bindPoseWs = modelWithoutScale * invert(joints[i].invBindTransform);
-            vec3 jointPosWs = bindPosWs(joints[i].invBindTransform, model) * scale;
+            mat4 bindPoseWs = modelWithoutScale * joints[i].bindTransform;
+            vec3 jointPosWs = bindPosWs(joints[i].bindTransform, model);
 
             vec4 p = invBodyGlobalTransform * vec4(jointPosWs, 1.0f);
             ragdoll->relativeJointPoses[i] = vec3(p.x, p.y, p.z);
@@ -469,7 +468,7 @@ namespace era_engine::physics
             if (ragdoll->rigidBodies[i])
             {
                 // Rigid body position relative to the joint
-                mat4 m = invert(model * invert(joints[i].invBindTransform));
+                mat4 m = invert(model * joints[i].bindTransform);
                 p = m * vec4(createVec3(ragdoll->rigidBodies[i]->getGlobalPose().p), 1.0f);
 
                 ragdoll->bodyPosRelativeToJoint[i] = vec3(p.x, p.y, p.z);
@@ -512,47 +511,49 @@ namespace era_engine::physics
         //// ---------------------------------------------------------------------------------------------------------------
 
         // Chest and Head
-        createD6Joint(pelvis, head, skeleton, j_neck_01_idx, model, scale);
+        createD6Joint(pelvis, head, skeleton, j_neck_01_idx, model);
 
         // Chest to Thighs
-        createD6Joint(pelvis, l_leg, skeleton, j_thigh_l_idx, model, scale);
-        createD6Joint(pelvis, r_leg, skeleton, j_thigh_r_idx, model, scale);
+        createD6Joint(pelvis, l_leg, skeleton, j_thigh_l_idx, model);
+        createD6Joint(pelvis, r_leg, skeleton, j_thigh_r_idx, model);
 
         // Thighs to Calf
-        createD6Joint(l_leg, l_calf, skeleton, j_calf_l_idx, model, scale);
-        createD6Joint(r_leg, r_calf, skeleton, j_calf_r_idx, model, scale);
+        createD6Joint(l_leg, l_calf, skeleton, j_calf_l_idx, model);
+        createD6Joint(r_leg, r_calf, skeleton, j_calf_r_idx, model);
         //createRevoluteJoint(l_leg, l_calf, skeleton, j_calf_l_idx, mat4::identity, model);
         //createRevoluteJoint(r_leg, r_calf, skeleton, j_calf_r_idx, mat4::identity, model);
 
         // Calf to Foot
-        createD6Joint(l_calf, l_foot, skeleton, j_foot_l_idx, model, scale);
-        createD6Joint(r_calf, r_foot, skeleton, j_foot_r_idx, model, scale);
+        createD6Joint(l_calf, l_foot, skeleton, j_foot_l_idx, model);
+        createD6Joint(r_calf, r_foot, skeleton, j_foot_r_idx, model);
 
         // Chest to Upperarm
-        createD6Joint(pelvis, l_arm, skeleton, j_upperarm_l_idx, model, scale);
-        createD6Joint(pelvis, r_arm, skeleton, j_upperarm_r_idx, model, scale);
+        createD6Joint(pelvis, l_arm, skeleton, j_upperarm_l_idx, model);
+        createD6Joint(pelvis, r_arm, skeleton, j_upperarm_r_idx, model);
 
         //mat4 arm_rot = mat4::identity;
         //arm_rot = trsToMat4(trs{vec3(0.0f),  quat(vec3(0.0f, 0.0f, 1.0f), -PxPi / 2.0f) });
 
         // Upperarm to Lowerman
         //createRevoluteJoint(l_arm, l_forearm, skeleton, j_lowerarm_l_idx, arm_rot, model);
-        createD6Joint(l_arm, l_forearm, skeleton, j_lowerarm_l_idx, model, scale);
+        createD6Joint(l_arm, l_forearm, skeleton, j_lowerarm_l_idx, model);
 
         //arm_rot = mat4::identity;
         //arm_rot = trsToMat4(trs{ vec3(0.0f), quat(vec3(0.0f, 0.0f, 1.0f), PxPi / 2.0f) });
-        createD6Joint(r_arm, r_forearm, skeleton, j_lowerarm_r_idx, model, scale);
+        createD6Joint(r_arm, r_forearm, skeleton, j_lowerarm_r_idx, model);
 
         //createRevoluteJoint(r_arm, r_forearm, skeleton, j_lowerarm_r_idx, arm_rot, model);
 
         // Lowerman to Hand
-        createD6Joint(l_forearm, l_hand, skeleton, j_hand_l_idx, model, scale);
-        createD6Joint(r_forearm, r_hand, skeleton, j_hand_r_idx, model, scale);
+        createD6Joint(l_forearm, l_hand, skeleton, j_hand_l_idx, model);
+        createD6Joint(r_forearm, r_hand, skeleton, j_hand_r_idx, model);
 
         physics->update(0.016f);
+
+        simulated = true;
     }
 
-	std::vector<trs> px_ragdoll_component::apply(const mat4& modelScale, const mat4& modelRotation)
+	std::vector<trs> px_ragdoll_component::apply(const mat4& modelRotation)
 	{
 		using namespace animation;
 
@@ -560,9 +561,9 @@ namespace era_engine::physics
 		{
 			std::vector<skeleton_joint>& joints = skeleton->joints;
 
-			for (uint32_t i = 0; i < (size_t)limb_type_count; i++)
+			for (uint32_t i = 1; i < joints.size(); i++)
 			{
-				uint32_t chosenIdx = 1;
+				uint32_t chosenIdx = 0;
 				PxRigidDynamic* body = ragdoll->findRecentBody(i, skeleton, chosenIdx);
 
 				mat4 globalTransform = createMat44(body->getGlobalPose());
@@ -576,14 +577,16 @@ namespace era_engine::physics
 				quat finalRotation = mat4ToTRS(joints[i].bindTransform).rotation * diffRot;
 				mat4 rotation = modelRotation * quaternionToMat4(finalRotation);
 
-				mat4 model = modelRotation * modelScale;
-
-				transforms[i] = mat4ToTRS(invert(model) * translation * rotation * modelScale);
+				transforms[i] = mat4ToTRS(invert(model) * translation * rotation);
 			}
 		}
 
 		return transforms;
 	}
+
+    void px_ragdoll_component::update(float dt)
+    {
+    }
 
 	void px_ragdoll_component::release(bool releaseActor)
 	{
@@ -601,7 +604,6 @@ namespace era_engine::physics
 
 		while (!body)
 		{
-            //if(joints[idx].parentID != (uint32)-1)
 			idx = joints[idx].parentID;
 			body = rigidBodies[idx];
 			chosenIdx = idx;

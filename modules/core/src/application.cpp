@@ -331,7 +331,7 @@ namespace era_engine
 
 			if (auto mesh = loadAnimatedMeshFromFileAsync(getAssetPath("/resources/assets/resident-evil-tyrant/source/UmodelExport.fbx")))
 			{
-				auto& en = scene.createEntity("Tiran")
+				auto& en = scene.createEntity("Ragdoll")
 					.addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(0.1f))
 					.addComponent<animation::animation_component>()
 					.addComponent<dynamic_transform_component>()
@@ -807,9 +807,17 @@ namespace era_engine
 
 		//if (renderer->mode != renderer_mode_pathtraced)
 		{
-			for (auto [entityHandle, anim, mesh, transform] : scene.group(component_group<animation::animation_component, mesh_component, transform_component>).each())
+			for (auto [entityHandle, anim, mesh, transform] : scene.group(component_group<animation::animation_component, mesh_component, transform_component>, component_group<physics::px_ragdoll_component>).each())
 			{
 				anim.update(mesh.mesh, stackArena, dt, &transform);
+
+				if (anim.drawSceleton)
+					anim.drawCurrentSkeleton(mesh.mesh, transform, &ldrRenderPass);
+			}
+
+			for (auto [entityHandle, anim, mesh, transform, ragdoll] : scene.group(component_group<animation::animation_component, mesh_component, transform_component, physics::px_ragdoll_component>).each())
+			{
+				anim.update(mesh.mesh, stackArena, dt, &transform, &ragdoll);
 
 				if (anim.drawSceleton)
 					anim.drawCurrentSkeleton(mesh.mesh, transform, &ldrRenderPass);

@@ -12,16 +12,12 @@
   Path: E:/Era Engine/resources/assets\cameraman\source\CameraManWhite.fbx
 - Handle: 11765951030938717829
   Path: E:/Era Engine/resources/assets\nemesis-re3\source\nemesis_-_resident_evil_3_remake_re3\textures\material_0_metallicRoughness.png
-- Handle: 8639247938796199524
-  Path: E:/Era Engine/resources/assets\fps-ak-74m-animations\textures\ak74m_AO.png
-- Handle: 5931401281031177371
-  Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_green_diff.png
-- Handle: 1837980540471891488
-  Path: E:/Era Engine/resources/assets\dark-knight\source\Knight_All.255.cache.bin
 - Handle: 15189601630968607387
   Path: E:/Era Engine/resources/assets\obj\bunny.fbx
 - Handle: 1843227552832675128
   Path: E:/Era Engine/resources/assets\box.fbx
+- Handle: 1837511076894566919
+  Path: E:/Era Engine/resources/assets\cameraman\source\CameraManWhite.255.cache.bin
 - Handle: 7024802555298856979
   Path: E:/Era Engine/resources/assets\cameraman\textures\CameraMan_packed0_diffuse.png
 - Handle: 13537452638996123579
@@ -32,6 +28,12 @@
   Path: E:/Era Engine/resources/assets\nemesis-re3\source\nemesis_-_resident_evil_3_remake_re3\textures\em9000_body00_baseColor.png
 - Handle: 1974194301457617636
   Path: E:/Era Engine/resources/assets\cameraman\textures\surveillance_camera.png
+- Handle: 8639247938796199524
+  Path: E:/Era Engine/resources/assets\fps-ak-74m-animations\textures\ak74m_AO.png
+- Handle: 5931401281031177371
+  Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_green_diff.png
+- Handle: 1837980540471891488
+  Path: E:/Era Engine/resources/assets\dark-knight\source\Knight_All.255.cache.bin
 - Handle: 6940914832491519400
   Path: E:/Era Engine/resources/assets\dark-knight\textures\T_cloth_M.png
 - Handle: 15079249607081802657
@@ -104,6 +106,8 @@
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Debug\net8.0\NewProject.AssemblyInfo.cs
 - Handle: 7166820094326500982
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\bin\Release\net8.0\NewProject.deps.json
+- Handle: 11544685773691950611
+  Path: E:/Era Engine/resources/assets\ragdoll\b\source\Business_Man.255.cache.bin
 - Handle: 17398963805348883862
   Path: E:/Era Engine/resources/assets\nemesis-re3\source\nemesis_-_resident_evil_3_remake_re3\license.txt
 - Handle: 5522699643973298496
@@ -120,14 +124,12 @@
   Path: E:/Era Engine/resources/assets\fps-ak-74m-animations\source\FpsAnims.fbx
 - Handle: 12278113384428092495
   Path: E:/Era Engine/resources/assets\fps-ak-74m-animations\textures\ak74m_Roughness.png
+- Handle: 11756624648512921776
+  Path: E:/Era Engine/resources/assets\ragdoll\b\textures\business_man_albedo.png
 - Handle: 14957911067943913948
   Path: E:/Era Engine/resources/assets\obj\blockwall.mtl
 - Handle: 9166301191058200720
   Path: E:/Era Engine/resources/assets\fps-ak-74m-animations\textures\armNormal.png
-- Handle: 685338125285828082
-  Path: E:/Era Engine/resources/assets\Sponza\textures\vase_bump.png
-- Handle: 10449316216664999573
-  Path: E:/Era Engine/resources/assets\obj\table.mtl
 - Handle: 505223500358356445
   Path: E:/Era Engine/resources/assets\nemesis-re3\source\nemesis_-_resident_evil_3_remake_re3\textures\em9000_body01_nails_baseColor.png
 - Handle: 14538469595899696062
@@ -164,6 +166,8 @@
   Path: E:/Era Engine/resources/assets\nemesis-re3\textures\material_0_metallicRoughness@channels=G.png
 - Handle: 7355587724262949888
   Path: E:/Era Engine/resources/assets\Sponza\textures\vase_plant_NRM.png
+- Handle: 15550521343600253043
+  Path: E:/Era Engine/resources/assets\ragdoll\b\textures\business_man_normal.png
 - Handle: 7182223389821297231
   Path: E:/Era Engine/resources/assets\obj\blockwall.obj
 - Handle: 4120125340477818955
@@ -178,6 +182,10 @@
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.assets.cache
 - Handle: 10191810456721912310
   Path: E:/Era Engine/resources/assets\obj\hugeAsset.obj
+- Handle: 685338125285828082
+  Path: E:/Era Engine/resources/assets\Sponza\textures\vase_bump.png
+- Handle: 10449316216664999573
+  Path: E:/Era Engine/resources/assets\obj\table.mtl
 - Handle: 16986872774794990680
   Path: E:/Era Engine/resources/assets\obj\table.obj
 - Handle: 6698839368495404016
@@ -194,6 +202,8 @@
   Path: E:/Era Engine/resources/assets\obj\untitled.mtl
 - Handle: 3225854363627173719
   Path: E:/Era Engine/resources/assets\resident-evil-tyrant\source\UmodelExport.fbx
+- Handle: 4022712154035586294
+  Path: E:/Era Engine/resources/assets\ragdoll\a\textures\Character_Normal.jpeg
 - Handle: 6919096418525756947
   Path: E:/Era Engine/resources/assets\obj\untitled.obj
 - Handle: 769574062586697135
@@ -248,6 +258,46 @@
   Path: E:/Era Engine/resources/assets\particles\fire_explosion.tif
 - Handle: 14490522790006249642
   Path: E:/Era Engine/resources/assets\particles\smoke1.tif
+- Handle: 1165691262057543120
+  Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_curtain_ddn.jpg
+- Handle: 1837518405606999385
+  Path: E:/Era Engine/resources/assets\ragdoll\a\source\Party_man_01.255.cache.bin
+- Handle: 1837518501637239616
+  Path: E:/Era Engine/resources/assets\ragdoll\a\source\Party_man_01.fbx
+- Handle: 3468033804133725222
+  Path: E:/Era Engine/resources/assets\ragdoll\a\source\textures\Character_ao.png
+- Handle: 5643316008233600935
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Debug\net8.0\NewProject.csproj.CopyComplete
+- Handle: 16773089220538589774
+  Path: E:/Era Engine/resources/assets\ragdoll\a\source\textures\Character_metallic.png
+- Handle: 9718570502436942858
+  Path: E:/Era Engine/resources/assets\ragdoll\a\source\textures\Character_MetallicAlpha.png
+- Handle: 950009077981754726
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\project.nuget.cache
+- Handle: 16453446401043143010
+  Path: E:/Era Engine/resources/assets\ragdoll\a\source\textures\Character_ResourceMap_ColorID.png
+- Handle: 7265678570059675600
+  Path: E:/Era Engine/resources/assets\ragdoll\a\source\textures\Character_ResourceMap_RGBMask.png
+- Handle: 18218810368988538303
+  Path: E:/Era Engine/resources/assets\ragdoll\a\source\textures\Character_roughness.png
+- Handle: 17984520097163046324
+  Path: E:/Era Engine/resources/assets\ragdoll\a\textures\Character_ao.png
+- Handle: 17937753681757441391
+  Path: E:/Era Engine/resources/assets\ragdoll\a\textures\Character_Diffuse.jpeg
+- Handle: 18108467212424839605
+  Path: E:/Era Engine/resources/assets\ragdoll\a\textures\Character_metallic.png
+- Handle: 12640619314950183295
+  Path: E:/Era Engine/resources/assets\ragdoll\a\textures\Character_roughness.png
+- Handle: 8794367755373428365
+  Path: E:/Era Engine/resources/assets\ragdoll\b\source\Business_Man.fbx
+- Handle: 18150942199154647409
+  Path: E:/Era Engine/resources/assets\ragdoll\b\textures\business_man_ao.png
+- Handle: 10749880726209132778
+  Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_diff.png
+- Handle: 17434230699712531193
+  Path: E:/Era Engine/resources/assets\resident-evil-tyrant\textures\T_Tyrant_D.png
+- Handle: 2482343939535338499
+  Path: E:/Era Engine/resources/assets\ragdoll\b\textures\business_man_spec.png
 - Handle: 4306037388642827931
   Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\source\resident-evil-tyrant\source\UmodelExport.fbx
 - Handle: 7380935162774474278
@@ -258,12 +308,18 @@
   Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\textures\T_Tyrant_D.png
 - Handle: 17562228251065776739
   Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\textures\T_Tyrant_N.png
+- Handle: 14064497463372127174
+  Path: E:/Era Engine/resources/assets\resident-evil-tyrant\source\tiran.255.cache.bin
+- Handle: 1837519632181842087
+  Path: E:/Era Engine/resources/assets\resident-evil-tyrant\source\tiran.fbx
 - Handle: 1837980631319626676
   Path: E:/Era Engine/resources/assets\resident-evil-tyrant\source\UmodelExport.255.cache.bin
-- Handle: 10749880726209132778
-  Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_diff.png
-- Handle: 17434230699712531193
-  Path: E:/Era Engine/resources/assets\resident-evil-tyrant\textures\T_Tyrant_D.png
+- Handle: 1648498558446614752
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject.sln
+- Handle: 3738219009680573222
+  Path: E:/Era Engine/resources/assets\resident-evil-tyrant\source\untitled.255.cache.bin
+- Handle: 1837519847896153182
+  Path: E:/Era Engine/resources/assets\resident-evil-tyrant\source\untitled.fbx
 - Handle: 3102926392340247084
   Path: E:/Era Engine/resources/assets\resident-evil-tyrant\textures\T_Tyrant_N.png
 - Handle: 2879563918427943770
@@ -342,8 +398,6 @@
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Debug\net8.0\NewProject.assets.cache
 - Handle: 9921412549345759097
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Debug\net8.0\NewProject.csproj.AssemblyReference.cache
-- Handle: 5643316008233600935
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Debug\net8.0\NewProject.csproj.CopyComplete
 - Handle: 12093008442914708072
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Debug\net8.0\NewProject.csproj.CoreCompileInputs.cache
 - Handle: 2294995827421869660
@@ -366,8 +420,6 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_arch_ddn.png
 - Handle: 9316744376089097931
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\project.assets.json
-- Handle: 950009077981754726
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\project.nuget.cache
 - Handle: 3559371054613975948
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Release\net8.0\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs
 - Handle: 3830262397672461611
@@ -404,14 +456,14 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\vase_hanging.png
 - Handle: 3783301262091663634
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\WeaponHandler.cs
-- Handle: 1648498558446614752
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject.sln
 - Handle: 15764328342304315136
   Path: E:/Era Engine/resources/assets\sounds\punch.wav
 - Handle: 7838683248162586798
   Path: E:/Era Engine/resources/assets\sounds\s.ogg
 - Handle: 11089635493870156207
   Path: E:/Era Engine/resources/assets\sounds\sound.ogg
+- Handle: 1837506141615611514
+  Path: E:/Era Engine/resources/assets\Sponza\sponza.255.cache.bin
 - Handle: 8581012435206862399
   Path: E:/Era Engine/resources/assets\Sponza\sponza.obj
 - Handle: 17063698481598821395
@@ -458,8 +510,6 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_column_c_spec.png
 - Handle: 15828239034984737340
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_curtain_blue_diff.png
-- Handle: 1165691262057543120
-  Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_curtain_ddn.jpg
 - Handle: 481448485570703163
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_curtain_diff.png
 - Handle: 3163919139392153019

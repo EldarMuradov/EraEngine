@@ -35,7 +35,9 @@ namespace era_engine::physics
 
 		void initRagdoll(ref<animation::animation_skeleton> skeletonRef);
 
-		std::vector<trs> apply(const mat4& modelScale, const mat4& modelRotation);
+		std::vector<trs> apply(const mat4& modelRotation = mat4::identity);
+
+		void update(float dt);
 
 		virtual void release(bool releaseActor = false) override;
 
@@ -44,8 +46,9 @@ namespace era_engine::physics
 		std::vector<trs> transforms;
 		float scale = 0.1f;
 		vec3 startPos;
+		bool simulated = false;
 
-		mat4 model = mat4::identity;
+		mat4 model = mat4::identity * scale;
 		mat4 modelWithoutScale = mat4::identity;
 		mat4 modelOnlyScale = mat4::identity * scale;
 	};
