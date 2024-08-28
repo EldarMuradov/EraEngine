@@ -16,11 +16,17 @@ namespace era_engine::physics
 	struct px_ragdoll
 	{
 		std::vector<PxRigidDynamic*> rigidBodies;
+
+		std::vector<vec3> childToParentJointDeltaPoses;
+		std::vector<quat> childToParentJointDeltaRots;
+
 		std::vector<vec3> relativeJointPoses;
 		std::vector<quat> originalBodyRotations;
 
 		std::vector<vec3> bodyPosRelativeToJoint;
 		std::vector<quat> originalJointRotations;
+
+		bool kinematic = false;
 
 		PxRigidDynamic* findRecentBody(uint32_t idx, ref<animation::animation_skeleton> skeleton, uint32_t& chosenIdx);
 		void setKinematic(bool state);
@@ -35,12 +41,16 @@ namespace era_engine::physics
 
 		void initRagdoll(ref<animation::animation_skeleton> skeletonRef);
 
+		void updateKinematic();
+
 		std::vector<trs> apply(const mat4& modelRotation = mat4::identity);
 
 		void update(float dt);
 
 		virtual void release(bool releaseActor = false) override;
 
+		vec3 worldPosDelta;
+		quat worldRotDelta;
 		ref<px_ragdoll> ragdoll = nullptr;
 		ref<animation::animation_skeleton> skeleton = nullptr;
 		std::vector<trs> transforms;

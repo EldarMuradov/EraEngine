@@ -472,6 +472,16 @@ namespace era_engine::animation
 		}
 	}
 
+	void animation_skeleton::getSkinningMatricesFromGlobalTransforms(const trs* globalTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
+	{
+		uint32 numJoints = (uint32)joints.size();
+
+		for (uint32 i = 0; i < numJoints; ++i)
+		{
+			outSkinningMatrices[i] = trsToMat4(worldTransform) * trsToMat4(globalTransforms[i]) * joints[i].invBindTransform;
+		}
+	}
+
 	std::vector<uint32> animation_skeleton::getClipsByName(const std::string& name)
 	{
 		std::vector<uint32> result;
@@ -709,7 +719,7 @@ namespace era_engine::animation
 
 		currentGlobalTransforms = 0;
 
-		if ((!ragdoll || !ragdoll->simulated) && animation && animation->valid())
+		if (!ragdoll && animation && animation->valid())
 		{
 			auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
 
@@ -742,14 +752,39 @@ namespace era_engine::animation
 			prevFrameVertexBuffer = currentVertexBuffer;
 			currentVertexBuffer = vb;
 
-			static std::vector<trs> transforms = ragdoll->apply();
+			std::vector<trs> transforms = ragdoll->apply();
 
-			for (int i = 0; i < skeleton.joints.size(); ++i)
-			{
-				skinningMatrices[i] = trsToMat4(transforms[i]) * skeleton.joints[i].invBindTransform;
-			}
+		    skeleton.getSkinningMatricesFromGlobalTransforms(&transforms[0], skinningMatrices);
 
 			currentGlobalTransforms = &transforms[0];
+		}
+		else if (ragdoll && ragdoll->ragdoll && !ragdoll->simulated)
+		{
+			auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
+
+			prevFrameVertexBuffer = currentVertexBuffer;
+			currentVertexBuffer = vb;
+
+			trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
+			trs deltaRootMotion;
+			animation->update(skeleton, dt * timeScale, localTransforms, deltaRootMotion);
+
+			trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
+
+			skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
+
+			if (transform)
+			{
+				*transform = *transform * deltaRootMotion;
+				transform->rotation = normalize(transform->rotation);
+			}
+
+			currentGlobalTransforms = globalTransforms;
+
+			ragdoll->updateKinematic();
+
+			if (animation->finished)
+				controller->stateMachine.update();
 		}
 		else
 		{

@@ -76,7 +76,6 @@ namespace era_engine::physics
         shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
         shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
 
-        mat4 invBindPose = joints[parentIdx].invBindTransform;
         mat4 bindPose = joints[parentIdx].bindTransform;
         mat4 bindPoseWs = modelWithoutScale * bindPose;
 
@@ -85,8 +84,6 @@ namespace era_engine::physics
         PxRigidDynamic* body = physics->getPhysics()->createRigidDynamic(px_transform);
         body->setActorFlag(PxActorFlag::eVISUALIZATION, true);
         body->setMass(mass);
-        //body->setActorFlag(PxActorFlag::eDISABLE_SIMULATION, true);
-
 
         body->attachShape(*shape);
 
@@ -278,6 +275,8 @@ namespace era_engine::physics
         transforms.resize(joints.size());
 
         ragdoll->rigidBodies.resize(joints.size());
+        ragdoll->childToParentJointDeltaPoses.resize(joints.size());
+        ragdoll->childToParentJointDeltaRots.resize(joints.size());
         ragdoll->relativeJointPoses.resize(joints.size());
         ragdoll->originalBodyRotations.resize(joints.size());
         ragdoll->bodyPosRelativeToJoint.resize(joints.size());
@@ -305,7 +304,7 @@ namespace era_engine::physics
             j_head_idx,
             *ragdoll,
             material,
-            vec3(0.0f, 15.0f * scale, 0.0f),
+            vec3(0.0f, -5.0f * scale, 0.0f),
             4.0f * scale,
             skeleton,
             modelWithoutScale,
@@ -456,24 +455,28 @@ namespace era_engine::physics
             PxRigidDynamic* body = ragdoll->findRecentBody(i, skeleton, chosenIdx);
 
             PxTransform pxPose = body->getGlobalPose();
-            mat4 bodyGlobalTransform = trsToMat4(trs{ createVec3(pxPose.p), createQuat(pxPose.q) });
-            mat4 invBodyGlobalTransform = invert(bodyGlobalTransform);
-            mat4 bindPoseWs = modelWithoutScale * joints[i].bindTransform;
-            vec3 jointPosWs = bindPosWs(joints[i].bindTransform, model);
+            trs bodyGlobalTransform = trs{ createVec3(pxPose.p), createQuat(pxPose.q) };
 
-            vec4 p = invBodyGlobalTransform * vec4(jointPosWs, 1.0f);
-            ragdoll->relativeJointPoses[i] = vec3(p.x, p.y, p.z);
-            ragdoll->originalBodyRotations[i] = mat4ToTRS(bodyGlobalTransform).rotation;
+            mat4 bodyPosTransformMat = trsToMat4(bodyGlobalTransform);
+            mat4 invBodyPosTransformMat = invert(bodyPosTransformMat);
+
+            mat4 bindPosWS = modelWithoutScale * skeleton->joints[i].bindTransform;
+
+            trs jointTrs = mat4ToTRS(skeleton->joints[i].bindTransform);
+
+            ragdoll->relativeJointPoses[i] = (invBodyPosTransformMat * vec4(jointTrs.position, 1.0f)).xyz;
+            ragdoll->originalBodyRotations[i] = normalize(bodyGlobalTransform.rotation);
 
             if (ragdoll->rigidBodies[i])
             {
-                // Rigid body position relative to the joint
-                mat4 m = invert(model * joints[i].bindTransform);
-                p = m * vec4(createVec3(ragdoll->rigidBodies[i]->getGlobalPose().p), 1.0f);
-
-                ragdoll->bodyPosRelativeToJoint[i] = vec3(p.x, p.y, p.z);
-                ragdoll->originalJointRotations[i] = mat4ToTRS(bindPoseWs).rotation;
+                mat4 m = invert(model * skeleton->joints[i].bindTransform);
+                ragdoll->bodyPosRelativeToJoint[i] = (m * vec4(bodyGlobalTransform.position, 1.0f)).xyz;
+                ragdoll->originalJointRotations[i] = normalize(mat4ToTRS(bindPosWS).rotation);
             }
+
+            ragdoll->childToParentJointDeltaPoses[i] = bodyGlobalTransform.position / scale - jointTrs.position;
+
+            ragdoll->childToParentJointDeltaRots[i] = normalize(bodyGlobalTransform.rotation * conjugate(jointTrs.rotation));
 
             finishBody(body, 1.0f, 1.0f);
         }
@@ -548,9 +551,34 @@ namespace era_engine::physics
         createD6Joint(l_forearm, l_hand, skeleton, j_hand_l_idx, model);
         createD6Joint(r_forearm, r_hand, skeleton, j_hand_r_idx, model);
 
+        ragdoll->setKinematic(false);
+
         physics->update(0.016f);
 
         simulated = true;
+    }
+
+    void px_ragdoll_component::updateKinematic()
+    {
+        if(!ragdoll->kinematic)
+            ragdoll->setKinematic(true);
+
+        for (int i = 0; i < ragdoll->rigidBodies.size(); ++i)
+        {
+            // TODO
+            PxRigidDynamic* rb = ragdoll->rigidBodies[i];
+            if (rb)
+            {
+                vec3 pos = (model * trsToMat4(transforms[i]) * vec4(ragdoll->bodyPosRelativeToJoint[i], 1.0f)).xyz;
+
+                quat jointRot = mat4ToTRS(modelWithoutScale * trsToMat4(transforms[i])).rotation;
+                quat deltaJRotation = normalize(conjugate(ragdoll->originalJointRotations[i]) * jointRot);
+
+                quat rot = normalize(ragdoll->originalBodyRotations[i] * deltaJRotation);
+
+                rb->setGlobalPose(PxTransform{createPxVec3(pos), createPxQuat(rot)});
+            }
+        }
     }
 
 	std::vector<trs> px_ragdoll_component::apply(const mat4& modelRotation)
@@ -559,25 +587,29 @@ namespace era_engine::physics
 
 		if (ragdoll->rigidBodies.size() > 0)
 		{
+
 			std::vector<skeleton_joint>& joints = skeleton->joints;
+
+            transforms[0] = mat4ToTRS(joints[0].bindTransform);
 
 			for (uint32_t i = 1; i < joints.size(); i++)
 			{
 				uint32_t chosenIdx = 0;
 				PxRigidDynamic* body = ragdoll->findRecentBody(i, skeleton, chosenIdx);
 
-				mat4 globalTransform = createMat44(body->getGlobalPose());
-				vec4 globalJointPos = globalTransform * vec4(ragdoll->relativeJointPoses[i], 1.0f);
+                PxTransform pxPose = body->getGlobalPose();
+                trs bodyGlobalTransform = trs{ createVec3(pxPose.p), createQuat(pxPose.q) };
 
-				quat bodyRot = mat4ToTRS(globalTransform).rotation;
-				quat diffRot = conjugate(ragdoll->originalBodyRotations[i]) * bodyRot;
+                vec4 globalJointPos = trsToMat4(bodyGlobalTransform) * vec4(ragdoll->relativeJointPoses[i], 1.0f);
 
-				mat4 translation = trsToMat4(trs(vec3(globalJointPos.x, globalJointPos.y, globalJointPos.z)));
+                trs jointTrs = mat4ToTRS(skeleton->joints[i].bindTransform);
 
-				quat finalRotation = mat4ToTRS(joints[i].bindTransform).rotation * diffRot;
-				mat4 rotation = modelRotation * quaternionToMat4(finalRotation);
+                quat deltaRotation = normalize(conjugate(ragdoll->originalBodyRotations[i]) * bodyGlobalTransform.rotation);
 
-				transforms[i] = mat4ToTRS(invert(model) * translation * rotation);
+                mat4 translation = trsToMat4(trs{ bodyGlobalTransform.position / scale - ragdoll->childToParentJointDeltaPoses[i], quat::identity});
+                mat4 rotation = modelRotation * trsToMat4(trs{ vec3(0.0f), jointTrs.rotation * deltaRotation });
+
+                transforms[i] = mat4ToTRS(modelWithoutScale * translation * rotation);
 			}
 		}
 
@@ -624,6 +656,8 @@ namespace era_engine::physics
 					rigidBodies[i]->wakeUp();
 			}
 		}
+
+        kinematic = state;
 	}
 
 }
