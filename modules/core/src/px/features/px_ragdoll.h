@@ -26,6 +26,8 @@ namespace era_engine::physics
 		std::vector<vec3> bodyPosRelativeToJoint;
 		std::vector<quat> originalJointRotations;
 
+		std::vector<vec3> initialBodyPos;
+
 		bool kinematic = false;
 
 		PxRigidDynamic* findRecentBody(uint32_t idx, ref<animation::animation_skeleton> skeleton, uint32_t& chosenIdx);

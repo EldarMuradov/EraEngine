@@ -780,7 +780,7 @@ namespace era_engine::animation
 			}
 
 			currentGlobalTransforms = globalTransforms;
-
+			// TODO
 			ragdoll->updateKinematic();
 
 			if (animation->finished)
