@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "EbOhZ4OB2A9sKKsp3eKL8BWNYL9XHGffELRyzRM4KpJkkN3J6nTARgdH8qjur7A+3NWywRS8aCCudVe25+3+ZQ==",
+  "dgSpecHash": "6+XRLJKykCTyJ5Jy7Pm5PUwrhIJEDeo3lzr5Lj7/LSKl8u6+XXLZfffxV8V9vVs5V9IcnHtpqhXuE/ayAfmSfw==",
   "success": true,
-  "projectFilePath": "E:\\EraEngine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj",
+  "projectFilePath": "E:\\Era Engine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Эльдар\\.nuget\\packages\\microsoft.dotnet.ilcompiler\\8.0.4\\microsoft.dotnet.ilcompiler.8.0.4.nupkg.sha512",
     "C:\\Users\\Эльдар\\.nuget\\packages\\microsoft.net.illink.tasks\\8.0.4\\microsoft.net.illink.tasks.8.0.4.nupkg.sha512",

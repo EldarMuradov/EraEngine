@@ -52,3 +52,15 @@ E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\refint\EraScript
 E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.pdb
 E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.genruntimeconfig.cache
 E:\EraEngine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\ref\EraScriptingCore.dll
+E:\Era Engine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.csproj.AssemblyReference.cache
+E:\Era Engine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.GeneratedMSBuildEditorConfig.editorconfig
+E:\Era Engine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.AssemblyInfoInputs.cache
+E:\Era Engine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.AssemblyInfo.cs
+E:\Era Engine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.csproj.CoreCompileInputs.cache
+E:\Era Engine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.sourcelink.json
+E:\Era Engine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScrip.C6674D70.Up2Date
+E:\Era Engine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.dll
+E:\Era Engine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\refint\EraScriptingCore.dll
+E:\Era Engine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.pdb
+E:\Era Engine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\EraScriptingCore.genruntimeconfig.cache
+E:\Era Engine\modules\dotnet\EraScriptingCore\obj\Release\net8.0\ref\EraScriptingCore.dll

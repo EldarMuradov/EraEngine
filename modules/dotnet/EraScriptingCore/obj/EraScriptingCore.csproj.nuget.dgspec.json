@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\EraEngine\\modules\\dotnet\\EraScriptingCore\\EraScriptingCore.csproj": {}
+    "E:\\Era Engine\\modules\\dotnet\\EraScriptingCore\\EraScriptingCore.csproj": {}
   },
   "projects": {
-    "E:\\EraEngine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj": {
+    "E:\\Era Engine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\EraEngine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj",
+        "projectUniqueName": "E:\\Era Engine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj",
         "projectName": "EraEngineDomain",
-        "projectPath": "E:\\EraEngine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj",
+        "projectPath": "E:\\Era Engine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj",
         "packagesPath": "C:\\Users\\Эльдар\\.nuget\\packages\\",
-        "outputPath": "E:\\EraEngine\\modules\\dotnet\\EraEngineDomain\\obj\\",
+        "outputPath": "E:\\Era Engine\\modules\\dotnet\\EraEngineDomain\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Эльдар\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -88,14 +88,14 @@
         }
       }
     },
-    "E:\\EraEngine\\modules\\dotnet\\EraScriptingCore\\EraScriptingCore.csproj": {
+    "E:\\Era Engine\\modules\\dotnet\\EraScriptingCore\\EraScriptingCore.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\EraEngine\\modules\\dotnet\\EraScriptingCore\\EraScriptingCore.csproj",
+        "projectUniqueName": "E:\\Era Engine\\modules\\dotnet\\EraScriptingCore\\EraScriptingCore.csproj",
         "projectName": "EraScriptingCore",
-        "projectPath": "E:\\EraEngine\\modules\\dotnet\\EraScriptingCore\\EraScriptingCore.csproj",
+        "projectPath": "E:\\Era Engine\\modules\\dotnet\\EraScriptingCore\\EraScriptingCore.csproj",
         "packagesPath": "C:\\Users\\Эльдар\\.nuget\\packages\\",
-        "outputPath": "E:\\EraEngine\\modules\\dotnet\\EraScriptingCore\\obj\\",
+        "outputPath": "E:\\Era Engine\\modules\\dotnet\\EraScriptingCore\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Эльдар\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -112,8 +112,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "E:\\EraEngine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj": {
-                "projectPath": "E:\\EraEngine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj"
+              "E:\\Era Engine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj": {
+                "projectPath": "E:\\Era Engine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj"
               }
             }
           }

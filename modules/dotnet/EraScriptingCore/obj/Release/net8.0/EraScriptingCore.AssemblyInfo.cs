@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EraScriptingCore")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+34e9afbe20dfdba8865be91a526645aa46ef5b85")]
 [assembly: System.Reflection.AssemblyProductAttribute("EraScriptingCore")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EraScriptingCore")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -3112,7 +3112,7 @@ namespace era_engine
 		{
 			fs::path path = getPathFromAssetHandle(asset);
 			fs::path relative = fs::relative(path, fs::current_path());
-			if (auto newTex = loadTextureFromFileAsync(relative.string(), loadFlags))
+			if (auto newTex = loadTextureFromFileAsync(path, loadFlags))
 			{
 				tex = newTex;
 			}
@@ -3131,7 +3131,7 @@ namespace era_engine
 		{
 			fs::path path = getPathFromAssetHandle(asset);
 			fs::path relative = fs::relative(path, fs::current_path());
-			if (auto newMesh = loadMeshFromFile(relative.string(), loadFlags))
+			if (auto newMesh = loadMeshFromFile(path, loadFlags))
 			{
 				mesh = newMesh;
 			}

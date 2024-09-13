@@ -345,7 +345,7 @@ namespace era_engine
 				{
 					sized_string lib = readString(file);
 					auto libMaterials = loadMaterialLibrary(relativeFilepath(lib, path));
-					for (auto [name, mat] : libMaterials)
+					for (auto& [name, mat] : libMaterials)
 					{
 						nameToMaterialIndex[std::move(name)] = (int32)materials.size();
 						materials.push_back(std::move(mat));
