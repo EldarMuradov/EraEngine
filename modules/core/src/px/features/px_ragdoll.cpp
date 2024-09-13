@@ -45,6 +45,7 @@ namespace era_engine::physics
         mat4 model = mat4::identity,
         float r = 0.5f,
         mat4 rotation = mat4::identity,
+        float hm = 1.0f,
         float mass = 1.0f)
     {
         const auto& physics = physics_holder::physicsRef;
@@ -54,15 +55,15 @@ namespace era_engine::physics
         vec3 parentPos = bindPosWs(joints[parentIdx].bindTransform, model);
         vec3 childPos = bindPosWs(joints[childIdx].bindTransform, model);
 
-        float len = length(parentPos - childPos);
+        vec3 offset = parentPos - childPos;
+        float len = length(offset);
 
-        // shorten by 0.1 times to prevent overlap
-        len -= len * 0.1f;
+        if (len - 2.0f * r > 0.1f)
+            len = len - 2.0f * r;
+        else
+            len *= 0.9f;
 
-        if(len - 2.0f * r > 0)
-            len = len - r;
-
-        float halfHeight = len / 2.0f;
+        float halfHeight = hm * len / 2.0f;
 
         vec3 bodyPos = (parentPos + childPos) / 2.0f;
 
@@ -104,6 +105,7 @@ namespace era_engine::physics
         mat4 model = mat4::identity,
         float r = 0.5f,
         mat4 rotation = mat4::identity,
+        float hm = 1.0f,
         float mass = 1.0f)
     {
         const auto& physics = physics_holder::physicsRef;
@@ -112,7 +114,7 @@ namespace era_engine::physics
 
         vec3 parentPos = (bindPosWs(joints[parentIdx].bindTransform, model) + offset);
 
-        PxShape* shape = physics->getPhysics()->createShape(PxCapsuleGeometry(r, l / 2.0f), *material);
+        PxShape* shape = physics->getPhysics()->createShape(PxCapsuleGeometry(r, hm * l / 2.0f), *material);
 
         PxTransform local(createPxQuat(mat4ToTRS(rotation).rotation));
         shape->setLocalPose(local);
@@ -168,7 +170,7 @@ namespace era_engine::physics
         return body;
     }
 
-    static void createD6Joint(
+    static PxD6Joint* createD6Joint(
         PxRigidDynamic* parent,
         PxRigidDynamic* child,
         ref<animation::animation_skeleton> skeleton,
@@ -189,7 +191,7 @@ namespace era_engine::physics
 
         joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 
-        configD6Joint(3.14f / 4.f, 3.14f / 4.f, -3.14f / 8.f, 3.14f / 8.f, joint);
+        return joint;
     }
 
     static void createRevoluteJoint(
@@ -230,6 +232,16 @@ namespace era_engine::physics
 	px_ragdoll_component::~px_ragdoll_component()
 	{
 	}
+
+    static constexpr float HEAD_MASS_PERCENTAGE = 0.0826f;
+    static constexpr float BODY_UPPER_MASS_PERCENTAGE = 0.204f;
+    static constexpr float BODY_LOWER_MASS_PERCENTAGE = 0.204f;
+    static constexpr float ARM_MASS_PERCENTAGE = 0.07f;
+    static constexpr float FOREARM_MASS_PERCENTAGE = 0.0467f;
+    static constexpr float HAND_MASS_PERCENTAGE = 0.0065f;
+    static constexpr float UP_LEG_MASS_PERCENTAGE = 0.085f;
+    static constexpr float LEG_MASS_PERCENTAGE = 0.0475f;
+    static constexpr float FOOT_MASS_PERCENTAGE = 0.014f;
 
     void px_ragdoll_component::initRagdoll(ref<animation::animation_skeleton> skeletonRef)
     {
@@ -272,6 +284,8 @@ namespace era_engine::physics
         uint32_t j_hand_r_idx = skeleton->nameToJointID["hand_r"];
         uint32_t j_middle_01_r_idx = skeleton->nameToJointID["middle_01_r"];
 
+        float mass = 100.0f;
+
         transforms.resize(joints.size());
 
         ragdoll->initialBodyPos.resize(joints.size());
@@ -291,7 +305,7 @@ namespace era_engine::physics
 
         PxRigidDynamic* pelvis = createCapsuleBone(
             j_pelvis_idx,
-            j_neck_01_idx,
+            j_spine_03_idx,
             *ragdoll,
             material,
             skeleton,
@@ -299,7 +313,23 @@ namespace era_engine::physics
             modelOnlyScale,
             model,
             15.0f * scale,
-            rot);
+            rot,
+            0.8f);
+        finishBody(pelvis, mass * BODY_LOWER_MASS_PERCENTAGE, 1.0f);
+
+        PxRigidDynamic* upperSpine = createCapsuleBone(
+            j_spine_02_idx,
+            j_neck_01_idx,
+            *ragdoll,
+            material,
+            skeleton,
+            modelWithoutScale,
+            modelOnlyScale,
+            model,
+            13.0f * scale,
+            rot,
+            0.4f);
+        finishBody(upperSpine, mass * BODY_UPPER_MASS_PERCENTAGE, 1.0f);
 
         PxRigidDynamic* head = createCapsuleBone(
             j_head_idx,
@@ -313,6 +343,7 @@ namespace era_engine::physics
             model,
             6.0f * scale,
             rot);
+        finishBody(head, mass * HEAD_MASS_PERCENTAGE, 1.0f);
 
         PxRigidDynamic* l_leg = createCapsuleBone(
             j_thigh_l_idx,
@@ -325,6 +356,7 @@ namespace era_engine::physics
             model,
             8.0f * scale,
             rot);
+        finishBody(l_leg, mass * LEG_MASS_PERCENTAGE, 1.0f);
 
         PxRigidDynamic* r_leg = createCapsuleBone(
             j_thigh_r_idx,
@@ -337,30 +369,33 @@ namespace era_engine::physics
             model,
             8.0f * scale,
             rot);
+        finishBody(r_leg, mass * LEG_MASS_PERCENTAGE, 1.0f);
 
-        //PxRigidDynamic* l_calf = createCapsuleBone(
-        //    j_calf_l_idx,
-        //    j_foot_l_idx,
-        //    *ragdoll,
-        //    material,
-        //    skeleton,
-        //    modelWithoutScale,
-        //    modelOnlyScale,
-        //    model,
-        //    7.0f * scale,
-        //    rot);
+        PxRigidDynamic* l_calf = createCapsuleBone(
+            j_calf_l_idx,
+            j_foot_l_idx,
+            *ragdoll,
+            material,
+            skeleton,
+            modelWithoutScale,
+            modelOnlyScale,
+            model,
+            7.0f * scale,
+            rot);
+        finishBody(l_calf, mass * LEG_MASS_PERCENTAGE, 1.0f);
 
-        //PxRigidDynamic* r_calf = createCapsuleBone(
-        //    j_calf_r_idx,
-        //    j_foot_r_idx,
-        //    *ragdoll,
-        //    material,
-        //    skeleton,
-        //    modelWithoutScale,
-        //    modelOnlyScale,
-        //    model,
-        //    7.0f * scale,
-        //    rot);
+        PxRigidDynamic* r_calf = createCapsuleBone(
+            j_calf_r_idx,
+            j_foot_r_idx,
+            *ragdoll,
+            material,
+            skeleton,
+            modelWithoutScale,
+            modelOnlyScale,
+            model,
+            7.0f * scale,
+            rot);
+        finishBody(r_calf, mass * LEG_MASS_PERCENTAGE, 1.0f);
 
         PxRigidDynamic* l_arm = createCapsuleBone(
             j_upperarm_l_idx,
@@ -372,6 +407,8 @@ namespace era_engine::physics
             modelOnlyScale,
             model,
             8.0f * scale);
+        finishBody(l_arm, mass * ARM_MASS_PERCENTAGE, 1.0f);
+
 
         PxRigidDynamic* r_arm = createCapsuleBone(
             j_upperarm_r_idx,
@@ -383,28 +420,31 @@ namespace era_engine::physics
             modelOnlyScale,
             model,
             8.0f * scale);
+        finishBody(r_arm, mass* ARM_MASS_PERCENTAGE, 1.0f);
 
-        //PxRigidDynamic* l_forearm = createCapsuleBone(
-        //    j_lowerarm_l_idx,
-        //    j_hand_l_idx,
-        //    *ragdoll,
-        //    material,
-        //    skeleton,
-        //    modelWithoutScale,
-        //    modelOnlyScale,
-        //    model,
-        //    7.0f * scale);
+        PxRigidDynamic* l_forearm = createCapsuleBone(
+            j_lowerarm_l_idx,
+            j_hand_l_idx,
+            *ragdoll,
+            material,
+            skeleton,
+            modelWithoutScale,
+            modelOnlyScale,
+            model,
+            7.0f * scale);
+        finishBody(l_forearm, mass* ARM_MASS_PERCENTAGE, 1.0f);
 
-        //PxRigidDynamic* r_forearm = createCapsuleBone(
-        //    j_lowerarm_r_idx,
-        //    j_hand_r_idx,
-        //    *ragdoll,
-        //    material,
-        //    skeleton,
-        //    modelWithoutScale,
-        //    modelOnlyScale,
-        //    model,
-        //    7.0f * scale);
+        PxRigidDynamic* r_forearm = createCapsuleBone(
+            j_lowerarm_r_idx,
+            j_hand_r_idx,
+            *ragdoll,
+            material,
+            skeleton,
+            modelWithoutScale,
+            modelOnlyScale,
+            model,
+            7.0f * scale);
+        finishBody(r_forearm, mass* ARM_MASS_PERCENTAGE, 1.0f);
 
         /*PxRigidDynamic* l_hand = createSphereBone(
             j_middle_01_l_idx,
@@ -479,8 +519,6 @@ namespace era_engine::physics
             ragdoll->childToParentJointDeltaPoses[i] = bodyGlobalTransform.position / scale - jointTrs.position;
 
             ragdoll->childToParentJointDeltaRots[i] = normalize(conjugate(jointTrs.rotation) * bodyGlobalTransform.rotation);
-
-            finishBody(body, 1.0f, 1.0f);
         }
 
         //// ---------------------------------------------------------------------------------------------------------------
@@ -490,25 +528,26 @@ namespace era_engine::physics
         // Chest and Head
         scene->addActor(*pelvis);
         scene->addActor(*head);
+        scene->addActor(*upperSpine);
 
         // Left Leg
         scene->addActor(*l_leg);
-        //scene->addActor(*l_calf);
+        scene->addActor(*l_calf);
         //scene->addActor(*l_foot);
 
         // Right Leg
         scene->addActor(*r_leg);
-        //scene->addActor(*r_calf);
+        scene->addActor(*r_calf);
         //scene->addActor(*r_foot);
 
         // Left Arm
         scene->addActor(*l_arm);
-        //scene->addActor(*l_forearm);
+        scene->addActor(*l_forearm);
         //scene->addActor(*l_hand);
 
         // Right Arm
         scene->addActor(*r_arm);
-        //scene->addActor(*r_forearm);
+        scene->addActor(*r_forearm);
         //scene->addActor(*r_hand);
 
         //// ---------------------------------------------------------------------------------------------------------------
@@ -516,15 +555,25 @@ namespace era_engine::physics
         //// ---------------------------------------------------------------------------------------------------------------
 
         // Chest and Head
-        createD6Joint(pelvis, head, skeleton, j_neck_01_idx, model);
+        auto* jointHeadpelvis = createD6Joint(upperSpine, head, skeleton, j_neck_01_idx, model);
+        configD6Joint(3.14f / 8.0f, 3.14f / 8.0f, -3.14f / 8.0f, 3.14f / 8.0f, jointHeadpelvis);
+
+        auto* jointUpelvis = createD6Joint(upperSpine, pelvis, skeleton, j_spine_03_idx, model);
+        configD6Joint(3.14f / 12.0f, 3.14f / 12.0f, -3.14f / 12.0f, 3.14f / 12.0f, jointUpelvis);
 
         // Chest to Thighs
-        createD6Joint(pelvis, l_leg, skeleton, j_thigh_l_idx, model);
-        createD6Joint(pelvis, r_leg, skeleton, j_thigh_r_idx, model);
+        auto* jointLLegpelvis = createD6Joint(pelvis, l_leg, skeleton, j_thigh_l_idx, model);
+        configD6Joint(3.14f / 6.0f, 3.14f / 6.0f, -3.14f / 6.0f, 3.14f / 6.0f, jointLLegpelvis);
+
+        auto* jointRLegpelvis = createD6Joint(pelvis, r_leg, skeleton, j_thigh_r_idx, model);
+        configD6Joint(3.14f / 6.0f, 3.14f / 6.0f, -3.14f / 6.0f, 3.14f / 6.0f, jointRLegpelvis);
 
         // Thighs to Calf
-        //createD6Joint(l_leg, l_calf, skeleton, j_calf_l_idx, model);
-        //createD6Joint(r_leg, r_calf, skeleton, j_calf_r_idx, model);
+        auto* jointLLegCalf = createD6Joint(l_leg, l_calf, skeleton, j_calf_l_idx, model);
+        configD6Joint(3.14f / 6.0f, 3.14f / 6.0f, -3.14f / 6.0f, 3.14f / 6.0f, jointLLegCalf);
+
+        auto* jointRLegCalf = createD6Joint(r_leg, r_calf, skeleton, j_calf_r_idx, model);
+        configD6Joint(3.14f / 6.0f, 3.14f / 6.0f, -3.14f / 6.0f, 3.14f / 6.0f, jointRLegCalf);
         ////createRevoluteJoint(l_leg, l_calf, skeleton, j_calf_l_idx, mat4::identity, model);
         ////createRevoluteJoint(r_leg, r_calf, skeleton, j_calf_r_idx, mat4::identity, model);
 
@@ -533,19 +582,24 @@ namespace era_engine::physics
         ////createD6Joint(r_calf, r_foot, skeleton, j_foot_r_idx, model);
 
         // Chest to Upperarm
-        createD6Joint(pelvis, l_arm, skeleton, j_upperarm_l_idx, model);
-        createD6Joint(pelvis, r_arm, skeleton, j_upperarm_r_idx, model);
+        auto* jointLArmPelvis = createD6Joint(upperSpine, l_arm, skeleton, j_upperarm_l_idx, model);
+        configD6Joint(3.14f / 4.0f, 3.14f / 4.0f, -3.14f / 6.0f, 3.14f / 6.0f, jointLArmPelvis);
+        auto* jointRArmPelvis = createD6Joint(upperSpine, r_arm, skeleton, j_upperarm_r_idx, model);
+        configD6Joint(3.14f / 4.0f, 3.14f / 4.0f, -3.14f / 6.0f, 3.14f / 6.0f, jointRArmPelvis);
 
         ////mat4 arm_rot = mat4::identity;
         ////arm_rot = trsToMat4(trs{vec3(0.0f),  quat(vec3(0.0f, 0.0f, 1.0f), -PxPi / 2.0f) });
 
         // Upperarm to Lowerman
         ////createRevoluteJoint(l_arm, l_forearm, skeleton, j_lowerarm_l_idx, arm_rot, model);
-        //createD6Joint(l_arm, l_forearm, skeleton, j_lowerarm_l_idx, model);
+        auto* jointLArmForearm = createD6Joint(l_arm, l_forearm, skeleton, j_lowerarm_l_idx, model);
+        configD6Joint(3.14f / 4.0f, 3.14f / 4.0f, -3.14f / 6.0f, 3.14f / 6.0f, jointLArmForearm);
 
         ////arm_rot = mat4::identity;
         ////arm_rot = trsToMat4(trs{ vec3(0.0f), quat(vec3(0.0f, 0.0f, 1.0f), PxPi / 2.0f) });
-        //createD6Joint(r_arm, r_forearm, skeleton, j_lowerarm_r_idx, model);
+        auto* jointRArmForearm = createD6Joint(r_arm, r_forearm, skeleton, j_lowerarm_r_idx, model);
+        configD6Joint(3.14f / 4.0f, 3.14f / 4.0f, -3.14f / 6.0f, 3.14f / 6.0f, jointRArmForearm);
+
 
         ////createRevoluteJoint(r_arm, r_forearm, skeleton, j_lowerarm_r_idx, arm_rot, model);
 
@@ -605,8 +659,12 @@ namespace era_engine::physics
                 quat deltaRotation = bodyGlobalTransform.rotation * conjugate(ragdoll->originalBodyRotations[i]);
                 mat4 translationRot;
                 
-                if(chosenIdx == i)
-                    translationRot = trsToMat4(trs{ bodyGlobalTransform.position / scale - ragdoll->childToParentJointDeltaPoses[i], jointTrs.rotation * conjugate(deltaRotation) });
+                if (chosenIdx == i)
+                {
+                    vec3 pos = jointTrs.position + (bodyGlobalTransform.position / scale - ragdoll->initialBodyPos[i] / scale);
+
+                    translationRot = trsToMat4(trs{ pos, deltaRotation * jointTrs.rotation });
+                }
                 else
                 {
                     auto& parent = joints[chosenIdx];

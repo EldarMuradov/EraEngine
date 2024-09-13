@@ -268,6 +268,6 @@ namespace era_engine::animation
 		trs* currentGlobalTransforms = 0;
 
 		float timeScale = 1.f;
-		bool drawSceleton = true;
+		bool drawSceleton = false;
 	};
 }
