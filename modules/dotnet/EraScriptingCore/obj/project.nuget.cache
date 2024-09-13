@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "6USVAoHLnzuGOzQNDDpWGbq/ghRgn16nXySsNfKktgVmbH4kxNnCDGQpbJnppk7IJ7yk49vJcDziFIdSGpdVMQ==",
+  "dgSpecHash": "mq9C6Mgk5XePhr3jTGEG9K71kugaDuyZ5RisOa9ImjfyUv6uF31sdSMJhXrNwYPZU+F1Tvx3HlVeDPzVe9ND+Q==",
   "success": true,
-  "projectFilePath": "E:\\EraEngine\\modules\\dotnet\\EraScriptingCore\\EraScriptingCore.csproj",
+  "projectFilePath": "E:\\Era Engine\\modules\\dotnet\\EraScriptingCore\\EraScriptingCore.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Эльдар\\.nuget\\packages\\microsoft.extensions.configuration\\8.0.0\\microsoft.extensions.configuration.8.0.0.nupkg.sha512",
     "C:\\Users\\Эльдар\\.nuget\\packages\\microsoft.extensions.configuration.abstractions\\8.0.0\\microsoft.extensions.configuration.abstractions.8.0.0.nupkg.sha512",

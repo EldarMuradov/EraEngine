@@ -116,7 +116,7 @@ int main(int argc, char** argv)
 	using namespace era_engine;
 
 #ifndef _DEBUG || DEBUG
-	::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+	::ShowWindow(::GetConsoleWindow(), SW_HIDE);
 #endif
 
 	try

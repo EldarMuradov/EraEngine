@@ -377,11 +377,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\EraEngine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj",
+      "projectUniqueName": "E:\\Era Engine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj",
       "projectName": "EraEngineDomain",
-      "projectPath": "E:\\EraEngine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj",
+      "projectPath": "E:\\Era Engine\\modules\\dotnet\\EraEngineDomain\\EraEngineDomain.csproj",
       "packagesPath": "C:\\Users\\Эльдар\\.nuget\\packages\\",
-      "outputPath": "E:\\EraEngine\\modules\\dotnet\\EraEngineDomain\\obj\\",
+      "outputPath": "E:\\Era Engine\\modules\\dotnet\\EraEngineDomain\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Эльдар\\AppData\\Roaming\\NuGet\\NuGet.Config",

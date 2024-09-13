@@ -100,7 +100,7 @@ namespace era_engine
 
 		system_info systemInfo;
 
-		bool renderPhysicsShapes = true;
+		bool renderPhysicsShapes = false;
 
 		friend struct selection_undo;
 		friend struct application;

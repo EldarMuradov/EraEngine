@@ -12,11 +12,11 @@
 namespace era_engine
 {
     static std::unordered_map<uint64, sound_spec> soundRegistry;
-    static const fs::path registryPath = fs::path(L"resources/sounds.yaml").lexically_normal();
+    static const fs::path soundRegistryPath = fs::path(L"resources/sounds.yaml").lexically_normal();
 
     void loadSoundRegistry()
     {
-        std::ifstream stream(registryPath);
+        std::ifstream stream(soundRegistryPath);
         YAML::Node n = YAML::Load(stream);
 
         for (auto entryNode : n)
@@ -49,10 +49,10 @@ namespace era_engine
             out.push_back(n);
         }
 
-        fs::create_directories(registryPath.parent_path());
+        fs::create_directories(soundRegistryPath.parent_path());
 
         LOG_MESSAGE("Rewriting sound registry");
-        std::ofstream fout(registryPath);
+        std::ofstream fout(soundRegistryPath);
         fout << out;
     }
 

@@ -38,3 +38,13 @@ E:\EraEngine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.d
 E:\EraEngine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\refint\EraEngineDomain.dll
 E:\EraEngine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.pdb
 E:\EraEngine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\ref\EraEngineDomain.dll
+E:\Era Engine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.csproj.AssemblyReference.cache
+E:\Era Engine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.GeneratedMSBuildEditorConfig.editorconfig
+E:\Era Engine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.AssemblyInfoInputs.cache
+E:\Era Engine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.AssemblyInfo.cs
+E:\Era Engine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.csproj.CoreCompileInputs.cache
+E:\Era Engine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.sourcelink.json
+E:\Era Engine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.dll
+E:\Era Engine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\refint\EraEngineDomain.dll
+E:\Era Engine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\EraEngineDomain.pdb
+E:\Era Engine\modules\dotnet\EraEngineDomain\obj\Release\net8.0\ref\EraEngineDomain.dll

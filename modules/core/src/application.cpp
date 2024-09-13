@@ -208,7 +208,7 @@ namespace era_engine
 			for (size_t i = 0; i < mat_size; i++)
 				ptr[i] = mat.m[i];
 			data.core->process_trs(reinterpret_cast<uintptr_t>(ptr), (int)entityHandle);
-			delete[] ptr;
+			//delete[] ptr; //CLR clear's it
 		}
 		data.core->update(data.deltaTime);
 	}
@@ -239,20 +239,20 @@ namespace era_engine
 	}
 
 	static entity_handle sphere{};
-	static entity_handle ragdoll{};
+	//static entity_handle ragdoll{};
 
 	static void initTestScene(escene& scene)
 	{
 #ifndef ERA_RUNTIME
-		//if (auto mesh = loadMeshFromFileAsync(getAssetPath("/resources/assets/Sponza/sponza.obj")))
-		//{
-		//	model_asset ass = load3DModelFromFile(getAssetPath("/resources/assets/Sponza/sponza.obj"));
-		//	const auto& sponza = scene.createEntity("Sponza")
-		//		.addComponent<transform_component>(vec3(0.f, 0.f, 0.f), quat::identity, 0.01f)
-		//		.addComponent<mesh_component>(mesh);
+		if (auto mesh = loadMeshFromFileAsync(getAssetPath("/resources/assets/Sponza/sponza.obj")))
+		{
+			model_asset ass = load3DModelFromFile(getAssetPath("/resources/assets/Sponza/sponza.obj"));
+			const auto& sponza = scene.createEntity("Sponza")
+				.addComponent<transform_component>(vec3(5.0f, -3.75f, 35.0f), quat::identity, 0.01f)
+				.addComponent<mesh_component>(mesh);
 
-		//	addRaytracingComponentAsync(sponza, mesh);
-		//}
+			addRaytracingComponentAsync(sponza, mesh);
+		}
 #endif
 
 #if 0
@@ -329,7 +329,7 @@ namespace era_engine
 			//	addRaytracingComponentAsync(en, mesh);
 			//}
 
-			if (auto mesh = loadAnimatedMeshFromFileAsync(getAssetPath("/resources/assets/resident-evil-tyrant/source/UmodelExport.fbx")))
+			/*if (auto mesh = loadAnimatedMeshFromFileAsync(getAssetPath("/resources/assets/resident-evil-tyrant/source/UmodelExport.fbx")))
 			{
 				auto& en = scene.createEntity("Ragdoll")
 					.addComponent<transform_component>(vec3(0.0f), quat::identity, vec3(0.1f))
@@ -341,7 +341,7 @@ namespace era_engine
 				addRaytracingComponentAsync(en, mesh);
 
 				ragdoll = en.handle;
-			}
+			}*/
 
 
 #if PX_BLAST_ENABLE
@@ -420,7 +420,7 @@ namespace era_engine
 			//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f));
 
 			scene.createEntity("Platform")
-				.addComponent<transform_component>(vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)))
+				.addComponent<transform_component>(vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)), vec3(5.0f, 1.0f, 5.0f))
 				.addComponent<physics::px_plane_collider_component>(vec3(0.f, -5.0, 0.0f))
 				.addComponent<mesh_component>(groundMesh);
 
@@ -766,40 +766,6 @@ namespace era_engine
 			for (auto [entityHandle, cgm, _] : scene.group(component_group<physics::chunk_graph_manager, transform_component>).each())
 			{
 				cgm.update();
-				//for (auto&[handle, joints] : cgm.joints)
-				//{
-				//	if (joints.empty())
-				//		continue;
-				//	//if (selectedEntity != handle)
-				//		//continue;
-				//	for (auto& joint : joints)
-				//	{
-				//		entity_handle h = *(entity_handle*)joint->second->userData;
-				//		eentity entity{ h, &scene.registry };
-				//		if (physics::px_convex_mesh_collider_component* cm = entity.getComponentIfExists<physics::px_convex_mesh_collider_component>())
-				//		{
-				//			physics::px_body_component* body = physics::getBodyComponent(entity);
-
-				//			ASSERT(body != nullptr);
-
-				//			physics::physics_lock_read lock{};
-
-				//			physx::PxShape* shape[1];
-				//			body->getRigidActor()->getShapes(shape, 1);
-				//			auto geom = (physx::PxConvexMeshGeometry*)cm->getGeometry();
-				//			auto mesh = geom->convexMesh;
-
-				//			auto vertices = mesh->getVertices();
-				//			auto nbv = mesh->getNbVertices();
-
-				//			for (size_t i = 0; i < nbv; i++)
-				//			{
-				//				vec3 a = physx::createVec3(vertices[i] + shape[0]->getLocalPose().p) + entity.getComponent<transform_component>().position;
-				//				renderPoint(a, vec4(1, 0, 0, 1), &ldrRenderPass, true);
-				//			}
-				//		}
-				//	}
-				//}
 			}
 		}
 #endif
@@ -926,20 +892,20 @@ namespace era_engine
 		renderer->setSun(sun);
 		renderer->setCamera(camera);
 
-		if (ImGui::Begin("Ragdoll"))
-		{
-			static bool init = false;
+		//if (ImGui::Begin("Ragdoll"))
+		//{
+		//	static bool init = false;
 
-			if (ImGui::Checkbox("Build", &init))
-			{
-				init = false;
+		//	if (ImGui::Checkbox("Build", &init))
+		//	{
+		//		init = false;
 
-				eentity rag{ ragdoll, &scene.registry };
+		//		eentity rag{ ragdoll, &scene.registry };
 
-				rag.getComponent<physics::px_ragdoll_component>().initRagdoll(make_ref<animation::animation_skeleton>(rag.getComponent<mesh_component>().mesh->skeleton));
-			}
-			ImGui::End();
-		}
+		//		rag.getComponent<physics::px_ragdoll_component>().initRagdoll(make_ref<animation::animation_skeleton>(rag.getComponent<mesh_component>().mesh->skeleton));
+		//	}
+		//	ImGui::End();
+		//}
 
 		//if (running)
 		//	physics::physics_holder::physicsRef->endSimulation(dt);

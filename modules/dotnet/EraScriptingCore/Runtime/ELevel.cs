@@ -94,7 +94,7 @@ public static class ELevel
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            Debug.LogError(ex.Message);
         }
     }
 

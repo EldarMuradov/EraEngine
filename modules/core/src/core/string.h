@@ -96,6 +96,28 @@ namespace era_engine
 #endif
 	}
 
+	inline std::string convertPath(const std::string& inputPath)
+	{
+		std::filesystem::path path(inputPath);
+		std::filesystem::path newPath;
+
+		for (const auto& part : path)
+		{
+			if (part == "..")
+			{
+				continue;
+			}
+			newPath /= part;
+		}
+
+		if (!newPath.empty())
+		{
+			newPath = newPath.relative_path();
+		}
+
+		return '/' +  newPath.string();
+	}
+
 	inline constexpr std::string getAssetPath(std::string_view path)
 	{
 #ifdef ERA_RUNTIME

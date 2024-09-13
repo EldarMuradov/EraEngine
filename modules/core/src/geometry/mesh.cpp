@@ -5,6 +5,7 @@
 #include "rendering/pbr.h"
 
 #include "core/hash.h"
+#include "core/string.h"
 
 #include "asset/file_registry.h"
 #include "asset/model_asset.h"
@@ -47,7 +48,19 @@ namespace era_engine
 		{
 			for (auto& sub : mesh.submeshes)
 			{
-				const pbr_material_desc& materialDesc = asset.materials[sub.materialIndex];
+				pbr_material_desc& materialDesc = asset.materials[sub.materialIndex];
+
+				{
+					if (!materialDesc.albedo.empty() && *materialDesc.albedo.c_str() != 'F')
+						materialDesc.albedo = getAssetPath(convertPath(materialDesc.albedo.string()));
+					if (!materialDesc.normal.empty() && *materialDesc.normal.c_str() != 'F')
+						materialDesc.normal = getAssetPath(convertPath(materialDesc.normal.string()));
+					if (!materialDesc.roughness.empty() && *materialDesc.roughness.c_str() != 'F')
+						materialDesc.roughness = getAssetPath(convertPath(materialDesc.roughness.string()));
+					if (!materialDesc.metallic.empty() && *materialDesc.metallic.c_str() != 'F')
+						materialDesc.metallic = getAssetPath(convertPath(materialDesc.metallic.string()));
+				}
+
 				ref<pbr_material> material;
 				if (!async)
 				{
