@@ -378,11 +378,11 @@ namespace era_engine
 			//	scene.deleteEntity(px_sphere_entt1.handle);
 			//}
 
-			//auto& vehicle = scene.createEntity("Vehicle")
-			//	.addComponent<transform_component>(vec3(2.f), quat::identity, vec3(1.f))
-			//	.addComponent<physics::px_4_wheels_vehicle_component>(vec3(2.f));
+			auto& vehicle = scene.createEntity("Vehicle")
+				.addComponent<transform_component>(vec3(2.f), quat::identity, vec3(1.f))
+				.addComponent<physics::px_4_wheels_vehicle_component>(vec3(2.f));
 
-			//vehicle.getComponent<physics::px_4_wheels_vehicle_component>().setupVehicle();
+			vehicle.getComponent<physics::px_4_wheels_vehicle_component>().setupVehicle();
 
 			//auto soft_body = &scene.createEntity("SoftBody")
 			//	.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))

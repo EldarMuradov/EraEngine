@@ -58,7 +58,7 @@ namespace era_engine::physics
 		PxReal commandTime = 0.0f;
 		PxU32 commandProgress = 0;
 
-	private:
+	protected:
 		std::vector<px_default_vehicle_command> commands;
 	};
 
@@ -68,9 +68,6 @@ namespace era_engine::physics
 		px_4_wheels_vehicle_component(uint32 handle, const vec3& position);
 
 		virtual ~px_4_wheels_vehicle_component();
-
-	private:
-		std::vector<px_vehicle_base_component::px_default_vehicle_command> commands;
 	};
 
 	struct px_tank_vehicle_component : px_vehicle_base_component
