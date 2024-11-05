@@ -3,7 +3,7 @@
 #pragma once
 
 #include "core/camera_controller.h"
-#include "core/system.h"
+#include "core/system_info.h"
 #include "core/imgui.h"
 
 #include "editor/editor_icons.h"

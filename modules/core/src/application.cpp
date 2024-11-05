@@ -62,6 +62,10 @@
 #include "scripting/script.h"
 #include "scripting/native_scripting_linker.h"
 
+#include "ecs/world.h"
+#include "ecs/entity.h"
+#include "ecs/base_components/base_components.h"
+
 namespace era_engine
 {
 	static raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh)
@@ -83,6 +87,13 @@ namespace era_engine
 		}
 		else
 			return {};
+	}
+
+	static void ecs_test()
+	{
+		World* game_world = new World("GameWorld");
+		Entity entity = game_world->create_entity("Entity");
+		(void)entity;
 	}
 
 	void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
@@ -239,7 +250,6 @@ namespace era_engine
 	}
 
 	static entity_handle sphere{};
-	//static entity_handle ragdoll{};
 
 	static void initTestScene(escene& scene)
 	{
@@ -254,7 +264,7 @@ namespace era_engine
 			addRaytracingComponentAsync(sponza, mesh);
 		}
 #endif
-
+		ecs_test();
 #if 0
 		if (auto treeMesh = loadTreeMeshFromFileAsync(getAssetPath("/resources/assets/tree/source/tree.fbx")))
 		{
@@ -340,7 +350,19 @@ namespace era_engine
 				initializeAnimationComponentAsync(en, mesh);
 				addRaytracingComponentAsync(en, mesh);
 
-				ragdoll = en.handle;
+				struct ragdoll_load_data
+				{ 
+					entity_handle handle;
+					escene& scene;
+				} ragdoll_data = {en.handle, scene};
+
+				mainThreadJobQueue.createJob<ragdoll_load_data>([](ragdoll_load_data& data, job_handle handle) 
+					{
+						eentity rag{ data.handle, &data.scene.registry };
+
+						rag.getComponent<physics::px_ragdoll_component>().initRagdoll(make_ref<animation::animation_skeleton>(rag.getComponent<mesh_component>().mesh->skeleton));
+					},
+					ragdoll_data).submitAfter(mesh->loadJob);
 			}*/
 
 
@@ -378,11 +400,11 @@ namespace era_engine
 			//	scene.deleteEntity(px_sphere_entt1.handle);
 			//}
 
-			auto& vehicle = scene.createEntity("Vehicle")
-				.addComponent<transform_component>(vec3(2.f), quat::identity, vec3(1.f))
-				.addComponent<physics::px_4_wheels_vehicle_component>(vec3(2.f));
+			//auto& vehicle = scene.createEntity("Vehicle")
+			//	.addComponent<transform_component>(vec3(2.f, 10.0f, 5.0f), quat::identity, vec3(1.f))
+			//	.addComponent<physics::px_4_wheels_vehicle_component>(vec3(2.f));
 
-			vehicle.getComponent<physics::px_4_wheels_vehicle_component>().setupVehicle();
+			//vehicle.getComponent<physics::px_4_wheels_vehicle_component>().setupVehicle();
 
 			//auto soft_body = &scene.createEntity("SoftBody")
 			//	.addComponent<transform_component>(vec3(0.f), quat::identity, vec3(1.f))
@@ -769,6 +791,7 @@ namespace era_engine
 			}
 		}
 #endif
+
 		updateTestScene(dt, scene, input);
 
 		//if (renderer->mode != renderer_mode_pathtraced)
@@ -892,23 +915,6 @@ namespace era_engine
 		renderer->setSun(sun);
 		renderer->setCamera(camera);
 
-		//if (ImGui::Begin("Ragdoll"))
-		//{
-		//	static bool init = false;
-
-		//	if (ImGui::Checkbox("Build", &init))
-		//	{
-		//		init = false;
-
-		//		eentity rag{ ragdoll, &scene.registry };
-
-		//		rag.getComponent<physics::px_ragdoll_component>().initRagdoll(make_ref<animation::animation_skeleton>(rag.getComponent<mesh_component>().mesh->skeleton));
-		//	}
-		//	ImGui::End();
-		//}
-
-		//if (running)
-		//	physics::physics_holder::physicsRef->endSimulation(dt);
 #ifndef ERA_RUNTIME
 		editor.visualizePhysics(&ldrRenderPass);
 #endif

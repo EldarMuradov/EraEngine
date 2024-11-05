@@ -239,7 +239,7 @@ namespace era_engine
 		this->editorPanels = editorPanels;
 		cameraController.initialize(&scene->camera);
 
-		systemInfo = getSystemInfo();
+		systemInfo = era_engine::getSystemInfo();
 	}
 
 	bool eeditor::update(const user_input& input, ldr_render_pass* ldrRenderPass, float dt)

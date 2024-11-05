@@ -260,7 +260,7 @@ namespace era_engine::animation
 		uint32 secondKeyframeIndex = firstKeyframeIndex + 1;
 
 		float t = inverseLerp(clip.positionTimestamps[firstKeyframeIndex], clip.positionTimestamps[secondKeyframeIndex], time);
-		;
+
 		vec3 a = clip.positionKeyframes[firstKeyframeIndex];
 		vec3 b = clip.positionKeyframes[secondKeyframeIndex];
 
@@ -752,11 +752,22 @@ namespace era_engine::animation
 			prevFrameVertexBuffer = currentVertexBuffer;
 			currentVertexBuffer = vb;
 
-			std::vector<trs> transforms = ragdoll->apply();
+			trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
+			trs deltaRootMotion;
 
-		    skeleton.getSkinningMatricesFromGlobalTransforms(&transforms[0], skinningMatrices);
+			ragdoll->updateMotion(localTransforms, &deltaRootMotion);
 
-			currentGlobalTransforms = &transforms[0];
+			trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
+
+			skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
+
+			if (transform)
+			{
+				*transform = *transform * deltaRootMotion;
+				transform->rotation = normalize(transform->rotation);
+			}
+
+			currentGlobalTransforms = globalTransforms;
 		}
 		else if (ragdoll && ragdoll->ragdoll && !ragdoll->simulated)
 		{

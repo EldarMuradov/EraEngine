@@ -520,6 +520,9 @@ namespace era_engine::physics
 
             ragdoll->childToParentJointDeltaRots[i] = normalize(conjugate(jointTrs.rotation) * bodyGlobalTransform.rotation);
         }
+        PxTransform pxPose = pelvis->getGlobalPose();
+        trs bodyGlobalTransform = trs{ createVec3(pxPose.p), createQuat(pxPose.q) };
+        ragdoll->rootTrs = bodyGlobalTransform;
 
         //// ---------------------------------------------------------------------------------------------------------------
         //// Add rigid bodies to scene
@@ -685,6 +688,53 @@ namespace era_engine::physics
 
 		return transforms;
 	}
+
+    void px_ragdoll_component::updateMotion(trs* outLocalTransforms, trs* outRootMotion)
+    {
+        using namespace animation;
+
+        for (size_t i = 0; i < skeleton->joints.size(); ++i)
+        {
+            outLocalTransforms[i] = trs::identity;
+        }
+
+        for (size_t i = 0; i < ragdoll->rigidBodies.size(); ++i)
+        {
+            if (!ragdoll->rigidBodies[i])
+                continue;
+            const skeleton_joint& joint = skeleton->joints[i];
+            trs motion;
+            PxRigidDynamic* rootBody = ragdoll->rigidBodies[i];
+
+            PxTransform pxPose = rootBody->getGlobalPose();
+            trs bodyGlobalTransform = trs{ createVec3(pxPose.p), createQuat(pxPose.q) };
+            motion.position = bodyGlobalTransform.position / scale - ragdoll->initialBodyPos[i] / scale;
+            motion.rotation = bodyGlobalTransform.rotation * conjugate(ragdoll->originalBodyRotations[i]);
+            motion.scale = vec3(1.0f);
+
+            outLocalTransforms[i] = motion;
+        }
+
+        trs rootMotion = trs::identity;
+
+        if (outRootMotion)
+        {
+            uint32_t j_pelvis_idx = skeleton->nameToJointID["pelvis"];
+            PxRigidDynamic* rootBody = ragdoll->rigidBodies[j_pelvis_idx];
+
+            PxTransform pxPose = rootBody->getGlobalPose();
+            trs bodyGlobalTransform = trs{ createVec3(pxPose.p), createQuat(pxPose.q) };
+            rootMotion.position = bodyGlobalTransform.position / scale - ragdoll->rootTrs.position / scale;
+            rootMotion.rotation = bodyGlobalTransform.rotation * conjugate(ragdoll->rootTrs.rotation);
+            rootMotion.scale = vec3(1.0f);
+            *outRootMotion = rootMotion;
+            ragdoll->rootTrs = bodyGlobalTransform;
+        }
+        else
+        {
+            outLocalTransforms[0] = rootMotion * outLocalTransforms[0];
+        }
+    }
 
     void px_ragdoll_component::update(float dt)
     {
