@@ -25,6 +25,7 @@ ${ERA_ENGINE_PATH}/resources/lib/Release/yaml-cpp.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/DirectXTex.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/nvsdk_ngx_d.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/nethost.lib
+${ERA_ENGINE_PATH}/resources/lib/Release/rttr_core.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/libnethost.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/cuda.lib)
 
@@ -143,6 +144,7 @@ macro(era_common_register program_name)
     target_include_directories(${program_name} PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty_ext/yaml-cpp/include)
     target_include_directories(${program_name} PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty_ext/directxtex)
     target_include_directories(${program_name} PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty_ext/entt/src)
+    target_include_directories(${program_name} PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty_ext/rttr/src)
     target_include_directories(${program_name} PRIVATE ${ERA_ENGINE_PATH}/resources/common)
     target_include_directories(${program_name} PRIVATE ${ERA_ENGINE_PATH}/modules/shaders)
 

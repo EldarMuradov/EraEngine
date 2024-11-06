@@ -6,7 +6,7 @@
 	  <Nullable>enable</Nullable>
 	  <PublishAot>true</PublishAot>
 	  <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-	  <BaseOutputPath>E:\EraEngine\resources\bin\Dotnet\Release</BaseOutputPath>
+	  <BaseOutputPath>E:\Era Engine\resources\bin\Dotnet\Release</BaseOutputPath>
 	  <PlatformTarget>x64</PlatformTarget>
 	  <Configurations>Debug;Release;Release_NoOptim</Configurations>
   </PropertyGroup>

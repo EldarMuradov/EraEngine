@@ -18,6 +18,8 @@
   Path: E:/Era Engine/resources/assets\box.fbx
 - Handle: 8417185072282957454
   Path: E:/Era Engine/resources/assets\cameraman\source\CameraManWhite.255.cache.bin
+- Handle: 1840514803043903503
+  Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\textures\T_Tyrant_D.70.cache.dds
 - Handle: 4550126072618062236
   Path: E:/Era Engine/resources/assets\cameraman\textures\CameraMan_packed0_diffuse.png
 - Handle: 13320950911770913792
@@ -36,6 +38,8 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_green_diff.png
 - Handle: 6977559331635951125
   Path: E:/Era Engine/resources/assets\dark-knight\source\Knight_All.255.cache.bin
+- Handle: 14864811132324169086
+  Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_curtain_diff.71.cache.dds
 - Handle: 16739922292000786861
   Path: E:/Era Engine/resources/assets\dark-knight\textures\T_cloth_M.png
 - Handle: 127448310243159772
@@ -138,6 +142,8 @@
   Path: E:/Era Engine/resources/assets\obj\bunny.mtl
 - Handle: 5551712846599052162
   Path: E:/Era Engine/resources/assets\nemesis-re3\source\nemesis_-_resident_evil_3_remake_re3\scene.gltf
+- Handle: 2660029041119058646
+  Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\textures\T_Tyrant_N.71.cache.dds
 - Handle: 16880553462587745865
   Path: E:/Era Engine/resources/assets\nemesis-re3\source\nemesis_-_resident_evil_3_remake_re3\textures\em9001_head_eye_baseColor.png
 - Handle: 13351747343060492672
@@ -176,6 +182,8 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_roof_diff_NRM.png
 - Handle: 10398385926904521750
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_curtain_green_diff.png
+- Handle: 8658295698794267807
+  Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\textures\T_Tyrant_D.71.cache.dds
 - Handle: 4873418456315143670
   Path: E:/Era Engine/resources/assets\obj\bunny.obj
 - Handle: 6929945219473681222
@@ -568,6 +576,8 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_blue_diff.70.cache.dds
 - Handle: 4518325983401867767
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_blue_diff.png
+- Handle: 1841459406567307786
+  Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_ddn.71.cache.dds
 - Handle: 13817239836990721988
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_ddn.jpg
 - Handle: 10799553892970253263

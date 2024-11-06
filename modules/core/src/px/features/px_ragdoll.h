@@ -28,6 +28,8 @@ namespace era_engine::physics
 
 		std::vector<vec3> initialBodyPos;
 
+		trs rootTrs = trs::identity;
+
 		bool kinematic = false;
 
 		PxRigidDynamic* findRecentBody(uint32_t idx, ref<animation::animation_skeleton> skeleton, uint32_t& chosenIdx);
@@ -46,6 +48,8 @@ namespace era_engine::physics
 		void updateKinematic();
 
 		std::vector<trs> apply(const mat4& modelRotation = mat4::identity);
+
+		void updateMotion(trs* outLocalTransforms, trs* outRootMotion = nullptr);
 
 		void update(float dt);
 

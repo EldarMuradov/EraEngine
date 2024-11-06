@@ -1,6 +1,6 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
-#include "core/system.h"
+#include "core/system_info.h"
 #include "core/string.h"
 
 #include "dx/dx_context.h"

@@ -108,6 +108,9 @@ namespace era_engine::physics
 			commandProgress++;
 			commandTime = 0.0f;
 		}
+
+		if (commandProgress >= commands.size())
+			commandProgress = 0;
 	}
 
 	void px_vehicle_base_component::initMaterialFrictionTable()

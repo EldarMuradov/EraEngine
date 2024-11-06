@@ -471,7 +471,7 @@ namespace era_engine
 			return false;
 
 		scene.editorScene = escene();
-		scene.savePath = std::move(path);
+		scene.savePath = path;
 
 		std::string sceneName = n["Scene"].as<std::string>();
 

@@ -121,6 +121,11 @@ namespace era_engine::physics
 		particleSystem->setFluidRestOffset(0.0f);
 		particleSystem->enableCCD(true);
 
+		PxFilterData filterData;
+		filterData.word0 = -1; // word0 = own ID
+		filterData.word1 = -1;  // word1 = ID mask to filter pairs that trigger a contact callback
+		particleSystem->setSimulationFilterData(filterData);
+
 		physics_holder::physicsRef->lockWrite();
 		physics_holder::physicsRef->getScene()->addActor(*particleSystem);
 		physics_holder::physicsRef->unlockWrite();
