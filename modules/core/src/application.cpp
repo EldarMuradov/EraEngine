@@ -91,9 +91,22 @@ namespace era_engine
 
 	static void ecs_test()
 	{
-		World* game_world = new World("GameWorld");
-		Entity entity = game_world->create_entity("Entity");
-		(void)entity;
+		ref<World> game_world = make_ref<World>("GameWorld");
+		{
+			Entity entity1 = game_world->create_entity("Entity1");
+			Entity entity2 = game_world->create_entity("Entity2");
+			
+			game_world->destroy_entity(entity1);
+			game_world->destroy_entity(entity2);
+		}
+		(void)game_world;
+		{
+			Entity entity = game_world->create_entity("Entity");
+			(void)entity;
+			game_world->destroy_entity(entity);
+		}
+		(void)game_world;
+		game_world->destroy();
 	}
 
 	void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)

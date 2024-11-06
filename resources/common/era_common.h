@@ -28,6 +28,7 @@
 #include <set>
 #include <unordered_set>
 #include <queue>
+#include <type_traits>
 #include <atomic>
 
 #include <filesystem>
@@ -77,7 +78,7 @@ template<typename Func_, typename... Args_>
 using IsCallableFunc = std::enable_if_t<std::is_invocable_v<Func_, Args_...>, bool>;
 
 template <typename T, typename... Args>
-NODISCARD inline ref<T> make_ref(Args&&... args)
+NODISCARD inline constexpr ref<T> make_ref(Args&&... args)
 {
 	return std::make_shared<T>(std::forward<Args>(args)...);
 }

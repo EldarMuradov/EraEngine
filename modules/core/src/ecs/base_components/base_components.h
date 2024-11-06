@@ -1,17 +1,15 @@
 #pragma once
 
-#include "core/reflect.h"
 #include "core/math.h"
 
 #include "ecs/component.h"
 
 namespace era_engine
 {
-	class NameComponent : Component
+	class NameComponent final : Component
 	{
 	public:
-		NameComponent(Entity::Handle _handle, entt::registry* _registry);
-		NameComponent(Entity::Handle _handle, entt::registry* _registry, const char* n);
+		NameComponent(ref<Entity::EcsData> _data, const char* n = "Component");
 
 		virtual ~NameComponent();
 
@@ -19,21 +17,32 @@ namespace era_engine
 		char name[32]{};
 	};
 	REFLECT_STRUCT(NameComponent,
-		(name, "Name")
+		(name, "name")
 	);
 
-	class TransformComponent : Component
+	class TransformComponent final : Component
 	{
 	public:
-		TransformComponent(DEFAULT_CTOR_ARGS);
-		TransformComponent(DEFAULT_CTOR_ARGS, const trs& t);
-		TransformComponent(DEFAULT_CTOR_ARGS, vec3 position, quat rotation, vec3 scale = vec3(1.f, 1.f, 1.f));
+		TransformComponent(ref<Entity::EcsData> _data, const trs& t = trs::identity);
+		TransformComponent(ref<Entity::EcsData> _data, vec3 position, quat rotation, vec3 scale = vec3(1.f, 1.f, 1.f));
 
 		virtual ~TransformComponent();
 
 		trs transform = trs::identity;
 	};
 	REFLECT_STRUCT(TransformComponent,
-		(transform, "Transform")
+		(transform, "transform")
+	);
+
+	class ChildComponent final : Component
+	{
+	public:
+		ChildComponent(ref<Entity::EcsData> _data, weakref<Entity::EcsData> _parent);
+		virtual ~ChildComponent();
+
+		weakref<Entity::EcsData> parent;
+	};
+	REFLECT_STRUCT(ChildComponent,
+		(parent, "parent")
 	);
 }

@@ -5,37 +5,43 @@
 namespace era_engine
 {
 
-	Entity Entity::Null = Entity(Entity::NullHandle, (World*)nullptr);
+	Entity Entity::Null = Entity(make_ref<Entity::EcsData>(Entity::NullHandle, (entt::registry*)nullptr));
 
-	Entity::Entity(const Entity& _entity)
-		: handle(_entity.get_handle()),
-		  registry(_entity.registry)
+	Entity::Entity(const Entity& _entity) noexcept
+		: internal_data(_entity.internal_data)
 	{
 	}
 
-	Entity::Entity(Entity::Handle _handle, World* _world)
-		: Entity(_handle, &_world->registry)
+	Entity::Entity(Entity&& _entity) noexcept
+	{
+		internal_data = std::move(_entity.internal_data);
+	}
+
+
+	Entity::Entity(ref<EcsData> _data)
+		: internal_data(_data)
 	{
 	}
 
-	Entity::Entity(Entity::Handle _handle, entt::registry* _registry)
-		: handle(_handle),
-		  registry(_registry)
+	Entity::~Entity() noexcept
 	{
 	}
 
-	Entity::~Entity()
+	Entity& Entity::operator=(const Entity& _entity)
 	{
+		internal_data = _entity.internal_data;
+		return *this;
 	}
 
-	bool Entity::is_valid() const
+	Entity& Entity::operator=(Entity&& _entity)
 	{
-		return handle != Entity::NullHandle && registry != nullptr;
+		internal_data = std::move(_entity.internal_data);
+		return *this;
 	}
 
 	bool Entity::operator==(const Entity& _other) const
 	{
-		return handle == _other.handle && registry == _other.registry;
+		return internal_data == _other.internal_data;
 	}
 
 	bool Entity::operator!=(const Entity& _other) const
@@ -45,17 +51,24 @@ namespace era_engine
 
 	bool Entity::operator==(Entity::Handle _handle) const
 	{
-		return handle == _handle;
+		return internal_data->entity_handle == _handle;
+	}
+
+	bool Entity::is_valid() const noexcept
+	{
+		return internal_data != nullptr && 
+			   internal_data->entity_handle != Entity::NullHandle && 
+			   internal_data->registry != nullptr;
 	}
 
 	World* Entity::get_world() const
 	{
-		return worlds[registry];
+		return worlds[internal_data->registry];
 	}
 
 	Entity::Handle Entity::get_handle() const
 	{
-		return handle;
+		return internal_data->entity_handle;
 	}
 
 }

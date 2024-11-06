@@ -3,11 +3,7 @@
 namespace era_engine
 {
 
-	NameComponent::NameComponent(Entity::Handle _handle, entt::registry* _registry) : DEFAULT_CTOR_IMPL
-	{
-	}
-
-	NameComponent::NameComponent(Entity::Handle _handle, entt::registry* _registry, const char* n) : DEFAULT_CTOR_IMPL
+	NameComponent::NameComponent(ref<Entity::EcsData> _data, const char* n) : Component(_data)
 	{
 		strncpy(name, n, sizeof(name));
 		name[sizeof(name) - 1] = 0;
@@ -17,22 +13,26 @@ namespace era_engine
 	{
 	}
 
-	TransformComponent::TransformComponent(DEFAULT_CTOR_ARGS)
-		: DEFAULT_CTOR_IMPL
+	TransformComponent::TransformComponent(ref<Entity::EcsData> _data, const trs& t)
+		: Component(_data), transform(t)
 	{
 	}
 
-	TransformComponent::TransformComponent(DEFAULT_CTOR_ARGS, const trs& t)
-		: DEFAULT_CTOR_IMPL, transform(t)
-	{
-	}
-
-	TransformComponent::TransformComponent(DEFAULT_CTOR_ARGS, vec3 position, quat rotation, vec3 scale)
-		: DEFAULT_CTOR_IMPL, transform(position, rotation, scale)
+	TransformComponent::TransformComponent(ref<Entity::EcsData> _data, vec3 position, quat rotation, vec3 scale)
+		: Component(_data), transform(position, rotation, scale)
 	{
 	}
 
 	TransformComponent::~TransformComponent()
+	{
+	}
+
+	ChildComponent::ChildComponent(ref<Entity::EcsData> _data, weakref<Entity::EcsData> _parent)
+		: Component(_data), parent(_parent)
+	{
+	}
+
+	ChildComponent::~ChildComponent()
 	{
 	}
 

@@ -4,55 +4,52 @@
 namespace era_engine
 {
 
-	bool Type::operator==(const Type& _other) const
+	RTTR_REGISTRATION
 	{
-		return *info == *_other.info;
+		using namespace rttr;
+		rttr::registration::class_<Component>("Component")
+			.constructor<>();
 	}
 
-	bool Type::operator!=(const Type& _other) const
-	{
-		return !(*this == _other);
-	}
-
-	Component::Component(Entity::Handle _handle, World* _world)
-		: Component(_handle, _world, "NewComponent")
+	Component::Component(ref<Entity::EcsData> _data) noexcept
+		: component_data(_data)
 	{
 	}
 
-	Component::Component(Entity::Handle _handle, World* _world, const char* _name)
-		: handle(_handle),
-		  world(_world),
-		  name(_name)
+	Component::Component(const Component& _component) noexcept
+		: component_data(_component.component_data)
 	{
 	}
 
-	Component::Component(Entity::Handle _handle, entt::registry* _registry)
-		: Component(_handle, worlds[_registry])
+	Component::Component(Component&& _component) noexcept
 	{
-	}
-
-	Component::Component(Entity::Handle _handle, entt::registry* _registry, const char* _name)
-		: Component(_handle, worlds[_registry], _name)
-	{
+		component_data = std::move(_component.component_data);
 	}
 
 	Component::~Component()
 	{
 	}
 
-	World* Component::get_world() const
+	Component& Component::operator=(const Component& _component)
 	{
-		return world;
+		component_data = _component.component_data;
+		return *this;
 	}
 
-	Type Component::get_type() const
+	Component& Component::operator=(Component&& _component)
 	{
-		return Type::instance<decltype(*this)>();
+		component_data = std::move(_component.component_data);
+		return *this;
+	}
+
+	World* Component::get_world() const
+	{
+		return worlds[component_data->registry];
 	}
 
 	Entity Component::get_entity() const
 	{
-		return Entity(handle, world);
+		return Entity(component_data);
 	}
 
 }

@@ -3,13 +3,23 @@
 #include "ecs/entity.h"
 #include "ecs/entity_utils.h"
 
+#ifndef ECS_VALIDATE
+#define ECS_VALIDATE 1
+#endif // !ECS_VALIDATE
+
 #ifndef ENTT_ASSERT
+#if ECS_VALIDATE
 #define ENTT_ASSERT(condition, ...) ASSERT(condition)
+#else
+#define ENTT_ASSERT(condition, ...)
+#endif
 #endif // !ENTT_ASSERT
 
 #include <entt/entity/entity.hpp>
 #include <entt/entity/registry.hpp>
 #include <entt/entity/helper.hpp>
+
+#include <unordered_map>
 
 namespace era_engine
 {
@@ -31,7 +41,7 @@ namespace era_engine
 		void destroy_entity(const Entity& _entity);
 		void destroy_entity(Entity::Handle _handle);
 
-		void clear_all();
+		void destroy();
 
 		template <typename Component_>
 		Entity getEntityFromComponent(const Component_& comp)
@@ -149,13 +159,15 @@ namespace era_engine
 			(copyComponentPoolTo<Component_>(target), ...);
 		}
 
+		void add_base_components(Entity& entity);
+
 	private:
+		std::mutex sync;
+		std::unordered_map<Entity::Handle, ref<Entity::EcsData>> entity_datas;
 		entt::registry registry;
 		Entity root_entity;
 		const char* name = nullptr;
 
 		friend class Entity;
 	};
-
-	static inline std::unordered_map<entt::registry*, World*> worlds;
 }

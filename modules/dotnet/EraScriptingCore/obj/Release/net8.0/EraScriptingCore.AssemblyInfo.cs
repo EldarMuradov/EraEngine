@@ -11,10 +11,11 @@
 using System;
 using System.Reflection;
 
+[assembly: System.Reflection.AssemblyMetadata("IsTrimmable", "True")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("EraScriptingCore")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a53964e636eacb124aa44c531fed3a1646407cf6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f13d43663efc66c51b379c8ebe05995a6bb64638")]
 [assembly: System.Reflection.AssemblyProductAttribute("EraScriptingCore")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EraScriptingCore")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
