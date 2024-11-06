@@ -25,6 +25,7 @@ ${ERA_ENGINE_PATH}/resources/lib/Release/yaml-cpp.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/DirectXTex.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/nvsdk_ngx_d.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/nethost.lib
+${ERA_ENGINE_PATH}/resources/lib/Release/rttr_core.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/libnethost.lib
 ${ERA_ENGINE_PATH}/resources/lib/Release/cuda.lib)
 
