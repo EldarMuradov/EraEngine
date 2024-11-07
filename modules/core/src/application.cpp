@@ -62,6 +62,7 @@
 #include "scripting/script.h"
 #include "scripting/native_scripting_linker.h"
 
+#include "ecs/visitor/visitor.h"
 #include "ecs/world.h"
 #include "ecs/entity.h"
 #include "ecs/base_components/base_components.h"
@@ -89,24 +90,46 @@ namespace era_engine
 			return {};
 	}
 
-	static void ecs_test()
+	ref<World> game_world;
+
+	static void ecs_test_start()
+	{		
+		game_world = make_ref<World>("GameWorld");
+		Entity entity1 = game_world->create_entity("Entity1");
+		Entity entity2 = game_world->create_entity("Entity2");
+	}
+
+	static void ecs_test_update()
 	{
-		ref<World> game_world = make_ref<World>("GameWorld");
-		{
-			Entity entity1 = game_world->create_entity("Entity1");
-			Entity entity2 = game_world->create_entity("Entity2");
-			
-			game_world->destroy_entity(entity1);
-			game_world->destroy_entity(entity2);
-		}
-		(void)game_world;
-		{
-			Entity entity = game_world->create_entity("Entity");
-			(void)entity;
-			game_world->destroy_entity(entity);
-		}
-		(void)game_world;
-		game_world->destroy();
+		ImGui::Begin("World");
+		
+		game_world->for_each_entity([&](const Entity::Handle entity_handle) {
+			for (auto&& curr : game_world->registry.storage()) {
+				entt::id_type cid = curr.first;
+				auto& storage = curr.second;
+				entt::type_info ctype = storage.type();
+
+				if (storage.contains(entity_handle)) {
+					//TODO
+				}
+			}
+
+			//Entity entity = game_world->get_entity(entity_handle);
+			//NameComponent& comp = entity.get_component<NameComponent>();
+			//rttr::type type = comp.get_type();
+			//ImGui::Text("Component Name: %s", type.get_name().data());
+
+			//for (auto& prop : type.get_properties())
+			//{
+			//	//ImGui::Text("Property: %s. Value %s", prop.get_name().data(), prop.get_value(comp).get_value<char[]>());
+			//}
+
+			ImGui::Separator();
+			});
+
+
+
+		ImGui::End();
 	}
 
 	void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
@@ -277,7 +300,7 @@ namespace era_engine
 			addRaytracingComponentAsync(sponza, mesh);
 		}
 #endif
-		ecs_test();
+		ecs_test_start();
 #if 0
 		if (auto treeMesh = loadTreeMeshFromFileAsync(getAssetPath("/resources/assets/tree/source/tree.fbx")))
 		{
@@ -675,6 +698,8 @@ namespace era_engine
 				sphereEntity.getComponent<physics::px_dynamic_body_component>().addForce(vec3(200.0f, 1.0f, 0.0f), physics::px_force_mode::force_mode_impulse);
 			}
 		}
+
+		ecs_test_update();
 	}
 
 	void application::update(const user_input& input, float dt)

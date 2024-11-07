@@ -3,7 +3,6 @@
 namespace era_engine
 {
 	class World;
-	class Component;
 	class Entity;
 
 	class System

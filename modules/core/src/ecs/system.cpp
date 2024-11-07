@@ -1,4 +1,6 @@
 #include "ecs/system.h"
+#include "ecs/world.h"
+#include "ecs/entity.h"
 
 namespace era_engine
 {

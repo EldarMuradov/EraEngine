@@ -41,30 +41,32 @@ namespace era_engine
 		void destroy_entity(const Entity& _entity);
 		void destroy_entity(Entity::Handle _handle);
 
+		Entity get_entity(Entity::Handle _handle);
+
 		void destroy();
 
 		template <typename Component_>
-		Entity getEntityFromComponent(const Component_& comp)
+		Entity get_entity_from_component(const Component_& comp)
 		{
 			return { entt::to_entity(registry, comp), this };
 		}
 
 		template <typename Component_>
-		void copyComponentIfExists(Entity& src, Entity& dst)
+		void copy_component_if_exists(Entity& src, Entity& dst)
 		{
-			if (Component_* comp = src.getComponentIfExists<Component_>())
+			if (Component_* comp = src.get_component_if_exists<Component_>())
 			{
-				dst.addComponent<Component_>(*comp);
+				dst.add_component<Component_>(*comp);
 			}
 		}
 
 		template <typename FirstComponent_, typename... TailComponent_>
-		void copyComponentsIfExists(Entity& src, Entity& dst)
+		void copy_components_if_exists(Entity& src, Entity& dst)
 		{
-			copyComponentIfExists<FirstComponent_>(src, dst);
+			copy_component_if_exists<FirstComponent_>(src, dst);
 			if constexpr (sizeof...(TailComponent_) > 0)
 			{
-				copyComponentsIfExists<TailComponent_...>(src, dst);
+				copy_components_if_exists<TailComponent_...>(src, dst);
 			}
 		}
 
@@ -89,58 +91,58 @@ namespace era_engine
 		}
 
 		template <typename Func_>
-		void forEachEntity(Func_ func)
+		void for_each_entity(Func_ func)
 		{
 			registry.each(func);
 		}
 
 		template <typename Component_>
-		uint32 numberOfComponentsOfType()
+		uint32 number_of_components_of_type()
 		{
 			auto v = view<Component_>();
 			return (uint32)v.size();
 		}
 
 		template <typename Component_>
-		Component_& getComponentAtIndex(uint32 index)
+		Component_& get_component_at_index(uint32 index)
 		{
 			auto& s = registry.storage<Component_>();
 			return s.element_at(index);
 		}
 
 		template <typename Component_>
-		Entity getEntityFromComponentAtIndex(uint32 index)
+		Entity get_entity_from_component_at_index(uint32 index)
 		{
-			return getEntityFromComponent(getComponentAtIndex<Component_>(index));
+			return get_entity_from_fomponent(get_component_at_index<Component_>(index));
 		}
 
 		template <typename Context_, typename... Args_>
-		Context_& createOrGetContextVariable(Args_&&... a)
+		Context_& create_or_get_context_variable(Args_&&... a)
 		{
-			return EntityUtils::createOrGetContextVariable<Context_, Args_...>(registry, std::forward<Args_>(a)...);
+			return EntityUtils::create_or_get_context_variable<Context_, Args_...>(registry, std::forward<Args_>(a)...);
 		}
 
 		template <typename Context_>
-		Context_& getContextVariable()
+		Context_& get_context_variable()
 		{
-			return EntityUtils::getContextVariable<Context_>(registry);
+			return EntityUtils::get_context_variable<Context_>(registry);
 		}
 
 		template <typename Context_>
-		bool doesContextVariableExist()
+		bool does_context_variable_exist()
 		{
-			return EntityUtils::doesContextVariableExist<Context_>(registry);
+			return EntityUtils::does_context_variable_exist<Context_>(registry);
 		}
 
 		template <typename Context_>
-		void deleteContextVariable()
+		void delete_context_variable()
 		{
-			return EntityUtils::deleteContextVariable<Context_>(registry);
+			return EntityUtils::delete_context_variable<Context_>(registry);
 		}
-
+		entt::registry registry;
 	private:
 		template <typename Component_>
-		void copyComponentPoolTo(World& target)
+		void copy_component_pool_to(World& target)
 		{
 			auto v = view<Component_>();
 			auto& s = registry.storage<Component_>();
@@ -148,23 +150,23 @@ namespace era_engine
 		}
 
 		template <typename... Component_>
-		void copyComponentPoolsTo(World& target)
+		void copy_component_pools_to(World& target)
 		{
-			(copyComponentPoolTo<Component_>(target), ...);
+			(copy_component_pool_to<Component_>(target), ...);
 		}
 
 		template <typename... Component_>
-		void copyComponentPoolsTo(ComponentsGroup<Component_...>, World& target)
+		void copy_component_pools_to(ComponentsGroup<Component_...>, World& target)
 		{
-			(copyComponentPoolTo<Component_>(target), ...);
+			(copy_component_pool_to<Component_>(target), ...);
 		}
 
 		void add_base_components(Entity& entity);
 
 	private:
+
 		std::mutex sync;
 		std::unordered_map<Entity::Handle, ref<Entity::EcsData>> entity_datas;
-		entt::registry registry;
 		Entity root_entity;
 		const char* name = nullptr;
 

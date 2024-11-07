@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/reflect.h"
+#include "ecs/reflection.h"
 
 #ifndef ECS_VALIDATE
 #define ECS_VALIDATE 1
@@ -38,6 +38,8 @@ namespace era_engine
 			entt::registry* registry = nullptr;
 		};
 
+		ERA_REFLECT
+
 	public:
 		Entity() = default;
 		Entity(const Entity& _entity) noexcept;
@@ -45,8 +47,8 @@ namespace era_engine
 		Entity(ref<EcsData> _data);
 		~Entity() noexcept;
 
-		Entity& operator=(const Entity& _entity);
-		Entity& operator=(Entity&& _entity);
+		Entity& operator=(const Entity& _entity)  noexcept;
+		Entity& operator=(Entity&& _entity) noexcept;
 
 		bool operator==(const Entity& _other) const;
 		bool operator!=(const Entity& _other) const;
@@ -58,9 +60,9 @@ namespace era_engine
 		Entity::Handle get_handle() const;
 
 		template <typename Component_, typename... Args_>
-		Entity& addComponent(Args_&&... a)
+		Entity& add_component(Args_&&... a)
 		{
-			if (!hasComponent<Component_>())
+			if (!has_component<Component_>())
 			{
 				internal_data->registry->emplace_or_replace<Component_>(internal_data->entity_handle, internal_data, std::forward<Args_>(a)...);
 			}
@@ -68,44 +70,44 @@ namespace era_engine
 		}
 
 		template <typename Component_>
-		uint32 getComponentIndex() const
+		uint32 get_component_index() const
 		{
 			auto& s = internal_data->registry->storage<Component_>();
 			return (uint32)s.index(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
-		void removeComponent()
+		void remove_component()
 		{
 			internal_data->registry->remove<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
-		bool hasComponent() const
+		bool has_component() const
 		{
 			return internal_data->registry->any_of<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
-		Component_& getComponent()
+		Component_& get_component()
 		{
 			return internal_data->registry->get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
-		const Component_& getComponent() const
+		const Component_& get_component() const
 		{
 			return internal_data->registry->get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
-		Component_* getComponentIfExists()
+		Component_* get_component_if_exists()
 		{
 			return internal_data->registry->try_get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
-		const Component_* getComponentIfExists() const
+		const Component_* get_component_if_exists() const
 		{
 			return internal_data->registry->try_get<Component_>(internal_data->entity_handle);
 		}
@@ -115,9 +117,6 @@ namespace era_engine
 
 		friend class World;
 	};
-	REFLECT_STRUCT(Entity::EcsData,
-		(entity_handle, "entity_handle")
-	);
 
 	struct EntityNode
 	{

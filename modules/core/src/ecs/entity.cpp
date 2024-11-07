@@ -2,10 +2,20 @@
 #include "ecs/world.h"
 #include "ecs/component.h"
 
+#include <rttr/registration>
+
 namespace era_engine
 {
 
 	Entity Entity::Null = Entity(make_ref<Entity::EcsData>(Entity::NullHandle, (entt::registry*)nullptr));
+
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+		rttr::registration::class_<Entity>("Entity")
+			.constructor<>()
+			.constructor<ref<Entity::EcsData>>();
+	}
 
 	Entity::Entity(const Entity& _entity) noexcept
 		: internal_data(_entity.internal_data)
@@ -27,13 +37,13 @@ namespace era_engine
 	{
 	}
 
-	Entity& Entity::operator=(const Entity& _entity)
+	Entity& Entity::operator=(const Entity& _entity)  noexcept
 	{
 		internal_data = _entity.internal_data;
 		return *this;
 	}
 
-	Entity& Entity::operator=(Entity&& _entity)
+	Entity& Entity::operator=(Entity&& _entity) noexcept
 	{
 		internal_data = std::move(_entity.internal_data);
 		return *this;

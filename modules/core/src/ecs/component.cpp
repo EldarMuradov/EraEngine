@@ -1,6 +1,8 @@
 #include "ecs/component.h"
 #include "ecs/world.h"
 
+#include <rttr/registration>
+
 namespace era_engine
 {
 
@@ -8,7 +10,8 @@ namespace era_engine
 	{
 		using namespace rttr;
 		rttr::registration::class_<Component>("Component")
-			.constructor<>();
+			.constructor<>()
+			.constructor<ref<Entity::EcsData>>();
 	}
 
 	Component::Component(ref<Entity::EcsData> _data) noexcept
@@ -30,13 +33,13 @@ namespace era_engine
 	{
 	}
 
-	Component& Component::operator=(const Component& _component)
+	Component& Component::operator=(const Component& _component)  noexcept
 	{
 		component_data = _component.component_data;
 		return *this;
 	}
 
-	Component& Component::operator=(Component&& _component)
+	Component& Component::operator=(Component&& _component)  noexcept
 	{
 		component_data = std::move(_component.component_data);
 		return *this;
