@@ -7,6 +7,8 @@
 
 #include "core/simd.h"
 
+#include <rttr/type>
+
 #include <cmath>
 #include <cfloat>
 
@@ -498,6 +500,8 @@ struct trs
 	trs(vec3 position, quat rotation = quat::identity, vec3 scale = { 1.f, 1.f, 1.f }) : position(position), rotation(rotation), scale(scale) {}
 
 	static const trs identity;
+
+	RTTR_ENABLE()
 };
 
 // Vec2 operators

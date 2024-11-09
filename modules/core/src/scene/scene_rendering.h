@@ -27,6 +27,42 @@ namespace era_engine
 		uint32 numPointShadowRenderPasses = 0;
 	};
 
+	struct offset_count
+	{
+		uint32 offset;
+		uint32 count;
+	};
+
+	enum light_frustum_type
+	{
+		light_frustum_standard,
+		light_frustum_sphere
+	};
+
+	struct light_frustum
+	{
+		union
+		{
+			camera_frustum_planes frustum;
+			bounding_sphere sphere;
+		};
+
+		light_frustum_type type;
+	};
+
+	struct shadow_pass
+	{
+		light_frustum frustum;
+		shadow_render_pass_base* pass;
+		bool isPointLight;
+	};
+
+	struct shadow_passes
+	{
+		shadow_pass* shadowRenderPasses;
+		uint32 numShadowRenderPasses;
+	};
+
 	void renderScene(const render_camera& camera, escene& scene, eallocator& arena, entity_handle selectedObjectID,
 		directional_light& sun, scene_lighting& lighting, bool invalidateShadowMapCache,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,

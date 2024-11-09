@@ -66,6 +66,10 @@
 #include "ecs/world.h"
 #include "ecs/entity.h"
 #include "ecs/base_components/base_components.h"
+#include "ecs/rendering/mesh_component.h"
+#include "ecs/rendering/world_renderer.h"
+#include "ecs/reflection_utils.h"
+#include "ecs/editor/entity_editor_utils.h"
 
 namespace era_engine
 {
@@ -88,48 +92,6 @@ namespace era_engine
 		}
 		else
 			return {};
-	}
-
-	ref<World> game_world;
-
-	static void ecs_test_start()
-	{		
-		game_world = make_ref<World>("GameWorld");
-		Entity entity1 = game_world->create_entity("Entity1");
-		Entity entity2 = game_world->create_entity("Entity2");
-	}
-
-	static void ecs_test_update()
-	{
-		ImGui::Begin("World");
-		
-		game_world->for_each_entity([&](const Entity::Handle entity_handle) {
-			for (auto&& curr : game_world->registry.storage()) {
-				entt::id_type cid = curr.first;
-				auto& storage = curr.second;
-				entt::type_info ctype = storage.type();
-
-				if (storage.contains(entity_handle)) {
-					//TODO
-				}
-			}
-
-			//Entity entity = game_world->get_entity(entity_handle);
-			//NameComponent& comp = entity.get_component<NameComponent>();
-			//rttr::type type = comp.get_type();
-			//ImGui::Text("Component Name: %s", type.get_name().data());
-
-			//for (auto& prop : type.get_properties())
-			//{
-			//	//ImGui::Text("Property: %s. Value %s", prop.get_name().data(), prop.get_value(comp).get_value<char[]>());
-			//}
-
-			ImGui::Separator();
-			});
-
-
-
-		ImGui::End();
 	}
 
 	void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
@@ -277,6 +239,56 @@ namespace era_engine
 			}, data).submitNow();
 	}
 
+	static void initializeAnimationComponentAsync(Entity entity, ref<multi_mesh> mesh)
+	{
+		struct add_animation_data
+		{
+			Entity entity;
+			ref<multi_mesh> mesh;
+		};
+
+		add_animation_data data = { entity, mesh };
+
+		mainThreadJobQueue.createJob<add_animation_data>([](add_animation_data& data, job_handle job)
+			{
+				data.mesh->loadJob.waitForCompletion();
+				data.entity.get_component<animation::AnimationComponent>().initialize(data.mesh->skeleton.clips);
+			}, data).submitNow();
+	}
+
+	ref<World> game_world;
+
+	static void ecs_test_start()
+	{
+		game_world = make_ref<World>("GameWorld");
+		Entity entity1 = game_world->create_entity("Entity1");
+		Entity entity2 = game_world->create_entity("Entity2");
+
+		auto defaultmat = createPBRMaterialAsync({ "", "" });
+		defaultmat->shader = pbr_material_shader_double_sided;
+
+		mesh_builder builder;
+
+		auto sphereMesh = make_ref<multi_mesh>();
+		builder.pushSphere({ });
+		sphereMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
+		Entity entity3 = game_world->create_entity("Entity3").add_component<MeshComponent>(sphereMesh, false);
+		sphereMesh->mesh = builder.createDXMesh();
+
+		if (auto mesh = loadAnimatedMeshFromFileAsync(getAssetPath("/resources/assets/veribot/source/VERIBOT_final.fbx")))
+		{
+			auto& en = game_world->create_entity("Veribot")
+				.add_component<animation::AnimationComponent>()
+				.add_component<MeshComponent>(mesh);
+
+			TransformComponent& transform_component = en.get_component<TransformComponent>();
+			transform_component.type = TransformComponent::DYNAMIC;
+			transform_component.transform.position = vec3(5.0f);
+
+			initializeAnimationComponentAsync(en, mesh);
+		}
+	}
+
 	void application::loadCustomShaders()
 	{
 		if (dxContext.featureSupport.meshShaders())
@@ -300,7 +312,6 @@ namespace era_engine
 			addRaytracingComponentAsync(sponza, mesh);
 		}
 #endif
-		ecs_test_start();
 #if 0
 		if (auto treeMesh = loadTreeMeshFromFileAsync(getAssetPath("/resources/assets/tree/source/tree.fbx")))
 		{
@@ -491,7 +502,7 @@ namespace era_engine
 				builder.createDXMesh();
 		}
 #endif
-
+		ecs_test_start();
 #if 0
 		fireParticleSystem.initialize(10000, 50.f, getAssetPath("/resources/assets/particles/fire_explosion.png"), 6, 6, vec3(0, 1, 30));
 		smokeParticleSystem.initialize(10000, 500.f, getAssetPath("/resources/assets/particles/smoke1.tif"), 5, 5, vec3(0, 1, 15));
@@ -698,8 +709,6 @@ namespace era_engine
 				sphereEntity.getComponent<physics::px_dynamic_body_component>().addForce(vec3(200.0f, 1.0f, 0.0f), physics::px_force_mode::force_mode_impulse);
 			}
 		}
-
-		ecs_test_update();
 	}
 
 	void application::update(const user_input& input, float dt)
@@ -831,6 +840,41 @@ namespace era_engine
 #endif
 
 		updateTestScene(dt, scene, input);
+
+		{
+			if (ImGui::Begin("World"))
+			{
+				game_world->for_each_entity([&](const Entity::Handle entity_handle) {
+						EntityEditorUtils::edit_entity(game_world, entity_handle);
+						ImGui::Separator();
+					});
+			}
+			ImGui::End();
+
+			for (auto [entityHandle, anim, mesh, transform] : game_world->group(components_group<animation::AnimationComponent, MeshComponent, TransformComponent>, components_group<physics::px_ragdoll_component>).each())
+			{
+				anim.update(mesh.mesh, stackArena, dt, &transform.transform);
+
+				if (anim.draw_sceleton)
+					anim.draw_current_skeleton(mesh.mesh, transform.transform, &ldrRenderPass);
+			}
+
+			scene_lighting lighting;
+			lighting.spotLightBuffer = spotLightBuffer[dxContext.bufferedFrameID];
+			lighting.pointLightBuffer = pointLightBuffer[dxContext.bufferedFrameID];
+			lighting.spotLightShadowInfoBuffer = spotLightShadowInfoBuffer[dxContext.bufferedFrameID];
+			lighting.pointLightShadowInfoBuffer = pointLightShadowInfoBuffer[dxContext.bufferedFrameID];
+			lighting.spotShadowRenderPasses = spotShadowRenderPasses;
+			lighting.pointShadowRenderPasses = pointShadowRenderPasses;
+			lighting.maxNumSpotShadowRenderPasses = arraysize(spotShadowRenderPasses);
+			lighting.maxNumPointShadowRenderPasses = arraysize(pointShadowRenderPasses);
+
+			render_world(camera, game_world, stackArena, Entity::NullHandle, sun, lighting, !renderer->settings.cacheShadowMap,
+				&opaqueRenderPass, &transparentRenderPass, &ldrRenderPass, &sunShadowRenderPass, &computePass, unscaledDt);
+
+			renderer->setSpotLights(spotLightBuffer[dxContext.bufferedFrameID], game_world->number_of_components_of_type<spot_light_component>(), spotLightShadowInfoBuffer[dxContext.bufferedFrameID]);
+			renderer->setPointLights(pointLightBuffer[dxContext.bufferedFrameID], game_world->number_of_components_of_type<point_light_component>(), pointLightShadowInfoBuffer[dxContext.bufferedFrameID]);
+		}
 
 		//if (renderer->mode != renderer_mode_pathtraced)
 		{

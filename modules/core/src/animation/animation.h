@@ -9,6 +9,8 @@
 
 #include "ai/state_machine.h"
 
+#include "ecs/component.h"
+
 #define INVALID_JOINT 0xFFFFFFFF
 
 namespace era_engine
@@ -269,5 +271,30 @@ namespace era_engine::animation
 
 		float timeScale = 1.f;
 		bool drawSceleton = false;
+	};
+
+	class AnimationComponent : public Component
+	{
+	public:
+		AnimationComponent(ref<Entity::EcsData> _data);
+		virtual ~AnimationComponent();
+
+		void initialize(std::vector<animation_clip>& clips, size_t start_index = 0);
+		void update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform = 0, physics::px_ragdoll_component* ragdoll = nullptr);
+		void draw_current_skeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* render_pass) const;
+
+		ERA_VIRTUAL_REFLECT(Component)
+	public:
+		ref<animation_instance> animation = nullptr;
+
+		ref<animation_controller> controller = nullptr;
+
+		dx_vertex_buffer_group_view current_vertex_buffer;
+		dx_vertex_buffer_group_view prev_frame_vertex_buffer;
+
+		trs* current_global_transforms = 0;
+
+		float time_scale = 1.f;
+		bool draw_sceleton = false;
 	};
 }
