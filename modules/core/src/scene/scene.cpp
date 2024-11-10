@@ -34,9 +34,9 @@ namespace era_engine
 	escene::escene()
 	{
 #ifndef PHYSICS_ONLY
-		(void)registry.group<position_component, point_light_component>();
-		(void)registry.group<position_rotation_component, spot_light_component>();
-		(void)registry.group<ecs::scripts_component, transform_component>();
+		//(void)registry.group<position_component, point_light_component>();
+		//(void)registry.group<position_rotation_component, spot_light_component>();
+		(void)registry.group<ecs::ScriptsComponent, transform_component>();
 		(void)registry.group<physics::px_cloth_component, physics::px_cloth_render_component>();
 		(void)registry.group<physics::px_particles_component, physics::px_particles_render_component > ();
 #endif
@@ -100,14 +100,14 @@ namespace era_engine
 #endif
 
 			ai::navigation_component,
-			ecs::scripts_component,
+			ecs::ScriptsComponent,
 #endif
 
 			child_component,
 
 #ifndef PHYSICS_ONLY
-			point_light_component,
-			spot_light_component,
+			//point_light_component,
+			//spot_light_component,
 			cloth_render_component,
 
 			terrain_component,
@@ -164,8 +164,8 @@ namespace era_engine
 
 #ifndef PHYSICS_ONLY
 
-		if (auto* c = src.getComponentIfExists<point_light_component>()) { dest.addComponent<point_light_component>(*c); }
-		if (auto* c = src.getComponentIfExists<spot_light_component>()) { dest.addComponent<spot_light_component>(*c); }
+		/*if (auto* c = src.getComponentIfExists<point_light_component>()) { dest.addComponent<point_light_component>(*c); }
+		if (auto* c = src.getComponentIfExists<spot_light_component>()) { dest.addComponent<spot_light_component>(*c); }*/
 		if (auto* c = src.getComponentIfExists<cloth_render_component>()) { dest.addComponent<cloth_render_component>(*c); }
 
 		if (auto* c = src.getComponentIfExists<terrain_component>()) { dest.addComponent<terrain_component>(*c); }

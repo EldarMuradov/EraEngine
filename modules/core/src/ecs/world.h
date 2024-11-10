@@ -139,7 +139,11 @@ namespace era_engine
 		{
 			return EntityUtils::delete_context_variable<Context_>(registry);
 		}
+
+		void clone_to(ref<World> target);
+
 		entt::registry registry;
+
 	private:
 		template <typename Component_>
 		void copy_component_pool_to(World& target)

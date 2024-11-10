@@ -2,15 +2,21 @@
 
 #pragma once
 
+#include "ecs/component.h"
+
 namespace era_engine::ecs
 {
-	struct scripts_component
+	class ScriptsComponent : public Component
 	{
-		scripts_component() = default;
-		scripts_component(std::string name) { typeNames.emplace(name); };
-		scripts_component(const std::unordered_set<std::string>& name) : typeNames(name) {};
-		scripts_component(std::unordered_set<std::string>&& name) : typeNames(std::move(name)) {};
+	public:
+		ScriptsComponent() = default;
+		ScriptsComponent(ref<Entity::EcsData> _data, std::string_view name);
+		ScriptsComponent(ref<Entity::EcsData> _data, const std::unordered_set<std::string>& name);
+		ScriptsComponent(ref<Entity::EcsData> _data, std::unordered_set<std::string>&& name);
+		virtual ~ScriptsComponent();
 
-		std::unordered_set<std::string> typeNames;
+		ERA_VIRTUAL_REFLECT(Component)
+	public:
+		std::unordered_set<std::string> type_names;
 	};
 }

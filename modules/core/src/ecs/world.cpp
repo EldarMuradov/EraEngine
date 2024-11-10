@@ -90,6 +90,20 @@ namespace era_engine
 		entity_datas.clear();
 	}
 
+	void World::clone_to(ref<World> target)
+	{
+		target->registry.assign(registry.data(), registry.data() + registry.size(), registry.released());
+
+		rttr::array_range<rttr::type> types = rttr::type::get<Component>().get_derived_classes();
+
+		for (const rttr::type& type : types)
+		{
+			copy_component_pools_to(components_group<decltype(rttr::rttr_cast<Component>(rttr::instance(type)))>, *target.get());
+		}
+
+		target->registry.ctx() = registry.ctx();
+	}
+
 	void World::add_base_components(Entity& entity)
 	{
 		entity.add_component<TransformComponent>().add_component<ChildComponent>(weakref<Entity::EcsData>(root_entity.internal_data));

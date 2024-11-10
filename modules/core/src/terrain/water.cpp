@@ -14,6 +14,8 @@
 
 #include "geometry/mesh_builder.h"
 
+#include <rttr/registration>
+
 #include "water_rs.hlsli"
 #include "transform.hlsli"
 
@@ -107,6 +109,30 @@ namespace era_engine
 	{
 		time += dt;
 		renderPass->renderObject<water_pipeline, water_render_data>({ createModelMatrix(positionOffset, quat::identity, vec3(scale.x, 1.f, scale.y)), settings, time });
+	}
+
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+		rttr::registration::class_<WaterComponent>("WaterComponent")
+			.constructor<>()
+			.constructor<ref<Entity::EcsData>, const water_settings&>()
+			.property("settings", &WaterComponent::settings);
+	}
+
+	WaterComponent::WaterComponent(ref<Entity::EcsData> _data, const water_settings& _settings)
+		: Component(_data), settings(_settings)
+	{
+	}
+
+	WaterComponent::~WaterComponent()
+	{
+	}
+
+	void WaterComponent::render(const render_camera& camera, transparent_render_pass* render_pass, const vec3& position_offset, const vec2& scale, float dt)
+	{
+		time += dt;
+		render_pass->renderObject<water_pipeline, water_render_data>({ createModelMatrix(position_offset, quat::identity, vec3(scale.x, 1.f, scale.y)), settings, time });
 	}
 
 }

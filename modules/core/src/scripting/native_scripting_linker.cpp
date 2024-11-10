@@ -15,6 +15,8 @@
 
 #include "application.h"
 
+#include "ecs/world.h"
+
 #include <EraScriptingCPPDecls/EraScriptingCPPDecls.h>
 
 #include <fstream>
@@ -207,6 +209,8 @@ namespace era_engine::dotnet
 	{
 		static escene* scene = nullptr;
 
+		static World* world = nullptr;
+
 		static void add_force_internal(uint32_t id, uint8_t mode, float* force)
 		{
 			entity_handle hid = (entity_handle)id;
@@ -335,28 +339,48 @@ namespace era_engine::dotnet
 
 		static void create_script_internal(uint32_t id, const char* name)
 		{
-			entity_handle hid = (entity_handle)id;
-			eentity entity{ hid, &scene->registry };
-
-			if (auto script = entity.getComponentIfExists<ecs::scripts_component>())
+			if (!world)
 			{
-				script->typeNames.emplace(name);
+				return;
+			}
+
+			Entity::Handle hid = (Entity::Handle)id;
+			Entity entity = world->get_entity(hid);
+
+			if (entity == Entity::Null)
+			{
+				return;
+			}
+
+			if (auto script = entity.get_component_if_exists<ecs::ScriptsComponent>())
+			{
+				script->type_names.emplace(name);
 			}
 			else
 			{
-				entity.addComponent<ecs::scripts_component>(name);
+				entity.add_component<ecs::ScriptsComponent>(name);
 			}
 		}
 
 		static void remove_component_internal(uint32_t id, const char* name)
 		{
-			entity_handle hid = (entity_handle)id;
-			eentity entity{ hid, &scene->registry };
+			if (!world)
+			{
+				return;
+			}
+
+			Entity::Handle hid = (Entity::Handle)id;
+			Entity entity = world->get_entity(hid);
+
+			if (entity == Entity::Null)
+			{
+				return;
+			}
 
 			// TODO: Removing all internal components
-			if (auto comp = entity.getComponentIfExists<ecs::scripts_component>())
+			if (auto comp = entity.get_component_if_exists<ecs::ScriptsComponent>())
 			{
-				comp->typeNames.clear();
+				comp->type_names.clear();
 			}
 		}
 

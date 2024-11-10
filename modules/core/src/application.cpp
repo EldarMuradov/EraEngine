@@ -124,19 +124,49 @@ namespace era_engine
 			}, data).submitNow();
 	}
 
+	void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh)
+	{
+		struct add_ray_tracing_data
+		{
+			Entity entity;
+			ref<multi_mesh> mesh;
+		};
+
+		add_ray_tracing_data data = { entity, mesh };
+
+		lowPriorityJobQueue.createJob<add_ray_tracing_data>([](add_ray_tracing_data& data, job_handle)
+			{
+				data.mesh->loadJob.waitForCompletion();
+
+				struct create_component_data
+				{
+					Entity entity;
+					raytracing_object_type blas;
+				};
+
+				create_component_data createData = { data.entity, defineBlasFromMesh(data.mesh) };
+
+				mainThreadJobQueue.createJob<create_component_data>([](create_component_data& data, job_handle)
+					{
+						data.entity.add_component<RaytraceComponent>(data.blas);
+					}, createData).submitNow();
+
+			}, data).submitNow();
+	}
+
 	struct update_scripting_data
 	{
 		float deltaTime{};
 		ref<dotnet::enative_scripting_linker> core;
-		escene& scene;
+		ref<World> world;
 		const user_input& input;
 	};
 
 	spin_lock scriptingSync;
 
-	void updatePhysXCallbacksAndScripting(escene& currentScene, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in)
+	void updatePhysXCallbacksAndScripting(ref<World> current_world, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in)
 	{
-		update_scripting_data data = { dt, core, currentScene, in };
+		update_scripting_data data = { dt, core, current_world, in };
 
 		highPriorityJobQueue.createJob<update_scripting_data>([](update_scripting_data& data, job_handle)
 			{
@@ -201,17 +231,17 @@ namespace era_engine
 	void updateScripting(update_scripting_data& data)
 	{
 		CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
-		if (!data.scene.registry.size())
+		if (!data.world->registry.size())
 			return;
 
-		auto group = data.scene.group(component_group<ecs::scripts_component, transform_component>);
+		auto group = data.world->group(components_group<ecs::ScriptsComponent, TransformComponent>);
 
 		if (group.empty())
 			return;
 
 		for (auto [entityHandle, script, transform] : group.each())
 		{
-			const auto& mat = trsToMat4(transform);
+			const auto& mat = trsToMat4(transform.transform);
 			constexpr size_t mat_size = 16;
 			float* ptr = new float[mat_size];
 			for (size_t i = 0; i < mat_size; i++)
@@ -256,11 +286,16 @@ namespace era_engine
 			}, data).submitNow();
 	}
 
-	ref<World> game_world;
-
-	static void ecs_test_start()
+	void application::loadCustomShaders()
 	{
-		game_world = make_ref<World>("GameWorld");
+		if (dxContext.featureSupport.meshShaders())
+		{
+			initializeMeshShader();
+		}
+	}
+
+	static void initTestScene(ref<World> game_world)
+	{
 		Entity entity1 = game_world->create_entity("Entity1");
 		Entity entity2 = game_world->create_entity("Entity2");
 
@@ -272,6 +307,25 @@ namespace era_engine
 		auto sphereMesh = make_ref<multi_mesh>();
 		builder.pushSphere({ });
 		sphereMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
+
+		auto boxMesh = make_ref<multi_mesh>();
+		builder.pushBox({ vec3(0.f), vec3(1.f, 1.f, 2.f) });
+		boxMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
+
+		pbr_material_desc defaultPlaneMatDesc;
+		defaultPlaneMatDesc.albedo = getAssetPath("/resources/assets/uv.jpg");
+		defaultPlaneMatDesc.normal = "";
+		defaultPlaneMatDesc.roughness = "";
+		defaultPlaneMatDesc.uvScale = 15.0f;
+		defaultPlaneMatDesc.metallicOverride = 0.35f;
+		defaultPlaneMatDesc.roughnessOverride = 0.01f;
+
+		auto defaultPlaneMat = createPBRMaterialAsync(defaultPlaneMatDesc);
+
+		auto groundMesh = make_ref<multi_mesh>();
+		builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
+		groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
+
 		Entity entity3 = game_world->create_entity("Entity3").add_component<MeshComponent>(sphereMesh, false);
 		sphereMesh->mesh = builder.createDXMesh();
 
@@ -286,32 +340,39 @@ namespace era_engine
 			transform_component.transform.position = vec3(5.0f);
 
 			initializeAnimationComponentAsync(en, mesh);
+			addRaytracingComponentAsync(en, mesh);
 		}
-	}
 
-	void application::loadCustomShaders()
-	{
-		if (dxContext.featureSupport.meshShaders())
-		{
-			initializeMeshShader();
-		}
-	}
-
-	static entity_handle sphere{};
-
-	static void initTestScene(escene& scene)
-	{
-#ifndef ERA_RUNTIME
 		if (auto mesh = loadMeshFromFileAsync(getAssetPath("/resources/assets/Sponza/sponza.obj")))
 		{
-			model_asset ass = load3DModelFromFile(getAssetPath("/resources/assets/Sponza/sponza.obj"));
-			const auto& sponza = scene.createEntity("Sponza")
-				.addComponent<transform_component>(vec3(5.0f, -3.75f, 35.0f), quat::identity, 0.01f)
-				.addComponent<mesh_component>(mesh);
+			auto& sponza = game_world->create_entity("Sponza")
+				.add_component<MeshComponent>(mesh);
+
+			TransformComponent& transform_component = sponza.get_component<TransformComponent>();
+			transform_component.transform.position = vec3(5.0f, -3.75f, 35.0f);
+			transform_component.transform.scale = vec3(0.01f);
 
 			addRaytracingComponentAsync(sponza, mesh);
 		}
-#endif
+
+		Entity plane = game_world->create_entity("Platform")
+			.add_component<TransformComponent>(vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)), vec3(5.0f, 1.0f, 5.0f))
+			//.addComponent<physics::px_plane_collider_component>(vec3(0.f, -5.0, 0.0f))
+			.add_component<MeshComponent>(groundMesh);
+
+		{
+			TransformComponent& transform_component = plane.get_component<TransformComponent>();
+			transform_component.transform.position = vec3(10.0f, -9.0f, 0.0f);
+			transform_component.transform.scale = vec3(5.0f, 1.0f, 5.0f);
+		}
+
+		auto chainMesh = make_ref<multi_mesh>();
+
+		groundMesh->mesh =
+			boxMesh->mesh =
+			sphereMesh->mesh =
+			chainMesh->mesh =
+			builder.createDXMesh();
 #if 0
 		if (auto treeMesh = loadTreeMeshFromFileAsync(getAssetPath("/resources/assets/tree/source/tree.fbx")))
 		{
@@ -324,54 +385,28 @@ namespace era_engine
 
 #ifndef ERA_RUNTIME
 		{
-			auto defaultmat = createPBRMaterialAsync({ "", "" });
-			defaultmat->shader = pbr_material_shader_double_sided;
-
-			mesh_builder builder;
-
-			auto sphereMesh = make_ref<multi_mesh>();
-			builder.pushSphere({ });
-			sphereMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
-
-			auto boxMesh = make_ref<multi_mesh>();
-			builder.pushBox({ vec3(0.f), vec3(1.f, 1.f, 2.f) });
-			boxMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
-
-			pbr_material_desc defaultPlaneMatDesc;
-			defaultPlaneMatDesc.albedo = getAssetPath("/resources/assets/uv.jpg");
-			defaultPlaneMatDesc.normal = "";
-			defaultPlaneMatDesc.roughness = "";
-			defaultPlaneMatDesc.uvScale = 15.0f;
-			defaultPlaneMatDesc.metallicOverride = 0.35f;
-			defaultPlaneMatDesc.roughnessOverride = 0.01f;
-
-			auto defaultPlaneMat = createPBRMaterialAsync(defaultPlaneMatDesc);
-
-			auto groundMesh = make_ref<multi_mesh>();
-			builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
-			groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
 
 			//model_asset ass = load3DModelFromFile(getAssetPath("/resources/assets/sphere.fbx"));
-			auto& px_sphere_entt = scene.createEntity("SpherePX", (entity_handle)60)
-				.addComponent<transform_component>(vec3(-10.0f, 5.0f, -3.0f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-				.addComponent<mesh_component>(sphereMesh)
+			//auto& px_sphere_entt = scene.createEntity("SpherePX", (entity_handle)60)
+			//	.addComponent<transform_component>(vec3(-10.0f, 5.0f, -3.0f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			//	.addComponent<mesh_component>(sphereMesh)
 				//.addComponent<physics::px_convex_mesh_collider_component>(&(ass.meshes[0]))
 				//.addComponent<physics::px_triangle_mesh_collider_component>(&(ass.meshes[0]))
 				//.addComponent<physics::px_bounding_box_collider_component>(&(ass.meshes[0]))
-				.addComponent<physics::px_sphere_collider_component>(1.0f)
-				.addComponent<physics::px_dynamic_body_component>();
-			px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setMass(1000.f);
-			px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setCCD(true);
+			//	.addComponent<physics::px_sphere_collider_component>(1.0f)
+			//	.addComponent<physics::px_dynamic_body_component>();
+			//px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setMass(1000.f);
+			//px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setCCD(true);
 			//px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setFilterMask(1, 2);
-			sphere = px_sphere_entt.handle;
+			//sphere = px_sphere_entt.handle;
 
-			auto px_sphere1 = &scene.createEntity("SpherePX1", (entity_handle)59)
-				.addComponent<transform_component>(vec3(5, 155.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(5.f))
-				.addComponent<mesh_component>(sphereMesh)
-				.addComponent<physics::px_sphere_collider_component>(5.0f)
-				.addComponent<physics::px_dynamic_body_component>();
-			px_sphere1->getComponent<physics::px_dynamic_body_component>().setCCD(true);
-			px_sphere1->getComponent<physics::px_dynamic_body_component>().setMass(500.0f);
+			//auto px_sphere1 = &scene.createEntity("SpherePX1", (entity_handle)59)
+			//	.addComponent<transform_component>(vec3(5, 155.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(5.f))
+			//	.addComponent<mesh_component>(sphereMesh)
+			//	.addComponent<physics::px_sphere_collider_component>(5.0f)
+			//	.addComponent<physics::px_dynamic_body_component>();
+			//px_sphere1->getComponent<physics::px_dynamic_body_component>().setCCD(true);
+			//px_sphere1->getComponent<physics::px_dynamic_body_component>().setMass(500.0f);
 			//px_sphere1->getComponent<physics::px_dynamic_body_component>().setFilterMask(2, 1 | 3);
 
 			//px_sphere1->getComponent<physics::px_dynamic_body_component>().setFilterMask(3, 1);
@@ -487,22 +522,8 @@ namespace era_engine
 			//auto& cloth = scene.createEntity("ClothPX")
 			//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
 			//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f));
-
-			scene.createEntity("Platform")
-				.addComponent<transform_component>(vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)), vec3(5.0f, 1.0f, 5.0f))
-				.addComponent<physics::px_plane_collider_component>(vec3(0.f, -5.0, 0.0f))
-				.addComponent<mesh_component>(groundMesh);
-
-			auto chainMesh = make_ref<multi_mesh>();
-
-			groundMesh->mesh =
-				boxMesh->mesh =
-				sphereMesh->mesh =
-				chainMesh->mesh =
-				builder.createDXMesh();
 		}
 #endif
-		ecs_test_start();
 #if 0
 		fireParticleSystem.initialize(10000, 50.f, getAssetPath("/resources/assets/particles/fire_explosion.png"), 6, 6, vec3(0, 1, 30));
 		smokeParticleSystem.initialize(10000, 500.f, getAssetPath("/resources/assets/particles/smoke1.tif"), 5, 5, vec3(0, 1, 15));
@@ -514,6 +535,8 @@ namespace era_engine
 	void application::initialize(main_renderer* renderer, editor_panels* editorPanels)
 	{
 		this->renderer = renderer;
+
+		world_scene = make_ref<EditorScene>();
 
 		if (dxContext.featureSupport.raytracing())
 		{
@@ -528,6 +551,8 @@ namespace era_engine
 		physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>();
 
 		escene& scene = this->scene.getCurrentScene();
+
+		ref<World> world = world_scene->get_current_world();
 
 		{
 			CPU_PROFILE_BLOCK("Binding for scripting initialization");
@@ -546,7 +571,19 @@ namespace era_engine
 
 #endif
 
-		initTestScene(scene);
+		initTestScene(world);
+
+		{
+			world_scene->sun.direction = normalize(vec3(-0.6f, -1.f, -0.3f));
+			world_scene->sun.color = vec3(1.f, 0.93f, 0.76f);
+			world_scene->sun.intensity = 11.1f;
+			world_scene->sun.numShadowCascades = 3;
+			world_scene->sun.shadowDimensions = 2048;
+			world_scene->sun.cascadeDistances = vec4(9.f, 25.f, 50.f, 10000.f);
+			world_scene->sun.bias = vec4(0.000588f, 0.000784f, 0.000824f, 0.0035f);
+			world_scene->sun.blendDistances = vec4(5.f, 10.f, 10.f, 10.f);
+			world_scene->sun.stabilize = true;
+		}
 
 		this->scene.sun.direction = normalize(vec3(-0.6f, -1.f, -0.3f));
 		this->scene.sun.color = vec3(1.f, 0.93f, 0.76f);
@@ -700,15 +737,6 @@ namespace era_engine
 		smokeParticleSystem.render(&transparentRenderPass);
 		debrisParticleSystem.render(&transparentRenderPass);
 #endif
-
-		// Tests
-		{
-			eentity sphereEntity{ sphere, &scene.registry };
-			if (input.keyboard['G'].pressEvent)
-			{
-				sphereEntity.getComponent<physics::px_dynamic_body_component>().addForce(vec3(200.0f, 1.0f, 0.0f), physics::px_force_mode::force_mode_impulse);
-			}
-		}
 	}
 
 	void application::update(const user_input& input, float dt)
@@ -743,66 +771,71 @@ namespace era_engine
 		environment.lightProbeGrid.visualize(&opaqueRenderPass);
 
 		escene& scene = this->scene.getCurrentScene();
+		ref<World> world = world_scene->get_current_world();
 		float unscaledDt = dt;
-		dt *= this->scene.getTimestepScale();
+		dt *= world_scene->get_timestep_scale();
 
 		bool running = this->scene.isPausable();
 
 #if PX_VEHICLE
 		{
-			if (running)
-			{
-				CPU_PROFILE_BLOCK("PhysX vehicles step");
-				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_vehicle_base_component, transform_component>).each())
-				{
-					vehicleStep(&vehicle, &trs, dt);
-				}
+			//if (running)
+			//{
+			//	CPU_PROFILE_BLOCK("PhysX vehicles step");
+			//	for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_vehicle_base_component, transform_component>).each())
+			//	{
+			//		vehicleStep(&vehicle, &trs, dt);
+			//	}
 
-				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_4_wheels_vehicle_component, transform_component>).each())
-				{
-					vehicleStep(&vehicle, &trs, dt);
-				}
+			//	for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_4_wheels_vehicle_component, transform_component>).each())
+			//	{
+			//		vehicleStep(&vehicle, &trs, dt);
+			//	}
 
-				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_tank_vehicle_component, transform_component>).each())
-				{
-					vehicleStep(&vehicle, &trs, dt);
-				}
-			}
+			//	for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_tank_vehicle_component, transform_component>).each())
+			//	{
+			//		vehicleStep(&vehicle, &trs, dt);
+			//	}
+			//}
 		}
 #endif
 
 		if (running)
+		{
 			physics::physics_holder::physicsRef->update(dt);
+		}
 
 		if (running)
-			updatePhysXCallbacksAndScripting(scene, linker, dt, input);
+		{
+			updatePhysXCallbacksAndScripting(world, linker, dt, input);
+		}
 
 #if PX_VEHICLE
 		{
-			if (running)
-			{
-				CPU_PROFILE_BLOCK("PhysX vehicles post step");
-				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_vehicle_base_component, transform_component>).each())
-				{
-					vehiclePostStep(&vehicle, dt);
-				}
+			//if (running)
+			//{
+			//	CPU_PROFILE_BLOCK("PhysX vehicles post step");
+			//	for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_vehicle_base_component, transform_component>).each())
+			//	{
+			//		vehiclePostStep(&vehicle, dt);
+			//	}
 
-				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_4_wheels_vehicle_component, transform_component>).each())
-				{
-					vehiclePostStep(&vehicle, dt);
-				}
+			//	for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_4_wheels_vehicle_component, transform_component>).each())
+			//	{
+			//		vehiclePostStep(&vehicle, dt);
+			//	}
 
-				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_tank_vehicle_component, transform_component>).each())
-				{
-					vehiclePostStep(&vehicle, dt);
-				}
-			}
+			//	for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_tank_vehicle_component, transform_component>).each())
+			//	{
+			//		vehiclePostStep(&vehicle, dt);
+			//	}
+			//}
 		}
 #endif
 
 #ifndef ERA_RUNTIME
 
-		eentity selectedEntity = editor.selectedEntity;
+		Entity selectedEntity = Entity::Null;
 
 #else
 
@@ -830,13 +863,13 @@ namespace era_engine
 
 #endif
 #if PX_BLAST_ENABLE
-		{
-			CPU_PROFILE_BLOCK("PhysX blast chuncks");
-			for (auto [entityHandle, cgm, _] : scene.group(component_group<physics::chunk_graph_manager, transform_component>).each())
-			{
-				cgm.update();
-			}
-		}
+		//{
+		//	CPU_PROFILE_BLOCK("PhysX blast chuncks");
+		//	for (auto [entityHandle, cgm, _] : scene.group(component_group<physics::chunk_graph_manager, transform_component>).each())
+		//	{
+		//		cgm.update();
+		//	}
+		//}
 #endif
 
 		updateTestScene(dt, scene, input);
@@ -844,14 +877,14 @@ namespace era_engine
 		{
 			if (ImGui::Begin("World"))
 			{
-				game_world->for_each_entity([&](const Entity::Handle entity_handle) {
-						EntityEditorUtils::edit_entity(game_world, entity_handle);
+				world->for_each_entity([&](const Entity::Handle entity_handle) {
+						EntityEditorUtils::edit_entity(world, entity_handle);
 						ImGui::Separator();
 					});
 			}
 			ImGui::End();
 
-			for (auto [entityHandle, anim, mesh, transform] : game_world->group(components_group<animation::AnimationComponent, MeshComponent, TransformComponent>, components_group<physics::px_ragdoll_component>).each())
+			for (auto [entityHandle, anim, mesh, transform] : world->group(components_group<animation::AnimationComponent, MeshComponent, TransformComponent>, components_group<physics::px_ragdoll_component>).each())
 			{
 				anim.update(mesh.mesh, stackArena, dt, &transform.transform);
 
@@ -869,114 +902,43 @@ namespace era_engine
 			lighting.maxNumSpotShadowRenderPasses = arraysize(spotShadowRenderPasses);
 			lighting.maxNumPointShadowRenderPasses = arraysize(pointShadowRenderPasses);
 
-			render_world(camera, game_world, stackArena, Entity::NullHandle, sun, lighting, !renderer->settings.cacheShadowMap,
+			render_world(camera, world, stackArena, Entity::NullHandle, sun, lighting, !renderer->settings.cacheShadowMap,
 				&opaqueRenderPass, &transparentRenderPass, &ldrRenderPass, &sunShadowRenderPass, &computePass, unscaledDt);
 
-			renderer->setSpotLights(spotLightBuffer[dxContext.bufferedFrameID], game_world->number_of_components_of_type<spot_light_component>(), spotLightShadowInfoBuffer[dxContext.bufferedFrameID]);
-			renderer->setPointLights(pointLightBuffer[dxContext.bufferedFrameID], game_world->number_of_components_of_type<point_light_component>(), pointLightShadowInfoBuffer[dxContext.bufferedFrameID]);
-		}
-
-		//if (renderer->mode != renderer_mode_pathtraced)
-		{
-			for (auto [entityHandle, anim, mesh, transform] : scene.group(component_group<animation::animation_component, mesh_component, transform_component>, component_group<physics::px_ragdoll_component>).each())
-			{
-				anim.update(mesh.mesh, stackArena, dt, &transform);
-
-				if (anim.drawSceleton)
-					anim.drawCurrentSkeleton(mesh.mesh, transform, &ldrRenderPass);
-			}
-
-			for (auto [entityHandle, anim, mesh, transform, ragdoll] : scene.group(component_group<animation::animation_component, mesh_component, transform_component, physics::px_ragdoll_component>).each())
-			{
-				anim.update(mesh.mesh, stackArena, dt, &transform, &ragdoll);
-
-				if (anim.drawSceleton)
-					anim.drawCurrentSkeleton(mesh.mesh, transform, &ldrRenderPass);
-			}
-
-			scene_lighting lighting;
-			lighting.spotLightBuffer = spotLightBuffer[dxContext.bufferedFrameID];
-			lighting.pointLightBuffer = pointLightBuffer[dxContext.bufferedFrameID];
-			lighting.spotLightShadowInfoBuffer = spotLightShadowInfoBuffer[dxContext.bufferedFrameID];
-			lighting.pointLightShadowInfoBuffer = pointLightShadowInfoBuffer[dxContext.bufferedFrameID];
-			lighting.spotShadowRenderPasses = spotShadowRenderPasses;
-			lighting.pointShadowRenderPasses = pointShadowRenderPasses;
-			lighting.maxNumSpotShadowRenderPasses = arraysize(spotShadowRenderPasses);
-			lighting.maxNumPointShadowRenderPasses = arraysize(pointShadowRenderPasses);
-
-			renderScene(camera, scene, stackArena, selectedEntity.handle, sun, lighting, !renderer->settings.cacheShadowMap,
-				&opaqueRenderPass, &transparentRenderPass, &ldrRenderPass, &sunShadowRenderPass, &computePass, unscaledDt);
-
-			renderer->setSpotLights(spotLightBuffer[dxContext.bufferedFrameID], scene.numberOfComponentsOfType<spot_light_component>(), spotLightShadowInfoBuffer[dxContext.bufferedFrameID]);
-			renderer->setPointLights(pointLightBuffer[dxContext.bufferedFrameID], scene.numberOfComponentsOfType<point_light_component>(), pointLightShadowInfoBuffer[dxContext.bufferedFrameID]);
-
+			renderer->setSpotLights(spotLightBuffer[dxContext.bufferedFrameID], world->number_of_components_of_type<SpotLightComponent>(), spotLightShadowInfoBuffer[dxContext.bufferedFrameID]);
+			renderer->setPointLights(pointLightBuffer[dxContext.bufferedFrameID], world->number_of_components_of_type<PointLightComponent>(), pointLightShadowInfoBuffer[dxContext.bufferedFrameID]);
+		
 			if (decals.size())
 			{
 				updateUploadBufferData(decalBuffer[dxContext.bufferedFrameID], decals.data(), (uint32)(sizeof(pbr_decal_cb) * decals.size()));
 				renderer->setDecals(decalBuffer[dxContext.bufferedFrameID], (uint32)decals.size(), decalTexture);
 			}
-
 #ifndef ERA_RUNTIME
 
-			if (selectedEntity)
+			if (selectedEntity != Entity::Null)
 			{
-				if (point_light_component* pl = selectedEntity.getComponentIfExists<point_light_component>())
-				{
-					position_component& pc = selectedEntity.getComponent<position_component>();
+				TransformComponent& transform = selectedEntity.get_component<TransformComponent>();
 
-					renderWireSphere(pc.position, pl->radius, vec4(pl->color, 1.f), &ldrRenderPass);
+				if (PointLightComponent* pl = selectedEntity.get_component_if_exists<PointLightComponent>())
+				{
+					renderWireSphere(transform.transform.position, pl->radius, vec4(pl->color, 1.f), &ldrRenderPass);
 				}
-				else if (spot_light_component* sl = selectedEntity.getComponentIfExists<spot_light_component>())
+				else if (SpotLightComponent* sl = selectedEntity.get_component_if_exists<SpotLightComponent>())
 				{
-					position_rotation_component& prc = selectedEntity.getComponent<position_rotation_component>();
-
-					renderWireCone(prc.position, prc.rotation * vec3(0.f, 0.f, -1.f),
+					renderWireCone(transform.transform.position, transform.transform.rotation * vec3(0.f, 0.f, -1.f),
 						sl->distance, sl->outerAngle * 2.f, vec4(sl->color, 1.f), &ldrRenderPass);
 				}
-				else if (physics::px_capsule_cct_component* cct = selectedEntity.getComponentIfExists<physics::px_capsule_cct_component>())
+				else if (physics::px_capsule_cct_component* cct = selectedEntity.get_component_if_exists<physics::px_capsule_cct_component>())
 				{
-					dynamic_transform_component& dtc = selectedEntity.getComponent<dynamic_transform_component>();
-					renderWireCapsule(dtc.position, dtc.position + vec3(0, cct->height, 0), cct->radius, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
+					renderWireCapsule(transform.transform.position, transform.transform.position + vec3(0, cct->height, 0), cct->radius, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
 				}
-				else if (physics::px_box_cct_component* cct = selectedEntity.getComponentIfExists<physics::px_box_cct_component>())
+				else if (physics::px_box_cct_component* cct = selectedEntity.get_component_if_exists<physics::px_box_cct_component>())
 				{
-					dynamic_transform_component& dtc = selectedEntity.getComponent<dynamic_transform_component>();
-					renderWireBox(dtc.position, vec3(cct->halfSideExtent, cct->halfHeight * 2, cct->halfSideExtent), dtc.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
-				}
-				else if (physics::px_convex_mesh_collider_component* cm = selectedEntity.getComponentIfExists<physics::px_convex_mesh_collider_component>())
-				{
-					//physics::px_body_component* body = nullptr;
-					//body = selectedEntity.getComponentIfExists<physics::px_dynamic_body_component>();
-					//if(!body)
-					//	body = selectedEntity.getComponentIfExists<physics::px_static_body_component>();
-
-					//ASSERT(body != nullptr);
-
-					//physics::physics_lock_read lock{};
-
-					//physx::PxShape* shape[1];
-					//body->getRigidActor()->getShapes(shape, 1);
-					//auto geom = (physx::PxConvexMeshGeometry*)cm->getGeometry();
-					//auto mesh = geom->convexMesh;
-
-					//auto vertices = mesh->getVertices();
-					//auto nbv = mesh->getNbVertices();
-
-					//for (size_t i = 0; i < nbv; i++)
-					//{
-					//	vec3 a = physx::createVec3(vertices[i] + shape[0]->getLocalPose().p) + selectedEntity.getComponent<transform_component>().position;
-					//	renderPoint(a, vec4(1, 0, 0, 1), &ldrRenderPass, true);
-					//}
+					renderWireBox(transform.transform.position, vec3(cct->halfSideExtent, cct->halfHeight * 2, cct->halfSideExtent), transform.transform.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
 				}
 			}
 #endif
-
 			submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
-		}
-
-		for (auto [entityHandle, transform, dynamic] : scene.group(component_group<transform_component, dynamic_transform_component>).each())
-		{
-			dynamic = transform;
 		}
 
 		animation::performSkinning(&computePass);
@@ -985,9 +947,9 @@ namespace era_engine
 		{
 			raytracingTLAS.reset();
 
-			for (auto [entityHandle, transform, raytrace] : scene.group(component_group<transform_component, raytrace_component>).each())
+			for (auto [entityHandle, transform, raytrace] : world->group(components_group<TransformComponent, RaytraceComponent>).each())
 			{
-				auto handle = raytracingTLAS.instantiate(raytrace.type, transform);
+				auto handle = raytracingTLAS.instantiate(raytrace.type, transform.transform);
 			}
 
 			renderer->setRaytracingScene(&raytracingTLAS);

@@ -239,7 +239,7 @@ namespace era_engine
 		this->editorPanels = editorPanels;
 		cameraController.initialize(&scene->camera);
 
-		systemInfo = era_engine::getSystemInfo();
+		systemInfo = getSystemInfo();
 	}
 
 	bool eeditor::update(const user_input& input, ldr_render_pass* ldrRenderPass, float dt)
@@ -877,16 +877,6 @@ namespace era_engine
 						drawComponent<physics::px_tank_vehicle_component>(selectedEntity, "Tank Vehicle", [](physics::px_tank_vehicle_component& vehicle)
 							{
 								ImGui::Text("Tank Vehicle");
-							});
-
-						drawComponent<ecs::scripts_component>(selectedEntity, "Script", [](ecs::scripts_component& script)
-							{
-								auto iter = script.typeNames.begin();
-								const auto& end = script.typeNames.end();
-								for (; iter != end; ++iter)
-								{
-									ImGui::Text((*iter).c_str());
-								}
 							});
 
 						drawComponent<raytrace_component>(selectedEntity, "Ray-tracing", [](raytrace_component& trace)
@@ -1737,7 +1727,7 @@ namespace era_engine
 								}
 							});
 
-						drawComponent<point_light_component>(selectedEntity, "Point Light", [this](point_light_component& pl)
+						/*drawComponent<point_light_component>(selectedEntity, "Point Light", [this](point_light_component& pl)
 							{
 								using component_t = point_light_component;
 
@@ -1759,9 +1749,9 @@ namespace era_engine
 
 									ImGui::EndProperties();
 								}
-							});
+							});*/
 
-						drawComponent<spot_light_component>(selectedEntity, "Spot Light", [this](spot_light_component& sl)
+						/*drawComponent<spot_light_component>(selectedEntity, "Spot Light", [this](spot_light_component& sl)
 							{
 								using component_t = spot_light_component;
 
@@ -1787,7 +1777,7 @@ namespace era_engine
 
 									ImGui::EndProperties();
 								}
-							});
+							});*/
 					}
 
 
@@ -2280,13 +2270,13 @@ namespace era_engine
 			{
 				auto& pl = scene->createEntity("Point light")
 					.addComponent<position_component>(camera.position + camera.rotation * vec3(0.f, 0.f, -3.f))
-					.addComponent<point_light_component>(
+					/*.addComponent<point_light_component>(
 						vec3(1.f, 1.f, 1.f),
 						1.f,
 						10.f,
 						false,
 						512u
-					);
+					)*/;
 
 				currentUndoStack->pushAction("entity creation", entity_existence_undo(*scene, pl));
 
@@ -2298,7 +2288,7 @@ namespace era_engine
 			{
 				auto& sl = scene->createEntity("Spot light")
 					.addComponent<position_rotation_component>(camera.position + camera.rotation * vec3(0.f, 0.f, -3.f), quat::identity)
-					.addComponent<spot_light_component>(
+					/*.addComponent<spot_light_component>(
 						vec3(1.f, 1.f, 1.f),
 						1.f,
 						25.f,
@@ -2306,7 +2296,7 @@ namespace era_engine
 						deg2rad(30.f),
 						false,
 						512u
-					);
+					)*/;
 
 				currentUndoStack->pushAction("entity creation", entity_existence_undo(*scene, sl));
 

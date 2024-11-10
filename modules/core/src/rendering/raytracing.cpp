@@ -7,6 +7,8 @@
 #include "dx/dx_context.h"
 #include "dx/dx_command_list.h"
 
+#include <rttr/registration>
+
 #include <dxcapi.h>
 
 #include <fstream>
@@ -554,4 +556,23 @@ namespace era_engine
 
 		return result;
 	}
+
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+		rttr::registration::class_<RaytraceComponent>("RaytraceComponent")
+			.constructor<>()
+			.constructor<ref<Entity::EcsData>, const raytracing_object_type&>()
+			.property("type", &RaytraceComponent::type);
+	}
+
+	RaytraceComponent::RaytraceComponent(ref<Entity::EcsData> _data, const raytracing_object_type& _type)
+		:  Component(_data), type(_type)
+	{
+	}
+
+	RaytraceComponent::~RaytraceComponent()
+	{
+	}
+
 }

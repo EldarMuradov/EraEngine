@@ -9,7 +9,7 @@ struct point_light_cb;
 
 namespace era_engine
 {
-	struct directional_light;
+	class directional_light;
 
 	struct shadow_map_viewport
 	{

@@ -13,6 +13,8 @@
 #include "dx/dx_profiling.h"
 #include "dx/dx_barrier_batcher.h"
 
+#include <rttr/registration>
+
 #include "grass_rs.hlsli"
 #include "depth_only_rs.hlsli"
 
@@ -382,6 +384,81 @@ namespace era_engine
 		else
 		{
 			renderPass->renderObject<grass_no_depth_prepass_pipeline>(data);
+		}
+	}
+
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+		rttr::registration::class_<GrassComponent>("GrassComponent")
+			.constructor<>()
+			.constructor<ref<Entity::EcsData>, const grass_settings&>()
+			.property("settings", &GrassComponent::settings);
+	}
+
+	GrassComponent::GrassComponent(ref<Entity::EcsData> _data, const grass_settings& _settings)
+		: Component(_data), settings(_settings)
+	{
+		uint32 num_vertices_LOD0 = numSegmentsLOD0 * 2 + 1;
+		uint32 num_vertices_LOD1 = num_vertices_LOD0 / 2 + 1;
+
+		grass_draw draw[2] = {};
+		draw[0].draw.VertexCountPerInstance = num_vertices_LOD0;
+		draw[1].draw.VertexCountPerInstance = num_vertices_LOD1;
+
+		draw_buffer = createBuffer(sizeof(grass_draw), 2, &draw, true);
+		count_buffer = createBuffer(sizeof(uint32), 2, 0, true, true);
+		blade_buffer_LOD0 = createBuffer(sizeof(grass_blade), 1000000, 0, true);
+		blade_buffer_LOD1 = createBuffer(sizeof(grass_blade), 1000000, 0, true);
+	}
+
+	GrassComponent::~GrassComponent()
+	{
+	}
+
+	void GrassComponent::generate(compute_pass* compute_pass, const render_camera& camera, const TerrainComponent& terrain, vec3 position_offset, float dt)
+	{
+		prev_time = time;
+		time += dt;
+
+		grass_update_data data;
+		data.chunks.reserve(terrain.chunks.size());
+		for (const auto& chunk : terrain.chunks)
+		{
+			data.chunks.push_back({ chunk.heightmap, chunk.normalmap });
+		}
+
+		data.settings = settings;
+		data.cameraFrustum = camera.getWorldSpaceFrustumPlanes();
+		data.cameraPosition = camera.position;
+
+		data.minCorner = terrain.get_min_corner(position_offset);
+		data.chunksPerDim = terrain.chunksPerDim;
+		data.chunkSize = terrain.chunkSize;
+		data.amplitudeScale = terrain.amplitudeScale;
+
+		data.time = time;
+		data.prevTime = prev_time;
+
+		data.drawBuffer = draw_buffer;
+		data.countBuffer = count_buffer;
+		data.bladeBufferLOD0 = blade_buffer_LOD0;
+		data.bladeBufferLOD1 = blade_buffer_LOD1;
+
+		compute_pass_event eventTime = grass_settings::depthPrepass ? compute_pass_before_depth_prepass : compute_pass_before_opaque;
+		compute_pass->addTask<grass_update_pipeline>(eventTime, std::move(data));
+	}
+
+	void GrassComponent::render(opaque_render_pass* render_pass)
+	{
+		grass_render_data data = { settings, draw_buffer, blade_buffer_LOD0, blade_buffer_LOD1, wind_direction, (uint32_t)component_data->entity_handle };
+		if (grass_settings::depthPrepass)
+		{
+			render_pass->renderObject<grass_pipeline, grass_depth_prepass_pipeline>(data, data);
+		}
+		else
+		{
+			render_pass->renderObject<grass_no_depth_prepass_pipeline>(data);
 		}
 	}
 

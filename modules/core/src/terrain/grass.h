@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "ecs/component.h"
+
 #include "rendering/render_pass.h"
 
 #include "terrain/terrain.h"
@@ -41,6 +43,32 @@ namespace era_engine
 		float time = 0.f;
 		float prevTime = 0.f;
 		vec2 windDirection = normalize(vec2(1.f, 1.f));
+	};
+
+	class GrassComponent final : public Component
+	{
+	public:
+		GrassComponent() = default;
+		GrassComponent(ref<Entity::EcsData> _data, const grass_settings& _settings = {});
+		virtual ~GrassComponent();
+
+		void generate(struct compute_pass* compute_pass, const render_camera& camera, const TerrainComponent& terrain, vec3 position_offset, float dt);
+		void render(struct opaque_render_pass* render_pass);
+
+		ERA_VIRTUAL_REFLECT(Component)
+
+	public:
+		grass_settings settings;
+
+	private:
+		ref<dx_buffer> draw_buffer;
+		ref<dx_buffer> count_buffer;
+		ref<dx_buffer> blade_buffer_LOD0;
+		ref<dx_buffer> blade_buffer_LOD1;
+
+		float time = 0.f;
+		float prev_time = 0.f;
+		vec2 wind_direction = normalize(vec2(1.f, 1.f));
 	};
 
 	void initializeGrassPipelines();

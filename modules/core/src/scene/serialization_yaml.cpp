@@ -382,7 +382,7 @@ namespace era_engine
 		out["Scene"] = "My scene";
 		out["Camera"] = scene.camera;
 		out["Rendering"] = rendererSettings;
-		out["Sun"] = scene.sun;
+		//out["Sun"] = scene.sun;
 		out["Environment"] = scene.environment;
 
 		YAML::Node entityNode;
@@ -406,8 +406,8 @@ namespace era_engine
 
 					// Rendering
 					if (auto* c = entity.getComponentIfExists<mesh_component>()) { n["Mesh"] = *c; }
-					if (auto* c = entity.getComponentIfExists<point_light_component>()) { n["Point light"] = *c; }
-					if (auto* c = entity.getComponentIfExists<spot_light_component>()) { n["Spot light"] = *c; }
+					//if (auto* c = entity.getComponentIfExists<point_light_component>()) { n["Point light"] = *c; }
+					//if (auto* c = entity.getComponentIfExists<spot_light_component>()) { n["Spot light"] = *c; }
 
 					// Physics
 					if (auto* c = entity.getComponentIfExists<rigid_body_component>()) { n["Rigid body"] = *c; }
@@ -477,7 +477,7 @@ namespace era_engine
 
 		YAML_LOAD(n, scene.camera, "Camera");
 		YAML_LOAD(n, rendererSettings, "Rendering");
-		YAML_LOAD(n, scene.sun, "Sun");
+		//YAML_LOAD(n, scene.sun, "Sun");
 
 		//YAML_LOAD(n, environmentName, "Environment");
 
@@ -498,8 +498,8 @@ namespace era_engine
 
 			// Rendering.
 			LOAD_COMPONENT(mesh_component, "Mesh");
-			LOAD_COMPONENT(point_light_component, "Point light");
-			LOAD_COMPONENT(spot_light_component, "Spot light");
+			//LOAD_COMPONENT(point_light_component, "Point light");
+			//LOAD_COMPONENT(spot_light_component, "Spot light");
 
 			// Physics.
 			LOAD_COMPONENT(rigid_body_component, "Rigid body");

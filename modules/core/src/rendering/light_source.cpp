@@ -2,6 +2,8 @@
 
 #include "rendering/light_source.h"
 
+#include <rttr/registration>
+
 namespace era_engine
 {
 	void directional_light::updateMatrices(const render_camera& camera)
@@ -110,4 +112,59 @@ namespace era_engine
 		mat4 projMatrix = createPerspectiveProjectionMatrix(acos(sl.getOuterCutoff()) * 2.f, 1.f, 0.01f, sl.maxDistance);
 		return projMatrix * viewMatrix;
 	}
+
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+		rttr::registration::class_<directional_light>("directional_light")
+			.constructor<>()
+			.property("color", &directional_light::color)
+			.property("intensity", &directional_light::intensity)
+			.property("bias", &directional_light::bias)
+			.property("cascadeDistances", &directional_light::cascadeDistances)
+			.property("blendDistances", &directional_light::blendDistances)
+			.property("direction", &directional_light::direction)
+			.property("negativeZOffset", &directional_light::negativeZOffset)
+			.property("shadowDimensions", &directional_light::shadowDimensions)
+			.property("numShadowCascades", &directional_light::numShadowCascades)
+			.property("stabilize", &directional_light::stabilize);
+
+		rttr::registration::class_<PointLightComponent>("PointLightComponent")
+			.constructor<>()
+			.property("color", &PointLightComponent::color)
+			.property("intensity", &PointLightComponent::intensity)
+			.property("radius", &PointLightComponent::radius)
+			.property("castsShadow", &PointLightComponent::castsShadow)
+			.property("shadowMapResolution", &PointLightComponent::shadowMapResolution);
+
+		rttr::registration::class_<SpotLightComponent>("SpotLightComponent")
+			.constructor<>()
+			.property("color", &SpotLightComponent::color)
+			.property("intensity", &SpotLightComponent::intensity)
+			.property("distance", &SpotLightComponent::distance)
+			.property("innerAngle", &SpotLightComponent::innerAngle)
+			.property("outerAngle", &SpotLightComponent::outerAngle)
+			.property("castsShadow", &SpotLightComponent::castsShadow)
+			.property("shadowMapResolution", &SpotLightComponent::shadowMapResolution);
+	}
+
+	PointLightComponent::PointLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _radius, bool _castsShadow, uint32 _shadowMapResolution)
+		: Component(_data), color(_color), intensity(_intensity), radius(_radius), castsShadow(_castsShadow), shadowMapResolution(_shadowMapResolution)
+	{
+	}
+
+	PointLightComponent::~PointLightComponent()
+	{
+	}
+
+	SpotLightComponent::SpotLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _distance, float _innerAngle, float _outerAngle, bool _castsShadow, uint32 _shadowMapResolution)
+		: Component(_data), color(_color), intensity(_intensity), distance(_distance), innerAngle(_innerAngle), outerAngle(_outerAngle), castsShadow(_castsShadow), shadowMapResolution(_shadowMapResolution)
+
+	{
+	}
+
+	SpotLightComponent::~SpotLightComponent()
+	{
+	}
+
 }

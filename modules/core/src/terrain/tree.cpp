@@ -1,12 +1,18 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "terrain/tree.h"
+
 #include "core/color.h"
 #include "core/nearest_neighbor.h"
+
 #include "dx/dx_pipeline.h"
+
 #include "rendering/render_resources.h"
 #include "rendering/pbr.h"
 #include "rendering/render_pass.h"
+
+#include <rttr/registration>
+
 #include "tree_rs.hlsli"
 
 namespace era_engine
@@ -117,6 +123,24 @@ namespace era_engine
             cl->drawIndexed(submesh.numIndices, data.numInstances, submesh.firstIndex, submesh.baseVertex, 0);
         }
     };
+
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
+        rttr::registration::class_<TreeComponent>("TreeComponent")
+            .constructor<>()
+            .constructor<ref<Entity::EcsData>, const tree_settings&>()
+            .property("settings", &TreeComponent::settings);
+    }
+
+    TreeComponent::TreeComponent(ref<Entity::EcsData> _data, const tree_settings& _settings)
+       : Component(_data), settings(_settings)
+    {
+    }
+
+    TreeComponent::~TreeComponent()
+    {
+    }
 
     void renderTree(opaque_render_pass* renderPass, D3D12_GPU_VIRTUAL_ADDRESS transforms, uint32 numInstances, const multi_mesh* mesh, float dt)
     {

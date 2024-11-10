@@ -602,49 +602,47 @@ namespace era_engine
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
 		compute_pass* computePass, float dt)
 	{
-		//TODO
 		CPU_PROFILE_BLOCK("Terrain");
 
-		/*memory_marker tempMemoryMarker = arena.getMarker();
-		position_scale_component* waterPlaneTransforms = arena.allocate<position_scale_component>(scene.numberOfComponentsOfType<water_component>());
+		memory_marker tempMemoryMarker = arena.getMarker();
+		TransformComponent* waterPlaneTransforms = arena.allocate<TransformComponent>(world->number_of_components_of_type<WaterComponent>());
 		uint32 numWaterPlanes = 0;
 
-		for (auto [entityHandle, water, transform] : scene.group(component_group<water_component, position_scale_component>).each())
+		for (auto [entityHandle, water, transform] : world->group(components_group<WaterComponent, TransformComponent>).each())
 		{
-			water.render(camera, transparentRenderPass, transform.position, vec2(transform.scale.x, transform.scale.z), dt, (uint32)entityHandle);
+			water.render(camera, transparentRenderPass, transform.transform.position, vec2(transform.transform.scale.x, transform.transform.scale.z), dt);
 
 			waterPlaneTransforms[numWaterPlanes++] = transform;
 		}
 
-		for (auto [entityHandle, terrain, position] : scene.group(component_group<terrain_component, position_component>).each())
+		for (auto [entityHandle, terrain, position] : world->group(components_group<TerrainComponent, TransformComponent>).each())
 		{
 			terrain.render(camera, opaqueRenderPass, sunShadowRenderPass, ldrRenderPass,
-				position.position, (uint32)entityHandle, selectedObjectID == entityHandle, waterPlaneTransforms, numWaterPlanes);
+				position.transform.position, selectedObjectID == entityHandle, waterPlaneTransforms, numWaterPlanes);
 		}
 		arena.resetToMarker(tempMemoryMarker);
 
-		for (auto [entityHandle, terrain, position, placement] : scene.group(component_group<terrain_component, position_component, proc_placement_component>).each())
+		for (auto [entityHandle, terrain, position, placement] : world->group(components_group<TerrainComponent, TransformComponent, ProcPlacementComponent>).each())
 		{
-			placement.generate(camera, terrain, position.position);
+			placement.generate(camera, terrain, position.transform.position);
 			placement.render(ldrRenderPass);
 		}
 
-		for (auto [entityHandle, terrain, position, grass] : scene.group(component_group<terrain_component, position_component, grass_component>).each())
+		for (auto [entityHandle, terrain, position, grass] : world->group(components_group<TerrainComponent, TransformComponent, GrassComponent>).each())
 		{
-			grass.generate(computePass, camera, terrain, position.position, dt);
-			grass.render(opaqueRenderPass, (uint32)entityHandle);
-		}*/
+			grass.generate(computePass, camera, terrain, position.transform.position, dt);
+			grass.render(opaqueRenderPass);
+		}
 	}
 
 	static void renderTrees(ref<World> world, const camera_frustum_planes& frustum, eallocator& arena, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
 		float dt)
 	{
-		//TODO
 		CPU_PROFILE_BLOCK("Trees");
 
-		/*auto group = scene.group(
-			component_group<transform_component, mesh_component, tree_component>);
+		auto group = world->group(
+			components_group<TransformComponent, MeshComponent, TreeComponent>);
 
 		uint32 groupSize = (uint32)group.size();
 
@@ -666,7 +664,7 @@ namespace era_engine
 			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
-			transforms[index] = trsToMat4(transform);
+			transforms[index] = trsToMat4(transform.transform);
 			objectIDs[index] = (uint32)entityHandle;
 
 			++oc.count;
@@ -692,7 +690,7 @@ namespace era_engine
 			D3D12_GPU_VIRTUAL_ADDRESS baseObjectID = objectIDAddress + (oc.offset * sizeof(uint32));
 
 			renderTree(opaqueRenderPass, baseM, oc.count, mesh, dt);
-		}*/
+		}
 	}
 
 	static void renderCloth(ref<World> world, Entity::Handle selectedObjectID,
@@ -846,15 +844,15 @@ namespace era_engine
 
 	static void setupSpotShadowPasses(ref<World> world, scene_lighting& lighting, bool invalidateShadowMapCache)
 	{
-		uint32 numSpotLights = world->number_of_components_of_type<spot_light_component>();
+		uint32 numSpotLights = world->number_of_components_of_type<SpotLightComponent>();
 		if (numSpotLights)
 		{
 			auto* slPtr = (spot_light_cb*)mapBuffer(lighting.spotLightBuffer, false);
 			auto* siPtr = (spot_shadow_info*)mapBuffer(lighting.spotLightShadowInfoBuffer, false);
 
-			for (auto [entityHandle, transform, sl] : world->group<position_rotation_component, spot_light_component>().each())
+			for (auto [entityHandle, transform, sl] : world->group<TransformComponent, SpotLightComponent>().each())
 			{
-				spot_light_cb cb(transform.position, transform.rotation * vec3(0.f, 0.f, -1.f), sl.color * sl.intensity, sl.innerAngle, sl.outerAngle, sl.distance);
+				spot_light_cb cb(transform.transform.position, transform.transform.rotation * vec3(0.f, 0.f, -1.f), sl.color * sl.intensity, sl.innerAngle, sl.outerAngle, sl.distance);
 
 				if (sl.castsShadow && lighting.numSpotShadowRenderPasses < lighting.maxNumSpotShadowRenderPasses)
 				{
@@ -880,15 +878,15 @@ namespace era_engine
 
 	static void setupPointShadowPasses(ref<World> world, scene_lighting& lighting, bool invalidateShadowMapCache)
 	{
-		uint32 numPointLights = world->number_of_components_of_type<point_light_component>();
+		uint32 numPointLights = world->number_of_components_of_type<PointLightComponent>();
 		if (numPointLights)
 		{
 			auto* plPtr = (point_light_cb*)mapBuffer(lighting.pointLightBuffer, false);
 			auto* siPtr = (point_shadow_info*)mapBuffer(lighting.pointLightShadowInfoBuffer, false);
 
-			for (auto [entityHandle, position, pl] : world->group<position_component, point_light_component>().each())
+			for (auto [entityHandle, position, pl] : world->group<TransformComponent, PointLightComponent>().each())
 			{
-				point_light_cb cb(position.position, pl.color * pl.intensity, pl.radius);
+				point_light_cb cb(position.transform.position, pl.color * pl.intensity, pl.radius);
 
 				if (pl.castsShadow && lighting.numPointShadowRenderPasses < lighting.maxNumPointShadowRenderPasses)
 				{
@@ -978,9 +976,9 @@ namespace era_engine
 		renderStaticObjects(world, frustum, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, staticShadowPasses);
 		renderDynamicObjects(world, frustum, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, dynamicShadowPasses);
 		renderAnimatedObjects(world, frustum, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, dynamicShadowPasses);
-		//renderTerrain(camera, world, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, sunRenderStaticGeometry ? sunShadowRenderPass : 0,
-		//	computePass, dt);
-		//renderTrees(world, frustum, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, sunShadowRenderPass, dt);
+		renderTerrain(camera, world, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, sunRenderStaticGeometry ? sunShadowRenderPass : 0,
+			computePass, dt);
+		renderTrees(world, frustum, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, sunShadowRenderPass, dt);
 		//renderCloth(world, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, sunShadowRenderPass);
 
 		arena.resetToMarker(tempMemoryMarker);

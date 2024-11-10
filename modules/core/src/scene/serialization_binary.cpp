@@ -108,8 +108,8 @@ namespace era_engine
 
 		// Rendering
 		mesh_component,
-		point_light_component,
-		spot_light_component,
+		//point_light_component,
+		//spot_light_component,
 
 		// Physics
 		rigid_body_component,

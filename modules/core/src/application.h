@@ -29,6 +29,8 @@
 
 #include "editor/editor.h"
 
+#include "ecs/editor/editor_scene.h"
+
 namespace era_engine
 {
 	namespace dotnet
@@ -42,7 +44,7 @@ namespace era_engine
 	bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
 	struct update_scripting_data;
-	void updatePhysXCallbacksAndScripting(escene& currentScene, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in);
+	void updatePhysXCallbacksAndScripting(ref<World> current_world, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in);
 	void updateScripting(update_scripting_data& data);
 
 	struct application
@@ -54,8 +56,11 @@ namespace era_engine
 
 		void handleFileDrop(const fs::path& filename);
 
-		NODISCARD escene* getCurrentScene() { return &scene.getCurrentScene(); }
-		NODISCARD editor_scene* getScene() { return &scene; }
+		escene* getCurrentScene() { return &scene.getCurrentScene(); }
+		editor_scene* getScene() { return &scene; }
+
+		ref<World> getCurrentWorld() const { return world_scene->get_current_world(); }
+		ref<EditorScene> getWorldScene() { return world_scene; }
 
 		main_renderer* getRenderer() const
 		{
@@ -95,6 +100,8 @@ namespace era_engine
 		ref<dotnet::enative_scripting_linker> linker;
 
 		editor_scene scene;
+
+		ref<EditorScene> world_scene = nullptr;
 
 #ifndef ERA_RUNTIME
 

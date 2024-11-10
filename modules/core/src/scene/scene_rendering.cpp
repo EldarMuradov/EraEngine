@@ -830,73 +830,10 @@ namespace era_engine
 
 	static void setupSpotShadowPasses(escene& scene, scene_lighting& lighting, bool invalidateShadowMapCache)
 	{
-		uint32 numSpotLights = scene.numberOfComponentsOfType<spot_light_component>();
-		if (numSpotLights)
-		{
-			auto* slPtr = (spot_light_cb*)mapBuffer(lighting.spotLightBuffer, false);
-			auto* siPtr = (spot_shadow_info*)mapBuffer(lighting.spotLightShadowInfoBuffer, false);
-
-			for (auto [entityHandle, transform, sl] : scene.group<position_rotation_component, spot_light_component>().each())
-			{
-				spot_light_cb cb(transform.position, transform.rotation * vec3(0.f, 0.f, -1.f), sl.color * sl.intensity, sl.innerAngle, sl.outerAngle, sl.distance);
-
-				if (sl.castsShadow && lighting.numSpotShadowRenderPasses < lighting.maxNumSpotShadowRenderPasses)
-				{
-					cb.shadowInfoIndex = lighting.numSpotShadowRenderPasses++;
-
-					auto [command, si] = determineSpotShadowInfo(cb, (uint32)entityHandle, sl.shadowMapResolution, invalidateShadowMapCache);
-					spot_shadow_render_pass& pass = lighting.spotShadowRenderPasses[cb.shadowInfoIndex];
-
-					pass.copyFromStaticCache = !command.renderStaticGeometry;
-					pass.viewport = command.viewports[0];
-					pass.viewProjMatrix = si.viewProj;
-
-					*siPtr++ = si;
-				}
-
-				*slPtr++ = cb;
-			}
-
-			unmapBuffer(lighting.spotLightBuffer, true, { 0, numSpotLights });
-			unmapBuffer(lighting.spotLightShadowInfoBuffer, true, { 0, lighting.numSpotShadowRenderPasses });
-		}
 	}
 
 	static void setupPointShadowPasses(escene& scene, scene_lighting& lighting, bool invalidateShadowMapCache)
 	{
-		uint32 numPointLights = scene.numberOfComponentsOfType<point_light_component>();
-		if (numPointLights)
-		{
-			auto* plPtr = (point_light_cb*)mapBuffer(lighting.pointLightBuffer, false);
-			auto* siPtr = (point_shadow_info*)mapBuffer(lighting.pointLightShadowInfoBuffer, false);
-
-			for (auto [entityHandle, position, pl] : scene.group<position_component, point_light_component>().each())
-			{
-				point_light_cb cb(position.position, pl.color * pl.intensity, pl.radius);
-
-				if (pl.castsShadow && lighting.numPointShadowRenderPasses < lighting.maxNumPointShadowRenderPasses)
-				{
-					cb.shadowInfoIndex = lighting.numPointShadowRenderPasses++;
-
-					auto [command, si] = determinePointShadowInfo(cb, (uint32)entityHandle, pl.shadowMapResolution, invalidateShadowMapCache);
-					point_shadow_render_pass& pass = lighting.pointShadowRenderPasses[cb.shadowInfoIndex];
-
-					pass.copyFromStaticCache0 = !command.renderStaticGeometry;
-					pass.copyFromStaticCache1 = !command.renderStaticGeometry;
-					pass.viewport0 = command.viewports[0];
-					pass.viewport1 = command.viewports[1];
-					pass.lightPosition = cb.position;
-					pass.maxDistance = cb.radius;
-
-					*siPtr++ = si;
-				}
-
-				*plPtr++ = cb;
-			}
-
-			unmapBuffer(lighting.pointLightBuffer, true, { 0, numPointLights });
-			unmapBuffer(lighting.pointLightShadowInfoBuffer, true, { 0, lighting.numPointShadowRenderPasses });
-		}
 	}
 
 	void renderScene(const render_camera& camera, escene& scene, eallocator& arena, entity_handle selectedObjectID,

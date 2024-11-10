@@ -9,6 +9,8 @@
 #include "rendering/material.h"
 #include "rendering/pbr.h"
 
+#include "ecs/component.h"
+
 namespace era_engine
 {
 	struct tree_settings
@@ -18,6 +20,18 @@ namespace era_engine
 
 	struct tree_component
 	{
+		tree_settings settings;
+	};
+
+	class TreeComponent : public Component
+	{
+	public:
+		TreeComponent() = default;
+		TreeComponent(ref<Entity::EcsData> _data, const tree_settings& _settings);
+		virtual ~TreeComponent();
+
+		ERA_VIRTUAL_REFLECT(Component)
+	public:
 		tree_settings settings;
 	};
 
