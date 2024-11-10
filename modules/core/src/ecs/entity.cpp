@@ -81,4 +81,76 @@ namespace era_engine
 		return internal_data->entity_handle;
 	}
 
+	void EntityContainer::emplace_pair(Entity::Handle parent, Entity::Handle child)
+	{
+		lock l(sync);
+
+		if (container.find(parent) == container.end())
+		{
+			container.emplace(std::make_pair(parent, EntityNode()));
+		}
+
+		container.at(parent).childs.push_back(child);
+	}
+
+	void EntityContainer::erase(Entity::Handle parent)
+	{
+		lock l(sync);
+
+		if (container.find(parent) == container.end())
+		{
+			return;
+		}
+
+		container.erase(parent);
+	}
+
+	void EntityContainer::erase_pair(Entity::Handle parent, Entity::Handle child)
+	{
+		lock l(sync);
+
+		if (container.find(parent) == container.end())
+		{
+			return;
+		}
+
+		auto iter = container.at(parent).childs.begin();
+		const auto& end = container.at(parent).childs.end();
+
+		for (; iter != end; ++iter)
+		{
+			if (*iter == child)
+			{
+				container.at(parent).childs.erase(iter);
+			}
+		}
+	}
+
+	std::vector<Entity::Handle> EntityContainer::get_childs(Entity::Handle parent)
+	{
+		if (container.find(parent) == container.end())
+		{
+			return std::vector<Entity::Handle>();
+		}
+
+		return container.at(parent).childs;
+	}
+
+	std::vector<Entity> EntityContainer::get_entity_childs(ref<World> world, Entity::Handle parent)
+	{
+		if (container.find(parent) == container.end())
+		{
+			return std::vector<Entity>();
+		}
+
+		std::vector<Entity> result = std::vector<Entity>(container.at(parent).childs.size());
+
+		for (const Entity::Handle handle : container.at(parent).childs)
+		{
+			result.emplace_back(world->get_entity(handle));
+		}
+
+		return result;
+	}
+
 }

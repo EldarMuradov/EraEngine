@@ -38,8 +38,11 @@ namespace era_engine
 		Entity create_entity(const char* _name);
 		Entity create_entity(Entity::Handle _handle);
 		Entity create_entity(Entity::Handle _handle, const char* _name);
+
 		void destroy_entity(const Entity& _entity);
 		void destroy_entity(Entity::Handle _handle);
+
+		Entity try_create_entity_in_place(const Entity& place, const char* _name);
 
 		Entity get_entity(Entity::Handle _handle);
 

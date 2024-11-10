@@ -543,10 +543,15 @@ namespace era_engine
 			raytracingTLAS.initialize();
 		}
 
-		scene.camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
-		scene.editorCamera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
-		scene.environment.setFromTexture(getAssetPath("/resources/assets/sky/sunset_in_the_chalk_quarry_4k.hdr"));
-		scene.environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
+		world_scene->camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
+		world_scene->editor_camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
+		world_scene->environment.setFromTexture(getAssetPath("/resources/assets/sky/sunset_in_the_chalk_quarry_4k.hdr"));
+		world_scene->environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
+
+		//scene.camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
+		//scene.editorCamera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
+		//scene.environment.setFromTexture(getAssetPath("/resources/assets/sky/sunset_in_the_chalk_quarry_4k.hdr"));
+		//scene.environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
 
 		physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>();
 
@@ -562,7 +567,7 @@ namespace era_engine
 
 #ifndef ERA_RUNTIME
 
-		editor.initialize(&this->scene, renderer, editorPanels);
+		editor.initialize(world_scene, renderer, editorPanels);
 		editor.app = this;
 
 #else
@@ -750,7 +755,7 @@ namespace era_engine
 		bool objectDragged = editor.update(input, &ldrRenderPass, dt);
 		editor.render(&ldrRenderPass, dt);
 
-		render_camera& camera = this->scene.isPausable() ? scene.editorCamera : scene.camera;
+		render_camera& camera = this->world_scene->is_pausable() ? world_scene->editor_camera : world_scene->camera;
 
 #else
 
@@ -775,7 +780,7 @@ namespace era_engine
 		float unscaledDt = dt;
 		dt *= world_scene->get_timestep_scale();
 
-		bool running = this->scene.isPausable();
+		bool running = world_scene->is_pausable();
 
 #if PX_VEHICLE
 		{
@@ -875,15 +880,6 @@ namespace era_engine
 		updateTestScene(dt, scene, input);
 
 		{
-			if (ImGui::Begin("World"))
-			{
-				world->for_each_entity([&](const Entity::Handle entity_handle) {
-						EntityEditorUtils::edit_entity(world, entity_handle);
-						ImGui::Separator();
-					});
-			}
-			ImGui::End();
-
 			for (auto [entityHandle, anim, mesh, transform] : world->group(components_group<animation::AnimationComponent, MeshComponent, TransformComponent>, components_group<physics::px_ragdoll_component>).each())
 			{
 				anim.update(mesh.mesh, stackArena, dt, &transform.transform);

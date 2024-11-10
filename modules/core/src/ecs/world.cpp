@@ -75,6 +75,15 @@ namespace era_engine
 		entity_datas.erase(_handle);
 	}
 
+	Entity World::try_create_entity_in_place(const Entity& place, const char* _name)
+	{
+		if(place.is_valid())
+		{
+			return create_entity(place.internal_data->entity_handle, _name);
+		}
+		return Entity::Null;
+	}
+
 	Entity World::get_entity(Entity::Handle _handle)
 	{
 		if (entity_datas.find(_handle) == entity_datas.end())

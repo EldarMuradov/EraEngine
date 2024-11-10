@@ -16,6 +16,7 @@
 #include "physics/physics.h"
 
 #include "scene/scene.h"
+#include "ecs/editor/editor_scene.h"
 
 #include "asset/file_registry.h"
 
@@ -25,13 +26,13 @@ namespace era_engine
 
 	struct eeditor
 	{
-		void initialize(editor_scene* scene, main_renderer* renderer, editor_panels* editorPanels);
+		void initialize(ref<EditorScene> _scene, main_renderer* _renderer, editor_panels* _editorPanels);
 
 		bool update(const user_input& input, ldr_render_pass* ldrRenderPass, float dt);
 
 		void render(ldr_render_pass* ldrRenderPass, float dt);
 
-		eentity selectedEntity;
+		Entity selectedEntity;
 		physics_settings physicsSettings;
 
 	private:
@@ -50,13 +51,13 @@ namespace era_engine
 		void drawSettings(float dt);
 		bool drawMainMenuBar();
 		bool drawSceneHierarchy();
-		void renderChilds(eentity& entity);
+		void renderChilds(Entity& entity);
 		bool handleUserInput(const user_input& input, ldr_render_pass* ldrRenderPass, float dt);
 		bool drawEntityCreationPopup();
 
 		void updateSelectedEntityUIRotation();
 
-		void setSelectedEntity(eentity entity);
+		void setSelectedEntity(const Entity& entity);
 
 		bool editCamera(render_camera& camera);
 		bool editTonemapping(tonemap_settings& tonemap);
@@ -77,10 +78,8 @@ namespace era_engine
 		template <typename Value_, typename Action_, typename... Args_>
 		void undoable(const char* undoLabel, Value_ before, Value_& now, Args_... args);
 
-		eentity selectedColliderEntity;
-		eentity selectedConstraintEntity;
+		ref<EditorScene> scene = nullptr;
 
-		editor_scene* scene = nullptr;
 		main_renderer* renderer = nullptr;
 		editor_panels* editorPanels = nullptr;
 

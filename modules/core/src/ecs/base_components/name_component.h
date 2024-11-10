@@ -8,6 +8,7 @@ namespace era_engine
 	class NameComponent final : public Component
 	{
 	public:
+		NameComponent() = default;
 		NameComponent(ref<Entity::EcsData> _data, const char* n);
 
 		virtual ~NameComponent();

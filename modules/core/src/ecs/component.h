@@ -16,6 +16,8 @@ namespace era_engine
 		Component(Component&& _component) noexcept;
 		virtual ~Component();
 
+		virtual void release();
+
 		Component& operator=(const Component& _component) noexcept;
 		Component& operator=(Component&& _component) noexcept;
 

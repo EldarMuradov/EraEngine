@@ -33,6 +33,11 @@ namespace era_engine
 	{
 	}
 
+	void era_engine::Component::release()
+	{
+		component_data.reset();
+	}
+
 	Component& Component::operator=(const Component& _component)  noexcept
 	{
 		component_data = _component.component_data;

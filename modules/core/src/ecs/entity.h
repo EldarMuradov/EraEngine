@@ -116,6 +116,7 @@ namespace era_engine
 		ref<EcsData> internal_data = nullptr;
 
 		friend class World;
+		friend struct eeditor;
 	};
 
 	struct EntityNode
@@ -129,61 +130,17 @@ namespace era_engine
 	class EntityContainer final
 	{
 		EntityContainer() = delete;
+
 	public:
-		static void emplacePair(Entity::Handle parent, Entity::Handle child)
-		{
-			lock l(sync);
+		static void emplace_pair(Entity::Handle parent, Entity::Handle child);
 
-			if (container.find(parent) == container.end())
-			{
-				container.emplace(std::make_pair(parent, EntityNode()));
-			}
+		static void erase(Entity::Handle parent);
 
-			container.at(parent).childs.push_back(child);
-		}
+		static void erase_pair(Entity::Handle parent, Entity::Handle child);
 
-		static void erase(Entity::Handle parent)
-		{
-			lock l(sync);
+		static std::vector<Entity::Handle> get_childs(Entity::Handle parent);
 
-			if (container.find(parent) == container.end())
-			{
-				return;
-			}
-
-			container.erase(parent);
-		}
-
-		static void erasePair(Entity::Handle parent, Entity::Handle child)
-		{
-			lock l(sync);
-
-			if (container.find(parent) == container.end())
-			{
-				return;
-			}
-
-			auto iter = container.at(parent).childs.begin();
-			const auto& end = container.at(parent).childs.end();
-
-			for (; iter != end; ++iter)
-			{
-				if (*iter == child)
-				{
-					container.at(parent).childs.erase(iter);
-				}
-			}
-		}
-
-		static std::vector<Entity::Handle> getChilds(Entity::Handle parent)
-		{
-			if (container.find(parent) == container.end())
-			{
-				return std::vector<Entity::Handle>();
-			}
-
-			return container.at(parent).childs;
-		}
+		static std::vector<Entity> get_entity_childs(ref<World> world, Entity::Handle parent);
 
 	private:
 		static inline std::unordered_map<Entity::Handle, EntityNode> container;

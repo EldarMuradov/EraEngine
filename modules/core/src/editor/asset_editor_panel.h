@@ -9,6 +9,8 @@
 
 #include "rendering/main_renderer.h"
 
+#include "ecs/editor/editor_scene.h"
+
 namespace era_engine
 {
 	struct editor_scene;
@@ -43,7 +45,7 @@ namespace era_engine
 		virtual void endFrame() override;
 
 		void setMesh(ref<multi_mesh> m) { mesh = m; }
-		void setScene(editor_scene* scene) { this->scene = scene; }
+		void setScene(ref<EditorScene> _scene) { scene = _scene; }
 
 		bool isHovered() const { return hovered; }
 
@@ -55,7 +57,7 @@ namespace era_engine
 		virtual void setDragDropData(void* data, uint32 size) override;
 
 		ref<multi_mesh> mesh;
-		editor_scene* scene = nullptr;
+		ref<EditorScene> scene = nullptr;
 		main_renderer renderer;
 
 		user_input input = {};
