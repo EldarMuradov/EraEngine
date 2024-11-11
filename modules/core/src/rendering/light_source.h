@@ -43,7 +43,8 @@ namespace era_engine
 	{
 	public:
 		PointLightComponent() = default;
-		PointLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _radius, bool _castsShadow = false, uint32 _shadowMapResolution = 512);		PointLightComponent(const PointLightComponent&) = default;
+		PointLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _radius, bool _castsShadow = false, uint32 _shadowMapResolution = 2048);
+		PointLightComponent(const PointLightComponent&) = default;
 		virtual ~PointLightComponent();
 
 		ERA_VIRTUAL_REFLECT(Component)
@@ -62,7 +63,8 @@ namespace era_engine
 	{
 	public:
 		SpotLightComponent() = default;
-		SpotLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _distance, float _innerAngle, float _outerAngle, bool _castsShadow = false, uint32 _shadowMapResolution = 512);		SpotLightComponent(const SpotLightComponent&) = default;
+		SpotLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _distance, float _innerAngle, float _outerAngle, bool _castsShadow = false, uint32 _shadowMapResolution = 2048);		
+		SpotLightComponent(const SpotLightComponent&) = default;
 		virtual ~SpotLightComponent();
 
 		ERA_VIRTUAL_REFLECT(Component)

@@ -5,7 +5,7 @@
 #include "core/math.h"
 #include "core/coroutine.h"
 
-#include "scene/components.h"
+#include "ecs/component.h"
 
 #include "ai/navigation.h"
 
@@ -13,32 +13,36 @@ namespace era_engine::ai
 {
 	struct nav_node;
 
-	enum class nav_type
+	class NavigationComponent : public Component
 	{
-		nav_type_none,
-		nav_type_a_Star,
-		nav_type_dijkstra,
-		nav_type_count
-	};
+	public:
+		enum class NavType
+		{
+			nav_type_none,
+			nav_type_a_Star,
+			nav_type_dijkstra,
+			nav_type_count
+		};
 
-	struct navigation_component : entity_handle_component_base
-	{
-		navigation_component() = default;
-		navigation_component(uint32 h, nav_type tp);
-		~navigation_component() { }
+		NavigationComponent() = default;
+		NavigationComponent(ref<Entity::EcsData> _data, NavType _type);
+		virtual ~NavigationComponent();
 
-		void processPath();
+		void process_path();
 
+		ERA_VIRTUAL_REFLECT(Component)
+
+	public:
 		vec3 destination = vec3(0.0f);
 
-		nav_type type;
+		NavType type;
 
 	private:
-		void createPath(vec3 to, vec3 from);
+		void create_path(const vec3& to, const vec3& from);
 
 	private:
-		coroutine_return<nav_node> navCoroutine;
+		coroutine_return<nav_node> nav_coroutine;
 
-		vec3 previousDestination = vec3(NAV_INF_POS);
+		vec3 previous_destination = vec3(NAV_INF_POS);
 	};
 }

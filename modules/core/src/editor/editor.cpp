@@ -1032,8 +1032,8 @@ namespace era_engine
 						vec3(1.f, 1.f, 1.f),
 						1.f,
 						10.f,
-						false,
-						512u
+						true,
+						2048u
 					);
 
 				TransformComponent& transform = pl.get_component<TransformComponent>();
@@ -1054,8 +1054,8 @@ namespace era_engine
 						25.f,
 						deg2rad(20.f),
 						deg2rad(30.f),
-						false,
-						512u
+						true,
+						2048u
 					);
 
 				TransformComponent& transform = sl.get_component<TransformComponent>();

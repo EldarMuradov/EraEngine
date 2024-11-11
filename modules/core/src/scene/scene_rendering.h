@@ -62,9 +62,4 @@ namespace era_engine
 		shadow_pass* shadowRenderPasses;
 		uint32 numShadowRenderPasses;
 	};
-
-	void renderScene(const render_camera& camera, escene& scene, eallocator& arena, entity_handle selectedObjectID,
-		directional_light& sun, scene_lighting& lighting, bool invalidateShadowMapCache,
-		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
-		compute_pass* computePass, float dt);
 }

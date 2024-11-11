@@ -73,9 +73,4 @@ namespace era_engine
 		return loadMeshFromHandleAsync(handle, flags, parentJob, cb);
 	}
 
-	struct mesh_component
-	{
-		ref<multi_mesh> mesh;
-		bool isHidden = false;
-	};
 }

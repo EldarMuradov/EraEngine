@@ -37,17 +37,17 @@ namespace era_engine
 			corners[6] = camera.position + topLeftRay * distance;
 			corners[7] = camera.position + topRightRay * distance;
 
-			vec3 center(0.f);
+			vec3 center(0.0f);
 			for (uint32 i = 0; i < 8; ++i)
 			{
 				center += corners[i];
 			}
-			center /= 8.f;
+			center /= 8.0f;
 
-			vec3 upDir = vec3(0.f, 1.f, 0.f);
-			if (abs(dot(upDir, direction)) > 1.f - EPSILON)
+			vec3 upDir = vec3(0.f, 1.0f, 0.f);
+			if (abs(dot(upDir, direction)) > 1.0f - EPSILON)
 			{
-				upDir = vec3(0.f, 0.f, 1.f);
+				upDir = vec3(0.0f, 0.0f, 1.0f);
 			}
 
 			mat4 viewMatrix = lookAt(center, center + direction, upDir);
@@ -64,7 +64,7 @@ namespace era_engine
 					sphereRadius = max(sphereRadius, d);
 				}
 
-				sphereRadius = ceil(sphereRadius * 16.f) / 16.f;
+				sphereRadius = ceil(sphereRadius * 16.0f) / 16.0f;
 				minExtents = -sphereRadius;
 				maxExtents = sphereRadius;
 			}
@@ -90,8 +90,8 @@ namespace era_engine
 
 			{
 				mat4 matrix = projMatrix * viewMatrix;
-				vec3 shadowOrigin(0.f);
-				shadowOrigin = (matrix * vec4(shadowOrigin, 1.f)).xyz;
+				vec3 shadowOrigin(0.0f);
+				shadowOrigin = (matrix * vec4(shadowOrigin, 1.0f)).xyz;
 				shadowOrigin *= (shadowDimensions * 0.5f);
 
 				vec3 roundedOrigin = round(shadowOrigin);

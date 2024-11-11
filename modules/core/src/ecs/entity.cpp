@@ -7,7 +7,7 @@
 namespace era_engine
 {
 
-	Entity Entity::Null = Entity(make_ref<Entity::EcsData>(Entity::NullHandle, (entt::registry*)nullptr));
+	Entity Entity::Null = Entity(nullptr);
 
 	RTTR_REGISTRATION
 	{
@@ -66,8 +66,8 @@ namespace era_engine
 
 	bool Entity::is_valid() const noexcept
 	{
-		return internal_data != nullptr && 
-			   internal_data->entity_handle != Entity::NullHandle && 
+		return internal_data != nullptr &&
+			   internal_data->entity_handle != Entity::NullHandle &&
 			   internal_data->registry != nullptr;
 	}
 

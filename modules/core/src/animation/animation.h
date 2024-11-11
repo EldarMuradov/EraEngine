@@ -235,8 +235,8 @@ namespace era_engine::animation
 
 	struct animation_blend_tree_1d
 	{
-		animation_blend_tree_1d() { }
-		animation_blend_tree_1d(std::initializer_list<animation_clip*> clips, float startRelTime = 0.f, float startBlendValue = 0.f);
+		animation_blend_tree_1d() = default;
+		animation_blend_tree_1d(std::initializer_list<animation_clip*> clips, float startRelTime = 0.0f, float startBlendValue = 0.0f);
 
 		void setBlendValue(float blendValue);
 		void update(const animation_skeleton& skeleton, float dt, trs* outLocalTransforms, trs& outDeltaRootMotion);
@@ -254,25 +254,6 @@ namespace era_engine::animation
 		trs lastRootMotion;
 	};
 
-	struct animation_component
-	{
-		void initialize(std::vector<animation_clip>& clips, size_t startIndex = 0);
-		void update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform = 0, physics::px_ragdoll_component* ragdoll = nullptr);
-		void drawCurrentSkeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* renderPass) const;
-
-		ref<animation_instance> animation = nullptr;
-
-		ref<animation_controller> controller = nullptr;
-
-		dx_vertex_buffer_group_view currentVertexBuffer;
-		dx_vertex_buffer_group_view prevFrameVertexBuffer;
-
-		trs* currentGlobalTransforms = 0;
-
-		float timeScale = 1.f;
-		bool drawSceleton = false;
-	};
-
 	class AnimationComponent : public Component
 	{
 	public:
@@ -280,7 +261,7 @@ namespace era_engine::animation
 		virtual ~AnimationComponent();
 
 		void initialize(std::vector<animation_clip>& clips, size_t start_index = 0);
-		void update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform = 0, physics::px_ragdoll_component* ragdoll = nullptr);
+		void update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform = nullptr, physics::px_ragdoll_component* ragdoll = nullptr);
 		void draw_current_skeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* render_pass) const;
 
 		ERA_VIRTUAL_REFLECT(Component)

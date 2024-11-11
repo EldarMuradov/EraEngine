@@ -8,6 +8,8 @@
 
 #include "terrain/heightmap_collider.h"
 
+#include "ecs/rendering/mesh_component.h"
+
 namespace era_engine
 {
 	struct write_stream
@@ -107,7 +109,7 @@ namespace era_engine
 		dynamic_transform_component,
 
 		// Rendering
-		mesh_component,
+		//mesh_component,
 		//point_light_component,
 		//spot_light_component,
 
@@ -154,22 +156,12 @@ namespace era_engine
 	template <> void deserializeFromMemoryStream<dynamic_transform_component>(eentity entity, read_stream& stream) { entity.addComponent<dynamic_transform_component>(); }
 
 	template <>
-	void serializeToMemoryStream(eentity entity, const mesh_component& component, write_stream& stream)
+	void serializeToMemoryStream(eentity entity, const era_engine::MeshComponent& component, write_stream& stream)
 	{
 		asset_handle handle = component.mesh ? component.mesh->handle : (asset_handle)0;
 		uint32 flags = component.mesh ? component.mesh->flags : 0;
 		stream.write(handle);
 		stream.write(flags);
-	}
-
-	template <>
-	void deserializeFromMemoryStream<mesh_component>(eentity entity, read_stream& stream)
-	{
-		READ(asset_handle, handle);
-		READ(uint32, flags);
-
-		auto mesh = loadMeshFromHandle(handle, flags);
-		entity.addComponent<mesh_component>(mesh);
 	}
 
 	template <>

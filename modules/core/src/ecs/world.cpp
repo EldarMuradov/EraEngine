@@ -1,13 +1,15 @@
 #include "ecs/world.h"
 #include "ecs/base_components/base_components.h"
 
+#include "rendering/light_source.h"
+
 namespace era_engine
 {
 
 	World::World(const char* _name)
 		:name(_name)
 	{
-		(void)registry.group<NameComponent, TransformComponent>();
+		(void)registry.group<TransformComponent, NameComponent>();
 
 		registry.reserve(64000);
 

@@ -94,36 +94,6 @@ namespace era_engine
 			return {};
 	}
 
-	void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
-	{
-		struct add_ray_tracing_data
-		{
-			eentity entity;
-			ref<multi_mesh> mesh;
-		};
-
-		add_ray_tracing_data data = { entity, mesh };
-
-		lowPriorityJobQueue.createJob<add_ray_tracing_data>([](add_ray_tracing_data& data, job_handle)
-			{
-				data.mesh->loadJob.waitForCompletion();
-
-				struct create_component_data
-				{
-					eentity entity;
-					raytracing_object_type blas;
-				};
-
-				create_component_data createData = { data.entity, defineBlasFromMesh(data.mesh) };
-
-				mainThreadJobQueue.createJob<create_component_data>([](create_component_data& data, job_handle)
-					{
-						data.entity.addComponent<raytrace_component>(data.blas);
-					}, createData).submitNow();
-
-			}, data).submitNow();
-	}
-
 	void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh)
 	{
 		struct add_ray_tracing_data
@@ -250,23 +220,6 @@ namespace era_engine
 			//delete[] ptr; //CLR clear's it
 		}
 		data.core->update(data.deltaTime);
-	}
-
-	static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> mesh)
-	{
-		struct add_animation_data
-		{
-			eentity entity;
-			ref<multi_mesh> mesh;
-		};
-
-		add_animation_data data = { entity, mesh };
-
-		mainThreadJobQueue.createJob<add_animation_data>([](add_animation_data& data, job_handle job)
-			{
-				data.mesh->loadJob.waitForCompletion();
-				data.entity.getComponent<animation::animation_component>().initialize(data.mesh->skeleton.clips);
-			}, data).submitNow();
 	}
 
 	static void initializeAnimationComponentAsync(Entity entity, ref<multi_mesh> mesh)
@@ -548,11 +501,6 @@ namespace era_engine
 		world_scene->environment.setFromTexture(getAssetPath("/resources/assets/sky/sunset_in_the_chalk_quarry_4k.hdr"));
 		world_scene->environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
 
-		//scene.camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
-		//scene.editorCamera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
-		//scene.environment.setFromTexture(getAssetPath("/resources/assets/sky/sunset_in_the_chalk_quarry_4k.hdr"));
-		//scene.environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
-
 		physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>();
 
 		escene& scene = this->scene.getCurrentScene();
@@ -578,28 +526,15 @@ namespace era_engine
 
 		initTestScene(world);
 
-		{
-			world_scene->sun.direction = normalize(vec3(-0.6f, -1.f, -0.3f));
-			world_scene->sun.color = vec3(1.f, 0.93f, 0.76f);
-			world_scene->sun.intensity = 11.1f;
-			world_scene->sun.numShadowCascades = 3;
-			world_scene->sun.shadowDimensions = 2048;
-			world_scene->sun.cascadeDistances = vec4(9.f, 25.f, 50.f, 10000.f);
-			world_scene->sun.bias = vec4(0.000588f, 0.000784f, 0.000824f, 0.0035f);
-			world_scene->sun.blendDistances = vec4(5.f, 10.f, 10.f, 10.f);
-			world_scene->sun.stabilize = true;
-		}
-
-		this->scene.sun.direction = normalize(vec3(-0.6f, -1.f, -0.3f));
-		this->scene.sun.color = vec3(1.f, 0.93f, 0.76f);
-		this->scene.sun.intensity = 11.1f;
-
-		this->scene.sun.numShadowCascades = 3;
-		this->scene.sun.shadowDimensions = 2048;
-		this->scene.sun.cascadeDistances = vec4(9.f, 25.f, 50.f, 10000.f);
-		this->scene.sun.bias = vec4(0.000588f, 0.000784f, 0.000824f, 0.0035f);
-		this->scene.sun.blendDistances = vec4(5.f, 10.f, 10.f, 10.f);
-		this->scene.sun.stabilize = true;
+		world_scene->sun.direction = normalize(vec3(-0.6f, -1.f, -0.3f));
+		world_scene->sun.color = vec3(1.f, 0.93f, 0.76f);
+		world_scene->sun.intensity = 11.1f;
+		world_scene->sun.numShadowCascades = 3;
+		world_scene->sun.shadowDimensions = 2048;
+		world_scene->sun.cascadeDistances = vec4(9.f, 25.f, 50.f, 10000.f);
+		world_scene->sun.bias = vec4(0.000588f, 0.000784f, 0.000824f, 0.0035f);
+		world_scene->sun.blendDistances = vec4(5.f, 10.f, 10.f, 10.f);
+		world_scene->sun.stabilize = true;
 
 		for (uint32 i = 0; i < NUM_BUFFERED_FRAMES; ++i)
 		{
@@ -727,7 +662,7 @@ namespace era_engine
 		}
 	}
 
-	static void updateTestScene(float dt, escene& scene, const user_input& input)
+	static void updateTestScene(float dt, ref<World> world, const user_input& input)
 	{
 		// Particles
 #if 0
@@ -761,22 +696,22 @@ namespace era_engine
 
 		bool objectDragged = false;
 
-		render_camera& camera = scene.camera;
+		render_camera& camera = world_scene->camera;
 
 		rt.update();
 
 #endif
 
-		directional_light& sun = scene.sun;
-		pbr_environment& environment = scene.environment;
+		directional_light& sun = world_scene->sun;
+		pbr_environment& environment = world_scene->environment;
 
 		environment.update(sun.direction);
 		sun.updateMatrices(camera);
 		setAudioListener(camera.position, camera.rotation, vec3(0.f));
 		environment.lightProbeGrid.visualize(&opaqueRenderPass);
 
-		escene& scene = this->scene.getCurrentScene();
 		ref<World> world = world_scene->get_current_world();
+
 		float unscaledDt = dt;
 		dt *= world_scene->get_timestep_scale();
 
@@ -808,10 +743,6 @@ namespace era_engine
 		if (running)
 		{
 			physics::physics_holder::physicsRef->update(dt);
-		}
-
-		if (running)
-		{
 			updatePhysXCallbacksAndScripting(world, linker, dt, input);
 		}
 
@@ -840,11 +771,11 @@ namespace era_engine
 
 #ifndef ERA_RUNTIME
 
-		Entity selectedEntity = Entity::Null;
+		Entity selectedEntity = editor.selectedEntity;
 
 #else
 
-		eentity selectedEntity{};
+		Entity selectedEntity = Entity::Null;
 
 #endif
 
@@ -877,7 +808,7 @@ namespace era_engine
 		//}
 #endif
 
-		updateTestScene(dt, scene, input);
+		updateTestScene(dt, world, input);
 
 		{
 			for (auto [entityHandle, anim, mesh, transform] : world->group(components_group<animation::AnimationComponent, MeshComponent, TransformComponent>, components_group<physics::px_ragdoll_component>).each())
@@ -970,29 +901,29 @@ namespace era_engine
 
 		if (isMeshExtension(ext))
 		{
+			fs::path path = filename;
+			path = path.stem();
+
+			ref<World> world = world_scene->get_current_world();
 			if (auto mesh = loadAnimatedMeshFromFileAsync(relative.string()))
 			{
-				fs::path path = filename;
-				path = path.stem();
+				auto& entity = world->create_entity("Veribot")
+					.add_component<animation::AnimationComponent>()
+					.add_component<MeshComponent>(mesh);
 
-				auto& en = scene.getCurrentScene().createEntity(path.string().c_str())
-					.addComponent<transform_component>(vec3(0.f), quat::identity)
-					.addComponent<animation::animation_component>()
-					.addComponent<dynamic_transform_component>()
-					.addComponent<mesh_component>(mesh);
-				initializeAnimationComponentAsync(en, mesh);
-				addRaytracingComponentAsync(en, mesh);
+				TransformComponent& transform_component = entity.get_component<TransformComponent>();
+				transform_component.type = TransformComponent::DYNAMIC;
+
+				initializeAnimationComponentAsync(entity, mesh);
+				addRaytracingComponentAsync(entity, mesh);
 			}
 			else if (auto mesh = loadMeshFromFileAsync(relative.string()))
 			{
-				fs::path path = filename;
-				path = path.stem();
+				auto& entity = world->create_entity("Veribot")
+					.add_component<animation::AnimationComponent>()
+					.add_component<MeshComponent>(mesh);
 
-				auto& en = scene.getCurrentScene().createEntity(path.string().c_str())
-					.addComponent<transform_component>(vec3(0.f), quat::identity)
-					.addComponent<mesh_component>(mesh);
-
-				addRaytracingComponentAsync(en, mesh);
+				addRaytracingComponentAsync(entity, mesh);
 			}
 		}
 		else if (ext == ".hdr")

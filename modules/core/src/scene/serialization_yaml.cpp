@@ -285,34 +285,6 @@ namespace YAML
 	};
 
 	template<>
-	struct convert<mesh_component>
-	{
-		static Node encode(const mesh_component& c)
-		{
-			Node n;
-			n["Handle"] = c.mesh->handle;
-			n["Flags"] = c.mesh->flags;
-			return n;
-		}
-
-		static bool decode(const Node& n, mesh_component& c)
-		{
-			if (!n.IsMap())
-				return false;
-
-			asset_handle handle;
-			uint32 flags;
-
-			YAML_LOAD(n, handle, "Handle");
-			YAML_LOAD(n, flags, "Flags");
-
-			c.mesh = loadMeshFromHandle(handle, flags);
-
-			return true;
-		}
-	};
-
-	template<>
 	struct convert<pbr_environment>
 	{
 		static Node encode(const pbr_environment& c)
@@ -405,7 +377,6 @@ namespace era_engine
 					if (auto* c = entity.getComponentIfExists<dynamic_transform_component>()) { n["Dynamic"] = true; }
 
 					// Rendering
-					if (auto* c = entity.getComponentIfExists<mesh_component>()) { n["Mesh"] = *c; }
 					//if (auto* c = entity.getComponentIfExists<point_light_component>()) { n["Point light"] = *c; }
 					//if (auto* c = entity.getComponentIfExists<spot_light_component>()) { n["Spot light"] = *c; }
 
@@ -497,7 +468,6 @@ namespace era_engine
 			if (entityNode["Dynamic"]) { entity.addComponent<dynamic_transform_component>(); }
 
 			// Rendering.
-			LOAD_COMPONENT(mesh_component, "Mesh");
 			//LOAD_COMPONENT(point_light_component, "Point light");
 			//LOAD_COMPONENT(spot_light_component, "Spot light");
 

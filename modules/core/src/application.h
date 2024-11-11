@@ -38,7 +38,7 @@ namespace era_engine
 		struct enative_scripting_linker;
 	}
 
-	void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh);
+	void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh);
 
 	bool editFireParticleSystem(fire_particle_system& particleSystem);
 	bool editBoidParticleSystem(boid_particle_system& particleSystem);

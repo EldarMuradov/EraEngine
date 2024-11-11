@@ -1,7 +1,6 @@
 #include "ecs/rendering/world_renderer.h"
 #include "ecs/rendering/mesh_component.h"
 #include "ecs/base_components/base_components.h"
-#include "ecs/world.h"
 
 #include "core/cpu_profiling.h"
 #include "core/string.h"
@@ -322,9 +321,8 @@ namespace era_engine
 		CPU_PROFILE_BLOCK("Static objects");
 
 		using specialized_components = ComponentsGroup<
-			animation::AnimationComponent/*,
-			TransformComponent,
-			//tree_component*/ //TODO
+			animation::AnimationComponent,
+			TreeComponent
 		>;
 
 		auto group = world->group(
@@ -696,11 +694,7 @@ namespace era_engine
 	static void renderCloth(ref<World> world, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass)
 	{
-		//TODO
 		CPU_PROFILE_BLOCK("Cloth");
-
-		//auto group = scene.group(
-		//	component_group<cloth_component, cloth_render_component>);
 
 		//uint32 groupSize = (uint32)group.size();
 
@@ -713,63 +707,6 @@ namespace era_engine
 		//D3D12_GPU_VIRTUAL_ADDRESS objectIDAddress = objectIDAllocation.gpuPtr;
 
 		//uint32 index = 0;
-		//for (auto [entityHandle, cloth, render] : scene.group<cloth_component, cloth_render_component>().each())
-		//{
-		//	pbr_material_desc desc;
-		//	desc.albedo = getAssetPath("/resources/assets/Sponza/textures/sponza_curtain_diff.png");
-		//	desc.normal = getAssetPath("/resources/assets/Sponza/textures/sponza_fabric_ddn.jpg");
-		//	desc.roughness = getAssetPath("/resources/assets/Sponza/textures/sponza_curtain_diff.png");
-		//	desc.metallic = "";
-		//	desc.shader = pbr_material_shader_double_sided;
-
-		//	static auto clothMaterial = createPBRMaterial(desc);
-
-		//	objectIDs[index] = (uint32)entityHandle;
-		//	D3D12_GPU_VIRTUAL_ADDRESS baseObjectID = objectIDAddress + (index * sizeof(uint32));
-
-		//	auto [vb, prevFrameVB, ib, sm] = render.getRenderData(cloth);
-
-		//	pbr_render_data data;
-		//	data.transformPtr = transformAllocation.gpuPtr;
-		//	data.vertexBuffer = vb;
-		//	data.indexBuffer = ib;
-		//	data.submesh = sm;
-		//	data.material = clothMaterial;
-		//	data.numInstances = 1;
-
-		//	depth_prepass_data depthPrepassData;
-		//	depthPrepassData.transformPtr = transformAllocation.gpuPtr;
-		//	depthPrepassData.prevFrameTransformPtr = transformAllocation.gpuPtr;
-		//	depthPrepassData.objectIDPtr = baseObjectID;
-		//	depthPrepassData.vertexBuffer = vb;
-		//	depthPrepassData.prevFrameVertexBuffer = prevFrameVB.positions ? prevFrameVB.positions : vb.positions;
-		//	depthPrepassData.indexBuffer = ib;
-		//	depthPrepassData.submesh = sm;
-		//	depthPrepassData.numInstances = 1;
-		//	depthPrepassData.alphaCutoutTextureSRV = (clothMaterial && clothMaterial->albedo) ? clothMaterial->albedo->defaultSRV : dx_cpu_descriptor_handle{};
-
-		//	addToRenderPass(clothMaterial->shader, data, depthPrepassData, opaqueRenderPass, transparentRenderPass);
-
-		//	if (sunShadowRenderPass)
-		//	{
-		//		shadow_render_data shadowData;
-		//		shadowData.transformPtr = transformAllocation.gpuPtr;
-		//		shadowData.vertexBuffer = vb.positions;
-		//		shadowData.indexBuffer = ib;
-		//		shadowData.numInstances = 1;
-		//		shadowData.submesh = data.submesh;
-
-		//		addToDynamicRenderPass(clothMaterial->shader, shadowData, &sunShadowRenderPass->cascades[0], false);
-		//	}
-
-		//	if (entityHandle == selectedObjectID)
-		//	{
-		//		renderOutline(ldrRenderPass, mat4::identity, vb, ib, sm);
-		//	}
-
-		//	++index;
-		//}
-
 		//for (auto [entityHandle, cloth, render] : scene.group<physics::px_cloth_component, physics::px_cloth_render_component>().each())
 		//{
 		//	pbr_material_desc desc;
@@ -850,7 +787,7 @@ namespace era_engine
 			auto* slPtr = (spot_light_cb*)mapBuffer(lighting.spotLightBuffer, false);
 			auto* siPtr = (spot_shadow_info*)mapBuffer(lighting.spotLightShadowInfoBuffer, false);
 
-			for (auto [entityHandle, transform, sl] : world->group<TransformComponent, SpotLightComponent>().each())
+			for (auto [entityHandle, transform, sl] : world->view<TransformComponent, SpotLightComponent>().each())
 			{
 				spot_light_cb cb(transform.transform.position, transform.transform.rotation * vec3(0.f, 0.f, -1.f), sl.color * sl.intensity, sl.innerAngle, sl.outerAngle, sl.distance);
 
@@ -884,7 +821,7 @@ namespace era_engine
 			auto* plPtr = (point_light_cb*)mapBuffer(lighting.pointLightBuffer, false);
 			auto* siPtr = (point_shadow_info*)mapBuffer(lighting.pointLightShadowInfoBuffer, false);
 
-			for (auto [entityHandle, position, pl] : world->group<TransformComponent, PointLightComponent>().each())
+			for (auto [entityHandle, position, pl] : world->view<TransformComponent, PointLightComponent>().each())
 			{
 				point_light_cb cb(position.transform.position, pl.color * pl.intensity, pl.radius);
 
@@ -962,6 +899,7 @@ namespace era_engine
 			outPass.frustum.sphere = { pass->lightPosition, pass->maxDistance };
 			outPass.frustum.type = light_frustum_sphere;
 			outPass.pass = pass;
+			outPass.isPointLight = true;
 
 			if (!pass->copyFromStaticCache0)
 			{

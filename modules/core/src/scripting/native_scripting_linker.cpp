@@ -50,7 +50,7 @@ namespace era_engine::dotnet
 		// Log config
 		{
 #if _DEBUG
-			std::wofstream file((eproject::enginePath + L"/bin/Debug/core.cfg"));
+			std::wofstream file((eproject::enginePath + L"/_build/Debug/core.cfg"));
 #else
 			std::wofstream file(eproject::enginePath + L"/_build/Release/core.cfg");
 #endif
@@ -315,9 +315,12 @@ namespace era_engine::dotnet
 
 		static uint32_t create_entity_internal(const char* name)
 		{
-			return (uint32_t)scene->createEntity(name)
-				.addComponent<transform_component>(vec3(0.f), quat::identity)
-				.handle;
+			if (!world)
+			{
+				return (uint32_t)Entity::NullHandle;
+			}
+
+			return (uint32_t)world->create_entity(name).get_handle();
 		}
 
 		static float* get_angular_velocity_internal(uint32_t id)
@@ -396,9 +399,14 @@ namespace era_engine::dotnet
 
 		static void release_internal(uint32_t id)
 		{
-			entity_handle hid = (entity_handle)id;
+			if (!world)
+			{
+				return;
+			}
 
-			scene->deleteEntity(hid);
+			Entity::Handle hid = (Entity::Handle)id;
+
+			world->destroy_entity(hid);
 		}
 
 		static void setActive_internal(uint32_t id, bool active)
@@ -410,21 +418,43 @@ namespace era_engine::dotnet
 		{
 			using namespace era_engine::ai;
 
-			entity_handle hid = (entity_handle)id;
-			eentity entity{ hid, &scene->registry };
+			if (!world)
+			{
+				return;
+			}
 
-			if (!entity.hasComponent<navigation_component>())
-				entity.addComponent<navigation_component>((nav_type)type);
+			Entity::Handle hid = (Entity::Handle)id;
+			Entity entity = world->get_entity(hid);
+
+			if (entity == Entity::Null)
+			{
+				return;
+			}
+
+			if (!entity.has_component<NavigationComponent>())
+			{
+				entity.add_component<NavigationComponent>((NavigationComponent::NavType)type);
+			}
 		}
 
 		static void set_destination_internal(uint32_t id, float* destPtr)
 		{
 			using namespace era_engine::ai;
 
-			entity_handle hid = (entity_handle)id;
-			eentity entity{ hid, &scene->registry };
+			if (!world)
+			{
+				return;
+			}
 
-			if (auto nav_comp = entity.getComponentIfExists<navigation_component>())
+			Entity::Handle hid = (Entity::Handle)id;
+			Entity entity = world->get_entity(hid);
+
+			if (entity == Entity::Null)
+			{
+				return;
+			}
+
+			if (auto* nav_comp = entity.get_component_if_exists<NavigationComponent>())
 			{
 				vec3 pos = vec3(destPtr[0], 0.0f, destPtr[2]);
 				nav_comp->destination = pos;
@@ -440,11 +470,17 @@ namespace era_engine::dotnet
 			message_type type = (message_type)mode;
 
 			if (type == message_type_warning)
+			{
 				LOG_WARNING(message);
+			}
 			else if (type == message_type_error)
+			{
 				LOG_ERROR(message);
+			}
 			else
+			{
 				LOG_MESSAGE(message);
+			}
 		}
 
 		static void send_type_internal(const char* type)
@@ -479,7 +515,9 @@ namespace era_engine::dotnet
 	void enative_scripting_linker::release()
 	{
 		if (lib)
+		{
 			FreeLibrary(lib);
+		}
 		host.releaseHost();
 	}
 
@@ -501,40 +539,54 @@ namespace era_engine::dotnet
 	void enative_scripting_linker::handle_coll(int id1, int id2)
 	{
 		if (handleCollisionsF)
+		{
 			handleCollisionsF(id1, id2);
+		}
 	}
 
 	void enative_scripting_linker::handle_exit_coll(int id1, int id2)
 	{
 		if (handleExitCollisionsF)
+		{
 			handleExitCollisionsF(id1, id2);
+		}
 	}
 
 	void enative_scripting_linker::process_trs(intptr_t ptr, int id)
 	{
 		if (handleTrsF)
+		{
 			handleTrsF(ptr, id);
+		}
 	}
 
 	void enative_scripting_linker::init_src()
 	{
 		if (initScrF)
+		{
 			initScrF();
+		}
 	}
 
 	void enative_scripting_linker::release_src()
 	{
 		if (!started)
+		{
 			return;
+		}
 		if (releaseSrcF)
+		{
 			releaseSrcF();
+		}
 	}
 
 	void enative_scripting_linker::reload_src()
 	{
 		scriptTypes.clear();
 		if (reloadSrcF)
+		{
 			reloadSrcF();
+		}
 	}
 
 	void enative_scripting_linker::handleInput(uintptr_t input)
@@ -542,7 +594,9 @@ namespace era_engine::dotnet
 		try
 		{
 			if (inputF)
+			{
 				inputF(input);
+			}
 		}
 		catch (const std::exception& ex)
 		{
@@ -553,13 +607,17 @@ namespace era_engine::dotnet
 	void enative_scripting_linker::createScript(int id, const char* comp)
 	{
 		if (createCompF)
+		{
 			createCompF(id, reinterpret_cast<uintptr_t>(comp));
+		}
 	}
 
 	void enative_scripting_linker::removeScript(int id, const char* comp)
 	{
 		if (removeCompF)
+		{
 			removeCompF(id, reinterpret_cast<uintptr_t>(comp));
+		}
 	}
 
 	void enative_scripting_linker::bindFunctions()

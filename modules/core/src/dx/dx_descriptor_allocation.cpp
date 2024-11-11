@@ -118,6 +118,11 @@ namespace era_engine
 		}
 	}
 
+	com<ID3D12DescriptorHeap> dx_descriptor_heap::getHeap(int index) const
+	{
+		return allPages[index]->descriptorHeap;
+	}
+
 	struct dx_frame_descriptor_page
 	{
 		com<ID3D12DescriptorHeap> descriptorHeap;

@@ -99,7 +99,6 @@ namespace era_engine
 
 #endif
 
-			ai::navigation_component,
 			ecs::ScriptsComponent,
 #endif
 
@@ -118,11 +117,7 @@ namespace era_engine
 #endif
 			heightmap_collider_component,
 
-			mesh_component,
-
 			raytrace_component,
-
-			animation::animation_component,
 
 			collider_component,
 			rigid_body_component,
@@ -172,8 +167,6 @@ namespace era_engine
 
 #endif
 
-		if (auto* c = src.getComponentIfExists<animation::animation_component>()) { dest.addComponent<animation::animation_component>(*c); }
-		if (auto* c = src.getComponentIfExists<mesh_component>()) { dest.addComponent<mesh_component>(*c); }
 		if (auto* c = src.getComponentIfExists<raytrace_component>()) { dest.addComponent<raytrace_component>(*c); }
 
 		for (collider_component& collider : collider_component_iterator(src))

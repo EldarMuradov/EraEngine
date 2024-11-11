@@ -32,7 +32,7 @@ namespace era_engine
 
 		void render(ldr_render_pass* ldrRenderPass, float dt);
 
-		Entity selectedEntity;
+		Entity selectedEntity = Entity::Null;
 		physics_settings physicsSettings;
 
 	private:
