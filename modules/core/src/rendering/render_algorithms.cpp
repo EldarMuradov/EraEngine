@@ -663,7 +663,9 @@ namespace era_engine
 			{
 				PROFILE_ALL(cl, "Sort objects into tiles");
 
+				cl->setDescriptorHeap(dxContext.srvUavAllocator.type, dxContext.srvUavAllocatorShaderVisible.getHeap(0).Get());
 				cl->clearUAV(culling.tiledCullingIndexCounter, 0u);
+				cl->resetToDynamicDescriptorHeap();
 				//cl->uavBarrier(tiledCullingIndexCounter);
 				cl->setPipelineState(*lightCullingPipeline.pipeline);
 				cl->setComputeRootSignature(*lightCullingPipeline.rootSignature);

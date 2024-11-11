@@ -91,7 +91,9 @@ namespace era_engine
 			return type;
 		}
 		else
+		{
 			return {};
+		}
 	}
 
 	void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh)
@@ -152,13 +154,17 @@ namespace era_engine
 							{
 								physics::collision_handling_data collData;
 								while (physicsRef->collisionQueue.try_dequeue(collData))
+								{
 									data.core->handle_coll(collData.id1, collData.id2);
+								}
 							}
 
 							{
 								physics::collision_handling_data collData;
 								while (physicsRef->collisionExitQueue.try_dequeue(collData))
+								{
 									data.core->handle_exit_coll(collData.id1, collData.id2);
+								}
 							}
 						}
 					}
@@ -217,7 +223,7 @@ namespace era_engine
 			for (size_t i = 0; i < mat_size; i++)
 				ptr[i] = mat.m[i];
 			data.core->process_trs(reinterpret_cast<uintptr_t>(ptr), (int)entityHandle);
-			//delete[] ptr; //CLR clear's it
+			//delete[] ptr; // CoreRT/CLR clear's it
 		}
 		data.core->update(data.deltaTime);
 	}
@@ -326,6 +332,22 @@ namespace era_engine
 			sphereMesh->mesh =
 			chainMesh->mesh =
 			builder.createDXMesh();
+
+		auto& terrain = game_world->create_entity("Terrain")
+			.add_component<TerrainComponent>(10u, 64.0f, 50.f, defaultPlaneMat, defaultPlaneMat, defaultPlaneMat)
+			.add_component<GrassComponent>();
+		{
+			TransformComponent& transform_component = terrain.get_component<TransformComponent>();
+			transform_component.transform.position = vec3(0.0f, -64.0f, 0.0f);
+		}	
+
+		auto& water = game_world->create_entity("Water")
+			.add_component<WaterComponent>();
+		{
+			TransformComponent& transform_component = water.get_component<TransformComponent>();
+			transform_component.transform.position = vec3(-3.920f, -48.689f, -85.580f);
+			transform_component.transform.scale = vec3(90.0f);
+		}
 #if 0
 		if (auto treeMesh = loadTreeMeshFromFileAsync(getAssetPath("/resources/assets/tree/source/tree.fbx")))
 		{
@@ -817,6 +839,11 @@ namespace era_engine
 
 				if (anim.draw_sceleton)
 					anim.draw_current_skeleton(mesh.mesh, transform.transform, &ldrRenderPass);
+			}
+
+			for (auto [entityHandle, transform, terrain] : world->group(components_group<TransformComponent, TerrainComponent>).each())
+			{
+				terrain.update();
 			}
 
 			scene_lighting lighting;

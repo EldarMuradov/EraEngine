@@ -1589,8 +1589,10 @@ namespace era_engine
 							renderer->dlss_adapter.initialize(renderer);
 						}
 					}
-					//else
-						//renderer->settings.tonemapSettings = renderer->settings.defaultTonemapSettings;
+					else
+					{
+						renderer->settings.tonemapSettings = renderer->settings.defaultTonemapSettings;
+					}
 					ImGui::Separator();
 
 #endif
@@ -1672,7 +1674,10 @@ namespace era_engine
 									ImGui::PropertySlider("Scale", grid.irradianceUIScale, 0.1f, 20.f));
 								ImGui::EndProperties();
 							}
-							ImGui::Image(grid.irradiance, (uint32)(grid.irradiance->width * grid.irradianceUIScale));
+							if(grid.irradiance)
+							{
+								ImGui::Image(grid.irradiance, (uint32)(grid.irradiance->width * grid.irradianceUIScale));
+							}
 							ImGui::EndTree();
 						}
 						if (ImGui::BeginTree("Depth"))
@@ -1683,7 +1688,10 @@ namespace era_engine
 									ImGui::PropertySlider("Scale", grid.depthUIScale, 0.1f, 20.f));
 								ImGui::EndProperties();
 							}
-							ImGui::Image(grid.depth, (uint32)(grid.depth->width * grid.depthUIScale));
+							if(grid.depth)
+							{
+								ImGui::Image(grid.depth, (uint32)(grid.depth->width * grid.depthUIScale));
+							}
 							ImGui::EndTree();
 						}
 						if (ImGui::BeginTree("Raytraced radiance"))
@@ -1694,56 +1702,15 @@ namespace era_engine
 									ImGui::PropertySlider("Scale", grid.raytracedRadianceUIScale, 0.1f, 20.f));
 								ImGui::EndProperties();
 							}
-							ImGui::Image(grid.raytracedRadiance, (uint32)(grid.raytracedRadiance->width * grid.raytracedRadianceUIScale));
+							if(grid.raytracedRadiance)
+							{
+								ImGui::Image(grid.raytracedRadiance, (uint32)(grid.raytracedRadiance->width * grid.raytracedRadianceUIScale));
+							}
 							ImGui::EndTree();
 						}
 
 						ImGui::EndTree();
 					}
-				}
-				ImGui::EndTree();
-			}
-
-			if (ImGui::BeginTree("Physics"))
-			{
-				if (ImGui::BeginProperties())
-				{
-					UNDOABLE_SETTING("fixed frame rate", physicsSettings.fixedFrameRate,
-						ImGui::PropertyCheckbox("Fixed frame rate (deterministic)", physicsSettings.fixedFrameRate));
-
-					if (physicsSettings.fixedFrameRate)
-					{
-						UNDOABLE_SETTING("frame rate", physicsSettings.frameRate,
-							ImGui::PropertyInput("Frame rate", physicsSettings.frameRate));
-						if (physicsSettings.frameRate < 30)
-						{
-							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.f, 0.f, 1.f));
-							ImGui::PropertyValue("", "Low frame rate");
-							ImGui::PopStyleColor();
-						}
-
-						UNDOABLE_SETTING("max physics steps per frame", physicsSettings.maxPhysicsIterationsPerFrame,
-							ImGui::PropertyDrag("Max physics steps per frame", physicsSettings.maxPhysicsIterationsPerFrame));
-					}
-
-					UNDOABLE_SETTING("rigid solver iterations", physicsSettings.numRigidSolverIterations,
-						ImGui::PropertySlider("Rigid solver iterations", physicsSettings.numRigidSolverIterations, 1, 200));
-
-					UNDOABLE_SETTING("cloth velocity iterations", physicsSettings.numClothVelocityIterations,
-						ImGui::PropertySlider("Cloth velocity iterations", physicsSettings.numClothVelocityIterations, 0, 10));
-					UNDOABLE_SETTING("cloth position iterations", physicsSettings.numClothPositionIterations,
-						ImGui::PropertySlider("Cloth position iterations", physicsSettings.numClothPositionIterations, 0, 10));
-					UNDOABLE_SETTING("cloth drift iterations", physicsSettings.numClothDriftIterations,
-						ImGui::PropertySlider("Cloth drift iterations", physicsSettings.numClothDriftIterations, 0, 10));
-
-					UNDOABLE_SETTING("SIMD broad phase", physicsSettings.simdBroadPhase,
-						ImGui::PropertyCheckbox("SIMD broad phase", physicsSettings.simdBroadPhase));
-					UNDOABLE_SETTING("SIMD narrow phase", physicsSettings.simdNarrowPhase,
-						ImGui::PropertyCheckbox("SIMD narrow phase", physicsSettings.simdNarrowPhase));
-					UNDOABLE_SETTING("SIMD constraint solver", physicsSettings.simdConstraintSolver,
-						ImGui::PropertyCheckbox("SIMD constraint solver", physicsSettings.simdConstraintSolver));
-
-					ImGui::EndProperties();
 				}
 				ImGui::EndTree();
 			}

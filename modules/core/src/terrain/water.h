@@ -23,7 +23,7 @@ namespace era_engine
 	{
 	public:
 		WaterComponent() = default;
-		WaterComponent(ref<Entity::EcsData> _data, const water_settings& _settings);
+		WaterComponent(ref<Entity::EcsData> _data, const water_settings& _settings = water_settings{});
 		virtual ~WaterComponent();
 
 		void render(const render_camera& camera, struct transparent_render_pass* render_pass, const vec3& position_offset, const vec2& scale, float dt);
@@ -31,16 +31,6 @@ namespace era_engine
 		ERA_VIRTUAL_REFLECT(Component)
 
 	public:
-		water_settings settings;
-
-	private:
-		float time = 0.f;
-	};
-
-	struct water_component
-	{
-		void render(const render_camera& camera, struct transparent_render_pass* renderPass, vec3 positionOffset, vec2 scale, float dt, uint32 entityID = -1);
-
 		water_settings settings;
 
 	private:

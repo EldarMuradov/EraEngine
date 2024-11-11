@@ -108,11 +108,6 @@ namespace era_engine
 			//point_light_component,
 			//spot_light_component,
 			cloth_render_component,
-
-			terrain_component,
-			grass_component,
-			proc_placement_component,
-			water_component,
 			tree_component,
 #endif
 			heightmap_collider_component,
@@ -162,8 +157,6 @@ namespace era_engine
 		/*if (auto* c = src.getComponentIfExists<point_light_component>()) { dest.addComponent<point_light_component>(*c); }
 		if (auto* c = src.getComponentIfExists<spot_light_component>()) { dest.addComponent<spot_light_component>(*c); }*/
 		if (auto* c = src.getComponentIfExists<cloth_render_component>()) { dest.addComponent<cloth_render_component>(*c); }
-
-		if (auto* c = src.getComponentIfExists<terrain_component>()) { dest.addComponent<terrain_component>(*c); }
 
 #endif
 

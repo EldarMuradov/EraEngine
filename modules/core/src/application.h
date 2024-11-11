@@ -19,8 +19,6 @@
 #include "rendering/raytracing.h"
 #include "rendering/main_renderer.h"
 
-#include "learning/learned_locomotion.h"
-
 #include "px/core/px_physics_engine.h"
 
 #ifdef ERA_RUNTIME
@@ -117,8 +115,6 @@ namespace era_engine
 		smoke_particle_system smokeParticleSystem;
 		boid_particle_system boidParticleSystem;
 		debris_particle_system debrisParticleSystem;
-
-		learned_locomotion learnedLocomotion;
 
 		opaque_render_pass opaqueRenderPass;
 		transparent_render_pass transparentRenderPass;

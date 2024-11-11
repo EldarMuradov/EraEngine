@@ -956,7 +956,7 @@ namespace era_engine
 
 			barrier_batcher(cl)
 				.transition(hdrColorTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-				.transitionEnd(frameResult, frameResultState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+				.transition(frameResult, frameResultState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 			{
 				PROFILE_ALL(cl, "Raytracing");

@@ -131,7 +131,7 @@ namespace era_engine
 		info.ResultDataMaxSizeInBytes = alignTo(info.ResultDataMaxSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
 
 		ref<raytracing_blas> blas = make_ref<raytracing_blas>();
-		blas->scratch = createBuffer((uint32)info.ScratchDataSizeInBytes, 1, 0, true, false, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		blas->scratch = createBuffer((uint32)info.ScratchDataSizeInBytes, 1, 0, true, false);
 		blas->blas = createBuffer((uint32)info.ResultDataMaxSizeInBytes, 1, 0, true, false, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
 
 		SET_NAME(blas->scratch->resource, "BLAS Scratch");

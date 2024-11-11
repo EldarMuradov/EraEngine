@@ -30,8 +30,8 @@ namespace era_engine
 {
 	struct renderer_settings
 	{
-		tonemap_settings tonemapSettings;
-		tonemap_settings defaultTonemapSettings;
+		tonemap_settings tonemapSettings{};
+		tonemap_settings defaultTonemapSettings{};
 
 		hbao_settings aoSettings;
 
@@ -115,7 +115,7 @@ namespace era_engine
 
 	struct main_renderer
 	{
-		main_renderer() {}
+		main_renderer() = default;
 		void initialize(color_depth colorDepth, uint32 windowWidth, uint32 windowHeight, renderer_spec spec, bool initDLSS = false);
 
 		void beginFrame(uint32 windowWidth, uint32 windowHeight);
@@ -225,12 +225,12 @@ namespace era_engine
 		ref<dx_texture> sssCalculationTexture;
 		ref<dx_texture> sssBlurTempTexture;
 		ref<dx_texture> sssTextures[2]; // These get flip-flopped from frame to frame.
-		uint32 sssHistoryIndex = 0;
+		volatile uint32 sssHistoryIndex = 0;
 
 		ref<dx_texture> ssrRaycastTexture;
 		ref<dx_texture> ssrResolveTexture;
 		ref<dx_texture> ssrTemporalTextures[2]; // These get flip-flopped from frame to frame.
-		uint32 ssrHistoryIndex = 0;
+		volatile uint32 ssrHistoryIndex = 0;
 
 		ref<dx_texture> prevFrameHDRColorTexture; // This is downsampled by a factor of 2 and contains up to 8 mip levels.
 		ref<dx_texture> prevFrameHDRColorTempTexture;
@@ -238,7 +238,7 @@ namespace era_engine
 		ref<dx_texture> hdrPostProcessingTexture;
 		ref<dx_texture> ldrPostProcessingTexture;
 		ref<dx_texture> taaTextures[2]; // These get flip-flopped from frame to frame.
-		uint32 taaHistoryIndex = 0;
+		volatile uint32 taaHistoryIndex = 0;
 
 		ref<dx_texture> bloomTexture;
 		ref<dx_texture> bloomTempTexture;
@@ -250,7 +250,7 @@ namespace era_engine
 
 		light_culling culling{};
 
-		era_engine::dlss::dlss_feature_adapter dlss_adapter{};
+		dlss::dlss_feature_adapter dlss_adapter{};
 
 		aspect_ratio_mode oldAspectRatioMode = aspect_ratio_free;
 		renderer_mode oldMode = renderer_mode_rasterized;
@@ -260,7 +260,7 @@ namespace era_engine
 		bool windowHovered = false;
 		bool sssWasOnLastFrame = false;
 
-		friend era_engine::dlss::dlss_feature_adapter;
+		friend dlss::dlss_feature_adapter;
 		friend struct eeditor;
 	};
 }

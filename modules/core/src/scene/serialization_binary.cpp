@@ -128,11 +128,7 @@ namespace era_engine
 		//px_triangle_mesh_collider,
 
 		// Terrain
-		terrain_component,
-		heightmap_collider_component,
-		grass_component,
-		proc_placement_component,
-		water_component
+		heightmap_collider_component
 	> ;
 
 	template <typename component_t>
@@ -339,34 +335,6 @@ namespace era_engine
 	}
 
 	template <>
-	void serializeToMemoryStream(eentity entity, const terrain_component& component, write_stream& stream)
-	{
-		stream.write(component.chunksPerDim);
-		stream.write(component.chunkSize);
-		stream.write(component.amplitudeScale);
-		stream.write(component.genSettings);
-
-		serializeMaterial(component.groundMaterial, stream);
-		serializeMaterial(component.rockMaterial, stream);
-		serializeMaterial(component.mudMaterial, stream);
-	}
-
-	template <>
-	void deserializeFromMemoryStream<terrain_component>(eentity entity, read_stream& stream)
-	{
-		READ(uint32, chunksPerDim);
-		READ(float, chunkSize);
-		READ(float, amplitudeScale);
-		READ(terrain_generation_settings, genSettings);
-
-		auto ground = deserializeMaterial(stream);
-		auto rock = deserializeMaterial(stream);
-		auto mud = deserializeMaterial(stream);
-
-		entity.addComponent<terrain_component>(chunksPerDim, chunkSize, amplitudeScale, ground, rock, mud, genSettings);
-	}
-
-	template <>
 	void serializeToMemoryStream(eentity entity, const heightmap_collider_component& component, write_stream& stream)
 	{
 		stream.write(component.chunksPerDim);
@@ -382,31 +350,6 @@ namespace era_engine
 		READ(physics_material, material);
 
 		entity.addComponent<heightmap_collider_component>(chunksPerDim, chunkSize, material);
-	}
-
-	template <>
-	void serializeToMemoryStream(eentity entity, const grass_component& component, write_stream& stream)
-	{
-		stream.write(component.settings);
-	}
-
-	template <>
-	void deserializeFromMemoryStream<grass_component>(eentity entity, read_stream& stream)
-	{
-		READ(grass_settings, settings);
-		entity.addComponent<grass_component>(settings);
-	}
-
-	template <>
-	void serializeToMemoryStream(eentity entity, const proc_placement_component& component, write_stream& stream)
-	{
-		// TODO
-	}
-
-	template <>
-	void deserializeFromMemoryStream<proc_placement_component>(eentity entity, read_stream& stream)
-	{
-		// TODO
 	}
 
 	template <typename Component_>
