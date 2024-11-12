@@ -781,7 +781,6 @@ namespace era_engine
 						ImGui::Text("Create component");
 						ImGui::Separator();
 
-
 						for (const auto& script : era_engine::dotnet::enative_scripting_linker::scriptTypes)
 						{
 							if (ImGui::MenuItem(script.c_str()))
@@ -1453,15 +1452,15 @@ namespace era_engine
 		undoStacks[1].reset();
 		setSelectedEntity({});
 
-		for (auto [entityHandle, rigidbody, transform] : scene->get_current_world()->group(components_group<physics::px_dynamic_body_component, TransformComponent>).each())
-		{
-			rigidbody.setPhysicsPositionAndRotation(transform.transform.position, transform.transform.rotation);
-		}
+		//for (auto [entityHandle, rigidbody, transform] : scene->get_current_world()->group(components_group<physics::px_dynamic_body_component, TransformComponent>).each())
+		//{
+		//	rigidbody.setPhysicsPositionAndRotation(transform.transform.position, transform.transform.rotation);
+		//}
 
-		for (auto [entityHandle, rigidbody, transform] : scene->get_current_world()->group(components_group<physics::px_static_body_component, TransformComponent>).each())
-		{
-			rigidbody.setPhysicsPositionAndRotation(transform.transform.position, transform.transform.rotation);
-		}
+		//for (auto [entityHandle, rigidbody, transform] : scene->get_current_world()->group(components_group<physics::px_static_body_component, TransformComponent>).each())
+		//{
+		//	rigidbody.setPhysicsPositionAndRotation(transform.transform.position, transform.transform.rotation);
+		//}
 
 		if (!paused)
 		{

@@ -24,6 +24,17 @@ namespace era_engine
 
 	static inline std::unordered_map<entt::registry*, World*> worlds;
 
+	class IReleasable
+	{
+	public:
+		IReleasable() = default;
+		virtual ~IReleasable() = default;
+
+		virtual void release();
+
+		ERA_REFLECT
+	};
+
 	class Entity final
 	{
 	public:
@@ -79,6 +90,10 @@ namespace era_engine
 		template <typename Component_>
 		void remove_component()
 		{
+			IReleasable* component = get_component_if_exists<Component_>();
+			ASSERT(component != nullptr);
+
+			component->release();
 			internal_data->registry->remove<Component_>(internal_data->entity_handle);
 		}
 
@@ -145,5 +160,7 @@ namespace era_engine
 	private:
 		static inline std::unordered_map<Entity::Handle, EntityNode> container;
 		static inline std::mutex sync;
+
+		friend class World;
 	};
 }

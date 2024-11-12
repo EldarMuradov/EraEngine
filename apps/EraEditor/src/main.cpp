@@ -116,7 +116,7 @@ int main(int argc, char** argv)
 	using namespace era_engine;
 
 #ifndef _DEBUG || DEBUG
-	::ShowWindow(::GetConsoleWindow(), SW_HIDE);
+	::ShowWindow(::GetConsoleWindow(), SW_SHOW);
 #endif
 
 	try
@@ -339,7 +339,7 @@ int main(int argc, char** argv)
 
 		physics::physics_holder::physicsRef->release();
 	}
-	catch (std::exception ex)
+	catch (const std::exception& ex)
 	{
 		std::cerr << ex.what() << "\n";
 

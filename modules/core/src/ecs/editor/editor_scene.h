@@ -41,7 +41,7 @@ namespace era_engine
 		{
 			if (mode == scene_mode_editor)
 			{
-				runtime_world->destroy();
+				runtime_world->destroy(false);
 				editor_world->clone_to(runtime_world);
 			}
 			mode = scene_mode_runtime_playing;

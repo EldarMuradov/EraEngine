@@ -204,11 +204,11 @@ namespace era_engine::physics
         //    connectTouchingChunks(graphManager, meshes[i].first, chunks[i], jointBreakForce, radiusArray, i);
         //}
 
-        for (auto chunk : chunks)
-        {
-            eentity renderEntity{ chunk, &enttScene->registry };
-            renderEntity.setParent(fractureGameObject);
-        }
+        //for (auto chunk : chunks)
+        //{
+        //    eentity renderEntity{ chunk, &enttScene->registry };
+        //    renderEntity.setParent(fractureGameObject);
+        //}
 
         anchorChunks(gameObject.handle, anchor);
 
@@ -351,7 +351,7 @@ namespace era_engine::physics
 
     void fracture::connectTouchingChunks(chunk_graph_manager& manager, ref<submesh_asset> asset, entity_handle chunk, float jointBreakForce, std::vector<float>& radiuses, int index, float touchRadius)
     {
-        auto enttScene = globalApp.getCurrentScene();
+        /*auto enttScene = globalApp.getCurrentScene();
         eentity entt{ chunk, &enttScene->registry };
 
         auto& rb = entt.getComponent<physics::px_dynamic_body_component>();
@@ -408,7 +408,7 @@ namespace era_engine::physics
                     manager.joints.emplace(overlap, jointVec);
                 }
             }
-        }
+        }*/
     }
 }
 

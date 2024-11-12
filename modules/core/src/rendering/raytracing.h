@@ -64,11 +64,6 @@ namespace era_engine
 		uint32 instanceContributionToHitGroupIndex;
 	};
 
-	struct raytrace_component
-	{
-		raytracing_object_type type;
-	};
-
 	class RaytraceComponent final : public Component
 	{
 	public:

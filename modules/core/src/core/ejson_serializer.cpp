@@ -39,9 +39,6 @@ namespace era_engine
 		entity_handle id = entity->handle;
 		int childCount = 0;
 
-		if (auto cc = entity->getComponentIfExists<child_component>())
-			childCount = eentity_container::getChilds(id).size();
-
 		json obj =
 		{
 			{"Name", name},
@@ -57,9 +54,6 @@ namespace era_engine
 		std::string name = entity->getComponent<tag_component>().name;
 		entity_handle id = entity->handle;
 		int childCount = 0;
-
-		if (auto cc = entity->getComponentIfExists<child_component>())
-			childCount = eentity_container::getChilds(id).size();
 
 		json obj =
 		{

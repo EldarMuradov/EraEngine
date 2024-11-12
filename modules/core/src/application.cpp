@@ -333,21 +333,21 @@ namespace era_engine
 			chainMesh->mesh =
 			builder.createDXMesh();
 
-		auto& terrain = game_world->create_entity("Terrain")
-			.add_component<TerrainComponent>(10u, 64.0f, 50.f, defaultPlaneMat, defaultPlaneMat, defaultPlaneMat)
-			.add_component<GrassComponent>();
-		{
-			TransformComponent& transform_component = terrain.get_component<TransformComponent>();
-			transform_component.transform.position = vec3(0.0f, -64.0f, 0.0f);
-		}	
+		//auto& terrain = game_world->create_entity("Terrain")
+		//	.add_component<TerrainComponent>(10u, 64.0f, 50.f, defaultPlaneMat, defaultPlaneMat, defaultPlaneMat)
+		//	.add_component<GrassComponent>();
+		//{
+		//	TransformComponent& transform_component = terrain.get_component<TransformComponent>();
+		//	transform_component.transform.position = vec3(0.0f, -64.0f, 0.0f);
+		//}	
 
-		auto& water = game_world->create_entity("Water")
-			.add_component<WaterComponent>();
-		{
-			TransformComponent& transform_component = water.get_component<TransformComponent>();
-			transform_component.transform.position = vec3(-3.920f, -48.689f, -85.580f);
-			transform_component.transform.scale = vec3(90.0f);
-		}
+		//auto& water = game_world->create_entity("Water")
+		//	.add_component<WaterComponent>();
+		//{
+		//	TransformComponent& transform_component = water.get_component<TransformComponent>();
+		//	transform_component.transform.position = vec3(-3.920f, -48.689f, -85.580f);
+		//	transform_component.transform.scale = vec3(90.0f);
+		//}
 #if 0
 		if (auto treeMesh = loadTreeMeshFromFileAsync(getAssetPath("/resources/assets/tree/source/tree.fbx")))
 		{

@@ -18,11 +18,6 @@ namespace era_engine
 		float bendStrength;
 	};
 
-	struct tree_component
-	{
-		tree_settings settings;
-	};
-
 	class TreeComponent : public Component
 	{
 	public:

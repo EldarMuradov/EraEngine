@@ -31,74 +31,6 @@ namespace era_engine
 	using entity_handle = entt::entity;
 	static const auto null_entity = entt::null;
 
-	struct eentity_node
-	{
-		eentity_node() = default;
-		~eentity_node() {}
-
-		std::vector<entity_handle> childs;
-	};
-
-	struct child_component
-	{
-		child_component() = default;
-		child_component(entity_handle prnt) : parent(prnt) {}
-		entity_handle parent;
-	};
-
-	struct eentity_container
-	{
-		static void emplacePair(entity_handle parent, entity_handle child)
-		{
-			lock l(sync);
-
-			if (container.find(parent) == container.end())
-				container.emplace(std::make_pair(parent, eentity_node()));
-			container.at(parent).childs.push_back(child);
-		}
-
-		static void erase(entity_handle parent)
-		{
-			lock l(sync);
-
-			if (container.find(parent) == container.end())
-				return;
-
-			container.erase(parent);
-		}
-
-		static void erasePair(entity_handle parent, entity_handle child)
-		{
-			lock l(sync);
-
-			if (container.find(parent) == container.end())
-				return;
-
-			auto iter = container.at(parent).childs.begin();
-			const auto& end = container.at(parent).childs.end();
-
-			for (; iter != end; ++iter)
-			{
-				if (*iter == child)
-					container.at(parent).childs.erase(iter);
-			}
-		}
-
-		static std::vector<entity_handle> getChilds(entity_handle parent)
-		{
-			if (container.find(parent) == container.end())
-				return std::vector<entity_handle>();
-
-			return container.at(parent).childs;
-		}
-
-	private:
-		eentity_container() = delete;
-
-		static std::unordered_map<entity_handle, eentity_node> container;
-		static std::mutex sync;
-	};
-
 	struct eentity
 	{
 		eentity() = default;
@@ -162,54 +94,6 @@ namespace era_engine
 		void removeComponent()
 		{
 			registry->remove<Component_>(handle);
-		}
-
-		entity_handle getParentHandle() const
-		{
-			auto child = getComponentIfExists<child_component>();
-			if (child)
-				return child->parent;
-			return null_entity;
-		}
-
-		void setParent(entity_handle prnt)
-		{
-			addComponent<child_component>(prnt);
-
-			eentity_container::emplacePair(prnt, handle);
-		}
-
-		void setParent(eentity& prnt)
-		{
-			addComponent<child_component>(prnt.handle);
-
-			eentity_container::emplacePair(prnt.handle, handle);
-		}
-
-		void addChild(eentity& child)
-		{
-			child.addComponent<child_component>(handle);
-			eentity_container::emplacePair(handle, child.handle);
-		}
-
-		void deleteChild(eentity& child)
-		{
-			child.removeComponent<child_component>();
-			eentity_container::erasePair(handle, child.handle);
-		}
-
-		std::vector<entity_handle> getChildsHandles()
-		{
-			return eentity_container::getChilds(handle);
-		}
-
-		std::vector<eentity> getChilds()
-		{
-			const auto& collection = getChildsHandles();
-			std::vector<eentity> result;
-			for (const auto& item : collection)
-				result.push_back({ item, registry });
-			return result;
 		}
 
 		inline operator uint32() const

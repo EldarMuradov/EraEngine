@@ -40,13 +40,13 @@ namespace era_engine
 		Entity create_entity(Entity::Handle _handle, const char* _name);
 
 		void destroy_entity(const Entity& _entity);
-		void destroy_entity(Entity::Handle _handle);
+		void destroy_entity(Entity::Handle _handle, bool _destroy_childs = true, bool _destroy_components = true);
 
 		Entity try_create_entity_in_place(const Entity& place, const char* _name);
 
 		Entity get_entity(Entity::Handle _handle);
 
-		void destroy();
+		void destroy(bool _destroy_components = true);
 
 		template <typename Component_>
 		Entity get_entity_from_component(const Component_& comp)

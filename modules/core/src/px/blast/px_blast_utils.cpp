@@ -12,42 +12,43 @@ namespace era_engine::physics
 {
     bounds getCompositeMeshBounds(eentity& entt)
     {
-        auto childs = entt.getChilds();
+        //auto childs = entt.getChilds();
 
-        std::vector<bounds> meshBounds;
-        meshBounds.reserve(childs.size());
+        //std::vector<bounds> meshBounds;
+        //meshBounds.reserve(childs.size());
 
-        if (auto mesh = entt.getComponentIfExists<mesh_component>())
-        {
-            auto& aabb = mesh->mesh->aabb;
+        //if (auto mesh = entt.getComponentIfExists<mesh_component>())
+        //{
+        //    auto& aabb = mesh->mesh->aabb;
 
-            meshBounds.push_back({ (aabb.maxCorner + aabb.minCorner) / 2.0f, (aabb.maxCorner - aabb.minCorner) / 2.0f });
-        }
+        //    meshBounds.push_back({ (aabb.maxCorner + aabb.minCorner) / 2.0f, (aabb.maxCorner - aabb.minCorner) / 2.0f });
+        //}
 
-        for (auto& c : childs)
-        {
-            if (auto mesh = c.getComponentIfExists<mesh_component>())
-            {
-                auto& aabb = mesh->mesh->aabb;
+        //for (auto& c : childs)
+        //{
+        //    if (auto mesh = c.getComponentIfExists<mesh_component>())
+        //    {
+        //        auto& aabb = mesh->mesh->aabb;
 
-                meshBounds.push_back({ (aabb.maxCorner + aabb.minCorner) / 2.0f, (aabb.maxCorner - aabb.minCorner) / 2.0f });
-            }
-        }
+        //        meshBounds.push_back({ (aabb.maxCorner + aabb.minCorner) / 2.0f, (aabb.maxCorner - aabb.minCorner) / 2.0f });
+        //    }
+        //}
 
-        if (meshBounds.size() == 0)
-            return {};
+        //if (meshBounds.size() == 0)
+        //    return {};
 
-        if (meshBounds.size() == 1)
-            return meshBounds[0];
+        //if (meshBounds.size() == 1)
+        //    return meshBounds[0];
 
-        auto& compositeBounds = meshBounds[0];
+        //auto& compositeBounds = meshBounds[0];
 
-        for (size_t i = 1; i < meshBounds.size(); i++)
-        {
-            compositeBounds.encapsulate(meshBounds[i]);
-        }
+        //for (size_t i = 1; i < meshBounds.size(); i++)
+        //{
+        //    compositeBounds.encapsulate(meshBounds[i]);
+        //}
 
-        return compositeBounds;
+        //return compositeBounds;
+        return {  };
     }
 
     ref<submesh_asset> physics::createRenderMesh(const physics::nvmesh& simpleMesh)

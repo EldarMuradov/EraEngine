@@ -1,5 +1,6 @@
 #include "ecs/world.h"
 #include "ecs/base_components/base_components.h"
+#include "ecs/static_registration.h"
 
 #include "rendering/light_source.h"
 
@@ -43,6 +44,7 @@ namespace era_engine
 	Entity World::create_entity(Entity::Handle _handle)
 	{
 		lock _lock{ sync };
+
 		if (entity_datas.find(_handle) == entity_datas.end())
 		{
 			if (registry.create(_handle) == Entity::NullHandle)
@@ -71,8 +73,36 @@ namespace era_engine
 		destroy_entity(_entity.get_handle());
 	}
 
-	void World::destroy_entity(Entity::Handle _handle)
+	void World::destroy_entity(Entity::Handle _handle, bool _destroy_childs, bool _destroy_components)
 	{
+		if (_handle == Entity::NullHandle)
+		{
+			return;
+		}
+
+		lock _lock{ EntityContainer::sync };
+
+		if (_destroy_components)
+		{
+			for (auto&& curr : registry.storage())
+			{
+				if (curr.second.contains(_handle))
+				{
+					IReleasable* comp = reinterpret_cast<IReleasable*>(registry.storage(curr.first)->second.get(_handle));
+					ASSERT(comp != nullptr);
+					comp->release();
+				}
+			}
+		}
+
+		if (_destroy_childs)
+		{
+			for (const Entity::Handle child : EntityContainer::get_childs(_handle))
+			{
+				destroy_entity(child);
+			}
+		}
+
 		registry.destroy(_handle);
 		entity_datas.erase(_handle);
 	}
@@ -95,8 +125,12 @@ namespace era_engine
 		return Entity(entity_datas[_handle]);
 	}
 
-	void World::destroy()
+	void World::destroy(bool _destroy_components)
 	{
+		for (auto& [handle, data] : entity_datas)
+		{
+			destroy_entity(handle, false, _destroy_components);
+		}
 		registry.clear();
 		entity_datas.clear();
 	}
@@ -105,13 +139,9 @@ namespace era_engine
 	{
 		target->registry.assign(registry.data(), registry.data() + registry.size(), registry.released());
 
-		rttr::array_range<rttr::type> types = rttr::type::get<Component>().get_derived_classes();
-
-		for (const rttr::type& type : types)
-		{
-			copy_component_pools_to(components_group<decltype(rttr::rttr_cast<Component>(rttr::instance(type)))>, *target.get());
-		}
-
+		copy_component_pools_to(common_group, *target.get());
+		target->entity_datas = entity_datas;
+		
 		target->registry.ctx() = registry.ctx();
 	}
 
