@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ecs/reflection.h"
+
 namespace era_engine
 {
 	class World;
@@ -13,6 +15,8 @@ namespace era_engine
 
 		virtual void init();
 		virtual void update(float dt);
+
+		ERA_REFLECT
 
 	protected:
 		World* world = nullptr;

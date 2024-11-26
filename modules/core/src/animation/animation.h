@@ -17,11 +17,6 @@ namespace era_engine
 {
 	struct multi_mesh;
 	struct ldr_render_pass;
-
-	namespace physics
-	{
-		struct px_ragdoll_component;
-	}
 }
 
 namespace era_engine::animation
@@ -261,7 +256,7 @@ namespace era_engine::animation
 		virtual ~AnimationComponent();
 
 		void initialize(std::vector<animation_clip>& clips, size_t start_index = 0);
-		void update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform = nullptr, physics::px_ragdoll_component* ragdoll = nullptr);
+		void update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform = nullptr);
 		void draw_current_skeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* render_pass) const;
 
 		ERA_VIRTUAL_REFLECT(Component)

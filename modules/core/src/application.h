@@ -19,8 +19,6 @@
 #include "rendering/raytracing.h"
 #include "rendering/main_renderer.h"
 
-#include "px/core/px_physics_engine.h"
-
 #ifdef ERA_RUNTIME
 #include "core/runtime.h"
 #endif
@@ -124,7 +122,6 @@ namespace era_engine
 		ldr_render_pass ldrRenderPass;
 		compute_pass computePass;
 
-		friend class physics::px_physics_engine;
 		friend class eeditor;
 	};
 

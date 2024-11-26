@@ -16,9 +16,6 @@
 
 #include "geometry/mesh.h"
 
-#include "physics/ragdoll.h"
-#include "physics/vehicle.h"
-
 #include "audio/audio.h"
 
 #include "rendering/debug_visualization.h"
@@ -35,14 +32,14 @@
 #include "scripting/script.h"
 #include "scripting/native_scripting_linker.h"
 
-#include "px/blast/px_blast_destructions.h"
-#include "px/physics/px_soft_body.h"
-#include "px/features/px_vehicle_component.h"
-
 #include "ecs/base_components/base_components.h"
 #include "ecs/world.h"
 #include "ecs/rendering/mesh_component.h"
 #include "ecs/editor/entity_editor_utils.h"
+
+#include "physics/core/physics.h"
+#include "physics/body_component.h"
+#include "physics/shape_component.h"
 
 #include <fontawesome/list.h>
 
@@ -804,10 +801,10 @@ namespace era_engine
 	{
 		if (selectedEntity.is_valid())
 		{
-			if (physics::px_cloth_component* cloth = selectedEntity.get_component_if_exists<physics::px_cloth_component>())
-			{
-				cloth->translate(selectedEntity.get_component<TransformComponent>().transform.position);
-			}
+			//if (physics::px_cloth_component* cloth = selectedEntity.get_component_if_exists<physics::px_cloth_component>())
+			//{
+			//	cloth->translate(selectedEntity.get_component<TransformComponent>().transform.position);
+			//}
 		}
 	}
 
@@ -869,10 +866,14 @@ namespace era_engine
 			{
 				if (gizmo.manipulateTransformation(transform->transform, camera, input, !inputCaptured, ldrRenderPass))
 				{
-					/*if (auto rb = selectedEntity.getComponentIfExists<physics::px_dynamic_body_component>())
-						rb->setPhysicsPositionAndRotation(transform->position, transform->rotation);
-					else if (auto rb = selectedEntity.getComponentIfExists<physics::px_static_body_component>())
-						rb->setPhysicsPositionAndRotation(transform->position, transform->rotation);*/
+					if (auto rb = selectedEntity.get_component_if_exists<physics::DynamicBodyComponent>())
+					{
+						rb->manual_set_physics_position_and_rotation(transform->transform.position, transform->transform.rotation);
+					}
+					else if (auto rb = selectedEntity.get_component_if_exists<physics::StaticBodyComponent>())
+					{
+						rb->manual_set_physics_position_and_rotation(transform->transform.position, transform->transform.rotation);
+					}
 
 					//if (auto vehicle = physics::getVehicleComponent(selectedEntity))
 					//{
@@ -932,6 +933,7 @@ namespace era_engine
 
 			if (ImGui::IconButton(imgui_icon_play, imgui_icon_play, IMGUI_ICON_DEFAULT_SIZE, this->scene->is_playable()))
 			{
+				setSelectedEntity({});
 				forceStart();
 			}
 			ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
@@ -1452,15 +1454,15 @@ namespace era_engine
 		undoStacks[1].reset();
 		setSelectedEntity({});
 
-		//for (auto [entityHandle, rigidbody, transform] : scene->get_current_world()->group(components_group<physics::px_dynamic_body_component, TransformComponent>).each())
-		//{
-		//	rigidbody.setPhysicsPositionAndRotation(transform.transform.position, transform.transform.rotation);
-		//}
+		for (auto [entityHandle, rigidbody, transform] : scene->get_current_world()->group(components_group<physics::DynamicBodyComponent, TransformComponent>).each())
+		{
+			rigidbody.manual_set_physics_position_and_rotation(transform.transform.position, transform.transform.rotation);
+		}
 
-		//for (auto [entityHandle, rigidbody, transform] : scene->get_current_world()->group(components_group<physics::px_static_body_component, TransformComponent>).each())
-		//{
-		//	rigidbody.setPhysicsPositionAndRotation(transform.transform.position, transform.transform.rotation);
-		//}
+		for (auto [entityHandle, rigidbody, transform] : scene->get_current_world()->group(components_group<physics::StaticBodyComponent, TransformComponent>).each())
+		{
+			rigidbody.manual_set_physics_position_and_rotation(transform.transform.position, transform.transform.rotation);
+		}
 
 		if (!paused)
 		{
@@ -1484,19 +1486,21 @@ namespace era_engine
 		this->scene->environment.forceUpdate(this->scene->sun.direction);
 		setSelectedEntity({});
 		app->linker->reload_src();
-		physics::physics_holder::physicsRef->resetActorsVelocityAndInertia();
+		physics::PhysicsHolder::physics_ref->reset_actors_velocity_and_inertia();
 		paused = false;
 		this->scene->editor_camera.setPositionAndRotation(vec3(0.0f), quat::identity);
 	}
 
 	void eeditor::visualizePhysics(ldr_render_pass* ldrRenderPass) const
 	{
+		using namespace physx;
+
 		if (!renderPhysicsShapes)
 		{
 			return;
 		}
 
-		auto scene = physics::physics_holder::physicsRef->getScene();
+		auto scene = physics::PhysicsHolder::physics_ref->get_scene();
 		const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
 
 		for (physx::PxU32 i = 0; i < rb.getNbPoints(); i++)
@@ -1718,18 +1722,24 @@ namespace era_engine
 			{
 				if (ImGui::BeginProperties())
 				{
-					const auto& physicsRef = physics::physics_holder::physicsRef;
-					UNDOABLE_SETTING("px frame rate", physicsRef->frameRate,
-						ImGui::PropertyInput("Frame rate", physicsRef->frameRate));
-					if (physicsRef->frameRate < 30)
+					const auto& physicsRef = physics::PhysicsHolder::physics_ref;
+					float frame_rate = physicsRef->frame_rate;
+
+					ImGui::PropertyInput("Frame rate", frame_rate);
+					if (frame_rate != physicsRef->frame_rate)
+					{
+						physicsRef->frame_rate = frame_rate;
+					}
+
+					if (physicsRef->frame_rate < 30)
 					{
 						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.f, 0.f, 1.f));
 						ImGui::PropertyValue("", "Low frame rate");
 						ImGui::PopStyleColor();
 					}
 
-					uint32 nbaa = physicsRef->nbActiveActors.load(::std::memory_order_relaxed);
-					uint32 nba = physicsRef->actorsMap.size();
+					uint32 nbaa = physicsRef->nb_active_actors.load(std::memory_order_relaxed);
+					uint32 nba = physicsRef->actors_map.size();
 					ImGui::PropertyValue("Number of active actors", std::to_string(nbaa).c_str());
 					ImGui::PropertyValue("Number of actors", std::to_string(nba).c_str());
 					if (this->scene->is_pausable())

@@ -2,32 +2,30 @@
 #include "ecs/base_components/base_components.h"
 #include "ecs/static_registration.h"
 
-#include "rendering/light_source.h"
-
 namespace era_engine
 {
+	std::unordered_map<const char*, World*> worlds;
 
 	World::World(const char* _name)
-		:name(_name)
+		: name(_name)
 	{
-		(void)registry.group<TransformComponent, NameComponent>();
-
 		registry.reserve(64000);
 
-		{
-			ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(registry.create(), &registry);
-			entity_datas.emplace(new_data->entity_handle, new_data);
-			root_entity = Entity(new_data).add_component<TransformComponent>().add_component<NameComponent>("RootEntity");
-		}
+		worlds.emplace(_name, this);
+	}
 
-		worlds.emplace(&registry, this);
+	void World::init()
+	{
+		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(registry.create());
+		entity_datas.emplace(new_data->entity_handle, new_data);
+		root_entity = Entity(new_data).add_component<TransformComponent>().add_component<NameComponent>("RootEntity");
 	}
 
 	Entity World::create_entity()
 	{
 		lock _lock{sync};
 
-		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(registry.create(), &registry);
+		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(registry.create());
 		entity_datas.emplace(new_data->entity_handle, new_data);
 
 		Entity entity = Entity(new_data);
@@ -52,7 +50,7 @@ namespace era_engine
 				LOG_ERROR("ECS> Entity creation failed!");
 			}
 
-			ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(_handle, &registry);
+			ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(_handle);
 			entity_datas.emplace(new_data->entity_handle, new_data);
 
 			Entity entity = Entity(new_data);
@@ -135,6 +133,16 @@ namespace era_engine
 		entity_datas.clear();
 	}
 
+	size_t World::size() const noexcept
+	{
+		return registry.size();
+	}
+
+	entt::registry& World::get_registry()
+	{
+		return registry;
+	}
+
 	void World::clone_to(ref<World> target)
 	{
 		target->registry.assign(registry.data(), registry.data() + registry.size(), registry.released());
@@ -148,6 +156,11 @@ namespace era_engine
 	void World::add_base_components(Entity& entity)
 	{
 		entity.add_component<TransformComponent>().add_component<ChildComponent>(weakref<Entity::EcsData>(root_entity.internal_data));
+	}
+
+	World* get_world_by_name(const char* _name)
+	{
+		return worlds[_name];
 	}
 
 }

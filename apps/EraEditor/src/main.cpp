@@ -17,6 +17,8 @@
 #include "editor/asset_editor_panel.h"
 #include "editor/editor_icons.h"
 
+#include "physics/core/physics.h"
+
 #include "application.h"
 
 #include "rendering/render_utils.h"
@@ -337,7 +339,7 @@ int main(int argc, char** argv)
 
 		shutdownAudio();
 
-		physics::physics_holder::physicsRef->release();
+		physics::PhysicsHolder::physics_ref->release();
 	}
 	catch (const std::exception& ex)
 	{

@@ -22,7 +22,7 @@ namespace era_engine
 		TransformComponent(ref<Entity::EcsData> _data, const trs& t, TransformType _type);
 		TransformComponent(ref<Entity::EcsData> _data, const vec3& position, const quat& rotation, const vec3& scale = vec3(1.f, 1.f, 1.f), TransformType _type = STATIC);
 
-		virtual ~TransformComponent();
+		~TransformComponent() override;
 
 		ERA_VIRTUAL_REFLECT(Component)
 

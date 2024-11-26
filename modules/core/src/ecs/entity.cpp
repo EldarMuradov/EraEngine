@@ -2,6 +2,8 @@
 #include "ecs/world.h"
 #include "ecs/component.h"
 
+#include "ecs/editor/editor_scene.h"
+
 #include <rttr/registration>
 
 namespace era_engine
@@ -21,8 +23,23 @@ namespace era_engine
 			.constructor<ref<Entity::EcsData>>();
 	}
 
+	entt::registry& get_current_game_registry()
+	{
+		return get_registry(get_current_game_world());
+	}
+
+	World* get_current_game_world()
+	{
+		return EditorScene::get_current_world().get();
+	}
+
 	void IReleasable::release()
 	{
+	}
+
+	entt::registry& get_registry(World* _world)
+	{
+		return _world->get_registry();
 	}
 
 	Entity::Entity(const Entity& _entity) noexcept
@@ -75,13 +92,12 @@ namespace era_engine
 	bool Entity::is_valid() const noexcept
 	{
 		return internal_data != nullptr &&
-			   internal_data->entity_handle != Entity::NullHandle &&
-			   internal_data->registry != nullptr;
+			   internal_data->entity_handle != Entity::NullHandle;
 	}
 
 	World* Entity::get_world() const
 	{
-		return worlds[internal_data->registry];
+		return get_current_game_world();
 	}
 
 	Entity::Handle Entity::get_handle() const

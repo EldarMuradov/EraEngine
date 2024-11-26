@@ -16,10 +16,6 @@
 #include "dx/dx_context.h"
 #include "dx/dx_profiling.h"
 
-#include "physics/physics.h"
-#include "physics/ragdoll.h"
-#include "physics/vehicle.h"
-
 #include "rendering/outline.h"
 #include "rendering/mesh_shader.h"
 #include "rendering/shadow_map.h"
@@ -30,7 +26,6 @@
 #include "audio/audio.h"
 
 #include "terrain/terrain.h"
-#include "terrain/heightmap_collider.h"
 #include "terrain/proc_placement.h"
 #include "terrain/grass.h"
 #include "terrain/water.h"
@@ -40,21 +35,6 @@
 
 #include "asset/model_asset.h"
 #include "asset/file_registry.h"
-
-#include "px/core/px_tasks.h"
-#include "px/core/px_aggregate.h"
-
-#include "px/physics/px_collider_component.h"
-#include "px/physics/px_joint.h"
-#include "px/physics/px_character_controller_component.h"
-#include "px/physics/px_soft_body.h"
-
-#include "px/features/px_ragdoll.h"
-#include "px/features/px_particles.h"
-#include "px/features/cloth/px_clothing_factory.h"
-#include "px/features/px_vehicle_component.h"
-
-#include "px/blast/px_blast_destructions.h"
 
 #include "ai/navigation.h"
 #include "ai/navigation_component.h"
@@ -70,6 +50,12 @@
 #include "ecs/rendering/world_renderer.h"
 #include "ecs/reflection_utils.h"
 #include "ecs/editor/entity_editor_utils.h"
+
+#include "physics/core/physics.h"
+#include "physics/aggregate.h"
+#include "physics/body_component.h"
+#include "physics/shape_component.h"
+#include "physics/basic_objects.h"
 
 namespace era_engine
 {
@@ -146,24 +132,24 @@ namespace era_engine
 				{
 					shared_spin_lock lock{ scriptingSync };
 					{
-						const auto& physicsRef = physics::physics_holder::physicsRef;
+						const auto& physicsRef = physics::PhysicsHolder::physics_ref;
 
 						{
 							CPU_PROFILE_BLOCK("PhysX collision events step");
 
 							{
-								physics::collision_handling_data collData;
-								while (physicsRef->collisionQueue.try_dequeue(collData))
+								physics::CollisionHandlingData collData;
+								while (physicsRef->collision_queue.try_dequeue(collData))
 								{
-									data.core->handle_coll(collData.id1, collData.id2);
+									data.core->handle_coll(static_cast<int>(collData.id1), static_cast<int>(collData.id2));
 								}
 							}
 
 							{
-								physics::collision_handling_data collData;
-								while (physicsRef->collisionExitQueue.try_dequeue(collData))
+								physics::CollisionHandlingData collData;
+								while (physicsRef->collision_exit_queue.try_dequeue(collData))
 								{
-									data.core->handle_exit_coll(collData.id1, collData.id2);
+									data.core->handle_exit_coll(static_cast<int>(collData.id1), static_cast<int>(collData.id2));
 								}
 							}
 						}
@@ -207,13 +193,17 @@ namespace era_engine
 	void updateScripting(update_scripting_data& data)
 	{
 		CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
-		if (!data.world->registry.size())
+		if (!data.world->size())
+		{
 			return;
+		}
 
 		auto group = data.world->group(components_group<ecs::ScriptsComponent, TransformComponent>);
 
 		if (group.empty())
+		{
 			return;
+		}
 
 		for (auto [entityHandle, script, transform] : group.each())
 		{
@@ -285,8 +275,12 @@ namespace era_engine
 		builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
 		groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
 
-		Entity entity3 = game_world->create_entity("Entity3").add_component<MeshComponent>(sphereMesh, false);
-		sphereMesh->mesh = builder.createDXMesh();
+		{
+			Entity entity3 = game_world->create_entity("Entity3").add_component<MeshComponent>(sphereMesh, false)
+				.add_component<physics::SphereShapeComponent>(1.0f)
+				.add_component<physics::DynamicBodyComponent>();
+			sphereMesh->mesh = builder.createDXMesh();
+		}
 
 		if (auto mesh = loadAnimatedMeshFromFileAsync(getAssetPath("/resources/assets/veribot/source/VERIBOT_final.fbx")))
 		{
@@ -316,7 +310,7 @@ namespace era_engine
 
 		Entity plane = game_world->create_entity("Platform")
 			.add_component<TransformComponent>(vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)), vec3(5.0f, 1.0f, 5.0f))
-			//.addComponent<physics::px_plane_collider_component>(vec3(0.f, -5.0, 0.0f))
+			.add_component<physics::PlaneComponent>(vec3(0.f, -5.0, 0.0f), vec3(0.0f, 1.0f, 0.0f))
 			.add_component<MeshComponent>(groundMesh);
 
 		{
@@ -512,6 +506,7 @@ namespace era_engine
 		this->renderer = renderer;
 
 		world_scene = make_ref<EditorScene>();
+		world_scene->init();
 
 		if (dxContext.featureSupport.raytracing())
 		{
@@ -523,7 +518,8 @@ namespace era_engine
 		world_scene->environment.setFromTexture(getAssetPath("/resources/assets/sky/sunset_in_the_chalk_quarry_4k.hdr"));
 		world_scene->environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
 
-		physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>();
+		physics::PhysicsHolder::physics_ref = make_ref<physics::Physics>();
+		physics::PhysicsHolder::physics_ref->set_editor_scene(world_scene.get());
 
 		escene& scene = this->scene.getCurrentScene();
 
@@ -577,7 +573,7 @@ namespace era_engine
 
 		stackArena.initialize();
 
-		physics::physics_holder::physicsRef->start();
+		physics::PhysicsHolder::physics_ref->start();
 	}
 
 #if 0
@@ -764,7 +760,7 @@ namespace era_engine
 
 		if (running)
 		{
-			physics::physics_holder::physicsRef->update(dt);
+			physics::PhysicsHolder::physics_ref->update(dt);
 			updatePhysXCallbacksAndScripting(world, linker, dt, input);
 		}
 
@@ -833,7 +829,7 @@ namespace era_engine
 		updateTestScene(dt, world, input);
 
 		{
-			for (auto [entityHandle, anim, mesh, transform] : world->group(components_group<animation::AnimationComponent, MeshComponent, TransformComponent>, components_group<physics::px_ragdoll_component>).each())
+			for (auto [entityHandle, anim, mesh, transform] : world->group(components_group<animation::AnimationComponent, MeshComponent, TransformComponent>).each())
 			{
 				anim.update(mesh.mesh, stackArena, dt, &transform.transform);
 
@@ -882,13 +878,13 @@ namespace era_engine
 					renderWireCone(transform.transform.position, transform.transform.rotation * vec3(0.f, 0.f, -1.f),
 						sl->distance, sl->outerAngle * 2.f, vec4(sl->color, 1.f), &ldrRenderPass);
 				}
-				else if (physics::px_capsule_cct_component* cct = selectedEntity.get_component_if_exists<physics::px_capsule_cct_component>())
+				else if (physics::CapsuleShapeComponent* shape = selectedEntity.get_component_if_exists<physics::CapsuleShapeComponent>())
 				{
-					renderWireCapsule(transform.transform.position, transform.transform.position + vec3(0, cct->height, 0), cct->radius, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
+					//renderWireCapsule(transform.transform.position, transform.transform.position + vec3(0, cct->height, 0), cct->radius, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
 				}
-				else if (physics::px_box_cct_component* cct = selectedEntity.get_component_if_exists<physics::px_box_cct_component>())
+				else if (physics::BoxShapeComponent* shape = selectedEntity.get_component_if_exists<physics::BoxShapeComponent>())
 				{
-					renderWireBox(transform.transform.position, vec3(cct->halfSideExtent, cct->halfHeight * 2, cct->halfSideExtent), transform.transform.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
+					//renderWireBox(transform.transform.position, vec3(cct->halfSideExtent, cct->halfHeight * 2, cct->halfSideExtent), transform.transform.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
 				}
 			}
 #endif

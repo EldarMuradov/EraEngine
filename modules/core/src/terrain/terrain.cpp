@@ -1,13 +1,13 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
-#include "terrain.h"
-
-#include "heightmap_collider.h"
+#include "terrain/terrain.h"
 
 #include "dx/dx_context.h"
 #include "dx/dx_command_list.h"
 #include "dx/dx_barrier_batcher.h"
 #include "dx/dx_profiling.h"
+
+#include "rendering/pbr_material.h"
 
 #include "rendering/render_utils.h"
 #include "rendering/render_pass.h"

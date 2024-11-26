@@ -14,8 +14,6 @@
 
 #include "rendering/debug_visualization.h"
 
-#include "px/features/px_ragdoll.h"
-
 #include <rttr/registration>
 
 #include <algorithm>
@@ -853,14 +851,14 @@ namespace era_engine::animation
 		}
 	}
 
-	void AnimationComponent::update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform, physics::px_ragdoll_component* ragdoll)
+	void AnimationComponent::update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform)
 	{
 		const dx_mesh& dxMesh = mesh->mesh;
 		animation_skeleton& skeleton = mesh->skeleton;
 
 		current_global_transforms = 0;
 
-		if (!ragdoll && animation && animation->valid())
+		if (animation && animation->valid())
 		{
 			auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
 
@@ -888,60 +886,60 @@ namespace era_engine::animation
 				controller->stateMachine.update();
 			}
 		}
-		else if (ragdoll && ragdoll->ragdoll && ragdoll->simulated)
-		{
-			auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
+		//else if (ragdoll && ragdoll->ragdoll && ragdoll->simulated)
+		//{
+		//	auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
 
-			prev_frame_vertex_buffer = current_vertex_buffer;
-			current_vertex_buffer = vb;
+		//	prev_frame_vertex_buffer = current_vertex_buffer;
+		//	current_vertex_buffer = vb;
 
-			trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-			trs deltaRootMotion;
+		//	trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
+		//	trs deltaRootMotion;
 
-			ragdoll->updateMotion(localTransforms, &deltaRootMotion);
+		//	ragdoll->updateMotion(localTransforms, &deltaRootMotion);
 
-			trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
+		//	trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
 
-			skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
+		//	skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
 
-			if (transform)
-			{
-				*transform = *transform * deltaRootMotion;
-				transform->rotation = normalize(transform->rotation);
-			}
+		//	if (transform)
+		//	{
+		//		*transform = *transform * deltaRootMotion;
+		//		transform->rotation = normalize(transform->rotation);
+		//	}
 
-			current_global_transforms = globalTransforms;
-		}
-		else if (ragdoll && ragdoll->ragdoll && !ragdoll->simulated)
-		{
-			auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
+		//	current_global_transforms = globalTransforms;
+		//}
+		//else if (ragdoll && ragdoll->ragdoll && !ragdoll->simulated)
+		//{
+		//	auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
 
-			prev_frame_vertex_buffer = current_vertex_buffer;
-			current_vertex_buffer = vb;
+		//	prev_frame_vertex_buffer = current_vertex_buffer;
+		//	current_vertex_buffer = vb;
 
-			trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-			trs deltaRootMotion;
-			animation->update(skeleton, dt * time_scale, localTransforms, deltaRootMotion);
+		//	trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
+		//	trs deltaRootMotion;
+		//	animation->update(skeleton, dt * time_scale, localTransforms, deltaRootMotion);
 
-			trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
+		//	trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
 
-			skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
+		//	skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
 
-			if (transform)
-			{
-				*transform = *transform * deltaRootMotion;
-				transform->rotation = normalize(transform->rotation);
-			}
+		//	if (transform)
+		//	{
+		//		*transform = *transform * deltaRootMotion;
+		//		transform->rotation = normalize(transform->rotation);
+		//	}
 
-			current_global_transforms = globalTransforms;
-			// TODO
-			ragdoll->updateKinematic();
+		//	current_global_transforms = globalTransforms;
+		//	// TODO
+		//	ragdoll->updateKinematic();
 
-			if (animation->finished)
-			{
-				controller->stateMachine.update();
-			}
-		}
+		//	if (animation->finished)
+		//	{
+		//		controller->stateMachine.update();
+		//	}
+		//}
 		else
 		{
 			current_vertex_buffer = dxMesh.vertexBuffer;

@@ -26,6 +26,7 @@ namespace era_engine
 		virtual ~TreeComponent();
 
 		ERA_VIRTUAL_REFLECT(Component)
+
 	public:
 		tree_settings settings;
 	};

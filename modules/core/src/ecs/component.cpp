@@ -33,7 +33,7 @@ namespace era_engine
 	{
 	}
 
-	void era_engine::Component::release()
+	void Component::release()
 	{
 		component_data.reset();
 	}
@@ -52,12 +52,17 @@ namespace era_engine
 
 	World* Component::get_world() const
 	{
-		return worlds[component_data->registry];
+		return get_current_game_world();
 	}
 
 	Entity Component::get_entity() const
 	{
 		return Entity(component_data);
+	}
+
+	Entity::Handle era_engine::Component::get_handle() const
+	{
+		return component_data->entity_handle;
 	}
 
 }

@@ -34,6 +34,11 @@ namespace era_engine
 	public:
 		World(const char* _name);
 
+		World(const World& _world) = delete;
+		World& operator=(const World* _world) const = delete;
+
+		void init();
+
 		Entity create_entity();
 		Entity create_entity(const char* _name);
 		Entity create_entity(Entity::Handle _handle);
@@ -48,10 +53,27 @@ namespace era_engine
 
 		void destroy(bool _destroy_components = true);
 
+		size_t size() const noexcept;
+
+		entt::registry& get_registry();
+
 		template <typename Component_>
 		Entity get_entity_from_component(const Component_& comp)
 		{
 			return { entt::to_entity(registry, comp), this };
+		}
+
+		template <typename Component_>
+		Component_* get_root_component()
+		{
+			return root_entity.get_component_if_exists<Component_>();
+		}
+
+		template <typename Component_, typename... Args_>
+		Component_* add_root_component(Args_&&... args)
+		{
+			root_entity.add_component<Component_>(std::forward<Args_>(args)...);
+			return root_entity.get_component_if_exists<Component_>();
 		}
 
 		template <typename Component_>
@@ -145,8 +167,6 @@ namespace era_engine
 
 		void clone_to(ref<World> target);
 
-		entt::registry registry;
-
 	private:
 		template <typename Component_>
 		void copy_component_pool_to(World& target)
@@ -171,12 +191,16 @@ namespace era_engine
 		void add_base_components(Entity& entity);
 
 	private:
-
 		std::mutex sync;
 		std::unordered_map<Entity::Handle, ref<Entity::EcsData>> entity_datas;
 		Entity root_entity;
 		const char* name = nullptr;
 
+		entt::registry registry;
+
 		friend class Entity;
+		friend class EntityEditorUtils;
 	};
+
+	World* get_world_by_name(const char* _name);
 }

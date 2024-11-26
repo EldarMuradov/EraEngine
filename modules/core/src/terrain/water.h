@@ -19,7 +19,7 @@ namespace era_engine
 		float normalStrength = 1.f;
 	};
 
-	class WaterComponent final : public Component
+	class WaterComponent : public Component
 	{
 	public:
 		WaterComponent() = default;
@@ -33,7 +33,7 @@ namespace era_engine
 	public:
 		water_settings settings;
 
-	private:
+	protected:
 		float time = 0.f;
 	};
 

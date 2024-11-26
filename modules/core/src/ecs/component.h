@@ -25,6 +25,8 @@ namespace era_engine
 
 		Entity get_entity() const;
 
+		Entity::Handle get_handle() const;
+
 		ERA_VIRTUAL_REFLECT(IReleasable)
 
 	protected:

@@ -50,8 +50,7 @@ namespace era_engine::ai
 
 	void NavigationComponent::process_path()
 	{
-		World* world = worlds[component_data->registry];
-		auto& transform = world->get_entity(component_data->entity_handle).get_component<TransformComponent>();
+		auto& transform = get_world()->get_entity(component_data->entity_handle).get_component<TransformComponent>();
 		const auto& pos = transform.transform.position;
 
 		if (!equalIn2d(destination, previous_destination))

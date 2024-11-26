@@ -53,12 +53,12 @@ namespace era_engine
 	template <typename simd_t>
 	struct wN_bounding_box
 	{
-		NODISCARD static wN_bounding_box fromMinMax(wN_vec3<simd_t> minCorner, wN_vec3<simd_t> maxCorner)
+		static wN_bounding_box fromMinMax(wN_vec3<simd_t> minCorner, wN_vec3<simd_t> maxCorner)
 		{
 			return wN_bounding_box{ minCorner, maxCorner };
 		}
 
-		NODISCARD static wN_bounding_box fromCenterRadius(wN_vec3<simd_t> center, wN_vec3<simd_t> radius)
+		static wN_bounding_box fromCenterRadius(wN_vec3<simd_t> center, wN_vec3<simd_t> radius)
 		{
 			return wN_bounding_box{ center - radius, center + radius };
 		}
@@ -82,7 +82,7 @@ namespace era_engine
 	};
 
 	template <typename simd_t>
-	inline NODISCARD auto aabbVsAABB(const wN_bounding_box<simd_t>& a, const wN_bounding_box<simd_t>& b)
+	inline auto aabbVsAABB(const wN_bounding_box<simd_t>& a, const wN_bounding_box<simd_t>& b)
 	{
 		return
 			(a.maxCorner.x >= b.minCorner.x) & (a.minCorner.x <= b.maxCorner.x) &
@@ -100,7 +100,7 @@ namespace era_engine
 	}
 
 	template <typename simd_t>
-	inline NODISCARD wN_vec3<simd_t> closestPoint_PointAABB(const wN_vec3<simd_t>& q, const wN_bounding_box<simd_t>& aabb)
+	inline wN_vec3<simd_t> closestPoint_PointAABB(const wN_vec3<simd_t>& q, const wN_bounding_box<simd_t>& aabb)
 	{
 		wN_vec3<simd_t> result;
 		for (uint32 i = 0; i < 3; ++i)
@@ -114,7 +114,7 @@ namespace era_engine
 	}
 
 	template <typename simd_t>
-	inline NODISCARD simd_t closestPoint_SegmentSegment(const wN_line_segment<simd_t>& l1, const wN_line_segment<simd_t>& l2, wN_vec3<simd_t>& c1, wN_vec3<simd_t>& c2)
+	inline simd_t closestPoint_SegmentSegment(const wN_line_segment<simd_t>& l1, const wN_line_segment<simd_t>& l2, wN_vec3<simd_t>& c1, wN_vec3<simd_t>& c2)
 	{
 		w_vec3 d1 = l1.b - l1.a;
 		w_vec3 d2 = l2.b - l2.a;

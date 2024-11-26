@@ -213,7 +213,7 @@ namespace era_engine::dotnet
 
 		static void add_force_internal(uint32_t id, uint8_t mode, float* force)
 		{
-			entity_handle hid = (entity_handle)id;
+			/*entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
 			if (auto rb = entity.getComponentIfExists<physics::px_dynamic_body_component>())
@@ -223,12 +223,12 @@ namespace era_engine::dotnet
 				std::cout << "Force" << "\n";
 			}
 			else
-				std::cerr << "Failed to call function addForce";
+				std::cerr << "Failed to call function addForce";*/
 		}
 
 		static void add_torque_internal(uint32_t id, uint8_t mode, float* torque)
 		{
-			entity_handle hid = (entity_handle)id;
+			/*entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
 			if (auto rb = entity.getComponentIfExists<physics::px_dynamic_body_component>())
@@ -238,12 +238,12 @@ namespace era_engine::dotnet
 				std::cout << "Torque" << "\n";
 			}
 			else
-				std::cerr << "Failed to call function addTorque";
+				std::cerr << "Failed to call function addTorque";*/
 		}
 
 		static void initialize_rigidbody_internal(uint32_t id, uint8_t type)
 		{
-			entity_handle hid = (entity_handle)id;
+			/*entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
 			if ((physics::px_rigidbody_type)type == physics::px_rigidbody_type::rigidbody_type_dynamic)
@@ -262,7 +262,7 @@ namespace era_engine::dotnet
 					entity.addComponent<physics::px_dynamic_body_component>();
 
 				entity.getComponent<physics::px_dynamic_body_component>().setKinematic(true);
-			}
+			}*/
 		}
 
 		static void overlap_sphere_internal(uint32_t id, uint8_t type)
@@ -272,20 +272,20 @@ namespace era_engine::dotnet
 
 		static float get_mass_internal(uint32_t id)
 		{
-			entity_handle hid = (entity_handle)id;
+			/*entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
 			if (auto rb = entity.getComponentIfExists<physics::px_dynamic_body_component>())
 				return rb->getMass();
 			else if (auto rb = entity.getComponentIfExists<physics::px_static_body_component>())
 				return rb->getMass();
-			else
+			else*/
 				return -1.0f;
 		}
 
 		static void set_mass_internal(uint32_t id, float mass)
 		{
-			entity_handle hid = (entity_handle)id;
+			/*entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
 			if (auto rb = entity.getComponentIfExists<physics::px_dynamic_body_component>())
@@ -293,12 +293,12 @@ namespace era_engine::dotnet
 			else if (auto rb = entity.getComponentIfExists<physics::px_static_body_component>())
 				rb->setMass(mass);
 			else
-				std::cerr << "Failed to call function";
+				std::cerr << "Failed to call function";*/
 		}
 
 		static float* get_linear_velocity_internal(uint32_t id)
 		{
-			entity_handle hid = (entity_handle)id;
+			/*entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
 			if (auto rb = entity.getComponentIfExists<physics::px_dynamic_body_component>())
@@ -309,7 +309,7 @@ namespace era_engine::dotnet
 				f[2] = rb->getLinearVelocity().data[2];
 				return f;
 			}
-			else
+			else*/
 				return new float[3];
 		}
 
@@ -325,7 +325,7 @@ namespace era_engine::dotnet
 
 		static float* get_angular_velocity_internal(uint32_t id)
 		{
-			entity_handle hid = (entity_handle)id;
+			/*entity_handle hid = (entity_handle)id;
 			eentity entity{ hid, &scene->registry };
 
 			if (auto rb = entity.getComponentIfExists<physics::px_dynamic_body_component>())
@@ -336,7 +336,7 @@ namespace era_engine::dotnet
 				f[2] = rb->getAngularVelocity().data[2];
 				return f;
 			}
-			else
+			else*/
 				return new float[3];
 		}
 
@@ -625,6 +625,7 @@ namespace era_engine::dotnet
 		if (builder)
 		{
 			bind::scene = runtimeScene;
+			bind::world = runtimeWorld;
 
 			// Rigidbody
 			{

@@ -13,8 +13,6 @@
 
 #include "rendering/main_renderer.h"
 
-#include "physics/physics.h"
-
 #include "scene/scene.h"
 #include "ecs/editor/editor_scene.h"
 
@@ -33,7 +31,6 @@ namespace era_engine
 		void render(ldr_render_pass* ldrRenderPass, float dt);
 
 		Entity selectedEntity = Entity::Null;
-		physics_settings physicsSettings;
 
 	private:
 		struct undo_buffer

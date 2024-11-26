@@ -16,6 +16,7 @@ namespace era_engine::ecs
 		virtual ~ScriptsComponent();
 
 		ERA_VIRTUAL_REFLECT(Component)
+
 	public:
 		std::unordered_set<std::string> type_names;
 	};

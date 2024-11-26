@@ -2,27 +2,12 @@
 
 #include "scene/scene.h"
 
-#include "physics/physics.h"
-#include "physics/collision_broad.h"
-
-#include "terrain/heightmap_collider.h"
-
 #include "rendering/raytracing.h"
 
 #ifndef PHYSICS_ONLY
 #include "scripting/script.h"
 
 #include "ai/navigation_component.h"
-
-#include "px/core/px_physics_engine.h"
-
-#include "px/features/px_ragdoll.h"
-
-#include "px/physics/px_soft_body.h"
-
-#include "px/blast/px_blast_destructions.h"
-
-#include "px/features/px_vehicle_component.h"
 
 #endif
 
@@ -33,9 +18,7 @@ namespace era_engine
 	{
 #ifndef PHYSICS_ONLY
 		//(void)registry.group<position_component, point_light_component>();
-		//(void)registry.group<position_rotation_component, spot_light_component>();
-		(void)registry.group<physics::px_cloth_component, physics::px_cloth_render_component>();
-		(void)registry.group<physics::px_particles_component, physics::px_particles_render_component > ();
+
 #endif
 
 		registry.reserve(64000);
@@ -57,72 +40,7 @@ namespace era_engine
 			position_rotation_component,
 			position_scale_component,
 			dynamic_transform_component,
-			entity_handle_component_base,
-
-#ifndef PHYSICS_ONLY
-
-			physics::px_body_component,
-			physics::px_dynamic_body_component,
-			physics::px_static_body_component,
-			physics::px_box_collider_component,
-			physics::px_collider_component_base,
-			physics::px_sphere_collider_component,
-			physics::px_capsule_collider_component,
-			physics::px_triangle_mesh_collider_component,
-			physics::px_bounding_box_collider_component,
-			physics::px_convex_mesh_collider_component,
-			physics::px_plane_collider_component,
-			physics::px_cct_component_base,
-			physics::px_capsule_cct_component,
-			physics::px_box_cct_component,
-			physics::px_cloth_component,
-			physics::px_cloth_render_component,
-			physics::px_particles_component,
-			physics::px_particles_render_component,
-			physics::px_soft_body_component,
-			physics::px_ragdoll_component,
-
-#if PX_VEHICLE
-			physics::px_vehicle_base_component,
-			physics::px_4_wheels_vehicle_component,
-			physics::px_tank_vehicle_component,
-#endif
-
-#if !_DEBUG
-
-			physics::chunk_graph_manager,
-			physics::chunk_graph_manager::chunk_node,
-			physics::nvmesh_chunk_component,
-
-#endif
-
-#endif
-
-#ifndef PHYSICS_ONLY
-			//point_light_component,
-			//spot_light_component,
-			cloth_render_component,
-#endif
-			heightmap_collider_component,
-
-			collider_component,
-			rigid_body_component,
-			force_field_component,
-			trigger_component,
-			cloth_component,
-			physics_reference_component,
-			sap_endpoint_indirection_component,
-			constraint_entity_reference_component,
-
-			physics_transform0_component,
-			physics_transform1_component,
-
-			distance_constraint,
-			ball_constraint,
-			fixed_constraint,
-			hinge_constraint,
-			cone_twist_constraint,
-			slider_constraint
+			entity_handle_component_base
 		> ;
 
 		copyComponentPoolsTo(copy_components{}, target);
@@ -144,80 +62,6 @@ namespace era_engine
 	{
 		if (e.handle == null_entity)
 			return;
-
-#ifndef PHYSICS_ONLY
-
-		if (physics::px_dynamic_body_component* reference = e.getComponentIfExists<physics::px_dynamic_body_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_static_body_component* reference = e.getComponentIfExists<physics::px_static_body_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_box_collider_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_sphere_collider_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_capsule_collider_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_triangle_mesh_collider_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_physics_component_base* reference = e.getComponentIfExists<physics::px_plane_collider_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_convex_mesh_collider_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_collider_component_base* reference = e.getComponentIfExists<physics::px_bounding_box_collider_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_cct_component_base* reference = e.getComponentIfExists<physics::px_capsule_cct_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_cloth_component* reference = e.getComponentIfExists<physics::px_cloth_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_particles_component* reference = e.getComponentIfExists<physics::px_particles_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_soft_body_component* reference = e.getComponentIfExists<physics::px_soft_body_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_vehicle_base_component* reference = e.getComponentIfExists<physics::px_vehicle_base_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_4_wheels_vehicle_component* reference = e.getComponentIfExists<physics::px_4_wheels_vehicle_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_tank_vehicle_component* reference = e.getComponentIfExists<physics::px_tank_vehicle_component>())
-		{
-			reference->release();
-		}
-		if (physics::px_ragdoll_component* reference = e.getComponentIfExists<physics::px_ragdoll_component>())
-		{
-			reference->release();
-		}
-#endif
-
-		registry.destroy(e.handle);
 	}
 
 	void escene::deleteEntity(entity_handle handle)

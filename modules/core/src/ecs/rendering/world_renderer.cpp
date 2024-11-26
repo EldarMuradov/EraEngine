@@ -14,10 +14,6 @@
 
 #include "dx/dx_context.h"
 
-#include "physics/cloth.h"
-
-#include "px/features/cloth/px_clothing_factory.h"
-
 namespace era_engine
 {
 

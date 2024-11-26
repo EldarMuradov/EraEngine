@@ -27,13 +27,14 @@ namespace era_engine
 		std::atomic_flag flag;
 
 	public:
-		spin_lock() = default;
-
-		~spin_lock() { unlock(); }
-
 		void lock()
 		{
 			while (!flag.test_and_set(std::memory_order_acquire));
+		}
+
+		bool try_lock()
+		{
+			return flag.test_and_set(std::memory_order_acquire);
 		}
 
 		void unlock()

@@ -10,6 +10,8 @@ namespace era_engine
 {
 	struct escene;
 	struct enative_scripting_builder;
+
+	class World;
 }
 
 namespace era_engine::dotnet
@@ -44,6 +46,7 @@ namespace era_engine::dotnet
 		static void removeScript(int id, const char* comp);
 
 		escene* runtimeScene = nullptr;
+		World* runtimeWorld = nullptr;
 
 		static std::vector<std::string> scriptTypes;
 

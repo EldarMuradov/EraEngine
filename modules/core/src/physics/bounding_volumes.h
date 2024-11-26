@@ -119,19 +119,19 @@ namespace era_engine
 	{
 		void grow(vec3 o);
 		void pad(vec3 p);
-		NODISCARD vec3 getCenter() const;
-		NODISCARD vec3 getRadius() const;
-		NODISCARD bool contains(vec3 p) const;
+		vec3 getCenter() const;
+		vec3 getRadius() const;
+		bool contains(vec3 p) const;
 
-		NODISCARD bounding_box transformToAABB(quat rotation, vec3 translation) const;
-		NODISCARD bounding_oriented_box transformToOBB(quat rotation, vec3 translation) const;
-		NODISCARD bounding_box_corners getCorners() const;
-		NODISCARD bounding_box_corners getCorners(quat rotation, vec3 translation) const;
+		bounding_box transformToAABB(quat rotation, vec3 translation) const;
+		bounding_oriented_box transformToOBB(quat rotation, vec3 translation) const;
+		bounding_box_corners getCorners() const;
+		bounding_box_corners getCorners(quat rotation, vec3 translation) const;
 
-		NODISCARD static bounding_box everything();
-		NODISCARD static bounding_box negativeInfinity();
-		NODISCARD static bounding_box fromMinMax(vec3 minCorner, vec3 maxCorner);
-		NODISCARD static bounding_box fromCenterRadius(vec3 center, vec3 radius);
+		static bounding_box everything();
+		static bounding_box negativeInfinity();
+		static bounding_box fromMinMax(vec3 minCorner, vec3 maxCorner);
+		static bounding_box fromCenterRadius(vec3 center, vec3 radius);
 
 		float volume() const
 		{
@@ -151,10 +151,10 @@ namespace era_engine
 			return diameter.x * diameter.y * diameter.z;
 		}
 
-		NODISCARD bounding_box getAABB() const;
-		NODISCARD bounding_box transformToAABB(quat rotation, vec3 translation) const;
-		NODISCARD bounding_oriented_box transformToOBB(quat rotation, vec3 translation) const;
-		NODISCARD bounding_box_corners getCorners() const;
+		bounding_box getAABB() const;
+		bounding_box transformToAABB(quat rotation, vec3 translation) const;
+		bounding_oriented_box transformToOBB(quat rotation, vec3 translation) const;
+		bounding_box_corners getCorners() const;
 
 		quat rotation;
 		vec3 center;
@@ -169,21 +169,21 @@ namespace era_engine
 		vec2 getRadius() const;
 		bool contains(vec2 p) const;
 
-		NODISCARD static bounding_rectangle negativeInfinity();
-		NODISCARD static bounding_rectangle fromMinMax(vec2 minCorner, vec2 maxCorner);
-		NODISCARD static bounding_rectangle fromCenterRadius(vec2 center, vec2 radius);
+		static bounding_rectangle negativeInfinity();
+		static bounding_rectangle fromMinMax(vec2 minCorner, vec2 maxCorner);
+		static bounding_rectangle fromCenterRadius(vec2 center, vec2 radius);
 
 		vec2 minCorner;
 		vec2 maxCorner;
 	};
 
-	inline NODISCARD vec4 createPlane(vec3 point, vec3 normal)
+	inline vec4 createPlane(vec3 point, vec3 normal)
 	{
 		float d = -dot(normal, point);
 		return vec4(normal, d);
 	}
 
-	inline NODISCARD vec3 createLine(vec2 point, vec2 normal)
+	inline vec3 createLine(vec2 point, vec2 normal)
 	{
 		float d = -dot(normal, point);
 		return vec3(normal, d);
@@ -193,13 +193,13 @@ namespace era_engine
 
 	struct bounding_plane
 	{
-		bounding_plane() {}
+		bounding_plane() = default;
 		bounding_plane(vec3 point, vec3 normal)
 		{
 			plane = createPlane(point, normal);
 		}
 
-		NODISCARD float signedDistance(vec3 p) const
+		float signedDistance(vec3 p) const
 		{
 			return signedDistanceToPlane(p, plane);
 		}
@@ -369,7 +369,7 @@ namespace era_engine
 		return true;
 	}
 
-	inline NODISCARD bool aabbVsOBB(const bounding_box& a, const bounding_oriented_box& o)
+	inline bool aabbVsOBB(const bounding_box& a, const bounding_oriented_box& o)
 	{
 		return obbVsOBB(bounding_oriented_box{ quat::identity, a.getCenter(), a.getRadius() }, o);
 	}

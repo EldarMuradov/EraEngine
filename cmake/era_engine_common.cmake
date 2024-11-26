@@ -228,7 +228,6 @@ function(declare_support_program program_name)
 
     set(sources_${program_name} ${SOURCES_${program_name}})
     set(headers_${program_name} ${HEADERS_${program_name}})
-    set_source_files_properties(${SOURCES_${program_name}} ${HEADERS_${program_name}} PROPERTIES COMPILE_FLAGS -Od)
     add_executable(${program_name} ${SOURCES_${program_name}} ${HEADERS_${program_name}})
     target_include_directories(${program_name} PRIVATE ${ERA_ENGINE_PATH}/apps/${program_name}/src)
     target_link_directories(${program_name} PUBLIC ${ERA_ENGINE_PATH}/_build/Release)
