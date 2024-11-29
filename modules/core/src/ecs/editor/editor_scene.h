@@ -24,18 +24,16 @@ namespace era_engine
 		EditorScene()
 		{
 			runtime_world = make_ref<World>("GameWorld");
-			editor_world = make_ref<World>("EditorWorld");
 		}
 
 		static void init()
 		{
 			runtime_world->init();
-			editor_world->init();
 		}
 
 		static ref<World> get_current_world()
 		{
-			return (mode == scene_mode_editor) ? editor_world : runtime_world;
+			return runtime_world;
 		}
 
 		float get_timestep_scale() const
@@ -47,8 +45,7 @@ namespace era_engine
 		{
 			if (mode == scene_mode_editor)
 			{
-				runtime_world->destroy(false);
-				editor_world->clone_to(runtime_world);
+				//runtime_world->destroy(false);
 			}
 			mode = scene_mode_runtime_playing;
 		}
@@ -81,10 +78,9 @@ namespace era_engine
 			return mode == scene_mode_runtime_playing || mode == scene_mode_runtime_paused;
 		}
 
-		static inline ref<World> editor_world = nullptr;
 		static inline ref<World> runtime_world = nullptr;
 
-		static inline SceneMode mode = scene_mode_editor;
+		static inline SceneMode mode = scene_mode_runtime_playing;
 		float timestep_scale = 1.0f;
 
 		render_camera camera;

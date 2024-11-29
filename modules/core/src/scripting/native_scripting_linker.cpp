@@ -624,7 +624,6 @@ namespace era_engine::dotnet
 	{
 		if (builder)
 		{
-			bind::scene = runtimeScene;
 			bind::world = runtimeWorld;
 
 			// Rigidbody

@@ -23,7 +23,7 @@ namespace era_engine::dotnet
 
 	struct enative_scripting_linker
 	{
-		enative_scripting_linker(escene* scene) : runtimeScene(scene) {};
+		enative_scripting_linker(World* world) : runtimeWorld(world) {};
 		~enative_scripting_linker();
 
 		void init();
@@ -45,7 +45,6 @@ namespace era_engine::dotnet
 		static void createScript(int id, const char* comp);
 		static void removeScript(int id, const char* comp);
 
-		escene* runtimeScene = nullptr;
 		World* runtimeWorld = nullptr;
 
 		static std::vector<std::string> scriptTypes;

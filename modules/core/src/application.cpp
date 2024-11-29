@@ -521,13 +521,11 @@ namespace era_engine
 		physics::PhysicsHolder::physics_ref = make_ref<physics::Physics>();
 		physics::PhysicsHolder::physics_ref->set_editor_scene(world_scene.get());
 
-		escene& scene = this->scene.getCurrentScene();
-
 		ref<World> world = world_scene->get_current_world();
 
 		{
 			CPU_PROFILE_BLOCK("Binding for scripting initialization");
-			linker = make_ref<era_engine::dotnet::enative_scripting_linker>(&this->scene.runtimeScene);
+			linker = make_ref<era_engine::dotnet::enative_scripting_linker>(world.get());
 			linker->init();
 		}
 
@@ -951,7 +949,7 @@ namespace era_engine
 		}
 		else if (ext == ".hdr")
 		{
-			scene.environment.setFromTexture(relative);
+			world_scene->environment.setFromTexture(relative);
 		}
 	}
 }

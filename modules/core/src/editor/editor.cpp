@@ -931,21 +931,21 @@ namespace era_engine
 		{
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 
-			if (ImGui::IconButton(imgui_icon_play, imgui_icon_play, IMGUI_ICON_DEFAULT_SIZE, this->scene->is_playable()))
-			{
-				setSelectedEntity({});
-				forceStart();
-			}
-			ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
+			//if (ImGui::IconButton(imgui_icon_play, imgui_icon_play, IMGUI_ICON_DEFAULT_SIZE, this->scene->is_playable()))
+			//{
+			//	setSelectedEntity({});
+			//	forceStart();
+			//}
+			//ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
 			if (ImGui::IconButton(imgui_icon_pause, imgui_icon_pause, IMGUI_ICON_DEFAULT_SIZE, this->scene->is_pausable()))
 			{
 				forcePause();
 			}
-			ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
-			if (ImGui::IconButton(imgui_icon_stop, imgui_icon_stop, IMGUI_ICON_DEFAULT_SIZE, this->scene->is_stoppable()))
-			{
-				forceStop();
-			}
+			//ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
+			//if (ImGui::IconButton(imgui_icon_stop, imgui_icon_stop, IMGUI_ICON_DEFAULT_SIZE, this->scene->is_stoppable()))
+			//{
+			//	forceStop();
+			//}
 
 			//scene = &this->scene->getCurrentScene();
 			//cameraController.camera = &camera;

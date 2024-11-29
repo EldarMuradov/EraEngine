@@ -23,8 +23,6 @@ namespace era_engine
 	class World;
 
 	entt::registry& get_registry(World* _world);
-	entt::registry& get_current_game_registry();
-	World* get_current_game_world();
 
 	extern std::unordered_map<const char*, World*> worlds;
 
@@ -50,6 +48,7 @@ namespace era_engine
 		struct EcsData final
 		{
 			Entity::Handle entity_handle = Entity::NullHandle;
+			World* world = nullptr;
 		};
 
 		ERA_REFLECT
@@ -78,7 +77,7 @@ namespace era_engine
 		{
 			if (!has_component<Component_>())
 			{
-				get_current_game_registry().emplace_or_replace<Component_>(internal_data->entity_handle, internal_data, std::forward<Args_>(a)...);
+				get_registry(internal_data->world).emplace_or_replace<Component_>(internal_data->entity_handle, internal_data, std::forward<Args_>(a)...);
 			}
 			return *this;
 		}
@@ -86,7 +85,7 @@ namespace era_engine
 		template <typename Component_>
 		uint32 get_component_index() const
 		{
-			auto& s = get_current_game_registry().storage<Component_>();
+			auto& s = get_registry(internal_data->world).storage<Component_>();
 			return (uint32)s.index(internal_data->entity_handle);
 		}
 
@@ -97,37 +96,37 @@ namespace era_engine
 			ASSERT(component != nullptr);
 
 			component->release();
-			get_current_game_registry().remove<Component_>(internal_data->entity_handle);
+			get_registry(internal_data->world).remove<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
 		bool has_component() const
 		{
-			return get_current_game_registry().any_of<Component_>(internal_data->entity_handle);
+			return get_registry(internal_data->world).any_of<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
 		Component_& get_component()
 		{
-			return get_current_game_registry().get<Component_>(internal_data->entity_handle);
+			return get_registry(internal_data->world).get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
 		const Component_& get_component() const
 		{
-			return get_current_game_registry().get<Component_>(internal_data->entity_handle);
+			return get_registry(internal_data->world).get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
 		Component_* get_component_if_exists()
 		{
-			return get_current_game_registry().try_get<Component_>(internal_data->entity_handle);
+			return get_registry(internal_data->world).try_get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
 		const Component_* get_component_if_exists() const
 		{
-			return get_current_game_registry().try_get<Component_>(internal_data->entity_handle);
+			return get_registry(internal_data->world).try_get<Component_>(internal_data->entity_handle);
 		}
 
 	private:

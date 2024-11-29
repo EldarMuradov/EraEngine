@@ -52,7 +52,7 @@ namespace era_engine
 
 	World* Component::get_world() const
 	{
-		return get_current_game_world();
+		return component_data->world;
 	}
 
 	Entity Component::get_entity() const

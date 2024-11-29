@@ -52,9 +52,6 @@ namespace era_engine
 
 		void handleFileDrop(const fs::path& filename);
 
-		escene* getCurrentScene() { return &scene.getCurrentScene(); }
-		editor_scene* getScene() { return &scene; }
-
 		ref<World> getCurrentWorld() const { return world_scene->get_current_world(); }
 		ref<EditorScene> getWorldScene() { return world_scene; }
 
@@ -94,8 +91,6 @@ namespace era_engine
 		main_renderer* renderer;
 
 		ref<dotnet::enative_scripting_linker> linker;
-
-		editor_scene scene;
 
 		ref<EditorScene> world_scene = nullptr;
 

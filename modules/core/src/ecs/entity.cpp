@@ -23,16 +23,6 @@ namespace era_engine
 			.constructor<ref<Entity::EcsData>>();
 	}
 
-	entt::registry& get_current_game_registry()
-	{
-		return get_registry(get_current_game_world());
-	}
-
-	World* get_current_game_world()
-	{
-		return EditorScene::get_current_world().get();
-	}
-
 	void IReleasable::release()
 	{
 	}
@@ -92,12 +82,13 @@ namespace era_engine
 	bool Entity::is_valid() const noexcept
 	{
 		return internal_data != nullptr &&
-			   internal_data->entity_handle != Entity::NullHandle;
+			   internal_data->entity_handle != Entity::NullHandle &&
+			   internal_data->world != nullptr;
 	}
 
 	World* Entity::get_world() const
 	{
-		return get_current_game_world();
+		return internal_data->world;
 	}
 
 	Entity::Handle Entity::get_handle() const

@@ -16,7 +16,7 @@ namespace era_engine
 
 	void World::init()
 	{
-		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(registry.create());
+		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(registry.create(), this);
 		entity_datas.emplace(new_data->entity_handle, new_data);
 		root_entity = Entity(new_data).add_component<TransformComponent>().add_component<NameComponent>("RootEntity");
 	}
@@ -25,7 +25,7 @@ namespace era_engine
 	{
 		lock _lock{sync};
 
-		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(registry.create());
+		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(registry.create(), this);
 		entity_datas.emplace(new_data->entity_handle, new_data);
 
 		Entity entity = Entity(new_data);
@@ -50,7 +50,7 @@ namespace era_engine
 				LOG_ERROR("ECS> Entity creation failed!");
 			}
 
-			ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(_handle);
+			ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(_handle, this);
 			entity_datas.emplace(new_data->entity_handle, new_data);
 
 			Entity entity = Entity(new_data);
