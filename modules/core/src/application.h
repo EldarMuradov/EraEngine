@@ -26,6 +26,7 @@
 #include "editor/editor.h"
 
 #include "ecs/editor/editor_scene.h"
+#include "ecs/world_system_scheduler.h"
 
 namespace era_engine
 {
@@ -71,6 +72,8 @@ namespace era_engine
 
 		eallocator stackArena;
 
+		ldr_render_pass ldrRenderPass;
+
 	private:
 		void resetRenderPasses();
 		void submitRendererParams(uint32 numSpotLightShadowPasses, uint32 numPointLightShadowPasses);
@@ -89,6 +92,7 @@ namespace era_engine
 		ref<dx_texture> decalTexture;
 
 		main_renderer* renderer;
+		WorldSystemScheduler* schedulder = nullptr;
 
 		ref<dotnet::enative_scripting_linker> linker;
 
@@ -114,7 +118,6 @@ namespace era_engine
 		sun_shadow_render_pass sunShadowRenderPass;
 		spot_shadow_render_pass spotShadowRenderPasses[16];
 		point_shadow_render_pass pointShadowRenderPasses[16];
-		ldr_render_pass ldrRenderPass;
 		compute_pass computePass;
 
 		friend class eeditor;

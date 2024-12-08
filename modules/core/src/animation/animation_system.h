@@ -2,12 +2,12 @@
 
 #include "ecs/system.h"
 
-namespace era_engine::physics
+namespace era_engine::animation
 {
-	class PhysicsSystem final : public System
+	class AnimationSystem final : public System
 	{
 	public:
-		PhysicsSystem(World* _world);
+		AnimationSystem(World* _world);
 		void init() override;
 		void update(float dt) override;
 

@@ -846,7 +846,7 @@ namespace era_engine::animation
 		for (int i = clips.size() - 1; i >= 0; --i)
 		{
 			animation_blackboard blackboard = { &clips[i] };
-			clips[i].looping = false;
+			//clips[i].looping = false;
 			controller->stateMachine.enter(blackboard);
 		}
 	}

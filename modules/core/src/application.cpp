@@ -508,6 +508,9 @@ namespace era_engine
 		world_scene = make_ref<EditorScene>();
 		world_scene->init();
 
+		schedulder = new WorldSystemScheduler(world_scene->get_current_world().get());
+		schedulder->initialize_systems();
+
 		if (dxContext.featureSupport.raytracing())
 		{
 			raytracingTLAS.initialize();
@@ -706,6 +709,8 @@ namespace era_engine
 		bool objectDragged = editor.update(input, &ldrRenderPass, dt);
 		editor.render(&ldrRenderPass, dt);
 
+		schedulder->begin(dt);
+
 		render_camera& camera = this->world_scene->is_pausable() ? world_scene->editor_camera : world_scene->camera;
 
 #else
@@ -733,57 +738,8 @@ namespace era_engine
 
 		bool running = world_scene->is_pausable();
 
-#if PX_VEHICLE
-		{
-			//if (running)
-			//{
-			//	CPU_PROFILE_BLOCK("PhysX vehicles step");
-			//	for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_vehicle_base_component, transform_component>).each())
-			//	{
-			//		vehicleStep(&vehicle, &trs, dt);
-			//	}
-
-			//	for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_4_wheels_vehicle_component, transform_component>).each())
-			//	{
-			//		vehicleStep(&vehicle, &trs, dt);
-			//	}
-
-			//	for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_tank_vehicle_component, transform_component>).each())
-			//	{
-			//		vehicleStep(&vehicle, &trs, dt);
-			//	}
-			//}
-		}
-#endif
-
-		if (running)
-		{
-			physics::PhysicsHolder::physics_ref->update(dt);
-			updatePhysXCallbacksAndScripting(world, linker, dt, input);
-		}
-
-#if PX_VEHICLE
-		{
-			//if (running)
-			//{
-			//	CPU_PROFILE_BLOCK("PhysX vehicles post step");
-			//	for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_vehicle_base_component, transform_component>).each())
-			//	{
-			//		vehiclePostStep(&vehicle, dt);
-			//	}
-
-			//	for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_4_wheels_vehicle_component, transform_component>).each())
-			//	{
-			//		vehiclePostStep(&vehicle, dt);
-			//	}
-
-			//	for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_tank_vehicle_component, transform_component>).each())
-			//	{
-			//		vehiclePostStep(&vehicle, dt);
-			//	}
-			//}
-		}
-#endif
+		schedulder->physics_update(dt);
+		schedulder->render_update(dt);
 
 #ifndef ERA_RUNTIME
 
@@ -795,46 +751,9 @@ namespace era_engine
 
 #endif
 
-
-#if PX_GPU_BROAD_PHASE
-		{
-			CPU_PROFILE_BLOCK("PhysX GPU clothes render step");
-			for (auto [entityHandle, cloth, render] : scene.group(component_group<physics::px_cloth_component, physics::px_cloth_render_component>).each())
-			{
-				cloth.update(false, &ldrRenderPass);
-			}
-		}
-
-		{
-			CPU_PROFILE_BLOCK("PhysX GPU particles render step");
-			for (auto [entityHandle, particles, render] : scene.group(component_group<physics::px_particles_component, physics::px_particles_render_component>).each())
-			{
-				particles.update(true, &ldrRenderPass);
-			}
-		}
-
-#endif
-#if PX_BLAST_ENABLE
-		//{
-		//	CPU_PROFILE_BLOCK("PhysX blast chuncks");
-		//	for (auto [entityHandle, cgm, _] : scene.group(component_group<physics::chunk_graph_manager, transform_component>).each())
-		//	{
-		//		cgm.update();
-		//	}
-		//}
-#endif
-
 		updateTestScene(dt, world, input);
 
 		{
-			for (auto [entityHandle, anim, mesh, transform] : world->group(components_group<animation::AnimationComponent, MeshComponent, TransformComponent>).each())
-			{
-				anim.update(mesh.mesh, stackArena, dt, &transform.transform);
-
-				if (anim.draw_sceleton)
-					anim.draw_current_skeleton(mesh.mesh, transform.transform, &ldrRenderPass);
-			}
-
 			for (auto [entityHandle, transform, terrain] : world->group(components_group<TransformComponent, TerrainComponent>).each())
 			{
 				terrain.update();
@@ -910,6 +829,8 @@ namespace era_engine
 #ifndef ERA_RUNTIME
 		editor.visualizePhysics(&ldrRenderPass);
 #endif
+
+		schedulder->end(dt);
 
 		executeMainThreadJobs();
 	}

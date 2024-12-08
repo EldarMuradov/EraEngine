@@ -3,6 +3,8 @@
 #include "ecs/entity.h"
 #include "ecs/entity_utils.h"
 
+#include "ecs/reflection.h"
+
 #ifndef ECS_VALIDATE
 #define ECS_VALIDATE 1
 #endif // !ECS_VALIDATE
@@ -29,7 +31,7 @@ namespace era_engine
 	template<typename... Type_>
 	inline constexpr ComponentsGroup<Type_...> components_group{};
 
-	class World final
+	class World
 	{
 	public:
 		World(const char* _name);
@@ -189,6 +191,9 @@ namespace era_engine
 		}
 
 		void add_base_components(Entity& entity);
+
+	public:
+		ERA_REFLECT
 
 	private:
 		std::mutex sync;

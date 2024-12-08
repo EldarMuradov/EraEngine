@@ -83,7 +83,7 @@ struct RTTR_API policy
          * }
          * \endcode
          */
-        static const detail::return_as_ptr      return_ref_as_ptr;
+        static inline const detail::return_as_ptr      return_ref_as_ptr = {};
 
        /*!
          * This policy should be used when the return value of a method should not be forwarded to the caller.
@@ -113,7 +113,7 @@ struct RTTR_API policy
          * }
          * \endcode
          */
-        static const detail::discard_return     discard_return;
+        static inline const detail::discard_return     discard_return = {};
     };
 
     /*!
@@ -155,7 +155,7 @@ struct RTTR_API policy
          * }
          * \endcode
          */
-        static const detail::bind_as_ptr        bind_as_ptr;
+        static inline const detail::bind_as_ptr        bind_as_ptr = {};
 
         /*!
          * The \ref as_reference_wrapper policy will bind a member object as *std::reference_wrapper* type.
@@ -190,7 +190,7 @@ struct RTTR_API policy
          * }
          * \endcode
          */
-        static const detail::as_reference_wrapper        as_reference_wrapper;
+        static inline const detail::as_reference_wrapper        as_reference_wrapper = {};
     };
 
     /*!
@@ -232,7 +232,7 @@ struct RTTR_API policy
          * }
          * \endcode
          */
-        static const detail::as_raw_pointer         as_raw_ptr;
+        static inline const detail::as_raw_pointer         as_raw_ptr = {};
 
          /*!
          * The \ref as_std_shared_ptr policy will create an instance of a class through *std::make_shared<T>*.
@@ -268,7 +268,7 @@ struct RTTR_API policy
          * }                                                    // because the var object is gone out of scope
          * \endcode
          */
-        static const detail::as_std_shared_ptr      as_std_shared_ptr;
+        static inline const detail::as_std_shared_ptr      as_std_shared_ptr = {};
 
         /*!
          * The \ref as_object policy will create an instance of a class with automatic storage.
@@ -303,7 +303,7 @@ struct RTTR_API policy
          * }
          * \endcode
          */
-        static const detail::as_object              as_object;
+        static inline const detail::as_object              as_object = {};
     };
 };
 

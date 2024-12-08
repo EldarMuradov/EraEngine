@@ -160,10 +160,10 @@ namespace era_engine
         SetThreadPriority(handle, THREAD_PRIORITY_HIGHEST);
         CloseHandle(handle);
 
-        //uint32 numHardwareThreads = std::thread::hardware_concurrency();
+        uint32 numHardwareThreads = std::thread::hardware_concurrency();
 
-        highPriorityJobQueue.initialize(4, 1, THREAD_PRIORITY_NORMAL, L"High priority worker");
-        lowPriorityJobQueue.initialize(4, 5, THREAD_PRIORITY_BELOW_NORMAL, L"Low priority worker");
+        highPriorityJobQueue.initialize(numHardwareThreads, 1, THREAD_PRIORITY_NORMAL, L"High priority worker");
+        lowPriorityJobQueue.initialize(numHardwareThreads, 5, THREAD_PRIORITY_BELOW_NORMAL, L"Low priority worker");
         mainThreadJobQueue.initialize(0, 0, 0, 0);
     }
 
