@@ -26,6 +26,8 @@ namespace era_engine
 
 	WorldSystemScheduler::~WorldSystemScheduler()
 	{
+		updates.clear();
+		systems.clear();
 	}
 
 	void WorldSystemScheduler::initialize_systems()
@@ -47,6 +49,8 @@ namespace era_engine
 				updates[group.name].tasks.push_back({ system, update });
 			}
 			systems.push_back(system);
+
+			system->init();
 		}
 	}
 

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <rttr/type>
+
 namespace era_engine
 {
 	template<typename T>
@@ -63,7 +65,7 @@ namespace era_engine
 
 	struct eallocator
 	{
-		eallocator() {}
+		eallocator() { initialize(); }
 		eallocator(const eallocator&) = delete;
 		eallocator(eallocator&&) = default;
 		~eallocator() { reset(true); }
@@ -113,6 +115,8 @@ namespace era_engine
 		void resetToMarker(memory_marker marker);
 
 		NODISCARD uint8* base() const noexcept { return memory; }
+
+		RTTR_ENABLE()
 
 	protected:
 		void ensureFreeSizeInternal(uint64 size);

@@ -886,60 +886,6 @@ namespace era_engine::animation
 				controller->stateMachine.update();
 			}
 		}
-		//else if (ragdoll && ragdoll->ragdoll && ragdoll->simulated)
-		//{
-		//	auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
-
-		//	prev_frame_vertex_buffer = current_vertex_buffer;
-		//	current_vertex_buffer = vb;
-
-		//	trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-		//	trs deltaRootMotion;
-
-		//	ragdoll->updateMotion(localTransforms, &deltaRootMotion);
-
-		//	trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-
-		//	skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
-
-		//	if (transform)
-		//	{
-		//		*transform = *transform * deltaRootMotion;
-		//		transform->rotation = normalize(transform->rotation);
-		//	}
-
-		//	current_global_transforms = globalTransforms;
-		//}
-		//else if (ragdoll && ragdoll->ragdoll && !ragdoll->simulated)
-		//{
-		//	auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
-
-		//	prev_frame_vertex_buffer = current_vertex_buffer;
-		//	current_vertex_buffer = vb;
-
-		//	trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-		//	trs deltaRootMotion;
-		//	animation->update(skeleton, dt * time_scale, localTransforms, deltaRootMotion);
-
-		//	trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-
-		//	skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
-
-		//	if (transform)
-		//	{
-		//		*transform = *transform * deltaRootMotion;
-		//		transform->rotation = normalize(transform->rotation);
-		//	}
-
-		//	current_global_transforms = globalTransforms;
-		//	// TODO
-		//	ragdoll->updateKinematic();
-
-		//	if (animation->finished)
-		//	{
-		//		controller->stateMachine.update();
-		//	}
-		//}
 		else
 		{
 			current_vertex_buffer = dxMesh.vertexBuffer;

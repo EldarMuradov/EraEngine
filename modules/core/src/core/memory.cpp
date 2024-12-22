@@ -3,8 +3,19 @@
 #include "core/memory.h"
 #include "core/math.h"
 
+#include <rttr/registration>
+
 namespace era_engine
 {
+
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+
+		rttr::registration::class_<eallocator>("eallocator")
+			.constructor<>()(policy::ctor::as_raw_ptr);
+	}
+
 	void eallocator::initialize(uint64 minimumBlockSize, uint64 reserveSize)
 	{
 		reset(true);

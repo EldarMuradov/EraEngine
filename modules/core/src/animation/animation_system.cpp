@@ -1,6 +1,9 @@
 #include "animation/animation_system.h"
 
 #include "core/cpu_profiling.h"
+#include "core/memory.h"
+
+#include "engine/engine.h"
 
 #include "ecs/update_groups.h"
 
@@ -22,7 +25,7 @@ namespace era_engine::animation
 
 		rttr::registration::class_<AnimationSystem>("AnimationSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr)
-			.method("update", &System::update)(metadata("update_group", update_types::BEFORE_RENDER));
+			.method("update", &System::update)(metadata("update_group", update_types::RENDER));
 	}
 
 	AnimationSystem::AnimationSystem(World* _world)
@@ -30,21 +33,29 @@ namespace era_engine::animation
 	{
 	}
 
+	era_engine::animation::AnimationSystem::~AnimationSystem()
+	{
+		allocator->reset();
+	}
+
 	void AnimationSystem::init()
 	{
+		allocator = get_transient_object<eallocator>();
 	}
 
 	void AnimationSystem::update(float dt)
 	{
+		memory_marker marker = allocator->getMarker();
 		for (auto [entityHandle, anim, mesh, transform] : world->group(components_group<animation::AnimationComponent, MeshComponent, TransformComponent>).each())
 		{
-			anim.update(mesh.mesh, globalApp.stackArena, dt, &transform.transform);
-
+			anim.update(mesh.mesh, *allocator, dt, &transform.transform);
+			
 			if (anim.draw_sceleton)
 			{
 				anim.draw_current_skeleton(mesh.mesh, transform.transform, &globalApp.ldrRenderPass);
 			}
 		}
+		allocator->resetToMarker(marker);
 	}
 
 }

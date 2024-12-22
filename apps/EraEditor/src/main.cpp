@@ -9,13 +9,13 @@ int main(int argc, char** argv)
 	using namespace era_engine;
 
 #ifndef _DEBUG
-	::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+	::ShowWindow(::GetConsoleWindow(), SW_HIDE);
 #endif
 
 	try
 	{
-		Engine engine;
-		if (!engine.run())
+		Engine* engine = Engine::instance();
+		if (!engine->run())
 		{
 			return EXIT_FAILURE;
 		}

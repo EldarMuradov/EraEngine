@@ -120,6 +120,17 @@ namespace era_engine
 	{
 	}
 
+	Engine* Engine::instance()
+	{
+		static Engine engine = Engine();
+		return &engine;
+	}
+
+	void Engine::release()
+	{
+		instance()->running = false;
+	}
+
 	bool Engine::run()
 	{
 		if (!dxContext.initialize())
@@ -332,6 +343,8 @@ namespace era_engine
 		}
 
 	terminate();
+
+	return true;
 }
 
 void Engine::terminate()

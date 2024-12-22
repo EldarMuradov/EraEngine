@@ -143,16 +143,6 @@ namespace era_engine
 		return registry;
 	}
 
-	void World::clone_to(ref<World> target)
-	{
-		target->registry.assign(registry.data(), registry.data() + registry.size(), registry.released());
-
-		copy_component_pools_to(common_group, *target.get());
-		target->entity_datas = entity_datas;
-		
-		target->registry.ctx() = registry.ctx();
-	}
-
 	void World::add_base_components(Entity& entity)
 	{
 		entity.add_component<TransformComponent>().add_component<ChildComponent>(weakref<Entity::EcsData>(root_entity.internal_data));

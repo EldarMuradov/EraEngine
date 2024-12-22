@@ -769,7 +769,9 @@ namespace era_engine
 			lighting.maxNumSpotShadowRenderPasses = arraysize(spotShadowRenderPasses);
 			lighting.maxNumPointShadowRenderPasses = arraysize(pointShadowRenderPasses);
 
-			render_world(camera, world, stackArena, Entity::NullHandle, sun, lighting, !renderer->settings.cacheShadowMap,
+			Entity::Handle handle = selectedEntity.is_valid() ? selectedEntity.get_handle() : Entity::NullHandle;
+
+			render_world(camera, world, stackArena, handle, sun, lighting, !renderer->settings.cacheShadowMap,
 				&opaqueRenderPass, &transparentRenderPass, &ldrRenderPass, &sunShadowRenderPass, &computePass, unscaledDt);
 
 			renderer->setSpotLights(spotLightBuffer[dxContext.bufferedFrameID], world->number_of_components_of_type<SpotLightComponent>(), spotLightShadowInfoBuffer[dxContext.bufferedFrameID]);
