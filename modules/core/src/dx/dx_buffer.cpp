@@ -4,7 +4,7 @@
 #include "dx/dx_command_list.h"
 #include "dx/dx_context.h"
 
-#include <d3d12memoryallocator/D3D12MemAlloc.h>
+#include <dx/D3D12MemAlloc.h>
 
 namespace era_engine
 {

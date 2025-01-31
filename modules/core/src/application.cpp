@@ -8,7 +8,6 @@
 #include "core/threading.h"
 #include "core/coroutine.h"
 #include "core/event_queue.h"
-#include "core/ejson_serializer.h"
 
 #include "geometry/mesh_builder.h"
 
@@ -20,8 +19,6 @@
 #include "rendering/mesh_shader.h"
 #include "rendering/shadow_map.h"
 #include "rendering/debug_visualization.h"
-
-#include "scene/scene_rendering.h"
 
 #include "audio/audio.h"
 
@@ -39,8 +36,8 @@
 #include "ai/navigation.h"
 #include "ai/navigation_component.h"
 
-#include "scripting/script.h"
-#include "scripting/native_scripting_linker.h"
+//#include "scripting/script.h"
+//#include "scripting/native_scripting_linker.h"
 
 #include "ecs/visitor/visitor.h"
 #include "ecs/world.h"
@@ -51,11 +48,11 @@
 #include "ecs/reflection_utils.h"
 #include "ecs/editor/entity_editor_utils.h"
 
-#include "physics/core/physics.h"
-#include "physics/aggregate.h"
-#include "physics/body_component.h"
-#include "physics/shape_component.h"
-#include "physics/basic_objects.h"
+//#include "physics/core/physics.h"
+//#include "physics/aggregate.h"
+//#include "physics/body_component.h"
+//#include "physics/shape_component.h"
+//#include "physics/basic_objects.h"
 
 namespace era_engine
 {
@@ -92,9 +89,9 @@ namespace era_engine
 
 		add_ray_tracing_data data = { entity, mesh };
 
-		lowPriorityJobQueue.createJob<add_ray_tracing_data>([](add_ray_tracing_data& data, job_handle)
+		low_priority_job_queue.createJob<add_ray_tracing_data>([](add_ray_tracing_data& data, JobHandle)
 			{
-				data.mesh->loadJob.waitForCompletion();
+				data.mesh->loadJob.wait_for_completion();
 
 				struct create_component_data
 				{
@@ -104,27 +101,27 @@ namespace era_engine
 
 				create_component_data createData = { data.entity, defineBlasFromMesh(data.mesh) };
 
-				mainThreadJobQueue.createJob<create_component_data>([](create_component_data& data, job_handle)
+				main_thread_job_queue.createJob<create_component_data>([](create_component_data& data, JobHandle)
 					{
 						data.entity.add_component<RaytraceComponent>(data.blas);
-					}, createData).submitNow();
+					}, createData).submit_now();
 
-			}, data).submitNow();
+			}, data).submit_now();
 	}
 
-	struct update_scripting_data
-	{
-		float deltaTime{};
-		ref<dotnet::enative_scripting_linker> core;
-		ref<World> world;
-		const user_input& input;
-	};
+	//struct update_scripting_data
+	//{
+	//	float deltaTime{};
+	//	ref<dotnet::enative_scripting_linker> core;
+	//	ref<World> world;
+	//	const user_input& input;
+	//};
 
-	spin_lock scriptingSync;
+	SpinLock scriptingSync;
 
-	void updatePhysXCallbacksAndScripting(ref<World> current_world, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in)
-	{
-		update_scripting_data data = { dt, core, current_world, in };
+	//void updatePhysXCallbacksAndScripting(ref<World> current_world, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in)
+	//{
+		/*update_scripting_data data = { dt, core, current_world, in };
 
 		highPriorityJobQueue.createJob<update_scripting_data>([](update_scripting_data& data, job_handle)
 			{
@@ -166,7 +163,7 @@ namespace era_engine
 		{
 			CPU_PROFILE_BLOCK(".NET 8 Input sync step");
 			core->handleInput(reinterpret_cast<uintptr_t>(&in.keyboard[0]));
-		}
+		}*/
 
 		//const auto& nav_objects = data.scene.group(component_group<ai::navigation_component, transform_component>);
 
@@ -188,35 +185,35 @@ namespace era_engine
 		//			}
 		//		}, nav_data).submitNow();
 		//}
-	}
+	//}
 
-	void updateScripting(update_scripting_data& data)
-	{
-		CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
-		if (!data.world->size())
-		{
-			return;
-		}
+	//void updateScripting(update_scripting_data& data)
+	//{
+	//	CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
+	//	if (!data.world->size())
+	//	{
+	//		return;
+	//	}
 
-		auto group = data.world->group(components_group<ecs::ScriptsComponent, TransformComponent>);
+	//	auto group = data.world->group(components_group<ecs::ScriptsComponent, TransformComponent>);
 
-		if (group.empty())
-		{
-			return;
-		}
+	//	if (group.empty())
+	//	{
+	//		return;
+	//	}
 
-		for (auto [entityHandle, script, transform] : group.each())
-		{
-			const auto& mat = trsToMat4(transform.transform);
-			constexpr size_t mat_size = 16;
-			float* ptr = new float[mat_size];
-			for (size_t i = 0; i < mat_size; i++)
-				ptr[i] = mat.m[i];
-			data.core->process_trs(reinterpret_cast<uintptr_t>(ptr), (int)entityHandle);
-			//delete[] ptr; // CoreRT/CLR clear's it
-		}
-		data.core->update(data.deltaTime);
-	}
+	//	for (auto [entityHandle, script, transform] : group.each())
+	//	{
+	//		const auto& mat = trsToMat4(transform.transform);
+	//		constexpr size_t mat_size = 16;
+	//		float* ptr = new float[mat_size];
+	//		for (size_t i = 0; i < mat_size; i++)
+	//			ptr[i] = mat.m[i];
+	//		data.core->process_trs(reinterpret_cast<uintptr_t>(ptr), (int)entityHandle);
+	//		//delete[] ptr; // CoreRT/CLR clear's it
+	//	}
+	//	data.core->update(data.deltaTime);
+	//}
 
 	static void initializeAnimationComponentAsync(Entity entity, ref<multi_mesh> mesh)
 	{
@@ -228,11 +225,11 @@ namespace era_engine
 
 		add_animation_data data = { entity, mesh };
 
-		mainThreadJobQueue.createJob<add_animation_data>([](add_animation_data& data, job_handle job)
+		main_thread_job_queue.createJob<add_animation_data>([](add_animation_data& data, JobHandle job)
 			{
-				data.mesh->loadJob.waitForCompletion();
+				data.mesh->loadJob.wait_for_completion();
 				data.entity.get_component<animation::AnimationComponent>().initialize(data.mesh->skeleton.clips);
-			}, data).submitNow();
+			}, data).submit_now();
 	}
 
 	void application::loadCustomShaders()
@@ -261,13 +258,13 @@ namespace era_engine
 		builder.pushBox({ vec3(0.f), vec3(1.f, 1.f, 2.f) });
 		boxMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
 
-		pbr_material_desc defaultPlaneMatDesc;
-		defaultPlaneMatDesc.albedo = getAssetPath("/resources/assets/uv.jpg");
+		PbrMaterialDesc defaultPlaneMatDesc;
+		defaultPlaneMatDesc.albedo = get_asset_path("/resources/assets/uv.jpg");
 		defaultPlaneMatDesc.normal = "";
 		defaultPlaneMatDesc.roughness = "";
-		defaultPlaneMatDesc.uvScale = 15.0f;
-		defaultPlaneMatDesc.metallicOverride = 0.35f;
-		defaultPlaneMatDesc.roughnessOverride = 0.01f;
+		defaultPlaneMatDesc.uv_scale = 15.0f;
+		defaultPlaneMatDesc.metallic_override = 0.35f;
+		defaultPlaneMatDesc.roughness_override = 0.01f;
 
 		auto defaultPlaneMat = createPBRMaterialAsync(defaultPlaneMatDesc);
 
@@ -275,14 +272,14 @@ namespace era_engine
 		builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
 		groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
 
-		{
+		/*{
 			Entity entity3 = game_world->create_entity("Entity3").add_component<MeshComponent>(sphereMesh, false)
 				.add_component<physics::SphereShapeComponent>(1.0f)
 				.add_component<physics::DynamicBodyComponent>();
 			sphereMesh->mesh = builder.createDXMesh();
-		}
+		}*/
 
-		if (auto mesh = loadAnimatedMeshFromFileAsync(getAssetPath("/resources/assets/veribot/source/VERIBOT_final.fbx")))
+		if (auto mesh = loadAnimatedMeshFromFileAsync(get_asset_path("/resources/assets/veribot/source/VERIBOT_final.fbx")))
 		{
 			auto& en = game_world->create_entity("Veribot")
 				.add_component<animation::AnimationComponent>()
@@ -296,7 +293,7 @@ namespace era_engine
 			addRaytracingComponentAsync(en, mesh);
 		}
 
-		if (auto mesh = loadMeshFromFileAsync(getAssetPath("/resources/assets/Sponza/sponza.obj")))
+		if (auto mesh = loadMeshFromFileAsync(get_asset_path("/resources/assets/Sponza/sponza.obj")))
 		{
 			auto& sponza = game_world->create_entity("Sponza")
 				.add_component<MeshComponent>(mesh);
@@ -308,7 +305,7 @@ namespace era_engine
 			addRaytracingComponentAsync(sponza, mesh);
 		}
 
-		Entity plane = game_world->create_entity("Platform")
+		/*Entity plane = game_world->create_entity("Platform")
 			.add_component<TransformComponent>(vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)), vec3(5.0f, 1.0f, 5.0f))
 			.add_component<physics::PlaneComponent>(vec3(0.f, -5.0, 0.0f), vec3(0.0f, 1.0f, 0.0f))
 			.add_component<MeshComponent>(groundMesh);
@@ -317,7 +314,7 @@ namespace era_engine
 			TransformComponent& transform_component = plane.get_component<TransformComponent>();
 			transform_component.transform.position = vec3(10.0f, -9.0f, 0.0f);
 			transform_component.transform.scale = vec3(5.0f, 1.0f, 5.0f);
-		}
+		}*/
 
 		auto chainMesh = make_ref<multi_mesh>();
 
@@ -508,9 +505,6 @@ namespace era_engine
 		world_scene = make_ref<EditorScene>();
 		world_scene->init();
 
-		schedulder = new WorldSystemScheduler(world_scene->get_current_world().get());
-		schedulder->initialize_systems();
-
 		if (dxContext.featureSupport.raytracing())
 		{
 			raytracingTLAS.initialize();
@@ -518,19 +512,16 @@ namespace era_engine
 
 		world_scene->camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
 		world_scene->editor_camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
-		world_scene->environment.setFromTexture(getAssetPath("/resources/assets/sky/sunset_in_the_chalk_quarry_4k.hdr"));
+		world_scene->environment.setFromTexture(get_asset_path("/resources/assets/sky/sunset_in_the_chalk_quarry_4k.hdr"));
 		world_scene->environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
-
-		physics::PhysicsHolder::physics_ref = make_ref<physics::Physics>();
-		physics::PhysicsHolder::physics_ref->set_editor_scene(world_scene.get());
 
 		ref<World> world = world_scene->get_current_world();
 
-		{
+		/*{
 			CPU_PROFILE_BLOCK("Binding for scripting initialization");
 			linker = make_ref<era_engine::dotnet::enative_scripting_linker>(world.get());
 			linker->init();
-		}
+		}*/
 
 #ifndef ERA_RUNTIME
 
@@ -573,8 +564,6 @@ namespace era_engine
 		}
 
 		stackArena.initialize();
-
-		physics::PhysicsHolder::physics_ref->start();
 	}
 
 #if 0
@@ -681,7 +670,7 @@ namespace era_engine
 		}
 	}
 
-	static void updateTestScene(float dt, ref<World> world, const user_input& input)
+	static void updateTestScene(float dt, ref<World> world, const UserInput& input)
 	{
 		// Particles
 #if 0
@@ -698,7 +687,7 @@ namespace era_engine
 #endif
 	}
 
-	void application::update(const user_input& input, float dt)
+	void application::update(const UserInput& input, float dt)
 	{
 		resetRenderPasses();
 
@@ -708,8 +697,6 @@ namespace era_engine
 
 		bool objectDragged = editor.update(input, &ldrRenderPass, dt);
 		editor.render(&ldrRenderPass, dt);
-
-		schedulder->begin(dt);
 
 		render_camera& camera = this->world_scene->is_pausable() ? world_scene->editor_camera : world_scene->camera;
 
@@ -737,9 +724,6 @@ namespace era_engine
 		dt *= world_scene->get_timestep_scale();
 
 		bool running = world_scene->is_pausable();
-
-		schedulder->physics_update(dt);
-		schedulder->render_update(dt);
 
 #ifndef ERA_RUNTIME
 
@@ -797,14 +781,14 @@ namespace era_engine
 					renderWireCone(transform.transform.position, transform.transform.rotation * vec3(0.f, 0.f, -1.f),
 						sl->distance, sl->outerAngle * 2.f, vec4(sl->color, 1.f), &ldrRenderPass);
 				}
-				else if (physics::CapsuleShapeComponent* shape = selectedEntity.get_component_if_exists<physics::CapsuleShapeComponent>())
-				{
-					//renderWireCapsule(transform.transform.position, transform.transform.position + vec3(0, cct->height, 0), cct->radius, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
-				}
-				else if (physics::BoxShapeComponent* shape = selectedEntity.get_component_if_exists<physics::BoxShapeComponent>())
-				{
-					//renderWireBox(transform.transform.position, vec3(cct->halfSideExtent, cct->halfHeight * 2, cct->halfSideExtent), transform.transform.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
-				}
+				//else if (physics::CapsuleShapeComponent* shape = selectedEntity.get_component_if_exists<physics::CapsuleShapeComponent>())
+				//{
+				//	//renderWireCapsule(transform.transform.position, transform.transform.position + vec3(0, cct->height, 0), cct->radius, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
+				//}
+				//else if (physics::BoxShapeComponent* shape = selectedEntity.get_component_if_exists<physics::BoxShapeComponent>())
+				//{
+				//	//renderWireBox(transform.transform.position, vec3(cct->halfSideExtent, cct->halfHeight * 2, cct->halfSideExtent), transform.transform.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
+				//}
 			}
 #endif
 			submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
@@ -831,10 +815,6 @@ namespace era_engine
 #ifndef ERA_RUNTIME
 		editor.visualizePhysics(&ldrRenderPass);
 #endif
-
-		schedulder->end(dt);
-
-		executeMainThreadJobs();
 	}
 
 	void application::handleFileDrop(const fs::path& filename)
@@ -843,7 +823,7 @@ namespace era_engine
 		fs::path relative = fs::relative(path, fs::current_path());
 		fs::path ext = relative.extension();
 
-		if (isMeshExtension(ext))
+		if (is_mesh_extension(ext))
 		{
 			fs::path path = filename;
 			path = path.stem();

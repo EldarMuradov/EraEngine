@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core_api.h"
+
 #ifndef ENTT_ASSERT
 #define ENTT_ASSERT(condition, ...) ASSERT(condition)
 #endif // !ENTT_ASSERT
@@ -10,7 +12,7 @@
 
 namespace era_engine
 {
-	class EntityUtils final
+	class ERA_CORE_API EntityUtils final
 	{
 		EntityUtils() = delete;
 

@@ -4,10 +4,10 @@
 #include "audio/audio.h"
 #include "audio/sound.h"
 
-#include "editor/editor_icons.h"
-
+#include "core/editor_icons.h"
 #include "core/imgui.h"
 #include "core/yaml.h"
+#include "core/log.h"
 
 namespace era_engine
 {
@@ -28,7 +28,7 @@ namespace era_engine
             YAML_LOAD(entryNode, spec.stream, "Stream");
             YAML_LOAD(entryNode, spec.name, "Tag");
 
-            uint64 hash = hashString64(spec.name.c_str());
+            uint64 hash = hash_string64(spec.name.c_str());
 
             soundRegistry[hash] = spec;
         }
@@ -108,7 +108,7 @@ namespace era_engine
                     sound_spec spec = {};
                     spec.name = input;
 
-                    uint64 hash = hashString64(input);
+                    uint64 hash = hash_string64(input);
                     soundRegistry.insert({ hash, spec });
 
                     input[0] = 0;

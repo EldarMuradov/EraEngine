@@ -11,7 +11,7 @@
 #include "rendering/texture_preprocessing.h"
 #include "rendering/render_resources.h"
 
-#include <d3d12memoryallocator/D3D12MemAlloc.h>
+#include <dx/D3D12MemAlloc.h>
 
 #include <DirectXTex/DirectXTex.h>
 
@@ -67,11 +67,11 @@ namespace era_engine
 
 		uploadImageToGPU(result, scratchImage, textureDesc, flags);
 
-		result->loadState.store(asset_loaded, std::memory_order_release);
+		result->loadState.store(AssetLoadState::LOADED, std::memory_order_release);
 	}
 
-	NODISCARD static ref<dx_texture> loadTextureInternal(const fs::path& path, asset_handle handle, uint32 flags,
-		bool async, job_handle parentJob)
+	NODISCARD static ref<dx_texture> loadTextureInternal(const fs::path& path, AssetHandle handle, uint32 flags,
+		bool async, JobHandle parentJob)
 	{
 		if (flags & image_load_flags_gen_mips_on_gpu)
 		{
@@ -109,7 +109,7 @@ namespace era_engine
 			result->defaultSRV = render_resources::nullTextureSRV;
 			result->handle = handle;
 			result->flags = flags;
-			result->loadState = asset_loading;
+			result->loadState = AssetLoadState::LOADING;
 
 			struct texture_loading_data
 			{
@@ -120,11 +120,11 @@ namespace era_engine
 
 			texture_loading_data data = { result, path, flags };
 
-			job_handle job = lowPriorityJobQueue.createJob<texture_loading_data>([](texture_loading_data& data, job_handle)
+			JobHandle job = low_priority_job_queue.createJob<texture_loading_data>([](texture_loading_data& data, JobHandle)
 				{
 					textureLoaderThread(data.texture, data.path, data.flags);
 				}, data, parentJob);
-			job.submitNow();
+			job.submit_now();
 
 			result->loadJob = job;
 
@@ -206,7 +206,7 @@ namespace era_engine
 
 	struct texture_key
 	{
-		asset_handle handle;
+		AssetHandle handle;
 		uint32 flags;
 	};
 }
@@ -236,15 +236,15 @@ namespace era_engine
 	static std::unordered_map<texture_key, weakref<dx_texture>> textureCache;
 	static std::mutex mutex;
 
-	NODISCARD static ref<dx_texture> loadTextureFromFileAndHandle(const fs::path& filename, asset_handle handle, uint32 flags,
-		bool async = false, job_handle parentJob = {})
+	NODISCARD static ref<dx_texture> loadTextureFromFileAndHandle(const fs::path& filename, AssetHandle handle, uint32 flags,
+		bool async = false, JobHandle parentJob = {})
 	{
 		if (!fs::exists(filename))
 			return 0;
 
 		texture_key key = { handle, flags };
 
-		lock lock{ mutex };
+		Lock lock{ mutex };
 
 		ref<dx_texture> result = textureCache[key].lock();
 		if (!result)
@@ -259,25 +259,25 @@ namespace era_engine
 	{
 		fs::path path = filename.lexically_normal().make_preferred();
 
-		asset_handle handle = getAssetHandleFromPath(path);
+		AssetHandle handle = getAssetHandleFromPath(path);
 		return loadTextureFromFileAndHandle(path, handle, flags);
 	}
 
-	NODISCARD ref<dx_texture> loadTextureFromHandle(asset_handle handle, uint32 flags)
+	NODISCARD ref<dx_texture> loadTextureFromHandle(AssetHandle handle, uint32 flags)
 	{
 		fs::path sceneFilename = getPathFromAssetHandle(handle);
 		return loadTextureFromFileAndHandle(sceneFilename, handle, flags);
 	}
 
-	NODISCARD ref<dx_texture> loadTextureFromFileAsync(const fs::path& filename, uint32 flags, job_handle parentJob)
+	NODISCARD ref<dx_texture> loadTextureFromFileAsync(const fs::path& filename, uint32 flags, JobHandle parentJob)
 	{
 		fs::path path = filename.lexically_normal().make_preferred();
 
-		asset_handle handle = getAssetHandleFromPath(path);
+		AssetHandle handle = getAssetHandleFromPath(path);
 		return loadTextureFromFileAndHandle(path, handle, flags, true, parentJob);
 	}
 
-	NODISCARD ref<dx_texture> loadTextureFromHandleAsync(asset_handle handle, uint32 flags, job_handle parentJob)
+	NODISCARD ref<dx_texture> loadTextureFromHandleAsync(AssetHandle handle, uint32 flags, JobHandle parentJob)
 	{
 		fs::path sceneFilename = getPathFromAssetHandle(handle);
 		return loadTextureFromFileAndHandle(sceneFilename, handle, flags, true, parentJob);
@@ -1244,7 +1244,7 @@ namespace era_engine
 		ASSERT(format == DXGI_FORMAT_R8G8B8A8_UNORM);
 		uint32 outputSize = 4;
 
-		uint32 readbackPitch = alignTo(width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+		uint32 readbackPitch = align_to(width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 		ref<dx_buffer> readbackBuffer = createReadbackBuffer(outputSize, readbackPitch * height);
 
 		dx_command_list* cl = dxContext.getFreeRenderCommandList();
@@ -1263,7 +1263,7 @@ namespace era_engine
 		uint32 destPitch = outputSize * width;
 
 		uint8* result = (uint8*)mapBuffer(readbackBuffer, true);
-		uint32 resultPitch = (uint32)alignTo(outputSize * width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+		uint32 resultPitch = (uint32)align_to(outputSize * width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 
 		for (uint32 h = 0; h < height; ++h)
 		{
@@ -1291,7 +1291,7 @@ namespace era_engine
 	{
 		uint32 outputSize = getFormatSize(texture->format);
 
-		uint32 readbackPitch = alignTo(texture->width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+		uint32 readbackPitch = align_to(texture->width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 		ref<dx_buffer> readbackBuffer = createReadbackBuffer(outputSize, readbackPitch * texture->height);
 
 		dx_command_list* cl = dxContext.getFreeRenderCommandList();
@@ -1316,7 +1316,7 @@ namespace era_engine
 		uint32 destPitch = outputSize * texture->width;
 
 		uint8* result = (uint8*)mapBuffer(readbackBuffer, true);
-		uint32 resultPitch = (uint32)alignTo(outputSize * texture->width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+		uint32 resultPitch = (uint32)align_to(outputSize * texture->width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 
 		for (uint32 h = 0; h < texture->height; ++h)
 		{

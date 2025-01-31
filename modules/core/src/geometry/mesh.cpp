@@ -14,7 +14,7 @@ namespace era_engine
 {
 	struct mesh_key
 	{
-		asset_handle handle;
+		AssetHandle handle;
 		uint32 flags;
 	};
 }
@@ -37,28 +37,30 @@ namespace std
 namespace era_engine
 {
 	static void meshLoaderThread(ref<multi_mesh> result, const fs::path& sceneFilename, uint32 flags, mesh_load_callback cb,
-		bool async, job_handle parentJob)
+		bool async, JobHandle parentJob)
 	{
+		using namespace animation;
+
 		result->aabb = bounding_box::negativeInfinity();
 
-		model_asset asset = load3DModelFromFile(sceneFilename);
+		ModelAsset asset = load_3d_model_from_file(sceneFilename);
 		mesh_builder builder(flags | mesh_creation_flags_with_skin);
 
 		for (auto& mesh : asset.meshes)
 		{
 			for (auto& sub : mesh.submeshes)
 			{
-				pbr_material_desc& materialDesc = asset.materials[sub.materialIndex];
+				PbrMaterialDesc& materialDesc = asset.materials[sub.material_index];
 
 				{
 					if (!materialDesc.albedo.empty() && *materialDesc.albedo.c_str() != 'F')
-						materialDesc.albedo = getAssetPath(convertPath(materialDesc.albedo.string()));
+						materialDesc.albedo = get_asset_path(convert_path(materialDesc.albedo.string()));
 					if (!materialDesc.normal.empty() && *materialDesc.normal.c_str() != 'F')
-						materialDesc.normal = getAssetPath(convertPath(materialDesc.normal.string()));
+						materialDesc.normal = get_asset_path(convert_path(materialDesc.normal.string()));
 					if (!materialDesc.roughness.empty() && *materialDesc.roughness.c_str() != 'F')
-						materialDesc.roughness = getAssetPath(convertPath(materialDesc.roughness.string()));
+						materialDesc.roughness = get_asset_path(convert_path(materialDesc.roughness.string()));
 					if (!materialDesc.metallic.empty() && *materialDesc.metallic.c_str() != 'F')
-						materialDesc.metallic = getAssetPath(convertPath(materialDesc.metallic.string()));
+						materialDesc.metallic = get_asset_path(convert_path(materialDesc.metallic.string()));
 				}
 
 				ref<pbr_material> material;
@@ -80,42 +82,42 @@ namespace era_engine
 			}
 		}
 
-		animation::animation_skeleton& skeleton = result->skeleton;
+		AnimationSkeleton& skeleton = result->skeleton;
 
 		// Load skeleton
 		if (!asset.skeletons.empty()/* && flags & mesh_creation_flags_with_skin*/)
 		{
-			skeleton_asset& in = asset.skeletons.front();
+			SkeletonAsset& in = asset.skeletons.front();
 
 			skeleton.joints = std::move(in.joints);
-			skeleton.nameToJointID = std::move(in.nameToJointID);
+			skeleton.nameToJointID = std::move(in.name_to_joint_id);
 			skeleton.analyzeJoints(builder.getPositions(), (uint8*)builder.getOthers() + builder.getSkinOffset(), builder.getOthersSize(), builder.getNumVertices());
 		}
 
 		// Load animations
 		for (auto& anim : asset.animations)
 		{
-			animation_asset& in = anim;
+			AnimationAsset& in = anim;
 
-			animation::animation_clip& clip = skeleton.clips.emplace_back();
+			AnimationClip& clip = skeleton.clips.emplace_back();
 			clip.name = std::move(in.name);
 			clip.filename = sceneFilename;
-			clip.lengthInSeconds = in.duration;
+			clip.length_in_seconds = in.duration;
 			clip.joints.resize(skeleton.joints.size(), {});
 
-			clip.positionKeyframes = std::move(in.positionKeyframes);
-			clip.positionTimestamps = std::move(in.positionTimestamps);
-			clip.rotationKeyframes = std::move(in.rotationKeyframes);
-			clip.rotationTimestamps = std::move(in.rotationTimestamps);
-			clip.scaleKeyframes = std::move(in.scaleKeyframes);
-			clip.scaleTimestamps = std::move(in.scaleTimestamps);
+			clip.position_keyframes = std::move(in.position_keyframes);
+			clip.position_timestamps = std::move(in.position_timestamps);
+			clip.rotation_keyframes = std::move(in.rotation_keyframes);
+			clip.rotation_timestamps = std::move(in.rotation_timestamps);
+			clip.scale_keyframes = std::move(in.scale_keyframes);
+			clip.scale_timestamps = std::move(in.scale_timestamps);
 
 			for (auto& [name, joint] : in.joints)
 			{
 				auto it = skeleton.nameToJointID.find(name);
 				if (it != skeleton.nameToJointID.end())
 				{
-					animation::animation_joint& j = clip.joints[it->second];
+					AnimationJoint& j = clip.joints[it->second];
 					j = joint;
 				}
 			}
@@ -128,16 +130,16 @@ namespace era_engine
 
 		result->mesh = builder.createDXMesh();
 
-		result->loadState.store(asset_loaded, std::memory_order_release);
+		result->loadState.store(AssetLoadState::LOADED, std::memory_order_release);
 	}
 
-	static ref<multi_mesh> loadMeshFromFileInternal(const fs::path& sceneFilename, asset_handle handle, uint32 flags, mesh_load_callback cb,
-		bool async, job_handle parentJob)
+	static ref<multi_mesh> loadMeshFromFileInternal(const fs::path& sceneFilename, AssetHandle handle, uint32 flags, mesh_load_callback cb,
+		bool async, JobHandle parentJob)
 	{
 		ref<multi_mesh> result = make_ref<multi_mesh>();
 		result->handle = handle;
 		result->flags = flags;
-		result->loadState = asset_loading;
+		result->loadState = AssetLoadState::LOADING;
 
 		if (!async)
 		{
@@ -159,11 +161,11 @@ namespace era_engine
 
 			mesh_loading_data data = { cb, sceneFilename, result, flags };
 
-			job_handle job = lowPriorityJobQueue.createJob<mesh_loading_data>([](mesh_loading_data& data, job_handle job)
+			JobHandle job = low_priority_job_queue.createJob<mesh_loading_data>([](mesh_loading_data& data, JobHandle job)
 				{
 					meshLoaderThread(data.mesh, data.path, data.flags, data.cb, true, job);
 				}, data, parentJob);
-			job.submitNow();
+			job.submit_now();
 
 			result->loadJob = job;
 
@@ -179,8 +181,8 @@ namespace era_engine
 	static std::unordered_map<mesh_key, weakref<multi_mesh>> meshCache;
 	static std::mutex mutex;
 
-	static ref<multi_mesh> loadMeshFromFileAndHandle(const fs::path& filename, asset_handle handle, uint32 flags, mesh_load_callback cb,
-		bool async = false, job_handle parentJob = {})
+	static ref<multi_mesh> loadMeshFromFileAndHandle(const fs::path& filename, AssetHandle handle, uint32 flags, mesh_load_callback cb,
+		bool async = false, JobHandle parentJob = {})
 	{
 		if (!fs::exists(filename))
 			return 0;
@@ -204,40 +206,27 @@ namespace era_engine
 	{
 		fs::path path = filename.lexically_normal().make_preferred();
 
-		asset_handle handle = getAssetHandleFromPath(path);
+		AssetHandle handle = getAssetHandleFromPath(path);
 		return loadMeshFromFileAndHandle(path, handle, flags, cb);
 	}
 
-	NODISCARD ref<multi_mesh> loadMeshFromHandle(asset_handle handle, uint32 flags, mesh_load_callback cb)
+	NODISCARD ref<multi_mesh> loadMeshFromHandle(AssetHandle handle, uint32 flags, mesh_load_callback cb)
 	{
 		fs::path sceneFilename = getPathFromAssetHandle(handle);
 		return loadMeshFromFileAndHandle(sceneFilename, handle, flags, cb);
 	}
 
-	NODISCARD ref<multi_mesh> loadMeshFromFileAsync(const fs::path& filename, uint32 flags, job_handle parentJob, mesh_load_callback cb)
+	NODISCARD ref<multi_mesh> loadMeshFromFileAsync(const fs::path& filename, uint32 flags, JobHandle parentJob, mesh_load_callback cb)
 	{
 		fs::path path = filename.lexically_normal().make_preferred();
 
-		asset_handle handle = getAssetHandleFromPath(path);
+		AssetHandle handle = getAssetHandleFromPath(path);
 		return loadMeshFromFileAndHandle(path, handle, flags, cb, true, parentJob);
 	}
 
-	NODISCARD ref<multi_mesh> loadMeshFromHandleAsync(asset_handle handle, uint32 flags, job_handle parentJob, mesh_load_callback cb)
+	NODISCARD ref<multi_mesh> loadMeshFromHandleAsync(AssetHandle handle, uint32 flags, JobHandle parentJob, mesh_load_callback cb)
 	{
 		fs::path sceneFilename = getPathFromAssetHandle(handle);
 		return loadMeshFromFileAndHandle(sceneFilename, handle, flags, cb, true, parentJob);
-	}
-}
-
-#include <scene/scene.h>
-
-namespace era_engine
-{
-	NODISCARD eentity loadEntityMeshFromFile(escene& scene, const fs::path& filename, uint32 flags, mesh_load_callback cb)
-	{
-		auto& registry = scene.registry;
-		eentity parent(registry.create(), &registry);
-
-		return parent;
 	}
 }

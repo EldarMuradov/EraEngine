@@ -3,67 +3,63 @@
 #include "asset/io.h"
 #include "asset/model_asset.h"
 #include "asset/mesh_postprocessing.h"
+#include "asset/pbr_material_desc.h"
 
 #include "core/math.h"
 #include "core/cpu_profiling.h"
+#include "core/bounding_volumes.h"
 
 #include "geometry/mesh.h"
-
-#include "rendering/pbr_material.h"
 
 //#define PROFILE(name) CPU_PRINT_PROFILE_BLOCK(name)
 #define PROFILE(name) 
 
 namespace era_engine
 {
-	void testDumpToPLY(const std::string& filename,
-		const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals, const std::vector<indexed_triangle16>& triangles,
-		uint8 r = 255, uint8 g = 255, uint8 b = 255);
-
-	static bool isEndOfLine(char c)
+	static bool is_end_of_line(char c)
 	{
 		return c == '\r' ||
 			c == '\n';
 	}
 
-	static bool isWhitespace(char c)
+	static bool is_whitespace(char c)
 	{
 		return c == ' ' ||
 			c == '\t' ||
-			isEndOfLine(c);
+			is_end_of_line(c);
 	}
 
-	static bool isWhiteSpaceNoEndOfLine(char c)
+	static bool is_white_space_no_end_of_line(char c)
 	{
 		return c == ' ' ||
 			c == '\t';
 	}
 
-	static void discardLine(entire_file& file)
+	static void discard_line(EntireFile& file)
 	{
-		while (file.readOffset < file.size && file.content[file.readOffset] != '\n')
+		while (file.read_offset < file.size && file.content[file.read_offset] != '\n')
 		{
-			++file.readOffset;
+			++file.read_offset;
 		}
-		if (file.readOffset < file.size)
+		if (file.read_offset < file.size)
 		{
-			++file.readOffset;
+			++file.read_offset;
 		}
 	}
 
-	static void discardWhitespace(entire_file& file, bool allowLineSkip = true)
+	static void discard_whitespace(EntireFile& file, bool allow_line_skip = true)
 	{
-		if (allowLineSkip)
+		if (allow_line_skip)
 		{
-			while (file.readOffset < file.size)
+			while (file.read_offset < file.size)
 			{
-				while (file.readOffset < file.size && isWhitespace((char)file.content[file.readOffset]))
+				while (file.read_offset < file.size && is_whitespace((char)file.content[file.read_offset]))
 				{
-					++file.readOffset;
+					++file.read_offset;
 				}
-				if (file.readOffset < file.size && file.content[file.readOffset] == '#')
+				if (file.read_offset < file.size && file.content[file.read_offset] == '#')
 				{
-					discardLine(file);
+					discard_line(file);
 				}
 				else
 				{
@@ -73,39 +69,39 @@ namespace era_engine
 		}
 		else
 		{
-			while (file.readOffset < file.size && isWhiteSpaceNoEndOfLine((char)file.content[file.readOffset]))
+			while (file.read_offset < file.size && is_white_space_no_end_of_line((char)file.content[file.read_offset]))
 			{
-				++file.readOffset;
+				++file.read_offset;
 			}
 		}
 	}
 
-	static sized_string readString(entire_file& file, bool allowLineSkip = true)
+	static sized_string read_string(EntireFile& file, bool allow_line_skip = true)
 	{
-		discardWhitespace(file, allowLineSkip);
+		discard_whitespace(file, allow_line_skip);
 
 		sized_string result;
-		result.str = (const char*)file.content + file.readOffset;
-		while (file.readOffset < file.size && !isWhitespace((char)file.content[file.readOffset]))
+		result.str = (const char*)file.content + file.read_offset;
+		while (file.read_offset < file.size && !is_whitespace((char)file.content[file.read_offset]))
 		{
 			++result.length;
-			++file.readOffset;
+			++file.read_offset;
 		}
 
 		return result;
 	}
 
-	static int32 readInt32(entire_file& file)
+	static int32 read_int32(EntireFile& file)
 	{
-		sized_string str = readString(file);
+		sized_string str = read_string(file);
 		return atoi(str.str);
 	}
 
-	static vec3 readVec3(entire_file& file)
+	static vec3 read_vec3(EntireFile& file)
 	{
-		sized_string xStr = readString(file);
-		sized_string yStr = readString(file);
-		sized_string zStr = readString(file);
+		sized_string xStr = read_string(file);
+		sized_string yStr = read_string(file);
+		sized_string zStr = read_string(file);
 
 		float x = (float)atof(xStr.str);
 		float y = (float)atof(yStr.str);
@@ -114,10 +110,10 @@ namespace era_engine
 		return vec3(x, y, z);
 	}
 
-	static vec2 readVec2(entire_file& file)
+	static vec2 read_vec2(EntireFile& file)
 	{
-		sized_string xStr = readString(file);
-		sized_string yStr = readString(file);
+		sized_string xStr = read_string(file);
+		sized_string yStr = read_string(file);
 
 		float x = (float)atof(xStr.str);
 		float y = (float)atof(yStr.str);
@@ -125,98 +121,98 @@ namespace era_engine
 		return vec2(x, y);
 	}
 
-	static float readFloat(entire_file& file)
+	static float read_float(EntireFile& file)
 	{
-		sized_string str = readString(file);
+		sized_string str = read_string(file);
 		float v = (float)atof(str.str);
 		return v;
 	}
 
 	struct obj_vertex_indices
 	{
-		int32 positionIndex;
-		int32 normalIndex;
-		int32 uvIndex;
+		int32 position_index;
+		int32 normal_index;
+		int32 uv_index;
 	};
 
-	static obj_vertex_indices readVertexIndices(sized_string vertexStr)
+	static obj_vertex_indices read_vertex_indices(sized_string vertex_str)
 	{
-		sized_string indexStrs[3] = {};
-		indexStrs[0].str = vertexStr.str;
+		sized_string index_strs[3] = {};
+		index_strs[0].str = vertex_str.str;
 		uint32 curr = 0;
-		for (uint32 i = 0; i < vertexStr.length; ++i)
+		for (uint32 i = 0; i < vertex_str.length; ++i)
 		{
-			if (vertexStr.str[i] == '/')
+			if (vertex_str.str[i] == '/')
 			{
 				++curr;
-				indexStrs[curr].str = vertexStr.str + (i + 1);
+				index_strs[curr].str = vertex_str.str + (i + 1);
 			}
 			else
 			{
-				++indexStrs[curr].length;
+				++index_strs[curr].length;
 			}
 		}
 
-		int32 positionIndex = indexStrs[0].length ? atoi(indexStrs[0].str) : 0;
-		int32 uvIndex = indexStrs[1].length ? atoi(indexStrs[1].str) : 0;
-		int32 normalIndex = indexStrs[2].length ? atoi(indexStrs[2].str) : 0;
+		int32 position_index = index_strs[0].length ? atoi(index_strs[0].str) : 0;
+		int32 uv_index = index_strs[1].length ? atoi(index_strs[1].str) : 0;
+		int32 normal_index = index_strs[2].length ? atoi(index_strs[2].str) : 0;
 
-		if (positionIndex > 0)
+		if (position_index > 0)
 		{
-			--positionIndex;
+			--position_index;
 		}
-		if (normalIndex > 0)
+		if (normal_index > 0)
 		{
-			--normalIndex;
+			--normal_index;
 		}
-		if (uvIndex > 0)
+		if (uv_index > 0)
 		{
-			--uvIndex;
+			--uv_index;
 		}
 
-		return { positionIndex, normalIndex, uvIndex };
+		return { position_index, normal_index, uv_index };
 	}
 
-	static std::vector<std::pair<std::string, pbr_material_desc>> loadMaterialLibrary(const fs::path& path)
+	static std::vector<std::pair<std::string, PbrMaterialDesc>> load_material_library(const fs::path& path)
 	{
-		entire_file file = loadFile(path);
+		EntireFile file = load_file(path);
 
-		std::vector<std::pair<std::string, pbr_material_desc>> result;
-		pbr_material_desc currentMaterial = {};
-		std::string currentName;
+		std::vector<std::pair<std::string, PbrMaterialDesc>> result;
+		PbrMaterialDesc current_material = {};
+		std::string current_name;
 
 		{
 			PROFILE("Parse OBJ material library");
 
-			while (file.readOffset < file.size)
+			while (file.read_offset < file.size)
 			{
-				sized_string token = readString(file);
+				sized_string token = read_string(file);
 				std::transform(token.str, token.str + token.length, (char*)token.str, [](char c) { return std::tolower(c); });
 
 				if (token == "newmtl")
 				{
-					if (!currentName.empty())
+					if (!current_name.empty())
 					{
-						result.push_back({ std::move(currentName), std::move(currentMaterial) });
+						result.push_back({ std::move(current_name), std::move(current_material) });
 					}
 
-					sized_string name = readString(file);
-					currentName = nameToString(name);
+					sized_string name = read_string(file);
+					current_name = name_to_string(name);
 				}
 				else if (token == "ns")
 				{
-					float value = readFloat(file);
-					currentMaterial.roughnessOverride = 1.f - (sqrt(value) * 0.1f);
+					float value = read_float(file);
+					current_material.roughness_override = 1.f - (sqrt(value) * 0.1f);
 				}
 				else if (token == "pr")
 				{
-					float value = readFloat(file);
-					currentMaterial.roughnessOverride = value;
+					float value = read_float(file);
+					current_material.roughness_override = value;
 				}
 				else if (token == "pm")
 				{
-					float value = readFloat(file);
-					currentMaterial.metallicOverride = value;
+					float value = read_float(file);
+					current_material.metallic_override = value;
 				}
 				else if (token == "ni")
 				{
@@ -228,12 +224,12 @@ namespace era_engine
 				}
 				else if (token == "tr")
 				{
-					float value = readFloat(file);
+					float value = read_float(file);
 					float alpha = 1.f - value;
-					currentMaterial.albedoTint.w = alpha;
+					current_material.albedo_tint.w = alpha;
 					if (alpha < 1.f)
 					{
-						currentMaterial.shader = pbr_material_shader_transparent;
+						current_material.shader = pbr_material_shader_transparent;
 					}
 				}
 				else if (token == "tf")
@@ -250,8 +246,8 @@ namespace era_engine
 				}
 				else if (token == "kd")
 				{
-					vec3 color = readVec3(file);
-					currentMaterial.albedoTint.xyz = color;
+					vec3 color = read_vec3(file);
+					current_material.albedo_tint.xyz = color;
 				}
 				else if (token == "ks")
 				{
@@ -259,18 +255,18 @@ namespace era_engine
 				}
 				else if (token == "ke")
 				{
-					vec3 color = readVec3(file);
-					currentMaterial.emission = vec4(color, 1.f);
+					vec3 color = read_vec3(file);
+					current_material.emission = vec4(color, 1.f);
 				}
 				else if (token == "map_ka" || token == "map_pm")
 				{
-					sized_string str = readString(file);
-					currentMaterial.metallic = relativeFilepath(str, path);
+					sized_string str = read_string(file);
+					current_material.metallic = relative_filepath(str, path);
 				}
 				else if (token == "map_kd")
 				{
-					sized_string str = readString(file);
-					currentMaterial.albedo = relativeFilepath(str, path);
+					sized_string str = read_string(file);
+					current_material.albedo = relative_filepath(str, path);
 				}
 				else if (token == "map_d")
 				{
@@ -278,13 +274,13 @@ namespace era_engine
 				}
 				else if (token == "map_bump")
 				{
-					sized_string str = readString(file);
-					currentMaterial.normal = relativeFilepath(str, path);
+					sized_string str = read_string(file);
+					current_material.normal = relative_filepath(str, path);
 				}
 				else if (token == "map_ns" || token == "map_pr")
 				{
-					sized_string str = readString(file);
-					currentMaterial.roughness = relativeFilepath(str, path);
+					sized_string str = read_string(file);
+					current_material.roughness = relative_filepath(str, path);
 				}
 				else if (token == "bump")
 				{
@@ -299,69 +295,69 @@ namespace era_engine
 					printf("Unrecognized material start token '%.*s'\n", token.length, token.str);
 				}
 
-				discardLine(file);
+				discard_line(file);
 			}
 		}
-		if (!currentName.empty())
+		if (!current_name.empty())
 		{
-			result.push_back({ std::move(currentName), std::move(currentMaterial) });
+			result.push_back({ std::move(current_name), std::move(current_material) });
 		}
 
-		freeFile(file);
+		free_file(file);
 
 		return result;
 	}
 
-	NODISCARD model_asset loadOBJ(const fs::path& path, uint32 flags)
+	NODISCARD ModelAsset loadOBJ(const fs::path& path, uint32 flags)
 	{
 		PROFILE("Loading OBJ");
 
-		entire_file file = loadFile(path);
+		EntireFile file = load_file(path);
 
 		std::vector<vec3> positions; positions.reserve(1 << 16);
 		std::vector<vec2> uvs; uvs.reserve(1 << 16);
 		std::vector<vec3> normals; normals.reserve(1 << 16);
 
-		std::vector<pbr_material_desc> materials;
-		std::unordered_map<std::string, int32> nameToMaterialIndex;
-		int32 currentMaterialIndex = 0;
+		std::vector<PbrMaterialDesc> materials;
+		std::unordered_map<std::string, int32> name_to_material_index;
+		int32 current_material_index = 0;
 
-		std::vector<submesh_asset> submeshes;
+		std::vector<SubmeshAsset> submeshes;
 
-		std::unordered_map<int32, per_material> materialToMesh;
+		std::unordered_map<int32, per_material> material_to_mesh;
 
-		std::vector<vec3> positionCache; positionCache.reserve(16);
-		std::vector<vec2> uvCache; uvCache.reserve(16);
-		std::vector<vec3> normalCache; normalCache.reserve(16);
+		std::vector<vec3> position_cache; position_cache.reserve(16);
+		std::vector<vec2> uv_cache; uv_cache.reserve(16);
+		std::vector<vec3> normal_cache; normal_cache.reserve(16);
 
 		{
 			PROFILE("Parse OBJ");
 
-			while (file.readOffset < file.size)
+			while (file.read_offset < file.size)
 			{
-				sized_string token = readString(file);
+				sized_string token = read_string(file);
 
 				if (token == "mtllib")
 				{
-					sized_string lib = readString(file);
-					auto libMaterials = loadMaterialLibrary(relativeFilepath(lib, path));
-					for (auto& [name, mat] : libMaterials)
+					sized_string lib = read_string(file);
+					auto lib_materials = load_material_library(relative_filepath(lib, path));
+					for (auto& [name, mat] : lib_materials)
 					{
-						nameToMaterialIndex[std::move(name)] = (int32)materials.size();
+						name_to_material_index[std::move(name)] = (int32)materials.size();
 						materials.push_back(std::move(mat));
 					}
 				}
 				else if (token == "v")
 				{
-					positions.push_back(readVec3(file));
+					positions.push_back(read_vec3(file));
 				}
 				else if (token == "vn")
 				{
-					normals.push_back(readVec3(file));
+					normals.push_back(read_vec3(file));
 				}
 				else if (token == "vt")
 				{
-					vec2 uv = readVec2(file);
+					vec2 uv = read_vec2(file);
 					if (flags & mesh_flag_flip_uvs_vertically)
 					{
 						uv.y = 1.f - uv.y;
@@ -370,25 +366,25 @@ namespace era_engine
 				}
 				else if (token == "g")
 				{
-					sized_string name = readString(file);
+					sized_string name = read_string(file);
 				}
 				else if (token == "o")
 				{
-					sized_string name = readString(file);
+					sized_string name = read_string(file);
 				}
 				else if (token == "s")
 				{
-					int32 smoothing = readInt32(file);
+					int32 smoothing = read_int32(file);
 				}
 				else if (token == "usemtl")
 				{
-					sized_string mtl = readString(file);
-					std::string name = nameToString(mtl);
+					sized_string mtl = read_string(file);
+					std::string name = name_to_string(mtl);
 
-					auto it = nameToMaterialIndex.find(name);
-					if (it != nameToMaterialIndex.end())
+					auto it = name_to_material_index.find(name);
+					if (it != name_to_material_index.end())
 					{
-						currentMaterialIndex = it->second;
+						current_material_index = it->second;
 					}
 					else
 					{
@@ -397,49 +393,49 @@ namespace era_engine
 				}
 				else if (token == "f")
 				{
-					int32 faceSize = 0;
-					while (file.readOffset < file.size && !isEndOfLine((char)file.content[file.readOffset]))
+					int32 face_size = 0;
+					while (file.read_offset < file.size && !is_end_of_line((char)file.content[file.read_offset]))
 					{
-						sized_string vertexStr = readString(file, false);
-						if (vertexStr.length == 0)
+						sized_string vertex_str = read_string(file, false);
+						if (vertex_str.length == 0)
 						{
 							break;
 						}
 
-						obj_vertex_indices vertexIndices = readVertexIndices(vertexStr);
+						obj_vertex_indices vertex_indices = read_vertex_indices(vertex_str);
 
-						int32 currNumPositions = (int32)positions.size();
-						vertexIndices.positionIndex += (vertexIndices.positionIndex >= 0) ? 0 : currNumPositions;
-						ASSERT(vertexIndices.positionIndex < currNumPositions);
-						positionCache.push_back(positions[vertexIndices.positionIndex]);
+						int32 curr_num_positions = (int32)positions.size();
+						vertex_indices.position_index += (vertex_indices.position_index >= 0) ? 0 : curr_num_positions;
+						ASSERT(vertex_indices.position_index < curr_num_positions);
+						position_cache.push_back(positions[vertex_indices.position_index]);
 
 						if (flags & mesh_flag_load_uvs)
 						{
-							int32 currNumUVs = (int32)uvs.size();
-							vertexIndices.uvIndex += (vertexIndices.uvIndex >= 0) ? 0 : currNumUVs;
-							ASSERT(vertexIndices.uvIndex < currNumUVs);
-							uvCache.push_back(uvs[vertexIndices.uvIndex]);
+							int32 curr_num_uvs = (int32)uvs.size();
+							vertex_indices.uv_index += (vertex_indices.uv_index >= 0) ? 0 : curr_num_uvs;
+							ASSERT(vertex_indices.uv_index < curr_num_uvs);
+							uv_cache.push_back(uvs[vertex_indices.uv_index]);
 						}
 
 						if (flags & mesh_flag_load_normals)
 						{
-							int32 currNumNormals = (int32)normals.size();
-							vertexIndices.normalIndex += (vertexIndices.normalIndex >= 0) ? 0 : currNumNormals;
-							ASSERT(vertexIndices.normalIndex < currNumNormals);
-							normalCache.push_back(normals[vertexIndices.normalIndex]);
+							int32 curr_num_normals = (int32)normals.size();
+							vertex_indices.normal_index += (vertex_indices.normal_index >= 0) ? 0 : curr_num_normals;
+							ASSERT(vertex_indices.normal_index < curr_num_normals);
+							normal_cache.push_back(normals[vertex_indices.normal_index]);
 						}
 
-						++faceSize;
+						++face_size;
 					}
 
-					per_material& perMat = materialToMesh[currentMaterialIndex];
-					perMat.sub.materialIndex = currentMaterialIndex;
+					per_material& per_mat = material_to_mesh[current_material_index];
+					per_mat.sub.material_index = current_material_index;
 
-					perMat.addTriangles(positionCache, uvCache, normalCache, {}, {}, {}, 0, faceSize, submeshes);
+					per_mat.addTriangles(position_cache, uv_cache, normal_cache, {}, {}, {}, 0, face_size, submeshes);
 
-					positionCache.clear();
-					uvCache.clear();
-					normalCache.clear();
+					position_cache.clear();
+					uv_cache.clear();
+					normal_cache.clear();
 				}
 				else if (token.length == 0)
 				{
@@ -450,36 +446,22 @@ namespace era_engine
 					printf("Unrecognized start token '%.*s'\n", token.length, token.str);
 				}
 
-				discardLine(file);
+				discard_line(file);
 			}
 		}
 
-		for (auto& [i, perMat] : materialToMesh)
+		for (auto& [i, per_mat] : material_to_mesh)
 		{
-			perMat.flush(submeshes);
+			per_mat.flush(submeshes);
 		}
 
-		freeFile(file);
+		free_file(file);
 		generateNormalsAndTangents(submeshes, flags);
 
-		model_asset result;
+		ModelAsset result;
 		result.flags = flags;
 		result.meshes.push_back({ path.filename().string(), std::move(submeshes), -1 });
 		result.materials = std::move(materials);
-
-#if 0
-		for (uint32 i = 0; i < (uint32)submeshes.size(); ++i)
-		{
-			const submesh_asset& sub = submeshes[i];
-
-			vec3 diffuseColor = vec3(1.f, 1.f, 1.f);
-
-			std::string indexedName2 = "Mesh_" + std::to_string(i) + ".ply";
-
-			testDumpToPLY(indexedName2, sub.positions, sub.uvs, sub.normals, sub.triangles,
-				(uint8)(diffuseColor.x * 255), (uint8)(diffuseColor.y * 255), (uint8)(diffuseColor.z * 255));
-		}
-#endif
 
 		return result;
 	}

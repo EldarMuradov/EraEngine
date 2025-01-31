@@ -1,17 +1,18 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "asset/model_asset.h"
+#include "core/log.h"
 
 #include "rendering/pbr_material.h"
 
 namespace era_engine
 {
-	NODISCARD model_asset loadFBX(const fs::path& path, uint32 flags);
-	NODISCARD model_asset loadOBJ(const fs::path& path, uint32 flags);
-	NODISCARD model_asset loadBIN(const fs::path& path);
-	void writeBIN(const model_asset& asset, const fs::path& path);
+	NODISCARD ModelAsset loadFBX(const fs::path& path, uint32 flags);
+	NODISCARD ModelAsset loadOBJ(const fs::path& path, uint32 flags);
+	NODISCARD ModelAsset loadBIN(const fs::path& path);
+	void writeBIN(const ModelAsset& asset, const fs::path& path);
 
-	NODISCARD model_asset load3DModelFromFile(const fs::path& path, uint32 meshFlags)
+	NODISCARD ModelAsset load_3d_model_from_file(const fs::path& path, uint32 meshFlags)
 	{
 		if (!fs::exists(path))
 		{
@@ -44,7 +45,7 @@ namespace era_engine
 #endif
 		std::cout << '\n';
 
-		model_asset result;
+		ModelAsset result;
 
 		std::transform(extension.begin(), extension.end(), extension.begin(),
 			[](char c) { return std::tolower(c); });
@@ -63,12 +64,12 @@ namespace era_engine
 		return result;
 	}
 
-	bool isMeshExtension(const fs::path& extension)
+	bool is_mesh_extension(const fs::path& extension)
 	{
 		return extension == ".fbx" || extension == ".obj" || extension == ".bin";
 	}
 
-	bool isMeshExtension(const std::string& extension)
+	bool is_mesh_extension(const std::string& extension)
 	{
 		return extension == ".fbx" || extension == ".obj" || extension == ".bin";
 	}

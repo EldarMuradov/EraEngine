@@ -1,12 +1,14 @@
 #pragma once
 
+#include "core_api.h"
+
 #include "ecs/system.h"
 
 namespace era_engine
 {
 	class World;
 
-	class WorldSystemScheduler
+	class ERA_CORE_API WorldSystemScheduler
 	{
 	public:
 		struct Update
@@ -17,7 +19,9 @@ namespace era_engine
 		WorldSystemScheduler(World* _world);
 		~WorldSystemScheduler();
 
-		void initialize_systems();
+		void initialize_systems(const rttr::array_range<rttr::type>& types);
+
+		void input(float elapsed);
 
 		void begin(float elapsed);
 
@@ -26,10 +30,12 @@ namespace era_engine
 
 		void end(float elapsed);
 
+		void run(float elapsed, const UpdateGroup& group);
+
 	private:
 		World* world = nullptr;
 		std::vector<System*> systems;
 
-		std::unordered_map<const char*, Update> updates;
+		std::unordered_map<std::string, Update> updates;
 	};
 }

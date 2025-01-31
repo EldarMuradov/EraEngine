@@ -2,14 +2,10 @@
 
 #pragma once
 
-#ifdef ERA_RUNTIME
-#define ENABLE_DLSS 0
-#elif DEBUG
-#define ENABLE_DLSS 0
-#elif _DEBUG
+#ifdef DEBUG || _DEBUG || ERA_RUNTIME
 #define ENABLE_DLSS 0
 #else
-#define ENABLE_DLSS 1
+#define ENABLE_DLSS 0
 #endif
 
 #include "dx/dx_context.h"

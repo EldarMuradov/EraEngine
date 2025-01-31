@@ -6,6 +6,8 @@
 
 #include "asset/file_registry.h"
 
+#include "core/log.h"
+
 #define fourccRIFF 'FFIR'
 #define fourccDATA 'atad'
 #define fourccFMT ' tmf'

@@ -63,7 +63,7 @@ namespace era_engine
 
         shader_data* hitData = (shader_data*)alloca(sizeof(shader_data) * numRayTypes);
 
-        lock lock{ mutex };
+        Lock lock{ mutex };
 
         for (uint32 i = 0; i < numGeometries; ++i)
         {

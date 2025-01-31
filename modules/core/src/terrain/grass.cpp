@@ -276,9 +276,9 @@ namespace era_engine
 							uint32 chunkNumGrassBladesPerDim = numGrassBladesPerDim;
 							uint32 lodIndex = 0;
 
-							float sqDistance = pointInBox(data.cameraPosition, aabb.minCorner, aabb.maxCorner)
+							float sqDistance = point_in_box(data.cameraPosition, aabb.minCorner, aabb.maxCorner)
 								? 0.f
-								: squaredLength(data.cameraPosition - closestPoint_PointAABB(data.cameraPosition, aabb));
+								: squared_length(data.cameraPosition - closestPoint_PointAABB(data.cameraPosition, aabb));
 							if (sqDistance > lodChangeEndDistance * lodChangeEndDistance)
 							{
 								chunkNumGrassBladesPerDim /= 2;

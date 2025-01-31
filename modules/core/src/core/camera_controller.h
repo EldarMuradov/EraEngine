@@ -1,13 +1,17 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
+
+#include "core_api.h"
+
 #include "core/camera.h"
+#include "core/bounding_volumes.h"
 
 namespace era_engine
 {
-	struct user_input;
+	struct UserInput;
 
-	struct runtime_camera_controller
+	struct ERA_CORE_API runtime_camera_controller
 	{
 		void initialize(render_camera* camera) { this->camera = camera; }
 
@@ -16,13 +20,13 @@ namespace era_engine
 		render_camera* camera = nullptr;
 	};
 
-	struct camera_controller
+	struct ERA_CORE_API camera_controller
 	{
 		void initialize(render_camera* camera) { this->camera = camera; }
 
 		// Returns true, if camera is moved, and therefore input is captured
 		bool centerCameraOnObject(const bounding_box& aabb);
-		bool update(const user_input& input, uint32 viewportWidth, uint32 viewportHeight, float dt);
+		bool update(const UserInput& input, uint32 viewportWidth, uint32 viewportHeight, float dt);
 
 		render_camera* camera = nullptr;
 

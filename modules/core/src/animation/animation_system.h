@@ -4,7 +4,7 @@
 
 namespace era_engine
 {
-	struct eallocator;
+	struct Allocator;
 }
 
 namespace era_engine::animation
@@ -20,6 +20,6 @@ namespace era_engine::animation
 
 		ERA_VIRTUAL_REFLECT(System)
 	private:
-		eallocator* allocator = nullptr;
+		Allocator* allocator = nullptr;
 	};
 }

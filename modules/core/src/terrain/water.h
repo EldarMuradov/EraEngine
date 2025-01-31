@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "core/math.h"
 #include "core/camera.h"
 
@@ -9,7 +11,7 @@
 
 namespace era_engine
 {
-	struct water_settings
+	struct ERA_CORE_API water_settings
 	{
 		vec4 deepWaterColor = vec4(0.f, 0.241f, 0.799f, 0.76f);
 		vec4 shallowWaterColor = vec4(0.120f, 0.546f, 0.941f, 0.176f);
@@ -19,7 +21,7 @@ namespace era_engine
 		float normalStrength = 1.f;
 	};
 
-	class WaterComponent : public Component
+	class ERA_CORE_API WaterComponent : public Component
 	{
 	public:
 		WaterComponent() = default;

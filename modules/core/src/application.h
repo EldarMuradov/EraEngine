@@ -9,8 +9,6 @@
 
 #include "geometry/mesh.h"
 
-#include "scene/scene.h"
-
 #include "particles/fire_particle_system.h"
 #include "particles/smoke_particle_system.h"
 #include "particles/boid_particle_system.h"
@@ -23,16 +21,16 @@
 #include "core/runtime.h"
 #endif
 
-#include "editor/editor.h"
-
-#include "ecs/editor/editor_scene.h"
 #include "ecs/world_system_scheduler.h"
+
+#include "editor/asset_editor_panel.h"
+#include "editor/editor.h"
 
 namespace era_engine
 {
 	namespace dotnet
 	{
-		struct enative_scripting_linker;
+		//struct enative_scripting_linker;
 	}
 
 	void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh);
@@ -40,16 +38,16 @@ namespace era_engine
 	bool editFireParticleSystem(fire_particle_system& particleSystem);
 	bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
-	struct update_scripting_data;
-	void updatePhysXCallbacksAndScripting(ref<World> current_world, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in);
-	void updateScripting(update_scripting_data& data);
+	//struct update_scripting_data;
+	//void updatePhysXCallbacksAndScripting(ref<World> current_world, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in);
+	//void updateScripting(update_scripting_data& data);
 
 	struct application
 	{
 		application() {}
 		void loadCustomShaders();
 		void initialize(main_renderer* renderer, editor_panels* editorPanels);
-		void update(const user_input& input, float dt);
+		void update(const UserInput& input, float dt);
 
 		void handleFileDrop(const fs::path& filename);
 
@@ -70,7 +68,7 @@ namespace era_engine
 
 #endif
 
-		eallocator stackArena;
+		Allocator stackArena;
 
 		ldr_render_pass ldrRenderPass;
 
@@ -92,9 +90,8 @@ namespace era_engine
 		ref<dx_texture> decalTexture;
 
 		main_renderer* renderer;
-		WorldSystemScheduler* schedulder = nullptr;
 
-		ref<dotnet::enative_scripting_linker> linker;
+		//ref<dotnet::enative_scripting_linker> linker;
 
 		ref<EditorScene> world_scene = nullptr;
 

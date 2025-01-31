@@ -37,7 +37,7 @@ namespace era_engine
 		void returnPage(dx_page* page);
 		void reset();
 
-		eallocator arena;
+		Allocator arena;
 
 		std::mutex mutex;
 

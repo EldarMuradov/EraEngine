@@ -1,51 +1,47 @@
-// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
-
 #pragma once
+
+#include "core_api.h"
 
 namespace era_engine
 {
-	struct block_allocator
+	class ERA_CORE_API BlockAllocator
 	{
-		void initialize(uint64 capacity);
+	public:
+		void initialize(uint64_t capacity);
 
 		// Returns the offset
-		uint64 allocate(uint64 requestedSize);
-		void free(uint64 offset, uint64 size);
+		uint64_t allocate(uint64_t requested_size);
+		void free(uint64_t offset, uint64_t size);
 
-		uint64 availableSize;
+		uint64_t available_size;
 
 	private:
-		struct offset_value;
-		struct size_value;
+		struct OffsetValue;
+		struct SizeValue;
 
 		// Referencing each-other
-		using block_by_offset_map = std::map<uint64, offset_value>;
-		using block_by_size_map = std::multimap<uint64, size_value>;
+		using BlockByOffsetMap = std::map<uint64_t, OffsetValue>;
+		using BlockBySizeMap = std::multimap<uint64_t, SizeValue>;
 
-		struct offset_value
+		struct OffsetValue
 		{
-			offset_value() {}
-			offset_value(block_by_size_map::iterator sizeIterator) : sizeIterator(sizeIterator) {}
-			NODISCARD uint64 getSize() const { return sizeIterator->first; }
-			block_by_size_map::iterator sizeIterator;
+			OffsetValue() = default;
+			OffsetValue(const BlockBySizeMap::iterator& _size_iterator) : size_iterator(_size_iterator) {}
+			uint64_t get_size() const { return size_iterator->first; }
+			BlockBySizeMap::iterator size_iterator;
 		};
 
-		struct size_value
+		struct SizeValue
 		{
-			size_value() {}
-			size_value(block_by_offset_map::iterator offsetIterator) : offsetIterator(offsetIterator) {}
-			NODISCARD uint64 getOffset() const { return offsetIterator->first; }
-			block_by_offset_map::iterator offsetIterator;
+			SizeValue() = default;
+			SizeValue(const BlockByOffsetMap::iterator& _offset_iterator) : offset_iterator(_offset_iterator) {}
+			uint64_t get_offset() const { return offset_iterator->first; }
+			BlockByOffsetMap::iterator offset_iterator;
 		};
 
-		void addNewBlock(uint64 offset, uint64 size)
-		{
-			auto newBlockIt = blocksByOffset.emplace(offset, offset_value());
-			auto orderIt = blocksBySize.emplace(size, newBlockIt.first);
-			newBlockIt.first->second.sizeIterator = orderIt;
-		}
+		void add_new_block(uint64_t offset, uint64_t size);
 
-		block_by_offset_map blocksByOffset;
-		block_by_size_map blocksBySize;
+		BlockByOffsetMap blocks_by_offset;
+		BlockBySizeMap blocks_by_size;
 	};
 }

@@ -227,9 +227,8 @@ namespace era_engine
         fillVertices(submeshes, positions, others, trunkVertexColor, trunkPositions);
         fillVertices(submeshes, positions, others, branchVertexColor, branchPositions);
 
-        point_cloud trunkPC(trunkPositions, numTrunkVertices);
-        point_cloud branchPC(branchPositions, numBranchVertices);
-
+        PointCloud trunkPC(trunkPositions, numTrunkVertices);
+        PointCloud branchPC(branchPositions, numBranchVertices);
 
         float scale = 1.f / (boundingBox.maxCorner.y - boundingBox.minCorner.y);
 
@@ -241,13 +240,13 @@ namespace era_engine
 
                 vec3 query = positions[vertexID];
 
-                float distanceToTrunk = sqrt(trunkPC.nearestNeighborIndex(query).squaredDistance);
-                float distanceToBranch = sqrt(branchPC.nearestNeighborIndex(query).squaredDistance);
+                float distanceToTrunk = sqrt(trunkPC.nearest_neighbor_index(query).squared_distance);
+                float distanceToBranch = sqrt(branchPC.nearest_neighbor_index(query).squared_distance);
 
                 distanceToBranch = min(distanceToTrunk, distanceToBranch);
 
                 others[vertexID].color = packColor(
-                    saturate(inverseLerp(boundingBox.minCorner.y, boundingBox.maxCorner.y, query.y)),
+                    saturate(inverse_lerp(boundingBox.minCorner.y, boundingBox.maxCorner.y, query.y)),
                     distanceToTrunk * scale,
                     distanceToBranch * scale,
                     1.f);
@@ -265,17 +264,17 @@ namespace era_engine
         return loadMeshFromFile(sceneFilename, mesh_creation_flags_default | mesh_creation_flags_with_colors, analyzeTreeMesh);
     }
 
-    ref<multi_mesh> loadTreeMeshFromHandle(asset_handle handle)
+    ref<multi_mesh> loadTreeMeshFromHandle(AssetHandle handle)
     {
         return loadMeshFromHandle(handle, mesh_creation_flags_default | mesh_creation_flags_with_colors, analyzeTreeMesh);
     }
 
-    ref<multi_mesh> loadTreeMeshFromFileAsync(const fs::path& sceneFilename, job_handle parentJob)
+    ref<multi_mesh> loadTreeMeshFromFileAsync(const fs::path& sceneFilename, JobHandle parentJob)
     {
         return loadMeshFromFileAsync(sceneFilename, mesh_creation_flags_default | mesh_creation_flags_with_colors, parentJob, analyzeTreeMesh);
     }
 
-    ref<multi_mesh> loadTreeMeshFromHandleAsync(asset_handle handle, job_handle parentJob)
+    ref<multi_mesh> loadTreeMeshFromHandleAsync(AssetHandle handle, JobHandle parentJob)
     {
         return loadMeshFromHandleAsync(handle, mesh_creation_flags_default | mesh_creation_flags_with_colors, parentJob, analyzeTreeMesh);
     }

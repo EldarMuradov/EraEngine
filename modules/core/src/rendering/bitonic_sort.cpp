@@ -46,7 +46,7 @@ namespace era_engine
 
 	static std::pair<uint32, uint32> getAlignedMaxNumElementsAndNumIterations(uint32 maxNumElements)
 	{
-		uint32 alignedMaxNumElements = alignToPowerOfTwo(maxNumElements);
+		uint32 alignedMaxNumElements = align_to_power_of_two(maxNumElements);
 		uint32 maxNumIterations = log2(max(2048u, alignedMaxNumElements)) - 10;
 
 		return { alignedMaxNumElements, maxNumIterations };
@@ -184,14 +184,14 @@ namespace era_engine
 
 	void testBitonicSortUint(uint32 numElements, bool ascending)
 	{
-		uint32 mask = alignToPowerOfTwo(numElements) - 1;
+		uint32 mask = align_to_power_of_two(numElements) - 1;
 
-		random_number_generator rng = { 125912842 };
+		RandomNumberGenerator rng = { 125912842 };
 
 		uint32* values = new uint32[numElements];
 		for (uint32 i = 0; i < numElements; ++i)
 		{
-			values[i] = (rng.randomUint32() & ~mask) | i;
+			values[i] = (rng.random_uint32() & ~mask) | i;
 		}
 
 		ref<dx_buffer> list = createBuffer(sizeof(uint32), numElements, values, true);
@@ -250,14 +250,14 @@ namespace era_engine
 
 	void testBitonicSortFloat(uint32 numElements, bool ascending)
 	{
-		random_number_generator rng = { 125912842 };
+		RandomNumberGenerator rng = { 125912842 };
 
 		uint32* values = new uint32[numElements];
 		float* keys = new float[numElements];
 		for (uint32 i = 0; i < numElements; ++i)
 		{
 			values[i] = i;
-			keys[i] = rng.randomFloatBetween(-10000.f, 10000.f);
+			keys[i] = rng.random_float_between(-10000.f, 10000.f);
 		}
 
 		ref<dx_buffer> valuesList = createBuffer(sizeof(uint32), numElements, values, true);

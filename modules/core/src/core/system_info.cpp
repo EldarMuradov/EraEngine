@@ -51,7 +51,7 @@ namespace era_engine
 		DXGI_ADAPTER_DESC1 gpuDesc;
 		dxContext.adapter->GetDesc1(&gpuDesc);
 
-		system.gpuName = wstringToString(gpuDesc.Description);
+		system.gpuName = wstring_to_string(gpuDesc.Description);
 		system.videoMemory = gpuDesc.DedicatedVideoMemory;
 
 		return system;

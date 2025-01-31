@@ -54,7 +54,7 @@ namespace era_engine
 			SET_NAME(defaultNormalMap->resource, "Default normal map");
 		}
 
-		noiseTexture = loadTextureFromFile(getAssetPath("/resources/noise/blue_noise.dds"), image_load_flags_noncolor); // Already compressed and in DDS format.
+		noiseTexture = loadTextureFromFile(get_asset_path("/resources/noise/blue_noise.dds"), image_load_flags_noncolor); // Already compressed and in DDS format.
 
 		shadowMap = createDepthTexture(SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, shadowDepthFormat, 1, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		SET_NAME(shadowMap->resource, "Shadow map");
@@ -159,7 +159,7 @@ namespace era_engine
 				resources.alignment = allocationInfo.Alignment;
 			}
 
-			offset = alignTo(offset, allocationInfo.Alignment);
+			offset = align_to(offset, allocationInfo.Alignment);
 
 			resources.offsetsInBytes.push_back(offset);
 

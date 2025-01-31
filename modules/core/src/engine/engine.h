@@ -1,18 +1,29 @@
 #pragma once
 
+#include "core_api.h"
+
 #include <rttr/type>
+
+#include <functional>
 
 namespace era_engine
 {
-	class Engine final
+	class WorldSystemScheduler;
+
+	class ERA_CORE_API Engine final
 	{
-		Engine();
+		Engine(int argc, char** argv);
 		~Engine();
 	public:
+		Engine(const Engine&) = delete;
+		Engine(Engine&&) = delete;
+
 		static Engine* instance();
 		static void release();
 
-		bool run();
+		static Engine* create_instance(int argc, char** argv);
+
+		bool run(const std::function<void(void)>& initial_task = nullptr);
 
 		void terminate();
 
@@ -33,12 +44,18 @@ namespace era_engine
 			return object.get_value<Object*>();
 		}
 
+		WorldSystemScheduler* get_system_scheduler() const;
+
 	private:
 		bool update();
 
 		bool running = false;
 
 		std::unordered_map<rttr::type, rttr::variant> single_objects;
+
+		WorldSystemScheduler* scheduler = nullptr;
+
+		static Engine* instance_object;
 	};
 
 	template<typename Object>

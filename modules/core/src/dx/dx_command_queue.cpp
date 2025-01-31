@@ -54,7 +54,7 @@ namespace era_engine
 
 	uint64 dx_command_queue::signal()
 	{
-		uint64 fenceValueForSignal = atomicIncrement(fenceValue) + 1;
+		uint64 fenceValueForSignal = atomic_increment(fenceValue) + 1;
 		checkResult(commandQueue->Signal(fence.Get(), fenceValueForSignal));
 
 		return fenceValueForSignal;
@@ -127,7 +127,7 @@ namespace era_engine
 					list->next = queue.freeCommandLists;
 					queue.freeCommandLists = list;
 
-					atomicDecrement(queue.numRunningCommandLists);
+					atomic_decrement(queue.numRunningCommandLists);
 
 					queue.commandListMutex.unlock();
 				}

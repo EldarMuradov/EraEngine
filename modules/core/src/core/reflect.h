@@ -16,10 +16,10 @@ namespace era_engine
 	template <auto... member_pointers>
 	struct member_list : member_list_base
 	{
-		static inline const uint32 numMembers = sizeof...(member_pointers);
+		static inline const uint32 num_members = sizeof...(member_pointers);
 
 		template <typename T, typename F>
-		constexpr static auto applyImpl(F f, T& v, const char* memberNames[numMembers])
+		constexpr static auto applyImpl(F f, T& v, const char* memberNames[num_members])
 		{
 			uint32 i = 0;
 			([&]
@@ -46,9 +46,9 @@ namespace era_engine
 #define REFLECT_STRUCT(name, ...)																									\
 	template<> struct type_descriptor<name> : member_list<MACRO_FOR_EACH(MEMBER_POINTER_1, MEMBER_POINTER_N, name, __VA_ARGS__)>	\
 	{																																\
-		static inline const char* memberNames[] = { MACRO_FOR_EACH(MEMBER_NAME, MEMBER_NAME, , __VA_ARGS__) };						\
-		static inline const char* structName = #name;																				\
-		template <typename T, typename F> constexpr static auto apply(F f, T& v) { return applyImpl(f, v, memberNames); }			\
+		static inline const char* member_names[] = { MACRO_FOR_EACH(MEMBER_NAME, MEMBER_NAME, , __VA_ARGS__) };						\
+		static inline const char* struct_name = #name;																				\
+		template <typename T, typename F> constexpr static auto apply(F f, T& v) { return applyImpl(f, v, member_names); }			\
     };
 
 namespace era_engine
@@ -59,7 +59,7 @@ namespace era_engine
 	template <typename T, typename = std::enable_if_t<is_reflected_v<T>>>
 	inline std::ostream& operator<<(std::ostream& o, const T& v)
 	{
-		o << type_descriptor<T>::structName << " = {\n";
+		o << type_descriptor<T>::struct_name << " = {\n";
 		type_descriptor<T>::apply(
 			[&o](const char* name, const auto& member)
 			{

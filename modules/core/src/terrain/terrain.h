@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "core/math.h"
 #include "core/camera.h"
 
@@ -14,7 +16,7 @@
 
 namespace era_engine
 {
-	struct terrain_chunk
+	struct ERA_CORE_API terrain_chunk
 	{
 		ref<dx_texture> heightmap;
 		ref<dx_texture> normalmap;
@@ -22,7 +24,7 @@ namespace era_engine
 		std::vector<uint16> heights;
 	};
 
-	struct terrain_generation_settings
+	struct ERA_CORE_API terrain_generation_settings
 	{
 		float scale = 0.01f;
 
@@ -34,7 +36,7 @@ namespace era_engine
 		uint32 noiseOctaves = 15;
 	};
 
-	class TerrainComponent : public Component
+	class ERA_CORE_API TerrainComponent : public Component
 	{
 	public:
 		TerrainComponent() = default;

@@ -13,7 +13,7 @@ namespace era_engine
 
 		ImGui::PushID((uint32)handle);
 
-		for (auto&& curr : world->registry.storage())
+		for (auto&& curr : world->world_data->registry.storage())
 		{
 			entt::id_type cid = curr.first;
 			auto& storage = curr.second;
@@ -21,7 +21,7 @@ namespace era_engine
 
 			if (storage.contains(handle))
 			{
-				Component* comp = reinterpret_cast<Component*>(world->registry.storage(cid)->second.get(handle));
+				Component* comp = static_cast<Component*>(world->world_data->registry.storage(cid)->second.get(handle));
 				rttr::type type = comp->get_type();
 				const char* comp_name = type.get_name().data();
 				const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
@@ -138,16 +138,16 @@ namespace era_engine
 							trs value = prop.get_value(*comp).get_value<trs>();
 							show_vector3("Position", value.position, 1080);
 							ImGui::SameLine();
-							vec3 rot = quatToEuler(value.rotation);
+							vec3 rot = quat_to_euler(value.rotation);
 							show_vector3("Rotation", rot, 1080);
-							value.rotation = eulerToQuat(rot);
+							value.rotation = euler_to_quat(rot);
 							ImGui::SameLine();
 							show_vector3("Scale", value.scale, 1080);
 							prop.set_value(*comp, value);
 						}
 						else if (prop_type.is_enumeration())
 						{
-							ImGui::Text("Enum: %s. Value: %s", prop.get_name().data(), prop.get_value(*comp).to_string());
+							ImGui::Text("Enum: %s. Value: %s", prop.get_name().data(), prop.get_enumeration().value_to_name({prop.get_value(*comp)}).data());
 						}
 						else if (prop_type == rttr::type::get<std::string>() || prop_type == rttr::type::get<char*>())
 						{
@@ -161,16 +161,7 @@ namespace era_engine
 						}
 						else
 						{
-							bool ok = false;
-							auto result = prop.get_value(*comp).to_string(&ok);
-							if (ok)
-							{
-								ImGui::Text("Property: %s. Value: %s", prop.get_name().data(), prop.get_value(*comp).to_string());
-							}
-							else
-							{
-								ImGui::Text("Property: %s.", prop.get_name().data());
-							}
+							ImGui::Text("Property: %s.", prop.get_name().data());
 						}
 					}
 					ImGui::TreePop();

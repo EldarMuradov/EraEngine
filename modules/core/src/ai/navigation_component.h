@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "core/math.h"
 #include "core/coroutine.h"
 
@@ -11,9 +13,9 @@
 
 namespace era_engine::ai
 {
-	struct nav_node;
+	struct NavNode;
 
-	class NavigationComponent : public Component
+	class ERA_CORE_API NavigationComponent : public Component
 	{
 	public:
 		enum class NavType
@@ -41,7 +43,7 @@ namespace era_engine::ai
 		void create_path(const vec3& to, const vec3& from);
 
 	private:
-		coroutine_return<nav_node> nav_coroutine;
+		CoroutineReturn<NavNode> nav_coroutine;
 
 		vec3 previous_destination = vec3(NAV_INF_POS);
 	};

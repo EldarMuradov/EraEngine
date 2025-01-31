@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core_api.h"
+
 #include "ecs/entity.h"
 #include "ecs/reflection.h"
 
@@ -7,7 +9,7 @@ namespace era_engine
 {
 	class World;
 
-	class Component : public IReleasable
+	class ERA_CORE_API Component : public IReleasable
 	{
 	public:
 		Component() = default;

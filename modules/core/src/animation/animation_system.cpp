@@ -25,7 +25,7 @@ namespace era_engine::animation
 
 		rttr::registration::class_<AnimationSystem>("AnimationSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr)
-			.method("update", &System::update)(metadata("update_group", update_types::RENDER));
+			.method("update", &AnimationSystem::update)(metadata("update_group", update_types::RENDER));
 	}
 
 	AnimationSystem::AnimationSystem(World* _world)
@@ -33,20 +33,20 @@ namespace era_engine::animation
 	{
 	}
 
-	era_engine::animation::AnimationSystem::~AnimationSystem()
+	AnimationSystem::~AnimationSystem()
 	{
 		allocator->reset();
 	}
 
 	void AnimationSystem::init()
 	{
-		allocator = get_transient_object<eallocator>();
+		allocator = get_transient_object<Allocator>();
 	}
 
 	void AnimationSystem::update(float dt)
 	{
-		memory_marker marker = allocator->getMarker();
-		for (auto [entityHandle, anim, mesh, transform] : world->group(components_group<animation::AnimationComponent, MeshComponent, TransformComponent>).each())
+		MemoryMarker marker = allocator->get_marker();
+		for (auto [entityHandle, anim, mesh, transform] : world->group(components_group<AnimationComponent, MeshComponent, TransformComponent>).each())
 		{
 			anim.update(mesh.mesh, *allocator, dt, &transform.transform);
 			
@@ -55,7 +55,7 @@ namespace era_engine::animation
 				anim.draw_current_skeleton(mesh.mesh, transform.transform, &globalApp.ldrRenderPass);
 			}
 		}
-		allocator->resetToMarker(marker);
+		allocator->reset_to_marker(marker);
 	}
 
 }

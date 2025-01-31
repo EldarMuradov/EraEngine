@@ -27,13 +27,14 @@ namespace era_engine
 	{
 	}
 
-	void era_engine::ChildComponent::release()
+	void ChildComponent::release()
 	{
 		if (ref<Entity::EcsData> parent_data = parent.lock())
 		{
 			EntityContainer::erase_pair(parent_data->entity_handle, component_data->entity_handle);
 			EntityContainer::erase(parent_data->entity_handle);
 		}
+		Component::release();
 	}
 
 }

@@ -119,7 +119,7 @@ namespace era_engine
 		void initialize(color_depth colorDepth, uint32 windowWidth, uint32 windowHeight, renderer_spec spec, bool initDLSS = false);
 
 		void beginFrame(uint32 windowWidth, uint32 windowHeight);
-		void endFrame(const user_input* input);
+		void endFrame(const UserInput* input);
 
 		void setCamera(const render_camera& camera);
 
@@ -171,7 +171,7 @@ namespace era_engine
 
 		NODISCARD dx_command_list* renderThread0(const common_render_data& commonRenderData);
 		NODISCARD dx_command_list* renderThread1(const common_render_data& commonRenderData, bool aspectRatioModeChanged);
-		NODISCARD dx_command_list* renderThread2(const common_render_data& commonRenderData, const user_input* input);
+		NODISCARD dx_command_list* renderThread2(const common_render_data& commonRenderData, const UserInput* input);
 		NODISCARD dx_command_list* renderThread3(common_render_data commonRenderData, dx_dynamic_constant_buffer unjitteredCameraCBV);
 
 		void recalculateViewport(bool resizeTextures);

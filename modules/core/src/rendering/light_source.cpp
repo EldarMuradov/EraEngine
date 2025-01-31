@@ -50,17 +50,17 @@ namespace era_engine
 				upDir = vec3(0.0f, 0.0f, 1.0f);
 			}
 
-			mat4 viewMatrix = lookAt(center, center + direction, upDir);
+			mat4 viewMatrix = look_at(center, center + direction, upDir);
 
 			vec3 minExtents, maxExtents;
 			if (stabilize)
 			{
-				vec3 viewCenter = transformPosition(viewMatrix, center);
+				vec3 viewCenter = transform_position(viewMatrix, center);
 
 				float sphereRadius = 0.f;
 				for (uint32 i = 0; i < 8; ++i)
 				{
-					float d = length(transformPosition(viewMatrix, corners[i]) - viewCenter);
+					float d = length(transform_position(viewMatrix, corners[i]) - viewCenter);
 					sphereRadius = max(sphereRadius, d);
 				}
 
@@ -73,7 +73,7 @@ namespace era_engine
 				bounding_box extents = bounding_box::negativeInfinity();
 				for (uint32 i = 0; i < 8; ++i)
 				{
-					vec3 c = transformPosition(viewMatrix, corners[i]);
+					vec3 c = transform_position(viewMatrix, corners[i]);
 					extents.grow(c);
 				}
 
@@ -86,7 +86,7 @@ namespace era_engine
 
 			//viewMatrix = lookAt(shadowCamPos, shadowCamPos + direction, upDir);
 
-			mat4 projMatrix = createOrthographicProjectionMatrix(maxExtents.x, minExtents.x, maxExtents.y, minExtents.y, -negativeZOffset, cascadeExtents.z);
+			mat4 projMatrix = create_orthographic_projection_matrix(maxExtents.x, minExtents.x, maxExtents.y, minExtents.y, -negativeZOffset, cascadeExtents.z);
 
 			{
 				mat4 matrix = projMatrix * viewMatrix;
@@ -108,8 +108,8 @@ namespace era_engine
 
 	NODISCARD mat4 getSpotLightViewProjectionMatrix(const spot_light_cb& sl)
 	{
-		mat4 viewMatrix = lookAt(sl.position, sl.position + sl.direction, vec3(0.f, 1.f, 0.f));
-		mat4 projMatrix = createPerspectiveProjectionMatrix(acos(sl.getOuterCutoff()) * 2.f, 1.f, 0.01f, sl.maxDistance);
+		mat4 viewMatrix = look_at(sl.position, sl.position + sl.direction, vec3(0.f, 1.f, 0.f));
+		mat4 projMatrix = create_perspective_projection_matrix(acos(sl.getOuterCutoff()) * 2.f, 1.f, 0.01f, sl.maxDistance);
 		return projMatrix * viewMatrix;
 	}
 

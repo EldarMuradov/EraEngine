@@ -2,37 +2,39 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "core/hash.h"
 
 namespace era_engine
 {
-	struct asset_handle
+	struct AssetHandle
 	{
-		asset_handle() : value(0) {}
-		asset_handle(uint64 value) : value(value) {}
+		AssetHandle() : value(0) {}
+		AssetHandle(uint64 value) : value(value) {}
 
-		static NODISCARD asset_handle generate();
+		static NODISCARD AssetHandle generate();
 
 		operator bool() { return value != 0; }
 
 		uint64 value;
 	};
 
-	inline bool operator==(asset_handle a, asset_handle b)
+	inline bool operator==(AssetHandle a, AssetHandle b)
 	{
 		return a.value == b.value;
 	}
 
-	enum asset_load_state
+	enum AssetLoadState
 	{
-		asset_unloaded,
-		asset_loading,
-		asset_loaded,
+		UNLOADED = 0,
+		LOADING,
+		LOADED,
 
-		asset_load_state_count,
+		COUNT,
 	};
 
-	static const char* assetLoadStateNames[] =
+	static const char* asset_load_state_names[] =
 	{
 		"Unloaded",
 		"Loading",
@@ -43,9 +45,9 @@ namespace era_engine
 namespace std
 {
 	template<>
-	struct hash<era_engine::asset_handle>
+	struct hash<era_engine::AssetHandle>
 	{
-		size_t operator()(const era_engine::asset_handle& x) const
+		size_t operator()(const era_engine::AssetHandle& x) const
 		{
 			return std::hash<uint64>()(x.value);
 		}

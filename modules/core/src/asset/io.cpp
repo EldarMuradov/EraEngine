@@ -1,33 +1,33 @@
-
-
 #include "asset/io.h"
 
 namespace era_engine
 {
-	NODISCARD entire_file loadFile(const fs::path& path)
+	EntireFile load_file(const fs::path& path)
 	{
-		FILE* f = fopen(path.string().c_str(), "rb");
-		if (!f)
+		FILE* file = fopen(path.string().c_str(), "rb");
+		if (!file)
 		{
 			return {};
 		}
-		fseek(f, 0, SEEK_END);
-		uint32 fileSize = ftell(f);
-		if (fileSize == 0)
+
+		fseek(file, 0, SEEK_END);
+		uint32 file_size = ftell(file);
+
+		if (file_size == 0)
 		{
-			fclose(f);
+			fclose(file);
 			return {};
 		}
-		fseek(f, 0, SEEK_SET);
 
-		uint8* buffer = (uint8*)malloc(fileSize);
-		fread(buffer, fileSize, 1, f);
-		fclose(f);
+		fseek(file, 0, SEEK_SET);
+		uint8* buffer = (uint8*)malloc(file_size);
+		fread(buffer, file_size, 1, file);
+		fclose(file);
 
-		return { buffer, fileSize };
+		return { buffer, file_size };
 	}
 
-	void freeFile(entire_file file)
+	void free_file(const EntireFile& file)
 	{
 		free(file.content);
 	}

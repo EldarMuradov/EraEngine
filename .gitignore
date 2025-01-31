@@ -1,17 +1,10 @@
-projects/
-
 _build/
+
+.vscode
+.pytest_cache
+__pycache__
 
 asset_cache/
 resources/assets
 
-# Roadmap
-roadmap.txt
-
-# lf
-libfbxsdk-mt.lib
-libfbxsdk-md.lib
 PhysXGpu_64.dll
-hugeAsset.obj
-nvrtc_static.lib
-nvJitLink_static.lib

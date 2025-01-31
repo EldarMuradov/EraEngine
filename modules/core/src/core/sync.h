@@ -2,19 +2,21 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include <atomic>
 #include <mutex>
 
 namespace era_engine
 {
-	struct lock
+	struct ERA_CORE_API Lock
 	{
-		lock(std::mutex& mutex) : sync(mutex)
+		Lock(std::mutex& mutex) : sync(mutex)
 		{
 			sync.lock();
 		}
 
-		~lock()
+		~Lock() noexcept
 		{
 			sync.unlock();
 		}
@@ -22,7 +24,7 @@ namespace era_engine
 		std::mutex& sync;
 	};
 
-	class spin_lock
+	class SpinLock
 	{
 		std::atomic_flag flag;
 
@@ -37,18 +39,18 @@ namespace era_engine
 			return flag.test_and_set(std::memory_order_acquire);
 		}
 
-		void unlock()
+		void unlock() noexcept
 		{
 			flag.clear(std::memory_order_release);
 		}
 	};
 
-	class shared_spin_lock
+	class ERA_CORE_API ScopedSpinLock
 	{
-		spin_lock& lock;
+		SpinLock& lock;
 
 	public:
-		shared_spin_lock(spin_lock& toLock) : lock(toLock) { lock.lock(); }
-		~shared_spin_lock() { lock.unlock(); }
+		ScopedSpinLock(SpinLock& _lock) : lock(_lock) { lock.lock(); }
+		~ScopedSpinLock() { lock.unlock(); }
 	};
 }

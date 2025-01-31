@@ -1,11 +1,13 @@
 #pragma once
 
+#include "core_api.h"
+
 #include "ecs/component.h"
 
 namespace era_engine
 {
 
-	class NameComponent final : public Component
+	class ERA_CORE_API NameComponent final : public Component
 	{
 	public:
 		NameComponent() = default;

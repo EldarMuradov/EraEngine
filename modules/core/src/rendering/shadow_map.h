@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "scene/scene.h"
 #include "light_source.h"
 #include "render_pass.h"
 

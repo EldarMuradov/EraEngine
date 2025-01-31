@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "audio/sound.h"
 
 #include "core/math.h"
@@ -22,7 +24,7 @@ namespace era_engine
 		channel_state_virtual,
 	};
 
-	struct property_fader
+	struct ERA_CORE_API property_fader
 	{
 		void initialize(float start)
 		{
@@ -59,7 +61,7 @@ namespace era_engine
 		float current;
 	};
 
-	struct audio_context
+	struct ERA_CORE_API audio_context
 	{
 		com<IXAudio2> xaudio;
 
@@ -74,7 +76,7 @@ namespace era_engine
 		X3DAUDIO_LISTENER listener;
 	};
 
-	struct audio_channel
+	struct ERA_CORE_API audio_channel
 	{
 		audio_channel(const audio_context& context, const ref<audio_sound>& sound, const sound_settings& settings);
 		audio_channel(const audio_context& context, const ref<audio_sound>& sound, vec3 position, const sound_settings& settings);

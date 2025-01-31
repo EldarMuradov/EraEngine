@@ -15,9 +15,11 @@
 
 #include "editor/file_browser.h"
 #include "editor/asset_editor_panel.h"
-#include "editor/editor_icons.h"
 
-#include "physics/core/physics.h"
+#include "ecs/world_system_scheduler.h"
+
+#include "core/editor_icons.h"
+#include "core/log.h"
 
 #include "application.h"
 
@@ -25,6 +27,8 @@
 #include "rendering/main_renderer.h"
 
 #include "audio/audio.h"
+
+#include <clara/clapa.hpp>
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui/imgui_internal.h>
@@ -66,7 +70,7 @@ namespace era_engine
 		newImGuiFrame(dt);
 		ImGui::DockSpaceOverViewport();
 
-		cpuProfilingResolveTimeStamps();
+		cpu_profiling_resolve_time_stamps();
 
 		{
 			CPU_PROFILE_BLOCK("Wait for queued frame to finish rendering");
@@ -111,9 +115,31 @@ namespace era_engine
 
 	application globalApp;
 
-	Engine::Engine()
+	Engine* Engine::instance_object = nullptr;
+
+	Engine::Engine(int argc, char** argv)
 	{
+		using namespace clara;
+
 		running = true;
+		instance_object = this;
+#ifndef _DEBUG
+		::ShowWindow(::GetConsoleWindow(), SW_HIDE);
+#endif
+
+		bool verbose = false;
+		auto cli = Opt(verbose, "verbose")["-v"]["--verbose"]("verbose logging");
+
+		auto result = cli.parse(Args(argc, argv));
+		if (!result)
+		{
+			std::cerr << "Error in command line: " << result.errorMessage() << std::endl;
+		}
+
+		if (verbose)
+		{
+			::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+		}
 	}
 
 	Engine::~Engine()
@@ -122,8 +148,7 @@ namespace era_engine
 
 	Engine* Engine::instance()
 	{
-		static Engine engine = Engine();
-		return &engine;
+		return instance_object;
 	}
 
 	void Engine::release()
@@ -131,21 +156,24 @@ namespace era_engine
 		instance()->running = false;
 	}
 
-	bool Engine::run()
+	Engine* Engine::create_instance(int argc, char** argv)
+	{
+		return new Engine(argc, argv);
+	}
+
+	bool Engine::run(const std::function<void(void)>& initial_task /* = nullptr */)
 	{
 		if (!dxContext.initialize())
 		{
 			return EXIT_FAILURE;
 		}
 
-		initializeJobSystem();
-		initializeMessageLog();
+		initialize_job_system();
 		initializeFileRegistry();
-		initializeAudio();
 
 		dx_window window;
 		window.initialize(TEXT("  New Project - Era Engine - 0.1432v1 - <DX12>"), 1920, 1080);
-		window.setIcon(getAssetPath("/resources/icons/Logo.ico"));
+		window.setIcon(get_asset_path("/resources/icons/Logo.ico"));
 		window.setCustomWindowStyle();
 		window.maximize();
 
@@ -174,13 +202,20 @@ namespace era_engine
 
 		globalApp.initialize(&renderer, &editorPanels);
 
+		scheduler = new WorldSystemScheduler(globalApp.getCurrentWorld().get());
+
 		file_browser fileBrowser;
 
 		// Wait for initialization to finish
 		fenceValues[NUM_BUFFERED_FRAMES - 1] = dxContext.renderQueue.signal();
 		dxContext.flushApplication();
 
-		user_input input = {};
+		if (initial_task)
+		{
+			initial_task();
+		}
+
+		UserInput input = {};
 		bool appFocusedLastFrame = true;
 
 		float dt;
@@ -190,6 +225,8 @@ namespace era_engine
 			uint32 renderWidth = (uint32)ImGui::GetContentRegionAvail().x;
 			uint32 renderHeight = (uint32)ImGui::GetContentRegionAvail().y;
 			ImGui::Image(renderer.frameResult, renderWidth, renderHeight);
+
+			scheduler->input(dt);
 
 			{
 				CPU_PROFILE_BLOCK("Collect user input");
@@ -221,12 +258,12 @@ namespace era_engine
 					input.mouse.right = { ImGui::IsMouseDown(ImGuiMouseButton_Right), ImGui::IsMouseClicked(ImGuiMouseButton_Right), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Right) };
 					input.mouse.middle = { ImGui::IsMouseDown(ImGuiMouseButton_Middle), ImGui::IsMouseClicked(ImGuiMouseButton_Middle), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Middle) };
 
-					for (uint32 i = 0; i < arraysize(user_input::keyboard); ++i)
+					for (uint32 i = 0; i < arraysize(UserInput::keyboard); ++i)
 					{
 						input.keyboard[i] = { ImGui::IsKeyDown(i), ImGui::IsKeyPressed(i, false) };
 					}
 
-					input.overWindow = true;
+					input.over_window = true;
 				}
 				else
 				{
@@ -248,20 +285,20 @@ namespace era_engine
 						input.mouse.middle.down = false;
 					}
 
-					input.mouse.left.clickEvent = input.mouse.left.doubleClickEvent = false;
-					input.mouse.right.clickEvent = input.mouse.right.doubleClickEvent = false;
-					input.mouse.middle.clickEvent = input.mouse.middle.doubleClickEvent = false;
+					input.mouse.left.click_event = input.mouse.left.double_click_event = false;
+					input.mouse.right.click_event = input.mouse.right.double_click_event = false;
+					input.mouse.middle.click_event = input.mouse.middle.double_click_event = false;
 
-					for (uint32 i = 0; i < arraysize(user_input::keyboard); ++i)
+					for (uint32 i = 0; i < arraysize(UserInput::keyboard); ++i)
 					{
 						if (!ImGui::IsKeyDown(i))
 						{
 							input.keyboard[i].down = false;
 						}
-						input.keyboard[i].pressEvent = false;
+						input.keyboard[i].press_event = false;
 					}
 
-					input.overWindow = false;
+					input.over_window = false;
 				}
 			}
 
@@ -286,7 +323,7 @@ namespace era_engine
 
 			appFocusedLastFrame = ImGui::IsMousePosValid();
 
-			if (input.keyboard['V'].pressEvent && !(input.keyboard[key_ctrl].down || input.keyboard[key_shift].down || input.keyboard[key_alt].down))
+			if (input.keyboard['V'].press_event && !(input.keyboard[key_ctrl].down || input.keyboard[key_shift].down || input.keyboard[key_alt].down))
 				window.toggleVSync();
 			if (ImGui::IsKeyPressed(key_esc))
 			{
@@ -297,11 +334,19 @@ namespace era_engine
 				window.toggleFullscreen(); // Also allowed if not focused on main window.
 			}
 
+			scheduler->begin(dt);
+
 			renderer.beginFrame(renderWidth, renderHeight);
 
 			editorPanels.meshEditor.beginFrame();
 
+			scheduler->physics_update(dt);
+			scheduler->render_update(dt);
 			globalApp.update(input, dt);
+
+			scheduler->end(dt);
+
+			execute_main_thread_jobs();
 
 			endFrameCommon();
 			renderer.endFrame(&input);
@@ -313,7 +358,7 @@ namespace era_engine
 				const fs::path dir = "captures";
 				fs::create_directories(dir);
 
-				fs::path path = dir / (getTimeString() + ".png");
+				fs::path path = dir / (get_time_string() + ".png");
 
 				if (ImGui::IsKeyDown(key_ctrl))
 				{
@@ -329,15 +374,11 @@ namespace era_engine
 
 			fileBrowser.draw();
 
-			updateMessageLog(dt);
-
-			updateAudio(dt);
-
 			ImGui::End();
 
 			renderToMainWindow(window);
 
-			cpuProfilingFrameEndMarker();
+			cpu_profiling_frame_end_marker();
 
 			++frameID;
 		}
@@ -353,9 +394,12 @@ void Engine::terminate()
 
 	dxContext.quit();
 
-	shutdownAudio();
+	instance_object = nullptr;
+}
 
-	physics::PhysicsHolder::physics_ref->release();
+WorldSystemScheduler* Engine::get_system_scheduler() const
+{
+	return scheduler;
 }
 
 bool Engine::update()

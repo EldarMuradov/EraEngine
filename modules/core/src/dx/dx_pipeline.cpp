@@ -4,10 +4,11 @@
 
 #include "core/string.h"
 #include "core/file_system.h"
+#include "core/log.h"
 
 namespace era_engine
 {
-	static void handlePipelineChanges(const file_system_event& e);
+	static void handlePipelineChanges(const FileSystemEvent& e);
 	static void loadRootSignature(struct reloadable_root_signature& r);
 	static void loadPipeline(struct reloadable_pipeline_state& p);
 
@@ -135,7 +136,7 @@ namespace era_engine
 			if (it == shaderBlobs.end())
 			{
 				// New file
-				std::wstring filepath = SHADER_BIN_DIR + stringToWstring(filename) + L".cso";
+				std::wstring filepath = SHADER_BIN_DIR + string_to_wstring(filename) + L".cso";
 
 				dx_blob blob;
 				checkResult(D3DReadFileToBlob(filepath.c_str(), &blob));
@@ -402,7 +403,7 @@ namespace era_engine
 		}
 
 		//static HANDLE thread = CreateThread(0, 0, checkForFileChanges, 0, 0, 0); // Static, so that we only do this once.
-		static bool observing = observeDirectory(SHADER_BIN_DIR, handlePipelineChanges); // Static, so that we only do this once.
+		static bool observing = observe_directory(SHADER_BIN_DIR, handlePipelineChanges); // Static, so that we only do this once.
 	}
 
 	static bool fileIsLocked(const wchar* filename)
@@ -415,9 +416,9 @@ namespace era_engine
 		return false;
 	}
 
-	static void handlePipelineChanges(const file_system_event& e)
+	static void handlePipelineChanges(const FileSystemEvent& e)
 	{
-		if (e.change == file_system_change_modify)
+		if (e.change == FileSystemChange::Modify)
 		{
 			bool isFile = !fs::is_directory(e.path);
 
@@ -460,7 +461,7 @@ namespace era_engine
 
 	void checkForChangedPipelines()
 	{
-		lock lock{ mutex };
+		Lock lock{ mutex };
 
 		for (uint32 i = 0; i < (uint32)dirtyRootSignatures.size(); ++i)
 		{

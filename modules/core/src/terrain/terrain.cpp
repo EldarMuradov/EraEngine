@@ -18,8 +18,6 @@
 #include "core/random.h"
 #include "core/job_system.h"
 
-#include "scene/components.h"
-
 #include "ecs/component.h"
 #include "ecs/base_components/transform_component.h"
 
@@ -300,7 +298,7 @@ namespace era_engine
 
 	struct height_generator
 	{
-		fbm_noise_2D noiseFunc = valueNoise;
+		fbm_noise_2D noiseFunc = value_noise;
 
 		virtual float height(vec2 position) const = 0;
 		virtual vec2 grad(vec2 position) const = 0;
@@ -577,7 +575,7 @@ namespace era_engine
 			generator,
 		};
 
-		job_handle parentJob = highPriorityJobQueue.createJob<terrain_gen_job_data>([](terrain_gen_job_data& data, job_handle parent)
+		JobHandle parentJob = high_priority_job_queue.createJob<terrain_gen_job_data>([](terrain_gen_job_data& data, JobHandle parent)
 			{
 				for (int32 cz = 0; cz < (int32)data.terrain.chunksPerDim; ++cz)
 				{
@@ -597,7 +595,7 @@ namespace era_engine
 							cx, cz,
 						};
 
-						job_handle job = highPriorityJobQueue.createJob<chunk_gen_job_data>([](chunk_gen_job_data& data, job_handle)
+						JobHandle job = high_priority_job_queue.createJob<chunk_gen_job_data>([](chunk_gen_job_data& data, JobHandle)
 							{
 								float chunkSize = data.terrain.chunkSize;
 								uint32 numSegmentsPerDim = TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1;
@@ -660,8 +658,8 @@ namespace era_engine
 				}
 			}, data);
 
-		parentJob.submitNow();
-		parentJob.waitForCompletion();
+		parentJob.submit_now();
+		parentJob.wait_for_completion();
 	}
 
 	void TerrainComponent::generate_chunks_GPU()

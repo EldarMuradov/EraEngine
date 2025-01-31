@@ -4,36 +4,35 @@
 #include "ai/navigation.h"
 
 #include "ecs/base_components/transform_component.h"
+#include "ecs/world.h"
 
 #include <rttr/registration>
 
-#include "application.h"
-
 namespace era_engine::ai
 {
-	NODISCARD static coroutine_return<nav_node> navigate(vec2 pos, vec2 target)
+	NODISCARD static CoroutineReturn<NavNode> navigate(const vec2& pos, const vec2& target)
 	{
-		nav_node player;
+		NavNode player;
 		player.position = pos / (float)NAV_X_STEP;
 
-		nav_node destination;
+		NavNode destination;
 		destination.position = target / (float)NAV_X_STEP;
 
-		const auto& path = a_star_navigation::navigate(player, destination);
-		for (const nav_node& node : path)
+		const auto& path = AStarNavigation::navigate(player, destination);
+		for (const NavNode& node : path)
 		{
 			co_yield node;
 		}
 
 		while (true)
 		{
-			co_yield nav_node(vec2(NAV_INF_POS));
+			co_yield NavNode(vec2(NAV_INF_POS));
 		}
 
-		co_return nav_node(vec2(NAV_INF_POS));
+		co_return NavNode(vec2(NAV_INF_POS));
 	}
 
-	static bool equalIn2d(const vec3& lhs, const vec3& rhs)
+	static bool equal_in_2d(const vec3& lhs, const vec3& rhs)
 	{
 		return (int)rhs.x == (int)lhs.x && (int)rhs.z == (int)lhs.z;
 	}
@@ -53,21 +52,21 @@ namespace era_engine::ai
 		auto& transform = get_world()->get_entity(component_data->entity_handle).get_component<TransformComponent>();
 		const auto& pos = transform.transform.position;
 
-		if (!equalIn2d(destination, previous_destination))
+		if (!equal_in_2d(destination, previous_destination))
 		{
 			create_path(destination, pos);
 			previous_destination = destination;
 		}
 
-		coroutine<nav_node> nav_cor = nav_coroutine;
+		Coroutine<NavNode> nav_cor = nav_coroutine;
 		if (nav_cor)
 		{
-			nav_node tempPos = nav_cor.value();
-			if (tempPos.position != vec2(NAV_INF_POS))
+			NavNode temp_pos = nav_cor.value();
+			if (temp_pos.position != vec2(NAV_INF_POS))
 			{
-				transform.transform.position = lerp(pos, vec3(tempPos.position.x, 0, tempPos.position.y), 0.025f);
+				transform.transform.position = lerp(pos, vec3(temp_pos.position.x, 0, temp_pos.position.y), 0.025f);
 
-				if (length(transform.transform.position - vec3(tempPos.position.x, 0, tempPos.position.y)) < 0.25f)
+				if (length(transform.transform.position - vec3(temp_pos.position.x, 0, temp_pos.position.y)) < 0.25f)
 				{
 					nav_cor();
 				}

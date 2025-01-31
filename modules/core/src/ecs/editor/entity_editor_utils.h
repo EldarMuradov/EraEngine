@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core_api.h"
+
 #include "core/math.h"
 #include "core/imgui.h"
 
@@ -7,7 +9,7 @@
 
 namespace era_engine
 {
-	class EntityEditorUtils final
+	class ERA_CORE_API EntityEditorUtils final
 	{
 		EntityEditorUtils() = delete;
 	public:

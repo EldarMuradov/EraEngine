@@ -2,20 +2,22 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "terrain/terrain.h"
 
 #include "ecs/component.h"
 
 namespace era_engine
 {
-	struct proc_placement_layer_desc
+	struct ERA_CORE_API proc_placement_layer_desc
 	{
 		const char* name;
 		float footprint;
 		ref<multi_mesh> meshes[4] = {};
 	};
 
-	class ProcPlacementComponent : public Component
+	class ERA_CORE_API ProcPlacementComponent : public Component
 	{
 	public:
 		ProcPlacementComponent() = default;

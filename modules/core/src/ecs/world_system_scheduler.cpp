@@ -30,104 +30,118 @@ namespace era_engine
 		systems.clear();
 	}
 
-	void WorldSystemScheduler::initialize_systems()
+	void WorldSystemScheduler::initialize_systems(const rttr::array_range<rttr::type>& types)
 	{
 		using namespace rttr;
 		type base_type = type::get<System>();
 
-		for (auto& system_class : base_type.get_derived_classes())
+		for (const type& type_instance : types)
 		{
-			method update = system_class.get_method("update");
-			UpdateGroup group = update.get_metadata("update_group").get_value<UpdateGroup>();
-			System* system = system_class.create({ world }).get_value<System*>();
-			if (updates.find(group.name) == updates.end())
+			if (base_type.is_base_of(type_instance) && type_instance.get_raw_type() != base_type && type_instance.is_class())
 			{
-				updates.emplace(group.name, std::vector<std::pair<System*, rttr::method>>{{ system, update }});
-			}
-			else
-			{
-				updates[group.name].tasks.push_back({ system, update });
-			}
-			systems.push_back(system);
+				for (const method& system_method : type_instance.get_methods())
+				{
+					variant meta = system_method.get_metadata("update_group");
+					if (!meta.is_valid())
+					{
+						continue;
+					}
 
+					UpdateGroup group = meta.get_value<UpdateGroup>();
+					System* system = type_instance.create({ world }).get_value<System*>();
+					if (updates.find(group.name) == updates.end())
+					{
+						updates.emplace(group.name, std::vector<std::pair<System*, rttr::method>>{{ system, system_method }});
+					}
+					else
+					{
+						updates[group.name].tasks.push_back({ system, system_method });
+					}
+					systems.push_back(system);
+				}
+			}
+		}
+
+		for (System* system : systems)
+		{
 			system->init();
 		}
 	}
 
+	void WorldSystemScheduler::input(float elapsed)
+	{
+		run(elapsed, update_types::INPUT);
+	}
+
 	void WorldSystemScheduler::begin(float elapsed)
 	{
-		using namespace rttr;
+		run(elapsed, update_types::BEGIN);
 
-		const auto simulation_task = [](UpdateParams& data, job_handle job) {
-			for (auto& pair : data.update.tasks)
-			{
-				pair.second.invoke(*pair.first, data.elapsed);
-			}
-		};
-
-		job_handle begin_handle = highPriorityJobQueue.createJob<UpdateParams>(simulation_task, { updates[update_types::BEGIN.name], elapsed });
-		begin_handle.submitNow();
-		begin_handle.waitForCompletion();
 	}
 
 	void WorldSystemScheduler::render_update(float elapsed)
 	{
 		using namespace rttr;
 
-		const auto simulation_task = [](UpdateParams& data, job_handle job) {
+		const auto simulation_task = [](UpdateParams& data, JobHandle job) {
 			for (auto& pair : data.update.tasks)
 			{
 				pair.second.invoke(*pair.first, data.elapsed);
 			}
 		};
 
-		job_handle before_render_handle = highPriorityJobQueue.createJob<UpdateParams>(simulation_task, { updates[update_types::BEFORE_RENDER.name], elapsed });
-		before_render_handle.submitNow();
+		JobHandle before_render_handle = high_priority_job_queue.createJob<UpdateParams>(simulation_task, { updates[update_types::BEFORE_RENDER.name], elapsed });
+		before_render_handle.submit_now();
 
-		job_handle render_handle = highPriorityJobQueue.createJob<UpdateParams>(simulation_task, { updates[update_types::RENDER.name], elapsed });
-		render_handle.submitAfter(before_render_handle);
+		JobHandle render_handle = high_priority_job_queue.createJob<UpdateParams>(simulation_task, { updates[update_types::RENDER.name], elapsed });
+		render_handle.submit_after(before_render_handle);
 
-		job_handle after_render_handle = highPriorityJobQueue.createJob<UpdateParams>(simulation_task, { updates[update_types::AFTER_RENDER.name], elapsed });
-		after_render_handle.submitAfter(render_handle);
-		after_render_handle.waitForCompletion();
+		JobHandle after_render_handle = high_priority_job_queue.createJob<UpdateParams>(simulation_task, { updates[update_types::AFTER_RENDER.name], elapsed });
+		after_render_handle.submit_after(render_handle);
+		after_render_handle.wait_for_completion();
 	}
 
 	void WorldSystemScheduler::physics_update(float elapsed)
 	{
 		using namespace rttr;
 
-		const auto simulation_task = [](UpdateParams& data, job_handle job) {
+		const auto simulation_task = [](UpdateParams& data, JobHandle job) {
 			for (auto& pair : data.update.tasks)
 			{
 				pair.second.invoke(*pair.first, data.elapsed);
 			}
 		};
 
-		job_handle before_physics_handle = highPriorityJobQueue.createJob<UpdateParams>(simulation_task, { updates[update_types::BEFORE_PHYSICS.name], elapsed });
-		before_physics_handle.submitNow();
+		JobHandle before_physics_handle = high_priority_job_queue.createJob<UpdateParams>(simulation_task, { updates[update_types::BEFORE_PHYSICS.name], elapsed });
+		before_physics_handle.submit_now();
 
-		job_handle physics_handle = highPriorityJobQueue.createJob<UpdateParams>(simulation_task, { updates[update_types::PHYSICS.name], elapsed });
-		physics_handle.submitAfter(before_physics_handle);
+		JobHandle physics_handle = high_priority_job_queue.createJob<UpdateParams>(simulation_task, { updates[update_types::PHYSICS.name], elapsed });
+		physics_handle.submit_after(before_physics_handle);
 
-		job_handle after_physics_handle = highPriorityJobQueue.createJob<UpdateParams>(simulation_task, { updates[update_types::AFTER_PHYSICS.name], elapsed });
-		after_physics_handle.submitAfter(physics_handle);
-		after_physics_handle.waitForCompletion();
+		JobHandle after_physics_handle = high_priority_job_queue.createJob<UpdateParams>(simulation_task, { updates[update_types::AFTER_PHYSICS.name], elapsed });
+		after_physics_handle.submit_after(physics_handle);
+		after_physics_handle.wait_for_completion();
 	}
 
 	void WorldSystemScheduler::end(float elapsed)
 	{
+		run(elapsed, update_types::END);
+	}
+
+	void WorldSystemScheduler::run(float elapsed, const UpdateGroup& group)
+	{
 		using namespace rttr;
 
-		const auto simulation_task = [](UpdateParams& data, job_handle job) {
+		const auto simulation_task = [](UpdateParams& data, JobHandle job) {
 			for (auto& pair : data.update.tasks)
 			{
 				pair.second.invoke(*pair.first, data.elapsed);
 			}
-		};
+			};
 
-		job_handle end_handle = highPriorityJobQueue.createJob<UpdateParams>(simulation_task, { updates[update_types::END.name], elapsed });
-		end_handle.submitNow();
-		end_handle.waitForCompletion();
+		JobHandle end_handle = high_priority_job_queue.createJob<UpdateParams>(simulation_task, { updates[group.name], elapsed });
+		end_handle.submit_now();
+		end_handle.wait_for_completion();
 	}
 
 }

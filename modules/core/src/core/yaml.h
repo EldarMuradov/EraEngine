@@ -229,10 +229,10 @@ namespace YAML
 	};
 
 	template<>
-	struct convert<asset_handle>
+	struct convert<AssetHandle>
 	{
-		NODISCARD static Node encode(const asset_handle& v) { Node n; n = v.value; return n; }
-		static bool decode(const Node& n, asset_handle& h) { h.value = n.as<uint64>(); return true; }
+		NODISCARD static Node encode(const AssetHandle& v) { Node n; n = v.value; return n; }
+		static bool decode(const Node& n, AssetHandle& h) { h.value = n.as<uint64>(); return true; }
 	};
 }
 

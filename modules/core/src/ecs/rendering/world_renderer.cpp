@@ -10,9 +10,17 @@
 #include "rendering/outline.h"
 #include "rendering/shadow_map.h"
 
+#include "asset/pbr_material_desc.h"
+
 #include "geometry/mesh.h"
 
 #include "dx/dx_context.h"
+
+#include "terrain/tree.h"
+#include "terrain/water.h"
+#include "terrain/terrain.h"
+#include "terrain/proc_placement.h"
+#include "terrain/grass.h"
 
 namespace era_engine
 {
@@ -27,12 +35,12 @@ namespace era_engine
 
 	static bool shouldRender(const camera_frustum_planes& frustum, const MeshComponent& mesh, const TransformComponent& transform)
 	{
-		return mesh.mesh && !mesh.is_hidden && (mesh.mesh->loadState.load() == asset_loaded) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || !frustum.cullModelSpaceAABB(mesh.mesh->aabb, transform.transform));
+		return mesh.mesh && !mesh.is_hidden && (mesh.mesh->loadState.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || !frustum.cullModelSpaceAABB(mesh.mesh->aabb, transform.transform));
 	}
 
 	static bool shouldRender(const bounding_sphere& frustum, const MeshComponent& mesh, const TransformComponent& transform)
 	{
-		return mesh.mesh && !mesh.is_hidden && (mesh.mesh->loadState.load() == asset_loaded) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || shouldRender(frustum, mesh.mesh->aabb, transform.transform));
+		return mesh.mesh && !mesh.is_hidden && (mesh.mesh->loadState.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || shouldRender(frustum, mesh.mesh->aabb, transform.transform));
 	}
 
 	static bool shouldRender(const light_frustum& frustum, const MeshComponent& mesh, const TransformComponent& transform)
@@ -48,7 +56,7 @@ namespace era_engine
 		std::unordered_map<multi_mesh*, offset_count> ocPerMesh;
 
 		uint32 index = 0;
-		for (entity_handle entityHandle : group)
+		for (Entity::Handle entityHandle : group)
 		{
 			MeshComponent& mesh = group.get<MeshComponent>(entityHandle);
 			++ocPerMesh[mesh.mesh.get()].count;
@@ -67,7 +75,7 @@ namespace era_engine
 		return ocPerMesh;
 	}
 
-	static void addToRenderPass(pbr_material_shader shader, const pbr_render_data& data, const depth_prepass_data& depthPrepassData,
+	static void addToRenderPass(PbrMaterialShader shader, const pbr_render_data& data, const depth_prepass_data& depthPrepassData,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass)
 	{
 		switch (shader)
@@ -98,7 +106,7 @@ namespace era_engine
 		}
 	}
 
-	static void addToStaticRenderPass(pbr_material_shader shader, const shadow_render_data& shadowData, shadow_render_pass_base* shadowRenderPass, bool isPointLight)
+	static void addToStaticRenderPass(PbrMaterialShader shader, const shadow_render_data& shadowData, shadow_render_pass_base* shadowRenderPass, bool isPointLight)
 	{
 		switch (shader)
 		{
@@ -132,7 +140,7 @@ namespace era_engine
 		}
 	}
 
-	static void addToDynamicRenderPass(pbr_material_shader shader, const shadow_render_data& shadowData, shadow_render_pass_base* shadowRenderPass, bool isPointLight)
+	static void addToDynamicRenderPass(PbrMaterialShader shader, const shadow_render_data& shadowData, shadow_render_pass_base* shadowRenderPass, bool isPointLight)
 	{
 		switch (shader)
 		{
@@ -168,7 +176,7 @@ namespace era_engine
 
 	template <typename group_t>
 	static void renderStaticObjectsToMainCamera(group_t group, std::unordered_map<multi_mesh*, offset_count> ocPerMesh,
-		const camera_frustum_planes& frustum, eallocator& arena, Entity::Handle selectedObjectID,
+		const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass)
 	{
 		uint32 groupSize = (uint32)group.size();
@@ -192,7 +200,7 @@ namespace era_engine
 			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
-			transforms[index] = trsToMat4(transform.transform);
+			transforms[index] = trs_to_mat4(transform.transform);
 			objectIDs[index] = (uint32)entityHandle;
 
 			++oc.count;
@@ -258,7 +266,7 @@ namespace era_engine
 
 	template <typename group_t>
 	static void renderStaticObjectsToShadowMap(group_t group, std::unordered_map<multi_mesh*, offset_count> ocPerMesh,
-		const light_frustum& frustum, eallocator& arena, shadow_render_pass_base* shadowRenderPass)
+		const light_frustum& frustum, Allocator& arena, shadow_render_pass_base* shadowRenderPass)
 	{
 		uint32 groupSize = (uint32)group.size();
 
@@ -278,7 +286,7 @@ namespace era_engine
 			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
-			transforms[index] = trsToMat4(transform.transform);
+			transforms[index] = trs_to_mat4(transform.transform);
 
 			++oc.count;
 		}
@@ -311,7 +319,7 @@ namespace era_engine
 		}
 	}
 
-	static void renderStaticObjects(ref<World> world, const camera_frustum_planes& frustum, eallocator& arena, Entity::Handle selectedObjectID,
+	static void renderStaticObjects(ref<World> world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
 	{
 		CPU_PROFILE_BLOCK("Static objects");
@@ -338,7 +346,7 @@ namespace era_engine
 
 	template <typename group_t>
 	static void renderDynamicObjectsToMainCamera(group_t group, std::unordered_map<multi_mesh*, offset_count> ocPerMesh,
-		const camera_frustum_planes& frustum, eallocator& arena, Entity::Handle selectedObjectID,
+		const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass)
 	{
 		uint32 groupSize = (uint32)group.size();
@@ -363,8 +371,8 @@ namespace era_engine
 			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
-			transforms[index] = trsToMat4(transform.transform);
-			prevFrameTransforms[index] = trsToMat4(transform.transform);
+			transforms[index] = trs_to_mat4(transform.transform);
+			prevFrameTransforms[index] = trs_to_mat4(transform.transform);
 			objectIDs[index] = (uint32)entityHandle;
 
 			++oc.count;
@@ -432,7 +440,7 @@ namespace era_engine
 
 	template <typename group_t>
 	static void renderDynamicObjectsToShadowMap(group_t group, std::unordered_map<multi_mesh*, offset_count> ocPerMesh,
-		const light_frustum& frustum, eallocator& arena, shadow_render_pass_base* shadowRenderPass)
+		const light_frustum& frustum, Allocator& arena, shadow_render_pass_base* shadowRenderPass)
 	{
 		uint32 groupSize = (uint32)group.size();
 
@@ -453,7 +461,7 @@ namespace era_engine
 			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
-			transforms[index] = trsToMat4(transform.transform);
+			transforms[index] = trs_to_mat4(transform.transform);
 
 			++oc.count;
 		}
@@ -486,7 +494,7 @@ namespace era_engine
 		}
 	}
 
-	static void renderDynamicObjects(ref<World> world, const camera_frustum_planes& frustum, eallocator& arena, Entity::Handle selectedObjectID,
+	static void renderDynamicObjects(ref<World> world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
 	{
 		CPU_PROFILE_BLOCK("Dynamic objects");
@@ -505,7 +513,7 @@ namespace era_engine
 		}
 	}
 
-	static void renderAnimatedObjects(ref<World> world, const camera_frustum_planes& frustum, eallocator& arena, Entity::Handle selectedObjectID,
+	static void renderAnimatedObjects(ref<World> world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
 	{
 		CPU_PROFILE_BLOCK("Animated objects");
@@ -529,11 +537,11 @@ namespace era_engine
 		uint32 index = 0;
 		for (auto [entityHandle, transform, mesh, anim] : group.each())
 		{
-			if (!mesh.mesh || mesh.is_hidden || (mesh.mesh->loadState.load() != asset_loaded))
+			if (!mesh.mesh || mesh.is_hidden || (mesh.mesh->loadState.load() != AssetLoadState::LOADED))
 				continue;
 
-			transforms[index] = trsToMat4(transform.transform);
-			prevFrameTransforms[index] = trsToMat4(transform.transform); //TODO
+			transforms[index] = trs_to_mat4(transform.transform);
+			prevFrameTransforms[index] = trs_to_mat4(transform.transform); //TODO
 			objectIDs[index] = (uint32)entityHandle;
 
 			D3D12_GPU_VIRTUAL_ADDRESS baseM = transformsAddress + (index * sizeof(mat4));
@@ -592,13 +600,13 @@ namespace era_engine
 		}
 	}
 
-	static void renderTerrain(const render_camera& camera, ref<World> world, eallocator& arena, Entity::Handle selectedObjectID,
+	static void renderTerrain(const render_camera& camera, ref<World> world, Allocator& arena, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
 		compute_pass* computePass, float dt)
 	{
 		CPU_PROFILE_BLOCK("Terrain");
 
-		memory_marker tempMemoryMarker = arena.getMarker();
+		MemoryMarker tempMemoryMarker = arena.get_marker();
 		TransformComponent* waterPlaneTransforms = arena.allocate<TransformComponent>(world->number_of_components_of_type<WaterComponent>());
 		uint32 numWaterPlanes = 0;
 
@@ -614,7 +622,7 @@ namespace era_engine
 			terrain.render(camera, opaqueRenderPass, sunShadowRenderPass, ldrRenderPass,
 				position.transform.position, selectedObjectID == entityHandle, waterPlaneTransforms, numWaterPlanes);
 		}
-		arena.resetToMarker(tempMemoryMarker);
+		arena.reset_to_marker(tempMemoryMarker);
 
 		for (auto [entityHandle, terrain, position, placement] : world->group(components_group<TerrainComponent, TransformComponent, ProcPlacementComponent>).each())
 		{
@@ -629,7 +637,7 @@ namespace era_engine
 		}
 	}
 
-	static void renderTrees(ref<World> world, const camera_frustum_planes& frustum, eallocator& arena, Entity::Handle selectedObjectID,
+	static void renderTrees(ref<World> world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
 		float dt)
 	{
@@ -658,7 +666,7 @@ namespace era_engine
 			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
-			transforms[index] = trsToMat4(transform.transform);
+			transforms[index] = trs_to_mat4(transform.transform);
 			objectIDs[index] = (uint32)entityHandle;
 
 			++oc.count;
@@ -846,7 +854,7 @@ namespace era_engine
 		}
 	}
 
-	void render_world(const render_camera& camera, ref<World> world, eallocator& arena, Entity::Handle selectedObjectID, directional_light& sun, scene_lighting& lighting, bool invalidateShadowMapCache, opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass, compute_pass* computePass, float dt)
+	void render_world(const render_camera& camera, ref<World> world, Allocator& arena, Entity::Handle selectedObjectID, directional_light& sun, scene_lighting& lighting, bool invalidateShadowMapCache, opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass, compute_pass* computePass, float dt)
 	{
 		CPU_PROFILE_BLOCK("Submit scene render commands");
 
@@ -857,7 +865,7 @@ namespace era_engine
 		shadow_passes staticShadowPasses = {};
 		shadow_passes dynamicShadowPasses = {};
 
-		memory_marker tempMemoryMarker = arena.getMarker();
+		MemoryMarker tempMemoryMarker = arena.get_marker();
 		uint32 numShadowCastingLights = 1 + lighting.numSpotShadowRenderPasses + lighting.numPointShadowRenderPasses;
 		staticShadowPasses.shadowRenderPasses = arena.allocate<shadow_pass>(numShadowCastingLights);
 		dynamicShadowPasses.shadowRenderPasses = arena.allocate<shadow_pass>(numShadowCastingLights);
@@ -915,7 +923,7 @@ namespace era_engine
 		renderTrees(world, frustum, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, sunShadowRenderPass, dt);
 		//renderCloth(world, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, sunShadowRenderPass);
 
-		arena.resetToMarker(tempMemoryMarker);
+		arena.reset_to_marker(tempMemoryMarker);
 	}
 
 }

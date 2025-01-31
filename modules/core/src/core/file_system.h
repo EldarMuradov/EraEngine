@@ -2,27 +2,30 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include <functional>
 
 namespace era_engine
 {
-	enum file_system_change
+	enum class FileSystemChange
 	{
-		file_system_change_none,
-		file_system_change_add,
-		file_system_change_delete,
-		file_system_change_modify,
-		file_system_change_rename,
+		None = 0,
+		Add,
+		Delete,
+		Modify,
+		Rename,
+		Count
 	};
 
-	struct file_system_event
+	struct ERA_CORE_API FileSystemEvent
 	{
-		file_system_change change;
+		FileSystemChange change;
 		fs::path path;
-		fs::path oldPath; // Only set in case of a rename event.
+		fs::path old_path; // Only set in case of a rename event.
 	};
 
-	typedef std::function<void(const file_system_event&)> file_system_observer;
+	typedef std::function<void(const FileSystemEvent&)> FileSystemObserver;
 
-	bool observeDirectory(const fs::path& directory, const file_system_observer& callback, bool watchSubDirectories = true);
+	bool observe_directory(const fs::path& directory, const FileSystemObserver& callback, bool watch_subdirectories = true);
 }

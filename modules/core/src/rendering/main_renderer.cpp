@@ -423,7 +423,7 @@ namespace era_engine
 		return cl;
 	}
 
-	NODISCARD dx_command_list* main_renderer::renderThread2(const common_render_data& commonRenderData, const user_input* input)
+	NODISCARD dx_command_list* main_renderer::renderThread2(const common_render_data& commonRenderData, const UserInput* input)
 	{
 		dx_command_list* cl = dxContext.getFreeRenderCommandList();
 		PROFILE_ALL(cl, "Render thread 2");
@@ -553,7 +553,7 @@ namespace era_engine
 		// Copy hovered object id to readback buffer.
 		if (objectIDsTexture && input)
 		{
-			windowHovered = input->overWindow
+			windowHovered = input->over_window
 				&& (input->mouse.x - windowXOffset >= 0)
 				&& (input->mouse.x - windowXOffset < (int32)renderWidth)
 				&& (input->mouse.y - windowYOffset >= 0)
@@ -709,7 +709,7 @@ namespace era_engine
 		return cl;
 	}
 
-	void main_renderer::endFrame(const user_input* input)
+	void main_renderer::endFrame(const UserInput* input)
 	{
 		bool aspectRatioModeChanged = aspectRatioMode != oldAspectRatioMode;
 		oldAspectRatioMode = aspectRatioMode;
@@ -793,7 +793,7 @@ namespace era_engine
 				const common_render_data& commonRenderData;
 
 				bool aspectRatioModeChanged;
-				const user_input* input;
+				const UserInput* input;
 				dx_dynamic_constant_buffer unjitteredCameraCBV;
 
 				dx_command_list*& cl0;
@@ -815,32 +815,32 @@ namespace era_engine
 				cl3,
 			};
 
-			job_handle parentJob = highPriorityJobQueue.createJob<render_job_data>([](render_job_data& data, job_handle parent)
+			JobHandle parentJob = high_priority_job_queue.createJob<render_job_data>([](render_job_data& data, JobHandle parent)
 				{
-					highPriorityJobQueue.createJob<render_job_data>([](render_job_data& data, job_handle)
+					high_priority_job_queue.createJob<render_job_data>([](render_job_data& data, JobHandle)
 						{
 							data.cl0 = data.renderer->renderThread0(data.commonRenderData);
-						}, data, parent).submitNow();
+						}, data, parent).submit_now();
 
-						highPriorityJobQueue.createJob<render_job_data>([](render_job_data& data, job_handle)
+						high_priority_job_queue.createJob<render_job_data>([](render_job_data& data, JobHandle)
 							{
 								data.cl1 = data.renderer->renderThread1(data.commonRenderData, data.aspectRatioModeChanged);
-							}, data, parent).submitNow();
+							}, data, parent).submit_now();
 
-							highPriorityJobQueue.createJob<render_job_data>([](render_job_data& data, job_handle)
+							high_priority_job_queue.createJob<render_job_data>([](render_job_data& data, JobHandle)
 								{
 									data.cl2 = data.renderer->renderThread2(data.commonRenderData, data.input);
-								}, data, parent).submitNow();
+								}, data, parent).submit_now();
 
-								highPriorityJobQueue.createJob<render_job_data>([](render_job_data& data, job_handle)
+								high_priority_job_queue.createJob<render_job_data>([](render_job_data& data, JobHandle)
 									{
 										data.cl3 = data.renderer->renderThread3(data.commonRenderData, data.unjitteredCameraCBV);
-									}, data, parent).submitNow();
+									}, data, parent).submit_now();
 
 				}, jobData);
 
-			parentJob.submitNow();
-			parentJob.waitForCompletion();
+			parentJob.submit_now();
+			parentJob.wait_for_completion();
 
 			ASSERT(cl0);
 			ASSERT(cl1);

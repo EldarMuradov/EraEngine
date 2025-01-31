@@ -1,15 +1,14 @@
-// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
-
 #define PROFILING_INTERNAL
+
 #include "core/profiling_internal.h"
 #include "core/imgui.h"
 #include "core/input.h"
 
 namespace era_engine
 {
-	bool handleProfileEvent(profile_event* events, uint32 eventIndex, uint32 numEvents, uint16* stack, uint32& d, profile_block* blocks, uint32& numBlocksUsed, uint64& frameEndTimestamp, bool lookahead)
+	bool handle_profile_event(ProfileEvent* events, uint32 event_index, uint32 num_events, uint16* stack, uint32& d, ProfileBlock* blocks, uint32& num_blocks_used, uint64& frame_end_timestamp, bool lookahead)
 	{
-		profile_event* e = events + eventIndex;
+		ProfileEvent* e = events + event_index;
 
 		bool result = false;
 
@@ -17,7 +16,7 @@ namespace era_engine
 		{
 		case profile_event_begin_block:
 		{
-		rehandleEvent:
+		REHANDLE_EVENT:
 			uint64 timestamp = e->timestamp;
 
 			// The end event of one block often has the exact same timestamp as the begin event of the next block(s).
@@ -28,55 +27,55 @@ namespace era_engine
 
 			if (lookahead && d > 0)
 			{
-				profile_block* currentStackTop = blocks + stack[d - 1];
+				ProfileBlock* current_stack_top = blocks + stack[d - 1];
 
-				for (uint32 j = eventIndex + 1; j < numEvents && events[j].timestamp == timestamp; ++j)
+				for (uint32 j = event_index + 1; j < num_events && events[j].timestamp == timestamp; ++j)
 				{
 					if (events[j].type == profile_event_end_block
-						&& events[j].threadID != e->threadID				// Event is from another thread than current event. Events on the same thread are always in the correct order.
-						&& events[j].threadID == currentStackTop->threadID	// Event is from the same thread as current stack top.
-						&& events[j].name == currentStackTop->name)			// Event has the same name as current stack top.
+						&& events[j].thread_id != e->thread_id				// Event is from another thread than current event. Events on the same thread are always in the correct order.
+						&& events[j].thread_id == current_stack_top->thread_id	// Event is from the same thread as current stack top.
+						&& events[j].name == current_stack_top->name)			// Event has the same name as current stack top.
 					{
 						--d;
-						currentStackTop->endClock = timestamp;
+						current_stack_top->end_clock = timestamp;
 
 						events[j].type = profile_event_none; // Mark as handled.
-						goto rehandleEvent;
+						goto REHANDLE_EVENT;
 					}
 				}
 			}
 
-			uint32 index = numBlocksUsed++;
-			profile_block& block = blocks[index];
+			uint32 index = num_blocks_used++;
 
-			block.startClock = timestamp;
-			block.endClock = 0;
+			ProfileBlock& block = blocks[index];
+			block.start_clock = timestamp;
+			block.end_clock = 0;
 			block.parent = (d == 0) ? INVALID_PROFILE_BLOCK : stack[d - 1];
 			block.name = e->name;
-			block.threadID = e->threadID;
-			block.firstChild = INVALID_PROFILE_BLOCK;
-			block.lastChild = INVALID_PROFILE_BLOCK;
-			block.nextSibling = INVALID_PROFILE_BLOCK;
+			block.thread_id = e->thread_id;
+			block.first_child = INVALID_PROFILE_BLOCK;
+			block.last_child = INVALID_PROFILE_BLOCK;
+			block.next_sibling = INVALID_PROFILE_BLOCK;
 
 			if (block.parent != INVALID_PROFILE_BLOCK) // d > 0.
 			{
-				profile_block* parent = blocks + block.parent;
+				ProfileBlock* parent = blocks + block.parent;
 
-				if (parent->firstChild == INVALID_PROFILE_BLOCK)
+				if (parent->first_child == INVALID_PROFILE_BLOCK)
 				{
-					parent->firstChild = index;
+					parent->first_child = index;
 				}
-				if (parent->lastChild != INVALID_PROFILE_BLOCK)
+				if (parent->last_child != INVALID_PROFILE_BLOCK)
 				{
-					profile_block* lastChild = blocks + parent->lastChild;
-					lastChild->nextSibling = index;
+					ProfileBlock* last_child = blocks + parent->last_child;
+					last_child->next_sibling = index;
 				}
-				parent->lastChild = index;
+				parent->last_child = index;
 			}
 			else if (stack[d] != INVALID_PROFILE_BLOCK) // d is guaranteed to be 0 here. Therefore we can check for the validity of the stack element. This is always initialized.
 			{
-				profile_block* current = blocks + stack[d];
-				current->nextSibling = index;
+				ProfileBlock* current = blocks + stack[d];
+				current->next_sibling = index;
 			}
 
 			stack[d] = index;
@@ -87,15 +86,15 @@ namespace era_engine
 		{
 			--d;
 
-			profile_block* block = blocks + stack[d];
+			ProfileBlock* block = blocks + stack[d];
 			ASSERT(block->name == e->name);
 
-			block->endClock = e->timestamp;
+			block->end_clock = e->timestamp;
 		} break;
 
 		case profile_event_frame_marker:
 		{
-			frameEndTimestamp = e->timestamp;
+			frame_end_timestamp = e->timestamp;
 			result = true;
 		} break;
 		}
@@ -103,46 +102,46 @@ namespace era_engine
 		return result;
 	}
 
-	void copyProfileBlocks(profile_block* src, uint16* stack, uint32 depth, profile_block* dest, uint32& numDestBlocks)
+	void copy_profile_blocks(ProfileBlock* src, uint16* stack, uint32 depth, ProfileBlock* dest, uint32& num_dest_blocks)
 	{
 		for (uint32 d = 0; d < depth; ++d)
 		{
-			uint32 index = numDestBlocks++;
-			profile_block& old = src[stack[d]];
-			profile_block& block = dest[index];
+			uint32 index = num_dest_blocks++;
+			ProfileBlock& old = src[stack[d]];
+			ProfileBlock& block = dest[index];
 
-			block.startClock = old.startClock;
-			block.endClock = 0;
+			block.start_clock = old.start_clock;
+			block.end_clock = 0;
 			block.parent = (d == 0) ? INVALID_PROFILE_BLOCK : stack[d - 1];
 			block.name = old.name;
-			block.threadID = old.threadID;
-			block.firstChild = INVALID_PROFILE_BLOCK;
-			block.lastChild = INVALID_PROFILE_BLOCK;
-			block.nextSibling = INVALID_PROFILE_BLOCK;
+			block.thread_id = old.thread_id;
+			block.first_child = INVALID_PROFILE_BLOCK;
+			block.last_child = INVALID_PROFILE_BLOCK;
+			block.next_sibling = INVALID_PROFILE_BLOCK;
 
 			if (block.parent != INVALID_PROFILE_BLOCK) // d > 0.
 			{
-				profile_block* parent = dest + block.parent;
+				ProfileBlock* parent = dest + block.parent;
 
-				if (parent->firstChild == INVALID_PROFILE_BLOCK)
+				if (parent->first_child == INVALID_PROFILE_BLOCK)
 				{
-					parent->firstChild = index;
+					parent->first_child = index;
 				}
-				parent->lastChild = index;
+				parent->last_child = index;
 			}
 
 			stack[d] = index;
 		}
 	}
 
-	static const ImColor highlightFrameColor = ImGui::green;
+	static const ImColor highlight_frame_color = ImGui::green;
 
-	static const float timelineBottom = 400.f;
-	static const float rightPadding = 50.f;
-	static const float highlightTop = timelineBottom + 150.f;
-	static const float verticalBarStride = 40.f;
+	inline constexpr float timeline_bottom = 400.f;
+	inline constexpr float right_padding = 50.f;
+	inline constexpr float highlight_top = timeline_bottom + 150.f;
+	inline constexpr float vertical_bar_stride = 40.f;
 
-	static const ImColor colorTable[] =
+	static const ImColor color_table[] =
 	{
 		ImColor(107, 142, 35),
 		ImColor(220, 20, 60),
@@ -172,60 +171,60 @@ namespace era_engine
 		ImColor(188, 143, 143),
 	};
 
-	profiler_timeline::profiler_timeline(profiler_persistent& persistent, uint32 numFrames)
-		: persistent(persistent), numFrames(numFrames)
+	ProfilerTimeline::ProfilerTimeline(ProfilerPersistent& _persistent, uint32 _num_frames)
+		: persistent(_persistent), num_frames(_num_frames)
 	{
-		totalWidth = ImGui::GetContentRegionAvail().x - leftPadding - rightPadding;
+		total_width = ImGui::GetContentRegionAvail().x - left_padding - right_padding;
 
-		barHeight16ms = 100.f;
-		barHeight33ms = barHeight16ms * 2.f;
+		bar_height16ms = 100.f;
+		bar_height33ms = bar_height16ms * 2.f;
+		
+		right_edge = left_padding + total_width;
+		horizontal_bar_stride = total_width / num_frames;
+		bar_width = horizontal_bar_stride/* * 0.9f*/;
 
-		rightEdge = leftPadding + totalWidth;
-		horizontalBarStride = totalWidth / numFrames;
-		barWidth = horizontalBarStride/* * 0.9f*/;
-
-		callStackTop = highlightTop;
+		call_stack_top = highlight_top;
 	}
 
-	bool profiler_timeline::drawHeader(bool& pauseRecording)
+	bool ProfilerTimeline::draw_header(bool& pause_recording)
 	{
 		bool result = false;
-		if (ImGui::Button(pauseRecording ? (ICON_FA_PLAY "  Resume recording") : (ICON_FA_PAUSE "  Pause recording")))
+		if (ImGui::Button(pause_recording ? (ICON_FA_PLAY "  Resume recording") : (ICON_FA_PAUSE "  Pause recording")))
 		{
-			pauseRecording = !pauseRecording;
+			pause_recording = !pause_recording;
 			result = true;
 		}
 		ImGui::SameLine();
-		ImGui::Text("The last %u frames are recorded. Click on one frame to get a detailed hierarchical view of all blocks. Zoom into detail view with mouse wheel and click and drag to shift the display.", numFrames);
+		ImGui::Text("The last %u frames are recorded. Click on one frame to get a detailed hierarchical view of all blocks. Zoom into detail view with mouse wheel and click and drag to shift the display.", num_frames);
 		return result;
 	}
 
-	void profiler_timeline::drawOverviewFrame(profile_frame& frame, uint32 frameIndex, uint32 currentFrame)
+	void ProfilerTimeline::draw_overview_frame(ProfileFrame& frame, uint32 frame_index, uint32 current_frame)
 	{
 		if (frame.duration > 0.f)
 		{
-			float left = leftPadding + frameIndex * horizontalBarStride;
-			float height = frame.duration / (1000.f / 60.f) * barHeight16ms;
+			float left = left_padding + frame_index * horizontal_bar_stride;
+			float height = frame.duration / (1000.f / 60.f) * bar_height16ms;
 			if (height > 0.f)
 			{
-				float top = timelineBottom - height;
+				float top = timeline_bottom - height;
 
-				ImGui::PushID(frameIndex);
+				ImGui::PushID(frame_index);
 
 				ImGui::SetCursorPos(ImVec2(left, top));
 
-				ImColor color = (frameIndex == persistent.highlightFrameIndex) ? highlightFrameColor : ImGui::red;
-				color = (frameIndex == currentFrame) ? ImGui::yellow : color;
+				ImColor color = (frame_index == persistent.highlight_frame_index) ? highlight_frame_color : ImGui::red;
+				color = (frame_index == current_frame) ? ImGui::yellow : color;
 
-				bool result = ImGui::ColorButton("", color, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(barWidth, height));
+				bool result = ImGui::ColorButton("", color, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(bar_width, height));
 				if (ImGui::IsItemHovered())
 				{
-					ImGui::SetTooltip("Frame %llu (%fms)", frame.globalFrameID, frame.duration);
+					ImGui::SetTooltip("Frame %llu (%fms)", frame.global_frame_id, frame.duration);
 				}
 
 				if (result)
 				{
-					persistent.highlightFrameIndex = frameIndex;
+					persistent.highlight_frame_index = frame_index;
 				}
 
 				ImGui::PopID();
@@ -233,39 +232,39 @@ namespace era_engine
 		}
 	}
 
-	void profiler_timeline::endOverview()
+	void ProfilerTimeline::end_overview()
 	{
-		ImGui::SetCursorPos(ImVec2(leftPadding, timelineBottom - barHeight16ms - 1));
-		ImGui::ColorButton("##60FPS", ImGui::white, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(totalWidth, 1));
+		ImGui::SetCursorPos(ImVec2(left_padding, timeline_bottom - bar_height16ms - 1));
+		ImGui::ColorButton("##60FPS", ImGui::white, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(total_width, 1));
 
-		ImGui::SetCursorPos(ImVec2(leftPadding, timelineBottom - barHeight33ms - 1));
-		ImGui::ColorButton("##30FPS", ImGui::white, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(totalWidth, 1));
+		ImGui::SetCursorPos(ImVec2(left_padding, timeline_bottom - bar_height33ms - 1));
+		ImGui::ColorButton("##30FPS", ImGui::white, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(total_width, 1));
 
-		ImGui::SetCursorPos(ImVec2(rightEdge + 3.f, timelineBottom - barHeight16ms - 1));
+		ImGui::SetCursorPos(ImVec2(right_edge + 3.f, timeline_bottom - bar_height16ms - 1));
 		ImGui::Text("16.7ms");
 
-		ImGui::SetCursorPos(ImVec2(rightEdge + 3.f, timelineBottom - barHeight33ms - 1));
+		ImGui::SetCursorPos(ImVec2(right_edge + 3.f, timeline_bottom - bar_height33ms - 1));
 		ImGui::Text("33.3ms");
 	}
 
-	void profiler_timeline::drawHighlightFrameInfo(profile_frame& frame)
+	void ProfilerTimeline::draw_highlight_frame_info(ProfileFrame& frame)
 	{
-		ImGui::SetCursorPos(ImVec2(leftPadding, highlightTop - 80.f));
-		ImGui::Text("Frame %llu (%fms)", frame.globalFrameID, frame.duration);
+		ImGui::SetCursorPos(ImVec2(left_padding, highlight_top - 80.f));
+		ImGui::Text("Frame %llu (%fms)", frame.global_frame_id, frame.duration);
 	}
 
-	void profiler_timeline::drawCallStack(profile_block* blocks, uint16 startIndex, const char* name)
+	void ProfilerTimeline::draw_call_stack(ProfileBlock* blocks, uint16 start_index, const char* name)
 	{
 #if 0
 		ImGui::SameLine();
 		if (ImGui::Button("Dump this frame to stdout"))
 		{
-			uint16 currentIndex = 0;
+			uint16 current_index = 0;
 			uint32 depth = 0;
 
-			while (currentIndex != INVALID_PROFILE_BLOCK)
+			while (current_index != INVALID_PROFILE_BLOCK)
 			{
-				profile_block* current = blocks + currentIndex;
+				ProfileBlock* current = blocks + current_index;
 
 				for (uint32 i = 0; i < depth; ++i)
 				{
@@ -274,23 +273,23 @@ namespace era_engine
 				std::cout << current->name << '\n';
 
 				// Advance.
-				uint16 nextIndex = current->firstChild;
-				if (nextIndex == INVALID_PROFILE_BLOCK)
+				uint16 next_index = current->first_child;
+				if (next_index == INVALID_PROFILE_BLOCK)
 				{
-					nextIndex = current->nextSibling;
+					next_index = current->next_sibling;
 
-					if (nextIndex == INVALID_PROFILE_BLOCK)
+					if (next_index == INVALID_PROFILE_BLOCK)
 					{
-						uint16 nextAncestor = current->parent;
-						while (nextAncestor != INVALID_PROFILE_BLOCK)
+						uint16 next_ancestor = current->parent;
+						while (next_ancestor != INVALID_PROFILE_BLOCK)
 						{
 							--depth;
-							if (blocks[nextAncestor].nextSibling != INVALID_PROFILE_BLOCK)
+							if (blocks[next_ancestor].next_sibling != INVALID_PROFILE_BLOCK)
 							{
-								nextIndex = blocks[nextAncestor].nextSibling;
+								next_index = blocks[next_ancestor].next_sibling;
 								break;
 							}
-							nextAncestor = blocks[nextAncestor].parent;
+							next_ancestor = blocks[next_ancestor].parent;
 						}
 					}
 				}
@@ -298,47 +297,47 @@ namespace era_engine
 				{
 					++depth;
 				}
-				currentIndex = nextIndex;
+				current_index = nextIndex;
 			}
 		}
 #endif
 
 		if (name)
 		{
-			ImGui::SetCursorPos(ImVec2(leftPadding, callStackTop - 5.f));
+			ImGui::SetCursorPos(ImVec2(left_padding, call_stack_top - 5.f));
 			ImGui::Text(name);
 		}
 
-		if (callStackTop != highlightTop)
+		if (call_stack_top != highlight_top)
 		{
-			ImGui::SetCursorPos(ImVec2(leftPadding, callStackTop - 5.f));
-			ImGui::ColorButton("", ImGui::white, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(totalWidth + rightPadding, 1));
+			ImGui::SetCursorPos(ImVec2(left_padding, call_stack_top - 5.f));
+			ImGui::ColorButton("", ImGui::white, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(total_width + right_padding, 1));
 		}
 
-		static const float barHeight = verticalBarStride * 0.8f;
+		static const float bar_height = vertical_bar_stride * 0.8f;
 
-		const float frameWidth16ms = totalWidth * persistent.frameWidthMultiplier;
-		const float frameWidth33ms = frameWidth16ms * 2.f;
+		const float frame_width16ms = total_width * persistent.frame_width_multiplier;
+		const float frame_width33ms = frame_width16ms * 2.f;
 
 		// Call stack.
-		uint16 currentIndex = startIndex;
+		uint16 current_index = start_index;
 		uint32 depth = 0;
-		uint32 maxDepth = 0;
+		uint32 max_depth = 0;
 
-		while (currentIndex != INVALID_PROFILE_BLOCK)
+		while (current_index != INVALID_PROFILE_BLOCK)
 		{
-			profile_block* current = blocks + currentIndex;
+			ProfileBlock* current = blocks + current_index;
 
 			// Draw.
-			float top = callStackTop + depth * verticalBarStride;
-			float left = persistent.callstackLeftPadding + current->relStart / (1000.f / 60.f) * frameWidth16ms;
-			float width = current->duration / (1000.f / 60.f) * frameWidth16ms;
+			float top = call_stack_top + depth * vertical_bar_stride;
+			float left = persistent.callstack_left_padding + current->rel_start / (1000.f / 60.f) * frame_width16ms;
+			float width = current->duration / (1000.f / 60.f) * frame_width16ms;
 			if (width > 0.f) // Important. ImGui renders zero-size elements with a default size (> 0).
 			{
 				ImGui::SetCursorPos(ImVec2(left, top));
-				ImGui::ColorButton(current->name, colorTable[colorIndex++],
+				ImGui::ColorButton(current->name, color_table[color_index++],
 					ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoDragDrop,
-					ImVec2(width, barHeight));
+					ImVec2(width, bar_height));
 
 				if (ImGui::IsItemHovered())
 				{
@@ -347,172 +346,172 @@ namespace era_engine
 
 				ImGui::PushClipRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), true);
 				ImGui::SetCursorPos(ImVec2(left + ImGui::GetStyle().FramePadding.x, top + ImGui::GetStyle().FramePadding.y));
-				ImGui::Text("%s: %.3fms%s", current->name, current->duration, (current->endClock == 0) ? " (continues in next frame" : "");
+				ImGui::Text("%s: %.3fms%s", current->name, current->duration, (current->end_clock == 0) ? " (continues in next frame" : "");
 				ImGui::PopClipRect();
 
 
-				if (colorIndex >= arraysize(colorTable))
+				if (color_index >= arraysize(color_table))
 				{
-					colorIndex = 0;
+					color_index = 0;
 				}
 			}
 
 			// Advance
-			uint16 nextIndex = current->firstChild;
+			uint16 nextIndex = current->first_child;
 			if (nextIndex == INVALID_PROFILE_BLOCK)
 			{
-				nextIndex = current->nextSibling;
+				nextIndex = current->next_sibling;
 
 				if (nextIndex == INVALID_PROFILE_BLOCK)
 				{
-					uint16 nextAncestor = current->parent;
-					while (nextAncestor != INVALID_PROFILE_BLOCK)
+					uint16 next_ancestor = current->parent;
+					while (next_ancestor != INVALID_PROFILE_BLOCK)
 					{
 						--depth;
-						if (blocks[nextAncestor].nextSibling != INVALID_PROFILE_BLOCK)
+						if (blocks[next_ancestor].next_sibling != INVALID_PROFILE_BLOCK)
 						{
-							nextIndex = blocks[nextAncestor].nextSibling;
+							nextIndex = blocks[next_ancestor].next_sibling;
 							break;
 						}
-						nextAncestor = blocks[nextAncestor].parent;
+						next_ancestor = blocks[next_ancestor].parent;
 					}
 				}
 			}
 			else
 			{
 				++depth;
-				maxDepth = max(depth, maxDepth);
+				max_depth = max(depth, max_depth);
 			}
-			currentIndex = nextIndex;
+			current_index = nextIndex;
 		}
 
 		ASSERT(depth == 0);
 
-		callStackTop += (maxDepth + 1) * verticalBarStride + 10.f;
+		call_stack_top += (max_depth + 1) * vertical_bar_stride + 10.f;
 	}
 
-	void profiler_timeline::drawMillisecondSpacings(profile_frame& frame)
+	void ProfilerTimeline::draw_millisecond_spacings(ProfileFrame& frame) const
 	{
-		const float frameWidth16ms = totalWidth * persistent.frameWidthMultiplier;
-		const float frameWidth33ms = frameWidth16ms * 2.f;
+		const float frame_width16ms = total_width * persistent.frame_width_multiplier;
+		const float frame_width33ms = frame_width16ms * 2.f;
 
-		float callStackHeight = callStackTop - highlightTop;
+		float call_stack_height = call_stack_top - highlight_top;
 
-		const float textSpacing = 30.f;
-		const float lineHeight = callStackHeight + textSpacing;
-		const float lineTop = highlightTop - textSpacing;
+		const float text_spacing = 30.f;
+		const float line_height = call_stack_height + text_spacing;
+		const float line_top = highlight_top - text_spacing;
 
 		// 0ms
-		ImGui::SetCursorPos(ImVec2(persistent.callstackLeftPadding, lineTop));
-		ImGui::ColorButton("##0ms", ImGui::white, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(1, lineHeight));
+		ImGui::SetCursorPos(ImVec2(persistent.callstack_left_padding, line_top));
+		ImGui::ColorButton("##0ms", ImGui::white, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(1, line_height));
 
-		ImGui::SetCursorPos(ImVec2(persistent.callstackLeftPadding + 2, lineTop - 5));
+		ImGui::SetCursorPos(ImVec2(persistent.callstack_left_padding + 2, line_top - 5));
 		ImGui::Text("0ms");
 
 		// 16ms
-		ImGui::SetCursorPos(ImVec2(persistent.callstackLeftPadding + frameWidth16ms, lineTop));
-		ImGui::ColorButton("##16ms", ImGui::white, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(1, lineHeight));
+		ImGui::SetCursorPos(ImVec2(persistent.callstack_left_padding + frame_width16ms, line_top));
+		ImGui::ColorButton("##16ms", ImGui::white, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(1, line_height));
 
-		ImGui::SetCursorPos(ImVec2(persistent.callstackLeftPadding + frameWidth16ms + 2, lineTop - 5));
+		ImGui::SetCursorPos(ImVec2(persistent.callstack_left_padding + frame_width16ms + 2, line_top - 5));
 		ImGui::Text("16.7ms");
 
 		// 33ms
-		ImGui::SetCursorPos(ImVec2(persistent.callstackLeftPadding + frameWidth33ms, lineTop));
-		ImGui::ColorButton("##33ms", ImGui::white, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(1, lineHeight));
+		ImGui::SetCursorPos(ImVec2(persistent.callstack_left_padding + frame_width33ms, line_top));
+		ImGui::ColorButton("##33ms", ImGui::white, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(1, line_height));
 
-		ImGui::SetCursorPos(ImVec2(persistent.callstackLeftPadding + frameWidth33ms + 2, lineTop - 5));
+		ImGui::SetCursorPos(ImVec2(persistent.callstack_left_padding + frame_width33ms + 2, line_top - 5));
 		ImGui::Text("33.3ms");
 
 		// 1ms spacings
-		const ImVec4 normalColor(0.2f, 0.2f, 0.2f, 1.f);
-		const ImVec4 specialColor(0.5f, 0.5f, 0.5f, 1.f);
+		const ImVec4 normal_color(0.2f, 0.2f, 0.2f, 1.f);
+		const ImVec4 special_color(0.5f, 0.5f, 0.5f, 1.f);
 
-		const float millisecondSpacing = frameWidth33ms / (1000.f / 30.f);
+		const float millisecond_spacing = frame_width33ms / (1000.f / 30.f);
 		for (uint32 i = 1; i <= 33; ++i)
 		{
-			ImVec4 color = (i % 5 == 0) ? specialColor : normalColor;
+			ImVec4 color = (i % 5 == 0) ? special_color : normal_color;
 
-			ImGui::SetCursorPos(ImVec2(persistent.callstackLeftPadding + i * millisecondSpacing, lineTop + 8));
-			ImGui::ColorButton("", color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(1, lineHeight));
+			ImGui::SetCursorPos(ImVec2(persistent.callstack_left_padding + i * millisecond_spacing, line_top + 8));
+			ImGui::ColorButton("", color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(1, line_height));
 		}
 
 		// Frame end
-		ImGui::SetCursorPos(ImVec2(persistent.callstackLeftPadding + frame.duration * millisecondSpacing, lineTop));
-		ImGui::ColorButton("##Frame end", ImGui::blue, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(1, lineHeight));
+		ImGui::SetCursorPos(ImVec2(persistent.callstack_left_padding + frame.duration * millisecond_spacing, line_top));
+		ImGui::ColorButton("##Frame end", ImGui::blue, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(1, line_height));
 
-		ImGui::SetCursorPos(ImVec2(persistent.callstackLeftPadding + frame.duration * millisecondSpacing + 2, lineTop - 5));
+		ImGui::SetCursorPos(ImVec2(persistent.callstack_left_padding + frame.duration * millisecond_spacing + 2, line_top - 5));
 		ImGui::Text("Frame end");
 	}
 
-	void profiler_timeline::handleUserInteractions()
+	void ProfilerTimeline::handle_user_interactions()
 	{
-		const float frameWidth16ms = totalWidth * persistent.frameWidthMultiplier;
-		const float frameWidth33ms = frameWidth16ms * 2.f;
+		const float frame_width16ms = total_width * persistent.frame_width_multiplier;
+		const float frame_width33ms = frame_width16ms * 2.f;
 
-		float callStackHeight = callStackTop - highlightTop;
+		float call_stack_height = call_stack_top - highlight_top;
 
-		const float textSpacing = 30.f;
-		const float lineHeight = callStackHeight + textSpacing;
-		const float lineTop = highlightTop - textSpacing;
+		const float text_spacing = 30.f;
+		const float line_height = call_stack_height + text_spacing;
+		const float line_top = highlight_top - text_spacing;
 
 		// Invisible widget to block window dragging in this area
-		ImGui::SetCursorPos(ImVec2(leftPadding, highlightTop));
-		ImGui::InvisibleButton("Blocker", ImVec2(totalWidth + rightPadding, callStackHeight));
+		ImGui::SetCursorPos(ImVec2(left_padding, highlight_top));
+		ImGui::InvisibleButton("Blocker", ImVec2(total_width + right_padding, call_stack_height));
 
-		ImVec2 mousePos = ImGui::GetMousePos();
-		ImVec2 windowPos = ImGui::GetWindowPos();
+		ImVec2 mouse_pos = ImGui::GetMousePos();
+		ImVec2 window_pos = ImGui::GetWindowPos();
 
-		float relMouseX = mousePos.x - windowPos.x;
+		float rel_mouse_x = mouse_pos.x - window_pos.x;
 
-		bool overStack = false;
+		bool over_stack = false;
 		if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId) && // If dropdown or smth is open, don't interact with call stack.
-			ImGui::IsMouseHoveringRect(ImVec2(leftPadding + windowPos.x, highlightTop + windowPos.y), ImVec2(leftPadding + totalWidth + rightPadding + windowPos.x, highlightTop + callStackHeight + windowPos.y), false))
+			ImGui::IsMouseHoveringRect(ImVec2(left_padding + window_pos.x, highlight_top + window_pos.y), ImVec2(left_padding + total_width + right_padding + window_pos.x, highlight_top + call_stack_height + window_pos.y), false))
 		{
-			overStack = true;
+			over_stack = true;
 
 			// Hover time
-			float hoveredX = ImGui::GetMousePos().x - ImGui::GetWindowPos().x;
-			float hoveredTime = (hoveredX - persistent.callstackLeftPadding) / frameWidth33ms * (1000.f / 30.f);
-			ImGui::SetCursorPos(ImVec2(hoveredX, lineTop));
-			ImGui::ColorButton("", ImGui::yellow, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(1, lineHeight));
+			float hovered_x = ImGui::GetMousePos().x - ImGui::GetWindowPos().x;
+			float hovered_time = (hovered_x - persistent.callstack_left_padding) / frame_width33ms * (1000.f / 30.f);
+			ImGui::SetCursorPos(ImVec2(hovered_x, line_top));
+			ImGui::ColorButton("", ImGui::yellow, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoBorder, ImVec2(1, line_height));
 
-			ImGui::SetCursorPos(ImVec2(hoveredX + 2, lineTop - 5));
-			ImGui::Text("%.3fms", hoveredTime);
+			ImGui::SetCursorPos(ImVec2(hovered_x + 2, line_top - 5));
+			ImGui::Text("%.3fms", hovered_time);
 		}
 
 		// Horizontal scrolling
 		if (!ImGui::IsMouseDown(ImGuiPopupFlags_MouseButtonLeft))
 		{
-			persistent.horizontalScrolling = false;
+			persistent.horizontal_scrolling = false;
 		}
-		if (overStack && ImGui::IsMouseClicked(ImGuiPopupFlags_MouseButtonLeft))
+		if (over_stack && ImGui::IsMouseClicked(ImGuiPopupFlags_MouseButtonLeft))
 		{
-			persistent.horizontalScrollAnchor = relMouseX;
-			persistent.horizontalScrolling = true;
+			persistent.horizontal_scrolling = rel_mouse_x;
+			persistent.horizontal_scrolling = true;
 		}
-		if (persistent.horizontalScrolling)
+		if (persistent.horizontal_scrolling)
 		{
-			persistent.callstackLeftPadding += relMouseX - persistent.horizontalScrollAnchor;
-			persistent.horizontalScrollAnchor = relMouseX;
+			persistent.callstack_left_padding += rel_mouse_x - persistent.horizontal_scrolling;
+			persistent.horizontal_scrolling = rel_mouse_x;
 		}
 
 		// Zooming
-		if (overStack)
+		if (over_stack)
 		{
 			float zoom = ImGui::GetIO().MouseWheel;
 
 			if (zoom != 0.f && ImGui::IsKeyDown(key_ctrl))
 			{
-				float t = inverseLerp(persistent.callstackLeftPadding, persistent.callstackLeftPadding + frameWidth16ms, relMouseX);
+				float t = inverse_lerp(persistent.callstack_left_padding, persistent.callstack_left_padding + frame_width16ms, rel_mouse_x);
 
-				persistent.frameWidthMultiplier += zoom * 0.1f;
-				persistent.frameWidthMultiplier = max(persistent.frameWidthMultiplier, 0.2f);
+				persistent.frame_width_multiplier += zoom * 0.1f;
+				persistent.frame_width_multiplier = max(persistent.frame_width_multiplier, 0.2f);
 
-				float newFrameWidth16ms = totalWidth * persistent.frameWidthMultiplier;
-				persistent.callstackLeftPadding = relMouseX - t * newFrameWidth16ms;
+				float new_frame_width16ms = total_width * persistent.frame_width_multiplier;
+				persistent.callstack_left_padding = rel_mouse_x - t * new_frame_width16ms;
 			}
 		}
 
-		ImGui::SetCursorPos(ImVec2(leftPadding, highlightTop + callStackHeight));
+		ImGui::SetCursorPos(ImVec2(left_padding, highlight_top + call_stack_height));
 	}
 }

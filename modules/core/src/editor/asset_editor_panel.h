@@ -60,7 +60,7 @@ namespace era_engine
 		ref<EditorScene> scene = nullptr;
 		main_renderer renderer;
 
-		user_input input = {};
+		UserInput input = {};
 
 		camera_controller controller;
 

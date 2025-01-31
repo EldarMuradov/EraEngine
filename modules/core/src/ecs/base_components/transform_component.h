@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core_api.h"
+
 #include "core/math.h"
 
 #include "ecs/component.h"
@@ -7,7 +9,7 @@
 namespace era_engine
 {
 
-	class TransformComponent final : public Component
+	class ERA_CORE_API TransformComponent final : public Component
 	{
 	public:
 		enum TransformType : uint8_t

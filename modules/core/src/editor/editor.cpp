@@ -3,14 +3,10 @@
 #include "editor/editor.h"
 #include "editor/system_calls.h"
 
-#include "core/builder.h"
 #include "core/cpu_profiling.h"
+#include "core/log.h"
 
 #include "dx/dx_profiling.h"
-
-#include "scene/components.h"
-#include "scene/serialization_yaml.h"
-#include "scene/serialization_binary.h"
 
 #include "animation/animation.h"
 
@@ -29,17 +25,17 @@
 
 #include "imgui/imgui_internal.h"
 
-#include "scripting/script.h"
-#include "scripting/native_scripting_linker.h"
+//#include "scripting/script.h"
+//#include "scripting/native_scripting_linker.h"
 
 #include "ecs/base_components/base_components.h"
 #include "ecs/world.h"
 #include "ecs/rendering/mesh_component.h"
 #include "ecs/editor/entity_editor_utils.h"
 
-#include "physics/core/physics.h"
-#include "physics/body_component.h"
-#include "physics/shape_component.h"
+//#include "physics/core/physics.h"
+//#include "physics/body_component.h"
+//#include "physics/shape_component.h"
 
 #include <fontawesome/list.h>
 
@@ -105,7 +101,7 @@ namespace era_engine
 		template <typename T>
 		void set(T& c)
 		{
-			std::swap(entity.getComponent<T>(), c);
+			std::swap(entity.get_component<T>(), c);
 		}
 
 		Entity entity;
@@ -221,7 +217,7 @@ namespace era_engine
 				rotation = transform->transform.rotation;
 			}
 
-			selectedEntityEulerRotation = quatToEuler(rotation);
+			selectedEntityEulerRotation = quat_to_euler(rotation);
 		}
 	}
 
@@ -241,7 +237,7 @@ namespace era_engine
 		systemInfo = getSystemInfo();
 	}
 
-	bool eeditor::update(const user_input& input, ldr_render_pass* ldrRenderPass, float dt)
+	bool eeditor::update(const UserInput& input, ldr_render_pass* ldrRenderPass, float dt)
 	{
 		CPU_PROFILE_BLOCK("Update editor");
 
@@ -360,15 +356,15 @@ namespace era_engine
 					serializeToFile();
 				}
 
-				if (ImGui::MenuItem(ICON_FA_SAVE "  Build", "Ctrl+B"))
+				/*if (ImGui::MenuItem(ICON_FA_SAVE "  Build", "Ctrl+B"))
 				{
 					struct build_data {} bd;
-					lowPriorityJobQueue.createJob<build_data>([](build_data& data, job_handle)
+					lowPriorityJobQueue.createJob<build_data>([](build_data& data, JobHandle)
 						{
 							if (!era_engine::build::ebuilder::build())
 								LOG_ERROR("Building> Failed to build the game.");
 						}, bd).submitNow();
-				}
+				}*/
 
 				if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN "  Load scene", "Ctrl+O"))
 				{
@@ -403,20 +399,20 @@ namespace era_engine
 					dxProfilerWindowOpen = !dxProfilerWindowOpen;
 				}
 
-				if (ImGui::MenuItem(cpuProfilerWindowOpen ? (ICON_FA_CHART_LINE "  Hide CPU profiler") : (ICON_FA_CHART_LINE "  Show CPU profiler"), nullptr, nullptr, ENABLE_CPU_PROFILING))
+				if (ImGui::MenuItem(cpu_profiler_window_open ? (ICON_FA_CHART_LINE "  Hide CPU profiler") : (ICON_FA_CHART_LINE "  Show CPU profiler"), nullptr, nullptr, ENABLE_CPU_PROFILING))
 				{
-					cpuProfilerWindowOpen = !cpuProfilerWindowOpen;
+					cpu_profiler_window_open = !cpu_profiler_window_open;
 				}
 
 				ImGui::Separator();
 
 #ifdef ENABLE_MESSAGE_LOG
-				if (ImGui::MenuItem(logWindowOpen ? (ICON_FA_CLIPBOARD_LIST "  Hide Console") : (ICON_FA_CLIPBOARD_LIST "  Show Console"), "Ctrl+L", nullptr, 1))
+				if (ImGui::MenuItem(log_window_open ? (ICON_FA_CLIPBOARD_LIST "  Hide Console") : (ICON_FA_CLIPBOARD_LIST "  Show Console"), "Ctrl+L", nullptr, 1))
 #else
-				if (ImGui::MenuItem(logWindowOpen ? (ICON_FA_CLIPBOARD_LIST "  Hide Console") : (ICON_FA_CLIPBOARD_LIST "  Show Console"), "Ctrl+L", nullptr, 0))
+				if (ImGui::MenuItem(log_window_open ? (ICON_FA_CLIPBOARD_LIST "  Hide Console") : (ICON_FA_CLIPBOARD_LIST "  Show Console"), "Ctrl+L", nullptr, 0))
 #endif
 				{
-					logWindowOpen = !logWindowOpen;
+					log_window_open = !log_window_open;
 				}
 
 				ImGui::Separator();
@@ -778,13 +774,13 @@ namespace era_engine
 						ImGui::Text("Create component");
 						ImGui::Separator();
 
-						for (const auto& script : era_engine::dotnet::enative_scripting_linker::scriptTypes)
-						{
-							if (ImGui::MenuItem(script.c_str()))
-							{
-								era_engine::dotnet::enative_scripting_linker::createScript((int)selectedEntity.get_handle(), script.c_str());
-							}
-						}
+						//for (const auto& script : era_engine::dotnet::enative_scripting_linker::scriptTypes)
+						//{
+						//	if (ImGui::MenuItem(script.c_str()))
+						//	{
+						//		era_engine::dotnet::enative_scripting_linker::createScript((int)selectedEntity.get_handle(), script.c_str());
+						//	}
+						//}
 
 						ImGui::EndPopup();
 					}
@@ -808,13 +804,13 @@ namespace era_engine
 		}
 	}
 
-	bool eeditor::handleUserInput(const user_input& input, ldr_render_pass* ldrRenderPass, float dt)
+	bool eeditor::handleUserInput(const UserInput& input, ldr_render_pass* ldrRenderPass, float dt)
 	{
 		ref<World> world = this->scene->get_current_world();
 
 		// Returns true, if the user dragged an object using a gizmo.
 
-		if (input.keyboard['F'].pressEvent && selectedEntity.is_valid())
+		if (input.keyboard['F'].press_event && selectedEntity.is_valid())
 		{
 			bounding_box aabb = getObjectBoundingBox(selectedEntity, true);
 			cameraController.centerCameraOnObject(aabb);
@@ -866,14 +862,14 @@ namespace era_engine
 			{
 				if (gizmo.manipulateTransformation(transform->transform, camera, input, !inputCaptured, ldrRenderPass))
 				{
-					if (auto rb = selectedEntity.get_component_if_exists<physics::DynamicBodyComponent>())
+					/*if (auto rb = selectedEntity.get_component_if_exists<physics::DynamicBodyComponent>())
 					{
 						rb->manual_set_physics_position_and_rotation(transform->transform.position, transform->transform.rotation);
 					}
 					else if (auto rb = selectedEntity.get_component_if_exists<physics::StaticBodyComponent>())
 					{
 						rb->manual_set_physics_position_and_rotation(transform->transform.position, transform->transform.rotation);
-					}
+					}*/
 
 					//if (auto vehicle = physics::getVehicleComponent(selectedEntity))
 					//{
@@ -985,12 +981,12 @@ namespace era_engine
 			}
 			if (!inputCaptured && ImGui::IsKeyDown(key_ctrl) && ImGui::IsKeyPressed('L'))
 			{
-				logWindowOpen = !logWindowOpen;
+				log_window_open = !log_window_open;
 				inputCaptured = true;
 			}
 		}
 
-		if (!inputCaptured && input.mouse.left.clickEvent)
+		if (!inputCaptured && input.mouse.left.click_event)
 		{
 			if (input.keyboard[key_ctrl].down)
 			{
@@ -1454,24 +1450,24 @@ namespace era_engine
 		undoStacks[1].reset();
 		setSelectedEntity({});
 
-		for (auto [entityHandle, rigidbody, transform] : scene->get_current_world()->group(components_group<physics::DynamicBodyComponent, TransformComponent>).each())
-		{
-			rigidbody.manual_set_physics_position_and_rotation(transform.transform.position, transform.transform.rotation);
-		}
+		//for (auto [entityHandle, rigidbody, transform] : scene->get_current_world()->group(components_group<physics::DynamicBodyComponent, TransformComponent>).each())
+		//{
+		//	rigidbody.manual_set_physics_position_and_rotation(transform.transform.position, transform.transform.rotation);
+		//}
 
-		for (auto [entityHandle, rigidbody, transform] : scene->get_current_world()->group(components_group<physics::StaticBodyComponent, TransformComponent>).each())
-		{
-			rigidbody.manual_set_physics_position_and_rotation(transform.transform.position, transform.transform.rotation);
-		}
+		//for (auto [entityHandle, rigidbody, transform] : scene->get_current_world()->group(components_group<physics::StaticBodyComponent, TransformComponent>).each())
+		//{
+		//	rigidbody.manual_set_physics_position_and_rotation(transform.transform.position, transform.transform.rotation);
+		//}
 
-		if (!paused)
-		{
-			app->linker->start();
-		}
-		else
-		{
-			paused = false;
-		}
+		//if (!paused)
+		//{
+		//	app->linker->start();
+		//}
+		//else
+		//{
+		//	paused = false;
+		//}
 	}
 
 	void eeditor::forcePause()
@@ -1485,15 +1481,15 @@ namespace era_engine
 		this->scene->stop();
 		this->scene->environment.forceUpdate(this->scene->sun.direction);
 		setSelectedEntity({});
-		app->linker->reload_src();
-		physics::PhysicsHolder::physics_ref->reset_actors_velocity_and_inertia();
+		//app->linker->reload_src();
+		//physics::PhysicsHolder::physics_ref->reset_actors_velocity_and_inertia();
 		paused = false;
 		this->scene->editor_camera.setPositionAndRotation(vec3(0.0f), quat::identity);
 	}
 
 	void eeditor::visualizePhysics(ldr_render_pass* ldrRenderPass) const
 	{
-		using namespace physx;
+		/*using namespace physx;
 
 		if (!renderPhysicsShapes)
 		{
@@ -1513,7 +1509,7 @@ namespace era_engine
 		{
 			const physx::PxDebugLine& line = rb.getLines()[i];
 			renderLine(physx::createVec3(line.pos0), physx::createVec3(line.pos1), vec4(1.0f), ldrRenderPass);
-		}
+		}*/
 	}
 
 	void eeditor::drawSettings(float dt)
@@ -1612,7 +1608,7 @@ namespace era_engine
 
 				if (ImGui::BeginProperties())
 				{
-					asset_handle handle = (environment.sky) ? environment.sky->handle : asset_handle{};
+					AssetHandle handle = (environment.sky) ? environment.sky->handle : AssetHandle{};
 					if (ImGui::PropertyAssetHandle("Texture source", EDITOR_ICON_IMAGE_HDR, handle, "Make proc"))
 					{
 						if (handle)
@@ -1637,10 +1633,10 @@ namespace era_engine
 					if (tempMode != environment.giMode)
 					{
 						struct change_gi_mode_data { environment_gi_mode mode; environment_gi_mode& destMode; } data{ tempMode, this->scene->environment.giMode };
-						mainThreadJobQueue.createJob<change_gi_mode_data>([](change_gi_mode_data& data, job_handle job)
+						main_thread_job_queue.createJob<change_gi_mode_data>([](change_gi_mode_data& data, JobHandle job)
 							{
 								data.destMode = data.mode;
-							}, data).submitNow();
+							}, data).submit_now();
 					}
 
 					ImGui::EndProperties();
@@ -1718,7 +1714,7 @@ namespace era_engine
 				ImGui::EndTree();
 			}
 
-			if (ImGui::BeginTree("Physics (PhysX)"))
+			/*if (ImGui::BeginTree("Physics (PhysX)"))
 			{
 				if (ImGui::BeginProperties())
 				{
@@ -1755,7 +1751,7 @@ namespace era_engine
 				}
 
 				ImGui::EndTree();
-			}
+			}*/
 
 			if (ImGui::BeginTree("Audio"))
 			{
@@ -1844,7 +1840,7 @@ namespace era_engine
 
 	void editTexture(const char* name, ref<dx_texture>& tex, uint32 loadFlags)
 	{
-		asset_handle asset = {};
+		AssetHandle asset = {};
 		if (tex)
 		{
 			asset = tex->handle;
@@ -1863,7 +1859,7 @@ namespace era_engine
 
 	void editMesh(const char* name, ref<multi_mesh>& mesh, uint32 loadFlags)
 	{
-		asset_handle asset = {};
+		AssetHandle asset = {};
 		if (mesh)
 		{
 			asset = mesh->handle;
@@ -1884,7 +1880,7 @@ namespace era_engine
 	{
 		if (ImGui::BeginProperties())
 		{
-			asset_handle dummy = {};
+			AssetHandle dummy = {};
 
 			editTexture("Albedo", material->albedo, image_load_flags_default);
 			editTexture("Normal", material->normal, image_load_flags_default_noncolor);
@@ -1914,11 +1910,11 @@ namespace era_engine
 	void editSubmeshTransform(trs* transform)
 	{
 		ImGui::Drag("Position", transform->position, 0.1f);
-		vec3 selectedEntityEulerRotation = quatToEuler(transform->rotation);
+		vec3 selectedEntityEulerRotation = quat_to_euler(transform->rotation);
 
 		if (ImGui::Drag("Rotation", selectedEntityEulerRotation, 0.1f))
 		{
-			transform->rotation = eulerToQuat(selectedEntityEulerRotation);
+			transform->rotation = euler_to_quat(selectedEntityEulerRotation);
 		}
 
 		ImGui::Drag("Scale", transform->scale, 0.1f);

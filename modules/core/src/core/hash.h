@@ -14,8 +14,6 @@ inline void hash_combine(size_t& seed, const T& v)
 
 namespace std
 {
-	using namespace era_engine;
-
 	template<>
 	struct hash<vec2>
 	{

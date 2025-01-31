@@ -69,9 +69,9 @@ namespace era_engine
     inline void raytracing_binding_table<shader_data>::allocate()
     {
         totalBindingTableSize = (uint32)
-            (alignTo(sizeof(binding_table_entry), D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT)
-                + alignTo(sizeof(binding_table_entry) * numRayTypes, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT)
-                + alignTo(sizeof(binding_table_entry) * numRayTypes * maxNumHitGroups, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT));
+            (align_to(sizeof(binding_table_entry), D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT)
+                + align_to(sizeof(binding_table_entry) * numRayTypes, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT)
+                + align_to(sizeof(binding_table_entry) * numRayTypes * maxNumHitGroups, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT));
 
         if (!bindingTable)
             bindingTable = _aligned_malloc(totalBindingTableSize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
@@ -79,12 +79,12 @@ namespace era_engine
             bindingTable = _aligned_realloc(bindingTable, totalBindingTableSize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
 
         ASSERT(pipeline->shaderBindingTableDesc.raygenOffset == 0);
-        ASSERT(pipeline->shaderBindingTableDesc.missOffset == alignTo(sizeof(binding_table_entry), D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT));
-        ASSERT(pipeline->shaderBindingTableDesc.hitOffset == alignTo((1 + numRayTypes) * sizeof(binding_table_entry), D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT));
+        ASSERT(pipeline->shaderBindingTableDesc.missOffset == align_to(sizeof(binding_table_entry), D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT));
+        ASSERT(pipeline->shaderBindingTableDesc.hitOffset == align_to((1 + numRayTypes) * sizeof(binding_table_entry), D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT));
 
         raygen = (binding_table_entry*)bindingTable;
-        miss = (binding_table_entry*)alignTo(raygen + 1, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
-        hit = (binding_table_entry*)alignTo(miss + numRayTypes, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+        miss = (binding_table_entry*)align_to(raygen + 1, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+        hit = (binding_table_entry*)align_to(miss + numRayTypes, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
     }
 
     template<typename shader_data>

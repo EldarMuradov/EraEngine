@@ -211,7 +211,7 @@ namespace era_engine
 		cl->setPipelineState(*textureSkyPipeline.pipeline);
 		cl->setGraphicsRootSignature(*textureSkyPipeline.rootSignature);
 
-		cl->setGraphics32BitConstants(SKY_RS_TRANSFORM, sky_transform_cb{ proj * createSkyViewMatrix(view), proj * createSkyViewMatrix(prevFrameView) });
+		cl->setGraphics32BitConstants(SKY_RS_TRANSFORM, sky_transform_cb{ proj * create_sky_view_matrix(view), proj * create_sky_view_matrix(prevFrameView) });
 		cl->setGraphics32BitConstants(SKY_RS_CB, sky_cb{ jitter, prevFrameJitter, skyIntensity });
 		cl->setDescriptorHeapSRV(SKY_RS_TEX, 0, sky);
 
@@ -232,7 +232,7 @@ namespace era_engine
 		cl->setPipelineState(*proceduralSkyPipeline.pipeline);
 		cl->setGraphicsRootSignature(*proceduralSkyPipeline.rootSignature);
 
-		cl->setGraphics32BitConstants(SKY_RS_TRANSFORM, sky_transform_cb{ proj * createSkyViewMatrix(view), proj * createSkyViewMatrix(prevFrameView) });
+		cl->setGraphics32BitConstants(SKY_RS_TRANSFORM, sky_transform_cb{ proj * create_sky_view_matrix(view), proj * create_sky_view_matrix(prevFrameView) });
 		cl->setGraphics32BitConstants(SKY_RS_CB, sky_cb{ jitter, prevFrameJitter, skyIntensity, sunDirection });
 
 		cl->drawCubeTriangleStrip();
@@ -1265,7 +1265,7 @@ namespace era_engine
 
 			sss_cb cb;
 			cb.invDimensions = vec2(1.f / (float)sssCalculationTexture->width, 1.f / (float)sssCalculationTexture->height);
-			cb.lightDirection = -normalize(transformDirection(view, sunDirection));
+			cb.lightDirection = -normalize(transform_direction(view, sunDirection));
 			cb.rayDistance = settings.rayDistance;
 			cb.numSteps = settings.numSteps;
 			cb.thickness = settings.thickness;

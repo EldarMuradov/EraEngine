@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core_api.h"
+
 #include "ecs/reflection.h"
 
 #ifndef ECS_VALIDATE
@@ -22,11 +24,9 @@ namespace era_engine
 {
 	class World;
 
-	entt::registry& get_registry(World* _world);
-
 	extern std::unordered_map<const char*, World*> worlds;
 
-	class IReleasable
+	class ERA_CORE_API IReleasable
 	{
 	public:
 		IReleasable() = default;
@@ -37,7 +37,7 @@ namespace era_engine
 		ERA_REFLECT
 	};
 
-	class Entity final
+	class ERA_CORE_API Entity final
 	{
 	public:
 		using Handle = entt::entity;
@@ -49,6 +49,7 @@ namespace era_engine
 		{
 			Entity::Handle entity_handle = Entity::NullHandle;
 			World* world = nullptr;
+			entt::registry* native_registry = nullptr;
 		};
 
 		ERA_REFLECT
@@ -77,7 +78,7 @@ namespace era_engine
 		{
 			if (!has_component<Component_>())
 			{
-				get_registry(internal_data->world).emplace_or_replace<Component_>(internal_data->entity_handle, internal_data, std::forward<Args_>(a)...);
+				internal_data->native_registry->emplace_or_replace<Component_>(internal_data->entity_handle, internal_data, std::forward<Args_>(a)...);
 			}
 			return *this;
 		}
@@ -85,7 +86,7 @@ namespace era_engine
 		template <typename Component_>
 		uint32 get_component_index() const
 		{
-			auto& s = get_registry(internal_data->world).storage<Component_>();
+			auto& s = internal_data->native_registry->storage<Component_>();
 			return (uint32)s.index(internal_data->entity_handle);
 		}
 
@@ -96,38 +97,40 @@ namespace era_engine
 			ASSERT(component != nullptr);
 
 			component->release();
-			get_registry(internal_data->world).remove<Component_>(internal_data->entity_handle);
+			internal_data->native_registry->remove<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
 		bool has_component() const
 		{
-			return get_registry(internal_data->world).any_of<Component_>(internal_data->entity_handle);
+			return internal_data->native_registry->any_of<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
 		Component_& get_component()
 		{
-			return get_registry(internal_data->world).get<Component_>(internal_data->entity_handle);
+			return internal_data->native_registry->get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
 		const Component_& get_component() const
 		{
-			return get_registry(internal_data->world).get<Component_>(internal_data->entity_handle);
+			return internal_data->native_registry->get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
 		Component_* get_component_if_exists()
 		{
-			return get_registry(internal_data->world).try_get<Component_>(internal_data->entity_handle);
+			return internal_data->native_registry->try_get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
 		const Component_* get_component_if_exists() const
 		{
-			return get_registry(internal_data->world).try_get<Component_>(internal_data->entity_handle);
+			return internal_data->native_registry->try_get<Component_>(internal_data->entity_handle);
 		}
+
+		weakref<Entity::EcsData> get_data_weakref() const;
 
 	private:
 		ref<EcsData> internal_data = nullptr;
@@ -136,7 +139,7 @@ namespace era_engine
 		friend struct eeditor;
 	};
 
-	struct EntityNode
+	struct ERA_CORE_API EntityNode
 	{
 		EntityNode() = default;
 		~EntityNode() = default;

@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "core/memory.h"
 
-#include "physics/bounding_volumes.h"
+#include "core/bounding_volumes.h"
 
 #include "animation/animation.h"
 
@@ -88,7 +90,7 @@ namespace era_engine
 			center = (posA + posB) * 0.5f;
 			height = length(posA - posB);
 			this->radius = radius;
-			rotation = rotateFromTo(vec3(0.f, 1.f, 0.f), posB - posA);
+			rotation = rotate_from_to(vec3(0.f, 1.f, 0.f), posB - posA);
 		}
 
 		vec3 center = 0.f;
@@ -156,7 +158,7 @@ namespace era_engine
 		if (meshFlags & mesh_creation_flags_with_uvs) { size += sizeof(vec2); }
 		if (meshFlags & mesh_creation_flags_with_normals) { size += sizeof(vec3); }
 		if (meshFlags & mesh_creation_flags_with_tangents) { size += sizeof(vec3); }
-		if (meshFlags & mesh_creation_flags_with_skin) { size += sizeof(era_engine::animation::skinning_weights); }
+		if (meshFlags & mesh_creation_flags_with_skin) { size += sizeof(era_engine::animation::SkinningWeights); }
 		if (meshFlags & mesh_creation_flags_with_colors) { size += sizeof(uint32); }
 		return size;
 	}
@@ -180,7 +182,7 @@ namespace era_engine
 		void pushTorus(const torus_mesh_desc& desc, bool flipWindingOrder = false);
 		void pushMace(const mace_mesh_desc& desc, bool flipWindingOrder = false);
 
-		void pushMesh(const struct submesh_asset& mesh, float scale, bounding_box* aabb = 0);
+		void pushMesh(const struct SubmeshAsset& mesh, float scale, bounding_box* aabb = 0);
 
 		submesh_info endSubmesh();
 
@@ -198,9 +200,9 @@ namespace era_engine
 	private:
 		std::tuple<vec3*, uint8*, uint8*, uint32> beginPrimitive(uint32 numVertices, uint32 numTriangles);
 
-		eallocator positionArena;
-		eallocator othersArena;
-		eallocator indexArena;
+		Allocator positionArena;
+		Allocator othersArena;
+		Allocator indexArena;
 
 		uint32 vertexFlags;
 		mesh_index_type indexType;

@@ -4,10 +4,10 @@
 
 namespace era_engine
 {
-	struct asset_handle;
+	struct AssetHandle;
 
-	NODISCARD asset_handle getAssetHandleFromPath(const fs::path& path);
-	NODISCARD fs::path getPathFromAssetHandle(asset_handle handle);
+	NODISCARD AssetHandle getAssetHandleFromPath(const fs::path& path);
+	NODISCARD fs::path getPathFromAssetHandle(AssetHandle handle);
 
 	void initializeFileRegistry();
 }

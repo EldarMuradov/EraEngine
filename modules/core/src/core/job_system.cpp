@@ -6,18 +6,18 @@
 
 namespace era_engine
 {
-    void job_queue::initialize(uint32 numThreads, uint32 threadOffset, int threadPriority, const wchar* description)
+    void JobQueue::initialize(uint32 num_threads, uint32 thread_offset, int thread_priority, const wchar* description)
     {
         queue = moodycamel::ConcurrentQueue<int32>(capacity);
 
-        for (uint32 i = 0; i < numThreads; ++i)
+        for (uint32 i = 0; i < num_threads; ++i)
         {
-            std::thread thread([this, i]() { threadFunc(i); });
+            std::thread thread([this, i]() { thread_func(i); });
 
             HANDLE handle = (HANDLE)thread.native_handle();
-            SetThreadPriority(handle, threadPriority);
+            SetThreadPriority(handle, thread_priority);
 
-            uint64 affinityMask = 1ull << (i + threadOffset);
+            uint64 affinityMask = 1ull << (i + thread_offset);
             SetThreadAffinityMask(handle, affinityMask);
             SetThreadDescription(handle, description);
 
@@ -25,12 +25,12 @@ namespace era_engine
         }
     }
 
-    void job_queue::addContinuation(int32 first, job_handle second)
+    void JobQueue::add_continuation(int32 first, JobHandle second)
     {
-        job_queue_entry& firstJob = allJobs[first];
+        JobQueueEntry& first_job = all_jobs[first];
         //ASSERT(firstJob.continuation.index == -1);
 
-        int32 unfinished = firstJob.numUnfinishedJobs++;
+        int32 unfinished = first_job.num_unfinished_jobs++;
         if (unfinished == 0)
         {
             // First job was finished before adding continuation -> just submit second.
@@ -39,64 +39,64 @@ namespace era_engine
         else
         {
             // First job hadn't finished before -> add second as continuation and then finish first (which decrements numUnfinished again).
-            firstJob.continuation = second;
-            finishJob(first);
+            first_job.continuation = second;
+            finish_job(first);
         }
     }
 
-    void job_queue::submit(int32 handle)
+    void JobQueue::submit(int32 handle)
     {
         if (handle != -1)
         {
             while (!queue.try_enqueue(handle))
             {
-                executeNextJob();
+                execute_next_job();
             }
 
-            ++runningJobs;
+            ++running_jobs;
 
-            wakeCondition.notify_one();
+            wake_condition.notify_one();
         }
     }
 
-    void job_queue::waitForCompletion()
+    void JobQueue::wait_for_completion()
     {
-        while (runningJobs)
+        while (running_jobs)
         {
-            executeNextJob();
+            execute_next_job();
         }
     }
 
-    void job_queue::waitForCompletion(int32 handle)
+    void JobQueue::wait_for_completion(int32 handle)
     {
         if (handle != -1)
         {
-            job_queue_entry& job = allJobs[handle];
+            JobQueueEntry& job = all_jobs[handle];
 
-            while (job.numUnfinishedJobs > 0)
+            while (job.num_unfinished_jobs > 0)
             {
-                executeNextJob();
+                execute_next_job();
             }
         }
     }
 
-    int32 job_queue::allocateJob()
+    int32 JobQueue::allocate_job()
     {
-        return (int32)(nextFreeJob++ & indexMask);
+        return (int32)(next_free_job++ & index_mask);
     }
 
-    void job_queue::finishJob(int32 handle)
+    void JobQueue::finish_job(int32 handle)
     {
-        job_queue_entry& job = allJobs[handle];
-        int32 numUnfinishedJobs = --job.numUnfinishedJobs;
-        ASSERT(numUnfinishedJobs >= 0);
-        if (numUnfinishedJobs == 0)
+        JobQueueEntry& job = all_jobs[handle];
+        int32 num_unfinished_jobs = --job.num_unfinished_jobs;
+        ASSERT(num_unfinished_jobs >= 0);
+        if (num_unfinished_jobs == 0)
         {
-            --runningJobs;
+            --running_jobs;
 
             if (job.parent != -1)
             {
-                finishJob(job.parent);
+                finish_job(job.parent);
             }
 
             if (job.continuation.index != -1)
@@ -106,15 +106,15 @@ namespace era_engine
         }
     }
 
-    bool job_queue::executeNextJob()
+    bool JobQueue::execute_next_job()
     {
         int32 handle = -1;
         if (queue.try_dequeue(handle))
         {
-            job_queue_entry& job = allJobs[handle];
-            job.function(job.templatedFunction, job.data, { handle, this });
+            JobQueueEntry& job = all_jobs[handle];
+            job.function(job.templated_function, job.data, { handle, this });
 
-            finishJob(handle);
+            finish_job(handle);
 
             return true;
         }
@@ -122,54 +122,54 @@ namespace era_engine
         return false;
     }
 
-    void job_queue::threadFunc(int32 threadIndex)
+    void JobQueue::thread_func(int32 thread_index)
     {
         while (true)
         {
-            if (!executeNextJob())
+            if (!execute_next_job())
             {
-                std::unique_lock<std::mutex> lock(wakeMutex);
-                wakeCondition.wait(lock);
+                std::unique_lock<std::mutex> lock(wake_mutex);
+                wake_condition.wait(lock);
             }
         }
     }
 
-    void job_handle::submitNow()
+    void JobHandle::submit_now()
     {
         queue->submit(index);
     }
 
-    void job_handle::submitAfter(job_handle before)
+    void JobHandle::submit_after(JobHandle before)
     {
-        before.queue->addContinuation(before.index, *this);
+        before.queue->add_continuation(before.index, *this);
     }
 
-    void job_handle::waitForCompletion()
+    void JobHandle::wait_for_completion()
     {
-        queue->waitForCompletion(index);
+        queue->wait_for_completion(index);
     }
 
-    job_queue highPriorityJobQueue;
-    job_queue lowPriorityJobQueue;
-    job_queue mainThreadJobQueue;
+    JobQueue high_priority_job_queue;
+    JobQueue low_priority_job_queue;
+    JobQueue main_thread_job_queue;
 
-    void initializeJobSystem()
+    void initialize_job_system()
     {
         HANDLE handle = GetCurrentThread();
         SetThreadAffinityMask(handle, 1);
         SetThreadPriority(handle, THREAD_PRIORITY_HIGHEST);
         CloseHandle(handle);
 
-        uint32 numHardwareThreads = std::thread::hardware_concurrency();
+        uint32 num_hardware_threads = std::thread::hardware_concurrency();
 
-        highPriorityJobQueue.initialize(numHardwareThreads, 1, THREAD_PRIORITY_NORMAL, L"High priority worker");
-        lowPriorityJobQueue.initialize(numHardwareThreads, 5, THREAD_PRIORITY_BELOW_NORMAL, L"Low priority worker");
-        mainThreadJobQueue.initialize(0, 0, 0, 0);
+        high_priority_job_queue.initialize(num_hardware_threads, 1, THREAD_PRIORITY_NORMAL, L"High priority worker");
+        low_priority_job_queue.initialize(num_hardware_threads, 5, THREAD_PRIORITY_BELOW_NORMAL, L"Low priority worker");
+        main_thread_job_queue.initialize(0, 0, 0, 0);
     }
 
-    void executeMainThreadJobs()
+    void execute_main_thread_jobs()
     {
-        mainThreadJobQueue.waitForCompletion();
+        main_thread_job_queue.wait_for_completion();
     }
 
 }

@@ -1,10 +1,12 @@
 #pragma once
 
+#include "core_api.h"
+
 #include "ecs/component.h"
 
 namespace era_engine
 {
-	class ChildComponent final : public Component
+	class ERA_CORE_API ChildComponent final : public Component
 	{
 	public:
 		ChildComponent(ref<Entity::EcsData> _data, weakref<Entity::EcsData> _parent);

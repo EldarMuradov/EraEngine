@@ -52,11 +52,11 @@ namespace era_engine
 		uint32 requestedNumMipLevels;
 		uint32 numMipLevels;
 
-		asset_handle handle;
+		AssetHandle handle;
 		uint32 flags = 0;
 
-		std::atomic<asset_load_state> loadState = asset_loaded;
-		job_handle loadJob;
+		std::atomic<AssetLoadState> loadState = AssetLoadState::LOADED;
+		JobHandle loadJob;
 	};
 
 	struct dx_texture_atlas
@@ -147,9 +147,9 @@ namespace era_engine
 	// This means you should keep a reference to your textures yourself and not call this every frame.
 
 	NODISCARD ref<dx_texture> loadTextureFromFile(const fs::path& filename, uint32 flags = image_load_flags_default);
-	NODISCARD ref<dx_texture> loadTextureFromHandle(asset_handle handle, uint32 flags = image_load_flags_default);
-	NODISCARD ref<dx_texture> loadTextureFromFileAsync(const fs::path& filename, uint32 flags = image_load_flags_default, job_handle parentJob = {});
-	NODISCARD ref<dx_texture> loadTextureFromHandleAsync(asset_handle handle, uint32 flags = image_load_flags_default, job_handle parentJob = {});
+	NODISCARD ref<dx_texture> loadTextureFromHandle(AssetHandle handle, uint32 flags = image_load_flags_default);
+	NODISCARD ref<dx_texture> loadTextureFromFileAsync(const fs::path& filename, uint32 flags = image_load_flags_default, JobHandle parentJob = {});
+	NODISCARD ref<dx_texture> loadTextureFromHandleAsync(AssetHandle handle, uint32 flags = image_load_flags_default, JobHandle parentJob = {});
 
 	NODISCARD ref<dx_texture> loadTextureFromMemory(const void* ptr, uint32 size, image_format imageFormat, const fs::path& cacheFilename, uint32 flags = image_load_flags_default);
 	NODISCARD ref<dx_texture> loadVolumeTextureFromDirectory(const fs::path& dirname, uint32 flags = image_load_flags_compress | image_load_flags_cache_to_dds | image_load_flags_noncolor);

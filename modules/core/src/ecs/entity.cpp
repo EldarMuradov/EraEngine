@@ -2,7 +2,7 @@
 #include "ecs/world.h"
 #include "ecs/component.h"
 
-#include "ecs/editor/editor_scene.h"
+#include "core/sync.h"
 
 #include <rttr/registration>
 
@@ -25,11 +25,6 @@ namespace era_engine
 
 	void IReleasable::release()
 	{
-	}
-
-	entt::registry& get_registry(World* _world)
-	{
-		return _world->get_registry();
 	}
 
 	Entity::Entity(const Entity& _entity) noexcept
@@ -86,6 +81,11 @@ namespace era_engine
 			   internal_data->world != nullptr;
 	}
 
+	weakref<Entity::EcsData> Entity::get_data_weakref() const
+	{
+		return weakref<EcsData>(internal_data);
+	}
+
 	World* Entity::get_world() const
 	{
 		return internal_data->world;
@@ -98,7 +98,7 @@ namespace era_engine
 
 	void EntityContainer::emplace_pair(Entity::Handle parent, Entity::Handle child)
 	{
-		lock l(sync);
+		Lock l(sync);
 
 		if (container.find(parent) == container.end())
 		{
@@ -110,7 +110,7 @@ namespace era_engine
 
 	void EntityContainer::erase(Entity::Handle parent)
 	{
-		lock l(sync);
+		Lock l(sync);
 
 		if (container.find(parent) == container.end())
 		{
@@ -122,7 +122,7 @@ namespace era_engine
 
 	void EntityContainer::erase_pair(Entity::Handle parent, Entity::Handle child)
 	{
-		lock l(sync);
+		Lock l(sync);
 
 		if (container.find(parent) == container.end())
 		{

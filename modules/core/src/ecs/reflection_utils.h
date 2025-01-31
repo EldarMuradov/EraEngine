@@ -1,8 +1,10 @@
 #pragma once
 
+#include "core_api.h"
+
 namespace era_engine
 {
-	class ReflectionUtils final
+	class ERA_CORE_API ReflectionUtils final
 	{
 		ReflectionUtils() = delete;
 	public:

@@ -4,6 +4,8 @@
 
 namespace era_engine::update_types
 {
+	static inline UpdateGroup INPUT = UpdateGroup("INPUT", UpdateType::NORMAL);
+
 	static inline UpdateGroup BEGIN = UpdateGroup("BEGIN", UpdateType::NORMAL);
 
 	static inline UpdateGroup BEFORE_PHYSICS = UpdateGroup("BEFORE_PHYSICS", UpdateType::FIXED);

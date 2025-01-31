@@ -44,7 +44,7 @@ namespace fs = std::filesystem;
 #include <iomanip>
 
 #define RELEASE_PTR(ptr) if(ptr) { delete ptr; ptr = nullptr; }
-#define RELEASE_ARRAY_PTR(arrayPtr) if(arrayPtr) { delete[] arrayPtr; arrayPtr = nullptr; } 
+#define RELEASE_ARRAY_PTR(array_ptr) if(array_ptr) { delete[] array_ptr; array_ptr = nullptr; } 
 
 #define SAFE_RELEASE(ptr)   do { if(ptr) { (ptr)->Release(); (ptr) = NULL; } } while(false)
 
@@ -105,7 +105,7 @@ NODISCARD constexpr inline auto max(T a, T b)
 
 template <auto V> static constexpr auto force_consteval = V;
 
-static void checkResultInternal(HRESULT hr, const char* file, int32 line)
+static void check_result_internal(HRESULT hr, const char* file, int32 line)
 {
 	if (FAILED(hr))
 	{
@@ -129,7 +129,4 @@ static void checkResultInternal(HRESULT hr, const char* file, int32 line)
 #define setBit(mask, bit) (mask) |= (1 << (bit))
 #define unsetBit(mask, bit) (mask) ^= (1 << (bit))
 
-#define checkResult(hr) checkResultInternal(hr, __FILE__, __LINE__)
-
-#include "../../modules/core/src/core/sync.h"
-#include "../../modules/core/src/core/log.h"
+#define checkResult(hr) check_result_internal(hr, __FILE__, __LINE__)

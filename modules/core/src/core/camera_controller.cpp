@@ -26,7 +26,7 @@ namespace era_engine
 		return true;
 	}
 
-	bool camera_controller::update(const user_input& input, uint32 viewportWidth, uint32 viewportHeight, float dt)
+	bool camera_controller::update(const UserInput& input, uint32 viewportWidth, uint32 viewportHeight, float dt)
 	{
 		const float CAMERA_MOVEMENT_SPEED = 8.f;
 		const float CAMERA_SENSITIVITY = 4.f;

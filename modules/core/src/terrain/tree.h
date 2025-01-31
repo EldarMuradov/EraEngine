@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "core_api.h"
 #include "core/job_system.h"
 
 #include "geometry/mesh.h"
@@ -13,12 +14,12 @@
 
 namespace era_engine
 {
-	struct tree_settings
+	struct ERA_CORE_API tree_settings
 	{
 		float bendStrength;
 	};
 
-	class TreeComponent : public Component
+	class ERA_CORE_API TreeComponent : public Component
 	{
 	public:
 		TreeComponent() = default;
@@ -36,8 +37,8 @@ namespace era_engine
 	void initializeTreePipelines();
 
 	ref<multi_mesh> loadTreeMeshFromFile(const fs::path& sceneFilename);
-	ref<multi_mesh> loadTreeMeshFromHandle(asset_handle handle);
+	ref<multi_mesh> loadTreeMeshFromHandle(AssetHandle handle);
 
-	ref<multi_mesh> loadTreeMeshFromFileAsync(const fs::path& sceneFilename, job_handle parentJob = {});
-	ref<multi_mesh> loadTreeMeshFromHandleAsync(asset_handle handle, job_handle parentJob = {});
+	ref<multi_mesh> loadTreeMeshFromFileAsync(const fs::path& sceneFilename, JobHandle parentJob = {});
+	ref<multi_mesh> loadTreeMeshFromHandleAsync(AssetHandle handle, JobHandle parentJob = {});
 }

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "ecs/component.h"
 
 #include "rendering/render_pass.h"
@@ -10,7 +12,7 @@
 
 namespace era_engine
 {
-	struct grass_settings
+	struct ERA_CORE_API grass_settings
 	{
 		static inline bool depthPrepass = true;
 
@@ -25,7 +27,7 @@ namespace era_engine
 		float cullTransitionDistance = 50.f;
 	};
 
-	class GrassComponent final : public Component
+	class ERA_CORE_API GrassComponent final : public Component
 	{
 	public:
 		GrassComponent() = default;

@@ -2,6 +2,8 @@
 
 #include "particles/debris_particle_system.h"
 
+#include "core/log.h"
+
 #include "dx/dx_pipeline.h"
 #include "dx/dx_profiling.h"
 

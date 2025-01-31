@@ -6,17 +6,17 @@
 #include "core/system_info.h"
 #include "core/imgui.h"
 
-#include "editor/editor_icons.h"
+#include "core/editor_icons.h"
 #include "editor/undo_stack.h"
 #include "editor/transformation_gizmo.h"
 #include "editor/asset_editor_panel.h"
 
 #include "rendering/main_renderer.h"
 
-#include "scene/scene.h"
 #include "ecs/editor/editor_scene.h"
 
 #include "asset/file_registry.h"
+#include "dx/dx_texture.h"
 
 namespace era_engine
 {
@@ -26,7 +26,7 @@ namespace era_engine
 	{
 		void initialize(ref<EditorScene> _scene, main_renderer* _renderer, editor_panels* _editorPanels);
 
-		bool update(const user_input& input, ldr_render_pass* ldrRenderPass, float dt);
+		bool update(const UserInput& input, ldr_render_pass* ldrRenderPass, float dt);
 
 		void render(ldr_render_pass* ldrRenderPass, float dt);
 
@@ -49,7 +49,7 @@ namespace era_engine
 		bool drawMainMenuBar();
 		bool drawSceneHierarchy();
 		void renderChilds(Entity& entity);
-		bool handleUserInput(const user_input& input, ldr_render_pass* ldrRenderPass, float dt);
+		bool handleUserInput(const UserInput& input, ldr_render_pass* ldrRenderPass, float dt);
 		bool drawEntityCreationPopup();
 
 		void updateSelectedEntityUIRotation();

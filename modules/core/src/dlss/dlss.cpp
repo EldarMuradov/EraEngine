@@ -5,6 +5,7 @@
 #include "dx/dx_command_list.h"
 
 #include "core/project.h"
+#include "core/log.h"
 
 #include "rendering/main_renderer.h"
 

@@ -18,7 +18,7 @@ namespace era_engine
         return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
     }
 
-    static constexpr std::array<uint8, 512> initializePerlin()
+    static constexpr std::array<uint8, 512> initialize_perlin()
     {
         constexpr uint8 permutation[] =
         {
@@ -45,9 +45,9 @@ namespace era_engine
         return result;
     }
 
-    static const std::array<uint8, 512> p = initializePerlin();
+    static const std::array<uint8, 512> p = initialize_perlin();
 
-    NODISCARD float perlinNoise(float x, float y, float z)
+    float perlin_noise(float x, float y, float z)
     {
         float flooredX = floor(x);
         float flooredY = floor(y);

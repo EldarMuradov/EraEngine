@@ -6,14 +6,14 @@
 
 namespace era_engine
 {
-	void generateNormalsAndTangents(std::vector<submesh_asset>& submeshes, uint32 flags)
+	void generateNormalsAndTangents(std::vector<SubmeshAsset>& submeshes, uint32 flags)
 	{
 		if (flags & mesh_flag_gen_tangents)
 		{
 			flags |= mesh_flag_gen_normals;
 		}
 
-		for (submesh_asset& sub : submeshes)
+		for (SubmeshAsset& sub : submeshes)
 		{
 			if (sub.normals.empty() && flags & mesh_flag_gen_normals)
 			{
@@ -89,14 +89,14 @@ namespace era_engine
 					printf("Mesh has no UVs. Generating suboptimal tangents.\n");
 					for (uint32 i = 0; i < (uint32)sub.positions.size(); ++i)
 					{
-						sub.tangents[i] = getTangent(sub.normals[i]);
+						sub.tangents[i] = get_tangent(sub.normals[i]);
 					}
 				}
 			}
 		}
 	}
 
-	void generateNormalsAndTangents(ref<submesh_asset> submesh, uint32 flags)
+	void generateNormalsAndTangents(ref<SubmeshAsset> submesh, uint32 flags)
 	{
 		if (flags & mesh_flag_gen_tangents)
 		{
@@ -178,13 +178,13 @@ namespace era_engine
 				printf("Mesh has no UVs. Generating suboptimal tangents.\n");
 				for (uint32 i = 0; i < (uint32)submesh->positions.size(); ++i)
 				{
-					submesh->tangents[i] = getTangent(submesh->normals[i]);
+					submesh->tangents[i] = get_tangent(submesh->normals[i]);
 				}
 			}
 		}
 	}
 
-	void per_material::addTriangles(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals, const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<era_engine::animation::skinning_weights>& skins, int32 firstIndex, int32 faceSize, std::vector<submesh_asset>& outSubmeshes)
+	void per_material::addTriangles(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals, const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<era_engine::animation::SkinningWeights>& skins, int32 firstIndex, int32 faceSize, std::vector<SubmeshAsset>& outSubmeshes)
 	{
 		if (faceSize < 3)
 			return;
@@ -214,7 +214,7 @@ namespace era_engine
 		}
 	}
 
-	void per_material::flush(std::vector<submesh_asset>& outSubmeshes)
+	void per_material::flush(std::vector<SubmeshAsset>& outSubmeshes)
 	{
 		if (vertexToIndex.size() > 0)
 		{
@@ -223,14 +223,14 @@ namespace era_engine
 		}
 	}
 
-	per_material::add_vertex_result per_material::addVertex(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals, const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<era_engine::animation::skinning_weights>& skins, int32 index)
+	per_material::add_vertex_result per_material::addVertex(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals, const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<era_engine::animation::SkinningWeights>& skins, int32 index)
 	{
 		vec3 position = positions[index];
 		vec2 uv = !uvs.empty() ? uvs[index] : vec2(0.f, 0.f);
 		vec3 normal = !normals.empty() ? normals[index] : vec3(0.f, 0.f, 0.f);
 		vec3 tangent = !tangents.empty() ? tangents[index] : vec3(0.f, 0.f, 0.f);
 		uint32 color = !colors.empty() ? colors[index] : 0;
-		animation::skinning_weights skin = !skins.empty() ? skins[index] : animation::skinning_weights{};
+		animation::SkinningWeights skin = !skins.empty() ? skins[index] : animation::SkinningWeights{};
 
 		full_vertex vertex = { position, uv, normal, tangent, color, skin, };
 		auto it = vertexToIndex.find(vertex);

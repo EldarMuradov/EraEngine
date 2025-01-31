@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "dx/dx.h"
 #include "dx/dx_upload_buffer.h"
 #include "dx/dx_dynamic_descriptor_heap.h"
@@ -13,7 +15,7 @@
 
 namespace era_engine
 {
-	struct clear_rect
+	struct ERA_CORE_API clear_rect
 	{
 		uint32 x, y, width, height;
 	};

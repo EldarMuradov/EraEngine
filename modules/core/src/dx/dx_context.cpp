@@ -10,7 +10,7 @@
 
 #include "dlss/dlss.h"
 
-#include <d3d12memoryallocator/D3D12MemAlloc.cpp>
+#include <dx/D3D12MemAlloc.cpp>
 
 extern "C"
 {
@@ -357,25 +357,25 @@ namespace era_engine
 
 	void dx_context::retire(texture_grave&& texture)
 	{
-		lock lock{ mutex };
+		Lock lock{ mutex };
 		textureGraveyard[bufferedFrameID].push_back(std::move(texture));
 	}
 
 	void dx_context::retire(buffer_grave&& buffer)
 	{
-		lock lock{ mutex };
+		Lock lock{ mutex };
 		bufferGraveyard[bufferedFrameID].push_back(std::move(buffer));
 	}
 
 	void dx_context::retire(dx_object obj)
 	{
-		lock lock{ mutex };
+		Lock lock{ mutex };
 		objectGraveyard[bufferedFrameID].push_back(obj);
 	}
 
 	void dx_context::retire(D3D12MA::Allocation* allocation)
 	{
-		lock lock{ mutex };
+		Lock lock{ mutex };
 		allocationGraveyard[bufferedFrameID].push_back(allocation);
 	}
 
@@ -399,7 +399,7 @@ namespace era_engine
 		if (!result)
 		{
 			result = new dx_command_list(queue.commandListType);
-			atomicIncrement(queue.totalNumCommandLists);
+			atomic_increment(queue.totalNumCommandLists);
 		}
 
 #if ENABLE_DX_PROFILING
@@ -456,9 +456,9 @@ namespace era_engine
 		commandList->lastExecutionFenceValue = fenceValue;
 
 		{
-			lock lock{ queue.commandListMutex };
+			Lock lock{ queue.commandListMutex };
 			enqueueRunningCommandList(queue, commandList);
-			atomicIncrement(queue.numRunningCommandLists);
+			atomic_increment(queue.numRunningCommandLists);
 		}
 
 
@@ -487,12 +487,12 @@ namespace era_engine
 		}
 
 		{
-			lock lock{ queue.commandListMutex };
+			Lock lock{ queue.commandListMutex };
 			for (uint32 i = 0; i < count; ++i)
 			{
 				enqueueRunningCommandList(queue, commandLists[i]);
 			}
-			atomicAdd(queue.numRunningCommandLists, count);
+			atomic_add(queue.numRunningCommandLists, count);
 		}
 
 		return fenceValue;
@@ -557,7 +557,7 @@ namespace era_engine
 	{
 		this->frameID = frameID;
 
-		lock lock{ mutex };
+		Lock lock{ mutex };
 		bufferedFrameID = (uint32)(frameID % NUM_BUFFERED_FRAMES);
 
 #if ENABLE_DX_PROFILING

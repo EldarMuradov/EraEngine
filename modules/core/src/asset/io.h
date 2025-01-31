@@ -2,34 +2,36 @@
 
 #pragma once
 
+#include "core_api.h"
+
 namespace era_engine
 {
-	struct entire_file
+	struct ERA_CORE_API EntireFile
 	{
 		template <typename T>
-		NODISCARD T* consume(uint32 count = 1)
+		T* consume(uint32 count = 1)
 		{
 			uint32 readSize = sizeof(T) * count;
-			if (readSize > size - readOffset)
+			if (readSize > size - read_offset)
 			{
 				return 0;
 			}
 
-			T* result = (T*)(content + readOffset);
-			readOffset += readSize;
+			T* result = (T*)(content + read_offset);
+			read_offset += readSize;
 			return result;
 		}
 
 		uint8* content;
 		uint64 size;
-		uint64 readOffset;
+		uint64 read_offset;
 	};
 
-	NODISCARD entire_file loadFile(const fs::path& path);
+	EntireFile load_file(const fs::path& path);
 
-	void freeFile(entire_file file);
+	void free_file(const EntireFile& file);
 
-	struct sized_string
+	struct ERA_CORE_API sized_string
 	{
 		sized_string() : str(0), length(0) {}
 		sized_string(const char* str, uint32 length) : str(str), length(length) {}
@@ -44,7 +46,7 @@ namespace era_engine
 		return a.length == b.length && strncmp(a.str, b.str, a.length) == 0;
 	}
 
-	NODISCARD inline std::string nameToString(sized_string str)
+	inline std::string name_to_string(sized_string str)
 	{
 		std::string name;
 		name.reserve(str.length);
@@ -57,19 +59,19 @@ namespace era_engine
 			name.push_back(str.str[j]);
 		}
 
-		size_t posOfFirstOr = name.find_last_of('|');
-		if (posOfFirstOr != std::string::npos)
+		size_t pos_of_first_or = name.find_last_of('|');
+		if (pos_of_first_or != std::string::npos)
 		{
-			name = name.substr(posOfFirstOr + 1);
+			name = name.substr(pos_of_first_or + 1);
 		}
 
 		return name;
 	}
 
-	NODISCARD inline std::string relativeFilepath(sized_string str, const fs::path& scenePath)
+	inline std::string relative_filepath(sized_string str, const fs::path& scene_path)
 	{
 		fs::path p = std::string(str.str, str.length);
-		fs::path abs = (p.is_absolute()) ? p : scenePath.parent_path() / p;
+		fs::path abs = (p.is_absolute()) ? p : scene_path.parent_path() / p;
 		fs::path rel = fs::relative(abs, fs::current_path());
 		return rel.string();
 	}
