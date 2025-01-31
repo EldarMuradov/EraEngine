@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include "dx/dx.h"
 #include "core/math.h"
-#include "foundation/PxVec3.h"
+
+#include "dx/dx_command_list.h"
+#include "dx/dx_texture.h"
 
 #define IM_ASSERT(condition) ASSERT(condition)
 #include <imgui/imgui.h>
@@ -25,7 +26,7 @@ namespace era_engine
 	LRESULT handleImGuiInput(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 	struct dx_texture;
-	struct asset_handle;
+	struct AssetHandle;
 
 	enum imgui_icon
 	{
@@ -96,8 +97,8 @@ namespace ImGui
 
 	void PopupOkButton(uint32 width = 120);
 
-	bool AssetHandle(const char* label, const char* type, asset_handle& asset, const char* clearText = 0);
-	bool TextureAssetHandle(const char* label, const char* type, asset_handle& asset,
+	bool AssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const char* clearText = 0);
+	bool TextureAssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset,
 		const ref<dx_texture>& texture, uint32 width = 0, uint32 height = 0, ImVec2 uv0 = ImVec2(0.f, 0.f), ImVec2 uv1 = ImVec2(1.f, 1.f), const char* clearText = 0);
 
 	bool Drag(const char* label, float& f, float speed = 1.f, float min = -FLT_MAX, float max = FLT_MAX, const char* format = "%.3f");
@@ -166,8 +167,8 @@ namespace ImGui
 
 	bool PropertyInputText(const char* label, char* buffer, uint32 bufferSize, bool disableInput = false);
 
-	bool PropertyAssetHandle(const char* label, const char* type, asset_handle& asset, const char* clearText = 0);
-	bool PropertyTextureAssetHandle(const char* label, const char* type, asset_handle& asset,
+	bool PropertyAssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const char* clearText = 0);
+	bool PropertyTextureAssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset,
 		const ref<dx_texture>& texture, uint32 width = 0, uint32 height = 0, ImVec2 uv0 = ImVec2(0.f, 0.f), ImVec2 uv1 = ImVec2(1.f, 1.f), const char* clearText = 0);
 
 	bool PropertyDragDropStringTarget(const char* label, const char* dragDropID, std::string& value, const char* clearLabel = 0);
@@ -195,16 +196,6 @@ namespace ImGui
 	static const ImColor green(0.f, 1.f, 0.f, 1.f);
 	static const ImColor red(1.f, 0.f, 0.f, 1.f);
 	static const ImColor blue(0.f, 0.f, 1.f, 1.f);
-
-	static void ImGui_DragFloat3Dir(const char* label, float v[3])
-	{
-		if (ImGui::Button("Normalize"))
-		{
-			((physx::PxVec3*)v)->normalize();
-		}
-		ImGui::SameLine();
-		ImGui::DragFloat3(label, v);
-	};
 
 
 #define IM_ARRAYSIZE(_ARR)  ((int)(sizeof(_ARR)/sizeof(*_ARR)))

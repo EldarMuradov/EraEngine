@@ -1,0 +1,2 @@
+pytest==8.3.4
+pytest-fixtures==0.1.0

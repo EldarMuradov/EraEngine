@@ -37,7 +37,7 @@ namespace era_engine
 				prefilteredRadiance,
 			};
 
-			lowPriorityJobQueue.createJob<post_process_sky_data>([](post_process_sky_data& data, job_handle)
+			low_priority_job_queue.createJob<post_process_sky_data>([](post_process_sky_data& data, JobHandle)
 				{
 					dxContext.renderQueue.waitForOtherQueue(dxContext.copyQueue);
 					dx_command_list* cl = dxContext.getFreeRenderCommandList();
@@ -52,7 +52,7 @@ namespace era_engine
 					SET_NAME(data.sky->resource, "Sky");
 
 					dxContext.executeCommandList(cl);
-				}, data).submitAfter(equiSky->loadJob);
+				}, data).submit_after(equiSky->loadJob);
 		}
 	}
 

@@ -3,6 +3,7 @@
 #include "particles/boid_particle_system.h"
 
 #include "core/string.h"
+#include "core/log.h"
 
 #include "dx/dx_pipeline.h"
 
@@ -42,7 +43,7 @@ namespace era_engine
 	void boid_particle_system::initialize(uint32 maxNumParticles, float emitRate)
 	{
 		this->emitRate = emitRate;
-		cartoonMesh = loadAnimatedMeshFromFile(getAssetPath("/resources/assets/cartoon/cartoon.fbx"));
+		cartoonMesh = loadAnimatedMeshFromFile(get_asset_path("/resources/assets/cartoon/cartoon.fbx"));
 		if (cartoonMesh)
 		{
 			particle_system::initializeAsMesh(sizeof(boid_particle_data), cartoonMesh->mesh, cartoonMesh->submeshes[0].info, maxNumParticles, sort_mode_none);
@@ -61,10 +62,10 @@ namespace era_engine
 		if (cartoonMesh)
 		{
 			const dx_mesh& mesh = cartoonMesh->mesh;
-			era_engine::animation::animation_skeleton& skeleton = cartoonMesh->skeleton;
+			animation::AnimationSkeleton& skeleton = cartoonMesh->skeleton;
 
 			time += dt;
-			time = fmod(time, skeleton.clips[0].lengthInSeconds);
+			time = fmod(time, skeleton.clips[0].length_in_seconds);
 
 			auto [skinnedVertexBuffer, skinningMatrices] = era_engine::animation::skinObject(mesh.vertexBuffer, cartoonMesh->submeshes[0].info, (uint32)skeleton.joints.size());
 

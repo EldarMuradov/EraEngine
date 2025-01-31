@@ -14,42 +14,42 @@
 
 #include "rendering/debug_visualization.h"
 
-#include "px/features/px_ragdoll.h"
+#include <rttr/registration>
 
 #include <algorithm>
 
 namespace era_engine::animation
 {
-	static void scaleKeyframes(animation_clip& clip, animation_joint& joint, float scale)
+	static void scale_keyframes(AnimationClip& clip, AnimationJoint& joint, float scale)
 	{
-		for (uint32 keyID = 0; keyID < joint.numPositionKeyframes; ++keyID)
+		for (uint32 keyID = 0; keyID < joint.num_position_keyframes; ++keyID)
 		{
-			clip.positionKeyframes[joint.firstPositionKeyframe + keyID] *= scale;
+			clip.position_keyframes[joint.first_position_keyframe + keyID] *= scale;
 		}
-		for (uint32 keyID = 0; keyID < joint.numScaleKeyframes; ++keyID)
+		for (uint32 keyID = 0; keyID < joint.num_scale_keyframes; ++keyID)
 		{
-			clip.scaleKeyframes[joint.firstScaleKeyframe + keyID] *= scale;
+			clip.scale_keyframes[joint.first_scale_keyframe + keyID] *= scale;
 		}
 	}
 
-	void animation_skeleton::analyzeJoints(const vec3* positions, const void* others, uint32 otherStride, uint32 numVertices)
+	void AnimationSkeleton::analyzeJoints(const vec3* positions, const void* others, uint32 otherStride, uint32 numVertices)
 	{
 		for (uint32 jointID = 0; jointID < (uint32)joints.size(); ++jointID)
 		{
-			skeleton_joint& j = joints[jointID];
+			SkeletonJoint& j = joints[jointID];
 
 			std::string name = j.name;
 			std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
-			limb_type c = limb_type_none;
+			LimbType c = limb_type_none;
 
-			bool left = contains(name, "left") || endsWith(name, ".l") || endsWith(name, "_l");
+			bool left = contains(name, "left") || ends_with(name, ".l") || ends_with(name, "_l");
 
 			if (contains(name, "spine") || contains(name, "hip") || contains(name, "rib") || contains(name, "pelvis") || contains(name, "shoulder") || contains(name, "clavicle")) { c = limb_type_torso; }
 			else if (contains(name, "head") || contains(name, "neck")) { c = limb_type_head; }
 			else if (contains(name, "arm"))
 			{
-				limb_type parentType = (j.parentID != INVALID_JOINT) ? joints[j.parentID].limbType : limb_type_none;
+				LimbType parentType = (j.parent_id != INVALID_JOINT) ? joints[j.parent_id].limb_type : limb_type_none;
 
 				if (contains(name, "lower") || contains(name, "lo") || contains(name, "fore")) { c = left ? limb_type_lower_arm_left : limb_type_lower_arm_right; }
 				else if (contains(name, "upper") || contains(name, "up")) { c = left ? limb_type_upper_arm_left : limb_type_upper_arm_right; }
@@ -62,7 +62,7 @@ namespace era_engine::animation
 			}
 			else if (contains(name, "leg") || contains(name, "thigh") || contains(name, "shin") || contains(name, "calf"))
 			{
-				limb_type parentType = (j.parentID != INVALID_JOINT) ? joints[j.parentID].limbType : limb_type_none;
+				LimbType parentType = (j.parent_id != INVALID_JOINT) ? joints[j.parent_id].limb_type : limb_type_none;
 
 				if (contains(name, "lower") || contains(name, "lo") || contains(name, "shin") || contains(name, "calf")) { c = left ? limb_type_lower_leg_left : limb_type_lower_leg_right; }
 				else if (contains(name, "upper") || contains(name, "up") || contains(name, "thigh")) { c = left ? limb_type_upper_leg_left : limb_type_upper_leg_right; }
@@ -74,14 +74,14 @@ namespace era_engine::animation
 				c = left ? limb_type_foot_left : limb_type_foot_right;
 			}
 
-			j.limbType = c;
+			j.limb_type = c;
 			j.ik = contains(name, "ik");
 
-			if (limbs[c].representativeJoint == INVALID_JOINT)
+			if (limbs[c].representative_joint == INVALID_JOINT)
 			{
 				// The highest joint in the hierarchy for this type is chosen as the representative.
 				// Because we order the joints, the first joint we encounter is automatically the highest in the hierarchy.
-				limbs[c].representativeJoint = jointID;
+				limbs[c].representative_joint = jointID;
 			}
 		}
 
@@ -184,24 +184,24 @@ namespace era_engine::animation
 		for (uint32 i = 0; i < numVertices; ++i)
 		{
 			vec3 p = positions[i];
-			skinning_weights w = *(skinning_weights*)((uint8*)others + i * otherStride);
+			SkinningWeights w = *(SkinningWeights*)((uint8*)others + i * otherStride);
 			for (uint32 j = 0; j < 4; ++j)
 			{
-				if (w.skinWeights[j] > 200)
+				if (w.skin_weights[j] > 200)
 				{
-					limb_type type = joints[w.skinIndices[j]].limbType;
+					LimbType type = joints[w.skin_indices[j]].limb_type;
 					if (type != limb_type_none)
 					{
-						if (limbs[type].representativeJoint != INVALID_JOINT)
+						if (limbs[type].representative_joint != INVALID_JOINT)
 						{
-							const skeleton_joint& j = joints[limbs[type].representativeJoint];
-							limb_dimensions& d = limbs[type].dimensions;
+							const SkeletonJoint& j = joints[limbs[type].representative_joint];
+							LimbDimensions& d = limbs[type].dimensions;
 
-							p = transformPosition(j.invBindTransform, p);
+							p = transform_position(j.inv_bind_transform, p);
 
 							d.minY = min(d.minY, p.y);
 							d.maxY = max(d.maxY, p.y);
-							d.radius = max(d.radius, squaredLength(vec2(p.x, p.z)));
+							d.radius = max(d.radius, squared_length(vec2(p.x, p.z)));
 						}
 					}
 				}
@@ -210,7 +210,7 @@ namespace era_engine::animation
 
 		for (uint32 i = 0; i < limb_type_count; ++i)
 		{
-			limb_dimensions& d = limbs[i].dimensions;
+			LimbDimensions& d = limbs[i].dimensions;
 
 			d.radius = sqrt(d.radius); // Above, we calculate the squared radius.
 
@@ -233,23 +233,23 @@ namespace era_engine::animation
 #endif
 	}
 
-	static vec3 samplePosition(const animation_clip& clip, const animation_joint& animJoint, float time)
+	static vec3 samplePosition(const AnimationClip& clip, const AnimationJoint& animJoint, float time)
 	{
-		if (time >= clip.lengthInSeconds)
+		if (time >= clip.length_in_seconds)
 		{
-			return clip.positionKeyframes[animJoint.firstPositionKeyframe + animJoint.numPositionKeyframes - 1];
+			return clip.position_keyframes[animJoint.first_position_keyframe + animJoint.num_position_keyframes - 1];
 		}
 
-		if (animJoint.numPositionKeyframes == 1)
+		if (animJoint.num_position_keyframes == 1)
 		{
-			return clip.positionKeyframes[animJoint.firstPositionKeyframe];
+			return clip.position_keyframes[animJoint.first_position_keyframe];
 		}
 
 		uint32 firstKeyframeIndex = -1;
-		for (uint32 i = 0; i < animJoint.numPositionKeyframes - 1; ++i)
+		for (uint32 i = 0; i < animJoint.num_position_keyframes - 1; ++i)
 		{
-			uint32 j = i + animJoint.firstPositionKeyframe;
-			if (time < clip.positionTimestamps[j + 1])
+			uint32 j = i + animJoint.first_position_keyframe;
+			if (time < clip.position_timestamps[j + 1])
 			{
 				firstKeyframeIndex = j;
 				break;
@@ -259,31 +259,31 @@ namespace era_engine::animation
 
 		uint32 secondKeyframeIndex = firstKeyframeIndex + 1;
 
-		float t = inverseLerp(clip.positionTimestamps[firstKeyframeIndex], clip.positionTimestamps[secondKeyframeIndex], time);
+		float t = inverse_lerp(clip.position_timestamps[firstKeyframeIndex], clip.position_timestamps[secondKeyframeIndex], time);
 
-		vec3 a = clip.positionKeyframes[firstKeyframeIndex];
-		vec3 b = clip.positionKeyframes[secondKeyframeIndex];
+		vec3 a = clip.position_keyframes[firstKeyframeIndex];
+		vec3 b = clip.position_keyframes[secondKeyframeIndex];
 
 		return lerp(a, b, t);
 	}
 
-	static quat sampleRotation(const animation_clip& clip, const animation_joint& animJoint, float time)
+	static quat sampleRotation(const AnimationClip& clip, const AnimationJoint& animJoint, float time)
 	{
-		if (time >= clip.lengthInSeconds)
+		if (time >= clip.length_in_seconds)
 		{
-			return clip.rotationKeyframes[animJoint.firstRotationKeyframe + animJoint.numRotationKeyframes - 1];
+			return clip.rotation_keyframes[animJoint.first_rotation_keyframe + animJoint.num_rotation_keyframes - 1];
 		}
 
-		if (animJoint.numRotationKeyframes == 1)
+		if (animJoint.num_rotation_keyframes == 1)
 		{
-			return clip.rotationKeyframes[animJoint.firstRotationKeyframe];
+			return clip.rotation_keyframes[animJoint.first_rotation_keyframe];
 		}
 
 		uint32 firstKeyframeIndex = -1;
-		for (uint32 i = 0; i < animJoint.numRotationKeyframes - 1; ++i)
+		for (uint32 i = 0; i < animJoint.num_rotation_keyframes - 1; ++i)
 		{
-			uint32 j = i + animJoint.firstRotationKeyframe;
-			if (time < clip.rotationTimestamps[j + 1])
+			uint32 j = i + animJoint.first_rotation_keyframe;
+			if (time < clip.rotation_timestamps[j + 1])
 			{
 				firstKeyframeIndex = j;
 				break;
@@ -293,10 +293,10 @@ namespace era_engine::animation
 
 		uint32 secondKeyframeIndex = firstKeyframeIndex + 1;
 
-		float t = inverseLerp(clip.rotationTimestamps[firstKeyframeIndex], clip.rotationTimestamps[secondKeyframeIndex], time);
+		float t = inverse_lerp(clip.rotation_timestamps[firstKeyframeIndex], clip.rotation_timestamps[secondKeyframeIndex], time);
 
-		quat a = clip.rotationKeyframes[firstKeyframeIndex];
-		quat b = clip.rotationKeyframes[secondKeyframeIndex];
+		quat a = clip.rotation_keyframes[firstKeyframeIndex];
+		quat b = clip.rotation_keyframes[secondKeyframeIndex];
 
 		if (dot(a.v4, b.v4) < 0.f)
 		{
@@ -306,23 +306,23 @@ namespace era_engine::animation
 		return lerp(a, b, t);
 	}
 
-	static vec3 sampleScale(const animation_clip& clip, const animation_joint& animJoint, float time)
+	static vec3 sampleScale(const AnimationClip& clip, const AnimationJoint& animJoint, float time)
 	{
-		if (time >= clip.lengthInSeconds)
-			return clip.scaleKeyframes[animJoint.firstScaleKeyframe + animJoint.numScaleKeyframes - 1];
+		if (time >= clip.length_in_seconds)
+			return clip.scale_keyframes[animJoint.first_scale_keyframe + animJoint.num_scale_keyframes - 1];
 
-		if (animJoint.numScaleKeyframes == 1)
-			return clip.scaleKeyframes[animJoint.firstScaleKeyframe];
+		if (animJoint.num_scale_keyframes == 1)
+			return clip.scale_keyframes[animJoint.first_scale_keyframe];
 
-		if (!clip.scaleTimestamps.size())
+		if (!clip.scale_timestamps.size())
 			return vec3(1.0f);
 
 		uint32 firstKeyframeIndex = -1;
-		for (uint32 i = 0; i < animJoint.numScaleKeyframes - 1; ++i)
+		for (uint32 i = 0; i < animJoint.num_scale_keyframes - 1; ++i)
 		{
-			uint32 j = i + animJoint.firstScaleKeyframe;
+			uint32 j = i + animJoint.first_scale_keyframe;
 
-			if (time < clip.scaleTimestamps[j + 1])
+			if (time < clip.scale_timestamps[j + 1])
 			{
 				firstKeyframeIndex = j;
 				break;
@@ -332,26 +332,26 @@ namespace era_engine::animation
 
 		uint32 secondKeyframeIndex = firstKeyframeIndex + 1;
 
-		float t = inverseLerp(clip.scaleTimestamps[firstKeyframeIndex], clip.scaleTimestamps[secondKeyframeIndex], time);
+		float t = inverse_lerp(clip.scale_timestamps[firstKeyframeIndex], clip.scale_timestamps[secondKeyframeIndex], time);
 
-		vec3 a = clip.scaleKeyframes[firstKeyframeIndex];
-		vec3 b = clip.scaleKeyframes[secondKeyframeIndex];
+		vec3 a = clip.scale_keyframes[firstKeyframeIndex];
+		vec3 b = clip.scale_keyframes[secondKeyframeIndex];
 
 		return lerp(a, b, t);
 	}
 
-	void animation_skeleton::sampleAnimation(const animation_clip& clip, float time, trs* outLocalTransforms, trs* outRootMotion) const
+	void AnimationSkeleton::sampleAnimation(const AnimationClip& clip, float time, trs* outLocalTransforms, trs* outRootMotion) const
 	{
 		ASSERT(clip.joints.size() == joints.size());
 
-		time = clamp(time, 0.f, clip.lengthInSeconds);
+		time = clamp(time, 0.f, clip.length_in_seconds);
 
 		uint32 numJoints = (uint32)joints.size();
 		for (uint32 i = 0; i < numJoints; ++i)
 		{
-			const animation_joint& animJoint = clip.joints[i];
+			const AnimationJoint& animJoint = clip.joints[i];
 
-			if (animJoint.isAnimated)
+			if (animJoint.is_animated)
 			{
 				outLocalTransforms[i].position = samplePosition(clip, animJoint, time);
 				outLocalTransforms[i].rotation = sampleRotation(clip, animJoint, time);
@@ -364,11 +364,11 @@ namespace era_engine::animation
 		}
 
 		trs rootMotion;
-		if (clip.rootMotionJoint.isAnimated)
+		if (clip.root_motion_joint.is_animated)
 		{
-			rootMotion.position = samplePosition(clip, clip.rootMotionJoint, time);
-			rootMotion.rotation = sampleRotation(clip, clip.rootMotionJoint, time);
-			rootMotion.scale = sampleScale(clip, clip.rootMotionJoint, time);
+			rootMotion.position = samplePosition(clip, clip.root_motion_joint, time);
+			rootMotion.rotation = sampleRotation(clip, clip.root_motion_joint, time);
+			rootMotion.scale = sampleScale(clip, clip.root_motion_joint, time);
 		}
 		else
 		{
@@ -377,13 +377,13 @@ namespace era_engine::animation
 
 		if (outRootMotion)
 		{
-			if (clip.bakeRootRotationIntoPose)
+			if (clip.bake_root_rotation_into_pose)
 			{
 				outLocalTransforms[0] = trs(0.f, rootMotion.rotation) * outLocalTransforms[0];
 				rootMotion.rotation = quat::identity;
 			}
 
-			if (clip.bakeRootXZTranslationIntoPose)
+			if (clip.bake_root_xz_translation_into_pose)
 			{
 				outLocalTransforms[0].position.x += rootMotion.position.x;
 				outLocalTransforms[0].position.z += rootMotion.position.z;
@@ -391,7 +391,7 @@ namespace era_engine::animation
 				rootMotion.position.z = 0.f;
 			}
 
-			if (clip.bakeRootYTranslationIntoPose)
+			if (clip.bake_root_y_translation_into_pose)
 			{
 				outLocalTransforms[0].position.y += rootMotion.position.y;
 				rootMotion.position.y = 0.f;
@@ -405,12 +405,12 @@ namespace era_engine::animation
 		}
 	}
 
-	void animation_skeleton::sampleAnimation(uint32 index, float time, trs* outLocalTransforms, trs* outRootMotion) const
+	void AnimationSkeleton::sampleAnimation(uint32 index, float time, trs* outLocalTransforms, trs* outRootMotion) const
 	{
 		sampleAnimation(clips[index], time, outLocalTransforms, outRootMotion);
 	}
 
-	void animation_skeleton::blendLocalTransforms(const trs* localTransforms1, const trs* localTransforms2, float t, trs* outBlendedLocalTransforms) const
+	void AnimationSkeleton::blendLocalTransforms(const trs* localTransforms1, const trs* localTransforms2, float t, trs* outBlendedLocalTransforms) const
 	{
 		t = clamp01(t);
 		for (uint32 jointID = 0; jointID < (uint32)joints.size(); ++jointID)
@@ -419,70 +419,70 @@ namespace era_engine::animation
 		}
 	}
 
-	void animation_skeleton::getSkinningMatricesFromLocalTransforms(const trs* localTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
+	void AnimationSkeleton::getSkinningMatricesFromLocalTransforms(const trs* localTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
 	{
 		uint32 numJoints = (uint32)joints.size();
 		trs* globalTransforms = (trs*)alloca(sizeof(trs) * numJoints);
 
 		for (uint32 i = 0; i < numJoints; ++i)
 		{
-			const skeleton_joint& skelJoint = joints[i];
-			if (skelJoint.parentID != INVALID_JOINT)
+			const SkeletonJoint& skelJoint = joints[i];
+			if (skelJoint.parent_id != INVALID_JOINT)
 			{
-				ASSERT(i > skelJoint.parentID); // Parent already processed.
-				globalTransforms[i] = globalTransforms[skelJoint.parentID] * localTransforms[i];
+				ASSERT(i > skelJoint.parent_id); // Parent already processed.
+				globalTransforms[i] = globalTransforms[skelJoint.parent_id] * localTransforms[i];
 			}
 			else
 			{
 				globalTransforms[i] = worldTransform * localTransforms[i];
 			}
 
-			outSkinningMatrices[i] = trsToMat4(globalTransforms[i]) * joints[i].invBindTransform;
+			outSkinningMatrices[i] = trs_to_mat4(globalTransforms[i]) * joints[i].inv_bind_transform;
 		}
 	}
 
-	void animation_skeleton::getSkinningMatricesFromLocalTransforms(const trs* localTransforms, trs* outGlobalTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
+	void AnimationSkeleton::getSkinningMatricesFromLocalTransforms(const trs* localTransforms, trs* outGlobalTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
 	{
 		uint32 numJoints = (uint32)joints.size();
 
 		for (uint32 i = 0; i < numJoints; ++i)
 		{
-			const skeleton_joint& skelJoint = joints[i];
-			if (skelJoint.parentID != INVALID_JOINT)
+			const SkeletonJoint& skelJoint = joints[i];
+			if (skelJoint.parent_id != INVALID_JOINT)
 			{
-				ASSERT(i > skelJoint.parentID); // Parent already processed
-				outGlobalTransforms[i] = outGlobalTransforms[skelJoint.parentID] * localTransforms[i];
+				ASSERT(i > skelJoint.parent_id); // Parent already processed
+				outGlobalTransforms[i] = outGlobalTransforms[skelJoint.parent_id] * localTransforms[i];
 			}
 			else
 			{
 				outGlobalTransforms[i] = worldTransform * localTransforms[i];
 			}
 
-			outSkinningMatrices[i] = trsToMat4(outGlobalTransforms[i]) * joints[i].invBindTransform;
+			outSkinningMatrices[i] = trs_to_mat4(outGlobalTransforms[i]) * joints[i].inv_bind_transform;
 		}
 	}
 
-	void animation_skeleton::getSkinningMatricesFromGlobalTransforms(const trs* globalTransforms, mat4* outSkinningMatrices) const
+	void AnimationSkeleton::getSkinningMatricesFromGlobalTransforms(const trs* globalTransforms, mat4* outSkinningMatrices) const
 	{
 		uint32 numJoints = (uint32)joints.size();
 
 		for (uint32 i = 0; i < numJoints; ++i)
 		{
-			outSkinningMatrices[i] = trsToMat4(globalTransforms[i]) * joints[i].invBindTransform;
+			outSkinningMatrices[i] = trs_to_mat4(globalTransforms[i]) * joints[i].inv_bind_transform;
 		}
 	}
 
-	void animation_skeleton::getSkinningMatricesFromGlobalTransforms(const trs* globalTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
+	void AnimationSkeleton::getSkinningMatricesFromGlobalTransforms(const trs* globalTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
 	{
 		uint32 numJoints = (uint32)joints.size();
 
 		for (uint32 i = 0; i < numJoints; ++i)
 		{
-			outSkinningMatrices[i] = trsToMat4(worldTransform) * trsToMat4(globalTransforms[i]) * joints[i].invBindTransform;
+			outSkinningMatrices[i] = trs_to_mat4(worldTransform) * trs_to_mat4(globalTransforms[i]) * joints[i].inv_bind_transform;
 		}
 	}
 
-	std::vector<uint32> animation_skeleton::getClipsByName(const std::string& name)
+	std::vector<uint32> AnimationSkeleton::getClipsByName(const std::string& name)
 	{
 		std::vector<uint32> result;
 		for (uint32 i = 0; i < (uint32)clips.size(); ++i)
@@ -495,11 +495,11 @@ namespace era_engine::animation
 		return result;
 	}
 
-	static void prettyPrint(const animation_skeleton& skeleton, uint32 parent, uint32 indent)
+	static void prettyPrint(const AnimationSkeleton& skeleton, uint32 parent, uint32 indent)
 	{
 		for (uint32 i = 0; i < (uint32)skeleton.joints.size(); ++i)
 		{
-			if (skeleton.joints[i].parentID == parent)
+			if (skeleton.joints[i].parent_id == parent)
 			{
 				std::cout << std::string(indent, ' ') << skeleton.joints[i].name << '\n';
 				prettyPrint(skeleton, i, indent + 1);
@@ -507,37 +507,37 @@ namespace era_engine::animation
 		}
 	}
 
-	void animation_skeleton::prettyPrintHierarchy() const
+	void AnimationSkeleton::prettyPrintHierarchy() const
 	{
 		prettyPrint(*this, INVALID_JOINT, 0);
 	}
 
-	void animation_clip::edit()
+	void AnimationClip::edit()
 	{
-		ImGui::Checkbox("Bake root rotation into pose", &bakeRootRotationIntoPose);
-		ImGui::Checkbox("Bake xz translation into pose", &bakeRootXZTranslationIntoPose);
-		ImGui::Checkbox("Bake y translation into pose", &bakeRootYTranslationIntoPose);
+		ImGui::Checkbox("Bake root rotation into pose", &bake_root_rotation_into_pose);
+		ImGui::Checkbox("Bake xz translation into pose", &bake_root_xz_translation_into_pose);
+		ImGui::Checkbox("Bake y translation into pose", &bake_root_y_translation_into_pose);
 	}
 
-	NODISCARD trs animation_clip::getFirstRootTransform() const
+	trs AnimationClip::get_first_root_transform() const
 	{
-		if (rootMotionJoint.isAnimated)
+		if (root_motion_joint.is_animated)
 		{
 			trs t;
-			t.position = positionKeyframes[rootMotionJoint.firstPositionKeyframe];
-			t.rotation = rotationKeyframes[rootMotionJoint.firstRotationKeyframe];
-			t.scale = scaleKeyframes[rootMotionJoint.firstScaleKeyframe];
+			t.position = position_keyframes[root_motion_joint.first_position_keyframe];
+			t.rotation = rotation_keyframes[root_motion_joint.first_rotation_keyframe];
+			t.scale = scale_keyframes[root_motion_joint.first_scale_keyframe];
 
-			if (bakeRootRotationIntoPose)
+			if (bake_root_rotation_into_pose)
 			{
 				t.rotation = quat::identity;
 			}
-			if (bakeRootXZTranslationIntoPose)
+			if (bake_root_xz_translation_into_pose)
 			{
 				t.position.x = 0.f;
 				t.position.z = 0.f;
 			}
-			if (bakeRootYTranslationIntoPose)
+			if (bake_root_y_translation_into_pose)
 			{
 				t.position.y = 0.f;
 			}
@@ -547,25 +547,25 @@ namespace era_engine::animation
 		return trs::identity;
 	}
 
-	NODISCARD trs animation_clip::getLastRootTransform() const
+	trs AnimationClip::get_last_root_transform() const
 	{
-		if (rootMotionJoint.isAnimated)
+		if (root_motion_joint.is_animated)
 		{
 			trs t;
-			t.position = positionKeyframes[rootMotionJoint.firstPositionKeyframe + rootMotionJoint.numPositionKeyframes - 1];
-			t.rotation = rotationKeyframes[rootMotionJoint.firstRotationKeyframe + rootMotionJoint.numRotationKeyframes - 1];
-			t.scale = scaleKeyframes[rootMotionJoint.firstScaleKeyframe + rootMotionJoint.numScaleKeyframes - 1];
+			t.position = position_keyframes[root_motion_joint.first_position_keyframe + root_motion_joint.num_position_keyframes - 1];
+			t.rotation = rotation_keyframes[root_motion_joint.first_rotation_keyframe + root_motion_joint.num_rotation_keyframes - 1];
+			t.scale = scale_keyframes[root_motion_joint.first_scale_keyframe + root_motion_joint.num_scale_keyframes - 1];
 
-			if (bakeRootRotationIntoPose)
+			if (bake_root_rotation_into_pose)
 			{
 				t.rotation = quat::identity;
 			}
-			if (bakeRootXZTranslationIntoPose)
+			if (bake_root_xz_translation_into_pose)
 			{
 				t.position.x = 0.f;
 				t.position.z = 0.f;
 			}
-			if (bakeRootYTranslationIntoPose)
+			if (bake_root_y_translation_into_pose)
 			{
 				t.position.y = 0.f;
 			}
@@ -575,19 +575,19 @@ namespace era_engine::animation
 		return trs::identity;
 	}
 
-	animation_instance::animation_instance(const animation_clip* clip, float startTime)
+	AnimationInstance::AnimationInstance(const AnimationClip* clip, float startTime)
 	{
 		set(clip, startTime);
 	}
 
-	void animation_instance::set(const animation_clip* clip, float startTime)
+	void AnimationInstance::set(const AnimationClip* clip, float startTime)
 	{
 		this->clip = clip;
 		time = startTime;
-		lastRootMotion = clip->getFirstRootTransform();
+		lastRootMotion = clip->get_first_root_transform();
 	}
 
-	void animation_instance::update(const animation_skeleton& skeleton, float dt, trs* outLocalTransforms, trs& outDeltaRootMotion)
+	void AnimationInstance::update(const AnimationSkeleton& skeleton, float dt, trs* outLocalTransforms, trs& outDeltaRootMotion)
 	{
 		if (paused)
 			return;
@@ -595,16 +595,16 @@ namespace era_engine::animation
 		if (valid())
 		{
 			time += dt;
-			if (time >= clip->lengthInSeconds)
+			if (time >= clip->length_in_seconds)
 			{
 				if (clip->looping)
 				{
-					time = fmod(time, clip->lengthInSeconds);
-					lastRootMotion = clip->getFirstRootTransform();
+					time = fmod(time, clip->length_in_seconds);
+					lastRootMotion = clip->get_first_root_transform();
 				}
 				else
 				{
-					time = clip->lengthInSeconds;
+					time = clip->length_in_seconds;
 					finished = true;
 				}
 			}
@@ -618,13 +618,13 @@ namespace era_engine::animation
 	}
 
 #if 1
-	animation_blend_tree_1d::animation_blend_tree_1d(std::initializer_list<animation_clip*> clips, float startBlendValue, float startRelTime)
+	AnimationBlendTree1d::AnimationBlendTree1d(std::initializer_list<AnimationClip*> clips, float startBlendValue, float startRelTime)
 	{
 		ASSERT(clips.size() <= arraysize(this->clips));
 		ASSERT(clips.size() > 1);
 
 		numClips = 0;
-		for (animation_clip* clip : clips)
+		for (AnimationClip* clip : clips)
 		{
 			this->clips[numClips++] = clip;
 		}
@@ -635,16 +635,16 @@ namespace era_engine::animation
 
 		setBlendValue(startBlendValue);
 
-		lastRootMotion = lerp(this->clips[first]->getFirstRootTransform(), this->clips[second]->getFirstRootTransform(), blendValue);
+		lastRootMotion = lerp(this->clips[first]->get_first_root_transform(), this->clips[second]->get_first_root_transform(), blendValue);
 	}
 
-	void animation_blend_tree_1d::update(const animation_skeleton& skeleton, float dt, trs* outLocalTransforms, trs& outDeltaRootMotion)
+	void AnimationBlendTree1d::update(const AnimationSkeleton& skeleton, float dt, trs* outLocalTransforms, trs& outDeltaRootMotion)
 	{
-		const animation_clip* first = clips[this->first];
-		const animation_clip* second = clips[this->second];
+		const AnimationClip* first = clips[this->first];
+		const AnimationClip* second = clips[this->second];
 
-		float firstLength = first->lengthInSeconds;
-		float secondLength = second->lengthInSeconds;
+		float firstLength = first->length_in_seconds;
+		float secondLength = second->length_in_seconds;
 
 		float lengthDist = secondLength - firstLength;
 		float targetLength = firstLength + lengthDist * blendValue;
@@ -658,8 +658,8 @@ namespace era_engine::animation
 		trs* localTransforms2 = totalLocalTransforms + skeleton.joints.size();
 
 		trs rootMotion1, rootMotion2;
-		skeleton.sampleAnimation(*first, first->lengthInSeconds * relTime, localTransforms1, &rootMotion1);
-		skeleton.sampleAnimation(*second, second->lengthInSeconds * relTime, localTransforms2, &rootMotion2);
+		skeleton.sampleAnimation(*first, first->length_in_seconds * relTime, localTransforms1, &rootMotion1);
+		skeleton.sampleAnimation(*second, second->length_in_seconds * relTime, localTransforms2, &rootMotion2);
 
 		skeleton.blendLocalTransforms(localTransforms1, localTransforms2, blendValue, outLocalTransforms);
 
@@ -669,7 +669,7 @@ namespace era_engine::animation
 		lastRootMotion = rootMotion;
 	}
 
-	void animation_blend_tree_1d::setBlendValue(float value)
+	void AnimationBlendTree1d::setBlendValue(float value)
 	{
 		value = clamp01(value);
 
@@ -691,123 +691,7 @@ namespace era_engine::animation
 	}
 #endif
 
-	void animation_component::initialize(std::vector<animation_clip>& clips, size_t startIndex)
-	{
-		animation = make_ref<animation_instance>();
-		ref<animation_state> state = make_ref<animation_state>(animation);
-
-		controller = make_ref<animation_controller>();
-
-		if (clips.empty())
-			return;
-
-		animation_blackboard startBlackboard = { &clips[startIndex] };
-		controller->stateMachine.set_state(state, startBlackboard);
-
-		for (int i = clips.size() - 1; i >= 0; --i)
-		{
-			animation_blackboard blackboard = { &clips[i] };
-			clips[i].looping = false;
-			controller->stateMachine.enter(blackboard);
-		}
-	}
-
-	void animation_component::update(const ref<multi_mesh>& mesh, eallocator& arena, float dt, trs* transform, physics::px_ragdoll_component* ragdoll)
-	{
-		const dx_mesh& dxMesh = mesh->mesh;
-		animation_skeleton& skeleton = mesh->skeleton;
-
-		currentGlobalTransforms = 0;
-
-		if (!ragdoll && animation && animation->valid())
-		{
-			auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
-
-			prevFrameVertexBuffer = currentVertexBuffer;
-			currentVertexBuffer = vb;
-
-			trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-			trs deltaRootMotion;
-			animation->update(skeleton, dt * timeScale, localTransforms, deltaRootMotion);
-
-			trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-
-			skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
-
-			if (transform)
-			{
-				*transform = *transform * deltaRootMotion;
-				transform->rotation = normalize(transform->rotation);
-			}
-
-			currentGlobalTransforms = globalTransforms;
-
-			if (animation->finished)
-				controller->stateMachine.update();
-		}
-		else if (ragdoll && ragdoll->ragdoll && ragdoll->simulated)
-		{
-			auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
-
-			prevFrameVertexBuffer = currentVertexBuffer;
-			currentVertexBuffer = vb;
-
-			trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-			trs deltaRootMotion;
-
-			ragdoll->updateMotion(localTransforms, &deltaRootMotion);
-
-			trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-
-			skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
-
-			if (transform)
-			{
-				*transform = *transform * deltaRootMotion;
-				transform->rotation = normalize(transform->rotation);
-			}
-
-			currentGlobalTransforms = globalTransforms;
-		}
-		else if (ragdoll && ragdoll->ragdoll && !ragdoll->simulated)
-		{
-			auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
-
-			prevFrameVertexBuffer = currentVertexBuffer;
-			currentVertexBuffer = vb;
-
-			trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-			trs deltaRootMotion;
-			animation->update(skeleton, dt * timeScale, localTransforms, deltaRootMotion);
-
-			trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-
-			skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
-
-			if (transform)
-			{
-				*transform = *transform * deltaRootMotion;
-				transform->rotation = normalize(transform->rotation);
-			}
-
-			currentGlobalTransforms = globalTransforms;
-			// TODO
-			ragdoll->updateKinematic();
-
-			if (animation->finished)
-				controller->stateMachine.update();
-		}
-		else
-		{
-			currentVertexBuffer = dxMesh.vertexBuffer;
-			if (!prevFrameVertexBuffer)
-			{
-				prevFrameVertexBuffer = currentVertexBuffer;
-			}
-		}
-	}
-
-	const char* limbTypeNames[] =
+	const char* limb_type_names[] =
 	{
 		"Unknown",
 
@@ -831,7 +715,7 @@ namespace era_engine::animation
 		"Foot left",
 	};
 
-	const vec3 limbTypeColors[] =
+	const vec3 limb_type_colors[] =
 	{
 		vec3(1.f, 0.f, 1.f),
 
@@ -855,10 +739,169 @@ namespace era_engine::animation
 		vec3(1.f, 1.f, 1.f),
 	};
 
-	void animation_component::drawCurrentSkeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* renderPass) const
+	void AnimationStateMachine::set_state(ref<AnimationState> state, AnimationBlackboard& blackboard)
+	{
+		if (currentState)
+		{
+			currentState->exit(blackboard);
+		}
+
+		currentState = state;
+
+		if (currentState)
+		{
+			currentState->enter(blackboard);
+
+			if (paused)
+			{
+				currentState->pause(blackboard);
+			}
+		}
+	}
+
+	void AnimationStateMachine::enter(AnimationBlackboard& blackboard)
+	{
+		if (currentState)
+		{
+			currentState->enter(blackboard);
+			input.push(blackboard);
+			if (paused)
+			{
+				currentState->pause(blackboard);
+			}
+		}
+	}
+
+	void AnimationStateMachine::pause(AnimationBlackboard& blackboard)
+	{
+		paused = true;
+
+		if (currentState)
+		{
+			currentState->pause(blackboard);
+		}
+	}
+
+	void AnimationStateMachine::resume(AnimationBlackboard& blackboard)
+	{
+		paused = false;
+
+		if (currentState)
+			currentState->resume(blackboard);
+	}
+
+	void AnimationStateMachine::update(AnimationBlackboard& blackboard)
+	{
+		if (paused)
+			return;
+
+		if (currentState)
+		{
+			input.push(blackboard);
+			currentState->update(blackboard);
+		}
+	}
+
+	void AnimationStateMachine::update()
+	{
+		if (paused)
+			return;
+
+		if (currentState && input.size())
+		{
+			currentState->enter(input.top());
+			input.pop();
+		}
+	}
+
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+		rttr::registration::class_<AnimationComponent>("AnimationComponent")
+			.constructor<ref<Entity::EcsData>>();
+	}
+
+	animation::AnimationComponent::AnimationComponent(ref<Entity::EcsData> _data)
+		: Component(_data)
+	{
+	}
+
+	AnimationComponent::~AnimationComponent()
+	{
+	}
+
+	void AnimationComponent::initialize(std::vector<AnimationClip>& clips, size_t start_index)
+	{
+		animation = make_ref<AnimationInstance>();
+		ref<AnimationState> state = make_ref<AnimationState>(animation);
+
+		controller = make_ref<AnimationController>();
+
+		if (clips.empty())
+		{
+			return;
+		}
+
+		AnimationBlackboard startBlackboard = { &clips[start_index] };
+		controller->state_machine.set_state(state, startBlackboard);
+
+		for (int i = clips.size() - 1; i >= 0; --i)
+		{
+			AnimationBlackboard blackboard = { &clips[i] };
+			//clips[i].looping = false;
+			controller->state_machine.enter(blackboard);
+		}
+	}
+
+	void AnimationComponent::update(const ref<multi_mesh>& mesh, Allocator& arena, float dt, trs* transform)
 	{
 		const dx_mesh& dxMesh = mesh->mesh;
-		animation_skeleton& skeleton = mesh->skeleton;
+		AnimationSkeleton& skeleton = mesh->skeleton;
+
+		current_global_transforms = 0;
+
+		if (animation && animation->valid())
+		{
+			auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
+
+			prev_frame_vertex_buffer = current_vertex_buffer;
+			current_vertex_buffer = vb;
+
+			trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
+			trs deltaRootMotion;
+			animation->update(skeleton, dt * time_scale, localTransforms, deltaRootMotion);
+
+			trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
+
+			skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
+
+			if (transform)
+			{
+				*transform = *transform * deltaRootMotion;
+				transform->rotation = normalize(transform->rotation);
+			}
+
+			current_global_transforms = globalTransforms;
+
+			if (animation->finished)
+			{
+				controller->state_machine.update();
+			}
+		}
+		else
+		{
+			current_vertex_buffer = dxMesh.vertexBuffer;
+			if (!prev_frame_vertex_buffer)
+			{
+				prev_frame_vertex_buffer = current_vertex_buffer;
+			}
+		}
+	}
+
+	void AnimationComponent::draw_current_skeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* render_pass) const
+	{
+		const dx_mesh& dxMesh = mesh->mesh;
+		AnimationSkeleton& skeleton = mesh->skeleton;
 
 #if 1
 		uint32 numJoints = (uint32)skeleton.joints.size();
@@ -872,13 +915,13 @@ namespace era_engine::animation
 		for (uint32 i = 0; i < numJoints; ++i)
 		{
 			const auto& joint = skeleton.joints[i];
-			if (joint.parentID != INVALID_JOINT && !joint.ik)
+			if (joint.parent_id != INVALID_JOINT && !joint.ik)
 			{
-				const auto& parentJoint = skeleton.joints[joint.parentID];
-				if (currentGlobalTransforms)
+				const auto& parentJoint = skeleton.joints[joint.parent_id];
+				if (current_global_transforms)
 				{
-					*vertices++ = { currentGlobalTransforms[joint.parentID].position, limbTypeColors[parentJoint.limbType] };
-					*vertices++ = { currentGlobalTransforms[i].position, limbTypeColors[parentJoint.limbType] };
+					*vertices++ = { current_global_transforms[joint.parent_id].position, limb_type_colors[parentJoint.limb_type] };
+					*vertices++ = { current_global_transforms[i].position, limb_type_colors[parentJoint.limb_type] };
 				}
 				else
 				{
@@ -894,8 +937,8 @@ namespace era_engine::animation
 					*vertices++ = { vrt1, limbTypeColors[parentJoint.limbType] };
 					*vertices++ = { vrt2, limbTypeColors[parentJoint.limbType] };
 #else
-					*vertices++ = { skeleton.joints[joint.parentID].bindTransform.col3.xyz, limbTypeColors[parentJoint.limbType] };
-					*vertices++ = { joint.bindTransform.col3.xyz, limbTypeColors[parentJoint.limbType] };
+					* vertices++ = { skeleton.joints[joint.parent_id].bind_transform.col3.xyz, limb_type_colors[parentJoint.limb_type] };
+					*vertices++ = { joint.bind_transform.col3.xyz, limb_type_colors[parentJoint.limb_type] };
 #endif
 				}
 			}
@@ -908,7 +951,7 @@ namespace era_engine::animation
 			*lines++ = { (uint16)(2 * i), (uint16)(2 * i + 1) };
 		}
 
-		renderDebug<debug_unlit_line_pipeline::position_color>(trsToMat4(transform), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), renderPass, true);
+		renderDebug<debug_unlit_line_pipeline::position_color>(trs_to_mat4(transform), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), render_pass, true);
 
 #else
 		for (uint32 i = 0; i < limb_type_count; ++i)
@@ -929,79 +972,6 @@ namespace era_engine::animation
 			}
 		}
 #endif
-	}
-
-	void animation_state_machine::set_state(ref<animation_state> state, animation_blackboard& blackboard)
-	{
-		if (currentState)
-		{
-			currentState->exit(blackboard);
-		}
-
-		currentState = state;
-
-		if (currentState)
-		{
-			currentState->enter(blackboard);
-
-			if (paused)
-			{
-				currentState->pause(blackboard);
-			}
-		}
-	}
-
-	void animation_state_machine::enter(animation_blackboard& blackboard)
-	{
-		if (currentState)
-		{
-			currentState->enter(blackboard);
-			input.push(blackboard);
-			if (paused)
-			{
-				currentState->pause(blackboard);
-			}
-		}
-	}
-
-	void animation_state_machine::pause(animation_blackboard& blackboard)
-	{
-		paused = true;
-
-		if (currentState)
-			currentState->pause(blackboard);
-	}
-
-	void animation_state_machine::resume(animation_blackboard& blackboard)
-	{
-		paused = false;
-
-		if (currentState)
-			currentState->resume(blackboard);
-	}
-
-	void animation_state_machine::update(animation_blackboard& blackboard)
-	{
-		if (paused)
-			return;
-
-		if (currentState)
-		{
-			input.push(blackboard);
-			currentState->update(blackboard);
-		}
-	}
-
-	void animation_state_machine::update()
-	{
-		if (paused)
-			return;
-
-		if (currentState && input.size())
-		{
-			currentState->enter(input.top());
-			input.pop();
-		}
 	}
 
 }

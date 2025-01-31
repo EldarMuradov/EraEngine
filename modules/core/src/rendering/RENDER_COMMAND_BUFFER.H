@@ -49,7 +49,7 @@ namespace era_engine
 		}
 
 		std::vector<command_key> keys;
-		eallocator arena;
+		Allocator arena;
 
 	public:
 		render_command_buffer()

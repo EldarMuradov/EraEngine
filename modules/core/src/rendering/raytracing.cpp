@@ -7,6 +7,8 @@
 #include "dx/dx_context.h"
 #include "dx/dx_command_list.h"
 
+#include <rttr/registration>
+
 #include <dxcapi.h>
 
 #include <fstream>
@@ -28,7 +30,7 @@ namespace era_engine
 		else
 		{
 			geomDesc.Triangles.Transform3x4 = localTransforms.size();
-			localTransforms.push_back(transpose(trsToMat4(localTransform)));
+			localTransforms.push_back(transpose(trs_to_mat4(localTransform)));
 		}
 
 		geomDesc.Triangles.VertexBuffer.StartAddress = vertexBuffer.positions->gpuVirtualAddress + (vertexBuffer.positions->elementSize * submesh.baseVertex);
@@ -125,11 +127,11 @@ namespace era_engine
 		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
 		dxContext.device->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
 
-		info.ScratchDataSizeInBytes = alignTo(info.ScratchDataSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
-		info.ResultDataMaxSizeInBytes = alignTo(info.ResultDataMaxSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+		info.ScratchDataSizeInBytes = align_to(info.ScratchDataSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+		info.ResultDataMaxSizeInBytes = align_to(info.ResultDataMaxSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
 
 		ref<raytracing_blas> blas = make_ref<raytracing_blas>();
-		blas->scratch = createBuffer((uint32)info.ScratchDataSizeInBytes, 1, 0, true, false, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		blas->scratch = createBuffer((uint32)info.ScratchDataSizeInBytes, 1, 0, true, false);
 		blas->blas = createBuffer((uint32)info.ResultDataMaxSizeInBytes, 1, 0, true, false, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
 
 		SET_NAME(blas->scratch->resource, "BLAS Scratch");
@@ -172,7 +174,7 @@ namespace era_engine
 		checkResult(DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&library)));
 		checkResult(library->CreateIncludeHandler(&includeHandler));
 
-		std::string source = "#include \"" + wstringToString(filename) + "\"\n";
+		std::string source = "#include \"" + wstring_to_string(filename) + "\"\n";
 
 		// Create blob from the string.
 		com<IDxcBlobEncoding> textBlob;
@@ -261,7 +263,7 @@ namespace era_engine
 		{
 			if (rootSignatureDesc.pParameters[i].ParameterType == D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS)
 			{
-				size += alignTo(rootSignatureDesc.pParameters[i].Constants.Num32BitValues * 4, 8);
+				size += align_to(rootSignatureDesc.pParameters[i].Constants.Num32BitValues * 4, 8);
 			}
 			else
 			{
@@ -519,7 +521,7 @@ namespace era_engine
 		{
 			auto& shaderBindingTableDesc = result.shaderBindingTableDesc;
 			tableEntrySize += D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-			shaderBindingTableDesc.entrySize = (uint32)alignTo(tableEntrySize, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
+			shaderBindingTableDesc.entrySize = (uint32)align_to(tableEntrySize, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
 
 			uint32 numGeometryTypes = hasMeshGeometry + hasProceduralGeometry;
 
@@ -548,10 +550,29 @@ namespace era_engine
 			}
 
 			shaderBindingTableDesc.raygenOffset = 0;
-			shaderBindingTableDesc.missOffset = shaderBindingTableDesc.raygenOffset + (uint32)alignTo(numRaygenShaderEntries * tableEntrySize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
-			shaderBindingTableDesc.hitOffset = shaderBindingTableDesc.missOffset + (uint32)alignTo(numMissShaderEntries * tableEntrySize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+			shaderBindingTableDesc.missOffset = shaderBindingTableDesc.raygenOffset + (uint32)align_to(numRaygenShaderEntries * tableEntrySize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+			shaderBindingTableDesc.hitOffset = shaderBindingTableDesc.missOffset + (uint32)align_to(numMissShaderEntries * tableEntrySize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
 		}
 
 		return result;
 	}
+
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+		rttr::registration::class_<RaytraceComponent>("RaytraceComponent")
+			.constructor<>()
+			.constructor<ref<Entity::EcsData>, const raytracing_object_type&>()
+			.property("type", &RaytraceComponent::type);
+	}
+
+	RaytraceComponent::RaytraceComponent(ref<Entity::EcsData> _data, const raytracing_object_type& _type)
+		:  Component(_data), type(_type)
+	{
+	}
+
+	RaytraceComponent::~RaytraceComponent()
+	{
+	}
+
 }

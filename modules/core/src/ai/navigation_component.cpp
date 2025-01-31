@@ -3,63 +3,70 @@
 #include "ai/navigation_component.h"
 #include "ai/navigation.h"
 
-#include "application.h"
+#include "ecs/base_components/transform_component.h"
+#include "ecs/world.h"
 
-#include "scene/scene.h"
+#include <rttr/registration>
 
 namespace era_engine::ai
 {
-	NODISCARD static coroutine_return<nav_node> navigate(vec2 pos, vec2 target)
+	NODISCARD static CoroutineReturn<NavNode> navigate(const vec2& pos, const vec2& target)
 	{
-		nav_node player;
+		NavNode player;
 		player.position = pos / (float)NAV_X_STEP;
 
-		nav_node destination;
+		NavNode destination;
 		destination.position = target / (float)NAV_X_STEP;
 
-		const auto& path = a_star_navigation::navigate(player, destination);
-		for (const nav_node& node : path)
+		const auto& path = AStarNavigation::navigate(player, destination);
+		for (const NavNode& node : path)
 		{
 			co_yield node;
 		}
 
 		while (true)
-			co_yield nav_node(vec2(NAV_INF_POS));
+		{
+			co_yield NavNode(vec2(NAV_INF_POS));
+		}
 
-		co_return nav_node(vec2(NAV_INF_POS));
+		co_return NavNode(vec2(NAV_INF_POS));
 	}
 
-	navigation_component::navigation_component(uint32 h, nav_type tp) : entity_handle_component_base(h), type(tp)
-	{
-	}
-
-	static bool equalIn2d(vec3 rhs, vec3 lhs)
+	static bool equal_in_2d(const vec3& lhs, const vec3& rhs)
 	{
 		return (int)rhs.x == (int)lhs.x && (int)rhs.z == (int)lhs.z;
 	}
 
-	void navigation_component::processPath()
+	RTTR_REGISTRATION
 	{
-		eentity entity{ (entity_handle)entityHandle, &globalApp.getCurrentScene()->registry };
+		using namespace rttr;
+		rttr::registration::class_<NavigationComponent>("NavigationComponent")
+			.constructor<>()
+			.constructor<ref<Entity::EcsData>, NavigationComponent::NavType>()
+			.property("destination", &NavigationComponent::destination)
+			.property("type", &NavigationComponent::type);
+	}
 
-		auto& transform = entity.getComponent<transform_component>();
-		const auto& pos = transform.position;
+	void NavigationComponent::process_path()
+	{
+		auto& transform = get_world()->get_entity(component_data->entity_handle).get_component<TransformComponent>();
+		const auto& pos = transform.transform.position;
 
-		if (!equalIn2d(destination, previousDestination))
+		if (!equal_in_2d(destination, previous_destination))
 		{
-			createPath(destination, pos);
-			previousDestination = destination;
+			create_path(destination, pos);
+			previous_destination = destination;
 		}
 
-		coroutine<nav_node> nav_cor = navCoroutine;
+		Coroutine<NavNode> nav_cor = nav_coroutine;
 		if (nav_cor)
 		{
-			nav_node tempPos = nav_cor.value();
-			if (tempPos.position != vec2(NAV_INF_POS))
+			NavNode temp_pos = nav_cor.value();
+			if (temp_pos.position != vec2(NAV_INF_POS))
 			{
-				transform.position = lerp(pos, vec3(tempPos.position.x, 0, tempPos.position.y), 0.025f);
+				transform.transform.position = lerp(pos, vec3(temp_pos.position.x, 0, temp_pos.position.y), 0.025f);
 
-				if (length(transform.position - vec3(tempPos.position.x, 0, tempPos.position.y)) < 0.25f)
+				if (length(transform.transform.position - vec3(temp_pos.position.x, 0, temp_pos.position.y)) < 0.25f)
 				{
 					nav_cor();
 				}
@@ -72,9 +79,19 @@ namespace era_engine::ai
 		}
 	}
 
-	void navigation_component::createPath(vec3 to, vec3 from)
+	void NavigationComponent::create_path(const vec3& to, const vec3& from)
 	{
-		navCoroutine.handle = {};
-		navCoroutine = navigate(vec2((unsigned int)from.x, (unsigned int)from.z), vec2((unsigned int)to.x, (unsigned int)to.z));
+		nav_coroutine.handle = {};
+		nav_coroutine = navigate(vec2((unsigned int)from.x, (unsigned int)from.z), vec2((unsigned int)to.x, (unsigned int)to.z));
 	}
+
+	NavigationComponent::NavigationComponent(ref<Entity::EcsData> _data, NavType _type)
+		: Component(_data), type(_type)
+	{
+	}
+
+	NavigationComponent::~NavigationComponent()
+	{
+	}
+
 }

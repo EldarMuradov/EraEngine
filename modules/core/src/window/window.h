@@ -2,11 +2,13 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include <functional>
 
 namespace era_engine
 {
-	struct custom_window_style
+	struct ERA_CORE_API custom_window_style
 	{
 		// Default values match the current ImGui style.
 
@@ -28,7 +30,7 @@ namespace era_engine
 		bool preventRoundedTopCorners = true;
 	};
 
-	struct win32_window
+	struct ERA_CORE_API win32_window
 	{
 		win32_window() = default;
 		win32_window(win32_window&) = delete;
@@ -97,7 +99,7 @@ namespace era_engine
 		friend bool handleWindowsMessages();
 	};
 
-	struct monitor_info
+	struct ERA_CORE_API monitor_info
 	{
 		// This is specific for the actual physical monitor / projector.
 		std::string name;

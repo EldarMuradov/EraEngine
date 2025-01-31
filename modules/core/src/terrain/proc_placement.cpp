@@ -14,6 +14,8 @@
 #include "rendering/render_pass.h"
 #include "rendering/pbr.h"
 
+#include <rttr/registration>
+
 #include "proc_placement_rs.hlsli"
 
 namespace era_engine
@@ -59,8 +61,6 @@ namespace era_engine
 		visualizePointsCommandSignature = createCommandSignature(*visualizePointsPipeline.rootSignature, argumentDescs, arraysize(argumentDescs), sizeof(placement_draw));
 	}
 
-
-
 	struct render_proc_placement_layer_data
 	{
 		ref<dx_buffer> commandBuffer;
@@ -103,7 +103,17 @@ namespace era_engine
 	static ref<dx_buffer> readbackMeshOffsets;
 #endif
 
-	proc_placement_component::proc_placement_component(const std::vector<proc_placement_layer_desc>& layers)
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+		rttr::registration::class_<ProcPlacementComponent>("ProcPlacementComponent")
+			.constructor<>()
+			.constructor<ref<Entity::EcsData>, const std::vector<proc_placement_layer_desc>&>()
+			.property("layers", &ProcPlacementComponent::layers);
+	}
+
+	ProcPlacementComponent::ProcPlacementComponent(ref<Entity::EcsData> _data, const std::vector<proc_placement_layer_desc>& _layers)
+		: Component(_data)
 	{
 		std::vector<placement_draw> drawArgs;
 
@@ -116,18 +126,18 @@ namespace era_engine
 			draw.draw.StartInstanceLocation = 0;
 			drawArgs.push_back(draw);
 
-			submeshToMesh.push_back(0);
+			submesh_to_mesh.push_back(0);
 		}
 
 		uint32 globalMeshOffset = 1;
 
 		for (const auto& layerDesc : layers)
 		{
-			placement_layer layer;
+			PlacementLayer layer;
 			layer.name = layerDesc.name;
 			layer.footprint = layerDesc.footprint;
-			layer.globalMeshOffset = globalMeshOffset;
-			layer.numMeshes = 0;
+			layer.global_mesh_offset = globalMeshOffset;
+			layer.num_meshes = 0;
 
 			for (uint32 i = 0; i < 4; ++i)
 			{
@@ -136,7 +146,7 @@ namespace era_engine
 
 				if (mesh)
 				{
-					++layer.numMeshes;
+					++layer.num_meshes;
 
 					for (const auto& sub : mesh->submeshes)
 					{
@@ -148,26 +158,26 @@ namespace era_engine
 						draw.draw.StartInstanceLocation = 0;
 						drawArgs.push_back(draw);
 
-						submeshToMesh.push_back(globalMeshOffset + i);
+						submesh_to_mesh.push_back(globalMeshOffset + i);
 
-						hasValidMeshes = true;
+						has_valid_meshes = true;
 					}
 				}
 			}
 
-			globalMeshOffset += layer.numMeshes;
+			globalMeshOffset += layer.num_meshes;
 
 			this->layers.push_back(layer);
 		}
 
 		ASSERT(globalMeshOffset <= 512); // Prefix sum currently only supports up to 512 points.
 
-		placementPointBuffer = createBuffer(sizeof(placement_point), 100000, 0, true);
-		transformBuffer = createBuffer(sizeof(placement_transform), 100000, 0, true);
-		meshCountBuffer = createBuffer(sizeof(uint32), globalMeshOffset, 0, true, true);
-		meshOffsetBuffer = createBuffer(sizeof(uint32), globalMeshOffset, 0, true, true);
-		submeshToMeshBuffer = createBuffer(sizeof(uint32), (uint32)submeshToMesh.size(), submeshToMesh.data());
-		drawIndirectBuffer = createBuffer(sizeof(placement_draw), (uint32)drawArgs.size(), drawArgs.data(), true);
+		placement_point_buffer = createBuffer(sizeof(placement_point), 100000, 0, true);
+		transform_buffer = createBuffer(sizeof(placement_transform), 100000, 0, true);
+		mesh_count_buffer = createBuffer(sizeof(uint32), globalMeshOffset, 0, true, true);
+		mesh_offset_buffer = createBuffer(sizeof(uint32), globalMeshOffset, 0, true, true);
+		submesh_to_mesh_buffer = createBuffer(sizeof(uint32), (uint32)submesh_to_mesh.size(), submesh_to_mesh.data());
+		draw_indirect_buffer = createBuffer(sizeof(placement_draw), (uint32)drawArgs.size(), drawArgs.data(), true);
 
 
 #if READBACK
@@ -177,9 +187,13 @@ namespace era_engine
 #endif
 	}
 
-	void proc_placement_component::generate(const render_camera& camera, const terrain_component& terrain, vec3 positionOffset)
+	ProcPlacementComponent::~ProcPlacementComponent()
 	{
-		if (!hasValidMeshes)
+	}
+
+	void ProcPlacementComponent::generate(const render_camera& camera, const TerrainComponent& terrain, const vec3& position_offset)
+	{
+		if (!has_valid_meshes)
 		{
 			return;
 		}
@@ -201,10 +215,10 @@ namespace era_engine
 				cl->setPipelineState(*generatePointsPipeline.pipeline);
 				cl->setComputeRootSignature(*generatePointsPipeline.rootSignature);
 
-				vec3 minCorner = terrain.getMinCorner(positionOffset);
+				vec3 minCorner = terrain.get_min_corner(position_offset);
 				vec3 chunkSize(terrain.chunkSize, terrain.amplitudeScale, terrain.chunkSize);
 
-				cl->clearUAV(meshCountBuffer, 0u);
+				cl->clearUAV(mesh_count_buffer, 0u);
 
 				for (uint32 z = 0; z < terrain.chunksPerDim; ++z)
 				{
@@ -219,8 +233,8 @@ namespace era_engine
 						{
 							cl->setDescriptorHeapSRV(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 0, chunk.heightmap);
 							cl->setDescriptorHeapSRV(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 1, chunk.normalmap);
-							cl->setDescriptorHeapUAV(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 2, placementPointBuffer);
-							cl->setDescriptorHeapUAV(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 3, meshCountBuffer);
+							cl->setDescriptorHeapUAV(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 2, placement_point_buffer);
+							cl->setDescriptorHeapUAV(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 3, mesh_count_buffer);
 
 
 							proc_placement_generate_points_cb cb;
@@ -236,22 +250,22 @@ namespace era_engine
 								uint32 numGroupsPerDim = (uint32)ceil(scaling);
 
 								cb.densities = vec4(0.f);
-								for (uint32 i = 0; i < layer.numMeshes; ++i)
+								for (uint32 i = 0; i < layer.num_meshes; ++i)
 								{
 									cb.densities.data[i] = layer.densities[i];
 								}
 
 								cb.uvScale = 1.f / scaling;
-								cb.numMeshes = layer.numMeshes;
-								cb.globalMeshOffset = layer.globalMeshOffset;
+								cb.numMeshes = layer.num_meshes;
+								cb.globalMeshOffset = layer.global_mesh_offset;
 
 								cl->setCompute32BitConstants(PROC_PLACEMENT_GENERATE_POINTS_RS_CB, cb);
 
 								cl->dispatch(numGroupsPerDim, numGroupsPerDim, 1);
 
 								barrier_batcher(cl)
-									.uav(placementPointBuffer)
-									.uav(meshCountBuffer);
+									.uav(placement_point_buffer)
+									.uav(mesh_count_buffer);
 							}
 						}
 					}
@@ -259,8 +273,8 @@ namespace era_engine
 			}
 
 			barrier_batcher(cl)
-				.transition(meshCountBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ)
-				.transition(placementPointBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
+				.transition(mesh_count_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ)
+				.transition(placement_point_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
 
 			{
 				PROFILE_ALL(cl, "Prefix sum");
@@ -268,17 +282,17 @@ namespace era_engine
 				cl->setPipelineState(*prefixSumPipeline.pipeline);
 				cl->setComputeRootSignature(*prefixSumPipeline.rootSignature);
 
-				cl->setCompute32BitConstants(PROC_PLACEMENT_PREFIX_SUM_RS_CB, prefix_sum_cb{ meshCountBuffer->elementCount - 1 });
+				cl->setCompute32BitConstants(PROC_PLACEMENT_PREFIX_SUM_RS_CB, prefix_sum_cb{ mesh_count_buffer->elementCount - 1 });
 
 				// Offset by 1 element, since that is the point count.
-				cl->setRootComputeUAV(PROC_PLACEMENT_PREFIX_SUM_RS_OUTPUT, meshOffsetBuffer->gpuVirtualAddress + meshOffsetBuffer->elementSize);
-				cl->setRootComputeSRV(PROC_PLACEMENT_PREFIX_SUM_RS_INPUT, meshCountBuffer->gpuVirtualAddress + meshCountBuffer->elementSize);
+				cl->setRootComputeUAV(PROC_PLACEMENT_PREFIX_SUM_RS_OUTPUT, mesh_offset_buffer->gpuVirtualAddress + mesh_offset_buffer->elementSize);
+				cl->setRootComputeSRV(PROC_PLACEMENT_PREFIX_SUM_RS_INPUT, mesh_count_buffer->gpuVirtualAddress + mesh_count_buffer->elementSize);
 
 				cl->dispatch(1);
 			}
 
 			barrier_batcher(cl)
-				.transition(meshOffsetBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
+				.transition(mesh_offset_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
 
 			{
 				PROFILE_ALL(cl, "Create draw calls");
@@ -287,16 +301,16 @@ namespace era_engine
 				cl->setComputeRootSignature(*createDrawCallsPipeline.rootSignature);
 
 				proc_placement_create_draw_calls_cb cb;
-				cb.transformAddressHigh = (uint32)(transformBuffer->gpuVirtualAddress >> 32);
-				cb.transformAddressLow = (uint32)(transformBuffer->gpuVirtualAddress & 0xFFFFFFFF);
-				cb.stride = transformBuffer->elementSize;
+				cb.transformAddressHigh = (uint32)(transform_buffer->gpuVirtualAddress >> 32);
+				cb.transformAddressLow = (uint32)(transform_buffer->gpuVirtualAddress & 0xFFFFFFFF);
+				cb.stride = transform_buffer->elementSize;
 				cl->setCompute32BitConstants(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_CB, cb);
-				cl->setRootComputeUAV(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_OUTPUT, drawIndirectBuffer);
-				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_MESH_COUNTS, meshCountBuffer);
-				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_MESH_OFFSETS, meshOffsetBuffer);
-				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_SUBMESH_TO_MESH, submeshToMeshBuffer);
+				cl->setRootComputeUAV(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_OUTPUT, draw_indirect_buffer);
+				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_MESH_COUNTS, mesh_count_buffer);
+				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_MESH_OFFSETS, mesh_offset_buffer);
+				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_SUBMESH_TO_MESH, submesh_to_mesh_buffer);
 
-				cl->dispatch(bucketize(drawIndirectBuffer->elementCount, PROC_PLACEMENT_CREATE_DRAW_CALLS_BLOCK_SIZE));
+				cl->dispatch(bucketize(draw_indirect_buffer->elementCount, PROC_PLACEMENT_CREATE_DRAW_CALLS_BLOCK_SIZE));
 			}
 
 #if READBACK
@@ -304,8 +318,8 @@ namespace era_engine
 #endif
 
 			barrier_batcher(cl)
-				.transition(meshCountBuffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-				.uav(drawIndirectBuffer);
+				.transition(mesh_count_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+				.uav(draw_indirect_buffer);
 
 			{
 				PROFILE_ALL(cl, "Create transforms");
@@ -313,21 +327,21 @@ namespace era_engine
 				cl->setPipelineState(*createTransformsPipeline.pipeline);
 				cl->setComputeRootSignature(*createTransformsPipeline.rootSignature);
 
-				cl->setRootComputeUAV(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_TRANSFORMS, transformBuffer);
-				cl->setRootComputeUAV(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_MESH_COUNTS, meshCountBuffer);
-				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_POINTS, placementPointBuffer);
-				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_MESH_OFFSETS, meshOffsetBuffer);
+				cl->setRootComputeUAV(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_TRANSFORMS, transform_buffer);
+				cl->setRootComputeUAV(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_MESH_COUNTS, mesh_count_buffer);
+				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_POINTS, placement_point_buffer);
+				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_MESH_OFFSETS, mesh_offset_buffer);
 
-				cl->dispatch(bucketize(placementPointBuffer->elementCount, PROC_PLACEMENT_CREATE_TRANSFORMS_BLOCK_SIZE)); // TODO
-				cl->uavBarrier(transformBuffer);
-				cl->uavBarrier(meshCountBuffer);
+				cl->dispatch(bucketize(placement_point_buffer->elementCount, PROC_PLACEMENT_CREATE_TRANSFORMS_BLOCK_SIZE)); // TODO
+				cl->uavBarrier(transform_buffer);
+				cl->uavBarrier(mesh_count_buffer);
 			}
-		}
+	}
 
 #if READBACK
-		cl->transitionBarrier(drawIndirectBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
-		cl->copyBufferRegionToBuffer(drawIndirectBuffer, readbackIndirect, 0, drawIndirectBuffer->elementCount, 0);
-		cl->copyBufferRegionToBuffer(meshOffsetBuffer, readbackMeshOffsets, 0, meshOffsetBuffer->elementCount, 0);
+		cl->transitionBarrier(draw_indirect_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
+		cl->copyBufferRegionToBuffer(draw_indirect_buffer, readbackIndirect, 0, draw_indirect_buffer->elementCount, 0);
+		cl->copyBufferRegionToBuffer(mesh_offset_buffer, readbackMeshOffsets, 0, mesh_offset_buffer->elementCount, 0);
 #endif
 
 		dxContext.executeCommandList(cl);
@@ -364,12 +378,12 @@ namespace era_engine
 #endif
 	}
 
-	void proc_placement_component::render(ldr_render_pass* renderPass)
+	void ProcPlacementComponent::render(ldr_render_pass* render_pass)
 	{
 #if 0
 
-		render_proc_placement_layer_data data = { transformBuffer, drawIndirectBuffer, 0, visualizePointsMesh.vertexBuffer, visualizePointsMesh.indexBuffer };
-		renderPass->renderObject<render_proc_placement_layer_pipeline>(data);
+		render_proc_placement_layer_data data = { transform_buffer, draw_indirect_buffer, 0, visualize_points_mesh.vertexBuffer, visualize_points_mesh.indexBuffer };
+		render_pass->renderObject<render_proc_placement_layer_pipeline>(data);
 
 #else
 
@@ -377,15 +391,15 @@ namespace era_engine
 
 		for (const auto& layer : layers)
 		{
-			for (uint32 i = 0; i < layer.numMeshes; ++i)
+			for (uint32 i = 0; i < layer.num_meshes; ++i)
 			{
 				for (uint32 j = 0; j < (uint32)layer.meshes[i]->submeshes.size(); ++j)
 				{
 					// TODO: We could pack the vertex and index buffer into the indirect call, but I'm not sure if that fits well with stuff like procedural objects.
-					render_proc_placement_layer_data data = { drawIndirectBuffer, drawCallOffset,
+					render_proc_placement_layer_data data = { draw_indirect_buffer, drawCallOffset,
 						layer.meshes[i]->mesh.vertexBuffer, layer.meshes[i]->mesh.indexBuffer, layer.meshes[i]->submeshes[j].material->albedo };
 
-					renderPass->renderObject<render_proc_placement_layer_pipeline>(data);
+					render_pass->renderObject<render_proc_placement_layer_pipeline>(data);
 
 					++drawCallOffset;
 				}

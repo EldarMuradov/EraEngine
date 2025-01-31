@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core_api.h"
+
 #ifndef ENTT_ASSERT
 #define ENTT_ASSERT(condition, ...) ASSERT(condition)
 #endif // !ENTT_ASSERT
@@ -10,13 +12,13 @@
 
 namespace era_engine
 {
-	class EntityUtils final
+	class ERA_CORE_API EntityUtils final
 	{
 		EntityUtils() = delete;
 
 	public:
 		template <typename Context_, typename... Args_>
-		inline Context_& createOrGetContextVariable(entt::registry& registry, Args_&&... a)
+		inline Context_& create_or_get_context_variable(entt::registry& registry, Args_&&... a)
 		{
 			auto& c = registry.ctx();
 			Context_* context = c.find<Context_>();
@@ -29,28 +31,28 @@ namespace era_engine
 		}
 
 		template <typename Context_>
-		inline Context_& getContextVariable(entt::registry& registry)
+		inline Context_& get_context_variable(entt::registry& registry)
 		{
 			auto& c = registry.ctx();
 			return *c.find<Context_>();
 		}
 
 		template <typename Context_>
-		inline Context_* tryGetContextVariable(entt::registry& registry)
+		inline Context_* try_get_context_variable(entt::registry& registry)
 		{
 			auto& c = registry.ctx();
 			return c.find<Context_>();
 		}
 
 		template <typename Context_>
-		inline bool doesContextVariableExist(entt::registry& registry)
+		inline bool does_context_variable_exist(entt::registry& registry)
 		{
 			auto& c = registry.ctx();
 			return c.contains<Context_>();
 		}
 
 		template <typename Context_>
-		inline void deleteContextVariable(entt::registry& registry)
+		inline void delete_context_variable(entt::registry& registry)
 		{
 			auto& c = registry.ctx();
 			c.erase<Context_>();

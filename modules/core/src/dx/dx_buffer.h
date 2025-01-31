@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "dx/dx_descriptor.h"
 #include "dx/dx_descriptor_allocation.h"
 
@@ -145,7 +147,7 @@ namespace era_engine
 
 	DXGI_FORMAT getIndexBufferFormat(uint32 elementSize);
 
-	struct map_range
+	struct ERA_CORE_API map_range
 	{
 		uint32 firstElement = 0;
 		uint32 numElements = (uint32)-1;

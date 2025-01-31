@@ -1,14 +1,17 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #pragma once
+
+#include "core_api.h"
+
 #include <aitoolkit/behtree.hpp>
 
 namespace era_engine::ai
 {
     template <typename Type>
-    struct behaviour_tree
+    struct BehaviourTree
     {
-        behaviour_tree()
+        BehaviourTree()
         {
             tree = aitoolkit::bt::sel<Type>::make(
                 {
@@ -32,7 +35,7 @@ namespace era_engine::ai
     };
 
     template<typename Type>
-    inline aitoolkit::bt::execution_state behaviour_tree<Type>::evaluate(Type type)
+    inline aitoolkit::bt::execution_state BehaviourTree<Type>::evaluate(Type type)
     {
         auto state = tree.evaluate(type);
         return state;

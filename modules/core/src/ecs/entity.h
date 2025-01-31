@@ -1,6 +1,8 @@
 #pragma once
 
-#include "core/reflect.h"
+#include "core_api.h"
+
+#include "ecs/reflection.h"
 
 #ifndef ECS_VALIDATE
 #define ECS_VALIDATE 1
@@ -22,9 +24,20 @@ namespace era_engine
 {
 	class World;
 
-	static inline std::unordered_map<entt::registry*, World*> worlds;
+	extern std::unordered_map<const char*, World*> worlds;
 
-	class Entity final
+	class ERA_CORE_API IReleasable
+	{
+	public:
+		IReleasable() = default;
+		virtual ~IReleasable() = default;
+
+		virtual void release();
+
+		ERA_REFLECT
+	};
+
+	class ERA_CORE_API Entity final
 	{
 	public:
 		using Handle = entt::entity;
@@ -35,8 +48,11 @@ namespace era_engine
 		struct EcsData final
 		{
 			Entity::Handle entity_handle = Entity::NullHandle;
-			entt::registry* registry = nullptr;
+			World* world = nullptr;
+			entt::registry* native_registry = nullptr;
 		};
+
+		ERA_REFLECT
 
 	public:
 		Entity() = default;
@@ -45,8 +61,8 @@ namespace era_engine
 		Entity(ref<EcsData> _data);
 		~Entity() noexcept;
 
-		Entity& operator=(const Entity& _entity);
-		Entity& operator=(Entity&& _entity);
+		Entity& operator=(const Entity& _entity)  noexcept;
+		Entity& operator=(Entity&& _entity) noexcept;
 
 		bool operator==(const Entity& _other) const;
 		bool operator!=(const Entity& _other) const;
@@ -58,68 +74,72 @@ namespace era_engine
 		Entity::Handle get_handle() const;
 
 		template <typename Component_, typename... Args_>
-		Entity& addComponent(Args_&&... a)
+		Entity& add_component(Args_&&... a)
 		{
-			if (!hasComponent<Component_>())
+			if (!has_component<Component_>())
 			{
-				internal_data->registry->emplace_or_replace<Component_>(internal_data->entity_handle, internal_data, std::forward<Args_>(a)...);
+				internal_data->native_registry->emplace_or_replace<Component_>(internal_data->entity_handle, internal_data, std::forward<Args_>(a)...);
 			}
 			return *this;
 		}
 
 		template <typename Component_>
-		uint32 getComponentIndex() const
+		uint32 get_component_index() const
 		{
-			auto& s = internal_data->registry->storage<Component_>();
+			auto& s = internal_data->native_registry->storage<Component_>();
 			return (uint32)s.index(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
-		void removeComponent()
+		void remove_component()
 		{
-			internal_data->registry->remove<Component_>(internal_data->entity_handle);
+			IReleasable* component = get_component_if_exists<Component_>();
+			ASSERT(component != nullptr);
+
+			component->release();
+			internal_data->native_registry->remove<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
-		bool hasComponent() const
+		bool has_component() const
 		{
-			return internal_data->registry->any_of<Component_>(internal_data->entity_handle);
+			return internal_data->native_registry->any_of<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
-		Component_& getComponent()
+		Component_& get_component()
 		{
-			return internal_data->registry->get<Component_>(internal_data->entity_handle);
+			return internal_data->native_registry->get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
-		const Component_& getComponent() const
+		const Component_& get_component() const
 		{
-			return internal_data->registry->get<Component_>(internal_data->entity_handle);
+			return internal_data->native_registry->get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
-		Component_* getComponentIfExists()
+		Component_* get_component_if_exists()
 		{
-			return internal_data->registry->try_get<Component_>(internal_data->entity_handle);
+			return internal_data->native_registry->try_get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
-		const Component_* getComponentIfExists() const
+		const Component_* get_component_if_exists() const
 		{
-			return internal_data->registry->try_get<Component_>(internal_data->entity_handle);
+			return internal_data->native_registry->try_get<Component_>(internal_data->entity_handle);
 		}
+
+		weakref<Entity::EcsData> get_data_weakref() const;
 
 	private:
 		ref<EcsData> internal_data = nullptr;
 
 		friend class World;
+		friend struct eeditor;
 	};
-	REFLECT_STRUCT(Entity::EcsData,
-		(entity_handle, "entity_handle")
-	);
 
-	struct EntityNode
+	struct ERA_CORE_API EntityNode
 	{
 		EntityNode() = default;
 		~EntityNode() = default;
@@ -130,64 +150,22 @@ namespace era_engine
 	class EntityContainer final
 	{
 		EntityContainer() = delete;
+
 	public:
-		static void emplacePair(Entity::Handle parent, Entity::Handle child)
-		{
-			lock l(sync);
+		static void emplace_pair(Entity::Handle parent, Entity::Handle child);
 
-			if (container.find(parent) == container.end())
-			{
-				container.emplace(std::make_pair(parent, EntityNode()));
-			}
+		static void erase(Entity::Handle parent);
 
-			container.at(parent).childs.push_back(child);
-		}
+		static void erase_pair(Entity::Handle parent, Entity::Handle child);
 
-		static void erase(Entity::Handle parent)
-		{
-			lock l(sync);
+		static std::vector<Entity::Handle> get_childs(Entity::Handle parent);
 
-			if (container.find(parent) == container.end())
-			{
-				return;
-			}
-
-			container.erase(parent);
-		}
-
-		static void erasePair(Entity::Handle parent, Entity::Handle child)
-		{
-			lock l(sync);
-
-			if (container.find(parent) == container.end())
-			{
-				return;
-			}
-
-			auto iter = container.at(parent).childs.begin();
-			const auto& end = container.at(parent).childs.end();
-
-			for (; iter != end; ++iter)
-			{
-				if (*iter == child)
-				{
-					container.at(parent).childs.erase(iter);
-				}
-			}
-		}
-
-		static std::vector<Entity::Handle> getChilds(Entity::Handle parent)
-		{
-			if (container.find(parent) == container.end())
-			{
-				return std::vector<Entity::Handle>();
-			}
-
-			return container.at(parent).childs;
-		}
+		static std::vector<Entity> get_entity_childs(ref<World> world, Entity::Handle parent);
 
 	private:
 		static inline std::unordered_map<Entity::Handle, EntityNode> container;
 		static inline std::mutex sync;
+
+		friend class World;
 	};
 }

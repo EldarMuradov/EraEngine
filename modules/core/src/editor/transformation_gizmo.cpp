@@ -9,7 +9,7 @@
 
 #include "geometry/mesh_builder.h"
 
-#include "physics/bounding_volumes.h"
+#include "core/bounding_volumes.h"
 
 #include "rendering/render_utils.h"
 #include "rendering/debug_visualization.h"
@@ -128,7 +128,7 @@ namespace era_engine
 		}
 	}
 
-	uint32 transformation_gizmo::handleTranslation(trs& transform, ray r, const user_input& input, float snapping, float scaling)
+	uint32 transformation_gizmo::handleTranslation(trs& transform, ray r, const UserInput& input, float snapping, float scaling)
 	{
 		quat rot = (space == transformation_global) ? quat::identity : transform.rotation;
 
@@ -151,7 +151,7 @@ namespace era_engine
 			}
 		}
 
-		if (input.mouse.left.clickEvent && hoverAxisIndex != -1)
+		if (input.mouse.left.click_event && hoverAxisIndex != -1)
 		{
 			dragging = true;
 			axisIndex = hoverAxisIndex;
@@ -230,7 +230,7 @@ namespace era_engine
 		return dragging ? axisIndex : hoverAxisIndex;
 	}
 
-	uint32 transformation_gizmo::handleRotation(trs& transform, ray r, const user_input& input, float snapping, float scaling)
+	uint32 transformation_gizmo::handleRotation(trs& transform, ray r, const UserInput& input, float snapping, float scaling)
 	{
 		quat rot = (space == transformation_global) ? quat::identity : transform.rotation;
 
@@ -247,7 +247,7 @@ namespace era_engine
 			}
 		}
 
-		if (input.mouse.left.clickEvent && hoverAxisIndex != -1)
+		if (input.mouse.left.click_event && hoverAxisIndex != -1)
 		{
 			dragging = true;
 			axisIndex = hoverAxisIndex;
@@ -299,7 +299,7 @@ namespace era_engine
 		return dragging ? axisIndex : hoverAxisIndex;
 	}
 
-	uint32 transformation_gizmo::handleScaling(trs& transform, ray r, const user_input& input, float scaling, const render_camera& camera, bool allowNonUniform)
+	uint32 transformation_gizmo::handleScaling(trs& transform, ray r, const UserInput& input, float scaling, const render_camera& camera, bool allowNonUniform)
 	{
 		// We only allow scaling in local space
 		quat rot = transform.rotation;
@@ -310,8 +310,8 @@ namespace era_engine
 		bounding_box uniformBox = bounding_box::fromCenterRadius(vec3(0.f), uniformRadius);
 
 		ray localRay = r;
-		localRay.origin = inverseTransformPosition(transform, r.origin) * transform.scale; // inverseTransformPosition applies scale, but we don't want this.
-		localRay.direction = inverseTransformDirection(transform, r.direction);
+		localRay.origin = inverse_transform_position(transform, r.origin) * transform.scale; // inverseTransformPosition applies scale, but we don't want this.
+		localRay.direction = inverse_transform_direction(transform, r.direction);
 
 		uint32 hoverAxisIndex = -1;
 		float minT = FLT_MAX;
@@ -334,7 +334,7 @@ namespace era_engine
 			}
 		}
 
-		if (input.mouse.left.clickEvent && hoverAxisIndex != -1)
+		if (input.mouse.left.click_event && hoverAxisIndex != -1)
 		{
 			if (hoverAxisIndex < 3)
 			{
@@ -501,7 +501,7 @@ namespace era_engine
 		return keyboardInteraction || uiInteraction;
 	}
 
-	void transformation_gizmo::manipulateInternal(trs& transform, const render_camera& camera, const user_input& input, bool allowInput, ldr_render_pass* ldrRenderPass, bool allowNonUniformScale)
+	void transformation_gizmo::manipulateInternal(trs& transform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass, bool allowNonUniformScale)
 	{
 		if (!input.mouse.left.down || !allowInput)
 		{
@@ -553,7 +553,7 @@ namespace era_engine
 				for (uint32 i = 0; i < 3; ++i)
 				{
 					debug_render_data data = {
-						createModelMatrix(transform.position, rotations[i], scaling),
+						create_model_matrix(transform.position, rotations[i], scaling),
 						mesh.vertexBuffer, mesh.indexBuffer,
 						submeshes[type],
 						colors[i] * (highlightAxis == i ? 0.5f : 1.f)
@@ -566,7 +566,7 @@ namespace era_engine
 			if (type == transformation_type_scale)
 			{
 				debug_render_data data = {
-					createModelMatrix(transform.position, rot, scaling),
+					create_model_matrix(transform.position, rot, scaling),
 					mesh.vertexBuffer, mesh.indexBuffer,
 					boxSubmesh,
 					vec4(0.5f) * (highlightAxis == 3 ? 0.5f : 1.f)
@@ -595,7 +595,7 @@ namespace era_engine
 			for (uint32 i = 0; i < 3; ++i)
 			{
 				debug_render_data data = {
-					createModelMatrix(transform.position, rotations[i], scaling),
+					create_model_matrix(transform.position, rotations[i], scaling),
 					mesh.vertexBuffer, mesh.indexBuffer,
 					planeSubmesh,
 					colors[i] * (highlightAxis == i + 3 ? 0.5f : 1.f)
@@ -610,14 +610,14 @@ namespace era_engine
 	{
 	}
 
-	bool transformation_gizmo::manipulateTransformation(trs& transform, const render_camera& camera, const user_input& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool transformation_gizmo::manipulateTransformation(trs& transform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
 	{
 		bool inputCaptured = handleUserInput(allowInput, true, true, true, true);
 		manipulateInternal(transform, camera, input, allowInput, ldrRenderPass);
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulatePosition(vec3& position, const render_camera& camera, const user_input& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool transformation_gizmo::manipulatePosition(vec3& position, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
 	{
 		if (type == transformation_type_rotation || type == transformation_type_scale)
 		{
@@ -632,7 +632,7 @@ namespace era_engine
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulatePositionRotation(vec3& position, quat& rotation, const render_camera& camera, const user_input& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool transformation_gizmo::manipulatePositionRotation(vec3& position, quat& rotation, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
 	{
 		if (type == transformation_type_scale)
 		{
@@ -647,7 +647,7 @@ namespace era_engine
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulatePositionScale(vec3& position, vec3& scale, const render_camera& camera, const user_input& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool transformation_gizmo::manipulatePositionScale(vec3& position, vec3& scale, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
 	{
 		if (type == transformation_type_rotation)
 		{
@@ -662,14 +662,14 @@ namespace era_engine
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulateNothing(const render_camera& camera, const user_input& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool transformation_gizmo::manipulateNothing(const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
 	{
 		dragging = false;
 		bool inputCaptured = handleUserInput(allowInput, true, true, true, true);
 		return false;
 	}
 
-	bool transformation_gizmo::manipulateBoundingSphere(bounding_sphere& sphere, const trs& parentTransform, const render_camera& camera, const user_input& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool transformation_gizmo::manipulateBoundingSphere(bounding_sphere& sphere, const trs& parentTransform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
 	{
 		if (type == transformation_type_rotation)
 		{
@@ -684,7 +684,7 @@ namespace era_engine
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulateBoundingCapsule(bounding_capsule& capsule, const trs& parentTransform, const render_camera& camera, const user_input& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool transformation_gizmo::manipulateBoundingCapsule(bounding_capsule& capsule, const trs& parentTransform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
 	{
 		bool inputCaptured = handleUserInput(allowInput, true, true, true, true);
 
@@ -695,13 +695,13 @@ namespace era_engine
 
 		trs transform = { center, parentTransform.rotation, capsule.radius };
 
-		a = inverseTransformPosition(transform, a);
-		b = inverseTransformPosition(transform, b);
+		a = inverse_transform_position(transform, a);
+		b = inverse_transform_position(transform, b);
 
 		manipulateInternal(transform, camera, input, allowInput, ldrRenderPass, false);
 
-		a = transformPosition(transform, a);
-		b = transformPosition(transform, b);
+		a = transform_position(transform, a);
+		b = transform_position(transform, b);
 
 		capsule.positionA = conjugate(parentTransform.rotation) * (a - parentTransform.position);
 		capsule.positionB = conjugate(parentTransform.rotation) * (b - parentTransform.position);
@@ -710,7 +710,7 @@ namespace era_engine
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulateBoundingCylinder(bounding_cylinder& cylinder, const trs& parentTransform, const render_camera& camera, const user_input& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool transformation_gizmo::manipulateBoundingCylinder(bounding_cylinder& cylinder, const trs& parentTransform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
 	{
 		bounding_capsule c = { cylinder.positionA, cylinder.positionB, cylinder.radius };
 		bool result = manipulateBoundingCapsule(c, parentTransform, camera, input, allowInput, ldrRenderPass);
@@ -718,7 +718,7 @@ namespace era_engine
 		return result;
 	}
 
-	bool transformation_gizmo::manipulateBoundingBox(bounding_box& aabb, const trs& parentTransform, const render_camera& camera, const user_input& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool transformation_gizmo::manipulateBoundingBox(bounding_box& aabb, const trs& parentTransform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
 	{
 		if (type == transformation_type_rotation)
 		{
@@ -734,7 +734,7 @@ namespace era_engine
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulateOrientedBoundingBox(bounding_oriented_box& obb, const trs& parentTransform, const render_camera& camera, const user_input& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool transformation_gizmo::manipulateOrientedBoundingBox(bounding_oriented_box& obb, const trs& parentTransform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
 	{
 		bool inputCaptured = handleUserInput(allowInput, true, true, true, true);
 		trs transform = { parentTransform.rotation * obb.center + parentTransform.position, parentTransform.rotation, obb.radius };

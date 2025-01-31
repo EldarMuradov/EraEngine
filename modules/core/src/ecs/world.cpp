@@ -1,31 +1,35 @@
 #include "ecs/world.h"
 #include "ecs/base_components/base_components.h"
 
+#include "core/sync.h"
+#include "core/log.h"
+
 namespace era_engine
 {
+	std::unordered_map<const char*, World*> worlds;
 
 	World::World(const char* _name)
-		:name(_name)
 	{
-		(void)registry.group<NameComponent, TransformComponent>();
+		world_data = make_ref<WorldData>();
+		world_data->name = _name;
+		world_data->registry.reserve(64000);
 
-		registry.reserve(64000);
+		worlds.emplace(_name, this);
+	}
 
-		{
-			ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(registry.create(), &registry);
-			entity_datas.emplace(new_data->entity_handle, new_data);
-			root_entity = Entity(new_data).addComponent<TransformComponent>().addComponent<NameComponent>("RootEntity");
-		}
-
-		worlds.emplace(&registry, this);
+	void World::init()
+	{
+		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), this, &world_data->registry);
+		world_data->entity_datas.emplace(new_data->entity_handle, new_data);
+		world_data->root_entity = Entity(new_data).add_component<TransformComponent>().add_component<NameComponent>("RootEntity");
 	}
 
 	Entity World::create_entity()
 	{
-		lock _lock{sync};
+		Lock _lock{ world_data->sync};
 
-		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(registry.create(), &registry);
-		entity_datas.emplace(new_data->entity_handle, new_data);
+		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), this, &world_data->registry);
+		world_data->entity_datas.emplace(new_data->entity_handle, new_data);
 
 		Entity entity = Entity(new_data);
 		add_base_components(entity);
@@ -35,33 +39,34 @@ namespace era_engine
 
 	Entity World::create_entity(const char* _name)
 	{
-		return create_entity().addComponent<NameComponent>(_name);
+		return create_entity().add_component<NameComponent>(_name);
 	}
 
 	Entity World::create_entity(Entity::Handle _handle)
 	{
-		lock _lock{ sync };
-		if (entity_datas.find(_handle) == entity_datas.end())
+		Lock _lock{ world_data->sync };
+
+		if (world_data->entity_datas.find(_handle) == world_data->entity_datas.end())
 		{
-			if (registry.create(_handle) == Entity::NullHandle)
+			if (world_data->registry.create(_handle) == Entity::NullHandle)
 			{
 				LOG_ERROR("ECS> Entity creation failed!");
 			}
 
-			ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(_handle, &registry);
-			entity_datas.emplace(new_data->entity_handle, new_data);
+			ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(_handle, this, &world_data->registry);
+			world_data->entity_datas.emplace(new_data->entity_handle, new_data);
 
 			Entity entity = Entity(new_data);
 			add_base_components(entity);
 
 			return entity;
 		}
-		return Entity(entity_datas[_handle]);
+		return Entity(world_data->entity_datas[_handle]);
 	}
 
 	Entity World::create_entity(Entity::Handle _handle, const char* _name)
 	{
-		return create_entity(_handle).addComponent<NameComponent>(_name);
+		return create_entity(_handle).add_component<NameComponent>(_name);
 	}
 
 	void World::destroy_entity(const Entity& _entity)
@@ -69,21 +74,86 @@ namespace era_engine
 		destroy_entity(_entity.get_handle());
 	}
 
-	void World::destroy_entity(Entity::Handle _handle)
+	void World::destroy_entity(Entity::Handle _handle, bool _destroy_childs, bool _destroy_components)
 	{
-		registry.destroy(_handle);
-		entity_datas.erase(_handle);
+		if (_handle == Entity::NullHandle)
+		{
+			return;
+		}
+
+		Lock _lock{ EntityContainer::sync };
+
+		if (_destroy_components)
+		{
+			for (auto&& curr : world_data->registry.storage())
+			{
+				if (curr.second.contains(_handle))
+				{
+					IReleasable* comp = reinterpret_cast<IReleasable*>(world_data->registry.storage(curr.first)->second.get(_handle));
+					ASSERT(comp != nullptr);
+					comp->release();
+				}
+			}
+		}
+
+		if (_destroy_childs)
+		{
+			for (const Entity::Handle child : EntityContainer::get_childs(_handle))
+			{
+				destroy_entity(child);
+			}
+		}
+
+		world_data->registry.destroy(_handle);
+		world_data->entity_datas.erase(_handle);
 	}
 
-	void World::destroy()
+	Entity World::try_create_entity_in_place(const Entity& place, const char* _name)
 	{
-		registry.clear();
-		entity_datas.clear();
+		if(place.is_valid())
+		{
+			return create_entity(place.internal_data->entity_handle, _name);
+		}
+		return Entity::Null;
+	}
+
+	Entity World::get_entity(Entity::Handle _handle)
+	{
+		if (world_data->entity_datas.find(_handle) == world_data->entity_datas.end())
+		{
+			return Entity();
+		}
+		return Entity(world_data->entity_datas[_handle]);
+	}
+
+	void World::destroy(bool _destroy_components)
+	{
+		for (auto& [handle, data] : world_data->entity_datas)
+		{
+			destroy_entity(handle, false, _destroy_components);
+		}
+		world_data->registry.clear();
+		world_data->entity_datas.clear();
+	}
+
+	size_t World::size() const noexcept
+	{
+		return world_data->registry.size();
+	}
+
+	entt::registry& World::get_registry()
+	{
+		return world_data->registry;
 	}
 
 	void World::add_base_components(Entity& entity)
 	{
-		entity.addComponent<TransformComponent>().addComponent<ChildComponent>(weakref<Entity::EcsData>(root_entity.internal_data));
+		entity.add_component<TransformComponent>().add_component<ChildComponent>(weakref<Entity::EcsData>(world_data->root_entity.internal_data));
+	}
+
+	World* get_world_by_name(const char* _name)
+	{
+		return worlds[_name];
 	}
 
 }

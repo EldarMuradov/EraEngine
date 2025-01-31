@@ -2,8 +2,12 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "core/math.h"
 #include "core/camera.h"
+
+#include "ecs/component.h"
 
 #include "dx/dx_texture.h"
 
@@ -12,7 +16,7 @@
 
 namespace era_engine
 {
-	struct terrain_chunk
+	struct ERA_CORE_API terrain_chunk
 	{
 		ref<dx_texture> heightmap;
 		ref<dx_texture> normalmap;
@@ -20,7 +24,7 @@ namespace era_engine
 		std::vector<uint16> heights;
 	};
 
-	struct terrain_generation_settings
+	struct ERA_CORE_API terrain_generation_settings
 	{
 		float scale = 0.01f;
 
@@ -32,30 +36,32 @@ namespace era_engine
 		uint32 noiseOctaves = 15;
 	};
 
-	struct terrain_component
+	class ERA_CORE_API TerrainComponent : public Component
 	{
-		terrain_component(uint32 chunksPerDim, float chunkSize, float amplitudeScale,
-			ref<pbr_material> groundMaterial, ref<pbr_material> rockMaterial, ref<pbr_material> mudMaterial,
-			terrain_generation_settings genSettings = {});
-		terrain_component(const terrain_component&) = default;
-		terrain_component(terrain_component&&) = default;
-		terrain_component& operator=(const terrain_component&) = default;
-		terrain_component& operator=(terrain_component&&) = default;
+	public:
+		TerrainComponent() = default;
+		TerrainComponent(ref<Entity::EcsData> _data, uint32 _chunks_per_dim, float _chunk_size, float _amplitude_scale,
+			ref<pbr_material> ground_material, ref<pbr_material> rock_material, ref<pbr_material> _mud_material,
+			const terrain_generation_settings& _gen_settings = {});
+		virtual ~TerrainComponent();
+
+		void update();
+		void render(const render_camera& camera, struct opaque_render_pass* renderPass, struct sun_shadow_render_pass* shadowPass, struct ldr_render_pass* ldrPass,
+			vec3 positionOffset, bool selected = false,
+			struct TransformComponent* waterPlaneTransforms = 0, uint32 numWaters = 0);
 
 		terrain_chunk& chunk(uint32 x, uint32 z) { return chunks[z * chunksPerDim + x]; }
 		const terrain_chunk& chunk(uint32 x, uint32 z) const { return chunks[z * chunksPerDim + x]; }
 
-		vec3 getMinCorner(vec3 positionOffset) const
+		vec3 get_min_corner(vec3 positionOffset) const
 		{
 			float xzOffset = -(chunkSize * chunksPerDim) * 0.5f; // Offsets entire terrain by half.
 			return positionOffset + vec3(xzOffset, 0.f, xzOffset);
 		}
 
-		void update(vec3 positionOffset, struct heightmap_collider_component* collider = 0);
-		void render(const render_camera& camera, struct opaque_render_pass* renderPass, struct sun_shadow_render_pass* shadowPass, struct ldr_render_pass* ldrPass,
-			vec3 positionOffset, uint32 entityID = -1, bool selected = false,
-			struct position_scale_component* waterPlaneTransforms = 0, uint32 numWaters = 0);
+		ERA_VIRTUAL_REFLECT(Component)
 
+	public:
 		uint32 chunksPerDim;
 		float chunkSize;
 		float amplitudeScale;
@@ -67,14 +73,14 @@ namespace era_engine
 		ref<pbr_material> mudMaterial;
 
 	private:
-		void generateChunksCPU();
-		void generateChunksGPU();
+		void generate_chunks_CPU();
+		void generate_chunks_GPU();
 
 		terrain_generation_settings oldGenSettings;
 
 		std::vector<terrain_chunk> chunks;
 
-		friend struct grass_component;
+		friend struct GrassComponent;
 	};
 
 	void initializeTerrainPipelines();

@@ -2,6 +2,12 @@
 
 #pragma once
 
+#include "core_api.h"
+
+#include "core/sync.h"
+
+#include <rttr/type>
+
 namespace era_engine
 {
 	template<typename T>
@@ -22,123 +28,123 @@ namespace era_engine
 	template<typename T>
 	constexpr auto BYTE_TO_GB(T b) { return ((b) / (1024 * 1024)); }
 
-	NODISCARD inline uint32 alignTo(uint32 currentOffset, uint32 alignment)
+	NODISCARD inline uint32 align_to(uint32 current_offset, uint32 alignment)
 	{
 		uint32 mask = alignment - 1;
-		uint32 misalignment = currentOffset & mask;
+		uint32 misalignment = current_offset & mask;
 		uint32 adjustment = (misalignment == 0) ? 0 : (alignment - misalignment);
-		return currentOffset + adjustment;
+		return current_offset + adjustment;
 	}
 
-	NODISCARD inline uint64 alignTo(uint64 currentOffset, uint64 alignment)
+	NODISCARD inline uint64 align_to(uint64 current_offset, uint64 alignment)
 	{
 		uint64 mask = alignment - 1;
-		uint64 misalignment = currentOffset & mask;
+		uint64 misalignment = current_offset & mask;
 		uint64 adjustment = (misalignment == 0) ? 0 : (alignment - misalignment);
-		return currentOffset + adjustment;
+		return current_offset + adjustment;
 	}
 
-	NODISCARD inline void* alignTo(void* currentAddress, uint64 alignment)
+	NODISCARD inline void* align_to(void* current_address, uint64 alignment)
 	{
 		uint64 mask = alignment - 1;
-		uint64 misalignment = (uint64)(currentAddress)&mask;
+		uint64 misalignment = (uint64)(current_address)&mask;
 		uint64 adjustment = (misalignment == 0) ? 0 : (alignment - misalignment);
-		return (uint8*)currentAddress + adjustment;
+		return (uint8*)current_address + adjustment;
 	}
 
-	inline bool rangesOverlap(uint64 fromA, uint64 toA, uint64 fromB, uint64 toB) noexcept
+	inline bool ranges_overlap(uint64 fromA, uint64 toA, uint64 fromB, uint64 toB) noexcept
 	{
 		return !(toA <= fromB || fromA >= toA);
 	}
 
-	inline bool rangesOverlap(void* fromA, void* toA, void* fromB, void* toB) noexcept
+	inline bool ranges_overlap(void* fromA, void* toA, void* fromB, void* toB) noexcept
 	{
 		return !(toA <= fromB || fromA >= toB);
 	}
 
-	struct memory_marker
+	struct ERA_CORE_API MemoryMarker
 	{
 		uint64 before;
 	};
 
-	struct eallocator
+	struct ERA_CORE_API Allocator
 	{
-		eallocator() {}
-		eallocator(const eallocator&) = delete;
-		eallocator(eallocator&&) = default;
-		~eallocator() { reset(true); }
+		Allocator();
+		Allocator(uint64 _minimum_block_size, uint64 _reserve_size);
+		Allocator(const Allocator&) = default;
+		Allocator(Allocator&&) = default;
+		~Allocator() { reset(true); }
 
-		void initialize(uint64 minimumBlockSize = 0, uint64 reserveSize = GB(8));
+		void initialize(uint64 _minimum_block_size = 0, uint64 _reserve_size = GB(8));
 
-		void ensureFreeSize(uint64 size)
-		{
-			lock lock{ mutex };
-			ensureFreeSizeInternal(size);
-		}
+		void ensure_free_size(uint64 size);
 
-		void* allocate(uint64 size, uint64 alignment = 1, bool clearToZero = false);
+		void* allocate(uint64 size, uint64 alignment = 1, bool clear_to_zero = false);
 
 		template <typename T>
-		NODISCARD T* allocate(uint32 count = 1, bool clearToZero = false)
+		NODISCARD T* allocate(uint32 count = 1, bool clear_to_zero = false)
 		{
-			return (T*)allocate(sizeof(T) * count, alignof(T), clearToZero);
+			return (T*)allocate(sizeof(T) * count, alignof(T), clear_to_zero);
 		}
 
 		// Get and set current are not thread safe.
-		NODISCARD void* getCurrent(uint64 alignment = 1) const
+		NODISCARD void* get_current(uint64 alignment = 1) const
 		{
-			return memory + alignTo(current, alignment);
+			return memory + align_to(current, alignment);
 		}
 
 		template <typename T>
-		NODISCARD T* getCurrent() const
+		NODISCARD T* get_current() const
 		{
-			return (T*)getCurrent(alignof(T));
+			return (T*)get_current(alignof(T));
 		}
 
-		void setCurrentTo(void* ptr)
+		void set_current_to(void* ptr)
 		{
 			current = (uint8*)ptr - memory;
-			sizeLeftCurrent = committedMemory - current;
-			sizeLeftTotal = reserveSize - current;
+			size_left_current = committed_memory - current;
+			size_left_total = reserve_size - current;
 		}
 
-		void reset(bool freeMemory = false);
+		void reset(bool free_memory = false);
 
-		NODISCARD memory_marker getMarker() noexcept
+		NODISCARD MemoryMarker get_marker() noexcept
 		{
 			return { current };
 		}
 
-		void resetToMarker(memory_marker marker);
+		void reset_to_marker(MemoryMarker marker);
 
 		NODISCARD uint8* base() const noexcept { return memory; }
 
+		RTTR_ENABLE()
+
 	protected:
-		void ensureFreeSizeInternal(uint64 size);
+		void ensure_free_size_internal(uint64 size);
 
 		uint8* memory = 0;
-		uint64 committedMemory = 0;
+		uint64 committed_memory = 0;
 
 		uint64 current = 0;
-		uint64 sizeLeftCurrent = 0;
+		uint64 size_left_current = 0;
 
-		uint64 sizeLeftTotal = 0;
+		uint64 size_left_total = 0;
 
-		uint64 pageSize = 0;
-		uint64 minimumBlockSize = 0;
+		uint64 page_size = 0;
+		uint64 minimum_block_size = 0;
 
-		uint64 reserveSize = 0;
-
-		std::mutex mutex;
+		uint64 reserve_size = 0;
 	};
 
-	struct scope_temp_memory
+	class ERA_CORE_API ScopedAllocator
 	{
-		eallocator& arena;
-		memory_marker marker;
+	public:
+		ScopedAllocator(Allocator& _arena) : arena(_arena), marker(_arena.get_marker()) {}
+		~ScopedAllocator() { arena.reset_to_marker(marker); }
 
-		scope_temp_memory(eallocator& arena) : arena(arena), marker(arena.getMarker()) {}
-		~scope_temp_memory() { arena.resetToMarker(marker); }
+		Allocator& arena;
+		MemoryMarker marker;
+
+		RTTR_ENABLE()
 	};
 }

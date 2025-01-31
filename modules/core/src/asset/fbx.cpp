@@ -302,7 +302,7 @@ namespace era_engine
 		const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals, const std::vector<indexed_triangle16>& triangles,
 		uint8 r = 255, uint8 g = 255, uint8 b = 255);
 
-	static uint32 parseProperties(entire_file& file, std::vector<fbx_property>& outProperties, uint32 numProperties)
+	static uint32 parseProperties(EntireFile& file, std::vector<fbx_property>& outProperties, uint32 numProperties)
 	{
 		uint32 before = (uint32)outProperties.size();
 
@@ -403,7 +403,7 @@ namespace era_engine
 		return (uint32)outProperties.size() - before;
 	}
 
-	static fbx_node_record_header_64 readNodeRecordHeader(uint32 version, entire_file& file)
+	static fbx_node_record_header_64 readNodeRecordHeader(uint32 version, EntireFile& file)
 	{
 		fbx_node_record_header_64 node;
 		if (version >= 7500)
@@ -421,7 +421,7 @@ namespace era_engine
 		return node;
 	}
 
-	static void parseNodes(uint32 version, entire_file& file, std::vector<fbx_node>& outNodes, std::vector<fbx_property>& outProperties, uint32 level, uint32 parent)
+	static void parseNodes(uint32 version, EntireFile& file, std::vector<fbx_node>& outNodes, std::vector<fbx_property>& outProperties, uint32 level, uint32 parent)
 	{
 		fbx_node_record_header_64 currentNode = readNodeRecordHeader(version, file);
 		while (currentNode.endOffset != 0)
@@ -459,11 +459,11 @@ namespace era_engine
 
 			outNodes.push_back(node);
 
-			uint64 sizeLeft = currentNode.endOffset - file.readOffset;
+			uint64 sizeLeft = currentNode.endOffset - file.read_offset;
 			if (sizeLeft > 0)
 			{
 				parseNodes(version, file, outNodes, outProperties, level + 1, nodeIndex);
-				sizeLeft = currentNode.endOffset - file.readOffset;
+				sizeLeft = currentNode.endOffset - file.read_offset;
 			}
 
 			ASSERT(sizeLeft == 0);
@@ -909,7 +909,7 @@ namespace era_engine
 		std::vector<vec3> normals;
 		std::vector<vec3> tangents;
 		std::vector<uint32> colors;
-		std::vector<era_engine::animation::skinning_weights> skin;
+		std::vector<era_engine::animation::SkinningWeights> skin;
 		std::vector<uint8> faceSizes;
 
 		std::vector<offset_count> vertexOffsetCounts;
@@ -917,7 +917,7 @@ namespace era_engine
 
 		std::vector<int32> materialIndexPerFace;
 
-		std::vector<submesh_asset> submeshes;
+		std::vector<SubmeshAsset> submeshes;
 		int64 skeletonID;
 
 		fbx_model* model;
@@ -929,7 +929,7 @@ namespace era_engine
 		vec4 albedoTint;
 		float roughnessOverride;
 		float metallicOverride;
-		pbr_material_shader shader;
+		PbrMaterialShader shader;
 		float uvScale;
 		float translucency;
 
@@ -1753,7 +1753,7 @@ namespace era_engine
 		{
 			fbx_animation& anim = lut.animations.emplace_back();
 			anim.duration = stack.duration;
-			anim.name = nameToString(stack.name);
+			anim.name = name_to_string(stack.name);
 
 			ASSERT(stack.layers.size() == 1);
 			for (fbx_animation_layer* layer : stack.layers)
@@ -1802,12 +1802,12 @@ namespace era_engine
 					{
 						uint32 vertexIndex = mesh.originalToNewVertex[j + offset];
 
-						era_engine::animation::skinning_weights& skin = mesh.skin[vertexIndex];
+						era_engine::animation::SkinningWeights& skin = mesh.skin[vertexIndex];
 
 						int32 slot = -1;
 						for (int32 k = 0; k < 4; ++k)
 						{
-							if (skin.skinWeights[k] < weight)
+							if (skin.skin_weights[k] < weight)
 							{
 								slot = k;
 								break;
@@ -1815,17 +1815,17 @@ namespace era_engine
 						}
 						if (slot != -1)
 						{
-							if (skin.skinWeights[3] != 0)
+							if (skin.skin_weights[3] != 0)
 							{
 								//printf("Warning: Vertex is influences by more than 4 joints. Ditching joint with weight %f.\n", skin.skinWeights[3] / 255.f);
 							}
 							for (int32 k = 3; k > slot; --k)
 							{
-								skin.skinIndices[k] = skin.skinIndices[k - 1];
-								skin.skinWeights[k] = skin.skinWeights[k - 1];
+								skin.skin_indices[k] = skin.skin_indices[k - 1];
+								skin.skin_weights[k] = skin.skin_weights[k - 1];
 							}
-							skin.skinIndices[slot] = (uint8)jointID;
-							skin.skinWeights[slot] = weight;
+							skin.skin_indices[slot] = (uint8)jointID;
+							skin.skin_weights[slot] = weight;
 						}
 						else
 						{
@@ -1846,7 +1846,7 @@ namespace era_engine
 				int32 material = mesh.materialIndexPerFace[faceIndex];
 
 				per_material& perMat = materialToMesh[material];
-				perMat.sub.materialIndex = material;
+				perMat.sub.material_index = material;
 
 				perMat.addTriangles(mesh.positions, mesh.uvs, mesh.normals, mesh.tangents, mesh.colors, mesh.skin, firstIndex, faceSize, mesh.submeshes);
 
@@ -2004,15 +2004,15 @@ namespace era_engine
 		return 0;
 	}
 
-	NODISCARD model_asset loadFBX(const fs::path& path, uint32 flags)
+	NODISCARD ModelAsset loadFBX(const fs::path& path, uint32 flags)
 	{
 		std::string pathStr = path.string();
 		const char* s = pathStr.c_str();
-		entire_file file = loadFile(path);
+		EntireFile file = load_file(path);
 		if (file.size < sizeof(fbx_header))
 		{
 			printf("File '%s' is smaller than FBX header.\n", s);
-			freeFile(file);
+			free_file(file);
 			return {};
 		}
 
@@ -2020,7 +2020,7 @@ namespace era_engine
 		if ((strcmp(header->magic, "Kaydara FBX Binary  ") != 0) || header->unknown[0] != 0x1A || header->unknown[1] != 0x00)
 		{
 			printf("Header of file '%s' does not match FBX spec.\n", s);
-			freeFile(file);
+			free_file(file);
 			return {};
 		}
 
@@ -2133,31 +2133,31 @@ namespace era_engine
 		for (fbx_mesh& mesh : objectLUT.meshes)
 		{
 			fbx_model* model = mesh.model;
-			for (submesh_asset& sub : mesh.submeshes)
+			for (SubmeshAsset& sub : mesh.submeshes)
 			{
-				fbx_material* mat = model->materials[sub.materialIndex];
-				sub.materialIndex = materialToGlobalIndex[mat];
+				fbx_material* mat = model->materials[sub.material_index];
+				sub.material_index = materialToGlobalIndex[mat];
 			}
 		}
 
-		model_asset result;
+		ModelAsset result;
 		result.flags = flags;
 
 		result.materials.reserve(objectLUT.materials.size());
 		for (fbx_material& material : objectLUT.materials)
 		{
-			pbr_material_desc out;
-			out.albedo = material.albedoTexture ? relativeFilepath(material.albedoTexture->relativeFilename, path) : std::string();
-			out.normal = material.normalTexture ? relativeFilepath(material.normalTexture->relativeFilename, path) : std::string();
-			out.roughness = material.roughnessTexture ? relativeFilepath(material.roughnessTexture->relativeFilename, path) : std::string();
-			out.metallic = material.metallicTexture ? relativeFilepath(material.metallicTexture->relativeFilename, path) : std::string();
-			out.albedoTint = material.albedoTint;
+			PbrMaterialDesc out;
+			out.albedo = material.albedoTexture ? relative_filepath(material.albedoTexture->relativeFilename, path) : std::string();
+			out.normal = material.normalTexture ? relative_filepath(material.normalTexture->relativeFilename, path) : std::string();
+			out.roughness = material.roughnessTexture ? relative_filepath(material.roughnessTexture->relativeFilename, path) : std::string();
+			out.metallic = material.metallicTexture ? relative_filepath(material.metallicTexture->relativeFilename, path) : std::string();
+			out.albedo_tint = material.albedoTint;
 			out.emission = material.emission;
-			out.metallicOverride = material.metallicOverride;
-			out.roughnessOverride = material.roughnessOverride;
+			out.metallic_override = material.metallicOverride;
+			out.roughness_override = material.roughnessOverride;
 			out.shader = material.shader;
 			out.translucency = material.translucency;
-			out.uvScale = material.uvScale;
+			out.uv_scale = material.uvScale;
 
 			result.materials.push_back(std::move(out));
 		}
@@ -2165,31 +2165,31 @@ namespace era_engine
 		result.meshes.reserve(objectLUT.meshes.size());
 		for (fbx_mesh& mesh : objectLUT.meshes)
 		{
-			result.meshes.push_back(mesh_asset{ nameToString(mesh.model->name), std::move(mesh.submeshes), -1 });
+			result.meshes.push_back(MeshAsset{ name_to_string(mesh.model->name), std::move(mesh.submeshes), -1 });
 		}
 
 		for (auto& [id, skeleton] : objectLUT.skeletons)
 		{
 			uint32 numJoints = (uint32)skeleton.joints.size();
 
-			skeleton_asset out;
+			SkeletonAsset out;
 			out.joints.reserve(numJoints);
 			for (uint32 i = 0; i < numJoints; ++i)
 			{
 				fbx_deformer* joint = skeleton.joints[i];
-				std::string name = nameToString(joint->model->name);
+				std::string name = name_to_string(joint->model->name);
 
-				out.nameToJointID[name] = i;
+				out.name_to_joint_id[name] = i;
 				out.joints.push_back({ std::move(name), era_engine::animation::limb_type_none, false, joint->invBindMatrix, invert(joint->invBindMatrix), joint->parentID });
 			}
 
-			ASSERT(out.joints.size() == out.nameToJointID.size());
+			ASSERT(out.joints.size() == out.name_to_joint_id.size());
 
 			for (uint32 i = 0; i < (uint32)objectLUT.meshes.size(); ++i)
 			{
 				if (objectLUT.meshes[i].skeletonID == id)
 				{
-					result.meshes[i].skeletonIndex = (uint32)result.skeletons.size();
+					result.meshes[i].skeleton_index = (uint32)result.skeletons.size();
 				}
 			}
 
@@ -2202,7 +2202,7 @@ namespace era_engine
 
 			if (numJoints)
 			{
-				animation_asset out;
+				AnimationAsset out;
 				out.duration = convertTime(animation.duration);
 				out.joints.reserve(animation.joints.size());
 				out.name = animation.name;
@@ -2213,33 +2213,33 @@ namespace era_engine
 					ASSERT(modelType == fbx_object_type_model);
 
 					fbx_model& model = objectLUT.models[modelIndex];
-					std::string name = nameToString(model.name);
+					std::string name = name_to_string(model.name);
 
-					era_engine::animation::animation_joint& joint = out.joints[name];
-					joint.isAnimated = true;
+					era_engine::animation::AnimationJoint& joint = out.joints[name];
+					joint.is_animated = true;
 
 					if (j.curveNodes[0])
 					{
-						offset_count position = transferAnimationCurve(j.curveNodes[0], out.positionKeyframes, out.positionTimestamps, animation.duration,
+						offset_count position = transferAnimationCurve(j.curveNodes[0], out.position_keyframes, out.position_timestamps, animation.duration,
 							animationTimes, animationValues);
-						joint.firstPositionKeyframe = position.offset;
-						joint.numPositionKeyframes = position.count;
+						joint.first_position_keyframe = position.offset;
+						joint.num_position_keyframes = position.count;
 					}
 
 					if (j.curveNodes[1])
 					{
-						offset_count rotation = transferAnimationCurve(j.curveNodes[1], out.rotationKeyframes, out.rotationTimestamps, animation.duration,
+						offset_count rotation = transferAnimationCurve(j.curveNodes[1], out.rotation_keyframes, out.rotation_timestamps, animation.duration,
 							animationTimes, animationValues, definitions.defaultRotationOrder);
-						joint.firstRotationKeyframe = rotation.offset;
-						joint.numRotationKeyframes = rotation.count;
+						joint.first_rotation_keyframe = rotation.offset;
+						joint.num_rotation_keyframes = rotation.count;
 					}
 
 					if (j.curveNodes[2])
 					{
-						offset_count scale = transferAnimationCurve(j.curveNodes[2], out.scaleKeyframes, out.scaleTimestamps, animation.duration,
+						offset_count scale = transferAnimationCurve(j.curveNodes[2], out.scale_keyframes, out.scale_timestamps, animation.duration,
 							animationTimes, animationValues);
-						joint.firstScaleKeyframe = scale.offset;
-						joint.numScaleKeyframes = scale.count;
+						joint.first_scale_keyframe = scale.offset;
+						joint.num_scale_keyframes = scale.count;
 					}
 				}
 
@@ -2247,7 +2247,7 @@ namespace era_engine
 			}
 		}
 
-		freeFile(file);
+		free_file(file);
 
 #if 0
 		for (uint32 i = 0; i < (uint32)result.meshes.size(); ++i)

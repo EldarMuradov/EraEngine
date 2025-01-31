@@ -2,10 +2,30 @@
 #include "ecs/world.h"
 #include "ecs/component.h"
 
+#include "core/sync.h"
+
+#include <rttr/registration>
+
 namespace era_engine
 {
 
-	Entity Entity::Null = Entity(make_ref<Entity::EcsData>(Entity::NullHandle, (entt::registry*)nullptr));
+	Entity Entity::Null = Entity(nullptr);
+
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+
+		rttr::registration::class_<IReleasable>("IReleasable")
+			.constructor<>();
+
+		rttr::registration::class_<Entity>("Entity")
+			.constructor<>()
+			.constructor<ref<Entity::EcsData>>();
+	}
+
+	void IReleasable::release()
+	{
+	}
 
 	Entity::Entity(const Entity& _entity) noexcept
 		: internal_data(_entity.internal_data)
@@ -27,13 +47,13 @@ namespace era_engine
 	{
 	}
 
-	Entity& Entity::operator=(const Entity& _entity)
+	Entity& Entity::operator=(const Entity& _entity)  noexcept
 	{
 		internal_data = _entity.internal_data;
 		return *this;
 	}
 
-	Entity& Entity::operator=(Entity&& _entity)
+	Entity& Entity::operator=(Entity&& _entity) noexcept
 	{
 		internal_data = std::move(_entity.internal_data);
 		return *this;
@@ -56,19 +76,96 @@ namespace era_engine
 
 	bool Entity::is_valid() const noexcept
 	{
-		return internal_data != nullptr && 
-			   internal_data->entity_handle != Entity::NullHandle && 
-			   internal_data->registry != nullptr;
+		return internal_data != nullptr &&
+			   internal_data->entity_handle != Entity::NullHandle &&
+			   internal_data->world != nullptr;
+	}
+
+	weakref<Entity::EcsData> Entity::get_data_weakref() const
+	{
+		return weakref<EcsData>(internal_data);
 	}
 
 	World* Entity::get_world() const
 	{
-		return worlds[internal_data->registry];
+		return internal_data->world;
 	}
 
 	Entity::Handle Entity::get_handle() const
 	{
 		return internal_data->entity_handle;
+	}
+
+	void EntityContainer::emplace_pair(Entity::Handle parent, Entity::Handle child)
+	{
+		Lock l(sync);
+
+		if (container.find(parent) == container.end())
+		{
+			container.emplace(std::make_pair(parent, EntityNode()));
+		}
+
+		container.at(parent).childs.push_back(child);
+	}
+
+	void EntityContainer::erase(Entity::Handle parent)
+	{
+		Lock l(sync);
+
+		if (container.find(parent) == container.end())
+		{
+			return;
+		}
+
+		container.erase(parent);
+	}
+
+	void EntityContainer::erase_pair(Entity::Handle parent, Entity::Handle child)
+	{
+		Lock l(sync);
+
+		if (container.find(parent) == container.end())
+		{
+			return;
+		}
+
+		auto iter = container.at(parent).childs.begin();
+		const auto& end = container.at(parent).childs.end();
+
+		for (; iter != end; ++iter)
+		{
+			if (*iter == child)
+			{
+				container.at(parent).childs.erase(iter);
+			}
+		}
+	}
+
+	std::vector<Entity::Handle> EntityContainer::get_childs(Entity::Handle parent)
+	{
+		if (container.find(parent) == container.end())
+		{
+			return std::vector<Entity::Handle>();
+		}
+
+		return container.at(parent).childs;
+	}
+
+	std::vector<Entity> EntityContainer::get_entity_childs(ref<World> world, Entity::Handle parent)
+	{
+		if (container.find(parent) == container.end())
+		{
+			return std::vector<Entity>();
+		}
+
+		std::vector<Entity> result = std::vector<Entity>(container.at(parent).childs.size());
+
+		for (const Entity::Handle handle : container.at(parent).childs)
+		{
+			result.emplace_back(world->get_entity(handle));
+		}
+
+		return result;
 	}
 
 }

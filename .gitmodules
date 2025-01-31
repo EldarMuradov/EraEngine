@@ -1,0 +1,15 @@
+[submodule "modules/thirdparty-yaml-cpp/yaml-cppmodules/thirdparty-yaml-cpp/yaml-cpp"]
+	path = modules/thirdparty-yaml-cpp/yaml-cppmodules/thirdparty-yaml-cpp/yaml-cpp
+	url = https://github.com/EldarMuradov/yaml-cpp.git
+[submodule "modules/thirdparty-yaml-cpp/yaml-cpp"]
+	path = modules/thirdparty-yaml-cpp/yaml-cpp
+	url = https://github.com/EldarMuradov/yaml-cpp.git
+[submodule "modules/thirdparty-entt/entt"]
+	path = modules/thirdparty-entt/entt
+	url = https://github.com/EldarMuradov/entt.git
+[submodule "modules/thirdparty-directxtex/directxtex"]
+	path = modules/thirdparty-directxtex/directxtex
+	url = https://github.com/EldarMuradov/DirectXTex.git
+[submodule "modules/thirdparty-rttr/rttr"]
+	path = modules/thirdparty-rttr/rttr
+	url = https://github.com/EldarMuradov/rttr.git

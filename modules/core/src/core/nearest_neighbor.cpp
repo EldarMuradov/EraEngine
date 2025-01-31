@@ -6,44 +6,44 @@
 
 namespace era_engine
 {
-    point_cloud::point_cloud(vec3* positions, uint32 numPositions)
+    PointCloud::PointCloud(vec3* _positions, uint32 _num_positions)
     {
         using kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
-            nanoflann::L2_Simple_Adaptor<float, point_cloud>,
-            point_cloud, 3>;
+            nanoflann::L2_Simple_Adaptor<float, PointCloud>,
+            PointCloud, 3>;
 
-        this->positions = positions;
-        this->numPositions = numPositions;
+        positions = _positions;
+        num_positions = _num_positions;
 
-        this->index = new kd_tree_t(3, *this, { 10 });
+        index = new kd_tree_t(3, *this, { 10 });
     }
 
-    point_cloud::~point_cloud()
+    PointCloud::~PointCloud()
     {
         using kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
-            nanoflann::L2_Simple_Adaptor<float, point_cloud>,
-            point_cloud, 3>;
+            nanoflann::L2_Simple_Adaptor<float, PointCloud>,
+            PointCloud, 3>;
 
-        kd_tree_t* index = (kd_tree_t*)this->index;
+        kd_tree_t* _index = (kd_tree_t*)index;
 
-        delete index;
+        delete _index;
     }
 
-    NODISCARD nearest_neighbor_query_result point_cloud::nearestNeighborIndex(vec3 query)
+    NearestNeighborQueryResult PointCloud::nearest_neighbor_index(vec3 query) const
     {
         using kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
-            nanoflann::L2_Simple_Adaptor<float, point_cloud>,
-            point_cloud, 3>;
+            nanoflann::L2_Simple_Adaptor<float, PointCloud>,
+            PointCloud, 3>;
 
-        kd_tree_t* index = (kd_tree_t*)this->index;
+        kd_tree_t* _index = (kd_tree_t*)index;
 
-        size_t resultIndex;
-        float squaredDistance;
-        nanoflann::KNNResultSet<float> resultSet(1);
-        resultSet.init(&resultIndex, &squaredDistance);
+        size_t result_index = 0;
+        float squared_distance = 0.0f;
+        nanoflann::KNNResultSet<float> result_set(1);
+        result_set.init(&result_index, &squared_distance);
 
-        index->findNeighbors(resultSet, &query.data[0]);
+        _index->findNeighbors(result_set, &query.data[0]);
 
-        return { (uint32)resultIndex, squaredDistance };
+        return { (uint32)result_index, squared_distance };
     }
 }

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "core/simd.h"
 #include "core/soa.h"
 
@@ -10,13 +12,16 @@ struct w8_float;
 struct w16_float;
 
 template <typename simd_t>
-union wN_vec2
+struct wN_vec2
 {
-	struct
+	union
 	{
-		simd_t x, y;
+		struct
+		{
+			simd_t x, y;
+		};
+		simd_t data[2];
 	};
-	simd_t data[2];
 
 	wN_vec2() {}
 	wN_vec2(simd_t v) : wN_vec2(v, v) {}
@@ -29,22 +34,25 @@ union wN_vec2
 };
 
 template <typename simd_t>
-union wN_vec3
+struct wN_vec3
 {
-	struct
+	union
 	{
-		simd_t x, y, z;
+		struct
+		{
+			simd_t x, y, z;
+		};
+		struct
+		{
+			simd_t r, g, b;
+		};
+		struct
+		{
+			wN_vec2<simd_t> xy;
+			simd_t z;
+		};
+		simd_t data[3];
 	};
-	struct
-	{
-		simd_t r, g, b;
-	};
-	struct
-	{
-		wN_vec2<simd_t> xy;
-		simd_t z;
-	};
-	simd_t data[3];
 
 	wN_vec3() {}
 	wN_vec3(simd_t v) : wN_vec3(v, v, v) {}
@@ -58,27 +66,30 @@ union wN_vec3
 };
 
 template <typename simd_t>
-union wN_vec4
+struct wN_vec4
 {
-	struct
+	union
 	{
-		simd_t x, y, z, w;
+		struct
+		{
+			simd_t x, y, z, w;
+		};
+		struct
+		{
+			simd_t r, g, b, a;
+		};
+		struct
+		{
+			wN_vec3<simd_t> xyz;
+			simd_t w;
+		};
+		struct
+		{
+			wN_vec2<simd_t> xy;
+			wN_vec2<simd_t> zw;
+		};
+		simd_t data[4];
 	};
-	struct
-	{
-		simd_t r, g, b, a;
-	};
-	struct
-	{
-		wN_vec3<simd_t> xyz;
-		simd_t w;
-	};
-	struct
-	{
-		wN_vec2<simd_t> xy;
-		wN_vec2<simd_t> zw;
-	};
-	simd_t data[4];
 
 	wN_vec4() {}
 	wN_vec4(simd_t v) : wN_vec4(v, v, v, v) {}
@@ -92,19 +103,22 @@ union wN_vec4
 };
 
 template <typename simd_t>
-union wN_quat
+struct wN_quat
 {
-	struct
+	union
 	{
-		simd_t x, y, z, w;
+		struct
+		{
+			simd_t x, y, z, w;
+		};
+		struct
+		{
+			wN_vec3<simd_t> v;
+			simd_t cosHalfAngle;
+		};
+		wN_vec4<simd_t> v4;
+		simd_t data[4];
 	};
-	struct
-	{
-		wN_vec3<simd_t> v;
-		simd_t cosHalfAngle;
-	};
-	wN_vec4<simd_t> v4;
-	simd_t data[4];
 
 	wN_quat() {}
 	wN_quat(simd_t x, simd_t y, simd_t z, simd_t w) : x(x), y(y), z(z), w(w) {}
@@ -117,15 +131,18 @@ union wN_quat
 };
 
 template <typename simd_t>
-union wN_mat2
+struct wN_mat2
 {
-	struct
+	union
 	{
-		simd_t
-			m00, m10,
-			m01, m11;
+		struct
+		{
+			simd_t
+				m00, m10,
+				m01, m11;
+		};
+		simd_t m[4];
 	};
-	simd_t m[4];
 
 	wN_mat2() {}
 	wN_mat2(
@@ -134,16 +151,19 @@ union wN_mat2
 };
 
 template <typename simd_t>
-union wN_mat3
+struct wN_mat3
 {
-	struct
+	union
 	{
-		simd_t
-			m00, m10, m20,
-			m01, m11, m21,
-			m02, m12, m22;
+		struct
+		{
+			simd_t
+				m00, m10, m20,
+				m01, m11, m21,
+				m02, m12, m22;
+		};
+		simd_t m[9];
 	};
-	simd_t m[9];
 
 	wN_mat3() {}
 	wN_mat3(
@@ -153,17 +173,20 @@ union wN_mat3
 };
 
 template <typename simd_t>
-union wN_mat4
+struct wN_mat4
 {
-	struct
+	union
 	{
-		simd_t
-			m00, m10, m20, m30,
-			m01, m11, m21, m31,
-			m02, m12, m22, m32,
-			m03, m13, m23, m33;
+		struct
+		{
+			simd_t
+				m00, m10, m20, m30,
+				m01, m11, m21, m31,
+				m02, m12, m22, m32,
+				m03, m13, m23, m33;
+		};
+		simd_t m[16];
 	};
-	simd_t m[16];
 
 	wN_mat4() {}
 	wN_mat4(
@@ -240,49 +263,49 @@ template <typename simd_t> inline simd_t dot(wN_vec4<simd_t> a, wN_vec4<simd_t> 
 template <typename simd_t> inline simd_t cross(wN_vec2<simd_t> a, wN_vec2<simd_t> b) { return fmsub(a.x, b.y, a.y * b.x); }
 template <typename simd_t> inline wN_vec3<simd_t> cross(wN_vec3<simd_t> a, wN_vec3<simd_t> b) { wN_vec3 result = { fmsub(a.y, b.z, a.z * b.y), fmsub(a.z, b.x, a.x * b.z), fmsub(a.x, b.y, a.y * b.x) }; return result; }
 
-template <typename simd_t> inline simd_t squaredLength(wN_vec2<simd_t> a) { return dot(a, a); }
-template <typename simd_t> inline simd_t squaredLength(wN_vec3<simd_t> a) { return dot(a, a); }
-template <typename simd_t> inline simd_t squaredLength(wN_vec4<simd_t> a) { return dot(a, a); }
+template <typename simd_t> inline simd_t squared_length(wN_vec2<simd_t> a) { return dot(a, a); }
+template <typename simd_t> inline simd_t squared_length(wN_vec3<simd_t> a) { return dot(a, a); }
+template <typename simd_t> inline simd_t squared_length(wN_vec4<simd_t> a) { return dot(a, a); }
 
-template <typename simd_t> inline simd_t length(wN_vec2<simd_t> a) { return sqrt(squaredLength(a)); }
-template <typename simd_t> inline simd_t length(wN_vec3<simd_t> a) { return sqrt(squaredLength(a)); }
-template <typename simd_t> inline simd_t length(wN_vec4<simd_t> a) { return sqrt(squaredLength(a)); }
+template <typename simd_t> inline simd_t length(wN_vec2<simd_t> a) { return sqrt(squared_length(a)); }
+template <typename simd_t> inline simd_t length(wN_vec3<simd_t> a) { return sqrt(squared_length(a)); }
+template <typename simd_t> inline simd_t length(wN_vec4<simd_t> a) { return sqrt(squared_length(a)); }
 
 template <typename simd_t> inline wN_vec2<simd_t> fmadd(wN_vec2<simd_t> a, wN_vec2<simd_t> b, wN_vec2<simd_t> c) { return { fmadd(a.x, b.x, c.x), fmadd(a.y, b.y, c.y) }; }
 template <typename simd_t> inline wN_vec3<simd_t> fmadd(wN_vec3<simd_t> a, wN_vec3<simd_t> b, wN_vec3<simd_t> c) { return { fmadd(a.x, b.x, c.x), fmadd(a.y, b.y, c.y), fmadd(a.z, b.z, c.z) }; }
 template <typename simd_t> inline wN_vec4<simd_t> fmadd(wN_vec4<simd_t> a, wN_vec4<simd_t> b, wN_vec4<simd_t> c) { return { fmadd(a.x, b.x, c.x), fmadd(a.y, b.y, c.y), fmadd(a.z, b.z, c.z), fmadd(a.w, b.w, c.w) }; }
 
 template <typename simd_t, typename cmp_t>
-NODISCARD inline wN_vec2<simd_t> ifThen(cmp_t cond, wN_vec2<simd_t> ifCase, wN_vec2<simd_t> thenCase)
+NODISCARD inline wN_vec2<simd_t> if_then(cmp_t cond, wN_vec2<simd_t> if_case, wN_vec2<simd_t> then_case)
 {
-	return { ifThen(cond, ifCase.x, thenCase.x), ifThen(cond, ifCase.y, thenCase.y) };
+	return { if_then(cond, if_case.x, then_case.x), if_then(cond, if_case.y, then_case.y) };
 }
 
 template <typename simd_t, typename cmp_t>
-NODISCARD inline wN_vec3<simd_t> ifThen(cmp_t cond, wN_vec3<simd_t> ifCase, wN_vec3<simd_t> thenCase)
+NODISCARD inline wN_vec3<simd_t> if_then(cmp_t cond, wN_vec3<simd_t> if_case, wN_vec3<simd_t> then_case)
 {
-	return { ifThen(cond, ifCase.x, thenCase.x), ifThen(cond, ifCase.y, thenCase.y), ifThen(cond, ifCase.z, thenCase.z) };
+	return { if_then(cond, if_case.x, then_case.x), if_then(cond, if_case.y, then_case.y), if_then(cond, if_case.z, then_case.z) };
 }
 
 template <typename simd_t, typename cmp_t>
-NODISCARD inline wN_vec4<simd_t> ifThen(cmp_t cond, wN_vec4<simd_t> ifCase, wN_vec4<simd_t> thenCase)
+NODISCARD inline wN_vec4<simd_t> if_then(cmp_t cond, wN_vec4<simd_t> if_case, wN_vec4<simd_t> then_case)
 {
-	return { ifThen(cond, ifCase.x, thenCase.x), ifThen(cond, ifCase.y, thenCase.y), ifThen(cond, ifCase.z, thenCase.z), ifThen(cond, ifCase.w, thenCase.w) };
+	return { if_then(cond, if_case.x, then_case.x), if_then(cond, if_case.y, then_case.y), if_then(cond, if_case.z, then_case.z), if_then(cond, if_case.w, then_case.w) };
 }
 
 template <typename simd_t, typename cmp_t>
-NODISCARD inline wN_quat<simd_t> ifThen(cmp_t cond, wN_quat<simd_t> ifCase, wN_quat<simd_t> thenCase)
+NODISCARD inline wN_quat<simd_t> if_then(cmp_t cond, wN_quat<simd_t> if_case, wN_quat<simd_t> then_case)
 {
-	return { ifThen(cond, ifCase.x, thenCase.x), ifThen(cond, ifCase.y, thenCase.y), ifThen(cond, ifCase.z, thenCase.z), ifThen(cond, ifCase.w, thenCase.w) };
+	return { if_then(cond, if_case.x, then_case.x), if_then(cond, if_case.y, then_case.y), if_then(cond, if_case.z, then_case.z), if_then(cond, if_case.w, then_case.w) };
 }
 
-template <typename simd_t> inline NODISCARD wN_vec2<simd_t> noz(wN_vec2<simd_t> a) { simd_t sl = squaredLength(a); return ifThen(sl < 1e-8f, wN_vec2<simd_t>::zero(), a * rsqrt(sl)); }
-template <typename simd_t> inline NODISCARD wN_vec3<simd_t> noz(wN_vec3<simd_t> a) { simd_t sl = squaredLength(a); return ifThen(sl < 1e-8f, wN_vec3<simd_t>::zero(), a * rsqrt(sl)); }
-template <typename simd_t> inline NODISCARD wN_vec4<simd_t> noz(wN_vec4<simd_t> a) { simd_t sl = squaredLength(a); return ifThen(sl < 1e-8f, wN_vec4<simd_t>::zero(), a * rsqrt(sl)); }
+template <typename simd_t> inline NODISCARD wN_vec2<simd_t> noz(wN_vec2<simd_t> a) { simd_t sl = squared_length(a); return if_then(sl < 1e-8f, wN_vec2<simd_t>::zero(), a * rsqrt(sl)); }
+template <typename simd_t> inline NODISCARD wN_vec3<simd_t> noz(wN_vec3<simd_t> a) { simd_t sl = squared_length(a); return if_then(sl < 1e-8f, wN_vec3<simd_t>::zero(), a * rsqrt(sl)); }
+template <typename simd_t> inline NODISCARD wN_vec4<simd_t> noz(wN_vec4<simd_t> a) { simd_t sl = squared_length(a); return if_then(sl < 1e-8f, wN_vec4<simd_t>::zero(), a * rsqrt(sl)); }
 
-template <typename simd_t> inline NODISCARD wN_vec2<simd_t> normalize(wN_vec2<simd_t> a) { simd_t l2 = squaredLength(a); return a * rsqrt(l2); }
-template <typename simd_t> inline NODISCARD wN_vec3<simd_t> normalize(wN_vec3<simd_t> a) { simd_t l2 = squaredLength(a); return a * rsqrt(l2); }
-template <typename simd_t> inline NODISCARD wN_vec4<simd_t> normalize(wN_vec4<simd_t> a) { simd_t l2 = squaredLength(a); return a * rsqrt(l2); }
+template <typename simd_t> inline NODISCARD wN_vec2<simd_t> normalize(wN_vec2<simd_t> a) { simd_t l2 = squared_length(a); return a * rsqrt(l2); }
+template <typename simd_t> inline NODISCARD wN_vec3<simd_t> normalize(wN_vec3<simd_t> a) { simd_t l2 = squared_length(a); return a * rsqrt(l2); }
+template <typename simd_t> inline NODISCARD wN_vec4<simd_t> normalize(wN_vec4<simd_t> a) { simd_t l2 = squared_length(a); return a * rsqrt(l2); }
 
 template <typename simd_t> inline NODISCARD wN_vec2<simd_t> abs(wN_vec2<simd_t> a) { return wN_vec2(abs(a.x), abs(a.y)); }
 template <typename simd_t> inline NODISCARD wN_vec3<simd_t> abs(wN_vec3<simd_t> a) { return wN_vec3(abs(a.x), abs(a.y), abs(a.z)); }
@@ -460,7 +483,7 @@ NODISCARD inline wN_mat4<simd_t> transpose(const wN_mat4<simd_t>& a)
 }
 
 template <typename simd_t>
-NODISCARD inline wN_mat3<simd_t> getSkewMatrix(wN_vec3<simd_t> r)
+NODISCARD inline wN_mat3<simd_t> get_skew_matrix(wN_vec3<simd_t> r)
 {
 	simd_t zero = simd_t::zero();
 	wN_mat3<simd_t> result;
@@ -477,12 +500,12 @@ NODISCARD inline wN_mat3<simd_t> getSkewMatrix(wN_vec3<simd_t> r)
 }
 
 template <typename simd_t>
-NODISCARD inline wN_vec2<simd_t> solveLinearSystem(const wN_mat2<simd_t>& A, wN_vec2<simd_t> b)
+NODISCARD inline wN_vec2<simd_t> solve_linear_system(const wN_mat2<simd_t>& A, wN_vec2<simd_t> b)
 {
 	wN_vec2<simd_t> ex(A.m00, A.m10);
 	wN_vec2<simd_t> ey(A.m01, A.m11);
 	simd_t det = cross(ex, ey);
-	det = ifThen(det != simd_t::zero(), 1.f / det, det);
+	det = if_then(det != simd_t::zero(), 1.f / det, det);
 
 	wN_vec2<simd_t> x;
 	x.x = det * cross(b, ey);
@@ -491,13 +514,13 @@ NODISCARD inline wN_vec2<simd_t> solveLinearSystem(const wN_mat2<simd_t>& A, wN_
 }
 
 template <typename simd_t>
-NODISCARD inline wN_vec3<simd_t> solveLinearSystem(const wN_mat3<simd_t>& A, wN_vec3<simd_t> b)
+NODISCARD inline wN_vec3<simd_t> solve_linear_system(const wN_mat3<simd_t>& A, wN_vec3<simd_t> b)
 {
 	wN_vec3<simd_t> ex(A.m00, A.m10, A.m20);
 	wN_vec3<simd_t> ey(A.m01, A.m11, A.m21);
 	wN_vec3<simd_t> ez(A.m02, A.m12, A.m22);
 	simd_t det = dot(ex, cross(ey, ez));
-	det = ifThen(det != simd_t::zero(), 1.f / det, det);
+	det = if_then(det != simd_t::zero(), 1.f / det, det);
 
 	wN_vec3<simd_t> x;
 	x.x = det * dot(b, cross(ey, ez));
@@ -507,7 +530,7 @@ NODISCARD inline wN_vec3<simd_t> solveLinearSystem(const wN_mat3<simd_t>& A, wN_
 }
 
 template <typename simd_t>
-inline wN_quat<simd_t> rotateFromTo(wN_vec3<simd_t> _from, wN_vec3<simd_t> _to)
+inline wN_quat<simd_t> rotate_from_to(wN_vec3<simd_t> _from, wN_vec3<simd_t> _to)
 {
 	wN_vec3<simd_t> from = normalize(_from);
 	wN_vec3<simd_t> to = normalize(_to);
@@ -518,19 +541,19 @@ inline wN_quat<simd_t> rotateFromTo(wN_vec3<simd_t> _from, wN_vec3<simd_t> _to)
 	simd_t d = dot(from, to);
 	auto same = d >= 1.f;
 
-	auto largeRotation = d < (1e-6f - 1.f);
+	auto large_rotation = d < (1e-6f - 1.f);
 	wN_quat<simd_t> q0, q1;
 
-	if (anyTrue(largeRotation))
+	if (any_true(large_rotation))
 	{
 		// Rotate 180° around some axis.
 		wN_vec3<simd_t> axis = cross(wN_vec3<simd_t>(one, zero, zero), from);
-		axis = ifThen(squaredLength(axis) == zero, cross(wN_vec3<simd_t>(zero, one, zero), from), axis);
+		axis = if_then(squared_length(axis) == zero, cross(wN_vec3<simd_t>(zero, one, zero), from), axis);
 		axis = normalize(axis);
 		q0 = normalize(wN_quat<simd_t>(axis, M_PI));
 	}
 
-	if (anyFalse(largeRotation))
+	if (any_false(large_rotation))
 	{
 		simd_t s = sqrt((one + d) * simd_t(2.f));
 		simd_t invs = one / s;
@@ -544,13 +567,13 @@ inline wN_quat<simd_t> rotateFromTo(wN_vec3<simd_t> _from, wN_vec3<simd_t> _to)
 		q1 = normalize(q1);
 	}
 
-	wN_quat<simd_t> q = ifThen(largeRotation, q0, q1);
-	q = ifThen(same, wN_quat<simd_t>(zero, zero, zero, one), q);
+	wN_quat<simd_t> q = if_then(large_rotation, q0, q1);
+	q = if_then(same, wN_quat<simd_t>(zero, zero, zero, one), q);
 	return q;
 }
 
 template <typename simd_t>
-void getAxisRotation(wN_quat<simd_t> q, wN_vec3<simd_t>& axis, simd_t& angle)
+void get_axis_rotation(wN_quat<simd_t> q, wN_vec3<simd_t>& axis, simd_t& angle)
 {
 	simd_t zero = simd_t::zero();
 	simd_t one = 1.f;
@@ -558,32 +581,32 @@ void getAxisRotation(wN_quat<simd_t> q, wN_vec3<simd_t>& axis, simd_t& angle)
 	angle = zero;
 	axis = wN_vec3<simd_t>(one, zero, zero);
 
-	simd_t sqLength = squaredLength(q.v);
-	auto mask = sqLength > zero;
-	if (anyTrue(mask))
+	simd_t sq_length = squared_length(q.v);
+	auto mask = sq_length > zero;
+	if (any_true(mask))
 	{
-		simd_t angleOverride = simd_t(2.f) * acos(q.w);
-		simd_t invLength = one / sqrt(sqLength);
-		wN_vec3<simd_t> axisOverride = q.v * invLength;
+		simd_t angle_override = simd_t(2.f) * acos(q.w);
+		simd_t inv_length = one / sqrt(sq_length);
+		wN_vec3<simd_t> axis_override = q.v * inv_length;
 
-		angle = ifThen(mask, angleOverride, angle);
-		axis = ifThen(mask, axisOverride, axis);
+		angle = if_then(mask, angle_override, angle);
+		axis = if_then(mask, axis_override, axis);
 	}
 }
 
 template <typename simd_t>
-NODISCARD wN_vec3<simd_t> getTangent(wN_vec3<simd_t> normal)
+NODISCARD wN_vec3<simd_t> get_tangent(wN_vec3<simd_t> normal)
 {
 	auto mask = abs(normal.x) > simd_t(0.57735f);
-	wN_vec3<simd_t> tangent = ifThen(mask, wN_vec3<simd_t>(normal.y, -normal.x, simd_t::zero()), wN_vec3<simd_t>(simd_t::zero(), normal.z, -normal.y));
+	wN_vec3<simd_t> tangent = if_then(mask, wN_vec3<simd_t>(normal.y, -normal.x, simd_t::zero()), wN_vec3<simd_t>(simd_t::zero(), normal.z, -normal.y));
 	return normalize(tangent);
 }
 
 template <typename simd_t>
-void getTangents(wN_vec3<simd_t> normal, wN_vec3<simd_t>& outTangent, wN_vec3<simd_t>& outBitangent)
+void get_tangents(wN_vec3<simd_t> normal, wN_vec3<simd_t>& out_tangent, wN_vec3<simd_t>& out_bitangent)
 {
-	outTangent = getTangent(normal);
-	outBitangent = cross(normal, outTangent);
+	out_tangent = get_tangent(normal);
+	out_bitangent = cross(normal, out_tangent);
 }
 
 template<typename simd_t>

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "core_api.h"
 #include "core/math.h"
 
 #define C_HZ		261.63f
@@ -21,13 +22,13 @@
 
 namespace era_engine
 {
-	struct audio_synth
+	struct ERA_CORE_API audio_synth
 	{
 		NODISCARD virtual uint32 getSamples(float* buffer, uint32 numSamples) = 0;
 		NODISCARD virtual float getDuration() const { return 0.f; } // You only need to override this, if you don't stream the audio.
 	};
 
-	struct sine_synth : audio_synth
+	struct ERA_CORE_API sine_synth : audio_synth
 	{
 		sine_synth(float duration = 10.f, float hz = C_HZ)
 			: audio_synth()

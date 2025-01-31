@@ -48,17 +48,17 @@ namespace era_engine
 	{
 		if (type == camera_type_ingame)
 		{
-			proj = createPerspectiveProjectionMatrix(verticalFOV, aspect, nearPlane, farPlane);
+			proj = create_perspective_projection_matrix(verticalFOV, aspect, nearPlane, farPlane);
 		}
 		else
 		{
 			ASSERT(type == camera_type_calibrated);
-			proj = createPerspectiveProjectionMatrix((float)width, (float)height, fx, fy, cx, cy, nearPlane, farPlane);
+			proj = create_perspective_projection_matrix((float)width, (float)height, fx, fy, cx, cy, nearPlane, farPlane);
 		}
 
-		invProj = invertPerspectiveProjectionMatrix(proj);
-		view = createViewMatrix(position, rotation);
-		invView = invertAffine(view);
+		invProj = invert_perspective_projection_matrix(proj);
+		view = create_view_matrix(position, rotation);
+		invView = invert_affine(view);
 		viewProj = proj * view;
 		invViewProj = invView * invProj;
 	}
@@ -295,7 +295,7 @@ namespace era_engine
 
 	NODISCARD bool camera_frustum_planes::cullModelSpaceAABB(const bounding_box& aabb, const trs& transform) const
 	{
-		return cullModelSpaceAABB(aabb, trsToMat4(transform));
+		return cullModelSpaceAABB(aabb, trs_to_mat4(transform));
 	}
 
 	NODISCARD bool camera_frustum_planes::cullModelSpaceAABB(const bounding_box& aabb, const mat4& transform) const

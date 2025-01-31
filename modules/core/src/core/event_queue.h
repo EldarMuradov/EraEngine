@@ -1,27 +1,34 @@
 #pragma once
 
+#include "core_api.h"
+
+#include "core/log.h"
+#include "core/sync.h"
+
 namespace era_engine
 {
-	constexpr size_t MAX_PENDING = 1024;
-
 	template <typename Event_>
 	using EventType = std::enable_if_t<!std::is_pointer_v<Event_>, bool>;
 
 	template <typename Event, EventType<Event> = true>
 	using ProcessEventFunction = void (*)(Event&);
 
-	template <typename Event, EventType<Event> = true>
-	struct event_queue
+	template <typename Event, size_t MAX_PENDING = 1024, EventType<Event> = true>
+	struct ERA_CORE_API EventQueue
 	{
-		virtual void pushEvent(const Event& event)
+		virtual void push_event(const Event& event)
 		{
 			if (num < MAX_PENDING - 1)
+			{
 				pending[num++] = event;
+			}
 			else
+			{
 				LOG_WARNING("Event Queue> Can't push event in queue!");
+			}
 		}
 
-		virtual void processQueue(ProcessEventFunction<Event> func)
+		virtual void process_queue(ProcessEventFunction<Event> func)
 		{
 			for (size_t i = 0; i < num; ++i)
 			{
@@ -30,33 +37,29 @@ namespace era_engine
 			num = 0;
 		}
 
-		virtual bool empty() const noexcept { return num == 0; }
+		bool empty() const noexcept { return num == 0; }
 
 	protected:
 		Event pending[MAX_PENDING];
 		size_t num = 0;
 	};
 
-	template <typename Event, EventType<Event> = true>
-	struct concurrent_event_queue : event_queue<Event>
+	template <typename Event, size_t MAX_PENDING = 1024, EventType<Event> = true>
+	struct ERA_CORE_API ConcurrentEventQueue : EventQueue<Event, MAX_PENDING>
 	{
-		virtual void pushEvent(const Event& event)
+		void push_event(const Event& event) override
 		{
-			shared_spin_lock lock{ sync };
-			queue.pushEvent(event);
+			ScopedSpinLock lock{ sync };
+			EventQueue::push_event(event);
 		}
 
-		virtual void processQueue(ProcessEventFunction<Event> func)
+		void process_queue(ProcessEventFunction<Event> func) override
 		{
-			shared_spin_lock lock{ sync };
-			queue.processQueue(func);
+			ScopedSpinLock lock{ sync };
+			EventQueue::process_queue(func);
 		}
-
-		virtual bool empty() const noexcept { return queue.empty(); }
 
 	private:
-		event_queue<Event> queue;
-
-		spin_lock sync;
+		SpinLock sync;
 	};
 }

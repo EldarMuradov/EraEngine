@@ -41,7 +41,7 @@ namespace era_engine
 	void particle_system::initializeInternal(uint32 particleStructSize, uint32 maxNumParticles, submesh_info submesh, sort_mode sortMode)
 	{
 		this->maxNumParticles = maxNumParticles;
-		this->index = atomicIncrement(particleSystemCounter);
+		this->index = atomic_increment(particleSystemCounter);
 		this->submesh = submesh;
 		this->sortMode = sortMode;
 

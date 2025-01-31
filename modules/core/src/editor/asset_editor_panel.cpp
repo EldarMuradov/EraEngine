@@ -8,10 +8,8 @@
 
 #include "animation/animation.h"
 
-#include "editor/editor_icons.h"
+#include "core/editor_icons.h"
 #include "editor/editor.h"
-
-#include "scene/scene.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui/imgui_internal.h>
@@ -171,7 +169,7 @@ namespace era_engine
 				{
 					if (ImGui::BeginProperties())
 					{
-						ImGui::PropertyValue("Load state", assetLoadStateNames[mesh->loadState.load()]);
+						ImGui::PropertyValue("Load state", asset_load_state_names[mesh->loadState.load()]);
 						editMesh("Mesh", mesh, mesh_creation_flags_default);
 						ImGui::EndProperties();
 					}
@@ -203,7 +201,7 @@ namespace era_engine
 			{
 				if (ImGui::BeginChild("AnimationSettings"))
 				{
-					animation_skeleton& skeleton = this->mesh->skeleton;
+					AnimationSkeleton& skeleton = this->mesh->skeleton;
 					if (skeleton.joints.size() > 0)
 					{
 						if (ImGui::BeginTree("Skeleton"))
@@ -214,13 +212,13 @@ namespace era_engine
 								{
 									if (i != limb_type_none)
 									{
-										skeleton_limb& l = skeleton.limbs[i];
-										vec3 c = limbTypeColors[i];
-										if (ImGui::BeginTreeColoredText(limbTypeNames[i], c))
+										SkeletonLimb& l = skeleton.limbs[i];
+										vec3 c = limb_type_colors[i];
+										if (ImGui::BeginTreeColoredText(limb_type_names[i], c))
 										{
 											if (ImGui::BeginProperties())
 											{
-												limb_dimensions& d = l.dimensions;
+												LimbDimensions& d = l.dimensions;
 												ImGui::PropertyDrag("Min Y", d.minY, 0.01f);
 												ImGui::PropertyDrag("Max Y", d.maxY, 0.01f);
 												ImGui::PropertyDrag("Radius", d.radius, 0.01f);
@@ -243,8 +241,8 @@ namespace era_engine
 							{
 								for (uint32 i = 0; i < (uint32)skeleton.joints.size(); ++i)
 								{
-									const skeleton_joint& j = skeleton.joints[i];
-									vec3 c = limbTypeColors[j.limbType];
+									const SkeletonJoint& j = skeleton.joints[i];
+									vec3 c = limb_type_colors[j.limb_type];
 									ImGui::TextColored(ImVec4(c.x, c.y, c.z, 1.f), j.name.c_str());
 								}
 
@@ -317,12 +315,12 @@ namespace era_engine
 								input.mouse.right = { ImGui::IsMouseDown(ImGuiMouseButton_Right), ImGui::IsMouseClicked(ImGuiMouseButton_Right), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Right) };
 								input.mouse.middle = { ImGui::IsMouseDown(ImGuiMouseButton_Middle), ImGui::IsMouseClicked(ImGuiMouseButton_Middle), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Middle) };
 
-								for (uint32 i = 0; i < arraysize(user_input::keyboard); ++i)
+								for (uint32 i = 0; i < arraysize(UserInput::keyboard); ++i)
 								{
 									input.keyboard[i] = { ImGui::IsKeyDown(i), ImGui::IsKeyPressed(i, false) };
 								}
 
-								input.overWindow = true;
+								input.over_window = true;
 							}
 							else
 							{
@@ -345,20 +343,20 @@ namespace era_engine
 									input.mouse.middle.down = false;
 								}
 
-								input.mouse.left.clickEvent = input.mouse.left.doubleClickEvent = false;
-								input.mouse.right.clickEvent = input.mouse.right.doubleClickEvent = false;
-								input.mouse.middle.clickEvent = input.mouse.middle.doubleClickEvent = false;
+								input.mouse.left.click_event = input.mouse.left.double_click_event = false;
+								input.mouse.right.click_event = input.mouse.right.double_click_event = false;
+								input.mouse.middle.click_event = input.mouse.middle.double_click_event = false;
 
-								for (uint32 i = 0; i < arraysize(user_input::keyboard); ++i)
+								for (uint32 i = 0; i < arraysize(UserInput::keyboard); ++i)
 								{
 									if (!ImGui::IsKeyDown(i))
 									{
 										input.keyboard[i].down = false;
 									}
-									input.keyboard[i].pressEvent = false;
+									input.keyboard[i].press_event = false;
 								}
 
-								input.overWindow = false;
+								input.over_window = false;
 							}
 
 							ImGui::SetCursorPos(ImVec2(minCorner.x + 4.5f, minCorner.y + 4.5f));

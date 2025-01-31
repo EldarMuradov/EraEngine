@@ -11,7 +11,7 @@
 	if (vertexFlags & mesh_creation_flags_with_uvs) { *(vec2*)othersPtr = uv; othersPtr += sizeof(vec2); }								\
 	if (vertexFlags & mesh_creation_flags_with_normals) { *(vec3*)othersPtr = nor; othersPtr += sizeof(vec3); }							\
 	if (vertexFlags & mesh_creation_flags_with_tangents) { *(vec3*)othersPtr = tan; othersPtr += sizeof(vec3); }						\
-	if (vertexFlags & mesh_creation_flags_with_skin) { *(skinning_weights*)othersPtr = skin; othersPtr += sizeof(skinning_weights); }	\
+	if (vertexFlags & mesh_creation_flags_with_skin) { *(animation::SkinningWeights*)othersPtr = skin; othersPtr += sizeof(animation::SkinningWeights); }	\
 	if (vertexFlags & mesh_creation_flags_with_colors) { *(uint32*)othersPtr = col; othersPtr += sizeof(uint32); }
 
 #define triangle(triangle_type, index_type, a, b, c) *(triangle_type*)indexPtr = flipWindingOrder \
@@ -39,7 +39,7 @@ namespace era_engine
 		if (flags & mesh_creation_flags_with_uvs) { result.othersSize += sizeof(vec2); }
 		if (flags & mesh_creation_flags_with_normals) { result.othersSize += sizeof(vec3); }
 		if (flags & mesh_creation_flags_with_tangents) { result.othersSize += sizeof(vec3); }
-		if (flags & mesh_creation_flags_with_skin) { result.skinOffset = result.othersSize;	result.othersSize += sizeof(skinning_weights); }
+		if (flags & mesh_creation_flags_with_skin) { result.skinOffset = result.othersSize;	result.othersSize += sizeof(SkinningWeights); }
 		if (flags & mesh_creation_flags_with_colors) { result.othersSize += sizeof(uint32); }
 		return result;
 	}
@@ -403,7 +403,7 @@ namespace era_engine
 		auto [positionPtr, othersPtr, indexPtr, indexOffset] = beginPrimitive(slices * rows + 2, 2 * rows * slices);
 
 		// Vertices
-		pushVertex(center + vec3(0.f, -radius, 0.f), directionToPanoramaUV(vec3(0.f, -1.f, 0.f)), vec3(0.f, -1.f, 0.f), vec3(1.f, 0.f, 0.f), {}, 0);
+		pushVertex(center + vec3(0.f, -radius, 0.f), direction_to_panorama_uv(vec3(0.f, -1.f, 0.f)), vec3(0.f, -1.f, 0.f), vec3(1.f, 0.f, 0.f), {}, 0);
 
 		for (uint32 y = 0; y < rows; ++y)
 		{
@@ -418,11 +418,11 @@ namespace era_engine
 				vec3 pos(vertexX * radius, vertexY * radius, vertexZ * radius);
 				vec3 nor(vertexX, vertexY, vertexZ);
 
-				pushVertex(center + pos, directionToPanoramaUV(nor), normalize(nor), normalize(cross(vec3(0.f, 1.f, 0.f), nor)), {}, 0);
+				pushVertex(center + pos, direction_to_panorama_uv(nor), normalize(nor), normalize(cross(vec3(0.f, 1.f, 0.f), nor)), {}, 0);
 			}
 		}
 
-		pushVertex(center + vec3(0.f, radius, 0.f), directionToPanoramaUV(vec3(0.f, 1.f, 0.f)), vec3(0.f, 1.f, 0.f), vec3(1.f, 0.f, 0.f), {}, 0);
+		pushVertex(center + vec3(0.f, radius, 0.f), direction_to_panorama_uv(vec3(0.f, 1.f, 0.f)), vec3(0.f, 1.f, 0.f), vec3(1.f, 0.f, 0.f), {}, 0);
 
 		uint32 lastVertex = slices * rows + 2;
 
@@ -587,7 +587,7 @@ namespace era_engine
 
 		// Vertices
 		pushVertex(rotation * vec3(0.f, -radius - halfHeight, 0.f) + center,
-			directionToPanoramaUV(vec3(0.f, -1.f, 0.f)),
+			direction_to_panorama_uv(vec3(0.f, -1.f, 0.f)),
 			rotation * vec3(0.f, -1.f, 0.f),
 			rotation * vec3(1.f, 0.f, 0.f), {}, 0);
 
@@ -604,7 +604,7 @@ namespace era_engine
 				vec3 pos(vertexX * radius, vertexY * radius - halfHeight, vertexZ * radius);
 				vec3 nor(vertexX, vertexY, vertexZ);
 
-				vec2 uv = directionToPanoramaUV(nor);
+				vec2 uv = direction_to_panorama_uv(nor);
 				uv.y *= texStretch;
 				pushVertex(rotation * pos + center, uv, rotation * normalize(nor), rotation * normalize(cross(vec3(0.f, 1.f, 0.f), nor)), {}, 0);
 			}
@@ -622,13 +622,13 @@ namespace era_engine
 				vec3 pos(vertexX * radius, vertexY * radius + halfHeight, vertexZ * radius);
 				vec3 nor(vertexX, vertexY, vertexZ);
 
-				vec2 uv = directionToPanoramaUV(nor);
+				vec2 uv = direction_to_panorama_uv(nor);
 				uv.y *= texStretch;
 				pushVertex(rotation * pos + center, uv, rotation * normalize(nor), rotation * normalize(cross(vec3(0.f, 1.f, 0.f), nor)), {}, 0);
 			}
 		}
 		pushVertex(rotation * vec3(0.f, radius + halfHeight, 0.f) + center,
-			directionToPanoramaUV(vec3(0.f, 1.f, 0.f)),
+			direction_to_panorama_uv(vec3(0.f, 1.f, 0.f)),
 			rotation * vec3(0.f, 1.f, 0.f),
 			rotation * vec3(1.f, 0.f, 0.f), {}, 0);
 
@@ -1246,7 +1246,7 @@ namespace era_engine
 		pushTriangle(lastVertex - 1 - slices, lastVertex - 2, lastVertex - 1);
 	}
 
-	void mesh_builder::pushMesh(const submesh_asset& mesh, float scale, bounding_box* aabb)
+	void mesh_builder::pushMesh(const SubmeshAsset& mesh, float scale, bounding_box* aabb)
 	{
 		uint32 numVertices = (uint32)mesh.positions.size();
 		uint32 numFaces = (uint32)mesh.triangles.size();
@@ -1264,7 +1264,7 @@ namespace era_engine
 		vec3 tangent(0.f, 0.f, 0.f);
 		vec2 uv(0.f, 0.f);
 		uint32 vertexColor = 0;
-		skinning_weights skin = {};
+		animation::SkinningWeights skin = {};
 
 		bool hasPositions = true;
 		bool hasUVs = !mesh.uvs.empty();
@@ -1337,7 +1337,7 @@ namespace era_engine
 		totalNumTriangles += numTrianglesInCurrentSubmesh;
 
 		// Align the next index to a 16-byte boundary
-		uint32 alignedNumTriangles = alignTo(totalNumTriangles, 8); // 8 triangles are 48 bytes, which is divisible by 16.
+		uint32 alignedNumTriangles = align_to(totalNumTriangles, 8); // 8 triangles are 48 bytes, which is divisible by 16.
 		uint32 missing = alignedNumTriangles - totalNumTriangles;
 		if (missing > 0)
 		{

@@ -328,7 +328,7 @@ namespace era_engine
 
 		if (visualizeProbes)
 		{
-			mat4 transform = createTranslationMatrix(minCorner);
+			mat4 transform = create_translation_matrix(minCorner);
 			visualize_grid_render_data data =
 			{
 				transform, sphereMesh.vertexBuffer, sphereMesh.indexBuffer, sphereSubmesh, cellSize, numNodesX, numNodesY, numNodesZ, totalNumNodes, irradiance
@@ -338,7 +338,7 @@ namespace era_engine
 		}
 		if (visualizeRays)
 		{
-			mat4 transform = createTranslationMatrix(minCorner);
+			mat4 transform = create_translation_matrix(minCorner);
 			visualize_rays_render_data data = { transform, cellSize, numNodesX, numNodesY, numNodesZ, totalNumNodes, raytracedRadiance, raytracedDirectionAndDistance };
 
 			renderPass->renderObject<visualize_rays_pipeline>(data);
@@ -431,7 +431,7 @@ namespace era_engine
 			cl->setComputeRootSignature(pipeline.rootSignature);
 
 			light_probe_trace_cb cb;
-			cb.rayRotation = createModelMatrix(0.f, grid.rayRotation);
+			cb.rayRotation = create_model_matrix(0.f, grid.rayRotation);
 			cb.grid = grid.getCB();
 			cb.sampleSkyFromTexture = !common.proceduralSky;
 

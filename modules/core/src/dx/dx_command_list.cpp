@@ -114,7 +114,7 @@ namespace era_engine
 		destLocation.PlacedFootprint.Footprint.Width = destWidth;
 		destLocation.PlacedFootprint.Footprint.Height = numRows;
 		destLocation.PlacedFootprint.Footprint.Depth = 1;
-		destLocation.PlacedFootprint.Footprint.RowPitch = alignTo(destWidth * getFormatSize(format), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+		destLocation.PlacedFootprint.Footprint.RowPitch = align_to(destWidth * getFormatSize(format), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 
 		D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
 		srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;

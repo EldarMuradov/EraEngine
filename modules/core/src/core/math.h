@@ -5,7 +5,11 @@
 #define ROW_MAJOR 0
 #define DIRECTX_COORDINATE_SYSTEM 1
 
+#include "core_api.h"
+
 #include "core/simd.h"
+
+#include <rttr/type>
 
 #include <cmath>
 #include <cfloat>
@@ -30,25 +34,25 @@ constexpr float oneDiv60 = 1.0f / 60.0f;
 constexpr float oneDiv120 = 1.0f / 120.0f;
 
 inline constexpr float lerp(float l, float u, float t) { return l + t * (u - l); }
-inline constexpr float inverseLerp(float l, float u, float v) { return (v - l) / (u - l); }
-inline constexpr float remap(float v, float oldL, float oldU, float newL, float newU) { return lerp(newL, newU, inverseLerp(oldL, oldU, v)); }
+inline constexpr float inverse_lerp(float l, float u, float v) { return (v - l) / (u - l); }
+inline constexpr float remap(float v, float oldL, float oldU, float newL, float newU) { return lerp(newL, newU, inverse_lerp(oldL, oldU, v)); }
 inline constexpr float clamp(float v, float l, float u) { float r = max(l, v); r = min(u, r); return r; }
 inline constexpr uint32 clamp(uint32 v, uint32 l, uint32 u) { uint32 r = max(l, v); r = min(u, r); return r; }
 inline constexpr int32 clamp(int32 v, int32 l, int32 u) { int32 r = max(l, v); r = min(u, r); return r; }
 inline constexpr float clamp01(float v) { return clamp(v, 0.f, 1.f); }
 inline constexpr float saturate(float v) { return clamp01(v); }
 inline constexpr float smoothstep(float t) { return t * t * (3.f - 2.f * t); }
-inline constexpr float smoothstep(float l, float u, float v) { return smoothstep(clamp01(inverseLerp(l, u, v))); }
+inline constexpr float smoothstep(float l, float u, float v) { return smoothstep(clamp01(inverse_lerp(l, u, v))); }
 inline constexpr uint32 bucketize(uint32 problemSize, uint32 bucketSize) { return (problemSize + bucketSize - 1) / bucketSize; }
 inline constexpr uint64 bucketize(uint64 problemSize, uint64 bucketSize) { return (problemSize + bucketSize - 1) / bucketSize; }
 
 inline float frac(float v) { return fmodf(v, 1.f); }
-inline void copySign(float from, float& to) { to = copysign(to, from); }
+inline void copy_sign(float from, float& to) { to = copysign(to, from); }
 
-inline void flushDenormalsToZero() { _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON); }
+inline void flush_denormals_to_zero() { _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON); }
 
 // Constexpr-version of _BitScanForward. Returns -1 if mask is zero.
-inline constexpr uint32 indexOfLeastSignificantSetBit(uint32 i)
+inline constexpr uint32 index_of_least_significant_set_bit(uint32 i)
 {
 	if (i == 0)
 	{
@@ -66,7 +70,7 @@ inline constexpr uint32 indexOfLeastSignificantSetBit(uint32 i)
 }
 
 // Constexpr-version of _BitScanReverse. Returns -1 if mask is zero.
-inline constexpr uint32 indexOfMostSignificantSetBit(uint32 i)
+inline constexpr uint32 index_of_most_significant_set_bit(uint32 i)
 {
 	if (i == 0)
 	{
@@ -87,8 +91,8 @@ inline constexpr int32 log2(int32 i)
 {
 	ASSERT(i >= 0);
 
-	uint32 mssb = indexOfMostSignificantSetBit((uint32)i);
-	uint32 lssb = indexOfLeastSignificantSetBit((uint32)i);
+	uint32 mssb = index_of_most_significant_set_bit((uint32)i);
+	uint32 lssb = index_of_least_significant_set_bit((uint32)i);
 
 	if (mssb == (uint32)-1 || lssb == (uint32)-1)
 	{
@@ -102,8 +106,8 @@ inline constexpr int32 log2(int32 i)
 
 inline constexpr uint32 log2(uint32 i)
 {
-	uint32 mssb = indexOfMostSignificantSetBit(i);
-	uint32 lssb = indexOfLeastSignificantSetBit(i);
+	uint32 mssb = index_of_most_significant_set_bit(i);
+	uint32 lssb = index_of_least_significant_set_bit(i);
 
 	if (mssb == (uint32)-1 || lssb == (uint32)-1)
 	{
@@ -115,51 +119,51 @@ inline constexpr uint32 log2(uint32 i)
 	return mssb + (mssb == lssb ? 0 : 1);
 }
 
-inline constexpr bool isPowerOfTwo(uint32 i)
+inline constexpr bool is_power_of_two(uint32 i)
 {
 	return (i & (i - 1)) == 0;
 }
 
-inline constexpr uint32 alignToPowerOfTwo(uint32 i)
+inline constexpr uint32 align_to_power_of_two(uint32 i)
 {
 	return i == 0u ? 0u : 1u << log2(i);
 }
 
-inline float easeInQuadratic(float t) { return t * t; }
-inline float easeOutQuadratic(float t) { return t * (2.f - t); }
-inline float easeInOutQuadratic(float t) { return (t < 0.5f) ? (2.f * t * t) : (-1.f + (4.f - 2.f * t) * t); }
+inline float ease_in_quadratic(float t) { return t * t; }
+inline float ease_out_quadratic(float t) { return t * (2.f - t); }
+inline float ease_in_out_quadratic(float t) { return (t < 0.5f) ? (2.f * t * t) : (-1.f + (4.f - 2.f * t) * t); }
 
-inline float easeInCubic(float t) { return t * t * t; }
-inline float easeOutCubic(float t) { float tmin1 = t - 1.f; return tmin1 * tmin1 * tmin1 + 1.f; }
-inline float easeInOutCubic(float t) { return (t < 0.5f) ? (4.f * t * t * t) : ((t - 1.f) * (2.f * t - 2.f) * (2.f * t - 2.f) + 1.f); }
+inline float ease_in_cubic(float t) { return t * t * t; }
+inline float ease_out_cubic(float t) { float tmin1 = t - 1.f; return tmin1 * tmin1 * tmin1 + 1.f; }
+inline float ease_in_out_cubic(float t) { return (t < 0.5f) ? (4.f * t * t * t) : ((t - 1.f) * (2.f * t - 2.f) * (2.f * t - 2.f) + 1.f); }
 
-inline float easeInQuartic(float t) { return t * t * t * t; }
-inline float easeOutQuartic(float t) { float tmin1 = t - 1.f; return 1.f - tmin1 * tmin1 * tmin1 * tmin1; }
-inline float easeInOutQuartic(float t) { float tmin1 = t - 1.f; return (t < 0.5f) ? (8.f * t * t * t * t) : (1.f - 8.f * tmin1 * tmin1 * tmin1 * tmin1); }
+inline float ease_in_quartic(float t) { return t * t * t * t; }
+inline float ease_out_quartic(float t) { float tmin1 = t - 1.f; return 1.f - tmin1 * tmin1 * tmin1 * tmin1; }
+inline float ease_in_out_quartic(float t) { float tmin1 = t - 1.f; return (t < 0.5f) ? (8.f * t * t * t * t) : (1.f - 8.f * tmin1 * tmin1 * tmin1 * tmin1); }
 
-inline float easeInQuintic(float t) { return t * t * t * t * t; }
-inline float easeOutQuintic(float t) { float tmin1 = t - 1.f; return 1.f + tmin1 * tmin1 * tmin1 * tmin1 * tmin1; }
-inline float easeInOutQuintic(float t) { float tmin1 = t - 1.f; return t < 0.5 ? 16.f * t * t * t * t * t : 1.f + 16.f * tmin1 * tmin1 * tmin1 * tmin1 * tmin1; }
+inline float ease_in_quintic(float t) { return t * t * t * t * t; }
+inline float ease_out_quintic(float t) { float tmin1 = t - 1.f; return 1.f + tmin1 * tmin1 * tmin1 * tmin1 * tmin1; }
+inline float ease_in_out_quintic(float t) { float tmin1 = t - 1.f; return t < 0.5 ? 16.f * t * t * t * t * t : 1.f + 16.f * tmin1 * tmin1 * tmin1 * tmin1 * tmin1; }
 
-inline float easeInSine(float t) { return sin((t - 1.f) * M_PI_OVER_2) + 1.f; }
-inline float easeOutSine(float t) { return sin(t * M_PI_OVER_2); }
-inline float easeInOutSine(float t) { return 0.5f * (1 - cos(t * M_PI)); }
+inline float ease_in_sine(float t) { return sin((t - 1.f) * M_PI_OVER_2) + 1.f; }
+inline float ease_out_sine(float t) { return sin(t * M_PI_OVER_2); }
+inline float ease_in_out_sine(float t) { return 0.5f * (1 - cos(t * M_PI)); }
 
-inline float easeInCircular(float t) { return 1.f - sqrt(1.f - (t * t)); }
-inline float easeOutCircular(float t) { return sqrt((2.f - t) * t); }
-inline float easeInOutCircular(float t) { return (t < 0.5f) ? (0.5f * (1.f - sqrt(1.f - 4.f * (t * t)))) : (0.5f * (sqrt(-((2.f * t) - 3.f) * ((2.f * t) - 1.f)) + 1.f)); }
+inline float ease_in_circular(float t) { return 1.f - sqrt(1.f - (t * t)); }
+inline float ease_out_circular(float t) { return sqrt((2.f - t) * t); }
+inline float ease_in_out_circular(float t) { return (t < 0.5f) ? (0.5f * (1.f - sqrt(1.f - 4.f * (t * t)))) : (0.5f * (sqrt(-((2.f * t) - 3.f) * ((2.f * t) - 1.f)) + 1.f)); }
 
-inline float easeInExponential(float t) { return (t == 0.f) ? t : powf(2.f, 10.f * (t - 1.f)); }
-inline float easeOutExponential(float t) { return (t == 1.f) ? t : 1.f - powf(2.f, -10.f * t); }
-inline float easeInOutExponential(float t) { if (t == 0.f || t == 1.f) { return t; } return (t < 0.5f) ? (0.5f * powf(2.f, (20.f * t) - 10.f)) : (-0.5f * powf(2.f, (-20.f * t) + 10.f) + 1.f); }
+inline float ease_in_exponential(float t) { return (t == 0.f) ? t : powf(2.f, 10.f * (t - 1.f)); }
+inline float ease_out_exponential(float t) { return (t == 1.f) ? t : 1.f - powf(2.f, -10.f * t); }
+inline float ease_in_out_exponential(float t) { if (t == 0.f || t == 1.f) { return t; } return (t < 0.5f) ? (0.5f * powf(2.f, (20.f * t) - 10.f)) : (-0.5f * powf(2.f, (-20.f * t) + 10.f) + 1.f); }
 
-inline float inElastic(float t) { return sin(13.f * M_PI_OVER_2 * t) * powf(2.f, 10.f * (t - 1.f)); }
-inline float outElastic(float t) { return sin(-13.f * M_PI_OVER_2 * (t + 1.f)) * powf(2.f, -10.f * t) + 1.f; }
-inline float inOutElastic(float t) { return (t < 0.5f) ? (0.5f * sin(13.f * M_PI_OVER_2 * (2.f * t)) * powf(2.f, 10.f * ((2.f * t) - 1.f))) : (0.5f * (sin(-13.f * M_PI_OVER_2 * ((2.f * t - 1.f) + 1.f)) * powf(2.f, -10.f * (2.f * t - 1.f)) + 2.f)); }
+inline float in_elastic(float t) { return sin(13.f * M_PI_OVER_2 * t) * powf(2.f, 10.f * (t - 1.f)); }
+inline float out_elastic(float t) { return sin(-13.f * M_PI_OVER_2 * (t + 1.f)) * powf(2.f, -10.f * t) + 1.f; }
+inline float in_out_elastic(float t) { return (t < 0.5f) ? (0.5f * sin(13.f * M_PI_OVER_2 * (2.f * t)) * powf(2.f, 10.f * ((2.f * t) - 1.f))) : (0.5f * (sin(-13.f * M_PI_OVER_2 * ((2.f * t - 1.f) + 1.f)) * powf(2.f, -10.f * (2.f * t - 1.f)) + 2.f)); }
 
-inline float inBack(float t) { const float s = 1.70158f; return t * t * ((s + 1.f) * t - s); }
-inline float outBack(float t) { const float s = 1.70158f; return --t, 1.f * (t * t * ((s + 1.f) * t + s) + 1.f); }
-inline float inOutBack(float t) { const float s = 1.70158f * 1.525f; return (t < 0.5f) ? (t *= 2.f, 0.5f * t * t * (t * s + t - s)) : (t = t * 2.f - 2.f, 0.5f * (2.f + t * t * (t * s + t + s))); }
+inline float in_back(float t) { const float s = 1.70158f; return t * t * ((s + 1.f) * t - s); }
+inline float out_back(float t) { const float s = 1.70158f; return --t, 1.f * (t * t * ((s + 1.f) * t + s) + 1.f); }
+inline float in_out_back(float t) { const float s = 1.70158f * 1.525f; return (t < 0.5f) ? (t *= 2.f, 0.5f * t * t * (t * s + t - s)) : (t = t * 2.f - 2.f, 0.5f * (2.f + t * t * (t * s + t + s))); }
 
 #define bounceout(p) ( \
     (t) < 4.f/11.f ? (121.f * (t) * (t))/16.f : \
@@ -167,18 +171,18 @@ inline float inOutBack(float t) { const float s = 1.70158f * 1.525f; return (t <
     (t) < 9.f/10.f ? (4356.f/361.f * (t) * (t)) - (35442.f/1805.f * (t)) + 16061.f/1805.f \
                 : (54.f/5.f * (t) * (t)) - (513.f/25.f * (t)) + 268.f/25.f )
 
-inline float inBounce(float t) { return 1.f - bounceout(1.f - t); }
-inline float outBounce(float t) { return bounceout(t); }
-inline float inOutBounce(float t) { return (t < 0.5f) ? (0.5f * (1.f - bounceout(1.f - t * 2.f))) : (0.5f * bounceout((t * 2.f - 1.f)) + 0.5f); }
+inline float in_bounce(float t) { return 1.f - bounceout(1.f - t); }
+inline float out_bounce(float t) { return bounceout(t); }
+inline float in_out_bounce(float t) { return (t < 0.5f) ? (0.5f * (1.f - bounceout(1.f - t * 2.f))) : (0.5f * bounceout((t * 2.f - 1.f)) + 0.5f); }
 
 #undef bounceout
 
-inline float getFramerateIndependentT(float speed, float dt)
+inline float get_framerate_independent_t(float speed, float dt)
 {
 	return 1.f - expf(-speed * dt);
 }
 
-struct half
+struct ERA_CORE_API half
 {
 	uint16 h;
 
@@ -188,8 +192,8 @@ struct half
 
 	operator float();
 
-	static const half minValue;
-	static const half maxValue;
+	static const half min_value;
+	static const half max_value;
 };
 
 half operator+(half a, half b);
@@ -204,13 +208,16 @@ half& operator*=(half& a, half b);
 half operator/(half a, half b);
 half& operator/=(half& a, half b);
 
-union vec2
+struct ERA_CORE_API vec2
 {
-	struct
+	union
 	{
-		float x, y;
+		struct
+		{
+			float x, y;
+		};
+		float data[2];
 	};
-	float data[2];
 
 	vec2() {}
 	vec2(float v) : vec2(v, v) {}
@@ -219,27 +226,30 @@ union vec2
 	static const vec2 zero;
 };
 
-union vec3
+struct ERA_CORE_API vec3
 {
-	struct
+	union
 	{
-		float x, y, z;
+		struct
+		{
+			float x, y, z;
+		};
+		struct
+		{
+			float r, g, b;
+		};
+		struct
+		{
+			vec2 xy;
+			float z;
+		};
+		struct
+		{
+			float x;
+			vec2 yz;
+		};
+		float data[3];
 	};
-	struct
-	{
-		float r, g, b;
-	};
-	struct
-	{
-		vec2 xy;
-		float z;
-	};
-	struct
-	{
-		float x;
-		vec2 yz;
-	};
-	float data[3];
 
 	vec3() {}
 	vec3(float v) : vec3(v, v, v) {}
@@ -249,33 +259,36 @@ union vec3
 	static const vec3 zero;
 };
 
-union vec4
+struct ERA_CORE_API vec4
 {
-	struct
+	union
 	{
-		float x, y, z, w;
+		struct
+		{
+			float x, y, z, w;
+		};
+		struct
+		{
+			float r, g, b, a;
+		};
+		struct
+		{
+			vec3 xyz;
+			float w;
+		};
+		struct
+		{
+			vec2 xy;
+			vec2 zw;
+		};
+		struct
+		{
+			float x;
+			vec3 yzw;
+		};
+		w4_float f4;
+		float data[4];
 	};
-	struct
-	{
-		float r, g, b, a;
-	};
-	struct
-	{
-		vec3 xyz;
-		float w;
-	};
-	struct
-	{
-		vec2 xy;
-		vec2 zw;
-	};
-	struct
-	{
-		float x;
-		vec3 yzw;
-	};
-	w4_float f4;
-	float data[4];
 
 	vec4() {}
 	vec4(float v) : vec4(v, v, v, v) {}
@@ -286,19 +299,22 @@ union vec4
 	static const vec4 zero;
 };
 
-union quat
+struct ERA_CORE_API quat
 {
-	struct
+	union
 	{
-		float x, y, z, w;
+		struct
+		{
+			float x, y, z, w;
+		};
+		struct
+		{
+			vec3 v;
+			float cosHalfAngle;
+		};
+		vec4 v4;
+		w4_float f4;
 	};
-	struct
-	{
-		vec3 v;
-		float cosHalfAngle;
-	};
-	vec4 v4;
-	w4_float f4;
 
 	quat() {}
 	quat(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
@@ -310,7 +326,7 @@ union quat
 	static const quat zero;
 };
 
-struct dual_quat
+struct ERA_CORE_API dual_quat
 {
 	quat real;
 	quat dual;
@@ -319,43 +335,46 @@ struct dual_quat
 	dual_quat(quat real, quat dual) : real(real), dual(dual) {}
 	dual_quat(quat rotation, vec3 translation);
 
-	vec3 getTranslation();
-	quat getRotation();
+	vec3 get_translation();
+	quat get_rotation() const;
 
 	static const dual_quat identity;
 	static const dual_quat zero;
 };
 
-union mat2
+struct ERA_CORE_API mat2
 {
+	union
+	{
 #if ROW_MAJOR
-	struct
-	{
-		float
-			m00, m01,
-			m10, m11;
-	};
-	struct
-	{
-		vec2 row0;
-		vec2 row1;
-	};
-	vec2 rows[2];
+		struct
+		{
+			float
+				m00, m01,
+				m10, m11;
+		};
+		struct
+		{
+			vec2 row0;
+			vec2 row1;
+};
+		vec2 rows[2];
 #else
-	struct
-	{
-		float
-			m00, m10,
-			m01, m11;
-	};
-	struct
-	{
-		vec2 col0;
-		vec2 col1;
-	};
-	vec2 cols[2];
+		struct
+		{
+			float
+				m00, m10,
+				m01, m11;
+		};
+		struct
+		{
+			vec2 col0;
+			vec2 col1;
+		};
+		vec2 cols[2];
 #endif
-	float m[4];
+		float m[4];
+	};
 
 	mat2() {}
 	mat2(
@@ -366,40 +385,43 @@ union mat2
 	static const mat2 zero;
 };
 
-union mat3
+struct ERA_CORE_API mat3
 {
+	union
+	{
 #if ROW_MAJOR
-	struct
-	{
-		float
-			m00, m01, m02,
-			m10, m11, m12,
-			m20, m21, m22;
+		struct
+		{
+			float
+				m00, m01, m02,
+				m10, m11, m12,
+				m20, m21, m22;
+		};
+		struct
+		{
+			vec3 row0;
+			vec3 row1;
+			vec3 row2;
 	};
-	struct
-	{
-		vec3 row0;
-		vec3 row1;
-		vec3 row2;
-	};
-	vec3 rows[3];
+		vec3 rows[3];
 #else
-	struct
-	{
-		float
-			m00, m10, m20,
-			m01, m11, m21,
-			m02, m12, m22;
-	};
-	struct
-	{
-		vec3 col0;
-		vec3 col1;
-		vec3 col2;
-	};
-	vec3 cols[3];
+		struct
+		{
+			float
+				m00, m10, m20,
+				m01, m11, m21,
+				m02, m12, m22;
+		};
+		struct
+		{
+			vec3 col0;
+			vec3 col1;
+			vec3 col2;
+		};
+		vec3 cols[3];
 #endif
-	float m[9];
+		float m[9];
+	};
 
 	mat3() {}
 	mat3(
@@ -411,51 +433,54 @@ union mat3
 	static const mat3 zero;
 };
 
-union mat4
+struct ERA_CORE_API mat4
 {
+	union
+	{
 #if ROW_MAJOR
-	struct
-	{
-		float
-			m00, m01, m02, m03,
-			m10, m11, m12, m13,
-			m20, m21, m22, m23,
-			m30, m31, m32, m33;
-	};
-	struct
-	{
-		vec4 row0;
-		vec4 row1;
-		vec4 row2;
-		vec4 row3;
-	};
-	vec4 rows[4];
+		struct
+		{
+			float
+				m00, m01, m02, m03,
+				m10, m11, m12, m13,
+				m20, m21, m22, m23,
+				m30, m31, m32, m33;
+		};
+		struct
+		{
+			vec4 row0;
+			vec4 row1;
+			vec4 row2;
+			vec4 row3;
+		};
+		vec4 rows[4];
 #else
-	struct
-	{
-		float
-			m00, m10, m20, m30,
-			m01, m11, m21, m31,
-			m02, m12, m22, m32,
-			m03, m13, m23, m33;
-	};
-	struct
-	{
-		vec4 col0;
-		vec4 col1;
-		vec4 col2;
-		vec4 col3;
-	};
-	vec4 cols[4];
+		struct
+		{
+			float
+				m00, m10, m20, m30,
+				m01, m11, m21, m31,
+				m02, m12, m22, m32,
+				m03, m13, m23, m33;
+		};
+		struct
+		{
+			vec4 col0;
+			vec4 col1;
+			vec4 col2;
+			vec4 col3;
+		};
+		vec4 cols[4];
 #endif
-	struct
-	{
-		w4_float f40;
-		w4_float f41;
-		w4_float f42;
-		w4_float f43;
+		struct
+		{
+			w4_float f40;
+			w4_float f41;
+			w4_float f42;
+			w4_float f43;
+		};
+		float m[16];
 	};
-	float m[16];
 
 	mat4() {}
 	mat4(
@@ -488,7 +513,7 @@ inline vec3 col(const mat3& a, uint32 c) { return a.cols[c]; }
 inline vec4 col(const mat4& a, uint32 c) { return a.cols[c]; }
 #endif
 
-struct trs
+struct ERA_CORE_API trs
 {
 	quat rotation;
 	vec3 position;
@@ -498,6 +523,8 @@ struct trs
 	trs(vec3 position, quat rotation = quat::identity, vec3 scale = { 1.f, 1.f, 1.f }) : position(position), rotation(rotation), scale(scale) {}
 
 	static const trs identity;
+
+	RTTR_ENABLE()
 };
 
 // Vec2 operators
@@ -569,30 +596,30 @@ inline vec4 diagonal(const mat4& m) { return vec4(m.m00, m.m11, m.m22, m.m33); }
 
 inline float dot(vec2 a, vec2 b) { float result = a.x * b.x + a.y * b.y; return result; }
 inline float dot(vec3 a, vec3 b) { float result = a.x * b.x + a.y * b.y + a.z * b.z; return result; }
-inline float dot(vec4 a, vec4 b) { w4_float m = a.f4 * b.f4; return addElements(m); }
+inline float dot(vec4 a, vec4 b) { w4_float m = a.f4 * b.f4; return add_elements(m); }
 
 inline float cross(vec2 a, vec2 b) { return a.x * b.y - a.y * b.x; }
 inline vec3 cross(vec3 a, vec3 b) { vec3 result = { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x }; return result; }
 
-inline float squaredLength(vec2 a) { return dot(a, a); }
-inline float squaredLength(vec3 a) { return dot(a, a); }
-inline float squaredLength(vec4 a) { return dot(a, a); }
+inline float squared_length(vec2 a) { return dot(a, a); }
+inline float squared_length(vec3 a) { return dot(a, a); }
+inline float squared_length(vec4 a) { return dot(a, a); }
 
-inline float length(vec2 a) { return sqrt(squaredLength(a)); }
-inline float length(vec3 a) { return sqrt(squaredLength(a)); }
-inline float length(vec4 a) { return sqrt(squaredLength(a)); }
+inline float length(vec2 a) { return sqrt(squared_length(a)); }
+inline float length(vec3 a) { return sqrt(squared_length(a)); }
+inline float length(vec4 a) { return sqrt(squared_length(a)); }
 
-inline vec2 noz(vec2 a) { float sl = squaredLength(a); return (sl < 1e-8f) ? vec2(0.f, 0.f) : (a * (1.f / sqrt(sl))); }
-inline vec3 noz(vec3 a) { float sl = squaredLength(a); return (sl < 1e-8f) ? vec3(0.f, 0.f, 0.f) : (a * (1.f / sqrt(sl))); }
-inline vec4 noz(vec4 a) { float sl = squaredLength(a); return (sl < 1e-8f) ? vec4(0.f, 0.f, 0.f, 0.f) : (a * (1.f / sqrt(sl))); }
+inline vec2 noz(vec2 a) { float sl = squared_length(a); return (sl < 1e-8f) ? vec2(0.f, 0.f) : (a * (1.f / sqrt(sl))); }
+inline vec3 noz(vec3 a) { float sl = squared_length(a); return (sl < 1e-8f) ? vec3(0.f, 0.f, 0.f) : (a * (1.f / sqrt(sl))); }
+inline vec4 noz(vec4 a) { float sl = squared_length(a); return (sl < 1e-8f) ? vec4(0.f, 0.f, 0.f, 0.f) : (a * (1.f / sqrt(sl))); }
 
 inline vec2 normalize(vec2 a) { float l = length(a); return a * (1.f / l); }
 inline vec3 normalize(vec3 a) { float l = length(a); return a * (1.f / l); }
 inline vec4 normalize(vec4 a) { float l = length(a); return a * (1.f / l); }
 
-inline void copySign(vec2 from, vec2& to) { copySign(from.x, to.x); copySign(from.y, to.y); }
-inline void copySign(vec3 from, vec3& to) { copySign(from.x, to.x); copySign(from.y, to.y); copySign(from.z, to.z); }
-inline void copySign(vec4 from, vec4& to) { copySign(from.x, to.x); copySign(from.y, to.y); copySign(from.z, to.z); copySign(from.w, to.w); }
+inline void copy_sign(vec2 from, vec2& to) { copy_sign(from.x, to.x); copy_sign(from.y, to.y); }
+inline void copy_sign(vec3 from, vec3& to) { copy_sign(from.x, to.x); copy_sign(from.y, to.y); copy_sign(from.z, to.z); }
+inline void copy_sign(vec4 from, vec4& to) { copy_sign(from.x, to.x); copy_sign(from.y, to.y); copy_sign(from.z, to.z); copy_sign(from.w, to.w); }
 
 inline vec2 abs(vec2 a) { return vec2(abs(a.x), abs(a.y)); }
 inline vec3 abs(vec3 a) { return vec3(abs(a.x), abs(a.y), abs(a.z)); }
@@ -687,13 +714,13 @@ inline vec2 max(vec2 a, vec2 b) { return vec2(max(a.x, b.x), max(a.y, b.y)); }
 inline vec3 max(vec3 a, vec3 b) { return vec3(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)); }
 inline vec4 max(vec4 a, vec4 b) { return vec4(maximum(a.f4, b.f4)); }
 
-inline float maxElement(vec2 a) { return max(a.x, a.y); }
-inline float maxElement(vec3 a) { return max(a.x, max(a.y, a.z)); }
-inline float maxElement(vec4 a) { return max(a.x, max(a.y, max(a.z, a.w))); }
+inline float max_element(vec2 a) { return max(a.x, a.y); }
+inline float max_element(vec3 a) { return max(a.x, max(a.y, a.z)); }
+inline float max_element(vec4 a) { return max(a.x, max(a.y, max(a.z, a.w))); }
 
-inline uint32 maxElementIndex(vec2 a) { return (a.x > a.y) ? 0 : 1; }
-inline uint32 maxElementIndex(vec3 a) { return (a.x > a.y) ? ((a.x > a.z) ? 0 : 2) : ((a.y > a.z) ? 1 : 2); }
-inline uint32 maxElementIndex(vec4 a) {
+inline uint32 max_element_index(vec2 a) { return (a.x > a.y) ? 0 : 1; }
+inline uint32 max_element_index(vec3 a) { return (a.x > a.y) ? ((a.x > a.z) ? 0 : 2) : ((a.y > a.z) ? 1 : 2); }
+inline uint32 max_element_index(vec4 a) {
 	return (a.x > a.y) ? ((a.x > a.z) ? ((a.x > a.w) ? 0 : 3)
 		: ((a.z > a.w) ? 2 : 3))
 		: ((a.y > a.z) ? ((a.y > a.w) ? 1 : 3)
@@ -762,96 +789,98 @@ float determinant(const mat4& m);
 float trace(const mat3& m);
 float trace(const mat4& m);
 
-vec3 transformPosition(const mat4& m, vec3 pos);
-vec3 transformDirection(const mat4& m, vec3 dir);
-vec3 transformPosition(const trs& m, vec3 pos);
-vec3 transformDirection(const trs& m, vec3 dir);
-vec3 inverseTransformPosition(const trs& m, vec3 pos);
-vec3 inverseTransformDirection(const trs& m, vec3 dir);
+vec3 transform_position(const mat4& m, vec3 pos);
+vec3 transform_direction(const mat4& m, vec3 dir);
+vec3 transform_position(const trs& m, vec3 pos);
+vec3 transform_direction(const trs& m, vec3 dir);
+vec3 inverse_transform_position(const trs& m, vec3 pos);
+vec3 inverse_transform_direction(const trs& m, vec3 dir);
 
-quat rotateFromTo(vec3 from, vec3 to);
-quat lookAtQuaternion(vec3 forward, vec3 up);
-void getAxisRotation(quat q, vec3& axis, float& angle);
-void decomposeQuaternionIntoTwistAndSwing(quat q, vec3 normalizedTwistAxis, quat& twist, quat& swing);
+quat rotate_from_to(vec3 from, vec3 to);
+quat look_at_quaternion(vec3 forward, vec3 up);
+void get_axis_rotation(quat q, vec3& axis, float& angle);
+void decompose_quaternion_into_twist_and_swing(quat q, vec3 normalized_twist_axis, quat& twist, quat& swing);
 
 quat slerp(quat from, quat to, float t);
 quat nlerp(quat* qs, float* weights, uint32 count);
 
-mat3 quaternionToMat3(quat q);
-mat4 quaternionToMat4(quat q);
+mat3 quaternion_to_mat3(quat q);
+mat4 quaternion_to_mat4(quat q);
 
-quat mat3ToQuaternion(const mat3& m);
+quat mat3_to_quaternion(const mat3& m);
 
-vec3 quatToEuler(quat q);
-quat eulerToQuat(vec3 euler);
+vec3 quat_to_euler(quat q);
+quat euler_to_quat(vec3 euler);
 
-mat3 outerProduct(vec3 a, vec3 b);
-mat3 getSkewMatrix(vec3 r);
+mat3 outer_product(vec3 a, vec3 b);
+mat3 get_skew_matrix(vec3 r);
 
-mat4 trsToMat4(const trs& transform);
-trs mat4ToTRS(const mat4& m);
+mat4 trs_to_mat4(const trs& transform);
+trs mat4_to_trs(const mat4& m);
 
-mat4 createPerspectiveProjectionMatrix(float fov, float aspect, float nearPlane, float farPlane);
-mat4 createPerspectiveProjectionMatrix(float width, float height, float fx, float fy, float cx, float cy, float nearPlane, float farPlane);
-mat4 createPerspectiveProjectionMatrix(float r, float l, float t, float b, float nearPlane, float farPlane);
-mat4 createOrthographicProjectionMatrix(float r, float l, float t, float b, float nearPlane, float farPlane);
-mat4 invertPerspectiveProjectionMatrix(const mat4& m);
-mat4 invertOrthographicProjectionMatrix(const mat4& m);
-mat4 createTranslationMatrix(vec3 position);
-mat4 createModelMatrix(vec3 position, quat rotation, vec3 scale = vec3(1.f, 1.f, 1.f));
-mat4 createBillboardModelMatrix(vec3 position, vec3 eye, vec3 scale);
-mat4 createViewMatrix(vec3 eye, float pitch, float yaw);
-mat4 createSkyViewMatrix(const mat4& v);
-mat4 lookAt(vec3 eye, vec3 target, vec3 up);
-mat4 createViewMatrix(vec3 position, quat rotation);
-mat4 invertAffine(const mat4& m);
+mat4 create_perspective_projection_matrix(float fov, float aspect, float near_plane, float far_plane);
+mat4 create_perspective_projection_matrix(float width, float height, float fx, float fy, float cx, float cy, float near_plane, float far_plane);
+mat4 create_perspective_projection_matrix(float r, float l, float t, float b, float near_plane, float far_plane);
+mat4 create_orthographic_projection_matrix(float r, float l, float t, float b, float near_plane, float far_plane);
+mat4 invert_perspective_projection_matrix(const mat4& m);
+mat4 invert_orthographic_projection_matrix(const mat4& m);
+mat4 create_translation_matrix(vec3 position);
+mat4 create_model_matrix(vec3 position, quat rotation, vec3 scale = vec3(1.f, 1.f, 1.f));
+mat4 create_billboard_model_matrix(vec3 position, vec3 eye, vec3 scale);
+mat4 create_view_matrix(vec3 eye, float pitch, float yaw);
+mat4 create_sky_view_matrix(const mat4& v);
+mat4 look_at(vec3 eye, vec3 target, vec3 up);
+mat4 create_view_matrix(vec3 position, quat rotation);
+mat4 invert_affine(const mat4& m);
 
-bool pointInTriangle(vec3 point, vec3 triA, vec3 triB, vec3& triC);
-bool pointInRectangle(vec2 p, vec2 topLeft, vec2 bottomRight);
-bool pointInBox(vec3 p, vec3 minCorner, vec3 maxCorner);
+bool point_in_triangle(vec3 point, vec3 triA, vec3 triB, vec3& triC);
+bool point_in_rectangle(vec2 p, vec2 top_left, vec2 bottom_right);
+bool point_in_box(vec3 p, vec3 min_corner, vec3 max_corner);
 
-vec2 directionToPanoramaUV(vec3 dir);
+vec2 direction_to_panorama_uv(vec3 dir);
 
-float angleToZeroToTwoPi(float angle);
-float angleToNegPiToPi(float angle);
+float angle_to_zero_to_two_pi(float angle);
+float angle_to_neg_pi_to_pi(float angle);
 
-vec2 solveLinearSystem(const mat2& A, vec2 b);
-vec3 solveLinearSystem(const mat3& A, vec3 b);
+vec2 solve_linear_system(const mat2& A, vec2 b);
+vec3 solve_linear_system(const mat3& A, vec3 b);
 
-vec3 getBarycentricCoordinates(vec2 a, vec2 b, vec2 c, vec2 p);
-vec3 getBarycentricCoordinates(vec3 a, vec3 b, vec3 c, vec3 p);
-bool insideTriangle(vec3 barycentrics);
+vec3 get_barycentric_coordinates(vec2 a, vec2 b, vec2 c, vec2 p);
+vec3 get_barycentric_coordinates(vec3 a, vec3 b, vec3 c, vec3 p);
+bool inside_triangle(vec3 barycentrics);
 
-void getTangents(vec3 normal, vec3& outTangent, vec3& outBitangent);
-vec3 getTangent(vec3 normal);
+void get_tangents(vec3 normal, vec3& out_tangent, vec3& out_bitangent);
+vec3 get_tangent(vec3 normal);
 
 // W = PDF = 1 / 4pi
-vec4 uniformSampleSphere(vec2 E);
+vec4 uniform_sample_sphere(vec2 E);
 
-struct singular_value_decomposition
+struct ERA_CORE_API singular_value_decomposition
 {
 	mat3 U;
 	mat3 V;
-	vec3 singularValues;
+	vec3 singular_values;
 };
 
-struct qr_decomposition
+struct ERA_CORE_API QRDecomposition
 {
 	mat3 Q, R;
 };
 
-singular_value_decomposition computeSVD(const mat3& A);
-qr_decomposition qrDecomposition(const mat3& mat);
-bool getEigen(const mat3& A, vec3& outEigenValues, mat3& outEigenVectors);
+singular_value_decomposition compute_svd(const mat3& A);
+QRDecomposition create_qr_decomposition(const mat3& mat);
+bool get_eigen(const mat3& A, vec3& out_eigen_values, mat3& out_eigen_vectors);
 
 template <typename T>
-void exclusivePrefixSum(const T* input, T* output, uint32 count)
+void exclusive_prefix_sum(const T* input, T* output, uint32 count)
 {
 	if (count > 0)
 	{
 		output[0] = T(0);
 		for (uint32 i = 1; i < count; ++i)
+		{
 			output[i] = output[i - 1] + input[i - 1];
+		}
 	}
 }
 
@@ -860,56 +889,64 @@ T sum(const T* input, uint32 count)
 {
 	T result = 0;
 	for (uint32 i = 0; i < count; ++i)
+	{
 		result += input[i];
+	}
 
 	return result;
 }
 
-inline bool fuzzyEquals(float a, float b, float threshold = 1e-4f) { return abs(a - b) < threshold; }
-inline bool fuzzyEquals(vec2 a, vec2 b, float threshold = 1e-4f) { return fuzzyEquals(a.x, b.x, threshold) && fuzzyEquals(a.y, b.y, threshold); }
-inline bool fuzzyEquals(vec3 a, vec3 b, float threshold = 1e-4f) { return fuzzyEquals(a.x, b.x, threshold) && fuzzyEquals(a.y, b.y, threshold) && fuzzyEquals(a.z, b.z, threshold); }
-inline bool fuzzyEquals(vec4 a, vec4 b, float threshold = 1e-4f) { return fuzzyEquals(a.x, b.x, threshold) && fuzzyEquals(a.y, b.y, threshold) && fuzzyEquals(a.z, b.z, threshold) && fuzzyEquals(a.w, b.w, threshold); }
-inline bool fuzzyEquals(quat a, quat b, float threshold = 1e-4f) { if (dot(a.v4, b.v4) < 0.f) { a.v4 *= -1.f; } return fuzzyEquals(a.x, b.x, threshold) && fuzzyEquals(a.y, b.y, threshold) && fuzzyEquals(a.z, b.z, threshold) && fuzzyEquals(a.w, b.w, threshold); }
+inline bool fuzzy_equals(float a, float b, float threshold = 1e-4f) { return abs(a - b) < threshold; }
+inline bool fuzzy_equals(vec2 a, vec2 b, float threshold = 1e-4f) { return fuzzy_equals(a.x, b.x, threshold) && fuzzy_equals(a.y, b.y, threshold); }
+inline bool fuzzy_equals(vec3 a, vec3 b, float threshold = 1e-4f) { return fuzzy_equals(a.x, b.x, threshold) && fuzzy_equals(a.y, b.y, threshold) && fuzzy_equals(a.z, b.z, threshold); }
+inline bool fuzzy_equals(vec4 a, vec4 b, float threshold = 1e-4f) { return fuzzy_equals(a.x, b.x, threshold) && fuzzy_equals(a.y, b.y, threshold) && fuzzy_equals(a.z, b.z, threshold) && fuzzy_equals(a.w, b.w, threshold); }
+inline bool fuzzy_equals(quat a, quat b, float threshold = 1e-4f) { if (dot(a.v4, b.v4) < 0.f) { a.v4 *= -1.f; } return fuzzy_equals(a.x, b.x, threshold) && fuzzy_equals(a.y, b.y, threshold) && fuzzy_equals(a.z, b.z, threshold) && fuzzy_equals(a.w, b.w, threshold); }
 
-inline bool fuzzyEquals(const mat2& a, const mat2& b, float threshold = 1e-4f)
+inline bool fuzzy_equals(const mat2& a, const mat2& b, float threshold = 1e-4f)
 {
 	bool result = true;
 	for (uint32 i = 0; i < 4; ++i)
-		result &= fuzzyEquals(a.m[i], b.m[i], threshold);
+	{
+		result &= fuzzy_equals(a.m[i], b.m[i], threshold);
+	}
 
 	return result;
 }
 
-inline bool fuzzyEquals(const mat3& a, const mat3& b, float threshold = 1e-4f)
+inline bool fuzzy_equals(const mat3& a, const mat3& b, float threshold = 1e-4f)
 {
 	bool result = true;
 	for (uint32 i = 0; i < 9; ++i)
-		result &= fuzzyEquals(a.m[i], b.m[i], threshold);
+	{
+		result &= fuzzy_equals(a.m[i], b.m[i], threshold);
+	}
 
 	return result;
 }
 
-inline bool fuzzyEquals(const mat4& a, const mat4& b, float threshold = 1e-4f)
+inline bool fuzzy_equals(const mat4& a, const mat4& b, float threshold = 1e-4f)
 {
 	bool result = true;
 	for (uint32 i = 0; i < 16; ++i)
-		result &= fuzzyEquals(a.m[i], b.m[i], threshold);
+	{
+		result &= fuzzy_equals(a.m[i], b.m[i], threshold);
+	}
 
 	return result;
 }
 
-inline bool fuzzyEquals(const trs& a, const trs& b, float threshold = 1e-4f)
+inline bool fuzzy_equals(const trs& a, const trs& b, float threshold = 1e-4f)
 {
 	bool result = true;
-	result &= fuzzyEquals(a.position, b.position, threshold);
-	result &= fuzzyEquals(a.rotation, b.rotation, threshold);
-	result &= fuzzyEquals(a.scale, b.scale, threshold);
+	result &= fuzzy_equals(a.position, b.position, threshold);
+	result &= fuzzy_equals(a.rotation, b.rotation, threshold);
+	result &= fuzzy_equals(a.scale, b.scale, threshold);
 	return result;
 }
 
-inline bool isUniform(vec2 v) { return fuzzyEquals(v.x, v.y); }
-inline bool isUniform(vec3 v) { return fuzzyEquals(v.x, v.y) && fuzzyEquals(v.x, v.z); }
-inline bool isUniform(vec4 v) { return fuzzyEquals(v.x, v.y) && fuzzyEquals(v.x, v.z) && fuzzyEquals(v.x, v.w); }
+inline bool isUniform(vec2 v) { return fuzzy_equals(v.x, v.y); }
+inline bool isUniform(vec3 v) { return fuzzy_equals(v.x, v.y) && fuzzy_equals(v.x, v.z); }
+inline bool isUniform(vec4 v) { return fuzzy_equals(v.x, v.y) && fuzzy_equals(v.x, v.z) && fuzzy_equals(v.x, v.w); }
 
 inline quat::quat(vec3 axis, float angle)
 {
@@ -928,13 +965,13 @@ inline dual_quat::dual_quat(quat rotation, vec3 translation)
 	dual = quat(x, y, z, w);
 }
 
-inline vec3 dual_quat::getTranslation()
+inline vec3 dual_quat::get_translation()
 {
 	quat tq = dual * conjugate(real);
 	return 2.f * tq.v4.xyz;
 }
 
-inline quat dual_quat::getRotation()
+inline quat dual_quat::get_rotation() const
 {
 	return real;
 }
@@ -1023,7 +1060,7 @@ inline std::ostream& operator<<(std::ostream& s, const trs& m)
 }
 
 template <typename T>
-inline T evaluateSpline(const float* ts, const T* values, int32 num, float t)
+inline T evaluate_spline(const float* ts, const T* values, int32 num, float t)
 {
 	ASSERT(num >= 2);
 
@@ -1036,16 +1073,20 @@ inline T evaluateSpline(const float* ts, const T* values, int32 num, float t)
 		num = k + 1;
 
 	// Interpolant.
-	const float h1 = clamp01(inverseLerp(ts[k - 1], ts[k], t));
+	const float h1 = clamp01(inverse_lerp(ts[k - 1], ts[k], t));
 	const float h2 = h1 * h1;
 	const float h3 = h2 * h1;
 	const vec4 h(h3, h2, h1, 1.f);
 
 	T result;
 	if constexpr (std::is_same_v<std::remove_cv_t<T>, quat> || std::is_same_v<std::remove_cv_t<T>, dual_quat>)
+	{
 		result = T::zero;
+	}
 	else
+	{
 		result = 0;
+	}
 
 	int32 m = num - 1;
 	result += values[clamp(k - 2, 0, m)] * dot(vec4(-1, 2, -1, 0), h);
@@ -1060,15 +1101,15 @@ inline T evaluateSpline(const float* ts, const T* values, int32 num, float t)
 
 // maxNumPoints must be a multiple of 4!
 // If you want to use this in a shader constant buffer, T can currently be either float or vec4.
-template <typename T, uint32 maxNumPoints_>
+template <typename T, uint32 max_num_points_>
 struct alignas(16) catmull_rom_spline
 {
-	static_assert(maxNumPoints_ > 0 && maxNumPoints_ % 4 == 0, "Spline max num points must be divisible by 4.");
+	static_assert(max_num_points_ > 0 && max_num_points_ % 4 == 0, "Spline max num points must be divisible by 4.");
 
-	float ts[maxNumPoints_];
-	T values[maxNumPoints_];
+	float ts[max_num_points_];
+	T values[max_num_points_];
 
-	enum { maxNumPoints = maxNumPoints_ };
+	enum { max_num_points = max_num_points_ };
 
 	catmull_rom_spline()
 	{
@@ -1089,19 +1130,19 @@ struct alignas(16) catmull_rom_spline
 
 	catmull_rom_spline(T(*func)(float))
 	{
-		for (int i = 0; i < maxNumPoints; ++i)
+		for (int i = 0; i < max_num_points; ++i)
 		{
-			ts[i] = i / float(maxNumPoints - 1);
+			ts[i] = i / float(max_num_points - 1);
 			values[i] = func(ts[i]);
 		}
 	}
 
 	inline T evaluate(uint32 numActualPoints, float t) const
 	{
-		return evaluateSpline(ts, values, numActualPoints, t);
+		return evaluate_spline(ts, values, numActualPoints, t);
 	}
 };
 
 // Interop for shaders.
-#define spline(T, maxNumPoints) catmull_rom_spline<T, maxNumPoints>
-#define defineSpline(T, maxNumPoints) template struct spline(T, maxNumPoints);
+#define spline(T, max_num_points) catmull_rom_spline<T, max_num_points>
+#define defineSpline(T, max_num_points) template struct spline(T, max_num_points);

@@ -53,7 +53,7 @@ namespace era_engine
 
 	void dx_page_pool::returnPage(dx_page* page)
 	{
-		lock lock{ mutex };
+		Lock lock{ mutex };
 		page->next = usedPages;
 		usedPages = page;
 		if (!lastUsedPage)
@@ -77,7 +77,7 @@ namespace era_engine
 	{
 		ASSERT(size <= pagePool->pageSize);
 
-		uint64 alignedOffset = currentPage ? alignTo(currentPage->currentOffset, alignment) : 0;
+		uint64 alignedOffset = currentPage ? align_to(currentPage->currentOffset, alignment) : 0;
 
 		dx_page* page = currentPage;
 		if (!page || alignedOffset + size > page->pageSize)

@@ -8,13 +8,13 @@
 
 namespace era_engine
 {
-	NODISCARD shadow_render_command determineSunShadowInfo(directional_light& sun, bool invalidateCache)
+	shadow_render_command determineSunShadowInfo(directional_light& sun, bool invalidateCache)
 	{
 		bool staticCacheAvailable = !invalidateCache;
 
 		uint64 movementHash = getLightMovementHash(sun);
 
-		shadow_render_command result;
+		shadow_render_command result{};
 
 		for (uint32 i = 0; i < sun.numShadowCascades; ++i)
 		{
@@ -32,13 +32,13 @@ namespace era_engine
 		return result;
 	}
 
-	NODISCARD std::pair<shadow_render_command, spot_shadow_info> determineSpotShadowInfo(const spot_light_cb& spotLight, uint32 lightID, uint32 resolution, bool invalidateCache)
+	std::pair<shadow_render_command, spot_shadow_info> determineSpotShadowInfo(const spot_light_cb& spotLight, uint32 lightID, uint32 resolution, bool invalidateCache)
 	{
 		uint64 uniqueID = ((uint64)(lightID + 1) << 32);
 
 		uint64 movementHash = getLightMovementHash(spotLight);
 
-		shadow_render_command result;
+		shadow_render_command result{};
 
 		auto [vp, staticCacheAvailable] = assignShadowMapViewport(uniqueID, movementHash, resolution);
 		result.viewports[0] = vp;
@@ -53,13 +53,13 @@ namespace era_engine
 		return { result, si };
 	}
 
-	NODISCARD std::pair<shadow_render_command, point_shadow_info> determinePointShadowInfo(const point_light_cb& pointLight, uint32 lightID, uint32 resolution, bool invalidateCache)
+	std::pair<shadow_render_command, point_shadow_info> determinePointShadowInfo(const point_light_cb& pointLight, uint32 lightID, uint32 resolution, bool invalidateCache)
 	{
 		uint64 uniqueID = ((uint64)(lightID + 1) << 32);
 
 		uint64 movementHash = getLightMovementHash(pointLight);
 
-		shadow_render_command result;
+		shadow_render_command result{};
 
 		auto [vp0, staticCacheAvailable0] = assignShadowMapViewport(uniqueID, movementHash, resolution);
 		auto [vp1, staticCacheAvailable1] = assignShadowMapViewport(uniqueID + 1, movementHash, resolution);

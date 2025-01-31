@@ -2,11 +2,11 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "core/math.h"
-
 #include "core/reflect.h"
-
-#include "physics/bounding_volumes.h"
+#include "core/bounding_volumes.h"
 
 namespace era_engine
 {
@@ -62,12 +62,12 @@ namespace era_engine
 		camera_type_calibrated,
 	};
 
-	struct camera_projection_extents
+	struct ERA_CORE_API camera_projection_extents
 	{
 		float left, right, top, bottom; // Extents of frustum at distance 1
 	};
 
-	struct render_camera
+	struct ERA_CORE_API render_camera
 	{
 		void setPositionAndRotation(vec3 position, quat rotation);
 		void initializeIngame(vec3 position, quat rotation, float verticalFOV, float nearPlane, float farPlane = -1.f);

@@ -5,6 +5,7 @@
 #include "dx/dx_command_list.h"
 
 #include "core/project.h"
+#include "core/log.h"
 
 #include "rendering/main_renderer.h"
 
@@ -85,7 +86,7 @@ namespace era_engine::dlss
 
 #if ENABLE_DLSS
 
-		* OutResource = nullptr;
+		*OutResource = nullptr;
 		HRESULT hr = dxContext.device->CreateCommittedResource(InHeap, D3D12_HEAP_FLAG_NONE,
 			InDesc, (D3D12_RESOURCE_STATES)InState,
 			nullptr, IID_PPV_ARGS(OutResource));

@@ -26,7 +26,7 @@ namespace era_engine
         instance.Flags = 0;// D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE;
         instance.InstanceContributionToHitGroupIndex = type.instanceContributionToHitGroupIndex;
 
-        mat4 m = transpose(trsToMat4(transform));
+        mat4 m = transpose(trs_to_mat4(transform));
         memcpy(instance.Transform, &m, sizeof(instance.Transform));
         instance.AccelerationStructure = type.blas->blas->gpuVirtualAddress;
         instance.InstanceMask = 0xFF;
@@ -52,8 +52,8 @@ namespace era_engine
 
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info;
         dxContext.device->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
-        info.ScratchDataSizeInBytes = alignTo(info.ScratchDataSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
-        info.ResultDataMaxSizeInBytes = alignTo(info.ResultDataMaxSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+        info.ScratchDataSizeInBytes = align_to(info.ScratchDataSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+        info.ResultDataMaxSizeInBytes = align_to(info.ResultDataMaxSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
 
         bool fromScratch = false;
 
@@ -77,11 +77,11 @@ namespace era_engine
         {
             if (scratch)
             {
-                resizeBuffer(scratch, (uint32)info.ScratchDataSizeInBytes, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+                resizeBuffer(scratch, (uint32)info.ScratchDataSizeInBytes);
             }
             else
             {
-                scratch = createBuffer(1, (uint32)info.ScratchDataSizeInBytes, 0, true, false, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+                scratch = createBuffer(1, (uint32)info.ScratchDataSizeInBytes, 0, true, false);
                 SET_NAME(scratch->resource, "TLAS Scratch");
             }
         }

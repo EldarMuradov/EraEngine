@@ -8,7 +8,6 @@
 #include "core/threading.h"
 #include "core/coroutine.h"
 #include "core/event_queue.h"
-#include "core/ejson_serializer.h"
 
 #include "geometry/mesh_builder.h"
 
@@ -16,21 +15,14 @@
 #include "dx/dx_context.h"
 #include "dx/dx_profiling.h"
 
-#include "physics/physics.h"
-#include "physics/ragdoll.h"
-#include "physics/vehicle.h"
-
 #include "rendering/outline.h"
 #include "rendering/mesh_shader.h"
 #include "rendering/shadow_map.h"
 #include "rendering/debug_visualization.h"
 
-#include "scene/scene_rendering.h"
-
 #include "audio/audio.h"
 
 #include "terrain/terrain.h"
-#include "terrain/heightmap_collider.h"
 #include "terrain/proc_placement.h"
 #include "terrain/grass.h"
 #include "terrain/water.h"
@@ -41,30 +33,26 @@
 #include "asset/model_asset.h"
 #include "asset/file_registry.h"
 
-#include "px/core/px_tasks.h"
-#include "px/core/px_aggregate.h"
-
-#include "px/physics/px_collider_component.h"
-#include "px/physics/px_joint.h"
-#include "px/physics/px_character_controller_component.h"
-#include "px/physics/px_soft_body.h"
-
-#include "px/features/px_ragdoll.h"
-#include "px/features/px_particles.h"
-#include "px/features/cloth/px_clothing_factory.h"
-#include "px/features/px_vehicle_component.h"
-
-#include "px/blast/px_blast_destructions.h"
-
 #include "ai/navigation.h"
 #include "ai/navigation_component.h"
 
-#include "scripting/script.h"
-#include "scripting/native_scripting_linker.h"
+//#include "scripting/script.h"
+//#include "scripting/native_scripting_linker.h"
 
+#include "ecs/visitor/visitor.h"
 #include "ecs/world.h"
 #include "ecs/entity.h"
 #include "ecs/base_components/base_components.h"
+#include "ecs/rendering/mesh_component.h"
+#include "ecs/rendering/world_renderer.h"
+#include "ecs/reflection_utils.h"
+#include "ecs/editor/entity_editor_utils.h"
+
+//#include "physics/core/physics.h"
+//#include "physics/aggregate.h"
+//#include "physics/body_component.h"
+//#include "physics/shape_component.h"
+//#include "physics/basic_objects.h"
 
 namespace era_engine
 {
@@ -86,72 +74,54 @@ namespace era_engine
 			return type;
 		}
 		else
+		{
 			return {};
+		}
 	}
 
-	static void ecs_test()
-	{
-		ref<World> game_world = make_ref<World>("GameWorld");
-		{
-			Entity entity1 = game_world->create_entity("Entity1");
-			Entity entity2 = game_world->create_entity("Entity2");
-			
-			game_world->destroy_entity(entity1);
-			game_world->destroy_entity(entity2);
-		}
-		(void)game_world;
-		{
-			Entity entity = game_world->create_entity("Entity");
-			(void)entity;
-			game_world->destroy_entity(entity);
-		}
-		(void)game_world;
-		game_world->destroy();
-	}
-
-	void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh)
+	void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh)
 	{
 		struct add_ray_tracing_data
 		{
-			eentity entity;
+			Entity entity;
 			ref<multi_mesh> mesh;
 		};
 
 		add_ray_tracing_data data = { entity, mesh };
 
-		lowPriorityJobQueue.createJob<add_ray_tracing_data>([](add_ray_tracing_data& data, job_handle)
+		low_priority_job_queue.createJob<add_ray_tracing_data>([](add_ray_tracing_data& data, JobHandle)
 			{
-				data.mesh->loadJob.waitForCompletion();
+				data.mesh->loadJob.wait_for_completion();
 
 				struct create_component_data
 				{
-					eentity entity;
+					Entity entity;
 					raytracing_object_type blas;
 				};
 
 				create_component_data createData = { data.entity, defineBlasFromMesh(data.mesh) };
 
-				mainThreadJobQueue.createJob<create_component_data>([](create_component_data& data, job_handle)
+				main_thread_job_queue.createJob<create_component_data>([](create_component_data& data, JobHandle)
 					{
-						data.entity.addComponent<raytrace_component>(data.blas);
-					}, createData).submitNow();
+						data.entity.add_component<RaytraceComponent>(data.blas);
+					}, createData).submit_now();
 
-			}, data).submitNow();
+			}, data).submit_now();
 	}
 
-	struct update_scripting_data
-	{
-		float deltaTime{};
-		ref<dotnet::enative_scripting_linker> core;
-		escene& scene;
-		const user_input& input;
-	};
+	//struct update_scripting_data
+	//{
+	//	float deltaTime{};
+	//	ref<dotnet::enative_scripting_linker> core;
+	//	ref<World> world;
+	//	const user_input& input;
+	//};
 
-	spin_lock scriptingSync;
+	SpinLock scriptingSync;
 
-	void updatePhysXCallbacksAndScripting(escene& currentScene, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in)
-	{
-		update_scripting_data data = { dt, core, currentScene, in };
+	//void updatePhysXCallbacksAndScripting(ref<World> current_world, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in)
+	//{
+		/*update_scripting_data data = { dt, core, current_world, in };
 
 		highPriorityJobQueue.createJob<update_scripting_data>([](update_scripting_data& data, job_handle)
 			{
@@ -159,21 +129,25 @@ namespace era_engine
 				{
 					shared_spin_lock lock{ scriptingSync };
 					{
-						const auto& physicsRef = physics::physics_holder::physicsRef;
+						const auto& physicsRef = physics::PhysicsHolder::physics_ref;
 
 						{
 							CPU_PROFILE_BLOCK("PhysX collision events step");
 
 							{
-								physics::collision_handling_data collData;
-								while (physicsRef->collisionQueue.try_dequeue(collData))
-									data.core->handle_coll(collData.id1, collData.id2);
+								physics::CollisionHandlingData collData;
+								while (physicsRef->collision_queue.try_dequeue(collData))
+								{
+									data.core->handle_coll(static_cast<int>(collData.id1), static_cast<int>(collData.id2));
+								}
 							}
 
 							{
-								physics::collision_handling_data collData;
-								while (physicsRef->collisionExitQueue.try_dequeue(collData))
-									data.core->handle_exit_coll(collData.id1, collData.id2);
+								physics::CollisionHandlingData collData;
+								while (physicsRef->collision_exit_queue.try_dequeue(collData))
+								{
+									data.core->handle_exit_coll(static_cast<int>(collData.id1), static_cast<int>(collData.id2));
+								}
 							}
 						}
 					}
@@ -189,7 +163,7 @@ namespace era_engine
 		{
 			CPU_PROFILE_BLOCK(".NET 8 Input sync step");
 			core->handleInput(reinterpret_cast<uintptr_t>(&in.keyboard[0]));
-		}
+		}*/
 
 		//const auto& nav_objects = data.scene.group(component_group<ai::navigation_component, transform_component>);
 
@@ -211,47 +185,51 @@ namespace era_engine
 		//			}
 		//		}, nav_data).submitNow();
 		//}
-	}
+	//}
 
-	void updateScripting(update_scripting_data& data)
-	{
-		CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
-		if (!data.scene.registry.size())
-			return;
+	//void updateScripting(update_scripting_data& data)
+	//{
+	//	CPU_PROFILE_BLOCK(".NET 8.0 scripting step");
+	//	if (!data.world->size())
+	//	{
+	//		return;
+	//	}
 
-		auto group = data.scene.group(component_group<ecs::scripts_component, transform_component>);
+	//	auto group = data.world->group(components_group<ecs::ScriptsComponent, TransformComponent>);
 
-		if (group.empty())
-			return;
+	//	if (group.empty())
+	//	{
+	//		return;
+	//	}
 
-		for (auto [entityHandle, script, transform] : group.each())
-		{
-			const auto& mat = trsToMat4(transform);
-			constexpr size_t mat_size = 16;
-			float* ptr = new float[mat_size];
-			for (size_t i = 0; i < mat_size; i++)
-				ptr[i] = mat.m[i];
-			data.core->process_trs(reinterpret_cast<uintptr_t>(ptr), (int)entityHandle);
-			//delete[] ptr; //CLR clear's it
-		}
-		data.core->update(data.deltaTime);
-	}
+	//	for (auto [entityHandle, script, transform] : group.each())
+	//	{
+	//		const auto& mat = trsToMat4(transform.transform);
+	//		constexpr size_t mat_size = 16;
+	//		float* ptr = new float[mat_size];
+	//		for (size_t i = 0; i < mat_size; i++)
+	//			ptr[i] = mat.m[i];
+	//		data.core->process_trs(reinterpret_cast<uintptr_t>(ptr), (int)entityHandle);
+	//		//delete[] ptr; // CoreRT/CLR clear's it
+	//	}
+	//	data.core->update(data.deltaTime);
+	//}
 
-	static void initializeAnimationComponentAsync(eentity entity, ref<multi_mesh> mesh)
+	static void initializeAnimationComponentAsync(Entity entity, ref<multi_mesh> mesh)
 	{
 		struct add_animation_data
 		{
-			eentity entity;
+			Entity entity;
 			ref<multi_mesh> mesh;
 		};
 
 		add_animation_data data = { entity, mesh };
 
-		mainThreadJobQueue.createJob<add_animation_data>([](add_animation_data& data, job_handle job)
+		main_thread_job_queue.createJob<add_animation_data>([](add_animation_data& data, JobHandle job)
 			{
-				data.mesh->loadJob.waitForCompletion();
-				data.entity.getComponent<animation::animation_component>().initialize(data.mesh->skeleton.clips);
-			}, data).submitNow();
+				data.mesh->loadJob.wait_for_completion();
+				data.entity.get_component<animation::AnimationComponent>().initialize(data.mesh->skeleton.clips);
+			}, data).submit_now();
 	}
 
 	void application::loadCustomShaders()
@@ -262,22 +240,105 @@ namespace era_engine
 		}
 	}
 
-	static entity_handle sphere{};
-
-	static void initTestScene(escene& scene)
+	static void initTestScene(ref<World> game_world)
 	{
-#ifndef ERA_RUNTIME
-		if (auto mesh = loadMeshFromFileAsync(getAssetPath("/resources/assets/Sponza/sponza.obj")))
+		Entity entity1 = game_world->create_entity("Entity1");
+		Entity entity2 = game_world->create_entity("Entity2");
+
+		auto defaultmat = createPBRMaterialAsync({ "", "" });
+		defaultmat->shader = pbr_material_shader_double_sided;
+
+		mesh_builder builder;
+
+		auto sphereMesh = make_ref<multi_mesh>();
+		builder.pushSphere({ });
+		sphereMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
+
+		auto boxMesh = make_ref<multi_mesh>();
+		builder.pushBox({ vec3(0.f), vec3(1.f, 1.f, 2.f) });
+		boxMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
+
+		PbrMaterialDesc defaultPlaneMatDesc;
+		defaultPlaneMatDesc.albedo = get_asset_path("/resources/assets/uv.jpg");
+		defaultPlaneMatDesc.normal = "";
+		defaultPlaneMatDesc.roughness = "";
+		defaultPlaneMatDesc.uv_scale = 15.0f;
+		defaultPlaneMatDesc.metallic_override = 0.35f;
+		defaultPlaneMatDesc.roughness_override = 0.01f;
+
+		auto defaultPlaneMat = createPBRMaterialAsync(defaultPlaneMatDesc);
+
+		auto groundMesh = make_ref<multi_mesh>();
+		builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
+		groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
+
+		/*{
+			Entity entity3 = game_world->create_entity("Entity3").add_component<MeshComponent>(sphereMesh, false)
+				.add_component<physics::SphereShapeComponent>(1.0f)
+				.add_component<physics::DynamicBodyComponent>();
+			sphereMesh->mesh = builder.createDXMesh();
+		}*/
+
+		if (auto mesh = loadAnimatedMeshFromFileAsync(get_asset_path("/resources/assets/veribot/source/VERIBOT_final.fbx")))
 		{
-			model_asset ass = load3DModelFromFile(getAssetPath("/resources/assets/Sponza/sponza.obj"));
-			const auto& sponza = scene.createEntity("Sponza")
-				.addComponent<transform_component>(vec3(5.0f, -3.75f, 35.0f), quat::identity, 0.01f)
-				.addComponent<mesh_component>(mesh);
+			auto& en = game_world->create_entity("Veribot")
+				.add_component<animation::AnimationComponent>()
+				.add_component<MeshComponent>(mesh);
+
+			TransformComponent& transform_component = en.get_component<TransformComponent>();
+			transform_component.type = TransformComponent::DYNAMIC;
+			transform_component.transform.position = vec3(5.0f);
+
+			initializeAnimationComponentAsync(en, mesh);
+			addRaytracingComponentAsync(en, mesh);
+		}
+
+		if (auto mesh = loadMeshFromFileAsync(get_asset_path("/resources/assets/Sponza/sponza.obj")))
+		{
+			auto& sponza = game_world->create_entity("Sponza")
+				.add_component<MeshComponent>(mesh);
+
+			TransformComponent& transform_component = sponza.get_component<TransformComponent>();
+			transform_component.transform.position = vec3(5.0f, -3.75f, 35.0f);
+			transform_component.transform.scale = vec3(0.01f);
 
 			addRaytracingComponentAsync(sponza, mesh);
 		}
-#endif
-		ecs_test();
+
+		/*Entity plane = game_world->create_entity("Platform")
+			.add_component<TransformComponent>(vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)), vec3(5.0f, 1.0f, 5.0f))
+			.add_component<physics::PlaneComponent>(vec3(0.f, -5.0, 0.0f), vec3(0.0f, 1.0f, 0.0f))
+			.add_component<MeshComponent>(groundMesh);
+
+		{
+			TransformComponent& transform_component = plane.get_component<TransformComponent>();
+			transform_component.transform.position = vec3(10.0f, -9.0f, 0.0f);
+			transform_component.transform.scale = vec3(5.0f, 1.0f, 5.0f);
+		}*/
+
+		auto chainMesh = make_ref<multi_mesh>();
+
+		groundMesh->mesh =
+			boxMesh->mesh =
+			sphereMesh->mesh =
+			chainMesh->mesh =
+			builder.createDXMesh();
+
+		//auto& terrain = game_world->create_entity("Terrain")
+		//	.add_component<TerrainComponent>(10u, 64.0f, 50.f, defaultPlaneMat, defaultPlaneMat, defaultPlaneMat)
+		//	.add_component<GrassComponent>();
+		//{
+		//	TransformComponent& transform_component = terrain.get_component<TransformComponent>();
+		//	transform_component.transform.position = vec3(0.0f, -64.0f, 0.0f);
+		//}	
+
+		//auto& water = game_world->create_entity("Water")
+		//	.add_component<WaterComponent>();
+		//{
+		//	TransformComponent& transform_component = water.get_component<TransformComponent>();
+		//	transform_component.transform.position = vec3(-3.920f, -48.689f, -85.580f);
+		//	transform_component.transform.scale = vec3(90.0f);
+		//}
 #if 0
 		if (auto treeMesh = loadTreeMeshFromFileAsync(getAssetPath("/resources/assets/tree/source/tree.fbx")))
 		{
@@ -290,54 +351,28 @@ namespace era_engine
 
 #ifndef ERA_RUNTIME
 		{
-			auto defaultmat = createPBRMaterialAsync({ "", "" });
-			defaultmat->shader = pbr_material_shader_double_sided;
-
-			mesh_builder builder;
-
-			auto sphereMesh = make_ref<multi_mesh>();
-			builder.pushSphere({ });
-			sphereMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
-
-			auto boxMesh = make_ref<multi_mesh>();
-			builder.pushBox({ vec3(0.f), vec3(1.f, 1.f, 2.f) });
-			boxMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
-
-			pbr_material_desc defaultPlaneMatDesc;
-			defaultPlaneMatDesc.albedo = getAssetPath("/resources/assets/uv.jpg");
-			defaultPlaneMatDesc.normal = "";
-			defaultPlaneMatDesc.roughness = "";
-			defaultPlaneMatDesc.uvScale = 15.0f;
-			defaultPlaneMatDesc.metallicOverride = 0.35f;
-			defaultPlaneMatDesc.roughnessOverride = 0.01f;
-
-			auto defaultPlaneMat = createPBRMaterialAsync(defaultPlaneMatDesc);
-
-			auto groundMesh = make_ref<multi_mesh>();
-			builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
-			groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
 
 			//model_asset ass = load3DModelFromFile(getAssetPath("/resources/assets/sphere.fbx"));
-			auto& px_sphere_entt = scene.createEntity("SpherePX", (entity_handle)60)
-				.addComponent<transform_component>(vec3(-10.0f, 5.0f, -3.0f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
-				.addComponent<mesh_component>(sphereMesh)
+			//auto& px_sphere_entt = scene.createEntity("SpherePX", (entity_handle)60)
+			//	.addComponent<transform_component>(vec3(-10.0f, 5.0f, -3.0f), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(1.f))
+			//	.addComponent<mesh_component>(sphereMesh)
 				//.addComponent<physics::px_convex_mesh_collider_component>(&(ass.meshes[0]))
 				//.addComponent<physics::px_triangle_mesh_collider_component>(&(ass.meshes[0]))
 				//.addComponent<physics::px_bounding_box_collider_component>(&(ass.meshes[0]))
-				.addComponent<physics::px_sphere_collider_component>(1.0f)
-				.addComponent<physics::px_dynamic_body_component>();
-			px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setMass(1000.f);
-			px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setCCD(true);
+			//	.addComponent<physics::px_sphere_collider_component>(1.0f)
+			//	.addComponent<physics::px_dynamic_body_component>();
+			//px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setMass(1000.f);
+			//px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setCCD(true);
 			//px_sphere_entt.getComponent<physics::px_dynamic_body_component>().setFilterMask(1, 2);
-			sphere = px_sphere_entt.handle;
+			//sphere = px_sphere_entt.handle;
 
-			auto px_sphere1 = &scene.createEntity("SpherePX1", (entity_handle)59)
-				.addComponent<transform_component>(vec3(5, 155.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(5.f))
-				.addComponent<mesh_component>(sphereMesh)
-				.addComponent<physics::px_sphere_collider_component>(5.0f)
-				.addComponent<physics::px_dynamic_body_component>();
-			px_sphere1->getComponent<physics::px_dynamic_body_component>().setCCD(true);
-			px_sphere1->getComponent<physics::px_dynamic_body_component>().setMass(500.0f);
+			//auto px_sphere1 = &scene.createEntity("SpherePX1", (entity_handle)59)
+			//	.addComponent<transform_component>(vec3(5, 155.f, 5), quat(vec3(0.f, 0.f, 0.f), deg2rad(1.f)), vec3(5.f))
+			//	.addComponent<mesh_component>(sphereMesh)
+			//	.addComponent<physics::px_sphere_collider_component>(5.0f)
+			//	.addComponent<physics::px_dynamic_body_component>();
+			//px_sphere1->getComponent<physics::px_dynamic_body_component>().setCCD(true);
+			//px_sphere1->getComponent<physics::px_dynamic_body_component>().setMass(500.0f);
 			//px_sphere1->getComponent<physics::px_dynamic_body_component>().setFilterMask(2, 1 | 3);
 
 			//px_sphere1->getComponent<physics::px_dynamic_body_component>().setFilterMask(3, 1);
@@ -453,22 +488,8 @@ namespace era_engine
 			//auto& cloth = scene.createEntity("ClothPX")
 			//	.addComponent<transform_component>(vec3(0.f, 15.0f, 0.0f), eulerToQuat(vec3(0.0f, 0.0f, 0.0f)), vec3(1.f))
 			//	.addComponent<physics::px_cloth_component>(100, 100, vec3(0.f, 15.0f, 0.0f));
-
-			scene.createEntity("Platform")
-				.addComponent<transform_component>(vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)), vec3(5.0f, 1.0f, 5.0f))
-				.addComponent<physics::px_plane_collider_component>(vec3(0.f, -5.0, 0.0f))
-				.addComponent<mesh_component>(groundMesh);
-
-			auto chainMesh = make_ref<multi_mesh>();
-
-			groundMesh->mesh =
-				boxMesh->mesh =
-				sphereMesh->mesh =
-				chainMesh->mesh =
-				builder.createDXMesh();
 		}
 #endif
-
 #if 0
 		fireParticleSystem.initialize(10000, 50.f, getAssetPath("/resources/assets/particles/fire_explosion.png"), 6, 6, vec3(0, 1, 30));
 		smokeParticleSystem.initialize(10000, 500.f, getAssetPath("/resources/assets/particles/smoke1.tif"), 5, 5, vec3(0, 1, 15));
@@ -481,29 +502,30 @@ namespace era_engine
 	{
 		this->renderer = renderer;
 
+		world_scene = make_ref<EditorScene>();
+		world_scene->init();
+
 		if (dxContext.featureSupport.raytracing())
 		{
 			raytracingTLAS.initialize();
 		}
 
-		scene.camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
-		scene.editorCamera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
-		scene.environment.setFromTexture(getAssetPath("/resources/assets/sky/sunset_in_the_chalk_quarry_4k.hdr"));
-		scene.environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
+		world_scene->camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
+		world_scene->editor_camera.initializeIngame(vec3(0.f, 1.f, 5.f), quat::identity, deg2rad(70.f), 0.2f);
+		world_scene->environment.setFromTexture(get_asset_path("/resources/assets/sky/sunset_in_the_chalk_quarry_4k.hdr"));
+		world_scene->environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
 
-		physics::physics_holder::physicsRef = make_ref<physics::px_physics_engine>();
+		ref<World> world = world_scene->get_current_world();
 
-		escene& scene = this->scene.getCurrentScene();
-
-		{
+		/*{
 			CPU_PROFILE_BLOCK("Binding for scripting initialization");
-			linker = make_ref<era_engine::dotnet::enative_scripting_linker>(&this->scene.runtimeScene);
+			linker = make_ref<era_engine::dotnet::enative_scripting_linker>(world.get());
 			linker->init();
-		}
+		}*/
 
 #ifndef ERA_RUNTIME
 
-		editor.initialize(&this->scene, renderer, editorPanels);
+		editor.initialize(world_scene, renderer, editorPanels);
 		editor.app = this;
 
 #else
@@ -512,18 +534,17 @@ namespace era_engine
 
 #endif
 
-		initTestScene(scene);
+		initTestScene(world);
 
-		this->scene.sun.direction = normalize(vec3(-0.6f, -1.f, -0.3f));
-		this->scene.sun.color = vec3(1.f, 0.93f, 0.76f);
-		this->scene.sun.intensity = 11.1f;
-
-		this->scene.sun.numShadowCascades = 3;
-		this->scene.sun.shadowDimensions = 2048;
-		this->scene.sun.cascadeDistances = vec4(9.f, 25.f, 50.f, 10000.f);
-		this->scene.sun.bias = vec4(0.000588f, 0.000784f, 0.000824f, 0.0035f);
-		this->scene.sun.blendDistances = vec4(5.f, 10.f, 10.f, 10.f);
-		this->scene.sun.stabilize = true;
+		world_scene->sun.direction = normalize(vec3(-0.6f, -1.f, -0.3f));
+		world_scene->sun.color = vec3(1.f, 0.93f, 0.76f);
+		world_scene->sun.intensity = 11.1f;
+		world_scene->sun.numShadowCascades = 3;
+		world_scene->sun.shadowDimensions = 2048;
+		world_scene->sun.cascadeDistances = vec4(9.f, 25.f, 50.f, 10000.f);
+		world_scene->sun.bias = vec4(0.000588f, 0.000784f, 0.000824f, 0.0035f);
+		world_scene->sun.blendDistances = vec4(5.f, 10.f, 10.f, 10.f);
+		world_scene->sun.stabilize = true;
 
 		for (uint32 i = 0; i < NUM_BUFFERED_FRAMES; ++i)
 		{
@@ -543,8 +564,6 @@ namespace era_engine
 		}
 
 		stackArena.initialize();
-
-		physics::physics_holder::physicsRef->start();
 	}
 
 #if 0
@@ -651,7 +670,7 @@ namespace era_engine
 		}
 	}
 
-	static void updateTestScene(float dt, escene& scene, const user_input& input)
+	static void updateTestScene(float dt, ref<World> world, const UserInput& input)
 	{
 		// Particles
 #if 0
@@ -666,18 +685,9 @@ namespace era_engine
 		smokeParticleSystem.render(&transparentRenderPass);
 		debrisParticleSystem.render(&transparentRenderPass);
 #endif
-
-		// Tests
-		{
-			eentity sphereEntity{ sphere, &scene.registry };
-			if (input.keyboard['G'].pressEvent)
-			{
-				sphereEntity.getComponent<physics::px_dynamic_body_component>().addForce(vec3(200.0f, 1.0f, 0.0f), physics::px_force_mode::force_mode_impulse);
-			}
-		}
 	}
 
-	void application::update(const user_input& input, float dt)
+	void application::update(const UserInput& input, float dt)
 	{
 		resetRenderPasses();
 
@@ -688,141 +698,49 @@ namespace era_engine
 		bool objectDragged = editor.update(input, &ldrRenderPass, dt);
 		editor.render(&ldrRenderPass, dt);
 
-		render_camera& camera = this->scene.isPausable() ? scene.editorCamera : scene.camera;
+		render_camera& camera = this->world_scene->is_pausable() ? world_scene->editor_camera : world_scene->camera;
 
 #else
 
 		bool objectDragged = false;
 
-		render_camera& camera = scene.camera;
+		render_camera& camera = world_scene->camera;
 
 		rt.update();
 
 #endif
 
-		directional_light& sun = scene.sun;
-		pbr_environment& environment = scene.environment;
+		directional_light& sun = world_scene->sun;
+		pbr_environment& environment = world_scene->environment;
 
 		environment.update(sun.direction);
 		sun.updateMatrices(camera);
 		setAudioListener(camera.position, camera.rotation, vec3(0.f));
 		environment.lightProbeGrid.visualize(&opaqueRenderPass);
 
-		escene& scene = this->scene.getCurrentScene();
+		ref<World> world = world_scene->get_current_world();
+
 		float unscaledDt = dt;
-		dt *= this->scene.getTimestepScale();
+		dt *= world_scene->get_timestep_scale();
 
-		bool running = this->scene.isPausable();
-
-#if PX_VEHICLE
-		{
-			if (running)
-			{
-				CPU_PROFILE_BLOCK("PhysX vehicles step");
-				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_vehicle_base_component, transform_component>).each())
-				{
-					vehicleStep(&vehicle, &trs, dt);
-				}
-
-				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_4_wheels_vehicle_component, transform_component>).each())
-				{
-					vehicleStep(&vehicle, &trs, dt);
-				}
-
-				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_tank_vehicle_component, transform_component>).each())
-				{
-					vehicleStep(&vehicle, &trs, dt);
-				}
-			}
-		}
-#endif
-
-		if (running)
-			physics::physics_holder::physicsRef->update(dt);
-
-		if (running)
-			updatePhysXCallbacksAndScripting(scene, linker, dt, input);
-
-#if PX_VEHICLE
-		{
-			if (running)
-			{
-				CPU_PROFILE_BLOCK("PhysX vehicles post step");
-				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_vehicle_base_component, transform_component>).each())
-				{
-					vehiclePostStep(&vehicle, dt);
-				}
-
-				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_4_wheels_vehicle_component, transform_component>).each())
-				{
-					vehiclePostStep(&vehicle, dt);
-				}
-
-				for (auto [entityHandle, vehicle, trs] : scene.group(component_group<physics::px_tank_vehicle_component, transform_component>).each())
-				{
-					vehiclePostStep(&vehicle, dt);
-				}
-			}
-		}
-#endif
+		bool running = world_scene->is_pausable();
 
 #ifndef ERA_RUNTIME
 
-		eentity selectedEntity = editor.selectedEntity;
+		Entity selectedEntity = editor.selectedEntity;
 
 #else
 
-		eentity selectedEntity{};
+		Entity selectedEntity = Entity::Null;
 
 #endif
 
-
-#if PX_GPU_BROAD_PHASE
-		{
-			CPU_PROFILE_BLOCK("PhysX GPU clothes render step");
-			for (auto [entityHandle, cloth, render] : scene.group(component_group<physics::px_cloth_component, physics::px_cloth_render_component>).each())
-			{
-				cloth.update(false, &ldrRenderPass);
-			}
-		}
+		updateTestScene(dt, world, input);
 
 		{
-			CPU_PROFILE_BLOCK("PhysX GPU particles render step");
-			for (auto [entityHandle, particles, render] : scene.group(component_group<physics::px_particles_component, physics::px_particles_render_component>).each())
+			for (auto [entityHandle, transform, terrain] : world->group(components_group<TransformComponent, TerrainComponent>).each())
 			{
-				particles.update(true, &ldrRenderPass);
-			}
-		}
-
-#endif
-#if PX_BLAST_ENABLE
-		{
-			CPU_PROFILE_BLOCK("PhysX blast chuncks");
-			for (auto [entityHandle, cgm, _] : scene.group(component_group<physics::chunk_graph_manager, transform_component>).each())
-			{
-				cgm.update();
-			}
-		}
-#endif
-
-		updateTestScene(dt, scene, input);
-
-		//if (renderer->mode != renderer_mode_pathtraced)
-		{
-			for (auto [entityHandle, anim, mesh, transform] : scene.group(component_group<animation::animation_component, mesh_component, transform_component>, component_group<physics::px_ragdoll_component>).each())
-			{
-				anim.update(mesh.mesh, stackArena, dt, &transform);
-
-				if (anim.drawSceleton)
-					anim.drawCurrentSkeleton(mesh.mesh, transform, &ldrRenderPass);
-			}
-
-			for (auto [entityHandle, anim, mesh, transform, ragdoll] : scene.group(component_group<animation::animation_component, mesh_component, transform_component, physics::px_ragdoll_component>).each())
-			{
-				anim.update(mesh.mesh, stackArena, dt, &transform, &ragdoll);
-
-				if (anim.drawSceleton)
-					anim.drawCurrentSkeleton(mesh.mesh, transform, &ldrRenderPass);
+				terrain.update();
 			}
 
 			scene_lighting lighting;
@@ -835,79 +753,45 @@ namespace era_engine
 			lighting.maxNumSpotShadowRenderPasses = arraysize(spotShadowRenderPasses);
 			lighting.maxNumPointShadowRenderPasses = arraysize(pointShadowRenderPasses);
 
-			renderScene(camera, scene, stackArena, selectedEntity.handle, sun, lighting, !renderer->settings.cacheShadowMap,
+			Entity::Handle handle = selectedEntity.is_valid() ? selectedEntity.get_handle() : Entity::NullHandle;
+
+			render_world(camera, world, stackArena, handle, sun, lighting, !renderer->settings.cacheShadowMap,
 				&opaqueRenderPass, &transparentRenderPass, &ldrRenderPass, &sunShadowRenderPass, &computePass, unscaledDt);
 
-			renderer->setSpotLights(spotLightBuffer[dxContext.bufferedFrameID], scene.numberOfComponentsOfType<spot_light_component>(), spotLightShadowInfoBuffer[dxContext.bufferedFrameID]);
-			renderer->setPointLights(pointLightBuffer[dxContext.bufferedFrameID], scene.numberOfComponentsOfType<point_light_component>(), pointLightShadowInfoBuffer[dxContext.bufferedFrameID]);
-
+			renderer->setSpotLights(spotLightBuffer[dxContext.bufferedFrameID], world->number_of_components_of_type<SpotLightComponent>(), spotLightShadowInfoBuffer[dxContext.bufferedFrameID]);
+			renderer->setPointLights(pointLightBuffer[dxContext.bufferedFrameID], world->number_of_components_of_type<PointLightComponent>(), pointLightShadowInfoBuffer[dxContext.bufferedFrameID]);
+		
 			if (decals.size())
 			{
 				updateUploadBufferData(decalBuffer[dxContext.bufferedFrameID], decals.data(), (uint32)(sizeof(pbr_decal_cb) * decals.size()));
 				renderer->setDecals(decalBuffer[dxContext.bufferedFrameID], (uint32)decals.size(), decalTexture);
 			}
-
 #ifndef ERA_RUNTIME
 
-			if (selectedEntity)
+			if (selectedEntity != Entity::Null)
 			{
-				if (point_light_component* pl = selectedEntity.getComponentIfExists<point_light_component>())
-				{
-					position_component& pc = selectedEntity.getComponent<position_component>();
+				TransformComponent& transform = selectedEntity.get_component<TransformComponent>();
 
-					renderWireSphere(pc.position, pl->radius, vec4(pl->color, 1.f), &ldrRenderPass);
+				if (PointLightComponent* pl = selectedEntity.get_component_if_exists<PointLightComponent>())
+				{
+					renderWireSphere(transform.transform.position, pl->radius, vec4(pl->color, 1.f), &ldrRenderPass);
 				}
-				else if (spot_light_component* sl = selectedEntity.getComponentIfExists<spot_light_component>())
+				else if (SpotLightComponent* sl = selectedEntity.get_component_if_exists<SpotLightComponent>())
 				{
-					position_rotation_component& prc = selectedEntity.getComponent<position_rotation_component>();
-
-					renderWireCone(prc.position, prc.rotation * vec3(0.f, 0.f, -1.f),
+					renderWireCone(transform.transform.position, transform.transform.rotation * vec3(0.f, 0.f, -1.f),
 						sl->distance, sl->outerAngle * 2.f, vec4(sl->color, 1.f), &ldrRenderPass);
 				}
-				else if (physics::px_capsule_cct_component* cct = selectedEntity.getComponentIfExists<physics::px_capsule_cct_component>())
-				{
-					dynamic_transform_component& dtc = selectedEntity.getComponent<dynamic_transform_component>();
-					renderWireCapsule(dtc.position, dtc.position + vec3(0, cct->height, 0), cct->radius, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
-				}
-				else if (physics::px_box_cct_component* cct = selectedEntity.getComponentIfExists<physics::px_box_cct_component>())
-				{
-					dynamic_transform_component& dtc = selectedEntity.getComponent<dynamic_transform_component>();
-					renderWireBox(dtc.position, vec3(cct->halfSideExtent, cct->halfHeight * 2, cct->halfSideExtent), dtc.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
-				}
-				else if (physics::px_convex_mesh_collider_component* cm = selectedEntity.getComponentIfExists<physics::px_convex_mesh_collider_component>())
-				{
-					//physics::px_body_component* body = nullptr;
-					//body = selectedEntity.getComponentIfExists<physics::px_dynamic_body_component>();
-					//if(!body)
-					//	body = selectedEntity.getComponentIfExists<physics::px_static_body_component>();
-
-					//ASSERT(body != nullptr);
-
-					//physics::physics_lock_read lock{};
-
-					//physx::PxShape* shape[1];
-					//body->getRigidActor()->getShapes(shape, 1);
-					//auto geom = (physx::PxConvexMeshGeometry*)cm->getGeometry();
-					//auto mesh = geom->convexMesh;
-
-					//auto vertices = mesh->getVertices();
-					//auto nbv = mesh->getNbVertices();
-
-					//for (size_t i = 0; i < nbv; i++)
-					//{
-					//	vec3 a = physx::createVec3(vertices[i] + shape[0]->getLocalPose().p) + selectedEntity.getComponent<transform_component>().position;
-					//	renderPoint(a, vec4(1, 0, 0, 1), &ldrRenderPass, true);
-					//}
-				}
+				//else if (physics::CapsuleShapeComponent* shape = selectedEntity.get_component_if_exists<physics::CapsuleShapeComponent>())
+				//{
+				//	//renderWireCapsule(transform.transform.position, transform.transform.position + vec3(0, cct->height, 0), cct->radius, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
+				//}
+				//else if (physics::BoxShapeComponent* shape = selectedEntity.get_component_if_exists<physics::BoxShapeComponent>())
+				//{
+				//	//renderWireBox(transform.transform.position, vec3(cct->halfSideExtent, cct->halfHeight * 2, cct->halfSideExtent), transform.transform.rotation, vec4(0.107f, 1.0f, 0.0f, 1.0f), &ldrRenderPass);
+				//}
 			}
 #endif
-
 			submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
-		}
-
-		for (auto [entityHandle, transform, dynamic] : scene.group(component_group<transform_component, dynamic_transform_component>).each())
-		{
-			dynamic = transform;
 		}
 
 		animation::performSkinning(&computePass);
@@ -916,9 +800,9 @@ namespace era_engine
 		{
 			raytracingTLAS.reset();
 
-			for (auto [entityHandle, transform, raytrace] : scene.group(component_group<transform_component, raytrace_component>).each())
+			for (auto [entityHandle, transform, raytrace] : world->group(components_group<TransformComponent, RaytraceComponent>).each())
 			{
-				auto handle = raytracingTLAS.instantiate(raytrace.type, transform);
+				auto handle = raytracingTLAS.instantiate(raytrace.type, transform.transform);
 			}
 
 			renderer->setRaytracingScene(&raytracingTLAS);
@@ -931,8 +815,6 @@ namespace era_engine
 #ifndef ERA_RUNTIME
 		editor.visualizePhysics(&ldrRenderPass);
 #endif
-
-		executeMainThreadJobs();
 	}
 
 	void application::handleFileDrop(const fs::path& filename)
@@ -941,36 +823,36 @@ namespace era_engine
 		fs::path relative = fs::relative(path, fs::current_path());
 		fs::path ext = relative.extension();
 
-		if (isMeshExtension(ext))
+		if (is_mesh_extension(ext))
 		{
+			fs::path path = filename;
+			path = path.stem();
+
+			ref<World> world = world_scene->get_current_world();
 			if (auto mesh = loadAnimatedMeshFromFileAsync(relative.string()))
 			{
-				fs::path path = filename;
-				path = path.stem();
+				auto& entity = world->create_entity("Veribot")
+					.add_component<animation::AnimationComponent>()
+					.add_component<MeshComponent>(mesh);
 
-				auto& en = scene.getCurrentScene().createEntity(path.string().c_str())
-					.addComponent<transform_component>(vec3(0.f), quat::identity)
-					.addComponent<animation::animation_component>()
-					.addComponent<dynamic_transform_component>()
-					.addComponent<mesh_component>(mesh);
-				initializeAnimationComponentAsync(en, mesh);
-				addRaytracingComponentAsync(en, mesh);
+				TransformComponent& transform_component = entity.get_component<TransformComponent>();
+				transform_component.type = TransformComponent::DYNAMIC;
+
+				initializeAnimationComponentAsync(entity, mesh);
+				addRaytracingComponentAsync(entity, mesh);
 			}
 			else if (auto mesh = loadMeshFromFileAsync(relative.string()))
 			{
-				fs::path path = filename;
-				path = path.stem();
+				auto& entity = world->create_entity("Veribot")
+					.add_component<animation::AnimationComponent>()
+					.add_component<MeshComponent>(mesh);
 
-				auto& en = scene.getCurrentScene().createEntity(path.string().c_str())
-					.addComponent<transform_component>(vec3(0.f), quat::identity)
-					.addComponent<mesh_component>(mesh);
-
-				addRaytracingComponentAsync(en, mesh);
+				addRaytracingComponentAsync(entity, mesh);
 			}
 		}
 		else if (ext == ".hdr")
 		{
-			scene.environment.setFromTexture(relative);
+			world_scene->environment.setFromTexture(relative);
 		}
 	}
 }

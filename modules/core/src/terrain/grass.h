@@ -2,13 +2,17 @@
 
 #pragma once
 
+#include "core_api.h"
+
+#include "ecs/component.h"
+
 #include "rendering/render_pass.h"
 
 #include "terrain/terrain.h"
 
 namespace era_engine
 {
-	struct grass_settings
+	struct ERA_CORE_API grass_settings
 	{
 		static inline bool depthPrepass = true;
 
@@ -23,24 +27,30 @@ namespace era_engine
 		float cullTransitionDistance = 50.f;
 	};
 
-	struct grass_component
+	class ERA_CORE_API GrassComponent final : public Component
 	{
-		grass_component(grass_settings settings = {});
+	public:
+		GrassComponent() = default;
+		GrassComponent(ref<Entity::EcsData> _data, const grass_settings& _settings = {});
+		virtual ~GrassComponent();
 
-		void generate(struct compute_pass* computePass, const render_camera& camera, const terrain_component& terrain, vec3 positionOffset, float dt);
-		void render(struct opaque_render_pass* renderPass, uint32 entityID = -1);
+		void generate(struct compute_pass* compute_pass, const render_camera& camera, const TerrainComponent& terrain, vec3 position_offset, float dt);
+		void render(struct opaque_render_pass* render_pass);
 
+		ERA_VIRTUAL_REFLECT(Component)
+
+	public:
 		grass_settings settings;
 
 	private:
-		ref<dx_buffer> drawBuffer;
-		ref<dx_buffer> countBuffer;
-		ref<dx_buffer> bladeBufferLOD0;
-		ref<dx_buffer> bladeBufferLOD1;
+		ref<dx_buffer> draw_buffer;
+		ref<dx_buffer> count_buffer;
+		ref<dx_buffer> blade_buffer_LOD0;
+		ref<dx_buffer> blade_buffer_LOD1;
 
 		float time = 0.f;
-		float prevTime = 0.f;
-		vec2 windDirection = normalize(vec2(1.f, 1.f));
+		float prev_time = 0.f;
+		vec2 wind_direction = normalize(vec2(1.f, 1.f));
 	};
 
 	void initializeGrassPipelines();

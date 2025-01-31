@@ -1,0 +1,35 @@
+load("@entt//bazel:copts.bzl", "COPTS")
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+# buildifier: keep sorted
+_TESTS = [
+    "component",
+    "entity",
+    "group",
+    "handle",
+    "helper",
+    "organizer",
+    "reactive_mixin",
+    "registry",
+    "runtime_view",
+    "sigh_mixin",
+    "snapshot",
+    "sparse_set",
+    "storage",
+    "storage_entity",
+    "storage_no_instance",
+    "storage_utility",
+    "view",
+]
+
+[cc_test(
+    name = test,
+    srcs = ["{}.cpp".format(test)],
+    copts = COPTS,
+    deps = [
+        "//common",
+        "@entt",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+) for test in _TESTS]

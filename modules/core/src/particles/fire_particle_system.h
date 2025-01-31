@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "particles/particles.h"
 
 #include "dx/dx_texture.h"
@@ -12,7 +14,7 @@
 
 namespace era_engine
 {
-	struct fire_particle_system : particle_system
+	struct ERA_CORE_API fire_particle_system : particle_system
 	{
 		static void initializePipeline();
 

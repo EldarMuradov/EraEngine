@@ -63,7 +63,7 @@ namespace era_engine
 
         shader_data* hitData = (shader_data*)alloca(sizeof(shader_data) * numRayTypes);
 
-        lock lock{ mutex };
+        Lock lock{ mutex };
 
         for (uint32 i = 0; i < numGeometries; ++i)
         {
@@ -72,7 +72,7 @@ namespace era_engine
             submesh_info submesh = blas->geometries[i].submesh;
             const ref<pbr_material>& material = materials[i];
 
-            dx_cpu_descriptor_handle base = descriptorHeap.currentCPU;
+            dx_gpu_descriptor_handle base = descriptorHeap.currentGPU;
 
             descriptorHeap.push().createBufferSRV(blas->geometries[i].vertexBuffer.others, { submesh.baseVertex, submesh.numVertices });
             descriptorHeap.push().createRawBufferSRV(blas->geometries[i].indexBuffer, { submesh.firstIndex, submesh.numIndices });

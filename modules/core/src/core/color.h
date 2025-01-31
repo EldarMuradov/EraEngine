@@ -22,7 +22,7 @@ namespace era_engine
 			(cmax == rgb.x) ? (60.f * fmod((rgb.y - rgb.z) / delta, 6.f)) :
 			(cmax == rgb.y) ? (60.f * ((rgb.z - rgb.x) / delta + 2.f)) :
 			(60.f * ((rgb.x - rgb.y) / delta + 4.f));
-		float h = angleToZeroToTwoPi(deg2rad(degrees));
+		float h = angle_to_zero_to_two_pi(deg2rad(degrees));
 		float s = (cmax == 0) ? 0.f : (delta / cmax);
 		float v = cmax;
 
@@ -51,11 +51,11 @@ namespace era_engine
 		return rgb;
 	}
 
-	NODISCARD inline vec3 randomRGB(random_number_generator& rng)
+	NODISCARD inline vec3 randomRGB(RandomNumberGenerator& rng)
 	{
 		vec3 hsv =
 		{
-			rng.randomFloatBetween(0.f, 2.f * M_PI),
+			rng.random_float_between(0.f, 2.f * M_PI),
 			1.f,
 			1.f,
 		};

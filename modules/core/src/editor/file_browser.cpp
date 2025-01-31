@@ -2,9 +2,9 @@
 
 #include "editor/file_browser.h"
 #include "editor/asset_editor_panel.h"
-#include "editor/editor_icons.h"
 #include "editor/system_calls.h"
 
+#include "core/editor_icons.h"
 #include "core/imgui.h"
 #include "core/project.h"
 #include "core/string.h"
@@ -22,7 +22,7 @@ namespace era_engine
 {
 	file_browser::file_browser()
 	{
-		std::string path = getAssetPath("/resources/assets");
+		std::string path = get_asset_path("/resources/assets");
 		changeCurrentPath(path);
 	}
 
@@ -259,7 +259,7 @@ namespace era_engine
 			else
 			{
 				fs::path extension = p.path().extension();
-				if (isMeshExtension(extension))
+				if (is_mesh_extension(extension))
 				{
 					type = dir_entry_type_mesh;
 				}

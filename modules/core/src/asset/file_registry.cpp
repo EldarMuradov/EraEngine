@@ -6,17 +6,19 @@
 #include "core/file_system.h"
 #include "core/yaml.h"
 #include "core/string.h"
+#include "core/log.h"
+#include "core/sync.h"
 
 namespace era_engine
 {
-	typedef std::unordered_map<fs::path, asset_handle> path_to_handle;
-	typedef std::unordered_map<asset_handle, fs::path> handle_to_path;
+	typedef std::unordered_map<fs::path, AssetHandle> path_to_handle;
+	typedef std::unordered_map<AssetHandle, fs::path> handle_to_path;
 
 	static path_to_handle pathToHandle;
 	static handle_to_path handleToPath;
 
 	static std::mutex fileRegistryMutex;
-	static const fs::path registryPath = fs::path(getAssetPath(L"/resources/files.yaml")).lexically_normal();
+	static const fs::path registryPath = fs::path(get_asset_path(L"/resources/files.yaml")).lexically_normal();
 
 	static path_to_handle loadRegistryFromDisk()
 	{
@@ -27,7 +29,7 @@ namespace era_engine
 
 		for (auto entryNode : n)
 		{
-			asset_handle handle = 0;
+			AssetHandle handle = 0;
 			fs::path path;
 
 			YAML_LOAD(entryNode, handle, "Handle");
@@ -73,7 +75,7 @@ namespace era_engine
 				auto it = loadedRegistry.find(path);
 
 				// If already known, use the handle, otherwise generate one.
-				asset_handle handle = (it != loadedRegistry.end()) ? it->second : asset_handle::generate();
+				AssetHandle handle = (it != loadedRegistry.end()) ? it->second : AssetHandle::generate();
 
 				pathToHandle.insert({ path, handle });
 				handleToPath.insert({ handle, path });
@@ -81,26 +83,26 @@ namespace era_engine
 		}
 	}
 
-	static void handleAssetChange(const file_system_event& e)
+	static void handleAssetChange(const FileSystemEvent& e)
 	{
 		if (!fs::is_directory(e.path) && e.path != registryPath)
 		{
 			{
-				lock lock{ fileRegistryMutex };
+				Lock lock{ fileRegistryMutex };
 				switch (e.change)
 				{
-				case file_system_change_add:
+				case FileSystemChange::Add:
 				{
 					LOG_MESSAGE("Asset '%ws' added", e.path.c_str());
 
 					ASSERT(pathToHandle.find(e.path) == pathToHandle.end());
 
-					asset_handle handle = asset_handle::generate();
+					AssetHandle handle = AssetHandle::generate();
 					pathToHandle.insert({ e.path, handle });
 					handleToPath.insert({ handle, e.path });
 				} break;
 
-				case file_system_change_delete:
+				case FileSystemChange::Delete:
 				{
 					LOG_MESSAGE("Asset '%ws' deleted", e.path.c_str());
 
@@ -108,26 +110,26 @@ namespace era_engine
 
 					ASSERT(it != pathToHandle.end());
 
-					asset_handle handle = it->second;
+					AssetHandle handle = it->second;
 					pathToHandle.erase(it);
 					handleToPath.erase(handle);
 				} break;
 
-				case file_system_change_modify:
+				case FileSystemChange::Modify:
 				{
 					LOG_MESSAGE("Asset '%ws' modified", e.path.c_str());
 				} break;
 
-				case file_system_change_rename:
+				case FileSystemChange::Rename:
 				{
-					LOG_MESSAGE("Asset renamed from '%ws' to '%ws'", e.oldPath.c_str(), e.path.c_str());
+					LOG_MESSAGE("Asset renamed from '%ws' to '%ws'", e.old_path.c_str(), e.path.c_str());
 
-					auto oldIt = pathToHandle.find(e.oldPath);
+					auto oldIt = pathToHandle.find(e.old_path);
 
 					ASSERT(oldIt != pathToHandle.end()); // Old path exists.
 					ASSERT(pathToHandle.find(e.path) == pathToHandle.end()); // New path does not exist.
 
-					asset_handle handle = oldIt->second;
+					AssetHandle handle = oldIt->second;
 					pathToHandle.erase(oldIt);
 					pathToHandle.insert({ e.path, handle });
 					handleToPath[handle] = e.path; // Replace.
@@ -141,7 +143,7 @@ namespace era_engine
 		}
 	}
 
-	NODISCARD asset_handle getAssetHandleFromPath(const fs::path& path)
+	NODISCARD AssetHandle getAssetHandleFromPath(const fs::path& path)
 	{
 		const std::lock_guard<std::mutex> lock(fileRegistryMutex);
 
@@ -153,7 +155,7 @@ namespace era_engine
 		return it->second;
 	}
 
-	NODISCARD fs::path getPathFromAssetHandle(asset_handle handle)
+	NODISCARD fs::path getPathFromAssetHandle(AssetHandle handle)
 	{
 		const std::lock_guard<std::mutex> lock(fileRegistryMutex);
 
@@ -168,10 +170,10 @@ namespace era_engine
 	void initializeFileRegistry()
 	{
 		auto loadedRegistry = loadRegistryFromDisk();
-		readDirectory(getAssetPath(L"/resources/assets"), loadedRegistry);
+		readDirectory(get_asset_path(L"/resources/assets"), loadedRegistry);
 		writeRegistryToDisk();
 
-		observeDirectory(getAssetPath(L"/resources/assets"), handleAssetChange);
+		observe_directory(get_asset_path(L"/resources/assets"), handleAssetChange);
 	}
 
 }

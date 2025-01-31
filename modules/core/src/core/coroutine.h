@@ -1,24 +1,26 @@
-// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
-
 #pragma once
 
 #if _MSVC_LANG >= 202002L
+
+#include "core_api.h"
 
 #include <coroutine>
 
 namespace era_engine
 {
-	struct cancellation_token
+	class ERA_CORE_API CancellationToken
 	{
+	public:
 		bool cancelled = false;
 	};
 
-	template <typename param_t>
-	struct coroutine_return
+	template <typename Param>
+	class ERA_CORE_API CoroutineReturn
 	{
+	public:
 		struct promise_type
 		{
-			coroutine_return get_return_object()
+			CoroutineReturn get_return_object()
 			{
 				return { .handle = std::coroutine_handle<promise_type>::from_promise(*this) };
 			}
@@ -27,30 +29,31 @@ namespace era_engine
 			std::suspend_always final_suspend() noexcept { return {}; } // Don't destroy after co_return. This means the caller must destroy, but he can check for .done().
 
 			//void return_void() {}
-			void return_value(param_t&& value) { this->value = std::move(value); }
+			void return_value(Param&& value) { this->value = std::move(value); }
 			void unhandled_exception() { std::cout << "Coroutine fatal error\n"; }
 
-			std::suspend_always yield_value(const param_t& value)
+			std::suspend_always yield_value(const Param& value)
 			{
 				this->value = value;
 				return {};
 			}
 
-			param_t value;
+			Param value;
 		};
 
 		std::coroutine_handle<promise_type> handle;
-		ref<cancellation_token> token = ref<cancellation_token>(new cancellation_token);
+		ref<CancellationToken> token = ref<CancellationToken>(new CancellationToken);
 	};
 
-	template <typename value_t>
-	struct coroutine
+	template <typename Value>
+	class ERA_CORE_API Coroutine
 	{
-		std::coroutine_handle<typename coroutine_return<value_t>::promise_type> handle;
-		coroutine_return<value_t>::promise_type& promise;
-		ref<cancellation_token> token = nullptr;
+	public:
+		std::coroutine_handle<typename CoroutineReturn<Value>::promise_type> handle;
+		CoroutineReturn<Value>::promise_type& promise;
+		ref<CancellationToken> token = nullptr;
 
-		coroutine(coroutine_return<value_t> ret)
+		Coroutine(CoroutineReturn<Value> ret)
 			: handle(ret.handle), promise(handle.promise()), token(ret.token) {}
 
 		const auto& value() const { return promise.value; }
@@ -69,7 +72,9 @@ namespace era_engine
 		operator bool() const
 		{
 			if (token->cancelled)
+			{
 				return false;
+			}
 			return !handle.done();
 		}
 	};

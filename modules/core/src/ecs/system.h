@@ -1,21 +1,6 @@
 #pragma once
 
-namespace era_engine
-{
-	class World;
-	class Component;
-	class Entity;
+#include <base/system.h>
 
-	class System
-	{
-	public:
-		System(World* _world);
-		virtual ~System();
-
-		virtual void init();
-		virtual void update(float dt);
-
-	protected:
-		World* world = nullptr;
-	};
-}
+#include "ecs/reflection.h"
+#include "ecs/world.h"

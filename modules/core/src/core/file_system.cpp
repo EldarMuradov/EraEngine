@@ -4,20 +4,20 @@
 
 namespace era_engine
 {
-	struct observe_params
+	struct ObserveParams
 	{
 		fs::path directory;
-		file_system_observer callback;
-		bool watchSubDirectories;
+		FileSystemObserver callback;
+		bool watch_subdirectories;
 	};
 
-	static DWORD observeDirectoryThread(void* inParams)
+	static DWORD observe_directory_thread(void* in_params)
 	{
-		observe_params* params = (observe_params*)inParams;
+		ObserveParams* params = (ObserveParams*)in_params;
 
 		uint8 buffer[1024] = {};
 
-		HANDLE directoryHandle = CreateFileW(
+		HANDLE directory_handle = CreateFileW(
 			params->directory.c_str(),
 			GENERIC_READ | FILE_LIST_DIRECTORY,
 			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -26,7 +26,7 @@ namespace era_engine
 			FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
 			NULL);
 
-		if (directoryHandle == INVALID_HANDLE_VALUE)
+		if (directory_handle == INVALID_HANDLE_VALUE)
 		{
 			std::cerr << "Monitor directory failed.\n";
 			return 1;
@@ -36,23 +36,23 @@ namespace era_engine
 		overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 		ResetEvent(overlapped.hEvent);
 
-		DWORD eventName =
+		DWORD event_name =
 			FILE_NOTIFY_CHANGE_LAST_WRITE |
 			FILE_NOTIFY_CHANGE_FILE_NAME |
 			FILE_NOTIFY_CHANGE_DIR_NAME |
 			FILE_NOTIFY_CHANGE_SIZE;
 
-		DWORD bytesReturned;
+		DWORD bytes_returned;
 
-		fs::path lastChangedPath = "";
-		fs::file_time_type lastChangedPathTimeStamp;
+		fs::path last_changed_path = "";
+		fs::file_time_type last_changed_path_timestamp;
 
 		while (true)
 		{
-			DWORD result = ReadDirectoryChangesW(directoryHandle,
-				buffer, sizeof(buffer), params->watchSubDirectories,
-				eventName,
-				&bytesReturned, &overlapped, NULL);
+			DWORD result = ReadDirectoryChangesW(directory_handle,
+				buffer, sizeof(buffer), params->watch_subdirectories,
+				event_name,
+				&bytes_returned, &overlapped, NULL);
 
 			if (!result)
 			{
@@ -63,7 +63,7 @@ namespace era_engine
 			WaitForSingleObject(overlapped.hEvent, INFINITE);
 
 			DWORD dw;
-			if (!GetOverlappedResult(directoryHandle, &overlapped, &dw, FALSE) || dw == 0)
+			if (!GetOverlappedResult(directory_handle, &overlapped, &dw, FALSE) || dw == 0)
 			{
 				std::cerr << "Get overlapped result failed.\n";
 				break;
@@ -72,57 +72,57 @@ namespace era_engine
 			FILE_NOTIFY_INFORMATION* filenotify;
 			DWORD offset = 0;
 
-			fs::path oldPath;
+			fs::path old_path;
 
 			do
 			{
 				filenotify = (FILE_NOTIFY_INFORMATION*)(&buffer[offset]);
 
-				file_system_change change = file_system_change_none;
+				FileSystemChange change = FileSystemChange::None;
 
 				switch (filenotify->Action)
 				{
-				case FILE_ACTION_ADDED: { change = file_system_change_add; } break;
-				case FILE_ACTION_REMOVED: { change = file_system_change_delete; } break;
-				case FILE_ACTION_MODIFIED: { change = file_system_change_modify; } break;
+				case FILE_ACTION_ADDED: { change = FileSystemChange::Add; } break;
+				case FILE_ACTION_REMOVED: { change = FileSystemChange::Delete; } break;
+				case FILE_ACTION_MODIFIED: { change = FileSystemChange::Modify; } break;
 				case FILE_ACTION_RENAMED_OLD_NAME:
 				{
-					uint32 filenameLength = filenotify->FileNameLength / sizeof(WCHAR);
-					oldPath = (params->directory / std::wstring(filenotify->FileName, filenameLength)).lexically_normal();
+					uint32 filename_length = filenotify->FileNameLength / sizeof(WCHAR);
+					old_path = (params->directory / std::wstring(filenotify->FileName, filename_length)).lexically_normal();
 				} break;
-				case FILE_ACTION_RENAMED_NEW_NAME: { change = file_system_change_rename; } break;
+				case FILE_ACTION_RENAMED_NEW_NAME: { change = FileSystemChange::Rename; } break;
 				}
 
-				if (change != file_system_change_none)
+				if (change != FileSystemChange::None)
 				{
-					uint32 filenameLength = filenotify->FileNameLength / sizeof(WCHAR);
-					fs::path path = (params->directory / std::wstring(filenotify->FileName, filenameLength)).lexically_normal();
+					uint32 filename_length = filenotify->FileNameLength / sizeof(WCHAR);
+					fs::path path = (params->directory / std::wstring(filenotify->FileName, filename_length)).lexically_normal();
 
-					if (change == file_system_change_modify)
+					if (change == FileSystemChange::Modify)
 					{
 						auto writeTime = fs::last_write_time(path);
 
 						// The filesystem usually sends multiple notifications for changed files, since the file is first written, then metadata is changed etc.
 						// This check prevents these notifications if they are too close together in time.
 						// This is a pretty crude fix. In this setup files should not change at the same time, since we only ever track one file.
-						if (path == lastChangedPath
-							&& std::chrono::duration_cast<std::chrono::milliseconds>(writeTime - lastChangedPathTimeStamp).count() < 200)
+						if (path == last_changed_path
+							&& std::chrono::duration_cast<std::chrono::milliseconds>(writeTime - last_changed_path_timestamp).count() < 200)
 						{
-							lastChangedPath = path;
-							lastChangedPathTimeStamp = writeTime;
+							last_changed_path = path;
+							last_changed_path_timestamp = writeTime;
 							break;
 						}
 
-						lastChangedPath = path;
-						lastChangedPathTimeStamp = writeTime;
+						last_changed_path = path;
+						last_changed_path_timestamp = writeTime;
 					}
 
-					file_system_event e;
+					FileSystemEvent e;
 					e.change = change;
 					e.path = std::move(path);
-					if (change == file_system_change_rename)
+					if (change == FileSystemChange::Rename)
 					{
-						e.oldPath = std::move(oldPath);
+						e.old_path = std::move(old_path);
 					}
 
 					params->callback(e);
@@ -138,21 +138,21 @@ namespace era_engine
 			}
 		}
 
-		CloseHandle(directoryHandle);
+		CloseHandle(directory_handle);
 
 		delete params;
 
 		return 0;
 	}
 
-	bool observeDirectory(const fs::path& directory, const file_system_observer& callback, bool watchSubDirectories)
+	bool observe_directory(const fs::path& directory, const FileSystemObserver& callback, bool watch_subdirectories)
 	{
-		observe_params* params = new observe_params;
+		ObserveParams* params = new ObserveParams;
 		params->directory = directory;
 		params->callback = callback;
-		params->watchSubDirectories = watchSubDirectories;
+		params->watch_subdirectories = watch_subdirectories;
 
-		HANDLE handle = CreateThread(0, 0, observeDirectoryThread, params, 0, 0);
+		HANDLE handle = CreateThread(0, 0, observe_directory_thread, params, 0, 0);
 		bool result = handle != INVALID_HANDLE_VALUE;
 		CloseHandle(handle);
 

@@ -3,6 +3,7 @@
 #include "asset/image.h"
 
 #include "core/memory.h"
+#include "core/log.h"
 
 #include <DirectXTex/DirectXTex.h>
 

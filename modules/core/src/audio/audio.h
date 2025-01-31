@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "audio/sound.h"
 #include "audio/sound_management.h"
 #include "audio/reverb.h"
@@ -12,7 +14,7 @@
 
 namespace era_engine
 {
-	struct master_audio_settings
+	struct ERA_CORE_API master_audio_settings
 	{
 		float volume = 0.1f;
 		bool reverbEnabled = true;
@@ -29,7 +31,7 @@ namespace era_engine
 
 	void updateAudio(float dt);
 
-	struct sound_handle
+	struct ERA_CORE_API sound_handle
 	{
 		operator bool() { return id != 0; }
 		uint32 id;

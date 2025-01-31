@@ -1,13 +1,13 @@
-// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
-
 #pragma once
+
+#include "core_api.h"
 
 #define COMPOSITE_VARNAME_(a, b) a##b
 #define COMPOSITE_VARNAME(a, b) COMPOSITE_VARNAME_(a, b)
 
 namespace era_engine
 {
-	enum profile_event_type : uint16
+	enum ProfileEventType : uint16
 	{
 		profile_event_none,
 		profile_event_frame_marker,
@@ -17,11 +17,11 @@ namespace era_engine
 		profile_event_count
 	};
 
-	struct profile_event
+	struct ERA_CORE_API ProfileEvent
 	{
-		profile_event_type type;
-		uint16 clType; // For gpu profiler.
-		uint32 threadID;
+		ProfileEventType type;
+		uint16 cl_type; // For gpu profiler.
+		uint32 thread_id;
 		const char* name;
 		uint64 timestamp;
 	};
@@ -33,76 +33,76 @@ namespace era_engine
 
 namespace era_engine
 {
-	struct profile_block
+	struct ERA_CORE_API ProfileBlock
 	{
-		uint16 firstChild;
-		uint16 lastChild;
-		uint16 nextSibling;
+		uint16 first_child;
+		uint16 last_child;
+		uint16 next_sibling;
 		uint16 parent;
 
-		uint64 startClock;
-		uint64 endClock;
+		uint64 start_clock;
+		uint64 end_clock;
 
-		float relStart;
+		float rel_start;
 		float duration;
 
-		uint32 threadID;
+		uint32 thread_id;
 
 		const char* name;
 	};
 
-	struct profile_frame
+	struct ERA_CORE_API ProfileFrame
 	{
-		uint64 startClock;
-		uint64 endClock;
-		uint64 globalFrameID;
+		uint64 start_clock;
+		uint64 end_clock;
+		uint64 global_frame_id;
 
 		float duration;
 	};
 
-	static const float leftPadding = 5.f;
+	inline constexpr float left_padding = 5.0f;
 
-	struct profiler_persistent
+	struct ERA_CORE_API ProfilerPersistent
 	{
-		uint32 highlightFrameIndex = -1;
+		uint32 highlight_frame_index = -1;
 
-		float frameWidthMultiplier = 1.f;
-		float callstackLeftPadding = leftPadding;
+		float frame_width_multiplier = 1.f;
+		float callstack_left_padding = left_padding;
 
-		float horizontalScrollAnchor = 0;
-		bool horizontalScrolling = false;
+		float horizontal_scroll_anchor = 0;
+		bool horizontal_scrolling = false;
 	};
 
-	struct profiler_timeline
+	struct ERA_CORE_API ProfilerTimeline
 	{
-		uint32 numFrames;
-		float totalWidth;
+		uint32 num_frames;
+		float total_width;
 
-		float barHeight16ms;
-		float barHeight33ms;
+		float bar_height16ms;
+		float bar_height33ms;
 
-		float rightEdge;
-		float horizontalBarStride;
-		float barWidth;
-		float callStackTop;
+		float right_edge;
+		float horizontal_bar_stride;
+		float bar_width;
+		float call_stack_top;
 
-		uint32 colorIndex = 0;
+		uint32 color_index = 0;
 
-		profiler_persistent& persistent;
+		ProfilerPersistent& persistent;
 
-		profiler_timeline(profiler_persistent& persistent, uint32 numFrames);
-		bool drawHeader(bool& pauseRecording);
-		void drawOverviewFrame(profile_frame& frame, uint32 frameIndex, uint32 currentFrame);
-		void endOverview();
+		ProfilerTimeline(ProfilerPersistent& _persistent, uint32 _num_frames);
+		bool draw_header(bool& pause_recording);
+		void draw_overview_frame(ProfileFrame& frame, uint32 frame_index, uint32 current_frame);
+		void end_overview();
 
-		void drawHighlightFrameInfo(profile_frame& frame);
-		void drawCallStack(profile_block* blocks, uint16 startIndex, const char* name = 0);
-		void drawMillisecondSpacings(profile_frame& frame);
-		void handleUserInteractions();
+		void draw_highlight_frame_info(ProfileFrame& frame);
+		void draw_call_stack(ProfileBlock* blocks, uint16 start_index, const char* name = 0);
+		void draw_millisecond_spacings(ProfileFrame& frame) const;
+		void handle_user_interactions();
 	};
 
 	// Returns true if frame-end marker is found.
-	bool handleProfileEvent(profile_event* events, uint32 eventIndex, uint32 numEvents, uint16* stack, uint32& d, profile_block* blocks, uint32& numBlocksUsed, uint64& frameEndTimestamp, bool lookahead);
-	void copyProfileBlocks(profile_block* src, uint16* stack, uint32 depth, profile_block* dest, uint32& numDestBlocks);
+	bool handle_profile_event(ProfileEvent* events, uint32 event_index, uint32 num_events, uint16* stack, uint32& d, ProfileBlock* blocks, uint32& num_blocks_used, uint64& frame_end_timestamp, bool lookahead);
+	void copy_profile_blocks(ProfileBlock* src, uint16* stack, uint32 depth, ProfileBlock* dest, uint32& num_dest_blocks);
 }
 #endif

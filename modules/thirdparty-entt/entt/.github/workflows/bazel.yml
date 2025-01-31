@@ -1,0 +1,23 @@
+name: bazel
+
+on: [push, pull_request]
+
+jobs:
+
+  test:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+
+    steps:
+    - uses: actions/checkout@v4
+    - run: bazelisk test --config=ci ...
+      working-directory: test
+      env:
+        USE_BAZEL_VERSION: 6.x

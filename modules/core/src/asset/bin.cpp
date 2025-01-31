@@ -80,10 +80,10 @@ namespace era_engine
 		fwrite(in.data(), sizeof(T), in.size(), file);
 	}
 
-	static void writeMesh(const mesh_asset& mesh, FILE* file)
+	static void writeMesh(const MeshAsset& mesh, FILE* file)
 	{
 		bin_mesh_header header;
-		header.skeletonIndex = mesh.skeletonIndex;
+		header.skeletonIndex = mesh.skeleton_index;
 		header.numSubmeshes = (uint32)mesh.submeshes.size();
 		header.nameLength = (uint32)mesh.name.length();
 
@@ -92,10 +92,10 @@ namespace era_engine
 
 		for (uint32 i = 0; i < header.numSubmeshes; ++i)
 		{
-			const submesh_asset& in = mesh.submeshes[i];
+			const SubmeshAsset& in = mesh.submeshes[i];
 
 			bin_submesh_header subHeader;
-			subHeader.materialIndex = in.materialIndex;
+			subHeader.materialIndex = in.material_index;
 			subHeader.numVertices = (uint32)in.positions.size();
 			subHeader.numTriangles = (uint32)in.triangles.size();
 
@@ -119,7 +119,7 @@ namespace era_engine
 		}
 	}
 
-	static void writeMaterial(const pbr_material_desc& material, FILE* file)
+	static void writeMaterial(const PbrMaterialDesc& material, FILE* file)
 	{
 		std::string albedo = material.albedo.string();
 		std::string normal = material.normal.string();
@@ -138,21 +138,21 @@ namespace era_engine
 		fwrite(roughness.c_str(), sizeof(char), header.roughnessPathLength, file);
 		fwrite(metallic.c_str(), sizeof(char), header.metallicPathLength, file);
 
-		fwrite(&material.albedoFlags, sizeof(uint32), 1, file);
-		fwrite(&material.normalFlags, sizeof(uint32), 1, file);
-		fwrite(&material.roughnessFlags, sizeof(uint32), 1, file);
-		fwrite(&material.metallicFlags, sizeof(uint32), 1, file);
+		fwrite(&material.albedo_flags, sizeof(uint32), 1, file);
+		fwrite(&material.normal_flags, sizeof(uint32), 1, file);
+		fwrite(&material.roughness_flags, sizeof(uint32), 1, file);
+		fwrite(&material.metallic_flags, sizeof(uint32), 1, file);
 
 		fwrite(&material.emission, sizeof(vec4), 1, file);
-		fwrite(&material.albedoTint, sizeof(vec4), 1, file);
-		fwrite(&material.roughnessOverride, sizeof(float), 1, file);
-		fwrite(&material.metallicOverride, sizeof(float), 1, file);
-		fwrite(&material.shader, sizeof(pbr_material_shader), 1, file);
-		fwrite(&material.uvScale, sizeof(float), 1, file);
+		fwrite(&material.albedo_tint, sizeof(vec4), 1, file);
+		fwrite(&material.roughness_override, sizeof(float), 1, file);
+		fwrite(&material.metallic_override, sizeof(float), 1, file);
+		fwrite(&material.shader, sizeof(PbrMaterialShader), 1, file);
+		fwrite(&material.uv_scale, sizeof(float), 1, file);
 		fwrite(&material.translucency, sizeof(float), 1, file);
 	}
 
-	static void writeSkeleton(const skeleton_asset& skeleton, FILE* file)
+	static void writeSkeleton(const SkeletonAsset& skeleton, FILE* file)
 	{
 		bin_skeleton_header header;
 		header.numJoints = (uint32)skeleton.joints.size();
@@ -164,22 +164,22 @@ namespace era_engine
 			uint32 nameLength = (uint32)skeleton.joints[i].name.length();
 			fwrite(&nameLength, sizeof(uint32), 1, file);
 			fwrite(skeleton.joints[i].name.c_str(), sizeof(char), nameLength, file);
-			fwrite(&skeleton.joints[i].limbType, sizeof(era_engine::animation::limb_type), 1, file);
+			fwrite(&skeleton.joints[i].limb_type, sizeof(era_engine::animation::LimbType), 1, file);
 			fwrite(&skeleton.joints[i].ik, sizeof(bool), 1, file);
-			fwrite(&skeleton.joints[i].invBindTransform, sizeof(mat4), 1, file);
-			fwrite(&skeleton.joints[i].bindTransform, sizeof(mat4), 1, file);
-			fwrite(&skeleton.joints[i].parentID, sizeof(uint32), 1, file);
+			fwrite(&skeleton.joints[i].inv_bind_transform, sizeof(mat4), 1, file);
+			fwrite(&skeleton.joints[i].bind_transform, sizeof(mat4), 1, file);
+			fwrite(&skeleton.joints[i].parent_id, sizeof(uint32), 1, file);
 		}
 	}
 
-	static void writeAnimation(const animation_asset& animation, FILE* file)
+	static void writeAnimation(const AnimationAsset& animation, FILE* file)
 	{
 		bin_animation_header header;
 		header.duration = animation.duration;
 		header.numJoints = (uint32)animation.joints.size();
-		header.numPositionKeyframes = (uint32)animation.positionKeyframes.size();
-		header.numRotationKeyframes = (uint32)animation.rotationKeyframes.size();
-		header.numScaleKeyframes = (uint32)animation.scaleKeyframes.size();
+		header.numPositionKeyframes = (uint32)animation.position_keyframes.size();
+		header.numRotationKeyframes = (uint32)animation.rotation_keyframes.size();
+		header.numScaleKeyframes = (uint32)animation.scale_keyframes.size();
 		header.nameLength = (uint32)animation.name.length();
 
 		fwrite(&header, sizeof(header), 1, file);
@@ -191,18 +191,18 @@ namespace era_engine
 			fwrite(&nameLength, sizeof(uint32), 1, file);
 			fwrite(name.c_str(), sizeof(char), nameLength, file);
 
-			fwrite(&joint, sizeof(animation::animation_joint), 1, file);
+			fwrite(&joint, sizeof(animation::AnimationJoint), 1, file);
 		}
 
-		writeArray(animation.positionTimestamps, file);
-		writeArray(animation.rotationTimestamps, file);
-		writeArray(animation.scaleTimestamps, file);
-		writeArray(animation.positionKeyframes, file);
-		writeArray(animation.rotationKeyframes, file);
-		writeArray(animation.scaleKeyframes, file);
+		writeArray(animation.position_timestamps, file);
+		writeArray(animation.rotation_timestamps, file);
+		writeArray(animation.scale_timestamps, file);
+		writeArray(animation.position_keyframes, file);
+		writeArray(animation.rotation_keyframes, file);
+		writeArray(animation.scale_keyframes, file);
 	}
 
-	void writeBIN(const model_asset& asset, const fs::path& path)
+	void writeBIN(const ModelAsset& asset, const fs::path& path)
 	{
 		FILE* file = fopen(path.string().c_str(), "wb");
 
@@ -236,29 +236,29 @@ namespace era_engine
 	}
 
 	template <typename T>
-	static void readArray(entire_file& file, std::vector<T>& out, uint32 count)
+	static void readArray(EntireFile& file, std::vector<T>& out, uint32 count)
 	{
 		out.resize(count);
 		T* ptr = file.consume<T>(count);
 		memcpy(out.data(), ptr, sizeof(T) * count);
 	}
 
-	static mesh_asset readMesh(entire_file& file)
+	static MeshAsset readMesh(EntireFile& file)
 	{
 		bin_mesh_header* header = file.consume<bin_mesh_header>();
 		char* name = file.consume<char>(header->nameLength);
 
-		mesh_asset result;
+		MeshAsset result;
 		result.name = std::string(name, header->nameLength);
 		result.submeshes.resize(header->numSubmeshes);
-		result.skeletonIndex = header->skeletonIndex;
+		result.skeleton_index = header->skeletonIndex;
 
 		for (uint32 i = 0; i < header->numSubmeshes; ++i)
 		{
 			bin_submesh_header* subHeader = file.consume<bin_submesh_header>();
 
-			submesh_asset& sub = result.submeshes[i];
-			sub.materialIndex = subHeader->materialIndex;
+			SubmeshAsset& sub = result.submeshes[i];
+			sub.material_index = subHeader->materialIndex;
 			if (subHeader->flags & bin_submesh_flag_positions) { readArray(file, sub.positions, subHeader->numVertices); }
 			if (subHeader->flags & bin_submesh_flag_uvs) { readArray(file, sub.uvs, subHeader->numVertices); }
 			if (subHeader->flags & bin_submesh_flag_normals) { readArray(file, sub.normals, subHeader->numVertices); }
@@ -271,7 +271,7 @@ namespace era_engine
 		return result;
 	}
 
-	static pbr_material_desc readMaterial(entire_file& file)
+	static PbrMaterialDesc readMaterial(EntireFile& file)
 	{
 		bin_material_header* header = file.consume<bin_material_header>();
 
@@ -280,35 +280,35 @@ namespace era_engine
 		char* roughness = file.consume<char>(header->roughnessPathLength);
 		char* metallic = file.consume<char>(header->metallicPathLength);
 
-		pbr_material_desc result;
+		PbrMaterialDesc result;
 		result.albedo = std::string(albedo, header->albedoPathLength);
 		result.normal = std::string(normal, header->normalPathLength);
 		result.roughness = std::string(roughness, header->roughnessPathLength);
 		result.metallic = std::string(metallic, header->metallicPathLength);
 
-		result.albedoFlags = *file.consume<uint32>();
-		result.normalFlags = *file.consume<uint32>();
-		result.roughnessFlags = *file.consume<uint32>();
-		result.metallicFlags = *file.consume<uint32>();
+		result.albedo_flags = *file.consume<uint32>();
+		result.normal_flags = *file.consume<uint32>();
+		result.roughness_flags = *file.consume<uint32>();
+		result.metallic_flags = *file.consume<uint32>();
 
 		result.emission = *file.consume<vec4>();
-		result.albedoTint = *file.consume<vec4>();
-		result.roughnessOverride = *file.consume<float>();
-		result.metallicOverride = *file.consume<float>();
-		result.shader = *file.consume<pbr_material_shader>();
-		result.uvScale = *file.consume<float>();
+		result.albedo_tint = *file.consume<vec4>();
+		result.roughness_override = *file.consume<float>();
+		result.metallic_override = *file.consume<float>();
+		result.shader = *file.consume<PbrMaterialShader>();
+		result.uv_scale = *file.consume<float>();
 		result.translucency = *file.consume<float>();
 
 		return result;
 	}
 
-	static skeleton_asset readSkeleton(entire_file& file)
+	static SkeletonAsset readSkeleton(EntireFile& file)
 	{
 		bin_skeleton_header* header = file.consume<bin_skeleton_header>();
 
-		skeleton_asset result;
+		SkeletonAsset result;
 		result.joints.resize(header->numJoints);
-		result.nameToJointID.reserve(header->numJoints);
+		result.name_to_joint_id.reserve(header->numJoints);
 
 		for (uint32 i = 0; i < header->numJoints; ++i)
 		{
@@ -316,23 +316,23 @@ namespace era_engine
 			char* name = file.consume<char>(nameLength);
 
 			result.joints[i].name = std::string(name, nameLength);
-			result.joints[i].limbType = *file.consume<animation::limb_type>();
+			result.joints[i].limb_type = *file.consume<animation::LimbType>();
 			result.joints[i].ik = *file.consume<bool>();
-			result.joints[i].invBindTransform = *file.consume<mat4>();
-			result.joints[i].bindTransform = *file.consume<mat4>();
-			result.joints[i].parentID = *file.consume<uint32>();
+			result.joints[i].inv_bind_transform = *file.consume<mat4>();
+			result.joints[i].bind_transform = *file.consume<mat4>();
+			result.joints[i].parent_id = *file.consume<uint32>();
 
-			result.nameToJointID[result.joints[i].name] = i;
+			result.name_to_joint_id[result.joints[i].name] = i;
 		}
 
 		return result;
 	}
 
-	static animation_asset readAnimation(entire_file& file)
+	static AnimationAsset readAnimation(EntireFile& file)
 	{
 		bin_animation_header* header = file.consume<bin_animation_header>();
 
-		animation_asset result;
+		AnimationAsset result;
 		result.duration = header->duration;
 
 		char* name = file.consume<char>(header->nameLength);
@@ -345,34 +345,34 @@ namespace era_engine
 			uint32 nameLength = *file.consume<uint32>();
 			char* name = file.consume<char>(nameLength);
 
-			animation::animation_joint joint = *file.consume<animation::animation_joint>();
+			animation::AnimationJoint joint = *file.consume<animation::AnimationJoint>();
 			result.joints[std::string(name, nameLength)] = joint;
 		}
 
-		readArray(file, result.positionTimestamps, header->numPositionKeyframes);
-		readArray(file, result.rotationTimestamps, header->numRotationKeyframes);
-		readArray(file, result.scaleTimestamps, header->numScaleKeyframes);
-		readArray(file, result.positionKeyframes, header->numPositionKeyframes);
-		readArray(file, result.rotationKeyframes, header->numRotationKeyframes);
-		readArray(file, result.scaleKeyframes, header->numScaleKeyframes);
+		readArray(file, result.position_timestamps, header->numPositionKeyframes);
+		readArray(file, result.rotation_timestamps, header->numRotationKeyframes);
+		readArray(file, result.scale_timestamps, header->numScaleKeyframes);
+		readArray(file, result.position_keyframes, header->numPositionKeyframes);
+		readArray(file, result.rotation_keyframes, header->numRotationKeyframes);
+		readArray(file, result.scale_keyframes, header->numScaleKeyframes);
 
 		return result;
 	}
 
-	NODISCARD model_asset loadBIN(const fs::path& path)
+	NODISCARD ModelAsset loadBIN(const fs::path& path)
 	{
 		PROFILE("Loading BIN");
 
-		entire_file file = loadFile(path);
+		EntireFile file = load_file(path);
 
 		bin_header* header = file.consume<bin_header>();
 		if (header->header != BIN_HEADER)
 		{
-			freeFile(file);
+			free_file(file);
 			return {};
 		}
 
-		model_asset result;
+		ModelAsset result;
 		result.meshes.resize(header->numMeshes);
 		result.materials.resize(header->numMaterials);
 		result.skeletons.resize(header->numSkeletons);
@@ -395,7 +395,7 @@ namespace era_engine
 			result.animations[i] = readAnimation(file);
 		}
 
-		freeFile(file);
+		free_file(file);
 
 		return result;
 	}

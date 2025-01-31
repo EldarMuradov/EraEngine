@@ -177,7 +177,7 @@ namespace era_engine
 			*triangles++ = { center, i, next };
 		}
 
-		renderDebug<debug_unlit_pipeline::position>(createModelMatrix(position, rotateFromTo(vec3(0.f, 0.f, 1.f), upAxis)), vb, ib, color, renderPass, overlay);
+		renderDebug<debug_unlit_pipeline::position>(create_model_matrix(position, rotate_from_to(vec3(0.f, 0.f, 1.f), upAxis)), vb, ib, color, renderPass, overlay);
 	}
 
 	void renderRing(vec3 position, vec3 upAxis, float outerRadius, float innerRadius, vec4 color, ldr_render_pass* renderPass, bool overlay)
@@ -216,7 +216,7 @@ namespace era_engine
 			*triangles++ = { next, (uint16)(i + offset), (uint16)(next + offset) };
 		}
 
-		renderDebug<debug_unlit_pipeline::position>(createModelMatrix(position, rotateFromTo(vec3(0.f, 0.f, 1.f), upAxis)), vb, ib, color, renderPass, overlay);
+		renderDebug<debug_unlit_pipeline::position>(create_model_matrix(position, rotate_from_to(vec3(0.f, 0.f, 1.f), upAxis)), vb, ib, color, renderPass, overlay);
 	}
 
 	void renderAngleRing(vec3 position, vec3 upAxis, float outerRadius, float innerRadius,
@@ -375,9 +375,9 @@ namespace era_engine
 
 		auto [vb, ib] = getWireRing();
 
-		renderDebug<debug_unlit_line_pipeline::position>(createModelMatrix(position, quat::identity, radius), vb, ib, color, renderPass, overlay);
-		renderDebug<debug_unlit_line_pipeline::position>(createModelMatrix(position, quat(vec3(0.f, 1.f, 0.f), deg2rad(90.f)), radius), vb, ib, color, renderPass, overlay);
-		renderDebug<debug_unlit_line_pipeline::position>(createModelMatrix(position, quat(vec3(1.f, 0.f, 0.f), deg2rad(90.f)), radius), vb, ib, color, renderPass, overlay);
+		renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(position, quat::identity, radius), vb, ib, color, renderPass, overlay);
+		renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(position, quat(vec3(0.f, 1.f, 0.f), deg2rad(90.f)), radius), vb, ib, color, renderPass, overlay);
+		renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(position, quat(vec3(1.f, 0.f, 0.f), deg2rad(90.f)), radius), vb, ib, color, renderPass, overlay);
 	}
 
 	void renderWireCapsule(vec3 positionA, vec3 positionB, float radius, vec4 color, ldr_render_pass* renderPass, bool overlay)
@@ -385,24 +385,24 @@ namespace era_engine
 		CPU_PROFILE_BLOCK("Render wire capsule");
 
 		vec3 center = 0.5f * (positionA + positionB);
-		quat rotation = rotateFromTo(vec3(0.f, 1.f, 0.f), positionA - positionB);
+		quat rotation = rotate_from_to(vec3(0.f, 1.f, 0.f), positionA - positionB);
 		auto [vb, ib] = getWireCapsuleCrossSection(length(positionA - positionB), radius);
 
-		renderDebug<debug_unlit_line_pipeline::position>(createModelMatrix(center, rotation * quat::identity, 1.f), vb, ib, color, renderPass, overlay);
-		renderDebug<debug_unlit_line_pipeline::position>(createModelMatrix(center, rotation * quat(vec3(0.f, 1.f, 0.f), deg2rad(90.f)), 1.f), vb, ib, color, renderPass, overlay);
+		renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(center, rotation * quat::identity, 1.f), vb, ib, color, renderPass, overlay);
+		renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(center, rotation * quat(vec3(0.f, 1.f, 0.f), deg2rad(90.f)), 1.f), vb, ib, color, renderPass, overlay);
 	}
 
 	void renderWireCylinder(vec3 positionA, vec3 positionB, float radius, vec4 color, ldr_render_pass* renderPass, bool overlay)
 	{
 		CPU_PROFILE_BLOCK("Render wire cylinder");
 
-		quat rotation = rotateFromTo(vec3(0.f, 1.f, 0.f), positionA - positionB);
+		quat rotation = rotate_from_to(vec3(0.f, 1.f, 0.f), positionA - positionB);
 
 		{
 			auto [vb, ib] = getWireRing();
 			quat rotate90deg(vec3(1.f, 0.f, 0.f), deg2rad(90.f));
-			renderDebug<debug_unlit_line_pipeline::position>(createModelMatrix(positionA, rotation * rotate90deg, radius), vb, ib, color, renderPass, overlay);
-			renderDebug<debug_unlit_line_pipeline::position>(createModelMatrix(positionB, rotation * rotate90deg, radius), vb, ib, color, renderPass, overlay);
+			renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(positionA, rotation * rotate90deg, radius), vb, ib, color, renderPass, overlay);
+			renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(positionB, rotation * rotate90deg, radius), vb, ib, color, renderPass, overlay);
 		}
 
 		{
@@ -457,7 +457,7 @@ namespace era_engine
 		float axisLength = tan(halfAngle);
 
 		vec3 xAxis, yAxis;
-		getTangents(direction, xAxis, yAxis);
+		get_tangents(direction, xAxis, yAxis);
 		vec3 zAxis = direction * distance;
 		xAxis *= distance * axisLength;
 		yAxis *= distance * axisLength;
@@ -527,7 +527,7 @@ namespace era_engine
 		*lines++ = { 2, 6 };
 		*lines++ = { 3, 7 };
 
-		renderDebug<debug_unlit_line_pipeline::position>(createModelMatrix(position, rotation, radius), vb, ib, color, renderPass, overlay);
+		renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(position, rotation, radius), vb, ib, color, renderPass, overlay);
 	}
 
 	void renderCameraFrustum(const render_camera& frustum, vec4 color, ldr_render_pass* renderPass, float alternativeFarPlane, bool overlay)

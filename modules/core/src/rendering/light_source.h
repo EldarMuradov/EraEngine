@@ -6,12 +6,16 @@
 #include "core/camera.h"
 #include "core/reflect.h"
 
+#include "ecs/component.h"
+
 #include "light_source.hlsli"
 
 namespace era_engine
 {
-	struct directional_light
+	class directional_light
 	{
+	public:
+
 		void updateMatrices(const render_camera& camera);
 
 		vec4 cascadeDistances;
@@ -31,26 +35,20 @@ namespace era_engine
 		uint32 numShadowCascades;
 
 		bool stabilize;
+
+		ERA_REFLECT
 	};
-	REFLECT_STRUCT(directional_light,
-		(color, "Color"),
-		(intensity, "Intensity"),
-		(direction, "Direction"),
-		(numShadowCascades, "Cascades"),
-		(cascadeDistances, "Cascade distances"),
-		(bias, "Bias"),
-		(blendDistances, "Blend distances"),
-		(shadowDimensions, "Shadow dimensions"),
-		(stabilize, "Stabilize")
-	);
 
-	struct point_light_component
+	class PointLightComponent final : public Component
 	{
-		point_light_component() {}
-		point_light_component(vec3 color, float intensity, float radius, bool castsShadow = false, uint32 shadowMapResolution = 512)
-			: color(color), intensity(intensity), radius(radius), castsShadow(castsShadow), shadowMapResolution(shadowMapResolution) {}
-		point_light_component(const point_light_component&) = default;
+	public:
+		PointLightComponent() = default;
+		PointLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _radius, bool _castsShadow = false, uint32 _shadowMapResolution = 2048);
+		PointLightComponent(const PointLightComponent&) = default;
+		virtual ~PointLightComponent();
 
+		ERA_VIRTUAL_REFLECT(Component)
+	public:
 		vec3 color{};
 
 		float intensity{};
@@ -60,21 +58,18 @@ namespace era_engine
 
 		bool castsShadow{};
 	};
-	REFLECT_STRUCT(point_light_component,
-		(color, "Color"),
-		(intensity, "Intensity"),
-		(radius, "Radius"),
-		(castsShadow, "Casts shadow"),
-		(shadowMapResolution, "Shadow resolution")
-	);
 
-	struct spot_light_component
+	class SpotLightComponent final : public Component
 	{
-		spot_light_component() {}
-		spot_light_component(vec3 color, float intensity, float distance, float innerAngle, float outerAngle, bool castsShadow = false, uint32 shadowMapResolution = 512)
-			: color(color), intensity(intensity), distance(distance), innerAngle(innerAngle), outerAngle(outerAngle), castsShadow(castsShadow), shadowMapResolution(shadowMapResolution) {}
-		spot_light_component(const spot_light_component&) = default;
+	public:
+		SpotLightComponent() = default;
+		SpotLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _distance, float _innerAngle, float _outerAngle, bool _castsShadow = false, uint32 _shadowMapResolution = 2048);		
+		SpotLightComponent(const SpotLightComponent&) = default;
+		virtual ~SpotLightComponent();
 
+		ERA_VIRTUAL_REFLECT(Component)
+
+	public:
 		vec3 color;
 
 		float intensity;
@@ -86,15 +81,6 @@ namespace era_engine
 
 		bool castsShadow;
 	};
-	REFLECT_STRUCT(spot_light_component,
-		(color, "Color"),
-		(intensity, "Intensity"),
-		(distance, "Distance"),
-		(innerAngle, "Inner angle"),
-		(outerAngle, "Outer angle"),
-		(castsShadow, "Casts shadow"),
-		(shadowMapResolution, "Shadow resolution")
-	);
 
 	NODISCARD mat4 getSpotLightViewProjectionMatrix(const spot_light_cb& sl);
 }

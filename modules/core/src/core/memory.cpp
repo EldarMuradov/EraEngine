@@ -3,86 +3,118 @@
 #include "core/memory.h"
 #include "core/math.h"
 
+#include <rttr/registration>
+
 namespace era_engine
 {
-	void eallocator::initialize(uint64 minimumBlockSize, uint64 reserveSize)
+	static std::mutex mutex;
+
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+
+		rttr::registration::class_<Allocator>("Allocator")
+			.constructor<>()(policy::ctor::as_raw_ptr);
+	}
+
+	Allocator::Allocator()
+	{
+		initialize();
+	}
+
+	Allocator::Allocator(uint64 _minimum_block_size, uint64 _reserve_size)
+	{
+		initialize(_minimum_block_size, _reserve_size);
+	}
+
+	void Allocator::initialize(uint64 _minimum_block_size, uint64 _reserve_size)
 	{
 		reset(true);
 
-		memory = (uint8*)VirtualAlloc(0, reserveSize, MEM_RESERVE, PAGE_READWRITE);
+		memory = (uint8*)VirtualAlloc(0, _reserve_size, MEM_RESERVE, PAGE_READWRITE);
 
 		SYSTEM_INFO systemInfo;
 		GetSystemInfo(&systemInfo);
 
-		pageSize = systemInfo.dwPageSize;
-		sizeLeftTotal = reserveSize;
-		this->minimumBlockSize = minimumBlockSize;
-		this->reserveSize = reserveSize;
+		page_size = systemInfo.dwPageSize;
+		size_left_total = _reserve_size;
+		minimum_block_size = _minimum_block_size;
+		reserve_size = _reserve_size;
 	}
 
-	void eallocator::resetToMarker(memory_marker marker)
+	void Allocator::ensure_free_size(uint64 size)
+	{
+		std::lock_guard lock{ mutex };
+		ensure_free_size_internal(size);
+	}
+
+	void Allocator::reset_to_marker(MemoryMarker marker)
 	{
 		current = marker.before;
-		sizeLeftCurrent = committedMemory - current;
-		sizeLeftTotal = reserveSize - current;
+		size_left_current = committed_memory - current;
+		size_left_total = reserve_size - current;
 	}
 
-	void eallocator::ensureFreeSizeInternal(uint64 size)
+	void Allocator::ensure_free_size_internal(uint64 size)
 	{
-		if (sizeLeftCurrent < size)
+		if (size_left_current < size)
 		{
-			uint64 allocationSize = max(size, minimumBlockSize);
-			allocationSize = pageSize * bucketize(allocationSize, pageSize);
-			VirtualAlloc(memory + committedMemory, allocationSize, MEM_COMMIT, PAGE_READWRITE);
+			uint64 allocationSize = max(size, minimum_block_size);
+			allocationSize = page_size * bucketize(allocationSize, page_size);
+			VirtualAlloc(memory + committed_memory, allocationSize, MEM_COMMIT, PAGE_READWRITE);
 
-			sizeLeftTotal += allocationSize;
-			sizeLeftCurrent += allocationSize;
-			committedMemory += allocationSize;
+			size_left_total += allocationSize;
+			size_left_current += allocationSize;
+			committed_memory += allocationSize;
 		}
 	}
 
-	void* eallocator::allocate(uint64 size, uint64 alignment, bool clearToZero)
+	void* Allocator::allocate(uint64 size, uint64 alignment, bool clearToZero)
 	{
 		if (size == 0)
+		{
 			return 0;
+		}
 
 		uint8* result = nullptr;
 		{
-			lock lock{ mutex };
+			std::lock_guard lock{ mutex };
 			uint64 mask = alignment - 1;
 			uint64 misalignment = current & mask;
 			uint64 adjustment = (misalignment == 0) ? 0 : (alignment - misalignment);
 			current += adjustment;
 
-			sizeLeftCurrent -= adjustment;
-			sizeLeftTotal -= adjustment;
+			size_left_current -= adjustment;
+			size_left_total -= adjustment;
 
-			ASSERT(sizeLeftTotal >= size);
+			ASSERT(size_left_total >= size);
 
-			ensureFreeSizeInternal(size);
+			ensure_free_size_internal(size);
 
 			result = memory + current;
 			current += size;
-			sizeLeftCurrent -= size;
-			sizeLeftTotal -= size;
+			size_left_current -= size;
+			size_left_total -= size;
 		}
 
 		if (clearToZero && result)
+		{
 			memset(result, 0, size);
+		}
 
 		return result;
 	}
 
-	void eallocator::reset(bool freeMemory)
+	void Allocator::reset(bool free_memory)
 	{
-		if (memory && freeMemory)
+		if (memory && free_memory)
 		{
 			VirtualFree(memory, 0, MEM_RELEASE);
 			memory = 0;
-			committedMemory = 0;
+			committed_memory = 0;
 		}
 
-		resetToMarker(memory_marker{ 0 });
+		reset_to_marker(MemoryMarker{ 0 });
 	}
 
 }

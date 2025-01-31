@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "window/window.h"
 
 #include "dx/dx.h"
@@ -11,7 +13,7 @@
 
 namespace era_engine
 {
-	struct dx_window : win32_window
+	struct ERA_CORE_API dx_window : win32_window
 	{
 		dx_window() = default;
 		dx_window(dx_window&) = delete;

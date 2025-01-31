@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "core/math.h"
 
 #include "animation/animation.h"
@@ -10,61 +12,61 @@
 
 namespace era_engine
 {
-	struct skeleton_asset
+	struct ERA_CORE_API SkeletonAsset
 	{
-		std::vector<animation::skeleton_joint> joints;
-		std::unordered_map<std::string, uint32> nameToJointID;
+		std::vector<animation::SkeletonJoint> joints;
+		std::unordered_map<std::string, uint32> name_to_joint_id;
 	};
 
-	struct animation_asset
+	struct ERA_CORE_API AnimationAsset
 	{
 		std::string name;
 		float duration;
 
-		std::unordered_map<std::string, animation::animation_joint> joints;
+		std::unordered_map<std::string, animation::AnimationJoint> joints;
 
-		std::vector<float> positionTimestamps;
-		std::vector<float> rotationTimestamps;
-		std::vector<float> scaleTimestamps;
+		std::vector<float> position_timestamps;
+		std::vector<float> rotation_timestamps;
+		std::vector<float> scale_timestamps;
 
-		std::vector<vec3> positionKeyframes;
-		std::vector<quat> rotationKeyframes;
-		std::vector<vec3> scaleKeyframes;
+		std::vector<vec3> position_keyframes;
+		std::vector<quat> rotation_keyframes;
+		std::vector<vec3> scale_keyframes;
 	};
 
-	struct submesh_asset
+	struct ERA_CORE_API SubmeshAsset
 	{
-		int32 materialIndex;
+		int32 material_index;
 
 		std::vector<vec3> positions;
 		std::vector<vec2> uvs;
 		std::vector<vec3> normals;
 		std::vector<vec3> tangents;
 		std::vector<uint32> colors;
-		std::vector<animation::skinning_weights> skin;
+		std::vector<animation::SkinningWeights> skin;
 
 		std::vector<indexed_triangle16> triangles;
 	};
 
-	struct mesh_asset
+	struct ERA_CORE_API MeshAsset
 	{
 		std::string name;
-		std::vector<submesh_asset> submeshes;
-		int32 skeletonIndex;
+		std::vector<SubmeshAsset> submeshes;
+		int32 skeleton_index;
 	};
 
-	struct pbr_material_desc;
+	struct PbrMaterialDesc;
 
-	struct model_asset
+	struct ERA_CORE_API ModelAsset
 	{
 		uint32 flags;
-		std::vector<mesh_asset> meshes;
-		std::vector<pbr_material_desc> materials;
-		std::vector<skeleton_asset> skeletons;
-		std::vector<animation_asset> animations;
+		std::vector<MeshAsset> meshes;
+		std::vector<PbrMaterialDesc> materials;
+		std::vector<SkeletonAsset> skeletons;
+		std::vector<AnimationAsset> animations;
 	};
 
-	enum mesh_flags
+	enum MeshFlags
 	{
 		mesh_flag_load_uvs = (1 << 0),
 		mesh_flag_flip_uvs_vertically = (1 << 1),
@@ -81,8 +83,8 @@ namespace era_engine
 		mesh_flag_load_colors | mesh_flag_load_skin,
 	};
 
-	NODISCARD model_asset load3DModelFromFile(const fs::path& path, uint32 meshFlags = mesh_flag_default);
+	NODISCARD ModelAsset load_3d_model_from_file(const fs::path& path, uint32 mesh_flags = mesh_flag_default);
 
-	bool isMeshExtension(const fs::path& extension);
-	bool isMeshExtension(const std::string& extension);
+	bool is_mesh_extension(const fs::path& extension);
+	bool is_mesh_extension(const std::string& extension);
 }

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "dx/dx.h"
 
 namespace era_engine
@@ -10,7 +12,7 @@ namespace era_engine
 	struct dx_buffer;
 	struct dx_command_list;
 
-	struct barrier_batcher
+	struct ERA_CORE_API barrier_batcher
 	{
 		barrier_batcher(dx_command_list* cl);
 		~barrier_batcher() { submit(); }

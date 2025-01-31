@@ -4,10 +4,6 @@
 #include "core/input.h"
 #include "core/string.h"
 
-#include "dx/dx_context.h"
-#include "dx/dx_command_list.h"
-#include "dx/dx_profiling.h"
-
 #include "window/dx_window.h"
 
 #include "asset/asset.h"
@@ -23,6 +19,7 @@
 
 #include <imgui/backends/imgui_impl_win32.cpp>
 #include <imgui/backends/imgui_impl_dx12.cpp>
+#include <dx/dx_profiling.h>
 
 #define MAX_NUM_IMGUI_IMAGES_PER_FRAME 128
 
@@ -98,14 +95,14 @@ namespace era_engine
 
 		setStyle();
 
-		io.FontDefault = io.Fonts->AddFontFromFileTTF(getAssetPath("/resources/fonts/opensans/OpenSans-Regular.ttf").c_str(), 18.f);
+		io.FontDefault = io.Fonts->AddFontFromFileTTF(get_asset_path("/resources/fonts/opensans/OpenSans-Regular.ttf").c_str(), 18.f);
 
 		// Merge in icons.
 		static const ImWchar iconsRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 		ImFontConfig iconsConfig;
 		iconsConfig.MergeMode = true;
 		iconsConfig.PixelSnapH = true;
-		io.FontDefault = io.Fonts->AddFontFromFileTTF((getAssetPath("/resources/fonts/icons/") + FONT_ICON_FILE_NAME_FAS).c_str(), 16.f, &iconsConfig, iconsRanges);
+		io.FontDefault = io.Fonts->AddFontFromFileTTF((get_asset_path("/resources/fonts/icons/") + FONT_ICON_FILE_NAME_FAS).c_str(), 16.f, &iconsConfig, iconsRanges);
 
 		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 		desc.NumDescriptors = NUM_BUFFERED_FRAMES * MAX_NUM_IMGUI_IMAGES_PER_FRAME + 2;
@@ -127,7 +124,7 @@ namespace era_engine
 			startGPUDescriptor);
 
 		{
-			iconsTexture = loadTextureFromFile(getAssetPath("/resources/icons/icons_ui.svg"), image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
+			iconsTexture = loadTextureFromFile(get_asset_path("/resources/icons/icons_ui.svg"), image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
 
 			CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(startCPUDescriptor, 1, descriptorHandleIncrementSize);
 			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(startGPUDescriptor, 1, descriptorHandleIncrementSize);
@@ -508,7 +505,7 @@ namespace ImGui
 	}
 
 	template <typename tooptip_func>
-	static bool AssetHandleInternal(const char* label, const char* type, asset_handle& asset, const char* clearText, tooptip_func tooltipFunc)
+	static bool AssetHandleInternal(const char* label, const char* type, era_engine::AssetHandle& asset, const char* clearText, tooptip_func tooltipFunc)
 	{
 		char buffer[512] = "";
 		if (asset)
@@ -565,12 +562,12 @@ namespace ImGui
 		return result;
 	}
 
-	bool AssetHandle(const char* label, const char* type, asset_handle& asset, const char* clearText)
+	bool AssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const char* clearText)
 	{
 		return AssetHandleInternal(label, type, asset, clearText, []() {});
 	}
 
-	bool TextureAssetHandle(const char* label, const char* type, asset_handle& asset, const ref<dx_texture>& texture, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1, const char* clearText)
+	bool TextureAssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const ref<dx_texture>& texture, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1, const char* clearText)
 	{
 		return AssetHandleInternal(label, type, asset, clearText, [=]() { ImGui::Image(texture, width, height, uv0, uv1); });
 	}
@@ -845,9 +842,9 @@ namespace ImGui
 
 	bool PropertyDropdownPowerOfTwo(const char* label, uint32 from, uint32 to, uint32& current)
 	{
-		ASSERT(isPowerOfTwo(current));
-		ASSERT(isPowerOfTwo(from));
-		ASSERT(isPowerOfTwo(to));
+		ASSERT(is_power_of_two(current));
+		ASSERT(is_power_of_two(from));
+		ASSERT(is_power_of_two(to));
 		uint32 logCurrent = log2(current);
 		uint32 logFrom = log2(from);
 		uint32 logTo = log2(to);
@@ -937,7 +934,7 @@ namespace ImGui
 		return result;
 	}
 
-	bool PropertyAssetHandle(const char* label, const char* type, asset_handle& asset, const char* clearText)
+	bool PropertyAssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const char* clearText)
 	{
 		pre(label);
 		bool result = AssetHandle("", type, asset, clearText);
@@ -945,7 +942,7 @@ namespace ImGui
 		return result;
 	}
 
-	bool PropertyTextureAssetHandle(const char* label, const char* type, asset_handle& asset, const ref<dx_texture>& texture, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1, const char* clearText)
+	bool PropertyTextureAssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const ref<dx_texture>& texture, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1, const char* clearText)
 	{
 		pre(label);
 		bool result = TextureAssetHandle("", type, asset, texture, width, height, uv0, uv1, clearText);
@@ -1037,36 +1034,36 @@ namespace tween
 		{
 		default:
 		case LINEAR: return t;
-		case QUADIN: return easeInQuadratic(t);
-		case QUADOUT: return easeOutQuadratic(t);
-		case QUADINOUT: return easeInOutQuadratic(t);
-		case CUBICIN: return easeInCubic(t);
-		case CUBICOUT: return easeOutCubic(t);
-		case CUBICINOUT: return easeInOutCubic(t);
-		case QUARTIN: return easeInQuartic(t);
-		case QUARTOUT: return easeOutQuartic(t);
-		case QUARTINOUT: return easeInOutQuartic(t);
-		case QUINTIN: return easeInQuintic(t);
-		case QUINTOUT: return easeOutQuintic(t);
-		case QUINTINOUT: return easeInOutQuintic(t);
-		case SINEIN: return easeInSine(t);
-		case SINEOUT: return easeOutSine(t);
-		case SINEINOUT: return easeInOutSine(t);
-		case CIRCIN: return easeInCircular(t);
-		case CIRCOUT: return easeOutCircular(t);
-		case CIRCINOUT: return easeInOutCircular(t);
-		case EXPOIN: return easeInExponential(t);
-		case EXPOOUT: return easeOutExponential(t);
-		case EXPOINOUT: return easeInOutExponential(t);
-		case ELASTICIN: return inElastic(t);
-		case ELASTICOUT: return outElastic(t);
-		case ELASTICINOUT: return inOutElastic(t);
-		case BACKIN: return inBack(t);
-		case BACKOUT: return outBack(t);
-		case BACKINOUT: return inOutBack(t);
-		case BOUNCEIN: return inBounce(t);
-		case BOUNCEOUT: return outBounce(t);
-		case BOUNCEINOUT: return inOutBounce(t);
+		case QUADIN: return ease_in_quadratic(t);
+		case QUADOUT: return ease_out_quadratic(t);
+		case QUADINOUT: return ease_in_out_quadratic(t);
+		case CUBICIN: return ease_in_cubic(t);
+		case CUBICOUT: return ease_out_cubic(t);
+		case CUBICINOUT: return ease_in_out_cubic(t);
+		case QUARTIN: return ease_in_quartic(t);
+		case QUARTOUT: return ease_out_quartic(t);
+		case QUARTINOUT: return ease_in_out_quartic(t);
+		case QUINTIN: return ease_in_quintic(t);
+		case QUINTOUT: return ease_out_quintic(t);
+		case QUINTINOUT: return ease_in_out_quintic(t);
+		case SINEIN: return ease_in_sine(t);
+		case SINEOUT: return ease_out_sine(t);
+		case SINEINOUT: return ease_in_out_sine(t);
+		case CIRCIN: return ease_in_circular(t);
+		case CIRCOUT: return ease_out_circular(t);
+		case CIRCINOUT: return ease_in_out_circular(t);
+		case EXPOIN: return ease_in_exponential(t);
+		case EXPOOUT: return ease_out_exponential(t);
+		case EXPOINOUT: return ease_in_out_exponential(t);
+		case ELASTICIN: return in_elastic(t);
+		case ELASTICOUT: return out_elastic(t);
+		case ELASTICINOUT: return in_out_elastic(t);
+		case BACKIN: return in_back(t);
+		case BACKOUT: return out_back(t);
+		case BACKINOUT: return in_out_back(t);
+		case BOUNCEIN: return in_bounce(t);
+		case BOUNCEOUT: return out_bounce(t);
+		case BOUNCEINOUT: return in_out_bounce(t);
 		}
 	}
 }
@@ -1085,7 +1082,7 @@ namespace ImGui
 			return y[0];
 		}
 
-		float output = evaluateSpline(x, y, numPoints, p);
+		float output = evaluate_spline(x, y, numPoints, p);
 
 		return output;
 	}

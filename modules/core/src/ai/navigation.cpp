@@ -7,38 +7,38 @@
 
 namespace era_engine::ai
 {
-    static bool isDestination(vec2 pos, nav_node dest)
+    static bool is_destination(const vec2& pos, const NavNode& dest)
     {
         return pos == dest.position;
     }
 
-    static float calculateH(vec2 pos, nav_node dest)
+    static float calculate_h(const vec2& pos, const NavNode& dest)
     {
         return length(pos - dest.position);
     }
 
     // TODO: Obstacle checking
-    static bool isValid(vec2 pos)
+    static bool is_valid(const vec2& pos)
     {
         return true;
     }
 
-    NODISCARD std::vector<nav_node> path_finder::a_star_makePath(std::unordered_map<vec2, nav_node>& map, nav_node& dest)
+    NODISCARD std::vector<NavNode> PathFinder::a_star_make_path(std::unordered_map<vec2, NavNode>& map, NavNode& dest)
     {
         try
         {
             std::cout << "Found a path\n";
             int x = dest.position.x;
             int y = dest.position.y;
-            std::stack<nav_node> path;
-            std::vector<nav_node> usablePath;
+            std::stack<NavNode> path;
+            std::vector<NavNode> usablePath;
 
-            while (!(map[vec2(x, y)].parentPosition == vec2(x, y))
+            while (!(map[vec2(x, y)].parent_position == vec2(x, y))
                 && map[vec2(x, y)].position != NAV_INF_POS)
             {
                 path.push(map[vec2(x, y)]);
-                int tempX = map[vec2(x, y)].parentPosition.x;
-                int tempY = map[vec2(x, y)].parentPosition.y;
+                int tempX = map[vec2(x, y)].parent_position.x;
+                int tempY = map[vec2(x, y)].parent_position.y;
                 x = tempX;
                 y = tempY;
             }
@@ -46,7 +46,7 @@ namespace era_engine::ai
 
             while (!path.empty())
             {
-                nav_node top = path.top();
+                NavNode top = path.top();
                 path.pop();
                 usablePath.emplace_back(top);
             }
@@ -60,14 +60,14 @@ namespace era_engine::ai
         }
     }
 
-    NODISCARD std::vector<nav_node> a_star_navigation::navigate(nav_node& from, nav_node& to)
+    NODISCARD std::vector<NavNode> AStarNavigation::navigate(NavNode& from, NavNode& to)
     {
-        if (isValid(to.position) == false)
+        if (is_valid(to.position) == false)
         {
             std::cout << "Destination is an obstacle\n";
             return {};
         }
-        if (isDestination(from.position, to))
+        if (is_destination(from.position, to))
         {
             std::cout << "You are the destination\n";
             return {};
@@ -76,16 +76,16 @@ namespace era_engine::ai
         std::unordered_map<vec2, bool> closedList;
         closedList.reserve((NAV_X_MAX / NAV_X_STEP) * (NAV_Y_MAX / NAV_Y_STEP) + 1);
 
-        std::unordered_map<vec2, nav_node> allMap;
+        std::unordered_map<vec2, NavNode> allMap;
         allMap.reserve((NAV_X_MAX / NAV_X_STEP) * (NAV_Y_MAX / NAV_Y_STEP) + 1);
         for (int x = -1; x < (NAV_X_MAX / NAV_X_STEP) + 1; x++)
         {
             for (int y = -1; y < (NAV_Y_MAX / NAV_Y_STEP) + 1; y++)
             {
-                allMap[vec2(x, y)].fCost = FLT_MAX;
-                allMap[vec2(x, y)].gCost = FLT_MAX;
-                allMap[vec2(x, y)].hCost = FLT_MAX;
-                allMap[vec2(x, y)].parentPosition = NAV_INF_POS;
+                allMap[vec2(x, y)].f_cost = FLT_MAX;
+                allMap[vec2(x, y)].g_cost = FLT_MAX;
+                allMap[vec2(x, y)].h_cost = FLT_MAX;
+                allMap[vec2(x, y)].parent_position = NAV_INF_POS;
                 allMap[vec2(x, y)].position = vec2(x, y);
 
                 closedList.emplace(vec2(x, y), false);
@@ -94,34 +94,34 @@ namespace era_engine::ai
 
         int x = from.position.x;
         int y = from.position.y;
-        allMap[vec2(x, y)].fCost = 0.0;
-        allMap[vec2(x, y)].gCost = 0.0;
-        allMap[vec2(x, y)].hCost = 0.0;
-        allMap[vec2(x, y)].parentPosition = vec2(x, y);
+        allMap[vec2(x, y)].f_cost = 0.0;
+        allMap[vec2(x, y)].g_cost = 0.0;
+        allMap[vec2(x, y)].h_cost = 0.0;
+        allMap[vec2(x, y)].parent_position = vec2(x, y);
 
-        std::vector<nav_node> openList;
+        std::vector<NavNode> openList;
         openList.emplace_back(allMap[vec2(x, y)]);
         bool destinationFound = false;
 
         while (!openList.empty() && openList.size() < (NAV_X_MAX / NAV_X_STEP) * (NAV_Y_MAX / NAV_Y_STEP))
         {
-            nav_node node;
+            NavNode node;
             do
             {
                 float temp = FLT_MAX;
-                std::vector<nav_node>::iterator itNode;
+                std::vector<NavNode>::iterator itNode;
                 for (auto it = openList.begin(); it != openList.end(); it = next(it))
                 {
-                    nav_node n = *it;
-                    if (n.fCost < temp)
+                    NavNode n = *it;
+                    if (n.f_cost < temp)
                     {
-                        temp = n.fCost;
+                        temp = n.f_cost;
                         itNode = it;
                     }
                 }
                 node = *itNode;
                 openList.erase(itNode);
-            } while (isValid(node.position) == false);
+            } while (is_valid(node.position) == false);
 
             x = node.position.x;
             y = node.position.y;
@@ -132,27 +132,27 @@ namespace era_engine::ai
                 for (int newY = -1; newY <= 1; newY++)
                 {
                     double gNew, hNew, fNew;
-                    if (isValid(vec2(x + newX, y + newY)))
+                    if (is_valid(vec2(x + newX, y + newY)))
                     {
-                        if (isDestination(vec2(x + newX, y + newY), to))
+                        if (is_destination(vec2(x + newX, y + newY), to))
                         {
-                            allMap[vec2(x + newX, y + newY)].parentPosition = vec2(x, y);
+                            allMap[vec2(x + newX, y + newY)].parent_position = vec2(x, y);
                             destinationFound = true;
-                            return path_finder::a_star_makePath(allMap, to);;
+                            return PathFinder::a_star_make_path(allMap, to);;
                         }
                         else if (closedList[vec2(x + newX, y + newY)] == false)
                         {
-                            gNew = node.gCost + 1.0;
-                            hNew = calculateH(vec2(x + newX, y + newY), to);
+                            gNew = node.g_cost + 1.0;
+                            hNew = calculate_h(vec2(x + newX, y + newY), to);
                             fNew = gNew + hNew;
 
-                            if (allMap[vec2(x + newX, y + newY)].fCost == FLT_MAX ||
-                                allMap[vec2(x + newX, y + newY)].fCost > fNew)
+                            if (allMap[vec2(x + newX, y + newY)].f_cost == FLT_MAX ||
+                                allMap[vec2(x + newX, y + newY)].f_cost > fNew)
                             {
-                                allMap[vec2(x + newX, y + newY)].fCost = fNew;
-                                allMap[vec2(x + newX, y + newY)].gCost = gNew;
-                                allMap[vec2(x + newX, y + newY)].hCost = hNew;
-                                allMap[vec2(x + newX, y + newY)].parentPosition = vec2(x, y);
+                                allMap[vec2(x + newX, y + newY)].f_cost = fNew;
+                                allMap[vec2(x + newX, y + newY)].g_cost = gNew;
+                                allMap[vec2(x + newX, y + newY)].h_cost = hNew;
+                                allMap[vec2(x + newX, y + newY)].parent_position = vec2(x, y);
                                 openList.emplace_back(allMap[vec2(x + newX, y + newY)]);
                             }
                         }

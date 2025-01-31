@@ -24,7 +24,7 @@ namespace era_engine
 
 		uint32 descriptorSize;
 
-		block_allocator allocator;
+		BlockAllocator allocator;
 	};
 
 	dx_descriptor_page::dx_descriptor_page(D3D12_DESCRIPTOR_HEAP_TYPE type, uint64 capacity, bool shaderVisible)
@@ -113,9 +113,14 @@ namespace era_engine
 	{
 		if (allocation.valid())
 		{
-			lock lock{ mutex };
+			Lock lock{ mutex };
 			allPages[allocation.pageIndex]->free(allocation);
 		}
+	}
+
+	com<ID3D12DescriptorHeap> dx_descriptor_heap::getHeap(int index) const
+	{
+		return allPages[index]->descriptorHeap;
 	}
 
 	struct dx_frame_descriptor_page
@@ -136,7 +141,7 @@ namespace era_engine
 
 	void dx_frame_descriptor_allocator::newFrame(uint32 bufferedFrameID)
 	{
-		lock lock{ mutex };
+		Lock lock{ mutex };
 
 		currentFrame = bufferedFrameID;
 

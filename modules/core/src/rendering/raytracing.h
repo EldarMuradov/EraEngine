@@ -6,6 +6,8 @@
 
 #include "geometry/mesh.h"
 
+#include "ecs/component.h"
+
 #include "dx/dx_buffer.h"
 #include "dx/dx_pipeline.h"
 
@@ -62,8 +64,15 @@ namespace era_engine
 		uint32 instanceContributionToHitGroupIndex;
 	};
 
-	struct raytrace_component
+	class RaytraceComponent final : public Component
 	{
+	public:
+		RaytraceComponent() = default;
+		RaytraceComponent(ref<Entity::EcsData> _data, const raytracing_object_type& _type);
+		virtual ~RaytraceComponent();
+
+		ERA_VIRTUAL_REFLECT(Component)
+	public:
 		raytracing_object_type type;
 	};
 

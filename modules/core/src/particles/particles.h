@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "core_api.h"
 #include "core/math.h"
 
 #include "rendering/render_pass.h"
@@ -21,7 +22,7 @@ namespace era_engine
 		sort_mode_back_to_front,
 	};
 
-	struct common_particle_simulation_data
+	struct ERA_CORE_API common_particle_simulation_data
 	{
 		mat4 prevFrameCameraView;
 		mat4 prevFrameCameraViewProj;
@@ -34,7 +35,7 @@ namespace era_engine
 		ref<dx_texture> prevFrameNormals;
 	};
 
-	struct particle_system
+	struct ERA_CORE_API particle_system
 	{
 		virtual ~particle_system() {}
 

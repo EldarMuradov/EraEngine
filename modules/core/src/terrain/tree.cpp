@@ -1,12 +1,18 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "terrain/tree.h"
+
 #include "core/color.h"
 #include "core/nearest_neighbor.h"
+
 #include "dx/dx_pipeline.h"
+
 #include "rendering/render_resources.h"
 #include "rendering/pbr.h"
 #include "rendering/render_pass.h"
+
+#include <rttr/registration>
+
 #include "tree_rs.hlsli"
 
 namespace era_engine
@@ -118,6 +124,24 @@ namespace era_engine
         }
     };
 
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
+        rttr::registration::class_<TreeComponent>("TreeComponent")
+            .constructor<>()
+            .constructor<ref<Entity::EcsData>, const tree_settings&>()
+            .property("settings", &TreeComponent::settings);
+    }
+
+    TreeComponent::TreeComponent(ref<Entity::EcsData> _data, const tree_settings& _settings)
+       : Component(_data), settings(_settings)
+    {
+    }
+
+    TreeComponent::~TreeComponent()
+    {
+    }
+
     void renderTree(opaque_render_pass* renderPass, D3D12_GPU_VIRTUAL_ADDRESS transforms, uint32 numInstances, const multi_mesh* mesh, float dt)
     {
         static float time = 0.f;
@@ -203,9 +227,8 @@ namespace era_engine
         fillVertices(submeshes, positions, others, trunkVertexColor, trunkPositions);
         fillVertices(submeshes, positions, others, branchVertexColor, branchPositions);
 
-        point_cloud trunkPC(trunkPositions, numTrunkVertices);
-        point_cloud branchPC(branchPositions, numBranchVertices);
-
+        PointCloud trunkPC(trunkPositions, numTrunkVertices);
+        PointCloud branchPC(branchPositions, numBranchVertices);
 
         float scale = 1.f / (boundingBox.maxCorner.y - boundingBox.minCorner.y);
 
@@ -217,13 +240,13 @@ namespace era_engine
 
                 vec3 query = positions[vertexID];
 
-                float distanceToTrunk = sqrt(trunkPC.nearestNeighborIndex(query).squaredDistance);
-                float distanceToBranch = sqrt(branchPC.nearestNeighborIndex(query).squaredDistance);
+                float distanceToTrunk = sqrt(trunkPC.nearest_neighbor_index(query).squared_distance);
+                float distanceToBranch = sqrt(branchPC.nearest_neighbor_index(query).squared_distance);
 
                 distanceToBranch = min(distanceToTrunk, distanceToBranch);
 
                 others[vertexID].color = packColor(
-                    saturate(inverseLerp(boundingBox.minCorner.y, boundingBox.maxCorner.y, query.y)),
+                    saturate(inverse_lerp(boundingBox.minCorner.y, boundingBox.maxCorner.y, query.y)),
                     distanceToTrunk * scale,
                     distanceToBranch * scale,
                     1.f);
@@ -241,17 +264,17 @@ namespace era_engine
         return loadMeshFromFile(sceneFilename, mesh_creation_flags_default | mesh_creation_flags_with_colors, analyzeTreeMesh);
     }
 
-    ref<multi_mesh> loadTreeMeshFromHandle(asset_handle handle)
+    ref<multi_mesh> loadTreeMeshFromHandle(AssetHandle handle)
     {
         return loadMeshFromHandle(handle, mesh_creation_flags_default | mesh_creation_flags_with_colors, analyzeTreeMesh);
     }
 
-    ref<multi_mesh> loadTreeMeshFromFileAsync(const fs::path& sceneFilename, job_handle parentJob)
+    ref<multi_mesh> loadTreeMeshFromFileAsync(const fs::path& sceneFilename, JobHandle parentJob)
     {
         return loadMeshFromFileAsync(sceneFilename, mesh_creation_flags_default | mesh_creation_flags_with_colors, parentJob, analyzeTreeMesh);
     }
 
-    ref<multi_mesh> loadTreeMeshFromHandleAsync(asset_handle handle, job_handle parentJob)
+    ref<multi_mesh> loadTreeMeshFromHandleAsync(AssetHandle handle, JobHandle parentJob)
     {
         return loadMeshFromHandleAsync(handle, mesh_creation_flags_default | mesh_creation_flags_with_colors, parentJob, analyzeTreeMesh);
     }

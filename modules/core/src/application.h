@@ -9,8 +9,6 @@
 
 #include "geometry/mesh.h"
 
-#include "scene/scene.h"
-
 #include "particles/fire_particle_system.h"
 #include "particles/smoke_particle_system.h"
 #include "particles/boid_particle_system.h"
@@ -19,43 +17,42 @@
 #include "rendering/raytracing.h"
 #include "rendering/main_renderer.h"
 
-#include "learning/learned_locomotion.h"
-
-#include "px/core/px_physics_engine.h"
-
 #ifdef ERA_RUNTIME
 #include "core/runtime.h"
 #endif
 
+#include "ecs/world_system_scheduler.h"
+
+#include "editor/asset_editor_panel.h"
 #include "editor/editor.h"
 
 namespace era_engine
 {
 	namespace dotnet
 	{
-		struct enative_scripting_linker;
+		//struct enative_scripting_linker;
 	}
 
-	void addRaytracingComponentAsync(eentity entity, ref<multi_mesh> mesh);
+	void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh);
 
 	bool editFireParticleSystem(fire_particle_system& particleSystem);
 	bool editBoidParticleSystem(boid_particle_system& particleSystem);
 
-	struct update_scripting_data;
-	void updatePhysXCallbacksAndScripting(escene& currentScene, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in);
-	void updateScripting(update_scripting_data& data);
+	//struct update_scripting_data;
+	//void updatePhysXCallbacksAndScripting(ref<World> current_world, ref<dotnet::enative_scripting_linker> core, float dt, const user_input& in);
+	//void updateScripting(update_scripting_data& data);
 
 	struct application
 	{
 		application() {}
 		void loadCustomShaders();
 		void initialize(main_renderer* renderer, editor_panels* editorPanels);
-		void update(const user_input& input, float dt);
+		void update(const UserInput& input, float dt);
 
 		void handleFileDrop(const fs::path& filename);
 
-		NODISCARD escene* getCurrentScene() { return &scene.getCurrentScene(); }
-		NODISCARD editor_scene* getScene() { return &scene; }
+		ref<World> getCurrentWorld() const { return world_scene->get_current_world(); }
+		ref<EditorScene> getWorldScene() { return world_scene; }
 
 		main_renderer* getRenderer() const
 		{
@@ -71,7 +68,9 @@ namespace era_engine
 
 #endif
 
-		eallocator stackArena;
+		Allocator stackArena;
+
+		ldr_render_pass ldrRenderPass;
 
 	private:
 		void resetRenderPasses();
@@ -92,9 +91,9 @@ namespace era_engine
 
 		main_renderer* renderer;
 
-		ref<dotnet::enative_scripting_linker> linker;
+		//ref<dotnet::enative_scripting_linker> linker;
 
-		editor_scene scene;
+		ref<EditorScene> world_scene = nullptr;
 
 #ifndef ERA_RUNTIME
 
@@ -111,17 +110,13 @@ namespace era_engine
 		boid_particle_system boidParticleSystem;
 		debris_particle_system debrisParticleSystem;
 
-		learned_locomotion learnedLocomotion;
-
 		opaque_render_pass opaqueRenderPass;
 		transparent_render_pass transparentRenderPass;
 		sun_shadow_render_pass sunShadowRenderPass;
 		spot_shadow_render_pass spotShadowRenderPasses[16];
 		point_shadow_render_pass pointShadowRenderPasses[16];
-		ldr_render_pass ldrRenderPass;
 		compute_pass computePass;
 
-		friend class physics::px_physics_engine;
 		friend class eeditor;
 	};
 

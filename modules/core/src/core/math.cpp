@@ -4,8 +4,8 @@
 
 #include <half/half.c>
 
-const half half::minValue = (uint16)0b1111101111111111;
-const half half::maxValue = (uint16)0b0111101111111111;
+const half half::min_value = (uint16)0b1111101111111111;
+const half half::max_value = (uint16)0b0111101111111111;
 
 const mat2 mat2::identity =
 {
@@ -256,7 +256,9 @@ mat2 invert(const mat2& m)
 {
 	float det = determinant(m);
 	if (det == 0.f)
+	{
 		return mat2();
+	}
 
 	mat2 inv;
 	inv.m00 = m.m11;
@@ -290,7 +292,9 @@ mat3 invert(const mat3& m)
 		+ m.m02 * (m.m10 * m.m21 - m.m20 * m.m11);
 
 	if (det == 0.f)
+	{
 		return mat3();
+	}
 
 	det = 1.f / det;
 
@@ -418,7 +422,9 @@ mat4 invert(const mat4& m)
 	float det = m.m00 * inv.m00 + m.m10 * inv.m01 + m.m20 * inv.m02 + m.m30 * inv.m03;
 
 	if (det == 0.f)
+	{
 		return mat4();
+	}
 
 	det = 1.f / det;
 
@@ -468,9 +474,9 @@ float trace(const mat4& m)
 
 trs operator*(const trs& a, const trs& b)
 {
-	//if (!isUniform(a.scale) || !isUniform(b.scale))
+	//if (!is_uniform(a.scale) || !is_uniform(b.scale))
 	//{
-	//	return trsToMat4(a) * trsToMat4(b);
+	//	return trs_to_mat4(a) * trs_to_mat4(b);
 	//}
 
 	trs result;
@@ -482,52 +488,52 @@ trs operator*(const trs& a, const trs& b)
 
 trs invert(const trs& t)
 {
-	//if (!isUniform(t.scale))
+	//if (!is_uniform(t.scale))
 	//{
-	//	mat4 m = trsToMat4(t);
+	//	mat4 m = trs_to_mat4(t);
 	//	mat4 invM = invert(m);
 	//	trs result = invM;
 	//	return result;
 	//}
 
-	quat invRotation = conjugate(t.rotation);
-	vec3 invScale = 1.f / t.scale;
-	vec3 invTranslation = invRotation * (invScale * -t.position);
+	quat inv_rotation = conjugate(t.rotation);
+	vec3 inv_scale = 1.f / t.scale;
+	vec3 inv_translation = inv_rotation * (inv_scale * -t.position);
 
-	return trs(invTranslation, invRotation, invScale);
+	return trs(inv_translation, inv_rotation, inv_scale);
 }
 
-vec3 transformPosition(const mat4& m, vec3 pos)
+vec3 transform_position(const mat4& m, vec3 pos)
 {
 	return (m * vec4(pos, 1.f)).xyz;
 }
 
-vec3 transformDirection(const mat4& m, vec3 dir)
+vec3 transform_direction(const mat4& m, vec3 dir)
 {
 	return (m * vec4(dir, 0.f)).xyz;
 }
 
-vec3 transformPosition(const trs& m, vec3 pos)
+vec3 transform_position(const trs& m, vec3 pos)
 {
 	return m.rotation * (m.scale * pos) + m.position;
 }
 
-vec3 transformDirection(const trs& m, vec3 dir)
+vec3 transform_direction(const trs& m, vec3 dir)
 {
 	return m.rotation * dir;
 }
 
-vec3 inverseTransformPosition(const trs& m, vec3 pos)
+vec3 inverse_transform_position(const trs& m, vec3 pos)
 {
 	return (conjugate(m.rotation) * (pos - m.position)) / m.scale;
 }
 
-vec3 inverseTransformDirection(const trs& m, vec3 dir)
+vec3 inverse_transform_direction(const trs& m, vec3 dir)
 {
 	return conjugate(m.rotation) * dir;
 }
 
-quat rotateFromTo(vec3 _from, vec3 _to)
+quat rotate_from_to(vec3 _from, vec3 _to)
 {
 	vec3 from = normalize(_from);
 	vec3 to = normalize(_to);
@@ -543,7 +549,7 @@ quat rotateFromTo(vec3 _from, vec3 _to)
 	{
 		// Rotate 180° around some axis
 		vec3 axis = cross(vec3(1.f, 0.f, 0.f), from);
-		if (squaredLength(axis) == 0.f) // Pick another if colinear
+		if (squared_length(axis) == 0.f) // Pick another if colinear
 		{
 			axis = cross(vec3(0.f, 1.f, 0.f), from);
 		}
@@ -566,14 +572,14 @@ quat rotateFromTo(vec3 _from, vec3 _to)
 	return q;
 }
 
-void getAxisRotation(quat q, vec3& axis, float& angle)
+void get_axis_rotation(quat q, vec3& axis, float& angle)
 {
-	float sqLength = squaredLength(q.v);
-	if (sqLength > 0.f)
+	float sq_length = squared_length(q.v);
+	if (sq_length > 0.f)
 	{
 		angle = 2.f * acos(q.w);
-		float invLength = 1.f / sqrt(sqLength);
-		axis = q.v * invLength;
+		float inv_length = 1.f / sqrt(sq_length);
+		axis = q.v * inv_length;
 	}
 	else
 	{
@@ -583,10 +589,10 @@ void getAxisRotation(quat q, vec3& axis, float& angle)
 	}
 }
 
-void decomposeQuaternionIntoTwistAndSwing(quat q, vec3 normalizedTwistAxis, quat& twist, quat& swing)
+void decompose_quaternion_into_twist_and_swing(quat q, vec3 normalized_twist_axis, quat& twist, quat& swing)
 {
 	vec3 axis(q.x, q.y, q.z);
-	vec3 proj = dot(axis, normalizedTwistAxis) * normalizedTwistAxis; // This assumes that twistAxis is normalized.
+	vec3 proj = dot(axis, normalized_twist_axis) * normalized_twist_axis; // This assumes that twistAxis is normalized.
 	twist = normalize(quat(proj.x, proj.y, proj.z, q.w));
 	swing = q * conjugate(twist);
 }
@@ -602,9 +608,9 @@ quat slerp(quat from, quat to, float t)
 	{
 
 		float angle = acosf(absDot);
-		float invSinTheta = 1.f / sinf(angle);
-		scale0 = (sinf((1.f - t) * angle) * invSinTheta);
-		scale1 = (sinf((t * angle)) * invSinTheta);
+		float inv_sin_theta = 1.f / sinf(angle);
+		scale0 = (sinf((1.f - t) * angle) * inv_sin_theta);
+		scale1 = (sinf((t * angle)) * inv_sin_theta);
 	}
 
 	if (d < 0.f)
@@ -635,7 +641,7 @@ quat nlerp(quat* qs, float* weights, uint32 count)
 	return { result.f4 };
 }
 
-mat3 quaternionToMat3(quat q)
+mat3 quaternion_to_mat3(quat q)
 {
 	if (q.w == 1.f)
 	{
@@ -669,7 +675,7 @@ mat3 quaternionToMat3(quat q)
 	return result;
 }
 
-mat4 quaternionToMat4(quat q)
+mat4 quaternion_to_mat4(quat q)
 {
 	if (q.w == 1.f)
 	{
@@ -703,7 +709,7 @@ mat4 quaternionToMat4(quat q)
 	return result;
 }
 
-quat mat3ToQuaternion(const mat3& m)
+quat mat3_to_quaternion(const mat3& m)
 {
 #if 1
 	float tr = m.m00 + m.m11 + m.m22;
@@ -752,7 +758,7 @@ quat mat3ToQuaternion(const mat3& m)
 	return normalize(result);
 }
 
-vec3 quatToEuler(quat q)
+vec3 quat_to_euler(quat q)
 {
 	float roll, pitch, yaw;
 
@@ -780,7 +786,7 @@ vec3 quatToEuler(quat q)
 	return vec3(pitch, yaw, roll);
 }
 
-quat eulerToQuat(vec3 euler)
+quat euler_to_quat(vec3 euler)
 {
 	float pitch = euler.x;
 	float yaw = euler.y;
@@ -803,7 +809,7 @@ quat eulerToQuat(vec3 euler)
 	return q;
 }
 
-mat3 outerProduct(vec3 a, vec3 b)
+mat3 outer_product(vec3 a, vec3 b)
 {
 	vec3 col0 = a * b.x;
 	vec3 col1 = a * b.y;
@@ -822,7 +828,7 @@ mat3 outerProduct(vec3 a, vec3 b)
 	return result;
 }
 
-mat3 getSkewMatrix(vec3 r)
+mat3 get_skew_matrix(vec3 r)
 {
 	mat3 result;
 	result.m00 = 0.f;
@@ -837,7 +843,7 @@ mat3 getSkewMatrix(vec3 r)
 	return result;
 }
 
-mat4 createPerspectiveProjectionMatrix(float fov, float aspect, float nearPlane, float farPlane)
+mat4 create_perspective_projection_matrix(float fov, float aspect, float near_plane, float far_plane)
 {
 	mat4 result;
 
@@ -856,23 +862,23 @@ mat4 createPerspectiveProjectionMatrix(float fov, float aspect, float nearPlane,
 	result.m20 = 0.f;
 	result.m21 = 0.f;
 
-	if (farPlane > 0.f)
+	if (far_plane > 0.f)
 	{
 #if DIRECTX_COORDINATE_SYSTEM
-		result.m22 = -farPlane / (farPlane - nearPlane);
-		result.m23 = result.m22 * nearPlane;
+		result.m22 = -far_plane / (far_plane - near_plane);
+		result.m23 = result.m22 * near_plane;
 #else
-		result.m22 = -(farPlane + nearPlane) / (farPlane - nearPlane);
-		result.m23 = -2.f * farPlane * nearPlane / (farPlane - nearPlane);
+		result.m22 = -(far_plane + near_plane) / (far_plane - near_plane);
+		result.m23 = -2.f * far_plane * near_plane / (far_plane - near_plane);
 #endif
 	}
 	else
 	{
 		result.m22 = -1.f;
 #if DIRECTX_COORDINATE_SYSTEM
-		result.m23 = -nearPlane;
+		result.m23 = -near_plane;
 #else
-		result.m23 = -2.f * nearPlane;
+		result.m23 = -2.f * near_plane;
 #endif
 	}
 
@@ -884,7 +890,7 @@ mat4 createPerspectiveProjectionMatrix(float fov, float aspect, float nearPlane,
 	return result;
 }
 
-mat4 createPerspectiveProjectionMatrix(float width, float height, float fx, float fy, float cx, float cy, float nearPlane, float farPlane)
+mat4 create_perspective_projection_matrix(float width, float height, float fx, float fy, float cx, float cy, float near_plane, float far_plane)
 {
 	mat4 result;
 
@@ -901,23 +907,23 @@ mat4 createPerspectiveProjectionMatrix(float width, float height, float fx, floa
 	result.m20 = 0.f;
 	result.m21 = 0.f;
 
-	if (farPlane > 0.f)
+	if (far_plane > 0.f)
 	{
 #if DIRECTX_COORDINATE_SYSTEM
-		result.m22 = -farPlane / (farPlane - nearPlane);
-		result.m23 = result.m22 * nearPlane;
+		result.m22 = -far_plane / (far_plane - near_plane);
+		result.m23 = result.m22 * near_plane;
 #else
-		result.m22 = -(farPlane + nearPlane) / (farPlane - nearPlane);
-		result.m23 = -2.f * farPlane * nearPlane / (farPlane - nearPlane);
+		result.m22 = -(far_plane + near_plane) / (far_plane - near_plane);
+		result.m23 = -2.f * far_plane * near_plane / (far_plane - near_plane);
 #endif
 	}
 	else
 	{
 		result.m22 = -1.f;
 #if DIRECTX_COORDINATE_SYSTEM
-		result.m23 = -nearPlane;
+		result.m23 = -near_plane;
 #else
-		result.m23 = -2.f * nearPlane;
+		result.m23 = -2.f * near_plane;
 #endif
 	}
 
@@ -929,40 +935,40 @@ mat4 createPerspectiveProjectionMatrix(float width, float height, float fx, floa
 	return result;
 }
 
-mat4 createPerspectiveProjectionMatrix(float r, float l, float t, float b, float nearPlane, float farPlane)
+mat4 create_perspective_projection_matrix(float r, float l, float t, float b, float near_plane, float far_plane)
 {
 	mat4 result;
 
-	result.m00 = (2.f * nearPlane) / (r - l);
+	result.m00 = (2.f * near_plane) / (r - l);
 	result.m01 = 0.f;
 	result.m02 = (r + l) / (r - l);
 	result.m03 = 0.f;
 
 	result.m10 = 0.f;
-	result.m11 = (2.f * nearPlane) / (t - b);
+	result.m11 = (2.f * near_plane) / (t - b);
 	result.m12 = (t + b) / (t - b);
 	result.m13 = 0.f;
 
 	result.m20 = 0;
 	result.m21 = 0;
 
-	if (farPlane > 0.f)
+	if (far_plane > 0.f)
 	{
 #if DIRECTX_COORDINATE_SYSTEM
-		result.m22 = -farPlane / (farPlane - nearPlane);
-		result.m23 = result.m22 * nearPlane;
+		result.m22 = -far_plane / (far_plane - near_plane);
+		result.m23 = result.m22 * near_plane;
 #else
-		result.m22 = -(farPlane + nearPlane) / (farPlane - nearPlane);
-		result.m23 = -2.f * farPlane * nearPlane / (farPlane - nearPlane);
+		result.m22 = -(far_plane + near_plane) / (far_plane - near_plane);
+		result.m23 = -2.f * far_plane * near_plane / (far_plane - near_plane);
 #endif
 	}
 	else
 	{
 		result.m22 = -1.f;
 #if DIRECTX_COORDINATE_SYSTEM
-		result.m23 = -nearPlane;
+		result.m23 = -near_plane;
 #else
-		result.m23 = -2.f * nearPlane;
+		result.m23 = -2.f * near_plane;
 #endif
 	}
 
@@ -974,7 +980,7 @@ mat4 createPerspectiveProjectionMatrix(float r, float l, float t, float b, float
 	return result;
 }
 
-mat4 createOrthographicProjectionMatrix(float r, float l, float t, float b, float nearPlane, float farPlane)
+mat4 create_orthographic_projection_matrix(float r, float l, float t, float b, float near_plane, float far_plane)
 {
 	mat4 result;
 
@@ -992,11 +998,11 @@ mat4 createOrthographicProjectionMatrix(float r, float l, float t, float b, floa
 	result.m21 = 0.f;
 
 #if DIRECTX_COORDINATE_SYSTEM
-	result.m22 = -1.f / (farPlane - nearPlane);
-	result.m23 = result.m22 * nearPlane;
+	result.m22 = -1.f / (far_plane - near_plane);
+	result.m23 = result.m22 * near_plane;
 #else
-	result.m22 = -2.f / (farPlane - nearPlane);
-	result.m23 = -(farPlane + nearPlane) / (farPlane - nearPlane);
+	result.m22 = -2.f / (far_plane - near_plane);
+	result.m23 = -(far_plane + near_plane) / (far_plane - near_plane);
 #endif
 
 	result.m30 = 0.f;
@@ -1007,7 +1013,7 @@ mat4 createOrthographicProjectionMatrix(float r, float l, float t, float b, floa
 	return result;
 }
 
-mat4 invertPerspectiveProjectionMatrix(const mat4& m)
+mat4 invert_perspective_projection_matrix(const mat4& m)
 {
 	mat4 inv;
 
@@ -1034,7 +1040,7 @@ mat4 invertPerspectiveProjectionMatrix(const mat4& m)
 	return inv;
 }
 
-mat4 invertOrthographicProjectionMatrix(const mat4& m)
+mat4 invert_orthographic_projection_matrix(const mat4& m)
 {
 	mat4 inv;
 
@@ -1061,7 +1067,7 @@ mat4 invertOrthographicProjectionMatrix(const mat4& m)
 	return inv;
 }
 
-mat4 createTranslationMatrix(vec3 position)
+mat4 create_translation_matrix(vec3 position)
 {
 	mat4 result = mat4::identity;
 	result.m03 = position.x;
@@ -1070,14 +1076,14 @@ mat4 createTranslationMatrix(vec3 position)
 	return result;
 }
 
-mat4 createModelMatrix(vec3 position, quat rotation, vec3 scale)
+mat4 create_model_matrix(vec3 position, quat rotation, vec3 scale)
 {
 	mat4 result;
 #if 0
 	result.m03 = position.x;
 	result.m13 = position.y;
 	result.m23 = position.z;
-	mat3 rot = quaternionToMat3(rotation);
+	mat3 rot = quaternion_to_mat3(rotation);
 	result.m00 = rot.m00 * scale.x;
 	result.m01 = rot.m01 * scale.y;
 	result.m02 = rot.m02 * scale.z;
@@ -1136,7 +1142,7 @@ mat4 createModelMatrix(vec3 position, quat rotation, vec3 scale)
 	return result;
 }
 
-mat4 createBillboardModelMatrix(vec3 position, vec3 eye, vec3 scale)
+mat4 create_billboard_model_matrix(vec3 position, vec3 eye, vec3 scale)
 {
 	vec3 up(0.f, 1.f, 0.f);
 	vec3 forward = normalize(eye - position);
@@ -1173,12 +1179,12 @@ mat4 createBillboardModelMatrix(vec3 position, vec3 eye, vec3 scale)
 
 }
 
-mat4 trsToMat4(const trs& transform)
+mat4 trs_to_mat4(const trs& transform)
 {
-	return createModelMatrix(transform.position, transform.rotation, transform.scale);
+	return create_model_matrix(transform.position, transform.rotation, transform.scale);
 }
 
-trs mat4ToTRS(const mat4& m)
+trs mat4_to_trs(const mat4& m)
 {
 	trs result;
 
@@ -1189,7 +1195,7 @@ trs mat4ToTRS(const mat4& m)
 	result.scale.y = sqrt(dot(c1, c1));
 	result.scale.z = sqrt(dot(c2, c2));
 
-	vec3 invScale = 1.f / result.scale;
+	vec3 inv_scale = 1.f / result.scale;
 
 	result.position.x = m.m03;
 	result.position.y = m.m13;
@@ -1197,33 +1203,33 @@ trs mat4ToTRS(const mat4& m)
 
 	mat3 R;
 
-	R.m00 = m.m00 * invScale.x;
-	R.m10 = m.m10 * invScale.x;
-	R.m20 = m.m20 * invScale.x;
+	R.m00 = m.m00 * inv_scale.x;
+	R.m10 = m.m10 * inv_scale.x;
+	R.m20 = m.m20 * inv_scale.x;
+					
+	R.m01 = m.m01 * inv_scale.y;
+	R.m11 = m.m11 * inv_scale.y;
+	R.m21 = m.m21 * inv_scale.y;
+					
+	R.m02 = m.m02 * inv_scale.z;
+	R.m12 = m.m12 * inv_scale.z;
+	R.m22 = m.m22 * inv_scale.z;
 
-	R.m01 = m.m01 * invScale.y;
-	R.m11 = m.m11 * invScale.y;
-	R.m21 = m.m21 * invScale.y;
-
-	R.m02 = m.m02 * invScale.z;
-	R.m12 = m.m12 * invScale.z;
-	R.m22 = m.m22 * invScale.z;
-
-	result.rotation = mat3ToQuaternion(R);
+	result.rotation = mat3_to_quaternion(R);
 
 	return result;
 }
 
-mat4 createViewMatrix(vec3 eye, float pitch, float yaw)
+mat4 create_view_matrix(vec3 eye, float pitch, float yaw)
 {
-	float cosPitch = cosf(pitch);
-	float sinPitch = sinf(pitch);
-	float cosYaw = cosf(yaw);
-	float sinYaw = sinf(yaw);
+	float cos_pitch = cosf(pitch);
+	float sin_pitch = sinf(pitch);
+	float cos_yaw = cosf(yaw);
+	float sin_yaw = sinf(yaw);
 
-	vec3 xAxis(cosYaw, 0, -sinYaw);
-	vec3 yAxis(sinYaw * sinPitch, cosPitch, cosYaw * sinPitch);
-	vec3 zAxis(sinYaw * cosPitch, -sinPitch, cosPitch * cosYaw);
+	vec3 xAxis(cos_yaw, 0, -sin_yaw);
+	vec3 yAxis(sin_yaw * sin_pitch, cos_pitch, cos_yaw * sin_pitch);
+	vec3 zAxis(sin_yaw * cos_pitch, -sin_pitch, cos_pitch * cos_yaw);
 
 	mat4 result;
 	result.m00 = xAxis.x; result.m10 = yAxis.x; result.m20 = zAxis.x; result.m30 = 0.f;
@@ -1234,14 +1240,14 @@ mat4 createViewMatrix(vec3 eye, float pitch, float yaw)
 	return result;
 }
 
-mat4 createSkyViewMatrix(const mat4& v)
+mat4 create_sky_view_matrix(const mat4& v)
 {
 	mat4 result = v;
 	result.m03 = 0.f; result.m13 = 0.f; result.m23 = 0.f;
 	return result;
 }
 
-mat4 lookAt(vec3 eye, vec3 target, vec3 up)
+mat4 look_at(vec3 eye, vec3 target, vec3 up)
 {
 	vec3 zAxis = normalize(eye - target);
 	vec3 xAxis = normalize(cross(up, zAxis));
@@ -1256,7 +1262,7 @@ mat4 lookAt(vec3 eye, vec3 target, vec3 up)
 	return result;
 }
 
-quat lookAtQuaternion(vec3 forward, vec3 up)
+quat look_at_quaternion(vec3 forward, vec3 up)
 {
 	vec3 zAxis = -normalize(forward);
 	vec3 xAxis = normalize(cross(up, zAxis));
@@ -1267,37 +1273,37 @@ quat lookAtQuaternion(vec3 forward, vec3 up)
 	m.m10 = xAxis.y; m.m11 = yAxis.y; m.m12 = zAxis.y;
 	m.m20 = xAxis.z; m.m21 = yAxis.z; m.m22 = zAxis.z;
 
-	return mat3ToQuaternion(m);
+	return mat3_to_quaternion(m);
 }
 
-mat4 createViewMatrix(vec3 position, quat rotation)
+mat4 create_view_matrix(vec3 position, quat rotation)
 {
 	vec3 target = position + rotation * vec3(0.f, 0.f, -1.f);
 	vec3 up = rotation * vec3(0.f, 1.f, 0.f);
-	return lookAt(position, target, up);
+	return look_at(position, target, up);
 }
 
-mat4 invertAffine(const mat4& m)
+mat4 invert_affine(const mat4& m)
 {
 	vec3 xAxis(m.m00, m.m10, m.m20);
 	vec3 yAxis(m.m01, m.m11, m.m21);
 	vec3 zAxis(m.m02, m.m12, m.m22);
 	vec3 pos(m.m03, m.m13, m.m23);
 
-	vec3 invXAxis = xAxis / squaredLength(xAxis);
-	vec3 invYAxis = yAxis / squaredLength(yAxis);
-	vec3 invZAxis = zAxis / squaredLength(zAxis);
-	vec3 invPos(-dot(invXAxis, pos), -dot(invYAxis, pos), -dot(invZAxis, pos));
+	vec3 inv_x_axis = xAxis / squared_length(xAxis);
+	vec3 inv_y_xis = yAxis / squared_length(yAxis);
+	vec3 inv_z_axis = zAxis / squared_length(zAxis);
+	vec3 inv_pos(-dot(inv_x_axis, pos), -dot(inv_y_xis, pos), -dot(inv_z_axis, pos));
 
 	mat4 result;
-	result.m00 = invXAxis.x; result.m10 = invYAxis.x; result.m20 = invZAxis.x; result.m30 = 0.f;
-	result.m01 = invXAxis.y; result.m11 = invYAxis.y; result.m21 = invZAxis.y; result.m31 = 0.f;
-	result.m02 = invXAxis.z; result.m12 = invYAxis.z; result.m22 = invZAxis.z; result.m32 = 0.f;
-	result.m03 = invPos.x; result.m13 = invPos.y; result.m23 = invPos.z; result.m33 = 1.f;
+	result.m00 = inv_x_axis.x; result.m10 = inv_y_xis.x; result.m20 = inv_z_axis.x; result.m30 = 0.f;
+	result.m01 = inv_x_axis.y; result.m11 = inv_y_xis.y; result.m21 = inv_z_axis.y; result.m31 = 0.f;
+	result.m02 = inv_x_axis.z; result.m12 = inv_y_xis.z; result.m22 = inv_z_axis.z; result.m32 = 0.f;
+	result.m03 = inv_pos.x; result.m13 = inv_pos.y; result.m23 = inv_pos.z; result.m33 = 1.f;
 	return result;
 }
 
-bool pointInTriangle(vec3 point, vec3 triA, vec3 triB, vec3& triC)
+bool point_in_triangle(vec3 point, vec3 triA, vec3 triB, vec3& triC)
 {
 	vec3 e10 = triB - triA;
 	vec3 e20 = triC - triA;
@@ -1316,17 +1322,17 @@ bool pointInTriangle(vec3 point, vec3 triA, vec3 triB, vec3& triC)
 #undef uintCast
 }
 
-bool pointInRectangle(vec2 p, vec2 topLeft, vec2 bottomRight)
+bool point_in_rectangle(vec2 p, vec2 top_left, vec2 bottom_right)
 {
-	return p.x >= topLeft.x && p.y >= topLeft.y && p.x <= bottomRight.x && p.y <= bottomRight.y;
+	return p.x >= top_left.x && p.y >= top_left.y && p.x <= bottom_right.x && p.y <= bottom_right.y;
 }
 
-bool pointInBox(vec3 p, vec3 minCorner, vec3 maxCorner)
+bool point_in_box(vec3 p, vec3 min_corner, vec3 max_corner)
 {
-	return p.x >= minCorner.x && p.y >= minCorner.y && p.z >= minCorner.z && p.x <= maxCorner.x && p.y <= maxCorner.y && p.z <= maxCorner.z;
+	return p.x >= min_corner.x && p.y >= min_corner.y && p.z >= min_corner.z && p.x <= max_corner.x && p.y <= max_corner.y && p.z <= max_corner.z;
 }
 
-vec2 directionToPanoramaUV(vec3 dir)
+vec2 direction_to_panorama_uv(vec3 dir)
 {
 	const vec2 invAtan = vec2(INV_TAU, INV_PI);
 
@@ -1340,7 +1346,7 @@ vec2 directionToPanoramaUV(vec3 dir)
 	return panoUV;
 }
 
-float angleToZeroToTwoPi(float angle)
+float angle_to_zero_to_two_pi(float angle)
 {
 	while (angle < 0)
 	{
@@ -1353,7 +1359,7 @@ float angleToZeroToTwoPi(float angle)
 	return angle;
 }
 
-float angleToNegPiToPi(float angle)
+float angle_to_neg_pi_to_pi(float angle)
 {
 	while (angle < -M_PI)
 	{
@@ -1366,7 +1372,7 @@ float angleToNegPiToPi(float angle)
 	return angle;
 }
 
-vec2 solveLinearSystem(const mat2& A, vec2 b)
+vec2 solve_linear_system(const mat2& A, vec2 b)
 {
 	float a11 = A.m00, a12 = A.m01, a21 = A.m10, a22 = A.m11;
 	float det = a11 * a22 - a12 * a21;
@@ -1380,7 +1386,7 @@ vec2 solveLinearSystem(const mat2& A, vec2 b)
 	return x;
 }
 
-vec3 solveLinearSystem(const mat3& A, vec3 b)
+vec3 solve_linear_system(const mat3& A, vec3 b)
 {
 	vec3 ex(A.m00, A.m10, A.m20);
 	vec3 ey(A.m01, A.m11, A.m21);
@@ -1397,7 +1403,7 @@ vec3 solveLinearSystem(const mat3& A, vec3 b)
 	return x;
 }
 
-vec3 getBarycentricCoordinates(vec2 a, vec2 b, vec2 c, vec2 p)
+vec3 get_barycentric_coordinates(vec2 a, vec2 b, vec2 c, vec2 p)
 {
 	vec2 v0 = b - a, v1 = c - a, v2 = p - a;
 	float d00 = dot(v0, v0);
@@ -1414,7 +1420,7 @@ vec3 getBarycentricCoordinates(vec2 a, vec2 b, vec2 c, vec2 p)
 	return vec3(u, v, w);
 }
 
-vec3 getBarycentricCoordinates(vec3 a, vec3 b, vec3 c, vec3 p)
+vec3 get_barycentric_coordinates(vec3 a, vec3 b, vec3 c, vec3 p)
 {
 	vec3 v0 = b - a, v1 = c - a, v2 = p - a;
 	float d00 = dot(v0, v0);
@@ -1433,35 +1439,35 @@ vec3 getBarycentricCoordinates(vec3 a, vec3 b, vec3 c, vec3 p)
 	return vec3(u, v, w);
 }
 
-bool insideTriangle(vec3 barycentrics)
+bool inside_triangle(vec3 barycentrics)
 {
 	return barycentrics.x >= 0.f
 		&& barycentrics.y >= 0.f
 		&& barycentrics.z >= 0.f;
 }
 
-vec3 getTangent(vec3 normal)
+vec3 get_tangent(vec3 normal)
 {
 	vec3 tangent = (abs(normal.x) >= 0.57735f) ? vec3(normal.y, -normal.x, 0.f) : vec3(0.f, normal.z, -normal.y);
 	return normalize(tangent);
 }
 
-void getTangents(vec3 normal, vec3& outTangent, vec3& outBitangent)
+void get_tangents(vec3 normal, vec3& out_tangent, vec3& out_bitangent)
 {
-	outTangent = getTangent(normal);
-	outBitangent = cross(normal, outTangent);
+	out_tangent = get_tangent(normal);
+	out_bitangent = cross(normal, out_tangent);
 }
 
-vec4 uniformSampleSphere(vec2 E)
+vec4 uniform_sample_sphere(vec2 E)
 {
 	float phi = 2 * M_PI * E.x;
-	float cosTheta = 1.f - 2.f * E.y;
-	float sinTheta = sqrt(1.f - cosTheta * cosTheta);
+	float cos_theta = 1.f - 2.f * E.y;
+	float sin_theta = sqrt(1.f - cos_theta * cos_theta);
 
 	vec3 H;
-	H.x = sinTheta * cos(phi);
-	H.y = sinTheta * sin(phi);
-	H.z = cosTheta;
+	H.x = sin_theta * cos(phi);
+	H.y = sin_theta * sin(phi);
+	H.z = cos_theta;
 
 	float PDF = 1.f / (4.f * M_PI);
 
@@ -1472,21 +1478,21 @@ vec4 uniformSampleSphere(vec2 E)
 #define _cstar 0.923879532f // cos(pi/8)
 #define _sstar 0.3826834323f // sin(p/8)
 
-static void condSwap(bool c, float& X, float& Y)
+static void cond_swap(bool c, float& X, float& Y)
 {
 	float Z = X;
 	X = c ? Y : X;
 	Y = c ? Z : Y;
 }
 
-static void condNegSwap(bool c, float& X, float& Y)
+static void cond_neg_swap(bool c, float& X, float& Y)
 {
 	float Z = -X;
 	X = c ? Y : X;
 	Y = c ? Z : Y;
 }
 
-static void approximateGivensQuaternion(float a11, float a12, float a22, float& ch, float& sh)
+static void approximate_givens_quaternion(float a11, float a12, float a22, float& ch, float& sh)
 {
 	// Given givens angle computed by approximateGivensAngles,
 	// compute the corresponding rotation quaternion
@@ -1498,7 +1504,7 @@ static void approximateGivensQuaternion(float a11, float a12, float a22, float& 
 	sh = b ? w * sh : _sstar;
 }
 
-static void QRGivensQuaternion(float a1, float a2, float& ch, float& sh)
+static void qr_givens_quaternion(float a1, float a2, float& ch, float& sh)
 {
 	// a1 = pivot point on diagonal
 	// a2 = lower triangular entry we want to annihilate
@@ -1507,20 +1513,20 @@ static void QRGivensQuaternion(float a1, float a2, float& ch, float& sh)
 	sh = rho > EPSILON ? a2 : 0.f;
 	ch = fabs(a1) + fmax(rho, EPSILON);
 	bool b = a1 < 0;
-	condSwap(b, sh, ch);
+	cond_swap(b, sh, ch);
 	float w = 1.f / sqrt(ch * ch + sh * sh);
 	ch *= w;
 	sh *= w;
 }
 
-static void jacobiConjugation(const int x, const int y, const int z,
+static void jacobi_conjugation(const int x, const int y, const int z,
 	float& s11,
 	float& s21, float& s22,
 	float& s31, float& s32, float& s33,
 	quat& q)
 {
 	float ch, sh;
-	approximateGivensQuaternion(s11, s21, s22, ch, sh);
+	approximate_givens_quaternion(s11, s21, s22, ch, sh);
 
 	float scale = ch * ch + sh * sh;
 	float a = (ch * ch - sh * sh) / scale;
@@ -1565,7 +1571,7 @@ static void jacobiConjugation(const int x, const int y, const int z,
 	s31 = _s31; s32 = _s32; s33 = _s33;
 }
 
-static void jacobiEigenanlysis(
+static void jacobi_eigenanlysis(
 	float& s11,
 	float& s21, float& s22,
 	float& s31, float& s32, float& s33,
@@ -1579,9 +1585,9 @@ static void jacobiEigenanlysis(
 		// on every iteration, but cycling over all 3 possible rotations
 		// in fixed order (p,q) = (1,2) , (2,3), (1,3) still retains
 		//  asymptotic convergence.
-		jacobiConjugation(0, 1, 2, s11, s21, s22, s31, s32, s33, q); // p,q = 0,1
-		jacobiConjugation(1, 2, 0, s11, s21, s22, s31, s32, s33, q); // p,q = 1,2
-		jacobiConjugation(2, 0, 1, s11, s21, s22, s31, s32, s33, q); // p,q = 0,2
+		jacobi_conjugation(0, 1, 2, s11, s21, s22, s31, s32, s33, q); // p,q = 0,1
+		jacobi_conjugation(1, 2, 0, s11, s21, s22, s31, s32, s33, q); // p,q = 1,2
+		jacobi_conjugation(2, 0, 1, s11, s21, s22, s31, s32, s33, q); // p,q = 0,2
 	}
 }
 
@@ -1590,7 +1596,7 @@ static float dist2(float x, float y, float z)
 	return x * x + y * y + z * z;
 }
 
-static void sortSingularValues(mat3& B, mat3& V)
+static void sort_singular_values(mat3& B, mat3& V)
 {
 	float* Bm = B.m;
 	float* Vm = V.m;
@@ -1599,28 +1605,28 @@ static void sortSingularValues(mat3& B, mat3& V)
 	float rho3 = dist2(Bm[6], Bm[7], Bm[8]);
 
 	bool c = rho1 < rho2;
-	condNegSwap(c, Bm[0], Bm[3]); condNegSwap(c, Vm[0], Vm[3]);
-	condNegSwap(c, Bm[1], Bm[4]); condNegSwap(c, Vm[1], Vm[4]);
-	condNegSwap(c, Bm[2], Bm[5]); condNegSwap(c, Vm[2], Vm[5]);
-	condSwap(c, rho1, rho2);
+	cond_neg_swap(c, Bm[0], Bm[3]); cond_neg_swap(c, Vm[0], Vm[3]);
+	cond_neg_swap(c, Bm[1], Bm[4]); cond_neg_swap(c, Vm[1], Vm[4]);
+	cond_neg_swap(c, Bm[2], Bm[5]); cond_neg_swap(c, Vm[2], Vm[5]);
+	cond_swap(c, rho1, rho2);
 	c = rho1 < rho3;
-	condNegSwap(c, Bm[0], Bm[6]); condNegSwap(c, Vm[0], Vm[6]);
-	condNegSwap(c, Bm[1], Bm[7]); condNegSwap(c, Vm[1], Vm[7]);
-	condNegSwap(c, Bm[2], Bm[8]); condNegSwap(c, Vm[2], Vm[8]);
-	condSwap(c, rho1, rho3);
+	cond_neg_swap(c, Bm[0], Bm[6]); cond_neg_swap(c, Vm[0], Vm[6]);
+	cond_neg_swap(c, Bm[1], Bm[7]); cond_neg_swap(c, Vm[1], Vm[7]);
+	cond_neg_swap(c, Bm[2], Bm[8]); cond_neg_swap(c, Vm[2], Vm[8]);
+	cond_swap(c, rho1, rho3);
 	c = rho2 < rho3;
-	condNegSwap(c, Bm[3], Bm[6]); condNegSwap(c, Vm[3], Vm[6]);
-	condNegSwap(c, Bm[4], Bm[7]); condNegSwap(c, Vm[4], Vm[7]);
-	condNegSwap(c, Bm[5], Bm[8]); condNegSwap(c, Vm[5], Vm[8]);
+	cond_neg_swap(c, Bm[3], Bm[6]); cond_neg_swap(c, Vm[3], Vm[6]);
+	cond_neg_swap(c, Bm[4], Bm[7]); cond_neg_swap(c, Vm[4], Vm[7]);
+	cond_neg_swap(c, Bm[5], Bm[8]); cond_neg_swap(c, Vm[5], Vm[8]);
 }
 
-static void QRDecomposition(mat3& B, mat3& Q, mat3& R)
+static void qr_decomposition(mat3& B, mat3& Q, mat3& R)
 {
 	float ch1, sh1, ch2, sh2, ch3, sh3;
 	float a, b;
 
 	// first givens rotation (ch,0,0,sh)
-	QRGivensQuaternion(B.m00, B.m10, ch1, sh1);
+	qr_givens_quaternion(B.m00, B.m10, ch1, sh1);
 	a = 1 - 2 * sh1 * sh1;
 	b = 2 * ch1 * sh1;
 
@@ -1632,7 +1638,7 @@ static void QRDecomposition(mat3& B, mat3& Q, mat3& R)
 	Rm[2] = Bm[2];          Rm[5] = Bm[5];          Rm[8] = Bm[8];
 
 	// Second givens rotation (ch,0,-sh,0).
-	QRGivensQuaternion(Rm[0], Rm[2], ch2, sh2);
+	qr_givens_quaternion(Rm[0], Rm[2], ch2, sh2);
 	a = 1 - 2 * sh2 * sh2;
 	b = 2 * ch2 * sh2;
 
@@ -1642,7 +1648,7 @@ static void QRDecomposition(mat3& B, mat3& Q, mat3& R)
 	Bm[2] = -b * Rm[0] + a * Rm[2]; Bm[5] = -b * Rm[3] + a * Rm[5]; Bm[8] = -b * Rm[6] + a * Rm[8];
 
 	// Third givens rotation (ch,sh,0,0).
-	QRGivensQuaternion(Bm[4], Bm[5], ch3, sh3);
+	qr_givens_quaternion(Bm[4], Bm[5], ch3, sh3);
 	a = 1 - 2 * sh3 * sh3;
 	b = 2 * ch3 * sh3;
 	// R is now set to desired value.
@@ -1672,26 +1678,26 @@ static void QRDecomposition(mat3& B, mat3& Q, mat3& R)
 	Qm[8] = (-1 + 2 * sh22) * (-1 + 2 * sh32);
 }
 
-singular_value_decomposition computeSVD(const mat3& A)
+singular_value_decomposition compute_svd(const mat3& A)
 {
 	mat3 ATA = transpose(A) * A;
 
 	mat3 U, V;
 
 	quat q;
-	jacobiEigenanlysis(ATA.m00, ATA.m10, ATA.m11, ATA.m20, ATA.m21, ATA.m22, q);
-	V = quaternionToMat3(q);
+	jacobi_eigenanlysis(ATA.m00, ATA.m10, ATA.m11, ATA.m20, ATA.m21, ATA.m22, q);
+	V = quaternion_to_mat3(q);
 
 	mat3 B = A * V;
 
-	sortSingularValues(B, V);
+	sort_singular_values(B, V);
 	mat3 S;
-	QRDecomposition(B, U, S);
+	qr_decomposition(B, U, S);
 
 	return { U, V, vec3(S.m00, S.m11, S.m22) };
 }
 
-static void computeMinor(mat3& m, const mat3& from, uint32 d)
+static void compute_minor(mat3& m, const mat3& from, uint32 d)
 {
 	for (uint32 y = 0; y < 3; ++y)
 	{
@@ -1709,7 +1715,7 @@ static void computeMinor(mat3& m, const mat3& from, uint32 d)
 	}
 }
 
-static void computeHouseholderFactor(mat3& mat, const vec3& v)
+static void compute_householder_factor(mat3& mat, const vec3& v)
 {
 	for (uint32 i = 0; i < 3; ++i)
 	{
@@ -1724,7 +1730,7 @@ static void computeHouseholderFactor(mat3& mat, const vec3& v)
 	}
 }
 
-qr_decomposition qrDecomposition(const mat3& mat)
+QRDecomposition create_qr_decomposition(const mat3& mat)
 {
 	mat3 qv[2];
 
@@ -1734,7 +1740,7 @@ qr_decomposition qrDecomposition(const mat3& mat)
 
 	for (uint32 k = 0; k < 2; ++k)
 	{
-		computeMinor(z1, z, k);
+		compute_minor(z1, z, k);
 		vec3 x = col(z1, k);
 
 		float a = length(x);
@@ -1753,13 +1759,13 @@ qr_decomposition qrDecomposition(const mat3& mat)
 		e = normalize(e);
 
 		// qv[k] = I - 2 *e*e^T
-		computeHouseholderFactor(qv[k], e);
+		compute_householder_factor(qv[k], e);
 
 		z = qv[k] * z1;
 
 	}
 
-	qr_decomposition result;
+	QRDecomposition result;
 	result.Q = qv[0];
 
 	// After this loop, we will obtain Q (up to a transpose operation)
@@ -1775,9 +1781,9 @@ qr_decomposition qrDecomposition(const mat3& mat)
 	return result;
 }
 
-bool getEigen(const mat3& A, vec3& outEigenValues, mat3& outEigenVectors)
+bool get_eigen(const mat3& A, vec3& out_eigen_values, mat3& out_eigen_vectors)
 {
-	mat3 Q = qrDecomposition(A).Q;
+	mat3 Q = create_qr_decomposition(A).Q;
 	mat3 Qt = transpose(Q);
 
 	mat3 tmp = Qt * A;
@@ -1795,7 +1801,7 @@ bool getEigen(const mat3& A, vec3& outEigenValues, mat3& outEigenVectors)
 	{
 		init = res;
 
-		mat3 Q = qrDecomposition(E).Q;
+		mat3 Q = create_qr_decomposition(E).Q;
 		mat3 Qt = transpose(Q);
 
 		tmp = Qt * E;
@@ -1809,8 +1815,8 @@ bool getEigen(const mat3& A, vec3& outEigenValues, mat3& outEigenVectors)
 		e = dot(error, error);
 	}
 
-	outEigenValues = res;
-	outEigenVectors = U;
+	out_eigen_values = res;
+	out_eigen_vectors = U;
 
 	return true;
 }

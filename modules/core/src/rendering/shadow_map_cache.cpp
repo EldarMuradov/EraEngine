@@ -21,10 +21,10 @@ namespace era_engine
 	static constexpr uint16 minimumSize = 128;
 	static_assert(SHADOW_MAP_WIDTH% maximumSize == 0, "");
 	static_assert(SHADOW_MAP_HEIGHT% maximumSize == 0, "");
-	static_assert(isPowerOfTwo(maximumSize), "");
-	static_assert(isPowerOfTwo(minimumSize), "");
+	static_assert(is_power_of_two(maximumSize), "");
+	static_assert(is_power_of_two(minimumSize), "");
 
-	static constexpr uint32 numBuckets = indexOfLeastSignificantSetBit(maximumSize) - indexOfLeastSignificantSetBit(minimumSize) + 1;
+	static constexpr uint32 numBuckets = index_of_least_significant_set_bit(maximumSize) - index_of_least_significant_set_bit(minimumSize) + 1;
 	static std::vector<shadow_map_viewport> nodes[numBuckets];
 
 	struct shadow_map_cache
@@ -50,7 +50,7 @@ namespace era_engine
 
 	NODISCARD static uint32 getIndex(uint32 size)
 	{
-		uint32 index = indexOfLeastSignificantSetBit(size) - indexOfLeastSignificantSetBit(minimumSize);
+		uint32 index = index_of_least_significant_set_bit(size) - index_of_least_significant_set_bit(minimumSize);
 		index = numBuckets - index - 1;
 		return index;
 	}
@@ -59,7 +59,7 @@ namespace era_engine
 	{
 		ASSERT(size <= maximumSize);
 		ASSERT(size >= minimumSize);
-		ASSERT(isPowerOfTwo(size));
+		ASSERT(is_power_of_two(size));
 
 		uint32 index = getIndex(size);
 
@@ -71,7 +71,7 @@ namespace era_engine
 
 		for (uint32 i = insertIndex; i < index; ++i)
 		{
-			uint16 nodeSize = 1u << (indexOfLeastSignificantSetBit(maximumSize) - i);
+			uint16 nodeSize = 1u << (index_of_least_significant_set_bit(maximumSize) - i);
 			uint16 halfSize = nodeSize / 2;
 
 			shadow_map_viewport n = nodes[i].back();
@@ -105,7 +105,7 @@ namespace era_engine
 		}
 
 		uint32 doubleSize = remove.size * 2;
-		uint32 shift = indexOfLeastSignificantSetBit(doubleSize);
+		uint32 shift = index_of_least_significant_set_bit(doubleSize);
 
 		uint32 parentX = remove.x >> shift;
 		uint32 parentY = remove.y >> shift;

@@ -1,76 +1,76 @@
-// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
-
 #include "core/block_allocator.h"
 
 namespace era_engine
 {
-	void block_allocator::initialize(uint64 capacity)
+	void BlockAllocator::initialize(uint64_t capacity)
 	{
-		availableSize = capacity;
-		addNewBlock(0, capacity);
+		available_size = capacity;
+		add_new_block(0, capacity);
 	}
 
-	uint64 block_allocator::allocate(uint64 requestedSize)
+	uint64_t BlockAllocator::allocate(uint64_t requested_size)
 	{
-		auto smallestBlockItIt = blocksBySize.lower_bound(requestedSize);
-		if (smallestBlockItIt == blocksBySize.end())
-			return UINT64_MAX;
-
-		size_value sizeValue = smallestBlockItIt->second;
-
-		uint64 offset = sizeValue.getOffset();
-		uint64 size = smallestBlockItIt->first;
-
-		uint64 newOffset = offset + requestedSize;
-		uint64 newSize = size - requestedSize;
-
-		blocksBySize.erase(smallestBlockItIt);
-		blocksByOffset.erase(sizeValue.offsetIterator);
-
-		if (newSize > 0)
+		auto smallest_block_it = blocks_by_size.lower_bound(requested_size);
+		if (smallest_block_it == blocks_by_size.end())
 		{
-			addNewBlock(newOffset, newSize);
+			return UINT64_MAX;
 		}
 
-		availableSize -= requestedSize;
+		SizeValue size_value = smallest_block_it->second;
+
+		uint64_t offset = size_value.get_offset();
+		uint64_t size = smallest_block_it->first;
+
+		uint64_t new_offset = offset + requested_size;
+		uint64_t new_size = size - requested_size;
+
+		blocks_by_size.erase(smallest_block_it);
+		blocks_by_offset.erase(size_value.offset_iterator);
+
+		if (new_size > 0)
+		{
+			add_new_block(new_offset, new_size);
+		}
+
+		available_size -= requested_size;
 		return offset;
 	}
 
-	void block_allocator::free(uint64 offset, uint64 size)
+	void BlockAllocator::free(uint64_t offset, uint64_t size)
 	{
-		auto nextBlockIt = blocksByOffset.upper_bound(offset);
-		auto prevBlockIt = nextBlockIt;
-		if (prevBlockIt != blocksByOffset.begin())
+		auto next_block_it = blocks_by_offset.upper_bound(offset);
+		auto& prev_block_it = next_block_it;
+		if (prev_block_it != blocks_by_offset.begin())
 		{
-			--prevBlockIt;
+			--prev_block_it;
 		}
 		else
 		{
-			prevBlockIt = blocksByOffset.end();
+			prev_block_it = blocks_by_offset.end();
 		}
 
-		uint64 newOffset, newSize;
-		if (prevBlockIt != blocksByOffset.end() && offset == prevBlockIt->first + prevBlockIt->second.getSize())
+		uint64 new_offset = 0, new_size = 0;
+		if (prev_block_it != blocks_by_offset.end() && offset == prev_block_it->first + prev_block_it->second.get_size())
 		{
 			// PrevBlock.Offset           Offset
 			// |                          |
 			// |<-----PrevBlock.Size----->|<------Size-------->|
 			//
-			newSize = prevBlockIt->second.getSize() + size;
-			newOffset = prevBlockIt->first;
+			new_size = prev_block_it->second.get_size() + size;
+			new_offset = prev_block_it->first;
 
-			if (nextBlockIt != blocksByOffset.end() && offset + size == nextBlockIt->first)
+			if (next_block_it != blocks_by_offset.end() && offset + size == next_block_it->first)
 			{
 				// PrevBlock.Offset           Offset               NextBlock.Offset
 				// |                          |                    |
 				// |<-----PrevBlock.Size----->|<------Size-------->|<-----NextBlock.Size----->|
 				//
-				newSize += nextBlockIt->second.getSize();
-				blocksBySize.erase(prevBlockIt->second.sizeIterator);
-				blocksBySize.erase(nextBlockIt->second.sizeIterator);
+				new_size += next_block_it->second.get_size();
+				blocks_by_size.erase(prev_block_it->second.size_iterator);
+				blocks_by_size.erase(prev_block_it->second.size_iterator);
 				// Delete the range of two blocks
-				++nextBlockIt;
-				blocksByOffset.erase(prevBlockIt, nextBlockIt);
+				++next_block_it;
+				blocks_by_offset.erase(prev_block_it, next_block_it);
 			}
 			else
 			{
@@ -78,20 +78,20 @@ namespace era_engine
 				// |                          |                            |
 				// |<-----PrevBlock.Size----->|<------Size-------->| ~ ~ ~ |<-----NextBlock.Size----->|
 				//
-				blocksBySize.erase(prevBlockIt->second.sizeIterator);
-				blocksByOffset.erase(prevBlockIt);
+				blocks_by_size.erase(prev_block_it->second.size_iterator);
+				blocks_by_offset.erase(prev_block_it);
 			}
 		}
-		else if (nextBlockIt != blocksByOffset.end() && offset + size == nextBlockIt->first)
+		else if (next_block_it != blocks_by_offset.end() && offset + size == next_block_it->first)
 		{
 			// PrevBlock.Offset                   Offset               NextBlock.Offset
 			// |                                  |                    |
 			// |<-----PrevBlock.Size----->| ~ ~ ~ |<------Size-------->|<-----NextBlock.Size----->|
 			//
-			newSize = size + nextBlockIt->second.getSize();
-			newOffset = offset;
-			blocksBySize.erase(nextBlockIt->second.sizeIterator);
-			blocksByOffset.erase(nextBlockIt);
+			new_size = size + next_block_it->second.get_size();
+			new_offset = offset;
+			blocks_by_size.erase(next_block_it->second.size_iterator);
+			blocks_by_offset.erase(next_block_it);
 		}
 		else
 		{
@@ -99,12 +99,19 @@ namespace era_engine
 			// |                                  |                            |
 			// |<-----PrevBlock.Size----->| ~ ~ ~ |<------Size-------->| ~ ~ ~ |<-----NextBlock.Size----->|
 			//
-			newSize = size;
-			newOffset = offset;
+			new_size = size;
+			new_offset = offset;
 		}
 
-		addNewBlock(newOffset, newSize);
+		add_new_block(new_offset, new_size);
 
-		availableSize += size;
+		available_size += size;
+	}
+
+	void BlockAllocator::add_new_block(uint64_t offset, uint64_t size)
+	{
+		auto new_block_it = blocks_by_offset.emplace(offset, OffsetValue());
+		auto order_it = blocks_by_size.emplace(size, new_block_it.first);
+		new_block_it.first->second.size_iterator = order_it;
 	}
 }

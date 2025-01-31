@@ -16,7 +16,7 @@ namespace era_engine
 	void undo_stack::pushAction(const char* name, const void* entry, uint64 entrySize, toggle_func toggle)
 	{
 		uint64 nameLength = strlen(name) + 1;
-		uint64 alignedNameLength = alignTo(nameLength, 16);
+		uint64 alignedNameLength = align_to(nameLength, 16);
 		uint64 requiredSpace = sizeof(entry_header) + alignedNameLength + entrySize;
 		uint64 availableSpaceAtEnd = memory + memorySize - nextToWrite;
 
@@ -34,7 +34,7 @@ namespace era_engine
 			address = (requiredSpace <= availableSpaceAtEnd) ? nextToWrite : memory;
 		}
 
-		uint8* end = (uint8*)alignTo(address + requiredSpace, 16);
+		uint8* end = (uint8*)align_to(address + requiredSpace, 16);
 
 		// Clean up blocks which are overriden by the new block
 		oldest = newest;
@@ -45,7 +45,7 @@ namespace era_engine
 				void* oldestBegin = oldest;
 				void* oldestEnd = oldest->getOneAfterEnd();
 
-				if (rangesOverlap(address, end, oldestBegin, oldestEnd))
+				if (ranges_overlap(address, end, oldestBegin, oldestEnd))
 				{
 					oldest = oldest->newer;
 					break;
@@ -117,7 +117,7 @@ namespace era_engine
 			newest = newest->older;
 			if (newest)
 			{
-				nextToWrite = (uint8*)alignTo(((uint8*)data + newest->entrySize), 16);
+				nextToWrite = (uint8*)align_to(((uint8*)data + newest->entrySize), 16);
 			}
 			else
 			{
@@ -137,7 +137,7 @@ namespace era_engine
 			void* data = newest->getData();
 			newest->toggle(data);
 
-			nextToWrite = (uint8*)alignTo(((uint8*)data + newest->entrySize), 16);
+			nextToWrite = (uint8*)align_to(((uint8*)data + newest->entrySize), 16);
 		}
 
 		if (!newest && oldest)
@@ -145,7 +145,7 @@ namespace era_engine
 			void* data = oldest->getData();
 			oldest->toggle(data);
 
-			nextToWrite = (uint8*)alignTo(((uint8*)data + oldest->entrySize), 16);
+			nextToWrite = (uint8*)align_to(((uint8*)data + oldest->entrySize), 16);
 			newest = oldest;
 		}
 	}

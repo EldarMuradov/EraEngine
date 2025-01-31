@@ -48,7 +48,7 @@ namespace era_engine
 		float raytracedRadianceUIScale = 1.f;
 
 		mutable quat rayRotation = quat::identity;
-		mutable random_number_generator rng = { 61913 };
+		mutable RandomNumberGenerator rng = { 61913 };
 
 		friend struct light_probe_tracer;
 		friend struct eeditor;

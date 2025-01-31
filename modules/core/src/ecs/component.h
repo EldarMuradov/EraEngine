@@ -1,21 +1,15 @@
 #pragma once
 
-#include "core/reflect.h"
+#include "core_api.h"
 
 #include "ecs/entity.h"
-
-#include <typeinfo>
-
-#include <rttr/type>
-#include <rttr/registration>
-#include <rttr/registration_friend>
+#include "ecs/reflection.h"
 
 namespace era_engine
 {
-	using namespace rttr;
 	class World;
 
-	class Component
+	class ERA_CORE_API Component : public IReleasable
 	{
 	public:
 		Component() = default;
@@ -24,15 +18,18 @@ namespace era_engine
 		Component(Component&& _component) noexcept;
 		virtual ~Component();
 
-		Component& operator=(const Component& _component);
-		Component& operator=(Component&& _component);
+		virtual void release() override;
+
+		Component& operator=(const Component& _component) noexcept;
+		Component& operator=(Component&& _component) noexcept;
 
 		World* get_world() const;
 
 		Entity get_entity() const;
 
-		RTTR_ENABLE()
-		RTTR_REGISTRATION_FRIEND
+		Entity::Handle get_handle() const;
+
+		ERA_VIRTUAL_REFLECT(IReleasable)
 
 	protected:
 		ref<Entity::EcsData> component_data = nullptr;

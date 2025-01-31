@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "scene/scene.h"
 #include "light_source.h"
 #include "render_pass.h"
 
@@ -16,9 +15,9 @@ namespace era_engine
 		shadow_map_viewport viewports[4];
 	};
 
-	NODISCARD shadow_render_command determineSunShadowInfo(directional_light& sun, bool invalidateCache);
-	NODISCARD std::pair<shadow_render_command, spot_shadow_info> determineSpotShadowInfo(const spot_light_cb& spotLight, uint32 lightID, uint32 resolution, bool invalidateCache);
-	NODISCARD std::pair<shadow_render_command, point_shadow_info> determinePointShadowInfo(const point_light_cb& pointLight, uint32 lightID, uint32 resolution, bool invalidateCache);
+	shadow_render_command determineSunShadowInfo(directional_light& sun, bool invalidateCache);
+	std::pair<shadow_render_command, spot_shadow_info> determineSpotShadowInfo(const spot_light_cb& spotLight, uint32 lightID, uint32 resolution, bool invalidateCache);
+	std::pair<shadow_render_command, point_shadow_info> determinePointShadowInfo(const point_light_cb& pointLight, uint32 lightID, uint32 resolution, bool invalidateCache);
 
 	struct shadow_render_data
 	{

@@ -1,6 +1,6 @@
-// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
-
 #pragma once
+
+#include "core_api.h"
 
 namespace era_engine
 {
@@ -35,25 +35,25 @@ namespace era_engine
 		key_f12 = VK_F12,
 	};
 
-	struct input_key
+	struct ERA_CORE_API InputKey
 	{
 		bool down;
-		bool pressEvent;
+		bool press_event;
 	};
 
-	struct input_mouse_button
+	struct ERA_CORE_API InputMouseButton
 	{
 		bool down;
-		bool clickEvent;
-		bool doubleClickEvent;
+		bool click_event;
+		bool double_click_event;
 		bool padding;
 	};
 
-	struct mouse_input
+	struct ERA_CORE_API MouseInput
 	{
-		input_mouse_button left;
-		input_mouse_button right;
-		input_mouse_button middle;
+		InputMouseButton left;
+		InputMouseButton right;
+		InputMouseButton middle;
 		float scroll;
 
 		int32 x;
@@ -67,11 +67,11 @@ namespace era_engine
 		float reldy;
 	};
 
-	struct user_input
+	struct ERA_CORE_API UserInput
 	{
-		input_key keyboard[128];
-		mouse_input mouse;
-		bool overWindow;
+		InputKey keyboard[128];
+		MouseInput mouse;
+		bool over_window;
 		bool padding[3];
 	};
 }

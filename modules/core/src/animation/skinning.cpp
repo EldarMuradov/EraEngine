@@ -140,13 +140,13 @@ namespace era_engine::animation
 
 	NODISCARD std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer_group_view& vertexBuffer, vertex_range range, uint32 numJoints)
 	{
-		uint32 jointOffset = atomicAdd(numSkinningMatricesThisFrame, numJoints);
+		uint32 jointOffset = atomic_add(numSkinningMatricesThisFrame, numJoints);
 		ASSERT(jointOffset + numJoints <= MAX_NUM_SKINNING_MATRICES_PER_FRAME);
 
-		uint32 vertexOffset = atomicAdd(totalNumVertices, range.numVertices);
+		uint32 vertexOffset = atomic_add(totalNumVertices, range.numVertices);
 		ASSERT(vertexOffset + range.numVertices <= MAX_NUM_SKINNED_VERTICES_PER_FRAME);
 
-		uint32 callIndex = atomicIncrement(numCalls);
+		uint32 callIndex = atomic_increment(numCalls);
 		ASSERT(callIndex < arraysize(calls));
 
 		calls[callIndex] =
@@ -190,10 +190,10 @@ namespace era_engine::animation
 	NODISCARD dx_vertex_buffer_group_view skinCloth(const dx_vertex_buffer_view& inpositions, uint32 gridSizeX, uint32 gridSizeY)
 	{
 		uint32 numVertices = gridSizeX * gridSizeY;
-		uint32 vertexOffset = atomicAdd(totalNumVertices, numVertices);
+		uint32 vertexOffset = atomic_add(totalNumVertices, numVertices);
 		ASSERT(vertexOffset + numVertices <= MAX_NUM_SKINNED_VERTICES_PER_FRAME);
 
-		uint32 callIndex = atomicIncrement(numClothCalls);
+		uint32 callIndex = atomic_increment(numClothCalls);
 		ASSERT(callIndex < arraysize(clothCalls));
 
 		clothCalls[callIndex] =

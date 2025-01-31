@@ -2,11 +2,13 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "window/window.h"
 
 namespace era_engine
 {
-	struct software_window : win32_window
+	struct ERA_CORE_API software_window : win32_window
 	{
 		software_window() = default;
 		software_window(software_window&) = delete;

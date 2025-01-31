@@ -3,6 +3,7 @@
 #include "terrain/water.h"
 
 #include "core/string.h"
+#include "core/math.h"
 
 #include "dx/dx_buffer.h"
 #include "dx/dx_pipeline.h"
@@ -13,6 +14,8 @@
 #include "rendering/render_resources.h"
 
 #include "geometry/mesh_builder.h"
+
+#include <rttr/registration>
 
 #include "water_rs.hlsli"
 #include "transform.hlsli"
@@ -37,10 +40,10 @@ namespace era_engine
 			waterPipeline = createReloadablePipeline(desc, { "water_vs", "water_ps" });
 		}
 
-		normalmap1 = loadTextureFromFileAsync(getAssetPath("/resources/assets/water/waterNM1.png"), image_load_flags_noncolor | image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
-		normalmap2 = loadTextureFromFileAsync(getAssetPath("/resources/assets/water/waterNM2.png"), image_load_flags_noncolor | image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
-		foamTexture = loadTextureFromFileAsync(getAssetPath("/resources/assets/water/waterFoam.dds"), image_load_flags_noncolor | image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
-		noiseTexture = loadTextureFromFileAsync(getAssetPath("/resources/assets/water/waterNoise.dds"), image_load_flags_noncolor | image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
+		normalmap1 = loadTextureFromFileAsync(get_asset_path("/resources/assets/water/waterNM1.png"), image_load_flags_noncolor | image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
+		normalmap2 = loadTextureFromFileAsync(get_asset_path("/resources/assets/water/waterNM2.png"), image_load_flags_noncolor | image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
+		foamTexture = loadTextureFromFileAsync(get_asset_path("/resources/assets/water/waterFoam.dds"), image_load_flags_noncolor | image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
+		noiseTexture = loadTextureFromFileAsync(get_asset_path("/resources/assets/water/waterNoise.dds"), image_load_flags_noncolor | image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
 	}
 
 
@@ -103,10 +106,28 @@ namespace era_engine
 		cl->draw(4, 1, 0, 0);
 	}
 
-	void water_component::render(const render_camera& camera, transparent_render_pass* renderPass, vec3 positionOffset, vec2 scale, float dt, uint32 entityID)
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+		rttr::registration::class_<WaterComponent>("WaterComponent")
+			.constructor<>()
+			.constructor<ref<Entity::EcsData>, const water_settings&>()
+			.property("settings", &WaterComponent::settings);
+	}
+
+	WaterComponent::WaterComponent(ref<Entity::EcsData> _data, const water_settings& _settings)
+		: Component(_data), settings(_settings)
+	{
+	}
+
+	WaterComponent::~WaterComponent()
+	{
+	}
+
+	void WaterComponent::render(const render_camera& camera, transparent_render_pass* render_pass, const vec3& position_offset, const vec2& scale, float dt)
 	{
 		time += dt;
-		renderPass->renderObject<water_pipeline, water_render_data>({ createModelMatrix(positionOffset, quat::identity, vec3(scale.x, 1.f, scale.y)), settings, time });
+		render_pass->renderObject<water_pipeline, water_render_data>({ create_model_matrix(position_offset, quat::identity, vec3(scale.x, 1.f, scale.y)), settings, time });
 	}
 
 }

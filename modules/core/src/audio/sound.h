@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "audio/synth.h"
 #include "core/string.h"
 #include "asset/asset.h"
@@ -13,7 +15,7 @@
 
 namespace era_engine
 {
-    struct sound_id
+    struct ERA_CORE_API sound_id
     {
         const char* id;
         uint64 hash;
@@ -32,15 +34,15 @@ namespace era_engine
         "Effects",
     };
 
-    struct sound_spec
+    struct ERA_CORE_API sound_spec
     {
         std::string name;
-        asset_handle asset;
+        AssetHandle asset;
         sound_type type;
         bool stream;
     };
 
-    struct audio_sound
+    struct ERA_CORE_API audio_sound
     {
         virtual ~audio_sound();
 
@@ -61,7 +63,7 @@ namespace era_engine
         sound_type type;
     };
 
-    struct sound_settings
+    struct ERA_CORE_API sound_settings
     {
         float volume = 1.f;
         float pitch = 1.f;
@@ -85,7 +87,7 @@ namespace era_engine
         static_assert(std::is_base_of_v<audio_synth, Synth_>, "Synthesizer must inherit from audio_synth");
         static_assert(sizeof(Synth_) <= MAX_SYNTH_SIZE);
 
-        sound_id id = { idStr, hashString64(idStr) };
+        sound_id id = { idStr, hash_string64(idStr) };
         sound_spec spec = { {}, type, stream };
 
         bool checkForExistingSynthSound(sound_id);
