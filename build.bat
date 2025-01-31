@@ -20,10 +20,6 @@ py --version
 echo    Python      - Ready.
 
 mkdir _build
-
-xcopy resources/imgui.ini _build/apps/editor/Debug /Q
-xcopy resources/imgui.ini _build/apps/editor/Release /Q
-
 cd _build
 
 echo Creating venv...

@@ -4,7 +4,7 @@ set(ERA_ENGINE_PATH ${CMAKE_SOURCE_DIR})
 
 include(cmake/common.cmake)
 
-project(Engine VERSION 1.0)
+project(EraEngine VERSION 1.0)
 
 add_subdirectory(modules/thirdparty-entt)
 add_subdirectory(modules/thirdparty-yaml-cpp)
