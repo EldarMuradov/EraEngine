@@ -6,7 +6,7 @@ namespace era_engine
 {
 	extern bool log_window_open;
 
-	enum MessageType
+	enum MessageType : uint8_t
 	{
 		message_type_normal,
 		message_type_warning,
@@ -27,6 +27,8 @@ namespace era_engine
 #define LOG_WARNING(message, ...) log_message(message_type_warning, message, __VA_ARGS__)
 #define LOG_ERROR(message, ...) log_message(message_type_error, message, __VA_ARGS__)
 #endif
+
+#include "core_api.h"
 
 #include "ecs/system.h"
 

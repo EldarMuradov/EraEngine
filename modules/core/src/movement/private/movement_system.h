@@ -5,23 +5,22 @@
 namespace era_engine
 {
 	class InputRootComponent;
-	class RendererHolderRootComponent;
+	class MovementComponent;
 
-	class InputSystem final : public System
+	class MovementSystem final : public System
 	{
 	public:
-		InputSystem(World* _world);
-		~InputSystem();
+		MovementSystem(World* _world);
+		~MovementSystem();
 
 		void init() override;
 		void update(float dt) override;
 
-		void show_input(float dt);
+		void reset_input(float dt);
 
 		ERA_VIRTUAL_REFLECT(System)
 
 	private:
 		InputRootComponent* input_rc = nullptr;
-		RendererHolderRootComponent* renderer_holder_rc = nullptr;
 	};
 }

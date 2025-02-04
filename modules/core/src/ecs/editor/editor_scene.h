@@ -23,12 +23,10 @@ namespace era_engine
 
 		EditorScene()
 		{
-			runtime_world = make_ref<World>("GameWorld");
 		}
 
 		static void init()
 		{
-			runtime_world->init();
 		}
 
 		static ref<World> get_current_world()

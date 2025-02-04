@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 		std::cerr << ex.what() << "\n";
 
 		std::ofstream output("logs/error_log.txt");
-		output << "Runtime Error> " << ex.what() << std::endl;
+		output << "Runtime Error>" << ex.what() << std::endl;
 		output.close();
 
 		std::this_thread::sleep_for(std::chrono::duration<float>(5000.0f));

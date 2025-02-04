@@ -85,6 +85,13 @@ namespace era_engine
 
 	NODISCARD ModelAsset load_3d_model_from_file(const fs::path& path, uint32 mesh_flags = mesh_flag_default);
 
-	bool is_mesh_extension(const fs::path& extension);
-	bool is_mesh_extension(const std::string& extension);
+	inline bool is_mesh_extension(const fs::path& extension)
+	{
+		return extension == ".fbx" || extension == ".obj" || extension == ".bin";
+	}
+
+	inline bool is_mesh_extension(const std::string& extension)
+	{
+		return extension == ".fbx" || extension == ".obj" || extension == ".bin";
+	}
 }

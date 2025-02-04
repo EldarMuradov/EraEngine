@@ -16,6 +16,12 @@ namespace era_engine
 	{
 	public:
 
+		directional_light() = default;
+		directional_light(const directional_light& other) noexcept = default;
+		directional_light(directional_light&& other) noexcept = default;
+		directional_light& operator=(const directional_light& other) noexcept = default;
+		directional_light& operator=(directional_light&& other) noexcept = default;
+
 		void updateMatrices(const render_camera& camera);
 
 		vec4 cascadeDistances;

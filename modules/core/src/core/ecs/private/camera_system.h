@@ -4,24 +4,23 @@
 
 namespace era_engine
 {
-	struct Allocator;
-	class RendererHolderRootComponent;
-}
 
-namespace era_engine::animation
-{
-	class AnimationSystem final : public System
+	class InputRootComponent;
+	class RendererHolderRootComponent;
+
+	class CameraSystem final : public System
 	{
 	public:
-		AnimationSystem(World* _world);
-		~AnimationSystem();
+		CameraSystem(World* _world);
+		~CameraSystem();
 
 		void init() override;
 		void update(float dt) override;
 
 		ERA_VIRTUAL_REFLECT(System)
+
 	private:
-		Allocator* allocator = nullptr;
+		InputRootComponent* input_rc = nullptr;
 		RendererHolderRootComponent* renderer_holder_rc = nullptr;
 	};
 }

@@ -11,6 +11,8 @@
 
 #include "rendering/render_utils.h"
 
+#include <rttr/type>
+
 namespace era_engine
 {
 	struct ERA_CORE_API dx_window : win32_window
@@ -39,6 +41,8 @@ namespace era_engine
 		uint32 currentBackbufferIndex;
 
 		color_depth colorDepth;
+
+		RTTR_ENABLE()
 
 	private:
 		void updateRenderTargetViews();

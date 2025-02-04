@@ -2,7 +2,7 @@
 
 #pragma once
 
-#ifdef DEBUG || _DEBUG || ERA_RUNTIME
+#ifdef _DEBUG
 #define ENABLE_DLSS 0
 #else
 #define ENABLE_DLSS 0

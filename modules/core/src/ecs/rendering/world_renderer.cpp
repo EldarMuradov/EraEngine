@@ -319,7 +319,7 @@ namespace era_engine
 		}
 	}
 
-	static void renderStaticObjects(ref<World> world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
+	static void renderStaticObjects(World* world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
 	{
 		CPU_PROFILE_BLOCK("Static objects");
@@ -494,7 +494,7 @@ namespace era_engine
 		}
 	}
 
-	static void renderDynamicObjects(ref<World> world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
+	static void renderDynamicObjects(World* world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
 	{
 		CPU_PROFILE_BLOCK("Dynamic objects");
@@ -513,7 +513,7 @@ namespace era_engine
 		}
 	}
 
-	static void renderAnimatedObjects(ref<World> world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
+	static void renderAnimatedObjects(World* world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
 	{
 		CPU_PROFILE_BLOCK("Animated objects");
@@ -600,7 +600,7 @@ namespace era_engine
 		}
 	}
 
-	static void renderTerrain(const render_camera& camera, ref<World> world, Allocator& arena, Entity::Handle selectedObjectID,
+	static void renderTerrain(const render_camera& camera, World* world, Allocator& arena, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
 		compute_pass* computePass, float dt)
 	{
@@ -637,7 +637,7 @@ namespace era_engine
 		}
 	}
 
-	static void renderTrees(ref<World> world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
+	static void renderTrees(World* world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
 		float dt)
 	{
@@ -695,7 +695,7 @@ namespace era_engine
 		}
 	}
 
-	static void renderCloth(ref<World> world, Entity::Handle selectedObjectID,
+	static void renderCloth(World* world, Entity::Handle selectedObjectID,
 		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass)
 	{
 		CPU_PROFILE_BLOCK("Cloth");
@@ -783,7 +783,7 @@ namespace era_engine
 		sunShadowRenderPass->copyFromStaticCache = !command.renderStaticGeometry;
 	}
 
-	static void setupSpotShadowPasses(ref<World> world, scene_lighting& lighting, bool invalidateShadowMapCache)
+	static void setupSpotShadowPasses(World* world, scene_lighting& lighting, bool invalidateShadowMapCache)
 	{
 		uint32 numSpotLights = world->number_of_components_of_type<SpotLightComponent>();
 		if (numSpotLights)
@@ -817,7 +817,7 @@ namespace era_engine
 		}
 	}
 
-	static void setupPointShadowPasses(ref<World> world, scene_lighting& lighting, bool invalidateShadowMapCache)
+	static void setupPointShadowPasses(World* world, scene_lighting& lighting, bool invalidateShadowMapCache)
 	{
 		uint32 numPointLights = world->number_of_components_of_type<PointLightComponent>();
 		if (numPointLights)
@@ -854,7 +854,7 @@ namespace era_engine
 		}
 	}
 
-	void render_world(const render_camera& camera, ref<World> world, Allocator& arena, Entity::Handle selectedObjectID, directional_light& sun, scene_lighting& lighting, bool invalidateShadowMapCache, opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass, compute_pass* computePass, float dt)
+	void render_world(const render_camera& camera, World* world, Allocator& arena, Entity::Handle selectedObjectID, directional_light& sun, scene_lighting& lighting, bool invalidateShadowMapCache, opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass, compute_pass* computePass, float dt)
 	{
 		CPU_PROFILE_BLOCK("Submit scene render commands");
 

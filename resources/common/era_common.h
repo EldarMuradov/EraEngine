@@ -2,7 +2,7 @@
 
 #pragma once
 
-#define NOMINMAX
+#define NOMINMAX 1
 #define WIN32_LEAN_AND_MEAN
 
 #define LOG_LEVEL_PROFILE 1

@@ -1,10 +1,15 @@
 #include "core/ecs/private/input_system.h"
 #include "core/ecs/input_root_component.h"
+#include "core/ecs/input_reciever_component.h"
 #include "core/imgui.h"
 #include "core/log.h"
 #include "core/cpu_profiling.h"
 
+#include "rendering/main_renderer.h"
+#include "rendering/ecs/renderer_holder_root_component.h"
+
 #include "ecs/update_groups.h"
+#include "ecs/base_components/transform_component.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui/imgui_internal.h>
@@ -18,10 +23,9 @@ namespace era_engine
 	{
 		using namespace rttr;
 
-		rttr::registration::class_<InputSystem>("InputSystem")
+		registration::class_<InputSystem>("InputSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr)
-			.method("update", &InputSystem::update)(metadata("update_group", update_types::INPUT))
-			.method("show_input", &InputSystem::show_input)(metadata("update_group", update_types::END));
+			.method("update", &InputSystem::update)(metadata("update_group", update_types::INPUT));
 	}
 
 	InputSystem::InputSystem(World* _world)
@@ -29,6 +33,9 @@ namespace era_engine
 	{
 		input_rc = world->add_root_component<InputRootComponent>();
 		ASSERT(input_rc != nullptr);
+
+		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
+		ASSERT(renderer_holder_rc != nullptr);
 	}
 
 	InputSystem::~InputSystem()
@@ -43,12 +50,20 @@ namespace era_engine
 	{
 		static bool app_focused_last_frame = true;
 
+		ImGui::BeginWindowHiddenTabBar("Scene Viewport");
+		uint32 render_width = (uint32)ImGui::GetContentRegionAvail().x;
+		uint32 render_height = (uint32)ImGui::GetContentRegionAvail().y;
+
+		renderer_holder_rc->width = render_width;
+		renderer_holder_rc->height = render_height;
+
+		main_renderer* renderer = renderer_holder_rc->renderer;
+
+		ImGui::Image(renderer->frameResult, render_width, render_height);
+
 		CPU_PROFILE_BLOCK("Collect user input");
 
 		UserInput& input = input_rc->frame_input;
-
-		uint32 render_width = (uint32)ImGui::GetContentRegionAvail().x;
-		uint32 render_height = (uint32)ImGui::GetContentRegionAvail().y;
 
 		ImGuiIO& io = ImGui::GetIO();
 		if (ImGui::IsItemHovered())
@@ -124,18 +139,25 @@ namespace era_engine
 			(input.keyboard['D'].down ? 1.0f : 0.0f) + (input.keyboard['A'].down ? -1.f : 0.0f),
 			(input.keyboard['E'].down ? 1.0f : 0.0f) + (input.keyboard['Q'].down ? -1.f : 0.0f),
 			(input.keyboard['W'].down ? -1.0f : 0.0f) + (input.keyboard['S'].down ? 1.f : 0.0f)
-		) * (input.keyboard[key_shift].down ? 3.0f : 1.f) * (input.keyboard[key_ctrl].down ? 0.1f : 1.0f);
+		);
 
 		input_rc->last_input = input_rc->current_input;
-		input_rc->desired_input = current_input;
 		input_rc->current_input = current_input;
 
 		app_focused_last_frame = ImGui::IsMousePosValid();
-	}
 
-	void InputSystem::show_input(float dt)
-	{
-		LOG_MESSAGE("Frame input is: X: %f Y: %f Z: %f", input_rc->current_input.x, input_rc->current_input.y, input_rc->current_input.z);
+		renderer->beginFrame(render_width, render_height);
+
+		for (auto [handle, transform, reciever] : world->group(components_group<TransformComponent, InputRecieverComponent>).each())
+		{
+			if (!reciever.is_active())
+			{
+				continue;
+			}
+
+			reciever.frame_input = input_rc->frame_input;
+			reciever.current_input = input_rc->current_input;
+		}
 	}
 
 }

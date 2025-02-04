@@ -4,8 +4,18 @@
 
 #include "dx/dx_context.h"
 
+#include <rttr/registration>
+
 namespace era_engine
 {
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+
+		registration::class_<dx_window>("dx_window")
+			.constructor<>();
+	}
+
 	static bool checkTearingSupport(dx_factory factory)
 	{
 		BOOL allowTearing = FALSE;

@@ -10,9 +10,11 @@
 #include "rendering/debug_visualization.h"
 #include "rendering/light_probe.h"
 #include "rendering/raytraced_reflections.h"
+#include "rendering/pbr_raytracer.h"
 #include "rendering/shadow_map.h"
 
 #include "core/random.h"
+#include "core/job_system.h"
 
 #include "dx/dx_context.h"
 
@@ -39,7 +41,7 @@ namespace era_engine
 		initializeTexturePreprocessing();
 		initializeDepthPrepassPipelines();
 		initializeOutlinePipelines();
-		era_engine::animation::initializeSkinning();
+		animation::initializeSkinning();
 		initializeShadowPipelines();
 		initializeTerrainPipelines();
 		initializeLightProbePipelines();
@@ -108,4 +110,73 @@ namespace era_engine
 		outCB.jitter = jitter;
 	}
 
+	raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh)
+	{
+		if (dxContext.featureSupport.raytracing())
+		{
+			raytracing_blas_builder blasBuilder;
+			std::vector<ref<pbr_material>> raytracingMaterials;
+
+			for (auto& sm : mesh->submeshes)
+			{
+				blasBuilder.push(mesh->mesh.vertexBuffer, mesh->mesh.indexBuffer, sm.info);
+				raytracingMaterials.push_back(sm.material);
+			}
+
+			ref<raytracing_blas> blas = blasBuilder.finish();
+			raytracing_object_type type = pbr_raytracer::defineObjectType(blas, raytracingMaterials);
+			return type;
+		}
+		else
+		{
+			return {};
+		}
+	}
+
+	extern "C" void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh)
+	{
+		struct add_ray_tracing_data
+		{
+			Entity entity;
+			ref<multi_mesh> mesh;
+		};
+
+		add_ray_tracing_data data = { entity, mesh };
+
+		low_priority_job_queue.createJob<add_ray_tracing_data>([](add_ray_tracing_data& data, JobHandle)
+			{
+				data.mesh->loadJob.wait_for_completion();
+
+				struct create_component_data
+				{
+					Entity entity;
+					raytracing_object_type blas;
+				};
+
+				create_component_data createData = { data.entity, defineBlasFromMesh(data.mesh) };
+
+				main_thread_job_queue.createJob<create_component_data>([](create_component_data& data, JobHandle)
+					{
+						data.entity.add_component<RaytraceComponent>(data.blas);
+					}, createData).submit_now();
+
+			}, data).submit_now();
+	}
+
+	extern "C" void initializeAnimationComponentAsync(Entity entity, ref<multi_mesh> mesh)
+	{
+		struct add_animation_data
+		{
+			Entity entity;
+			ref<multi_mesh> mesh;
+		};
+
+		add_animation_data data = { entity, mesh };
+
+		main_thread_job_queue.createJob<add_animation_data>([](add_animation_data& data, JobHandle job)
+			{
+				data.mesh->loadJob.wait_for_completion();
+				data.entity.get_component<animation::AnimationComponent>().initialize(data.mesh->skeleton.clips);
+			}, data).submit_now();
+	}
 }

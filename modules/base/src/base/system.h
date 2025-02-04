@@ -10,7 +10,7 @@ namespace era_engine
 
 	enum class UpdateType : uint8_t
 	{
-		NORMAL,
+		NORMAL = 0,
 		FIXED
 	};
 

@@ -8,7 +8,7 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		rttr::registration::class_<InputRootComponent>("InputRootComponent")
+		registration::class_<InputRootComponent>("InputRootComponent")
 			.constructor<ref<Entity::EcsData>>();
 	}
 
@@ -27,17 +27,12 @@ namespace era_engine
 		return current_input;
 	}
 
-	const vec3& InputRootComponent::get_desired_input() const
-	{
-		return desired_input;
-	}
-
 	const vec3& InputRootComponent::get_last_input() const
 	{
 		return last_input;
 	}
 
-	const UserInput& era_engine::InputRootComponent::get_frame_input() const
+	const UserInput& InputRootComponent::get_frame_input() const
 	{
 		return frame_input;
 	}

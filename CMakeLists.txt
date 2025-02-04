@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.12)
 set(ERA_ENGINE_PATH ${CMAKE_SOURCE_DIR})
 
 include(cmake/common.cmake)
+include(cmake/deploy.cmake)
 
 project(EraEngine VERSION 1.0)
 
@@ -17,5 +18,8 @@ add_subdirectory(modules/physics)
 
 add_subdirectory(apps/editor)
 add_subdirectory(apps/example_game)
+
+add_deploy_target(editor)
+add_deploy_target(example_game)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

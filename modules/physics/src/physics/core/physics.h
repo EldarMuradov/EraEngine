@@ -116,12 +116,12 @@ namespace era_engine::physics
 		physx::RaycastCCDManager* raycast_ccd = nullptr;
 #endif
 
-		PhysicsAllocatorCallback allocator_callback;
+		PhysicsAllocatorCallback* allocator_callback = nullptr;
 		ErrorReporter error_reporter;
 
 		ProfilerCallback profiler_callback;
 
-		FixedStepper stepper;
+		FixedStepper* stepper = nullptr;
 
 		SimulationFilterCallback simulation_filter_callback;
 		ref<SimulationEventCallback> simulation_event_callback = nullptr;

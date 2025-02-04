@@ -63,14 +63,4 @@ namespace era_engine
 
 		return result;
 	}
-
-	bool is_mesh_extension(const fs::path& extension)
-	{
-		return extension == ".fbx" || extension == ".obj" || extension == ".bin";
-	}
-
-	bool is_mesh_extension(const std::string& extension)
-	{
-		return extension == ".fbx" || extension == ".obj" || extension == ".bin";
-	}
 }
