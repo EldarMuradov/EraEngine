@@ -176,7 +176,8 @@ namespace era_engine
 		main_thread_job_queue.createJob<add_animation_data>([](add_animation_data& data, JobHandle job)
 			{
 				data.mesh->loadJob.wait_for_completion();
-				data.entity.get_component<animation::AnimationComponent>().initialize(data.mesh->skeleton.clips);
+				data.entity.get_component<animation::SkeletonComponent>().skeleton = &data.mesh->skeleton;
+				data.entity.get_component<animation::AnimationComponent>().initialize(data.mesh->animation_skeleton.clips);
 			}, data).submit_now();
 	}
 }

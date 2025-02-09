@@ -124,29 +124,50 @@ namespace era_engine::animation
 		LimbDimensions dimensions;
 	};
 
+	class ERA_CORE_API Skeleton
+	{
+	public:
+		Skeleton() = default;
+
+		void analyze_joints(const vec3* positions, const void* others, uint32 other_stride, uint32 num_vertices);
+
+		void blend_local_transforms(const trs* local_transforms1, const trs* local_transforms2, float t, trs* out_blended_local_transforms) const;
+		void get_skinning_matrices_from_local_transforms(const trs* local_transforms, mat4* out_skinning_matrices, const trs& world_transform = trs::identity) const;
+		void get_skinning_matrices_from_local_transforms(const trs* local_transforms, trs* out_global_transforms, mat4* out_skinning_matrices, const trs& world_transform = trs::identity) const;
+		void get_skinning_matrices_from_global_transforms(const trs* global_transforms, mat4* out_skinning_matrices) const;
+		void get_skinning_matrices_from_global_transforms(const trs* global_transforms, mat4* out_skinning_matrices, const trs& world_transform) const;
+
+		void pretty_print_hierarchy() const;
+
+	public:
+		std::vector<SkeletonJoint> joints;
+		std::unordered_map<std::string, uint32> name_to_joint_id;
+		SkeletonLimb limbs[limb_type_count];
+	};
+
 	struct ERA_CORE_API AnimationSkeleton
 	{
-		void analyzeJoints(const vec3* positions, const void* others, uint32 otherStride, uint32 numVertices);
-
 		void sampleAnimation(const AnimationClip& clip, float time, trs* outLocalTransforms, trs* outRootMotion = 0) const;
 		void sampleAnimation(uint32 index, float time, trs* outLocalTransforms, trs* outRootMotion = 0) const;
-		void blendLocalTransforms(const trs* localTransforms1, const trs* localTransforms2, float t, trs* outBlendedLocalTransforms) const;
-		void getSkinningMatricesFromLocalTransforms(const trs* localTransforms, mat4* outSkinningMatrices, const trs& worldTransform = trs::identity) const;
-		void getSkinningMatricesFromLocalTransforms(const trs* localTransforms, trs* outGlobalTransforms, mat4* outSkinningMatrices, const trs& worldTransform = trs::identity) const;
-		void getSkinningMatricesFromGlobalTransforms(const trs* globalTransforms, mat4* outSkinningMatrices) const;
-		void getSkinningMatricesFromGlobalTransforms(const trs* globalTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const;
 
 		std::vector<uint32> getClipsByName(const std::string& name);
-
-		void prettyPrintHierarchy() const;
-
-		std::vector<SkeletonJoint> joints;
-		std::unordered_map<std::string, uint32> nameToJointID;
 
 		std::vector<AnimationClip> clips;
 		std::vector<fs::path> files;
 
-		SkeletonLimb limbs[limb_type_count];
+		Skeleton* skeleton = nullptr;
+	};
+
+	class ERA_CORE_API SkeletonComponent : public Component
+	{
+	public:
+		SkeletonComponent(ref<Entity::EcsData> _data);
+		virtual ~SkeletonComponent();
+
+		ERA_VIRTUAL_REFLECT(Component)
+
+	public:
+		Skeleton* skeleton = nullptr;
 	};
 
 	struct ERA_CORE_API AnimationInstance

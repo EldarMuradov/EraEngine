@@ -54,7 +54,8 @@ namespace era_engine
 #define MODULE_REGISTRATION															\
 	{																				\
 		Engine * engine_ptr = static_cast<Engine*>(engine);							\
-		WorldSystemScheduler* scheduler = engine_ptr->get_system_scheduler();		\
+		World* world = get_world_by_name("GameWorld");								\
+		WorldSystemScheduler* scheduler = world->get_system_scheduler();			\
 		rttr::library module_lib(name);												\
 		if (module_lib.load())														\
 		{																			\

@@ -146,8 +146,6 @@ namespace era_engine
 
 		app_focused_last_frame = ImGui::IsMousePosValid();
 
-		renderer->beginFrame(render_width, render_height);
-
 		for (auto [handle, transform, reciever] : world->group(components_group<TransformComponent, InputRecieverComponent>).each())
 		{
 			if (!reciever.is_active())

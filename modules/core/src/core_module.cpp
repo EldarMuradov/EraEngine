@@ -21,7 +21,10 @@ namespace era_engine
         IModule::initialize(engine);
 
         Engine* engine_ptr = static_cast<Engine*>(engine);
-        WorldSystemScheduler* scheduler = engine_ptr->get_system_scheduler();
+
+        World* world = get_world_by_name("GameWorld");
+        WorldSystemScheduler* scheduler = world->get_system_scheduler();
+
         scheduler->initialize_systems(rttr::type::get_types());
 
         return true;

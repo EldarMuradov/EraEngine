@@ -38,5 +38,10 @@ namespace era_engine
 		return type;
 	}
 
+	void CameraHolderComponent::set_camera_type(CameraType _type)
+	{
+		type = _type;
+	}
+
 	
 }

@@ -82,7 +82,10 @@ namespace era_engine
 			}
 		}
 
-		AnimationSkeleton& skeleton = result->skeleton;
+		Skeleton& skeleton = result->skeleton;
+
+		AnimationSkeleton& animation_skeleton = result->animation_skeleton;
+		animation_skeleton.skeleton = &result->skeleton;
 
 		// Load skeleton
 		if (!asset.skeletons.empty()/* && flags & mesh_creation_flags_with_skin*/)
@@ -90,8 +93,8 @@ namespace era_engine
 			SkeletonAsset& in = asset.skeletons.front();
 
 			skeleton.joints = std::move(in.joints);
-			skeleton.nameToJointID = std::move(in.name_to_joint_id);
-			skeleton.analyzeJoints(builder.getPositions(), (uint8*)builder.getOthers() + builder.getSkinOffset(), builder.getOthersSize(), builder.getNumVertices());
+			skeleton.name_to_joint_id = std::move(in.name_to_joint_id);
+			skeleton.analyze_joints(builder.getPositions(), (uint8*)builder.getOthers() + builder.getSkinOffset(), builder.getOthersSize(), builder.getNumVertices());
 		}
 
 		// Load animations
@@ -99,7 +102,7 @@ namespace era_engine
 		{
 			AnimationAsset& in = anim;
 
-			AnimationClip& clip = skeleton.clips.emplace_back();
+			AnimationClip& clip = animation_skeleton.clips.emplace_back();
 			clip.name = std::move(in.name);
 			clip.filename = sceneFilename;
 			clip.length_in_seconds = in.duration;
@@ -114,8 +117,8 @@ namespace era_engine
 
 			for (auto& [name, joint] : in.joints)
 			{
-				auto it = skeleton.nameToJointID.find(name);
-				if (it != skeleton.nameToJointID.end())
+				auto it = skeleton.name_to_joint_id.find(name);
+				if (it != skeleton.name_to_joint_id.end())
 				{
 					AnimationJoint& j = clip.joints[it->second];
 					j = joint;

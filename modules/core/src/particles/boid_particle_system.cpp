@@ -62,16 +62,17 @@ namespace era_engine
 		if (cartoonMesh)
 		{
 			const dx_mesh& mesh = cartoonMesh->mesh;
-			animation::AnimationSkeleton& skeleton = cartoonMesh->skeleton;
+			animation::Skeleton& skeleton = cartoonMesh->skeleton;
+			animation::AnimationSkeleton& animation_skeleton = cartoonMesh->animation_skeleton;
 
 			time += dt;
-			time = fmod(time, skeleton.clips[0].length_in_seconds);
+			time = fmod(time, animation_skeleton.clips[0].length_in_seconds);
 
 			auto [skinnedVertexBuffer, skinningMatrices] = era_engine::animation::skinObject(mesh.vertexBuffer, cartoonMesh->submeshes[0].info, (uint32)skeleton.joints.size());
 
 			trs localTransforms[128];
-			skeleton.sampleAnimation(0, time, localTransforms);
-			skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, skinningMatrices);
+			animation_skeleton.sampleAnimation(0, time, localTransforms);
+			skeleton.get_skinning_matrices_from_local_transforms(localTransforms, skinningMatrices);
 
 			this->skinnedVertexBuffer = skinnedVertexBuffer;
 			this->submesh.baseVertex = 0;

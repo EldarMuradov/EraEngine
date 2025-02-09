@@ -19,7 +19,7 @@ add_subdirectory(modules/physics)
 add_subdirectory(apps/editor)
 add_subdirectory(apps/example_game)
 
-add_deploy_target(editor)
-add_deploy_target(example_game)
+era_add_deploy_target(editor)
+era_add_deploy_target(example_game)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "core/math.h"
 #include "core/input.h"
 #include "core/camera.h"
@@ -12,7 +14,7 @@
 
 namespace era_engine
 {
-	struct transformation_gizmo
+	struct ERA_CORE_API transformation_gizmo
 	{
 		bool manipulateTransformation(trs& transform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass);
 		bool manipulatePosition(vec3& position, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass);
@@ -67,5 +69,5 @@ namespace era_engine
 		vec3 originalScale;
 	};
 
-	void initializeTransformationGizmos();
+	ERA_CORE_API void initializeTransformationGizmos();
 }

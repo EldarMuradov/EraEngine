@@ -27,7 +27,7 @@ namespace era_engine
 
 	WorldSystemScheduler::~WorldSystemScheduler()
 	{
-		updates.clear();
+		grouped_ordered_tasks.clear();
 		systems.clear();
 		system_types.clear();
 	}
@@ -91,14 +91,14 @@ namespace era_engine
 	{
 		JobHandle handle = run(elapsed, update_types::INPUT, main_thread_job_queue);
 		handle.submit_now();
-		//handle.wait_for_completion();
+		handle.wait_for_completion();
 	}
 
 	void WorldSystemScheduler::begin(float elapsed)
 	{
 		JobHandle handle = run(elapsed, update_types::BEGIN, main_thread_job_queue);
 		handle.submit_now();
-		//handle.wait_for_completion();
+		handle.wait_for_completion();
 	}
 
 	void WorldSystemScheduler::render_update(float elapsed)
@@ -124,14 +124,14 @@ namespace era_engine
 
 		JobHandle after_physics_handle = run(elapsed, update_types::AFTER_PHYSICS, main_thread_job_queue);
 		after_physics_handle.submit_after(physics_handle);
-		//after_physics_handle.wait_for_completion();
+		after_physics_handle.wait_for_completion();
 	}
 
 	void WorldSystemScheduler::end(float elapsed)
 	{
 		JobHandle handle = run(elapsed, update_types::END, main_thread_job_queue);
 		handle.submit_now();
-		//handle.wait_for_completion();
+		handle.wait_for_completion();
 	}
 
 	JobHandle WorldSystemScheduler::run(float elapsed, const UpdateGroup& group, JobQueue& queue)

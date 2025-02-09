@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ecs/system.h"
+#include <ecs/system.h>
 
 namespace era_engine
 {

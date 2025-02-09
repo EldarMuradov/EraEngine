@@ -33,19 +33,28 @@ namespace era_engine
 	template<typename... Type_>
 	inline constexpr ComponentsGroup<Type_...> components_group{};
 
-	class ERA_CORE_API World
+	class WorldSystemScheduler;
+
+	class ERA_CORE_API World final
 	{
 		struct WorldData
 		{
 			std::mutex sync;
+
 			std::unordered_map<Entity::Handle, ref<Entity::EcsData>> entity_datas;
+
 			entt::registry registry;
+
 			Entity root_entity;
+
+			WorldSystemScheduler* scheduler = nullptr;
+
 			const char* name = nullptr;
 		};
 
 	public:
 		World(const char* _name);
+		~World();
 
 		World(const World& _world) = delete;
 		World& operator=(const World* _world) const = delete;
@@ -69,6 +78,8 @@ namespace era_engine
 		size_t size() const noexcept;
 
 		entt::registry& get_registry();
+
+		WorldSystemScheduler* get_system_scheduler() const;
 
 		template <typename Component_>
 		Entity get_entity_from_component(const Component_& comp)
@@ -209,11 +220,13 @@ namespace era_engine
 		ERA_REFLECT
 
 	private:
-		ref<WorldData> world_data = nullptr;
+		WorldData* world_data = nullptr;
 
 		friend class Entity;
 		friend class EntityEditorUtils;
 	};
 
-	World* get_world_by_name(const char* _name);
+	ERA_CORE_API World* get_world_by_name(const char* _name);
+
+	ERA_CORE_API std::unordered_map<std::string, World*>& get_worlds();
 }

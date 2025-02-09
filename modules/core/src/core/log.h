@@ -34,10 +34,10 @@ namespace era_engine
 
 namespace era_engine
 {
-	void log_message_internal(MessageType type, const char* file, const char* function, uint32 line, const char* format, ...);
-	void log_message(MessageType type, const char* format, ...);
+	ERA_CORE_API void log_message_internal(MessageType type, const char* file, const char* function, uint32 line, const char* format, ...);
+	ERA_CORE_API void log_message(MessageType type, const char* format, ...);
 
-	class LogSystem final : public System
+	class ERA_CORE_API LogSystem final : public System
 	{
 	public:
 		LogSystem(World* _world);
@@ -55,8 +55,5 @@ namespace era_engine
 #define LOG_MESSAGE(...)
 #define LOG_WARNING(...)
 #define LOG_ERROR(...)
-
-#define initializeMessageLog(...)
-#define updateMessageLog(...)
 
 #endif

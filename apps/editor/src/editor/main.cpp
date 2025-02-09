@@ -2,9 +2,7 @@
 #include <fstream>
 #include <iostream>
 
-#include <engine/engine.h>
-
-#include <base/module_loader.h>
+#include "editor/editor_startup.h"
 
 int main(int argc, char** argv)
 {
@@ -12,19 +10,8 @@ int main(int argc, char** argv)
 
 	try
 	{
-		Engine* engine = Engine::create_instance(argc, argv);
-
-		auto initial_task = [&engine]() {
-			ModuleLoader loader = ModuleLoader(engine, "physics");
-			ASSERT(loader.status());
-		};
-
-		if (!engine->run(initial_task))
-		{
-			return EXIT_FAILURE;
-		}
-
-		engine->terminate();
+		EditorStartup startup;
+		startup.start(argc, argv);
 	}
 	catch (const std::exception& ex)
 	{

@@ -1,14 +1,12 @@
-#include "movement/private/movement_system.h"
-#include "movement/movement_component.h"
+#include <game/movement/private/movement_system.h>
+#include <game/movement/movement_component.h>
+		 
+#include <core/ecs/input_reciever_component.h>
+#include <core/ecs/input_root_component.h>
+#include <core/ecs/camera_holder_component.h>
 
-#include "core/ecs/input_reciever_component.h"
-#include "core/ecs/input_root_component.h"
-#include "core/ecs/camera_holder_component.h"
-#include "core/log.h"
-#include "core/cpu_profiling.h"
-
-#include "ecs/update_groups.h"
-#include "ecs/base_components/transform_component.h"
+#include <ecs/update_groups.h>
+#include <ecs/base_components/transform_component.h>
 
 #include <rttr/policy.h>
 #include <rttr/registration>

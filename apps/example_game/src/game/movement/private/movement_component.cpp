@@ -1,4 +1,4 @@
-#include "movement/movement_component.h"
+#include "game/movement/movement_component.h"
 
 #include <rttr/registration>
 

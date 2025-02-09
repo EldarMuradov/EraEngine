@@ -17,8 +17,6 @@
 #include "core/ecs/camera_holder_component.h"
 #include "ecs/rendering/mesh_component.h"
 
-#include "movement/movement_component.h"
-
 #include "audio/audio.h"
 
 #include "terrain/terrain.h"
@@ -37,8 +35,7 @@ namespace era_engine
 		registration::class_<RenderSystem>("RenderSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr)
 			.method("before_render", &RenderSystem::before_render)(metadata("update_group", update_types::BEFORE_RENDER))
-			.method("update", &RenderSystem::update)(metadata("update_group", update_types::RENDER))
-			.method("after_render", &RenderSystem::after_render)(metadata("update_group", update_types::AFTER_RENDER));
+			.method("update", &RenderSystem::update)(metadata("update_group", update_types::RENDER));
 	}
 
 	RenderSystem::RenderSystem(World* _world)
@@ -56,14 +53,7 @@ namespace era_engine
 		{
 			raytracingTLAS.initialize();
 		}
-	}
 
-	RenderSystem::~RenderSystem()
-	{
-	}
-
-	void RenderSystem::init()
-	{
 		renderer_holder_rc->camera.initializeIngame(vec3::zero, quat::identity, deg2rad(70.f), 0.2f);
 		renderer_holder_rc->environment.setFromTexture(get_asset_path("/resources/assets/sky/sunset_in_the_chalk_quarry_4k.hdr"));
 		renderer_holder_rc->environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
@@ -104,7 +94,8 @@ namespace era_engine
 
 		{
 			Entity camera_entity = world->create_entity("Entity1");
-			camera_entity.add_component<CameraHolderComponent>().add_component<MovementComponent>().add_component<InputRecieverComponent>();
+			camera_entity.add_component<CameraHolderComponent>().add_component<InputRecieverComponent>();
+			camera_entity.get_component<CameraHolderComponent>().set_camera_type(CameraHolderComponent::FREE_CAMERA);
 			camera_entity.get_component<CameraHolderComponent>().set_render_camera(&renderer_holder_rc->camera);
 
 			Entity entity2 = world->create_entity("Entity2");
@@ -136,20 +127,6 @@ namespace era_engine
 			builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
 			groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
 
-			if (auto mesh = loadAnimatedMeshFromFileAsync(get_asset_path("/resources/assets/veribot/source/VERIBOT_final.fbx")))
-			{
-				auto& en = world->create_entity("Veribot")
-					.add_component<animation::AnimationComponent>()
-					.add_component<MeshComponent>(mesh);
-
-				TransformComponent& transform_component = en.get_component<TransformComponent>();
-				transform_component.type = TransformComponent::DYNAMIC;
-				transform_component.transform.position = vec3(5.0f);
-
-				initializeAnimationComponentAsync(en, mesh);
-				addRaytracingComponentAsync(en, mesh);
-			}
-
 			if (auto mesh = loadMeshFromFileAsync(get_asset_path("/resources/assets/Sponza/sponza.obj")))
 			{
 				auto& sponza = world->create_entity("Sponza")
@@ -160,6 +137,21 @@ namespace era_engine
 				transform_component.transform.scale = vec3(0.01f);
 
 				addRaytracingComponentAsync(sponza, mesh);
+			}
+
+			if (auto mesh = loadAnimatedMeshFromFileAsync(get_asset_path("/resources/assets/veribot/source/VERIBOT_final.fbx")))
+			{
+				auto& en = world->create_entity("Veribot")
+					.add_component<animation::AnimationComponent>()
+					.add_component<animation::SkeletonComponent>()
+					.add_component<MeshComponent>(mesh);
+
+				TransformComponent& transform_component = en.get_component<TransformComponent>();
+				transform_component.type = TransformComponent::DYNAMIC;
+				transform_component.transform.position = vec3(5.0f);
+
+				initializeAnimationComponentAsync(en, mesh);
+				addRaytracingComponentAsync(en, mesh);
 			}
 
 			auto chainMesh = make_ref<multi_mesh>();
@@ -179,9 +171,19 @@ namespace era_engine
 		}
 	}
 
+	RenderSystem::~RenderSystem()
+	{
+	}
+
+	void RenderSystem::init()
+	{
+	}
+
 	void RenderSystem::before_render(float dt)
 	{
+		main_renderer* renderer = renderer_holder_rc->renderer;
 
+		renderer->beginFrame(renderer_holder_rc->width, renderer_holder_rc->height);
 	}
 
 	void RenderSystem::update(float dt)
@@ -253,10 +255,6 @@ namespace era_engine
 
 		endFrameCommon();
 		renderer->endFrame(&input_rc->get_frame_input());
-	}
-
-	void RenderSystem::after_render(float dt)
-	{
 	}
 
 	void RenderSystem::load_custom_shaders()

@@ -1,20 +1,27 @@
 #include "ecs/world.h"
 #include "ecs/base_components/base_components.h"
+#include "ecs/world_system_scheduler.h"
 
 #include "core/sync.h"
 #include "core/log.h"
 
 namespace era_engine
 {
-	std::unordered_map<const char*, World*> worlds;
+	std::unordered_map<std::string, World*> worlds;
 
 	World::World(const char* _name)
 	{
-		world_data = make_ref<WorldData>();
+		world_data = new WorldData();
 		world_data->name = _name;
 		world_data->registry.reserve(64000);
+		world_data->scheduler = new WorldSystemScheduler(this);
 
-		worlds.emplace(_name, this);
+		worlds.emplace(std::string(_name), this);
+	}
+
+	World::~World()
+	{
+		destroy();
 	}
 
 	void World::init()
@@ -26,7 +33,7 @@ namespace era_engine
 
 	Entity World::create_entity()
 	{
-		Lock _lock{ world_data->sync};
+		std::lock_guard _lock{ world_data->sync};
 
 		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), this, &world_data->registry);
 		world_data->entity_datas.emplace(new_data->entity_handle, new_data);
@@ -44,7 +51,7 @@ namespace era_engine
 
 	Entity World::create_entity(Entity::Handle _handle)
 	{
-		Lock _lock{ world_data->sync };
+		std::lock_guard _lock{ world_data->sync };
 
 		if (world_data->entity_datas.find(_handle) == world_data->entity_datas.end())
 		{
@@ -81,7 +88,7 @@ namespace era_engine
 			return;
 		}
 
-		Lock _lock{ EntityContainer::sync };
+		std::lock_guard _lock{ EntityContainer::sync };
 
 		if (_destroy_components)
 		{
@@ -89,7 +96,7 @@ namespace era_engine
 			{
 				if (curr.second.contains(_handle))
 				{
-					IReleasable* comp = reinterpret_cast<IReleasable*>(world_data->registry.storage(curr.first)->second.get(_handle));
+					IReleasable* comp = static_cast<IReleasable*>(world_data->registry.storage(curr.first)->second.get(_handle));
 					ASSERT(comp != nullptr);
 					comp->release();
 				}
@@ -134,6 +141,8 @@ namespace era_engine
 		}
 		world_data->registry.clear();
 		world_data->entity_datas.clear();
+
+		delete world_data;
 	}
 
 	size_t World::size() const noexcept
@@ -146,6 +155,11 @@ namespace era_engine
 		return world_data->registry;
 	}
 
+	WorldSystemScheduler* World::get_system_scheduler() const
+	{
+		return world_data->scheduler;
+	}
+
 	void World::add_base_components(Entity& entity)
 	{
 		entity.add_component<TransformComponent>().add_component<ChildComponent>(weakref<Entity::EcsData>(world_data->root_entity.internal_data));
@@ -153,7 +167,12 @@ namespace era_engine
 
 	World* get_world_by_name(const char* _name)
 	{
-		return worlds[_name];
+		return worlds[std::string(_name)];
+	}
+
+	std::unordered_map<std::string, World*>& get_worlds()
+	{
+		return worlds;
 	}
 
 }

@@ -2,33 +2,16 @@
 #include <fstream>
 #include <iostream>
 
-#include <engine/engine.h>
-
-#include <base/module_loader.h>
+#include "game/game_startup.h"
 
 int main(int argc, char** argv)
 {
 	using namespace era_engine;
 
-#ifndef _DEBUG
-	//::ShowWindow(::GetConsoleWindow(), SW_HIDE);
-#endif
-
 	try
 	{
-		Engine* engine = Engine::create_instance();
-
-		auto initial_task = [&engine]() {
-			ModuleLoader loader = ModuleLoader(engine, "physics");
-			ASSERT(loader.status());
-		};
-
-		if (!engine->run(initial_task))
-		{
-			return EXIT_FAILURE;
-		}
-
-		engine->terminate();
+		GameStartup startup;
+		startup.start(argc, argv);
 	}
 	catch (const std::exception& ex)
 	{

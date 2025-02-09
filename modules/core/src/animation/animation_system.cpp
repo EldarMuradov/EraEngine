@@ -24,7 +24,7 @@ namespace era_engine::animation
 
 		rttr::registration::class_<AnimationSystem>("AnimationSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr)
-			.method("update", &AnimationSystem::update)(metadata("update_group", update_types::RENDER));
+			.method("update", &AnimationSystem::update)(metadata("update_group", update_types::BEGIN));
 	}
 
 	AnimationSystem::AnimationSystem(World* _world)

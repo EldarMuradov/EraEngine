@@ -28,7 +28,6 @@ namespace era_engine
 		void init() override;
 		void before_render(float dt);
 		void update(float dt) override;
-		void after_render(float dt);
 
 		ERA_VIRTUAL_REFLECT(System)
 

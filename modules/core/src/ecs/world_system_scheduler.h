@@ -12,7 +12,7 @@ namespace era_engine
 {
 	class World;
 
-	struct Task
+	struct ERA_CORE_API Task
 	{
 		Task(System* _system,
 			 const rttr::method& _method,
@@ -35,11 +35,6 @@ namespace era_engine
 	class ERA_CORE_API WorldSystemScheduler
 	{
 	public:
-		struct Update
-		{
-			std::vector<std::pair<System*, rttr::method>> tasks;
-		};
-
 		WorldSystemScheduler(World* _world);
 		~WorldSystemScheduler();
 
@@ -67,8 +62,6 @@ namespace era_engine
 		World* world = nullptr;
 		std::vector<System*> systems;
 		std::set<rttr::type> system_types;
-
-		std::unordered_map<std::string, Update> updates;
 
 		std::unordered_map<std::string, ref<Task>> tasks;
 		std::unordered_map<std::string, std::vector<std::string>> adj_list;

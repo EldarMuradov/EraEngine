@@ -1,15 +1,13 @@
 #pragma once
 
-#include "core_api.h"
+#include <core/math.h>
 
-#include "core/math.h"
-
-#include "ecs/component.h"
+#include <ecs/component.h>
 
 namespace era_engine
 {
 
-	class ERA_CORE_API MovementComponent : public Component
+	class MovementComponent : public Component
 	{
 	public:
 		MovementComponent() = default;

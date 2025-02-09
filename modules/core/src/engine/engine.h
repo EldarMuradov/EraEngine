@@ -8,7 +8,6 @@
 
 namespace era_engine
 {
-	class WorldSystemScheduler;
 
 	class ERA_CORE_API Engine final
 	{
@@ -44,16 +43,12 @@ namespace era_engine
 			return object.get_value<Object*>();
 		}
 
-		WorldSystemScheduler* get_system_scheduler() const;
-
 	private:
 		bool update();
 
 		bool running = false;
 
 		std::unordered_map<rttr::type, rttr::variant> single_objects;
-
-		WorldSystemScheduler* scheduler = nullptr;
 
 		static Engine* instance_object;
 	};

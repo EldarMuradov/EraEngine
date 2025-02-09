@@ -1,9 +1,11 @@
 #pragma once
 
-#include "ecs/system.h"
+#include <ecs/system.h>
 
 namespace era_engine
 {
+	class RendererHolderRootComponent;
+
 	class DragNDropSystem final : public System
 	{
 	public:
@@ -14,5 +16,8 @@ namespace era_engine
 		void update(float dt) override;
 
 		ERA_VIRTUAL_REFLECT(System)
+
+	private:
+		RendererHolderRootComponent* renderer_holder_rc = nullptr;
 	};
 }

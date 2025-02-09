@@ -28,6 +28,7 @@ namespace era_engine
 		render_camera* get_render_camera() const;
 
 		CameraType get_camera_type() const;
+		void set_camera_type(CameraType _type);
 
 		ERA_VIRTUAL_REFLECT(Component)
 

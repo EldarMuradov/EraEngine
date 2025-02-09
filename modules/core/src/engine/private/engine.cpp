@@ -90,6 +90,10 @@ namespace era_engine
 			{
 				ImGui::EndMenu();
 			}
+			if (ImGui::BeginMenu(std::to_string(frameID).c_str()))
+			{
+				ImGui::EndMenu();
+			}
 			ImGui::EndMainMenuBar();
 		}
 	}
@@ -127,18 +131,23 @@ namespace era_engine
 
 	Engine* Engine::instance_object = nullptr;
 
+	static bool verbose = false;
+	static bool main_menu = false;
+
 	Engine::Engine(int argc, char** argv)
 	{
 		using namespace clara;
 
 		running = true;
 		instance_object = this;
+
 #ifndef _DEBUG
 		::ShowWindow(::GetConsoleWindow(), SW_HIDE);
 #endif
 
-		bool verbose = false;
-		auto cli = Opt(verbose, "verbose")["-v"]["--verbose"]("verbose logging");
+		Parser cli;
+		cli += Opt(verbose, "verbose")["-v"]["--verbose"]("Enable verbose logging");
+		cli += Opt(main_menu, "main-menu")["-mm"]["--main-menu"]("Enable main menu bar");
 
 		auto result = cli.parse(Args(argc, argv));
 		if (!result)
@@ -150,6 +159,12 @@ namespace era_engine
 		{
 			::ShowWindow(::GetConsoleWindow(), SW_SHOW);
 		}
+
+		const bool dx_inited = dxContext.initialize();
+		ASSERT(dx_inited);
+
+		World* runtime_world = new World("GameWorld");
+		runtime_world->init();
 	}
 
 	Engine::~Engine()
@@ -173,31 +188,13 @@ namespace era_engine
 
 	bool Engine::run(const std::function<void(void)>& initial_task /* = nullptr */)
 	{
-		if (!dxContext.initialize())
-		{
-			return false;
-		}
-
 		initialize_job_system();
 		initializeFileRegistry();
 
-		dx_window* window = get_object<dx_window>();
-		window->initialize(TEXT("  New Project - Era Engine - 0.1432v1 - <DX12>"), 1920, 1080);
-		window->setIcon(get_asset_path("/resources/icons/Logo.ico"));
-		window->setCustomWindowStyle();
-		window->maximize();
-
-		//window->setFileDropCallback([](const fs::path& s) { handle_file_drop(s); });
-
-		initializeTransformationGizmos();
 		initializeRenderUtils();
 
+		dx_window* window = get_object<dx_window>();
 		initializeImGui(*window);
-
-		ref<World> runtime_world = make_ref<World>("GameWorld");
-		runtime_world->init();
-
-		scheduler = new WorldSystemScheduler(runtime_world.get());
 
 		file_browser fileBrowser;
 
@@ -210,21 +207,52 @@ namespace era_engine
 			initial_task();
 		}
 
-		scheduler->initialize_all_systems();
+		for (auto& [name, world] : get_worlds())
+		{
+			WorldSystemScheduler* scheduler = world->get_system_scheduler();
+			scheduler->initialize_all_systems();
+		}
+
+		execute_main_thread_jobs();
 
 		float dt;
 		while (newFrame(dt, *window))
 		{
-			scheduler->input(dt);
+			auto& worlds = get_worlds();
+			for (auto& [name, world] : worlds)
+			{
+				WorldSystemScheduler* scheduler = world->get_system_scheduler();
+				scheduler->input(dt);
+			}
 
-			scheduler->begin(dt);
+			for (auto& [name, world] : worlds)
+			{
+				WorldSystemScheduler* scheduler = world->get_system_scheduler();
+				scheduler->begin(dt);
+			}
 
-			scheduler->physics_update(dt);
-			scheduler->render_update(dt);
+			for (auto& [name, world] : worlds)
+			{
+				WorldSystemScheduler* scheduler = world->get_system_scheduler();
+				scheduler->physics_update(dt);
+			}
 
-			draw_debug_menu_bar(dt);
+			for (auto& [name, world] : worlds)
+			{
+				WorldSystemScheduler* scheduler = world->get_system_scheduler();
+				scheduler->render_update(dt);
+			}
 
-			scheduler->end(dt);
+			if (main_menu)
+			{
+				draw_debug_menu_bar(dt);
+			}
+
+			for (auto& [name, world] : worlds)
+			{
+				WorldSystemScheduler* scheduler = world->get_system_scheduler();
+				scheduler->end(dt);
+			}
 
 			execute_main_thread_jobs();
 
@@ -251,11 +279,6 @@ void Engine::terminate()
 	dxContext.quit();
 
 	instance_object = nullptr;
-}
-
-WorldSystemScheduler* Engine::get_system_scheduler() const
-{
-	return scheduler;
 }
 
 bool Engine::update()
