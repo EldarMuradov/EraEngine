@@ -1,5 +1,6 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
+#include "asset/bin.h"
 #include "asset/model_asset.h"
 #include "core/log.h"
 
@@ -7,12 +8,7 @@
 
 namespace era_engine
 {
-	NODISCARD ModelAsset loadFBX(const fs::path& path, uint32 flags);
-	NODISCARD ModelAsset loadOBJ(const fs::path& path, uint32 flags);
-	NODISCARD ModelAsset loadBIN(const fs::path& path);
-	void writeBIN(const ModelAsset& asset, const fs::path& path);
-
-	NODISCARD ModelAsset load_3d_model_from_file(const fs::path& path, uint32 meshFlags)
+	ModelAsset load_3d_model_from_file(const fs::path& path, uint32 meshFlags)
 	{
 		if (!fs::exists(path))
 		{

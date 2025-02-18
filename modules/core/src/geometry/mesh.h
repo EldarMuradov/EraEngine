@@ -43,28 +43,28 @@ namespace era_engine
 
 	using mesh_load_callback = std::function<void(mesh_builder& builder, std::vector<submesh>& submeshes, const bounding_box& boundingBox)>;
 
-	NODISCARD ref<multi_mesh> loadMeshFromFile(const fs::path& filename, uint32 flags = mesh_creation_flags_default, mesh_load_callback cb = nullptr);
-	NODISCARD ref<multi_mesh> loadMeshFromHandle(AssetHandle handle, uint32 flags = mesh_creation_flags_default, mesh_load_callback cb = nullptr);
-	NODISCARD ref<multi_mesh> loadMeshFromFileAsync(const fs::path& filename, uint32 flags = mesh_creation_flags_default, JobHandle parentJob = {}, mesh_load_callback cb = nullptr);
-	NODISCARD ref<multi_mesh> loadMeshFromHandleAsync(AssetHandle handle, uint32 flags = mesh_creation_flags_default, JobHandle parentJob = {}, mesh_load_callback cb = nullptr);
+	ERA_CORE_API ref<multi_mesh> loadMeshFromFile(const fs::path& filename, uint32 flags = mesh_creation_flags_default, const mesh_load_callback& cb = nullptr);
+	ERA_CORE_API ref<multi_mesh> loadMeshFromHandle(AssetHandle handle, uint32 flags = mesh_creation_flags_default, const mesh_load_callback& cb = nullptr);
+	ERA_CORE_API ref<multi_mesh> loadMeshFromFileAsync(const fs::path& filename, uint32 flags = mesh_creation_flags_default, JobHandle parentJob = {}, const mesh_load_callback& cb = nullptr);
+	ERA_CORE_API ref<multi_mesh> loadMeshFromHandleAsync(AssetHandle handle, uint32 flags = mesh_creation_flags_default, JobHandle parentJob = {}, const mesh_load_callback& cb = nullptr);
 
 	// Same functions but with different default flags (includes skin).
-	inline NODISCARD ref<multi_mesh> loadAnimatedMeshFromFile(const fs::path& filename, uint32 flags = mesh_creation_flags_animated, mesh_load_callback cb = nullptr)
+	inline ref<multi_mesh> loadAnimatedMeshFromFile(const fs::path& filename, uint32 flags = mesh_creation_flags_animated, const mesh_load_callback& cb = nullptr)
 	{
 		return loadMeshFromFile(filename, flags, cb);
 	}
 
-	inline NODISCARD ref<multi_mesh> loadAnimatedMeshFromHandle(AssetHandle handle, uint32 flags = mesh_creation_flags_animated, mesh_load_callback cb = nullptr)
+	inline ref<multi_mesh> loadAnimatedMeshFromHandle(AssetHandle handle, uint32 flags = mesh_creation_flags_animated, const mesh_load_callback& cb = nullptr)
 	{
 		return loadMeshFromHandle(handle, flags, cb);
 	}
 
-	inline NODISCARD ref<multi_mesh> loadAnimatedMeshFromFileAsync(const fs::path& filename, uint32 flags = mesh_creation_flags_animated, JobHandle parentJob = {}, mesh_load_callback cb = nullptr)
+	inline ref<multi_mesh> loadAnimatedMeshFromFileAsync(const fs::path& filename, uint32 flags = mesh_creation_flags_animated, JobHandle parentJob = {}, const mesh_load_callback& cb = nullptr)
 	{
 		return loadMeshFromFileAsync(filename, flags, parentJob, cb);
 	}
 
-	inline NODISCARD ref<multi_mesh> loadAnimatedMeshFromHandleAsync(AssetHandle handle, uint32 flags = mesh_creation_flags_animated, JobHandle parentJob = {}, mesh_load_callback cb = nullptr)
+	inline ref<multi_mesh> loadAnimatedMeshFromHandleAsync(AssetHandle handle, uint32 flags = mesh_creation_flags_animated, JobHandle parentJob = {}, const mesh_load_callback& cb = nullptr)
 	{
 		return loadMeshFromHandleAsync(handle, flags, parentJob, cb);
 	}

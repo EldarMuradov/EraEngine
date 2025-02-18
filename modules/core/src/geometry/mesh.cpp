@@ -36,7 +36,7 @@ namespace std
 
 namespace era_engine
 {
-	static void meshLoaderThread(ref<multi_mesh> result, const fs::path& sceneFilename, uint32 flags, mesh_load_callback cb,
+	static void meshLoaderThread(ref<multi_mesh> result, const fs::path& sceneFilename, uint32 flags, const mesh_load_callback& cb,
 		bool async, JobHandle parentJob)
 	{
 		using namespace animation;
@@ -136,7 +136,7 @@ namespace era_engine
 		result->loadState.store(AssetLoadState::LOADED, std::memory_order_release);
 	}
 
-	static ref<multi_mesh> loadMeshFromFileInternal(const fs::path& sceneFilename, AssetHandle handle, uint32 flags, mesh_load_callback cb,
+	static ref<multi_mesh> loadMeshFromFileInternal(const fs::path& sceneFilename, AssetHandle handle, uint32 flags, const mesh_load_callback& cb,
 		bool async, JobHandle parentJob)
 	{
 		ref<multi_mesh> result = make_ref<multi_mesh>();
@@ -184,16 +184,15 @@ namespace era_engine
 	static std::unordered_map<mesh_key, weakref<multi_mesh>> meshCache;
 	static std::mutex mutex;
 
-	static ref<multi_mesh> loadMeshFromFileAndHandle(const fs::path& filename, AssetHandle handle, uint32 flags, mesh_load_callback cb,
+	static ref<multi_mesh> loadMeshFromFileAndHandle(const fs::path& filename, AssetHandle handle, uint32 flags, const mesh_load_callback& cb,
 		bool async = false, JobHandle parentJob = {})
 	{
 		if (!fs::exists(filename))
-			return 0;
+			return nullptr;
 
 		mesh_key key = { handle, flags };
 
-		mutex.lock();
-
+		std::lock_guard _lock{mutex};
 		ref<multi_mesh> result = { meshCache[key].lock(), {} };
 		if (!result)
 		{
@@ -201,11 +200,10 @@ namespace era_engine
 			meshCache[key] = result;
 		}
 
-		mutex.unlock();
 		return result;
 	}
 
-	NODISCARD ref<multi_mesh> loadMeshFromFile(const fs::path& filename, uint32 flags, mesh_load_callback cb)
+	ref<multi_mesh> loadMeshFromFile(const fs::path& filename, uint32 flags, const mesh_load_callback& cb)
 	{
 		fs::path path = filename.lexically_normal().make_preferred();
 
@@ -213,13 +211,13 @@ namespace era_engine
 		return loadMeshFromFileAndHandle(path, handle, flags, cb);
 	}
 
-	NODISCARD ref<multi_mesh> loadMeshFromHandle(AssetHandle handle, uint32 flags, mesh_load_callback cb)
+	ref<multi_mesh> loadMeshFromHandle(AssetHandle handle, uint32 flags, const mesh_load_callback& cb)
 	{
 		fs::path sceneFilename = getPathFromAssetHandle(handle);
 		return loadMeshFromFileAndHandle(sceneFilename, handle, flags, cb);
 	}
 
-	NODISCARD ref<multi_mesh> loadMeshFromFileAsync(const fs::path& filename, uint32 flags, JobHandle parentJob, mesh_load_callback cb)
+	ref<multi_mesh> loadMeshFromFileAsync(const fs::path& filename, uint32 flags, JobHandle parentJob, const mesh_load_callback& cb)
 	{
 		fs::path path = filename.lexically_normal().make_preferred();
 
@@ -227,7 +225,7 @@ namespace era_engine
 		return loadMeshFromFileAndHandle(path, handle, flags, cb, true, parentJob);
 	}
 
-	NODISCARD ref<multi_mesh> loadMeshFromHandleAsync(AssetHandle handle, uint32 flags, JobHandle parentJob, mesh_load_callback cb)
+	ref<multi_mesh> loadMeshFromHandleAsync(AssetHandle handle, uint32 flags, JobHandle parentJob, const mesh_load_callback& cb)
 	{
 		fs::path sceneFilename = getPathFromAssetHandle(handle);
 		return loadMeshFromFileAndHandle(sceneFilename, handle, flags, cb, true, parentJob);

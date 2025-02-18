@@ -216,8 +216,11 @@ namespace era_engine
 		execute_main_thread_jobs();
 
 		float dt;
-		while (newFrame(dt, *window))
+		bool status = true;
+		while (status)
 		{
+			status = newFrame(dt, *window);
+
 			auto& worlds = get_worlds();
 			for (auto& [name, world] : worlds)
 			{

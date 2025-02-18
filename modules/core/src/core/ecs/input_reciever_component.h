@@ -34,6 +34,7 @@ namespace era_engine
 		bool active = true;
 
 		friend class InputSystem;
+		friend class InputSenderComponent;
 	};
 
 }

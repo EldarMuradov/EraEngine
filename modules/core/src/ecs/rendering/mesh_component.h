@@ -1,12 +1,13 @@
 #pragma once
 
+#include "core_api.h"
 #include "ecs/component.h"
 
 #include "geometry/mesh.h"
 
 namespace era_engine
 {
-	class MeshComponent : public Component
+	class ERA_CORE_API MeshComponent : public Component
 	{
 	public:
 		MeshComponent(ref<Entity::EcsData> _data, ref<multi_mesh> _mesh, bool _is_hidden = false);

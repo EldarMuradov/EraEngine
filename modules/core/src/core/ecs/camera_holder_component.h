@@ -36,8 +36,6 @@ namespace era_engine
 		render_camera* camera = nullptr;
 
 		CameraType type = ATTACHED_TO_TRS;
-
-		friend class MovementSystem;
 	};
 
 }

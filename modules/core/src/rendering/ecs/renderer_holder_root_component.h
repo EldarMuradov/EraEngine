@@ -13,6 +13,7 @@
 
 namespace era_engine
 {
+	class UserInput;
 
 	class ERA_CORE_API RendererHolderRootComponent final : public Component
 	{
@@ -43,7 +44,10 @@ namespace era_engine
 	private:
 		main_renderer* renderer = nullptr;
 
+		UserInput* active_render_input = nullptr;
+
 		float timestep_scale = 1.0f;
+
 		friend class RenderSystem;
 		friend class InputSystem;
 	};

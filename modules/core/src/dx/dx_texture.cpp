@@ -236,7 +236,7 @@ namespace era_engine
 	static std::unordered_map<texture_key, weakref<dx_texture>> textureCache;
 	static std::mutex mutex;
 
-	NODISCARD static ref<dx_texture> loadTextureFromFileAndHandle(const fs::path& filename, AssetHandle handle, uint32 flags,
+	static ref<dx_texture> loadTextureFromFileAndHandle(const fs::path& filename, AssetHandle handle, uint32 flags,
 		bool async = false, JobHandle parentJob = {})
 	{
 		if (!fs::exists(filename))
@@ -255,7 +255,7 @@ namespace era_engine
 		return result;
 	}
 
-	NODISCARD ref<dx_texture> loadTextureFromFile(const fs::path& filename, uint32 flags)
+	ref<dx_texture> loadTextureFromFile(const fs::path& filename, uint32 flags)
 	{
 		fs::path path = filename.lexically_normal().make_preferred();
 
@@ -263,13 +263,13 @@ namespace era_engine
 		return loadTextureFromFileAndHandle(path, handle, flags);
 	}
 
-	NODISCARD ref<dx_texture> loadTextureFromHandle(AssetHandle handle, uint32 flags)
+	ref<dx_texture> loadTextureFromHandle(AssetHandle handle, uint32 flags)
 	{
 		fs::path sceneFilename = getPathFromAssetHandle(handle);
 		return loadTextureFromFileAndHandle(sceneFilename, handle, flags);
 	}
 
-	NODISCARD ref<dx_texture> loadTextureFromFileAsync(const fs::path& filename, uint32 flags, JobHandle parentJob)
+	ref<dx_texture> loadTextureFromFileAsync(const fs::path& filename, uint32 flags, JobHandle parentJob)
 	{
 		fs::path path = filename.lexically_normal().make_preferred();
 
@@ -277,55 +277,55 @@ namespace era_engine
 		return loadTextureFromFileAndHandle(path, handle, flags, true, parentJob);
 	}
 
-	NODISCARD ref<dx_texture> loadTextureFromHandleAsync(AssetHandle handle, uint32 flags, JobHandle parentJob)
+	ref<dx_texture> loadTextureFromHandleAsync(AssetHandle handle, uint32 flags, JobHandle parentJob)
 	{
 		fs::path sceneFilename = getPathFromAssetHandle(handle);
 		return loadTextureFromFileAndHandle(sceneFilename, handle, flags, true, parentJob);
 	}
 
-	NODISCARD ref<dx_texture> loadTextureFromMemory(const void* ptr, uint32 size, image_format imageFormat, const fs::path& cacheFilename, uint32 flags)
+	ref<dx_texture> loadTextureFromMemory(const void* ptr, uint32 size, image_format imageFormat, const fs::path& cacheFilename, uint32 flags)
 	{
 		return loadTextureFromMemoryInternal(ptr, size, imageFormat, cacheFilename, flags);
 	}
 
-	NODISCARD ref<dx_texture> loadVolumeTextureFromDirectory(const fs::path& dirname, uint32 flags)
+	ref<dx_texture> loadVolumeTextureFromDirectory(const fs::path& dirname, uint32 flags)
 	{
 		return loadVolumeTextureInternal(dirname, flags);
 	}
 
-	NODISCARD static bool checkFormatSupport(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport, D3D12_FORMAT_SUPPORT1 support)
+	static bool checkFormatSupport(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport, D3D12_FORMAT_SUPPORT1 support)
 	{
 		return (formatSupport.Support1 & support) != 0;
 	}
 
-	NODISCARD static bool checkFormatSupport(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport, D3D12_FORMAT_SUPPORT2 support)
+	static bool checkFormatSupport(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport, D3D12_FORMAT_SUPPORT2 support)
 	{
 		return (formatSupport.Support2 & support) != 0;
 	}
 
-	NODISCARD static bool formatSupportsRTV(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport)
+	static bool formatSupportsRTV(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport)
 	{
 		return checkFormatSupport(formatSupport, D3D12_FORMAT_SUPPORT1_RENDER_TARGET);
 	}
 
-	NODISCARD static bool formatSupportsDSV(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport)
+	static bool formatSupportsDSV(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport)
 	{
 		return checkFormatSupport(formatSupport, D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL);
 	}
 
-	NODISCARD static bool formatSupportsSRV(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport)
+	static bool formatSupportsSRV(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport)
 	{
 		return checkFormatSupport(formatSupport, D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE);
 	}
 
-	NODISCARD static bool formatSupportsUAV(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport)
+	static bool formatSupportsUAV(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport)
 	{
 		return checkFormatSupport(formatSupport, D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW) &&
 			checkFormatSupport(formatSupport, D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) &&
 			checkFormatSupport(formatSupport, D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE);
 	}
 
-	NODISCARD D3D12_RESOURCE_ALLOCATION_INFO getTextureAllocationInfo(uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips, D3D12_RESOURCE_FLAGS flags)
+	D3D12_RESOURCE_ALLOCATION_INFO getTextureAllocationInfo(uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips, D3D12_RESOURCE_FLAGS flags)
 	{
 		uint32 numMips = allocateMips ? 0 : 1;
 		auto desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 1, numMips, 1, 0, flags);

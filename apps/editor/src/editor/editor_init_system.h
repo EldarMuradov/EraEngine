@@ -4,17 +4,15 @@
 
 namespace era_engine
 {
-	class MovementSystem final : public System
+
+	class EditorInitSystem final : public System
 	{
 	public:
-		MovementSystem(World* _world);
-		~MovementSystem();
+		EditorInitSystem(World* _world);
+		~EditorInitSystem();
 
 		void init() override;
 		void update(float dt) override;
-
-		void reset_input(float dt);
-
 		ERA_VIRTUAL_REFLECT(System)
 	};
 }

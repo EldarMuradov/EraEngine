@@ -17,7 +17,6 @@
 namespace era_engine
 {
 	class RendererHolderRootComponent;
-	class InputRootComponent;
 
 	class RenderSystem final : public System
 	{
@@ -39,7 +38,6 @@ namespace era_engine
 
 	private:
 		RendererHolderRootComponent* renderer_holder_rc = nullptr;
-		InputRootComponent* input_rc = nullptr;
 
 		Allocator stackArena;
 

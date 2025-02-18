@@ -5,7 +5,6 @@
 #include "core/log.h"
 #include "core/string.h"
 #include "core/cpu_profiling.h"
-#include "core/ecs/input_root_component.h"
 #include "core/ecs/input_reciever_component.h"
 
 #include "rendering/mesh_shader.h"
@@ -46,9 +45,6 @@ namespace era_engine
 		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
 		ASSERT(renderer_holder_rc != nullptr);
 
-		input_rc = world->add_root_component<InputRootComponent>();
-		ASSERT(input_rc != nullptr);
-
 		if (dxContext.featureSupport.raytracing())
 		{
 			raytracingTLAS.initialize();
@@ -86,89 +82,6 @@ namespace era_engine
 		}
 
 		stackArena.initialize();
-
-
-
-
-
-
-		{
-			Entity camera_entity = world->create_entity("Entity1");
-			camera_entity.add_component<CameraHolderComponent>().add_component<InputRecieverComponent>();
-			camera_entity.get_component<CameraHolderComponent>().set_camera_type(CameraHolderComponent::FREE_CAMERA);
-			camera_entity.get_component<CameraHolderComponent>().set_render_camera(&renderer_holder_rc->camera);
-
-			Entity entity2 = world->create_entity("Entity2");
-
-			auto defaultmat = createPBRMaterialAsync({ "", "" });
-			defaultmat->shader = pbr_material_shader_double_sided;
-
-			mesh_builder builder;
-
-			auto sphereMesh = make_ref<multi_mesh>();
-			builder.pushSphere({ });
-			sphereMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
-
-			auto boxMesh = make_ref<multi_mesh>();
-			builder.pushBox({ vec3(0.f), vec3(1.f, 1.f, 2.f) });
-			boxMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
-
-			PbrMaterialDesc defaultPlaneMatDesc;
-			defaultPlaneMatDesc.albedo = get_asset_path("/resources/assets/uv.jpg");
-			defaultPlaneMatDesc.normal = "";
-			defaultPlaneMatDesc.roughness = "";
-			defaultPlaneMatDesc.uv_scale = 15.0f;
-			defaultPlaneMatDesc.metallic_override = 0.35f;
-			defaultPlaneMatDesc.roughness_override = 0.01f;
-
-			auto defaultPlaneMat = createPBRMaterialAsync(defaultPlaneMatDesc);
-
-			auto groundMesh = make_ref<multi_mesh>();
-			builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
-			groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
-
-			if (auto mesh = loadMeshFromFileAsync(get_asset_path("/resources/assets/Sponza/sponza.obj")))
-			{
-				auto& sponza = world->create_entity("Sponza")
-					.add_component<MeshComponent>(mesh);
-
-				TransformComponent& transform_component = sponza.get_component<TransformComponent>();
-				transform_component.transform.position = vec3(5.0f, -3.75f, 35.0f);
-				transform_component.transform.scale = vec3(0.01f);
-
-				addRaytracingComponentAsync(sponza, mesh);
-			}
-
-			if (auto mesh = loadAnimatedMeshFromFileAsync(get_asset_path("/resources/assets/veribot/source/VERIBOT_final.fbx")))
-			{
-				auto& en = world->create_entity("Veribot")
-					.add_component<animation::AnimationComponent>()
-					.add_component<animation::SkeletonComponent>()
-					.add_component<MeshComponent>(mesh);
-
-				TransformComponent& transform_component = en.get_component<TransformComponent>();
-				transform_component.type = TransformComponent::DYNAMIC;
-				transform_component.transform.position = vec3(5.0f);
-
-				initializeAnimationComponentAsync(en, mesh);
-				addRaytracingComponentAsync(en, mesh);
-			}
-
-			auto chainMesh = make_ref<multi_mesh>();
-
-			groundMesh->mesh =
-				boxMesh->mesh =
-				sphereMesh->mesh =
-				chainMesh->mesh =
-				builder.createDXMesh();
-
-#if 0
-			fireParticleSystem.initialize(10000, 50.f, getAssetPath("/resources/assets/particles/fire_explosion.png"), 6, 6, vec3(0, 1, 30));
-			smokeParticleSystem.initialize(10000, 500.f, getAssetPath("/resources/assets/particles/smoke1.tif"), 5, 5, vec3(0, 1, 15));
-			//boidParticleSystem.initialize(10000, 2000.f);
-			debrisParticleSystem.initialize(10000);
-#endif
-		}
 	}
 
 	RenderSystem::~RenderSystem()
@@ -254,7 +167,9 @@ namespace era_engine
 		renderer->setCamera(camera);
 
 		endFrameCommon();
-		renderer->endFrame(&input_rc->get_frame_input());
+
+		UserInput input{};
+		renderer->endFrame(&input);
 	}
 
 	void RenderSystem::load_custom_shaders()

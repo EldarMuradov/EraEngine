@@ -2,7 +2,7 @@
 #include <game/movement/movement_component.h>
 		 
 #include <core/ecs/input_reciever_component.h>
-#include <core/ecs/input_root_component.h>
+#include <core/ecs/input_sender_component.h>
 #include <core/ecs/camera_holder_component.h>
 
 #include <ecs/update_groups.h>
@@ -26,8 +26,6 @@ namespace era_engine
 	MovementSystem::MovementSystem(World* _world)
 		: System(_world)
 	{
-		input_rc = world->add_root_component<InputRootComponent>();
-		ASSERT(input_rc != nullptr);
 	}
 
 	MovementSystem::~MovementSystem()

@@ -49,9 +49,9 @@ namespace era_engine
 	static std::unordered_map<PbrMaterialDesc, weakref<pbr_material>> materialCache;
 	static std::mutex mutex;
 
-	NODISCARD ref<pbr_material> createPBRMaterial(const PbrMaterialDesc& desc)
+	ref<pbr_material> createPBRMaterial(const PbrMaterialDesc& desc)
 	{
-		Lock lock{ mutex };
+		std::lock_guard lock{ mutex };
 
 		auto sp = materialCache[desc].lock();
 		if (!sp)
@@ -76,9 +76,9 @@ namespace era_engine
 		return sp;
 	}
 
-	NODISCARD ref<pbr_material> createPBRMaterialAsync(const PbrMaterialDesc& desc, JobHandle parentJob)
+	ref<pbr_material> createPBRMaterialAsync(const PbrMaterialDesc& desc, JobHandle parentJob)
 	{
-		Lock lock{ mutex };
+		std::lock_guard lock{ mutex };
 
 		auto sp = materialCache[desc].lock();
 		if (!sp)
@@ -103,7 +103,7 @@ namespace era_engine
 		return sp;
 	}
 
-	NODISCARD ref<pbr_material> getDefaultPBRMaterial()
+	ref<pbr_material> getDefaultPBRMaterial()
 	{
 		static ref<pbr_material> material = createPBRMaterial({});
 		return material;

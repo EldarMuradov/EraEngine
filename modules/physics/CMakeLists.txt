@@ -1,6 +1,11 @@
 include(${CMAKE_SOURCE_DIR}/cmake/common.cmake)
 
 era_begin(physics "MODULE")
+    require_thirdparty_module(physics EnTT)
+    require_thirdparty_module(physics yaml-cpp)
+    require_thirdparty_module(physics rttr_core)
+    require_thirdparty_module(physics DirectXTex)
+    require_module(physics base)
     require_module(physics core)
     require_physx(physics)
     target_compile_definitions(physics PRIVATE ERA_PHYSICS)

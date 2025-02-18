@@ -1,7 +1,7 @@
 #include "core/ecs/private/camera_system.h"
 #include "core/log.h"
 #include "core/cpu_profiling.h"
-#include "core/ecs/input_root_component.h"
+#include "core/ecs/input_reciever_component.h"
 #include "core/ecs/camera_holder_component.h"
 
 #include "rendering/ecs/renderer_holder_root_component.h"
@@ -28,11 +28,8 @@ namespace era_engine
 	CameraSystem::CameraSystem(World* _world)
 		: System(_world)
 	{
-		input_rc = world->add_root_component<InputRootComponent>();
-		ASSERT(input_rc != nullptr);
-
 		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
-		ASSERT(input_rc != nullptr);
+		ASSERT(renderer_holder_rc != nullptr);
 	}
 
 	CameraSystem::~CameraSystem()
@@ -45,11 +42,11 @@ namespace era_engine
 
 	void CameraSystem::update(float dt)
 	{
-		const UserInput& user_input = input_rc->get_frame_input();
-		const vec3& input = input_rc->get_current_input();
-
-		for (auto [handle, camera_holder, transform] : world->group(components_group<CameraHolderComponent, TransformComponent>).each())
+		for (auto [handle, camera_holder, receiver, transform] : world->group(components_group<CameraHolderComponent, InputRecieverComponent, TransformComponent>).each())
 		{
+			const UserInput& user_input = receiver.get_frame_input();
+			const vec3& input = receiver.get_current_input();
+
 			render_camera* camera = camera_holder.get_render_camera();
 
 			camera->setViewport(renderer_holder_rc->width, renderer_holder_rc->height);
@@ -79,6 +76,18 @@ namespace era_engine
 				camera->position = transform.transform.position;
 				camera->rotation = transform.transform.rotation;
 			}
+
+			camera->updateMatrices();
+		}
+
+		for (auto [handle, camera_holder, transform] : world->group(components_group<CameraHolderComponent, TransformComponent>, components_group<InputRecieverComponent>).each())
+		{
+			render_camera* camera = camera_holder.get_render_camera();
+
+			camera->setViewport(renderer_holder_rc->width, renderer_holder_rc->height);
+
+			camera->position = transform.transform.position;
+			camera->rotation = transform.transform.rotation;
 
 			camera->updateMatrices();
 		}

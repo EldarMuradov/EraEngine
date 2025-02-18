@@ -83,7 +83,7 @@ namespace era_engine
 		mesh_flag_load_colors | mesh_flag_load_skin,
 	};
 
-	NODISCARD ModelAsset load_3d_model_from_file(const fs::path& path, uint32 mesh_flags = mesh_flag_default);
+	ERA_CORE_API ModelAsset load_3d_model_from_file(const fs::path& path, uint32 mesh_flags = mesh_flag_default);
 
 	inline bool is_mesh_extension(const fs::path& extension)
 	{

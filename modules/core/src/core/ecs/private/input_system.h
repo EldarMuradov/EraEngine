@@ -4,7 +4,6 @@
 
 namespace era_engine
 {
-	class InputRootComponent;
 	class RendererHolderRootComponent;
 
 	class InputSystem final : public System
@@ -21,7 +20,6 @@ namespace era_engine
 		ERA_VIRTUAL_REFLECT(System)
 
 	private:
-		InputRootComponent* input_rc = nullptr;
 		RendererHolderRootComponent* renderer_holder_rc = nullptr;
 	};
 }
