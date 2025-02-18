@@ -5,8 +5,12 @@
 
 #include "dx/dx_pipeline.h"
 
+#include "ecs/entity.h"
+
 #include "rendering/light_source.h"
 #include "rendering/render_pass.h"
+
+#include "rendering/raytracing.h"
 
 #include "camera.hlsli"
 
@@ -50,4 +54,9 @@ namespace era_engine
 	{
 		return (colorDepth == color_depth_8) ? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R10G10B10A2_UNORM;
 	}
+
+	extern "C" __declspec(dllexport) void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh);
+	raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh);
+	extern "C" __declspec(dllexport) void initializeAnimationComponentAsync(Entity entity, ref<multi_mesh> mesh);
+
 }

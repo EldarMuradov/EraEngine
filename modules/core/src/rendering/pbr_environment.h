@@ -24,6 +24,12 @@ namespace era_engine
 
 	struct pbr_environment
 	{
+		pbr_environment() = default;
+		pbr_environment(const pbr_environment& other) noexcept = default;
+		pbr_environment(pbr_environment&& other) noexcept = default;
+		pbr_environment& operator=(const pbr_environment& other) noexcept = default;
+		pbr_environment& operator=(pbr_environment&& other) noexcept = default;
+
 		NODISCARD bool isProcedural() const { return sky == 0; }
 
 		void setFromTexture(const fs::path& filename);

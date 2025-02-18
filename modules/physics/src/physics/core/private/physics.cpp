@@ -76,7 +76,8 @@ namespace era_engine::physics
 
 		allocator.initialize(MB(256U));
 
-		foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocator_callback, error_reporter);
+		allocator_callback = new PhysicsAllocatorCallback();
+		foundation = PxCreateFoundation(PX_PHYSICS_VERSION, *allocator_callback, error_reporter);
 
 		if (!foundation)
 		{
@@ -97,19 +98,19 @@ namespace era_engine::physics
 		omni_pvd = PxCreateOmniPvd(*foundation);
 		if (!omni_pvd)
 		{
-			printf("Error : could not create PxOmniPvd!");
+			printf("Error: could not create PxOmniPvd!");
 			return;
 		}
 		OmniPvdWriter* omniWriter = omni_pvd->getWriter();
 		if (!omniWriter)
 		{
-			printf("Error : could not get an instance of PxOmniPvdWriter!");
+			printf("Error: could not get an instance of PxOmniPvdWriter!");
 			return;
 		}
 		OmniPvdFileWriteStream* fStream = omni_pvd->getFileWriteStream();
 		if (!fStream)
 		{
-			printf("Error : could not get an instance of PxOmniPvdFileWriteStream!");
+			printf("Error: could not get an instance of PxOmniPvdFileWriteStream!");
 			return;
 		}
 		fStream->setFileName(omni_pvd_path);
@@ -168,6 +169,8 @@ namespace era_engine::physics
 		scene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_FNORMALS, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
+
+		stepper = new FixedStepper();
 
 #if PX_ENABLE_RAYCAST_CCD
 		raycastCCD = new RaycastCCDManager(scene);
@@ -234,14 +237,19 @@ namespace era_engine::physics
 			scene->flushSimulation();
 		}
 
-		PX_RELEASE(default_material)
-		PX_RELEASE(scene)
-		PX_RELEASE(dispatcher)
-		PX_RELEASE(pvd)
-		PX_RELEASE(omni_pvd)
-		PX_RELEASE(physics)
-		PX_RELEASE(cuda_context_manager)
-		PX_RELEASE(foundation)
+		{
+			PX_RELEASE(default_material)
+			PX_RELEASE(scene)
+			delete stepper;
+			PX_RELEASE(physics)
+			PX_RELEASE(dispatcher)
+			PX_RELEASE(pvd)
+			PX_RELEASE(omni_pvd)
+			PX_RELEASE(cuda_context_manager)
+			PX_RELEASE(foundation)
+		}
+
+		delete allocator_callback;
 
 #if PX_ENABLE_RAYCAST_CCD
 		delete raycast_ccd;
@@ -282,21 +290,21 @@ namespace era_engine::physics
 
 #else
 
-		stepper.setup(stepSize);
+		stepper->setup(stepSize);
 
-		if (!stepper.advance(scene, stepSize, scratchMemBlock, scratchMemBlockSize))
+		if (!stepper->advance(scene, stepSize, scratchMemBlock, scratchMemBlockSize))
 		{
 			return;
 		}
 
-		stepper.renderDone();
+		stepper->renderDone();
 #endif
 	}
 
 	void Physics::end_simulation(float dt)
 	{
 #if !PX_GPU_BROAD_PHASE
-		stepper.wait(scene);
+		stepper->wait(scene);
 #endif
 #if PX_VEHICLE
 		//vehiclePostStep(dt);
@@ -460,7 +468,7 @@ namespace era_engine::physics
 	void Physics::step_physics(float step_size)
 	{
 		using namespace physx;
-		stepper.setup(step_size);
+		stepper->setup(step_size);
 
 		static constexpr uint64 align = 16U;
 
@@ -468,14 +476,14 @@ namespace era_engine::physics
 
 		static void* scratchMemBlock = allocator.allocate(scratchMemBlockSize, align, true);
 
-		if (!stepper.advance(scene, step_size, scratchMemBlock, scratchMemBlockSize))
+		if (!stepper->advance(scene, step_size, scratchMemBlock, scratchMemBlockSize))
 		{
 			return;
 		}
 
-		stepper.renderDone();
+		stepper->renderDone();
 
-		stepper.wait(scene);
+		stepper->wait(scene);
 
 #if PX_ENABLE_RAYCAST_CCD
 		raycastCCD->doRaycastCCD(true);

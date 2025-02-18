@@ -21,8 +21,6 @@
 #include "core/editor_icons.h"
 #include "core/log.h"
 
-#include "application.h"
-
 #include "rendering/render_utils.h"
 #include "rendering/main_renderer.h"
 
@@ -34,6 +32,7 @@
 #include <imgui/imgui_internal.h>
 
 #include <fstream>
+#include "editor/transformation_gizmo.h"
 
 namespace era_engine
 {
@@ -82,6 +81,23 @@ namespace era_engine
 		return result;
 	}
 
+	static void draw_debug_menu_bar(float elapsed)
+	{
+		const float fps = 1.0f / elapsed;
+		if (ImGui::BeginMainMenuBar())
+		{
+			if (ImGui::BeginMenu(std::to_string(fps).c_str()))
+			{
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu(std::to_string(frameID).c_str()))
+			{
+				ImGui::EndMenu();
+			}
+			ImGui::EndMainMenuBar();
+		}
+	}
+
 	static void renderToMainWindow(dx_window& window)
 	{
 		dx_resource backbuffer = window.backBuffers[window.currentBackbufferIndex];
@@ -113,9 +129,10 @@ namespace era_engine
 		fenceValues[window.currentBackbufferIndex] = result;
 	}
 
-	application globalApp;
-
 	Engine* Engine::instance_object = nullptr;
+
+	static bool verbose = false;
+	static bool main_menu = false;
 
 	Engine::Engine(int argc, char** argv)
 	{
@@ -123,12 +140,14 @@ namespace era_engine
 
 		running = true;
 		instance_object = this;
+
 #ifndef _DEBUG
 		::ShowWindow(::GetConsoleWindow(), SW_HIDE);
 #endif
 
-		bool verbose = false;
-		auto cli = Opt(verbose, "verbose")["-v"]["--verbose"]("verbose logging");
+		Parser cli;
+		cli += Opt(verbose, "verbose")["-v"]["--verbose"]("Enable verbose logging");
+		cli += Opt(main_menu, "main-menu")["-mm"]["--main-menu"]("Enable main menu bar");
 
 		auto result = cli.parse(Args(argc, argv));
 		if (!result)
@@ -140,6 +159,12 @@ namespace era_engine
 		{
 			::ShowWindow(::GetConsoleWindow(), SW_SHOW);
 		}
+
+		const bool dx_inited = dxContext.initialize();
+		ASSERT(dx_inited);
+
+		World* runtime_world = new World("GameWorld");
+		runtime_world->init();
 	}
 
 	Engine::~Engine()
@@ -163,46 +188,13 @@ namespace era_engine
 
 	bool Engine::run(const std::function<void(void)>& initial_task /* = nullptr */)
 	{
-		if (!dxContext.initialize())
-		{
-			return EXIT_FAILURE;
-		}
-
 		initialize_job_system();
 		initializeFileRegistry();
 
-		dx_window window;
-		window.initialize(TEXT("  New Project - Era Engine - 0.1432v1 - <DX12>"), 1920, 1080);
-		window.setIcon(get_asset_path("/resources/icons/Logo.ico"));
-		window.setCustomWindowStyle();
-		window.maximize();
-
-		globalApp.loadCustomShaders();
-
-		window.setFileDropCallback([](const fs::path& s) { globalApp.handleFileDrop(s); });
-
-		initializeTransformationGizmos();
 		initializeRenderUtils();
 
-		initializeImGui(window);
-
-		renderer_spec spec;
-		spec.allowObjectPicking = true;
-		spec.allowAO = true;
-		spec.allowSSS = true;
-		spec.allowSSR = true;
-		spec.allowTAA = true;
-		spec.allowBloom = true;
-		spec.allowDLSS = true;
-
-		main_renderer renderer;
-		renderer.initialize(window.colorDepth, window.clientWidth, window.clientHeight, spec);
-
-		editor_panels editorPanels;
-
-		globalApp.initialize(&renderer, &editorPanels);
-
-		scheduler = new WorldSystemScheduler(globalApp.getCurrentWorld().get());
+		dx_window* window = get_object<dx_window>();
+		initializeImGui(*window);
 
 		file_browser fileBrowser;
 
@@ -215,168 +207,63 @@ namespace era_engine
 			initial_task();
 		}
 
-		UserInput input = {};
-		bool appFocusedLastFrame = true;
+		for (auto& [name, world] : get_worlds())
+		{
+			WorldSystemScheduler* scheduler = world->get_system_scheduler();
+			scheduler->initialize_all_systems();
+		}
+
+		execute_main_thread_jobs();
 
 		float dt;
-		while (newFrame(dt, window))
+		bool status = true;
+		while (status)
 		{
-			ImGui::BeginWindowHiddenTabBar("Scene Viewport");
-			uint32 renderWidth = (uint32)ImGui::GetContentRegionAvail().x;
-			uint32 renderHeight = (uint32)ImGui::GetContentRegionAvail().y;
-			ImGui::Image(renderer.frameResult, renderWidth, renderHeight);
+			status = newFrame(dt, *window);
 
-			scheduler->input(dt);
-
+			auto& worlds = get_worlds();
+			for (auto& [name, world] : worlds)
 			{
-				CPU_PROFILE_BLOCK("Collect user input");
-
-				ImGuiIO& io = ImGui::GetIO();
-				if (ImGui::IsItemHovered() && !editorPanels.meshEditor.isHovered())
-				{
-					ImVec2 relativeMouse = ImGui::GetMousePos() - ImGui::GetItemRectMin();
-					vec2 mousePos = { relativeMouse.x, relativeMouse.y };
-					if (appFocusedLastFrame)
-					{
-						input.mouse.dx = (int32)(mousePos.x - input.mouse.x);
-						input.mouse.dy = (int32)(mousePos.y - input.mouse.y);
-						input.mouse.reldx = (float)input.mouse.dx / (renderWidth - 1);
-						input.mouse.reldy = (float)input.mouse.dy / (renderHeight - 1);
-					}
-					else
-					{
-						input.mouse.dx = 0;
-						input.mouse.dy = 0;
-						input.mouse.reldx = 0.f;
-						input.mouse.reldy = 0.f;
-					}
-					input.mouse.x = (int32)mousePos.x;
-					input.mouse.y = (int32)mousePos.y;
-					input.mouse.relX = mousePos.x / (renderWidth - 1);
-					input.mouse.relY = mousePos.y / (renderHeight - 1);
-					input.mouse.left = { ImGui::IsMouseDown(ImGuiMouseButton_Left), ImGui::IsMouseClicked(ImGuiMouseButton_Left), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) };
-					input.mouse.right = { ImGui::IsMouseDown(ImGuiMouseButton_Right), ImGui::IsMouseClicked(ImGuiMouseButton_Right), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Right) };
-					input.mouse.middle = { ImGui::IsMouseDown(ImGuiMouseButton_Middle), ImGui::IsMouseClicked(ImGuiMouseButton_Middle), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Middle) };
-
-					for (uint32 i = 0; i < arraysize(UserInput::keyboard); ++i)
-					{
-						input.keyboard[i] = { ImGui::IsKeyDown(i), ImGui::IsKeyPressed(i, false) };
-					}
-
-					input.over_window = true;
-				}
-				else
-				{
-					input.mouse.dx = 0;
-					input.mouse.dy = 0;
-					input.mouse.reldx = 0.f;
-					input.mouse.reldy = 0.f;
-
-					if (input.mouse.left.down && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
-					{
-						input.mouse.left.down = false;
-					}
-					if (input.mouse.right.down && !ImGui::IsMouseDown(ImGuiMouseButton_Right))
-					{
-						input.mouse.right.down = false;
-					}
-					if (input.mouse.middle.down && !ImGui::IsMouseDown(ImGuiMouseButton_Middle))
-					{
-						input.mouse.middle.down = false;
-					}
-
-					input.mouse.left.click_event = input.mouse.left.double_click_event = false;
-					input.mouse.right.click_event = input.mouse.right.double_click_event = false;
-					input.mouse.middle.click_event = input.mouse.middle.double_click_event = false;
-
-					for (uint32 i = 0; i < arraysize(UserInput::keyboard); ++i)
-					{
-						if (!ImGui::IsKeyDown(i))
-						{
-							input.keyboard[i].down = false;
-						}
-						input.keyboard[i].press_event = false;
-					}
-
-					input.over_window = false;
-				}
+				WorldSystemScheduler* scheduler = world->get_system_scheduler();
+				scheduler->input(dt);
 			}
 
-			// The drag&drop outline is rendered around the drop target. Since the image fills the frame, the outline is outside the window 
-			// and thus invisible. So instead this (slightly smaller) Dummy acts as the drop target.
-			// Important: This is below the input processing, so that we don't override the current element id.
-			ImGui::SetCursorPos(ImVec2(4.5f, 4.5f));
-			ImGui::Dummy(ImVec2(renderWidth - 9.f, renderHeight - 9.f));
-
-			if (ImGui::BeginDragDropTarget())
+			for (auto& [name, world] : worlds)
 			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_MESH))
-				{
-					globalApp.handleFileDrop((const char*)payload->Data);
-				}
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_IMAGE_HDR))
-				{
-					globalApp.handleFileDrop((const char*)payload->Data);
-				}
-				ImGui::EndDragDropTarget();
+				WorldSystemScheduler* scheduler = world->get_system_scheduler();
+				scheduler->begin(dt);
 			}
 
-			appFocusedLastFrame = ImGui::IsMousePosValid();
-
-			if (input.keyboard['V'].press_event && !(input.keyboard[key_ctrl].down || input.keyboard[key_shift].down || input.keyboard[key_alt].down))
-				window.toggleVSync();
-			if (ImGui::IsKeyPressed(key_esc))
+			for (auto& [name, world] : worlds)
 			{
-				break; // Also allowed if not focused on main window.
-			}
-			if (ImGui::IsKeyPressed(key_enter) && ImGui::IsKeyDown(key_alt))
-			{
-				window.toggleFullscreen(); // Also allowed if not focused on main window.
+				WorldSystemScheduler* scheduler = world->get_system_scheduler();
+				scheduler->physics_update(dt);
 			}
 
-			scheduler->begin(dt);
+			for (auto& [name, world] : worlds)
+			{
+				WorldSystemScheduler* scheduler = world->get_system_scheduler();
+				scheduler->render_update(dt);
+			}
 
-			renderer.beginFrame(renderWidth, renderHeight);
+			if (main_menu)
+			{
+				draw_debug_menu_bar(dt);
+			}
 
-			editorPanels.meshEditor.beginFrame();
-
-			scheduler->physics_update(dt);
-			scheduler->render_update(dt);
-			globalApp.update(input, dt);
-
-			scheduler->end(dt);
+			for (auto& [name, world] : worlds)
+			{
+				WorldSystemScheduler* scheduler = world->get_system_scheduler();
+				scheduler->end(dt);
+			}
 
 			execute_main_thread_jobs();
-
-			endFrameCommon();
-			renderer.endFrame(&input);
-
-			editorPanels.meshEditor.endFrame();
-
-			if (ImGui::IsKeyPressed(key_print))
-			{
-				const fs::path dir = "captures";
-				fs::create_directories(dir);
-
-				fs::path path = dir / (get_time_string() + ".png");
-
-				if (ImGui::IsKeyDown(key_ctrl))
-				{
-					saveTextureToFile(window.backBuffers[window.currentBackbufferIndex], window.clientWidth, window.clientHeight, DXGI_FORMAT_R8G8B8A8_UNORM, path);
-				}
-				else
-				{
-					saveTextureToFile(renderer.frameResult, path);
-				}
-
-				LOG_MESSAGE("Saved screenshot to '%ws'", path.c_str());
-			}
 
 			fileBrowser.draw();
 
 			ImGui::End();
 
-			renderToMainWindow(window);
+			renderToMainWindow(*window);
 
 			cpu_profiling_frame_end_marker();
 
@@ -395,11 +282,6 @@ void Engine::terminate()
 	dxContext.quit();
 
 	instance_object = nullptr;
-}
-
-WorldSystemScheduler* Engine::get_system_scheduler() const
-{
-	return scheduler;
 }
 
 bool Engine::update()

@@ -1,5 +1,7 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
+#include "asset/bin.h"
+
 #include "asset/model_asset.h"
 #include "asset/io.h"
 
@@ -359,7 +361,7 @@ namespace era_engine
 		return result;
 	}
 
-	NODISCARD ModelAsset loadBIN(const fs::path& path)
+	ModelAsset loadBIN(const fs::path& path)
 	{
 		PROFILE("Loading BIN");
 

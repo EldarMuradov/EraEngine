@@ -32,207 +32,6 @@ namespace era_engine::animation
 		}
 	}
 
-	void AnimationSkeleton::analyzeJoints(const vec3* positions, const void* others, uint32 otherStride, uint32 numVertices)
-	{
-		for (uint32 jointID = 0; jointID < (uint32)joints.size(); ++jointID)
-		{
-			SkeletonJoint& j = joints[jointID];
-
-			std::string name = j.name;
-			std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-
-			LimbType c = limb_type_none;
-
-			bool left = contains(name, "left") || ends_with(name, ".l") || ends_with(name, "_l");
-
-			if (contains(name, "spine") || contains(name, "hip") || contains(name, "rib") || contains(name, "pelvis") || contains(name, "shoulder") || contains(name, "clavicle")) { c = limb_type_torso; }
-			else if (contains(name, "head") || contains(name, "neck")) { c = limb_type_head; }
-			else if (contains(name, "arm"))
-			{
-				LimbType parentType = (j.parent_id != INVALID_JOINT) ? joints[j.parent_id].limb_type : limb_type_none;
-
-				if (contains(name, "lower") || contains(name, "lo") || contains(name, "fore")) { c = left ? limb_type_lower_arm_left : limb_type_lower_arm_right; }
-				else if (contains(name, "upper") || contains(name, "up")) { c = left ? limb_type_upper_arm_left : limb_type_upper_arm_right; }
-				else if (parentType == limb_type_torso) { c = left ? limb_type_upper_arm_left : limb_type_upper_arm_right; }
-				else { c = left ? limb_type_lower_arm_left : limb_type_lower_arm_right; }
-			}
-			else if (contains(name, "hand") || contains(name, "finger") || contains(name, "thumb") || contains(name, "index") || contains(name, "middle") || contains(name, "ring") || contains(name, "pinky"))
-			{
-				c = left ? limb_type_hand_left : limb_type_hand_right;
-			}
-			else if (contains(name, "leg") || contains(name, "thigh") || contains(name, "shin") || contains(name, "calf"))
-			{
-				LimbType parentType = (j.parent_id != INVALID_JOINT) ? joints[j.parent_id].limb_type : limb_type_none;
-
-				if (contains(name, "lower") || contains(name, "lo") || contains(name, "shin") || contains(name, "calf")) { c = left ? limb_type_lower_leg_left : limb_type_lower_leg_right; }
-				else if (contains(name, "upper") || contains(name, "up") || contains(name, "thigh")) { c = left ? limb_type_upper_leg_left : limb_type_upper_leg_right; }
-				else if (parentType == limb_type_torso) { c = left ? limb_type_upper_leg_left : limb_type_upper_leg_right; }
-				else { c = left ? limb_type_lower_leg_left : limb_type_lower_leg_right; }
-			}
-			else if (contains(name, "foot") || contains(name, "toe") || contains(name, "ball"))
-			{
-				c = left ? limb_type_foot_left : limb_type_foot_right;
-			}
-
-			j.limb_type = c;
-			j.ik = contains(name, "ik");
-
-			if (limbs[c].representative_joint == INVALID_JOINT)
-			{
-				// The highest joint in the hierarchy for this type is chosen as the representative.
-				// Because we order the joints, the first joint we encounter is automatically the highest in the hierarchy.
-				limbs[c].representative_joint = jointID;
-			}
-		}
-
-#if 0
-
-		struct limb_analysis
-		{
-			vec3 vertexMean;
-			uint32 numVertices;
-			mat3 covariance;
-		};
-
-		limb_analysis analysis[limb_type_count] = {};
-
-		for (uint32 i = 0; i < numVertices; ++i)
-		{
-			vec3 p = positions[i];
-			skinning_weights w = *(skinning_weights*)((uint8*)others + i * otherStride);
-			for (uint32 j = 0; j < 4; ++j)
-			{
-				if (w.skinWeights[j] > 150)
-				{
-					const auto& joint = joints[w.skinIndices[j]];
-					limb_type c = joint.limbType;
-					if (c != limb_type_unknown)
-					{
-						limb_analysis& a = analysis[c];
-						a.vertexMean += p;
-						++a.numVertices;
-					}
-				}
-			}
-		}
-
-		for (uint32 i = 0; i < limb_type_count; ++i)
-		{
-			if (analysis[i].numVertices)
-			{
-				analysis[i].vertexMean /= (float)analysis[i].numVertices;
-			}
-		}
-
-
-		for (uint32 i = 0; i < numVertices; ++i)
-		{
-			vec3 p = positions[i];
-			skinning_weights w = *(skinning_weights*)((uint8*)others + i * otherStride);
-			for (uint32 j = 0; j < 4; ++j)
-			{
-				if (w.skinWeights[j] > 150)
-				{
-					const auto& joint = joints[w.skinIndices[j]];
-					limb_type c = joint.limbType;
-					if (c != limb_type_unknown)
-					{
-						limb_analysis& a = analysis[c];
-						vec3 m = a.vertexMean;
-
-						for (uint32 y = 0; y < 3; ++y)
-						{
-							for (uint32 x = 0; x < 3; ++x)
-							{
-								a.covariance.m[3 * y + x] += (m.data[y] - p.data[y]) * (m.data[x] - p.data[x]);
-							}
-						}
-					}
-				}
-			}
-		}
-
-		for (uint32 i = 0; i < limb_type_count; ++i)
-		{
-			if (analysis[i].numVertices)
-			{
-				analysis[i].covariance *= 1.f / (float)analysis[i].numVertices;
-
-				//singular_value_decomposition svd = computeSVD(analysis[i].covariance);
-				//vec3 principalAxis = col(svd.U, 0);
-
-				vec3 eigenValues;
-				mat3 eigenVectors;
-
-				getEigen(analysis[i].covariance, eigenValues, eigenVectors);
-				uint32 maxComponent = (eigenValues.x > eigenValues.y) ? (eigenValues.x > eigenValues.z) ? 0 : 2 : (eigenValues.y > eigenValues.z) ? 1 : 2;
-
-				vec3 principalAxis = col(eigenVectors, maxComponent);
-
-				limbs[i].mean = analysis[i].vertexMean;
-				limbs[i].principalAxis = principalAxis;
-			}
-		}
-
-#else
-
-		for (uint32 i = 0; i < limb_type_count; ++i)
-		{
-			limbs[i].dimensions = { FLT_MAX, -FLT_MAX, -FLT_MAX };
-		}
-
-		for (uint32 i = 0; i < numVertices; ++i)
-		{
-			vec3 p = positions[i];
-			SkinningWeights w = *(SkinningWeights*)((uint8*)others + i * otherStride);
-			for (uint32 j = 0; j < 4; ++j)
-			{
-				if (w.skin_weights[j] > 200)
-				{
-					LimbType type = joints[w.skin_indices[j]].limb_type;
-					if (type != limb_type_none)
-					{
-						if (limbs[type].representative_joint != INVALID_JOINT)
-						{
-							const SkeletonJoint& j = joints[limbs[type].representative_joint];
-							LimbDimensions& d = limbs[type].dimensions;
-
-							p = transform_position(j.inv_bind_transform, p);
-
-							d.minY = min(d.minY, p.y);
-							d.maxY = max(d.maxY, p.y);
-							d.radius = max(d.radius, squared_length(vec2(p.x, p.z)));
-						}
-					}
-				}
-			}
-		}
-
-		for (uint32 i = 0; i < limb_type_count; ++i)
-		{
-			LimbDimensions& d = limbs[i].dimensions;
-
-			d.radius = sqrt(d.radius); // Above, we calculate the squared radius.
-
-			float c = 0.5f * (d.minY + d.maxY);
-
-			const float scaleFactor = 0.8f;
-			d.minY = (d.minY - c) * scaleFactor + c;
-			d.maxY = (d.maxY - c) * scaleFactor + c;
-			d.radius *= scaleFactor;
-
-			d.minY += d.radius;
-			d.maxY -= d.radius;
-			if (d.minY > d.maxY)
-			{
-				d.minY = c - EPSILON;
-				d.maxY = c + EPSILON;
-			}
-		}
-
-#endif
-	}
-
 	static vec3 samplePosition(const AnimationClip& clip, const AnimationJoint& animJoint, float time)
 	{
 		if (time >= clip.length_in_seconds)
@@ -342,11 +141,12 @@ namespace era_engine::animation
 
 	void AnimationSkeleton::sampleAnimation(const AnimationClip& clip, float time, trs* outLocalTransforms, trs* outRootMotion) const
 	{
-		ASSERT(clip.joints.size() == joints.size());
+		ASSERT(skeleton != nullptr);
+		ASSERT(clip.joints.size() == skeleton->joints.size());
 
 		time = clamp(time, 0.f, clip.length_in_seconds);
 
-		uint32 numJoints = (uint32)joints.size();
+		uint32 numJoints = (uint32)skeleton->joints.size();
 		for (uint32 i = 0; i < numJoints; ++i)
 		{
 			const AnimationJoint& animJoint = clip.joints[i];
@@ -410,78 +210,6 @@ namespace era_engine::animation
 		sampleAnimation(clips[index], time, outLocalTransforms, outRootMotion);
 	}
 
-	void AnimationSkeleton::blendLocalTransforms(const trs* localTransforms1, const trs* localTransforms2, float t, trs* outBlendedLocalTransforms) const
-	{
-		t = clamp01(t);
-		for (uint32 jointID = 0; jointID < (uint32)joints.size(); ++jointID)
-		{
-			outBlendedLocalTransforms[jointID] = lerp(localTransforms1[jointID], localTransforms2[jointID], t);
-		}
-	}
-
-	void AnimationSkeleton::getSkinningMatricesFromLocalTransforms(const trs* localTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
-	{
-		uint32 numJoints = (uint32)joints.size();
-		trs* globalTransforms = (trs*)alloca(sizeof(trs) * numJoints);
-
-		for (uint32 i = 0; i < numJoints; ++i)
-		{
-			const SkeletonJoint& skelJoint = joints[i];
-			if (skelJoint.parent_id != INVALID_JOINT)
-			{
-				ASSERT(i > skelJoint.parent_id); // Parent already processed.
-				globalTransforms[i] = globalTransforms[skelJoint.parent_id] * localTransforms[i];
-			}
-			else
-			{
-				globalTransforms[i] = worldTransform * localTransforms[i];
-			}
-
-			outSkinningMatrices[i] = trs_to_mat4(globalTransforms[i]) * joints[i].inv_bind_transform;
-		}
-	}
-
-	void AnimationSkeleton::getSkinningMatricesFromLocalTransforms(const trs* localTransforms, trs* outGlobalTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
-	{
-		uint32 numJoints = (uint32)joints.size();
-
-		for (uint32 i = 0; i < numJoints; ++i)
-		{
-			const SkeletonJoint& skelJoint = joints[i];
-			if (skelJoint.parent_id != INVALID_JOINT)
-			{
-				ASSERT(i > skelJoint.parent_id); // Parent already processed
-				outGlobalTransforms[i] = outGlobalTransforms[skelJoint.parent_id] * localTransforms[i];
-			}
-			else
-			{
-				outGlobalTransforms[i] = worldTransform * localTransforms[i];
-			}
-
-			outSkinningMatrices[i] = trs_to_mat4(outGlobalTransforms[i]) * joints[i].inv_bind_transform;
-		}
-	}
-
-	void AnimationSkeleton::getSkinningMatricesFromGlobalTransforms(const trs* globalTransforms, mat4* outSkinningMatrices) const
-	{
-		uint32 numJoints = (uint32)joints.size();
-
-		for (uint32 i = 0; i < numJoints; ++i)
-		{
-			outSkinningMatrices[i] = trs_to_mat4(globalTransforms[i]) * joints[i].inv_bind_transform;
-		}
-	}
-
-	void AnimationSkeleton::getSkinningMatricesFromGlobalTransforms(const trs* globalTransforms, mat4* outSkinningMatrices, const trs& worldTransform) const
-	{
-		uint32 numJoints = (uint32)joints.size();
-
-		for (uint32 i = 0; i < numJoints; ++i)
-		{
-			outSkinningMatrices[i] = trs_to_mat4(worldTransform) * trs_to_mat4(globalTransforms[i]) * joints[i].inv_bind_transform;
-		}
-	}
-
 	std::vector<uint32> AnimationSkeleton::getClipsByName(const std::string& name)
 	{
 		std::vector<uint32> result;
@@ -495,21 +223,16 @@ namespace era_engine::animation
 		return result;
 	}
 
-	static void prettyPrint(const AnimationSkeleton& skeleton, uint32 parent, uint32 indent)
+	static void pretty_print(const Skeleton& skeleton, uint32 parent, uint32 indent)
 	{
 		for (uint32 i = 0; i < (uint32)skeleton.joints.size(); ++i)
 		{
 			if (skeleton.joints[i].parent_id == parent)
 			{
 				std::cout << std::string(indent, ' ') << skeleton.joints[i].name << '\n';
-				prettyPrint(skeleton, i, indent + 1);
+				pretty_print(skeleton, i, indent + 1);
 			}
 		}
-	}
-
-	void AnimationSkeleton::prettyPrintHierarchy() const
-	{
-		prettyPrint(*this, INVALID_JOINT, 0);
 	}
 
 	void AnimationClip::edit()
@@ -653,15 +376,15 @@ namespace era_engine::animation
 		relTime += dt / targetLength;
 		relTime = fmodf(relTime, 1.f);
 
-		trs* totalLocalTransforms = (trs*)alloca(sizeof(trs) * skeleton.joints.size() * 2);
+		trs* totalLocalTransforms = (trs*)alloca(sizeof(trs) * skeleton.skeleton->joints.size() * 2);
 		trs* localTransforms1 = totalLocalTransforms;
-		trs* localTransforms2 = totalLocalTransforms + skeleton.joints.size();
+		trs* localTransforms2 = totalLocalTransforms + skeleton.skeleton->joints.size();
 
 		trs rootMotion1, rootMotion2;
 		skeleton.sampleAnimation(*first, first->length_in_seconds * relTime, localTransforms1, &rootMotion1);
 		skeleton.sampleAnimation(*second, second->length_in_seconds * relTime, localTransforms2, &rootMotion2);
 
-		skeleton.blendLocalTransforms(localTransforms1, localTransforms2, blendValue, outLocalTransforms);
+		skeleton.skeleton->blend_local_transforms(localTransforms1, localTransforms2, blendValue, outLocalTransforms);
 
 		trs rootMotion = lerp(rootMotion1, rootMotion2, blendValue);
 
@@ -819,9 +542,11 @@ namespace era_engine::animation
 		using namespace rttr;
 		rttr::registration::class_<AnimationComponent>("AnimationComponent")
 			.constructor<ref<Entity::EcsData>>();
+		rttr::registration::class_<SkeletonComponent>("SkeletonComponent")
+			.constructor<ref<Entity::EcsData>>();
 	}
 
-	animation::AnimationComponent::AnimationComponent(ref<Entity::EcsData> _data)
+	AnimationComponent::AnimationComponent(ref<Entity::EcsData> _data)
 		: Component(_data)
 	{
 	}
@@ -856,7 +581,8 @@ namespace era_engine::animation
 	void AnimationComponent::update(const ref<multi_mesh>& mesh, Allocator& arena, float dt, trs* transform)
 	{
 		const dx_mesh& dxMesh = mesh->mesh;
-		AnimationSkeleton& skeleton = mesh->skeleton;
+		Skeleton& skeleton = mesh->skeleton;
+		AnimationSkeleton& animation_skeleton = mesh->animation_skeleton;
 
 		current_global_transforms = 0;
 
@@ -869,11 +595,11 @@ namespace era_engine::animation
 
 			trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
 			trs deltaRootMotion;
-			animation->update(skeleton, dt * time_scale, localTransforms, deltaRootMotion);
+			animation->update(animation_skeleton, dt * time_scale, localTransforms, deltaRootMotion);
 
 			trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
 
-			skeleton.getSkinningMatricesFromLocalTransforms(localTransforms, globalTransforms, skinningMatrices);
+			skeleton.get_skinning_matrices_from_local_transforms(localTransforms, globalTransforms, skinningMatrices);
 
 			if (transform)
 			{
@@ -901,7 +627,8 @@ namespace era_engine::animation
 	void AnimationComponent::draw_current_skeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* render_pass) const
 	{
 		const dx_mesh& dxMesh = mesh->mesh;
-		AnimationSkeleton& skeleton = mesh->skeleton;
+		Skeleton& skeleton = mesh->skeleton;
+		AnimationSkeleton& animation_skeleton = mesh->animation_skeleton;
 
 #if 1
 		uint32 numJoints = (uint32)skeleton.joints.size();
@@ -974,4 +701,291 @@ namespace era_engine::animation
 #endif
 	}
 
+
+	void Skeleton::analyze_joints(const vec3* positions, const void* others, uint32 other_stride, uint32 num_vertices)
+	{
+		for (uint32 jointID = 0; jointID < (uint32)joints.size(); ++jointID)
+		{
+			SkeletonJoint& j = joints[jointID];
+
+			std::string name = j.name;
+			std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+
+			LimbType c = limb_type_none;
+
+			bool left = contains(name, "left") || ends_with(name, ".l") || ends_with(name, "_l");
+
+			if (contains(name, "spine") || contains(name, "hip") || contains(name, "rib") || contains(name, "pelvis") || contains(name, "shoulder") || contains(name, "clavicle")) { c = limb_type_torso; }
+			else if (contains(name, "head") || contains(name, "neck")) { c = limb_type_head; }
+			else if (contains(name, "arm"))
+			{
+				LimbType parentType = (j.parent_id != INVALID_JOINT) ? joints[j.parent_id].limb_type : limb_type_none;
+
+				if (contains(name, "lower") || contains(name, "lo") || contains(name, "fore")) { c = left ? limb_type_lower_arm_left : limb_type_lower_arm_right; }
+				else if (contains(name, "upper") || contains(name, "up")) { c = left ? limb_type_upper_arm_left : limb_type_upper_arm_right; }
+				else if (parentType == limb_type_torso) { c = left ? limb_type_upper_arm_left : limb_type_upper_arm_right; }
+				else { c = left ? limb_type_lower_arm_left : limb_type_lower_arm_right; }
+			}
+			else if (contains(name, "hand") || contains(name, "finger") || contains(name, "thumb") || contains(name, "index") || contains(name, "middle") || contains(name, "ring") || contains(name, "pinky"))
+			{
+				c = left ? limb_type_hand_left : limb_type_hand_right;
+			}
+			else if (contains(name, "leg") || contains(name, "thigh") || contains(name, "shin") || contains(name, "calf"))
+			{
+				LimbType parentType = (j.parent_id != INVALID_JOINT) ? joints[j.parent_id].limb_type : limb_type_none;
+
+				if (contains(name, "lower") || contains(name, "lo") || contains(name, "shin") || contains(name, "calf")) { c = left ? limb_type_lower_leg_left : limb_type_lower_leg_right; }
+				else if (contains(name, "upper") || contains(name, "up") || contains(name, "thigh")) { c = left ? limb_type_upper_leg_left : limb_type_upper_leg_right; }
+				else if (parentType == limb_type_torso) { c = left ? limb_type_upper_leg_left : limb_type_upper_leg_right; }
+				else { c = left ? limb_type_lower_leg_left : limb_type_lower_leg_right; }
+			}
+			else if (contains(name, "foot") || contains(name, "toe") || contains(name, "ball"))
+			{
+				c = left ? limb_type_foot_left : limb_type_foot_right;
+			}
+
+			j.limb_type = c;
+			j.ik = contains(name, "ik");
+
+			if (limbs[c].representative_joint == INVALID_JOINT)
+			{
+				// The highest joint in the hierarchy for this type is chosen as the representative.
+				// Because we order the joints, the first joint we encounter is automatically the highest in the hierarchy.
+				limbs[c].representative_joint = jointID;
+			}
+		}
+
+#if 0
+
+		struct limb_analysis
+		{
+			vec3 vertexMean;
+			uint32 numVertices;
+			mat3 covariance;
+		};
+
+		limb_analysis analysis[limb_type_count] = {};
+
+		for (uint32 i = 0; i < numVertices; ++i)
+		{
+			vec3 p = positions[i];
+			skinning_weights w = *(skinning_weights*)((uint8*)others + i * otherStride);
+			for (uint32 j = 0; j < 4; ++j)
+			{
+				if (w.skinWeights[j] > 150)
+				{
+					const auto& joint = joints[w.skinIndices[j]];
+					limb_type c = joint.limbType;
+					if (c != limb_type_unknown)
+					{
+						limb_analysis& a = analysis[c];
+						a.vertexMean += p;
+						++a.numVertices;
+					}
+				}
+			}
+		}
+
+		for (uint32 i = 0; i < limb_type_count; ++i)
+		{
+			if (analysis[i].numVertices)
+			{
+				analysis[i].vertexMean /= (float)analysis[i].numVertices;
+			}
+		}
+
+
+		for (uint32 i = 0; i < numVertices; ++i)
+		{
+			vec3 p = positions[i];
+			skinning_weights w = *(skinning_weights*)((uint8*)others + i * otherStride);
+			for (uint32 j = 0; j < 4; ++j)
+			{
+				if (w.skinWeights[j] > 150)
+				{
+					const auto& joint = joints[w.skinIndices[j]];
+					limb_type c = joint.limbType;
+					if (c != limb_type_unknown)
+					{
+						limb_analysis& a = analysis[c];
+						vec3 m = a.vertexMean;
+
+						for (uint32 y = 0; y < 3; ++y)
+						{
+							for (uint32 x = 0; x < 3; ++x)
+							{
+								a.covariance.m[3 * y + x] += (m.data[y] - p.data[y]) * (m.data[x] - p.data[x]);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		for (uint32 i = 0; i < limb_type_count; ++i)
+		{
+			if (analysis[i].numVertices)
+			{
+				analysis[i].covariance *= 1.f / (float)analysis[i].numVertices;
+
+				//singular_value_decomposition svd = computeSVD(analysis[i].covariance);
+				//vec3 principalAxis = col(svd.U, 0);
+
+				vec3 eigenValues;
+				mat3 eigenVectors;
+
+				getEigen(analysis[i].covariance, eigenValues, eigenVectors);
+				uint32 maxComponent = (eigenValues.x > eigenValues.y) ? (eigenValues.x > eigenValues.z) ? 0 : 2 : (eigenValues.y > eigenValues.z) ? 1 : 2;
+
+				vec3 principalAxis = col(eigenVectors, maxComponent);
+
+				limbs[i].mean = analysis[i].vertexMean;
+				limbs[i].principalAxis = principalAxis;
+			}
+		}
+
+#else
+
+		for (uint32 i = 0; i < limb_type_count; ++i)
+		{
+			limbs[i].dimensions = { FLT_MAX, -FLT_MAX, -FLT_MAX };
+		}
+
+		for (uint32 i = 0; i < num_vertices; ++i)
+		{
+			vec3 p = positions[i];
+			SkinningWeights w = *(SkinningWeights*)((uint8*)others + i * other_stride);
+			for (uint32 j = 0; j < 4; ++j)
+			{
+				if (w.skin_weights[j] > 200)
+				{
+					LimbType type = joints[w.skin_indices[j]].limb_type;
+					if (type != limb_type_none)
+					{
+						if (limbs[type].representative_joint != INVALID_JOINT)
+						{
+							const SkeletonJoint& j = joints[limbs[type].representative_joint];
+							LimbDimensions& d = limbs[type].dimensions;
+
+							p = transform_position(j.inv_bind_transform, p);
+
+							d.minY = min(d.minY, p.y);
+							d.maxY = max(d.maxY, p.y);
+							d.radius = max(d.radius, squared_length(vec2(p.x, p.z)));
+						}
+					}
+				}
+			}
+		}
+
+		for (uint32 i = 0; i < limb_type_count; ++i)
+		{
+			LimbDimensions& d = limbs[i].dimensions;
+
+			d.radius = sqrt(d.radius); // Above, we calculate the squared radius.
+
+			float c = 0.5f * (d.minY + d.maxY);
+
+			const float scaleFactor = 0.8f;
+			d.minY = (d.minY - c) * scaleFactor + c;
+			d.maxY = (d.maxY - c) * scaleFactor + c;
+			d.radius *= scaleFactor;
+
+			d.minY += d.radius;
+			d.maxY -= d.radius;
+			if (d.minY > d.maxY)
+			{
+				d.minY = c - EPSILON;
+				d.maxY = c + EPSILON;
+			}
+		}
+
+#endif
+	}
+
+	void Skeleton::blend_local_transforms(const trs* local_transforms1, const trs* local_transforms2, float t, trs* out_blended_local_transforms) const
+	{
+		t = clamp01(t);
+		for (uint32 jointID = 0; jointID < (uint32)joints.size(); ++jointID)
+		{
+			out_blended_local_transforms[jointID] = lerp(local_transforms1[jointID], local_transforms2[jointID], t);
+		}
+	}
+
+	void Skeleton::get_skinning_matrices_from_local_transforms(const trs* local_transforms, mat4* out_skinning_matrices, const trs& world_transform) const
+	{
+		uint32 numJoints = (uint32)joints.size();
+		trs* global_transforms = (trs*)alloca(sizeof(trs) * numJoints);
+
+		for (uint32 i = 0; i < numJoints; ++i)
+		{
+			const SkeletonJoint& skelJoint = joints[i];
+			if (skelJoint.parent_id != INVALID_JOINT)
+			{
+				ASSERT(i > skelJoint.parent_id); // Parent already processed.
+				global_transforms[i] = global_transforms[skelJoint.parent_id] * local_transforms[i];
+			}
+			else
+			{
+				global_transforms[i] = world_transform * local_transforms[i];
+			}
+
+			out_skinning_matrices[i] = trs_to_mat4(global_transforms[i]) * joints[i].inv_bind_transform;
+		}
+	}
+
+	void Skeleton::get_skinning_matrices_from_local_transforms(const trs* local_transforms, trs* out_global_transforms, mat4* out_skinning_matrices, const trs& world_transform) const
+	{
+		uint32 numJoints = (uint32)joints.size();
+
+		for (uint32 i = 0; i < numJoints; ++i)
+		{
+			const SkeletonJoint& skelJoint = joints[i];
+			if (skelJoint.parent_id != INVALID_JOINT)
+			{
+				ASSERT(i > skelJoint.parent_id); // Parent already processed
+				out_global_transforms[i] = out_global_transforms[skelJoint.parent_id] * local_transforms[i];
+			}
+			else
+			{
+				out_global_transforms[i] = world_transform * local_transforms[i];
+			}
+
+			out_skinning_matrices[i] = trs_to_mat4(out_global_transforms[i]) * joints[i].inv_bind_transform;
+		}
+	}
+
+	void Skeleton::get_skinning_matrices_from_global_transforms(const trs* global_transforms, mat4* out_skinning_matrices) const
+	{
+		uint32 numJoints = (uint32)joints.size();
+
+		for (uint32 i = 0; i < numJoints; ++i)
+		{
+			out_skinning_matrices[i] = trs_to_mat4(global_transforms[i]) * joints[i].inv_bind_transform;
+		}
+	}
+
+	void Skeleton::get_skinning_matrices_from_global_transforms(const trs* global_transforms, mat4* out_skinning_matrices, const trs& world_transform) const
+	{
+		uint32 numJoints = (uint32)joints.size();
+
+		for (uint32 i = 0; i < numJoints; ++i)
+		{
+			out_skinning_matrices[i] = trs_to_mat4(world_transform) * trs_to_mat4(global_transforms[i]) * joints[i].inv_bind_transform;
+		}
+	}
+
+	void Skeleton::pretty_print_hierarchy() const
+	{
+		pretty_print(*this, INVALID_JOINT, 0);
+	}
+
+	SkeletonComponent::SkeletonComponent(ref<Entity::EcsData> _data) 
+		: Component(_data) 
+	{
+	}
+
+	SkeletonComponent::~SkeletonComponent()
+	{
+	}
 }

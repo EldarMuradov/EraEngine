@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "core_api.h"
 #include "core/math.h"
 #include "core/job_system.h"
 
@@ -36,7 +37,7 @@ namespace era_engine
 		float translucency;
 	};
 
-	NODISCARD ref<pbr_material> createPBRMaterial(const PbrMaterialDesc& desc);
-	NODISCARD ref<pbr_material> createPBRMaterialAsync(const PbrMaterialDesc& desc, JobHandle parentJob = {});
-	NODISCARD ref<pbr_material> getDefaultPBRMaterial();
+	ERA_CORE_API ref<pbr_material> createPBRMaterial(const PbrMaterialDesc& desc);
+	ERA_CORE_API ref<pbr_material> createPBRMaterialAsync(const PbrMaterialDesc& desc, JobHandle parentJob = {});
+	ERA_CORE_API ref<pbr_material> getDefaultPBRMaterial();
 }

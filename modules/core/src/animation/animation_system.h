@@ -5,6 +5,7 @@
 namespace era_engine
 {
 	struct Allocator;
+	class RendererHolderRootComponent;
 }
 
 namespace era_engine::animation
@@ -21,5 +22,6 @@ namespace era_engine::animation
 		ERA_VIRTUAL_REFLECT(System)
 	private:
 		Allocator* allocator = nullptr;
+		RendererHolderRootComponent* renderer_holder_rc = nullptr;
 	};
 }

@@ -8,7 +8,7 @@
 
 namespace era_engine
 {
-	struct AssetHandle
+	struct ERA_CORE_API AssetHandle
 	{
 		AssetHandle() : value(0) {}
 		AssetHandle(uint64 value) : value(value) {}

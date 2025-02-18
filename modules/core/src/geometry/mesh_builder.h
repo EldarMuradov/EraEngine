@@ -14,7 +14,7 @@
 
 namespace era_engine
 {
-	struct submesh_info
+	struct ERA_CORE_API submesh_info
 	{
 		uint32 numIndices;
 		uint32 firstIndex;
@@ -43,21 +43,21 @@ namespace era_engine
 		mesh_index_uint32,
 	};
 
-	struct quad_mesh_desc
+	struct ERA_CORE_API quad_mesh_desc
 	{
 		vec3 center = 0.f;
 		vec2 radius = 1.f;
 		quat rotation = quat::identity;
 	};
 
-	struct box_mesh_desc
+	struct ERA_CORE_API box_mesh_desc
 	{
 		vec3 center = 0.f;
 		vec3 radius = 1.f;
 		quat rotation = quat::identity;
 	};
 
-	struct tesselated_box_mesh_desc
+	struct ERA_CORE_API tesselated_box_mesh_desc
 	{
 		vec3 center = 0.f;
 		vec3 radius = 1.f;
@@ -65,7 +65,7 @@ namespace era_engine
 		quat rotation = quat::identity;
 	};
 
-	struct sphere_mesh_desc
+	struct ERA_CORE_API sphere_mesh_desc
 	{
 		vec3 center = 0.f;
 		float radius = 1.f;
@@ -73,7 +73,7 @@ namespace era_engine
 		uint32 rows = 15;
 	};
 
-	struct icosphere_mesh_desc
+	struct ERA_CORE_API icosphere_mesh_desc
 	{
 		vec3 center = 0.f;
 		float radius = 1.f;
@@ -81,15 +81,15 @@ namespace era_engine
 	};
 
 	// All meshes are standing upright by default.
-	struct capsule_mesh_desc
+	struct ERA_CORE_API capsule_mesh_desc
 	{
 		capsule_mesh_desc() {}
 
-		capsule_mesh_desc(vec3 posA, vec3 posB, float radius)
+		capsule_mesh_desc(vec3 posA, vec3 posB, float _radius)
 		{
 			center = (posA + posB) * 0.5f;
 			height = length(posA - posB);
-			this->radius = radius;
+			radius = _radius;
 			rotation = rotate_from_to(vec3(0.f, 1.f, 0.f), posB - posA);
 		}
 
@@ -101,7 +101,7 @@ namespace era_engine
 		uint32 rows = 15;
 	};
 
-	struct cylinder_mesh_desc
+	struct ERA_CORE_API cylinder_mesh_desc
 	{
 		vec3 center = 0.f;
 		float height = 1.f;
@@ -110,7 +110,7 @@ namespace era_engine
 		uint32 slices = 15;
 	};
 
-	struct hollow_cylinder_mesh_desc
+	struct ERA_CORE_API hollow_cylinder_mesh_desc
 	{
 		vec3 center = 0.f;
 		float height = 1.f;
@@ -120,7 +120,7 @@ namespace era_engine
 		uint32 slices = 15;
 	};
 
-	struct arrow_mesh_desc
+	struct ERA_CORE_API arrow_mesh_desc
 	{
 		vec3 base = 0.f;
 		float shaftLength = 1.f;
@@ -131,7 +131,7 @@ namespace era_engine
 		uint32 slices = 15;
 	};
 
-	struct torus_mesh_desc
+	struct ERA_CORE_API torus_mesh_desc
 	{
 		vec3 center = 0.f;
 		float torusRadius = 1.f;
@@ -141,7 +141,7 @@ namespace era_engine
 		uint32 segments = 15;
 	};
 
-	struct mace_mesh_desc
+	struct ERA_CORE_API mace_mesh_desc
 	{
 		vec3 base = 0.f;
 		float shaftLength = 1.f;
@@ -163,7 +163,7 @@ namespace era_engine
 		return size;
 	}
 
-	struct mesh_builder
+	struct ERA_CORE_API mesh_builder
 	{
 		mesh_builder(uint32 vertexFlags = mesh_creation_flags_default, mesh_index_type indexType = mesh_index_uint16);
 		mesh_builder(const mesh_builder& mesh) = delete;

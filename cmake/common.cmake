@@ -26,7 +26,7 @@ function(assign_source_group)
     endforeach()
 endfunction(assign_source_group)
 
-function(default_linkage name)
+function(era_default_linkage name)
     target_compile_definitions(${name} PRIVATE _UNICODE
         UNICODE
         _CRT_SECURE_NO_WARNINGS
@@ -59,13 +59,10 @@ function(declare_module name)
     file(GLOB_RECURSE SOURCES_${name} ${ERA_ENGINE_PATH}/modules/${name}/src/*.cpp)
     file(GLOB_RECURSE HEADERS_${name} ${ERA_ENGINE_PATH}/modules/${name}/src/*.h)
 
-    set(sources_${name} ${SOURCES_${name}})
-    set(headers_${name} ${HEADERS_${name}})
-
     add_library(${name} SHARED ${SOURCES_${name}} ${HEADERS_${name}})
     target_include_directories(${name} PUBLIC ${ERA_ENGINE_PATH}/modules/${name}/src)
 
-    default_linkage(${name})
+    era_default_linkage(${name})
 endfunction()
 
 function(declare_asset_module name)
@@ -82,13 +79,10 @@ function(declare_app name)
     file(GLOB_RECURSE SOURCES_${name} ${ERA_ENGINE_PATH}/apps/${name}/src/*.cpp)
     file(GLOB_RECURSE HEADERS_${name} ${ERA_ENGINE_PATH}/apps/${name}/src/*.h)
 
-    set(sources_${name} ${SOURCES_${name}})
-    set(headers_${name} ${HEADERS_${name}})
-
     add_executable(${name} ${SOURCES_${name}} ${HEADERS_${name}})
     target_include_directories(${name} PUBLIC ${ERA_ENGINE_PATH}/apps/${name}/src)
 
-    default_linkage(${name})
+    era_default_linkage(${name})
 endfunction()
 
 function(era_begin name target_type)
@@ -120,7 +114,7 @@ function(require_module target module)
     add_dependencies(${target} ${module})
 
     get_property(module_dependencies TARGET ${module} PROPERTY DEPENDENCIES)
-    set_property(TARGET ${target} APPEND PROPERTY DEPENDENCIES ${module} ${module_dependencies})
+    set_property(TARGET ${target} APPEND PROPERTY DEPENDENCIES ${module})
 endfunction()
 
 function(require_thirdparty_module target module)
@@ -134,7 +128,7 @@ function(require_thirdparty_module target module)
     add_dependencies(${target} ${module})
 
     get_property(module_dependencies TARGET ${module} PROPERTY DEPENDENCIES)
-    set_property(TARGET ${target} APPEND PROPERTY DEPENDENCIES ${module} ${module_dependencies})
+    set_property(TARGET ${target} APPEND PROPERTY DEPENDENCIES ${module})
 endfunction()
 
 function(era_end name)

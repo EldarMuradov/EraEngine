@@ -21,8 +21,6 @@
 #include "terrain/grass.h"
 #include "terrain/water.h"
 
-#include "application.h"
-
 #include "imgui/imgui_internal.h"
 
 //#include "scripting/script.h"

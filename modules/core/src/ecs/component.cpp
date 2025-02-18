@@ -40,13 +40,19 @@ namespace era_engine
 
 	Component& Component::operator=(const Component& _component)  noexcept
 	{
-		component_data = _component.component_data;
+		if (this != &_component)
+		{
+			component_data = _component.component_data;
+		}
 		return *this;
 	}
 
 	Component& Component::operator=(Component&& _component)  noexcept
 	{
-		component_data = std::move(_component.component_data);
+		if (this != &_component)
+		{
+			component_data = std::move(_component.component_data);
+		}
 		return *this;
 	}
 

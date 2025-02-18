@@ -422,7 +422,7 @@ namespace era_engine
 		return true;
 	}
 
-	bool saveImageToFile(const fs::path& filepath, DirectX::Image image)
+	bool saveImageToFile(const fs::path& filepath, const DirectX::Image& image)
 	{
 		fs::path extension = filepath.extension();
 

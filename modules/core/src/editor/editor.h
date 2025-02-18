@@ -20,8 +20,6 @@
 
 namespace era_engine
 {
-	struct application;
-
 	struct eeditor
 	{
 		void initialize(ref<EditorScene> _scene, main_renderer* _renderer, editor_panels* _editorPanels);
@@ -80,8 +78,6 @@ namespace era_engine
 		main_renderer* renderer = nullptr;
 		editor_panels* editorPanels = nullptr;
 
-		application* app = nullptr;
-
 		undo_stack undoStacks[2];
 		undo_buffer undoBuffers[2];
 
@@ -99,7 +95,6 @@ namespace era_engine
 		bool renderPhysicsShapes = false;
 
 		friend struct selection_undo;
-		friend struct application;
 	};
 
 	void editTexture(const char* name, ref<dx_texture>& tex, uint32 loadFlags);

@@ -48,7 +48,7 @@ namespace era_engine
 	bool loadImageFromFile(const fs::path& filepath, uint32 flags, DirectX::ScratchImage& scratchImage, D3D12_RESOURCE_DESC& textureDesc);
 	bool loadSVGFromFile(const fs::path& filepath, uint32 flags, DirectX::ScratchImage& scratchImage, D3D12_RESOURCE_DESC& textureDesc);
 
-	bool saveImageToFile(const fs::path& filepath, DirectX::Image image);
+	bool saveImageToFile(const fs::path& filepath, const DirectX::Image& image);
 
 	NODISCARD inline constexpr bool isUAVCompatibleFormat(DXGI_FORMAT format)
 	{

@@ -1,5 +1,6 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
+#include "asset/bin.h"
 #include "asset/io.h"
 #include "asset/model_asset.h"
 #include "asset/mesh_postprocessing.h"
@@ -308,7 +309,7 @@ namespace era_engine
 		return result;
 	}
 
-	NODISCARD ModelAsset loadOBJ(const fs::path& path, uint32 flags)
+	ModelAsset loadOBJ(const fs::path& path, uint32 flags)
 	{
 		PROFILE("Loading OBJ");
 

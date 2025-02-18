@@ -138,6 +138,15 @@ namespace era_engine
 		return wstring_to_string(Project::engine_path) + path.data();
 #endif	
 	}
+
+	inline fs::path get_full_path(const fs::path& path)
+	{
+#ifdef ERA_RUNTIME
+		return  wstring_to_string(Project::path) + path.data();
+#else
+		return fs::path(wstring_to_string(Project::engine_path)) / path;
+#endif	
+	}
 }
 
 #define COMPILE_TIME_STRING_HASH_32(str) (force_consteval<hash_string32(str)>)

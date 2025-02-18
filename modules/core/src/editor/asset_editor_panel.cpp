@@ -201,7 +201,7 @@ namespace era_engine
 			{
 				if (ImGui::BeginChild("AnimationSettings"))
 				{
-					AnimationSkeleton& skeleton = this->mesh->skeleton;
+					Skeleton& skeleton = this->mesh->skeleton;
 					if (skeleton.joints.size() > 0)
 					{
 						if (ImGui::BeginTree("Skeleton"))

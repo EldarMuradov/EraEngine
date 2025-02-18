@@ -1,5 +1,6 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
+#include "asset/bin.h"
 #include "asset/deflate.h"
 #include "asset/io.h"
 #include "asset/model_asset.h"
@@ -2004,7 +2005,7 @@ namespace era_engine
 		return 0;
 	}
 
-	NODISCARD ModelAsset loadFBX(const fs::path& path, uint32 flags)
+	ModelAsset loadFBX(const fs::path& path, uint32 flags)
 	{
 		std::string pathStr = path.string();
 		const char* s = pathStr.c_str();

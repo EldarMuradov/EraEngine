@@ -1,6 +1,3 @@
-[submodule "modules/thirdparty-yaml-cpp/yaml-cppmodules/thirdparty-yaml-cpp/yaml-cpp"]
-	path = modules/thirdparty-yaml-cpp/yaml-cppmodules/thirdparty-yaml-cpp/yaml-cpp
-	url = https://github.com/EldarMuradov/yaml-cpp.git
 [submodule "modules/thirdparty-yaml-cpp/yaml-cpp"]
 	path = modules/thirdparty-yaml-cpp/yaml-cpp
 	url = https://github.com/EldarMuradov/yaml-cpp.git

@@ -24,8 +24,6 @@ namespace era_engine
 {
 	class World;
 
-	extern std::unordered_map<const char*, World*> worlds;
-
 	class ERA_CORE_API IReleasable
 	{
 	public:
