@@ -83,10 +83,10 @@ namespace era_engine
 		ProfileStatType type;
 	};
 
-	extern std::atomic<uint32> cpu_profile_index;
-	extern std::atomic<uint32> cpu_profile_completely_written[2];
-	extern ProfileEvent cpu_profile_events[2][MAX_NUM_CPU_PROFILE_EVENTS];
-	extern ProfileStat cpu_profile_stats[2][MAX_NUM_CPU_PROFILE_STATS];
+	ERA_CORE_API extern std::atomic<uint32> cpu_profile_index;
+	ERA_CORE_API extern std::atomic<uint32> cpu_profile_completely_written[2];
+	ERA_CORE_API extern ProfileEvent cpu_profile_events[2][MAX_NUM_CPU_PROFILE_EVENTS];
+	ERA_CORE_API extern ProfileStat cpu_profile_stats[2][MAX_NUM_CPU_PROFILE_STATS];
 
 	struct ERA_CORE_API CpuProfileBlockRecorder
 	{
@@ -117,7 +117,7 @@ namespace era_engine
 	inline void CPU_PROFILE_STAT(const char* label, float value) { _CPU_PROFILE_STAT(label, value, float_value, profile_stat_type_float); }
 	inline void CPU_PROFILE_STAT(const char* label, const char* value) { _CPU_PROFILE_STAT(label, value, string_value, profile_stat_type_string); }
 
-	void cpu_profiling_resolve_time_stamps();
+	ERA_CORE_API void cpu_profiling_resolve_time_stamps();
 
 	struct ERA_CORE_API CpuPrintProfileBlockRecorder
 	{

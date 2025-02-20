@@ -4,6 +4,7 @@
 
 #include "core/sync.h"
 #include "core/log.h"
+#include "core/ecs/tags_component.h"
 
 namespace era_engine
 {
@@ -28,7 +29,9 @@ namespace era_engine
 	{
 		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), this, &world_data->registry);
 		world_data->entity_datas.emplace(new_data->entity_handle, new_data);
-		world_data->root_entity = Entity(new_data).add_component<TransformComponent>().add_component<NameComponent>("RootEntity");
+		world_data->root_entity = Entity(new_data).add_component<TransformComponent>()
+			.add_component<NameComponent>("RootEntity")
+			.add_component<TagsComponent>();
 	}
 
 	Entity World::create_entity()
@@ -143,6 +146,33 @@ namespace era_engine
 		world_data->entity_datas.clear();
 
 		delete world_data;
+	}
+
+	void World::add_tag(const std::string& tag)
+	{
+		world_data->scheduler->refresh_graph();
+		world_data->root_entity.get_component<TagsComponent>().add_tag(tag);
+	}
+
+	bool World::remove_tag(const std::string& tag)
+	{
+		world_data->scheduler->refresh_graph();
+		return world_data->root_entity.get_component<TagsComponent>().remove_tag(tag);
+	}
+
+	bool World::has_tag(const std::string& tag) const
+	{
+		return world_data->root_entity.get_component<TagsComponent>().has_tag(tag);
+	}
+
+	void World::clear_tags()
+	{
+		world_data->root_entity.get_component<TagsComponent>().clear();
+	}
+
+	const TagsContainer& World::get_tags_container() const
+	{
+		return world_data->root_entity.get_component<TagsComponent>().get_container();
 	}
 
 	size_t World::size() const noexcept

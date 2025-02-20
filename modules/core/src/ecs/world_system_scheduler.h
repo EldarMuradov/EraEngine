@@ -17,6 +17,7 @@ namespace era_engine
 		Task(System* _system,
 			 const rttr::method& _method,
 			 const std::string& _group,
+			 const std::string& _tag,
 			 const std::vector<std::string>& _dependencies,
 			 const std::vector<std::string>& _dependents);
 		Task(Task&& _other) noexcept = default;
@@ -28,6 +29,7 @@ namespace era_engine
 		System* system = nullptr;
 		rttr::method method;
 		std::string group;
+		std::string tag;
 		std::vector<std::string> dependencies;
 		std::vector<std::string> dependents;
 	};
@@ -41,6 +43,8 @@ namespace era_engine
 		void initialize_systems(const rttr::array_range<rttr::type>& types);
 
 		void initialize_all_systems();
+
+		void refresh_graph();
 
 		void input(float elapsed);
 
@@ -60,6 +64,7 @@ namespace era_engine
 
 	private:
 		World* world = nullptr;
+		bool inited = false;
 		std::vector<System*> systems;
 		std::set<rttr::type> system_types;
 

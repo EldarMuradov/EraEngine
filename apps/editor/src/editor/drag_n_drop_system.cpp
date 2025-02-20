@@ -51,15 +51,15 @@ namespace era_engine
 
 	void DragNDropSystem::update(float dt)
 	{
-		//float render_width = static_cast<float>(renderer_holder_rc->width);
-		//float render_height = static_cast<float>(renderer_holder_rc->height);
+		float render_width = static_cast<float>(renderer_holder_rc->width);
+		float render_height = static_cast<float>(renderer_holder_rc->height);
 
-		//// The drag&drop outline is rendered around the drop target. Since the image fills the frame, the outline is outside the window 
-		//// and thus invisible. So instead this (slightly smaller) Dummy acts as the drop target.
-		//// Important: This is below the input processing, so that we don't override the current element id.
+		// The drag&drop outline is rendered around the drop target. Since the image fills the frame, the outline is outside the window 
+		// and thus invisible. So instead this (slightly smaller) Dummy acts as the drop target.
+		// Important: This is below the input processing, so that we don't override the current element id.
+
 		//ImGui::SetCursorPos(ImVec2(4.5f, 4.5f));
 		//ImGui::Dummy(ImVec2(render_width - 9.0f, render_height - 9.0f));
-		//
 		//if (ImGui::BeginDragDropTarget())
 		//{
 		//	if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_MESH))

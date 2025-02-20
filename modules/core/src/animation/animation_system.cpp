@@ -23,7 +23,7 @@ namespace era_engine::animation
 		using namespace rttr;
 
 		rttr::registration::class_<AnimationSystem>("AnimationSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr)
+			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("render")))
 			.method("update", &AnimationSystem::update)(metadata("update_group", update_types::BEGIN));
 	}
 

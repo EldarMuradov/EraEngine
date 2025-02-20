@@ -21,7 +21,7 @@ namespace era_engine
 		using namespace rttr;
 
 		registration::class_<CameraSystem>("CameraSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr)
+			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("base")))
 			.method("update", &CameraSystem::update)(metadata("update_group", update_types::BEFORE_RENDER));
 	}
 

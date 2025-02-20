@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "dx/dx_texture.h"
 
 #include "rendering/light_probe.h"
@@ -22,7 +24,7 @@ namespace era_engine
 		"Raytraced",
 	};
 
-	struct pbr_environment
+	struct ERA_CORE_API pbr_environment
 	{
 		pbr_environment() = default;
 		pbr_environment(const pbr_environment& other) noexcept = default;

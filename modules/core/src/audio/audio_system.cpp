@@ -13,7 +13,7 @@ namespace era_engine
 		using namespace rttr;
 
 		rttr::registration::class_<AudioSystem>("AudioSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr)
+			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("base")))
 			.method("update", &AudioSystem::update)(metadata("update_group", update_types::BEGIN));
 	}
 

@@ -32,7 +32,7 @@ namespace era_engine
 		using namespace rttr;
 
 		registration::class_<RenderSystem>("RenderSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr)
+			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("render")))
 			.method("before_render", &RenderSystem::before_render)(metadata("update_group", update_types::BEFORE_RENDER))
 			.method("update", &RenderSystem::update)(metadata("update_group", update_types::RENDER));
 	}

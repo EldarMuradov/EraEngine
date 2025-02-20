@@ -8,6 +8,8 @@
 
 #include <core/string.h>
 
+#include <ecs/world.h>
+
 namespace era_engine
 {
 
@@ -25,6 +27,13 @@ namespace era_engine
 		window->setIcon(get_asset_path("/resources/icons/Logo.ico"));
 		window->setCustomWindowStyle();
 		window->maximize();
+
+		World* game_world = get_world_by_name("GameWorld");
+
+		game_world->add_tag("physics");
+		game_world->add_tag("render");
+		game_world->add_tag("base");
+		game_world->add_tag("game");
 
 		engine->run(initial_task);
 

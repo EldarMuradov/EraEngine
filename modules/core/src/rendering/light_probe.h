@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "core_api.h"
 #include "core/math.h"
 #include "core/random.h"
 
@@ -13,7 +14,7 @@
 
 namespace era_engine
 {
-	struct light_probe_grid
+	struct ERA_CORE_API light_probe_grid
 	{
 		void initialize(vec3 minCorner, vec3 dimensions, float cellSize);
 		void visualize(opaque_render_pass* renderPass);

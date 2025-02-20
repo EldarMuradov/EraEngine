@@ -33,6 +33,11 @@ namespace era_engine
 
 		World* game_world = get_world_by_name("GameWorld");
 		window->setFileDropCallback([&game_world](const fs::path& s) { EditorFileUtils::handle_file_drop(s, game_world); });
+		
+		game_world->add_tag("physics");
+		game_world->add_tag("render");
+		game_world->add_tag("base");
+		game_world->add_tag("editor");
 
 		initializeTransformationGizmos();
 

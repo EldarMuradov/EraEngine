@@ -2,6 +2,8 @@
 
 #include "core_api.h"
 
+#include "core/tags_container.h"
+
 #include "ecs/entity.h"
 #include "ecs/entity_utils.h"
 
@@ -74,6 +76,13 @@ namespace era_engine
 		Entity get_entity(Entity::Handle _handle);
 
 		void destroy(bool _destroy_components = true);
+
+		void add_tag(const std::string& tag);
+		bool remove_tag(const std::string& tag);
+		bool has_tag(const std::string& tag) const;
+		void clear_tags();
+
+		const TagsContainer& get_tags_container() const;
 
 		size_t size() const noexcept;
 

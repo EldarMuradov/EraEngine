@@ -15,7 +15,7 @@ namespace era_engine
 {
 	void EditorFileUtils::handle_file_drop(const fs::path& filename, World* world)
 	{
-		/*fs::path path = filename;
+		fs::path path = filename;
 		fs::path relative = fs::relative(path, fs::current_path());
 		fs::path ext = relative.extension();
 
@@ -48,6 +48,6 @@ namespace era_engine
 		else if (ext == ".hdr")
 		{
 			world->get_root_component<RendererHolderRootComponent>()->environment.setFromTexture(relative);
-		}*/
+		}
 	}
 }

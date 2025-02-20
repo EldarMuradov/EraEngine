@@ -38,5 +38,7 @@ namespace era_engine
 
 	protected:
 		World* world = nullptr;
+
+		friend class WorldSystemScheduler;
 	};
 }

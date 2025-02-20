@@ -53,6 +53,9 @@ namespace era_engine
 				System* system = type_instance.create({ world }).get_value<System*>();
 				systems.push_back(system);
 
+				variant system_tag_meta = type_instance.get_constructor({type::get<World*>()}).get_metadata("Tag");
+				std::string system_tag = system_tag_meta.is_valid() ? system_tag_meta.get_value<std::string>() : std::string("base");
+
 				for (method system_method : type_instance.get_methods())
 				{
 					variant meta = system_method.get_metadata("update_group");
@@ -69,21 +72,31 @@ namespace era_engine
 
 					UpdateGroup group = meta.get_value<UpdateGroup>();
 
-					ref<Task> task = make_ref<Task>(system, system_method, std::string(group.name), dependencies, dependent);
+					ref<Task> task = make_ref<Task>(system, system_method, std::string(group.name), system_tag, dependencies, dependent);
 
 					add_task(task);
 				}
 			}
 		}
+
+		inited = true;
 	}
 
 	void WorldSystemScheduler::initialize_all_systems()
 	{
-		grouped_ordered_tasks = build_task_order();
+		refresh_graph();
 
 		for (System* system : systems)
 		{
 			system->init();
+		}
+	}
+
+	void WorldSystemScheduler::refresh_graph()
+	{
+		if(inited)
+		{
+			grouped_ordered_tasks = build_task_order();
 		}
 	}
 
@@ -116,13 +129,13 @@ namespace era_engine
 
 	void WorldSystemScheduler::physics_update(float elapsed)
 	{
-		JobHandle before_physics_handle = run(elapsed, update_types::BEFORE_PHYSICS, main_thread_job_queue);
+		JobHandle before_physics_handle = run(elapsed, update_types::BEFORE_PHYSICS, high_priority_job_queue);
 		before_physics_handle.submit_now();
 
-		JobHandle physics_handle = run(elapsed, update_types::PHYSICS, main_thread_job_queue);
+		JobHandle physics_handle = run(elapsed, update_types::PHYSICS, high_priority_job_queue);
 		physics_handle.submit_after(before_physics_handle);
 
-		JobHandle after_physics_handle = run(elapsed, update_types::AFTER_PHYSICS, main_thread_job_queue);
+		JobHandle after_physics_handle = run(elapsed, update_types::AFTER_PHYSICS, high_priority_job_queue);
 		after_physics_handle.submit_after(physics_handle);
 		after_physics_handle.wait_for_completion();
 	}
@@ -200,7 +213,10 @@ namespace era_engine
 		{
 			std::string current = zero_in_degree.front();
 
-			task_order.push_back(tasks[current]);
+			auto& current_task = tasks[current];
+
+			task_order.push_back(current_task);
+			
 			zero_in_degree.pop();
 
 			for (const auto& neighbor : adj_list[current])
@@ -229,7 +245,7 @@ namespace era_engine
 
 		for (const auto& task : task_order)
 		{
-			if (added_groups.find(task->group) == added_groups.end())
+			if (added_groups.find(task->group) == added_groups.end() && task->system->world->has_tag(task->tag))
 			{
 				ordered_groups.emplace(task->group, grouped_tasks[task->group]);
 				added_groups.insert(task->group);
@@ -239,8 +255,8 @@ namespace era_engine
 		return ordered_groups;
 	}
 
-	Task::Task(System* _system, const rttr::method& _method, const std::string& _group, const std::vector<std::string>& _dependencies, const std::vector<std::string>& _dependents)
-		: system(_system), method(_method), group(_group), dependencies(_dependencies), dependents(_dependents)
+	Task::Task(System* _system, const rttr::method& _method, const std::string& _group, const std::string& _tag, const std::vector<std::string>& _dependencies, const std::vector<std::string>& _dependents)
+		: system(_system), method(_method), group(_group), tag(_tag), dependencies(_dependencies), dependents(_dependents)
 	{
 	}
 
