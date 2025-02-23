@@ -56,17 +56,16 @@ namespace era_engine
 
 		Entity camera_entity = world->create_entity("CameraEntity");
 		camera_entity.add_component<CameraHolderComponent>()
-					 .add_component<InputSenderComponent>()
-					 .add_component<InputRecieverComponent>()
-					 .add_component<MovementComponent>();
+			.add_component<InputSenderComponent>()
+			//.add_component<MovementComponent>()
+			.add_component<InputRecieverComponent>();
 
 		CameraHolderComponent& camera_holder_component = camera_entity.get_component<CameraHolderComponent>();
-		camera_holder_component.set_camera_type(CameraHolderComponent::ATTACHED_TO_TRS);
+		camera_holder_component.set_camera_type(CameraHolderComponent::FREE_CAMERA);
 		camera_holder_component.set_render_camera(&renderer_holder_rc->camera);
 
 		camera_entity.get_component<InputSenderComponent>().add_reciever(camera_entity.get_component_if_exists<InputRecieverComponent>());
 
-#if 1
 		auto defaultmat = createPBRMaterialAsync({ "", "" });
 		defaultmat->shader = pbr_material_shader_double_sided;
 
@@ -94,19 +93,19 @@ namespace era_engine
 		builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
 		groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
 
-		if (auto mesh = loadAnimatedMeshFromFileAsync(get_asset_path("/resources/assets/veribot/source/VERIBOT_final.fbx")))
+		if (auto mesh = loadAnimatedMeshFromFileAsync(get_asset_path("/resources/assets/resident-evil-2-tyrant/source/UmodelExport.fbx")))
 		{
-			auto& en = world->create_entity("Veribot")
+			auto& tiran = world->create_entity("Tiran")
 				.add_component<animation::AnimationComponent>()
 				.add_component<animation::SkeletonComponent>()
 				.add_component<MeshComponent>(mesh);
 
-			TransformComponent& transform_component = en.get_component<TransformComponent>();
+			TransformComponent& transform_component = tiran.get_component<TransformComponent>();
 			transform_component.type = TransformComponent::DYNAMIC;
-			transform_component.transform.position = vec3(5.0f);
+			transform_component.transform = trs{ vec3(-10.0f, -2.0f, 0.0f), quat(vec3(1.f, 0.f, 0.f), deg2rad(-90.f)), vec3(0.1f) };
 
-			initializeAnimationComponentAsync(en, mesh);
-			addRaytracingComponentAsync(en, mesh);
+			initializeAnimationComponentAsync(tiran, mesh);
+			addRaytracingComponentAsync(tiran, mesh);
 		}
 
 		if (auto mesh = loadMeshFromFileAsync(get_asset_path("/resources/assets/Sponza/sponza.obj")))
@@ -141,13 +140,11 @@ namespace era_engine
 			.add_component<physics::PlaneComponent>(vec3(0.f, -5.0, 0.0f))
 			.add_component<MeshComponent>(groundMesh);
 		plane.get_component<TransformComponent>().transform = trs{ vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)), vec3(5.0f, 1.0f, 5.0f) };
-
+		
 		groundMesh->mesh =
 			boxMesh->mesh =
 			sphereMesh->mesh =
 			builder.createDXMesh();
-
-#endif
 	}
 
 	void GameInitSystem::update(float dt)

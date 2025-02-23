@@ -39,6 +39,8 @@ namespace era_engine
 		uint32_t width = 1920;
 		uint32_t height = 1080;
 
+		bool visualize_shapes = true;
+
 		ERA_VIRTUAL_REFLECT(Component)
 
 	private:

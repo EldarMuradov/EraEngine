@@ -139,7 +139,7 @@ namespace era_engine::animation
 		return lerp(a, b, t);
 	}
 
-	void AnimationSkeleton::sampleAnimation(const AnimationClip& clip, float time, trs* outLocalTransforms, trs* outRootMotion) const
+	void AnimationSkeleton::sampleAnimation(const AnimationClip& clip, float time, trs* outRootMotion) const
 	{
 		ASSERT(skeleton != nullptr);
 		ASSERT(clip.joints.size() == skeleton->joints.size());
@@ -150,16 +150,17 @@ namespace era_engine::animation
 		for (uint32 i = 0; i < numJoints; ++i)
 		{
 			const AnimationJoint& animJoint = clip.joints[i];
+			auto& joint = skeleton->joints[i];
 
 			if (animJoint.is_animated)
 			{
-				outLocalTransforms[i].position = samplePosition(clip, animJoint, time);
-				outLocalTransforms[i].rotation = sampleRotation(clip, animJoint, time);
-				outLocalTransforms[i].scale = sampleScale(clip, animJoint, time);
+				joint.transform.position = samplePosition(clip, animJoint, time);
+				joint.transform.rotation = sampleRotation(clip, animJoint, time);
+				joint.transform.scale = sampleScale(clip, animJoint, time);
 			}
 			else
 			{
-				outLocalTransforms[i] = trs::identity;
+				joint.transform = trs::identity;
 			}
 		}
 
@@ -179,21 +180,21 @@ namespace era_engine::animation
 		{
 			if (clip.bake_root_rotation_into_pose)
 			{
-				outLocalTransforms[0] = trs(0.f, rootMotion.rotation) * outLocalTransforms[0];
+				skeleton->joints[0].transform = trs(0.f, rootMotion.rotation) * skeleton->joints[0].transform;
 				rootMotion.rotation = quat::identity;
 			}
 
 			if (clip.bake_root_xz_translation_into_pose)
 			{
-				outLocalTransforms[0].position.x += rootMotion.position.x;
-				outLocalTransforms[0].position.z += rootMotion.position.z;
+				skeleton->joints[0].transform.position.x += rootMotion.position.x;
+				skeleton->joints[0].transform.position.z += rootMotion.position.z;
 				rootMotion.position.x = 0.f;
 				rootMotion.position.z = 0.f;
 			}
 
 			if (clip.bake_root_y_translation_into_pose)
 			{
-				outLocalTransforms[0].position.y += rootMotion.position.y;
+				skeleton->joints[0].transform.position.y += rootMotion.position.y;
 				rootMotion.position.y = 0.f;
 			}
 
@@ -201,13 +202,13 @@ namespace era_engine::animation
 		}
 		else
 		{
-			outLocalTransforms[0] = rootMotion * outLocalTransforms[0];
+			skeleton->joints[0].transform = rootMotion * skeleton->joints[0].transform;
 		}
 	}
 
-	void AnimationSkeleton::sampleAnimation(uint32 index, float time, trs* outLocalTransforms, trs* outRootMotion) const
+	void AnimationSkeleton::sampleAnimation(uint32 index, float time, trs* outRootMotion) const
 	{
-		sampleAnimation(clips[index], time, outLocalTransforms, outRootMotion);
+		sampleAnimation(clips[index], time, outRootMotion);
 	}
 
 	std::vector<uint32> AnimationSkeleton::getClipsByName(const std::string& name)
@@ -310,10 +311,12 @@ namespace era_engine::animation
 		lastRootMotion = clip->get_first_root_transform();
 	}
 
-	void AnimationInstance::update(const AnimationSkeleton& skeleton, float dt, trs* outLocalTransforms, trs& outDeltaRootMotion)
+	void AnimationInstance::update(const AnimationSkeleton& skeleton, float dt, trs& outDeltaRootMotion)
 	{
 		if (paused)
+		{
 			return;
+		}
 
 		if (valid())
 		{
@@ -333,7 +336,7 @@ namespace era_engine::animation
 			}
 
 			trs rootMotion;
-			skeleton.sampleAnimation(*clip, time, outLocalTransforms, &rootMotion);
+			skeleton.sampleAnimation(*clip, time, &rootMotion);
 
 			outDeltaRootMotion = invert(lastRootMotion) * rootMotion;
 			lastRootMotion = rootMotion;
@@ -381,8 +384,8 @@ namespace era_engine::animation
 		trs* localTransforms2 = totalLocalTransforms + skeleton.skeleton->joints.size();
 
 		trs rootMotion1, rootMotion2;
-		skeleton.sampleAnimation(*first, first->length_in_seconds * relTime, localTransforms1, &rootMotion1);
-		skeleton.sampleAnimation(*second, second->length_in_seconds * relTime, localTransforms2, &rootMotion2);
+		skeleton.sampleAnimation(*first, first->length_in_seconds * relTime, &rootMotion1);
+		skeleton.sampleAnimation(*second, second->length_in_seconds * relTime, &rootMotion2);
 
 		skeleton.skeleton->blend_local_transforms(localTransforms1, localTransforms2, blendValue, outLocalTransforms);
 
@@ -560,68 +563,12 @@ namespace era_engine::animation
 		animation = make_ref<AnimationInstance>();
 		ref<AnimationState> state = make_ref<AnimationState>(animation);
 
-		controller = make_ref<AnimationController>();
-
 		if (clips.empty())
 		{
 			return;
 		}
 
-		AnimationBlackboard startBlackboard = { &clips[start_index] };
-		controller->state_machine.set_state(state, startBlackboard);
-
-		for (int i = clips.size() - 1; i >= 0; --i)
-		{
-			AnimationBlackboard blackboard = { &clips[i] };
-			//clips[i].looping = false;
-			controller->state_machine.enter(blackboard);
-		}
-	}
-
-	void AnimationComponent::update(const ref<multi_mesh>& mesh, Allocator& arena, float dt, trs* transform)
-	{
-		const dx_mesh& dxMesh = mesh->mesh;
-		Skeleton& skeleton = mesh->skeleton;
-		AnimationSkeleton& animation_skeleton = mesh->animation_skeleton;
-
-		current_global_transforms = 0;
-
-		if (animation && animation->valid())
-		{
-			auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
-
-			prev_frame_vertex_buffer = current_vertex_buffer;
-			current_vertex_buffer = vb;
-
-			trs* localTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-			trs deltaRootMotion;
-			animation->update(animation_skeleton, dt * time_scale, localTransforms, deltaRootMotion);
-
-			trs* globalTransforms = arena.allocate<trs>((uint32)skeleton.joints.size());
-
-			skeleton.get_skinning_matrices_from_local_transforms(localTransforms, globalTransforms, skinningMatrices);
-
-			if (transform)
-			{
-				*transform = *transform * deltaRootMotion;
-				transform->rotation = normalize(transform->rotation);
-			}
-
-			current_global_transforms = globalTransforms;
-
-			if (animation->finished)
-			{
-				controller->state_machine.update();
-			}
-		}
-		else
-		{
-			current_vertex_buffer = dxMesh.vertexBuffer;
-			if (!prev_frame_vertex_buffer)
-			{
-				prev_frame_vertex_buffer = current_vertex_buffer;
-			}
-		}
+		animation->set(&clips[clips.size() - 1]);
 	}
 
 	void AnimationComponent::draw_current_skeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* render_pass) const
@@ -912,7 +859,7 @@ namespace era_engine::animation
 		}
 	}
 
-	void Skeleton::get_skinning_matrices_from_local_transforms(const trs* local_transforms, mat4* out_skinning_matrices, const trs& world_transform) const
+	void Skeleton::get_skinning_matrices_from_local_transforms(mat4* out_skinning_matrices, const trs& world_transform) const
 	{
 		uint32 numJoints = (uint32)joints.size();
 		trs* global_transforms = (trs*)alloca(sizeof(trs) * numJoints);
@@ -923,18 +870,18 @@ namespace era_engine::animation
 			if (skelJoint.parent_id != INVALID_JOINT)
 			{
 				ASSERT(i > skelJoint.parent_id); // Parent already processed.
-				global_transforms[i] = global_transforms[skelJoint.parent_id] * local_transforms[i];
+				global_transforms[i] = global_transforms[skelJoint.parent_id] * skelJoint.transform;
 			}
 			else
 			{
-				global_transforms[i] = world_transform * local_transforms[i];
+				global_transforms[i] = world_transform * skelJoint.transform;
 			}
 
 			out_skinning_matrices[i] = trs_to_mat4(global_transforms[i]) * joints[i].inv_bind_transform;
 		}
 	}
 
-	void Skeleton::get_skinning_matrices_from_local_transforms(const trs* local_transforms, trs* out_global_transforms, mat4* out_skinning_matrices, const trs& world_transform) const
+	void Skeleton::get_skinning_matrices_from_local_transforms(trs* out_global_transforms, mat4* out_skinning_matrices, const trs& world_transform) const
 	{
 		uint32 numJoints = (uint32)joints.size();
 
@@ -944,11 +891,11 @@ namespace era_engine::animation
 			if (skelJoint.parent_id != INVALID_JOINT)
 			{
 				ASSERT(i > skelJoint.parent_id); // Parent already processed
-				out_global_transforms[i] = out_global_transforms[skelJoint.parent_id] * local_transforms[i];
+				out_global_transforms[i] = out_global_transforms[skelJoint.parent_id] * skelJoint.transform;
 			}
 			else
 			{
-				out_global_transforms[i] = world_transform * local_transforms[i];
+				out_global_transforms[i] = world_transform * skelJoint.transform;
 			}
 
 			out_skinning_matrices[i] = trs_to_mat4(out_global_transforms[i]) * joints[i].inv_bind_transform;

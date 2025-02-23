@@ -20,6 +20,13 @@ namespace era_engine::physics
 	class ERA_PHYSICS_API ShapeComponent : public Component
 	{
 	public:
+		enum class SyncType : uint8_t
+		{
+			NONE = 0,
+			ANIM_TO_PHYSICS,
+			PHYSICS_TO_ANIM
+		};
+
 		ShapeComponent() = default;
 		ShapeComponent(ref<Entity::EcsData> _data);
 		virtual ~ShapeComponent();
@@ -37,6 +44,11 @@ namespace era_engine::physics
 		physx::PxShape* get_shape() const;
 		const physx::PxGeometry& get_geometry() const;
 
+		SyncType get_sync_type() const;
+		void set_sync_type(SyncType _sync_type);
+
+		void sync_with_joint(const std::string& _connected_joint_name, SyncType _sync_type = SyncType::PHYSICS_TO_ANIM);
+
 		virtual void release() override;
 
 		ERA_VIRTUAL_REFLECT(Component)
@@ -49,6 +61,8 @@ namespace era_engine::physics
 	protected:
 		physx::PxShape* shape = nullptr;
 		Entity::Handle* handle_data = nullptr;
+		SyncType sync_type = SyncType::NONE;
+		std::string connected_joint_name;
 
 		friend class DynamicBodyComponent;
 		friend class StaticBodyComponent;

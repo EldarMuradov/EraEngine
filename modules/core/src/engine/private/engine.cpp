@@ -237,13 +237,13 @@ namespace era_engine
 			for (auto& [name, world] : worlds)
 			{
 				WorldSystemScheduler* scheduler = world->get_system_scheduler();
-				scheduler->physics_update(dt);
+				scheduler->render_update(dt);
 			}
 
 			for (auto& [name, world] : worlds)
 			{
 				WorldSystemScheduler* scheduler = world->get_system_scheduler();
-				scheduler->render_update(dt);
+				scheduler->physics_update(dt);
 			}
 
 			if (main_menu)

@@ -55,6 +55,22 @@ namespace era_engine::physics
         return shape->getGeometry();
     }
 
+    ShapeComponent::SyncType ShapeComponent::get_sync_type() const
+    {
+        return sync_type;
+    }
+
+    void ShapeComponent::set_sync_type(ShapeComponent::SyncType _sync_type)
+    {
+        sync_type = _sync_type;
+    }
+
+    void ShapeComponent::sync_with_joint(const std::string& _connected_joint_name, SyncType _sync_type)
+    {
+        sync_type = _sync_type;
+        connected_joint_name = _connected_joint_name;
+    }
+
     void ShapeComponent::release()
     {
         PhysicsHolder::physics_ref->remove_shape_from_entity_data(this);

@@ -306,8 +306,6 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_column_c_bump.png
 - Handle: 11318883757531199189
   Path: E:/Era Engine/resources/assets\ragdoll\b\textures\bootsRoughness.png
-- Handle: 1613645703905169615
-  Path: E:/Era Engine/resources/assets\resident-evil-tyrant\source\tiran.255.cache.bin
 - Handle: 2136653335584426104
   Path: E:/Era Engine/resources/assets\ragdoll\b\textures\cigarette.png
 - Handle: 2760037778560615912
@@ -326,24 +324,18 @@
   Path: E:/Era Engine/resources/assets\ragdoll\b\textures\pistollowMetallic.png
 - Handle: 1274922026022686021
   Path: E:/Era Engine/resources/assets\ragdoll\b\textures\pistollowNormal.png
-- Handle: 9062206849993721274
-  Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\source\resident-evil-tyrant\source\UmodelExport.fbx
-- Handle: 4222037402551915185
-  Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\source\resident-evil-tyrant\textures\T_Tyrant_D.png
-- Handle: 15963561627929842900
-  Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\source\resident-evil-tyrant\textures\T_Tyrant_N.png
+- Handle: 4040852868247876091
+  Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_flagpole_diff.70.cache.dds
+- Handle: 7174351981199468594
+  Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\source\UmodelExport.255.cache.bin
+- Handle: 1863862795382577154
+  Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\source\UmodelExport.fbx
 - Handle: 15643106021928058721
   Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\textures\T_Tyrant_D.png
 - Handle: 14781971874360563775
   Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\textures\T_Tyrant_N.png
 - Handle: 6220833252311480238
   Path: E:/Era Engine/resources/assets\resident-evil-tyrant\source\tiran.fbx
-- Handle: 14855890879377928513
-  Path: E:/Era Engine/resources/assets\resident-evil-tyrant\source\UmodelExport.255.cache.bin
-- Handle: 18347671022279133983
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject.sln
-- Handle: 16762996510516379652
-  Path: E:/Era Engine/resources/assets\resident-evil-tyrant\source\untitled.255.cache.bin
 - Handle: 16356347730311865092
   Path: E:/Era Engine/resources/assets\resident-evil-tyrant\source\untitled.fbx
 - Handle: 10058452970015995040
@@ -488,6 +480,8 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\vase_hanging.png
 - Handle: 15809575812216747063
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\WeaponHandler.cs
+- Handle: 18347671022279133983
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject.sln
 - Handle: 443965208886211172
   Path: E:/Era Engine/resources/assets\sounds\punch.wav
 - Handle: 5542661316452023680
@@ -586,8 +580,6 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_diff.70.cache.dds
 - Handle: 10343585091069546953
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_green_diff.70.cache.dds
-- Handle: 4040852868247876091
-  Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_flagpole_diff.70.cache.dds
 - Handle: 6439932740894228440
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_flagpole_diff.png
 - Handle: 12188351137485576487

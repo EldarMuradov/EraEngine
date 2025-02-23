@@ -19,6 +19,8 @@ namespace era_engine::animation
 		void init() override;
 		void update(float dt) override;
 
+		void draw_skeletons(float dt);
+
 		ERA_VIRTUAL_REFLECT(System)
 	private:
 		Allocator* allocator = nullptr;

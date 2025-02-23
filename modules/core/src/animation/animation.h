@@ -66,6 +66,9 @@ namespace era_engine::animation
 
 		mat4 inv_bind_transform; // Transforms from model space to joint space.
 		mat4 bind_transform;	  // Position of joint relative to model space.
+
+		trs transform = trs::identity;
+
 		uint32 parent_id;
 	};
 
@@ -132,8 +135,8 @@ namespace era_engine::animation
 		void analyze_joints(const vec3* positions, const void* others, uint32 other_stride, uint32 num_vertices);
 
 		void blend_local_transforms(const trs* local_transforms1, const trs* local_transforms2, float t, trs* out_blended_local_transforms) const;
-		void get_skinning_matrices_from_local_transforms(const trs* local_transforms, mat4* out_skinning_matrices, const trs& world_transform = trs::identity) const;
-		void get_skinning_matrices_from_local_transforms(const trs* local_transforms, trs* out_global_transforms, mat4* out_skinning_matrices, const trs& world_transform = trs::identity) const;
+		void get_skinning_matrices_from_local_transforms(mat4* out_skinning_matrices, const trs& world_transform = trs::identity) const;
+		void get_skinning_matrices_from_local_transforms(trs* out_global_transforms, mat4* out_skinning_matrices, const trs& world_transform = trs::identity) const;
 		void get_skinning_matrices_from_global_transforms(const trs* global_transforms, mat4* out_skinning_matrices) const;
 		void get_skinning_matrices_from_global_transforms(const trs* global_transforms, mat4* out_skinning_matrices, const trs& world_transform) const;
 
@@ -147,8 +150,8 @@ namespace era_engine::animation
 
 	struct ERA_CORE_API AnimationSkeleton
 	{
-		void sampleAnimation(const AnimationClip& clip, float time, trs* outLocalTransforms, trs* outRootMotion = 0) const;
-		void sampleAnimation(uint32 index, float time, trs* outLocalTransforms, trs* outRootMotion = 0) const;
+		void sampleAnimation(const AnimationClip& clip, float time, trs* outRootMotion = 0) const;
+		void sampleAnimation(uint32 index, float time, trs* outRootMotion = 0) const;
 
 		std::vector<uint32> getClipsByName(const std::string& name);
 
@@ -173,15 +176,15 @@ namespace era_engine::animation
 	struct ERA_CORE_API AnimationInstance
 	{
 		AnimationInstance() { }
-		AnimationInstance(const AnimationClip* clip, float startTime = 0.f);
+		AnimationInstance(const AnimationClip* clip, float startTime = 0.0f);
 
-		void set(const AnimationClip* clip, float startTime = 0.f);
-		void update(const AnimationSkeleton& skeleton, float dt, trs* outLocalTransforms, trs& outDeltaRootMotion);
+		void set(const AnimationClip* clip, float startTime = 0.0f);
+		void update(const AnimationSkeleton& skeleton, float dt, trs& outDeltaRootMotion);
 
-		bool valid() const { return clip != 0; }
+		bool valid() const { return clip != nullptr; }
 
-		const AnimationClip* clip = 0;
-		float time = 0.f;
+		const AnimationClip* clip = nullptr;
+		float time = 0.0f;
 
 		trs lastRootMotion;
 
@@ -279,14 +282,11 @@ namespace era_engine::animation
 		virtual ~AnimationComponent();
 
 		void initialize(std::vector<AnimationClip>& clips, size_t start_index = 0);
-		void update(const ref<multi_mesh>& mesh, Allocator& arena, float dt, trs* transform = nullptr);
 		void draw_current_skeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* render_pass) const;
 
 		ERA_VIRTUAL_REFLECT(Component)
 	public:
 		ref<AnimationInstance> animation = nullptr;
-
-		ref<AnimationController> controller = nullptr;
 
 		dx_vertex_buffer_group_view current_vertex_buffer;
 		dx_vertex_buffer_group_view prev_frame_vertex_buffer;
@@ -294,6 +294,6 @@ namespace era_engine::animation
 		trs* current_global_transforms = 0;
 
 		float time_scale = 1.f;
-		bool draw_sceleton = false;
+		bool draw_sceleton = true;
 	};
 }

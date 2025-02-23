@@ -34,7 +34,8 @@ namespace era_engine
 		registration::class_<RenderSystem>("RenderSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("render")))
 			.method("before_render", &RenderSystem::before_render)(metadata("update_group", update_types::BEFORE_RENDER))
-			.method("update", &RenderSystem::update)(metadata("update_group", update_types::RENDER));
+			.method("update", &RenderSystem::update)(metadata("update_group", update_types::RENDER))
+			.method("after_render", &RenderSystem::after_render)(metadata("update_group", update_types::AFTER_RENDER));
 	}
 
 	RenderSystem::RenderSystem(World* _world)
@@ -147,6 +148,16 @@ namespace era_engine
 
 			submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
 		}
+	}
+
+	void RenderSystem::after_render(float dt)
+	{
+		main_renderer* renderer = renderer_holder_rc->renderer;
+
+		directional_light& sun = renderer_holder_rc->sun;
+		pbr_environment& environment = renderer_holder_rc->environment;
+
+		render_camera& camera = renderer_holder_rc->camera;
 
 		animation::performSkinning(&computePass);
 

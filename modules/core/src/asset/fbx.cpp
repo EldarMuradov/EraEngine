@@ -2181,7 +2181,7 @@ namespace era_engine
 				std::string name = name_to_string(joint->model->name);
 
 				out.name_to_joint_id[name] = i;
-				out.joints.push_back({ std::move(name), era_engine::animation::limb_type_none, false, joint->invBindMatrix, invert(joint->invBindMatrix), joint->parentID });
+				out.joints.push_back({ std::move(name), era_engine::animation::limb_type_none, false, joint->invBindMatrix, invert(joint->invBindMatrix), mat4_to_trs(invert(joint->invBindMatrix)), joint->parentID });
 			}
 
 			ASSERT(out.joints.size() == out.name_to_joint_id.size());
