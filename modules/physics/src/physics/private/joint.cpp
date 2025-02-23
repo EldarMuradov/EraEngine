@@ -122,6 +122,7 @@ namespace era_engine::physics
 		created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 
 		joint = created_joint;
+		joint->userData = this;
 	}
 
 	FixedJointComponent::~FixedJointComponent()
@@ -154,6 +155,7 @@ namespace era_engine::physics
 		}
 
 		joint = created_joint;
+		joint->userData = this;
 	}
 
 	RevoluteJointComponent::~RevoluteJointComponent()
@@ -197,6 +199,7 @@ namespace era_engine::physics
 		}
 
 		joint = created_joint;
+		joint->userData = this;
 	}
 
 	DistanceJointComponent::~DistanceJointComponent()

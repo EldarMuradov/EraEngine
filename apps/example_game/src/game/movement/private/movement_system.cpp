@@ -59,7 +59,7 @@ namespace era_engine
 			rotation = quat(vec3(0.f, 1.f, 0.f), turn_angle.x) * rotation;
 			rotation = rotation * quat(vec3(1.f, 0.f, 0.f), turn_angle.y);
 
-			transform_component.transform.position += rotation * movement_component.velocity * dt * MOVE_SPEED;
+			transform_component.transform.position += rotation * movement_component.velocity * dt * MOVE_SPEED * vec3(1.0f, 0.0f, 1.0f);
 		}
 	}
 

@@ -17,7 +17,7 @@ namespace era_engine
         return tokens;
     }
 
-    ModuleLoader::ModuleLoader(Engine* _engine, std::string_view _modules)
+    ModuleLoader::ModuleLoader(Engine* _engine, const std::string& _modules)
         : engine(_engine)
     {
         using namespace rttr;
@@ -53,6 +53,11 @@ namespace era_engine
     bool ModuleLoader::unload_module(std::string_view name)
     {
         return false;
+    }
+
+    void ModuleLoader::add_module(IModule* _module)
+    {
+        modules.push_back(_module);
     }
 
     bool ModuleLoader::status() const

@@ -16,6 +16,10 @@
 
 #include <game/movement/movement_component.h>
 
+#include <physics/body_component.h>
+#include <physics/shape_component.h>
+#include <physics/basic_objects.h>
+
 #include <audio/audio.h>
 
 #include <terrain/terrain.h>
@@ -117,12 +121,30 @@ namespace era_engine
 			addRaytracingComponentAsync(sponza, mesh);
 		}
 
-		auto chainMesh = make_ref<multi_mesh>();
+		auto& physics_sphere = world->create_entity("SpherePX")
+			.add_component<MeshComponent>(sphereMesh);
+		physics_sphere.get_component<TransformComponent>().transform.position = vec3(-10.0f, 5.0f, -3.0f);
+		physics_sphere.add_component<physics::SphereShapeComponent>(1.0f)
+					  .add_component<physics::DynamicBodyComponent>();
+		physics_sphere.get_component<physics::DynamicBodyComponent>().set_CCD(true);
+
+		auto& big_physics_sphere = world->create_entity("SpherePX1")
+			.add_component<MeshComponent>(sphereMesh);
+		big_physics_sphere.get_component<TransformComponent>().transform.scale = vec3(5.0f);
+		big_physics_sphere.get_component<TransformComponent>().transform.position = vec3(5.0f, 155.f, 5.0f);
+		
+		big_physics_sphere.add_component<physics::SphereShapeComponent>(5.0f)
+						  .add_component<physics::DynamicBodyComponent>();
+		big_physics_sphere.get_component<physics::DynamicBodyComponent>().set_CCD(true);
+
+		auto& plane = world->create_entity("Platform")
+			.add_component<physics::PlaneComponent>(vec3(0.f, -5.0, 0.0f))
+			.add_component<MeshComponent>(groundMesh);
+		plane.get_component<TransformComponent>().transform = trs{ vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)), vec3(5.0f, 1.0f, 5.0f) };
 
 		groundMesh->mesh =
 			boxMesh->mesh =
 			sphereMesh->mesh =
-			chainMesh->mesh =
 			builder.createDXMesh();
 
 #endif

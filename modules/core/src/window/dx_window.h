@@ -23,8 +23,8 @@ namespace era_engine
 
 		virtual ~dx_window();
 
-		bool initialize(const TCHAR* name, uint32 requestedClientWidth, uint32 requestedClientHeight, color_depth colorDepth = color_depth_8, bool exclusiveFullscreen = false);
-		bool initialize(HINSTANCE hInst, const TCHAR* name, uint32 requestedClientWidth, uint32 requestedClientHeight, color_depth colorDepth = color_depth_8, bool exclusiveFullscreen = false);
+		bool initialize(const TCHAR* name, uint32 requestedClientWidth, uint32 requestedClientHeight, color_depth colorDepth = color_depth_10, bool exclusiveFullscreen = false);
+		bool initialize(HINSTANCE hInst, const TCHAR* name, uint32 requestedClientWidth, uint32 requestedClientHeight, color_depth colorDepth = color_depth_10, bool exclusiveFullscreen = false);
 
 		virtual void shutdown();
 

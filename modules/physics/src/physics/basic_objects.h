@@ -14,7 +14,7 @@ namespace era_engine::physics
 	{
 	public:
 		PlaneComponent() = default;
-		PlaneComponent(ref<Entity::EcsData> _data, const vec3& _point, const vec3& _norm);
+		PlaneComponent(ref<Entity::EcsData> _data, const vec3& _point, const vec3& _norm = vec3(0.0f, 1.0f, 0.0f));
 		~PlaneComponent();
 
 		virtual void release() override;
@@ -27,7 +27,7 @@ namespace era_engine::physics
 		physx::PxRigidStatic* plane = nullptr;
 	};
 
-	physx::PxRigidDynamic* create_rigid_cube(physx::PxReal half_extent, const physx::PxVec3& position);
+	ERA_PHYSICS_API physx::PxRigidDynamic* create_rigid_cube(physx::PxReal half_extent, const physx::PxVec3& position);
 
 	void create_cube(physx::PxArray<physx::PxVec3>& tri_verts, physx::PxArray<physx::PxU32>& tri_indices, const physx::PxVec3& pos, physx::PxReal scaling);
 }

@@ -855,6 +855,8 @@ vec3 get_tangent(vec3 normal);
 // W = PDF = 1 / 4pi
 vec4 uniform_sample_sphere(vec2 E);
 
+vec3 local_to_world(const vec3& local_pos, const trs& transform);
+
 struct ERA_CORE_API singular_value_decomposition
 {
 	mat3 U;

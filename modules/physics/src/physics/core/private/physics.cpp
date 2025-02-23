@@ -1,6 +1,7 @@
 #include "physics/core/physics.h"
 #include "physics/shape_component.h"
 #include "physics/body_component.h"
+#include "physics/soft_body.h"
 
 #include "core/cpu_profiling.h"
 #include "core/event_queue.h"
@@ -70,7 +71,8 @@ namespace era_engine::physics
 		}
 	}
 
-	Physics::Physics()
+	Physics::Physics(const PhysicsDescriptor& _descriptor)
+		: descriptor(_descriptor)
 	{
 		using namespace physx;
 
@@ -84,39 +86,36 @@ namespace era_engine::physics
 			throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
 		}
 
-#if PX_GPU_BROAD_PHASE
-		if (PxGetSuggestedCudaDeviceOrdinal(foundation->getErrorCallback()) < 0)
+		if (descriptor.broad_phase == PxBroadPhaseType::eGPU && PxGetSuggestedCudaDeviceOrdinal(foundation->getErrorCallback()) < 0)
 		{
 			throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
 		}
-#endif
 
 		pvd = PxCreatePvd(*foundation);
 
-#if PX_ENABLE_PVD
-
-		omni_pvd = PxCreateOmniPvd(*foundation);
-		if (!omni_pvd)
+		if (descriptor.enable_pvd)
 		{
-			printf("Error: could not create PxOmniPvd!");
-			return;
+			omni_pvd = PxCreateOmniPvd(*foundation);
+			if (!omni_pvd)
+			{
+				printf("Error: could not create PxOmniPvd!");
+				return;
+			}
+			OmniPvdWriter* omniWriter = omni_pvd->getWriter();
+			if (!omniWriter)
+			{
+				printf("Error: could not get an instance of PxOmniPvdWriter!");
+				return;
+			}
+			OmniPvdFileWriteStream* fStream = omni_pvd->getFileWriteStream();
+			if (!fStream)
+			{
+				printf("Error: could not get an instance of PxOmniPvdFileWriteStream!");
+				return;
+			}
+			fStream->setFileName(omni_pvd_path);
+			omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*fStream));
 		}
-		OmniPvdWriter* omniWriter = omni_pvd->getWriter();
-		if (!omniWriter)
-		{
-			printf("Error: could not get an instance of PxOmniPvdWriter!");
-			return;
-		}
-		OmniPvdFileWriteStream* fStream = omni_pvd->getFileWriteStream();
-		if (!fStream)
-		{
-			printf("Error: could not get an instance of PxOmniPvdFileWriteStream!");
-			return;
-		}
-		fStream->setFileName(omni_pvd_path);
-		omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*fStream));
-
-#endif
 
 		tolerance_scale.length = 1.0f;
 		tolerance_scale.speed = 9.81f;
@@ -129,12 +128,10 @@ namespace era_engine::physics
 
 		default_material = physics->createMaterial(0.7f, 0.7f, 0.8f);
 
-#if PX_ENABLE_PVD
-		if (physics->getOmniPvd())
+		if (descriptor.enable_pvd && physics->getOmniPvd())
 		{
 			ASSERT(omni_pvd->startSampling());
 		}
-#endif
 
 		dispatcher = PxDefaultCpuDispatcherCreate(nb_cpu_dispatcher_threads);
 
@@ -146,17 +143,19 @@ namespace era_engine::physics
 		sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
-#if PX_GPU_BROAD_PHASE
-		PxCudaContextManagerDesc cudaContextManagerDesc;
-		cudaContextManagerDesc.graphicsDevice = dxContext.device.Get();
-		cudaContextManager = PxCreateCudaContextManager(*foundation, cudaContextManagerDesc, &profilerCallback);
-		sceneDesc.cudaContextManager = cudaContextManager;
-		sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
-		sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
-		sceneDesc.gpuMaxNumPartitions = 8;
-#else
-		sceneDesc.broadPhaseType = physx::PxBroadPhaseType::ePABP;
-#endif
+
+		if (descriptor.broad_phase == PxBroadPhaseType::eGPU)
+		{
+			PxCudaContextManagerDesc cuda_context_manager_desc;
+			cuda_context_manager = PxCreateCudaContextManager(*foundation, cuda_context_manager_desc, &profiler_callback);
+			sceneDesc.cudaContextManager = cuda_context_manager;
+			sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
+			sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
+			sceneDesc.gpuMaxNumPartitions = 8;
+		}
+
+		sceneDesc.broadPhaseType = descriptor.broad_phase;
+
 		sceneDesc.filterShader = contact_report_filter_shader;
 
 		simulation_event_callback = make_ref<SimulationEventCallback>();
@@ -222,6 +221,11 @@ namespace era_engine::physics
 		return tolerance_scale;
 	}
 
+	bool Physics::is_gpu() const
+	{
+		return descriptor.broad_phase == physx::PxBroadPhaseType::eGPU;
+	}
+
 	void Physics::release()
 	{
 		ScopedSpinLock lock{ sync };
@@ -270,7 +274,7 @@ namespace era_engine::physics
 	void Physics::start_simulation(float dt)
 	{
 		using namespace physx;
-		//recordProfileEvent(profile_event_begin_block, "PhysX update");
+		recordProfileEvent(profile_event_begin_block, "PhysX update");
 
 		const float stepSize = 1.0f / frame_rate;
 
@@ -280,46 +284,43 @@ namespace era_engine::physics
 
 		static void* scratchMemBlock = allocator.allocate(scratchMemBlockSize, align, true);
 
-#if PX_GPU_BROAD_PHASE
-
+		if (is_gpu())
 		{
 			PxSceneWriteLock lock{ *scene };
 			scene->simulate(stepSize, NULL, scratchMemBlock, scratchMemBlockSize);
 			scene->fetchResults(true);
 		}
-
-#else
-
-		stepper->setup(stepSize);
-
-		if (!stepper->advance(scene, stepSize, scratchMemBlock, scratchMemBlockSize))
+		else
 		{
-			return;
-		}
+			stepper->setup(stepSize);
 
-		stepper->renderDone();
-#endif
+			if (!stepper->advance(scene, stepSize, scratchMemBlock, scratchMemBlockSize))
+			{
+				return;
+			}
+
+			stepper->renderDone();
+		}
 	}
 
 	void Physics::end_simulation(float dt)
 	{
-#if !PX_GPU_BROAD_PHASE
-		stepper->wait(scene);
-#endif
-#if PX_VEHICLE
-		//vehiclePostStep(dt);
-#endif
+		if (!is_gpu())
 		{
-			//CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");
+			stepper->wait(scene);
+		}
+
+		{
+			CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");
 			process_simulation_event_callbacks();
 		}
 
 		{
-			//CPU_PROFILE_BLOCK("PhysX sync transforms steps");
+			CPU_PROFILE_BLOCK("PhysX sync transforms steps");
 			sync_transforms();
 		}
 
-		//recordProfileEvent(profile_event_end_block, "PhysX update");
+		recordProfileEvent(profile_event_end_block, "PhysX update");
 	}
 
 	void Physics::reset_actors_velocity_and_inertia()
@@ -421,48 +422,148 @@ namespace era_engine::physics
 		scene->removeActors(actors, size);
 	}
 
-	void Physics::set_editor_scene(EditorScene* _editor_scene)
-	{
-		editor_scene = _editor_scene;
-	}
-
 	void Physics::explode(const vec3& world_pos, float damage_radius, float explosive_impulse)
 	{
+		using namespace physx;
+		PxVec3 pos = create_PxVec3(world_pos);
+		ExplodeOverlapCallback overlap_callback(pos, damage_radius, explosive_impulse);
+		scene->overlap(PxSphereGeometry(damage_radius), PxTransform(pos), overlap_callback);
 	}
 
 	RaycastInfo Physics::raycast(const BodyComponent* rb, const vec3& dir, int max_dist, bool hit_triggers, uint32_t layer_mask, int max_hits)
 	{
+		using namespace physx;
+
+		const auto& pose = rb->get_rigid_actor()->getGlobalPose().p - PxVec3(0.0f, 1.5f, 0.0f);
+
+		PX_SCENE_QUERY_SETUP(true);
+		PxRaycastBuffer buffer;
+		PxVec3 d = create_PxVec3(dir);
+		bool status = scene->raycast(pose, d, max_dist, buffer, hitFlags, PxQueryFilterData(), &queryFilter);
+
+		if (status)
+		{
+			uint32 nb = buffer.getNbAnyHits();
+			std::cout << "Hits: " << nb << "\n";
+			uint32 index = 0;
+			if (nb > 1)
+				index = 1;
+			const auto& hitInfo1 = buffer.getAnyHit(index);
+
+			auto actor = actors_map[hitInfo1.actor];
+
+			if (actor != rb)
+			{
+				return RaycastInfo{
+						actor,
+						hitInfo1.distance,
+						buffer.getNbAnyHits(),
+						vec3(hitInfo1.position.x, hitInfo1.position.y, hitInfo1.position.z)
+					};
+			}
+			
+			else if (buffer.getNbAnyHits() > 1)
+			{
+				const auto& hitInfo2 = buffer.getAnyHit(1);
+
+				actor = actors_map[hitInfo2.actor];
+
+				return RaycastInfo {
+						actor,
+						hitInfo2.distance,
+						buffer.getNbAnyHits(),
+						vec3(hitInfo2.position.x, hitInfo2.position.y, hitInfo2.position.z)
+					};
+			}
+		}
+
 		return RaycastInfo();
 	}
 
 	bool Physics::check_box(const vec3& center, const vec3& half_extents, const quat& rotation, bool hit_triggers, uint32 layer_mask)
 	{
-		return false;
+		using namespace physx;
+
+		PX_SCENE_QUERY_SETUP_CHECK();
+		const PxTransform pose(create_PxVec3(center - vec3(0.0f)), create_PxQuat(rotation));
+		const PxBoxGeometry geometry(create_PxVec3(half_extents));
+
+		return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
 	}
 
 	bool Physics::check_sphere(const vec3& center, const float radius, bool hit_triggers, uint32 layer_mask)
 	{
-		return false;
+		using namespace physx;
+
+		PX_SCENE_QUERY_SETUP_CHECK();
+		const PxTransform pose(create_PxVec3(center - vec3(0.0f)));
+		const PxSphereGeometry geometry(radius);
+
+		return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
 	}
 
 	bool Physics::check_capsule(const vec3& center, const float radius, const float half_height, const quat& rotation, bool hit_triggers, uint32 layer_mask)
 	{
-		return false;
+		using namespace physx;
+
+		PX_SCENE_QUERY_SETUP_CHECK();
+		const PxTransform pose(create_PxVec3(center - vec3(0.0f)), create_PxQuat(rotation));
+		const PxCapsuleGeometry geometry(radius, half_height);
+		return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
 	}
 
 	OverlapInfo Physics::overlap_capsule(const vec3& center, const float radius, const float half_height, const quat& rotation, bool hit_triggers, uint32 layer_mask)
 	{
-		return OverlapInfo();
+		using namespace physx;
+
+		PX_SCENE_QUERY_SETUP_OVERLAP();
+		std::vector<Entity::Handle> results;
+		const PxTransform pose(create_PxVec3(center - vec3(0.0f)), create_PxQuat(rotation));
+		const PxCapsuleGeometry geometry(radius, half_height);
+		if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
+		{
+			return OverlapInfo(false, results);
+		}
+
+		PX_SCENE_QUERY_COLLECT_OVERLAP();
+
+		return OverlapInfo(true, results);
 	}
 
 	OverlapInfo Physics::overlap_box(const vec3& center, const vec3& half_extents, const quat& rotation, bool hit_triggers, uint32 layer_mask)
 	{
-		return OverlapInfo();
+		using namespace physx;
+		PX_SCENE_QUERY_SETUP_OVERLAP();
+		std::vector<Entity::Handle> results;
+		const PxTransform pose(create_PxVec3(center - vec3(0.0f)), create_PxQuat(rotation));
+		const PxBoxGeometry geometry(create_PxVec3(half_extents));
+
+		if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
+		{
+			return OverlapInfo(false, results);
+		}
+
+		PX_SCENE_QUERY_COLLECT_OVERLAP();
+
+		return OverlapInfo(true, results);
 	}
 
 	OverlapInfo Physics::overlap_sphere(const vec3& center, const float radius, bool hit_triggers, uint32 layer_mask)
 	{
-		return OverlapInfo();
+		using namespace physx;
+		PX_SCENE_QUERY_SETUP_OVERLAP();
+		std::vector<Entity::Handle> results;
+		const PxTransform pose(create_PxVec3(center - vec3(0.0f)));
+		const PxSphereGeometry geometry(radius);
+
+		if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
+		{
+			return OverlapInfo(false, results);
+		}
+
+		PX_SCENE_QUERY_COLLECT_OVERLAP();
+
+		return OverlapInfo(true, results);
 	}
 
 	void Physics::step_physics(float step_size)
@@ -510,14 +611,13 @@ namespace era_engine::physics
 			if (auto rb = activeActors[i]->is<PxRigidDynamic>())
 			{
 				Entity::EcsData* data = static_cast<Entity::EcsData*>(activeActors[i]->userData);
-				Entity renderObject = editor_scene->get_current_world()->get_entity(data->entity_handle);
 
-				if (!renderObject.is_valid())
+				if (data == nullptr)
 				{
 					continue;
 				}
 
-				TransformComponent& transform = renderObject.get_component<TransformComponent>();
+				TransformComponent& transform =	data->native_registry->get<TransformComponent>(data->entity_handle);
 
 				const auto& pxt = rb->getGlobalPose();
 				const auto& pos = pxt.p;
@@ -527,11 +627,13 @@ namespace era_engine::physics
 			}
 		}
 
-		//for (size_t i = 0; i < softBodies.size(); ++i)
-		//{
-		//	ref<px_soft_body> sb = softBodies[i];
-		//	sb->copyDeformedVerticesFromGPUAsync(0);
-		//}
+		for (auto&& [name, world] : get_worlds())
+		{
+			for (auto [entity_handle, transform, soft_body] : world->group(components_group<TransformComponent, SoftBodyComponent>).each())
+			{
+				soft_body.copy_deformed_vertices_from_gpu_async(0);
+			}
+		}
 	}
 
 	void Physics::process_simulation_event_callbacks()

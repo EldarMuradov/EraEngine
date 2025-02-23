@@ -15,7 +15,7 @@ namespace era_engine
 		~Engine();
 	public:
 		Engine(const Engine&) = delete;
-		Engine(Engine&&) = delete;
+		Engine& operator=(const Engine&) const = delete;
 
 		static Engine* instance();
 		static void release();

@@ -13,6 +13,33 @@ namespace era_engine::physics
 			.constructor<>();
 	}
 
+	static void process_soft_body(physx::PxSoftBody* softBody, const physx::PxFEMParameters& femParams, const physx::PxTransform& transform, const physx::PxReal density, const physx::PxReal scale, const physx::PxU32 iterCount)
+	{
+		using namespace physx;
+		PxVec4* simPositionInvMassPinned;
+		PxVec4* simVelocityPinned;
+		PxVec4* collPositionInvMassPinned;
+		PxVec4* restPositionPinned;
+
+		PxCudaContextManager* context_managert = PhysicsHolder::physics_ref->get_cuda_context_manager();
+
+		PxSoftBodyExt::allocateAndInitializeHostMirror(*softBody, context_managert, simPositionInvMassPinned, simVelocityPinned, collPositionInvMassPinned, restPositionPinned);
+
+		const PxReal maxInvMassRatio = 50.f;
+
+		softBody->setParameter(femParams);
+		softBody->setSolverIterationCounts(iterCount);
+
+		PxSoftBodyExt::transform(*softBody, transform, scale, simPositionInvMassPinned, simVelocityPinned, collPositionInvMassPinned, restPositionPinned);
+		PxSoftBodyExt::updateMass(*softBody, density, maxInvMassRatio, simPositionInvMassPinned);
+		PxSoftBodyExt::copyToDevice(*softBody, PxSoftBodyDataFlag::eALL, simPositionInvMassPinned, simVelocityPinned, collPositionInvMassPinned, restPositionPinned);
+
+		PX_PINNED_HOST_FREE(context_managert, simPositionInvMassPinned);
+		PX_PINNED_HOST_FREE(context_managert, simVelocityPinned);
+		PX_PINNED_HOST_FREE(context_managert, collPositionInvMassPinned);
+		PX_PINNED_HOST_FREE(context_managert, restPositionPinned);
+	}
+
 	void connect_cube_to_soft_body(physx::PxRigidDynamic* cube, physx::PxReal cube_half_extent, const physx::PxVec3& cube_position, physx::PxSoftBody* soft_body, physx::PxU32 point_grid_resolution)
 	{
 		using namespace physx;
@@ -80,7 +107,7 @@ namespace era_engine::physics
 
 	void SoftBodyComponent::release()
 	{
-		PhysicsHolder::physics_ref->get_scene()->addActor(*soft_body);
+		PhysicsHolder::physics_ref->get_scene()->removeActor(*soft_body);
 
 		if (positions_inv_mass)
 		{
@@ -98,17 +125,83 @@ namespace era_engine::physics
 
 	void SoftBodyComponent::create_soft_body(const physx::PxCookingParams& params, const physx::PxArray<physx::PxVec3>& tri_verts, const physx::PxArray<physx::PxU32>& tri_indices, bool use_collision_mesh_for_simulation)
 	{
+		using namespace physx;
 
+		const auto physics = PhysicsHolder::physics_ref->get_physics();
+
+		PxSoftBodyMesh* softBodyMesh;
+
+		PxU32 numVoxelsAlongLongestAABBAxis = 8;
+
+		PxSimpleTriangleMesh surfaceMesh;
+		surfaceMesh.points.count = tri_verts.size();
+		surfaceMesh.points.data = tri_verts.begin();
+		surfaceMesh.triangles.count = tri_indices.size() / 3;
+		surfaceMesh.triangles.data = tri_indices.begin();
+
+		if (use_collision_mesh_for_simulation)
+		{
+			softBodyMesh = PxSoftBodyExt::createSoftBodyMeshNoVoxels(params, surfaceMesh, physics->getPhysicsInsertionCallback());
+		}
+		else
+		{
+			softBodyMesh = PxSoftBodyExt::createSoftBodyMesh(params, surfaceMesh, numVoxelsAlongLongestAABBAxis, physics->getPhysicsInsertionCallback());
+		}
+
+		//Alternatively one can cook a softbody mesh in a single step
+		//tetMesh = cooking.createSoftBodyMesh(simulationMeshDesc, collisionMeshDesc, softbodyDesc, physics.getPhysicsInsertionCallback());
+		PX_ASSERT(softBodyMesh);
+
+		PxCudaContextManager* context_managert = PhysicsHolder::physics_ref->get_cuda_context_manager();
+
+		if (!context_managert)
+		{
+			return;
+		}
+		PxSoftBody* softBody = physics->createSoftBody(*context_managert);
+		if (softBody)
+		{
+			PxShapeFlags shapeFlags = PxShapeFlag::eVISUALIZATION | PxShapeFlag::eSCENE_QUERY_SHAPE | PxShapeFlag::eSIMULATION_SHAPE;
+
+			PxFEMSoftBodyMaterial* materialPtr = PxGetPhysics().createFEMSoftBodyMaterial(1e+6f, 0.45f, 0.5f);
+			PxTetrahedronMeshGeometry geometry(softBodyMesh->getCollisionMesh());
+			PxShape* shape = physics->createShape(geometry, &materialPtr, 1, true, shapeFlags);
+			if (shape)
+			{
+				softBody->attachShape(*shape);
+				shape->setSimulationFilterData(PxFilterData(0, 0, 2, 0));
+			}
+			softBody->attachSimulationMesh(*softBodyMesh->getSimulationMesh(), *softBodyMesh->getSoftBodyAuxData());
+
+			PhysicsHolder::physics_ref->get_scene()->addActor(*softBody);
+
+			PxFEMParameters femParams;
+			process_soft_body(softBody, femParams, PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(PxIdentity)), 100.f, 1.0f, 30);
+			softBody->setSoftBodyFlag(PxSoftBodyFlag::eDISABLE_SELF_COLLISION, false);
+			softBody->setSoftBodyFlag(PxSoftBodyFlag::eENABLE_CCD, true);
+		}
 	}
 
 	void SoftBodyComponent::copy_deformed_vertices_from_gpu_async(CUstream stream)
 	{
+		using namespace physx;
+		PxTetrahedronMesh* tetMesh = soft_body->getCollisionMesh();
 
+		PxCudaContextManager* context_managert = PhysicsHolder::physics_ref->get_cuda_context_manager();
+
+		PxScopedCudaLock _lock(*context_managert);
+		context_managert->getCudaContext()->memcpyDtoHAsync(positions_inv_mass, reinterpret_cast<CUdeviceptr>(soft_body->getPositionInvMassBufferD()), tetMesh->getNbVertices() * sizeof(PxVec4), stream);
 	}
 
 	void SoftBodyComponent::copy_deformed_vertices_from_gpu()
 	{
+		using namespace physx;
+		PxTetrahedronMesh* tetMesh = soft_body->getCollisionMesh();
 
+		PxCudaContextManager* context_managert = PhysicsHolder::physics_ref->get_cuda_context_manager();
+
+		PxScopedCudaLock _lock(*context_managert);
+		context_managert->getCudaContext()->memcpyDtoH(positions_inv_mass, reinterpret_cast<CUdeviceptr>(soft_body->getPositionInvMassBufferD()), tetMesh->getNbVertices() * sizeof(PxVec4));
 	}
 
 }

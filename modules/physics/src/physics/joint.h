@@ -41,6 +41,8 @@ namespace era_engine::physics
 
 		physx::PxJoint* get_native_joint() const;
 
+		std::function<void(JointComponent*)> on_broken_callback = nullptr;
+
 		ERA_VIRTUAL_REFLECT(Component)
 
 	protected:

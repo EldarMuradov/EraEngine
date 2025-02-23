@@ -48,6 +48,7 @@ namespace era_engine::physics
 
 	protected:
 		physx::PxShape* shape = nullptr;
+		Entity::Handle* handle_data = nullptr;
 
 		friend class DynamicBodyComponent;
 		friend class StaticBodyComponent;

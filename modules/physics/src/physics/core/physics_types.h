@@ -195,7 +195,25 @@ namespace era_engine::physics
 		ContactPoint contacts[PX_CONTACT_BUFFER_SIZE];
 	};
 
-	class Joint;
+	struct ExplodeOverlapCallback : physx::PxOverlapCallback
+	{
+		ExplodeOverlapCallback(physx::PxVec3 worldPos, float radius, float explosiveImpulse)
+			: worldPosition(worldPos)
+			, radius(radius)
+			, explosiveImpulse(explosiveImpulse)
+			, physx::PxOverlapCallback(hitBuffer, sizeof(hitBuffer) / sizeof(hitBuffer[0])) {}
+
+		physx::PxAgain processTouches(const physx::PxOverlapHit* buffer, physx::PxU32 nbHits);
+
+	private:
+		std::set<physx::PxRigidDynamic*> actorBuffer;
+		float explosiveImpulse;
+		float radius;
+		physx::PxVec3 worldPosition;
+		physx::PxOverlapHit hitBuffer[512];
+	};
+
+	class JointComponent;
 
 	class SimulationEventCallback : public physx::PxSimulationEventCallback
 	{
@@ -214,7 +232,7 @@ namespace era_engine::physics
 
 		void onColliderRemoved(BodyComponent* collider);
 
-		void onJointRemoved(Joint* joint);
+		void onJointRemoved(JointComponent* joint);
 
 		void onConstraintBreak(physx::PxConstraintInfo* constraints, physx::PxU32 count) override;
 		void onWake(physx::PxActor** actors, physx::PxU32 count) override;
@@ -226,7 +244,7 @@ namespace era_engine::physics
 	public:
 		physx::PxArray<Collision> new_collisions;
 
-		physx::PxArray<Joint*> broken_joints;
+		physx::PxArray<JointComponent*> broken_joints;
 
 		physx::PxArray<Collision> removed_collisions;
 

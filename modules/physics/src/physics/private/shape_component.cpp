@@ -37,6 +37,7 @@ namespace era_engine::physics
         : Component(_data)
     {
         register_shape();
+        handle_data = new Entity::Handle(_data->entity_handle);
     }
 
     ShapeComponent::~ShapeComponent()
@@ -60,8 +61,11 @@ namespace era_engine::physics
 
         PhysicsUtils::get_body_component(component_data)->detach_shape(shape);
 
-        Component::release();
         PX_RELEASE(shape)
+        
+        delete handle_data;
+
+        Component::release();
     }
 
     void ShapeComponent::register_shape()
@@ -90,6 +94,7 @@ namespace era_engine::physics
         ref<Physics> physics = PhysicsHolder::physics_ref;
 
         shape = physics->get_physics()->createShape(PxBoxGeometry(extents.x, extents.y, extents.z), *physics->get_default_material(), true);
+        shape->userData = handle_data;
         return shape;
     }
 
@@ -109,6 +114,8 @@ namespace era_engine::physics
         ref<Physics> physics = PhysicsHolder::physics_ref;
 
         shape = physics->get_physics()->createShape(PxSphereGeometry(radius), *physics->get_default_material(), true);
+        shape->userData = handle_data;
+
         return shape;
     }
 
@@ -128,6 +135,8 @@ namespace era_engine::physics
         ref<Physics> physics = PhysicsHolder::physics_ref;
 
         shape = physics->get_physics()->createShape(PxCapsuleGeometry(radius, half_height), *physics->get_default_material(), true);
+        shape->userData = handle_data;
+
         return shape;
     }
 
@@ -147,6 +156,8 @@ namespace era_engine::physics
         ref<Physics> physics = PhysicsHolder::physics_ref;
 
         shape = physics->get_physics()->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(create_PxVec3(size))), *physics->get_default_material(), true);
+        shape->userData = handle_data;
+
         return shape;
     }
 
@@ -166,6 +177,8 @@ namespace era_engine::physics
         ref<Physics> physics = PhysicsHolder::physics_ref;
 
         shape = physics->get_physics()->createShape(PxConvexMeshGeometry(mesh, PxMeshScale(create_PxVec3(size))), *physics->get_default_material(), true);
+        shape->userData = handle_data;
+
         return shape;
     }
 

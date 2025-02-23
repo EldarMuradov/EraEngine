@@ -59,17 +59,25 @@
 #define PX_PINNED_HOST_ALLOC_T(T, cudaContextManager, numElements) cudaContextManager->allocPinnedHostBuffer<T>(numElements, PX_FL)
 #define PX_PINNED_HOST_FREE(cudaContextManager, pinnedHostBuffer) cudaContextManager->freePinnedHostBuffer(pinnedHostBuffer);
 
+#define PX_SCENE_QUERY_SETUP(block_single) \
+		const physx::PxHitFlags hitFlags = physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL | physx::PxHitFlag::eMESH_MULTIPLE | physx::PxHitFlag::eUV; \
+		physx::PxQueryFilterData filterData; \
+		filterData.flags |= physx::PxQueryFlag::eDYNAMIC | physx::PxQueryFlag::eSTATIC; \
+		filterData.data.word0 = layer_mask; \
+		filterData.data.word1 = block_single ? 1 : 0; \
+		filterData.data.word2 = hit_triggers ? 1 : 0
+
 #define PX_SCENE_QUERY_SETUP_SWEEP_CAST_ALL() PX_SCENE_QUERY_SETUP(true); \
 		physx::PxSweepBufferN<1> buffer
 
 #define PX_SCENE_QUERY_SETUP_SWEEP_CAST() PX_SCENE_QUERY_SETUP(false); \
-		px_dynamic_hit_buffer<physx::PxSweepHit> buffer
+		DynamicHitBuffer<physx::PxSweepHit> buffer
 
 #define PX_SCENE_QUERY_SETUP_CHECK() PX_SCENE_QUERY_SETUP(false); \
 		physx::PxOverlapBufferN<1> buffer
 
 #define PX_SCENE_QUERY_SETUP_OVERLAP() PX_SCENE_QUERY_SETUP(false); \
-		px_dynamic_hit_buffer<physx::PxOverlapHit> buffer
+		DynamicHitBuffer<physx::PxOverlapHit> buffer
 
 #define PX_SCENE_QUERY_COLLECT_OVERLAP() results.clear(); \
 		results.resize(buffer.getNbTouches()); \
@@ -77,7 +85,7 @@
 		for (int32 i = 0; i < resultSize; i++) \
 		{ \
 			const auto& hit = buffer.getTouch(i); \
-			results[i] = hit.shape ? *reinterpret_cast<uint32_t*>(hit.shape->userData) : 0; \
+			results[i] = hit.shape ? *reinterpret_cast<Entity::Handle*>(hit.shape->userData) : Entity::NullHandle; \
 		}
 
 #if PX_VEHICLE

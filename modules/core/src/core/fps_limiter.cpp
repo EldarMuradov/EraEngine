@@ -31,12 +31,12 @@ namespace era_engine
 
 	void FpsLimiter::end_frame()
 	{
-		if(frame_started)
+		if(frame_started && enabled)
 		{
 			auto current_timme = std::chrono::high_resolution_clock::now();
 			std::chrono::duration<float, std::milli> elapsed_seconds = current_timme - frame_start_time;
 			float wait_time = frame_time - elapsed_seconds.count();
-			if (wait_time > 0.0f && enabled)
+			if (wait_time > 0.0f)
 			{
 				wait(wait_time);
 			}

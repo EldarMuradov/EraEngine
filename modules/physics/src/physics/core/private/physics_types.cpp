@@ -1,6 +1,7 @@
 #include "physics/core/physics_types.h"
 #include "physics/core/physics.h"
 #include "physics/body_component.h"
+#include "physics/joint.h"
 
 #include "core/memory.h"
 #include "core/cpu_profiling.h"
@@ -165,7 +166,7 @@ namespace era_engine::physics
 	void* ProfilerCallback::zoneStart(const char* eventName, bool detached, uint64_t contextId)
 	{
 #if ENABLE_CPU_PROFILING
-		//recordProfileEvent(profile_event_begin_block, eventName);
+		recordProfileEvent(profile_event_begin_block, eventName);
 #endif
 
 		//LOG_MESSAGE("[%s] %s", eventName, "started");
@@ -177,7 +178,7 @@ namespace era_engine::physics
 		//LOG_MESSAGE("[%s] %s", eventName, "finished");
 
 #if ENABLE_CPU_PROFILING
-		//recordProfileEvent(profile_event_end_block, eventName);
+		recordProfileEvent(profile_event_end_block, eventName);
 #endif
 	}
 	
@@ -242,6 +243,14 @@ namespace era_engine::physics
 
 	void SimulationEventCallback::sendJointEvents()
 	{
+		for (auto* joint : broken_joints)
+		{
+			joint->state = JointComponent::BROKEN;
+			if (joint->on_broken_callback)
+			{
+				joint->on_broken_callback(joint);
+			}
+		}
 	}
 
 	void SimulationEventCallback::onColliderRemoved(BodyComponent* collider)
@@ -250,7 +259,7 @@ namespace era_engine::physics
 		clear_collider_from_collection(collider, lost_trigger_pairs);
 	}
 
-	void SimulationEventCallback::onJointRemoved(Joint* joint)
+	void SimulationEventCallback::onJointRemoved(JointComponent* joint)
 	{
 		broken_joints.findAndReplaceWithLast(joint);
 		broken_joints.popBack();
@@ -264,7 +273,7 @@ namespace era_engine::physics
 			PxJoint* joint = reinterpret_cast<PxJoint*>(constraints[i].externalReference);
 			if (joint->userData)
 			{
-				broken_joints.pushBack(static_cast<Joint*>(joint->userData));
+				broken_joints.pushBack(static_cast<JointComponent*>(joint->userData));
 			}
 		}
 	}
@@ -312,7 +321,6 @@ namespace era_engine::physics
 				collision.impulse += impulse;
 
 				UNUSED(point);
-				UNUSED(impulse);
 				UNUSED(internalFaceIndex0);
 				UNUSED(internalFaceIndex1);
 			}
@@ -391,6 +399,31 @@ namespace era_engine::physics
 				}
 			}
 		}
+	}
+
+	physx::PxAgain ExplodeOverlapCallback::processTouches(const physx::PxOverlapHit* buffer, physx::PxU32 nbHits)
+	{
+		using namespace physx;
+		PxSceneWriteLock lock{ *PhysicsHolder::physics_ref->get_scene()};
+		for (PxU32 i = 0; i < nbHits; ++i)
+		{
+			PxRigidActor* actor = buffer[i].actor;
+			PxRigidDynamic* rigidDynamic = actor->is<PxRigidDynamic>();
+			if (rigidDynamic && !(rigidDynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC))
+			{
+				if (actorBuffer.find(rigidDynamic) == actorBuffer.end())
+				{
+					actorBuffer.insert(rigidDynamic);
+					PxVec3 dr = rigidDynamic->getGlobalPose().transform(rigidDynamic->getCMassLocalPose()).p - worldPosition;
+					float distance = dr.magnitude();
+					float factor = PxClamp(1.0f - (distance * distance) / (radius * radius), 0.0f, 1.0f);
+					float impulse = factor * explosiveImpulse * 1000.0f;
+					PxVec3 vel = dr.getNormalized() * impulse / rigidDynamic->getMass();
+					rigidDynamic->setLinearVelocity(rigidDynamic->getLinearVelocity() + vel);
+				}
+			}
+		}
+		return true;
 	}
 
 }

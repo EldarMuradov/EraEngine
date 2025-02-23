@@ -8,6 +8,8 @@
 
 #include <core/string.h>
 
+#include <physics_module.h>
+
 #include <ecs/world.h>
 
 namespace era_engine
@@ -18,7 +20,12 @@ namespace era_engine
 		Engine* engine = Engine::create_instance(argc, argv);
 
 		auto initial_task = [&engine]() {
-			ModuleLoader loader = ModuleLoader(engine, "physics");
+			ModuleLoader loader = ModuleLoader(engine);
+
+			PhysicsModule* physics_module = new PhysicsModule();
+			physics_module->initialize(engine);
+
+			loader.add_module(physics_module);
 			ASSERT(loader.status());
 		};
 

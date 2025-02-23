@@ -15,11 +15,13 @@ namespace era_engine
 	{
 	public:
 		ModuleLoader() = default;
-		ModuleLoader(Engine* _engine, std::string_view _modules);
+		ModuleLoader(Engine* _engine, const std::string& _modules = std::string());
 		virtual ~ModuleLoader();
 
 		virtual bool load_module(std::string_view name);
 		virtual bool unload_module(std::string_view name);
+
+		void add_module(IModule* _module);
 
 		bool status() const;
 

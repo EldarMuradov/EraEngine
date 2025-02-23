@@ -20,12 +20,18 @@ namespace era_engine::physics
 {
 	class BodyComponent;
 	class ShapeComponent;
-	//class SoftBody;
+
+	class ERA_CORE_API PhysicsDescriptor
+	{
+	public:
+		physx::PxBroadPhaseType::Enum broad_phase = physx::PxBroadPhaseType::ePABP;
+		bool enable_pvd = true;
+	};
 
 	class Physics final
 	{
 	public:
-		Physics();
+		Physics(const PhysicsDescriptor& _descriptor = {});
 		~Physics();
 
 		physx::PxScene* get_scene() const;
@@ -35,6 +41,8 @@ namespace era_engine::physics
 		physx::PxCudaContextManager* get_cuda_context_manager() const;
 		physx::PxCpuDispatcher* get_cpu_dispatcher() const;
 		physx::PxTolerancesScale get_tolerance_scale() const;
+
+		bool is_gpu() const;
 
 		void release();
 
@@ -53,8 +61,6 @@ namespace era_engine::physics
 		void remove_actor(BodyComponent* actor);
 
 		void release_scene();
-
-		void set_editor_scene(EditorScene* _editor_scene);
 
 		void explode(const vec3& world_pos, float damage_radius, float explosive_impulse);
 
@@ -96,13 +102,13 @@ namespace era_engine::physics
 		SpinLock sync;
 
 	private:
+		PhysicsDescriptor descriptor;
+
 		physx::PxScene* scene = nullptr;
 
 		physx::PxPhysics* physics = nullptr;
 
 		physx::PxPvd* pvd = nullptr;
-
-		EditorScene* editor_scene = nullptr;
 
 		physx::PxMaterial* default_material = nullptr;
 
