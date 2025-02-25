@@ -91,8 +91,6 @@ namespace era_engine
 			return;
 		}
 
-		std::lock_guard _lock{ EntityContainer::sync };
-
 		if (_destroy_components)
 		{
 			for (auto&& curr : world_data->registry.storage())
@@ -138,9 +136,33 @@ namespace era_engine
 
 	void World::destroy(bool _destroy_components)
 	{
-		for (auto& [handle, data] : world_data->entity_datas)
+		for (auto iter = world_data->entity_datas.begin(); iter != world_data->entity_datas.end();)
 		{
-			destroy_entity(handle, false, _destroy_components);
+			if (iter->first == Entity::NullHandle)
+			{
+				continue;
+			}
+
+			if (_destroy_components)
+			{
+				for (auto&& curr : world_data->registry.storage())
+				{
+					if (curr.second.contains(iter->first))
+					{
+						IReleasable* comp = static_cast<IReleasable*>(world_data->registry.storage(curr.first)->second.get(iter->first));
+						ASSERT(comp != nullptr);
+						comp->release();
+					}
+				}
+			}
+
+			world_data->registry.destroy(iter->first);
+			iter = world_data->entity_datas.erase(iter);
+			if (iter == world_data->entity_datas.end())
+			{
+				break;
+			}
+			++iter;
 		}
 		world_data->registry.clear();
 		world_data->entity_datas.clear();
@@ -177,7 +199,7 @@ namespace era_engine
 
 	size_t World::size() const noexcept
 	{
-		return world_data->registry.size();
+		return world_data->entity_datas.size();
 	}
 
 	entt::registry& World::get_registry()

@@ -129,14 +129,16 @@ namespace era_engine
 			return;
 		}
 
-		auto iter = container.at(parent).childs.begin();
-		const auto& end = container.at(parent).childs.end();
+		auto& childs = container.at(parent).childs;
+		auto iter = childs.begin();
+		const auto& end = childs.end();
 
 		for (; iter != end; ++iter)
 		{
 			if (*iter == child)
 			{
-				container.at(parent).childs.erase(iter);
+				childs.erase(iter);
+				break;
 			}
 		}
 	}

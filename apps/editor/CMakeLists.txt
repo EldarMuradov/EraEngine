@@ -11,5 +11,5 @@ era_begin(editor "APP")
 
     require_physx(editor)
 
-    target_include_directories(editor PUBLIC modules/thirdparty-imgui/imgui)
+    target_include_directories(editor PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-imgui/imgui)
 era_end(editor)

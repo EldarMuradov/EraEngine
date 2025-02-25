@@ -11,5 +11,5 @@ era_begin(example_game "APP")
 
     require_physx(example_game)
 
-    target_include_directories(example_game PUBLIC modules/thirdparty-imgui/imgui)
+    target_include_directories(example_game PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-imgui/imgui)
 era_end(example_game)

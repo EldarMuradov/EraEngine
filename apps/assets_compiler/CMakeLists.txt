@@ -8,5 +8,5 @@ era_begin(assets_compiler "APP")
     require_module(assets_compiler base)
     require_module(assets_compiler core)
 
-    target_include_directories(assets_compiler PUBLIC modules/thirdparty-imgui/imgui)
+    target_include_directories(assets_compiler PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-imgui/imgui)
 era_end(assets_compiler)
