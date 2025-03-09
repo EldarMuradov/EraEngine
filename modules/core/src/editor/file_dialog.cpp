@@ -23,7 +23,7 @@ namespace era_engine
 		return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 	}
 
-	NODISCARD std::string openFileDialog(const std::string& fileDescription, const std::string& extension)
+	std::string openFileDialog(const std::string& fileDescription, const std::string& extension)
 	{
 		char filter[128];
 		createFilter(filter, fileDescription, extension);
@@ -52,7 +52,7 @@ namespace era_engine
 		return std::string();
 	}
 
-	NODISCARD std::string saveFileDialog(const std::string& fileDescription, const std::string& extension)
+	std::string saveFileDialog(const std::string& fileDescription, const std::string& extension)
 	{
 		char filter[128];
 		createFilter(filter, fileDescription, extension);
@@ -82,7 +82,7 @@ namespace era_engine
 
 #pragma warning( disable : 4244 )
 
-	NODISCARD std::string directoryDialog()
+	std::string directoryDialog()
 	{
 		IFileDialog* pFileOpen;
 

@@ -49,20 +49,16 @@ namespace era_engine
 		ASSERT(renderer_holder_rc != nullptr);
 
 		Entity camera_entity = world->create_entity("CameraEntity");
-		camera_entity.add_component<CameraHolderComponent>()
-					 .add_component<InputRecieverComponent>()
-					 .add_component<InputSenderComponent>();
 
-		CameraHolderComponent& camera_holder_component = camera_entity.get_component<CameraHolderComponent>();
+		CameraHolderComponent& camera_holder_component = camera_entity.add_component<CameraHolderComponent>();
 		camera_holder_component.set_camera_type(CameraHolderComponent::FREE_CAMERA);
 		camera_holder_component.set_render_camera(&renderer_holder_rc->camera);
 
-		camera_entity.get_component<InputSenderComponent>().add_reciever(camera_entity.get_component_if_exists<InputRecieverComponent>());
+		camera_entity.add_component<InputSenderComponent>().add_reciever(&camera_entity.add_component<InputRecieverComponent>());
 	}
 
 	void EditorInitSystem::update(float dt)
 	{
-		
 	}
 
 }

@@ -29,8 +29,8 @@ namespace era_engine
 		using namespace rttr;
 
 		registration::class_<DragNDropSystem>("DragNDropSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr)
-			.method("update", &DragNDropSystem::update)(metadata("update_group", update_types::INPUT), metadata("After", std::vector<std::string>{"InputSystem::update"}));
+			.constructor<World*>()(policy::ctor::as_raw_ptr)(policy::ctor::as_raw_ptr, metadata("Tag", std::string("editor")))
+			.method("update", &DragNDropSystem::update)(metadata("update_group", update_types::END)/*, metadata("After", std::vector<std::string>{"EditorToolsSystem::update"})*/);
 	}
 
 	DragNDropSystem::DragNDropSystem(World* _world)

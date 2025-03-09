@@ -26,9 +26,10 @@ namespace era_engine
 
 			if (auto mesh = loadAnimatedMeshFromFileAsync(relative.string()))
 			{
-				auto& entity = world->create_entity("Veribot")
-					.add_component<animation::AnimationComponent>()
-					.add_component<MeshComponent>(mesh);
+				auto entity = world->create_entity();
+				entity.add_component<MeshComponent>(mesh);
+				entity.add_component<animation::AnimationComponent>();
+				entity.add_component<animation::SkeletonComponent>();
 
 				TransformComponent& transform_component = entity.get_component<TransformComponent>();
 				transform_component.type = TransformComponent::DYNAMIC;
@@ -38,9 +39,9 @@ namespace era_engine
 			}
 			else if (auto mesh = loadMeshFromFileAsync(relative.string()))
 			{
-				auto& entity = world->create_entity("Veribot")
-					.add_component<animation::AnimationComponent>()
-					.add_component<MeshComponent>(mesh);
+				auto entity = world->create_entity();
+				entity.add_component<animation::AnimationComponent>();
+				entity.add_component<MeshComponent>(mesh);
 
 				addRaytracingComponentAsync(entity, mesh);
 			}

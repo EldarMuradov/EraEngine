@@ -106,7 +106,7 @@ namespace era_engine
 		}
 	}
 
-	NODISCARD mat4 getSpotLightViewProjectionMatrix(const spot_light_cb& sl)
+	mat4 getSpotLightViewProjectionMatrix(const spot_light_cb& sl)
 	{
 		mat4 viewMatrix = look_at(sl.position, sl.position + sl.direction, vec3(0.f, 1.f, 0.f));
 		mat4 projMatrix = create_perspective_projection_matrix(acos(sl.getOuterCutoff()) * 2.f, 1.f, 0.01f, sl.maxDistance);

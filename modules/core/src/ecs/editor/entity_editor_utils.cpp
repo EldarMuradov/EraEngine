@@ -7,13 +7,15 @@
 
 namespace era_engine
 {
-	void EntityEditorUtils::edit_entity(ref<World> world, const Entity::Handle handle)
+	void EntityEditorUtils::edit_entity(World* world, const Entity::Handle handle)
 	{
 		ImGui::AlignTextToFramePadding();
 
 		ImGui::PushID((uint32)handle);
 
-		for (auto&& curr : world->world_data->registry.storage())
+		entt::registry& registry = world->get_registry();
+
+		for (auto&& curr : registry.storage())
 		{
 			entt::id_type cid = curr.first;
 			auto& storage = curr.second;
@@ -21,7 +23,7 @@ namespace era_engine
 
 			if (storage.contains(handle))
 			{
-				Component* comp = static_cast<Component*>(world->world_data->registry.storage(cid)->second.get(handle));
+				Component* comp = static_cast<Component*>(registry.storage(cid)->second.get(handle));
 				rttr::type type = comp->get_type();
 				const char* comp_name = type.get_name().data();
 				const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
@@ -166,7 +168,6 @@ namespace era_engine
 					}
 					ImGui::TreePop();
 				}
-
 			}
 		}
 

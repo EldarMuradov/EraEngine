@@ -4,6 +4,7 @@
 #include "core/imgui.h"
 #include "core/cpu_profiling.h"
 #include "core/job_system.h"
+#include "core/debug/debug_var_storage.h"
 
 #include "dx/dx_context.h"
 #include "dx/dx_command_list.h"
@@ -84,6 +85,7 @@ namespace era_engine
 	static void draw_debug_menu_bar(float elapsed)
 	{
 		const float fps = 1.0f / elapsed;
+		bool debug_vars_opened = false;
 		if (ImGui::BeginMainMenuBar())
 		{
 			if (ImGui::BeginMenu(std::to_string(fps).c_str()))
@@ -94,8 +96,14 @@ namespace era_engine
 			{
 				ImGui::EndMenu();
 			}
+			if (ImGui::BeginMenu("Debug Vars Menu"))
+			{
+				ImGui::EndMenu();
+			}
 			ImGui::EndMainMenuBar();
 		}
+
+		DebugVarsStorage::get_instance()->draw_vars(debug_vars_opened);
 	}
 
 	static void renderToMainWindow(dx_window& window)
@@ -162,9 +170,6 @@ namespace era_engine
 
 		const bool dx_inited = dxContext.initialize();
 		ASSERT(dx_inited);
-
-		World* runtime_world = new World("GameWorld");
-		runtime_world->init();
 	}
 
 	Engine::~Engine()

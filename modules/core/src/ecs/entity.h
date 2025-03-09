@@ -72,13 +72,13 @@ namespace era_engine
 		Entity::Handle get_handle() const;
 
 		template <typename Component_, typename... Args_>
-		Entity& add_component(Args_&&... a)
+		Component_& add_component(Args_&&... a)
 		{
 			if (!has_component<Component_>())
 			{
-				internal_data->native_registry->emplace_or_replace<Component_>(internal_data->entity_handle, internal_data, std::forward<Args_>(a)...);
+				return internal_data->native_registry->emplace_or_replace<Component_>(internal_data->entity_handle, internal_data, std::forward<Args_>(a)...);
 			}
-			return *this;
+			return get_component<Component_>();
 		}
 
 		template <typename Component_>
@@ -145,7 +145,7 @@ namespace era_engine
 		std::vector<Entity::Handle> childs;
 	};
 
-	class EntityContainer final
+	class ERA_CORE_API EntityContainer final
 	{
 		EntityContainer() = delete;
 
@@ -162,7 +162,6 @@ namespace era_engine
 
 	private:
 		static inline std::unordered_map<Entity::Handle, EntityNode> container;
-		static inline std::mutex sync;
 
 		friend class World;
 	};

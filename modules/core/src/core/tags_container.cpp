@@ -28,9 +28,7 @@ namespace era_engine
 
 	bool TagsContainer::has_tag(const std::string& tag) const
 	{
-		{
-			const_cast<TagsContainer*>(this)->refresh();
-		}
+		const_cast<TagsContainer*>(this)->refresh();
 
 		const auto iter = std::lower_bound(tags.begin(), tags.end(), tag);
 		return iter != tags.end() && *iter == tag;
@@ -39,6 +37,12 @@ namespace era_engine
 	void TagsContainer::clear()
 	{
 		tags.clear();
+	}
+
+	size_t TagsContainer::size() const
+	{
+		const_cast<TagsContainer*>(this)->refresh();
+		return tags.size();
 	}
 
 	void TagsContainer::refresh()

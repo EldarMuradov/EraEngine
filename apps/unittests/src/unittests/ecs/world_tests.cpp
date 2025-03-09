@@ -4,6 +4,7 @@
 #include <ecs/world.h>
 
 TEST(ECS_World, Initialization) {
+
 	using namespace era_engine;
 
 	World* runtime_world = new World("GameWorld");
@@ -12,9 +13,11 @@ TEST(ECS_World, Initialization) {
 	ASSERT_TRUE(runtime_world->size() == 1);
 
 	delete runtime_world;
+
 }
 
 TEST(ECS_World, AddEntity) {
+
 	using namespace era_engine;
 
 	World* runtime_world = new World("GameWorld");
@@ -37,4 +40,5 @@ TEST(ECS_World, AddEntity) {
 	ASSERT_TRUE(runtime_world->size() == 1);
 
 	delete runtime_world;
+
 }

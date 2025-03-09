@@ -13,6 +13,8 @@
 
 #include <ecs/world.h>
 
+#include <physics_module.h>
+
 namespace era_engine
 {
 
@@ -21,7 +23,11 @@ namespace era_engine
 		Engine* engine = Engine::create_instance(argc, argv);
 
 		auto initial_task = [&engine]() {
-			ModuleLoader loader = ModuleLoader(engine, "physics");
+			ModuleLoader loader = ModuleLoader(engine);
+
+			PhysicsModule* physics_module = new PhysicsModule();
+			physics_module->initialize(engine);
+
 			ASSERT(loader.status());
 		};
 
@@ -31,7 +37,9 @@ namespace era_engine
 		window->setCustomWindowStyle();
 		window->maximize();
 
-		World* game_world = get_world_by_name("GameWorld");
+		World* game_world = new World("GameWorld");
+		game_world->init();
+
 		window->setFileDropCallback([&game_world](const fs::path& s) { EditorFileUtils::handle_file_drop(s, game_world); });
 		
 		game_world->add_tag("physics");
@@ -42,6 +50,8 @@ namespace era_engine
 		initializeTransformationGizmos();
 
 		engine->run(initial_task);
+
+		delete game_world;
 
 		engine->terminate();
 	}

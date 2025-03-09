@@ -3,6 +3,8 @@
 
 #include <ecs/update_groups.h>
 
+#include "core/debug/debug_var.h"
+
 #include <rendering/ecs/renderer_holder_root_component.h>
 
 #include <rttr/policy.h>
@@ -11,6 +13,8 @@
 
 namespace era_engine::physics
 {
+	static DebugVar<bool> visualize_shapes = DebugVar<bool>("physics.visualize_shapes", false);
+
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
@@ -35,24 +39,24 @@ namespace era_engine::physics
 	{
 		using namespace physx;
 
-		if (!renderer_holder_rc->visualize_shapes)
+		if (!visualize_shapes)
 		{
 			return;
 		}
 
 		auto scene = physics::PhysicsHolder::physics_ref->get_scene();
-		const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
+		const PxRenderBuffer& rb = scene->getRenderBuffer();
 
-		for (physx::PxU32 i = 0; i < rb.getNbPoints(); i++)
+		for (PxU32 i = 0; i < rb.getNbPoints(); i++)
 		{
-			const physx::PxDebugPoint& point = rb.getPoints()[i];
-			renderPoint(physx::create_vec3(point.pos), vec4(1.0f), renderer_holder_rc->ldrRenderPass);
+			const PxDebugPoint& point = rb.getPoints()[i];
+			renderPoint(create_vec3(point.pos), vec4(1.0f), renderer_holder_rc->ldrRenderPass);
 		}
 
-		for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
+		for (PxU32 i = 0; i < rb.getNbLines(); i++)
 		{
-			const physx::PxDebugLine& line = rb.getLines()[i];
-			renderLine(physx::create_vec3(line.pos0), physx::create_vec3(line.pos1), vec4(1.0f), renderer_holder_rc->ldrRenderPass);
+			const PxDebugLine& line = rb.getLines()[i];
+			renderLine(create_vec3(line.pos0), create_vec3(line.pos1), vec4(1.0f), renderer_holder_rc->ldrRenderPass);
 		}
 	}
 

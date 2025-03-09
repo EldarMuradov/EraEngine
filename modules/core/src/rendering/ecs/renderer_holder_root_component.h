@@ -39,7 +39,7 @@ namespace era_engine
 		uint32_t width = 1920;
 		uint32_t height = 1080;
 
-		bool visualize_shapes = true;
+		float timestep_scale = 1.0f;
 
 		ERA_VIRTUAL_REFLECT(Component)
 
@@ -47,8 +47,6 @@ namespace era_engine
 		main_renderer* renderer = nullptr;
 
 		UserInput* active_render_input = nullptr;
-
-		float timestep_scale = 1.0f;
 
 		friend class RenderSystem;
 		friend class InputSystem;

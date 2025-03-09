@@ -543,9 +543,9 @@ namespace era_engine::animation
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		rttr::registration::class_<AnimationComponent>("AnimationComponent")
+		registration::class_<AnimationComponent>("AnimationComponent")
 			.constructor<ref<Entity::EcsData>>();
-		rttr::registration::class_<SkeletonComponent>("SkeletonComponent")
+		registration::class_<SkeletonComponent>("SkeletonComponent")
 			.constructor<ref<Entity::EcsData>>();
 	}
 
@@ -611,7 +611,7 @@ namespace era_engine::animation
 					*vertices++ = { vrt1, limbTypeColors[parentJoint.limbType] };
 					*vertices++ = { vrt2, limbTypeColors[parentJoint.limbType] };
 #else
-					* vertices++ = { skeleton.joints[joint.parent_id].bind_transform.col3.xyz, limb_type_colors[parentJoint.limb_type] };
+					*vertices++ = { skeleton.joints[joint.parent_id].bind_transform.col3.xyz, limb_type_colors[parentJoint.limb_type] };
 					*vertices++ = { joint.bind_transform.col3.xyz, limb_type_colors[parentJoint.limb_type] };
 #endif
 				}

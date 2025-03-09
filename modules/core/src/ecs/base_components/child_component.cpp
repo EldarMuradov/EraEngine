@@ -23,6 +23,11 @@ namespace era_engine
 		}
 	}
 
+	ChildComponent::ChildComponent(ref<Entity::EcsData> _data, const Entity& _parent)
+		: ChildComponent(_data, _parent.get_data_weakref())
+	{
+	}
+
 	ChildComponent::~ChildComponent()
 	{
 	}

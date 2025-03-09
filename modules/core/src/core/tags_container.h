@@ -18,6 +18,8 @@ namespace era_engine
 
 		void clear();
 
+		size_t size() const;
+
 		void refresh();
 
 		const std::vector<std::string>& get_tags() const;

@@ -96,9 +96,11 @@ namespace era_engine
 		return internal_data->entity_handle;
 	}
 
+	static inline std::mutex container_sync;
+
 	void EntityContainer::emplace_pair(Entity::Handle parent, Entity::Handle child)
 	{
-		Lock l(sync);
+		std::lock_guard _lock(container_sync);
 
 		if (container.find(parent) == container.end())
 		{
@@ -110,7 +112,7 @@ namespace era_engine
 
 	void EntityContainer::erase(Entity::Handle parent)
 	{
-		Lock l(sync);
+		std::lock_guard _lock(container_sync);
 
 		if (container.find(parent) == container.end())
 		{
@@ -122,7 +124,7 @@ namespace era_engine
 
 	void EntityContainer::erase_pair(Entity::Handle parent, Entity::Handle child)
 	{
-		Lock l(sync);
+		std::lock_guard _lock(container_sync);
 
 		if (container.find(parent) == container.end())
 		{

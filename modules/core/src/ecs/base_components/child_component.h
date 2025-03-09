@@ -10,6 +10,7 @@ namespace era_engine
 	{
 	public:
 		ChildComponent(ref<Entity::EcsData> _data, weakref<Entity::EcsData> _parent);
+		ChildComponent(ref<Entity::EcsData> _data, const Entity& _parent);
 		~ChildComponent() override;
 
 		virtual void release() override;

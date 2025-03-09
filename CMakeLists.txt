@@ -20,6 +20,7 @@ add_subdirectory(modules/thirdparty-gtest)
 add_subdirectory(modules/base)
 add_subdirectory(modules/core)
 add_subdirectory(modules/physics)
+add_subdirectory(modules/simple_motion_matching)
 
 add_subdirectory(apps/editor)
 add_subdirectory(apps/example_game)

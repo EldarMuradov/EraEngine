@@ -98,14 +98,14 @@ namespace era_engine
 		main_renderer* renderer = renderer_holder_rc->renderer;
 
 		renderer->beginFrame(renderer_holder_rc->width, renderer_holder_rc->height);
+
+		resetRenderPasses();
+
+		stackArena.reset();
 	}
 
 	void RenderSystem::update(float dt)
 	{
-		resetRenderPasses();
-
-		stackArena.reset();
-
 		main_renderer* renderer = renderer_holder_rc->renderer;
 
 		directional_light& sun = renderer_holder_rc->sun;

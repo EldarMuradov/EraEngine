@@ -774,88 +774,98 @@ mat3& operator*=(mat3& a, float b);
 mat4& operator*=(mat4& a, float b);
 trs operator*(const trs& a, const trs& b);
 
-mat2 transpose(const mat2& a);
-mat3 transpose(const mat3& a);
-mat4 transpose(const mat4& a);
+static inline quat operator-(quat q)
+{
+	return quat(-q.x, -q.y, -q.z, -q.w);
+}
 
-mat3 invert(const mat3& m);
-mat4 invert(const mat4& m);
-trs invert(const trs& t);
+static inline quat operator-(quat q, quat p)
+{
+	return quat(q.x - p.x, q.y - p.y, q.z - p.z, q.w - p.w);
+}
 
-float determinant(const mat2& m);
-float determinant(const mat3& m);
-float determinant(const mat4& m);
+ERA_CORE_API mat2 transpose(const mat2& a);
+ERA_CORE_API mat3 transpose(const mat3& a);
+ERA_CORE_API mat4 transpose(const mat4& a);
 
-float trace(const mat3& m);
-float trace(const mat4& m);
+ERA_CORE_API mat3 invert(const mat3& m);
+ERA_CORE_API mat4 invert(const mat4& m);
+ERA_CORE_API trs invert(const trs& t);
 
-vec3 transform_position(const mat4& m, vec3 pos);
-vec3 transform_direction(const mat4& m, vec3 dir);
-vec3 transform_position(const trs& m, vec3 pos);
-vec3 transform_direction(const trs& m, vec3 dir);
-vec3 inverse_transform_position(const trs& m, vec3 pos);
-vec3 inverse_transform_direction(const trs& m, vec3 dir);
+ERA_CORE_API float determinant(const mat2& m);
+ERA_CORE_API float determinant(const mat3& m);
+ERA_CORE_API float determinant(const mat4& m);
 
-quat rotate_from_to(vec3 from, vec3 to);
-quat look_at_quaternion(vec3 forward, vec3 up);
-void get_axis_rotation(quat q, vec3& axis, float& angle);
-void decompose_quaternion_into_twist_and_swing(quat q, vec3 normalized_twist_axis, quat& twist, quat& swing);
+ERA_CORE_API float trace(const mat3& m);
+ERA_CORE_API float trace(const mat4& m);
 
-quat slerp(quat from, quat to, float t);
-quat nlerp(quat* qs, float* weights, uint32 count);
+ERA_CORE_API vec3 transform_position(const mat4& m, vec3 pos);
+ERA_CORE_API vec3 transform_direction(const mat4& m, vec3 dir);
+ERA_CORE_API vec3 transform_position(const trs& m, vec3 pos);
+ERA_CORE_API vec3 transform_direction(const trs& m, vec3 dir);
+ERA_CORE_API vec3 inverse_transform_position(const trs& m, vec3 pos);
+ERA_CORE_API vec3 inverse_transform_direction(const trs& m, vec3 dir);
 
-mat3 quaternion_to_mat3(quat q);
-mat4 quaternion_to_mat4(quat q);
+ERA_CORE_API quat rotate_from_to(vec3 from, vec3 to);
+ERA_CORE_API quat look_at_quaternion(vec3 forward, vec3 up);
+ERA_CORE_API void get_axis_rotation(quat q, vec3& axis, float& angle);
+ERA_CORE_API void decompose_quaternion_into_twist_and_swing(quat q, vec3 normalized_twist_axis, quat& twist, quat& swing);
 
-quat mat3_to_quaternion(const mat3& m);
+ERA_CORE_API quat slerp(quat from, quat to, float t);
+ERA_CORE_API quat nlerp(quat* qs, float* weights, uint32 count);
 
-vec3 quat_to_euler(quat q);
-quat euler_to_quat(vec3 euler);
+ERA_CORE_API mat3 quaternion_to_mat3(quat q);
+ERA_CORE_API mat4 quaternion_to_mat4(quat q);
 
-mat3 outer_product(vec3 a, vec3 b);
-mat3 get_skew_matrix(vec3 r);
+ERA_CORE_API quat mat3_to_quaternion(const mat3& m);
 
-mat4 trs_to_mat4(const trs& transform);
-trs mat4_to_trs(const mat4& m);
+ERA_CORE_API vec3 quat_to_euler(quat q);
+ERA_CORE_API quat euler_to_quat(vec3 euler);
 
-mat4 create_perspective_projection_matrix(float fov, float aspect, float near_plane, float far_plane);
-mat4 create_perspective_projection_matrix(float width, float height, float fx, float fy, float cx, float cy, float near_plane, float far_plane);
-mat4 create_perspective_projection_matrix(float r, float l, float t, float b, float near_plane, float far_plane);
-mat4 create_orthographic_projection_matrix(float r, float l, float t, float b, float near_plane, float far_plane);
-mat4 invert_perspective_projection_matrix(const mat4& m);
-mat4 invert_orthographic_projection_matrix(const mat4& m);
-mat4 create_translation_matrix(vec3 position);
-mat4 create_model_matrix(vec3 position, quat rotation, vec3 scale = vec3(1.f, 1.f, 1.f));
-mat4 create_billboard_model_matrix(vec3 position, vec3 eye, vec3 scale);
-mat4 create_view_matrix(vec3 eye, float pitch, float yaw);
-mat4 create_sky_view_matrix(const mat4& v);
-mat4 look_at(vec3 eye, vec3 target, vec3 up);
-mat4 create_view_matrix(vec3 position, quat rotation);
-mat4 invert_affine(const mat4& m);
+ERA_CORE_API mat3 outer_product(vec3 a, vec3 b);
+ERA_CORE_API mat3 get_skew_matrix(vec3 r);
 
-bool point_in_triangle(vec3 point, vec3 triA, vec3 triB, vec3& triC);
-bool point_in_rectangle(vec2 p, vec2 top_left, vec2 bottom_right);
-bool point_in_box(vec3 p, vec3 min_corner, vec3 max_corner);
+ERA_CORE_API mat4 trs_to_mat4(const trs& transform);
+ERA_CORE_API trs mat4_to_trs(const mat4& m);
 
-vec2 direction_to_panorama_uv(vec3 dir);
+ERA_CORE_API mat4 create_perspective_projection_matrix(float fov, float aspect, float near_plane, float far_plane);
+ERA_CORE_API mat4 create_perspective_projection_matrix(float width, float height, float fx, float fy, float cx, float cy, float near_plane, float far_plane);
+ERA_CORE_API mat4 create_perspective_projection_matrix(float r, float l, float t, float b, float near_plane, float far_plane);
+ERA_CORE_API mat4 create_orthographic_projection_matrix(float r, float l, float t, float b, float near_plane, float far_plane);
+ERA_CORE_API mat4 invert_perspective_projection_matrix(const mat4& m);
+ERA_CORE_API mat4 invert_orthographic_projection_matrix(const mat4& m);
+ERA_CORE_API mat4 create_translation_matrix(vec3 position);
+ERA_CORE_API mat4 create_model_matrix(vec3 position, quat rotation, vec3 scale = vec3(1.f, 1.f, 1.f));
+ERA_CORE_API mat4 create_billboard_model_matrix(vec3 position, vec3 eye, vec3 scale);
+ERA_CORE_API mat4 create_view_matrix(vec3 eye, float pitch, float yaw);
+ERA_CORE_API mat4 create_sky_view_matrix(const mat4& v);
+ERA_CORE_API mat4 look_at(vec3 eye, vec3 target, vec3 up);
+ERA_CORE_API mat4 create_view_matrix(vec3 position, quat rotation);
+ERA_CORE_API mat4 invert_affine(const mat4& m);
 
-float angle_to_zero_to_two_pi(float angle);
-float angle_to_neg_pi_to_pi(float angle);
+ERA_CORE_API bool point_in_triangle(vec3 point, vec3 triA, vec3 triB, vec3& triC);
+ERA_CORE_API bool point_in_rectangle(vec2 p, vec2 top_left, vec2 bottom_right);
+ERA_CORE_API bool point_in_box(vec3 p, vec3 min_corner, vec3 max_corner);
 
-vec2 solve_linear_system(const mat2& A, vec2 b);
-vec3 solve_linear_system(const mat3& A, vec3 b);
+ERA_CORE_API vec2 direction_to_panorama_uv(vec3 dir);
 
-vec3 get_barycentric_coordinates(vec2 a, vec2 b, vec2 c, vec2 p);
-vec3 get_barycentric_coordinates(vec3 a, vec3 b, vec3 c, vec3 p);
-bool inside_triangle(vec3 barycentrics);
+ERA_CORE_API float angle_to_zero_to_two_pi(float angle);
+ERA_CORE_API float angle_to_neg_pi_to_pi(float angle);
 
-void get_tangents(vec3 normal, vec3& out_tangent, vec3& out_bitangent);
-vec3 get_tangent(vec3 normal);
+ERA_CORE_API vec2 solve_linear_system(const mat2& A, vec2 b);
+ERA_CORE_API vec3 solve_linear_system(const mat3& A, vec3 b);
+
+ERA_CORE_API vec3 get_barycentric_coordinates(vec2 a, vec2 b, vec2 c, vec2 p);
+ERA_CORE_API vec3 get_barycentric_coordinates(vec3 a, vec3 b, vec3 c, vec3 p);
+ERA_CORE_API bool inside_triangle(vec3 barycentrics);
+
+ERA_CORE_API void get_tangents(vec3 normal, vec3& out_tangent, vec3& out_bitangent);
+ERA_CORE_API vec3 get_tangent(vec3 normal);
 
 // W = PDF = 1 / 4pi
-vec4 uniform_sample_sphere(vec2 E);
+ERA_CORE_API vec4 uniform_sample_sphere(vec2 E);
 
-vec3 local_to_world(const vec3& local_pos, const trs& transform);
+ERA_CORE_API vec3 local_to_world(const vec3& local_pos, const trs& transform);
 
 struct ERA_CORE_API singular_value_decomposition
 {
@@ -869,9 +879,9 @@ struct ERA_CORE_API QRDecomposition
 	mat3 Q, R;
 };
 
-singular_value_decomposition compute_svd(const mat3& A);
-QRDecomposition create_qr_decomposition(const mat3& mat);
-bool get_eigen(const mat3& A, vec3& out_eigen_values, mat3& out_eigen_vectors);
+ERA_CORE_API singular_value_decomposition compute_svd(const mat3& A);
+ERA_CORE_API QRDecomposition create_qr_decomposition(const mat3& mat);
+ERA_CORE_API bool get_eigen(const mat3& A, vec3& out_eigen_values, mat3& out_eigen_vectors);
 
 template <typename T>
 void exclusive_prefix_sum(const T* input, T* output, uint32 count)
@@ -1144,6 +1154,476 @@ struct alignas(16) catmull_rom_spline
 		return evaluate_spline(ts, values, numActualPoints, t);
 	}
 };
+
+//#define LN2f 0.69314718056f
+//
+//static inline quat operator/(quat q, float s)
+//{
+//	return quat(q.x / s, q.y / s, q.z / s, q.w / s);
+//}
+//
+//static inline float clampf(float x, float min, float max)
+//{
+//	return x > max ? max : x < min ? min : x;
+//}
+//
+//static inline float minf(float x, float y)
+//{
+//	return x < y ? x : y;
+//}
+//
+//static inline float maxf(float x, float y)
+//{
+//	return x > y ? x : y;
+//}
+//
+//static inline float squaref(float x)
+//{
+//	return x * x;
+//}
+//
+//static inline float lerpf(float x, float y, float a)
+//{
+//	return (1.0f - a) * x + a * y;
+//}
+//
+//static inline float signf(float x)
+//{
+//	return x > 0.0f ? 1.0f : x < 0.0f ? -1.0f : 0.0f;
+//}
+//
+//static inline float fast_negexpf(float x)
+//{
+//	return 1.0f / (1.0f + x + 0.48f * x * x + 0.235f * x * x * x);
+//}
+//
+//static inline float fast_atanf(float x)
+//{
+//	float z = fabs(x);
+//	float w = z > 1.0f ? 1.0f / z : z;
+//	float y = (M_PI / 4.0f) * w - w * (w - 1.0f) * (0.2447f + 0.0663f * w);
+//	return copysign(z > 1.0f ? M_PI / 2.0f - y : y, x);
+//}
+//
+//
+//static inline float quat_length(quat q)
+//{
+//	return sqrtf(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
+//}
+//
+//static inline quat quat_normalize(quat q, const float eps = 1e-8f)
+//{
+//	return q / (quat_length(q) + eps);
+//}
+//
+//static inline quat quat_inv(quat q)
+//{
+//	return quat(-q.x, -q.y, -q.z, q.w);
+//}
+//
+//static inline quat quat_mul(quat q, quat p)
+//{
+//	return q * p;
+//}
+//
+//static inline quat quat_inv_mul(quat q, quat p)
+//{
+//	return quat_mul(quat_inv(q), p);
+//}
+//
+//static inline quat quat_mul_inv(quat q, quat p)
+//{
+//	return quat_mul(q, quat_inv(p));
+//}
+//
+//static inline vec3 quat_mul_vec3(quat q, vec3 v)
+//{
+//	return q * v;
+//}
+//
+//static inline vec3 quat_inv_mul_vec3(quat q, vec3 v)
+//{
+//	return quat_mul_vec3(quat_inv(q), v);
+//}
+//
+//static inline quat quat_abs(quat x)
+//{
+//	return x.w < 0.0 ? -x : x;
+//}
+//
+//static inline quat quat_exp(vec3 v, float eps = 1e-8f)
+//{
+//	float halfangle = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+//
+//	if (halfangle < eps)
+//	{
+//		return quat_normalize(quat(v.x, v.y, v.z, 1.0f));
+//	}
+//	else
+//	{
+//		float c = cosf(halfangle);
+//		float s = sinf(halfangle) / halfangle;
+//		return quat(s * v.x, s * v.y, s * v.z, c);
+//	}
+//}
+//
+//static inline vec3 quat_log(quat q, float eps = 1e-8f)
+//{
+//	float length = sqrtf(q.x * q.x + q.y * q.y + q.z * q.z);
+//
+//	if (length < eps)
+//	{
+//		return vec3(q.x, q.y, q.z);
+//	}
+//	else
+//	{
+//		float halfangle = acosf(clampf(q.w, -1.0f, 1.0f));
+//		return halfangle * (vec3(q.x, q.y, q.z) / length);
+//	}
+//}
+//
+//static inline quat quat_from_scaled_angle_axis(vec3 v, float eps = 1e-8f)
+//{
+//	return quat_exp(v / 2.0f, eps);
+//}
+//
+//static inline vec3 quat_to_scaled_angle_axis(quat q, float eps = 1e-8f)
+//{
+//	return 2.0f * quat_log(q, eps);
+//}
+//
+//static inline vec3 quat_differentiate_angular_velocity(
+//	quat next, quat curr, float dt, float eps = 1e-8f)
+//{
+//	return quat_to_scaled_angle_axis(
+//		quat_abs(quat_mul(next, quat_inv(curr))), eps) / dt;
+//}
+//
+//static inline quat quat_integrate_angular_velocity(
+//	vec3 vel, quat curr, float dt, float eps = 1e-8f)
+//{
+//	return quat_mul(quat_from_scaled_angle_axis(vel * dt, eps), curr);
+//}
+//
+//static inline quat quat_from_angle_axis(float angle, vec3 axis)
+//{
+//	float c = cosf(angle / 2.0f);
+//	float s = sinf(angle / 2.0f);
+//	return quat(s * axis.x, s * axis.y, s * axis.z, c);
+//}
+//
+//static inline void quat_to_angle_axis(quat q, float& angle, vec3& axis, float eps = 1e-8f)
+//{
+//	float length = sqrtf(q.x * q.x + q.y * q.y + q.z * q.z);
+//
+//	if (length < eps)
+//	{
+//		angle = 0.0f;
+//		axis = vec3(1.0f, 0.0f, 0.0f);
+//	}
+//	else
+//	{
+//		angle = 2.0f * acosf(clampf(q.w, -1.0f, 1.0f));
+//		axis = vec3(q.x, q.y, q.z) / length;
+//	}
+//}
+//
+//static inline float quat_dot(quat q, quat p)
+//{
+//	return q.w * p.w + q.x * p.x + q.y * p.y + q.z * p.z;
+//}
+//
+//static inline quat quat_nlerp(quat q, quat p, float alpha)
+//{
+//	return quat_normalize(quat(
+//		lerpf(q.x, p.x, alpha),
+//		lerpf(q.y, p.y, alpha),
+//		lerpf(q.z, p.z, alpha),
+//		lerpf(q.w, p.w, alpha)));
+//}
+//
+//static inline quat quat_nlerp_shortest(quat q, quat p, float alpha)
+//{
+//	if (quat_dot(q, p) < 0.0f)
+//	{
+//		p = -p;
+//	}
+//
+//	return quat_nlerp(q, p, alpha);
+//}
+//
+//static inline quat quat_slerp_shortest(quat q, quat p, float alpha, float eps = 1e-5f)
+//{
+//	//return slerp(q, p, alpha);
+//	if (quat_dot(q, p) < 0.0f)
+//	{
+//		p = -p;
+//	}
+//
+//	float dot = quat_dot(q, p);
+//	float theta = acosf(clampf(dot, -1.0f, 1.0f));
+//
+//	if (theta < eps)
+//	{
+//		return quat_nlerp(q, p, alpha);
+//	}
+//
+//	quat r = quat_normalize(p - q * dot);
+//
+//	return q * cosf(theta * alpha) + r * sinf(theta * alpha);
+//}
+//
+//// Taken from https://zeux.io/2015/07/23/approximating-slerp/
+//static inline quat quat_slerp_shortest_approx(quat q, quat p, float alpha)
+//{
+//	float ca = quat_dot(q, p);
+//
+//	if (ca < 0.0f)
+//	{
+//		p = -p;
+//	}
+//
+//	float d = fabsf(ca);
+//	float a = 1.0904f + d * (-3.2452f + d * (3.55645f - d * 1.43519f));
+//	float b = 0.848013f + d * (-1.06021f + d * 0.215638f);
+//	float k = a * (alpha - 0.5f) * (alpha - 0.5f) + b;
+//	float oalpha = alpha + alpha * (alpha - 0.5f) * (alpha - 1) * k;
+//
+//	return quat_nlerp(q, p, oalpha);
+//}
+//
+//static inline float quat_angle_between(quat q, quat p)
+//{
+//	quat diff = quat_abs(quat_mul_inv(q, p));
+//	return 2.0f * acosf(clampf(diff.w, -1.0f, 1.0f));
+//}
+//
+//static inline quat quat_between(vec3 p, vec3 q)
+//{
+//	vec3 c = cross(p, q);
+//
+//	return quat_normalize(quat(
+//		c.x,
+//		c.y,
+//		c.z,
+//		sqrtf(dot(p, p) * dot(q, q)) + dot(p, q)));
+//}
+//
+//static inline float damper_exact(float x, float g, float halflife, float dt, float eps = 1e-5f)
+//{
+//	return lerpf(x, g, 1.0f - fast_negexpf((LN2f * dt) / (halflife + eps)));
+//}
+//
+//static inline vec3 damper_exact(vec3 x, vec3 g, float halflife, float dt, float eps = 1e-5f)
+//{
+//	return lerp(x, g, 1.0f - fast_negexpf((LN2f * dt) / (halflife + eps)));
+//}
+//
+//static inline quat damper_exact(quat x, quat g, float halflife, float dt, float eps = 1e-5f)
+//{
+//	return quat_slerp_shortest_approx(x, g, 1.0f - fast_negexpf((LN2f * dt) / (halflife + eps)));
+//}
+//
+//static inline float damp_adjustment_exact(float g, float halflife, float dt, float eps = 1e-5f)
+//{
+//	return g * (1.0f - fast_negexpf((LN2f * dt) / (halflife + eps)));
+//}
+//
+//static inline vec3 damp_adjustment_exact(vec3 g, float halflife, float dt, float eps = 1e-5f)
+//{
+//	return g * (1.0f - fast_negexpf((LN2f * dt) / (halflife + eps)));
+//}
+//
+//static inline quat damp_adjustment_exact(quat g, float halflife, float dt, float eps = 1e-5f)
+//{
+//	return quat_slerp_shortest_approx(quat::identity, g, 1.0f - fast_negexpf((LN2f * dt) / (halflife + eps)));
+//}
+//
+////--------------------------------------
+//
+//static inline float halflife_to_damping(float halflife, float eps = 1e-5f)
+//{
+//	return (4.0f * LN2f) / (halflife + eps);
+//}
+//
+//static inline float damping_to_halflife(float damping, float eps = 1e-5f)
+//{
+//	return (4.0f * LN2f) / (damping + eps);
+//}
+//
+//static inline float frequency_to_stiffness(float frequency)
+//{
+//	return squaref(2.0f * M_PI * frequency);
+//}
+//
+//static inline float stiffness_to_frequency(float stiffness)
+//{
+//	return sqrtf(stiffness) / (2.0f * M_PI);
+//}
+//
+//static inline vec3 clamp(vec3 v, vec3 min, vec3 max)
+//{
+//    return vec3(
+//        clampf(v.x, min.x, max.x),
+//        clampf(v.y, min.y, max.y),
+//        clampf(v.z, min.z, max.z));
+//}
+//
+////--------------------------------------
+//
+//static inline void simple_spring_damper_exact(
+//	float& x,
+//	float& v,
+//	const float x_goal,
+//	const float halflife,
+//	const float dt)
+//{
+//	float y = halflife_to_damping(halflife) / 2.0f;
+//	float j0 = x - x_goal;
+//	float j1 = v + j0 * y;
+//	float eydt = fast_negexpf(y * dt);
+//
+//	x = eydt * (j0 + j1 * dt) + x_goal;
+//	v = eydt * (v - j1 * y * dt);
+//}
+//
+//static inline void simple_spring_damper_exact(
+//	vec3& x,
+//	vec3& v,
+//	const vec3 x_goal,
+//	const float halflife,
+//	const float dt)
+//{
+//	float y = halflife_to_damping(halflife) / 2.0f;
+//	vec3 j0 = x - x_goal;
+//	vec3 j1 = v + j0 * y;
+//	float eydt = fast_negexpf(y * dt);
+//
+//	x = eydt * (j0 + j1 * dt) + x_goal;
+//	v = eydt * (v - j1 * y * dt);
+//}
+//
+//static inline void simple_spring_damper_exact(
+//	quat& x,
+//	vec3& v,
+//	const quat x_goal,
+//	const float halflife,
+//	const float dt)
+//{
+//	float y = halflife_to_damping(halflife) / 2.0f;
+//
+//	vec3 j0 = quat_to_scaled_angle_axis(quat_abs(quat_mul(x, quat_inv(x_goal))));
+//	vec3 j1 = v + j0 * y;
+//
+//	float eydt = fast_negexpf(y * dt);
+//
+//	x = quat_mul(quat_from_scaled_angle_axis(eydt * (j0 + j1 * dt)), x_goal);
+//	v = eydt * (v - j1 * y * dt);
+//}
+//
+////--------------------------------------
+//
+//static inline void decay_spring_damper_exact(
+//	float& x,
+//	float& v,
+//	const float halflife,
+//	const float dt)
+//{
+//	float y = halflife_to_damping(halflife) / 2.0f;
+//	float j1 = v + x * y;
+//	float eydt = fast_negexpf(y * dt);
+//
+//	x = eydt * (x + j1 * dt);
+//	v = eydt * (v - j1 * y * dt);
+//}
+//
+//static inline void decay_spring_damper_exact(
+//	vec3& x,
+//	vec3& v,
+//	const float halflife,
+//	const float dt)
+//{
+//	float y = halflife_to_damping(halflife) / 2.0f;
+//	vec3 j1 = v + x * y;
+//	float eydt = fast_negexpf(y * dt);
+//
+//	x = eydt * (x + j1 * dt);
+//	v = eydt * (v - j1 * y * dt);
+//}
+//
+//static inline void decay_spring_damper_exact(
+//	quat& x,
+//	vec3& v,
+//	const float halflife,
+//	const float dt)
+//{
+//	float y = halflife_to_damping(halflife) / 2.0f;
+//
+//	vec3 j0 = quat_to_scaled_angle_axis(x);
+//	vec3 j1 = v + j0 * y;
+//
+//	float eydt = fast_negexpf(y * dt);
+//
+//	x = quat_from_scaled_angle_axis(eydt * (j0 + j1 * dt));
+//	v = eydt * (v - j1 * y * dt);
+//}
+//
+////--------------------------------------
+//
+//static inline void inertialize_transition(
+//	vec3& off_x,
+//	vec3& off_v,
+//	const vec3 src_x,
+//	const vec3 src_v,
+//	const vec3 dst_x,
+//	const vec3 dst_v)
+//{
+//	off_x = (src_x + off_x) - dst_x;
+//	off_v = (src_v + off_v) - dst_v;
+//}
+//
+//static inline void inertialize_update(
+//	vec3& out_x,
+//	vec3& out_v,
+//	vec3& off_x,
+//	vec3& off_v,
+//	const vec3 in_x,
+//	const vec3 in_v,
+//	const float halflife,
+//	const float dt)
+//{
+//	decay_spring_damper_exact(off_x, off_v, halflife, dt);
+//	out_x = in_x + off_x;
+//	out_v = in_v + off_v;
+//}
+//
+//static inline void inertialize_transition(
+//	quat& off_x,
+//	vec3& off_v,
+//	const quat src_x,
+//	const vec3 src_v,
+//	const quat dst_x,
+//	const vec3 dst_v)
+//{
+//	off_x = quat_abs(quat_mul(quat_mul(off_x, src_x), quat_inv(dst_x)));
+//	off_v = (off_v + src_v) - dst_v;
+//}
+//
+//static inline void inertialize_update(
+//	quat& out_x,
+//	vec3& out_v,
+//	quat& off_x,
+//	vec3& off_v,
+//	const quat in_x,
+//	const vec3 in_v,
+//	const float halflife,
+//	const float dt)
+//{
+//	decay_spring_damper_exact(off_x, off_v, halflife, dt);
+//	out_x = quat_mul(off_x, in_x);
+//	out_v = off_v + quat_mul_vec3(off_x, in_v);
+//}
+
 
 // Interop for shaders.
 #define spline(T, max_num_points) catmull_rom_spline<T, max_num_points>

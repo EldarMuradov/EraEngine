@@ -22,6 +22,8 @@ namespace era_engine
 
 		bool has_tag(const std::string& tag) const;
 
+		size_t size() const;
+
 		void clear();
 	
 		const TagsContainer& get_container() const;

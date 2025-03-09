@@ -37,6 +37,11 @@ namespace era_engine
 		return container.has_tag(tag);
 	}
 
+	size_t TagsComponent::size() const
+	{
+		return container.size();
+	}
+
 	void TagsComponent::clear()
 	{
 		container.clear();

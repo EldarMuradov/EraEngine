@@ -91,12 +91,6 @@ namespace era_engine
 		WorldSystemScheduler* get_system_scheduler() const;
 
 		template <typename Component_>
-		Entity get_entity_from_component(const Component_& comp)
-		{
-			return { entt::to_entity(world_data->registry, comp), this };
-		}
-
-		template <typename Component_>
 		Component_* get_root_component()
 		{
 			return world_data->root_entity.get_component_if_exists<Component_>();
@@ -149,7 +143,7 @@ namespace era_engine
 		{
 			auto& s = world_data->registry.storage<Component_>();
 			Component_** r = s.raw();
-			return r ? *r : 0;
+			return r ? *r : nullptr;
 		}
 
 		template <typename Func_>
@@ -170,12 +164,6 @@ namespace era_engine
 		{
 			auto& s = world_data->registry.storage<Component_>();
 			return s.element_at(index);
-		}
-
-		template <typename Component_>
-		Entity get_entity_from_component_at_index(uint32 index)
-		{
-			return get_entity_from_fomponent(get_component_at_index<Component_>(index));
 		}
 
 		template <typename Context_, typename... Args_>
@@ -232,7 +220,6 @@ namespace era_engine
 		WorldData* world_data = nullptr;
 
 		friend class Entity;
-		friend class EntityEditorUtils;
 	};
 
 	ERA_CORE_API World* get_world_by_name(const char* _name);

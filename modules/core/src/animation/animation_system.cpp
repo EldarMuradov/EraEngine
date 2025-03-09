@@ -69,7 +69,7 @@ namespace era_engine::animation
 
 				trs* globalTransforms = allocator->allocate<trs>((uint32)skeleton.joints.size());
 
-				skeleton.get_skinning_matrices_from_local_transforms(globalTransforms, skinningMatrices);
+				skeleton.get_skinning_matrices_from_local_transforms(globalTransforms, skinningMatrices, transform.transform);
 
 				transform.transform = transform.transform * deltaRootMotion;
 				transform.transform.rotation = normalize(transform.transform.rotation);

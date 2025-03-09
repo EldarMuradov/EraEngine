@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core_api.h"
+
 #include "core/threading.h"
 
 #include "dx/dx.h"
@@ -11,7 +13,7 @@
 
 namespace era_engine
 {
-	struct dx_memory_usage
+	struct ERA_CORE_API dx_memory_usage
 	{
 		// In MB.
 		uint32 currentlyUsed;
@@ -48,7 +50,7 @@ namespace era_engine
 		dx_tiling_4
 	};
 
-	struct dx_feature_support
+	struct ERA_CORE_API dx_feature_support
 	{
 		dx_raytracing_tier raytracingTier = dx_raytracing_1_0;
 		dx_mesh_shader_tier meshShaderTier = dx_mesh_shader_1_0;
@@ -152,4 +154,6 @@ namespace era_engine
 	};
 
 	extern dx_context& dxContext;
+
+	ERA_CORE_API dx_memory_usage get_dx_mem_usage();
 }

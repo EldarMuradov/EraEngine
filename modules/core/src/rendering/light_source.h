@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core_api.h"
+
 #include "core/math.h"
 #include "core/camera.h"
 #include "core/reflect.h"
@@ -12,7 +14,7 @@
 
 namespace era_engine
 {
-	class directional_light
+	class ERA_CORE_API directional_light
 	{
 	public:
 
@@ -45,7 +47,7 @@ namespace era_engine
 		ERA_REFLECT
 	};
 
-	class PointLightComponent final : public Component
+	class ERA_CORE_API PointLightComponent final : public Component
 	{
 	public:
 		PointLightComponent() = default;
@@ -65,7 +67,7 @@ namespace era_engine
 		bool castsShadow{};
 	};
 
-	class SpotLightComponent final : public Component
+	class ERA_CORE_API SpotLightComponent final : public Component
 	{
 	public:
 		SpotLightComponent() = default;
@@ -88,5 +90,5 @@ namespace era_engine
 		bool castsShadow;
 	};
 
-	NODISCARD mat4 getSpotLightViewProjectionMatrix(const spot_light_cb& sl);
+	ERA_CORE_API mat4 getSpotLightViewProjectionMatrix(const spot_light_cb& sl);
 }

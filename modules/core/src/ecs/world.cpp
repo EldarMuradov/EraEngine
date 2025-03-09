@@ -29,9 +29,10 @@ namespace era_engine
 	{
 		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), this, &world_data->registry);
 		world_data->entity_datas.emplace(new_data->entity_handle, new_data);
-		world_data->root_entity = Entity(new_data).add_component<TransformComponent>()
-			.add_component<NameComponent>("RootEntity")
-			.add_component<TagsComponent>();
+		world_data->root_entity = Entity(new_data);
+		world_data->root_entity.add_component<TransformComponent>();
+		world_data->root_entity.add_component<NameComponent>("RootEntity");
+		world_data->root_entity.add_component<TagsComponent>();
 	}
 
 	Entity World::create_entity()
@@ -49,7 +50,9 @@ namespace era_engine
 
 	Entity World::create_entity(const char* _name)
 	{
-		return create_entity().add_component<NameComponent>(_name);
+		Entity created_entity = create_entity();
+		created_entity.add_component<NameComponent>(_name);
+		return created_entity;
 	}
 
 	Entity World::create_entity(Entity::Handle _handle)
@@ -76,7 +79,9 @@ namespace era_engine
 
 	Entity World::create_entity(Entity::Handle _handle, const char* _name)
 	{
-		return create_entity(_handle).add_component<NameComponent>(_name);
+		Entity created_entity = create_entity(_handle);
+		created_entity.add_component<NameComponent>(_name);
+		return created_entity;
 	}
 
 	void World::destroy_entity(const Entity& _entity)
@@ -214,7 +219,7 @@ namespace era_engine
 
 	void World::add_base_components(Entity& entity)
 	{
-		entity.add_component<TransformComponent>().add_component<ChildComponent>(weakref<Entity::EcsData>(world_data->root_entity.internal_data));
+		entity.add_component<TransformComponent>();
 	}
 
 	World* get_world_by_name(const char* _name)

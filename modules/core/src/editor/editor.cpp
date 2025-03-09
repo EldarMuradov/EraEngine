@@ -759,7 +759,7 @@ namespace era_engine
 
 					if (selectedEntity.is_valid())
 					{
-						EntityEditorUtils::edit_entity(world, selectedEntity.get_handle());
+						EntityEditorUtils::edit_entity(world.get(), selectedEntity.get_handle());
 					}
 
 					if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && !ImGui::IsAnyItemHovered())
@@ -1022,43 +1022,43 @@ namespace era_engine
 		{
 			if (ImGui::MenuItem("Point light", "P") || ImGui::IsKeyPressed('P'))
 			{
-				Entity pl = world->create_entity("Point light")
-					.add_component<PointLightComponent>(
-						vec3(1.f, 1.f, 1.f),
-						1.f,
-						10.f,
-						true,
-						2048u
-					);
+				//Entity pl = world->create_entity("Point light")
+				//	.add_component<PointLightComponent>(
+				//		vec3(1.f, 1.f, 1.f),
+				//		1.f,
+				//		10.f,
+				//		true,
+				//		2048u
+				//	);
 
-				TransformComponent& transform = pl.get_component<TransformComponent>();
-				transform.transform.position = camera.position + camera.rotation * vec3(0.f, 0.f, -3.f);
+				//TransformComponent& transform = pl.get_component<TransformComponent>();
+				//transform.transform.position = camera.position + camera.rotation * vec3(0.f, 0.f, -3.f);
 
 				//currentUndoStack->pushAction("entity creation", entity_existence_undo(world, pl));
 
-				setSelectedEntity(pl);
+				//setSelectedEntity(pl);
 				clicked = true;
 			}
 
 			if (ImGui::MenuItem("Spot light", "S") || ImGui::IsKeyPressed('S'))
 			{
-				Entity sl = world->create_entity("Spot light")
-					.add_component<SpotLightComponent>(
-						vec3(1.f, 1.f, 1.f),
-						1.f,
-						25.f,
-						deg2rad(20.f),
-						deg2rad(30.f),
-						true,
-						2048u
-					);
+				//Entity sl = world->create_entity("Spot light")
+				//	.add_component<SpotLightComponent>(
+				//		vec3(1.f, 1.f, 1.f),
+				//		1.f,
+				//		25.f,
+				//		deg2rad(20.f),
+				//		deg2rad(30.f),
+				//		true,
+				//		2048u
+				//	);
 
-				TransformComponent& transform = sl.get_component<TransformComponent>();
-				transform.transform.position = camera.position + camera.rotation * vec3(0.f, 0.f, -3.f);
+				//TransformComponent& transform = sl.get_component<TransformComponent>();
+				//transform.transform.position = camera.position + camera.rotation * vec3(0.f, 0.f, -3.f);
 
 				//currentUndoStack->pushAction("entity creation", entity_existence_undo(world, sl));
 
-				setSelectedEntity(sl);
+				//setSelectedEntity(sl);
 				clicked = true;
 			}
 

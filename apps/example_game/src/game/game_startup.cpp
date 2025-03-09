@@ -9,6 +9,7 @@
 #include <core/string.h>
 
 #include <physics_module.h>
+#include <simple_motion_matching_module.h>
 
 #include <ecs/world.h>
 
@@ -25,7 +26,12 @@ namespace era_engine
 			PhysicsModule* physics_module = new PhysicsModule();
 			physics_module->initialize(engine);
 
+			SimpleMotionMatchingModule* simple_mm_module = new SimpleMotionMatchingModule();
+			simple_mm_module->initialize(engine);
+
 			loader.add_module(physics_module);
+			loader.add_module(simple_mm_module);
+
 			ASSERT(loader.status());
 		};
 
@@ -35,14 +41,18 @@ namespace era_engine
 		window->setCustomWindowStyle();
 		window->maximize();
 
-		World* game_world = get_world_by_name("GameWorld");
+		World* game_world = new World("GameWorld");
+		game_world->init();
 
 		game_world->add_tag("physics");
 		game_world->add_tag("render");
 		game_world->add_tag("base");
 		game_world->add_tag("game");
+		game_world->add_tag("motion_matching");
 
 		engine->run(initial_task);
+
+		delete game_world;
 
 		engine->terminate();
 	}

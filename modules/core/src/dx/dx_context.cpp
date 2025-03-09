@@ -583,4 +583,9 @@ namespace era_engine
 		pagePools[bufferedFrameID].reset();
 		frameDescriptorAllocator.newFrame(bufferedFrameID);
 	}
+
+	dx_memory_usage get_dx_mem_usage()
+	{
+		return dxContext.getMemoryUsage();
+	}
 }
