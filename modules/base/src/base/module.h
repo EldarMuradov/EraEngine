@@ -8,6 +8,10 @@ namespace era_engine
 {
 	class Engine;
 
+
+	/**
+	* Default module base class.
+	*/
 	class ERA_BASE_API IModule
 	{
 	public:

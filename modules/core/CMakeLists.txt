@@ -6,6 +6,7 @@ era_begin(core "MODULE")
     require_thirdparty_module(core yaml-cpp)
     require_thirdparty_module(core rttr_core)
     require_thirdparty_module(core DirectXTex)
+    require_thirdparty_module(core acl_target)
 
     target_include_directories(core PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-imgui/imgui)
     target_compile_definitions(core PRIVATE ERA_CORE)

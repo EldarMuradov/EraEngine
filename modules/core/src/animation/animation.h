@@ -127,8 +127,6 @@ namespace era_engine::animation
 		LimbDimensions dimensions;
 	};
 
-
-
 	class ERA_CORE_API Skeleton
 	{
 	public:

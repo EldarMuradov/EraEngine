@@ -16,6 +16,7 @@ add_subdirectory(modules/thirdparty-yaml-cpp)
 add_subdirectory(modules/thirdparty-directxtex)
 add_subdirectory(modules/thirdparty-rttr)
 add_subdirectory(modules/thirdparty-gtest)
+add_subdirectory(modules/thirdparty-acl)
 
 add_subdirectory(modules/base)
 add_subdirectory(modules/core)

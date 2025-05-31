@@ -16,6 +16,8 @@
 #include <rttr/policy.h>
 #include <rttr/registration>
 
+#include <acl/version.h>
+
 namespace era_engine::animation
 {
 
