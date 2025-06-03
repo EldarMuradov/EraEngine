@@ -120,10 +120,24 @@ namespace physx
 	PX_FORCE_INLINE PxQuat create_PxQuat(const quat& q) { return PxQuat(q.x, q.y, q.z, q.w); }
 	PX_FORCE_INLINE PxQuat create_PxQuat(quat&& q) { return PxQuat(q.x, q.y, q.z, q.w); }
 
+	PX_FORCE_INLINE quat create_quat(const PxQuat& q) { return quat(q.x, q.y, q.z, q.w); }
+	PX_FORCE_INLINE quat create_quat(PxQuat&& q) { return quat(q.x, q.y, q.z, q.w); }
+
 	PX_FORCE_INLINE vec3 create_vec3(const PxVec3& vec) { return vec3(vec.x, vec.y, vec.z); }
 	PX_FORCE_INLINE vec2 create_vec2(const PxVec2& vec) { return vec2(vec.x, vec.y); }
 	PX_FORCE_INLINE vec3 create_vec3(PxVec3&& vec) { return vec3(vec.x, vec.y, vec.z); }
 	PX_FORCE_INLINE vec2 create_vec2(PxVec2&& vec) { return vec2(vec.x, vec.y); }
+
+	PX_FORCE_INLINE PxVec2 min(const PxVec2& a, const PxVec2& b) { return PxVec2(std::min(a.x, b.x), std::min(a.y, b.y)); }
+	PX_FORCE_INLINE PxVec3 min(const PxVec3& a, const PxVec3& b) { return PxVec3(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z)); }
+
+	PX_FORCE_INLINE PxVec2 max(const PxVec2& a, const PxVec2& b) { return PxVec2(std::max(a.x, b.x), std::max(a.y, b.y)); }
+	PX_FORCE_INLINE PxVec3 max(const PxVec3& a, const PxVec3& b) { return PxVec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)); }
+
+	PX_FORCE_INLINE trs create_trs(const PxTransform& transform) { return trs(create_vec3(transform.p), create_quat(transform.q), vec3(1.0f)); }
+	PX_FORCE_INLINE trs create_trs(PxTransform&& transform) { return trs(create_vec3(transform.p), create_quat(transform.q), vec3(1.0f)); }
+	PX_FORCE_INLINE PxTransform create_PxTransform(const trs& transform) { return PxTransform(create_PxVec3(transform.position), create_PxQuat(transform.rotation)); }
+	PX_FORCE_INLINE PxTransform create_PxTransform(trs&& transform) { return PxTransform(create_PxVec3(transform.position), create_PxQuat(transform.rotation)); }
 
 	PX_FORCE_INLINE PxMat44 create_PxMat44(const mat4& mat)
 	{
@@ -178,15 +192,6 @@ namespace physx
 
 		return new_mat;
 	}
-
-	PX_FORCE_INLINE quat create_quat(const PxQuat& q) { return quat(q.x, q.y, q.z, q.w); }
-	PX_FORCE_INLINE quat create_quat(PxQuat&& q) { return quat(q.x, q.y, q.z, q.w); }
-							 
-	PX_FORCE_INLINE PxVec2 min(const PxVec2& a, const PxVec2& b) { return PxVec2(std::min(a.x, b.x), std::min(a.y, b.y)); }
-	PX_FORCE_INLINE PxVec3 min(const PxVec3& a, const PxVec3& b) { return PxVec3(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z)); }
-							 
-	PX_FORCE_INLINE PxVec2 max(const PxVec2& a, const PxVec2& b) { return PxVec2(std::max(a.x, b.x), std::max(a.y, b.y)); }
-	PX_FORCE_INLINE PxVec3 max(const PxVec3& a, const PxVec3& b) { return PxVec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)); }
 }
 
 namespace era_engine::physics

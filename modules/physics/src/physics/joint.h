@@ -28,8 +28,11 @@ namespace era_engine::physics
 		struct ERA_PHYSICS_API BaseDescriptor
 		{
 			weakref<Entity::EcsData> connected_entity;
-			float break_force = std::numeric_limits<float>::max();
-			bool enable_collision = true;
+
+			trs local_frame = trs::identity;
+			trs second_local_frame = trs::identity;
+
+			bool enable_collision = false;
 		};
 
 		JointComponent() = default;
@@ -38,6 +41,9 @@ namespace era_engine::physics
 		virtual ~JointComponent();
 
 		virtual void release() override;
+
+		void set_break_force(float break_force);
+		float get_break_force() const;
 
 		physx::PxJoint* get_native_joint() const;
 
@@ -58,7 +64,7 @@ namespace era_engine::physics
 	public:
 		FixedJointComponent() = default;
 		FixedJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
-		virtual ~FixedJointComponent();
+		~FixedJointComponent() override;
 
 		ERA_VIRTUAL_REFLECT(JointComponent)
 	};
@@ -66,55 +72,75 @@ namespace era_engine::physics
 	class ERA_PHYSICS_API RevoluteJointComponent : public JointComponent
 	{
 	public:
-		struct ERA_PHYSICS_API RevoluteJointDescriptor
-		{
-			float upper = physx::PxPi / 4.0f;
-			float lower = -physx::PxPi / 4.0f;
-
-			float contact_distance = 0.01f;
-
-			bool enable_drive = false;
-
-			// Used only if enable_drive == true.
-			float drive_velocity = 10.0f;
-			float drive_force_limit = 100.0f;
-			float drive_gear_ratio = 0.0f;
-		};
-
 		RevoluteJointComponent() = default;
-		RevoluteJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor, const RevoluteJointDescriptor& _descriptor = RevoluteJointDescriptor{});
-		virtual ~RevoluteJointComponent();
+		RevoluteJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
+		~RevoluteJointComponent() override;
+
+		void set_enable_drive(bool enable_drive);
+
+		void set_drive_velocity(float drive_velocity);
+		void set_drive_force_limit(float force_limit);
+		void set_drive_gear_ratio(float gear_ratio);
+
+		void set_constraint_limit(float upper, float lower);
 
 		ERA_VIRTUAL_REFLECT(JointComponent)
-	private:
-		RevoluteJointDescriptor descriptor;
 	};
 
 	class ERA_PHYSICS_API DistanceJointComponent : public JointComponent
 	{
 	public:
-		struct ERA_PHYSICS_API DistanceJointDescriptor
-		{
-			bool enable_min_distance = true;
-			float min_distance = 0.02f; // Used only if enable_min_distance == true.
-
-			bool enable_max_distance = true;
-			float max_distance = 10.0f; // Used only if enable_max_distance == true.
-
-			float tolerance = 0.02f;
-
-			bool enable_spring = false;
-			// Used only if enable_spring == true.
-			float damping = 0.01f;
-			float stiffness = 0.01f;
-		};
-
 		DistanceJointComponent() = default;
-		DistanceJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor, const DistanceJointDescriptor& _descriptor);
-		virtual ~DistanceJointComponent();
+		DistanceJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
+		~DistanceJointComponent() override;
+
+		void set_damping(float damping);
+		float get_damping() const;
+
+		void set_stiffness(float stiffness);
+		float get_stiffness() const;
+
+		void set_constraint_limit(float min_distance, float max_distance);
 
 		ERA_VIRTUAL_REFLECT(JointComponent)
-	private:
-		DistanceJointDescriptor descriptor;
+	};
+
+	class ERA_PHYSICS_API SphericalJointComponent : public JointComponent
+	{
+	public:
+		SphericalJointComponent() = default;
+		SphericalJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
+		~SphericalJointComponent() override;
+
+		void set_constraint_limit(float swing_y, float swing_z);
+
+		ERA_VIRTUAL_REFLECT(JointComponent)
+	};
+
+	class ERA_PHYSICS_API D6JointComponent : public JointComponent
+	{
+	public:
+		D6JointComponent() = default;
+		D6JointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
+		~D6JointComponent() override;
+
+		void set_swing_limit(float swing_y, float swing_z);
+		void set_twist_limit(float twist_min, float twist_max);
+
+		void set_linear_limit(float value, float stiffness, float damping);
+		void set_distance_limit(float value, float stiffness, float damping);
+
+		void set_motion(physx::PxD6Axis::Enum axis, physx::PxD6Motion::Enum type);
+
+		void set_drive(physx::PxD6Drive::Enum axis, 
+			float stiffness,
+			float damping,
+			float drive_force_limit,
+			bool is_acceleration);
+
+		void set_drive_velocity(const vec3& angular_drive_velocity, const vec3& linear_drive_velocity = vec3::zero);
+		void set_drive_pose(const trs& drive_pose);
+
+		ERA_VIRTUAL_REFLECT(JointComponent)
 	};
 }
