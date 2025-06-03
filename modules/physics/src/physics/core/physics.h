@@ -138,6 +138,8 @@ namespace era_engine::physics
 
 		const uint32_t nb_cpu_dispatcher_threads = 4;
 
+		bool use_stepper = false;
+
 		Allocator allocator;
 
 		friend class PhysicsSystem;

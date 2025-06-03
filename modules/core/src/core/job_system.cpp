@@ -160,8 +160,8 @@ namespace era_engine
         SetThreadPriority(handle, THREAD_PRIORITY_HIGHEST);
         CloseHandle(handle);
 
-        high_priority_job_queue.initialize(4, 1, THREAD_PRIORITY_NORMAL, L"High priority worker");
-        low_priority_job_queue.initialize(4, 5, THREAD_PRIORITY_BELOW_NORMAL, L"Low priority worker");
+        high_priority_job_queue.initialize(2, 1, THREAD_PRIORITY_NORMAL, L"High priority worker");
+        low_priority_job_queue.initialize(2, 3, THREAD_PRIORITY_BELOW_NORMAL, L"Low priority worker");
         main_thread_job_queue.initialize(0, 0, 0, 0);
     }
 

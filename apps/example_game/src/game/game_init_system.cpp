@@ -39,7 +39,7 @@ namespace era_engine
 
 		registration::class_<GameInitSystem>("GameInitSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("game")))
-			.method("update", &GameInitSystem::update)(metadata("update_group", update_types::BEGIN));
+			.method("update", &GameInitSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL));
 	}
 
 	GameInitSystem::GameInitSystem(World* _world)
@@ -93,20 +93,20 @@ namespace era_engine
 		builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
 		groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
 
-		/*if (auto mesh = loadAnimatedMeshFromFileAsync(get_asset_path("/resources/assets/resident-evil-2-tyrant/source/UmodelExport.fbx")))
+		Entity tiran;
+		if (auto mesh = loadAnimatedMeshFromFileAsync(get_asset_path("/resources/assets/resident-evil-2-tyrant/source/UmodelExport.fbx"), mesh_creation_flags_unreal_animated_asset))
 		{
-			auto tiran = world->create_entity("Tiran");
+			tiran = world->create_entity("Tiran");
 			tiran.add_component<animation::AnimationComponent>();
 			tiran.add_component<animation::SkeletonComponent>();
 			tiran.add_component<MeshComponent>(mesh);
 
 			TransformComponent& transform_component = tiran.get_component<TransformComponent>();
-			transform_component.type = TransformComponent::DYNAMIC;
-			transform_component.transform = trs{ vec3(-10.0f, -2.0f, 0.0f), quat(vec3(1.f, 0.f, 0.f), deg2rad(-90.f)), vec3(0.1f) };
+			transform_component.transform = trs{ vec3(-10.0f, -2.0f, 0.0f), quat::identity, vec3(1.0f) };
 
 			initializeAnimationComponentAsync(tiran, mesh);
 			addRaytracingComponentAsync(tiran, mesh);
-		}*/
+		}
 
 		if (auto mesh = loadMeshFromFileAsync(get_asset_path("/resources/assets/Sponza/sponza.obj")))
 		{
@@ -120,18 +120,24 @@ namespace era_engine
 			addRaytracingComponentAsync(sponza, mesh);
 		}
 
-		auto physics_sphere = world->create_entity("SpherePX");
-		physics_sphere.add_component<MeshComponent>(sphereMesh);
-		physics_sphere.get_component<TransformComponent>().transform.position = vec3(-10.0f, 5.0f, -3.0f);
-		physics_sphere.add_component<physics::SphereShapeComponent>(1.0f);
-		physics_sphere.add_component<physics::DynamicBodyComponent>().set_CCD(true);
+		{
+			Entity physics_sphere = world->create_entity("SpherePX");
+			physics_sphere.set_parent(tiran.get_handle());
+			physics_sphere.add_component<MeshComponent>(sphereMesh);
+			physics::SphereShapeComponent& sphere_component = physics_sphere.add_component<physics::SphereShapeComponent>(1.0f);
+			sphere_component.sync_with_joint(tiran.get_data_weakref(), std::string("pelvis"));
+			sphere_component.set_attacment_state(true);
+			physics_sphere.add_component<physics::DynamicBodyComponent>().set_gravity(false);
+		}
 
-		auto big_physics_sphere = world->create_entity("SpherePX1");
-		big_physics_sphere.add_component<MeshComponent>(sphereMesh);
-		big_physics_sphere.get_component<TransformComponent>().transform = trs{ vec3(5.0f, 155.f, 5.0f) , quat::identity, vec3(5.0f)};
-		
-		big_physics_sphere.add_component<physics::SphereShapeComponent>(5.0f);
-		big_physics_sphere.add_component<physics::DynamicBodyComponent>().set_CCD(true);
+		{
+			Entity big_physics_sphere = world->create_entity("SpherePX1");
+			big_physics_sphere.add_component<MeshComponent>(sphereMesh);
+			big_physics_sphere.get_component<TransformComponent>().transform = trs{ vec3(-10.0f, 5.f, 0.0f), quat::identity, vec3(1.5f) };
+			big_physics_sphere.add_component<physics::SphereShapeComponent>(1.5f);
+			big_physics_sphere.add_component<physics::DynamicBodyComponent>();
+		}
+
 
 		auto plane = world->create_entity("Platform");
 		plane.add_component<physics::PlaneComponent>(vec3(0.f, -5.0, 0.0f));

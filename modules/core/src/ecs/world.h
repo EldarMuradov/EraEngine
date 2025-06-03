@@ -68,6 +68,8 @@ namespace era_engine
 		Entity create_entity(Entity::Handle _handle);
 		Entity create_entity(Entity::Handle _handle, const char* _name);
 
+		uint64 get_fixed_frame_id() const;
+
 		void destroy_entity(const Entity& _entity);
 		void destroy_entity(Entity::Handle _handle, bool _destroy_childs = true, bool _destroy_components = true);
 
@@ -219,7 +221,10 @@ namespace era_engine
 	private:
 		WorldData* world_data = nullptr;
 
+		uint64 fixed_frame_id = 0;
+
 		friend class Entity;
+		friend class WorldSystemScheduler;
 	};
 
 	ERA_CORE_API World* get_world_by_name(const char* _name);

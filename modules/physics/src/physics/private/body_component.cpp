@@ -18,13 +18,13 @@ namespace era_engine::physics
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		rttr::registration::class_<BodyComponent>("BodyComponent")
+		registration::class_<BodyComponent>("BodyComponent")
 			.constructor<>();
 
-		rttr::registration::class_<DynamicBodyComponent>("DynamicBodyComponent")
+		registration::class_<DynamicBodyComponent>("DynamicBodyComponent")
 			.constructor<>();
 
-		rttr::registration::class_<StaticBodyComponent>("StaticBodyComponent")
+		registration::class_<StaticBodyComponent>("StaticBodyComponent")
 			.constructor<>();
 	}
 
@@ -40,25 +40,6 @@ namespace era_engine::physics
 	physx::PxRigidActor* BodyComponent::get_rigid_actor() const
 	{
 		return actor;
-	}
-
-	void BodyComponent::manual_set_physics_position_and_rotation(const vec3& pos, const quat& rot)
-	{
-		using namespace physx;
-
-		PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-
-		actor->setGlobalPose(PxTransform(create_PxVec3(pos), create_PxQuat(rot)));
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			if (dyn->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
-			{
-				return;
-			}
-			dyn->setAngularVelocity(PxVec3(0.0f));
-			dyn->setLinearVelocity(PxVec3(0.0f));
-		}
 	}
 
 	uint32_t BodyComponent::get_filter_mask() const
@@ -295,6 +276,12 @@ namespace era_engine::physics
 
 	bool DynamicBodyComponent::is_kinematic_body() const
 	{
+		using namespace physx;
+
+		if (auto dyn = actor->is<PxRigidDynamic>())
+		{
+			return dyn->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC;
+		}
 		return false;
 	}
 
@@ -420,6 +407,13 @@ namespace era_engine::physics
 			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
 			dyn->clearForce();
 			dyn->clearTorque();
+
+			if (dyn->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
+			{
+				return;
+			}
+			dyn->setAngularVelocity(PxVec3(0.0f));
+			dyn->setLinearVelocity(PxVec3(0.0f));
 		}
 	}
 

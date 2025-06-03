@@ -17,10 +17,11 @@ namespace era_engine
 	class ERA_BASE_API UpdateGroup
 	{
 	public:
-		UpdateGroup(const char* _name, UpdateType _update_type) noexcept;
+		UpdateGroup(const char* _name, UpdateType _update_type, bool _main_thread = false) noexcept;
 
 		const char* name = nullptr;
 		UpdateType update_type = UpdateType::NORMAL;
+		bool main_thread = false;
 	};
 
 	class ERA_BASE_API System
@@ -41,4 +42,13 @@ namespace era_engine
 
 		friend class WorldSystemScheduler;
 	};
+
+	class ERA_BASE_API UpdatesHolder
+	{
+		UpdatesHolder() = delete;
+	public:
+		static std::unordered_map<std::string, UpdateGroup*> global_groups;
+		static std::vector<std::string> update_order;
+	};
+
 }

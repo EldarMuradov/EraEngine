@@ -476,7 +476,7 @@ namespace era_engine
 	{
 		if (prop.encoding == 0)
 		{
-			memcpy(out, prop.data, prop.encodedLength); //fuck, maybe I need to write custom memcpy? I heard it's cool for game engine =)
+			memcpy(out, prop.data, prop.encodedLength);
 			return prop.encodedLength;
 		}
 		else
@@ -1091,6 +1091,10 @@ namespace era_engine
 		{
 			int32 decodedIndex = decodeIndex(index);
 			vec3d position = originalPositionsPtr[decodedIndex];
+			if (flags & mesh_creation_flags_sm_to_m)
+			{
+				position = vec3d{position.x / 100.0, position.y / 100.0, position.z / 100.0 };
+			}
 			result.positions.push_back(vec3((float)position.x, (float)position.y, (float)position.z));
 			++result.vertexOffsetCounts[decodedIndex].count;
 
@@ -1897,7 +1901,7 @@ namespace era_engine
 	};
 
 	static offset_count transferAnimationCurve(fbx_animation_curve_node* curveNode, std::vector<vec3>& outValues, std::vector<float>& outTimes, int64 animationDuration,
-		const std::vector<int64>& animationTimes, const std::vector<float>& animationValues)
+		const std::vector<int64>& animationTimes, const std::vector<float>& animationValues, bool sm_to_m = false)
 	{
 		fbx_animation_curve* x = curveNode->xCurve;
 		fbx_animation_curve* y = curveNode->yCurve;
@@ -1915,6 +1919,11 @@ namespace era_engine
 			value.x = sampleAnimationCurve(x, time, animationTimes, animationValues);
 			value.y = sampleAnimationCurve(y, time, animationTimes, animationValues);
 			value.z = sampleAnimationCurve(z, time, animationTimes, animationValues);
+
+			if (sm_to_m)
+			{
+				value /= 100.0f;
+			}
 
 			outValues.push_back(value);
 			outTimes.push_back(convertTime(time));
@@ -1945,7 +1954,7 @@ namespace era_engine
 	}
 
 	static offset_count transferAnimationCurve(fbx_animation_curve_node* curveNode, std::vector<quat>& outValues, std::vector<float>& outTimes, int64 animationDuration,
-		const std::vector<int64>& animationTimes, const std::vector<float>& animationValues, rotation_order rotationOrder)
+		const std::vector<int64>& animationTimes, const std::vector<float>& animationValues, rotation_order rotationOrder, uint32 flags)
 	{
 		fbx_animation_curve* x = curveNode->xCurve;
 		fbx_animation_curve* y = curveNode->yCurve;
@@ -2181,7 +2190,14 @@ namespace era_engine
 				std::string name = name_to_string(joint->model->name);
 
 				out.name_to_joint_id[name] = i;
-				out.joints.push_back({ std::move(name), era_engine::animation::limb_type_none, false, joint->invBindMatrix, invert(joint->invBindMatrix), mat4_to_trs(invert(joint->invBindMatrix)), joint->parentID });
+
+				trs joint_inv_bind_transform = mat4_to_trs(joint->invBindMatrix);
+				if (flags & mesh_creation_flags_sm_to_m)
+				{
+					joint_inv_bind_transform.position /= 100.0f;
+				}
+				out.joints.push_back({ std::move(name), animation::limb_type_none, false, trs_to_mat4(joint_inv_bind_transform), 
+					invert(trs_to_mat4(joint_inv_bind_transform)), joint->parentID });
 			}
 
 			ASSERT(out.joints.size() == out.name_to_joint_id.size());
@@ -2216,13 +2232,13 @@ namespace era_engine
 					fbx_model& model = objectLUT.models[modelIndex];
 					std::string name = name_to_string(model.name);
 
-					era_engine::animation::AnimationJoint& joint = out.joints[name];
+					animation::AnimationJoint& joint = out.joints[name];
 					joint.is_animated = true;
 
 					if (j.curveNodes[0])
 					{
 						offset_count position = transferAnimationCurve(j.curveNodes[0], out.position_keyframes, out.position_timestamps, animation.duration,
-							animationTimes, animationValues);
+							animationTimes, animationValues, flags & mesh_creation_flags_sm_to_m);
 						joint.first_position_keyframe = position.offset;
 						joint.num_position_keyframes = position.count;
 					}
@@ -2230,7 +2246,7 @@ namespace era_engine
 					if (j.curveNodes[1])
 					{
 						offset_count rotation = transferAnimationCurve(j.curveNodes[1], out.rotation_keyframes, out.rotation_timestamps, animation.duration,
-							animationTimes, animationValues, definitions.defaultRotationOrder);
+							animationTimes, animationValues, definitions.defaultRotationOrder, flags);
 						joint.first_rotation_keyframe = rotation.offset;
 						joint.num_rotation_keyframes = rotation.count;
 					}

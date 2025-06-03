@@ -31,7 +31,7 @@ namespace era_engine
 
 		registration::class_<EditorInitSystem>("GameInitSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("editor")))
-			.method("update", &EditorInitSystem::update)(metadata("update_group", update_types::BEGIN));
+			.method("update", &EditorInitSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL_MAIN_THREAD));
 	}
 
 	EditorInitSystem::EditorInitSystem(World* _world)

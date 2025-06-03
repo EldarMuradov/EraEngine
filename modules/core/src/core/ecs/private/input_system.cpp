@@ -48,11 +48,16 @@ namespace era_engine
 		static bool app_focused_last_frame = true;
 
 		ImGui::BeginWindowHiddenTabBar("Scene Viewport");
-		uint32 render_width = (uint32)ImGui::GetContentRegionAvail().x;
-		uint32 render_height = (uint32)ImGui::GetContentRegionAvail().y;
+		ImVec2 resolution = ImGui::GetContentRegionAvail();
 
-		renderer_holder_rc->width = render_width;
-		renderer_holder_rc->height = render_height;
+		if (resolution.x > 0 && resolution.y > 0)
+		{
+			renderer_holder_rc->width = (uint32)resolution.x;
+			renderer_holder_rc->height = (uint32)resolution.y;
+		}
+
+		uint32 render_width = renderer_holder_rc->width;
+		uint32 render_height = renderer_holder_rc->height;
 
 		main_renderer* renderer = renderer_holder_rc->renderer;
 

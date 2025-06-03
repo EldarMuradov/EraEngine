@@ -62,14 +62,30 @@ namespace era_engine::animation
 	{
 		std::string name;
 		LimbType limb_type;
-		bool ik;
+		bool ik = false;
 
 		mat4 inv_bind_transform; // Transforms from model space to joint space.
-		mat4 bind_transform;	  // Position of joint relative to model space.
+		mat4 bind_transform; // Position of joint relative to model space.
 
-		trs transform = trs::identity;
+		uint32 parent_id = INVALID_JOINT;
+	};
 
-		uint32 parent_id;
+	class ERA_CORE_API JointTransform
+	{
+	public:
+		JointTransform() = default;
+
+		void set_translation(const vec3& new_translation);
+		const vec3& get_translation() const;
+
+		void set_rotation(const quat& new_rotation);
+		const quat& get_rotation() const;
+
+		void set_transform(const trs& new_transform);
+		const trs& get_transform() const;
+
+	private:
+		trs local_transform = trs::identity; // In parent space.
 	};
 
 	struct ERA_CORE_API AnimationJoint
@@ -107,7 +123,7 @@ namespace era_engine::animation
 
 		AnimationJoint root_motion_joint;
 
-		float length_in_seconds;
+		float length_in_seconds = 0.0f;
 		bool looping = true;
 		bool bake_root_rotation_into_pose = false;
 		bool bake_root_xz_translation_into_pose = false;
@@ -144,6 +160,7 @@ namespace era_engine::animation
 
 	public:
 		std::vector<SkeletonJoint> joints;
+		std::vector<JointTransform> local_transforms; // In parent space.
 		std::unordered_map<std::string, uint32> name_to_joint_id;
 		SkeletonLimb limbs[limb_type_count];
 	};
@@ -171,6 +188,16 @@ namespace era_engine::animation
 
 	public:
 		Skeleton* skeleton = nullptr;
+
+		bool draw_sceleton = true;
+	};
+
+	class ERA_CORE_API SkeletonUtils final
+	{
+		SkeletonUtils() = delete;
+
+	public:
+		static trs get_object_space_joint_transform(const Skeleton* skeleton, uint32 joint_id);
 	};
 
 	struct ERA_CORE_API AnimationInstance
@@ -294,6 +321,5 @@ namespace era_engine::animation
 		trs* current_global_transforms = 0;
 
 		float time_scale = 1.f;
-		bool draw_sceleton = true;
 	};
 }

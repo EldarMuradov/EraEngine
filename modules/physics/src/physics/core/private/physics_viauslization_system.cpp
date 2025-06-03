@@ -19,7 +19,7 @@ namespace era_engine::physics
 	{
 		using namespace rttr;
 
-		rttr::registration::class_<PhysicsVisualizationSystem>("PhysicsVisualizationSystem")
+		registration::class_<PhysicsVisualizationSystem>("PhysicsVisualizationSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("physics")))
 			.method("update", &PhysicsVisualizationSystem::update)(metadata("update_group", update_types::RENDER), metadata("After", std::vector<std::string>{"AnimationSystem::update"}));
 	}

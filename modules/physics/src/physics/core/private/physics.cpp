@@ -123,7 +123,7 @@ namespace era_engine::physics
 
 		if (!PxInitExtensions(*physics, pvd))
 		{
-			//LOG_ERROR("Physics> Failed to initialize extensions.");
+			LOG_ERROR("Physics> Failed to initialize extensions.");
 		}
 
 		default_material = physics->createMaterial(0.7f, 0.7f, 0.8f);
@@ -284,7 +284,7 @@ namespace era_engine::physics
 
 		static void* scratchMemBlock = allocator.allocate(scratchMemBlockSize, align, true);
 
-		if (is_gpu())
+		if (is_gpu() || !use_stepper)
 		{
 			PxSceneWriteLock lock{ *scene };
 			scene->simulate(stepSize, NULL, scratchMemBlock, scratchMemBlockSize);
@@ -305,7 +305,7 @@ namespace era_engine::physics
 
 	void Physics::end_simulation(float dt)
 	{
-		if (!is_gpu())
+		if (!is_gpu() && use_stepper)
 		{
 			stepper->wait(scene);
 		}
@@ -615,6 +615,21 @@ namespace era_engine::physics
 				if (data == nullptr)
 				{
 					continue;
+				}
+
+				// Check joint shape sync.
+				{
+					auto& colliders = colliders_map[data->entity_handle];
+
+					if (!colliders.empty())
+					{
+						auto& shape_component = colliders.front(); // Only for single-shape entities.
+
+						if (shape_component->attachment_active)
+						{
+							continue;
+						}
+					}
 				}
 
 				TransformComponent& transform =	data->native_registry->get<TransformComponent>(data->entity_handle);

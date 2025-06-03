@@ -15,7 +15,9 @@ namespace era_engine
 		world_data = new WorldData();
 		world_data->name = _name;
 		world_data->registry.reserve(64000);
-		world_data->scheduler = new WorldSystemScheduler(this);
+		world_data->scheduler = new WorldSystemScheduler(this, 2, 1);
+
+		world_data->scheduler->set_fixed_update_rate(60.0);
 
 		worlds.emplace(std::string(_name), this);
 	}
@@ -27,7 +29,7 @@ namespace era_engine
 
 	void World::init()
 	{
-		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), this, &world_data->registry);
+		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), Entity::NullHandle, this, &world_data->registry);
 		world_data->entity_datas.emplace(new_data->entity_handle, new_data);
 		world_data->root_entity = Entity(new_data);
 		world_data->root_entity.add_component<TransformComponent>();
@@ -39,11 +41,13 @@ namespace era_engine
 	{
 		std::lock_guard _lock{ world_data->sync};
 
-		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), this, &world_data->registry);
+		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), world_data->root_entity.get_handle(), this, &world_data->registry);
 		world_data->entity_datas.emplace(new_data->entity_handle, new_data);
 
 		Entity entity = Entity(new_data);
 		add_base_components(entity);
+
+		EntityContainer::emplace_pair(world_data->root_entity.get_handle(), new_data->entity_handle);
 
 		return entity;
 	}
@@ -66,11 +70,13 @@ namespace era_engine
 				LOG_ERROR("ECS> Entity creation failed!");
 			}
 
-			ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(_handle, this, &world_data->registry);
+			ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(_handle, world_data->root_entity.get_handle(), this, &world_data->registry);
 			world_data->entity_datas.emplace(new_data->entity_handle, new_data);
 
 			Entity entity = Entity(new_data);
 			add_base_components(entity);
+
+			EntityContainer::emplace_pair(world_data->root_entity.get_handle(), new_data->entity_handle);
 
 			return entity;
 		}
@@ -82,6 +88,11 @@ namespace era_engine
 		Entity created_entity = create_entity(_handle);
 		created_entity.add_component<NameComponent>(_name);
 		return created_entity;
+	}
+
+	uint64 World::get_fixed_frame_id() const
+	{
+		return fixed_frame_id;
 	}
 
 	void World::destroy_entity(const Entity& _entity)

@@ -6,7 +6,17 @@
 #include "core/job_system.h"
 
 #include <rttr/type>
+
 #include <string>
+#include <vector>
+#include <unordered_map>
+#include <queue>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <atomic>
+#include <chrono>
+#include <functional>
 
 namespace era_engine
 {
@@ -34,44 +44,72 @@ namespace era_engine
 		std::vector<std::string> dependents;
 	};
 
-	class ERA_CORE_API WorldSystemScheduler
-	{
-	public:
-		WorldSystemScheduler(World* _world);
-		~WorldSystemScheduler();
+    ERA_CORE_API UpdateGroup* find_group(const std::string& name);
 
-		void initialize_systems(const rttr::array_range<rttr::type>& types);
+    class ERA_CORE_API WorldSystemScheduler
+    {
+    public:
+        WorldSystemScheduler(World* _world, size_t normal_threads = 2, size_t fixed_threads = 2);
 
-		void initialize_all_systems();
+        ~WorldSystemScheduler();
 
-		void refresh_graph();
+        void stop();
 
-		void input(float elapsed);
+        void set_fixed_update_rate(double rate);
 
-		void begin(float elapsed);
+        void initialize_systems(const rttr::array_range<rttr::type>& types);
 
-		void render_update(float elapsed);
-		void physics_update(float elapsed);
+        void initialize_all_systems();
 
-		void end(float elapsed);
+        void refresh_graph();
 
-		JobHandle run(float elapsed, const UpdateGroup& group, JobQueue& queue);
+        void update_normal(float dt);
 
-	private:
-		std::unordered_map<std::string, std::vector<ref<Task>>> build_task_order();
+        void update_fixed(float dt);
 
-		void add_task(ref<Task> task);
+    protected:
+        struct TaskItem 
+        {
+            ref<Task> task;
+            float dt = 0.0f;
+        };
 
-	private:
-		World* world = nullptr;
-		bool inited = false;
-		std::vector<System*> systems;
-		std::set<rttr::type> system_types;
+        void normal_worker();
 
-		std::unordered_map<std::string, ref<Task>> tasks;
-		std::unordered_map<std::string, std::vector<std::string>> adj_list;
-		std::unordered_map<std::string, int> in_degree;
+        void fixed_worker();
+     
+        void fixed_update_loop();
 
-		std::unordered_map<std::string, std::vector<ref<Task>>> grouped_ordered_tasks;
-	};
+        std::unordered_map<std::string, std::vector<ref<Task>>> build_task_order();
+
+        void add_task(ref<Task> task);
+
+        std::vector<std::thread> normal_thread_pool;
+        std::queue<TaskItem> normal_task_queue;
+
+        std::vector<std::thread> fixed_thread_pool;
+        std::queue<TaskItem> fixed_task_queue;
+
+        std::mutex queue_mutex;
+        std::condition_variable normal_condition;
+        std::condition_variable fixed_condition;
+        std::atomic<bool> running = false;
+
+        std::thread fixed_update_thread;
+        double fixed_update_rate = 1.0 / 30.0;
+        std::chrono::duration<double> fixed_update_interval;
+        std::chrono::time_point<std::chrono::steady_clock> last_fixed_update;
+
+        std::vector<System*> systems;
+        std::set<rttr::type> system_types;
+
+        std::unordered_map<std::string, ref<Task>> tasks;
+        std::unordered_map<std::string, std::vector<std::string>> adj_list;
+        std::unordered_map<std::string, int> in_degree;
+
+        std::unordered_map<std::string, std::vector<ref<Task>>> grouped_ordered_tasks;
+
+        World* world = nullptr;
+        bool inited = false;
+    };
 }

@@ -93,6 +93,26 @@ namespace era_engine
 			SkeletonAsset& in = asset.skeletons.front();
 
 			skeleton.joints = std::move(in.joints);
+
+			skeleton.local_transforms.reserve(skeleton.joints.size());
+			for (size_t i = 0; i < skeleton.joints.size(); ++i)
+			{
+				const SkeletonJoint& joint = skeleton.joints[i];
+				JointTransform joint_transform;
+
+				if (joint.parent_id > skeleton.joints.size() || joint.parent_id == INVALID_JOINT)
+				{
+					joint_transform.set_transform(mat4_to_trs(joint.bind_transform));
+				}
+				else 
+				{
+					const auto& parent_bind = skeleton.joints[joint.parent_id].bind_transform;
+					joint_transform.set_transform(mat4_to_trs(invert(parent_bind) * joint.bind_transform));
+				}
+
+				skeleton.local_transforms.push_back(joint_transform);
+			}
+
 			skeleton.name_to_joint_id = std::move(in.name_to_joint_id);
 			skeleton.analyze_joints(builder.getPositions(), (uint8*)builder.getOthers() + builder.getSkinOffset(), builder.getOthersSize(), builder.getNumVertices());
 		}

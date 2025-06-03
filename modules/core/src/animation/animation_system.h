@@ -23,7 +23,7 @@ namespace era_engine::animation
 
 		ERA_VIRTUAL_REFLECT(System)
 	private:
-		Allocator* allocator = nullptr;
+		ref<Allocator> allocator = nullptr;
 		RendererHolderRootComponent* renderer_holder_rc = nullptr;
 	};
 }

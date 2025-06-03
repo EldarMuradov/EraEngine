@@ -1,4 +1,5 @@
 #include "ecs/base_components/transform_component.h"
+#include "ecs/world.h"
 
 #include <rttr/registration>
 
@@ -41,4 +42,28 @@ namespace era_engine
 	{
 	}
 
+	trs TransformComponent::get_local_tranform() const
+	{
+		Entity parent = get_world()->get_entity(component_data->parent_handle);
+		if (parent.is_valid())
+		{
+			const trs& parent_world_space_trs = parent.get_component<TransformComponent>().transform;
+			return invert(parent_world_space_trs) * transform;
+		}
+		return trs::identity;
+	}
+
+	void TransformComponent::set_local_tranform(const trs& new_local_transform)
+	{
+		Entity parent = get_world()->get_entity(component_data->parent_handle);
+		if (parent.is_valid())
+		{
+			const trs& parent_world_space_trs = parent.get_component<TransformComponent>().transform;
+			transform = parent_world_space_trs * new_local_transform;
+		}
+		else
+		{
+			transform = new_local_transform;
+		}
+	}
 }

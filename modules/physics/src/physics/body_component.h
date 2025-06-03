@@ -49,8 +49,6 @@ namespace era_engine::physics
 
 		physx::PxRigidActor* get_rigid_actor() const;
 
-		void manual_set_physics_position_and_rotation(const vec3& pos, const quat& rot);
-
 		uint32_t get_filter_mask() const;
 		void set_filter_mask(uint32_t group, uint32_t mask);
 
@@ -69,6 +67,8 @@ namespace era_engine::physics
 		physx::PxU32 filter_mask = -1;
 
 		friend class ShapeComponent;
+		friend class PhysicsSystem;
+		friend class PhysicsUtils;
 	};
 
 	using OnCollisionCallback = void(*)(BodyComponent*, BodyComponent*);

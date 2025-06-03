@@ -11,6 +11,8 @@ namespace era_engine::physics
 		void init() override;
 		void update(float dt) override;
 
+		void process_skeleton_attachments(float dt) const;
+
 		ERA_VIRTUAL_REFLECT(System)
 	};
 }

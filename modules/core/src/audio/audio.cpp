@@ -336,7 +336,7 @@ namespace era_engine
 		}
 	}
 
-	NODISCARD sound_settings* getSettings(sound_handle handle)
+	sound_settings* getSettings(sound_handle handle)
 	{
 		if (handle)
 		{

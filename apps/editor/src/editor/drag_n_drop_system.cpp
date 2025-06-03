@@ -30,7 +30,7 @@ namespace era_engine
 
 		registration::class_<DragNDropSystem>("DragNDropSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr)(policy::ctor::as_raw_ptr, metadata("Tag", std::string("editor")))
-			.method("update", &DragNDropSystem::update)(metadata("update_group", update_types::END)/*, metadata("After", std::vector<std::string>{"EditorToolsSystem::update"})*/);
+			.method("update", &DragNDropSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL_MAIN_THREAD)/*, metadata("After", std::vector<std::string>{"EditorToolsSystem::update"})*/);
 	}
 
 	DragNDropSystem::DragNDropSystem(World* _world)
@@ -51,8 +51,8 @@ namespace era_engine
 
 	void DragNDropSystem::update(float dt)
 	{
-		float render_width = static_cast<float>(renderer_holder_rc->width);
-		float render_height = static_cast<float>(renderer_holder_rc->height);
+		//float render_width = static_cast<float>(renderer_holder_rc->width);
+		//float render_height = static_cast<float>(renderer_holder_rc->height);
 
 		// The drag&drop outline is rendered around the drop target. Since the image fills the frame, the outline is outside the window 
 		// and thus invisible. So instead this (slightly smaller) Dummy acts as the drop target.

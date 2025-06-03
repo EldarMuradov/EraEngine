@@ -10,12 +10,10 @@ namespace era_engine
 	{
 	public:
 		InputSystem(World* _world);
-		~InputSystem();
+		~InputSystem() override;
 
 		void init() override;
 		void update(float dt) override;
-
-		void show_input(float dt);
 
 		ERA_VIRTUAL_REFLECT(System)
 

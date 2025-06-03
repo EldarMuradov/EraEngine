@@ -472,30 +472,8 @@ float trace(const mat4& m)
 	return m.m00 + m.m11 + m.m22 + m.m33;
 }
 
-trs operator*(const trs& a, const trs& b)
-{
-	//if (!is_uniform(a.scale) || !is_uniform(b.scale))
-	//{
-	//	return trs_to_mat4(a) * trs_to_mat4(b);
-	//}
-
-	trs result;
-	result.rotation = a.rotation * b.rotation;
-	result.position = a.rotation * (a.scale * b.position) + a.position;
-	result.scale = a.scale * b.scale;
-	return result;
-}
-
 trs invert(const trs& t)
 {
-	//if (!is_uniform(t.scale))
-	//{
-	//	mat4 m = trs_to_mat4(t);
-	//	mat4 invM = invert(m);
-	//	trs result = invM;
-	//	return result;
-	//}
-
 	quat inv_rotation = conjugate(t.rotation);
 	vec3 inv_scale = 1.f / t.scale;
 	vec3 inv_translation = inv_rotation * (inv_scale * -t.position);

@@ -86,6 +86,13 @@ namespace era_engine
 		return weakref<EcsData>(internal_data);
 	}
 
+	void Entity::set_parent(Entity::Handle parent_handle)
+	{
+		EntityContainer::erase_pair(internal_data->parent_handle, internal_data->entity_handle);
+		EntityContainer::emplace_pair(parent_handle, internal_data->entity_handle);
+		internal_data->parent_handle = parent_handle;
+	}
+
 	World* Entity::get_world() const
 	{
 		return internal_data->world;
@@ -94,6 +101,11 @@ namespace era_engine
 	Entity::Handle Entity::get_handle() const
 	{
 		return internal_data->entity_handle;
+	}
+
+	Entity::Handle Entity::get_parent_handle() const
+	{
+		return internal_data->parent_handle;
 	}
 
 	static inline std::mutex container_sync;

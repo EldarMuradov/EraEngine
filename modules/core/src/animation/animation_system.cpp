@@ -16,8 +16,6 @@
 #include <rttr/policy.h>
 #include <rttr/registration>
 
-#include <acl/version.h>
-
 namespace era_engine::animation
 {
 
@@ -25,9 +23,9 @@ namespace era_engine::animation
 	{
 		using namespace rttr;
 
-		rttr::registration::class_<AnimationSystem>("AnimationSystem")
+		registration::class_<AnimationSystem>("AnimationSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("render")))
-			.method("update", &AnimationSystem::update)(metadata("update_group", update_types::BEGIN))
+			.method("update", &AnimationSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL_MAIN_THREAD))
 			.method("draw_skeletons", &AnimationSystem::draw_skeletons)(metadata("update_group", update_types::RENDER));
 	}
 
@@ -45,7 +43,7 @@ namespace era_engine::animation
 
 	void AnimationSystem::init()
 	{
-		allocator = get_transient_object<Allocator>();
+		allocator = make_ref<Allocator>();
 	}
 
 	void AnimationSystem::update(float dt)
@@ -66,15 +64,19 @@ namespace era_engine::animation
 				anim.prev_frame_vertex_buffer = anim.current_vertex_buffer;
 				anim.current_vertex_buffer = vb;
 
-				trs deltaRootMotion;
+				trs deltaRootMotion = trs::identity;
 				anim.animation->update(animation_skeleton, dt * anim.time_scale, deltaRootMotion);
 
 				trs* globalTransforms = allocator->allocate<trs>((uint32)skeleton.joints.size());
 
-				skeleton.get_skinning_matrices_from_local_transforms(globalTransforms, skinningMatrices, transform.transform);
+				skeleton.get_skinning_matrices_from_local_transforms(globalTransforms, skinningMatrices, trs::identity);
 
-				transform.transform = transform.transform * deltaRootMotion;
-				transform.transform.rotation = normalize(transform.transform.rotation);
+				if (deltaRootMotion.position != vec3::zero || 
+					deltaRootMotion.rotation != quat::identity)
+				{
+					transform.transform = transform.transform * deltaRootMotion;
+					transform.transform.rotation = normalize(transform.transform.rotation);
+				}
 
 				anim.current_global_transforms = globalTransforms;
 			}
@@ -92,9 +94,9 @@ namespace era_engine::animation
 
 	void AnimationSystem::draw_skeletons(float dt)
 	{
-		for (auto [entityHandle, anim, mesh, transform] : world->group(components_group<AnimationComponent, MeshComponent, TransformComponent>).each())
+		for (auto [entityHandle, anim, skeleton, mesh, transform] : world->group(components_group<AnimationComponent, SkeletonComponent, MeshComponent, TransformComponent>).each())
 		{
-			if (anim.draw_sceleton)
+			if (skeleton.draw_sceleton)
 			{
 				anim.draw_current_skeleton(mesh.mesh, transform.transform, renderer_holder_rc->ldrRenderPass);
 			}

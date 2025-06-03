@@ -85,9 +85,9 @@ namespace era_engine
 	{
 		using namespace rttr;
 
-		rttr::registration::class_<LogSystem>("LogSystem")
+		registration::class_<LogSystem>("LogSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr)
-			.method("update", &System::update)(metadata("update_group", update_types::END));
+			.method("update", &System::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL_MAIN_THREAD));
 	}
 
 	LogSystem::LogSystem(World* _world)

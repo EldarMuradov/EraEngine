@@ -55,20 +55,16 @@ namespace era_engine::physics
         return shape->getGeometry();
     }
 
-    ShapeComponent::SyncType ShapeComponent::get_sync_type() const
+    void ShapeComponent::sync_with_joint(weakref<Entity::EcsData> _entity_reference, const std::string& _connected_joint_name)
     {
-        return sync_type;
-    }
-
-    void ShapeComponent::set_sync_type(ShapeComponent::SyncType _sync_type)
-    {
-        sync_type = _sync_type;
-    }
-
-    void ShapeComponent::sync_with_joint(const std::string& _connected_joint_name, SyncType _sync_type)
-    {
-        sync_type = _sync_type;
         connected_joint_name = _connected_joint_name;
+        entity_reference = _entity_reference;
+        attachment_active = false;
+    }
+
+    void ShapeComponent::set_attacment_state(bool active)
+    {
+        attachment_active = active;
     }
 
     void ShapeComponent::release()

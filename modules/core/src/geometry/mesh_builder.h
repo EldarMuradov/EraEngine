@@ -32,9 +32,13 @@ namespace era_engine
 		mesh_creation_flags_with_tangents = (1 << 3),
 		mesh_creation_flags_with_skin = (1 << 4),
 		mesh_creation_flags_with_colors = (1 << 5),
+		mesh_creation_flags_sm_to_m = (1 << 6),
+		mesh_creation_flags_yzx_to_xyz = (1 << 7),
 
 		mesh_creation_flags_default = mesh_creation_flags_with_positions | mesh_creation_flags_with_uvs | mesh_creation_flags_with_normals | mesh_creation_flags_with_tangents,
 		mesh_creation_flags_animated = mesh_creation_flags_default | mesh_creation_flags_with_skin,
+		mesh_creation_flags_unreal_asset = mesh_creation_flags_default | mesh_creation_flags_sm_to_m | mesh_creation_flags_yzx_to_xyz,
+		mesh_creation_flags_unreal_animated_asset = mesh_creation_flags_unreal_asset | mesh_creation_flags_with_skin
 	};
 
 	enum mesh_index_type

@@ -1,4 +1,5 @@
 #include "ecs/world_system_scheduler.h"
+#include "ecs/update_groups.h"
 
 #include "core/cpu_profiling.h"
 #include "core/log.h"
@@ -20,16 +21,81 @@ namespace era_engine
 		float elapsed = 0.0f;
 	};
 
-	WorldSystemScheduler::WorldSystemScheduler(World* _world)
-		: world(_world)
+	static void set_high_priority(std::thread& thread, bool is_critical = false)
 	{
+		auto handle = thread.native_handle();
+
+#ifdef _WIN32
+		SetThreadPriority(handle, /*is_critical ? THREAD_PRIORITY_TIME_CRITICAL :*/ THREAD_PRIORITY_NORMAL);
+#else
+		pthread_t pt_handle = handle;
+		sched_param sch_params;
+		int policy = SCHED_FIFO;
+		sch_params.sched_priority = is_critical ? 99 : 80;
+		pthread_setschedparam(pt_handle, policy, &sch_params);
+#endif
+	}
+
+	WorldSystemScheduler::WorldSystemScheduler(World* _world, size_t normal_threads, size_t fixed_threads)
+		: world(_world), fixed_update_rate(60.0), running(false)
+	{
+		running = true;
+		fixed_update_thread = std::thread(&WorldSystemScheduler::fixed_update_loop, this);
+
+		for (size_t i = 0; i < normal_threads; ++i)
+		{
+			normal_thread_pool.emplace_back(&WorldSystemScheduler::normal_worker, this);
+			set_high_priority(normal_thread_pool.back(), false);
+		}
+		for (size_t i = 0; i < fixed_threads; ++i)
+		{
+			fixed_thread_pool.emplace_back(&WorldSystemScheduler::fixed_worker, this);
+			set_high_priority(fixed_thread_pool.back(), true);
+		}
 	}
 
 	WorldSystemScheduler::~WorldSystemScheduler()
 	{
+		stop();
 		grouped_ordered_tasks.clear();
 		systems.clear();
 		system_types.clear();
+	}
+
+	void WorldSystemScheduler::stop()
+	{
+		running = false;
+		{
+			std::unique_lock<std::mutex> lock(queue_mutex);
+			normal_condition.notify_all();
+			fixed_condition.notify_all();
+		}
+
+		if (fixed_update_thread.joinable())
+		{
+			fixed_update_thread.join();
+		}
+
+		for (auto& thread : normal_thread_pool)
+		{
+			if (thread.joinable())
+			{
+				thread.join();
+			}
+		}
+		for (auto& thread : fixed_thread_pool)
+		{
+			if (thread.joinable())
+			{
+				thread.join();
+			}
+		}
+	}
+
+	void WorldSystemScheduler::set_fixed_update_rate(double rate)
+	{
+		fixed_update_rate = rate;
+		fixed_update_interval = std::chrono::duration<double>(1.0 / rate);
 	}
 
 	void WorldSystemScheduler::initialize_systems(const rttr::array_range<rttr::type>& types)
@@ -79,6 +145,8 @@ namespace era_engine
 			}
 		}
 
+		update_types::register_default_order();
+
 		inited = true;
 	}
 
@@ -100,73 +168,46 @@ namespace era_engine
 		}
 	}
 
-	void WorldSystemScheduler::input(float elapsed)
+	void WorldSystemScheduler::update_normal(float dt)
 	{
-		JobHandle handle = run(elapsed, update_types::INPUT, main_thread_job_queue);
-		handle.submit_now();
-		handle.wait_for_completion();
-	}
-
-	void WorldSystemScheduler::begin(float elapsed)
-	{
-		JobHandle handle = run(elapsed, update_types::BEGIN, main_thread_job_queue);
-		handle.submit_now();
-		handle.wait_for_completion();
-	}
-
-	void WorldSystemScheduler::render_update(float elapsed)
-	{
-		JobHandle before_render_handle = run(elapsed, update_types::BEFORE_RENDER, high_priority_job_queue);
-		before_render_handle.submit_now();
-
-		JobHandle render_handle = run(elapsed, update_types::RENDER, high_priority_job_queue);
-		render_handle.submit_after(before_render_handle);
-
-		JobHandle after_render_handle = run(elapsed, update_types::AFTER_RENDER, high_priority_job_queue);
-		after_render_handle.submit_after(render_handle);
-		after_render_handle.wait_for_completion();
-	}
-
-	void WorldSystemScheduler::physics_update(float elapsed)
-	{
-		JobHandle before_physics_handle = run(elapsed, update_types::BEFORE_PHYSICS, high_priority_job_queue);
-		before_physics_handle.submit_now();
-
-		JobHandle physics_handle = run(elapsed, update_types::PHYSICS, high_priority_job_queue);
-		physics_handle.submit_after(before_physics_handle);
-
-		JobHandle after_physics_handle = run(elapsed, update_types::AFTER_PHYSICS, high_priority_job_queue);
-		after_physics_handle.submit_after(physics_handle);
-		after_physics_handle.wait_for_completion();
-	}
-
-	void WorldSystemScheduler::end(float elapsed)
-	{
-		JobHandle handle = run(elapsed, update_types::END, main_thread_job_queue);
-		handle.submit_now();
-		handle.wait_for_completion();
-	}
-
-	JobHandle WorldSystemScheduler::run(float elapsed, const UpdateGroup& group, JobQueue& queue)
-	{
-		using namespace rttr;
-
-		const auto simulation_task = [](TasksParams& data, JobHandle job) {
-			for (auto& task : data.updates)
+		{
+			std::unique_lock<std::mutex> lock(queue_mutex);
+			for (auto& group_name : UpdatesHolder::update_order)
 			{
-				auto type_name = task->system->get_type().get_name().data();
-				auto method_name = task->method.get_name().data();
+				UpdateGroup* group = find_group(group_name);
+				auto found_group_iter = grouped_ordered_tasks.find(group_name);
+				if (found_group_iter != grouped_ordered_tasks.end())
+				{
+					auto& tasks = found_group_iter->second;
+					if (group && group->update_type == UpdateType::NORMAL)
+					{
+						if (!group->main_thread)
+						{
+							for (auto& task : tasks)
+							{
+								normal_task_queue.push({ task, dt });
+							}
+						}
+						else
+						{
+							for (auto& task : tasks)
+							{
+								auto type_name = task->system->get_type().get_name().data();
+								auto method_name = task->method.get_name().data();
 
-				std::stringstream stream{};
-				stream << type_name << ": " << method_name;
+								std::stringstream stream{};
+								stream << type_name << ": " << method_name;
 
-				CPU_PROFILE_BLOCK(stream.str().c_str());
+								CPU_PROFILE_BLOCK(stream.str().c_str());
 
-				task->method.invoke(*task->system, data.elapsed);
+								task->method.invoke(*task->system, dt);
+							}
+						}
+					}
+				}
 			}
-		};
-
-		return queue.createJob<TasksParams>(simulation_task, { grouped_ordered_tasks[group.name], elapsed });
+		}
+		normal_condition.notify_all();
 	}
 
 	void WorldSystemScheduler::add_task(ref<Task> task)
@@ -193,6 +234,163 @@ namespace era_engine
 		{
 			adj_list[task_name].push_back(dep);
 			in_degree[dep]++;
+		}
+	}
+
+	UpdateGroup* find_group(const std::string& name)
+	{
+		auto iter = UpdatesHolder::global_groups.find(name);
+		if (iter == UpdatesHolder::global_groups.end())
+		{
+			return nullptr;
+		}
+		return iter->second;
+	}
+
+	void WorldSystemScheduler::normal_worker()
+	{
+		while (true)
+		{
+			TaskItem item;
+			{
+				std::unique_lock<std::mutex> lock(queue_mutex);
+				auto timeout = std::chrono::milliseconds(100);
+				if (!normal_condition.wait_for(lock, timeout, [this]
+					{
+						return !normal_task_queue.empty() || !running;
+					}))
+				{
+					continue;
+				}
+
+				if (!running)
+				{
+					break;
+				}
+
+				item = normal_task_queue.front();
+				normal_task_queue.pop();
+			}
+
+			auto type_name = item.task->system->get_type().get_name().data();
+			auto method_name = item.task->method.get_name().data();
+
+			std::stringstream stream{};
+			stream << type_name << ": " << method_name;
+
+			CPU_PROFILE_BLOCK(stream.str().c_str());
+
+			item.task->method.invoke(*item.task->system, item.dt);
+		}
+	}
+
+	void WorldSystemScheduler::update_fixed(float dt)
+	{
+		{
+			std::unique_lock<std::mutex> lock(queue_mutex);
+			for (auto& group_name : UpdatesHolder::update_order)
+			{
+				UpdateGroup* group = find_group(group_name);
+				auto found_group_iter = grouped_ordered_tasks.find(group_name);
+				if(found_group_iter != grouped_ordered_tasks.end())
+				{
+					auto& tasks = found_group_iter->second;
+
+					if (group && group->update_type == UpdateType::FIXED)
+					{
+						if (!group->main_thread)
+						{
+							for (auto& task : tasks)
+							{
+								fixed_task_queue.push({ task, dt });
+							}
+						}
+						else
+						{
+							for (auto& task : tasks)
+							{
+								auto type_name = task->system->get_type().get_name().data();
+								auto method_name = task->method.get_name().data();
+
+								std::stringstream stream{};
+								stream << type_name << ": " << method_name;
+
+								CPU_PROFILE_BLOCK(stream.str().c_str());
+
+								task->method.invoke(*task->system, dt);
+							}
+						}
+					}
+				}
+			}
+		}
+		++world->fixed_frame_id;
+
+		fixed_condition.notify_all();
+	}
+
+	void WorldSystemScheduler::fixed_worker()
+	{
+		while (true)
+		{
+			TaskItem item;
+			{
+				std::unique_lock<std::mutex> lock(queue_mutex);
+				auto timeout = std::chrono::milliseconds(100);
+				if (!fixed_condition.wait_for(lock, timeout, [this]
+					{
+						return !fixed_task_queue.empty() || !running;
+					})) 
+				{
+					continue;
+				}
+
+				if (!running)
+				{
+					break;
+				}
+
+				item = fixed_task_queue.front();
+				fixed_task_queue.pop();
+			}
+
+			auto type_name = item.task->system->get_type().get_name().data();
+			auto method_name = item.task->method.get_name().data();
+
+			std::stringstream stream{};
+			stream << type_name << ": " << method_name;
+
+			CPU_PROFILE_BLOCK(stream.str().c_str());
+
+			item.task->method.invoke(*item.task->system, item.dt);
+		}
+	}
+
+	void WorldSystemScheduler::fixed_update_loop()
+	{
+		last_fixed_update = std::chrono::steady_clock::now();
+
+		while (running)
+		{
+			auto now = std::chrono::steady_clock::now();
+			auto elapsed = now - last_fixed_update;
+
+			if (elapsed >= fixed_update_interval)
+			{
+				float fixed_dt = std::chrono::duration<float>(fixed_update_interval).count();
+				update_fixed(fixed_dt);
+
+				last_fixed_update += std::chrono::duration_cast<decltype(last_fixed_update)::duration>(fixed_update_interval);
+
+				if (now - last_fixed_update > fixed_update_interval * 2.0f)
+				{
+					last_fixed_update = now;
+				}
+			}
+			else
+			{
+				std::this_thread::sleep_for(fixed_update_interval - elapsed);
+			}
 		}
 	}
 

@@ -212,13 +212,13 @@ namespace era_engine
 			initial_task();
 		}
 
+		execute_main_thread_jobs();
+
 		for (auto& [name, world] : get_worlds())
 		{
 			WorldSystemScheduler* scheduler = world->get_system_scheduler();
 			scheduler->initialize_all_systems();
 		}
-
-		execute_main_thread_jobs();
 
 		float dt;
 		bool status = true;
@@ -230,25 +230,7 @@ namespace era_engine
 			for (auto& [name, world] : worlds)
 			{
 				WorldSystemScheduler* scheduler = world->get_system_scheduler();
-				scheduler->input(dt);
-			}
-
-			for (auto& [name, world] : worlds)
-			{
-				WorldSystemScheduler* scheduler = world->get_system_scheduler();
-				scheduler->begin(dt);
-			}
-
-			for (auto& [name, world] : worlds)
-			{
-				WorldSystemScheduler* scheduler = world->get_system_scheduler();
-				scheduler->render_update(dt);
-			}
-
-			for (auto& [name, world] : worlds)
-			{
-				WorldSystemScheduler* scheduler = world->get_system_scheduler();
-				scheduler->physics_update(dt);
+				scheduler->update_normal(dt);
 			}
 
 			if (main_menu)
@@ -256,16 +238,12 @@ namespace era_engine
 				draw_debug_menu_bar(dt);
 			}
 
-			for (auto& [name, world] : worlds)
-			{
-				WorldSystemScheduler* scheduler = world->get_system_scheduler();
-				scheduler->end(dt);
-			}
-
 			execute_main_thread_jobs();
 
 			fileBrowser.draw();
 
+			ImGui::End();
+			ImGui::End();
 			ImGui::End();
 
 			renderToMainWindow(*window);
@@ -274,6 +252,12 @@ namespace era_engine
 
 			++frameID;
 		}
+
+	for (auto& [name, world] : get_worlds())
+	{
+		WorldSystemScheduler* scheduler = world->get_system_scheduler();
+		scheduler->stop();
+	}
 
 	terminate();
 

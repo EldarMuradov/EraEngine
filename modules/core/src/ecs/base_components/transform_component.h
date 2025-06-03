@@ -22,15 +22,18 @@ namespace era_engine
 		TransformComponent() = default;
 		TransformComponent(ref<Entity::EcsData> _data, const trs& t = trs::identity);
 		TransformComponent(ref<Entity::EcsData> _data, const trs& t, TransformType _type);
-		TransformComponent(ref<Entity::EcsData> _data, const vec3& position, const quat& rotation, const vec3& scale = vec3(1.f, 1.f, 1.f), TransformType _type = STATIC);
+		TransformComponent(ref<Entity::EcsData> _data, const vec3& position, const quat& rotation, const vec3& scale = vec3(1.f, 1.f, 1.f), TransformType _type = DYNAMIC);
 
 		~TransformComponent() override;
+
+		trs get_local_tranform() const;
+		void set_local_tranform(const trs& new_local_transform);
 
 		ERA_VIRTUAL_REFLECT(Component)
 
 	public:
-		trs transform = trs::identity;
-		TransformType type = STATIC;
+		trs transform = trs::identity; // In World space.
+		TransformType type = DYNAMIC;
 	};
 
 }

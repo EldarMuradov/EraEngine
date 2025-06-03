@@ -46,6 +46,7 @@ namespace era_engine
 		struct EcsData final
 		{
 			Entity::Handle entity_handle = Entity::NullHandle;
+			Entity::Handle parent_handle = Entity::NullHandle;
 			World* world = nullptr;
 			entt::registry* native_registry = nullptr;
 		};
@@ -70,6 +71,7 @@ namespace era_engine
 
 		World* get_world() const;
 		Entity::Handle get_handle() const;
+		Entity::Handle get_parent_handle() const;
 
 		template <typename Component_, typename... Args_>
 		Component_& add_component(Args_&&... a)
@@ -129,6 +131,8 @@ namespace era_engine
 		}
 
 		weakref<Entity::EcsData> get_data_weakref() const;
+
+		void set_parent(Entity::Handle parent_handle);
 
 	private:
 		ref<EcsData> internal_data = nullptr;
