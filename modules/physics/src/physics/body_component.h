@@ -9,6 +9,7 @@
 #include "core/math.h"
 
 #include "ecs/component.h"
+#include "ecs/observable_member.h"
 
 namespace era_engine::physics
 {
@@ -57,14 +58,15 @@ namespace era_engine::physics
 		ERA_VIRTUAL_REFLECT(Component)
 
 	private:
+		void setup_filter_mask();
 		void detach_shape(physx::PxShape* shape);
 
 	protected:
 		physx::PxRigidActor* actor = nullptr;
 		physx::PxMaterial* material = nullptr;
 
-		physx::PxU32 filter_group = -1;
-		physx::PxU32 filter_mask = -1;
+		ObservableMember<uint32> filter_group = -1;
+		ObservableMember<uint32> filter_mask = -1;
 
 		friend class ShapeComponent;
 		friend class PhysicsSystem;
@@ -80,26 +82,19 @@ namespace era_engine::physics
 		DynamicBodyComponent(ref<Entity::EcsData> _data);
 		virtual ~DynamicBodyComponent();
 
-		void add_force(const vec3& force, ForceMode mode = ForceMode::IMPULSE);
-		void add_torque(const vec3& torque, ForceMode mode = ForceMode::IMPULSE);
+		void add_force(const vec3& force, ForceMode mode = ForceMode::FORCE);
+		void add_torque(const vec3& torque, ForceMode mode = ForceMode::FORCE);
 
 		physx::PxRigidDynamic* get_rigid_dynamic() const;
 
-		void set_gravity(bool use_gravity);
-
 		void set_constraints(uint8_t constraints);
 		uint8_t get_constraints() const;
-
-		void set_CCD(bool enable);
 
 		void set_mass_space_inertia_tensor(const vec3& tensor);
 
 		void update_mass_and_inertia(float density);
 
 		void enable_max_contact_impulse(bool state);
-
-		void set_kinematic(bool kinematic);
-		bool is_kinematic_body() const;
 
 		void set_linear_velocity(const vec3& velocity);
 		vec3 get_linear_velocity() const;
@@ -118,6 +113,10 @@ namespace era_engine::physics
 		void set_threshold(float stabilization, float sleep = 0.01f);
 
 		void manual_clear_force_and_torque();
+
+		ObservableMember<bool> use_gravity = true;
+		ObservableMember<bool> ccd = false;
+		ObservableMember<bool> kinematic = false;
 
 		ERA_VIRTUAL_REFLECT(BodyComponent)
 	};

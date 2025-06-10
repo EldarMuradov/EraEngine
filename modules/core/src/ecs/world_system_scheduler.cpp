@@ -8,6 +8,7 @@
 #include "ecs/system.h"
 #include "ecs/world.h"
 #include "ecs/update_groups.h"
+#include "ecs/observable_member.h"
 
 #include <rttr/policy.h>
 #include <rttr/registration>
@@ -323,6 +324,7 @@ namespace era_engine
 					}
 				}
 			}
+			ObservableStorage::sync_all_changes();
 		}
 		++world->fixed_frame_id;
 

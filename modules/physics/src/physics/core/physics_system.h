@@ -11,6 +11,9 @@ namespace era_engine::physics
 		void init() override;
 		void update(float dt) override;
 
+		void on_dynamic_body_created(entt::registry& registry, entt::entity entity_handle);
+		void on_static_body_created(entt::registry& registry, entt::entity entity_handle);
+
 		ERA_VIRTUAL_REFLECT(System)
 	};
 }

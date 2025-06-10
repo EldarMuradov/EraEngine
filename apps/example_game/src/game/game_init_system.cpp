@@ -128,7 +128,7 @@ namespace era_engine
 			physics::SphereShapeComponent& sphere_component = physics_sphere.add_component<physics::SphereShapeComponent>(1.0f);
 			sphere_component.sync_with_joint(tiran.get_data_weakref(), std::string("pelvis"));
 			sphere_component.set_attacment_state(true);
-			physics_sphere.add_component<physics::DynamicBodyComponent>().set_gravity(false);
+			physics_sphere.add_component<physics::DynamicBodyComponent>().use_gravity = false;
 		}
 
 		{
@@ -144,20 +144,20 @@ namespace era_engine
 			very_big_physics_sphere.add_component<physics::SphereShapeComponent>(2.5f);
 			very_big_physics_sphere.add_component<physics::DynamicBodyComponent>();
 
-			physics::JointComponent::BaseDescriptor joint_descriptor;
-			joint_descriptor.enable_collision = false;
-			joint_descriptor.connected_entity = big_physics_sphere.get_data_weakref();
-			joint_descriptor.local_frame = very_big_physics_sphere.get_component<TransformComponent>().transform;
-			joint_descriptor.second_local_frame = big_physics_sphere.get_component<TransformComponent>().transform;
-			physics::D6JointComponent& d6_joint_component = very_big_physics_sphere.add_component<physics::D6JointComponent>(joint_descriptor);
-			d6_joint_component.set_motion(physx::PxD6Axis::eX, physx::PxD6Motion::eLOCKED);
-			d6_joint_component.set_motion(physx::PxD6Axis::eY, physx::PxD6Motion::eLOCKED);
-			d6_joint_component.set_motion(physx::PxD6Axis::eZ, physx::PxD6Motion::eLOCKED);
-			d6_joint_component.set_motion(physx::PxD6Axis::eTWIST, physx::PxD6Motion::eLIMITED);
-			d6_joint_component.set_motion(physx::PxD6Axis::eSWING1, physx::PxD6Motion::eLIMITED);
-			d6_joint_component.set_motion(physx::PxD6Axis::eSWING2, physx::PxD6Motion::eLIMITED);
-			d6_joint_component.set_swing_limit(M_PI / 4.0f, M_PI / 4.0f);
-			d6_joint_component.set_twist_limit(-M_PI / 4.0f, M_PI / 4.0f);
+			//physics::JointComponent::BaseDescriptor joint_descriptor;
+			//joint_descriptor.enable_collision = false;
+			//joint_descriptor.connected_entity = big_physics_sphere.get_data_weakref();
+			//joint_descriptor.local_frame = very_big_physics_sphere.get_component<TransformComponent>().transform;
+			//joint_descriptor.second_local_frame = big_physics_sphere.get_component<TransformComponent>().transform;
+			//physics::D6JointComponent& d6_joint_component = very_big_physics_sphere.add_component<physics::D6JointComponent>(joint_descriptor);
+			//d6_joint_component.set_motion(physx::PxD6Axis::eX, physx::PxD6Motion::eLOCKED);
+			//d6_joint_component.set_motion(physx::PxD6Axis::eY, physx::PxD6Motion::eLOCKED);
+			//d6_joint_component.set_motion(physx::PxD6Axis::eZ, physx::PxD6Motion::eLOCKED);
+			//d6_joint_component.set_motion(physx::PxD6Axis::eTWIST, physx::PxD6Motion::eLIMITED);
+			//d6_joint_component.set_motion(physx::PxD6Axis::eSWING1, physx::PxD6Motion::eLIMITED);
+			//d6_joint_component.set_motion(physx::PxD6Axis::eSWING2, physx::PxD6Motion::eLIMITED);
+			//d6_joint_component.set_swing_limit(M_PI / 4.0f, M_PI / 4.0f);
+			//d6_joint_component.set_twist_limit(-M_PI / 4.0f, M_PI / 4.0f);
 		}
 
 		auto plane = world->create_entity("Platform");

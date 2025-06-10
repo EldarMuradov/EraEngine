@@ -227,7 +227,7 @@ namespace era_engine::physics
 
 		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, base_descriptor.enable_collision);
 
-		created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
+		//created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 		created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 
 		created_joint->setTolerance(0.02f);
@@ -306,7 +306,7 @@ namespace era_engine::physics
 
 		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, base_descriptor.enable_collision);
 
-		created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
+		//created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 		created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 
 		joint = created_joint;
@@ -340,7 +340,7 @@ namespace era_engine::physics
 
 		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, base_descriptor.enable_collision);
 
-		created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
+		//created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 		created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 
 		joint = created_joint;

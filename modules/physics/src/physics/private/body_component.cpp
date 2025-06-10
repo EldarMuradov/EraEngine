@@ -49,16 +49,9 @@ namespace era_engine::physics
 
 	void BodyComponent::set_filter_mask(uint32_t group, uint32_t mask)
 	{
-		using namespace physx;
-
 		filter_mask = mask;
 		filter_group = group;
-		auto& colliders = PhysicsHolder::physics_ref->colliders_map[component_data->entity_handle];
-
-		for (auto& collider : colliders)
-		{
-			ShapeUtils::setup_filtering(collider->get_shape(), filter_group, filter_mask);
-		}
+		setup_filter_mask();
 	}
 
 	void BodyComponent::release()
@@ -66,6 +59,18 @@ namespace era_engine::physics
 		PhysicsHolder::physics_ref->remove_actor(this);
 		PX_RELEASE(actor)
 		Component::release();
+	}
+
+	void BodyComponent::setup_filter_mask()
+	{
+		using namespace physx;
+
+		auto& colliders = PhysicsHolder::physics_ref->colliders_map[component_data->entity_handle];
+
+		for (auto& collider : colliders)
+		{
+			ShapeUtils::setup_filtering(collider->get_shape(), filter_group, filter_mask);
+		}
 	}
 
 	void BodyComponent::detach_shape(physx::PxShape* shape)
@@ -79,7 +84,7 @@ namespace era_engine::physics
 	DynamicBodyComponent::DynamicBodyComponent(ref<Entity::EcsData> _data)
 		: BodyComponent(_data)
 	{
-		using namespace physx;
+		/*using namespace physx;
 
 		Entity entity = get_world()->get_entity(component_data->entity_handle);
 
@@ -115,7 +120,7 @@ namespace era_engine::physics
 
 		set_filter_mask(filter_group, filter_mask);
 
-		physicsRef->add_actor(this, actor);
+		physicsRef->add_actor(this, actor);*/
 	}
 
 	DynamicBodyComponent::~DynamicBodyComponent()
@@ -189,11 +194,6 @@ namespace era_engine::physics
 		return actor->is<physx::PxRigidDynamic>();
 	}
 
-	void DynamicBodyComponent::set_gravity(bool use_gravity)
-	{
-		actor->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, !use_gravity);
-	}
-
 	void DynamicBodyComponent::set_constraints(uint8_t constraints)
 	{
 		using namespace physx;
@@ -215,16 +215,6 @@ namespace era_engine::physics
 			return dyn->getRigidDynamicLockFlags();
 		}
 		return 0;
-	}
-
-	void DynamicBodyComponent::set_CCD(bool enable)
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, enable);
-		}
 	}
 
 	void DynamicBodyComponent::set_mass_space_inertia_tensor(const vec3& tensor)
@@ -258,31 +248,6 @@ namespace era_engine::physics
 			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
 			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_MAX_CONTACT_IMPULSE, state);
 		}
-	}
-
-	void DynamicBodyComponent::set_kinematic(bool kinematic)
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, !kinematic);
-			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, !kinematic);
-			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, !kinematic);
-			dyn->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, kinematic);
-		}
-	}
-
-	bool DynamicBodyComponent::is_kinematic_body() const
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			return dyn->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC;
-		}
-		return false;
 	}
 
 	void DynamicBodyComponent::set_linear_velocity(const vec3& velocity)
@@ -420,7 +385,7 @@ namespace era_engine::physics
 	StaticBodyComponent::StaticBodyComponent(ref<Entity::EcsData> _data)
 		: BodyComponent(_data)
 	{
-		using namespace physx;
+		/*using namespace physx;
 
 		Entity entity = get_world()->get_entity(component_data->entity_handle);
 
@@ -456,7 +421,7 @@ namespace era_engine::physics
 
 		set_filter_mask(filter_group, filter_mask);
 
-		physicsRef->add_actor(this, actor);
+		physicsRef->add_actor(this, actor);*/
 	}
 
 	StaticBodyComponent::~StaticBodyComponent()
