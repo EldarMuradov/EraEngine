@@ -59,35 +59,6 @@ namespace era_engine::physics
 				}
 			}
 		}
-
-		/*for (auto [entity_handle, transform_component, ragdoll_component] : world->group(components_group<TransformComponent, RagdollComponent>).each())
-		{
-			auto pelvis_iter = std::find_if(ragdoll_component.limbs.begin(), ragdoll_component.limbs.end(), [&ragdoll_component](const EntityPtr& limb_ptr) -> bool
-			{
-				if (limb_ptr.is_empty())
-				{
-					return false;
-				}
-
-				if (RagdollLimbComponent* limb_component = limb_ptr.get().get_component_if_exists<RagdollLimbComponent>())
-				{
-					if (limb_component->joint_id == ragdoll_component.joint_init_ids.pelvis_idx)
-					{
-						return true;
-					}
-				}
-				return false;
-			});
-
-			if (pelvis_iter != ragdoll_component.limbs.end())
-			{
-				TransformComponent& pelvis_transform = pelvis_iter->get().get_component<TransformComponent>();
-
-				ragdoll_component.frame_delta_transform = invert(ragdoll_component.prev_pelvis_transform) * pelvis_transform.get_world_transform();
-
-				transform_component.set_world_transform(pelvis_transform.get_world_transform());
-			}
-		}*/
 	}
 
 	void RagdollSystem::update_normal(float dt)
@@ -189,7 +160,6 @@ namespace era_engine::physics
 						q.push(child_id);
 					}
 				}
-
 			}
 		}
 	}

@@ -130,9 +130,9 @@ namespace era_engine::physics
         RagdollSettings settings;
         RagdollJointIds joint_init_ids;
 
-        float mass = 85.0f; // Set in creation.
+        float mass = 100.0f; // Set in creation.
 
-        float blend_factor = 0.3f;
+        float blend_factor = 0.4f;
 
 		std::vector<EntityPtr> limbs;
 

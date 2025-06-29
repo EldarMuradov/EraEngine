@@ -269,6 +269,8 @@ namespace era_engine::physics
 	{
 		using namespace animation;
 
+		// TODO: move out constants and offsets.
+
 		RagdollComponent& ragdoll_component = ragdoll.get_component<RagdollComponent>();
 		const RagdollSettings& settings = ragdoll_component.settings;
 		const RagdollJointIds& joint_init_ids = ragdoll_component.joint_init_ids;
