@@ -141,6 +141,26 @@ namespace era_engine
 		friend struct eeditor;
 	};
 
+	class ERA_CORE_API EntityPtr
+	{
+	public:
+		EntityPtr() = default;
+		EntityPtr(Entity entity);
+		EntityPtr(const weakref<Entity::EcsData>& entity_data);
+
+		bool operator==(const EntityPtr& _other) const;
+		bool operator!=(const EntityPtr& _other) const;
+
+		Entity get() const;
+
+		const weakref<Entity::EcsData>& get_data() const;
+
+		bool is_empty() const;
+
+	private:
+		weakref<Entity::EcsData> data;
+	};
+
 	struct ERA_CORE_API EntityNode
 	{
 		EntityNode() = default;

@@ -14,22 +14,22 @@ namespace era_engine::physics
     RTTR_REGISTRATION
     {
         using namespace rttr;
-        rttr::registration::class_<ShapeComponent>("ShapeComponent")
+        registration::class_<ShapeComponent>("ShapeComponent")
             .constructor<>();
 
-        rttr::registration::class_<BoxShapeComponent>("BoxShapeComponent")
+        registration::class_<BoxShapeComponent>("BoxShapeComponent")
             .constructor<>();
 
-        rttr::registration::class_<SphereShapeComponent>("SphereShapeComponent")
+        registration::class_<SphereShapeComponent>("SphereShapeComponent")
             .constructor<>();
 
-        rttr::registration::class_<CapsuleShapeComponent>("CapsuleShapeComponent")
+        registration::class_<CapsuleShapeComponent>("CapsuleShapeComponent")
             .constructor<>();
 
-        rttr::registration::class_<TriangleMeshShapeComponent>("TriangleMeshShapeComponent")
+        registration::class_<TriangleMeshShapeComponent>("TriangleMeshShapeComponent")
             .constructor<>();
 
-        rttr::registration::class_<ConvexMeshShapeComponent>("ConvexMeshShapeComponent")
+        registration::class_<ConvexMeshShapeComponent>("ConvexMeshShapeComponent")
             .constructor<>();
     }
 
@@ -38,6 +38,9 @@ namespace era_engine::physics
     {
         register_shape();
         handle_data = new Entity::Handle(_data->entity_handle);
+
+        local_position.set_component(ComponentPtr(this));
+        local_rotation.set_component(ComponentPtr(this));
     }
 
     ShapeComponent::~ShapeComponent()
@@ -90,8 +93,8 @@ namespace era_engine::physics
         return nullptr;
     }
 
-    BoxShapeComponent::BoxShapeComponent(ref<Entity::EcsData> _data, const vec3& _extents)
-        : ShapeComponent(_data), extents(_extents)
+    BoxShapeComponent::BoxShapeComponent(ref<Entity::EcsData> _data)
+        : ShapeComponent(_data)
     {
     }
 
@@ -105,13 +108,13 @@ namespace era_engine::physics
 
         ref<Physics> physics = PhysicsHolder::physics_ref;
 
-        shape = physics->get_physics()->createShape(PxBoxGeometry(extents.x, extents.y, extents.z), *physics->get_default_material(), true);
+        shape = physics->get_physics()->createShape(PxBoxGeometry(half_extents.x, half_extents.y, half_extents.z), *physics->get_default_material(), true);
         shape->userData = handle_data;
         return shape;
     }
 
-    SphereShapeComponent::SphereShapeComponent(ref<Entity::EcsData> _data, const float _radius)
-        : ShapeComponent(_data), radius(_radius)
+    SphereShapeComponent::SphereShapeComponent(ref<Entity::EcsData> _data)
+        : ShapeComponent(_data)
     {
     }
 
@@ -131,8 +134,8 @@ namespace era_engine::physics
         return shape;
     }
 
-    CapsuleShapeComponent::CapsuleShapeComponent(ref<Entity::EcsData> _data, const float _radius, const float _half_height)
-        : ShapeComponent(_data), radius(_radius), half_height(_half_height)
+    CapsuleShapeComponent::CapsuleShapeComponent(ref<Entity::EcsData> _data)
+        : ShapeComponent(_data)
     {
     }
 
@@ -152,8 +155,8 @@ namespace era_engine::physics
         return shape;
     }
 
-    TriangleMeshShapeComponent::TriangleMeshShapeComponent(ref<Entity::EcsData> _data, ref<MeshAsset> _asset, const vec3& _size)
-        : ShapeComponent(_data), asset(_asset), size(_size)
+    TriangleMeshShapeComponent::TriangleMeshShapeComponent(ref<Entity::EcsData> _data)
+        : ShapeComponent(_data)
     {
     }
 
@@ -173,8 +176,8 @@ namespace era_engine::physics
         return shape;
     }
 
-    ConvexMeshShapeComponent::ConvexMeshShapeComponent(ref<Entity::EcsData> _data, ref<MeshAsset> _asset, const vec3& _size)
-        : ShapeComponent(_data), asset(_asset), size(_size)
+    ConvexMeshShapeComponent::ConvexMeshShapeComponent(ref<Entity::EcsData> _data)
+        : ShapeComponent(_data)
     {
     }
 

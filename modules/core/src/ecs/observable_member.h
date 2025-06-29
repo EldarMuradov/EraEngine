@@ -2,13 +2,20 @@
 
 #include "core_api.h"
 
+#include "core/math.h"
+#include "ecs/component.h"
+
 namespace era_engine
 {
+	class World;
+
 	class ERA_CORE_API ObservableBase
 	{
 	public:
 		ObservableBase();
 		virtual ~ObservableBase();
+
+		void set_component(const ComponentPtr& _component_ptr);
 
 		void notify();
 		bool is_changed() const;
@@ -19,6 +26,8 @@ namespace era_engine
 	protected:
 		uint32 changes_count = 0;
 		uint32 old_changes_count = 0;
+
+		ComponentPtr component_ptr;
 
 		friend class ObservableStorage;
 	};
@@ -83,6 +92,11 @@ namespace era_engine
 			return member;
 		}
 
+		Type_& get_silent_for_write()
+		{
+			return member;
+		}
+
 		const Type_* operator->() const
 		{
 			return &member;
@@ -126,6 +140,14 @@ namespace era_engine
 	public:
 		static std::vector<ObservableBase*> observable_ptrs;
 
-		static void sync_all_changes();
+		static void sync_all_changes(World* world);
+	};
+
+	class ERA_CORE_API ObservableMemberChangedFlagComponent final : public Component
+	{
+	public:
+		ObservableMemberChangedFlagComponent(ref<Entity::EcsData> _data);
+
+		ERA_VIRTUAL_REFLECT(Component)
 	};
 }

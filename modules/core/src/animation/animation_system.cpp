@@ -65,7 +65,10 @@ namespace era_engine::animation
 				anim.current_vertex_buffer = vb;
 
 				trs deltaRootMotion = trs::identity;
-				anim.animation->update(animation_skeleton, dt * anim.time_scale, deltaRootMotion);
+				if(anim.play)
+				{
+					anim.animation->update(animation_skeleton, dt * anim.time_scale, deltaRootMotion);
+				}
 
 				trs* globalTransforms = allocator->allocate<trs>((uint32)skeleton.joints.size());
 

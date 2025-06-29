@@ -158,6 +158,12 @@ namespace era_engine::animation
 
 		void pretty_print_hierarchy() const;
 
+		void set_joint_transform(const trs& new_transform, uint32 joint_id);
+		void set_joint_rotation(const quat& new_rotation, uint32 joint_id);
+
+		const trs& get_joint_transform(uint32 joint_id) const;
+		const quat& get_joint_rotation(uint32 joint_id) const;
+
 	public:
 		std::vector<SkeletonJoint> joints;
 		std::vector<JointTransform> local_transforms; // In parent space.
@@ -189,7 +195,7 @@ namespace era_engine::animation
 	public:
 		Skeleton* skeleton = nullptr;
 
-		bool draw_sceleton = true;
+		bool draw_sceleton = false;
 	};
 
 	class ERA_CORE_API SkeletonUtils final
@@ -319,6 +325,8 @@ namespace era_engine::animation
 		dx_vertex_buffer_group_view prev_frame_vertex_buffer;
 
 		trs* current_global_transforms = 0;
+
+		bool play = true;
 
 		float time_scale = 1.f;
 	};

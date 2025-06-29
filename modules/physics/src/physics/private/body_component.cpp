@@ -84,137 +84,34 @@ namespace era_engine::physics
 	DynamicBodyComponent::DynamicBodyComponent(ref<Entity::EcsData> _data)
 		: BodyComponent(_data)
 	{
-		/*using namespace physx;
-
-		Entity entity = get_world()->get_entity(component_data->entity_handle);
-
-		auto& physicsRef = PhysicsHolder::physics_ref;
-		const auto& physics = physicsRef->get_physics();
-
-		auto& colliders = physicsRef->colliders_map[component_data->entity_handle];
-		if (colliders.empty())
-		{
-			entity.add_component<CapsuleShapeComponent>(1.0f, 2.0f);
-			colliders.push_back(&entity.get_component<CapsuleShapeComponent>());
-		}
-
-		TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
-		transform->type = TransformComponent::DYNAMIC;
-		const vec3& pos = transform->transform.position;
-		PxVec3 pospx = create_PxVec3(pos);
-
-		const quat& q = transform->transform.rotation;
-		PxQuat rotpx = create_PxQuat(q);
-
-		void* user_data = static_cast<void*>(component_data.get());
-
-		actor = PhysicsUtils::create_rigid_dynamic(PxTransform(pospx, rotpx), user_data);
-
-		for (auto& coll : colliders)
-		{
-			PxShape* shape = coll->create_shape();
-			shape->userData = user_data;
-
-			actor->attachShape(*shape);
-		}
-
-		set_filter_mask(filter_group, filter_mask);
-
-		physicsRef->add_actor(this, actor);*/
+		simulated.set_component(ComponentPtr(this));
+		kinematic.set_component(ComponentPtr(this));
+		ccd.set_component(ComponentPtr(this));
+		use_gravity.set_component(ComponentPtr(this));
+		constraints.set_component(ComponentPtr(this));
+		linear_damping.set_component(ComponentPtr(this));
+		angular_damping.set_component(ComponentPtr(this));
+		linear_velocity.set_component(ComponentPtr(this));
+		angular_velocity.set_component(ComponentPtr(this));
+		center_of_mass.set_component(ComponentPtr(this));
+		mass.set_component(ComponentPtr(this));
+		max_angular_velocity.set_component(ComponentPtr(this));
+		max_linear_velocity.set_component(ComponentPtr(this));
+		max_contact_impulse.set_component(ComponentPtr(this));
+		max_depenetration_velocity.set_component(ComponentPtr(this));
+		sleep_threshold.set_component(ComponentPtr(this));
+		stabilization_threshold.set_component(ComponentPtr(this));
+		solver_velocity_iterations_count.set_component(ComponentPtr(this));
+		solver_position_iterations_count.set_component(ComponentPtr(this));
 	}
 
 	DynamicBodyComponent::~DynamicBodyComponent()
 	{
 	}
 
-	void DynamicBodyComponent::add_force(const vec3& force, ForceMode mode)
-	{
-		using namespace physx;
-
-		if (PxRigidDynamic* dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-
-			if (mode == ForceMode::FORCE)
-			{
-				dyn->addForce(create_PxVec3(force), PxForceMode::eFORCE);
-			}
-			else if (mode == ForceMode::IMPULSE)
-			{
-				dyn->addForce(create_PxVec3(force), PxForceMode::eIMPULSE);
-			}
-			else if (mode == ForceMode::VELOCITY_CHANGE)
-			{
-				dyn->addForce(create_PxVec3(force), PxForceMode::eVELOCITY_CHANGE);
-			}
-			else if (mode == ForceMode::ACCELERATION)
-			{
-				dyn->addForce(create_PxVec3(force), PxForceMode::eACCELERATION);
-			}
-			else
-			{
-				dyn->addForce(create_PxVec3(force), PxForceMode::eFORCE);
-			}
-		}
-	}
-
-	void DynamicBodyComponent::add_torque(const vec3& torque, ForceMode mode)
-	{
-		using namespace physx;
-
-		if (PxRigidDynamic* dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-
-			if (mode == ForceMode::FORCE)
-			{
-				dyn->addTorque(create_PxVec3(torque), PxForceMode::eFORCE);
-			}
-			else if (mode == ForceMode::IMPULSE)
-			{
-				dyn->addTorque(create_PxVec3(torque), PxForceMode::eIMPULSE);
-			}
-			else if (mode == ForceMode::VELOCITY_CHANGE)
-			{
-				dyn->addTorque(create_PxVec3(torque), PxForceMode::eVELOCITY_CHANGE);
-			}
-			else if (mode == ForceMode::ACCELERATION)
-			{
-				dyn->addTorque(create_PxVec3(torque), PxForceMode::eACCELERATION);
-			}
-			else
-			{
-				dyn->addTorque(create_PxVec3(torque), PxForceMode::eFORCE);
-			}
-		}
-	}
-
 	physx::PxRigidDynamic* DynamicBodyComponent::get_rigid_dynamic() const
 	{
-		return actor->is<physx::PxRigidDynamic>();
-	}
-
-	void DynamicBodyComponent::set_constraints(uint8_t constraints)
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			dyn->setRigidDynamicLockFlags((PxRigidDynamicLockFlags)constraints);
-		}
-	}
-
-	uint8_t DynamicBodyComponent::get_constraints() const
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			return dyn->getRigidDynamicLockFlags();
-		}
-		return 0;
+		return actor == nullptr ? nullptr : actor->is<physx::PxRigidDynamic>();
 	}
 
 	void DynamicBodyComponent::set_mass_space_inertia_tensor(const vec3& tensor)
@@ -239,87 +136,6 @@ namespace era_engine::physics
 		}
 	}
 
-	void DynamicBodyComponent::enable_max_contact_impulse(bool state)
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_MAX_CONTACT_IMPULSE, state);
-		}
-	}
-
-	void DynamicBodyComponent::set_linear_velocity(const vec3& velocity)
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			dyn->setLinearVelocity(create_PxVec3(velocity));
-		}
-	}
-
-	vec3 DynamicBodyComponent::get_linear_velocity() const
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneReadLock lock(*PhysicsHolder::physics_ref->get_scene());
-			PxVec3 vel = dyn->getLinearVelocity();
-			return create_vec3(vel);
-		}
-		return vec3();
-	}
-
-	void DynamicBodyComponent::set_angular_velocity(const vec3& velocity)
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			dyn->setAngularVelocity(create_PxVec3(velocity));
-		}
-	}
-
-	vec3 DynamicBodyComponent::get_angular_velocity() const
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneReadLock lock(*PhysicsHolder::physics_ref->get_scene());
-			PxVec3 vel = dyn->getAngularVelocity();
-			return create_vec3(vel);
-		}
-		return vec3();
-	}
-
-	void DynamicBodyComponent::set_max_linear_velosity(float velocity)
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			dyn->setMaxLinearVelocity(velocity);
-		}
-	}
-
-	void DynamicBodyComponent::set_max_angular_velosity(float velocity)
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			dyn->setMaxAngularVelocity(velocity);
-		}
-	}
-
 	vec3 DynamicBodyComponent::get_physics_position() const
 	{
 		using namespace physx;
@@ -327,40 +143,6 @@ namespace era_engine::physics
 		PxSceneReadLock lock(*PhysicsHolder::physics_ref->get_scene());
 		PxVec3 pos = actor->getGlobalPose().p;
 		return create_vec3(pos);
-	}
-
-	void DynamicBodyComponent::set_angular_damping(float damping)
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			dyn->setAngularDamping(damping);
-		}
-	}
-
-	void DynamicBodyComponent::set_linear_damping(float damping)
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			dyn->setLinearDamping(damping);
-		}
-	}
-
-	void DynamicBodyComponent::set_threshold(float stabilization, float sleep)
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			dyn->setStabilizationThreshold(stabilization);
-			dyn->setSleepThreshold(sleep);
-		}
 	}
 
 	void DynamicBodyComponent::manual_clear_force_and_torque()
@@ -385,43 +167,6 @@ namespace era_engine::physics
 	StaticBodyComponent::StaticBodyComponent(ref<Entity::EcsData> _data)
 		: BodyComponent(_data)
 	{
-		/*using namespace physx;
-
-		Entity entity = get_world()->get_entity(component_data->entity_handle);
-
-		auto& physicsRef = PhysicsHolder::physics_ref;
-		const auto& physics = physicsRef->get_physics();
-
-		auto& colliders = physicsRef->colliders_map[component_data->entity_handle];
-		if (colliders.empty())
-		{
-			entity.add_component<CapsuleShapeComponent>(1.0f, 2.0f);
-			colliders.push_back(&entity.get_component<CapsuleShapeComponent>());
-		}
-
-		TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
-
-		const vec3& pos = transform->transform.position;
-		PxVec3 pospx = create_PxVec3(pos);
-
-		const quat& q = transform->transform.rotation;
-		PxQuat rotpx = create_PxQuat(q);
-
-		void* user_data = static_cast<void*>(component_data.get());
-
-		actor = PhysicsUtils::create_rigid_static(PxTransform(pospx, rotpx), user_data);
-
-		for (auto& coll : colliders)
-		{
-			PxShape* shape = coll->create_shape();
-			shape->userData = user_data;
-
-			actor->attachShape(*shape);
-		}
-
-		set_filter_mask(filter_group, filter_mask);
-
-		physicsRef->add_actor(this, actor);*/
 	}
 
 	StaticBodyComponent::~StaticBodyComponent()

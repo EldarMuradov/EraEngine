@@ -118,7 +118,8 @@ namespace era_engine::physics
 		}
 
 		tolerance_scale.length = 1.0f;
-		tolerance_scale.speed = 9.81f;
+		tolerance_scale.speed = 10.0f;
+
 		physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, tolerance_scale, true, pvd, omni_pvd);
 
 		if (!PxInitExtensions(*physics, pvd))
@@ -126,7 +127,7 @@ namespace era_engine::physics
 			LOG_ERROR("Physics> Failed to initialize extensions.");
 		}
 
-		default_material = physics->createMaterial(0.7f, 0.7f, 0.8f);
+		default_material = physics->createMaterial(0.8f, 0.8f, 0.0f);
 
 		if (descriptor.enable_pvd && physics->getOmniPvd())
 		{
@@ -141,6 +142,7 @@ namespace era_engine::physics
 		sceneDesc.solverType = PxSolverType::eTGS;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+		sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 		sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
 
@@ -286,7 +288,6 @@ namespace era_engine::physics
 
 		if (is_gpu() || !use_stepper)
 		{
-			PxSceneWriteLock lock{ *scene };
 			scene->simulate(stepSize, NULL, scratchMemBlock, scratchMemBlockSize);
 			scene->fetchResults(true);
 		}
@@ -321,13 +322,14 @@ namespace era_engine::physics
 		}
 
 		recordProfileEvent(profile_event_end_block, "PhysX update");
+
+		allocator.reset();
 	}
 
 	void Physics::reset_actors_velocity_and_inertia()
 	{
 		using namespace physx;
 
-		PxSceneWriteLock lock{ *scene };
 		PxU32 nbActiveActors;
 		PxActor** activeActors = scene->getActiveActors(nbActiveActors);
 
@@ -369,11 +371,7 @@ namespace era_engine::physics
 	{
 		using namespace physx;
 
-		{
-			PxSceneWriteLock lock{ *scene };
-
-			scene->addActor(*physx_actor);
-		}
+		scene->addActor(*physx_actor);
 
 #if PX_ENABLE_RAYCAST_CCD
 		if (auto r = ractor->is<PxRigidDynamic>())
@@ -401,11 +399,6 @@ namespace era_engine::physics
 			ScopedSpinLock l{ sync };
 			actors.erase(actor);
 			actors_map.erase(actor->get_rigid_actor());
-		}
-
-		{
-			PxSceneWriteLock lock{ *scene };
-
 			scene->removeActor(*actor->get_rigid_actor());
 		}
 	}
@@ -418,7 +411,6 @@ namespace era_engine::physics
 		PxU32 size;
 		auto actors = scene->getActiveActors(size);
 
-		PxSceneWriteLock lock{ *scene };
 		scene->removeActors(actors, size);
 	}
 
@@ -595,8 +587,6 @@ namespace era_engine::physics
 	{
 		using namespace physx;
 
-		PxSceneReadLock lock{ *scene };
-
 		uint32_t tempNb;
 		PxActor** activeActors = scene->getActiveActors(tempNb);
 		nb_active_actors.store(tempNb, std::memory_order_relaxed);
@@ -642,11 +632,14 @@ namespace era_engine::physics
 			}
 		}
 
-		for (auto&& [name, world] : get_worlds())
+		if (is_gpu())
 		{
-			for (auto [entity_handle, transform, soft_body] : world->group(components_group<TransformComponent, SoftBodyComponent>).each())
+			for (auto&& [name, world] : get_worlds())
 			{
-				soft_body.copy_deformed_vertices_from_gpu_async(0);
+				for (auto [entity_handle, transform, soft_body] : world->group(components_group<TransformComponent, SoftBodyComponent>).each())
+				{
+					soft_body.copy_deformed_vertices_from_gpu_async(0);
+				}
 			}
 		}
 	}

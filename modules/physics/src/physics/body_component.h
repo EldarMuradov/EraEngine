@@ -34,11 +34,26 @@ namespace era_engine::physics
 
 	enum class ForceMode : uint8_t
 	{
-		NONE = 0,
-		FORCE,
+		FORCE = 0,
 		IMPULSE,
 		VELOCITY_CHANGE,
 		ACCELERATION
+	};
+
+	struct ERA_PHYSICS_API Force
+	{
+		ForceMode mode = ForceMode::FORCE;
+		vec3 force = vec3::zero;
+
+		// Only FORCE and IMPULSE are supported, as the force required to produce a given velocity 
+		// change or acceleration is underdetermined given only the desired change at a given point.
+		vec3 point = vec3::zero;
+	};
+
+	struct ERA_PHYSICS_API Torque
+	{
+		ForceMode mode = ForceMode::FORCE;
+		vec3 torque = vec3::zero;
 	};
 
 	class ERA_PHYSICS_API BodyComponent : public Component
@@ -82,43 +97,51 @@ namespace era_engine::physics
 		DynamicBodyComponent(ref<Entity::EcsData> _data);
 		virtual ~DynamicBodyComponent();
 
-		void add_force(const vec3& force, ForceMode mode = ForceMode::FORCE);
-		void add_torque(const vec3& torque, ForceMode mode = ForceMode::FORCE);
-
 		physx::PxRigidDynamic* get_rigid_dynamic() const;
-
-		void set_constraints(uint8_t constraints);
-		uint8_t get_constraints() const;
 
 		void set_mass_space_inertia_tensor(const vec3& tensor);
 
 		void update_mass_and_inertia(float density);
 
-		void enable_max_contact_impulse(bool state);
-
-		void set_linear_velocity(const vec3& velocity);
-		vec3 get_linear_velocity() const;
-
-		void set_angular_velocity(const vec3& velocity);
-		vec3 get_angular_velocity() const;
-
-		void set_max_linear_velosity(float velocity);
-		void set_max_angular_velosity(float velocity);
-
 		vec3 get_physics_position() const;
 
-		void set_angular_damping(float damping);
-		void set_linear_damping(float damping);
+		ERA_VIRTUAL_REFLECT(BodyComponent)
 
-		void set_threshold(float stabilization, float sleep = 0.01f);
-
+	private:
 		void manual_clear_force_and_torque();
 
+	public:
 		ObservableMember<bool> use_gravity = true;
 		ObservableMember<bool> ccd = false;
 		ObservableMember<bool> kinematic = false;
 
-		ERA_VIRTUAL_REFLECT(BodyComponent)
+		ObservableMember<bool> simulated = false;
+
+		ObservableMember<uint8_t> constraints = 0;
+
+		ObservableMember<float> mass = 1.0f;
+
+		ObservableMember<float> angular_damping = 0.05f;
+		ObservableMember<float> linear_damping = 0.01f;
+
+		ObservableMember<float> sleep_threshold = 0.00f;
+		ObservableMember<float> stabilization_threshold = 0.00f;
+
+		ObservableMember<uint32> solver_position_iterations_count = 4;
+		ObservableMember<uint32> solver_velocity_iterations_count = 1;
+
+		ObservableMember<float> max_angular_velocity = std::numeric_limits<float>::max();
+		ObservableMember<float> max_linear_velocity = std::numeric_limits<float>::max();
+		ObservableMember<float> max_contact_impulse = std::numeric_limits<float>::max();
+		ObservableMember<float> max_depenetration_velocity = std::numeric_limits<float>::max();
+
+		ObservableMember<vec3> linear_velocity = vec3::zero;
+		ObservableMember<vec3> angular_velocity = vec3::zero;
+
+		ObservableMember<vec3> center_of_mass = vec3::zero;
+
+		std::vector<Force> forces;
+		std::vector<Torque> torques;
 	};
 
 	class ERA_PHYSICS_API StaticBodyComponent : public BodyComponent

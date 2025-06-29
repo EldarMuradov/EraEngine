@@ -22,6 +22,7 @@
 #include <physics/shape_component.h>
 #include <physics/basic_objects.h>
 #include <physics/joint.h>
+#include <physics/ragdoll_component.h>
 
 #include <audio/audio.h>
 
@@ -54,6 +55,9 @@ namespace era_engine
 
 	void GameInitSystem::init()
 	{
+		using namespace animation;
+		using namespace physics;
+
 		RendererHolderRootComponent* renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
 		ASSERT(renderer_holder_rc != nullptr);
 
@@ -62,7 +66,6 @@ namespace era_engine
 
 		camera_entity.add_component<InputSenderComponent>().add_reciever(&camera_entity.add_component<InputRecieverComponent>());
 		camera_entity.add_component<MovementComponent>();
-		camera_entity.add_component<MotionMatchingControllerComponent>();
 
 		camera_holder_component.set_camera_type(CameraHolderComponent::FREE_CAMERA);
 		camera_holder_component.set_render_camera(&renderer_holder_rc->camera);
@@ -95,70 +98,74 @@ namespace era_engine
 		groundMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultPlaneMat });
 
 		Entity tiran;
+
 		if (auto mesh = loadAnimatedMeshFromFileAsync(get_asset_path("/resources/assets/resident-evil-2-tyrant/source/UmodelExport.fbx"), mesh_creation_flags_unreal_animated_asset))
 		{
 			tiran = world->create_entity("Tiran");
-			tiran.add_component<animation::AnimationComponent>();
-			tiran.add_component<animation::SkeletonComponent>();
+
+			AnimationComponent& animation_component = tiran.add_component<AnimationComponent>();
+			animation_component.play = false;
+
+			SkeletonComponent& skeleton_component = tiran.add_component<SkeletonComponent>();
 			tiran.add_component<MeshComponent>(mesh);
 
 			TransformComponent& transform_component = tiran.get_component<TransformComponent>();
 			transform_component.transform = trs{ vec3(-10.0f, -2.0f, 0.0f), quat::identity, vec3(1.0f) };
 
-			initializeAnimationComponentAsync(tiran, mesh);
-			addRaytracingComponentAsync(tiran, mesh);
+			mesh->loadJob.wait_for_completion();
+
+			animation_component.initialize(mesh->animation_skeleton.clips);
+			skeleton_component.skeleton = &mesh->skeleton;
+
+			const Skeleton* skeleton = skeleton_component.skeleton;
+
+			RagdollJointIds joint_init_ids;
+			joint_init_ids.head_end_idx = skeleton->name_to_joint_id.at("head");
+			joint_init_ids.head_idx = skeleton->name_to_joint_id.at("head");
+			joint_init_ids.neck_idx = skeleton->name_to_joint_id.at("neck_01");
+
+			joint_init_ids.spine_03_idx = skeleton->name_to_joint_id.at("spine_03");
+			joint_init_ids.spine_02_idx = skeleton->name_to_joint_id.at("spine_02");
+			joint_init_ids.spine_01_idx = skeleton->name_to_joint_id.at("spine_01");
+			joint_init_ids.pelvis_idx = skeleton->name_to_joint_id.at("pelvis");
+
+			joint_init_ids.root_idx = skeleton->name_to_joint_id.at("root");
+
+			joint_init_ids.thigh_l_idx = skeleton->name_to_joint_id.at("thigh_l");
+			joint_init_ids.calf_l_idx = skeleton->name_to_joint_id.at("calf_l");
+			joint_init_ids.foot_l_idx = skeleton->name_to_joint_id.at("foot_l");
+			joint_init_ids.foot_end_l_idx = skeleton->name_to_joint_id.at("ball_l");
+
+			joint_init_ids.thigh_r_idx = skeleton->name_to_joint_id.at("thigh_r");
+			joint_init_ids.calf_r_idx = skeleton->name_to_joint_id.at("calf_r");
+			joint_init_ids.foot_r_idx = skeleton->name_to_joint_id.at("foot_r");
+			joint_init_ids.foot_end_r_idx = skeleton->name_to_joint_id.at("ball_r");
+
+			joint_init_ids.upperarm_l_idx = skeleton->name_to_joint_id.at("upperarm_l");
+			joint_init_ids.lowerarm_l_idx = skeleton->name_to_joint_id.at("lowerarm_l");
+			joint_init_ids.hand_l_idx = skeleton->name_to_joint_id.at("hand_l");
+			joint_init_ids.hand_end_l_idx = skeleton->name_to_joint_id.at("middle_01_l");
+
+			joint_init_ids.upperarm_r_idx = skeleton->name_to_joint_id.at("upperarm_r");
+			joint_init_ids.lowerarm_r_idx = skeleton->name_to_joint_id.at("lowerarm_r");
+			joint_init_ids.hand_r_idx = skeleton->name_to_joint_id.at("hand_r");
+			joint_init_ids.hand_end_r_idx = skeleton->name_to_joint_id.at("middle_01_r");
+
+			RagdollComponent& ragdoll_component = tiran.add_component<RagdollComponent>();
+			ragdoll_component.joint_init_ids = joint_init_ids;
 		}
 
-		if (auto mesh = loadMeshFromFileAsync(get_asset_path("/resources/assets/Sponza/sponza.obj")))
-		{
-			auto sponza = world->create_entity("Sponza");
-			sponza.add_component<MeshComponent>(mesh);
+		//if (auto mesh = loadMeshFromFileAsync(get_asset_path("/resources/assets/Sponza/sponza.obj")))
+		//{
+		//	auto sponza = world->create_entity("Sponza");
+		//	sponza.add_component<MeshComponent>(mesh);
 
-			TransformComponent& transform_component = sponza.get_component<TransformComponent>();
-			transform_component.transform.position = vec3(5.0f, -3.75f, 35.0f);
-			transform_component.transform.scale = vec3(0.01f);
+		//	TransformComponent& transform_component = sponza.get_component<TransformComponent>();
+		//	transform_component.transform.position = vec3(5.0f, -3.75f, 35.0f);
+		//	transform_component.transform.scale = vec3(0.01f);
 
-			addRaytracingComponentAsync(sponza, mesh);
-		}
-
-		{
-			Entity physics_sphere = world->create_entity("SpherePX");
-			physics_sphere.set_parent(tiran.get_handle());
-			physics_sphere.add_component<MeshComponent>(sphereMesh);
-			physics::SphereShapeComponent& sphere_component = physics_sphere.add_component<physics::SphereShapeComponent>(1.0f);
-			sphere_component.sync_with_joint(tiran.get_data_weakref(), std::string("pelvis"));
-			sphere_component.set_attacment_state(true);
-			physics_sphere.add_component<physics::DynamicBodyComponent>().use_gravity = false;
-		}
-
-		{
-			Entity big_physics_sphere = world->create_entity("SpherePX1");
-			big_physics_sphere.add_component<MeshComponent>(sphereMesh);
-			big_physics_sphere.get_component<TransformComponent>().transform = trs{ vec3(-10.0f, 5.f, 0.0f), quat::identity, vec3(1.5f) };
-			big_physics_sphere.add_component<physics::SphereShapeComponent>(1.5f);
-			big_physics_sphere.add_component<physics::DynamicBodyComponent>();
-
-			Entity very_big_physics_sphere = world->create_entity("SpherePX2");
-			very_big_physics_sphere.add_component<MeshComponent>(sphereMesh);
-			very_big_physics_sphere.get_component<TransformComponent>().transform = trs{ vec3(-10.0f, 15.f, 0.0f), quat::identity, vec3(2.5f) };
-			very_big_physics_sphere.add_component<physics::SphereShapeComponent>(2.5f);
-			very_big_physics_sphere.add_component<physics::DynamicBodyComponent>();
-
-			//physics::JointComponent::BaseDescriptor joint_descriptor;
-			//joint_descriptor.enable_collision = false;
-			//joint_descriptor.connected_entity = big_physics_sphere.get_data_weakref();
-			//joint_descriptor.local_frame = very_big_physics_sphere.get_component<TransformComponent>().transform;
-			//joint_descriptor.second_local_frame = big_physics_sphere.get_component<TransformComponent>().transform;
-			//physics::D6JointComponent& d6_joint_component = very_big_physics_sphere.add_component<physics::D6JointComponent>(joint_descriptor);
-			//d6_joint_component.set_motion(physx::PxD6Axis::eX, physx::PxD6Motion::eLOCKED);
-			//d6_joint_component.set_motion(physx::PxD6Axis::eY, physx::PxD6Motion::eLOCKED);
-			//d6_joint_component.set_motion(physx::PxD6Axis::eZ, physx::PxD6Motion::eLOCKED);
-			//d6_joint_component.set_motion(physx::PxD6Axis::eTWIST, physx::PxD6Motion::eLIMITED);
-			//d6_joint_component.set_motion(physx::PxD6Axis::eSWING1, physx::PxD6Motion::eLIMITED);
-			//d6_joint_component.set_motion(physx::PxD6Axis::eSWING2, physx::PxD6Motion::eLIMITED);
-			//d6_joint_component.set_swing_limit(M_PI / 4.0f, M_PI / 4.0f);
-			//d6_joint_component.set_twist_limit(-M_PI / 4.0f, M_PI / 4.0f);
-		}
+		//	addRaytracingComponentAsync(sponza, mesh);
+		//}
 
 		auto plane = world->create_entity("Platform");
 		plane.add_component<physics::PlaneComponent>(vec3(0.f, -5.0, 0.0f));

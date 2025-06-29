@@ -113,6 +113,11 @@ namespace era_engine
 				skeleton.local_transforms.push_back(joint_transform);
 			}
 
+			if(flags & mesh_creation_flags_unreal_asset)
+			{
+				skeleton.local_transforms[0].set_rotation(skeleton.local_transforms[0].get_rotation() * euler_to_quat(vec3(0.0f, -M_PI / 2.0f, 0.0f)));
+			}
+
 			skeleton.name_to_joint_id = std::move(in.name_to_joint_id);
 			skeleton.analyze_joints(builder.getPositions(), (uint8*)builder.getOthers() + builder.getSkinOffset(), builder.getOthersSize(), builder.getNumVertices());
 		}

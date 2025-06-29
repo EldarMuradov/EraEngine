@@ -151,7 +151,7 @@ namespace era_engine::physics
 	{
 		if (message)
 		{
-			//LOG_ERROR("PhysX Error> %s %s %u %s %s %s %u", message, "Code:", static_cast<int32>(code), "Source:", file, ":", line);
+			LOG_ERROR("PhysX Error> %s %s %u %s %s %s %u", message, "Code:", static_cast<int32>(code), "Source:", file, ":", line);
 
 			std::ostringstream stream;
 			stream << message;
@@ -168,15 +168,11 @@ namespace era_engine::physics
 #if ENABLE_CPU_PROFILING
 		recordProfileEvent(profile_event_begin_block, eventName);
 #endif
-
-		//LOG_MESSAGE("[%s] %s", eventName, "started");
 		return nullptr;
 	}
 
 	void ProfilerCallback::zoneEnd(void* profilerData, const char* eventName, bool detached, uint64_t contextId)
 	{
-		//LOG_MESSAGE("[%s] %s", eventName, "finished");
-
 #if ENABLE_CPU_PROFILING
 		recordProfileEvent(profile_event_end_block, eventName);
 #endif
@@ -212,11 +208,6 @@ namespace era_engine::physics
 	{
 		for (auto& c : removed_collisions)
 		{
-			//TODO
-			//c.this_actor->onCollisionExit(c.other_actor);
-			//c.swap_objects();
-			//c.this_actor->onCollisionExit(c.other_actor);
-			//c.swap_objects();
 			PhysicsHolder::physics_ref->collision_exit_queue.enqueue({
 				c.this_actor->get_entity().get_handle(),
 				c.other_actor->get_entity().get_handle()
@@ -225,11 +216,6 @@ namespace era_engine::physics
 
 		for (auto& c : new_collisions)
 		{
-			//TODO
-			//c.this_actor->onCollisionEnter(c.other_actor);
-			//c.swap_objects();
-			//c.this_actor->onCollisionEnter(c.other_actor);
-			//c.swap_objects();
 			PhysicsHolder::physics_ref->collision_queue.enqueue({
 				c.this_actor->get_entity().get_handle(),
 				c.other_actor->get_entity().get_handle()
@@ -245,7 +231,7 @@ namespace era_engine::physics
 	{
 		for (auto* joint : broken_joints)
 		{
-			joint->state = JointComponent::BROKEN;
+			joint->state = JointComponent::State::BROKEN;
 			if (joint->on_broken_callback)
 			{
 				joint->on_broken_callback(joint);

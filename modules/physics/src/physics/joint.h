@@ -4,7 +4,8 @@
 
 #include "physics/physx_api.h"
 
-#include "ecs/component.h"
+#include <ecs/component.h>
+#include <ecs/observable_member.h>
 
 namespace era_engine::physics
 {
@@ -18,7 +19,7 @@ namespace era_engine::physics
 	class ERA_PHYSICS_API JointComponent : public Component
 	{
 	public:
-		enum JointState : uint8_t
+		enum class State : uint8_t
 		{
 			ENABLED,
 			DISABLED,
@@ -27,12 +28,11 @@ namespace era_engine::physics
 
 		struct ERA_PHYSICS_API BaseDescriptor
 		{
-			weakref<Entity::EcsData> connected_entity;
+			EntityPtr connected_entity;
+			EntityPtr second_connected_entity;
 
 			trs local_frame = trs::identity;
 			trs second_local_frame = trs::identity;
-
-			bool enable_collision = false;
 		};
 
 		JointComponent() = default;
@@ -42,10 +42,16 @@ namespace era_engine::physics
 
 		virtual void release() override;
 
-		void set_break_force(float break_force);
-		float get_break_force() const;
+		State get_state() const;
 
 		physx::PxJoint* get_native_joint() const;
+
+		EntityPtr get_first_entity_ptr() const;
+		EntityPtr get_second_entity_ptr() const;
+
+		ObservableMember<bool> enable_collision = false;
+
+		ObservableMember<float> break_force = std::numeric_limits<float>::max();
 
 		std::function<void(JointComponent*)> on_broken_callback = nullptr;
 
@@ -54,9 +60,10 @@ namespace era_engine::physics
 	protected:
 		physx::PxJoint* joint = nullptr;
 		BaseDescriptor base_descriptor;
+		State state = State::DISABLED;
 
-	public:
-		JointState state = ENABLED;
+		friend class JointsSystem;
+		friend class SimulationEventCallback;
 	};
 
 	class ERA_PHYSICS_API FixedJointComponent : public JointComponent
@@ -75,6 +82,15 @@ namespace era_engine::physics
 		RevoluteJointComponent() = default;
 		RevoluteJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
 		~RevoluteJointComponent() override;
+
+		ObservableMember<bool> enable_drive = false;
+
+		ObservableMember<float> drive_velocity = 0.0f;
+		ObservableMember<float> drive_force_limit = 1000.0f;
+		ObservableMember<float> drive_gear_limit = 0.0f;
+
+		//x = lower, y = upper
+		ObservableMember<vec2> linear_limit = vec2::zero;
 
 		void set_enable_drive(bool enable_drive);
 
@@ -120,26 +136,62 @@ namespace era_engine::physics
 	class ERA_PHYSICS_API D6JointComponent : public JointComponent
 	{
 	public:
+		enum class Motion : uint8
+		{
+			LOCKED = 0,	// The DOF is locked, it does not allow relative motion.
+			LIMITED,	// The DOF is limited, it only allows motion within a specific range.
+			FREE		// The DOF is free and has its full range of motion.
+		};
+
 		D6JointComponent() = default;
 		D6JointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
 		~D6JointComponent() override;
 
-		void set_swing_limit(float swing_y, float swing_z);
-		void set_twist_limit(float twist_min, float twist_max);
+		ObservableMember<float> swing_y_limit = 0.0f;
+		ObservableMember<float> swing_z_limit = 0.0f;
 
-		void set_linear_limit(float value, float stiffness, float damping);
-		void set_distance_limit(float value, float stiffness, float damping);
+		ObservableMember<float> twist_min_limit = 0.0f;
+		ObservableMember<float> twist_max_limit = 0.0f;
 
-		void set_motion(physx::PxD6Axis::Enum axis, physx::PxD6Motion::Enum type);
+		ObservableMember<float> linear_limit = 0.00f;
+		ObservableMember<float> distance_limit = 0.00f;
 
-		void set_drive(physx::PxD6Drive::Enum axis, 
-			float stiffness,
-			float damping,
-			float drive_force_limit,
-			bool is_acceleration);
+		ObservableMember<Motion> linear_x_motion_type = Motion::FREE;
+		ObservableMember<Motion> linear_y_motion_type = Motion::FREE;
+		ObservableMember<Motion> linear_z_motion_type = Motion::FREE;
 
-		void set_drive_velocity(const vec3& angular_drive_velocity, const vec3& linear_drive_velocity = vec3::zero);
-		void set_drive_pose(const trs& drive_pose);
+		ObservableMember<Motion> swing_y_motion_type = Motion::FREE;
+		ObservableMember<Motion> swing_z_motion_type = Motion::FREE;
+		ObservableMember<Motion> twist_motion_type = Motion::FREE;
+
+		ObservableMember<float> slerp_drive_force_limit = 0.0f;
+		ObservableMember<float> swing_drive_force_limit = 0.0f;
+		ObservableMember<float> twist_drive_force_limit = 0.0f;
+		ObservableMember<float> linear_drive_force_limit = 0.0f;
+
+		ObservableMember<bool> drive_limits_are_forces = false;
+
+		ObservableMember<bool> gpu_compatible = false;
+
+		ObservableMember<float> slerp_drive_stiffness = 0.0f;
+		ObservableMember<float> swing_drive_stiffness = 0.0f;
+		ObservableMember<float> twist_drive_stiffness = 0.0f;
+		ObservableMember<float> linear_drive_stiffness = 0.0f;
+
+		ObservableMember<float> slerp_drive_damping = 0.0f;
+		ObservableMember<float> swing_drive_damping = 0.0f;
+		ObservableMember<float> twist_drive_damping = 0.0f;
+		ObservableMember<float> linear_drive_damping = 0.0f;
+
+		ObservableMember<bool> slerp_drive_accelerated = false;
+		ObservableMember<bool> swing_drive_accelerated = false;
+		ObservableMember<bool> twist_drive_accelerated = false;
+		ObservableMember<bool> linear_drive_accelerated = false;
+
+		ObservableMember<vec3> angular_drive_velocity = vec3::zero;
+		ObservableMember<vec3> linear_drive_velocity = vec3::zero;
+
+		ObservableMember<trs> drive_transform = trs::identity;
 
 		ERA_VIRTUAL_REFLECT(JointComponent)
 	};

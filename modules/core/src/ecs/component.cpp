@@ -9,7 +9,7 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		rttr::registration::class_<Component>("Component")
+		registration::class_<Component>("Component")
 			.constructor<>()
 			.constructor<ref<Entity::EcsData>>();
 	}
@@ -69,6 +69,31 @@ namespace era_engine
 	Entity::Handle era_engine::Component::get_handle() const
 	{
 		return component_data->entity_handle;
+	}
+
+	ComponentDataPtr::ComponentDataPtr(const Component* _component)
+		: component_weak_data(_component->component_data)
+	{
+	}
+
+	ComponentPtr::ComponentPtr(Component* _component)
+		: component(_component)
+	{
+	}
+
+	const Component* ComponentPtr::get() const
+	{
+		return component;
+	}
+
+	Component* ComponentPtr::get_for_write()
+	{
+		return component;
+	}
+
+	bool ComponentPtr::is_empty() const
+	{
+		return component == nullptr;
 	}
 
 }

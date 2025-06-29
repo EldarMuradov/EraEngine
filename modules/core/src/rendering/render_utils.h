@@ -55,8 +55,11 @@ namespace era_engine
 		return (colorDepth == color_depth_8) ? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R10G10B10A2_UNORM;
 	}
 
+	using LoadCallBackType = void(*)(Entity);
+
 	extern "C" __declspec(dllexport) void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh);
 	raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh);
 	extern "C" __declspec(dllexport) void initializeAnimationComponentAsync(Entity entity, ref<multi_mesh> mesh);
+	extern "C" __declspec(dllexport) void initializeSkeletonComponentAsync(Entity entity, ref<multi_mesh> mesh, LoadCallBackType callback = nullptr);
 
 }

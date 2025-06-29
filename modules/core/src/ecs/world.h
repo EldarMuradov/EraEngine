@@ -51,11 +51,13 @@ namespace era_engine
 
 			WorldSystemScheduler* scheduler = nullptr;
 
-			const char* name = nullptr;
+			std::string name;
 		};
 
 	public:
-		World(const char* _name);
+		static inline std::string GAMEPLAY_WORLD_NAME = std::string("GameplayWorld");
+
+		World(const std::string& _name);
 		~World();
 
 		World(const World& _world) = delete;
@@ -227,7 +229,7 @@ namespace era_engine
 		friend class WorldSystemScheduler;
 	};
 
-	ERA_CORE_API World* get_world_by_name(const char* _name);
+	ERA_CORE_API World* get_world_by_name(const std::string& _name);
 
 	ERA_CORE_API std::unordered_map<std::string, World*>& get_worlds();
 }

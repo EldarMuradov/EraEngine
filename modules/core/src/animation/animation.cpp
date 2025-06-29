@@ -984,6 +984,26 @@ namespace era_engine::animation
 		pretty_print(*this, INVALID_JOINT, 0);
 	}
 
+	void Skeleton::set_joint_transform(const trs& new_transform, uint32 joint_id)
+	{
+		local_transforms[joint_id].set_transform(new_transform);
+	}
+
+	void Skeleton::set_joint_rotation(const quat& new_rotaiton, uint32 joint_id)
+	{
+		local_transforms[joint_id].set_rotation(new_rotaiton);
+	}
+
+	const trs& Skeleton::get_joint_transform(uint32 joint_id) const
+	{
+		return local_transforms[joint_id].get_transform();
+	}
+
+	const quat& Skeleton::get_joint_rotation(uint32 joint_id) const
+	{
+		return local_transforms[joint_id].get_rotation();
+	}
+
 	SkeletonComponent::SkeletonComponent(ref<Entity::EcsData> _data) 
 		: Component(_data) 
 	{

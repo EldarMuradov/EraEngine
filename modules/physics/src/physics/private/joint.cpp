@@ -66,16 +66,15 @@ namespace era_engine::physics
 	{
 		using namespace rttr;
 
-		registration::enumeration<JointComponent::JointState>("JointState")
+		registration::enumeration<JointComponent::State>("State")
 		(
-			value("ENABLED", JointComponent::ENABLED),
-			value("DISABLED", JointComponent::DISABLED),
-			value("BROKEN", JointComponent::BROKEN)
+			value("ENABLED", JointComponent::State::ENABLED),
+			value("DISABLED", JointComponent::State::DISABLED),
+			value("BROKEN", JointComponent::State::BROKEN)
 		);
 
 		registration::class_<JointComponent>("JointComponent")
-			.constructor<>()
-			.property("state", &JointComponent::state);
+			.constructor<>();
 
 		registration::class_<FixedJointComponent>("FixedJointComponent")
 			.constructor<>();
@@ -96,6 +95,8 @@ namespace era_engine::physics
 	JointComponent::JointComponent(ref<Entity::EcsData> _data, const BaseDescriptor& _base_descriptor)
 		: Component(_data), base_descriptor(_base_descriptor)
 	{
+		enable_collision.set_component(ComponentPtr(this));
+		break_force.set_component(ComponentPtr(this));
 	}
 
 	JointComponent::~JointComponent()
@@ -107,16 +108,9 @@ namespace era_engine::physics
 		PX_RELEASE(joint)
 	}
 
-	void JointComponent::set_break_force(float break_force)
+	JointComponent::State JointComponent::get_state() const
 	{
-		joint->setBreakForce(break_force, break_force);
-	}
-
-	float JointComponent::get_break_force() const
-	{
-		float force = 0.0f, torque = 0.0f;
-		joint->getBreakForce(force, torque);
-		return force;
+		return state;
 	}
 
 	physx::PxJoint* JointComponent::get_native_joint() const
@@ -124,14 +118,24 @@ namespace era_engine::physics
 		return joint;
 	}
 
+	EntityPtr JointComponent::get_first_entity_ptr() const
+	{
+		return base_descriptor.connected_entity;
+	}
+
+	EntityPtr era_engine::physics::JointComponent::get_second_entity_ptr() const
+	{
+		return base_descriptor.second_connected_entity;
+	}
+
 	FixedJointComponent::FixedJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor)
 		: JointComponent(_data, _base_descriptor)
 	{
 		using namespace physx;
 
-		PxFixedJoint* created_joint = create_fixed_joint(PhysicsUtils::get_body_component(component_data)->get_rigid_actor(),
-								   PhysicsUtils::get_body_component(base_descriptor.connected_entity)->get_rigid_actor());
-		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, base_descriptor.enable_collision);
+		PxFixedJoint* created_joint = create_fixed_joint(PhysicsUtils::get_body_component(base_descriptor.connected_entity.get_data())->get_rigid_actor(),
+								   PhysicsUtils::get_body_component(base_descriptor.second_connected_entity.get_data())->get_rigid_actor());
+		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, enable_collision);
 
 		created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 		created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
@@ -152,10 +156,10 @@ namespace era_engine::physics
 		auto* physics = PhysicsHolder::physics_ref->get_physics();
 
 		PxRevoluteJoint* created_joint = physx::PxRevoluteJointCreate(*physics,
-			PhysicsUtils::get_body_component(component_data)->get_rigid_actor(), create_PxTransform(_base_descriptor.local_frame),
-			PhysicsUtils::get_body_component(base_descriptor.connected_entity)->get_rigid_actor(), create_PxTransform(_base_descriptor.second_local_frame));
+			PhysicsUtils::get_body_component(base_descriptor.connected_entity.get_data())->get_rigid_actor(), create_PxTransform(_base_descriptor.local_frame),
+			PhysicsUtils::get_body_component(base_descriptor.second_connected_entity.get_data())->get_rigid_actor(), create_PxTransform(_base_descriptor.second_local_frame));
 
-		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, base_descriptor.enable_collision);
+		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, enable_collision);
 
 		created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 		created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
@@ -222,10 +226,10 @@ namespace era_engine::physics
 		auto* physics = PhysicsHolder::physics_ref->get_physics();
 
 		PxDistanceJoint* created_joint = physx::PxDistanceJointCreate(*physics,
-			PhysicsUtils::get_body_component(component_data)->get_rigid_actor(), create_PxTransform(_base_descriptor.local_frame),
-			PhysicsUtils::get_body_component(base_descriptor.connected_entity)->get_rigid_actor(), create_PxTransform(_base_descriptor.second_local_frame));
+			PhysicsUtils::get_body_component(base_descriptor.connected_entity.get_data())->get_rigid_actor(), create_PxTransform(_base_descriptor.local_frame),
+			PhysicsUtils::get_body_component(base_descriptor.second_connected_entity.get_data())->get_rigid_actor(), create_PxTransform(_base_descriptor.second_local_frame));
 
-		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, base_descriptor.enable_collision);
+		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, enable_collision);
 
 		//created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 		created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
@@ -301,10 +305,10 @@ namespace era_engine::physics
 		auto* physics = PhysicsHolder::physics_ref->get_physics();
 
 		PxSphericalJoint* created_joint = physx::PxSphericalJointCreate(*physics,
-			PhysicsUtils::get_body_component(component_data)->get_rigid_actor(), create_PxTransform(_base_descriptor.local_frame),
-			PhysicsUtils::get_body_component(base_descriptor.connected_entity)->get_rigid_actor(), create_PxTransform(_base_descriptor.second_local_frame));
+			PhysicsUtils::get_body_component(base_descriptor.connected_entity.get_data())->get_rigid_actor(), create_PxTransform(_base_descriptor.local_frame),
+			PhysicsUtils::get_body_component(base_descriptor.second_connected_entity.get_data())->get_rigid_actor(), create_PxTransform(_base_descriptor.second_local_frame));
 
-		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, base_descriptor.enable_collision);
+		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, enable_collision);
 
 		//created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 		created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
@@ -330,105 +334,50 @@ namespace era_engine::physics
 	D6JointComponent::D6JointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor)
 		: JointComponent(_data, _base_descriptor)
 	{
-		using namespace physx;
+		drive_transform.set_component(ComponentPtr(this));
+		linear_drive_velocity.set_component(ComponentPtr(this));
+		angular_drive_velocity.set_component(ComponentPtr(this));
 
-		auto* physics = PhysicsHolder::physics_ref->get_physics();
+		linear_drive_accelerated.set_component(ComponentPtr(this));
+		twist_drive_accelerated.set_component(ComponentPtr(this));
+		swing_drive_accelerated.set_component(ComponentPtr(this));
+		slerp_drive_accelerated.set_component(ComponentPtr(this));
 
-		PxD6Joint* created_joint = physx::PxD6JointCreate(*physics,
-			PhysicsUtils::get_body_component(component_data)->get_rigid_actor(), create_PxTransform(_base_descriptor.local_frame),
-			PhysicsUtils::get_body_component(base_descriptor.connected_entity)->get_rigid_actor(), create_PxTransform(_base_descriptor.second_local_frame));
+		linear_drive_stiffness.set_component(ComponentPtr(this));
+		twist_drive_stiffness.set_component(ComponentPtr(this));
+		swing_drive_stiffness.set_component(ComponentPtr(this));
+		slerp_drive_stiffness.set_component(ComponentPtr(this));
 
-		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, base_descriptor.enable_collision);
+		linear_drive_force_limit.set_component(ComponentPtr(this));
+		twist_drive_force_limit.set_component(ComponentPtr(this));
+		swing_drive_force_limit.set_component(ComponentPtr(this));
+		slerp_drive_force_limit.set_component(ComponentPtr(this));
 
-		//created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
-		created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
+		twist_motion_type.set_component(ComponentPtr(this));
+		swing_z_motion_type.set_component(ComponentPtr(this));
+		swing_y_motion_type.set_component(ComponentPtr(this));
 
-		joint = created_joint;
-		joint->userData = this;
+		linear_x_motion_type.set_component(ComponentPtr(this));
+		linear_y_motion_type.set_component(ComponentPtr(this));
+		linear_z_motion_type.set_component(ComponentPtr(this));
+
+		swing_z_limit.set_component(ComponentPtr(this));
+		swing_y_limit.set_component(ComponentPtr(this));
+
+		twist_max_limit.set_component(ComponentPtr(this));
+		twist_min_limit.set_component(ComponentPtr(this));
+		linear_z_motion_type.set_component(ComponentPtr(this));
+		linear_z_motion_type.set_component(ComponentPtr(this));
+
+		linear_limit.set_component(ComponentPtr(this));
+		distance_limit.set_component(ComponentPtr(this));
+
+		drive_limits_are_forces.set_component(ComponentPtr(this));
+		gpu_compatible.set_component(ComponentPtr(this));
 	}
 
 	D6JointComponent::~D6JointComponent()
 	{
-	}
-
-	void D6JointComponent::set_swing_limit(float swing_y, float swing_z)
-	{
-		using namespace physx;
-		if (PxD6Joint* d6_joint = joint->is<PxD6Joint>())
-		{
-			d6_joint->setSwingLimit(PxJointLimitCone{ swing_y, swing_z });
-		}
-	}
-
-	void D6JointComponent::set_twist_limit(float twist_min, float twist_max)
-	{
-		using namespace physx;
-		if (PxD6Joint* d6_joint = joint->is<PxD6Joint>())
-		{
-			d6_joint->setTwistLimit(PxJointAngularLimitPair{ twist_min, twist_max });
-		}
-	}
-
-	void D6JointComponent::set_linear_limit(float value, float stiffness, float damping)
-	{
-		using namespace physx;
-		if (PxD6Joint* d6_joint = joint->is<PxD6Joint>())
-		{
-			d6_joint->setLinearLimit(PxJointLinearLimit{ value, PxSpring(stiffness, damping)});
-		}
-	}
-
-	void D6JointComponent::set_distance_limit(float value, float stiffness, float damping)
-	{
-		using namespace physx;
-		if (PxD6Joint* d6_joint = joint->is<PxD6Joint>())
-		{
-			d6_joint->setDistanceLimit(PxJointLinearLimit{ value, PxSpring(stiffness, damping) });
-		}
-	}
-
-	void D6JointComponent::set_motion(physx::PxD6Axis::Enum axis, physx::PxD6Motion::Enum type)
-	{
-		using namespace physx;
-		if (PxD6Joint* d6_joint = joint->is<PxD6Joint>())
-		{
-			d6_joint->setMotion(axis, type);
-		}
-	}
-
-	void D6JointComponent::set_drive(physx::PxD6Drive::Enum axis,
-									 float stiffness,
-									 float damping,
-									 float drive_force_limit,
-									 bool is_acceleration)
-	{
-		using namespace physx;
-		if (PxD6Joint* d6_joint = joint->is<PxD6Joint>())
-		{
-			d6_joint->setDrive(axis, PxD6JointDrive(
-				stiffness,
-				damping,
-				drive_force_limit,
-				is_acceleration));
-		}
-	}
-
-	void D6JointComponent::set_drive_velocity(const vec3& angular_drive_velocity, const vec3& linear_drive_velocity/* = vec3::zero*/)
-	{
-		using namespace physx;
-		if (PxD6Joint* d6_joint = joint->is<PxD6Joint>())
-		{
-			d6_joint->setDriveVelocity(create_PxVec3(linear_drive_velocity), create_PxVec3(angular_drive_velocity));
-		}
-	}
-
-	void D6JointComponent::set_drive_pose(const trs& drive_pose)
-	{
-		using namespace physx;
-		if (PxD6Joint* d6_joint = joint->is<PxD6Joint>())
-		{
-			d6_joint->setDrivePosition(create_PxTransform(drive_pose));
-		}
 	}
 
 }

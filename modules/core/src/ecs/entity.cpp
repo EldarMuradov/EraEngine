@@ -184,4 +184,43 @@ namespace era_engine
 		return result;
 	}
 
+	EntityPtr::EntityPtr(Entity entity)
+		: data(entity.get_data_weakref())
+	{
+
+	}
+	EntityPtr::EntityPtr(const weakref<Entity::EcsData>& entity_data)
+		: data(entity_data)
+	{
+	}
+
+	Entity EntityPtr::get() const
+	{
+		if (std::shared_ptr<Entity::EcsData> internal_data = data.lock())
+		{
+			return Entity(internal_data);
+		}
+		return Entity::Null;
+	}
+
+	bool EntityPtr::operator==(const EntityPtr& _other) const
+	{
+		return get() == _other.get();
+	}
+
+	bool EntityPtr::operator!=(const EntityPtr& _other) const
+	{
+		return !(*this == _other);
+	}
+
+	const weakref<Entity::EcsData>& EntityPtr::get_data() const
+	{
+		return data;
+	}
+
+	bool EntityPtr::is_empty() const
+	{
+		return data.lock() == nullptr;
+	}
+
 }

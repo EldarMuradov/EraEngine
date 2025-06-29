@@ -26,14 +26,20 @@ namespace era_engine
 
 		~TransformComponent() override;
 
-		trs get_local_tranform() const;
-		void set_local_tranform(const trs& new_local_transform);
+		const trs& get_local_transform() const;
+		void set_local_transform(const trs& new_local_transform);
+
+		const trs& get_world_transform() const;
+		void set_world_transform(const trs& new_world_transform);
 
 		ERA_VIRTUAL_REFLECT(Component)
 
 	public:
 		trs transform = trs::identity; // In World space.
 		TransformType type = DYNAMIC;
+
+	private:
+		trs local_transform = trs::identity; // In World space.
 	};
 
 }

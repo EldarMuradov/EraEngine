@@ -23,7 +23,7 @@ namespace era_engine
 			.property("type", &TransformComponent::type);
 	}
 
-	TransformComponent::TransformComponent(ref<Entity::EcsData> _data, const trs& t)
+		TransformComponent::TransformComponent(ref<Entity::EcsData> _data, const trs& t)
 		: Component(_data), transform(t)
 	{
 	}
@@ -42,28 +42,30 @@ namespace era_engine
 	{
 	}
 
-	trs TransformComponent::get_local_tranform() const
+	const trs& TransformComponent::get_local_transform() const
 	{
-		Entity parent = get_world()->get_entity(component_data->parent_handle);
-		if (parent.is_valid())
-		{
-			const trs& parent_world_space_trs = parent.get_component<TransformComponent>().transform;
-			return invert(parent_world_space_trs) * transform;
-		}
-		return trs::identity;
+		return local_transform;
 	}
 
-	void TransformComponent::set_local_tranform(const trs& new_local_transform)
+	void TransformComponent::set_local_transform(const trs& new_local_transform)
 	{
+		local_transform = new_local_transform;
+	}
+
+	const trs& TransformComponent::get_world_transform() const
+	{
+		return transform;
+	}
+
+	void TransformComponent::set_world_transform(const trs& new_world_transform)
+	{
+		transform = new_world_transform;
+
 		Entity parent = get_world()->get_entity(component_data->parent_handle);
 		if (parent.is_valid())
 		{
 			const trs& parent_world_space_trs = parent.get_component<TransformComponent>().transform;
-			transform = parent_world_space_trs * new_local_transform;
-		}
-		else
-		{
-			transform = new_local_transform;
+			local_transform = invert(parent_world_space_trs) * transform;
 		}
 	}
 }

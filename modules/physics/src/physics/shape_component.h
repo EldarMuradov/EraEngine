@@ -4,7 +4,8 @@
 
 #include "physics/physx_api.h"
 
-#include "ecs/component.h"
+#include <ecs/component.h>
+#include <ecs/observable_member.h>
 
 namespace era_engine
 {
@@ -37,6 +38,9 @@ namespace era_engine::physics
 		physx::PxShape* get_shape() const;
 		const physx::PxGeometry& get_geometry() const;
 
+		ObservableMember<vec3> local_position = vec3::zero;
+		ObservableMember<quat> local_rotation = quat::identity;
+
 		void sync_with_joint(weakref<Entity::EcsData> _entity_reference, const std::string& _connected_joint_name);
 		void set_attacment_state(bool active);
 
@@ -68,82 +72,77 @@ namespace era_engine::physics
 	{
 	public:
 		BoxShapeComponent() = default;
-		BoxShapeComponent(ref<Entity::EcsData> _data, const vec3& _extents);
+		BoxShapeComponent(ref<Entity::EcsData> _data);
 		~BoxShapeComponent() override;
+
+		vec3 half_extents = vec3(1.0f);
 
 		ERA_VIRTUAL_REFLECT(ShapeComponent)
 
 	protected:
 		physx::PxShape* create_shape() override;
-
-	private:
-		vec3 extents = vec3(1.0f);
 	};
 
 	class ERA_PHYSICS_API SphereShapeComponent final : public ShapeComponent
 	{
 	public:
 		SphereShapeComponent() = default;
-		SphereShapeComponent(ref<Entity::EcsData> _data, const float _radius);
+		SphereShapeComponent(ref<Entity::EcsData> _data);
 		~SphereShapeComponent() override;
+
+		float radius = 1.0f;
 
 		ERA_VIRTUAL_REFLECT(ShapeComponent)
 
 	protected:
 		physx::PxShape* create_shape() override;
-
-	private:
-		float radius = 1.0f;
 	};
 
 	class ERA_PHYSICS_API CapsuleShapeComponent final : public ShapeComponent
 	{
 	public:
 		CapsuleShapeComponent() = default;
-		CapsuleShapeComponent(ref<Entity::EcsData> _data, const float _radius, const float _half_height);
+		CapsuleShapeComponent(ref<Entity::EcsData> _data);
 		~CapsuleShapeComponent() override;
+
+		float radius = 1.0f;
+		float half_height = 1.0f;
 
 		ERA_VIRTUAL_REFLECT(ShapeComponent)
 
 	protected:
 		physx::PxShape* create_shape() override;
-
-	private:
-		float radius = 1.0f;
-		float half_height = 1.0f;
 	};
 
 	class ERA_PHYSICS_API TriangleMeshShapeComponent final : public ShapeComponent
 	{
 	public:
 		TriangleMeshShapeComponent() = default;
-		TriangleMeshShapeComponent(ref<Entity::EcsData> _data, ref<MeshAsset> _asset, const vec3& _size);
+		TriangleMeshShapeComponent(ref<Entity::EcsData> _data);
 		~TriangleMeshShapeComponent() override;
+
+		vec3 size = vec3(1.0f);
+		ref<MeshAsset> asset = nullptr;
 
 		ERA_VIRTUAL_REFLECT(ShapeComponent)
 
 	protected:
 		physx::PxShape* create_shape() override;
-
-	private:
-		ref<MeshAsset> asset = nullptr;
-		vec3 size = vec3(1.0f);
 	};
 
 	class ERA_PHYSICS_API ConvexMeshShapeComponent final : public ShapeComponent
 	{
 	public:
 		ConvexMeshShapeComponent() = default;
-		ConvexMeshShapeComponent(ref<Entity::EcsData> _data, ref<MeshAsset> _asset, const vec3& _size);
+		ConvexMeshShapeComponent(ref<Entity::EcsData> _data);
 		~ConvexMeshShapeComponent() override;
+
+		vec3 size = vec3(1.0f);
+		ref<MeshAsset> asset = nullptr;
 
 		ERA_VIRTUAL_REFLECT(ShapeComponent)
 
 	protected:
 		physx::PxShape* create_shape() override;
-
-	private:
-		ref<MeshAsset> asset = nullptr;
-		vec3 size = vec3(1.0f);
 	};
 }

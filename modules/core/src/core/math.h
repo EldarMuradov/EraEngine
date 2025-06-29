@@ -25,8 +25,15 @@
 
 #define EPSILON 1e-6f
 
-#define deg2rad(deg) ((deg) * M_PI_OVER_180)
-#define rad2deg(rad) ((rad) * M_180_OVER_PI)
+inline constexpr float deg2rad(float  deg) 
+{ 
+	return deg * (M_PI_OVER_180);
+}
+
+inline constexpr float rad2deg(float rad) 
+{
+	return rad * (M_180_OVER_PI);
+}
 
 constexpr float oneDiv6 = 1.0f / 6.0f;
 constexpr float oneDiv24 = 1.0f / 24.0f;
@@ -782,12 +789,22 @@ inline trs operator*(const trs& a, const trs& b)
 	return result;
 }
 
+inline bool operator==(const trs& a, const trs& b) 
+{ 
+	return a.position == b.position && a.rotation == b.rotation && a.scale == b.scale; 
+}
+
+inline bool operator!=(const trs& a, const trs& b)
+{
+	return !operator==(a, b);
+}
+
 static inline quat operator-(quat q)
 {
 	return quat(-q.x, -q.y, -q.z, -q.w);
 }
 
-static inline quat operator-(quat q, quat p)
+static inline quat operator-(const quat& q, const quat& p)
 {
 	return quat(q.x - p.x, q.y - p.y, q.z - p.z, q.w - p.w);
 }
@@ -1028,6 +1045,8 @@ inline std::ostream& operator<<(std::ostream& s, vec2 v)
 	s << "[" << v.x << ", " << v.y << "]";
 	return s;
 }
+
+ERA_CORE_API quat shortest_arc(const vec3& from, const vec3& to);
 
 inline std::ostream& operator<<(std::ostream& s, vec3 v)
 {

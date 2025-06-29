@@ -87,6 +87,9 @@ namespace era_engine
         std::vector<std::thread> normal_thread_pool;
         std::queue<TaskItem> normal_task_queue;
 
+        std::atomic<int> active_fixed_tasks = 0;
+        std::condition_variable tasks_done_cv;
+
         std::vector<std::thread> fixed_thread_pool;
         std::queue<TaskItem> fixed_task_queue;
 

@@ -10,7 +10,7 @@ namespace era_engine
 {
 	std::unordered_map<std::string, World*> worlds;
 
-	World::World(const char* _name)
+	World::World(const std::string& _name)
 	{
 		world_data = new WorldData();
 		world_data->name = _name;
@@ -19,7 +19,7 @@ namespace era_engine
 
 		world_data->scheduler->set_fixed_update_rate(60.0);
 
-		worlds.emplace(std::string(_name), this);
+		worlds.emplace(_name, this);
 	}
 
 	World::~World()
@@ -233,9 +233,9 @@ namespace era_engine
 		entity.add_component<TransformComponent>();
 	}
 
-	World* get_world_by_name(const char* _name)
+	World* get_world_by_name(const std::string& _name)
 	{
-		return worlds[std::string(_name)];
+		return worlds[_name];
 	}
 
 	std::unordered_map<std::string, World*>& get_worlds()

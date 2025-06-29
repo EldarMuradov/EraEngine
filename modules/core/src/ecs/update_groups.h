@@ -10,9 +10,9 @@ namespace era_engine::update_types
 
 	static inline UpdateGroup GAMEPLAY_BEFORE_PHYSICS = UpdateGroup("GAMEPLAY_BEFORE_PHYSICS", UpdateType::FIXED);
 
-	static inline UpdateGroup BEFORE_PHYSICS = UpdateGroup("BEFORE_PHYSICS", UpdateType::FIXED);
-	static inline UpdateGroup PHYSICS = UpdateGroup("PHYSICS", UpdateType::FIXED);
-	static inline UpdateGroup AFTER_PHYSICS = UpdateGroup("AFTER_PHYSICS", UpdateType::FIXED);
+	static inline UpdateGroup BEFORE_PHYSICS = UpdateGroup("BEFORE_PHYSICS", UpdateType::FIXED, true);
+	static inline UpdateGroup PHYSICS = UpdateGroup("PHYSICS", UpdateType::FIXED, true);
+	static inline UpdateGroup AFTER_PHYSICS = UpdateGroup("AFTER_PHYSICS", UpdateType::FIXED, true);
 
 	static inline UpdateGroup GAMEPLAY_AFTER_PHYSICS = UpdateGroup("GAMEPLAY_AFTER_PHYSICS", UpdateType::FIXED);
 

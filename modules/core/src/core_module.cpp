@@ -22,7 +22,7 @@ namespace era_engine
 
         Engine* engine_ptr = static_cast<Engine*>(engine);
 
-        World* world = get_world_by_name("GameWorld");
+        World* world = get_world_by_name(World::GAMEPLAY_WORLD_NAME);
         WorldSystemScheduler* scheduler = world->get_system_scheduler();
 
         scheduler->initialize_systems(rttr::type::get_types());

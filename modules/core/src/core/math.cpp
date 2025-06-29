@@ -1826,3 +1826,30 @@ bool get_eigen(const mat3& A, vec3& out_eigen_values, mat3& out_eigen_vectors)
 
 	return true;
 }
+
+quat shortest_arc(const vec3& from, const vec3& to)
+{
+	const float dot_product = dot(from, to);
+	if (fuzzy_equals(dot_product, 1.f))
+	{
+		return {};
+	}
+	else if (fuzzy_equals(dot_product, -1.f))
+	{
+		vec3 non_collinear_vector(0.f, 1.f, 0.f);
+		if (fuzzy_equals(abs(dot(from, non_collinear_vector)), 1.f))
+		{
+			non_collinear_vector = vec3(1.f, 0.f, 0.f);
+		}
+
+		const vec3 orthogonal_vector = normalize(cross(from, non_collinear_vector));
+
+		return quat(orthogonal_vector.x, orthogonal_vector.y, orthogonal_vector.z, 0.f);
+	}
+	else
+	{
+		const vec3 axis = cross(from, to);
+		const quat unorm = quat(axis.x, axis.y, axis.z, dot_product + 1.f);
+		return normalize(unorm);
+	}
+}

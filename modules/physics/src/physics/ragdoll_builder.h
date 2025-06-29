@@ -4,14 +4,15 @@
 
 #include "physics/physx_api.h"
 
-#include "core/math.h"
+#include <ecs/entity.h>
 
 namespace era_engine::physics
 {
-	class ERA_PHYSICS_API RagdollBuilder final
+	class ERA_PHYSICS_API RagdollBuilderUtils final
 	{
-		RagdollBuilder() = delete;
+		RagdollBuilderUtils() = delete;
 	public:
 
+		static void build_simulated_body(Entity ragdoll);
 	};
 }

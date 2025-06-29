@@ -8,7 +8,7 @@ TEST(ECS_Components, TagsComponent) {
 
 	using namespace era_engine;
 
-	World* runtime_world = new World("GameWorld");
+	World* runtime_world = new World(World::GAMEPLAY_WORLD_NAME);
 	runtime_world->init();
 
 	Entity entity = runtime_world->create_entity("Entity");
@@ -35,7 +35,7 @@ TEST(ECS_Components, ChildComponent) {
 
 	using namespace era_engine;
 
-	World* runtime_world = new World("GameWorld");
+	World* runtime_world = new World(World::GAMEPLAY_WORLD_NAME);
 	runtime_world->init();
 
 	Entity parent = runtime_world->create_entity();

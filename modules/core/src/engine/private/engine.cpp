@@ -82,7 +82,7 @@ namespace era_engine
 		return result;
 	}
 
-	static void draw_debug_menu_bar(float elapsed)
+	static void draw_debug_menu_bar(float elapsed, uint64 gameplay_fixed_frame_id)
 	{
 		const float fps = 1.0f / elapsed;
 		bool debug_vars_opened = false;
@@ -93,6 +93,10 @@ namespace era_engine
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu(std::to_string(frameID).c_str()))
+			{
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu(std::to_string(gameplay_fixed_frame_id).c_str()))
 			{
 				ImGui::EndMenu();
 			}
@@ -220,22 +224,29 @@ namespace era_engine
 			scheduler->initialize_all_systems();
 		}
 
-		float dt;
+		float dt = 0.0f;
 		bool status = true;
 		while (status)
 		{
 			status = newFrame(dt, *window);
+
+			uint64 gameplay_fixed_frame_id = 0;
 
 			auto& worlds = get_worlds();
 			for (auto& [name, world] : worlds)
 			{
 				WorldSystemScheduler* scheduler = world->get_system_scheduler();
 				scheduler->update_normal(dt);
+
+				if (name == World::GAMEPLAY_WORLD_NAME && gameplay_fixed_frame_id == 0)
+				{
+					gameplay_fixed_frame_id = world->get_fixed_frame_id();
+				}
 			}
 
 			if (main_menu)
 			{
-				draw_debug_menu_bar(dt);
+				draw_debug_menu_bar(dt, gameplay_fixed_frame_id);
 			}
 
 			execute_main_thread_jobs();

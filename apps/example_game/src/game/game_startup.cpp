@@ -41,7 +41,7 @@ namespace era_engine
 		window->setCustomWindowStyle();
 		window->maximize();
 
-		World* game_world = new World("GameWorld");
+		World* game_world = new World(World::GAMEPLAY_WORLD_NAME);
 		game_world->init();
 
 		game_world->add_tag("physics");

@@ -288,7 +288,7 @@ namespace era_engine
 	void WorldSystemScheduler::update_fixed(float dt)
 	{
 		{
-			std::unique_lock<std::mutex> lock(queue_mutex);
+			std::lock_guard<std::mutex> lock(queue_mutex);
 			for (auto& group_name : UpdatesHolder::update_order)
 			{
 				UpdateGroup* group = find_group(group_name);
@@ -324,9 +324,7 @@ namespace era_engine
 					}
 				}
 			}
-			ObservableStorage::sync_all_changes();
 		}
-		++world->fixed_frame_id;
 
 		fixed_condition.notify_all();
 	}
@@ -354,6 +352,8 @@ namespace era_engine
 
 				item = fixed_task_queue.front();
 				fixed_task_queue.pop();
+
+				++active_fixed_tasks;
 			}
 
 			auto type_name = item.task->system->get_type().get_name().data();
@@ -365,6 +365,12 @@ namespace era_engine
 			CPU_PROFILE_BLOCK(stream.str().c_str());
 
 			item.task->method.invoke(*item.task->system, item.dt);
+
+			{
+				std::lock_guard<std::mutex> lock(queue_mutex);
+				--active_fixed_tasks;
+			}
+			tasks_done_cv.notify_one();
 		}
 	}
 
@@ -381,6 +387,17 @@ namespace era_engine
 			{
 				float fixed_dt = std::chrono::duration<float>(fixed_update_interval).count();
 				update_fixed(fixed_dt);
+
+				{
+					std::unique_lock<std::mutex> lock(queue_mutex);
+					tasks_done_cv.wait(lock, [this] {
+						return active_fixed_tasks == 0 && fixed_task_queue.empty();
+						});
+				}
+
+				ObservableStorage::sync_all_changes(world);
+
+				++world->fixed_frame_id;
 
 				last_fixed_update += std::chrono::duration_cast<decltype(last_fixed_update)::duration>(fixed_update_interval);
 

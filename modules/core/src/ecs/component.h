@@ -33,5 +33,32 @@ namespace era_engine
 
 	protected:
 		ref<Entity::EcsData> component_data = nullptr;
+
+		friend class ComponentDataPtr;
+	};
+
+	class ERA_CORE_API ComponentDataPtr
+	{
+	public:
+		ComponentDataPtr() = default;
+		ComponentDataPtr(const Component* _component);
+
+	private:
+		weakref<Entity::EcsData> component_weak_data;
+	};
+
+	class ERA_CORE_API ComponentPtr
+	{
+	public:
+		ComponentPtr() = default;
+		ComponentPtr(Component* _component);
+
+		const Component* get() const;
+		Component* get_for_write();
+
+		bool is_empty() const;
+
+	private:
+		Component* component = nullptr;
 	};
 }
