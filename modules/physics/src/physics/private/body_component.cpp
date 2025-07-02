@@ -42,35 +42,11 @@ namespace era_engine::physics
 		return actor;
 	}
 
-	uint32_t BodyComponent::get_filter_mask() const
-	{
-		return filter_mask;
-	}
-
-	void BodyComponent::set_filter_mask(uint32_t group, uint32_t mask)
-	{
-		filter_mask = mask;
-		filter_group = group;
-		setup_filter_mask();
-	}
-
 	void BodyComponent::release()
 	{
 		PhysicsHolder::physics_ref->remove_actor(this);
 		PX_RELEASE(actor)
 		Component::release();
-	}
-
-	void BodyComponent::setup_filter_mask()
-	{
-		using namespace physx;
-
-		auto& colliders = PhysicsHolder::physics_ref->colliders_map[component_data->entity_handle];
-
-		for (auto& collider : colliders)
-		{
-			ShapeUtils::setup_filtering(collider->get_shape(), filter_group, filter_mask);
-		}
 	}
 
 	void BodyComponent::detach_shape(physx::PxShape* shape)
@@ -103,6 +79,7 @@ namespace era_engine::physics
 		stabilization_threshold.set_component(ComponentPtr(this));
 		solver_velocity_iterations_count.set_component(ComponentPtr(this));
 		solver_position_iterations_count.set_component(ComponentPtr(this));
+		mass_space_inertia_tensor.set_component(ComponentPtr(this));
 	}
 
 	DynamicBodyComponent::~DynamicBodyComponent()
@@ -114,28 +91,6 @@ namespace era_engine::physics
 		return actor == nullptr ? nullptr : actor->is<physx::PxRigidDynamic>();
 	}
 
-	void DynamicBodyComponent::set_mass_space_inertia_tensor(const vec3& tensor)
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			dyn->setMassSpaceInertiaTensor(create_PxVec3(tensor));
-		}
-	}
-
-	void DynamicBodyComponent::update_mass_and_inertia(float density)
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			PxRigidBodyExt::updateMassAndInertia(*dyn, density);
-		}
-	}
-
 	vec3 DynamicBodyComponent::get_physics_position() const
 	{
 		using namespace physx;
@@ -143,25 +98,6 @@ namespace era_engine::physics
 		PxSceneReadLock lock(*PhysicsHolder::physics_ref->get_scene());
 		PxVec3 pos = actor->getGlobalPose().p;
 		return create_vec3(pos);
-	}
-
-	void DynamicBodyComponent::manual_clear_force_and_torque()
-	{
-		using namespace physx;
-
-		if (auto dyn = actor->is<PxRigidDynamic>())
-		{
-			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-			dyn->clearForce();
-			dyn->clearTorque();
-
-			if (dyn->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
-			{
-				return;
-			}
-			dyn->setAngularVelocity(PxVec3(0.0f));
-			dyn->setLinearVelocity(PxVec3(0.0f));
-		}
 	}
 
 	StaticBodyComponent::StaticBodyComponent(ref<Entity::EcsData> _data)

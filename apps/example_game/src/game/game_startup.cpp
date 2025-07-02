@@ -1,4 +1,5 @@
 #include "game/game_startup.h"
+#include "game/physics/physics_initializer.h"
 
 #include <engine/engine.h>
 
@@ -49,6 +50,9 @@ namespace era_engine
 		game_world->add_tag("base");
 		game_world->add_tag("game");
 		game_world->add_tag("motion_matching");
+
+		PhysicsInitializer physics_initializer = PhysicsInitializer(game_world);
+		physics_initializer.init();
 
 		engine->run(initial_task);
 

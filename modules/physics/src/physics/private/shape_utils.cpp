@@ -1,7 +1,9 @@
 #include "physics/shape_utils.h"
 #include "physics/core/physics.h"
+#include "physics/collisions_holder_root_component.h"
 
 #include "core/log.h"
+#include "core/traits.h"
 
 #include "geometry/mesh.h"
 
@@ -146,24 +148,10 @@ namespace era_engine::physics
 		}
 		catch (...)
 		{
-			//LOG_ERROR("Physics> Failed to create physics triangle mesh");
+			LOG_ERROR("Physics> Failed to create physics triangle mesh");
+			throw;
 		}
 		return nullptr;
-	}
-
-	void ShapeUtils::get_filter_data(physx::PxRigidActor* actor, std::vector<physx::PxFilterData>& out_filter_data)
-	{
-		using namespace physx;
-
-		std::vector<PxShape*> shapes(actor->getNbShapes(), nullptr);
-		out_filter_data.resize(shapes.size());
-
-		actor->getShapes(&shapes[0], shapes.size());
-
-		for (size_t i = 0; i < shapes.size(); ++i)
-		{
-			out_filter_data[i] = shapes[i]->getSimulationFilterData();
-		}
 	}
 
 	bool ShapeUtils::is_trigger(const physx::PxFilterData& data)
@@ -187,28 +175,35 @@ namespace era_engine::physics
 		return true;
 	}
 
-	void ShapeUtils::set_filter_data(physx::PxRigidActor* actor, const std::vector<physx::PxFilterData>& filter_data)
+	void ShapeUtils::setup_filtering(World* world, physx::PxShape* shape, uint32 collision_type, std::optional<uint32> collision_filter_data)
 	{
-		using namespace physx;
-		std::vector<PxShape*> shapes(actor->getNbShapes(), nullptr);
+		// - word0 is collision types mask
+		// - word1 is mask with types to collide with
+		// - word2 is for additional flags
+		// - word3 is for user data
 
-		actor->getShapes(&shapes[0], shapes.size());
-		for (size_t i = 0; i < shapes.size(); ++i)
-		{
-			shapes[i]->setSimulationFilterData(filter_data[i]);
-		}
-	}
+		ASSERT(world != nullptr);
+		ASSERT(shape != nullptr);
 
-	void ShapeUtils::setup_filtering(physx::PxShape* shape, physx::PxU32 filter_group, physx::PxU32 filter_mask)
-	{
 		using namespace physx;
 
-		PxFilterData filter_data;
-		filter_data.word0 = filter_group; // word0 = own ID
-		filter_data.word1 = filter_mask;  // word1 = ID mask to filter pairs that trigger a contact callback
+		const CollisionsHolderRootComponent* collisions_holder_rc = world->get_root_component<CollisionsHolderRootComponent>();
+		ASSERT(collisions_holder_rc != nullptr);
 
-		shape->setSimulationFilterData(filter_data);
-		shape->setQueryFilterData(filter_data);
+		PxFilterData physx_sim_filter_data = shape->getSimulationFilterData();
+		PxFilterData physx_query_filter_data = shape->getQueryFilterData();
+
+		physx_sim_filter_data.word0 = physx_query_filter_data.word0 = collision_type;
+		physx_sim_filter_data.word1 = physx_query_filter_data.word1 = collisions_holder_rc->get_collision_filter(collision_type);
+
+		uint32 additional_flags = (1u << 31);
+		set_flag(additional_flags, FilterData::HAS_FILTER_DATA_FLAG, collision_filter_data.has_value());
+
+		physx_sim_filter_data.word2 = physx_query_filter_data.word2 = additional_flags;
+		physx_sim_filter_data.word3 = physx_query_filter_data.word3 = collision_filter_data.value_or(0);
+
+		shape->setSimulationFilterData(physx_sim_filter_data);
+		shape->setQueryFilterData(physx_query_filter_data);
 	}
 
 	void ShapeUtils::enable_shape_visualization(physx::PxShape* shape, const bool enable)

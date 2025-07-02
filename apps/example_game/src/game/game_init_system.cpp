@@ -1,4 +1,5 @@
 #include "game/game_init_system.h"
+#include "game/physics/gameplay_physics_types.h"
 
 #include <core/ecs/input_reciever_component.h>
 #include <core/ecs/input_sender_component.h>
@@ -151,8 +152,23 @@ namespace era_engine
 			joint_init_ids.hand_r_idx = skeleton->name_to_joint_id.at("hand_r");
 			joint_init_ids.hand_end_r_idx = skeleton->name_to_joint_id.at("middle_01_r");
 
+			RagdollSettings settings;
+			settings.head_end_joint_adjastment = vec3(0.0f, 0.2f, 0.0f);
+			settings.head_joint_adjastment = vec3(0.0f, 0.15f, 0.0f);
+			settings.neck_joint_adjastment = vec3(0.0f, 0.15f, 0.0f);
+			settings.thorax_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
+			settings.abdomen_joint_adjastment = vec3(0.0f, 0.0f, 0.0f);
+			settings.pelvis_joint_adjastment = vec3(0.0f, 0.3f, 0.0f);
+
+			settings.upper_body_height_modifier = 0.3f;
+			settings.upper_body_radius_modifier = 0.6f;
+			settings.lower_body_height_modifier = 0.1f;
+			settings.lower_body_radius_modifier = 3.3f;
+
 			RagdollComponent& ragdoll_component = tiran.add_component<RagdollComponent>();
 			ragdoll_component.joint_init_ids = joint_init_ids;
+			ragdoll_component.settings = settings;
+			ragdoll_component.simulated = true;
 		}
 
 		//if (auto mesh = loadMeshFromFileAsync(get_asset_path("/resources/assets/Sponza/sponza.obj")))
@@ -168,7 +184,7 @@ namespace era_engine
 		//}
 
 		auto plane = world->create_entity("Platform");
-		plane.add_component<physics::PlaneComponent>(vec3(0.f, -5.0, 0.0f));
+		plane.add_component<physics::PlaneComponent>(static_cast<CollisionType>(GameCollisionType::TERRAIN), vec3(0.f, -5.0, 0.0f));
 		plane.add_component<MeshComponent>(groundMesh);
 		plane.get_component<TransformComponent>().transform = trs{ vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)), vec3(5.0f, 1.0f, 5.0f) };
 		

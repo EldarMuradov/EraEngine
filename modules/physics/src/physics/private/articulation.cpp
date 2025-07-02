@@ -50,7 +50,7 @@ namespace era_engine::physics
 		{
 			PxSphereGeometry geometry = PxSphereGeometry(1.0f);
 
-			physx::PxRigidActorExt::createExclusiveShape(*link, geometry, *PhysicsHolder::physics_ref->get_default_material());
+			physx::PxRigidActorExt::createExclusiveShape(*link, geometry, *PhysicsHolder::physics_ref->get_default_material()->get_native_material());
 			physx::PxRigidBodyExt::updateMassAndInertia(*link, 1.0f);
 
 			PxArticulationJointReducedCoordinate* joint = link->getInboundJoint();

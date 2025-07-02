@@ -47,6 +47,15 @@ namespace era_engine::physics
 	{
 		process_added_ragdolls();
 
+		for (auto [entity_handle, changed_flag, ragdoll_limb_component] : world->group(components_group<ObservableMemberChangedFlagComponent, RagdollLimbComponent>).each())
+		{
+			if (ragdoll_limb_component.simulated.is_changed())
+			{
+				Entity limb = world->get_entity(entity_handle);
+				limb.get_component<DynamicBodyComponent>().simulated = ragdoll_limb_component.simulated;
+			}
+		}
+
 		for (auto [entity_handle, changed_flag, ragdoll_component] : world->group(components_group<ObservableMemberChangedFlagComponent, RagdollComponent>).each())
 		{
 			if (ragdoll_component.simulated.is_changed())
@@ -55,7 +64,6 @@ namespace era_engine::physics
 				{
 					Entity limb = limb_ptr.get();
 					limb.get_component<RagdollLimbComponent>().simulated = ragdoll_component.simulated;
-					limb.get_component<DynamicBodyComponent>().simulated = ragdoll_component.simulated;
 				}
 			}
 		}
@@ -67,6 +75,11 @@ namespace era_engine::physics
 
 		for (auto [entity_handle, transform_component, ragdoll_component] : world->group(components_group<TransformComponent, RagdollComponent>).each())
 		{
+			if (!ragdoll_component.simulated)
+			{
+				continue;
+			}
+
 			Entity ragdoll = world->get_entity(entity_handle);
 			SkeletonComponent& skeleton_component = ragdoll.get_component<SkeletonComponent>();
 
@@ -112,7 +125,7 @@ namespace era_engine::physics
 						trs inverse_parent_local = invert(parent_local);
 						inverse_parent_local.rotation = normalize(inverse_parent_local.rotation);
 
-						const trs& limb_animation_pose = SkeletonUtils::get_object_space_joint_transform(skeleton, child_id);
+						const trs limb_animation_pose = SkeletonUtils::get_object_space_joint_transform(skeleton, child_id);
 
 						auto limb_iter = simulated_joints.find(child_id);
 						if (limb_iter == simulated_joints.end())
@@ -125,7 +138,7 @@ namespace era_engine::physics
 							RagdollLimbComponent& ragdoll_limb = limb.get_component<RagdollLimbComponent>();
 							const trs limb_physics_pose = limb.get_component<TransformComponent>().transform;
 
-							const trs& limb_pose = inverse_ragdoll_world_transform * limb_physics_pose;
+							const trs limb_pose = inverse_ragdoll_world_transform * limb_physics_pose;
 
 							trs new_transform = inverse_parent_local * limb_pose;
 
@@ -174,7 +187,6 @@ namespace era_engine::physics
 		{
 			Entity entity = world->get_entity(entity_handle);
 			RagdollBuilderUtils::build_simulated_body(entity);
-			entity.get_component<RagdollComponent>().simulated = true;
 		}
 	}
 

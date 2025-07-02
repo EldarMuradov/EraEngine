@@ -14,5 +14,8 @@ namespace era_engine::physics
 		void process_skeleton_attachments(float dt) const;
 
 		ERA_VIRTUAL_REFLECT(System)
+
+	private:
+		std::vector<Entity::Handle> shapes_to_init; // TODO
 	};
 }

@@ -3,6 +3,8 @@
 #include "physics_api.h"
 
 #include "physics/physx_api.h"
+#include "physics/collision_types.h"
+#include "physics/material.h"
 
 #include <ecs/component.h>
 #include <ecs/observable_member.h>
@@ -40,6 +42,11 @@ namespace era_engine::physics
 
 		ObservableMember<vec3> local_position = vec3::zero;
 		ObservableMember<quat> local_rotation = quat::identity;
+
+		ObservableMember<CollisionType> collision_type = CollisionType::NONE;
+		ObservableMember<std::optional<uint32>> collision_filter_data = std::optional<uint32>{};
+
+		ref<PhysicsMaterial> material = nullptr;
 
 		void sync_with_joint(weakref<Entity::EcsData> _entity_reference, const std::string& _connected_joint_name);
 		void set_attacment_state(bool active);

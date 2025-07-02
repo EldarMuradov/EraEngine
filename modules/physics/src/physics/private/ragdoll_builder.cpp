@@ -60,7 +60,7 @@ namespace era_engine::physics
 		const trs& e1_joint_transform,
 		const trs& e0_local_transform,
 		const trs& e1_local_transform,
-		float twist_min_deg, 
+		float twist_min_deg,
 		float twist_max_deg,
 		float swing_y_deg,
 		float swing_z_deg,
@@ -269,8 +269,6 @@ namespace era_engine::physics
 	{
 		using namespace animation;
 
-		// TODO: move out constants and offsets.
-
 		RagdollComponent& ragdoll_component = ragdoll.get_component<RagdollComponent>();
 		const RagdollSettings& settings = ragdoll_component.settings;
 		const RagdollJointIds& joint_init_ids = ragdoll_component.joint_init_ids;
@@ -284,41 +282,38 @@ namespace era_engine::physics
 			return;
 		}
 
-		trs ragdoll_world_transform = ragdoll.get_component<TransformComponent>().transform;
+		const trs& ragdoll_world_transform = ragdoll.get_component<TransformComponent>().transform;
 
-		ConstraintDetails head_constraint;
-		ConstraintDetails neck_constraint;
-
-		ConstraintDetails body_upper_constraint;
-		ConstraintDetails body_middle_constraint;
-
-		ConstraintDetails arm_constraint;
-		ConstraintDetails forearm_constraint;
-		ConstraintDetails hand_constraint;
-
-		ConstraintDetails leg_constraint;
-		ConstraintDetails calf_constraint;
-		ConstraintDetails foot_constraint;
+		const ConstraintDetails& head_constraint = settings.head_constraint;;
+		const ConstraintDetails& neck_constraint = settings.neck_constraint;
+		const ConstraintDetails& body_upper_constraint = settings.body_upper_constraint;
+		const ConstraintDetails& body_middle_constraint = settings.body_middle_constraint;
+		const ConstraintDetails& arm_constraint = settings.arm_constraint;
+		const ConstraintDetails& forearm_constraint = settings.forearm_constraint;
+		const ConstraintDetails& hand_constraint = settings.hand_constraint;
+		const ConstraintDetails& leg_constraint = settings.leg_constraint;
+		const ConstraintDetails& calf_constraint = settings.calf_constraint;
+		const ConstraintDetails& foot_constraint = settings.foot_constraint;
 
 		const float mass = ragdoll_component.mass;
 
 		trs neck_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.neck_idx);
-		neck_joint_transform.position = neck_joint_transform.position + vec3(0.0f, 0.15f, 0.0f);
+		neck_joint_transform.position = neck_joint_transform.position + settings.neck_joint_adjastment;
 
 		trs head_end_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.head_end_idx);
-		head_end_joint_transform.position = head_end_joint_transform.position + vec3(0.0f, 0.15f, 0.0f);
+		head_end_joint_transform.position = head_end_joint_transform.position + settings.head_joint_adjastment;
 
 		trs head_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.head_idx);
-		head_joint_transform.position = head_joint_transform.position + vec3(0.0f, 0.15f, 0.0f);
+		head_joint_transform.position = head_joint_transform.position + settings.head_joint_adjastment;
 
 		trs thorax_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.spine_03_idx);
-		thorax_joint_transform.position = thorax_joint_transform.position + vec3(0.0f, 0.05f, 0.0f);
+		thorax_joint_transform.position = thorax_joint_transform.position + settings.thorax_joint_adjastment;
 
 		trs abdomen_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.spine_01_idx);
-		abdomen_joint_transform.position = abdomen_joint_transform.position + vec3(0.0f, 0.0f, 0.0f);
+		abdomen_joint_transform.position = abdomen_joint_transform.position + settings.abdomen_joint_adjastment;
 
 		trs pelvis_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.pelvis_idx);
-		pelvis_joint_transform.position = pelvis_joint_transform.position + vec3(0.0f, 0.3f, 0.0f);
+		pelvis_joint_transform.position = pelvis_joint_transform.position + settings.pelvis_joint_adjastment;
 
 		const trs left_arm_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.upperarm_l_idx);
 		const trs left_forearm_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.lowerarm_l_idx);
@@ -352,6 +347,9 @@ namespace era_engine::physics
 		const float distance_between_foot_and_foot_end = length(left_foot_joint_transform.position - left_foot_end_joint_transform.position);
 		const float distance_between_foot_y_and_foot_end_y = abs(left_foot_joint_transform.position.y - left_foot_end_joint_transform.position.y);
 
+		ref<PhysicsMaterial> material = PhysicsHolder::physics_ref->create_material(0.1f, 0.8f, 0.8f);
+		ASSERT(material != nullptr);
+
 		Entity head;
 		trs head_capsule_bottom_transform;
 
@@ -367,8 +365,8 @@ namespace era_engine::physics
 		Entity left_forearm;
 		trs left_forearm_capsule_bottom_transform;
 
-		//Entity left_hand;
-		//trs left_hand_box_bottom_transform;
+		Entity left_hand;
+		trs left_hand_box_bottom_transform;
 
 		Entity right_arm;
 		trs right_arm_capsule_bottom_transform;
@@ -376,8 +374,8 @@ namespace era_engine::physics
 		Entity right_forearm;
 		trs right_forearm_capsule_bottom_transform;
 
-		//Entity right_hand;
-		//trs right_hand_box_bottom_transform;
+		Entity right_hand;
+		trs right_hand_box_bottom_transform;
 
 		Entity left_up_leg;
 		trs left_up_leg_capsule_bottom_transform;
@@ -385,8 +383,8 @@ namespace era_engine::physics
 		Entity left_leg;
 		trs left_leg_capsule_bottom_transform;
 
-		//Entity left_foot;
-		//trs left_foot_box_bottom_transform;
+		Entity left_foot;
+		trs left_foot_box_bottom_transform;
 
 		Entity right_up_leg;
 		trs right_up_leg_capsule_bottom_transform;
@@ -394,8 +392,8 @@ namespace era_engine::physics
 		Entity right_leg;
 		trs right_leg_capsule_bottom_transform;
 
-		//Entity right_foot;
-		//trs right_foot_box_bottom_transform;
+		Entity right_foot;
+		trs right_foot_box_bottom_transform;
 
 		// Head
 		{
@@ -404,9 +402,11 @@ namespace era_engine::physics
 			TransformComponent& transform_component = head.get_component<TransformComponent>();
 			transform_component.set_world_transform(ragdoll_world_transform * neck_joint_transform);
 
-			trs head_end_transform = trs(head_joint_transform.position + 0.2f * vec3(0.0f, 1.0f, 0.0f), head_joint_transform.rotation, head_joint_transform.scale);
+			trs head_end_transform = trs(head_joint_transform.position + settings.head_end_joint_adjastment, head_joint_transform.rotation, head_joint_transform.scale);
 
 			CapsuleShapeComponent& capsule_shape_component = head.add_component<CapsuleShapeComponent>();
+			capsule_shape_component.collision_type = CollisionType::RAGDOLL;
+			capsule_shape_component.material = material;
 
 			head_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
@@ -427,13 +427,16 @@ namespace era_engine::physics
 			transform_component.set_world_transform(ragdoll_world_transform * thorax_joint_transform);
 
 			CapsuleShapeComponent& capsule_shape_component = body_upper.add_component<CapsuleShapeComponent>();
+			capsule_shape_component.collision_type = CollisionType::RAGDOLL;
+			capsule_shape_component.material = material;
+
 			body_upper_capsule_bottom_transform = position_capsule_between_joints_from_height(
 				capsule_shape_component,
-				distance_between_arms * 0.3f,
+				distance_between_arms * settings.upper_body_height_modifier,
 				middle_abdomen_thorax_transform,
 				neck_joint_transform,
 				thorax_joint_transform,
-				0.6f);
+				settings.upper_body_radius_modifier);
 
 			create_dynamic_body(body_upper, mass * settings.body_upper_mass_percentage, settings.max_body_contact_impulse, 3.0f);
 		}
@@ -446,13 +449,16 @@ namespace era_engine::physics
 			transform_component.set_world_transform(ragdoll_world_transform * pelvis_joint_transform);
 
 			CapsuleShapeComponent& capsule_shape_component = body_lower.add_component<CapsuleShapeComponent>();
+			capsule_shape_component.collision_type = CollisionType::RAGDOLL;
+			capsule_shape_component.material = material;
+
 			lower_default_transform = position_capsule_between_joints_from_height(
 				capsule_shape_component,
-				distance_between_arms * 0.1f,
+				distance_between_arms * settings.lower_body_height_modifier,
 				pelvis_joint_transform,
 				middle_abdomen_thorax_transform,
 				pelvis_joint_transform,
-				3.3f);
+				settings.lower_body_radius_modifier);
 
 			create_dynamic_body(body_lower, mass * settings.body_lower_mass_percentage, settings.max_body_contact_impulse, 3.0f);
 		}
@@ -465,6 +471,9 @@ namespace era_engine::physics
 			transform_component.set_world_transform(ragdoll_world_transform * left_arm_joint_transform);
 
 			CapsuleShapeComponent& capsule_shape_component = left_arm.add_component<CapsuleShapeComponent>();
+			capsule_shape_component.collision_type = CollisionType::RAGDOLL;
+			capsule_shape_component.material = material;
+
 			left_arm_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
 				settings.arm_radius,
@@ -484,6 +493,9 @@ namespace era_engine::physics
 			transform_component.set_world_transform(ragdoll_world_transform * left_forearm_joint_transform);
 
 			CapsuleShapeComponent& capsule_shape_component = left_forearm.add_component<CapsuleShapeComponent>();
+			capsule_shape_component.collision_type = CollisionType::RAGDOLL;
+			capsule_shape_component.material = material;
+
 			left_forearm_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
 				settings.forearm_radius,
@@ -495,24 +507,26 @@ namespace era_engine::physics
 			create_dynamic_body(left_forearm, mass * settings.forearm_mass_percentage, settings.max_forearm_contact_impulse);
 		}
 
-		//// Left hand
-		//{
-		//	left_hand = create_child_entity(ragdoll, "l_hand", joint_init_ids.hand_l_idx);
+		// Left hand
+		{
+			left_hand = create_child_entity(ragdoll, "l_hand", joint_init_ids.hand_l_idx);
 
-		//	TransformComponent& transform_component = left_hand.get_component<TransformComponent>();
-		//	transform_component.set_world_transform(ragdoll_world_transform * left_hand_joint_transform);
+			TransformComponent& transform_component = left_hand.get_component<TransformComponent>();
+			transform_component.set_world_transform(ragdoll_world_transform * left_hand_joint_transform);
 
-		//	// Hands don't collide with any other geometries. It's important to prevent stabilization artefacts.
-		//	BoxShapeComponent& box_shape_component = left_hand.add_component<BoxShapeComponent>();
-		//	left_hand_box_bottom_transform = position_box_between_joints(
-		//		box_shape_component,
-		//		vec3(distance_between_hand_and_hand_end, settings.hand_height, settings.hand_width),
-		//		left_hand_joint_transform,
-		//		left_hand_end_joint_transform,
-		//		left_hand_joint_transform);
+			BoxShapeComponent& box_shape_component = left_hand.add_component<BoxShapeComponent>();
+			box_shape_component.collision_type = CollisionType::NONE;
+			box_shape_component.material = material;
 
-		//	create_dynamic_body(left_hand, mass * settings.hand_mass_percentage, settings.max_hand_contact_impulse);
-		//}
+			left_hand_box_bottom_transform = position_box_between_joints(
+				box_shape_component,
+				vec3(distance_between_hand_and_hand_end, settings.hand_height, settings.hand_width),
+				left_hand_joint_transform,
+				left_hand_end_joint_transform,
+				left_hand_joint_transform);
+
+			create_dynamic_body(left_hand, mass * settings.hand_mass_percentage, settings.max_hand_contact_impulse);
+		}
 
 		// Right arm
 		{
@@ -522,6 +536,9 @@ namespace era_engine::physics
 			transform_component.set_world_transform(ragdoll_world_transform * right_arm_joint_transform);
 
 			CapsuleShapeComponent& capsule_shape_component = right_arm.add_component<CapsuleShapeComponent>();
+			capsule_shape_component.collision_type = CollisionType::RAGDOLL;
+			capsule_shape_component.material = material;
+
 			right_arm_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
 				settings.arm_radius,
@@ -541,6 +558,9 @@ namespace era_engine::physics
 			transform_component.set_world_transform(ragdoll_world_transform * right_forearm_joint_transform);
 
 			CapsuleShapeComponent& capsule_shape_component = right_forearm.add_component<CapsuleShapeComponent>();
+			capsule_shape_component.collision_type = CollisionType::RAGDOLL;
+			capsule_shape_component.material = material;
+
 			right_forearm_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
 				settings.forearm_radius,
@@ -552,24 +572,26 @@ namespace era_engine::physics
 			create_dynamic_body(right_forearm, mass * settings.forearm_mass_percentage, settings.max_forearm_contact_impulse);
 		}
 
-		//// Right hand
-		//{
-		//	right_hand = create_child_entity(ragdoll, "r_hand", joint_init_ids.hand_r_idx);
+		// Right hand
+		{
+			right_hand = create_child_entity(ragdoll, "r_hand", joint_init_ids.hand_r_idx);
 
-		//	TransformComponent& transform_component = right_hand.get_component<TransformComponent>();
-		//	transform_component.set_world_transform(ragdoll_world_transform * right_hand_joint_transform);
+			TransformComponent& transform_component = right_hand.get_component<TransformComponent>();
+			transform_component.set_world_transform(ragdoll_world_transform * right_hand_joint_transform);
 
-		//	// Hands don't collide with any other geometries. It's important to prevent stabilization artefacts.
-		//	BoxShapeComponent& box_shape_component = right_hand.add_component<BoxShapeComponent>();
-		//	right_hand_box_bottom_transform = position_box_between_joints(
-		//		box_shape_component,
-		//		vec3(distance_between_hand_and_hand_end, settings.hand_height, settings.hand_width),
-		//		right_hand_joint_transform,
-		//		right_hand_end_joint_transform,
-		//		right_hand_joint_transform);
+			BoxShapeComponent& box_shape_component = right_hand.add_component<BoxShapeComponent>();
+			box_shape_component.collision_type = CollisionType::NONE;
+			box_shape_component.material = material;
 
-		//	create_dynamic_body(right_hand, mass * settings.hand_mass_percentage, settings.max_hand_contact_impulse);
-		//}
+			right_hand_box_bottom_transform = position_box_between_joints(
+				box_shape_component,
+				vec3(distance_between_hand_and_hand_end, settings.hand_height, settings.hand_width),
+				right_hand_joint_transform,
+				right_hand_end_joint_transform,
+				right_hand_joint_transform);
+
+			create_dynamic_body(right_hand, mass * settings.hand_mass_percentage, settings.max_hand_contact_impulse);
+		}
 
 		// Left up leg
 		{
@@ -579,6 +601,9 @@ namespace era_engine::physics
 			transform_component.set_world_transform(ragdoll_world_transform * left_up_leg_joint_transform);
 
 			CapsuleShapeComponent& capsule_shape_component = left_up_leg.add_component<CapsuleShapeComponent>();
+			capsule_shape_component.collision_type = CollisionType::RAGDOLL;
+			capsule_shape_component.material = material;
+
 			left_up_leg_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
 				settings.up_leg_radius,
@@ -598,6 +623,9 @@ namespace era_engine::physics
 			transform_component.set_world_transform(ragdoll_world_transform * left_leg_joint_transform);
 
 			CapsuleShapeComponent& capsule_shape_component = left_leg.add_component<CapsuleShapeComponent>();
+			capsule_shape_component.collision_type = CollisionType::RAGDOLL;
+			capsule_shape_component.material = material;
+
 			left_leg_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
 				settings.leg_radius,
@@ -609,27 +637,30 @@ namespace era_engine::physics
 			create_dynamic_body(left_leg, mass * settings.leg_mass_percentage, settings.max_leg_contact_impulse);
 		}
 
-		//// Left foot
-		//{
-		//	const vec3 foot_end_same_y(left_foot_end_joint_transform.position.x, left_foot_joint_transform.position.y, left_foot_end_joint_transform.position.z);
-		//	const vec3 foot_to_foot_end_offset = foot_end_same_y - left_foot_joint_transform.position;
-		//	const vec3 center = left_foot_joint_transform.position + foot_to_foot_end_offset / 2.0f - vec3(0.0f, distance_between_foot_y_and_foot_end_y / 2.0f, 0.0f);
+		// Left foot
+		{
+			const vec3 foot_end_same_y(left_foot_end_joint_transform.position.x, left_foot_joint_transform.position.y, left_foot_end_joint_transform.position.z);
+			const vec3 foot_to_foot_end_offset = foot_end_same_y - left_foot_joint_transform.position;
+			const vec3 center = left_foot_joint_transform.position + foot_to_foot_end_offset / 2.0f - vec3(0.0f, distance_between_foot_y_and_foot_end_y / 2.0f, 0.0f);
 
-		//	left_foot = create_child_entity(ragdoll, "l_foot", joint_init_ids.foot_l_idx);
+			left_foot = create_child_entity(ragdoll, "l_foot", joint_init_ids.foot_l_idx);
 
-		//	TransformComponent& transform_component = left_foot.get_component<TransformComponent>();
-		//	transform_component.set_world_transform(ragdoll_world_transform * left_foot_joint_transform);
+			TransformComponent& transform_component = left_foot.get_component<TransformComponent>();
+			transform_component.set_world_transform(ragdoll_world_transform * left_foot_joint_transform);
 
-		//	BoxShapeComponent& box_shape_component = left_foot.add_component<BoxShapeComponent>();
-		//	left_foot_box_bottom_transform = position_box_between_joints(
-		//		box_shape_component,
-		//		vec3(distance_between_foot_and_foot_end, distance_between_foot_y_and_foot_end_y * 2.0f, settings.foot_width),
-		//		trs(center - foot_to_foot_end_offset / 2.0f, left_foot_joint_transform.rotation, left_foot_joint_transform.scale),
-		//		trs(center + foot_to_foot_end_offset / 2.0f, left_foot_joint_transform.rotation, left_foot_joint_transform.scale),
-		//		left_foot_joint_transform);
+			BoxShapeComponent& box_shape_component = left_foot.add_component<BoxShapeComponent>();
+			box_shape_component.collision_type = CollisionType::NONE;
+			box_shape_component.material = material;
 
-		//	create_dynamic_body(left_foot, mass * settings.foot_mass_percentage, settings.max_foot_contact_impulse);
-		//}
+			left_foot_box_bottom_transform = position_box_between_joints(
+				box_shape_component,
+				vec3(distance_between_foot_and_foot_end, distance_between_foot_y_and_foot_end_y * 2.0f, settings.foot_width),
+				trs(center - foot_to_foot_end_offset / 2.0f, left_foot_joint_transform.rotation, left_foot_joint_transform.scale),
+				trs(center + foot_to_foot_end_offset / 2.0f, left_foot_joint_transform.rotation, left_foot_joint_transform.scale),
+				left_foot_joint_transform);
+
+			create_dynamic_body(left_foot, mass * settings.foot_mass_percentage, settings.max_foot_contact_impulse);
+		}
 
 		// Right up leg
 		{
@@ -639,6 +670,9 @@ namespace era_engine::physics
 			transform_component.set_world_transform(ragdoll_world_transform * right_up_leg_joint_transform);
 
 			CapsuleShapeComponent& capsule_shape_component = right_up_leg.add_component<CapsuleShapeComponent>();
+			capsule_shape_component.collision_type = CollisionType::RAGDOLL;
+			capsule_shape_component.material = material;
+
 			right_up_leg_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
 				settings.up_leg_radius,
@@ -658,6 +692,9 @@ namespace era_engine::physics
 			transform_component.set_world_transform(ragdoll_world_transform * right_leg_joint_transform);
 
 			CapsuleShapeComponent& capsule_shape_component = right_leg.add_component<CapsuleShapeComponent>();
+			capsule_shape_component.collision_type = CollisionType::RAGDOLL;
+			capsule_shape_component.material = material;
+
 			right_leg_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
 				settings.leg_radius,
@@ -669,27 +706,30 @@ namespace era_engine::physics
 			create_dynamic_body(right_leg, mass * settings.leg_mass_percentage, settings.max_leg_contact_impulse);
 		}
 
-		//// Right foot
-		//{
-		//	const vec3 foot_end_same_y(right_foot_end_joint_transform.position.x, right_foot_joint_transform.position.y, right_foot_end_joint_transform.position.z);
-		//	const vec3 foot_to_foot_end_offset = foot_end_same_y - right_foot_joint_transform.position;
-		//	const vec3 center = right_foot_joint_transform.position + foot_to_foot_end_offset / 2.0f - vec3(0.0f, distance_between_foot_y_and_foot_end_y / 2.0f, 0.0f);
+		// Right foot
+		{
+			const vec3 foot_end_same_y(right_foot_end_joint_transform.position.x, right_foot_joint_transform.position.y, right_foot_end_joint_transform.position.z);
+			const vec3 foot_to_foot_end_offset = foot_end_same_y - right_foot_joint_transform.position;
+			const vec3 center = right_foot_joint_transform.position + foot_to_foot_end_offset / 2.0f - vec3(0.0f, distance_between_foot_y_and_foot_end_y / 2.0f, 0.0f);
 
-		//	right_foot = create_child_entity(ragdoll, "r_foot", joint_init_ids.foot_r_idx);
+			right_foot = create_child_entity(ragdoll, "r_foot", joint_init_ids.foot_r_idx);
 
-		//	TransformComponent& transform_component = right_foot.get_component<TransformComponent>();
-		//	transform_component.set_world_transform(ragdoll_world_transform * right_foot_joint_transform);
+			TransformComponent& transform_component = right_foot.get_component<TransformComponent>();
+			transform_component.set_world_transform(ragdoll_world_transform * right_foot_joint_transform);
 
-		//	BoxShapeComponent& box_shape_component = right_foot.add_component<BoxShapeComponent>();
-		//	right_foot_box_bottom_transform = position_box_between_joints(
-		//		box_shape_component,
-		//		vec3(distance_between_foot_and_foot_end, distance_between_foot_y_and_foot_end_y * 2.0f, settings.foot_width),
-		//		trs(center - foot_to_foot_end_offset / 2.0f, right_foot_joint_transform.rotation, right_foot_joint_transform.scale),
-		//		trs(center + foot_to_foot_end_offset / 2.0f, right_foot_joint_transform.rotation, right_foot_joint_transform.scale),
-		//		right_foot_joint_transform);
+			BoxShapeComponent& box_shape_component = right_foot.add_component<BoxShapeComponent>();
+			box_shape_component.collision_type = CollisionType::RAGDOLL;
+			box_shape_component.material = material;
 
-		//	create_dynamic_body(right_foot, mass * settings.foot_mass_percentage, settings.max_foot_contact_impulse);
-		//}
+			right_foot_box_bottom_transform = position_box_between_joints(
+				box_shape_component,
+				vec3(distance_between_foot_and_foot_end, distance_between_foot_y_and_foot_end_y * 2.0f, settings.foot_width),
+				trs(center - foot_to_foot_end_offset / 2.0f, right_foot_joint_transform.rotation, right_foot_joint_transform.scale),
+				trs(center + foot_to_foot_end_offset / 2.0f, right_foot_joint_transform.rotation, right_foot_joint_transform.scale),
+				right_foot_joint_transform);
+
+			create_dynamic_body(right_foot, mass * settings.foot_mass_percentage, settings.max_foot_contact_impulse);
+		}
 
 		// Neck -> head
 		create_d6_joint(
@@ -764,19 +804,19 @@ namespace era_engine::physics
 			left_forearm_joint_transform,
 			-10.0f, 10.0f,
 			forearm_d6_swing_y_deg,
-			1.0f);
+			20.0f);
 
-		//// Left forearm -> left hand
-		//create_d6_joint(
-		//	ragdoll, hand_constraint,
-		//	left_forearm, left_hand,
-		//	left_hand_box_bottom_transform,
-		//	left_hand_box_bottom_transform,
-		//	left_forearm_joint_transform,
-		//	left_hand_joint_transform,
-		//	-8.0f, 8.0f,
-		//	22.0f,
-		//	40.0f);
+		// Left forearm -> left hand
+		create_d6_joint(
+			ragdoll, hand_constraint,
+			left_forearm, left_hand,
+			left_hand_box_bottom_transform,
+			left_hand_box_bottom_transform,
+			left_forearm_joint_transform,
+			left_hand_joint_transform,
+			-8.0f, 8.0f,
+			22.0f,
+			40.0f);
 
 		// Thorax -> right arm
 		const vec3 right_arm_capsule_y_axis = right_arm_capsule_bottom_transform.rotation * vec3(0.0f, 1.0f, 0.0f);
@@ -812,19 +852,19 @@ namespace era_engine::physics
 			right_forearm_joint_transform,
 			-10.0f, 10.0f,
 			forearm_d6_swing_y_deg,
-			1.0f);
+			20.0f);
 
-		//// Right forearm -> right hand
-		//create_d6_joint(
-		//	ragdoll, hand_constraint,
-		//	right_forearm, right_hand,
-		//	right_hand_box_bottom_transform,
-		//	right_hand_box_bottom_transform,
-		//	right_forearm_joint_transform,
-		//	right_hand_joint_transform,
-		//	-8.0f, 8.0f,
-		//	22.0f,
-		//	40.0f);
+		// Right forearm -> right hand
+		create_d6_joint(
+			ragdoll, hand_constraint,
+			right_forearm, right_hand,
+			right_hand_box_bottom_transform,
+			right_hand_box_bottom_transform,
+			right_forearm_joint_transform,
+			right_hand_joint_transform,
+			-8.0f, 8.0f,
+			22.0f,
+			40.0f);
 
 		// Pelvis -> left up leg
 		const float up_leg_back_angle_deg = 22.5f; // How far up leg can be rotated around y axis in backwards direction
@@ -842,8 +882,8 @@ namespace era_engine::physics
 			left_up_leg_capsule_bottom_transform,
 			pelvis_joint_transform,
 			left_up_leg_joint_transform,
-			1.0f, 1.0f,
-			120.0f,
+			-20.0f, 20.0f,
+			up_leg_d6_swing_y_deg,
 			35.0f);
 
 		// Left up leg -> left leg
@@ -861,20 +901,20 @@ namespace era_engine::physics
 			left_up_leg_joint_transform,
 			left_leg_joint_transform,
 			-10.0f, 10.0f,
-			1.0f,
-			leg_d6_swing_y_deg);
+			leg_d6_swing_y_deg,
+			5.0f);
 
-		//// Left leg -> left foot
-		//create_d6_joint(
-		//	ragdoll, foot_constraint,
-		//	left_leg, left_foot,
-		//	left_foot_box_bottom_transform,
-		//	left_foot_box_bottom_transform,
-		//	left_leg_joint_transform,
-		//	left_foot_joint_transform,
-		//	-17.0f, 17.0f,
-		//	35.0f,
-		//	22.5f);
+		// Left leg -> left foot
+		create_d6_joint(
+			ragdoll, foot_constraint,
+			left_leg, left_foot,
+			left_foot_box_bottom_transform,
+			left_foot_box_bottom_transform,
+			left_leg_joint_transform,
+			left_foot_joint_transform,
+			-17.0f, 17.0f,
+			35.0f,
+			22.5f);
 
 		// Pelvis -> right up leg
 		const vec3 right_up_leg_capsule_y_axis = right_up_leg_capsule_bottom_transform.rotation * vec3(0.0f, 1.0f, 0.0f);
@@ -889,8 +929,8 @@ namespace era_engine::physics
 			right_up_leg_capsule_bottom_transform,
 			pelvis_joint_transform,
 			right_up_leg_joint_transform,
-			1.0f, 1.0f,
-			120.0f,
+			-20.0f, 20.0f,
+			up_leg_d6_swing_y_deg,
 			35.0f);
 
 		// Right up leg -> right leg
@@ -907,20 +947,20 @@ namespace era_engine::physics
 			right_up_leg_joint_transform,
 			right_leg_joint_transform,
 			-10.0f, 10.0f,
-			1.0f,
-			leg_d6_swing_y_deg);
+			leg_d6_swing_y_deg,
+			5.0f);
 
-		//// Right leg -> right foot
-		//create_d6_joint(
-		//	ragdoll, foot_constraint,
-		//	right_leg, right_foot,
-		//	right_foot_box_bottom_transform,
-		//	right_foot_box_bottom_transform,
-		//	right_leg_joint_transform,
-		//	right_foot_joint_transform,
-		//	-17.0f, 17.0f,
-		//	35.0f,
-		//	22.5f);
+		// Right leg -> right foot
+		create_d6_joint(
+			ragdoll, foot_constraint,
+			right_leg, right_foot,
+			right_foot_box_bottom_transform,
+			right_foot_box_bottom_transform,
+			right_leg_joint_transform,
+			right_foot_joint_transform,
+			-17.0f, 17.0f,
+			35.0f,
+			22.5f);
 	}
 
 }

@@ -65,23 +65,16 @@ namespace era_engine::physics
 
 		physx::PxRigidActor* get_rigid_actor() const;
 
-		uint32_t get_filter_mask() const;
-		void set_filter_mask(uint32_t group, uint32_t mask);
-
 		virtual void release() override;
 
 		ERA_VIRTUAL_REFLECT(Component)
 
 	private:
-		void setup_filter_mask();
 		void detach_shape(physx::PxShape* shape);
 
 	protected:
 		physx::PxRigidActor* actor = nullptr;
 		physx::PxMaterial* material = nullptr;
-
-		ObservableMember<uint32> filter_group = -1;
-		ObservableMember<uint32> filter_mask = -1;
 
 		friend class ShapeComponent;
 		friend class PhysicsSystem;
@@ -99,16 +92,9 @@ namespace era_engine::physics
 
 		physx::PxRigidDynamic* get_rigid_dynamic() const;
 
-		void set_mass_space_inertia_tensor(const vec3& tensor);
-
-		void update_mass_and_inertia(float density);
-
 		vec3 get_physics_position() const;
 
 		ERA_VIRTUAL_REFLECT(BodyComponent)
-
-	private:
-		void manual_clear_force_and_torque();
 
 	public:
 		ObservableMember<bool> use_gravity = true;
@@ -117,7 +103,7 @@ namespace era_engine::physics
 
 		ObservableMember<bool> simulated = false;
 
-		ObservableMember<uint8_t> constraints = 0;
+		ObservableMember<uint8> constraints = 0;
 
 		ObservableMember<float> mass = 1.0f;
 
@@ -139,6 +125,8 @@ namespace era_engine::physics
 		ObservableMember<vec3> angular_velocity = vec3::zero;
 
 		ObservableMember<vec3> center_of_mass = vec3::zero;
+
+		ObservableMember<vec3> mass_space_inertia_tensor = vec3::zero;
 
 		std::vector<Force> forces;
 		std::vector<Torque> torques;

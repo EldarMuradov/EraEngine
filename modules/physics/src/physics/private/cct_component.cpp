@@ -74,7 +74,7 @@ namespace era_engine::physics
 		PxBoxControllerDesc desc;
 
 		desc.halfHeight = half_height;
-		desc.material = PhysicsHolder::physics_ref->get_default_material();
+		desc.material = PhysicsHolder::physics_ref->get_default_material()->get_native_material();
 		desc.maxJumpHeight = half_height;
 		desc.halfSideExtent = half_side_extent;
 		desc.slopeLimit = cosf(deg2rad(45.0f));
@@ -108,7 +108,7 @@ namespace era_engine::physics
 
 		PxCapsuleControllerDesc desc;
 		desc.height = height;
-		desc.material = PhysicsHolder::physics_ref->get_default_material();
+		desc.material = PhysicsHolder::physics_ref->get_default_material()->get_native_material();
 		desc.maxJumpHeight = height * 0.5f;
 		desc.radius = radius;
 		desc.slopeLimit = cosf(deg2rad(45.0f));

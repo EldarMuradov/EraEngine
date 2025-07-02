@@ -69,12 +69,6 @@ namespace era_engine::physics
 				continue;
 			}
 
-			if (dynamic_body.filter_group.is_changed() ||
-				dynamic_body.filter_mask.is_changed())
-			{
-				dynamic_body.setup_filter_mask();
-			}
-
 			if (dynamic_body.use_gravity.is_changed())
 			{
 				body->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, !dynamic_body.use_gravity);
@@ -123,9 +117,6 @@ namespace era_engine::physics
 
 			if (dynamic_body.kinematic.is_changed())
 			{
-				body->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, !dynamic_body.kinematic);
-				body->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, !dynamic_body.kinematic);
-				body->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD_FRICTION, !dynamic_body.kinematic);
 				body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, dynamic_body.kinematic);
 			}
 
@@ -149,6 +140,11 @@ namespace era_engine::physics
 				body->setAngularVelocity(create_PxVec3(dynamic_body.angular_velocity));
 			}
 
+			if (dynamic_body.mass_space_inertia_tensor.is_changed())
+			{
+				body->setMassSpaceInertiaTensor(create_PxVec3(dynamic_body.mass_space_inertia_tensor));
+			}
+
 			if (dynamic_body.simulated.is_changed())
 			{
 				body->setActorFlag(PxActorFlag::eDISABLE_SIMULATION, !dynamic_body.simulated);
@@ -161,7 +157,7 @@ namespace era_engine::physics
 
 			if (dynamic_body.mass.is_changed() || dynamic_body.center_of_mass.is_changed())
 			{
-				PxVec3 center_of_mass = create_PxVec3(dynamic_body.center_of_mass);
+				const PxVec3 center_of_mass = create_PxVec3(dynamic_body.center_of_mass);
 
 				PxRigidBodyExt::setMassAndUpdateInertia(
 					*body,
@@ -170,20 +166,6 @@ namespace era_engine::physics
 					false);
 
 				dynamic_body.center_of_mass.get_silent_for_write() = create_vec3(body->getCMassLocalPose().p);
-			}
-		}
-
-		for (auto [entity_handle, transform, static_body] : world->group(components_group<ObservableMemberChangedFlagComponent, StaticBodyComponent>).each())
-		{
-			if (static_body.get_rigid_actor() == nullptr)
-			{
-				continue;
-			}
-
-			if (static_body.filter_group.is_changed() ||
-				static_body.filter_mask.is_changed())
-			{
-				static_body.setup_filter_mask();
 			}
 		}
 
@@ -306,6 +288,7 @@ namespace era_engine::physics
 
 			TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
 			transform->type = TransformComponent::DYNAMIC;
+
 			const vec3& pos = transform->transform.position;
 			PxVec3 pospx = create_PxVec3(pos);
 
@@ -316,37 +299,22 @@ namespace era_engine::physics
 
 			dynamic_body_component.actor = PhysicsUtils::create_rigid_dynamic(PxTransform(pospx, rotpx), user_data);
 
-			for (ShapeComponent* coll : colliders)
+			for (ShapeComponent* shape_component : colliders)
 			{
-				PxShape* shape = coll->create_shape();
+				PxShape* shape = shape_component->create_shape();
 				shape->userData = user_data;
 
 				dynamic_body_component.actor->attachShape(*shape);
+
+				ShapeUtils::setup_filtering(world, shape, static_cast<uint32>(shape_component->collision_type.get()), shape_component->collision_filter_data);
 			}
 
 			physics_ref->add_actor(&dynamic_body_component, dynamic_body_component.actor);
 
 			{
-				dynamic_body_component.setup_filter_mask();
-
 				PxRigidDynamic* dynamic_body = dynamic_body_component.get_rigid_dynamic();
 
-				dynamic_body->setLinearDamping(dynamic_body_component.linear_damping);
-				dynamic_body->setAngularDamping(dynamic_body_component.angular_damping);
-
-				if (dynamic_body_component.constraints != 0)
-				{
-					dynamic_body->setRigidDynamicLockFlags(static_cast<PxRigidDynamicLockFlags>(dynamic_body_component.constraints));
-				}
-
-				dynamic_body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, dynamic_body_component.kinematic);
-				dynamic_body->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, dynamic_body_component.ccd);
-
-				dynamic_body->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, !dynamic_body_component.use_gravity);
-
-				dynamic_body->setActorFlag(PxActorFlag::eDISABLE_SIMULATION, !dynamic_body_component.simulated);
-
-				PxVec3 center_of_mass = create_PxVec3(dynamic_body_component.center_of_mass);
+				const PxVec3 center_of_mass = create_PxVec3(dynamic_body_component.center_of_mass);
 
 				PxRigidBodyExt::setMassAndUpdateInertia(
 					*dynamic_body,
@@ -354,7 +322,7 @@ namespace era_engine::physics
 					&center_of_mass,
 					false);
 
-				dynamic_body_component.center_of_mass = create_vec3(dynamic_body->getCMassLocalPose().p);
+				dynamic_body_component.center_of_mass.get_silent_for_write() = create_vec3(dynamic_body->getCMassLocalPose().p);
 			}
 		}
 
@@ -373,7 +341,7 @@ namespace era_engine::physics
 				colliders.push_back(&shape_component);
 			}
 
-			TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
+			const TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
 
 			const vec3& pos = transform->transform.position;
 			PxVec3 pospx = create_PxVec3(pos);
@@ -385,19 +353,17 @@ namespace era_engine::physics
 
 			static_body_component.actor = PhysicsUtils::create_rigid_static(PxTransform(pospx, rotpx), user_data);
 
-			for (ShapeComponent* coll : colliders)
+			for (ShapeComponent* shape_component : colliders)
 			{
-				PxShape* shape = coll->create_shape();
+				PxShape* shape = shape_component->create_shape();
 				shape->userData = user_data;
 
 				static_body_component.actor->attachShape(*shape);
+				ShapeUtils::setup_filtering(world, shape, static_cast<uint32>(shape_component->collision_type.get()), shape_component->collision_filter_data);
 			}
-
-			static_body_component.setup_filter_mask();
 
 			physics_ref->add_actor(&static_body_component, static_body_component.actor);
 		}
-
 	}
 
 	void PhysicsSystem::on_dynamic_body_created(entt::registry& registry, entt::entity entity_handle)

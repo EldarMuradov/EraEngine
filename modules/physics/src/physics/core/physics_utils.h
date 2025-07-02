@@ -9,6 +9,7 @@
 namespace era_engine::physics
 {
 	class BodyComponent;
+	class DynamicBodyComponent;
 
 	class PhysicsUtils final
 	{
@@ -23,5 +24,9 @@ namespace era_engine::physics
 
 		static void manual_set_physics_transform(Entity entity, const vec3& pos, const quat& rot, bool update_transform_component = true);
 		static void manual_set_physics_transform(Entity entity, const trs& transform, bool update_transform_component = true);
+
+		static void manual_clear_force_and_torque(DynamicBodyComponent* body_component);
+
+		static void update_mass_and_inertia(DynamicBodyComponent* body_component, float density);
 	};
 }

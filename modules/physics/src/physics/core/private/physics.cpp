@@ -127,44 +127,47 @@ namespace era_engine::physics
 			LOG_ERROR("Physics> Failed to initialize extensions.");
 		}
 
-		default_material = physics->createMaterial(0.8f, 0.8f, 0.0f);
+		default_material = create_material(0.8f, 0.8f, 0.6f);
 
 		if (descriptor.enable_pvd && physics->getOmniPvd())
 		{
-			ASSERT(omni_pvd->startSampling());
+			const bool result = omni_pvd->startSampling();
+			ASSERT(result);
 		}
 
 		dispatcher = PxDefaultCpuDispatcherCreate(nb_cpu_dispatcher_threads);
 
-		PxSceneDesc sceneDesc(tolerance_scale);
-		sceneDesc.gravity = gravity;
-		sceneDesc.cpuDispatcher = dispatcher;
-		sceneDesc.solverType = PxSolverType::eTGS;
-		sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
-		sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-		sceneDesc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
-		sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
-		sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
+		PxSceneDesc scene_desc(tolerance_scale);
+		scene_desc.gravity = gravity;
+		scene_desc.cpuDispatcher = dispatcher;
+		if (descriptor.enable_tgs_solver)
+		{
+			scene_desc.solverType = PxSolverType::eTGS;
+		}
+		scene_desc.flags |= PxSceneFlag::eENABLE_CCD;
+		scene_desc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+		scene_desc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
+		scene_desc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
+		scene_desc.flags |= PxSceneFlag::eENABLE_PCM;
 
 		if (descriptor.broad_phase == PxBroadPhaseType::eGPU)
 		{
 			PxCudaContextManagerDesc cuda_context_manager_desc;
 			cuda_context_manager = PxCreateCudaContextManager(*foundation, cuda_context_manager_desc, &profiler_callback);
-			sceneDesc.cudaContextManager = cuda_context_manager;
-			sceneDesc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
-			sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
-			sceneDesc.gpuMaxNumPartitions = 8;
+			scene_desc.cudaContextManager = cuda_context_manager;
+			scene_desc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
+			scene_desc.gpuMaxNumPartitions = 8;
 		}
 
-		sceneDesc.broadPhaseType = descriptor.broad_phase;
+		scene_desc.broadPhaseType = descriptor.broad_phase;
 
-		sceneDesc.filterShader = contact_report_filter_shader;
+		scene_desc.filterShader = contact_report_filter_shader;
 
 		simulation_event_callback = make_ref<SimulationEventCallback>();
 
-		sceneDesc.simulationEventCallback = simulation_event_callback.get();
+		scene_desc.simulationEventCallback = simulation_event_callback.get();
 
-		scene = physics->createScene(sceneDesc);
+		scene = physics->createScene(scene_desc);
 
 		scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 1.0f);
@@ -180,7 +183,7 @@ namespace era_engine::physics
 #if PX_VEHICLE
 		if (!PxInitVehicleSDK(*physics))
 		{
-			//LOG_ERROR("Physics> Failed to initialize PxVehicleSDK.");
+			LOG_ERROR("Physics> Failed to initialize PxVehicleSDK.");
 		}
 
 		PxVehicleSetBasisVectors(PxVec3(0, 1, 0), PxVec3(0, 0, 1));
@@ -203,9 +206,16 @@ namespace era_engine::physics
 		return physics;
 	}
 
-	physx::PxMaterial* Physics::get_default_material() const
+	ref<PhysicsMaterial> Physics::get_default_material() const
 	{
 		return default_material;
+	}
+
+	ref<PhysicsMaterial> Physics::create_material(float restitution, float static_friction, float dynamic_friction)
+	{
+		ref<PhysicsMaterial> material = make_ref<PhysicsMaterial>(physics, restitution, static_friction, dynamic_friction);
+		materials.emplace_back(material);
+		return material;
 	}
 
 	physx::PxCudaContextManager* Physics::get_cuda_context_manager() const
@@ -278,24 +288,22 @@ namespace era_engine::physics
 		using namespace physx;
 		recordProfileEvent(profile_event_begin_block, "PhysX update");
 
-		const float stepSize = 1.0f / frame_rate;
-
 		static constexpr uint64 align = 16U;
 
-		static constexpr uint64 scratchMemBlockSize = MB(32U);
+		static constexpr uint64 scratch_mem_block_size = MB(32U);
 
-		static void* scratchMemBlock = allocator.allocate(scratchMemBlockSize, align, true);
+		static void* scratch_mem_block = allocator.allocate(scratch_mem_block_size, align, true);
 
 		if (is_gpu() || !use_stepper)
 		{
-			scene->simulate(stepSize, NULL, scratchMemBlock, scratchMemBlockSize);
+			scene->simulate(dt, NULL, scratch_mem_block, scratch_mem_block_size);
 			scene->fetchResults(true);
 		}
 		else
 		{
-			stepper->setup(stepSize);
+			stepper->setup(dt);
 
-			if (!stepper->advance(scene, stepSize, scratchMemBlock, scratchMemBlockSize))
+			if (!stepper->advance(scene, dt, scratch_mem_block, scratch_mem_block_size))
 			{
 				return;
 			}
@@ -330,12 +338,12 @@ namespace era_engine::physics
 	{
 		using namespace physx;
 
-		PxU32 nbActiveActors;
-		PxActor** activeActors = scene->getActiveActors(nbActiveActors);
+		PxU32 nb_active_actors = 0;
+		PxActor** active_actors = scene->getActiveActors(nb_active_actors);
 
-		for (size_t i = 0; i < nbActiveActors; i++)
+		for (size_t i = 0; i < nb_active_actors; ++i)
 		{
-			if (auto rd = activeActors[i]->is<PxRigidDynamic>())
+			if (auto rd = active_actors[i]->is<PxRigidDynamic>())
 			{
 				rd->setAngularVelocity(PxVec3(0.0f));
 				rd->setLinearVelocity(PxVec3(0.0f));
@@ -408,7 +416,7 @@ namespace era_engine::physics
 		using namespace physx;
 		ScopedSpinLock l{ sync };
 
-		PxU32 size;
+		PxU32 size = 0;
 		auto actors = scene->getActiveActors(size);
 
 		scene->removeActors(actors, size);
@@ -436,10 +444,11 @@ namespace era_engine::physics
 		if (status)
 		{
 			uint32 nb = buffer.getNbAnyHits();
-			std::cout << "Hits: " << nb << "\n";
 			uint32 index = 0;
 			if (nb > 1)
+			{
 				index = 1;
+			}
 			const auto& hitInfo1 = buffer.getAnyHit(index);
 
 			auto actor = actors_map[hitInfo1.actor];
@@ -558,49 +567,24 @@ namespace era_engine::physics
 		return OverlapInfo(true, results);
 	}
 
-	void Physics::step_physics(float step_size)
-	{
-		using namespace physx;
-		stepper->setup(step_size);
-
-		static constexpr uint64 align = 16U;
-
-		static constexpr uint64 scratchMemBlockSize = MB(32U);
-
-		static void* scratchMemBlock = allocator.allocate(scratchMemBlockSize, align, true);
-
-		if (!stepper->advance(scene, step_size, scratchMemBlock, scratchMemBlockSize))
-		{
-			return;
-		}
-
-		stepper->renderDone();
-
-		stepper->wait(scene);
-
-#if PX_ENABLE_RAYCAST_CCD
-		raycastCCD->doRaycastCCD(true);
-#endif
-	}
-
 	void Physics::sync_transforms()
 	{
 		using namespace physx;
 
-		uint32_t tempNb;
-		PxActor** activeActors = scene->getActiveActors(tempNb);
-		nb_active_actors.store(tempNb, std::memory_order_relaxed);
+		uint32_t temp_nb = 0;
+		PxActor** active_actors = scene->getActiveActors(temp_nb);
+		nb_active_actors.store(temp_nb, std::memory_order_relaxed);
 
 		for (size_t i = 0; i < nb_active_actors; ++i)
 		{
-			if (!activeActors[i]->userData)
+			if (!active_actors[i]->userData)
 			{
 				continue;
 			}
 
-			if (auto rb = activeActors[i]->is<PxRigidDynamic>())
+			if (auto rb = active_actors[i]->is<PxRigidDynamic>())
 			{
-				Entity::EcsData* data = static_cast<Entity::EcsData*>(activeActors[i]->userData);
+				Entity::EcsData* data = static_cast<Entity::EcsData*>(active_actors[i]->userData);
 
 				if (data == nullptr)
 				{

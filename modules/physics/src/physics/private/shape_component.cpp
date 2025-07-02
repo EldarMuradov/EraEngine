@@ -108,7 +108,12 @@ namespace era_engine::physics
 
         ref<Physics> physics = PhysicsHolder::physics_ref;
 
-        shape = physics->get_physics()->createShape(PxBoxGeometry(half_extents.x, half_extents.y, half_extents.z), *physics->get_default_material(), true);
+        PxMaterial* used_material = material == nullptr 
+            ? physics->get_default_material()->get_native_material() 
+            : material->get_native_material();
+
+        shape = physics->get_physics()->createShape(PxBoxGeometry(half_extents.x, half_extents.y, half_extents.z), 
+            *used_material, true);
         shape->userData = handle_data;
         return shape;
     }
@@ -128,7 +133,12 @@ namespace era_engine::physics
 
         ref<Physics> physics = PhysicsHolder::physics_ref;
 
-        shape = physics->get_physics()->createShape(PxSphereGeometry(radius), *physics->get_default_material(), true);
+        PxMaterial* used_material = material == nullptr
+            ? physics->get_default_material()->get_native_material()
+            : material->get_native_material();
+
+        shape = physics->get_physics()->createShape(PxSphereGeometry(radius), 
+            *used_material, true);
         shape->userData = handle_data;
 
         return shape;
@@ -149,7 +159,12 @@ namespace era_engine::physics
 
         ref<Physics> physics = PhysicsHolder::physics_ref;
 
-        shape = physics->get_physics()->createShape(PxCapsuleGeometry(radius, half_height), *physics->get_default_material(), true);
+        PxMaterial* used_material = material == nullptr
+            ? physics->get_default_material()->get_native_material()
+            : material->get_native_material();
+
+        shape = physics->get_physics()->createShape(PxCapsuleGeometry(radius, half_height), 
+            *used_material, true);
         shape->userData = handle_data;
 
         return shape;
@@ -170,7 +185,12 @@ namespace era_engine::physics
         PxTriangleMesh* mesh = ShapeUtils::build_triangle_mesh(asset.get(), size);
         ref<Physics> physics = PhysicsHolder::physics_ref;
 
-        shape = physics->get_physics()->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(create_PxVec3(size))), *physics->get_default_material(), true);
+        PxMaterial* used_material = material == nullptr
+            ? physics->get_default_material()->get_native_material()
+            : material->get_native_material();
+
+        shape = physics->get_physics()->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(create_PxVec3(size))), 
+            *used_material, true);
         shape->userData = handle_data;
 
         return shape;
@@ -191,7 +211,12 @@ namespace era_engine::physics
         PxConvexMesh* mesh = ShapeUtils::build_convex_mesh(asset.get(), size);
         ref<Physics> physics = PhysicsHolder::physics_ref;
 
-        shape = physics->get_physics()->createShape(PxConvexMeshGeometry(mesh, PxMeshScale(create_PxVec3(size))), *physics->get_default_material(), true);
+        PxMaterial* used_material = material == nullptr
+            ? physics->get_default_material()->get_native_material()
+            : material->get_native_material();
+
+        shape = physics->get_physics()->createShape(PxConvexMeshGeometry(mesh, PxMeshScale(create_PxVec3(size))), 
+            *used_material, true);
         shape->userData = handle_data;
 
         return shape;

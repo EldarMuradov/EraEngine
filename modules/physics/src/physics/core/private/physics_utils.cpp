@@ -71,8 +71,6 @@ namespace era_engine::physics
 			return;
 		}
 
-		PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
-
 		body_component->actor->setGlobalPose(PxTransform(create_PxVec3(pos), create_PxQuat(rot)));
 
 		if (update_transform_component)
@@ -96,6 +94,36 @@ namespace era_engine::physics
 	void PhysicsUtils::manual_set_physics_transform(Entity entity, const trs& transform, bool update_transform_component)
 	{
 		manual_set_physics_transform(entity, transform.position, transform.rotation, update_transform_component);
+	}
+
+	void PhysicsUtils::manual_clear_force_and_torque(DynamicBodyComponent* body_component)
+	{
+		using namespace physx;
+
+		if (PxRigidDynamic* body = body_component->get_rigid_dynamic())
+		{
+			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
+			body->clearForce();
+			body->clearTorque();
+
+			if (body->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
+			{
+				return;
+			}
+			body->setAngularVelocity(PxVec3(0.0f));
+			body->setLinearVelocity(PxVec3(0.0f));
+		}
+	}
+
+	void PhysicsUtils::update_mass_and_inertia(DynamicBodyComponent* body_component, float density)
+	{
+		using namespace physx;
+
+		if (PxRigidDynamic* body = body_component->get_rigid_dynamic())
+		{
+			PxSceneWriteLock lock(*PhysicsHolder::physics_ref->get_scene());
+			PxRigidBodyExt::updateMassAndInertia(*body, density);
+		}
 	}
 
 }

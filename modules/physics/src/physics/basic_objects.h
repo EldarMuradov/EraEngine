@@ -3,6 +3,7 @@
 #include "physics_api.h"
 
 #include "physics/physx_api.h"
+#include "physics/collision_types.h"
 
 #include "core/math.h"
 
@@ -14,10 +15,10 @@ namespace era_engine::physics
 	{
 	public:
 		PlaneComponent() = default;
-		PlaneComponent(ref<Entity::EcsData> _data, const vec3& _point, const vec3& _norm = vec3(0.0f, 1.0f, 0.0f));
-		~PlaneComponent();
+		PlaneComponent(ref<Entity::EcsData> _data, CollisionType _collision_type, const vec3& _point, const vec3& _norm = vec3(0.0f, 1.0f, 0.0f));
+		~PlaneComponent() override;
 
-		virtual void release() override;
+		void release() override;
 
 		ERA_VIRTUAL_REFLECT(Component)
 

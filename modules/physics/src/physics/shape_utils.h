@@ -23,17 +23,13 @@ namespace era_engine::physics
 		static physx::PxConvexMesh* build_convex_mesh(const MeshAsset* asset, const vec3& size);
 		static physx::PxTriangleMesh* build_triangle_mesh(const MeshAsset* asset, const vec3& size);
 
-		static void get_filter_data(physx::PxRigidActor* actor, std::vector<physx::PxFilterData>& out_filter_data);
-
 		static bool is_trigger(const physx::PxFilterData& data);
-
-		static void set_filter_data(physx::PxRigidActor* actor, const std::vector<physx::PxFilterData>& filter_data);
-
-		static void setup_filtering(physx::PxShape* shape, physx::PxU32 filter_group, physx::PxU32 filter_mask);
 
 		static void enable_shape_visualization(physx::PxShape* shape, const bool enable);
 		static void enable_shape_in_contact_tests(physx::PxShape* shape, const bool enable);
 		static void enable_shape_in_scene_query_tests(physx::PxShape* shape, const bool enable);
+
+		static void setup_filtering(World* world, physx::PxShape* shape, uint32 collision_type, std::optional<uint32> collision_filter_data);
 	};
 
 }

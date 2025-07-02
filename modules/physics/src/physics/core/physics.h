@@ -3,6 +3,7 @@
 #include "physics/physx_api.h"
 #include "physics/core/physics_types.h"
 #include "physics/core/physics_stepper.h"
+#include "physics/material.h"
 
 #include <core/memory.h>
 #include <core/math.h>
@@ -26,6 +27,7 @@ namespace era_engine::physics
 	public:
 		physx::PxBroadPhaseType::Enum broad_phase = physx::PxBroadPhaseType::ePABP;
 		bool enable_pvd = true;
+		bool enable_tgs_solver = true;
 	};
 
 	class Physics final
@@ -36,7 +38,11 @@ namespace era_engine::physics
 
 		physx::PxScene* get_scene() const;
 		physx::PxPhysics* get_physics() const;
-		physx::PxMaterial* get_default_material() const;
+		ref<PhysicsMaterial> get_default_material() const;
+
+		ref<PhysicsMaterial> create_material(float restitution = 0.6f,
+			float static_friction = 0.8f,
+			float dynamic_friction = 0.8f);
 
 		physx::PxCudaContextManager* get_cuda_context_manager() const;
 		physx::PxCpuDispatcher* get_cpu_dispatcher() const;
@@ -82,7 +88,6 @@ namespace era_engine::physics
 		OverlapInfo overlap_sphere(const vec3& center, const float radius, bool hit_triggers = false, uint32 layer_mask = 0);
 
 	private:
-		void step_physics(float step_size);
 		void sync_transforms();
 		void process_simulation_event_callbacks();
 
@@ -110,7 +115,7 @@ namespace era_engine::physics
 
 		physx::PxPvd* pvd = nullptr;
 
-		physx::PxMaterial* default_material = nullptr;
+		ref<PhysicsMaterial> default_material = nullptr;
 
 		physx::PxFoundation* foundation = nullptr;
 
@@ -131,6 +136,8 @@ namespace era_engine::physics
 
 		SimulationFilterCallback simulation_filter_callback;
 		ref<SimulationEventCallback> simulation_event_callback = nullptr;
+
+		std::vector<ref<PhysicsMaterial>> materials;
 
 		QueryFilter queryFilter;
 

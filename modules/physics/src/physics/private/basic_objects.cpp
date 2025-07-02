@@ -14,18 +14,18 @@ namespace era_engine::physics
 			.constructor<>();
 	}
 
-	PlaneComponent::PlaneComponent(ref<Entity::EcsData> _data, const vec3& _point, const vec3& _norm)
+	PlaneComponent::PlaneComponent(ref<Entity::EcsData> _data, CollisionType _collision_type, const vec3& _point, const vec3& _norm)
 		: Component(_data), point(_point), normal(_norm)
 	{
 		using namespace physx;
 
 		auto& physics = PhysicsHolder::physics_ref;
 
-		plane = PxCreatePlane(*physics->get_physics(), PxPlane(create_PxVec3(point), create_PxVec3(normal)), *physics->get_default_material());
+		plane = PxCreatePlane(*physics->get_physics(), PxPlane(create_PxVec3(point), create_PxVec3(normal)), *physics->get_default_material()->get_native_material());
 		
 		PxShape* buffer[1];
 		plane->getShapes(buffer, 1);
-		ShapeUtils::setup_filtering(buffer[0], -1, -1);
+		ShapeUtils::setup_filtering(get_world(), buffer[0], static_cast<uint32>(_collision_type), std::optional<uint32>{});
 
 		PxSceneWriteLock lock{ *physics->get_scene() };
 		physics->get_scene()->addActor(*plane);
