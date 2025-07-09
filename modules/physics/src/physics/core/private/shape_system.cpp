@@ -51,6 +51,62 @@ namespace era_engine::physics
 				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
 			}
 		}
+
+		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<ObservableMemberChangedFlagComponent, CapsuleShapeComponent>).each())
+		{
+			if (shape_component.get_shape() == nullptr)
+			{
+				continue;
+			}
+
+			if (shape_component.local_position.is_changed() ||
+				shape_component.local_rotation.is_changed())
+			{
+				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
+			}
+		}
+
+		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<ObservableMemberChangedFlagComponent, SphereShapeComponent>).each())
+		{
+			if (shape_component.get_shape() == nullptr)
+			{
+				continue;
+			}
+
+			if (shape_component.local_position.is_changed() ||
+				shape_component.local_rotation.is_changed())
+			{
+				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
+			}
+		}
+
+		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<ObservableMemberChangedFlagComponent, ConvexMeshShapeComponent>).each())
+		{
+			if (shape_component.get_shape() == nullptr)
+			{
+				continue;
+			}
+
+			if (shape_component.local_position.is_changed() ||
+				shape_component.local_rotation.is_changed())
+			{
+				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
+			}
+		}
+
+		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<ObservableMemberChangedFlagComponent, TriangleMeshShapeComponent>).each())
+		{
+			if (shape_component.get_shape() == nullptr)
+			{
+				continue;
+			}
+
+			if (shape_component.local_position.is_changed() ||
+				shape_component.local_rotation.is_changed())
+			{
+				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
+			}
+		}
 	}
 
 	void ShapeSystem::process_skeleton_attachments(float dt) const
@@ -92,9 +148,8 @@ namespace era_engine::physics
 					continue;
 				}
 
-				const uint32 joint_id = skeleton->name_to_joint_id.at(shape_component->connected_joint_name);
-				const trs reference_space_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_id);
-				const trs& reference_world_transform = referenced_entity.get_component<TransformComponent>().transform;
+				const trs reference_space_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, shape_component->connected_joint_id);
+				const trs& reference_world_transform = referenced_entity.get_component<TransformComponent>()->get_world_transform();
 				const trs world_space_joint_trasnform = reference_world_transform * reference_space_joint_transform;
 
 				PhysicsUtils::manual_set_physics_transform(world->get_entity(entity_handle), world_space_joint_trasnform, true);

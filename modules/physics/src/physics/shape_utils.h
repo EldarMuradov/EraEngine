@@ -15,6 +15,7 @@ namespace era_engine
 
 namespace era_engine::physics
 {
+	class ShapeComponent;
 
 	class ERA_PHYSICS_API ShapeUtils final
 	{
@@ -24,6 +25,8 @@ namespace era_engine::physics
 		static physx::PxTriangleMesh* build_triangle_mesh(const MeshAsset* asset, const vec3& size);
 
 		static bool is_trigger(const physx::PxFilterData& data);
+
+		static ShapeComponent* get_shape_component(Entity entity);
 
 		static void enable_shape_visualization(physx::PxShape* shape, const bool enable);
 		static void enable_shape_in_contact_tests(physx::PxShape* shape, const bool enable);

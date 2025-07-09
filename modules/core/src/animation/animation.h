@@ -74,6 +74,7 @@ namespace era_engine::animation
 	{
 	public:
 		JointTransform() = default;
+		JointTransform(const trs& initial_transform);
 
 		void set_translation(const vec3& new_translation);
 		const vec3& get_translation() const;
@@ -123,6 +124,8 @@ namespace era_engine::animation
 
 		AnimationJoint root_motion_joint;
 
+		bool is_unreal_asset = false;
+
 		float length_in_seconds = 0.0f;
 		bool looping = true;
 		bool bake_root_rotation_into_pose = false;
@@ -141,6 +144,30 @@ namespace era_engine::animation
 	{
 		uint32 representative_joint = INVALID_JOINT;
 		LimbDimensions dimensions;
+	};
+
+	class ERA_CORE_API SkeletonPose
+	{
+	public:
+		SkeletonPose() = default;
+		SkeletonPose(uint32 joints_size);
+
+		bool is_valid() const;
+
+		uint32 size() const;
+
+		void set_joint_transform(const JointTransform& new_joint_transform, uint32 joint_id);
+		void set_joint_translation(const vec3& new_translation, uint32 joint_id);
+		void set_joint_rotation(const quat& new_rotation, uint32 joint_id);
+
+		const JointTransform& get_joint_transform(uint32 joint_id) const;
+		const vec3& get_joint_translation(uint32 joint_id) const;
+		const quat& get_joint_rotation(uint32 joint_id) const;
+
+	private:
+		std::vector<JointTransform> local_transforms; // In parent space.
+
+		friend class Skeleton;
 	};
 
 	class ERA_CORE_API Skeleton
@@ -164,6 +191,8 @@ namespace era_engine::animation
 		const trs& get_joint_transform(uint32 joint_id) const;
 		const quat& get_joint_rotation(uint32 joint_id) const;
 
+		void apply_pose(const SkeletonPose& pose);
+
 	public:
 		std::vector<SkeletonJoint> joints;
 		std::vector<JointTransform> local_transforms; // In parent space.
@@ -173,8 +202,8 @@ namespace era_engine::animation
 
 	struct ERA_CORE_API AnimationSkeleton
 	{
-		void sampleAnimation(const AnimationClip& clip, float time, trs* outRootMotion = 0) const;
-		void sampleAnimation(uint32 index, float time, trs* outRootMotion = 0) const;
+		SkeletonPose sampleAnimation(const AnimationClip& clip, float time, trs* outRootMotion = 0) const;
+		SkeletonPose sampleAnimation(uint32 index, float time, trs* outRootMotion = 0) const;
 
 		std::vector<uint32> getClipsByName(const std::string& name);
 
@@ -188,7 +217,7 @@ namespace era_engine::animation
 	{
 	public:
 		SkeletonComponent(ref<Entity::EcsData> _data);
-		virtual ~SkeletonComponent();
+		~SkeletonComponent() override;
 
 		ERA_VIRTUAL_REFLECT(Component)
 
@@ -204,6 +233,8 @@ namespace era_engine::animation
 
 	public:
 		static trs get_object_space_joint_transform(const Skeleton* skeleton, uint32 joint_id);
+
+		static trs get_object_space_joint_transform(const SkeletonPose& pose, const Skeleton* skeleton, uint32 joint_id);
 	};
 
 	struct ERA_CORE_API AnimationInstance
@@ -212,7 +243,7 @@ namespace era_engine::animation
 		AnimationInstance(const AnimationClip* clip, float startTime = 0.0f);
 
 		void set(const AnimationClip* clip, float startTime = 0.0f);
-		void update(const AnimationSkeleton& skeleton, float dt, trs& outDeltaRootMotion);
+		SkeletonPose update(const AnimationSkeleton& skeleton, float dt, trs& outDeltaRootMotion);
 
 		bool valid() const { return clip != nullptr; }
 
@@ -287,6 +318,7 @@ namespace era_engine::animation
 		AnimationStateMachine state_machine;
 	};
 
+#if 0
 	struct ERA_CORE_API AnimationBlendTree1d
 	{
 		AnimationBlendTree1d() = default;
@@ -307,19 +339,23 @@ namespace era_engine::animation
 
 		trs lastRootMotion;
 	};
+#endif
 
 	class ERA_CORE_API AnimationComponent : public Component
 	{
 	public:
 		AnimationComponent(ref<Entity::EcsData> _data);
-		virtual ~AnimationComponent();
+		~AnimationComponent() override;
 
 		void initialize(std::vector<AnimationClip>& clips, size_t start_index = 0);
 		void draw_current_skeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* render_pass) const;
 
 		ERA_VIRTUAL_REFLECT(Component)
+
 	public:
 		ref<AnimationInstance> animation = nullptr;
+
+		SkeletonPose current_animation_pose;
 
 		dx_vertex_buffer_group_view current_vertex_buffer;
 		dx_vertex_buffer_group_view prev_frame_vertex_buffer;
@@ -327,6 +363,7 @@ namespace era_engine::animation
 		trs* current_global_transforms = 0;
 
 		bool play = true;
+		bool update_skeleton = true;
 
 		float time_scale = 1.f;
 	};

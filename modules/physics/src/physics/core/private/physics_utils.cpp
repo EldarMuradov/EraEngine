@@ -71,13 +71,18 @@ namespace era_engine::physics
 			return;
 		}
 
+		if(body_component->actor == nullptr)
+		{
+			return;
+		}
+
 		body_component->actor->setGlobalPose(PxTransform(create_PxVec3(pos), create_PxQuat(rot)));
 
 		if (update_transform_component)
 		{
-			TransformComponent& transform_component = entity.get_component<TransformComponent>();
-			transform_component.transform.position = pos;
-			transform_component.transform.rotation = rot;
+			TransformComponent* transform_component = entity.get_component<TransformComponent>();
+			transform_component->set_world_position(pos);
+			transform_component->set_world_rotation(rot);
 		}
 
 		if (auto dyn = body_component->actor->is<PxRigidDynamic>())

@@ -534,6 +534,14 @@ struct ERA_CORE_API trs
 	RTTR_ENABLE()
 };
 
+struct ERA_CORE_API ray
+{
+	vec3 origin;
+	vec3 direction;
+
+	RTTR_ENABLE()
+};
+
 // Vec2 operators
 inline vec2 operator+(vec2 a, vec2 b) { vec2 result = { a.x + b.x, a.y + b.y }; return result; }
 inline vec2& operator+=(vec2& a, vec2 b) { a = a + b; return a; }
@@ -734,6 +742,8 @@ inline uint32 max_element_index(vec4 a) {
 			: ((a.z > a.w) ? 2 : 3));
 }
 
+ERA_CORE_API float map_value(float value, float in_range_a, float in_range_b, float out_range_a, float out_range_b);
+
 inline vec2 remap(vec2 v, vec2 oldL, vec2 oldU, vec2 newL, vec2 newU)
 {
 	return
@@ -816,6 +826,7 @@ ERA_CORE_API mat4 transpose(const mat4& a);
 ERA_CORE_API mat3 invert(const mat3& m);
 ERA_CORE_API mat4 invert(const mat4& m);
 ERA_CORE_API trs invert(const trs& t);
+ERA_CORE_API mat2 invert(const mat2& m);
 
 ERA_CORE_API float determinant(const mat2& m);
 ERA_CORE_API float determinant(const mat3& m);
@@ -1135,6 +1146,23 @@ inline T evaluate_spline(const float* ts, const T* values, int32 num, float t)
 
 	result *= 0.5f;
 
+	return result;
+}
+
+inline vec2 clamp(const vec2& v, float l, float u)
+{ 
+	vec2 result;
+	result.x = clamp(v.x, l, u);
+	result.y = clamp(v.x, l, u);
+	return result;
+}
+
+inline vec3 clamp(const vec3& v, float l, float u)
+{
+	vec3 result;
+	result.x = clamp(v.x, l, u);
+	result.y = clamp(v.x, l, u);
+	result.z = clamp(v.z, l, u);
 	return result;
 }
 

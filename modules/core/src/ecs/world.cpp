@@ -189,28 +189,28 @@ namespace era_engine
 	void World::add_tag(const std::string& tag)
 	{
 		world_data->scheduler->refresh_graph();
-		world_data->root_entity.get_component<TagsComponent>().add_tag(tag);
+		world_data->root_entity.get_component<TagsComponent>()->add_tag(tag);
 	}
 
 	bool World::remove_tag(const std::string& tag)
 	{
 		world_data->scheduler->refresh_graph();
-		return world_data->root_entity.get_component<TagsComponent>().remove_tag(tag);
+		return world_data->root_entity.get_component<TagsComponent>()->remove_tag(tag);
 	}
 
 	bool World::has_tag(const std::string& tag) const
 	{
-		return world_data->root_entity.get_component<TagsComponent>().has_tag(tag);
+		return world_data->root_entity.get_component<TagsComponent>()->has_tag(tag);
 	}
 
 	void World::clear_tags()
 	{
-		world_data->root_entity.get_component<TagsComponent>().clear();
+		world_data->root_entity.get_component<TagsComponent>()->clear();
 	}
 
 	const TagsContainer& World::get_tags_container() const
 	{
-		return world_data->root_entity.get_component<TagsComponent>().get_container();
+		return world_data->root_entity.get_component<TagsComponent>()->get_container();
 	}
 
 	size_t World::size() const noexcept
@@ -226,6 +226,11 @@ namespace era_engine
 	WorldSystemScheduler* World::get_system_scheduler() const
 	{
 		return world_data->scheduler;
+	}
+
+	Entity World::get_root_entity() const
+	{
+		return world_data->root_entity;
 	}
 
 	void World::add_base_components(Entity& entity)

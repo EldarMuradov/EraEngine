@@ -25,8 +25,8 @@ namespace era_engine
         IModule::initialize(engine);
 
         physics::PhysicsHolder::physics_ref = make_ref<physics::Physics>();
+        physics::PhysicsHolder::physics_ref->init_scene();
         physics::PhysicsHolder::physics_ref->start();
-
         MODULE_REGISTRATION
 
         return true;

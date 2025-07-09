@@ -49,8 +49,8 @@ namespace era_engine::ai
 
 	void NavigationComponent::process_path()
 	{
-		auto& transform = get_world()->get_entity(component_data->entity_handle).get_component<TransformComponent>();
-		const auto& pos = transform.transform.position;
+		TransformComponent* transform = get_world()->get_entity(component_data->entity_handle).get_component<TransformComponent>();
+		const auto& pos = transform->get_world_position();
 
 		if (!equal_in_2d(destination, previous_destination))
 		{
@@ -64,9 +64,9 @@ namespace era_engine::ai
 			NavNode temp_pos = nav_cor.value();
 			if (temp_pos.position != vec2(NAV_INF_POS))
 			{
-				transform.transform.position = lerp(pos, vec3(temp_pos.position.x, 0, temp_pos.position.y), 0.025f);
+				transform->set_world_position(lerp(pos, vec3(temp_pos.position.x, 0, temp_pos.position.y), 0.025f));
 
-				if (length(transform.transform.position - vec3(temp_pos.position.x, 0, temp_pos.position.y)) < 0.25f)
+				if (length(transform->get_world_position() - vec3(temp_pos.position.x, 0, temp_pos.position.y)) < 0.25f)
 				{
 					nav_cor();
 				}

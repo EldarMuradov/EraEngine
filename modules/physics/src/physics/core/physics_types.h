@@ -109,14 +109,6 @@ namespace era_engine::physics
 		bool statusChange(physx::PxU64& pairID, physx::PxPairFlags& pairFlags, physx::PxFilterFlags& filterFlags) override;
 	};
 
-	class QueryFilter : public physx::PxQueryFilterCallback
-	{
-	public:
-		physx::PxQueryHitType::Enum preFilter(const physx::PxFilterData& filterData, const physx::PxShape* shape, const physx::PxRigidActor* actor, physx::PxHitFlags& queryFlags) override;
-
-		physx::PxQueryHitType::Enum postFilter(const physx::PxFilterData& filterData, const physx::PxQueryHit& hit, const physx::PxShape* shape, const physx::PxRigidActor* actor) override;
-	};
-
 	class CharacterControllerFilterCallback : public physx::PxControllerFilterCallback
 	{
 	public:
@@ -140,23 +132,6 @@ namespace era_engine::physics
 	};
 
 	class BodyComponent;
-
-	struct RaycastInfo
-	{
-		BodyComponent* actor = nullptr;
-
-		float distance = 0.0f;
-
-		uint32_t hit_count = 0;
-
-		vec3 position = vec3(0.0f);
-	};
-
-	struct OverlapInfo
-	{
-		bool is_overlapping;
-		std::vector<Entity::Handle> results;
-	};
 
 	struct CollisionHandlingData
 	{

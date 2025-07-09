@@ -129,6 +129,7 @@ namespace era_engine
 
 			AnimationClip& clip = animation_skeleton.clips.emplace_back();
 			clip.name = std::move(in.name);
+			clip.is_unreal_asset = flags & mesh_creation_flags_unreal_asset;
 			clip.filename = sceneFilename;
 			clip.length_in_seconds = in.duration;
 			clip.joints.resize(skeleton.joints.size(), {});

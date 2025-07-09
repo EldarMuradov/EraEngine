@@ -123,25 +123,24 @@ namespace era_engine::physics
 		return base_descriptor.connected_entity;
 	}
 
-	EntityPtr era_engine::physics::JointComponent::get_second_entity_ptr() const
+	EntityPtr JointComponent::get_second_entity_ptr() const
 	{
 		return base_descriptor.second_connected_entity;
+	}
+
+	const trs& JointComponent::get_first_local_frame() const
+	{
+		return base_descriptor.local_frame;
+	}
+
+	const trs& JointComponent::get_second_local_frame() const
+	{
+		return base_descriptor.second_local_frame;
 	}
 
 	FixedJointComponent::FixedJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor)
 		: JointComponent(_data, _base_descriptor)
 	{
-		using namespace physx;
-
-		PxFixedJoint* created_joint = create_fixed_joint(PhysicsUtils::get_body_component(base_descriptor.connected_entity.get_data())->get_rigid_actor(),
-								   PhysicsUtils::get_body_component(base_descriptor.second_connected_entity.get_data())->get_rigid_actor());
-		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, enable_collision);
-
-		created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
-		created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
-
-		joint = created_joint;
-		joint->userData = this;
 	}
 
 	FixedJointComponent::~FixedJointComponent()
@@ -221,80 +220,15 @@ namespace era_engine::physics
 	DistanceJointComponent::DistanceJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor)
 		: JointComponent(_data, _base_descriptor)
 	{
-		using namespace physx;
-
-		auto* physics = PhysicsHolder::physics_ref->get_physics();
-
-		PxDistanceJoint* created_joint = physx::PxDistanceJointCreate(*physics,
-			PhysicsUtils::get_body_component(base_descriptor.connected_entity.get_data())->get_rigid_actor(), create_PxTransform(_base_descriptor.local_frame),
-			PhysicsUtils::get_body_component(base_descriptor.second_connected_entity.get_data())->get_rigid_actor(), create_PxTransform(_base_descriptor.second_local_frame));
-
-		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, enable_collision);
-
-		//created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
-		created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
-
-		created_joint->setTolerance(0.02f);
-
-		created_joint->setDistanceJointFlag(PxDistanceJointFlag::eSPRING_ENABLED, true);
-
-		joint = created_joint;
-		joint->userData = this;
+		stiffness.set_component(ComponentPtr(this));
+		damping.set_component(ComponentPtr(this));
+		spring_enabled.set_component(ComponentPtr(this));
+		max_distance.set_component(ComponentPtr(this));
+		min_distance.set_component(ComponentPtr(this));
 	}
 
 	DistanceJointComponent::~DistanceJointComponent()
 	{
-	}
-
-	void DistanceJointComponent::set_damping(float damping)
-	{
-		using namespace physx;
-		if (PxDistanceJoint* distance_joint = joint->is<PxDistanceJoint>())
-		{
-			distance_joint->setDamping(damping);
-		}
-	}
-
-	float DistanceJointComponent::get_damping() const
-	{
-		using namespace physx;
-		if (PxDistanceJoint* distance_joint = joint->is<PxDistanceJoint>())
-		{
-			return distance_joint->getDamping();
-		}
-		return 0.0f;
-	}
-
-	void DistanceJointComponent::set_stiffness(float stiffness)
-	{
-		using namespace physx;
-		if (PxDistanceJoint* distance_joint = joint->is<PxDistanceJoint>())
-		{
-			return distance_joint->setStiffness(stiffness);
-		}
-	}
-
-	float DistanceJointComponent::get_stiffness() const
-	{
-		using namespace physx;
-		if (PxDistanceJoint* distance_joint = joint->is<PxDistanceJoint>())
-		{
-			return distance_joint->getStiffness();
-		}
-		return 0.0f;
-	}
-
-	void DistanceJointComponent::set_constraint_limit(float min_distance, float max_distance)
-	{
-		using namespace physx;
-		if (PxDistanceJoint* distance_joint = joint->is<PxDistanceJoint>())
-		{
-			distance_joint->setDistanceJointFlag(PxDistanceJointFlag::eMIN_DISTANCE_ENABLED, true);
-			distance_joint->setMinDistance(min_distance);
-
-			distance_joint->setDistanceJointFlag(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED, true);
-			distance_joint->setMinDistance(max_distance);
-		}
 	}
 	
 	SphericalJointComponent::SphericalJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor)

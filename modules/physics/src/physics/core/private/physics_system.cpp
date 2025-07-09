@@ -55,6 +55,26 @@ namespace era_engine::physics
 	{
 		using namespace physx;
 
+		for (auto [entity_handle, changed_flag, static_body] : world->group(components_group<ObservableMemberChangedFlagComponent, StaticBodyComponent>).each())
+		{
+			if (static_body.get_rigid_actor() == nullptr)
+			{
+				continue;
+			}
+
+			PxRigidStatic* body = static_body.get_rigid_static();
+
+			if (body == nullptr)
+			{
+				continue;
+			}
+
+			if (static_body.simulated.is_changed())
+			{
+				body->setActorFlag(PxActorFlag::eDISABLE_SIMULATION, !static_body.simulated);
+			}
+		}
+
 		for (auto [entity_handle, changed_flag, dynamic_body] : world->group(components_group<ObservableMemberChangedFlagComponent, DynamicBodyComponent>).each())
 		{
 			if (dynamic_body.get_rigid_actor() == nullptr)
@@ -71,7 +91,7 @@ namespace era_engine::physics
 
 			if (dynamic_body.use_gravity.is_changed())
 			{
-				body->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, !dynamic_body.use_gravity);
+				body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, !dynamic_body.use_gravity);
 			}
 
 			if (dynamic_body.max_angular_velocity.is_changed())
@@ -275,15 +295,15 @@ namespace era_engine::physics
 		{
 			Entity entity = world->get_entity(entity_handle);
 
-			DynamicBodyComponent& dynamic_body_component = entity.get_component<DynamicBodyComponent>();
+			DynamicBodyComponent* dynamic_body_component = entity.get_component<DynamicBodyComponent>();
 
 			auto& colliders = physics_ref->colliders_map[entity_handle];
 			if (colliders.empty())
 			{
-				CapsuleShapeComponent& shape_component = entity.add_component<CapsuleShapeComponent>();
-				shape_component.half_height = 1.0f;
-				shape_component.radius = 0.3f;
-				colliders.push_back(&shape_component);
+				CapsuleShapeComponent* shape_component = entity.add_component<CapsuleShapeComponent>();
+				shape_component->half_height = 1.0f;
+				shape_component->radius = 0.3f;
+				colliders.push_back(shape_component);
 			}
 
 			TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
@@ -295,34 +315,33 @@ namespace era_engine::physics
 			const quat& q = transform->transform.rotation;
 			PxQuat rotpx = create_PxQuat(q);
 
-			void* user_data = static_cast<void*>(dynamic_body_component.component_data.get());
+			void* user_data = static_cast<void*>(dynamic_body_component);
 
-			dynamic_body_component.actor = PhysicsUtils::create_rigid_dynamic(PxTransform(pospx, rotpx), user_data);
+			dynamic_body_component->actor = PhysicsUtils::create_rigid_dynamic(PxTransform(pospx, rotpx), user_data);
 
 			for (ShapeComponent* shape_component : colliders)
 			{
 				PxShape* shape = shape_component->create_shape();
-				shape->userData = user_data;
 
-				dynamic_body_component.actor->attachShape(*shape);
+				dynamic_body_component->actor->attachShape(*shape);
 
 				ShapeUtils::setup_filtering(world, shape, static_cast<uint32>(shape_component->collision_type.get()), shape_component->collision_filter_data);
 			}
 
-			physics_ref->add_actor(&dynamic_body_component, dynamic_body_component.actor);
+			physics_ref->add_actor(dynamic_body_component, dynamic_body_component->actor);
 
 			{
-				PxRigidDynamic* dynamic_body = dynamic_body_component.get_rigid_dynamic();
+				PxRigidDynamic* dynamic_body = dynamic_body_component->get_rigid_dynamic();
 
-				const PxVec3 center_of_mass = create_PxVec3(dynamic_body_component.center_of_mass);
+				const PxVec3 center_of_mass = create_PxVec3(dynamic_body_component->center_of_mass);
 
 				PxRigidBodyExt::setMassAndUpdateInertia(
 					*dynamic_body,
-					dynamic_body_component.mass.get(),
+					dynamic_body_component->mass.get(),
 					&center_of_mass,
 					false);
 
-				dynamic_body_component.center_of_mass.get_silent_for_write() = create_vec3(dynamic_body->getCMassLocalPose().p);
+				dynamic_body_component->center_of_mass.get_silent_for_write() = create_vec3(dynamic_body->getCMassLocalPose().p);
 			}
 		}
 
@@ -330,15 +349,15 @@ namespace era_engine::physics
 		{
 			Entity entity = world->get_entity(entity_handle);
 
-			StaticBodyComponent& static_body_component = entity.get_component<StaticBodyComponent>();
+			StaticBodyComponent* static_body_component = entity.get_component<StaticBodyComponent>();
 
 			auto& colliders = physics_ref->colliders_map[entity_handle];
 			if (colliders.empty())
 			{
-				CapsuleShapeComponent& shape_component = entity.add_component<CapsuleShapeComponent>();
-				shape_component.half_height = 1.0f;
-				shape_component.radius = 0.3f;
-				colliders.push_back(&shape_component);
+				CapsuleShapeComponent* shape_component = entity.add_component<CapsuleShapeComponent>();
+				shape_component->half_height = 1.0f;
+				shape_component->radius = 0.3f;
+				colliders.push_back(shape_component);
 			}
 
 			const TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
@@ -349,20 +368,19 @@ namespace era_engine::physics
 			const quat& q = transform->transform.rotation;
 			PxQuat rotpx = create_PxQuat(q);
 
-			void* user_data = static_cast<void*>(static_body_component.component_data.get());
+			void* user_data = static_cast<void*>(static_body_component);
 
-			static_body_component.actor = PhysicsUtils::create_rigid_static(PxTransform(pospx, rotpx), user_data);
+			static_body_component->actor = PhysicsUtils::create_rigid_static(PxTransform(pospx, rotpx), user_data);
 
 			for (ShapeComponent* shape_component : colliders)
 			{
 				PxShape* shape = shape_component->create_shape();
-				shape->userData = user_data;
 
-				static_body_component.actor->attachShape(*shape);
+				static_body_component->actor->attachShape(*shape);
 				ShapeUtils::setup_filtering(world, shape, static_cast<uint32>(shape_component->collision_type.get()), shape_component->collision_filter_data);
 			}
 
-			physics_ref->add_actor(&static_body_component, static_body_component.actor);
+			physics_ref->add_actor(static_body_component, static_body_component->actor);
 		}
 	}
 

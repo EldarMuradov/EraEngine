@@ -12,23 +12,22 @@ TEST(ECS_Components, TagsComponent) {
 	runtime_world->init();
 
 	Entity entity = runtime_world->create_entity("Entity");
-	TagsComponent& tags_component = entity.add_component<TagsComponent>();
+	TagsComponent* tags_component = entity.add_component<TagsComponent>();
 
-	tags_component.add_tag("test");
-	tags_component.add_tag("test_2");
+	tags_component->add_tag("test");
+	tags_component->add_tag("test_2");
 
-	EXPECT_TRUE(tags_component.size() == 2);
+	EXPECT_TRUE(tags_component->size() == 2);
 
-	EXPECT_TRUE(tags_component.has_tag("test"));
+	EXPECT_TRUE(tags_component->has_tag("test"));
 
-	EXPECT_FALSE(tags_component.has_tag("test_fail"));
+	EXPECT_FALSE(tags_component->has_tag("test_fail"));
 
-	EXPECT_TRUE(tags_component.remove_tag("test_2"));
+	EXPECT_TRUE(tags_component->remove_tag("test_2"));
 
-	EXPECT_TRUE(tags_component.size() == 1);
+	EXPECT_TRUE(tags_component->size() == 1);
 
 	delete runtime_world;
-
 }
 
 TEST(ECS_Components, ChildComponent) {
@@ -42,11 +41,12 @@ TEST(ECS_Components, ChildComponent) {
 
 	{
 		Entity child = runtime_world->create_entity();
-		ChildComponent& child_component = child.add_component<ChildComponent>(parent);
+		child.set_parent(parent.get_handle());
 
 		EXPECT_TRUE(EntityContainer::get_childs(parent.get_handle()).size() == 1);
 
-		child.remove_component<ChildComponent>();
+		child.set_parent(runtime_world->get_root_entity().get_handle());
+
 		runtime_world->destroy_entity(child);
 	}
 

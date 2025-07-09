@@ -67,7 +67,15 @@ namespace era_engine::animation
 				trs deltaRootMotion = trs::identity;
 				if(anim.play)
 				{
-					anim.animation->update(animation_skeleton, dt * anim.time_scale, deltaRootMotion);
+					SkeletonPose result_pose = anim.animation->update(animation_skeleton, dt * anim.time_scale, deltaRootMotion);
+					if (result_pose.is_valid())
+					{
+						if(anim.update_skeleton)
+						{
+							skeleton.apply_pose(result_pose);
+						}
+						anim.current_animation_pose = result_pose;
+					}
 				}
 
 				trs* globalTransforms = allocator->allocate<trs>((uint32)skeleton.joints.size());

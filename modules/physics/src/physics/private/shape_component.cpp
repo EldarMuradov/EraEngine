@@ -37,7 +37,6 @@ namespace era_engine::physics
         : Component(_data)
     {
         register_shape();
-        handle_data = new Entity::Handle(_data->entity_handle);
 
         local_position.set_component(ComponentPtr(this));
         local_rotation.set_component(ComponentPtr(this));
@@ -58,9 +57,9 @@ namespace era_engine::physics
         return shape->getGeometry();
     }
 
-    void ShapeComponent::sync_with_joint(weakref<Entity::EcsData> _entity_reference, const std::string& _connected_joint_name)
+    void ShapeComponent::sync_with_joint(weakref<Entity::EcsData> _entity_reference, uint32 _connected_joint_id)
     {
-        connected_joint_name = _connected_joint_name;
+        connected_joint_id = _connected_joint_id;
         entity_reference = _entity_reference;
         attachment_active = false;
     }
@@ -78,8 +77,6 @@ namespace era_engine::physics
 
         PX_RELEASE(shape)
         
-        delete handle_data;
-
         Component::release();
     }
 
@@ -114,7 +111,7 @@ namespace era_engine::physics
 
         shape = physics->get_physics()->createShape(PxBoxGeometry(half_extents.x, half_extents.y, half_extents.z), 
             *used_material, true);
-        shape->userData = handle_data;
+        shape->userData = this;
         return shape;
     }
 
@@ -139,7 +136,7 @@ namespace era_engine::physics
 
         shape = physics->get_physics()->createShape(PxSphereGeometry(radius), 
             *used_material, true);
-        shape->userData = handle_data;
+        shape->userData = this;
 
         return shape;
     }
@@ -165,7 +162,7 @@ namespace era_engine::physics
 
         shape = physics->get_physics()->createShape(PxCapsuleGeometry(radius, half_height), 
             *used_material, true);
-        shape->userData = handle_data;
+        shape->userData = this;
 
         return shape;
     }
@@ -191,7 +188,7 @@ namespace era_engine::physics
 
         shape = physics->get_physics()->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(create_PxVec3(size))), 
             *used_material, true);
-        shape->userData = handle_data;
+        shape->userData = this;
 
         return shape;
     }
@@ -217,7 +214,7 @@ namespace era_engine::physics
 
         shape = physics->get_physics()->createShape(PxConvexMeshGeometry(mesh, PxMeshScale(create_PxVec3(size))), 
             *used_material, true);
-        shape->userData = handle_data;
+        shape->userData = this;
 
         return shape;
     }

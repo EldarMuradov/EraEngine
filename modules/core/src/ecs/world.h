@@ -79,6 +79,8 @@ namespace era_engine
 
 		Entity get_entity(Entity::Handle _handle);
 
+		Entity get_root_entity() const;
+
 		void destroy(bool _destroy_components = true);
 
 		void add_tag(const std::string& tag);
@@ -105,7 +107,7 @@ namespace era_engine
 		{
 			if (!world_data->root_entity.has_component<Component_>())
 			{
-				world_data->root_entity.add_component<Component_>(std::forward<Args_>(args)...);
+				return world_data->root_entity.add_component<Component_>(std::forward<Args_>(args)...);
 			}
 
 			return world_data->root_entity.get_component_if_exists<Component_>();

@@ -124,7 +124,21 @@ static void check_result_internal(HRESULT hr, const char* file, int32 line)
 	}
 }
 
+#define DEFINE_BITWISE_OPERATORS_FOR_ENUM(enum_type) \
+    inline constexpr enum_type operator|(enum_type l, enum_type r) { return static_cast<enum_type>(static_cast<uint32>(l) | static_cast<uint32>(r)); } \
+    inline constexpr enum_type operator&(enum_type l, enum_type r) { return static_cast<enum_type>(static_cast<uint32>(l) & static_cast<uint32>(r)); } \
+    inline constexpr enum_type operator^(enum_type l, enum_type r) { return static_cast<enum_type>(static_cast<uint32>(l) ^ static_cast<uint32>(r)); } \
+    inline constexpr enum_type& operator|=(enum_type& l, enum_type r) { l = l | r; return l; } \
+    inline constexpr enum_type& operator&=(enum_type& l, enum_type r) { l = l & r; return l; } \
+    inline constexpr enum_type& operator^=(enum_type& l, enum_type r) { l = l ^ r; return l; } \
+    inline constexpr enum_type operator~(enum_type e) { return static_cast<enum_type>(~static_cast<uint32>(e)); }
+
 #define arraysize(arr) (sizeof(arr) / sizeof((arr)[0]))
+
+#define setBit(mask, bit) (mask) |= (1 << (bit))
+#define unsetBit(mask, bit) (mask) ^= (1 << (bit))
+
+#define checkResult(hr) check_result_internal(hr, __FILE__, __LINE__)
 
 #define setBit(mask, bit) (mask) |= (1 << (bit))
 #define unsetBit(mask, bit) (mask) ^= (1 << (bit))

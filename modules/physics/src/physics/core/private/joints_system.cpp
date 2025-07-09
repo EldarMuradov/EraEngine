@@ -48,6 +48,50 @@ namespace era_engine::physics
 	{
 		using namespace physx;
 
+		for (auto [entity_handle, observable_component, joint_component] : world->group(components_group<ObservableMemberChangedFlagComponent, DistanceJointComponent>).each())
+		{
+			PxJoint* joint = joint_component.get_native_joint();
+
+			if (joint == nullptr)
+			{
+				continue;
+			}
+
+			PxDistanceJoint* native_joint = joint->is<PxDistanceJoint>();
+
+			if (native_joint == nullptr)
+			{
+				continue;
+			}
+			
+			if (joint_component.stiffness.is_changed())
+			{
+				native_joint->setStiffness(joint_component.stiffness);
+			}
+
+			if (joint_component.damping.is_changed())
+			{
+				native_joint->setDamping(joint_component.damping);
+			}
+
+			if (joint_component.spring_enabled.is_changed())
+			{
+				native_joint->setDistanceJointFlag(PxDistanceJointFlag::eSPRING_ENABLED, joint_component.spring_enabled);
+			}
+
+			if (joint_component.min_distance.is_changed())
+			{
+				native_joint->setDistanceJointFlag(PxDistanceJointFlag::eMIN_DISTANCE_ENABLED, true);
+				native_joint->setMinDistance(joint_component.min_distance);
+			}
+
+			if (joint_component.max_distance.is_changed())
+			{
+				native_joint->setDistanceJointFlag(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED, true);
+				native_joint->setMaxDistance(joint_component.max_distance);
+			}
+		}
+
 		for (auto [entity_handle, observable_component, joint_component] : world->group(components_group<ObservableMemberChangedFlagComponent, D6JointComponent>).each())
 		{
 			PxJoint* joint = joint_component.get_native_joint();
@@ -289,10 +333,10 @@ namespace era_engine::physics
 		{
 			Entity entity = world->get_entity(*iter);
 
-			D6JointComponent& joint_component = entity.get_component<D6JointComponent>();
+			D6JointComponent* joint_component = entity.get_component<D6JointComponent>();
 
-			PxRigidActor* first_actor = PhysicsUtils::get_body_component(joint_component.base_descriptor.connected_entity.get())->get_rigid_actor();
-			PxRigidActor* second_actor = PhysicsUtils::get_body_component(joint_component.base_descriptor.second_connected_entity.get())->get_rigid_actor();
+			PxRigidActor* first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
+			PxRigidActor* second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
 
 			if (first_actor == nullptr ||
 				second_actor == nullptr)
@@ -303,25 +347,105 @@ namespace era_engine::physics
 
 			PxD6Joint* created_joint = PxD6JointCreate(*PhysicsHolder::physics_ref->get_physics(),
 				first_actor,
-				create_PxTransform(joint_component.base_descriptor.local_frame),
+				create_PxTransform(joint_component->base_descriptor.local_frame),
 				second_actor,
-				create_PxTransform(joint_component.base_descriptor.second_local_frame));
+				create_PxTransform(joint_component->base_descriptor.second_local_frame));
 
 			created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
-			created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component.enable_collision);
+			created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component->enable_collision);
 
 			if (PhysicsHolder::physics_ref->is_gpu())
 			{
 				created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
 			}
 
-			joint_component.joint = created_joint;
-			joint_component.joint->userData = this;
-
-			joint_component.state = JointComponent::State::ENABLED;
+			joint_component->joint = created_joint;
+			joint_component->joint->userData = joint_component;
+						
+			joint_component->state = JointComponent::State::ENABLED;
 
 			iter = d6_joints_to_init.erase(iter);
 		}
+
+		for (auto iter = distance_joints_to_init.begin(); iter != distance_joints_to_init.end();)
+		{
+			Entity entity = world->get_entity(*iter);
+
+			DistanceJointComponent* joint_component = entity.get_component<DistanceJointComponent>();
+
+			PxRigidActor* first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
+			PxRigidActor* second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+
+			if (first_actor == nullptr ||
+				second_actor == nullptr)
+			{
+				++iter;
+				continue;
+			}
+
+			PxDistanceJoint* created_joint = PxDistanceJointCreate(*PhysicsHolder::physics_ref->get_physics(),
+				first_actor,
+				create_PxTransform(joint_component->base_descriptor.local_frame),
+				second_actor,
+				create_PxTransform(joint_component->base_descriptor.second_local_frame));
+
+			created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
+			created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component->enable_collision);
+
+			joint_component->joint = created_joint;
+			joint_component->joint->userData = joint_component;
+
+			joint_component->state = JointComponent::State::ENABLED;
+
+			iter = distance_joints_to_init.erase(iter);
+		}
+
+		for (auto iter = fixed_joints_to_init.begin(); iter != fixed_joints_to_init.end();)
+		{
+			Entity entity = world->get_entity(*iter);
+
+			FixedJointComponent* joint_component = entity.get_component<FixedJointComponent>();
+
+			PxRigidActor* first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
+			PxRigidActor* second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+
+			if (first_actor == nullptr ||
+				second_actor == nullptr)
+			{
+				++iter;
+				continue;
+			}
+
+			PxFixedJoint* created_joint = PxFixedJointCreate(*PhysicsHolder::physics_ref->get_physics(),
+				first_actor,
+				create_PxTransform(joint_component->base_descriptor.local_frame),
+				second_actor,
+				create_PxTransform(joint_component->base_descriptor.second_local_frame));
+
+			created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
+			created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component->enable_collision);
+
+			joint_component->joint = created_joint;
+			joint_component->joint->userData = joint_component;
+
+			joint_component->state = JointComponent::State::ENABLED;
+
+			iter = fixed_joints_to_init.erase(iter);
+		}
+	}
+
+	void JointsSystem::on_fixed_joint_created(entt::registry& registry, entt::entity entity_handle)
+	{
+		ScopedSpinLock _lock{ sync };
+
+		fixed_joints_to_init.push_back(static_cast<Entity::Handle>(entity_handle));
+	}
+
+	void JointsSystem::on_distance_joint_created(entt::registry& registry, entt::entity entity_handle)
+	{
+		ScopedSpinLock _lock{ sync };
+
+		distance_joints_to_init.push_back(static_cast<Entity::Handle>(entity_handle));
 	}
 
 	void JointsSystem::on_d6_joint_created(entt::registry& registry, entt::entity entity_handle)

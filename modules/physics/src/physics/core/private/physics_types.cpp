@@ -74,36 +74,6 @@ namespace era_engine::physics
 		return false;
 	};
 
-	physx::PxQueryHitType::Enum QueryFilter::preFilter(const physx::PxFilterData& filterData, const physx::PxShape* shape, const physx::PxRigidActor* actor, physx::PxHitFlags& queryFlags)
-	{
-		using namespace physx;
-
-		if(shape == nullptr)
-		{
-			return PxQueryHitType::eNONE;
-		}
-
-		const PxFilterData shape_filter = shape->getQueryFilterData();
-		if ((filterData.word0 & shape_filter.word0) == 0)
-		{
-			return PxQueryHitType::eNONE;
-		}
-
-		const bool hit_triggers = filterData.word2 != 0;
-		if (!hit_triggers && shape->getFlags() & PxShapeFlag::eTRIGGER_SHAPE)
-		{
-			return PxQueryHitType::eNONE;
-		}
-
-		const bool block_single = filterData.word1 != 0;
-		return block_single ? PxQueryHitType::eBLOCK : PxQueryHitType::eTOUCH;
-	}
-
-	physx::PxQueryHitType::Enum QueryFilter::postFilter(const physx::PxFilterData& filterData, const physx::PxQueryHit& hit, const physx::PxShape* shape, const physx::PxRigidActor* actor)
-	{
-		return physx::PxQueryHitType::eNONE;
-	}
-
 	physx::PxShape* CharacterControllerFilterCallback::getShape(const physx::PxController& controller)
 	{
 		using namespace physx;

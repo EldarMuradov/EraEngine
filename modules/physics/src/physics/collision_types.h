@@ -41,6 +41,7 @@ namespace era_engine::physics
 		RAGDOLL = uint32(1u << 31u),
 		ALL = uint32(0xFFFFFFFF),
 	};
+	DEFINE_BITWISE_OPERATORS_FOR_ENUM(CollisionType)
 
 	constexpr static const uint32 TYPES_COUNT = 32u;
 

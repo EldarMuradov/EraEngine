@@ -28,6 +28,7 @@ namespace era_engine::physics
 		physx::PxBroadPhaseType::Enum broad_phase = physx::PxBroadPhaseType::ePABP;
 		bool enable_pvd = true;
 		bool enable_tgs_solver = true;
+		const char* omni_pvd_path = "out.ovd";
 	};
 
 	class Physics final
@@ -35,6 +36,8 @@ namespace era_engine::physics
 	public:
 		Physics(const PhysicsDescriptor& _descriptor = {});
 		~Physics();
+
+		void init_scene();
 
 		physx::PxScene* get_scene() const;
 		physx::PxPhysics* get_physics() const;
@@ -70,30 +73,11 @@ namespace era_engine::physics
 
 		void explode(const vec3& world_pos, float damage_radius, float explosive_impulse);
 
-		// Raycasting
-		RaycastInfo raycast(const BodyComponent* rb, const vec3& dir, int max_dist = PX_NB_MAX_RAYCAST_DISTANCE, bool hit_triggers = true, uint32_t layer_mask = 0, int max_hits = PX_NB_MAX_RAYCAST_HITS);
-
-		// Checking
-		bool check_box(const vec3& center, const vec3& half_extents, const quat& rotation, bool hit_triggers = false, uint32 layer_mask = 0);
-
-		bool check_sphere(const vec3& center, const float radius, bool hit_triggers = false, uint32 layer_mask = 0);
-
-		bool check_capsule(const vec3& center, const float radius, const float half_height, const quat& rotation, bool hit_triggers = false, uint32 layer_mask = 0);
-
-		// Overlapping
-		OverlapInfo overlap_capsule(const vec3& center, const float radius, const float half_height, const quat& rotation, bool hit_triggers = false, uint32 layer_mask = 0);
-
-		OverlapInfo overlap_box(const vec3& center, const vec3& half_extents, const quat& rotation, bool hit_triggers = false, uint32 layer_mask = 0);
-
-		OverlapInfo overlap_sphere(const vec3& center, const float radius, bool hit_triggers = false, uint32 layer_mask = 0);
-
 	private:
 		void sync_transforms();
 		void process_simulation_event_callbacks();
 
 	public:
-		volatile float frame_rate = 60.0f;
-
 		std::atomic_uint32_t nb_active_actors{};
 
 		std::set<BodyComponent*> actors;
@@ -108,6 +92,7 @@ namespace era_engine::physics
 
 	private:
 		PhysicsDescriptor descriptor;
+		Allocator allocator;
 
 		physx::PxScene* scene = nullptr;
 
@@ -123,10 +108,6 @@ namespace era_engine::physics
 
 		physx::PxCudaContextManager* cuda_context_manager = nullptr;
 
-#if PX_ENABLE_RAYCAST_CCD
-		physx::RaycastCCDManager* raycast_ccd = nullptr;
-#endif
-
 		PhysicsAllocatorCallback* allocator_callback = nullptr;
 		ErrorReporter error_reporter;
 
@@ -139,15 +120,10 @@ namespace era_engine::physics
 
 		std::vector<ref<PhysicsMaterial>> materials;
 
-		QueryFilter queryFilter;
-
 		physx::PxTolerancesScale tolerance_scale;
 
 		const uint32_t nb_cpu_dispatcher_threads = 4;
-
 		bool use_stepper = false;
-
-		Allocator allocator;
 
 		friend class PhysicsSystem;
 	};

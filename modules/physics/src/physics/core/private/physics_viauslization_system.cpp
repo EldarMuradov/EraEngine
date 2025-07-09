@@ -50,13 +50,13 @@ namespace era_engine::physics
 		for (PxU32 i = 0; i < rb.getNbPoints(); i++)
 		{
 			const PxDebugPoint& point = rb.getPoints()[i];
-			renderPoint(create_vec3(point.pos), vec4(1.0f), renderer_holder_rc->ldrRenderPass);
+			renderPoint(create_vec3(point.pos), vec4(1.0f), renderer_holder_rc->ldrRenderPass, true);
 		}
 
 		for (PxU32 i = 0; i < rb.getNbLines(); i++)
 		{
 			const PxDebugLine& line = rb.getLines()[i];
-			renderLine(create_vec3(line.pos0), create_vec3(line.pos1), vec4(1.0f), renderer_holder_rc->ldrRenderPass);
+			renderLine(create_vec3(line.pos0), create_vec3(line.pos1), vec4(1.0f), renderer_holder_rc->ldrRenderPass, true);
 		}
 	}
 

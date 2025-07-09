@@ -1,6 +1,8 @@
 #include "physics/soft_body.h"
 #include "physics/core/physics.h"
 
+#include "ecs/base_components/transform_component.h"
+
 #include <rttr/registration>
 
 namespace era_engine::physics
@@ -175,8 +177,10 @@ namespace era_engine::physics
 
 			PhysicsHolder::physics_ref->get_scene()->addActor(*softBody);
 
+			const trs& world_transform = get_entity().get_component<TransformComponent>()->get_world_transform();
+
 			PxFEMParameters femParams;
-			process_soft_body(softBody, femParams, PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(PxIdentity)), 100.f, 1.0f, 30);
+			process_soft_body(softBody, femParams, create_PxTransform(world_transform), 100.f, 1.0f, 30);
 			softBody->setSoftBodyFlag(PxSoftBodyFlag::eDISABLE_SELF_COLLISION, false);
 			softBody->setSoftBodyFlag(PxSoftBodyFlag::eENABLE_CCD, true);
 		}

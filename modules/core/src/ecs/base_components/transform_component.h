@@ -32,7 +32,16 @@ namespace era_engine
 		const trs& get_world_transform() const;
 		void set_world_transform(const trs& new_world_transform);
 
+		const vec3& get_world_position() const;
+		void set_world_position(const vec3& new_world_position);
+
+		const quat& get_world_rotation() const;
+		void set_world_rotation(const quat& new_world_rotation);
+
 		ERA_VIRTUAL_REFLECT(Component)
+
+	private:
+		void sync_local_transform();
 
 	public:
 		trs transform = trs::identity; // In World space.

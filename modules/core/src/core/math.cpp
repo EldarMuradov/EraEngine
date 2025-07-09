@@ -86,6 +86,15 @@ half& operator*=(half& a, half b) { a = a * b; return a; }
 half operator/(half a, half b) { half result; result.h = half_div(a.h, b.h); return result; }
 half& operator/=(half& a, half b) { a = a / b; return a; }
 
+float map_value(float value, float in_range_a, float in_range_b, float out_range_a, float out_range_b)
+{
+	float value_clamped = clamp(value, in_range_a, in_range_b);
+	float in_range_size = in_range_b - in_range_a;
+	float out_range_size = out_range_b - out_range_a;
+
+	return (value_clamped - in_range_a) / in_range_size * out_range_size + out_range_a;
+}
+
 mat2 operator*(const mat2& a, const mat2& b)
 {
 	vec2 r0 = row(a, 0);

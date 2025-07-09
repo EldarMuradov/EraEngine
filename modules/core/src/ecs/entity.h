@@ -74,11 +74,11 @@ namespace era_engine
 		Entity::Handle get_parent_handle() const;
 
 		template <typename Component_, typename... Args_>
-		Component_& add_component(Args_&&... a)
+		Component_* add_component(Args_&&... a)
 		{
 			if (!has_component<Component_>())
 			{
-				return internal_data->native_registry->emplace_or_replace<Component_>(internal_data->entity_handle, internal_data, std::forward<Args_>(a)...);
+				return &internal_data->native_registry->emplace_or_replace<Component_>(internal_data->entity_handle, internal_data, std::forward<Args_>(a)...);
 			}
 			return get_component<Component_>();
 		}
@@ -107,15 +107,15 @@ namespace era_engine
 		}
 
 		template <typename Component_>
-		Component_& get_component()
+		Component_* get_component()
 		{
-			return internal_data->native_registry->get<Component_>(internal_data->entity_handle);
+			return &internal_data->native_registry->get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>
-		const Component_& get_component() const
+		const Component_* get_component() const
 		{
-			return internal_data->native_registry->get<Component_>(internal_data->entity_handle);
+			return &internal_data->native_registry->get<Component_>(internal_data->entity_handle);
 		}
 
 		template <typename Component_>

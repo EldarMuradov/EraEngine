@@ -1,0 +1,204 @@
+#include "physics/physical_animation/physical_animation_component.h"
+#include "physics/body_component.h"
+#include "physics/joint.h"
+#include "physics/physical_animation/states/blend_in_simulation_state.h"
+#include "physics/physical_animation/states/blend_out_simulation_state.h"
+#include "physics/physical_animation/states/enabled_simulation_state.h"
+#include "physics/physical_animation/states/disabled_simulation_state.h"
+
+#include <rttr/registration>
+
+namespace era_engine::physics
+{
+
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+		registration::class_<PhysicalAnimationComponent>("PhysicalAnimationComponent")
+			.constructor<>();
+
+		registration::class_<PhysicalAnimationLimbComponent>("PhysicalAnimationLimbComponent")
+			.constructor<>();
+	}
+
+	PhysicalAnimationLimbComponent::PhysicalAnimationLimbComponent(ref<Entity::EcsData> _data, uint32 _joint_id /*= INVALID_JOINT*/)
+		: RagdollLimbComponent(_data, _joint_id)
+	{
+	}
+
+	PhysicalAnimationLimbComponent::~PhysicalAnimationLimbComponent()
+	{
+	}
+
+	PhysicalAnimationComponent::PhysicalAnimationComponent(ref<Entity::EcsData> _data)
+		: RagdollComponent(_data)
+	{
+        ComponentPtr this_component_ptr = ComponentPtr(this);
+
+        simulation_states.emplace(ConstraintStateType::ENABLED, std::make_shared<EnabledSimulationState>(this_component_ptr));
+        simulation_states.emplace(ConstraintStateType::DISABLED, std::make_shared<DisabledSimulationState>(this_component_ptr));
+        simulation_states.emplace(ConstraintStateType::BLEND_IN, std::make_shared<BlendInSimulationState>(this_component_ptr));
+        simulation_states.emplace(ConstraintStateType::BLEND_OUT, std::make_shared<BlendOutSimulationState>(this_component_ptr));
+
+        current_state_type = ConstraintStateType::DISABLED;
+	}
+
+	PhysicalAnimationComponent::~PhysicalAnimationComponent()
+	{
+	}
+
+	bool PhysicalAnimationComponent::try_to_apply_ragdoll_profile(ref<RagdollProfile> new_profile, bool force_reload)
+	{
+        if (current_profile != new_profile || force_reload)
+        {
+            current_profile = new_profile;
+
+            for (const EntityPtr& limb_ptr : limbs)
+            {
+                Entity limb = limb_ptr.get();
+                PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
+
+                const ConstraintDetails* details = nullptr;
+
+                switch (limb_component->type)
+                {
+                case RagdollLimbComponent::Type::HEAD:
+                {
+                    details = &current_profile->head_constraint;
+                }
+                break;
+
+                case RagdollLimbComponent::Type::NECK:
+                {
+                    details = &current_profile->neck_constraint;
+                }
+                break;
+
+                case RagdollLimbComponent::Type::BODY_UPPER:
+                {
+                    details = &current_profile->body_upper_constraint;
+                }
+                break;
+
+                case RagdollLimbComponent::Type::BODY_LOWER:
+                case RagdollLimbComponent::Type::BODY_MIDDLE:
+                {
+                    details = &current_profile->body_middle_constraint;
+                }
+                break;
+
+                case RagdollLimbComponent::Type::ARM:
+                {
+                    details = &current_profile->arm_constraint;
+                }
+                break;
+
+                case RagdollLimbComponent::Type::FOREARM:
+                {
+                    details = &current_profile->forearm_constraint;
+                }
+                break;
+
+                case RagdollLimbComponent::Type::HAND:
+                {
+                    details = &current_profile->hand_constraint;
+                }
+                break;
+
+                case RagdollLimbComponent::Type::LEG:
+                {
+                    details = &current_profile->leg_constraint;
+                }
+                break;
+
+                case RagdollLimbComponent::Type::CALF:
+                {
+                    details = &current_profile->calf_constraint;
+                }
+                break;
+
+                case RagdollLimbComponent::Type::FOOT:
+                {
+                    details = &current_profile->foot_constraint;
+                }
+                break;
+
+                default:
+                {
+                    details = &current_profile->body_upper_constraint;
+                }
+                break;
+                }
+
+                if (details != nullptr)
+                {
+                    limb_component->stiffness = details->drive_stiffness;
+                    limb_component->damping = details->drive_damping;
+                    limb_component->drive_velocity_modifier = details->drive_velocity_modifier;
+
+                    limb_component->blend_type = details->blend_type;
+
+                    D6JointComponent* joint_component = dynamic_cast<D6JointComponent*>(limb_component->parent_joint_component.get_for_write());
+                    if (joint_component)
+                    {
+                        if (details->enable_slerp_drive)
+                        {
+                            joint_component->slerp_drive_damping = details->drive_damping;
+                            joint_component->slerp_drive_force_limit = details->max_force;
+                            joint_component->slerp_drive_stiffness = details->drive_stiffness;
+                        }
+                        else
+                        {
+                            joint_component->swing_drive_damping = details->drive_damping;
+                            joint_component->swing_drive_force_limit = details->max_force;
+                            joint_component->swing_drive_stiffness = details->drive_stiffness;
+
+                            joint_component->twist_drive_damping = details->drive_damping;
+                            joint_component->twist_drive_force_limit = details->max_force;
+                            joint_component->twist_drive_stiffness = details->drive_stiffness;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+        return false;
+    }
+
+	ref<RagdollProfile> PhysicalAnimationComponent::get_ragdoll_profile() const
+	{
+		return current_profile;
+	}
+
+    std::shared_ptr<BaseSimulationState> PhysicalAnimationComponent::get_current_state() const
+    {
+        return simulation_states.at(current_state_type);
+    }
+
+    ConstraintStateType PhysicalAnimationComponent::get_current_state_type() const
+    {
+        return current_state_type;
+    }
+
+    void PhysicalAnimationComponent::force_switch_state(ConstraintStateType desired_state)
+    {
+        current_state_type = desired_state;
+        get_current_state()->on_entered();
+    }
+
+    void PhysicalAnimationComponent::update_states(float dt, ConstraintStateType desired_state)
+    {
+        if (current_state_type != desired_state)
+        {
+            const ConstraintStateType transition_state = get_current_state()->try_switch_to(desired_state);
+            if (current_state_type != transition_state)
+            {
+                force_switch_state(transition_state);
+            }
+        }
+
+        get_current_state()->update(dt);
+    }
+
+}

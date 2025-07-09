@@ -49,6 +49,9 @@ namespace era_engine::physics
 		EntityPtr get_first_entity_ptr() const;
 		EntityPtr get_second_entity_ptr() const;
 
+		const trs& get_first_local_frame() const;
+		const trs& get_second_local_frame() const;
+
 		ObservableMember<bool> enable_collision = false;
 
 		ObservableMember<float> break_force = std::numeric_limits<float>::max();
@@ -110,13 +113,13 @@ namespace era_engine::physics
 		DistanceJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
 		~DistanceJointComponent() override;
 
-		void set_damping(float damping);
-		float get_damping() const;
+		ObservableMember<float> stiffness = 0.0f;
+		ObservableMember<float> damping = 0.0f;
 
-		void set_stiffness(float stiffness);
-		float get_stiffness() const;
+		ObservableMember<float> min_distance = 0.0f;
+		ObservableMember<float> max_distance = 0.0f;
 
-		void set_constraint_limit(float min_distance, float max_distance);
+		ObservableMember<bool> spring_enabled = false;
 
 		ERA_VIRTUAL_REFLECT(JointComponent)
 	};

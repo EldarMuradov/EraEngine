@@ -514,7 +514,7 @@ namespace era_engine
 
 	static bounding_box getObjectBoundingBox(Entity entity, bool applyPosition)
 	{
-		bounding_box aabb = entity.has_component<MeshComponent>() ? entity.get_component<MeshComponent>().mesh->aabb : bounding_box::fromCenterRadius(0.f, 1.f);
+		bounding_box aabb = entity.has_component<MeshComponent>() ? entity.get_component<MeshComponent>()->mesh->aabb : bounding_box::fromCenterRadius(0.f, 1.f);
 
 		if (TransformComponent* transform = entity.get_component_if_exists<TransformComponent>())
 		{
@@ -671,12 +671,10 @@ namespace era_engine
 							const char* name = tag.name;
 							Entity entity = world->get_entity(entityHandle);
 
-							if (ChildComponent* cc = entity.get_component_if_exists<ChildComponent>())
+							Entity parent = world->get_entity(entity.get_parent_handle());
+
+							if (parent.is_valid())
 							{
-								if (cc->parent.expired())
-								{
-									return;
-								}
 								ImGuiTreeNodeFlags flags = ((selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
 								if (ImGui::TreeNodeEx((void*)(uint32)entityHandle, flags, name))
 								{
@@ -1067,8 +1065,8 @@ namespace era_engine
 			if (ImGui::MenuItem("Empty", "E") || ImGui::IsKeyPressed('E'))
 			{
 				auto empty = world->create_entity("Empty");
-				TransformComponent& transform = empty.get_component<TransformComponent>();
-				transform.transform.position = camera.position + camera.rotation * vec3(0.f, 0.f, -3.f);
+				TransformComponent* transform = empty.get_component<TransformComponent>();
+				transform->set_world_position(camera.position + camera.rotation * vec3(0.f, 0.f, -3.f));
 
 				//currentUndoStack->pushAction("entity creation", entity_existence_undo(world, empty));
 

@@ -61,11 +61,11 @@ namespace era_engine::physics
 	public:
 		BodyComponent() = default;
 		BodyComponent(ref<Entity::EcsData> _data);
-		virtual ~BodyComponent();
+		~BodyComponent() override;
 
 		physx::PxRigidActor* get_rigid_actor() const;
 
-		virtual void release() override;
+		void release() override;
 
 		ERA_VIRTUAL_REFLECT(Component)
 
@@ -88,11 +88,13 @@ namespace era_engine::physics
 	public:
 		DynamicBodyComponent() = default;
 		DynamicBodyComponent(ref<Entity::EcsData> _data);
-		virtual ~DynamicBodyComponent();
+		~DynamicBodyComponent() override;
 
 		physx::PxRigidDynamic* get_rigid_dynamic() const;
 
 		vec3 get_physics_position() const;
+
+		void wake_up();
 
 		ERA_VIRTUAL_REFLECT(BodyComponent)
 
@@ -137,9 +139,11 @@ namespace era_engine::physics
 	public:
 		StaticBodyComponent() = default;
 		StaticBodyComponent(ref<Entity::EcsData> _data);
-		virtual ~StaticBodyComponent();
+		~StaticBodyComponent() override;
 
 		physx::PxRigidStatic* get_rigid_static() const;
+
+		ObservableMember<bool> simulated = false;
 
 		ERA_VIRTUAL_REFLECT(BodyComponent)
 	};

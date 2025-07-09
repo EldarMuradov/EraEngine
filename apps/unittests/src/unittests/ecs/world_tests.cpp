@@ -13,7 +13,6 @@ TEST(ECS_World, Initialization) {
 	ASSERT_TRUE(runtime_world->size() == 1);
 
 	delete runtime_world;
-
 }
 
 TEST(ECS_World, AddEntity) {

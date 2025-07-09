@@ -17,9 +17,7 @@
 
 namespace era_engine::physics
 {
-
 	static physx::PxOmniPvd* omni_pvd = NULL;
-	const char* omni_pvd_path = "E:/OmniPVD/out.ovd";
 
 	static physx::PxFilterFlags contact_report_filter_shader(
 		physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filter_data0,
@@ -53,7 +51,7 @@ namespace era_engine::physics
 		return physx::PxFilterFlag::eSUPPRESS;
 	}
 
-	static void clearColliderFromCollection(const physics::BodyComponent* collider,
+	static void clear_collider_from_collection(const physics::BodyComponent* collider,
 		physx::PxArray<SimulationEventCallback::CollidersPair>& collection)
 	{
 		const auto c = &collection[0];
@@ -98,22 +96,22 @@ namespace era_engine::physics
 			omni_pvd = PxCreateOmniPvd(*foundation);
 			if (!omni_pvd)
 			{
-				printf("Error: could not create PxOmniPvd!");
+				LOG_ERROR("Error: could not create PxOmniPvd!");
 				return;
 			}
 			OmniPvdWriter* omniWriter = omni_pvd->getWriter();
 			if (!omniWriter)
 			{
-				printf("Error: could not get an instance of PxOmniPvdWriter!");
+				LOG_ERROR("Error: could not get an instance of PxOmniPvdWriter!");
 				return;
 			}
 			OmniPvdFileWriteStream* fStream = omni_pvd->getFileWriteStream();
 			if (!fStream)
 			{
-				printf("Error: could not get an instance of PxOmniPvdFileWriteStream!");
+				LOG_ERROR("Error: could not get an instance of PxOmniPvdFileWriteStream!");
 				return;
 			}
-			fStream->setFileName(omni_pvd_path);
+			fStream->setFileName(descriptor.omni_pvd_path);
 			omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*fStream));
 		}
 
@@ -136,6 +134,28 @@ namespace era_engine::physics
 		}
 
 		dispatcher = PxDefaultCpuDispatcherCreate(nb_cpu_dispatcher_threads);
+
+		stepper = new FixedStepper();
+
+#if PX_VEHICLE
+		if (!PxInitVehicleSDK(*physics))
+		{
+			LOG_ERROR("Physics> Failed to initialize PxVehicleSDK.");
+		}
+
+		PxVehicleSetBasisVectors(PxVec3(0, 1, 0), PxVec3(0, 0, 1));
+		PxVehicleSetUpdateMode(PxVehicleUpdateMode::eVELOCITY_CHANGE);
+#endif
+	}
+
+	Physics::~Physics()
+	{
+		release();
+	}
+
+	void Physics::init_scene()
+	{
+		using namespace physx;
 
 		PxSceneDesc scene_desc(tolerance_scale);
 		scene_desc.gravity = gravity;
@@ -173,27 +193,6 @@ namespace era_engine::physics
 		scene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_FNORMALS, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
-
-		stepper = new FixedStepper();
-
-#if PX_ENABLE_RAYCAST_CCD
-		raycastCCD = new RaycastCCDManager(scene);
-#endif
-
-#if PX_VEHICLE
-		if (!PxInitVehicleSDK(*physics))
-		{
-			LOG_ERROR("Physics> Failed to initialize PxVehicleSDK.");
-		}
-
-		PxVehicleSetBasisVectors(PxVec3(0, 1, 0), PxVec3(0, 0, 1));
-		PxVehicleSetUpdateMode(PxVehicleUpdateMode::eVELOCITY_CHANGE);
-#endif
-	}
-
-	Physics::~Physics()
-	{
-		release();
 	}
 
 	physx::PxScene* Physics::get_scene() const
@@ -242,21 +241,17 @@ namespace era_engine::physics
 	{
 		ScopedSpinLock lock{ sync };
 
+		release_scene();
+
 #if PX_VEHICLE
 		physx::PxCloseVehicleSDK();
 #endif
 
 		PxCloseExtensions();
 
-		if (scene)
 		{
-			scene->flushSimulation();
-		}
-
-		{
-			PX_RELEASE(default_material)
-			PX_RELEASE(scene)
 			delete stepper;
+			PX_RELEASE(default_material)
 			PX_RELEASE(physics)
 			PX_RELEASE(dispatcher)
 			PX_RELEASE(pvd)
@@ -266,11 +261,6 @@ namespace era_engine::physics
 		}
 
 		delete allocator_callback;
-
-#if PX_ENABLE_RAYCAST_CCD
-		delete raycast_ccd;
-		raycast_ccd = nullptr;
-#endif
 	}
 
 	void Physics::start()
@@ -379,36 +369,24 @@ namespace era_engine::physics
 	{
 		using namespace physx;
 
+		ScopedSpinLock l{ sync };
+
 		scene->addActor(*physx_actor);
 
-#if PX_ENABLE_RAYCAST_CCD
-		if (auto r = ractor->is<PxRigidDynamic>())
-		{
-			PxShape* shape = nullptr;
-
-			r->getShapes(&shape, 1);
-
-			raycastCCD->registerRaycastCCDObject(r, shape);
-		}
-#endif
-
-		{
-			ScopedSpinLock l{ sync };
-			actors.emplace(actor);
-			actors_map.insert(std::make_pair(physx_actor, actor));
-		}
+		actors.emplace(actor);
+		actors_map.insert(std::make_pair(physx_actor, actor));
 	}
 
 	void Physics::remove_actor(BodyComponent* actor)
 	{
 		using namespace physx;
 
-		{
-			ScopedSpinLock l{ sync };
-			actors.erase(actor);
-			actors_map.erase(actor->get_rigid_actor());
-			scene->removeActor(*actor->get_rigid_actor());
-		}
+
+		ScopedSpinLock l{ sync };
+		actors.erase(actor);
+		actors_map.erase(actor->get_rigid_actor());
+		scene->removeActor(*actor->get_rigid_actor());
+
 	}
 
 	void Physics::release_scene()
@@ -416,10 +394,23 @@ namespace era_engine::physics
 		using namespace physx;
 		ScopedSpinLock l{ sync };
 
-		PxU32 size = 0;
-		auto actors = scene->getActiveActors(size);
+		if (scene)
+		{
+			scene->flushSimulation();
+		}
 
-		scene->removeActors(actors, size);
+		for (auto& actor : actors)
+		{
+			scene->removeActor(*actor->get_rigid_actor());
+		}
+
+		actors.clear();
+		actors_map.clear();
+		colliders_map.clear();
+
+		nb_active_actors = 0;
+
+		PX_RELEASE(scene)
 	}
 
 	void Physics::explode(const vec3& world_pos, float damage_radius, float explosive_impulse)
@@ -428,143 +419,6 @@ namespace era_engine::physics
 		PxVec3 pos = create_PxVec3(world_pos);
 		ExplodeOverlapCallback overlap_callback(pos, damage_radius, explosive_impulse);
 		scene->overlap(PxSphereGeometry(damage_radius), PxTransform(pos), overlap_callback);
-	}
-
-	RaycastInfo Physics::raycast(const BodyComponent* rb, const vec3& dir, int max_dist, bool hit_triggers, uint32_t layer_mask, int max_hits)
-	{
-		using namespace physx;
-
-		const auto& pose = rb->get_rigid_actor()->getGlobalPose().p - PxVec3(0.0f, 1.5f, 0.0f);
-
-		PX_SCENE_QUERY_SETUP(true);
-		PxRaycastBuffer buffer;
-		PxVec3 d = create_PxVec3(dir);
-		bool status = scene->raycast(pose, d, max_dist, buffer, hitFlags, PxQueryFilterData(), &queryFilter);
-
-		if (status)
-		{
-			uint32 nb = buffer.getNbAnyHits();
-			uint32 index = 0;
-			if (nb > 1)
-			{
-				index = 1;
-			}
-			const auto& hitInfo1 = buffer.getAnyHit(index);
-
-			auto actor = actors_map[hitInfo1.actor];
-
-			if (actor != rb)
-			{
-				return RaycastInfo{
-						actor,
-						hitInfo1.distance,
-						buffer.getNbAnyHits(),
-						vec3(hitInfo1.position.x, hitInfo1.position.y, hitInfo1.position.z)
-					};
-			}
-			
-			else if (buffer.getNbAnyHits() > 1)
-			{
-				const auto& hitInfo2 = buffer.getAnyHit(1);
-
-				actor = actors_map[hitInfo2.actor];
-
-				return RaycastInfo {
-						actor,
-						hitInfo2.distance,
-						buffer.getNbAnyHits(),
-						vec3(hitInfo2.position.x, hitInfo2.position.y, hitInfo2.position.z)
-					};
-			}
-		}
-
-		return RaycastInfo();
-	}
-
-	bool Physics::check_box(const vec3& center, const vec3& half_extents, const quat& rotation, bool hit_triggers, uint32 layer_mask)
-	{
-		using namespace physx;
-
-		PX_SCENE_QUERY_SETUP_CHECK();
-		const PxTransform pose(create_PxVec3(center - vec3(0.0f)), create_PxQuat(rotation));
-		const PxBoxGeometry geometry(create_PxVec3(half_extents));
-
-		return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
-	}
-
-	bool Physics::check_sphere(const vec3& center, const float radius, bool hit_triggers, uint32 layer_mask)
-	{
-		using namespace physx;
-
-		PX_SCENE_QUERY_SETUP_CHECK();
-		const PxTransform pose(create_PxVec3(center - vec3(0.0f)));
-		const PxSphereGeometry geometry(radius);
-
-		return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
-	}
-
-	bool Physics::check_capsule(const vec3& center, const float radius, const float half_height, const quat& rotation, bool hit_triggers, uint32 layer_mask)
-	{
-		using namespace physx;
-
-		PX_SCENE_QUERY_SETUP_CHECK();
-		const PxTransform pose(create_PxVec3(center - vec3(0.0f)), create_PxQuat(rotation));
-		const PxCapsuleGeometry geometry(radius, half_height);
-		return scene->overlap(geometry, pose, buffer, filterData, &queryFilter);
-	}
-
-	OverlapInfo Physics::overlap_capsule(const vec3& center, const float radius, const float half_height, const quat& rotation, bool hit_triggers, uint32 layer_mask)
-	{
-		using namespace physx;
-
-		PX_SCENE_QUERY_SETUP_OVERLAP();
-		std::vector<Entity::Handle> results;
-		const PxTransform pose(create_PxVec3(center - vec3(0.0f)), create_PxQuat(rotation));
-		const PxCapsuleGeometry geometry(radius, half_height);
-		if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
-		{
-			return OverlapInfo(false, results);
-		}
-
-		PX_SCENE_QUERY_COLLECT_OVERLAP();
-
-		return OverlapInfo(true, results);
-	}
-
-	OverlapInfo Physics::overlap_box(const vec3& center, const vec3& half_extents, const quat& rotation, bool hit_triggers, uint32 layer_mask)
-	{
-		using namespace physx;
-		PX_SCENE_QUERY_SETUP_OVERLAP();
-		std::vector<Entity::Handle> results;
-		const PxTransform pose(create_PxVec3(center - vec3(0.0f)), create_PxQuat(rotation));
-		const PxBoxGeometry geometry(create_PxVec3(half_extents));
-
-		if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
-		{
-			return OverlapInfo(false, results);
-		}
-
-		PX_SCENE_QUERY_COLLECT_OVERLAP();
-
-		return OverlapInfo(true, results);
-	}
-
-	OverlapInfo Physics::overlap_sphere(const vec3& center, const float radius, bool hit_triggers, uint32 layer_mask)
-	{
-		using namespace physx;
-		PX_SCENE_QUERY_SETUP_OVERLAP();
-		std::vector<Entity::Handle> results;
-		const PxTransform pose(create_PxVec3(center - vec3(0.0f)));
-		const PxSphereGeometry geometry(radius);
-
-		if (!scene->overlap(geometry, pose, buffer, filterData, &queryFilter))
-		{
-			return OverlapInfo(false, results);
-		}
-
-		PX_SCENE_QUERY_COLLECT_OVERLAP();
-
-		return OverlapInfo(true, results);
 	}
 
 	void Physics::sync_transforms()
@@ -584,7 +438,7 @@ namespace era_engine::physics
 
 			if (auto rb = active_actors[i]->is<PxRigidDynamic>())
 			{
-				Entity::EcsData* data = static_cast<Entity::EcsData*>(active_actors[i]->userData);
+				Component* data = static_cast<Component*>(active_actors[i]->userData);
 
 				if (data == nullptr)
 				{
@@ -593,7 +447,7 @@ namespace era_engine::physics
 
 				// Check joint shape sync.
 				{
-					auto& colliders = colliders_map[data->entity_handle];
+					auto& colliders = colliders_map[data->get_handle()];
 
 					if (!colliders.empty())
 					{
@@ -606,13 +460,13 @@ namespace era_engine::physics
 					}
 				}
 
-				TransformComponent& transform =	data->native_registry->get<TransformComponent>(data->entity_handle);
+				TransformComponent* transform = data->get_entity().get_component<TransformComponent>();
 
 				const auto& pxt = rb->getGlobalPose();
 				const auto& pos = pxt.p;
 				const auto& rot = pxt.q;
-				transform.transform.position = create_vec3(pos);
-				transform.transform.rotation = create_quat(rot);
+				transform->set_world_position(create_vec3(pos));
+				transform->set_world_rotation(create_quat(rot));
 			}
 		}
 

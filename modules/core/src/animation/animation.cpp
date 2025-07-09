@@ -139,10 +139,12 @@ namespace era_engine::animation
 		return lerp(a, b, t);
 	}
 
-	void AnimationSkeleton::sampleAnimation(const AnimationClip& clip, float time, trs* outRootMotion) const
+	SkeletonPose AnimationSkeleton::sampleAnimation(const AnimationClip& clip, float time, trs* outRootMotion) const
 	{
 		ASSERT(skeleton != nullptr);
 		ASSERT(clip.joints.size() == skeleton->joints.size());
+
+		SkeletonPose result_pose = SkeletonPose(skeleton->joints.size());
 
 		time = clamp(time, 0.f, clip.length_in_seconds);
 
@@ -150,8 +152,7 @@ namespace era_engine::animation
 		for (uint32 i = 0; i < numJoints; ++i)
 		{
 			const AnimationJoint& animJoint = clip.joints[i];
-			auto& joint = skeleton->joints[i];
-			auto& joint_transform = skeleton->local_transforms[i];
+			JointTransform joint_transform;
 
 			if (animJoint.is_animated)
 			{
@@ -166,6 +167,8 @@ namespace era_engine::animation
 			{
 				joint_transform.set_transform(trs::identity);
 			}
+
+			result_pose.set_joint_transform(joint_transform, i);
 		}
 
 		trs rootMotion;
@@ -184,22 +187,22 @@ namespace era_engine::animation
 		{
 			if (clip.bake_root_rotation_into_pose)
 			{
-				skeleton->local_transforms[0].set_transform(trs(0.f, rootMotion.rotation) * skeleton->local_transforms[0].get_transform());
+				result_pose.set_joint_transform(JointTransform(trs(0.f, rootMotion.rotation) * result_pose.get_joint_transform(0).get_transform()), 0);
 				rootMotion.rotation = quat::identity;
 			}
 
 			if (clip.bake_root_xz_translation_into_pose)
 			{
-				skeleton->local_transforms[0].set_translation(skeleton->local_transforms[0].get_translation()
-					+ vec3(rootMotion.position.x, 0.0f, 0.0f) + vec3(0.0f, 0.0f, rootMotion.position.z));
+				result_pose.set_joint_translation(result_pose.get_joint_translation(0)
+					+ vec3(rootMotion.position.x, 0.0f, 0.0f) + vec3(0.0f, 0.0f, rootMotion.position.z), 0);
 				rootMotion.position.x = 0.f;
 				rootMotion.position.z = 0.f;
 			}
 
 			if (clip.bake_root_y_translation_into_pose)
 			{
-				skeleton->local_transforms[0].set_translation(skeleton->local_transforms[0].get_translation()
-					+ vec3(rootMotion.position.x, 0.0f, 0.0f) + vec3(0.0f, rootMotion.position.y, 0.0f));
+				result_pose.set_joint_translation(result_pose.get_joint_translation(0)
+					+ vec3(rootMotion.position.x, 0.0f, 0.0f) + vec3(0.0f, rootMotion.position.y, 0.0f), 0);
 				rootMotion.position.y = 0.f;
 			}
 
@@ -207,13 +210,20 @@ namespace era_engine::animation
 		}
 		else
 		{
-			skeleton->local_transforms[0].set_transform(rootMotion * skeleton->local_transforms[0].get_transform());
+			result_pose.set_joint_transform(JointTransform(rootMotion * result_pose.get_joint_transform(0).get_transform()), 0);
 		}
+
+		if (clip.is_unreal_asset)
+		{
+			result_pose.set_joint_rotation(result_pose.get_joint_rotation(0) * euler_to_quat(vec3(0.0f, -M_PI / 2.0f, 0.0f)), 0);
+		}
+
+		return result_pose;
 	}
 
-	void AnimationSkeleton::sampleAnimation(uint32 index, float time, trs* outRootMotion) const
+	SkeletonPose AnimationSkeleton::sampleAnimation(uint32 index, float time, trs* outRootMotion) const
 	{
-		sampleAnimation(clips[index], time, outRootMotion);
+		return sampleAnimation(clips[index], time, outRootMotion);
 	}
 
 	std::vector<uint32> AnimationSkeleton::getClipsByName(const std::string& name)
@@ -316,11 +326,11 @@ namespace era_engine::animation
 		lastRootMotion = clip->get_first_root_transform();
 	}
 
-	void AnimationInstance::update(const AnimationSkeleton& skeleton, float dt, trs& outDeltaRootMotion)
+	SkeletonPose AnimationInstance::update(const AnimationSkeleton& skeleton, float dt, trs& outDeltaRootMotion)
 	{
 		if (paused)
 		{
-			return;
+			return SkeletonPose();
 		}
 
 		if (valid())
@@ -341,14 +351,16 @@ namespace era_engine::animation
 			}
 
 			trs rootMotion;
-			skeleton.sampleAnimation(*clip, time, &rootMotion);
+			SkeletonPose result_pose = skeleton.sampleAnimation(*clip, time, &rootMotion);
 
 			outDeltaRootMotion = invert(lastRootMotion) * rootMotion;
 			lastRootMotion = rootMotion;
+			return result_pose;
 		}
+		return SkeletonPose();
 	}
 
-#if 1
+#if 0
 	AnimationBlendTree1d::AnimationBlendTree1d(std::initializer_list<AnimationClip*> clips, float startBlendValue, float startRelTime)
 	{
 		ASSERT(clips.size() <= arraysize(this->clips));
@@ -554,6 +566,11 @@ namespace era_engine::animation
 			.constructor<ref<Entity::EcsData>>();
 	}
 
+	JointTransform::JointTransform(const trs& initial_transform)
+	{
+		local_transform = initial_transform;
+	}
+
 	void JointTransform::set_translation(const vec3& new_translation)
 	{
 		local_transform.position = new_translation;
@@ -584,6 +601,51 @@ namespace era_engine::animation
 		return local_transform;
 	}
 
+	SkeletonPose::SkeletonPose(uint32 joints_size)
+	{
+		local_transforms.resize(joints_size);
+	}
+
+	bool SkeletonPose::is_valid() const
+	{
+		return local_transforms.size() > 0;
+	}
+
+	uint32 SkeletonPose::size() const
+	{
+		return static_cast<uint32>(local_transforms.size());
+	}
+
+	void SkeletonPose::set_joint_transform(const JointTransform& new_joint_transform, uint32 joint_id)
+	{
+		local_transforms[joint_id] = new_joint_transform;
+	}
+
+	void SkeletonPose::set_joint_translation(const vec3& new_translation, uint32 joint_id)
+	{
+		local_transforms[joint_id].set_translation(new_translation);
+	}
+
+	void SkeletonPose::set_joint_rotation(const quat& new_rotaiton, uint32 joint_id)
+	{
+		local_transforms[joint_id].set_rotation(new_rotaiton);
+	}
+
+	const vec3& SkeletonPose::get_joint_translation(uint32 joint_id) const
+	{
+		return local_transforms[joint_id].get_translation();
+	}
+
+	const JointTransform& SkeletonPose::get_joint_transform(uint32 joint_id) const
+	{
+		return local_transforms[joint_id];
+	}
+
+	const quat& SkeletonPose::get_joint_rotation(uint32 joint_id) const
+	{
+		return local_transforms[joint_id].get_rotation();
+	}
+
 	trs SkeletonUtils::get_object_space_joint_transform(const Skeleton* skeleton, uint32 joint_id)
 	{
 		if (joint_id >= skeleton->local_transforms.size()) 
@@ -597,6 +659,25 @@ namespace era_engine::animation
 		while (parent_id != INVALID_JOINT && parent_id < skeleton->joints.size())
 		{
 			result = skeleton->local_transforms[parent_id].get_transform() * result;
+			parent_id = skeleton->joints[parent_id].parent_id;
+		}
+
+		return result;
+	}
+
+	trs SkeletonUtils::get_object_space_joint_transform(const SkeletonPose& pose, const Skeleton* skeleton, uint32 joint_id)
+	{
+		if (joint_id >= pose.size())
+		{
+			return trs::identity;
+		}
+
+		trs result = pose.get_joint_transform(joint_id).get_transform();
+		uint32 parent_id = skeleton->joints[joint_id].parent_id;
+
+		while (parent_id != INVALID_JOINT && parent_id < skeleton->joints.size())
+		{
+			result = pose.get_joint_transform(parent_id).get_transform() * result;
 			parent_id = skeleton->joints[parent_id].parent_id;
 		}
 
@@ -1002,6 +1083,11 @@ namespace era_engine::animation
 	const quat& Skeleton::get_joint_rotation(uint32 joint_id) const
 	{
 		return local_transforms[joint_id].get_rotation();
+	}
+
+	void Skeleton::apply_pose(const SkeletonPose& pose)
+	{
+		local_transforms = pose.local_transforms;
 	}
 
 	SkeletonComponent::SkeletonComponent(ref<Entity::EcsData> _data) 

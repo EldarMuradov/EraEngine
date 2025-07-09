@@ -96,13 +96,29 @@ namespace era_engine::physics
 		using namespace physx;
 
 		PxSceneReadLock lock(*PhysicsHolder::physics_ref->get_scene());
-		PxVec3 pos = actor->getGlobalPose().p;
+		const PxVec3 pos = actor->getGlobalPose().p;
 		return create_vec3(pos);
+	}
+
+	void DynamicBodyComponent::wake_up()
+	{
+		using namespace physx;
+
+		if (actor == nullptr)
+		{
+			return;
+		}
+
+		if (PxRigidDynamic* body = actor->is<PxRigidDynamic>())
+		{
+			body->wakeUp();
+		}
 	}
 
 	StaticBodyComponent::StaticBodyComponent(ref<Entity::EcsData> _data)
 		: BodyComponent(_data)
 	{
+		simulated.set_component(ComponentPtr(this));
 	}
 
 	StaticBodyComponent::~StaticBodyComponent()

@@ -31,8 +31,8 @@ namespace era_engine
 				entity.add_component<animation::AnimationComponent>();
 				entity.add_component<animation::SkeletonComponent>();
 
-				TransformComponent& transform_component = entity.get_component<TransformComponent>();
-				transform_component.type = TransformComponent::DYNAMIC;
+				TransformComponent* transform_component = entity.get_component<TransformComponent>();
+				transform_component->type = TransformComponent::DYNAMIC;
 
 				initializeAnimationComponentAsync(entity, mesh);
 				addRaytracingComponentAsync(entity, mesh);

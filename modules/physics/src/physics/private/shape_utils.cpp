@@ -1,6 +1,7 @@
 #include "physics/shape_utils.h"
 #include "physics/core/physics.h"
 #include "physics/collisions_holder_root_component.h"
+#include "physics/shape_component.h"
 
 #include "core/log.h"
 #include "core/traits.h"
@@ -173,6 +174,32 @@ namespace era_engine::physics
 			return false;
 		}
 		return true;
+	}
+
+	ShapeComponent* ShapeUtils::get_shape_component(Entity entity)
+	{
+		if (SphereShapeComponent* shape_component = entity.get_component_if_exists<SphereShapeComponent>())
+		{
+			return shape_component;
+		}
+		else if (BoxShapeComponent* shape_component = entity.get_component_if_exists<BoxShapeComponent>())
+		{
+			return shape_component;
+		}
+		else if (CapsuleShapeComponent* shape_component = entity.get_component_if_exists<CapsuleShapeComponent>())
+		{
+			return shape_component;
+		}
+		else if (ConvexMeshShapeComponent* shape_component = entity.get_component_if_exists<ConvexMeshShapeComponent>())
+		{
+			return shape_component;
+		}
+		else if (TriangleMeshShapeComponent* shape_component = entity.get_component_if_exists<TriangleMeshShapeComponent>())
+		{
+			return shape_component;
+		}
+
+		return nullptr;
 	}
 
 	void ShapeUtils::setup_filtering(World* world, physx::PxShape* shape, uint32 collision_type, std::optional<uint32> collision_filter_data)

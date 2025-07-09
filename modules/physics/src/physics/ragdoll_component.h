@@ -24,6 +24,7 @@ namespace era_engine::physics
         uint32_t pelvis_idx = INVALID_JOINT;
 
         uint32_t root_idx = INVALID_JOINT;
+        uint32_t attachment_idx = INVALID_JOINT;
 
         uint32_t thigh_l_idx = INVALID_JOINT;
         uint32_t calf_l_idx = INVALID_JOINT;
@@ -44,24 +45,6 @@ namespace era_engine::physics
         uint32_t lowerarm_r_idx = INVALID_JOINT;
         uint32_t hand_r_idx = INVALID_JOINT;
         uint32_t hand_end_r_idx = INVALID_JOINT;
-    };
-
-    class ERA_PHYSICS_API ConstraintDetails final
-    {
-    public:
-        ConstraintDetails() = default;
-        ConstraintDetails(const ConstraintDetails& other) = default;
-        ConstraintDetails(ConstraintDetails&& other) = default;
-
-        ConstraintDetails& operator=(const ConstraintDetails& other) = default;
-
-        float drive_damping = 10.0f;
-        float drive_stiffness = 1000.0f;
-
-        float slerp_drive_damping = 1000.0f;
-        float slerp_drive_stiffness = 0.0f;
-
-        float max_force = std::numeric_limits<float>::max();
     };
 
     class ERA_PHYSICS_API RagdollSettings final
@@ -98,20 +81,6 @@ namespace era_engine::physics
         float head_radius = 0.1f;
         float head_half_height = 0.04f;
 
-        ConstraintDetails head_constraint;
-        ConstraintDetails neck_constraint;
-
-        ConstraintDetails body_upper_constraint;
-        ConstraintDetails body_middle_constraint;
-
-        ConstraintDetails arm_constraint;
-        ConstraintDetails forearm_constraint;
-        ConstraintDetails hand_constraint;
-
-        ConstraintDetails leg_constraint;
-        ConstraintDetails calf_constraint;
-        ConstraintDetails foot_constraint;
-
         vec3 head_joint_adjastment = vec3::zero;
         vec3 head_end_joint_adjastment = vec3::zero;
         vec3 neck_joint_adjastment = vec3::zero;
@@ -129,6 +98,21 @@ namespace era_engine::physics
 	class ERA_PHYSICS_API RagdollLimbComponent : public Component
 	{
 	public:
+        enum class Type : uint8
+        {
+            BODY_UPPER = 0,
+            BODY_MIDDLE,
+            BODY_LOWER,
+            HEAD,
+            NECK,
+            ARM,
+            FOREARM,
+            HAND,
+            LEG,
+            CALF,
+            FOOT
+        };
+
 		RagdollLimbComponent() = default;
 		RagdollLimbComponent(ref<Entity::EcsData> _data, uint32 _joint_id = INVALID_JOINT);
 
@@ -143,6 +127,8 @@ namespace era_engine::physics
 
         EntityPtr joint_entity_ptr;
 
+        Type type = Type::BODY_UPPER;
+
         ERA_VIRTUAL_REFLECT(Component)
 	};
 
@@ -155,6 +141,8 @@ namespace era_engine::physics
 
 		ObservableMember<bool> simulated = false;
 
+        bool loaded = false;
+
         RagdollSettings settings;
         RagdollJointIds joint_init_ids;
 
@@ -165,5 +153,15 @@ namespace era_engine::physics
 		std::vector<EntityPtr> limbs;
 
         ERA_VIRTUAL_REFLECT(Component)
+
+    protected:
+        std::unordered_map<uint32, EntityPtr> simulated_joints;
+        std::unordered_map<uint32, std::vector<uint32>> children_map;
+        std::unordered_map<uint32, trs> local_joint_poses;
+
+        uint32 root_joint_id = 0;
+
+        friend class RagdollSystem;
+        friend class PhysicalAnimationSystem;
 	};
 }

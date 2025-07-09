@@ -25,7 +25,7 @@ namespace era_engine::physics
 	public:
 		ShapeComponent() = default;
 		ShapeComponent(ref<Entity::EcsData> _data);
-		virtual ~ShapeComponent();
+		~ShapeComponent() override;
 
 		template<class T>
 		T* is()
@@ -48,10 +48,10 @@ namespace era_engine::physics
 
 		ref<PhysicsMaterial> material = nullptr;
 
-		void sync_with_joint(weakref<Entity::EcsData> _entity_reference, const std::string& _connected_joint_name);
+		void sync_with_joint(weakref<Entity::EcsData> _entity_reference, uint32 _connected_joint_id);
 		void set_attacment_state(bool active);
 
-		virtual void release() override;
+		void release() override;
 
 		ERA_VIRTUAL_REFLECT(Component)
 
@@ -62,9 +62,8 @@ namespace era_engine::physics
 
 	protected:
 		physx::PxShape* shape = nullptr;
-		Entity::Handle* handle_data = nullptr;
 
-		std::string connected_joint_name;
+		uint32 connected_joint_id;
 		weakref<Entity::EcsData> entity_reference;
 		bool attachment_active = false;
 
