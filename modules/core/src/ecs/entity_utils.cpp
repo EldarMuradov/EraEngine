@@ -2,5 +2,4 @@
 
 namespace era_engine
 {
-	static inline int dummy = 0;
 }

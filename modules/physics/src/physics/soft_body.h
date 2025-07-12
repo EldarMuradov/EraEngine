@@ -17,9 +17,7 @@ namespace era_engine::physics
 		SoftBodyComponent() = default;
 
 		SoftBodyComponent(ref<Entity::EcsData> _data);
-		virtual ~SoftBodyComponent();
-
-		virtual void release() override;
+		~SoftBodyComponent() override;
 
 		uint32 get_nb_vertices() const;
 

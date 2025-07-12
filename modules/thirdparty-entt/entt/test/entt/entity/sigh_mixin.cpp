@@ -10,6 +10,7 @@
 #include <entt/entity/mixin.hpp>
 #include <entt/entity/registry.hpp>
 #include <entt/entity/storage.hpp>
+#include <entt/signal/sigh.hpp>
 #include "../../common/config.h"
 #include "../../common/entity.h"
 #include "../../common/linter.hpp"
@@ -25,15 +26,15 @@ struct auto_signal final {
           updated{&uflag},
           destroyed{&dflag} {}
 
-    inline static void on_construct(entt::registry &registry, const entt::entity entt) {
+    static void on_construct(entt::registry &registry, const entt::entity entt) {
         *registry.get<auto_signal>(entt).created = true;
     }
 
-    inline static void on_update(entt::registry &registry, const entt::entity entt) {
+    static void on_update(entt::registry &registry, const entt::entity entt) {
         *registry.get<auto_signal>(entt).updated = true;
     }
 
-    inline static void on_destroy(entt::registry &registry, const entt::entity entt) {
+    static void on_destroy(entt::registry &registry, const entt::entity entt) {
         *registry.get<auto_signal>(entt).destroyed = true;
     }
 
@@ -47,11 +48,6 @@ template<typename Registry>
 void listener(std::size_t &counter, Registry &, typename Registry::entity_type) {
     ++counter;
 }
-
-template<typename Type>
-struct entt::storage_type<Type, test::entity, std::allocator<Type>, std::enable_if_t<!std::is_same_v<Type, test::entity>>> {
-    using type = entt::basic_sigh_mixin<entt::basic_storage<Type, test::entity>, test::basic_custom_registry<test::entity>>;
-};
 
 template<typename Type>
 struct SighMixin: testing::Test {
@@ -305,11 +301,11 @@ TEST(SighMixin, StorageEntity) {
     ASSERT_EQ(on_construct, 3u);
     ASSERT_EQ(on_destroy, 3u);
 
-    pool.emplace();
-    pool.emplace(entt::entity{0});
+    pool.generate();
+    pool.generate(entt::entity{0});
 
     std::array<entt::entity, 1u> entity{};
-    pool.insert(entity.begin(), entity.end());
+    pool.generate(entity.begin(), entity.end());
 
     ASSERT_EQ(on_construct, 6u);
     ASSERT_EQ(on_destroy, 3u);
@@ -433,7 +429,7 @@ TYPED_TEST(SighMixin, Swap) {
 
 TEST(SighMixin, AutoSignal) {
     entt::registry registry;
-    auto const entity = registry.create();
+    const auto entity = registry.create();
 
     bool created{};
     bool updated{};
@@ -488,7 +484,7 @@ ENTT_DEBUG_TYPED_TEST(SighMixinDeathTest, Registry) {
 
 TYPED_TEST(SighMixin, CustomRegistry) {
     using value_type = typename TestFixture::type;
-    using registry_type = test::basic_custom_registry<test::entity>;
+    using registry_type = test::custom_registry<test::entity>;
 
     registry_type registry;
     entt::basic_sigh_mixin<entt::basic_storage<value_type, test::entity>, registry_type> pool;
@@ -520,7 +516,7 @@ TYPED_TEST(SighMixin, CustomRegistry) {
 
 ENTT_DEBUG_TYPED_TEST(SighMixinDeathTest, CustomRegistry) {
     using value_type = typename TestFixture::type;
-    using registry_type = test::basic_custom_registry<test::entity>;
+    using registry_type = test::custom_registry<test::entity>;
     entt::basic_sigh_mixin<entt::basic_storage<value_type, test::entity>, registry_type> pool;
     ASSERT_DEATH([[maybe_unused]] auto &registry = pool.registry(), "");
     ASSERT_DEATH([[maybe_unused]] const auto &registry = std::as_const(pool).registry(), "");
@@ -566,6 +562,7 @@ TYPED_TEST(SighMixin, CustomAllocator) {
     ASSERT_NE(pool.capacity(), 0u);
     ASSERT_EQ(pool.size(), 2u);
 
+    other = {};
     pool.swap(other);
     pool = std::move(other);
     test::is_initialized(other);

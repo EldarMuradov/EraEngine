@@ -170,9 +170,10 @@ namespace era_engine
 			settings.lower_body_height_modifier = 0.2f;
 			settings.lower_body_radius_modifier = 2.8f;
 
-			PhysicalAnimationComponent* ragdoll_component = tiran.add_component<PhysicalAnimationComponent>();
+			RagdollComponent* ragdoll_component = tiran.add_component<RagdollComponent>();
 			ragdoll_component->joint_init_ids = joint_init_ids;
 			ragdoll_component->settings = settings;
+			ragdoll_component->simulated = true;
 		}
 
 		//if (auto mesh = loadMeshFromFileAsync(get_asset_path("/resources/assets/Sponza/sponza.obj"), mesh_creation_flags_unreal_asset))

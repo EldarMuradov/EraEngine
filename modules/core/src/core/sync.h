@@ -16,7 +16,7 @@ namespace era_engine
 			sync.lock();
 		}
 
-		~Lock() noexcept
+		~Lock()
 		{
 			sync.unlock();
 		}
@@ -26,12 +26,29 @@ namespace era_engine
 
 	class SpinLock
 	{
-		std::atomic_flag flag;
+		alignas(64) std::atomic_flag flag = ATOMIC_FLAG_INIT;
 
 	public:
 		void lock()
 		{
-			while (!flag.test_and_set(std::memory_order_acquire)) {}
+			uint32 backoff = 1;
+
+			while (!flag.test_and_set(std::memory_order_acquire)) 
+			{
+				for (uint32 i = 0; i < backoff; ++i)
+				{
+					_mm_pause();
+				}
+
+				if (backoff < 1024u)
+				{
+					backoff *= 2u;
+				}
+				else
+				{
+					std::this_thread::yield();
+				}
+			}
 		}
 
 		bool try_lock()
@@ -39,7 +56,7 @@ namespace era_engine
 			return flag.test_and_set(std::memory_order_acquire);
 		}
 
-		void unlock() noexcept
+		void unlock()
 		{
 			flag.clear(std::memory_order_release);
 		}

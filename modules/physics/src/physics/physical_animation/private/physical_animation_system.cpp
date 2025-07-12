@@ -1,5 +1,6 @@
 #include "physics/physical_animation/physical_animation_system.h"
 #include "physics/core/physics.h"
+#include "physics/core/physics_utils.h"
 #include "physics/body_component.h"
 #include "physics/joint.h"
 #include "physics/core/physics_utils.h"
@@ -18,7 +19,6 @@
 #include <rendering/debug_visualization.h>
 #include <rendering/ecs/renderer_holder_root_component.h>
 
-#include <ecs/base_components/transform_component.h>
 #include <ecs/update_groups.h>
 
 #include <rttr/policy.h>
@@ -63,8 +63,11 @@ namespace era_engine::physics
 
 	void PhysicalAnimationSystem::init()
 	{
+		using namespace animation;
 		entt::registry& registry = world->get_registry();
 		registry.on_construct<PhysicalAnimationComponent>().connect<&PhysicalAnimationSystem::on_pac_created>(this);
+
+		ragdolls_group = world->group(components_group<TransformComponent, PhysicalAnimationComponent, AnimationComponent, SkeletonComponent>);
 
 		collisions_holder_rc = world->add_root_component<CollisionsHolderRootComponent>();
 		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
@@ -120,7 +123,7 @@ namespace era_engine::physics
 	{
 		process_added_pacs();
 
-		for (auto [entity_handle, changed_flag, physical_animation_limb_component] : world->group(components_group<ObservableMemberChangedFlagComponent, PhysicalAnimationLimbComponent>).each())
+		for (auto&& [entity_handle, changed_flag, physical_animation_limb_component] : world->group(components_group<ObservableMemberChangedFlagComponent, PhysicalAnimationLimbComponent>).each())
 		{
 			if (physical_animation_limb_component.simulated.is_changed())
 			{
@@ -129,7 +132,7 @@ namespace era_engine::physics
 			}
 		}
 
-		for (auto [entity_handle, changed_flag, physical_animation_component] : world->group(components_group<ObservableMemberChangedFlagComponent, PhysicalAnimationComponent>).each())
+		for (auto&& [entity_handle, changed_flag, physical_animation_component] : world->group(components_group<ObservableMemberChangedFlagComponent, PhysicalAnimationComponent>).each())
 		{
 			if (physical_animation_component.simulated.is_changed())
 			{
@@ -141,8 +144,12 @@ namespace era_engine::physics
 			}
 		}
 
-		for (auto [entity_handle, transform_component, physical_animation_component] : world->group(components_group<TransformComponent, PhysicalAnimationComponent>).each())
+		for (auto&& [entity_handle, transform_component, physical_animation_component, animm, skeleton] : ragdolls_group.each())
 		{
+			if (physical_animation_component.loaded)
+			{
+				continue;
+			}
 			bool is_ready_for_simulation = true;
 			for (const EntityPtr& limb_ptr : physical_animation_component.limbs)
 			{
@@ -155,11 +162,11 @@ namespace era_engine::physics
 				{
 					is_ready_for_simulation &= body_component->get_rigid_actor() != nullptr;
 					is_ready_for_simulation &= shape_component->get_shape() != nullptr;
-					if(body_component->get_rigid_actor() != nullptr)
+					if (body_component->get_rigid_actor() != nullptr)
 					{
 						is_ready_for_simulation &= body_component->get_rigid_actor()->userData != nullptr;
 					}
-					if(shape_component->get_shape() != nullptr)
+					if (shape_component->get_shape() != nullptr)
 					{
 						is_ready_for_simulation &= shape_component->get_shape()->userData != nullptr;
 					}
@@ -186,7 +193,11 @@ namespace era_engine::physics
 	{
 		using namespace animation;
 
-		for (auto [entity_handle, transform_component, physical_animation_component] : world->group(components_group<TransformComponent, PhysicalAnimationComponent>).each())
+		for (auto&& [entity_handle,
+			transform_component,
+			physical_animation_component,
+			animation_component, 
+			skeleton_component] : ragdolls_group.each())
 		{
 			if (!physical_animation_component.simulated)
 			{
@@ -194,109 +205,113 @@ namespace era_engine::physics
 			}
 
 			Entity ragdoll = world->get_entity(entity_handle);
-			SkeletonComponent* skeleton_component = ragdoll.get_component<SkeletonComponent>();
 
-			Skeleton* skeleton = skeleton_component->skeleton;
+			Skeleton* skeleton = skeleton_component.skeleton;
 			if (skeleton == nullptr)
 			{
 				continue;
 			}
 
+			SkeletonPose current_animation_pose = animation_component.current_animation_pose;
+
+			const uint32 root_id = physical_animation_component.root_joint_id;
+			physical_animation_component.local_joint_poses[root_id] = SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton, root_id);
+
+			const trs pelvis_world_transform = transform_component.get_world_transform() *
+				SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton, physical_animation_component.joint_init_ids.attachment_idx);
+			PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
+
+			const trs inverse_ragdoll_world_transform = invert(physical_animation_component.prev_fixed_world_transform);
+
+			std::queue<uint32> q;
+			q.push(root_id);
+
+			while (!q.empty())
 			{
-				const uint32 root_id = physical_animation_component.root_joint_id;
-				physical_animation_component.local_joint_poses[root_id] = SkeletonUtils::get_object_space_joint_transform(skeleton, root_id);
+				uint32 current_id = q.front();
+				q.pop();
 
-				const trs inverse_ragdoll_world_transform = invert(transform_component.transform);
-
-				std::queue<uint32> q;
-				q.push(root_id);
-
-				while (!q.empty())
+				for (uint32 child_id : physical_animation_component.children_map[current_id])
 				{
-					uint32 current_id = q.front();
-					q.pop();
+					const trs& parent_local = physical_animation_component.local_joint_poses[current_id];
+					trs inverse_parent_local = invert(parent_local);
+					inverse_parent_local.rotation = normalize(inverse_parent_local.rotation);
 
-					for (uint32 child_id : physical_animation_component.children_map[current_id])
+					const trs limb_animation_pose = SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton, child_id);
+
+					auto limb_iter = physical_animation_component.simulated_joints.find(child_id);
+					if (limb_iter == physical_animation_component.simulated_joints.end())
 					{
-						const trs& parent_local = physical_animation_component.local_joint_poses[current_id];
-						trs inverse_parent_local = invert(parent_local);
-						inverse_parent_local.rotation = normalize(inverse_parent_local.rotation);
+						physical_animation_component.local_joint_poses[child_id] = limb_animation_pose;
+					}
+					else
+					{
+						Entity limb = limb_iter->second.get();
+						PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
+						const trs& limb_physics_pose = limb.get_component<TransformComponent>()->get_world_transform();
 
-						const trs limb_animation_pose = SkeletonUtils::get_object_space_joint_transform(skeleton, child_id);
+						const trs limb_pose = inverse_ragdoll_world_transform * limb_physics_pose;
 
-						auto limb_iter = physical_animation_component.simulated_joints.find(child_id);
-						if (limb_iter == physical_animation_component.simulated_joints.end())
+						trs new_transform = trs::identity;
+						if (limb_component->blend_type == ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE)
 						{
-							physical_animation_component.local_joint_poses[child_id] = limb_animation_pose;
+							const vec3 mid_translation = lerp(limb_component->adjusted_pose.position,
+								limb_component->physics_pose.position,
+								physical_animation_component.blend_factor);
+
+							const quat mid_rotation = slerp(limb_component->adjusted_pose.rotation,
+								limb_component->physics_pose.rotation,
+								physical_animation_component.blend_factor);
+
+							new_transform = inverse_parent_local * inverse_ragdoll_world_transform * trs(mid_translation, mid_rotation, vec3(1.0f));
+						}
+						else if (limb_component->blend_type == ConstraintBlendType::BLEND_WITH_PREV_POSE)
+						{
+							new_transform = inverse_parent_local * limb_pose;
+
+							// Smooth blend with prev pose.
+							if (!fuzzy_equals(limb_component->prev_limb_local_rotation, new_transform.rotation))
+							{
+								new_transform.rotation = slerp(limb_component->prev_limb_local_rotation,
+									new_transform.rotation,
+									physical_animation_component.blend_factor);
+							}
 						}
 						else
 						{
-							Entity limb = limb_iter->second.get();
-							PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
-							const trs& limb_physics_pose = limb.get_component<TransformComponent>()->get_world_transform();
-
-							const trs limb_pose = inverse_ragdoll_world_transform * limb_physics_pose;
-
-							trs new_transform = trs::identity;
-							if (limb_component->blend_type == ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE)
-							{
-								const vec3 mid_translation = lerp(limb_component->adjusted_pose.position,
-									limb_component->physics_pose.position,
-									physical_animation_component.blend_factor);
-
-								const quat mid_rotation = slerp(limb_component->adjusted_pose.rotation,
-									limb_component->physics_pose.rotation,
-									physical_animation_component.blend_factor);
-
-								new_transform = inverse_parent_local * inverse_ragdoll_world_transform * trs(mid_translation, mid_rotation, vec3(1.0f));
-							}
-							else if (limb_component->blend_type == ConstraintBlendType::BLEND_WITH_PREV_POSE)
-							{
-								new_transform = inverse_parent_local * limb_pose;
-
-								// Smooth blend with prev pose.
-								if (!fuzzy_equals(limb_component->prev_limb_local_rotation, new_transform.rotation))
-								{
-									new_transform.rotation = slerp(limb_component->prev_limb_local_rotation,
-										new_transform.rotation,
-										physical_animation_component.blend_factor);
-								}
-							}
-							else
-							{
-								// No blend at all.
-								new_transform = inverse_parent_local * limb_pose;
-							}
-
-							// Blend with animation step.
-							if (!fuzzy_equals(physical_animation_component.blend_weight, 1.0f))
-							{
-								const trs animation_blend_pose = limb_animation_pose * inverse_parent_local;
-								new_transform.position = lerp(animation_blend_pose.position,
-									new_transform.position,
-									physical_animation_component.blend_weight);
-
-								new_transform.rotation = slerp(animation_blend_pose.rotation,
-									new_transform.rotation,
-									physical_animation_component.blend_weight);
-							}
-
-							new_transform.rotation = normalize(new_transform.rotation);
-
-							skeleton->set_joint_rotation(new_transform.rotation, child_id);
-
-							limb_component->prev_limb_local_position = new_transform.position;
-							limb_component->prev_limb_local_rotation = new_transform.rotation;
-
-							trs new_local_child_transform = parent_local * new_transform;
-							new_local_child_transform.position = new_local_child_transform.position;
-							new_local_child_transform.rotation = normalize(new_local_child_transform.rotation);
-
-							physical_animation_component.local_joint_poses[child_id] = new_local_child_transform;
+							// No blend at all.
+							new_transform = inverse_parent_local * limb_pose;
 						}
 
-						q.push(child_id);
+						// Blend with animation step.
+						if (!fuzzy_equals(physical_animation_component.blend_weight, 1.0f))
+						{
+							const trs animation_blend_pose = limb_animation_pose * inverse_parent_local;
+							new_transform.position = lerp(animation_blend_pose.position,
+								new_transform.position,
+								physical_animation_component.blend_weight);
+
+							new_transform.rotation = slerp(animation_blend_pose.rotation,
+								new_transform.rotation,
+								physical_animation_component.blend_weight);
+						}
+
+						new_transform.rotation = normalize(new_transform.rotation);
+
+						skeleton->set_joint_rotation(new_transform.rotation, child_id);
+						current_animation_pose.set_joint_rotation(new_transform.rotation, child_id);
+
+						limb_component->prev_limb_local_position = new_transform.position;
+						limb_component->prev_limb_local_rotation = new_transform.rotation;
+
+						trs new_local_child_transform = parent_local * new_transform;
+						new_local_child_transform.position = new_local_child_transform.position;
+						new_local_child_transform.rotation = normalize(new_local_child_transform.rotation);
+
+						physical_animation_component.local_joint_poses[child_id] = new_local_child_transform;
 					}
+
+					q.push(child_id);
 				}
 			}
 		}
@@ -306,11 +321,11 @@ namespace era_engine::physics
 	{
 		using namespace animation;
 
-		for (auto [entity_handle, 
-			transform_component, 
-			physical_animation_component, 
-			skeleton_component,
-			animation_component] : world->group(components_group<TransformComponent, PhysicalAnimationComponent, SkeletonComponent, AnimationComponent>).each())
+		for (auto&& [entity_handle,
+			transform_component,
+			physical_animation_component,
+			animation_component,
+			skeleton_component] : ragdolls_group.each())
 		{
 			if (!physical_animation_component.loaded)
 			{
@@ -337,7 +352,7 @@ namespace era_engine::physics
 
 			const bool is_should_be_simulated = should_be_simulated(simulated_body);
 
-			const vec3 root_delta_motion = world_transform.position - physical_animation_component.prev_fixed_world_position;
+			const vec3 root_delta_motion = world_transform.position - physical_animation_component.prev_fixed_world_transform.position;
 			const vec3 raw_root_acceleration = root_delta_motion / (dt * dt);
 
 			if (is_should_be_simulated) // Update profiles only if simulated.
@@ -419,13 +434,13 @@ namespace era_engine::physics
 						renderer_holder_rc->ldrRenderPass);
 				}
 			}
-			physical_animation_component.prev_fixed_world_position = world_transform.position;
+			physical_animation_component.prev_fixed_world_transform = world_transform;
 		}
 	}
 
-	void PhysicalAnimationSystem::update_ragdoll_profiles(PhysicalAnimationComponent* physical_animation_component, 
-		const vec3& raw_root_delta_position, 
-		float dt, 
+	void PhysicalAnimationSystem::update_ragdoll_profiles(PhysicalAnimationComponent* physical_animation_component,
+		const vec3& raw_root_delta_position,
+		float dt,
 		bool force_reload) const
 	{
 		const vec3 velocity = (raw_root_delta_position) / dt;
@@ -565,11 +580,21 @@ namespace era_engine::physics
 			const vec3 delta_position = limb_component->adjusted_pose.position - limb_component->physics_pose.position;
 
 			// Partial velocity drive.
-			const vec3 desired_velocity = delta_position / dt;
+			vec3 desired_velocity = delta_position / dt;
+			const float desired_velocity_magnitude = length(desired_velocity);
+			if (desired_velocity_magnitude > profile->partial_velocity_drive_limit)
+			{
+				desired_velocity = desired_velocity * (profile->partial_velocity_drive_limit / desired_velocity_magnitude);
+			}
 			vec3 drive_linear_velocity = lerp(dynamic_body->linear_velocity, desired_velocity, profile->partial_velocity_drive * limb_component->drive_velocity_modifier);
 
 			// Partial root acceleration drive.
-			const vec3 acceleration = clamp(raw_root_acceleration, 0.0f, profile->acceleration_limit);
+			vec3 acceleration = raw_root_acceleration;
+			const float acceleration_magnitude = length(acceleration);
+			if (acceleration_magnitude > profile->acceleration_limit)
+			{
+				acceleration = acceleration * (profile->acceleration_limit / acceleration_magnitude);
+			}
 			drive_linear_velocity += acceleration * (is_leg_limb ? profile->legs_acceleration_gain : profile->acceleration_gain);
 
 			dynamic_body->linear_velocity = drive_linear_velocity;
@@ -603,7 +628,7 @@ namespace era_engine::physics
 
 				const trs drive_result_pose = (parent_limb_component->physics_pose * delta_transform * joint_local_parent);
 
-				renderLine(drive_result_pose.position, 
+				renderLine(drive_result_pose.position,
 					drive_result_pose.position + drive_result_pose.rotation * vec3(axis_length, 0.0f, 0.0f),
 					vec4(1.0f, 0.0f, 0.0f, 1.0f),
 					renderer_holder_rc->ldrRenderPass);

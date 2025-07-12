@@ -14,7 +14,6 @@ namespace era_engine
 	{
 		world_data = new WorldData();
 		world_data->name = _name;
-		world_data->registry.reserve(64000);
 		world_data->scheduler = new WorldSystemScheduler(this, 2, 1);
 
 		world_data->scheduler->set_fixed_update_rate(60.0);
@@ -107,19 +106,6 @@ namespace era_engine
 			return;
 		}
 
-		if (_destroy_components)
-		{
-			for (auto&& curr : world_data->registry.storage())
-			{
-				if (curr.second.contains(_handle))
-				{
-					IReleasable* comp = static_cast<IReleasable*>(world_data->registry.storage(curr.first)->second.get(_handle));
-					ASSERT(comp != nullptr);
-					comp->release();
-				}
-			}
-		}
-
 		if (_destroy_childs)
 		{
 			for (const Entity::Handle child : EntityContainer::get_childs(_handle))
@@ -157,19 +143,6 @@ namespace era_engine
 			if (iter->first == Entity::NullHandle)
 			{
 				continue;
-			}
-
-			if (_destroy_components)
-			{
-				for (auto&& curr : world_data->registry.storage())
-				{
-					if (curr.second.contains(iter->first))
-					{
-						IReleasable* comp = static_cast<IReleasable*>(world_data->registry.storage(curr.first)->second.get(iter->first));
-						ASSERT(comp != nullptr);
-						comp->release();
-					}
-				}
 			}
 
 			world_data->registry.destroy(iter->first);

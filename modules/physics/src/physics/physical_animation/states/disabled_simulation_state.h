@@ -14,5 +14,7 @@ namespace era_engine::physics
 
         ConstraintStateType try_switch_to(ConstraintStateType desired_type) const override;
         void on_entered() override;
+
+        void update(float dt) override;
     };
 }

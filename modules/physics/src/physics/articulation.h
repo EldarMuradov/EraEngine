@@ -44,9 +44,7 @@ namespace era_engine::physics
 
 		ArticulationComponent() = default;
 		ArticulationComponent(ref<Entity::EcsData> _data, const ArticulationComponentDescriptor& _descriptor = {});
-		virtual ~ArticulationComponent();
-
-		void release() override;
+		~ArticulationComponent() override;
 
 		void apply_cache(ArticulationCacheFlags flags = ArticulationCacheFlags::ALL, physx::PxArticulationCache* in_cache = nullptr);
 

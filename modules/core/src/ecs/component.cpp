@@ -33,11 +33,6 @@ namespace era_engine
 	{
 	}
 
-	void Component::release()
-	{
-		component_data.reset();
-	}
-
 	Component& Component::operator=(const Component& _component)  noexcept
 	{
 		if (this != &_component)
@@ -94,6 +89,15 @@ namespace era_engine
 	bool ComponentPtr::is_empty() const
 	{
 		return component == nullptr;
+	}
+
+	Entity ComponentPtr::get_entity() const
+	{
+		if (component == nullptr)
+		{
+			return Entity::Null;
+		}
+		return component->get_entity();
 	}
 
 }

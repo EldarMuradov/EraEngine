@@ -28,8 +28,6 @@ namespace era_engine
 
 		~RendererHolderRootComponent() override;
 
-		void release() override;
-
 		render_camera camera;
 
 		directional_light sun;

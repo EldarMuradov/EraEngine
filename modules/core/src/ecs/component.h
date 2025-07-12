@@ -9,7 +9,7 @@ namespace era_engine
 {
 	class World;
 
-	class ERA_CORE_API Component : public IReleasable
+	class ERA_CORE_API Component
 	{
 	public:
 		Component() = default;
@@ -17,8 +17,6 @@ namespace era_engine
 		Component(const Component& _component) noexcept;
 		Component(Component&& _component) noexcept;
 		virtual ~Component();
-
-		void release() override;
 
 		Component& operator=(const Component& _component) noexcept;
 		Component& operator=(Component&& _component) noexcept;
@@ -29,7 +27,7 @@ namespace era_engine
 
 		Entity::Handle get_handle() const;
 
-		ERA_VIRTUAL_REFLECT(IReleasable)
+		ERA_REFLECT
 
 	protected:
 		ref<Entity::EcsData> component_data = nullptr;
@@ -57,6 +55,8 @@ namespace era_engine
 		Component* get_for_write();
 
 		bool is_empty() const;
+
+		Entity get_entity() const;
 
 	private:
 		Component* component = nullptr;

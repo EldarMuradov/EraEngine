@@ -65,8 +65,6 @@ namespace era_engine::physics
 
 		physx::PxRigidActor* get_rigid_actor() const;
 
-		void release() override;
-
 		ERA_VIRTUAL_REFLECT(Component)
 
 	private:

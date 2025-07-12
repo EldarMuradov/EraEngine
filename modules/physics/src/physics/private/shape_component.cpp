@@ -40,10 +40,19 @@ namespace era_engine::physics
 
         local_position.set_component(ComponentPtr(this));
         local_rotation.set_component(ComponentPtr(this));
+        collision_type.set_component(ComponentPtr(this));
+        collision_filter_data.set_component(ComponentPtr(this));
+        is_trigger.set_component(ComponentPtr(this));
+        use_in_scene_queries.set_component(ComponentPtr(this));
     }
 
     ShapeComponent::~ShapeComponent()
     {
+        PhysicsHolder::physics_ref->remove_shape_from_entity_data(this);
+
+        PhysicsUtils::get_body_component(component_data)->detach_shape(shape);
+
+        PX_RELEASE(shape)
     }
 
     physx::PxShape* ShapeComponent::get_shape() const
@@ -67,17 +76,6 @@ namespace era_engine::physics
     void ShapeComponent::set_attacment_state(bool active)
     {
         attachment_active = active;
-    }
-
-    void ShapeComponent::release()
-    {
-        PhysicsHolder::physics_ref->remove_shape_from_entity_data(this);
-
-        PhysicsUtils::get_body_component(component_data)->detach_shape(shape);
-
-        PX_RELEASE(shape)
-        
-        Component::release();
     }
 
     void ShapeComponent::register_shape()

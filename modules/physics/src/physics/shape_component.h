@@ -46,12 +46,13 @@ namespace era_engine::physics
 		ObservableMember<CollisionType> collision_type = CollisionType::NONE;
 		ObservableMember<std::optional<uint32>> collision_filter_data = std::optional<uint32>{};
 
+		ObservableMember<bool> use_in_scene_queries = true;
+		ObservableMember<bool> is_trigger = false;
+
 		ref<PhysicsMaterial> material = nullptr;
 
 		void sync_with_joint(weakref<Entity::EcsData> _entity_reference, uint32 _connected_joint_id);
 		void set_attacment_state(bool active);
-
-		void release() override;
 
 		ERA_VIRTUAL_REFLECT(Component)
 

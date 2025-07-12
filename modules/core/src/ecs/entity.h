@@ -24,17 +24,6 @@ namespace era_engine
 {
 	class World;
 
-	class ERA_CORE_API IReleasable
-	{
-	public:
-		IReleasable() = default;
-		virtual ~IReleasable() = default;
-
-		virtual void release();
-
-		ERA_REFLECT
-	};
-
 	class ERA_CORE_API Entity final
 	{
 	public:
@@ -93,10 +82,6 @@ namespace era_engine
 		template <typename Component_>
 		void remove_component()
 		{
-			IReleasable* component = get_component_if_exists<Component_>();
-			ASSERT(component != nullptr);
-
-			component->release();
 			internal_data->native_registry->remove<Component_>(internal_data->entity_handle);
 		}
 

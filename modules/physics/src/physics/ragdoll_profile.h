@@ -60,14 +60,16 @@ namespace era_engine::physics
         ConstraintDetails foot_constraint;
 
         float acceleration_limit = 0.2f;
+        float partial_velocity_drive_limit = 1.0f;
+
         float partial_velocity_drive = 0.15f;
 
-        float drive_angular_velocity_modifier = 0.4f;
+        float drive_angular_velocity_modifier = 0.6f;
 
-        float acceleration_gain = 0.05f;
+        float acceleration_gain = 0.02f;
         float blend_torque_stiffness_modifier = 1.0f;
 
         float legs_blend_torque_stiffness_modifier = 1.0f;
-        float legs_acceleration_gain = 0.05f;
+        float legs_acceleration_gain = 0.02f;
     };
 }

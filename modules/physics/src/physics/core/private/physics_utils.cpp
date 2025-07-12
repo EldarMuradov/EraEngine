@@ -84,16 +84,6 @@ namespace era_engine::physics
 			transform_component->set_world_position(pos);
 			transform_component->set_world_rotation(rot);
 		}
-
-		if (auto dyn = body_component->actor->is<PxRigidDynamic>())
-		{
-			if (dyn->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
-			{
-				return;
-			}
-			dyn->setAngularVelocity(PxVec3(0.0f));
-			dyn->setLinearVelocity(PxVec3(0.0f));
-		}
 	}
 
 	void PhysicsUtils::manual_set_physics_transform(Entity entity, const trs& transform, bool update_transform_component)

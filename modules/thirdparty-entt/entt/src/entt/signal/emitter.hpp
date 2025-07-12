@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <utility>
 #include "../container/dense_map.hpp"
+#include "../core/compressed_pair.hpp"
 #include "../core/fwd.hpp"
 #include "../core/type_info.hpp"
 #include "../core/utility.hpp"
@@ -38,7 +39,7 @@ class emitter {
 
     using alloc_traits = std::allocator_traits<Allocator>;
     using container_allocator = typename alloc_traits::template rebind_alloc<std::pair<const key_type, mapped_type>>;
-    using container_type = dense_map<key_type, mapped_type, identity, std::equal_to<key_type>, container_allocator>;
+    using container_type = dense_map<key_type, mapped_type, identity, std::equal_to<>, container_allocator>;
 
 public:
     /*! @brief Allocator type. */
@@ -57,10 +58,8 @@ public:
     explicit emitter(const allocator_type &allocator)
         : handlers{allocator, allocator} {}
 
-    /*! @brief Default destructor. */
-    virtual ~emitter() noexcept {
-        static_assert(std::is_base_of_v<emitter<Derived>, Derived>, "Invalid emitter type");
-    }
+    /*! @brief Default copy constructor, deleted on purpose. */
+    emitter(const emitter &) = delete;
 
     /**
      * @brief Move constructor.
@@ -74,16 +73,30 @@ public:
      * @param other The instance to move from.
      * @param allocator The allocator to use.
      */
-    emitter(emitter &&other, const allocator_type &allocator) noexcept
-        : handlers{container_type{std::move(other.handlers.first()), allocator}, allocator} {}
+    emitter(emitter &&other, const allocator_type &allocator)
+        : handlers{container_type{std::move(other.handlers.first()), allocator}, allocator} {
+        ENTT_ASSERT(alloc_traits::is_always_equal::value || handlers.second() == other.handlers.second(), "Copying an emitter is not allowed");
+    }
+
+    /*! @brief Default destructor. */
+    virtual ~emitter() {
+        static_assert(std::is_base_of_v<emitter<Derived, Allocator>, Derived>, "Invalid emitter type");
+    }
+
+    /**
+     * @brief Default copy assignment operator, deleted on purpose.
+     * @return This emitter.
+     */
+    emitter &operator=(const emitter &) = delete;
 
     /**
      * @brief Move assignment operator.
      * @param other The instance to move from.
-     * @return This dispatcher.
+     * @return This emitter.
      */
     emitter &operator=(emitter &&other) noexcept {
-        handlers = std::move(other.handlers);
+        ENTT_ASSERT(alloc_traits::is_always_equal::value || handlers.second() == other.handlers.second(), "Copying an emitter is not allowed");
+        swap(other);
         return *this;
     }
 
@@ -91,7 +104,7 @@ public:
      * @brief Exchanges the contents with those of a given emitter.
      * @param other Emitter to exchange the content with.
      */
-    void swap(emitter &other) {
+    void swap(emitter &other) noexcept {
         using std::swap;
         swap(handlers, other.handlers);
     }
@@ -110,7 +123,7 @@ public:
      * @param value An instance of the given type of event.
      */
     template<typename Type>
-    void publish(Type &&value) {
+    void publish(Type value) {
         if(const auto id = type_id<Type>().hash(); handlers.first().contains(id)) {
             handlers.first()[id](&value);
         }

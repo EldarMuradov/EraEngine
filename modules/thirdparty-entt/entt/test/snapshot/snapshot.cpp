@@ -1,8 +1,10 @@
 #include <sstream>
+#include <type_traits>
 #include <vector>
 #include <gtest/gtest.h>
 #include <cereal/archives/json.hpp>
 #include <entt/core/hashed_string.hpp>
+#include <entt/core/type_traits.hpp>
 #include <entt/entity/registry.hpp>
 #include <entt/entity/snapshot.hpp>
 
@@ -64,11 +66,23 @@ TEST(Snapshot, Full) {
     {
         // output finishes flushing its contents when it goes out of scope
         cereal::JSONOutputArchive output{storage};
-        entt::snapshot{source}.entities(output).component<position, timer, relationship, entt::tag<"empty"_hs>>(output);
+
+        entt::snapshot{source}
+            .get<entt::entity>(output)
+            .get<position>(output)
+            .get<timer>(output)
+            .get<relationship>(output)
+            .get<entt::tag<"empty"_hs>>(output);
     }
 
     cereal::JSONInputArchive input{storage};
-    entt::snapshot_loader{destination}.entities(input).component<position, timer, relationship, entt::tag<"empty"_hs>>(input);
+
+    entt::snapshot_loader{destination}
+        .get<entt::entity>(input)
+        .get<position>(input)
+        .get<timer>(input)
+        .get<relationship>(input)
+        .get<entt::tag<"empty"_hs>>(input);
 
     ASSERT_TRUE(destination.valid(e0));
     ASSERT_TRUE(destination.all_of<position>(e0));
@@ -100,13 +114,13 @@ TEST(Snapshot, Continuous) {
     entt::registry source;
     entt::registry destination;
 
-    std::vector<entt::entity> entities;
+    std::vector<entt::entity> entity;
     for(auto i = 0; i < 10; ++i) {
-        entities.push_back(source.create());
+        entity.push_back(source.create());
     }
 
-    for(auto entity: entities) {
-        source.destroy(entity);
+    for(auto entt: entity) {
+        source.destroy(entt);
     }
 
     auto e0 = source.create();
@@ -129,14 +143,32 @@ TEST(Snapshot, Continuous) {
     {
         // output finishes flushing its contents when it goes out of scope
         cereal::JSONOutputArchive output{storage};
-        entt::snapshot{source}.entities(output).component<position, relationship, timer, entt::tag<"empty"_hs>>(output);
+
+        entt::snapshot{source}
+            .get<entt::entity>(output)
+            .get<position>(output)
+            .get<relationship>(output)
+            .get<timer>(output)
+            .get<entt::tag<"empty"_hs>>(output);
     }
 
     cereal::JSONInputArchive input{storage};
     entt::continuous_loader loader{destination};
-    loader.entities(input)
-        .component<position, relationship>(input, &relationship::parent)
-        .component<timer, entt::tag<"empty"_hs>>(input);
+
+    auto archive = [&input, &loader](auto &value) {
+        input(value);
+
+        if constexpr(std::is_same_v<std::remove_reference_t<decltype(value)>, relationship>) {
+            value.parent = loader.map(value.parent);
+        }
+    };
+
+    loader
+        .get<entt::entity>(input)
+        .get<position>(input)
+        .get<relationship>(archive)
+        .get<timer>(input)
+        .get<entt::tag<"empty"_hs>>(input);
 
     ASSERT_FALSE(destination.valid(e0));
     ASSERT_TRUE(loader.contains(e0));

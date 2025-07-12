@@ -3,6 +3,7 @@
 #include "physics/body_component.h"
 #include "physics/core/physics_utils.h"
 #include "physics/shape_component.h"
+#include "physics/shape_utils.h"
 
 #include <core/cpu_profiling.h>
 
@@ -50,6 +51,22 @@ namespace era_engine::physics
 			{
 				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
 			}
+
+			if (shape_component.use_in_scene_queries.is_changed())
+			{
+				shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
+			}
+
+			if (shape_component.is_trigger.is_changed())
+			{
+				shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
+			}
+
+			if (shape_component.collision_filter_data.is_changed() ||
+				shape_component.collision_type.is_changed())
+			{
+				ShapeUtils::setup_filtering(world, shape_component.get_shape(), static_cast<uint32>(shape_component.collision_type.get()), shape_component.collision_filter_data);
+			}
 		}
 
 		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<ObservableMemberChangedFlagComponent, CapsuleShapeComponent>).each())
@@ -63,6 +80,22 @@ namespace era_engine::physics
 				shape_component.local_rotation.is_changed())
 			{
 				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
+			}
+
+			if (shape_component.use_in_scene_queries.is_changed())
+			{
+				shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
+			}
+
+			if (shape_component.is_trigger.is_changed())
+			{
+				shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
+			}
+
+			if (shape_component.collision_filter_data.is_changed() ||
+				shape_component.collision_type.is_changed())
+			{
+				ShapeUtils::setup_filtering(world, shape_component.get_shape(), static_cast<uint32>(shape_component.collision_type.get()), shape_component.collision_filter_data);
 			}
 		}
 
@@ -78,6 +111,22 @@ namespace era_engine::physics
 			{
 				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
 			}
+
+			if (shape_component.use_in_scene_queries.is_changed())
+			{
+				shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
+			}
+
+			if (shape_component.is_trigger.is_changed())
+			{
+				shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
+			}
+
+			if (shape_component.collision_filter_data.is_changed() ||
+				shape_component.collision_type.is_changed())
+			{
+				ShapeUtils::setup_filtering(world, shape_component.get_shape(), static_cast<uint32>(shape_component.collision_type.get()), shape_component.collision_filter_data);
+			}
 		}
 
 		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<ObservableMemberChangedFlagComponent, ConvexMeshShapeComponent>).each())
@@ -92,6 +141,22 @@ namespace era_engine::physics
 			{
 				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
 			}
+
+			if (shape_component.use_in_scene_queries.is_changed())
+			{
+				shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
+			}
+
+			if (shape_component.is_trigger.is_changed())
+			{
+				shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
+			}
+
+			if (shape_component.collision_filter_data.is_changed() ||
+				shape_component.collision_type.is_changed())
+			{
+				ShapeUtils::setup_filtering(world, shape_component.get_shape(), static_cast<uint32>(shape_component.collision_type.get()), shape_component.collision_filter_data);
+			}
 		}
 
 		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<ObservableMemberChangedFlagComponent, TriangleMeshShapeComponent>).each())
@@ -105,6 +170,22 @@ namespace era_engine::physics
 				shape_component.local_rotation.is_changed())
 			{
 				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
+			}
+
+			if (shape_component.use_in_scene_queries.is_changed())
+			{
+				shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
+			}
+
+			if (shape_component.is_trigger.is_changed())
+			{
+				shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
+			}
+
+			if (shape_component.collision_filter_data.is_changed() ||
+				shape_component.collision_type.is_changed())
+			{
+				ShapeUtils::setup_filtering(world, shape_component.get_shape(), static_cast<uint32>(shape_component.collision_type.get()), shape_component.collision_filter_data);
 			}
 		}
 	}

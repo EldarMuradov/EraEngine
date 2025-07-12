@@ -1,28 +1,37 @@
-* debugging tools (#60): the issue online already contains interesting tips on this, look at it
-* work stealing job system (see #100) + mt scheduler based on const awareness for types
-
 EXAMPLES
 * filter on runtime values/variables (not only types)
 * support to polymorphic types (see #859)
 
 DOC:
-* storage<void>
 * custom storage/view
-* examples (and credits) from @alanjfs :)
 * update entity doc when the storage based model is in place
+* in-place O(1) release/destroy for non-orphaned entities, out-of-sync model
+* view: single vs multi type views are no longer a thing actually
+* bump entities, reserved bits on identifiers
 
-WIP:
-* any: assert-if-dynamic like tag to the constructor
-* no gh-pages, use main/docs or similar, see settings/pages on gh
-* get rid of observers, storage based views made them pointless - document alternatives
-* add storage getter for filters to views and groups
-* exploit the tombstone mechanism to allow enabling/disabling entities (see bump, compact and clear for further details)
-* basic_storage::bind for cross-registry setups (see and remove todo from entity_copy.cpp)
-* process scheduler: reviews, use free lists internally
-* iterator based try_emplace vs try_insert for perf reasons
-* dedicated entity storage, in-place O(1) release/destroy for non-orphaned entities, out-of-sync model
-* entity-only and exclude-only views (both solved with entity storage and storage<void>)
-* custom allocators all over (registry, ...)
-* add test for maximum number of entities reached
-* add user data to type_info
-* deprecate non-owning groups in favor of owning views and view packs, introduce lazy owning views
+TODO:
+* review all NOLINT
+* bring nested groups back in place (see bd34e7f)
+* work stealing job system (see #100) + mt scheduler based on const awareness for types
+* view: reduce inst due to/improve perf with index-based approach in dispatch_get/pick_and_each/each (single type too, define storage ::at and ::at_as_tuple)
+* view: update natvis as needed after the last rework, merge pools/filter in the same array, drop check (?) and turn view into a position
+* view: type-only view_iterator (dyn get/excl sizes), type-only basic_common_view (dyn get/excl sizes with pointer to array from derived)
+* combine version-mask-vs-version-bits tricks with reserved bits to allow things like enabling/disabling
+* self contained entity traits to avoid explicit specializations (ie enum constants)
+* auto type info data from types if present
+* test: push sharing types further
+* storage entity: fast range-push from above
+* table: pop back to support swap and pop, single column access, empty type optimization
+* review cmake warning about FetchContent_Populate (need .28 and EXCLUDE_FROM_ALL for FetchContent)
+* suppress -Wself-move on CI with g++13
+* view specializations for multi, single and filtered elements
+* don't pass reactive storage by default to callback
+* runtime types support for meta for types that aren't backed by C++ types
+* built-in no-pagination storage - no_pagination page size as limits::max
+* any cdynamic to support const ownership construction
+* allow passing arguments to meta setter/getter (we can fallback on meta invoke probably)
+* FetchContent_Populate -> FetchContent_MakeAvailable warnings
+* doc: IMPLICIT_DIR_DOCS for dir docs or \dir
+* meta non-const allow_cast overloads: (const int &) to (int &) is not allowed, but (const int &) to (double &) is allowed (support only for convertibles)
+* improve non-const allow cast with in-place switch
+* meta fixed_size could return the size directly if present

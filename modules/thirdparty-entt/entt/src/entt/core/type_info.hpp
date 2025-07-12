@@ -11,11 +11,7 @@
 
 namespace entt {
 
-/**
- * @cond TURN_OFF_DOXYGEN
- * Internal details not to be documented.
- */
-
+/*! @cond TURN_OFF_DOXYGEN */
 namespace internal {
 
 struct ENTT_API type_index final {
@@ -28,7 +24,7 @@ struct ENTT_API type_index final {
 template<typename Type>
 [[nodiscard]] constexpr auto stripped_type_name() noexcept {
 #if defined ENTT_PRETTY_FUNCTION
-    std::string_view pretty_function{ENTT_PRETTY_FUNCTION};
+    const std::string_view pretty_function{static_cast<const char *>(ENTT_PRETTY_FUNCTION)};
     auto first = pretty_function.find_first_not_of(' ', pretty_function.find_first_of(ENTT_PRETTY_FUNCTION_PREFIX) + 1);
     auto value = pretty_function.substr(first, pretty_function.find_last_of(ENTT_PRETTY_FUNCTION_SUFFIX) - first);
     return value;
@@ -38,26 +34,26 @@ template<typename Type>
 }
 
 template<typename Type, auto = stripped_type_name<Type>().find_first_of('.')>
-[[nodiscard]] static constexpr std::string_view type_name(int) noexcept {
+[[nodiscard]] constexpr std::string_view type_name(int) noexcept {
     constexpr auto value = stripped_type_name<Type>();
     return value;
 }
 
 template<typename Type>
-[[nodiscard]] static std::string_view type_name(char) noexcept {
+[[nodiscard]] std::string_view type_name(char) noexcept {
     static const auto value = stripped_type_name<Type>();
     return value;
 }
 
 template<typename Type, auto = stripped_type_name<Type>().find_first_of('.')>
-[[nodiscard]] static constexpr id_type type_hash(int) noexcept {
+[[nodiscard]] constexpr id_type type_hash(int) noexcept {
     constexpr auto stripped = stripped_type_name<Type>();
     constexpr auto value = hashed_string::value(stripped.data(), stripped.size());
     return value;
 }
 
 template<typename Type>
-[[nodiscard]] static id_type type_hash(char) noexcept {
+[[nodiscard]] id_type type_hash(char) noexcept {
     static const auto value = [](const auto stripped) {
         return hashed_string::value(stripped.data(), stripped.size());
     }(stripped_type_name<Type>());
@@ -65,11 +61,7 @@ template<typename Type>
 }
 
 } // namespace internal
-
-/**
- * Internal details not to be documented.
- * @endcond
- */
+/*! @endcond */
 
 /**
  * @brief Type sequential identifier.
@@ -144,10 +136,12 @@ struct type_info final {
      * @tparam Type Type for which to construct a type info object.
      */
     template<typename Type>
+    // NOLINTBEGIN(modernize-use-transparent-functors)
     constexpr type_info(std::in_place_type_t<Type>) noexcept
         : seq{type_index<std::remove_cv_t<std::remove_reference_t<Type>>>::value()},
           identifier{type_hash<std::remove_cv_t<std::remove_reference_t<Type>>>::value()},
           alias{type_name<std::remove_cv_t<std::remove_reference_t<Type>>>::value()} {}
+    // NOLINTEND(modernize-use-transparent-functors)
 
     /**
      * @brief Type index.
@@ -185,7 +179,7 @@ private:
  * @param rhs A type info object.
  * @return True if the two type info objects are identical, false otherwise.
  */
-[[nodiscard]] inline constexpr bool operator==(const type_info &lhs, const type_info &rhs) noexcept {
+[[nodiscard]] constexpr bool operator==(const type_info &lhs, const type_info &rhs) noexcept {
     return lhs.hash() == rhs.hash();
 }
 
@@ -195,7 +189,7 @@ private:
  * @param rhs A type info object.
  * @return True if the two type info objects differ, false otherwise.
  */
-[[nodiscard]] inline constexpr bool operator!=(const type_info &lhs, const type_info &rhs) noexcept {
+[[nodiscard]] constexpr bool operator!=(const type_info &lhs, const type_info &rhs) noexcept {
     return !(lhs == rhs);
 }
 
@@ -256,7 +250,7 @@ private:
 template<typename Type>
 [[nodiscard]] const type_info &type_id() noexcept {
     if constexpr(std::is_same_v<Type, std::remove_cv_t<std::remove_reference_t<Type>>>) {
-        static type_info instance{std::in_place_type<Type>};
+        static const type_info instance{std::in_place_type<Type>};
         return instance;
     } else {
         return type_id<std::remove_cv_t<std::remove_reference_t<Type>>>();
@@ -265,6 +259,7 @@ template<typename Type>
 
 /*! @copydoc type_id */
 template<typename Type>
+// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
 [[nodiscard]] const type_info &type_id(Type &&) noexcept {
     return type_id<std::remove_cv_t<std::remove_reference_t<Type>>>();
 }

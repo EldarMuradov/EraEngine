@@ -837,7 +837,7 @@ namespace era_engine::physics
 
 		// Pelvis -> left up leg
 		const float up_leg_back_angle_deg = 75.5f; // How far up leg can be rotated around y axis in backwards direction
-		const float up_leg_forward_angle_deg = 15.0f; // How far up leg can be rotated around y axis in forward direction
+		const float up_leg_forward_angle_deg = 25.0f; // How far up leg can be rotated around y axis in forward direction
 		const float up_leg_d6_swing_y_deg = (up_leg_forward_angle_deg + up_leg_back_angle_deg) / 2.0f;
 		const vec3 left_up_leg_capsule_y_axis = left_up_leg_capsule_bottom_transform.rotation * vec3(0.0f, 1.0f, 0.0f);
 		const trs left_up_leg_d6_transform = trs(

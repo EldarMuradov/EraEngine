@@ -1,98 +1,91 @@
+#include <algorithm>
 #include <array>
 #include <vector>
 #include <gtest/gtest.h>
 #include <entt/core/algorithm.hpp>
-
-struct boxed_int {
-    int value;
-};
+#include "../../common/boxed_type.h"
 
 TEST(Algorithm, StdSort) {
     // well, I'm pretty sure it works, it's std::sort!!
-    std::array<int, 5> arr{{4, 1, 3, 2, 0}};
-    entt::std_sort sort;
+    std::array arr{4, 1, 3, 2, 0};
+    const entt::std_sort sort;
 
     sort(arr.begin(), arr.end());
 
-    for(auto i = 0u; i < (arr.size() - 1u); ++i) {
-        ASSERT_LT(arr[i], arr[i + 1u]);
-    }
+    ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
 TEST(Algorithm, StdSortBoxedInt) {
     // well, I'm pretty sure it works, it's std::sort!!
-    std::array<boxed_int, 6> arr{{{4}, {1}, {3}, {2}, {0}, {6}}};
-    entt::std_sort sort;
+    std::array arr{test::boxed_int{4}, test::boxed_int{1}, test::boxed_int{3}, test::boxed_int{2}, test::boxed_int{0}, test::boxed_int{8}};
+    const entt::std_sort sort;
 
     sort(arr.begin(), arr.end(), [](const auto &lhs, const auto &rhs) {
         return lhs.value > rhs.value;
     });
 
-    for(auto i = 0u; i < (arr.size() - 1u); ++i) {
-        ASSERT_GT(arr[i].value, arr[i + 1u].value);
-    }
+    ASSERT_TRUE(std::is_sorted(arr.rbegin(), arr.rend()));
+}
+
+TEST(Algorithm, StdSortEmptyContainer) {
+    std::vector<int> vec{};
+    const entt::std_sort sort;
+    // this should crash with asan enabled if we break the constraint
+    sort(vec.begin(), vec.end());
 }
 
 TEST(Algorithm, InsertionSort) {
-    std::array<int, 5> arr{{4, 1, 3, 2, 0}};
-    entt::insertion_sort sort;
+    std::array arr{4, 1, 3, 2, 0};
+    const entt::insertion_sort sort;
 
     sort(arr.begin(), arr.end());
 
-    for(auto i = 0u; i < (arr.size() - 1u); ++i) {
-        ASSERT_LT(arr[i], arr[i + 1u]);
-    }
+    ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
 TEST(Algorithm, InsertionSortBoxedInt) {
-    std::array<boxed_int, 6> arr{{{4}, {1}, {3}, {2}, {0}, {6}}};
-    entt::insertion_sort sort;
+    std::array arr{test::boxed_int{4}, test::boxed_int{1}, test::boxed_int{3}, test::boxed_int{2}, test::boxed_int{0}, test::boxed_int{8}};
+    const entt::insertion_sort sort;
 
     sort(arr.begin(), arr.end(), [](const auto &lhs, const auto &rhs) {
         return lhs.value > rhs.value;
     });
 
-    for(auto i = 0u; i < (arr.size() - 1u); ++i) {
-        ASSERT_GT(arr[i].value, arr[i + 1u].value);
-    }
+    ASSERT_TRUE(std::is_sorted(arr.rbegin(), arr.rend()));
 }
 
 TEST(Algorithm, InsertionSortEmptyContainer) {
     std::vector<int> vec{};
-    entt::insertion_sort sort;
+    const entt::insertion_sort sort;
     // this should crash with asan enabled if we break the constraint
     sort(vec.begin(), vec.end());
 }
 
 TEST(Algorithm, RadixSort) {
-    std::array<uint32_t, 5> arr{{4, 1, 3, 2, 0}};
-    entt::radix_sort<8, 32> sort;
+    std::array arr{4u, 1u, 3u, 2u, 0u};
+    const entt::radix_sort<8, 32> sort;
 
     sort(arr.begin(), arr.end(), [](const auto &value) {
         return value;
     });
 
-    for(auto i = 0u; i < (arr.size() - 1u); ++i) {
-        ASSERT_LT(arr[i], arr[i + 1u]);
-    }
+    ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
 TEST(Algorithm, RadixSortBoxedInt) {
-    std::array<boxed_int, 6> arr{{{4}, {1}, {3}, {2}, {0}, {6}}};
-    entt::radix_sort<2, 6> sort;
+    std::array arr{test::boxed_int{4}, test::boxed_int{1}, test::boxed_int{3}, test::boxed_int{2}, test::boxed_int{0}, test::boxed_int{8}};
+    const entt::radix_sort<2, 6> sort;
 
     sort(arr.rbegin(), arr.rend(), [](const auto &instance) {
         return instance.value;
     });
 
-    for(auto i = 0u; i < (arr.size() - 1u); ++i) {
-        ASSERT_GT(arr[i].value, arr[i + 1u].value);
-    }
+    ASSERT_TRUE(std::is_sorted(arr.rbegin(), arr.rend()));
 }
 
 TEST(Algorithm, RadixSortEmptyContainer) {
     std::vector<int> vec{};
-    entt::radix_sort<8, 32> sort;
+    const entt::radix_sort<8, 32> sort;
     // this should crash with asan enabled if we break the constraint
     sort(vec.begin(), vec.end());
 }

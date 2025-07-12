@@ -48,7 +48,7 @@ namespace era_engine::physics
 		DynamicBodyComponent* dynamic_body_component = entity.add_component<DynamicBodyComponent>();
 		dynamic_body_component->mass = mass;
 		dynamic_body_component->ccd = true;
-		dynamic_body_component->use_gravity = true;
+		dynamic_body_component->use_gravity = false;
 		dynamic_body_component->simulated = false;
 		dynamic_body_component->linear_damping = 0.1f;
 		dynamic_body_component->angular_damping = 0.25f;
@@ -422,8 +422,6 @@ namespace era_engine::physics
 			CapsuleShapeComponent* capsule_shape_component = head.add_component<CapsuleShapeComponent>();
 			capsule_shape_component->collision_type = CollisionType::RAGDOLL;
 			capsule_shape_component->material = material;
-			capsule_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.head_idx);
-			capsule_shape_component->set_attacment_state(true);
 
 			head_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
@@ -433,7 +431,7 @@ namespace era_engine::physics
 				neck_joint_transform,
 				1.0f);
 
-			create_dynamic_body(head, mass * settings.head_mass_percentage, settings.max_head_contact_impulse, 3.0f);
+			create_dynamic_body(head, mass * settings.head_mass_percentage, settings.max_head_contact_impulse);
 		}
 
 		// Body upper (from body middle to neck)
@@ -446,8 +444,6 @@ namespace era_engine::physics
 			CapsuleShapeComponent* capsule_shape_component = body_upper.add_component<CapsuleShapeComponent>();
 			capsule_shape_component->collision_type = CollisionType::RAGDOLL;
 			capsule_shape_component->material = material;
-			capsule_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.spine_03_idx);
-			capsule_shape_component->set_attacment_state(true);
 
 			body_upper_capsule_bottom_transform = position_capsule_between_joints_from_height(
 				capsule_shape_component,
@@ -457,7 +453,7 @@ namespace era_engine::physics
 				thorax_joint_transform,
 				settings.upper_body_radius_modifier);
 
-			create_dynamic_body(body_upper, mass * settings.body_upper_mass_percentage, settings.max_body_contact_impulse, 3.0f);
+			create_dynamic_body(body_upper, mass * settings.body_upper_mass_percentage, settings.max_body_contact_impulse);
 		}
 
 		// Body lower (from pelvis to abdomen)
@@ -470,8 +466,6 @@ namespace era_engine::physics
 			CapsuleShapeComponent* capsule_shape_component = body_lower.add_component<CapsuleShapeComponent>();
 			capsule_shape_component->collision_type = CollisionType::RAGDOLL;
 			capsule_shape_component->material = material;
-			capsule_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.pelvis_idx);
-			capsule_shape_component->set_attacment_state(true);
 
 			lower_default_transform = position_capsule_between_joints_from_height(
 				capsule_shape_component,
@@ -481,7 +475,7 @@ namespace era_engine::physics
 				pelvis_joint_transform,
 				settings.lower_body_radius_modifier);
 
-			create_dynamic_body(body_lower, mass * settings.body_lower_mass_percentage, settings.max_body_contact_impulse, 3.0f);
+			create_dynamic_body(body_lower, mass * settings.body_lower_mass_percentage, settings.max_body_contact_impulse);
 		}
 
 		// Lower body attachment.
@@ -492,15 +486,15 @@ namespace era_engine::physics
 			TransformComponent* transform_component = body_lower_ghost.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * pelvis_joint_transform);
 
-			StaticBodyComponent* lower_body_ghost_component = body_lower_ghost.add_component<StaticBodyComponent>();
+			DynamicBodyComponent* lower_body_ghost_component = body_lower_ghost.add_component<DynamicBodyComponent>();
 			lower_body_ghost_component->simulated = true;
+			lower_body_ghost_component->kinematic = true;
+			lower_body_ghost_component->use_gravity = false;
 
 			BoxShapeComponent* box_shape_component = body_lower_ghost.add_component<BoxShapeComponent>();
 			box_shape_component->collision_type = CollisionType::NONE;
 			box_shape_component->material = material;
 			box_shape_component->half_extents = vec3(0.01f);
-			box_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.pelvis_idx);
-			box_shape_component->set_attacment_state(true);
 
 			JointComponent::BaseDescriptor descriptor;
 			descriptor.connected_entity = body_lower_ghost.get_data_weakref();
@@ -513,7 +507,7 @@ namespace era_engine::physics
 				joint_component->max_distance = 0.05f;
 				joint_component->min_distance = 0.001f;
 				joint_component->stiffness = 1500.0f;
-				joint_component->damping = 200.0f;
+				joint_component->damping = 40.0f;
 				joint_component->spring_enabled = true;
 			}
 			else
@@ -521,8 +515,8 @@ namespace era_engine::physics
 				FixedJointComponent* joint_component = body_lower_ghost.add_component<FixedJointComponent>(descriptor);
 				joint_component->enable_collision = false;
 			}
-
 			physical_animation_component->use_spring_pelvis_attachment = enable_spring_pelvis_attachment;
+			physical_animation_component->attachment_body = EntityPtr{ body_lower_ghost };
 		}
 
 		// Left arm
@@ -535,8 +529,6 @@ namespace era_engine::physics
 			CapsuleShapeComponent* capsule_shape_component = left_arm.add_component<CapsuleShapeComponent>();
 			capsule_shape_component->collision_type = CollisionType::RAGDOLL;
 			capsule_shape_component->material = material;
-			capsule_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.upperarm_l_idx);
-			capsule_shape_component->set_attacment_state(true);
 
 			left_arm_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
@@ -559,8 +551,6 @@ namespace era_engine::physics
 			CapsuleShapeComponent* capsule_shape_component = left_forearm.add_component<CapsuleShapeComponent>();
 			capsule_shape_component->collision_type = CollisionType::RAGDOLL;
 			capsule_shape_component->material = material;
-			capsule_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.lowerarm_l_idx);
-			capsule_shape_component->set_attacment_state(true);
 
 			left_forearm_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
@@ -583,8 +573,6 @@ namespace era_engine::physics
 			BoxShapeComponent* box_shape_component = left_hand.add_component<BoxShapeComponent>();
 			box_shape_component->collision_type = CollisionType::NONE;
 			box_shape_component->material = material;
-			box_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.hand_l_idx);
-			box_shape_component->set_attacment_state(true);
 
 			left_hand_box_bottom_transform = position_box_between_joints(
 				box_shape_component,
@@ -606,8 +594,6 @@ namespace era_engine::physics
 			CapsuleShapeComponent* capsule_shape_component = right_arm.add_component<CapsuleShapeComponent>();
 			capsule_shape_component->collision_type = CollisionType::RAGDOLL;
 			capsule_shape_component->material = material;
-			capsule_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.upperarm_r_idx);
-			capsule_shape_component->set_attacment_state(true);
 
 			right_arm_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
@@ -630,8 +616,6 @@ namespace era_engine::physics
 			CapsuleShapeComponent* capsule_shape_component = right_forearm.add_component<CapsuleShapeComponent>();
 			capsule_shape_component->collision_type = CollisionType::RAGDOLL;
 			capsule_shape_component->material = material;
-			capsule_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.lowerarm_r_idx);
-			capsule_shape_component->set_attacment_state(true);
 
 			right_forearm_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
@@ -654,8 +638,6 @@ namespace era_engine::physics
 			BoxShapeComponent* box_shape_component = right_hand.add_component<BoxShapeComponent>();
 			box_shape_component->collision_type = CollisionType::NONE;
 			box_shape_component->material = material;
-			box_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.hand_r_idx);
-			box_shape_component->set_attacment_state(true);
 
 			right_hand_box_bottom_transform = position_box_between_joints(
 				box_shape_component,
@@ -677,8 +659,6 @@ namespace era_engine::physics
 			CapsuleShapeComponent* capsule_shape_component = left_up_leg.add_component<CapsuleShapeComponent>();
 			capsule_shape_component->collision_type = CollisionType::RAGDOLL;
 			capsule_shape_component->material = material;
-			capsule_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.thigh_l_idx);
-			capsule_shape_component->set_attacment_state(true);
 
 			left_up_leg_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
@@ -701,8 +681,6 @@ namespace era_engine::physics
 			CapsuleShapeComponent* capsule_shape_component = left_leg.add_component<CapsuleShapeComponent>();
 			capsule_shape_component->collision_type = CollisionType::RAGDOLL;
 			capsule_shape_component->material = material;
-			capsule_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.calf_l_idx);
-			capsule_shape_component->set_attacment_state(true);
 
 			left_leg_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
@@ -729,8 +707,6 @@ namespace era_engine::physics
 			BoxShapeComponent* box_shape_component = left_foot.add_component<BoxShapeComponent>();
 			box_shape_component->collision_type = CollisionType::NONE;
 			box_shape_component->material = material;
-			box_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.foot_l_idx);
-			box_shape_component->set_attacment_state(true);
 
 			left_foot_box_bottom_transform = position_box_between_joints(
 				box_shape_component,
@@ -752,8 +728,6 @@ namespace era_engine::physics
 			CapsuleShapeComponent* capsule_shape_component = right_up_leg.add_component<CapsuleShapeComponent>();
 			capsule_shape_component->collision_type = CollisionType::RAGDOLL;
 			capsule_shape_component->material = material;
-			capsule_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.thigh_r_idx);
-			capsule_shape_component->set_attacment_state(true);
 
 			right_up_leg_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
@@ -776,8 +750,6 @@ namespace era_engine::physics
 			CapsuleShapeComponent* capsule_shape_component = right_leg.add_component<CapsuleShapeComponent>();
 			capsule_shape_component->collision_type = CollisionType::RAGDOLL;
 			capsule_shape_component->material = material;
-			capsule_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.calf_r_idx);
-			capsule_shape_component->set_attacment_state(true);
 
 			right_leg_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
@@ -804,8 +776,6 @@ namespace era_engine::physics
 			BoxShapeComponent* box_shape_component = right_foot.add_component<BoxShapeComponent>();
 			box_shape_component->collision_type = CollisionType::RAGDOLL;
 			box_shape_component->material = material;
-			box_shape_component->sync_with_joint(ragdoll.get_data_weakref(), joint_init_ids.foot_r_idx);
-			box_shape_component->set_attacment_state(true);
 
 			right_foot_box_bottom_transform = position_box_between_joints(
 				box_shape_component,
@@ -954,7 +924,7 @@ namespace era_engine::physics
 
 		// Pelvis -> left up leg
 		const float up_leg_back_angle_deg = 75.5f; // How far up leg can be rotated around y axis in backwards direction
-		const float up_leg_forward_angle_deg = 15.0f; // How far up leg can be rotated around y axis in forward direction
+		const float up_leg_forward_angle_deg = 25.0f; // How far up leg can be rotated around y axis in forward direction
 		const float up_leg_d6_swing_y_deg = (up_leg_forward_angle_deg + up_leg_back_angle_deg) / 2.0f;
 		const vec3 left_up_leg_capsule_y_axis = left_up_leg_capsule_bottom_transform.rotation * vec3(0.0f, 1.0f, 0.0f);
 		const trs left_up_leg_d6_transform = trs(

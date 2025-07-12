@@ -82,7 +82,9 @@ namespace era_engine::physics
 
 		bool use_spring_pelvis_attachment = false;
 
-		vec3 prev_fixed_world_position = vec3::zero;
+		trs prev_fixed_world_transform = trs::identity;
+
+		EntityPtr attachment_body;
 
         ERA_VIRTUAL_REFLECT(RagdollComponent)
 

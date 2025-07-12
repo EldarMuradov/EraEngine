@@ -104,19 +104,12 @@ namespace era_engine::physics
 
 	SoftBodyComponent::~SoftBodyComponent()
 	{
-
-	}
-
-	void SoftBodyComponent::release()
-	{
 		PhysicsHolder::physics_ref->get_scene()->removeActor(*soft_body);
 
 		if (positions_inv_mass)
 		{
 			PX_PINNED_HOST_FREE(PhysicsHolder::physics_ref->get_cuda_context_manager(), positions_inv_mass);
 		}
-
-		Component::release();
 		PX_RELEASE(soft_body)
 	}
 

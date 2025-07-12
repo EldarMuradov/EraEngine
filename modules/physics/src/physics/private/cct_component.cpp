@@ -31,6 +31,8 @@ namespace era_engine::physics
 
 	CCTBaseComponent::~CCTBaseComponent()
 	{
+		PX_RELEASE(controller)
+		PX_RELEASE(manager)
 	}
 
 	void CCTBaseComponent::create_character_controller()
@@ -42,14 +44,6 @@ namespace era_engine::physics
 		controller->getActor()->userData = static_cast<void*>(component_data.get());
 
 		PhysicsHolder::physics_ref->add_actor((BodyComponent*)this, controller->getActor());
-	}
-
-	void CCTBaseComponent::release()
-	{
-		PX_RELEASE(controller)
-		PX_RELEASE(manager)
-
-		BodyComponent::release();
 	}
 
 	BoxCCTComponent::BoxCCTComponent(ref<Entity::EcsData> _data, float _half_height, float _half_side_extent, float _mass)

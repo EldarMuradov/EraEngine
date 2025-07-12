@@ -14,7 +14,6 @@ namespace era_engine
 		ImGui::PushID((uint32)handle);
 
 		entt::registry& registry = world->get_registry();
-
 		for (auto&& curr : registry.storage())
 		{
 			entt::id_type cid = curr.first;
@@ -23,7 +22,8 @@ namespace era_engine
 
 			if (storage.contains(handle))
 			{
-				Component* comp = static_cast<Component*>(registry.storage(cid)->second.get(handle));
+				const Component* comp = static_cast<const Component*>(registry.storage(cid)->get(handle));
+
 				rttr::type type = comp->get_type();
 				const char* comp_name = type.get_name().data();
 				const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;

@@ -21,7 +21,7 @@ struct clazz: base {
     clazz(int val)
         : value{val} {}
 
-    explicit operator int() const noexcept {
+    [[nodiscard]] explicit operator int() const noexcept {
         return get_int();
     }
 
@@ -33,15 +33,15 @@ struct clazz: base {
         value = val.value;
     }
 
-    int get_int() const noexcept {
+    [[nodiscard]] int get_int() const noexcept {
         return value;
     }
 
-    static std::string to_string(const clazz &instance) {
+    [[nodiscard]] static std::string to_string(const clazz &instance) {
         return std::to_string(instance.get_int());
     }
 
-    static clazz from_string(const std::string &value) {
+    [[nodiscard]] static clazz from_string(const std::string &value) {
         return clazz{std::stoi(value)};
     }
 
@@ -347,7 +347,7 @@ TEST_F(MetaFactory, FuncOverload) {
 
     clazz instance{1};
     entt::meta_factory<clazz> factory{};
-    entt::meta_type type = entt::resolve<clazz>();
+    const entt::meta_type type = entt::resolve<clazz>();
 
     ASSERT_FALSE(type.func("func"_hs));
 

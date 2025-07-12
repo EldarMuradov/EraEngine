@@ -1,3 +1,5 @@
+// IWYU pragma: always_keep
+
 #ifndef ENTT_META_POINTER_HPP
 #define ENTT_META_POINTER_HPP
 
@@ -21,6 +23,7 @@ struct is_meta_pointer_like<Type *>
  * @tparam N Number of elements of the array.
  */
 template<typename Type, std::size_t N>
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, modernize-avoid-c-arrays)
 struct is_meta_pointer_like<Type (*)[N]>
     : std::false_type {};
 
@@ -41,6 +44,14 @@ struct is_meta_pointer_like<std::shared_ptr<Type>>
  */
 template<typename Type, typename... Args>
 struct is_meta_pointer_like<std::unique_ptr<Type, Args...>>
+    : std::true_type {};
+
+/**
+ * @brief Specialization for self-proclaimed meta pointer like types.
+ * @tparam Type Element type.
+ */
+template<typename Type>
+struct is_meta_pointer_like<Type, std::void_t<typename Type::is_meta_pointer_like>>
     : std::true_type {};
 
 } // namespace entt

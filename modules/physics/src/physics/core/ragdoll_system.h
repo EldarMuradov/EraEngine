@@ -1,8 +1,15 @@
 #pragma once
 
+#include "physics/ragdoll_component.h"
+
 #include <ecs/system.h>
+#include <ecs/base_components/transform_component.h>
+
+#include <animation/animation.h>
 
 #include <core/sync.h>
+
+#include <entt/entt.hpp>
 
 namespace era_engine::physics
 {
@@ -24,5 +31,9 @@ namespace era_engine::physics
 	private:
 		std::vector<Entity::Handle> ragdolls_to_init;
 		SpinLock sync;
+
+		entt::group<entt::owned_t<>, entt::get_t<TransformComponent,
+			RagdollComponent,
+			animation::SkeletonComponent>> ragdolls_group;
 	};
 }

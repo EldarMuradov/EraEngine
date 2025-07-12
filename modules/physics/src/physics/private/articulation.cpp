@@ -80,19 +80,13 @@ namespace era_engine::physics
 
 	ArticulationComponent::~ArticulationComponent()
 	{
-	}
-
-	void ArticulationComponent::release()
-	{
 		PhysicsHolder::physics_ref->get_scene()->removeArticulation(*articulation);
 
 		joints.clear();
 		links.clear();
 
 		PX_RELEASE(articulation)
-		PX_RELEASE(cache)
-
-		Component::release();
+			PX_RELEASE(cache)
 	}
 
 	void ArticulationComponent::apply_cache(ArticulationCacheFlags flags, physx::PxArticulationCache* in_cache)

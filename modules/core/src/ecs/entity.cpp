@@ -15,16 +15,9 @@ namespace era_engine
 	{
 		using namespace rttr;
 
-		rttr::registration::class_<IReleasable>("IReleasable")
-			.constructor<>();
-
-		rttr::registration::class_<Entity>("Entity")
+		registration::class_<Entity>("Entity")
 			.constructor<>()
 			.constructor<ref<Entity::EcsData>>();
-	}
-
-	void IReleasable::release()
-	{
 	}
 
 	Entity::Entity(const Entity& _entity) noexcept

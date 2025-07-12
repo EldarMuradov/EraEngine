@@ -35,18 +35,14 @@ namespace era_engine::physics
 
 	BodyComponent::~BodyComponent()
 	{
+		PhysicsHolder::physics_ref->remove_actor(this);
+
+		PX_RELEASE(actor)
 	}
 
 	physx::PxRigidActor* BodyComponent::get_rigid_actor() const
 	{
 		return actor;
-	}
-
-	void BodyComponent::release()
-	{
-		PhysicsHolder::physics_ref->remove_actor(this);
-		PX_RELEASE(actor)
-		Component::release();
 	}
 
 	void BodyComponent::detach_shape(physx::PxShape* shape)

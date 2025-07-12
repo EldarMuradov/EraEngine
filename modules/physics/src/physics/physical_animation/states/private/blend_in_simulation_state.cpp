@@ -73,10 +73,6 @@ namespace era_engine::physics
                     parent_joint_component->angular_drive_velocity = vec3::zero;
                 }
 
-                ShapeComponent* shape_component = ShapeUtils::get_shape_component(limb);
-                ASSERT(shape_component != nullptr);
-                shape_component->set_attacment_state(false);
-
                 DynamicBodyComponent* dynamic_body_component = limb.get_component<DynamicBodyComponent>();
                 ASSERT(dynamic_body_component != nullptr);
                 dynamic_body_component->simulated = true;

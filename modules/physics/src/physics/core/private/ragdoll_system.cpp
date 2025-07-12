@@ -4,8 +4,8 @@
 #include "physics/joint.h"
 #include "physics/core/physics_utils.h"
 #include "physics/shape_utils.h"
-#include "physics/ragdoll_component.h"
 #include "physics/ragdoll_builder.h"
+#include "physics/shape_component.h"
 
 #include <core/cpu_profiling.h>
 
@@ -41,6 +41,8 @@ namespace era_engine::physics
 	{
 		entt::registry& registry = world->get_registry();
 		registry.on_construct<RagdollComponent>().connect<&RagdollSystem::on_ragdoll_created>(this);
+
+		ragdolls_group = world->group(components_group<TransformComponent, RagdollComponent, animation::SkeletonComponent>);
 	}
 
 	void RagdollSystem::update(float dt)
@@ -67,23 +69,64 @@ namespace era_engine::physics
 				}
 			}
 		}
+
+		for (auto&& [entity_handle, transform_component, ragdoll_component, skeleton_component] : ragdolls_group.each())
+		{
+			if (ragdoll_component.loaded)
+			{
+				continue;
+			}
+			bool is_ready_for_simulation = true;
+			for (const EntityPtr& limb_ptr : ragdoll_component.limbs)
+			{
+				Entity limb = limb_ptr.get();
+
+				ShapeComponent* shape_component = ShapeUtils::get_shape_component(limb);
+				DynamicBodyComponent* body_component = limb.get_component<DynamicBodyComponent>();
+
+				if (body_component != nullptr && shape_component != nullptr)
+				{
+					is_ready_for_simulation &= body_component->get_rigid_actor() != nullptr;
+					is_ready_for_simulation &= shape_component->get_shape() != nullptr;
+					if (body_component->get_rigid_actor() != nullptr)
+					{
+						is_ready_for_simulation &= body_component->get_rigid_actor()->userData != nullptr;
+					}
+					if (shape_component->get_shape() != nullptr)
+					{
+						is_ready_for_simulation &= shape_component->get_shape()->userData != nullptr;
+					}
+				}
+				else
+				{
+					is_ready_for_simulation = false;
+					break;
+				}
+
+				if (!is_ready_for_simulation)
+				{
+					break;
+				}
+			}
+
+			ragdoll_component.loaded = is_ready_for_simulation;
+		}
 	}
 
 	void RagdollSystem::update_normal(float dt)
 	{
 		using namespace animation;
 
-		for (auto [entity_handle, transform_component, ragdoll_component] : world->group(components_group<TransformComponent, RagdollComponent>).each())
+		for (auto&& [entity_handle, transform_component, ragdoll_component, skeleton_component] : ragdolls_group.each())
 		{
-			if (!ragdoll_component.simulated)
+			if (!ragdoll_component.simulated || !ragdoll_component.loaded)
 			{
 				continue;
 			}
 
 			Entity ragdoll = world->get_entity(entity_handle);
-			SkeletonComponent* skeleton_component = ragdoll.get_component<SkeletonComponent>();
 
-			Skeleton* skeleton = skeleton_component->skeleton;
+			Skeleton* skeleton = skeleton_component.skeleton;
 			if (skeleton == nullptr)
 			{
 				continue;

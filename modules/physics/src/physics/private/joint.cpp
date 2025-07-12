@@ -101,10 +101,6 @@ namespace era_engine::physics
 
 	JointComponent::~JointComponent()
 	{
-	}
-
-	void JointComponent::release()
-	{
 		PX_RELEASE(joint)
 	}
 

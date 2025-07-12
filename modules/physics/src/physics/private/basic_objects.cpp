@@ -33,10 +33,6 @@ namespace era_engine::physics
 
 	PlaneComponent::~PlaneComponent()
 	{
-	}
-
-	void PlaneComponent::release()
-	{
 		using namespace physx;
 
 		auto& physics = PhysicsHolder::physics_ref;

@@ -1,20 +1,12 @@
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <entt/process/process.hpp>
-
-struct fake_delta {};
+#include "../../common/empty.h"
 
 template<typename Delta>
 struct fake_process: entt::process<fake_process<Delta>, Delta> {
     using process_type = entt::process<fake_process<Delta>, Delta>;
     using delta_type = typename process_type::delta_type;
-
-    fake_process()
-        : init_invoked{false},
-          update_invoked{false},
-          succeeded_invoked{false},
-          failed_invoked{false},
-          aborted_invoked{false} {}
 
     void succeed() noexcept {
         process_type::succeed();
@@ -49,18 +41,18 @@ struct fake_process: entt::process<fake_process<Delta>, Delta> {
     }
 
     void update(typename entt::process<fake_process<Delta>, Delta>::delta_type, void *data) {
-        if(data) {
+        if(data != nullptr) {
             (*static_cast<int *>(data))++;
         }
 
         update_invoked = true;
     }
 
-    bool init_invoked;
-    bool update_invoked;
-    bool succeeded_invoked;
-    bool failed_invoked;
-    bool aborted_invoked;
+    bool init_invoked{};
+    bool update_invoked{};
+    bool succeeded_invoked{};
+    bool failed_invoked{};
+    bool aborted_invoked{};
 };
 
 TEST(Process, Basics) {
@@ -119,7 +111,7 @@ TEST(Process, Basics) {
 }
 
 TEST(Process, Succeeded) {
-    fake_process<fake_delta> process{};
+    fake_process<test::empty> process{};
 
     process.tick({});
     process.tick({});
@@ -159,7 +151,7 @@ TEST(Process, Fail) {
 }
 
 TEST(Process, Data) {
-    fake_process<fake_delta> process{};
+    fake_process<test::empty> process{};
     int value = 0;
 
     process.tick({});
@@ -200,7 +192,7 @@ TEST(Process, AbortNextTick) {
 }
 
 TEST(Process, AbortImmediately) {
-    fake_process<fake_delta> process{};
+    fake_process<test::empty> process{};
 
     process.tick({});
     process.abort(true);
@@ -255,7 +247,7 @@ TEST(ProcessAdaptor, Data) {
     int value = 0;
 
     auto lambda = [](std::uint64_t, void *data, auto resolve, auto) {
-        *static_cast<int *>(data) = 42;
+        *static_cast<int *>(data) = 2;
         resolve();
     };
 
@@ -265,5 +257,5 @@ TEST(ProcessAdaptor, Data) {
     process.tick(0, &value);
 
     ASSERT_TRUE(process.finished());
-    ASSERT_EQ(value, 42);
+    ASSERT_EQ(value, 2);
 }

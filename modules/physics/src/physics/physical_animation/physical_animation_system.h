@@ -3,9 +3,14 @@
 #include "physics/physical_animation/physical_animation_component.h"
 
 #include <ecs/system.h>
+#include <ecs/base_components/transform_component.h>
+
+#include <animation/animation.h>
 
 #include <core/sync.h>
 #include <core/math.h>
+
+#include <entt/entt.hpp>
 
 namespace era_engine
 {
@@ -62,6 +67,11 @@ namespace era_engine::physics
 
 		const CollisionsHolderRootComponent* collisions_holder_rc = nullptr;
 		RendererHolderRootComponent* renderer_holder_rc = nullptr;
+
+		entt::group<entt::owned_t<>, entt::get_t<TransformComponent,
+			PhysicalAnimationComponent,
+			animation::AnimationComponent,
+			animation::SkeletonComponent>> ragdolls_group;
 
 		// Demo
 		ref<RagdollProfile> idle_profile = nullptr;

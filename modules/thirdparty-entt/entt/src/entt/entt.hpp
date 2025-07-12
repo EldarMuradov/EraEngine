@@ -1,11 +1,17 @@
+/*! @brief `EnTT` default namespace. */
+namespace entt {}
+
+// IWYU pragma: begin_exports
 #include "config/config.h"
 #include "config/macro.h"
 #include "config/version.h"
 #include "container/dense_map.hpp"
 #include "container/dense_set.hpp"
+#include "container/table.hpp"
 #include "core/algorithm.hpp"
 #include "core/any.hpp"
 #include "core/attribute.h"
+#include "core/bit.hpp"
 #include "core/compressed_pair.hpp"
 #include "core/enum.hpp"
 #include "core/family.hpp"
@@ -14,6 +20,7 @@
 #include "core/iterator.hpp"
 #include "core/memory.hpp"
 #include "core/monostate.hpp"
+#include "core/ranges.hpp"
 #include "core/tuple.hpp"
 #include "core/type_info.hpp"
 #include "core/type_traits.hpp"
@@ -23,11 +30,11 @@
 #include "entity/group.hpp"
 #include "entity/handle.hpp"
 #include "entity/helper.hpp"
-#include "entity/observer.hpp"
+#include "entity/mixin.hpp"
 #include "entity/organizer.hpp"
+#include "entity/ranges.hpp"
 #include "entity/registry.hpp"
 #include "entity/runtime_view.hpp"
-#include "entity/sigh_storage_mixin.hpp"
 #include "entity/snapshot.hpp"
 #include "entity/sparse_set.hpp"
 #include "entity/storage.hpp"
@@ -49,7 +56,6 @@
 #include "meta/template.hpp"
 #include "meta/type_traits.hpp"
 #include "meta/utility.hpp"
-#include "platform/android-ndk-r17.hpp"
 #include "poly/poly.hpp"
 #include "process/process.hpp"
 #include "process/scheduler.hpp"
@@ -60,3 +66,4 @@
 #include "signal/dispatcher.hpp"
 #include "signal/emitter.hpp"
 #include "signal/sigh.hpp"
+// IWYU pragma: end_exports

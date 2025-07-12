@@ -3,6 +3,8 @@
 
 #include "version.h"
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+
 #if defined(__cpp_exceptions) && !defined(ENTT_NOEXCEPTION)
 #    define ENTT_CONSTEXPR
 #    define ENTT_THROW throw
@@ -15,6 +17,18 @@
 #    define ENTT_CATCH if(false)
 #endif
 
+#if __has_include(<version>)
+#    include <version>
+#
+#    if defined(__cpp_consteval)
+#        define ENTT_CONSTEVAL consteval
+#    endif
+#endif
+
+#ifndef ENTT_CONSTEVAL
+#    define ENTT_CONSTEVAL constexpr
+#endif
+
 #ifdef ENTT_USE_ATOMIC
 #    include <atomic>
 #    define ENTT_MAYBE_ATOMIC(Type) std::atomic<Type>
@@ -25,6 +39,8 @@
 #ifndef ENTT_ID_TYPE
 #    include <cstdint>
 #    define ENTT_ID_TYPE std::uint32_t
+#else
+#    include <cstdint> // provides coverage for types in the std namespace
 #endif
 
 #ifndef ENTT_SPARSE_PAGE
@@ -37,16 +53,31 @@
 
 #ifdef ENTT_DISABLE_ASSERT
 #    undef ENTT_ASSERT
-#    define ENTT_ASSERT(...) (void(0))
+#    define ENTT_ASSERT(condition, msg) (void(0))
 #elif !defined ENTT_ASSERT
 #    include <cassert>
-#    define ENTT_ASSERT(condition, ...) assert(condition)
+#    define ENTT_ASSERT(condition, msg) assert(((condition) && (msg)))
 #endif
+
+#ifdef ENTT_DISABLE_ASSERT
+#    undef ENTT_ASSERT_CONSTEXPR
+#    define ENTT_ASSERT_CONSTEXPR(condition, msg) (void(0))
+#elif !defined ENTT_ASSERT_CONSTEXPR
+#    define ENTT_ASSERT_CONSTEXPR(condition, msg) ENTT_ASSERT(condition, msg)
+#endif
+
+#define ENTT_FAIL(msg) ENTT_ASSERT(false, msg);
 
 #ifdef ENTT_NO_ETO
 #    define ENTT_ETO_TYPE(Type) void
 #else
 #    define ENTT_ETO_TYPE(Type) Type
+#endif
+
+#ifdef ENTT_NO_MIXIN
+#    define ENTT_STORAGE(Mixin, ...) __VA_ARGS__
+#else
+#    define ENTT_STORAGE(Mixin, ...) Mixin<__VA_ARGS__>
 #endif
 
 #ifdef ENTT_STANDARD_CPP
@@ -70,5 +101,7 @@
 #    pragma detect_mismatch("entt.id", ENTT_XSTR(ENTT_ID_TYPE))
 #    pragma detect_mismatch("entt.nonstd", ENTT_XSTR(ENTT_NONSTD))
 #endif
+
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 #endif

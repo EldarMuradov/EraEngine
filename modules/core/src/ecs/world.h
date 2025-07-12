@@ -145,31 +145,10 @@ namespace era_engine
 		}
 
 		template <typename Component_>
-		auto raw()
-		{
-			auto& s = world_data->registry.storage<Component_>();
-			Component_** r = s.raw();
-			return r ? *r : nullptr;
-		}
-
-		template <typename Func_>
-		void for_each_entity(Func_ func)
-		{
-			world_data->registry.each(func);
-		}
-
-		template <typename Component_>
 		uint32 number_of_components_of_type()
 		{
 			auto v = view<Component_>();
 			return (uint32)v.size();
-		}
-
-		template <typename Component_>
-		Component_& get_component_at_index(uint32 index)
-		{
-			auto& s = world_data->registry.storage<Component_>();
-			return s.element_at(index);
 		}
 
 		template <typename Context_, typename... Args_>

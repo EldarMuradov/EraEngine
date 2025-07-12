@@ -18,8 +18,6 @@ namespace era_engine::physics
 		PlaneComponent(ref<Entity::EcsData> _data, CollisionType _collision_type, const vec3& _point, const vec3& _norm = vec3(0.0f, 1.0f, 0.0f));
 		~PlaneComponent() override;
 
-		void release() override;
-
 		ERA_VIRTUAL_REFLECT(Component)
 
 	private:

@@ -23,10 +23,10 @@ jobs:
       # see: https://apt.llvm.org/
       run: |
         wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-        sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-$LLVM main"
+        sudo add-apt-repository "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-$LLVM main"
         sudo apt update
         sudo apt remove -y "llvm*"
-        sudo apt remove -y "libclang-dev*"
+        sudo apt remove -y "libclang*"
         sudo apt remove -y "clang*"
         sudo apt install -y llvm-$LLVM-dev
         sudo apt install -y libclang-$LLVM-dev
@@ -55,6 +55,7 @@ jobs:
               -DENTT_BUILD_EXAMPLE=ON \
               -DENTT_BUILD_LIB=ON \
               -DENTT_BUILD_SNAPSHOT=ON \
+              -DENTT_BUILD_TOOLS=ON \
               -DCMAKE_CXX_INCLUDE_WHAT_YOU_USE="include-what-you-use;-Xiwyu;--mapping_file=${GITHUB_WORKSPACE}/entt.imp;-Xiwyu;--no_fwd_decls;-Xiwyu;--verbose=1" \
               ..
         make -j4
@@ -72,10 +73,12 @@ jobs:
       env:
         CXX: clang++
       run: |
-        cmake -DENTT_BUILD_TESTING=ON -DENTT_BUILD_LIB=ON -DENTT_BUILD_EXAMPLE=ON -DENTT_USE_CLANG_TIDY=ON ..
+        cmake -DENTT_BUILD_TESTING=ON \
+              -DENTT_BUILD_BENCHMARK=ON \
+              -DENTT_BUILD_EXAMPLE=ON \
+              -DENTT_BUILD_LIB=ON \
+              -DENTT_BUILD_SNAPSHOT=ON \
+              -DENTT_BUILD_TOOLS=ON \
+              -DENTT_USE_CLANG_TIDY=ON \
+              ..
         make -j4
-    - name: Run tests
-      working-directory: build
-      env:
-        CTEST_OUTPUT_ON_FAILURE: 1
-      run: ctest -C Debug -j4

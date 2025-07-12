@@ -38,9 +38,7 @@ namespace era_engine::physics
 		JointComponent() = default;
 		JointComponent(ref<Entity::EcsData> _data, const BaseDescriptor& _base_descriptor);
 
-		virtual ~JointComponent();
-
-		virtual void release() override;
+		~JointComponent() override;
 
 		State get_state() const;
 

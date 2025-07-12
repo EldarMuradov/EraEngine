@@ -8,6 +8,28 @@
 namespace entt {
 
 /**
+ * @brief Provides the member constant `value` to true if a given type is a
+ * tuple, false otherwise.
+ * @tparam Type The type to test.
+ */
+template<typename Type>
+struct is_tuple: std::false_type {};
+
+/**
+ * @copybrief is_tuple
+ * @tparam Args Tuple template arguments.
+ */
+template<typename... Args>
+struct is_tuple<std::tuple<Args...>>: std::true_type {};
+
+/**
+ * @brief Helper variable template.
+ * @tparam Type The type to test.
+ */
+template<typename Type>
+inline constexpr bool is_tuple_v = is_tuple<Type>::value;
+
+/**
  * @brief Utility function to unwrap tuples of a single element.
  * @tparam Type Tuple type of any sizes.
  * @param value A tuple object of the given type.
@@ -34,7 +56,7 @@ struct forward_apply: private Func {
      * @tparam Args Types of arguments to use to construct the new instance.
      * @param args Parameters to use to construct the instance.
      */
-    template<class... Args>
+    template<typename... Args>
     constexpr forward_apply(Args &&...args) noexcept(std::is_nothrow_constructible_v<Func, Args...>)
         : Func{std::forward<Args>(args)...} {}
 
@@ -44,13 +66,13 @@ struct forward_apply: private Func {
      * @param args Parameters to forward to the underlying function.
      * @return Return value of the underlying function, if any.
      */
-    template<class Type>
+    template<typename Type>
     constexpr decltype(auto) operator()(Type &&args) noexcept(noexcept(std::apply(std::declval<Func &>(), args))) {
         return std::apply(static_cast<Func &>(*this), std::forward<Type>(args));
     }
 
     /*! @copydoc operator()() */
-    template<class Type>
+    template<typename Type>
     constexpr decltype(auto) operator()(Type &&args) const noexcept(noexcept(std::apply(std::declval<const Func &>(), args))) {
         return std::apply(static_cast<const Func &>(*this), std::forward<Type>(args));
     }

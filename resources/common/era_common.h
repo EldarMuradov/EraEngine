@@ -144,3 +144,5 @@ static void check_result_internal(HRESULT hr, const char* file, int32 line)
 #define unsetBit(mask, bit) (mask) ^= (1 << (bit))
 
 #define checkResult(hr) check_result_internal(hr, __FILE__, __LINE__)
+
+#define ENTT_USE_ATOMIC 1

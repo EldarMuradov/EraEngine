@@ -66,14 +66,8 @@ namespace era_engine
 
 	RendererHolderRootComponent::~RendererHolderRootComponent()
 	{
-	}
-
-	void RendererHolderRootComponent::release()
-	{
 		delete ldrRenderPass;
 		delete renderer;
-
-		Component::release();
 	}
 
 }
