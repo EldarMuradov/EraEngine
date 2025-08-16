@@ -20,16 +20,13 @@
 Era Engine is a modern modular game engine that provides developers with powerful tools for creating 3D games. It includes the following features and functionality:
 
 ### Entity Component System:
-Era Engine uses ECS to manage game objects and their behavior. This allows developers to easily create and modify complex systems in the game.
+Era Engine uses ECS with reflection to manage game objects and their behavior. This allows developers to easily create and modify complex systems in the game.
 
 ### Physics: 
-Integration with PhysX 5.3.1 and CUDA provides realistic simulation of game physics, including collisions, GJK (overlapping, raycasting etc), gravity, aggregates, articulations, soft bodies, GPU particles, GPU clothes, joints, Blast Physics Destructions, Mesh destructions, ragdolls, vehicles, CPU-based tasks, physics event system etc.
+Integration of ECS with PhysX 5.3.1 and CUDA provides realistic simulation of game physics, including physical animations, collisions, GJK, scene queues, aggregates, articulations, soft bodies, GPU particles, GPU clothes, joints, Blast Physics Destructions, Mesh fracturing, ragdolls, vehicles, CPU-based tasks, physics event system etc.
 
 ### Rendering: 
 The engine uses DirectX 12 to provide high-quality and efficient rendering, allowing you to create visually appealing games with advanced graphical effects. DLSS 3.5 and FSR 2.0 supported.
-
-### User Interface: 
-ImGui is integrated into the engine to create intuitive and customizable user interfaces in games. 
 
 ### Audio:
 Engine provides API and tools to work with audio. You can customize all audio settings and preferences to create realistic high quality sounds. Wwise support will be soon.
@@ -39,4 +36,4 @@ Era Engine uses .NET 8.0 Native AOT/Runtime and modules. This allows developers 
 
 
 
-Some other researches and repositories were used while developing game engine. Thanks NVIDIA, Ubisoft, P. Kurth, O. Ocornut, M. Caini and Microsoft.
+Thanks NVIDIA, Ubisoft, Microsoft, PFG, P. Kurth, O. Ocornut, M. Caini.
