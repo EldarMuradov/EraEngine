@@ -19,6 +19,8 @@ echo Python version:
 py --version
 echo    Python      - Ready.
 
+git submodule update --init
+
 mkdir _build
 cd _build
 
@@ -27,5 +29,5 @@ py -m venv venv
 echo venv created
 
 echo Generating project...
-cmake -G "Visual Studio 17 2022" ..
+cmake -G "Visual Studio 17 2022" -A x64 ..
 echo Done.
