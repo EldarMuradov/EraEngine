@@ -13,3 +13,7 @@
 [submodule "modules/thirdparty-gtest"]
 	path = modules/thirdparty-gtest
 	url = https://github.com/google/googletest.git
+[submodule "modules/thirdparty-acl/acl"]
+	path = modules/thirdparty-acl/acl
+	url = https://github.com/nfrechette/acl.git
+	branch = release/2.0
