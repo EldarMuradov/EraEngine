@@ -10,7 +10,6 @@ namespace era_engine
 	{
 	public:
 		CoreModule() noexcept;
-
 		~CoreModule() override;
 
 		bool initialize(void* engine) override;

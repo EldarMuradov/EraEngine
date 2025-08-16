@@ -1,8 +1,13 @@
 #pragma once
 
+#include "physics/body_component.h"
+
+#include <ecs/base_components/transform_component.h>
 #include <ecs/system.h>
 
 #include <core/sync.h>
+
+#include <entt/entt.hpp>
 
 namespace era_engine::physics
 {
@@ -26,5 +31,7 @@ namespace era_engine::physics
 	private:
 		std::vector<Entity::Handle> dynamics_to_init;
 		std::vector<Entity::Handle> statics_to_init;
+
+		entt::group<entt::owned_t<>, entt::get_t<TransformComponent, DynamicBodyComponent>> dynamic_body_group;
 	};
 }

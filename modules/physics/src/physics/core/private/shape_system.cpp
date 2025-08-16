@@ -23,7 +23,7 @@ namespace era_engine::physics
 
 		registration::class_<ShapeSystem>("ShapeSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("physics")))
-			.method("update", &ShapeSystem::update)(metadata("update_group", update_types::PHYSICS), metadata("After", std::vector<std::string>{"AnimationSystem::update"}))
+			.method("update", &ShapeSystem::update)(metadata("update_group", update_types::PHYSICS))
 			.method("process_skeleton_attachments", &ShapeSystem::process_skeleton_attachments)(metadata("update_group", update_types::AFTER_PHYSICS));
 	}
 
@@ -39,6 +39,9 @@ namespace era_engine::physics
 	void ShapeSystem::update(float dt)
 	{
 		using namespace physx;
+
+		ZoneScopedN("ShapeSystem::update");
+
 		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<ObservableMemberChangedFlagComponent, BoxShapeComponent>).each())
 		{
 			if (shape_component.get_shape() == nullptr)
@@ -194,6 +197,8 @@ namespace era_engine::physics
 	{
 		using namespace physx;
 		using namespace animation;
+
+		ZoneScopedN("ShapeSystem::process_skeleton_attachments");
 
 		auto& physics_ref = PhysicsHolder::physics_ref;
 

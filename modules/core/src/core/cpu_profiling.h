@@ -7,10 +7,17 @@
 #include "core/threading.h"
 #include "core/profiling_internal.h"
 
+#include <tracy/Tracy.hpp>
+
 namespace era_engine
 {
 	extern bool cpu_profiler_window_open;
 }
+
+#ifndef TRACY_ENABLE
+#define ZoneScopedN( name )
+#define FrameMark
+#endif
 
 #if ENABLE_CPU_PROFILING
 

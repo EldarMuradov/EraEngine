@@ -42,6 +42,8 @@ namespace era_engine
 
 	void CameraSystem::update(float dt)
 	{
+		ZoneScopedN("CameraSystem::render");
+
 		for (auto [handle, camera_holder, receiver, transform] : world->group(components_group<CameraHolderComponent, InputRecieverComponent, TransformComponent>).each())
 		{
 			const UserInput& user_input = receiver.get_frame_input();

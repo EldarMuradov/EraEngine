@@ -16,7 +16,7 @@ namespace era_engine
 	std::unordered_map<std::string, UpdateGroup*> UpdatesHolder::global_groups;
 	std::vector<std::string> UpdatesHolder::update_order;
 
-	UpdateGroup::UpdateGroup(const char* _name, UpdateType _update_type, bool _main_thread/* = false*/) noexcept
+	UpdateGroup::UpdateGroup(const char* _name, UpdateType _update_type, bool _main_thread/* = true*/) noexcept
 		: name(_name), update_type(_update_type), main_thread(_main_thread)
 	{
 		UpdatesHolder::global_groups.emplace(std::string(_name), this);

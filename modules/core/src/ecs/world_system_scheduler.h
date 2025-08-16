@@ -80,9 +80,9 @@ namespace era_engine
      
         void fixed_update_loop();
 
-        std::unordered_map<std::string, std::vector<ref<Task>>> build_task_order();
+        std::unordered_map<std::string, std::vector<ref<Task>>> build_task_order(UpdateType type);
 
-        void add_task(ref<Task> task);
+        void add_task(ref<Task> task, UpdateType type);
 
         std::vector<std::thread> normal_thread_pool;
         std::queue<TaskItem> normal_task_queue;
@@ -110,7 +110,12 @@ namespace era_engine
         std::unordered_map<std::string, std::vector<std::string>> adj_list;
         std::unordered_map<std::string, int> in_degree;
 
+        std::unordered_map<std::string, ref<Task>> fixed_tasks;
+        std::unordered_map<std::string, std::vector<std::string>> fixed_adj_list;
+        std::unordered_map<std::string, int> fixed_in_degree;
+
         std::unordered_map<std::string, std::vector<ref<Task>>> grouped_ordered_tasks;
+        std::unordered_map<std::string, std::vector<ref<Task>>> fixed_grouped_ordered_tasks;
 
         World* world = nullptr;
         bool inited = false;

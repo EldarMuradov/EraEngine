@@ -16,8 +16,9 @@ namespace era_engine::physics
     enum class ConstraintBlendType : uint8
     {
         BLEND_WITH_PREV_POSE = 0,
-        BLEND_WITH_ADJUSTED_POSE,
-        PURE_PHYSICS
+        BLEND_WITH_ANIMATION_POSE,
+        PURE_PHYSICS,
+        PURE_ANIMATION
     };
 
     class ERA_PHYSICS_API ConstraintDetails final
@@ -30,7 +31,7 @@ namespace era_engine::physics
         ConstraintDetails& operator=(const ConstraintDetails& other) = default;
 
         float drive_damping = 10.0f;
-        float drive_stiffness = 1000.0f;
+        float drive_stiffness = 200.0f;
 
         float max_force = std::numeric_limits<float>::max();
 

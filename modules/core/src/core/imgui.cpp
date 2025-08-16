@@ -9,17 +9,12 @@
 #include "asset/asset.h"
 #include "asset/file_registry.h"
 
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include <imgui/imgui_draw.cpp>
-#include <imgui/imgui.cpp>
-#include <imgui/imgui_widgets.cpp>
-#include <imgui/imgui_demo.cpp>
-#include <imgui/imgui_tables.cpp>
-#include <imgui/imgui_internal.h>
-
-#include <imgui/backends/imgui_impl_win32.cpp>
-#include <imgui/backends/imgui_impl_dx12.cpp>
 #include <dx/dx_profiling.h>
+
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include <imgui/imgui_internal.h>
+#include <imgui/backends/imgui_impl_dx12.h>
+#include <imgui/backends/imgui_impl_win32.h>
 
 #define MAX_NUM_IMGUI_IMAGES_PER_FRAME 128
 
@@ -31,6 +26,8 @@ static uint32 numImagesThisFrame;
 
 static ref<era_engine::dx_texture> iconsTexture;
 static ImTextureID iconsTextureID;
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 static void setStyle()
 {

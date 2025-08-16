@@ -34,21 +34,39 @@ namespace era_engine::physics
 		entt::registry& registry = world->get_registry();
 		registry.on_construct<DynamicBodyComponent>().connect<&PhysicsSystem::on_dynamic_body_created>(this);
 		registry.on_construct<StaticBodyComponent>().connect<&PhysicsSystem::on_static_body_created>(this);
+
+		dynamic_body_group = world->group(components_group<TransformComponent, DynamicBodyComponent>);
 	}
 
 	void PhysicsSystem::update(float dt)
 	{
-		process_added_bodies();
-
-		sync_physics_to_component_changes();
+		ZoneScopedN("PhysicsSystem::update");
 
 		{
+			ZoneScopedN("PhysicsSystem::process_added_bodies");
+
+			process_added_bodies();
+		}
+
+		{
+			ZoneScopedN("PhysicsSystem::sync_physics_to_component_changes");
+
+			sync_physics_to_component_changes();
+		}
+
+		{
+			ZoneScopedN("PhysicsSystem::update PhysX");
+
 			ScopedSpinLock _lock{ PhysicsHolder::physics_ref->sync };
 
 			PhysicsHolder::physics_ref->update(dt);
 		}
 
-		sync_component_to_physics();
+		{
+			ZoneScopedN("PhysicsSystem::sync_component_to_physics");
+
+			sync_component_to_physics();
+		}
 	}
 
 	void PhysicsSystem::sync_physics_to_component_changes()
@@ -188,19 +206,30 @@ namespace era_engine::physics
 				dynamic_body.center_of_mass.get_silent_for_write() = create_vec3(body->getCMassLocalPose().p);
 			}
 		}
+	}
 
-		for (auto [entity_handle, transformm_component, dynamic_body] : world->group(components_group<TransformComponent, DynamicBodyComponent>).each())
+	void PhysicsSystem::sync_component_to_physics()
+	{
+		using namespace physx;
+
+		for (auto [entity_handle, transformm_component, dynamic_body] : dynamic_body_group.each())
 		{
-			if (dynamic_body.get_rigid_actor() == nullptr)
-			{
-				continue;
-			}
-
 			PxRigidDynamic* body = dynamic_body.get_rigid_dynamic();
 
 			if (body == nullptr)
 			{
 				return;
+			}
+
+			if (!dynamic_body.kinematic)
+			{
+				dynamic_body.linear_velocity.get_silent_for_write() = create_vec3(body->getLinearVelocity());
+				dynamic_body.angular_velocity.get_silent_for_write() = create_vec3(body->getAngularVelocity());
+			}
+			else
+			{
+				dynamic_body.linear_velocity.get_silent_for_write() = vec3::zero;
+				dynamic_body.angular_velocity.get_silent_for_write() = vec3::zero;
 			}
 
 			for (const Force& force : std::exchange(dynamic_body.forces, {}))
@@ -254,32 +283,6 @@ namespace era_engine::physics
 		}
 	}
 
-	void PhysicsSystem::sync_component_to_physics()
-	{
-		using namespace physx;
-
-		for (auto [entity_handle, transformm_component, dynamic_body] : world->group(components_group<TransformComponent, DynamicBodyComponent>).each())
-		{
-			PxRigidDynamic* body = dynamic_body.get_rigid_dynamic();
-
-			if (body == nullptr)
-			{
-				return;
-			}
-
-			if (!dynamic_body.kinematic)
-			{
-				dynamic_body.linear_velocity.get_silent_for_write() = create_vec3(body->getLinearVelocity());
-				dynamic_body.angular_velocity.get_silent_for_write() = create_vec3(body->getAngularVelocity());
-			}
-			else
-			{
-				dynamic_body.linear_velocity.get_silent_for_write() = vec3::zero;
-				dynamic_body.angular_velocity.get_silent_for_write() = vec3::zero;
-			}
-		}
-	}
-
 	void PhysicsSystem::process_added_bodies()
 	{
 		using namespace physx;
@@ -298,13 +301,6 @@ namespace era_engine::physics
 			DynamicBodyComponent* dynamic_body_component = entity.get_component<DynamicBodyComponent>();
 
 			auto& colliders = physics_ref->colliders_map[entity_handle];
-			if (colliders.empty())
-			{
-				CapsuleShapeComponent* shape_component = entity.add_component<CapsuleShapeComponent>();
-				shape_component->half_height = 1.0f;
-				shape_component->radius = 0.3f;
-				colliders.push_back(shape_component);
-			}
 
 			TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
 			transform->type = TransformComponent::DYNAMIC;
@@ -352,13 +348,6 @@ namespace era_engine::physics
 			StaticBodyComponent* static_body_component = entity.get_component<StaticBodyComponent>();
 
 			auto& colliders = physics_ref->colliders_map[entity_handle];
-			if (colliders.empty())
-			{
-				CapsuleShapeComponent* shape_component = entity.add_component<CapsuleShapeComponent>();
-				shape_component->half_height = 1.0f;
-				shape_component->radius = 0.3f;
-				colliders.push_back(shape_component);
-			}
 
 			const TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
 

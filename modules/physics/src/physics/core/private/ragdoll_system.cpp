@@ -47,6 +47,8 @@ namespace era_engine::physics
 
 	void RagdollSystem::update(float dt)
 	{
+		ZoneScopedN("RagdollSystem::update");
+
 		process_added_ragdolls();
 
 		for (auto [entity_handle, changed_flag, ragdoll_limb_component] : world->group(components_group<ObservableMemberChangedFlagComponent, RagdollLimbComponent>).each())
@@ -116,6 +118,8 @@ namespace era_engine::physics
 	void RagdollSystem::update_normal(float dt)
 	{
 		using namespace animation;
+
+		ZoneScopedN("RagdollSystem::update_normal");
 
 		for (auto&& [entity_handle, transform_component, ragdoll_component, skeleton_component] : ragdolls_group.each())
 		{

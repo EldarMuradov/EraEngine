@@ -3,6 +3,7 @@
 		 
 #include <core/ecs/input_reciever_component.h>
 #include <core/ecs/input_sender_component.h>
+#include <core/cpu_profiling.h>
 #include <core/ecs/camera_holder_component.h>
 
 #include <ecs/update_groups.h>
@@ -38,6 +39,8 @@ namespace era_engine
 
 	void MovementSystem::update(float dt)
 	{
+		ZoneScopedN("MovementSystem::update");
+
 		const float ROTATION_SENSITIVITY = 4.0f;
 		const float MOVE_SPEED = 4.0f;
 
@@ -65,6 +68,8 @@ namespace era_engine
 
 	void MovementSystem::reset_input(float dt)
 	{
+		ZoneScopedN("MovementSystem::reset_input");
+
 		for (auto [handle, transform_component, movement_component] : world->group(components_group<TransformComponent, MovementComponent>).each())
 		{
 			movement_component.apply_desired_input();

@@ -228,19 +228,30 @@ namespace era_engine
 		bool status = true;
 		while (status)
 		{
-			status = newFrame(dt, *window);
+			ZoneScopedN("Engine::update");
+
+			{
+				ZoneScopedN("Engine::start_frame");
+				status = newFrame(dt, *window);
+			}
 
 			uint64 gameplay_fixed_frame_id = 0;
 
-			auto& worlds = get_worlds();
-			for (auto& [name, world] : worlds)
 			{
-				WorldSystemScheduler* scheduler = world->get_system_scheduler();
-				scheduler->update_normal(dt);
+				ZoneScopedN("Engine::update_worlds");
 
-				if (name == World::GAMEPLAY_WORLD_NAME && gameplay_fixed_frame_id == 0)
+				auto& worlds = get_worlds();
+				for (auto& [name, world] : worlds)
 				{
-					gameplay_fixed_frame_id = world->get_fixed_frame_id();
+					ZoneScopedN("Engine::normal_update_world");
+
+					WorldSystemScheduler* scheduler = world->get_system_scheduler();
+					scheduler->update_normal(dt);
+
+					if (name == World::GAMEPLAY_WORLD_NAME && gameplay_fixed_frame_id == 0)
+					{
+						gameplay_fixed_frame_id = world->get_fixed_frame_id();
+					}
 				}
 			}
 
@@ -249,19 +260,26 @@ namespace era_engine
 				draw_debug_menu_bar(dt, gameplay_fixed_frame_id);
 			}
 
-			execute_main_thread_jobs();
+			{
+				ZoneScopedN("Engine::execute_main_thread_jobs");
 
-			fileBrowser.draw();
+				execute_main_thread_jobs();
+			}
 
-			ImGui::End();
-			ImGui::End();
-			ImGui::End();
+			{
+				ZoneScopedN("Engine::render");
+				fileBrowser.draw();
 
-			renderToMainWindow(*window);
+				ImGui::End();
+
+				renderToMainWindow(*window);
+			}
 
 			cpu_profiling_frame_end_marker();
 
 			++frameID;
+
+			FrameMark;
 		}
 
 	for (auto& [name, world] : get_worlds())

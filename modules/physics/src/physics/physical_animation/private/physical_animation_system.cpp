@@ -43,7 +43,7 @@ namespace era_engine::physics
 
 	static DebugVar<bool> enable_angular_drive = DebugVar<bool>("physics.physical_animation.enable_angular_drive", true);
 	static DebugVar<bool> enable_motor_drive = DebugVar<bool>("physics.physical_animation.enable_motor_drive", true);
-	static DebugVar<bool> enable_dynamic_raycasts = DebugVar<bool>("physics.physical_animation.enable_dynamic_raycasts", true);
+	static DebugVar<bool> enable_dynamic_raycasts = DebugVar<bool>("physics.physical_animation.enable_dynamic_raycasts", false);
 	static DebugVar<bool> enable_always = DebugVar<bool>("physics.physical_animation.enable_always", false);
 
 	static DebugVar<bool> draw_motor_drives = DebugVar<bool>("physics.physical_animation.draw_motor_drives", false);
@@ -78,6 +78,17 @@ namespace era_engine::physics
 			idle_profile->arm_constraint.enable_slerp_drive = true;
 			idle_profile->head_constraint.enable_slerp_drive = true;
 			idle_profile->leg_constraint.enable_slerp_drive = true;
+
+			idle_profile->head_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->neck_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->arm_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->body_upper_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->body_middle_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->forearm_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->hand_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->leg_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->calf_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->foot_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
 		}
 
 		{
@@ -87,16 +98,16 @@ namespace era_engine::physics
 			running_profile->head_constraint.enable_slerp_drive = true;
 			running_profile->leg_constraint.enable_slerp_drive = true;
 
-			running_profile->head_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			running_profile->neck_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			running_profile->arm_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			running_profile->body_upper_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			running_profile->body_middle_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			running_profile->forearm_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			running_profile->hand_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			running_profile->leg_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			running_profile->calf_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			running_profile->foot_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
+			running_profile->head_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			running_profile->neck_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			running_profile->arm_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			running_profile->body_upper_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			running_profile->body_middle_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			running_profile->forearm_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			running_profile->hand_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			running_profile->leg_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			running_profile->calf_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			running_profile->foot_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
 		}
 
 		{
@@ -106,21 +117,23 @@ namespace era_engine::physics
 			sprint_profile->head_constraint.enable_slerp_drive = true;
 			sprint_profile->leg_constraint.enable_slerp_drive = true;
 
-			sprint_profile->head_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			sprint_profile->neck_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			sprint_profile->arm_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			sprint_profile->body_upper_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			sprint_profile->body_middle_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			sprint_profile->forearm_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			sprint_profile->hand_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			sprint_profile->leg_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			sprint_profile->calf_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
-			sprint_profile->foot_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE;
+			sprint_profile->head_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->neck_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->arm_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->body_upper_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->body_middle_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->forearm_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->hand_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->leg_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->calf_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->foot_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
 		}
 	}
 
 	void PhysicalAnimationSystem::update(float dt)
 	{
+		ZoneScopedN("PhysicalAnimationSystem::update");
+
 		process_added_pacs();
 
 		for (auto&& [entity_handle, changed_flag, physical_animation_limb_component] : world->group(components_group<ObservableMemberChangedFlagComponent, PhysicalAnimationLimbComponent>).each())
@@ -193,6 +206,8 @@ namespace era_engine::physics
 	{
 		using namespace animation;
 
+		ZoneScopedN("PhysicalAnimationSystem::update_normal");
+
 		for (auto&& [entity_handle,
 			transform_component,
 			physical_animation_component,
@@ -215,16 +230,20 @@ namespace era_engine::physics
 			SkeletonPose current_animation_pose = animation_component.current_animation_pose;
 
 			const uint32 root_id = physical_animation_component.root_joint_id;
-			physical_animation_component.local_joint_poses[root_id] = SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton, root_id);
 
 			const trs pelvis_world_transform = transform_component.get_world_transform() *
-				SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton, physical_animation_component.joint_init_ids.attachment_idx);
+				SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton, physical_animation_component.joint_init_ids.pelvis_idx);
 			PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
 
-			const trs inverse_ragdoll_world_transform = invert(physical_animation_component.prev_fixed_world_transform);
+			const trs inverse_ragdoll_world_transform = invert(transform_component.get_world_transform());
 
 			std::queue<uint32> q;
 			q.push(root_id);
+
+			{
+				const trs current_root_transform = SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton, root_id);
+				physical_animation_component.local_joint_poses[root_id] = current_root_transform;
+			}
 
 			while (!q.empty())
 			{
@@ -248,67 +267,68 @@ namespace era_engine::physics
 					{
 						Entity limb = limb_iter->second.get();
 						PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
-						const trs& limb_physics_pose = limb.get_component<TransformComponent>()->get_world_transform();
 
-						const trs limb_pose = inverse_ragdoll_world_transform * limb_physics_pose;
-
-						trs new_transform = trs::identity;
-						if (limb_component->blend_type == ConstraintBlendType::BLEND_WITH_ADJUSTED_POSE)
+						if (limb_component->blend_type == ConstraintBlendType::PURE_ANIMATION)
 						{
-							const vec3 mid_translation = lerp(limb_component->adjusted_pose.position,
-								limb_component->physics_pose.position,
-								physical_animation_component.blend_factor);
-
-							const quat mid_rotation = slerp(limb_component->adjusted_pose.rotation,
-								limb_component->physics_pose.rotation,
-								physical_animation_component.blend_factor);
-
-							new_transform = inverse_parent_local * inverse_ragdoll_world_transform * trs(mid_translation, mid_rotation, vec3(1.0f));
-						}
-						else if (limb_component->blend_type == ConstraintBlendType::BLEND_WITH_PREV_POSE)
-						{
-							new_transform = inverse_parent_local * limb_pose;
-
-							// Smooth blend with prev pose.
-							if (!fuzzy_equals(limb_component->prev_limb_local_rotation, new_transform.rotation))
-							{
-								new_transform.rotation = slerp(limb_component->prev_limb_local_rotation,
-									new_transform.rotation,
-									physical_animation_component.blend_factor);
-							}
+							// No physics impact.
+							physical_animation_component.local_joint_poses[child_id] = limb_animation_pose;
 						}
 						else
 						{
-							// No blend at all.
-							new_transform = inverse_parent_local * limb_pose;
+							const trs& limb_physics_pose = limb.get_component<TransformComponent>()->get_world_transform();
+
+							const trs limb_pose = inverse_ragdoll_world_transform * limb_physics_pose;
+
+							trs new_transform = inverse_parent_local * limb_pose;
+							if (limb_component->blend_type == ConstraintBlendType::BLEND_WITH_ANIMATION_POSE)
+							{
+								const trs animation_blend_pose = limb_animation_pose * inverse_parent_local;
+								new_transform.position = lerp(animation_blend_pose.position,
+									new_transform.position,
+									physical_animation_component.blend_factor);
+
+								new_transform.rotation = slerp(animation_blend_pose.rotation,
+									new_transform.rotation,
+									physical_animation_component.blend_factor);
+							}
+							else if (limb_component->blend_type == ConstraintBlendType::BLEND_WITH_PREV_POSE)
+							{
+								// Smooth blend with prev pose.
+								if (!fuzzy_equals(limb_component->prev_limb_local_rotation, new_transform.rotation))
+								{
+									new_transform.rotation = slerp(limb_component->prev_limb_local_rotation,
+										new_transform.rotation,
+										physical_animation_component.blend_factor);
+								}
+							}
+
+							// Blend with animation step.
+							if (!fuzzy_equals(physical_animation_component.blend_weight, 1.0f))
+							{
+								const trs animation_blend_pose = limb_animation_pose * inverse_parent_local;
+								new_transform.position = lerp(animation_blend_pose.position,
+									new_transform.position,
+									physical_animation_component.blend_weight);
+
+								new_transform.rotation = slerp(animation_blend_pose.rotation,
+									new_transform.rotation,
+									physical_animation_component.blend_weight);
+							}
+
+							new_transform.rotation = normalize(new_transform.rotation);
+
+							skeleton->set_joint_rotation(new_transform.rotation, child_id);
+							current_animation_pose.set_joint_rotation(new_transform.rotation, child_id);
+
+							limb_component->prev_limb_local_position = new_transform.position;
+							limb_component->prev_limb_local_rotation = new_transform.rotation;
+
+							trs new_local_child_transform = parent_local * new_transform;
+							new_local_child_transform.position = new_local_child_transform.position;
+							new_local_child_transform.rotation = normalize(new_local_child_transform.rotation);
+
+							physical_animation_component.local_joint_poses[child_id] = new_local_child_transform;
 						}
-
-						// Blend with animation step.
-						if (!fuzzy_equals(physical_animation_component.blend_weight, 1.0f))
-						{
-							const trs animation_blend_pose = limb_animation_pose * inverse_parent_local;
-							new_transform.position = lerp(animation_blend_pose.position,
-								new_transform.position,
-								physical_animation_component.blend_weight);
-
-							new_transform.rotation = slerp(animation_blend_pose.rotation,
-								new_transform.rotation,
-								physical_animation_component.blend_weight);
-						}
-
-						new_transform.rotation = normalize(new_transform.rotation);
-
-						skeleton->set_joint_rotation(new_transform.rotation, child_id);
-						current_animation_pose.set_joint_rotation(new_transform.rotation, child_id);
-
-						limb_component->prev_limb_local_position = new_transform.position;
-						limb_component->prev_limb_local_rotation = new_transform.rotation;
-
-						trs new_local_child_transform = parent_local * new_transform;
-						new_local_child_transform.position = new_local_child_transform.position;
-						new_local_child_transform.rotation = normalize(new_local_child_transform.rotation);
-
-						physical_animation_component.local_joint_poses[child_id] = new_local_child_transform;
 					}
 
 					q.push(child_id);

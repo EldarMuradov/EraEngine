@@ -151,6 +151,8 @@ namespace era_engine::physics
 	Physics::~Physics()
 	{
 		release();
+
+		allocator.reset();
 	}
 
 	void Physics::init_scene()
@@ -193,6 +195,9 @@ namespace era_engine::physics
 		scene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_FNORMALS, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
+
+		static constexpr uint64 align = 16U;
+		scratch_mem_block = allocator.allocate(scratch_mem_block_size, align, true);
 	}
 
 	physx::PxScene* Physics::get_scene() const
@@ -276,17 +281,12 @@ namespace era_engine::physics
 	void Physics::start_simulation(float dt)
 	{
 		using namespace physx;
-		recordProfileEvent(profile_event_begin_block, "PhysX update");
-
-		static constexpr uint64 align = 16U;
-
-		static constexpr uint64 scratch_mem_block_size = MB(32U);
-
-		static void* scratch_mem_block = allocator.allocate(scratch_mem_block_size, align, true);
 
 		if (is_gpu() || !use_stepper)
 		{
-			scene->simulate(dt, NULL, scratch_mem_block, scratch_mem_block_size);
+			ZoneScopedN("Physics::simulate_and_fetch");
+
+			scene->simulate(dt, nullptr, scratch_mem_block, scratch_mem_block_size);
 			scene->fetchResults(true);
 		}
 		else
@@ -310,18 +310,14 @@ namespace era_engine::physics
 		}
 
 		{
-			CPU_PROFILE_BLOCK("PhysX process simulation event callbacks steps");
+			ZoneScopedN("Physics::process_simulation_event_callbacks");
 			process_simulation_event_callbacks();
 		}
 
 		{
-			CPU_PROFILE_BLOCK("PhysX sync transforms steps");
+			ZoneScopedN("Physics::sync_transforms");
 			sync_transforms();
 		}
-
-		recordProfileEvent(profile_event_end_block, "PhysX update");
-
-		allocator.reset();
 	}
 
 	void Physics::reset_actors_velocity_and_inertia()
@@ -339,8 +335,6 @@ namespace era_engine::physics
 				rd->setLinearVelocity(PxVec3(0.0f));
 			}
 		}
-
-		scene->flushSimulation();
 	}
 
 	void Physics::add_shape_to_entity_data(ShapeComponent* shape)

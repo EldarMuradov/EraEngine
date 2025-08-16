@@ -96,6 +96,8 @@ namespace era_engine::physics
 
 		physx::PxScene* scene = nullptr;
 
+		void* scratch_mem_block = nullptr;
+
 		physx::PxPhysics* physics = nullptr;
 
 		physx::PxPvd* pvd = nullptr;
@@ -123,6 +125,8 @@ namespace era_engine::physics
 		physx::PxTolerancesScale tolerance_scale;
 
 		const uint32_t nb_cpu_dispatcher_threads = 4;
+		static constexpr uint64 scratch_mem_block_size = MB(32U);
+
 		bool use_stepper = false;
 
 		friend class PhysicsSystem;

@@ -7,13 +7,13 @@ era_begin(unittests "APP")
     require_thirdparty_module(unittests yaml-cpp)
     require_thirdparty_module(unittests rttr_core)
     require_thirdparty_module(unittests DirectXTex)
+    require_module(unittests imgui)
     require_module(unittests base)
     require_module(unittests core)
     require_module(unittests physics)
 
     require_physx(unittests)
 
-    target_include_directories(unittests PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-imgui/imgui)
     target_include_directories(unittests PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-gtest/googletest/include)
 
     find_library(gtest NAMES gtest PATHS ${ERA_ENGINE_PATH}/modules/thirdparty-gtest/googletest)

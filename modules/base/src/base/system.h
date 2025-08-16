@@ -17,11 +17,11 @@ namespace era_engine
 	class ERA_BASE_API UpdateGroup
 	{
 	public:
-		UpdateGroup(const char* _name, UpdateType _update_type, bool _main_thread = false) noexcept;
+		UpdateGroup(const char* _name, UpdateType _update_type, bool _main_thread = true) noexcept;
 
 		const char* name = nullptr;
 		UpdateType update_type = UpdateType::NORMAL;
-		bool main_thread = false;
+		bool main_thread = true;
 	};
 
 	class ERA_BASE_API System

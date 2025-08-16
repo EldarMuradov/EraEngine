@@ -18,6 +18,7 @@ add_subdirectory(modules/thirdparty-rttr)
 add_subdirectory(modules/thirdparty-gtest)
 add_subdirectory(modules/thirdparty-acl)
 
+add_subdirectory(modules/imgui)
 add_subdirectory(modules/base)
 add_subdirectory(modules/core)
 add_subdirectory(modules/physics)

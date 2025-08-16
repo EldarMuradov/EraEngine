@@ -25,7 +25,7 @@ namespace era_engine::animation
 
 		registration::class_<AnimationSystem>("AnimationSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("render")))
-			.method("update", &AnimationSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL_MAIN_THREAD))
+			.method("update", &AnimationSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL))
 			.method("draw_skeletons", &AnimationSystem::draw_skeletons)(metadata("update_group", update_types::RENDER));
 	}
 
@@ -48,6 +48,8 @@ namespace era_engine::animation
 
 	void AnimationSystem::update(float dt)
 	{
+		ZoneScopedN("AnimationSystem::render");
+
 		MemoryMarker marker = allocator->get_marker();
 		for (auto [entityHandle, anim, mesh, transform] : world->group(components_group<AnimationComponent, MeshComponent, TransformComponent>).each())
 		{
@@ -105,6 +107,8 @@ namespace era_engine::animation
 
 	void AnimationSystem::draw_skeletons(float dt)
 	{
+		ZoneScopedN("AnimationSystem::draw_skeletons");
+
 		for (auto [entityHandle, anim, skeleton, mesh, transform] : world->group(components_group<AnimationComponent, SkeletonComponent, MeshComponent, TransformComponent>).each())
 		{
 			if (skeleton.draw_sceleton)

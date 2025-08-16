@@ -107,9 +107,9 @@ namespace era_engine
 			tiran = world->create_entity("Tiran");
 
 			AnimationComponent* animation_component = tiran.add_component<AnimationComponent>();
-			//animation_component->play = false;
+			animation_component->play = false;
 			animation_component->update_skeleton = false;
-			animation_component->time_scale = 0.1f;
+			animation_component->time_scale = 0.2f;
 
 			SkeletonComponent* skeleton_component = tiran.add_component<SkeletonComponent>();
 			tiran.add_component<MeshComponent>(mesh);
@@ -171,21 +171,22 @@ namespace era_engine
 			settings.lower_body_radius_modifier = 2.8f;
 
 			RagdollComponent* ragdoll_component = tiran.add_component<RagdollComponent>();
+			ragdoll_component->simulated = true;
+			//PhysicalAnimationComponent* ragdoll_component = tiran.add_component<PhysicalAnimationComponent>();
 			ragdoll_component->joint_init_ids = joint_init_ids;
 			ragdoll_component->settings = settings;
-			ragdoll_component->simulated = true;
 		}
 
-		//if (auto mesh = loadMeshFromFileAsync(get_asset_path("/resources/assets/Sponza/sponza.obj"), mesh_creation_flags_unreal_asset))
-		//{
-		//	auto sponza = world->create_entity("Sponza");
-		//	sponza.add_component<MeshComponent>(mesh);
+		if (auto mesh = loadMeshFromFileAsync(get_asset_path("/resources/assets/Sponza/sponza.obj"), mesh_creation_flags_unreal_asset))
+		{
+			auto sponza = world->create_entity("Sponza");
+			sponza.add_component<MeshComponent>(mesh);
 
-		//	TransformComponent* transform_component = sponza.get_component<TransformComponent>();
-		//	transform_component->set_world_position(vec3(5.0f, -3.75f, 35.0f));
+			TransformComponent* transform_component = sponza.get_component<TransformComponent>();
+			transform_component->set_world_position(vec3(5.0f, -3.75f, 35.0f));
 
-		//	addRaytracingComponentAsync(sponza, mesh);
-		//}
+			addRaytracingComponentAsync(sponza, mesh);
+		}
 
 		auto plane = world->create_entity("Platform");
 		plane.add_component<physics::PlaneComponent>(static_cast<CollisionType>(GameCollisionType::TERRAIN), vec3(0.f, -5.0, 0.0f));

@@ -39,6 +39,8 @@ namespace era_engine::physics
 
 	void JointsSystem::update(float dt)
 	{
+		ZoneScopedN("JointsSystem::update");
+
 		process_added_joints();
 
 		sync_physics_to_component_changes();

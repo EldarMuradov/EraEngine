@@ -45,6 +45,8 @@ namespace era_engine
 
 	void InputSystem::update(float dt)
 	{
+		ZoneScopedN("InputSystem::render");
+
 		static bool app_focused_last_frame = true;
 
 		ImGui::BeginWindowHiddenTabBar("Scene Viewport");
@@ -62,8 +64,6 @@ namespace era_engine
 		main_renderer* renderer = renderer_holder_rc->renderer;
 
 		ImGui::Image(renderer->frameResult, render_width, render_height);
-
-		CPU_PROFILE_BLOCK("Collect user input");
 
 		static UserInput input{};
 

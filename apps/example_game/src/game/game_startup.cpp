@@ -50,6 +50,7 @@ namespace era_engine
 		game_world->add_tag("base");
 		game_world->add_tag("game");
 		game_world->add_tag("motion_matching");
+		game_world->add_tag("debug");
 
 		PhysicsInitializer physics_initializer = PhysicsInitializer(game_world);
 		physics_initializer.init();

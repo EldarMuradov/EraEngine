@@ -30,7 +30,7 @@ namespace era_engine
 
 		registration::class_<DragNDropSystem>("DragNDropSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr)(policy::ctor::as_raw_ptr, metadata("Tag", std::string("editor")))
-			.method("update", &DragNDropSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL_MAIN_THREAD)/*, metadata("After", std::vector<std::string>{"EditorToolsSystem::update"})*/);
+			.method("update", &DragNDropSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL)/*, metadata("After", std::vector<std::string>{"EditorToolsSystem::update"})*/);
 	}
 
 	DragNDropSystem::DragNDropSystem(World* _world)

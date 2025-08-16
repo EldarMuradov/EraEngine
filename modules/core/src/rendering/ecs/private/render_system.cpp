@@ -95,6 +95,7 @@ namespace era_engine
 
 	void RenderSystem::before_render(float dt)
 	{
+		ZoneScopedN("RenderSystem::before_render");
 		main_renderer* renderer = renderer_holder_rc->renderer;
 
 		renderer->beginFrame(renderer_holder_rc->width, renderer_holder_rc->height);
@@ -106,6 +107,7 @@ namespace era_engine
 
 	void RenderSystem::update(float dt)
 	{
+		ZoneScopedN("RenderSystem::update");
 		main_renderer* renderer = renderer_holder_rc->renderer;
 
 		directional_light& sun = renderer_holder_rc->sun;
@@ -152,6 +154,8 @@ namespace era_engine
 
 	void RenderSystem::after_render(float dt)
 	{
+		ZoneScopedN("RenderSystem::after_render");
+
 		main_renderer* renderer = renderer_holder_rc->renderer;
 
 		directional_light& sun = renderer_holder_rc->sun;
@@ -216,6 +220,7 @@ namespace era_engine
 
 		{
 			CPU_PROFILE_BLOCK("Sort render passes");
+			ZoneScopedN("RenderSystem::submitRendererParams");
 
 			opaqueRenderPass.sort();
 			transparentRenderPass.sort();

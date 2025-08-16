@@ -48,7 +48,7 @@ namespace era_engine::physics
 		DynamicBodyComponent* dynamic_body_component = entity.add_component<DynamicBodyComponent>();
 		dynamic_body_component->mass = mass;
 		dynamic_body_component->ccd = true;
-		dynamic_body_component->use_gravity = false;
+		dynamic_body_component->use_gravity = true;
 		dynamic_body_component->simulated = false;
 		dynamic_body_component->linear_damping = 0.1f;
 		dynamic_body_component->angular_damping = 0.25f;

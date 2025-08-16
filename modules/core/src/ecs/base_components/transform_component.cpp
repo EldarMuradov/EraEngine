@@ -19,7 +19,7 @@ namespace era_engine
 			.constructor<ref<Entity::EcsData>, const trs&>()
 			.constructor<ref<Entity::EcsData>, const trs&, TransformComponent::TransformType>()
 			.constructor<ref<Entity::EcsData>, const vec3&, const quat&, const vec3&, TransformComponent::TransformType>()
-			.property("transform", &TransformComponent::get_world_transform, &TransformComponent::set_world_transform)
+			.property("transform", &TransformComponent::get_world_transform, &TransformComponent::force_sync_world_transforms)
 			.property("local_transform", &TransformComponent::get_local_transform, &TransformComponent::set_local_transform)
 			.property("type", &TransformComponent::type);
 	}
@@ -58,11 +58,19 @@ namespace era_engine
 		return transform;
 	}
 
-	void TransformComponent::set_world_transform(const trs& new_world_transform)
+	void TransformComponent::force_sync_world_transforms(const trs& new_world_transform)
+	{
+		set_world_transform(new_world_transform, true);
+	}
+
+	void TransformComponent::set_world_transform(const trs& new_world_transform, bool update_local_transform)
 	{
 		transform = new_world_transform;
 
-		sync_local_transform();
+		if(update_local_transform)
+		{
+			sync_local_transform();
+		}
 	}
 
 	const vec3& TransformComponent::get_world_position() const
@@ -96,6 +104,19 @@ namespace era_engine
 		{
 			const trs& parent_world_space_trs = parent.get_component<TransformComponent>()->get_world_transform();
 			local_transform = invert(parent_world_space_trs) * transform;
+		}
+	}
+
+	void TransformComponent::sync_childs_transforms(const trs& delta_transform)
+	{
+		std::vector<Entity> childs = EntityContainer::get_entity_childs(get_world(), get_handle());
+
+		for (Entity child : childs)
+		{
+			TransformComponent* child_transform_component = child.get_component<TransformComponent>();
+			const trs& pre_child_world_transform = child_transform_component->get_world_transform();
+
+			child_transform_component->set_world_transform(pre_child_world_transform * delta_transform);
 		}
 	}
 

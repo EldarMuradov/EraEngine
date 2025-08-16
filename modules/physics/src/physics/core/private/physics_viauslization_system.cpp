@@ -3,7 +3,7 @@
 
 #include <ecs/update_groups.h>
 
-#include "core/debug/debug_var.h"
+#include <core/debug/debug_var.h>
 
 #include <rendering/ecs/renderer_holder_root_component.h>
 

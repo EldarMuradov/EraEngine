@@ -11,6 +11,7 @@ DXGI.lib
 dxguid.lib
 dxcompiler.lib
 XAudio2.lib
+Ws2_32.lib
 )
 
 function(assign_source_group)
@@ -30,7 +31,7 @@ function(era_default_linkage name)
     target_compile_definitions(${name} PRIVATE _UNICODE
         UNICODE
         _CRT_SECURE_NO_WARNINGS
-        ENABLE_CPU_PROFILING=1
+        ENABLE_CPU_PROFILING=0
         ENABLE_MESSAGE_LOG=1
         ENGINE_PATH=L"${ERA_ENGINE_PATH}"
         SHADER_BIN_DIR=L"${ERA_ENGINE_PATH}/modules/shaders/bin/Release/"
@@ -38,6 +39,12 @@ function(era_default_linkage name)
         MESH_SHADER_SUPPORTED
         ENABLE_DX_PROFILING=0
         ENABLE_FSR_WRAPPER
+        TRACY_ENABLE
+        TRACY_ON_DEMAND
+        TRACY_NO_CRASH_HANDLER
+        TRACY_NO_CALLSTACK
+        TRACY_NO_CODE_TRANSFER
+        TRACY_NO_SAMPLING
     )
 
     target_link_libraries(${name} ${ENGINE_DEFAULT_LIBS})
@@ -57,10 +64,10 @@ function(declare_module name)
     message("-- Declare module ${name}.")
 
     file(GLOB_RECURSE SOURCES_${name} ${ERA_ENGINE_PATH}/modules/${name}/src/*.cpp)
-    file(GLOB_RECURSE HEADERS_${name} ${ERA_ENGINE_PATH}/modules/${name}/src/*.h)
+    file(GLOB_RECURSE HEADERS_${name} ${ERA_ENGINE_PATH}/modules/${name}/src/*.h ${ERA_ENGINE_PATH}/modules/${name}/src/*.hpp)
 
     add_library(${name} SHARED ${SOURCES_${name}} ${HEADERS_${name}})
-    target_include_directories(${name} PUBLIC ${ERA_ENGINE_PATH}/modules/${name}/src)
+    target_include_directories(${name} PUBLIC ${ERA_ENGINE_PATH}/modules/${name}/src ${ERA_ENGINE_PATH}/tools/tracy/repo/public)
 
     era_default_linkage(${name})
 endfunction()
@@ -77,10 +84,10 @@ function(declare_app name)
     message("-- Declare app ${name}.")
 
     file(GLOB_RECURSE SOURCES_${name} ${ERA_ENGINE_PATH}/apps/${name}/src/*.cpp)
-    file(GLOB_RECURSE HEADERS_${name} ${ERA_ENGINE_PATH}/apps/${name}/src/*.h)
+    file(GLOB_RECURSE HEADERS_${name} ${ERA_ENGINE_PATH}/apps/${name}/src/*.h ${ERA_ENGINE_PATH}/modules/${name}/src/*.hpp)
 
     add_executable(${name} ${SOURCES_${name}} ${HEADERS_${name}})
-    target_include_directories(${name} PUBLIC ${ERA_ENGINE_PATH}/apps/${name}/src)
+    target_include_directories(${name} PUBLIC ${ERA_ENGINE_PATH}/apps/${name}/src ${ERA_ENGINE_PATH}/tools/tracy/repo/public)
 
     era_default_linkage(${name})
 endfunction()

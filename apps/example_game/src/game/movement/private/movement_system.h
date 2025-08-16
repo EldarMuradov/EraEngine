@@ -8,7 +8,7 @@ namespace era_engine
 	{
 	public:
 		MovementSystem(World* _world);
-		~MovementSystem();
+		~MovementSystem() override;
 
 		void init() override;
 		void update(float dt) override;

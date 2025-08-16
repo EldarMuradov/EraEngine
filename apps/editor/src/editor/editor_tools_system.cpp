@@ -28,8 +28,7 @@ namespace era_engine
 
 		registration::class_<EditorToolsSystem>("EditorToolsSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr)(policy::ctor::as_raw_ptr, metadata("Tag", std::string("editor")))
-			//.method("update", &EditorToolsSystem::update)(metadata("update_group", update_types::RENDER), metadata("Before", std::vector<std::string>{"RenderSystem::update"}))
-			;
+			.method("update", &EditorToolsSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL));
 	}
 
 	EditorToolsSystem::EditorToolsSystem(World* _world)
@@ -50,25 +49,25 @@ namespace era_engine
 
 	void EditorToolsSystem::update(float dt)
 	{
-		//draw_world();
-		//draw_creation_popup();
+		draw_world();
+		draw_creation_popup();
 
-		//if (ImGui::Begin("Settings"))
-		//{
-		//	ImGui::Text("%.3f ms, %u FPS", dt * 1000.f, (uint32)(1.f / dt));
+		if (ImGui::Begin("Settings"))
+		{
+			ImGui::Text("%.3f ms, %u FPS", dt * 1000.f, (uint32)(1.f / dt));
 
-		//	if (ImGui::BeginProperties())
-		//	{
-		//		ImGui::PropertySlider("Time scale", renderer_holder_rc->timestep_scale);
+			if (ImGui::BeginProperties())
+			{
+				ImGui::PropertySlider("Time scale", renderer_holder_rc->timestep_scale);
 
-		//		dx_memory_usage memoryUsage = get_dx_mem_usage();
+				dx_memory_usage memoryUsage = get_dx_mem_usage();
 
-		//		ImGui::PropertyValue("Video memory usage", "%u / %uMB", memoryUsage.currentlyUsed, memoryUsage.available);
+				ImGui::PropertyValue("Video memory usage", "%u / %uMB", memoryUsage.currentlyUsed, memoryUsage.available);
 
-		//		ImGui::EndProperties();
-		//	}
-		//}
-		//ImGui::End();
+				ImGui::EndProperties();
+			}
+		}
+		ImGui::End();
 	}
 
 	void EditorToolsSystem::draw_creation_popup()

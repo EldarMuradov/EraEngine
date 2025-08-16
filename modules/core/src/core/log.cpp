@@ -87,7 +87,7 @@ namespace era_engine
 
 		registration::class_<LogSystem>("LogSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr)
-			.method("update", &System::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL_MAIN_THREAD));
+			.method("update", &System::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL));
 	}
 
 	LogSystem::LogSystem(World* _world)

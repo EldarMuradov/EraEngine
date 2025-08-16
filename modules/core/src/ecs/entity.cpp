@@ -160,7 +160,7 @@ namespace era_engine
 		return container.at(parent).childs;
 	}
 
-	std::vector<Entity> EntityContainer::get_entity_childs(ref<World> world, Entity::Handle parent)
+	std::vector<Entity> EntityContainer::get_entity_childs(World* world, Entity::Handle parent)
 	{
 		if (container.find(parent) == container.end())
 		{

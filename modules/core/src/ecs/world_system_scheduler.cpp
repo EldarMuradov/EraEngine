@@ -53,6 +53,8 @@ namespace era_engine
 			fixed_thread_pool.emplace_back(&WorldSystemScheduler::fixed_worker, this);
 			set_high_priority(fixed_thread_pool.back(), true);
 		}
+
+		update_types::register_default_order();
 	}
 
 	WorldSystemScheduler::~WorldSystemScheduler()
@@ -141,12 +143,10 @@ namespace era_engine
 
 					ref<Task> task = make_ref<Task>(system, system_method, std::string(group.name), system_tag, dependencies, dependent);
 
-					add_task(task);
+					add_task(task, group.update_type);
 				}
 			}
 		}
-
-		update_types::register_default_order();
 
 		inited = true;
 	}
@@ -165,7 +165,8 @@ namespace era_engine
 	{
 		if(inited)
 		{
-			grouped_ordered_tasks = build_task_order();
+			grouped_ordered_tasks = build_task_order(UpdateType::NORMAL);
+			fixed_grouped_ordered_tasks = build_task_order(UpdateType::FIXED);
 		}
 	}
 
@@ -179,19 +180,19 @@ namespace era_engine
 				auto found_group_iter = grouped_ordered_tasks.find(group_name);
 				if (found_group_iter != grouped_ordered_tasks.end())
 				{
-					auto& tasks = found_group_iter->second;
-					if (group && group->update_type == UpdateType::NORMAL)
+					auto& group_tasks = found_group_iter->second;
+					if (group)
 					{
 						if (!group->main_thread)
 						{
-							for (auto& task : tasks)
+							for (auto& task : group_tasks)
 							{
 								normal_task_queue.push({ task, dt });
 							}
 						}
 						else
 						{
-							for (auto& task : tasks)
+							for (auto& task : group_tasks)
 							{
 								auto type_name = task->system->get_type().get_name().data();
 								auto method_name = task->method.get_name().data();
@@ -211,30 +212,34 @@ namespace era_engine
 		normal_condition.notify_all();
 	}
 
-	void WorldSystemScheduler::add_task(ref<Task> task)
+	void WorldSystemScheduler::add_task(ref<Task> task, UpdateType type)
 	{
-		std::string task_name = task->system->get_type().get_name() + std::string("::") + task->method.get_name();
-		tasks[task_name] = task;
+		auto& current_in_degree = type == UpdateType::NORMAL ? in_degree : fixed_in_degree;
+		auto& current_tasks = type == UpdateType::NORMAL ? tasks : fixed_tasks;
+		auto& current_adj_list = type == UpdateType::NORMAL ? adj_list : fixed_adj_list;
 
-		if (adj_list.find(task_name) == adj_list.end())
+		std::string task_name = task->system->get_type().get_name() + std::string("::") + task->method.get_name();
+		current_tasks[task_name] = task;
+
+		if (current_adj_list.find(task_name) == current_adj_list.end())
 		{
-			adj_list[task_name] = {};
+			current_adj_list[task_name] = {};
 		}
-		if (in_degree.find(task_name) == in_degree.end())
+		if (current_in_degree.find(task_name) == current_in_degree.end())
 		{
-			in_degree[task_name] = 0;
+			current_in_degree[task_name] = 0;
 		}
 
 		for (const auto& dep : task->dependencies)
 		{
-			adj_list[dep].push_back(task_name);
-			in_degree[task_name]++;
+			current_adj_list[dep].push_back(task_name);
+			current_in_degree[task_name]++;
 		}
 
 		for (const auto& dep : task->dependents)
 		{
-			adj_list[task_name].push_back(dep);
-			in_degree[dep]++;
+			current_adj_list[task_name].push_back(dep);
+			current_in_degree[dep]++;
 		}
 	}
 
@@ -289,26 +294,28 @@ namespace era_engine
 	{
 		{
 			std::lock_guard<std::mutex> lock(queue_mutex);
-			for (auto& group_name : UpdatesHolder::update_order)
+
+			const std::vector<std::string>& order = UpdatesHolder::update_order;
+			for (auto& group_name : order)
 			{
 				UpdateGroup* group = find_group(group_name);
-				auto found_group_iter = grouped_ordered_tasks.find(group_name);
-				if(found_group_iter != grouped_ordered_tasks.end())
+				auto found_group_iter = fixed_grouped_ordered_tasks.find(group_name);
+				if(found_group_iter != fixed_grouped_ordered_tasks.end())
 				{
-					auto& tasks = found_group_iter->second;
+					auto& group_tasks = found_group_iter->second;
 
-					if (group && group->update_type == UpdateType::FIXED)
+					if (group)
 					{
 						if (!group->main_thread)
 						{
-							for (auto& task : tasks)
+							for (auto& task : group_tasks)
 							{
 								fixed_task_queue.push({ task, dt });
 							}
 						}
 						else
 						{
-							for (auto& task : tasks)
+							for (auto& task : group_tasks)
 							{
 								auto type_name = task->system->get_type().get_name().data();
 								auto method_name = task->method.get_name().data();
@@ -385,7 +392,9 @@ namespace era_engine
 
 			if (elapsed >= fixed_update_interval)
 			{
-				float fixed_dt = std::chrono::duration<float>(fixed_update_interval).count();
+				ZoneScopedN("WorldSystemScheduler::fixed_update_loop");
+
+				float fixed_dt = std::chrono::duration<float>(elapsed).count();
 				update_fixed(fixed_dt);
 
 				{
@@ -399,12 +408,7 @@ namespace era_engine
 
 				++world->fixed_frame_id;
 
-				last_fixed_update += std::chrono::duration_cast<decltype(last_fixed_update)::duration>(fixed_update_interval);
-
-				if (now - last_fixed_update > fixed_update_interval * 2.0f)
-				{
-					last_fixed_update = now;
-				}
+				last_fixed_update = now;
 			}
 			else
 			{
@@ -413,12 +417,16 @@ namespace era_engine
 		}
 	}
 
-	std::unordered_map<std::string, std::vector<ref<Task>>> WorldSystemScheduler::build_task_order()
+	std::unordered_map<std::string, std::vector<ref<Task>>> WorldSystemScheduler::build_task_order(UpdateType type)
 	{
+		auto& current_in_degree = type == UpdateType::NORMAL ? in_degree : fixed_in_degree;
+		auto& current_tasks = type == UpdateType::NORMAL ? tasks : fixed_tasks;
+		auto& current_adj_list = type == UpdateType::NORMAL ? adj_list : fixed_adj_list;
+
 		std::queue<std::string> zero_in_degree;
 		std::vector<ref<Task>> task_order;
 
-		for (const auto& [task_name, degree] : in_degree)
+		for (const auto& [task_name, degree] : current_in_degree)
 		{
 			if (degree == 0)
 			{
@@ -430,23 +438,23 @@ namespace era_engine
 		{
 			std::string current = zero_in_degree.front();
 
-			auto& current_task = tasks[current];
+			auto& current_task = current_tasks[current];
 
 			task_order.push_back(current_task);
 			
 			zero_in_degree.pop();
 
-			for (const auto& neighbor : adj_list[current])
+			for (const auto& neighbor : current_adj_list[current])
 			{
-				in_degree[neighbor]--;
-				if (in_degree[neighbor] == 0)
+				current_in_degree[neighbor]--;
+				if (current_in_degree[neighbor] == 0)
 				{
 					zero_in_degree.push(neighbor);
 				}
 			}
 		}
 
-		if (task_order.size() != tasks.size())
+		if (task_order.size() != current_tasks.size())
 		{
 			throw std::runtime_error("Cycle in task order graph!");
 		}
