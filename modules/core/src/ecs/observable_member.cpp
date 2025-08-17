@@ -72,10 +72,10 @@ namespace era_engine
 			entityes_to_reset_state.push_back(entity_handle);
 		}
 
-		for (ObservableBase* observable : observable_ptrs)
-		{
-			observable->sync_changes();
-		}
+		//for (ObservableBase* observable : observable_ptrs)
+		//{
+		//	observable->sync_changes();
+		//}
 
 		for (Entity::Handle handle : entityes_to_reset_state)
 		{

@@ -2,6 +2,8 @@
   Path: E:/Era Engine/resources/assets\character\textures\TTGloves_albedo.png
 - Handle: 1886831743355418187
   Path: E:/Era Engine/resources/assets\box.255.cache.bin
+- Handle: 7913510872548180025
+  Path: E:/Era Engine/resources/assets\zombie\textures\Zombie_gloss.png
 - Handle: 14843255765298488698
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.dll
 - Handle: 9551062408368025107
@@ -18,6 +20,8 @@
   Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\textures\T_Tyrant_D.70.cache.dds
 - Handle: 14013368778707063931
   Path: E:/Era Engine/resources/assets\cameraman\textures\CameraMan_packed0_diffuse.png
+- Handle: 11094657577245272232
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Legs01_N.71.cache.dds
 - Handle: 42371012595528463
   Path: E:/Era Engine/resources/assets\cameraman\textures\CameraMan_packed0_specular.png
 - Handle: 17181001394840778504
@@ -52,6 +56,8 @@
   Path: E:/Era Engine/resources/assets\character\textures\Juuuuumpp_ao.png
 - Handle: 12203391317818471545
   Path: E:/Era Engine/resources/assets\dark-knight\textures\T_cloth_D.png
+- Handle: 12290876859949394907
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Corpse01_N.71.cache.dds
 - Handle: 17800350716916037262
   Path: E:/Era Engine/resources/assets\fps-ak-74m-animations\textures\armColor.png
 - Handle: 3529147715924344517
@@ -106,6 +112,8 @@
   Path: E:/Era Engine/resources/assets\resident-evil-tyrant\source\untitled.fbx
 - Handle: 10099874025338719289
   Path: E:/Era Engine/resources/assets\character\textures\Boots_roughness.png
+- Handle: 7962533418277210209
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Corpse01_BC.png
 - Handle: 1669377044443005317
   Path: E:/Era Engine/resources/assets\nemesis-re3\source\nemesis_-_resident_evil_3_remake_re3.zip
 - Handle: 17949917862980071560
@@ -118,6 +126,8 @@
   Path: E:/Era Engine/resources/assets\character\textures\Cap_normal.png
 - Handle: 595853088388223096
   Path: E:/Era Engine/resources/assets\character\textures\Cap_roughness.jpeg
+- Handle: 97779946519389086
+  Path: E:/Era Engine/resources/assets\zombie\source\Zombie\animations\Zombie@Z_Walk1.FBX
 - Handle: 4234885490589692154
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_curtain_blue_diff.png
 - Handle: 6110744972886501464
@@ -174,6 +184,8 @@
   Path: E:/Era Engine/resources/assets\character\textures\TTGloves_normal.png
 - Handle: 2081262788618018422
   Path: E:/Era Engine/resources/assets\character\textures\TTGloves_roughness.png
+- Handle: 6167195153874667810
+  Path: E:/Era Engine/resources/assets\zombie\source\Zombie\animations\Zombie@Z_Run.FBX
 - Handle: 15119069068499315945
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_curtain_diff.71.cache.dds
 - Handle: 17537797464174994832
@@ -300,6 +312,8 @@
   Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\textures\T_Tyrant_N.71.cache.dds
 - Handle: 11840895193688980907
   Path: E:/Era Engine/resources/assets\nemesis-re3\source\nemesis_-_resident_evil_3_remake_re3\textures\em9001_head_eye_baseColor.png
+- Handle: 9323139903871666867
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Legs01_R.png
 - Handle: 16835511991123113403
   Path: E:/Era Engine/resources/assets\nemesis-re3\source\nemesis_-_resident_evil_3_remake_re3\textures\material_0_normal.png
 - Handle: 12414434625384319632
@@ -310,6 +324,10 @@
   Path: E:/Era Engine/resources/assets\nemesis-re3\textures\em9000_body00_normal.png
 - Handle: 3103321023363044306
   Path: E:/Era Engine/resources/assets\nemesis-re3\textures\em9000_body01_normal.png
+- Handle: 13504295776393981345
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40SW01_M.71.cache.dds
+- Handle: 15302445330435697487
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40ArmsAcc01_M.71.cache.dds
 - Handle: 17551228194721517266
   Path: E:/Era Engine/resources/assets\Sponza\textures\lion.png
 - Handle: 17570119498967677941
@@ -326,6 +344,8 @@
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\Bullet.cs
 - Handle: 16165171254252833778
   Path: E:/Era Engine/resources/assets\nemesis-re3\textures\material_0_normal.png
+- Handle: 15672782472980335422
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Legs01_M.71.cache.dds
 - Handle: 4093632311822648933
   Path: E:/Era Engine/resources/assets\obj\blockwall.mtl
 - Handle: 7001529398524524467
@@ -392,6 +412,10 @@
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\TestSystem.cs
 - Handle: 11543323973946961582
   Path: E:/Era Engine/resources/assets\ostume-ciri-for-moiras\textures\1n.png
+- Handle: 1475527899181481316
+  Path: E:/Era Engine/resources/assets\zombie\source\Zombie\animations\Zombie@Z_Walk.FBX
+- Handle: 2250790429084665950
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Torso01_R.71.cache.dds
 - Handle: 6521201096488596211
   Path: E:/Era Engine/resources/assets\ostume-ciri-for-moiras\textures\2.png
 - Handle: 8211801488554180694
@@ -400,6 +424,10 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_arch_spec.png
 - Handle: 5165666875016446550
   Path: E:/Era Engine/resources/assets\ostume-ciri-for-moiras\textures\2n.png
+- Handle: 17384574821345404910
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40SW01_R.71.cache.dds
+- Handle: 11610938678920630319
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40ArmsAcc01_R.71.cache.dds
 - Handle: 16637521557630132908
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_curtain_diff.70.cache.dds
 - Handle: 5711976468738171090
@@ -422,12 +450,22 @@
   Path: E:/Era Engine/resources/assets\ragdoll\b\source\gaurd.255.cache.bin
 - Handle: 17762980665803690971
   Path: E:/Era Engine/resources/assets\ragdoll\b\source\gaurd.fbx
+- Handle: 9147150528614396293
+  Path: E:/Era Engine/resources/assets\zombie\source\Zombie\Zombie1.FBX
 - Handle: 4250136895986171324
   Path: E:/Era Engine/resources/assets\ragdoll\b\textures\bodyAO.png
+- Handle: 1163828244346107001
+  Path: E:/Era Engine/resources/assets\zombie\textures\Zombie_nm.png
 - Handle: 10706596188000845895
   Path: E:/Era Engine/resources/assets\ragdoll\b\textures\bodyColor.png
+- Handle: 371175710953414711
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40SW01_N.71.cache.dds
+- Handle: 6769085964484313851
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40ArmsAcc01_N.71.cache.dds
 - Handle: 12475975076680294023
   Path: E:/Era Engine/resources/assets\ragdoll\b\textures\bodyMetallic.png
+- Handle: 4973987375349759413
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40W01_BC.png
 - Handle: 4263039163925057786
   Path: E:/Era Engine/resources/assets\ragdoll\b\textures\bodyNormal.png
 - Handle: 15220635573505742612
@@ -468,6 +506,8 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_flagpole_diff.70.cache.dds
 - Handle: 14116038867758858430
   Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\source\UmodelExport.255.cache.bin
+- Handle: 4145338546265577359
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Corpse01_M.71.cache.dds
 - Handle: 9041686964815696063
   Path: E:/Era Engine/resources/assets\resident-evil-2-tyrant\source\UmodelExport.fbx
 - Handle: 4830484972570235988
@@ -482,6 +522,8 @@
   Path: E:/Era Engine/resources/assets\resident-evil-tyrant\textures\T_Tyrant_D.png
 - Handle: 4365817112678901480
   Path: E:/Era Engine/resources/assets\resident-evil-tyrant\textures\T_Tyrant_N.png
+- Handle: 3691821078496498226
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Head01_BC.70.cache.dds
 - Handle: 3154131445420430691
   Path: E:/Era Engine/resources/assets\Sponza\textures\chain_texture.png
 - Handle: 2678245734698261296
@@ -492,6 +534,8 @@
   Path: E:/Era Engine/resources/assets\resources\files.yaml
 - Handle: 13541940541834541793
   Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\NewProject\DesignTimeBuild\.dtbcache.v2
+- Handle: 13062658351904332560
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40W01_N.png
 - Handle: 16320912973291438348
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_column_b_ddn.png
 - Handle: 3366307571544860372
@@ -508,6 +552,8 @@
   Path: E:/Era Engine/resources/assets\veribot\source\VERIBOT_final.255.cache.bin
 - Handle: 12340123836963345513
   Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\ProjectEvaluation\newproject.metadata.v7.bin
+- Handle: 7101642746433818950
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Arms01_R.71.cache.dds
 - Handle: 2251211911541088641
   Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\ProjectEvaluation\newproject.projects.v7.bin
 - Handle: 13125025116603789314
@@ -560,8 +606,12 @@
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Debug\net8.0\NewProject.csproj.CoreCompileInputs.cache
 - Handle: 10094929320638252989
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Debug\net8.0\NewProject.csproj.FileListAbsolute.txt
+- Handle: 2570013454528405921
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Corpse01_R.png
 - Handle: 7856504436501291310
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Debug\net8.0\NewProject.GlobalUsings.g.cs
+- Handle: 7063887098233716487
+  Path: E:/Era Engine/resources/assets\zombie\textures\zombie_emission.png
 - Handle: 1674743198591484609
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Debug\net8.0\ref\NewProject.dll
 - Handle: 12209962882122156676
@@ -572,6 +622,8 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\lion2_ddn.png
 - Handle: 11093618507175765847
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\NewProject.csproj.nuget.g.targets
+- Handle: 16314038326680100310
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Head01_R.png
 - Handle: 1807963267488090810
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_arch_ddn.png
 - Handle: 16013163888699490521
@@ -580,6 +632,10 @@
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\project.nuget.cache
 - Handle: 5054534618135049882
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Release\net8.0\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+- Handle: 10348403660055256625
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Corpse01_M.png
+- Handle: 8963478293901972836
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Arms01_BC.70.cache.dds
 - Handle: 14027728691548644727
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.AssemblyInfo.cs
 - Handle: 16912851719832714025
@@ -598,18 +654,28 @@
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Release\net8.0\ref\NewProject.dll
 - Handle: 11294308213296448262
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Release\net8.0\refint\NewProject.dll
+- Handle: 5645821946932369704
+  Path: E:/Era Engine/resources/assets\zombie\source\Zombie\animations\Zombie@Z_FallingBack.FBX
 - Handle: 2585750632250301696
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\PayerController.cs
+- Handle: 16586232990962790489
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Arms01_N.71.cache.dds
 - Handle: 3175395102827104400
   Path: E:/Era Engine/resources/assets\Sponza\textures\vase_hanging.png
 - Handle: 982820132286947191
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\WeaponHandler.cs
 - Handle: 10020359202471789321
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject.sln
+- Handle: 16518382012650891331
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40SW01_M.png
+- Handle: 5508567447145284343
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40ArmsAcc01_M.png
 - Handle: 18431454083697254793
   Path: E:/Era Engine/resources/assets\sounds\s.ogg
 - Handle: 3329221836627936906
   Path: E:/Era Engine/resources/assets\sounds\sound.ogg
+- Handle: 3242875461917460262
+  Path: E:/Era Engine/resources/assets\zombie\source\Zombie\animations\Zombie@Z_Attack.FBX
 - Handle: 14394011236569866933
   Path: E:/Era Engine/resources/assets\Sponza\sponza.255.cache.bin
 - Handle: 5333389968503086342
@@ -618,8 +684,12 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\background.70.cache.dds
 - Handle: 14340855595739801997
   Path: E:/Era Engine/resources/assets\Sponza\textures\background.png
+- Handle: 5432377405609117638
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Arms01_BC.png
 - Handle: 865634711637579294
   Path: E:/Era Engine/resources/assets\Sponza\textures\backgroundBGR.png
+- Handle: 17241694843809025806
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40W01_M.png
 - Handle: 5699731964345100302
   Path: E:/Era Engine/resources/assets\Sponza\textures\background_ddn.png
 - Handle: 7631271249389166302
@@ -628,6 +698,8 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\spnza_bricks_a_ddn.png
 - Handle: 9464184494192915744
   Path: E:/Era Engine/resources/assets\Sponza\textures\chain_texture_ddn.png
+- Handle: 159856188894325582
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Arms01_M.71.cache.dds
 - Handle: 6638190339895988659
   Path: E:/Era Engine/resources/assets\Sponza\textures\gi_flag.png
 - Handle: 16161025838963598227
@@ -656,10 +728,14 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_column_b_diff.png
 - Handle: 817775809983171553
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_column_b_spec.png
+- Handle: 1158390949727706109
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Legs01_M.png
 - Handle: 10190857211017221474
   Path: E:/Era Engine/resources/assets\Sponza\textures\vase_round.70.cache.dds
 - Handle: 4358601188000289856
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_column_c_ddn.png
+- Handle: 6342937819245182542
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Head01_R.71.cache.dds
 - Handle: 13161031794378141928
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_column_c_diff.70.cache.dds
 - Handle: 17065212870052005129
@@ -672,6 +748,8 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_curtain_ddn.jpg
 - Handle: 16319330338214873200
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_curtain_diff.png
+- Handle: 670776973452990234
+  Path: E:/Era Engine/resources/assets\zombie\source\Zombie\animations\Zombie@Z_FallingForward.FBX
 - Handle: 9055987779450343264
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_curtain_green_diff.70.cache.dds
 - Handle: 16018435544224833274
@@ -686,6 +764,8 @@
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_blue_diff.png
 - Handle: 17158695525165482401
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_ddn.71.cache.dds
+- Handle: 1784054295670924061
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Torso01_N.png
 - Handle: 4329232869627505762
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_fabric_ddn.jpg
 - Handle: 4244050082361826234
@@ -724,6 +804,78 @@
   Path: E:/Era Engine/resources/assets\vehicledata\Base.json
 - Handle: 8916022020924767600
   Path: E:/Era Engine/resources/assets\Sponza\textures\vase_round_ddn.png
+- Handle: 12148014465638872859
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Torso01_R.png
+- Handle: 2518405537259285457
+  Path: E:/Era Engine/resources/assets\springtrap\source\Springtrap.255.cache.bin
+- Handle: 11559562688727072862
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Torso01_M.71.cache.dds
+- Handle: 1881646285535632051
+  Path: E:/Era Engine/resources/assets\springtrap\source\Springtrap.fbx
+- Handle: 3296557722894194505
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Arms01_M.png
+- Handle: 12669845982244142759
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Arms01_N.png
+- Handle: 17926298389318210458
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Arms01_R.png
+- Handle: 7664285136406634529
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40SW01_BC.70.cache.dds
+- Handle: 172637751864646552
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40ArmsAcc01_BC.70.cache.dds
+- Handle: 11814455824584119014
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40SW01_BC.png
+- Handle: 11968499891083429181
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40ArmsAcc01_BC.png
+- Handle: 16475445911584431315
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40SW01_N.png
+- Handle: 1617269341042155314
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40ArmsAcc01_N.png
+- Handle: 10788210281742321066
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40SW01_R.png
+- Handle: 2264345642600953484
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40ArmsAcc01_R.png
+- Handle: 2680287374100487033
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Corpse01_BC.70.cache.dds
+- Handle: 12593886088113837645
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Corpse01_N.png
+- Handle: 7237314139153440224
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Corpse01_R.71.cache.dds
+- Handle: 12246656957469552162
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Head01_BC.png
+- Handle: 1470878661212255614
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Head01_E.png
+- Handle: 17523147893367092246
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Head01_M.71.cache.dds
+- Handle: 14882399946166906516
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Head01_M.png
+- Handle: 5278964830066310910
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Head01_N.71.cache.dds
+- Handle: 7632665522524401609
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Head01_N.png
+- Handle: 11100983835596087673
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Legs01_BC.70.cache.dds
+- Handle: 1287374280109353069
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Legs01_BC.png
+- Handle: 4617804546834062474
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Legs01_N.png
+- Handle: 1881392909633326762
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Legs01_R.71.cache.dds
+- Handle: 1924541010030692684
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Torso01_BC.70.cache.dds
+- Handle: 9792339489890959521
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Torso01_BC.png
+- Handle: 11344692851464404704
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Torso01_M.png
+- Handle: 15036260967111462583
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Torso01_N.71.cache.dds
+- Handle: 16140138187873466062
+  Path: E:/Era Engine/resources/assets\veribot\textures\VERIBOT2_checker_BaseColor.png
+- Handle: 15187879449135432323
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40W01_BC.70.cache.dds
+- Handle: 2949910728553459443
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40W01_M.71.cache.dds
+- Handle: 6473902733155031750
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40W01_N.71.cache.dds
 - Handle: 3239275869598118752
   Path: E:/Era Engine/resources/assets\terrain\rock.bmp
 - Handle: 4496751133996133017
@@ -732,5 +884,15 @@
   Path: E:/Era Engine/resources/assets\vehicledata\EngineDrive.json
 - Handle: 8595799870241234103
   Path: E:/Era Engine/resources/assets\veribot\source\VERIBOT_final.fbx
-- Handle: 16140138187873466062
-  Path: E:/Era Engine/resources/assets\veribot\textures\VERIBOT2_checker_BaseColor.png
+- Handle: 7910886340248963892
+  Path: E:/Era Engine/resources/assets\zombie\source\Zombie\animations\Zombie@Z_Idle.FBX
+- Handle: 12587380018867186224
+  Path: E:/Era Engine/resources/assets\zombie\source\Zombie\animations\Zombie@Z_Run_InPlace.FBX
+- Handle: 1693465995048134617
+  Path: E:/Era Engine/resources/assets\zombie\source\Zombie\animations\Zombie@Z_Walk1_InPlace.FBX
+- Handle: 10522073157225343446
+  Path: E:/Era Engine/resources/assets\zombie\source\Zombie\animations\Zombie@Z_Walk_InPlace.FBX
+- Handle: 14284651316908956710
+  Path: E:/Era Engine/resources/assets\zombie\textures\Zombie.png
+- Handle: 5861952079513914526
+  Path: E:/Era Engine/resources/assets\zombie\textures\Zombie_ao.png

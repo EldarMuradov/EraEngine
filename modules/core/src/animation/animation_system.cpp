@@ -84,8 +84,9 @@ namespace era_engine::animation
 
 				skeleton.get_skinning_matrices_from_local_transforms(globalTransforms, skinningMatrices, trs::identity);
 
-				if (deltaRootMotion.position != vec3::zero || 
-					deltaRootMotion.rotation != quat::identity)
+				if ((deltaRootMotion.position != vec3::zero || 
+					deltaRootMotion.rotation != quat::identity) &&
+					anim.enable_root_motion)
 				{
 					transform.transform = transform.transform * deltaRootMotion;
 					transform.transform.rotation = normalize(transform.transform.rotation);

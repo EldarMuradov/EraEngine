@@ -101,15 +101,15 @@ namespace era_engine
 
 		Entity tiran;
 
-		if (auto mesh = loadAnimatedMeshFromFileAsync(get_asset_path("/resources/assets/resident-evil-2-tyrant/source/UmodelExport.fbx"), 
+		if (auto mesh = loadAnimatedMeshFromFileAsync(get_asset_path("/resources/assets/springtrap/source/Springtrap.fbx"), 
 			mesh_creation_flags_unreal_animated_asset))
 		{
 			tiran = world->create_entity("Tiran");
 
 			AnimationComponent* animation_component = tiran.add_component<AnimationComponent>();
-			animation_component->play = false;
+			//animation_component->play = false;
 			animation_component->update_skeleton = false;
-			animation_component->time_scale = 0.2f;
+			animation_component->enable_root_motion = false;
 
 			SkeletonComponent* skeleton_component = tiran.add_component<SkeletonComponent>();
 			tiran.add_component<MeshComponent>(mesh);
@@ -119,60 +119,64 @@ namespace era_engine
 
 			mesh->loadJob.wait_for_completion();
 
-			animation_component->initialize(mesh->animation_skeleton.clips);
+			animation_component->initialize(mesh->animation_skeleton.clips, 74);
 			skeleton_component->skeleton = &mesh->skeleton;
 
 			const Skeleton* skeleton = skeleton_component->skeleton;
 
 			RagdollJointIds joint_init_ids;
-			joint_init_ids.head_end_idx = skeleton->name_to_joint_id.at("head");
-			joint_init_ids.head_idx = skeleton->name_to_joint_id.at("head");
-			joint_init_ids.neck_idx = skeleton->name_to_joint_id.at("neck_01");
+			joint_init_ids.head_end_idx = skeleton->name_to_joint_id.at("joint_HeadA_01");
+			joint_init_ids.head_idx = skeleton->name_to_joint_id.at("joint_HeadA_01");
+			joint_init_ids.neck_idx = skeleton->name_to_joint_id.at("joint_NeckA_01");
 
-			joint_init_ids.spine_03_idx = skeleton->name_to_joint_id.at("spine_03");
-			joint_init_ids.spine_02_idx = skeleton->name_to_joint_id.at("spine_02");
-			joint_init_ids.spine_01_idx = skeleton->name_to_joint_id.at("spine_01");
-			joint_init_ids.pelvis_idx = skeleton->name_to_joint_id.at("pelvis");
+			joint_init_ids.spine_03_idx = skeleton->name_to_joint_id.at("joint_TorsoC_01");
+			joint_init_ids.spine_02_idx = skeleton->name_to_joint_id.at("joint_TorsoB_01");
+			joint_init_ids.spine_01_idx = skeleton->name_to_joint_id.at("joint_TorsoA_01");
+			joint_init_ids.pelvis_idx = skeleton->name_to_joint_id.at("joint_Pelvis_01");
 
-			joint_init_ids.root_idx = skeleton->name_to_joint_id.at("root");
-			joint_init_ids.attachment_idx = skeleton->name_to_joint_id.at("root");
+			joint_init_ids.root_idx = skeleton->name_to_joint_id.at("joint_Char");
+			joint_init_ids.attachment_idx = skeleton->name_to_joint_id.at("joint_Pelvis_01");
 
-			joint_init_ids.thigh_l_idx = skeleton->name_to_joint_id.at("thigh_l");
-			joint_init_ids.calf_l_idx = skeleton->name_to_joint_id.at("calf_l");
-			joint_init_ids.foot_l_idx = skeleton->name_to_joint_id.at("foot_l");
-			joint_init_ids.foot_end_l_idx = skeleton->name_to_joint_id.at("ball_l");
+			joint_init_ids.thigh_l_idx = skeleton->name_to_joint_id.at("joint_HipLT_01");
+			joint_init_ids.calf_l_idx = skeleton->name_to_joint_id.at("joint_KneeLT_01");
+			joint_init_ids.foot_l_idx = skeleton->name_to_joint_id.at("joint_FootLT_01");
+			joint_init_ids.foot_end_l_idx = skeleton->name_to_joint_id.at("joint_ToeLT_01");
 
-			joint_init_ids.thigh_r_idx = skeleton->name_to_joint_id.at("thigh_r");
-			joint_init_ids.calf_r_idx = skeleton->name_to_joint_id.at("calf_r");
-			joint_init_ids.foot_r_idx = skeleton->name_to_joint_id.at("foot_r");
-			joint_init_ids.foot_end_r_idx = skeleton->name_to_joint_id.at("ball_r");
+			joint_init_ids.thigh_r_idx = skeleton->name_to_joint_id.at("joint_HipRT_01");
+			joint_init_ids.calf_r_idx = skeleton->name_to_joint_id.at("joint_KneeRT_01");
+			joint_init_ids.foot_r_idx = skeleton->name_to_joint_id.at("joint_FootRT_01");
+			joint_init_ids.foot_end_r_idx = skeleton->name_to_joint_id.at("joint_ToeRT_01");
 
-			joint_init_ids.upperarm_l_idx = skeleton->name_to_joint_id.at("upperarm_l");
-			joint_init_ids.lowerarm_l_idx = skeleton->name_to_joint_id.at("lowerarm_l");
-			joint_init_ids.hand_l_idx = skeleton->name_to_joint_id.at("hand_l");
-			joint_init_ids.hand_end_l_idx = skeleton->name_to_joint_id.at("middle_01_l");
+			joint_init_ids.upperarm_l_idx = skeleton->name_to_joint_id.at("joint_ShoulderLT_01");
+			joint_init_ids.lowerarm_l_idx = skeleton->name_to_joint_id.at("joint_ElbowLT_01");
+			joint_init_ids.hand_l_idx = skeleton->name_to_joint_id.at("joint_HandLT_01");
+			joint_init_ids.hand_end_l_idx = skeleton->name_to_joint_id.at("joint_FingerBLT_01");
 
-			joint_init_ids.upperarm_r_idx = skeleton->name_to_joint_id.at("upperarm_r");
-			joint_init_ids.lowerarm_r_idx = skeleton->name_to_joint_id.at("lowerarm_r");
-			joint_init_ids.hand_r_idx = skeleton->name_to_joint_id.at("hand_r");
-			joint_init_ids.hand_end_r_idx = skeleton->name_to_joint_id.at("middle_01_r");
+			joint_init_ids.upperarm_r_idx = skeleton->name_to_joint_id.at("joint_ShoulderRT_01");
+			joint_init_ids.lowerarm_r_idx = skeleton->name_to_joint_id.at("joint_ElbowRT_01");
+			joint_init_ids.hand_r_idx = skeleton->name_to_joint_id.at("joint_HandRT_01");
+			joint_init_ids.hand_end_r_idx = skeleton->name_to_joint_id.at("joint_FingerBRT_01");
 
 			RagdollSettings settings;
-			settings.head_end_joint_adjastment = vec3(0.0f, 0.2f, 0.0f);
-			settings.head_joint_adjastment = vec3(0.0f, 0.15f, 0.0f);
-			settings.neck_joint_adjastment = vec3(0.0f, 0.15f, 0.0f);
-			settings.thorax_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
+			settings.head_radius = 0.15f;
+
+			settings.head_end_joint_adjastment = vec3(0.0f, 0.25f, 0.0f);
+			settings.head_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
+			settings.neck_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
+			settings.thorax_joint_adjastment = vec3(0.0f, 0.1f, 0.0f);
 			settings.abdomen_joint_adjastment = vec3(0.0f, 0.0f, 0.0f);
-			settings.pelvis_joint_adjastment = vec3(0.0f, 0.22f, 0.0f);
+			settings.pelvis_joint_adjastment = vec3(0.0f, -0.15f, 0.0f);
 
-			settings.upper_body_height_modifier = 0.3f;
-			settings.upper_body_radius_modifier = 0.7f;
-			settings.lower_body_height_modifier = 0.2f;
-			settings.lower_body_radius_modifier = 2.8f;
+			settings.upper_body_height_modifier = 0.5f;
+			settings.upper_body_radius_modifier = 0.8f;
+			settings.middle_body_height_modifier = 0.3f;
+			settings.middle_body_radius_modifier = 0.7f;
+			settings.lower_body_height_modifier = 0.9f;
+			settings.lower_body_radius_modifier = 0.7f;
 
-			RagdollComponent* ragdoll_component = tiran.add_component<RagdollComponent>();
-			ragdoll_component->simulated = true;
-			//PhysicalAnimationComponent* ragdoll_component = tiran.add_component<PhysicalAnimationComponent>();
+			//RagdollComponent* ragdoll_component = tiran.add_component<RagdollComponent>();
+			//ragdoll_component->simulated = true;
+			PhysicalAnimationComponent* ragdoll_component = tiran.add_component<PhysicalAnimationComponent>();
 			ragdoll_component->joint_init_ids = joint_init_ids;
 			ragdoll_component->settings = settings;
 		}
@@ -189,7 +193,7 @@ namespace era_engine
 		}
 
 		auto plane = world->create_entity("Platform");
-		plane.add_component<physics::PlaneComponent>(static_cast<CollisionType>(GameCollisionType::TERRAIN), vec3(0.f, -5.0, 0.0f));
+		plane.add_component<physics::PlaneComponent>(CollisionType::TERRAIN, vec3(0.f, -5.0, 0.0f));
 		plane.add_component<MeshComponent>(groundMesh);
 		plane.get_component<TransformComponent>()->set_world_transform(trs{vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)), vec3(5.0f, 1.0f, 5.0f)});
 		

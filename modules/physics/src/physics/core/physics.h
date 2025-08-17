@@ -58,6 +58,8 @@ namespace era_engine::physics
 		void start();
 		void update(float dt);
 
+		void clear_collisions();
+
 		void start_simulation(float dt);
 		void end_simulation(float dt);
 
@@ -85,8 +87,7 @@ namespace era_engine::physics
 		std::unordered_map<Entity::Handle, std::vector<ShapeComponent*>> colliders_map;
 		std::unordered_map<physx::PxRigidActor*, BodyComponent*> actors_map;
 
-		moodycamel::ConcurrentQueue<CollisionHandlingData> collision_queue;
-		moodycamel::ConcurrentQueue<CollisionHandlingData> collision_exit_queue;
+		ref<SimulationEventCallback> simulation_event_callback = nullptr;
 
 		SpinLock sync;
 
@@ -118,7 +119,6 @@ namespace era_engine::physics
 		FixedStepper* stepper = nullptr;
 
 		SimulationFilterCallback simulation_filter_callback;
-		ref<SimulationEventCallback> simulation_event_callback = nullptr;
 
 		std::vector<ref<PhysicsMaterial>> materials;
 

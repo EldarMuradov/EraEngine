@@ -12,7 +12,7 @@ namespace era_engine::physics
     public:
         DisabledSimulationState(ComponentPtr _physical_animation_component_ptr);
 
-        ConstraintStateType try_switch_to(ConstraintStateType desired_type) const override;
+        SimulationStateType try_switch_to(SimulationStateType desired_type) const override;
         void on_entered() override;
 
         void update(float dt) override;

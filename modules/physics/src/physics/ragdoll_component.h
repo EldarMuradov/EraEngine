@@ -89,9 +89,11 @@ namespace era_engine::physics
         vec3 pelvis_joint_adjastment = vec3::zero;
 
         float upper_body_height_modifier = 1.0f;
+        float middle_body_height_modifier = 1.0f;
         float lower_body_height_modifier = 1.0f;
 
         float upper_body_radius_modifier = 1.0f;
+        float middle_body_radius_modifier = 1.0f;
         float lower_body_radius_modifier = 1.0f;
     };
 
@@ -148,7 +150,7 @@ namespace era_engine::physics
 
         float mass = 100.0f; // Set before creation.
 
-        float blend_factor = 0.5f;
+        float blend_factor = 0.75f;
 
 		std::vector<EntityPtr> limbs;
 

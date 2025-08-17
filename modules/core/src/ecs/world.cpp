@@ -16,7 +16,7 @@ namespace era_engine
 		world_data->name = _name;
 		world_data->scheduler = new WorldSystemScheduler(this, 1, 1);
 
-		world_data->scheduler->set_fixed_update_rate(30.0);
+		world_data->scheduler->set_fixed_update_rate(60.0);
 
 		worlds.emplace(_name, this);
 	}
@@ -46,7 +46,7 @@ namespace era_engine
 		Entity entity = Entity(new_data);
 		add_base_components(entity);
 
-		EntityContainer::emplace_pair(world_data->root_entity.get_handle(), new_data->entity_handle);
+		EntityContainer::emplace_pair(this, world_data->root_entity.get_handle(), new_data->entity_handle);
 
 		return entity;
 	}
@@ -75,7 +75,7 @@ namespace era_engine
 			Entity entity = Entity(new_data);
 			add_base_components(entity);
 
-			EntityContainer::emplace_pair(world_data->root_entity.get_handle(), new_data->entity_handle);
+			EntityContainer::emplace_pair(this, world_data->root_entity.get_handle(), new_data->entity_handle);
 
 			return entity;
 		}
@@ -108,7 +108,7 @@ namespace era_engine
 
 		if (_destroy_childs)
 		{
-			for (const Entity::Handle child : EntityContainer::get_childs(_handle))
+			for (const Entity::Handle child : EntityContainer::get_childs(this, _handle))
 			{
 				destroy_entity(child);
 			}

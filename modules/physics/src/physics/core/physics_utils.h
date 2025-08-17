@@ -22,6 +22,8 @@ namespace era_engine::physics
 		static BodyComponent* get_body_component(weakref<Entity::EcsData> entity_data);
 		static BodyComponent* get_body_component(Entity entity);
 
+		static void manual_update_mass(DynamicBodyComponent* dynamic_body_component);
+
 		static void manual_set_physics_transform(Entity entity, const vec3& pos, const quat& rot, bool update_transform_component = true);
 		static void manual_set_physics_transform(Entity entity, const trs& transform, bool update_transform_component = true);
 

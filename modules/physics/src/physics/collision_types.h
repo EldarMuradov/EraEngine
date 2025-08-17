@@ -37,7 +37,7 @@ namespace era_engine::physics
 		COLLISION_27 = uint32(1u << 27u),
 		COLLISION_28 = uint32(1u << 28u),
 		COLLISION_29 = uint32(1u << 29u),
-		COLLISION_30 = uint32(1u << 30u),
+		TERRAIN = uint32(1u << 30u),
 		RAGDOLL = uint32(1u << 31u),
 		ALL = uint32(0xFFFFFFFF),
 	};

@@ -30,7 +30,7 @@ namespace era_engine
 		void set_local_transform(const trs& new_local_transform);
 
 		const trs& get_world_transform() const;
-		void set_world_transform(const trs& new_world_transform, bool update_local_transform = true);
+		void set_world_transform(const trs& new_world_transform);
 
 		const vec3& get_world_position() const;
 		void set_world_position(const vec3& new_world_position);
@@ -38,14 +38,12 @@ namespace era_engine
 		const quat& get_world_rotation() const;
 		void set_world_rotation(const quat& new_world_rotation);
 
-		void force_sync_world_transforms(const trs& transform);
-
 		ERA_VIRTUAL_REFLECT(Component)
 
 	private:
-		void sync_local_transform();
+		static void update_world_transform(Entity entity);
 
-		void sync_childs_transforms(const trs& delta_transform);
+		static void update_local_transform(Entity entity);
 
 	public:
 		trs transform = trs::identity; // In World space.
@@ -53,6 +51,7 @@ namespace era_engine
 
 	private:
 		trs local_transform = trs::identity; // In Parent space.
+		friend class EntityContainer;
 	};
 
 }

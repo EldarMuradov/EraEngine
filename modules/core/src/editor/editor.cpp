@@ -537,7 +537,7 @@ namespace era_engine
 
 		ref<World> world = scene->get_current_world();
 
-		auto childs = EntityContainer::get_childs(entity.get_handle());
+		auto childs = EntityContainer::get_childs(world.get(), entity.get_handle());
 
 		if (!childs.empty())
 		{

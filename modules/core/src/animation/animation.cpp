@@ -646,7 +646,7 @@ namespace era_engine::animation
 		return local_transforms[joint_id].get_rotation();
 	}
 
-	trs SkeletonUtils::get_object_space_joint_transform(const Skeleton* skeleton, uint32 joint_id)
+	trs SkeletonUtils::get_object_space_joint_transform(const Skeleton* skeleton, uint32 joint_id, uint32 start_from/* = INVALID_JOINT*/)
 	{
 		if (joint_id >= skeleton->local_transforms.size()) 
 		{
@@ -656,7 +656,7 @@ namespace era_engine::animation
 		trs result = skeleton->local_transforms[joint_id].get_transform();
 		uint32 parent_id = skeleton->joints[joint_id].parent_id;
 
-		while (parent_id != INVALID_JOINT && parent_id < skeleton->joints.size())
+		while (parent_id != INVALID_JOINT && parent_id != start_from && parent_id < skeleton->joints.size())
 		{
 			result = skeleton->local_transforms[parent_id].get_transform() * result;
 			parent_id = skeleton->joints[parent_id].parent_id;
@@ -665,7 +665,7 @@ namespace era_engine::animation
 		return result;
 	}
 
-	trs SkeletonUtils::get_object_space_joint_transform(const SkeletonPose& pose, const Skeleton* skeleton, uint32 joint_id)
+	trs SkeletonUtils::get_object_space_joint_transform(const SkeletonPose& pose, const Skeleton* skeleton, uint32 joint_id, uint32 start_from/* = INVALID_JOINT*/)
 	{
 		if (joint_id >= pose.size())
 		{
@@ -675,7 +675,7 @@ namespace era_engine::animation
 		trs result = pose.get_joint_transform(joint_id).get_transform();
 		uint32 parent_id = skeleton->joints[joint_id].parent_id;
 
-		while (parent_id != INVALID_JOINT && parent_id < skeleton->joints.size())
+		while (parent_id != INVALID_JOINT && parent_id != start_from && parent_id < skeleton->joints.size())
 		{
 			result = pose.get_joint_transform(parent_id).get_transform() * result;
 			parent_id = skeleton->joints[parent_id].parent_id;
@@ -703,7 +703,7 @@ namespace era_engine::animation
 			return;
 		}
 
-		animation->set(&clips[clips.size() - 1]);
+		animation->set(&clips[start_index]);
 	}
 
 	void AnimationComponent::draw_current_skeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* render_pass) const

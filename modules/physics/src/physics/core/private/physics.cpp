@@ -278,6 +278,11 @@ namespace era_engine::physics
 		end_simulation(dt);
 	}
 
+	void Physics::clear_collisions()
+	{
+		simulation_event_callback->clear();
+	}
+
 	void Physics::start_simulation(float dt)
 	{
 		using namespace physx;
@@ -481,8 +486,6 @@ namespace era_engine::physics
 		simulation_event_callback->sendCollisionEvents();
 		simulation_event_callback->sendTriggerEvents();
 		simulation_event_callback->sendJointEvents();
-
-		simulation_event_callback->clear();
 	}
 
 }

@@ -43,14 +43,14 @@ TEST(ECS_Components, ChildComponent) {
 		Entity child = runtime_world->create_entity();
 		child.set_parent(parent.get_handle());
 
-		EXPECT_TRUE(EntityContainer::get_childs(parent.get_handle()).size() == 1);
+		EXPECT_TRUE(EntityContainer::get_childs(runtime_world, parent.get_handle()).size() == 1);
 
 		child.set_parent(runtime_world->get_root_entity().get_handle());
 
 		runtime_world->destroy_entity(child);
 	}
 
-	EXPECT_TRUE(EntityContainer::get_childs(parent.get_handle()).size() == 0);
+	EXPECT_TRUE(EntityContainer::get_childs(runtime_world, parent.get_handle()).size() == 0);
 
 	delete runtime_world;
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "physics/physical_animation/physical_animation_component.h"
+#include "physics/physical_animation/drive_pose_sampler.h"
 
 #include <ecs/system.h>
 #include <ecs/base_components/transform_component.h>
@@ -25,12 +26,25 @@ namespace era_engine::physics
 	{
 	public:
 		PhysicalAnimationSystem(World* _world);
+
 		void init() override;
 		void update(float dt) override;
 
 		void update_normal(float dt);
 
-		void update_limb_states_and_profiles(float dt);
+		void update_ragdolls(float dt);
+
+		void filter_states_by_collisions(float dt) const;
+
+		void update_chains_states(const PhysicalAnimationComponent* physical_animation_component, float dt) const;
+
+		bool update_chain(const ref<PhysicsLimbChain>& chain,
+			float dt,
+			bool force_simulation = false) const;
+
+		void calculate_state_poses(Entity limb,
+			const trs& calculated_target_local_space_pose,
+			const trs& world_space_ragdoll_transform) const;
 
 		void update_ragdoll_profiles(PhysicalAnimationComponent* physical_animation_component,
 			const vec3& raw_root_delta_position,
@@ -38,22 +52,6 @@ namespace era_engine::physics
 			bool force_reload = false) const;
 
 		bool should_be_simulated(Entity ragdoll) const;
-
-		void update_targets_and_collisions(Entity limb,
-			PhysicalAnimationLimbComponent* limb_component,
-			PhysicalAnimationComponent* physical_animation_component,
-			float dt) const;
-
-		void apply_drives_to_limb(Entity limb,
-			PhysicalAnimationLimbComponent* limb_component,
-			const PhysicalAnimationComponent* physical_animation_component,
-			const vec3& raw_root_acceleration,
-			float dt) const;
-
-		vec3 calculate_delta_rotation_time_derivative(const quat& delta_rotation,
-			float dt) const;
-
-		bool is_low_limb(PhysicalAnimationLimbComponent::Type type) const;
 
 		void process_added_pacs();
 
@@ -77,5 +75,7 @@ namespace era_engine::physics
 		ref<RagdollProfile> idle_profile = nullptr;
 		ref<RagdollProfile> running_profile = nullptr;
 		ref<RagdollProfile> sprint_profile = nullptr;
+
+		std::unique_ptr<DrivePoseSampler> pose_sampler;
 	};
 }

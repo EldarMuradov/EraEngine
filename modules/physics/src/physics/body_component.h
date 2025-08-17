@@ -56,6 +56,12 @@ namespace era_engine::physics
 		vec3 torque = vec3::zero;
 	};
 
+	enum class KinematicMotionType : uint8
+	{
+		TELEPORT = 0,
+		VELOCITY
+	};
+
 	class ERA_PHYSICS_API BodyComponent : public Component
 	{
 	public:
@@ -101,6 +107,8 @@ namespace era_engine::physics
 		ObservableMember<bool> ccd = false;
 		ObservableMember<bool> kinematic = false;
 
+		ObservableMember<KinematicMotionType> kinematic_motion_type = KinematicMotionType::TELEPORT;
+
 		ObservableMember<bool> simulated = false;
 
 		ObservableMember<uint8> constraints = 0;
@@ -116,10 +124,10 @@ namespace era_engine::physics
 		ObservableMember<uint32> solver_position_iterations_count = 4;
 		ObservableMember<uint32> solver_velocity_iterations_count = 1;
 
-		ObservableMember<float> max_angular_velocity = std::numeric_limits<float>::max();
-		ObservableMember<float> max_linear_velocity = std::numeric_limits<float>::max();
-		ObservableMember<float> max_contact_impulse = std::numeric_limits<float>::max();
-		ObservableMember<float> max_depenetration_velocity = std::numeric_limits<float>::max();
+		ObservableMember<float> max_angular_velocity = 1e15f;
+		ObservableMember<float> max_linear_velocity = 1e15f;
+		ObservableMember<float> max_contact_impulse = 1e15f;
+		ObservableMember<float> max_depenetration_velocity = 1e15f;
 
 		ObservableMember<vec3> linear_velocity = vec3::zero;
 		ObservableMember<vec3> angular_velocity = vec3::zero;

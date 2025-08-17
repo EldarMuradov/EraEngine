@@ -1,6 +1,7 @@
 #include "ecs/entity.h"
 #include "ecs/world.h"
 #include "ecs/component.h"
+#include "ecs/base_components/transform_component.h"
 
 #include "core/sync.h"
 
@@ -81,8 +82,8 @@ namespace era_engine
 
 	void Entity::set_parent(Entity::Handle parent_handle)
 	{
-		EntityContainer::erase_pair(internal_data->parent_handle, internal_data->entity_handle);
-		EntityContainer::emplace_pair(parent_handle, internal_data->entity_handle);
+		EntityContainer::erase_pair(get_world(), internal_data->parent_handle, internal_data->entity_handle);
+		EntityContainer::emplace_pair(get_world(), parent_handle, internal_data->entity_handle);
 		internal_data->parent_handle = parent_handle;
 	}
 
@@ -103,7 +104,7 @@ namespace era_engine
 
 	static inline std::mutex container_sync;
 
-	void EntityContainer::emplace_pair(Entity::Handle parent, Entity::Handle child)
+	void EntityContainer::emplace_pair(World* world, Entity::Handle parent, Entity::Handle child)
 	{
 		std::lock_guard _lock(container_sync);
 
@@ -113,9 +114,11 @@ namespace era_engine
 		}
 
 		container.at(parent).childs.push_back(child);
+
+		TransformComponent::update_world_transform(world->get_entity(child));
 	}
 
-	void EntityContainer::erase(Entity::Handle parent)
+	void EntityContainer::erase(World* world, Entity::Handle parent)
 	{
 		std::lock_guard _lock(container_sync);
 
@@ -124,10 +127,21 @@ namespace era_engine
 			return;
 		}
 
+		auto& childs = container.at(parent).childs;
+		auto iter = childs.begin();
+		const auto& end = childs.end();
+
+		for (; iter != end; ++iter)
+		{
+			Entity child = world->get_entity(*iter);
+			child.set_parent(world->get_root_entity().get_handle());
+			TransformComponent::update_world_transform(child);
+		}
+
 		container.erase(parent);
 	}
 
-	void EntityContainer::erase_pair(Entity::Handle parent, Entity::Handle child)
+	void EntityContainer::erase_pair(World* world, Entity::Handle parent, Entity::Handle child)
 	{
 		std::lock_guard _lock(container_sync);
 
@@ -150,7 +164,7 @@ namespace era_engine
 		}
 	}
 
-	std::vector<Entity::Handle> EntityContainer::get_childs(Entity::Handle parent)
+	std::vector<Entity::Handle> EntityContainer::get_childs(World* world, Entity::Handle parent)
 	{
 		if (container.find(parent) == container.end())
 		{
@@ -167,7 +181,8 @@ namespace era_engine
 			return std::vector<Entity>();
 		}
 
-		std::vector<Entity> result = std::vector<Entity>(container.at(parent).childs.size());
+		std::vector<Entity> result;
+		result.reserve(container.at(parent).childs.size());
 
 		for (const Entity::Handle handle : container.at(parent).childs)
 		{

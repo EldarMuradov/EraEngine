@@ -252,7 +252,7 @@ namespace era_engine
 	{
 		static int i = 0;
 
-		auto childs = EntityContainer::get_childs(entity.get_handle());
+		auto childs = EntityContainer::get_childs(world, entity.get_handle());
 
 		if (!childs.empty())
 		{

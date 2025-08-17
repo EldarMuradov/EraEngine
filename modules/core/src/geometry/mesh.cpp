@@ -150,6 +150,8 @@ namespace era_engine
 					j = joint;
 				}
 			}
+
+			clip.root_motion_joint = clip.joints[0];
 		}
 
 		if (cb)

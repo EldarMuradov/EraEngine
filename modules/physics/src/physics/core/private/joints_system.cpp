@@ -50,7 +50,7 @@ namespace era_engine::physics
 	{
 		using namespace physx;
 
-		for (auto [entity_handle, observable_component, joint_component] : world->group(components_group<ObservableMemberChangedFlagComponent, DistanceJointComponent>).each())
+		for (auto [entity_handle, observable_component, joint_component] : world->group(components_group<TransformComponent, DistanceJointComponent>).each())
 		{
 			PxJoint* joint = joint_component.get_native_joint();
 
@@ -69,32 +69,37 @@ namespace era_engine::physics
 			if (joint_component.stiffness.is_changed())
 			{
 				native_joint->setStiffness(joint_component.stiffness);
+				joint_component.stiffness.sync_changes();
 			}
 
 			if (joint_component.damping.is_changed())
 			{
 				native_joint->setDamping(joint_component.damping);
+				joint_component.damping.sync_changes();
 			}
 
 			if (joint_component.spring_enabled.is_changed())
 			{
 				native_joint->setDistanceJointFlag(PxDistanceJointFlag::eSPRING_ENABLED, joint_component.spring_enabled);
+				joint_component.spring_enabled.sync_changes();
 			}
 
 			if (joint_component.min_distance.is_changed())
 			{
 				native_joint->setDistanceJointFlag(PxDistanceJointFlag::eMIN_DISTANCE_ENABLED, true);
 				native_joint->setMinDistance(joint_component.min_distance);
+				joint_component.min_distance.sync_changes();
 			}
 
 			if (joint_component.max_distance.is_changed())
 			{
 				native_joint->setDistanceJointFlag(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED, true);
 				native_joint->setMaxDistance(joint_component.max_distance);
+				joint_component.max_distance.sync_changes();
 			}
 		}
 
-		for (auto [entity_handle, observable_component, joint_component] : world->group(components_group<ObservableMemberChangedFlagComponent, D6JointComponent>).each())
+		for (auto [entity_handle, observable_component, joint_component] : world->group(components_group<TransformComponent, D6JointComponent>).each())
 		{
 			PxJoint* joint = joint_component.get_native_joint();
 
@@ -111,71 +116,117 @@ namespace era_engine::physics
 			}
 
 			if (joint_component.swing_y_limit.is_changed() ||
-				joint_component.swing_z_limit.is_changed())
+				joint_component.swing_z_limit.is_changed() ||
+				joint_component.swing_limit_stiffness.is_changed() ||
+				joint_component.swing_limit_damping.is_changed() ||
+				joint_component.swing_limit_restitution.is_changed())
 			{
 				PxJointLimitCone limit(
 					joint_component.swing_y_limit,
 					joint_component.swing_z_limit,
-					PxSpring(0.0f, 0.0f));
-				limit.restitution = 0.0f;
+					PxSpring(joint_component.swing_limit_stiffness, joint_component.swing_limit_damping));
+				limit.restitution = joint_component.swing_limit_restitution;
 				native_joint->setSwingLimit(limit);
+
+				joint_component.swing_y_limit.sync_changes();
+				joint_component.swing_z_limit.sync_changes();
+				joint_component.swing_limit_stiffness.sync_changes();
+				joint_component.swing_limit_damping.sync_changes();
+				joint_component.swing_limit_restitution.sync_changes();
 			}
 
 			if (joint_component.twist_min_limit.is_changed() ||
-				joint_component.twist_max_limit.is_changed())
+				joint_component.twist_max_limit.is_changed() ||
+				joint_component.twist_limit_stiffness.is_changed() ||
+				joint_component.twist_limit_damping.is_changed() ||
+				joint_component.twist_limit_restitution.is_changed())
 			{
 				PxJointAngularLimitPair limit(
 					joint_component.twist_min_limit,
 					joint_component.twist_max_limit,
-					PxSpring(0.0f, 0.0f));
-				limit.restitution = 0.0f;
+					PxSpring(joint_component.twist_limit_stiffness, joint_component.twist_limit_damping));
+				limit.restitution = joint_component.twist_limit_restitution;
 
 				native_joint->setTwistLimit(limit);
+
+				joint_component.twist_min_limit.sync_changes();
+				joint_component.twist_max_limit.sync_changes();
+				joint_component.twist_limit_stiffness.sync_changes();
+				joint_component.twist_limit_damping.sync_changes();
+				joint_component.twist_limit_restitution.sync_changes();
 			}
 
 			if (joint_component.linear_limit.is_changed())
 			{
 				native_joint->setLinearLimit(PxJointLinearLimit{ joint_component.linear_limit });
+				joint_component.linear_limit.sync_changes();
 			}
 
 			if (joint_component.distance_limit.is_changed())
 			{
 				native_joint->setDistanceLimit(PxJointLinearLimit{ joint_component.distance_limit });
+				joint_component.distance_limit.sync_changes();
 			}
 
 			if (joint_component.swing_y_motion_type.is_changed())
 			{
 				native_joint->setMotion(PxD6Axis::eSWING1, static_cast<PxD6Motion::Enum>(joint_component.swing_y_motion_type.get()));
+				joint_component.swing_y_motion_type.sync_changes();
 			}
 			if (joint_component.swing_z_motion_type.is_changed())
 			{
 				native_joint->setMotion(PxD6Axis::eSWING2, static_cast<PxD6Motion::Enum>(joint_component.swing_z_motion_type.get()));
+				joint_component.swing_z_motion_type.sync_changes();
 			}
 			if (joint_component.twist_motion_type.is_changed())
 			{
 				native_joint->setMotion(PxD6Axis::eTWIST, static_cast<PxD6Motion::Enum>(joint_component.twist_motion_type.get()));
+				joint_component.twist_motion_type.sync_changes();
 			}
 			if (joint_component.linear_x_motion_type.is_changed())
 			{
 				native_joint->setMotion(PxD6Axis::eX, static_cast<PxD6Motion::Enum>(joint_component.linear_x_motion_type.get()));
+				joint_component.linear_x_motion_type.sync_changes();
 			}
 			if (joint_component.linear_y_motion_type.is_changed())
 			{
 				native_joint->setMotion(PxD6Axis::eY, static_cast<PxD6Motion::Enum>(joint_component.linear_y_motion_type.get()));
+				joint_component.linear_y_motion_type.sync_changes();
 			}
 			if (joint_component.linear_z_motion_type.is_changed())
 			{
 				native_joint->setMotion(PxD6Axis::eZ, static_cast<PxD6Motion::Enum>(joint_component.linear_z_motion_type.get()));
+				joint_component.linear_z_motion_type.sync_changes();
 			}
 
 			if (joint_component.drive_limits_are_forces.is_changed())
 			{
 				native_joint->setConstraintFlag(PxConstraintFlag::eDRIVE_LIMITS_ARE_FORCES, joint_component.drive_limits_are_forces);
+				joint_component.drive_limits_are_forces.sync_changes();
+			}
+
+			if (joint_component.improved_slerp.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eIMPROVED_SLERP, joint_component.improved_slerp);
+				joint_component.improved_slerp.sync_changes();
+			}
+
+			if (joint_component.disable_preprocessing.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eDISABLE_PREPROCESSING, joint_component.disable_preprocessing);
+				joint_component.disable_preprocessing.sync_changes();
+			}
+
+			if (joint_component.disabled.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eDISABLE_CONSTRAINT, joint_component.disabled);
+				joint_component.disabled.sync_changes();
 			}
 
 			if (joint_component.gpu_compatible.is_changed())
 			{
 				native_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, joint_component.gpu_compatible);
+				joint_component.gpu_compatible.sync_changes();
 			}
 
 			if (joint_component.twist_drive_accelerated.is_changed() ||
@@ -209,6 +260,11 @@ namespace era_engine::physics
 						actor_dynamic->wakeUp();
 					}
 				}
+
+				joint_component.twist_drive_damping.sync_changes();
+				joint_component.twist_drive_accelerated.sync_changes();
+				joint_component.twist_drive_stiffness.sync_changes();
+				joint_component.twist_drive_force_limit.sync_changes();
 			}
 
 			if (joint_component.swing_drive_accelerated.is_changed() ||
@@ -242,6 +298,11 @@ namespace era_engine::physics
 						actor_dynamic->wakeUp();
 					}
 				}
+
+				joint_component.swing_drive_damping.sync_changes();
+				joint_component.swing_drive_accelerated.sync_changes();
+				joint_component.swing_drive_stiffness.sync_changes();
+				joint_component.swing_drive_force_limit.sync_changes();
 			}
 
 			if (joint_component.slerp_drive_accelerated.is_changed() ||
@@ -275,6 +336,11 @@ namespace era_engine::physics
 						actor_dynamic->wakeUp();
 					}
 				}
+
+				joint_component.slerp_drive_damping.sync_changes();
+				joint_component.slerp_drive_accelerated.sync_changes();
+				joint_component.slerp_drive_stiffness.sync_changes();
+				joint_component.slerp_drive_force_limit.sync_changes();
 			}
 
 			if (joint_component.linear_drive_accelerated.is_changed() ||
@@ -310,17 +376,25 @@ namespace era_engine::physics
 						actor_dynamic->wakeUp();
 					}
 				}
+
+				joint_component.linear_drive_damping.sync_changes();
+				joint_component.linear_drive_accelerated.sync_changes();
+				joint_component.linear_drive_stiffness.sync_changes();
+				joint_component.linear_drive_force_limit.sync_changes();
 			}
 
 			if (joint_component.angular_drive_velocity.is_changed() || 
 				joint_component.linear_drive_velocity.is_changed())
 			{
 				native_joint->setDriveVelocity(create_PxVec3(joint_component.linear_drive_velocity), create_PxVec3(joint_component.angular_drive_velocity), true);
+				joint_component.angular_drive_velocity.sync_changes();
+				joint_component.linear_drive_velocity.sync_changes();
 			}
 
 			if (joint_component.drive_transform.is_changed())
 			{
 				native_joint->setDrivePosition(create_PxTransform(joint_component.drive_transform), true);
+				joint_component.drive_transform.sync_changes();
 			}
 		}
 	}
@@ -355,6 +429,8 @@ namespace era_engine::physics
 
 			created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
 			created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component->enable_collision);
+			created_joint->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, joint_component->always_update);
+			created_joint->setConstraintFlag(PxConstraintFlag::eENABLE_EXTENDED_LIMITS, true);
 
 			if (PhysicsHolder::physics_ref->is_gpu())
 			{
@@ -393,6 +469,7 @@ namespace era_engine::physics
 
 			created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
 			created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component->enable_collision);
+			created_joint->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, joint_component->always_update);
 
 			joint_component->joint = created_joint;
 			joint_component->joint->userData = joint_component;
@@ -426,6 +503,7 @@ namespace era_engine::physics
 
 			created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
 			created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component->enable_collision);
+			created_joint->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, joint_component->always_update);
 
 			joint_component->joint = created_joint;
 			joint_component->joint->userData = joint_component;

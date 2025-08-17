@@ -159,13 +159,13 @@ namespace era_engine
 		EntityContainer() = delete;
 
 	public:
-		static void emplace_pair(Entity::Handle parent, Entity::Handle child);
+		static void emplace_pair(World* world, Entity::Handle parent, Entity::Handle child);
 
-		static void erase(Entity::Handle parent);
+		static void erase(World* world, Entity::Handle parent);
 
-		static void erase_pair(Entity::Handle parent, Entity::Handle child);
+		static void erase_pair(World* world, Entity::Handle parent, Entity::Handle child);
 
-		static std::vector<Entity::Handle> get_childs(Entity::Handle parent);
+		static std::vector<Entity::Handle> get_childs(World* world, Entity::Handle parent);
 
 		static std::vector<Entity> get_entity_childs(World* world, Entity::Handle parent);
 

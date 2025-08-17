@@ -176,21 +176,6 @@ namespace era_engine::physics
 
 	void SimulationEventCallback::sendCollisionEvents()
 	{
-		for (auto& c : removed_collisions)
-		{
-			PhysicsHolder::physics_ref->collision_exit_queue.enqueue({
-				c.this_actor->get_entity().get_handle(),
-				c.other_actor->get_entity().get_handle()
-				});
-		}
-
-		for (auto& c : new_collisions)
-		{
-			PhysicsHolder::physics_ref->collision_queue.enqueue({
-				c.this_actor->get_entity().get_handle(),
-				c.other_actor->get_entity().get_handle()
-				});
-		}
 	}
 
 	void SimulationEventCallback::sendTriggerEvents()

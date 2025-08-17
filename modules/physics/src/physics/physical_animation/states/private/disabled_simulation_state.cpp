@@ -17,13 +17,13 @@ namespace era_engine::physics
     {
     }
 
-    ConstraintStateType DisabledSimulationState::try_switch_to(ConstraintStateType desired_type) const
+    SimulationStateType DisabledSimulationState::try_switch_to(SimulationStateType desired_type) const
     {
-        if (desired_type == ConstraintStateType::ENABLED)
+        if (desired_type == SimulationStateType::ENABLED)
         {
-            return ConstraintStateType::BLEND_IN;
+            return SimulationStateType::BLEND_IN;
         }
-        return ConstraintStateType::DISABLED;
+        return SimulationStateType::DISABLED;
     }
 
     void DisabledSimulationState::on_entered()
@@ -33,8 +33,6 @@ namespace era_engine::physics
         PhysicalAnimationComponent* physical_animation_component = dynamic_cast<PhysicalAnimationComponent*>(physical_animation_component_ptr.get_for_write());
         physical_animation_component->blend_weight = 0.0f;
 
-        // TODO: enable IK for foots.
-
         if (physical_animation_component->simulated)
         {
             for (const EntityPtr& limb_ptr : physical_animation_component->limbs)
@@ -43,6 +41,15 @@ namespace era_engine::physics
 
                 PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
 
+                // Reset all data.
+                limb_component->collision_time = 0.0f;
+                limb_component->was_in_collision = false;
+                limb_component->is_colliding = false;
+                limb_component->is_blocked = false;
+                limb_component->blocked_blend_factor = 0.0f;
+
+                limb_component->force_switch_state(ConstraintLimbStateType::KINEMATIC);
+
                 D6JointComponent* parent_joint_component = dynamic_cast<D6JointComponent*>(limb_component->parent_joint_component.get_for_write());
 
                 if (parent_joint_component != nullptr)
@@ -50,12 +57,6 @@ namespace era_engine::physics
                     parent_joint_component->drive_transform = trs::identity;
                     parent_joint_component->angular_drive_velocity = vec3::zero;
                 }
-
-                DynamicBodyComponent* dynamic_body_component = limb.get_component<DynamicBodyComponent>();
-                ASSERT(dynamic_body_component != nullptr);
-                dynamic_body_component->simulated = false;
-                dynamic_body_component->linear_velocity = vec3::zero;
-                dynamic_body_component->angular_velocity = vec3::zero;
             }
 
             physical_animation_component->simulated = false;

@@ -56,26 +56,29 @@ namespace era_engine::physics
 	DynamicBodyComponent::DynamicBodyComponent(ref<Entity::EcsData> _data)
 		: BodyComponent(_data)
 	{
-		simulated.set_component(ComponentPtr(this));
-		kinematic.set_component(ComponentPtr(this));
-		ccd.set_component(ComponentPtr(this));
-		use_gravity.set_component(ComponentPtr(this));
-		constraints.set_component(ComponentPtr(this));
-		linear_damping.set_component(ComponentPtr(this));
-		angular_damping.set_component(ComponentPtr(this));
-		linear_velocity.set_component(ComponentPtr(this));
-		angular_velocity.set_component(ComponentPtr(this));
-		center_of_mass.set_component(ComponentPtr(this));
-		mass.set_component(ComponentPtr(this));
-		max_angular_velocity.set_component(ComponentPtr(this));
-		max_linear_velocity.set_component(ComponentPtr(this));
-		max_contact_impulse.set_component(ComponentPtr(this));
-		max_depenetration_velocity.set_component(ComponentPtr(this));
-		sleep_threshold.set_component(ComponentPtr(this));
-		stabilization_threshold.set_component(ComponentPtr(this));
-		solver_velocity_iterations_count.set_component(ComponentPtr(this));
-		solver_position_iterations_count.set_component(ComponentPtr(this));
-		mass_space_inertia_tensor.set_component(ComponentPtr(this));
+		ComponentPtr this_component = ComponentPtr(this);
+
+		simulated.set_component(this_component);
+		kinematic.set_component(this_component);
+		ccd.set_component(this_component);
+		use_gravity.set_component(this_component);
+		constraints.set_component(this_component);
+		linear_damping.set_component(this_component);
+		angular_damping.set_component(this_component);
+		linear_velocity.set_component(this_component);
+		angular_velocity.set_component(this_component);
+		center_of_mass.set_component(this_component);
+		mass.set_component(this_component);
+		max_angular_velocity.set_component(this_component);
+		max_linear_velocity.set_component(this_component);
+		max_contact_impulse.set_component(this_component);
+		max_depenetration_velocity.set_component(this_component);
+		sleep_threshold.set_component(this_component);
+		stabilization_threshold.set_component(this_component);
+		solver_velocity_iterations_count.set_component(this_component);
+		solver_position_iterations_count.set_component(this_component);
+		mass_space_inertia_tensor.set_component(this_component);
+		kinematic_motion_type.set_component(this_component);
 	}
 
 	DynamicBodyComponent::~DynamicBodyComponent()
@@ -107,7 +110,10 @@ namespace era_engine::physics
 
 		if (PxRigidDynamic* body = actor->is<PxRigidDynamic>())
 		{
-			body->wakeUp();
+			if(simulated)
+			{
+				body->wakeUp();
+			}
 		}
 	}
 

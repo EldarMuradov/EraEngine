@@ -31,10 +31,13 @@ namespace era_engine
 		ASSERT(collision_holder_rc != nullptr);
 
 		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::RAGDOLL), 
-			static_cast<uint32>(GameCollisionType::TERRAIN), true);
+			static_cast<uint32>(CollisionType::TERRAIN), true);
 
 		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::RAGDOLL), 
 			static_cast<uint32>(GameCollisionType::STATICS), true);
+
+		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::RAGDOLL),
+			static_cast<uint32>(CollisionType::RAGDOLL), false);
 
 		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::RAGDOLL),
 			static_cast<uint32>(GameCollisionType::DYNAMICS), true);
@@ -42,7 +45,7 @@ namespace era_engine
 		collision_holder_rc->set_collision_filter(static_cast<uint32>(GameCollisionType::STATICS),
 			static_cast<uint32>(GameCollisionType::DYNAMICS), true);
 
-		collision_holder_rc->set_collision_filter(static_cast<uint32>(GameCollisionType::TERRAIN),
+		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::TERRAIN),
 			static_cast<uint32>(GameCollisionType::DYNAMICS), true);
 	}
 

@@ -91,16 +91,20 @@ namespace era_engine::animation
 
 	struct ERA_CORE_API AnimationJoint
 	{
+		AnimationJoint() = default;
+
+		AnimationJoint& operator=(const AnimationJoint&) = default;
+
 		bool is_animated = false;
 
-		uint32 first_position_keyframe;
-		uint32 num_position_keyframes;
+		uint32 first_position_keyframe = 0;
+		uint32 num_position_keyframes = 0;
 
-		uint32 first_rotation_keyframe;
-		uint32 num_rotation_keyframes;
+		uint32 first_rotation_keyframe = 0;
+		uint32 num_rotation_keyframes = 0;
 
-		uint32 first_scale_keyframe;
-		uint32 num_scale_keyframes;
+		uint32 first_scale_keyframe = 0;
+		uint32 num_scale_keyframes = 0;
 	};
 
 	struct ERA_CORE_API AnimationClip
@@ -232,9 +236,9 @@ namespace era_engine::animation
 		SkeletonUtils() = delete;
 
 	public:
-		static trs get_object_space_joint_transform(const Skeleton* skeleton, uint32 joint_id);
+		static trs get_object_space_joint_transform(const Skeleton* skeleton, uint32 joint_id, uint32 start_from = INVALID_JOINT);
 
-		static trs get_object_space_joint_transform(const SkeletonPose& pose, const Skeleton* skeleton, uint32 joint_id);
+		static trs get_object_space_joint_transform(const SkeletonPose& pose, const Skeleton* skeleton, uint32 joint_id, uint32 start_from = INVALID_JOINT);
 	};
 
 	struct ERA_CORE_API AnimationInstance
@@ -364,6 +368,7 @@ namespace era_engine::animation
 
 		bool play = true;
 		bool update_skeleton = true;
+		bool enable_root_motion = true;
 
 		float time_scale = 1.f;
 	};

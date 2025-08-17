@@ -145,7 +145,7 @@ namespace era_engine
 		return result;
 	}
 
-	static int hitTest(POINT point, win32_window* window)
+	int hitTest(POINT point, win32_window* window)
 	{
 		if (!window->fullscreen)
 		{
@@ -742,7 +742,7 @@ namespace era_engine
 		win32_window::mainWindow = window;
 	}
 
-	static LRESULT CALLBACK windowCallBack(
+	LRESULT CALLBACK windowCallBack(
 		_In_ HWND   hwnd,
 		_In_ UINT   msg,
 		_In_ WPARAM wParam,

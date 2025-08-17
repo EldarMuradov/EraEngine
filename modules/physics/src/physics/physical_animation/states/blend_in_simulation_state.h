@@ -12,7 +12,7 @@ namespace era_engine::physics
     public:
         BlendInSimulationState(ComponentPtr _physical_animation_component_ptr);
 
-        ConstraintStateType try_switch_to(ConstraintStateType desired_type) const override;
+        SimulationStateType try_switch_to(SimulationStateType desired_type) const override;
 
         void update(float dt) override;
 

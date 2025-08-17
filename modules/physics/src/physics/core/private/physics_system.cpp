@@ -21,6 +21,7 @@ namespace era_engine::physics
 
 		registration::class_<PhysicsSystem>("PhysicsSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("physics")))
+			.method("clear_pending_collisions", &PhysicsSystem::clear_pending_collisions)(metadata("update_group", update_types::GAMEPLAY_BEFORE_PHYSICS_CONCURRENT))
 			.method("update", &PhysicsSystem::update)(metadata("update_group", update_types::PHYSICS));
 	}
 
@@ -69,11 +70,20 @@ namespace era_engine::physics
 		}
 	}
 
+	void PhysicsSystem::clear_pending_collisions(float)
+	{
+		ZoneScopedN("PhysicsSystem::clear_pending_collisions");
+
+		ScopedSpinLock _lock{ PhysicsHolder::physics_ref->sync };
+
+		PhysicsHolder::physics_ref->clear_collisions();
+	}
+
 	void PhysicsSystem::sync_physics_to_component_changes()
 	{
 		using namespace physx;
 
-		for (auto [entity_handle, changed_flag, static_body] : world->group(components_group<ObservableMemberChangedFlagComponent, StaticBodyComponent>).each())
+		for (auto [entity_handle, changed_flag, static_body] : world->group(components_group<TransformComponent, StaticBodyComponent>).each())
 		{
 			if (static_body.get_rigid_actor() == nullptr)
 			{
@@ -90,10 +100,11 @@ namespace era_engine::physics
 			if (static_body.simulated.is_changed())
 			{
 				body->setActorFlag(PxActorFlag::eDISABLE_SIMULATION, !static_body.simulated);
+				static_body.simulated.sync_changes();
 			}
 		}
 
-		for (auto [entity_handle, changed_flag, dynamic_body] : world->group(components_group<ObservableMemberChangedFlagComponent, DynamicBodyComponent>).each())
+		for (auto [entity_handle, changed_flag, dynamic_body] : world->group(components_group<TransformComponent, DynamicBodyComponent>).each())
 		{
 			if (dynamic_body.get_rigid_actor() == nullptr)
 			{
@@ -107,129 +118,135 @@ namespace era_engine::physics
 				continue;
 			}
 
-			if (dynamic_body.use_gravity.is_changed())
+			if (dynamic_body.max_linear_velocity.is_changed())
 			{
-				body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, !dynamic_body.use_gravity);
+				body->setMaxLinearVelocity(dynamic_body.max_linear_velocity);
+				dynamic_body.max_linear_velocity.sync_changes();
+			}
+
+			if (dynamic_body.max_depenetration_velocity.is_changed())
+			{
+				body->setMaxDepenetrationVelocity(dynamic_body.max_depenetration_velocity);
+				dynamic_body.max_contact_impulse.sync_changes();
+			}
+
+			if (dynamic_body.max_contact_impulse.is_changed())
+			{
+				body->setMaxContactImpulse(dynamic_body.max_contact_impulse);
+				dynamic_body.max_contact_impulse.sync_changes();
 			}
 
 			if (dynamic_body.max_angular_velocity.is_changed())
 			{
 				body->setMaxAngularVelocity(dynamic_body.max_angular_velocity);
+				dynamic_body.max_angular_velocity.sync_changes();
+			}
+
+			bool update_mass = false;
+
+			if (dynamic_body.mass.is_changed() ||
+				dynamic_body.center_of_mass.is_changed() ||
+				dynamic_body.mass_space_inertia_tensor.is_changed())
+			{
+				update_mass = true;
+
+				dynamic_body.mass_space_inertia_tensor.sync_changes();
+				dynamic_body.center_of_mass.sync_changes();
+				dynamic_body.mass.sync_changes();
+			}
+
+			if (dynamic_body.simulated.is_changed())
+			{
+				body->setActorFlag(PxActorFlag::eDISABLE_SIMULATION, !dynamic_body.simulated);
+
+				if (dynamic_body.simulated)
+				{
+					update_mass = true;
+
+					body->setLinearVelocity(create_PxVec3(dynamic_body.linear_velocity), false);
+					body->setAngularVelocity(create_PxVec3(dynamic_body.angular_velocity), false);
+				}
+
+				dynamic_body.simulated.sync_changes();
+			}
+
+			if (update_mass)
+			{
+				PhysicsUtils::manual_update_mass(&dynamic_body);
+			}
+
+			if (dynamic_body.use_gravity.is_changed())
+			{
+				body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, !dynamic_body.use_gravity);
+				dynamic_body.use_gravity.sync_changes();
 			}
 
 			if (dynamic_body.solver_position_iterations_count.is_changed() ||
 				dynamic_body.solver_velocity_iterations_count.is_changed())
 			{
 				body->setSolverIterationCounts(dynamic_body.solver_position_iterations_count, dynamic_body.solver_velocity_iterations_count);
+				dynamic_body.solver_position_iterations_count.sync_changes();
+				dynamic_body.solver_velocity_iterations_count.sync_changes();
 			}
 
 			if (dynamic_body.sleep_threshold.is_changed())
 			{
 				body->setSleepThreshold(dynamic_body.sleep_threshold);
+				dynamic_body.sleep_threshold.sync_changes();
 			}
 
 			if (dynamic_body.stabilization_threshold.is_changed())
 			{
 				body->setStabilizationThreshold(dynamic_body.stabilization_threshold);
-			}
-
-			if (dynamic_body.max_linear_velocity.is_changed())
-			{
-				body->setMaxLinearVelocity(dynamic_body.max_linear_velocity);
-			}
-
-			if (dynamic_body.max_depenetration_velocity.is_changed())
-			{
-				body->setMaxDepenetrationVelocity(dynamic_body.max_depenetration_velocity);
-			}
-
-			if (dynamic_body.max_contact_impulse.is_changed())
-			{
-				body->setMaxContactImpulse(dynamic_body.max_contact_impulse);
+				dynamic_body.stabilization_threshold.sync_changes();
 			}
 
 			if (dynamic_body.ccd.is_changed())
 			{
 				body->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, dynamic_body.ccd);
+				dynamic_body.ccd.sync_changes();
 			}
 
 			if (dynamic_body.kinematic.is_changed())
 			{
 				body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, dynamic_body.kinematic);
+				dynamic_body.kinematic.sync_changes();
 			}
 
 			if (dynamic_body.constraints.is_changed())
 			{
 				body->setRigidDynamicLockFlags(static_cast<PxRigidDynamicLockFlags>(dynamic_body.constraints));
+				dynamic_body.constraints.sync_changes();
 			}
 
 			if (dynamic_body.linear_damping.is_changed())
 			{
 				body->setLinearDamping(dynamic_body.linear_damping);
+				dynamic_body.linear_damping.sync_changes();
 			}
 
 			if (dynamic_body.angular_damping.is_changed())
 			{
 				body->setAngularDamping(dynamic_body.angular_damping);
+				dynamic_body.angular_damping.sync_changes();
 			}
 
 			if (dynamic_body.angular_velocity.is_changed())
 			{
-				body->setAngularVelocity(create_PxVec3(dynamic_body.angular_velocity));
-			}
-
-			if (dynamic_body.mass_space_inertia_tensor.is_changed())
-			{
-				body->setMassSpaceInertiaTensor(create_PxVec3(dynamic_body.mass_space_inertia_tensor));
-			}
-
-			if (dynamic_body.simulated.is_changed())
-			{
-				body->setActorFlag(PxActorFlag::eDISABLE_SIMULATION, !dynamic_body.simulated);
+				if (!dynamic_body.kinematic && dynamic_body.simulated)
+				{
+					body->setAngularVelocity(create_PxVec3(dynamic_body.angular_velocity));
+				}
+				dynamic_body.angular_velocity.sync_changes();
 			}
 
 			if (dynamic_body.linear_velocity.is_changed())
 			{
-				body->setLinearVelocity(create_PxVec3(dynamic_body.linear_velocity));
-			}
-
-			if (dynamic_body.mass.is_changed() || dynamic_body.center_of_mass.is_changed())
-			{
-				const PxVec3 center_of_mass = create_PxVec3(dynamic_body.center_of_mass);
-
-				PxRigidBodyExt::setMassAndUpdateInertia(
-					*body,
-					dynamic_body.mass.get(),
-					&center_of_mass,
-					false);
-
-				dynamic_body.center_of_mass.get_silent_for_write() = create_vec3(body->getCMassLocalPose().p);
-			}
-		}
-	}
-
-	void PhysicsSystem::sync_component_to_physics()
-	{
-		using namespace physx;
-
-		for (auto [entity_handle, transformm_component, dynamic_body] : dynamic_body_group.each())
-		{
-			PxRigidDynamic* body = dynamic_body.get_rigid_dynamic();
-
-			if (body == nullptr)
-			{
-				return;
-			}
-
-			if (!dynamic_body.kinematic)
-			{
-				dynamic_body.linear_velocity.get_silent_for_write() = create_vec3(body->getLinearVelocity());
-				dynamic_body.angular_velocity.get_silent_for_write() = create_vec3(body->getAngularVelocity());
-			}
-			else
-			{
-				dynamic_body.linear_velocity.get_silent_for_write() = vec3::zero;
-				dynamic_body.angular_velocity.get_silent_for_write() = vec3::zero;
+				if(!dynamic_body.kinematic && dynamic_body.simulated)
+				{
+					body->setLinearVelocity(create_PxVec3(dynamic_body.linear_velocity));
+				}
+				dynamic_body.linear_velocity.sync_changes();
 			}
 
 			for (const Force& force : std::exchange(dynamic_body.forces, {}))
@@ -279,6 +296,32 @@ namespace era_engine::physics
 
 				body->addTorque(create_PxVec3(value),
 					static_cast<PxForceMode::Enum>(torque.mode));
+			}
+		}
+	}
+
+	void PhysicsSystem::sync_component_to_physics()
+	{
+		using namespace physx;
+
+		for (auto [entity_handle, transformm_component, dynamic_body] : dynamic_body_group.each())
+		{
+			PxRigidDynamic* body = dynamic_body.get_rigid_dynamic();
+
+			if (body == nullptr)
+			{
+				return;
+			}
+
+			if (!dynamic_body.kinematic)
+			{
+				dynamic_body.linear_velocity.get_silent_for_write() = create_vec3(body->getLinearVelocity());
+				dynamic_body.angular_velocity.get_silent_for_write() = create_vec3(body->getAngularVelocity());
+			}
+			else
+			{
+				dynamic_body.linear_velocity.get_silent_for_write() = vec3::zero;
+				dynamic_body.angular_velocity.get_silent_for_write() = vec3::zero;
 			}
 		}
 	}

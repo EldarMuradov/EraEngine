@@ -42,7 +42,7 @@ namespace era_engine::physics
 
 		ZoneScopedN("ShapeSystem::update");
 
-		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<ObservableMemberChangedFlagComponent, BoxShapeComponent>).each())
+		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<TransformComponent, BoxShapeComponent>).each())
 		{
 			if (shape_component.get_shape() == nullptr)
 			{
@@ -53,26 +53,32 @@ namespace era_engine::physics
 				shape_component.local_rotation.is_changed())
 			{
 				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
+				shape_component.local_rotation.sync_changes();
+				shape_component.local_position.sync_changes();
 			}
 
 			if (shape_component.use_in_scene_queries.is_changed())
 			{
 				shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
+				shape_component.use_in_scene_queries.sync_changes();
 			}
 
 			if (shape_component.is_trigger.is_changed())
 			{
 				shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
+				shape_component.is_trigger.sync_changes();
 			}
 
 			if (shape_component.collision_filter_data.is_changed() ||
 				shape_component.collision_type.is_changed())
 			{
 				ShapeUtils::setup_filtering(world, shape_component.get_shape(), static_cast<uint32>(shape_component.collision_type.get()), shape_component.collision_filter_data);
+				shape_component.collision_type.sync_changes();
+				shape_component.collision_filter_data.sync_changes();
 			}
 		}
 
-		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<ObservableMemberChangedFlagComponent, CapsuleShapeComponent>).each())
+		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<TransformComponent, CapsuleShapeComponent>).each())
 		{
 			if (shape_component.get_shape() == nullptr)
 			{
@@ -83,26 +89,32 @@ namespace era_engine::physics
 				shape_component.local_rotation.is_changed())
 			{
 				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
+				shape_component.local_rotation.sync_changes();
+				shape_component.local_position.sync_changes();
 			}
 
 			if (shape_component.use_in_scene_queries.is_changed())
 			{
 				shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
+				shape_component.use_in_scene_queries.sync_changes();
 			}
 
 			if (shape_component.is_trigger.is_changed())
 			{
 				shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
+				shape_component.is_trigger.sync_changes();
 			}
 
 			if (shape_component.collision_filter_data.is_changed() ||
 				shape_component.collision_type.is_changed())
 			{
 				ShapeUtils::setup_filtering(world, shape_component.get_shape(), static_cast<uint32>(shape_component.collision_type.get()), shape_component.collision_filter_data);
+				shape_component.collision_type.sync_changes();
+				shape_component.collision_filter_data.sync_changes();
 			}
 		}
 
-		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<ObservableMemberChangedFlagComponent, SphereShapeComponent>).each())
+		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<TransformComponent, SphereShapeComponent>).each())
 		{
 			if (shape_component.get_shape() == nullptr)
 			{
@@ -113,26 +125,32 @@ namespace era_engine::physics
 				shape_component.local_rotation.is_changed())
 			{
 				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
+				shape_component.local_rotation.sync_changes();
+				shape_component.local_position.sync_changes();
 			}
 
 			if (shape_component.use_in_scene_queries.is_changed())
 			{
 				shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
+				shape_component.use_in_scene_queries.sync_changes();
 			}
 
 			if (shape_component.is_trigger.is_changed())
 			{
 				shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
+				shape_component.is_trigger.sync_changes();
 			}
 
 			if (shape_component.collision_filter_data.is_changed() ||
 				shape_component.collision_type.is_changed())
 			{
 				ShapeUtils::setup_filtering(world, shape_component.get_shape(), static_cast<uint32>(shape_component.collision_type.get()), shape_component.collision_filter_data);
+				shape_component.collision_type.sync_changes();
+				shape_component.collision_filter_data.sync_changes();
 			}
 		}
 
-		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<ObservableMemberChangedFlagComponent, ConvexMeshShapeComponent>).each())
+		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<TransformComponent, ConvexMeshShapeComponent>).each())
 		{
 			if (shape_component.get_shape() == nullptr)
 			{
@@ -143,26 +161,32 @@ namespace era_engine::physics
 				shape_component.local_rotation.is_changed())
 			{
 				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
+				shape_component.local_rotation.sync_changes();
+				shape_component.local_position.sync_changes();
 			}
 
 			if (shape_component.use_in_scene_queries.is_changed())
 			{
 				shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
+				shape_component.use_in_scene_queries.sync_changes();
 			}
 
 			if (shape_component.is_trigger.is_changed())
 			{
 				shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
+				shape_component.is_trigger.sync_changes();
 			}
 
 			if (shape_component.collision_filter_data.is_changed() ||
 				shape_component.collision_type.is_changed())
 			{
 				ShapeUtils::setup_filtering(world, shape_component.get_shape(), static_cast<uint32>(shape_component.collision_type.get()), shape_component.collision_filter_data);
+				shape_component.collision_type.sync_changes();
+				shape_component.collision_filter_data.sync_changes();
 			}
 		}
 
-		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<ObservableMemberChangedFlagComponent, TriangleMeshShapeComponent>).each())
+		for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<TransformComponent, TriangleMeshShapeComponent>).each())
 		{
 			if (shape_component.get_shape() == nullptr)
 			{
@@ -173,22 +197,28 @@ namespace era_engine::physics
 				shape_component.local_rotation.is_changed())
 			{
 				shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
+				shape_component.local_rotation.sync_changes();
+				shape_component.local_position.sync_changes();
 			}
 
 			if (shape_component.use_in_scene_queries.is_changed())
 			{
 				shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
+				shape_component.use_in_scene_queries.sync_changes();
 			}
 
 			if (shape_component.is_trigger.is_changed())
 			{
 				shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
+				shape_component.is_trigger.sync_changes();
 			}
 
 			if (shape_component.collision_filter_data.is_changed() ||
 				shape_component.collision_type.is_changed())
 			{
 				ShapeUtils::setup_filtering(world, shape_component.get_shape(), static_cast<uint32>(shape_component.collision_type.get()), shape_component.collision_filter_data);
+				shape_component.collision_type.sync_changes();
+				shape_component.collision_filter_data.sync_changes();
 			}
 		}
 	}

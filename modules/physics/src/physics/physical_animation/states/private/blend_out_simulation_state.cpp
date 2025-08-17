@@ -8,22 +8,22 @@ namespace era_engine::physics
     {
     }
 
-    ConstraintStateType BlendOutSimulationState::try_switch_to(ConstraintStateType desired_type) const
+    SimulationStateType BlendOutSimulationState::try_switch_to(SimulationStateType desired_type) const
     {
         ASSERT(physical_animation_component_ptr.get() != nullptr);
 
         const PhysicalAnimationComponent* physical_animation_component = dynamic_cast<const PhysicalAnimationComponent*>(physical_animation_component_ptr.get());
 
-        if (desired_type == ConstraintStateType::ENABLED)
+        if (desired_type == SimulationStateType::ENABLED)
         {
-            return ConstraintStateType::BLEND_IN;
+            return SimulationStateType::BLEND_IN;
         }
-        else if (desired_type == ConstraintStateType::DISABLED &&
+        else if (desired_type == SimulationStateType::DISABLED &&
             blend_time >= physical_animation_component->blend_out_time)
         {
-            return ConstraintStateType::DISABLED;
+            return SimulationStateType::DISABLED;
         }
-        return ConstraintStateType::BLEND_OUT;
+        return SimulationStateType::BLEND_OUT;
     }
 
     void BlendOutSimulationState::update(float dt)

@@ -18,6 +18,8 @@ namespace era_engine::physics
 		void init() override;
 		void update(float dt) override;
 
+		void clear_pending_collisions(float);
+
 		void sync_physics_to_component_changes();
 		void sync_component_to_physics();
 

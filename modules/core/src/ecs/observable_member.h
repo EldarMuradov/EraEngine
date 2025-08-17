@@ -19,8 +19,6 @@ namespace era_engine
 
 		void notify();
 		bool is_changed() const;
-
-	protected:
 		void sync_changes();
 
 	protected:
@@ -36,7 +34,9 @@ namespace era_engine
 	class ObservableMember : public ObservableBase
 	{
 	public:
-		ObservableMember() : ObservableBase() {}
+		ObservableMember() : ObservableBase() 
+		{
+		}
 
 		ObservableMember(const ObservableMember& other)
 			: ObservableBase(), member(other.member)

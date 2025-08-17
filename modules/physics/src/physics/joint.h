@@ -52,6 +52,8 @@ namespace era_engine::physics
 
 		ObservableMember<bool> enable_collision = false;
 
+		ObservableMember<bool> always_update = false;
+
 		ObservableMember<float> break_force = std::numeric_limits<float>::max();
 
 		std::function<void(JointComponent*)> on_broken_callback = nullptr;
@@ -161,6 +163,14 @@ namespace era_engine::physics
 		ObservableMember<Motion> linear_y_motion_type = Motion::FREE;
 		ObservableMember<Motion> linear_z_motion_type = Motion::FREE;
 
+		ObservableMember<float> swing_limit_stiffness = 0.0f;
+		ObservableMember<float> swing_limit_damping = 0.0f;
+		ObservableMember<float> swing_limit_restitution = 0.0f;
+
+		ObservableMember<float> twist_limit_stiffness = 0.0f;
+		ObservableMember<float> twist_limit_damping = 0.0f;
+		ObservableMember<float> twist_limit_restitution = 0.0f;
+
 		ObservableMember<Motion> swing_y_motion_type = Motion::FREE;
 		ObservableMember<Motion> swing_z_motion_type = Motion::FREE;
 		ObservableMember<Motion> twist_motion_type = Motion::FREE;
@@ -171,6 +181,11 @@ namespace era_engine::physics
 		ObservableMember<float> linear_drive_force_limit = 0.0f;
 
 		ObservableMember<bool> drive_limits_are_forces = false;
+
+		ObservableMember<bool> improved_slerp = false;
+		ObservableMember<bool> disable_preprocessing = false;
+
+		ObservableMember<bool> disabled = false;
 
 		ObservableMember<bool> gpu_compatible = false;
 

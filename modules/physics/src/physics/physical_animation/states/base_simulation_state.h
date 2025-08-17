@@ -9,7 +9,7 @@
 
 namespace era_engine::physics
 {
-	enum class ConstraintStateType : uint8
+	enum class SimulationStateType : uint8
 	{
 		DISABLED = 0,
 		BLEND_IN,
@@ -24,7 +24,7 @@ namespace era_engine::physics
 		BaseSimulationState(ComponentPtr _physical_animation_component_ptr);
 		virtual ~BaseSimulationState();
 
-		virtual ConstraintStateType try_switch_to(ConstraintStateType desired_type) const;
+		virtual SimulationStateType try_switch_to(SimulationStateType desired_type) const;
 
 		virtual void on_entered();
 

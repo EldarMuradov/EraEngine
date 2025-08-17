@@ -51,16 +51,7 @@ namespace era_engine::physics
 
 		process_added_ragdolls();
 
-		for (auto [entity_handle, changed_flag, ragdoll_limb_component] : world->group(components_group<ObservableMemberChangedFlagComponent, RagdollLimbComponent>).each())
-		{
-			if (ragdoll_limb_component.simulated.is_changed())
-			{
-				Entity limb = world->get_entity(entity_handle);
-				limb.get_component<DynamicBodyComponent>()->simulated = ragdoll_limb_component.simulated;
-			}
-		}
-
-		for (auto [entity_handle, changed_flag, ragdoll_component] : world->group(components_group<ObservableMemberChangedFlagComponent, RagdollComponent>).each())
+		for (auto [entity_handle, changed_flag, ragdoll_component] : world->group(components_group<TransformComponent, RagdollComponent>).each())
 		{
 			if (ragdoll_component.simulated.is_changed())
 			{
@@ -69,6 +60,17 @@ namespace era_engine::physics
 					Entity limb = limb_ptr.get();
 					limb.get_component<RagdollLimbComponent>()->simulated = ragdoll_component.simulated;
 				}
+				ragdoll_component.simulated.sync_changes();
+			}
+		}
+
+		for (auto [entity_handle, changed_flag, ragdoll_limb_component] : world->group(components_group<TransformComponent, RagdollLimbComponent>).each())
+		{
+			if (ragdoll_limb_component.simulated.is_changed())
+			{
+				Entity limb = world->get_entity(entity_handle);
+				limb.get_component<DynamicBodyComponent>()->simulated = ragdoll_limb_component.simulated;
+				ragdoll_limb_component.simulated.sync_changes();
 			}
 		}
 

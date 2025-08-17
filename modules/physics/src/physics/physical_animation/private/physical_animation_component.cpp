@@ -5,6 +5,10 @@
 #include "physics/physical_animation/states/blend_out_simulation_state.h"
 #include "physics/physical_animation/states/enabled_simulation_state.h"
 #include "physics/physical_animation/states/disabled_simulation_state.h"
+#include "physics/physical_animation/drive_pose_solver.h"
+#include "physics/physical_animation/limb_states/blend_out_limb_state.h"
+#include "physics/physical_animation/limb_states/kinematic_limb_state.h"
+#include "physics/physical_animation/limb_states/simulation_limb_state.h"
 
 #include <rttr/registration>
 
@@ -19,28 +23,100 @@ namespace era_engine::physics
 
 		registration::class_<PhysicalAnimationLimbComponent>("PhysicalAnimationLimbComponent")
 			.constructor<>();
-	}
+    }
+
+    bool PhysicsLimbChain::has_any_blocked_limb() const
+    {
+        for (EntityPtr limb_ptr : connected_limbs)
+        {
+            Entity limb = limb_ptr.get();
+
+            const PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
+            ASSERT(limb_component != nullptr);
+
+            if (limb_component->is_blocked || limb_component->blocked_blend_factor > 0.0f)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool PhysicsLimbChain::has_any_colliding_limb() const
+    {
+        for (EntityPtr limb_ptr : connected_limbs)
+        {
+            Entity limb = limb_ptr.get();
+
+            const PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
+            ASSERT(limb_component != nullptr);
+
+            if (limb_component->is_colliding || limb_component->collision_time > 0.0f)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
 	PhysicalAnimationLimbComponent::PhysicalAnimationLimbComponent(ref<Entity::EcsData> _data, uint32 _joint_id /*= INVALID_JOINT*/)
 		: RagdollLimbComponent(_data, _joint_id)
 	{
+        ComponentPtr this_component_ptr = ComponentPtr(this);
+
+        simulation_states.emplace(ConstraintLimbStateType::KINEMATIC, std::make_shared<KinematicLimbState>(this_component_ptr));
+        simulation_states.emplace(ConstraintLimbStateType::TRANSITION, std::make_shared<BlendOutLimbState>(this_component_ptr));
+        simulation_states.emplace(ConstraintLimbStateType::SIMULATION, std::make_shared<SimulationLimbState>(this_component_ptr));
 	}
 
 	PhysicalAnimationLimbComponent::~PhysicalAnimationLimbComponent()
 	{
 	}
 
+    std::shared_ptr<BaseLimbState> PhysicalAnimationLimbComponent::get_current_state() const
+    {
+        return simulation_states.at(current_state_type);
+    }
+
+    ConstraintLimbStateType PhysicalAnimationLimbComponent::get_current_state_type() const
+    {
+        return current_state_type;
+    }
+
+    void PhysicalAnimationLimbComponent::force_switch_state(ConstraintLimbStateType desired_state)
+    {
+        get_current_state()->on_exit();
+        current_state_type = desired_state;
+        get_current_state()->on_enter();
+    }
+
+    void PhysicalAnimationLimbComponent::update_states(float dt, ConstraintLimbStateType desired_state)
+    {
+        if (current_state_type != desired_state)
+        {
+            const ConstraintLimbStateType transition_state = get_current_state()->try_switch_to(desired_state);
+            if (current_state_type != transition_state)
+            {
+                force_switch_state(transition_state);
+            }
+        }
+
+        get_current_state()->update(dt);
+    }
+
 	PhysicalAnimationComponent::PhysicalAnimationComponent(ref<Entity::EcsData> _data)
 		: RagdollComponent(_data)
 	{
         ComponentPtr this_component_ptr = ComponentPtr(this);
 
-        simulation_states.emplace(ConstraintStateType::ENABLED, std::make_shared<EnabledSimulationState>(this_component_ptr));
-        simulation_states.emplace(ConstraintStateType::DISABLED, std::make_shared<DisabledSimulationState>(this_component_ptr));
-        simulation_states.emplace(ConstraintStateType::BLEND_IN, std::make_shared<BlendInSimulationState>(this_component_ptr));
-        simulation_states.emplace(ConstraintStateType::BLEND_OUT, std::make_shared<BlendOutSimulationState>(this_component_ptr));
+        simulation_states.emplace(SimulationStateType::ENABLED, std::make_shared<EnabledSimulationState>(this_component_ptr));
+        simulation_states.emplace(SimulationStateType::DISABLED, std::make_shared<DisabledSimulationState>(this_component_ptr));
+        simulation_states.emplace(SimulationStateType::BLEND_IN, std::make_shared<BlendInSimulationState>(this_component_ptr));
+        simulation_states.emplace(SimulationStateType::BLEND_OUT, std::make_shared<BlendOutSimulationState>(this_component_ptr));
 
-        current_state_type = ConstraintStateType::DISABLED;
+        current_state_type = SimulationStateType::DISABLED;
+
+        pose_solver = std::make_unique<DrivePoseSolver>(this_component_ptr);
 	}
 
 	PhysicalAnimationComponent::~PhysicalAnimationComponent()
@@ -161,9 +237,48 @@ namespace era_engine::physics
                 }
             }
 
+            // If we update ragdoll profile, we need to combine prev and current blend types untill ragdoll_profile_transition_time is over.
+            ragdoll_profile_transition_time = max_ragdoll_profile_transition_time;
+
             return true;
         }
         return false;
+    }
+
+    float PhysicalAnimationComponent::get_profile_transition_time() const
+    {
+        return ragdoll_profile_transition_time;
+    }
+
+    bool PhysicalAnimationComponent::is_in_transition() const
+    {
+        return ragdoll_profile_transition_time > 0.0f;
+    }
+
+    void PhysicalAnimationComponent::update_profile_transition(float dt)
+    {
+        if (fuzzy_equals(ragdoll_profile_transition_time, 0.0f))
+        {
+            return;
+        }
+
+        if (ragdoll_profile_transition_time > 0.0f)
+        {
+            ragdoll_profile_transition_time -= dt;
+        }
+
+        if (ragdoll_profile_transition_time < 0.0f)
+        {
+            ragdoll_profile_transition_time = 0.0f;
+
+            for (auto& limb_ptr : limbs)
+            {
+                PhysicalAnimationLimbComponent* limb_component = limb_ptr.get().get_component<PhysicalAnimationLimbComponent>();
+                ASSERT(limb_component != nullptr);
+
+                limb_component->prev_blend_type = ConstraintBlendType::NONE;
+            }
+        }
     }
 
 	ref<RagdollProfile> PhysicalAnimationComponent::get_ragdoll_profile() const
@@ -176,22 +291,27 @@ namespace era_engine::physics
         return simulation_states.at(current_state_type);
     }
 
-    ConstraintStateType PhysicalAnimationComponent::get_current_state_type() const
+    SimulationStateType PhysicalAnimationComponent::get_current_state_type() const
     {
         return current_state_type;
     }
 
-    void PhysicalAnimationComponent::force_switch_state(ConstraintStateType desired_state)
+    void PhysicalAnimationComponent::force_switch_state(SimulationStateType desired_state)
     {
         current_state_type = desired_state;
         get_current_state()->on_entered();
     }
 
-    void PhysicalAnimationComponent::update_states(float dt, ConstraintStateType desired_state)
+    bool PhysicalAnimationComponent::is_in_idle() const
+    {
+        return current_profile->type == RagdollProfileType::IDLE;
+    }
+
+    void PhysicalAnimationComponent::update_states(float dt, SimulationStateType desired_state)
     {
         if (current_state_type != desired_state)
         {
-            const ConstraintStateType transition_state = get_current_state()->try_switch_to(desired_state);
+            const SimulationStateType transition_state = get_current_state()->try_switch_to(desired_state);
             if (current_state_type != transition_state)
             {
                 force_switch_state(transition_state);
@@ -199,6 +319,8 @@ namespace era_engine::physics
         }
 
         get_current_state()->update(dt);
+
+        update_profile_transition(dt);
     }
 
 }

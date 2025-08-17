@@ -35,22 +35,22 @@ namespace era_engine::physics
 	static DynamicBodyComponent* create_dynamic_body(
 		Entity& entity,
 		const float mass,
-		const float max_contact_impulse = std::numeric_limits<float>::max(),
-		const float max_angular_velocity = std::numeric_limits<float>::max())
+		const float max_contact_impulse = 1e15f,
+		const float max_angular_velocity = 1e15f)
 	{
 		DynamicBodyComponent* dynamic_body_component = entity.add_component<DynamicBodyComponent>();
-		dynamic_body_component->mass = mass;
-		dynamic_body_component->ccd = true;
-		dynamic_body_component->use_gravity = true;
-		dynamic_body_component->simulated = false;
-		dynamic_body_component->linear_damping = 0.1f;
-		dynamic_body_component->angular_damping = 0.25f;
-		dynamic_body_component->max_angular_velocity = max_angular_velocity;
-		dynamic_body_component->max_contact_impulse = max_contact_impulse;
-		dynamic_body_component->solver_position_iterations_count = 32;
-		dynamic_body_component->solver_velocity_iterations_count = 16;
-		dynamic_body_component->sleep_threshold = 0.01f;
-		dynamic_body_component->stabilization_threshold = 0.01f;
+		dynamic_body_component->mass.get_for_write() = mass;
+		dynamic_body_component->ccd.get_for_write() = true;
+		dynamic_body_component->use_gravity.get_for_write() = true;
+		dynamic_body_component->simulated.get_for_write() = false;
+		dynamic_body_component->linear_damping.get_for_write() = 0.1f;
+		dynamic_body_component->angular_damping.get_for_write() = 0.25f;
+		dynamic_body_component->max_angular_velocity.get_for_write() = max_angular_velocity;
+		dynamic_body_component->max_contact_impulse.get_for_write() = max_contact_impulse;
+		dynamic_body_component->solver_position_iterations_count.get_for_write() = 16;
+		dynamic_body_component->solver_velocity_iterations_count.get_for_write() = 8;
+		dynamic_body_component->sleep_threshold.get_for_write() = 0.01f;
+		dynamic_body_component->stabilization_threshold.get_for_write() = 0.01f;
 
 		return dynamic_body_component;
 	}
@@ -70,8 +70,13 @@ namespace era_engine::physics
 		bool accelerated_drive = true,
 		bool enable_slerp_drive = false)
 	{
-		const trs e0_to_e0_joint_transform = invert(e0_local_transform) * e0_joint_transform;
-		const trs e1_to_e1_joint_transform = invert(e1_local_transform) * e1_joint_transform;
+		trs e0_to_e0_joint_transform = invert(e0_local_transform) * e0_joint_transform;
+		e0_to_e0_joint_transform.rotation = normalize(e0_to_e0_joint_transform.rotation);
+		e0_to_e0_joint_transform.scale = vec3(1.0f);
+
+		trs e1_to_e1_joint_transform = invert(e1_local_transform) * e1_joint_transform;
+		e1_to_e1_joint_transform.rotation = normalize(e1_to_e1_joint_transform.rotation);
+		e1_to_e1_joint_transform.scale = vec3(1.0f);
 
 		JointComponent::BaseDescriptor descriptor;
 		descriptor.connected_entity = e0.get_data_weakref();
@@ -86,37 +91,58 @@ namespace era_engine::physics
 
 		D6JointComponent* joint_component = joint_entity.add_component<D6JointComponent>(descriptor);
 
-		joint_component->enable_collision = false;
+		joint_component->enable_collision.get_for_write() = false;
+
+		joint_component->linear_x_motion_type.get_for_write() = D6JointComponent::Motion::LOCKED;
+		joint_component->linear_y_motion_type.get_for_write() = D6JointComponent::Motion::LOCKED;
+		joint_component->linear_z_motion_type.get_for_write() = D6JointComponent::Motion::LOCKED;
 
 		if (fuzzy_equals(twist_max_deg - twist_min_deg, 0.0f))
 		{
-			joint_component->twist_motion_type = D6JointComponent::Motion::LOCKED;
+			joint_component->twist_motion_type.get_for_write() = D6JointComponent::Motion::LOCKED;
 		}
 		else
 		{
-			joint_component->twist_motion_type = D6JointComponent::Motion::LIMITED;
-			joint_component->twist_min_limit = deg2rad(twist_min_deg);
-			joint_component->twist_max_limit = deg2rad(twist_max_deg);
+			joint_component->twist_motion_type.get_for_write() = D6JointComponent::Motion::LIMITED;
+			joint_component->twist_min_limit.get_for_write() = deg2rad(twist_min_deg);
+			joint_component->twist_max_limit.get_for_write() = deg2rad(twist_max_deg);
+
+			joint_component->twist_limit_damping.get_for_write() = 10.0f;
+			joint_component->twist_limit_stiffness.get_for_write() = 150.0f;
+			joint_component->twist_limit_restitution.get_for_write() = 0.0f;
 		}
+
+		bool any_moving_swing = false;
 
 		if (fuzzy_equals(swing_y_deg, 0.0f))
 		{
-			joint_component->swing_y_motion_type = D6JointComponent::Motion::LOCKED;
+			joint_component->swing_y_motion_type.get_for_write() = D6JointComponent::Motion::LOCKED;
 		}
 		else
 		{
-			joint_component->swing_y_motion_type = D6JointComponent::Motion::LIMITED;
-			joint_component->swing_y_limit = deg2rad(swing_y_deg);
+			joint_component->swing_y_motion_type.get_for_write() = D6JointComponent::Motion::LIMITED;
+			joint_component->swing_y_limit.get_for_write() = deg2rad(swing_y_deg);
+
+			any_moving_swing = true;
 		}
 
 		if (fuzzy_equals(swing_z_deg, 0.0f))
 		{
-			joint_component->swing_z_motion_type = D6JointComponent::Motion::LOCKED;
+			joint_component->swing_z_motion_type.get_for_write() = D6JointComponent::Motion::LOCKED;
 		}
 		else
 		{
-			joint_component->swing_z_motion_type = D6JointComponent::Motion::LIMITED;
-			joint_component->swing_z_limit = deg2rad(swing_z_deg);
+			joint_component->swing_z_motion_type.get_for_write() = D6JointComponent::Motion::LIMITED;
+			joint_component->swing_z_limit.get_for_write() = deg2rad(swing_z_deg);
+
+			any_moving_swing = true;
+		}
+
+		if(any_moving_swing)
+		{
+			joint_component->swing_limit_damping.get_for_write() = 10.0f;
+			joint_component->swing_limit_stiffness.get_for_write() = 150.0f;
+			joint_component->swing_limit_restitution.get_for_write() = 0.0f;
 		}
 	}
 
@@ -142,8 +168,8 @@ namespace era_engine::physics
 
 		const trs box_transform_relative_to_owner = invert(owner_joint_transform) *  box_transform;
 
-		box_shape_component->local_position = box_transform_relative_to_owner.position;
-		box_shape_component->local_rotation = box_transform_relative_to_owner.rotation;
+		box_shape_component->local_position.get_for_write() = box_transform_relative_to_owner.position;
+		box_shape_component->local_rotation.get_for_write() = box_transform_relative_to_owner.rotation;
 
 		return trs(box_transform.position - direction * size.x / 2.0f, box_transform.rotation, box_transform.scale);
 	}
@@ -174,8 +200,8 @@ namespace era_engine::physics
 
 		const trs capsule_transform_relative_to_owner = invert(owner_joint_transform) * capsule_transform;
 
-		capsule_shape_component->local_position = capsule_transform_relative_to_owner.position;
-		capsule_shape_component->local_rotation = capsule_transform_relative_to_owner.rotation;
+		capsule_shape_component->local_position.get_for_write() = capsule_transform_relative_to_owner.position;
+		capsule_shape_component->local_rotation.get_for_write() = capsule_transform_relative_to_owner.rotation;
 
 		return trs(capsule_transform.position - direction * (radius + height / 2.0f), capsule_transform.rotation, capsule_transform.scale);
 	}
@@ -206,8 +232,8 @@ namespace era_engine::physics
 
 		const trs capsule_transform_relative_to_owner = invert(owner_joint_transform) * capsule_transform;
 
-		capsule_shape_component->local_position = capsule_transform_relative_to_owner.position;
-		capsule_shape_component->local_rotation = capsule_transform_relative_to_owner.rotation;
+		capsule_shape_component->local_position.get_for_write() = capsule_transform_relative_to_owner.position;
+		capsule_shape_component->local_rotation.get_for_write() = capsule_transform_relative_to_owner.rotation;
 
 		return trs(capsule_transform.position - direction * (radius + half_height), capsule_transform.rotation, capsule_transform.scale);
 	}
@@ -241,8 +267,8 @@ namespace era_engine::physics
 			vec3(1.0f));
 		const trs capsule_transform_relative_to_owner = invert(owner_joint_transform) * capsule_transform;
 
-		capsule_shape_component->local_position = capsule_transform_relative_to_owner.position;
-		capsule_shape_component->local_rotation = capsule_transform_relative_to_owner.rotation;
+		capsule_shape_component->local_position.get_for_write() = capsule_transform_relative_to_owner.position;
+		capsule_shape_component->local_rotation.get_for_write() = capsule_transform_relative_to_owner.rotation;
 
 		const vec3 capsule_x_axis = capsule_transform.rotation * vec3(1.0f, 0.0f, 0.0f);
 		return trs(capsule_transform.position - direction * radius, capsule_transform.rotation, capsule_transform.scale) * trs(vec3::zero, shortest_arc(capsule_x_axis, direction), vec3(1.0f));

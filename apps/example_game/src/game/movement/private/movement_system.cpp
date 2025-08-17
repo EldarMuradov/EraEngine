@@ -20,8 +20,8 @@ namespace era_engine
 
 		registration::class_<MovementSystem>("MovementSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr)
-			.method("update", &MovementSystem::update)(metadata("update_group", update_types::GAMEPLAY_BEFORE_PHYSICS))
-			.method("reset_input", &MovementSystem::reset_input)(metadata("update_group", update_types::GAMEPLAY_BEFORE_PHYSICS));
+			.method("update", &MovementSystem::update)(metadata("update_group", update_types::GAMEPLAY_BEFORE_PHYSICS_CONCURRENT))
+			.method("reset_input", &MovementSystem::reset_input)(metadata("update_group", update_types::GAMEPLAY_BEFORE_PHYSICS_CONCURRENT));
 	}
 
 	MovementSystem::MovementSystem(World* _world)

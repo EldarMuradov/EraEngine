@@ -8,13 +8,13 @@ namespace era_engine::physics
     {
     }
 
-    ConstraintStateType EnabledSimulationState::try_switch_to(ConstraintStateType desired_type) const
+    SimulationStateType EnabledSimulationState::try_switch_to(SimulationStateType desired_type) const
     {
-        if (desired_type == ConstraintStateType::DISABLED)
+        if (desired_type == SimulationStateType::DISABLED)
         {
-            return ConstraintStateType::BLEND_OUT;
+            return SimulationStateType::BLEND_OUT;
         }
-        return ConstraintStateType::ENABLED;
+        return SimulationStateType::ENABLED;
     }
 
     void EnabledSimulationState::on_entered()

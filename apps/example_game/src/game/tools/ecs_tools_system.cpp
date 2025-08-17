@@ -249,7 +249,7 @@ namespace era_engine
 
 	void EcsToolsSystem::draw_childs(const Entity& entity)
 	{
-		auto childs = EntityContainer::get_childs(entity.get_handle());
+		auto childs = EntityContainer::get_childs(world, entity.get_handle());
 
 		if (!childs.empty())
 		{

@@ -1839,14 +1839,14 @@ bool get_eigen(const mat3& A, vec3& out_eigen_values, mat3& out_eigen_vectors)
 quat shortest_arc(const vec3& from, const vec3& to)
 {
 	const float dot_product = dot(from, to);
-	if (fuzzy_equals(dot_product, 1.f))
+	if (fuzzy_equals(dot_product, 1.f, 1e-2f))
 	{
-		return {};
+		return quat::identity;
 	}
-	else if (fuzzy_equals(dot_product, -1.f))
+	else if (fuzzy_equals(dot_product, -1.f, 1e-2f))
 	{
 		vec3 non_collinear_vector(0.f, 1.f, 0.f);
-		if (fuzzy_equals(abs(dot(from, non_collinear_vector)), 1.f))
+		if (fuzzy_equals(abs(dot(from, non_collinear_vector)), 1.f, 1e-2f))
 		{
 			non_collinear_vector = vec3(1.f, 0.f, 0.f);
 		}
