@@ -89,10 +89,12 @@ namespace era_engine::physics
 			throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
 		}
 
-		pvd = PxCreatePvd(*foundation);
-
 		if (descriptor.enable_pvd)
 		{
+			pvd = PxCreatePvd(*foundation);
+			transport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
+			pvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
+
 			omni_pvd = PxCreateOmniPvd(*foundation);
 			if (!omni_pvd)
 			{
@@ -261,6 +263,7 @@ namespace era_engine::physics
 			PX_RELEASE(dispatcher)
 			PX_RELEASE(pvd)
 			PX_RELEASE(omni_pvd)
+			PX_RELEASE(transport)
 			PX_RELEASE(cuda_context_manager)
 			PX_RELEASE(foundation)
 		}

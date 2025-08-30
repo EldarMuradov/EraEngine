@@ -102,9 +102,10 @@ namespace era_engine::physics
 
 		D6JointComponent* joint_component = joint_entity.add_component<D6JointComponent>(descriptor);
 
+		joint_component->perform_slerp_drive = details.enable_slerp_drive;
+
 		joint_component->enable_collision.get_for_write() = false;
 		joint_component->drive_limits_are_forces.get_for_write() = true;
-		joint_component->improved_slerp.get_for_write() = true;
 
 		joint_component->linear_x_motion_type.get_for_write() = D6JointComponent::Motion::LOCKED;
 		joint_component->linear_y_motion_type.get_for_write() = D6JointComponent::Motion::LOCKED;
@@ -142,8 +143,8 @@ namespace era_engine::physics
 			joint_component->twist_min_limit.get_for_write() = deg2rad(twist_min_deg);
 			joint_component->twist_max_limit.get_for_write() = deg2rad(twist_max_deg);
 
-			joint_component->twist_limit_damping.get_for_write() = 10.0f;
-			joint_component->twist_limit_stiffness.get_for_write() = 150.0f;
+			joint_component->twist_limit_damping.get_for_write() = 25.0f;
+			joint_component->twist_limit_stiffness.get_for_write() = 250.0f;
 			joint_component->twist_limit_restitution.get_for_write() = 0.0f;
 		}
 
@@ -173,8 +174,8 @@ namespace era_engine::physics
 
 		if (any_moving_swing)
 		{
-			joint_component->swing_limit_damping.get_for_write() = 10.0f;
-			joint_component->swing_limit_stiffness.get_for_write() = 150.0f;
+			joint_component->swing_limit_damping.get_for_write() = 25.0f;
+			joint_component->swing_limit_stiffness.get_for_write() = 250.0f;
 			joint_component->swing_limit_restitution.get_for_write() = 0.0f;
 		}
 	}
@@ -186,7 +187,8 @@ namespace era_engine::physics
 		const vec3& size,
 		const trs& from_joint_transform,
 		const trs& to_joint_transform,
-		const trs& owner_joint_transform)
+		const trs& owner_joint_transform,
+		const vec3& local_position_adjustment = vec3::zero)
 	{
 		box_shape_component->half_extents = (size / 2.0f) / owner_joint_transform.scale.x;
 
@@ -201,7 +203,7 @@ namespace era_engine::physics
 
 		const trs box_transform_relative_to_owner = invert(owner_joint_transform) *  box_transform;
 
-		box_shape_component->local_position.get_for_write() = box_transform_relative_to_owner.position;
+		box_shape_component->local_position.get_for_write() = box_transform_relative_to_owner.position + local_position_adjustment;
 		box_shape_component->local_rotation.get_for_write() = box_transform_relative_to_owner.rotation;
 
 		return trs(box_transform.position - direction * size.x / 2.0f, box_transform.rotation, box_transform.scale);
@@ -215,7 +217,8 @@ namespace era_engine::physics
 		const trs& from_joint_transform,
 		const trs& to_joint_transform,
 		const trs& owner_joint_transform,
-		const float height_multiplier)
+		const float height_multiplier,
+		const vec3& local_position_adjustment = vec3::zero)
 	{
 		const vec3 offset = to_joint_transform.position - from_joint_transform.position;
 		const float height = (length(offset) - 2 * radius) * height_multiplier;
@@ -233,7 +236,7 @@ namespace era_engine::physics
 
 		const trs capsule_transform_relative_to_owner = invert(owner_joint_transform) * capsule_transform;
 
-		capsule_shape_component->local_position.get_for_write() = capsule_transform_relative_to_owner.position;
+		capsule_shape_component->local_position.get_for_write() = capsule_transform_relative_to_owner.position + local_position_adjustment;
 		capsule_shape_component->local_rotation.get_for_write() = capsule_transform_relative_to_owner.rotation;
 
 		return trs(capsule_transform.position - direction * (radius + height / 2.0f), capsule_transform.rotation, capsule_transform.scale);
@@ -248,7 +251,8 @@ namespace era_engine::physics
 		const trs& from_joint_transform,
 		const trs& to_joint_transform,
 		const trs& owner_joint_transform,
-		const vec3& offset_for_from_joint = vec3::zero)
+		const vec3& offset_for_from_joint = vec3::zero,
+		const vec3& local_position_adjustment = vec3::zero)
 	{
 		const vec3 offset = to_joint_transform.position - from_joint_transform.position;
 
@@ -265,7 +269,7 @@ namespace era_engine::physics
 
 		const trs capsule_transform_relative_to_owner = invert(owner_joint_transform) * capsule_transform;
 
-		capsule_shape_component->local_position.get_for_write() = capsule_transform_relative_to_owner.position;
+		capsule_shape_component->local_position.get_for_write() = capsule_transform_relative_to_owner.position + local_position_adjustment;
 		capsule_shape_component->local_rotation.get_for_write() = capsule_transform_relative_to_owner.rotation;
 
 		return trs(capsule_transform.position - direction * (radius + half_height), capsule_transform.rotation, capsule_transform.scale);
@@ -279,7 +283,8 @@ namespace era_engine::physics
 		const trs& from_joint_transform,
 		const trs& to_joint_transform,
 		const trs& owner_joint_transform,
-		const float radius_modifier = 1.0f)
+		const float radius_modifier = 1.0f,
+		const vec3& local_position_adjustment = vec3::zero)
 	{
 		const vec3 offset = to_joint_transform.position - from_joint_transform.position;
 		const float radius = length(offset) * 0.65f * radius_modifier; // Increased intentionally for thorax, abdomen and pelvis. Should probably be specified outside.
@@ -300,7 +305,7 @@ namespace era_engine::physics
 			vec3(1.0f));
 		const trs capsule_transform_relative_to_owner = invert(owner_joint_transform) * capsule_transform;
 
-		capsule_shape_component->local_position.get_for_write() = capsule_transform_relative_to_owner.position;
+		capsule_shape_component->local_position.get_for_write() = capsule_transform_relative_to_owner.position + local_position_adjustment;
 		capsule_shape_component->local_rotation.get_for_write() = capsule_transform_relative_to_owner.rotation;
 
 		const vec3 capsule_x_axis = capsule_transform.rotation * vec3(1.0f, 0.0f, 0.0f);
@@ -350,23 +355,16 @@ namespace era_engine::physics
 
 		const float mass = physical_animation_component->mass;
 
-		trs neck_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.neck_idx);
-		neck_joint_transform.position = neck_joint_transform.position + settings.neck_joint_adjastment;
+		const trs neck_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.neck_idx);
 
 		trs head_end_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.head_end_idx);
-		head_end_joint_transform.position = head_end_joint_transform.position + settings.head_joint_adjastment;
+		head_end_joint_transform.position = head_end_joint_transform.position + head_end_joint_transform.rotation * settings.head_end_joint_adjastment;
 
-		trs head_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.head_idx);
-		head_joint_transform.position = head_joint_transform.position + settings.head_joint_adjastment;
+		const trs head_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.head_idx);
 
-		trs thorax_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.spine_03_idx);
-		thorax_joint_transform.position = thorax_joint_transform.position + settings.thorax_joint_adjastment;
-
-		trs abdomen_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.spine_01_idx);
-		abdomen_joint_transform.position = abdomen_joint_transform.position + settings.abdomen_joint_adjastment;
-
-		trs pelvis_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.pelvis_idx);
-		pelvis_joint_transform.position = pelvis_joint_transform.position + settings.pelvis_joint_adjastment;
+		const trs thorax_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.spine_03_idx);
+		const trs abdomen_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.spine_01_idx);
+		const trs pelvis_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.pelvis_idx);
 
 		const trs left_arm_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.upperarm_l_idx);
 		const trs left_forearm_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.lowerarm_l_idx);
@@ -470,7 +468,8 @@ namespace era_engine::physics
 				neck_joint_transform,
 				head_end_transform,
 				neck_joint_transform,
-				1.0f);
+				1.0f,
+				settings.neck_joint_adjastment);
 
 			create_dynamic_body(head, mass * settings.head_mass_percentage, settings.max_head_contact_impulse);
 		}
@@ -492,7 +491,8 @@ namespace era_engine::physics
 				middle_abdomen_thorax_transform,
 				neck_joint_transform,
 				thorax_joint_transform,
-				settings.upper_body_radius_modifier);
+				settings.upper_body_radius_modifier,
+				settings.thorax_joint_adjastment);
 
 			create_dynamic_body(body_upper, mass * settings.body_upper_mass_percentage, settings.max_body_contact_impulse);
 		}
@@ -514,7 +514,8 @@ namespace era_engine::physics
 				abdomen_joint_transform,
 				thorax_joint_transform,
 				abdomen_joint_transform,
-				settings.middle_body_radius_modifier);
+				settings.middle_body_radius_modifier,
+				settings.abdomen_joint_adjastment);
 
 			create_dynamic_body(body_middle, mass * settings.body_lower_mass_percentage, settings.max_body_contact_impulse);
 		}
@@ -536,7 +537,8 @@ namespace era_engine::physics
 				pelvis_joint_transform,
 				middle_abdomen_thorax_transform,
 				pelvis_joint_transform,
-				settings.lower_body_radius_modifier);
+				settings.lower_body_radius_modifier,
+				settings.pelvis_joint_adjastment);
 
 			create_dynamic_body(body_lower, mass * settings.body_lower_mass_percentage, settings.max_body_contact_impulse);
 		}
@@ -727,11 +729,11 @@ namespace era_engine::physics
 
 			left_up_leg_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
-				settings.up_leg_radius,
+				settings.up_leg_radius * 1.1f,
 				left_up_leg_joint_transform,
 				left_leg_joint_transform,
 				left_up_leg_joint_transform,
-				0.9f);
+				1.1f);
 
 			create_dynamic_body(left_up_leg, mass * settings.up_leg_mass_percentage, settings.max_up_leg_contact_impulse);
 		}
@@ -749,7 +751,7 @@ namespace era_engine::physics
 
 			left_leg_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
-				settings.leg_radius,
+				settings.leg_radius * 1.2f,
 				left_leg_joint_transform,
 				left_foot_joint_transform,
 				left_leg_joint_transform,
@@ -796,11 +798,11 @@ namespace era_engine::physics
 
 			right_up_leg_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
-				settings.up_leg_radius,
+				settings.up_leg_radius * 1.1f,
 				right_up_leg_joint_transform,
 				right_leg_joint_transform,
 				right_up_leg_joint_transform,
-				0.9f);
+				1.1f);
 
 			create_dynamic_body(right_up_leg, mass * settings.up_leg_mass_percentage, settings.max_up_leg_contact_impulse);
 		}
@@ -818,7 +820,7 @@ namespace era_engine::physics
 
 			right_leg_capsule_bottom_transform = position_capsule_between_joints_from_radius(
 				capsule_shape_component,
-				settings.leg_radius,
+				settings.leg_radius * 1.2f,
 				right_leg_joint_transform,
 				right_foot_joint_transform,
 				right_leg_joint_transform,
@@ -852,7 +854,7 @@ namespace era_engine::physics
 			create_dynamic_body(right_foot, mass * settings.foot_mass_percentage, settings.max_foot_contact_impulse);
 		}
 
-		// Neck -> head
+		// Body upper -> head
 		create_d6_joint(
 			ragdoll,
 			head_constraint,
@@ -861,8 +863,8 @@ namespace era_engine::physics
 			head_capsule_bottom_transform,
 			thorax_joint_transform,
 			head_joint_transform,
-			-45.0f, 45.0f,
-			40.0f, 40.0f);
+			-35.0f, 35.0f,
+			30.0f, 30.0f);
 
 		// Body middle -> body upper
 		const float body_upper_forward_angle_deg = 4.0f;
@@ -882,8 +884,8 @@ namespace era_engine::physics
 			body_upper_capsule_bottom_transform,
 			abdomen_joint_transform,
 			thorax_joint_transform,
-			-2.0f,
-			2.0f,
+			-4.0f,
+			4.0f,
 			body_upper_d6_swing_y_deg,
 			4.0f);
 
@@ -905,10 +907,10 @@ namespace era_engine::physics
 			middle_default_transform,
 			pelvis_joint_transform,
 			abdomen_joint_transform,
-			2.0f,
-			2.0f,
+			-4.0f,
+			4.0f,
 			body_middle_d6_swing_y_deg,
-			3.0f);
+			4.0f);
 
 		const float arm_forward_angle_deg = 32.5f; // How far an arm can be rotated forward around Y axis
 		const float arm_backward_angle_deg = 70.0f; // How far an arm can be rotated backwards around Y axis

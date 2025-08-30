@@ -59,6 +59,21 @@ namespace era_engine::physics
         return false;
     }
 
+    float PhysicalAnimationLimbComponent::calculate_desired_damping(float delta_angle) const
+    {
+        float angular_damping = damping;
+        if (dynamic_update_damping)
+        {
+            angular_damping = map_value(delta_angle,
+                angle_range.x,
+                angle_range.y,
+                damping_range.x,
+                damping_range.y);
+        }
+
+        return angular_damping;
+    }
+
 	PhysicalAnimationLimbComponent::PhysicalAnimationLimbComponent(ref<Entity::EcsData> _data, uint32 _joint_id /*= INVALID_JOINT*/)
 		: RagdollLimbComponent(_data, _joint_id)
 	{

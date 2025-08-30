@@ -137,9 +137,9 @@ namespace era_engine::physics
 			{
 				continue;
 			}
-
+			
 			{
-				const uint32 root_id = ragdoll_component.root_joint_id;
+				const uint32 root_id = 0;
 				ragdoll_component.local_joint_poses[root_id] = SkeletonUtils::get_object_space_joint_transform(skeleton, root_id);
 
 				const trs inverse_ragdoll_world_transform = invert(transform_component.transform);
@@ -158,7 +158,8 @@ namespace era_engine::physics
 						trs inverse_parent_local = invert(parent_local);
 						inverse_parent_local.rotation = normalize(inverse_parent_local.rotation);
 
-						const trs limb_animation_pose = SkeletonUtils::get_object_space_joint_transform(skeleton, child_id);
+						trs limb_animation_pose = parent_local * skeleton->get_joint_transform(child_id);
+						limb_animation_pose.scale = vec3(1.0f);
 
 						auto limb_iter = ragdoll_component.simulated_joints.find(child_id);
 						if (limb_iter == ragdoll_component.simulated_joints.end())

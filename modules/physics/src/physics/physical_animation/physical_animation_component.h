@@ -45,6 +45,8 @@ namespace era_engine::physics
 
 		void update_states(float dt, ConstraintLimbStateType desired_state);
 
+		float calculate_desired_damping(float delta_angle) const;
+
 	public:
 		/* Joint world space transfrom from animation. */
 		trs target_pose = trs::identity;
@@ -69,13 +71,18 @@ namespace era_engine::physics
 		*/
 		float blocked_blend_factor = 0.0f;
 
+		vec2 angle_range = vec2(deg2rad(3.0f), deg2rad(30.0f));
+		vec2 damping_range = vec2(40.0f, 15.0f);
+
 		float drive_velocity_modifier = 1.0f;
 
-		float transition_time = 0.4f;
+		float transition_time = 0.5f;
 
 		bool was_in_collision = false;
 		bool is_colliding = false;
 		float collision_time = 0.0f;
+
+		bool dynamic_update_damping = true;
 
 		float max_collision_time = 0.5f;
 
@@ -127,7 +134,7 @@ namespace era_engine::physics
 		float blend_weight = 0.0f;
 
 		float blend_in_time = 0.1f;
-		float blend_out_time = 0.25f;
+		float blend_out_time = 0.2f;
 
 		float target_position_blend_factor = 0.2f;
 		float target_rotation_blend_factor = 0.2f;

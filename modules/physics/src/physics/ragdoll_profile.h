@@ -9,7 +9,6 @@
 #include <animation/animation.h>
 
 #include <ecs/component.h>
-#include <ecs/observable_member.h>
 
 namespace era_engine::physics
 {
@@ -32,7 +31,7 @@ namespace era_engine::physics
 
         ConstraintDetails& operator=(const ConstraintDetails& other) = default;
 
-        float drive_damping = 10.0f;
+        float drive_damping = 20.0f;
         float drive_stiffness = 350.0f;
 
         float max_force = std::numeric_limits<float>::max();
@@ -78,10 +77,11 @@ namespace era_engine::physics
         float partial_velocity_drive_limit = 1.0f;
         float partial_velocity_drive = 0.05f;
 
-        float drive_angular_velocity_modifier = 0.9f;
+        float drive_angular_velocity_modifier = 0.95f;
 
-        float legs_partial_angular_drive = 0.5f;
-        float partial_angular_drive = 0.5f;
+        float legs_partial_angular_drive = 0.55f;
+        float partial_angular_drive = 0.55f;
+        float partial_angular_drive_limit = 25.0f;
 
         RagdollProfileType type = RagdollProfileType::IDLE;
     };

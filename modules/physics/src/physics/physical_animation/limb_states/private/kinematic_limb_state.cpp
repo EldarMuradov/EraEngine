@@ -21,19 +21,18 @@ namespace era_engine::physics
     {
         BaseLimbState::update(dt);
 
-        PhysicalAnimationLimbComponent* limb_component = dynamic_cast<PhysicalAnimationLimbComponent*>(physical_animation_limb_component_ptr.get_for_write());
+        PhysicalAnimationLimbComponent* limb_component = static_cast<PhysicalAnimationLimbComponent*>(physical_animation_limb_component_ptr.get_for_write());
 
         Entity limb = limb_component->get_entity();
 
         TransformComponent* transform_component = limb.get_component<TransformComponent>();
 
-        D6JointComponent* parent_joint_component = dynamic_cast<D6JointComponent*>(limb_component->parent_joint_component.get_for_write());
+        D6JointComponent* parent_joint_component = static_cast<D6JointComponent*>(limb_component->parent_joint_component.get_for_write());
 
         trs desired_pose;
         if (parent_joint_component == nullptr)
         {
             desired_pose = transform_component->get_world_transform();
-            desired_pose.rotation = limb_component->adjusted_pose.rotation;
         }
         else
         {
@@ -41,11 +40,11 @@ namespace era_engine::physics
             const trs possible_pose = parent_joint_component->get_entity().get_component<TransformComponent>()->get_world_transform() * joint_local_parent;
 
             desired_pose = possible_pose;
-            desired_pose.rotation = limb_component->adjusted_pose.rotation;
 
             parent_joint_component->angular_drive_velocity = vec3::zero;
             parent_joint_component->drive_transform = trs::identity;
         }
+        desired_pose.rotation = limb_component->adjusted_pose.rotation;
 
         PhysicsUtils::manual_set_physics_transform(limb, desired_pose, true);
     }

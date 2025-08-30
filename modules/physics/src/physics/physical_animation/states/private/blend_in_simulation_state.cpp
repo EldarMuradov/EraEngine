@@ -49,7 +49,7 @@ namespace era_engine::physics
 
         PhysicalAnimationComponent* physical_animation_component = dynamic_cast<PhysicalAnimationComponent*>(physical_animation_component_ptr.get_for_write());
 
-        blend_time = physical_animation_component->blend_weight * physical_animation_component->blend_out_time;
+        blend_time = physical_animation_component->blend_weight * physical_animation_component->blend_in_time;
         time_range = vec2(0.0f, physical_animation_component->blend_in_time);
 
         if (!physical_animation_component->simulated)

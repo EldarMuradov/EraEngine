@@ -34,6 +34,8 @@ namespace era_engine::physics
 
 		void update_ragdolls(float dt);
 
+	private:
+
 		void filter_states_by_collisions(float dt) const;
 
 		void update_chains_states(const PhysicalAnimationComponent* physical_animation_component, float dt) const;
@@ -42,7 +44,11 @@ namespace era_engine::physics
 			float dt,
 			bool force_simulation = false) const;
 
-		void calculate_state_poses(Entity limb,
+		bool check_chain(const ref<PhysicsLimbChain>& chain,
+			bool force_simulation = false) const;
+
+		void calculate_state_poses(const PhysicalAnimationComponent* physical_animation_component,
+			Entity limb,
 			const trs& calculated_target_local_space_pose,
 			const trs& world_space_ragdoll_transform) const;
 
@@ -52,6 +58,8 @@ namespace era_engine::physics
 			bool force_reload = false) const;
 
 		bool should_be_simulated(Entity ragdoll) const;
+
+		vec3 get_joint_adjustment(const PhysicalAnimationComponent* physical_animation_component, uint32 joint_id) const;
 
 		void process_added_pacs();
 

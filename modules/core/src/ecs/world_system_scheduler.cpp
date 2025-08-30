@@ -298,6 +298,10 @@ namespace era_engine
 			const std::vector<std::string>& order = UpdatesHolder::update_order;
 			for (auto& group_name : order)
 			{
+				if (group_name.empty())
+				{
+					continue;
+				}
 				UpdateGroup* group = find_group(group_name);
 				auto found_group_iter = fixed_grouped_ordered_tasks.find(group_name);
 				if(found_group_iter != fixed_grouped_ordered_tasks.end())

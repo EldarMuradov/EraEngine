@@ -111,6 +111,8 @@ namespace era_engine::physics
 
 		physx::PxCudaContextManager* cuda_context_manager = nullptr;
 
+		physx::PxPvdTransport* transport = nullptr;
+
 		PhysicsAllocatorCallback* allocator_callback = nullptr;
 		ErrorReporter error_reporter;
 

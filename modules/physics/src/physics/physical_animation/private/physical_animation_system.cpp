@@ -44,6 +44,7 @@ namespace era_engine::physics
 	}
 
 	static DebugVar<bool> enable_always = DebugVar<bool>("physics.physical_animation.enable_always", false);
+	static DebugVar<bool> force_drive_simulation = DebugVar<bool>("physics.physical_animation.force_drive_simulation", false);
 
 	static DebugVar<bool> draw_simulation_data = DebugVar<bool>("physics.physical_animation.draw_simulation_data", false);
 	static DebugVar<bool> draw_adjusted_positions = DebugVar<bool>("physics.physical_animation.draw_adjusted_positions", false);
@@ -72,7 +73,7 @@ namespace era_engine::physics
 		{
 			idle_profile = make_ref<RagdollProfile>();
 
-			idle_profile->drive_angular_velocity_modifier = 0.5f;
+			idle_profile->drive_angular_velocity_modifier = 0.8f;
 
 			idle_profile->type = RagdollProfileType::IDLE;
 			idle_profile->head_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
@@ -208,23 +209,23 @@ namespace era_engine::physics
 			animation_component, 
 			skeleton_component] : ragdolls_group.each())
 		{
-			if (!physical_animation_component.simulated)
+			if (!physical_animation_component.loaded)
 			{
 				continue;
 			}
 
 			const bool is_simulated = physical_animation_component.get_current_state_type() != SimulationStateType::DISABLED;
 
-			Skeleton* skeleton = skeleton_component.skeleton;
-			if (skeleton == nullptr)
-			{
-				continue;
-			}
-
-			SkeletonPose current_animation_pose = animation_component.current_animation_pose;
-
 			if (is_simulated)
 			{
+				Skeleton* skeleton = skeleton_component.skeleton;
+				if (skeleton == nullptr)
+				{
+					continue;
+				}
+
+				SkeletonPose current_animation_pose = animation_component.current_animation_pose;
+
 				// Sample only if simulation enabled.
 				pose_sampler->sample_pose(&physical_animation_component, &skeleton_component, current_animation_pose);
 			}
@@ -270,7 +271,6 @@ namespace era_engine::physics
 
 			const vec3 root_delta_motion = world_transform.position - physical_animation_component.prev_fixed_world_transform.position;
 			physical_animation_component.velocity = root_delta_motion / dt;
-			const vec3 raw_root_acceleration = physical_animation_component.velocity / dt;
 
 			if (is_should_be_simulated) // Update profiles only if simulated.
 			{
@@ -298,7 +298,7 @@ namespace era_engine::physics
 
 				physical_animation_component.local_joint_poses_for_target_calculation[physical_animation_component.root_joint_id] = pelvis_local_transform;
 
-				calculate_state_poses(physical_animation_component.simulated_joints.at(physical_animation_component.root_joint_id).get(), pelvis_local_transform, world_transform);
+				calculate_state_poses(&physical_animation_component, physical_animation_component.simulated_joints.at(physical_animation_component.root_joint_id).get(), pelvis_local_transform, world_transform);
 
 				// Traverse simulation graph once.
 				while (!simulation_limbs_queue.empty())
@@ -322,18 +322,18 @@ namespace era_engine::physics
 						if (limb_iter != physical_animation_component.simulated_joints.end())
 						{
 							const Entity limb = limb_iter->second.get();
-							calculate_state_poses(limb, calculated_transform, world_transform);
+							calculate_state_poses(&physical_animation_component, limb, calculated_transform, world_transform);
 						}
 
 						simulation_limbs_queue.push(child_id);
 					}
 				}
+
+				//const trs pelvis_world_transform = world_transform * pelvis_local_transform;
+				//PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
 			}
 
 			physical_animation_component.prev_fixed_world_transform = world_transform;
-
-			const trs pelvis_world_transform = physical_animation_component.simulated_joints.at(physical_animation_component.root_joint_id).get().get_component<PhysicalAnimationLimbComponent>()->target_pose;
-			PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
 		}
 
 		if (has_any_simulated_ragdolls)
@@ -409,10 +409,10 @@ namespace era_engine::physics
 	{
 		bool has_any_simulated_chains = false;
 
-		has_any_simulated_chains |= update_chain(physical_animation_component->left_arm_chain, dt);
-		has_any_simulated_chains |= update_chain(physical_animation_component->right_arm_chain, dt);
-		has_any_simulated_chains |= update_chain(physical_animation_component->left_leg_chain, dt);
-		has_any_simulated_chains |= update_chain(physical_animation_component->right_leg_chain, dt);
+		has_any_simulated_chains |= check_chain(physical_animation_component->left_arm_chain);
+		has_any_simulated_chains |= check_chain(physical_animation_component->right_arm_chain);
+		has_any_simulated_chains |= check_chain(physical_animation_component->left_leg_chain);
+		has_any_simulated_chains |= check_chain(physical_animation_component->right_leg_chain);
 
 		// Reset forse simulation on body chain if not idle.
 		if (!physical_animation_component->is_in_idle())
@@ -421,13 +421,18 @@ namespace era_engine::physics
 		}
 
 		// If we have at least one simulated chain, we should also simulate the body root chain.
-		update_chain(physical_animation_component->neck_chain, dt, has_any_simulated_chains);
 		update_chain(physical_animation_component->body_chain, dt, has_any_simulated_chains);
+		update_chain(physical_animation_component->neck_chain, dt, has_any_simulated_chains);
+
+		update_chain(physical_animation_component->left_arm_chain, dt);
+		update_chain(physical_animation_component->right_arm_chain, dt);
+		update_chain(physical_animation_component->left_leg_chain, dt);
+		update_chain(physical_animation_component->right_leg_chain, dt);
 	}
 
 	bool PhysicalAnimationSystem::update_chain(const ref<PhysicsLimbChain>& chain, float dt, bool force_simulation) const
 	{
-		const bool should_update_as_simulated = chain->has_any_blocked_limb() || chain->has_any_colliding_limb() || force_simulation;
+		const bool should_update_as_simulated = check_chain(chain, force_simulation);
 
 		for (EntityPtr limb_ptr : chain->connected_limbs)
 		{
@@ -438,7 +443,11 @@ namespace era_engine::physics
 
 			bool want_be_simulated = should_update_as_simulated;
 
-			const ConstraintLimbStateType desired_chain_state = want_be_simulated ? ConstraintLimbStateType::SIMULATION : ConstraintLimbStateType::SIMULATION;
+			ConstraintLimbStateType desired_chain_state = want_be_simulated ? ConstraintLimbStateType::SIMULATION : ConstraintLimbStateType::KINEMATIC;
+			if (force_drive_simulation)
+			{
+				desired_chain_state = ConstraintLimbStateType::SIMULATION;
+			}
 
 			limb_data_component->update_states(dt, desired_chain_state);
 
@@ -456,7 +465,13 @@ namespace era_engine::physics
 		return should_update_as_simulated;
 	}
 
-	void PhysicalAnimationSystem::calculate_state_poses(Entity limb, const trs& calculated_target_local_space_pose, const trs& world_space_ragdoll_transform) const
+	bool PhysicalAnimationSystem::check_chain(const ref<PhysicsLimbChain>& chain, bool force_simulation) const
+	{
+		const bool should_update_as_simulated = chain->has_any_blocked_limb() || chain->has_any_colliding_limb() || force_simulation;
+		return should_update_as_simulated;
+	}
+
+	void PhysicalAnimationSystem::calculate_state_poses(const PhysicalAnimationComponent* physical_animation_component, Entity limb, const trs& calculated_target_local_space_pose, const trs& world_space_ragdoll_transform) const
 	{
 		PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
 		ASSERT(limb_data_component != nullptr);
@@ -465,9 +480,14 @@ namespace era_engine::physics
 		limb_data_component->physics_pose = limb.get_component<TransformComponent>()->get_world_transform();
 
 		// Calculate target pose in world space.
-		limb_data_component->target_pose = world_space_ragdoll_transform * calculated_target_local_space_pose;
+		trs world_space_limb_transform = world_space_ragdoll_transform * calculated_target_local_space_pose;
+		world_space_limb_transform.scale = vec3(1.0f);
+		limb_data_component->target_pose = world_space_limb_transform;
 
-		limb_data_component->adjusted_pose = limb_data_component->target_pose;
+		if(!physical_animation_component->simulated.get())
+		{
+			limb_data_component->adjusted_pose = limb_data_component->target_pose;
+		}
 
 		// Reset at the beggining of the calculation process.
 		limb_data_component->is_colliding = false;
@@ -509,6 +529,32 @@ namespace era_engine::physics
 	bool PhysicalAnimationSystem::should_be_simulated(Entity ragdoll) const
 	{
 		return enable_always;
+	}
+
+	vec3 PhysicalAnimationSystem::get_joint_adjustment(const PhysicalAnimationComponent* physical_animation_component, uint32 joint_id) const
+	{
+		if (joint_id == physical_animation_component->joint_init_ids.pelvis_idx)
+		{
+			return physical_animation_component->settings.pelvis_joint_adjastment;
+		}
+		else if (joint_id == physical_animation_component->joint_init_ids.spine_01_idx)
+		{
+			return physical_animation_component->settings.abdomen_joint_adjastment;
+		}
+		else if (joint_id == physical_animation_component->joint_init_ids.spine_03_idx)
+		{
+			return physical_animation_component->settings.thorax_joint_adjastment;
+		}
+		else if (joint_id == physical_animation_component->joint_init_ids.head_idx)
+		{
+			return physical_animation_component->settings.head_joint_adjastment;
+		}
+		else if (joint_id == physical_animation_component->joint_init_ids.neck_idx)
+		{
+			return physical_animation_component->settings.neck_joint_adjastment;
+		}
+
+		return vec3::zero;
 	}
 
 	void PhysicalAnimationSystem::process_added_pacs()

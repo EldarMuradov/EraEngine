@@ -35,6 +35,8 @@ namespace era_engine::physics
 	{
 		entt::registry& registry = world->get_registry();
 		registry.on_construct<D6JointComponent>().connect<&JointsSystem::on_d6_joint_created>(this);
+		registry.on_construct<FixedJointComponent>().connect<&JointsSystem::on_fixed_joint_created>(this);
+		registry.on_construct<DistanceJointComponent>().connect<&JointsSystem::on_distance_joint_created>(this);
 	}
 
 	void JointsSystem::update(float dt)
@@ -229,10 +231,11 @@ namespace era_engine::physics
 				joint_component.gpu_compatible.sync_changes();
 			}
 
-			if (joint_component.twist_drive_accelerated.is_changed() ||
+			if ((joint_component.twist_drive_accelerated.is_changed() ||
 				joint_component.twist_drive_damping.is_changed() ||
 				joint_component.twist_drive_stiffness.is_changed() ||
-				joint_component.twist_drive_force_limit.is_changed())
+				joint_component.twist_drive_force_limit.is_changed()) &&
+				!joint_component.perform_slerp_drive)
 			{
 				PxD6JointDrive drive;
 				drive.stiffness = joint_component.twist_drive_stiffness;
@@ -267,10 +270,11 @@ namespace era_engine::physics
 				joint_component.twist_drive_force_limit.sync_changes();
 			}
 
-			if (joint_component.swing_drive_accelerated.is_changed() ||
+			if ((joint_component.swing_drive_accelerated.is_changed() ||
 				joint_component.swing_drive_damping.is_changed() ||
 				joint_component.swing_drive_stiffness.is_changed() ||
-				joint_component.swing_drive_force_limit.is_changed())
+				joint_component.swing_drive_force_limit.is_changed()) &&
+				!joint_component.perform_slerp_drive)
 			{
 				PxD6JointDrive drive;
 				drive.stiffness = joint_component.swing_drive_stiffness;
@@ -305,10 +309,11 @@ namespace era_engine::physics
 				joint_component.swing_drive_force_limit.sync_changes();
 			}
 
-			if (joint_component.slerp_drive_accelerated.is_changed() ||
+			if ((joint_component.slerp_drive_accelerated.is_changed() ||
 				joint_component.slerp_drive_damping.is_changed() ||
 				joint_component.slerp_drive_stiffness.is_changed() ||
 				joint_component.slerp_drive_force_limit.is_changed())
+				&& joint_component.perform_slerp_drive)
 			{
 				PxD6JointDrive drive;
 				drive.stiffness = joint_component.slerp_drive_stiffness;
@@ -386,14 +391,56 @@ namespace era_engine::physics
 			if (joint_component.angular_drive_velocity.is_changed() || 
 				joint_component.linear_drive_velocity.is_changed())
 			{
-				native_joint->setDriveVelocity(create_PxVec3(joint_component.linear_drive_velocity), create_PxVec3(joint_component.angular_drive_velocity), true);
+				native_joint->setDriveVelocity(create_PxVec3(joint_component.linear_drive_velocity), create_PxVec3(joint_component.angular_drive_velocity), false);
+
+				PxRigidActor* actor0 = nullptr;
+				PxRigidActor* actor1 = nullptr;
+				native_joint->getActors(actor0, actor1);
+
+				if (PxRigidDynamic* actor_dynamic = actor0 == nullptr ? nullptr : actor0->is<PxRigidDynamic>(); actor_dynamic != nullptr)
+				{
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					{
+						actor_dynamic->wakeUp();
+					}
+				}
+
+				if (PxRigidDynamic* actor_dynamic = actor1 == nullptr ? nullptr : actor1->is<PxRigidDynamic>(); actor_dynamic != nullptr)
+				{
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					{
+						actor_dynamic->wakeUp();
+					}
+				}
+
 				joint_component.angular_drive_velocity.sync_changes();
 				joint_component.linear_drive_velocity.sync_changes();
 			}
 
 			if (joint_component.drive_transform.is_changed())
 			{
-				native_joint->setDrivePosition(create_PxTransform(joint_component.drive_transform), true);
+				native_joint->setDrivePosition(create_PxTransform(joint_component.drive_transform), false);
+
+				PxRigidActor* actor0 = nullptr;
+				PxRigidActor* actor1 = nullptr;
+				native_joint->getActors(actor0, actor1);
+
+				if (PxRigidDynamic* actor_dynamic = actor0 == nullptr ? nullptr : actor0->is<PxRigidDynamic>(); actor_dynamic != nullptr)
+				{
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					{
+						actor_dynamic->wakeUp();
+					}
+				}
+
+				if (PxRigidDynamic* actor_dynamic = actor1 == nullptr ? nullptr : actor1->is<PxRigidDynamic>(); actor_dynamic != nullptr)
+				{
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					{
+						actor_dynamic->wakeUp();
+					}
+				}
+
 				joint_component.drive_transform.sync_changes();
 			}
 		}
@@ -429,8 +476,6 @@ namespace era_engine::physics
 
 			created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
 			created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component->enable_collision);
-			created_joint->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, joint_component->always_update);
-			created_joint->setConstraintFlag(PxConstraintFlag::eENABLE_EXTENDED_LIMITS, true);
 
 			if (PhysicsHolder::physics_ref->is_gpu())
 			{
@@ -469,7 +514,6 @@ namespace era_engine::physics
 
 			created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
 			created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component->enable_collision);
-			created_joint->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, joint_component->always_update);
 
 			joint_component->joint = created_joint;
 			joint_component->joint->userData = joint_component;
@@ -503,7 +547,6 @@ namespace era_engine::physics
 
 			created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
 			created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component->enable_collision);
-			created_joint->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, joint_component->always_update);
 
 			joint_component->joint = created_joint;
 			joint_component->joint->userData = joint_component;

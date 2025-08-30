@@ -150,6 +150,8 @@ namespace era_engine::physics
 		D6JointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
 		~D6JointComponent() override;
 
+		bool perform_slerp_drive = false;
+
 		ObservableMember<float> swing_y_limit = 0.0f;
 		ObservableMember<float> swing_z_limit = 0.0f;
 

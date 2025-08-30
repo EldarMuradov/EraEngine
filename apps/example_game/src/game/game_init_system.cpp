@@ -121,6 +121,7 @@ namespace era_engine
 
 			animation_component->initialize(mesh->animation_skeleton.clips, 74);
 			skeleton_component->skeleton = &mesh->skeleton;
+			skeleton_component->draw_sceleton = true;
 
 			const Skeleton* skeleton = skeleton_component->skeleton;
 
@@ -162,17 +163,17 @@ namespace era_engine
 
 			settings.head_end_joint_adjastment = vec3(0.0f, 0.25f, 0.0f);
 			settings.head_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
-			settings.neck_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
-			settings.thorax_joint_adjastment = vec3(0.0f, 0.1f, 0.0f);
-			settings.abdomen_joint_adjastment = vec3(0.0f, 0.0f, 0.0f);
-			settings.pelvis_joint_adjastment = vec3(0.0f, -0.15f, 0.0f);
+			settings.neck_joint_adjastment = vec3(0.0f, 0.1f, 0.0f);
+			settings.thorax_joint_adjastment = vec3(0.0f, 0.18f, 0.0f);
+			settings.abdomen_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
+			settings.pelvis_joint_adjastment = vec3(0.0f, -0.05f, 0.0f);
 
 			settings.upper_body_height_modifier = 0.5f;
-			settings.upper_body_radius_modifier = 0.8f;
-			settings.middle_body_height_modifier = 0.3f;
-			settings.middle_body_radius_modifier = 0.7f;
-			settings.lower_body_height_modifier = 0.9f;
-			settings.lower_body_radius_modifier = 0.7f;
+			settings.upper_body_radius_modifier = 0.6f;
+			settings.middle_body_height_modifier = 0.4f;
+			settings.middle_body_radius_modifier = 0.8f;
+			settings.lower_body_height_modifier = 1.2f;
+			settings.lower_body_radius_modifier = 1.4f;
 
 			//RagdollComponent* ragdoll_component = tiran.add_component<RagdollComponent>();
 			//ragdoll_component->simulated = true;
@@ -189,7 +190,7 @@ namespace era_engine
 			TransformComponent* transform_component = sponza.get_component<TransformComponent>();
 			transform_component->set_world_position(vec3(5.0f, -3.75f, 35.0f));
 
-			addRaytracingComponentAsync(sponza, mesh);
+			//addRaytracingComponentAsync(sponza, mesh);
 		}
 
 		auto plane = world->create_entity("Platform");
