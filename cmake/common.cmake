@@ -230,13 +230,35 @@ optimized ${ERA_ENGINE_PATH}/modules/thirdparty-physx/lib/Release/SimulationCont
 optimized ${ERA_ENGINE_PATH}/modules/thirdparty-physx/lib/Release/SnippetUtils_static_64.lib
 )
 
+set(PHYSX_BLAST_RELEASE_LIBS
+${ERA_ENGINE_PATH}/modules/thirdparty-physx/blast/bin/NvBlast.lib
+${ERA_ENGINE_PATH}/modules/thirdparty-physx/blast/bin/NvBlastExtAssetUtils.lib
+${ERA_ENGINE_PATH}/modules/thirdparty-physx/blast/bin/NvBlastExtAuthoring.lib
+${ERA_ENGINE_PATH}/modules/thirdparty-physx/blast/bin/NvBlastExtSerialization.lib
+${ERA_ENGINE_PATH}/modules/thirdparty-physx/blast/bin/NvBlastExtShaders.lib
+${ERA_ENGINE_PATH}/modules/thirdparty-physx/blast/bin/NvBlastExtStress.lib
+${ERA_ENGINE_PATH}/modules/thirdparty-physx/blast/bin/NvBlastExtTkSerialization.lib
+${ERA_ENGINE_PATH}/modules/thirdparty-physx/blast/bin/NvBlastGlobals.lib
+${ERA_ENGINE_PATH}/modules/thirdparty-physx/blast/bin/NvBlastTk.lib
+)
+
 function(require_physx target)
     add_custom_command(TARGET ${target} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${ERA_ENGINE_PATH}/modules/thirdparty-physx/bin/$<CONFIGURATION>
         $<TARGET_FILE_DIR:${target}>
     )
-    target_link_libraries(${target} ${PHYSX_RELEASE_LIBS} ${PHYSX_DEBUG_LIBS})
+    add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${ERA_ENGINE_PATH}/modules/thirdparty-physx/blast/bin
+        $<TARGET_FILE_DIR:${target}>
+    )
+    target_link_libraries(${target} ${PHYSX_RELEASE_LIBS} ${PHYSX_DEBUG_LIBS} ${PHYSX_BLAST_RELEASE_LIBS})
     target_include_directories(${target} PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-physx/src/physx)
-    target_include_directories(${target} PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-physx/src/blast)
+    target_include_directories(${target} PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-physx/src/blast/include)
+    target_include_directories(${target} PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-physx/src/blast/include/shared/NvFoundation)
+    target_include_directories(${target} PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-physx/src/blast/include/lowlevel)
+    target_include_directories(${target} PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-physx/src/blast/include/globals)
+    target_include_directories(${target} PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-physx/src/blast/include/toolkit)
+    target_include_directories(${target} PUBLIC ${ERA_ENGINE_PATH}/modules/thirdparty-physx/src/blast/include/extensions)
 endfunction()

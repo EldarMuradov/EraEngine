@@ -329,8 +329,8 @@ namespace era_engine::physics
 					}
 				}
 
-				//const trs pelvis_world_transform = world_transform * pelvis_local_transform;
-				//PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
+				const trs pelvis_world_transform = world_transform * pelvis_local_transform;
+				PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
 			}
 
 			physical_animation_component.prev_fixed_world_transform = world_transform;

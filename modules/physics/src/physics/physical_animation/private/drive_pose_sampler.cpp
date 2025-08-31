@@ -28,7 +28,7 @@ namespace era_engine::physics
 
         const uint32 root_id = 0;
 
-        trs root_local_transform = SkeletonUtils::get_object_space_joint_transform(pose, skeleton, root_id, 0);
+        trs root_local_transform = SkeletonUtils::get_object_space_joint_transform(pose, skeleton, root_id);
         root_local_transform.scale = vec3(1.0f);
 
         physical_animation_component->local_joint_poses[root_id] = root_local_transform;

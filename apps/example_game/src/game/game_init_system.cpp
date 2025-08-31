@@ -161,9 +161,9 @@ namespace era_engine
 			RagdollSettings settings;
 			settings.head_radius = 0.15f;
 
-			settings.head_end_joint_adjastment = vec3(0.0f, 0.25f, 0.0f);
+			settings.head_end_joint_adjastment = vec3(0.0f, 0.2f, 0.0f);
 			settings.head_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
-			settings.neck_joint_adjastment = vec3(0.0f, 0.1f, 0.0f);
+			settings.neck_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
 			settings.thorax_joint_adjastment = vec3(0.0f, 0.18f, 0.0f);
 			settings.abdomen_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
 			settings.pelvis_joint_adjastment = vec3(0.0f, -0.05f, 0.0f);
@@ -175,9 +175,9 @@ namespace era_engine
 			settings.lower_body_height_modifier = 1.2f;
 			settings.lower_body_radius_modifier = 1.4f;
 
-			//RagdollComponent* ragdoll_component = tiran.add_component<RagdollComponent>();
-			//ragdoll_component->simulated = true;
-			PhysicalAnimationComponent* ragdoll_component = tiran.add_component<PhysicalAnimationComponent>();
+			RagdollComponent* ragdoll_component = tiran.add_component<RagdollComponent>();
+			ragdoll_component->simulated = true;
+			//PhysicalAnimationComponent* ragdoll_component = tiran.add_component<PhysicalAnimationComponent>();
 			ragdoll_component->joint_init_ids = joint_init_ids;
 			ragdoll_component->settings = settings;
 		}
