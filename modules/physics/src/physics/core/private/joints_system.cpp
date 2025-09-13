@@ -250,7 +250,8 @@ namespace era_engine::physics
 
 				if (PxRigidDynamic* actor_dynamic = actor0 == nullptr ? nullptr : actor0->is<PxRigidDynamic>(); actor_dynamic != nullptr)
 				{
-					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) &&
+						!actor_dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
 					{
 						actor_dynamic->wakeUp();
 					}
@@ -258,7 +259,8 @@ namespace era_engine::physics
 
 				if (PxRigidDynamic* actor_dynamic = actor1 == nullptr ? nullptr : actor1->is<PxRigidDynamic>(); actor_dynamic != nullptr)
 				{
-					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) &&
+						!actor_dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
 					{
 						actor_dynamic->wakeUp();
 					}
@@ -289,7 +291,8 @@ namespace era_engine::physics
 
 				if (PxRigidDynamic* actor_dynamic = actor0 == nullptr ? nullptr : actor0->is<PxRigidDynamic>(); actor_dynamic != nullptr)
 				{
-					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) &&
+						!actor_dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
 					{
 						actor_dynamic->wakeUp();
 					}
@@ -297,7 +300,8 @@ namespace era_engine::physics
 
 				if (PxRigidDynamic* actor_dynamic = actor1 == nullptr ? nullptr : actor1->is<PxRigidDynamic>(); actor_dynamic != nullptr)
 				{
-					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) &&
+						!actor_dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
 					{
 						actor_dynamic->wakeUp();
 					}
@@ -328,7 +332,8 @@ namespace era_engine::physics
 
 				if (PxRigidDynamic* actor_dynamic = actor0 == nullptr ? nullptr : actor0->is<PxRigidDynamic>(); actor_dynamic != nullptr)
 				{
-					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) &&
+						!actor_dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
 					{
 						actor_dynamic->wakeUp();
 					}
@@ -336,7 +341,8 @@ namespace era_engine::physics
 
 				if (PxRigidDynamic* actor_dynamic = actor1 == nullptr ? nullptr : actor1->is<PxRigidDynamic>(); actor_dynamic != nullptr)
 				{
-					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) &&
+						!actor_dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
 					{
 						actor_dynamic->wakeUp();
 					}
@@ -368,7 +374,8 @@ namespace era_engine::physics
 
 				if (PxRigidDynamic* actor_dynamic = actor0 == nullptr ? nullptr : actor0->is<PxRigidDynamic>(); actor_dynamic != nullptr)
 				{
-					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) &&
+						!actor_dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
 					{
 						actor_dynamic->wakeUp();
 					}
@@ -376,7 +383,8 @@ namespace era_engine::physics
 
 				if (PxRigidDynamic* actor_dynamic = actor1 == nullptr ? nullptr : actor1->is<PxRigidDynamic>(); actor_dynamic != nullptr)
 				{
-					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) &&
+						!actor_dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
 					{
 						actor_dynamic->wakeUp();
 					}
@@ -399,7 +407,8 @@ namespace era_engine::physics
 
 				if (PxRigidDynamic* actor_dynamic = actor0 == nullptr ? nullptr : actor0->is<PxRigidDynamic>(); actor_dynamic != nullptr)
 				{
-					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) &&
+						!actor_dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
 					{
 						actor_dynamic->wakeUp();
 					}
@@ -407,7 +416,8 @@ namespace era_engine::physics
 
 				if (PxRigidDynamic* actor_dynamic = actor1 == nullptr ? nullptr : actor1->is<PxRigidDynamic>(); actor_dynamic != nullptr)
 				{
-					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) &&
+						!actor_dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
 					{
 						actor_dynamic->wakeUp();
 					}
@@ -427,7 +437,8 @@ namespace era_engine::physics
 
 				if (PxRigidDynamic* actor_dynamic = actor0 == nullptr ? nullptr : actor0->is<PxRigidDynamic>(); actor_dynamic != nullptr)
 				{
-					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) &&
+						!actor_dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
 					{
 						actor_dynamic->wakeUp();
 					}
@@ -435,7 +446,8 @@ namespace era_engine::physics
 
 				if (PxRigidDynamic* actor_dynamic = actor1 == nullptr ? nullptr : actor1->is<PxRigidDynamic>(); actor_dynamic != nullptr)
 				{
-					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+					if (!actor_dynamic->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) &&
+						!actor_dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
 					{
 						actor_dynamic->wakeUp();
 					}

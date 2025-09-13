@@ -31,13 +31,23 @@ namespace era_engine::physics
 
         ConstraintDetails& operator=(const ConstraintDetails& other) = default;
 
-        float drive_damping = 20.0f;
-        float drive_stiffness = 350.0f;
+        float angular_drive_damping = 10.0f;
+        float angular_drive_stiffness = 100.0f;
+
+        float linear_drive_damping = 10.0f;
+        float linear_drive_stiffness = 100.0f;
+
+        vec2 angular_range = vec2(deg2rad(3.0f), deg2rad(30.0f));
+        vec2 angular_damping_range = vec2(60.0f, 10.0f);
+
+        vec2 linear_range = vec2(0.05f, 0.5f);
+        vec2 linear_damping_range = vec2(80.0f, 10.0f);
 
         float max_force = std::numeric_limits<float>::max();
 
         float drive_velocity_modifier = 1.0f;
 
+        bool accelerated = true;
         bool enable_slerp_drive = true;
 
         ConstraintBlendType blend_type = ConstraintBlendType::BLEND_WITH_PREV_POSE;
@@ -75,9 +85,10 @@ namespace era_engine::physics
         float legs_acceleration_gain = 0.02f;
 
         float partial_velocity_drive_limit = 1.0f;
-        float partial_velocity_drive = 0.05f;
+        float partial_velocity_drive = 0.2f;
 
-        float drive_angular_velocity_modifier = 0.95f;
+        float drive_angular_velocity_modifier = 0.8f;
+        float drive_linear_velocity_modifier = 0.8f;
 
         float legs_partial_angular_drive = 0.55f;
         float partial_angular_drive = 0.55f;

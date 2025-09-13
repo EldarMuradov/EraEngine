@@ -50,12 +50,13 @@ namespace era_engine::physics
 
                 limb_component->force_switch_state(ConstraintLimbStateType::KINEMATIC);
 
-                D6JointComponent* parent_joint_component = dynamic_cast<D6JointComponent*>(limb_component->parent_joint_component.get_for_write());
+                D6JointComponent* drive_joint_component = dynamic_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
 
-                if (parent_joint_component != nullptr)
+                if (drive_joint_component != nullptr)
                 {
-                    parent_joint_component->drive_transform = trs::identity;
-                    parent_joint_component->angular_drive_velocity = vec3::zero;
+                    drive_joint_component->drive_transform = trs::identity;
+                    drive_joint_component->angular_drive_velocity = vec3::zero;
+                    drive_joint_component->linear_drive_velocity = vec3::zero;
                 }
             }
 

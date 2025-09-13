@@ -4,6 +4,7 @@
 #include "physics/body_component.h"
 #include "physics/physical_animation/physical_animation_component.h"
 #include "physics/joint.h"
+#include "physics/core/physics_utils.h"
 
 #include <core/math.h>
 #include <core/traits.h>
@@ -34,6 +35,12 @@ namespace era_engine::physics
 			{
 				process_by_collision(limb_data_component, dt);
 			}
+
+            if (limb_data_component->drive_joint_component.get() != nullptr)
+            {
+                D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_data_component->drive_joint_component.get_for_write());
+                PhysicsUtils::manual_set_physics_transform(drive_joint->get_first_entity_ptr().get(), limb_data_component->adjusted_pose, true);
+            }
 		}
 	}
 

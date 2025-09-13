@@ -59,19 +59,34 @@ namespace era_engine::physics
         return false;
     }
 
-    float PhysicalAnimationLimbComponent::calculate_desired_damping(float delta_angle) const
+    float PhysicalAnimationLimbComponent::calculate_desired_angular_damping(float delta_angle) const
     {
-        float angular_damping = damping;
+        float angular_damping_value = angular_damping;
         if (dynamic_update_damping)
         {
-            angular_damping = map_value(delta_angle,
-                angle_range.x,
-                angle_range.y,
-                damping_range.x,
-                damping_range.y);
+            angular_damping_value = map_value(delta_angle,
+                angular_range.x,
+                angular_range.y,
+                angular_damping_range.x,
+                angular_damping_range.y);
         }
 
-        return angular_damping;
+        return angular_damping_value;
+    }
+
+    float PhysicalAnimationLimbComponent::calculate_desired_linear_damping(float delta_position) const
+    {
+        float linear_damping_value = linear_damping;
+        if (dynamic_update_damping)
+        {
+            linear_damping_value = map_value(delta_position,
+                linear_range.x,
+                linear_range.y,
+                linear_damping_range.x,
+                linear_damping_range.y);
+        }
+
+        return linear_damping_value;
     }
 
 	PhysicalAnimationLimbComponent::PhysicalAnimationLimbComponent(ref<Entity::EcsData> _data, uint32 _joint_id /*= INVALID_JOINT*/)
@@ -223,31 +238,46 @@ namespace era_engine::physics
 
                 if (details != nullptr)
                 {
-                    limb_component->stiffness = details->drive_stiffness;
-                    limb_component->damping = details->drive_damping;
+                    limb_component->angular_stiffness = details->angular_drive_stiffness;
+                    limb_component->angular_damping = details->angular_drive_damping;
+
+                    limb_component->linear_stiffness = details->linear_drive_stiffness;
+                    limb_component->linear_damping = details->linear_drive_damping;
+
                     limb_component->drive_velocity_modifier = details->drive_velocity_modifier;
+
+                    limb_component->angular_range = details->angular_range;
+                    limb_component->linear_range = details->linear_range;
 
                     limb_component->blend_type = details->blend_type;
 
-                    D6JointComponent* joint_component = dynamic_cast<D6JointComponent*>(limb_component->parent_joint_component.get_for_write());
+                    D6JointComponent* joint_component = dynamic_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
                     if (joint_component)
                     {
                         if (details->enable_slerp_drive)
                         {
-                            joint_component->slerp_drive_damping = details->drive_damping;
+                            joint_component->slerp_drive_damping = details->angular_drive_damping;
                             joint_component->slerp_drive_force_limit = details->max_force;
-                            joint_component->slerp_drive_stiffness = details->drive_stiffness;
+                            joint_component->slerp_drive_stiffness = details->angular_drive_stiffness;
+                            joint_component->slerp_drive_accelerated = details->accelerated;
                         }
                         else
                         {
-                            joint_component->swing_drive_damping = details->drive_damping;
+                            joint_component->swing_drive_damping = details->angular_drive_damping;
                             joint_component->swing_drive_force_limit = details->max_force;
-                            joint_component->swing_drive_stiffness = details->drive_stiffness;
+                            joint_component->swing_drive_stiffness = details->angular_drive_stiffness;
+                            joint_component->swing_drive_accelerated = details->accelerated;
 
-                            joint_component->twist_drive_damping = details->drive_damping;
+                            joint_component->twist_drive_damping = details->angular_drive_damping;
                             joint_component->twist_drive_force_limit = details->max_force;
-                            joint_component->twist_drive_stiffness = details->drive_stiffness;
+                            joint_component->twist_drive_stiffness = details->angular_drive_stiffness;
+                            joint_component->twist_drive_accelerated = details->accelerated;
                         }
+
+                        joint_component->linear_drive_damping = details->linear_drive_damping;
+                        joint_component->linear_drive_force_limit = details->max_force;
+                        joint_component->linear_drive_stiffness = details->linear_drive_stiffness;
+                        joint_component->linear_drive_accelerated = details->accelerated;
                     }
                 }
             }

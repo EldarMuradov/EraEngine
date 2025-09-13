@@ -73,19 +73,66 @@ namespace era_engine::physics
 		{
 			idle_profile = make_ref<RagdollProfile>();
 
-			idle_profile->drive_angular_velocity_modifier = 0.8f;
-
 			idle_profile->type = RagdollProfileType::IDLE;
 			idle_profile->head_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->head_constraint.angular_drive_stiffness = 20.0f;
+			idle_profile->head_constraint.angular_drive_damping = 250.0f;
+			idle_profile->head_constraint.linear_drive_stiffness = 20.0f;
+			idle_profile->head_constraint.linear_drive_damping = 200.0f;
+
 			idle_profile->neck_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->neck_constraint.angular_drive_stiffness = 20.0f;
+			idle_profile->neck_constraint.angular_drive_damping = 250.0f;
+			idle_profile->neck_constraint.linear_drive_stiffness = 20.0f;
+			idle_profile->neck_constraint.linear_drive_damping = 200.0f;
+
 			idle_profile->arm_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->arm_constraint.angular_drive_stiffness = 30.0f;
+			idle_profile->arm_constraint.angular_drive_damping = 300.0f;
+			idle_profile->arm_constraint.linear_drive_stiffness = 30.0f;
+			idle_profile->arm_constraint.linear_drive_damping = 200.0f;
+
 			idle_profile->body_upper_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->body_upper_constraint.angular_drive_stiffness = 30.0f;
+			idle_profile->body_upper_constraint.angular_drive_damping = 300.0f;
+			idle_profile->body_upper_constraint.linear_drive_stiffness = 30.0f;
+			idle_profile->body_upper_constraint.linear_drive_damping = 200.0f;
+
 			idle_profile->body_middle_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->body_middle_constraint.angular_drive_stiffness = 30.0f;
+			idle_profile->body_middle_constraint.angular_drive_damping = 300.0f;
+			idle_profile->body_middle_constraint.linear_drive_stiffness = 30.0f;
+			idle_profile->body_middle_constraint.linear_drive_damping = 200.0f;
+
 			idle_profile->forearm_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->forearm_constraint.angular_drive_stiffness = 30.0f;
+			idle_profile->forearm_constraint.angular_drive_damping = 300.0f;
+			idle_profile->forearm_constraint.linear_drive_stiffness = 30.0f;
+			idle_profile->forearm_constraint.linear_drive_damping = 200.0f;
+
 			idle_profile->hand_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->hand_constraint.angular_drive_stiffness = 20.0f;
+			idle_profile->hand_constraint.angular_drive_damping = 250.0f;
+			idle_profile->hand_constraint.linear_drive_stiffness = 20.0f;
+			idle_profile->hand_constraint.linear_drive_damping = 200.0f;
+
 			idle_profile->leg_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->leg_constraint.angular_drive_stiffness = 30.0f;
+			idle_profile->leg_constraint.angular_drive_damping = 300.0f;
+			idle_profile->leg_constraint.linear_drive_stiffness = 30.0f;
+			idle_profile->leg_constraint.linear_drive_damping = 200.0f;
+
 			idle_profile->calf_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->calf_constraint.angular_drive_stiffness = 30.0f;
+			idle_profile->calf_constraint.angular_drive_damping = 300.0f;
+			idle_profile->calf_constraint.linear_drive_stiffness = 30.0f;
+			idle_profile->calf_constraint.linear_drive_damping = 200.0f;
+
 			idle_profile->foot_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->foot_constraint.angular_drive_stiffness = 20.0f;
+			idle_profile->foot_constraint.angular_drive_damping = 250.0f;
+			idle_profile->foot_constraint.linear_drive_stiffness = 20.0f;
+			idle_profile->foot_constraint.linear_drive_damping = 200.0f;
 		}
 
 		{

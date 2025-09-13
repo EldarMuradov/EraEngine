@@ -15,8 +15,6 @@
 #include "pvdruntime/OmniPvdWriter.h"
 #include "pvdruntime/OmniPvdFileWriteStream.h"
 
-#include "toolkit/NvBlastTk.h"
-
 namespace era_engine::physics
 {
 	static physx::PxOmniPvd* omni_pvd = NULL;

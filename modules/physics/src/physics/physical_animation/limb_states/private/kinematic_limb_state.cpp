@@ -41,8 +41,13 @@ namespace era_engine::physics
 
             desired_pose = possible_pose;
 
-            parent_joint_component->angular_drive_velocity = vec3::zero;
-            parent_joint_component->drive_transform = trs::identity;
+            D6JointComponent* drive_joint_component = static_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
+            if (drive_joint_component)
+            {
+                drive_joint_component->angular_drive_velocity = vec3::zero;
+                drive_joint_component->linear_drive_velocity = vec3::zero;
+                drive_joint_component->drive_transform = trs::identity;
+            }
         }
         desired_pose.rotation = limb_component->adjusted_pose.rotation;
 

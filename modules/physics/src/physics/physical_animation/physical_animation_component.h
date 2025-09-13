@@ -45,7 +45,8 @@ namespace era_engine::physics
 
 		void update_states(float dt, ConstraintLimbStateType desired_state);
 
-		float calculate_desired_damping(float delta_angle) const;
+		float calculate_desired_angular_damping(float delta_angle) const;
+		float calculate_desired_linear_damping(float delta_position) const;
 
 	public:
 		/* Joint world space transfrom from animation. */
@@ -60,19 +61,22 @@ namespace era_engine::physics
 		/* Physics body world space transfrom. */
 		trs physics_pose = trs::identity;
 
-		/* The joint's resistance to deformation under stress. */
-		float stiffness = 1.0f;
-
-		/* The loss of energy of an oscillating system by dissipation. */
-		float damping = 1.0f;
-
 		/*
 			Factor of how adjusted_pose.rotation should be interpolated from target_pose.rotation to physics_pose.rotation.
 		*/
 		float blocked_blend_factor = 0.0f;
 
-		vec2 angle_range = vec2(deg2rad(3.0f), deg2rad(30.0f));
-		vec2 damping_range = vec2(40.0f, 15.0f);
+		float angular_damping = 10.0f;
+		float angular_stiffness = 100.0f;
+
+		float linear_damping = 10.0f;
+		float linear_stiffness = 100.0f;
+
+		vec2 angular_range = vec2(deg2rad(3.0f), deg2rad(30.0f));
+		vec2 angular_damping_range = vec2(80.0f, 15.0f);
+
+		vec2 linear_range = vec2(0.05f, 0.5f);
+		vec2 linear_damping_range = vec2(80.0f, 15.0f);
 
 		float drive_velocity_modifier = 1.0f;
 
@@ -92,8 +96,10 @@ namespace era_engine::physics
 		ConstraintBlendType prev_blend_type = ConstraintBlendType::NONE;
 
 		ComponentPtr parent_joint_component = nullptr;
+		ComponentPtr drive_joint_component = nullptr;
 
 		EntityPtr ragdoll_ptr;
+		EntityPtr drive_joint_entity_ptr;
 
         ERA_VIRTUAL_REFLECT(RagdollLimbComponent)
 
