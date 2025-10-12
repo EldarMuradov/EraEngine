@@ -107,7 +107,7 @@ namespace era_engine
 			tiran = world->create_entity("Tiran");
 
 			AnimationComponent* animation_component = tiran.add_component<AnimationComponent>();
-			//animation_component->play = false;
+			animation_component->play = false;
 			animation_component->update_skeleton = false;
 			animation_component->enable_root_motion = false;
 
@@ -175,9 +175,9 @@ namespace era_engine
 			settings.lower_body_height_modifier = 1.2f;
 			settings.lower_body_radius_modifier = 1.4f;
 
-			//RagdollComponent* ragdoll_component = tiran.add_component<RagdollComponent>();
-			//ragdoll_component->simulated = true;
-			PhysicalAnimationComponent* ragdoll_component = tiran.add_component<PhysicalAnimationComponent>();
+			RagdollComponent* ragdoll_component = tiran.add_component<RagdollComponent>();
+			ragdoll_component->simulated = true;
+			//PhysicalAnimationComponent* ragdoll_component = tiran.add_component<PhysicalAnimationComponent>();
 			ragdoll_component->joint_init_ids = joint_init_ids;
 			ragdoll_component->settings = settings;
 		}

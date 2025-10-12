@@ -14,4 +14,5 @@ namespace era_engine::physics
 			blast_asset = nullptr;
 		}
 	}
+
 }
