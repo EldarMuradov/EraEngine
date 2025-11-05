@@ -76,6 +76,6 @@ namespace era_engine
 			int32 index);
 	};
 
-	void generateNormalsAndTangents(std::vector<SubmeshAsset>& submeshes, uint32 flags);
-	void generateNormalsAndTangents(ref<SubmeshAsset> submesh, uint32 flags);
+	ERA_CORE_API void generateNormalsAndTangents(std::vector<SubmeshAsset>& submeshes, uint32 flags);
+	ERA_CORE_API void generateNormalsAndTangents(ref<SubmeshAsset> submesh, uint32 flags);
 }

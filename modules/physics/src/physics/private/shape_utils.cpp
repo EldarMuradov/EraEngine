@@ -233,6 +233,36 @@ namespace era_engine::physics
 		shape->setQueryFilterData(physx_query_filter_data);
 	}
 
+	float ShapeUtils::signed_volume_of_triangle(const vec3& p1, const vec3& p2, const vec3& p3)
+	{
+		const float v321 = p3.x * p2.y * p1.z;
+		const float v231 = p2.x * p3.y * p1.z;
+		const float v312 = p3.x * p1.y * p2.z;
+		const float v132 = p1.x * p3.y * p2.z;
+		const float v213 = p2.x * p1.y * p3.z;
+		const float v123 = p1.x * p2.y * p3.z;
+		return (1.0f / 6.0f) * (-v321 + v231 + v312 - v132 - v213 + v123);
+	}
+
+	float ShapeUtils::volume_of_mesh(ref<SubmeshAsset> mesh)
+	{
+		float volume = 0.0f;
+
+		const auto& vertices = mesh->positions;
+		const auto& triangles = mesh->triangles;
+
+		for (int i = 0; i < mesh->triangles.size(); i++)
+		{
+			const vec3& p1 = vertices[triangles[i].a];
+			const vec3& p2 = vertices[triangles[i].b];
+			const vec3& p3 = vertices[triangles[i].c];
+
+			volume += signed_volume_of_triangle(p1, p2, p3);
+		}
+
+		return abs(volume);
+	}
+
 	void ShapeUtils::enable_shape_visualization(physx::PxShape* shape, const bool enable)
 	{
 		ASSERT(shape != nullptr);

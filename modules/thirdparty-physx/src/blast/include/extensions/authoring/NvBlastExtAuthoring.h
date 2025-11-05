@@ -31,7 +31,7 @@
 #ifndef NVBLASTAUTHORING_H
 #define NVBLASTAUTHORING_H
 
-#include "NvBlastExtAuthoringTypes.h"
+#include "extensions/authoringCommon/NvBlastExtAuthoringTypes.h"
 
 namespace Nv
 {

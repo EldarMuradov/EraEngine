@@ -20,8 +20,6 @@ namespace era_engine::physics
 	public:
 		PhysicsLimbChain() = default;
 
-		bool has_any_blocked_limb() const;
-
 		bool has_any_colliding_limb() const;
 
 	public:
@@ -48,23 +46,20 @@ namespace era_engine::physics
 		float calculate_desired_angular_damping(float delta_angle) const;
 		float calculate_desired_linear_damping(float delta_position) const;
 
+		void reset_collision_data();
+
 	public:
 		/* Joint world space transfrom from animation. */
 		trs target_pose = trs::identity;
 
 		/*
 			Desired joint world space transfrom.
-			Depending on distance to target_pose it can be interpolated from physics to animation or be calculated by raycasts from physics_pose to target_pose.
+			Can be interpolated from physics to animation or be from physics_pose to target_pose.
 		*/
 		trs adjusted_pose = trs::identity;
 
 		/* Physics body world space transfrom. */
 		trs physics_pose = trs::identity;
-
-		/*
-			Factor of how adjusted_pose.rotation should be interpolated from target_pose.rotation to physics_pose.rotation.
-		*/
-		float blocked_blend_factor = 0.0f;
 
 		float angular_damping = 10.0f;
 		float angular_stiffness = 100.0f;
@@ -80,7 +75,7 @@ namespace era_engine::physics
 
 		float drive_velocity_modifier = 1.0f;
 
-		float transition_time = 0.5f;
+		float transition_time = 1.0f;
 
 		bool was_in_collision = false;
 		bool is_colliding = false;
@@ -88,9 +83,8 @@ namespace era_engine::physics
 
 		bool dynamic_update_damping = true;
 
-		float max_collision_time = 0.5f;
-
-		bool is_blocked = false;
+		constexpr static float MAX_COLLISION_TIME = 0.5f;
+		constexpr static float MAX_FREQUENT_COLLISION_TIME = 0.2f;
 
 		ConstraintBlendType blend_type = ConstraintBlendType::BLEND_WITH_PREV_POSE;
 		ConstraintBlendType prev_blend_type = ConstraintBlendType::NONE;
@@ -137,17 +131,18 @@ namespace era_engine::physics
 
 		void update_states(float dt, SimulationStateType desired_state);
 
+	public:
+		constexpr static float MAX_RAGDOLL_PROFILE_TRANSITION_TIME = 0.15f;
+
 		float blend_weight = 0.0f;
 
 		float blend_in_time = 0.1f;
 		float blend_out_time = 0.2f;
 
-		float target_position_blend_factor = 0.2f;
-		float target_rotation_blend_factor = 0.2f;
+		float target_position_blend_factor = 0.5f;
+		float target_rotation_blend_factor = 0.5f;
 
 		float ragdoll_profile_transition_time = 0.0f;
-
-		float max_ragdoll_profile_transition_time = 0.15f;
 
 		bool use_spring_pelvis_attachment = false;
 

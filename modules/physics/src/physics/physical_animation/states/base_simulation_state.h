@@ -9,6 +9,8 @@
 
 namespace era_engine::physics
 {
+	class PhysicalAnimationLimbComponent;
+
 	enum class SimulationStateType : uint8
 	{
 		DISABLED = 0,
@@ -26,9 +28,13 @@ namespace era_engine::physics
 
 		virtual SimulationStateType try_switch_to(SimulationStateType desired_type) const;
 
-		virtual void on_entered();
+		virtual void on_enter();
+		virtual void on_exit();
 
 		virtual void update(float dt);
+
+	protected:
+		void traverse_simulation_graph(const std::function<void(PhysicalAnimationLimbComponent*)>& action_for_limb);
 
 	protected:
 		ComponentPtr physical_animation_component_ptr = nullptr;

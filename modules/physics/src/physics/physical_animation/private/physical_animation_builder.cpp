@@ -191,6 +191,11 @@ namespace era_engine::physics
 		Entity& e0,
 		Entity& e1)
 	{
+		if (!details.should_create_drive_joint)
+		{
+			return;
+		}
+
 		JointComponent::BaseDescriptor descriptor;
 		descriptor.connected_entity = e0.get_data_weakref();
 		descriptor.second_connected_entity = e1.get_data_weakref();
@@ -553,8 +558,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(head, mass * settings.head_mass_percentage, settings.max_head_contact_impulse);
 
-			head_attachment = create_attachment_dynamic_body(ragdoll, "head_attachment", mass * settings.head_mass_percentage);
-			head_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * head_joint_transform);
+			if (head_constraint.should_create_drive_joint)
+			{
+				head_attachment = create_attachment_dynamic_body(ragdoll, "head_attachment", mass * settings.head_mass_percentage);
+				head_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * head_joint_transform);
+			}
 		}
 
 		// Body upper (from body middle to neck)
@@ -579,8 +587,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(body_upper, mass * settings.body_upper_mass_percentage, settings.max_body_contact_impulse);
 
-			body_upper_attachment = create_attachment_dynamic_body(ragdoll, "body_upper_attachment", mass * settings.body_upper_mass_percentage);
-			body_upper_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * thorax_joint_transform);
+			if (body_upper_constraint.should_create_drive_joint)
+			{
+				body_upper_attachment = create_attachment_dynamic_body(ragdoll, "body_upper_attachment", mass * settings.body_upper_mass_percentage);
+				body_upper_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * thorax_joint_transform);
+			}
 		}
 
 		// Body middle
@@ -605,8 +616,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(body_middle, mass * settings.body_lower_mass_percentage, settings.max_body_contact_impulse);
 			
-			body_middle_attachment = create_attachment_dynamic_body(ragdoll, "body_middle_attachment", mass * settings.body_lower_mass_percentage);
-			body_middle_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * abdomen_joint_transform);
+			if (body_middle_constraint.should_create_drive_joint)
+			{
+				body_middle_attachment = create_attachment_dynamic_body(ragdoll, "body_middle_attachment", mass * settings.body_lower_mass_percentage);
+				body_middle_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * abdomen_joint_transform);
+			}
 		}
 
 		// Body lower (from pelvis to abdomen)
@@ -696,8 +710,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(left_arm, mass * settings.arm_mass_percentage, settings.max_arm_contact_impulse);
 		
-			left_arm_attachment = create_attachment_dynamic_body(ragdoll, "left_arm_attachment", mass * settings.arm_mass_percentage);
-			left_arm_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_arm_joint_transform);
+			if (arm_constraint.should_create_drive_joint)
+			{
+				left_arm_attachment = create_attachment_dynamic_body(ragdoll, "left_arm_attachment", mass * settings.arm_mass_percentage);
+				left_arm_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform* left_arm_joint_transform);
+			}
 		}
 
 		// Left forearm
@@ -721,8 +738,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(left_forearm, mass * settings.forearm_mass_percentage, settings.max_forearm_contact_impulse);
 		
-			left_forearm_attachment = create_attachment_dynamic_body(ragdoll, "left_forearm_attachment", mass * settings.forearm_mass_percentage);
-			left_forearm_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_forearm_joint_transform);
+			if (forearm_constraint.should_create_drive_joint)
+			{
+				left_forearm_attachment = create_attachment_dynamic_body(ragdoll, "left_forearm_attachment", mass * settings.forearm_mass_percentage);
+				left_forearm_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_forearm_joint_transform);
+			}
 		}
 
 		// Left hand
@@ -745,8 +765,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(left_hand, mass * settings.hand_mass_percentage, settings.max_hand_contact_impulse);
 		
-			left_hand_attachment = create_attachment_dynamic_body(ragdoll, "left_hand_attachment", mass * settings.hand_mass_percentage);
-			left_hand_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_hand_joint_transform);
+			if (hand_constraint.should_create_drive_joint)
+			{
+				left_hand_attachment = create_attachment_dynamic_body(ragdoll, "left_hand_attachment", mass * settings.hand_mass_percentage);
+				left_hand_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_hand_joint_transform);
+			}
 		}
 
 		// Right arm
@@ -770,8 +793,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(right_arm, mass * settings.arm_mass_percentage, settings.max_arm_contact_impulse);
 		
-			right_arm_attachment = create_attachment_dynamic_body(ragdoll, "right_arm_attachment", mass * settings.arm_mass_percentage);
-			right_arm_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_arm_joint_transform);
+			if (arm_constraint.should_create_drive_joint)
+			{
+				right_arm_attachment = create_attachment_dynamic_body(ragdoll, "right_arm_attachment", mass * settings.arm_mass_percentage);
+				right_arm_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_arm_joint_transform);
+			}
 		}
 
 		// Right forearm
@@ -794,9 +820,12 @@ namespace era_engine::physics
 				1.5f);
 
 			create_dynamic_body(right_forearm, mass * settings.forearm_mass_percentage, settings.max_forearm_contact_impulse);
-		
-			right_forearm_attachment = create_attachment_dynamic_body(ragdoll, "right_forearm_attachment", mass * settings.forearm_mass_percentage);
-			right_forearm_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_forearm_joint_transform);
+
+			if (forearm_constraint.should_create_drive_joint)
+			{
+				right_forearm_attachment = create_attachment_dynamic_body(ragdoll, "right_forearm_attachment", mass * settings.forearm_mass_percentage);
+				right_forearm_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_forearm_joint_transform);
+			}
 		}
 
 		// Right hand
@@ -819,8 +848,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(right_hand, mass * settings.hand_mass_percentage, settings.max_hand_contact_impulse);
 		
-			right_hand_attachment = create_attachment_dynamic_body(ragdoll, "right_hand_attachment", mass * settings.hand_mass_percentage);
-			right_hand_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_hand_joint_transform);
+			if (hand_constraint.should_create_drive_joint)
+			{
+				right_hand_attachment = create_attachment_dynamic_body(ragdoll, "right_hand_attachment", mass * settings.hand_mass_percentage);
+				right_hand_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_hand_joint_transform);
+			}
 		}
 
 		// Left up leg
@@ -844,8 +876,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(left_up_leg, mass * settings.up_leg_mass_percentage, settings.max_up_leg_contact_impulse);
 		
-			left_up_leg_attachment = create_attachment_dynamic_body(ragdoll, "left_up_leg_attachment", mass * settings.up_leg_mass_percentage);
-			left_up_leg_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_up_leg_joint_transform);
+			if (leg_constraint.should_create_drive_joint)
+			{
+				left_up_leg_attachment = create_attachment_dynamic_body(ragdoll, "left_up_leg_attachment", mass * settings.up_leg_mass_percentage);
+				left_up_leg_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_up_leg_joint_transform);
+			}
 		}
 
 		// Left leg
@@ -869,8 +904,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(left_leg, mass * settings.leg_mass_percentage, settings.max_leg_contact_impulse);
 		
-			left_leg_attachment = create_attachment_dynamic_body(ragdoll, "left_leg_attachment", mass * settings.leg_mass_percentage);
-			left_leg_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_leg_joint_transform);
+			if (calf_constraint.should_create_drive_joint)
+			{
+				left_leg_attachment = create_attachment_dynamic_body(ragdoll, "left_leg_attachment", mass * settings.leg_mass_percentage);
+				left_leg_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_leg_joint_transform);
+			}
 		}
 
 		// Left foot
@@ -897,8 +935,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(left_foot, mass * settings.foot_mass_percentage, settings.max_foot_contact_impulse);
 		
-			left_foot_attachment = create_attachment_dynamic_body(ragdoll, "left_foot_attachment", mass * settings.foot_mass_percentage);
-			left_foot_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_foot_joint_transform);
+			if (foot_constraint.should_create_drive_joint)
+			{
+				left_foot_attachment = create_attachment_dynamic_body(ragdoll, "left_foot_attachment", mass * settings.foot_mass_percentage);
+				left_foot_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_foot_joint_transform);
+			}
 		}
 
 		// Right up leg
@@ -922,8 +963,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(right_up_leg, mass * settings.up_leg_mass_percentage, settings.max_up_leg_contact_impulse);
 		
-			right_up_leg_attachment = create_attachment_dynamic_body(ragdoll, "right_up_leg_attachment", mass * settings.up_leg_mass_percentage);
-			right_up_leg_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_up_leg_joint_transform);
+			if (leg_constraint.should_create_drive_joint)
+			{
+				right_up_leg_attachment = create_attachment_dynamic_body(ragdoll, "right_up_leg_attachment", mass * settings.up_leg_mass_percentage);
+				right_up_leg_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_up_leg_joint_transform);
+			}
 		}
 
 		// Right leg
@@ -947,8 +991,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(right_leg, mass * settings.leg_mass_percentage, settings.max_leg_contact_impulse);
 		
-			right_leg_attachment = create_attachment_dynamic_body(ragdoll, "right_leg_attachment", mass * settings.leg_mass_percentage);
-			right_leg_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_leg_joint_transform);
+			if (calf_constraint.should_create_drive_joint)
+			{
+				right_leg_attachment = create_attachment_dynamic_body(ragdoll, "right_leg_attachment", mass * settings.leg_mass_percentage);
+				right_leg_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_leg_joint_transform);
+			}
 		}
 
 		// Right foot
@@ -975,8 +1022,11 @@ namespace era_engine::physics
 
 			create_dynamic_body(right_foot, mass * settings.foot_mass_percentage, settings.max_foot_contact_impulse);
 		
-			right_foot_attachment = create_attachment_dynamic_body(ragdoll, "right_foot_attachment", mass * settings.foot_mass_percentage);
-			right_foot_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_foot_joint_transform);
+			if (foot_constraint.should_create_drive_joint)
+			{
+				right_foot_attachment = create_attachment_dynamic_body(ragdoll, "right_foot_attachment", mass * settings.foot_mass_percentage);
+				right_foot_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_foot_joint_transform);
+			}
 		}
 
 		// Body upper -> head

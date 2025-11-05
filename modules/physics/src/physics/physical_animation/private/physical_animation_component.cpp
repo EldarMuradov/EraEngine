@@ -25,23 +25,6 @@ namespace era_engine::physics
 			.constructor<>();
     }
 
-    bool PhysicsLimbChain::has_any_blocked_limb() const
-    {
-        for (EntityPtr limb_ptr : connected_limbs)
-        {
-            Entity limb = limb_ptr.get();
-
-            const PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
-            ASSERT(limb_component != nullptr);
-
-            if (limb_component->is_blocked || limb_component->blocked_blend_factor > 0.0f)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     bool PhysicsLimbChain::has_any_colliding_limb() const
     {
         for (EntityPtr limb_ptr : connected_limbs)
@@ -87,6 +70,13 @@ namespace era_engine::physics
         }
 
         return linear_damping_value;
+    }
+
+    void PhysicalAnimationLimbComponent::reset_collision_data()
+    {
+        was_in_collision = false;
+        is_colliding = false;
+        collision_time = 0.0f;
     }
 
 	PhysicalAnimationLimbComponent::PhysicalAnimationLimbComponent(ref<Entity::EcsData> _data, uint32 _joint_id /*= INVALID_JOINT*/)
@@ -283,7 +273,7 @@ namespace era_engine::physics
             }
 
             // If we update ragdoll profile, we need to combine prev and current blend types untill ragdoll_profile_transition_time is over.
-            ragdoll_profile_transition_time = max_ragdoll_profile_transition_time;
+            ragdoll_profile_transition_time = MAX_RAGDOLL_PROFILE_TRANSITION_TIME;
 
             return true;
         }
@@ -343,8 +333,9 @@ namespace era_engine::physics
 
     void PhysicalAnimationComponent::force_switch_state(SimulationStateType desired_state)
     {
+        get_current_state()->on_exit();
         current_state_type = desired_state;
-        get_current_state()->on_entered();
+        get_current_state()->on_enter();
     }
 
     bool PhysicalAnimationComponent::is_in_idle() const

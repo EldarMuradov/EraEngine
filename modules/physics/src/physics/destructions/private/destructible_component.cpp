@@ -20,16 +20,6 @@ namespace era_engine::physics
 
 	DestructibleComponent::~DestructibleComponent()
 	{
-		const uint32 actor_count = NvBlastFamilyGetActorCount(family, nullptr);
-
-		const bool success = NvBlastActorDeactivate(blast_actor, nullptr);
-		ASSERT(success);
-
-		if (actor_count == 1)
-		{
-			free(family);
-			family = nullptr;
-		}
 	}
 
 }

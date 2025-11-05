@@ -11,6 +11,7 @@
 namespace era_engine
 {
 	struct MeshAsset;
+	struct SubmeshAsset;
 }
 
 namespace era_engine::physics
@@ -33,6 +34,10 @@ namespace era_engine::physics
 		static void enable_shape_in_scene_query_tests(physx::PxShape* shape, const bool enable);
 
 		static void setup_filtering(World* world, physx::PxShape* shape, uint32 collision_type, std::optional<uint32> collision_filter_data);
+
+		static float signed_volume_of_triangle(const vec3& p1, const vec3& p2, const vec3& p3);
+
+		static float volume_of_mesh(ref<SubmeshAsset> mesh);
 	};
 
 }

@@ -16,7 +16,7 @@ namespace era_engine::physics
 	{
 	}
 
-	void DrivePoseSampler::sample_pose(PhysicalAnimationComponent* physical_animation_component, animation::SkeletonComponent* skeleton_to_update, animation::SkeletonPose& pose) const
+	void DrivePoseSampler::sample_pose(PhysicalAnimationComponent* physical_animation_component, animation::SkeletonComponent* skeleton_to_update, const animation::SkeletonPose& pose) const
 	{
         using namespace animation;
 
@@ -68,7 +68,6 @@ namespace era_engine::physics
 
                     // We only rotate joints to prevent skinning artefacts.
                     skeleton->set_joint_rotation(new_transform.rotation, child_id);
-                    pose.set_joint_rotation(new_transform.rotation, child_id);
 
                     trs new_local_child_transform = parent_local * new_transform;
                     new_local_child_transform.rotation = normalize(new_local_child_transform.rotation);

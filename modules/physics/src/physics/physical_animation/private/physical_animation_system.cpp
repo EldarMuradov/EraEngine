@@ -76,63 +76,55 @@ namespace era_engine::physics
 			idle_profile->type = RagdollProfileType::IDLE;
 			idle_profile->head_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
 			idle_profile->head_constraint.angular_drive_stiffness = 20.0f;
-			idle_profile->head_constraint.angular_drive_damping = 250.0f;
+			idle_profile->head_constraint.angular_drive_damping = 20.0f;
 			idle_profile->head_constraint.linear_drive_stiffness = 20.0f;
 			idle_profile->head_constraint.linear_drive_damping = 200.0f;
+			idle_profile->head_constraint.should_create_drive_joint = true;
 
 			idle_profile->neck_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
-			idle_profile->neck_constraint.angular_drive_stiffness = 20.0f;
-			idle_profile->neck_constraint.angular_drive_damping = 250.0f;
-			idle_profile->neck_constraint.linear_drive_stiffness = 20.0f;
-			idle_profile->neck_constraint.linear_drive_damping = 200.0f;
 
 			idle_profile->arm_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
-			idle_profile->arm_constraint.angular_drive_stiffness = 30.0f;
-			idle_profile->arm_constraint.angular_drive_damping = 300.0f;
-			idle_profile->arm_constraint.linear_drive_stiffness = 30.0f;
-			idle_profile->arm_constraint.linear_drive_damping = 200.0f;
 
 			idle_profile->body_upper_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
 			idle_profile->body_upper_constraint.angular_drive_stiffness = 30.0f;
 			idle_profile->body_upper_constraint.angular_drive_damping = 300.0f;
 			idle_profile->body_upper_constraint.linear_drive_stiffness = 30.0f;
 			idle_profile->body_upper_constraint.linear_drive_damping = 200.0f;
+			idle_profile->body_upper_constraint.should_create_drive_joint = true;
 
 			idle_profile->body_middle_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
-			idle_profile->body_middle_constraint.angular_drive_stiffness = 30.0f;
-			idle_profile->body_middle_constraint.angular_drive_damping = 300.0f;
-			idle_profile->body_middle_constraint.linear_drive_stiffness = 30.0f;
-			idle_profile->body_middle_constraint.linear_drive_damping = 200.0f;
+
+			idle_profile->body_lower_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
 
 			idle_profile->forearm_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
 			idle_profile->forearm_constraint.angular_drive_stiffness = 30.0f;
-			idle_profile->forearm_constraint.angular_drive_damping = 300.0f;
+			idle_profile->forearm_constraint.angular_drive_damping = 400.0f;
 			idle_profile->forearm_constraint.linear_drive_stiffness = 30.0f;
-			idle_profile->forearm_constraint.linear_drive_damping = 200.0f;
+			idle_profile->forearm_constraint.linear_drive_damping = 300.0f;
+			idle_profile->forearm_constraint.should_create_drive_joint = true;
 
 			idle_profile->hand_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
 			idle_profile->hand_constraint.angular_drive_stiffness = 20.0f;
-			idle_profile->hand_constraint.angular_drive_damping = 250.0f;
+			idle_profile->hand_constraint.angular_drive_damping = 200.0f;
 			idle_profile->hand_constraint.linear_drive_stiffness = 20.0f;
-			idle_profile->hand_constraint.linear_drive_damping = 200.0f;
+			idle_profile->hand_constraint.linear_drive_damping = 400.0f;
+			idle_profile->hand_constraint.should_create_drive_joint = true;
 
 			idle_profile->leg_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
-			idle_profile->leg_constraint.angular_drive_stiffness = 30.0f;
-			idle_profile->leg_constraint.angular_drive_damping = 300.0f;
-			idle_profile->leg_constraint.linear_drive_stiffness = 30.0f;
-			idle_profile->leg_constraint.linear_drive_damping = 200.0f;
 
 			idle_profile->calf_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
 			idle_profile->calf_constraint.angular_drive_stiffness = 30.0f;
 			idle_profile->calf_constraint.angular_drive_damping = 300.0f;
 			idle_profile->calf_constraint.linear_drive_stiffness = 30.0f;
-			idle_profile->calf_constraint.linear_drive_damping = 200.0f;
+			idle_profile->calf_constraint.linear_drive_damping = 400.0f;
+			idle_profile->calf_constraint.should_create_drive_joint = true;
 
 			idle_profile->foot_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
 			idle_profile->foot_constraint.angular_drive_stiffness = 20.0f;
-			idle_profile->foot_constraint.angular_drive_damping = 250.0f;
+			idle_profile->foot_constraint.angular_drive_damping = 200.0f;
 			idle_profile->foot_constraint.linear_drive_stiffness = 20.0f;
 			idle_profile->foot_constraint.linear_drive_damping = 200.0f;
+			idle_profile->foot_constraint.should_create_drive_joint = true;
 		}
 
 		{
@@ -454,27 +446,13 @@ namespace era_engine::physics
 
 	void PhysicalAnimationSystem::update_chains_states(const PhysicalAnimationComponent* physical_animation_component, float dt) const
 	{
-		bool has_any_simulated_chains = false;
-
-		has_any_simulated_chains |= check_chain(physical_animation_component->left_arm_chain);
-		has_any_simulated_chains |= check_chain(physical_animation_component->right_arm_chain);
-		has_any_simulated_chains |= check_chain(physical_animation_component->left_leg_chain);
-		has_any_simulated_chains |= check_chain(physical_animation_component->right_leg_chain);
-
-		// Reset forse simulation on body chain if not idle.
-		if (!physical_animation_component->is_in_idle())
-		{
-			has_any_simulated_chains = false;
-		}
-
-		// If we have at least one simulated chain, we should also simulate the body root chain.
-		update_chain(physical_animation_component->body_chain, dt, has_any_simulated_chains);
-		update_chain(physical_animation_component->neck_chain, dt, has_any_simulated_chains);
-
-		update_chain(physical_animation_component->left_arm_chain, dt);
-		update_chain(physical_animation_component->right_arm_chain, dt);
+		update_chain(physical_animation_component->body_chain, dt);
 		update_chain(physical_animation_component->left_leg_chain, dt);
 		update_chain(physical_animation_component->right_leg_chain, dt);
+
+		update_chain(physical_animation_component->neck_chain, dt);
+		update_chain(physical_animation_component->left_arm_chain, dt);
+		update_chain(physical_animation_component->right_arm_chain, dt);
 	}
 
 	bool PhysicalAnimationSystem::update_chain(const ref<PhysicsLimbChain>& chain, float dt, bool force_simulation) const
@@ -500,7 +478,10 @@ namespace era_engine::physics
 
 			if (limb_data_component->was_in_collision && limb_data_component->is_colliding)
 			{
-				limb_data_component->collision_time = clamp(limb_data_component->collision_time + dt, 0.0f, limb_data_component->max_collision_time);
+				const float used_collision_time = limb_data_component->type == PhysicalAnimationLimbComponent::Type::HAND ? 
+					PhysicalAnimationLimbComponent::MAX_FREQUENT_COLLISION_TIME :
+					PhysicalAnimationLimbComponent::MAX_COLLISION_TIME;
+				limb_data_component->collision_time = clamp(limb_data_component->collision_time + dt, 0.0f, used_collision_time);
 			}
 			else
 			{
@@ -514,7 +495,7 @@ namespace era_engine::physics
 
 	bool PhysicalAnimationSystem::check_chain(const ref<PhysicsLimbChain>& chain, bool force_simulation) const
 	{
-		const bool should_update_as_simulated = chain->has_any_blocked_limb() || chain->has_any_colliding_limb() || force_simulation;
+		const bool should_update_as_simulated = chain->has_any_colliding_limb() || force_simulation;
 		return should_update_as_simulated;
 	}
 
@@ -530,11 +511,6 @@ namespace era_engine::physics
 		trs world_space_limb_transform = world_space_ragdoll_transform * calculated_target_local_space_pose;
 		world_space_limb_transform.scale = vec3(1.0f);
 		limb_data_component->target_pose = world_space_limb_transform;
-
-		if(!physical_animation_component->simulated.get())
-		{
-			limb_data_component->adjusted_pose = limb_data_component->target_pose;
-		}
 
 		// Reset at the beggining of the calculation process.
 		limb_data_component->is_colliding = false;

@@ -50,6 +50,9 @@ namespace era_engine::physics
         bool accelerated = true;
         bool enable_slerp_drive = true;
 
+        // This flag should be set on default profile (IDLE).
+        bool should_create_drive_joint = false;
+
         ConstraintBlendType blend_type = ConstraintBlendType::BLEND_WITH_PREV_POSE;
     };
 
@@ -71,6 +74,7 @@ namespace era_engine::physics
 
         ConstraintDetails body_upper_constraint;
         ConstraintDetails body_middle_constraint;
+        ConstraintDetails body_lower_constraint;
 
         ConstraintDetails arm_constraint;
         ConstraintDetails forearm_constraint;
@@ -80,19 +84,17 @@ namespace era_engine::physics
         ConstraintDetails calf_constraint;
         ConstraintDetails foot_constraint;
 
+        float drive_angular_velocity_modifier = 1.0f;
+        float drive_linear_velocity_modifier = 1.0f;
+
         float acceleration_limit = 0.2f;
         float acceleration_gain = 0.02f;
-        float legs_acceleration_gain = 0.02f;
+
+        float partial_angular_drive_limit = 25.0f;
+        float partial_angular_drive = 0.2f;
 
         float partial_velocity_drive_limit = 1.0f;
         float partial_velocity_drive = 0.2f;
-
-        float drive_angular_velocity_modifier = 0.8f;
-        float drive_linear_velocity_modifier = 0.8f;
-
-        float legs_partial_angular_drive = 0.55f;
-        float partial_angular_drive = 0.55f;
-        float partial_angular_drive_limit = 25.0f;
 
         RagdollProfileType type = RagdollProfileType::IDLE;
     };

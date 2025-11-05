@@ -79,7 +79,7 @@ namespace era_engine::physics
 		allocator_callback = new PhysicsAllocatorCallback();
 		foundation = PxCreateFoundation(PX_PHYSICS_VERSION, *allocator_callback, error_reporter);
 
-		if (!foundation)
+		if (foundation == nullptr)
 		{
 			throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
 		}
@@ -87,34 +87,6 @@ namespace era_engine::physics
 		if (descriptor.broad_phase == PxBroadPhaseType::eGPU && PxGetSuggestedCudaDeviceOrdinal(foundation->getErrorCallback()) < 0)
 		{
 			throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
-		}
-
-		if (descriptor.enable_pvd)
-		{
-			pvd = PxCreatePvd(*foundation);
-			transport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
-			pvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
-
-			omni_pvd = PxCreateOmniPvd(*foundation);
-			if (!omni_pvd)
-			{
-				LOG_ERROR("Error: could not create PxOmniPvd!");
-				return;
-			}
-			OmniPvdWriter* omniWriter = omni_pvd->getWriter();
-			if (!omniWriter)
-			{
-				LOG_ERROR("Error: could not get an instance of PxOmniPvdWriter!");
-				return;
-			}
-			OmniPvdFileWriteStream* fStream = omni_pvd->getFileWriteStream();
-			if (!fStream)
-			{
-				LOG_ERROR("Error: could not get an instance of PxOmniPvdFileWriteStream!");
-				return;
-			}
-			fStream->setFileName(descriptor.omni_pvd_path);
-			omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*fStream));
 		}
 
 		tolerance_scale.length = 1.0f;
@@ -200,6 +172,48 @@ namespace era_engine::physics
 
 		static constexpr uint64 align = 16U;
 		scratch_mem_block = allocator.allocate(scratch_mem_block_size, align, true);
+
+		if (descriptor.enable_pvd)
+		{
+			pvd = PxCreatePvd(*foundation);
+
+			PxPvdSceneClient* pvd_client = scene->getScenePvdClient();
+			if (pvd_client)
+			{
+				pvd_client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
+				pvd_client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
+				pvd_client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
+			}
+
+			transport = PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
+			if (transport)
+			{
+				pvd->connect(*transport,
+					PxPvdInstrumentationFlag::ePROFILE
+				);
+			}
+
+			omni_pvd = PxCreateOmniPvd(*foundation);
+			if (!omni_pvd)
+			{
+				LOG_ERROR("Error: could not create PxOmniPvd!");
+				return;
+			}
+			OmniPvdWriter* omniWriter = omni_pvd->getWriter();
+			if (!omniWriter)
+			{
+				LOG_ERROR("Error: could not get an instance of PxOmniPvdWriter!");
+				return;
+			}
+			OmniPvdFileWriteStream* fStream = omni_pvd->getFileWriteStream();
+			if (!fStream)
+			{
+				LOG_ERROR("Error: could not get an instance of PxOmniPvdFileWriteStream!");
+				return;
+			}
+			fStream->setFileName(descriptor.omni_pvd_path);
+			omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*fStream));
+		}
 	}
 
 	physx::PxScene* Physics::get_scene() const

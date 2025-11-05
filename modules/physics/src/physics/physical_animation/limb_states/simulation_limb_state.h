@@ -7,12 +7,14 @@
 
 namespace era_engine::physics
 {
-    class ERA_PHYSICS_API SimulationLimbState final : public BaseLimbState
+    class ERA_PHYSICS_API SimulationLimbState : public BaseLimbState
     {
     public:
         SimulationLimbState(ComponentPtr _limb_component_ptr);
 
         void update(float dt) override;
+
+        void on_exit();
 
         ConstraintLimbStateType try_switch_to(ConstraintLimbStateType desired_state) const override;
     };

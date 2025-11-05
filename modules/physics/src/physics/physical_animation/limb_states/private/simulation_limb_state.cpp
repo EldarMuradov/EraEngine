@@ -16,11 +16,8 @@
 
 namespace era_engine::physics
 {
-	static DebugVar<bool> enable_angular_drive = DebugVar<bool>("physics.physical_animation.enable_angular_drive", true);
+	static DebugVar<bool> enable_partial_drive = DebugVar<bool>("physics.physical_animation.enable_partial_drive", false);
 	static DebugVar<bool> enable_motor_drive = DebugVar<bool>("physics.physical_animation.enable_motor_drive", true);
-
-	static DebugVar<bool> draw_motor_drives = DebugVar<bool>("physics.physical_animation.draw_motor_drives", false);
-	static DebugVar<bool> draw_joint_poses = DebugVar<bool>("physics.physical_animation.draw_joint_poses", false);
 
     SimulationLimbState::SimulationLimbState(ComponentPtr _limb_component_ptr)
         : BaseLimbState(_limb_component_ptr)
@@ -43,35 +40,6 @@ namespace era_engine::physics
 
         const ref<RagdollProfile> profile = physical_animation_component->get_ragdoll_profile();
         ASSERT(profile != nullptr);
-
-        const bool is_leg_limb = PhysicalAnimationUtils::is_low_limb(limb_component->type);
-
-		// Keyframe controller stage.
-		{
-			const vec3& raw_root_velocity = physical_animation_component->velocity;
-
-			const vec3 delta_position = limb_component->adjusted_pose.position - limb_component->physics_pose.position;
-
-			// Partial velocity drive.
-			vec3 desired_velocity = delta_position / dt;
-			const float desired_velocity_magnitude = length(desired_velocity);
-			if (desired_velocity_magnitude > profile->partial_velocity_drive_limit)
-			{
-				desired_velocity = desired_velocity * (profile->partial_velocity_drive_limit / desired_velocity_magnitude);
-			}
-			vec3 drive_linear_velocity = lerp(dynamic_body->linear_velocity, desired_velocity, profile->partial_velocity_drive * limb_component->drive_velocity_modifier);
-
-			// Partial root velocity drive.
-			vec3 root_velocity = raw_root_velocity;
-			const float velocity_magnitude = length(root_velocity);
-			if (velocity_magnitude > profile->acceleration_limit)
-			{
-				root_velocity = root_velocity * (profile->acceleration_limit / velocity_magnitude);
-			}
-			drive_linear_velocity += root_velocity * (is_leg_limb ? profile->legs_acceleration_gain : profile->acceleration_gain);
-
-			dynamic_body->linear_velocity = drive_linear_velocity;
-		}
 
 		const quat delta_rotation = normalize(limb_component->adjusted_pose.rotation * conjugate(limb_component->physics_pose.rotation));
 		const vec3 angular_drive_velocity = PhysicalAnimationUtils::calculate_delta_rotation_time_derivative(delta_rotation, dt);
@@ -126,16 +94,40 @@ namespace era_engine::physics
 		{
 			if (!limb_component->drive_joint_component.is_empty())
 			{
-				D6JointComponent* drive_joint_component = static_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
-				drive_joint_component->drive_transform = trs::identity;
-				drive_joint_component->angular_drive_velocity = vec3::zero;
-				drive_joint_component->linear_drive_velocity = vec3::zero;
+				PhysicalAnimationUtils::reset_motor_drive(limb_component);
 			}
 		}
 
-		// Angular velocity drives for rotation stabilization.
-		if (enable_angular_drive)
+		// Velocity drives for rotation stabilization.
+		if (enable_partial_drive)
 		{
+			// Keyframe controller stage.
+			{
+				const vec3& raw_root_velocity = physical_animation_component->velocity;
+
+				const vec3 delta_position = limb_component->adjusted_pose.position - limb_component->physics_pose.position;
+
+				// Partial velocity drive.
+				vec3 desired_velocity = delta_position / dt;
+				const float desired_velocity_magnitude = length(desired_velocity);
+				if (desired_velocity_magnitude > profile->partial_velocity_drive_limit)
+				{
+					desired_velocity = desired_velocity * (profile->partial_velocity_drive_limit / desired_velocity_magnitude);
+				}
+				vec3 drive_linear_velocity = lerp(dynamic_body->linear_velocity, desired_velocity, profile->partial_velocity_drive * limb_component->drive_velocity_modifier);
+
+				// Partial root velocity drive.
+				vec3 root_velocity = raw_root_velocity;
+				const float velocity_magnitude = length(root_velocity);
+				if (velocity_magnitude > profile->acceleration_limit)
+				{
+					root_velocity = root_velocity * (profile->acceleration_limit / velocity_magnitude);
+				}
+				drive_linear_velocity += root_velocity * profile->acceleration_gain;
+
+				dynamic_body->linear_velocity = drive_linear_velocity;
+			}
+
 			vec3 desired_angular_velocity = angular_drive_velocity;
 			const float angular_velocity_magnitude = length(desired_angular_velocity);
 			if (angular_velocity_magnitude > profile->partial_angular_drive_limit)
@@ -143,7 +135,7 @@ namespace era_engine::physics
 				desired_angular_velocity *= (profile->partial_angular_drive_limit / angular_velocity_magnitude);
 			}
 
-			const float angular_velocity_modifier = is_leg_limb ? profile->legs_partial_angular_drive : profile->partial_angular_drive;
+			const float angular_velocity_modifier = profile->partial_angular_drive;
 
 			const vec3& current_angular_velocity = dynamic_body->angular_velocity;
 			dynamic_body->angular_velocity = lerp(current_angular_velocity, desired_angular_velocity, angular_velocity_modifier);
@@ -158,5 +150,16 @@ namespace era_engine::physics
         }
         return desired_state;
     }
+
+	void SimulationLimbState::on_exit()
+	{
+		ASSERT(!physical_animation_limb_component_ptr.is_empty());
+
+		PhysicalAnimationLimbComponent* limb_component = static_cast<PhysicalAnimationLimbComponent*>(physical_animation_limb_component_ptr.get_for_write());
+
+		PhysicalAnimationUtils::reset_motor_drive(limb_component);
+
+		BaseLimbState::on_exit();
+	}
 
 }

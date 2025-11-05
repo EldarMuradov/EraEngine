@@ -17,13 +17,13 @@ namespace era_engine::physics
         return SimulationStateType::ENABLED;
     }
 
-    void EnabledSimulationState::on_entered()
+    void EnabledSimulationState::on_enter()
     {
         ASSERT(physical_animation_component_ptr.get() != nullptr);
 
         PhysicalAnimationComponent* physical_animation_component = dynamic_cast<PhysicalAnimationComponent*>(physical_animation_component_ptr.get_for_write());
         physical_animation_component->blend_weight = 1.0f;
 
-        BaseSimulationState::on_entered();
+        BaseSimulationState::on_enter();
     }
 }

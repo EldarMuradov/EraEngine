@@ -13,7 +13,5 @@ namespace era_engine::physics
         KinematicLimbState(ComponentPtr _limb_component_ptr);
 
         void update(float dt) override;
-
-        ConstraintLimbStateType try_switch_to(ConstraintLimbStateType desired_state) const override;
     };
 }

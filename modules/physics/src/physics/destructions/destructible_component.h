@@ -18,9 +18,6 @@ namespace era_engine::physics
 		~DestructibleComponent() override;
 
 	protected:
-		ref<DestructibleAsset> blast_asset = nullptr;
-		NvBlastActor* blast_actor = nullptr;
-		NvBlastFamily* family = nullptr;
 
 		uint32 health = 100;
 		bool is_root = true;

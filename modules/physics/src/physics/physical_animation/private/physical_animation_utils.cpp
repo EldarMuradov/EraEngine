@@ -1,4 +1,17 @@
 #include "physics/physical_animation/physical_animation_utils.h"
+#include "physics/core/physics.h"
+#include "physics/body_component.h"
+#include "physics/shape_component.h"
+#include "physics/core/physics_utils.h"
+#include "physics/shape_utils.h"
+#include "physics/physical_animation/physical_animation_component.h"
+#include "physics/joint.h"
+
+#include <core/math.h>
+
+#include <ecs/base_components/transform_component.h>
+
+#include <animation/animation.h>
 
 namespace era_engine::physics
 {
@@ -13,10 +26,108 @@ namespace era_engine::physics
 		return desired_angular_velocity;
 	}
 
-	bool PhysicalAnimationUtils::is_low_limb(PhysicalAnimationLimbComponent::Type type)
-	{
-		return type == PhysicalAnimationLimbComponent::Type::LEG ||
-			type == PhysicalAnimationLimbComponent::Type::CALF ||
-			type == PhysicalAnimationLimbComponent::Type::FOOT;
-	}
+    bool PhysicalAnimationUtils::is_body_limb(PhysicalAnimationLimbComponent::Type type)
+    {
+        return type == PhysicalAnimationLimbComponent::Type::BODY_LOWER ||
+            type == PhysicalAnimationLimbComponent::Type::BODY_MIDDLE ||
+            type == PhysicalAnimationLimbComponent::Type::BODY_UPPER;
+    }
+
+    bool PhysicalAnimationUtils::is_head_limb(PhysicalAnimationLimbComponent::Type type)
+    {
+        return type == PhysicalAnimationLimbComponent::Type::HEAD;
+    }
+
+    bool PhysicalAnimationUtils::is_leg_limb(PhysicalAnimationLimbComponent::Type type)
+    {
+        return type == PhysicalAnimationLimbComponent::Type::LEG ||
+            type == PhysicalAnimationLimbComponent::Type::CALF ||
+            type == PhysicalAnimationLimbComponent::Type::FOOT;
+    }
+
+    bool PhysicalAnimationUtils::is_arm_limb(PhysicalAnimationLimbComponent::Type type)
+    {
+        return type == PhysicalAnimationLimbComponent::Type::ARM ||
+            type == PhysicalAnimationLimbComponent::Type::FOREARM ||
+            type == PhysicalAnimationLimbComponent::Type::HAND;
+    }
+
+    void PhysicalAnimationUtils::reset_motor_drive(PhysicalAnimationLimbComponent* limb_component)
+    {
+        ASSERT(limb_component != nullptr);
+
+        if (limb_component->drive_joint_component.is_empty())
+        {
+            return;
+        }
+
+        D6JointComponent* drive_joint_component = dynamic_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
+
+        drive_joint_component->drive_transform = trs::identity;
+        drive_joint_component->linear_drive_velocity = vec3::zero;
+        drive_joint_component->angular_drive_velocity = vec3::zero;
+
+        drive_joint_component->linear_drive_stiffness = limb_component->linear_stiffness;
+        drive_joint_component->linear_drive_damping = limb_component->linear_damping;
+
+        if (drive_joint_component->perform_slerp_drive)
+        {
+            drive_joint_component->slerp_drive_stiffness = limb_component->angular_stiffness;
+            drive_joint_component->slerp_drive_damping = limb_component->angular_damping;
+        }
+        else
+        {
+            drive_joint_component->swing_drive_damping = limb_component->angular_damping;
+            drive_joint_component->swing_drive_stiffness = limb_component->angular_stiffness;
+
+            drive_joint_component->twist_drive_damping = limb_component->angular_damping;
+            drive_joint_component->twist_drive_stiffness = limb_component->angular_stiffness;
+        }
+    }
+
+    void PhysicalAnimationUtils::set_simulation_for_limb(const PhysicalAnimationLimbComponent* limb_component,
+        bool enable_simulation,
+        bool enable_gravity /*= false*/)
+    {
+        ASSERT(limb_component != nullptr);
+
+        DynamicBodyComponent* dynamic_body_component = limb_component->get_entity().get_component<DynamicBodyComponent>();
+        ASSERT(dynamic_body_component != nullptr);
+
+        dynamic_body_component->use_gravity = enable_gravity;
+
+        dynamic_body_component->simulated = enable_simulation;
+
+        if (!enable_simulation)
+        {
+            dynamic_body_component->simulated = false;
+            dynamic_body_component->linear_velocity = vec3::zero;
+            dynamic_body_component->angular_velocity = vec3::zero;
+        }
+    }
+
+    void PhysicalAnimationUtils::force_sync_limb_to_skeleton(const PhysicalAnimationLimbComponent* limb_component,
+        const animation::SkeletonComponent* skeleton_component,
+        const trs& ragdoll_world_transform)
+    {
+        using namespace animation;
+
+        ASSERT(limb_component != nullptr);
+        ASSERT(skeleton_component != nullptr);
+
+        Entity limb = limb_component->get_entity();
+
+        TransformComponent* limb_transform = limb.get_component<TransformComponent>();
+        ASSERT(limb_transform != nullptr);
+
+        AnimationComponent* limb_animation = skeleton_component->get_entity().get_component<AnimationComponent>();
+        ASSERT(limb_animation != nullptr);
+
+        trs limb_object_space_pose = SkeletonUtils::get_object_space_joint_transform(limb_animation->current_animation_pose, 
+            skeleton_component->skeleton, 
+            limb_component->joint_id);
+        limb_object_space_pose.scale = vec3(1.0f);
+
+        PhysicsUtils::manual_set_physics_transform(limb, ragdoll_world_transform * limb_object_space_pose, true);
+    }
 }

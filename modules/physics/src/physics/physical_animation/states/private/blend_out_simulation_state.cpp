@@ -39,7 +39,7 @@ namespace era_engine::physics
         BaseSimulationState::update(dt);
     }
 
-    void BlendOutSimulationState::on_entered()
+    void BlendOutSimulationState::on_enter()
     {
         ASSERT(physical_animation_component_ptr.get() != nullptr);
 
@@ -47,6 +47,6 @@ namespace era_engine::physics
         blend_time = (1.0f - physical_animation_component->blend_weight) * physical_animation_component->blend_out_time;
 
         time_range = vec2(0.0f, physical_animation_component->blend_out_time);
-        BaseSimulationState::on_entered();
+        BaseSimulationState::on_enter();
     }
 }

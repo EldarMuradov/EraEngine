@@ -1,9 +1,14 @@
 #include "physics/physical_animation/states/blend_in_simulation_state.h"
 #include "physics/physical_animation/physical_animation_component.h"
+#include "physics/physical_animation/physical_animation_utils.h"
 #include "physics/body_component.h"
 #include "physics/joint.h"
 #include "physics/shape_utils.h"
 #include "physics/shape_component.h"
+
+#include <ecs/base_components/transform_component.h>
+
+#include <animation/animation.h>
 
 namespace era_engine::physics
 {
@@ -43,8 +48,10 @@ namespace era_engine::physics
         BaseSimulationState::update(dt);
     }
 
-    void BlendInSimulationState::on_entered()
+    void BlendInSimulationState::on_enter()
     {
+        using namespace animation;
+
         ASSERT(physical_animation_component_ptr.get() != nullptr);
 
         PhysicalAnimationComponent* physical_animation_component = dynamic_cast<PhysicalAnimationComponent*>(physical_animation_component_ptr.get_for_write());
@@ -52,27 +59,23 @@ namespace era_engine::physics
         blend_time = physical_animation_component->blend_weight * physical_animation_component->blend_in_time;
         time_range = vec2(0.0f, physical_animation_component->blend_in_time);
 
-        if (!physical_animation_component->simulated)
-        {
-            for (const EntityPtr& limb_ptr : physical_animation_component->limbs)
-            {
-                Entity limb = limb_ptr.get();
+		if (!physical_animation_component->simulated)
+		{
+			const trs& ragdoll_transform = physical_animation_component->get_entity().get_component<TransformComponent>()->get_world_transform();
+			const SkeletonComponent* skeleton_component = physical_animation_component->get_entity().get_component<SkeletonComponent>();
 
-                PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
+			auto process_limb = [&skeleton_component, &ragdoll_transform](PhysicalAnimationLimbComponent* limb_component)
+				{
+					PhysicalAnimationUtils::reset_motor_drive(limb_component);
+					PhysicalAnimationUtils::set_simulation_for_limb(limb_component, true, false);
+					PhysicalAnimationUtils::force_sync_limb_to_skeleton(limb_component, skeleton_component, ragdoll_transform);
+				};
 
-                D6JointComponent* drive_joint_component = dynamic_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
-
-                if (drive_joint_component != nullptr)
-                {
-                    drive_joint_component->drive_transform = trs::identity;
-                    drive_joint_component->angular_drive_velocity = vec3::zero;
-                    drive_joint_component->linear_drive_velocity = vec3::zero;
-                }
-            }
+			traverse_simulation_graph(process_limb);
 
             physical_animation_component->simulated = true;
         }
 
-        BaseSimulationState::on_entered();
+        BaseSimulationState::on_enter();
     }
 }

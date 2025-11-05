@@ -5,6 +5,11 @@
 
 #include <core/math.h>
 
+namespace era_engine::animation
+{
+	class SkeletonComponent;
+}
+
 namespace era_engine::physics
 {
 	class ERA_PHYSICS_API PhysicalAnimationUtils final
@@ -15,6 +20,19 @@ namespace era_engine::physics
 		static vec3 calculate_delta_rotation_time_derivative(const quat& delta_rotation,
 			float dt);
 
-		static bool is_low_limb(PhysicalAnimationLimbComponent::Type type);
+		static bool is_body_limb(PhysicalAnimationLimbComponent::Type type);
+		static bool is_head_limb(PhysicalAnimationLimbComponent::Type type);
+		static bool is_leg_limb(PhysicalAnimationLimbComponent::Type type);
+		static bool is_arm_limb(PhysicalAnimationLimbComponent::Type type);
+
+		static void reset_motor_drive(PhysicalAnimationLimbComponent* limb_component);
+
+		static void set_simulation_for_limb(const PhysicalAnimationLimbComponent* limb_component,
+			bool enable_simulation,
+			bool enable_gravity = false);
+
+		static void force_sync_limb_to_skeleton(const PhysicalAnimationLimbComponent* limb_component,
+			const animation::SkeletonComponent* skeleton_component,
+			const trs& ragdoll_world_transform);
 	};
 }

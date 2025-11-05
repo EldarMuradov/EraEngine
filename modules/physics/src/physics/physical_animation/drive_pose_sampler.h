@@ -22,7 +22,7 @@ namespace era_engine::physics
 
         void sample_pose(PhysicalAnimationComponent* physical_animation_component,
             animation::SkeletonComponent* skeleton_to_update,
-            animation::SkeletonPose& pose) const;
+            const animation::SkeletonPose& pose) const;
 
 	private:
 		void blend_with_prev_physics_pose(const trs& prev_joint_transform,

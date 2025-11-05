@@ -1,5 +1,6 @@
 #include "physics/physical_animation/states/disabled_simulation_state.h"
 #include "physics/physical_animation/physical_animation_component.h"
+#include "physics/physical_animation/physical_animation_utils.h"
 #include "physics/body_component.h"
 #include "physics/joint.h"
 #include "physics/shape_utils.h"
@@ -26,7 +27,7 @@ namespace era_engine::physics
         return SimulationStateType::DISABLED;
     }
 
-    void DisabledSimulationState::on_entered()
+    void DisabledSimulationState::on_enter()
     {
         ASSERT(physical_animation_component_ptr.get() != nullptr);
 
@@ -35,35 +36,21 @@ namespace era_engine::physics
 
         if (physical_animation_component->simulated)
         {
-            for (const EntityPtr& limb_ptr : physical_animation_component->limbs)
-            {
-                Entity limb = limb_ptr.get();
-
-                PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
-
-                // Reset all data.
-                limb_component->collision_time = 0.0f;
-                limb_component->was_in_collision = false;
-                limb_component->is_colliding = false;
-                limb_component->is_blocked = false;
-                limb_component->blocked_blend_factor = 0.0f;
-
-                limb_component->force_switch_state(ConstraintLimbStateType::KINEMATIC);
-
-                D6JointComponent* drive_joint_component = dynamic_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
-
-                if (drive_joint_component != nullptr)
+            auto process_limb = [](PhysicalAnimationLimbComponent* limb_component)
                 {
-                    drive_joint_component->drive_transform = trs::identity;
-                    drive_joint_component->angular_drive_velocity = vec3::zero;
-                    drive_joint_component->linear_drive_velocity = vec3::zero;
-                }
-            }
+                    limb_component->reset_collision_data();
+                    limb_component->force_switch_state(ConstraintLimbStateType::KINEMATIC);
+
+                    PhysicalAnimationUtils::reset_motor_drive(limb_component);
+                    PhysicalAnimationUtils::set_simulation_for_limb(limb_component, false, false);
+                };
+
+            traverse_simulation_graph(process_limb);
 
             physical_animation_component->simulated = false;
         }
 
-        BaseSimulationState::on_entered();
+        BaseSimulationState::on_enter();
     }
 
     void DisabledSimulationState::update(float dt)

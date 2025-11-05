@@ -55,34 +55,6 @@ namespace era_engine::physics
 
 			DestructibleComponent* destructibe_component = entity.get_component<DestructibleComponent>();
 
-			if (destructibe_component->is_root)
-			{
-				void* mem = malloc(NvBlastAssetGetFamilyMemorySize(destructibe_component->blast_asset->blast_asset, nullptr));
-
-				NvBlastFamily* family = NvBlastAssetCreateFamily(mem, destructibe_component->blast_asset->blast_asset, nullptr);
-				destructibe_component->family = family;
-
-				std::vector<float> bonds_healths;
-				bonds_healths.resize(NvBlastAssetGetBondCount(destructibe_component->blast_asset->blast_asset, nullptr), destructibe_component->health);
-
-				std::vector<float> support_chunks_healths;
-				support_chunks_healths.resize(NvBlastAssetGetSupportChunkCount(destructibe_component->blast_asset->blast_asset, nullptr), destructibe_component->health);
-
-				NvBlastActorDesc actor_desc{};
-				actor_desc.initialBondHealths = bonds_healths.data();
-				actor_desc.initialSupportChunkHealths = support_chunks_healths.data();
-
-				// Provide scratch memory
-				std::vector<char> scratch(NvBlastFamilyGetRequiredScratchForCreateFirstActor(family, nullptr));
-
-				// Create the first actor
-				NvBlastActor* actor = NvBlastFamilyCreateFirstActor(family, &actor_desc, scratch.data(), nullptr);
-				ASSERT(actor != nullptr);
-
-				destructibe_component->blast_actor = actor;
-			}
-			// else assume actor is created via fracturing
-
 			PxRigidActor* rigid_actor = PhysicsUtils::get_body_component(entity)->get_rigid_actor();
 			if (rigid_actor == nullptr)
 			{

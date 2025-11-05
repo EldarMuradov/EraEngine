@@ -16,7 +16,7 @@ namespace era_engine::physics
 
         void update(float dt) override;
 
-        void on_entered() override;
+        void on_enter() override;
 
     private:
         float blend_time = 0.0f;
