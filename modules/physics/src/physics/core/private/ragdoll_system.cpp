@@ -142,7 +142,7 @@ namespace era_engine::physics
 				const uint32 root_id = 0;
 				ragdoll_component.local_joint_poses[root_id] = SkeletonUtils::get_object_space_joint_transform(skeleton, root_id);
 
-				const trs inverse_ragdoll_world_transform = invert(transform_component.transform);
+				const trs inverse_ragdoll_world_transform = invert(transform_component.get_world_transform());
 
 				std::queue<uint32> q;
 				q.push(root_id);

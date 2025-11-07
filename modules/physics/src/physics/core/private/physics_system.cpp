@@ -348,11 +348,11 @@ namespace era_engine::physics
 			TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
 			transform->type = TransformComponent::DYNAMIC;
 
-			const vec3& pos = transform->transform.position;
-			PxVec3 pospx = create_PxVec3(pos);
+			const trs& world_transform = transform->get_world_transform();
 
-			const quat& q = transform->transform.rotation;
-			PxQuat rotpx = create_PxQuat(q);
+			PxVec3 pospx = create_PxVec3(world_transform.position);
+
+			PxQuat rotpx = create_PxQuat(world_transform.rotation);
 
 			void* user_data = static_cast<void*>(dynamic_body_component);
 
@@ -394,11 +394,11 @@ namespace era_engine::physics
 
 			const TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
 
-			const vec3& pos = transform->transform.position;
-			PxVec3 pospx = create_PxVec3(pos);
+			const trs& world_transform = transform->get_world_transform();
 
-			const quat& q = transform->transform.rotation;
-			PxQuat rotpx = create_PxQuat(q);
+			PxVec3 pospx = create_PxVec3(world_transform.position);
+
+			PxQuat rotpx = create_PxQuat(world_transform.rotation);
 
 			void* user_data = static_cast<void*>(static_body_component);
 

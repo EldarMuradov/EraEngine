@@ -53,6 +53,8 @@ namespace era_engine
 
 			camera->setViewport(renderer_holder_rc->width, renderer_holder_rc->height);
 
+			const trs& world_transform = transform.get_world_transform();
+
 			if (camera_holder.get_camera_type() == CameraHolderComponent::FREE_CAMERA)
 			{
 				if (user_input.mouse.right.down)
@@ -69,14 +71,13 @@ namespace era_engine
 
 					camera->position += camera_rotation * input * dt * CAMERA_MOVEMENT_SPEED;
 
-					transform.transform.position = camera->position;
-					transform.transform.rotation = camera->rotation;
+					transform.set_world_transform(trs{ camera->position, camera->rotation, world_transform.scale});
 				}
 			}
 			else
 			{
-				camera->position = transform.transform.position;
-				camera->rotation = transform.transform.rotation;
+				camera->position = world_transform.position;
+				camera->rotation = world_transform.rotation;
 			}
 
 			camera->updateMatrices();
@@ -88,8 +89,10 @@ namespace era_engine
 
 			camera->setViewport(renderer_holder_rc->width, renderer_holder_rc->height);
 
-			camera->position = transform.transform.position;
-			camera->rotation = transform.transform.rotation;
+			const trs& world_transform = transform.get_world_transform();
+
+			camera->position = world_transform.position;
+			camera->rotation = world_transform.rotation;
 
 			camera->updateMatrices();
 		}

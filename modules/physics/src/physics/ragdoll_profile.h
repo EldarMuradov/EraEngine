@@ -47,7 +47,7 @@ namespace era_engine::physics
 
         float drive_velocity_modifier = 1.0f;
 
-        bool accelerated = true;
+        bool accelerated = false;
         bool enable_slerp_drive = true;
 
         // This flag should be set on default profile (IDLE).

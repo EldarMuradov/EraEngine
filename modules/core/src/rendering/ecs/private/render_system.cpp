@@ -171,7 +171,7 @@ namespace era_engine
 
 			for (auto [entityHandle, transform, raytrace] : world->group(components_group<TransformComponent, RaytraceComponent>).each())
 			{
-				auto handle = raytracingTLAS.instantiate(raytrace.type, transform.transform);
+				auto handle = raytracingTLAS.instantiate(raytrace.type, transform.get_world_transform());
 			}
 
 			renderer->setRaytracingScene(&raytracingTLAS);

@@ -88,8 +88,9 @@ namespace era_engine::animation
 					deltaRootMotion.rotation != quat::identity) &&
 					anim.enable_root_motion)
 				{
-					transform.transform = transform.transform * deltaRootMotion;
-					transform.transform.rotation = normalize(transform.transform.rotation);
+					const trs& world_transform = transform.get_world_transform();
+
+					transform.set_world_transform(world_transform * deltaRootMotion);
 				}
 
 				anim.current_global_transforms = globalTransforms;
@@ -114,7 +115,7 @@ namespace era_engine::animation
 		{
 			if (skeleton.draw_sceleton)
 			{
-				anim.draw_current_skeleton(mesh.mesh, transform.transform, renderer_holder_rc->ldrRenderPass);
+				anim.draw_current_skeleton(mesh.mesh, transform.get_world_transform(), renderer_holder_rc->ldrRenderPass);
 			}
 		}
 	}

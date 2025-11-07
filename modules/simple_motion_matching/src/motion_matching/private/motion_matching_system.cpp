@@ -24,7 +24,6 @@
 #include "motion_matching/quat.h"
 #include "motion_matching/spring.h"
 #include "motion_matching/array.h"
-#include "motion_matching/character.h"
 #include "motion_matching/controller.h"
 
 #include <rttr/policy.h>
@@ -53,8 +52,8 @@ namespace era_engine
     }
 
     static Vec3 desired_velocity_update(
-        const Vec3 gamepadstick_left,
-        const Quat simulation_rotation,
+        const Vec3& gamepadstick_left,
+        const Quat& simulation_rotation,
         const float fwrd_speed,
         const float side_speed,
         const float back_speed)
@@ -68,12 +67,12 @@ namespace era_engine
     }
 
     static Quat desired_rotation_update(
-        const Quat desired_rotation,
-        const Vec3 gamepadstick_left,
-        const Vec3 gamepadstick_right,
+        const Quat& desired_rotation,
+        const Vec3& gamepadstick_left,
+        const Vec3& gamepadstick_right,
         const float strafe_direction,
         const bool desired_strafe,
-        const Vec3 desired_velocity)
+        const Vec3& desired_velocity)
     {
         Quat desired_rotation_curr = desired_rotation;
 
@@ -123,8 +122,8 @@ namespace era_engine
         Quat& transition_dst_rotation,
         Vec3& position,
         Quat& rotation,
-        const Vec3 input_position,
-        const Quat input_rotation)
+        const Vec3& input_position,
+        const Quat& input_rotation)
     {
         // Find the position difference and add it to the state and transition location
         Vec3 position_difference = input_position - position;
@@ -155,8 +154,8 @@ namespace era_engine
         Quat& transition_src_rotation,
         Vec3& transition_dst_position,
         Quat& transition_dst_rotation,
-        const Vec3 root_position,
-        const Quat root_rotation)
+        const Vec3& root_position,
+        const Quat& root_rotation)
     {
         bone_offset_positions.zero();
         bone_offset_velocities.zero();
@@ -185,18 +184,18 @@ namespace era_engine
         Quat& transition_src_rotation,
         Vec3& transition_dst_position,
         Quat& transition_dst_rotation,
-        const Vec3 root_position,
-        const Vec3 root_velocity,
-        const Quat root_rotation,
-        const Vec3 root_angular_velocity,
-        const slice1d<Vec3> bone_src_positions,
-        const slice1d<Vec3> bone_src_velocities,
-        const slice1d<Quat> bone_src_rotations,
-        const slice1d<Vec3> bone_src_angular_velocities,
-        const slice1d<Vec3> bone_dst_positions,
-        const slice1d<Vec3> bone_dst_velocities,
-        const slice1d<Quat> bone_dst_rotations,
-        const slice1d<Vec3> bone_dst_angular_velocities)
+        const Vec3& root_position,
+        const Vec3& root_velocity,
+        const Quat& root_rotation,
+        const Vec3& root_angular_velocity,
+        const slice1d<Vec3>& bone_src_positions,
+        const slice1d<Vec3>& bone_src_velocities,
+        const slice1d<Quat>& bone_src_rotations,
+        const slice1d<Vec3>& bone_src_angular_velocities,
+        const slice1d<Vec3>& bone_dst_positions,
+        const slice1d<Vec3>& bone_dst_velocities,
+        const slice1d<Quat>& bone_dst_rotations,
+        const slice1d<Vec3>& bone_dst_angular_velocities)
     {
         // First we record the root position and rotation
         // in the animation data for the source and destination
@@ -267,14 +266,14 @@ namespace era_engine
         slice1d<Vec3> bone_offset_velocities,
         slice1d<Quat> bone_offset_rotations,
         slice1d<Vec3> bone_offset_angular_velocities,
-        const slice1d<Vec3> bone_input_positions,
-        const slice1d<Vec3> bone_input_velocities,
-        const slice1d<Quat> bone_input_rotations,
-        const slice1d<Vec3> bone_input_angular_velocities,
-        const Vec3 transition_src_position,
-        const Quat transition_src_rotation,
-        const Vec3 transition_dst_position,
-        const Quat transition_dst_rotation,
+        const slice1d<Vec3>& bone_input_positions,
+        const slice1d<Vec3>& bone_input_velocities,
+        const slice1d<Quat>& bone_input_rotations,
+        const slice1d<Vec3>& bone_input_angular_velocities,
+        const Vec3& transition_src_position,
+        const Quat& transition_src_rotation,
+        const Vec3& transition_dst_position,
+        const Quat& transition_dst_rotation,
         const float halflife,
         const float dt)
     {
@@ -351,9 +350,9 @@ namespace era_engine
         slice1d<float> query,
         int& offset,
         const int size,
-        const slice1d<float> features,
-        const slice1d<float> features_offset,
-        const slice1d<float> features_scale)
+        const slice1d<float>& features,
+        const slice1d<float>& features_offset,
+        const slice1d<float>& features_scale)
     {
         for (int i = 0; i < size; i++)
         {
@@ -368,9 +367,9 @@ namespace era_engine
     static void query_compute_trajectory_position_feature(
         slice1d<float> query,
         int& offset,
-        const Vec3 root_position,
-        const Quat root_rotation,
-        const slice1d<Vec3> trajectory_positions)
+        const Vec3& root_position,
+        const Quat& root_rotation,
+        const slice1d<Vec3>& trajectory_positions)
     {
         Vec3 traj0 = quat_inv_mul_vec3(root_rotation, trajectory_positions(1) - root_position);
         Vec3 traj1 = quat_inv_mul_vec3(root_rotation, trajectory_positions(2) - root_position);
@@ -390,8 +389,8 @@ namespace era_engine
     static void query_compute_trajectory_direction_feature(
         slice1d<float> query,
         int& offset,
-        const Quat root_rotation,
-        const slice1d<Quat> trajectory_rotations)
+        const Quat& root_rotation,
+        const slice1d<Quat>& trajectory_rotations)
     {
         Vec3 traj0 = quat_inv_mul_vec3(root_rotation, quat_mul_vec3(trajectory_rotations(1), Vec3(0, 0, 1)));
         Vec3 traj1 = quat_inv_mul_vec3(root_rotation, quat_mul_vec3(trajectory_rotations(2), Vec3(0, 0, 1)));
@@ -412,10 +411,10 @@ namespace era_engine
     // Collide against the obscales which are
     // essentially bounding boxes of a given size
     static Vec3 simulation_collide_obstacles(
-        const Vec3 prev_pos,
-        const Vec3 next_pos,
-        const slice1d<Vec3> obstacles_positions,
-        const slice1d<Vec3> obstacles_scales,
+        const Vec3& prev_pos,
+        const Vec3& next_pos,
+        const slice1d<Vec3>& obstacles_positions,
+        const slice1d<Vec3>& obstacles_scales,
         const float radius = 0.6f)
     {
         Vec3 dx = next_pos - prev_pos;
@@ -450,11 +449,11 @@ namespace era_engine
         Vec3& position,
         Vec3& velocity,
         Vec3& acceleration,
-        const Vec3 desired_velocity,
+        const Vec3& desired_velocity,
         const float halflife,
         const float dt,
-        const slice1d<Vec3> obstacles_positions,
-        const slice1d<Vec3> obstacles_scales)
+        const slice1d<Vec3>& obstacles_positions,
+        const slice1d<Vec3>& obstacles_scales)
     {
         float y = halflife_to_damping(halflife) / 2.0f;
         Vec3 j0 = velocity - desired_velocity;
@@ -478,7 +477,7 @@ namespace era_engine
     static void simulation_rotations_update(
         Quat& rotation,
         Vec3& angular_velocity,
-        const Quat desired_rotation,
+        const Quat& desired_rotation,
         const float halflife,
         const float dt)
     {
@@ -496,11 +495,10 @@ namespace era_engine
     // the world space
     static void trajectory_desired_velocities_predict(
         slice1d<Vec3> desired_velocities,
-        const slice1d<Quat> trajectory_rotations,
-        const Vec3 desired_velocity,
-        const float camera_azimuth,
-        const Vec3 gamepadstick_left,
-        const Vec3 gamepadstick_right,
+        const slice1d<Quat>& trajectory_rotations,
+        const Vec3& desired_velocity,
+        const Vec3& gamepadstick_left,
+        const Vec3& gamepadstick_right,
         const bool desired_strafe,
         const float fwrd_speed,
         const float side_speed,
@@ -524,14 +522,14 @@ namespace era_engine
         slice1d<Vec3> positions,
         slice1d<Vec3> velocities,
         slice1d<Vec3> accelerations,
-        const Vec3 position,
-        const Vec3 velocity,
-        const Vec3 acceleration,
-        const slice1d<Vec3> desired_velocities,
+        const Vec3& position,
+        const Vec3& velocity,
+        const Vec3& acceleration,
+        const slice1d<Vec3>& desired_velocities,
         const float halflife,
         const float dt,
-        const slice1d<Vec3> obstacles_positions,
-        const slice1d<Vec3> obstacles_scales)
+        const slice1d<Vec3>& obstacles_positions,
+        const slice1d<Vec3>& obstacles_scales)
     {
         positions(0) = position;
         velocities(0) = velocity;
@@ -560,10 +558,9 @@ namespace era_engine
     static void trajectory_desired_rotations_predict(
         slice1d<Quat> desired_rotations,
         const slice1d<Vec3> desired_velocities,
-        const Quat desired_rotation,
-        const float camera_azimuth,
-        const Vec3 gamepadstick_left,
-        const Vec3 gamepadstick_right,
+        const Quat& desired_rotation,
+        const Vec3& gamepadstick_left,
+        const Vec3& gamepadstick_right,
         const bool desired_strafe,
         const float dt)
     {
@@ -584,9 +581,9 @@ namespace era_engine
     static void trajectory_rotations_predict(
         slice1d<Quat> rotations,
         slice1d<Vec3> angular_velocities,
-        const Quat rotation,
-        const Vec3 angular_velocity,
-        const slice1d<Quat> desired_rotations,
+        const Quat& rotation,
+        const Vec3& angular_velocity,
+        const slice1d<Quat>& desired_rotations,
         const float halflife,
         const float dt)
     {
@@ -604,8 +601,6 @@ namespace era_engine
         }
     }
 
-    //--------------------------------------
-
     static void contact_reset(
         bool& contact_state,
         bool& contact_lock,
@@ -615,8 +610,8 @@ namespace era_engine
         Vec3& contact_target,
         Vec3& contact_offset_position,
         Vec3& contact_offset_velocity,
-        const Vec3 input_contact_position,
-        const Vec3 input_contact_velocity,
+        const Vec3& input_contact_position,
+        const Vec3& input_contact_velocity,
         const bool input_contact_state)
     {
         contact_state = false;
@@ -638,7 +633,7 @@ namespace era_engine
         Vec3& contact_target,
         Vec3& contact_offset_position,
         Vec3& contact_offset_velocity,
-        const Vec3 input_contact_position,
+        const Vec3& input_contact_position,
         const bool input_contact_state,
         const float unlock_radius,
         const float foot_height,
@@ -715,11 +710,11 @@ namespace era_engine
     // given target position
     static void ik_look_at(
         Quat& bone_rotation,
-        const Quat global_parent_rotation,
-        const Quat global_rotation,
-        const Vec3 global_position,
-        const Vec3 child_position,
-        const Vec3 target_position,
+        const Quat& global_parent_rotation,
+        const Quat& global_rotation,
+        const Vec3& global_position,
+        const Vec3& child_position,
+        const Vec3& target_position,
         const float eps = 1e-5f)
     {
         Vec3 curr_dir = normalize(child_position - global_position);
@@ -738,15 +733,16 @@ namespace era_engine
     static void ik_two_bone(
         Quat& bone_root_lr,
         Quat& bone_mid_lr,
-        const Vec3 bone_root,
-        const Vec3 bone_mid,
-        const Vec3 bone_end,
-        const Vec3 target,
-        const Vec3 fwd,
-        const Quat bone_root_gr,
-        const Quat bone_mid_gr,
-        const Quat bone_par_gr,
-        const float max_length_buffer) {
+        const Vec3& bone_root,
+        const Vec3& bone_mid,
+        const Vec3& bone_end,
+        const Vec3& target,
+        const Vec3& fwd,
+        const Quat& bone_root_gr,
+        const Quat& bone_mid_gr,
+        const Quat& bone_par_gr,
+        const float max_length_buffer)
+    {
 
         float max_extension =
             length(bone_root - bone_mid) +
@@ -792,8 +788,8 @@ namespace era_engine
     }
 
     static Vec3 adjust_character_position(
-        const Vec3 character_position,
-        const Vec3 simulation_position,
+        const Vec3& character_position,
+        const Vec3& simulation_position,
         const float halflife,
         const float dt)
     {
@@ -811,8 +807,8 @@ namespace era_engine
     }
 
     static Quat adjust_character_rotation(
-        const Quat character_rotation,
-        const Quat simulation_rotation,
+        const Quat& character_rotation,
+        const Quat& simulation_rotation,
         const float halflife,
         const float dt)
     {
@@ -835,9 +831,9 @@ namespace era_engine
     }
 
     static Vec3 adjust_character_position_by_velocity(
-        const Vec3 character_position,
-        const Vec3 character_velocity,
-        const Vec3 simulation_position,
+        const Vec3& character_position,
+        const Vec3& character_velocity,
+        const Vec3& simulation_position,
         const float max_adjustment_ratio,
         const float halflife,
         const float dt)
@@ -862,9 +858,9 @@ namespace era_engine
     }
 
     static Quat adjust_character_rotation_by_velocity(
-        const Quat character_rotation,
-        const Vec3 character_angular_velocity,
-        const Quat simulation_rotation,
+        const Quat& character_rotation,
+        const Vec3& character_angular_velocity,
+        const Quat& simulation_rotation,
         const float max_adjustment_ratio,
         const float halflife,
         const float dt)
@@ -895,8 +891,8 @@ namespace era_engine
     //--------------------------------------
 
     static Vec3 clamp_character_position(
-        const Vec3 character_position,
-        const Vec3 simulation_position,
+        const Vec3& character_position,
+        const Vec3& simulation_position,
         const float max_distance)
     {
         // If the character deviates too far from the simulation 
@@ -914,8 +910,8 @@ namespace era_engine
     }
 
     static Quat clamp_character_rotation(
-        const Quat character_rotation,
-        const Quat simulation_rotation,
+        const Quat& character_rotation,
+        const Quat& simulation_rotation,
         const float max_angle)
     {
         // If the angle between the character rotation and simulation 
@@ -927,7 +923,8 @@ namespace era_engine
                 character_rotation, simulation_rotation));
 
             // We can then decompose it into angle and axis
-            float diff_angle; Vec3 diff_axis;
+            float diff_angle = 0.0f;
+            Vec3 diff_axis;
             quat_to_angle_axis(diff, diff_angle, diff_axis);
 
             // We then clamp the angle to within our bounds
@@ -942,8 +939,6 @@ namespace era_engine
             return character_rotation;
         }
     }
-
-    //--------------------------------------
 
 	RTTR_REGISTRATION
 	{
@@ -969,17 +964,6 @@ namespace era_engine
 	void MotionMatchingSystem::init()
 	{
 		allocator = get_transient_object<Allocator>();
-
-        //obstacles_positions.resize(3);
-        //obstacles_scales.resize(3);
-
-        //obstacles_positions(0) = vec3(5.0f, 0.0f, 6.0f);
-        //obstacles_positions(1) = vec3(-3.0f, 0.0f, -5.0f);
-        //obstacles_positions(2) = vec3(-8.0f, 0.0f, 3.0f);
-
-        //obstacles_scales(0) = vec3(2.0f, 1.0f, 5.0f);
-        //obstacles_scales(1) = vec3(4.0f, 1.0f, 4.0f);
-        //obstacles_scales(2) = vec3(2.0f, 1.0f, 2.0f);
 
         database_load(db, get_asset_path("/resources/assets/motion_matching/database.bin").c_str());
 
@@ -1068,7 +1052,6 @@ namespace era_engine
                 controller.trajectory_desired_rotations,
                 controller.trajectory_desired_velocities,
                 controller.desired_rotation,
-                0.0f,
                 gamepadstick_left,
                 gamepadstick_right,
                 desired_strafe,
@@ -1087,7 +1070,6 @@ namespace era_engine
                 controller.trajectory_desired_velocities,
                 controller.trajectory_rotations,
                 controller.desired_velocity,
-                0.0f,
                 gamepadstick_left,
                 gamepadstick_right,
                 desired_strafe,
@@ -1116,7 +1098,6 @@ namespace era_engine
             array1d<float> query(db.nfeatures());
 
             // Compute the features of the query vector
-
             slice1d<float> query_features = db.features(controller.frame_index);
 
             int offset = 0;
@@ -1513,9 +1494,9 @@ namespace era_engine
                     controller.simulation_position.y,
                     controller.simulation_position.z), vec3(sim_dir_.x, sim_dir_.y, sim_dir_.z), vec4(0.0f, 1.0f, 0.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
 
-            transform_component.transform = 
+            transform_component.set_world_transform(
                 trs(vec3(controller.simulation_position.x, controller.simulation_position.y, controller.simulation_position.z),
-                    quat(controller.simulation_rotation.x, controller.simulation_rotation.y, controller.simulation_rotation.z, controller.simulation_rotation.w));
+                    quat(controller.simulation_rotation.x, controller.simulation_rotation.y, controller.simulation_rotation.z, controller.simulation_rotation.w)));
 
             if (clamping_enabled)
             {
@@ -1576,8 +1557,10 @@ namespace era_engine
 
         controller.frame_index = db.range_starts(0);
 
-        const vec3& current_pos = transform.transform.position;
-        const quat& current_rot = transform.transform.rotation;
+        const trs& world_transform = transform.get_world_transform();
+
+        const vec3& current_pos = world_transform.position;
+        const quat& current_rot = world_transform.rotation;
 
         controller.simulation_position = Vec3(current_pos.x, current_pos.y, current_pos.z);
         controller.simulation_rotation = Quat(current_rot.w, current_rot.x, current_rot.y, current_rot.z);

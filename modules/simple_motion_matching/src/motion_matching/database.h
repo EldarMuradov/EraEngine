@@ -6,7 +6,6 @@
 #include "motion_matching/vec.h"
 #include "motion_matching/quat.h"
 #include "motion_matching/array.h"
-#include "motion_matching/character.h"
 
 #include <assert.h>
 #include <float.h>
@@ -15,6 +14,32 @@
 
 namespace era_engine
 {
+    enum Bones
+    {
+        Bone_Entity = 0,
+        Bone_Hips = 1,
+        Bone_LeftUpLeg = 2,
+        Bone_LeftLeg = 3,
+        Bone_LeftFoot = 4,
+        Bone_LeftToe = 5,
+        Bone_RightUpLeg = 6,
+        Bone_RightLeg = 7,
+        Bone_RightFoot = 8,
+        Bone_RightToe = 9,
+        Bone_Spine = 10,
+        Bone_Spine1 = 11,
+        Bone_Spine2 = 12,
+        Bone_Neck = 13,
+        Bone_Head = 14,
+        Bone_LeftShoulder = 15,
+        Bone_LeftArm = 16,
+        Bone_LeftForeArm = 17,
+        Bone_LeftHand = 18,
+        Bone_RightShoulder = 19,
+        Bone_RightArm = 20,
+        Bone_RightForeArm = 21,
+        Bone_RightHand = 22,
+    };
 
     enum
     {
@@ -166,8 +191,8 @@ namespace era_engine
 
     static void denormalize_features(
         slice1d<float> features,
-        const slice1d<float> features_offset,
-        const slice1d<float> features_scale)
+        const slice1d<float>& features_offset,
+        const slice1d<float>& features_scale)
     {
         for (int i = 0; i < features.size; i++)
         {
@@ -175,15 +200,12 @@ namespace era_engine
         }
     }
 
-    //--------------------------------------
-
-    // Here I am using a simple recursive version of forward kinematics
     static void forward_kinematics(
         Vec3& bone_position,
         Quat& bone_rotation,
-        const slice1d<Vec3> bone_positions,
-        const slice1d<Quat> bone_rotations,
-        const slice1d<int> bone_parents,
+        const slice1d<Vec3>& bone_positions,
+        const slice1d<Quat>& bone_rotations,
+        const slice1d<int>& bone_parents,
         const int bone)
     {
         if (bone_parents(bone) != -1)
@@ -215,14 +237,13 @@ namespace era_engine
         Vec3& bone_velocity,
         Quat& bone_rotation,
         Vec3& bone_angular_velocity,
-        const slice1d<Vec3> bone_positions,
-        const slice1d<Vec3> bone_velocities,
-        const slice1d<Quat> bone_rotations,
-        const slice1d<Vec3> bone_angular_velocities,
-        const slice1d<int> bone_parents,
+        const slice1d<Vec3>&  bone_positions,
+        const slice1d<Vec3>& bone_velocities,
+        const slice1d<Quat>& bone_rotations,
+        const slice1d<Vec3>& bone_angular_velocities,
+        const slice1d<int>& bone_parents,
         const int bone)
     {
-        //
         if (bone_parents(bone) != -1)
         {
             Vec3 parent_position;
@@ -263,9 +284,9 @@ namespace era_engine
     static void forward_kinematics_full(
         slice1d<Vec3> global_bone_positions,
         slice1d<Quat> global_bone_rotations,
-        const slice1d<Vec3> local_bone_positions,
-        const slice1d<Quat> local_bone_rotations,
-        const slice1d<int> bone_parents)
+        const slice1d<Vec3>& local_bone_positions,
+        const slice1d<Quat>& local_bone_rotations,
+        const slice1d<int>& bone_parents)
     {
         for (int i = 0; i < bone_parents.size; i++)
         {
@@ -293,9 +314,9 @@ namespace era_engine
         slice1d<Vec3> global_bone_positions,
         slice1d<Quat> global_bone_rotations,
         slice1d<bool> global_bone_computed,
-        const slice1d<Vec3> local_bone_positions,
-        const slice1d<Quat> local_bone_rotations,
-        const slice1d<int> bone_parents,
+        const slice1d<Vec3>& local_bone_positions,
+        const slice1d<Quat>& local_bone_rotations,
+        const slice1d<int>& bone_parents,
         int bone)
     {
         if (bone_parents(bone) == -1)
@@ -332,11 +353,11 @@ namespace era_engine
         slice1d<Quat> global_bone_rotations,
         slice1d<Vec3> global_bone_angular_velocities,
         slice1d<bool> global_bone_computed,
-        const slice1d<Vec3> local_bone_positions,
-        const slice1d<Vec3> local_bone_velocities,
-        const slice1d<Quat> local_bone_rotations,
-        const slice1d<Vec3> local_bone_angular_velocities,
-        const slice1d<int> bone_parents,
+        const slice1d<Vec3>& local_bone_positions,
+        const slice1d<Vec3>& local_bone_velocities,
+        const slice1d<Quat>& local_bone_rotations,
+        const slice1d<Vec3>& local_bone_angular_velocities,
+        const slice1d<int>& bone_parents,
         int bone)
     {
         if (bone_parents(bone) == -1)
@@ -573,16 +594,16 @@ namespace era_engine
     static void motion_matching_search(
         int& best_index,
         float& best_cost,
-        const slice1d<int> range_starts,
-        const slice1d<int> range_stops,
-        const slice2d<float> features,
-        const slice1d<float> features_offset,
-        const slice1d<float> features_scale,
-        const slice2d<float> bound_sm_min,
-        const slice2d<float> bound_sm_max,
-        const slice2d<float> bound_lr_min,
-        const slice2d<float> bound_lr_max,
-        const slice1d<float> query_normalized,
+        const slice1d<int>& range_starts,
+        const slice1d<int>& range_stops,
+        const slice2d<float>& features,
+        const slice1d<float>& features_offset,
+        const slice1d<float>& features_scale,
+        const slice2d<float>& bound_sm_min,
+        const slice2d<float>& bound_sm_max,
+        const slice2d<float>& bound_lr_min,
+        const slice2d<float>& bound_lr_max,
+        const slice1d<float>& query_normalized,
         const float transition_cost,
         const int ignore_range_end,
         const int ignore_surrounding)
@@ -704,7 +725,7 @@ namespace era_engine
         int& best_index,
         float& best_cost,
         const database& db,
-        const slice1d<float> query,
+        const slice1d<float>& query,
         const float transition_cost = 0.0f,
         const int ignore_range_end = 20,
         const int ignore_surrounding = 20)

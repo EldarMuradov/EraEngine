@@ -212,7 +212,7 @@ namespace era_engine
 
 			if (TransformComponent* transform = selectedEntity.get_component_if_exists<TransformComponent>())
 			{
-				rotation = transform->transform.rotation;
+				rotation = transform->get_world_rotation();
 			}
 
 			selectedEntityEulerRotation = quat_to_euler(rotation);
@@ -518,13 +518,15 @@ namespace era_engine
 
 		if (TransformComponent* transform = entity.get_component_if_exists<TransformComponent>())
 		{
-			aabb.minCorner *= transform->transform.scale;
-			aabb.maxCorner *= transform->transform.scale;
+			const trs& world_transform = transform->get_world_transform();
+
+			aabb.minCorner *= world_transform.scale;
+			aabb.maxCorner *= world_transform.scale;
 
 			if (applyPosition)
 			{
-				aabb.minCorner += transform->transform.position;
-				aabb.maxCorner += transform->transform.position;
+				aabb.minCorner += world_transform.position;
+				aabb.maxCorner += world_transform.position;
 			}
 		}
 		
@@ -856,7 +858,7 @@ namespace era_engine
 		{
 			if (TransformComponent* transform = selectedEntity.get_component_if_exists<TransformComponent>())
 			{
-				if (gizmo.manipulateTransformation(transform->transform, camera, input, !inputCaptured, ldrRenderPass))
+				//if (gizmo.manipulateTransformation(transform->get_world_transform(), camera, input, !inputCaptured, ldrRenderPass))
 				{
 					/*if (auto rb = selectedEntity.get_component_if_exists<physics::DynamicBodyComponent>())
 					{
@@ -879,7 +881,7 @@ namespace era_engine
 					inputCaptured = true;
 					objectMovedByGizmo = true;
 				}
-				else if (draggingBefore)
+				//else if (draggingBefore)
 				{
 					//currentUndoStack->pushAction("object transform",
 					//	component_undo<TransformComponent>(selectedEntity, TransformComponent(selectedEntity.internal_data, gizmo.originalTransform)));

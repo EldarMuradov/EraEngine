@@ -47,13 +47,12 @@ namespace era_engine::physics
 		bool check_chain(const ref<PhysicsLimbChain>& chain,
 			bool force_simulation = false) const;
 
-		void calculate_state_poses(const PhysicalAnimationComponent* physical_animation_component,
+		void update_target_pose(const PhysicalAnimationComponent* physical_animation_component,
 			Entity limb,
-			const trs& calculated_target_local_space_pose,
-			const trs& world_space_ragdoll_transform) const;
+			const trs& calculated_target_local_space_pose) const;
 
 		void update_ragdoll_profiles(PhysicalAnimationComponent* physical_animation_component,
-			const vec3& raw_root_delta_position,
+			const vec3& velocity,
 			float dt,
 			bool force_reload = false) const;
 

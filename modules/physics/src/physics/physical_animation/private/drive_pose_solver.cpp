@@ -22,6 +22,9 @@ namespace era_engine::physics
 	{
 		const PhysicalAnimationComponent* physical_animation_component = dynamic_cast<const PhysicalAnimationComponent*>(physical_animation_component_ptr.get());
 
+        Entity ragdoll = physical_animation_component->get_entity();
+        const trs& ragdoll_world_transform = ragdoll.get_component<TransformComponent>()->get_world_transform();
+
 		for (const auto& limb_ptr : physical_animation_component->limbs)
 		{
 			PhysicalAnimationLimbComponent* limb_data_component = limb_ptr.get().get_component<PhysicalAnimationLimbComponent>();
@@ -41,12 +44,6 @@ namespace era_engine::physics
                 {
                     solve_free_limb(limb_data_component);
                 }
-            }
-
-            if (limb_data_component->drive_joint_component.get() != nullptr)
-            {
-                D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_data_component->drive_joint_component.get_for_write());
-                PhysicsUtils::manual_set_physics_transform(drive_joint->get_first_entity_ptr().get(), limb_data_component->adjusted_pose, true);
             }
 		}
 	}

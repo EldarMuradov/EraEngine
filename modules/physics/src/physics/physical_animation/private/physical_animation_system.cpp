@@ -253,6 +253,13 @@ namespace era_engine::physics
 				continue;
 			}
 
+			const trs& world_transform = transform_component.get_world_transform();
+
+			const vec3 root_delta_motion = world_transform.position - physical_animation_component.prev_world_transform.position;
+			physical_animation_component.velocity = root_delta_motion / dt;
+
+			physical_animation_component.prev_world_transform = world_transform;
+
 			const bool is_simulated = physical_animation_component.get_current_state_type() != SimulationStateType::DISABLED;
 
 			if (is_simulated)
@@ -263,10 +270,68 @@ namespace era_engine::physics
 					continue;
 				}
 
-				SkeletonPose current_animation_pose = animation_component.current_animation_pose;
+				const SkeletonPose& current_animation_pose = animation_component.current_animation_pose;
 
 				// Sample only if simulation enabled.
 				pose_sampler->sample_pose(&physical_animation_component, &skeleton_component, current_animation_pose);
+
+				std::queue<uint32> simulation_limbs_queue;
+				simulation_limbs_queue.push(physical_animation_component.root_joint_id);
+
+				trs pelvis_local_transform = SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton, physical_animation_component.root_joint_id, 0);
+				pelvis_local_transform.scale = vec3(1.0f);
+
+				physical_animation_component.local_joint_poses_for_target_calculation[physical_animation_component.root_joint_id] = pelvis_local_transform;
+
+				update_target_pose(&physical_animation_component, physical_animation_component.simulated_joints.at(physical_animation_component.root_joint_id).get(), pelvis_local_transform);
+
+				// Traverse simulation graph once.
+				while (!simulation_limbs_queue.empty())
+				{
+					const uint32 current_id = simulation_limbs_queue.front();
+					simulation_limbs_queue.pop();
+
+					for (const uint32 child_id : physical_animation_component.children_map[current_id])
+					{
+						const trs& parent_local = physical_animation_component.local_joint_poses_for_target_calculation.at(current_id);
+
+						trs limb_animation_pose = current_animation_pose.get_joint_transform(child_id).get_transform();
+						limb_animation_pose.scale = vec3(1.0f);
+
+						// Update targets from current animation.
+						trs calculated_transform = parent_local * limb_animation_pose;
+						calculated_transform.scale = vec3(1.0f);
+						physical_animation_component.local_joint_poses_for_target_calculation[child_id] = calculated_transform;
+
+						auto limb_iter = physical_animation_component.simulated_joints.find(child_id);
+						if (limb_iter != physical_animation_component.simulated_joints.end())
+						{
+							const Entity limb = limb_iter->second.get();
+							update_target_pose(&physical_animation_component, limb, calculated_transform);
+						}
+
+						simulation_limbs_queue.push(child_id);
+					}
+				}
+
+				const trs pelvis_world_transform = world_transform * pelvis_local_transform;
+				PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
+
+				physical_animation_component.pose_solver->solve_pose(dt);
+
+				for (const EntityPtr& limb_ptr : physical_animation_component.limbs)
+				{
+					Entity limb = limb_ptr.get();
+					PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
+
+					ASSERT(limb_data_component != nullptr);
+
+					if (limb_data_component->drive_joint_component.get() != nullptr)
+					{
+						D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_data_component->drive_joint_component.get_for_write());
+						PhysicsUtils::manual_set_physics_transform(drive_joint->get_first_entity_ptr().get(), world_transform * limb_data_component->adjusted_pose, true);
+					}
+				}
 			}
 		}
 	}
@@ -300,20 +365,15 @@ namespace era_engine::physics
 				continue;
 			}
 
-			const SkeletonPose& current_animation_pose = animation_component.current_animation_pose;
-
 			Entity simulated_body = world->get_entity(entity_handle);
 
-			const trs& world_transform = simulated_body.get_component<TransformComponent>()->get_world_transform();
+			const trs& world_transform = transform_component.get_world_transform();
 
 			const bool is_should_be_simulated = should_be_simulated(simulated_body);
 
-			const vec3 root_delta_motion = world_transform.position - physical_animation_component.prev_fixed_world_transform.position;
-			physical_animation_component.velocity = root_delta_motion / dt;
-
 			if (is_should_be_simulated) // Update profiles only if simulated.
 			{
-				update_ragdoll_profiles(&physical_animation_component, root_delta_motion, dt, false);
+				update_ragdoll_profiles(&physical_animation_component, physical_animation_component.velocity, dt, false);
 			}
 
 			// Update states.
@@ -329,50 +389,17 @@ namespace era_engine::physics
 			{
 				has_any_simulated_ragdolls = true;
 
-				std::queue<uint32> simulation_limbs_queue;
-				simulation_limbs_queue.push(physical_animation_component.root_joint_id);
-
-				trs pelvis_local_transform = SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton, physical_animation_component.root_joint_id, 0);
-				pelvis_local_transform.scale = vec3(1.0f);
-
-				physical_animation_component.local_joint_poses_for_target_calculation[physical_animation_component.root_joint_id] = pelvis_local_transform;
-
-				calculate_state_poses(&physical_animation_component, physical_animation_component.simulated_joints.at(physical_animation_component.root_joint_id).get(), pelvis_local_transform, world_transform);
-
-				// Traverse simulation graph once.
-				while (!simulation_limbs_queue.empty())
+				for (const EntityPtr& limb_ptr : physical_animation_component.limbs)
 				{
-					const uint32 current_id = simulation_limbs_queue.front();
-					simulation_limbs_queue.pop();
+					Entity limb = limb_ptr.get();
+					PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
 
-					for (const uint32 child_id : physical_animation_component.children_map[current_id])
-					{
-						const trs& parent_local = physical_animation_component.local_joint_poses_for_target_calculation.at(current_id);
+					ASSERT(limb_data_component != nullptr);
 
-						trs limb_animation_pose = current_animation_pose.get_joint_transform(child_id).get_transform();
-						limb_animation_pose.scale = vec3(1.0f);
-
-						// Update targets from current animation.
-						trs calculated_transform = parent_local * limb_animation_pose;
-						calculated_transform.scale = vec3(1.0f);
-						physical_animation_component.local_joint_poses_for_target_calculation[child_id] = calculated_transform;
-
-						auto limb_iter = physical_animation_component.simulated_joints.find(child_id);
-						if (limb_iter != physical_animation_component.simulated_joints.end())
-						{
-							const Entity limb = limb_iter->second.get();
-							calculate_state_poses(&physical_animation_component, limb, calculated_transform, world_transform);
-						}
-
-						simulation_limbs_queue.push(child_id);
-					}
+					limb_data_component->physics_pose = limb.get_component<TransformComponent>()->get_local_transform();
+					limb_data_component->is_colliding = false;
 				}
-
-				const trs pelvis_world_transform = world_transform * pelvis_local_transform;
-				PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
 			}
-
-			physical_animation_component.prev_fixed_world_transform = world_transform;
 		}
 
 		if (has_any_simulated_ragdolls)
@@ -396,7 +423,6 @@ namespace era_engine::physics
 				if (is_simulated)
 				{
 					update_chains_states(&physical_animation_component, dt);
-					physical_animation_component.pose_solver->solve_pose(dt);
 				}
 			}
 		}
@@ -499,29 +525,20 @@ namespace era_engine::physics
 		return should_update_as_simulated;
 	}
 
-	void PhysicalAnimationSystem::calculate_state_poses(const PhysicalAnimationComponent* physical_animation_component, Entity limb, const trs& calculated_target_local_space_pose, const trs& world_space_ragdoll_transform) const
+	void PhysicalAnimationSystem::update_target_pose(const PhysicalAnimationComponent* physical_animation_component, Entity limb, const trs& calculated_target_local_space_pose) const
 	{
 		PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
 		ASSERT(limb_data_component != nullptr);
 
-		// Assume that PxRigidDynamic::getGlobalPose() is equal to entitie's world transform.
-		limb_data_component->physics_pose = limb.get_component<TransformComponent>()->get_world_transform();
-
-		// Calculate target pose in world space.
-		trs world_space_limb_transform = world_space_ragdoll_transform * calculated_target_local_space_pose;
-		world_space_limb_transform.scale = vec3(1.0f);
-		limb_data_component->target_pose = world_space_limb_transform;
-
-		// Reset at the beggining of the calculation process.
-		limb_data_component->is_colliding = false;
+		// Calculate target pose in local space.
+		limb_data_component->target_pose = calculated_target_local_space_pose;
 	}
 
 	void PhysicalAnimationSystem::update_ragdoll_profiles(PhysicalAnimationComponent* physical_animation_component,
-		const vec3& raw_root_delta_position,
+		const vec3& velocity,
 		float dt,
 		bool force_reload) const
 	{
-		const vec3 velocity = (raw_root_delta_position) / dt;
 		const float velocity_magnitude = length(velocity);
 		if (velocity_magnitude >= running_speed && velocity_magnitude <= sprint_speed)
 		{

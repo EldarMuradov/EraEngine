@@ -130,6 +130,7 @@ namespace era_engine
 
         void zero() { memset(data, 0, sizeof(T) * rows * cols); }
         void set(const T& x) { for (int i = 0; i < rows * cols; i++) { data[i] = x; } }
+        void fill(const T* x) { for (int i = 0; i < rows * cols; i++) { data[i] = x[i]; } }
 
         void resize(int _rows, int _cols)
         {
@@ -163,6 +164,62 @@ namespace era_engine
     };
 
     template<typename T>
+    array2d<T> operator*(const array2d<T>& left, const array2d<T>& right)
+    {
+        ASSERT(left.cols == right.rows);
+
+        uint32 l_row_count = left.rows;
+        uint32 l_column_count = left.cols;
+        uint32 r_column_count = right.cols;
+
+        std::vector<float> result;
+        result.resize(l_row_count * r_column_count);
+
+        for (uint32 left_row = 0; left_row < l_row_count; ++left_row)
+        {
+            for (uint32 right_column = 0; right_column < r_column_count; ++right_column)
+            {
+                float element = 0.0f;
+                for (uint32 left_column = 0; left_column < l_column_count; ++left_column)
+                {
+                    uint32 left_linear_index = (left_row * l_column_count) + left_column;
+                    uint32 right_linear_index = (left_column * r_column_count) + right_column;
+
+                    element += (left.data[left_linear_index] * right.data[right_linear_index]);
+                }
+
+                // Store the Result.
+                uint32 linear_index = (left_row * r_column_count) + right_column;
+                result[linear_index] = element;
+            }
+        }
+
+        array2d<T> result_matrix (l_row_count, r_column_count);
+        result_matrix.fill(result.data());
+        return result_matrix;
+    }
+
+    template<typename T>
+    array2d<T> transpose(const array2d<T>& m)
+    {
+        array2d<T> result;
+        result.cols = m.cols;
+        result.rows = m.rows;
+        result.data = (T*)malloc((result.rows * result.cols) * sizeof(T));
+
+        uint32 current_value = 0;
+        for (uint32 i = 0; i < result.rows; ++i)
+        {
+            for (uint32 j = 0; j < result.cols; ++j)
+            {
+                result.data[current_value++] = m(j, i);
+            }
+        }
+
+        return result;
+    }
+
+    template<typename T>
     void array2d_write(const array2d<T>& arr, FILE* f)
     {
         fwrite(&arr.rows, sizeof(int), 1, f);
@@ -174,7 +231,7 @@ namespace era_engine
     template<typename T>
     void array2d_read(array2d<T>& arr, FILE* f)
     {
-        int rows, cols;
+        int rows = 0, cols = 0;
         fread(&rows, sizeof(int), 1, f);
         fread(&cols, sizeof(int), 1, f);
         arr.resize(rows, cols);

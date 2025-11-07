@@ -41,16 +41,15 @@ namespace era_engine
 		ERA_VIRTUAL_REFLECT(Component)
 
 	private:
-		static void update_world_transform(Entity entity);
-
-		static void update_local_transform(Entity entity);
+		void on_world_transform_requested() const;
+		void on_world_transform_changed();
 
 	public:
-		trs transform = trs::identity; // In World space.
 		TransformType type = DYNAMIC;
 
 	private:
 		trs local_transform = trs::identity; // In Parent space.
+		mutable trs transform = trs::identity; // In World space.
 		friend class EntityContainer;
 	};
 

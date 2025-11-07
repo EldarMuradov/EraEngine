@@ -35,12 +35,12 @@ namespace era_engine
 
 	static bool shouldRender(const camera_frustum_planes& frustum, const MeshComponent& mesh, const TransformComponent& transform)
 	{
-		return mesh.mesh && !mesh.is_hidden && (mesh.mesh->loadState.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || !frustum.cullModelSpaceAABB(mesh.mesh->aabb, transform.transform));
+		return mesh.mesh && !mesh.is_hidden && (mesh.mesh->loadState.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || !frustum.cullModelSpaceAABB(mesh.mesh->aabb, transform.get_world_transform()));
 	}
 
 	static bool shouldRender(const bounding_sphere& frustum, const MeshComponent& mesh, const TransformComponent& transform)
 	{
-		return mesh.mesh && !mesh.is_hidden && (mesh.mesh->loadState.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || shouldRender(frustum, mesh.mesh->aabb, transform.transform));
+		return mesh.mesh && !mesh.is_hidden && (mesh.mesh->loadState.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || shouldRender(frustum, mesh.mesh->aabb, transform.get_world_transform()));
 	}
 
 	static bool shouldRender(const light_frustum& frustum, const MeshComponent& mesh, const TransformComponent& transform)
@@ -200,7 +200,9 @@ namespace era_engine
 			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
-			transforms[index] = trs_to_mat4(transform.transform);
+			const trs& world_transform = transform.get_world_transform();
+
+			transforms[index] = trs_to_mat4(world_transform);
 			objectIDs[index] = (uint32)entityHandle;
 
 			++oc.count;
@@ -286,7 +288,9 @@ namespace era_engine
 			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
-			transforms[index] = trs_to_mat4(transform.transform);
+			const trs& world_transform = transform.get_world_transform();
+
+			transforms[index] = trs_to_mat4(world_transform);
 
 			++oc.count;
 		}
@@ -371,8 +375,10 @@ namespace era_engine
 			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
-			transforms[index] = trs_to_mat4(transform.transform);
-			prevFrameTransforms[index] = trs_to_mat4(transform.transform);
+			const trs& world_transform = transform.get_world_transform();
+
+			transforms[index] = trs_to_mat4(world_transform);
+			prevFrameTransforms[index] = trs_to_mat4(world_transform);
 			objectIDs[index] = (uint32)entityHandle;
 
 			++oc.count;
@@ -461,7 +467,9 @@ namespace era_engine
 			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
-			transforms[index] = trs_to_mat4(transform.transform);
+			const trs& world_transform = transform.get_world_transform();
+
+			transforms[index] = trs_to_mat4(world_transform);
 
 			++oc.count;
 		}
@@ -540,8 +548,9 @@ namespace era_engine
 			if (!mesh.mesh || mesh.is_hidden || (mesh.mesh->loadState.load() != AssetLoadState::LOADED))
 				continue;
 
-			transforms[index] = trs_to_mat4(transform.transform);
-			prevFrameTransforms[index] = trs_to_mat4(transform.transform); //TODO
+			const trs& world_transform = transform.get_world_transform();
+			transforms[index] = trs_to_mat4(world_transform);
+			prevFrameTransforms[index] = trs_to_mat4(world_transform); //TODO
 			objectIDs[index] = (uint32)entityHandle;
 
 			D3D12_GPU_VIRTUAL_ADDRESS baseM = transformsAddress + (index * sizeof(mat4));
@@ -612,27 +621,35 @@ namespace era_engine
 
 		for (auto [entityHandle, water, transform] : world->group(components_group<WaterComponent, TransformComponent>).each())
 		{
-			water.render(camera, transparentRenderPass, transform.transform.position, vec2(transform.transform.scale.x, transform.transform.scale.z), dt);
+			const trs& world_transform = transform.get_world_transform();
+
+			water.render(camera, transparentRenderPass, world_transform.position, vec2(world_transform.scale.x, world_transform.scale.z), dt);
 
 			waterPlaneTransforms[numWaterPlanes++] = transform;
 		}
 
 		for (auto [entityHandle, terrain, position] : world->group(components_group<TerrainComponent, TransformComponent>).each())
 		{
+			const trs& world_transform = position.get_world_transform();
+
 			terrain.render(camera, opaqueRenderPass, sunShadowRenderPass, ldrRenderPass,
-				position.transform.position, selectedObjectID == entityHandle, waterPlaneTransforms, numWaterPlanes);
+				world_transform.position, selectedObjectID == entityHandle, waterPlaneTransforms, numWaterPlanes);
 		}
 		arena.reset_to_marker(tempMemoryMarker);
 
 		for (auto [entityHandle, terrain, position, placement] : world->group(components_group<TerrainComponent, TransformComponent, ProcPlacementComponent>).each())
 		{
-			placement.generate(camera, terrain, position.transform.position);
+			const trs& world_transform = position.get_world_transform();
+
+			placement.generate(camera, terrain, world_transform.position);
 			placement.render(ldrRenderPass);
 		}
 
 		for (auto [entityHandle, terrain, position, grass] : world->group(components_group<TerrainComponent, TransformComponent, GrassComponent>).each())
 		{
-			grass.generate(computePass, camera, terrain, position.transform.position, dt);
+			const trs& world_transform = position.get_world_transform();
+
+			grass.generate(computePass, camera, terrain, world_transform.position, dt);
 			grass.render(opaqueRenderPass);
 		}
 	}
@@ -666,7 +683,8 @@ namespace era_engine
 			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
-			transforms[index] = trs_to_mat4(transform.transform);
+
+			transforms[index] = trs_to_mat4(transform.get_world_transform());
 			objectIDs[index] = (uint32)entityHandle;
 
 			++oc.count;
@@ -793,7 +811,9 @@ namespace era_engine
 
 			for (auto [entityHandle, transform, sl] : world->view<TransformComponent, SpotLightComponent>().each())
 			{
-				spot_light_cb cb(transform.transform.position, transform.transform.rotation * vec3(0.f, 0.f, -1.f), sl.color * sl.intensity, sl.innerAngle, sl.outerAngle, sl.distance);
+				const trs& world_transform = transform.get_world_transform();
+
+				spot_light_cb cb(world_transform.position, world_transform.rotation * vec3(0.f, 0.f, -1.f), sl.color * sl.intensity, sl.innerAngle, sl.outerAngle, sl.distance);
 
 				if (sl.castsShadow && lighting.numSpotShadowRenderPasses < lighting.maxNumSpotShadowRenderPasses)
 				{
@@ -827,7 +847,9 @@ namespace era_engine
 
 			for (auto [entityHandle, position, pl] : world->view<TransformComponent, PointLightComponent>().each())
 			{
-				point_light_cb cb(position.transform.position, pl.color * pl.intensity, pl.radius);
+				const trs& world_transform = position.get_world_transform();
+
+				point_light_cb cb(world_transform.position, pl.color * pl.intensity, pl.radius);
 
 				if (pl.castsShadow && lighting.numPointShadowRenderPasses < lighting.maxNumPointShadowRenderPasses)
 				{

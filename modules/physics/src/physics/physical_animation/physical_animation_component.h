@@ -49,16 +49,16 @@ namespace era_engine::physics
 		void reset_collision_data();
 
 	public:
-		/* Joint world space transfrom from animation. */
+		/* Joint local space transfrom from animation. */
 		trs target_pose = trs::identity;
 
 		/*
-			Desired joint world space transfrom.
+			Desired joint local space transfrom.
 			Can be interpolated from physics to animation or be from physics_pose to target_pose.
 		*/
 		trs adjusted_pose = trs::identity;
 
-		/* Physics body world space transfrom. */
+		/* Physics body local space transfrom. */
 		trs physics_pose = trs::identity;
 
 		float angular_damping = 10.0f;
@@ -146,7 +146,7 @@ namespace era_engine::physics
 
 		bool use_spring_pelvis_attachment = false;
 
-		trs prev_fixed_world_transform = trs::identity;
+		trs prev_world_transform = trs::identity;
 
 		vec3 velocity = vec3::zero;
 

@@ -738,7 +738,7 @@ namespace era_engine::physics
 			transform_component->set_world_transform(ragdoll_world_transform * right_foot_joint_transform);
 
 			BoxShapeComponent* box_shape_component = right_foot.add_component<BoxShapeComponent>();
-			box_shape_component->collision_type = CollisionType::RAGDOLL;
+			box_shape_component->collision_type = CollisionType::NONE;
 			box_shape_component->material = material;
 
 			right_foot_box_bottom_transform = position_box_between_joints(

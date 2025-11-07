@@ -7,7 +7,6 @@
 
 namespace era_engine
 {
-
 	static inline float clampf(float x, float min, float max)
 	{
 		return x > max ? max : x < min ? min : x;
@@ -55,5 +54,4 @@ namespace era_engine
 	{
 		return x < min ? min : x > max ? max : x;
 	}
-
 }

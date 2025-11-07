@@ -73,7 +73,10 @@ namespace era_engine::physics
 		desc.halfSideExtent = half_side_extent;
 		desc.slopeLimit = cosf(deg2rad(45.0f));
 		desc.invisibleWallHeight = half_height;
-		desc.position = PxExtendedVec3(transform->transform.position.x, transform->transform.position.y, transform->transform.position.z);
+
+		const trs& world_transform = transform->get_world_transform();
+
+		desc.position = PxExtendedVec3(world_transform.position.x, world_transform.position.y, world_transform.position.z);
 		controller = manager->createController(desc);
 
 		controller->getActor()->setMass(mass);
@@ -107,7 +110,10 @@ namespace era_engine::physics
 		desc.radius = radius;
 		desc.slopeLimit = cosf(deg2rad(45.0f));
 		desc.invisibleWallHeight = height * 0.5f;
-		desc.position = PxExtendedVec3(transform->transform.position.x, transform->transform.position.y, transform->transform.position.z);
+
+		const trs& world_transform = transform->get_world_transform();
+
+		desc.position = PxExtendedVec3(world_transform.position.x, world_transform.position.y, world_transform.position.z);
 		desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
 		controller = manager->createController(desc);
 

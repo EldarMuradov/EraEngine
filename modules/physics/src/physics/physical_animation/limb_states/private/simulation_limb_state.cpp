@@ -51,17 +51,17 @@ namespace era_engine::physics
 
 			const trs& constraint_frame_in_actor1_local = drive_joint_component->get_second_local_frame();
 			const trs& constraint_frame_in_actor0_local = drive_joint_component->get_first_local_frame();
-			const trs& parent_world_transform = drive_joint_component->get_entity().get_component<TransformComponent>()->get_world_transform();
+			const trs& parent_local_transform = drive_joint_component->get_entity().get_component<TransformComponent>()->get_local_transform();
 
-			const trs constraint_frame_actor0_world = parent_world_transform * constraint_frame_in_actor0_local;
-			const trs constraint_frame_adjusted_world = limb_component->adjusted_pose * constraint_frame_in_actor1_local;
+			const trs constraint_frame_actor0_local = parent_local_transform * constraint_frame_in_actor0_local;
+			const trs constraint_frame_adjusted_local = limb_component->adjusted_pose * constraint_frame_in_actor1_local;
 
-			trs target_pose_in_constraint_space = invert(constraint_frame_actor0_world) * constraint_frame_adjusted_world;
+			trs target_pose_in_constraint_space = invert(constraint_frame_actor0_local) * constraint_frame_adjusted_local;
 			target_pose_in_constraint_space.rotation = normalize(target_pose_in_constraint_space.rotation);
 
 			drive_joint_component->drive_transform = target_pose_in_constraint_space;
 
-			const quat parent_constraint_frame_rotation = normalize(parent_world_transform.rotation * constraint_frame_in_actor0_local.rotation);
+			const quat parent_constraint_frame_rotation = normalize(parent_local_transform.rotation * constraint_frame_in_actor0_local.rotation);
 
 			const vec3 angular_velocity_constraint_space = conjugate(parent_constraint_frame_rotation) * angular_drive_velocity;
 			drive_joint_component->angular_drive_velocity = angular_velocity_constraint_space * profile->drive_angular_velocity_modifier;

@@ -84,11 +84,11 @@ namespace era_engine::physics
 
 		DynamicBodyComponent* dynamic_body_component = attachment.add_component<DynamicBodyComponent>();
 
-		dynamic_body_component->mass = map_value(mass, 1.0f, 20.0f, 1.0f, 10.0f);
-		dynamic_body_component->use_gravity = false;
-		dynamic_body_component->simulated = true;
-		dynamic_body_component->kinematic = true;
-		dynamic_body_component->kinematic_motion_type = KinematicMotionType::TELEPORT;
+		dynamic_body_component->mass = mass;
+		dynamic_body_component->use_gravity.get_for_write() = false;
+		dynamic_body_component->simulated.get_for_write() = true;
+		dynamic_body_component->kinematic.get_for_write() = true;
+		dynamic_body_component->kinematic_motion_type.get_for_write() = KinematicMotionType::TELEPORT;
 
 		BoxShapeComponent* box_shape_component = attachment.add_component<BoxShapeComponent>();
 		box_shape_component->half_extents = vec3(0.02f, 0.02f, 0.02f);
@@ -672,7 +672,6 @@ namespace era_engine::physics
 			{
 				DistanceJointComponent* joint_component = body_lower_ghost.add_component<DistanceJointComponent>(descriptor);
 				joint_component->enable_collision = false;
-				joint_component->always_update = true;
 				joint_component->max_distance = 0.05f;
 				joint_component->min_distance = 0.001f;
 				joint_component->stiffness = 500.0f;
@@ -683,7 +682,6 @@ namespace era_engine::physics
 			{
 				FixedJointComponent* joint_component = body_lower_ghost.add_component<FixedJointComponent>(descriptor);
 				joint_component->enable_collision = false;
-				joint_component->always_update = true;
 			}
 			physical_animation_component->use_spring_pelvis_attachment = enable_spring_pelvis_attachment;
 			physical_animation_component->attachment_body = EntityPtr{ body_lower_ghost };
@@ -753,7 +751,7 @@ namespace era_engine::physics
 			transform_component->set_world_transform(ragdoll_world_transform * left_hand_joint_transform);
 
 			BoxShapeComponent* box_shape_component = left_hand.add_component<BoxShapeComponent>();
-			box_shape_component->collision_type = CollisionType::NONE;
+			box_shape_component->collision_type = CollisionType::RAGDOLL;
 			box_shape_component->material = material;
 
 			left_hand_box_bottom_transform = position_box_between_joints(
@@ -836,7 +834,7 @@ namespace era_engine::physics
 			transform_component->set_world_transform(ragdoll_world_transform * right_hand_joint_transform);
 
 			BoxShapeComponent* box_shape_component = right_hand.add_component<BoxShapeComponent>();
-			box_shape_component->collision_type = CollisionType::NONE;
+			box_shape_component->collision_type = CollisionType::RAGDOLL;
 			box_shape_component->material = material;
 
 			right_hand_box_bottom_transform = position_box_between_joints(
@@ -923,7 +921,7 @@ namespace era_engine::physics
 			transform_component->set_world_transform(ragdoll_world_transform * left_foot_joint_transform);
 
 			BoxShapeComponent* box_shape_component = left_foot.add_component<BoxShapeComponent>();
-			box_shape_component->collision_type = CollisionType::NONE;
+			box_shape_component->collision_type = CollisionType::RAGDOLL;
 			box_shape_component->material = material;
 
 			left_foot_box_bottom_transform = position_box_between_joints(

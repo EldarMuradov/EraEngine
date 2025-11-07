@@ -17,7 +17,7 @@ namespace era_engine
 	{
 	public:
 		MotionMatchingSystem(World* _world);
-		~MotionMatchingSystem();
+		~MotionMatchingSystem() override;
 
 		void init() override;
 		void update(float dt) override;

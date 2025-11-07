@@ -481,8 +481,10 @@ namespace era_engine::physics
 				const auto& pxt = rb->getGlobalPose();
 				const auto& pos = pxt.p;
 				const auto& rot = pxt.q;
-				transform->set_world_position(create_vec3(pos));
-				transform->set_world_rotation(create_quat(rot));
+
+				trs new_transform(create_vec3(pos), create_quat(rot), transform->get_local_transform().scale);
+
+				transform->set_world_transform(new_transform);
 			}
 		}
 

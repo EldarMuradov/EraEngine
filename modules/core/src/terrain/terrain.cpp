@@ -496,8 +496,9 @@ namespace era_engine
 		waterPlanes.numWaterPlanes = min(numWaters, 4u);
 		for (uint32 i = 0; i < waterPlanes.numWaterPlanes; ++i)
 		{
-			vec3 pos = waterPlaneTransforms[i].transform.position;
-			vec3 scale = waterPlaneTransforms[i].transform.scale;
+			const trs& world_transform = waterPlaneTransforms[i].get_world_transform();
+			const vec3& pos = world_transform.position;
+			const vec3& scale = world_transform.scale;
 			waterPlanes.waterMinMaxXZ[i] = vec4(pos.x, pos.z, pos.x, pos.z) + vec4(-scale.x, -scale.z, scale.x, scale.z);
 			waterPlanes.waterHeights.data[i] = pos.y;
 		}

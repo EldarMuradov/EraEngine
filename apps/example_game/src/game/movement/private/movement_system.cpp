@@ -58,11 +58,15 @@ namespace era_engine
 
 			vec2 turn_angle = vec2(-user_input.mouse.reldx, -user_input.mouse.reldy) * ROTATION_SENSITIVITY;
 
-			quat& rotation = transform_component.transform.rotation;
+			const trs& world_transform = transform_component.get_world_transform();
+
+			quat rotation = world_transform.rotation;
 			rotation = quat(vec3(0.f, 1.f, 0.f), turn_angle.x) * rotation;
 			rotation = rotation * quat(vec3(1.f, 0.f, 0.f), turn_angle.y);
 
-			transform_component.transform.position += rotation * movement_component.velocity * dt * MOVE_SPEED * vec3(1.0f, 0.0f, 1.0f);
+			vec3 position = world_transform.position + rotation * movement_component.velocity * dt * MOVE_SPEED * vec3(1.0f, 0.0f, 1.0f);
+
+			transform_component.set_world_transform(trs(position, rotation, world_transform.scale));
 		}
 	}
 

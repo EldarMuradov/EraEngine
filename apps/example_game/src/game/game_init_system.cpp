@@ -68,6 +68,7 @@ namespace era_engine
 
 		camera_entity.add_component<InputSenderComponent>()->add_reciever(camera_entity.add_component<InputRecieverComponent>());
 		camera_entity.add_component<MovementComponent>();
+		camera_entity.add_component<MotionMatchingControllerComponent>();
 
 		camera_holder_component->set_camera_type(CameraHolderComponent::FREE_CAMERA);
 		camera_holder_component->set_render_camera(&renderer_holder_rc->camera);
@@ -107,7 +108,7 @@ namespace era_engine
 			tiran = world->create_entity("Tiran");
 
 			AnimationComponent* animation_component = tiran.add_component<AnimationComponent>();
-			animation_component->play = false;
+			//animation_component->play = false;
 			animation_component->update_skeleton = false;
 			animation_component->enable_root_motion = false;
 
@@ -189,12 +190,10 @@ namespace era_engine
 
 			TransformComponent* transform_component = sponza.get_component<TransformComponent>();
 			transform_component->set_world_position(vec3(5.0f, -3.75f, 35.0f));
-
-			//addRaytracingComponentAsync(sponza, mesh);
 		}
 
 		auto plane = world->create_entity("Platform");
-		plane.add_component<physics::PlaneComponent>(CollisionType::TERRAIN, vec3(0.f, -5.0, 0.0f));
+		plane.add_component<PlaneComponent>(CollisionType::TERRAIN, vec3(0.f, -5.0, 0.0f));
 		plane.add_component<MeshComponent>(groundMesh);
 		plane.get_component<TransformComponent>()->set_world_transform(trs{vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)), vec3(5.0f, 1.0f, 5.0f)});
 		

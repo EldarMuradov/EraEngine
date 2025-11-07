@@ -114,8 +114,6 @@ namespace era_engine
 		}
 
 		container.at(parent).childs.push_back(child);
-
-		TransformComponent::update_world_transform(world->get_entity(child));
 	}
 
 	void EntityContainer::erase(World* world, Entity::Handle parent)
@@ -135,7 +133,6 @@ namespace era_engine
 		{
 			Entity child = world->get_entity(*iter);
 			child.set_parent(world->get_root_entity().get_handle());
-			TransformComponent::update_world_transform(child);
 		}
 
 		container.erase(parent);

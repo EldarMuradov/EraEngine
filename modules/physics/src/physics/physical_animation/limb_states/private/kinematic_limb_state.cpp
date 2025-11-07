@@ -25,7 +25,10 @@ namespace era_engine::physics
 
         Entity limb = limb_component->get_entity();
 
-        trs desired_pose = limb_component->target_pose;
+        Entity ragdoll = limb_component->ragdoll_ptr.get();
+        const trs& ragdoll_world_transform = ragdoll.get_component<TransformComponent>()->get_world_transform();
+
+        const trs desired_pose = ragdoll_world_transform * limb_component->target_pose;
 
         PhysicsUtils::manual_set_physics_transform(limb, desired_pose, true);
     }

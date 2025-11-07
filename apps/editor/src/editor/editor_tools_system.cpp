@@ -303,7 +303,7 @@ namespace era_engine
 
 			if (const TransformComponent* transform = selected_entity.get_component_if_exists<TransformComponent>())
 			{
-				rotation = transform->transform.rotation;
+				rotation = transform->get_world_rotation();
 			}
 
 			selected_entity_euler_rotation = quat_to_euler(rotation);
