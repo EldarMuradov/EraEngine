@@ -9,12 +9,18 @@
 #include "asset/asset.h"
 #include "asset/file_registry.h"
 
-#include <dx/dx_profiling.h>
+#include <dx/dx_profiling.h
+
+#pragma warning(push)
+
+#pragma warning(disable:C4273)
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui/imgui_internal.h>
 #include <imgui/backends/imgui_impl_dx12.h>
 #include <imgui/backends/imgui_impl_win32.h>
+
+#pragma warning(pop)
 
 #define MAX_NUM_IMGUI_IMAGES_PER_FRAME 128
 
