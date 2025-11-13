@@ -29,8 +29,6 @@ namespace era_engine
 	struct multi_mesh
 	{
 		std::vector<submesh> submeshes;
-		animation::Skeleton skeleton;
-		animation::AnimationSkeleton animation_skeleton;
 		dx_mesh mesh;
 		bounding_box aabb = { vec3(0.f), vec3(0.f) };
 

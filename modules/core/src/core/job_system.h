@@ -109,4 +109,17 @@ namespace era_engine
 
     void initialize_job_system();
     void execute_main_thread_jobs();
+
+    struct DefaultJob
+    {
+        struct Data
+        {
+            void* user_data = nullptr;
+            size_t data_size = 0;
+        };
+
+        Data data;
+        std::function<void(Data&)> job_func;
+    };
+    ERA_CORE_API JobHandle schedule_low_priority_job(const DefaultJob& job, JobHandle parent_job = {});
 }

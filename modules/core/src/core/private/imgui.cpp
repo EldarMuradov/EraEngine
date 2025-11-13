@@ -9,11 +9,9 @@
 #include "asset/asset.h"
 #include "asset/file_registry.h"
 
-#include <dx/dx_profiling.h
+#include <dx/dx_profiling.h>
 
-#pragma warning(push)
-
-#pragma warning(disable:C4273)
+#pragma warning(push, 0)
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui/imgui_internal.h>

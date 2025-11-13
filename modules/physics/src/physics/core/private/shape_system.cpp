@@ -258,13 +258,13 @@ namespace era_engine::physics
 					continue;
 				}
 
-				const Skeleton* skeleton = skeleton_component->skeleton;
+				const ref<Skeleton> skeleton = skeleton_component->skeleton;
 				if (skeleton == nullptr)
 				{
 					continue;
 				}
 
-				const trs reference_space_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, shape_component->connected_joint_id);
+				const trs reference_space_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton.get(), shape_component->connected_joint_id);
 				const trs& reference_world_transform = referenced_entity.get_component<TransformComponent>()->get_world_transform();
 				const trs world_space_joint_trasnform = reference_world_transform * reference_space_joint_transform;
 

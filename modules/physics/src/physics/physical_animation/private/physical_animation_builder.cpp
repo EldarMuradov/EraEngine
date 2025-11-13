@@ -388,7 +388,7 @@ namespace era_engine::physics
 
 		SkeletonComponent* skeleton_component = ragdoll.get_component<SkeletonComponent>();
 
-		const Skeleton* skeleton = skeleton_component->skeleton;
+		const Skeleton* skeleton = skeleton_component->skeleton.get();
 		if (skeleton == nullptr)
 		{
 			ASSERT(false);

@@ -6,10 +6,10 @@
 #include <core/debug/debug_var.h>
 
 #include <rendering/ecs/renderer_holder_root_component.h>
+#include <rendering/debug_visualization.h>
 
 #include <rttr/policy.h>
 #include <rttr/registration>
-#include <rendering/debug_visualization.h>
 
 namespace era_engine::physics
 {
@@ -53,11 +53,11 @@ namespace era_engine::physics
 			renderPoint(create_vec3(point.pos), vec4(1.0f), renderer_holder_rc->ldrRenderPass, true);
 		}
 
+		const PxDebugLine* lines = rb.getLines();
 		for (PxU32 i = 0; i < rb.getNbLines(); i++)
 		{
-			const PxDebugLine& line = rb.getLines()[i];
+			const PxDebugLine& line = lines[i];
 			renderLine(create_vec3(line.pos0), create_vec3(line.pos1), vec4(1.0f), renderer_holder_rc->ldrRenderPass, true);
 		}
 	}
-
 }

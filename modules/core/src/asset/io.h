@@ -1,8 +1,11 @@
-// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
-
 #pragma once
 
 #include "core_api.h"
+
+#include "core/io/binary_data_archive.h"
+
+#include <istream>
+#include <ostream>
 
 namespace era_engine
 {
@@ -75,4 +78,37 @@ namespace era_engine
 		fs::path rel = fs::relative(abs, fs::current_path());
 		return rel.string();
 	}
+
+	class ERA_CORE_API IO final
+	{
+	public:
+		IO() = delete;
+
+		template <typename T>
+		static std::streamsize read_data(std::istream& is, T* value, std::streamsize size);
+
+		template <typename T>
+		static bool read_value(std::istream& is, T& value);
+
+		template <typename T>
+		static bool read_vector(std::istream& is, std::vector<T>& value);
+
+		template <typename T>
+		static T read_value(std::istream& is);
+
+		static void align_pos_to_uint32(std::istream& is);
+
+		template <typename T>
+		static bool write_data(std::ostream& os, const T* value, std::streamsize size);
+
+		template <typename T>
+		static bool write_value(std::ostream& os, const T& value);
+
+		template <typename T>
+		static bool write_vector(std::ostream& os, const std::vector<T>& value);
+
+		static void align_pos_to_uint32(std::ostream& os);
+	};
 }
+
+#include "asset/private/io_impl.h"

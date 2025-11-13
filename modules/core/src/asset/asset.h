@@ -40,6 +40,14 @@ namespace era_engine
 		"Loading",
 		"Loaded",
 	};
+
+	static const uint32 BIN_HEADER = 'BIN ';
+
+	struct BinaryHeader
+	{
+		uint32 header = BIN_HEADER;
+		uint32 version = 1;
+	};
 }
 
 namespace std

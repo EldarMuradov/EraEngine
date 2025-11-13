@@ -59,41 +59,41 @@ namespace era_engine
 
 	void boid_particle_system::update(struct dx_command_list* cl, const common_particle_simulation_data& common, float dt)
 	{
-		if (cartoonMesh)
-		{
-			const dx_mesh& mesh = cartoonMesh->mesh;
-			animation::Skeleton& skeleton = cartoonMesh->skeleton;
-			animation::AnimationSkeleton& animation_skeleton = cartoonMesh->animation_skeleton;
+		//if (cartoonMesh)
+		//{
+		//	const dx_mesh& mesh = cartoonMesh->mesh;
+		//	animation::Skeleton& skeleton = cartoonMesh->skeleton;
+		//	animation::AnimationSkeleton& animation_skeleton = cartoonMesh->animation_skeleton;
 
-			time += dt;
-			time = fmod(time, animation_skeleton.clips[0].length_in_seconds);
+		//	time += dt;
+		//	time = fmod(time, animation_skeleton.clips[0].length_in_seconds);
 
-			auto [skinnedVertexBuffer, skinningMatrices] = era_engine::animation::skinObject(mesh.vertexBuffer, cartoonMesh->submeshes[0].info, (uint32)skeleton.joints.size());
+		//	auto [skinnedVertexBuffer, skinningMatrices] = era_engine::animation::skinObject(mesh.vertexBuffer, cartoonMesh->submeshes[0].info, (uint32)skeleton.joints.size());
 
-			trs localTransforms[128];
-			animation_skeleton.sampleAnimation(0, time, localTransforms);
-			skeleton.get_skinning_matrices_from_local_transforms(localTransforms, skinningMatrices);
+		//	trs localTransforms[128];
+		//	animation_skeleton.sampleAnimation(0, time, localTransforms);
+		//	skeleton.get_skinning_matrices_from_local_transforms(localTransforms, skinningMatrices);
 
-			this->skinnedVertexBuffer = skinnedVertexBuffer;
-			this->submesh.baseVertex = 0;
+		//	this->skinnedVertexBuffer = skinnedVertexBuffer;
+		//	this->submesh.baseVertex = 0;
 
-			struct setter : public particle_parameter_setter
-			{
-				boid_simulation_cb cb;
+		//	struct setter : public particle_parameter_setter
+		//	{
+		//		boid_simulation_cb cb;
 
-				virtual void setRootParameters(dx_command_list* cl) override
-				{
-					cl->setCompute32BitConstants(BOID_PARTICLE_SYSTEM_COMPUTE_RS_CBV, cb);
-				}
-			};
+		//		virtual void setRootParameters(dx_command_list* cl) override
+		//		{
+		//			cl->setCompute32BitConstants(BOID_PARTICLE_SYSTEM_COMPUTE_RS_CBV, cb);
+		//		}
+		//	};
 
-			setter s;
-			s.cb.emitPosition = vec3(-30.f, 20.f, -10.f); // TEMPORARY
-			s.cb.frameIndex = (uint32)dxContext.frameID;
-			s.cb.radius = settings.radius;
+		//	setter s;
+		//	s.cb.emitPosition = vec3(-30.f, 20.f, -10.f); // TEMPORARY
+		//	s.cb.frameIndex = (uint32)dxContext.frameID;
+		//	s.cb.radius = settings.radius;
 
-			updateInternal(cl, emitRate * dt, dt, emitPipeline, simulatePipeline, &s);
-		}
+		//	updateInternal(cl, emitRate * dt, dt, emitPipeline, simulatePipeline, &s);
+		//}
 	}
 
 	void boid_particle_system::render(transparent_render_pass* renderPass)

@@ -9,9 +9,7 @@
 #include "dx/dx_command_list.h"
 #include "dx/dx_texture.h"
 
-#pragma warning(push)
-
-#pragma warning(disable:C4273)
+#pragma warning(push, 0)
 
 #define IM_ASSERT(condition) ASSERT(condition)
 #include <imgui/imgui.h>

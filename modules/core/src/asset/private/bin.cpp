@@ -3,6 +3,7 @@
 #include "asset/bin.h"
 
 #include "asset/model_asset.h"
+#include "asset/asset.h"
 #include "asset/io.h"
 
 #include "core/cpu_profiling.h"
@@ -14,12 +15,9 @@
 
 namespace era_engine
 {
-	static const uint32 BIN_HEADER = 'BIN ';
-
 	struct bin_header
 	{
-		uint32 header = BIN_HEADER;
-		uint32 version = 1;
+		BinaryHeader header;
 		uint32 flags;
 		uint32 numMeshes;
 		uint32 numMaterials;
@@ -368,7 +366,7 @@ namespace era_engine
 		EntireFile file = load_file(path);
 
 		bin_header* header = file.consume<bin_header>();
-		if (header->header != BIN_HEADER)
+		if (header->header.header != BIN_HEADER)
 		{
 			free_file(file);
 			return {};

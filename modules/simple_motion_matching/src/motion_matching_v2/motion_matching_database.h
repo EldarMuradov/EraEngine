@@ -4,11 +4,15 @@
 
 #include "motion_matching/array.h"
 
+#include <asset/game_asset.h>
+
+#include <core/serialization/binary_serializer.h>
+
 namespace era_engine 
 {
 	class KnnStructure;
 
-	class ERA_MOTION_MATCHING_API MotionMatchingDatabase final
+	class ERA_MOTION_MATCHING_API MotionMatchingDatabase : public GameAsset
 	{
 	public:
 		struct Sample
@@ -17,6 +21,8 @@ namespace era_engine
 
 			uint32 anim_index = 0;
 			float anim_position = 0.0f;
+
+			ERA_BINARY_SERIALIZE(features, anim_index, anim_position)
 		};
 
 		struct DatabaseAsset
@@ -28,6 +34,8 @@ namespace era_engine
 			float sample_rate = 10.0f;
 
 			uint32 max_broardphase_candidates = 10;
+
+			ERA_BINARY_SERIALIZE(min_values, max_values, weights, sample_rate, max_broardphase_candidates)
 		};
 
 		void build_structure();
@@ -37,6 +45,11 @@ namespace era_engine
 		std::vector<float> normalize_query(const std::vector<float>& query) const;
 		void subtract_column_means(array2d<float>& matrix) const;
 		array2d<float> pack_query(const std::vector<float>& query) const;
+
+		static std::string get_asset_type_impl();
+
+		bool serialize(std::ostream& os) const override;
+		bool deserialize(std::istream& is) override;
 
 	private:
 		void fill_normalize_factors();

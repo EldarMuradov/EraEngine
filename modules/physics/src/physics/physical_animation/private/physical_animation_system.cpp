@@ -264,7 +264,7 @@ namespace era_engine::physics
 
 			if (is_simulated)
 			{
-				Skeleton* skeleton = skeleton_component.skeleton;
+				ref<Skeleton> skeleton = skeleton_component.skeleton;
 				if (skeleton == nullptr)
 				{
 					continue;
@@ -278,7 +278,7 @@ namespace era_engine::physics
 				std::queue<uint32> simulation_limbs_queue;
 				simulation_limbs_queue.push(physical_animation_component.root_joint_id);
 
-				trs pelvis_local_transform = SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton, physical_animation_component.root_joint_id, 0);
+				trs pelvis_local_transform = SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton.get(), physical_animation_component.root_joint_id, 0);
 				pelvis_local_transform.scale = vec3(1.0f);
 
 				physical_animation_component.local_joint_poses_for_target_calculation[physical_animation_component.root_joint_id] = pelvis_local_transform;
@@ -353,14 +353,14 @@ namespace era_engine::physics
 				continue;
 			}
 
-			const Skeleton* skeleton = skeleton_component.skeleton;
+			const ref<Skeleton> skeleton = skeleton_component.skeleton;
 			if (skeleton == nullptr)
 			{
 				ASSERT(false);
 				continue;
 			}
 
-			if (animation_component.animation == nullptr)
+			if (animation_component.current_animation == nullptr)
 			{
 				continue;
 			}
@@ -610,7 +610,7 @@ namespace era_engine::physics
 
 			const SkeletonComponent* skeleton_component = entity.get_component<SkeletonComponent>();
 
-			const Skeleton* skeleton = skeleton_component->skeleton;
+			const ref<Skeleton> skeleton = skeleton_component->skeleton;
 			if (skeleton == nullptr)
 			{
 				continue;

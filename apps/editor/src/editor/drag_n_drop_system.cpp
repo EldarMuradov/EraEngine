@@ -13,9 +13,7 @@
 #include <rttr/policy.h>
 #include <rttr/registration>
 
-#pragma warning(push)
-
-#pragma warning(disable:C4273)
+#pragma warning(push, 0)
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui/imgui_draw.cpp>

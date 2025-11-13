@@ -170,4 +170,21 @@ namespace era_engine
         main_thread_job_queue.wait_for_completion();
     }
 
+    JobHandle schedule_low_priority_job(const DefaultJob& data, JobHandle parent_job/* = {}*/)
+    {
+        JobHandle job = low_priority_job_queue.createJob<DefaultJob>([](DefaultJob& job_data, JobHandle job)
+            {
+                if (job_data.job_func)
+                {
+                    job_data.job_func(job_data.data);
+                }
+                if (job_data.data.user_data)
+                {
+                    delete job_data.data.user_data;
+                    job_data.data.user_data = nullptr;
+                }
+            }, data, parent_job);
+
+        return job;
+    }
 }

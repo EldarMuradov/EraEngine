@@ -132,7 +132,7 @@ namespace era_engine::physics
 
 			Entity ragdoll = world->get_entity(entity_handle);
 
-			Skeleton* skeleton = skeleton_component.skeleton;
+			ref<Skeleton> skeleton = skeleton_component.skeleton;
 			if (skeleton == nullptr)
 			{
 				continue;
@@ -140,7 +140,7 @@ namespace era_engine::physics
 			
 			{
 				const uint32 root_id = 0;
-				ragdoll_component.local_joint_poses[root_id] = SkeletonUtils::get_object_space_joint_transform(skeleton, root_id);
+				ragdoll_component.local_joint_poses[root_id] = SkeletonUtils::get_object_space_joint_transform(skeleton.get(), root_id);
 
 				const trs inverse_ragdoll_world_transform = invert(transform_component.get_world_transform());
 
@@ -224,7 +224,7 @@ namespace era_engine::physics
 
 			const SkeletonComponent* skeleton_component = entity.get_component<SkeletonComponent>();
 
-			const Skeleton* skeleton = skeleton_component->skeleton;
+			const ref<Skeleton> skeleton = skeleton_component->skeleton;
 			if (skeleton == nullptr)
 			{
 				continue;

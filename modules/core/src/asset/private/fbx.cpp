@@ -12,7 +12,7 @@
 
 #include "geometry/mesh.h"
 
-#include "mesh_postprocessing.h"
+#include "asset/mesh_postprocessing.h"
 
 #include "rendering/pbr_material.h"
 

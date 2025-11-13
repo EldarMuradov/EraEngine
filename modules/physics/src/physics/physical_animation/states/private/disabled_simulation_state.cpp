@@ -60,7 +60,7 @@ namespace era_engine::physics
         Entity ragdoll = physical_animation_component_ptr.get_entity();
 
         const AnimationComponent* animation_component = ragdoll.get_component<AnimationComponent>();
-        if (!animation_component->update_skeleton || animation_component->animation == nullptr)
+        if (!animation_component->update_skeleton || animation_component->current_animation == nullptr)
         {
             return;
         }
@@ -70,7 +70,7 @@ namespace era_engine::physics
         const SkeletonPose& current_animation_pose = animation_component->current_animation_pose;
 
         PhysicalAnimationComponent* physical_animation_component = dynamic_cast<PhysicalAnimationComponent*>(physical_animation_component_ptr.get_for_write());
-
+        const trs& ragdoll_world_transform = transform_component->get_world_transform();
         for (const EntityPtr& limb_ptr : physical_animation_component->limbs)
         {
             Entity limb = limb_ptr.get();
@@ -79,9 +79,9 @@ namespace era_engine::physics
             ASSERT(shape_component != nullptr);
 
             PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
-            const trs joint_anim_transform = SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton_component->skeleton, limb_component->joint_id);
+            const trs joint_anim_transform = SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton_component->skeleton.get(), limb_component->joint_id);
 
-            PhysicsUtils::manual_set_physics_transform(limb, transform_component->get_world_transform() * joint_anim_transform, true);
+            PhysicsUtils::manual_set_physics_transform(limb, ragdoll_world_transform * joint_anim_transform, true);
         }
     }
 }

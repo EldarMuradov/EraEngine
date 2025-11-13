@@ -34,6 +34,7 @@
 #include "acl/core/track_writer.h"
 #include "acl/core/impl/compiler_utils.h"
 #include "acl/compression/track.h"
+#include "acl/core/string.h"
 
 #include <cstdint>
 #include <limits>

@@ -1,6 +1,7 @@
 #include "animation/animation_system.h"
 #include "animation/animation.h"
 #include "animation/skinning.h"
+#include "animation/animation_pose_sampler.h"
 
 #include "rendering/ecs/renderer_holder_root_component.h"
 
@@ -25,11 +26,10 @@ namespace era_engine::animation
 
 		registration::class_<AnimationSystem>("AnimationSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("render")))
-			.method("update", &AnimationSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL))
-			.method("draw_skeletons", &AnimationSystem::draw_skeletons)(metadata("update_group", update_types::RENDER));
+			.method("update", &AnimationSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL));
 	}
 
-	AnimationSystem::AnimationSystem(World* _world)
+		AnimationSystem::AnimationSystem(World* _world)
 		: System(_world)
 	{
 		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
@@ -51,73 +51,64 @@ namespace era_engine::animation
 		ZoneScopedN("AnimationSystem::render");
 
 		MemoryMarker marker = allocator->get_marker();
-		for (auto [entityHandle, anim, mesh, transform] : world->group(components_group<AnimationComponent, MeshComponent, TransformComponent>).each())
+		for (auto [entity_handle, animation_component, mesh_component, skeleton_component, transform_component] :
+			world->group(components_group<AnimationComponent, MeshComponent, SkeletonComponent, TransformComponent>).each())
 		{
-			const dx_mesh& dxMesh = mesh.mesh->mesh;
-			Skeleton& skeleton = mesh.mesh->skeleton;
-			AnimationSkeleton& animation_skeleton = mesh.mesh->animation_skeleton;
+			const dx_mesh& dxMesh = mesh_component.mesh->mesh;
+			ref<Skeleton> skeleton = skeleton_component.skeleton;
 
-			anim.current_global_transforms = nullptr;
+			animation_component.current_global_transforms = nullptr;
 
-			if (anim.animation && anim.animation->valid())
+			auto [vb, skinning_matrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton->joints.size());
+
+			animation_component.prev_frame_vertex_buffer = animation_component.current_vertex_buffer;
+			animation_component.current_vertex_buffer = vb;
+
+			if (animation_component.current_animation != nullptr &&
+				animation_component.current_animation->is_valid() &&
+				animation_component.play)
 			{
-				auto [vb, skinningMatrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton.joints.size());
+				const float anim_duration = animation_component.current_animation->get_duration();
 
-				anim.prev_frame_vertex_buffer = anim.current_vertex_buffer;
-				anim.current_vertex_buffer = vb;
-
-				trs deltaRootMotion = trs::identity;
-				if(anim.play)
+				if (animation_component.current_anim_position < anim_duration)
 				{
-					SkeletonPose result_pose = anim.animation->update(animation_skeleton, dt * anim.time_scale, deltaRootMotion);
+					AnimationPoseSampler sampler;
+					sampler.init(skeleton.get(), animation_component.current_animation);
+
+					SkeletonPose result_pose = SkeletonPose(skeleton->joints.size());
+					sampler.sample_pose(animation_component.current_anim_position, result_pose);
 					if (result_pose.is_valid())
 					{
-						if(anim.update_skeleton)
+						if (animation_component.update_skeleton)
 						{
-							skeleton.apply_pose(result_pose);
+							skeleton->apply_pose(result_pose);
+							skeleton_component.current_pose = result_pose;
 						}
-						anim.current_animation_pose = result_pose;
+						animation_component.current_animation_pose = result_pose;
 					}
 				}
 
-				trs* globalTransforms = allocator->allocate<trs>((uint32)skeleton.joints.size());
+				animation_component.current_anim_position += dt;
 
-				skeleton.get_skinning_matrices_from_local_transforms(globalTransforms, skinningMatrices, trs::identity);
-
-				if ((deltaRootMotion.position != vec3::zero || 
-					deltaRootMotion.rotation != quat::identity) &&
-					anim.enable_root_motion)
+				if (animation_component.current_anim_position >= anim_duration)
 				{
-					const trs& world_transform = transform.get_world_transform();
-
-					transform.set_world_transform(world_transform * deltaRootMotion);
-				}
-
-				anim.current_global_transforms = globalTransforms;
-			}
-			else
-			{
-				anim.current_vertex_buffer = dxMesh.vertexBuffer;
-				if (!anim.prev_frame_vertex_buffer)
-				{
-					anim.prev_frame_vertex_buffer = anim.current_vertex_buffer;
+					if (animation_component.loop)
+					{
+						animation_component.current_anim_position = fmod(animation_component.current_anim_position, anim_duration);
+					}
+					else
+					{
+						animation_component.current_anim_position = anim_duration;
+					}
 				}
 			}
+
+			trs* global_transforms = allocator->allocate<trs>((uint32)skeleton->joints.size());
+
+			skeleton->get_skinning_matrices_from_local_transforms(global_transforms, skinning_matrices, trs::identity);
+
+			animation_component.current_global_transforms = global_transforms;
 		}
 		allocator->reset_to_marker(marker);
 	}
-
-	void AnimationSystem::draw_skeletons(float dt)
-	{
-		ZoneScopedN("AnimationSystem::draw_skeletons");
-
-		for (auto [entityHandle, anim, skeleton, mesh, transform] : world->group(components_group<AnimationComponent, SkeletonComponent, MeshComponent, TransformComponent>).each())
-		{
-			if (skeleton.draw_sceleton)
-			{
-				anim.draw_current_skeleton(mesh.mesh, transform.get_world_transform(), renderer_holder_rc->ldrRenderPass);
-			}
-		}
-	}
-
 }

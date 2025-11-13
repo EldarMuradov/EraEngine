@@ -11,9 +11,10 @@
 
 #include "ai/state_machine.h"
 
-#include "ecs/component.h"
+#include "animation/skeleton.h"
+#include "animation/skeleton_component.h"
 
-#define INVALID_JOINT 0xFFFFFFFF
+#include "ecs/component.h"
 
 namespace era_engine
 {
@@ -23,72 +24,6 @@ namespace era_engine
 
 namespace era_engine::animation
 {
-	struct ERA_CORE_API SkinningWeights
-	{
-		uint8 skin_indices[4];
-		uint8 skin_weights[4];
-	};
-
-	enum LimbType
-	{
-		limb_type_none,
-
-		limb_type_torso,
-		limb_type_head,
-
-		limb_type_upper_arm_right,
-		limb_type_lower_arm_right,
-		limb_type_hand_right,
-
-		limb_type_upper_arm_left,
-		limb_type_lower_arm_left,
-		limb_type_hand_left,
-
-		limb_type_upper_leg_right,
-		limb_type_lower_leg_right,
-		limb_type_foot_right,
-
-		limb_type_upper_leg_left,
-		limb_type_lower_leg_left,
-		limb_type_foot_left,
-
-		limb_type_count,
-	};
-
-	extern const char* limb_type_names[limb_type_count];
-	extern const vec3 limb_type_colors[limb_type_count];
-
-	struct ERA_CORE_API SkeletonJoint
-	{
-		std::string name;
-		LimbType limb_type;
-		bool ik = false;
-
-		mat4 inv_bind_transform; // Transforms from model space to joint space.
-		mat4 bind_transform; // Position of joint relative to model space.
-
-		uint32 parent_id = INVALID_JOINT;
-	};
-
-	class ERA_CORE_API JointTransform
-	{
-	public:
-		JointTransform() = default;
-		JointTransform(const trs& initial_transform);
-
-		void set_translation(const vec3& new_translation);
-		const vec3& get_translation() const;
-
-		void set_rotation(const quat& new_rotation);
-		const quat& get_rotation() const;
-
-		void set_transform(const trs& new_transform);
-		const trs& get_transform() const;
-
-	private:
-		trs local_transform = trs::identity; // In parent space.
-	};
-
 	struct ERA_CORE_API AnimationJoint
 	{
 		AnimationJoint() = default;
@@ -137,73 +72,6 @@ namespace era_engine::animation
 		bool bake_root_y_translation_into_pose = false;
 	};
 
-	struct ERA_CORE_API LimbDimensions
-	{
-		float minY, maxY;
-		float radius;
-		float xOffset, zOffset;
-	};
-
-	struct ERA_CORE_API SkeletonLimb
-	{
-		uint32 representative_joint = INVALID_JOINT;
-		LimbDimensions dimensions;
-	};
-
-	class ERA_CORE_API SkeletonPose
-	{
-	public:
-		SkeletonPose() = default;
-		SkeletonPose(uint32 joints_size);
-
-		bool is_valid() const;
-
-		uint32 size() const;
-
-		void set_joint_transform(const JointTransform& new_joint_transform, uint32 joint_id);
-		void set_joint_translation(const vec3& new_translation, uint32 joint_id);
-		void set_joint_rotation(const quat& new_rotation, uint32 joint_id);
-
-		const JointTransform& get_joint_transform(uint32 joint_id) const;
-		const vec3& get_joint_translation(uint32 joint_id) const;
-		const quat& get_joint_rotation(uint32 joint_id) const;
-
-	private:
-		std::vector<JointTransform> local_transforms; // In parent space.
-
-		friend class Skeleton;
-	};
-
-	class ERA_CORE_API Skeleton
-	{
-	public:
-		Skeleton() = default;
-
-		void analyze_joints(const vec3* positions, const void* others, uint32 other_stride, uint32 num_vertices);
-
-		void blend_local_transforms(const trs* local_transforms1, const trs* local_transforms2, float t, trs* out_blended_local_transforms) const;
-		void get_skinning_matrices_from_local_transforms(mat4* out_skinning_matrices, const trs& world_transform = trs::identity) const;
-		void get_skinning_matrices_from_local_transforms(trs* out_global_transforms, mat4* out_skinning_matrices, const trs& world_transform = trs::identity) const;
-		void get_skinning_matrices_from_global_transforms(const trs* global_transforms, mat4* out_skinning_matrices) const;
-		void get_skinning_matrices_from_global_transforms(const trs* global_transforms, mat4* out_skinning_matrices, const trs& world_transform) const;
-
-		void pretty_print_hierarchy() const;
-
-		void set_joint_transform(const trs& new_transform, uint32 joint_id);
-		void set_joint_rotation(const quat& new_rotation, uint32 joint_id);
-
-		const trs& get_joint_transform(uint32 joint_id) const;
-		const quat& get_joint_rotation(uint32 joint_id) const;
-
-		void apply_pose(const SkeletonPose& pose);
-
-	public:
-		std::vector<SkeletonJoint> joints;
-		std::vector<JointTransform> local_transforms; // In parent space.
-		std::unordered_map<std::string, uint32> name_to_joint_id;
-		SkeletonLimb limbs[limb_type_count];
-	};
-
 	struct ERA_CORE_API AnimationSkeleton
 	{
 		SkeletonPose sampleAnimation(const AnimationClip& clip, float time, trs* outRootMotion = 0) const;
@@ -215,30 +83,6 @@ namespace era_engine::animation
 		std::vector<fs::path> files;
 
 		Skeleton* skeleton = nullptr;
-	};
-
-	class ERA_CORE_API SkeletonComponent : public Component
-	{
-	public:
-		SkeletonComponent(ref<Entity::EcsData> _data);
-		~SkeletonComponent() override;
-
-		ERA_VIRTUAL_REFLECT(Component)
-
-	public:
-		Skeleton* skeleton = nullptr;
-
-		bool draw_sceleton = false;
-	};
-
-	class ERA_CORE_API SkeletonUtils final
-	{
-		SkeletonUtils() = delete;
-
-	public:
-		static trs get_object_space_joint_transform(const Skeleton* skeleton, uint32 joint_id, uint32 start_from = INVALID_JOINT);
-
-		static trs get_object_space_joint_transform(const SkeletonPose& pose, const Skeleton* skeleton, uint32 joint_id, uint32 start_from = INVALID_JOINT);
 	};
 
 	struct ERA_CORE_API AnimationInstance
@@ -351,25 +195,22 @@ namespace era_engine::animation
 		AnimationComponent(ref<Entity::EcsData> _data);
 		~AnimationComponent() override;
 
-		void initialize(std::vector<AnimationClip>& clips, size_t start_index = 0);
-		void draw_current_skeleton(const ref<multi_mesh>& mesh, const trs& transform, ldr_render_pass* render_pass) const;
-
 		ERA_VIRTUAL_REFLECT(Component)
 
 	public:
-		ref<AnimationInstance> animation = nullptr;
+		ref<AnimationAssetClip> current_animation;
+		float current_anim_position = 0.0f;
 
 		SkeletonPose current_animation_pose;
 
+		bool play = true;
+		bool update_skeleton = true;
+		bool loop = false;
+
+		// Render data
 		dx_vertex_buffer_group_view current_vertex_buffer;
 		dx_vertex_buffer_group_view prev_frame_vertex_buffer;
 
-		trs* current_global_transforms = 0;
-
-		bool play = true;
-		bool update_skeleton = true;
-		bool enable_root_motion = true;
-
-		float time_scale = 1.f;
+		trs* current_global_transforms = nullptr;
 	};
 }

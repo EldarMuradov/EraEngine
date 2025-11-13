@@ -21,7 +21,7 @@ namespace era_engine
 	struct ERA_CORE_API AnimationAsset
 	{
 		std::string name;
-		float duration;
+		float duration = 0.0f;
 
 		std::unordered_map<std::string, animation::AnimationJoint> joints;
 
@@ -36,7 +36,7 @@ namespace era_engine
 
 	struct ERA_CORE_API SubmeshAsset
 	{
-		int32 material_index;
+		int32 material_index = 0;
 
 		std::vector<vec3> positions;
 		std::vector<vec2> uvs;
@@ -52,14 +52,14 @@ namespace era_engine
 	{
 		std::string name;
 		std::vector<SubmeshAsset> submeshes;
-		int32 skeleton_index;
+		int32 skeleton_index = 0;
 	};
 
 	struct PbrMaterialDesc;
 
 	struct ERA_CORE_API ModelAsset
 	{
-		uint32 flags;
+		uint32 flags = 0;
 		std::vector<MeshAsset> meshes;
 		std::vector<PbrMaterialDesc> materials;
 		std::vector<SkeletonAsset> skeletons;

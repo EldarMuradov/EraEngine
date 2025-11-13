@@ -45,6 +45,7 @@ function(era_default_linkage name)
         TRACY_NO_CALLSTACK
         TRACY_NO_CODE_TRANSFER
         TRACY_NO_SAMPLING
+        ACL_USE_SJSON
     )
 
     target_link_libraries(${name} ${ENGINE_DEFAULT_LIBS})

@@ -126,13 +126,13 @@ namespace era_engine
 
 					auto oldIt = pathToHandle.find(e.old_path);
 
-					ASSERT(oldIt != pathToHandle.end()); // Old path exists.
-					ASSERT(pathToHandle.find(e.path) == pathToHandle.end()); // New path does not exist.
+					ASSERT(oldIt != pathToHandle.end());
+					ASSERT(pathToHandle.find(e.path) == pathToHandle.end());
 
 					AssetHandle handle = oldIt->second;
 					pathToHandle.erase(oldIt);
 					pathToHandle.insert({ e.path, handle });
-					handleToPath[handle] = e.path; // Replace.
+					handleToPath[handle] = e.path;
 				} break;
 				}
 			}
@@ -143,7 +143,7 @@ namespace era_engine
 		}
 	}
 
-	NODISCARD AssetHandle getAssetHandleFromPath(const fs::path& path)
+	AssetHandle getAssetHandleFromPath(const fs::path& path)
 	{
 		const std::lock_guard<std::mutex> lock(fileRegistryMutex);
 
@@ -155,7 +155,7 @@ namespace era_engine
 		return it->second;
 	}
 
-	NODISCARD fs::path getPathFromAssetHandle(AssetHandle handle)
+	fs::path getPathFromAssetHandle(AssetHandle handle)
 	{
 		const std::lock_guard<std::mutex> lock(fileRegistryMutex);
 

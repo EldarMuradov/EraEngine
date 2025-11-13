@@ -133,7 +133,7 @@ namespace era_engine
 		}
 	}
 
-	extern "C" void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh)
+	void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh)
 	{
 		struct add_ray_tracing_data
 		{
@@ -160,46 +160,6 @@ namespace era_engine
 						data.entity.add_component<RaytraceComponent>(data.blas);
 					}, createData).submit_now();
 
-			}, data).submit_now();
-	}
-
-	extern "C" void initializeAnimationComponentAsync(Entity entity, ref<multi_mesh> mesh)
-	{
-		struct add_animation_data
-		{
-			Entity entity;
-			ref<multi_mesh> mesh;
-		};
-
-		add_animation_data data = { entity, mesh };
-
-		main_thread_job_queue.createJob<add_animation_data>([](add_animation_data& data, JobHandle job)
-			{
-				data.mesh->loadJob.wait_for_completion();
-				data.entity.get_component<animation::AnimationComponent>()->initialize(data.mesh->animation_skeleton.clips);
-			}, data).submit_now();
-	}
-
-	extern "C" void initializeSkeletonComponentAsync(Entity entity, ref<multi_mesh> mesh, LoadCallBackType callback)
-	{
-		struct add_skeleton_data
-		{
-			Entity entity;
-			ref<multi_mesh> mesh;
-			LoadCallBackType callback = nullptr;
-		};
-
-		add_skeleton_data data = { entity, mesh, callback };
-
-		main_thread_job_queue.createJob<add_skeleton_data>([](add_skeleton_data& data, JobHandle job)
-			{
-				data.mesh->loadJob.wait_for_completion();
-				data.entity.get_component<animation::SkeletonComponent>()->skeleton = &data.mesh->skeleton;
-
-				if(data.callback != nullptr)
-				{
-					data.callback(data.entity);
-				}
 			}, data).submit_now();
 	}
 }

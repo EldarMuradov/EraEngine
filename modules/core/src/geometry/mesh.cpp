@@ -8,7 +8,12 @@
 #include "core/string.h"
 
 #include "asset/file_registry.h"
+#include "asset/game_asset.h"
 #include "asset/model_asset.h"
+
+#include "animation/skeleton.h"
+#include "animation/animation_clip_utils.h"
+#include "animation/animation_clip.h"
 
 namespace era_engine
 {
@@ -82,76 +87,132 @@ namespace era_engine
 			}
 		}
 
-		Skeleton& skeleton = result->skeleton;
+		GameAssetsProvider provider;
 
-		AnimationSkeleton& animation_skeleton = result->animation_skeleton;
-		animation_skeleton.skeleton = &result->skeleton;
+		ref<Skeleton> default_skeleton;
 
 		// Load skeleton
-		if (!asset.skeletons.empty()/* && flags & mesh_creation_flags_with_skin*/)
+		if (!asset.skeletons.empty() && (flags & mesh_creation_flags_with_skin))
 		{
-			SkeletonAsset& in = asset.skeletons.front();
-
-			skeleton.joints = std::move(in.joints);
-
-			skeleton.local_transforms.reserve(skeleton.joints.size());
-			for (size_t i = 0; i < skeleton.joints.size(); ++i)
+			uint32 skeleton_index = 0;
+			for (SkeletonAsset& skeleton_asset : asset.skeletons)
 			{
-				const SkeletonJoint& joint = skeleton.joints[i];
-				JointTransform joint_transform;
+				fs::path skeleton_path = sceneFilename.parent_path();
+				skeleton_path.append("skeletons");
+				skeleton_path.append("skeleton" + std::to_string(skeleton_index));
 
-				if (joint.parent_id > skeleton.joints.size() || joint.parent_id == INVALID_JOINT)
+				if (!fs::exists(fs::path(skeleton_path.string() + AssetExtension<Skeleton>::get_asset_type())))
 				{
-					joint_transform.set_transform(mat4_to_trs(joint.bind_transform));
+					ref<Skeleton> imported_skeleton = make_ref<Skeleton>();
+
+					if (default_skeleton == nullptr)
+					{
+						default_skeleton = imported_skeleton;
+					}
+
+					imported_skeleton->joints = std::move(skeleton_asset.joints);
+
+					imported_skeleton->local_transforms.reserve(imported_skeleton->joints.size());
+					for (size_t i = 0; i < imported_skeleton->joints.size(); ++i)
+					{
+						SkeletonJoint& joint = imported_skeleton->joints[i];
+						JointTransform joint_transform;
+
+						if (joint.parent_id > imported_skeleton->joints.size() || joint.parent_id == INVALID_JOINT)
+						{
+							if (flags & mesh_creation_flags_unreal_asset)
+							{
+								joint_transform.set_transform(mat4_to_trs(joint.bind_transform) * trs { vec3::zero, euler_to_quat(vec3(0.0f, -M_PI / 2.0f, 0.0f)), vec3(1.0f) });
+							}
+							else
+							{
+								joint_transform.set_transform(mat4_to_trs(joint.bind_transform));
+							}
+						}
+						else
+						{
+							const auto& parent_bind = imported_skeleton->joints[joint.parent_id].bind_transform;
+							joint_transform.set_transform(mat4_to_trs(invert(parent_bind) * joint.bind_transform));
+						}
+
+						imported_skeleton->local_transforms.push_back(joint_transform);
+					}
+
+					imported_skeleton->name_to_joint_id = std::move(skeleton_asset.name_to_joint_id);
+					imported_skeleton->analyze_joints(builder.getPositions(), (uint8*)builder.getOthers() + builder.getSkinOffset(), builder.getOthersSize(), builder.getNumVertices());
+
+					JobHandle skeleton_load_job = provider.save_game_asset_to_file_async<Skeleton>(skeleton_path, imported_skeleton.get(), parentJob);
+					skeleton_load_job.wait_for_completion();
+					skeleton_index++;
 				}
-				else 
-				{
-					const auto& parent_bind = skeleton.joints[joint.parent_id].bind_transform;
-					joint_transform.set_transform(mat4_to_trs(invert(parent_bind) * joint.bind_transform));
-				}
-
-				skeleton.local_transforms.push_back(joint_transform);
 			}
-
-			if(flags & mesh_creation_flags_unreal_asset)
-			{
-				skeleton.local_transforms[0].set_rotation(skeleton.local_transforms[0].get_rotation() * euler_to_quat(vec3(0.0f, -M_PI / 2.0f, 0.0f)));
-			}
-
-			skeleton.name_to_joint_id = std::move(in.name_to_joint_id);
-			skeleton.analyze_joints(builder.getPositions(), (uint8*)builder.getOthers() + builder.getSkinOffset(), builder.getOthersSize(), builder.getNumVertices());
 		}
 
-		// Load animations
-		for (auto& anim : asset.animations)
+
 		{
-			AnimationAsset& in = anim;
+			AnimationSkeleton animation_skeleton;
 
-			AnimationClip& clip = animation_skeleton.clips.emplace_back();
-			clip.name = std::move(in.name);
-			clip.is_unreal_asset = flags & mesh_creation_flags_unreal_asset;
-			clip.filename = sceneFilename;
-			clip.length_in_seconds = in.duration;
-			clip.joints.resize(skeleton.joints.size(), {});
-
-			clip.position_keyframes = std::move(in.position_keyframes);
-			clip.position_timestamps = std::move(in.position_timestamps);
-			clip.rotation_keyframes = std::move(in.rotation_keyframes);
-			clip.rotation_timestamps = std::move(in.rotation_timestamps);
-			clip.scale_keyframes = std::move(in.scale_keyframes);
-			clip.scale_timestamps = std::move(in.scale_timestamps);
-
-			for (auto& [name, joint] : in.joints)
+			if (default_skeleton == nullptr &&
+				!asset.animations.empty())
 			{
-				auto it = skeleton.name_to_joint_id.find(name);
-				if (it != skeleton.name_to_joint_id.end())
-				{
-					AnimationJoint& j = clip.joints[it->second];
-					j = joint;
-				}
-			}
+				fs::path skeleton_path = sceneFilename.parent_path();
+				skeleton_path.append("skeletons");
+				skeleton_path.append("skeleton" + std::to_string(0));
 
-			clip.root_motion_joint = clip.joints[0];
+				default_skeleton = provider.load_game_asset_from_file<Skeleton>(skeleton_path);
+				default_skeleton->load_job.wait_for_completion();
+
+			}
+			animation_skeleton.skeleton = default_skeleton.get();
+
+			uint32 anim_index = 0;
+			uint32 clips_loaded = 0;
+
+			// Load animations
+			for (auto& anim : asset.animations)
+			{
+				fs::path clip_path = sceneFilename.parent_path();
+				clip_path.append("animations");
+				clip_path.append("animation_clip" + std::to_string(anim_index));
+
+				if (!fs::exists(fs::path(clip_path.string() + AssetExtension<AnimationAssetClip>::get_asset_type())))
+				{
+					AnimationAsset& in = anim;
+
+					AnimationClip& clip = animation_skeleton.clips.emplace_back();
+					clip.name = std::move(in.name);
+					clip.is_unreal_asset = flags & mesh_creation_flags_unreal_asset;
+					clip.filename = sceneFilename;
+					clip.length_in_seconds = in.duration;
+					clip.joints.resize(default_skeleton->joints.size(), {});
+
+					clip.position_keyframes = std::move(in.position_keyframes);
+					clip.position_timestamps = std::move(in.position_timestamps);
+					clip.rotation_keyframes = std::move(in.rotation_keyframes);
+					clip.rotation_timestamps = std::move(in.rotation_timestamps);
+					clip.scale_keyframes = std::move(in.scale_keyframes);
+					clip.scale_timestamps = std::move(in.scale_timestamps);
+
+					for (auto& [name, joint] : in.joints)
+					{
+						auto it = default_skeleton->name_to_joint_id.find(name);
+						if (it != default_skeleton->name_to_joint_id.end())
+						{
+							AnimationJoint& j = clip.joints[it->second];
+							j = joint;
+						}
+					}
+
+					clip.root_motion_joint = clip.joints[0];
+
+					ref<AnimationAssetClip> animation_clip = AnimationAssetClipUtils::make_clip(animation_skeleton, clips_loaded, default_skeleton.get());
+
+					JobHandle animation_load_job = provider.save_game_asset_to_file_async<AnimationAssetClip>(clip_path, animation_clip.get(), parentJob);
+					animation_load_job.wait_for_completion();
+					clips_loaded++;
+				}
+				anim_index++;
+			}
 		}
 
 		if (cb)
@@ -220,7 +281,7 @@ namespace era_engine
 
 		mesh_key key = { handle, flags };
 
-		std::lock_guard _lock{mutex};
+		std::lock_guard _lock{ mutex };
 		ref<multi_mesh> result = { meshCache[key].lock(), {} };
 		if (!result)
 		{

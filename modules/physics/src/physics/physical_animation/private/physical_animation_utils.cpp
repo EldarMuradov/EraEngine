@@ -124,7 +124,7 @@ namespace era_engine::physics
         ASSERT(limb_animation != nullptr);
 
         trs limb_object_space_pose = SkeletonUtils::get_object_space_joint_transform(limb_animation->current_animation_pose, 
-            skeleton_component->skeleton, 
+            skeleton_component->skeleton.get(),
             limb_component->joint_id);
         limb_object_space_pose.scale = vec3(1.0f);
 

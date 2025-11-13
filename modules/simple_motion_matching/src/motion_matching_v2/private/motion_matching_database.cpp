@@ -1,7 +1,10 @@
 #include "motion_matching_v2/motion_matching_database.h"
 #include "motion_matching_v2/motion_matching_knn_structure.h"
 
+#include <asset/io.h>
+
 #include <core/math.h>
+#include <core/log.h>
 
 namespace era_engine
 {
@@ -92,5 +95,67 @@ namespace era_engine
         subtract_column_means(pack_target);
 
         return transpose(transform_matrix * transpose(pack_target));
+    }
+
+    std::string MotionMatchingDatabase::get_asset_type_impl()
+    {
+        return std::string(".emmdb");
+    }
+
+    struct MMDatabaseSerializationData
+    {
+        uint32 search_dimension = 0;
+
+        array1d<float> transform_column_means;
+        array2d<float> transform_matrix;
+
+        std::vector<float> mean_values;
+        std::vector<float> normalize_factors;
+
+        ERA_BINARY_SERIALIZE(search_dimension, 
+            transform_column_means, 
+            transform_matrix, 
+            mean_values, 
+            normalize_factors)
+    };
+
+    bool MotionMatchingDatabase::serialize(std::ostream& os) const
+    {
+        MMDatabaseSerializationData data;
+        // TODO
+
+        const BinaryDataArchive& serialized_data = BinarySerializer::serialize(data);
+
+        try
+        {
+            if (!IO::write_value(os, serialized_data))
+            {
+                return false;
+            }
+        }
+        catch (...)
+        {
+            LOG_ERROR("Exception thrown while serializing asset!");
+            return false;
+        }
+
+        return true;
+    }
+
+    bool MotionMatchingDatabase::deserialize(std::istream& is)
+    {
+        BinaryDataArchive serialized_data;
+
+        IO::read_value(is, serialized_data);
+
+        MMDatabaseSerializationData data{};
+        if (BinarySerializer::deserialize(BinaryData(serialized_data), data) != serialized_data.size())
+        {
+            return false;
+        }
+
+        //TODO
+
+        return true;
     }
 }

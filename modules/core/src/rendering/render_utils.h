@@ -57,9 +57,7 @@ namespace era_engine
 
 	using LoadCallBackType = void(*)(Entity);
 
-	extern "C" __declspec(dllexport) void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh);
+	ERA_CORE_API void addRaytracingComponentAsync(Entity entity, ref<multi_mesh> mesh);
 	raytracing_object_type defineBlasFromMesh(const ref<multi_mesh>& mesh);
-	extern "C" __declspec(dllexport) void initializeAnimationComponentAsync(Entity entity, ref<multi_mesh> mesh);
-	extern "C" __declspec(dllexport) void initializeSkeletonComponentAsync(Entity entity, ref<multi_mesh> mesh, LoadCallBackType callback = nullptr);
 
 }

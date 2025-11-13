@@ -195,7 +195,7 @@ namespace era_engine
 				ImGui::EndTabItem();
 			}
 
-			using namespace era_engine::animation;
+			/*using namespace era_engine::animation;
 
 			if (this->mesh && ImGui::BeginTabItem("Animations"))
 			{
@@ -258,7 +258,7 @@ namespace era_engine
 
 				ImGui::EndTabItem();
 			}
-
+			*/
 			ImGui::EndTabBar();
 		}
 	}
