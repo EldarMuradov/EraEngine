@@ -23,13 +23,13 @@ Era Engine is a modern modular game engine that provides developers with powerfu
 Era Engine uses ECS with reflection to manage game objects and their behavior. This allows developers to easily create and modify complex systems in the game.
 
 ### Physics: 
-Integration of ECS with PhysX 5.3.1 and CUDA provides realistic simulation of game physics, including physical animations, collisions, GJK, scene queues, aggregates, articulations, soft bodies, GPU particles, GPU clothes, joints, Blast Physics Destructions, Mesh fracturing, ragdolls, vehicles, CPU-based tasks, physics event system etc.
+Integration of ECS with PhysX 5.3.1, NvBlast and CUDA provides realistic simulation of game physics, including physical animations (active ragdolls), ragdolls, physics destructions, mesh fracturing, vehicles, soft bodies, clothes, particles, joints, aggregates, articulations, scene queries, GPU and multi-threaded simulation, event system etc.
 
 ### Rendering: 
-The engine uses DirectX 12 to provide high-quality and efficient rendering, allowing you to create visually appealing games with advanced graphical effects. DLSS 3.5 and FSR 2.0 supported.
+Era Engine uses DirectX 12 to provide high-quality and efficient rendering, allowing you to create visually appealing games with advanced graphical effects. DLSS 3.5 and FSR 2.0 supported.
 
 ### Audio:
-Engine provides API and tools to work with audio. You can customize all audio settings and preferences to create realistic high quality sounds. Wwise support will be soon.
+Era Engine provides API and tools to work with audio. You can customize all audio settings and preferences to create realistic high quality sounds.
 
 ### Scripting: 
 Era Engine uses .NET 8.0 Native AOT/Runtime and modules. This allows developers to write scripts in C# with all the benefits of .NET, including high performance and a rich class library.
