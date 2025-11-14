@@ -29,7 +29,8 @@ namespace era_engine
     template<typename T>
     struct ERA_MOTION_MATCHING_API slice2d
     {
-        int rows = 0, cols = 0;
+        int rows = 0;
+        int cols = 0;
         T* data = nullptr;
 
         slice2d(int _rows, int _cols, T* _data) : rows(_rows), cols(_cols), data(_data) {}
@@ -114,7 +115,8 @@ namespace era_engine
     template<typename T>
     struct ERA_MOTION_MATCHING_API array2d
     {
-        int rows = 0, cols = 0;
+        int rows = 0;
+        int cols = 0;
         T* data = nullptr;
 
         array2d() : rows(0), cols(0), data(NULL) {}

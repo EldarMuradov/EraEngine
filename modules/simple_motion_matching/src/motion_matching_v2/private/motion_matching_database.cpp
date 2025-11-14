@@ -1,6 +1,8 @@
 #include "motion_matching_v2/motion_matching_database.h"
 #include "motion_matching_v2/motion_matching_knn_structure.h"
 
+#include "motion_matching_v2/hnsw/hnsw_knn_structure.h"
+
 #include <asset/io.h>
 
 #include <core/math.h>
@@ -10,16 +12,16 @@ namespace era_engine
 {
 	void MotionMatchingDatabase::fill_normalize_factors()
 	{
-		normalize_factors.reserve(asset->max_values.size);
-		for (size_t index = 0; index < asset->max_values.size; ++index)
+		normalize_factors.reserve(max_values.size());
+		for (size_t index = 0; index < max_values.size(); ++index)
 		{
-			if (fuzzy_equals(asset->max_values(index), asset->min_values(index), 1e-3f))
+			if (fuzzy_equals(max_values[index], min_values[index], 1e-3f))
 			{
 				normalize_factors.push_back(0.0f);
 			}
 			else
 			{
-				normalize_factors.push_back(asset->weights(index) / (asset->max_values(index) - asset->min_values(index)));
+				normalize_factors.push_back(weights[index] / (max_values[index] - min_values[index]));
 			}
 		}
 	}
@@ -46,7 +48,7 @@ namespace era_engine
 
         ASSERT(query_size == search_dimension);
 
-        std::vector<std::shared_ptr<Sample>> knn = knn_structure->search_knn(packed_normalized_query, query_size, asset->max_broardphase_candidates, *this);
+        std::vector<std::shared_ptr<Sample>> knn = knn_structure->search_knn(packed_normalized_query, query_size, max_broardphase_candidates, *this);
 
         return narrow_phase_search(knn);
     }
@@ -82,7 +84,7 @@ namespace era_engine
         {
             for (uint32 j = 0; j < columns; ++j)
             {
-                matrix(i, j) = matrix(i, j) - transform_column_means(j);
+                matrix(i, j) = matrix(i, j) - transform_column_means[j];
             }
         }
     }
@@ -102,36 +104,35 @@ namespace era_engine
         return std::string(".emmdb");
     }
 
-    struct MMDatabaseSerializationData
-    {
-        uint32 search_dimension = 0;
-
-        array1d<float> transform_column_means;
-        array2d<float> transform_matrix;
-
-        std::vector<float> mean_values;
-        std::vector<float> normalize_factors;
-
-        ERA_BINARY_SERIALIZE(search_dimension, 
-            transform_column_means, 
-            transform_matrix, 
-            mean_values, 
-            normalize_factors)
-    };
-
     bool MotionMatchingDatabase::serialize(std::ostream& os) const
     {
-        MMDatabaseSerializationData data;
-        // TODO
-
-        const BinaryDataArchive& serialized_data = BinarySerializer::serialize(data);
-
         try
         {
-            if (!IO::write_value(os, serialized_data))
+            IO::write_value(os, knn_type);
+            IO::write_value(os, search_dimension);
+            IO::write_value(os, sample_rate);
+            IO::write_value(os, max_broardphase_candidates);
+
+            IO::write_vector(os, mean_values);
+            IO::write_vector(os, normalize_factors);
+            IO::write_vector(os, min_values);
+            IO::write_vector(os, max_values);
+            IO::write_vector(os, weights);
+            IO::write_vector(os, transform_column_means);
+
+            IO::write_value(os, transform_matrix.cols);
+            IO::write_value(os, transform_matrix.rows);
+            IO::write_data(os, transform_matrix.data, static_cast<uint32>(transform_matrix.cols * transform_matrix.rows));
+
+            if (knn_structure->writable.empty())
             {
-                return false;
+                knn_structure->build_structure(*this);
             }
+
+            IO::write_value(os, knn_structure->writable.size());
+            IO::write_data(os, knn_structure->writable.data(), knn_structure->writable.size());
+
+            knn_structure->serialize(os, *this);
         }
         catch (...)
         {
@@ -144,17 +145,51 @@ namespace era_engine
 
     bool MotionMatchingDatabase::deserialize(std::istream& is)
     {
-        BinaryDataArchive serialized_data;
-
-        IO::read_value(is, serialized_data);
-
-        MMDatabaseSerializationData data{};
-        if (BinarySerializer::deserialize(BinaryData(serialized_data), data) != serialized_data.size())
+        try
         {
+            IO::read_value(is, knn_type);
+            IO::read_value(is, search_dimension);
+            IO::read_value(is, sample_rate);
+            IO::read_value(is, max_broardphase_candidates);
+
+            IO::read_vector(is, mean_values);
+            IO::read_vector(is, normalize_factors);
+            IO::read_vector(is, min_values);
+            IO::read_vector(is, max_values);
+            IO::read_vector(is, weights);
+            IO::read_vector(is, transform_column_means);
+
+            IO::read_value(is, transform_matrix.cols);
+            IO::read_value(is, transform_matrix.rows);
+            IO::read_data(is, transform_matrix.data, static_cast<uint32>(transform_matrix.cols * transform_matrix.rows));
+
+            if (knn_type == KnnStructureType::HNSW)
+            {
+                knn_structure = ref<KnnStructure>(new HnswKnnStructure());
+            }
+            else
+            {
+                ASSERT(false);
+            }
+
+            uint32 knn_size = 0;
+            IO::read_value(is, knn_size);
+
+            std::vector<uint8> knn_data;
+            knn_data.reserve(knn_size);
+            IO::read_data(is, knn_data.data(), knn_size);
+
+            knn_structure->writable.assign(
+                reinterpret_cast<const char*>(knn_data.data()),
+                knn_size);
+
+            knn_structure->deserialize(is, *this);
+        }
+        catch (...)
+        {
+            LOG_ERROR("Exception thrown while deserializing asset!");
             return false;
         }
-
-        //TODO
 
         return true;
     }

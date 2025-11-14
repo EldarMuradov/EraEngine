@@ -34,7 +34,6 @@ namespace era_engine
 				TransformComponent* transform_component = entity.get_component<TransformComponent>();
 				transform_component->type = TransformComponent::DYNAMIC;
 
-				initializeAnimationComponentAsync(entity, mesh);
 				addRaytracingComponentAsync(entity, mesh);
 			}
 			else if (auto mesh = loadMeshFromFileAsync(relative.string()))

@@ -8,8 +8,10 @@ namespace era_engine
     {
     }
 
-    void HnswKnnStructure::build_structure(MotionMatchingDatabase& database)
+    void HnswKnnStructure::build_structure(const MotionMatchingDatabase& database)
     {
+        hnsw_l2_space = hnswlib::L2Space(database.search_dimension);
+
         std::vector<float> features_array;
         features_array.reserve(database.samples.size() * database.search_dimension);
 
@@ -41,6 +43,8 @@ namespace era_engine
 
             hnsw->addPoint(animation_data.data(), point_index);
         }
+
+        hnsw->saveIndex(writable);
     }
 
     std::vector<std::shared_ptr<MotionMatchingDatabase::Sample>> HnswKnnStructure::search_knn(float* query, uint32 query_size, uint32 max_candidates, const MotionMatchingDatabase& database)
@@ -60,5 +64,33 @@ namespace era_engine
         }
 
         return found_samples;
+    }
+
+	bool HnswKnnStructure::serialize(std::ostream& os, const MotionMatchingDatabase& database) const
+	{
+        IO::write_value(os, max_edges_per_vertex);
+        IO::write_value(os, construction_exploration_factor);
+
+		return true;
+	}
+
+    bool HnswKnnStructure::deserialize(std::istream& is, const MotionMatchingDatabase& database)
+    {
+        IO::read_value(is, max_edges_per_vertex);
+        IO::read_value(is, construction_exploration_factor);
+
+        hnsw_l2_space = hnswlib::L2Space(database.search_dimension);
+
+        if (writable.empty())
+        {
+            build_structure(database);
+        }
+        else
+        {
+            hnsw = std::shared_ptr<hnswlib::HierarchicalNSW<float>>(new hnswlib::HierarchicalNSW<float>(&hnsw_l2_space));
+
+            hnsw->loadIndex(writable, &hnsw_l2_space);
+        }
+        return false;
     }
 }

@@ -8,12 +8,22 @@ namespace era_engine
     {
     }
 
-    void KnnStructure::build_structure(MotionMatchingDatabase& database)
+    void KnnStructure::build_structure(const MotionMatchingDatabase& database)
     {
     }
 
     std::vector<std::shared_ptr<MotionMatchingDatabase::Sample>> KnnStructure::search_knn(float* query, uint32 query_size, uint32 max_candidates, const MotionMatchingDatabase& database)
     {
         return std::vector<std::shared_ptr<MotionMatchingDatabase::Sample>>();
+    }
+
+    bool KnnStructure::serialize(std::ostream& os, const MotionMatchingDatabase& database) const
+    {
+        return false;
+    }
+
+    bool KnnStructure::deserialize(std::istream& is, const MotionMatchingDatabase& database)
+    {
+        return false;
     }
 }

@@ -6,11 +6,20 @@
 
 #include <asset/game_asset.h>
 
+#include <animation/animation_clip.h>
+
 #include <core/serialization/binary_serializer.h>
 
 namespace era_engine 
 {
 	class KnnStructure;
+
+	enum KnnStructureType : uint8
+	{
+		HNSW = 0,
+		DEFAULT = HNSW,
+		COUNT
+	};
 
 	class ERA_MOTION_MATCHING_API MotionMatchingDatabase : public GameAsset
 	{
@@ -23,19 +32,6 @@ namespace era_engine
 			float anim_position = 0.0f;
 
 			ERA_BINARY_SERIALIZE(features, anim_index, anim_position)
-		};
-
-		struct DatabaseAsset
-		{
-			array1d<float> min_values;
-			array1d<float> max_values;
-			array1d<float> weights;
-
-			float sample_rate = 10.0f;
-
-			uint32 max_broardphase_candidates = 10;
-
-			ERA_BINARY_SERIALIZE(min_values, max_values, weights, sample_rate, max_broardphase_candidates)
 		};
 
 		void build_structure();
@@ -57,18 +53,25 @@ namespace era_engine
 		std::shared_ptr<Sample> narrow_phase_search(const std::vector<std::shared_ptr<Sample>>& broadphase_candidates) const;
 
 	public:
-		std::shared_ptr<DatabaseAsset> asset;
-
-		std::shared_ptr<KnnStructure> knn_structure;
-
 		std::vector<std::shared_ptr<Sample>> samples;
 
-		uint32 search_dimension = 0;
+		std::shared_ptr<KnnStructure> knn_structure;
+		KnnStructureType knn_type = KnnStructureType::DEFAULT;
 
-		array1d<float> transform_column_means;
-		array2d<float> transform_matrix;
+		uint32 search_dimension = 0;
+		float sample_rate = 10.0f;
+		uint32 max_broardphase_candidates = 10;
 
 		std::vector<float> mean_values;
 		std::vector<float> normalize_factors;
+
+		std::vector<float> weights;
+		std::vector<float> min_values;
+		std::vector<float> max_values;
+
+		std::vector<float> transform_column_means;
+		array2d<float> transform_matrix;
+
+		std::vector<ref<AnimationAssetClip>> animations;
 	};
 }

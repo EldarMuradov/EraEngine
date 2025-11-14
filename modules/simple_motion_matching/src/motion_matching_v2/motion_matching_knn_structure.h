@@ -11,8 +11,14 @@ namespace era_engine
 	public:
 		virtual ~KnnStructure();
 
-		virtual void build_structure(MotionMatchingDatabase& database);
+		virtual void build_structure(const MotionMatchingDatabase& database);
 
 		virtual std::vector<std::shared_ptr<MotionMatchingDatabase::Sample>> search_knn(float* query, uint32 query_size, uint32 max_candidates, const MotionMatchingDatabase& database);
+	
+		virtual bool serialize(std::ostream& os, const MotionMatchingDatabase& database) const;
+		virtual bool deserialize(std::istream& is, const MotionMatchingDatabase& database);
+
+	public:
+		mutable std::string writable; // Serializable data
 	};
 }
