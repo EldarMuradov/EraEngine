@@ -3,6 +3,8 @@
 #include "motion_matching_api.h"
 
 #include "motion_matching/array.h"
+#include "motion_matching/common.h"
+#include "motion_matching/features/motion_matching_feature.h"
 
 #include <asset/game_asset.h>
 
@@ -43,24 +45,6 @@ namespace era_engine
 		float stability_distance_threshold = 0.1f;
 	};
 
-	struct ERA_MOTION_MATCHING_API SearchParams final
-	{
-		ref<animation::AnimationAssetClip> current_animation;
-		std::vector<float> current_features;
-		std::vector<float> query;
-
-		float current_anim_position = 0.0f;
-	};
-
-	struct ERA_MOTION_MATCHING_API SearchResult final
-	{
-		ref<animation::AnimationAssetClip> animation;
-		std::string database_id;
-
-		std::vector<float> found_features;
-		float anim_position = 0.0f;
-	};
-
 	class ERA_MOTION_MATCHING_API MotionMatchingDatabase : public GameAsset
 	{
 	public:
@@ -75,7 +59,7 @@ namespace era_engine
 		};
 
 		MotionMatchingDatabase(KnnStructureType _knn_type = KnnStructureType::DEFAULT);
-		void build_structure();
+		~MotionMatchingDatabase() override;
 
 		void bake();
 
@@ -98,24 +82,29 @@ namespace era_engine
 			const SearchParams& params) const;
 
 	public:
+		// Settings
+		std::string database_id;
+		KnnStructureType knn_type = KnnStructureType::DEFAULT;
+		std::vector<ref<animation::AnimationAssetClip>> animations;
+
+		std::vector<std::string> feature_types;
+
+		float sample_rate = 10.0f;
+		NarrowPhaseParams narrow_phase_params;
+
+		uint32 search_dimension = 0;
+		uint32 max_broardphase_candidates = 10;
+
+		std::vector<float> weights;
+
+		// Generated
 		std::vector<std::shared_ptr<Sample>> samples;
 
 		std::shared_ptr<KnnStructure> knn_structure;
-		KnnStructureType knn_type = KnnStructureType::DEFAULT;
-
-		uint32 search_dimension = 0;
-		float sample_rate = 10.0f;
-		uint32 max_broardphase_candidates = 10;
-
-		NarrowPhaseParams narrow_phase_params;
-		
-		std::string database_id;
-		std::vector<std::string> feature_types;
 
 		std::vector<float> mean_values;
 		std::vector<float> normalize_factors;
 
-		std::vector<float> weights;
 		std::vector<float> min_values;
 		std::vector<float> max_values;
 
@@ -124,6 +113,17 @@ namespace era_engine
 
 		std::vector<uint64> animations_asset_handles;
 		std::vector<uint32> animations_hashes;
-		std::vector<ref<animation::AnimationAssetClip>> animations;
+
+		std::vector<MotionMatchingFeature*> features;
+	};
+
+	class ERA_MOTION_MATCHING_API MotionDatabaseRegistry
+	{
+	public:
+		MotionDatabaseRegistry() = delete;
+
+		static void add_to_registry(ref<MotionMatchingDatabase> database);
+
+		static ref<MotionMatchingDatabase> get_by_id(const std::string& database_id);
 	};
 }

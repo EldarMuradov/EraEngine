@@ -2,14 +2,13 @@
 
 #include "motion_matching_api.h"
 
+#include "motion_matching/common.h"
+
 #include <ecs/component.h>
 
 namespace era_engine
 {
-	namespace animation
-	{
-		class AnimationAssetClip;
-	}
+	class MotionMatchingFeatureSet;
 
 	class ERA_MOTION_MATCHING_API MotionMatchingComponent final : public Component
 	{
@@ -19,9 +18,13 @@ namespace era_engine
 
 		~MotionMatchingComponent() override;
 
-		float search_time = 0.1f;
-		float search_timer = search_time;
+		SearchResult search_animation(const std::string& database_id, float dt) const;
+		SearchResult search_animation(const MotionMatchingFeatureSet& feature_set, const std::string& database_id) const;
 
 		ERA_VIRTUAL_REFLECT(Component)
+
+	public:
+		float search_time = 0.1f;
+		float search_timer = search_time;
 	};
 }

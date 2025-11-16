@@ -11,7 +11,8 @@ namespace era_engine
 	class ERA_MOTION_MATCHING_API TrajectoryFeature : public MotionMatchingFeature
 	{
 	public:
-		TrajectoryFeature();
+		TrajectoryFeature() = default;
+		TrajectoryFeature(const TrajectoryFeature&) = default;
 		~TrajectoryFeature() override;
 
 		void compute_features(const FeatureComputationContext& context) override;

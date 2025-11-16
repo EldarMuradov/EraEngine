@@ -36,10 +36,11 @@ namespace era_engine
 	class ERA_MOTION_MATCHING_API MotionMatchingFeature
 	{
 	public:
-		MotionMatchingFeature();
+		MotionMatchingFeature() = default;
+		MotionMatchingFeature(const MotionMatchingFeature&) = default;
 		virtual ~MotionMatchingFeature();
 
-		const std::vector<float>& get_values() const;
+		std::vector<float> get_values() const;
 
 		virtual void compute_features(const FeatureComputationContext& context);
 		void store_features(std::vector<float>&& _values);

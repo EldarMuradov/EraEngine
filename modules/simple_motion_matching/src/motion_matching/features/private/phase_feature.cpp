@@ -1,5 +1,6 @@
 #include "motion_matching/features/phase_feature.h"
 
+#include <rttr/policy.h>
 #include <rttr/registration>
 
 namespace era_engine
@@ -8,11 +9,7 @@ namespace era_engine
 	{
 		using namespace rttr;
 		registration::class_<PhaseFeature>("PhaseFeature")
-			.constructor<>();
-	}
-
-	PhaseFeature::PhaseFeature()
-	{
+			.constructor<>()(policy::ctor::as_raw_ptr);
 	}
 
 	PhaseFeature::~PhaseFeature()

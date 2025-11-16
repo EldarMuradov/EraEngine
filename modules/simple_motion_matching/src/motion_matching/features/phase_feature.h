@@ -11,7 +11,8 @@ namespace era_engine
 	class ERA_MOTION_MATCHING_API PhaseFeature : public MotionMatchingFeature
 	{
 	public:
-		PhaseFeature();
+		PhaseFeature() = default;
+		PhaseFeature(const PhaseFeature&) = default;
 		~PhaseFeature() override;
 
 		void compute_features(const FeatureComputationContext& context) override;

@@ -1,5 +1,6 @@
 #include "motion_matching/features/trajectory_feature.h"
 
+#include <rttr/policy.h>
 #include <rttr/registration>
 
 namespace era_engine
@@ -8,11 +9,7 @@ namespace era_engine
 	{
 		using namespace rttr;
 		registration::class_<TrajectoryFeature>("TrajectoryFeature")
-			.constructor<>();
-	}
-
-	TrajectoryFeature::TrajectoryFeature()
-	{
+			.constructor<>()(policy::ctor::as_raw_ptr);
 	}
 
 	TrajectoryFeature::~TrajectoryFeature()

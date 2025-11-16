@@ -1,21 +1,16 @@
 #include "motion_matching/runtime_motion_matching_system.h"
-#include "animation/animation.h"
-#include "animation/skinning.h"
-
-#include "rendering/debug_visualization.h"
-
-#include "core/cpu_profiling.h"
-#include "core/string.h"
-#include "core/debug/debug_var.h"
-
-#include "engine/engine.h"
-
-#include "ecs/update_groups.h"
-#include "ecs/base_components/transform_component.h"
-
+#include "motion_matching/features/motion_matching_feature_set.h"
 #include "motion_matching/motion_matching_database.h"
 #include "motion_matching/common.h"
 #include "motion_matching/motion_matching_component.h"
+
+#include "animation/animation.h"
+
+#include "core/string.h"
+#include "core/debug/debug_var.h"
+
+#include "ecs/update_groups.h"
+#include "ecs/base_components/transform_component.h"
 
 #include <rttr/policy.h>
 #include <rttr/registration>
@@ -42,24 +37,28 @@ namespace era_engine
 
 	void RuntimeMotionMatchingSystem::init()
 	{
-        world->get_registry().on_construct<MotionMatchingComponent>().connect<&RuntimeMotionMatchingSystem::on_controller_created>(this);
 	}
 
 	void RuntimeMotionMatchingSystem::update(float dt)
 	{
 		using namespace animation;
 
-        for (auto [handle, transform_component, controller] : world->group(components_group<TransformComponent, MotionMatchingComponent>).each())
+        for (auto [handle, transform_component, mm_controller, animation_component] : world->group(components_group<TransformComponent, MotionMatchingComponent, AnimationComponent>).each())
         {
+			mm_controller.search_timer -= dt;
+			if (mm_controller.search_timer <= 0.0f)
+			{
+				mm_controller.search_timer = mm_controller.search_time;
 
+				MotionMatchingFeatureSet feature_set;
+				SearchResult search_result = mm_controller.search_animation(feature_set, "LOCOMOTION");
+				
+				if (search_result.animation != nullptr)
+				{
+					animation_component.current_animation = search_result.animation;
+					animation_component.current_anim_position = search_result.anim_position;
+				}
+			}
         }
 	}
-
-    void RuntimeMotionMatchingSystem::on_controller_created(entt::registry& registry, entt::entity entity)
-    {
-        MotionMatchingComponent& controller = registry.get<MotionMatchingComponent>(entity);
-        TransformComponent& transform = registry.get<TransformComponent>(entity);
-
-        // TODO
-    }
 }

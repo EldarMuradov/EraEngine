@@ -6,6 +6,7 @@
 #include "animation/animation.h"
 #include "animation/skeleton_component.h"
 
+#include <rttr/policy.h>
 #include <rttr/registration>
 
 namespace era_engine
@@ -14,7 +15,7 @@ namespace era_engine
 	{
 		using namespace rttr;
 		registration::class_<MotionMatchingFeature>("MotionMatchingFeature")
-			.constructor<>();
+			.constructor<>()(policy::ctor::as_raw_ptr);
 	}
 
 	void FeatureComputationContext::fill_context(Entity _entity, float _dt)
@@ -50,7 +51,7 @@ namespace era_engine
 		values = std::move(_values);
 	}
 
-	const std::vector<float>& MotionMatchingFeature::get_values() const
+	std::vector<float> MotionMatchingFeature::get_values() const
 	{
 		return values;
 	}

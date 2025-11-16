@@ -17,8 +17,6 @@ namespace era_engine
 		void init() override;
 		void update(float dt) override;
 
-		void on_controller_created(entt::registry& registry, entt::entity entity);
-
 		ERA_VIRTUAL_REFLECT(System)
 	};
 }

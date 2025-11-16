@@ -7,6 +7,29 @@
 
 namespace era_engine
 {
+	namespace animation
+	{
+		class AnimationAssetClip;
+	}
+
+	struct ERA_MOTION_MATCHING_API SearchParams final
+	{
+		ref<animation::AnimationAssetClip> current_animation;
+		std::vector<float> current_features;
+		std::vector<float> query;
+
+		float current_anim_position = 0.0f;
+	};
+
+	struct ERA_MOTION_MATCHING_API SearchResult final
+	{
+		ref<animation::AnimationAssetClip> animation;
+		std::string database_id;
+
+		std::vector<float> found_features;
+		float anim_position = -1.0f;
+	};
+
 	static inline float clampf(float x, float min, float max)
 	{
 		return x > max ? max : x < min ? min : x;
