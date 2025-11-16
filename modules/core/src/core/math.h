@@ -342,7 +342,7 @@ struct ERA_CORE_API dual_quat
 	dual_quat(quat real, quat dual) : real(real), dual(dual) {}
 	dual_quat(quat rotation, vec3 translation);
 
-	vec3 get_translation();
+	vec3 get_translation() const;
 	quat get_rotation() const;
 
 	static const dual_quat identity;
@@ -543,106 +543,110 @@ struct ERA_CORE_API ray
 };
 
 // Vec2 operators
-inline vec2 operator+(vec2 a, vec2 b) { vec2 result = { a.x + b.x, a.y + b.y }; return result; }
-inline vec2& operator+=(vec2& a, vec2 b) { a = a + b; return a; }
-inline vec2 operator-(vec2 a, vec2 b) { vec2 result = { a.x - b.x, a.y - b.y }; return result; }
-inline vec2& operator-=(vec2& a, vec2 b) { a = a - b; return a; }
-inline vec2 operator*(vec2 a, vec2 b) { vec2 result = { a.x * b.x, a.y * b.y }; return result; }
-inline vec2& operator*=(vec2& a, vec2 b) { a = a * b; return a; }
-inline vec2 operator/(vec2 a, vec2 b) { vec2 result = { a.x / b.x, a.y / b.y }; return result; }
-inline vec2& operator/=(vec2& a, vec2 b) { a = a / b; return a; }
+inline vec2 operator+(const vec2& a, const vec2& b) { vec2 result = { a.x + b.x, a.y + b.y }; return result; }
+inline vec2& operator+=(vec2& a, const vec2& b) { a = a + b; return a; }
+inline vec2 operator-(vec2 a, const vec2& b) { vec2 result = { a.x - b.x, a.y - b.y }; return result; }
+inline vec2& operator-=(vec2& a, const vec2& b) { a = a - b; return a; }
+inline vec2 operator*(vec2 a, const vec2& b) { vec2 result = { a.x * b.x, a.y * b.y }; return result; }
+inline vec2& operator*=(vec2& a, const vec2& b) { a = a * b; return a; }
+inline vec2 operator/(vec2 a, const vec2& b) { vec2 result = { a.x / b.x, a.y / b.y }; return result; }
+inline vec2& operator/=(vec2& a, const vec2& b) { a = a / b; return a; }
 
-inline vec2 operator*(vec2 a, float b) { vec2 result = { a.x * b, a.y * b }; return result; }
-inline vec2 operator*(float a, vec2 b) { return b * a; }
+inline vec2 operator*(const vec2& a, float b) { vec2 result = { a.x * b, a.y * b }; return result; }
+inline vec2 operator*(float a, const vec2& b) { return b * a; }
 inline vec2& operator*=(vec2& a, float b) { a = a * b; return a; }
 inline vec2 operator/(vec2 a, float b) { vec2 result = { a.x / b, a.y / b }; return result; }
 inline vec2& operator/=(vec2& a, float b) { a = a / b; return a; }
 
-inline vec2 operator-(vec2 a) { return vec2(-a.x, -a.y); }
+inline vec2 operator-(const vec2& a) { return vec2(-a.x, -a.y); }
 
-inline bool operator==(vec2 a, vec2 b) { return a.x == b.x && a.y == b.y; }
-inline bool operator!=(vec2 a, vec2 b) { return !(a == b); }
+inline bool operator==(const vec2& a, const vec2& b) { return a.x == b.x && a.y == b.y; }
+inline bool operator!=(const vec2& a, const vec2& b) { return !(a == b); }
 
 // Vec3 operators
-inline vec3 operator+(vec3 a, vec3 b) { vec3 result = { a.x + b.x, a.y + b.y, a.z + b.z }; return result; }
-inline vec3& operator+=(vec3& a, vec3 b) { a = a + b; return a; }
-inline vec3 operator-(vec3 a, vec3 b) { vec3 result = { a.x - b.x, a.y - b.y, a.z - b.z }; return result; }
-inline vec3& operator-=(vec3& a, vec3 b) { a = a - b; return a; }
-inline vec3 operator*(vec3 a, vec3 b) { vec3 result = { a.x * b.x, a.y * b.y, a.z * b.z }; return result; }
-inline vec3& operator*=(vec3& a, vec3 b) { a = a * b; return a; }
-inline vec3 operator/(vec3 a, vec3 b) { vec3 result = { a.x / b.x, a.y / b.y, a.z / b.z }; return result; }
-inline vec3& operator/=(vec3& a, vec3 b) { a = a / b; return a; }
+inline vec3 operator+(const vec3& a, const vec3& b) { vec3 result = { a.x + b.x, a.y + b.y, a.z + b.z }; return result; }
+inline vec3& operator+=(vec3& a, const vec3& b) { a = a + b; return a; }
+inline vec3 operator-(const vec3& a, const vec3& b) { vec3 result = { a.x - b.x, a.y - b.y, a.z - b.z }; return result; }
+inline vec3& operator-=(vec3& a, const vec3& b) { a = a - b; return a; }
+inline vec3 operator*(const vec3& a, const vec3& b) { vec3 result = { a.x * b.x, a.y * b.y, a.z * b.z }; return result; }
+inline vec3& operator*=(vec3& a, const vec3& b) { a = a * b; return a; }
+inline vec3 operator/(const vec3& a, const vec3& b) { vec3 result = { a.x / b.x, a.y / b.y, a.z / b.z }; return result; }
+inline vec3& operator/=(vec3& a, const vec3& b) { a = a / b; return a; }
 
-inline vec3 operator*(vec3 a, float b) { vec3 result = { a.x * b, a.y * b, a.z * b }; return result; }
-inline vec3 operator*(float a, vec3 b) { return b * a; }
+inline vec3 operator*(const vec3& a, float b) { vec3 result = { a.x * b, a.y * b, a.z * b }; return result; }
+inline vec3 operator*(float a, const vec3& b) { return b * a; }
 inline vec3& operator*=(vec3& a, float b) { a = a * b; return a; }
 inline vec3 operator/(vec3 a, float b) { vec3 result = { a.x / b, a.y / b, a.z / b }; return result; }
 inline vec3& operator/=(vec3& a, float b) { a = a / b; return a; }
 
-inline vec3 operator-(vec3 a) { return vec3(-a.x, -a.y, -a.z); }
+inline vec3 operator-(const vec3& a) { return vec3(-a.x, -a.y, -a.z); }
 
-inline bool operator==(vec3 a, vec3 b) { return a.x == b.x && a.y == b.y && a.z == b.z; }
-inline bool operator!=(vec3 a, vec3 b) { return !(a == b); }
+inline bool operator==(const vec3& a, const vec3& b) { return a.x == b.x && a.y == b.y && a.z == b.z; }
+inline bool operator!=(const vec3& a, const vec3& b) { return !(a == b); }
 
 // Vec4 operators
-inline vec4 operator+(vec4 a, vec4 b) { vec4 result = { a.f4 + b.f4 }; return result; }
-inline vec4& operator+=(vec4& a, vec4 b) { a = a + b; return a; }
-inline vec4 operator-(vec4 a, vec4 b) { vec4 result = { a.f4 - b.f4 }; return result; }
-inline vec4& operator-=(vec4& a, vec4 b) { a = a - b; return a; }
-inline vec4 operator*(vec4 a, vec4 b) { vec4 result = { a.f4 * b.f4 }; return result; }
-inline vec4& operator*=(vec4& a, vec4 b) { a = a * b; return a; }
-inline vec4 operator/(vec4 a, vec4 b) { vec4 result = { a.f4 / b.f4 }; return result; }
-inline vec4& operator/=(vec4& a, vec4 b) { a = a / b; return a; }
+inline vec4 operator+(const vec4& a, const vec4& b) { vec4 result = { a.f4 + b.f4 }; return result; }
+inline vec4& operator+=(vec4& a, const vec4& b) { a = a + b; return a; }
+inline vec4 operator-(const vec4& a, const vec4& b) { vec4 result = { a.f4 - b.f4 }; return result; }
+inline vec4& operator-=(vec4& a, const vec4& b) { a = a - b; return a; }
+inline vec4 operator*(const vec4& a, const vec4& b) { vec4 result = { a.f4 * b.f4 }; return result; }
+inline vec4& operator*=(vec4& a, const vec4& b) { a = a * b; return a; }
+inline vec4 operator/(const vec4& a, const vec4& b) { vec4 result = { a.f4 / b.f4 }; return result; }
+inline vec4& operator/=(vec4& a, const vec4& b) { a = a / b; return a; }
 
-inline vec4 operator*(vec4 a, float b) { vec4 result = { a.f4 * w4_float(b) }; return result; }
-inline vec4 operator*(float a, vec4 b) { return b * a; }
+inline vec4 operator*(const vec4& a, float b) { vec4 result = { a.f4 * w4_float(b) }; return result; }
+inline vec4 operator*(float a, const vec4& b) { return b * a; }
 inline vec4& operator*=(vec4& a, float b) { a = a * b; return a; }
-inline vec4 operator/(vec4 a, float b) { vec4 result = { a.f4 / w4_float(b) }; return result; }
+inline vec4 operator/(const vec4& a, float b) { vec4 result = { a.f4 / w4_float(b) }; return result; }
 inline vec4& operator/=(vec4& a, float b) { a = a / b; return a; }
 
-inline vec4 operator-(vec4 a) { return vec4(-a.f4); }
+inline vec4 operator-(const vec4& a) { return vec4(-a.f4); }
 
-inline bool operator==(vec4 a, vec4 b) { return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w; }
-inline bool operator!=(vec4 a, vec4 b) { return !(a == b); }
+inline quat operator-(const quat& a) { return quat(-a.f4); }
+
+inline bool operator==(const vec4& a, const vec4& b) { return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w; }
+inline bool operator!=(const vec4& a, const vec4& b) { return !(a == b); }
 
 inline vec2 diagonal(const mat2& m) { return vec2(m.m00, m.m11); }
 inline vec3 diagonal(const mat3& m) { return vec3(m.m00, m.m11, m.m22); }
 inline vec4 diagonal(const mat4& m) { return vec4(m.m00, m.m11, m.m22, m.m33); }
 
-inline float dot(vec2 a, vec2 b) { float result = a.x * b.x + a.y * b.y; return result; }
-inline float dot(vec3 a, vec3 b) { float result = a.x * b.x + a.y * b.y + a.z * b.z; return result; }
-inline float dot(vec4 a, vec4 b) { w4_float m = a.f4 * b.f4; return add_elements(m); }
+inline float dot(const vec2& a, const vec2& b) { float result = a.x * b.x + a.y * b.y; return result; }
+inline float dot(const vec3& a, const vec3& b) { float result = a.x * b.x + a.y * b.y + a.z * b.z; return result; }
+inline float dot(const vec4& a, const vec4& b) { w4_float m = a.f4 * b.f4; return add_elements(m); }
+inline float dot(const quat& a, const quat& b) { w4_float m = a.f4 * b.f4; return add_elements(m); }
 
-inline float cross(vec2 a, vec2 b) { return a.x * b.y - a.y * b.x; }
-inline vec3 cross(vec3 a, vec3 b) { vec3 result = { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x }; return result; }
+inline float cross(const vec2& a, const vec2& b) { return a.x * b.y - a.y * b.x; }
+inline vec3 cross(const vec3& a, const vec3& b) { vec3 result = { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x }; return result; }
 
-inline float squared_length(vec2 a) { return dot(a, a); }
-inline float squared_length(vec3 a) { return dot(a, a); }
-inline float squared_length(vec4 a) { return dot(a, a); }
+inline float squared_length(const vec2& a) { return dot(a, a); }
+inline float squared_length(const vec3& a) { return dot(a, a); }
+inline float squared_length(const vec4& a) { return dot(a, a); }
 
-inline float length(vec2 a) { return sqrt(squared_length(a)); }
-inline float length(vec3 a) { return sqrt(squared_length(a)); }
-inline float length(vec4 a) { return sqrt(squared_length(a)); }
+inline float length(const vec2& a) { return sqrt(squared_length(a)); }
+inline float length(const vec3& a) { return sqrt(squared_length(a)); }
+inline float length(const vec4& a) { return sqrt(squared_length(a)); }
 
-inline vec2 noz(vec2 a) { float sl = squared_length(a); return (sl < 1e-8f) ? vec2(0.f, 0.f) : (a * (1.f / sqrt(sl))); }
-inline vec3 noz(vec3 a) { float sl = squared_length(a); return (sl < 1e-8f) ? vec3(0.f, 0.f, 0.f) : (a * (1.f / sqrt(sl))); }
-inline vec4 noz(vec4 a) { float sl = squared_length(a); return (sl < 1e-8f) ? vec4(0.f, 0.f, 0.f, 0.f) : (a * (1.f / sqrt(sl))); }
+inline vec2 noz(const vec2& a) { float sl = squared_length(a); return (sl < 1e-8f) ? vec2(0.f, 0.f) : (a * (1.f / sqrt(sl))); }
+inline vec3 noz(const vec3& a) { float sl = squared_length(a); return (sl < 1e-8f) ? vec3(0.f, 0.f, 0.f) : (a * (1.f / sqrt(sl))); }
+inline vec4 noz(const vec4& a) { float sl = squared_length(a); return (sl < 1e-8f) ? vec4(0.f, 0.f, 0.f, 0.f) : (a * (1.f / sqrt(sl))); }
 
-inline vec2 normalize(vec2 a) { float l = length(a); return a * (1.f / l); }
-inline vec3 normalize(vec3 a) { float l = length(a); return a * (1.f / l); }
-inline vec4 normalize(vec4 a) { float l = length(a); return a * (1.f / l); }
+inline vec2 normalize(const vec2& a) { float l = length(a); return a * (1.f / l); }
+inline vec3 normalize(const vec3& a) { float l = length(a); return a * (1.f / l); }
+inline vec4 normalize(const vec4& a) { float l = length(a); return a * (1.f / l); }
 
-inline void copy_sign(vec2 from, vec2& to) { copy_sign(from.x, to.x); copy_sign(from.y, to.y); }
-inline void copy_sign(vec3 from, vec3& to) { copy_sign(from.x, to.x); copy_sign(from.y, to.y); copy_sign(from.z, to.z); }
-inline void copy_sign(vec4 from, vec4& to) { copy_sign(from.x, to.x); copy_sign(from.y, to.y); copy_sign(from.z, to.z); copy_sign(from.w, to.w); }
+inline void copy_sign(const vec2& from, vec2& to) { copy_sign(from.x, to.x); copy_sign(from.y, to.y); }
+inline void copy_sign(const vec3& from, vec3& to) { copy_sign(from.x, to.x); copy_sign(from.y, to.y); copy_sign(from.z, to.z); }
+inline void copy_sign(const vec4& from, vec4& to) { copy_sign(from.x, to.x); copy_sign(from.y, to.y); copy_sign(from.z, to.z); copy_sign(from.w, to.w); }
 
-inline vec2 abs(vec2 a) { return vec2(abs(a.x), abs(a.y)); }
-inline vec3 abs(vec3 a) { return vec3(abs(a.x), abs(a.y), abs(a.z)); }
-inline vec4 abs(vec4 a) { return vec4(abs(a.f4)); }
+inline vec2 abs(const vec2& a) { return vec2(abs(a.x), abs(a.y)); }
+inline vec3 abs(const vec3& a) { return vec3(abs(a.x), abs(a.y), abs(a.z)); }
+inline vec4 abs(const vec4& a) { return vec4(abs(a.f4)); }
+inline quat abs(const quat& a) { return a.w < 0.0 ? -a : a; }
 
-inline vec2 floor(vec2 a) { return vec2(floor(a.x), floor(a.y)); }
-inline vec3 floor(vec3 a) { return vec3(floor(a.x), floor(a.y), floor(a.z)); }
-inline vec4 floor(vec4 a) { return vec4(floor(a.f4)); }
+inline vec2 floor(const vec2& a) { return vec2(floor(a.x), floor(a.y)); }
+inline vec3 floor(const vec3& a) { return vec3(floor(a.x), floor(a.y), floor(a.z)); }
+inline vec4 floor(const vec4& a) { return vec4(floor(a.f4)); }
 
 inline vec2 round(vec2 a) { return vec2(round(a.x), round(a.y)); }
 inline vec3 round(vec3 a) { return vec3(round(a.x), round(a.y), round(a.z)); }
@@ -656,6 +660,7 @@ inline quat normalize(quat a) { return { normalize(a.v4).f4 }; }
 inline quat conjugate(quat a) { return { -a.x, -a.y, -a.z, a.w }; }
 
 inline quat operator+(quat a, quat b) { quat result = { a.f4 + b.f4 }; return result; }
+inline quat operator-(quat a, quat b) { quat result = { a.f4 - b.f4 }; return result; }
 
 inline quat operator*(quat a, quat b)
 {
@@ -732,6 +737,119 @@ inline vec4 max(vec4 a, vec4 b) { return vec4(maximum(a.f4, b.f4)); }
 inline float max_element(vec2 a) { return max(a.x, a.y); }
 inline float max_element(vec3 a) { return max(a.x, max(a.y, a.z)); }
 inline float max_element(vec4 a) { return max(a.x, max(a.y, max(a.z, a.w))); }
+
+inline quat nlerp(const quat& q, const quat& p, float alpha)
+{
+	return normalize(quat(
+		lerp(q.x, p.x, alpha),
+		lerp(q.y, p.y, alpha),
+		lerp(q.z, p.z, alpha),
+		lerp(q.w, p.w, alpha)));
+}
+
+inline quat nlerp_shortest(const quat& q, const quat& p, float alpha)
+{
+	return nlerp(q, (dot(q, p) < 0.0f ? -p : p), alpha);
+}
+
+inline quat slerp_shortest(const quat& q, quat p, float alpha, float eps = 1e-5f)
+{
+	if (dot(q, p) < 0.0f)
+	{
+		p = -p;
+	}
+
+	float dot_product = dot(q, p);
+	float theta = acosf(clamp(dot_product, -1.0f, 1.0f));
+
+	if (theta < eps)
+	{
+		return nlerp(q, p, alpha);
+	}
+
+	quat r = normalize(p - q * dot_product);
+
+	return q * cosf(theta * alpha) + r * sinf(theta * alpha);
+}
+
+// Taken from https://zeux.io/2015/07/23/approximating-slerp/
+inline quat slerp_shortest_approx(const quat& q, quat p, float alpha)
+{
+	float ca = dot(q, p);
+
+	if (ca < 0.0f)
+	{
+		p = -p;
+	}
+
+	float d = fabsf(ca);
+	float a = 1.0904f + d * (-3.2452f + d * (3.55645f - d * 1.43519f));
+	float b = 0.848013f + d * (-1.06021f + d * 0.215638f);
+	float k = a * (alpha - 0.5f) * (alpha - 0.5f) + b;
+	float oalpha = alpha + alpha * (alpha - 0.5f) * (alpha - 1) * k;
+
+	return nlerp(q, p, oalpha);
+}
+
+inline float angle_between(quat q, quat p)
+{
+	quat diff = abs(conjugate(q) * p);
+	return 2.0f * acosf(clamp(diff.w, -1.0f, 1.0f));
+}
+
+inline vec3 log(const quat& q, float eps = 1e-8f)
+{
+	float length = sqrtf(q.x * q.x + q.y * q.y + q.z * q.z);
+
+	if (length < eps)
+	{
+		return vec3(q.x, q.y, q.z);
+	}
+	else
+	{
+		float halfangle = acosf(clamp(q.w, -1.0f, 1.0f));
+		return halfangle * (vec3(q.x, q.y, q.z) / length);
+	}
+}
+
+inline quat exp(const vec3& v, float eps = 1e-8f)
+{
+	float halfangle = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+
+	if (halfangle < eps)
+	{
+		return normalize(quat(v.x, v.y, v.z, 1.0f));
+	}
+	else
+	{
+		float c = cosf(halfangle);
+		float s = sinf(halfangle) / halfangle;
+		return quat(s * v.x, s * v.y, s * v.z, c);
+	}
+}
+
+inline quat quat_from_scaled_angle_axis(const vec3& v, float eps = 1e-8f)
+{
+	return exp(v / 2.0f, eps);
+}
+
+inline vec3 quat_to_scaled_angle_axis(const quat& q, float eps = 1e-8f)
+{
+	return 2.0f * log(q, eps);
+}
+
+inline vec3 quat_differentiate_angular_velocity(
+	const quat& next, const quat& curr, float dt, float eps = 1e-8f)
+{
+	return quat_to_scaled_angle_axis(
+		abs(next * conjugate(curr)), eps) / dt;
+}
+
+inline quat quat_integrate_angular_velocity(
+	const vec3& vel, const quat& cur, float dt, float eps = 1e-8f)
+{
+	return quat_from_scaled_angle_axis(vel * dt, eps) * cur;
+}
 
 inline uint32 max_element_index(vec2 a) { return (a.x > a.y) ? 0 : 1; }
 inline uint32 max_element_index(vec3 a) { return (a.x > a.y) ? ((a.x > a.z) ? 0 : 2) : ((a.y > a.z) ? 1 : 2); }
@@ -945,9 +1063,9 @@ T sum(const T* input, uint32 count)
 }
 
 inline bool fuzzy_equals(float a, float b, float threshold = 1e-4f) { return abs(a - b) < threshold; }
-inline bool fuzzy_equals(vec2 a, vec2 b, float threshold = 1e-4f) { return fuzzy_equals(a.x, b.x, threshold) && fuzzy_equals(a.y, b.y, threshold); }
-inline bool fuzzy_equals(vec3 a, vec3 b, float threshold = 1e-4f) { return fuzzy_equals(a.x, b.x, threshold) && fuzzy_equals(a.y, b.y, threshold) && fuzzy_equals(a.z, b.z, threshold); }
-inline bool fuzzy_equals(vec4 a, vec4 b, float threshold = 1e-4f) { return fuzzy_equals(a.x, b.x, threshold) && fuzzy_equals(a.y, b.y, threshold) && fuzzy_equals(a.z, b.z, threshold) && fuzzy_equals(a.w, b.w, threshold); }
+inline bool fuzzy_equals(const vec2& a, const vec2& b, float threshold = 1e-4f) { return fuzzy_equals(a.x, b.x, threshold) && fuzzy_equals(a.y, b.y, threshold); }
+inline bool fuzzy_equals(const vec3& a, const vec3& b, float threshold = 1e-4f) { return fuzzy_equals(a.x, b.x, threshold) && fuzzy_equals(a.y, b.y, threshold) && fuzzy_equals(a.z, b.z, threshold); }
+inline bool fuzzy_equals(const vec4& a, const vec4& b, float threshold = 1e-4f) { return fuzzy_equals(a.x, b.x, threshold) && fuzzy_equals(a.y, b.y, threshold) && fuzzy_equals(a.z, b.z, threshold) && fuzzy_equals(a.w, b.w, threshold); }
 inline bool fuzzy_equals(quat a, quat b, float threshold = 1e-4f) { if (dot(a.v4, b.v4) < 0.f) { a.v4 *= -1.f; } return fuzzy_equals(a.x, b.x, threshold) && fuzzy_equals(a.y, b.y, threshold) && fuzzy_equals(a.z, b.z, threshold) && fuzzy_equals(a.w, b.w, threshold); }
 
 inline bool fuzzy_equals(const mat2& a, const mat2& b, float threshold = 1e-4f)
@@ -992,9 +1110,9 @@ inline bool fuzzy_equals(const trs& a, const trs& b, float threshold = 1e-4f)
 	return result;
 }
 
-inline bool isUniform(vec2 v) { return fuzzy_equals(v.x, v.y); }
-inline bool isUniform(vec3 v) { return fuzzy_equals(v.x, v.y) && fuzzy_equals(v.x, v.z); }
-inline bool isUniform(vec4 v) { return fuzzy_equals(v.x, v.y) && fuzzy_equals(v.x, v.z) && fuzzy_equals(v.x, v.w); }
+inline bool isUniform(const vec2& v) { return fuzzy_equals(v.x, v.y); }
+inline bool isUniform(const vec3& v) { return fuzzy_equals(v.x, v.y) && fuzzy_equals(v.x, v.z); }
+inline bool isUniform(const vec4& v) { return fuzzy_equals(v.x, v.y) && fuzzy_equals(v.x, v.z) && fuzzy_equals(v.x, v.w); }
 
 inline quat::quat(vec3 axis, float angle)
 {
@@ -1013,7 +1131,7 @@ inline dual_quat::dual_quat(quat rotation, vec3 translation)
 	dual = quat(x, y, z, w);
 }
 
-inline vec3 dual_quat::get_translation()
+inline vec3 dual_quat::get_translation() const
 {
 	quat tq = dual * conjugate(real);
 	return 2.f * tq.v4.xyz;

@@ -586,7 +586,7 @@ void decompose_quaternion_into_twist_and_swing(quat q, vec3 normalized_twist_axi
 
 quat slerp(quat from, quat to, float t)
 {
-	float d = dot(from.v4, to.v4);
+	float d = dot(from, to);
 	float absDot = d < 0.f ? -d : d;
 	float scale0 = 1.f - t;
 	float scale1 = t;

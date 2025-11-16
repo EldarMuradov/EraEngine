@@ -20,16 +20,15 @@
 #include <ecs/rendering/scene_rendering.h>
 #include <ecs/rendering/mesh_component.h>
 
-#include <game/movement/movement_component.h>
-
-#include <motion_matching/controller.h>
-
 #include <physics/body_component.h>
 #include <physics/shape_component.h>
 #include <physics/basic_objects.h>
 #include <physics/joint.h>
 #include <physics/ragdoll_component.h>
 #include <physics/physical_animation/physical_animation_component.h>
+
+#include <motion_matching/trajectory/trajectory_component.h>
+#include <motion_matching/motion/motion_component.h>
 
 #include <audio/audio.h>
 
@@ -72,8 +71,8 @@ namespace era_engine
 		CameraHolderComponent* camera_holder_component = camera_entity.add_component<CameraHolderComponent>();
 
 		camera_entity.add_component<InputSenderComponent>()->add_reciever(camera_entity.add_component<InputRecieverComponent>());
-		camera_entity.add_component<MovementComponent>();
-		camera_entity.add_component<MotionMatchingControllerComponent>();
+		camera_entity.add_component<MotionComponent>();
+		camera_entity.add_component<TrajectoryComponent>();
 
 		camera_holder_component->set_camera_type(CameraHolderComponent::FREE_CAMERA);
 		camera_holder_component->set_render_camera(&renderer_holder_rc->camera);

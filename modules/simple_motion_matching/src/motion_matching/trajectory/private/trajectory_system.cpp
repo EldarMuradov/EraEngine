@@ -1,0 +1,310 @@
+#include "motion_matching/trajectory/trajectory_system.h"
+#include "motion_matching/motion_matching_database.h"
+#include "motion_matching/motion_matching_component.h"
+#include "motion_matching/motion/spring_motion_utils.h"
+#include "motion_matching/trajectory/trajectory_component.h"
+#include "motion_matching/motion/motion_utils.h"
+#include "motion_matching/motion/motion_component.h"
+
+#include "motion_matching/common.h"
+
+#include "rendering/ecs/renderer_holder_root_component.h"
+#include "rendering/debug_visualization.h"
+
+#include "core/cpu_profiling.h"
+#include "core/string.h"
+#include "core/ecs/input_reciever_component.h"
+#include "core/debug/debug_var.h"
+
+#include "engine/engine.h"
+
+#include "ecs/update_groups.h"
+#include "ecs/rendering/mesh_component.h"
+#include "ecs/base_components/transform_component.h"
+
+#include <rttr/policy.h>
+#include <rttr/registration>
+
+namespace era_engine
+{
+    static DebugVar<bool> draw_trajectories = DebugVar<bool>("motion_matching.debug_draw.draw_trajectories", false);
+
+    // Predict what the desired velocity will be in the 
+    // future. Here we need to use the future trajectory 
+    // rotation as well as predicted future camera 
+    // position to find an accurate desired velocity in 
+    // the world space
+    static void trajectory_desired_velocities_predict(
+        slice1d<vec3> desired_velocities,
+        const slice1d<quat>& trajectory_rotations,
+        const vec3& desired_velocity,
+        const vec3& gamepadstick_left,
+        const vec3& gamepadstick_right,
+        const bool desired_strafe,
+        const float fwrd_speed,
+        const float side_speed,
+        const float back_speed,
+        const float dt)
+    {
+        desired_velocities(0) = desired_velocity;
+
+        for (int i = 1; i < desired_velocities.size; i++)
+        {
+            desired_velocities(i) = MotionUtils::desired_velocity_update(
+                gamepadstick_left,
+                trajectory_rotations(i),
+                fwrd_speed,
+                side_speed,
+                back_speed);
+        }
+    }
+
+    static void trajectory_positions_predict(
+        slice1d<vec3> positions,
+        slice1d<vec3> velocities,
+        slice1d<vec3> accelerations,
+        const vec3& position,
+        const vec3& velocity,
+        const vec3& acceleration,
+        const slice1d<vec3>& desired_velocities,
+        const float halflife,
+        const float dt)
+    {
+        positions(0) = position;
+        velocities(0) = velocity;
+        accelerations(0) = acceleration;
+
+        for (int i = 1; i < positions.size; i++)
+        {
+            positions(i) = positions(i - 1);
+            velocities(i) = velocities(i - 1);
+            accelerations(i) = accelerations(i - 1);
+
+            MotionUtils::simulation_positions_update(
+                positions(i),
+                velocities(i),
+                accelerations(i),
+                desired_velocities(i),
+                halflife,
+                dt);
+        }
+    }
+
+    // Predict desired rotations given the estimated future 
+    // camera rotation and other parameters
+    static void trajectory_desired_rotations_predict(
+        slice1d<quat> desired_rotations,
+        const slice1d<vec3> desired_velocities,
+        const quat& desired_rotation,
+        const vec3& gamepadstick_left,
+        const vec3& gamepadstick_right,
+        const bool desired_strafe,
+        const float dt)
+    {
+        desired_rotations(0) = desired_rotation;
+
+        for (int i = 1; i < desired_rotations.size; i++)
+        {
+            desired_rotations(i) = MotionUtils::desired_rotation_update(
+                desired_rotations(i - 1),
+                gamepadstick_left,
+                gamepadstick_right,
+                0.0f,
+                desired_strafe,
+                desired_velocities(i));
+        }
+    }
+
+    static void trajectory_rotations_predict(
+        slice1d<quat> rotations,
+        slice1d<vec3> angular_velocities,
+        const quat& rotation,
+        const vec3& angular_velocity,
+        const slice1d<quat>& desired_rotations,
+        const float halflife,
+        const float dt)
+    {
+        rotations.set(rotation);
+        angular_velocities.set(angular_velocity);
+
+        for (int i = 1; i < rotations.size; i++)
+        {
+            MotionUtils::simulation_rotations_update(
+                rotations(i),
+                angular_velocities(i),
+                desired_rotations(i),
+                halflife,
+                i * dt);
+        }
+    }
+
+	RTTR_REGISTRATION
+	{
+		using namespace rttr;
+
+		registration::class_<TrajectoryMotionSystem>("TrajectoryMotionSystem")
+			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("motion_matching")))
+			.method("update", &TrajectoryMotionSystem::update)(metadata("update_group", update_types::GAMEPLAY_AFTER_PHYSICS_CONCURRENT), metadata("Before", std::vector<std::string>{"MotionSystem::update"}))
+            .method("debug_draw_update", &TrajectoryMotionSystem::debug_draw_update)(metadata("update_group", update_types::RENDER));
+	}
+
+	TrajectoryMotionSystem::TrajectoryMotionSystem(World* _world)
+		: System(_world)
+	{
+		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
+		ASSERT(renderer_holder_rc != nullptr);
+	}
+
+	TrajectoryMotionSystem::~TrajectoryMotionSystem()
+	{
+	}
+
+	void TrajectoryMotionSystem::init()
+	{
+	}
+
+	void TrajectoryMotionSystem::update(float dt)
+	{
+		using namespace animation;
+
+        for (auto [handle, transform_component, reciever_component, trajectory_component, motion_component] 
+			: world->group(components_group<TransformComponent, InputRecieverComponent, TrajectoryComponent, MotionComponent>).each())
+        {
+            // Get gamepad stick states
+            const vec3& input = motion_component.get_desired_input();
+
+            vec3 gamepadstick_left = input;
+            vec3 gamepadstick_right = vec3();
+
+            // Get if strafe is desired
+            bool desired_strafe = reciever_component.get_frame_input().keyboard[key_ctrl].down;
+
+            // Get the desired gait (walk / run)
+            MotionUtils::desired_gait_update(
+                motion_component.desired_gait,
+                motion_component.desired_gait_velocity,
+                dt);
+
+            // Get the desired simulation speeds based on the gait
+            float simulation_fwrd_speed = lerpf(motion_component.run_fwrd_speed, motion_component.walk_fwrd_speed, motion_component.desired_gait);
+            float simulation_side_speed = lerpf(motion_component.run_side_speed, motion_component.walk_side_speed, motion_component.desired_gait);
+            float simulation_back_speed = lerpf(motion_component.run_back_speed, motion_component.walk_back_speed, motion_component.desired_gait);
+
+            // Get the desired velocity
+            vec3 desired_velocity_curr = MotionUtils::desired_velocity_update(
+                gamepadstick_left,
+                motion_component.simulation_rotation,
+                simulation_fwrd_speed,
+                simulation_side_speed,
+                simulation_back_speed);
+
+            // Get the desired rotation/direction
+            quat desired_rotation_curr = MotionUtils::desired_rotation_update(
+                motion_component.desired_rotation,
+                gamepadstick_left,
+                gamepadstick_right,
+                0.0f,
+                desired_strafe,
+                desired_velocity_curr);
+
+            // Check if we should force a search because input changed quickly
+            motion_component.desired_velocity_change_prev = motion_component.desired_velocity_change_curr;
+            motion_component.desired_velocity_change_curr = (desired_velocity_curr - motion_component.desired_velocity) / dt;
+            motion_component.desired_velocity = desired_velocity_curr;
+
+            motion_component.desired_rotation_change_prev = motion_component.desired_rotation_change_curr;
+            motion_component.desired_rotation_change_curr = quat_to_scaled_angle_axis(abs((conjugate(desired_rotation_curr) * motion_component.desired_rotation))) / dt;
+            motion_component.desired_rotation = desired_rotation_curr;
+
+            const float scaled_dt = 20.0f * dt;
+
+            trajectory_desired_rotations_predict(
+                trajectory_component.trajectory_desired_rotations,
+                trajectory_component.trajectory_desired_velocities,
+                motion_component.desired_rotation,
+                gamepadstick_left,
+                gamepadstick_right,
+                desired_strafe,
+                scaled_dt);
+
+            trajectory_rotations_predict(
+                trajectory_component.trajectory_rotations,
+                trajectory_component.trajectory_angular_velocities,
+                motion_component.simulation_rotation,
+                motion_component.angular_velocity,
+                trajectory_component.trajectory_desired_rotations,
+                motion_component.rotation_halflife,
+                scaled_dt);
+
+            trajectory_desired_velocities_predict(
+                trajectory_component.trajectory_desired_velocities,
+                trajectory_component.trajectory_rotations,
+                motion_component.desired_velocity,
+                gamepadstick_left,
+                gamepadstick_right,
+                desired_strafe,
+                simulation_fwrd_speed,
+                simulation_side_speed,
+                simulation_back_speed,
+                scaled_dt);
+
+            trajectory_positions_predict(
+                trajectory_component.trajectory_positions,
+                trajectory_component.trajectory_velocities,
+                trajectory_component.trajectory_accelerations,
+                motion_component.simulation_position,
+                motion_component.velocity,
+                motion_component.acceleration,
+                trajectory_component.trajectory_desired_velocities,
+                motion_component.velocity_halflife,
+                scaled_dt);
+
+            /*bool force_search = false;
+
+            if (controller.force_search_timer <= 0.0f && (
+                (length(controller.desired_velocity_change_prev) >= controller.desired_velocity_change_threshold &&
+                    length(controller.desired_velocity_change_curr) < controller.desired_velocity_change_threshold)
+                || (length(controller.desired_rotation_change_prev) >= controller.desired_rotation_change_threshold &&
+                    length(controller.desired_rotation_change_curr) < controller.desired_rotation_change_threshold)))
+            {
+                force_search = true;
+                controller.force_search_timer = controller.search_time;
+            }
+            else if (controller.force_search_timer > 0)
+            {
+                controller.force_search_timer -= dt;
+            }*/
+        }
+	}
+
+	void TrajectoryMotionSystem::debug_draw_update(float dt)
+	{
+		if (draw_trajectories)
+		{
+			for (auto [handle, transform_component, trajectory_component]
+				: world->group(components_group<TransformComponent, TrajectoryComponent>).each())
+			{
+				draw_trajectory(
+					trajectory_component.trajectory_positions,
+					trajectory_component.trajectory_rotations,
+					vec4(1.0f, 0.0f, 0.0f, 1.0f));
+			}
+		}
+	}
+
+    void TrajectoryMotionSystem::draw_trajectory(const slice1d<vec3>& trajectory_positions, 
+		const slice1d<quat>& trajectory_rotations, 
+		const vec4& color)
+    {
+        for (int i = 1; i < trajectory_positions.size; i++)
+        {
+            vec3 point = vec3(trajectory_positions(i).x, trajectory_positions(i).y, trajectory_positions(i).z);
+            renderWireSphere(point, 0.05f, color, renderer_holder_rc->ldrRenderPass);
+
+            vec3 dir = trajectory_rotations(i) * vec3(0.0f, 0.0f, 1.0f);
+            renderLine(point, point + 0.6f * dir, color, renderer_holder_rc->ldrRenderPass);
+            renderLine(vec3(trajectory_positions(i - 1).x, trajectory_positions(i - 1).y, trajectory_positions(i - 1).z), point, color, renderer_holder_rc->ldrRenderPass);
+        }
+    }
+
+}

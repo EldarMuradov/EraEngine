@@ -13,18 +13,6 @@
 #include <rttr/policy.h>
 #include <rttr/registration>
 
-#pragma warning(push, 0)
-
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include <imgui/imgui_draw.cpp>
-#include <imgui/imgui.cpp>
-#include <imgui/imgui_widgets.cpp>
-#include <imgui/imgui_demo.cpp>
-#include <imgui/imgui_tables.cpp>
-#include <imgui/imgui_internal.h>
-
-#pragma warning(pop)
-
 namespace era_engine
 {
 
