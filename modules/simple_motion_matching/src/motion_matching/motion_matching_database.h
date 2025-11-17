@@ -31,7 +31,6 @@ namespace era_engine
 		NONE = 0,
 		SAME_FRAME_CHECK = 1,
 		EUCLIDIAN_DISTANCE_CHECK = 2,
-		STABILITY_CHECK = 4,
 
 		ALL = SAME_FRAME_CHECK | EUCLIDIAN_DISTANCE_CHECK | STABILITY_CHECK
 	};
@@ -42,7 +41,6 @@ namespace era_engine
 		NarrowPhaseFlags flags = NarrowPhaseFlags::NONE;
 		float same_frame_time_threshold = 0.5f;
 		float max_euclidean_distance = 15.0f;
-		float stability_distance_threshold = 0.1f;
 	};
 
 	class ERA_MOTION_MATCHING_API MotionMatchingDatabase : public GameAsset

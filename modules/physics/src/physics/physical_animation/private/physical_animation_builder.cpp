@@ -64,8 +64,8 @@ namespace era_engine::physics
 		dynamic_body_component->angular_damping.get_for_write() = 0.25f;
 		dynamic_body_component->max_angular_velocity.get_for_write() = max_angular_velocity;
 		dynamic_body_component->max_contact_impulse.get_for_write() = max_contact_impulse;
-		dynamic_body_component->solver_position_iterations_count.get_for_write() = 32;
-		dynamic_body_component->solver_velocity_iterations_count.get_for_write() = 16;
+		dynamic_body_component->solver_position_iterations_count.get_for_write() = 16;
+		dynamic_body_component->solver_velocity_iterations_count.get_for_write() = 8;
 		dynamic_body_component->sleep_threshold.get_for_write() = 0.01f;
 		dynamic_body_component->stabilization_threshold.get_for_write() = 0.01f;
 
@@ -148,8 +148,8 @@ namespace era_engine::physics
 			joint_component->twist_min_limit.get_for_write() = deg2rad(twist_min_deg);
 			joint_component->twist_max_limit.get_for_write() = deg2rad(twist_max_deg);
 
-			joint_component->twist_limit_damping.get_for_write() = 25.0f;
-			joint_component->twist_limit_stiffness.get_for_write() = 250.0f;
+			joint_component->twist_limit_damping.get_for_write() = 40.0f;
+			joint_component->twist_limit_stiffness.get_for_write() = 300.0f;
 			joint_component->twist_limit_restitution.get_for_write() = 0.0f;
 		}
 
@@ -179,8 +179,8 @@ namespace era_engine::physics
 
 		if (any_moving_swing)
 		{
-			joint_component->swing_limit_damping.get_for_write() = 25.0f;
-			joint_component->swing_limit_stiffness.get_for_write() = 250.0f;
+			joint_component->swing_limit_damping.get_for_write() = 40.0f;
+			joint_component->swing_limit_stiffness.get_for_write() = 300.0f;
 			joint_component->swing_limit_restitution.get_for_write() = 0.0f;
 		}
 	}
@@ -222,6 +222,8 @@ namespace era_engine::physics
 		joint_component->linear_drive_damping = details.linear_drive_damping;
 		joint_component->linear_drive_force_limit = details.max_force;
 		joint_component->linear_drive_accelerated = details.accelerated;
+
+		joint_component->disable_preprocessing = true;
 
 		e1.get_component<PhysicalAnimationLimbComponent>()->drive_joint_component = ComponentPtr{ joint_component };
 

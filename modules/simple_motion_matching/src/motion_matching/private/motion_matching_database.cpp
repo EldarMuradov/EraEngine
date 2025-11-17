@@ -333,57 +333,30 @@ namespace era_engine
         const std::vector<float>& normalized_query,
         const SearchParams& params) const
     {
-        bool has_current_frame_candidate = params.current_features.size() == normalized_query.size();
-
         std::optional<std::shared_ptr<MotionMatchingDatabase::Sample>> result_candidate;
         if (!broadphase_candidates.empty())
         {
             result_candidate = broadphase_candidates.front();
         }
 
-        float result_candidate_to_query_distance_sqr = std::numeric_limits<float>::max();
-        float current_candidate_to_query_distance_sqr = std::numeric_limits<float>::max();
-
-        if (has_flag(narrow_phase_params.flags, NarrowPhaseFlags::EUCLIDIAN_DISTANCE_CHECK) ||
-            has_flag(narrow_phase_params.flags, NarrowPhaseFlags::STABILITY_CHECK))
+        if (has_flag(narrow_phase_params.flags, NarrowPhaseFlags::EUCLIDIAN_DISTANCE_CHECK))
         {
             if (result_candidate.has_value())
             {
-                result_candidate_to_query_distance_sqr = square_distance(normalized_query, normalize_query(result_candidate.value()->features));
-            }
+                const float result_candidate_to_query_distance_sqr = square_distance(normalized_query, normalize_query(result_candidate.value()->features));
 
-            if (has_current_frame_candidate)
-            {
-                const std::vector<float> current_frame_sample_normalized_features = normalize_query(params.current_features);
-                current_candidate_to_query_distance_sqr = square_distance(normalized_query, current_frame_sample_normalized_features);
-            }
-        }
-
-        if (has_flag(narrow_phase_params.flags, NarrowPhaseFlags::EUCLIDIAN_DISTANCE_CHECK))
-        {
-            const float max_euclidean_distance_sqr = squaref(narrow_phase_params.max_euclidean_distance);
-            if (result_candidate.has_value() && result_candidate_to_query_distance_sqr >= max_euclidean_distance_sqr)
-            {
-                result_candidate.reset();
-            }
-
-            if (has_current_frame_candidate && current_candidate_to_query_distance_sqr >= max_euclidean_distance_sqr)
-            {
-                has_current_frame_candidate = false;
+                const float max_euclidean_distance_sqr = squaref(narrow_phase_params.max_euclidean_distance);
+                if (result_candidate.has_value() && result_candidate_to_query_distance_sqr >= max_euclidean_distance_sqr)
+                {
+                    result_candidate.reset();
+                }
             }
         }
 
         if (!result_candidate.has_value())
-        {
-            if (has_current_frame_candidate)
-            {
-                return SearchResult(params.current_animation, database_id, params.current_features, params.current_anim_position);
-            }
-            else
-            {
-                return SearchResult();
-            }
-        }
+		{
+			return SearchResult();
+		}
 
         if (has_flag(narrow_phase_params.flags, NarrowPhaseFlags::SAME_FRAME_CHECK) &&
             params.current_animation == animations[result_candidate.value()->anim_index])
@@ -394,18 +367,6 @@ namespace era_engine
             {
                 return SearchResult(params.current_animation, database_id, params.current_features, params.current_anim_position);
 
-            }
-        }
-
-        if (has_flag(narrow_phase_params.flags, NarrowPhaseFlags::STABILITY_CHECK) &&
-            has_current_frame_candidate)
-        {
-            const float current_frame_to_query_distance = std::sqrt(current_candidate_to_query_distance_sqr);
-            const float result_candidate_to_query_distance = std::sqrt(result_candidate_to_query_distance_sqr);
-
-            if (current_frame_to_query_distance - narrow_phase_params.stability_distance_threshold < result_candidate_to_query_distance)
-            {
-                return SearchResult(params.current_animation, database_id, params.current_features, params.current_anim_position);
             }
         }
 
@@ -623,7 +584,6 @@ namespace era_engine
                 IO::write_value(os, narrow_phase_params.flags);
                 IO::write_value(os, narrow_phase_params.same_frame_time_threshold);
                 IO::write_value(os, narrow_phase_params.max_euclidean_distance);
-                IO::write_value(os, narrow_phase_params.stability_distance_threshold);
             }
 
             // Transform
@@ -715,7 +675,6 @@ namespace era_engine
                 IO::read_value(is, narrow_phase_params.flags);
                 IO::read_value(is, narrow_phase_params.same_frame_time_threshold);
                 IO::read_value(is, narrow_phase_params.max_euclidean_distance);
-                IO::read_value(is, narrow_phase_params.stability_distance_threshold);
             }
 
             // Transform
