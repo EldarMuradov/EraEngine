@@ -16,6 +16,6 @@ namespace era_engine::physics
 
         void on_exit();
 
-        ConstraintLimbStateType try_switch_to(ConstraintLimbStateType desired_state) const override;
+        PhysicalLimbStateType try_switch_to(PhysicalLimbStateType desired_state) const override;
     };
 }

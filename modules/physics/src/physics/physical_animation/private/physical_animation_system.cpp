@@ -9,7 +9,7 @@
 #include "physics/physical_animation/physical_animation_builder.h"
 #include "physics/scene_queries.h"
 #include "physics/shape_component.h"
-#include "physics/ragdoll_profile.h"
+#include "physics/physical_animation/ragdoll_profile.h"
 #include "physics/physical_animation/drive_pose_solver.h"
 #include "physics/physical_animation/physical_animation_utils.h"
 
@@ -46,12 +46,7 @@ namespace era_engine::physics
 	static DebugVar<bool> enable_always = DebugVar<bool>("physics.physical_animation.enable_always", false);
 	static DebugVar<bool> force_drive_simulation = DebugVar<bool>("physics.physical_animation.force_drive_simulation", false);
 
-	static DebugVar<bool> draw_simulation_data = DebugVar<bool>("physics.physical_animation.draw_simulation_data", false);
-	static DebugVar<bool> draw_adjusted_positions = DebugVar<bool>("physics.physical_animation.draw_adjusted_positions", false);
-	static DebugVar<bool> draw_physics_positions = DebugVar<bool>("physics.physical_animation.draw_physics_positions", false);
-	static DebugVar<bool> draw_target_positions = DebugVar<bool>("physics.physical_animation.draw_target_positions", false);
-
-	static DebugVar<float> running_speed = DebugVar<float>("physics.physical_animation.debug_demo.running_speed", 1.0f);
+	static DebugVar<float> running_speed = DebugVar<float>("physics.physical_animation.debug_demo.running_speed", 1.5f);
 	static DebugVar<float> sprint_speed = DebugVar<float>("physics.physical_animation.debug_demo.sprint_speed", 5.0f);
 
 	PhysicalAnimationSystem::PhysicalAnimationSystem(World* _world)
@@ -74,89 +69,85 @@ namespace era_engine::physics
 			idle_profile = make_ref<RagdollProfile>();
 
 			idle_profile->type = RagdollProfileType::IDLE;
-			idle_profile->head_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
-			idle_profile->head_constraint.angular_drive_stiffness = 20.0f;
-			idle_profile->head_constraint.angular_drive_damping = 20.0f;
-			idle_profile->head_constraint.linear_drive_stiffness = 20.0f;
-			idle_profile->head_constraint.linear_drive_damping = 200.0f;
-			idle_profile->head_constraint.should_create_drive_joint = true;
+			idle_profile->head_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->head_limb_details.motor_drive = MotorDriveDetails();
+			idle_profile->head_limb_details.motor_drive->angular_drive_stiffness = 20.0f;
+			idle_profile->head_limb_details.motor_drive->angular_drive_damping = 20.0f;
+			idle_profile->head_limb_details.motor_drive->linear_drive_stiffness = 20.0f;
+			idle_profile->head_limb_details.motor_drive->linear_drive_damping = 200.0f;
 
-			idle_profile->neck_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->body_upper_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->body_upper_limb_details.motor_drive = MotorDriveDetails();
+			idle_profile->body_upper_limb_details.motor_drive->angular_drive_stiffness = 30.0f;
+			idle_profile->body_upper_limb_details.motor_drive->angular_drive_damping = 300.0f;
+			idle_profile->body_upper_limb_details.motor_drive->linear_drive_stiffness = 30.0f;
+			idle_profile->body_upper_limb_details.motor_drive->linear_drive_damping = 200.0f;
 
-			idle_profile->arm_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->body_middle_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 
-			idle_profile->body_upper_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
-			idle_profile->body_upper_constraint.angular_drive_stiffness = 30.0f;
-			idle_profile->body_upper_constraint.angular_drive_damping = 300.0f;
-			idle_profile->body_upper_constraint.linear_drive_stiffness = 30.0f;
-			idle_profile->body_upper_constraint.linear_drive_damping = 200.0f;
-			idle_profile->body_upper_constraint.should_create_drive_joint = true;
+			idle_profile->arm_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->arm_limb_details.motor_drive = MotorDriveDetails();
+			idle_profile->arm_limb_details.motor_drive->angular_drive_stiffness = 30.0f;
+			idle_profile->arm_limb_details.motor_drive->angular_drive_damping = 400.0f;
+			idle_profile->arm_limb_details.motor_drive->linear_drive_stiffness = 30.0f;
+			idle_profile->arm_limb_details.motor_drive->linear_drive_damping = 300.0f;
 
-			idle_profile->body_middle_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->body_lower_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 
-			idle_profile->body_lower_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->forearm_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->forearm_limb_details.motor_drive = MotorDriveDetails();
+			idle_profile->forearm_limb_details.motor_drive->angular_drive_stiffness = 30.0f;
+			idle_profile->forearm_limb_details.motor_drive->angular_drive_damping = 200.0f;
+			idle_profile->forearm_limb_details.motor_drive->linear_drive_stiffness = 30.0f;
+			idle_profile->forearm_limb_details.motor_drive->linear_drive_damping = 400.0f;
 
-			idle_profile->forearm_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
-			idle_profile->forearm_constraint.angular_drive_stiffness = 30.0f;
-			idle_profile->forearm_constraint.angular_drive_damping = 400.0f;
-			idle_profile->forearm_constraint.linear_drive_stiffness = 30.0f;
-			idle_profile->forearm_constraint.linear_drive_damping = 300.0f;
-			idle_profile->forearm_constraint.should_create_drive_joint = true;
+			idle_profile->hand_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 
-			idle_profile->hand_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
-			idle_profile->hand_constraint.angular_drive_stiffness = 20.0f;
-			idle_profile->hand_constraint.angular_drive_damping = 200.0f;
-			idle_profile->hand_constraint.linear_drive_stiffness = 20.0f;
-			idle_profile->hand_constraint.linear_drive_damping = 400.0f;
-			idle_profile->hand_constraint.should_create_drive_joint = true;
+			idle_profile->leg_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 
-			idle_profile->leg_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
+			idle_profile->calf_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->calf_limb_details.motor_drive = MotorDriveDetails();
+			idle_profile->calf_limb_details.motor_drive->angular_drive_stiffness = 30.0f;
+			idle_profile->calf_limb_details.motor_drive->angular_drive_damping = 300.0f;
+			idle_profile->calf_limb_details.motor_drive->linear_drive_stiffness = 30.0f;
+			idle_profile->calf_limb_details.motor_drive->linear_drive_damping = 400.0f;
 
-			idle_profile->calf_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
-			idle_profile->calf_constraint.angular_drive_stiffness = 30.0f;
-			idle_profile->calf_constraint.angular_drive_damping = 300.0f;
-			idle_profile->calf_constraint.linear_drive_stiffness = 30.0f;
-			idle_profile->calf_constraint.linear_drive_damping = 400.0f;
-			idle_profile->calf_constraint.should_create_drive_joint = true;
-
-			idle_profile->foot_constraint.blend_type = ConstraintBlendType::PURE_PHYSICS;
-			idle_profile->foot_constraint.angular_drive_stiffness = 20.0f;
-			idle_profile->foot_constraint.angular_drive_damping = 200.0f;
-			idle_profile->foot_constraint.linear_drive_stiffness = 20.0f;
-			idle_profile->foot_constraint.linear_drive_damping = 200.0f;
-			idle_profile->foot_constraint.should_create_drive_joint = true;
+			idle_profile->foot_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->foot_limb_details.motor_drive = MotorDriveDetails();
+			idle_profile->foot_limb_details.motor_drive->angular_drive_stiffness = 20.0f;
+			idle_profile->foot_limb_details.motor_drive->angular_drive_damping = 200.0f;
+			idle_profile->foot_limb_details.motor_drive->linear_drive_stiffness = 20.0f;
+			idle_profile->foot_limb_details.motor_drive->linear_drive_damping = 200.0f;
 		}
 
 		{
 			running_profile = make_ref<RagdollProfile>();
 
 			running_profile->type = RagdollProfileType::RUNNING;
-			running_profile->head_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			running_profile->neck_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			running_profile->arm_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			running_profile->body_upper_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			running_profile->body_middle_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			running_profile->forearm_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			running_profile->hand_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			running_profile->leg_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			running_profile->calf_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			running_profile->foot_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			running_profile->head_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			running_profile->arm_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			running_profile->body_upper_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			running_profile->body_middle_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			running_profile->forearm_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			running_profile->hand_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			running_profile->leg_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
+			running_profile->calf_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
+			running_profile->foot_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
 		}
 
 		{
 			sprint_profile = make_ref<RagdollProfile>();
 
-			sprint_profile->type = RagdollProfileType::RUNNING;
-			sprint_profile->head_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			sprint_profile->neck_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			sprint_profile->arm_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			sprint_profile->body_upper_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			sprint_profile->body_middle_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			sprint_profile->forearm_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			sprint_profile->hand_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			sprint_profile->leg_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			sprint_profile->calf_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
-			sprint_profile->foot_constraint.blend_type = ConstraintBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->type = RagdollProfileType::SPRINT;
+			sprint_profile->head_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->arm_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->body_upper_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->body_middle_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->forearm_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->hand_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->leg_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->calf_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
+			sprint_profile->foot_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
 		}
 
 		pose_sampler = std::make_unique<DrivePoseSampler>();
@@ -494,17 +485,15 @@ namespace era_engine::physics
 
 			bool want_be_simulated = should_update_as_simulated;
 
-			ConstraintLimbStateType desired_chain_state = want_be_simulated ? ConstraintLimbStateType::SIMULATION : ConstraintLimbStateType::KINEMATIC;
-			if (force_drive_simulation)
-			{
-				desired_chain_state = ConstraintLimbStateType::SIMULATION;
-			}
+			const PhysicalLimbStateType desired_chain_state = want_be_simulated || force_drive_simulation 
+				? PhysicalLimbStateType::SIMULATION 
+				: PhysicalLimbStateType::KINEMATIC;
 
 			limb_data_component->update_states(dt, desired_chain_state);
 
 			if (limb_data_component->was_in_collision && limb_data_component->is_colliding)
 			{
-				const float used_collision_time = limb_data_component->type == PhysicalAnimationLimbComponent::Type::HAND ? 
+				const float used_collision_time = PhysicalAnimationUtils::is_arm_limb(limb_data_component->type) ?
 					PhysicalAnimationLimbComponent::MAX_FREQUENT_COLLISION_TIME :
 					PhysicalAnimationLimbComponent::MAX_COLLISION_TIME;
 				limb_data_component->collision_time = clamp(limb_data_component->collision_time + dt, 0.0f, used_collision_time);

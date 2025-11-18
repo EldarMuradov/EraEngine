@@ -26,30 +26,30 @@ namespace era_engine::physics
 		return desired_angular_velocity;
 	}
 
-    bool PhysicalAnimationUtils::is_body_limb(PhysicalAnimationLimbComponent::Type type)
+    bool PhysicalAnimationUtils::is_body_limb(RagdollLimbType type)
     {
-        return type == PhysicalAnimationLimbComponent::Type::BODY_LOWER ||
-            type == PhysicalAnimationLimbComponent::Type::BODY_MIDDLE ||
-            type == PhysicalAnimationLimbComponent::Type::BODY_UPPER;
+        return type == RagdollLimbType::BODY_LOWER ||
+            type == RagdollLimbType::BODY_MIDDLE ||
+            type == RagdollLimbType::BODY_UPPER;
     }
 
-    bool PhysicalAnimationUtils::is_head_limb(PhysicalAnimationLimbComponent::Type type)
+    bool PhysicalAnimationUtils::is_head_limb(RagdollLimbType type)
     {
-        return type == PhysicalAnimationLimbComponent::Type::HEAD;
+        return type == RagdollLimbType::HEAD;
     }
 
-    bool PhysicalAnimationUtils::is_leg_limb(PhysicalAnimationLimbComponent::Type type)
+    bool PhysicalAnimationUtils::is_leg_limb(RagdollLimbType type)
     {
-        return type == PhysicalAnimationLimbComponent::Type::LEG ||
-            type == PhysicalAnimationLimbComponent::Type::CALF ||
-            type == PhysicalAnimationLimbComponent::Type::FOOT;
+        return type == RagdollLimbType::LEG ||
+            type == RagdollLimbType::CALF ||
+            type == RagdollLimbType::FOOT;
     }
 
-    bool PhysicalAnimationUtils::is_arm_limb(PhysicalAnimationLimbComponent::Type type)
+    bool PhysicalAnimationUtils::is_arm_limb(RagdollLimbType type)
     {
-        return type == PhysicalAnimationLimbComponent::Type::ARM ||
-            type == PhysicalAnimationLimbComponent::Type::FOREARM ||
-            type == PhysicalAnimationLimbComponent::Type::HAND;
+        return type == RagdollLimbType::ARM ||
+            type == RagdollLimbType::FOREARM ||
+            type == RagdollLimbType::HAND;
     }
 
     void PhysicalAnimationUtils::reset_motor_drive(PhysicalAnimationLimbComponent* limb_component)

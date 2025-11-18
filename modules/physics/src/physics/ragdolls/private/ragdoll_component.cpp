@@ -1,4 +1,4 @@
-#include "physics/ragdoll_component.h"
+#include "physics/ragdolls/ragdoll_component.h"
 
 #include <rttr/registration>
 

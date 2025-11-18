@@ -11,9 +11,9 @@ namespace era_engine::physics
     {
     }
 
-    ConstraintLimbStateType BaseLimbState::try_switch_to(ConstraintLimbStateType desired_type) const
+    PhysicalLimbStateType BaseLimbState::try_switch_to(PhysicalLimbStateType desired_type) const
     {
-        return ConstraintLimbStateType::KINEMATIC;
+        return PhysicalLimbStateType::KINEMATIC;
     }
 
     void BaseLimbState::on_enter()

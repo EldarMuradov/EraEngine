@@ -39,7 +39,7 @@ namespace era_engine::physics
             auto process_limb = [](PhysicalAnimationLimbComponent* limb_component)
                 {
                     limb_component->reset_collision_data();
-                    limb_component->force_switch_state(ConstraintLimbStateType::KINEMATIC);
+                    limb_component->force_switch_state(PhysicalLimbStateType::KINEMATIC);
 
                     PhysicalAnimationUtils::reset_motor_drive(limb_component);
                     PhysicalAnimationUtils::set_simulation_for_limb(limb_component, false, false);
@@ -58,30 +58,21 @@ namespace era_engine::physics
         using namespace animation;
 
         Entity ragdoll = physical_animation_component_ptr.get_entity();
-
         const AnimationComponent* animation_component = ragdoll.get_component<AnimationComponent>();
+
         if (!animation_component->update_skeleton || animation_component->current_animation == nullptr)
         {
             return;
         }
+
         const SkeletonComponent* skeleton_component = ragdoll.get_component<SkeletonComponent>();
-        const TransformComponent* transform_component = ragdoll.get_component<TransformComponent>();
+        const trs& ragdoll_transform = ragdoll.get_component<TransformComponent>()->get_world_transform();
 
-        const SkeletonPose& current_animation_pose = animation_component->current_animation_pose;
+        auto process_limb = [&skeleton_component, &ragdoll_transform](PhysicalAnimationLimbComponent* limb_component)
+            {
+                PhysicalAnimationUtils::force_sync_limb_to_skeleton(limb_component, skeleton_component, ragdoll_transform);
+            };
 
-        PhysicalAnimationComponent* physical_animation_component = dynamic_cast<PhysicalAnimationComponent*>(physical_animation_component_ptr.get_for_write());
-        const trs& ragdoll_world_transform = transform_component->get_world_transform();
-        for (const EntityPtr& limb_ptr : physical_animation_component->limbs)
-        {
-            Entity limb = limb_ptr.get();
-
-            ShapeComponent* shape_component = ShapeUtils::get_shape_component(limb);
-            ASSERT(shape_component != nullptr);
-
-            PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
-            const trs joint_anim_transform = SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton_component->skeleton.get(), limb_component->joint_id);
-
-            PhysicsUtils::manual_set_physics_transform(limb, ragdoll_world_transform * joint_anim_transform, true);
-        }
+        traverse_simulation_graph(process_limb);
     }
 }

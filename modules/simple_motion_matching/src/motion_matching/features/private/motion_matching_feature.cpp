@@ -34,10 +34,6 @@ namespace era_engine
 		motion_component = entity.get_component<MotionComponent>();
 	}
 
-	MotionMatchingFeature::MotionMatchingFeature()
-	{
-	}
-
 	MotionMatchingFeature::~MotionMatchingFeature()
 	{
 	}

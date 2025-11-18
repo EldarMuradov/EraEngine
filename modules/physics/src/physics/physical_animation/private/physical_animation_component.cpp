@@ -84,9 +84,9 @@ namespace era_engine::physics
 	{
         ComponentPtr this_component_ptr = ComponentPtr(this);
 
-        simulation_states.emplace(ConstraintLimbStateType::KINEMATIC, std::make_shared<KinematicLimbState>(this_component_ptr));
-        simulation_states.emplace(ConstraintLimbStateType::TRANSITION, std::make_shared<BlendOutLimbState>(this_component_ptr));
-        simulation_states.emplace(ConstraintLimbStateType::SIMULATION, std::make_shared<SimulationLimbState>(this_component_ptr));
+        simulation_states.emplace(PhysicalLimbStateType::KINEMATIC, std::make_shared<KinematicLimbState>(this_component_ptr));
+        simulation_states.emplace(PhysicalLimbStateType::TRANSITION, std::make_shared<BlendOutLimbState>(this_component_ptr));
+        simulation_states.emplace(PhysicalLimbStateType::SIMULATION, std::make_shared<SimulationLimbState>(this_component_ptr));
 	}
 
 	PhysicalAnimationLimbComponent::~PhysicalAnimationLimbComponent()
@@ -98,23 +98,23 @@ namespace era_engine::physics
         return simulation_states.at(current_state_type);
     }
 
-    ConstraintLimbStateType PhysicalAnimationLimbComponent::get_current_state_type() const
+    PhysicalLimbStateType PhysicalAnimationLimbComponent::get_current_state_type() const
     {
         return current_state_type;
     }
 
-    void PhysicalAnimationLimbComponent::force_switch_state(ConstraintLimbStateType desired_state)
+    void PhysicalAnimationLimbComponent::force_switch_state(PhysicalLimbStateType desired_state)
     {
         get_current_state()->on_exit();
         current_state_type = desired_state;
         get_current_state()->on_enter();
     }
 
-    void PhysicalAnimationLimbComponent::update_states(float dt, ConstraintLimbStateType desired_state)
+    void PhysicalAnimationLimbComponent::update_states(float dt, PhysicalLimbStateType desired_state)
     {
         if (current_state_type != desired_state)
         {
-            const ConstraintLimbStateType transition_state = get_current_state()->try_switch_to(desired_state);
+            const PhysicalLimbStateType transition_state = get_current_state()->try_switch_to(desired_state);
             if (current_state_type != transition_state)
             {
                 force_switch_state(transition_state);
@@ -154,120 +154,119 @@ namespace era_engine::physics
                 Entity limb = limb_ptr.get();
                 PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
 
-                const ConstraintDetails* details = nullptr;
+                const PhysicalLimbDetails* details = nullptr;
 
                 switch (limb_component->type)
                 {
-                case RagdollLimbComponent::Type::HEAD:
+                case RagdollLimbType::HEAD:
                 {
-                    details = &current_profile->head_constraint;
+                    details = &current_profile->head_limb_details;
                 }
                 break;
 
-                case RagdollLimbComponent::Type::NECK:
+                case RagdollLimbType::BODY_UPPER:
                 {
-                    details = &current_profile->neck_constraint;
+                    details = &current_profile->body_upper_limb_details;
                 }
                 break;
 
-                case RagdollLimbComponent::Type::BODY_UPPER:
+                case RagdollLimbType::BODY_LOWER:
+                case RagdollLimbType::BODY_MIDDLE:
                 {
-                    details = &current_profile->body_upper_constraint;
+                    details = &current_profile->body_middle_limb_details;
                 }
                 break;
 
-                case RagdollLimbComponent::Type::BODY_LOWER:
-                case RagdollLimbComponent::Type::BODY_MIDDLE:
+                case RagdollLimbType::ARM:
                 {
-                    details = &current_profile->body_middle_constraint;
+                    details = &current_profile->arm_limb_details;
                 }
                 break;
 
-                case RagdollLimbComponent::Type::ARM:
+                case RagdollLimbType::FOREARM:
                 {
-                    details = &current_profile->arm_constraint;
+                    details = &current_profile->forearm_limb_details;
                 }
                 break;
 
-                case RagdollLimbComponent::Type::FOREARM:
+                case RagdollLimbType::HAND:
                 {
-                    details = &current_profile->forearm_constraint;
+                    details = &current_profile->hand_limb_details;
                 }
                 break;
 
-                case RagdollLimbComponent::Type::HAND:
+                case RagdollLimbType::LEG:
                 {
-                    details = &current_profile->hand_constraint;
+                    details = &current_profile->leg_limb_details;
                 }
                 break;
 
-                case RagdollLimbComponent::Type::LEG:
+                case RagdollLimbType::CALF:
                 {
-                    details = &current_profile->leg_constraint;
+                    details = &current_profile->calf_limb_details;
                 }
                 break;
 
-                case RagdollLimbComponent::Type::CALF:
+                case RagdollLimbType::FOOT:
                 {
-                    details = &current_profile->calf_constraint;
-                }
-                break;
-
-                case RagdollLimbComponent::Type::FOOT:
-                {
-                    details = &current_profile->foot_constraint;
+                    details = &current_profile->foot_limb_details;
                 }
                 break;
 
                 default:
                 {
-                    details = &current_profile->body_upper_constraint;
+                    details = &current_profile->body_upper_limb_details;
                 }
                 break;
                 }
 
                 if (details != nullptr)
                 {
-                    limb_component->angular_stiffness = details->angular_drive_stiffness;
-                    limb_component->angular_damping = details->angular_drive_damping;
-
-                    limb_component->linear_stiffness = details->linear_drive_stiffness;
-                    limb_component->linear_damping = details->linear_drive_damping;
-
-                    limb_component->drive_velocity_modifier = details->drive_velocity_modifier;
-
-                    limb_component->angular_range = details->angular_range;
-                    limb_component->linear_range = details->linear_range;
-
                     limb_component->blend_type = details->blend_type;
 
-                    D6JointComponent* joint_component = dynamic_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
-                    if (joint_component)
+                    if (details->motor_drive.has_value())
                     {
-                        if (details->enable_slerp_drive)
-                        {
-                            joint_component->slerp_drive_damping = details->angular_drive_damping;
-                            joint_component->slerp_drive_force_limit = details->max_force;
-                            joint_component->slerp_drive_stiffness = details->angular_drive_stiffness;
-                            joint_component->slerp_drive_accelerated = details->accelerated;
-                        }
-                        else
-                        {
-                            joint_component->swing_drive_damping = details->angular_drive_damping;
-                            joint_component->swing_drive_force_limit = details->max_force;
-                            joint_component->swing_drive_stiffness = details->angular_drive_stiffness;
-                            joint_component->swing_drive_accelerated = details->accelerated;
+                        const MotorDriveDetails& motor_drive = details->motor_drive.value();
 
-                            joint_component->twist_drive_damping = details->angular_drive_damping;
-                            joint_component->twist_drive_force_limit = details->max_force;
-                            joint_component->twist_drive_stiffness = details->angular_drive_stiffness;
-                            joint_component->twist_drive_accelerated = details->accelerated;
-                        }
+                        limb_component->angular_stiffness = motor_drive.angular_drive_stiffness;
+                        limb_component->angular_damping = motor_drive.angular_drive_damping;
 
-                        joint_component->linear_drive_damping = details->linear_drive_damping;
-                        joint_component->linear_drive_force_limit = details->max_force;
-                        joint_component->linear_drive_stiffness = details->linear_drive_stiffness;
-                        joint_component->linear_drive_accelerated = details->accelerated;
+                        limb_component->linear_stiffness = motor_drive.linear_drive_stiffness;
+                        limb_component->linear_damping = motor_drive.linear_drive_damping;
+
+                        limb_component->drive_velocity_modifier = motor_drive.drive_velocity_modifier;
+
+                        limb_component->angular_range = motor_drive.angular_range;
+                        limb_component->linear_range = motor_drive.linear_range;
+
+                        D6JointComponent* joint_component = dynamic_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
+                        if (joint_component)
+                        {
+                            if (motor_drive.enable_slerp_drive)
+                            {
+                                joint_component->slerp_drive_damping = motor_drive.angular_drive_damping;
+                                joint_component->slerp_drive_force_limit = motor_drive.max_force;
+                                joint_component->slerp_drive_stiffness = motor_drive.angular_drive_stiffness;
+                                joint_component->slerp_drive_accelerated = motor_drive.accelerated;
+                            }
+                            else
+                            {
+                                joint_component->swing_drive_damping = motor_drive.angular_drive_damping;
+                                joint_component->swing_drive_force_limit = motor_drive.max_force;
+                                joint_component->swing_drive_stiffness = motor_drive.angular_drive_stiffness;
+                                joint_component->swing_drive_accelerated = motor_drive.accelerated;
+
+                                joint_component->twist_drive_damping = motor_drive.angular_drive_damping;
+                                joint_component->twist_drive_force_limit = motor_drive.max_force;
+                                joint_component->twist_drive_stiffness = motor_drive.angular_drive_stiffness;
+                                joint_component->twist_drive_accelerated = motor_drive.accelerated;
+                            }
+
+                            joint_component->linear_drive_damping = motor_drive.linear_drive_damping;
+                            joint_component->linear_drive_force_limit = motor_drive.max_force;
+                            joint_component->linear_drive_stiffness = motor_drive.linear_drive_stiffness;
+                            joint_component->linear_drive_accelerated = motor_drive.accelerated;
+                        }
                     }
                 }
             }
@@ -311,7 +310,7 @@ namespace era_engine::physics
                 PhysicalAnimationLimbComponent* limb_component = limb_ptr.get().get_component<PhysicalAnimationLimbComponent>();
                 ASSERT(limb_component != nullptr);
 
-                limb_component->prev_blend_type = ConstraintBlendType::NONE;
+                limb_component->prev_blend_type = PhysicalLimbBlendType::NONE;
             }
         }
     }

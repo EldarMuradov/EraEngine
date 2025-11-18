@@ -165,13 +165,11 @@ namespace era_engine::physics
 
 		scene = physics->createScene(scene_desc);
 
+#if defined(_DEBUG)
 		scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_FNORMALS, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
-
-		static constexpr uint64 align = 16U;
-		scratch_mem_block = allocator.allocate(scratch_mem_block_size, align, true);
 
 		if (descriptor.enable_pvd)
 		{
@@ -214,6 +212,10 @@ namespace era_engine::physics
 			fStream->setFileName(descriptor.omni_pvd_path);
 			omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*fStream));
 		}
+#endif
+
+		static constexpr uint64 align = 16U;
+		scratch_mem_block = allocator.allocate(scratch_mem_block_size, align, true);
 	}
 
 	physx::PxScene* Physics::get_scene() const
@@ -275,9 +277,15 @@ namespace era_engine::physics
 			PX_RELEASE(default_material)
 			PX_RELEASE(physics)
 			PX_RELEASE(dispatcher)
+
+#if defined(_DEBUG)
+
 			PX_RELEASE(pvd)
 			PX_RELEASE(omni_pvd)
 			PX_RELEASE(transport)
+
+#endif
+
 			PX_RELEASE(cuda_context_manager)
 			PX_RELEASE(foundation)
 		}

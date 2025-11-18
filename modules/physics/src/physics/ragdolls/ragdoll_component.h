@@ -97,24 +97,23 @@ namespace era_engine::physics
         float lower_body_radius_modifier = 1.0f;
     };
 
+    enum class RagdollLimbType : uint8
+    {
+        BODY_LOWER = 0,
+        BODY_MIDDLE,
+        BODY_UPPER,
+        HEAD,
+        ARM,
+        FOREARM,
+        HAND,
+        LEG,
+        CALF,
+        FOOT
+    };
+
 	class ERA_PHYSICS_API RagdollLimbComponent : public Component
 	{
 	public:
-        enum class Type : uint8
-        {
-            BODY_UPPER = 0,
-            BODY_MIDDLE,
-            BODY_LOWER,
-            HEAD,
-            NECK,
-            ARM,
-            FOREARM,
-            HAND,
-            LEG,
-            CALF,
-            FOOT
-        };
-
 		RagdollLimbComponent() = default;
 		RagdollLimbComponent(ref<Entity::EcsData> _data, uint32 _joint_id = INVALID_JOINT);
 
@@ -129,7 +128,7 @@ namespace era_engine::physics
 
         EntityPtr joint_entity_ptr;
 
-        Type type = Type::BODY_UPPER;
+        RagdollLimbType type = RagdollLimbType::BODY_LOWER;
 
         ERA_VIRTUAL_REFLECT(Component)
 	};

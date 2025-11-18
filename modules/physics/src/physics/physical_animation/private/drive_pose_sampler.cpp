@@ -1,7 +1,7 @@
 #include "physics/physical_animation/drive_pose_sampler.h"
 #include "physics/physical_animation/physical_animation_component.h"
 #include "physics/physical_animation/physical_animation_utils.h"
-#include "physics/ragdoll_profile.h"
+#include "physics/physical_animation/ragdoll_profile.h"
 
 #include <animation/animation.h>
 
@@ -119,20 +119,20 @@ namespace era_engine::physics
         PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
 
         // Combine blend types to process ragdoll profile transition.
-        ConstraintBlendType result_type = limb_data_component->blend_type | limb_data_component->prev_blend_type;
-        if (result_type == ConstraintBlendType::NONE)
+        PhysicalLimbBlendType result_type = limb_data_component->blend_type | limb_data_component->prev_blend_type;
+        if (result_type == PhysicalLimbBlendType::NONE)
         {
             // By default use PURE_ANIMATION blend type.
-            result_type = ConstraintBlendType::PURE_ANIMATION;
+            result_type = PhysicalLimbBlendType::PURE_ANIMATION;
         }
 
         trs new_transform = trs::identity;
-        if (has_flag(result_type, ConstraintBlendType::PURE_ANIMATION))
+        if (has_flag(result_type, PhysicalLimbBlendType::PURE_ANIMATION))
         {
             // No physics impact.
             new_transform = limb_animation_transform;
         }
-        else if (has_flag(result_type, ConstraintBlendType::PURE_PHYSICS))
+        else if (has_flag(result_type, PhysicalLimbBlendType::PURE_PHYSICS))
         {
             const trs limb_pose = inverse_ragdoll_transform * limb.get_component<TransformComponent>()->get_world_transform();
 
@@ -145,12 +145,12 @@ namespace era_engine::physics
 
             new_transform = inverse_parent_local_transform * limb_pose;
 
-            if (has_flag(result_type, ConstraintBlendType::BLEND_WITH_ANIMATION_POSE))
+            if (has_flag(result_type, PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE))
             {
                 blend_with_animation_pose(limb_animation_transform, physical_animation_component->blend_factor, new_transform);
             }
 
-            if (has_flag(result_type, ConstraintBlendType::BLEND_WITH_PREV_POSE))
+            if (has_flag(result_type, PhysicalLimbBlendType::BLEND_WITH_PREV_POSE))
             {
                 blend_with_prev_physics_pose(trs(limb_data_component->prev_limb_local_position, limb_data_component->prev_limb_local_rotation), physical_animation_component->blend_factor, new_transform);
             }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "physics/ragdoll_component.h"
+#include "physics/ragdolls/ragdoll_component.h"
 
 #include <ecs/system.h>
 #include <ecs/base_components/transform_component.h>

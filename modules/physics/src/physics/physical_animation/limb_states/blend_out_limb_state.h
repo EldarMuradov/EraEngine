@@ -14,7 +14,7 @@ namespace era_engine::physics
 
         void update(float dt) override;
 
-        ConstraintLimbStateType try_switch_to(ConstraintLimbStateType desired_state) const override;
+        PhysicalLimbStateType try_switch_to(PhysicalLimbStateType desired_state) const override;
 
         void on_enter() override;
         void on_exit() override;

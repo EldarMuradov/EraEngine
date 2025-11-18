@@ -69,7 +69,7 @@ namespace era_engine::physics
 	{
         const PhysicalAnimationComponent* physical_animation_component = dynamic_cast<const PhysicalAnimationComponent*>(physical_animation_component_ptr.get());
 
-        const float used_collision_time = limb_component->type == PhysicalAnimationLimbComponent::Type::HAND ?
+        const float used_collision_time = limb_component->type == RagdollLimbType::HAND ?
             PhysicalAnimationLimbComponent::MAX_FREQUENT_COLLISION_TIME :
             PhysicalAnimationLimbComponent::MAX_COLLISION_TIME;
 

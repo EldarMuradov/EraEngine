@@ -19,9 +19,9 @@ namespace era_engine::physics
 
 	static Entity create_child_entity(Entity parent, 
 		std::string_view entity_name,
-		const ConstraintDetails& details,
+		const PhysicalLimbDetails& details,
 		uint32 joint_id, 
-		PhysicalAnimationLimbComponent::Type type,
+		RagdollLimbType type,
 		const ref<PhysicsLimbChain>& chain)
 	{
 		Entity child = parent.get_world()->create_entity(entity_name.data());
@@ -30,15 +30,21 @@ namespace era_engine::physics
 		PhysicalAnimationLimbComponent* limb_component = child.add_component<PhysicalAnimationLimbComponent>();
 		limb_component->joint_id = joint_id;
 		limb_component->type = type;
-		limb_component->linear_stiffness = details.linear_drive_stiffness;
-		limb_component->linear_damping = details.linear_drive_damping;
-		limb_component->angular_stiffness = details.angular_drive_stiffness;
-		limb_component->angular_damping = details.angular_drive_damping;
-		limb_component->drive_velocity_modifier = details.drive_velocity_modifier;
-		limb_component->angular_range = details.angular_range;
-		limb_component->linear_range = details.linear_range;
-		limb_component->angular_damping_range = details.angular_damping_range;
-		limb_component->linear_damping_range = details.linear_damping_range;
+		if (details.motor_drive.has_value())
+		{
+			const MotorDriveDetails& motor_drive = details.motor_drive.value();
+
+			limb_component->linear_stiffness = motor_drive.linear_drive_stiffness;
+			limb_component->linear_damping = motor_drive.linear_drive_damping;
+			limb_component->angular_stiffness = motor_drive.angular_drive_stiffness;
+			limb_component->angular_damping = motor_drive.angular_drive_damping;
+			limb_component->drive_velocity_modifier = motor_drive.drive_velocity_modifier;
+			limb_component->angular_range = motor_drive.angular_range;
+			limb_component->linear_range = motor_drive.linear_range;
+			limb_component->angular_damping_range = motor_drive.angular_damping_range;
+			limb_component->linear_damping_range = motor_drive.linear_damping_range;
+		}
+		
 		limb_component->ragdoll_ptr = EntityPtr{ parent };
 
 		PhysicalAnimationComponent* physical_animation_component = parent.get_component<PhysicalAnimationComponent>();
@@ -187,14 +193,16 @@ namespace era_engine::physics
 
 	static void create_drive_joint(
 		const Entity& source,
-		const ConstraintDetails& details,
+		const PhysicalLimbDetails& details,
 		Entity& e0,
 		Entity& e1)
 	{
-		if (!details.should_create_drive_joint)
+		if (!details.motor_drive.has_value())
 		{
 			return;
 		}
+
+		const MotorDriveDetails& motor_drive = details.motor_drive.value();
 
 		JointComponent::BaseDescriptor descriptor;
 		descriptor.connected_entity = e0.get_data_weakref();
@@ -209,7 +217,7 @@ namespace era_engine::physics
 
 		D6JointComponent* joint_component = joint_entity.add_component<D6JointComponent>(descriptor);
 
-		joint_component->perform_slerp_drive = details.enable_slerp_drive;
+		joint_component->perform_slerp_drive = motor_drive.enable_slerp_drive;
 
 		joint_component->enable_collision.get_for_write() = false;
 		joint_component->drive_limits_are_forces.get_for_write() = true;
@@ -218,38 +226,38 @@ namespace era_engine::physics
 		joint_component->linear_y_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
 		joint_component->linear_z_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
 
-		joint_component->linear_drive_stiffness = details.linear_drive_stiffness;
-		joint_component->linear_drive_damping = details.linear_drive_damping;
-		joint_component->linear_drive_force_limit = details.max_force;
-		joint_component->linear_drive_accelerated = details.accelerated;
+		joint_component->twist_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
+		joint_component->swing_y_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
+		joint_component->swing_z_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
+
+		joint_component->linear_drive_stiffness = motor_drive.linear_drive_stiffness;
+		joint_component->linear_drive_damping = motor_drive.linear_drive_damping;
+		joint_component->linear_drive_force_limit = motor_drive.max_force;
+		joint_component->linear_drive_accelerated = motor_drive.accelerated;
 
 		joint_component->disable_preprocessing = true;
 
 		e1.get_component<PhysicalAnimationLimbComponent>()->drive_joint_component = ComponentPtr{ joint_component };
 
-		if (details.enable_slerp_drive)
+		if (motor_drive.enable_slerp_drive)
 		{
-			joint_component->slerp_drive_damping.get_for_write() = details.angular_drive_damping;
-			joint_component->slerp_drive_force_limit.get_for_write() = details.max_force;
-			joint_component->slerp_drive_stiffness.get_for_write() = details.angular_drive_stiffness;
-			joint_component->slerp_drive_accelerated.get_for_write() = details.accelerated;
+			joint_component->slerp_drive_damping.get_for_write() = motor_drive.angular_drive_damping;
+			joint_component->slerp_drive_force_limit.get_for_write() = motor_drive.max_force;
+			joint_component->slerp_drive_stiffness.get_for_write() = motor_drive.angular_drive_stiffness;
+			joint_component->slerp_drive_accelerated.get_for_write() = motor_drive.accelerated;
 		}
 		else
 		{
-			joint_component->swing_drive_force_limit.get_for_write() = details.max_force;
-			joint_component->swing_drive_accelerated.get_for_write() = details.accelerated;
-			joint_component->swing_drive_stiffness.get_for_write() = details.angular_drive_stiffness;
-			joint_component->swing_drive_damping.get_for_write() = details.angular_drive_damping;
+			joint_component->swing_drive_force_limit.get_for_write() = motor_drive.max_force;
+			joint_component->swing_drive_accelerated.get_for_write() = motor_drive.accelerated;
+			joint_component->swing_drive_stiffness.get_for_write() = motor_drive.angular_drive_stiffness;
+			joint_component->swing_drive_damping.get_for_write() = motor_drive.angular_drive_damping;
 
-			joint_component->twist_drive_stiffness.get_for_write() = details.angular_drive_stiffness;
-			joint_component->twist_drive_damping.get_for_write() = details.angular_drive_damping;
-			joint_component->twist_drive_force_limit.get_for_write() = details.max_force;
-			joint_component->twist_drive_accelerated.get_for_write() = details.accelerated;
+			joint_component->twist_drive_stiffness.get_for_write() = motor_drive.angular_drive_stiffness;
+			joint_component->twist_drive_damping.get_for_write() = motor_drive.angular_drive_damping;
+			joint_component->twist_drive_force_limit.get_for_write() = motor_drive.max_force;
+			joint_component->twist_drive_accelerated.get_for_write() = motor_drive.accelerated;
 		}
-
-		joint_component->twist_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
-		joint_component->swing_y_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
-		joint_component->swing_z_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
 	}
 
 	// Return bottom of the box, used for creating d6s
@@ -405,16 +413,15 @@ namespace era_engine::physics
 
 		const trs& ragdoll_world_transform = ragdoll.get_component<TransformComponent>()->get_world_transform();
 
-		const ConstraintDetails& head_constraint = ragdoll_profile->head_constraint;
-		const ConstraintDetails& neck_constraint = ragdoll_profile->neck_constraint;
-		const ConstraintDetails& body_upper_constraint = ragdoll_profile->body_upper_constraint;
-		const ConstraintDetails& body_middle_constraint = ragdoll_profile->body_middle_constraint;
-		const ConstraintDetails& arm_constraint = ragdoll_profile->arm_constraint;
-		const ConstraintDetails& forearm_constraint = ragdoll_profile->forearm_constraint;
-		const ConstraintDetails& hand_constraint = ragdoll_profile->hand_constraint;
-		const ConstraintDetails& leg_constraint = ragdoll_profile->leg_constraint;
-		const ConstraintDetails& calf_constraint = ragdoll_profile->calf_constraint;
-		const ConstraintDetails& foot_constraint = ragdoll_profile->foot_constraint;
+		const PhysicalLimbDetails& head_limb_details = ragdoll_profile->head_limb_details;
+		const PhysicalLimbDetails& body_upper_limb_details = ragdoll_profile->body_upper_limb_details;
+		const PhysicalLimbDetails& body_middle_limb_details = ragdoll_profile->body_middle_limb_details;
+		const PhysicalLimbDetails& arm_limb_details = ragdoll_profile->arm_limb_details;
+		const PhysicalLimbDetails& forearm_limb_details = ragdoll_profile->forearm_limb_details;
+		const PhysicalLimbDetails& hand_limb_details = ragdoll_profile->hand_limb_details;
+		const PhysicalLimbDetails& leg_limb_details = ragdoll_profile->leg_limb_details;
+		const PhysicalLimbDetails& calf_limb_details = ragdoll_profile->calf_limb_details;
+		const PhysicalLimbDetails& foot_limb_details = ragdoll_profile->foot_limb_details;
 
 		physical_animation_component->neck_chain = make_ref<PhysicsLimbChain>();
 		physical_animation_component->body_chain = make_ref<PhysicsLimbChain>();
@@ -538,7 +545,7 @@ namespace era_engine::physics
 
 		// Head
 		{
-			head = create_child_entity(ragdoll, "head", head_constraint, joint_init_ids.head_idx, PhysicalAnimationLimbComponent::Type::HEAD, physical_animation_component->neck_chain);
+			head = create_child_entity(ragdoll, "head", head_limb_details, joint_init_ids.head_idx, RagdollLimbType::HEAD, physical_animation_component->neck_chain);
 
 			TransformComponent* transform_component = head.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * neck_joint_transform);
@@ -560,7 +567,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(head, mass * settings.head_mass_percentage, settings.max_head_contact_impulse);
 
-			if (head_constraint.should_create_drive_joint)
+			if (head_limb_details.motor_drive.has_value())
 			{
 				head_attachment = create_attachment_dynamic_body(ragdoll, "head_attachment", mass * settings.head_mass_percentage);
 				head_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * head_joint_transform);
@@ -569,7 +576,7 @@ namespace era_engine::physics
 
 		// Body upper (from body middle to neck)
 		{
-			body_upper = create_child_entity(ragdoll, "body_upper", body_upper_constraint, joint_init_ids.spine_03_idx, PhysicalAnimationLimbComponent::Type::BODY_UPPER, physical_animation_component->body_chain);
+			body_upper = create_child_entity(ragdoll, "body_upper", body_upper_limb_details, joint_init_ids.spine_03_idx, RagdollLimbType::BODY_UPPER, physical_animation_component->body_chain);
 
 			TransformComponent* transform_component = body_upper.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * thorax_joint_transform);
@@ -589,7 +596,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(body_upper, mass * settings.body_upper_mass_percentage, settings.max_body_contact_impulse);
 
-			if (body_upper_constraint.should_create_drive_joint)
+			if (body_upper_limb_details.motor_drive.has_value())
 			{
 				body_upper_attachment = create_attachment_dynamic_body(ragdoll, "body_upper_attachment", mass * settings.body_upper_mass_percentage);
 				body_upper_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * thorax_joint_transform);
@@ -598,7 +605,7 @@ namespace era_engine::physics
 
 		// Body middle
 		{
-			body_middle = create_child_entity(ragdoll, "body_middle", body_middle_constraint, joint_init_ids.spine_01_idx, PhysicalAnimationLimbComponent::Type::BODY_MIDDLE, physical_animation_component->body_chain);
+			body_middle = create_child_entity(ragdoll, "body_middle", body_middle_limb_details, joint_init_ids.spine_01_idx, RagdollLimbType::BODY_MIDDLE, physical_animation_component->body_chain);
 
 			TransformComponent* transform_component = body_middle.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * abdomen_joint_transform);
@@ -618,7 +625,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(body_middle, mass * settings.body_lower_mass_percentage, settings.max_body_contact_impulse);
 			
-			if (body_middle_constraint.should_create_drive_joint)
+			if (body_middle_limb_details.motor_drive.has_value())
 			{
 				body_middle_attachment = create_attachment_dynamic_body(ragdoll, "body_middle_attachment", mass * settings.body_lower_mass_percentage);
 				body_middle_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * abdomen_joint_transform);
@@ -627,7 +634,7 @@ namespace era_engine::physics
 
 		// Body lower (from pelvis to abdomen)
 		{
-			body_lower = create_child_entity(ragdoll, "pelvis", body_middle_constraint, joint_init_ids.pelvis_idx, PhysicalAnimationLimbComponent::Type::BODY_LOWER, physical_animation_component->body_chain);
+			body_lower = create_child_entity(ragdoll, "pelvis", body_middle_limb_details, joint_init_ids.pelvis_idx, RagdollLimbType::BODY_LOWER, physical_animation_component->body_chain);
 
 			TransformComponent* transform_component = body_lower.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * pelvis_joint_transform);
@@ -691,7 +698,7 @@ namespace era_engine::physics
 
 		// Left arm
 		{
-			left_arm = create_child_entity(ragdoll, "l_arm", arm_constraint, joint_init_ids.upperarm_l_idx, PhysicalAnimationLimbComponent::Type::ARM, physical_animation_component->left_arm_chain);
+			left_arm = create_child_entity(ragdoll, "l_arm", arm_limb_details, joint_init_ids.upperarm_l_idx, RagdollLimbType::ARM, physical_animation_component->left_arm_chain);
 
 			TransformComponent* transform_component = left_arm.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * left_arm_joint_transform);
@@ -710,7 +717,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(left_arm, mass * settings.arm_mass_percentage, settings.max_arm_contact_impulse);
 		
-			if (arm_constraint.should_create_drive_joint)
+			if (arm_limb_details.motor_drive.has_value())
 			{
 				left_arm_attachment = create_attachment_dynamic_body(ragdoll, "left_arm_attachment", mass * settings.arm_mass_percentage);
 				left_arm_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform* left_arm_joint_transform);
@@ -719,7 +726,7 @@ namespace era_engine::physics
 
 		// Left forearm
 		{
-			left_forearm = create_child_entity(ragdoll, "l_forearm", forearm_constraint, joint_init_ids.lowerarm_l_idx, PhysicalAnimationLimbComponent::Type::FOREARM, physical_animation_component->left_arm_chain);
+			left_forearm = create_child_entity(ragdoll, "l_forearm", forearm_limb_details, joint_init_ids.lowerarm_l_idx, RagdollLimbType::FOREARM, physical_animation_component->left_arm_chain);
 
 			TransformComponent* transform_component = left_forearm.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * left_forearm_joint_transform);
@@ -738,7 +745,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(left_forearm, mass * settings.forearm_mass_percentage, settings.max_forearm_contact_impulse);
 		
-			if (forearm_constraint.should_create_drive_joint)
+			if (forearm_limb_details.motor_drive.has_value())
 			{
 				left_forearm_attachment = create_attachment_dynamic_body(ragdoll, "left_forearm_attachment", mass * settings.forearm_mass_percentage);
 				left_forearm_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_forearm_joint_transform);
@@ -747,7 +754,7 @@ namespace era_engine::physics
 
 		// Left hand
 		{
-			left_hand = create_child_entity(ragdoll, "l_hand", hand_constraint, joint_init_ids.hand_l_idx, PhysicalAnimationLimbComponent::Type::HAND, physical_animation_component->left_arm_chain);
+			left_hand = create_child_entity(ragdoll, "l_hand", hand_limb_details, joint_init_ids.hand_l_idx, RagdollLimbType::HAND, physical_animation_component->left_arm_chain);
 
 			TransformComponent* transform_component = left_hand.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * left_hand_joint_transform);
@@ -765,7 +772,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(left_hand, mass * settings.hand_mass_percentage, settings.max_hand_contact_impulse);
 		
-			if (hand_constraint.should_create_drive_joint)
+			if (hand_limb_details.motor_drive.has_value())
 			{
 				left_hand_attachment = create_attachment_dynamic_body(ragdoll, "left_hand_attachment", mass * settings.hand_mass_percentage);
 				left_hand_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_hand_joint_transform);
@@ -774,7 +781,7 @@ namespace era_engine::physics
 
 		// Right arm
 		{
-			right_arm = create_child_entity(ragdoll, "r_arm", arm_constraint, joint_init_ids.upperarm_r_idx, PhysicalAnimationLimbComponent::Type::ARM, physical_animation_component->right_arm_chain);
+			right_arm = create_child_entity(ragdoll, "r_arm", arm_limb_details, joint_init_ids.upperarm_r_idx, RagdollLimbType::ARM, physical_animation_component->right_arm_chain);
 
 			TransformComponent* transform_component = right_arm.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * right_arm_joint_transform);
@@ -793,7 +800,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(right_arm, mass * settings.arm_mass_percentage, settings.max_arm_contact_impulse);
 		
-			if (arm_constraint.should_create_drive_joint)
+			if (arm_limb_details.motor_drive.has_value())
 			{
 				right_arm_attachment = create_attachment_dynamic_body(ragdoll, "right_arm_attachment", mass * settings.arm_mass_percentage);
 				right_arm_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_arm_joint_transform);
@@ -802,7 +809,7 @@ namespace era_engine::physics
 
 		// Right forearm
 		{
-			right_forearm = create_child_entity(ragdoll, "r_forearm", forearm_constraint, joint_init_ids.lowerarm_r_idx, PhysicalAnimationLimbComponent::Type::FOREARM, physical_animation_component->right_arm_chain);
+			right_forearm = create_child_entity(ragdoll, "r_forearm", forearm_limb_details, joint_init_ids.lowerarm_r_idx, RagdollLimbType::FOREARM, physical_animation_component->right_arm_chain);
 
 			TransformComponent* transform_component = right_forearm.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * right_forearm_joint_transform);
@@ -821,7 +828,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(right_forearm, mass * settings.forearm_mass_percentage, settings.max_forearm_contact_impulse);
 
-			if (forearm_constraint.should_create_drive_joint)
+			if (forearm_limb_details.motor_drive.has_value())
 			{
 				right_forearm_attachment = create_attachment_dynamic_body(ragdoll, "right_forearm_attachment", mass * settings.forearm_mass_percentage);
 				right_forearm_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_forearm_joint_transform);
@@ -830,7 +837,7 @@ namespace era_engine::physics
 
 		// Right hand
 		{
-			right_hand = create_child_entity(ragdoll, "r_hand", hand_constraint, joint_init_ids.hand_r_idx, PhysicalAnimationLimbComponent::Type::HAND, physical_animation_component->right_arm_chain);
+			right_hand = create_child_entity(ragdoll, "r_hand", hand_limb_details, joint_init_ids.hand_r_idx, RagdollLimbType::HAND, physical_animation_component->right_arm_chain);
 
 			TransformComponent* transform_component = right_hand.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * right_hand_joint_transform);
@@ -848,7 +855,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(right_hand, mass * settings.hand_mass_percentage, settings.max_hand_contact_impulse);
 		
-			if (hand_constraint.should_create_drive_joint)
+			if (hand_limb_details.motor_drive.has_value())
 			{
 				right_hand_attachment = create_attachment_dynamic_body(ragdoll, "right_hand_attachment", mass * settings.hand_mass_percentage);
 				right_hand_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_hand_joint_transform);
@@ -857,7 +864,7 @@ namespace era_engine::physics
 
 		// Left up leg
 		{
-			left_up_leg = create_child_entity(ragdoll, "l_thigh", leg_constraint, joint_init_ids.thigh_l_idx, PhysicalAnimationLimbComponent::Type::LEG, physical_animation_component->left_leg_chain);
+			left_up_leg = create_child_entity(ragdoll, "l_thigh", leg_limb_details, joint_init_ids.thigh_l_idx, RagdollLimbType::LEG, physical_animation_component->left_leg_chain);
 
 			TransformComponent* transform_component = left_up_leg.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * left_up_leg_joint_transform);
@@ -876,7 +883,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(left_up_leg, mass * settings.up_leg_mass_percentage, settings.max_up_leg_contact_impulse);
 		
-			if (leg_constraint.should_create_drive_joint)
+			if (leg_limb_details.motor_drive.has_value())
 			{
 				left_up_leg_attachment = create_attachment_dynamic_body(ragdoll, "left_up_leg_attachment", mass * settings.up_leg_mass_percentage);
 				left_up_leg_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_up_leg_joint_transform);
@@ -885,7 +892,7 @@ namespace era_engine::physics
 
 		// Left leg
 		{
-			left_leg = create_child_entity(ragdoll, "l_calf", calf_constraint, joint_init_ids.calf_l_idx, PhysicalAnimationLimbComponent::Type::CALF, physical_animation_component->left_leg_chain);
+			left_leg = create_child_entity(ragdoll, "l_calf", calf_limb_details, joint_init_ids.calf_l_idx, RagdollLimbType::CALF, physical_animation_component->left_leg_chain);
 
 			TransformComponent* transform_component = left_leg.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * left_leg_joint_transform);
@@ -904,7 +911,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(left_leg, mass * settings.leg_mass_percentage, settings.max_leg_contact_impulse);
 		
-			if (calf_constraint.should_create_drive_joint)
+			if (calf_limb_details.motor_drive.has_value())
 			{
 				left_leg_attachment = create_attachment_dynamic_body(ragdoll, "left_leg_attachment", mass * settings.leg_mass_percentage);
 				left_leg_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_leg_joint_transform);
@@ -917,7 +924,7 @@ namespace era_engine::physics
 			const vec3 foot_to_foot_end_offset = foot_end_same_y - left_foot_joint_transform.position;
 			const vec3 center = left_foot_joint_transform.position + foot_to_foot_end_offset / 2.0f - vec3(0.0f, distance_between_foot_y_and_foot_end_y / 2.0f, 0.0f);
 
-			left_foot = create_child_entity(ragdoll, "l_foot", foot_constraint, joint_init_ids.foot_l_idx, PhysicalAnimationLimbComponent::Type::FOOT, physical_animation_component->left_leg_chain);
+			left_foot = create_child_entity(ragdoll, "l_foot", foot_limb_details, joint_init_ids.foot_l_idx, RagdollLimbType::FOOT, physical_animation_component->left_leg_chain);
 
 			TransformComponent* transform_component = left_foot.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * left_foot_joint_transform);
@@ -935,7 +942,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(left_foot, mass * settings.foot_mass_percentage, settings.max_foot_contact_impulse);
 		
-			if (foot_constraint.should_create_drive_joint)
+			if (foot_limb_details.motor_drive.has_value())
 			{
 				left_foot_attachment = create_attachment_dynamic_body(ragdoll, "left_foot_attachment", mass * settings.foot_mass_percentage);
 				left_foot_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_foot_joint_transform);
@@ -944,7 +951,7 @@ namespace era_engine::physics
 
 		// Right up leg
 		{
-			right_up_leg = create_child_entity(ragdoll, "r_thigh", leg_constraint, joint_init_ids.thigh_r_idx, PhysicalAnimationLimbComponent::Type::LEG, physical_animation_component->right_leg_chain);
+			right_up_leg = create_child_entity(ragdoll, "r_thigh", leg_limb_details, joint_init_ids.thigh_r_idx, RagdollLimbType::LEG, physical_animation_component->right_leg_chain);
 
 			TransformComponent* transform_component = right_up_leg.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * right_up_leg_joint_transform);
@@ -963,7 +970,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(right_up_leg, mass * settings.up_leg_mass_percentage, settings.max_up_leg_contact_impulse);
 		
-			if (leg_constraint.should_create_drive_joint)
+			if (leg_limb_details.motor_drive.has_value())
 			{
 				right_up_leg_attachment = create_attachment_dynamic_body(ragdoll, "right_up_leg_attachment", mass * settings.up_leg_mass_percentage);
 				right_up_leg_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_up_leg_joint_transform);
@@ -972,7 +979,7 @@ namespace era_engine::physics
 
 		// Right leg
 		{
-			right_leg = create_child_entity(ragdoll, "r_calf", calf_constraint, joint_init_ids.calf_r_idx, PhysicalAnimationLimbComponent::Type::CALF, physical_animation_component->right_leg_chain);
+			right_leg = create_child_entity(ragdoll, "r_calf", calf_limb_details, joint_init_ids.calf_r_idx, RagdollLimbType::CALF, physical_animation_component->right_leg_chain);
 
 			TransformComponent* transform_component = right_leg.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * right_leg_joint_transform);
@@ -991,7 +998,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(right_leg, mass * settings.leg_mass_percentage, settings.max_leg_contact_impulse);
 		
-			if (calf_constraint.should_create_drive_joint)
+			if (calf_limb_details.motor_drive.has_value())
 			{
 				right_leg_attachment = create_attachment_dynamic_body(ragdoll, "right_leg_attachment", mass * settings.leg_mass_percentage);
 				right_leg_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_leg_joint_transform);
@@ -1004,7 +1011,7 @@ namespace era_engine::physics
 			const vec3 foot_to_foot_end_offset = foot_end_same_y - right_foot_joint_transform.position;
 			const vec3 center = right_foot_joint_transform.position + foot_to_foot_end_offset / 2.0f - vec3(0.0f, distance_between_foot_y_and_foot_end_y / 2.0f, 0.0f);
 
-			right_foot = create_child_entity(ragdoll, "r_foot", foot_constraint, joint_init_ids.foot_r_idx, PhysicalAnimationLimbComponent::Type::FOOT, physical_animation_component->right_leg_chain);
+			right_foot = create_child_entity(ragdoll, "r_foot", foot_limb_details, joint_init_ids.foot_r_idx, RagdollLimbType::FOOT, physical_animation_component->right_leg_chain);
 
 			TransformComponent* transform_component = right_foot.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * right_foot_joint_transform);
@@ -1022,7 +1029,7 @@ namespace era_engine::physics
 
 			create_dynamic_body(right_foot, mass * settings.foot_mass_percentage, settings.max_foot_contact_impulse);
 		
-			if (foot_constraint.should_create_drive_joint)
+			if (foot_limb_details.motor_drive.has_value())
 			{
 				right_foot_attachment = create_attachment_dynamic_body(ragdoll, "right_foot_attachment", mass * settings.foot_mass_percentage);
 				right_foot_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_foot_joint_transform);
@@ -1283,77 +1290,77 @@ namespace era_engine::physics
 
 		// Drive joints
 		create_drive_joint(ragdoll,
-			head_constraint,
+			head_limb_details,
 			head_attachment,
 			head);
 
 		create_drive_joint(ragdoll,
-			body_upper_constraint,
+			body_upper_limb_details,
 			body_upper_attachment,
 			body_upper);
 
 		create_drive_joint(ragdoll,
-			body_middle_constraint,
+			body_middle_limb_details,
 			body_middle_attachment,
 			body_middle);
 
 		create_drive_joint(ragdoll,
-			arm_constraint,
+			arm_limb_details,
 			left_arm_attachment,
 			left_arm);
 
 		create_drive_joint(ragdoll,
-			forearm_constraint,
+			forearm_limb_details,
 			left_forearm_attachment,
 			left_forearm);
 
 		create_drive_joint(ragdoll,
-			hand_constraint,
+			hand_limb_details,
 			left_hand_attachment,
 			left_hand);
 
 		create_drive_joint(ragdoll,
-			arm_constraint,
+			arm_limb_details,
 			right_arm_attachment,
 			right_arm);
 
 		create_drive_joint(ragdoll,
-			forearm_constraint,
+			forearm_limb_details,
 			right_forearm_attachment,
 			right_forearm);
 
 		create_drive_joint(ragdoll,
-			hand_constraint,
+			hand_limb_details,
 			right_hand_attachment,
 			right_hand);
 
 		create_drive_joint(ragdoll,
-			leg_constraint,
+			leg_limb_details,
 			left_up_leg_attachment,
 			left_up_leg);
 
 		create_drive_joint(ragdoll,
-			calf_constraint,
+			calf_limb_details,
 			left_leg_attachment,
 			left_leg);
 
 		create_drive_joint(ragdoll,
-			foot_constraint,
+			foot_limb_details,
 			left_foot_attachment,
 			left_foot);
 
 		create_drive_joint(ragdoll,
-			leg_constraint,
+			leg_limb_details,
 			right_up_leg_attachment,
 			right_up_leg);
 
 		create_drive_joint(ragdoll,
-			calf_constraint,
+			calf_limb_details,
 			right_leg_attachment,
 			right_leg);
 
 		create_drive_joint(ragdoll,
-			foot_constraint,
+			foot_limb_details,
 			right_foot_attachment,
 			right_foot);
 	}

@@ -2,8 +2,8 @@
 
 #include "physics_api.h"
 #include "physics/physx_api.h"
-#include "physics/ragdoll_component.h"
-#include "physics/ragdoll_profile.h"
+#include "physics/ragdolls/ragdoll_component.h"
+#include "physics/physical_animation/ragdoll_profile.h"
 #include "physics/physical_animation/states/base_simulation_state.h"
 #include "physics/physical_animation/limb_states/base_limb_state.h"
 #include "physics/physical_animation/drive_pose_solver.h"
@@ -37,11 +37,11 @@ namespace era_engine::physics
 
 		std::shared_ptr<BaseLimbState> get_current_state() const;
 
-		ConstraintLimbStateType get_current_state_type() const;
+		PhysicalLimbStateType get_current_state_type() const;
 
-		void force_switch_state(ConstraintLimbStateType desired_state);
+		void force_switch_state(PhysicalLimbStateType desired_state);
 
-		void update_states(float dt, ConstraintLimbStateType desired_state);
+		void update_states(float dt, PhysicalLimbStateType desired_state);
 
 		float calculate_desired_angular_damping(float delta_angle) const;
 		float calculate_desired_linear_damping(float delta_position) const;
@@ -86,8 +86,8 @@ namespace era_engine::physics
 		constexpr static float MAX_COLLISION_TIME = 0.5f;
 		constexpr static float MAX_FREQUENT_COLLISION_TIME = 0.2f;
 
-		ConstraintBlendType blend_type = ConstraintBlendType::BLEND_WITH_PREV_POSE;
-		ConstraintBlendType prev_blend_type = ConstraintBlendType::NONE;
+		PhysicalLimbBlendType blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+		PhysicalLimbBlendType prev_blend_type = PhysicalLimbBlendType::NONE;
 
 		ComponentPtr parent_joint_component = nullptr;
 		ComponentPtr drive_joint_component = nullptr;
@@ -98,9 +98,9 @@ namespace era_engine::physics
         ERA_VIRTUAL_REFLECT(RagdollLimbComponent)
 
 	private:
-		ConstraintLimbStateType current_state_type = ConstraintLimbStateType::KINEMATIC;
+		PhysicalLimbStateType current_state_type = PhysicalLimbStateType::KINEMATIC;
 
-		std::unordered_map<ConstraintLimbStateType, std::shared_ptr<BaseLimbState>> simulation_states;
+		std::unordered_map<PhysicalLimbStateType, std::shared_ptr<BaseLimbState>> simulation_states;
 
 		friend class PhysicalAnimationSystem;
 	};

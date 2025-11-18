@@ -1,10 +1,10 @@
-#include "physics/ragdoll_builder.h"
+#include "physics/ragdolls/ragdoll_builder.h"
 #include "physics/core/physics.h"
 #include "physics/body_component.h"
 #include "physics/shape_component.h"
 #include "physics/core/physics_utils.h"
 #include "physics/shape_utils.h"
-#include "physics/ragdoll_component.h"
+#include "physics/ragdolls/ragdoll_component.h"
 #include "physics/joint.h"
 
 #include <core/math.h>
@@ -17,7 +17,7 @@ namespace era_engine::physics
 	static Entity create_child_entity(Entity parent, 
 		std::string_view entity_name,
 		uint32 joint_id = INVALID_JOINT,
-		RagdollLimbComponent::Type type = RagdollLimbComponent::Type::BODY_UPPER)
+		RagdollLimbType type = RagdollLimbType::BODY_UPPER)
 	{
 		Entity child = parent.get_world()->create_entity(entity_name.data());
 		child.set_parent(parent.get_handle());
@@ -391,7 +391,7 @@ namespace era_engine::physics
 
 		// Head
 		{
-			head = create_child_entity(ragdoll, "head", joint_init_ids.head_idx, RagdollLimbComponent::Type::HEAD);
+			head = create_child_entity(ragdoll, "head", joint_init_ids.head_idx, RagdollLimbType::HEAD);
 
 			TransformComponent* transform_component = head.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * neck_joint_transform);
@@ -416,7 +416,7 @@ namespace era_engine::physics
 
 		// Body upper (from body middle to neck)
 		{
-			body_upper = create_child_entity(ragdoll, "body_upper", joint_init_ids.spine_03_idx, RagdollLimbComponent::Type::BODY_UPPER);
+			body_upper = create_child_entity(ragdoll, "body_upper", joint_init_ids.spine_03_idx, RagdollLimbType::BODY_UPPER);
 
 			TransformComponent* transform_component = body_upper.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * thorax_joint_transform);
@@ -439,7 +439,7 @@ namespace era_engine::physics
 
 		// Body middle
 		{
-			body_middle = create_child_entity(ragdoll, "body_middle", joint_init_ids.spine_01_idx, RagdollLimbComponent::Type::BODY_MIDDLE);
+			body_middle = create_child_entity(ragdoll, "body_middle", joint_init_ids.spine_01_idx, RagdollLimbType::BODY_MIDDLE);
 
 			TransformComponent* transform_component = body_middle.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * abdomen_joint_transform);
@@ -462,7 +462,7 @@ namespace era_engine::physics
 
 		// Body lower (from pelvis to abdomen)
 		{
-			body_lower = create_child_entity(ragdoll, "pelvis", joint_init_ids.pelvis_idx, RagdollLimbComponent::Type::BODY_LOWER);
+			body_lower = create_child_entity(ragdoll, "pelvis", joint_init_ids.pelvis_idx, RagdollLimbType::BODY_LOWER);
 
 			TransformComponent* transform_component = body_lower.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * pelvis_joint_transform);
@@ -485,7 +485,7 @@ namespace era_engine::physics
 
 		// Left arm
 		{
-			left_arm = create_child_entity(ragdoll, "l_arm", joint_init_ids.upperarm_l_idx, RagdollLimbComponent::Type::ARM);
+			left_arm = create_child_entity(ragdoll, "l_arm", joint_init_ids.upperarm_l_idx, RagdollLimbType::ARM);
 
 			TransformComponent* transform_component = left_arm.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * left_arm_joint_transform);
@@ -507,7 +507,7 @@ namespace era_engine::physics
 
 		// Left forearm
 		{
-			left_forearm = create_child_entity(ragdoll, "l_forearm", joint_init_ids.lowerarm_l_idx, RagdollLimbComponent::Type::FOREARM);
+			left_forearm = create_child_entity(ragdoll, "l_forearm", joint_init_ids.lowerarm_l_idx, RagdollLimbType::FOREARM);
 
 			TransformComponent* transform_component = left_forearm.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * left_forearm_joint_transform);
@@ -529,7 +529,7 @@ namespace era_engine::physics
 
 		// Left hand
 		{
-			left_hand = create_child_entity(ragdoll, "l_hand", joint_init_ids.hand_l_idx, RagdollLimbComponent::Type::HAND);
+			left_hand = create_child_entity(ragdoll, "l_hand", joint_init_ids.hand_l_idx, RagdollLimbType::HAND);
 
 			TransformComponent* transform_component = left_hand.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * left_hand_joint_transform);
@@ -550,7 +550,7 @@ namespace era_engine::physics
 
 		// Right arm
 		{
-			right_arm = create_child_entity(ragdoll, "r_arm", joint_init_ids.upperarm_r_idx, RagdollLimbComponent::Type::ARM);
+			right_arm = create_child_entity(ragdoll, "r_arm", joint_init_ids.upperarm_r_idx, RagdollLimbType::ARM);
 
 			TransformComponent* transform_component = right_arm.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * right_arm_joint_transform);
@@ -572,7 +572,7 @@ namespace era_engine::physics
 
 		// Right forearm
 		{
-			right_forearm = create_child_entity(ragdoll, "r_forearm", joint_init_ids.lowerarm_r_idx, RagdollLimbComponent::Type::FOREARM);
+			right_forearm = create_child_entity(ragdoll, "r_forearm", joint_init_ids.lowerarm_r_idx, RagdollLimbType::FOREARM);
 
 			TransformComponent* transform_component = right_forearm.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * right_forearm_joint_transform);
@@ -594,7 +594,7 @@ namespace era_engine::physics
 
 		// Right hand
 		{
-			right_hand = create_child_entity(ragdoll, "r_hand", joint_init_ids.hand_r_idx, RagdollLimbComponent::Type::HAND);
+			right_hand = create_child_entity(ragdoll, "r_hand", joint_init_ids.hand_r_idx, RagdollLimbType::HAND);
 
 			TransformComponent* transform_component = right_hand.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * right_hand_joint_transform);
@@ -615,7 +615,7 @@ namespace era_engine::physics
 
 		// Left up leg
 		{
-			left_up_leg = create_child_entity(ragdoll, "l_thigh", joint_init_ids.thigh_l_idx, RagdollLimbComponent::Type::LEG);
+			left_up_leg = create_child_entity(ragdoll, "l_thigh", joint_init_ids.thigh_l_idx, RagdollLimbType::LEG);
 
 			TransformComponent* transform_component = left_up_leg.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * left_up_leg_joint_transform);
@@ -637,7 +637,7 @@ namespace era_engine::physics
 
 		// Left leg
 		{
-			left_leg = create_child_entity(ragdoll, "l_calf", joint_init_ids.calf_l_idx, RagdollLimbComponent::Type::CALF);
+			left_leg = create_child_entity(ragdoll, "l_calf", joint_init_ids.calf_l_idx, RagdollLimbType::CALF);
 
 			TransformComponent* transform_component = left_leg.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * left_leg_joint_transform);
@@ -663,7 +663,7 @@ namespace era_engine::physics
 			const vec3 foot_to_foot_end_offset = foot_end_same_y - left_foot_joint_transform.position;
 			const vec3 center = left_foot_joint_transform.position + foot_to_foot_end_offset / 2.0f - vec3(0.0f, distance_between_foot_y_and_foot_end_y / 2.0f, 0.0f);
 
-			left_foot = create_child_entity(ragdoll, "l_foot", joint_init_ids.foot_l_idx, RagdollLimbComponent::Type::FOOT);
+			left_foot = create_child_entity(ragdoll, "l_foot", joint_init_ids.foot_l_idx, RagdollLimbType::FOOT);
 
 			TransformComponent* transform_component = left_foot.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * left_foot_joint_transform);
@@ -684,7 +684,7 @@ namespace era_engine::physics
 
 		// Right up leg
 		{
-			right_up_leg = create_child_entity(ragdoll, "r_thigh", joint_init_ids.thigh_r_idx, RagdollLimbComponent::Type::LEG);
+			right_up_leg = create_child_entity(ragdoll, "r_thigh", joint_init_ids.thigh_r_idx, RagdollLimbType::LEG);
 
 			TransformComponent* transform_component = right_up_leg.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * right_up_leg_joint_transform);
@@ -706,7 +706,7 @@ namespace era_engine::physics
 
 		// Right leg
 		{
-			right_leg = create_child_entity(ragdoll, "r_calf", joint_init_ids.calf_r_idx, RagdollLimbComponent::Type::CALF);
+			right_leg = create_child_entity(ragdoll, "r_calf", joint_init_ids.calf_r_idx, RagdollLimbType::CALF);
 
 			TransformComponent* transform_component = right_leg.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * right_leg_joint_transform);
@@ -732,7 +732,7 @@ namespace era_engine::physics
 			const vec3 foot_to_foot_end_offset = foot_end_same_y - right_foot_joint_transform.position;
 			const vec3 center = right_foot_joint_transform.position + foot_to_foot_end_offset / 2.0f - vec3(0.0f, distance_between_foot_y_and_foot_end_y / 2.0f, 0.0f);
 
-			right_foot = create_child_entity(ragdoll, "r_foot", joint_init_ids.foot_r_idx, RagdollLimbComponent::Type::FOOT);
+			right_foot = create_child_entity(ragdoll, "r_foot", joint_init_ids.foot_r_idx, RagdollLimbType::FOOT);
 
 			TransformComponent* transform_component = right_foot.get_component<TransformComponent>();
 			transform_component->set_world_transform(ragdoll_world_transform * right_foot_joint_transform);

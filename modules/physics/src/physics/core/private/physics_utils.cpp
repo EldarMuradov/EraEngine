@@ -15,6 +15,10 @@ namespace era_engine::physics
 
 		PxRigidDynamic* actor = PhysicsHolder::physics_ref->get_physics()->createRigidDynamic(transform);
 		ASSERT(actor != nullptr);
+		
+#ifndef(_DEBUG)
+		actor->setActorFlag(PxActorFlag::eVISUALIZATION, false);
+#endif
 
 		actor->userData = user_data;
 
@@ -27,6 +31,10 @@ namespace era_engine::physics
 
 		PxRigidStatic* actor = PhysicsHolder::physics_ref->get_physics()->createRigidStatic(transform);
 		ASSERT(actor != nullptr);
+
+#ifndef(_DEBUG)
+		actor->setActorFlag(PxActorFlag::eVISUALIZATION, false);
+#endif
 
 		actor->userData = user_data;
 

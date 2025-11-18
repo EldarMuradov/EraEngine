@@ -20,10 +20,10 @@ namespace era_engine::physics
 		static vec3 calculate_delta_rotation_time_derivative(const quat& delta_rotation,
 			float dt);
 
-		static bool is_body_limb(PhysicalAnimationLimbComponent::Type type);
-		static bool is_head_limb(PhysicalAnimationLimbComponent::Type type);
-		static bool is_leg_limb(PhysicalAnimationLimbComponent::Type type);
-		static bool is_arm_limb(PhysicalAnimationLimbComponent::Type type);
+		static bool is_body_limb(RagdollLimbType type);
+		static bool is_head_limb(RagdollLimbType type);
+		static bool is_leg_limb(RagdollLimbType type);
+		static bool is_arm_limb(RagdollLimbType type);
 
 		static void reset_motor_drive(PhysicalAnimationLimbComponent* limb_component);
 

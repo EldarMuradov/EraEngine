@@ -256,6 +256,8 @@ namespace era_engine
                 result(row, column) = result_pca.eigenvectors[row][column];
             }
         }
+
+        return result;
     }
 
     static std::vector<float> build_column_means(array2d<float>& mat)

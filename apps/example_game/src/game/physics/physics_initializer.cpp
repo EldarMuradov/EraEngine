@@ -8,7 +8,7 @@
 #include <physics/shape_component.h>
 #include <physics/basic_objects.h>
 #include <physics/joint.h>
-#include <physics/ragdoll_component.h>
+#include <physics/ragdolls/ragdoll_component.h>
 #include <physics/collisions_holder_root_component.h>
 
 

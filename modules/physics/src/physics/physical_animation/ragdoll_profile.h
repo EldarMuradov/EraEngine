@@ -1,0 +1,106 @@
+#pragma once
+
+#include "physics_api.h"
+
+#include "physics/physx_api.h"
+#include "physics/ragdolls/ragdoll_component.h"
+
+#include <core/math.h>
+
+#include <animation/animation.h>
+
+#include <ecs/component.h>
+
+namespace era_engine::physics
+{
+    enum class PhysicalLimbBlendType : uint8
+    {
+        NONE = 0,
+        BLEND_WITH_PREV_POSE,
+        BLEND_WITH_ANIMATION_POSE,
+        PURE_PHYSICS,
+        PURE_ANIMATION
+    };
+    DEFINE_BITWISE_OPERATORS_FOR_ENUM(PhysicalLimbBlendType);
+
+    class ERA_PHYSICS_API MotorDriveDetails final
+    {
+    public:
+        MotorDriveDetails() = default;
+        MotorDriveDetails(const MotorDriveDetails& other) = default;
+        MotorDriveDetails(MotorDriveDetails&& other) = default;
+
+        MotorDriveDetails& operator=(const MotorDriveDetails& other) = default;
+
+        float angular_drive_damping = 10.0f;
+        float angular_drive_stiffness = 100.0f;
+
+        float linear_drive_damping = 10.0f;
+        float linear_drive_stiffness = 100.0f;
+
+        vec2 angular_range = vec2(deg2rad(3.0f), deg2rad(30.0f));
+        vec2 angular_damping_range = vec2(60.0f, 10.0f);
+
+        vec2 linear_range = vec2(0.05f, 0.5f);
+        vec2 linear_damping_range = vec2(80.0f, 10.0f);
+
+        float max_force = std::numeric_limits<float>::max();
+
+        float drive_velocity_modifier = 1.0f;
+
+        bool accelerated = false;
+        bool enable_slerp_drive = true;
+    };
+
+    class ERA_PHYSICS_API DragForceDetails final
+    {
+    public:
+        float partial_angular_drive_limit = 25.0f;
+        float partial_angular_drive = 0.5f;
+
+        float partial_velocity_drive_limit = 10.0f;
+        float partial_velocity_drive = 0.5f;
+
+        float acceleration_limit = 0.2f;
+        float acceleration_gain = 0.02f;
+    };
+
+    class ERA_PHYSICS_API PhysicalLimbDetails final
+    {
+    public:
+        std::optional<MotorDriveDetails> motor_drive;
+        std::optional<DragForceDetails> drag_force;
+        PhysicalLimbBlendType blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+    };
+
+    enum class RagdollProfileType : uint8
+    {
+        IDLE = 0,
+        RUNNING,
+        SPRINT,
+        CLIMBING,
+        RAGDOLL
+    };
+
+    class ERA_PHYSICS_API RagdollProfile final
+    {
+    public:
+        const PhysicalLimbDetails& get_limb_details_by_type(RagdollLimbType limb_type) const;
+
+        PhysicalLimbDetails head_limb_details;
+
+        PhysicalLimbDetails body_upper_limb_details;
+        PhysicalLimbDetails body_middle_limb_details;
+        PhysicalLimbDetails body_lower_limb_details;
+
+        PhysicalLimbDetails arm_limb_details;
+        PhysicalLimbDetails forearm_limb_details;
+        PhysicalLimbDetails hand_limb_details;
+
+        PhysicalLimbDetails leg_limb_details;
+        PhysicalLimbDetails calf_limb_details;
+        PhysicalLimbDetails foot_limb_details;
+
+        RagdollProfileType type = RagdollProfileType::IDLE;
+    };
+}

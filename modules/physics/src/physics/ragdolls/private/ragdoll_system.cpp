@@ -1,10 +1,10 @@
-#include "physics/core/ragdoll_system.h"
+#include "physics/ragdolls/ragdoll_system.h"
 #include "physics/core/physics.h"
 #include "physics/body_component.h"
 #include "physics/joint.h"
 #include "physics/core/physics_utils.h"
 #include "physics/shape_utils.h"
-#include "physics/ragdoll_builder.h"
+#include "physics/ragdolls/ragdoll_builder.h"
 #include "physics/shape_component.h"
 
 #include <core/cpu_profiling.h>

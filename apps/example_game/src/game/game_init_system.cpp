@@ -24,7 +24,7 @@
 #include <physics/shape_component.h>
 #include <physics/basic_objects.h>
 #include <physics/joint.h>
-#include <physics/ragdoll_component.h>
+#include <physics/ragdolls/ragdoll_component.h>
 #include <physics/physical_animation/physical_animation_component.h>
 
 #include <motion_matching/trajectory/trajectory_component.h>
@@ -119,7 +119,6 @@ namespace era_engine
 			mesh->loadJob.wait_for_completion();
 
 			SkeletonComponent* skeleton_component = tiran.add_component<SkeletonComponent>();
-			skeleton_component->draw_sceleton = true;
 
 			AnimationComponent* animation_component = tiran.add_component<AnimationComponent>();
 			animation_component->play = true;
@@ -137,10 +136,10 @@ namespace era_engine
 			}
 
 			{
-				/*ref<AnimationAssetClip> anim_clip = provider.load_game_asset_from_file<AnimationAssetClip>(get_asset_path("/resources/assets/springtrap/source/animations/animation_clip74"));
+				ref<AnimationAssetClip> anim_clip = provider.load_game_asset_from_file<AnimationAssetClip>(get_asset_path("/resources/assets/springtrap/source/animations/animation_clip74"));
 				anim_clip->load_job.wait_for_completion();
 				animation_component->current_animation = anim_clip;
-				animation_component->current_anim_position = 0.0f;*/
+				animation_component->current_anim_position = 0.0f;
 			}
 
 			/*const ref<Skeleton> skeleton = skeleton_component->skeleton;

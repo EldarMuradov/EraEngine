@@ -66,7 +66,6 @@ namespace era_engine::physics
 		physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
 		bool objectRemoved)
 	{
-		std::cout << "lost\n";
 	};
 
 	bool SimulationFilterCallback::statusChange(physx::PxU64& pairID, physx::PxPairFlags& pairFlags, physx::PxFilterFlags& filterFlags)

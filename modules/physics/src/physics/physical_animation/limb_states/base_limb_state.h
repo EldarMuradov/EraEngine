@@ -9,7 +9,7 @@
 
 namespace era_engine::physics
 {
-	enum class ConstraintLimbStateType : uint8
+	enum class PhysicalLimbStateType : uint8
 	{
 		KINEMATIC = 0,
 		TRANSITION,
@@ -23,7 +23,7 @@ namespace era_engine::physics
 		BaseLimbState(ComponentPtr _physical_animation_limb_component_ptr);
 		virtual ~BaseLimbState();
 
-		virtual ConstraintLimbStateType try_switch_to(ConstraintLimbStateType desired_type) const;
+		virtual PhysicalLimbStateType try_switch_to(PhysicalLimbStateType desired_type) const;
 
 		virtual void on_enter();
 

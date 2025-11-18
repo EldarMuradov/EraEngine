@@ -29,13 +29,13 @@ void BlendOutLimbState::update(float dt)
     blend_time = clamp(blend_time + dt, 0.0f, limb_component->transition_time);
 }
 
-ConstraintLimbStateType BlendOutLimbState::try_switch_to(ConstraintLimbStateType desired_state) const
+PhysicalLimbStateType BlendOutLimbState::try_switch_to(PhysicalLimbStateType desired_state) const
 {
     const PhysicalAnimationLimbComponent* limb_component = static_cast<const PhysicalAnimationLimbComponent*>(physical_animation_limb_component_ptr.get());
 
-    if (desired_state == ConstraintLimbStateType::KINEMATIC)
+    if (desired_state == PhysicalLimbStateType::KINEMATIC)
     {
-        return blend_time >= limb_component->transition_time ? ConstraintLimbStateType::KINEMATIC : ConstraintLimbStateType::TRANSITION;
+        return blend_time >= limb_component->transition_time ? PhysicalLimbStateType::KINEMATIC : PhysicalLimbStateType::TRANSITION;
     }
     return desired_state;
 }
