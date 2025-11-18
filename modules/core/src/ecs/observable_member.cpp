@@ -66,25 +66,10 @@ namespace era_engine
 
 	void ObservableStorage::sync_all_changes(World* world)
 	{
-		std::vector<Entity::Handle> entityes_to_reset_state;
-		for (auto [entity_handle, _1, _2] : world->group(components_group<ObservableMemberChangedFlagComponent, TransformComponent>).each())
-		{
-			entityes_to_reset_state.push_back(entity_handle);
-		}
-
 		//for (ObservableBase* observable : observable_ptrs)
 		//{
 		//	observable->sync_changes();
 		//}
-
-		for (Entity::Handle handle : entityes_to_reset_state)
-		{
-			Entity owner = world->get_entity(handle);
-			if (owner.has_component<ObservableMemberChangedFlagComponent>())
-			{
-				owner.remove_component<ObservableMemberChangedFlagComponent>();
-			}
-		}
 	}
 
 }

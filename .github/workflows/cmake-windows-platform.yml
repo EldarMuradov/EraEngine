@@ -33,9 +33,9 @@ jobs:
 
     - name: Generate project
       run: >
-        ./build.bat
+        ./generate_project_vs2022.bat
 
     - name: Build
       run: |
         cd _build
-        cmake --build . --config ${{ matrix.build_type }}
+        cmake --build . --target unittests --config ${{ matrix.build_type }}
