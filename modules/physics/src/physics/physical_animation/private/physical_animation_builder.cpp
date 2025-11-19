@@ -15,8 +15,6 @@
 
 namespace era_engine::physics
 {
-	static DebugVar<bool> enable_spring_pelvis_attachment = DebugVar<bool>("physics.physical_animation.enable_spring_pelvis_attachment", false);
-
 	static Entity create_child_entity(Entity parent, 
 		std::string_view entity_name,
 		const PhysicalLimbDetails& details,
@@ -34,10 +32,6 @@ namespace era_engine::physics
 		{
 			const MotorDriveDetails& motor_drive = details.motor_drive.value();
 
-			limb_component->linear_stiffness = motor_drive.linear_drive_stiffness;
-			limb_component->linear_damping = motor_drive.linear_drive_damping;
-			limb_component->angular_stiffness = motor_drive.angular_drive_stiffness;
-			limb_component->angular_damping = motor_drive.angular_drive_damping;
 			limb_component->drive_velocity_modifier = motor_drive.drive_velocity_modifier;
 			limb_component->angular_range = motor_drive.angular_range;
 			limb_component->linear_range = motor_drive.linear_range;
@@ -94,7 +88,7 @@ namespace era_engine::physics
 		dynamic_body_component->use_gravity.get_for_write() = false;
 		dynamic_body_component->simulated.get_for_write() = true;
 		dynamic_body_component->kinematic.get_for_write() = true;
-		dynamic_body_component->kinematic_motion_type.get_for_write() = KinematicMotionType::TELEPORT;
+		dynamic_body_component->kinematic_motion_type.get_for_write() = KinematicMotionType::VELOCITY;
 
 		BoxShapeComponent* box_shape_component = attachment.add_component<BoxShapeComponent>();
 		box_shape_component->half_extents = vec3(0.02f, 0.02f, 0.02f);
@@ -231,17 +225,17 @@ namespace era_engine::physics
 		joint_component->swing_z_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
 
 		joint_component->linear_drive_stiffness = motor_drive.linear_drive_stiffness;
-		joint_component->linear_drive_damping = motor_drive.linear_drive_damping;
+		joint_component->linear_drive_damping = motor_drive.linear_damping_range.y;
 		joint_component->linear_drive_force_limit = motor_drive.max_force;
 		joint_component->linear_drive_accelerated = motor_drive.accelerated;
 
-		joint_component->disable_preprocessing = true;
+		joint_component->disable_preprocessing.get_for_write() = true;
 
 		e1.get_component<PhysicalAnimationLimbComponent>()->drive_joint_component = ComponentPtr{ joint_component };
 
 		if (motor_drive.enable_slerp_drive)
 		{
-			joint_component->slerp_drive_damping.get_for_write() = motor_drive.angular_drive_damping;
+			joint_component->slerp_drive_damping.get_for_write() = motor_drive.angular_damping_range.y;
 			joint_component->slerp_drive_force_limit.get_for_write() = motor_drive.max_force;
 			joint_component->slerp_drive_stiffness.get_for_write() = motor_drive.angular_drive_stiffness;
 			joint_component->slerp_drive_accelerated.get_for_write() = motor_drive.accelerated;
@@ -251,10 +245,10 @@ namespace era_engine::physics
 			joint_component->swing_drive_force_limit.get_for_write() = motor_drive.max_force;
 			joint_component->swing_drive_accelerated.get_for_write() = motor_drive.accelerated;
 			joint_component->swing_drive_stiffness.get_for_write() = motor_drive.angular_drive_stiffness;
-			joint_component->swing_drive_damping.get_for_write() = motor_drive.angular_drive_damping;
+			joint_component->swing_drive_damping.get_for_write() = motor_drive.angular_damping_range.y;
 
 			joint_component->twist_drive_stiffness.get_for_write() = motor_drive.angular_drive_stiffness;
-			joint_component->twist_drive_damping.get_for_write() = motor_drive.angular_drive_damping;
+			joint_component->twist_drive_damping.get_for_write() = motor_drive.angular_damping_range.y;
 			joint_component->twist_drive_force_limit.get_for_write() = motor_drive.max_force;
 			joint_component->twist_drive_accelerated.get_for_write() = motor_drive.accelerated;
 		}
@@ -676,23 +670,10 @@ namespace era_engine::physics
 			JointComponent::BaseDescriptor descriptor;
 			descriptor.connected_entity = body_lower_ghost.get_data_weakref();
 			descriptor.second_connected_entity = body_lower.get_data_weakref();
-			
-			if (enable_spring_pelvis_attachment)
-			{
-				DistanceJointComponent* joint_component = body_lower_ghost.add_component<DistanceJointComponent>(descriptor);
-				joint_component->enable_collision = false;
-				joint_component->max_distance = 0.05f;
-				joint_component->min_distance = 0.001f;
-				joint_component->stiffness = 500.0f;
-				joint_component->damping = 20.0f;
-				joint_component->spring_enabled = true;
-			}
-			else
-			{
-				FixedJointComponent* joint_component = body_lower_ghost.add_component<FixedJointComponent>(descriptor);
-				joint_component->enable_collision = false;
-			}
-			physical_animation_component->use_spring_pelvis_attachment = enable_spring_pelvis_attachment;
+
+			FixedJointComponent* joint_component = body_lower_ghost.add_component<FixedJointComponent>(descriptor);
+			joint_component->enable_collision.get_for_write() = false;
+
 			physical_animation_component->attachment_body = EntityPtr{ body_lower_ghost };
 		}
 

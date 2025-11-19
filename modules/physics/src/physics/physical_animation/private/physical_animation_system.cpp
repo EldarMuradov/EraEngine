@@ -40,7 +40,8 @@ namespace era_engine::physics
 			 metadata("After", std::vector<std::string>{"PhysicsSystem::update"}))
 
 			.method("update_normal", &PhysicalAnimationSystem::update_normal)
-			(metadata("update_group", update_types::GAMEPLAY_NORMAL));
+			(metadata("update_group", update_types::GAMEPLAY_NORMAL),
+			metadata("After", std::vector<std::string>{"AnimationSystem::update"}));
 	}
 
 	static DebugVar<bool> enable_always = DebugVar<bool>("physics.physical_animation.enable_always", false);
@@ -71,53 +72,44 @@ namespace era_engine::physics
 			idle_profile->type = RagdollProfileType::IDLE;
 			idle_profile->head_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->head_limb_details.motor_drive = MotorDriveDetails();
-			idle_profile->head_limb_details.motor_drive->angular_drive_stiffness = 20.0f;
-			idle_profile->head_limb_details.motor_drive->angular_drive_damping = 20.0f;
-			idle_profile->head_limb_details.motor_drive->linear_drive_stiffness = 20.0f;
-			idle_profile->head_limb_details.motor_drive->linear_drive_damping = 200.0f;
+			idle_profile->head_limb_details.motor_drive->angular_drive_stiffness = 200.0f;
+			idle_profile->head_limb_details.motor_drive->linear_drive_stiffness = 200.0f;
 
 			idle_profile->body_upper_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->body_upper_limb_details.motor_drive = MotorDriveDetails();
-			idle_profile->body_upper_limb_details.motor_drive->angular_drive_stiffness = 30.0f;
-			idle_profile->body_upper_limb_details.motor_drive->angular_drive_damping = 300.0f;
-			idle_profile->body_upper_limb_details.motor_drive->linear_drive_stiffness = 30.0f;
-			idle_profile->body_upper_limb_details.motor_drive->linear_drive_damping = 200.0f;
+			idle_profile->body_upper_limb_details.motor_drive->angular_drive_stiffness = 400.0f;
+			idle_profile->body_upper_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
 
 			idle_profile->body_middle_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 
 			idle_profile->arm_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->arm_limb_details.motor_drive = MotorDriveDetails();
-			idle_profile->arm_limb_details.motor_drive->angular_drive_stiffness = 30.0f;
-			idle_profile->arm_limb_details.motor_drive->angular_drive_damping = 400.0f;
-			idle_profile->arm_limb_details.motor_drive->linear_drive_stiffness = 30.0f;
-			idle_profile->arm_limb_details.motor_drive->linear_drive_damping = 300.0f;
+			idle_profile->arm_limb_details.motor_drive->angular_drive_stiffness = 200.0f;
+			idle_profile->arm_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
 
 			idle_profile->body_lower_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 
 			idle_profile->forearm_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->forearm_limb_details.motor_drive = MotorDriveDetails();
-			idle_profile->forearm_limb_details.motor_drive->angular_drive_stiffness = 30.0f;
-			idle_profile->forearm_limb_details.motor_drive->angular_drive_damping = 200.0f;
-			idle_profile->forearm_limb_details.motor_drive->linear_drive_stiffness = 30.0f;
-			idle_profile->forearm_limb_details.motor_drive->linear_drive_damping = 400.0f;
+			idle_profile->forearm_limb_details.motor_drive->angular_drive_stiffness = 200.0f;
+			idle_profile->forearm_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
 
 			idle_profile->hand_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->hand_limb_details.motor_drive = MotorDriveDetails();
+			idle_profile->hand_limb_details.motor_drive->angular_drive_stiffness = 200.0f;
+			idle_profile->hand_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
 
 			idle_profile->leg_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 
 			idle_profile->calf_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->calf_limb_details.motor_drive = MotorDriveDetails();
-			idle_profile->calf_limb_details.motor_drive->angular_drive_stiffness = 30.0f;
-			idle_profile->calf_limb_details.motor_drive->angular_drive_damping = 300.0f;
-			idle_profile->calf_limb_details.motor_drive->linear_drive_stiffness = 30.0f;
-			idle_profile->calf_limb_details.motor_drive->linear_drive_damping = 400.0f;
+			idle_profile->calf_limb_details.motor_drive->angular_drive_stiffness = 400.0f;
+			idle_profile->calf_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
 
 			idle_profile->foot_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->foot_limb_details.motor_drive = MotorDriveDetails();
-			idle_profile->foot_limb_details.motor_drive->angular_drive_stiffness = 20.0f;
-			idle_profile->foot_limb_details.motor_drive->angular_drive_damping = 200.0f;
-			idle_profile->foot_limb_details.motor_drive->linear_drive_stiffness = 20.0f;
-			idle_profile->foot_limb_details.motor_drive->linear_drive_damping = 200.0f;
+			idle_profile->foot_limb_details.motor_drive->angular_drive_stiffness = 200.0f;
+			idle_profile->foot_limb_details.motor_drive->linear_drive_stiffness = 200.0f;
 		}
 
 		{
@@ -463,13 +455,16 @@ namespace era_engine::physics
 
 	void PhysicalAnimationSystem::update_chains_states(const PhysicalAnimationComponent* physical_animation_component, float dt) const
 	{
-		update_chain(physical_animation_component->body_chain, dt);
+		const bool has_any_active_arm_limbs = check_chain(physical_animation_component->left_arm_chain) || 
+			check_chain(physical_animation_component->right_arm_chain);
+
 		update_chain(physical_animation_component->left_leg_chain, dt);
 		update_chain(physical_animation_component->right_leg_chain, dt);
+		update_chain(physical_animation_component->body_chain, dt, has_any_active_arm_limbs);
 
-		update_chain(physical_animation_component->neck_chain, dt);
-		update_chain(physical_animation_component->left_arm_chain, dt);
-		update_chain(physical_animation_component->right_arm_chain, dt);
+		update_chain(physical_animation_component->neck_chain, dt, has_any_active_arm_limbs);
+		update_chain(physical_animation_component->left_arm_chain, dt, has_any_active_arm_limbs);
+		update_chain(physical_animation_component->right_arm_chain, dt, has_any_active_arm_limbs);
 	}
 
 	bool PhysicalAnimationSystem::update_chain(const ref<PhysicsLimbChain>& chain, float dt, bool force_simulation) const

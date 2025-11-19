@@ -19,6 +19,7 @@ namespace era_engine::animation
 		float get_duration() const;
 
 		std::shared_ptr<AnimationAssetClip> get_animation() const;
+		const Skeleton* get_skeleton() const;
 
 		bool sample_pose(float sample_time, SkeletonPose& target) const;
 

@@ -33,8 +33,6 @@ namespace era_engine::physics
 
         const PhysicalAnimationComponent* physical_animation_component = ragdoll.get_component<PhysicalAnimationComponent>();
 
-        DynamicBodyComponent* dynamic_body = limb.get_component<DynamicBodyComponent>();
-
         const ref<RagdollProfile> profile = physical_animation_component->get_ragdoll_profile();
         ASSERT(profile != nullptr);
 
@@ -96,6 +94,8 @@ namespace era_engine::physics
 		if (limb_details.drag_force.has_value())
 		{
 			const DragForceDetails& drag_details = limb_details.drag_force.value();
+			DynamicBodyComponent* dynamic_body = limb.get_component<DynamicBodyComponent>();
+
 			// Keyframe controller stage.
 			{
 				const vec3& raw_root_velocity = physical_animation_component->velocity;
@@ -109,7 +109,7 @@ namespace era_engine::physics
 				{
 					desired_velocity = desired_velocity * (drag_details.partial_velocity_drive_limit / desired_velocity_magnitude);
 				}
-				vec3 drive_linear_velocity = lerp(dynamic_body->linear_velocity, desired_velocity, drag_details.partial_velocity_drive * limb_component->drive_velocity_modifier);
+				vec3 drive_linear_velocity = lerp(dynamic_body->linear_velocity, desired_velocity, drag_details.partial_velocity_drive);
 
 				// Partial root velocity drive.
 				vec3 root_velocity = raw_root_velocity;

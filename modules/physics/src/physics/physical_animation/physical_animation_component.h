@@ -61,12 +61,6 @@ namespace era_engine::physics
 		/* Physics body local space transfrom. */
 		trs physics_pose = trs::identity;
 
-		float angular_damping = 10.0f;
-		float angular_stiffness = 100.0f;
-
-		float linear_damping = 10.0f;
-		float linear_stiffness = 100.0f;
-
 		vec2 angular_range = vec2(deg2rad(3.0f), deg2rad(30.0f));
 		vec2 angular_damping_range = vec2(80.0f, 15.0f);
 
@@ -81,10 +75,8 @@ namespace era_engine::physics
 		bool is_colliding = false;
 		float collision_time = 0.0f;
 
-		bool dynamic_update_damping = true;
-
 		constexpr static float MAX_COLLISION_TIME = 0.5f;
-		constexpr static float MAX_FREQUENT_COLLISION_TIME = 0.2f;
+		constexpr static float MAX_FREQUENT_COLLISION_TIME = 0.3f;
 
 		PhysicalLimbBlendType blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
 		PhysicalLimbBlendType prev_blend_type = PhysicalLimbBlendType::NONE;
@@ -132,7 +124,7 @@ namespace era_engine::physics
 		void update_states(float dt, SimulationStateType desired_state);
 
 	public:
-		constexpr static float MAX_RAGDOLL_PROFILE_TRANSITION_TIME = 0.15f;
+		constexpr static float MAX_RAGDOLL_PROFILE_TRANSITION_TIME = 0.2f;
 
 		float blend_weight = 0.0f;
 
@@ -143,8 +135,6 @@ namespace era_engine::physics
 		float target_rotation_blend_factor = 0.5f;
 
 		float ragdoll_profile_transition_time = 0.0f;
-
-		bool use_spring_pelvis_attachment = false;
 
 		trs prev_world_transform = trs::identity;
 

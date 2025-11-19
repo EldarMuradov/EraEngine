@@ -10,56 +10,26 @@
 
 namespace era_engine::physics
 {
-    class ERA_PHYSICS_API CCTBaseComponent : public BodyComponent
+    class ERA_PHYSICS_API CharacterControllerComponent final : public Component
     {
     public:
-        CCTBaseComponent() = default;
-        CCTBaseComponent(ref<Entity::EcsData> _data, float _mass = 1.0f);
-        ~CCTBaseComponent() override;
+        CharacterControllerComponent() = default;
+        CharacterControllerComponent(ref<Entity::EcsData> _data);
+        ~CharacterControllerComponent() override;
 
-        float mass = 1.0f;
+        float height = 1.2f;
+        float radius = 0.3f;
 
-        ERA_VIRTUAL_REFLECT(BodyComponent)
+        float step_offset = 0.5f;
+        float contact_offset = 0.1f;
 
-    protected:
-        virtual void create_character_controller();
+        float slope_limit = deg2rad(30.0f);
 
-        void register_cct();
+        ObservableMember<vec3> velocity;
 
-    protected:
-        physx::PxControllerManager* manager = nullptr;
+        ERA_VIRTUAL_REFLECT(Component)
+
+    private:
         physx::PxController* controller = nullptr;
-    };
-
-    class ERA_PHYSICS_API BoxCCTComponent : public CCTBaseComponent
-    {
-    public:
-        BoxCCTComponent() = default;
-        BoxCCTComponent(ref<Entity::EcsData> _data, float _half_height, float _half_side_extent, float _mass = 1.0f);
-        ~BoxCCTComponent() override;
-
-        float half_height = 1.0f;
-        float half_side_extent = 0.5f;
-
-        ERA_VIRTUAL_REFLECT(CCTBaseComponent)
-
-    protected:
-        void create_character_controller() override;
-    };
-
-    class ERA_PHYSICS_API CapsuleCCTComponent : public CCTBaseComponent
-    {
-    public:
-        CapsuleCCTComponent() = default;
-        CapsuleCCTComponent(ref<Entity::EcsData> _data, float _height, float _radius, float _mass = 1.0f);
-        ~CapsuleCCTComponent() override;
-
-        float height = 2.0f;
-        float radius = 0.5f;
-
-        ERA_VIRTUAL_REFLECT(CCTBaseComponent)
-
-    protected:
-        void create_character_controller() override;
     };
 }

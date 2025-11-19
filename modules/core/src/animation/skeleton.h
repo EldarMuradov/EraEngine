@@ -110,6 +110,7 @@ namespace era_engine::animation
 	public:
 		SkeletonPose() = default;
 		SkeletonPose(uint32 joints_size);
+		SkeletonPose(const std::vector<JointTransform>& _local_transforms);
 
 		bool is_valid() const;
 

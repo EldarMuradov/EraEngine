@@ -31,5 +31,8 @@ namespace era_engine
 		array1d<vec3> trajectory_accelerations;
 
 		array1d<vec3> trajectory_angular_velocities;
+
+		float build_time = 0.23f;
+		float build_timer = build_time;
 	};
 }

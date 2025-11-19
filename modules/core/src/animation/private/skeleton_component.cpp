@@ -21,4 +21,9 @@ namespace era_engine::animation
 	SkeletonComponent::~SkeletonComponent()
 	{
 	}
+
+	SkeletonPose SkeletonComponent::get_current_pose() const
+	{
+		return SkeletonPose(skeleton->local_transforms);
+	}
 }

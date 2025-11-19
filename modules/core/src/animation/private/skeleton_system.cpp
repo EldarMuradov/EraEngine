@@ -127,10 +127,9 @@ namespace era_engine::animation
 
 		for (auto [entity_handle, skeleton, transform] : world->group(components_group<SkeletonComponent, TransformComponent>).each())
 		{
-			if (skeleton.draw_sceleton &&
-				skeleton.current_pose.has_value())
+			if (skeleton.draw_sceleton)
 			{
-				draw_skeleton(*skeleton.skeleton, *skeleton.current_pose, transform.get_world_transform(), renderer_holder_rc->ldrRenderPass);
+				draw_skeleton(*skeleton.skeleton, skeleton.get_current_pose(), transform.get_world_transform(), renderer_holder_rc->ldrRenderPass);
 			}
 		}
 	}

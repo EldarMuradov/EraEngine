@@ -4,8 +4,6 @@
 
 namespace era_engine::physics
 {
-
-
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
@@ -85,8 +83,9 @@ namespace era_engine::physics
 		joints.clear();
 		links.clear();
 
+		PX_RELEASE(cache)
+
 		PX_RELEASE(articulation)
-			PX_RELEASE(cache)
 	}
 
 	void ArticulationComponent::apply_cache(ArticulationCacheFlags flags, physx::PxArticulationCache* in_cache)

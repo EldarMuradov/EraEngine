@@ -2,7 +2,6 @@
 
 #include "physics/physx_api.h"
 #include "physics/core/physics_types.h"
-#include "physics/core/physics_stepper.h"
 #include "physics/material.h"
 
 #include <core/memory.h>
@@ -113,12 +112,12 @@ namespace era_engine::physics
 
 		physx::PxPvdTransport* transport = nullptr;
 
+		physx::PxControllerManager* cct_manager = nullptr;
+
 		PhysicsAllocatorCallback* allocator_callback = nullptr;
 		ErrorReporter error_reporter;
 
 		ProfilerCallback profiler_callback;
-
-		FixedStepper* stepper = nullptr;
 
 		SimulationFilterCallback simulation_filter_callback;
 
@@ -126,10 +125,8 @@ namespace era_engine::physics
 
 		physx::PxTolerancesScale tolerance_scale;
 
-		const uint32_t nb_cpu_dispatcher_threads = 4;
+		const uint32 nb_cpu_dispatcher_threads = 4;
 		static constexpr uint64 scratch_mem_block_size = MB(32U);
-
-		bool use_stepper = false;
 
 		friend class PhysicsSystem;
 	};

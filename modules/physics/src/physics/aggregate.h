@@ -8,25 +8,25 @@
 
 namespace era_engine::physics
 {
-	class ERA_PHYSICS_API Aggregate
+	class ERA_PHYSICS_API Aggregate final
 	{
 	public:
 		Aggregate() = default;
-		Aggregate(uint8_t nb, bool sc = true);
-		virtual ~Aggregate();
+		Aggregate(uint8 _nb_actors, bool _self_collisions = true);
+		~Aggregate();
 
 		void add_actor(physx::PxActor* actor);
 		void remove_actor(physx::PxActor* actor);
 
-		uint8_t get_nb_actors() const noexcept;
-		bool is_self_collision() const noexcept;
+		uint8 get_nb_actors() const;
+		bool is_self_collision() const;
 
 		ERA_REFLECT
 
 	private:
 		physx::PxAggregate* aggregate = nullptr;
 
-		uint8_t nb_actors = 0;
+		uint8 nb_actors = 0;
 		bool self_collisions = true;
 	};
 }

@@ -207,7 +207,6 @@ namespace era_engine
                 desired_strafe,
                 desired_velocity_curr);
 
-            // Check if we should force a search because input changed quickly
             motion_component.desired_velocity_change_prev = motion_component.desired_velocity_change_curr;
             motion_component.desired_velocity_change_curr = (desired_velocity_curr - motion_component.desired_velocity) / dt;
             motion_component.desired_velocity = desired_velocity_curr;
@@ -216,64 +215,60 @@ namespace era_engine
             motion_component.desired_rotation_change_curr = quat_to_scaled_angle_axis(abs((conjugate(desired_rotation_curr) * motion_component.desired_rotation))) / dt;
             motion_component.desired_rotation = desired_rotation_curr;
 
-            const float scaled_dt = 20.0f * dt;
+			if (trajectory_component.build_timer <= 0.0f || (
+				(length(motion_component.desired_velocity_change_prev) >= motion_component.desired_velocity_change_threshold &&
+					length(motion_component.desired_velocity_change_curr) < motion_component.desired_velocity_change_threshold)
+				|| (length(motion_component.desired_rotation_change_prev) >= motion_component.desired_rotation_change_threshold &&
+					length(motion_component.desired_rotation_change_curr) < motion_component.desired_rotation_change_threshold)))
+			{
+                trajectory_component.build_timer = trajectory_component.build_time;
+                const float scaled_dt = 20.0f * dt;
 
-            trajectory_desired_rotations_predict(
-                trajectory_component.trajectory_desired_rotations,
-                trajectory_component.trajectory_desired_velocities,
-                motion_component.desired_rotation,
-                gamepadstick_left,
-                gamepadstick_right,
-                desired_strafe,
-                scaled_dt);
+                trajectory_desired_rotations_predict(
+                    trajectory_component.trajectory_desired_rotations,
+                    trajectory_component.trajectory_desired_velocities,
+                    motion_component.desired_rotation,
+                    gamepadstick_left,
+                    gamepadstick_right,
+                    desired_strafe,
+                    scaled_dt);
 
-            trajectory_rotations_predict(
-                trajectory_component.trajectory_rotations,
-                trajectory_component.trajectory_angular_velocities,
-                motion_component.simulation_rotation,
-                motion_component.angular_velocity,
-                trajectory_component.trajectory_desired_rotations,
-                motion_component.rotation_halflife,
-                scaled_dt);
+                trajectory_rotations_predict(
+                    trajectory_component.trajectory_rotations,
+                    trajectory_component.trajectory_angular_velocities,
+                    motion_component.simulation_rotation,
+                    motion_component.angular_velocity,
+                    trajectory_component.trajectory_desired_rotations,
+                    motion_component.rotation_halflife,
+                    scaled_dt);
 
-            trajectory_desired_velocities_predict(
-                trajectory_component.trajectory_desired_velocities,
-                trajectory_component.trajectory_rotations,
-                motion_component.desired_velocity,
-                gamepadstick_left,
-                gamepadstick_right,
-                desired_strafe,
-                simulation_fwrd_speed,
-                simulation_side_speed,
-                simulation_back_speed,
-                scaled_dt);
+                trajectory_desired_velocities_predict(
+                    trajectory_component.trajectory_desired_velocities,
+                    trajectory_component.trajectory_rotations,
+                    motion_component.desired_velocity,
+                    gamepadstick_left,
+                    gamepadstick_right,
+                    desired_strafe,
+                    simulation_fwrd_speed,
+                    simulation_side_speed,
+                    simulation_back_speed,
+                    scaled_dt);
 
-            trajectory_positions_predict(
-                trajectory_component.trajectory_positions,
-                trajectory_component.trajectory_velocities,
-                trajectory_component.trajectory_accelerations,
-                motion_component.simulation_position,
-                motion_component.velocity,
-                motion_component.acceleration,
-                trajectory_component.trajectory_desired_velocities,
-                motion_component.velocity_halflife,
-                scaled_dt);
-
-            /*bool force_search = false;
-
-            if (controller.force_search_timer <= 0.0f && (
-                (length(controller.desired_velocity_change_prev) >= controller.desired_velocity_change_threshold &&
-                    length(controller.desired_velocity_change_curr) < controller.desired_velocity_change_threshold)
-                || (length(controller.desired_rotation_change_prev) >= controller.desired_rotation_change_threshold &&
-                    length(controller.desired_rotation_change_curr) < controller.desired_rotation_change_threshold)))
-            {
-                force_search = true;
-                controller.force_search_timer = controller.search_time;
+                trajectory_positions_predict(
+                    trajectory_component.trajectory_positions,
+                    trajectory_component.trajectory_velocities,
+                    trajectory_component.trajectory_accelerations,
+                    motion_component.simulation_position,
+                    motion_component.velocity,
+                    motion_component.acceleration,
+                    trajectory_component.trajectory_desired_velocities,
+                    motion_component.velocity_halflife,
+                    scaled_dt);
             }
-            else if (controller.force_search_timer > 0)
+            else if (trajectory_component.build_timer > 0)
             {
-                controller.force_search_timer -= dt;
-            }*/
+                trajectory_component.build_timer -= dt;
+            }
         }
 	}
 
@@ -298,12 +293,12 @@ namespace era_engine
     {
         for (int i = 1; i < trajectory_positions.size; i++)
         {
-            vec3 point = vec3(trajectory_positions(i).x, trajectory_positions(i).y, trajectory_positions(i).z);
+            vec3 point = trajectory_positions(i);
             renderWireSphere(point, 0.05f, color, renderer_holder_rc->ldrRenderPass);
 
             vec3 dir = trajectory_rotations(i) * vec3(0.0f, 0.0f, 1.0f);
             renderLine(point, point + 0.6f * dir, color, renderer_holder_rc->ldrRenderPass);
-            renderLine(vec3(trajectory_positions(i - 1).x, trajectory_positions(i - 1).y, trajectory_positions(i - 1).z), point, color, renderer_holder_rc->ldrRenderPass);
+            renderLine(trajectory_positions(i - 1), point, color, renderer_holder_rc->ldrRenderPass);
         }
     }
 

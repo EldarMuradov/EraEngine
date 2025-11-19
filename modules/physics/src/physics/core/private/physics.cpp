@@ -109,8 +109,6 @@ namespace era_engine::physics
 
 		dispatcher = PxDefaultCpuDispatcherCreate(nb_cpu_dispatcher_threads);
 
-		stepper = new FixedStepper();
-
 #if PX_VEHICLE
 		if (!PxInitVehicleSDK(*physics))
 		{
@@ -216,6 +214,8 @@ namespace era_engine::physics
 
 		static constexpr uint64 align = 16U;
 		scratch_mem_block = allocator.allocate(scratch_mem_block_size, align, true);
+
+		cct_manager = PxCreateControllerManager(*scene);
 	}
 
 	physx::PxScene* Physics::get_scene() const
@@ -273,8 +273,8 @@ namespace era_engine::physics
 		PxCloseExtensions();
 
 		{
-			delete stepper;
 			PX_RELEASE(default_material)
+			PX_RELEASE(cct_manager)
 			PX_RELEASE(physics)
 			PX_RELEASE(dispatcher)
 
@@ -312,33 +312,21 @@ namespace era_engine::physics
 	{
 		using namespace physx;
 
-		if (is_gpu() || !use_stepper)
 		{
-			ZoneScopedN("Physics::simulate_and_fetch");
+			ZoneScopedN("Physics::simulate");
 
 			scene->simulate(dt, nullptr, scratch_mem_block, scratch_mem_block_size);
-			scene->fetchResults(true);
 		}
-		else
+
 		{
-			stepper->setup(dt);
+			ZoneScopedN("Physics::fetchResults");
+			scene->fetchResults(true);
 
-			if (!stepper->advance(scene, dt, scratch_mem_block, scratch_mem_block_size))
-			{
-				return;
-			}
-
-			stepper->renderDone();
 		}
 	}
 
 	void Physics::end_simulation(float dt)
 	{
-		if (!is_gpu() && use_stepper)
-		{
-			stepper->wait(scene);
-		}
-
 		{
 			ZoneScopedN("Physics::process_simulation_event_callbacks");
 			process_simulation_event_callbacks();
@@ -449,7 +437,7 @@ namespace era_engine::physics
 	{
 		using namespace physx;
 
-		uint32_t temp_nb = 0;
+		uint32 temp_nb = 0;
 		PxActor** active_actors = scene->getActiveActors(temp_nb);
 		nb_active_actors.store(temp_nb, std::memory_order_relaxed);
 

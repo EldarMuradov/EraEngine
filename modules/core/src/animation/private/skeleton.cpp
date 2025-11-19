@@ -72,6 +72,11 @@ namespace era_engine::animation
 		local_transforms.resize(joints_size);
 	}
 
+	SkeletonPose::SkeletonPose(const std::vector<JointTransform>& _local_transforms)
+		: local_transforms(_local_transforms)
+	{
+	}
+
 	bool SkeletonPose::is_valid() const
 	{
 		return local_transforms.size() > 0;

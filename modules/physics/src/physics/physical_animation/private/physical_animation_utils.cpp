@@ -67,21 +67,15 @@ namespace era_engine::physics
         drive_joint_component->linear_drive_velocity = vec3::zero;
         drive_joint_component->angular_drive_velocity = vec3::zero;
 
-        drive_joint_component->linear_drive_stiffness = limb_component->linear_stiffness;
-        drive_joint_component->linear_drive_damping = limb_component->linear_damping;
+        drive_joint_component->linear_drive_damping = limb_component->linear_damping_range.y;
 
         if (drive_joint_component->perform_slerp_drive)
         {
-            drive_joint_component->slerp_drive_stiffness = limb_component->angular_stiffness;
-            drive_joint_component->slerp_drive_damping = limb_component->angular_damping;
+            drive_joint_component->slerp_drive_damping = limb_component->angular_damping_range.y;
         }
         else
         {
-            drive_joint_component->swing_drive_damping = limb_component->angular_damping;
-            drive_joint_component->swing_drive_stiffness = limb_component->angular_stiffness;
-
-            drive_joint_component->twist_drive_damping = limb_component->angular_damping;
-            drive_joint_component->twist_drive_stiffness = limb_component->angular_stiffness;
+            drive_joint_component->twist_drive_damping = limb_component->angular_damping_range.y;
         }
     }
 

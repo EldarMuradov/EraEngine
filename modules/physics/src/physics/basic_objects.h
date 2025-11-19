@@ -21,12 +21,12 @@ namespace era_engine::physics
 		ERA_VIRTUAL_REFLECT(Component)
 
 	private:
-		vec3 point = vec3();
-		vec3 normal = vec3();
+		vec3 point = vec3::zero;
+		vec3 normal = vec3::zero;
 		physx::PxRigidStatic* plane = nullptr;
 	};
 
 	ERA_PHYSICS_API physx::PxRigidDynamic* create_rigid_cube(physx::PxReal half_extent, const physx::PxVec3& position);
 
-	void create_cube(physx::PxArray<physx::PxVec3>& tri_verts, physx::PxArray<physx::PxU32>& tri_indices, const physx::PxVec3& pos, physx::PxReal scaling);
+	ERA_PHYSICS_API void create_cube(physx::PxArray<physx::PxVec3>& tri_verts, physx::PxArray<physx::PxU32>& tri_indices, const physx::PxVec3& pos, physx::PxReal scaling);
 }

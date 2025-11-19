@@ -75,6 +75,11 @@ namespace era_engine::animation
 		return animation;
 	}
 
+	const Skeleton* AnimationPoseSampler::get_skeleton() const
+	{
+		return skeleton;
+	}
+
 	bool AnimationPoseSampler::is_valid() const
 	{
 		return animation != nullptr &&

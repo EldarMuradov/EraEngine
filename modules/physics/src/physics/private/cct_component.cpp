@@ -13,112 +13,17 @@ namespace era_engine::physics
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		rttr::registration::class_<CCTBaseComponent>("CCTBaseComponent")
-			.constructor<>();
-
-		rttr::registration::class_<BoxCCTComponent>("BoxCCTComponent")
-			.constructor<>();
-
-		rttr::registration::class_<CapsuleCCTComponent>("CapsuleCCTComponent")
+		registration::class_<CharacterControllerComponent>("CharacterControllerComponent")
 			.constructor<>();
 	}
 
-	CCTBaseComponent::CCTBaseComponent(ref<Entity::EcsData> _data, float _mass)
-		: BodyComponent(_data), mass(_mass)
+	CharacterControllerComponent::CharacterControllerComponent(ref<Entity::EcsData> _data)
+		: Component(_data)
 	{
-		
+		velocity.set_component(ComponentPtr{this});
 	}
 
-	CCTBaseComponent::~CCTBaseComponent()
-	{
-		PX_RELEASE(controller)
-		PX_RELEASE(manager)
-	}
-
-	void CCTBaseComponent::create_character_controller()
+	CharacterControllerComponent::~CharacterControllerComponent()
 	{
 	}
-
-	void CCTBaseComponent::register_cct()
-	{
-		controller->getActor()->userData = static_cast<void*>(component_data.get());
-
-		PhysicsHolder::physics_ref->add_actor((BodyComponent*)this, controller->getActor());
-	}
-
-	BoxCCTComponent::BoxCCTComponent(ref<Entity::EcsData> _data, float _half_height, float _half_side_extent, float _mass)
-		: CCTBaseComponent(_data, _mass)
-	{
-		create_character_controller();
-		register_cct();
-	}
-
-	BoxCCTComponent::~BoxCCTComponent()
-	{
-	}
-
-	void BoxCCTComponent::create_character_controller()
-	{
-		using namespace physx;
-		manager = PxCreateControllerManager(*PhysicsHolder::physics_ref->get_scene());
-
-		Entity entity = get_world()->get_entity(component_data->entity_handle);
-		const TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
-
-		PxBoxControllerDesc desc;
-
-		desc.halfHeight = half_height;
-		desc.material = PhysicsHolder::physics_ref->get_default_material()->get_native_material();
-		desc.maxJumpHeight = half_height;
-		desc.halfSideExtent = half_side_extent;
-		desc.slopeLimit = cosf(deg2rad(45.0f));
-		desc.invisibleWallHeight = half_height;
-
-		const trs& world_transform = transform->get_world_transform();
-
-		desc.position = PxExtendedVec3(world_transform.position.x, world_transform.position.y, world_transform.position.z);
-		controller = manager->createController(desc);
-
-		controller->getActor()->setMass(mass);
-		controller->getActor()->setRigidBodyFlags(physx::PxRigidBodyFlag::eKINEMATIC);
-	}
-
-	CapsuleCCTComponent::CapsuleCCTComponent(ref<Entity::EcsData> _data, float _height, float _radius, float _mass)
-		: CCTBaseComponent(_data, _mass), height(_height), radius(_radius)
-	{
-		create_character_controller();
-		register_cct();
-	}
-
-	CapsuleCCTComponent::~CapsuleCCTComponent()
-	{
-	}
-
-	void CapsuleCCTComponent::create_character_controller()
-	{
-		using namespace physx;
-
-		manager = PxCreateControllerManager(*PhysicsHolder::physics_ref->get_scene());
-
-		Entity entity = get_world()->get_entity(component_data->entity_handle);
-		const TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
-
-		PxCapsuleControllerDesc desc;
-		desc.height = height;
-		desc.material = PhysicsHolder::physics_ref->get_default_material()->get_native_material();
-		desc.maxJumpHeight = height * 0.5f;
-		desc.radius = radius;
-		desc.slopeLimit = cosf(deg2rad(45.0f));
-		desc.invisibleWallHeight = height * 0.5f;
-
-		const trs& world_transform = transform->get_world_transform();
-
-		desc.position = PxExtendedVec3(world_transform.position.x, world_transform.position.y, world_transform.position.z);
-		desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
-		controller = manager->createController(desc);
-
-		controller->getActor()->setMass(mass);
-		controller->getActor()->setRigidBodyFlags(physx::PxRigidBodyFlag::eKINEMATIC);
-	}
-
 }

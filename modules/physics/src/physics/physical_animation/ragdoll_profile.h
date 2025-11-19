@@ -32,10 +32,7 @@ namespace era_engine::physics
 
         MotorDriveDetails& operator=(const MotorDriveDetails& other) = default;
 
-        float angular_drive_damping = 10.0f;
         float angular_drive_stiffness = 100.0f;
-
-        float linear_drive_damping = 10.0f;
         float linear_drive_stiffness = 100.0f;
 
         vec2 angular_range = vec2(deg2rad(3.0f), deg2rad(30.0f));
@@ -79,7 +76,11 @@ namespace era_engine::physics
         RUNNING,
         SPRINT,
         CLIMBING,
-        RAGDOLL
+        RAGDOLL,
+
+        COUNT,
+
+        DEFAULT = IDLE
     };
 
     class ERA_PHYSICS_API RagdollProfile final

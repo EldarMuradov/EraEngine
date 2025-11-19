@@ -122,7 +122,6 @@ namespace era_engine
 
 			AnimationComponent* animation_component = tiran.add_component<AnimationComponent>();
 			animation_component->play = true;
-			//animation_component->update_skeleton = true;
 			animation_component->loop = true;
 
 			GameAssetsProvider provider;
@@ -132,7 +131,6 @@ namespace era_engine
 				tiran_skeleton->load_job.wait_for_completion();
 				skeleton_component->skeleton = tiran_skeleton;
 				tiran_skeleton->apply_pose(tiran_skeleton->get_default_pose());
-				skeleton_component->current_pose = tiran_skeleton->get_default_pose();
 			}
 
 			{
@@ -142,7 +140,7 @@ namespace era_engine
 				animation_component->current_anim_position = 0.0f;
 			}
 
-			/*const ref<Skeleton> skeleton = skeleton_component->skeleton;
+			const ref<Skeleton> skeleton = skeleton_component->skeleton;
 
 			RagdollJointIds joint_init_ids;
 			joint_init_ids.head_end_idx = skeleton->name_to_joint_id.at("joint_HeadA_01");
@@ -192,13 +190,13 @@ namespace era_engine
 			settings.middle_body_height_modifier = 0.4f;
 			settings.middle_body_radius_modifier = 0.8f;
 			settings.lower_body_height_modifier = 1.2f;
-			settings.lower_body_radius_modifier = 1.4f;*/
+			settings.lower_body_radius_modifier = 1.4f;
 
 			//RagdollComponent* ragdoll_component = tiran.add_component<RagdollComponent>();
 			//ragdoll_component->simulated = true;
-			//PhysicalAnimationComponent* ragdoll_component = tiran.add_component<PhysicalAnimationComponent>();
-			//ragdoll_component->joint_init_ids = joint_init_ids;
-			//ragdoll_component->settings = settings;
+			PhysicalAnimationComponent* ragdoll_component = tiran.add_component<PhysicalAnimationComponent>();
+			ragdoll_component->joint_init_ids = joint_init_ids;
+			ragdoll_component->settings = settings;
 		}
 
 		if (auto mesh = loadMeshFromFileAsync(get_asset_path("/resources/assets/Sponza/sponza.obj"), mesh_creation_flags_unreal_asset))

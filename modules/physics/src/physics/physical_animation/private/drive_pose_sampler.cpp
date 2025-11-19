@@ -67,7 +67,7 @@ namespace era_engine::physics
                         parent_local);
 
                     // We only rotate joints to prevent skinning artefacts.
-                    skeleton->set_joint_rotation(new_transform.rotation, child_id);
+                    skeleton->set_joint_transform(new_transform, child_id);
 
                     trs new_local_child_transform = parent_local * new_transform;
                     new_local_child_transform.rotation = normalize(new_local_child_transform.rotation);

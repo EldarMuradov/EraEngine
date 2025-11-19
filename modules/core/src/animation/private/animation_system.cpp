@@ -82,7 +82,6 @@ namespace era_engine::animation
 						if (animation_component.update_skeleton)
 						{
 							skeleton->apply_pose(result_pose);
-							skeleton_component.current_pose = result_pose;
 						}
 						animation_component.current_animation_pose = result_pose;
 					}

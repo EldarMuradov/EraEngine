@@ -18,9 +18,9 @@ namespace era_engine
 		trajectory_desired_velocities.resize(4);
 		trajectory_desired_rotations.resize(4);
 		trajectory_positions.resize(4);
+		trajectory_rotations.resize(4);
 		trajectory_velocities.resize(4);
 		trajectory_accelerations.resize(4);
-		trajectory_rotations.resize(4);
 		trajectory_angular_velocities.resize(4);
 	}
 

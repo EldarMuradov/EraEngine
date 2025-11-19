@@ -29,6 +29,8 @@ namespace era_engine::physics
 
     void DisabledSimulationState::on_enter()
     {
+        using namespace animation;
+
         ASSERT(physical_animation_component_ptr.get() != nullptr);
 
         PhysicalAnimationComponent* physical_animation_component = dynamic_cast<PhysicalAnimationComponent*>(physical_animation_component_ptr.get_for_write());
@@ -48,6 +50,9 @@ namespace era_engine::physics
             traverse_simulation_graph(process_limb);
 
             physical_animation_component->simulated = false;
+
+            AnimationComponent* animation_component = physical_animation_component->get_entity().get_component<AnimationComponent>();
+            animation_component->update_skeleton = true;
         }
 
         BaseSimulationState::on_enter();
@@ -60,7 +65,7 @@ namespace era_engine::physics
         Entity ragdoll = physical_animation_component_ptr.get_entity();
         const AnimationComponent* animation_component = ragdoll.get_component<AnimationComponent>();
 
-        if (!animation_component->update_skeleton || animation_component->current_animation == nullptr)
+        if (animation_component->current_animation == nullptr)
         {
             return;
         }

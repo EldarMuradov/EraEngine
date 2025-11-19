@@ -3,8 +3,8 @@
 
 namespace era_engine::physics
 {
-	Aggregate::Aggregate(uint8_t nb, bool sc)
-		: nb_actors(nb), self_collisions(sc)
+	Aggregate::Aggregate(uint8 _nb_actors, bool _self_collisions)
+		: nb_actors(_nb_actors), self_collisions(_self_collisions)
 	{
 		using namespace physx;
 
@@ -30,12 +30,12 @@ namespace era_engine::physics
 		aggregate->removeActor(*actor);
 	}
 
-	uint8_t Aggregate::get_nb_actors() const noexcept
+	uint8 Aggregate::get_nb_actors() const
 	{
 		return nb_actors;
 	}
 
-	bool Aggregate::is_self_collision() const noexcept
+	bool Aggregate::is_self_collision() const
 	{
 		return self_collisions;
 	}

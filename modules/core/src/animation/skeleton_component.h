@@ -16,12 +16,12 @@ namespace era_engine::animation
 		SkeletonComponent(ref<Entity::EcsData> _data);
 		~SkeletonComponent() override;
 
+		SkeletonPose get_current_pose() const;
+
 		ERA_VIRTUAL_REFLECT(Component)
 
 	public:
 		ref<Skeleton> skeleton = nullptr;
-
-		std::optional<SkeletonPose> current_pose;
 
 		bool draw_sceleton = false;
 	};

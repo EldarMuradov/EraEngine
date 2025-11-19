@@ -3,6 +3,7 @@
 #include "physics/shape_component.h"
 #include "physics/body_component.h"
 #include "physics/physical_animation/physical_animation_component.h"
+#include "physics/physical_animation/physical_animation_utils.h"
 #include "physics/joint.h"
 #include "physics/core/physics_utils.h"
 
@@ -69,7 +70,7 @@ namespace era_engine::physics
 	{
         const PhysicalAnimationComponent* physical_animation_component = dynamic_cast<const PhysicalAnimationComponent*>(physical_animation_component_ptr.get());
 
-        const float used_collision_time = limb_component->type == RagdollLimbType::HAND ?
+        const float used_collision_time = PhysicalAnimationUtils::is_arm_limb(limb_component->type) ?
             PhysicalAnimationLimbComponent::MAX_FREQUENT_COLLISION_TIME :
             PhysicalAnimationLimbComponent::MAX_COLLISION_TIME;
 
