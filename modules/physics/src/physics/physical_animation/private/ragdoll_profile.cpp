@@ -36,5 +36,6 @@ namespace era_engine::physics
 		case RagdollLimbType::FOOT:
 			return foot_limb_details;
 		}
+		return body_lower_limb_details;
 	}
 }

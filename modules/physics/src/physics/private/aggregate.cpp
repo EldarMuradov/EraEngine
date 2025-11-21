@@ -16,7 +16,6 @@ namespace era_engine::physics
 
 	Aggregate::~Aggregate()
 	{
-		PhysicsHolder::physics_ref->get_scene()->removeAggregate(*aggregate);
 		PX_RELEASE(aggregate)
 	}
 

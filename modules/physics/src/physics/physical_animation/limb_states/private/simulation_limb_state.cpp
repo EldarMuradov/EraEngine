@@ -50,7 +50,7 @@ namespace era_engine::physics
 
 			const trs& constraint_frame_in_actor1_local = drive_joint_component->get_second_local_frame();
 			const trs& constraint_frame_in_actor0_local = drive_joint_component->get_first_local_frame();
-			const trs& parent_local_transform = drive_joint_component->get_entity().get_component<TransformComponent>()->get_local_transform();
+			const trs& parent_local_transform = drive_joint_component->get_first_entity_ptr().get().get_component<TransformComponent>()->get_local_transform();
 
 			const trs constraint_frame_actor0_local = parent_local_transform * constraint_frame_in_actor0_local;
 			const trs constraint_frame_adjusted_local = limb_component->adjusted_pose * constraint_frame_in_actor1_local;
@@ -59,11 +59,6 @@ namespace era_engine::physics
 			target_pose_in_constraint_space.rotation = normalize(target_pose_in_constraint_space.rotation);
 
 			drive_joint_component->drive_transform = target_pose_in_constraint_space;
-
-			const quat parent_constraint_frame_rotation = normalize(parent_local_transform.rotation * constraint_frame_in_actor0_local.rotation);
-
-			const vec3 angular_velocity_constraint_space = conjugate(parent_constraint_frame_rotation) * angular_drive_velocity;
-			drive_joint_component->angular_drive_velocity = angular_velocity_constraint_space * motor_details.drive_velocity_modifier;
 
 			float delta_angle = 0.0f;
 			vec3 delta_axis = vec3::zero;
@@ -81,10 +76,6 @@ namespace era_engine::physics
 			}
 
 			const vec3 delta_position = limb_component->adjusted_pose.position - limb_component->physics_pose.position;
-			const vec3 desired_linear_velocity = delta_position / dt;
-
-			const vec3 linear_velocity_constraint_space = conjugate(parent_constraint_frame_rotation) * desired_linear_velocity;
-			drive_joint_component->linear_drive_velocity = linear_velocity_constraint_space * motor_details.drive_velocity_modifier;
 
 			const float linear_damping = limb_component->calculate_desired_linear_damping(length(delta_position));
 			drive_joint_component->linear_drive_damping = linear_damping;
@@ -141,7 +132,7 @@ namespace era_engine::physics
     {
         if (desired_state == PhysicalLimbStateType::KINEMATIC)
         {
-            return PhysicalLimbStateType::TRANSITION;
+            return PhysicalLimbStateType::BLEND_OUT;
         }
         return desired_state;
     }

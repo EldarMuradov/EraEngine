@@ -14,6 +14,10 @@ namespace era_engine::physics
         {
             return SimulationStateType::BLEND_OUT;
         }
+        else if (desired_type == SimulationStateType::RAGDOLL)
+        {
+            return SimulationStateType::RAGDOLL;
+        }
         return SimulationStateType::ENABLED;
     }
 

@@ -43,8 +43,6 @@ namespace era_engine::physics
 
         float max_force = std::numeric_limits<float>::max();
 
-        float drive_velocity_modifier = 1.0f;
-
         bool accelerated = false;
         bool enable_slerp_drive = true;
     };
@@ -62,11 +60,22 @@ namespace era_engine::physics
         float acceleration_gain = 0.02f;
     };
 
+    struct ERA_PHYSICS_API LimbStrengthDetails final
+    {
+        float default_strength_coeff = 1.0f;
+
+        float soft_strength_coeff = 0.5f;
+        float hard_strength_coeff = 3.0f;
+    };
+
     class ERA_PHYSICS_API PhysicalLimbDetails final
     {
     public:
         std::optional<MotorDriveDetails> motor_drive;
         std::optional<DragForceDetails> drag_force;
+
+        LimbStrengthDetails strength_details;
+
         PhysicalLimbBlendType blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
     };
 
@@ -81,6 +90,13 @@ namespace era_engine::physics
         COUNT,
 
         DEFAULT = IDLE
+    };
+
+    enum class RagdollProfileStrengthType : uint8
+    {
+        DEFAULT = 0,
+        SOFT,
+        HARD
     };
 
     class ERA_PHYSICS_API RagdollProfile final

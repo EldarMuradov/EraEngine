@@ -27,12 +27,14 @@ namespace era_engine::physics
 
 		void on_dynamic_body_created(entt::registry& registry, entt::entity entity_handle);
 		void on_static_body_created(entt::registry& registry, entt::entity entity_handle);
+		void on_aggregate_created(entt::registry& registry, entt::entity entity_handle);
 
 		ERA_VIRTUAL_REFLECT(System)
 
 	private:
 		std::vector<Entity::Handle> dynamics_to_init;
 		std::vector<Entity::Handle> statics_to_init;
+		std::vector<Entity::Handle> aggregates_to_init;
 
 		entt::group<entt::owned_t<>, entt::get_t<TransformComponent, DynamicBodyComponent>> dynamic_body_group;
 	};

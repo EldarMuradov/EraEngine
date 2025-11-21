@@ -88,7 +88,7 @@
 			results[i] = hit.shape ? *reinterpret_cast<Entity::Handle*>(hit.shape->userData) : Entity::NullHandle; \
 		}
 
-#if PX_VEHICLE
+#if 0
 #include <vehicle/PxVehicleUtil.h>
 #include <snippetutils/SnippetUtils.h>
 #include <snippetvehicle2common/enginedrivetrain/EngineDrivetrain.h>

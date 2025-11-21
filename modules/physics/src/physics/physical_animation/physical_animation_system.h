@@ -42,6 +42,7 @@ namespace era_engine::physics
 
 		bool update_chain(const ref<PhysicsLimbChain>& chain,
 			float dt,
+			bool is_in_ragdoll,
 			bool force_simulation = false) const;
 
 		bool check_chain(const ref<PhysicsLimbChain>& chain,
@@ -82,6 +83,7 @@ namespace era_engine::physics
 		ref<RagdollProfile> idle_profile = nullptr;
 		ref<RagdollProfile> running_profile = nullptr;
 		ref<RagdollProfile> sprint_profile = nullptr;
+		ref<RagdollProfile> ragdoll_profile = nullptr;
 
 		std::unique_ptr<DrivePoseSampler> pose_sampler;
 	};

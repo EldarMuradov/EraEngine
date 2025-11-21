@@ -2,6 +2,8 @@
 #include "physics/shape_component.h"
 #include "physics/body_component.h"
 #include "physics/soft_body.h"
+#include "physics/aggregate_holder_component.h"
+#include "physics/aggregate.h"
 
 #include "core/cpu_profiling.h"
 #include "core/event_queue.h"
@@ -383,7 +385,14 @@ namespace era_engine::physics
 
 		ScopedSpinLock l{ sync };
 
-		scene->addActor(*physx_actor);
+		if (AggregateHolderComponent* aggregate_component = actor->get_world()->get_entity(actor->get_entity().get_parent_handle()).get_component<AggregateHolderComponent>())
+		{
+			aggregate_component->aggregate->add_actor(physx_actor);
+		}
+		else
+		{
+			scene->addActor(*physx_actor);
+		}
 
 		actors.emplace(actor);
 		actors_map.insert(std::make_pair(physx_actor, actor));
@@ -393,12 +402,18 @@ namespace era_engine::physics
 	{
 		using namespace physx;
 
-
 		ScopedSpinLock l{ sync };
 		actors.erase(actor);
 		actors_map.erase(actor->get_rigid_actor());
-		scene->removeActor(*actor->get_rigid_actor());
 
+		if (AggregateHolderComponent* aggregate_component = actor->get_world()->get_entity(actor->get_entity().get_parent_handle()).get_component<AggregateHolderComponent>())
+		{
+			aggregate_component->aggregate->remove_actor(actor->get_rigid_actor());
+		}
+		else
+		{
+			scene->removeActor(*actor->get_rigid_actor());
+		}
 	}
 
 	void Physics::release_scene()

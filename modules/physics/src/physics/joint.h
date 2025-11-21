@@ -56,6 +56,8 @@ namespace era_engine::physics
 
 		ObservableMember<float> break_force = std::numeric_limits<float>::max();
 
+		ObservableMember<bool> disabled = false;
+
 		std::function<void(JointComponent*)> on_broken_callback = nullptr;
 
 		ERA_VIRTUAL_REFLECT(Component)
@@ -186,8 +188,6 @@ namespace era_engine::physics
 
 		ObservableMember<bool> improved_slerp = false;
 		ObservableMember<bool> disable_preprocessing = false;
-
-		ObservableMember<bool> disabled = false;
 
 		ObservableMember<bool> gpu_compatible = false;
 

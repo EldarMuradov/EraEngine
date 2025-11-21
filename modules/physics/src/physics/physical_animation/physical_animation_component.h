@@ -28,6 +28,13 @@ namespace era_engine::physics
 
 	class DrivePoseSolver;
 
+	enum class SkeletalMeshBlendType : uint8
+	{
+		ROTATION = 0,
+		TRANSLATION,
+		TRANSFORM
+	};
+
 	class ERA_PHYSICS_API PhysicalAnimationLimbComponent : public RagdollLimbComponent
 	{
 	public:
@@ -67,8 +74,6 @@ namespace era_engine::physics
 		vec2 linear_range = vec2(0.05f, 0.5f);
 		vec2 linear_damping_range = vec2(80.0f, 15.0f);
 
-		float drive_velocity_modifier = 1.0f;
-
 		float transition_time = 1.0f;
 
 		bool was_in_collision = false;
@@ -104,7 +109,7 @@ namespace era_engine::physics
 		PhysicalAnimationComponent(ref<Entity::EcsData> _data);
 		~PhysicalAnimationComponent() override;
 
-		bool try_to_apply_ragdoll_profile(ref<RagdollProfile> new_profile, bool force_reload = false);
+		bool try_to_apply_ragdoll_profile(ref<RagdollProfile> new_profile, RagdollProfileStrengthType new_strength_type = RagdollProfileStrengthType::DEFAULT, bool force_reload = false);
 		ref<RagdollProfile> get_ragdoll_profile() const;
 
 		std::shared_ptr<BaseSimulationState> get_current_state() const;
@@ -120,11 +125,18 @@ namespace era_engine::physics
 		void update_profile_transition(float dt);
 
 		bool is_in_idle() const;
+		bool is_in_ragdoll() const;
+
+		void force_set_ragdoll(bool enabled);
 
 		void update_states(float dt, SimulationStateType desired_state);
 
 	public:
-		constexpr static float MAX_RAGDOLL_PROFILE_TRANSITION_TIME = 0.2f;
+		constexpr static float MAX_RAGDOLL_PROFILE_TRANSITION_TIME = 0.3f;
+
+		RagdollProfileStrengthType strength_type = RagdollProfileStrengthType::DEFAULT;
+
+		bool force_ragdoll_state = false;
 
 		float blend_weight = 0.0f;
 
@@ -161,6 +173,7 @@ namespace era_engine::physics
 		std::unordered_map<uint32, trs> local_joint_poses_for_target_calculation;
 
 		SimulationStateType current_state_type = SimulationStateType::DISABLED;
+		SkeletalMeshBlendType mesh_blend_type = SkeletalMeshBlendType::TRANSFORM;
 
 		std::unordered_map<SimulationStateType, std::shared_ptr<BaseSimulationState>> simulation_states;
 

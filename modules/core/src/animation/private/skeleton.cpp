@@ -310,6 +310,16 @@ namespace era_engine::animation
 		return default_pose;
 	}
 
+	void Skeleton::set_joint_translation(const vec3& new_translation, uint32 joint_id)
+	{
+		local_transforms[joint_id].set_translation(new_translation);
+	}
+
+	const vec3& Skeleton::get_joint_translation(uint32 joint_id) const
+	{
+		return local_transforms[joint_id].get_translation();
+	}
+
 	struct SkeletonSerializationData
 	{
 		std::vector<SkeletonJoint> joints;

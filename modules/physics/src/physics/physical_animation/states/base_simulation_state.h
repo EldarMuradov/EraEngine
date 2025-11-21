@@ -16,7 +16,8 @@ namespace era_engine::physics
 		DISABLED = 0,
 		BLEND_IN,
 		ENABLED,
-		BLEND_OUT
+		BLEND_OUT,
+		RAGDOLL
 	};
 
 	class ERA_PHYSICS_API BaseSimulationState

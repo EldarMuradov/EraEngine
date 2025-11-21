@@ -66,8 +66,18 @@ namespace era_engine::physics
                         inverse_parent_local,
                         parent_local);
 
-                    // We only rotate joints to prevent skinning artefacts.
-                    skeleton->set_joint_transform(new_transform, child_id);
+                    if (physical_animation_component->mesh_blend_type == SkeletalMeshBlendType::TRANSFORM)
+                    {
+                        skeleton->set_joint_transform(new_transform, child_id);
+                    }
+                    else if (physical_animation_component->mesh_blend_type == SkeletalMeshBlendType::ROTATION)
+                    {
+                        skeleton->set_joint_rotation(new_transform.rotation, child_id);
+                    }
+                    else if (physical_animation_component->mesh_blend_type == SkeletalMeshBlendType::TRANSLATION)
+                    {
+                        skeleton->set_joint_translation(new_transform.position, child_id);
+                    }
 
                     trs new_local_child_transform = parent_local * new_transform;
                     new_local_child_transform.rotation = normalize(new_local_child_transform.rotation);

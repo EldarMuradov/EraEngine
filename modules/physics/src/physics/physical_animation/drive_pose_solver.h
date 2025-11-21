@@ -17,7 +17,7 @@ namespace era_engine::physics
     public:
         DrivePoseSolver(ComponentPtr _physical_animation_component_ptr);
 
-        void solve_pose(float dt) const;
+        void solve_pose(float dt, bool solve_as_target) const;
 
         void force_solve_collided_limb(PhysicalAnimationLimbComponent* limb_component) const;
 
@@ -26,7 +26,7 @@ namespace era_engine::physics
 
         void solve_free_limb(PhysicalAnimationLimbComponent* limb_component) const;
 
-        void solve_released_limb(PhysicalAnimationLimbComponent* limb_component, float dt, bool solve_as_blocking = true) const;
+        void solve_released_limb(PhysicalAnimationLimbComponent* limb_component, float dt) const;
 
     private:
         ComponentPtr physical_animation_component_ptr = nullptr;

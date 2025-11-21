@@ -18,6 +18,10 @@ namespace era_engine::physics
         {
             return SimulationStateType::BLEND_IN;
         }
+        else if (desired_type == SimulationStateType::RAGDOLL)
+        {
+            return SimulationStateType::RAGDOLL;
+        }
         else if (desired_type == SimulationStateType::DISABLED &&
             blend_time >= physical_animation_component->blend_out_time)
         {

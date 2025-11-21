@@ -155,6 +155,9 @@ namespace era_engine::animation
 		const trs& get_joint_transform(uint32 joint_id) const;
 		const quat& get_joint_rotation(uint32 joint_id) const;
 
+		void set_joint_translation(const vec3& new_translation, uint32 joint_id);
+		const vec3& get_joint_translation(uint32 joint_id) const;
+
 		void apply_pose(const SkeletonPose& pose);
 
 		uint32 get_joint_index(std::string_view name) const;

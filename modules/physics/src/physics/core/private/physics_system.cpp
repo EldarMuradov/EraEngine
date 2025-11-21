@@ -1,9 +1,11 @@
 #include "physics/core/physics_system.h"
 #include "physics/core/physics.h"
+#include "physics/aggregate_holder_component.h"
 #include "physics/body_component.h"
 #include "physics/shape_component.h"
 #include "physics/core/physics_utils.h"
 #include "physics/shape_utils.h"
+#include "physics/aggregate.h"
 
 #include <core/cpu_profiling.h>
 
@@ -35,6 +37,7 @@ namespace era_engine::physics
 		entt::registry& registry = world->get_registry();
 		registry.on_construct<DynamicBodyComponent>().connect<&PhysicsSystem::on_dynamic_body_created>(this);
 		registry.on_construct<StaticBodyComponent>().connect<&PhysicsSystem::on_static_body_created>(this);
+		registry.on_construct<AggregateHolderComponent>().connect<&PhysicsSystem::on_aggregate_created>(this);
 
 		dynamic_body_group = world->group(components_group<TransformComponent, DynamicBodyComponent>);
 	}
@@ -143,6 +146,7 @@ namespace era_engine::physics
 			}
 
 			bool update_mass = false;
+			bool only_started_simulation = false;
 
 			if (dynamic_body.mass.is_changed() ||
 				dynamic_body.center_of_mass.is_changed() ||
@@ -162,9 +166,7 @@ namespace era_engine::physics
 				if (dynamic_body.simulated)
 				{
 					update_mass = true;
-
-					body->setLinearVelocity(create_PxVec3(dynamic_body.linear_velocity), false);
-					body->setAngularVelocity(create_PxVec3(dynamic_body.angular_velocity), false);
+					only_started_simulation = true;
 				}
 
 				dynamic_body.simulated.sync_changes();
@@ -211,6 +213,12 @@ namespace era_engine::physics
 			{
 				body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, dynamic_body.kinematic);
 				dynamic_body.kinematic.sync_changes();
+			}
+
+			if (only_started_simulation && !dynamic_body.kinematic)
+			{
+				body->setLinearVelocity(create_PxVec3(dynamic_body.linear_velocity), false);
+				body->setAngularVelocity(create_PxVec3(dynamic_body.angular_velocity), false);
 			}
 
 			if (dynamic_body.constraints.is_changed())
@@ -337,6 +345,14 @@ namespace era_engine::physics
 
 		PxSceneWriteLock _scene_lock { *physics_ref->get_scene()};
 
+		for (Entity::Handle entity_handle : std::exchange(aggregates_to_init, {}))
+		{
+			Entity entity = world->get_entity(entity_handle);
+
+			AggregateHolderComponent* aggregate_holder_component = entity.get_component<AggregateHolderComponent>();
+			aggregate_holder_component->aggregate = make_ref<Aggregate>(aggregate_holder_component->max_actors, aggregate_holder_component->enable_self_collision);
+		}
+
 		for (Entity::Handle entity_handle : std::exchange(dynamics_to_init, {}))
 		{
 			Entity entity = world->get_entity(entity_handle);
@@ -428,6 +444,13 @@ namespace era_engine::physics
 		ScopedSpinLock _lock{ PhysicsHolder::physics_ref->sync };
 
 		statics_to_init.push_back(static_cast<Entity::Handle>(entity_handle));
+	}
+
+	void PhysicsSystem::on_aggregate_created(entt::registry& registry, entt::entity entity_handle)
+	{
+		ScopedSpinLock _lock{ PhysicsHolder::physics_ref->sync };
+
+		aggregates_to_init.push_back(static_cast<Entity::Handle>(entity_handle));
 	}
 
 }

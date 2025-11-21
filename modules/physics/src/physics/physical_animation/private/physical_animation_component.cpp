@@ -5,10 +5,12 @@
 #include "physics/physical_animation/states/blend_out_simulation_state.h"
 #include "physics/physical_animation/states/enabled_simulation_state.h"
 #include "physics/physical_animation/states/disabled_simulation_state.h"
+#include "physics/physical_animation/states/ragdoll_simulation_state.h"
 #include "physics/physical_animation/drive_pose_solver.h"
 #include "physics/physical_animation/limb_states/blend_out_limb_state.h"
 #include "physics/physical_animation/limb_states/kinematic_limb_state.h"
 #include "physics/physical_animation/limb_states/simulation_limb_state.h"
+#include "physics/physical_animation/limb_states/ragdoll_limb_state.h"
 
 #include <rttr/registration>
 
@@ -25,7 +27,7 @@ namespace era_engine::physics
 			.constructor<>();
 	}
 
-		bool PhysicsLimbChain::has_any_colliding_limb() const
+	bool PhysicsLimbChain::has_any_colliding_limb() const
 	{
 		for (EntityPtr limb_ptr : connected_limbs)
 		{
@@ -77,8 +79,10 @@ namespace era_engine::physics
 		ComponentPtr this_component_ptr = ComponentPtr(this);
 
 		simulation_states.emplace(PhysicalLimbStateType::KINEMATIC, std::make_shared<KinematicLimbState>(this_component_ptr));
-		simulation_states.emplace(PhysicalLimbStateType::TRANSITION, std::make_shared<BlendOutLimbState>(this_component_ptr));
+		simulation_states.emplace(PhysicalLimbStateType::BLEND_OUT, std::make_shared<BlendOutLimbState>(this_component_ptr));
 		simulation_states.emplace(PhysicalLimbStateType::SIMULATION, std::make_shared<SimulationLimbState>(this_component_ptr));
+		simulation_states.emplace(PhysicalLimbStateType::RAGDOLL, std::make_shared<RagdollLimbState>(this_component_ptr));
+
 	}
 
 	PhysicalAnimationLimbComponent::~PhysicalAnimationLimbComponent()
@@ -97,9 +101,12 @@ namespace era_engine::physics
 
 	void PhysicalAnimationLimbComponent::force_switch_state(PhysicalLimbStateType desired_state)
 	{
-		get_current_state()->on_exit();
-		current_state_type = desired_state;
-		get_current_state()->on_enter();
+		if(current_state_type != desired_state)
+		{
+			get_current_state()->on_exit();
+			current_state_type = desired_state;
+			get_current_state()->on_enter();
+		}
 	}
 
 	void PhysicalAnimationLimbComponent::update_states(float dt, PhysicalLimbStateType desired_state)
@@ -107,10 +114,8 @@ namespace era_engine::physics
 		if (current_state_type != desired_state)
 		{
 			const PhysicalLimbStateType transition_state = get_current_state()->try_switch_to(desired_state);
-			if (current_state_type != transition_state)
-			{
-				force_switch_state(transition_state);
-			}
+
+			force_switch_state(transition_state);
 		}
 
 		get_current_state()->update(dt);
@@ -125,6 +130,7 @@ namespace era_engine::physics
 		simulation_states.emplace(SimulationStateType::DISABLED, std::make_shared<DisabledSimulationState>(this_component_ptr));
 		simulation_states.emplace(SimulationStateType::BLEND_IN, std::make_shared<BlendInSimulationState>(this_component_ptr));
 		simulation_states.emplace(SimulationStateType::BLEND_OUT, std::make_shared<BlendOutSimulationState>(this_component_ptr));
+		simulation_states.emplace(SimulationStateType::RAGDOLL, std::make_shared<RagdollSimulationState>(this_component_ptr));
 
 		current_state_type = SimulationStateType::DISABLED;
 
@@ -135,11 +141,14 @@ namespace era_engine::physics
 	{
 	}
 
-	bool PhysicalAnimationComponent::try_to_apply_ragdoll_profile(ref<RagdollProfile> new_profile, bool force_reload)
+	bool PhysicalAnimationComponent::try_to_apply_ragdoll_profile(ref<RagdollProfile> new_profile, RagdollProfileStrengthType new_strength_type/* = RagdollProfileStrengthType::DEFAULT*/, bool force_reload)
 	{
-		if (current_profile != new_profile || force_reload)
+		if (current_profile != new_profile ||
+			strength_type != new_strength_type || 
+			force_reload)
 		{
 			current_profile = new_profile;
+			strength_type = new_strength_type;
 
 			for (const EntityPtr& limb_ptr : limbs)
 			{
@@ -154,37 +163,41 @@ namespace era_engine::physics
 				{
 					const MotorDriveDetails& motor_drive = limb_details.motor_drive.value();
 
-					limb_component->drive_velocity_modifier = motor_drive.drive_velocity_modifier;
-
 					limb_component->angular_range = motor_drive.angular_range;
 					limb_component->linear_range = motor_drive.linear_range;
+
+					float strength_coeff = limb_details.strength_details.default_strength_coeff;
+					if (strength_type == RagdollProfileStrengthType::SOFT)
+					{
+						strength_coeff = limb_details.strength_details.soft_strength_coeff;
+					}
+					else if(strength_type == RagdollProfileStrengthType::HARD)
+					{
+						strength_coeff = limb_details.strength_details.hard_strength_coeff;
+					}
 
 					D6JointComponent* joint_component = dynamic_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
 					if (joint_component != nullptr)
 					{
 						if (motor_drive.enable_slerp_drive)
 						{
-							joint_component->slerp_drive_damping = motor_drive.angular_damping_range.y;
 							joint_component->slerp_drive_force_limit = motor_drive.max_force;
-							joint_component->slerp_drive_stiffness = motor_drive.angular_drive_stiffness;
+							joint_component->slerp_drive_stiffness = motor_drive.angular_drive_stiffness * strength_coeff;
 							joint_component->slerp_drive_accelerated = motor_drive.accelerated;
 						}
 						else
 						{
-							joint_component->swing_drive_damping = motor_drive.angular_damping_range.y;
 							joint_component->swing_drive_force_limit = motor_drive.max_force;
-							joint_component->swing_drive_stiffness = motor_drive.angular_drive_stiffness;
+							joint_component->swing_drive_stiffness = motor_drive.angular_drive_stiffness * strength_coeff;
 							joint_component->swing_drive_accelerated = motor_drive.accelerated;
 
-							joint_component->twist_drive_damping = motor_drive.angular_damping_range.y;
 							joint_component->twist_drive_force_limit = motor_drive.max_force;
-							joint_component->twist_drive_stiffness = motor_drive.angular_drive_stiffness;
+							joint_component->twist_drive_stiffness = motor_drive.angular_drive_stiffness * strength_coeff;
 							joint_component->twist_drive_accelerated = motor_drive.accelerated;
 						}
 
-						joint_component->linear_drive_damping = motor_drive.linear_damping_range.y;
 						joint_component->linear_drive_force_limit = motor_drive.max_force;
-						joint_component->linear_drive_stiffness = motor_drive.linear_drive_stiffness;
+						joint_component->linear_drive_stiffness = motor_drive.linear_drive_stiffness * strength_coeff;
 						joint_component->linear_drive_accelerated = motor_drive.accelerated;
 					}
 				}
@@ -252,9 +265,12 @@ namespace era_engine::physics
 
 	void PhysicalAnimationComponent::force_switch_state(SimulationStateType desired_state)
 	{
-		get_current_state()->on_exit();
-		current_state_type = desired_state;
-		get_current_state()->on_enter();
+		if(current_state_type != desired_state)
+		{
+			get_current_state()->on_exit();
+			current_state_type = desired_state;
+			get_current_state()->on_enter();
+		}
 	}
 
 	bool PhysicalAnimationComponent::is_in_idle() const
@@ -262,15 +278,23 @@ namespace era_engine::physics
 		return current_profile->type == RagdollProfileType::IDLE;
 	}
 
+	bool PhysicalAnimationComponent::is_in_ragdoll() const
+	{
+		return force_ragdoll_state;
+	}
+
+	void PhysicalAnimationComponent::force_set_ragdoll(bool enabled)
+	{
+		force_ragdoll_state = enabled;
+	}
+
 	void PhysicalAnimationComponent::update_states(float dt, SimulationStateType desired_state)
 	{
 		if (current_state_type != desired_state)
 		{
 			const SimulationStateType transition_state = get_current_state()->try_switch_to(desired_state);
-			if (current_state_type != transition_state)
-			{
-				force_switch_state(transition_state);
-			}
+
+			force_switch_state(transition_state);
 		}
 
 		get_current_state()->update(dt);

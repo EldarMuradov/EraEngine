@@ -52,6 +52,47 @@ namespace era_engine::physics
 	{
 		using namespace physx;
 
+		for (auto [entity_handle, observable_component, joint_component] : world->group(components_group<TransformComponent, FixedJointComponent>).each())
+		{
+			PxJoint* joint = joint_component.get_native_joint();
+
+			if (joint == nullptr)
+			{
+				continue;
+			}
+
+			PxFixedJoint* native_joint = joint->is<PxFixedJoint>();
+
+			if (native_joint == nullptr)
+			{
+				continue;
+			}
+
+			if (joint_component.disabled.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eDISABLE_CONSTRAINT, joint_component.disabled);
+				joint_component.disabled.sync_changes();
+			}
+
+			if (joint_component.enable_collision.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component.enable_collision);
+				joint_component.enable_collision.sync_changes();
+			}
+
+			if (joint_component.break_force.is_changed())
+			{
+				native_joint->setBreakForce(joint_component.break_force.get(), joint_component.break_force.get() * 2.0f);
+				joint_component.break_force.sync_changes();
+			}
+
+			if (joint_component.always_update.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, joint_component.always_update);
+				joint_component.always_update.sync_changes();
+			}
+		}
+
 		for (auto [entity_handle, observable_component, joint_component] : world->group(components_group<TransformComponent, DistanceJointComponent>).each())
 		{
 			PxJoint* joint = joint_component.get_native_joint();
@@ -99,6 +140,30 @@ namespace era_engine::physics
 				native_joint->setMaxDistance(joint_component.max_distance);
 				joint_component.max_distance.sync_changes();
 			}
+
+			if (joint_component.disabled.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eDISABLE_CONSTRAINT, joint_component.disabled);
+				joint_component.disabled.sync_changes();
+			}
+
+			if (joint_component.enable_collision.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component.enable_collision);
+				joint_component.enable_collision.sync_changes();
+			}
+
+			if (joint_component.break_force.is_changed())
+			{
+				native_joint->setBreakForce(joint_component.break_force.get(), joint_component.break_force.get() * 2.0f);
+				joint_component.break_force.sync_changes();
+			}
+
+			if (joint_component.always_update.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, joint_component.always_update);
+				joint_component.always_update.sync_changes();
+			}
 		}
 
 		for (auto [entity_handle, observable_component, joint_component] : world->group(components_group<TransformComponent, D6JointComponent>).each())
@@ -115,6 +180,30 @@ namespace era_engine::physics
 			if (native_joint == nullptr)
 			{
 				continue;
+			}
+
+			if (joint_component.disabled.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eDISABLE_CONSTRAINT, joint_component.disabled);
+				joint_component.disabled.sync_changes();
+			}
+
+			if (joint_component.enable_collision.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component.enable_collision);
+				joint_component.enable_collision.sync_changes();
+			}
+
+			if (joint_component.break_force.is_changed())
+			{
+				native_joint->setBreakForce(joint_component.break_force.get(), joint_component.break_force.get() * 2.0f);
+				joint_component.break_force.sync_changes();
+			}
+
+			if (joint_component.always_update.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, joint_component.always_update);
+				joint_component.always_update.sync_changes();
 			}
 
 			if (joint_component.swing_y_limit.is_changed() ||
@@ -217,12 +306,6 @@ namespace era_engine::physics
 			{
 				native_joint->setConstraintFlag(PxConstraintFlag::eDISABLE_PREPROCESSING, joint_component.disable_preprocessing);
 				joint_component.disable_preprocessing.sync_changes();
-			}
-
-			if (joint_component.disabled.is_changed())
-			{
-				native_joint->setConstraintFlag(PxConstraintFlag::eDISABLE_CONSTRAINT, joint_component.disabled);
-				joint_component.disabled.sync_changes();
 			}
 
 			if (joint_component.gpu_compatible.is_changed())

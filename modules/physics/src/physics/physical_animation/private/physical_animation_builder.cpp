@@ -5,6 +5,7 @@
 #include "physics/core/physics_utils.h"
 #include "physics/shape_utils.h"
 #include "physics/physical_animation/physical_animation_component.h"
+#include "physics/aggregate_holder_component.h"
 #include "physics/joint.h"
 
 #include <core/math.h>
@@ -32,7 +33,6 @@ namespace era_engine::physics
 		{
 			const MotorDriveDetails& motor_drive = details.motor_drive.value();
 
-			limb_component->drive_velocity_modifier = motor_drive.drive_velocity_modifier;
 			limb_component->angular_range = motor_drive.angular_range;
 			limb_component->linear_range = motor_drive.linear_range;
 			limb_component->angular_damping_range = motor_drive.angular_damping_range;
@@ -61,13 +61,12 @@ namespace era_engine::physics
 		dynamic_body_component->use_gravity.get_for_write() = false;
 		dynamic_body_component->simulated.get_for_write() = false;
 		dynamic_body_component->linear_damping.get_for_write() = 0.1f;
-		dynamic_body_component->angular_damping.get_for_write() = 0.25f;
+		dynamic_body_component->angular_damping.get_for_write() = 0.2f;
 		dynamic_body_component->max_angular_velocity.get_for_write() = max_angular_velocity;
 		dynamic_body_component->max_contact_impulse.get_for_write() = max_contact_impulse;
 		dynamic_body_component->solver_position_iterations_count.get_for_write() = 16;
 		dynamic_body_component->solver_velocity_iterations_count.get_for_write() = 8;
 		dynamic_body_component->sleep_threshold.get_for_write() = 0.01f;
-		dynamic_body_component->stabilization_threshold.get_for_write() = 0.01f;
 
 		return dynamic_body_component;
 	}
@@ -86,7 +85,7 @@ namespace era_engine::physics
 
 		dynamic_body_component->mass = mass;
 		dynamic_body_component->use_gravity.get_for_write() = false;
-		dynamic_body_component->simulated.get_for_write() = true;
+		dynamic_body_component->simulated.get_for_write() = false;
 		dynamic_body_component->kinematic.get_for_write() = true;
 		dynamic_body_component->kinematic_motion_type.get_for_write() = KinematicMotionType::VELOCITY;
 
@@ -124,7 +123,7 @@ namespace era_engine::physics
 		descriptor.second_local_frame = e1_to_e1_joint_transform;
 
 		Entity joint_entity = e0.get_world()->create_entity();
-		joint_entity.set_parent(e0.get_handle());
+		joint_entity.set_parent(source.get_handle());
 
 		e0.get_component<PhysicalAnimationLimbComponent>()->joint_entity_ptr = EntityPtr{ joint_entity };
 
@@ -148,8 +147,8 @@ namespace era_engine::physics
 			joint_component->twist_min_limit.get_for_write() = deg2rad(twist_min_deg);
 			joint_component->twist_max_limit.get_for_write() = deg2rad(twist_max_deg);
 
-			joint_component->twist_limit_damping.get_for_write() = 40.0f;
-			joint_component->twist_limit_stiffness.get_for_write() = 300.0f;
+			joint_component->twist_limit_damping.get_for_write() = 30.0f;
+			joint_component->twist_limit_stiffness.get_for_write() = 250.0f;
 			joint_component->twist_limit_restitution.get_for_write() = 0.0f;
 		}
 
@@ -179,8 +178,8 @@ namespace era_engine::physics
 
 		if (any_moving_swing)
 		{
-			joint_component->swing_limit_damping.get_for_write() = 40.0f;
-			joint_component->swing_limit_stiffness.get_for_write() = 300.0f;
+			joint_component->swing_limit_damping.get_for_write() = 30.0f;
+			joint_component->swing_limit_stiffness.get_for_write() = 250.0f;
 			joint_component->swing_limit_restitution.get_for_write() = 0.0f;
 		}
 	}
@@ -205,7 +204,7 @@ namespace era_engine::physics
 		descriptor.second_local_frame = trs::identity;
 
 		Entity joint_entity = e0.get_world()->create_entity();
-		joint_entity.set_parent(e0.get_handle());
+		joint_entity.set_parent(source.get_handle());
 
 		e1.get_component<PhysicalAnimationLimbComponent>()->drive_joint_entity_ptr = EntityPtr{ joint_entity };
 
@@ -228,8 +227,6 @@ namespace era_engine::physics
 		joint_component->linear_drive_damping = motor_drive.linear_damping_range.y;
 		joint_component->linear_drive_force_limit = motor_drive.max_force;
 		joint_component->linear_drive_accelerated = motor_drive.accelerated;
-
-		joint_component->disable_preprocessing.get_for_write() = true;
 
 		e1.get_component<PhysicalAnimationLimbComponent>()->drive_joint_component = ComponentPtr{ joint_component };
 
@@ -402,6 +399,10 @@ namespace era_engine::physics
 		PhysicalAnimationComponent* physical_animation_component = ragdoll.get_component<PhysicalAnimationComponent>();
 		const RagdollSettings& settings = physical_animation_component->settings;
 		const RagdollJointIds& joint_init_ids = physical_animation_component->joint_init_ids;
+
+		AggregateHolderComponent* aggregate_component = ragdoll.add_component<AggregateHolderComponent>();
+		aggregate_component->enable_self_collision = true;
+		aggregate_component->max_actors = 32;
 
 		ref<RagdollProfile> ragdoll_profile = physical_animation_component->get_ragdoll_profile();
 
@@ -658,7 +659,7 @@ namespace era_engine::physics
 			transform_component->set_world_transform(ragdoll_world_transform * pelvis_joint_transform);
 
 			DynamicBodyComponent* lower_body_ghost_component = body_lower_ghost.add_component<DynamicBodyComponent>();
-			lower_body_ghost_component->simulated.get_for_write() = true;
+			lower_body_ghost_component->simulated.get_for_write() = false;
 			lower_body_ghost_component->kinematic.get_for_write() = true;
 			lower_body_ghost_component->use_gravity.get_for_write() = false;
 

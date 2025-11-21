@@ -24,6 +24,10 @@ namespace era_engine::physics
         {
             return SimulationStateType::BLEND_IN;
         }
+        else if (desired_type == SimulationStateType::RAGDOLL)
+        {
+            return SimulationStateType::RAGDOLL;
+        }
         return SimulationStateType::DISABLED;
     }
 
@@ -50,6 +54,8 @@ namespace era_engine::physics
             traverse_simulation_graph(process_limb);
 
             physical_animation_component->simulated = false;
+
+            physical_animation_component->attachment_body.get().get_component<DynamicBodyComponent>()->simulated = false;
 
             AnimationComponent* animation_component = physical_animation_component->get_entity().get_component<AnimationComponent>();
             animation_component->update_skeleton = true;

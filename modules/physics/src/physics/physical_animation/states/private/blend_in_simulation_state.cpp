@@ -27,6 +27,10 @@ namespace era_engine::physics
         {
             return SimulationStateType::BLEND_OUT;
         }
+        else if (desired_type == SimulationStateType::RAGDOLL)
+        {
+            return SimulationStateType::RAGDOLL;
+        }
         else if (desired_type == SimulationStateType::ENABLED &&
             blend_time >= physical_animation_component->blend_in_time)
         {
@@ -63,6 +67,8 @@ namespace era_engine::physics
 		{
 			const trs& ragdoll_transform = physical_animation_component->get_entity().get_component<TransformComponent>()->get_world_transform();
 			const SkeletonComponent* skeleton_component = physical_animation_component->get_entity().get_component<SkeletonComponent>();
+
+            physical_animation_component->attachment_body.get().get_component<DynamicBodyComponent>()->simulated = true;
 
 			auto process_limb = [&skeleton_component, &ragdoll_transform](PhysicalAnimationLimbComponent* limb_component)
 				{

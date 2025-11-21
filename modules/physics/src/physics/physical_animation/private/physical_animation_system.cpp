@@ -46,6 +46,7 @@ namespace era_engine::physics
 
 	static DebugVar<bool> enable_always = DebugVar<bool>("physics.physical_animation.enable_always", false);
 	static DebugVar<bool> force_drive_simulation = DebugVar<bool>("physics.physical_animation.force_drive_simulation", false);
+	static DebugVar<bool> force_ragdoll = DebugVar<bool>("physics.physical_animation.force_ragdoll", false);
 
 	static DebugVar<float> running_speed = DebugVar<float>("physics.physical_animation.debug_demo.running_speed", 1.5f);
 	static DebugVar<float> sprint_speed = DebugVar<float>("physics.physical_animation.debug_demo.sprint_speed", 5.0f);
@@ -81,6 +82,9 @@ namespace era_engine::physics
 			idle_profile->body_upper_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
 
 			idle_profile->body_middle_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->body_upper_limb_details.motor_drive = MotorDriveDetails();
+			idle_profile->body_upper_limb_details.motor_drive->angular_drive_stiffness = 400.0f;
+			idle_profile->body_upper_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
 
 			idle_profile->arm_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->arm_limb_details.motor_drive = MotorDriveDetails();
@@ -100,6 +104,9 @@ namespace era_engine::physics
 			idle_profile->hand_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
 
 			idle_profile->leg_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->leg_limb_details.motor_drive = MotorDriveDetails();
+			idle_profile->leg_limb_details.motor_drive->angular_drive_stiffness = 400.0f;
+			idle_profile->leg_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
 
 			idle_profile->calf_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->calf_limb_details.motor_drive = MotorDriveDetails();
@@ -108,8 +115,8 @@ namespace era_engine::physics
 
 			idle_profile->foot_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->foot_limb_details.motor_drive = MotorDriveDetails();
-			idle_profile->foot_limb_details.motor_drive->angular_drive_stiffness = 200.0f;
-			idle_profile->foot_limb_details.motor_drive->linear_drive_stiffness = 200.0f;
+			idle_profile->foot_limb_details.motor_drive->angular_drive_stiffness = 400.0f;
+			idle_profile->foot_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
 		}
 
 		{
@@ -140,6 +147,21 @@ namespace era_engine::physics
 			sprint_profile->leg_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
 			sprint_profile->calf_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
 			sprint_profile->foot_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE;
+		}
+
+		{
+			ragdoll_profile = make_ref<RagdollProfile>();
+
+			ragdoll_profile->type = RagdollProfileType::RAGDOLL;
+			ragdoll_profile->head_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			ragdoll_profile->arm_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			ragdoll_profile->body_upper_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			ragdoll_profile->body_middle_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			ragdoll_profile->forearm_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			ragdoll_profile->hand_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			ragdoll_profile->leg_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			ragdoll_profile->calf_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			ragdoll_profile->foot_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 		}
 
 		pose_sampler = std::make_unique<DrivePoseSampler>();
@@ -228,7 +250,7 @@ namespace era_engine::physics
 		for (auto&& [entity_handle,
 			transform_component,
 			physical_animation_component,
-			animation_component, 
+			animation_component,
 			skeleton_component] : ragdolls_group.each())
 		{
 			if (!physical_animation_component.loaded)
@@ -297,22 +319,26 @@ namespace era_engine::physics
 					}
 				}
 
-				const trs pelvis_world_transform = world_transform * pelvis_local_transform;
-				PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
+				const bool force_to_targets = physical_animation_component.is_in_ragdoll();
+				physical_animation_component.pose_solver->solve_pose(dt, force_to_targets);
 
-				physical_animation_component.pose_solver->solve_pose(dt);
-
-				for (const EntityPtr& limb_ptr : physical_animation_component.limbs)
+				if (!force_to_targets)
 				{
-					Entity limb = limb_ptr.get();
-					PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
+					const trs pelvis_world_transform = world_transform * pelvis_local_transform;
+					PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
 
-					ASSERT(limb_data_component != nullptr);
-
-					if (limb_data_component->drive_joint_component.get() != nullptr)
+					for (const EntityPtr& limb_ptr : physical_animation_component.limbs)
 					{
-						D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_data_component->drive_joint_component.get_for_write());
-						PhysicsUtils::manual_set_physics_transform(drive_joint->get_first_entity_ptr().get(), world_transform * limb_data_component->adjusted_pose, true);
+						Entity limb = limb_ptr.get();
+						PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
+
+						ASSERT(limb_data_component != nullptr);
+
+						if (limb_data_component->drive_joint_component.get() != nullptr)
+						{
+							D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_data_component->drive_joint_component.get_for_write());
+							PhysicsUtils::manual_set_physics_transform(drive_joint->get_first_entity_ptr().get(), world_transform * limb_data_component->adjusted_pose, true);
+						}
 					}
 				}
 			}
@@ -361,7 +387,25 @@ namespace era_engine::physics
 
 			// Update states.
 			{
-				const SimulationStateType desired_state_type = is_should_be_simulated ? SimulationStateType::ENABLED : SimulationStateType::DISABLED;
+				if (force_ragdoll)
+				{
+					physical_animation_component.force_set_ragdoll(true);
+				}
+				else
+				{
+					physical_animation_component.force_set_ragdoll(false);
+				}
+
+				SimulationStateType desired_state_type = SimulationStateType::DISABLED;
+				if (physical_animation_component.is_in_ragdoll())
+				{
+					desired_state_type = SimulationStateType::RAGDOLL;
+				}
+				else if (is_should_be_simulated)
+				{
+					desired_state_type = SimulationStateType::ENABLED;
+				}
+
 				physical_animation_component.update_states(dt, desired_state_type);
 			}
 
@@ -455,19 +499,22 @@ namespace era_engine::physics
 
 	void PhysicalAnimationSystem::update_chains_states(const PhysicalAnimationComponent* physical_animation_component, float dt) const
 	{
-		const bool has_any_active_arm_limbs = check_chain(physical_animation_component->left_arm_chain) || 
-			check_chain(physical_animation_component->right_arm_chain);
+		const bool has_any_active_arm_limbs = check_chain(physical_animation_component->left_arm_chain) ||
+			check_chain(physical_animation_component->right_arm_chain) ||
+			check_chain(physical_animation_component->neck_chain);
 
-		update_chain(physical_animation_component->left_leg_chain, dt);
-		update_chain(physical_animation_component->right_leg_chain, dt);
-		update_chain(physical_animation_component->body_chain, dt, has_any_active_arm_limbs);
+		const bool is_in_ragdoll = physical_animation_component->is_in_ragdoll();
 
-		update_chain(physical_animation_component->neck_chain, dt, has_any_active_arm_limbs);
-		update_chain(physical_animation_component->left_arm_chain, dt, has_any_active_arm_limbs);
-		update_chain(physical_animation_component->right_arm_chain, dt, has_any_active_arm_limbs);
+		update_chain(physical_animation_component->left_leg_chain, dt, is_in_ragdoll);
+		update_chain(physical_animation_component->right_leg_chain, dt, is_in_ragdoll);
+		update_chain(physical_animation_component->body_chain, dt, is_in_ragdoll, has_any_active_arm_limbs);
+
+		update_chain(physical_animation_component->neck_chain, dt, is_in_ragdoll, has_any_active_arm_limbs);
+		update_chain(physical_animation_component->left_arm_chain, dt, is_in_ragdoll, has_any_active_arm_limbs);
+		update_chain(physical_animation_component->right_arm_chain, dt, is_in_ragdoll, has_any_active_arm_limbs);
 	}
 
-	bool PhysicalAnimationSystem::update_chain(const ref<PhysicsLimbChain>& chain, float dt, bool force_simulation) const
+	bool PhysicalAnimationSystem::update_chain(const ref<PhysicsLimbChain>& chain, float dt, bool is_in_ragdoll, bool force_simulation) const
 	{
 		const bool should_update_as_simulated = check_chain(chain, force_simulation);
 
@@ -478,11 +525,17 @@ namespace era_engine::physics
 			PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
 			ASSERT(limb_data_component != nullptr);
 
-			bool want_be_simulated = should_update_as_simulated;
+			bool want_be_simulated = should_update_as_simulated || force_drive_simulation;
 
-			const PhysicalLimbStateType desired_chain_state = want_be_simulated || force_drive_simulation 
-				? PhysicalLimbStateType::SIMULATION 
-				: PhysicalLimbStateType::KINEMATIC;
+			PhysicalLimbStateType desired_chain_state = PhysicalLimbStateType::KINEMATIC;
+			if (is_in_ragdoll)
+			{
+				desired_chain_state = PhysicalLimbStateType::RAGDOLL;
+			}
+			else if (want_be_simulated)
+			{
+				desired_chain_state = PhysicalLimbStateType::SIMULATION;
+			}
 
 			limb_data_component->update_states(dt, desired_chain_state);
 
@@ -523,30 +576,29 @@ namespace era_engine::physics
 		float dt,
 		bool force_reload) const
 	{
-		const float velocity_magnitude = length(velocity);
-		if (velocity_magnitude >= running_speed && velocity_magnitude <= sprint_speed)
+		ref<RagdollProfile> desired_profile;
+
+		const float square_velocity_magnitude = squared_length(velocity);
+		if (square_velocity_magnitude < running_speed * running_speed)
 		{
-			const bool update_result = physical_animation_component->try_to_apply_ragdoll_profile(running_profile, force_reload);
-			if (update_result)
-			{
-				LOG_MESSAGE("Physics> Ragdoll profile updated to RUNNING");
-			}
+			desired_profile = idle_profile;
 		}
-		else if (velocity_magnitude >= sprint_speed)
+		else if (square_velocity_magnitude < sprint_speed * sprint_speed)
 		{
-			const bool update_result = physical_animation_component->try_to_apply_ragdoll_profile(sprint_profile, force_reload);
-			if (update_result)
-			{
-				LOG_MESSAGE("Physics> Ragdoll profile updated to SPRINT");
-			}
+			desired_profile = running_profile;
 		}
 		else
 		{
-			const bool update_result = physical_animation_component->try_to_apply_ragdoll_profile(idle_profile, force_reload);
-			if (update_result)
-			{
-				LOG_MESSAGE("Physics> Ragdoll profile updated to IDLE");
-			}
+			desired_profile = sprint_profile;
+		}
+
+		if (desired_profile != nullptr)
+		{
+			physical_animation_component->try_to_apply_ragdoll_profile(desired_profile, RagdollProfileStrengthType::DEFAULT, force_reload);
+		}
+		else
+		{
+			ASSERT(false);
 		}
 	}
 

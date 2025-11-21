@@ -35,7 +35,7 @@ PhysicalLimbStateType BlendOutLimbState::try_switch_to(PhysicalLimbStateType des
 
     if (desired_state == PhysicalLimbStateType::KINEMATIC)
     {
-        return blend_time >= limb_component->transition_time ? PhysicalLimbStateType::KINEMATIC : PhysicalLimbStateType::TRANSITION;
+        return blend_time >= limb_component->transition_time ? PhysicalLimbStateType::KINEMATIC : PhysicalLimbStateType::BLEND_OUT;
     }
     return desired_state;
 }

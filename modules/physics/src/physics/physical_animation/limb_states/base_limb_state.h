@@ -12,8 +12,9 @@ namespace era_engine::physics
 	enum class PhysicalLimbStateType : uint8
 	{
 		KINEMATIC = 0,
-		TRANSITION,
-		SIMULATION
+		BLEND_OUT,
+		SIMULATION,
+		RAGDOLL
 	};
 
 	class ERA_PHYSICS_API BaseLimbState

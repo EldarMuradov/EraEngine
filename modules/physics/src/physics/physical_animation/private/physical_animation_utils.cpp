@@ -64,8 +64,6 @@ namespace era_engine::physics
         D6JointComponent* drive_joint_component = dynamic_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
 
         drive_joint_component->drive_transform = trs::identity;
-        drive_joint_component->linear_drive_velocity = vec3::zero;
-        drive_joint_component->angular_drive_velocity = vec3::zero;
 
         drive_joint_component->linear_drive_damping = limb_component->linear_damping_range.y;
 
@@ -97,6 +95,13 @@ namespace era_engine::physics
             dynamic_body_component->simulated = false;
             dynamic_body_component->linear_velocity = vec3::zero;
             dynamic_body_component->angular_velocity = vec3::zero;
+        }
+
+        if (limb_component->drive_joint_component.get() != nullptr)
+        {
+            const D6JointComponent* drive_joint_component = dynamic_cast<const D6JointComponent*>(limb_component->drive_joint_component.get());
+
+            drive_joint_component->get_first_entity_ptr().get().get_component<DynamicBodyComponent>()->simulated = enable_simulation;
         }
     }
 
