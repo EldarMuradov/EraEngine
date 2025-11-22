@@ -70,6 +70,15 @@ namespace era_engine::physics
 
 			if (joint_component.disabled.is_changed())
 			{
+				if (joint_component.disabled)
+				{
+					native_joint->setActors(PhysicsUtils::get_body_component(joint_component.get_first_entity_ptr().get())->get_rigid_actor(), nullptr);
+				}
+				else
+				{
+					native_joint->setActors(PhysicsUtils::get_body_component(joint_component.get_first_entity_ptr().get())->get_rigid_actor(),
+						PhysicsUtils::get_body_component(joint_component.get_second_entity_ptr().get())->get_rigid_actor());
+				}
 				native_joint->setConstraintFlag(PxConstraintFlag::eDISABLE_CONSTRAINT, joint_component.disabled);
 				joint_component.disabled.sync_changes();
 			}
@@ -143,6 +152,15 @@ namespace era_engine::physics
 
 			if (joint_component.disabled.is_changed())
 			{
+				if (joint_component.disabled)
+				{
+					native_joint->setActors(PhysicsUtils::get_body_component(joint_component.get_first_entity_ptr().get())->get_rigid_actor(), nullptr);
+				}
+				else
+				{
+					native_joint->setActors(PhysicsUtils::get_body_component(joint_component.get_first_entity_ptr().get())->get_rigid_actor(),
+						PhysicsUtils::get_body_component(joint_component.get_second_entity_ptr().get())->get_rigid_actor());
+				}
 				native_joint->setConstraintFlag(PxConstraintFlag::eDISABLE_CONSTRAINT, joint_component.disabled);
 				joint_component.disabled.sync_changes();
 			}
@@ -184,6 +202,15 @@ namespace era_engine::physics
 
 			if (joint_component.disabled.is_changed())
 			{
+				if (joint_component.disabled)
+				{
+					native_joint->setActors(PhysicsUtils::get_body_component(joint_component.get_first_entity_ptr().get())->get_rigid_actor(), nullptr);
+				}
+				else
+				{
+					native_joint->setActors(PhysicsUtils::get_body_component(joint_component.get_first_entity_ptr().get())->get_rigid_actor(), 
+						PhysicsUtils::get_body_component(joint_component.get_second_entity_ptr().get())->get_rigid_actor());
+				}
 				native_joint->setConstraintFlag(PxConstraintFlag::eDISABLE_CONSTRAINT, joint_component.disabled);
 				joint_component.disabled.sync_changes();
 			}

@@ -151,6 +151,8 @@ namespace era_engine::physics
 
         float blend_factor = 0.75f;
 
+        uint32 root_joint_id = 0;
+
 		std::vector<EntityPtr> limbs;
 
         ERA_VIRTUAL_REFLECT(Component)
@@ -159,8 +161,6 @@ namespace era_engine::physics
         std::unordered_map<uint32, EntityPtr> simulated_joints;
         std::unordered_map<uint32, std::vector<uint32>> children_map;
         std::unordered_map<uint32, trs> local_joint_poses;
-
-        uint32 root_joint_id = 0;
 
         friend class RagdollSystem;
         friend class PhysicalAnimationSystem;

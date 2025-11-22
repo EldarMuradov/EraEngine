@@ -1026,12 +1026,12 @@ namespace era_engine::physics
 			head_capsule_bottom_transform,
 			thorax_joint_transform,
 			head_joint_transform,
-			-35.0f, 35.0f,
-			30.0f, 30.0f);
+			-45.0f, 45.0f,
+			40.0f, 40.0f);
 
 		// Body middle -> body upper
-		const float body_upper_forward_angle_deg = 4.0f;
-		const float body_upper_backward_angle_deg = 3.0f;
+		const float body_upper_forward_angle_deg = 25.0f;
+		const float body_upper_backward_angle_deg = 10.0f;
 		const float body_upper_d6_swing_y_deg = (body_upper_forward_angle_deg + body_upper_backward_angle_deg) / 2.0f;
 		const vec3 body_upper_capsule_y_axis = body_upper_capsule_bottom_transform.rotation * vec3(0.0f, 1.0f, 0.0f);
 		const trs body_middle_d6_transform = trs(
@@ -1046,14 +1046,14 @@ namespace era_engine::physics
 			body_upper_capsule_bottom_transform,
 			abdomen_joint_transform,
 			thorax_joint_transform,
-			-4.0f,
-			4.0f,
+			-10.0f,
+			10.0f,
 			body_upper_d6_swing_y_deg,
-			4.0f);
+			15.0f);
 
 		// Body lower -> body middle
-		const float body_middle_forward_angle_deg = 4.0f;
-		const float body_middle_backward_angle_deg = 2.0f;
+		const float body_middle_forward_angle_deg = 8.0f;
+		const float body_middle_backward_angle_deg = 4.0f;
 		const float body_middle_d6_swing_y_deg = (body_middle_forward_angle_deg + body_middle_backward_angle_deg) / 2.0f;
 		const vec3 body_middle_capsule_y_axis = middle_default_transform.rotation * vec3(0.0f, 1.0f, 0.0f);
 		const trs body_lower_d6_transform = trs(
@@ -1073,8 +1073,8 @@ namespace era_engine::physics
 			body_middle_d6_swing_y_deg,
 			4.0f);
 
-		const float arm_forward_angle_deg = 32.5f; // How far an arm can be rotated forward around Y axis
-		const float arm_backward_angle_deg = 70.0f; // How far an arm can be rotated backwards around Y axis
+		const float arm_forward_angle_deg = 90.0f; // How far an arm can be rotated forward around Y axis
+		const float arm_backward_angle_deg = 22.5f; // How far an arm can be rotated backwards around Y axis
 		const float arm_d6_swing_y_deg = (arm_forward_angle_deg + arm_backward_angle_deg) / 2.0f;
 
 		// Thorax -> left arm
@@ -1112,7 +1112,7 @@ namespace era_engine::physics
 			left_forearm_joint_transform,
 			-10.0f, 10.0f,
 			forearm_d6_swing_y_deg,
-			8.0f);
+			4.0f);
 
 		// Left forearm -> left hand
 		create_d6_joint(
@@ -1160,7 +1160,7 @@ namespace era_engine::physics
 			right_forearm_joint_transform,
 			-10.0f, 10.0f,
 			forearm_d6_swing_y_deg,
-			8.0f);
+			4.0f);
 
 		// Right forearm -> right hand
 		create_d6_joint(
@@ -1175,8 +1175,8 @@ namespace era_engine::physics
 			40.0f);
 
 		// Pelvis -> left up leg
-		const float up_leg_back_angle_deg = 75.5f; // How far up leg can be rotated around y axis in backwards direction
-		const float up_leg_forward_angle_deg = 25.0f; // How far up leg can be rotated around y axis in forward direction
+		const float up_leg_back_angle_deg = 5.0; // How far up leg can be rotated around y axis in backwards direction
+		const float up_leg_forward_angle_deg = 45.0f; // How far up leg can be rotated around y axis in forward direction
 		const float up_leg_d6_swing_y_deg = (up_leg_forward_angle_deg + up_leg_back_angle_deg) / 2.0f;
 		const vec3 left_up_leg_capsule_y_axis = left_up_leg_capsule_bottom_transform.rotation * vec3(0.0f, 1.0f, 0.0f);
 		const trs left_up_leg_d6_transform = trs(
@@ -1190,7 +1190,7 @@ namespace era_engine::physics
 			left_up_leg_capsule_bottom_transform,
 			pelvis_joint_transform,
 			left_up_leg_joint_transform,
-			-20.0f, 20.0f,
+			-6.0f, 6.0f,
 			up_leg_d6_swing_y_deg,
 			35.0f);
 
@@ -1237,7 +1237,7 @@ namespace era_engine::physics
 			right_up_leg_capsule_bottom_transform,
 			pelvis_joint_transform,
 			right_up_leg_joint_transform,
-			-20.0f, 20.0f,
+			-6.0f, 6.0f,
 			up_leg_d6_swing_y_deg,
 			35.0f);
 

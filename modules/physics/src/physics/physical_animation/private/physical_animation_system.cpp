@@ -322,23 +322,20 @@ namespace era_engine::physics
 				const bool force_to_targets = physical_animation_component.is_in_ragdoll();
 				physical_animation_component.pose_solver->solve_pose(dt, force_to_targets);
 
-				if (!force_to_targets)
+				const trs pelvis_world_transform = world_transform * pelvis_local_transform;
+				PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
+
+				for (const EntityPtr& limb_ptr : physical_animation_component.limbs)
 				{
-					const trs pelvis_world_transform = world_transform * pelvis_local_transform;
-					PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
+					Entity limb = limb_ptr.get();
+					PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
 
-					for (const EntityPtr& limb_ptr : physical_animation_component.limbs)
+					ASSERT(limb_data_component != nullptr);
+
+					if (limb_data_component->drive_joint_component.get() != nullptr)
 					{
-						Entity limb = limb_ptr.get();
-						PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
-
-						ASSERT(limb_data_component != nullptr);
-
-						if (limb_data_component->drive_joint_component.get() != nullptr)
-						{
-							D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_data_component->drive_joint_component.get_for_write());
-							PhysicsUtils::manual_set_physics_transform(drive_joint->get_first_entity_ptr().get(), world_transform * limb_data_component->adjusted_pose, true);
-						}
+						D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_data_component->drive_joint_component.get_for_write());
+						PhysicsUtils::manual_set_physics_transform(drive_joint->get_first_entity_ptr().get(), world_transform * limb_data_component->adjusted_pose, true);
 					}
 				}
 			}

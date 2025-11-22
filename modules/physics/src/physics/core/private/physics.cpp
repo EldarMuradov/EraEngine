@@ -385,7 +385,7 @@ namespace era_engine::physics
 
 		ScopedSpinLock l{ sync };
 
-		if (AggregateHolderComponent* aggregate_component = actor->get_world()->get_entity(actor->get_entity().get_parent_handle()).get_component<AggregateHolderComponent>())
+		if (AggregateHolderComponent* aggregate_component = actor->get_world()->get_entity(actor->get_entity().get_parent_handle()).get_component_if_exists<AggregateHolderComponent>())
 		{
 			aggregate_component->aggregate->add_actor(physx_actor);
 		}

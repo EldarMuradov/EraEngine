@@ -43,7 +43,7 @@ namespace era_engine::physics
 
         float max_force = std::numeric_limits<float>::max();
 
-        bool accelerated = false;
+        bool accelerated = true;
         bool enable_slerp_drive = true;
     };
 
