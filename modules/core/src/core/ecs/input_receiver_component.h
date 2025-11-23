@@ -10,13 +10,13 @@
 namespace era_engine
 {
 
-	class ERA_CORE_API InputRecieverComponent final : public Component
+	class ERA_CORE_API InputReceiverComponent final : public Component
 	{
 	public:
-		InputRecieverComponent() = default;
-		InputRecieverComponent(ref<Entity::EcsData> _data);
+		InputReceiverComponent() = default;
+		InputReceiverComponent(ref<Entity::EcsData> _data);
 
-		~InputRecieverComponent() override;
+		~InputReceiverComponent() override;
 
 		const vec3& get_current_input() const;
 

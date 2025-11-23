@@ -1,5 +1,5 @@
 #include "core/ecs/input_sender_component.h"
-#include "core/ecs/input_reciever_component.h"
+#include "core/ecs/input_receiver_component.h"
 
 #include <rttr/registration>
 
@@ -38,19 +38,19 @@ namespace era_engine
 		return frame_input;
 	}
 
-	void InputSenderComponent::add_reciever(InputRecieverComponent* reciever)
+	void InputSenderComponent::add_reciever(InputReceiverComponent* reciever)
 	{
 		recievers.push_back(reciever);
 	}
 
-	void InputSenderComponent::remove_reciever(InputRecieverComponent* reciever)
+	void InputSenderComponent::remove_reciever(InputReceiverComponent* reciever)
 	{
 		std::erase(recievers, reciever);
 	}
 
 	void InputSenderComponent::notify_input()
 	{
-		for (InputRecieverComponent* reciever : recievers)
+		for (InputReceiverComponent* reciever : recievers)
 		{
 			if (!reciever->is_active())
 			{

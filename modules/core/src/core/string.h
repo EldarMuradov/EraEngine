@@ -108,6 +108,16 @@ namespace era_engine
 #endif
 	}
 
+	inline void replace_all(std::string& input, const std::string& from, const std::string& to)
+	{
+		size_t pos = 0;
+		while ((pos = input.find(from, pos)) != std::string::npos)
+		{
+			input.replace(pos, from.size(), to);
+			pos += to.size();
+		}
+	}
+
 	inline std::string convert_path(std::string_view input_path)
 	{
 		std::filesystem::path path(input_path);
@@ -127,7 +137,9 @@ namespace era_engine
 			new_path = new_path.relative_path();
 		}
 
-		return '/' + new_path.string();
+		std::string converted_path = new_path.string();
+		replace_all(converted_path, "\\", "/");
+		return '/' + converted_path;
 	}
 
 	inline constexpr std::string get_asset_path(std::string_view path)

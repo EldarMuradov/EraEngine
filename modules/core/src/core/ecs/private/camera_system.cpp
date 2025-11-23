@@ -1,7 +1,7 @@
 #include "core/ecs/private/camera_system.h"
 #include "core/log.h"
 #include "core/cpu_profiling.h"
-#include "core/ecs/input_reciever_component.h"
+#include "core/ecs/input_receiver_component.h"
 #include "core/ecs/camera_holder_component.h"
 
 #include "rendering/ecs/renderer_holder_root_component.h"
@@ -44,7 +44,7 @@ namespace era_engine
 	{
 		ZoneScopedN("CameraSystem::render");
 
-		for (auto [handle, camera_holder, receiver, transform] : world->group(components_group<CameraHolderComponent, InputRecieverComponent, TransformComponent>).each())
+		for (auto [handle, camera_holder, receiver, transform] : world->group(components_group<CameraHolderComponent, InputReceiverComponent, TransformComponent>).each())
 		{
 			const UserInput& user_input = receiver.get_frame_input();
 			const vec3& input = receiver.get_current_input();
@@ -83,7 +83,7 @@ namespace era_engine
 			camera->updateMatrices();
 		}
 
-		for (auto [handle, camera_holder, transform] : world->group(components_group<CameraHolderComponent, TransformComponent>, components_group<InputRecieverComponent>).each())
+		for (auto [handle, camera_holder, transform] : world->group(components_group<CameraHolderComponent, TransformComponent>, components_group<InputReceiverComponent>).each())
 		{
 			render_camera* camera = camera_holder.get_render_camera();
 

@@ -14,7 +14,7 @@
 #include "core/cpu_profiling.h"
 #include "core/memory.h"
 #include "core/string.h"
-#include "core/ecs/input_reciever_component.h"
+#include "core/ecs/input_receiver_component.h"
 #include "core/debug/debug_var.h"
 
 #include "engine/engine.h"
@@ -88,7 +88,7 @@ namespace era_engine
 	{
 		ZoneScopedN("MotionSystem::update");
 
-		for (auto [handle, transform_component, motion_component, reciever_component] : world->group(components_group<TransformComponent, MotionComponent, InputRecieverComponent>).each())
+		for (auto [handle, transform_component, motion_component, reciever_component] : world->group(components_group<TransformComponent, MotionComponent, InputReceiverComponent>).each())
 		{
 			Entity movable = world->get_entity(handle);
 

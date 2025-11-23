@@ -9,7 +9,7 @@
 
 namespace era_engine
 {
-	class InputRecieverComponent;
+	class InputReceiverComponent;
 
 	class ERA_CORE_API InputSenderComponent final : public Component
 	{
@@ -24,8 +24,8 @@ namespace era_engine
 
 		const UserInput& get_frame_input() const;
 
-		void add_reciever(InputRecieverComponent* reciever);
-		void remove_reciever(InputRecieverComponent* reciever);
+		void add_reciever(InputReceiverComponent* reciever);
+		void remove_reciever(InputReceiverComponent* reciever);
 
 		ERA_VIRTUAL_REFLECT(Component)
 
@@ -38,7 +38,7 @@ namespace era_engine
 		vec3 current_input = vec3::zero;
 		vec3 last_input = vec3::zero;
 
-		std::vector<InputRecieverComponent*> recievers;
+		std::vector<InputReceiverComponent*> recievers;
 
 		friend class InputSystem;
 	};

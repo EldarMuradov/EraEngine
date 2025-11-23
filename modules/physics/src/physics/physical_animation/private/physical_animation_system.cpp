@@ -470,27 +470,23 @@ namespace era_engine::physics
 				continue;
 			}
 
-			PhysicalAnimationLimbComponent* first_limb_data_component = first_entity.get_component<PhysicalAnimationLimbComponent>();
-			if (first_limb_data_component == nullptr)
+			PhysicalAnimationLimbComponent* first_limb_data_component = first_entity.get_component_if_exists<PhysicalAnimationLimbComponent>();
+			if (first_limb_data_component != nullptr)
 			{
-				continue;
+				Entity first_ragdoll = first_limb_data_component->ragdoll_ptr.get();
+				const PhysicalAnimationComponent* first_simulation_component = first_ragdoll.get_component<PhysicalAnimationComponent>();
+				ASSERT(first_simulation_component != nullptr);
+				first_simulation_component->pose_solver->force_solve_collided_limb(first_limb_data_component);
 			}
 
-			PhysicalAnimationLimbComponent* second_limb_data_component = second_entity.get_component<PhysicalAnimationLimbComponent>();
-			if (second_limb_data_component == nullptr)
+			PhysicalAnimationLimbComponent* second_limb_data_component = second_entity.get_component_if_exists<PhysicalAnimationLimbComponent>();
+			if (second_limb_data_component != nullptr)
 			{
-				continue;
+				Entity second_ragdoll = second_limb_data_component->ragdoll_ptr.get();
+				const PhysicalAnimationComponent* second_simulation_component = second_ragdoll.get_component<PhysicalAnimationComponent>();
+				ASSERT(second_simulation_component != nullptr);
+				second_simulation_component->pose_solver->force_solve_collided_limb(second_limb_data_component);
 			}
-
-			Entity first_ragdoll = first_limb_data_component->ragdoll_ptr.get();
-			const PhysicalAnimationComponent* first_simulation_component = first_ragdoll.get_component<PhysicalAnimationComponent>();
-			ASSERT(first_simulation_component != nullptr);
-			first_simulation_component->pose_solver->force_solve_collided_limb(first_limb_data_component);
-
-			Entity second_ragdoll = second_limb_data_component->ragdoll_ptr.get();
-			const PhysicalAnimationComponent* second_simulation_component = second_ragdoll.get_component<PhysicalAnimationComponent>();
-			ASSERT(second_simulation_component != nullptr);
-			second_simulation_component->pose_solver->force_solve_collided_limb(second_limb_data_component);
 		}
 	}
 

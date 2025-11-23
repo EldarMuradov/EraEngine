@@ -21,7 +21,7 @@ namespace era_engine::physics
 	class BodyComponent;
 	class ShapeComponent;
 
-	class ERA_CORE_API PhysicsDescriptor
+	class ERA_PHYSICS_API PhysicsDescriptor
 	{
 	public:
 		physx::PxBroadPhaseType::Enum broad_phase = physx::PxBroadPhaseType::ePABP;
@@ -30,7 +30,7 @@ namespace era_engine::physics
 		const char* omni_pvd_path = "out.ovd";
 	};
 
-	class Physics final
+	class ERA_PHYSICS_API Physics final
 	{
 	public:
 		Physics(const PhysicsDescriptor& _descriptor = {});
@@ -131,7 +131,7 @@ namespace era_engine::physics
 		friend class PhysicsSystem;
 	};
 
-	class PhysicsHolder final
+	class ERA_PHYSICS_API PhysicsHolder final
 	{
 		PhysicsHolder() = delete;
 

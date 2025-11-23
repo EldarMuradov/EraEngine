@@ -1,6 +1,6 @@
 #include "editor/editor_init_system.h"
 
-#include <core/ecs/input_reciever_component.h>
+#include <core/ecs/input_receiver_component.h>
 #include <core/ecs/input_sender_component.h>
 #include <core/string.h>
 
@@ -54,7 +54,7 @@ namespace era_engine
 		camera_holder_component->set_camera_type(CameraHolderComponent::FREE_CAMERA);
 		camera_holder_component->set_render_camera(&renderer_holder_rc->camera);
 
-		camera_entity.add_component<InputSenderComponent>()->add_reciever(camera_entity.add_component<InputRecieverComponent>());
+		camera_entity.add_component<InputSenderComponent>()->add_reciever(camera_entity.add_component<InputReceiverComponent>());
 	}
 
 	void EditorInitSystem::update(float dt)

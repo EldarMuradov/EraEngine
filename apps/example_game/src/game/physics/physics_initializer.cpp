@@ -42,6 +42,9 @@ namespace era_engine
 		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::RAGDOLL),
 			static_cast<uint32>(GameCollisionType::DYNAMICS), true);
 
+		collision_holder_rc->set_collision_filter(static_cast<uint32>(GameCollisionType::DYNAMICS),
+			static_cast<uint32>(GameCollisionType::DYNAMICS), true);
+
 		collision_holder_rc->set_collision_filter(static_cast<uint32>(GameCollisionType::STATICS),
 			static_cast<uint32>(GameCollisionType::DYNAMICS), true);
 

@@ -8,9 +8,10 @@ int main(int argc, char** argv)
 {
 	using namespace era_engine;
 
+	GameStartup startup;
+
 	try
 	{
-		GameStartup startup;
 		startup.start(argc, argv);
 	}
 	catch (const std::exception& ex)

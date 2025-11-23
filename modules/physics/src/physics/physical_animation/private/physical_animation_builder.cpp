@@ -472,7 +472,7 @@ namespace era_engine::physics
 		const float distance_between_foot_and_foot_end = length(left_foot_joint_transform.position - left_foot_end_joint_transform.position);
 		const float distance_between_foot_y_and_foot_end_y = abs(left_foot_joint_transform.position.y - left_foot_end_joint_transform.position.y);
 
-		ref<PhysicsMaterial> material = PhysicsHolder::physics_ref->create_material(0.1f, 0.8f, 0.8f);
+		ref<PhysicsMaterial> material = PhysicsHolder::physics_ref->create_material(0.4f, 0.8f, 0.8f);
 		ASSERT(material != nullptr);
 
 		Entity head;

@@ -13,7 +13,7 @@
 
 #include "core/cpu_profiling.h"
 #include "core/string.h"
-#include "core/ecs/input_reciever_component.h"
+#include "core/ecs/input_receiver_component.h"
 #include "core/debug/debug_var.h"
 
 #include "engine/engine.h"
@@ -168,7 +168,7 @@ namespace era_engine
 		using namespace animation;
 
         for (auto [handle, transform_component, reciever_component, trajectory_component, motion_component] 
-			: world->group(components_group<TransformComponent, InputRecieverComponent, TrajectoryComponent, MotionComponent>).each())
+			: world->group(components_group<TransformComponent, InputReceiverComponent, TrajectoryComponent, MotionComponent>).each())
         {
             // Get gamepad stick states
             const vec3& input = motion_component.get_desired_input();

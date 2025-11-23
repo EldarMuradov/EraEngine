@@ -1,6 +1,6 @@
 #include "core/ecs/private/input_system.h"
 #include "core/ecs/input_sender_component.h"
-#include "core/ecs/input_reciever_component.h"
+#include "core/ecs/input_receiver_component.h"
 #include "core/imgui.h"
 #include "core/log.h"
 #include "core/cpu_profiling.h"

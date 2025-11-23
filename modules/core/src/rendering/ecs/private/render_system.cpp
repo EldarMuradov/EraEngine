@@ -5,7 +5,7 @@
 #include "core/log.h"
 #include "core/string.h"
 #include "core/cpu_profiling.h"
-#include "core/ecs/input_reciever_component.h"
+#include "core/ecs/input_receiver_component.h"
 
 #include "rendering/mesh_shader.h"
 

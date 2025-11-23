@@ -1,10 +1,11 @@
 #include "game/game_init_system.h"
 #include "game/physics/gameplay_physics_types.h"
 
-#include <core/ecs/input_reciever_component.h>
+#include <core/ecs/input_receiver_component.h>
 #include <core/ecs/input_sender_component.h>
 #include <core/string.h>
 #include <core/ecs/camera_holder_component.h>
+#include <core/debug/debug_var.h>
 
 #include <asset/game_asset.h>
 
@@ -21,6 +22,7 @@
 #include <ecs/rendering/mesh_component.h>
 
 #include <physics/body_component.h>
+#include "physics/core/physics.h"
 #include <physics/shape_component.h>
 #include <physics/basic_objects.h>
 #include <physics/joint.h>
@@ -47,8 +49,10 @@ namespace era_engine
 
 		registration::class_<GameInitSystem>("GameInitSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("game")))
-			.method("update", &GameInitSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL));
+			.method("update", &GameInitSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL_CONCURRENT));
 	}
+
+	static DebugVar<float> sphere_speed = DebugVar<float>("test.sphere_speed", 50000.0f);
 
 	GameInitSystem::GameInitSystem(World* _world)
 		: System(_world)
@@ -67,28 +71,15 @@ namespace era_engine
 		RendererHolderRootComponent* renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
 		ASSERT(renderer_holder_rc != nullptr);
 
-		Entity camera_entity = world->create_entity("CameraEntity");
+		camera_entity = world->create_entity("CameraEntity");
 		CameraHolderComponent* camera_holder_component = camera_entity.add_component<CameraHolderComponent>();
 
-		camera_entity.add_component<InputSenderComponent>()->add_reciever(camera_entity.add_component<InputRecieverComponent>());
+		camera_entity.add_component<InputSenderComponent>()->add_reciever(camera_entity.add_component<InputReceiverComponent>());
 		camera_entity.add_component<MotionComponent>();
 		camera_entity.add_component<TrajectoryComponent>();
 
 		camera_holder_component->set_camera_type(CameraHolderComponent::FREE_CAMERA);
 		camera_holder_component->set_render_camera(&renderer_holder_rc->camera);
-
-		auto defaultmat = createPBRMaterialAsync({ "", "" });
-		defaultmat->shader = pbr_material_shader_double_sided;
-
-		mesh_builder builder;
-
-		auto sphereMesh = make_ref<multi_mesh>();
-		builder.pushSphere({ });
-		sphereMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
-
-		auto boxMesh = make_ref<multi_mesh>();
-		builder.pushBox({ vec3(0.f), vec3(1.f, 1.f, 2.f) });
-		boxMesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
 
 		PbrMaterialDesc defaultPlaneMatDesc;
 		defaultPlaneMatDesc.albedo = get_asset_path("/resources/assets/uv.jpg");
@@ -99,6 +90,8 @@ namespace era_engine
 		defaultPlaneMatDesc.roughness_override = 0.01f;
 
 		auto defaultPlaneMat = createPBRMaterialAsync(defaultPlaneMatDesc);
+
+		mesh_builder builder;
 
 		auto groundMesh = make_ref<multi_mesh>();
 		builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
@@ -195,6 +188,7 @@ namespace era_engine
 			//RagdollComponent* ragdoll_component = tiran.add_component<RagdollComponent>();
 			//ragdoll_component->simulated = true;
 			PhysicalAnimationComponent* ragdoll_component = tiran.add_component<PhysicalAnimationComponent>();
+			ragdoll_component->strength_type = RagdollProfileStrengthType::SOFT;
 			ragdoll_component->joint_init_ids = joint_init_ids;
 			ragdoll_component->settings = settings;
 		}
@@ -213,15 +207,54 @@ namespace era_engine
 		plane.add_component<MeshComponent>(groundMesh);
 		plane.get_component<TransformComponent>()->set_world_transform(trs{vec3(10, -9.f, 0.f), quat(vec3(1.f, 0.f, 0.f), deg2rad(0.f)), vec3(5.0f, 1.0f, 5.0f)});
 		
-		groundMesh->mesh =
-			boxMesh->mesh =
-			sphereMesh->mesh =
-			builder.createDXMesh();
+		groundMesh->mesh = builder.createDXMesh();
 	}
 
 	void GameInitSystem::update(float dt)
 	{
-		
+		using namespace physics;
+		const InputReceiverComponent* input_receiver = camera_entity.get_component<InputReceiverComponent>();
+
+		const UserInput& frame_input = input_receiver->get_frame_input();
+		if (frame_input.keyboard[key_code::key_space].press_event)
+		{
+			mesh_builder builder;
+
+			auto defaultmat = createPBRMaterialAsync({ "", "" });
+			defaultmat->shader = pbr_material_shader_double_sided;
+
+			auto sphere_mesh = make_ref<multi_mesh>();
+			builder.pushSphere({ });
+			sphere_mesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, defaultmat });
+
+			sphere_mesh->mesh = builder.createDXMesh();
+
+			Entity sphere = world->create_entity("Sphere");
+
+			ref<PhysicsMaterial> material = PhysicsHolder::physics_ref->get_default_material();
+
+			SphereShapeComponent* sphere_shape_component = sphere.add_component<SphereShapeComponent>();
+			sphere_shape_component->collision_type = static_cast<CollisionType>(GameCollisionType::DYNAMICS);
+			sphere_shape_component->radius = 0.2f;
+			sphere_shape_component->material = material;
+			sphere.add_component<MeshComponent>(sphere_mesh);
+
+			CameraHolderComponent* camera_holder_component = camera_entity.get_component<CameraHolderComponent>();
+
+			trs camera_world_transform = trs{ camera_holder_component->get_render_camera()->position, camera_holder_component->get_render_camera()->rotation, vec3(0.2f)};
+			sphere.get_component<TransformComponent>()->set_world_transform(camera_world_transform);
+
+			DynamicBodyComponent* dynamic_body_component = sphere.add_component<DynamicBodyComponent>();
+			dynamic_body_component->ccd.get_for_write() = true;
+			dynamic_body_component->mass.get_for_write() = 50.0f;
+			dynamic_body_component->simulated.get_for_write() = true;
+			dynamic_body_component->use_gravity.get_for_write() = true;
+			dynamic_body_component->sleep_threshold.get_for_write() = 0.1f;
+
+			Force& force = dynamic_body_component->forces.emplace_back();
+			force.force = (camera_holder_component->get_render_camera()->rotation * quat(vec3(0.0f, 1.0f, 0.0f), M_PI)) * vec3(0.0f, 0.0f, 1.0f) * sphere_speed;
+			force.mode = ForceMode::FORCE;
+		}
 	}
 
 }

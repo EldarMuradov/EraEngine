@@ -634,11 +634,6 @@ namespace era_engine::physics
 			created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
 			created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component->enable_collision);
 
-			if (PhysicsHolder::physics_ref->is_gpu())
-			{
-				created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
-			}
-
 			joint_component->joint = created_joint;
 			joint_component->joint->userData = joint_component;
 						

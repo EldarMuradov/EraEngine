@@ -39,12 +39,6 @@ function(era_default_linkage name)
         MESH_SHADER_SUPPORTED
         ENABLE_DX_PROFILING=0
         ENABLE_FSR_WRAPPER
-        TRACY_ENABLE
-        TRACY_ON_DEMAND
-        TRACY_NO_CRASH_HANDLER
-        TRACY_NO_CALLSTACK
-        TRACY_NO_CODE_TRANSFER
-        TRACY_NO_SAMPLING
         ACL_USE_SJSON
     )
 

@@ -1,6 +1,7 @@
 #include "physics_module.h"
 
 #include "physics/core/physics.h"
+#include "physics/physx_api.h"
 
 #include "engine/engine.h"
 
@@ -24,7 +25,8 @@ namespace era_engine
     {
         IModule::initialize(engine);
 
-        physics::PhysicsHolder::physics_ref = make_ref<physics::Physics>();
+        physics::PhysicsDescriptor desc;
+        physics::PhysicsHolder::physics_ref = make_ref<physics::Physics>(desc);
         physics::PhysicsHolder::physics_ref->init_scene();
         physics::PhysicsHolder::physics_ref->start();
         MODULE_REGISTRATION
