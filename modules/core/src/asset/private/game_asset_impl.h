@@ -6,16 +6,19 @@
 namespace era_engine
 {
 	template<class T, CompatibleAssetType<T>>
-	inline ref<T> GameAssetsProvider::load_game_asset_from_file(const fs::path& path, JobHandle parent_job /*= {}*/, uint32 flags /*= 0*/)
+	inline ref<T> GameAssetsProvider::load_game_asset_from_file(const fs::path& path, bool load_from_cache/* = true*/, JobHandle parent_job /*= {}*/, uint32 flags /*= 0*/)
 	{
 		fs::path final_path = path.parent_path();
 		final_path.append(path.filename().string() + AssetExtension<T>::get_asset_type());
 		final_path = final_path.lexically_normal().make_preferred();
 
-		ref<GameAsset> cached_asset = GameAssetCache::try_get_asset_from_cache(final_path, flags);
-		if (cached_asset != nullptr)
+		if(load_from_cache)
 		{
-			return std::dynamic_pointer_cast<T>(cached_asset);
+			ref<GameAsset> cached_asset = GameAssetCache::try_get_asset_from_cache(final_path, flags);
+			if (cached_asset != nullptr)
+			{
+				return std::dynamic_pointer_cast<T>(cached_asset);
+			}
 		}
 
 		ref<T> asset = make_ref<T>();

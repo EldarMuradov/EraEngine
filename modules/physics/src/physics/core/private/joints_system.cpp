@@ -580,14 +580,49 @@ namespace era_engine::physics
 
 			D6JointComponent* joint_component = entity.get_component<D6JointComponent>();
 
-			PxRigidActor* first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
-			PxRigidActor* second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+			PxRigidActor* first_actor = nullptr;
+			PxRigidActor* second_actor = nullptr;
 
-			if (first_actor == nullptr ||
-				second_actor == nullptr)
+			if (!joint_component->base_descriptor.connected_entity.is_empty() &&
+				!joint_component->base_descriptor.second_connected_entity.is_empty())
 			{
-				++iter;
-				continue;
+				first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
+				second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+
+				if (first_actor == nullptr ||
+					second_actor == nullptr)
+				{
+					++iter;
+					continue;
+				}
+			}
+			else
+			{
+				if (!joint_component->base_descriptor.connected_entity.is_empty())
+				{
+					first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
+					if (first_actor == nullptr)
+					{
+						++iter;
+						continue;
+					}
+				}
+				else if (!joint_component->base_descriptor.second_connected_entity.is_empty())
+				{
+					second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+					if (second_actor == nullptr)
+					{
+						++iter;
+						continue;
+					}
+
+				}
+				else
+				{
+					ASSERT(false);
+					iter = d6_joints_to_init.erase(iter);
+					continue;
+				}
 			}
 
 			PxD6Joint* created_joint = PxD6JointCreate(*PhysicsHolder::physics_ref->get_physics(),
@@ -618,14 +653,49 @@ namespace era_engine::physics
 
 			DistanceJointComponent* joint_component = entity.get_component<DistanceJointComponent>();
 
-			PxRigidActor* first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
-			PxRigidActor* second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+			PxRigidActor* first_actor = nullptr;
+			PxRigidActor* second_actor = nullptr;
 
-			if (first_actor == nullptr ||
-				second_actor == nullptr)
+			if (!joint_component->base_descriptor.connected_entity.is_empty() &&
+				!joint_component->base_descriptor.second_connected_entity.is_empty())
 			{
-				++iter;
-				continue;
+				first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
+				second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+
+				if (first_actor == nullptr ||
+					second_actor == nullptr)
+				{
+					++iter;
+					continue;
+				}
+			}
+			else
+			{
+				if (!joint_component->base_descriptor.connected_entity.is_empty())
+				{
+					first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
+					if (first_actor == nullptr)
+					{
+						++iter;
+						continue;
+					}
+				}
+				else if (!joint_component->base_descriptor.second_connected_entity.is_empty())
+				{
+					second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+					if (second_actor == nullptr)
+					{
+						++iter;
+						continue;
+					}
+
+				}
+				else
+				{
+					ASSERT(false);
+					iter = d6_joints_to_init.erase(iter);
+					continue;
+				}
 			}
 
 			PxDistanceJoint* created_joint = PxDistanceJointCreate(*PhysicsHolder::physics_ref->get_physics(),
@@ -651,14 +721,49 @@ namespace era_engine::physics
 
 			FixedJointComponent* joint_component = entity.get_component<FixedJointComponent>();
 
-			PxRigidActor* first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
-			PxRigidActor* second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+			PxRigidActor* first_actor = nullptr;
+			PxRigidActor* second_actor = nullptr;
 
-			if (first_actor == nullptr ||
-				second_actor == nullptr)
+			if (!joint_component->base_descriptor.connected_entity.is_empty() &&
+				!joint_component->base_descriptor.second_connected_entity.is_empty())
 			{
-				++iter;
-				continue;
+				first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
+				second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+
+				if (first_actor == nullptr ||
+					second_actor == nullptr)
+				{
+					++iter;
+					continue;
+				}
+			}
+			else
+			{
+				if (!joint_component->base_descriptor.connected_entity.is_empty())
+				{
+					first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
+					if (first_actor == nullptr)
+					{
+						++iter;
+						continue;
+					}
+				}
+				else if (!joint_component->base_descriptor.second_connected_entity.is_empty())
+				{
+					second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+					if (second_actor == nullptr)
+					{
+						++iter;
+						continue;
+					}
+
+				}
+				else
+				{
+					ASSERT(false);
+					iter = d6_joints_to_init.erase(iter);
+					continue;
+				}
 			}
 
 			PxFixedJoint* created_joint = PxFixedJointCreate(*PhysicsHolder::physics_ref->get_physics(),

@@ -927,11 +927,6 @@ inline bool operator!=(const trs& a, const trs& b)
 	return !operator==(a, b);
 }
 
-static inline quat operator-(quat q)
-{
-	return quat(-q.x, -q.y, -q.z, -q.w);
-}
-
 static inline quat operator-(const quat& q, const quat& p)
 {
 	return quat(q.x - p.x, q.y - p.y, q.z - p.z, q.w - p.w);
