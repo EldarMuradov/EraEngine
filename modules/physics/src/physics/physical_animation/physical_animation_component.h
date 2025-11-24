@@ -6,7 +6,6 @@
 #include "physics/physical_animation/ragdoll_profile.h"
 #include "physics/physical_animation/states/base_simulation_state.h"
 #include "physics/physical_animation/limb_states/base_limb_state.h"
-#include "physics/physical_animation/drive_pose_solver.h"
 
 #include <core/math.h>
 
@@ -25,8 +24,6 @@ namespace era_engine::physics
 	public:
 		std::vector<EntityPtr> connected_limbs;
 	};
-
-	class DrivePoseSolver;
 
 	enum class SkeletalMeshBlendType : uint8
 	{
@@ -58,12 +55,6 @@ namespace era_engine::physics
 	public:
 		/* Joint local space transfrom from animation. */
 		trs target_pose = trs::identity;
-
-		/*
-			Desired joint local space transfrom.
-			Can be interpolated from physics to animation or be from physics_pose to target_pose.
-		*/
-		trs adjusted_pose = trs::identity;
 
 		/* Physics body local space transfrom. */
 		trs physics_pose = trs::identity;
@@ -151,8 +142,6 @@ namespace era_engine::physics
 		trs prev_world_transform = trs::identity;
 
 		vec3 velocity = vec3::zero;
-
-		ref<DrivePoseSolver> pose_solver;
 
 		ref<PhysicsLimbChain> left_arm_chain;
 		ref<PhysicsLimbChain> right_arm_chain;

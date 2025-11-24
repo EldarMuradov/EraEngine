@@ -6,7 +6,6 @@
 #include "physics/physical_animation/states/enabled_simulation_state.h"
 #include "physics/physical_animation/states/disabled_simulation_state.h"
 #include "physics/physical_animation/states/ragdoll_simulation_state.h"
-#include "physics/physical_animation/drive_pose_solver.h"
 #include "physics/physical_animation/limb_states/blend_out_limb_state.h"
 #include "physics/physical_animation/limb_states/kinematic_limb_state.h"
 #include "physics/physical_animation/limb_states/simulation_limb_state.h"
@@ -82,7 +81,6 @@ namespace era_engine::physics
 		simulation_states.emplace(PhysicalLimbStateType::BLEND_OUT, std::make_shared<BlendOutLimbState>(this_component_ptr));
 		simulation_states.emplace(PhysicalLimbStateType::SIMULATION, std::make_shared<SimulationLimbState>(this_component_ptr));
 		simulation_states.emplace(PhysicalLimbStateType::RAGDOLL, std::make_shared<RagdollLimbState>(this_component_ptr));
-
 	}
 
 	PhysicalAnimationLimbComponent::~PhysicalAnimationLimbComponent()
@@ -133,8 +131,6 @@ namespace era_engine::physics
 		simulation_states.emplace(SimulationStateType::RAGDOLL, std::make_shared<RagdollSimulationState>(this_component_ptr));
 
 		current_state_type = SimulationStateType::DISABLED;
-
-		pose_solver = std::make_unique<DrivePoseSolver>(this_component_ptr);
 	}
 
 	PhysicalAnimationComponent::~PhysicalAnimationComponent()

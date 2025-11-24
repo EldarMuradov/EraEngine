@@ -188,7 +188,6 @@ namespace era_engine
 			//RagdollComponent* ragdoll_component = tiran.add_component<RagdollComponent>();
 			//ragdoll_component->simulated = true;
 			PhysicalAnimationComponent* ragdoll_component = tiran.add_component<PhysicalAnimationComponent>();
-			ragdoll_component->strength_type = RagdollProfileStrengthType::SOFT;
 			ragdoll_component->joint_init_ids = joint_init_ids;
 			ragdoll_component->settings = settings;
 		}

@@ -16,12 +16,21 @@ namespace era_engine::physics
     enum class PhysicalLimbBlendType : uint8
     {
         NONE = 0,
-        BLEND_WITH_PREV_POSE,
-        BLEND_WITH_ANIMATION_POSE,
-        PURE_PHYSICS,
-        PURE_ANIMATION
+        BLEND_WITH_PREV_POSE = 1 << 0,
+        BLEND_WITH_ANIMATION_POSE = 1 << 1,
+        PURE_PHYSICS = 1 << 2,
+        PURE_ANIMATION = 1 << 3
     };
     DEFINE_BITWISE_OPERATORS_FOR_ENUM(PhysicalLimbBlendType);
+
+    enum class MotorDriveType : uint8
+    {
+        NONE = 0,
+        VELOCITY = 1 << 0,
+        TRANSFORM = 1 << 1,
+        ALL = VELOCITY | TRANSFORM
+    };
+    DEFINE_BITWISE_OPERATORS_FOR_ENUM(MotorDriveType);
 
     class ERA_PHYSICS_API MotorDriveDetails final
     {
@@ -36,15 +45,16 @@ namespace era_engine::physics
         float linear_drive_stiffness = 100.0f;
 
         vec2 angular_range = vec2(deg2rad(3.0f), deg2rad(30.0f));
-        vec2 angular_damping_range = vec2(60.0f, 10.0f);
+        vec2 angular_damping_range = vec2(60.0f, 20.0f);
 
         vec2 linear_range = vec2(0.05f, 0.5f);
-        vec2 linear_damping_range = vec2(80.0f, 10.0f);
+        vec2 linear_damping_range = vec2(80.0f, 20.0f);
 
         float max_force = std::numeric_limits<float>::max();
 
         bool accelerated = true;
         bool enable_slerp_drive = true;
+        MotorDriveType drive_type = MotorDriveType::TRANSFORM;
     };
 
     class ERA_PHYSICS_API DragForceDetails final

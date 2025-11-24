@@ -73,7 +73,7 @@ namespace era_engine::physics
 			auto process_limb = [&skeleton_component, &ragdoll_transform](PhysicalAnimationLimbComponent* limb_component)
 				{
 					PhysicalAnimationUtils::reset_motor_drive(limb_component);
-					PhysicalAnimationUtils::set_simulation_for_limb(limb_component, true, false);
+					PhysicalAnimationUtils::set_simulation_for_limb(limb_component, true, true);
 					PhysicalAnimationUtils::force_sync_limb_to_skeleton(limb_component, skeleton_component, ragdoll_transform);
 				};
 

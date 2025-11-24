@@ -50,7 +50,8 @@ namespace era_engine::physics
 
 		void update_target_pose(const PhysicalAnimationComponent* physical_animation_component,
 			Entity limb,
-			const trs& calculated_target_local_space_pose) const;
+			const trs& calculated_target_local_space_pose,
+			const trs& ragdoll_world_space_pose) const;
 
 		void update_ragdoll_profiles(PhysicalAnimationComponent* physical_animation_component,
 			const vec3& velocity,

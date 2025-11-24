@@ -17,7 +17,7 @@ namespace era_engine::physics
 		ASSERT(actor != nullptr);
 		
 #ifndef _DEBUG
-		actor->setActorFlag(PxActorFlag::eVISUALIZATION, false);
+		//actor->setActorFlag(PxActorFlag::eVISUALIZATION, false);
 #endif
 
 		actor->userData = user_data;
@@ -33,7 +33,7 @@ namespace era_engine::physics
 		ASSERT(actor != nullptr);
 
 #ifndef _DEBUG
-		actor->setActorFlag(PxActorFlag::eVISUALIZATION, false);
+		//actor->setActorFlag(PxActorFlag::eVISUALIZATION, false);
 #endif
 
 		actor->userData = user_data;

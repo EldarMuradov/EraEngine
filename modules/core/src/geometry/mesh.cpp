@@ -57,6 +57,8 @@ namespace era_engine
 			{
 				PbrMaterialDesc& materialDesc = asset.materials[sub.material_index];
 
+				materialDesc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
 				{
 					if (!materialDesc.albedo.empty() && *materialDesc.albedo.c_str() != 'F')
 						materialDesc.albedo = get_asset_path(convert_path(materialDesc.albedo.string()));

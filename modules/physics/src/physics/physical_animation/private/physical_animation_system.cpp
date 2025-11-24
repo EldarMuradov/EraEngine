@@ -10,7 +10,6 @@
 #include "physics/scene_queries.h"
 #include "physics/shape_component.h"
 #include "physics/physical_animation/ragdoll_profile.h"
-#include "physics/physical_animation/drive_pose_solver.h"
 #include "physics/physical_animation/physical_animation_utils.h"
 
 #include <core/cpu_profiling.h>
@@ -71,49 +70,49 @@ namespace era_engine::physics
 			idle_profile = make_ref<RagdollProfile>();
 
 			idle_profile->type = RagdollProfileType::IDLE;
-			idle_profile->head_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->head_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
 			idle_profile->head_limb_details.motor_drive = MotorDriveDetails();
-			idle_profile->head_limb_details.motor_drive->angular_drive_stiffness = 200.0f;
-			idle_profile->head_limb_details.motor_drive->linear_drive_stiffness = 200.0f;
+			idle_profile->head_limb_details.motor_drive->angular_drive_stiffness = 300.0f;
+			idle_profile->head_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
 
-			idle_profile->body_upper_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->body_upper_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
 			idle_profile->body_upper_limb_details.motor_drive = MotorDriveDetails();
-			idle_profile->body_upper_limb_details.motor_drive->angular_drive_stiffness = 400.0f;
-			idle_profile->body_upper_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
+			idle_profile->body_upper_limb_details.motor_drive->angular_drive_stiffness = 500.0f;
+			idle_profile->body_upper_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
 
-			idle_profile->body_middle_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->body_middle_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
 			idle_profile->body_upper_limb_details.motor_drive = MotorDriveDetails();
-			idle_profile->body_upper_limb_details.motor_drive->angular_drive_stiffness = 400.0f;
-			idle_profile->body_upper_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
+			idle_profile->body_upper_limb_details.motor_drive->angular_drive_stiffness = 500.0f;
+			idle_profile->body_upper_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
 
-			idle_profile->arm_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->arm_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
 			idle_profile->arm_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->arm_limb_details.motor_drive->angular_drive_stiffness = 200.0f;
 			idle_profile->arm_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
 
-			idle_profile->body_lower_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->body_lower_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
 
-			idle_profile->forearm_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->forearm_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
 			idle_profile->forearm_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->forearm_limb_details.motor_drive->angular_drive_stiffness = 200.0f;
 			idle_profile->forearm_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
 
-			idle_profile->hand_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->hand_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
 			idle_profile->hand_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->hand_limb_details.motor_drive->angular_drive_stiffness = 200.0f;
 			idle_profile->hand_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
 
-			idle_profile->leg_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->leg_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
 			idle_profile->leg_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->leg_limb_details.motor_drive->angular_drive_stiffness = 400.0f;
 			idle_profile->leg_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
 
-			idle_profile->calf_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->calf_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
 			idle_profile->calf_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->calf_limb_details.motor_drive->angular_drive_stiffness = 400.0f;
 			idle_profile->calf_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
 
-			idle_profile->foot_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->foot_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
 			idle_profile->foot_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->foot_limb_details.motor_drive->angular_drive_stiffness = 400.0f;
 			idle_profile->foot_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
@@ -288,7 +287,10 @@ namespace era_engine::physics
 
 				physical_animation_component.local_joint_poses_for_target_calculation[physical_animation_component.root_joint_id] = pelvis_local_transform;
 
-				update_target_pose(&physical_animation_component, physical_animation_component.simulated_joints.at(physical_animation_component.root_joint_id).get(), pelvis_local_transform);
+				update_target_pose(&physical_animation_component, 
+					physical_animation_component.simulated_joints.at(physical_animation_component.root_joint_id).get(), 
+					pelvis_local_transform,
+					world_transform);
 
 				// Traverse simulation graph once.
 				while (!simulation_limbs_queue.empty())
@@ -312,32 +314,18 @@ namespace era_engine::physics
 						if (limb_iter != physical_animation_component.simulated_joints.end())
 						{
 							const Entity limb = limb_iter->second.get();
-							update_target_pose(&physical_animation_component, limb, calculated_transform);
+							update_target_pose(&physical_animation_component, 
+								limb, 
+								calculated_transform,
+								world_transform);
 						}
 
 						simulation_limbs_queue.push(child_id);
 					}
 				}
 
-				const bool force_to_targets = physical_animation_component.is_in_ragdoll();
-				physical_animation_component.pose_solver->solve_pose(dt, force_to_targets);
-
 				const trs pelvis_world_transform = world_transform * pelvis_local_transform;
 				PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
-
-				for (const EntityPtr& limb_ptr : physical_animation_component.limbs)
-				{
-					Entity limb = limb_ptr.get();
-					PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
-
-					ASSERT(limb_data_component != nullptr);
-
-					if (limb_data_component->drive_joint_component.get() != nullptr)
-					{
-						D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_data_component->drive_joint_component.get_for_write());
-						PhysicsUtils::manual_set_physics_transform(drive_joint->get_first_entity_ptr().get(), world_transform * limb_data_component->adjusted_pose, true);
-					}
-				}
 			}
 		}
 	}
@@ -476,7 +464,14 @@ namespace era_engine::physics
 				Entity first_ragdoll = first_limb_data_component->ragdoll_ptr.get();
 				const PhysicalAnimationComponent* first_simulation_component = first_ragdoll.get_component<PhysicalAnimationComponent>();
 				ASSERT(first_simulation_component != nullptr);
-				first_simulation_component->pose_solver->force_solve_collided_limb(first_limb_data_component);
+
+				const SimulationStateType state = first_simulation_component->get_current_state_type();
+				if((state == SimulationStateType::ENABLED || 
+					state == SimulationStateType::RAGDOLL) &&
+					first_limb_data_component->type != RagdollLimbType::FOOT)
+				{
+					first_limb_data_component->is_colliding = true;
+				}
 			}
 
 			PhysicalAnimationLimbComponent* second_limb_data_component = second_entity.get_component_if_exists<PhysicalAnimationLimbComponent>();
@@ -485,7 +480,14 @@ namespace era_engine::physics
 				Entity second_ragdoll = second_limb_data_component->ragdoll_ptr.get();
 				const PhysicalAnimationComponent* second_simulation_component = second_ragdoll.get_component<PhysicalAnimationComponent>();
 				ASSERT(second_simulation_component != nullptr);
-				second_simulation_component->pose_solver->force_solve_collided_limb(second_limb_data_component);
+
+				const SimulationStateType state = second_simulation_component->get_current_state_type();
+				if ((state == SimulationStateType::ENABLED ||
+					state == SimulationStateType::RAGDOLL) &&
+					second_limb_data_component->type != RagdollLimbType::FOOT)
+				{
+					second_limb_data_component->is_colliding = true;
+				}
 			}
 		}
 	}
@@ -555,13 +557,22 @@ namespace era_engine::physics
 		return should_update_as_simulated;
 	}
 
-	void PhysicalAnimationSystem::update_target_pose(const PhysicalAnimationComponent* physical_animation_component, Entity limb, const trs& calculated_target_local_space_pose) const
+	void PhysicalAnimationSystem::update_target_pose(const PhysicalAnimationComponent* physical_animation_component, 
+		Entity limb, 
+		const trs& calculated_target_local_space_pose,
+		const trs& ragdoll_world_space_pose) const
 	{
 		PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
 		ASSERT(limb_data_component != nullptr);
 
 		// Calculate target pose in local space.
 		limb_data_component->target_pose = calculated_target_local_space_pose;
+
+		if (limb_data_component->drive_joint_component.get() != nullptr)
+		{
+			D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_data_component->drive_joint_component.get_for_write());
+			PhysicsUtils::manual_set_physics_transform(drive_joint->get_first_entity_ptr().get(), ragdoll_world_space_pose * limb_data_component->target_pose, true);
+		}
 	}
 
 	void PhysicalAnimationSystem::update_ragdoll_profiles(PhysicalAnimationComponent* physical_animation_component,

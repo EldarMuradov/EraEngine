@@ -30,7 +30,7 @@ namespace era_engine
 		uint32 roughness_flags = image_load_flags_default_noncolor;
 		uint32 metallic_flags = image_load_flags_default_noncolor;
 
-		vec4 emission = vec4(0.f);
+		vec4 emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		vec4 albedo_tint = vec4(1.f);
 		float roughness_override = 1.f;
 		float metallic_override = 0.f;

@@ -11,6 +11,7 @@
 #include <animation/animation.h>
 
 #include <core/debug/debug_var.h>
+#include <core/traits.h>
 
 #include <ecs/base_components/transform_component.h>
 
@@ -36,33 +37,56 @@ namespace era_engine::physics
         const ref<RagdollProfile> profile = physical_animation_component->get_ragdoll_profile();
         ASSERT(profile != nullptr);
 
-		const quat delta_rotation = normalize(limb_component->adjusted_pose.rotation * conjugate(limb_component->physics_pose.rotation));
-		const vec3 angular_drive_velocity = PhysicalAnimationUtils::calculate_delta_rotation_time_derivative(delta_rotation, dt);
+		const quat delta_rotation = normalize(limb_component->target_pose.rotation * conjugate(limb_component->physics_pose.rotation));
+		const vec3 delta_position = limb_component->target_pose.position - limb_component->physics_pose.position;
+
+		float delta_angle = 0.0f;
+		vec3 delta_axis = vec3::zero;
+		get_axis_rotation(delta_rotation, delta_axis, delta_angle);
+
+		const vec3 angular_drive_velocity = normalize(delta_axis) * delta_angle / dt;
 
 		const PhysicalLimbDetails& limb_details = profile->get_limb_details_by_type(limb_component->type);
 
 		// Motors drive for limb.
 		if (limb_details.motor_drive.has_value())
 		{
+			ASSERT(limb_details.motor_drive->drive_type != MotorDriveType::NONE);
+
 			ASSERT(!limb_component->drive_joint_component.is_empty());
 			const MotorDriveDetails& motor_details = limb_details.motor_drive.value();
 			D6JointComponent* drive_joint_component = static_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
 
-			const trs& constraint_frame_in_actor1_local = drive_joint_component->get_second_local_frame();
 			const trs& constraint_frame_in_actor0_local = drive_joint_component->get_first_local_frame();
 			const trs& parent_local_transform = drive_joint_component->get_first_entity_ptr().get().get_component<TransformComponent>()->get_local_transform();
 
-			const trs constraint_frame_actor0_local = parent_local_transform * constraint_frame_in_actor0_local;
-			const trs constraint_frame_adjusted_local = limb_component->adjusted_pose * constraint_frame_in_actor1_local;
+			if (has_flag(limb_details.motor_drive->drive_type, MotorDriveType::TRANSFORM))
+			{
+				const trs& constraint_frame_in_actor1_local = drive_joint_component->get_second_local_frame();
 
-			trs target_pose_in_constraint_space = invert(constraint_frame_actor0_local) * constraint_frame_adjusted_local;
-			target_pose_in_constraint_space.rotation = normalize(target_pose_in_constraint_space.rotation);
+				const trs constraint_frame_actor0_local = parent_local_transform * constraint_frame_in_actor0_local;
+				const trs constraint_frame_target_local = limb_component->target_pose * constraint_frame_in_actor1_local;
 
-			drive_joint_component->drive_transform = target_pose_in_constraint_space;
+				trs target_pose_in_constraint_space = invert(constraint_frame_actor0_local) * constraint_frame_target_local;
+				target_pose_in_constraint_space.rotation = normalize(target_pose_in_constraint_space.rotation);
 
-			float delta_angle = 0.0f;
-			vec3 delta_axis = vec3::zero;
-			get_axis_rotation(delta_rotation, delta_axis, delta_angle);
+				drive_joint_component->drive_transform = target_pose_in_constraint_space;
+				drive_joint_component->angular_drive_velocity.get_for_write() = vec3::zero;
+				drive_joint_component->linear_drive_velocity.get_for_write() = vec3::zero;
+			}
+			if (has_flag(limb_details.motor_drive->drive_type, MotorDriveType::VELOCITY))
+			{
+				const quat parent_constraint_frame_rotation = normalize(parent_local_transform.rotation * constraint_frame_in_actor0_local.rotation);
+
+				const vec3 angular_velocity_constraint_space = conjugate(parent_constraint_frame_rotation) * angular_drive_velocity;
+				drive_joint_component->angular_drive_velocity = angular_velocity_constraint_space;
+
+				const vec3 desired_linear_velocity = delta_position / dt;
+
+				const vec3 linear_velocity_constraint_space = conjugate(parent_constraint_frame_rotation) * desired_linear_velocity;
+				drive_joint_component->linear_drive_velocity = linear_velocity_constraint_space;
+			}
+
 			const float angular_damping = limb_component->calculate_desired_angular_damping(delta_angle);
 
 			if (drive_joint_component->perform_slerp_drive)
@@ -74,8 +98,6 @@ namespace era_engine::physics
 				drive_joint_component->twist_drive_damping = angular_damping;
 				drive_joint_component->swing_drive_damping = angular_damping;
 			}
-
-			const vec3 delta_position = limb_component->adjusted_pose.position - limb_component->physics_pose.position;
 
 			const float linear_damping = limb_component->calculate_desired_linear_damping(length(delta_position));
 			drive_joint_component->linear_drive_damping = linear_damping;
@@ -90,8 +112,6 @@ namespace era_engine::physics
 			// Keyframe controller stage.
 			{
 				const vec3& raw_root_velocity = physical_animation_component->velocity;
-
-				const vec3 delta_position = limb_component->adjusted_pose.position - limb_component->physics_pose.position;
 
 				// Partial velocity drive.
 				vec3 desired_velocity = delta_position / dt;

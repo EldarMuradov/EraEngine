@@ -135,6 +135,31 @@ namespace era_engine
 			ImGui::EndPopup();
 		}
 	}
+	static void edit_material(const ref<pbr_material>& material)
+	{
+		if (ImGui::BeginProperties())
+		{
+			AssetHandle dummy = {};
+
+			ImGui::PropertyColor("Emission", material->emission);
+			ImGui::PropertyColor("Albedo tint", material->albedoTint);
+			ImGui::PropertyDropdown("Shader", pbrMaterialShaderNames, pbr_material_shader_count, (uint32&)material->shader);
+			ImGui::PropertySlider("UV scale", material->uvScale, 0.0f, 150.0f);
+			ImGui::PropertySlider("Translucency", material->translucency);
+
+			if (!material->roughness)
+			{
+				ImGui::PropertySlider("Roughness override", material->roughnessOverride);
+			}
+
+			if (!material->metallic)
+			{
+				ImGui::PropertySlider("Metallic override", material->metallicOverride);
+			}
+
+			ImGui::EndProperties();
+		}
+	}
 
 	void EcsToolsSystem::draw_world()
 	{
@@ -226,6 +251,16 @@ namespace era_engine
 					if (selected_entity.is_valid())
 					{
 						EntityEditorUtils::edit_entity(world, selected_entity.get_handle());
+					}
+
+					{
+						if (MeshComponent* mesh_component = selected_entity.get_component_if_exists<MeshComponent>())
+						{
+							for (auto& submesh : mesh_component->mesh->submeshes)
+							{
+								edit_material(submesh.material);
+							}
+						}
 					}
 
 					if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && !ImGui::IsAnyItemHovered())
