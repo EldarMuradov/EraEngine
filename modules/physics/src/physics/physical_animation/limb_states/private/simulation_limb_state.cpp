@@ -60,7 +60,10 @@ namespace era_engine::physics
 			const trs& constraint_frame_in_actor0_local = drive_joint_component->get_first_local_frame();
 			const trs& parent_local_transform = drive_joint_component->get_first_entity_ptr().get().get_component<TransformComponent>()->get_local_transform();
 
-			if (has_flag(limb_details.motor_drive->drive_type, MotorDriveType::TRANSFORM))
+			const bool has_transform_drive = has_flag(limb_details.motor_drive->drive_type, MotorDriveType::TRANSFORM);
+			const bool has_velocity_drive = has_flag(limb_details.motor_drive->drive_type, MotorDriveType::VELOCITY);
+
+			if (has_transform_drive)
 			{
 				const trs& constraint_frame_in_actor1_local = drive_joint_component->get_second_local_frame();
 
@@ -71,10 +74,14 @@ namespace era_engine::physics
 				target_pose_in_constraint_space.rotation = normalize(target_pose_in_constraint_space.rotation);
 
 				drive_joint_component->drive_transform = target_pose_in_constraint_space;
-				drive_joint_component->angular_drive_velocity.get_for_write() = vec3::zero;
-				drive_joint_component->linear_drive_velocity.get_for_write() = vec3::zero;
+				if(!has_velocity_drive)
+				{
+					drive_joint_component->angular_drive_velocity = vec3::zero;
+					drive_joint_component->linear_drive_velocity = vec3::zero;
+				}
 			}
-			if (has_flag(limb_details.motor_drive->drive_type, MotorDriveType::VELOCITY))
+
+			if (has_velocity_drive)
 			{
 				const quat parent_constraint_frame_rotation = normalize(parent_local_transform.rotation * constraint_frame_in_actor0_local.rotation);
 
@@ -85,6 +92,11 @@ namespace era_engine::physics
 
 				const vec3 linear_velocity_constraint_space = conjugate(parent_constraint_frame_rotation) * desired_linear_velocity;
 				drive_joint_component->linear_drive_velocity = linear_velocity_constraint_space;
+
+				if (!has_transform_drive)
+				{
+					drive_joint_component->drive_transform = trs::identity;
+				}
 			}
 
 			const float angular_damping = limb_component->calculate_desired_angular_damping(delta_angle);

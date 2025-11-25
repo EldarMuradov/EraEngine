@@ -70,49 +70,55 @@ namespace era_engine::physics
 			idle_profile = make_ref<RagdollProfile>();
 
 			idle_profile->type = RagdollProfileType::IDLE;
-			idle_profile->head_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			idle_profile->head_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->head_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->head_limb_details.motor_drive->angular_drive_stiffness = 300.0f;
 			idle_profile->head_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
 
-			idle_profile->body_upper_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			idle_profile->body_upper_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->body_upper_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->body_upper_limb_details.motor_drive->angular_drive_stiffness = 500.0f;
 			idle_profile->body_upper_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
+			idle_profile->body_upper_limb_details.drag_force = DragForceDetails();
+			idle_profile->body_upper_limb_details.drag_force->partial_velocity_drive = 0.4f;
+			idle_profile->body_upper_limb_details.drag_force->partial_angular_drive = 0.5f;
 
-			idle_profile->body_middle_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
-			idle_profile->body_upper_limb_details.motor_drive = MotorDriveDetails();
-			idle_profile->body_upper_limb_details.motor_drive->angular_drive_stiffness = 500.0f;
-			idle_profile->body_upper_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
+			idle_profile->body_middle_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->body_middle_limb_details.motor_drive = MotorDriveDetails();
+			idle_profile->body_middle_limb_details.motor_drive->angular_drive_stiffness = 500.0f;
+			idle_profile->body_middle_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
 
-			idle_profile->arm_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			idle_profile->body_lower_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+			idle_profile->body_lower_limb_details.drag_force = DragForceDetails();
+			idle_profile->body_lower_limb_details.drag_force->partial_velocity_drive = 0.4f;
+			idle_profile->body_lower_limb_details.drag_force->partial_angular_drive = 0.5f;
+
+			idle_profile->arm_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->arm_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->arm_limb_details.motor_drive->angular_drive_stiffness = 200.0f;
 			idle_profile->arm_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
 
-			idle_profile->body_lower_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
-
-			idle_profile->forearm_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			idle_profile->forearm_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->forearm_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->forearm_limb_details.motor_drive->angular_drive_stiffness = 200.0f;
 			idle_profile->forearm_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
 
-			idle_profile->hand_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			idle_profile->hand_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->hand_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->hand_limb_details.motor_drive->angular_drive_stiffness = 200.0f;
 			idle_profile->hand_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
 
-			idle_profile->leg_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			idle_profile->leg_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->leg_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->leg_limb_details.motor_drive->angular_drive_stiffness = 400.0f;
 			idle_profile->leg_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
 
-			idle_profile->calf_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			idle_profile->calf_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->calf_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->calf_limb_details.motor_drive->angular_drive_stiffness = 400.0f;
 			idle_profile->calf_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
 
-			idle_profile->foot_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+			idle_profile->foot_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->foot_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->foot_limb_details.motor_drive->angular_drive_stiffness = 400.0f;
 			idle_profile->foot_limb_details.motor_drive->linear_drive_stiffness = 300.0f;
@@ -279,53 +285,42 @@ namespace era_engine::physics
 				// Sample only if simulation enabled.
 				pose_sampler->sample_pose(&physical_animation_component, &skeleton_component, current_animation_pose);
 
-				std::queue<uint32> simulation_limbs_queue;
-				simulation_limbs_queue.push(physical_animation_component.root_joint_id);
-
-				trs pelvis_local_transform = SkeletonUtils::get_object_space_joint_transform(current_animation_pose, skeleton.get(), physical_animation_component.root_joint_id, 0);
-				pelvis_local_transform.scale = vec3(1.0f);
-
-				physical_animation_component.local_joint_poses_for_target_calculation[physical_animation_component.root_joint_id] = pelvis_local_transform;
-
-				update_target_pose(&physical_animation_component, 
-					physical_animation_component.simulated_joints.at(physical_animation_component.root_joint_id).get(), 
-					pelvis_local_transform,
-					world_transform);
-
-				// Traverse simulation graph once.
-				while (!simulation_limbs_queue.empty())
 				{
-					const uint32 current_id = simulation_limbs_queue.front();
-					simulation_limbs_queue.pop();
+					auto simulated_joints_end = physical_animation_component.simulated_joints.end();
 
-					for (const uint32 child_id : physical_animation_component.children_map[current_id])
+					for (const uint32 simulation_joint : physical_animation_component.simulated_joints_set)
 					{
-						const trs& parent_local = physical_animation_component.local_joint_poses_for_target_calculation.at(current_id);
+						const uint32 parent_id = skeleton->joints.at(simulation_joint).parent_id;
+						const trs& parent_local = physical_animation_component.local_joint_poses_for_target_calculation[parent_id];
 
-						trs limb_animation_pose = current_animation_pose.get_joint_transform(child_id).get_transform();
+						trs limb_animation_pose = current_animation_pose.get_joint_transform(simulation_joint).get_transform();
 						limb_animation_pose.scale = vec3(1.0f);
 
 						// Update targets from current animation.
-						trs calculated_transform = parent_local * limb_animation_pose;
-						calculated_transform.scale = vec3(1.0f);
-						physical_animation_component.local_joint_poses_for_target_calculation[child_id] = calculated_transform;
+						const trs calculated_transform = parent_local * limb_animation_pose;
+						physical_animation_component.local_joint_poses_for_target_calculation[simulation_joint] = calculated_transform;
 
-						auto limb_iter = physical_animation_component.simulated_joints.find(child_id);
-						if (limb_iter != physical_animation_component.simulated_joints.end())
+						auto limb_iter = physical_animation_component.simulated_joints.find(simulation_joint);
+						if (limb_iter != simulated_joints_end)
 						{
-							const Entity limb = limb_iter->second.get();
-							update_target_pose(&physical_animation_component, 
-								limb, 
-								calculated_transform,
-								world_transform);
+							Entity limb = limb_iter->second.get();
+
+							PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
+							limb_component->target_pose = calculated_transform;
+
+							if (limb_component->drive_joint_component.get() != nullptr)
+							{
+								D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
+								PhysicsUtils::manual_set_physics_transform(drive_joint->get_first_entity_ptr().get(), world_transform * limb_component->target_pose, true);
+							}
 						}
-
-						simulation_limbs_queue.push(child_id);
 					}
-				}
 
-				const trs pelvis_world_transform = world_transform * pelvis_local_transform;
-				PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), pelvis_world_transform, true);
+					TransformComponent* root_attachment_transform_component = physical_animation_component.attachment_body.get().get_component<TransformComponent>();
+					PhysicsUtils::manual_set_physics_transform(physical_animation_component.attachment_body.get(), 
+						world_transform * physical_animation_component.local_joint_poses_for_target_calculation.at(physical_animation_component.root_joint_id),
+						true);
+				}
 			}
 		}
 	}
@@ -557,24 +552,6 @@ namespace era_engine::physics
 		return should_update_as_simulated;
 	}
 
-	void PhysicalAnimationSystem::update_target_pose(const PhysicalAnimationComponent* physical_animation_component, 
-		Entity limb, 
-		const trs& calculated_target_local_space_pose,
-		const trs& ragdoll_world_space_pose) const
-	{
-		PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
-		ASSERT(limb_data_component != nullptr);
-
-		// Calculate target pose in local space.
-		limb_data_component->target_pose = calculated_target_local_space_pose;
-
-		if (limb_data_component->drive_joint_component.get() != nullptr)
-		{
-			D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_data_component->drive_joint_component.get_for_write());
-			PhysicsUtils::manual_set_physics_transform(drive_joint->get_first_entity_ptr().get(), ragdoll_world_space_pose * limb_data_component->target_pose, true);
-		}
-	}
-
 	void PhysicalAnimationSystem::update_ragdoll_profiles(PhysicalAnimationComponent* physical_animation_component,
 		const vec3& velocity,
 		float dt,
@@ -669,16 +646,37 @@ namespace era_engine::physics
 
 			physical_animation_component->root_joint_id = physical_animation_component->joint_init_ids.attachment_idx;
 
-			const size_t joints_size = skeleton->joints.size();
-
-			for (uint32 joint = physical_animation_component->root_joint_id; joint < joints_size; ++joint)
+			for (auto& [joint_id, limb_ptr] : physical_animation_component->simulated_joints)
 			{
-				uint32 parent_id = skeleton->joints[joint].parent_id;
-				physical_animation_component->children_map[parent_id].push_back(joint);
+				uint32 calculation_id = joint_id;
+				physical_animation_component->simulated_joints_set.emplace(calculation_id);
+
+				while (calculation_id != INVALID_JOINT)
+				{
+					const uint32 parent_id = skeleton->joints.at(calculation_id).parent_id;
+					if (parent_id != INVALID_JOINT)
+					{
+						physical_animation_component->simulated_joints_set.emplace(parent_id);
+						calculation_id = parent_id;
+					}
+					else
+					{
+						break;
+					}
+				}
 			}
 
-			physical_animation_component->local_joint_poses.reserve(joints_size);
-			physical_animation_component->local_joint_poses_for_target_calculation.reserve(joints_size);
+			const uint32 simulation_graph_size = static_cast<uint32>(physical_animation_component->simulated_joints_set.size() + 1u);
+
+			physical_animation_component->local_joint_poses.reserve(simulation_graph_size);
+			physical_animation_component->local_joint_poses_for_target_calculation.reserve(simulation_graph_size);
+
+			physical_animation_component->local_joint_poses[INVALID_JOINT] = trs::identity;
+			physical_animation_component->local_joint_poses_for_target_calculation[INVALID_JOINT] = trs::identity;
+			physical_animation_component->local_joint_poses[0] = trs::identity;
+			physical_animation_component->local_joint_poses_for_target_calculation[0] = trs::identity;
+
+			physical_animation_component->try_to_apply_ragdoll_profile(idle_profile, RagdollProfileStrengthType::DEFAULT, true);
 		}
 	}
 

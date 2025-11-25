@@ -255,5 +255,4 @@ namespace era_engine
 			force.mode = ForceMode::FORCE;
 		}
 	}
-
 }

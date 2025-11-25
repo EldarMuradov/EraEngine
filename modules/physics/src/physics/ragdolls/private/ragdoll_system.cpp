@@ -139,72 +139,64 @@ namespace era_engine::physics
 			}
 			
 			{
+				const trs inverse_ragdoll_world_transform = invert(transform_component.get_world_transform());
+
 				const uint32 root_id = 0;
 				ragdoll_component.local_joint_poses[root_id] = SkeletonUtils::get_object_space_joint_transform(skeleton.get(), root_id);
 
-				const trs inverse_ragdoll_world_transform = invert(transform_component.get_world_transform());
+				auto simulated_joints_end = ragdoll_component.simulated_joints.end();
 
-				std::queue<uint32> q;
-				q.push(root_id);
-
-				while (!q.empty())
+				for (const uint32 simulation_joint : ragdoll_component.simulated_joints_set)
 				{
-					uint32 current_id = q.front();
-					q.pop();
+					const uint32 parent_id = skeleton->joints.at(simulation_joint).parent_id;
+					const trs& parent_local = ragdoll_component.local_joint_poses[parent_id];
 
-					for (uint32 child_id : ragdoll_component.children_map[current_id])
+					trs inverse_parent_local = invert(parent_local);
+					inverse_parent_local.rotation = normalize(inverse_parent_local.rotation);
+
+					trs limb_current_pose = skeleton->get_joint_transform(simulation_joint);
+					limb_current_pose.scale = vec3(1.0f);					
+
+					auto limb_iter = ragdoll_component.simulated_joints.find(simulation_joint);
+					if (limb_iter == ragdoll_component.simulated_joints.end())
 					{
-						const trs& parent_local = ragdoll_component.local_joint_poses[current_id];
-						trs inverse_parent_local = invert(parent_local);
-						inverse_parent_local.rotation = normalize(inverse_parent_local.rotation);
+						const trs calculated_transform = parent_local * limb_current_pose;
+						ragdoll_component.local_joint_poses[simulation_joint] = calculated_transform;
+					}
+					else
+					{
+						Entity limb = limb_iter->second.get();
+						RagdollLimbComponent* ragdoll_limb = limb.get_component<RagdollLimbComponent>();
+						const trs& limb_physics_pose = limb.get_component<TransformComponent>()->get_world_transform();
 
-						trs limb_animation_pose = parent_local * skeleton->get_joint_transform(child_id);
-						limb_animation_pose.scale = vec3(1.0f);
+						const trs limb_pose = inverse_ragdoll_world_transform * limb_physics_pose;
+						trs new_transform = inverse_parent_local * limb_pose;
 
-						auto limb_iter = ragdoll_component.simulated_joints.find(child_id);
-						if (limb_iter == ragdoll_component.simulated_joints.end())
+						if (!fuzzy_equals(ragdoll_limb->prev_limb_local_rotation, new_transform.rotation))
 						{
-							ragdoll_component.local_joint_poses[child_id] = limb_animation_pose;
-						}
-						else
-						{
-							Entity limb = limb_iter->second.get();
-							RagdollLimbComponent* ragdoll_limb = limb.get_component<RagdollLimbComponent>();
-							const trs& limb_physics_pose = limb.get_component<TransformComponent>()->get_world_transform();
-
-							const trs limb_pose = inverse_ragdoll_world_transform * limb_physics_pose;
-
-							trs new_transform = inverse_parent_local * limb_pose;
-
-							if (!fuzzy_equals(ragdoll_limb->prev_limb_local_rotation, new_transform.rotation))
-							{
-								new_transform.rotation = slerp(ragdoll_limb->prev_limb_local_rotation,
-															   new_transform.rotation,
-															   ragdoll_component.blend_factor);
-							}
-
-							if (!fuzzy_equals(ragdoll_limb->prev_limb_local_position, new_transform.position))
-							{
-								new_transform.position = lerp(ragdoll_limb->prev_limb_local_position,
-															  new_transform.position,
-															  ragdoll_component.blend_factor);
-							}
-
-							new_transform.rotation = normalize(new_transform.rotation);
-
-							skeleton->set_joint_transform(new_transform, child_id);
-
-							ragdoll_limb->prev_limb_local_position = new_transform.position;
-							ragdoll_limb->prev_limb_local_rotation = new_transform.rotation;
-
-							trs new_local_child_transform = parent_local * new_transform;
-							new_local_child_transform.position = new_local_child_transform.position;
-							new_local_child_transform.rotation = normalize(new_local_child_transform.rotation);
-
-							ragdoll_component.local_joint_poses[child_id] = new_local_child_transform;
+							new_transform.rotation = slerp(ragdoll_limb->prev_limb_local_rotation,
+								new_transform.rotation,
+								ragdoll_component.blend_factor);
 						}
 
-						q.push(child_id);
+						if (!fuzzy_equals(ragdoll_limb->prev_limb_local_position, new_transform.position))
+						{
+							new_transform.position = lerp(ragdoll_limb->prev_limb_local_position,
+								new_transform.position,
+								ragdoll_component.blend_factor);
+						}
+
+						new_transform.rotation = normalize(new_transform.rotation);
+
+						skeleton->set_joint_transform(new_transform, simulation_joint);
+
+						ragdoll_limb->prev_limb_local_position = new_transform.position;
+						ragdoll_limb->prev_limb_local_rotation = new_transform.rotation;
+
+						trs new_local_child_transform = parent_local * new_transform;
+						new_local_child_transform.rotation = normalize(new_local_child_transform.rotation);
+
+						ragdoll_component.local_joint_poses[simulation_joint] = new_local_child_transform;
 					}
 				}
 			}
@@ -242,15 +234,31 @@ namespace era_engine::physics
 
 			ragdoll_component->root_joint_id = ragdoll_component->joint_init_ids.attachment_idx;
 
-			const size_t joints_size = skeleton->joints.size();
-
-			for (uint32 joint = ragdoll_component->root_joint_id; joint < joints_size; ++joint)
+			for (auto& [joint_id, limb_ptr] : ragdoll_component->simulated_joints)
 			{
-				uint32 parent_id = skeleton->joints[joint].parent_id;
-				ragdoll_component->children_map[parent_id].push_back(joint);
+				uint32 calculation_id = joint_id;
+				ragdoll_component->simulated_joints_set.emplace(calculation_id);
+
+				while (calculation_id != INVALID_JOINT)
+				{
+					const uint32 parent_id = skeleton->joints.at(calculation_id).parent_id;
+					if (parent_id != INVALID_JOINT)
+					{
+						ragdoll_component->simulated_joints_set.emplace(parent_id);
+						calculation_id = parent_id;
+					}
+					else
+					{
+						break;
+					}
+				}
 			}
 
-			ragdoll_component->local_joint_poses.reserve(joints_size);
+			const uint32 simulation_graph_size = static_cast<uint32>(ragdoll_component->simulated_joints_set.size() + 1u);
+
+			ragdoll_component->local_joint_poses.reserve(simulation_graph_size);
+			ragdoll_component->local_joint_poses[0] = trs::identity;
+			ragdoll_component->local_joint_poses[INVALID_JOINT] = trs::identity;
 		}
 	}
 

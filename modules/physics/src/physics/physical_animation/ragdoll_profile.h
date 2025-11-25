@@ -13,6 +13,13 @@
 
 namespace era_engine::physics
 {
+    enum class SkeletalMeshBlendType : uint8
+    {
+        ROTATION = 0,
+        TRANSLATION,
+        TRANSFORM
+    };
+
     enum class PhysicalLimbBlendType : uint8
     {
         NONE = 0,
@@ -63,7 +70,7 @@ namespace era_engine::physics
         float partial_angular_drive_limit = 25.0f;
         float partial_angular_drive = 0.5f;
 
-        float partial_velocity_drive_limit = 10.0f;
+        float partial_velocity_drive_limit = 100.0f;
         float partial_velocity_drive = 0.5f;
 
         float acceleration_limit = 0.2f;

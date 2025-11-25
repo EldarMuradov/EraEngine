@@ -61,7 +61,7 @@ namespace era_engine::physics
 		dynamic_body_component->use_gravity.get_for_write() = true;
 		dynamic_body_component->simulated.get_for_write() = false;
 		dynamic_body_component->linear_damping.get_for_write() = 0.1f;
-		dynamic_body_component->angular_damping.get_for_write() = 0.25f;
+		dynamic_body_component->angular_damping.get_for_write() = 0.2f;
 		dynamic_body_component->max_angular_velocity.get_for_write() = max_angular_velocity;
 		dynamic_body_component->max_contact_impulse.get_for_write() = max_contact_impulse;
 		dynamic_body_component->solver_position_iterations_count.get_for_write() = 32;
@@ -82,15 +82,16 @@ namespace era_engine::physics
 		attachment.set_parent(entity.get_handle());
 
 		DynamicBodyComponent* dynamic_body_component = attachment.add_component<DynamicBodyComponent>();
-
 		dynamic_body_component->mass = mass;
 		dynamic_body_component->use_gravity.get_for_write() = false;
 		dynamic_body_component->simulated.get_for_write() = false;
 		dynamic_body_component->kinematic.get_for_write() = true;
 		dynamic_body_component->kinematic_motion_type.get_for_write() = KinematicMotionType::VELOCITY;
 
-		BoxShapeComponent* box_shape_component = attachment.add_component<BoxShapeComponent>();
-		box_shape_component->half_extents = vec3(0.02f, 0.02f, 0.02f);
+		SphereShapeComponent* shape_component = attachment.add_component<SphereShapeComponent>();
+		shape_component->radius = 0.01f;
+		shape_component->use_in_scene_queries = false;
+		shape_component->collision_type = CollisionType::NONE;
 
 		return attachment;
 	}
@@ -203,7 +204,7 @@ namespace era_engine::physics
 		descriptor.local_frame = trs::identity;
 		descriptor.second_local_frame = trs::identity;
 
-		Entity joint_entity = e0.get_world()->create_entity();
+		Entity joint_entity = e1.get_world()->create_entity();
 		joint_entity.set_parent(source.get_handle());
 
 		e1.get_component<PhysicalAnimationLimbComponent>()->drive_joint_entity_ptr = EntityPtr{ joint_entity };
@@ -667,10 +668,10 @@ namespace era_engine::physics
 			lower_body_ghost_component->use_gravity.get_for_write() = false;
 			lower_body_ghost_component->mass.get_for_write() = body_lower.get_component<DynamicBodyComponent>()->mass;
 
-			BoxShapeComponent* box_shape_component = body_lower_ghost.add_component<BoxShapeComponent>();
-			box_shape_component->collision_type = CollisionType::NONE;
-			box_shape_component->material = material;
-			box_shape_component->half_extents = vec3(0.01f);
+			SphereShapeComponent* shape_component = body_lower_ghost.add_component<SphereShapeComponent>();
+			shape_component->collision_type = CollisionType::NONE;
+			shape_component->radius = 0.01f;
+			shape_component->use_in_scene_queries = false;
 
 			JointComponent::BaseDescriptor descriptor;
 			descriptor.connected_entity = body_lower_ghost.get_data_weakref();
@@ -682,6 +683,7 @@ namespace era_engine::physics
 			joint_component->stiffness.get_for_write() = 1600.0f;
 			joint_component->damping.get_for_write() = 40.0f;
 			joint_component->max_distance.get_for_write() = 0.3f;
+			joint_component->min_distance.get_for_write() = 0.0f;
 
 			physical_animation_component->attachment_body = EntityPtr{ body_lower_ghost };
 		}
@@ -1099,12 +1101,12 @@ namespace era_engine::physics
 			left_arm_capsule_bottom_transform,
 			thorax_joint_transform,
 			left_arm_joint_transform,
-			-55.0f, 55.0f,
+			-60.0f, 60.0f,
 			arm_d6_swing_y_deg,
-			60.0f);
+			65.0f);
 
 		// Left arm -> left forearm
-		const float forearm_d6_swing_y_deg = 45.0f;
+		const float forearm_d6_swing_y_deg = 55.0f;
 		const vec3 left_forearm_capsule_y_axis = left_forearm_capsule_bottom_transform.rotation * vec3(0.0f, 1.0f, 0.0f);
 		const trs left_forearm_d6_transform = trs(
 			left_forearm_capsule_bottom_transform.position,
@@ -1148,9 +1150,9 @@ namespace era_engine::physics
 			right_arm_capsule_bottom_transform,
 			thorax_joint_transform,
 			right_arm_joint_transform,
-			-55.0f, 55.0f,
+			-60.0f, 60.0f,
 			arm_d6_swing_y_deg,
-			60.0f);
+			65.0f);
 
 		// Right arm -> right forearm
 		const vec3 right_forearm_capsule_y_axis = right_forearm_capsule_bottom_transform.rotation * vec3(0.0f, 1.0f, 0.0f);
@@ -1184,7 +1186,7 @@ namespace era_engine::physics
 
 		// Pelvis -> left up leg
 		const float up_leg_back_angle_deg = 5.0; // How far up leg can be rotated around y axis in backwards direction
-		const float up_leg_forward_angle_deg = 45.0f; // How far up leg can be rotated around y axis in forward direction
+		const float up_leg_forward_angle_deg = 55.0f; // How far up leg can be rotated around y axis in forward direction
 		const float up_leg_d6_swing_y_deg = (up_leg_forward_angle_deg + up_leg_back_angle_deg) / 2.0f;
 		const vec3 left_up_leg_capsule_y_axis = left_up_leg_capsule_bottom_transform.rotation * vec3(0.0f, 1.0f, 0.0f);
 		const trs left_up_leg_d6_transform = trs(

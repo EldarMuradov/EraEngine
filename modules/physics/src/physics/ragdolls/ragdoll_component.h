@@ -159,8 +159,8 @@ namespace era_engine::physics
 
     protected:
         std::unordered_map<uint32, EntityPtr> simulated_joints;
-        std::unordered_map<uint32, std::vector<uint32>> children_map;
         std::unordered_map<uint32, trs> local_joint_poses;
+        std::set<uint32> simulated_joints_set;
 
         friend class RagdollSystem;
         friend class PhysicalAnimationSystem;

@@ -45,13 +45,12 @@ namespace era_engine::physics
 		dynamic_body_component->use_gravity.get_for_write() = true;
 		dynamic_body_component->simulated.get_for_write() = false;
 		dynamic_body_component->linear_damping.get_for_write() = 0.1f;
-		dynamic_body_component->angular_damping.get_for_write() = 0.25f;
+		dynamic_body_component->angular_damping.get_for_write() = 0.2f;
 		dynamic_body_component->max_angular_velocity.get_for_write() = max_angular_velocity;
 		dynamic_body_component->max_contact_impulse.get_for_write() = max_contact_impulse;
-		dynamic_body_component->solver_position_iterations_count.get_for_write() = 16;
-		dynamic_body_component->solver_velocity_iterations_count.get_for_write() = 8;
+		dynamic_body_component->solver_position_iterations_count.get_for_write() = 32;
+		dynamic_body_component->solver_velocity_iterations_count.get_for_write() = 15;
 		dynamic_body_component->sleep_threshold.get_for_write() = 0.01f;
-		dynamic_body_component->stabilization_threshold.get_for_write() = 0.01f;
 
 		return dynamic_body_component;
 	}
@@ -106,8 +105,8 @@ namespace era_engine::physics
 			joint_component->twist_min_limit.get_for_write() = deg2rad(twist_min_deg);
 			joint_component->twist_max_limit.get_for_write() = deg2rad(twist_max_deg);
 
-			joint_component->twist_limit_damping.get_for_write() = 20.0f;
-			joint_component->twist_limit_stiffness.get_for_write() = 250.0f;
+			joint_component->twist_limit_damping.get_for_write() = 10.0f;
+			joint_component->twist_limit_stiffness.get_for_write() = 100.0f;
 			joint_component->twist_limit_restitution.get_for_write() = 0.0f;
 		}
 
@@ -139,8 +138,8 @@ namespace era_engine::physics
 
 		if(any_moving_swing)
 		{
-			joint_component->swing_limit_damping.get_for_write() = 20.0f;
-			joint_component->swing_limit_stiffness.get_for_write() = 250.0f;
+			joint_component->swing_limit_damping.get_for_write() = 10.0f;
+			joint_component->swing_limit_stiffness.get_for_write() = 100.0f;
 			joint_component->swing_limit_restitution.get_for_write() = 0.0f;
 		}
 	}
@@ -343,7 +342,7 @@ namespace era_engine::physics
 		const float distance_between_foot_and_foot_end = length(left_foot_joint_transform.position - left_foot_end_joint_transform.position);
 		const float distance_between_foot_y_and_foot_end_y = abs(left_foot_joint_transform.position.y - left_foot_end_joint_transform.position.y);
 
-		ref<PhysicsMaterial> material = PhysicsHolder::physics_ref->create_material(0.1f, 0.8f, 0.8f);
+		ref<PhysicsMaterial> material = PhysicsHolder::physics_ref->create_material(0.3f, 0.8f, 0.8f);
 		ASSERT(material != nullptr);
 
 		Entity head;
@@ -540,7 +539,7 @@ namespace era_engine::physics
 			transform_component->set_world_transform(ragdoll_world_transform * left_hand_joint_transform);
 
 			BoxShapeComponent* box_shape_component = left_hand.add_component<BoxShapeComponent>();
-			box_shape_component->collision_type = CollisionType::NONE;
+			box_shape_component->collision_type = CollisionType::RAGDOLL;
 			box_shape_component->material = material;
 
 			left_hand_box_bottom_transform = position_box_between_joints(
@@ -605,7 +604,7 @@ namespace era_engine::physics
 			transform_component->set_world_transform(ragdoll_world_transform * right_hand_joint_transform);
 
 			BoxShapeComponent* box_shape_component = right_hand.add_component<BoxShapeComponent>();
-			box_shape_component->collision_type = CollisionType::NONE;
+			box_shape_component->collision_type = CollisionType::RAGDOLL;
 			box_shape_component->material = material;
 
 			right_hand_box_bottom_transform = position_box_between_joints(
@@ -674,7 +673,7 @@ namespace era_engine::physics
 			transform_component->set_world_transform(ragdoll_world_transform * left_foot_joint_transform);
 
 			BoxShapeComponent* box_shape_component = left_foot.add_component<BoxShapeComponent>();
-			box_shape_component->collision_type = CollisionType::NONE;
+			box_shape_component->collision_type = CollisionType::RAGDOLL;
 			box_shape_component->material = material;
 
 			left_foot_box_bottom_transform = position_box_between_joints(
@@ -743,7 +742,7 @@ namespace era_engine::physics
 			transform_component->set_world_transform(ragdoll_world_transform * right_foot_joint_transform);
 
 			BoxShapeComponent* box_shape_component = right_foot.add_component<BoxShapeComponent>();
-			box_shape_component->collision_type = CollisionType::NONE;
+			box_shape_component->collision_type = CollisionType::RAGDOLL;
 			box_shape_component->material = material;
 
 			right_foot_box_bottom_transform = position_box_between_joints(

@@ -25,13 +25,6 @@ namespace era_engine::physics
 		std::vector<EntityPtr> connected_limbs;
 	};
 
-	enum class SkeletalMeshBlendType : uint8
-	{
-		ROTATION = 0,
-		TRANSLATION,
-		TRANSFORM
-	};
-
 	class ERA_PHYSICS_API PhysicalAnimationLimbComponent : public RagdollLimbComponent
 	{
 	public:
