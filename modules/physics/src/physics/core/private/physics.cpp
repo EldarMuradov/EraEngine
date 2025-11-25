@@ -165,12 +165,12 @@ namespace era_engine::physics
 
 		scene = physics->createScene(scene_desc);
 
+#if defined(VISUALIZE_PHYSICS)
+
 		scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_FNORMALS, 1.0f);
 		scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
-
-#if defined(_DEBUG)
 
 		if (descriptor.enable_pvd)
 		{

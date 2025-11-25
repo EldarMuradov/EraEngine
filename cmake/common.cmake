@@ -40,6 +40,13 @@ function(era_default_linkage name)
         ENABLE_DX_PROFILING=0
         ENABLE_FSR_WRAPPER
         ACL_USE_SJSON
+        TRACY_ENABLE
+        TRACY_ON_DEMAND
+        TRACY_NO_CRASH_HANDLER
+        TRACY_NO_CALLSTACK
+        TRACY_NO_CODE_TRANSFER
+        TRACY_NO_SAMPLING
+        VISUALIZE_PHYSICS=1
     )
 
     target_link_libraries(${name} ${ENGINE_DEFAULT_LIBS})
