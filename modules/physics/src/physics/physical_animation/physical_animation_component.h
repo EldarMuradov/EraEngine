@@ -120,15 +120,13 @@ namespace era_engine::physics
 
 		RagdollProfileStrengthType strength_type = RagdollProfileStrengthType::DEFAULT;
 
+		bool use_fixed_pelvis_attachment = false;
 		bool force_ragdoll_state = false;
 
 		float blend_weight = 0.0f;
 
 		float blend_in_time = 0.1f;
 		float blend_out_time = 0.2f;
-
-		float target_position_blend_factor = 0.5f;
-		float target_rotation_blend_factor = 0.5f;
 
 		float ragdoll_profile_transition_time = 0.0f;
 

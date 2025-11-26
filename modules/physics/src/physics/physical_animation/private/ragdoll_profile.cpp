@@ -18,6 +18,12 @@ namespace era_engine::physics
 		case RagdollLimbType::HEAD:
 			return head_limb_details;
 
+		case RagdollLimbType::NECK:
+			return neck_limb_details;
+
+		case RagdollLimbType::CLAVICLE:
+			return clavicle_limb_details;
+
 		case RagdollLimbType::ARM:
 			return arm_limb_details;
 

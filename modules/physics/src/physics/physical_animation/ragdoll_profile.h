@@ -52,12 +52,14 @@ namespace era_engine::physics
         float linear_drive_stiffness = 100.0f;
 
         vec2 angular_range = vec2(deg2rad(3.0f), deg2rad(30.0f));
-        vec2 angular_damping_range = vec2(60.0f, 20.0f);
+        vec2 angular_damping_range = vec2(60.0f, 10.0f);
 
         vec2 linear_range = vec2(0.05f, 0.5f);
-        vec2 linear_damping_range = vec2(80.0f, 20.0f);
+        vec2 linear_damping_range = vec2(80.0f, 10.0f);
 
         float max_force = std::numeric_limits<float>::max();
+
+        float velocity_drive_modifier = 0.25f;
 
         bool accelerated = true;
         bool enable_slerp_drive = true;
@@ -122,11 +124,13 @@ namespace era_engine::physics
         const PhysicalLimbDetails& get_limb_details_by_type(RagdollLimbType limb_type) const;
 
         PhysicalLimbDetails head_limb_details;
+        PhysicalLimbDetails neck_limb_details;
 
         PhysicalLimbDetails body_upper_limb_details;
         PhysicalLimbDetails body_middle_limb_details;
         PhysicalLimbDetails body_lower_limb_details;
 
+        PhysicalLimbDetails clavicle_limb_details;
         PhysicalLimbDetails arm_limb_details;
         PhysicalLimbDetails forearm_limb_details;
         PhysicalLimbDetails hand_limb_details;

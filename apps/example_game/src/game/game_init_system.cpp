@@ -145,6 +145,9 @@ namespace era_engine
 			joint_init_ids.spine_01_idx = skeleton->name_to_joint_id.at("joint_TorsoA_01");
 			joint_init_ids.pelvis_idx = skeleton->name_to_joint_id.at("joint_Pelvis_01");
 
+			joint_init_ids.clavicle_l_idx = skeleton->name_to_joint_id.at("joint_ClavicleLT_01");
+			joint_init_ids.clavicle_r_idx = skeleton->name_to_joint_id.at("joint_ClavicleRT_01");
+
 			joint_init_ids.root_idx = skeleton->name_to_joint_id.at("joint_Char");
 			joint_init_ids.attachment_idx = skeleton->name_to_joint_id.at("joint_Pelvis_01");
 
@@ -173,7 +176,7 @@ namespace era_engine
 
 			settings.head_end_joint_adjastment = vec3(0.0f, 0.2f, 0.0f);
 			settings.head_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
-			settings.neck_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
+			settings.neck_joint_adjastment = vec3(0.0f, 0.1f, 0.0f);
 			settings.thorax_joint_adjastment = vec3(0.0f, 0.18f, 0.0f);
 			settings.abdomen_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
 			settings.pelvis_joint_adjastment = vec3(0.0f, -0.05f, 0.0f);

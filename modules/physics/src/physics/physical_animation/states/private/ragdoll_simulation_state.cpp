@@ -41,8 +41,14 @@ namespace era_engine::physics
 
 		physical_animation_component->blend_weight = 1.0f;
 
-		physical_animation_component->attachment_body.get().get_component<DistanceJointComponent>()->disabled = true;
-
+		if (physical_animation_component->use_fixed_pelvis_attachment)
+		{
+			physical_animation_component->attachment_body.get().get_component<FixedJointComponent>()->disabled = true;
+		}
+		else
+		{
+			physical_animation_component->attachment_body.get().get_component<DistanceJointComponent>()->disabled = true;
+		}
 		const SkeletonComponent* skeleton_component = ragdoll.get_component<SkeletonComponent>();
 
 		auto process_limb = [&skeleton_component, &ragdoll_transform](PhysicalAnimationLimbComponent* limb_component)
@@ -78,7 +84,14 @@ namespace era_engine::physics
 
 		const trs& ragdoll_transform = ragdoll.get_component<TransformComponent>()->get_world_transform();
 
-		physical_animation_component->attachment_body.get().get_component<DistanceJointComponent>()->disabled = false;
+		if (physical_animation_component->use_fixed_pelvis_attachment)
+		{
+			physical_animation_component->attachment_body.get().get_component<FixedJointComponent>()->disabled = false;
+		}
+		else
+		{
+			physical_animation_component->attachment_body.get().get_component<DistanceJointComponent>()->disabled = false;
+		}
 
 		auto process_limb = [&ragdoll_transform](PhysicalAnimationLimbComponent* limb_component)
 			{

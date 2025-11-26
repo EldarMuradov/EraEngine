@@ -50,30 +50,30 @@
   Path: E:/Era Engine/resources/assets\Sponza\sponza.mtl
 - Handle: 5463493963996788981
   Path: E:/Era Engine/resources/assets\resources\files.yaml
-- Handle: 16029868928287435709
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\NewProject\FileContentIndex\ced42b84-0ebb-4328-ab7e-40dcab8bc2f5.vsidx
-- Handle: 11420826950532342454
-  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40W01_N.png
-- Handle: 14418071463870848525
-  Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_column_b_ddn.png
-- Handle: 5385805761283793971
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\NewProject\FileContentIndex\0c33e16d-11f4-44cd-b147-1d5d017b8857.vsidx
-- Handle: 3290894033064943932
-  Path: E:/Era Engine/resources/assets\springtrap\source\animations\animation_clip56.eanm
-- Handle: 18273300930703869115
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\NewProject\FileContentIndex\1ea0d05e-0155-4980-9d94-3ac40bcb0a7f.vsidx
-- Handle: 4265793947772010350
-  Path: E:/Era Engine/resources/assets\Sponza\textures\vase_plant.70.cache.dds
-- Handle: 4195073380553948829
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\bin\Debug\net8.0\NewProject.dll
-- Handle: 7190030610969494469
-  Path: E:/Era Engine/resources/assets\springtrap\source\animations\animation_clip53.eanm
-- Handle: 7798145035787337560
-  Path: E:/Era Engine/resources/assets\sounds\FireGren.mp3
-- Handle: 12610910683111480562
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\NewProject\FileContentIndex\3c427432-4bdd-4d25-b615-2c06d0fce752.vsidx
-- Handle: 17342917986224485323
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\NewProject\FileContentIndex\df5ce98b-71e1-4919-9ac5-47bfbfd09816.vsidx
+- Handle: 1908826587180832507
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\NewProject\FileContentIndex\1b9bbaeb-e922-422b-aeee-be03bb2256a4.vsidx
+- Handle: 3881515911158411286
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\NewProject\FileContentIndex\58964c6e-c91c-43c6-bc50-ef05893b947a.vsidx
+- Handle: 11117307269909703209
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\Bullet.cs
+- Handle: 14209419175049841398
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\NewProject\FileContentIndex\a0dc6712-ae88-4407-9cfc-fe209b67ec45.vsidx
+- Handle: 4105191080723970833
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\NewProject\v17\DocumentLayout.json
+- Handle: 18090687069675895955
+  Path: E:/Era Engine/resources/assets\uv.jpg
+- Handle: 594046799089274917
+  Path: E:/Era Engine/resources/assets\springtrap\source\animations\animation_clip51.eanm
+- Handle: 9634485632873038057
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\PlayerInputManager.cs
+- Handle: 7376125665134823395
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\NewProject\FileContentIndex\d79320c1-80c0-45f3-91da-64fbf83fd428.vsidx
+- Handle: 8175306398989260690
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\bin\Release\net8.0\NvBlastExtAssetUtils_x64.dll
+- Handle: 11028415624401017575
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\bin\Release\net8.0\NewProject.pdb
+- Handle: 3864941412470972076
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\NewProject\FileContentIndex\fe25237c-c512-4382-a170-f38e54094218.vsidx
 - Handle: 4201374846351468652
   Path: E:/Era Engine/resources/assets\scripts\NewProject\.vs\NewProject\v17\.futdcache.v2
 - Handle: 14604719585063008352
@@ -92,6 +92,10 @@
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\bin\Debug\net8.0\NewProject.deps.json
 - Handle: 13465478572984585435
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Debug\net8.0\NewProject.pdb
+- Handle: 4265793947772010350
+  Path: E:/Era Engine/resources/assets\Sponza\textures\vase_plant.70.cache.dds
+- Handle: 4195073380553948829
+  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\bin\Debug\net8.0\NewProject.dll
 - Handle: 11149473133920972778
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Debug\net8.0\NewProject.csproj.FileListAbsolute.txt
 - Handle: 13774672049788545852
@@ -122,16 +126,6 @@
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Debug\net8.0\NewProject.csproj.AssemblyReference.cache
 - Handle: 12243616435717970896
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\bin\Release\net8.0\NewProject.dll
-- Handle: 18090687069675895955
-  Path: E:/Era Engine/resources/assets\uv.jpg
-- Handle: 594046799089274917
-  Path: E:/Era Engine/resources/assets\springtrap\source\animations\animation_clip51.eanm
-- Handle: 9634485632873038057
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\PlayerInputManager.cs
-- Handle: 8175306398989260690
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\bin\Release\net8.0\NvBlastExtAssetUtils_x64.dll
-- Handle: 11028415624401017575
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\bin\Release\net8.0\NewProject.pdb
 - Handle: 12160294237296980419
   Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40Head01_R.png
 - Handle: 13425878408815873022
@@ -150,8 +144,6 @@
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\bin\Release\net8.0\NvBlastGlobals_x64.dll
 - Handle: 4719386408079593398
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\bin\Release\net8.0\NvBlast_x64.dll
-- Handle: 11117307269909703209
-  Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\Bullet.cs
 - Handle: 16439959423396614716
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject\obj\Release\net8.0\NewProject.csproj.AssemblyReference.cache
 - Handle: 4858815998576552893
@@ -238,6 +230,10 @@
   Path: E:/Era Engine/resources/assets\springtrap\source\animations\animation_clip96.eanm
 - Handle: 5201774011026857314
   Path: E:/Era Engine/resources/assets\scripts\NewProject\NewProject.sln
+- Handle: 7190030610969494469
+  Path: E:/Era Engine/resources/assets\springtrap\source\animations\animation_clip53.eanm
+- Handle: 7798145035787337560
+  Path: E:/Era Engine/resources/assets\sounds\FireGren.mp3
 - Handle: 3385642823196565835
   Path: E:/Era Engine/resources/assets\sounds\punch.wav
 - Handle: 14422192524380403454
@@ -342,6 +338,10 @@
   Path: E:/Era Engine/resources/assets\springtrap\source\animations\animation_clip17.eanm
 - Handle: 9546881337052796060
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_column_b_bump.png
+- Handle: 11420826950532342454
+  Path: E:/Era Engine/resources/assets\springtrap\textures\T_K40W01_N.png
+- Handle: 14418071463870848525
+  Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_column_b_ddn.png
 - Handle: 3065712838474833589
   Path: E:/Era Engine/resources/assets\Sponza\textures\sponza_column_b_diff.70.cache.dds
 - Handle: 16748131729558388047
@@ -566,6 +566,8 @@
   Path: E:/Era Engine/resources/assets\springtrap\source\animations\animation_clip49.eanm
 - Handle: 14816690218698746417
   Path: E:/Era Engine/resources/assets\springtrap\source\animations\animation_clip50.eanm
+- Handle: 3290894033064943932
+  Path: E:/Era Engine/resources/assets\springtrap\source\animations\animation_clip56.eanm
 - Handle: 7498964710897663486
   Path: E:/Era Engine/resources/assets\springtrap\source\animations\animation_clip57.eanm
 - Handle: 930812691661225733

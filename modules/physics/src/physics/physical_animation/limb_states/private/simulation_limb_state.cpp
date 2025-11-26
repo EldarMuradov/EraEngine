@@ -86,12 +86,12 @@ namespace era_engine::physics
 				const quat parent_constraint_frame_rotation = normalize(parent_local_transform.rotation * constraint_frame_in_actor0_local.rotation);
 
 				const vec3 angular_velocity_constraint_space = conjugate(parent_constraint_frame_rotation) * angular_drive_velocity;
-				drive_joint_component->angular_drive_velocity = angular_velocity_constraint_space;
+				drive_joint_component->angular_drive_velocity = angular_velocity_constraint_space * limb_details.motor_drive->velocity_drive_modifier;
 
 				const vec3 desired_linear_velocity = delta_position / dt;
 
 				const vec3 linear_velocity_constraint_space = conjugate(parent_constraint_frame_rotation) * desired_linear_velocity;
-				drive_joint_component->linear_drive_velocity = linear_velocity_constraint_space;
+				drive_joint_component->linear_drive_velocity = linear_velocity_constraint_space * limb_details.motor_drive->velocity_drive_modifier;
 
 				if (!has_transform_drive)
 				{

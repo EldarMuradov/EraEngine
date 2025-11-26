@@ -52,21 +52,21 @@ namespace era_engine::physics
 	static DynamicBodyComponent* create_dynamic_body(
 		Entity& entity,
 		const float mass,
-		const float max_contact_impulse = 1e15f,
-		const float max_angular_velocity = 1e15f)
+		const float max_contact_impulse = 400,
+		bool use_gravity = false)
 	{
 		DynamicBodyComponent* dynamic_body_component = entity.add_component<DynamicBodyComponent>();
 		dynamic_body_component->mass.get_for_write() = mass;
 		dynamic_body_component->ccd.get_for_write() = true;
-		dynamic_body_component->use_gravity.get_for_write() = true;
+		dynamic_body_component->use_gravity.get_for_write() = use_gravity;
 		dynamic_body_component->simulated.get_for_write() = false;
-		dynamic_body_component->linear_damping.get_for_write() = 0.1f;
-		dynamic_body_component->angular_damping.get_for_write() = 0.2f;
-		dynamic_body_component->max_angular_velocity.get_for_write() = max_angular_velocity;
+		dynamic_body_component->linear_damping.get_for_write() = 0.05f;
+		dynamic_body_component->angular_damping.get_for_write() = 0.1f;
 		dynamic_body_component->max_contact_impulse.get_for_write() = max_contact_impulse;
 		dynamic_body_component->solver_position_iterations_count.get_for_write() = 32;
 		dynamic_body_component->solver_velocity_iterations_count.get_for_write() = 16;
 		dynamic_body_component->sleep_threshold.get_for_write() = 0.01f;
+		dynamic_body_component->stabilization_threshold.get_for_write() = 0.1f;
 
 		return dynamic_body_component;
 	}
@@ -213,7 +213,6 @@ namespace era_engine::physics
 
 		joint_component->perform_slerp_drive = motor_drive.enable_slerp_drive;
 		joint_component->disable_preprocessing = true;
-		joint_component->improved_slerp = true;
 
 		joint_component->enable_collision.get_for_write() = false;
 		joint_component->drive_limits_are_forces.get_for_write() = true;
@@ -405,15 +404,17 @@ namespace era_engine::physics
 
 		AggregateHolderComponent* aggregate_component = ragdoll.add_component<AggregateHolderComponent>();
 		aggregate_component->enable_self_collision = true;
-		aggregate_component->max_actors = 32;
+		aggregate_component->max_actors = 48;
 
 		ref<RagdollProfile> ragdoll_profile = physical_animation_component->get_ragdoll_profile();
 
 		const trs& ragdoll_world_transform = ragdoll.get_component<TransformComponent>()->get_world_transform();
 
 		const PhysicalLimbDetails& head_limb_details = ragdoll_profile->head_limb_details;
+		const PhysicalLimbDetails& neck_limb_details = ragdoll_profile->neck_limb_details;
 		const PhysicalLimbDetails& body_upper_limb_details = ragdoll_profile->body_upper_limb_details;
 		const PhysicalLimbDetails& body_middle_limb_details = ragdoll_profile->body_middle_limb_details;
+		const PhysicalLimbDetails& clavicle_limb_details = ragdoll_profile->clavicle_limb_details;
 		const PhysicalLimbDetails& arm_limb_details = ragdoll_profile->arm_limb_details;
 		const PhysicalLimbDetails& forearm_limb_details = ragdoll_profile->forearm_limb_details;
 		const PhysicalLimbDetails& hand_limb_details = ragdoll_profile->hand_limb_details;
@@ -443,11 +444,13 @@ namespace era_engine::physics
 		const trs abdomen_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.spine_01_idx);
 		const trs pelvis_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.pelvis_idx);
 
+		const trs left_clavicle_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.clavicle_l_idx);
 		const trs left_arm_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.upperarm_l_idx);
 		const trs left_forearm_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.lowerarm_l_idx);
 		const trs left_hand_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.hand_l_idx);
 		const trs left_hand_end_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.hand_end_l_idx);
 
+		const trs right_clavicle_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.clavicle_r_idx);
 		const trs right_arm_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.upperarm_r_idx);
 		const trs right_forearm_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.lowerarm_r_idx);
 		const trs right_hand_joint_transform = SkeletonUtils::get_object_space_joint_transform(skeleton, joint_init_ids.hand_r_idx);
@@ -482,6 +485,10 @@ namespace era_engine::physics
 		Entity head_attachment;
 		trs head_capsule_bottom_transform;
 
+		Entity neck;
+		Entity neck_attachment;
+		trs neck_capsule_bottom_transform;
+
 		Entity body_upper;
 		Entity body_upper_attachment;
 		trs body_upper_capsule_bottom_transform;
@@ -492,6 +499,10 @@ namespace era_engine::physics
 
 		Entity body_lower;
 		trs lower_default_transform;
+
+		Entity left_clavicle;
+		Entity left_clavicle_attachment;
+		trs left_clavicle_capsule_bottom_transform;
 
 		Entity left_arm;
 		Entity left_arm_attachment;
@@ -504,6 +515,10 @@ namespace era_engine::physics
 		Entity left_hand;
 		Entity left_hand_attachment;
 		trs left_hand_box_bottom_transform;
+
+		Entity right_clavicle;
+		Entity right_clavicle_attachment;
+		trs right_clavicle_capsule_bottom_transform;
 
 		Entity right_arm;
 		Entity right_arm_attachment;
@@ -546,7 +561,7 @@ namespace era_engine::physics
 			head = create_child_entity(ragdoll, "head", head_limb_details, joint_init_ids.head_idx, RagdollLimbType::HEAD, physical_animation_component->neck_chain);
 
 			TransformComponent* transform_component = head.get_component<TransformComponent>();
-			transform_component->set_world_transform(ragdoll_world_transform * neck_joint_transform);
+			transform_component->set_world_transform(ragdoll_world_transform * head_joint_transform);
 
 			trs head_end_transform = trs(head_joint_transform.position + settings.head_end_joint_adjastment, head_joint_transform.rotation, head_joint_transform.scale);
 
@@ -561,7 +576,7 @@ namespace era_engine::physics
 				head_end_transform,
 				neck_joint_transform,
 				1.0f,
-				settings.neck_joint_adjastment);
+				settings.head_joint_adjastment);
 
 			create_dynamic_body(head, mass * settings.head_mass_percentage, settings.max_head_contact_impulse);
 
@@ -569,6 +584,35 @@ namespace era_engine::physics
 			{
 				head_attachment = create_attachment_dynamic_body(ragdoll, "head_attachment", mass * settings.head_mass_percentage);
 				head_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * head_joint_transform);
+			}
+		}
+
+		// Neck
+		{
+			neck = create_child_entity(ragdoll, "neck", neck_limb_details, joint_init_ids.neck_idx, RagdollLimbType::NECK, physical_animation_component->neck_chain);
+
+			TransformComponent* transform_component = neck.get_component<TransformComponent>();
+			transform_component->set_world_transform(ragdoll_world_transform * neck_joint_transform);
+
+			CapsuleShapeComponent* capsule_shape_component = neck.add_component<CapsuleShapeComponent>();
+			capsule_shape_component->collision_type = CollisionType::RAGDOLL;
+			capsule_shape_component->material = material;
+
+			neck_capsule_bottom_transform = position_capsule_between_joints_from_radius(
+				capsule_shape_component,
+				settings.neck_radius,
+				neck_joint_transform,
+				head_joint_transform,
+				neck_joint_transform,
+				1.8f,
+				settings.neck_joint_adjastment);
+
+			create_dynamic_body(neck, mass * settings.head_mass_percentage, settings.max_head_contact_impulse);
+
+			if (neck_limb_details.motor_drive.has_value())
+			{
+				neck_attachment = create_attachment_dynamic_body(ragdoll, "neck_attachment", mass * settings.head_mass_percentage);
+				neck_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * neck_joint_transform);
 			}
 		}
 
@@ -677,13 +721,21 @@ namespace era_engine::physics
 			descriptor.connected_entity = body_lower_ghost.get_data_weakref();
 			descriptor.second_connected_entity = body_lower.get_data_weakref();
 
-			DistanceJointComponent* joint_component = body_lower_ghost.add_component<DistanceJointComponent>(descriptor);
-			joint_component->enable_collision.get_for_write() = false;
-			joint_component->spring_enabled.get_for_write() = true;
-			joint_component->stiffness.get_for_write() = 1600.0f;
-			joint_component->damping.get_for_write() = 40.0f;
-			joint_component->max_distance.get_for_write() = 0.3f;
-			joint_component->min_distance.get_for_write() = 0.0f;
+			if (physical_animation_component->use_fixed_pelvis_attachment)
+			{
+				FixedJointComponent* joint_component = body_lower_ghost.add_component<FixedJointComponent>(descriptor);
+				joint_component->enable_collision.get_for_write() = false;
+			}
+			else
+			{
+				DistanceJointComponent* joint_component = body_lower_ghost.add_component<DistanceJointComponent>(descriptor);
+				joint_component->enable_collision.get_for_write() = false;
+				joint_component->spring_enabled.get_for_write() = true;
+				joint_component->stiffness.get_for_write() = 1600.0f;
+				joint_component->damping.get_for_write() = 40.0f;
+				joint_component->max_distance.get_for_write() = 0.3f;
+				joint_component->min_distance.get_for_write() = 0.0f;
+			}
 
 			physical_animation_component->attachment_body = EntityPtr{ body_lower_ghost };
 		}
@@ -1028,16 +1080,27 @@ namespace era_engine::physics
 			}
 		}
 
-		// Body upper -> head
+		// Neck -> head
 		create_d6_joint(
 			ragdoll,
-			body_upper, head,
+			neck, head,
 			head_capsule_bottom_transform,
 			head_capsule_bottom_transform,
-			thorax_joint_transform,
+			neck_joint_transform,
 			head_joint_transform,
-			-45.0f, 45.0f,
-			40.0f, 40.0f);
+			-25.0f, 25.0f,
+			20.0f, 20.0f);
+
+		// Body upper -> neck
+		create_d6_joint(
+			ragdoll,
+			body_upper, neck,
+			neck_capsule_bottom_transform,
+			neck_capsule_bottom_transform,
+			thorax_joint_transform,
+			neck_joint_transform,
+			-15.0f, 15.0f,
+			15.0f, 15.0f);
 
 		// Body middle -> body upper
 		const float body_upper_forward_angle_deg = 25.0f;
@@ -1285,6 +1348,11 @@ namespace era_engine::physics
 			head_limb_details,
 			head_attachment,
 			head);
+
+		create_drive_joint(ragdoll,
+			neck_limb_details,
+			neck_attachment,
+			neck);
 
 		create_drive_joint(ragdoll,
 			body_upper_limb_details,

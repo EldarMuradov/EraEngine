@@ -23,6 +23,9 @@ namespace era_engine::physics
         uint32_t spine_01_idx = INVALID_JOINT;
         uint32_t pelvis_idx = INVALID_JOINT;
 
+        uint32_t clavicle_l_idx = INVALID_JOINT;
+        uint32_t clavicle_r_idx = INVALID_JOINT;
+
         uint32_t root_idx = INVALID_JOINT;
         uint32_t attachment_idx = INVALID_JOINT;
 
@@ -76,7 +79,7 @@ namespace era_engine::physics
         float up_leg_radius = 0.09f;
         float leg_radius = 0.06f;
         float foot_width = 0.1f;
-        float neck_radius = 0.1f;
+        float neck_radius = 0.07f;
         float neck_half_height = 0.03f;
         float head_radius = 0.1f;
         float head_half_height = 0.04f;
@@ -103,6 +106,8 @@ namespace era_engine::physics
         BODY_MIDDLE,
         BODY_UPPER,
         HEAD,
+        NECK,
+        CLAVICLE,
         ARM,
         FOREARM,
         HAND,

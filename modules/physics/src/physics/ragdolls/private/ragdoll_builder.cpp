@@ -51,6 +51,7 @@ namespace era_engine::physics
 		dynamic_body_component->solver_position_iterations_count.get_for_write() = 32;
 		dynamic_body_component->solver_velocity_iterations_count.get_for_write() = 15;
 		dynamic_body_component->sleep_threshold.get_for_write() = 0.01f;
+		dynamic_body_component->stabilization_threshold.get_for_write() = 0.1f;
 
 		return dynamic_body_component;
 	}
