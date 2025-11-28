@@ -102,6 +102,144 @@ namespace era_engine::physics
 			}
 		}
 
+		for (auto [entity_handle, observable_component, joint_component] : world->group(components_group<TransformComponent, RevoluteJointComponent>).each())
+		{
+			PxJoint* joint = joint_component.get_native_joint();
+
+			if (joint == nullptr)
+			{
+				continue;
+			}
+
+			PxRevoluteJoint* native_joint = joint->is<PxRevoluteJoint>();
+
+			if (native_joint == nullptr)
+			{
+				continue;
+			}
+
+			if (joint_component.disabled.is_changed())
+			{
+				if (joint_component.disabled)
+				{
+					native_joint->setActors(PhysicsUtils::get_body_component(joint_component.get_first_entity_ptr().get())->get_rigid_actor(), nullptr);
+				}
+				else
+				{
+					native_joint->setActors(PhysicsUtils::get_body_component(joint_component.get_first_entity_ptr().get())->get_rigid_actor(),
+						PhysicsUtils::get_body_component(joint_component.get_second_entity_ptr().get())->get_rigid_actor());
+				}
+				native_joint->setConstraintFlag(PxConstraintFlag::eDISABLE_CONSTRAINT, joint_component.disabled);
+				joint_component.disabled.sync_changes();
+			}
+
+			if (joint_component.enable_collision.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component.enable_collision);
+				joint_component.enable_collision.sync_changes();
+			}
+
+			if (joint_component.break_force.is_changed())
+			{
+				native_joint->setBreakForce(joint_component.break_force.get(), joint_component.break_force.get() * 2.0f);
+				joint_component.break_force.sync_changes();
+			}
+
+			if (joint_component.always_update.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, joint_component.always_update);
+				joint_component.always_update.sync_changes();
+			}
+
+			if (joint_component.enable_drive.is_changed())
+			{
+				native_joint->setRevoluteJointFlag(PxRevoluteJointFlag::eDRIVE_ENABLED, joint_component.enable_drive);
+				joint_component.enable_drive.sync_changes();
+			}
+
+			if (joint_component.drive_force_limit.is_changed())
+			{
+				native_joint->setDriveForceLimit(joint_component.drive_force_limit);
+				joint_component.drive_force_limit.sync_changes();
+			}
+
+			if (joint_component.drive_gear_ratio.is_changed())
+			{
+				native_joint->setDriveGearRatio(joint_component.drive_gear_ratio);
+				joint_component.drive_gear_ratio.sync_changes();
+			}
+
+			if (joint_component.drive_velocity.is_changed())
+			{
+				native_joint->setDriveVelocity(joint_component.drive_velocity);
+				joint_component.drive_velocity.sync_changes();
+			}
+
+			if (joint_component.linear_limit.is_changed())
+			{
+				native_joint->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, true);
+				native_joint->setLimit(PxJointAngularLimitPair{ joint_component.linear_limit->x, joint_component.linear_limit->y });
+				joint_component.linear_limit.sync_changes();
+			}
+		}
+
+		for (auto [entity_handle, observable_component, joint_component] : world->group(components_group<TransformComponent, SphericalJointComponent>).each())
+		{
+			PxJoint* joint = joint_component.get_native_joint();
+
+			if (joint == nullptr)
+			{
+				continue;
+			}
+
+			PxSphericalJoint* native_joint = joint->is<PxSphericalJoint>();
+
+			if (native_joint == nullptr)
+			{
+				continue;
+			}
+
+			if (joint_component.disabled.is_changed())
+			{
+				if (joint_component.disabled)
+				{
+					native_joint->setActors(PhysicsUtils::get_body_component(joint_component.get_first_entity_ptr().get())->get_rigid_actor(), nullptr);
+				}
+				else
+				{
+					native_joint->setActors(PhysicsUtils::get_body_component(joint_component.get_first_entity_ptr().get())->get_rigid_actor(),
+						PhysicsUtils::get_body_component(joint_component.get_second_entity_ptr().get())->get_rigid_actor());
+				}
+				native_joint->setConstraintFlag(PxConstraintFlag::eDISABLE_CONSTRAINT, joint_component.disabled);
+				joint_component.disabled.sync_changes();
+			}
+
+			if (joint_component.enable_collision.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component.enable_collision);
+				joint_component.enable_collision.sync_changes();
+			}
+
+			if (joint_component.break_force.is_changed())
+			{
+				native_joint->setBreakForce(joint_component.break_force.get(), joint_component.break_force.get() * 2.0f);
+				joint_component.break_force.sync_changes();
+			}
+
+			if (joint_component.always_update.is_changed())
+			{
+				native_joint->setConstraintFlag(PxConstraintFlag::eALWAYS_UPDATE, joint_component.always_update);
+				joint_component.always_update.sync_changes();
+			}
+
+			if (joint_component.angular_limit.is_changed())
+			{
+				native_joint->setSphericalJointFlag(PxSphericalJointFlag::eLIMIT_ENABLED, true);
+				native_joint->setLimitCone(PxJointLimitCone{ joint_component.angular_limit->x, joint_component.angular_limit->y });
+				joint_component.angular_limit.sync_changes();
+			}
+		}
+
 		for (auto [entity_handle, observable_component, joint_component] : world->group(components_group<TransformComponent, DistanceJointComponent>).each())
 		{
 			PxJoint* joint = joint_component.get_native_joint();
@@ -333,12 +471,6 @@ namespace era_engine::physics
 			{
 				native_joint->setConstraintFlag(PxConstraintFlag::eDISABLE_PREPROCESSING, joint_component.disable_preprocessing);
 				joint_component.disable_preprocessing.sync_changes();
-			}
-
-			if (joint_component.gpu_compatible.is_changed())
-			{
-				native_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, joint_component.gpu_compatible);
-				joint_component.gpu_compatible.sync_changes();
 			}
 
 			if ((joint_component.twist_drive_accelerated.is_changed() ||
@@ -777,6 +909,142 @@ namespace era_engine::physics
 
 			iter = fixed_joints_to_init.erase(iter);
 		}
+
+		for (auto iter = revolute_joints_to_init.begin(); iter != revolute_joints_to_init.end();)
+		{
+			Entity entity = world->get_entity(*iter);
+
+			RevoluteJointComponent* joint_component = entity.get_component<RevoluteJointComponent>();
+
+			PxRigidActor* first_actor = nullptr;
+			PxRigidActor* second_actor = nullptr;
+
+			if (!joint_component->base_descriptor.connected_entity.is_empty() &&
+				!joint_component->base_descriptor.second_connected_entity.is_empty())
+			{
+				first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
+				second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+
+				if (first_actor == nullptr ||
+					second_actor == nullptr)
+				{
+					++iter;
+					continue;
+				}
+			}
+			else
+			{
+				if (!joint_component->base_descriptor.connected_entity.is_empty())
+				{
+					first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
+					if (first_actor == nullptr)
+					{
+						++iter;
+						continue;
+					}
+				}
+				else if (!joint_component->base_descriptor.second_connected_entity.is_empty())
+				{
+					second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+					if (second_actor == nullptr)
+					{
+						++iter;
+						continue;
+					}
+
+				}
+				else
+				{
+					ASSERT(false);
+					iter = d6_joints_to_init.erase(iter);
+					continue;
+				}
+			}
+
+			PxRevoluteJoint* created_joint = PxRevoluteJointCreate(*PhysicsHolder::physics_ref->get_physics(),
+				first_actor,
+				create_PxTransform(joint_component->base_descriptor.local_frame),
+				second_actor,
+				create_PxTransform(joint_component->base_descriptor.second_local_frame));
+
+			created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
+			created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component->enable_collision);
+
+			joint_component->joint = created_joint;
+			joint_component->joint->userData = joint_component;
+
+			joint_component->state = JointComponent::State::ENABLED;
+
+			iter = revolute_joints_to_init.erase(iter);
+		}
+
+		for (auto iter = spherical_joints_to_init.begin(); iter != spherical_joints_to_init.end();)
+		{
+			Entity entity = world->get_entity(*iter);
+
+			SphericalJointComponent* joint_component = entity.get_component<SphericalJointComponent>();
+
+			PxRigidActor* first_actor = nullptr;
+			PxRigidActor* second_actor = nullptr;
+
+			if (!joint_component->base_descriptor.connected_entity.is_empty() &&
+				!joint_component->base_descriptor.second_connected_entity.is_empty())
+			{
+				first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
+				second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+
+				if (first_actor == nullptr ||
+					second_actor == nullptr)
+				{
+					++iter;
+					continue;
+				}
+			}
+			else
+			{
+				if (!joint_component->base_descriptor.connected_entity.is_empty())
+				{
+					first_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.connected_entity.get())->get_rigid_actor();
+					if (first_actor == nullptr)
+					{
+						++iter;
+						continue;
+					}
+				}
+				else if (!joint_component->base_descriptor.second_connected_entity.is_empty())
+				{
+					second_actor = PhysicsUtils::get_body_component(joint_component->base_descriptor.second_connected_entity.get())->get_rigid_actor();
+					if (second_actor == nullptr)
+					{
+						++iter;
+						continue;
+					}
+
+				}
+				else
+				{
+					ASSERT(false);
+					iter = d6_joints_to_init.erase(iter);
+					continue;
+				}
+			}
+
+			PxSphericalJoint* created_joint = PxSphericalJointCreate(*PhysicsHolder::physics_ref->get_physics(),
+				first_actor,
+				create_PxTransform(joint_component->base_descriptor.local_frame),
+				second_actor,
+				create_PxTransform(joint_component->base_descriptor.second_local_frame));
+
+			created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, false);
+			created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, joint_component->enable_collision);
+
+			joint_component->joint = created_joint;
+			joint_component->joint->userData = joint_component;
+
+			joint_component->state = JointComponent::State::ENABLED;
+
+			iter = spherical_joints_to_init.erase(iter);
+		}
 	}
 
 	void JointsSystem::on_fixed_joint_created(entt::registry& registry, entt::entity entity_handle)
@@ -798,6 +1066,20 @@ namespace era_engine::physics
 		ScopedSpinLock _lock{ sync };
 
 		d6_joints_to_init.push_back(static_cast<Entity::Handle>(entity_handle));
+	}
+
+	void JointsSystem::on_spherical_joint_created(entt::registry& registry, entt::entity entity_handle)
+	{
+		ScopedSpinLock _lock{ sync };
+
+		spherical_joints_to_init.push_back(static_cast<Entity::Handle>(entity_handle));
+	}
+
+	void JointsSystem::on_revolute_joint_created(entt::registry& registry, entt::entity entity_handle)
+	{
+		ScopedSpinLock _lock{ sync };
+
+		revolute_joints_to_init.push_back(static_cast<Entity::Handle>(entity_handle));
 	}
 
 }

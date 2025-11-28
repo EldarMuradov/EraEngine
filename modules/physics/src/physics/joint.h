@@ -92,18 +92,10 @@ namespace era_engine::physics
 
 		ObservableMember<float> drive_velocity = 0.0f;
 		ObservableMember<float> drive_force_limit = 1000.0f;
-		ObservableMember<float> drive_gear_limit = 0.0f;
+		ObservableMember<float> drive_gear_ratio = 0.0f;
 
 		//x = lower, y = upper
 		ObservableMember<vec2> linear_limit = vec2::zero;
-
-		void set_enable_drive(bool enable_drive);
-
-		void set_drive_velocity(float drive_velocity);
-		void set_drive_force_limit(float force_limit);
-		void set_drive_gear_ratio(float gear_ratio);
-
-		void set_constraint_limit(float upper, float lower);
 
 		ERA_VIRTUAL_REFLECT(JointComponent)
 	};
@@ -133,7 +125,8 @@ namespace era_engine::physics
 		SphericalJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
 		~SphericalJointComponent() override;
 
-		void set_constraint_limit(float swing_y, float swing_z);
+		//x = swing_y, y = swing_z
+		ObservableMember<vec2> angular_limit = vec2::zero;
 
 		ERA_VIRTUAL_REFLECT(JointComponent)
 	};
@@ -188,8 +181,6 @@ namespace era_engine::physics
 
 		ObservableMember<bool> improved_slerp = false;
 		ObservableMember<bool> disable_preprocessing = false;
-
-		ObservableMember<bool> gpu_compatible = false;
 
 		ObservableMember<float> slerp_drive_stiffness = 0.0f;
 		ObservableMember<float> swing_drive_stiffness = 0.0f;

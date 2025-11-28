@@ -60,8 +60,8 @@ namespace era_engine::physics
 		dynamic_body_component->ccd.get_for_write() = true;
 		dynamic_body_component->use_gravity.get_for_write() = use_gravity;
 		dynamic_body_component->simulated.get_for_write() = false;
-		dynamic_body_component->linear_damping.get_for_write() = 0.05f;
-		dynamic_body_component->angular_damping.get_for_write() = 0.1f;
+		dynamic_body_component->linear_damping.get_for_write() = 0.15f;
+		dynamic_body_component->angular_damping.get_for_write() = 0.25f;
 		dynamic_body_component->max_contact_impulse.get_for_write() = max_contact_impulse;
 		dynamic_body_component->solver_position_iterations_count.get_for_write() = 32;
 		dynamic_body_component->solver_velocity_iterations_count.get_for_write() = 16;
@@ -94,6 +94,34 @@ namespace era_engine::physics
 		shape_component->collision_type = CollisionType::NONE;
 
 		return attachment;
+	}
+
+	static void create_collision_joint(
+		const Entity& source,
+		Entity& e0,
+		Entity& e1)
+	{
+		JointComponent::BaseDescriptor descriptor;
+		descriptor.connected_entity = e0.get_data_weakref();
+		descriptor.second_connected_entity = e1.get_data_weakref();
+		descriptor.local_frame = trs::identity;
+		descriptor.second_local_frame = trs::identity;
+
+		Entity joint_entity = e0.get_world()->create_entity();
+		joint_entity.set_parent(source.get_handle());
+
+		D6JointComponent* joint_component = joint_entity.add_component<D6JointComponent>(descriptor);
+
+		joint_component->disable_preprocessing = true;
+		joint_component->enable_collision.get_for_write() = false;
+
+		joint_component->linear_x_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
+		joint_component->linear_y_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
+		joint_component->linear_z_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
+
+		joint_component->twist_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
+		joint_component->swing_y_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
+		joint_component->swing_z_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
 	}
 
 	static void create_d6_joint(
@@ -138,7 +166,11 @@ namespace era_engine::physics
 
 		e1.get_component<PhysicalAnimationLimbComponent>()->parent_joint_component = ComponentPtr{ joint_component };
 
-		if (fuzzy_equals(twist_max_deg - twist_min_deg, 0.0f))
+		if (fuzzy_equals(twist_max_deg, 180.0f) && fuzzy_equals(twist_min_deg, 180.0f))
+		{
+			joint_component->twist_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
+		}
+		else if (fuzzy_equals(twist_max_deg - twist_min_deg, 0.0f))
 		{
 			joint_component->twist_motion_type.get_for_write() = D6JointComponent::Motion::LOCKED;
 		}
@@ -155,7 +187,11 @@ namespace era_engine::physics
 
 		bool any_moving_swing = false;
 
-		if (fuzzy_equals(swing_y_deg, 0.0f))
+		if (fuzzy_equals(swing_y_deg, 180.0f))
+		{
+			joint_component->swing_y_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
+		}
+		else if (fuzzy_equals(swing_y_deg, 0.0f))
 		{
 			joint_component->swing_y_motion_type.get_for_write() = D6JointComponent::Motion::LOCKED;
 		}
@@ -166,7 +202,11 @@ namespace era_engine::physics
 			any_moving_swing = true;
 		}
 
-		if (fuzzy_equals(swing_z_deg, 0.0f))
+		if (fuzzy_equals(swing_z_deg, 180.0f))
+		{
+			joint_component->swing_z_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
+		}
+		else if (fuzzy_equals(swing_z_deg, 0.0f))
 		{
 			joint_component->swing_z_motion_type.get_for_write() = D6JointComponent::Motion::LOCKED;
 		}
@@ -740,6 +780,39 @@ namespace era_engine::physics
 			physical_animation_component->attachment_body = EntityPtr{ body_lower_ghost };
 		}
 
+		// Left clavicle
+		{
+			left_clavicle = create_child_entity(ragdoll, "l_clavicle", clavicle_limb_details, joint_init_ids.clavicle_l_idx, RagdollLimbType::CLAVICLE, physical_animation_component->left_arm_chain);
+
+			TransformComponent* transform_component = left_clavicle.get_component<TransformComponent>();
+			transform_component->set_world_transform(ragdoll_world_transform * left_clavicle_joint_transform);
+
+			CapsuleShapeComponent* capsule_shape_component = left_clavicle.add_component<CapsuleShapeComponent>();
+			capsule_shape_component->collision_type = CollisionType::NONE;
+			capsule_shape_component->material = material;
+
+			const trs middle_clavicle_thorax_transform = trs(
+				lerp(left_clavicle_joint_transform.position, thorax_joint_transform.position, 0.5f),
+				slerp(left_clavicle_joint_transform.rotation, thorax_joint_transform.rotation, 0.5f),
+				lerp(left_clavicle_joint_transform.scale, thorax_joint_transform.scale, 0.5f));
+
+			left_clavicle_capsule_bottom_transform = position_capsule_between_joints_from_radius(
+				capsule_shape_component,
+				settings.arm_radius,
+				middle_clavicle_thorax_transform,
+				left_arm_joint_transform,
+				left_clavicle_joint_transform,
+				1.5f);
+
+			create_dynamic_body(left_clavicle, mass * settings.arm_mass_percentage, settings.max_arm_contact_impulse);
+
+			if (clavicle_limb_details.motor_drive.has_value())
+			{
+				left_clavicle_attachment = create_attachment_dynamic_body(ragdoll, "left_clavicle_attachment", mass * settings.arm_mass_percentage);
+				left_clavicle_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_clavicle_joint_transform);
+			}
+		}
+
 		// Left arm
 		{
 			left_arm = create_child_entity(ragdoll, "l_arm", arm_limb_details, joint_init_ids.upperarm_l_idx, RagdollLimbType::ARM, physical_animation_component->left_arm_chain);
@@ -820,6 +893,39 @@ namespace era_engine::physics
 			{
 				left_hand_attachment = create_attachment_dynamic_body(ragdoll, "left_hand_attachment", mass * settings.hand_mass_percentage);
 				left_hand_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * left_hand_joint_transform);
+			}
+		}
+
+		// Right clavicle
+		{
+			right_clavicle = create_child_entity(ragdoll, "r_clavicle", clavicle_limb_details, joint_init_ids.clavicle_r_idx, RagdollLimbType::CLAVICLE, physical_animation_component->right_arm_chain);
+
+			TransformComponent* transform_component = right_clavicle.get_component<TransformComponent>();
+			transform_component->set_world_transform(ragdoll_world_transform * right_clavicle_joint_transform);
+
+			CapsuleShapeComponent* capsule_shape_component = right_clavicle.add_component<CapsuleShapeComponent>();
+			capsule_shape_component->collision_type = CollisionType::NONE;
+			capsule_shape_component->material = material;
+
+			const trs middle_clavicle_thorax_transform = trs(
+				lerp(right_clavicle_joint_transform.position, thorax_joint_transform.position, 0.5f),
+				slerp(right_clavicle_joint_transform.rotation, thorax_joint_transform.rotation, 0.5f),
+				lerp(right_clavicle_joint_transform.scale, thorax_joint_transform.scale, 0.5f));
+
+			right_clavicle_capsule_bottom_transform = position_capsule_between_joints_from_radius(
+				capsule_shape_component,
+				settings.arm_radius,
+				middle_clavicle_thorax_transform,
+				right_arm_joint_transform,
+				right_clavicle_joint_transform,
+				1.5f);
+
+			create_dynamic_body(right_clavicle, mass * settings.arm_mass_percentage, settings.max_arm_contact_impulse);
+
+			if (clavicle_limb_details.motor_drive.has_value())
+			{
+				right_clavicle_attachment = create_attachment_dynamic_body(ragdoll, "right_clavicle_attachment", mass * settings.arm_mass_percentage);
+				right_clavicle_attachment.get_component<TransformComponent>()->set_world_transform(ragdoll_world_transform * right_clavicle_joint_transform);
 			}
 		}
 
@@ -1080,6 +1186,9 @@ namespace era_engine::physics
 			}
 		}
 
+		create_collision_joint(ragdoll, left_arm, body_upper);
+		create_collision_joint(ragdoll, right_arm, body_upper);
+
 		// Neck -> head
 		create_d6_joint(
 			ragdoll,
@@ -1146,8 +1255,18 @@ namespace era_engine::physics
 			body_middle_d6_swing_y_deg,
 			4.0f);
 
+		create_d6_joint(
+			ragdoll,
+			body_upper, left_clavicle,
+			left_clavicle_joint_transform,
+			left_clavicle_joint_transform,
+			thorax_joint_transform,
+			left_clavicle_joint_transform,
+			-180.0f, 180.0f,
+			180.0f, 180.0f);
+
 		const float arm_forward_angle_deg = 90.0f; // How far an arm can be rotated forward around Y axis
-		const float arm_backward_angle_deg = 22.5f; // How far an arm can be rotated backwards around Y axis
+		const float arm_backward_angle_deg = 42.5f; // How far an arm can be rotated backwards around Y axis
 		const float arm_d6_swing_y_deg = (arm_forward_angle_deg + arm_backward_angle_deg) / 2.0f;
 
 		// Thorax -> left arm
@@ -1159,14 +1278,14 @@ namespace era_engine::physics
 
 		create_d6_joint(
 			ragdoll,
-			body_upper, left_arm,
-			thorax_to_left_arm_d6_transform,
+			left_clavicle, left_arm,
 			left_arm_capsule_bottom_transform,
-			thorax_joint_transform,
+			left_arm_capsule_bottom_transform,
+			left_clavicle_joint_transform,
 			left_arm_joint_transform,
-			-60.0f, 60.0f,
+			-90.0f, 90.0f,
 			arm_d6_swing_y_deg,
-			65.0f);
+			95.0f);
 
 		// Left arm -> left forearm
 		const float forearm_d6_swing_y_deg = 55.0f;
@@ -1199,6 +1318,16 @@ namespace era_engine::physics
 			22.0f,
 			40.0f);
 
+		create_d6_joint(
+			ragdoll,
+			body_upper, right_clavicle,
+			right_clavicle_joint_transform,
+			right_clavicle_joint_transform,
+			thorax_joint_transform,
+			right_clavicle_joint_transform,
+			-180.0f, 180.0f,
+			180.0f, 180.0f);
+
 		// Thorax -> right arm
 		const vec3 right_arm_capsule_y_axis = right_arm_capsule_bottom_transform.rotation * vec3(0.0f, 1.0f, 0.0f);
 		const trs thorax_to_right_arm_d6_transform = trs(
@@ -1208,14 +1337,14 @@ namespace era_engine::physics
 
 		create_d6_joint(
 			ragdoll,
-			body_upper, right_arm,
-			thorax_to_right_arm_d6_transform,
+			right_clavicle, right_arm,
 			right_arm_capsule_bottom_transform,
-			thorax_joint_transform,
+			right_arm_capsule_bottom_transform,
+			right_clavicle_joint_transform,
 			right_arm_joint_transform,
-			-60.0f, 60.0f,
+			-90.0f, 90.0f,
 			arm_d6_swing_y_deg,
-			65.0f);
+			95.0f);
 
 		// Right arm -> right forearm
 		const vec3 right_forearm_capsule_y_axis = right_forearm_capsule_bottom_transform.rotation * vec3(0.0f, 1.0f, 0.0f);
@@ -1365,6 +1494,11 @@ namespace era_engine::physics
 			body_middle);
 
 		create_drive_joint(ragdoll,
+			clavicle_limb_details,
+			left_clavicle_attachment,
+			left_clavicle);
+
+		create_drive_joint(ragdoll,
 			arm_limb_details,
 			left_arm_attachment,
 			left_arm);
@@ -1378,6 +1512,11 @@ namespace era_engine::physics
 			hand_limb_details,
 			left_hand_attachment,
 			left_hand);
+
+		create_drive_joint(ragdoll,
+			clavicle_limb_details,
+			right_clavicle_attachment,
+			right_clavicle);
 
 		create_drive_joint(ragdoll,
 			arm_limb_details,

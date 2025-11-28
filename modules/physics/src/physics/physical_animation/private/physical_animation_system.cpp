@@ -84,22 +84,13 @@ namespace era_engine::physics
 			idle_profile->body_upper_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->body_upper_limb_details.motor_drive->angular_drive_stiffness = 500.0f;
 			idle_profile->body_upper_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
-			idle_profile->body_upper_limb_details.drag_force = DragForceDetails();
-			idle_profile->body_upper_limb_details.drag_force->partial_velocity_drive = 0.4f;
-			idle_profile->body_upper_limb_details.drag_force->partial_angular_drive = 0.5f;
 
 			idle_profile->body_middle_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->body_middle_limb_details.motor_drive = MotorDriveDetails();
 			idle_profile->body_middle_limb_details.motor_drive->angular_drive_stiffness = 500.0f;
 			idle_profile->body_middle_limb_details.motor_drive->linear_drive_stiffness = 400.0f;
-			idle_profile->body_middle_limb_details.drag_force = DragForceDetails();
-			idle_profile->body_middle_limb_details.drag_force->partial_velocity_drive = 0.4f;
-			idle_profile->body_middle_limb_details.drag_force->partial_angular_drive = 0.5f;
 
 			idle_profile->body_lower_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
-			idle_profile->body_lower_limb_details.drag_force = DragForceDetails();
-			idle_profile->body_lower_limb_details.drag_force->partial_velocity_drive = 0.4f;
-			idle_profile->body_lower_limb_details.drag_force->partial_angular_drive = 0.5f;
 
 			idle_profile->clavicle_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
 			idle_profile->clavicle_limb_details.motor_drive = MotorDriveDetails();

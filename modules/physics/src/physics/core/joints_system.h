@@ -19,6 +19,8 @@ namespace era_engine::physics
 		void on_fixed_joint_created(entt::registry& registry, entt::entity entity_handle);
 		void on_distance_joint_created(entt::registry& registry, entt::entity entity_handle);
 		void on_d6_joint_created(entt::registry& registry, entt::entity entity_handle);
+		void on_spherical_joint_created(entt::registry& registry, entt::entity entity_handle);
+		void on_revolute_joint_created(entt::registry& registry, entt::entity entity_handle);
 
 		ERA_VIRTUAL_REFLECT(System)
 
@@ -26,6 +28,8 @@ namespace era_engine::physics
 		std::vector<Entity::Handle> d6_joints_to_init;
 		std::vector<Entity::Handle> fixed_joints_to_init;
 		std::vector<Entity::Handle> distance_joints_to_init;
+		std::vector<Entity::Handle> revolute_joints_to_init;
+		std::vector<Entity::Handle> spherical_joints_to_init;
 
 		SpinLock sync;
 	};

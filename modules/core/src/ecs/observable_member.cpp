@@ -47,11 +47,12 @@ namespace era_engine
 	{
 		++changes_count;
 
-		if (!component_ptr.is_empty())
-		{
-			Entity owner = component_ptr.get()->get_entity();
-			owner.add_component<ObservableMemberChangedFlagComponent>();
-		}
+		// TODO
+		//if (!component_ptr.is_empty())
+		//{
+		//	Entity owner = component_ptr.get()->get_entity();
+		//	owner.add_component<ObservableMemberChangedFlagComponent>();
+		//}
 	}
 
 	bool ObservableBase::is_changed() const

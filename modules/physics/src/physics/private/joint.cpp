@@ -148,71 +148,14 @@ namespace era_engine::physics
 	RevoluteJointComponent::RevoluteJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor)
 		: JointComponent(_data, _base_descriptor)
 	{
-		using namespace physx;
-
-		auto* physics = PhysicsHolder::physics_ref->get_physics();
-
-		PxRevoluteJoint* created_joint = physx::PxRevoluteJointCreate(*physics,
-			PhysicsUtils::get_body_component(base_descriptor.connected_entity.get_data())->get_rigid_actor(), create_PxTransform(_base_descriptor.local_frame),
-			PhysicsUtils::get_body_component(base_descriptor.second_connected_entity.get_data())->get_rigid_actor(), create_PxTransform(_base_descriptor.second_local_frame));
-
-		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, enable_collision);
-
-		created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
-		created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
-
-		joint = created_joint;
-		joint->userData = this;
+		drive_force_limit.set_component(ComponentPtr(this));
+		drive_gear_ratio.set_component(ComponentPtr(this));
+		drive_velocity.set_component(ComponentPtr(this));
+		linear_limit.set_component(ComponentPtr(this));
 	}
 
 	RevoluteJointComponent::~RevoluteJointComponent()
 	{
-	}
-
-	void RevoluteJointComponent::set_enable_drive(bool enable_drive)
-	{
-		using namespace physx;
-		if(PxRevoluteJoint* revolute_joint = joint->is<PxRevoluteJoint>())
-		{
-			revolute_joint->setRevoluteJointFlag(PxRevoluteJointFlag::eDRIVE_ENABLED, enable_drive);
-		}
-	}
-
-	void RevoluteJointComponent::set_drive_velocity(float drive_velocity)
-	{
-		using namespace physx;
-		if (PxRevoluteJoint* revolute_joint = joint->is<PxRevoluteJoint>())
-		{
-			revolute_joint->setDriveVelocity(drive_velocity);
-		}
-	}
-
-	void RevoluteJointComponent::set_drive_force_limit(float force_limit)
-	{
-		using namespace physx;
-		if (PxRevoluteJoint* revolute_joint = joint->is<PxRevoluteJoint>())
-		{
-			revolute_joint->setDriveForceLimit(force_limit);
-		}
-	}
-
-	void RevoluteJointComponent::set_drive_gear_ratio(float gear_ratio)
-	{
-		using namespace physx;
-		if (PxRevoluteJoint* revolute_joint = joint->is<PxRevoluteJoint>())
-		{
-			revolute_joint->setDriveGearRatio(gear_ratio);
-		}
-	}
-
-	void RevoluteJointComponent::set_constraint_limit(float upper, float lower)
-	{
-		using namespace physx;
-		if (PxRevoluteJoint* revolute_joint = joint->is<PxRevoluteJoint>())
-		{
-			revolute_joint->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, true);
-			revolute_joint->setLimit(PxJointAngularLimitPair{ lower, upper });
-		}
 	}
 
 	DistanceJointComponent::DistanceJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor)
@@ -232,35 +175,11 @@ namespace era_engine::physics
 	SphericalJointComponent::SphericalJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor)
 		: JointComponent(_data, _base_descriptor)
 	{
-		using namespace physx;
-
-		auto* physics = PhysicsHolder::physics_ref->get_physics();
-
-		PxSphericalJoint* created_joint = physx::PxSphericalJointCreate(*physics,
-			PhysicsUtils::get_body_component(base_descriptor.connected_entity.get_data())->get_rigid_actor(), create_PxTransform(_base_descriptor.local_frame),
-			PhysicsUtils::get_body_component(base_descriptor.second_connected_entity.get_data())->get_rigid_actor(), create_PxTransform(_base_descriptor.second_local_frame));
-
-		created_joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, enable_collision);
-
-		//created_joint->setConstraintFlag(PxConstraintFlag::eGPU_COMPATIBLE, true);
-		created_joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
-
-		joint = created_joint;
-		joint->userData = this;
+		angular_limit.set_component(ComponentPtr(this));
 	}
 
 	SphericalJointComponent::~SphericalJointComponent()
 	{
-	}
-
-	void SphericalJointComponent::set_constraint_limit(float swing_y, float swing_z)
-	{
-		using namespace physx;
-		if (PxSphericalJoint* spherical_joint = joint->is<PxSphericalJoint>())
-		{
-			spherical_joint->setSphericalJointFlag(PxSphericalJointFlag::eLIMIT_ENABLED, true);
-			spherical_joint->setLimitCone(PxJointLimitCone{swing_y, swing_z});
-		}
 	}
 
 	D6JointComponent::D6JointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor)
@@ -305,7 +224,6 @@ namespace era_engine::physics
 		distance_limit.set_component(ComponentPtr(this));
 
 		drive_limits_are_forces.set_component(ComponentPtr(this));
-		gpu_compatible.set_component(ComponentPtr(this));
 
 		improved_slerp.set_component(ComponentPtr(this));
 		disable_preprocessing.set_component(ComponentPtr(this));
