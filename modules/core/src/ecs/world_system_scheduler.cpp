@@ -38,10 +38,12 @@ namespace era_engine
 	}
 
 	WorldSystemScheduler::WorldSystemScheduler(World* _world, size_t normal_threads, size_t fixed_threads)
-		: world(_world), fixed_update_rate(60.0), running(false)
+		: world(_world), running(false)
 	{
 		running = true;
 		fixed_update_thread = std::thread(&WorldSystemScheduler::fixed_update_loop, this);
+
+		set_fixed_update_rate(60.0f);
 
 		for (size_t i = 0; i < normal_threads; ++i)
 		{
@@ -99,6 +101,7 @@ namespace era_engine
 	{
 		fixed_update_rate = rate;
 		fixed_update_interval = std::chrono::duration<double>(1.0 / rate);
+		world->fixed_update_dt = 1.0f / float(fixed_update_rate);
 	}
 
 	void WorldSystemScheduler::initialize_systems(const rttr::array_range<rttr::type>& types)

@@ -6,6 +6,8 @@
 #include "motion_matching/motion/motion_component.h"
 #include "motion_matching/motion/motion_utils.h"
 
+#include "physics/cct_component.h"
+
 #include "motion_matching/common.h"
 
 #include "rendering/ecs/renderer_holder_root_component.h"
@@ -79,7 +81,15 @@ namespace era_engine
 				motion_component.rotation_halflife,
 				dt);
 
-			transform_component.set_world_transform(trs{ motion_component.simulation_position , motion_component.simulation_rotation, vec3(1.0f)});
+			if (physics::CharacterControllerComponent* cct_component = world->get_entity(handle).get_component_if_exists<physics::CharacterControllerComponent>())
+			{
+				cct_component->velocity = motion_component.velocity;
+				transform_component.set_world_rotation(motion_component.simulation_rotation);
+			}
+			else
+			{
+				transform_component.set_world_transform(trs{ motion_component.simulation_position , motion_component.simulation_rotation, vec3(1.0f) });
+			}
 			motion_component.last_velocity = motion_component.velocity;
 		}
 	}

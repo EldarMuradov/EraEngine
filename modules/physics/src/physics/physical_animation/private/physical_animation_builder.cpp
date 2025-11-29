@@ -52,13 +52,12 @@ namespace era_engine::physics
 	static DynamicBodyComponent* create_dynamic_body(
 		Entity& entity,
 		const float mass,
-		const float max_contact_impulse = 400,
-		bool use_gravity = false)
+		const float max_contact_impulse = 400)
 	{
 		DynamicBodyComponent* dynamic_body_component = entity.add_component<DynamicBodyComponent>();
 		dynamic_body_component->mass.get_for_write() = mass;
 		dynamic_body_component->ccd.get_for_write() = true;
-		dynamic_body_component->use_gravity.get_for_write() = use_gravity;
+		dynamic_body_component->use_gravity.get_for_write() = false;
 		dynamic_body_component->simulated.get_for_write() = false;
 		dynamic_body_component->linear_damping.get_for_write() = 0.15f;
 		dynamic_body_component->angular_damping.get_for_write() = 0.25f;
@@ -1080,7 +1079,7 @@ namespace era_engine::physics
 			transform_component->set_world_transform(ragdoll_world_transform * left_foot_joint_transform);
 
 			BoxShapeComponent* box_shape_component = left_foot.add_component<BoxShapeComponent>();
-			box_shape_component->collision_type = CollisionType::RAGDOLL;
+			box_shape_component->collision_type = CollisionType::NONE;
 			box_shape_component->material = material;
 
 			left_foot_box_bottom_transform = position_box_between_joints(
@@ -1167,7 +1166,7 @@ namespace era_engine::physics
 			transform_component->set_world_transform(ragdoll_world_transform * right_foot_joint_transform);
 
 			BoxShapeComponent* box_shape_component = right_foot.add_component<BoxShapeComponent>();
-			box_shape_component->collision_type = CollisionType::RAGDOLL;
+			box_shape_component->collision_type = CollisionType::NONE;
 			box_shape_component->material = material;
 
 			right_foot_box_bottom_transform = position_box_between_joints(

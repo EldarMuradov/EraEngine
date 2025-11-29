@@ -94,6 +94,11 @@ namespace era_engine
 		return fixed_frame_id;
 	}
 
+	float World::get_fixed_update_dt() const
+	{
+		return fixed_update_dt;
+	}
+
 	void World::destroy_entity(const Entity& _entity)
 	{
 		destroy_entity(_entity.get_handle());

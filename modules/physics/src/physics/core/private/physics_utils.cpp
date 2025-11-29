@@ -1,14 +1,80 @@
 #include "physics/core/physics_utils.h"
 #include "physics/core/physics.h"
 #include "physics/body_component.h"
+#include "physics/cct_component.h"
 
 #include <ecs/world.h>
 #include <ecs/base_components/transform_component.h>
 
 #include <core/log.h>
+#include <core/traits.h>
 
 namespace era_engine::physics
 {
+	class CharacterControllerFilterCallback final : public physx::PxQueryFilterCallback
+	{
+	public:
+		physx::PxQueryHitType::Enum preFilter(const physx::PxFilterData& cct_filter_data, const physx::PxShape* shape, const physx::PxRigidActor*, physx::PxHitFlags&) override
+		{
+			using namespace physx;
+
+			const PxFilterData& shape_filter_data = shape->getQueryFilterData();
+
+			if ((cct_filter_data.word0 & shape_filter_data.word1) == 0 &&
+				(shape_filter_data.word0 & cct_filter_data.word1) == 0)
+			{
+				return PxQueryHitType::eNONE;
+			}
+			else
+			{
+				return PxQueryHitType::eBLOCK;
+			}
+		}
+
+		physx::PxQueryHitType::Enum postFilter(const physx::PxFilterData& filterData, const physx::PxQueryHit& hit, const physx::PxShape* shape, const physx::PxRigidActor* actor) override
+		{
+			using namespace physx;
+
+			ASSERT(false);
+
+			return PxQueryHitType::eNONE;
+		}
+	};
+
+	class CCTAndCCTQueryFilterCallback final : public physx::PxControllerFilterCallback
+	{
+	public:
+		CCTAndCCTQueryFilterCallback()
+			: physx::PxControllerFilterCallback()
+		{
+		}
+
+		bool filter(const physx::PxController& cct0, const physx::PxController& cct1) override
+		{
+			physx::PxShape* shape0 = nullptr;
+			physx::PxShape* shape1 = nullptr;
+
+			cct0.getActor()->getShapes(&shape0, 1, 0);
+			ASSERT(shape0 != nullptr);
+
+			cct1.getActor()->getShapes(&shape1, 1, 0);
+			ASSERT(shape1 != nullptr);
+
+			const physx::PxFilterData& filter_data0 = shape0->getSimulationFilterData();
+			const physx::PxFilterData& filter_data1 = shape1->getSimulationFilterData();
+
+			bool res = false;
+
+			if ((filter_data0.word0 & filter_data1.word1) != 0 ||
+				(filter_data1.word0 & filter_data0.word1) != 0)
+			{
+				res = true;
+			}
+
+			return res;
+		}
+	};
+
 	physx::PxRigidDynamic* PhysicsUtils::create_rigid_dynamic(const physx::PxTransform& transform, void* user_data)
 	{
 		using namespace physx;
@@ -187,6 +253,65 @@ namespace era_engine::physics
 			const PxVec3 center_of_mass = create_PxVec3(body_component->center_of_mass);
 
 			PxRigidBodyExt::updateMassAndInertia(*body, density, &center_of_mass);
+		}
+	}
+
+	void PhysicsUtils::manual_move_cct(CharacterControllerComponent* cct_component, const vec3& offset)
+	{
+		using namespace physx;
+
+		World* world = cct_component->get_world();
+
+		PxCapsuleController* physx_cct = cct_component->controller;
+		ASSERT(physx_cct != nullptr);
+
+		PxExtendedVec3 position = physx_cct->getFootPosition();
+
+		PxRigidDynamic* physx_actor = physx_cct->getActor();
+		ASSERT(physx_actor != nullptr);
+
+		PxShape* physx_shape = nullptr;
+		physx_actor->getShapes(&physx_shape, 1, 0);
+		ASSERT(physx_shape != nullptr);
+
+		PxFilterData physx_filter_data = physx_shape->getQueryFilterData();
+
+		CharacterControllerFilterCallback cct_filter_callback;
+		CCTAndCCTQueryFilterCallback cct_vs_cct_filter_callback;
+
+		PxControllerFilters filters;
+		filters.mFilterCallback = &cct_filter_callback;
+		filters.mCCTFilterCallback = &cct_vs_cct_filter_callback;
+		filters.mFilterData = &physx_filter_data;
+		filters.mFilterFlags = PxQueryFlag::ePREFILTER | PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC;
+
+		PxControllerCollisionFlags collision_flags = physx_cct->move(create_PxVec3(offset), 0.0f, world->get_fixed_update_dt(), filters);
+
+		CharacterControllerCollisionFlags component_collision_flags = CharacterControllerCollisionFlags::NONE;
+
+		if (collision_flags.isSet(PxControllerCollisionFlag::Enum::eCOLLISION_SIDES))
+		{
+			set_flag(component_collision_flags, CharacterControllerCollisionFlags::SIDES);
+		}
+
+		if (collision_flags.isSet(PxControllerCollisionFlag::Enum::eCOLLISION_UP))
+		{
+			set_flag(component_collision_flags, CharacterControllerCollisionFlags::UP);
+		}
+
+		if (collision_flags.isSet(PxControllerCollisionFlag::Enum::eCOLLISION_DOWN))
+		{
+			set_flag(component_collision_flags, CharacterControllerCollisionFlags::DOWN);
+		}
+
+		cct_component->current_collision_flags = component_collision_flags;
+
+		PxExtendedVec3 new_position = physx_cct->getFootPosition();
+
+		TransformComponent* transform_component = cct_component->get_entity().get_component<TransformComponent>();
+		if (transform_component != nullptr)
+		{
+			transform_component->set_world_position(create_vec3(new_position));
 		}
 	}
 

@@ -10,6 +10,7 @@ namespace era_engine::physics
 {
 	class BodyComponent;
 	class DynamicBodyComponent;
+	class CharacterControllerComponent;
 
 	class PhysicsUtils final
 	{
@@ -30,5 +31,7 @@ namespace era_engine::physics
 		static void manual_clear_force_and_torque(DynamicBodyComponent* body_component);
 
 		static void update_mass_and_inertia(DynamicBodyComponent* body_component, float density);
+
+		static void manual_move_cct(CharacterControllerComponent* cct_component, const vec3& offset);
 	};
 }

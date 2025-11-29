@@ -71,6 +71,7 @@ namespace era_engine
 		Entity create_entity(Entity::Handle _handle, const char* _name);
 
 		uint64 get_fixed_frame_id() const;
+		float get_fixed_update_dt() const;
 
 		void destroy_entity(const Entity& _entity);
 		void destroy_entity(Entity::Handle _handle, bool _destroy_childs = true, bool _destroy_components = true);
@@ -205,6 +206,8 @@ namespace era_engine
 		WorldData* world_data = nullptr;
 
 		uint64 fixed_frame_id = 0;
+
+		float fixed_update_dt = 0.0f;
 
 		friend class Entity;
 		friend class WorldSystemScheduler;

@@ -50,6 +50,9 @@ namespace era_engine
 
 		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::TERRAIN),
 			static_cast<uint32>(GameCollisionType::DYNAMICS), true);
+
+		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::TERRAIN),
+			static_cast<uint32>(GameCollisionType::CCT), true);
 	}
 
 }

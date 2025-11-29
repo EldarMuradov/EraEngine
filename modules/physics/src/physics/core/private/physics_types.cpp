@@ -1,7 +1,9 @@
 #include "physics/core/physics_types.h"
 #include "physics/core/physics.h"
 #include "physics/body_component.h"
+#include "physics/collisions_holder_root_component.h"
 #include "physics/joint.h"
+#include "physics/cct_component.h"
 
 #include "core/memory.h"
 #include "core/cpu_profiling.h"
@@ -73,49 +75,6 @@ namespace era_engine::physics
 		return false;
 	};
 
-	physx::PxShape* CharacterControllerFilterCallback::getShape(const physx::PxController& controller)
-	{
-		using namespace physx;
-		PxRigidDynamic* actor = controller.getActor();
-
-		if (!actor || actor->getNbShapes() < 1)
-		{
-			return nullptr;
-		}
-
-		PxShape* shape = nullptr;
-		actor->getShapes(&shape, 1);
-
-		return shape;
-	}
-
-	bool CharacterControllerFilterCallback::filter(const physx::PxController& a, const physx::PxController& b)
-	{
-		using namespace physx;
-
-		PxShape* shape_a = getShape(a);
-		if (shape_a == nullptr)
-		{
-			return false;
-		}
-
-		PxShape* shape_b = getShape(b);
-		if (shape_b == nullptr)
-		{
-			return false;
-		}
-
-		if (PxFilterObjectIsTrigger(shape_b->getFlags()))
-		{
-			return false;
-		}
-
-		const PxFilterData shape_filter_a = shape_a->getQueryFilterData();
-		const PxFilterData shape_filter_b = shape_b->getQueryFilterData();
-
-		return shape_filter_a.word0 & shape_filter_b.word1;
-	}
-
 	void ErrorReporter::reportError(physx::PxErrorCode::Enum code, const char* message, const char* file, int line)
 	{
 		if (message)
@@ -166,6 +125,8 @@ namespace era_engine::physics
 	{
 		new_collisions.clear();
 		removed_collisions.clear();
+
+		cct_collisions.clear();
 
 		new_trigger_pairs.clear();
 		lost_trigger_pairs.clear();
@@ -364,6 +325,66 @@ namespace era_engine::physics
 			}
 		}
 		return true;
+	}
+
+	CharacterControllerHitReportCallback::CharacterControllerHitReportCallback(World* world_)
+		: world(world_)
+	{
+	}
+
+	void CharacterControllerHitReportCallback::onShapeHit(const physx::PxControllerShapeHit& hit)
+	{
+		ASSERT(hit.controller != nullptr);
+		ASSERT(hit.shape != nullptr);
+
+		CharacterControllerComponent* cct_component = static_cast<CharacterControllerComponent*>(hit.controller->getUserData());
+		ASSERT(cct_component != nullptr);
+
+		if (!cct_component->handle_non_cct_contacts)
+		{
+			return;
+		}
+
+		Component* shape_component = static_cast<Component*>(hit.shape->userData);
+		ASSERT(shape_component != nullptr);
+
+		CharacterControllerCollision cct_collision_info;
+		cct_collision_info.character_controller = cct_component;
+		cct_collision_info.other_ptr = ComponentPtr{ shape_component };
+		cct_collision_info.position = create_vec3(hit.worldPos);
+		cct_collision_info.normal = create_vec3(hit.worldNormal);
+		cct_collision_info.direction = create_vec3(hit.dir);
+		cct_collision_info.length = hit.length;
+
+		ref<SimulationEventCallback> event_callback = PhysicsHolder::physics_ref->simulation_event_callback;
+		event_callback->cct_collisions.pushBack(cct_collision_info);
+	}
+
+	void CharacterControllerHitReportCallback::onControllerHit(const physx::PxControllersHit& hit)
+	{
+		ASSERT(hit.controller != nullptr);
+		ASSERT(hit.other != nullptr);
+
+		CharacterControllerComponent* this_cct_component = static_cast<CharacterControllerComponent*>(hit.controller->getUserData());
+		ASSERT(this_cct_component != nullptr);
+
+		Component* other_cct_component = static_cast<Component*>(hit.other->getUserData());
+		ASSERT(other_cct_component != nullptr);
+
+		CharacterControllerCollision cct_collision_info;
+		cct_collision_info.character_controller = this_cct_component;
+		cct_collision_info.other_ptr = ComponentPtr{ other_cct_component };
+		cct_collision_info.position = create_vec3(hit.worldPos);
+		cct_collision_info.normal = create_vec3(hit.worldNormal);
+		cct_collision_info.direction = create_vec3(hit.dir);
+		cct_collision_info.length = hit.length;
+
+		ref<SimulationEventCallback> event_callback = PhysicsHolder::physics_ref->simulation_event_callback;
+		event_callback->cct_collisions.pushBack(cct_collision_info);
+	}
+
+	void CharacterControllerHitReportCallback::onObstacleHit(const physx::PxControllerObstacleHit& hit)
+	{
 	}
 
 }

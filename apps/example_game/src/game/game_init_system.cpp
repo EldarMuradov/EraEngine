@@ -22,8 +22,9 @@
 #include <ecs/rendering/mesh_component.h>
 
 #include <physics/body_component.h>
-#include "physics/core/physics.h"
+#include <physics/core/physics.h>
 #include <physics/shape_component.h>
+#include <physics/cct_component.h>
 #include <physics/basic_objects.h>
 #include <physics/joint.h>
 #include <physics/ragdolls/ragdoll_component.h>
@@ -73,13 +74,9 @@ namespace era_engine
 
 		camera_entity = world->create_entity("CameraEntity");
 		CameraHolderComponent* camera_holder_component = camera_entity.add_component<CameraHolderComponent>();
-
-		camera_entity.add_component<InputSenderComponent>()->add_reciever(camera_entity.add_component<InputReceiverComponent>());
-		camera_entity.add_component<MotionComponent>();
-		camera_entity.add_component<TrajectoryComponent>();
-
 		camera_holder_component->set_camera_type(CameraHolderComponent::FREE_CAMERA);
 		camera_holder_component->set_render_camera(&renderer_holder_rc->camera);
+		camera_entity.add_component<InputSenderComponent>()->add_reciever(camera_entity.add_component<InputReceiverComponent>());
 
 		PbrMaterialDesc defaultPlaneMatDesc;
 		defaultPlaneMatDesc.albedo = get_asset_path("/resources/assets/uv.jpg");
@@ -107,7 +104,7 @@ namespace era_engine
 			tiran.add_component<MeshComponent>(mesh);
 
 			TransformComponent* transform_component = tiran.get_component<TransformComponent>();
-			transform_component->set_world_transform(trs{vec3(-10.0f, -2.0f, 0.0f), quat::identity, vec3(1.0f)});
+			transform_component->set_world_transform(trs{vec3(-5.0f, -4.95f, 5.0f), quat::identity, vec3(1.0f)});
 
 			mesh->loadJob.wait_for_completion();
 
@@ -187,6 +184,16 @@ namespace era_engine
 			settings.middle_body_radius_modifier = 0.8f;
 			settings.lower_body_height_modifier = 1.2f;
 			settings.lower_body_radius_modifier = 1.4f;
+
+			CharacterControllerComponent* cct_component = tiran.add_component<CharacterControllerComponent>();
+			cct_component->collision_type = static_cast<CollisionType>(GameCollisionType::CCT);
+			cct_component->height = 1.2f;
+			cct_component->radius = 0.3f;
+			cct_component->step_offset = 0.05f;
+
+			tiran.add_component<MotionComponent>();
+			tiran.add_component<TrajectoryComponent>();
+			camera_entity.get_component<InputSenderComponent>()->add_reciever(tiran.add_component<InputReceiverComponent>());
 
 			//RagdollComponent* ragdoll_component = tiran.add_component<RagdollComponent>();
 			//ragdoll_component->simulated = true;

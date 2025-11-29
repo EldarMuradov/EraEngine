@@ -112,6 +112,7 @@ namespace physx
 	PX_FORCE_INLINE PxVec4 create_PxVec4(const vec3& vec) { return PxVec4(vec.x, vec.y, vec.z, 0); }
 	PX_FORCE_INLINE PxVec4 create_PxVec4(const vec4& vec) { return PxVec4(vec.x, vec.y, vec.z, vec.w); }
 
+	PX_FORCE_INLINE PxExtendedVec3 create_PxExtendedVec3(const vec3& vec) { return PxExtendedVec3(vec.x, vec.y, vec.z); }
 	PX_FORCE_INLINE PxVec3 create_PxVec3(const vec3& vec) { return PxVec3(vec.x, vec.y, vec.z); }
 	PX_FORCE_INLINE PxVec2 create_PxVec2(const vec2& vec) { return PxVec2(vec.x, vec.y); }
     PX_FORCE_INLINE PxVec3 create_PxVec3(vec3&& vec) { return PxVec3(vec.x, vec.y, vec.z); }
@@ -123,6 +124,7 @@ namespace physx
 	PX_FORCE_INLINE quat create_quat(const PxQuat& q) { return quat(q.x, q.y, q.z, q.w); }
 	PX_FORCE_INLINE quat create_quat(PxQuat&& q) { return quat(q.x, q.y, q.z, q.w); }
 
+	PX_FORCE_INLINE vec3 create_vec3(const PxExtendedVec3& vec) { return vec3(vec.x, vec.y, vec.z); }
 	PX_FORCE_INLINE vec3 create_vec3(const PxVec3& vec) { return vec3(vec.x, vec.y, vec.z); }
 	PX_FORCE_INLINE vec2 create_vec2(const PxVec2& vec) { return vec2(vec.x, vec.y); }
 	PX_FORCE_INLINE vec3 create_vec3(PxVec3&& vec) { return vec3(vec.x, vec.y, vec.z); }

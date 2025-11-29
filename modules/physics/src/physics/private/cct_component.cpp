@@ -1,5 +1,3 @@
-// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
-
 #include "physics/cct_component.h"
 #include "physics/core/physics.h"
 
@@ -21,6 +19,8 @@ namespace era_engine::physics
 		: Component(_data)
 	{
 		velocity.set_component(ComponentPtr{this});
+		collision_type.set_component(ComponentPtr{ this });
+		collision_filter_data.set_component(ComponentPtr{ this });
 	}
 
 	CharacterControllerComponent::~CharacterControllerComponent()

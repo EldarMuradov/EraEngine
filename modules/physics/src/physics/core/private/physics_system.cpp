@@ -6,6 +6,8 @@
 #include "physics/core/physics_utils.h"
 #include "physics/shape_utils.h"
 #include "physics/aggregate.h"
+#include "physics/core/physics_types.h"
+#include "physics/cct_component.h"
 
 #include <core/cpu_profiling.h>
 
@@ -34,10 +36,13 @@ namespace era_engine::physics
 
 	void PhysicsSystem::init()
 	{
+		cct_hit_report_callback = make_ref<CharacterControllerHitReportCallback>(world);
+
 		entt::registry& registry = world->get_registry();
 		registry.on_construct<DynamicBodyComponent>().connect<&PhysicsSystem::on_dynamic_body_created>(this);
 		registry.on_construct<StaticBodyComponent>().connect<&PhysicsSystem::on_static_body_created>(this);
 		registry.on_construct<AggregateHolderComponent>().connect<&PhysicsSystem::on_aggregate_created>(this);
+		registry.on_construct<CharacterControllerComponent>().connect<&PhysicsSystem::on_cct_created>(this);
 
 		dynamic_body_group = world->group(components_group<TransformComponent, DynamicBodyComponent>);
 	}
@@ -53,9 +58,15 @@ namespace era_engine::physics
 		}
 
 		{
+			ZoneScopedN("PhysicsSystem::process_added_ccts");
+
+			process_added_ccts();
+		}
+
+		{
 			ZoneScopedN("PhysicsSystem::sync_physics_to_component_changes");
 
-			sync_physics_to_component_changes();
+			sync_physics_to_component_changes(dt);
 		}
 
 		{
@@ -82,7 +93,7 @@ namespace era_engine::physics
 		PhysicsHolder::physics_ref->clear_collisions();
 	}
 
-	void PhysicsSystem::sync_physics_to_component_changes()
+	void PhysicsSystem::sync_physics_to_component_changes(float dt)
 	{
 		using namespace physx;
 
@@ -306,6 +317,23 @@ namespace era_engine::physics
 					static_cast<PxForceMode::Enum>(torque.mode));
 			}
 		}
+
+		for (auto [entity_handle, changed_flag, cct_component] : world->group(components_group<TransformComponent, CharacterControllerComponent>).each())
+		{
+			PxCapsuleController* controller = cct_component.controller;
+
+			if (controller == nullptr)
+			{
+				continue;
+			}
+
+			const vec3 offset = cct_component.velocity.get() * dt;
+
+			if (!fuzzy_equals(offset, vec3::zero))
+			{
+				PhysicsUtils::manual_move_cct(&cct_component, offset);
+			}
+		}
 	}
 
 	void PhysicsSystem::sync_component_to_physics()
@@ -432,6 +460,68 @@ namespace era_engine::physics
 		}
 	}
 
+	void PhysicsSystem::process_added_ccts()
+	{
+		using namespace physx;
+
+		for (Entity::Handle entity_handle : std::exchange(ccts_to_init, {}))
+		{
+			Entity entity = world->get_entity(entity_handle);
+
+			CharacterControllerComponent* cct_component = entity.get_component<CharacterControllerComponent>();
+
+			const TransformComponent* transform = entity.get_component_if_exists<TransformComponent>();
+
+			const trs& world_transform = transform->get_world_transform();
+
+			PxExtendedVec3 pospx = create_PxExtendedVec3(world_transform.position + vec3(0.0f, cct_component->radius + cct_component->height / 2.0f, 0.0f));
+
+			void* user_data = static_cast<void*>(cct_component);
+
+			ASSERT(cct_component->radius > 0.0f);
+			ASSERT(cct_component->height > 0.0f);
+
+			ref<PhysicsMaterial> material = PhysicsHolder::physics_ref->create_material(0.5f, 1.0f, 0.1f);
+			ASSERT(material != nullptr);
+
+			PxCapsuleControllerDesc desc;
+			desc.radius = cct_component->radius / 0.99f;
+			desc.height = cct_component->height / 0.99f;
+			desc.material = material->get_native_material();
+			desc.scaleCoeff = 0.99f;
+			desc.slopeLimit = std::cosf(cct_component->slope_limit);
+			desc.reportCallback = static_cast<CharacterControllerHitReportCallback*>(cct_hit_report_callback.get());
+			desc.contactOffset = cct_component->contact_offset;
+			desc.volumeGrowth = cct_component->volume_growth;
+			desc.position = pospx;
+
+			if (cct_component->non_walkable_mode == CharacterControllerComponent::NonWalkableMode::PREVENT_CLIMBING)
+			{
+				desc.nonWalkableMode = PxControllerNonWalkableMode::ePREVENT_CLIMBING;
+			}
+			else
+			{
+				ASSERT(cct_component->non_walkable_mode == CharacterControllerComponent::NonWalkableMode::PREVENT_CLIMBING_AND_SLIDE);
+				desc.nonWalkableMode = PxControllerNonWalkableMode::ePREVENT_CLIMBING_AND_FORCE_SLIDING;
+			}
+
+			cct_component->controller = static_cast<PxCapsuleController*>(PhysicsHolder::physics_ref->cct_manager->createController(desc));
+
+			cct_component->controller->setUserData(user_data);
+
+			PxRigidDynamic* physx_actor = cct_component->controller->getActor();
+			ASSERT(physx_actor != nullptr);
+			physx_actor->userData = user_data;
+
+			PxShape* physx_shape = nullptr;
+			physx_actor->getShapes(&physx_shape, 1, 0);
+			ASSERT(physx_shape != nullptr);
+			physx_shape->userData = user_data;
+
+			ShapeUtils::setup_filtering(world, physx_shape, static_cast<uint32>(cct_component->collision_type.get()), cct_component->collision_filter_data);
+		}
+	}
+
 	void PhysicsSystem::on_dynamic_body_created(entt::registry& registry, entt::entity entity_handle)
 	{
 		ScopedSpinLock _lock{ PhysicsHolder::physics_ref->sync };
@@ -451,6 +541,13 @@ namespace era_engine::physics
 		ScopedSpinLock _lock{ PhysicsHolder::physics_ref->sync };
 
 		aggregates_to_init.push_back(static_cast<Entity::Handle>(entity_handle));
+	}
+
+	void PhysicsSystem::on_cct_created(entt::registry& registry, entt::entity entity_handle)
+	{
+		ScopedSpinLock _lock{ PhysicsHolder::physics_ref->sync };
+
+		ccts_to_init.push_back(static_cast<Entity::Handle>(entity_handle));
 	}
 
 }

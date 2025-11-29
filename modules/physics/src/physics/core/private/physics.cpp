@@ -4,6 +4,7 @@
 #include "physics/soft_body.h"
 #include "physics/aggregate_holder_component.h"
 #include "physics/aggregate.h"
+#include "physics/cct_component.h"
 
 #include "core/cpu_profiling.h"
 #include "core/event_queue.h"
@@ -470,6 +471,11 @@ namespace era_engine::physics
 				Component* data = static_cast<Component*>(active_actors[i]->userData);
 
 				if (data == nullptr)
+				{
+					continue;
+				}
+
+				if (data->get_type() == rttr::type::get<CharacterControllerComponent>())
 				{
 					continue;
 				}

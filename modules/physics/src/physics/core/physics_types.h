@@ -1,12 +1,13 @@
 #pragma once
 
 #include "physics/physx_api.h"
+#include "physics_api.h"
 
+#include <ecs/component.h>
 #include <ecs/entity.h>
 
 namespace era_engine::physics
 {
-
 	class PhysicsAllocatorCallback : public physx::PxAllocatorCallback
 	{
 	public:
@@ -14,7 +15,6 @@ namespace era_engine::physics
 
 		void deallocate(void* ptr) override;
 	};
-
 
 	template<typename HitType>
 	class DynamicHitBuffer : public physx::PxHitCallback<HitType>
@@ -109,12 +109,19 @@ namespace era_engine::physics
 		bool statusChange(physx::PxU64& pairID, physx::PxPairFlags& pairFlags, physx::PxFilterFlags& filterFlags) override;
 	};
 
-	class CharacterControllerFilterCallback : public physx::PxControllerFilterCallback
+	class CharacterControllerHitReportCallback final : public physx::PxUserControllerHitReport
 	{
 	public:
-		static physx::PxShape* getShape(const physx::PxController& controller);
+		CharacterControllerHitReportCallback(World* world_);
 
-		bool filter(const physx::PxController& a, const physx::PxController& b) override;
+		void onShapeHit(const physx::PxControllerShapeHit& hit) override;
+
+		void onControllerHit(const physx::PxControllersHit& hit) override;
+
+		void onObstacleHit(const physx::PxControllerObstacleHit& hit) override;
+
+	private:
+		World* world = nullptr;
 	};
 
 	class ProfilerCallback : public physx::PxProfilerCallback
@@ -132,14 +139,15 @@ namespace era_engine::physics
 	};
 
 	class BodyComponent;
+	class CharacterControllerComponent;
 
-	struct CollisionHandlingData
+	struct ERA_PHYSICS_API CollisionHandlingData
 	{
 		Entity::Handle id1;
 		Entity::Handle id2;
 	};
 
-	struct ContactPoint
+	struct ERA_PHYSICS_API ContactPoint
 	{
 		physx::PxVec3 point;
 
@@ -148,7 +156,7 @@ namespace era_engine::physics
 		float separation;
 	};
 
-	class Collision final
+	class ERA_PHYSICS_API Collision final
 	{
 	public:
 		physx::PxVec3 get_relative_velocity() const;
@@ -156,18 +164,28 @@ namespace era_engine::physics
 
 	public:
 		BodyComponent* this_actor = nullptr;
-
 		BodyComponent* other_actor = nullptr;
 
 		physx::PxVec3 impulse;
-
 		physx::PxVec3 this_velocity;
-
 		physx::PxVec3 other_velocity;
 
-		int32_t contacts_count;
+		int32 contacts_count;
 
 		ContactPoint contacts[PX_CONTACT_BUFFER_SIZE];
+	};
+
+	struct ERA_PHYSICS_API CharacterControllerCollision final
+	{
+		CharacterControllerComponent* character_controller = nullptr;
+
+		ComponentPtr other_ptr;
+
+		vec3 position;
+		vec3 normal;
+		vec3 direction;
+
+		float length = 0.f;
 	};
 
 	struct ExplodeOverlapCallback : physx::PxOverlapCallback
@@ -218,6 +236,7 @@ namespace era_engine::physics
 
 	public:
 		physx::PxArray<Collision> new_collisions;
+		physx::PxArray<CharacterControllerCollision> cct_collisions;
 
 		physx::PxArray<JointComponent*> broken_joints;
 
