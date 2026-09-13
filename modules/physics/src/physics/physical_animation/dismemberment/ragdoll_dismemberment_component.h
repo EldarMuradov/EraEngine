@@ -5,11 +5,44 @@
 
 #include <core/math.h>
 
+#include <geometry/mesh.h>
+#include <asset/model_asset.h>
+
 #include <ecs/component.h>
 #include <ecs/observable_member.h>
 
 namespace era_engine::physics
 {
+	struct DismemberedPart
+	{
+		std::string name;
+		std::vector<uint32> bone_ids;
+
+		SubmeshAsset mesh;
+		uint32 source_submesh_index = 0;
+	};
+
+	struct SubmeshPartSplit
+	{
+		uint32 source_submesh_index = 0;
+		std::vector<std::vector<indexed_triangle32>> group_triangles;
+	};
+
+	struct DismembermentState
+	{
+		std::vector<DismemberedPart> parts;
+		std::vector<SubmeshPartSplit> splits;
+		std::vector<bool> detached;
+
+		bool initialized = false;
+	};
+
+	struct BoneGroup
+	{
+		std::string name;
+		std::vector<uint32> bone_indices;
+	};
+
 	enum class DismemberState : uint8
 	{
 		NONE = 0,
@@ -60,6 +93,8 @@ namespace era_engine::physics
 		ref<RagdollDismembermentProfile> dismemberment_profile;
 
 		DismemberEventFunc on_dismember = nullptr;
+
+		DismembermentState dismemberment_state;
 
 		bool affected_by_collisions = true;
 

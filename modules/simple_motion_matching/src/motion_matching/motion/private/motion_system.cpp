@@ -63,8 +63,8 @@ namespace era_engine
 
 			const vec3 input = noz(motion_component.get_desired_input());
 
-			const bool desired_strafe = reciever_component.get_frame_input().keyboard[key_ctrl].down;
-			const float strafe_direction = 0.0f;
+			const bool desired_strafe = motion_component.follow_input_rotation ? true : reciever_component.get_frame_input().keyboard[key_ctrl].down;
+			const float strafe_direction = motion_component.input_movement_yaw;
 
 			MotionUtils::desired_gait_update(
 				motion_component.desired_gait,

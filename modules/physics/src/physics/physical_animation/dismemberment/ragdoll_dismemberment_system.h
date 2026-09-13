@@ -35,6 +35,10 @@ namespace era_engine::physics
 
 		void on_rdc_created(entt::registry& registry, entt::entity entity_handle);
 
+		void rebuild_multimesh_with_parts(
+			MultiMesh& multimesh,
+			const DismembermentState& state);
+
 		ERA_VIRTUAL_REFLECT(System)
 
 	private:

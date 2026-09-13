@@ -573,9 +573,7 @@ namespace era_engine::physics
 			}
 
 			AnimationComponent* animation_component = ragdoll.get_component<AnimationComponent>();
-
-			const SkeletonPose& current_animation_pose = animation_component->current_animation_pose;
-			pose_sampler->sample_pose(physical_animation_component, skeleton_component, current_animation_pose, dt);
+			pose_sampler->sample_pose(physical_animation_component, skeleton_component, skeleton_component->get_current_pose(), dt);
 		}
 	}
 

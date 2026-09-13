@@ -198,6 +198,8 @@ namespace era_engine
 			if (transform.type == TransformComponent::DYNAMIC)
 				continue;
 
+			std::lock_guard<std::mutex> lock{ mesh.mesh->mutex };
+
 			const dx_mesh& dxMesh = mesh.mesh->mesh;
 
 			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
@@ -228,6 +230,8 @@ namespace era_engine
 		{
 			if (oc.count == 0)
 				continue;
+
+			std::lock_guard<std::mutex> lock{ mesh->mutex };
 
 			D3D12_GPU_VIRTUAL_ADDRESS baseM = transformsAddress + (oc.offset * sizeof(mat4));
 			D3D12_GPU_VIRTUAL_ADDRESS baseObjectID = objectIDAddress + (oc.offset * sizeof(uint32));
@@ -286,6 +290,8 @@ namespace era_engine
 			if (transform.type == TransformComponent::DYNAMIC)
 				continue;
 
+			std::lock_guard<std::mutex> lock{ mesh.mesh->mutex };
+
 			const dx_mesh& dxMesh = mesh.mesh->mesh;
 
 			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
@@ -304,6 +310,8 @@ namespace era_engine
 		{
 			if (oc.count == 0)
 				continue;
+
+			std::lock_guard<std::mutex> lock{ mesh->mutex };
 
 			D3D12_GPU_VIRTUAL_ADDRESS baseM = transformsAddress + (oc.offset * sizeof(mat4));
 
@@ -464,6 +472,8 @@ namespace era_engine
 			if (transform.type != TransformComponent::DYNAMIC)
 				continue;
 
+			std::lock_guard<std::mutex> lock{ mesh.mesh->mutex };
+
 			const dx_mesh& dxMesh = mesh.mesh->mesh;
 			if (!ocPerMesh.contains(mesh.mesh.get()))
 				continue;
@@ -483,6 +493,8 @@ namespace era_engine
 		{
 			if (oc.count == 0)
 				continue;
+
+			std::lock_guard<std::mutex> lock{ mesh->mutex };
 
 			D3D12_GPU_VIRTUAL_ADDRESS baseM = transformsAddress + (oc.offset * sizeof(mat4));
 
@@ -553,6 +565,8 @@ namespace era_engine
 		uint32 index = 0;
 		for (auto [entityHandle, transform, mesh, anim] : group.each())
 		{
+			std::lock_guard<std::mutex> lock{ mesh.mesh->mutex };
+
 			if (!mesh.mesh || mesh.is_hidden || (mesh.mesh->load_state.load() != AssetLoadState::LOADED))
 				continue;
 

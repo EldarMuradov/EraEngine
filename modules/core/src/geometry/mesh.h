@@ -34,11 +34,15 @@ namespace era_engine
 
 		static std::string get_asset_type_impl();
 
+		void update_mesh(const ModelAsset& new_model_asset);
+
 		std::optional<ModelAsset> model_asset;
 
 		std::vector<submesh> submeshes;
 		dx_mesh mesh;
 		bounding_box aabb = { vec3(0.f), vec3(0.f) };
+
+		std::mutex mutex;
 	};
 
 	using MeshLoadCallback = std::function<void(mesh_builder& builder, std::vector<submesh>& submeshes, const bounding_box& boundingBox)>;

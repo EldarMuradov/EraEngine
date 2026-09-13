@@ -297,6 +297,7 @@ namespace era_engine
 					animation_component->current_anim_position = 0.0f;
 				}
 
+
 				animation_component->activate_inertial_blend();
 
 				CharacterControllerComponent* cct_component = character.add_component<CharacterControllerComponent>();
@@ -616,45 +617,45 @@ namespace era_engine
 
 					add_animation("/resources/assets/test_character/animations/Standing Idle_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Unarmed Idle_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02L_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02R_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Run To Stop_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Walking_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Walking Left Turn_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Walking Right Turn_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Running_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/StrafeL_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/StrafeR_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Run Forward Arc Left_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Run Forward Arc Right_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Running Left Turn_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Running Right Turn_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Running Turn 180L_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Running Turn 180R_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Sprint_mixamo.com_clip0.eanm");
+					//add_animation("/resources/assets/test_character/animations/Start Walking_mixamo.com_clip0.eanm");
+					//add_animation("/resources/assets/test_character/animations/Stop Walking_mixamo.com_clip0.eanm");
+					//add_animation("/resources/assets/test_character/animations/Turn To RunningL_mixamo.com_clip0.eanm");
+					//add_animation("/resources/assets/test_character/animations/Turn To RunningR_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Jog Strafe Left_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Jog Strafe Right_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Backward Right Turn_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Backward Left Turn_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Run Backward Arc Left_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Run Backward Arc Right_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Running Backward_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Walking Backwards_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Run Backward_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Slow Jog Backwards_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Jog Backward DiagonalL_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Jog Backward DiagonalR_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Catwalk Walk Forward Arc 90L_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Catwalk Walk Forward Arc 90R_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Catwalk Walk Start Turn 180 Left_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Catwalk Walk Start Turn 180 Right_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Change DirectionL_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Change DirectionR_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Jog Backward DiagonalL_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Jog Backward DiagonalR_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Run Forward Arc Left_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Run Forward Arc Right_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Run To Stop_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Running Left Turn_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Running Right Turn_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Running Turn 180L_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Running Turn 180R_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Running_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Sprint_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Start Walking_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Stop Walking_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Turn To RunningL_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Turn To RunningR_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Walking Backwards_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Walking Left Turn_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Walking Right Turn_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Walking_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Backward Right Turn_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Backward Left Turn_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Jog Strafe Left_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Jog Strafe Right_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Running To Turn_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Run Backward Arc Left_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Run Backward Arc Right_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Running Backward_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/StrafeL_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/StrafeR_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Run Backward_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Slow Jog Backwards_mixamo.com_clip0.eanm");
+					//add_animation("/resources/assets/test_character/animations/Running To Turn_mixamo.com_clip0.eanm");
+					//add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02L_mixamo.com_clip0.eanm");
+					//add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02R_mixamo.com_clip0.eanm");
 
 					database->generate_initial_data();
 
@@ -711,8 +712,8 @@ namespace era_engine
 					database->weights[37] = 7.0f;
 					database->weights[38] = 12.0f;
 
-					database->weights[start_from + 1] = 6.0f;
-					database->weights[start_from + 2] = 6.0f;
+					database->weights[start_from + 1] = 30.0f;
+					database->weights[start_from + 2] = 30.0f;
 
 					database->weights[start_from + 3] = 8.0f;
 					database->weights[start_from + 4] = 8.0f;
@@ -724,17 +725,17 @@ namespace era_engine
 					database->weights[start_from + 9] = 25.0f;
 					database->weights[start_from + 10] = 25.0f;
 
-					database->weights[start_from + 11] = 80.0f;
-					database->weights[start_from + 12] = 80.0f;
-					database->weights[start_from + 13] = 60.0f;
-					database->weights[start_from + 14] = 60.0f;
-					database->weights[start_from + 9] = 30.0f;
-					database->weights[start_from + 10] = 30.0f;
+					database->weights[start_from + 11] = 90.0f;
+					database->weights[start_from + 12] = 90.0f;
+					database->weights[start_from + 13] = 80.0f;
+					database->weights[start_from + 14] = 80.0f;
+					database->weights[start_from + 9] = 7.0f;
+					database->weights[start_from + 10] = 7.0f;
 
 					database->weights[start_from + 11] = 150.0f;
 					database->weights[start_from + 12] = 150.0f;
-					database->weights[start_from + 13] = 80.0f;
-					database->weights[start_from + 14] = 80.0f;
+					database->weights[start_from + 13] = 100.0f;
+					database->weights[start_from + 14] = 100.0f;
 
 					database->mark(skeleton_component);
 
@@ -791,7 +792,7 @@ namespace era_engine
 				ragdoll_component->joint_init_ids = joint_init_ids;
 				ragdoll_component->settings = settings;
 
-				//character.add_component<RagdollDismembermentComponent>();
+				character.add_component<RagdollDismembermentComponent>();
 			}
 		}
 

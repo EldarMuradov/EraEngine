@@ -2,6 +2,7 @@
 #include "physics/physical_animation/physical_animation_component.h"
 #include "physics/physical_animation/physical_animation_utils.h"
 #include "physics/physical_animation/ragdoll_profile.h"
+#include "physics/physical_animation/dismemberment/ragdoll_dismemberment_component.h"
 
 #include <animation/animation.h>
 
@@ -35,10 +36,7 @@ namespace era_engine::physics
 		const float fixed_update_dt = physical_animation_component->get_world()->get_fixed_update_dt();
 
 		const uint32 root_id = 0;
-		trs root_local_transform = SkeletonUtils::get_object_space_joint_transform(pose, skeleton.get(), root_id);
-		root_local_transform.scale = vec3(1.0f);
-
-		physical_animation_component->local_joint_poses[root_id] = root_local_transform;
+		physical_animation_component->local_joint_poses[root_id] = trs::identity;
 
 		auto simulated_joints_end = physical_animation_component->simulated_joints.end();
 
@@ -86,6 +84,14 @@ namespace era_engine::physics
 				{
 					// By default use PURE_ANIMATION blend type.
 					result_type = PhysicalLimbBlendType::PURE_ANIMATION;
+				}
+
+				if (RagdollDismembermentLimbComponent* dismembered_limb = limb.get_component_if_exists<RagdollDismembermentLimbComponent>())
+				{
+					//if (dismembered_limb->is_dismembered())
+					{
+						result_type = PhysicalLimbBlendType::PURE_PHYSICS;
+					}
 				}
 
 				if (result_type != PhysicalLimbBlendType::PURE_ANIMATION)

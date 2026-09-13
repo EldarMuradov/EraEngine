@@ -116,6 +116,13 @@ namespace era_engine::animation
 			world->group(components_group<AnimationComponent, MeshComponent, SkeletonComponent, TransformComponent>).each())
 		{
 			const dx_mesh& dxMesh = mesh_component.mesh->mesh;
+
+			if (dxMesh.vertexBuffer.positions == nullptr ||
+				dxMesh.vertexBuffer.positions->elementCount == 0)
+			{
+				continue;
+			}
+
 			ref<Skeleton> skeleton = skeleton_component.skeleton;
 
 			animation_component.current_global_transforms = nullptr;

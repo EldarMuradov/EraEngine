@@ -49,6 +49,9 @@ namespace era_engine
 		vec3 last_input = vec3::zero;
 		vec3 desired_input = vec3::zero;
 
+		bool follow_input_rotation = true;
+
+		float input_movement_yaw = 0.0f;
 		quat input_movement_rotation = quat::identity;
 
 		vec3 desired_velocity = vec3::zero;

@@ -186,12 +186,21 @@ namespace era_engine
 
             const vec3 input = noz(motion_component.get_desired_input());
 
-            bool desired_strafe = reciever_component.get_frame_input().keyboard[key_ctrl].down;
-            const float strafe_direction = 0.0f;
+            const bool desired_strafe = motion_component.follow_input_rotation ? true : reciever_component.get_frame_input().keyboard[key_ctrl].down;
+            const float strafe_direction = motion_component.input_movement_yaw;
 
             float simulation_fwrd_speed = lerpf(motion_component.run_fwrd_speed, motion_component.walk_fwrd_speed, motion_component.desired_gait);
             float simulation_side_speed = lerpf(motion_component.run_side_speed, motion_component.walk_side_speed, motion_component.desired_gait);
             float simulation_back_speed = lerpf(motion_component.run_back_speed, motion_component.walk_back_speed, motion_component.desired_gait);
+
+            trajectory_desired_velocities_predict(
+                trajectory_component.trajectory_desired_velocities,
+                motion_component.velocity,
+                input,
+                motion_component.input_movement_rotation,
+                simulation_fwrd_speed,
+                simulation_side_speed,
+                simulation_back_speed);
 
             trajectory_desired_rotations_predict(
                 trajectory_component.trajectory_desired_rotations,
@@ -209,15 +218,6 @@ namespace era_engine
                 trajectory_component.trajectory_desired_rotations,
                 motion_component.rotation_halflife,
                 trajectory_component.time_offsets);
-
-            trajectory_desired_velocities_predict(
-                trajectory_component.trajectory_desired_velocities,
-                motion_component.velocity,
-                input,
-                motion_component.input_movement_rotation,
-                simulation_fwrd_speed,
-                simulation_side_speed,
-                simulation_back_speed);
 
             trajectory_positions_predict(
                 trajectory_component.trajectory_positions,

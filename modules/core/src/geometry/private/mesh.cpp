@@ -287,6 +287,8 @@ namespace era_engine
 	{
 		try
 		{
+			std::lock_guard<std::mutex> lock{ mutex };
+
 			BinaryDataArchive deserialized_data;
 
 			if (!IO::read_value(is, deserialized_data))
@@ -347,5 +349,46 @@ namespace era_engine
 	std::string MultiMesh::get_asset_type_impl()
 	{
 		return std::string(".emesh");
+	}
+
+	void MultiMesh::update_mesh(const ModelAsset& new_model_asset)
+	{
+		std::lock_guard<std::mutex> lock{ mutex };
+		load_state.store(AssetLoadState::UNLOADED, std::memory_order_release);
+
+		submeshes.clear();
+
+		model_asset = new_model_asset;
+
+		aabb = bounding_box::negativeInfinity();
+
+		mesh_builder builder(flags | mesh_creation_flags_with_skin);
+
+		for (auto& mesh : model_asset->meshes)
+		{
+			if (model_asset->materials.empty())
+			{
+				model_asset->materials.push_back(PbrMaterialDesc{});
+			}
+
+			for (auto& sub : mesh.submeshes)
+			{
+				PbrMaterialDesc& material_desc = model_asset->materials[sub.material_index];
+				material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+				ref<pbr_material> material = create_pbr_material(material_desc);
+
+				bounding_box aabb;
+				builder.pushMesh(sub, 1.f, &aabb);
+				submeshes.push_back({ builder.endSubmesh(), aabb, trs::identity, material, mesh.name });
+
+				aabb.grow(aabb.minCorner);
+				aabb.grow(aabb.maxCorner);
+			}
+		}
+
+		mesh = builder.createDXMesh();
+
+		load_state.store(AssetLoadState::LOADED, std::memory_order_release);
 	}
 }

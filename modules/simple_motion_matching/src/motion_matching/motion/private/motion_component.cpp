@@ -93,6 +93,7 @@ namespace era_engine
 	void MotionComponent::set_input_movement_rotation(const quat& new_input_rotation)
 	{
 		input_movement_rotation = new_input_rotation;
+		input_movement_yaw = get_yaw_angle(new_input_rotation);
 	}
 
 	void MotionComponent::apply_desired_input()
