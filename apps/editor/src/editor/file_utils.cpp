@@ -8,6 +8,9 @@
 #include <ecs/rendering/mesh_component.h>
 #include <ecs/rendering/world_renderer.h>
 
+#include <animation/animation.h>
+#include <animation/skeleton.h>
+
 #include <rendering/ecs/renderer_holder_root_component.h>
 #include <rendering/render_utils.h>
 
@@ -24,7 +27,7 @@ namespace era_engine
 			fs::path path = filename;
 			path = path.stem();
 
-			if (auto mesh = loadAnimatedMeshFromFileAsync(relative.string()))
+			if (auto mesh = import_animated_mesh_from_file_async(relative.string()))
 			{
 				auto entity = world->create_entity();
 				entity.add_component<MeshComponent>(mesh);

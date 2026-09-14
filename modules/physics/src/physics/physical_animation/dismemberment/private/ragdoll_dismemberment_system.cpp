@@ -694,8 +694,8 @@ namespace era_engine::physics
 			{
 				DismemberableLimbDetails& details = dismemberment_profile->limbs_details.emplace_back();
 				details.limb_type = RagdollLimbType::NECK;
-				details.type = DismemberableLimbType::ROOT;
-				details.max_health = 1.0f;
+				details.type = DismemberableLimbType::DISMEMBERABLE;
+				details.max_health = 2.0f;
 			}
 
 			{

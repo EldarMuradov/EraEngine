@@ -9,7 +9,7 @@
 
 namespace era_engine
 {
-	system_info getSystemInfo()
+	ERA_CORE_API system_info getSystemInfo()
 	{
 		system_info system;
 		char cpuName[64] = "";

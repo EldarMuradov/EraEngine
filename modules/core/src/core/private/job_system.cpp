@@ -178,7 +178,7 @@ namespace era_engine
                 {
                     job_data.job_func(job_data.data);
                 }
-                if (job_data.data.user_data)
+                if (job_data.data.user_data && job_data.data.destroy_after_execution)
                 {
                     delete job_data.data.user_data;
                     job_data.data.user_data = nullptr;

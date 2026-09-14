@@ -290,6 +290,7 @@ namespace era_engine
 				animation_component->play = true;
 				animation_component->loop = true;
 
+
 				{
 					ref<AnimationAssetClip> anim_clip = provider.load_game_asset_from_file<AnimationAssetClip>(get_asset_path("/resources/assets/test_character/animations/Unarmed Idle_mixamo.com_clip0.eanm"));
 					anim_clip->load_job.wait_for_completion();
@@ -762,6 +763,7 @@ namespace era_engine
 				settings.shapes_settings.forearm_radius = 0.058f;
 				settings.shapes_settings.foot_radius = 0.035f;
 				settings.shapes_settings.hand_radius = 0.035f;
+				settings.shapes_settings.calf_radius = 0.065f;
 
 				settings.local_shape_settings.abdomen_joint_adjastment = vec3(0.0f, 0.05f, 0.0f);
 				settings.local_shape_settings.pelvis_joint_adjastment = vec3(0.0f, -0.03f, 0.0f);

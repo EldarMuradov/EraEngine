@@ -7,7 +7,7 @@
 namespace era_engine
 {
 
-	struct system_info
+	struct ERA_CORE_API system_info
 	{
 		std::string cpuName;
 		std::string gpuName;
@@ -17,5 +17,5 @@ namespace era_engine
 		uint64 videoMemory;
 	};
 
-	system_info getSystemInfo();
+	ERA_CORE_API system_info getSystemInfo();
 }

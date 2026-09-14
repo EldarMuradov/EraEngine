@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "core_api.h"
 #include "rendering/pbr_raytracer.h"
 
 namespace era_engine
@@ -34,7 +35,7 @@ namespace era_engine
             const ref<dx_texture>& output,
             const common_render_data& common);
 
-        void resetRendering();
+        ERA_CORE_API void resetRendering();
 
         path_tracer_settings settings;
 

@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include "core_api.h"
+
 namespace era_engine::os
 {
-	struct path_parser
+	struct ERA_CORE_API path_parser
 	{
 		enum class file_type
 		{
@@ -37,7 +39,7 @@ namespace era_engine::os
 		path_parser() = delete;
 	};
 
-	struct system_calls
+	struct ERA_CORE_API system_calls
 	{
 		static void showInExplorer(std::string_view path);
 

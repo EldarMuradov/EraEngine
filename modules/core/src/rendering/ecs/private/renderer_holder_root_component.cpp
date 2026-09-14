@@ -38,7 +38,7 @@ namespace era_engine
 		renderer->initialize(window->colorDepth, window->clientWidth, window->clientHeight, spec);
 	}
 
-	RendererHolderRootComponent& era_engine::RendererHolderRootComponent::operator=(const RendererHolderRootComponent& other) noexcept
+	RendererHolderRootComponent& RendererHolderRootComponent::operator=(const RendererHolderRootComponent& other) noexcept
 	{
 		if (this != &other)
 		{
@@ -51,7 +51,7 @@ namespace era_engine
 		return *this;
 	}
 
-	RendererHolderRootComponent& era_engine::RendererHolderRootComponent::operator=(RendererHolderRootComponent&& other) noexcept
+	RendererHolderRootComponent& RendererHolderRootComponent::operator=(RendererHolderRootComponent&& other) noexcept
 	{
 		if (this != &other)
 		{
@@ -68,6 +68,11 @@ namespace era_engine
 	{
 		delete ldrRenderPass;
 		delete renderer;
+	}
+
+	main_renderer* RendererHolderRootComponent::get_renderer() const
+	{
+		return renderer;
 	}
 
 }

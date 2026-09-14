@@ -24,6 +24,9 @@ namespace era_engine
 		void draw_creation_popup();
 		void draw_world();
 
+		void draw_main_menu();
+		void draw_settings();
+
 		void draw_childs(const Entity& entity);
 
 		void update_selected_entity_ui_rotation();

@@ -349,27 +349,6 @@ namespace era_engine
 				}
 				ImGui::Separator();
 
-				if (ImGui::MenuItem(ICON_FA_SAVE "  Save scene", "Ctrl+S"))
-				{
-					serializeToFile();
-				}
-
-				/*if (ImGui::MenuItem(ICON_FA_SAVE "  Build", "Ctrl+B"))
-				{
-					struct build_data {} bd;
-					lowPriorityJobQueue.createJob<build_data>([](build_data& data, JobHandle)
-						{
-							if (!era_engine::build::ebuilder::build())
-								LOG_ERROR("Building> Failed to build the game.");
-						}, bd).submitNow();
-				}*/
-
-				if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN "  Load scene", "Ctrl+O"))
-				{
-					forceStop();
-					deserializeFromFile();
-				}
-
 				ImGui::Separator();
 				if (ImGui::MenuItem(ICON_FA_TIMES "  Exit", "Esc"))
 				{
@@ -445,7 +424,7 @@ namespace era_engine
 			{
 				// TODO: Docs
 				if (ImGui::MenuItem(ICON_FA_MEMORY "  Repository"))
-					os::system_calls::openURL("https://github.com/EldarMuradov/EraEngine");
+					os::system_calls::openURL("https://github.com/EldarMuradau/EraEngine");
 
 				ImGui::EndMenu();
 			}
@@ -507,7 +486,6 @@ namespace era_engine
 
 		drawIconsWindow(iconsWindowOpen);
 		drawSoundEditor(soundEditorWindowOpen);
-		objectPotentiallyMoved |= currentUndoStack->showHistory(undoWindowOpen);
 
 		return objectPotentiallyMoved;
 	}

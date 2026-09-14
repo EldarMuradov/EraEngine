@@ -37,7 +37,6 @@ namespace era_engine
 		ref<dx_texture> raytracedRadiance;
 		ref<dx_texture> raytracedDirectionAndDistance;
 
-	private:
 		bool visualizeProbes = false;
 		bool visualizeRays = false;
 		bool autoRotateRays = true;
@@ -50,9 +49,6 @@ namespace era_engine
 
 		mutable quat rayRotation = quat::identity;
 		mutable RandomNumberGenerator rng = { 61913 };
-
-		friend struct light_probe_tracer;
-		friend struct eeditor;
 	};
 
 	void initializeLightProbePipelines();

@@ -28,6 +28,8 @@ namespace era_engine
 
 		~RendererHolderRootComponent() override;
 
+		main_renderer* get_renderer() const;
+
 		render_camera camera;
 
 		directional_light sun;

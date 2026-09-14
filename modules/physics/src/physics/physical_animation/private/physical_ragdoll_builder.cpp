@@ -805,25 +805,6 @@ namespace era_engine::physics
 		PhysicalAnimationComponent* physical_animation_component = ctx.enable_physical_animation ? dynamic_cast<PhysicalAnimationComponent*>(ctx.ragdoll_component) : nullptr;
 
 		create_capsule_limb_between_joints(
-			ctx.ragdoll_component->joint_init_ids.head_idx,
-			ctx.enable_physical_animation ? &ctx.default_profile->head_limb_details : nullptr,
-			settings.mass_settings.head_mass_percentage,
-			settings.impulse_settings.max_head_contact_impulse,
-			RagdollLimbType::HEAD,
-			structure.head_joint,
-			structure.head_end_joint,
-			settings.shapes_settings.head_radius,
-			1.0f,
-			true,
-			ctx.enable_physical_animation ? physical_animation_component->neck_chain.get() : nullptr,
-			CollisionType::RAGDOLL,
-			settings.object_space_settings.head_joint_adjastment,
-			settings.object_space_settings.head_end_joint_adjastment,
-			settings.local_shape_settings.head_joint_adjastment,
-			settings.local_shape_settings.head_joint_spin
-		);
-
-		create_capsule_limb_between_joints(
 			ctx.ragdoll_component->joint_init_ids.neck_idx,
 			ctx.enable_physical_animation ? &ctx.default_profile->neck_limb_details : nullptr,
 			settings.mass_settings.neck_mass_percentage,
@@ -840,6 +821,25 @@ namespace era_engine::physics
 			settings.object_space_settings.head_joint_adjastment,
 			settings.local_shape_settings.neck_joint_adjastment,
 			settings.local_shape_settings.neck_joint_spin
+		);
+
+		create_capsule_limb_between_joints(
+			ctx.ragdoll_component->joint_init_ids.head_idx,
+			ctx.enable_physical_animation ? &ctx.default_profile->head_limb_details : nullptr,
+			settings.mass_settings.head_mass_percentage,
+			settings.impulse_settings.max_head_contact_impulse,
+			RagdollLimbType::HEAD,
+			structure.head_joint,
+			structure.head_end_joint,
+			settings.shapes_settings.head_radius,
+			1.0f,
+			true,
+			ctx.enable_physical_animation ? physical_animation_component->neck_chain.get() : nullptr,
+			CollisionType::RAGDOLL,
+			settings.object_space_settings.head_joint_adjastment,
+			settings.object_space_settings.head_end_joint_adjastment,
+			settings.local_shape_settings.head_joint_adjastment,
+			settings.local_shape_settings.head_joint_spin
 		);
 
 		create_capsule_limb_between_joints_from_radius(

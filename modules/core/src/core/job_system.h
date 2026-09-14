@@ -116,6 +116,7 @@ namespace era_engine
         {
             void* user_data = nullptr;
             size_t data_size = 0;
+            bool destroy_after_execution = true;
         };
 
         Data data;
