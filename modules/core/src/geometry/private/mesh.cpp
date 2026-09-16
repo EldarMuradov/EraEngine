@@ -354,7 +354,15 @@ namespace era_engine
 	void MultiMesh::update_mesh(const ModelAsset& new_model_asset)
 	{
 		std::lock_guard<std::mutex> lock{ mutex };
+
 		load_state.store(AssetLoadState::UNLOADED, std::memory_order_release);
+
+		std::vector<bool> old_visibility;
+		old_visibility.reserve(submeshes.size());
+		for (const auto& sm : submeshes)
+		{
+			old_visibility.push_back(sm.is_visible);
+		}
 
 		submeshes.clear();
 
@@ -363,6 +371,8 @@ namespace era_engine
 		aabb = bounding_box::negativeInfinity();
 
 		mesh_builder builder(flags | mesh_creation_flags_with_skin);
+
+		uint32 submesh_index = 0;
 
 		for (auto& mesh : model_asset->meshes)
 		{
@@ -380,15 +390,39 @@ namespace era_engine
 
 				bounding_box aabb;
 				builder.pushMesh(sub, 1.f, &aabb);
-				submeshes.push_back({ builder.endSubmesh(), aabb, trs::identity, material, mesh.name });
+
+				submesh sm;
+				sm.info = builder.endSubmesh();
+				sm.aabb = aabb;
+				sm.transform = trs::identity;
+				sm.material = material;
+				sm.name = mesh.name;
+				sm.is_visible = (submesh_index < old_visibility.size()) ? old_visibility[submesh_index] : true;
+
+				submeshes.push_back(std::move(sm));
 
 				aabb.grow(aabb.minCorner);
 				aabb.grow(aabb.maxCorner);
+
+				submesh_index++;
 			}
 		}
 
 		mesh = builder.createDXMesh();
 
 		load_state.store(AssetLoadState::LOADED, std::memory_order_release);
+	}
+
+	bool MultiMesh::has_visible_submeshes() const
+	{
+		for (const submesh& sub : submeshes)
+		{
+			if (sub.is_visible)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

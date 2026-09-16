@@ -22,6 +22,8 @@ namespace era_engine
 
 		ref<pbr_material> material;
 		std::string name;
+
+		bool is_visible = true;
 	};
 
 	class ERA_CORE_API MultiMesh : public GameAsset
@@ -36,8 +38,10 @@ namespace era_engine
 
 		void update_mesh(const ModelAsset& new_model_asset);
 
-		std::optional<ModelAsset> model_asset;
+		bool has_visible_submeshes() const;
 
+		std::optional<ModelAsset> model_asset;
+		
 		std::vector<submesh> submeshes;
 		dx_mesh mesh;
 		bounding_box aabb = { vec3(0.f), vec3(0.f) };

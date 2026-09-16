@@ -113,6 +113,8 @@ namespace era_engine::animation
 				out_global_transforms[i] = world_transform * joint_transform.get_transform();
 			}
 
+			out_global_transforms[i].rotation = normalize(out_global_transforms[i].rotation);
+
 			out_skinning_matrices[i] = trs_to_mat4(out_global_transforms[i]) * skeleton->joints[i].inv_bind_transform;
 		}
 	}

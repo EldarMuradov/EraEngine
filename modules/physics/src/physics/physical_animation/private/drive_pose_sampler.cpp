@@ -36,7 +36,8 @@ namespace era_engine::physics
 		const float fixed_update_dt = physical_animation_component->get_world()->get_fixed_update_dt();
 
 		const uint32 root_id = 0;
-		physical_animation_component->local_joint_poses[root_id] = trs::identity;
+		trs root_local_transform = SkeletonUtils::get_object_space_joint_transform(pose, skeleton.get(), root_id);
+		root_local_transform.scale = vec3(1.0f);
 
 		auto simulated_joints_end = physical_animation_component->simulated_joints.end();
 

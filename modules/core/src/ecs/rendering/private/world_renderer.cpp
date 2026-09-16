@@ -38,12 +38,12 @@ namespace era_engine
 
 	static bool shouldRender(const camera_frustum_planes& frustum, const MeshComponent& mesh, const TransformComponent& transform)
 	{
-		return mesh.mesh && !mesh.is_hidden && (mesh.mesh->load_state.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || !frustum.cullModelSpaceAABB(mesh.mesh->aabb, transform.get_world_transform()));
+		return mesh.mesh && !mesh.is_hidden && mesh.mesh->has_visible_submeshes() && (mesh.mesh->load_state.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || !frustum.cullModelSpaceAABB(mesh.mesh->aabb, transform.get_world_transform()));
 	}
 
 	static bool shouldRender(const bounding_sphere& frustum, const MeshComponent& mesh, const TransformComponent& transform)
 	{
-		return mesh.mesh && !mesh.is_hidden && (mesh.mesh->load_state.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || shouldRender(frustum, mesh.mesh->aabb, transform.get_world_transform()));
+		return mesh.mesh && !mesh.is_hidden && mesh.mesh->has_visible_submeshes() && (mesh.mesh->load_state.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || shouldRender(frustum, mesh.mesh->aabb, transform.get_world_transform()));
 	}
 
 	static bool shouldRender(const light_frustum& frustum, const MeshComponent& mesh, const TransformComponent& transform)
@@ -214,9 +214,12 @@ namespace era_engine
 
 			if (entityHandle == selectedObjectID)
 			{
-				for (auto& sm : mesh.mesh->submeshes)
+				for (submesh& sm : mesh.mesh->submeshes)
 				{
-					renderOutline(ldrRenderPass, transforms[index], dxMesh.vertexBuffer, dxMesh.indexBuffer, sm.info);
+					if (sm.is_visible)
+					{
+						renderOutline(ldrRenderPass, transforms[index], dxMesh.vertexBuffer, dxMesh.indexBuffer, sm.info);
+					}
 				}
 			}
 		}
@@ -258,6 +261,11 @@ namespace era_engine
 
 			for (auto& sm : mesh->submeshes)
 			{
+				if (!sm.is_visible)
+				{
+					continue;
+				}
+
 				data.submesh = sm.info;
 				data.material = sm.material;
 
@@ -328,6 +336,10 @@ namespace era_engine
 
 			for (auto& sm : mesh->submeshes)
 			{
+				if (!sm.is_visible)
+				{
+					continue;
+				}
 				data.submesh = sm.info;
 				addToStaticRenderPass(sm.material->shader, data, shadowRenderPass, frustum.type == light_frustum_sphere);
 			}
@@ -398,6 +410,10 @@ namespace era_engine
 			{
 				for (auto& sm : mesh.mesh->submeshes)
 				{
+					if (!sm.is_visible)
+					{
+						continue;
+					}
 					renderOutline(ldrRenderPass, transforms[index], dxMesh.vertexBuffer, dxMesh.indexBuffer, sm.info);
 				}
 			}
@@ -440,6 +456,10 @@ namespace era_engine
 
 			for (auto& sm : mesh->submeshes)
 			{
+				if (!sm.is_visible)
+				{
+					continue;
+				}
 				data.submesh = sm.info;
 				data.material = sm.material;
 
@@ -511,6 +531,10 @@ namespace era_engine
 
 			for (auto& sm : mesh->submeshes)
 			{
+				if (!sm.is_visible)
+				{
+					continue;
+				}
 				data.submesh = sm.info;
 				addToDynamicRenderPass(sm.material->shader, data, shadowRenderPass, frustum.type == light_frustum_sphere);
 			}
@@ -598,6 +622,10 @@ namespace era_engine
 
 			for (auto& sm : mesh.mesh->submeshes)
 			{
+				if (!sm.is_visible)
+				{
+					continue;
+				}
 				data.submesh = sm.info;
 				data.material = sm.material;
 
@@ -718,6 +746,10 @@ namespace era_engine
 			{
 				for (auto& sm : mesh.mesh->submeshes)
 				{
+					if (!sm.is_visible)
+					{
+						continue;
+					}
 					renderOutline(ldrRenderPass, transforms[index], dxMesh.vertexBuffer, dxMesh.indexBuffer, sm.info);
 				}
 			}

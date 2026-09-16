@@ -33,8 +33,28 @@ namespace era_engine::physics
 		std::vector<DismemberedPart> parts;
 		std::vector<SubmeshPartSplit> splits;
 		std::vector<bool> detached;
+		std::vector<SubmeshAsset> source_submeshes;
 
 		bool initialized = false;
+	};
+
+	struct DismembermentTaskResult
+	{
+		SubmeshAsset live;
+		std::vector<SubmeshAsset> detached;
+		std::vector<uint32> detached_indices;
+	};
+
+	struct DismembermentTaskData
+	{
+		std::vector<SubmeshAsset> source_submeshes;
+		std::vector<SubmeshPartSplit> splits;
+		std::vector<DismemberedPart> parts;
+		std::vector<bool> detached;
+
+		DismembermentTaskResult result;
+
+		std::atomic<bool> completed = false;
 	};
 
 	struct BoneGroup
@@ -97,6 +117,11 @@ namespace era_engine::physics
 		DismembermentState dismemberment_state;
 
 		bool affected_by_collisions = true;
+
+		std::vector<uint32> pending_detached_parts;
+
+		DismembermentTaskData* pending_task = nullptr;
+		JobHandle pending_job;
 
         ERA_VIRTUAL_REFLECT(Component)
 

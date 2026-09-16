@@ -13,7 +13,7 @@ namespace era_engine
 	{
 	public:
 		EditorToolsSystem(World* _world);
-		~EditorToolsSystem();
+		~EditorToolsSystem() override;
 
 		void init() override;
 		void update(float dt) override;

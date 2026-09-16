@@ -9,11 +9,11 @@ namespace era_engine
 {
 	class RendererHolderRootComponent;
 
-	class EcsToolsSystem final : public System
+	class EditorToolsSystem final : public System
 	{
 	public:
-		EcsToolsSystem(World* _world);
-		~EcsToolsSystem() override;
+		EditorToolsSystem(World* _world);
+		~EditorToolsSystem() override;
 
 		void init() override;
 		void update(float dt) override;
@@ -23,6 +23,9 @@ namespace era_engine
 	private:
 		void draw_creation_popup();
 		void draw_world();
+
+		void draw_main_menu();
+		void draw_settings();
 
 		void draw_childs(const Entity& entity);
 

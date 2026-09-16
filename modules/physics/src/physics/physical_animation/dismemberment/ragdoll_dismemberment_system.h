@@ -35,9 +35,23 @@ namespace era_engine::physics
 
 		void on_rdc_created(entt::registry& registry, entt::entity entity_handle);
 
-		void rebuild_multimesh_with_parts(
+		void rebuild_multimesh(
 			MultiMesh& multimesh,
 			const DismembermentState& state);
+
+		void process_dismemberment(
+			Entity entity,
+			RagdollDismembermentComponent& rdc,
+			const std::vector<Entity>& dismembered_limbs);
+
+		void start_dismemberment_task(
+			Entity entity,
+			RagdollDismembermentComponent& rdc);
+
+		void apply_dismemberment_result(
+			Entity entity,
+			PhysicalAnimationComponent& pac,
+			RagdollDismembermentComponent& rdc);
 
 		ERA_VIRTUAL_REFLECT(System)
 

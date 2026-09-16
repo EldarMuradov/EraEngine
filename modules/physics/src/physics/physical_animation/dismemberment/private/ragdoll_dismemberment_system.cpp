@@ -37,18 +37,18 @@ namespace era_engine::physics
 			 metadata("After", std::vector<std::string>{"PhysicalAnimationSystem::update_after_physics"}));
 	}
 
-	struct BoundaryEdge
+	static void seal_submesh_holes(
+			SubmeshAsset& submesh,
+			const std::vector<uint32>& group_bones)
 	{
-		uint32 v0;
-		uint32 v1;
-	};
+		if (submesh.triangles.empty())
+		{
+			return;
+		}
 
-	static std::vector<BoundaryEdge> find_boundary_edges(const SubmeshAsset& submesh)
-	{
 		struct EdgeKey
 		{
-			uint32 a;
-			uint32 b;
+			uint32 a, b;
 
 			bool operator==(const EdgeKey& o) const
 			{
@@ -75,7 +75,7 @@ namespace era_engine::physics
 			edge_count[{tri.c, tri.a}]++;
 		}
 
-		std::vector<BoundaryEdge> boundary;
+		std::vector<std::pair<uint32, uint32>> boundary;
 
 		for (const auto& [edge, count] : edge_count)
 		{
@@ -85,237 +85,242 @@ namespace era_engine::physics
 			}
 		}
 
-		return boundary;
-	}
-
-	static std::vector<uint32> build_boundary_loop(const std::vector<BoundaryEdge>& edges)
-	{
-		if (edges.empty())
-		{
-			return {};
-		}
-
-		std::unordered_map<uint32, std::vector<uint32>> graph;
-
-		for (const auto& e : edges)
-		{
-			graph[e.v0].push_back(e.v1);
-			graph[e.v1].push_back(e.v0);
-		}
-
-		std::vector<uint32> loop;
-
-		std::unordered_set<uint64> visited;
-
-		uint32 start = edges[0].v0;
-		uint32 current = start;
-
-		loop.push_back(current);
-
-		while (true)
-		{
-			bool found = false;
-
-			for (uint32 next : graph[current])
-			{
-				uint32 lo = current < next ? current : next;
-				uint32 hi = current < next ? next : current;
-				uint64 key = ((uint64)lo << 32) | hi;
-
-				if (visited.count(key))
-				{
-					continue;
-				}
-
-				visited.insert(key);
-				loop.push_back(next);
-				current = next;
-				found = true;
-				break;
-			}
-
-			if (!found || current == start)
-			{
-				break;
-			}
-		}
-
-		if (!loop.empty() && loop.back() == start)
-		{
-			loop.pop_back();
-		}
-
-		return loop;
-	}
-
-	static void cap_boundary_loop(
-		SubmeshAsset& submesh,
-		const std::vector<uint32>& loop,
-		bool flip_winding)
-	{
-		if (loop.size() < 3)
-		{
-			return;
-		}
-
-		vec3 center(0);
-
-		for (uint32 v : loop)
-		{
-			center += submesh.positions[v];
-		}
-
-		center /= (float)loop.size();
-
-		uint32 center_idx = (uint32)submesh.positions.size();
-
-		submesh.positions.push_back(center);
-
-		if (!submesh.normals.empty())
-		{
-			submesh.normals.push_back(vec3(0));
-		}
-
-		if (!submesh.uvs.empty())
-		{
-			vec2 uv_center(0);
-
-			for (uint32 v : loop)
-			{
-				uv_center += submesh.uvs[v];
-			}
-
-			uv_center /= (float)loop.size();
-
-			submesh.uvs.push_back(uv_center);
-		}
-
-		if (!submesh.tangents.empty())
-		{
-			submesh.tangents.push_back(vec3(0));
-		}
-
-		if (!submesh.colors.empty())
-		{
-			submesh.colors.push_back(submesh.colors[loop[0]]);
-		}
-
-		if (!submesh.skin.empty())
-		{
-			animation::SkinningWeights center_skin{};
-
-			std::unordered_map<uint32, uint32> bone_weights;
-
-			for (uint32 v : loop)
-			{
-				const auto& skin = submesh.skin[v];
-
-				for (int i = 0; i < 4; ++i)
-				{
-					if (skin.skin_weights[i] == 0)
-					{
-						continue;
-					}
-
-					bone_weights[skin.skin_indices[i]] += skin.skin_weights[i];
-				}
-			}
-
-			std::vector<std::pair<uint32, uint32>> sorted(bone_weights.begin(), bone_weights.end());
-
-			std::sort(sorted.begin(), sorted.end(),
-				[](const auto& a, const auto& b) { return a.second > b.second; });
-
-			uint32 total = 0;
-
-			for (uint32 i = 0; i < 4 && i < sorted.size(); ++i)
-			{
-				center_skin.skin_indices[i] = (uint8)sorted[i].first;
-				total += sorted[i].second;
-			}
-
-			if (total > 0)
-			{
-				for (uint32 i = 0; i < 4 && i < sorted.size(); ++i)
-				{
-					center_skin.skin_weights[i] = (uint8)((uint64)sorted[i].second * 255 / total);
-				}
-			}
-
-			submesh.skin.push_back(center_skin);
-		}
-
-		for (size_t i = 0; i < loop.size(); ++i)
-		{
-			size_t j = (i + 1) % loop.size();
-
-			indexed_triangle32 tri;
-			tri.a = center_idx;
-			tri.b = loop[i];
-			tri.c = loop[j];
-
-			if (flip_winding)
-			{
-				std::swap(tri.b, tri.c);
-			}
-
-			submesh.triangles.push_back(tri);
-		}
-
-		vec3 cap_normal(0);
-
-		for (size_t i = 0; i < loop.size(); ++i)
-		{
-			size_t j = (i + 1) % loop.size();
-
-			vec3 e0 = submesh.positions[loop[i]] - center;
-			vec3 e1 = submesh.positions[loop[j]] - center;
-
-			cap_normal += cross(e0, e1);
-		}
-
-		if (length(cap_normal) > 0.0001f)
-		{
-			cap_normal = normalize(cap_normal);
-		}
-
-		if (flip_winding)
-		{
-			cap_normal = -cap_normal;
-		}
-
-		if (!submesh.normals.empty())
-		{
-			submesh.normals[center_idx] = cap_normal;
-
-			for (uint32 v : loop)
-			{
-				submesh.normals[v] = normalize(submesh.normals[v] + cap_normal);
-			}
-		}
-	}
-
-	static void seal_submesh_holes(SubmeshAsset& submesh)
-	{
-		auto boundary = find_boundary_edges(submesh);
-
 		if (boundary.empty())
 		{
 			return;
 		}
 
-		while (!boundary.empty())
+		std::unordered_map<uint32, std::vector<uint32>> graph;
+
+		for (const auto& e : boundary)
 		{
-			auto loop = build_boundary_loop(boundary);
+			graph[e.first].push_back(e.second);
+			graph[e.second].push_back(e.first);
+		}
+
+		while (!graph.empty())
+		{
+			uint32 start = graph.begin()->first;
+			uint32 current = start;
+
+			std::vector<uint32> loop;
+			loop.push_back(current);
+
+			std::unordered_set<uint64> visited_edges;
+
+			while (true)
+			{
+				bool found = false;
+
+				auto it = graph.find(current);
+
+				if (it == graph.end())
+				{
+					break;
+				}
+
+				for (uint32 next : it->second)
+				{
+					uint32 lo = current < next ? current : next;
+					uint32 hi = current < next ? next : current;
+					uint64 key = ((uint64)lo << 32) | hi;
+
+					if (visited_edges.count(key))
+					{
+						continue;
+					}
+
+					visited_edges.insert(key);
+					loop.push_back(next);
+					current = next;
+					found = true;
+					break;
+				}
+
+				if (!found || current == start)
+				{
+					break;
+				}
+			}
+
+			if (!loop.empty() && loop.back() == start)
+			{
+				loop.pop_back();
+			}
+
+			for (size_t i = 0; i < loop.size(); ++i)
+			{
+				uint32 a = loop[i];
+				uint32 b = loop[(i + 1) % loop.size()];
+
+				auto itA = graph.find(a);
+
+				if (itA != graph.end())
+				{
+					auto& vec = itA->second;
+
+					for (auto vit = vec.begin(); vit != vec.end(); )
+					{
+						if (*vit == b)
+						{
+							vit = vec.erase(vit);
+						}
+						else
+						{
+							++vit;
+						}
+					}
+
+					if (vec.empty())
+					{
+						graph.erase(itA);
+					}
+				}
+			}
 
 			if (loop.size() < 3)
 			{
-				break;
+				continue;
 			}
 
-			cap_boundary_loop(submesh, loop, false);
+			vec3 center(0);
 
-			boundary = find_boundary_edges(submesh);
+			for (uint32 v : loop)
+			{
+				center += submesh.positions[v];
+			}
+
+			center /= (float)loop.size();
+
+			uint32 center_idx = (uint32)submesh.positions.size();
+
+			submesh.positions.push_back(center);
+
+			if (!submesh.normals.empty())
+			{
+				submesh.normals.push_back(vec3(0));
+			}
+
+			if (!submesh.uvs.empty())
+			{
+				vec2 uv_center(0);
+
+				for (uint32 v : loop)
+				{
+					uv_center += submesh.uvs[v];
+				}
+
+				uv_center /= (float)loop.size();
+
+				submesh.uvs.push_back(uv_center);
+			}
+
+			if (!submesh.tangents.empty())
+			{
+				submesh.tangents.push_back(vec3(0));
+			}
+
+			if (!submesh.colors.empty())
+			{
+				submesh.colors.push_back(submesh.colors[loop[0]]);
+			}
+
+			if (!submesh.skin.empty())
+			{
+				std::unordered_map<uint32, uint32> bone_weights;
+
+				for (uint32 v : loop)
+				{
+					const auto& skin = submesh.skin[v];
+
+					for (int i = 0; i < 4; ++i)
+					{
+						if (skin.skin_weights[i] == 0)
+						{
+							continue;
+						}
+
+						if (!group_bones.empty())
+						{
+							bool in_group = false;
+
+							for (uint32 b : group_bones)
+							{
+								if (b == skin.skin_indices[i])
+								{
+									in_group = true;
+									break;
+								}
+							}
+
+							if (!in_group)
+							{
+								continue;
+							}
+						}
+
+						bone_weights[skin.skin_indices[i]] += skin.skin_weights[i];
+					}
+				}
+
+				animation::SkinningWeights center_skin{};
+
+				std::vector<std::pair<uint32, uint32>> sorted(std::make_move_iterator(bone_weights.begin()), std::make_move_iterator(bone_weights.end()));
+				std::sort(sorted.begin(), sorted.end(),
+					[](const auto& a, const auto& b) { return a.second > b.second; });
+
+				uint32 total = 0;
+
+				for (uint32 i = 0; i < 4 && i < sorted.size(); ++i)
+				{
+					center_skin.skin_indices[i] = (uint8)sorted[i].first;
+					total += sorted[i].second;
+				}
+
+				if (total > 0)
+				{
+					for (uint32 i = 0; i < 4 && i < sorted.size(); ++i)
+					{
+						center_skin.skin_weights[i] = (uint8)((uint64)sorted[i].second * 255 / total);
+					}
+				}
+
+				submesh.skin.push_back(center_skin);
+			}
+
+			for (size_t i = 0; i < loop.size(); ++i)
+			{
+				size_t j = (i + 1) % loop.size();
+
+				indexed_triangle32 tri;
+				tri.a = center_idx;
+				tri.b = loop[i];
+				tri.c = loop[j];
+
+				submesh.triangles.push_back(tri);
+			}
+
+			vec3 cap_normal(0);
+
+			for (size_t i = 0; i < loop.size(); ++i)
+			{
+				size_t j = (i + 1) % loop.size();
+
+				vec3 e0 = submesh.positions[loop[i]] - center;
+				vec3 e1 = submesh.positions[loop[j]] - center;
+
+				cap_normal += cross(e0, e1);
+			}
+
+			if (length(cap_normal) > 0.0001f)
+			{
+				cap_normal = normalize(cap_normal);
+			}
+
+			if (!submesh.normals.empty())
+			{
+				submesh.normals[center_idx] = cap_normal;
+			}
 		}
 	}
 
@@ -336,7 +341,7 @@ namespace era_engine::physics
 		return best_bone;
 	}
 
-	static void build_part_submesh(
+	static void build_part_submesh_filtered(
 		const SubmeshAsset& source,
 		const std::vector<indexed_triangle32>& triangles,
 		const std::vector<uint32>& group_bones,
@@ -472,6 +477,188 @@ namespace era_engine::physics
 		}
 	}
 
+	static SubmeshAsset build_merged_live_submesh(const DismembermentState& state)
+	{
+		SubmeshAsset merged;
+		merged.material_index = 0;
+
+		std::unordered_set<uint32> detached_bones;
+
+		for (uint32 g = 0; g < state.parts.size(); ++g)
+		{
+			if (!state.detached[g])
+			{
+				continue;
+			}
+			for (uint32 b : state.parts[g].bone_ids)
+			{
+				detached_bones.insert(b);
+			}
+		}
+
+		std::vector<uint32> live_bones;
+
+		for (uint32 g = 0; g < state.parts.size(); ++g)
+		{
+			if (state.detached[g])
+			{
+				continue;
+			}
+			for (uint32 b : state.parts[g].bone_ids)
+			{
+				live_bones.push_back(b);
+			}
+		}
+
+		for (uint32 si = 0; si < state.source_submeshes.size(); ++si)
+		{
+			const SubmeshAsset& src = state.source_submeshes[si];
+
+			std::vector<bool> vertex_detached(src.positions.size(), false);
+
+			if (!src.skin.empty())
+			{
+				for (uint32 v = 0; v < src.skin.size(); ++v)
+				{
+					const auto& skin = src.skin[v];
+
+					for (int i = 0; i < 4; ++i)
+					{
+						if (skin.skin_weights[i] == 0)
+						{
+							continue;
+						}
+
+						if (detached_bones.count(skin.skin_indices[i]))
+						{
+							vertex_detached[v] = true;
+							break;
+						}
+					}
+				}
+			}
+
+			std::vector<bool> vertex_near_detached = vertex_detached;
+
+			for (const auto& tri : src.triangles)
+			{
+				if (vertex_detached[tri.a] || vertex_detached[tri.b] || vertex_detached[tri.c])
+				{
+					vertex_near_detached[tri.a] = true;
+					vertex_near_detached[tri.b] = true;
+					vertex_near_detached[tri.c] = true;
+				}
+			}
+
+			std::vector<indexed_triangle32> live_tris;
+			live_tris.reserve(src.triangles.size());
+
+			for (const auto& tri : src.triangles)
+			{
+				uint32 near_count = 0;
+				if (vertex_near_detached[tri.a]) near_count++;
+				if (vertex_near_detached[tri.b]) near_count++;
+				if (vertex_near_detached[tri.c]) near_count++;
+
+				if (near_count >= 2)
+				{
+					continue;
+				}
+
+				live_tris.push_back(tri);
+			}
+
+			if (live_tris.empty())
+			{
+				continue;
+			}
+
+			SubmeshAsset piece;
+			build_part_submesh_filtered(src, live_tris, live_bones, piece);
+
+			uint32 base = (uint32)merged.positions.size();
+
+			merged.positions.reserve(merged.positions.size() + base);
+			merged.positions.insert(merged.positions.end(), std::make_move_iterator(piece.positions.begin()), std::make_move_iterator(piece.positions.end()));
+
+			merged.normals.reserve(merged.normals.size() + piece.normals.size());
+			merged.normals.insert(merged.normals.end(), std::make_move_iterator(piece.normals.begin()), std::make_move_iterator(piece.normals.end()));
+
+			merged.uvs.reserve(merged.uvs.size() + piece.uvs.size());
+			merged.uvs.insert(merged.uvs.end(), std::make_move_iterator(piece.uvs.begin()), std::make_move_iterator(piece.uvs.end()));
+
+			merged.tangents.reserve(merged.tangents.size() + piece.tangents.size());
+			merged.tangents.insert(merged.tangents.end(), std::make_move_iterator(piece.tangents.begin()), std::make_move_iterator(piece.tangents.end()));
+
+			merged.colors.reserve(merged.colors.size() + piece.colors.size());
+			merged.colors.insert(merged.colors.end(), std::make_move_iterator(piece.colors.begin()), std::make_move_iterator(piece.colors.end()));
+
+			merged.skin.reserve(merged.skin.size() + piece.skin.size());
+			merged.skin.insert(merged.skin.end(), std::make_move_iterator(piece.skin.begin()), std::make_move_iterator(piece.skin.end()));
+
+			merged.triangles.reserve(merged.triangles.size() + piece.triangles.size());
+			for (auto& tri : piece.triangles)
+			{
+				merged.triangles.push_back({ tri.a + base, tri.b + base, tri.c + base });
+			}
+		}
+
+		return merged;
+	}
+
+	static SubmeshAsset build_detached_submesh(
+		const DismembermentState& state,
+		uint32 part_index)
+	{
+		SubmeshAsset result;
+		result.material_index = 0;
+
+		const std::vector<uint32>& group_bones = state.parts[part_index].bone_ids;
+
+		for (const auto& split : state.splits)
+		{
+			const auto& tris = split.group_triangles[part_index];
+
+			if (tris.empty())
+			{
+				continue;
+			}
+
+			const SubmeshAsset& src = state.source_submeshes[split.source_submesh_index];
+
+			SubmeshAsset piece;
+			build_part_submesh_filtered(src, tris, group_bones, piece);
+
+			uint32 base = (uint32)result.positions.size();
+
+			result.positions.reserve(result.positions.size() + base);
+			result.positions.insert(result.positions.end(), std::make_move_iterator(piece.positions.begin()), std::make_move_iterator(piece.positions.end()));
+
+			result.normals.reserve(result.normals.size() + piece.normals.size());
+			result.normals.insert(result.normals.end(), std::make_move_iterator(piece.normals.begin()), std::make_move_iterator(piece.normals.end()));
+
+			result.uvs.reserve(result.uvs.size() + piece.uvs.size());
+			result.uvs.insert(result.uvs.end(), std::make_move_iterator(piece.uvs.begin()), std::make_move_iterator(piece.uvs.end()));
+
+			result.tangents.reserve(result.tangents.size() + piece.tangents.size());
+			result.tangents.insert(result.tangents.end(), std::make_move_iterator(piece.tangents.begin()), std::make_move_iterator(piece.tangents.end()));
+
+			result.colors.reserve(result.colors.size() + piece.colors.size());
+			result.colors.insert(result.colors.end(), std::make_move_iterator(piece.colors.begin()), std::make_move_iterator(piece.colors.end()));
+
+			result.skin.reserve(result.skin.size() + piece.skin.size());
+			result.skin.insert(result.skin.end(), std::make_move_iterator(piece.skin.begin()), std::make_move_iterator(piece.skin.end()));
+
+			result.triangles.reserve(result.triangles.size() + piece.triangles.size());
+			for (auto& tri : piece.triangles)
+			{
+				result.triangles.push_back({ tri.a + base, tri.b + base, tri.c + base });
+			}
+		}
+
+		return result;
+	}
+
 	static void split_multimesh_into_parts(
 		const ModelAsset& source_model,
 		const MultiMesh& source_multimesh,
@@ -483,6 +670,7 @@ namespace era_engine::physics
 		out_state.splits.clear();
 		out_state.detached.clear();
 		out_state.detached.resize(groups.size(), false);
+		out_state.source_submeshes.clear();
 
 		for (uint32 g = 0; g < groups.size(); ++g)
 		{
@@ -510,6 +698,8 @@ namespace era_engine::physics
 			{
 				const auto& src_submesh = mesh.submeshes[submesh_idx];
 
+				out_state.source_submeshes.push_back(src_submesh);
+
 				SubmeshPartSplit split;
 				split.source_submesh_index = global_submesh_index;
 				split.group_triangles.resize(groups.size());
@@ -520,21 +710,9 @@ namespace era_engine::physics
 				{
 					for (uint32 v = 0; v < src_submesh.skin.size(); ++v)
 					{
-						const auto& skin = src_submesh.skin[v];
+						uint32 dominant = find_dominant_bone(src_submesh.skin[v]);
 
-						uint32 best_bone = 0;
-						uint8 best_weight = 0;
-
-						for (int i = 0; i < 4; ++i)
-						{
-							if (skin.skin_weights[i] > best_weight)
-							{
-								best_weight = skin.skin_weights[i];
-								best_bone = skin.skin_indices[i];
-							}
-						}
-
-						auto it = bone_to_group.find(best_bone);
+						auto it = bone_to_group.find(dominant);
 
 						if (it != bone_to_group.end())
 						{
@@ -575,94 +753,42 @@ namespace era_engine::physics
 
 					for (uint32 g : tri_groups)
 					{
-						uint32 count = 0;
-						if (g0 == g)
-						{
-							count++;
-						}
-						if (g1 == g)
-						{
-							count++;
-						}
-						if (g2 == g)
-						{
-							count++;
-						}
-
-						if (count >= 1)
-						{
-							split.group_triangles[g].push_back(tri);
-						}
+						split.group_triangles[g].push_back(tri);
 					}
 				}
 
 				out_state.splits.push_back(std::move(split));
-
-				for (uint32 g = 0; g < groups.size(); ++g)
-				{
-					if (out_state.splits.back().group_triangles[g].empty())
-					{
-						continue;
-					}
-
-					SubmeshAsset part_submesh;
-					build_part_submesh(src_submesh, out_state.splits.back().group_triangles[g], groups[g].bone_indices, part_submesh);
-
-					seal_submesh_holes(part_submesh);
-
-					DismemberedPart& part = out_state.parts[g];
-
-					if (part.mesh.positions.empty())
-					{
-						part.mesh = std::move(part_submesh);
-						part.source_submesh_index = global_submesh_index;
-					}
-					else
-					{
-						uint32 base = (uint32)part.mesh.positions.size();
-
-						for (auto& p : part_submesh.positions)
-						{
-							part.mesh.positions.push_back(p);
-						}
-
-						for (auto& n : part_submesh.normals)
-						{
-							part.mesh.normals.push_back(n);
-						}
-
-						for (auto& u : part_submesh.uvs)
-						{
-							part.mesh.uvs.push_back(u);
-						}
-
-						for (auto& t : part_submesh.tangents)
-						{
-							part.mesh.tangents.push_back(t);
-						}
-
-						for (auto& c : part_submesh.colors)
-						{
-							part.mesh.colors.push_back(c);
-						}
-
-						for (auto& s : part_submesh.skin)
-						{
-							part.mesh.skin.push_back(s);
-						}
-
-						for (auto& tri : part_submesh.triangles)
-						{
-							part.mesh.triangles.push_back({ tri.a + base, tri.b + base, tri.c + base });
-						}
-					}
-				}
 
 				global_submesh_index++;
 			}
 		}
 
 		out_state.initialized = true;
+	}
+
+	static uint32 find_part_index_by_limb(
+		Entity limb,
+		const DismembermentState& state)
+	{
+		PhysicalAnimationLimbComponent* p_limb = limb.get_component<PhysicalAnimationLimbComponent>();
+
+		if (p_limb == nullptr)
+		{
+			return UINT32_MAX;
+		}
+
+		for (uint32 g = 0; g < state.parts.size(); ++g)
+		{
+			for (uint32 bone_id : state.parts[g].bone_ids)
+			{
+				if (bone_id == p_limb->joint_id)
+				{
+					return g;
+				}
+			}
+		}
+
+		return UINT32_MAX;
 	}
 
 	RagdollDismembermentSystem::RagdollDismembermentSystem(World* _world)
@@ -768,7 +894,216 @@ namespace era_engine::physics
 				details.max_health = 1.0f;
 			}
 		}
+	}
 
+	void RagdollDismembermentSystem::apply_dismemberment_result(
+		Entity entity,
+		PhysicalAnimationComponent& pac,
+		RagdollDismembermentComponent& rdc)
+	{
+		DismembermentTaskData* data = rdc.pending_task;
+
+		if (data == nullptr)
+		{
+			return;
+		}
+
+		MeshComponent* mesh_component = entity.get_component_if_exists<MeshComponent>();
+
+		if (mesh_component == nullptr || mesh_component->mesh == nullptr)
+		{
+			return;
+		}
+
+		MultiMesh& multimesh = *mesh_component->mesh;
+
+		ModelAsset rebuilt;
+		MeshAsset mesh;
+
+		if (!data->result.live.positions.empty())
+		{
+			data->result.live.material_index = 0;
+			mesh.submeshes.push_back(std::move(data->result.live));
+		}
+
+		for (auto& part : data->result.detached)
+		{
+			if (part.positions.empty())
+			{
+				continue;
+			}
+
+			part.material_index = 0;
+			mesh.submeshes.push_back(std::move(part));
+		}
+
+		if (!mesh.submeshes.empty())
+		{
+			rebuilt.meshes.push_back(std::move(mesh));
+
+			if (multimesh.model_asset.has_value())
+			{
+				rebuilt.materials = multimesh.model_asset->materials;
+			}
+
+			multimesh.update_mesh(rebuilt);
+			multimesh.load_state.store(AssetLoadState::LOADED);
+		}
+
+		for (EntityPtr limb_ptr : pac.limbs)
+		{
+			Entity limb = limb_ptr.get();
+
+			RagdollDismembermentLimbComponent* d_limb = limb.get_component<RagdollDismembermentLimbComponent>();
+			PhysicalAnimationLimbComponent* p_limb = limb.get_component<PhysicalAnimationLimbComponent>();
+
+			if (d_limb == nullptr || p_limb == nullptr)
+			{
+				continue;
+			}
+
+			if (d_limb->state != DismemberState::PENDING)
+			{
+				continue;
+			}
+
+			d_limb->state = DismemberState::DISMEMBERED;
+			p_limb->force_switch_state(PhysicalLimbStateType::DISMEMBERED);
+
+			if (rdc.on_dismember != nullptr)
+			{
+				rdc.on_dismember(d_limb);
+			}
+
+			const PhysicsLimbChain* chain = pac.get_chain_by_joint_id(p_limb->joint_id);
+
+			if (chain == nullptr)
+			{
+				continue;
+			}
+
+			bool found = false;
+
+			for (EntityPtr chain_limb_ptr : chain->connected_limbs)
+			{
+				Entity chain_limb = chain_limb_ptr.get();
+
+				if (chain_limb == limb)
+				{
+					found = true;
+					continue;
+				}
+
+				if (!found)
+				{
+					continue;
+				}
+
+				RagdollDismembermentLimbComponent* next_d = chain_limb.get_component<RagdollDismembermentLimbComponent>();
+
+				if (next_d == nullptr || next_d->state == DismemberState::DISMEMBERED || next_d->state == DismemberState::PENDING)
+				{
+					continue;
+				}
+
+				next_d->state = DismemberState::PARTIAL_DISMEMBERED;
+
+				PhysicalAnimationLimbComponent* next_p = chain_limb.get_component<PhysicalAnimationLimbComponent>();
+
+				if (next_p != nullptr)
+				{
+					next_p->force_switch_state(PhysicalLimbStateType::PARTIAL_DISMEMBERED);
+				}
+			}
+		}
+	}
+
+	void RagdollDismembermentSystem::start_dismemberment_task(
+		Entity entity,
+		RagdollDismembermentComponent& rdc)
+	{
+		DismembermentState& state = rdc.dismemberment_state;
+
+		if (!state.initialized)
+		{
+			return;
+		}
+
+		DismembermentTaskData* data = new DismembermentTaskData();
+
+		data->source_submeshes = state.source_submeshes;
+		data->splits = state.splits;
+		data->parts = state.parts;
+		data->detached = state.detached;
+
+		DefaultJob job_object;
+
+		job_object.data.user_data = data;
+		job_object.data.data_size = sizeof(DismembermentTaskData);
+		job_object.data.destroy_after_execution = false;
+
+		job_object.job_func = [](DefaultJob::Data& default_data)
+			{
+				DismembermentTaskData* data = reinterpret_cast<DismembermentTaskData*>(default_data.user_data);
+
+				std::vector<uint32> live_bones;
+
+				for (uint32 g = 0; g < data->parts.size(); ++g)
+				{
+					if (data->detached[g])
+					{
+						continue;
+					}
+
+					for (uint32 b : data->parts[g].bone_ids)
+					{
+						live_bones.push_back(b);
+					}
+				}
+
+				DismembermentState temp_state;
+				temp_state.source_submeshes = data->source_submeshes;
+				temp_state.splits = data->splits;
+				temp_state.parts = data->parts;
+				temp_state.detached = data->detached;
+
+				SubmeshAsset live = build_merged_live_submesh(temp_state);
+
+				if (!live.positions.empty())
+				{
+					seal_submesh_holes(live, live_bones);
+				}
+
+				data->result.live = std::move(live);
+
+				for (uint32 g = 0; g < data->parts.size(); ++g)
+				{
+					if (!data->detached[g])
+					{
+						continue;
+					}
+
+					SubmeshAsset part = build_detached_submesh(temp_state, g);
+
+					if (!part.positions.empty())
+					{
+						seal_submesh_holes(part, data->parts[g].bone_ids);
+					}
+
+					data->result.detached.push_back(std::move(part));
+					data->result.detached_indices.push_back(g);
+				}
+
+				data->completed.store(true, std::memory_order_release);
+			};
+
+		JobHandle job = schedule_low_priority_job(job_object);
+		job.submit_now();
+
+		rdc.pending_job = job;
+		rdc.pending_task = data;
+
+		rdc.pending_detached_parts.clear();
 	}
 
 	void RagdollDismembermentSystem::update_ragdolls(float dt)
@@ -777,14 +1112,29 @@ namespace era_engine::physics
 
 		process_added_rdcs();
 
-		for (auto&& [entity_handle, transform_component, physical_animation_component, dismemberment_component, skeleton] : ragdolls_group.each())
+		for (auto&& [entity_handle, transform_component, physical_animation_component, dismemberment_component, skeleton_component] : ragdolls_group.each())
 		{
 			if (!physical_animation_component.loaded || !dismemberment_component.loaded)
 			{
 				continue;
 			}
 
-			std::vector<Entity> dismembered_limbs;
+			Entity entity = world->get_entity(entity_handle);
+
+			if (dismemberment_component.pending_task != nullptr &&
+				dismemberment_component.pending_task->completed.load(std::memory_order_acquire))
+			{
+				dismemberment_component.pending_job.wait_for_completion();
+
+				apply_dismemberment_result(
+					entity,
+					physical_animation_component,
+					dismemberment_component
+				);
+
+				delete dismemberment_component.pending_task;
+				dismemberment_component.pending_task = nullptr;
+			}
 
 			for (EntityPtr limb_ptr : physical_animation_component.limbs)
 			{
@@ -805,89 +1155,72 @@ namespace era_engine::physics
 
 				if (d_limb->is_pending())
 				{
-					d_limb->state = DismemberState::DISMEMBERED;
-					p_limb->force_switch_state(PhysicalLimbStateType::DISMEMBERED);
+					uint32 part_index = find_part_index_by_limb(limb, dismemberment_component.dismemberment_state);
 
-					if (dismemberment_component.on_dismember != nullptr)
+					if (part_index != UINT32_MAX &&
+						!dismemberment_component.dismemberment_state.detached[part_index])
 					{
-						dismemberment_component.on_dismember(d_limb);
-					}
+						dismemberment_component.dismemberment_state.detached[part_index] = true;
+						dismemberment_component.pending_detached_parts.push_back(part_index);
 
-					dismembered_limbs.push_back(limb);
+						d_limb->state = DismemberState::PENDING;
+					}
 				}
 			}
 
-			for (Entity limb : dismembered_limbs)
+			if (!dismemberment_component.pending_detached_parts.empty() &&
+				dismemberment_component.pending_task == nullptr)
 			{
-				PhysicalAnimationLimbComponent* p_limb = limb.get_component<PhysicalAnimationLimbComponent>();
-
-				const PhysicsLimbChain* chain = physical_animation_component.get_chain_by_joint_id(p_limb->joint_id);
-
-				if (chain == nullptr)
-				{
-					continue;
-				}
-
-				bool is_next_limb = false;
-
-				for (EntityPtr chain_limb_ptr : chain->connected_limbs)
-				{
-					Entity chain_limb = chain_limb_ptr.get();
-
-					if (chain_limb == limb)
-					{
-						is_next_limb = true;
-						continue;
-					}
-
-					if (!is_next_limb)
-					{
-						continue;
-					}
-
-					RagdollDismembermentLimbComponent* next_d_limb = chain_limb.get_component<RagdollDismembermentLimbComponent>();
-					if (next_d_limb == nullptr)
-					{
-						continue;
-					}
-
-					if (next_d_limb->get_current_state() == DismemberState::DISMEMBERED)
-					{
-						continue;
-					}
-
-					next_d_limb->state = DismemberState::PARTIAL_DISMEMBERED;
-
-					PhysicalAnimationLimbComponent* next_p_limb = chain_limb.get_component<PhysicalAnimationLimbComponent>();
-					if (next_p_limb != nullptr)
-					{
-						next_p_limb->force_switch_state(PhysicalLimbStateType::PARTIAL_DISMEMBERED);
-					}
-				}
+				start_dismemberment_task(entity, dismemberment_component);
 			}
 		}
 	}
 
-	void RagdollDismembermentSystem::rebuild_multimesh_with_parts(
+	void RagdollDismembermentSystem::rebuild_multimesh(
 		MultiMesh& multimesh,
 		const DismembermentState& state)
 	{
 		ModelAsset rebuilt;
 		MeshAsset mesh;
 
+		std::vector<uint32> live_bones;
+
 		for (uint32 g = 0; g < state.parts.size(); ++g)
 		{
-			if (state.parts[g].mesh.positions.empty() || state.parts[g].mesh.triangles.empty())
+			if (state.detached[g])
+			{
+				continue;
+			}
+			for (uint32 b : state.parts[g].bone_ids)
+			{
+				live_bones.push_back(b);
+			}
+		}
+
+		SubmeshAsset live = build_merged_live_submesh(state);
+
+		if (!live.positions.empty())
+		{
+			seal_submesh_holes(live, live_bones);
+			live.material_index = 0;
+			mesh.submeshes.push_back(std::move(live));
+		}
+
+		for (uint32 g = 0; g < state.parts.size(); ++g)
+		{
+			if (!state.detached[g])
 			{
 				continue;
 			}
 
-			SubmeshAsset sub = state.parts[g].mesh;
-			sub.material_index = 0;
+			SubmeshAsset part = build_detached_submesh(state, g);
 
-			seal_submesh_holes(sub);
-
-			mesh.submeshes.push_back(std::move(sub));
+			if (!part.positions.empty())
+			{
+				seal_submesh_holes(part, state.parts[g].bone_ids);
+				part.material_index = 0;
+				mesh.submeshes.push_back(std::move(part));
+			}
 		}
 
 		if (mesh.submeshes.empty())
@@ -903,6 +1236,45 @@ namespace era_engine::physics
 		}
 
 		multimesh.update_mesh(rebuilt);
+	}
+
+	void RagdollDismembermentSystem::process_dismemberment(
+		Entity entity,
+		RagdollDismembermentComponent& rdc,
+		const std::vector<Entity>& dismembered_limbs)
+	{
+		MeshComponent* mesh_comp = entity.get_component_if_exists<MeshComponent>();
+
+		if (mesh_comp == nullptr || mesh_comp->mesh == nullptr)
+		{
+			return;
+		}
+
+		DismembermentState& state = rdc.dismemberment_state;
+
+		if (!state.initialized)
+		{
+			return;
+		}
+
+		bool any = false;
+		for (Entity limb : dismembered_limbs)
+		{
+			uint32 part_index = find_part_index_by_limb(limb, state);
+
+			if (part_index == UINT32_MAX || state.detached[part_index])
+			{
+				continue;
+			}
+
+			state.detached[part_index] = true;
+			any = true;
+		}
+
+		if (any)
+		{
+			rebuild_multimesh(*mesh_comp->mesh, state);
+		}
 	}
 
 	void RagdollDismembermentSystem::process_added_rdcs()
@@ -1167,8 +1539,6 @@ namespace era_engine::physics
 			}
 
 			split_multimesh_into_parts(source_model, *mesh_component->mesh, groups, dismemberment_component->dismemberment_state);
-
-			rebuild_multimesh_with_parts(*mesh_component->mesh, dismemberment_component->dismemberment_state);
 
 			dismemberment_component->loaded = true;
 			iter = rdcs_to_init.erase(iter);
