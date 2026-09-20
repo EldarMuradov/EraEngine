@@ -48,7 +48,7 @@ namespace era_engine
 		ref<dx_texture> irradiance;
 		ref<dx_texture> prefilteredRadiance;
 
-		float globalIlluminationIntensity = 0.340f;
+		float globalIlluminationIntensity = 1.4f;
 		float skyIntensity = 1.85f;
 
 		light_probe_grid lightProbeGrid;

@@ -116,7 +116,7 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		rttr::registration::class_<directional_light>("directional_light")
+		registration::class_<directional_light>("directional_light")
 			.constructor<>()
 			.property("color", &directional_light::color)
 			.property("intensity", &directional_light::intensity)
@@ -129,7 +129,7 @@ namespace era_engine
 			.property("numShadowCascades", &directional_light::numShadowCascades)
 			.property("stabilize", &directional_light::stabilize);
 
-		rttr::registration::class_<PointLightComponent>("PointLightComponent")
+		registration::class_<PointLightComponent>("PointLightComponent")
 			.constructor<>()
 			.property("color", &PointLightComponent::color)
 			.property("intensity", &PointLightComponent::intensity)
@@ -137,7 +137,7 @@ namespace era_engine
 			.property("castsShadow", &PointLightComponent::castsShadow)
 			.property("shadowMapResolution", &PointLightComponent::shadowMapResolution);
 
-		rttr::registration::class_<SpotLightComponent>("SpotLightComponent")
+		registration::class_<SpotLightComponent>("SpotLightComponent")
 			.constructor<>()
 			.property("color", &SpotLightComponent::color)
 			.property("intensity", &SpotLightComponent::intensity)

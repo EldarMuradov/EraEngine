@@ -51,7 +51,7 @@ namespace era_engine::physics
 
 			.method("update_normal", &PhysicalAnimationSystem::update_normal)
 			(metadata("update_group", update_types::GAMEPLAY_NORMAL),
-			metadata("After", std::vector<std::string>{"AnimationSystem::update"}));
+			metadata("After", std::vector<std::string>{"IKSystem::update"}));
 	}
 
 	static DebugVar<bool> enable_always = DebugVar<bool>("physics.physical_animation.enable_always", false);

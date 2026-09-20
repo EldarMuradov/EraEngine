@@ -46,6 +46,8 @@
 #include "game/movement/character_locomotion_component.h"
 #include "game/camera/gameplay_tpp_camera_component.h"
 
+#include <ik/ik_component.h>
+
 #include <audio/audio.h>
 
 #include <terrain/terrain.h>
@@ -795,6 +797,42 @@ namespace era_engine
 				ragdoll_component->settings = settings;
 
 				character.add_component<RagdollDismembermentComponent>();
+
+				if (false)
+				{
+					IKComponent* ik_component = character.add_component<IKComponent>();
+
+					std::vector<IKBoneConstraint> seeds(4);
+					seeds[0].swing_min_deg = -25.0f;
+					seeds[0].swing_max_deg = 25.0f;
+
+					seeds[1].swing_min_deg = -95.0f;
+					seeds[1].swing_max_deg = 95.0f;
+
+					seeds[2].swing_min_deg = 2.0f;
+					seeds[2].swing_max_deg = 145.0f;
+
+					seeds[3].swing_min_deg = -70.0f;
+					seeds[3].swing_max_deg = 70.0f;
+
+					ik_component->add_chain_to_component({ "mixamorig:LeftShoulder", "mixamorig:LeftArm", "mixamorig:LeftForeArm", "mixamorig:LeftHand" }, &seeds);
+
+					auto& arm = ik_component->chains[0];
+					arm.target_world_position = vec3::zero;
+					arm.pole_vector_local = -vec3::forward;
+					arm.weight = 1.0f;
+					arm.iterations = 16;
+					arm.tolerance = 0.005f;
+
+					{
+						Entity hand_target = world->create_entity("HandIkTarget");
+
+						IKTargetComponent* hand_ik_target = hand_target.add_component<IKTargetComponent>();
+						hand_ik_target->owner_entity = character.get_handle();
+						hand_ik_target->chain_index = 0;
+						hand_ik_target->weight = 1.0f;
+					}
+				}
 			}
 		}
 

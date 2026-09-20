@@ -64,7 +64,7 @@ namespace era_engine
 		renderer_holder_rc->sun.numShadowCascades = 3;
 		renderer_holder_rc->sun.shadowDimensions = 2048;
 		renderer_holder_rc->sun.cascadeDistances = vec4(9.f, 25.f, 50.f, 10000.f);
-		renderer_holder_rc->sun.bias = vec4(0.000588f, 0.000784f, 0.000824f, 0.0035f);
+		renderer_holder_rc->sun.bias = vec4(0.0001f, 0.000784f, 0.000524f, 0.0035f);
 		renderer_holder_rc->sun.blendDistances = vec4(5.f, 10.f, 10.f, 10.f);
 		renderer_holder_rc->sun.stabilize = true;
 
