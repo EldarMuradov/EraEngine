@@ -29,7 +29,7 @@
 #include <physics/ragdolls/ragdoll_component.h>
 #include <physics/physical_animation/physical_animation_component.h>
 #include <physics/collisions_holder_root_component.h>
-#include <physics/pbd/pbd_cloth_component.h>
+#include <physics/pbd/cloth_physics_component.h>
 #include <physics/vehicles/w4_vehicle_component.h>
 #include <physics/physical_animation/dismemberment/ragdoll_dismemberment_component.h>
 #include <physics/destructions/destructible_component.h>
@@ -134,134 +134,134 @@ namespace era_engine
 				if (false)
 				{
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Change DirectionR.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Run To Stop.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Change DirectionL.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Run Forward Arc Left.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Run Forward Arc Right.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Running Turn 180R.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Running Turn 180L.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Turn To RunningL.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Turn To RunningR.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Running Left Turn.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Running Right Turn.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Running.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Unarmed Idle.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Catwalk Sequence 02L.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Catwalk Sequence 02R.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Catwalk Walk Start Turn 180 Left.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Catwalk Walk Start Turn 180 Right.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Catwalk Walk Forward Arc 90R.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Catwalk Walk Forward Arc 90L.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Stop Walking.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Walking Right Turn.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Walking Left Turn.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Jog Backward DiagonalR.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Jog Backward DiagonalL.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Walking Backwards.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Sprint.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Start Walking.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Standing Idle.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Walking.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Running To Turn.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Jog Strafe Right.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Jog Strafe Left.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Backward Right Turn.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Backward Left Turn.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Running To Turn.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Run Backward Arc Left.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Run Backward Arc Right.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Running Backward.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/StrafeR.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/StrafeL.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Slow Jog Backwards.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 
 					import_animations_and_skeletons(get_asset_path("/resources/assets/test_character/Run Backward.fbx"),
-						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion);
+						mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_flip_x);
 				}
 
 				//ref<MultiMesh> mesh = import_animated_mesh_from_file_async(get_asset_path("/resources/assets/test_character/Walking.fbx"),
-				//	mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_override_textures_with_local_folder);
+				//	mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_override_textures_with_local_folder | mesh_creation_flags_flip_x);
 
 				ref<MultiMesh> mesh = provider.load_game_asset_from_file<MultiMesh>(get_asset_path("/resources/assets/test_character/Character.emesh"), true, {}, mesh_creation_flags_animated);
 
@@ -291,7 +291,6 @@ namespace era_engine
 				AnimationComponent* animation_component = character.add_component<AnimationComponent>();
 				animation_component->play = true;
 				animation_component->loop = true;
-
 
 				{
 					ref<AnimationAssetClip> anim_clip = provider.load_game_asset_from_file<AnimationAssetClip>(get_asset_path("/resources/assets/test_character/animations/Unarmed Idle_mixamo.com_clip0.eanm"));
@@ -614,7 +613,7 @@ namespace era_engine
 							database->animations.push_back(animation);
 						};
 
-					database->sample_rate = 30.0f;
+					database->sample_rate = 15.0f;
 					database->narrow_phase_params.flags = NarrowPhaseFlags::SAME_FRAME_CHECK;
 					database->narrow_phase_params.same_frame_time_threshold = 0.16f;
 
@@ -656,9 +655,9 @@ namespace era_engine
 					add_animation("/resources/assets/test_character/animations/Catwalk Walk Start Turn 180 Right_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Change DirectionL_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Change DirectionR_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Running To Turn_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02L_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02R_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Running To Turn_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02L_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02R_mixamo.com_clip0.eanm");
 
 					database->generate_initial_data();
 
@@ -732,8 +731,8 @@ namespace era_engine
 					database->weights[start_from + 12] = 90.0f;
 					database->weights[start_from + 13] = 80.0f;
 					database->weights[start_from + 14] = 80.0f;
-					database->weights[start_from + 9] = 7.0f;
-					database->weights[start_from + 10] = 7.0f;
+					database->weights[start_from + 9] = 20.0f;
+					database->weights[start_from + 10] = 20.0f;
 
 					database->weights[start_from + 11] = 150.0f;
 					database->weights[start_from + 12] = 150.0f;
@@ -746,8 +745,8 @@ namespace era_engine
 
 					JobHandle save_job = provider.save_game_asset_to_file_async<MotionMatchingDatabase>(get_asset_path("/resources/assets/test_character/mmdb/locomotion"), database.get());
 					save_job.wait_for_completion();
-
 				}
+
 				MotionDatabaseRegistry::add_to_registry(database);
 
 				animation_component->enable_root_motion = false;
@@ -796,9 +795,9 @@ namespace era_engine
 				ragdoll_component->joint_init_ids = joint_init_ids;
 				ragdoll_component->settings = settings;
 
-				character.add_component<RagdollDismembermentComponent>();
+				//character.add_component<RagdollDismembermentComponent>();
 
-				if (false)
+				if (true)
 				{
 					IKComponent* ik_component = character.add_component<IKComponent>();
 
@@ -842,9 +841,9 @@ namespace era_engine
 		//	TransformComponent* transform_component = cloth.get_component<TransformComponent>();
 		//	transform_component->set_world_transform(trs{ vec3(0.0f, 20.0f, 10.0f), quat::identity, vec3(1.0f) });
 
-		//	physics::PBDClothComponent* cloth_component = cloth.add_component<physics::PBDClothComponent>();
-		//	cloth_component->num_x = 30;
-		//	cloth_component->num_z = 30;
+		//	physics::ClothPhysicsComponent* cloth_component = cloth.add_component<physics::ClothPhysicsComponent>();
+		//	cloth_component->num_x = 10;
+		//	cloth_component->num_z = 10;
 		//}
 
 		/*if (auto mesh = import_mesh_from_file_async(get_asset_path("/resources/assets/Sponza/sponza.obj"), mesh_creation_flags_unreal_asset))
@@ -858,7 +857,7 @@ namespace era_engine
 
 		//if (auto mesh = import_mesh_from_file_async(get_asset_path("/resources/assets/box.fbx"), mesh_creation_flags_default))
 		{
-			/*ref<MultiMesh> mesh = provider.load_game_asset_from_file<MultiMesh>(get_asset_path("/resources/assets/box.emesh"), true, {}, mesh_creation_flags_default);
+			ref<MultiMesh> mesh = provider.load_game_asset_from_file<MultiMesh>(get_asset_path("/resources/assets/box.emesh"), true, {}, mesh_creation_flags_default);
 			mesh->load_job.wait_for_completion();
 
 			Entity box = world->create_entity("Box");
@@ -870,8 +869,8 @@ namespace era_engine
 			DestructibleComponent* descructible_component = box.add_component<DestructibleComponent>(DestructibleComponent::Type::FRACTURE_BASED);
 			descructible_component->fracture_desc.chunks_count = 10;
 			descructible_component->fracture_desc.density = 100.0f;
-			descructible_component->fracture_desc.break_force = 200.0f;
-			descructible_component->material = PhysicsEngine::get_physics_core()->create_material(0.1f, 0.8f, 0.7f);*/
+			descructible_component->fracture_desc.break_force = 100.0f;
+			descructible_component->material = PhysicsEngine::get_physics_core()->create_material(0.1f, 0.8f, 0.7f);
 		}
 
 		//{

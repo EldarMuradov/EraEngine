@@ -76,7 +76,7 @@ namespace era_engine
 					}
 					else if (trajectory_feature_desc->type == FeatureDescType::VELOCITY)
 					{
-						const vec3 velocity = conjugate(context.motion_component->get_input_movement_rotation()) * context.trajectory_component->trajectory_velocities(i);
+						const vec3 velocity = conjugate(world_transform.rotation) * context.trajectory_component->trajectory_velocities(i);
 
 						values.emplace_back(velocity.x);
 						values.emplace_back(velocity.z);

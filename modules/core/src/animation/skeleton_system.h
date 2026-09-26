@@ -4,7 +4,6 @@
 
 namespace era_engine
 {
-	struct Allocator;
 	class RendererHolderRootComponent;
 }
 
@@ -14,7 +13,7 @@ namespace era_engine::animation
 	{
 	public:
 		SkeletonSystem(World* _world);
-		~SkeletonSystem();
+		~SkeletonSystem() override;
 
 		void init() override;
 		void update(float dt) override;
@@ -23,7 +22,6 @@ namespace era_engine::animation
 
 		ERA_VIRTUAL_REFLECT(System)
 	private:
-		ref<Allocator> allocator = nullptr;
 		RendererHolderRootComponent* renderer_holder_rc = nullptr;
 	};
 }

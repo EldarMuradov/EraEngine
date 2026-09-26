@@ -115,8 +115,16 @@ namespace era_engine
 
 				const float current_position = root_motion.get_position_by_time(root_motion.get_current_time());
 
-				motion_component.velocity = root_motion.get_world_linear_velocity(current_position);
-				motion_component.acceleration = root_motion.get_world_linear_acceleration(current_position);
+				//motion_component.velocity = root_motion.get_world_linear_velocity(current_position);
+				//motion_component.acceleration = root_motion.get_world_linear_acceleration(current_position);
+
+				MotionUtils::simulation_positions_update(
+					desired_world_transform.position,
+					motion_component.velocity,
+					motion_component.acceleration,
+					motion_component.desired_velocity,
+					motion_component.velocity_halflife,
+					dt);
 
 				MotionUtils::simulation_rotations_update(
 					desired_world_transform.rotation,
@@ -140,6 +148,19 @@ namespace era_engine
 				{
 					desired_world_transform = world_root_transform;
 				}
+
+				if (physics::CharacterControllerComponent* cct_component = world->get_entity(handle).get_component_if_exists<physics::CharacterControllerComponent>())
+				{
+					const vec3 root_velocity = desired_world_transform.rotation * root_motion.get_linear_velocity(current_position);
+					vec3& raw_cct_velocity = cct_component->velocity.get_for_write();
+					raw_cct_velocity.x = root_velocity.x;
+					raw_cct_velocity.z = root_velocity.z;
+					transform_component.set_world_rotation(desired_world_transform.rotation);
+				}
+				else
+				{
+					transform_component.set_world_transform(desired_world_transform);
+				}
 			}
 			else
 			{
@@ -157,19 +178,20 @@ namespace era_engine
 					motion_component.desired_rotation,
 					motion_component.rotation_halflife,
 					dt);
+
+				if (physics::CharacterControllerComponent* cct_component = world->get_entity(handle).get_component_if_exists<physics::CharacterControllerComponent>())
+				{
+					vec3& raw_cct_velocity = cct_component->velocity.get_for_write();
+					raw_cct_velocity.x = motion_component.velocity.x;
+					raw_cct_velocity.z = motion_component.velocity.z;
+					transform_component.set_world_rotation(desired_world_transform.rotation);
+				}
+				else
+				{
+					transform_component.set_world_transform(desired_world_transform);
+				}
 			}
 
-			if (physics::CharacterControllerComponent* cct_component = world->get_entity(handle).get_component_if_exists<physics::CharacterControllerComponent>())
-			{
-				vec3& raw_cct_velocity = cct_component->velocity.get_for_write();
-				raw_cct_velocity.x = motion_component.velocity.x;
-				raw_cct_velocity.z = motion_component.velocity.z;
-				transform_component.set_world_rotation(desired_world_transform.rotation);
-			}
-			else
-			{
-				transform_component.set_world_transform(desired_world_transform);
-			}
 			motion_component.last_velocity = motion_component.velocity;
 		}
 	}

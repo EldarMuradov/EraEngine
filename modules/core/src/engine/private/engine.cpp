@@ -302,34 +302,34 @@ namespace era_engine
 			FrameMark;
 		}
 
-	for (auto& [name, world] : get_worlds())
-	{
-		WorldSystemScheduler* scheduler = world->get_system_scheduler();
-		scheduler->stop();
+		for (auto& [name, world] : get_worlds())
+		{
+			WorldSystemScheduler* scheduler = world->get_system_scheduler();
+			scheduler->stop();
+		}
+
+		terminate();
+
+		if (timer_result == TIMERR_NOERROR)
+		{
+			timeEndPeriod(1);
+		}
+
+		return true;
 	}
 
-	terminate();
-
-	if (timer_result == TIMERR_NOERROR)
+	void Engine::terminate()
 	{
-		timeEndPeriod(1);
+		dxContext.flushApplication();
+
+		dxContext.quit();
+
+		instance_object = nullptr;
 	}
 
-	return true;
-}
-
-void Engine::terminate()
-{
-	dxContext.flushApplication();
-
-	dxContext.quit();
-
-	instance_object = nullptr;
-}
-
-bool Engine::update()
-{
-	return true;
-}
+	bool Engine::update()
+	{
+		return true;
+	}
 
 }

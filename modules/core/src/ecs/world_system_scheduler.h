@@ -152,6 +152,8 @@ namespace era_engine
 		Stats get_stats() const;
 		void reset_stats();
 
+		uint32 pump_fixed_steps();
+
 	protected:
 		enum QueueKind : size_t
 		{
@@ -198,8 +200,6 @@ namespace era_engine
 		UpdateScheduleRef build_schedule(UpdateType type) const;
 		UpdateScheduleRef get_schedule(UpdateType type) const;
 
-		uint32 pump_fixed_steps();
-
 		std::chrono::steady_clock::duration fixed_interval() const;
 
 	protected:
@@ -217,7 +217,7 @@ namespace era_engine
 		std::mutex fixed_step_mutex;
 		std::atomic<double> fixed_update_rate = 30.0;
 		std::atomic<uint32> max_fixed_steps_per_wakeup = 4;
-		std::atomic<FixedStepMode> fixed_step_mode = FixedStepMode::THREADED;
+		std::atomic<FixedStepMode> fixed_step_mode = FixedStepMode::MAIN_THREAD_PUMP;
 
 		// Owned by the timer thread.
 		std::chrono::steady_clock::time_point next_fixed_update{};

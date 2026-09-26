@@ -38,8 +38,8 @@ namespace era_engine::physics
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("physics")))
 
 			.method("update_profile_data", &PhysicalAnimationSystem::update_profile_data)
-				(metadata("update_group", update_types::BEFORE_RENDER),
-				metadata("After", std::vector<std::string>{"RenderSystem::before_render"}))
+			(metadata("update_group", update_types::BEFORE_RENDER),
+			metadata("After", std::vector<std::string>{"RenderSystem::before_render"}))
 
 			.method("update_before_physics", &PhysicalAnimationSystem::update_before_physics)
 			(metadata("update_group", update_types::PHYSICS),
@@ -47,11 +47,11 @@ namespace era_engine::physics
 
 			.method("update_after_physics", &PhysicalAnimationSystem::update_after_physics)
 			(metadata("update_group", update_types::PHYSICS),
-				metadata("After", std::vector<std::string>{"PhysicsSystem::update"}))
+			metadata("After", std::vector<std::string>{"PhysicsSystem::update"}))
 
 			.method("update_normal", &PhysicalAnimationSystem::update_normal)
 			(metadata("update_group", update_types::GAMEPLAY_NORMAL),
-			metadata("After", std::vector<std::string>{"IKSystem::update"}));
+			metadata("After", std::vector<std::string>{"SkeletonSystem::update"}));
 	}
 
 	static DebugVar<bool> enable_always = DebugVar<bool>("physics.physical_animation.enable_always", false);
@@ -59,8 +59,8 @@ namespace era_engine::physics
 	static DebugVar<bool> force_ragdoll = DebugVar<bool>("physics.physical_animation.force_ragdoll", false);
 	static DebugVar<bool> force_disable_ragdoll = DebugVar<bool>("physics.physical_animation.force_disable_ragdoll", false);
 
-	static DebugVar<float> running_speed = DebugVar<float>("physics.physical_animation.debug_demo.running_speed", 10.0f);
-	static DebugVar<float> sprint_speed = DebugVar<float>("physics.physical_animation.debug_demo.sprint_speed", 70.0f);
+	static DebugVar<float> running_speed = DebugVar<float>("physics.physical_animation.debug_demo.running_speed", 2.0f);
+	static DebugVar<float> sprint_speed = DebugVar<float>("physics.physical_animation.debug_demo.sprint_speed", 4.5f);
 
 	static DebugVar<bool> force_sync_profile = DebugVar<bool>("physics.physical_animation.force_sync_profile", false);
 
@@ -572,7 +572,6 @@ namespace era_engine::physics
 				continue;
 			}
 
-			AnimationComponent* animation_component = ragdoll.get_component<AnimationComponent>();
 			pose_sampler->sample_pose(physical_animation_component, skeleton_component, skeleton_component->get_current_pose(), dt);
 		}
 	}
@@ -661,7 +660,8 @@ namespace era_engine::physics
 
 			active_ragdolls.emplace_back(&physical_animation_component);
 
-			const SkeletonPose& current_animation_pose = animation_component.current_animation_pose;
+			//const SkeletonPose& current_animation_pose = animation_component.current_animation_pose;
+			const SkeletonPose current_animation_pose = skeleton_component.get_current_override_pose();
 			update_target_pose(&physical_animation_component, current_animation_pose, skeleton.get(), world_transform);
 
 			update_chains_states(&physical_animation_component, dt);

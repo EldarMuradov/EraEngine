@@ -7,23 +7,25 @@
 #include <ecs/component.h>
 
 #include <core/math.h>
-#include <core/memory.h>
 
 #include <dx/dx_buffer.h>
 #include <geometry/mesh_builder.h>
+#include "physics/pbd/deformable_surface.h"
 
 namespace era_engine
 {
 	class ClothRenderComponent;
+
+	class Allocator;
 }
 
 namespace era_engine::physics
 {
-	class ERA_PHYSICS_API PBDClothComponent : public Component
+	class ERA_PHYSICS_API ClothPhysicsComponent : public Component
 	{
 	public:
-		PBDClothComponent() = default;
-		PBDClothComponent(ref<Entity::EcsData> _data);
+		ClothPhysicsComponent() = default;
+		ClothPhysicsComponent(ref<Entity::EcsData> _data);
 
 		vec3* get_positions() const;
 
@@ -35,8 +37,7 @@ namespace era_engine::physics
 		uint32 num_x = 0;
 		uint32 num_z = 0;
 
-		float spacing = 0.2f;
-		float total_mass = 10.0f;
+		float density = 500.0f;
 
 	private:
 		vec3* view_pos_buffer = nullptr;
@@ -44,12 +45,9 @@ namespace era_engine::physics
 		physx::PxU32 num_particles = 0;
 
 	private:
-		ref<Allocator> allocator = nullptr;
+		std::unique_ptr<Allocator> allocator;
+		std::unique_ptr<DeformableSurface> surface;
 
-		//physx::PxPBDMaterial* material = nullptr;
-		//physx::PxPBDParticleSystem* particle_system = nullptr;
-		//physx::PxParticleClothBuffer* cloth_buffer = nullptr;
-
-		friend class PBDClothSystem;
+		friend class ClothPhysicsSystem;
 	};
 }

@@ -563,16 +563,16 @@ namespace era_engine::physics
 			}
 		}
 
-		/*if (is_gpu())
-		{
-			for (auto&& [name, world] : get_worlds())
-			{
-				for (auto [entity_handle, transform, soft_body] : world->group(components_group<TransformComponent, SoftBodyComponent>).each())
-				{
-					soft_body.copy_deformed_vertices_from_gpu_async(0);
-				}
-			}
-		}*/
+		//if (is_gpu())
+		//{
+		//	for (auto&& [name, world] : get_worlds())
+		//	{
+		//		for (auto [entity_handle, transform, soft_body] : world->group(components_group<TransformComponent, SoftBodyComponent>).each())
+		//		{
+		//			soft_body.copy_deformed_vertices_from_gpu_async(0);
+		//		}
+		//	}
+		//}
 	}
 
 	void Physics::process_simulation_event_callbacks()

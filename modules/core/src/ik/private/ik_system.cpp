@@ -25,7 +25,8 @@ namespace era_engine
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("base")))
 			.method("update", &IKSystem::update)
 			(metadata("update_group", update_types::GAMEPLAY_NORMAL), 
-				metadata("After", std::vector<std::string>{"AnimationSystem::update"}))
+				metadata("Before", std::vector<std::string>{"SkeletonSystem::update"}),
+                metadata("After", std::vector<std::string>{"AnimationSystem::update"}))
 			.method("debug_draw", &IKSystem::debug_draw)(metadata("update_group", update_types::RENDER));
 	}
 

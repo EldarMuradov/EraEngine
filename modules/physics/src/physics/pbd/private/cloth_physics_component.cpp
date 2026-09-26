@@ -1,11 +1,15 @@
-#include "physics/pbd/pbd_cloth_component.h"
+#include "physics/pbd/cloth_physics_component.h"
 #include "physics/core/physics.h"
 
 #include <ecs/rendering/cloth_render_component.h>
 
+#include <core/memory.h>
+
 #include <animation/skinning.h>
 
 #include <dx/dx_context.h>
+
+#include <extensions/PxCudaHelpersExt.h>
 
 #include <rttr/registration>
 
@@ -18,28 +22,28 @@ namespace era_engine::physics
 			.constructor<ref<Entity::EcsData>>();
 	}
 
-	PBDClothComponent::PBDClothComponent(ref<Entity::EcsData> _data)
+	ClothPhysicsComponent::ClothPhysicsComponent(ref<Entity::EcsData> _data)
 		: Component(_data)
 	{
-		allocator = make_ref<Allocator>();
+		allocator = std::make_unique<Allocator>();
 	}
 
-	vec3* PBDClothComponent::get_positions() const
+	vec3* ClothPhysicsComponent::get_positions() const
 	{
 		return view_pos_buffer;
 	}
 
-	void PBDClothComponent::sync_positions_buffers_locked()
+	void ClothPhysicsComponent::sync_positions_buffers_locked()
 	{
 		using namespace physx;
 
-		/*PxCudaContextManager* cuda_context_manager = PhysicsEngine::get_physics_core()->get_cuda_context_manager();
+		PxCudaContextManager* cuda_context_manager = PhysicsEngine::get_physics_core()->get_cuda_context_manager();
 
 		PxScopedCudaLock lock{ *cuda_context_manager };
 
-		PxVec4* positions_inv_masses = cloth_buffer->getPositionInvMasses();
+		PxVec4* positions_inv_masses = surface->get_positions_inv_mass();
 
-		const PxU32 num_particles = cloth_buffer->getNbActiveParticles();
+		const PxU32 num_particles = surface->get_num_elements();
 		cuda_context_manager->acquireContext();
 
 		PxCudaContext* cuda_context = cuda_context_manager->getCudaContext();
@@ -53,10 +57,10 @@ namespace era_engine::physics
 			view_pos_buffer[i + 1] = vec3(native_pos_buffer[i + 1].x, native_pos_buffer[i + 1].y, native_pos_buffer[i + 1].z);
 			view_pos_buffer[i + 2] = vec3(native_pos_buffer[i + 2].x, native_pos_buffer[i + 2].y, native_pos_buffer[i + 2].z);
 			view_pos_buffer[i + 3] = vec3(native_pos_buffer[i + 3].x, native_pos_buffer[i + 3].y, native_pos_buffer[i + 3].z);
-		}*/
+		}
 	}
 
-	std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, SubmeshInfo> PBDClothComponent::get_render_data(ClothRenderComponent* render_component)
+	std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, SubmeshInfo> ClothPhysicsComponent::get_render_data(ClothRenderComponent* render_component)
 	{
 		uint32 num_vertices = num_x * num_z;
 		uint32 num_triangles = (num_x - 1) * (num_z - 1) * 2;

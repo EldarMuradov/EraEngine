@@ -30,7 +30,8 @@ namespace era_engine::animation
 
 		registration::class_<SkeletonSystem>("SkeletonSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("render")))
-			.method("update", &SkeletonSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL))
+			.method("update", &SkeletonSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL),
+				metadata("After", std::vector<std::string>{"AnimationSystem::update"}))
 			.method("draw_skeletons", &SkeletonSystem::draw_skeletons)(metadata("update_group", update_types::RENDER));
 	}
 
@@ -96,29 +97,26 @@ namespace era_engine::animation
 	SkeletonSystem::SkeletonSystem(World* _world)
 		: System(_world)
 	{
-		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
-		ASSERT(renderer_holder_rc != nullptr);
 	}
 
 	SkeletonSystem::~SkeletonSystem()
 	{
-		allocator->reset();
 	}
 
 	void SkeletonSystem::init()
 	{
-		allocator = make_ref<Allocator>();
+		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
+		ASSERT(renderer_holder_rc != nullptr);
 	}
 
 	void SkeletonSystem::update(float dt)
 	{
-		ZoneScopedN("SkeletonSystem::render");
+		ZoneScopedN("SkeletonSystem::update");
 
-		//MemoryMarker marker = allocator->get_marker();
-
-		// TODO
-		
-		//allocator->reset_to_marker(marker);
+		for (auto [entity_handle, skeleton] : world->view<SkeletonComponent>().each())
+		{
+			skeleton.apply_override_pose(skeleton.get_current_pose());
+		}
 	}
 
 	void SkeletonSystem::draw_skeletons(float dt)

@@ -451,9 +451,9 @@ namespace era_engine
 		}
 	}
 
-	static std::vector<animation::SkeletonAssetImportData> load_skeletons(const aiScene* scene, float scaleFactor)
+	static std::vector<animation::SkeletonAssetImportData> load_skeletons(const aiScene* scene, float scaleFactor, uint32 flags)
 	{
-		using namespace era_engine::animation;
+		using namespace animation;
 
 		std::vector<SkeletonAssetImportData> result;
 
@@ -704,14 +704,17 @@ namespace era_engine
 	static std::vector<animation::AnimationClipAssetImportData> load_animations(
 		const aiScene* scene,
 		const animation::Skeleton* skeleton,
-		float scaleFactor)
+		float scaleFactor,
+		uint32 flags)
 	{
 		using namespace animation;
 
 		std::vector<AnimationClipAssetImportData> result;
 
 		if (!scene->mNumAnimations)
+		{
 			return result;
+		}
 
 		for (uint32 animIndex = 0; animIndex < scene->mNumAnimations; ++animIndex)
 		{
@@ -820,6 +823,177 @@ namespace era_engine
 		return result;
 	}
 
+	static void swap_lr_in_string(aiString& str)
+	{
+		std::string name = str.C_Str();
+
+		// Маркеры: помечаем все Left-варианты
+		auto mark = [&](const std::string& from, const std::string& marker)
+			{
+				size_t pos = 0;
+				while ((pos = name.find(from, pos)) != std::string::npos)
+				{
+					name.replace(pos, from.size(), marker);
+					pos += marker.size();
+				}
+			};
+
+		mark("_Left_", "\x01");
+		mark("_left_", "\x02");
+		mark("_L_", "\x03");
+		mark("_l_", "\x04");
+		mark("Left", "\x05");
+		mark("left", "\x06");
+
+		// Right -> Left
+		auto swap_right = [&](const std::string& from, const std::string& to)
+			{
+				size_t pos = 0;
+				while ((pos = name.find(from, pos)) != std::string::npos)
+				{
+					name.replace(pos, from.size(), to);
+					pos += to.size();
+				}
+			};
+
+		swap_right("_Right_", "_Left_");
+		swap_right("_right_", "_left_");
+		swap_right("_R_", "_L_");
+		swap_right("_r_", "_l_");
+		swap_right("Right", "Left");
+		swap_right("right", "left");
+
+		// Маркеры -> Right
+		auto unmark = [&](const std::string& marker, const std::string& to)
+			{
+				size_t pos = 0;
+				while ((pos = name.find(marker, pos)) != std::string::npos)
+				{
+					name.replace(pos, marker.size(), to);
+					pos += to.size();
+				}
+			};
+
+		unmark("\x01", "_Right_");
+		unmark("\x02", "_right_");
+		unmark("\x03", "_R_");
+		unmark("\x04", "_r_");
+		unmark("\x05", "Right");
+		unmark("\x06", "right");
+
+		str.Set(name.c_str());
+	}
+
+	static void mirror_matrix_x(aiMatrix4x4& m)
+	{
+		// m' = M * m * M, M = diag(-1, 1, 1, 1)
+		m.b1 = -m.b1;
+		m.c1 = -m.c1;
+		m.d1 = -m.d1;
+
+		m.a2 = -m.a2;
+		m.a3 = -m.a3;
+		m.a4 = -m.a4;
+	}
+
+	static void mirror_node_recursive(aiNode* node)
+	{
+		if (node == nullptr)
+		{
+			return;
+		}
+
+		aiVector3D pos, scale;
+		aiQuaternion rot;
+
+		node->mTransformation.Decompose(scale, rot, pos);
+
+		pos.x = -pos.x;
+		rot.y = -rot.y;
+		rot.z = -rot.z;
+
+		node->mTransformation = aiMatrix4x4(scale, rot, pos);
+
+		swap_lr_in_string(node->mName);
+
+		for (unsigned int i = 0; i < node->mNumChildren; ++i)
+		{
+			mirror_node_recursive(node->mChildren[i]);
+		}
+	}
+
+	static void mirror_scene_x(aiScene* scene)
+	{
+		if (scene == nullptr)
+		{
+			return;
+		}
+
+		for (unsigned int m = 0; m < scene->mNumMeshes; ++m)
+		{
+			aiMesh* mesh = scene->mMeshes[m];
+
+			for (unsigned int i = 0; i < mesh->mNumVertices; ++i)
+			{
+				mesh->mVertices[i].x = -mesh->mVertices[i].x;
+
+				if (mesh->mNormals)
+					mesh->mNormals[i].x = -mesh->mNormals[i].x;
+
+				if (mesh->mTangents)
+					mesh->mTangents[i].x = -mesh->mTangents[i].x;
+
+				if (mesh->mBitangents)
+					mesh->mBitangents[i].x = -mesh->mBitangents[i].x;
+			}
+
+			for (unsigned int f = 0; f < mesh->mNumFaces; ++f)
+			{
+				aiFace& face = mesh->mFaces[f];
+
+				if (face.mNumIndices == 3)
+				{
+					std::swap(face.mIndices[1], face.mIndices[2]);
+				}
+			}
+
+			for (unsigned int b = 0; b < mesh->mNumBones; ++b)
+			{
+				aiBone* bone = mesh->mBones[b];
+
+				mirror_matrix_x(bone->mOffsetMatrix);
+				swap_lr_in_string(bone->mName);
+			}
+		}
+
+		mirror_node_recursive(scene->mRootNode);
+
+		for (unsigned int a = 0; a < scene->mNumAnimations; ++a)
+		{
+			aiAnimation* anim = scene->mAnimations[a];
+
+			swap_lr_in_string(anim->mName);
+
+			for (unsigned int c = 0; c < anim->mNumChannels; ++c)
+			{
+				aiNodeAnim* ch = anim->mChannels[c];
+
+				swap_lr_in_string(ch->mNodeName);
+
+				for (unsigned int i = 0; i < ch->mNumPositionKeys; ++i)
+				{
+					ch->mPositionKeys[i].mValue.x = -ch->mPositionKeys[i].mValue.x;
+				}
+
+				for (unsigned int i = 0; i < ch->mNumRotationKeys; ++i)
+				{
+					ch->mRotationKeys[i].mValue.y = -ch->mRotationKeys[i].mValue.y;
+					ch->mRotationKeys[i].mValue.z = -ch->mRotationKeys[i].mValue.z;
+				}
+			}
+		}
+	}
+
 	void import_animations(const fs::path& path, const animation::Skeleton* skeleton, uint32 flags)
 	{
 		if (!fs::exists(path))
@@ -833,6 +1007,7 @@ namespace era_engine
 		importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
 
 		const aiScene* scene = importer.ReadFile(path.string(),
+			aiProcess_Triangulate |
 			aiProcess_ImproveCacheLocality |
 			aiProcess_SortByPType);
 
@@ -842,6 +1017,12 @@ namespace era_engine
 		{
 			LOG_ERROR(importer.GetErrorString());
 			return;
+		}
+
+		aiScene* mutable_scene = const_cast<aiScene*>(scene);
+		if (flags & mesh_creation_flags_flip_x)
+		{
+			mirror_scene_x(mutable_scene);
 		}
 
 		float scaleFactor = 1.0f;
@@ -854,7 +1035,7 @@ namespace era_engine
 			scaleFactor = 100.0f;
 		}
 
-		std::vector<animation::AnimationClipAssetImportData> animations = load_animations(scene, skeleton, scaleFactor);
+		std::vector<animation::AnimationClipAssetImportData> animations = load_animations(mutable_scene, skeleton, scaleFactor, flags);
 		animation::AnimationAssetClipUtils::import_animations(animations, skeleton, path, flags);
 	}
 
@@ -888,6 +1069,12 @@ namespace era_engine
 			return;
 		}
 
+		aiScene* mutable_scene = const_cast<aiScene*>(scene);
+		if (flags & mesh_creation_flags_flip_x)
+		{
+			mirror_scene_x(mutable_scene);
+		}
+
 		float scaleFactor = 1.0f;
 		if (flags & mesh_creation_flags_sm_to_m)
 		{
@@ -898,7 +1085,7 @@ namespace era_engine
 			scaleFactor = 100.0f;
 		}
 
-		std::vector<animation::SkeletonAssetImportData> skeletons = load_skeletons(scene, scaleFactor);
+		std::vector<animation::SkeletonAssetImportData> skeletons = load_skeletons(mutable_scene, scaleFactor, flags);
 		std::vector<ref<animation::Skeleton>> imported_skeletons = animation::SkeletonImportUtils::import_skeletons(skeletons);
 
 		animation::SkeletonImportUtils::post_process_skeletons(imported_skeletons, path, flags);
@@ -934,6 +1121,12 @@ namespace era_engine
 			return;
 		}
 
+		aiScene* mutable_scene = const_cast<aiScene*>(scene);
+		if (flags & mesh_creation_flags_flip_x)
+		{
+			mirror_scene_x(mutable_scene);
+		}
+
 		float scaleFactor = 1.0f;
 		if (flags & mesh_creation_flags_sm_to_m)
 		{
@@ -944,13 +1137,13 @@ namespace era_engine
 			scaleFactor = 100.0f;
 		}
 
-		std::vector<animation::SkeletonAssetImportData> skeletons = load_skeletons(scene, scaleFactor);
+		std::vector<animation::SkeletonAssetImportData> skeletons = load_skeletons(mutable_scene, scaleFactor, flags);
 
 		if (!skeletons.empty())
 		{
 			std::vector<ref<animation::Skeleton>> imported_skeletons = animation::SkeletonImportUtils::import_skeletons(skeletons);
 
-			std::vector<animation::AnimationClipAssetImportData> animations = load_animations(scene, imported_skeletons[0].get(), scaleFactor);
+			std::vector<animation::AnimationClipAssetImportData> animations = load_animations(mutable_scene, imported_skeletons[0].get(), scaleFactor, flags);
 
 			animation::SkeletonImportUtils::post_process_skeletons(imported_skeletons, path, flags);
 
@@ -992,7 +1185,10 @@ namespace era_engine
 			return result;
 		}
 
-		load_materials(scene, result);
+		aiScene* mutable_scene = const_cast<aiScene*>(scene);
+		mirror_scene_x(mutable_scene);
+
+		load_materials(mutable_scene, result);
 
 		float scaleFactor = 1.0f;
 		if (flags & mesh_creation_flags_sm_to_m)
@@ -1004,15 +1200,15 @@ namespace era_engine
 			scaleFactor = 100.0f;
 		}
 
-		load_meshes(scene, scaleFactor, result);
+		load_meshes(mutable_scene, scaleFactor, result);
 
-		std::vector<animation::SkeletonAssetImportData> skeletons = load_skeletons(scene, scaleFactor);
+		std::vector<animation::SkeletonAssetImportData> skeletons = load_skeletons(mutable_scene, scaleFactor, flags);
 
 		if (!skeletons.empty())
 		{
 			std::vector<ref<animation::Skeleton>> imported_skeletons = animation::SkeletonImportUtils::import_skeletons(skeletons);
 
-			std::vector<animation::AnimationClipAssetImportData> animations = load_animations(scene, imported_skeletons[0].get(), scaleFactor);
+			std::vector<animation::AnimationClipAssetImportData> animations = load_animations(mutable_scene, imported_skeletons[0].get(), scaleFactor, flags);
 
 			animation::SkeletonImportUtils::post_process_skeletons(imported_skeletons, path, flags);
 

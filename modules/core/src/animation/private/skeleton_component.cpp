@@ -27,6 +27,11 @@ namespace era_engine::animation
 		return SkeletonPose(local_transforms);
 	}
 
+	SkeletonPose SkeletonComponent::get_current_override_pose() const
+	{
+		return SkeletonPose(override_local_transforms);
+	}
+
 	void SkeletonComponent::set_joint_transform(const trs& new_transform, uint32 joint_id)
 	{
 		local_transforms[joint_id].set_transform(new_transform);
@@ -60,6 +65,11 @@ namespace era_engine::animation
 	void SkeletonComponent::apply_pose(const SkeletonPose& pose)
 	{
 		local_transforms = pose.local_transforms;
+	}
+
+	void SkeletonComponent::apply_override_pose(const SkeletonPose& pose)
+	{
+		override_local_transforms = pose.local_transforms;
 	}
 
 	void SkeletonComponent::blend_local_transforms(const trs* local_transforms1, const trs* local_transforms2, float t, trs* out_blended_local_transforms) const

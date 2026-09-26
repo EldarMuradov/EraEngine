@@ -29,7 +29,8 @@ namespace era_engine::physics
 			 metadata("After", std::vector<std::string>{"PhysicsSystem::update"}))
 
 			.method("update_normal", &RagdollSystem::update_normal)
-			(metadata("update_group", update_types::GAMEPLAY_NORMAL));
+			(metadata("update_group", update_types::GAMEPLAY_NORMAL),
+			metadata("After", std::vector<std::string>{"SkeletonSystem::update"}));
 	}
 
 	RagdollSystem::RagdollSystem(World* _world)

@@ -79,8 +79,9 @@ namespace era_engine::physics
 
 		AnimationComponent* animation_component = ragdoll.get_component<AnimationComponent>();
 		animation_component->play = true;
+		animation_component->update_skeleton = true;
 
-		const SkeletonComponent* skeleton_component = ragdoll.get_component<SkeletonComponent>();
+		SkeletonComponent* skeleton_component = ragdoll.get_component<SkeletonComponent>();
 
 		trs pelvis_local_transform = SkeletonUtils::get_object_space_joint_transform(animation_component->current_animation_pose, skeleton_component->skeleton.get(), physical_animation_component->root_joint_id, 0);
 		pelvis_local_transform.scale = vec3(1.0f);
@@ -101,12 +102,33 @@ namespace era_engine::physics
 
 			ASSERT(limb_data_component != nullptr);
 
+			trs limb_object_space_pose = SkeletonUtils::get_object_space_joint_transform(animation_component->current_animation_pose,
+				skeleton_component->skeleton.get(),
+				limb_data_component->joint_id);
+			limb_object_space_pose.scale = vec3(1.0f);
+
 			if (limb_data_component->drive_joint_component.get() != nullptr)
 			{
 				D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_data_component->drive_joint_component.get_for_write());
-				PhysicsUtils::manual_set_physics_transform_locked(drive_joint->get_first_entity_ptr().get(), ragdoll_transform * limb_data_component->target_pose, true);
+
+				PhysicsUtils::manual_set_physics_transform_locked(drive_joint->get_first_entity_ptr().get(), ragdoll_transform * limb_object_space_pose, true);
 			}
+
+			PhysicsUtils::manual_set_physics_transform_locked(limb, ragdoll_transform * limb_object_space_pose, true);
+
+			limb_data_component->collision.reset();
+			limb_data_component->prev_physics_pose = limb_object_space_pose;
+			limb_data_component->physics_pose = limb_object_space_pose;
+			limb_data_component->target_pose = limb_object_space_pose;
+
+			DynamicBodyComponent* dynamic_body_component = limb.get_component<DynamicBodyComponent>();
+			ASSERT(dynamic_body_component != nullptr);
+
+			dynamic_body_component->linear_velocity = vec3::zero;
+			dynamic_body_component->angular_velocity = vec3::zero;
 		}
+
+		skeleton_component->apply_pose(animation_component->current_animation_pose);
 
 		BaseSimulationState::on_exit();
 	}

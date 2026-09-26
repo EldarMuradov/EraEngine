@@ -17,6 +17,7 @@ namespace era_engine::animation
 		~SkeletonComponent() override;
 
 		SkeletonPose get_current_pose() const;
+		SkeletonPose get_current_override_pose() const;
 
 		void blend_local_transforms(const trs* local_transforms1, const trs* local_transforms2, float t, trs* out_blended_local_transforms) const;
 		void get_skinning_matrices_from_local_transforms(mat4* out_skinning_matrices, const trs& world_transform = trs::identity) const;
@@ -35,6 +36,8 @@ namespace era_engine::animation
 
 		void apply_pose(const SkeletonPose& pose);
 
+		void apply_override_pose(const SkeletonPose& pose);
+
 		ERA_VIRTUAL_REFLECT(Component)
 
 	public:
@@ -44,6 +47,7 @@ namespace era_engine::animation
 
 	private:
 		std::vector<JointTransform> local_transforms; // In parent space.
+		std::vector<JointTransform> override_local_transforms; // In parent space.
 
 		friend class SkeletonUtils;
 		friend class SkeletonSystem;

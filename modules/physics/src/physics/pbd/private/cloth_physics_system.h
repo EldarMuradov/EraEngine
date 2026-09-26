@@ -4,6 +4,9 @@
 
 #include <core/sync.h>
 
+#include <PxDeformableSkinning.h>
+#include <PxDeformableSurfaceMaterial.h>
+
 namespace era_engine
 {
 	class RendererHolderRootComponent;
@@ -11,13 +14,18 @@ namespace era_engine
 
 namespace era_engine::physics
 {
-	class PBDClothSystem final : public System
+	class PostSolveCallback;
+
+	class ClothPhysicsSystem final : public System
 	{
 	public:
-		PBDClothSystem(World* _world);
+		ClothPhysicsSystem(World* _world);
+		~ClothPhysicsSystem() override;
 
 		void init() override;
 		void update(float dt) override;
+
+		void update_after_simulation(float dt);
 
 		void debug_draw(float dt);
 
@@ -34,5 +42,9 @@ namespace era_engine::physics
 		const RendererHolderRootComponent* renderer_holder_rc = nullptr;
 
 		SpinLock sync;
+
+		PostSolveCallback* post_solve_callback = nullptr;
+
+		physx::PxDeformableSurfaceMaterial* cloth_material = nullptr;
 	};
 }

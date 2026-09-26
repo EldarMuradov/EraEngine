@@ -28,7 +28,7 @@
 #include <physics/ragdolls/ragdoll_component.h>
 #include <physics/physical_animation/physical_animation_component.h>
 #include <physics/collisions_holder_root_component.h>
-#include <physics/pbd/pbd_cloth_component.h>
+#include <physics/pbd/cloth_physics_component.h>
 #include <physics/vehicles/w4_vehicle_component.h>
 #include <physics/physical_animation/dismemberment/ragdoll_dismemberment_component.h>
 #include <physics/destructions/destructible_component.h>
