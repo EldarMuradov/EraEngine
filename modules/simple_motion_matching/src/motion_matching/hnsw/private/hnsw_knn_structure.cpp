@@ -57,6 +57,8 @@ namespace era_engine
             hnsw->addPoint(animation_data.data(), point_index);
         }
 
+        hnsw->setEf(search_exploration_factor);
+
         std::stringstream hnsw_stream;
         hnsw->saveIndex(hnsw_stream);
 
@@ -88,6 +90,7 @@ namespace era_engine
 	{
         IO::write_value(os, max_edges_per_vertex);
         IO::write_value(os, construction_exploration_factor);
+        IO::write_value(os, search_exploration_factor);
 
 		return true;
 	}
@@ -96,6 +99,7 @@ namespace era_engine
     {
         IO::read_value(is, max_edges_per_vertex);
         IO::read_value(is, construction_exploration_factor);
+        IO::read_value(is, search_exploration_factor);
 
         hnsw_l2_space = hnswlib::L2Space(database.search_dimension);
 
@@ -111,7 +115,8 @@ namespace era_engine
             std::istream hnsw_stream(&string_buf);
 
             hnsw->loadIndex(hnsw_stream, &hnsw_l2_space);
+            hnsw->setEf(search_exploration_factor);
         }
-        return false;
+        return hnsw != nullptr;
     }
 }

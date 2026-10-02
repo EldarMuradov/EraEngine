@@ -121,9 +121,33 @@ namespace era_engine
 
         array2d() : rows(0), cols(0), data(NULL) {}
         array2d(int _rows, int _cols) : array2d() { resize(_rows, _cols); }
+        array2d(const array2d<T>& rhs) : array2d() { *this = rhs; }
+        array2d(array2d<T>&& rhs) noexcept : rows(rhs.rows), cols(rhs.cols), data(rhs.data) { rhs.rows = 0; rhs.cols = 0; rhs.data = NULL; }
         ~array2d() { resize(0, 0); }
 
-        array2d& operator=(const array2d<T>& rhs) { resize(rhs.rows, rhs.cols); memcpy(data, rhs.data, rhs.rows * rhs.cols * sizeof(T)); return *this; };
+        array2d& operator=(const array2d<T>& rhs)
+        {
+            if (this != &rhs)
+            {
+                resize(rhs.rows, rhs.cols);
+                memcpy(data, rhs.data, rhs.rows * rhs.cols * sizeof(T));
+            }
+            return *this;
+        }
+        array2d& operator=(array2d<T>&& rhs) noexcept
+        {
+            if (this != &rhs)
+            {
+                free(data);
+                rows = rhs.rows;
+                cols = rhs.cols;
+                data = rhs.data;
+                rhs.rows = 0;
+                rhs.cols = 0;
+                rhs.data = NULL;
+            }
+            return *this;
+        }
         array2d& operator=(const slice2d<T>& rhs) { resize(rhs.rows, rhs.cols); memcpy(data, rhs.data, rhs.rows * rhs.cols * sizeof(T)); return *this; };
 
         inline slice1d<T> operator()(int i) const { assert(i >= 0 && i < rows); return slice1d<T>(cols, &data[i * cols]); }
@@ -157,10 +181,11 @@ namespace era_engine
             else if (_size > 0 && size > 0 && _size != size)
             {
                 data = (T*)realloc(data, _size * sizeof(T));
-                rows = _rows;
-                cols = _cols;
                 assert(data != NULL);
             }
+            // Shape may change even when the element count stays the same (e.g. transpose).
+            rows = _rows;
+            cols = _cols;
             zero();
         }
     };

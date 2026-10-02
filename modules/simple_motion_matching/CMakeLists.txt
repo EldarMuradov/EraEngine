@@ -1,15 +1,3 @@
-include(${CMAKE_SOURCE_DIR}/cmake/common.cmake)
-
-era_begin(simple_motion_matching "MODULE")
-    require_thirdparty_module(simple_motion_matching EnTT)
-    require_thirdparty_module(simple_motion_matching yaml-cpp)
-    require_thirdparty_module(simple_motion_matching rttr_core)
-    require_thirdparty_module(simple_motion_matching DirectXTex)
-    require_module(simple_motion_matching imgui)
-    require_module(simple_motion_matching base)
-    require_module(simple_motion_matching core)
-    require_assimp(simple_motion_matching)
-    require_module(simple_motion_matching physics)
-    require_physx(simple_motion_matching)
-    target_compile_definitions(simple_motion_matching PRIVATE ERA_MOTION_MATCHING TRACY_IMPORTS)
-era_end(simple_motion_matching)
+era_module(simple_motion_matching
+    EXPORT_DEFINE ERA_MOTION_MATCHING
+    PUBLIC  physics)

@@ -33,7 +33,7 @@ namespace era_engine
 		using namespace rttr;
 
 		registration::class_<EditorToolsSystem>("EditorToolsSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr)(policy::ctor::as_raw_ptr, metadata("Tag", std::string("editor")))
+			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("debug")))
 			.method("update", &EditorToolsSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL));
 	}
 

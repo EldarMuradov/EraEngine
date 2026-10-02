@@ -67,7 +67,7 @@ namespace era_engine
 		ref<GameAsset> result = { ASSET_CACHE[key].lock(), {} };
 		if (result == nullptr)
 		{
-			ASSET_CACHE[key] = result;
+			ASSET_CACHE[key] = asset;
 		}
 	}
 }

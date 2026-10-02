@@ -1,8 +1,10 @@
-include(${CMAKE_SOURCE_DIR}/cmake/common.cmake)
+# DirectXTex (static): DirectXTex. Included as <DirectXTex/DirectXTex.h>.
 
-era_begin(DirectXTex "THIRD-PARTY-MODULE")
-    add_subdirectory(${ERA_ENGINE_PATH}/modules/thirdparty-directxtex/directxtex)
-    find_library(DirectXTex NAMES DirectXTex PATHS ${ERA_ENGINE_PATH}/modules/thirdparty-directxtex/directxtex)
-    set_property(TARGET DirectXTex PROPERTY INCLUDE_PATH ${ERA_ENGINE_PATH}/modules/thirdparty-directxtex/directxtex)
-    set_property(TARGET DirectXTex PROPERTY TARGET_TYPE "THIRD-PARTY-MODULE")
-era_end(DirectXTex)
+set(BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(BUILD_SAMPLE OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(directxtex)
+
+target_include_directories(DirectXTex INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/directxtex>)
+
+era_thirdparty_folder(DirectXTex)

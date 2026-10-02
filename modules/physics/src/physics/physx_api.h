@@ -4,10 +4,6 @@
 #undef setBit
 #endif // setBit
 
-#ifndef PX_PHYSX_STATIC_LIB
-#define PX_PHYSX_STATIC_LIB
-#endif
-
 #include <PxPhysics.h>
 #include <PxPhysicsAPI.h>
 

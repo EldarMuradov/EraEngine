@@ -692,6 +692,11 @@ namespace era_engine::physics
 
 	SceneQueryHitType SceneQueryFilter::prefilter(const ShapeComponent* component)
 	{
+		if (component == nullptr)
+		{
+			return SceneQueryHitType::NONE;
+		}
+
 		if ((static_cast<uint32>(component->collision_type.get()) & collision_mask) > 0 &&
 			(static_cast<uint32>(component->collision_type.get()) & ignore_mask) == 0)
 		{

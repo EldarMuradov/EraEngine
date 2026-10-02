@@ -20,7 +20,7 @@ namespace era_engine
 	{
 	public:
 		IKSystem(World* _world);
-		~IKSystem();
+		~IKSystem() override;
 
 		void init() override;
 		void update(float dt) override;

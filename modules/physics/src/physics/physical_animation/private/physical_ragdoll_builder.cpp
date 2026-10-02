@@ -75,7 +75,7 @@ namespace era_engine::physics
 	{
 		DynamicBodyComponent* dynamic_body_component = entity.add_component<DynamicBodyComponent>();
 		dynamic_body_component->mass.get_for_write() = mass;
-		dynamic_body_component->max_depenetration_velocity = 20.0f;
+		dynamic_body_component->max_depenetration_velocity = 7.0f;
 		dynamic_body_component->use_gravity.get_for_write() = !is_physically_animated;
 		dynamic_body_component->simulated.get_for_write() = false;
 		dynamic_body_component->enable_gyroscopic_forces.get_for_write() = true;
@@ -204,8 +204,8 @@ namespace era_engine::physics
 			joint_component->twist_min_limit.get_for_write() = twist_min_deg;
 			joint_component->twist_max_limit.get_for_write() = twist_max_deg;
 
-			joint_component->twist_limit_damping.get_for_write() = 40.0f;
-			joint_component->twist_limit_stiffness.get_for_write() = 400.0f;
+			joint_component->twist_limit_damping.get_for_write() = 50.0f;
+			joint_component->twist_limit_stiffness.get_for_write() = 750.0f;
 			joint_component->twist_limit_restitution.get_for_write() = 0.0f;
 		}
 
@@ -243,8 +243,8 @@ namespace era_engine::physics
 
 		if (any_moving_swing)
 		{
-			joint_component->swing_limit_damping.get_for_write() = 40.0f;
-			joint_component->swing_limit_stiffness.get_for_write() = 400.0f;
+			joint_component->swing_limit_damping.get_for_write() = 50.0f;
+			joint_component->swing_limit_stiffness.get_for_write() = 750.0f;
 			joint_component->swing_limit_restitution.get_for_write() = 0.0f;
 		}
 	}
@@ -281,7 +281,7 @@ namespace era_engine::physics
 
 		joint_component->enable_collision.get_for_write() = false;
 		joint_component->drive_limits_are_forces.get_for_write() = true;
-		//joint_component->disable_preprocessing.get_for_write() = true;
+		joint_component->disable_preprocessing.get_for_write() = true;
 
 		joint_component->linear_x_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
 		joint_component->linear_y_motion_type.get_for_write() = D6JointComponent::Motion::FREE;

@@ -66,7 +66,7 @@ namespace era_engine
 
 		ObservableMember& operator=(ObservableMember&& other) noexcept
 		{
-			set_and_notify(std::forward<Type_>(other.new_member));
+			set_and_notify(std::move(other.member));
 			return *this;
 		}
 

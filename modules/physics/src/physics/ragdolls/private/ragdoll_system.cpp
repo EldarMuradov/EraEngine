@@ -309,6 +309,13 @@ namespace era_engine::physics
 		{
 			Entity limb = limb_ptr.get();
 
+			RagdollLimbComponent* limb_component = limb.get_component<RagdollLimbComponent>();
+
+			if (!limb_component->joint_entity_ptr.is_empty())
+			{
+				world->destroy_entity(limb_component->joint_entity_ptr.get());
+			}
+
 			world->destroy_entity(limb);
 		}
 	}

@@ -247,7 +247,7 @@ namespace era_engine::physics
 
 				if (!r1 || !r2)
 				{
-					return;
+					continue;
 				}
 
 				PxRigidActor* actor1 = r1;
@@ -258,7 +258,7 @@ namespace era_engine::physics
 
 				if (!rb1 || !rb2)
 				{
-					return;
+					continue;
 				}
 
 				collision.this_actor = rb1;
@@ -276,7 +276,7 @@ namespace era_engine::physics
 
 				if (!r1 || !r2)
 				{
-					return;
+					continue;
 				}
 
 				PxRigidActor* actor1 = r1;
@@ -287,7 +287,7 @@ namespace era_engine::physics
 
 				if (!rb1 || !rb2)
 				{
-					return;
+					continue;
 				}
 
 				collision.this_actor = rb1;

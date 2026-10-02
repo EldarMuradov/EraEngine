@@ -1,10 +1,12 @@
-include(${CMAKE_SOURCE_DIR}/cmake/common.cmake)
+# RTTR (shared): RTTR::Core. Deployed to apps as a regular shared library.
 
-era_begin(rttr_core "THIRD-PARTY-MODULE")
-    add_subdirectory(${ERA_ENGINE_PATH}/modules/thirdparty-rttr/rttr)
-    find_library(rttr_core NAMES rttr_core PATHS ${ERA_ENGINE_PATH}/modules/thirdparty-rttr/rttr)
-    set_property(TARGET rttr_core PROPERTY INCLUDE_PATH ${ERA_ENGINE_PATH}/modules/thirdparty-rttr/rttr/src)
-    set_property(TARGET rttr_core PROPERTY TARGET_TYPE "THIRD-PARTY-MODULE")
-    set_property(TARGET rttr_core PROPERTY NEED_COPY "true")
-    set_property(TARGET rttr_core PROPERTY BUILD_PATH ${ERA_ENGINE_PATH}/_build/modules/thirdparty-rttr/rttr/bin/$<CONFIGURATION>)
-era_end(rttr_core)
+set(BUILD_STATIC OFF CACHE BOOL "" FORCE)
+set(BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
+set(BUILD_DOCUMENTATION OFF CACHE BOOL "" FORCE)
+set(BUILD_PACKAGE OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(rttr)
+
+era_thirdparty_folder(rttr_core)

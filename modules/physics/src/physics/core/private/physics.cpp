@@ -20,6 +20,8 @@
 #include "pvdruntime/OmniPvdWriter.h"
 #include "pvdruntime/OmniPvdFileWriteStream.h"
 
+#include "extensions/PxExtensionsAPI.h"
+
 namespace era_engine::physics
 {
 	static physx::PxOmniPvd* omni_pvd = NULL;
@@ -95,6 +97,43 @@ namespace era_engine::physics
 		tolerance_scale.length = 1.0f;
 		tolerance_scale.speed = 10.0f;
 
+#if defined(VISUALIZE_PHYSICS)
+		// PVD and OmniPVD must exist before PxCreatePhysics to be attached to the SDK.
+		if (descriptor.enable_pvd)
+		{
+			pvd = PxCreatePvd(*foundation);
+
+			transport = PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
+			if (pvd && transport)
+			{
+				pvd->connect(*transport,
+					PxPvdInstrumentationFlag::ePROFILE
+				);
+			}
+
+			omni_pvd = PxCreateOmniPvd(*foundation);
+			if (omni_pvd)
+			{
+				OmniPvdWriter* omniWriter = omni_pvd->getWriter();
+				OmniPvdFileWriteStream* fStream = omni_pvd->getFileWriteStream();
+				if (omniWriter && fStream)
+				{
+					fStream->setFileName(descriptor.omni_pvd_path);
+					omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*fStream));
+				}
+				else
+				{
+					LOG_ERROR("Physics> Could not get PxOmniPvd writer or file write stream.");
+					PX_RELEASE(omni_pvd)
+				}
+			}
+			else
+			{
+				LOG_ERROR("Physics> Could not create PxOmniPvd.");
+			}
+		}
+#endif
+
 		physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, tolerance_scale, false, pvd, omni_pvd);
 
 		if (!PxInitExtensions(*physics, pvd))
@@ -119,6 +158,8 @@ namespace era_engine::physics
 		cuda_context_manager_desc.graphicsDevice = get_dx_context()->device.Get();
 
 		cuda_context_manager = PxCreateCudaContextManager(*foundation, cuda_context_manager_desc, &profiler_callback);
+
+		PxInitVehicleExtension(*foundation);
 	}
 
 	Physics::~Physics()
@@ -203,10 +244,8 @@ namespace era_engine::physics
 			scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
 		}
 
-		if (descriptor.enable_pvd)
+		if (descriptor.enable_pvd && pvd)
 		{
-			pvd = PxCreatePvd(*foundation);
-
 			PxSceneReadLock lock{ *scene };
 
 			PxPvdSceneClient* pvd_client = scene->getScenePvdClient();
@@ -216,35 +255,6 @@ namespace era_engine::physics
 				pvd_client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
 				pvd_client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
 			}
-
-			transport = PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
-			if (transport)
-			{
-				pvd->connect(*transport,
-					PxPvdInstrumentationFlag::ePROFILE
-				);
-			}
-
-			omni_pvd = PxCreateOmniPvd(*foundation);
-			if (!omni_pvd)
-			{
-				LOG_ERROR("Error: could not create PxOmniPvd!");
-				return;
-			}
-			OmniPvdWriter* omniWriter = omni_pvd->getWriter();
-			if (!omniWriter)
-			{
-				LOG_ERROR("Error: could not get an instance of PxOmniPvdWriter!");
-				return;
-			}
-			OmniPvdFileWriteStream* fStream = omni_pvd->getFileWriteStream();
-			if (!fStream)
-			{
-				LOG_ERROR("Error: could not get an instance of PxOmniPvdFileWriteStream!");
-				return;
-			}
-			fStream->setFileName(descriptor.omni_pvd_path);
-			omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*fStream));
 		}
 #endif
 	}
@@ -308,7 +318,11 @@ namespace era_engine::physics
 
 		ScopedSpinLock lock{ sync };
 
-		PxCloseExtensions();
+		if (physics != nullptr)
+		{
+			physx::PxCloseVehicleExtension();
+			PxCloseExtensions();
+		}
 
 		PX_RELEASE(default_material)
 
@@ -317,18 +331,14 @@ namespace era_engine::physics
 		PX_RELEASE(physics)
 		PX_RELEASE(dispatcher)
 
-#if defined(_DEBUG)
-
 		PX_RELEASE(pvd)
 		PX_RELEASE(omni_pvd)
 		PX_RELEASE(transport)
 
-#endif
-
 		PX_RELEASE(cuda_context_manager)
 		PX_RELEASE(foundation)
 
-		delete allocator_callback;
+		RELEASE_PTR(allocator_callback)
 	}
 
 	void Physics::start()

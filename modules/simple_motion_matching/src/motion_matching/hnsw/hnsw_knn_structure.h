@@ -25,6 +25,8 @@ namespace era_engine
 		uint32 max_edges_per_vertex = 32;
 		uint32 construction_exploration_factor = 200;
 
+		uint32 search_exploration_factor = 10;
+
 	private:
 		hnswlib::L2Space hnsw_l2_space = hnswlib::L2Space(0);
 		std::shared_ptr<hnswlib::HierarchicalNSW<float>> hnsw;

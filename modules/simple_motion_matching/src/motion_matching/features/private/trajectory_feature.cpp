@@ -9,6 +9,8 @@
 
 #include <ecs/base_components/transform_component.h>
 
+#include <core/log.h>
+
 #include <rttr/policy.h>
 #include <rttr/registration>
 
@@ -35,59 +37,75 @@ namespace era_engine
 
 	std::vector<float> TrajectoryFeature::compute_features(const FeatureComputationContext& context) const
 	{
-		ASSERT(context.trajectory_component->number_of_trajectories == NUM_OF_TRAJECTORIES);
+		const TrajectoryComponent* trajectory_component = context.trajectory_component;
+		ASSERT(trajectory_component != nullptr);
 
 		std::vector<float> values;
-		values.reserve(NUM_OF_TRAJECTORIES * descriptors.size());
-
-		float current_time = 0.0f;
+		values.reserve(get_feature_size());
 
 		const trs& world_transform = context.entity.get_component<TransformComponent>()->get_world_transform();
+		const trs inverse_world_transform = invert(world_transform);
 
-		for (int32 i = 0; i < NUM_OF_TRAJECTORIES; ++i)
+		for (const ref<FeatureDesc>& descriptor : descriptors)
 		{
-			for (ref<FeatureDesc> descriptor : descriptors)
+			ref<TrajectoryFeatureDesc> trajectory_feature_desc = std::dynamic_pointer_cast<TrajectoryFeatureDesc>(descriptor);
+			if (trajectory_feature_desc == nullptr)
 			{
-				if (ref<TrajectoryFeatureDesc> trajectory_feature_desc = std::dynamic_pointer_cast<TrajectoryFeatureDesc>(descriptor))
+				ASSERT(false);
+				values.insert(values.end(), { 0.0f, 0.0f });
+				continue;
+			}
+
+			int32 trajectory_index = -1;
+			for (int32 i = 0; i < int32(trajectory_component->number_of_trajectories); ++i)
+			{
+				if (fuzzy_equals(trajectory_component->time_offsets(i), trajectory_feature_desc->time_offset))
 				{
-					if (!fuzzy_equals(context.trajectory_component->time_offsets(i), trajectory_feature_desc->time_offset))
-					{
-						continue;
-					}
-
-					const trs trajectory_position = trs(context.trajectory_component->trajectory_positions(i), context.trajectory_component->trajectory_rotations(i), vec3(1.0f));
-
-					const trs root_space_transform = invert(world_transform) * trajectory_position;
-
-					if (trajectory_feature_desc->type == FeatureDescType::LOCATION)
-					{
-						const vec3& position = root_space_transform.position;
-
-						values.emplace_back(position.x);
-						values.emplace_back(position.z);
-					}
-					else if (trajectory_feature_desc->type == FeatureDescType::DIRECTION)
-					{
-						const quat& rotation = root_space_transform.rotation;
-						const vec3 direction = noz(rotation * vec3::forward);
-
-						values.emplace_back(direction.x);
-						values.emplace_back(direction.z);
-					}
-					else if (trajectory_feature_desc->type == FeatureDescType::VELOCITY)
-					{
-						const vec3 velocity = conjugate(world_transform.rotation) * context.trajectory_component->trajectory_velocities(i);
-
-						values.emplace_back(velocity.x);
-						values.emplace_back(velocity.z);
-					}
-				}
-				else
-				{
-					ASSERT(false);
+					trajectory_index = i;
+					break;
 				}
 			}
+
+			if (trajectory_index < 0)
+			{
+				LOG_ERROR("Motion matching> Trajectory has no point with time offset %f required by descriptor '%s'.",
+					trajectory_feature_desc->time_offset, trajectory_feature_desc->name.c_str());
+				values.insert(values.end(), { 0.0f, 0.0f });
+				continue;
+			}
+
+			if (trajectory_feature_desc->type == FeatureDescType::LOCATION)
+			{
+				const trs trajectory_position = trs(trajectory_component->trajectory_positions(trajectory_index), trajectory_component->trajectory_rotations(trajectory_index), vec3(1.0f));
+				const vec3& position = (inverse_world_transform * trajectory_position).position;
+
+				values.emplace_back(position.x);
+				values.emplace_back(position.z);
+			}
+			else if (trajectory_feature_desc->type == FeatureDescType::DIRECTION)
+			{
+				const trs trajectory_position = trs(trajectory_component->trajectory_positions(trajectory_index), trajectory_component->trajectory_rotations(trajectory_index), vec3(1.0f));
+				const quat& rotation = (inverse_world_transform * trajectory_position).rotation;
+				const vec3 direction = noz(rotation * vec3::forward);
+
+				values.emplace_back(direction.x);
+				values.emplace_back(direction.z);
+			}
+			else if (trajectory_feature_desc->type == FeatureDescType::VELOCITY)
+			{
+				const vec3 velocity = conjugate(world_transform.rotation) * trajectory_component->trajectory_velocities(trajectory_index);
+
+				values.emplace_back(velocity.x);
+				values.emplace_back(velocity.z);
+			}
+			else
+			{
+				ASSERT(false);
+				values.insert(values.end(), { 0.0f, 0.0f });
+			}
 		}
+
+		ASSERT(values.size() == get_feature_size());
 
 		return values;
 	}

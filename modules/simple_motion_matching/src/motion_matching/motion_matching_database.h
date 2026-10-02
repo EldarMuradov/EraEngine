@@ -44,6 +44,8 @@ namespace era_engine
 		NarrowPhaseFlags flags = NarrowPhaseFlags::NONE;
 		float same_frame_time_threshold = 0.5f;
 		float max_euclidean_distance = 15.0f;
+
+		float animation_end_ignore_window = 0.15f;
 	};
 
 	class ERA_MOTION_MATCHING_API MotionMatchingDatabase : public GameAsset
@@ -71,6 +73,8 @@ namespace era_engine
 
 		MotionMatchingDatabase(KnnStructureType _knn_type = KnnStructureType::DEFAULT);
 		~MotionMatchingDatabase() override;
+
+		void add_animation(ref<animation::AnimationAssetClip> animation);
 
 		void generate_initial_data();
 

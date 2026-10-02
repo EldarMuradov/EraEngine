@@ -6,6 +6,13 @@ namespace era_engine::update_types
 {
 	void register_default_order()
 	{
+		static bool registered = false;
+		if (registered)
+		{
+			return;
+		}
+		registered = true;
+
 		UpdatesHolder::update_order.push_back(std::string(INPUT.name));
 
 		UpdatesHolder::update_order.push_back(std::string(BEGIN.name));

@@ -458,16 +458,6 @@ namespace era_engine::physics
 			}
 		}
 
-		for (auto&& [entity_handle, transform_component, physical_animation_limb_component, animm, skeleton] : ragdolls_group.each())
-		{
-			if (physical_animation_limb_component.simulated.is_changed())
-			{
-				Entity limb = world->get_entity(entity_handle);
-				limb.get_component<DynamicBodyComponent>()->simulated = physical_animation_limb_component.simulated;
-				physical_animation_limb_component.simulated.sync_changes();
-			}
-		}
-
 		for (auto&& [entity_handle, transform_component, physical_animation_component, animm, skeleton] : ragdolls_group.each())
 		{
 			if (physical_animation_component.loaded)
@@ -660,7 +650,6 @@ namespace era_engine::physics
 
 			active_ragdolls.emplace_back(&physical_animation_component);
 
-			//const SkeletonPose& current_animation_pose = animation_component.current_animation_pose;
 			const SkeletonPose current_animation_pose = skeleton_component.get_current_override_pose();
 			update_target_pose(&physical_animation_component, current_animation_pose, skeleton.get(), world_transform);
 
@@ -1151,6 +1140,25 @@ namespace era_engine::physics
 		for (const EntityPtr& limb_ptr : physical_animation_component->limbs)
 		{
 			Entity limb = limb_ptr.get();
+
+			PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
+
+			if (!limb_component->drive_joint_entity_ptr.is_empty())
+			{
+				Entity drive_joint_entity = limb_component->drive_joint_entity_ptr.get();
+
+				if (D6JointComponent* joint_component = drive_joint_entity.get_component_if_exists<D6JointComponent>())
+				{
+					world->destroy_entity(joint_component->get_first_entity_ptr().get());
+				}
+
+				world->destroy_entity(drive_joint_entity);
+			}
+
+			if (!limb_component->joint_entity_ptr.is_empty())
+			{
+				world->destroy_entity(limb_component->joint_entity_ptr.get());
+			}
 
 			world->destroy_entity(limb);
 		}

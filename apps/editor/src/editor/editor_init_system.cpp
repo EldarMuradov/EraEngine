@@ -51,7 +51,7 @@ namespace era_engine
 	{
 		using namespace rttr;
 
-		registration::class_<EditorInitSystem>("GameInitSystem")
+		registration::class_<EditorInitSystem>("EditorInitSystem")
 			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("editor")))
 			.method("update", &EditorInitSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL));
 	}

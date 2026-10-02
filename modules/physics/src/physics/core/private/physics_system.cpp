@@ -344,7 +344,7 @@ namespace era_engine::physics
 
 			if (body == nullptr)
 			{
-				return;
+				continue;
 			}
 
 			if (!dynamic_body.kinematic)

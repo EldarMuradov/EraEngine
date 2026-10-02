@@ -21,7 +21,7 @@ namespace era_engine
         using namespace rttr;
 
         registration::class_<GameplayTppCameraSystem>("GameplayTppCameraSystem")
-            .constructor<World*>()(policy::ctor::as_raw_ptr)(policy::ctor::as_raw_ptr, metadata("Tag", std::string("game")))
+            .constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("game")))
             .method("update", &GameplayTppCameraSystem::update)(metadata("update_group", update_types::BEFORE_RENDER),
                 metadata("After", std::vector<std::string>{"CameraSystem::update"}));
     }

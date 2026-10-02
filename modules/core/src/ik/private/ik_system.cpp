@@ -51,7 +51,7 @@ namespace era_engine
 
 		ZoneScopedN("IKSystem::update");
 
-        for (auto [entity_handle, target_component, transform_component] : world->group<IKTargetComponent, TransformComponent>().each())
+        for (auto [entity_handle, target_component, transform_component] : world->group(components_group<IKTargetComponent, TransformComponent>).each())
         {
             IKComponent* owner_ik = world->get_entity(target_component.owner_entity).get_component<IKComponent>();
             if (!owner_ik)
@@ -123,7 +123,7 @@ namespace era_engine
 
 	void IKSystem::debug_draw(float dt)
 	{
-        for (auto [entity_handle, target_component, transform_component] : world->group<IKTargetComponent, TransformComponent>().each())
+        for (auto [entity_handle, target_component, transform_component] : world->group(components_group<IKTargetComponent, TransformComponent>).each())
         {
             vec3 point = transform_component.get_world_transform().position;
             renderWireSphere(point, 0.05f, vec4(1.0f, 0.f, 1.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
@@ -160,7 +160,6 @@ namespace era_engine
         }
 
         solve_fabrik(chain, skeleton, pose, world_transform);
-        //apply_constraints(chain, skeleton, pose, world_transform);
         write_back(chain, skeleton, pose, world_transform);
     }
 

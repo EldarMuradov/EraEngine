@@ -17,8 +17,9 @@ namespace era_engine
 
 		GameAssetsProvider provider;
 
-		for (const ref<AnimationAssetClip>& animation : database.animations)
+		for (uint32 anim_index = 0; anim_index < uint32(database.animations.size()); ++anim_index)
 		{
+			const ref<AnimationAssetClip>& animation = database.animations[anim_index];
 			for (MotionMatchingFeature* feature : database.features)
 			{
 				const bool status = feature->mark_animation(skeleton_component, animation);

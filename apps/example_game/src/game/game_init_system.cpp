@@ -353,13 +353,13 @@ namespace era_engine
 				joint_init_ids.hand_r_idx = skeleton->name_to_joint_id.at("mixamorig:RightHand");
 				joint_init_ids.hand_end_r_idx = skeleton->name_to_joint_id.at("mixamorig:RightHandMiddle3");
 
-				if (false)
+				if (true)
 				{
 					database = provider.load_game_asset_from_file<MotionMatchingDatabase>(get_asset_path("/resources/assets/test_character/mmdb/locomotion.emmdb"));
 					database->load_job.wait_for_completion();
 				}
 
-				if (true)
+				if (false)
 				{
 					database = make_ref<MotionMatchingDatabase>();
 
@@ -613,9 +613,9 @@ namespace era_engine
 							database->animations.push_back(animation);
 						};
 
-					database->sample_rate = 15.0f;
+					database->sample_rate = 30.0f;
 					database->narrow_phase_params.flags = NarrowPhaseFlags::SAME_FRAME_CHECK;
-					database->narrow_phase_params.same_frame_time_threshold = 0.16f;
+					database->narrow_phase_params.same_frame_time_threshold = 0.25f;
 
 					add_animation("/resources/assets/test_character/animations/Standing Idle_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Unarmed Idle_mixamo.com_clip0.eanm");
@@ -633,10 +633,6 @@ namespace era_engine
 					add_animation("/resources/assets/test_character/animations/Running Turn 180L_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Running Turn 180R_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Sprint_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Start Walking_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Stop Walking_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Turn To RunningL_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Turn To RunningR_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Jog Strafe Left_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Jog Strafe Right_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Backward Right Turn_mixamo.com_clip0.eanm");
@@ -656,12 +652,16 @@ namespace era_engine
 					add_animation("/resources/assets/test_character/animations/Change DirectionL_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Change DirectionR_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Running To Turn_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02L_mixamo.com_clip0.eanm");
-					add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02R_mixamo.com_clip0.eanm");
+					//add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02L_mixamo.com_clip0.eanm");
+					//add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02R_mixamo.com_clip0.eanm");
+					//add_animation("/resources/assets/test_character/animations/Start Walking_mixamo.com_clip0.eanm");
+					//add_animation("/resources/assets/test_character/animations/Stop Walking_mixamo.com_clip0.eanm");
+					//add_animation("/resources/assets/test_character/animations/Turn To RunningL_mixamo.com_clip0.eanm");
+					//add_animation("/resources/assets/test_character/animations/Turn To RunningR_mixamo.com_clip0.eanm");
 
 					database->generate_initial_data();
 
-					database->search_dimension = database->total_features_per_sample;
+					database->search_dimension = 40;
 					database->static_thresholds.resize(database->total_features_per_sample);
 					database->weights.resize(database->total_features_per_sample, 1.0f);
 
@@ -783,7 +783,7 @@ namespace era_engine
 				settings.scaler_settings.upper_body_radius_modifier = 0.5f;
 				settings.scaler_settings.middle_body_height_modifier = 0.75f;
 				settings.scaler_settings.middle_body_radius_modifier = 0.75f;
-				//settings.scaler_settings.lower_body_height_modifier = 1.0f;
+				settings.scaler_settings.lower_body_height_modifier = 1.0f;
 				settings.scaler_settings.lower_body_radius_modifier = 1.0f;
 				settings.scaler_settings.clavicle_height_modifier = 1.0f;
 				settings.scaler_settings.arm_height_modifier = 1.6f;

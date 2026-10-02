@@ -10,7 +10,7 @@ namespace era_engine
 {
 
     DynXPhysicsModule::DynXPhysicsModule() noexcept
-        : IModule("physics")
+        : IModule("dynx")
     {
     }
 

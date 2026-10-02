@@ -93,14 +93,13 @@ namespace era_engine::physics
 		{
 			Entity limb = limb_ptr.get();
 			PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
+			ASSERT(limb_data_component != nullptr);
 
 			if (limb_data_component->get_current_state_type() == PhysicalLimbStateType::DISMEMBERED ||
 				limb_data_component->get_current_state_type() == PhysicalLimbStateType::PARTIAL_DISMEMBERED)
 			{
-				return;
+				continue;
 			}
-
-			ASSERT(limb_data_component != nullptr);
 
 			trs limb_object_space_pose = SkeletonUtils::get_object_space_joint_transform(animation_component->current_animation_pose,
 				skeleton_component->skeleton.get(),
@@ -121,14 +120,14 @@ namespace era_engine::physics
 			limb_data_component->physics_pose = limb_object_space_pose;
 			limb_data_component->target_pose = limb_object_space_pose;
 
-			DynamicBodyComponent* dynamic_body_component = limb.get_component<DynamicBodyComponent>();
-			ASSERT(dynamic_body_component != nullptr);
+			//DynamicBodyComponent* dynamic_body_component = limb.get_component<DynamicBodyComponent>();
+			//ASSERT(dynamic_body_component != nullptr);
 
-			dynamic_body_component->linear_velocity = vec3::zero;
-			dynamic_body_component->angular_velocity = vec3::zero;
+			//dynamic_body_component->linear_velocity = vec3::zero;
+			//dynamic_body_component->angular_velocity = vec3::zero;
 		}
 
-		skeleton_component->apply_pose(animation_component->current_animation_pose);
+		//skeleton_component->apply_pose(animation_component->current_animation_pose);
 
 		BaseSimulationState::on_exit();
 	}

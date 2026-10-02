@@ -89,7 +89,7 @@ namespace era_engine::physics
 
 				if (RagdollDismembermentLimbComponent* dismembered_limb = limb.get_component_if_exists<RagdollDismembermentLimbComponent>())
 				{
-					//if (dismembered_limb->is_dismembered())
+					if (dismembered_limb->is_dismembered())
 					{
 						result_type = PhysicalLimbBlendType::PURE_PHYSICS;
 					}

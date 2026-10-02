@@ -92,6 +92,14 @@ namespace era_engine
 				}
 
 				ref<MotionMatchingDatabase> database = MotionDatabaseRegistry::get_by_id(database_id);
+				if (database == nullptr)
+				{
+					if (motion_data_component.on_search_failed_func != nullptr)
+					{
+						motion_data_component.on_search_failed_func();
+					}
+					continue;
+				}
 
 				MotionMatchingFeatureSet feature_set;
 				if (motion_data_component.calculate_feature_set_func != nullptr)

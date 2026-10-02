@@ -34,7 +34,7 @@ namespace era_engine
 		motion_data_component->on_search_succeeded_func = std::bind(&CharacterLocomotionComponent::on_search_succeeded, this, std::placeholders::_1);
 		motion_data_component->need_force_start_search_func = std::bind(&CharacterLocomotionComponent::need_force_start_search, this);
 
-		motion_data_component->search_time = 0.23f;
+		motion_data_component->search_time = 0.3f;
 	}
 
 	CharacterLocomotionComponent::~CharacterLocomotionComponent()
@@ -84,7 +84,7 @@ namespace era_engine
 			SkeletonPose result_pose = SkeletonPose(skeleton->joints.size());
 			sampler.sample_pose(result.anim_position, result_pose);
 
-			animation_component->trigger_reset_inertial_blend(result_pose, 0.16f);
+			animation_component->trigger_reset_inertial_blend(result_pose, 0.18f);
 		}
 
 		LOG_MESSAGE(std::format("Found animation: {}, at position {}", get_path_from_asset_handle(result.animation->handle).string().c_str(), result.anim_position).c_str());
@@ -93,7 +93,7 @@ namespace era_engine
 		//motion_component->init_root_motion(skeleton, 
 		//	result.animation, 
 		//	result.anim_position, 
-		//	0.23f,
+		//	0.3f,
 		//	RootMotionType::LOCATION);
 	}
 
