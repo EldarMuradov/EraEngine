@@ -32,39 +32,34 @@ namespace era_engine::physics
     };
     DEFINE_BITWISE_OPERATORS_FOR_ENUM(PhysicalLimbBlendType);
 
-    enum class MotorDriveType : uint8
+    struct ERA_PHYSICS_API AngularDriveSettings final
     {
-        NONE = 0,
-        VELOCITY = 1 << 0,
-        TRANSFORM = 1 << 1,
-        FULL = VELOCITY | TRANSFORM
+        float frequency = 6.0f; // Hz
+
+        float damping_ratio = 0.85f; // 1 = critical
+        float far_damping_ratio = 0.4f;
+
+        vec2 error_range_deg = vec2(3.0f, 30.0f); // [damping_ratio, far_damping_ratio].
+
+        float saturation_angle_deg = 60.0f;
     };
-    DEFINE_BITWISE_OPERATORS_FOR_ENUM(MotorDriveType);
 
-    class ERA_PHYSICS_API MotorDriveDetails final
+    struct ERA_PHYSICS_API LinearDriveSettings final
     {
-    public:
-        MotorDriveDetails() = default;
-        MotorDriveDetails(const MotorDriveDetails& other) = default;
-        MotorDriveDetails(MotorDriveDetails&& other) = default;
+        float frequency = 4.0f; // Hz
 
-        MotorDriveDetails& operator=(const MotorDriveDetails& other) = default;
+        float damping_ratio = 1.0f; // 1 = critical
+        float far_damping_ratio = 0.5f;
 
-        float angular_drive_stiffness = 600.0f;
-        float linear_drive_stiffness = 600.0f;
+        vec2 error_range = vec2(0.05f, 0.5f); // [damping_ratio, far_damping_ratio]
 
-        vec2 angular_range = vec2(deg2rad(3.0f), deg2rad(30.0f));
-        vec2 angular_damping_range = vec2(60.0f, 10.0f);
+        float saturation_distance = 0.3f;
+    };
 
-        vec2 linear_range = vec2(0.05f, 0.5f);
-        vec2 linear_damping_range = vec2(80.0f, 10.0f);
-
-        float max_linear_force = 1000000.0f;
-        float max_angular_force = 1000000.0f;
-
-        bool accelerated = true;
-        bool enable_slerp_drive = true;
-        MotorDriveType drive_type = MotorDriveType::FULL;
+    struct ERA_PHYSICS_API MotorDriveSettings final
+    {
+        AngularDriveSettings angular;
+        LinearDriveSettings linear;
     };
 
     class ERA_PHYSICS_API DragForceDetails final
@@ -80,6 +75,7 @@ namespace era_engine::physics
         float acceleration_gain = 0.02f;
     };
 
+    // Multiplier of the drive stiffness. Damping is scaled by sqrt(strength).
     struct ERA_PHYSICS_API LimbStrengthDetails final
     {
         float default_strength_coeff = 1.0f;
@@ -91,7 +87,7 @@ namespace era_engine::physics
     class ERA_PHYSICS_API PhysicalLimbDetails final
     {
     public:
-        std::optional<MotorDriveDetails> motor_drive;
+        std::optional<MotorDriveSettings> motor_drive;
         std::optional<DragForceDetails> drag_force;
 
         LimbStrengthDetails strength_details;
@@ -122,7 +118,12 @@ namespace era_engine::physics
     class ERA_PHYSICS_API RagdollProfile final
     {
     public:
+        static constexpr uint32 LIMB_TYPES_COUNT = static_cast<uint32>(RagdollLimbType::FOOT) + 1u;
+
         const PhysicalLimbDetails& get_limb_details_by_type(RagdollLimbType limb_type) const;
+        PhysicalLimbDetails& get_limb_details_by_type(RagdollLimbType limb_type);
+
+        float get_strength(RagdollLimbType limb_type, RagdollProfileStrengthType strength_type) const;
 
         PhysicalLimbDetails head_limb_details;
         PhysicalLimbDetails neck_limb_details;

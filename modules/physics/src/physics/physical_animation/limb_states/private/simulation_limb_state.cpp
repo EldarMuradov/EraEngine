@@ -22,6 +22,27 @@ namespace era_engine::physics
     {
     }
 
+    static float get_shortest_angle(const quat& q)
+    {
+        float angle = 0.0f;
+        vec3 axis = vec3::zero;
+        get_axis_rotation(q, axis, angle);
+        return angle > M_PI ? 2.0f * M_PI - angle : angle;
+    }
+
+    static vec3 get_shortest_angular_velocity(const quat& delta_rotation, float dt)
+    {
+        float angle = 0.0f;
+        vec3 axis = vec3::zero;
+        get_axis_rotation(delta_rotation, axis, angle);
+        if (angle > M_PI)
+        {
+            angle = 2.0f * M_PI - angle;
+            axis = -axis;
+        }
+        return axis * (angle / dt);
+    }
+
     void SimulationLimbState::update(float dt)
     {
         BaseLimbState::update(dt);
@@ -39,13 +60,10 @@ namespace era_engine::physics
 
 		const PhysicalLimbDetails& limb_details = profile->get_limb_details_by_type(limb_component->type);
 
-		// Motors drive for limb.
-		if (limb_details.motor_drive.has_value())
+		// Motor drive: the kinematic target carries the animation pose, stiffness/limits are compiled per profile.
+		// Only the error-scheduled damping is updated here.
+		if (limb_details.motor_drive.has_value() && !limb_component->drive_joint_component.is_empty())
 		{
-			ASSERT(limb_details.motor_drive->drive_type != MotorDriveType::NONE);
-
-			ASSERT(!limb_component->drive_joint_component.is_empty());
-			const MotorDriveDetails& motor_details = limb_details.motor_drive.value();
 			D6JointComponent* drive_joint_component = static_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
 
 			const trs& constraint_frame_actor0 = drive_joint_component->get_first_local_frame();
@@ -57,81 +75,35 @@ namespace era_engine::physics
 			const trs constraint_frame_actor1_world_space = PhysicsUtils::get_actor_world_pose_locked(limb) * constraint_frame_actor1;
 
 			const trs error_transform = invert(constraint_frame_actor1_world_space) * constraint_frame_actor0_world_space;
-			const quat error_rotation = normalize(error_transform.rotation);
-			const vec3 error_position = error_transform.position;
+			const float error_angle = get_shortest_angle(normalize(error_transform.rotation));
+			const float error_distance = length(error_transform.position);
 
-			float error_delta_angle = 0.0f;
-			vec3 error_delta_axis = vec3::zero;
-			get_axis_rotation(error_rotation, error_delta_axis, error_delta_angle);
-
-			if (limb_details.motor_drive->drive_type == MotorDriveType::FULL)
-			{
-				drive_joint_component->drive_transform.get_for_write() = invert(constraint_frame_actor0) * constraint_frame_actor1;
-
-				// Joint drive will handle drive velocity based on current limb velocity.
-				drive_joint_component->angular_drive_velocity.get_for_write() = vec3::zero;
-				drive_joint_component->linear_drive_velocity.get_for_write() = vec3::zero;
-			}
-			else
-			{
-				if (has_flag(limb_details.motor_drive->drive_type, MotorDriveType::TRANSFORM))
-				{
-					drive_joint_component->drive_transform.get_for_write() = invert(constraint_frame_actor0) * constraint_frame_actor1;
-				}
-				else if (has_flag(limb_details.motor_drive->drive_type, MotorDriveType::VELOCITY))
-				{
-					const vec3 angular_drive_velocity = normalize(error_delta_axis) * error_delta_angle / dt;
-					const vec3 linear_drive_velocity = error_position / dt;
-
-					drive_joint_component->angular_drive_velocity.get_for_write() = angular_drive_velocity;
-					drive_joint_component->linear_drive_velocity.get_for_write() = linear_drive_velocity;
-				}
-			}
-
-			const float angular_damping = limb_component->calculate_desired_angular_damping(error_delta_angle);
-
-			if (drive_joint_component->perform_slerp_drive)
-			{
-				drive_joint_component->slerp_drive_damping = angular_damping;
-			}
-			else
-			{
-				drive_joint_component->twist_drive_damping = angular_damping;
-				drive_joint_component->swing_drive_damping = angular_damping;
-			}
-
-			const float linear_damping = limb_component->calculate_desired_linear_damping(length(error_position));
-			drive_joint_component->linear_drive_damping = linear_damping;
+			drive_joint_component->slerp_drive_damping = limb_component->calculate_desired_angular_damping(error_angle);
+			drive_joint_component->linear_drive_damping = limb_component->calculate_desired_linear_damping(error_distance);
 		}
 
-		// Velocity drag frices for stabilization.
+		// Velocity drag forces for stabilization (keyframe controller). Poses are in ragdoll space, velocities in world space.
 		if (limb_details.drag_force.has_value())
 		{
 			const DragForceDetails& drag_details = limb_details.drag_force.value();
 			DynamicBodyComponent* dynamic_body = limb.get_component<DynamicBodyComponent>();
 
-			const trs physics_target_delta_transform = invert(limb_component->physics_pose) * limb_component->target_pose;
-			const quat physics_delta_rotation = normalize(physics_target_delta_transform.rotation);
-			const vec3 physics_delta_position = physics_target_delta_transform.position;
-
-			float physics_delta_angle = 0.0f;
-			vec3 physics_delta_axis = vec3::zero;
-			get_axis_rotation(physics_delta_rotation, physics_delta_axis, physics_delta_angle);
-
-			const vec3 angular_drag_velocity = normalize(physics_delta_axis) * physics_delta_angle / dt;
+			const trs& ragdoll_world_transform = ragdoll.get_component<TransformComponent>()->get_world_transform();
+			const trs physics_world_pose = ragdoll_world_transform * limb_component->physics_pose;
+			const trs target_world_pose = ragdoll_world_transform * limb_component->target_pose;
 
 			// Keyframe controller stage.
 			{
 				const vec3& raw_root_velocity = physical_animation_component->velocity;
 
 				// Partial velocity drive.
-				vec3 desired_velocity = physics_delta_position / dt;
+				vec3 desired_velocity = (target_world_pose.position - physics_world_pose.position) / dt;
 				const float desired_velocity_magnitude = length(desired_velocity);
 				if (desired_velocity_magnitude > drag_details.partial_velocity_drive_limit)
 				{
 					desired_velocity = desired_velocity * (drag_details.partial_velocity_drive_limit / desired_velocity_magnitude);
 				}
-				vec3 drive_linear_velocity = lerp(dynamic_body->linear_velocity, desired_velocity, drag_details.partial_velocity_drive);
+				vec3 drive_linear_velocity = lerp(dynamic_body->linear_velocity.get(), desired_velocity, drag_details.partial_velocity_drive);
 
 				// Partial root velocity drive.
 				vec3 root_velocity = raw_root_velocity;
@@ -145,17 +117,16 @@ namespace era_engine::physics
 				dynamic_body->linear_velocity = drive_linear_velocity;
 			}
 
-			vec3 desired_angular_velocity = angular_drag_velocity;
+			const quat delta_rotation = normalize(target_world_pose.rotation * conjugate(physics_world_pose.rotation));
+			vec3 desired_angular_velocity = get_shortest_angular_velocity(delta_rotation, dt);
 			const float angular_velocity_magnitude = length(desired_angular_velocity);
 			if (angular_velocity_magnitude > drag_details.partial_angular_drive_limit)
 			{
 				desired_angular_velocity *= (drag_details.partial_angular_drive_limit / angular_velocity_magnitude);
 			}
 
-			const float angular_velocity_modifier = drag_details.partial_angular_drive;
-
 			const vec3& current_angular_velocity = dynamic_body->angular_velocity;
-			dynamic_body->angular_velocity = lerp(current_angular_velocity, desired_angular_velocity, angular_velocity_modifier);
+			dynamic_body->angular_velocity = lerp(current_angular_velocity, desired_angular_velocity, drag_details.partial_angular_drive);
 		}
     }
 

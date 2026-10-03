@@ -8,12 +8,16 @@
 #include "physics/physical_animation/physical_animation_component.h"
 #include "physics/aggregate_holder_component.h"
 #include "physics/joint.h"
+#include "physics/physx_api.h"
 
 #include <core/math.h>
 #include <core/debug/debug_var.h>
+#include <core/log.h>
 
 #include <ecs/base_components/transform_component.h>
 #include <ecs/world.h>
+
+#include <algorithm>
 
 namespace era_engine::physics
 {
@@ -35,16 +39,7 @@ namespace era_engine::physics
 			PhysicalAnimationLimbComponent* limb_component = child.add_component<PhysicalAnimationLimbComponent>();
 			limb_component->joint_id = joint_id;
 			limb_component->type = type;
-
-			if (details->motor_drive.has_value())
-			{
-				const MotorDriveDetails& motor_drive = details->motor_drive.value();
-
-				limb_component->angular_range = motor_drive.angular_range;
-				limb_component->linear_range = motor_drive.linear_range;
-				limb_component->angular_damping_range = motor_drive.angular_damping_range;
-				limb_component->linear_damping_range = motor_drive.linear_damping_range;
-			}
+			limb_component->blend_type = details->blend_type;
 
 			limb_component->ragdoll_ptr = EntityPtr{ parent };
 		}
@@ -69,23 +64,22 @@ namespace era_engine::physics
 		bool is_physically_animated,
 		Entity& entity,
 		const float mass,
-		const float max_contact_impulse = 200.0f,
-		const float max_angular_velocity = 35.0f,
-		const float max_linear_velocity = 500.0f)
+		const float max_contact_impulse,
+		const RagdollSettings::BodySettings& body_settings)
 	{
 		DynamicBodyComponent* dynamic_body_component = entity.add_component<DynamicBodyComponent>();
 		dynamic_body_component->mass.get_for_write() = mass;
-		dynamic_body_component->max_depenetration_velocity = 7.0f;
+		dynamic_body_component->max_depenetration_velocity = body_settings.max_depenetration_velocity;
 		dynamic_body_component->use_gravity.get_for_write() = !is_physically_animated;
 		dynamic_body_component->simulated.get_for_write() = false;
 		dynamic_body_component->enable_gyroscopic_forces.get_for_write() = true;
-		dynamic_body_component->linear_damping.get_for_write() = 0.05f;
-		dynamic_body_component->angular_damping.get_for_write() = 0.05f;
+		dynamic_body_component->linear_damping.get_for_write() = body_settings.linear_damping;
+		dynamic_body_component->angular_damping.get_for_write() = body_settings.angular_damping;
 		dynamic_body_component->stabilization_threshold.get_for_write() = 0.0f;
-		dynamic_body_component->sleep_threshold.get_for_write() = 0.02f;
+		dynamic_body_component->sleep_threshold.get_for_write() = body_settings.sleep_threshold;
 		dynamic_body_component->max_contact_impulse.get_for_write() = max_contact_impulse;
-		dynamic_body_component->max_angular_velocity.get_for_write() = max_angular_velocity;
-		dynamic_body_component->max_linear_velocity.get_for_write() = max_linear_velocity;
+		dynamic_body_component->max_angular_velocity.get_for_write() = body_settings.max_angular_velocity;
+		dynamic_body_component->max_linear_velocity.get_for_write() = body_settings.max_linear_velocity;
 		dynamic_body_component->kinematic_motion_type.get_for_write() = KinematicMotionType::VELOCITY;
 
 		const bool is_tgs = PhysicsEngine::get_physics_core()->get_descriptor().enable_tgs_solver;
@@ -188,6 +182,7 @@ namespace era_engine::physics
 		else
 		{
 			e0.get_component<RagdollLimbComponent>()->joint_entity_ptr = EntityPtr{ joint_entity };
+			e1.get_component<RagdollLimbComponent>()->parent_joint_component = ComponentPtr{ joint_component };
 		}
 
 		if (fuzzy_equals(twist_max_deg, M_PI) && fuzzy_equals(twist_min_deg, -M_PI))
@@ -260,8 +255,6 @@ namespace era_engine::physics
 			return;
 		}
 
-		const MotorDriveDetails& motor_drive = details.motor_drive.value();
-
 		JointComponent::BaseDescriptor descriptor;
 		descriptor.connected_entity = e0.get_data_weakref();
 		descriptor.second_connected_entity = e1.get_data_weakref();
@@ -277,11 +270,15 @@ namespace era_engine::physics
 
 		D6JointComponent* joint_component = joint_entity.add_component<D6JointComponent>(descriptor);
 
-		joint_component->perform_slerp_drive = motor_drive.enable_slerp_drive;
+		joint_component->perform_slerp_drive = true;
 
 		joint_component->enable_collision.get_for_write() = false;
 		joint_component->drive_limits_are_forces.get_for_write() = true;
-		joint_component->disable_preprocessing.get_for_write() = true;
+
+		// Improved slerp decouples the three slerp rows for non-spherical inertia (CPU solver).
+		joint_component->improved_slerp.get_for_write() = true;
+
+		joint_component->disable_preprocessing.get_for_write() = false;
 
 		joint_component->linear_x_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
 		joint_component->linear_y_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
@@ -291,32 +288,17 @@ namespace era_engine::physics
 		joint_component->swing_y_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
 		joint_component->swing_z_motion_type.get_for_write() = D6JointComponent::Motion::FREE;
 
-		joint_component->linear_drive_stiffness = motor_drive.linear_drive_stiffness;
-		joint_component->linear_drive_damping = motor_drive.linear_damping_range.x;
-		joint_component->linear_drive_force_limit = motor_drive.max_linear_force;
-		joint_component->linear_drive_accelerated = motor_drive.accelerated;
+		joint_component->linear_drive_stiffness.get_for_write() = 0.0f;
+		joint_component->linear_drive_damping.get_for_write() = 0.0f;
+		joint_component->linear_drive_force_limit.get_for_write() = 0.0f;
+		joint_component->linear_drive_accelerated.get_for_write() = true;
+
+		joint_component->slerp_drive_stiffness.get_for_write() = 0.0f;
+		joint_component->slerp_drive_damping.get_for_write() = 0.0f;
+		joint_component->slerp_drive_force_limit.get_for_write() = 0.0f;
+		joint_component->slerp_drive_accelerated.get_for_write() = true;
 
 		e1_limb_component->drive_joint_component = ComponentPtr{ joint_component };
-
-		if (motor_drive.enable_slerp_drive)
-		{
-			joint_component->slerp_drive_force_limit.get_for_write() = motor_drive.max_angular_force;
-			joint_component->slerp_drive_stiffness.get_for_write() = motor_drive.angular_drive_stiffness;
-			joint_component->slerp_drive_damping.get_for_write() = motor_drive.angular_damping_range.x;
-			joint_component->slerp_drive_accelerated.get_for_write() = motor_drive.accelerated;
-		}
-		else
-		{
-			joint_component->swing_drive_force_limit.get_for_write() = motor_drive.max_angular_force;
-			joint_component->swing_drive_stiffness.get_for_write() = motor_drive.angular_drive_stiffness;
-			joint_component->swing_drive_damping.get_for_write() = motor_drive.angular_damping_range.x;
-			joint_component->swing_drive_accelerated.get_for_write() = motor_drive.accelerated;
-
-			joint_component->twist_drive_stiffness.get_for_write() = motor_drive.angular_drive_stiffness;
-			joint_component->twist_drive_damping.get_for_write() = motor_drive.angular_damping_range.x;
-			joint_component->twist_drive_force_limit.get_for_write() = motor_drive.max_angular_force;
-			joint_component->twist_drive_accelerated.get_for_write() = motor_drive.accelerated;
-		}
 	}
 
 	// Return bottom of the box, used for creating d6s
@@ -468,6 +450,13 @@ namespace era_engine::physics
 		{
 			ASSERT(false);
 			return;
+		}
+
+		const float total_mass_percentage = ctx.ragdoll_component->settings.mass_settings.get_total_percentage();
+		if (std::abs(total_mass_percentage - 1.0f) > 0.01f)
+		{
+			LOG_WARNING("Ragdoll builder> Mass percentages sum to %.3f instead of 1, the ragdoll weighs %.1f kg instead of %.1f kg.",
+				total_mass_percentage, ctx.ragdoll_component->mass * total_mass_percentage, ctx.ragdoll_component->mass);
 		}
 
 		if (ctx.enable_physical_animation)
@@ -667,7 +656,8 @@ namespace era_engine::physics
 					ctx.enable_physical_animation,
 					limb,
 					ctx.ragdoll_component->mass * mass_percentage,
-					max_contact_impulse);
+					max_contact_impulse,
+					ctx.ragdoll_component->settings.body_settings);
 			};
 
 		auto create_box_limb_between_joints = [&ctx, &material, &skeleton_component](
@@ -720,7 +710,8 @@ namespace era_engine::physics
 					ctx.enable_physical_animation,
 					limb,
 					ctx.ragdoll_component->mass * mass_percentage,
-					max_contact_impulse);
+					max_contact_impulse,
+					ctx.ragdoll_component->settings.body_settings);
 			};
 
 		auto create_capsule_limb_between_joints_from_radius = [&ctx, &material, &skeleton_component](
@@ -799,7 +790,8 @@ namespace era_engine::physics
 					ctx.enable_physical_animation,
 					limb,
 					ctx.ragdoll_component->mass * mass_percentage,
-					max_contact_impulse);
+					max_contact_impulse,
+					ctx.ragdoll_component->settings.body_settings);
 			};
 
 		PhysicalAnimationComponent* physical_animation_component = ctx.enable_physical_animation ? dynamic_cast<PhysicalAnimationComponent*>(ctx.ragdoll_component) : nullptr;
@@ -929,9 +921,9 @@ namespace era_engine::physics
 				DistanceJointComponent* joint_component = body_lower_ghost.add_component<DistanceJointComponent>(descriptor);
 				joint_component->enable_collision.get_for_write() = false;
 				joint_component->spring_enabled.get_for_write() = true;
-				joint_component->stiffness.get_for_write() = 800.0f;
-				joint_component->damping.get_for_write() = 60.0f;
-				joint_component->max_distance.get_for_write() = 0.05f;
+				joint_component->stiffness.get_for_write() = 0.0f;
+				joint_component->damping.get_for_write() = 0.0f;
+				joint_component->max_distance.get_for_write() = ctx.ragdoll_component->settings.pelvis_attachment_settings.max_distance;
 				joint_component->min_distance.get_for_write() = 0.0f;
 			}
 
@@ -1593,5 +1585,275 @@ namespace era_engine::physics
 		optional_build_drive_joint(ctx.default_profile->foot_limb_details, ctx.skeleton_structure.right_foot_joint);
 
 		return true;
+	}
+
+	// Body inertia data in world space.
+	struct BodyInertia
+	{
+		float mass = 0.0f;
+		physx::PxVec3 com = physx::PxVec3(0.0f);
+		physx::PxQuat principal_axes = physx::PxQuat(physx::PxIdentity);
+		physx::PxVec3 principal_inertia = physx::PxVec3(0.0f);
+	};
+
+	static BodyInertia get_body_inertia(const physx::PxRigidDynamic* rigid_dynamic)
+	{
+		using namespace physx;
+
+		const PxTransform global_pose = rigid_dynamic->getGlobalPose();
+		const PxTransform cmass_pose = rigid_dynamic->getCMassLocalPose();
+
+		BodyInertia result;
+		result.mass = rigid_dynamic->getMass();
+		result.com = global_pose.transform(cmass_pose.p);
+		result.principal_axes = global_pose.q * cmass_pose.q;
+		result.principal_inertia = rigid_dynamic->getMassSpaceInertiaTensor();
+		return result;
+	}
+
+	// Inertia of a body about the axis n passing through point.
+	static float get_inertia_about_axis(const BodyInertia& body, const physx::PxVec3& point, const physx::PxVec3& n)
+	{
+		using namespace physx;
+
+		const PxVec3 local_n = body.principal_axes.rotateInv(n);
+		const float inertia_cm = body.principal_inertia.x * local_n.x * local_n.x +
+			body.principal_inertia.y * local_n.y * local_n.y +
+			body.principal_inertia.z * local_n.z * local_n.z;
+
+		const PxVec3 offset = body.com - point;
+		const float distance_sq = std::max(offset.magnitudeSquared() - offset.dot(n) * offset.dot(n), 0.0f);
+
+		return inertia_cm + body.mass * distance_sq;
+	}
+
+	static RagdollLimbComponent* get_ragdoll_limb_component(Entity limb)
+	{
+		if (PhysicalAnimationLimbComponent* physical_animation_limb = limb.get_component_if_exists<PhysicalAnimationLimbComponent>())
+		{
+			return physical_animation_limb;
+		}
+		return limb.get_component_if_exists<RagdollLimbComponent>();
+	}
+
+	bool PhysicalRagdollBuilder::try_finalize_ragdoll(RagdollComponent* ragdoll_component)
+	{
+		ASSERT(ragdoll_component != nullptr);
+
+		if (ragdoll_component->loaded)
+		{
+			return true;
+		}
+
+		if (!are_bodies_created(ragdoll_component))
+		{
+			return false;
+		}
+
+		apply_constraint_limits(ragdoll_component);
+		apply_pelvis_attachment(ragdoll_component);
+
+		ragdoll_component->loaded = true;
+		return true;
+	}
+
+	bool PhysicalRagdollBuilder::are_bodies_created(const RagdollComponent* ragdoll_component)
+	{
+		if (ragdoll_component->limbs.empty())
+		{
+			return false;
+		}
+
+		for (const EntityPtr& limb_ptr : ragdoll_component->limbs)
+		{
+			Entity limb = limb_ptr.get();
+
+			const ShapeComponent* shape_component = ShapeUtils::get_shape_component(limb);
+			const DynamicBodyComponent* body_component = limb.get_component_if_exists<DynamicBodyComponent>();
+
+			if (body_component == nullptr || shape_component == nullptr)
+			{
+				return false;
+			}
+
+			const physx::PxRigidActor* actor = body_component->get_rigid_actor();
+			const physx::PxShape* shape = shape_component->get_shape();
+
+			if (actor == nullptr || actor->userData == nullptr ||
+				shape == nullptr || shape->userData == nullptr)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	void PhysicalRagdollBuilder::apply_constraint_limits(const RagdollComponent* ragdoll_component)
+	{
+		using namespace physx;
+
+		const RagdollSettings::ConstraintLimitSettings& settings = ragdoll_component->settings.constraint_limit_settings;
+
+		struct LimbNode
+		{
+			Entity limb;
+			Entity::Handle parent = Entity::NullHandle;
+			D6JointComponent* parent_joint = nullptr;
+			const PxRigidDynamic* rigid_dynamic = nullptr;
+			BodyInertia inertia;
+		};
+
+		std::vector<LimbNode> nodes;
+		nodes.reserve(ragdoll_component->limbs.size());
+
+		for (const EntityPtr& limb_ptr : ragdoll_component->limbs)
+		{
+			Entity limb = limb_ptr.get();
+
+			LimbNode& node = nodes.emplace_back();
+			node.limb = limb;
+
+			if (const DynamicBodyComponent* body_component = limb.get_component_if_exists<DynamicBodyComponent>())
+			{
+				node.rigid_dynamic = body_component->get_rigid_dynamic();
+			}
+
+			if (RagdollLimbComponent* limb_component = get_ragdoll_limb_component(limb))
+			{
+				node.parent_joint = dynamic_cast<D6JointComponent*>(limb_component->parent_joint_component.get_for_write());
+				if (node.parent_joint != nullptr)
+				{
+					node.parent = node.parent_joint->get_first_entity_ptr().get().get_handle();
+				}
+			}
+		}
+
+		auto is_in_subtree = [&nodes](Entity::Handle handle, Entity::Handle subtree_root)
+		{
+			while (handle != Entity::NullHandle)
+			{
+				if (handle == subtree_root)
+				{
+					return true;
+				}
+
+				auto node_iter = std::find_if(nodes.begin(), nodes.end(), [handle](const LimbNode& node)
+				{
+					return node.limb.get_handle() == handle;
+				});
+
+				if (node_iter == nodes.end())
+				{
+					return false;
+				}
+				handle = node_iter->parent;
+			}
+			return false;
+		};
+
+		const float omega = 2.0f * M_PI * std::max(settings.frequency, 0.0f);
+
+		struct LimitValues
+		{
+			D6JointComponent* joint = nullptr;
+			float stiffness = 0.0f;
+			float damping = 0.0f;
+		};
+		std::vector<LimitValues> limit_values;
+
+		PhysicsEngine::execute_read([&]()
+		{
+			for (LimbNode& node : nodes)
+			{
+				if (node.rigid_dynamic != nullptr)
+				{
+					node.inertia = get_body_inertia(node.rigid_dynamic);
+				}
+			}
+
+			for (const LimbNode& node : nodes)
+			{
+				if (node.parent_joint == nullptr || node.rigid_dynamic == nullptr)
+				{
+					continue;
+				}
+
+				// Joint frame of the constraint in world space (actor1 = this limb).
+				const PxTransform joint_world_frame = node.rigid_dynamic->getGlobalPose() * create_PxTransform(node.parent_joint->get_second_local_frame());
+
+				// Inertia of everything below the joint about the joint, worst of the three joint axes.
+				float subtree_inertia = 0.0f;
+				for (uint32 axis = 0; axis < 3; ++axis)
+				{
+					PxVec3 unit_axis = PxVec3(0.0f);
+					unit_axis[axis] = 1.0f;
+					const PxVec3 n = joint_world_frame.q.rotate(unit_axis);
+
+					float axis_inertia = 0.0f;
+					for (const LimbNode& other : nodes)
+					{
+						if (other.rigid_dynamic != nullptr && is_in_subtree(other.limb.get_handle(), node.limb.get_handle()))
+						{
+							axis_inertia += get_inertia_about_axis(other.inertia, joint_world_frame.p, n);
+						}
+					}
+
+					subtree_inertia = std::max(subtree_inertia, axis_inertia);
+				}
+
+				if (subtree_inertia <= 0.0f)
+				{
+					continue;
+				}
+
+				LimitValues& values = limit_values.emplace_back();
+				values.joint = node.parent_joint;
+				values.stiffness = subtree_inertia * omega * omega;
+				values.damping = 2.0f * settings.damping_ratio * std::sqrt(values.stiffness * subtree_inertia);
+			}
+		});
+
+		for (const LimitValues& values : limit_values)
+		{
+			values.joint->twist_limit_stiffness = values.stiffness;
+			values.joint->twist_limit_damping = values.damping;
+			values.joint->swing_limit_stiffness = values.stiffness;
+			values.joint->swing_limit_damping = values.damping;
+		}
+	}
+
+	void PhysicalRagdollBuilder::apply_pelvis_attachment(const RagdollComponent* ragdoll_component)
+	{
+		const PhysicalAnimationComponent* physical_animation_component = dynamic_cast<const PhysicalAnimationComponent*>(ragdoll_component);
+		if (physical_animation_component == nullptr ||
+			physical_animation_component->use_fixed_pelvis_attachment ||
+			physical_animation_component->attachment_body.is_empty())
+		{
+			return;
+		}
+
+		DistanceJointComponent* joint_component = physical_animation_component->attachment_body.get().get_component_if_exists<DistanceJointComponent>();
+		if (joint_component == nullptr)
+		{
+			return;
+		}
+
+		const DynamicBodyComponent* pelvis_body = joint_component->get_second_entity_ptr().get().get_component_if_exists<DynamicBodyComponent>();
+		if (pelvis_body == nullptr)
+		{
+			return;
+		}
+
+		const RagdollSettings::PelvisAttachmentSettings& settings = ragdoll_component->settings.pelvis_attachment_settings;
+
+		// Distance joint springs are force based.
+		const float mass = pelvis_body->mass.get();
+		const float omega = 2.0f * M_PI * std::max(settings.frequency, 0.0f);
+		const float stiffness = mass * omega * omega;
+
+		joint_component->stiffness = stiffness;
+		joint_component->damping = 2.0f * settings.damping_ratio * std::sqrt(stiffness * mass);
+		joint_component->max_distance = settings.max_distance;
 	}
 }

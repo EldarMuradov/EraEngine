@@ -8,12 +8,12 @@
   Path: E:\Era Engine\resources\assets\box.15.cache.bin
 - Handle: 7330997632640765000
   Path: E:\Era Engine\resources\assets\Sponza\textures\sponza_column_b_diff.png
+- Handle: 3939065019963065912
+  Path: E:\Era Engine\resources\assets\resident-evil-tyrant\source\UmodelExport.fbx
 - Handle: 7751632712314073537
   Path: E:\Era Engine\resources\assets\test_character\Turn To RunningR.fbx
 - Handle: 13718962248132728243
   Path: E:\Era Engine\resources\assets\box.emesh
-- Handle: 3939065019963065912
-  Path: E:\Era Engine\resources\assets\resident-evil-tyrant\source\UmodelExport.fbx
 - Handle: 3911417581658477988
   Path: E:\Era Engine\resources\assets\springtrap\textures\T_K40Legs01_M.png
 - Handle: 13509410420443180576
@@ -42,6 +42,8 @@
   Path: E:\Era Engine\resources\assets\resident-evil-tyrant\textures\T_Tyrant_D.png
 - Handle: 10873561291478016120
   Path: E:\Era Engine\resources\assets\resident-evil-tyrant\source\tiran.fbx
+- Handle: 1911081436532644451
+  Path: E:\Era Engine\resources\assets\physics\ragdoll_profiles.eragprof
 - Handle: 17802464856707852724
   Path: E:\Era Engine\resources\assets\resident-evil-tyrant\source\untitled.fbx
 - Handle: 7950406384025971153

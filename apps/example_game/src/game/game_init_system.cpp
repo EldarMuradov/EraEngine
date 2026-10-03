@@ -797,7 +797,7 @@ namespace era_engine
 
 				//character.add_component<RagdollDismembermentComponent>();
 
-				if (true)
+				if (false)
 				{
 					IKComponent* ik_component = character.add_component<IKComponent>();
 

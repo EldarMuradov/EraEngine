@@ -8,6 +8,23 @@ namespace era_engine::physics
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
+
+		registration::enumeration<RagdollLimbType>("RagdollLimbType")
+		(
+			value("BODY_LOWER", RagdollLimbType::BODY_LOWER),
+			value("BODY_MIDDLE", RagdollLimbType::BODY_MIDDLE),
+			value("BODY_UPPER", RagdollLimbType::BODY_UPPER),
+			value("HEAD", RagdollLimbType::HEAD),
+			value("NECK", RagdollLimbType::NECK),
+			value("CLAVICLE", RagdollLimbType::CLAVICLE),
+			value("ARM", RagdollLimbType::ARM),
+			value("FOREARM", RagdollLimbType::FOREARM),
+			value("HAND", RagdollLimbType::HAND),
+			value("LEG", RagdollLimbType::LEG),
+			value("CALF", RagdollLimbType::CALF),
+			value("FOOT", RagdollLimbType::FOOT)
+		);
+
 		registration::class_<RagdollComponent>("RagdollComponent")
 			.constructor<>();
 

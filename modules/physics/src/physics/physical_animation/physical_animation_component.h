@@ -4,6 +4,8 @@
 #include "physics/physx_api.h"
 #include "physics/ragdolls/ragdoll_component.h"
 #include "physics/physical_animation/ragdoll_profile.h"
+#include "physics/physical_animation/ragdoll_profiles_asset.h"
+#include "physics/physical_animation/ragdoll_drive_compiler.h"
 #include "physics/physical_animation/states/base_simulation_state.h"
 #include "physics/physical_animation/limb_states/base_limb_state.h"
 
@@ -64,21 +66,21 @@ namespace era_engine::physics
 
 		CollisionData collision;
 
-		/* Joint local space transfrom from animation. */
+		// Joint local space transfrom from animation.
 		trs target_pose = trs::identity;
 
-		vec2 angular_range = vec2(deg2rad(3.0f), deg2rad(30.0f));
-		vec2 angular_damping_range = vec2(0.0f, 0.0f);
+		LimbMassProperties mass_properties;
 
-		vec2 linear_range = vec2(0.05f, 0.5f);
-		vec2 linear_damping_range = vec2(0.0f, 0.0f);
+		// Drive values compiled from the current profile, blended on profile changes.
+		CompiledLimbDrive drive;
+		CompiledLimbDrive drive_transition_from;
+		CompiledLimbDrive drive_transition_to;
 
 		float transition_time = 0.6f;
 
 		PhysicalLimbBlendType blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
 		PhysicalLimbBlendType prev_blend_type = PhysicalLimbBlendType::NONE;
 
-		ComponentPtr parent_joint_component = nullptr;
 		ComponentPtr drive_joint_component = nullptr;
 
 		EntityPtr ragdoll_ptr;
@@ -103,6 +105,14 @@ namespace era_engine::physics
 
 		bool try_to_apply_ragdoll_profile(ref<RagdollProfile> new_profile, RagdollProfileStrengthType new_strength_type = RagdollProfileStrengthType::DEFAULT, bool force_reload = false);
 		ref<RagdollProfile> get_ragdoll_profile() const;
+		RagdollProfileStrengthType get_strength_type() const;
+
+		void update_drives(float dt);
+
+		// Animation poses arrive at frame rate, drive targets move at fixed rate. The two latest animation poses are kept
+		// and sampled at the physics clock, so targets move smoothly whatever the frame rate is (one frame behind).
+		void push_animation_pose(const animation::SkeletonPose& pose, float dt);
+		bool sample_animation_pose(float dt, animation::SkeletonPose& out_pose);
 
 		std::shared_ptr<BaseSimulationState> get_current_state() const;
 
@@ -156,6 +166,8 @@ namespace era_engine::physics
 
 		EntityPtr attachment_body;
 
+		ref<RagdollProfilesAsset> profiles_asset;
+
         ERA_VIRTUAL_REFLECT(RagdollComponent)
 
 	private:
@@ -167,6 +179,27 @@ namespace era_engine::physics
 		SkeletonUpdateType mesh_update_type = SkeletonUpdateType::TRANSFORM;
 
 		float ragdoll_profile_transition_time = 0.0f;
+
+		bool drives_dirty = true;
+		bool drives_compiled = false;
+		bool mass_properties_initialized = false;
+		uint32 applied_asset_revision = UINT32_MAX;
+
+		float drive_transition_elapsed = 0.0f;
+		float drive_transition_duration = 0.0f;
+
+		struct AnimationPoseSnapshot
+		{
+			animation::SkeletonPose pose;
+			float time = 0.0f;
+		};
+
+		// [0] - previous frame, [1] - latest frame.
+		AnimationPoseSnapshot animation_pose_snapshots[2];
+		uint32 animation_pose_snapshots_count = 0;
+
+		float animation_elapsed = 0.0f;
+		float physics_elapsed = 0.0f;
 
 		std::unordered_map<SimulationStateType, std::shared_ptr<BaseSimulationState>> simulation_states;
 

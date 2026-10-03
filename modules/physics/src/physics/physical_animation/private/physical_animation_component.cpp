@@ -15,6 +15,8 @@
 
 #include <rttr/registration>
 
+#include <algorithm>
+
 namespace era_engine::physics
 {
 
@@ -65,10 +67,10 @@ namespace era_engine::physics
 	float PhysicalAnimationLimbComponent::calculate_desired_angular_damping(float delta_angle, float strength_multiplier /*= 1.0f*/) const
 	{
 		const float angular_damping_value = map_value(delta_angle,
-			angular_range.x,
-			angular_range.y,
-			angular_damping_range.x,
-			angular_damping_range.y);
+			drive.angular.error_range.x,
+			drive.angular.error_range.y,
+			drive.angular.damping_range.x,
+			drive.angular.damping_range.y);
 
 		return angular_damping_value * strength_multiplier;
 	}
@@ -76,10 +78,10 @@ namespace era_engine::physics
 	float PhysicalAnimationLimbComponent::calculate_desired_linear_damping(float delta_position, float strength_multiplier /*= 1.0f*/) const
 	{
 		const float linear_damping_value = map_value(delta_position,
-			linear_range.x,
-			linear_range.y,
-			linear_damping_range.x,
-			linear_damping_range.y);
+			drive.linear.error_range.x,
+			drive.linear.error_range.y,
+			drive.linear.damping_range.x,
+			drive.linear.damping_range.y);
 
 		return linear_damping_value * strength_multiplier;
 	}
@@ -181,76 +183,173 @@ namespace era_engine::physics
 
 	bool PhysicalAnimationComponent::try_to_apply_ragdoll_profile(ref<RagdollProfile> new_profile, RagdollProfileStrengthType new_strength_type/* = RagdollProfileStrengthType::DEFAULT*/, bool force_reload)
 	{
-		if (current_profile != new_profile ||
-			strength_type != new_strength_type || 
-			force_reload)
+		if (current_profile == new_profile &&
+			strength_type == new_strength_type &&
+			!force_reload)
 		{
-			current_profile = new_profile;
-			strength_type = new_strength_type;
+			return false;
+		}
+
+		current_profile = new_profile;
+		strength_type = new_strength_type;
+
+		for (const EntityPtr& limb_ptr : limbs)
+		{
+			PhysicalAnimationLimbComponent* limb_component = limb_ptr.get().get_component<PhysicalAnimationLimbComponent>();
+			limb_component->blend_type = current_profile->get_limb_details_by_type(limb_component->type).blend_type;
+		}
+
+		drives_dirty = true;
+
+		ragdoll_profile_transition_time = MAX_RAGDOLL_PROFILE_TRANSITION_TIME;
+
+		return true;
+	}
+
+	RagdollProfileStrengthType PhysicalAnimationComponent::get_strength_type() const
+	{
+		return strength_type;
+	}
+
+	void PhysicalAnimationComponent::update_drives(float dt)
+	{
+		if (!loaded || current_profile == nullptr)
+		{
+			return;
+		}
+
+		// Mass properties are measured once.
+		if (!mass_properties_initialized)
+		{
+			for (const EntityPtr& limb_ptr : limbs)
+			{
+				PhysicalAnimationLimbComponent* limb_component = limb_ptr.get().get_component<PhysicalAnimationLimbComponent>();
+				limb_component->mass_properties = RagdollDriveCompiler::compute_limb_mass_properties(limb_component);
+			}
+			mass_properties_initialized = true;
+			drives_dirty = true;
+		}
+
+		const uint32 asset_revision = profiles_asset != nullptr ? profiles_asset->revision : 0u;
+		if (applied_asset_revision != asset_revision)
+		{
+			applied_asset_revision = asset_revision;
+			drives_dirty = true;
+		}
+
+		if (drives_dirty)
+		{
+			const bool first_compilation = !drives_compiled;
 
 			for (const EntityPtr& limb_ptr : limbs)
 			{
-				Entity limb = limb_ptr.get();
-				PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
+				PhysicalAnimationLimbComponent* limb_component = limb_ptr.get().get_component<PhysicalAnimationLimbComponent>();
 
 				const PhysicalLimbDetails& limb_details = current_profile->get_limb_details_by_type(limb_component->type);
-
-				limb_component->blend_type = limb_details.blend_type;
-
-				if (limb_details.motor_drive.has_value())
+				if (!limb_details.motor_drive.has_value() || limb_component->drive_joint_component.is_empty())
 				{
-					const MotorDriveDetails& motor_drive = limb_details.motor_drive.value();
-
-					limb_component->angular_range = motor_drive.angular_range;
-					limb_component->linear_range = motor_drive.linear_range;
-
-					limb_component->angular_damping_range = motor_drive.angular_damping_range;
-					limb_component->linear_damping_range = motor_drive.linear_damping_range;
-
-					float strength_coeff = limb_details.strength_details.default_strength_coeff;
-					if (strength_type == RagdollProfileStrengthType::SOFT)
-					{
-						strength_coeff = limb_details.strength_details.soft_strength_coeff;
-					}
-					else if(strength_type == RagdollProfileStrengthType::HARD)
-					{
-						strength_coeff = limb_details.strength_details.hard_strength_coeff;
-					}
-
-					D6JointComponent* joint_component = dynamic_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
-					if (joint_component != nullptr)
-					{
-						if (motor_drive.enable_slerp_drive)
-						{
-							joint_component->slerp_drive_force_limit = motor_drive.max_angular_force;
-							joint_component->slerp_drive_stiffness = motor_drive.angular_drive_stiffness * strength_coeff;
-							joint_component->slerp_drive_accelerated = motor_drive.accelerated;
-						}
-						else
-						{
-							joint_component->swing_drive_force_limit = motor_drive.max_angular_force;
-							joint_component->swing_drive_stiffness = motor_drive.angular_drive_stiffness * strength_coeff;
-							joint_component->swing_drive_accelerated = motor_drive.accelerated;
-
-							joint_component->twist_drive_force_limit = motor_drive.max_angular_force;
-							joint_component->twist_drive_stiffness = motor_drive.angular_drive_stiffness * strength_coeff;
-							joint_component->twist_drive_accelerated = motor_drive.accelerated;
-						}
-
-						joint_component->linear_drive_force_limit = motor_drive.max_linear_force;
-						joint_component->linear_drive_stiffness = motor_drive.linear_drive_stiffness * strength_coeff;
-						joint_component->linear_drive_accelerated = motor_drive.accelerated;
-					}
+					// Profiles without drives keep the current values.
+					limb_component->drive_transition_from = limb_component->drive;
+					limb_component->drive_transition_to = limb_component->drive;
+					continue;
 				}
 
+				const float strength = current_profile->get_strength(limb_component->type, strength_type);
+
+				limb_component->drive_transition_from = first_compilation ? CompiledLimbDrive{} : limb_component->drive;
+				limb_component->drive_transition_to = RagdollDriveCompiler::compile_limb_drive(limb_details.motor_drive.value(), limb_component->mass_properties, strength);
 			}
 
-			// If we update ragdoll profile, we need to combine prev and current blend types untill ragdoll_profile_transition_time is over.
-			ragdoll_profile_transition_time = MAX_RAGDOLL_PROFILE_TRANSITION_TIME;
+			drive_transition_elapsed = 0.0f;
+			drive_transition_duration = first_compilation || profiles_asset == nullptr ? 0.0f : profiles_asset->selection_settings.transition_time;
 
+			drives_compiled = true;
+			drives_dirty = false;
+		}
+
+		drive_transition_elapsed = std::min(drive_transition_elapsed + dt, drive_transition_duration);
+		const float blend = drive_transition_duration > 0.0f ? drive_transition_elapsed / drive_transition_duration : 1.0f;
+
+		for (const EntityPtr& limb_ptr : limbs)
+		{
+			PhysicalAnimationLimbComponent* limb_component = limb_ptr.get().get_component<PhysicalAnimationLimbComponent>();
+
+			D6JointComponent* joint_component = dynamic_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
+			if (joint_component == nullptr)
+			{
+				continue;
+			}
+
+			limb_component->drive = CompiledLimbDrive::lerp(limb_component->drive_transition_from, limb_component->drive_transition_to, blend);
+
+			joint_component->slerp_drive_stiffness = limb_component->drive.angular.stiffness;
+			joint_component->slerp_drive_force_limit = limb_component->drive.angular.force_limit;
+			joint_component->slerp_drive_accelerated = limb_component->drive.angular.accelerated;
+
+			joint_component->linear_drive_stiffness = limb_component->drive.linear.stiffness;
+			joint_component->linear_drive_force_limit = limb_component->drive.linear.force_limit;
+			joint_component->linear_drive_accelerated = limb_component->drive.linear.accelerated;
+		}
+	}
+
+	void PhysicalAnimationComponent::push_animation_pose(const animation::SkeletonPose& pose, float dt)
+	{
+		if (!pose.is_valid())
+		{
+			return;
+		}
+
+		animation_elapsed += dt;
+
+		animation_pose_snapshots[0] = std::move(animation_pose_snapshots[1]);
+		animation_pose_snapshots[1].pose = pose;
+		animation_pose_snapshots[1].time = animation_elapsed;
+
+		animation_pose_snapshots_count = std::min(animation_pose_snapshots_count + 1u, 2u);
+	}
+
+	bool PhysicalAnimationComponent::sample_animation_pose(float dt, animation::SkeletonPose& out_pose)
+	{
+		using namespace animation;
+
+		if (animation_pose_snapshots_count == 0)
+		{
+			return false;
+		}
+
+		const AnimationPoseSnapshot& latest = animation_pose_snapshots[1];
+
+		if (animation_pose_snapshots_count == 1 || animation_pose_snapshots[0].pose.size() != latest.pose.size())
+		{
+			physics_elapsed = latest.time;
+			out_pose = latest.pose;
 			return true;
 		}
-		return false;
+
+		const AnimationPoseSnapshot& previous = animation_pose_snapshots[0];
+
+		// Fixed steps of a frame run before its animation update, so the physics elapsed walks over the interval between
+		// the two latest animation frames. Clamping keeps it there if steps were dropped or the frame rate changed.
+		physics_elapsed = clamp(physics_elapsed + dt, previous.time, latest.time);
+
+		const float interval = latest.time - previous.time;
+		const float t = interval > 0.0f ? (physics_elapsed - previous.time) / interval : 1.0f;
+
+		out_pose = latest.pose;
+		for (uint32 joint_id = 0; joint_id < latest.pose.size(); ++joint_id)
+		{
+			const trs& from = previous.pose.get_joint_transform(joint_id).get_transform();
+			const trs& to = latest.pose.get_joint_transform(joint_id).get_transform();
+
+			trs joint_transform;
+			joint_transform.position = lerp(from.position, to.position, t);
+			joint_transform.rotation = nlerp_shortest(from.rotation, to.rotation, t);
+			joint_transform.scale = lerp(from.scale, to.scale, t);
+
+			out_pose.set_joint_transform(JointTransform(joint_transform), joint_id);
+		}
+
+		return true;
 	}
 
 	float PhysicalAnimationComponent::get_profile_transition_time() const
@@ -352,18 +451,7 @@ namespace era_engine::physics
 
 	float PhysicalAnimationComponent::get_strength_value_by_limb(RagdollLimbType limb_type) const
 	{
-		const PhysicalLimbDetails& limb_details = current_profile->get_limb_details_by_type(limb_type);
-
-		if (strength_type == RagdollProfileStrengthType::SOFT)
-		{
-			return limb_details.strength_details.soft_strength_coeff;
-		}
-		else if (strength_type == RagdollProfileStrengthType::HARD)
-		{
-			return limb_details.strength_details.hard_strength_coeff;
-		}
-
-		return limb_details.strength_details.default_strength_coeff;
+		return current_profile->get_strength(limb_type, strength_type);
 	}
 
 	const PhysicsLimbChain* PhysicalAnimationComponent::get_chain_by_joint_id(uint32 joint_id) const

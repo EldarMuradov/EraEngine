@@ -59,6 +59,11 @@ namespace era_engine::physics
 
 		bool should_be_simulated(Entity ragdoll) const;
 
+		void load_profiles_asset();
+		bool save_profiles_asset() const;
+
+		const RagdollProfilesAsset* get_profiles_asset(const PhysicalAnimationComponent* physical_animation_component) const;
+
 		void process_added_pacs();
 
 		void on_pac_created(entt::registry& registry, entt::entity entity_handle);
@@ -81,11 +86,7 @@ namespace era_engine::physics
 			animation::AnimationComponent,
 			animation::SkeletonComponent>> ragdolls_group;
 
-		// Test data
-		ref<RagdollProfile> idle_profile = nullptr;
-		ref<RagdollProfile> running_profile = nullptr;
-		ref<RagdollProfile> sprint_profile = nullptr;
-		ref<RagdollProfile> ragdoll_profile = nullptr;
+		ref<RagdollProfilesAsset> profiles_asset = nullptr;
 
 		std::unique_ptr<DrivePoseSampler> pose_sampler;
 	};

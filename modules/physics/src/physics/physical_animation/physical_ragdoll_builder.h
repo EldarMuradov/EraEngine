@@ -87,12 +87,18 @@ namespace era_engine::physics
 
         static void build_ragdoll(const RuntimeContext& ctx);
 
+        static bool try_finalize_ragdoll(RagdollComponent* ragdoll_component);
+
     private:
+        static bool are_bodies_created(const RagdollComponent* ragdoll_component);
+        static void apply_constraint_limits(const RagdollComponent* ragdoll_component);
+        static void apply_pelvis_attachment(const RagdollComponent* ragdoll_component);
+
         static bool prepare_structure(const RuntimeContext& ctx);
         static bool build_bodies(const RuntimeContext& ctx);
         static bool build_constraint_joints(const RuntimeContext& ctx);
 
-        static bool build_kinematics(const RuntimeContext& ctx); // Optional stage. Only if enable_physical_animation == true.
-        static bool build_drive_joints(const RuntimeContext& ctx); // Optional stage. Only if enable_physical_animation == true.
+        static bool build_kinematics(const RuntimeContext& ctx); // Only if enable_physical_animation == true.
+        static bool build_drive_joints(const RuntimeContext& ctx); // Only if enable_physical_animation == true.
     };
 }

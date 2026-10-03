@@ -53,20 +53,29 @@ namespace era_engine::physics
     class ERA_PHYSICS_API RagdollSettings
     {
     public:
+        // Must sum to 1 with paired limbs counted twice.
         struct MassSettings
         {
-            float head_mass_percentage = 0.029f;
-            float neck_mass_percentage = 0.0055f;
-            float body_upper_mass_percentage = 0.066f;
-            float body_middle_mass_percentage = 0.163f;
-            float body_lower_mass_percentage = 0.112f;
-            float clavicle_mass_percentage = 0.007f;
-            float arm_mass_percentage = 0.0135f;
-            float forearm_mass_percentage = 0.008f;
-            float hand_mass_percentage = 0.003f;
-            float leg_mass_percentage = 0.071f;
-            float calf_mass_percentage = 0.0215f;
-            float foot_mass_percentage = 0.007f;
+            float head_mass_percentage = 0.055f;
+            float neck_mass_percentage = 0.0144f;
+            float body_upper_mass_percentage = 0.1436f;
+            float body_middle_mass_percentage = 0.1633f;
+            float body_lower_mass_percentage = 0.1117f;
+            float clavicle_mass_percentage = 0.008f;
+            float arm_mass_percentage = 0.0271f;
+            float forearm_mass_percentage = 0.0162f;
+            float hand_mass_percentage = 0.0061f;
+            float leg_mass_percentage = 0.1416f;
+            float calf_mass_percentage = 0.0433f;
+            float foot_mass_percentage = 0.0137f;
+
+            float get_total_percentage() const
+            {
+                return head_mass_percentage + neck_mass_percentage +
+                    body_upper_mass_percentage + body_middle_mass_percentage + body_lower_mass_percentage +
+                    2.0f * (clavicle_mass_percentage + arm_mass_percentage + forearm_mass_percentage + hand_mass_percentage) +
+                    2.0f * (leg_mass_percentage + calf_mass_percentage + foot_mass_percentage);
+            }
         };
 
         struct ContactImpulseSettings
@@ -196,7 +205,34 @@ namespace era_engine::physics
             float forearm_height_modifier = 1.0f;
         };
 
+        struct BodySettings
+        {
+            float max_depenetration_velocity = 5.0f;
+            float linear_damping = 0.05f;
+            float angular_damping = 0.05f;
+            float max_linear_velocity = 500.0f;
+            float max_angular_velocity = 35.0f;
+            float sleep_threshold = 0.02f;
+        };
+
+        struct ConstraintLimitSettings
+        {
+            float frequency = 8.0f; // k = I * w^2, c = 2 * zeta * sqrt(k * I).
+            float damping_ratio = 1.0f;
+        };
+
+        // Spring between the kinematic pelvis attachment and the pelvis limb: k = m_pelvis * w^2, c = 2 * zeta * sqrt(k * m_pelvis).
+        struct PelvisAttachmentSettings
+        {
+            float frequency = 1.5f;
+            float damping_ratio = 0.8f;
+            float max_distance = 0.05f;
+        };
+
         MassSettings mass_settings;
+        BodySettings body_settings;
+        ConstraintLimitSettings constraint_limit_settings;
+        PelvisAttachmentSettings pelvis_attachment_settings;
         ContactImpulseSettings impulse_settings;
         BaseShapesSettings shapes_settings;
         LocalShapePositionsSettings local_shape_settings;
@@ -230,15 +266,18 @@ namespace era_engine::physics
 
 		uint32 joint_id = INVALID_JOINT;
 
-        /* Prev frame physics body local space transfrom. */
+        // Prev frame physics body local space transfrom.
         trs prev_physics_pose = trs::identity;
 
-        /* Physics body local space transfrom. */
+        // Physics body local space transfrom.
         trs physics_pose = trs::identity;
 
         ObservableMember<bool> simulated = false;
 
         EntityPtr joint_entity_ptr;
+
+        // Constraint joint connecting this limb (actor1) to its parent limb (actor0).
+        ComponentPtr parent_joint_component = nullptr;
 
         RagdollLimbType type = RagdollLimbType::BODY_LOWER;
 

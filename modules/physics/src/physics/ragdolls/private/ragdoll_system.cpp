@@ -55,44 +55,7 @@ namespace era_engine::physics
 
 		for (auto&& [entity_handle, transform_component, ragdoll_component, skeleton_component] : ragdolls_group.each())
 		{
-			if (ragdoll_component.loaded)
-			{
-				continue;
-			}
-			bool is_ready_for_simulation = true;
-			for (const EntityPtr& limb_ptr : ragdoll_component.limbs)
-			{
-				Entity limb = limb_ptr.get();
-
-				ShapeComponent* shape_component = ShapeUtils::get_shape_component(limb);
-				DynamicBodyComponent* body_component = limb.get_component<DynamicBodyComponent>();
-
-				if (body_component != nullptr && shape_component != nullptr)
-				{
-					is_ready_for_simulation &= body_component->get_rigid_actor() != nullptr;
-					is_ready_for_simulation &= shape_component->get_shape() != nullptr;
-					if (body_component->get_rigid_actor() != nullptr)
-					{
-						is_ready_for_simulation &= body_component->get_rigid_actor()->userData != nullptr;
-					}
-					if (shape_component->get_shape() != nullptr)
-					{
-						is_ready_for_simulation &= shape_component->get_shape()->userData != nullptr;
-					}
-				}
-				else
-				{
-					is_ready_for_simulation = false;
-					break;
-				}
-
-				if (!is_ready_for_simulation)
-				{
-					break;
-				}
-			}
-
-			ragdoll_component.loaded = is_ready_for_simulation;
+			PhysicalRagdollBuilder::try_finalize_ragdoll(&ragdoll_component);
 		}
 
 		for (auto [entity_handle, transform_component, ragdoll_component] : world->group(components_group<TransformComponent, RagdollComponent>).each())
