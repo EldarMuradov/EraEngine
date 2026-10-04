@@ -334,15 +334,15 @@ namespace era_engine::physics
 
 		ref<RagdollProfile> ragdoll_profile = make_ref<RagdollProfile>();
 		ragdoll_profile->type = RagdollProfileType::RAGDOLL;
-		ragdoll_profile->head_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
-		ragdoll_profile->arm_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
-		ragdoll_profile->body_upper_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
-		ragdoll_profile->body_middle_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
-		ragdoll_profile->forearm_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
-		ragdoll_profile->hand_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
-		ragdoll_profile->leg_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
-		ragdoll_profile->calf_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
-		ragdoll_profile->foot_limb_details.blend_type = PhysicalLimbBlendType::PURE_PHYSICS;
+		ragdoll_profile->head_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+		ragdoll_profile->arm_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+		ragdoll_profile->body_upper_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+		ragdoll_profile->body_middle_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+		ragdoll_profile->forearm_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+		ragdoll_profile->hand_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+		ragdoll_profile->leg_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+		ragdoll_profile->calf_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
+		ragdoll_profile->foot_limb_details.blend_type = PhysicalLimbBlendType::BLEND_WITH_PREV_POSE;
 		asset->profiles[static_cast<uint32>(RagdollProfileType::RAGDOLL)] = ragdoll_profile;
 
 		return asset;

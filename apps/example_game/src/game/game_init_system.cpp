@@ -47,6 +47,7 @@
 #include "game/camera/gameplay_tpp_camera_component.h"
 
 #include <ik/ik_component.h>
+#include <ik/full_body_ik_component.h>
 
 #include <audio/audio.h>
 
@@ -779,15 +780,16 @@ namespace era_engine
 				settings.object_space_settings.left_foot_end_joint_adjastment = vec3(0.0f, 0.0f, -0.04f);
 				settings.object_space_settings.right_foot_end_joint_adjastment = vec3(0.0f, 0.0f, -0.04f);
 
-				settings.scaler_settings.upper_body_height_modifier = 0.55f;
-				settings.scaler_settings.upper_body_radius_modifier = 0.5f;
-				settings.scaler_settings.middle_body_height_modifier = 0.75f;
-				settings.scaler_settings.middle_body_radius_modifier = 0.75f;
-				settings.scaler_settings.lower_body_height_modifier = 1.0f;
-				settings.scaler_settings.lower_body_radius_modifier = 1.0f;
-				settings.scaler_settings.clavicle_height_modifier = 1.0f;
+				settings.scaler_settings.upper_body_height_modifier = 0.65f;
+				settings.scaler_settings.upper_body_radius_modifier = 0.62f;
+				settings.scaler_settings.middle_body_height_modifier = 0.82f;
+				settings.scaler_settings.middle_body_radius_modifier = 0.82f;
+				settings.scaler_settings.lower_body_height_modifier = 0.95f;
+				settings.scaler_settings.lower_body_radius_modifier = 0.9f;
+				settings.scaler_settings.clavicle_height_modifier = 1.5f;
 				settings.scaler_settings.arm_height_modifier = 1.6f;
 				settings.scaler_settings.forearm_height_modifier = 1.3f;
+				settings.scaler_settings.neck_height_modifier = 1.3f;
 
 				//RagdollComponent* ragdoll_component = character.add_component<RagdollComponent>();
 				//ragdoll_component->simulated = true;
@@ -830,6 +832,42 @@ namespace era_engine
 						hand_ik_target->owner_entity = character.get_handle();
 						hand_ik_target->chain_index = 0;
 						hand_ik_target->weight = 1.0f;
+					}
+				}
+
+				if (false)
+				{
+					FullBodyIKComponent* full_body_ik = character.add_component<FullBodyIKComponent>();
+					full_body_ik->set_root("mixamorig:Hips");
+					full_body_ik->settings.iterations = 16;
+					full_body_ik->settings.root_position_mobility = 0.0f;
+
+					// The spine bends less than the arms.
+					FullBodyIKJointSettings spine_settings;
+					spine_settings.stiffness = 0.5f;
+					spine_settings.max_angle_deg = 30.0f;
+					full_body_ik->set_joint_settings("mixamorig:Spine", spine_settings);
+					full_body_ik->set_joint_settings("mixamorig:Spine1", spine_settings);
+					full_body_ik->set_joint_settings("mixamorig:Spine2", spine_settings);
+
+					const char* hand_names[] = { "mixamorig:LeftHand", "mixamorig:RightHand" };
+					for (const char* hand_name : hand_names)
+					{
+						const uint32 effector_index = full_body_ik->add_effector(hand_name);
+						if (effector_index == INVALID_JOINT)
+						{
+							continue;
+						}
+
+						full_body_ik->effectors[effector_index].pole_vector_local = -vec3::forward;
+						full_body_ik->effectors[effector_index].pole_weight = 0.5f;
+
+						Entity hand_target = world->create_entity(hand_name);
+
+						FullBodyIKTargetComponent* target_component = hand_target.add_component<FullBodyIKTargetComponent>();
+						target_component->owner_entity = character.get_handle();
+						target_component->effector_index = effector_index;
+						target_component->position_weight = 1.0f;
 					}
 				}
 			}

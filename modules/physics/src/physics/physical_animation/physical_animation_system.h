@@ -1,7 +1,7 @@
 #pragma once
 
 #include "physics/physical_animation/physical_animation_component.h"
-#include "physics/physical_animation/drive_pose_sampler.h"
+#include "physics/physical_animation/ragdoll_drive_pose_sampler.h"
 
 #include <ecs/system.h>
 #include <ecs/base_components/transform_component.h>
@@ -88,6 +88,6 @@ namespace era_engine::physics
 
 		ref<RagdollProfilesAsset> profiles_asset = nullptr;
 
-		std::unique_ptr<DrivePoseSampler> pose_sampler;
+		std::unique_ptr<RagdollDrivePoseSampler> pose_sampler;
 	};
 }

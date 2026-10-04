@@ -88,12 +88,12 @@ namespace era_engine::physics
 		if (is_tgs)
 		{
 			dynamic_body_component->solver_velocity_iterations_count.get_for_write() = is_gpu ? 1 : 1;
-			dynamic_body_component->solver_position_iterations_count.get_for_write() = is_gpu ? 24 : 6;
+			dynamic_body_component->solver_position_iterations_count.get_for_write() = is_gpu ? 24 : 8;
 		}
 		else
 		{
 			dynamic_body_component->solver_velocity_iterations_count.get_for_write() = is_gpu ? 6 : 4;
-			dynamic_body_component->solver_position_iterations_count.get_for_write() = is_gpu ? 12 : 8;
+			dynamic_body_component->solver_position_iterations_count.get_for_write() = is_gpu ? 12 : 10;
 		}
 
 		return dynamic_body_component;
@@ -805,7 +805,7 @@ namespace era_engine::physics
 			structure.neck_joint,
 			structure.head_joint,
 			settings.shapes_settings.neck_radius,
-			1.0f,
+			settings.scaler_settings.neck_height_modifier,
 			true,
 			ctx.enable_physical_animation ? physical_animation_component->neck_chain.get() : nullptr,
 			CollisionType::RAGDOLL,
@@ -1325,11 +1325,11 @@ namespace era_engine::physics
 			structure.thorax_joint,
 			body_middle_d6_transform,
 			body_upper_capsule_bottom_transform,
-			deg2rad(-10.0f), deg2rad(10.0f),
+			deg2rad(-15.0f), deg2rad(15.0f),
 			body_upper_d6_swing_y_deg, deg2rad(15.0f));
 
 		// Body lower -> body middle
-		constexpr float body_middle_forward_angle_deg = deg2rad(12.0f);
+		constexpr float body_middle_forward_angle_deg = deg2rad(20.0f);
 		constexpr float body_middle_backward_angle_deg = deg2rad(8.0f);
 		constexpr float body_middle_d6_swing_y_deg = (body_middle_forward_angle_deg + body_middle_backward_angle_deg) / 2.0f;
 		const vec3 body_middle_capsule_y_axis = middle_default_transform.rotation * vec3::up;

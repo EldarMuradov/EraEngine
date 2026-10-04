@@ -100,7 +100,7 @@ namespace era_engine::physics
 
 		load_profiles_asset();
 
-		pose_sampler = std::make_unique<DrivePoseSampler>();
+		pose_sampler = std::make_unique<RagdollDrivePoseSampler>();
 	}
 
 	void PhysicalAnimationSystem::update_before_physics(float dt)
@@ -717,23 +717,34 @@ namespace era_engine::physics
 
 				if (limb_component->drive_joint_component.get() != nullptr)
 				{
+					const trs target_world_pose = ragdoll_world_space_pose * limb_component->target_pose;
+					const trs target_rigid_pose = trs(target_world_pose.position, target_world_pose.rotation, vec3(1.0f));
+
 					D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_component->drive_joint_component.get_for_write());
 					Entity kinematic_target = drive_joint->get_first_entity_ptr().get();
 
-					const trs target_world_pose = ragdoll_world_space_pose * limb_component->target_pose;
+					const PhysicalLimbStateType current_state = limb_component->get_current_state_type();
+					if (drive_joint->disabled ||
+						(current_state == PhysicalLimbStateType::RAGDOLL ||
+							current_state == PhysicalLimbStateType::RAGDOLL ||
+							current_state == PhysicalLimbStateType::RAGDOLL))
+					{
+						drive_joint->drive_transform.get_for_write() = trs::identity;
+					}
+					else
+					{
+						// The kinematic target reaches its new pose only after the solver, so a drive aimed at it would trail
+						// the animation by a whole step. Aim the drive at the new pose relative to the current kinematic pose. 
+						// Damping already sees the target velocity through setKinematicTarget.
+						const trs kinematic_world_pose = PhysicsUtils::get_actor_world_pose_locked(kinematic_target);
+						const trs kinematic_rigid_pose = trs(kinematic_world_pose.position, kinematic_world_pose.rotation, vec3(1.0f));
 
-					// The kinematic target reaches its new pose only after the solver, so a drive aimed at it would trail
-					// the animation by a whole step. Aim the drive at the new pose relative to the current kinematic pose. 
-					// Damping already sees the target velocity through setKinematicTarget.
-					const trs kinematic_world_pose = PhysicsUtils::get_actor_world_pose_locked(kinematic_target);
-					const trs kinematic_rigid_pose = trs(kinematic_world_pose.position, kinematic_world_pose.rotation, vec3(1.0f));
-					const trs target_rigid_pose = trs(target_world_pose.position, target_world_pose.rotation, vec3(1.0f));
-
-					trs drive_transform = invert(kinematic_rigid_pose) * target_rigid_pose;
-					drive_transform.rotation = normalize(drive_transform.rotation);
-					drive_transform.scale = vec3(1.0f);
-					drive_joint->drive_transform = drive_transform;
-
+						trs drive_transform = invert(kinematic_rigid_pose) * target_rigid_pose;
+						drive_transform.rotation = normalize(drive_transform.rotation);
+						drive_transform.scale = vec3(1.0f);
+						drive_joint->drive_transform.get_for_write() = drive_transform;
+					}
+					
 					PhysicsUtils::manual_set_physics_transform_locked(kinematic_target, target_world_pose, true);
 				}
 			}

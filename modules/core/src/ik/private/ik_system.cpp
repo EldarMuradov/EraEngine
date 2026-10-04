@@ -1,5 +1,6 @@
 #include "ik/ik_system.h"
 #include "ik/ik_component.h"
+#include "ik/full_body_ik_component.h"
 
 #include "animation/skeleton.h"
 #include "animation/skeleton_component.h"
@@ -70,6 +71,63 @@ namespace era_engine
             chain.weight = target_component.weight;
         }
 
+        for (auto [entity_handle, target_component, transform_component] : world->group(components_group<FullBodyIKTargetComponent, TransformComponent>).each())
+        {
+            FullBodyIKComponent* owner_ik = world->get_entity(target_component.owner_entity).get_component_if_exists<FullBodyIKComponent>();
+            if (owner_ik == nullptr)
+            {
+                continue;
+            }
+
+            if (target_component.effector_index >= owner_ik->effectors.size())
+            {
+                continue;
+            }
+
+            FullBodyIKEffector& effector = owner_ik->effectors[target_component.effector_index];
+
+            const trs& target_transform = transform_component.get_world_transform();
+            effector.target_position = target_transform.position;
+            effector.target_rotation = target_transform.rotation;
+            effector.position_weight = target_component.position_weight;
+            effector.rotation_weight = target_component.rotation_weight;
+        }
+
+        for (auto [handle, full_body_ik_component, skeleton_component, transform_component]
+            : world->group(components_group<FullBodyIKComponent,
+                SkeletonComponent,
+                TransformComponent>).each())
+        {
+            if (!full_body_ik_component.enabled || full_body_ik_component.settings.weight <= 0.0f)
+            {
+                continue;
+            }
+
+            if (!full_body_ik_component.inited)
+            {
+                full_body_ik_component.solver.init(skeleton_component.skeleton.get(), full_body_ik_component.root_joint_id);
+                full_body_ik_component.inited = true;
+            }
+
+            SkeletonPose current_pose = skeleton_component.get_current_pose();
+
+            if (!current_pose.is_valid())
+            {
+                continue;
+            }
+
+            const bool solved = full_body_ik_component.solver.solve(current_pose,
+                transform_component.get_world_transform(),
+                full_body_ik_component.effectors,
+                full_body_ik_component.joint_settings,
+                full_body_ik_component.settings);
+
+            if (solved)
+            {
+                skeleton_component.apply_pose(current_pose);
+            }
+        }
+
         for (auto [handle, ik_component, skeleton_component, transform_component]
             : world->group(components_group<IKComponent,
                 SkeletonComponent,
@@ -127,6 +185,48 @@ namespace era_engine
         {
             vec3 point = transform_component.get_world_transform().position;
             renderWireSphere(point, 0.05f, vec4(1.0f, 0.f, 1.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
+        }
+
+        for (auto [entity_handle, target_component, transform_component] : world->group(components_group<FullBodyIKTargetComponent, TransformComponent>).each())
+        {
+            vec3 point = transform_component.get_world_transform().position;
+            renderWireSphere(point, 0.05f, vec4(1.0f, 0.f, 1.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
+        }
+
+        for (auto [entity_handle, full_body_ik_component] : world->view<FullBodyIKComponent>().each())
+        {
+            if (!full_body_ik_component.enabled || !full_body_ik_component.draw_debug)
+            {
+                continue;
+            }
+
+            const FullBodyIKSolver& solver = full_body_ik_component.solver;
+            const std::vector<FullBodyIKSolver::Node>& nodes = solver.get_nodes();
+            const std::vector<vec3>& positions = solver.get_solved_positions();
+
+            if (positions.size() != nodes.size())
+            {
+                continue;
+            }
+
+            for (size_t i = 0; i < nodes.size(); ++i)
+            {
+                const vec4 color = nodes[i].effector != INVALID_JOINT ? vec4(0.0f, 1.0f, 1.0f, 1.0f) : vec4(1.0f, 1.0f, 0.0f, 1.0f);
+                renderWireSphere(positions[i], 0.03f, color, renderer_holder_rc->ldrRenderPass);
+
+                if (nodes[i].parent != INVALID_JOINT)
+                {
+                    renderLine(positions[nodes[i].parent], positions[i], vec4(1.0f, 1.0f, 0.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
+                }
+            }
+
+            for (const FullBodyIKEffector& effector : full_body_ik_component.effectors)
+            {
+                if (effector.enabled && effector.position_weight > 0.0f)
+                {
+                    renderWireSphere(effector.target_position, 0.06f, vec4(0.0f, 1.f, 1.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
+                }
+            }
         }
 
         for (auto [entity_handle, ik_component] : world->view<IKComponent>().each())

@@ -184,8 +184,14 @@ namespace era_engine::physics
 
         limb_component->collision.reset();
         limb_component->prev_physics_pose = limb_object_space_pose;
-        limb_component->physics_pose = limb_object_space_pose;
+		limb_component->physics_pose = limb_object_space_pose;
 
-        PhysicsUtils::manual_set_physics_transform_locked(limb, ragdoll_world_transform * limb_object_space_pose, true);
-    }
+		PhysicsUtils::manual_set_physics_transform_locked(limb, ragdoll_world_transform * limb_object_space_pose, true);
+
+		DynamicBodyComponent* dynamic_body_component = limb.get_component<DynamicBodyComponent>();
+		ASSERT(dynamic_body_component != nullptr);
+
+		dynamic_body_component->linear_velocity = vec3::zero;
+		dynamic_body_component->angular_velocity = vec3::zero;
+	}
 }

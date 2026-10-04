@@ -18,10 +18,10 @@ namespace era_engine::physics
     class PhysicalAnimationComponent;
 	class PhysicalAnimationLimbComponent;
 
-	class ERA_PHYSICS_API DrivePoseSampler
+	class ERA_PHYSICS_API RagdollDrivePoseSampler
 	{
 	public:
-        DrivePoseSampler();
+        RagdollDrivePoseSampler();
 
         void sample_pose(PhysicalAnimationComponent* physical_animation_component,
             animation::SkeletonComponent* skeleton_to_update,

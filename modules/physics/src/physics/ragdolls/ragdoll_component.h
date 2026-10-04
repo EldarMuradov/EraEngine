@@ -200,6 +200,8 @@ namespace era_engine::physics
             float middle_body_radius_modifier = 1.0f;
             float lower_body_radius_modifier = 1.0f;
 
+            float neck_height_modifier = 1.0f;
+
             float clavicle_height_modifier = 1.0f;
             float arm_height_modifier = 1.0f;
             float forearm_height_modifier = 1.0f;

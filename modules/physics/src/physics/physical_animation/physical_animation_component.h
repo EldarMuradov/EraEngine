@@ -207,7 +207,7 @@ namespace era_engine::physics
 		bool force_ragdoll_state = false;
 
 		friend class PhysicalAnimationSystem;
-		friend class DrivePoseSampler;
+		friend class RagdollDrivePoseSampler;
 		friend class PhysicalAnimationBuilderUtils;
 	};
 }

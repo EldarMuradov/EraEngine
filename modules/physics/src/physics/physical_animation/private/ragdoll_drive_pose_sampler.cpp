@@ -1,4 +1,4 @@
-#include "physics/physical_animation/drive_pose_sampler.h"
+#include "physics/physical_animation/ragdoll_drive_pose_sampler.h"
 #include "physics/physical_animation/physical_animation_component.h"
 #include "physics/physical_animation/physical_animation_utils.h"
 #include "physics/physical_animation/ragdoll_profile.h"
@@ -14,11 +14,11 @@
 
 namespace era_engine::physics
 {
-	DrivePoseSampler::DrivePoseSampler()
+	RagdollDrivePoseSampler::RagdollDrivePoseSampler()
 	{
 	}
 
-	void DrivePoseSampler::sample_pose(PhysicalAnimationComponent* physical_animation_component,
+	void RagdollDrivePoseSampler::sample_pose(PhysicalAnimationComponent* physical_animation_component,
 		animation::SkeletonComponent* skeleton_to_update,
 		const animation::SkeletonPose& pose,
 		float dt) const
@@ -131,7 +131,7 @@ namespace era_engine::physics
 		}
 	}
 
-	void DrivePoseSampler::blend_with_transform(const trs& from_joint_transform, float blend_value, trs& out_transform) const
+	void RagdollDrivePoseSampler::blend_with_transform(const trs& from_joint_transform, float blend_value, trs& out_transform) const
 	{
 		out_transform.position = lerp(from_joint_transform.position,
 			out_transform.position,
@@ -145,7 +145,7 @@ namespace era_engine::physics
 		}
 	}
 
-	trs DrivePoseSampler::sample_limb(Entity limb,
+	trs RagdollDrivePoseSampler::sample_limb(Entity limb,
 		PhysicalAnimationLimbComponent* limb_data_component,
 		PhysicalAnimationComponent* physical_animation_component,
 		PhysicalLimbBlendType result_type,

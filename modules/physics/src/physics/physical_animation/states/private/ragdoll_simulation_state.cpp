@@ -119,15 +119,7 @@ namespace era_engine::physics
 			limb_data_component->prev_physics_pose = limb_object_space_pose;
 			limb_data_component->physics_pose = limb_object_space_pose;
 			limb_data_component->target_pose = limb_object_space_pose;
-
-			//DynamicBodyComponent* dynamic_body_component = limb.get_component<DynamicBodyComponent>();
-			//ASSERT(dynamic_body_component != nullptr);
-
-			//dynamic_body_component->linear_velocity = vec3::zero;
-			//dynamic_body_component->angular_velocity = vec3::zero;
 		}
-
-		//skeleton_component->apply_pose(animation_component->current_animation_pose);
 
 		BaseSimulationState::on_exit();
 	}
