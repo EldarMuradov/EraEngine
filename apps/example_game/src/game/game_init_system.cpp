@@ -38,6 +38,7 @@
 #include <motion_matching/motion/motion_component.h>
 #include <motion_matching/features/pose_feature.h>
 #include <motion_matching/features/trajectory_feature.h>
+#include <motion_matching/features/phase_feature.h>
 #include <motion_matching/motion_matching_database.h>
 #include <motion_matching/features/motion_matching_feature_set.h>
 #include <motion_matching/motion_matching_component.h>
@@ -607,6 +608,25 @@ namespace era_engine
 						database->features.push_back(trajectory_feature);
 					}
 
+					PhaseFeature* phase_feature = new PhaseFeature();
+					{
+						{
+							ref<PhaseFeatureDesc> desc = make_ref<PhaseFeatureDesc>();
+							desc->joint_id = joint_init_ids.foot_l_idx;
+							desc->name = "foot_l_phase";
+							phase_feature->descriptors.push_back(desc);
+						}
+
+						{
+							ref<PhaseFeatureDesc> desc = make_ref<PhaseFeatureDesc>();
+							desc->joint_id = joint_init_ids.foot_r_idx;
+							desc->name = "foot_r_phase";
+							phase_feature->descriptors.push_back(desc);
+						}
+
+						database->features.push_back(phase_feature);
+					}
+
 					auto add_animation = [&](std::string_view path)
 						{
 							ref<AnimationAssetClip> animation = provider.load_game_asset_from_file<AnimationAssetClip>(get_asset_path(path));
@@ -614,9 +634,9 @@ namespace era_engine
 							database->animations.push_back(animation);
 						};
 
-					database->sample_rate = 30.0f;
+					database->sample_rate = 15.0f;
 					database->narrow_phase_params.flags = NarrowPhaseFlags::SAME_FRAME_CHECK;
-					database->narrow_phase_params.same_frame_time_threshold = 0.25f;
+					database->narrow_phase_params.same_frame_time_threshold = 0.16f;
 
 					add_animation("/resources/assets/test_character/animations/Standing Idle_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Unarmed Idle_mixamo.com_clip0.eanm");
@@ -653,12 +673,12 @@ namespace era_engine
 					add_animation("/resources/assets/test_character/animations/Change DirectionL_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Change DirectionR_mixamo.com_clip0.eanm");
 					add_animation("/resources/assets/test_character/animations/Running To Turn_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02L_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02R_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Start Walking_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Stop Walking_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Turn To RunningL_mixamo.com_clip0.eanm");
-					//add_animation("/resources/assets/test_character/animations/Turn To RunningR_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02L_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Catwalk Sequence 02R_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Start Walking_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Stop Walking_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Turn To RunningL_mixamo.com_clip0.eanm");
+					add_animation("/resources/assets/test_character/animations/Turn To RunningR_mixamo.com_clip0.eanm");
 
 					database->generate_initial_data();
 
@@ -740,6 +760,12 @@ namespace era_engine
 					database->weights[start_from + 13] = 100.0f;
 					database->weights[start_from + 14] = 100.0f;
 
+					const uint32 phase_from = database->total_features_per_sample - phase_feature->get_feature_size();
+					for (uint32 i = phase_from; i < database->total_features_per_sample; ++i)
+					{
+						database->weights[i] = 25.0f;
+					}
+
 					database->mark(skeleton_component);
 
 					database->bake(skeleton_component->skeleton.get());
@@ -803,18 +829,11 @@ namespace era_engine
 				{
 					IKComponent* ik_component = character.add_component<IKComponent>();
 
-					std::vector<IKBoneConstraint> seeds(4);
-					seeds[0].swing_min_deg = -25.0f;
-					seeds[0].swing_max_deg = 25.0f;
-
-					seeds[1].swing_min_deg = -95.0f;
-					seeds[1].swing_max_deg = 95.0f;
-
-					seeds[2].swing_min_deg = 2.0f;
-					seeds[2].swing_max_deg = 145.0f;
-
-					seeds[3].swing_min_deg = -70.0f;
-					seeds[3].swing_max_deg = 70.0f;
+					std::vector<FullBodyIKJointSettings> seeds(4);
+					seeds[0].max_angle_deg = 25.0f;
+					seeds[1].max_angle_deg = 95.0f;
+					seeds[2].max_angle_deg = 145.0f;
+					seeds[3].max_angle_deg = 70.0f;
 
 					ik_component->add_chain_to_component({ "mixamorig:LeftShoulder", "mixamorig:LeftArm", "mixamorig:LeftForeArm", "mixamorig:LeftHand" }, &seeds);
 
@@ -835,14 +854,14 @@ namespace era_engine
 					}
 				}
 
-				if (false)
+				if (true)
 				{
 					FullBodyIKComponent* full_body_ik = character.add_component<FullBodyIKComponent>();
 					full_body_ik->set_root("mixamorig:Hips");
 					full_body_ik->settings.iterations = 16;
 					full_body_ik->settings.root_position_mobility = 0.0f;
+					full_body_ik->enabled = false;
 
-					// The spine bends less than the arms.
 					FullBodyIKJointSettings spine_settings;
 					spine_settings.stiffness = 0.5f;
 					spine_settings.max_angle_deg = 30.0f;

@@ -32,7 +32,6 @@ namespace era_engine
 			&& (effector.position_weight > 0.0f || effector.rotation_weight > 0.0f);
 	}
 
-	// Iterative extraction of the rotation that best maps from[i] onto to[i], starting from the given rotation.
 	static quat fit_rotation(quat rotation, const vec3* from, const vec3* to, size_t count, uint32 iterations = 8)
 	{
 		for (uint32 iter = 0; iter < iterations; ++iter)
@@ -58,7 +57,34 @@ namespace era_engine
 		return rotation;
 	}
 
-	// Limits the deviation of the local rotation from the animated one.
+	static quat swing_rotation(const vec3& from, const vec3& to, const vec3& fallback_axis)
+	{
+		const float lengths_product = length(from) * length(to);
+		if (lengths_product > EPSILON && dot(from, to) < (-1.0f + 1e-5f) * lengths_product)
+		{
+			const float fallback_length = length(fallback_axis);
+			const vec3 axis = fallback_length > EPSILON ? fallback_axis / fallback_length : any_perpendicular(normalize(from));
+			return quat(axis, M_PI);
+		}
+		return rotate_from_to(from, to);
+	}
+
+	static float soft_distance(float distance, float soft_start, float reach)
+	{
+		if (distance <= soft_start)
+		{
+			return distance;
+		}
+
+		const float soft_length = reach - soft_start;
+		if (soft_length <= EPSILON)
+		{
+			return std::min(distance, reach);
+		}
+
+		return soft_start + soft_length * (1.0f - std::exp(-(distance - soft_start) / soft_length));
+	}
+
 	static quat constrain_local_rotation(const quat& input_local, const quat& local, float max_angle_deg, float stiffness)
 	{
 		quat delta = normalize(conjugate(input_local) * local);
@@ -89,6 +115,11 @@ namespace era_engine
 	void FullBodyIKSolver::init(const animation::Skeleton* _skeleton,
 		uint32 _root_joint_id)
 	{
+		if (skeleton != _skeleton || root_joint_id != _root_joint_id)
+		{
+			reset();
+		}
+
 		skeleton = _skeleton;
 		root_joint_id = _root_joint_id;
 	}
@@ -156,6 +187,7 @@ namespace era_engine
 
 		const uint32 root_parent_id = get_parent_joint(*skeleton, nodes[0].joint_id);
 		root_parent_world = root_parent_id == INVALID_JOINT ? world_transform : world_animation_joint_transforms[root_parent_id];
+		character_rotation = world_transform.rotation;
 
 		for (size_t n = 0; n < nodes_count; ++n)
 		{
@@ -203,6 +235,8 @@ namespace era_engine
 			}
 		}
 
+		build_limbs(effectors);
+
 		const int32 iterations = std::max(settings.iterations, 1);
 
 		last_iterations = 0;
@@ -212,7 +246,6 @@ namespace era_engine
 		{
 			backward_pass();
 			forward_pass(effectors, joint_settings, settings);
-			apply_poles(effectors, world_transform);
 
 			++last_iterations;
 			last_error = compute_error();
@@ -396,6 +429,30 @@ namespace era_engine
 				continue;
 			}
 
+			const uint32 limb_index = node_limbs[n];
+			if (limb_index != INVALID_JOINT && limbs[limb_index].upper == n)
+			{
+				const Limb& limb = limbs[limb_index];
+				const float min_reach = std::abs(parent_space_node_offset_lengths[limb.middle] - parent_space_node_offset_lengths[limb.end]);
+
+				const vec3& target = backward_positions[limb.end];
+				const vec3 to_upper = world_solved_positions[n] - target;
+				const float distance = length(to_upper);
+
+				vec3 direction = world_solved_rotations[n] * -parent_space_node_offsets[limb.middle];
+				if (distance > EPSILON)
+				{
+					direction = to_upper / distance;
+				}
+				else
+				{
+					direction /= parent_space_node_offset_lengths[limb.middle];
+				}
+
+				backward_positions[n] = target + direction * clamp(distance, min_reach, limb.soft_start);
+				continue;
+			}
+
 			fit_from.clear();
 			fit_to.clear();
 
@@ -483,32 +540,42 @@ namespace era_engine
 				world_solved_positions[n] = world_solved_positions[node.parent] + world_solved_rotations[node.parent] * parent_space_node_offsets[n];
 			}
 
-			// Rotation carried by the parent from the previous iteration.
+			const uint32 limb_index = node_limbs[n];
+
+			if (limb_index != INVALID_JOINT && limbs[limb_index].upper == n)
+			{
+				const Limb& limb = limbs[limb_index];
+				solve_limb(limb, parent_rotation, effectors[nodes[limb.end].effector]);
+			}
+
 			const quat prior = normalize(parent_rotation * local_solved_rotations[n]);
 			quat fitted = prior;
 
-			fit_from.clear();
-			fit_to.clear();
+			if (limb_index == INVALID_JOINT)
+			{
+				fit_from.clear();
+				fit_to.clear();
 
-			for (uint32 child : node.children)
-			{
-				if (position_goals[child] && parent_space_node_offset_lengths[child] > EPSILON)
+				for (uint32 child : node.children)
 				{
-					fit_from.push_back(parent_space_node_offsets[child]);
-					fit_to.push_back(backward_positions[child] - world_solved_positions[n]);
+					if (position_goals[child] && parent_space_node_offset_lengths[child] > EPSILON)
+					{
+						fit_from.push_back(parent_space_node_offsets[child]);
+						fit_to.push_back(backward_positions[child] - world_solved_positions[n]);
+					}
 				}
-			}
 
-			if (fit_from.size() == 1)
-			{
-				if (squared_length(fit_to[0]) > EPSILON * EPSILON)
+				if (fit_from.size() == 1)
 				{
-					fitted = normalize(rotate_from_to(prior * fit_from[0], fit_to[0]) * prior);
+					if (squared_length(fit_to[0]) > EPSILON * EPSILON)
+					{
+						fitted = normalize(rotate_from_to(prior * fit_from[0], fit_to[0]) * prior);
+					}
 				}
-			}
-			else if (fit_from.size() > 1)
-			{
-				fitted = fit_rotation(prior, fit_from.data(), fit_to.data(), fit_from.size());
+				else if (fit_from.size() > 1)
+				{
+					fitted = fit_rotation(prior, fit_from.data(), fit_to.data(), fit_from.size());
+				}
 			}
 
 			quat local = normalize(conjugate(parent_rotation) * fitted);
@@ -517,7 +584,7 @@ namespace era_engine
 			{
 				local = constrain_local_rotation(local_animation_joint_rotations[n], local, 180.0f, 1.0f - clamp01(settings.root_rotation_mobility));
 			}
-			else if (node.joint_id < joint_settings.size())
+			if (node.joint_id < joint_settings.size())
 			{
 				const FullBodyIKJointSettings& joint = joint_settings[node.joint_id];
 				local = constrain_local_rotation(local_animation_joint_rotations[n], local, joint.max_angle_deg, joint.stiffness);
@@ -539,70 +606,183 @@ namespace era_engine
 		}
 	}
 
-	void FullBodyIKSolver::apply_poles(const std::vector<FullBodyIKEffector>& effectors, const trs& world_transform)
+	void FullBodyIKSolver::build_limbs(const std::vector<FullBodyIKEffector>& effectors)
 	{
-		for (size_t n = 0; n < nodes.size(); ++n)
+		limbs.clear();
+		node_limbs.assign(nodes.size(), INVALID_JOINT);
+
+		for (uint32 n = 0; n < (uint32)nodes.size(); ++n)
 		{
-			const uint32 effector_index = nodes[n].effector;
-			if (effector_index == INVALID_JOINT)
+			if (!position_effectors[n])
 			{
 				continue;
 			}
 
-			const FullBodyIKEffector& effector = effectors[effector_index];
-			const float pole_weight = clamp01(effector.pole_weight);
-			if (pole_weight <= 0.0f)
-			{
-				continue;
-			}
-
-			// Limb: upper -> middle -> effector. Rotating the upper joint around the upper-effector axis
-			// keeps the effector in place, so the limb must not branch inside the tree.
 			const uint32 middle = nodes[n].parent;
-			if (middle == INVALID_JOINT || nodes[middle].parent == INVALID_JOINT)
+			if (middle == INVALID_JOINT || position_effectors[middle])
 			{
 				continue;
 			}
+
 			const uint32 upper = nodes[middle].parent;
+			if (upper == INVALID_JOINT || node_limbs[upper] != INVALID_JOINT || node_limbs[middle] != INVALID_JOINT)
+			{
+				continue;
+			}
+
 			if (nodes[upper].children.size() != 1 || nodes[middle].children.size() != 1)
 			{
 				continue;
 			}
 
-			vec3 axis = world_solved_positions[n] - world_solved_positions[upper];
-			const float axis_length = length(axis);
-			if (axis_length < EPSILON)
-			{
-				continue;
-			}
-			axis /= axis_length;
-
-			vec3 pole = world_transform.rotation * effector.pole_vector_local;
-			pole -= axis * dot(pole, axis);
-
-			vec3 bend = world_solved_positions[middle] - world_solved_positions[upper];
-			bend -= axis * dot(bend, axis);
-
-			if (squared_length(pole) < EPSILON || squared_length(bend) < EPSILON)
+			const float upper_length = parent_space_node_offset_lengths[middle];
+			const float lower_length = parent_space_node_offset_lengths[n];
+			if (upper_length < EPSILON || lower_length < EPSILON)
 			{
 				continue;
 			}
 
-			const float angle = std::atan2(dot(axis, cross(bend, pole)), dot(bend, pole)) * pole_weight;
-			const quat twist = quat(axis, angle);
+			Limb& limb = limbs.emplace_back();
+			limb.upper = upper;
+			limb.middle = middle;
+			limb.end = n;
+			limb.reach = upper_length + lower_length;
 
-			world_solved_rotations[upper] = normalize(twist * world_solved_rotations[upper]);
-			world_solved_rotations[middle] = normalize(twist * world_solved_rotations[middle]);
-			world_solved_positions[middle] = world_solved_positions[upper] + twist * (world_solved_positions[middle] - world_solved_positions[upper]);
+			const float soft = clamp(effectors[nodes[n].effector].soft_reach, 0.0f, 0.5f);
+			if (soft > 0.0f)
+			{
+				const float animation_distance = length(world_animation_joint_positions[n] - world_animation_joint_positions[upper]);
+				limb.soft_start = clamp(animation_distance, limb.reach * (1.0f - soft), limb.reach * (1.0f - 0.25f * soft));
+			}
+			else
+			{
+				limb.soft_start = limb.reach;
+			}
 
-			const quat upper_parent_rotation = nodes[upper].parent == INVALID_JOINT
-				? root_parent_world.rotation
-				: world_solved_rotations[nodes[upper].parent];
-
-			local_solved_rotations[upper] = normalize(conjugate(upper_parent_rotation) * world_solved_rotations[upper]);
-			local_solved_rotations[middle] = normalize(conjugate(world_solved_rotations[upper]) * world_solved_rotations[middle]);
-			local_solved_rotations[n] = normalize(conjugate(world_solved_rotations[middle]) * world_solved_rotations[n]);
+			node_limbs[upper] = (uint32)(limbs.size() - 1);
+			node_limbs[middle] = (uint32)(limbs.size() - 1);
 		}
+	}
+
+	void FullBodyIKSolver::solve_limb(const Limb& limb, const quat& upper_parent_rotation, const FullBodyIKEffector& effector)
+	{
+		const uint32 upper = limb.upper;
+		const uint32 middle = limb.middle;
+		const uint32 end = limb.end;
+
+		const vec3& middle_offset = parent_space_node_offsets[middle];
+		const vec3& end_offset = parent_space_node_offsets[end];
+		const float upper_length = parent_space_node_offset_lengths[middle];
+		const float lower_length = parent_space_node_offset_lengths[end];
+		const float length_epsilon = 1e-4f * limb.reach;
+
+		local_solved_rotations[upper] = local_animation_joint_rotations[upper];
+		local_solved_rotations[middle] = local_animation_joint_rotations[middle];
+
+		const quat upper_animation_rotation = normalize(upper_parent_rotation * local_animation_joint_rotations[upper]);
+		const quat middle_animation_rotation = normalize(upper_animation_rotation * local_animation_joint_rotations[middle]);
+
+		const vec3 animation_upper_bone = upper_animation_rotation * middle_offset;
+		const vec3 animation_lower_bone = middle_animation_rotation * end_offset;
+
+		const vec3& upper_position = world_solved_positions[upper];
+
+		const vec3 to_target = effective_world_targets[end] - upper_position;
+		const float target_distance = length(to_target);
+		if (target_distance < length_epsilon)
+		{
+			return;
+		}
+		const vec3 direction = to_target / target_distance;
+
+		const float min_reach = std::abs(upper_length - lower_length);
+		const float distance = clamp(soft_distance(target_distance, limb.soft_start, limb.reach), min_reach + length_epsilon, limb.reach);
+
+		vec3 bend_direction = vec3(0.0f);
+		bool has_bend = false;
+		{
+			vec3 animation_bend = animation_upper_bone;
+
+			const vec3 animation_limb = animation_upper_bone + animation_lower_bone;
+			const float animation_limb_length = length(animation_limb);
+			if (animation_limb_length > length_epsilon)
+			{
+				animation_bend = reject(animation_bend, animation_limb / animation_limb_length);
+			}
+			animation_bend = reject(animation_bend, direction);
+
+			const float bend_length = length(animation_bend);
+			if (bend_length > length_epsilon)
+			{
+				bend_direction = animation_bend / bend_length;
+				has_bend = true;
+			}
+		}
+
+		const float pole_weight = clamp01(effector.pole_weight);
+		if (pole_weight > 0.0f)
+		{
+			const vec3 pole = character_rotation * effector.pole_vector_local;
+			const float pole_length = length(pole);
+			if (pole_length > EPSILON)
+			{
+				const vec3 pole_bend = reject(pole / pole_length, direction);
+				const float pole_sin = length(pole_bend);
+				if (pole_sin > 1e-3f)
+				{
+					const vec3 pole_direction = pole_bend / pole_sin;
+					if (!has_bend)
+					{
+						bend_direction = pole_direction;
+						has_bend = true;
+					}
+					else
+					{
+						const float weight = pole_weight * smoothstep01(pole_sin * 2.0f);
+						const float angle = signed_angle(bend_direction, pole_direction, direction) * weight;
+						bend_direction = normalize(quat(direction, angle) * bend_direction);
+					}
+				}
+			}
+		}
+
+		if (!has_bend)
+		{
+			bend_direction = any_perpendicular(direction);
+		}
+
+		const float cos_upper = clamp((upper_length * upper_length + distance * distance - lower_length * lower_length) / (2.0f * upper_length * distance), -1.0f, 1.0f);
+		const float sin_upper = std::sqrt(std::max(0.0f, 1.0f - cos_upper * cos_upper));
+
+		const vec3 middle_position = upper_position + direction * (upper_length * cos_upper) + bend_direction * (upper_length * sin_upper);
+		const vec3 end_position = upper_position + direction * distance;
+
+		const vec3 upper_bone = middle_position - upper_position;
+		const vec3 lower_bone = end_position - middle_position;
+
+		const vec3 animation_normal = cross(animation_upper_bone, animation_lower_bone);
+		const vec3 solved_normal = cross(upper_bone, lower_bone);
+
+		const quat upper_swing = swing_rotation(animation_upper_bone, upper_bone, animation_normal);
+		quat upper_rotation = normalize(upper_swing * upper_animation_rotation);
+
+		const float hinge_epsilon = 1e-3f * upper_length * lower_length;
+		if (length(animation_normal) > hinge_epsilon && length(solved_normal) > hinge_epsilon)
+		{
+			const vec3 axis = upper_bone / upper_length;
+			const vec3 current_normal = reject(upper_swing * animation_normal, axis);
+			const vec3 target_normal = reject(solved_normal, axis);
+
+			const float weight = smoothstep01(sin_upper * 5.0f);
+			const float angle = signed_angle(current_normal, target_normal, axis) * weight;
+			upper_rotation = normalize(quat(axis, angle) * upper_rotation);
+		}
+
+		quat middle_rotation = normalize(upper_rotation * local_animation_joint_rotations[middle]);
+		middle_rotation = normalize(swing_rotation(middle_rotation * end_offset, lower_bone, solved_normal) * middle_rotation);
+
+		local_solved_rotations[upper] = normalize(conjugate(upper_parent_rotation) * upper_rotation);
+		local_solved_rotations[middle] = normalize(conjugate(upper_rotation) * middle_rotation);
 	}
 
 	float FullBodyIKSolver::compute_error() const

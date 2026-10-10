@@ -32,9 +32,10 @@ namespace era_engine
 		float position_weight = 1.0f;
 		float rotation_weight = 0.0f;
 
-		// Bend direction of the limb in object space.
 		vec3 pole_vector_local = vec3(0.0f, 0.0f, 1.0f);
 		float pole_weight = 0.0f;
+
+		float soft_reach = 0.02f;
 
 		bool enabled = true;
 	};
@@ -56,9 +57,19 @@ namespace era_engine
 		struct Node
 		{
 			uint32 joint_id = INVALID_JOINT;
-			uint32 parent = INVALID_JOINT; // Node index.
-			uint32 effector = INVALID_JOINT; // Effector index.
-			std::vector<uint32> children; // Node indices.
+			uint32 parent = INVALID_JOINT;
+			uint32 effector = INVALID_JOINT;
+			std::vector<uint32> children;
+		};
+
+		struct Limb
+		{
+			uint32 upper = INVALID_JOINT;
+			uint32 middle = INVALID_JOINT;
+			uint32 end = INVALID_JOINT;
+
+			float reach = 0.0f;
+			float soft_start = 0.0f; // Distance.
 		};
 
 		void init(const animation::Skeleton* _skeleton, 
@@ -81,11 +92,14 @@ namespace era_engine
 	private:
 		bool rebuild_tree(const animation::Skeleton& _skeleton, uint32 _root_joint_id, const std::vector<FullBodyIKEffector>& effectors);
 
+		void build_limbs(const std::vector<FullBodyIKEffector>& effectors);
+
 		void backward_pass();
 		void forward_pass(const std::vector<FullBodyIKEffector>& effectors,
 			const std::vector<FullBodyIKJointSettings>& joint_settings,
 			const FullBodyIKSettings& settings);
-		void apply_poles(const std::vector<FullBodyIKEffector>& effectors, const trs& world_transform);
+
+		void solve_limb(const Limb& limb, const quat& upper_parent_rotation, const FullBodyIKEffector& effector);
 
 		float compute_error() const;
 
@@ -109,14 +123,19 @@ namespace era_engine
 		std::vector<vec3> backward_positions;
 		std::vector<quat> backward_rotations;
 
-		std::vector<vec3> effective_world_targets; // Per node, valid for position effectors.
-		std::vector<uint8> position_effectors; // Per node.
-		std::vector<uint8> position_goals; // Per node, any position effector in the subtree.
+		// Per node.
+		std::vector<vec3> effective_world_targets;
+		std::vector<uint8> position_effectors;
+		std::vector<uint8> position_goals;
+
+		std::vector<Limb> limbs;
+		std::vector<uint32> node_limbs; // Per node, limb index for the upper and middle nodes.
 
 		std::vector<vec3> fit_from;
 		std::vector<vec3> fit_to;
 
 		trs root_parent_world = trs::identity;
+		quat character_rotation = quat::identity;
 
 		uint32 root_joint_id = INVALID_JOINT;
 		const animation::Skeleton* skeleton = nullptr;

@@ -750,6 +750,28 @@ inline float max_element(vec2 a) { return max(a.x, a.y); }
 inline float max_element(vec3 a) { return max(a.x, max(a.y, a.z)); }
 inline float max_element(vec4 a) { return max(a.x, max(a.y, max(a.z, a.w))); }
 
+inline vec3 reject(const vec3& v, const vec3& unit_axis)
+{
+	return v - unit_axis * dot(v, unit_axis);
+}
+
+inline float signed_angle(const vec3& from, const vec3& to, const vec3& unit_axis)
+{
+	return std::atan2(dot(unit_axis, cross(from, to)), dot(from, to));
+}
+
+inline float smoothstep01(float x)
+{
+	x = clamp01(x);
+	return x * x * (3.0f - 2.0f * x);
+}
+
+inline vec3 any_perpendicular(const vec3& unit_v)
+{
+	const vec3 axis = std::abs(unit_v.x) < 0.9f ? vec3(1.0f, 0.0f, 0.0f) : vec3(0.0f, 1.0f, 0.0f);
+	return normalize(cross(unit_v, axis));
+}
+
 inline void decompose(const vec3& a, float& len, vec3& normal, float epsilon = EPSILON)
 {
 	len = length(a);

@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #include "core_api.h"
 
@@ -6,39 +6,42 @@
 
 #include "core/math.h"
 
-#include <optional>
+#include "ik/full_body_ik_solver.h"
 
 namespace era_engine
 {
     namespace animation
     {
         class Skeleton;
+        class SkeletonPose;
     }
-
-    struct ERA_CORE_API IKBoneConstraint
-    {
-        float swing_min_deg = -45.0f;
-        float swing_max_deg = 45.0f;
-
-        bool swing_locked = false;
-    };
 
     struct ERA_CORE_API IKChain
     {
         std::vector<uint32> joint_ids;
-        std::vector<float> bone_lengths; // size = joint_ids.size() - 1.
-        std::vector<IKBoneConstraint> constraints;// size = joint_ids.size().
+        std::vector<FullBodyIKJointSettings> constraints; // size = joint_ids.size().
 
         vec3 target_world_position = vec3(0.0f);
+        quat target_world_rotation = quat::identity;
+        float rotation_weight = 0.0f;
+
         vec3 pole_vector_local = vec3(0.0f, 0.0f, 1.0f);
+        float pole_weight = 1.0f;
+
+        float soft_reach = 0.02f;
+
         float weight = 1.0f;
         int32 iterations = 10;
         float tolerance = 0.005f;
         bool enabled = true;
 
-        std::vector<vec3> joint_world_positions; // size = joint_ids.size()
+        bool solve(const animation::Skeleton* skeleton, animation::SkeletonPose& pose, const trs& world_transform);
 
-        vec3 pole_vector_world = vec3(0.0f, 0.0f, 1.0f);
+        FullBodyIKSolver solver;
+
+    private:
+        std::vector<FullBodyIKEffector> effectors;
+        std::vector<FullBodyIKJointSettings> joint_settings; // Indexed by joint id.
     };
 
 	class ERA_CORE_API IKComponent : public Component
@@ -53,7 +56,7 @@ namespace era_engine
         uint32 find_chain_by_root_name(const animation::Skeleton& skeleton, std::string_view root_name) const;
 
         bool add_chain_to_component(const std::vector<std::string>& joint_names,
-            const std::vector<IKBoneConstraint>* constraints = nullptr);
+            const std::vector<FullBodyIKJointSettings>* constraints = nullptr);
 
 		ERA_VIRTUAL_REFLECT(Component)
 	};

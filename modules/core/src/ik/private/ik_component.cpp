@@ -3,6 +3,8 @@
 #include "animation/skeleton.h"
 #include "animation/skeleton_component.h"
 
+#include "core/log.h"
+
 #include <rttr/registration>
 
 namespace era_engine
@@ -19,59 +21,59 @@ namespace era_engine
 			.property("weight", &IKTargetComponent::weight);
 	}
 
-		static std::vector<trs> compute_default_object_pose(const animation::Skeleton& skeleton)
+	static bool is_ancestor_or_self(const animation::Skeleton& skeleton, uint32 ancestor_id, uint32 joint_id)
 	{
-		const size_t joints_nb = skeleton.joints.size();
-		std::vector<trs> object_transforms(joints_nb);
-
-		for (size_t i = 0; i < joints_nb; ++i)
+		while (joint_id != INVALID_JOINT && joint_id < skeleton.joints.size())
 		{
-			const trs& local_transform = skeleton.default_local_transforms[i].get_transform();
-			uint32 parent_id = skeleton.joints[i].parent_id;
-
-			if (parent_id == INVALID_JOINT || parent_id == i)
+			if (joint_id == ancestor_id)
 			{
-				object_transforms[i] = local_transform;
+				return true;
 			}
-			else
+
+			const uint32 parent_id = skeleton.joints[joint_id].parent_id;
+			joint_id = parent_id == joint_id ? INVALID_JOINT : parent_id;
+		}
+		return false;
+	}
+
+	bool IKChain::solve(const animation::Skeleton* skeleton, animation::SkeletonPose& pose, const trs& world_transform)
+	{
+		if (skeleton == nullptr || joint_ids.size() < 2)
+		{
+			return false;
+		}
+
+		solver.init(skeleton, joint_ids.front());
+
+		effectors.resize(1);
+
+		FullBodyIKEffector& effector = effectors.front();
+		effector.joint_id = joint_ids.back();
+		effector.target_position = target_world_position;
+		effector.target_rotation = target_world_rotation;
+		effector.position_weight = 1.0f;
+		effector.rotation_weight = rotation_weight;
+		effector.pole_vector_local = pole_vector_local;
+		effector.pole_weight = pole_weight;
+		effector.soft_reach = soft_reach;
+
+		joint_settings.assign(skeleton->joints.size(), FullBodyIKJointSettings{});
+		for (size_t i = 0; i < joint_ids.size() && i < constraints.size(); ++i)
+		{
+			if (joint_ids[i] < joint_settings.size())
 			{
-				const trs& parent_object_transform = object_transforms[parent_id];
-				object_transforms[i] = parent_object_transform * local_transform;
+				joint_settings[joint_ids[i]] = constraints[i];
 			}
 		}
 
-		return object_transforms;
-	}
+		FullBodyIKSettings settings;
+		settings.iterations = iterations;
+		settings.tolerance = tolerance;
+		settings.root_position_mobility = 0.0f;
+		settings.root_rotation_mobility = 1.0f;
+		settings.weight = weight;
 
-	static void bake_chain_from_default_pose(const animation::Skeleton& skeleton, IKChain& chain)
-	{
-        const size_t nb = chain.joint_ids.size();
-        if (nb < 2)
-        {
-            return;
-        }
-
-        const std::vector<trs> object_transforms = compute_default_object_pose(skeleton);
-
-        chain.bone_lengths.assign(nb - 1, 0.0f);
-        chain.constraints.resize(nb);
-
-        for (size_t i = 0; i + 1 < nb; ++i)
-        {
-            const uint32 a = chain.joint_ids[i];
-            const uint32 b = chain.joint_ids[i + 1];
-            chain.bone_lengths[i] =
-                length(object_transforms[b].position - object_transforms[a].position);
-        }
-
-        for (size_t i = 0; i < nb; ++i)
-        {
-            IKBoneConstraint& c = chain.constraints[i];
-            c.swing_locked = fuzzy_equals(c.swing_min_deg, 0.0f)
-                && fuzzy_equals(c.swing_max_deg, 0.0f);
-        }
-
-        chain.joint_world_positions.assign(nb, vec3(0.0f));
+		return solver.solve(pose, world_transform, effectors, joint_settings, settings);
 	}
 
 	IKComponent::IKComponent(ref<Entity::EcsData> _data)
@@ -112,20 +114,33 @@ namespace era_engine
 	}
 
 	bool IKComponent::add_chain_to_component(const std::vector<std::string>& joint_names,
-		const std::vector<IKBoneConstraint>* constraints/* = nullptr*/)
+		const std::vector<FullBodyIKJointSettings>* constraints/* = nullptr*/)
 	{
+		const animation::SkeletonComponent* skeleton_component = get_entity().get_component<animation::SkeletonComponent>();
+		if (skeleton_component == nullptr || skeleton_component->skeleton == nullptr)
+		{
+			return false;
+		}
+
+		const animation::Skeleton& skeleton = *skeleton_component->skeleton.get();
+
 		IKChain chain;
 		chain.joint_ids.reserve(joint_names.size());
 
-		const ref<animation::Skeleton>& skeleton = get_entity().get_component<animation::SkeletonComponent>()->skeleton;
-
 		for (const auto& nm : joint_names)
 		{
-			uint32 id = skeleton->get_joint_index(nm);
+			uint32 id = skeleton.get_joint_index(nm);
 			if (id == INVALID_JOINT)
 			{
 				return false;
 			}
+
+			if (!chain.joint_ids.empty() && !is_ancestor_or_self(skeleton, chain.joint_ids.back(), id))
+			{
+				LOG_ERROR("IK> Joint %s is not a descendant of the previous chain joint.", nm.c_str());
+				return false;
+			}
+
 			chain.joint_ids.push_back(id);
 		}
 
@@ -137,14 +152,8 @@ namespace era_engine
 		if (constraints != nullptr)
 		{
 			chain.constraints = *constraints;
-			chain.constraints.resize(chain.joint_ids.size());
 		}
-		else
-		{
-			chain.constraints.resize(chain.joint_ids.size());
-		}
-
-		bake_chain_from_default_pose(*skeleton.get(), chain);
+		chain.constraints.resize(chain.joint_ids.size());
 
 		chains.push_back(std::move(chain));
 
