@@ -869,7 +869,13 @@ namespace era_engine
 					full_body_ik->set_joint_settings("mixamorig:Spine1", spine_settings);
 					full_body_ik->set_joint_settings("mixamorig:Spine2", spine_settings);
 
-					const char* hand_names[] = { "mixamorig:LeftHand", "mixamorig:RightHand" };
+					// Without a limit a clavicle turns into the body when the hand reaches far to the other side.
+					FullBodyIKJointSettings clavicle_settings;
+					clavicle_settings.max_angle_deg = 30.0f;
+					full_body_ik->set_joint_settings("mixamorig:LeftShoulder", clavicle_settings);
+					full_body_ik->set_joint_settings("mixamorig:RightShoulder", clavicle_settings);
+
+					const char* hand_names[] = { /*"mixamorig:LeftHand", */"mixamorig:RightHand" };
 					for (const char* hand_name : hand_names)
 					{
 						const uint32 effector_index = full_body_ik->add_effector(hand_name);

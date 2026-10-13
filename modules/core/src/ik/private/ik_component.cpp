@@ -55,7 +55,7 @@ namespace era_engine
 		effector.rotation_weight = rotation_weight;
 		effector.pole_vector_local = pole_vector_local;
 		effector.pole_weight = pole_weight;
-		effector.soft_reach = soft_reach;
+		effector.soft_reach_distance = soft_reach_distance;
 
 		joint_settings.assign(skeleton->joints.size(), FullBodyIKJointSettings{});
 		for (size_t i = 0; i < joint_ids.size() && i < constraints.size(); ++i)

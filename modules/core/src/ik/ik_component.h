@@ -28,7 +28,7 @@ namespace era_engine
         vec3 pole_vector_local = vec3(0.0f, 0.0f, 1.0f);
         float pole_weight = 1.0f;
 
-        float soft_reach = 0.02f;
+        float soft_reach_distance = 0.02f;
 
         float weight = 1.0f;
         int32 iterations = 10;

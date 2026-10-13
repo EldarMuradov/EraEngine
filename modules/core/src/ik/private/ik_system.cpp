@@ -100,15 +100,15 @@ namespace era_engine
                 SkeletonComponent,
                 TransformComponent>).each())
         {
-            if (!full_body_ik_component.enabled || full_body_ik_component.settings.weight <= 0.0f)
-            {
-                continue;
-            }
-
             if (!full_body_ik_component.inited)
             {
                 full_body_ik_component.solver.init(skeleton_component.skeleton.get(), full_body_ik_component.root_joint_id);
                 full_body_ik_component.inited = true;
+            }
+
+            if (!full_body_ik_component.enabled || full_body_ik_component.settings.weight <= 0.0f)
+            {
+                continue;
             }
 
             SkeletonPose current_pose = skeleton_component.get_current_pose();

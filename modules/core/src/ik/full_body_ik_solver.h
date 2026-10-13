@@ -32,11 +32,13 @@ namespace era_engine
 		float position_weight = 1.0f;
 		float rotation_weight = 0.0f;
 
-		vec3 pole_vector_local = vec3(0.0f, 0.0f, 1.0f);
+		vec3 pole_vector_local = vec3(0.0f, 0.0f, 1.0f); // Character space bend direction of the limb middle joint.
 		float pole_weight = 0.0f;
 
-		float soft_reach = 0.02f;
+		float soft_reach_distance = 0.02f;
+		float min_reach_distance = 0.25f; // Part of the limb length the end keeps from the limb root.
 
+		bool solve_as_limb = true; // Two parent bones are solved analytically as a hinge limb.
 		bool enabled = true;
 	};
 
@@ -51,6 +53,7 @@ namespace era_engine
 		float weight = 1.0f;
 	};
 
+	// Multi-effector FABRIK with joint rotations.
 	class ERA_CORE_API FullBodyIKSolver
 	{
 	public:
@@ -68,14 +71,20 @@ namespace era_engine
 			uint32 middle = INVALID_JOINT;
 			uint32 end = INVALID_JOINT;
 
-			float reach = 0.0f;
-			float soft_start = 0.0f; // Distance.
+			float reach_distance = 0.0f;
+			float soft_start_distance = 0.0f;
+
+			float min_distance = 0.0f;
+			float min_soft_start_distance = 0.0f;
+
+			vec3 animation_direction = vec3(0.0f); // From the upper to the end node, in the upper parent space.
+			vec3 rest_direction = vec3(0.0f); // The same in the rest pose.
 		};
 
-		void init(const animation::Skeleton* _skeleton, 
+		void init(const animation::Skeleton* _skeleton,
 			uint32 _root_joint_id);
 
-		bool solve(animation::SkeletonPose& pose, 
+		bool solve(animation::SkeletonPose& pose,
 			const trs& world_transform,
 			const std::vector<FullBodyIKEffector>& effectors,
 			const std::vector<FullBodyIKJointSettings>& joint_settings, // Indexed by joint id, may be empty.
@@ -99,7 +108,10 @@ namespace era_engine
 			const std::vector<FullBodyIKJointSettings>& joint_settings,
 			const FullBodyIKSettings& settings);
 
+		void apply_rotation_effectors(const std::vector<FullBodyIKEffector>& effectors);
+
 		void solve_limb(const Limb& limb, const quat& upper_parent_rotation, const FullBodyIKEffector& effector);
+		vec3 get_limb_direction(const Limb& limb, const vec3& to_target, const quat& upper_parent_rotation) const;
 
 		float compute_error() const;
 
@@ -110,8 +122,9 @@ namespace era_engine
 		std::vector<Node> nodes; // Topological order, nodes[0] is the root.
 
 		// Per solve.
-		std::vector<trs> world_animation_joint_transforms;
+		std::vector<trs> world_animation_joint_transforms; // Per joint.
 
+		// Per node.
 		std::vector<vec3> world_animation_joint_positions;
 		std::vector<quat> local_animation_joint_rotations;
 		std::vector<vec3> parent_space_node_offsets; // Node position in the parent node frame.
@@ -120,16 +133,14 @@ namespace era_engine
 		std::vector<vec3> world_solved_positions;
 		std::vector<quat> world_solved_rotations;
 		std::vector<quat> local_solved_rotations;
-		std::vector<vec3> backward_positions;
-		std::vector<quat> backward_rotations;
 
-		// Per node.
+		std::vector<vec3> backward_positions;
 		std::vector<vec3> effective_world_targets;
 		std::vector<uint8> position_effectors;
-		std::vector<uint8> position_goals;
+		std::vector<uint8> position_goals; // Position effectors and their ancestors.
 
 		std::vector<Limb> limbs;
-		std::vector<uint32> node_limbs; // Per node, limb index for the upper and middle nodes.
+		std::vector<uint32> node_limbs; // Limb index for the upper, middle and end nodes.
 
 		std::vector<vec3> fit_from;
 		std::vector<vec3> fit_to;

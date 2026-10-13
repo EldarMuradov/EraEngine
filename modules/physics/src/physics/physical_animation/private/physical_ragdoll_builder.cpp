@@ -1374,7 +1374,7 @@ namespace era_engine::physics
 			arm_d6_swing_y_deg, deg2rad(60.0f));
 
 		// Left arm -> left forearm
-		constexpr float forearm_d6_swing_y_deg = deg2rad(70.0f);
+		constexpr float forearm_d6_swing_y_deg = deg2rad(120.0f);
 		create_d6_joint(
 			ctx.enable_physical_animation,
 			ctx.ragdoll,
