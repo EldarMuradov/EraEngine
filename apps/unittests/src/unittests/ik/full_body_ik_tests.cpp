@@ -115,24 +115,24 @@ namespace
 	};
 
 	// Max per frame change of the solved local rotation deltas (a spike = jerk), beyond the same metric of the animation.
-	FullBodyIKJointSettings make_limited_joint(float limit_deg, float stiffness = 0.0f)
+	FBIKJointSettings make_limited_joint(float limit_deg, float stiffness = 0.0f)
 	{
-		FullBodyIKJointSettings joint;
+		FBIKJointSettings joint;
 		joint.angular_stiffness = vec3(stiffness);
-		for (FullBodyIKLimitType& type : joint.angular_limit_types)
+		for (IKLimitType& type : joint.angular_limit_types)
 		{
-			type = FullBodyIKLimitType::LIMITED;
+			type = IKLimitType::LIMITED;
 		}
 		joint.angular_limits_deg = vec3(limit_deg);
 		return joint;
 	}
 
-	std::vector<FullBodyIKEffector> make_hand_effectors()
+	std::vector<IKEffector> make_hand_effectors()
 	{
-		std::vector<FullBodyIKEffector> effectors(2);
+		std::vector<IKEffector> effectors(2);
 		effectors[0].joint_id = L_HAND;
 		effectors[1].joint_id = R_HAND;
-		for (FullBodyIKEffector& effector : effectors)
+		for (IKEffector& effector : effectors)
 		{
 			effector.pole_vector_local = -vec3::forward;
 			effector.pole_weight = 0.5f;
@@ -140,9 +140,9 @@ namespace
 		return effectors;
 	}
 
-	std::vector<FullBodyIKJointSettings> make_joint_settings(float root_rotation_mobility, float root_position_mobility)
+	std::vector<FBIKJointSettings> make_joint_settings(float root_rotation_mobility, float root_position_mobility)
 	{
-		std::vector<FullBodyIKJointSettings> joint_settings(JOINTS_COUNT);
+		std::vector<FBIKJointSettings> joint_settings(JOINTS_COUNT);
 		joint_settings[HIPS].angular_stiffness = vec3(1.0f - root_rotation_mobility);
 		joint_settings[HIPS].linear_stiffness = vec3(1.0f - root_position_mobility);
 
@@ -159,15 +159,15 @@ namespace
 		return joint_settings;
 	}
 
-	ScenarioResult run_scenario(const TestRig& rig, const Scenario& scenario, FullBodyIKSolverType solver_type)
+	ScenarioResult run_scenario(const TestRig& rig, const Scenario& scenario, FBIKSolverType solver_type)
 	{
-		std::vector<FullBodyIKEffector> effectors = make_hand_effectors();
-		const std::vector<FullBodyIKJointSettings> joint_settings = make_joint_settings(scenario.root_rotation_mobility, scenario.root_position_mobility);
+		std::vector<IKEffector> effectors = make_hand_effectors();
+		const std::vector<FBIKJointSettings> joint_settings = make_joint_settings(scenario.root_rotation_mobility, scenario.root_position_mobility);
 
-		const ref<FullBodyIKSolver> solver = create_full_body_ik_solver(solver_type);
+		const ref<FBIKSolver> solver = create_full_body_ik_solver(solver_type);
 		EXPECT_TRUE(solver->init(&rig.skeleton, HIPS, effectors, joint_settings));
 
-		FullBodyIKSettings settings;
+		FBIKSettings settings;
 
 		const float dt = 1.0f / 60.0f;
 		const uint32 frames = 360;
@@ -253,7 +253,7 @@ namespace
 		}
 
 		printf("[FBIK %s] %-28s worst jerk %7.3f deg (frame %3u, joint %2u), worst twist %7.3f deg (frame %3u, joint %2u), clavicle swing %6.2f deg, max iterations %2u, max error %.4f\n",
-			solver_type == FullBodyIKSolverType::FABRIK ? "fabrik" : "jacobian", scenario.name, rad2deg(worst_jump), worst_frame, worst_joint, rad2deg(worst_twist), worst_twist_frame, worst_twist_joint, result.worst_clavicle_swing_deg, max_iterations, max_error);
+			solver_type == FBIKSolverType::FABRIK ? "fabrik" : "jacobian", scenario.name, rad2deg(worst_jump), worst_frame, worst_joint, rad2deg(worst_twist), worst_twist_frame, worst_twist_joint, result.worst_clavicle_swing_deg, max_iterations, max_error);
 
 		result.worst_jerk_deg = rad2deg(worst_jump);
 		result.worst_twist_deg = rad2deg(worst_twist);
@@ -327,7 +327,7 @@ TEST(IK, FullBodyIKTemporalStability)
 	scenarios[10].left_target = vec3(0.3f, 1.2f, -0.6f);
 	scenarios[10].right_target = vec3(0.5f, 1.35f, -0.75f);
 
-	for (FullBodyIKSolverType solver_type : { FullBodyIKSolverType::FABRIK, FullBodyIKSolverType::JACOBIAN })
+	for (FBIKSolverType solver_type : { FBIKSolverType::FABRIK, FBIKSolverType::JACOBIAN })
 	{
 		for (const Scenario& scenario : scenarios)
 		{
@@ -346,15 +346,15 @@ TEST(IK, FullBodyIKLimbBeforeBody)
 	const trs world_transform = trs(vec3(0.0f, 0.0f, -1.0f), quat::identity, vec3(1.0f));
 	const vec3 shoulder = vec3(-0.18f, 1.46f, -1.0f);
 
-	for (FullBodyIKSolverType solver_type : { FullBodyIKSolverType::FABRIK, FullBodyIKSolverType::JACOBIAN })
+	for (FBIKSolverType solver_type : { FBIKSolverType::FABRIK, FBIKSolverType::JACOBIAN })
 	{
-		std::vector<FullBodyIKEffector> effectors = make_hand_effectors();
+		std::vector<IKEffector> effectors = make_hand_effectors();
 		effectors[0].enabled = false;
 
-		const ref<FullBodyIKSolver> solver = create_full_body_ik_solver(solver_type);
+		const ref<FBIKSolver> solver = create_full_body_ik_solver(solver_type);
 		ASSERT_TRUE(solver->init(&rig.skeleton, HIPS, effectors, make_joint_settings(0.0f, 0.0f)));
 
-		const FullBodyIKSettings settings;
+		const FBIKSettings settings;
 
 		for (float distance : { 0.2f, 0.3f, 0.4f, 0.5f, 0.54f, 0.58f, 0.62f, 0.7f, 0.8f })
 		{
@@ -387,7 +387,7 @@ TEST(IK, FullBodyIKLimbBeforeBody)
 			else
 			{
 				EXPECT_LT(elbow_bend, 1.0f) << distance;
-				if (distance <= 0.7f && solver_type == FullBodyIKSolverType::JACOBIAN)
+				if (distance <= 0.7f && solver_type == FBIKSolverType::JACOBIAN)
 				{
 					EXPECT_LT(solver->get_last_error(), 0.003f) << distance;
 				}
