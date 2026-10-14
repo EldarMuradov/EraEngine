@@ -73,9 +73,9 @@ namespace era_engine
             chain.weight = target_component.weight;
         }
 
-        for (auto [entity_handle, target_component, transform_component] : world->group(components_group<FullBodyIKTargetComponent, TransformComponent>).each())
+        for (auto [entity_handle, target_component, transform_component] : world->group(components_group<FBIKTargetComponent, TransformComponent>).each())
         {
-            FullBodyIKComponent* owner_ik = world->get_entity(target_component.owner_entity).get_component_if_exists<FullBodyIKComponent>();
+            FBIKComponent* owner_ik = world->get_entity(target_component.owner_entity).get_component_if_exists<FBIKComponent>();
             if (owner_ik == nullptr)
             {
                 continue;
@@ -86,7 +86,7 @@ namespace era_engine
                 continue;
             }
 
-            FullBodyIKEffector& effector = owner_ik->effectors[target_component.effector_index];
+            IKEffector& effector = owner_ik->effectors[target_component.effector_index];
 
             const trs& target_transform = transform_component.get_world_transform();
             effector.target_position = target_transform.position;
@@ -96,17 +96,11 @@ namespace era_engine
         }
 
         for (auto [handle, full_body_ik_component, skeleton_component, transform_component]
-            : world->group(components_group<FullBodyIKComponent,
+            : world->group(components_group<FBIKComponent,
                 SkeletonComponent,
                 TransformComponent>).each())
         {
-            if (!full_body_ik_component.inited)
-            {
-                full_body_ik_component.solver.init(skeleton_component.skeleton.get(), full_body_ik_component.root_joint_id);
-                full_body_ik_component.inited = true;
-            }
-
-            if (!full_body_ik_component.enabled || full_body_ik_component.settings.weight <= 0.0f)
+            if (!full_body_ik_component.enabled || !full_body_ik_component.is_initialized() || full_body_ik_component.settings.weight <= 0.0f)
             {
                 continue;
             }
@@ -118,10 +112,9 @@ namespace era_engine
                 continue;
             }
 
-            const bool solved = full_body_ik_component.solver.solve(current_pose,
+            const bool solved = full_body_ik_component.solver->solve(current_pose,
                 transform_component.get_world_transform(),
                 full_body_ik_component.effectors,
-                full_body_ik_component.joint_settings,
                 full_body_ik_component.settings);
 
             if (solved)
@@ -135,7 +128,7 @@ namespace era_engine
                 SkeletonComponent,
                 TransformComponent>).each())
         {
-            if (!ik_component.enabled)
+            if (!ik_component.enabled || !ik_component.is_initialized())
             {
                 continue;
             }
@@ -161,7 +154,7 @@ namespace era_engine
                 {
                     continue;
                 }
-                if (chain.solve(skeleton_component.skeleton.get(), current_pose, world_transform))
+                if (chain.solve(current_pose, world_transform))
                 {
                     has_any_enabled = true;
                 }
@@ -182,21 +175,21 @@ namespace era_engine
             renderWireSphere(point, 0.05f, vec4(1.0f, 0.f, 1.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
         }
 
-        for (auto [entity_handle, target_component, transform_component] : world->group(components_group<FullBodyIKTargetComponent, TransformComponent>).each())
+        for (auto [entity_handle, target_component, transform_component] : world->group(components_group<FBIKTargetComponent, TransformComponent>).each())
         {
             vec3 point = transform_component.get_world_transform().position;
             renderWireSphere(point, 0.05f, vec4(1.0f, 0.f, 1.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
         }
 
-        for (auto [entity_handle, full_body_ik_component] : world->view<FullBodyIKComponent>().each())
+        for (auto [entity_handle, full_body_ik_component] : world->view<FBIKComponent>().each())
         {
-            if (!full_body_ik_component.enabled || !full_body_ik_component.draw_debug)
+            if (!full_body_ik_component.enabled || !full_body_ik_component.draw_debug || !full_body_ik_component.is_initialized())
             {
                 continue;
             }
 
-            const FullBodyIKSolver& solver = full_body_ik_component.solver;
-            const std::vector<FullBodyIKSolver::Node>& nodes = solver.get_nodes();
+            const FBIKSolver& solver = *full_body_ik_component.solver;
+            const std::vector<FBIKSolver::Node>& nodes = solver.get_nodes();
             const std::vector<vec3>& positions = solver.get_solved_positions();
 
             if (positions.size() != nodes.size())
@@ -215,7 +208,7 @@ namespace era_engine
                 }
             }
 
-            for (const FullBodyIKEffector& effector : full_body_ik_component.effectors)
+            for (const IKEffector& effector : full_body_ik_component.effectors)
             {
                 if (effector.enabled && effector.position_weight > 0.0f)
                 {
@@ -228,12 +221,12 @@ namespace era_engine
         {
             for (const IKChain& chain : ik_component.chains)
             {
-                if (!chain.enabled)
+                if (!chain.enabled || chain.solver == nullptr)
                 {
                     continue;
                 }
 
-                for (const vec3& position : chain.solver.get_solved_positions())
+                for (const vec3& position : chain.solver->get_solved_positions())
                 {
                     renderWireSphere(position, 0.05f, vec4(1.0f, 1.f, 0.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
                 }

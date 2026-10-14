@@ -10,27 +10,27 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		registration::class_<FullBodyIKComponent>("FullBodyIKComponent")
+		registration::class_<FBIKComponent>("FBIKComponent")
 			.constructor<ref<Entity::EcsData>>()
-			.property("enabled", &FullBodyIKComponent::enabled)
-			.property("draw_debug", &FullBodyIKComponent::draw_debug);
+			.property("enabled", &FBIKComponent::enabled)
+			.property("draw_debug", &FBIKComponent::draw_debug);
 
-		registration::class_<FullBodyIKTargetComponent>("FullBodyIKTargetComponent")
+		registration::class_<FBIKTargetComponent>("FBIKTargetComponent")
 			.constructor<ref<Entity::EcsData>>()
-			.property("position_weight", &FullBodyIKTargetComponent::position_weight)
-			.property("rotation_weight", &FullBodyIKTargetComponent::rotation_weight);
+			.property("position_weight", &FBIKTargetComponent::position_weight)
+			.property("rotation_weight", &FBIKTargetComponent::rotation_weight);
 	}
 
-	FullBodyIKComponent::FullBodyIKComponent(ref<Entity::EcsData> _data)
+	FBIKComponent::FBIKComponent(ref<Entity::EcsData> _data)
 		: Component(_data)
 	{
 	}
 
-	FullBodyIKComponent::~FullBodyIKComponent()
+	FBIKComponent::~FBIKComponent()
 	{
 	}
 
-	uint32 FullBodyIKComponent::add_effector(std::string_view joint_name)
+	uint32 FBIKComponent::add_effector(std::string_view joint_name)
 	{
 		const uint32 joint_id = get_joint_index(joint_name);
 		if (joint_id == INVALID_JOINT)
@@ -44,13 +44,13 @@ namespace era_engine
 			return existing;
 		}
 
-		FullBodyIKEffector& effector = effectors.emplace_back();
+		IKEffector& effector = effectors.emplace_back();
 		effector.joint_id = joint_id;
 
 		return static_cast<uint32>(effectors.size() - 1);
 	}
 
-	uint32 FullBodyIKComponent::find_effector(std::string_view joint_name) const
+	uint32 FBIKComponent::find_effector(std::string_view joint_name) const
 	{
 		const uint32 joint_id = get_joint_index(joint_name);
 		if (joint_id == INVALID_JOINT)
@@ -68,7 +68,7 @@ namespace era_engine
 		return INVALID_JOINT;
 	}
 
-	bool FullBodyIKComponent::set_root(std::string_view joint_name)
+	bool FBIKComponent::set_root(std::string_view joint_name)
 	{
 		const uint32 joint_id = get_joint_index(joint_name);
 		if (joint_id == INVALID_JOINT)
@@ -80,7 +80,7 @@ namespace era_engine
 		return true;
 	}
 
-	bool FullBodyIKComponent::set_joint_settings(std::string_view joint_name, const FullBodyIKJointSettings& new_joint_settings)
+	bool FBIKComponent::set_joint_settings(std::string_view joint_name, const FBIKJointSettings& new_joint_settings)
 	{
 		const uint32 joint_id = get_joint_index(joint_name);
 		if (joint_id == INVALID_JOINT)
@@ -97,7 +97,45 @@ namespace era_engine
 		return true;
 	}
 
-	uint32 FullBodyIKComponent::get_joint_index(std::string_view joint_name) const
+	bool FBIKComponent::init()
+	{
+		if (is_initialized())
+		{
+			return true;
+		}
+
+		const animation::SkeletonComponent* skeleton_component = get_entity().get_component_if_exists<animation::SkeletonComponent>();
+		if (skeleton_component == nullptr || skeleton_component->skeleton == nullptr)
+		{
+			return false;
+		}
+
+		solver = create_full_body_ik_solver(solver_type);
+		if (!solver->init(skeleton_component->skeleton.get(), root_joint_id, effectors, joint_settings))
+		{
+			solver.reset();
+			return false;
+		}
+		return true;
+	}
+
+	bool FBIKComponent::reinit()
+	{
+		reset();
+		return init();
+	}
+
+	void FBIKComponent::reset()
+	{
+		solver.reset();
+	}
+
+	bool FBIKComponent::is_initialized() const
+	{
+		return solver != nullptr && solver->is_initialized();
+	}
+
+	uint32 FBIKComponent::get_joint_index(std::string_view joint_name) const
 	{
 		const animation::SkeletonComponent* skeleton_component = get_entity().get_component<animation::SkeletonComponent>();
 		if (skeleton_component == nullptr || skeleton_component->skeleton == nullptr)
@@ -107,12 +145,12 @@ namespace era_engine
 		return skeleton_component->skeleton->get_joint_index(joint_name);
 	}
 
-	FullBodyIKTargetComponent::FullBodyIKTargetComponent(ref<Entity::EcsData> _data)
+	FBIKTargetComponent::FBIKTargetComponent(ref<Entity::EcsData> _data)
 		: Component(_data)
 	{
 	}
 
-	FullBodyIKTargetComponent::~FullBodyIKTargetComponent()
+	FBIKTargetComponent::~FBIKTargetComponent()
 	{
 	}
 }

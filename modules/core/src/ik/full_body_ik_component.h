@@ -8,31 +8,38 @@
 
 namespace era_engine
 {
-	class ERA_CORE_API FullBodyIKComponent : public Component
+	class ERA_CORE_API FBIKComponent : public Component
 	{
 	public:
-		FullBodyIKComponent(ref<Entity::EcsData> _data);
-		~FullBodyIKComponent() override;
+		FBIKComponent(ref<Entity::EcsData> _data);
+		~FBIKComponent() override;
 
 		uint32 add_effector(std::string_view joint_name);
 		uint32 find_effector(std::string_view joint_name) const;
 
 		bool set_root(std::string_view joint_name);
-		bool set_joint_settings(std::string_view joint_name, const FullBodyIKJointSettings& joint_settings);
+		bool set_joint_settings(std::string_view joint_name, const FBIKJointSettings& joint_settings);
 
-		std::vector<FullBodyIKEffector> effectors;
-		std::vector<FullBodyIKJointSettings> joint_settings; // Indexed by joint id.
+		bool init();
 
-		FullBodyIKSettings settings;
+		bool reinit();
+		void reset();
+		bool is_initialized() const;
 
-		// INVALID_JOINT -> the lowest joint of the active effectors.
+		FBIKSolverType solver_type = FBIKSolverType::FABRIK;
+
+		std::vector<IKEffector> effectors;
+		std::vector<FBIKJointSettings> joint_settings; // Indexed by joint id.
+
+		FBIKSettings settings;
+
+		// INVALID_JOINT -> the lowest common ancestor of the effectors.
 		uint32 root_joint_id = INVALID_JOINT;
 
 		bool enabled = true;
-		bool inited = false;
 		bool draw_debug = true;
 
-		FullBodyIKSolver solver;
+		ref<FBIKSolver> solver;
 
 		ERA_VIRTUAL_REFLECT(Component)
 
@@ -40,11 +47,11 @@ namespace era_engine
 		uint32 get_joint_index(std::string_view joint_name) const;
 	};
 
-	class ERA_CORE_API FullBodyIKTargetComponent : public Component
+	class ERA_CORE_API FBIKTargetComponent : public Component
 	{
 	public:
-		FullBodyIKTargetComponent(ref<Entity::EcsData> _data);
-		~FullBodyIKTargetComponent() override;
+		FBIKTargetComponent(ref<Entity::EcsData> _data);
+		~FBIKTargetComponent() override;
 
 		Entity::Handle owner_entity = Entity::NullHandle;
 		uint32 effector_index = 0;

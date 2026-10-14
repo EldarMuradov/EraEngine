@@ -825,15 +825,28 @@ namespace era_engine
 
 				//character.add_component<RagdollDismembermentComponent>();
 
+				// Rotation limited around every joint frame axis relative to the rest pose.
+				auto make_limited_joint = [](float limit_deg, float stiffness = 0.0f)
+				{
+					FBIKJointSettings joint;
+					joint.angular_stiffness = vec3(stiffness);
+					for (IKLimitType& type : joint.angular_limit_types)
+					{
+						type = IKLimitType::LIMITED;
+					}
+					joint.angular_limits_deg = vec3(limit_deg);
+					return joint;
+				};
+
 				if (false)
 				{
 					IKComponent* ik_component = character.add_component<IKComponent>();
 
-					std::vector<FullBodyIKJointSettings> seeds(4);
-					seeds[0].max_angle_deg = 25.0f;
-					seeds[1].max_angle_deg = 95.0f;
-					seeds[2].max_angle_deg = 145.0f;
-					seeds[3].max_angle_deg = 70.0f;
+					std::vector<FBIKJointSettings> seeds(4);
+					seeds[0] = make_limited_joint(25.0f);
+					seeds[1] = make_limited_joint(95.0f);
+					seeds[2] = make_limited_joint(145.0f);
+					seeds[3] = make_limited_joint(70.0f);
 
 					ik_component->add_chain_to_component({ "mixamorig:LeftShoulder", "mixamorig:LeftArm", "mixamorig:LeftForeArm", "mixamorig:LeftHand" }, &seeds);
 
@@ -843,6 +856,8 @@ namespace era_engine
 					arm.weight = 1.0f;
 					arm.iterations = 16;
 					arm.tolerance = 0.005f;
+
+					ik_component->init();
 
 					{
 						Entity hand_target = world->create_entity("HandIkTarget");
@@ -856,44 +871,62 @@ namespace era_engine
 
 				if (true)
 				{
-					FullBodyIKComponent* full_body_ik = character.add_component<FullBodyIKComponent>();
+					FBIKComponent* full_body_ik = character.add_component<FBIKComponent>();
+					full_body_ik->solver_type = FBIKSolverType::JACOBIAN;
 					full_body_ik->set_root("mixamorig:Hips");
 					full_body_ik->settings.iterations = 16;
-					full_body_ik->settings.root_position_mobility = 0.0f;
 					full_body_ik->enabled = false;
 
-					FullBodyIKJointSettings spine_settings;
-					spine_settings.stiffness = 0.5f;
-					spine_settings.max_angle_deg = 30.0f;
+					// The hips don't move.
+					FBIKJointSettings hips_settings;
+					hips_settings.angular_stiffness = vec3(1.0f);
+					full_body_ik->set_joint_settings("mixamorig:Hips", hips_settings);
+
+					const FBIKJointSettings spine_settings = make_limited_joint(30.0f, 0.5f);
 					full_body_ik->set_joint_settings("mixamorig:Spine", spine_settings);
 					full_body_ik->set_joint_settings("mixamorig:Spine1", spine_settings);
 					full_body_ik->set_joint_settings("mixamorig:Spine2", spine_settings);
 
 					// Without a limit a clavicle turns into the body when the hand reaches far to the other side.
-					FullBodyIKJointSettings clavicle_settings;
-					clavicle_settings.max_angle_deg = 30.0f;
+					const FBIKJointSettings clavicle_settings = make_limited_joint(30.0f);
 					full_body_ik->set_joint_settings("mixamorig:LeftShoulder", clavicle_settings);
 					full_body_ik->set_joint_settings("mixamorig:RightShoulder", clavicle_settings);
 
-					const char* hand_names[] = { /*"mixamorig:LeftHand", */"mixamorig:RightHand" };
-					for (const char* hand_name : hand_names)
+					// A target starts at its joint in the default pose.
+					const SkeletonPose default_pose = skeleton->get_default_pose();
+					const trs character_transform = transform_component->get_world_transform();
+
+					auto add_target = [&](const char* joint_name, float rotation_weight, const vec3& pole_vector_local)
 					{
-						const uint32 effector_index = full_body_ik->add_effector(hand_name);
+						const uint32 effector_index = full_body_ik->add_effector(joint_name);
 						if (effector_index == INVALID_JOINT)
 						{
-							continue;
+							return;
 						}
 
-						full_body_ik->effectors[effector_index].pole_vector_local = -vec3::forward;
-						full_body_ik->effectors[effector_index].pole_weight = 0.5f;
+						IKEffector& effector = full_body_ik->effectors[effector_index];
+						effector.pole_vector_local = pole_vector_local;
+						effector.pole_weight = 0.5f;
 
-						Entity hand_target = world->create_entity(hand_name);
+						Entity target = world->create_entity(joint_name);
+						target.get_component<TransformComponent>()->set_world_transform(
+							character_transform * SkeletonUtils::get_object_space_joint_transform(default_pose, skeleton.get(), effector.joint_id));
 
-						FullBodyIKTargetComponent* target_component = hand_target.add_component<FullBodyIKTargetComponent>();
+						FBIKTargetComponent* target_component = target.add_component<FBIKTargetComponent>();
 						target_component->owner_entity = character.get_handle();
 						target_component->effector_index = effector_index;
 						target_component->position_weight = 1.0f;
-					}
+						target_component->rotation_weight = rotation_weight;
+					};
+
+					add_target("mixamorig:RightHand", 0.0f, -vec3::forward);
+
+					// The root effector moves the hips, the feet stay planted.
+					//add_target("mixamorig:Hips", 0.0f, vec3::zero);
+					//add_target("mixamorig:LeftFoot", 1.0f, vec3::forward);
+					//add_target("mixamorig:RightFoot", 1.0f, vec3::forward);
+
+					full_body_ik->init();
 				}
 			}
 		}

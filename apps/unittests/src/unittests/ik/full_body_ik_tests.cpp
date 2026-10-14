@@ -99,6 +99,7 @@ namespace
 		float worst_jerk_deg = 0.0f;
 		float worst_twist_deg = 0.0f;
 		float worst_clavicle_swing_deg = 0.0f;
+		float max_error = 0.0f;
 	};
 
 	struct Scenario
@@ -114,11 +115,20 @@ namespace
 	};
 
 	// Max per frame change of the solved local rotation deltas (a spike = jerk), beyond the same metric of the animation.
-	ScenarioResult run_scenario(const TestRig& rig, const Scenario& scenario)
+	FullBodyIKJointSettings make_limited_joint(float limit_deg, float stiffness = 0.0f)
 	{
-		FullBodyIKSolver solver;
-		solver.init(&rig.skeleton, HIPS);
+		FullBodyIKJointSettings joint;
+		joint.angular_stiffness = vec3(stiffness);
+		for (FullBodyIKLimitType& type : joint.angular_limit_types)
+		{
+			type = FullBodyIKLimitType::LIMITED;
+		}
+		joint.angular_limits_deg = vec3(limit_deg);
+		return joint;
+	}
 
+	std::vector<FullBodyIKEffector> make_hand_effectors()
+	{
 		std::vector<FullBodyIKEffector> effectors(2);
 		effectors[0].joint_id = L_HAND;
 		effectors[1].joint_id = R_HAND;
@@ -127,23 +137,37 @@ namespace
 			effector.pole_vector_local = -vec3::forward;
 			effector.pole_weight = 0.5f;
 		}
+		return effectors;
+	}
 
+	std::vector<FullBodyIKJointSettings> make_joint_settings(float root_rotation_mobility, float root_position_mobility)
+	{
 		std::vector<FullBodyIKJointSettings> joint_settings(JOINTS_COUNT);
+		joint_settings[HIPS].angular_stiffness = vec3(1.0f - root_rotation_mobility);
+		joint_settings[HIPS].linear_stiffness = vec3(1.0f - root_position_mobility);
+
 		for (uint32 joint : { SPINE, SPINE1, SPINE2 })
 		{
-			joint_settings[joint].stiffness = 0.5f;
-			joint_settings[joint].max_angle_deg = 30.0f;
+			joint_settings[joint] = make_limited_joint(30.0f, 0.5f);
 		}
 
 		// Without limits a clavicle is a free ball joint: a hand far to the other side turns it into the body.
 		for (uint32 joint : { L_CLAVICLE, R_CLAVICLE })
 		{
-			joint_settings[joint].max_angle_deg = 30.0f;
+			joint_settings[joint] = make_limited_joint(30.0f);
 		}
+		return joint_settings;
+	}
+
+	ScenarioResult run_scenario(const TestRig& rig, const Scenario& scenario, FullBodyIKSolverType solver_type)
+	{
+		std::vector<FullBodyIKEffector> effectors = make_hand_effectors();
+		const std::vector<FullBodyIKJointSettings> joint_settings = make_joint_settings(scenario.root_rotation_mobility, scenario.root_position_mobility);
+
+		const ref<FullBodyIKSolver> solver = create_full_body_ik_solver(solver_type);
+		EXPECT_TRUE(solver->init(&rig.skeleton, HIPS, effectors, joint_settings));
 
 		FullBodyIKSettings settings;
-		settings.root_rotation_mobility = scenario.root_rotation_mobility;
-		settings.root_position_mobility = scenario.root_position_mobility;
 
 		const float dt = 1.0f / 60.0f;
 		const uint32 frames = 360;
@@ -178,10 +202,10 @@ namespace
 
 			SkeletonPose animation_pose = rig.animate(time);
 			SkeletonPose pose = animation_pose;
-			solver.solve(pose, world_transform, effectors, joint_settings, settings);
+			solver->solve(pose, world_transform, effectors, settings);
 
-			max_error = std::max(max_error, solver.get_last_error());
-			max_iterations = std::max(max_iterations, solver.get_last_iterations());
+			max_error = std::max(max_error, solver->get_last_error());
+			max_iterations = std::max(max_iterations, solver->get_last_iterations());
 
 			for (uint32 joint = 0; joint < JOINTS_COUNT; ++joint)
 			{
@@ -228,11 +252,12 @@ namespace
 			}
 		}
 
-		printf("[FBIK] %-28s worst jerk %7.3f deg (frame %3u, joint %2u), worst twist %7.3f deg (frame %3u, joint %2u), clavicle swing %6.2f deg, max iterations %2u, max error %.4f\n",
-			scenario.name, rad2deg(worst_jump), worst_frame, worst_joint, rad2deg(worst_twist), worst_twist_frame, worst_twist_joint, result.worst_clavicle_swing_deg, max_iterations, max_error);
+		printf("[FBIK %s] %-28s worst jerk %7.3f deg (frame %3u, joint %2u), worst twist %7.3f deg (frame %3u, joint %2u), clavicle swing %6.2f deg, max iterations %2u, max error %.4f\n",
+			solver_type == FullBodyIKSolverType::FABRIK ? "fabrik" : "jacobian", scenario.name, rad2deg(worst_jump), worst_frame, worst_joint, rad2deg(worst_twist), worst_twist_frame, worst_twist_joint, result.worst_clavicle_swing_deg, max_iterations, max_error);
 
 		result.worst_jerk_deg = rad2deg(worst_jump);
 		result.worst_twist_deg = rad2deg(worst_twist);
+		result.max_error = max_error;
 		return result;
 	}
 }
@@ -302,11 +327,71 @@ TEST(IK, FullBodyIKTemporalStability)
 	scenarios[10].left_target = vec3(0.3f, 1.2f, -0.6f);
 	scenarios[10].right_target = vec3(0.5f, 1.35f, -0.75f);
 
-	for (const Scenario& scenario : scenarios)
+	for (FullBodyIKSolverType solver_type : { FullBodyIKSolverType::FABRIK, FullBodyIKSolverType::JACOBIAN })
 	{
-		const ScenarioResult result = run_scenario(rig, scenario);
-		EXPECT_LT(result.worst_jerk_deg, 8.0f) << scenario.name;
-		EXPECT_LT(result.worst_twist_deg, 90.0f) << scenario.name;
-		EXPECT_LT(result.worst_clavicle_swing_deg, 31.0f) << scenario.name;
+		for (const Scenario& scenario : scenarios)
+		{
+			const ScenarioResult result = run_scenario(rig, scenario, solver_type);
+			EXPECT_LT(result.worst_jerk_deg, 8.0f) << scenario.name;
+			EXPECT_LT(result.worst_twist_deg, 90.0f) << scenario.name;
+			EXPECT_LT(result.worst_clavicle_swing_deg, 31.0f) << scenario.name;
+		}
+	}
+}
+
+// A target straight in front of the right shoulder: the limb bends before the body moves and is straight when the body helps.
+TEST(IK, FullBodyIKLimbBeforeBody)
+{
+	const TestRig rig;
+	const trs world_transform = trs(vec3(0.0f, 0.0f, -1.0f), quat::identity, vec3(1.0f));
+	const vec3 shoulder = vec3(-0.18f, 1.46f, -1.0f);
+
+	for (FullBodyIKSolverType solver_type : { FullBodyIKSolverType::FABRIK, FullBodyIKSolverType::JACOBIAN })
+	{
+		std::vector<FullBodyIKEffector> effectors = make_hand_effectors();
+		effectors[0].enabled = false;
+
+		const ref<FullBodyIKSolver> solver = create_full_body_ik_solver(solver_type);
+		ASSERT_TRUE(solver->init(&rig.skeleton, HIPS, effectors, make_joint_settings(0.0f, 0.0f)));
+
+		const FullBodyIKSettings settings;
+
+		for (float distance : { 0.2f, 0.3f, 0.4f, 0.5f, 0.54f, 0.58f, 0.62f, 0.7f, 0.8f })
+		{
+			effectors[1].target_position = shoulder + vec3(0.0f, 0.0f, distance);
+
+			const SkeletonPose animation_pose = rig.animate(0.0f);
+			SkeletonPose pose = animation_pose;
+			ASSERT_TRUE(solver->solve(pose, world_transform, effectors, settings));
+
+			float body_angle = 0.0f;
+			for (uint32 joint : { SPINE, SPINE1, SPINE2, R_CLAVICLE })
+			{
+				body_angle = std::max(body_angle, rad2deg(rotation_angle(pose.get_joint_rotation(joint), animation_pose.get_joint_rotation(joint))));
+			}
+
+			vec3 positions[JOINTS_COUNT];
+			for (size_t n = 0; n < solver->get_nodes().size(); ++n)
+			{
+				positions[solver->get_nodes()[n].joint_id] = solver->get_solved_positions()[n];
+			}
+			const vec3 upper_bone = normalize(positions[R_FOREARM] - positions[R_ARM]);
+			const vec3 lower_bone = normalize(positions[R_HAND] - positions[R_FOREARM]);
+			const float elbow_bend = rad2deg(std::acos(clamp(dot(upper_bone, lower_bone), -1.0f, 1.0f)));
+
+			if (distance <= 0.5f)
+			{
+				EXPECT_LT(body_angle, 0.1f) << distance;
+				EXPECT_LT(solver->get_last_error(), 1e-3f) << distance;
+			}
+			else
+			{
+				EXPECT_LT(elbow_bend, 1.0f) << distance;
+				if (distance <= 0.7f && solver_type == FullBodyIKSolverType::JACOBIAN)
+				{
+					EXPECT_LT(solver->get_last_error(), 0.003f) << distance;
+				}
+			}
+		}
 	}
 }

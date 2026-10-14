@@ -36,28 +36,19 @@ namespace era_engine
 		return false;
 	}
 
-	bool IKChain::solve(const animation::Skeleton* skeleton, animation::SkeletonPose& pose, const trs& world_transform)
+	bool IKChain::init(const animation::Skeleton* skeleton, FBIKSolverType solver_type)
 	{
+		solver.reset();
+
 		if (skeleton == nullptr || joint_ids.size() < 2)
 		{
 			return false;
 		}
 
-		solver.init(skeleton, joint_ids.front());
-
 		effectors.resize(1);
+		effectors.front().joint_id = joint_ids.back();
 
-		FullBodyIKEffector& effector = effectors.front();
-		effector.joint_id = joint_ids.back();
-		effector.target_position = target_world_position;
-		effector.target_rotation = target_world_rotation;
-		effector.position_weight = 1.0f;
-		effector.rotation_weight = rotation_weight;
-		effector.pole_vector_local = pole_vector_local;
-		effector.pole_weight = pole_weight;
-		effector.soft_reach_distance = soft_reach_distance;
-
-		joint_settings.assign(skeleton->joints.size(), FullBodyIKJointSettings{});
+		std::vector<FBIKJointSettings> joint_settings(skeleton->joints.size());
 		for (size_t i = 0; i < joint_ids.size() && i < constraints.size(); ++i)
 		{
 			if (joint_ids[i] < joint_settings.size())
@@ -66,14 +57,37 @@ namespace era_engine
 			}
 		}
 
-		FullBodyIKSettings settings;
+		solver = create_full_body_ik_solver(solver_type);
+		if (!solver->init(skeleton, joint_ids.front(), effectors, joint_settings))
+		{
+			solver.reset();
+			return false;
+		}
+		return true;
+	}
+
+	bool IKChain::solve(animation::SkeletonPose& pose, const trs& world_transform)
+	{
+		if (solver == nullptr || !solver->is_initialized())
+		{
+			return false;
+		}
+
+		IKEffector& effector = effectors.front();
+		effector.target_position = target_world_position;
+		effector.target_rotation = target_world_rotation;
+		effector.position_weight = 1.0f;
+		effector.rotation_weight = rotation_weight;
+		effector.pole_vector_local = pole_vector_local;
+		effector.pole_weight = pole_weight;
+		effector.soft_reach_distance = soft_reach_distance;
+
+		FBIKSettings settings;
 		settings.iterations = iterations;
 		settings.tolerance = tolerance;
-		settings.root_position_mobility = 0.0f;
-		settings.root_rotation_mobility = 1.0f;
 		settings.weight = weight;
 
-		return solver.solve(pose, world_transform, effectors, joint_settings, settings);
+		return solver->solve(pose, world_transform, effectors, settings);
 	}
 
 	IKComponent::IKComponent(ref<Entity::EcsData> _data)
@@ -83,6 +97,53 @@ namespace era_engine
 
 	IKComponent::~IKComponent()
 	{
+	}
+
+	bool IKComponent::init()
+	{
+		if (is_initialized())
+		{
+			return true;
+		}
+
+		const animation::SkeletonComponent* skeleton_component = get_entity().get_component_if_exists<animation::SkeletonComponent>();
+		if (skeleton_component == nullptr || skeleton_component->skeleton == nullptr)
+		{
+			return false;
+		}
+
+		bool result = true;
+		for (IKChain& chain : chains)
+		{
+			result &= chain.init(skeleton_component->skeleton.get(), solver_type);
+		}
+		return result;
+	}
+
+	bool IKComponent::reinit()
+	{
+		reset();
+		return init();
+	}
+
+	void IKComponent::reset()
+	{
+		for (IKChain& chain : chains)
+		{
+			chain.solver.reset();
+		}
+	}
+
+	bool IKComponent::is_initialized() const
+	{
+		for (const IKChain& chain : chains)
+		{
+			if (chain.solver == nullptr || !chain.solver->is_initialized())
+			{
+				return false;
+			}
+		}
+		return !chains.empty();
 	}
 
 	uint32 IKComponent::find_chain_by_root_name(const animation::Skeleton& skeleton, std::string_view root_name) const
@@ -114,7 +175,7 @@ namespace era_engine
 	}
 
 	bool IKComponent::add_chain_to_component(const std::vector<std::string>& joint_names,
-		const std::vector<FullBodyIKJointSettings>* constraints/* = nullptr*/)
+		const std::vector<FBIKJointSettings>* constraints/* = nullptr*/)
 	{
 		const animation::SkeletonComponent* skeleton_component = get_entity().get_component<animation::SkeletonComponent>();
 		if (skeleton_component == nullptr || skeleton_component->skeleton == nullptr)

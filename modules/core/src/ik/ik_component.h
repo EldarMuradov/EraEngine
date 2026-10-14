@@ -19,7 +19,7 @@ namespace era_engine
     struct ERA_CORE_API IKChain
     {
         std::vector<uint32> joint_ids;
-        std::vector<FullBodyIKJointSettings> constraints; // size = joint_ids.size().
+        std::vector<FBIKJointSettings> constraints; // size = joint_ids.size().
 
         vec3 target_world_position = vec3(0.0f);
         quat target_world_rotation = quat::identity;
@@ -35,13 +35,13 @@ namespace era_engine
         float tolerance = 0.005f;
         bool enabled = true;
 
-        bool solve(const animation::Skeleton* skeleton, animation::SkeletonPose& pose, const trs& world_transform);
+        bool init(const animation::Skeleton* skeleton, FBIKSolverType solver_type);
+        bool solve(animation::SkeletonPose& pose, const trs& world_transform);
 
-        FullBodyIKSolver solver;
+        ref<FBIKSolver> solver;
 
     private:
-        std::vector<FullBodyIKEffector> effectors;
-        std::vector<FullBodyIKJointSettings> joint_settings; // Indexed by joint id.
+        std::vector<IKEffector> effectors;
     };
 
 	class ERA_CORE_API IKComponent : public Component
@@ -50,13 +50,21 @@ namespace era_engine
 		IKComponent(ref<Entity::EcsData> _data);
 		~IKComponent() override;
 
+        bool init();
+
+        bool reinit();
+        void reset();
+        bool is_initialized() const;
+
+        FBIKSolverType solver_type = FBIKSolverType::FABRIK;
+
         std::vector<IKChain> chains;
         bool enabled = true;
 
         uint32 find_chain_by_root_name(const animation::Skeleton& skeleton, std::string_view root_name) const;
 
         bool add_chain_to_component(const std::vector<std::string>& joint_names,
-            const std::vector<FullBodyIKJointSettings>* constraints = nullptr);
+            const std::vector<FBIKJointSettings>* constraints = nullptr);
 
 		ERA_VIRTUAL_REFLECT(Component)
 	};
