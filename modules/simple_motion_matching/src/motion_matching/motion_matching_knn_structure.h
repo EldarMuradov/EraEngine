@@ -12,7 +12,7 @@ namespace era_engine
 		virtual ~KnnStructure();
 
 		virtual void rebuild_structure(const MotionMatchingDatabase& database);
-		virtual void build_structure_from_matrix(const MotionMatchingDatabase& database, const array2d<float>& compressed_matrix);
+		virtual void build_structure_from_matrix(const MotionMatchingDatabase& database, const MatrixX& compressed_matrix);
 
 		virtual std::vector<std::shared_ptr<MotionMatchingDatabase::Sample>> search_knn(float* query, uint32 query_size, uint32 max_candidates, const MotionMatchingDatabase& database);
 	

@@ -14,7 +14,7 @@ namespace era_engine
 		~HnswKnnStructure() override;
 
 		void rebuild_structure(const MotionMatchingDatabase& database) override;
-		void build_structure_from_matrix(const MotionMatchingDatabase& database, const array2d<float>& compressed_matrix) override;
+		void build_structure_from_matrix(const MotionMatchingDatabase& database, const MatrixX& compressed_matrix) override;
 
 		std::vector<std::shared_ptr<MotionMatchingDatabase::Sample>> search_knn(float* query, uint32 query_size, uint32 max_candidates, const MotionMatchingDatabase& database) override;
 

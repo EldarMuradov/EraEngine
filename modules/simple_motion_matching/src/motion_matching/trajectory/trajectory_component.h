@@ -2,8 +2,6 @@
 
 #include "motion_matching_api.h"
 
-#include "motion_matching/array.h"
-
 #include <core/math.h>
 
 #include <ecs/component.h>
@@ -21,19 +19,19 @@ namespace era_engine
 		ERA_VIRTUAL_REFLECT(Component)
 
 	public:
-		array1d<vec3> trajectory_desired_velocities;
-		array1d<quat> trajectory_desired_rotations;
+		std::vector<vec3> trajectory_desired_velocities;
+		std::vector<quat> trajectory_desired_rotations;
 
-		array1d<vec3> trajectory_positions;
-		array1d<quat> trajectory_rotations;
+		std::vector<vec3> trajectory_positions;
+		std::vector<quat> trajectory_rotations;
 
-		array1d<vec3> trajectory_velocities;
-		array1d<vec3> trajectory_accelerations;
+		std::vector<vec3> trajectory_velocities;
+		std::vector<vec3> trajectory_accelerations;
 
-		array1d<vec3> trajectory_angular_velocities;
+		std::vector<vec3> trajectory_angular_velocities;
 
 		size_t number_of_trajectories = 5;
 
-		array1d<float> time_offsets;
+		std::vector<float> time_offsets;
 	};
 }

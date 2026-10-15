@@ -12,7 +12,7 @@ namespace era_engine
     {
     }
 
-    void KnnStructure::build_structure_from_matrix(const MotionMatchingDatabase& database, const array2d<float>& compressed_matrix)
+    void KnnStructure::build_structure_from_matrix(const MotionMatchingDatabase& database, const MatrixX& compressed_matrix)
     {
     }
 

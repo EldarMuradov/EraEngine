@@ -36,7 +36,7 @@ namespace era_engine
     // position to find an accurate desired velocity in 
     // the world space
     static void trajectory_desired_velocities_predict(
-        slice1d<vec3> desired_velocities,
+        std::vector<vec3>& desired_velocities,
         const vec3& desired_velocity,
         const vec3& input,
         const quat& rotation,
@@ -44,11 +44,11 @@ namespace era_engine
         float side_speed,
         float back_speed)
     {
-        desired_velocities(0) = desired_velocity;
+        desired_velocities[0] = desired_velocity;
 
-        for (int i = 1; i < desired_velocities.size; i++)
+        for (size_t i = 1; i < desired_velocities.size(); i++)
         {
-            desired_velocities(i) = MotionUtils::desired_velocity_update(
+            desired_velocities[i] = MotionUtils::desired_velocity_update(
                 input,
                 rotation,
                 fwrd_speed,
@@ -58,38 +58,38 @@ namespace era_engine
     }
 
     static void trajectory_positions_predict(
-        slice1d<vec3> positions,
-        slice1d<vec3> velocities,
-        slice1d<vec3> accelerations,
-        const slice1d<float>& time_offsets,
+        std::vector<vec3>& positions,
+        std::vector<vec3>& velocities,
+        std::vector<vec3>& accelerations,
+        const std::vector<float>& time_offsets,
         const vec3& position,
         const vec3& velocity,
         const vec3& acceleration,
-        const slice1d<vec3>& desired_velocities,
+        const std::vector<vec3>& desired_velocities,
         float halflife)
     {
-        positions(0) = position;
-        velocities(0) = velocity;
-        accelerations(0) = acceleration;
+        positions[0] = position;
+        velocities[0] = velocity;
+        accelerations[0] = acceleration;
 
-        float current_time = time_offsets(0);
+        float current_time = time_offsets[0];
 
-        for (int i = 1; i < positions.size; i++)
+        for (size_t i = 1; i < positions.size(); i++)
         {
-            positions(i) = positions(i - 1);
-            velocities(i) = velocities(i - 1);
-            accelerations(i) = accelerations(i - 1);
+            positions[i] = positions[i - 1];
+            velocities[i] = velocities[i - 1];
+            accelerations[i] = accelerations[i - 1];
 
             float prev_time = current_time;
-            current_time = time_offsets(i);
+            current_time = time_offsets[i];
 
             float time_offset = current_time - prev_time;
 
             MotionUtils::simulation_positions_update(
-                positions(i),
-                velocities(i),
-                accelerations(i),
-                desired_velocities(i),
+                positions[i],
+                velocities[i],
+                accelerations[i],
+                desired_velocities[i],
                 halflife,
                 time_offset);
         }
@@ -98,51 +98,51 @@ namespace era_engine
     // Predict desired rotations given the estimated future 
     // camera rotation and other parameters
     static void trajectory_desired_rotations_predict(
-        slice1d<quat> desired_rotations,
-        const slice1d<vec3>& desired_velocities,
+        std::vector<quat>& desired_rotations,
+        const std::vector<vec3>& desired_velocities,
         const quat& desired_rotation,
         bool has_input,
         bool desired_strafe,
         float strafe_direction = 0.0f)
     {
-        desired_rotations(0) = desired_rotation;
+        desired_rotations[0] = desired_rotation;
 
-        for (int i = 1; i < desired_rotations.size; i++)
+        for (size_t i = 1; i < desired_rotations.size(); i++)
         {
-            desired_rotations(i) = MotionUtils::desired_rotation_update(
-                desired_rotations(i - 1),
+            desired_rotations[i] = MotionUtils::desired_rotation_update(
+                desired_rotations[i - 1],
                 has_input,
                 strafe_direction,
                 desired_strafe,
-                desired_velocities(i));
+                desired_velocities[i]);
         }
     }
 
     static void trajectory_rotations_predict(
-        slice1d<quat> rotations,
-        slice1d<vec3> angular_velocities,
+        std::vector<quat>& rotations,
+        std::vector<vec3>& angular_velocities,
         const quat& rotation,
         const vec3& angular_velocity,
-        const slice1d<quat>& desired_rotations,
+        const std::vector<quat>& desired_rotations,
         float halflife,
-        const slice1d<float>& time_offsets)
+        const std::vector<float>& time_offsets)
     {
-        rotations.set(rotation);
-        angular_velocities.set(angular_velocity);
+        std::fill(rotations.begin(), rotations.end(), rotation);
+        std::fill(angular_velocities.begin(), angular_velocities.end(), angular_velocity);
 
-        float current_time = time_offsets(0);
+        float current_time = time_offsets[0];
 
-        for (int i = 1; i < rotations.size; i++)
+        for (size_t i = 1; i < rotations.size(); i++)
         {
             float prev_time = current_time;
-            current_time = time_offsets(i);
+            current_time = time_offsets[i];
 
             float time_offset = current_time - prev_time;
 
             MotionUtils::simulation_rotations_update(
-                rotations(i),
-                angular_velocities(i),
-                desired_rotations(i),
+                rotations[i],
+                angular_velocities[i],
+                desired_rotations[i],
                 halflife,
                 time_offset);
         }
@@ -258,20 +258,20 @@ namespace era_engine
         }
     }
 
-    void TrajectoryMotionSystem::draw_trajectory(const slice1d<vec3>& trajectory_positions, 
-        const slice1d<quat>& trajectory_rotations, 
-        const slice1d<vec3>& trajectory_velocities,
+    void TrajectoryMotionSystem::draw_trajectory(const std::vector<vec3>& trajectory_positions, 
+        const std::vector<quat>& trajectory_rotations, 
+        const std::vector<vec3>& trajectory_velocities,
         const vec4& color)
     {
-        for (int i = 1; i < trajectory_positions.size; i++)
+        for (size_t i = 1; i < trajectory_positions.size(); i++)
         {
-            vec3 point = trajectory_positions(i);
+            vec3 point = trajectory_positions[i];
             renderWireSphere(point, 0.05f, color, renderer_holder_rc->ldrRenderPass);
 
-            vec3 dir = trajectory_rotations(i) * vec3(0.0f, 0.0f, 1.0f);
+            vec3 dir = trajectory_rotations[i] * vec3(0.0f, 0.0f, 1.0f);
             renderLine(point, point + 0.6f * dir, color, renderer_holder_rc->ldrRenderPass);
-            renderLine(point, point + 0.3f * trajectory_velocities(i), vec4(1.0f, 1.0f, 1.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
-            renderLine(trajectory_positions(i - 1), point, color, renderer_holder_rc->ldrRenderPass);
+            renderLine(point, point + 0.3f * trajectory_velocities[i], vec4(1.0f, 1.0f, 1.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
+            renderLine(trajectory_positions[i - 1], point, color, renderer_holder_rc->ldrRenderPass);
         }
     }
 

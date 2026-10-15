@@ -2,10 +2,11 @@
 
 #include "motion_matching_api.h"
 
-#include "motion_matching/array.h"
 #include "motion_matching/common.h"
 
 #include <asset/game_asset.h>
+
+#include <core/dense_matrix.h>
 
 #include <core/serialization/binary_serializer.h>
 
@@ -85,8 +86,14 @@ namespace era_engine
 		SearchResult search(const SearchParams& params) const;
 
 		std::vector<float> normalize_query(const std::vector<float>& query) const;
-		void substract_column_means(array2d<float>& matrix) const;
-		array2d<float> pack_query(const std::vector<float>& query) const;
+
+		// Rows are the normalized sample features.
+		void build_feature_matrix(MatrixX& out) const;
+		void substract_column_means(MatrixX& matrix) const;
+
+		// Rows of the mean-centered features projected to the search space.
+		void project_features(const MatrixX& features, MatrixX& out) const;
+		VectorX pack_query(const std::vector<float>& query) const;
 
 		static std::string get_asset_type_impl();
 
@@ -133,7 +140,7 @@ namespace era_engine
 		std::vector<float> max_values;
 
 		std::vector<float> transform_column_means;
-		array2d<float> transform_matrix;
+		MatrixX transform_matrix; // PCA axes in rows, empty without PCA.
 
 		std::vector<ref<Sample>> samples;
 	};

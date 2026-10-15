@@ -128,10 +128,10 @@ namespace era_engine
 
 	// PCA of mean-centered row samples (rows = samples, cols = features).
 	// Returns a (num_components x features) matrix whose rows are the principal axes, sorted by descending variance.
-	static array2d<float> build_pca_projection(const array2d<float>& centered_data, uint32 num_components)
+	static MatrixX build_pca_projection(const MatrixX& centered_data, uint32 num_components)
 	{
-		const uint32 num_samples = uint32(centered_data.rows);
-		const uint32 num_features = uint32(centered_data.cols);
+		const uint32 num_samples = centered_data.rows();
+		const uint32 num_features = centered_data.cols();
 
 		ASSERT(num_components > 0 && num_components <= num_features);
 
@@ -174,7 +174,7 @@ namespace era_engine
 				return covariance[size_t(a) * num_features + a] > covariance[size_t(b) * num_features + b];
 			});
 
-		array2d<float> proj(static_cast<int>(num_components), static_cast<int>(num_features));
+		MatrixX proj(num_components, num_features);
 		for (uint32 component = 0; component < num_components; ++component)
 		{
 			const uint32 eigen_index = indices[component];
@@ -187,23 +187,23 @@ namespace era_engine
 		return proj;
 	}
 
-	static std::vector<float> build_column_means(const array2d<float>& mat)
+	static std::vector<float> build_column_means(const MatrixX& mat)
 	{
-		std::vector<float> result(mat.cols, 0.0f);
-		if (mat.rows == 0)
+		std::vector<float> result(mat.cols(), 0.0f);
+		if (mat.rows() == 0)
 		{
 			return result;
 		}
 
-		for (int32 column = 0; column < mat.cols; ++column)
+		for (uint32 column = 0; column < mat.cols(); ++column)
 		{
 			double sum = 0.0;
-			for (int32 row = 0; row < mat.rows; ++row)
+			for (uint32 row = 0; row < mat.rows(); ++row)
 			{
 				sum += mat(row, column);
 			}
 
-			result[column] = float(sum / double(mat.rows));
+			result[column] = float(sum / double(mat.rows()));
 		}
 
 		return result;
@@ -324,8 +324,8 @@ namespace era_engine
 
 		const bool is_same_animation = params.current_animation != nullptr &&
 			result_animation != nullptr &&
-			(params.current_animation->handle == result_animation->handle ||
-				params.current_animation == result_animation);
+			(params.current_animation == result_animation ||
+				(params.current_animation->handle.value != 0 && params.current_animation->handle == result_animation->handle));
 
 		if (has_flag(narrow_phase_params.flags, NarrowPhaseFlags::SAME_FRAME_CHECK) && is_same_animation)
 		{
@@ -466,35 +466,17 @@ namespace era_engine
 
 		fill_normalize_factors();
 
-		// Samples are normalized exactly the same way as runtime queries (see normalize_query).
-		const uint32 matching_row_count = uint32(samples.size());
-		const uint32 matching_column_count = total_features_size;
-
-		array2d<float> features_matrix(static_cast<int>(matching_row_count), static_cast<int>(matching_column_count));
-		for (uint32 row = 0; row < matching_row_count; ++row)
-		{
-		    const std::vector<float> normalized_features = normalize_query(samples[row]->features);
-		    for (uint32 column = 0; column < matching_column_count; ++column)
-		    {
-		        features_matrix(row, column) = normalized_features[column];
-		    }
-		}
+		MatrixX features_matrix;
+		build_feature_matrix(features_matrix);
 
 		// Normalized features are already mean-centered; column means only remove floating point drift.
 		transform_column_means = build_column_means(features_matrix);
 		substract_column_means(features_matrix);
 
-		array2d<float> compressed_feature_matrix;
-		if (search_dimension != total_features_size)
-		{
-		    transform_matrix = build_pca_projection(features_matrix, search_dimension);
-		    compressed_feature_matrix = transpose(transform_matrix * transpose(features_matrix));
-		}
-		else
-		{
-		    transform_matrix = array2d<float>();
-		    compressed_feature_matrix = features_matrix;
-		}
+		transform_matrix = build_pca_projection(features_matrix, search_dimension);
+
+		MatrixX compressed_feature_matrix;
+		project_features(features_matrix, compressed_feature_matrix);
 
 		knn_structure->build_structure_from_matrix(*this, compressed_feature_matrix);
 	}
@@ -515,14 +497,10 @@ namespace era_engine
 
 		std::vector<float> normalized_query_values = normalize_query(params.query);
 
-		array2d<float> packed_matrix_query = pack_query(normalized_query_values);
+		VectorX packed_query = pack_query(normalized_query_values);
+		ASSERT(packed_query.size() == search_dimension);
 
-		float* packed_normalized_query = packed_matrix_query.data;
-		const uint32 query_size = packed_matrix_query.cols * packed_matrix_query.rows;
-
-		ASSERT(query_size == search_dimension);
-
-		std::vector<std::shared_ptr<Sample>> knn = knn_structure->search_knn(packed_normalized_query, query_size, max_broardphase_candidates, *this);
+		std::vector<std::shared_ptr<Sample>> knn = knn_structure->search_knn(packed_query.data(), packed_query.size(), max_broardphase_candidates, *this);
 
 		return narrow_phase_search(knn, normalized_query_values, params);
 	}
@@ -549,10 +527,23 @@ namespace era_engine
 		return result;
 	}
 
-	void MotionMatchingDatabase::substract_column_means(array2d<float>& matrix) const
+	void MotionMatchingDatabase::build_feature_matrix(MatrixX& out) const
 	{
-		const uint32 rows = matrix.rows;
-		const uint32 columns = matrix.cols;
+		// Samples are normalized exactly the same way as runtime queries.
+		out.resize(uint32(samples.size()), total_features_per_sample);
+		for (uint32 row = 0; row < out.rows(); ++row)
+		{
+			const std::vector<float> normalized_features = normalize_query(samples[row]->features);
+			ASSERT(normalized_features.size() == out.cols());
+
+			std::copy(normalized_features.begin(), normalized_features.end(), out.row(row));
+		}
+	}
+
+	void MotionMatchingDatabase::substract_column_means(MatrixX& matrix) const
+	{
+		const uint32 rows = matrix.rows();
+		const uint32 columns = matrix.cols();
 
 		ASSERT(transform_column_means.size() == columns);
 
@@ -565,19 +556,24 @@ namespace era_engine
 		}
 	}
 
-	array2d<float> MotionMatchingDatabase::pack_query(const std::vector<float>& query) const
+	void MotionMatchingDatabase::project_features(const MatrixX& features, MatrixX& out) const
 	{
-		array2d<float> pack_target(1, int(query.size()));
-		pack_target.fill(query.data());
+		multiply_transposed(features, transform_matrix, out);
+	}
 
-		substract_column_means(pack_target);
+	VectorX MotionMatchingDatabase::pack_query(const std::vector<float>& query) const
+	{
+		ASSERT(query.size() == transform_column_means.size());
 
-		if (search_dimension == total_features_per_sample)
+		VectorX centered(uint32(query.size()));
+		for (uint32 i = 0; i < centered.size(); ++i)
 		{
-			return pack_target;
+			centered[i] = query[i] - transform_column_means[i];
 		}
 
-		return transpose(transform_matrix * transpose(pack_target));
+		VectorX projected;
+		multiply(transform_matrix, centered, projected);
+		return projected;
 	}
 
 	std::string MotionMatchingDatabase::get_asset_type_impl()
@@ -661,14 +657,14 @@ namespace era_engine
 			{
 				IO::write_vector(os, transform_column_means);
 
-				const uint32 rows = uint32(transform_matrix.rows);
-				const uint32 cols = uint32(transform_matrix.cols);
+				const uint32 rows = transform_matrix.rows();
+				const uint32 cols = transform_matrix.cols();
 				IO::write_value(os, rows);
 				IO::write_value(os, cols);
 				if (rows * cols > 0)
 				{
 					// IO::write_data takes the size in bytes.
-					IO::write_data(os, transform_matrix.data, std::streamsize(sizeof(float)) * rows * cols);
+					IO::write_data(os, transform_matrix.data(), std::streamsize(sizeof(float)) * rows * cols);
 				}
 			}
 
@@ -844,10 +840,10 @@ namespace era_engine
 				IO::read_value(is, rows);
 				IO::read_value(is, cols);
 
-				transform_matrix = array2d<float>(static_cast<int>(rows), static_cast<int>(cols));
+				transform_matrix.resize(rows, cols);
 				if (rows * cols > 0)
 				{
-					IO::read_data(is, transform_matrix.data, std::streamsize(sizeof(float)) * rows * cols);
+					IO::read_data(is, transform_matrix.data(), std::streamsize(sizeof(float)) * rows * cols);
 				}
 			}
 

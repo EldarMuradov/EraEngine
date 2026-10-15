@@ -2,8 +2,6 @@
 
 #include "ecs/system.h"
 
-#include "motion_matching/array.h"
-
 #include "core/math.h"
 
 namespace era_engine
@@ -25,9 +23,9 @@ namespace era_engine
 
 	private:
 		void draw_trajectory(
-			const slice1d<vec3>& trajectory_positions,
-			const slice1d<quat>& trajectory_rotations,
-			const slice1d<vec3>& trajectory_velocities,
+			const std::vector<vec3>& trajectory_positions,
+			const std::vector<quat>& trajectory_rotations,
+			const std::vector<vec3>& trajectory_velocities,
 			const vec4& color);
 
 	private:

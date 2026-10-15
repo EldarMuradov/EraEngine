@@ -10,51 +10,27 @@ namespace era_engine
 
     void HnswKnnStructure::rebuild_structure(const MotionMatchingDatabase& database)
     {
-        std::vector<float> features_array;
-        features_array.reserve(database.samples.size() * database.search_dimension);
-
-        for (size_t sample_index = 0; sample_index < database.samples.size(); ++sample_index)
-        {
-            const std::shared_ptr<MotionMatchingDatabase::Sample>& sample = database.samples[sample_index];
-            const std::vector<float> sample_features = database.normalize_query(sample->features);
-
-            features_array.insert(features_array.end(), sample_features.begin(), sample_features.end());
-        }
-
-        array2d<float> features_matrix(uint32(database.samples.size()), database.samples.front()->features.size());
-        features_matrix.fill(features_array.data());
-
+        MatrixX features_matrix;
+        database.build_feature_matrix(features_matrix);
         database.substract_column_means(features_matrix);
 
-        array2d<float> final_features_matrix;
-        if (database.total_features_per_sample != database.search_dimension)
-        {
-            final_features_matrix = transpose(database.transform_matrix * transpose(features_matrix));
-        }
-        else
-        {
-            final_features_matrix = features_matrix;
-        }
+        MatrixX compressed_matrix;
+        database.project_features(features_matrix, compressed_matrix);
 
-        build_structure_from_matrix(database, final_features_matrix);
+        build_structure_from_matrix(database, compressed_matrix);
     }
 
-    void HnswKnnStructure::build_structure_from_matrix(const MotionMatchingDatabase& database, const array2d<float>& compressed_matrix)
+    void HnswKnnStructure::build_structure_from_matrix(const MotionMatchingDatabase& database, const MatrixX& compressed_matrix)
     {
+        ASSERT(compressed_matrix.rows() == database.samples.size() && compressed_matrix.cols() == database.search_dimension);
+
         hnsw_l2_space = hnswlib::L2Space(database.search_dimension);
 
         hnsw = std::shared_ptr<hnswlib::HierarchicalNSW<float>>(new hnswlib::HierarchicalNSW<float>(&hnsw_l2_space, database.samples.size(), max_edges_per_vertex, construction_exploration_factor));
 
-        for (uint32 point_index = 0; point_index < static_cast<uint32>(database.samples.size()); ++point_index)
+        for (uint32 point_index = 0; point_index < compressed_matrix.rows(); ++point_index)
         {
-            std::vector<float> animation_data;
-
-            for (uint32 feature_index = 0; feature_index < database.search_dimension; ++feature_index)
-            {
-                animation_data.push_back(compressed_matrix(point_index, feature_index));
-            }
-
-            hnsw->addPoint(animation_data.data(), point_index);
+            hnsw->addPoint(compressed_matrix.row(point_index), point_index);
         }
 
         hnsw->setEf(search_exploration_factor);

@@ -59,7 +59,7 @@ namespace era_engine
 			int32 trajectory_index = -1;
 			for (int32 i = 0; i < int32(trajectory_component->number_of_trajectories); ++i)
 			{
-				if (fuzzy_equals(trajectory_component->time_offsets(i), trajectory_feature_desc->time_offset))
+				if (fuzzy_equals(trajectory_component->time_offsets[i], trajectory_feature_desc->time_offset))
 				{
 					trajectory_index = i;
 					break;
@@ -76,7 +76,7 @@ namespace era_engine
 
 			if (trajectory_feature_desc->type == FeatureDescType::LOCATION)
 			{
-				const trs trajectory_position = trs(trajectory_component->trajectory_positions(trajectory_index), trajectory_component->trajectory_rotations(trajectory_index), vec3(1.0f));
+				const trs trajectory_position = trs(trajectory_component->trajectory_positions[trajectory_index], trajectory_component->trajectory_rotations[trajectory_index], vec3(1.0f));
 				const vec3& position = (inverse_world_transform * trajectory_position).position;
 
 				values.emplace_back(position.x);
@@ -84,7 +84,7 @@ namespace era_engine
 			}
 			else if (trajectory_feature_desc->type == FeatureDescType::DIRECTION)
 			{
-				const trs trajectory_position = trs(trajectory_component->trajectory_positions(trajectory_index), trajectory_component->trajectory_rotations(trajectory_index), vec3(1.0f));
+				const trs trajectory_position = trs(trajectory_component->trajectory_positions[trajectory_index], trajectory_component->trajectory_rotations[trajectory_index], vec3(1.0f));
 				const quat& rotation = (inverse_world_transform * trajectory_position).rotation;
 				const vec3 direction = noz(rotation * vec3::forward);
 
@@ -93,7 +93,7 @@ namespace era_engine
 			}
 			else if (trajectory_feature_desc->type == FeatureDescType::VELOCITY)
 			{
-				const vec3 velocity = conjugate(world_transform.rotation) * trajectory_component->trajectory_velocities(trajectory_index);
+				const vec3 velocity = conjugate(world_transform.rotation) * trajectory_component->trajectory_velocities[trajectory_index];
 
 				values.emplace_back(velocity.x);
 				values.emplace_back(velocity.z);
