@@ -168,10 +168,5 @@ namespace era_engine
 		static std::vector<Entity::Handle> get_childs(World* world, Entity::Handle parent);
 
 		static std::vector<Entity> get_entity_childs(World* world, Entity::Handle parent);
-
-	private:
-		static inline std::unordered_map<Entity::Handle, EntityNode> container;
-
-		friend class World;
 	};
 }

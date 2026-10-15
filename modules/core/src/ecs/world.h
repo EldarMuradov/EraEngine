@@ -45,6 +45,9 @@ namespace era_engine
 
 			std::unordered_map<Entity::Handle, ref<Entity::EcsData>> entity_datas;
 
+			std::mutex hierarchy_sync;
+			std::unordered_map<Entity::Handle, EntityNode> hierarchy;
+
 			entt::registry registry;
 
 			Entity root_entity;
@@ -210,6 +213,7 @@ namespace era_engine
 		float fixed_update_dt = 0.0f;
 
 		friend class Entity;
+		friend class EntityContainer;
 		friend class WorldSystemScheduler;
 	};
 

@@ -173,10 +173,10 @@ inline float out_back(float t) { const float s = 1.70158f; return --t, 1.f * (t 
 inline float in_out_back(float t) { const float s = 1.70158f * 1.525f; return (t < 0.5f) ? (t *= 2.f, 0.5f * t * t * (t * s + t - s)) : (t = t * 2.f - 2.f, 0.5f * (2.f + t * t * (t * s + t + s))); }
 
 #define bounceout(p) ( \
-    (t) < 4.f/11.f ? (121.f * (t) * (t))/16.f : \
-    (t) < 8.f/11.f ? (363.f/40.f * (t) * (t)) - (99.f/10.f * (t)) + 17.f/5.f : \
-    (t) < 9.f/10.f ? (4356.f/361.f * (t) * (t)) - (35442.f/1805.f * (t)) + 16061.f/1805.f \
-                : (54.f/5.f * (t) * (t)) - (513.f/25.f * (t)) + 268.f/25.f )
+    (p) < 4.f/11.f ? (121.f * (p) * (p))/16.f : \
+    (p) < 8.f/11.f ? (363.f/40.f * (p) * (p)) - (99.f/10.f * (p)) + 17.f/5.f : \
+    (p) < 9.f/10.f ? (4356.f/361.f * (p) * (p)) - (35442.f/1805.f * (p)) + 16061.f/1805.f \
+                : (54.f/5.f * (p) * (p)) - (513.f/25.f * (p)) + 268.f/25.f )
 
 inline float in_bounce(float t) { return 1.f - bounceout(1.f - t); }
 inline float out_bounce(float t) { return bounceout(t); }
@@ -855,7 +855,7 @@ inline vec3 log(const quat& q, float eps = 1e-8f)
 	}
 	else
 	{
-		float halfangle = acosf(clamp(q.w, -1.0f, 1.0f));
+		float halfangle = atan2f(length, q.w);
 		return halfangle * (vec3(q.x, q.y, q.z) / length);
 	}
 }

@@ -54,7 +54,7 @@ namespace era_engine
 
 	inline bool ranges_overlap(uint64 fromA, uint64 toA, uint64 fromB, uint64 toB) noexcept
 	{
-		return !(toA <= fromB || fromA >= toA);
+		return !(toA <= fromB || fromA >= toB);
 	}
 
 	inline bool ranges_overlap(void* fromA, void* toA, void* fromB, void* toB) noexcept

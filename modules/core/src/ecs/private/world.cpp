@@ -111,6 +111,18 @@ namespace era_engine
 			return;
 		}
 
+		Entity::Handle parent_handle = Entity::NullHandle;
+		{
+			std::lock_guard _lock{ world_data->sync };
+
+			const auto data_iter = world_data->entity_datas.find(_handle);
+			if (data_iter == world_data->entity_datas.end())
+			{
+				return;
+			}
+			parent_handle = data_iter->second->parent_handle;
+		}
+
 		if (_destroy_childs)
 		{
 			for (const Entity::Handle child : EntityContainer::get_childs(this, _handle))
@@ -119,8 +131,12 @@ namespace era_engine
 			}
 		}
 
-		std::lock_guard _lock{ world_data->sync };
+		EntityContainer::erase(this, _handle);
+		EntityContainer::erase_pair(this, parent_handle, _handle);
+
 		world_data->registry.destroy(_handle);
+
+		std::lock_guard _lock{ world_data->sync };
 		world_data->entity_datas.erase(_handle);
 	}
 
@@ -146,40 +162,43 @@ namespace era_engine
 
 	void World::destroy(bool _destroy_components)
 	{
-		std::lock_guard _lock{ world_data->sync };
-
-		for (auto iter = world_data->entity_datas.begin(); iter != world_data->entity_datas.end();)
+		if (world_data == nullptr)
 		{
-			if (iter->first == Entity::NullHandle)
-			{
-				continue;
-			}
-
-			world_data->registry.destroy(iter->first);
-			iter = world_data->entity_datas.erase(iter);
-			if (iter == world_data->entity_datas.end())
-			{
-				break;
-			}
-			++iter;
+			return;
 		}
+
+		const auto world_iter = worlds.find(world_data->name);
+		if (world_iter != worlds.end() && world_iter->second == this)
+		{
+			worlds.erase(world_iter);
+		}
+
+		world_data->scheduler->stop();
+
 		world_data->registry.clear();
-		world_data->entity_datas.clear();
+		{
+			std::lock_guard _lock{ world_data->sync };
+			world_data->entity_datas.clear();
+		}
 
 		delete world_data->scheduler;
+		world_data->scheduler = nullptr;
+
 		delete world_data;
+		world_data = nullptr;
 	}
 
 	void World::add_tag(const std::string& tag)
 	{
-		world_data->scheduler->refresh_graph();
 		world_data->root_entity.get_component<TagsComponent>()->add_tag(tag);
+		world_data->scheduler->refresh_graph();
 	}
 
 	bool World::remove_tag(const std::string& tag)
 	{
+		const bool removed = world_data->root_entity.get_component<TagsComponent>()->remove_tag(tag);
 		world_data->scheduler->refresh_graph();
-		return world_data->root_entity.get_component<TagsComponent>()->remove_tag(tag);
+		return removed;
 	}
 
 	bool World::has_tag(const std::string& tag) const
@@ -190,6 +209,7 @@ namespace era_engine
 	void World::clear_tags()
 	{
 		world_data->root_entity.get_component<TagsComponent>()->clear();
+		world_data->scheduler->refresh_graph();
 	}
 
 	const TagsContainer& World::get_tags_container() const
@@ -224,7 +244,8 @@ namespace era_engine
 
 	World* get_world_by_name(const std::string& _name)
 	{
-		return worlds[_name];
+		const auto world_iter = worlds.find(_name);
+		return world_iter != worlds.end() ? world_iter->second : nullptr;
 	}
 
 	std::unordered_map<std::string, World*>& get_worlds()

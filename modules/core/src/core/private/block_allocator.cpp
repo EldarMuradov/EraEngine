@@ -39,7 +39,7 @@ namespace era_engine
 	void BlockAllocator::free(uint64_t offset, uint64_t size)
 	{
 		auto next_block_it = blocks_by_offset.upper_bound(offset);
-		auto& prev_block_it = next_block_it;
+		auto prev_block_it = next_block_it;
 		if (prev_block_it != blocks_by_offset.begin())
 		{
 			--prev_block_it;
@@ -67,7 +67,7 @@ namespace era_engine
 				//
 				new_size += next_block_it->second.get_size();
 				blocks_by_size.erase(prev_block_it->second.size_iterator);
-				blocks_by_size.erase(prev_block_it->second.size_iterator);
+				blocks_by_size.erase(next_block_it->second.size_iterator);
 				// Delete the range of two blocks
 				++next_block_it;
 				blocks_by_offset.erase(prev_block_it, next_block_it);

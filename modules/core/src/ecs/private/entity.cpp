@@ -7,6 +7,8 @@
 
 #include <rttr/registration>
 
+#include <algorithm>
+
 namespace era_engine
 {
 
@@ -102,86 +104,86 @@ namespace era_engine
 		return internal_data->parent_handle;
 	}
 
-	static inline std::mutex container_sync;
-
 	void EntityContainer::emplace_pair(World* world, Entity::Handle parent, Entity::Handle child)
 	{
-		std::lock_guard _lock(container_sync);
-
-		if (container.find(parent) == container.end())
-		{
-			container.emplace(std::make_pair(parent, EntityNode()));
-		}
-
-		container.at(parent).childs.push_back(child);
+		std::lock_guard _lock(world->world_data->hierarchy_sync);
+		world->world_data->hierarchy[parent].childs.push_back(child);
 	}
 
 	void EntityContainer::erase(World* world, Entity::Handle parent)
 	{
-		std::lock_guard _lock(container_sync);
-
-		if (container.find(parent) == container.end())
+		std::vector<Entity::Handle> childs;
 		{
-			return;
+			std::lock_guard _lock(world->world_data->hierarchy_sync);
+
+			auto& hierarchy = world->world_data->hierarchy;
+			auto node_iter = hierarchy.find(parent);
+			if (node_iter == hierarchy.end())
+			{
+				return;
+			}
+
+			childs = std::move(node_iter->second.childs);
+			hierarchy.erase(node_iter);
 		}
 
-		auto& childs = container.at(parent).childs;
-		auto iter = childs.begin();
-		const auto& end = childs.end();
-
-		for (; iter != end; ++iter)
+		const Entity::Handle root_handle = world->get_root_entity().get_handle();
+		for (const Entity::Handle child_handle : childs)
 		{
-			Entity child = world->get_entity(*iter);
-			child.set_parent(world->get_root_entity().get_handle());
+			Entity child = world->get_entity(child_handle);
+			if (child.is_valid())
+			{
+				child.set_parent(root_handle);
+			}
 		}
-
-		container.erase(parent);
 	}
 
 	void EntityContainer::erase_pair(World* world, Entity::Handle parent, Entity::Handle child)
 	{
-		std::lock_guard _lock(container_sync);
+		std::lock_guard _lock(world->world_data->hierarchy_sync);
 
-		if (container.find(parent) == container.end())
+		auto& hierarchy = world->world_data->hierarchy;
+		auto node_iter = hierarchy.find(parent);
+		if (node_iter == hierarchy.end())
 		{
 			return;
 		}
 
-		auto& childs = container.at(parent).childs;
-		auto iter = childs.begin();
-		const auto& end = childs.end();
-
-		for (; iter != end; ++iter)
+		std::vector<Entity::Handle>& childs = node_iter->second.childs;
+		auto child_iter = std::find(childs.begin(), childs.end(), child);
+		if (child_iter != childs.end())
 		{
-			if (*iter == child)
-			{
-				childs.erase(iter);
-				break;
-			}
+			childs.erase(child_iter);
+		}
+
+		if (childs.empty())
+		{
+			hierarchy.erase(node_iter);
 		}
 	}
 
 	std::vector<Entity::Handle> EntityContainer::get_childs(World* world, Entity::Handle parent)
 	{
-		if (container.find(parent) == container.end())
+		std::lock_guard _lock(world->world_data->hierarchy_sync);
+
+		const auto& hierarchy = world->world_data->hierarchy;
+		const auto node_iter = hierarchy.find(parent);
+		if (node_iter == hierarchy.end())
 		{
 			return std::vector<Entity::Handle>();
 		}
 
-		return container.at(parent).childs;
+		return node_iter->second.childs;
 	}
 
 	std::vector<Entity> EntityContainer::get_entity_childs(World* world, Entity::Handle parent)
 	{
-		if (container.find(parent) == container.end())
-		{
-			return std::vector<Entity>();
-		}
+		const std::vector<Entity::Handle> childs = get_childs(world, parent);
 
 		std::vector<Entity> result;
-		result.reserve(container.at(parent).childs.size());
+		result.reserve(childs.size());
 
-		for (const Entity::Handle handle : container.at(parent).childs)
+		for (const Entity::Handle handle : childs)
 		{
 			result.emplace_back(world->get_entity(handle));
 		}
@@ -228,4 +230,4 @@ namespace era_engine
 		return data.lock() == nullptr;
 	}
 
-}
+}
