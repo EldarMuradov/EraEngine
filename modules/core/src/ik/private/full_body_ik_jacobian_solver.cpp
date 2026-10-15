@@ -5,59 +5,6 @@ namespace era_engine
 {
 	static constexpr float rotation_tolerance = 0.01f;
 
-	static bool cholesky_factorize(float* a, uint32 n)
-	{
-		for (uint32 i = 0; i < n; ++i)
-		{
-			for (uint32 j = 0; j <= i; ++j)
-			{
-				float sum = a[i * n + j];
-				for (uint32 k = 0; k < j; ++k)
-				{
-					sum -= a[i * n + k] * a[j * n + k];
-				}
-
-				if (i == j)
-				{
-					if (sum <= 0.0f)
-					{
-						return false;
-					}
-					a[i * n + i] = std::sqrt(sum);
-				}
-				else
-				{
-					a[i * n + j] = sum / a[j * n + j];
-				}
-			}
-		}
-		return true;
-	}
-
-	// Solves L * L^T * x = b.
-	static void cholesky_solve(const float* l, float* b, uint32 n)
-	{
-		for (uint32 i = 0; i < n; ++i)
-		{
-			float sum = b[i];
-			for (uint32 k = 0; k < i; ++k)
-			{
-				sum -= l[i * n + k] * b[k];
-			}
-			b[i] = sum / l[i * n + i];
-		}
-
-		for (uint32 i = n; i-- > 0;)
-		{
-			float sum = b[i];
-			for (uint32 k = i + 1; k < n; ++k)
-			{
-				sum -= l[k * n + i] * b[k];
-			}
-			b[i] = sum / l[i * n + i];
-		}
-	}
-
 	void FBIKJacobianSolver::on_init(const std::vector<IKEffector>& effectors)
 	{
 		const size_t nodes_count = nodes.size();
@@ -158,10 +105,7 @@ namespace era_engine
 	{
 		using namespace ik_utils;
 
-		row_effectors.clear();
-		row_rotations.clear();
-		row_points.clear();
-		row_goals.clear();
+		rows.clear();
 
 		bool converged = true;
 		for (uint32 n = 0; n < (uint32)nodes.size(); ++n)
@@ -169,34 +113,31 @@ namespace era_engine
 			const uint32 limb_index = node_limbs[n];
 			if (position_effectors[n])
 			{
-				const uint32 point = limb_index != INVALID_JOINT ? limbs[limb_index].upper : n;
-				const vec3 goal = limb_index != INVALID_JOINT ? get_limb_upper_goal(limbs[limb_index], effective_target_positions[n]) : effective_target_positions[n];
+				Row& row = rows.emplace_back();
+				row.effector = nodes[n].effector;
+				row.node = limb_index != INVALID_JOINT ? limbs[limb_index].upper : n;
+				row.goal = limb_index != INVALID_JOINT ? get_limb_upper_goal(limbs[limb_index], effective_target_positions[n]) : effective_target_positions[n];
 
-				row_effectors.push_back(nodes[n].effector);
-				row_rotations.push_back(0);
-				row_points.push_back(point);
-				row_goals.push_back(goal);
-
-				converged &= length(goal - world_solved_positions[point]) <= settings.tolerance;
+				converged &= length(row.goal - world_solved_positions[row.node]) <= settings.tolerance;
 			}
 
 			if (rotation_effectors[n] && limb_index == INVALID_JOINT)
 			{
-				row_effectors.push_back(nodes[n].effector);
-				row_rotations.push_back(1);
-				row_points.push_back(n);
-				row_goals.push_back(vec3(0.0f));
+				Row& row = rows.emplace_back();
+				row.effector = nodes[n].effector;
+				row.node = n;
+				row.is_rotation = true;
 
 				converged &= length(rotation_vector(effective_target_rotations[n] * conjugate(world_solved_rotations[n]))) <= rotation_tolerance;
 			}
 		}
 
-		const uint32 rows_count = 3 * (uint32)row_effectors.size();
-		const uint32 cols_count = (uint32)columns.size();
-		if (rows_count == 0 || converged)
+		if (rows.empty() || converged)
 		{
 			return false;
 		}
+
+		const uint32 cols_count = (uint32)columns.size();
 
 		column_world_axes.resize(cols_count);
 		for (uint32 c = 0; c < cols_count; ++c)
@@ -206,16 +147,14 @@ namespace era_engine
 		}
 
 		// Partial derivatives of the effector positions and rotations by the joint motions.
-		jacobian.assign((size_t)rows_count * cols_count, 0.0f);
-		target_vector.resize(rows_count);
+		jacobian.resize(3 * (uint32)rows.size(), cols_count);
+		target_vector.resize(3 * (uint32)rows.size());
 
 		bool movable = false;
-		for (uint32 block = 0; block < (uint32)row_effectors.size(); ++block)
+		for (uint32 r = 0; r < (uint32)rows.size(); ++r)
 		{
-			const IKEffector& effector = effectors[row_effectors[block]];
-			const EffectorChain& chain = chains[row_effectors[block]];
-			const uint32 point = row_points[block];
-			const bool rotation = row_rotations[block] != 0;
+			const Row& row = rows[r];
+			const EffectorChain& chain = chains[row.effector];
 
 			for (uint32 c = 0; c < cols_count; ++c)
 			{
@@ -231,7 +170,7 @@ namespace era_engine
 				const vec3& axis = column_world_axes[c];
 
 				vec3 derivative = vec3(0.0f);
-				if (rotation)
+				if (row.is_rotation)
 				{
 					derivative = column.is_linear ? vec3(0.0f) : axis * strength;
 				}
@@ -239,23 +178,20 @@ namespace era_engine
 				{
 					derivative = column.is_linear
 						? axis * strength
-						: cross(axis, world_solved_positions[point] - world_solved_positions[column.node]) * strength;
+						: cross(axis, world_solved_positions[row.node] - world_solved_positions[column.node]) * strength;
 				}
-
-				jacobian[(size_t)(3 * block + 0) * cols_count + c] = derivative.x;
-				jacobian[(size_t)(3 * block + 1) * cols_count + c] = derivative.y;
-				jacobian[(size_t)(3 * block + 2) * cols_count + c] = derivative.z;
+				jacobian.set_column_vec3(3 * r, c, derivative);
 			}
 
 			vec3 target = vec3(0.0f);
-			if (rotation)
+			if (row.is_rotation)
 			{
-				target = rotation_vector(effective_target_rotations[point] * conjugate(world_solved_rotations[point]));
+				target = rotation_vector(effective_target_rotations[row.node] * conjugate(world_solved_rotations[row.node]));
 			}
 			else
 			{
 				float chain_length = 0.0f;
-				for (uint32 node = point; node != INVALID_JOINT && chain.nodes[node]; node = nodes[node].parent)
+				for (uint32 node = row.node; node != INVALID_JOINT && chain.nodes[node]; node = nodes[node].parent)
 				{
 					const uint32 parent = nodes[node].parent;
 					if (parent != INVALID_JOINT && chain.nodes[parent])
@@ -263,19 +199,16 @@ namespace era_engine
 						chain_length += local_animation_offset_lengths[node];
 					}
 				}
-				const float max_length = chain_length * (settings.target_clamp + clamp01(effector.pull) * (1.0f - settings.target_clamp));
+				const float max_length = chain_length * (settings.target_clamp + clamp01(effectors[row.effector].pull) * (1.0f - settings.target_clamp));
 
-				target = row_goals[block] - world_solved_positions[point];
+				target = row.goal - world_solved_positions[row.node];
 				const float target_length = length(target);
 				if (target_length > max_length && target_length > EPSILON)
 				{
 					target *= max_length / target_length;
 				}
 			}
-
-			target_vector[3 * block + 0] = target.x;
-			target_vector[3 * block + 1] = target.y;
-			target_vector[3 * block + 2] = target.z;
+			target_vector.set_vec3(3 * r, target);
 		}
 
 		if (!movable)
@@ -283,46 +216,16 @@ namespace era_engine
 			return false;
 		}
 
-		deltas.assign(cols_count, 0.0f);
-
 		// deltas = J^T * (J * J^T + damping^2 * I)^-1 * e.
-		const float damping_squared = settings.damping * settings.damping;
+		multiply_transposed(jacobian, jacobian, system_matrix);
+		system_matrix.add_to_diagonal(settings.damping * settings.damping);
 
-		system_matrix.resize((size_t)rows_count * rows_count);
-		for (uint32 a = 0; a < rows_count; ++a)
-		{
-			const float* row_a = &jacobian[(size_t)a * cols_count];
-			for (uint32 b = 0; b <= a; ++b)
-			{
-				const float* row_b = &jacobian[(size_t)b * cols_count];
-
-				float sum = 0.0f;
-				for (uint32 c = 0; c < cols_count; ++c)
-				{
-					sum += row_a[c] * row_b[c];
-				}
-				system_matrix[(size_t)a * rows_count + b] = sum;
-				system_matrix[(size_t)b * rows_count + a] = sum;
-			}
-			system_matrix[(size_t)a * rows_count + a] += damping_squared;
-		}
-
-		if (!cholesky_factorize(system_matrix.data(), rows_count))
+		if (!solve_cholesky(system_matrix, target_vector))
 		{
 			return false;
 		}
 
-		system_vector = target_vector;
-		cholesky_solve(system_matrix.data(), system_vector.data(), rows_count);
-
-		for (uint32 r = 0; r < rows_count; ++r)
-		{
-			const float* row = &jacobian[(size_t)r * cols_count];
-			for (uint32 c = 0; c < cols_count; ++c)
-			{
-				deltas[c] += row[c] * system_vector[r];
-			}
-		}
+		transpose_multiply(jacobian, target_vector, deltas);
 		return true;
 	}
 
