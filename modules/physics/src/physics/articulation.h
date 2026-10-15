@@ -35,6 +35,8 @@ namespace era_engine::physics
 	class ERA_PHYSICS_API ArticulationComponent : public Component
 	{
 	public:
+		static constexpr bool in_place_delete = true;
+
 		struct ERA_PHYSICS_API ArticulationComponentDescriptor
 		{
 			vec3 root_position = vec3::zero;

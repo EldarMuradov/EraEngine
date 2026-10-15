@@ -65,6 +65,8 @@ namespace era_engine::physics
 	class ERA_PHYSICS_API BodyComponent : public Component
 	{
 	public:
+		static constexpr bool in_place_delete = true;
+
 		BodyComponent() = default;
 		BodyComponent(ref<Entity::EcsData> _data);
 		~BodyComponent() override;

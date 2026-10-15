@@ -16,6 +16,8 @@ namespace era_engine::physics
 	class ERA_PHYSICS_API PlanePhysicsComponent final : public Component
 	{
 	public:
+		static constexpr bool in_place_delete = true;
+
 		PlanePhysicsComponent() = default;
 		PlanePhysicsComponent(ref<Entity::EcsData> _data, CollisionType _collision_type, const vec3& _point, const vec3& _norm = vec3(0.0f, 1.0f, 0.0f));
 		~PlanePhysicsComponent() override;
@@ -33,6 +35,8 @@ namespace era_engine::physics
 	class ERA_PHYSICS_API TerrainPhysicsComponent final : public Component
 	{
 	public:
+		static constexpr bool in_place_delete = true;
+
 		TerrainPhysicsComponent() = default;
 		TerrainPhysicsComponent(ref<Entity::EcsData> _data, CollisionType _collision_type, const vec3& _point);
 		~TerrainPhysicsComponent() override;

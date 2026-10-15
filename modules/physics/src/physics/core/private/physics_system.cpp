@@ -633,6 +633,12 @@ namespace era_engine::physics
 		BodyComponent* body_component = PhysicsUtils::get_body_component(entity);
 
 		physx::PxRigidActor* actor = body_component->actor;
+		if (actor == nullptr)
+		{
+			std::erase(dynamics_to_init, entity_handle);
+			std::erase(statics_to_init, entity_handle);
+			return;
+		}
 
 		PhysicsEngine::execute_write([&]() {
 			std::array<physx::PxShape*, MAX_SHAPES_COUNT_PER_BODY> shapes{};

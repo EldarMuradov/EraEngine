@@ -50,6 +50,11 @@ namespace era_engine::physics
     {
         PhysicsEngine::get_physics_core()->remove_shape_from_entity_data(this);
 
+        if (shape == nullptr)
+        {
+            return;
+        }
+
         BodyComponent* body_component = PhysicsUtils::get_body_component(component_data);
         if (body_component != nullptr)
         {

@@ -198,31 +198,35 @@ namespace era_engine::physics
 	void SimulationEventCallback::onContact(const physx::PxContactPairHeader& pair_header, const physx::PxContactPair* pairs, physx::PxU32 nb_pairs)
 	{
 		using namespace physx;
+
+		if (pair_header.flags & (PxContactPairHeaderFlag::eREMOVED_ACTOR_0 | PxContactPairHeaderFlag::eREMOVED_ACTOR_1))
+		{
+			return;
+		}
+
 		const PxU32 buffer_size = PX_CONTACT_BUFFER_SIZE;
 		PxContactPairPoint contacts[buffer_size];
 
-		Collision collision{};
 		PxContactPairExtraDataIterator iter(pair_header.extraDataStream, pair_header.extraDataStreamSize);
 
 		for (PxU32 i = 0; i < nb_pairs; i++)
 		{
 			const PxContactPair& cp = pairs[i];
-			PxU32 nb_contacts = pairs[i].extractContacts(contacts, buffer_size);
+			const PxU32 nb_contacts = cp.extractContacts(contacts, buffer_size);
 
 			const bool has_post_velocities = !cp.flags.isSet(PxContactPairFlag::eACTOR_PAIR_LOST_TOUCH);
 
+			Collision collision{};
+			collision.impulse = PxVec3(0.0f);
+			collision.contacts_count = static_cast<int32>(nb_contacts);
+
 			for (PxU32 j = 0; j < nb_contacts; j++)
 			{
-				const PxVec3& point = contacts[j].position;
-				const PxVec3& impulse = contacts[j].impulse;
-				PxU32 internal_face_index0 = contacts[j].internalFaceIndex0;
-				PxU32 internal_face_index1 = contacts[j].internalFaceIndex1;
+				collision.impulse += contacts[j].impulse;
 
-				collision.impulse += impulse;
-
-				UNUSED(point);
-				UNUSED(internal_face_index0);
-				UNUSED(internal_face_index1);
+				collision.contacts[j].point = contacts[j].position;
+				collision.contacts[j].normal = contacts[j].normal;
+				collision.contacts[j].separation = contacts[j].separation;
 			}
 
 			collision.this_velocity = collision.other_velocity = PxVec3(0.0f);

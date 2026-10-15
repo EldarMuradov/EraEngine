@@ -8,11 +8,21 @@
 namespace era_engine::physics
 {
 
-	static void create_location_hit(const physx::PxLocationHit& physx_hit, SceneQueryHitType hit_type, SceneQueryPositionedHit& out_hit)
+	static ShapeComponent* get_shape_component(const physx::PxShape* shape)
+	{
+		if (shape == nullptr || shape->userData == nullptr)
+		{
+			return nullptr;
+		}
+		return dynamic_cast<ShapeComponent*>(static_cast<Component*>(shape->userData));
+	}
+
+	static void create_location_hit(const physx::PxLocationHit& physx_hit, const physx::PxShape* shape, SceneQueryHitType hit_type, SceneQueryPositionedHit& out_hit)
 	{
 		using namespace physx;
 
 		out_hit.type = hit_type;
+		out_hit.shape_component = get_shape_component(shape);
 		out_hit.position = create_vec3(physx_hit.position);
 		out_hit.normal = create_vec3(physx_hit.normal);
 		out_hit.distance = physx_hit.distance;
@@ -123,7 +133,7 @@ namespace era_engine::physics
 			{
 				SceneQueryPositionedHit hit;
 				hit.shape_component = dynamic_cast<ShapeComponent*>(component);
-				create_location_hit(static_cast<const PxLocationHit&>(physx_hit), SceneQueryHitType::NONE, hit);
+				create_location_hit(static_cast<const PxLocationHit&>(physx_hit), shape, SceneQueryHitType::NONE, hit);
 				hit_type = callback->postfilter(hit);
 			}
 
@@ -201,13 +211,13 @@ namespace era_engine::physics
 		{
 			if (physx_buffer_out->hasBlock)
 			{
-				create_location_hit(physx_buffer_out->block, SceneQueryHitType::BLOCK, result_buffer_out[hit_index]);
+				create_location_hit(physx_buffer_out->block, physx_buffer_out->block.shape, SceneQueryHitType::BLOCK, result_buffer_out[hit_index]);
 				++hit_index;
 			}
 
 			for (uint32 i = 0; i < physx_buffer_out->getNbTouches() && hit_index < result_buffer_size; ++i)
 			{
-				create_location_hit(physx_buffer_out->touches[i], SceneQueryHitType::TOUCH, result_buffer_out[hit_index]);
+				create_location_hit(physx_buffer_out->touches[i], physx_buffer_out->touches[i].shape, SceneQueryHitType::TOUCH, result_buffer_out[hit_index]);
 				++hit_index;
 			}
 		}
@@ -279,13 +289,13 @@ namespace era_engine::physics
 		{
 			if (physx_buffer_out->hasBlock)
 			{
-				create_location_hit(physx_buffer_out->block, SceneQueryHitType::BLOCK, result_buffer_out[hit_index]);
+				create_location_hit(physx_buffer_out->block, physx_buffer_out->block.shape, SceneQueryHitType::BLOCK, result_buffer_out[hit_index]);
 				++hit_index;
 			}
 
 			for (uint32 i = 0; i < physx_buffer_out->getNbTouches() && hit_index < result_buffer_size; ++i)
 			{
-				create_location_hit(physx_buffer_out->touches[i], SceneQueryHitType::TOUCH, result_buffer_out[hit_index]);
+				create_location_hit(physx_buffer_out->touches[i], physx_buffer_out->touches[i].shape, SceneQueryHitType::TOUCH, result_buffer_out[hit_index]);
 				++hit_index;
 			}
 		}
@@ -347,14 +357,14 @@ namespace era_engine::physics
 		{
 			if (physx_buffer_out->hasBlock)
 			{
-				result_buffer_out[hit_index].shape_component = static_cast<ShapeComponent*>(physx_buffer_out->block.shape->userData);
+				result_buffer_out[hit_index].shape_component = get_shape_component(physx_buffer_out->block.shape);
 				result_buffer_out[hit_index].type = SceneQueryHitType::BLOCK;
 				++hit_index;
 			}
 
 			for (uint32 i = 0; i < physx_buffer_out->getNbTouches() && hit_index < result_buffer_size; ++i)
 			{
-				result_buffer_out[hit_index].shape_component = static_cast<ShapeComponent*>(physx_buffer_out->touches[i].shape->userData);
+				result_buffer_out[hit_index].shape_component = get_shape_component(physx_buffer_out->touches[i].shape);
 				result_buffer_out[hit_index].type = SceneQueryHitType::TOUCH;
 				++hit_index;
 			}

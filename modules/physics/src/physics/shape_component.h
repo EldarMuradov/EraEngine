@@ -24,6 +24,8 @@ namespace era_engine::physics
 	class ERA_PHYSICS_API ShapeComponent : public Component
 	{
 	public:
+		static constexpr bool in_place_delete = true;
+
 		ShapeComponent() = default;
 		ShapeComponent(ref<Entity::EcsData> _data);
 		~ShapeComponent() override;

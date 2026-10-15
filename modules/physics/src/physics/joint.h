@@ -35,6 +35,8 @@ namespace era_engine::physics
 			trs second_local_frame = trs::identity;
 		};
 
+		static constexpr bool in_place_delete = true;
+
 		JointComponent() = default;
 		JointComponent(ref<Entity::EcsData> _data, const BaseDescriptor& _base_descriptor);
 

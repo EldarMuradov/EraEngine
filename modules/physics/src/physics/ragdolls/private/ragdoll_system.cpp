@@ -271,8 +271,16 @@ namespace era_engine::physics
 		for (const EntityPtr& limb_ptr : ragdoll_component->limbs)
 		{
 			Entity limb = limb_ptr.get();
+			if (!limb.is_valid())
+			{
+				continue;
+			}
 
-			RagdollLimbComponent* limb_component = limb.get_component<RagdollLimbComponent>();
+			RagdollLimbComponent* limb_component = limb.get_component_if_exists<RagdollLimbComponent>();
+			if (limb_component == nullptr)
+			{
+				continue;
+			}
 
 			if (!limb_component->joint_entity_ptr.is_empty())
 			{

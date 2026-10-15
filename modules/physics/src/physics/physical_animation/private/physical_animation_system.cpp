@@ -997,8 +997,16 @@ namespace era_engine::physics
 		for (const EntityPtr& limb_ptr : physical_animation_component->limbs)
 		{
 			Entity limb = limb_ptr.get();
+			if (!limb.is_valid())
+			{
+				continue;
+			}
 
-			PhysicalAnimationLimbComponent* limb_component = limb.get_component<PhysicalAnimationLimbComponent>();
+			PhysicalAnimationLimbComponent* limb_component = limb.get_component_if_exists<PhysicalAnimationLimbComponent>();
+			if (limb_component == nullptr)
+			{
+				continue;
+			}
 
 			if (!limb_component->drive_joint_entity_ptr.is_empty())
 			{
@@ -1020,6 +1028,9 @@ namespace era_engine::physics
 			world->destroy_entity(limb);
 		}
 
-		world->destroy_entity(physical_animation_component->attachment_body.get());
+		if (!physical_animation_component->attachment_body.is_empty())
+		{
+			world->destroy_entity(physical_animation_component->attachment_body.get());
+		}
 	}
 }

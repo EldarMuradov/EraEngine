@@ -325,6 +325,8 @@ namespace era_engine::physics
 		}
 
 		PX_RELEASE(default_material)
+		materials.clear();
+		simulation_event_callback.reset();
 
 		blast_core.reset();
 
@@ -466,7 +468,7 @@ namespace era_engine::physics
 			actors_map.erase(actor->get_rigid_actor());
 		}
 
-		if (AggregateHolderComponent* aggregate_component = actor->get_world()->get_entity(actor->get_entity().get_parent_handle()).get_component<AggregateHolderComponent>())
+		if (AggregateHolderComponent* aggregate_component = actor->get_world()->get_entity(actor->get_entity().get_parent_handle()).get_component_if_exists<AggregateHolderComponent>())
 		{
 			PxSceneWriteLock lock{ *scene };
 			aggregate_component->aggregate->remove_actor(actor->get_rigid_actor());

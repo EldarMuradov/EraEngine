@@ -43,6 +43,9 @@ namespace era_engine::physics
             PREVENT_CLIMBING_AND_SLIDE
         };
 
+        // Addresses are kept in PhysX user data, EnTT must not relocate the component.
+        static constexpr bool in_place_delete = true;
+
         CharacterControllerComponent() = default;
         CharacterControllerComponent(ref<Entity::EcsData> _data);
         ~CharacterControllerComponent() override;
