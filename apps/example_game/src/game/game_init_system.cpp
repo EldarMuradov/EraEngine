@@ -313,11 +313,11 @@ namespace era_engine
 
 				character.add_component<MotionComponent>();
 				TrajectoryComponent* trajectory_component = character.add_component<TrajectoryComponent>();
-				trajectory_component->time_offsets(0) = 0.0f;
-				trajectory_component->time_offsets(1) = 0.12f;
-				trajectory_component->time_offsets(2) = 0.32f;
-				trajectory_component->time_offsets(3) = 0.54f;
-				trajectory_component->time_offsets(4) = 0.76f;
+				trajectory_component->time_offsets[0] = 0.0f;
+				trajectory_component->time_offsets[1] = 0.12f;
+				trajectory_component->time_offsets[2] = 0.32f;
+				trajectory_component->time_offsets[3] = 0.54f;
+				trajectory_component->time_offsets[4] = 0.76f;
 
 				RagdollJointIds joint_init_ids;
 				joint_init_ids.head_end_idx = skeleton->name_to_joint_id.at("mixamorig:HeadTop_End");
@@ -1033,7 +1033,11 @@ namespace era_engine
 	{
 		using namespace physics;
 
-		const InputReceiverComponent* input_receiver = camera_entity.get_component<InputReceiverComponent>();
+		const InputReceiverComponent* input_receiver = camera_entity.get_component_if_exists<InputReceiverComponent>();
+		if (input_receiver == nullptr)
+		{
+			return;
+		}
 
 		const UserInput& frame_input = input_receiver->get_frame_input();
 		if (frame_input.keyboard[key_code::key_space].press_event)

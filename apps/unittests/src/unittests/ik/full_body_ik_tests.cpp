@@ -43,7 +43,6 @@ namespace
 			}
 		}
 
-		// Walk-like animation: hips bob and yaw, spine sway, arms swing.
 		SkeletonPose animate(float time) const
 		{
 			SkeletonPose pose(JOINTS_COUNT);
@@ -62,7 +61,6 @@ namespace
 			const float swing = deg2rad(30.0f) * std::sin(phase);
 			pose.set_joint_rotation(quat(vec3(1.0f, 0.0f, 0.0f), swing) * quat(vec3(0.0f, 0.0f, 1.0f), deg2rad(-70.0f)), L_ARM);
 			pose.set_joint_rotation(quat(vec3(1.0f, 0.0f, 0.0f), -swing) * quat(vec3(0.0f, 0.0f, 1.0f), deg2rad(70.0f)), R_ARM);
-			// Elbows flex forward, like a human arm.
 			pose.set_joint_rotation(quat(vec3(0.0f, 1.0f, 0.0f), deg2rad(-20.0f)), L_FOREARM);
 			pose.set_joint_rotation(quat(vec3(0.0f, 1.0f, 0.0f), deg2rad(20.0f)), R_FOREARM);
 			return pose;
@@ -88,7 +86,6 @@ namespace
 		return angle;
 	}
 
-	// Twist of the solved local rotation around its bone relative to the animated one, both from the swing-twist decomposition from the identity rest.
 	float twist_from_animation(const quat& solved, const quat& animated, const vec3& axis)
 	{
 		return wrap_angle(2.0f * std::atan2(dot(solved.v, axis), solved.w) - 2.0f * std::atan2(dot(animated.v, axis), animated.w));
@@ -107,14 +104,13 @@ namespace
 		const char* name;
 		float root_rotation_mobility = 0.0f;
 		float root_position_mobility = 0.0f;
-		float walk_speed = 0.0f; // Character moves through the targets.
+		float walk_speed = 0.0f;
 		vec3 left_target;
 		vec3 right_target;
 		float target_circle_radius = 0.0f;
 		vec3 target_circle_axis = vec3(0.0f, 0.0f, 1.0f);
 	};
 
-	// Max per frame change of the solved local rotation deltas (a spike = jerk), beyond the same metric of the animation.
 	FBIKJointSettings make_limited_joint(float limit_deg, float stiffness = 0.0f)
 	{
 		FBIKJointSettings joint;
@@ -151,7 +147,6 @@ namespace
 			joint_settings[joint] = make_limited_joint(30.0f, 0.5f);
 		}
 
-		// Without limits a clavicle is a free ball joint: a hand far to the other side turns it into the body.
 		for (uint32 joint : { L_CLAVICLE, R_CLAVICLE })
 		{
 			joint_settings[joint] = make_limited_joint(30.0f);
@@ -212,7 +207,6 @@ namespace
 				const quat solved = pose.get_joint_rotation(joint);
 				const quat animated = animation_pose.get_joint_rotation(joint);
 
-				// The decomposition is singular for a bone opposite to its rest direction.
 				const vec3 axis = rig.bone_children[joint] != INVALID_JOINT ? normalize(rig.offsets[rig.bone_children[joint]]) : vec3(0.0f);
 				if (rig.bone_children[joint] != INVALID_JOINT && dot(solved * axis, axis) > -0.7f && dot(animated * axis, axis) > -0.7f)
 				{
@@ -305,7 +299,6 @@ TEST(IK, FullBodyIKTemporalStability)
 	scenarios[6].left_target = vec3(0.3f, 1.2f, -1.45f);
 	scenarios[6].right_target = vec3(-0.3f, 1.2f, -1.45f);
 
-	// A hand moving near its shoulder (about (+-0.18, 1.46, -1.0)). A target through the limb root necessarily flips the limb.
 	scenarios[7].name = "near limb root";
 	scenarios[7].target_circle_radius = 0.03f;
 	scenarios[7].left_target = vec3(0.2f, 1.5f, -0.88f);
@@ -315,13 +308,11 @@ TEST(IK, FullBodyIKTemporalStability)
 	scenarios[8].left_target = vec3(0.2f, 1.42f, -0.92f);
 	scenarios[8].right_target = vec3(-0.2f, 1.42f, -0.92f);
 
-	// Walks to the targets until they are 0.1 in front of the shoulders.
 	scenarios[9].name = "approach limb root";
 	scenarios[9].walk_speed = 0.15f;
 	scenarios[9].left_target = vec3(0.2f, 1.42f, 0.0f);
 	scenarios[9].right_target = vec3(-0.2f, 1.42f, 0.0f);
 
-	// The right hand reaches far to the left.
 	scenarios[10].name = "across the body";
 	scenarios[10].target_circle_radius = 0.1f;
 	scenarios[10].left_target = vec3(0.3f, 1.2f, -0.6f);
@@ -339,7 +330,6 @@ TEST(IK, FullBodyIKTemporalStability)
 	}
 }
 
-// A target straight in front of the right shoulder: the limb bends before the body moves and is straight when the body helps.
 TEST(IK, FullBodyIKLimbBeforeBody)
 {
 	const TestRig rig;
