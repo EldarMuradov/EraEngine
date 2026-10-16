@@ -14,7 +14,7 @@ namespace era_engine
 
 		switch (e->type)
 		{
-		case profile_event_begin_block:
+		case PROFILE_EVENT_BEGIN_BLOCK:
 		{
 		REHANDLE_EVENT:
 			uint64 timestamp = e->timestamp;
@@ -31,7 +31,7 @@ namespace era_engine
 
 				for (uint32 j = event_index + 1; j < num_events && events[j].timestamp == timestamp; ++j)
 				{
-					if (events[j].type == profile_event_end_block
+					if (events[j].type == PROFILE_EVENT_END_BLOCK
 						&& events[j].thread_id != e->thread_id				// Event is from another thread than current event. Events on the same thread are always in the correct order.
 						&& events[j].thread_id == current_stack_top->thread_id	// Event is from the same thread as current stack top.
 						&& events[j].name == current_stack_top->name)			// Event has the same name as current stack top.
@@ -39,7 +39,7 @@ namespace era_engine
 						--d;
 						current_stack_top->end_clock = timestamp;
 
-						events[j].type = profile_event_none; // Mark as handled.
+						events[j].type = PROFILE_EVENT_NONE; // Mark as handled.
 						goto REHANDLE_EVENT;
 					}
 				}
@@ -82,7 +82,7 @@ namespace era_engine
 			++d;
 		} break;
 
-		case profile_event_end_block:
+		case PROFILE_EVENT_END_BLOCK:
 		{
 			--d;
 
@@ -92,7 +92,7 @@ namespace era_engine
 			block->end_clock = e->timestamp;
 		} break;
 
-		case profile_event_frame_marker:
+		case PROFILE_EVENT_FRAME_MARKER:
 		{
 			frame_end_timestamp = e->timestamp;
 			result = true;
@@ -297,7 +297,7 @@ namespace era_engine
 				{
 					++depth;
 				}
-				current_index = nextIndex;
+				current_index = next_index;
 			}
 		}
 #endif
@@ -357,12 +357,12 @@ namespace era_engine
 			}
 
 			// Advance
-			uint16 nextIndex = current->first_child;
-			if (nextIndex == INVALID_PROFILE_BLOCK)
+			uint16 next_index = current->first_child;
+			if (next_index == INVALID_PROFILE_BLOCK)
 			{
-				nextIndex = current->next_sibling;
+				next_index = current->next_sibling;
 
-				if (nextIndex == INVALID_PROFILE_BLOCK)
+				if (next_index == INVALID_PROFILE_BLOCK)
 				{
 					uint16 next_ancestor = current->parent;
 					while (next_ancestor != INVALID_PROFILE_BLOCK)
@@ -370,7 +370,7 @@ namespace era_engine
 						--depth;
 						if (blocks[next_ancestor].next_sibling != INVALID_PROFILE_BLOCK)
 						{
-							nextIndex = blocks[next_ancestor].next_sibling;
+							next_index = blocks[next_ancestor].next_sibling;
 							break;
 						}
 						next_ancestor = blocks[next_ancestor].parent;
@@ -382,7 +382,7 @@ namespace era_engine
 				++depth;
 				max_depth = max(depth, max_depth);
 			}
-			current_index = nextIndex;
+			current_index = next_index;
 		}
 
 		ASSERT(depth == 0);
@@ -500,7 +500,7 @@ namespace era_engine
 		{
 			float zoom = ImGui::GetIO().MouseWheel;
 
-			if (zoom != 0.f && ImGui::IsKeyDown(key_ctrl))
+			if (zoom != 0.f && ImGui::IsKeyDown(KEY_CTRL))
 			{
 				float t = inverse_lerp(persistent.callstack_left_padding, persistent.callstack_left_padding + frame_width16ms, rel_mouse_x);
 

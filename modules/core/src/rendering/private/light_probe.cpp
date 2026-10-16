@@ -20,132 +20,132 @@
 
 namespace era_engine
 {
-	static dx_pipeline visualizeGridPipeline;
-	static dx_pipeline visualizeRaysPipeline;
+	static DXPipeline visualize_grid_pipeline;
+	static DXPipeline visualize_rays_pipeline;
 
-	static dx_pipeline probeUpdateIrradiancePipeline;
-	static dx_pipeline probeUpdateDepthPipeline;
+	static DXPipeline probe_update_irradiance_pipeline;
+	static DXPipeline probe_update_depth_pipeline;
 
-	static dx_pipeline testSamplePipeline;
+	static DXPipeline test_sample_pipeline;
 
-	static dx_mesh sphereMesh;
-	static SubmeshInfo sphereSubmesh;
+	static DXMesh sphere_mesh;
+	static SubmeshInfo sphere_submesh;
 
-	static const DXGI_FORMAT irradianceFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;// DXGI_FORMAT_R11G11B10_FLOAT;
-	static const DXGI_FORMAT depthFormat = DXGI_FORMAT_R16G16_FLOAT;
-	static const DXGI_FORMAT raytracedRadianceFormat = DXGI_FORMAT_R11G11B10_FLOAT;
-	static const DXGI_FORMAT raytracedDirectionAndDistanceFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	static const DXGI_FORMAT irradiance_format = DXGI_FORMAT_R16G16B16A16_FLOAT;// DXGI_FORMAT_R11G11B10_FLOAT;
+	static const DXGI_FORMAT depth_format = DXGI_FORMAT_R16G16_FLOAT;
+	static const DXGI_FORMAT raytraced_radiance_format = DXGI_FORMAT_R11G11B10_FLOAT;
+	static const DXGI_FORMAT raytraced_direction_and_distance_format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 
-	struct light_probe_tracer : pbr_raytracer
+	struct LightProbeTracer : PBRRaytracer
 	{
 		void initialize();
 
-		void render(dx_command_list* cl, const raytracing_tlas& tlas,
-			const light_probe_grid& grid,
-			const common_render_data& common);
+		void render(DXCommandList* cl, const RaytracingTLAS& tlas,
+			const LightProbeGrid& grid,
+			const CommonRenderData& common);
 
 	private:
-		const uint32 maxRecursionDepth = 2;
-		const uint32 maxPayloadSize = 4 * sizeof(float); // Radiance-payload is 1 x float3, 1 x float
+		const uint32 max_recursion_depth = 2;
+		const uint32 max_payload_size = 4 * sizeof(float); // Radiance-payload is 1 x float3, 1 x float
 
 		// Only descriptors in here!
-		struct input_resources
+		struct InputResources
 		{
-			dx_cpu_descriptor_handle tlas;
-			dx_cpu_descriptor_handle sky;
-			dx_cpu_descriptor_handle irradiance;
-			dx_cpu_descriptor_handle depth;
+			DXCPUDescriptorHandle tlas;
+			DXCPUDescriptorHandle sky;
+			DXCPUDescriptorHandle irradiance;
+			DXCPUDescriptorHandle depth;
 		};
 
-		struct output_resources
+		struct OutputResources
 		{
-			dx_cpu_descriptor_handle radiance;
-			dx_cpu_descriptor_handle directionAndDistance;
+			DXCPUDescriptorHandle radiance;
+			DXCPUDescriptorHandle direction_and_distance;
 		};
 	};
 
-	static light_probe_tracer lightProbeTracer;
+	static LightProbeTracer light_probe_tracer;
 
-	void initializeLightProbePipelines()
+	void initialize_light_probe_pipelines()
 	{
-		if (!dxContext.featureSupport.raytracing())
+		if (!dx_context.feature_support.raytracing())
 			return;
 
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.inputLayout(inputLayout_position)
-				.renderTargets(hdrFormat, depthStencilFormat);
+				.input_layout(input_layout_position)
+				.render_targets(hdr_format, depth_stencil_format);
 
-			visualizeGridPipeline = createReloadablePipeline(desc, { "light_probe_grid_visualization_vs", "light_probe_grid_visualization_ps" });
+			visualize_grid_pipeline = create_reloadable_pipeline(desc, { "light_probe_grid_visualization_vs", "light_probe_grid_visualization_ps" });
 		}
 
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.primitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE)
-				.renderTargets(hdrFormat, depthStencilFormat);
+				.primitive_topology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE)
+				.render_targets(hdr_format, depth_stencil_format);
 
-			visualizeRaysPipeline = createReloadablePipeline(desc, { "light_probe_ray_visualization_vs", "light_probe_ray_visualization_ps" });
+			visualize_rays_pipeline = create_reloadable_pipeline(desc, { "light_probe_ray_visualization_vs", "light_probe_ray_visualization_ps" });
 		}
 
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.inputLayout(inputLayout_position)
-				.renderTargets(hdrFormat, depthStencilFormat);
+				.input_layout(input_layout_position)
+				.render_targets(hdr_format, depth_stencil_format);
 
-			testSamplePipeline = createReloadablePipeline(desc, { "light_probe_test_sample_vs", "light_probe_test_sample_ps" });
+			test_sample_pipeline = create_reloadable_pipeline(desc, { "light_probe_test_sample_vs", "light_probe_test_sample_ps" });
 		}
 
-		mesh_builder builder(mesh_creation_flags_with_positions);
-		builder.pushSphere({});
-		sphereSubmesh = builder.endSubmesh();
-		sphereMesh = builder.createDXMesh();
+		MeshBuilder builder(MESH_CREATION_FLAGS_WITH_POSITIONS);
+		builder.push_sphere({});
+		sphere_submesh = builder.end_submesh();
+		sphere_mesh = builder.create_dx_mesh();
 
-		probeUpdateIrradiancePipeline = createReloadablePipeline("light_probe_update_irradiance_cs");
-		probeUpdateDepthPipeline = createReloadablePipeline("light_probe_update_depth_cs");
+		probe_update_irradiance_pipeline = create_reloadable_pipeline("light_probe_update_irradiance_cs");
+		probe_update_depth_pipeline = create_reloadable_pipeline("light_probe_update_depth_cs");
 
-		lightProbeTracer.initialize();
+		light_probe_tracer.initialize();
 	}
 
-	void light_probe_grid::initialize(vec3 minCorner, vec3 dimensions, float cellSize)
+	void LightProbeGrid::initialize(vec3 min_corner, vec3 dimensions, float cell_size)
 	{
-		if (!dxContext.featureSupport.raytracing())
+		if (!dx_context.feature_support.raytracing())
 			return;
 
-		uint32 gridSizeX = (uint32)(ceilf(dimensions.x / cellSize));
-		uint32 gridSizeY = (uint32)(ceilf(dimensions.y / cellSize));
-		uint32 gridSizeZ = (uint32)(ceilf(dimensions.z / cellSize));
+		uint32 grid_size_x = (uint32)(ceilf(dimensions.x / cell_size));
+		uint32 grid_size_y = (uint32)(ceilf(dimensions.y / cell_size));
+		uint32 grid_size_z = (uint32)(ceilf(dimensions.z / cell_size));
 
-		vec3 oldDimensions = dimensions;
+		vec3 old_dimensions = dimensions;
 
-		dimensions = vec3((float)gridSizeX, (float)gridSizeY, (float)gridSizeZ) * cellSize;
-		minCorner -= (dimensions - oldDimensions) * 0.5f;
+		dimensions = vec3((float)grid_size_x, (float)grid_size_y, (float)grid_size_z) * cell_size;
+		min_corner -= (dimensions - old_dimensions) * 0.5f;
 
-		this->minCorner = minCorner;
-		this->cellSize = cellSize;
+		this->min_corner = min_corner;
+		this->cell_size = cell_size;
 
-		this->numNodesX = gridSizeX + 1;
-		this->numNodesY = gridSizeY + 1;
-		this->numNodesZ = gridSizeZ + 1;
-		this->totalNumNodes = numNodesX * numNodesY * numNodesZ;
+		this->num_nodes_x = grid_size_x + 1;
+		this->num_nodes_y = grid_size_y + 1;
+		this->num_nodes_z = grid_size_z + 1;
+		this->total_num_nodes = num_nodes_x * num_nodes_y * num_nodes_z;
 
-		uint32 irradianceYSliceWidth = numNodesX * LIGHT_PROBE_TOTAL_RESOLUTION;
-		uint32 irradianceTexWidth = numNodesY * irradianceYSliceWidth;
-		uint32 irradianceTexHeight = numNodesZ * LIGHT_PROBE_TOTAL_RESOLUTION;
+		uint32 irradiance_y_slice_width = num_nodes_x * LIGHT_PROBE_TOTAL_RESOLUTION;
+		uint32 irradiance_tex_width = num_nodes_y * irradiance_y_slice_width;
+		uint32 irradiance_tex_height = num_nodes_z * LIGHT_PROBE_TOTAL_RESOLUTION;
 
-		uint32 depthYSliceWidth = numNodesX * LIGHT_PROBE_TOTAL_DEPTH_RESOLUTION;
-		uint32 depthTexWidth = numNodesY * depthYSliceWidth;
-		uint32 depthTexHeight = numNodesZ * LIGHT_PROBE_TOTAL_DEPTH_RESOLUTION;
+		uint32 depth_y_slice_width = num_nodes_x * LIGHT_PROBE_TOTAL_DEPTH_RESOLUTION;
+		uint32 depth_tex_width = num_nodes_y * depth_y_slice_width;
+		uint32 depth_tex_height = num_nodes_z * LIGHT_PROBE_TOTAL_DEPTH_RESOLUTION;
 
 #if 0
-		struct color_rgba
+		struct ColorRGBA
 		{
 			uint8 r, g, b, a;
 		};
 
-		color_rgba* testBuffer = new color_rgba[irradianceTexWidth * irradianceTexHeight];
+		ColorRGBA* testBuffer = new ColorRGBA[irradiance_tex_width * irradiance_tex_height];
 
 
-		color_rgba testProbe[LIGHT_PROBE_TOTAL_RESOLUTION][LIGHT_PROBE_TOTAL_RESOLUTION] = {};
+		ColorRGBA testProbe[LIGHT_PROBE_TOTAL_RESOLUTION][LIGHT_PROBE_TOTAL_RESOLUTION] = {};
 
 		for (uint32 ly = 1; ly < LIGHT_PROBE_TOTAL_RESOLUTION - 1; ++ly)
 		{
@@ -158,7 +158,7 @@ namespace era_engine
 				vec2 uv = (vec2(x, y) + 0.5f) / LIGHT_PROBE_RESOLUTION;
 				vec2 oct = uv * 2.f - 1.f;
 
-				vec3 dir = decodeOctahedral(oct);
+				vec3 dir = decode_octahedral(oct);
 
 				vec3 c = lerp(vec3(0.f, 0.f, 1.f), vec3(1.f, 0.f, 0.f), dir.x * 0.5f + 0.5f);
 				//vec3 c = vec3(dir.x, 0.f, 0.f);
@@ -201,13 +201,13 @@ namespace era_engine
 		testProbe[5][7] = testProbe[2][6];
 		testProbe[6][7] = testProbe[1][6];
 
-		for (uint32 z = 0; z < numNodesZ; ++z)
+		for (uint32 z = 0; z < num_nodes_z; ++z)
 		{
-			for (uint32 y = 0; y < numNodesY; ++y)
+			for (uint32 y = 0; y < num_nodes_y; ++y)
 			{
-				for (uint32 x = 0; x < numNodesX; ++x)
+				for (uint32 x = 0; x < num_nodes_x; ++x)
 				{
-					uint32 texStartX = irradianceYSliceWidth * y + x * LIGHT_PROBE_TOTAL_RESOLUTION;
+					uint32 texStartX = irradiance_y_slice_width * y + x * LIGHT_PROBE_TOTAL_RESOLUTION;
 					uint32 texStartY = z * LIGHT_PROBE_TOTAL_RESOLUTION;
 
 					for (uint32 ly = 0; ly < LIGHT_PROBE_TOTAL_RESOLUTION; ++ly)
@@ -217,7 +217,7 @@ namespace era_engine
 							uint32 gx = texStartX + lx;
 							uint32 gy = texStartY + ly;
 
-							uint32 c = irradianceTexWidth * gy + gx;
+							uint32 c = irradiance_tex_width * gy + gx;
 
 							testBuffer[c] = testProbe[ly][lx];
 						}
@@ -226,244 +226,244 @@ namespace era_engine
 			}
 		}
 
-		this->irradiance = createTexture(testBuffer, irradianceTexWidth, irradianceTexHeight, DXGI_FORMAT_R8G8B8A8_UNORM, false, false, true, D3D12_RESOURCE_STATE_GENERIC_READ);
+		this->irradiance = create_texture(testBuffer, irradiance_tex_width, irradiance_tex_height, DXGI_FORMAT_R8G8B8A8_UNORM, false, false, true, D3D12_RESOURCE_STATE_GENERIC_READ);
 
 		delete[] testBuffer;
 #else
-		this->irradiance = createTexture(0, irradianceTexWidth, irradianceTexHeight, irradianceFormat, false, false, true);
+		this->irradiance = create_texture(0, irradiance_tex_width, irradiance_tex_height, irradiance_format, false, false, true);
 #endif
 
-		this->depth = createTexture(0, depthTexWidth, depthTexHeight, depthFormat, false, false, true);
+		this->depth = create_texture(0, depth_tex_width, depth_tex_height, depth_format, false, false, true);
 
-		this->raytracedRadiance = createTexture(0, NUM_RAYS_PER_PROBE, totalNumNodes, raytracedRadianceFormat, 0, 0, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		this->raytracedDirectionAndDistance = createTexture(0, NUM_RAYS_PER_PROBE, totalNumNodes, raytracedDirectionAndDistanceFormat, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		this->raytraced_radiance = create_texture(0, NUM_RAYS_PER_PROBE, total_num_nodes, raytraced_radiance_format, 0, 0, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		this->raytraced_direction_and_distance = create_texture(0, NUM_RAYS_PER_PROBE, total_num_nodes, raytraced_direction_and_distance_format, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	}
 
-	struct visualize_grid_render_data
+	struct VisualizeGridRenderData
 	{
 		mat4 transform;
-		dx_vertex_buffer_group_view vertexBuffer;
-		dx_index_buffer_view indexBuffer;
+		DXVertexBufferGroupView vertex_buffer;
+		DXIndexBufferView index_buffer;
 		SubmeshInfo submesh;
 
-		float cellSize;
-		uint32 countX;
-		uint32 countY;
-		uint32 countZ;
+		float cell_size;
+		uint32 count_x;
+		uint32 count_y;
+		uint32 count_z;
 		uint32 total;
 
-		ref<dx_texture> texture0;
-		ref<dx_texture> texture1;
+		ref<DXTexture> texture0;
+		ref<DXTexture> texture1;
 	};
 
-	struct visualize_grid_pipeline
+	struct VisualizeGridPipeline
 	{
 		PIPELINE_SETUP_DECL;
-		PIPELINE_RENDER_DECL(visualize_grid_render_data);
+		PIPELINE_RENDER_DECL(VisualizeGridRenderData);
 	};
 
-	PIPELINE_SETUP_IMPL(visualize_grid_pipeline)
+	PIPELINE_SETUP_IMPL(VisualizeGridPipeline)
 	{
-		cl->setPipelineState(*visualizeGridPipeline.pipeline);
-		cl->setGraphicsRootSignature(*visualizeGridPipeline.rootSignature);
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_pipeline_state(*visualize_grid_pipeline.pipeline);
+		cl->set_graphics_root_signature(*visualize_grid_pipeline.root_signature);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	PIPELINE_RENDER_IMPL(visualize_grid_pipeline, visualize_grid_render_data)
+	PIPELINE_RENDER_IMPL(VisualizeGridPipeline, VisualizeGridRenderData)
 	{
-		vec2 uvScale = 1.f / vec2((float)(data.countX * data.countY), (float)data.countZ);
-		cl->setGraphics32BitConstants(LIGHT_PROBE_GRID_VISUALIZATION_RS_CB, light_probe_grid_visualization_cb{ viewProj * data.transform, uvScale, data.cellSize, data.countX, data.countY });
-		cl->setDescriptorHeapSRV(LIGHT_PROBE_GRID_VISUALIZATION_RS_IRRADIANCE, 0, data.texture0);
+		vec2 uv_scale = 1.f / vec2((float)(data.count_x * data.count_y), (float)data.count_z);
+		cl->set_graphics_32bit_constants(LIGHT_PROBE_GRID_VISUALIZATION_RS_CB, LightProbeGridVisualizationCB{ view_proj * data.transform, uv_scale, data.cell_size, data.count_x, data.count_y });
+		cl->set_descriptor_heap_srv(LIGHT_PROBE_GRID_VISUALIZATION_RS_IRRADIANCE, 0, data.texture0);
 
-		cl->setVertexBuffer(0, data.vertexBuffer.positions);
-		cl->setVertexBuffer(1, data.vertexBuffer.others);
-		cl->setIndexBuffer(data.indexBuffer);
-		cl->drawIndexed(data.submesh.numIndices, data.total, data.submesh.firstIndex, data.submesh.baseVertex, 0);
+		cl->set_vertex_buffer(0, data.vertex_buffer.positions);
+		cl->set_vertex_buffer(1, data.vertex_buffer.others);
+		cl->set_index_buffer(data.index_buffer);
+		cl->draw_indexed(data.submesh.num_indices, data.total, data.submesh.first_index, data.submesh.base_vertex, 0);
 	}
 
-	struct visualize_rays_render_data
+	struct VisualizeRaysRenderData
 	{
 		mat4 transform;
 
-		float cellSize;
-		uint32 countX;
-		uint32 countY;
-		uint32 countZ;
+		float cell_size;
+		uint32 count_x;
+		uint32 count_y;
+		uint32 count_z;
 		uint32 total;
 
-		ref<dx_texture> texture0;
-		ref<dx_texture> texture1;
+		ref<DXTexture> texture0;
+		ref<DXTexture> texture1;
 	};
 
-	struct visualize_rays_pipeline
+	struct VisualizeRaysPipeline
 	{
 		PIPELINE_SETUP_DECL;
-		PIPELINE_RENDER_DECL(visualize_rays_render_data);
+		PIPELINE_RENDER_DECL(VisualizeRaysRenderData);
 	};
 
-	PIPELINE_SETUP_IMPL(visualize_rays_pipeline)
+	PIPELINE_SETUP_IMPL(VisualizeRaysPipeline)
 	{
-		cl->setPipelineState(*visualizeRaysPipeline.pipeline);
-		cl->setGraphicsRootSignature(*visualizeRaysPipeline.rootSignature);
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+		cl->set_pipeline_state(*visualize_rays_pipeline.pipeline);
+		cl->set_graphics_root_signature(*visualize_rays_pipeline.root_signature);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
 	}
 
-	PIPELINE_RENDER_IMPL(visualize_rays_pipeline, visualize_rays_render_data)
+	PIPELINE_RENDER_IMPL(VisualizeRaysPipeline, VisualizeRaysRenderData)
 	{
-		cl->setGraphics32BitConstants(LIGHT_PROBE_RAY_VISUALIZATION_RS_CB, light_probe_ray_visualization_cb{ viewProj * data.transform, data.cellSize, data.countX, data.countY });
-		cl->setDescriptorHeapSRV(LIGHT_PROBE_RAY_VISUALIZATION_RS_RAYS, 0, data.texture0);
-		cl->setDescriptorHeapSRV(LIGHT_PROBE_RAY_VISUALIZATION_RS_RAYS, 1, data.texture1);
+		cl->set_graphics_32bit_constants(LIGHT_PROBE_RAY_VISUALIZATION_RS_CB, LightProbeRayVisualizationCB{ view_proj * data.transform, data.cell_size, data.count_x, data.count_y });
+		cl->set_descriptor_heap_srv(LIGHT_PROBE_RAY_VISUALIZATION_RS_RAYS, 0, data.texture0);
+		cl->set_descriptor_heap_srv(LIGHT_PROBE_RAY_VISUALIZATION_RS_RAYS, 1, data.texture1);
 
-		cl->transitionBarrier(data.texture0, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
-		cl->transitionBarrier(data.texture1, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
+		cl->transition_barrier(data.texture0, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
+		cl->transition_barrier(data.texture1, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
 		cl->draw(2, NUM_RAYS_PER_PROBE * data.total, 0, 0);
-		cl->transitionBarrier(data.texture0, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		cl->transitionBarrier(data.texture1, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		cl->transition_barrier(data.texture0, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		cl->transition_barrier(data.texture1, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	}
 
-	void light_probe_grid::visualize(opaque_render_pass* renderPass)
+	void LightProbeGrid::visualize(OpaqueRenderPass* render_pass)
 	{
-		if (!dxContext.featureSupport.raytracing() || totalNumNodes == 0)
+		if (!dx_context.feature_support.raytracing() || total_num_nodes == 0)
 			return;
 
-		if (visualizeProbes)
+		if (visualize_probes)
 		{
-			mat4 transform = create_translation_matrix(minCorner);
-			visualize_grid_render_data data =
+			mat4 transform = create_translation_matrix(min_corner);
+			VisualizeGridRenderData data =
 			{
-				transform, sphereMesh.vertexBuffer, sphereMesh.indexBuffer, sphereSubmesh, cellSize, numNodesX, numNodesY, numNodesZ, totalNumNodes, irradiance
+				transform, sphere_mesh.vertex_buffer, sphere_mesh.index_buffer, sphere_submesh, cell_size, num_nodes_x, num_nodes_y, num_nodes_z, total_num_nodes, irradiance
 			};
 
-			renderPass->renderObject<visualize_grid_pipeline>(data);
+			render_pass->render_object<VisualizeGridPipeline>(data);
 		}
-		if (visualizeRays)
+		if (visualize_rays)
 		{
-			mat4 transform = create_translation_matrix(minCorner);
-			visualize_rays_render_data data = { transform, cellSize, numNodesX, numNodesY, numNodesZ, totalNumNodes, raytracedRadiance, raytracedDirectionAndDistance };
+			mat4 transform = create_translation_matrix(min_corner);
+			VisualizeRaysRenderData data = { transform, cell_size, num_nodes_x, num_nodes_y, num_nodes_z, total_num_nodes, raytraced_radiance, raytraced_direction_and_distance };
 
-			renderPass->renderObject<visualize_rays_pipeline>(data);
+			render_pass->render_object<VisualizeRaysPipeline>(data);
 		}
 	}
 
-	void light_probe_grid::updateProbes(dx_command_list* cl, const raytracing_tlas& lightProbeTlas, const common_render_data& common) const
+	void LightProbeGrid::update_probes(DXCommandList* cl, const RaytracingTLAS& light_probe_tlas, const CommonRenderData& common) const
 	{
-		if (!dxContext.featureSupport.raytracing() || totalNumNodes == 0)
+		if (!dx_context.feature_support.raytracing() || total_num_nodes == 0)
 			return;
 
-		if (autoRotateRays || rotateRays)
+		if (auto_rotate_rays || rotate_rays)
 		{
-			rayRotation = rng.randomRotation();
-			rotateRays = false;
+			ray_rotation = rng.random_rotation();
+			rotate_rays = false;
 		}
 
-		lightProbeTracer.finalizeForRender();
-		lightProbeTracer.render(cl, lightProbeTlas, *this, common);
+		light_probe_tracer.finalize_for_render();
+		light_probe_tracer.render(cl, light_probe_tlas, *this, common);
 	}
 
 #define LIGHT_PROBE_TRACING_RS_RESOURCES	0
 #define LIGHT_PROBE_TRACING_RS_CB			1
 #define LIGHT_PROBE_TRACING_RS_SUN			2
 
-	void light_probe_tracer::initialize()
+	void LightProbeTracer::initialize()
 	{
-		const wchar* shaderPath = L"shaders/light_probe/light_probe_trace_rts.hlsl";
+		const wchar* shader_path = L"shaders/light_probe/light_probe_trace_rts.hlsl";
 
-		const uint32 numInputResources = sizeof(input_resources) / sizeof(dx_cpu_descriptor_handle);
-		const uint32 numOutputResources = sizeof(output_resources) / sizeof(dx_cpu_descriptor_handle);
+		const uint32 num_input_resources = sizeof(InputResources) / sizeof(DXCPUDescriptorHandle);
+		const uint32 num_output_resources = sizeof(OutputResources) / sizeof(DXCPUDescriptorHandle);
 
-		CD3DX12_DESCRIPTOR_RANGE resourceRanges[] =
+		CD3DX12_DESCRIPTOR_RANGE resource_ranges[] =
 		{
 			// Must be input first, then output
-			CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, numInputResources, 0),
-			CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, numOutputResources, 0),
+			CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, num_input_resources, 0),
+			CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, num_output_resources, 0),
 		};
 
-		CD3DX12_ROOT_PARAMETER globalRootParameters[] =
+		CD3DX12_ROOT_PARAMETER global_root_parameters[] =
 		{
-			root_descriptor_table(arraysize(resourceRanges), resourceRanges),
-			root_constants<light_probe_trace_cb>(0),
+			root_descriptor_table(arraysize(resource_ranges), resource_ranges),
+			root_constants<LightProbeTraceCB>(0),
 			root_cbv(1),
 		};
 
-		CD3DX12_STATIC_SAMPLER_DESC globalStaticSampler(0, D3D12_FILTER_MIN_MAG_MIP_LINEAR);
+		CD3DX12_STATIC_SAMPLER_DESC global_static_sampler(0, D3D12_FILTER_MIN_MAG_MIP_LINEAR);
 
-		D3D12_ROOT_SIGNATURE_DESC globalDesc =
+		D3D12_ROOT_SIGNATURE_DESC global_desc =
 		{
-			arraysize(globalRootParameters), globalRootParameters,
-			1, &globalStaticSampler
+			arraysize(global_root_parameters), global_root_parameters,
+			1, &global_static_sampler
 		};
 
-		pbr_raytracer::initialize(shaderPath, maxPayloadSize, maxRecursionDepth, globalDesc);
+		PBRRaytracer::initialize(shader_path, max_payload_size, max_recursion_depth, global_desc);
 
-		allocateDescriptorHeapSpaceForGlobalResources<input_resources, output_resources>(descriptorHeap);
+		allocate_descriptor_heap_space_for_global_resources<InputResources, OutputResources>(descriptor_heap);
 	}
 
-	void light_probe_tracer::render(dx_command_list* cl, const raytracing_tlas& tlas, const light_probe_grid& grid, const common_render_data& common)
+	void LightProbeTracer::render(DXCommandList* cl, const RaytracingTLAS& tlas, const LightProbeGrid& grid, const CommonRenderData& common)
 	{
-		if (!tlas.tlas || grid.totalNumNodes == 0)
+		if (!tlas.tlas || grid.total_num_nodes == 0)
 			return;
 
 		{
 			PROFILE_ALL(cl, "Raytrace probes");
 
-			input_resources in;
-			in.tlas = tlas.tlas->raytracingSRV;
-			in.sky = common.sky->defaultSRV;
-			in.irradiance = grid.irradiance->defaultSRV;
-			in.depth = grid.depth->defaultSRV;
+			InputResources in;
+			in.tlas = tlas.tlas->raytracing_srv;
+			in.sky = common.sky->default_srv;
+			in.irradiance = grid.irradiance->default_srv;
+			in.depth = grid.depth->default_srv;
 
-			output_resources out;
-			out.radiance = grid.raytracedRadiance->defaultUAV;
-			out.directionAndDistance = grid.raytracedDirectionAndDistance->defaultUAV;
+			OutputResources out;
+			out.radiance = grid.raytraced_radiance->default_uav;
+			out.direction_and_distance = grid.raytraced_direction_and_distance->default_uav;
 
-			dx_gpu_descriptor_handle gpuHandle = copyGlobalResourcesToDescriptorHeap(in, out);
+			DXGPUDescriptorHandle gpu_handle = copy_global_resources_to_descriptor_heap(in, out);
 
 			// Fill out description
-			D3D12_DISPATCH_RAYS_DESC raytraceDesc;
-			fillOutRayTracingRenderDesc(bindingTable.getBuffer(), raytraceDesc,
-				NUM_RAYS_PER_PROBE, grid.totalNumNodes, 1,
-				numRayTypes, bindingTable.getNumberOfHitGroups());
+			D3D12_DISPATCH_RAYS_DESC raytrace_desc;
+			fill_out_ray_tracing_render_desc(binding_table.get_buffer(), raytrace_desc,
+				NUM_RAYS_PER_PROBE, grid.total_num_nodes, 1,
+				num_ray_types, binding_table.get_number_of_hit_groups());
 
 			// Set up pipeline
-			cl->setDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, descriptorHeap.descriptorHeap);
+			cl->set_descriptor_heap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, descriptor_heap.descriptor_heap);
 
-			cl->setPipelineState(pipeline.pipeline);
-			cl->setComputeRootSignature(pipeline.rootSignature);
+			cl->set_pipeline_state(pipeline.pipeline);
+			cl->set_compute_root_signature(pipeline.root_signature);
 
-			light_probe_trace_cb cb;
-			cb.rayRotation = create_model_matrix(0.f, grid.rayRotation);
-			cb.grid = grid.getCB();
-			cb.sampleSkyFromTexture = !common.proceduralSky;
+			LightProbeTraceCB cb;
+			cb.ray_rotation = create_model_matrix(0.f, grid.ray_rotation);
+			cb.grid = grid.get_cb();
+			cb.sample_sky_from_texture = !common.procedural_sky;
 
-			cl->setComputeDescriptorTable(LIGHT_PROBE_TRACING_RS_RESOURCES, gpuHandle);
-			cl->setCompute32BitConstants(LIGHT_PROBE_TRACING_RS_CB, cb);
-			cl->setComputeDynamicConstantBuffer(LIGHT_PROBE_TRACING_RS_SUN, common.lightingCBV);
+			cl->set_compute_descriptor_table(LIGHT_PROBE_TRACING_RS_RESOURCES, gpu_handle);
+			cl->set_compute_32bit_constants(LIGHT_PROBE_TRACING_RS_CB, cb);
+			cl->set_compute_dynamic_constant_buffer(LIGHT_PROBE_TRACING_RS_SUN, common.lighting_cbv);
 
-			cl->raytrace(raytraceDesc);
+			cl->raytrace(raytrace_desc);
 
-			cl->resetToDynamicDescriptorHeap();
+			cl->reset_to_dynamic_descriptor_heap();
 		}
 
-		barrier_batcher(cl)
-			.transition(grid.raytracedRadiance, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
-			.transition(grid.raytracedDirectionAndDistance, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
+		BarrierBatcher(cl)
+			.transition(grid.raytraced_radiance, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
+			.transition(grid.raytraced_direction_and_distance, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
 			.transition(grid.irradiance, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 			.transition(grid.depth, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 		{
 			PROFILE_ALL(cl, "Update irradiance");
 
-			cl->setPipelineState(*probeUpdateIrradiancePipeline.pipeline);
-			cl->setComputeRootSignature(*probeUpdateIrradiancePipeline.rootSignature);
+			cl->set_pipeline_state(*probe_update_irradiance_pipeline.pipeline);
+			cl->set_compute_root_signature(*probe_update_irradiance_pipeline.root_signature);
 
-			light_probe_update_cb cb;
-			cb.countX = grid.numNodesX;
-			cb.countY = grid.numNodesY;
+			LightProbeUpdateCB cb;
+			cb.count_x = grid.num_nodes_x;
+			cb.count_y = grid.num_nodes_y;
 
-			cl->setCompute32BitConstants(LIGHT_PROBE_UPDATE_RS_CB, cb);
-			cl->setDescriptorHeapSRV(LIGHT_PROBE_UPDATE_RS_RAYTRACE_RESULTS, 0, grid.raytracedRadiance);
-			cl->setDescriptorHeapSRV(LIGHT_PROBE_UPDATE_RS_RAYTRACE_RESULTS, 1, grid.raytracedDirectionAndDistance);
-			cl->setDescriptorHeapUAV(LIGHT_PROBE_UPDATE_RS_RAYTRACE_RESULTS, 2, grid.irradiance);
+			cl->set_compute_32bit_constants(LIGHT_PROBE_UPDATE_RS_CB, cb);
+			cl->set_descriptor_heap_srv(LIGHT_PROBE_UPDATE_RS_RAYTRACE_RESULTS, 0, grid.raytraced_radiance);
+			cl->set_descriptor_heap_srv(LIGHT_PROBE_UPDATE_RS_RAYTRACE_RESULTS, 1, grid.raytraced_direction_and_distance);
+			cl->set_descriptor_heap_uav(LIGHT_PROBE_UPDATE_RS_RAYTRACE_RESULTS, 2, grid.irradiance);
 
 			cl->dispatch(bucketize(grid.irradiance->width, LIGHT_PROBE_BLOCK_SIZE), bucketize(grid.irradiance->height, LIGHT_PROBE_BLOCK_SIZE));
 		}
@@ -472,25 +472,25 @@ namespace era_engine
 		{
 			PROFILE_ALL(cl, "Update depth");
 
-			cl->setPipelineState(*probeUpdateDepthPipeline.pipeline);
-			cl->setComputeRootSignature(*probeUpdateDepthPipeline.rootSignature);
+			cl->set_pipeline_state(*probe_update_depth_pipeline.pipeline);
+			cl->set_compute_root_signature(*probe_update_depth_pipeline.root_signature);
 
-			light_probe_update_cb cb;
-			cb.countX = grid.numNodesX;
-			cb.countY = grid.numNodesY;
+			LightProbeUpdateCB cb;
+			cb.count_x = grid.num_nodes_x;
+			cb.count_y = grid.num_nodes_y;
 
-			cl->setCompute32BitConstants(LIGHT_PROBE_UPDATE_RS_CB, cb);
-			cl->setDescriptorHeapSRV(LIGHT_PROBE_UPDATE_RS_RAYTRACE_RESULTS, 0, grid.raytracedRadiance);
-			cl->setDescriptorHeapSRV(LIGHT_PROBE_UPDATE_RS_RAYTRACE_RESULTS, 1, grid.raytracedDirectionAndDistance);
-			cl->setDescriptorHeapUAV(LIGHT_PROBE_UPDATE_RS_RAYTRACE_RESULTS, 2, grid.depth);
+			cl->set_compute_32bit_constants(LIGHT_PROBE_UPDATE_RS_CB, cb);
+			cl->set_descriptor_heap_srv(LIGHT_PROBE_UPDATE_RS_RAYTRACE_RESULTS, 0, grid.raytraced_radiance);
+			cl->set_descriptor_heap_srv(LIGHT_PROBE_UPDATE_RS_RAYTRACE_RESULTS, 1, grid.raytraced_direction_and_distance);
+			cl->set_descriptor_heap_uav(LIGHT_PROBE_UPDATE_RS_RAYTRACE_RESULTS, 2, grid.depth);
 
 			cl->dispatch(bucketize(grid.depth->width, LIGHT_PROBE_BLOCK_SIZE), bucketize(grid.depth->height, LIGHT_PROBE_BLOCK_SIZE));
 		}
 #endif
 
-		barrier_batcher(cl)
-			.transition(grid.raytracedRadiance, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-			.transition(grid.raytracedDirectionAndDistance, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+		BarrierBatcher(cl)
+			.transition(grid.raytraced_radiance, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+			.transition(grid.raytraced_direction_and_distance, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 			.transition(grid.irradiance, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON)
 			.transition(grid.depth, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
 	}

@@ -17,8 +17,8 @@ namespace era_engine
             HANDLE handle = (HANDLE)thread.native_handle();
             SetThreadPriority(handle, thread_priority);
 
-            uint64 affinityMask = 1ull << (i + thread_offset);
-            SetThreadAffinityMask(handle, affinityMask);
+            uint64 affinity_mask = 1ull << (i + thread_offset);
+            SetThreadAffinityMask(handle, affinity_mask);
             SetThreadDescription(handle, description);
 
             thread.detach();
@@ -172,7 +172,7 @@ namespace era_engine
 
     JobHandle schedule_low_priority_job(const DefaultJob& data, JobHandle parent_job/* = {}*/)
     {
-        JobHandle job = low_priority_job_queue.createJob<DefaultJob>([](DefaultJob& job_data, JobHandle job)
+        JobHandle job = low_priority_job_queue.create_job<DefaultJob>([](DefaultJob& job_data, JobHandle job)
             {
                 if (job_data.job_func)
                 {

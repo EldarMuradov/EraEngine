@@ -22,122 +22,122 @@
 
 namespace era_engine
 {
-	static_assert(sizeof(pbr_material_cb) == 24);
+	static_assert(sizeof(PBRMaterialCB) == 24);
 
-	static dx_pipeline opaquePBRPipeline;
-	static dx_pipeline opaqueDoubleSidedPBRPipeline;
-	static dx_pipeline transparentPBRPipeline;
+	static DXPipeline opaque_pbr_pipeline;
+	static DXPipeline opaque_double_sided_pbr_pipeline;
+	static DXPipeline transparent_pbr_pipeline;
 
-	void pbr_pipeline::initialize()
+	void PBRPipeline::initialize()
 	{
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.inputLayout(inputLayout_position_uv_normal_tangent)
-				.renderTargets(opaqueLightPassFormats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depthStencilFormat)
-				.depthSettings(true, false, D3D12_COMPARISON_FUNC_EQUAL);
+				.input_layout(input_layout_position_uv_normal_tangent)
+				.render_targets(opaque_light_pass_formats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depth_stencil_format)
+				.depth_settings(true, false, D3D12_COMPARISON_FUNC_EQUAL);
 
-			opaquePBRPipeline = createReloadablePipeline(desc, { "default_vs", "default_pbr_ps" });
+			opaque_pbr_pipeline = create_reloadable_pipeline(desc, { "default_vs", "default_pbr_ps" });
 
-			desc.cullingOff();
-			opaqueDoubleSidedPBRPipeline = createReloadablePipeline(desc, { "default_vs", "default_pbr_ps" });
+			desc.culling_off();
+			opaque_double_sided_pbr_pipeline = create_reloadable_pipeline(desc, { "default_vs", "default_pbr_ps" });
 		}
 
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.inputLayout(inputLayout_position_uv_normal_tangent)
-				.renderTargets(transparentLightPassFormats, arraysize(transparentLightPassFormats), depthStencilFormat)
-				.alphaBlending(0);
+				.input_layout(input_layout_position_uv_normal_tangent)
+				.render_targets(transparent_light_pass_formats, arraysize(transparent_light_pass_formats), depth_stencil_format)
+				.alpha_blending(0);
 
-			transparentPBRPipeline = createReloadablePipeline(desc, { "default_vs", "default_pbr_transparent_ps" });
+			transparent_pbr_pipeline = create_reloadable_pipeline(desc, { "default_vs", "default_pbr_transparent_ps" });
 		}
 	}
 
-	void pbr_pipeline::initialize(std::string_view vsPath, std::string_view pbrPsPath, std::string_view prbTransparentPsPath)
+	void PBRPipeline::initialize(std::string_view vs_path, std::string_view pbr_ps_path, std::string_view prb_transparent_ps_path)
 	{
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.inputLayout(inputLayout_position_uv_normal_tangent)
-				.renderTargets(opaqueLightPassFormats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depthStencilFormat)
-				.depthSettings(true, false, D3D12_COMPARISON_FUNC_EQUAL);
+				.input_layout(input_layout_position_uv_normal_tangent)
+				.render_targets(opaque_light_pass_formats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depth_stencil_format)
+				.depth_settings(true, false, D3D12_COMPARISON_FUNC_EQUAL);
 
-			opaquePBRPipeline = createReloadablePipeline(desc, { vsPath.data(), pbrPsPath.data() });
+			opaque_pbr_pipeline = create_reloadable_pipeline(desc, { vs_path.data(), pbr_ps_path.data() });
 
-			desc.cullingOff();
-			opaqueDoubleSidedPBRPipeline = createReloadablePipeline(desc, { vsPath.data(), pbrPsPath.data() });
+			desc.culling_off();
+			opaque_double_sided_pbr_pipeline = create_reloadable_pipeline(desc, { vs_path.data(), pbr_ps_path.data() });
 		}
 
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.inputLayout(inputLayout_position_uv_normal_tangent)
-				.renderTargets(transparentLightPassFormats, arraysize(transparentLightPassFormats), depthStencilFormat)
-				.alphaBlending(0);
+				.input_layout(input_layout_position_uv_normal_tangent)
+				.render_targets(transparent_light_pass_formats, arraysize(transparent_light_pass_formats), depth_stencil_format)
+				.alpha_blending(0);
 
-			transparentPBRPipeline = createReloadablePipeline(desc, { vsPath.data(), prbTransparentPsPath.data() });
+			transparent_pbr_pipeline = create_reloadable_pipeline(desc, { vs_path.data(), prb_transparent_ps_path.data() });
 		}
 	}
 
-	void pbr_pipeline::setupPBRCommon(dx_command_list* cl, const common_render_data& common)
+	void PBRPipeline::setup_pbr_common(DXCommandList* cl, const CommonRenderData& common)
 	{
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		dx_cpu_descriptor_handle nullTexture = render_resources::nullTextureSRV;
-		dx_cpu_descriptor_handle nullBuffer = render_resources::nullBufferSRV;
+		DXCPUDescriptorHandle null_texture = RenderResources::null_texture_srv;
+		DXCPUDescriptorHandle null_buffer = RenderResources::null_buffer_srv;
 
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 0, common.irradiance ? common.irradiance->defaultSRV : nullTexture);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 1, common.prefilteredRadiance ? common.prefilteredRadiance->defaultSRV : nullTexture);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 2, render_resources::brdfTex);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 3, common.tiledCullingGrid ? common.tiledCullingGrid->defaultSRV : nullTexture);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 4, common.tiledObjectsIndexList ? common.tiledObjectsIndexList->defaultSRV : nullBuffer);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 5, common.pointLightBuffer ? common.pointLightBuffer->defaultSRV : nullBuffer);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 6, common.spotLightBuffer ? common.spotLightBuffer->defaultSRV : nullBuffer);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 7, common.decalBuffer ? common.decalBuffer->defaultSRV : nullBuffer);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 8, common.shadowMap ? common.shadowMap->defaultSRV : nullTexture);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 9, common.pointLightShadowInfoBuffer ? common.pointLightShadowInfoBuffer->defaultSRV : nullBuffer);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 10, common.spotLightShadowInfoBuffer ? common.spotLightShadowInfoBuffer->defaultSRV : nullBuffer);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 11, common.decalTextureAtlas ? common.decalTextureAtlas->defaultSRV : nullTexture);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 12, common.aoTexture ? common.aoTexture : render_resources::whiteTexture);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 13, common.sssTexture ? common.sssTexture : render_resources::whiteTexture);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 14, common.ssrTexture ? common.ssrTexture->defaultSRV : nullTexture);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 15, common.lightProbeIrradiance ? common.lightProbeIrradiance->defaultSRV : nullTexture);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_FRAME_CONSTANTS, 16, common.lightProbeDepth ? common.lightProbeDepth->defaultSRV : nullTexture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 0, common.irradiance ? common.irradiance->default_srv : null_texture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 1, common.prefiltered_radiance ? common.prefiltered_radiance->default_srv : null_texture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 2, RenderResources::brdf_tex);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 3, common.tiled_culling_grid ? common.tiled_culling_grid->default_srv : null_texture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 4, common.tiled_objects_index_list ? common.tiled_objects_index_list->default_srv : null_buffer);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 5, common.point_light_buffer ? common.point_light_buffer->default_srv : null_buffer);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 6, common.spot_light_buffer ? common.spot_light_buffer->default_srv : null_buffer);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 7, common.decal_buffer ? common.decal_buffer->default_srv : null_buffer);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 8, common.shadow_map ? common.shadow_map->default_srv : null_texture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 9, common.point_light_shadow_info_buffer ? common.point_light_shadow_info_buffer->default_srv : null_buffer);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 10, common.spot_light_shadow_info_buffer ? common.spot_light_shadow_info_buffer->default_srv : null_buffer);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 11, common.decal_texture_atlas ? common.decal_texture_atlas->default_srv : null_texture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 12, common.ao_texture ? common.ao_texture : RenderResources::white_texture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 13, common.sss_texture ? common.sss_texture : RenderResources::white_texture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 14, common.ssr_texture ? common.ssr_texture->default_srv : null_texture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 15, common.light_probe_irradiance ? common.light_probe_irradiance->default_srv : null_texture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_FRAME_CONSTANTS, 16, common.light_probe_depth ? common.light_probe_depth->default_srv : null_texture);
 
-		cl->setGraphicsDynamicConstantBuffer(DEFAULT_PBR_RS_CAMERA, common.cameraCBV);
-		cl->setGraphicsDynamicConstantBuffer(DEFAULT_PBR_RS_LIGHTING, common.lightingCBV);
+		cl->set_graphics_dynamic_constant_buffer(DEFAULT_PBR_RS_CAMERA, common.camera_cbv);
+		cl->set_graphics_dynamic_constant_buffer(DEFAULT_PBR_RS_LIGHTING, common.lighting_cbv);
 
 		// Default material properties. This is JUST to make the dynamic descriptor heap happy.
 		// These textures will NEVER be read.
 
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_PBR_TEXTURES, 0, nullTexture);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_PBR_TEXTURES, 1, nullTexture);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_PBR_TEXTURES, 2, nullTexture);
-		cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_PBR_TEXTURES, 3, nullTexture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 0, null_texture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 1, null_texture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 2, null_texture);
+		cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 3, null_texture);
 	}
 
-	PIPELINE_SETUP_IMPL(pbr_pipeline::opaque)
+	PIPELINE_SETUP_IMPL(PBRPipeline::Opaque)
 	{
-		cl->setPipelineState(*opaquePBRPipeline.pipeline);
-		cl->setGraphicsRootSignature(*opaquePBRPipeline.rootSignature);
+		cl->set_pipeline_state(*opaque_pbr_pipeline.pipeline);
+		cl->set_graphics_root_signature(*opaque_pbr_pipeline.root_signature);
 
-		setupPBRCommon(cl, common);
+		setup_pbr_common(cl, common);
 	}
 
-	PIPELINE_SETUP_IMPL(pbr_pipeline::opaque_double_sided)
+	PIPELINE_SETUP_IMPL(PBRPipeline::OpaqueDoubleSided)
 	{
-		cl->setPipelineState(*opaqueDoubleSidedPBRPipeline.pipeline);
-		cl->setGraphicsRootSignature(*opaqueDoubleSidedPBRPipeline.rootSignature);
+		cl->set_pipeline_state(*opaque_double_sided_pbr_pipeline.pipeline);
+		cl->set_graphics_root_signature(*opaque_double_sided_pbr_pipeline.root_signature);
 
-		setupPBRCommon(cl, common);
+		setup_pbr_common(cl, common);
 	}
 
-	PIPELINE_SETUP_IMPL(pbr_pipeline::transparent)
+	PIPELINE_SETUP_IMPL(PBRPipeline::Transparent)
 	{
-		cl->setPipelineState(*transparentPBRPipeline.pipeline);
-		cl->setGraphicsRootSignature(*transparentPBRPipeline.rootSignature);
+		cl->set_pipeline_state(*transparent_pbr_pipeline.pipeline);
+		cl->set_graphics_root_signature(*transparent_pbr_pipeline.root_signature);
 
-		setupPBRCommon(cl, common);
+		setup_pbr_common(cl, common);
 	}
 
-	PIPELINE_RENDER_IMPL(pbr_pipeline, pbr_render_data)
+	PIPELINE_RENDER_IMPL(PBRPipeline, PBRRenderData)
 	{
 		const auto& mat = data.material;
 
@@ -145,40 +145,40 @@ namespace era_engine
 
 		if (mat->albedo)
 		{
-			cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_PBR_TEXTURES, 0, mat->albedo);
+			cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 0, mat->albedo);
 			flags |= MATERIAL_USE_ALBEDO_TEXTURE;
 		}
 		if (mat->normal)
 		{
-			cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_PBR_TEXTURES, 1, mat->normal);
+			cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 1, mat->normal);
 			flags |= MATERIAL_USE_NORMAL_TEXTURE;
 		}
 		if (mat->roughness)
 		{
-			cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_PBR_TEXTURES, 2, mat->roughness);
+			cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 2, mat->roughness);
 			flags |= MATERIAL_USE_ROUGHNESS_TEXTURE;
 		}
 		if (mat->metallic)
 		{
-			cl->setDescriptorHeapSRV(DEFAULT_PBR_RS_PBR_TEXTURES, 3, mat->metallic);
+			cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 3, mat->metallic);
 			flags |= MATERIAL_USE_METALLIC_TEXTURE;
 		}
-		if (mat->shader != pbr_material_shader_default)
+		if (mat->shader != PBR_MATERIAL_SHADER_DEFAULT)
 		{
 			flags |= MATERIAL_DOUBLE_SIDED;
 		}
 
-		cl->setGraphics32BitConstants(DEFAULT_PBR_RS_MATERIAL,
-			pbr_material_cb(mat->albedoTint, mat->emission.xyz, mat->roughnessOverride, mat->metallicOverride, flags, 1.f, mat->translucency, mat->uvScale)
+		cl->set_graphics_32bit_constants(DEFAULT_PBR_RS_MATERIAL,
+			PBRMaterialCB(mat->albedo_tint, mat->emission.xyz, mat->roughness_override, mat->metallic_override, flags, 1.f, mat->translucency, mat->uv_scale)
 		);
 
 		const SubmeshInfo& submesh = data.submesh;
 
-		cl->setRootGraphicsSRV(DEFAULT_PBR_RS_TRANSFORM, data.transformPtr);
+		cl->set_root_graphics_srv(DEFAULT_PBR_RS_TRANSFORM, data.transform_ptr);
 
-		cl->setVertexBuffer(0, data.vertexBuffer.positions);
-		cl->setVertexBuffer(1, data.vertexBuffer.others);
-		cl->setIndexBuffer(data.indexBuffer);
-		cl->drawIndexed(submesh.numIndices, data.numInstances, submesh.firstIndex, submesh.baseVertex, 0);
+		cl->set_vertex_buffer(0, data.vertex_buffer.positions);
+		cl->set_vertex_buffer(1, data.vertex_buffer.others);
+		cl->set_index_buffer(data.index_buffer);
+		cl->draw_indexed(submesh.num_indices, data.num_instances, submesh.first_index, submesh.base_vertex, 0);
 	}
 }

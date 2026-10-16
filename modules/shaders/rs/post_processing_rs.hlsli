@@ -5,9 +5,9 @@
 // ----------------------------------------
 // BLOOM
 // ----------------------------------------
-struct bloom_threshold_cb
+struct BloomThresholdCB
 {
-    vec2 invDimensions;
+    vec2 inv_dimensions;
     float threshold;
 };
 
@@ -24,9 +24,9 @@ struct bloom_threshold_cb
 #define BLOOM_THRESHOLD_RS_CB           0
 #define BLOOM_THRESHOLD_RS_TEXTURES     1
 
-struct bloom_combine_cb
+struct BloomCombineCB
 {
-    vec2 invDimensions;
+    vec2 inv_dimensions;
     float strength;
 };
 #define BLOOM_COMBINE_RS \
@@ -47,9 +47,9 @@ struct bloom_combine_cb
 // BLIT
 // ----------------------------------------
 
-struct blit_cb
+struct BlitCB
 {
-    vec2 invDimensions;
+    vec2 inv_dimensions;
 };
 
 #define BLIT_RS \
@@ -70,11 +70,11 @@ struct blit_cb
 // GAUSSIAN BLUR
 // ----------------------------------------
 
-struct gaussian_blur_cb
+struct GaussianBlurCB
 {
-    vec2 invDimensions;
-    float stepScale;
-    uint32 directionAndSourceMipLevel; // Direction (0 is horizontal, 1 is vertical) | sourceMipLevel.
+    vec2 inv_dimensions;
+    float step_scale;
+    uint32 direction_and_source_mip_level; // Direction (0 is horizontal, 1 is vertical) | sourceMipLevel.
 };
 
 #define GAUSSIAN_BLUR_RS \
@@ -93,11 +93,11 @@ struct gaussian_blur_cb
 // MORPHOLOGY
 // ----------------------------------------
 
-struct morphology_cb
+struct MorphologyCB
 {
     uint32 radius;
     uint32 direction; // 0 = x, 1 = y.
-    uint32 dimInDirection;
+    uint32 dim_in_direction;
 };
 
 #define MORPHOLOGY_MAX_RADIUS 16
@@ -115,10 +115,10 @@ struct morphology_cb
 // HIERARCHICAL LINEAR DEPTH
 // ----------------------------------------
 
-struct hierarchical_linear_depth_cb
+struct HierarchicalLinearDepthCB
 {
-    vec4 projectionParams;
-    vec2 invDimensions;
+    vec4 projection_params;
+    vec2 inv_dimensions;
 };
 
 #define HIERARCHICAL_LINEAR_DEPTH_RS \
@@ -138,9 +138,9 @@ struct hierarchical_linear_depth_cb
 // TEMPORAL ANTI-ALIASING
 // ----------------------------------------
 
-struct taa_cb
+struct TAACB
 {
-    vec4 projectionParams;
+    vec4 projection_params;
     vec2 dimensions;
 };
 
@@ -161,14 +161,14 @@ struct taa_cb
 // HBAO
 // ----------------------------------------
 
-struct hbao_cb
+struct HBAOCB
 {
-    uint32 screenWidth;
-    uint32 screenHeight;
-    float depthBufferMipLevel;
-    uint32 numRays;
-    vec2 rayDeltaRotation;
-    uint32 maxNumStepsPerRay;
+    uint32 screen_width;
+    uint32 screen_height;
+    float depth_buffer_mip_level;
+    uint32 num_rays;
+    vec2 ray_delta_rotation;
+    uint32 max_num_steps_per_ray;
     float radius;
     float strength;
     float seed;
@@ -193,16 +193,16 @@ struct hbao_cb
 // SCREEN-SPACE SHADOWS
 // ----------------------------------------
 
-struct sss_cb
+struct SSSCB
 {
-    vec2 invDimensions;
-    uint32 numSteps;
-    float rayDistance;
-    vec3 lightDirection;
+    vec2 inv_dimensions;
+    uint32 num_steps;
+    float ray_distance;
+    vec3 light_direction;
     float thickness;
-    float maxDistanceFromCamera;
-    float distanceFadeoutRange;
-    float invBorderFadeout;
+    float max_distance_from_camera;
+    float distance_fadeout_range;
+    float inv_border_fadeout;
     float seed;
 };
 
@@ -225,10 +225,10 @@ struct sss_cb
 // SHADOW BLUR
 // ----------------------------------------
 
-struct shadow_blur_cb
+struct ShadowBlurCB
 {
     vec2 dimensions;
-    vec2 invDimensions;
+    vec2 inv_dimensions;
 };
 
 #define SHADOW_BLUR_X_RS \
@@ -268,9 +268,9 @@ struct shadow_blur_cb
 // SPECULAR AMBIENT
 // ----------------------------------------
 
-struct specular_ambient_cb
+struct SpecularAmbientCB
 {
-    vec2 invDimensions;
+    vec2 inv_dimensions;
 };
 
 #define SPECULAR_AMBIENT_RS \
@@ -293,7 +293,7 @@ struct specular_ambient_cb
 // TONEMAPPING
 // ----------------------------------------
 
-struct tonemap_cb
+struct TonemapCB
 {
     float A;
     float B;
@@ -301,8 +301,8 @@ struct tonemap_cb
     float D;
     float E;
     float F;
-    float invEvaluatedLinearWhite;
-    float expExposure;
+    float inv_evaluated_linear_white;
+    float exp_exposure;
 
     vec3 evaluate(vec3 x)
     {
@@ -311,8 +311,8 @@ struct tonemap_cb
 
     vec3 tonemap(vec3 color)
     {
-        color *= expExposure;
-        return evaluate(color) * invEvaluatedLinearWhite;
+        color *= exp_exposure;
+        return evaluate(color) * inv_evaluated_linear_white;
     }
 };
 
@@ -331,11 +331,11 @@ struct tonemap_cb
 #define present_sdr 0
 #define present_hdr 1
 
-struct present_cb
+struct PresentCB
 {
-    uint32 displayMode;
-    float standardNits;
-    float sharpenStrength;
+    uint32 display_mode;
+    float standard_nits;
+    float sharpen_strength;
     uint32 offset; // x-offset | y-offset.
 };
 
@@ -351,9 +351,9 @@ struct present_cb
 // DEPTH SOBEL
 // ----------------------------------------
 
-struct depth_sobel_cb
+struct DepthSobelCB
 {
-    vec4 projectionParams;
+    vec4 projection_params;
     float threshold;
 };
 

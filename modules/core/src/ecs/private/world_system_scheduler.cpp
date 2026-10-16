@@ -110,21 +110,21 @@ namespace era_engine
 			std::chrono::steady_clock::duration spin_margin,
 			const std::atomic<bool>& running)
 		{
-			using clock = std::chrono::steady_clock;
+			using Clock = std::chrono::steady_clock;
 
-			const clock::time_point now = clock::now();
+			const Clock::time_point now = Clock::now();
 			if (target <= now)
 			{
 				return;
 			}
 
-			const clock::duration remaining = target - now;
+			const Clock::duration remaining = target - now;
 			if (remaining > spin_margin)
 			{
 				std::this_thread::sleep_for(remaining - spin_margin);
 			}
 
-			while (running.load(std::memory_order_relaxed) && clock::now() < target)
+			while (running.load(std::memory_order_relaxed) && Clock::now() < target)
 			{
 				std::this_thread::yield();
 			}
@@ -655,7 +655,7 @@ namespace era_engine
 
 	void WorldSystemScheduler::fixed_timer_loop()
 	{
-		using clock = std::chrono::steady_clock;
+		using Clock = std::chrono::steady_clock;
 
 		bool timer_active = false;
 
@@ -668,15 +668,15 @@ namespace era_engine
 				continue;
 			}
 
-			const clock::duration interval = fixed_interval();
+			const Clock::duration interval = fixed_interval();
 
 			if (!timer_active)
 			{
 				timer_active = true;
-				next_fixed_update = clock::now() + interval;
+				next_fixed_update = Clock::now() + interval;
 			}
 
-			clock::time_point now = clock::now();
+			Clock::time_point now = Clock::now();
 			if (now < next_fixed_update)
 			{
 				sleep_until_precise(next_fixed_update, fixed_spin_margin, running);
@@ -692,12 +692,12 @@ namespace era_engine
 
 				next_fixed_update += interval;
 				++steps;
-				now = clock::now();
+				now = Clock::now();
 			}
 
 			if (now >= next_fixed_update)
 			{
-				const clock::duration behind = now - next_fixed_update;
+				const Clock::duration behind = now - next_fixed_update;
 				const uint64 dropped = static_cast<uint64>(behind / interval) + 1ull;
 
 				stat_dropped_fixed_steps.fetch_add(dropped, std::memory_order_relaxed);
@@ -711,10 +711,10 @@ namespace era_engine
 
 	uint32 WorldSystemScheduler::pump_fixed_steps()
 	{
-		using clock = std::chrono::steady_clock;
+		using Clock = std::chrono::steady_clock;
 
-		const clock::duration interval = fixed_interval();
-		const clock::time_point now = clock::now();
+		const Clock::duration interval = fixed_interval();
+		const Clock::time_point now = Clock::now();
 
 		if (!pump_clock_valid)
 		{
@@ -736,7 +736,7 @@ namespace era_engine
 
 		if (next_pumped_fixed_update <= now)
 		{
-			const clock::duration behind = now - next_pumped_fixed_update;
+			const Clock::duration behind = now - next_pumped_fixed_update;
 			const uint64 dropped = static_cast<uint64>(behind / interval) + 1ull;
 
 			stat_dropped_fixed_steps.fetch_add(dropped, std::memory_order_relaxed);

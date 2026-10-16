@@ -8,22 +8,22 @@
 
 namespace era_engine
 {
-	struct particle_draw_info
+	struct ParticleDrawInfo
 	{
-		ref<dx_buffer> particleBuffer;
-		ref<dx_buffer> aliveList;
-		ref<dx_buffer> commandBuffer;
-		uint32 aliveListOffset;
-		uint32 commandBufferOffset;
-		uint32 rootParameterOffset;
+		ref<DXBuffer> particle_buffer;
+		ref<DXBuffer> alive_list;
+		ref<DXBuffer> command_buffer;
+		uint32 alive_list_offset;
+		uint32 command_buffer_offset;
+		uint32 root_parameter_offset;
 	};
 
 	template <typename render_data_t>
-	struct particle_render_command
+	struct ParticleRenderCommand
 	{
-		dx_vertex_buffer_group_view vertexBuffer;
-		dx_index_buffer_view indexBuffer;
-		particle_draw_info drawInfo;
+		DXVertexBufferGroupView vertex_buffer;
+		DXIndexBufferView index_buffer;
+		ParticleDrawInfo draw_info;
 
 		render_data_t data;
 	};

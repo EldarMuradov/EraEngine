@@ -16,23 +16,23 @@
 
 namespace era_engine
 {
-	master_audio_settings masterAudioSettings;
-	master_audio_settings oldMasterAudioSettings;
+	MasterAudioSettings master_audio_settings;
+	MasterAudioSettings old_master_audio_settings;
 
-	static property_fader masterVolumeFader;
+	static PropertyFader master_volume_fader;
 
-	float soundTypeVolumes[sound_type_count];
-	static float oldSoundTypeVolumes[sound_type_count];
-	static property_fader soundTypeVolumeFaders[sound_type_count];
+	float sound_type_volumes[SOUND_TYPE_COUNT];
+	static float old_sound_type_volumes[SOUND_TYPE_COUNT];
+	static PropertyFader sound_type_volume_faders[SOUND_TYPE_COUNT];
 
-	static audio_context context;
+	static AudioContext context;
 
-	typedef std::unordered_map<uint32, ref<audio_channel>> channel_map;
+	typedef std::unordered_map<uint32, ref<AudioChannel>> ChannelMap;
 
-	static channel_map channels;
-	static uint32 nextChannelID = 1;
+	static ChannelMap channels;
+	static uint32 next_channel_id = 1;
 
-	static XAUDIO2FX_REVERB_I3DL2_PARAMETERS reverbPresets[] =
+	static XAUDIO2FX_REVERB_I3DL2_PARAMETERS reverb_presets[] =
 	{
 		XAUDIO2FX_I3DL2_PRESET_DEFAULT,
 		XAUDIO2FX_I3DL2_PRESET_GENERIC,
@@ -73,96 +73,96 @@ namespace era_engine
 			 `-> [Sound type reverb] -^
 	*/
 
-	static void setReverb()
+	static void set_reverb()
 	{
-		bool reverbOn = masterAudioSettings.reverbEnabled && masterAudioSettings.reverbPreset != reverb_none;
+		bool reverb_on = master_audio_settings.reverb_enabled && master_audio_settings.reverb_preset != REVERB_NONE;
 
-		if (reverbOn)
+		if (reverb_on)
 		{
-			XAUDIO2FX_REVERB_PARAMETERS reverbParameters;
-			ReverbConvertI3DL2ToNative(&reverbPresets[masterAudioSettings.reverbPreset], &reverbParameters);
+			XAUDIO2FX_REVERB_PARAMETERS reverb_parameters;
+			ReverbConvertI3DL2ToNative(&reverb_presets[master_audio_settings.reverb_preset], &reverb_parameters);
 
-			for (uint32 i = 0; i < sound_type_count; ++i)
+			for (uint32 i = 0; i < SOUND_TYPE_COUNT; ++i)
 			{
-				context.reverbSubmixVoices[i]->SetEffectParameters(0, &reverbParameters, sizeof(reverbParameters));
+				context.reverb_submix_voices[i]->SetEffectParameters(0, &reverb_parameters, sizeof(reverb_parameters));
 			}
 		}
 
-		for (uint32 i = 0; i < sound_type_count; ++i)
+		for (uint32 i = 0; i < SOUND_TYPE_COUNT; ++i)
 		{
 			float level[16];
-			float reverbLevel = reverbOn ? 1.f : 0.f;
-			for (uint32 j = 0; j < context.soundTypeSubmixVoiceDetails[i].InputChannels; ++j)
+			float reverb_level = reverb_on ? 1.f : 0.f;
+			for (uint32 j = 0; j < context.sound_type_submix_voice_details[i].InputChannels; ++j)
 			{
-				level[j] = reverbLevel;
+				level[j] = reverb_level;
 			}
 
-			context.reverbSubmixVoices[i]->SetOutputMatrix(context.soundTypeSubmixVoices[i], 1, context.soundTypeSubmixVoiceDetails[i].InputChannels, level);
+			context.reverb_submix_voices[i]->SetOutputMatrix(context.sound_type_submix_voices[i], 1, context.sound_type_submix_voice_details[i].InputChannels, level);
 		}
 	}
 
-	bool initializeAudio()
+	bool initialize_audio()
 	{
 		uint32 flags = 0;
 #ifdef _DEBUG
 		flags |= XAUDIO2_DEBUG_ENGINE;
 #endif
 		checkResult(XAudio2Create(context.xaudio.GetAddressOf(), flags));
-		checkResult(context.xaudio->CreateMasteringVoice(&context.masterVoice));
+		checkResult(context.xaudio->CreateMasteringVoice(&context.master_voice));
 
-		masterVolumeFader.initialize(masterAudioSettings.volume);
-		context.masterVoice->SetVolume(masterAudioSettings.volume);
+		master_volume_fader.initialize(master_audio_settings.volume);
+		context.master_voice->SetVolume(master_audio_settings.volume);
 
-		DWORD channelMask;
-		context.masterVoice->GetChannelMask(&channelMask);
-		context.masterVoice->GetVoiceDetails(&context.masterVoiceDetails);
+		DWORD channel_mask;
+		context.master_voice->GetChannelMask(&channel_mask);
+		context.master_voice->GetVoiceDetails(&context.master_voice_details);
 
-		X3DAudioInitialize(channelMask, X3DAUDIO_SPEED_OF_SOUND, context.xaudio3D);
+		X3DAudioInitialize(channel_mask, X3DAUDIO_SPEED_OF_SOUND, context.xaudio_3d);
 
-		for (uint32 i = 0; i < sound_type_count; ++i)
+		for (uint32 i = 0; i < SOUND_TYPE_COUNT; ++i)
 		{
-			soundTypeVolumes[i] = oldSoundTypeVolumes[i] = 1.f;
-			soundTypeVolumeFaders[i].initialize(soundTypeVolumes[i]);
+			sound_type_volumes[i] = old_sound_type_volumes[i] = 1.f;
+			sound_type_volume_faders[i].initialize(sound_type_volumes[i]);
 
-			checkResult(context.xaudio->CreateSubmixVoice(&context.soundTypeSubmixVoices[i], context.masterVoiceDetails.InputChannels, context.masterVoiceDetails.InputSampleRate, 0, 1));
-			context.soundTypeSubmixVoices[i]->GetVoiceDetails(&context.soundTypeSubmixVoiceDetails[i]);
-			context.soundTypeSubmixVoices[i]->SetVolume(soundTypeVolumes[i]);
+			checkResult(context.xaudio->CreateSubmixVoice(&context.sound_type_submix_voices[i], context.master_voice_details.InputChannels, context.master_voice_details.InputSampleRate, 0, 1));
+			context.sound_type_submix_voices[i]->GetVoiceDetails(&context.sound_type_submix_voice_details[i]);
+			context.sound_type_submix_voices[i]->SetVolume(sound_type_volumes[i]);
 
-			IUnknown* reverbXAPO;
-			checkResult(XAudio2CreateReverb(&reverbXAPO));
+			IUnknown* reverb_xapo;
+			checkResult(XAudio2CreateReverb(&reverb_xapo));
 
 			XAUDIO2_EFFECT_DESCRIPTOR descriptor;
 			descriptor.InitialState = true;
 			descriptor.OutputChannels = 1;
-			descriptor.pEffect = reverbXAPO;
+			descriptor.pEffect = reverb_xapo;
 
 			XAUDIO2_EFFECT_CHAIN chain;
 			chain.EffectCount = 1;
 			chain.pEffectDescriptors = &descriptor;
 
-			XAUDIO2_SEND_DESCRIPTOR sendDescriptor;
-			sendDescriptor.Flags = 0;
-			sendDescriptor.pOutputVoice = context.soundTypeSubmixVoices[i];
+			XAUDIO2_SEND_DESCRIPTOR send_descriptor;
+			send_descriptor.Flags = 0;
+			send_descriptor.pOutputVoice = context.sound_type_submix_voices[i];
 
-			const XAUDIO2_VOICE_SENDS sendList = { 1, &sendDescriptor };
+			const XAUDIO2_VOICE_SENDS send_list = { 1, &send_descriptor };
 
-			checkResult(context.xaudio->CreateSubmixVoice(&context.reverbSubmixVoices[i], 1, context.soundTypeSubmixVoiceDetails[i].InputSampleRate, 0, 0, &sendList, &chain));
+			checkResult(context.xaudio->CreateSubmixVoice(&context.reverb_submix_voices[i], 1, context.sound_type_submix_voice_details[i].InputSampleRate, 0, 0, &send_list, &chain));
 
-			reverbXAPO->Release();
+			reverb_xapo->Release();
 		}
 
-		setReverb();
+		set_reverb();
 
 		context.listener.OrientFront = { 0.f, 0.f, 1.f };
 		context.listener.OrientTop = { 0.f, 1.f, 0.f };
 		context.listener.pCone = (X3DAUDIO_CONE*)&X3DAudioDefault_DirectionalCone;
 
-		loadSoundRegistry();
+		load_sound_registry();
 
 		return true;
 	}
 
-	void shutdownAudio()
+	void shutdown_audio()
 	{
 		channels.clear();
 
@@ -173,7 +173,7 @@ namespace era_engine
 		}
 	}
 
-	void setAudioListener(vec3 position, quat rotation, vec3 velocity)
+	void set_audio_listener(vec3 position, quat rotation, vec3 velocity)
 	{
 		vec3 forward = rotation * vec3(0.f, 0.f, -1.f);
 		vec3 up = rotation * vec3(0.f, 1.f, 0.f);
@@ -185,141 +185,141 @@ namespace era_engine
 		context.listener.Velocity = { velocity.x, velocity.y, -velocity.z };
 	}
 
-	void updateAudio(float dt)
+	void update_audio(float dt)
 	{
 		CPU_PROFILE_BLOCK("Update audio");
 
-		masterAudioSettings.volume = max(0.f, masterAudioSettings.volume);
+		master_audio_settings.volume = max(0.f, master_audio_settings.volume);
 
-		if (oldMasterAudioSettings.volume != masterAudioSettings.volume)
+		if (old_master_audio_settings.volume != master_audio_settings.volume)
 		{
-			masterVolumeFader.startFade(masterAudioSettings.volume, 0.1f);
+			master_volume_fader.start_fade(master_audio_settings.volume, 0.1f);
 		}
 
-		if (oldMasterAudioSettings.reverbEnabled != masterAudioSettings.reverbEnabled || oldMasterAudioSettings.reverbPreset != masterAudioSettings.reverbPreset)
+		if (old_master_audio_settings.reverb_enabled != master_audio_settings.reverb_enabled || old_master_audio_settings.reverb_preset != master_audio_settings.reverb_preset)
 		{
-			setReverb();
+			set_reverb();
 		}
 
-		oldMasterAudioSettings = masterAudioSettings;
+		old_master_audio_settings = master_audio_settings;
 
-		masterVolumeFader.update(dt);
-		context.masterVoice->SetVolume(masterVolumeFader.current);
+		master_volume_fader.update(dt);
+		context.master_voice->SetVolume(master_volume_fader.current);
 
-		for (uint32 i = 0; i < sound_type_count; ++i)
+		for (uint32 i = 0; i < SOUND_TYPE_COUNT; ++i)
 		{
-			soundTypeVolumes[i] = max(0.f, soundTypeVolumes[i]);
+			sound_type_volumes[i] = max(0.f, sound_type_volumes[i]);
 
-			if (oldSoundTypeVolumes[i] != soundTypeVolumes[i])
+			if (old_sound_type_volumes[i] != sound_type_volumes[i])
 			{
-				soundTypeVolumeFaders[i].startFade(soundTypeVolumes[i], 0.1f);
+				sound_type_volume_faders[i].start_fade(sound_type_volumes[i], 0.1f);
 			}
 
-			oldSoundTypeVolumes[i] = soundTypeVolumes[i];
+			old_sound_type_volumes[i] = sound_type_volumes[i];
 
-			soundTypeVolumeFaders[i].update(dt);
-			context.soundTypeSubmixVoices[i]->SetVolume(soundTypeVolumeFaders[i].current);
+			sound_type_volume_faders[i].update(dt);
+			context.sound_type_submix_voices[i]->SetVolume(sound_type_volume_faders[i].current);
 		}
 
-		channel_map::iterator stoppedChannels[64];
-		uint32 numStoppedChannels = 0;
+		ChannelMap::iterator stopped_channels[64];
+		uint32 num_stopped_channels = 0;
 
 		for (auto it = channels.begin(), end = channels.end(); it != end; ++it)
 		{
 			it->second->update(context, dt);
-			if (it->second->hasStopped())
+			if (it->second->has_stopped())
 			{
-				stoppedChannels[numStoppedChannels++] = it;
+				stopped_channels[num_stopped_channels++] = it;
 				//LOG_MESSAGE("Deleting channel");
 			}
 		}
 
-		for (uint32 i = 0; i < numStoppedChannels; ++i)
+		for (uint32 i = 0; i < num_stopped_channels; ++i)
 		{
-			channels.erase(stoppedChannels[i]);
+			channels.erase(stopped_channels[i]);
 		}
 	}
 
-	sound_handle play2DSound(const sound_id& id, const sound_settings& settings)
+	SoundHandle play_2d_sound(const SoundID& id, const SoundSettings& settings)
 	{
 		if (settings.volume <= 0.f)
 		{
 			return {};
 		}
 
-		ref<audio_sound> sound = getSound(id);
+		ref<AudioSound> sound = get_sound(id);
 		if (!sound)
 		{
 			// Not all sounds are file sounds, but we have no chance of creating a synth here.
-			if (!loadFileSound(id))
+			if (!load_file_sound(id))
 			{
 				return {};
 			}
 
-			sound = getSound(id);
+			sound = get_sound(id);
 		}
 
-		uint32 channelID = nextChannelID++;
+		uint32 channel_id = next_channel_id++;
 
-		ref<audio_channel> channel = make_ref<audio_channel>(context, sound, settings);
-		channels.insert({ channelID, channel });
+		ref<AudioChannel> channel = make_ref<AudioChannel>(context, sound, settings);
+		channels.insert({ channel_id, channel });
 
-		return { channelID };
+		return { channel_id };
 	}
 
-	sound_handle play3DSound(const sound_id& id, vec3 position, const sound_settings& settings)
+	SoundHandle play_3d_sound(const SoundID& id, vec3 position, const SoundSettings& settings)
 	{
 		if (settings.volume <= 0.f)
 		{
 			return {};
 		}
 
-		ref<audio_sound> sound = getSound(id);
+		ref<AudioSound> sound = get_sound(id);
 		if (!sound)
 		{
-			if (!loadFileSound(id))
+			if (!load_file_sound(id))
 			{
 				return {};
 			}
 
-			sound = getSound(id);
+			sound = get_sound(id);
 		}
 
-		uint32 channelID = nextChannelID++;
+		uint32 channel_id = next_channel_id++;
 
-		ref<audio_channel> channel = make_ref<audio_channel>(context, sound, position, settings);
-		channels.insert({ channelID, channel });
+		ref<AudioChannel> channel = make_ref<AudioChannel>(context, sound, position, settings);
+		channels.insert({ channel_id, channel });
 
-		return { channelID };
+		return { channel_id };
 	}
 
-	bool soundStillPlaying(sound_handle handle)
+	bool sound_still_playing(SoundHandle handle)
 	{
 		return handle && (channels.find(handle.id) != channels.end());
 	}
 
-	bool stop(sound_handle handle, float fadeOutTime)
+	bool stop(SoundHandle handle, float fade_out_time)
 	{
 		if (handle)
 		{
 			auto it = channels.find(handle.id);
 			if (it != channels.end())
 			{
-				it->second->stop(fadeOutTime);
+				it->second->stop(fade_out_time);
 				return true;
 			}
 		}
 		return false;
 	}
 
-	void restartAllSounds()
+	void restart_all_sounds()
 	{
-		auto channelsCopy = std::move(channels);
+		auto channels_copy = std::move(channels);
 
-		for (auto it = channelsCopy.begin(), end = channelsCopy.end(); it != end; ++it)
+		for (auto it = channels_copy.begin(), end = channels_copy.end(); it != end; ++it)
 		{
-			sound_id id = it->second->sound->id;
-			sound_settings settings = *it->second->getSettings();
+			SoundID id = it->second->sound->id;
+			SoundSettings settings = *it->second->get_settings();
 			bool positioned = it->second->positioned;
 			vec3 position = it->second->position;
 
@@ -327,34 +327,34 @@ namespace era_engine
 
 			if (positioned)
 			{
-				play3DSound(id, position, settings);
+				play_3d_sound(id, position, settings);
 			}
 			else
 			{
-				play2DSound(id, settings);
+				play_2d_sound(id, settings);
 			}
 		}
 	}
 
-	sound_settings* getSettings(sound_handle handle)
+	SoundSettings* get_settings(SoundHandle handle)
 	{
 		if (handle)
 		{
 			auto it = channels.find(handle.id);
 			if (it != channels.end())
 			{
-				return it->second->getSettings();
+				return it->second->get_settings();
 			}
 		}
 		return 0;
 	}
 
-	float dbToVolume(float db)
+	float db_to_volume(float db)
 	{
 		return XAudio2DecibelsToAmplitudeRatio(db);
 	}
 
-	float volumeToDB(float volume)
+	float volume_to_db(float volume)
 	{
 		return XAudio2AmplitudeRatioToDecibels(volume);
 	}

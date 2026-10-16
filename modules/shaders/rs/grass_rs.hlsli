@@ -3,22 +3,22 @@
 
 #include "indirect.hlsli"
 
-struct grass_blade
+struct GrassBlade
 {
     vec3 position;
     uint32 misc; // Type, lod
     vec2 facing; // sin(angle), cos(angle)
     float height;
-    uint32 windStrength_prevWindStrength;
+    uint32 wind_strength_prev_wind_strength;
 
 #ifdef HLSL
-    void initialize(float3 position_, float angle, uint type, float lod, float height_, float windStrength, float prevFrameWindStrength)
+    void initialize(float3 position_, float angle, uint type, float lod, float height_, float wind_strength, float prev_frame_wind_strength)
     {
         position = position_;
         sincos(angle, facing.x, facing.y);
         misc = (type << 16) | f32tof16(lod);
         height = height_;
-        windStrength_prevWindStrength = (f32tof16(windStrength) << 16) | f32tof16(prevFrameWindStrength);
+        wind_strength_prev_wind_strength = (f32tof16(wind_strength) << 16) | f32tof16(prev_frame_wind_strength);
     }
 
     uint type()
@@ -31,29 +31,29 @@ struct grass_blade
         return f16tof32(misc & 0xFFFF);
     }
 
-    float windStrength()
+    float wind_strength()
     {
-        return f16tof32(windStrength_prevWindStrength >> 16);
+        return f16tof32(wind_strength_prev_wind_strength >> 16);
     }
 
-    float prevFrameWindStrength()
+    float prev_frame_wind_strength()
     {
-        return f16tof32(windStrength_prevWindStrength & 0xFFFF);
+        return f16tof32(wind_strength_prev_wind_strength & 0xFFFF);
     }
 #endif
 };
 
-struct grass_draw
+struct GrassDraw
 {
     D3D12_DRAW_ARGUMENTS draw;
 };
 
-struct grass_cb
+struct GrassCB
 {
-    vec2 windDirection;
+    vec2 wind_direction;
 
-    uint32 numVertices;
-    float halfWidth;
+    uint32 num_vertices;
+    float half_width;
 };
 
 #ifdef NO_DEPTH_PREPASS
@@ -110,29 +110,29 @@ struct grass_cb
 
 #define GRASS_GENERATION_BLOCK_SIZE 8
 
-struct grass_generation_common_cb
+struct GrassGenerationCommonCB
 {
-    vec4 frustumPlanes[6];
-    vec3 cameraPosition;
-    float chunkSize;
-    float amplitudeScale;
-    float uvScale;
+    vec4 frustum_planes[6];
+    vec3 camera_position;
+    float chunk_size;
+    float amplitude_scale;
+    float uv_scale;
 
-    float lodChangeStartDistance;
-    float lodChangeEndDistance;
+    float lod_change_start_distance;
+    float lod_change_end_distance;
 
-    float cullStartDistance;
-    float cullEndDistance;
+    float cull_start_distance;
+    float cull_end_distance;
 
     float time;
-    float prevFrameTime;
-    float baseHeight;
+    float prev_frame_time;
+    float base_height;
 };
 
-struct grass_generation_cb
+struct GrassGenerationCB
 {
-    vec3 chunkCorner;
-    uint32 lodIndex;
+    vec3 chunk_corner;
+    uint32 lod_index;
 };
 
 #define GRASS_GENERATION_RS \
@@ -151,9 +151,9 @@ struct grass_generation_cb
 
 #define GRASS_CREATE_DRAW_CALLS_BLOCK_SIZE 32
 
-struct grass_create_draw_calls_cb
+struct GrassCreateDrawCallsCB
 {
-    uint32 maxNumInstances;
+    uint32 max_num_instances;
 };
 
 #define GRASS_CREATE_DRAW_CALLS_RS \

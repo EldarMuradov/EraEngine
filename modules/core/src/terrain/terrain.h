@@ -18,8 +18,8 @@ namespace era_engine
 {
 	struct ERA_CORE_API TerrainChunk
 	{
-		ref<dx_texture> heightmap;
-		ref<dx_texture> normalmap;
+		ref<DXTexture> heightmap;
+		ref<DXTexture> normalmap;
 
 		std::vector<uint16> heights;
 	};
@@ -28,12 +28,12 @@ namespace era_engine
 	{
 		float scale = 0.01f;
 
-		float domainWarpStrength = 1.2f;
-		vec2 domainWarpNoiseOffset = vec2(0.f, 0.f);
-		uint32 domainWarpOctaves = 3;
+		float domain_warp_strength = 1.2f;
+		vec2 domain_warp_noise_offset = vec2(0.f, 0.f);
+		uint32 domain_warp_octaves = 3;
 
-		vec2 noiseOffset = vec2(0.f, 0.f);
-		uint32 noiseOctaves = 15;
+		vec2 noise_offset = vec2(0.f, 0.f);
+		uint32 noise_octaves = 15;
 	};
 
 	class ERA_CORE_API TerrainComponent : public Component
@@ -41,55 +41,55 @@ namespace era_engine
 	public:
 		TerrainComponent() = default;
 		TerrainComponent(ref<Entity::EcsData> _data, uint32 _chunks_per_dim, float _chunk_size, float _amplitude_scale,
-			ref<pbr_material> ground_material, ref<pbr_material> rock_material, ref<pbr_material> _mud_material,
+			ref<PBRMaterial> _ground_material, ref<PBRMaterial> _rock_material, ref<PBRMaterial> _mud_material,
 			const TerrainGenerationSettings& _gen_settings = {});
 		~TerrainComponent() override;
 
 		void update();
-		void render(const render_camera& camera, 
-			struct opaque_render_pass* renderPass, 
-			struct sun_shadow_render_pass* shadowPass, 
-			struct ldr_render_pass* ldrPass,
-			vec3 positionOffset, 
+		void render(const RenderCamera& camera, 
+			struct OpaqueRenderPass* render_pass, 
+			struct SunShadowRenderPass* shadow_pass, 
+			struct LDRRenderPass* ldr_pass,
+			vec3 position_offset, 
 			bool selected = false,
-			struct TransformComponent* waterPlaneTransforms = 0, 
-			uint32 numWaters = 0);
+			struct TransformComponent* water_plane_transforms = 0, 
+			uint32 num_waters = 0);
 
-		TerrainChunk& chunk(uint32 x, uint32 z) { return chunks[z * chunksPerDim + x]; }
-		const TerrainChunk& chunk(uint32 x, uint32 z) const { return chunks[z * chunksPerDim + x]; }
+		TerrainChunk& chunk(uint32 x, uint32 z) { return chunks[z * chunks_per_dim + x]; }
+		const TerrainChunk& chunk(uint32 x, uint32 z) const { return chunks[z * chunks_per_dim + x]; }
 
 		TerrainChunk& chunk(uint32 id) { return chunks[id]; }
 		const TerrainChunk& chunk(uint32 id) const { return chunks[id]; }
 
-		vec3 get_min_corner(const vec3& positionOffset) const
+		vec3 get_min_corner(const vec3& position_offset) const
 		{
-			float xzOffset = -(chunkSize * chunksPerDim) * 0.5f; // Offsets entire terrain by half.
-			return positionOffset + vec3(xzOffset, 0.f, xzOffset);
+			float xz_offset = -(chunk_size * chunks_per_dim) * 0.5f; // Offsets entire terrain by half.
+			return position_offset + vec3(xz_offset, 0.f, xz_offset);
 		}
 
 		ERA_VIRTUAL_REFLECT(Component)
 
 	public:
-		uint32 chunksPerDim;
-		float chunkSize;
-		float amplitudeScale;
+		uint32 chunks_per_dim;
+		float chunk_size;
+		float amplitude_scale;
 
-		TerrainGenerationSettings genSettings;
+		TerrainGenerationSettings gen_settings;
 
-		ref<pbr_material> groundMaterial;
-		ref<pbr_material> rockMaterial;
-		ref<pbr_material> mudMaterial;
+		ref<PBRMaterial> ground_material;
+		ref<PBRMaterial> rock_material;
+		ref<PBRMaterial> mud_material;
 
 	private:
-		void generate_chunks_CPU();
-		void generate_chunks_GPU();
+		void generate_chunks_cpu();
+		void generate_chunks_gpu();
 
-		TerrainGenerationSettings oldGenSettings;
+		TerrainGenerationSettings old_gen_settings;
 
 		std::vector<TerrainChunk> chunks;
 
 		friend struct GrassComponent;
 	};
 
-	void initializeTerrainPipelines();
+	void initialize_terrain_pipelines();
 }

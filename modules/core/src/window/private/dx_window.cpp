@@ -16,13 +16,13 @@ namespace era_engine
 	{
 		using namespace rttr;
 
-		registration::class_<dx_window>("dx_window")
+		registration::class_<DXWindow>("DXWindow")
 			.constructor<>();
 	}
 
-	static bool checkTearingSupport(dx_factory factory)
+	static bool check_tearing_support(DXFactory factory)
 	{
-		BOOL allowTearing = FALSE;
+		BOOL allow_tearing = FALSE;
 
 		// Rather than create the DXGI 1.5 factory interface directly, we create the
 		// DXGI 1.4 interface and query for the 1.5 interface. This is to enable the 
@@ -33,88 +33,88 @@ namespace era_engine
 		{
 			if (FAILED(factory5->CheckFeatureSupport(
 				DXGI_FEATURE_PRESENT_ALLOW_TEARING,
-				&allowTearing, sizeof(allowTearing))))
+				&allow_tearing, sizeof(allow_tearing))))
 			{
-				allowTearing = FALSE;
+				allow_tearing = FALSE;
 			}
 		}
 
-		return allowTearing == TRUE;
+		return allow_tearing == TRUE;
 	}
 
-	static dx_swapchain createSwapChain(HWND windowHandle,
-		dx_factory factory, const dx_command_queue& commandQueue,
-		uint32 width, uint32 height, uint32 bufferCount, bool tearingSupported, color_depth colorDepth, bool exclusiveFullscreen)
+	static DXSwapchain create_swap_chain(HWND window_handle,
+		DXFactory factory, const DXCommandQueue& command_queue,
+		uint32 width, uint32 height, uint32 buffer_count, bool tearing_supported, ColorDepth color_depth, bool exclusive_fullscreen)
 	{
-		dx_swapchain dxgiSwapChain;
+		DXSwapchain dxgi_swap_chain;
 
-		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-		swapChainDesc.Width = width;
-		swapChainDesc.Height = height;
-		swapChainDesc.Format = colorDepthToFormat(colorDepth);
-		swapChainDesc.Stereo = FALSE;
-		swapChainDesc.SampleDesc = { 1, 0 };
-		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		swapChainDesc.BufferCount = bufferCount;
-		swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
-		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-		swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+		DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
+		swap_chain_desc.Width = width;
+		swap_chain_desc.Height = height;
+		swap_chain_desc.Format = color_depth_to_format(color_depth);
+		swap_chain_desc.Stereo = FALSE;
+		swap_chain_desc.SampleDesc = { 1, 0 };
+		swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		swap_chain_desc.BufferCount = buffer_count;
+		swap_chain_desc.Scaling = DXGI_SCALING_STRETCH;
+		swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+		swap_chain_desc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
 
 		// It is recommended to always allow tearing if tearing support is available
-		swapChainDesc.Flags = tearingSupported ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
+		swap_chain_desc.Flags = tearing_supported ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
-		com<IDXGISwapChain1> swapChain1;
+		com<IDXGISwapChain1> swap_chain1;
 		checkResult(factory->CreateSwapChainForHwnd(
-			commandQueue.commandQueue.Get(),
-			windowHandle,
-			&swapChainDesc,
+			command_queue.command_queue.Get(),
+			window_handle,
+			&swap_chain_desc,
 			0,
 			0,
-			&swapChain1));
+			&swap_chain1));
 
 		UINT flags = 0;
-		if (!exclusiveFullscreen)
+		if (!exclusive_fullscreen)
 		{
 			// Disable the Alt+Enter fullscreen toggle feature. Switching to fullscreen
 			// will be handled manually
 			flags = DXGI_MWA_NO_ALT_ENTER;
 		}
-		checkResult(factory->MakeWindowAssociation(windowHandle, flags));
+		checkResult(factory->MakeWindowAssociation(window_handle, flags));
 
-		checkResult(swapChain1.As(&dxgiSwapChain));
+		checkResult(swap_chain1.As(&dxgi_swap_chain));
 
-		return dxgiSwapChain;
+		return dxgi_swap_chain;
 	}
 
-	static int32 computeIntersectionArea(int32 ax1, int32 ay1, int32 ax2, int32 ay2, int32 bx1, int32 by1, int32 bx2, int32 by2)
+	static int32 compute_intersection_area(int32 ax1, int32 ay1, int32 ax2, int32 ay2, int32 bx1, int32 by1, int32 bx2, int32 by2)
 	{
 		return max(0, min(ax2, bx2) - max(ax1, bx1)) * max(0, min(ay2, by2) - max(ay1, by1));
 	}
 
-	static bool checkForHDRSupport(dx_factory factory, RECT windowRect, color_depth colorDepth)
+	static bool check_for_hdr_support(DXFactory factory, RECT window_rect, ColorDepth color_depth)
 	{
-		if (colorDepth == color_depth_8)
+		if (color_depth == COLOR_DEPTH_8)
 			return false;
 
-		com<IDXGIAdapter1> dxgiAdapter;
-		checkResult(factory->EnumAdapters1(0, &dxgiAdapter));
+		com<IDXGIAdapter1> dxgi_adapter;
+		checkResult(factory->EnumAdapters1(0, &dxgi_adapter));
 
 		uint32 i = 0;
-		com<IDXGIOutput> currentOutput;
-		com<IDXGIOutput> bestOutput;
-		int32 bestIntersectArea = -1;
+		com<IDXGIOutput> current_output;
+		com<IDXGIOutput> best_output;
+		int32 best_intersect_area = -1;
 
-		while (dxgiAdapter->EnumOutputs(i, &currentOutput) != DXGI_ERROR_NOT_FOUND)
+		while (dxgi_adapter->EnumOutputs(i, &current_output) != DXGI_ERROR_NOT_FOUND)
 		{
 			// Get the retangle bounds of the app window.
-			int ax1 = windowRect.left;
-			int ay1 = windowRect.top;
-			int ax2 = windowRect.right;
-			int ay2 = windowRect.bottom;
+			int ax1 = window_rect.left;
+			int ay1 = window_rect.top;
+			int ax2 = window_rect.right;
+			int ay2 = window_rect.bottom;
 
 			// Get the rectangle bounds of current output.
 			DXGI_OUTPUT_DESC desc;
-			checkResult(currentOutput->GetDesc(&desc));
+			checkResult(current_output->GetDesc(&desc));
 			RECT r = desc.DesktopCoordinates;
 			int bx1 = r.left;
 			int by1 = r.top;
@@ -122,18 +122,18 @@ namespace era_engine
 			int by2 = r.bottom;
 
 			// Compute the intersection.
-			int32 intersectArea = computeIntersectionArea(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2);
-			if (intersectArea > bestIntersectArea)
+			int32 intersect_area = compute_intersection_area(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2);
+			if (intersect_area > best_intersect_area)
 			{
-				bestOutput = currentOutput;
-				bestIntersectArea = intersectArea;
+				best_output = current_output;
+				best_intersect_area = intersect_area;
 			}
 
 			++i;
 		}
 
 		com<IDXGIOutput6> output6;
-		checkResult(bestOutput.As(&output6));
+		checkResult(best_output.As(&output6));
 
 		DXGI_OUTPUT_DESC1 desc1;
 		checkResult(output6->GetDesc1(&desc1));
@@ -141,255 +141,255 @@ namespace era_engine
 		return desc1.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
 	}
 
-	static void setSwapChainColorSpace(dx_swapchain swapchain, color_depth colorDepth, bool hdrSupport)
+	static void set_swap_chain_color_space(DXSwapchain swapchain, ColorDepth color_depth, bool hdr_support)
 	{
 		// Rec2020 is the standard for UHD displays. The tonemap shader needs to apply the ST2084 curve before display.
 		// Rec709 is the same as sRGB, just without the gamma curve. The tonemap shader needs to apply the gamma curve before display.
-		DXGI_COLOR_SPACE_TYPE colorSpace = (hdrSupport && colorDepth == color_depth_10) ? DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020 : DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
-		UINT colorSpaceSupport = 0;
-		if (SUCCEEDED(swapchain->CheckColorSpaceSupport(colorSpace, &colorSpaceSupport)) &&
-			((colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) == DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT))
+		DXGI_COLOR_SPACE_TYPE color_space = (hdr_support && color_depth == COLOR_DEPTH_10) ? DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020 : DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+		UINT color_space_support = 0;
+		if (SUCCEEDED(swapchain->CheckColorSpaceSupport(color_space, &color_space_support)) &&
+			((color_space_support & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) == DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT))
 		{
-			checkResult(swapchain->SetColorSpace1(colorSpace));
+			checkResult(swapchain->SetColorSpace1(color_space));
 		}
 
-		if (!hdrSupport)
+		if (!hdr_support)
 		{
 			checkResult(swapchain->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_NONE, 0, 0));
 			return;
 		}
 
-		struct display_chromaticities
+		struct DisplayChromaticities
 		{
-			float redX;
-			float redY;
-			float greenX;
-			float greenY;
-			float blueX;
-			float blueY;
-			float whiteX;
-			float whiteY;
+			float red_x;
+			float red_y;
+			float green_x;
+			float green_y;
+			float blue_x;
+			float blue_y;
+			float white_x;
+			float white_y;
 		};
 
-		static const display_chromaticities chroma =
+		static const DisplayChromaticities chroma =
 		{
 			0.70800f, 0.29200f, 0.17000f, 0.79700f, 0.13100f, 0.04600f, 0.31270f, 0.32900f // Display Gamut Rec2020
 		};
 
-		float maxOutputNits = 1000.f;
-		float minOutputNits = 0.001f;
-		float maxCLL = 2000.f;
-		float maxFALL = 500.f;
+		float max_output_nits = 1000.f;
+		float min_output_nits = 0.001f;
+		float max_cll = 2000.f;
+		float max_fall = 500.f;
 
-		DXGI_HDR_METADATA_HDR10 hdr10MetaData = {};
-		hdr10MetaData.RedPrimary[0] = (uint16)(chroma.redX * 50000.f);
-		hdr10MetaData.RedPrimary[1] = (uint16)(chroma.redY * 50000.f);
-		hdr10MetaData.GreenPrimary[0] = (uint16)(chroma.greenX * 50000.f);
-		hdr10MetaData.GreenPrimary[1] = (uint16)(chroma.greenY * 50000.f);
-		hdr10MetaData.BluePrimary[0] = (uint16)(chroma.blueX * 50000.f);
-		hdr10MetaData.BluePrimary[1] = (uint16)(chroma.blueY * 50000.f);
-		hdr10MetaData.WhitePoint[0] = (uint16)(chroma.whiteX * 50000.f);
-		hdr10MetaData.WhitePoint[1] = (uint16)(chroma.whiteY * 50000.f);
-		hdr10MetaData.MaxMasteringLuminance = (uint32)(maxOutputNits * 10000.f);
-		hdr10MetaData.MinMasteringLuminance = (uint32)(minOutputNits * 10000.f);
-		hdr10MetaData.MaxContentLightLevel = (uint16)(maxCLL);
-		hdr10MetaData.MaxFrameAverageLightLevel = (uint16)(maxFALL);
+		DXGI_HDR_METADATA_HDR10 hdr10_meta_data = {};
+		hdr10_meta_data.RedPrimary[0] = (uint16)(chroma.red_x * 50000.f);
+		hdr10_meta_data.RedPrimary[1] = (uint16)(chroma.red_y * 50000.f);
+		hdr10_meta_data.GreenPrimary[0] = (uint16)(chroma.green_x * 50000.f);
+		hdr10_meta_data.GreenPrimary[1] = (uint16)(chroma.green_y * 50000.f);
+		hdr10_meta_data.BluePrimary[0] = (uint16)(chroma.blue_x * 50000.f);
+		hdr10_meta_data.BluePrimary[1] = (uint16)(chroma.blue_y * 50000.f);
+		hdr10_meta_data.WhitePoint[0] = (uint16)(chroma.white_x * 50000.f);
+		hdr10_meta_data.WhitePoint[1] = (uint16)(chroma.white_y * 50000.f);
+		hdr10_meta_data.MaxMasteringLuminance = (uint32)(max_output_nits * 10000.f);
+		hdr10_meta_data.MinMasteringLuminance = (uint32)(min_output_nits * 10000.f);
+		hdr10_meta_data.MaxContentLightLevel = (uint16)(max_cll);
+		hdr10_meta_data.MaxFrameAverageLightLevel = (uint16)(max_fall);
 
-		checkResult(swapchain->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &hdr10MetaData));
+		checkResult(swapchain->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &hdr10_meta_data));
 	}
 
-	void dx_window::updateRenderTargetViews()
+	void DXWindow::update_render_target_views()
 	{
-		uint32 rtvDescriptorSize = dxContext.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		uint32 rtv_descriptor_size = dx_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtv_handle(rtv_descriptor_heap->GetCPUDescriptorHandleForHeapStart());
 
 		for (int i = 0; i < NUM_BUFFERED_FRAMES; ++i)
 		{
-			dx_resource backBuffer;
-			checkResult(swapchain->GetBuffer(i, IID_PPV_ARGS(&backBuffer)));
+			DXResource back_buffer;
+			checkResult(swapchain->GetBuffer(i, IID_PPV_ARGS(&back_buffer)));
 
-			dxContext.device->CreateRenderTargetView(backBuffer.Get(), 0, rtvHandle);
+			dx_context.device->CreateRenderTargetView(back_buffer.Get(), 0, rtv_handle);
 
-			backBuffers[i] = backBuffer;
-			backBufferRTVs[i] = rtvHandle;
+			back_buffers[i] = back_buffer;
+			back_buffer_rtvs[i] = rtv_handle;
 
-			SET_NAME(backBuffers[i], "Backbuffer");
+			SET_NAME(back_buffers[i], "Backbuffer");
 
-			rtvHandle.Offset(rtvDescriptorSize);
+			rtv_handle.Offset(rtv_descriptor_size);
 		}
 	}
 
-	dx_window::dx_window()
+	DXWindow::DXWindow()
 	{
-		vSync = enable_vsynk;
+		v_sync = enable_vsynk;
 	}
 
-	dx_window::~dx_window()
+	DXWindow::~DXWindow()
 	{
-		dxContext.flushApplication();
+		dx_context.flush_application();
 
 		shutdown();
 	}
 
-	bool dx_window::initialize(const TCHAR* name, uint32 requestedClientWidth, uint32 requestedClientHeight, color_depth colorDepth, bool exclusiveFullscreen)
+	bool DXWindow::initialize(const TCHAR* name, uint32 requested_client_width, uint32 requested_client_height, ColorDepth color_depth, bool exclusive_fullscreen)
 	{
-		if (!win32_window::initialize(name, requestedClientWidth, requestedClientHeight))
+		if (!Win32Window::initialize(name, requested_client_width, requested_client_height))
 			return false;
 
-		this->colorDepth = colorDepth;
-		this->exclusiveFullscreen = exclusiveFullscreen;
-		tearingSupported = checkTearingSupport(dxContext.factory);
+		this->color_depth = color_depth;
+		this->exclusive_fullscreen = exclusive_fullscreen;
+		tearing_supported = check_tearing_support(dx_context.factory);
 
-		swapchain = createSwapChain(windowHandle, dxContext.factory, dxContext.renderQueue, clientWidth, clientHeight, NUM_BUFFERED_FRAMES, tearingSupported, colorDepth, exclusiveFullscreen);
-		currentBackbufferIndex = swapchain->GetCurrentBackBufferIndex();
+		swapchain = create_swap_chain(window_handle, dx_context.factory, dx_context.render_queue, client_width, client_height, NUM_BUFFERED_FRAMES, tearing_supported, color_depth, exclusive_fullscreen);
+		current_backbuffer_index = swapchain->GetCurrentBackBufferIndex();
 
-		D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc = {};
-		descriptorHeapDesc.NumDescriptors = NUM_BUFFERED_FRAMES;
-		descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		D3D12_DESCRIPTOR_HEAP_DESC descriptor_heap_desc = {};
+		descriptor_heap_desc.NumDescriptors = NUM_BUFFERED_FRAMES;
+		descriptor_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 
-		checkResult(dxContext.device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&rtvDescriptorHeap)));
+		checkResult(dx_context.device->CreateDescriptorHeap(&descriptor_heap_desc, IID_PPV_ARGS(&rtv_descriptor_heap)));
 
-		RECT windowRect = { 0, 0, (LONG)clientWidth, (LONG)clientHeight };
-		AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
-		GetWindowRect(windowHandle, &windowRect);
-		hdrSupport = checkForHDRSupport(dxContext.factory, windowRect, colorDepth);
-		setSwapChainColorSpace(swapchain, colorDepth, hdrSupport);
+		RECT window_rect = { 0, 0, (LONG)client_width, (LONG)client_height };
+		AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, FALSE);
+		GetWindowRect(window_handle, &window_rect);
+		hdr_support = check_for_hdr_support(dx_context.factory, window_rect, color_depth);
+		set_swap_chain_color_space(swapchain, color_depth, hdr_support);
 
-		updateRenderTargetViews();
+		update_render_target_views();
 
 		initialized = true;
 
 		return true;
 	}
 
-	bool dx_window::initialize(HINSTANCE hInst, const TCHAR* name, uint32 requestedClientWidth, uint32 requestedClientHeight, color_depth colorDepth, bool exclusiveFullscreen)
+	bool DXWindow::initialize(HINSTANCE h_inst, const TCHAR* name, uint32 requested_client_width, uint32 requested_client_height, ColorDepth color_depth, bool exclusive_fullscreen)
 	{
-		if (!win32_window::initialize(hInst, name, requestedClientWidth, requestedClientHeight))
+		if (!Win32Window::initialize(h_inst, name, requested_client_width, requested_client_height))
 			return false;
 
-		this->colorDepth = colorDepth;
-		this->exclusiveFullscreen = exclusiveFullscreen;
-		tearingSupported = checkTearingSupport(dxContext.factory);
+		this->color_depth = color_depth;
+		this->exclusive_fullscreen = exclusive_fullscreen;
+		tearing_supported = check_tearing_support(dx_context.factory);
 
-		swapchain = createSwapChain(windowHandle, dxContext.factory, dxContext.renderQueue, clientWidth, clientHeight, NUM_BUFFERED_FRAMES, tearingSupported, colorDepth, exclusiveFullscreen);
-		currentBackbufferIndex = swapchain->GetCurrentBackBufferIndex();
+		swapchain = create_swap_chain(window_handle, dx_context.factory, dx_context.render_queue, client_width, client_height, NUM_BUFFERED_FRAMES, tearing_supported, color_depth, exclusive_fullscreen);
+		current_backbuffer_index = swapchain->GetCurrentBackBufferIndex();
 
-		D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc = {};
-		descriptorHeapDesc.NumDescriptors = NUM_BUFFERED_FRAMES;
-		descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		D3D12_DESCRIPTOR_HEAP_DESC descriptor_heap_desc = {};
+		descriptor_heap_desc.NumDescriptors = NUM_BUFFERED_FRAMES;
+		descriptor_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 
-		checkResult(dxContext.device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&rtvDescriptorHeap)));
+		checkResult(dx_context.device->CreateDescriptorHeap(&descriptor_heap_desc, IID_PPV_ARGS(&rtv_descriptor_heap)));
 
-		RECT windowRect = { 0, 0, (LONG)clientWidth, (LONG)clientHeight };
-		AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
-		GetWindowRect(windowHandle, &windowRect);
-		hdrSupport = checkForHDRSupport(dxContext.factory, windowRect, colorDepth);
-		setSwapChainColorSpace(swapchain, colorDepth, hdrSupport);
+		RECT window_rect = { 0, 0, (LONG)client_width, (LONG)client_height };
+		AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, FALSE);
+		GetWindowRect(window_handle, &window_rect);
+		hdr_support = check_for_hdr_support(dx_context.factory, window_rect, color_depth);
+		set_swap_chain_color_space(swapchain, color_depth, hdr_support);
 
-		updateRenderTargetViews();
+		update_render_target_views();
 
 		initialized = true;
 
 		return true;
 	}
 
-	void dx_window::shutdown()
+	void DXWindow::shutdown()
 	{
 		// Flush the GPU queue to make sure the swap chain's back buffers
 		// are not being referenced by an in-flight command list
-		dxContext.flushApplication();
+		dx_context.flush_application();
 
 		for (uint32 i = 0; i < NUM_BUFFERED_FRAMES; ++i)
 		{
-			backBuffers[i].Reset();
+			back_buffers[i].Reset();
 		}
-		rtvDescriptorHeap.Reset();
+		rtv_descriptor_heap.Reset();
 		swapchain.Reset();
 
 		initialized = false;
-		win32_window::shutdown();
+		Win32Window::shutdown();
 	}
 
-	void dx_window::onResize()
+	void DXWindow::on_resize()
 	{
 		if (initialized)
 		{
 			// Flush the GPU queue to make sure the swap chain's back buffers
 			// are not being referenced by an in-flight command list.
-			dxContext.flushApplication();
+			dx_context.flush_application();
 
 			for (uint32 i = 0; i < NUM_BUFFERED_FRAMES; ++i)
 			{
-				backBuffers[i].Reset();
+				back_buffers[i].Reset();
 			}
 
-			DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-			checkResult(swapchain->GetDesc(&swapChainDesc));
-			checkResult(swapchain->ResizeBuffers(NUM_BUFFERED_FRAMES, clientWidth, clientHeight,
-				swapChainDesc.BufferDesc.Format, swapChainDesc.Flags));
+			DXGI_SWAP_CHAIN_DESC swap_chain_desc = {};
+			checkResult(swapchain->GetDesc(&swap_chain_desc));
+			checkResult(swapchain->ResizeBuffers(NUM_BUFFERED_FRAMES, client_width, client_height,
+				swap_chain_desc.BufferDesc.Format, swap_chain_desc.Flags));
 
-			RECT windowRect;
-			GetWindowRect(windowHandle, &windowRect);
-			hdrSupport = checkForHDRSupport(dxContext.factory, windowRect, colorDepth);
-			setSwapChainColorSpace(swapchain, colorDepth, hdrSupport);
+			RECT window_rect;
+			GetWindowRect(window_handle, &window_rect);
+			hdr_support = check_for_hdr_support(dx_context.factory, window_rect, color_depth);
+			set_swap_chain_color_space(swapchain, color_depth, hdr_support);
 
-			currentBackbufferIndex = swapchain->GetCurrentBackBufferIndex();
+			current_backbuffer_index = swapchain->GetCurrentBackBufferIndex();
 
-			updateRenderTargetViews();
+			update_render_target_views();
 		}
 	}
 
-	void dx_window::onMove()
+	void DXWindow::on_move()
 	{
 		if (initialized)
 		{
-			RECT windowRect;
-			GetWindowRect(windowHandle, &windowRect);
-			hdrSupport = checkForHDRSupport(dxContext.factory, windowRect, colorDepth);
-			setSwapChainColorSpace(swapchain, colorDepth, hdrSupport);
+			RECT window_rect;
+			GetWindowRect(window_handle, &window_rect);
+			hdr_support = check_for_hdr_support(dx_context.factory, window_rect, color_depth);
+			set_swap_chain_color_space(swapchain, color_depth, hdr_support);
 		}
 	}
 
-	void dx_window::onWindowDisplayChange()
+	void DXWindow::on_window_display_change()
 	{
 		if (initialized)
 		{
-			RECT windowRect;
-			GetWindowRect(windowHandle, &windowRect);
-			hdrSupport = checkForHDRSupport(dxContext.factory, windowRect, colorDepth);
-			setSwapChainColorSpace(swapchain, colorDepth, hdrSupport);
+			RECT window_rect;
+			GetWindowRect(window_handle, &window_rect);
+			hdr_support = check_for_hdr_support(dx_context.factory, window_rect, color_depth);
+			set_swap_chain_color_space(swapchain, color_depth, hdr_support);
 		}
 	}
 
-	void dx_window::swapBuffers()
+	void DXWindow::swap_buffers()
 	{
 		if (initialized)
 		{
-			uint32 syncInterval = vSync ? 1 : 0;
-			uint32 presentFlags = tearingSupported && !vSync && !exclusiveFullscreen ? DXGI_PRESENT_ALLOW_TEARING : 0;
-			checkResult(swapchain->Present(syncInterval, presentFlags));
+			uint32 sync_interval = v_sync ? 1 : 0;
+			uint32 present_flags = tearing_supported && !v_sync && !exclusive_fullscreen ? DXGI_PRESENT_ALLOW_TEARING : 0;
+			checkResult(swapchain->Present(sync_interval, present_flags));
 
-			currentBackbufferIndex = swapchain->GetCurrentBackBufferIndex();
+			current_backbuffer_index = swapchain->GetCurrentBackBufferIndex();
 		}
 	}
 
-	void dx_window::toggleFullscreen()
+	void DXWindow::toggle_fullscreen()
 	{
-		if (exclusiveFullscreen)
+		if (exclusive_fullscreen)
 		{
 			fullscreen = !fullscreen;
 			swapchain->SetFullscreenState(fullscreen, 0);
 		}
 		else
 		{
-			win32_window::toggleFullscreen();
+			Win32Window::toggle_fullscreen();
 		}
 	}
 
-	void dx_window::toggleVSync()
+	void DXWindow::toggle_v_sync()
 	{
-		vSync = !vSync;
-		enable_vsynk = vSync;
+		v_sync = !v_sync;
+		enable_vsynk = v_sync;
 	}
 }

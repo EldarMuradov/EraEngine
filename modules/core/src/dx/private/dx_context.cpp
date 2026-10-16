@@ -21,20 +21,20 @@ extern "C"
 namespace era_engine
 {
 	// Allocate dynamically on the heap to ensure that this thing never gets destroyed before anything else. This is quite a hack.
-	dx_context& dxContext = *new dx_context{};
+	DXContext& dx_context = *new DXContext{};
 
-	LONG NTAPI handleVectoredException(PEXCEPTION_POINTERS exceptionInfo)
+	LONG NTAPI handle_vectored_exception(PEXCEPTION_POINTERS exception_pointers)
 	{
-		PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
+		PEXCEPTION_RECORD exception_record = exception_pointers->ExceptionRecord;
 
-		switch (exceptionRecord->ExceptionCode)
+		switch (exception_record->ExceptionCode)
 		{
 		case DBG_PRINTEXCEPTION_WIDE_C:
 		case DBG_PRINTEXCEPTION_C:
 
-			if (exceptionRecord->NumberParameters >= 2)
+			if (exception_record->NumberParameters >= 2)
 			{
-				ULONG len = (ULONG)exceptionRecord->ExceptionInformation[0];
+				ULONG len = (ULONG)exception_record->ExceptionInformation[0];
 
 				union
 				{
@@ -43,11 +43,11 @@ namespace era_engine
 					PCSTR psz;
 				};
 
-				up = exceptionRecord->ExceptionInformation[1];
+				up = exception_record->ExceptionInformation[1];
 
-				HANDLE hOut = GetStdHandle(STD_ERROR_HANDLE);
+				HANDLE h_out = GetStdHandle(STD_ERROR_HANDLE);
 
-				if (exceptionRecord->ExceptionCode == DBG_PRINTEXCEPTION_C)
+				if (exception_record->ExceptionCode == DBG_PRINTEXCEPTION_C)
 				{
 					// Localized text will be incorrect displayed, if used not CP_OEMCP encoding.
 					// WriteConsoleA(hOut, psz, len, &len, 0);
@@ -66,7 +66,7 @@ namespace era_engine
 
 				if (len)
 				{
-					WriteConsoleW(hOut, pwz, len - 1, &len, 0);
+					WriteConsoleW(h_out, pwz, len - 1, &len, 0);
 				}
 
 			}
@@ -76,7 +76,7 @@ namespace era_engine
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
 
-	static void enableDebugLayer()
+	static void enable_debug_layer()
 	{
 #if defined(_DEBUG)
 		com<ID3D12Debug3> debugInterface;
@@ -87,34 +87,34 @@ namespace era_engine
 #endif
 	}
 
-	static dx_factory createFactory()
+	static DXFactory create_factory()
 	{
-		dx_factory dxgiFactory;
-		uint32 createFactoryFlags = 0;
+		DXFactory dxgi_factory;
+		uint32 create_factory_flags = 0;
 #if defined(_DEBUG)
-		createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+		create_factory_flags = DXGI_CREATE_FACTORY_DEBUG;
 #endif
 
-		checkResult(CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&dxgiFactory)));
+		checkResult(CreateDXGIFactory2(create_factory_flags, IID_PPV_ARGS(&dxgi_factory)));
 
-		return dxgiFactory;
+		return dxgi_factory;
 	}
 
-	struct adapter_desc
+	struct AdapterDesc
 	{
-		dx_adapter adapter;
-		D3D_FEATURE_LEVEL featureLevel;
+		DXAdapter adapter;
+		D3D_FEATURE_LEVEL feature_level;
 	};
 
-	static adapter_desc getAdapter(dx_factory factory, D3D_FEATURE_LEVEL minimumFeatureLevel = D3D_FEATURE_LEVEL_11_0)
+	static AdapterDesc get_adapter(DXFactory factory, D3D_FEATURE_LEVEL minimum_feature_level = D3D_FEATURE_LEVEL_11_0)
 	{
-		com<IDXGIAdapter1> dxgiAdapter1;
-		dx_adapter dxgiAdapter;
+		com<IDXGIAdapter1> dxgi_adapter1;
+		DXAdapter dxgi_adapter;
 		DXGI_ADAPTER_DESC1 desc;
 
-		D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_9_1;
+		D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_9_1;
 
-		D3D_FEATURE_LEVEL possibleFeatureLevels[] =
+		D3D_FEATURE_LEVEL possible_feature_levels[] =
 		{
 			D3D_FEATURE_LEVEL_9_1,
 			D3D_FEATURE_LEVEL_9_2,
@@ -127,57 +127,57 @@ namespace era_engine
 			D3D_FEATURE_LEVEL_12_1
 		};
 
-		uint32 firstFeatureLevel = 0;
-		for (uint32 i = 0; i < arraysize(possibleFeatureLevels); ++i)
+		uint32 first_feature_level = 0;
+		for (uint32 i = 0; i < arraysize(possible_feature_levels); ++i)
 		{
-			if (possibleFeatureLevels[i] == minimumFeatureLevel)
+			if (possible_feature_levels[i] == minimum_feature_level)
 			{
-				firstFeatureLevel = i;
+				first_feature_level = i;
 				break;
 			}
 		}
 
-		uint64 maxDedicatedVideoMemory = 0;
-		for (uint32 i = 0; factory->EnumAdapters1(i, &dxgiAdapter1) != DXGI_ERROR_NOT_FOUND; ++i)
+		uint64 max_dedicated_video_memory = 0;
+		for (uint32 i = 0; factory->EnumAdapters1(i, &dxgi_adapter1) != DXGI_ERROR_NOT_FOUND; ++i)
 		{
-			DXGI_ADAPTER_DESC1 dxgiAdapterDesc1;
-			dxgiAdapter1->GetDesc1(&dxgiAdapterDesc1);
+			DXGI_ADAPTER_DESC1 dxgi_adapter_desc1;
+			dxgi_adapter1->GetDesc1(&dxgi_adapter_desc1);
 
 			// Check to see if the adapter can create a D3D12 device without actually 
 			// creating it. Out of all adapters which support the minimum feature level,
 			// the adapter with the largest dedicated video memory is favored.
-			if ((dxgiAdapterDesc1.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) == 0)
+			if ((dxgi_adapter_desc1.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) == 0)
 			{
-				D3D_FEATURE_LEVEL adapterFeatureLevel = D3D_FEATURE_LEVEL_9_1;
-				bool supportsFeatureLevel = false;
+				D3D_FEATURE_LEVEL adapter_feature_level = D3D_FEATURE_LEVEL_9_1;
+				bool supports_feature_level = false;
 
-				for (uint32 fl = firstFeatureLevel; fl < arraysize(possibleFeatureLevels); ++fl)
+				for (uint32 fl = first_feature_level; fl < arraysize(possible_feature_levels); ++fl)
 				{
-					if (SUCCEEDED(D3D12CreateDevice(dxgiAdapter1.Get(),
-						possibleFeatureLevels[fl], __uuidof(ID3D12Device), 0)))
+					if (SUCCEEDED(D3D12CreateDevice(dxgi_adapter1.Get(),
+						possible_feature_levels[fl], __uuidof(ID3D12Device), 0)))
 					{
-						adapterFeatureLevel = possibleFeatureLevels[fl];
-						supportsFeatureLevel = true;
+						adapter_feature_level = possible_feature_levels[fl];
+						supports_feature_level = true;
 					}
 				}
 
-				if (supportsFeatureLevel && dxgiAdapterDesc1.DedicatedVideoMemory > maxDedicatedVideoMemory)
+				if (supports_feature_level && dxgi_adapter_desc1.DedicatedVideoMemory > max_dedicated_video_memory)
 				{
-					checkResult(dxgiAdapter1.As(&dxgiAdapter));
-					maxDedicatedVideoMemory = dxgiAdapterDesc1.DedicatedVideoMemory;
-					featureLevel = adapterFeatureLevel;
-					desc = dxgiAdapterDesc1;
+					checkResult(dxgi_adapter1.As(&dxgi_adapter));
+					max_dedicated_video_memory = dxgi_adapter_desc1.DedicatedVideoMemory;
+					feature_level = adapter_feature_level;
+					desc = dxgi_adapter_desc1;
 				}
 			}
 		}
 
-		return { dxgiAdapter, featureLevel };
+		return { dxgi_adapter, feature_level };
 	}
 
-	static dx_device createDevice(dx_adapter adapter, D3D_FEATURE_LEVEL featureLevel)
+	static DXDevice create_device(DXAdapter adapter, D3D_FEATURE_LEVEL feature_level)
 	{
-		dx_device device;
-		checkResult(D3D12CreateDevice(adapter.Get(), featureLevel, IID_PPV_ARGS(&device)));
+		DXDevice device;
+		checkResult(D3D12CreateDevice(adapter.Get(), feature_level, IID_PPV_ARGS(&device)));
 
 #if defined(_DEBUG)
 		com<ID3D12InfoQueue> infoQueue;
@@ -219,21 +219,21 @@ namespace era_engine
 		return device;
 	}
 
-	static dx_feature_support checkFeatureSupport(dx_device device)
+	static DXFeatureSupport check_feature_support(DXDevice device)
 	{
-		dx_feature_support result = {};
+		DXFeatureSupport result = {};
 
 		D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {};
 		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5))))
 		{
-			result.raytracingTier = (dx_raytracing_tier)options5.RaytracingTier;
+			result.raytracing_tier = (DXRaytracingTier)options5.RaytracingTier;
 		}
 
 #ifdef SDK_SUPPORTS_MESH_SHADERS
 		D3D12_FEATURE_DATA_D3D12_OPTIONS7 options7 = {};
 		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &options7, sizeof(options7))))
 		{
-			result.meshShaderTier = (dx_mesh_shader_tier)options7.MeshShaderTier;
+			result.mesh_shader_tier = (DXMeshShaderTier)options7.MeshShaderTier;
 		}
 		else
 		{
@@ -244,24 +244,24 @@ namespace era_engine
 		D3D12_FEATURE_DATA_D3D12_OPTIONS options1 = {};
 		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options1, sizeof(options1))))
 		{
-			result.tilingTier = (dx_tiling_tier)options1.TiledResourcesTier;
+			result.tiling_tier = (DXTilingTier)options1.TiledResourcesTier;
 		}
 
 		return result;
 	}
 
-	bool dx_context::initialize()
+	bool DXContext::initialize()
 	{
 		SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-		AddVectoredExceptionHandler(TRUE, handleVectoredException);
+		AddVectoredExceptionHandler(TRUE, handle_vectored_exception);
 
 		checkResult(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE));
 
-		enableDebugLayer();
+		enable_debug_layer();
 
-		factory = createFactory();
-		adapter_desc adapterDesc = getAdapter(factory);
-		this->adapter = adapterDesc.adapter;
+		factory = create_factory();
+		AdapterDesc adapter_desc = get_adapter(factory);
+		this->adapter = adapter_desc.adapter;
 
 		if (!adapter)
 		{
@@ -269,64 +269,64 @@ namespace era_engine
 			return false;
 		}
 
-		device = createDevice(adapter, adapterDesc.featureLevel);
+		device = create_device(adapter, adapter_desc.feature_level);
 
 #if USE_D3D12_BLOCK_ALLOCATOR
-		D3D12MA::ALLOCATOR_DESC allocatorDesc = {};
-		allocatorDesc.pDevice = device.Get();
-		allocatorDesc.pAdapter = adapter.Get();
-		checkResult(D3D12MA::CreateAllocator(&allocatorDesc, &memoryAllocator));
+		D3D12MA::ALLOCATOR_DESC allocator_desc = {};
+		allocator_desc.pDevice = device.Get();
+		allocator_desc.pAdapter = adapter.Get();
+		checkResult(D3D12MA::CreateAllocator(&allocator_desc, &memory_allocator));
 #endif
 
-		featureSupport = checkFeatureSupport(device);
+		feature_support = check_feature_support(device);
 
-		if (!era_engine::dlss::checkDLSSStatus(adapter.Get()))
-			featureSupport.dlss_status = DLSS_status_not_available;
+		if (!era_engine::dlss::check_dlss_status(adapter.Get()))
+			feature_support.dlss_status = DLSS_STATUS_NOT_AVAILABLE;
 
-		bufferedFrameID = NUM_BUFFERED_FRAMES - 1;
+		buffered_frame_id = NUM_BUFFERED_FRAMES - 1;
 
-		descriptorHandleIncrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		descriptor_handle_increment_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-		srvUavAllocator.initialize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, false, 4096);
-		srvUavAllocatorShaderVisible.initialize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true, 128);
-		rtvAllocator.initialize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, false, 1024);
-		dsvAllocator.initialize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, false, 1024);
-		frameDescriptorAllocator.initialize();
+		srv_uav_allocator.initialize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, false, 4096);
+		srv_uav_allocator_shader_visible.initialize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true, 128);
+		rtv_allocator.initialize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, false, 1024);
+		dsv_allocator.initialize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, false, 1024);
+		frame_descriptor_allocator.initialize();
 
 		for (uint32 i = 0; i < NUM_BUFFERED_FRAMES; ++i)
 		{
-			pagePools[i].initialize(MB(32));
+			page_pools[i].initialize(mb(32));
 
 #if ENABLE_DX_PROFILING
 			timestampHeaps[i].initialize(MAX_NUM_DX_PROFILE_EVENTS);
-			resolvedTimestampBuffers[i] = createReadbackBuffer(sizeof(uint64), MAX_NUM_DX_PROFILE_EVENTS);
+			resolvedTimestampBuffers[i] = create_readback_buffer(sizeof(uint64), MAX_NUM_DX_PROFILE_EVENTS);
 #endif
 		}
 
-		frameUploadBuffer.reset();
-		frameUploadBuffer.pagePool = &pagePools[bufferedFrameID];
+		frame_upload_buffer.reset();
+		frame_upload_buffer.page_pool = &page_pools[buffered_frame_id];
 
-		pagePools[bufferedFrameID].reset();
+		page_pools[buffered_frame_id].reset();
 
-		renderQueue.initialize(device, D3D12_COMMAND_LIST_TYPE_DIRECT);
-		computeQueue.initialize(device, D3D12_COMMAND_LIST_TYPE_COMPUTE);
-		copyQueue.initialize(device, D3D12_COMMAND_LIST_TYPE_COPY);
+		render_queue.initialize(device, D3D12_COMMAND_LIST_TYPE_DIRECT);
+		compute_queue.initialize(device, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+		copy_queue.initialize(device, D3D12_COMMAND_LIST_TYPE_COPY);
 
-		D3D12_INDIRECT_ARGUMENT_DESC argumentDesc;
-		argumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
-		defaultDispatchCommandSignature = createCommandSignature({}, &argumentDesc, 1, sizeof(D3D12_DISPATCH_ARGUMENTS));
+		D3D12_INDIRECT_ARGUMENT_DESC argument_desc;
+		argument_desc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
+		default_dispatch_command_signature = create_command_signature({}, &argument_desc, 1, sizeof(D3D12_DISPATCH_ARGUMENTS));
 
 		return true;
 	}
 
-	void dx_context::flushApplication()
+	void DXContext::flush_application()
 	{
-		renderQueue.flush();
-		computeQueue.flush();
-		copyQueue.flush();
+		render_queue.flush();
+		compute_queue.flush();
+		copy_queue.flush();
 	}
 
-	void dx_context::quit()
+	void DXContext::quit()
 	{
 #if ENABLE_DX_PROFILING
 		for (uint32 b = 0; b < NUM_BUFFERED_FRAMES; ++b)
@@ -336,271 +336,271 @@ namespace era_engine
 #endif
 
 		running = false;
-		flushApplication();
-		WaitForSingleObject(renderQueue.processThreadHandle, INFINITE);
-		WaitForSingleObject(computeQueue.processThreadHandle, INFINITE);
-		WaitForSingleObject(copyQueue.processThreadHandle, INFINITE);
+		flush_application();
+		WaitForSingleObject(render_queue.process_thread_handle, INFINITE);
+		WaitForSingleObject(compute_queue.process_thread_handle, INFINITE);
+		WaitForSingleObject(copy_queue.process_thread_handle, INFINITE);
 
 		for (uint32 b = 0; b < NUM_BUFFERED_FRAMES; ++b)
 		{
-			textureGraveyard[b].clear();
-			bufferGraveyard[b].clear();
-			objectGraveyard[b].clear();
+			texture_graveyard[b].clear();
+			buffer_graveyard[b].clear();
+			object_graveyard[b].clear();
 
-			for (auto allocation : allocationGraveyard[b])
+			for (auto allocation : allocation_graveyard[b])
 			{
 				allocation->Release();
 			}
-			allocationGraveyard[b].clear();
+			allocation_graveyard[b].clear();
 		}
 	}
 
-	void dx_context::retire(texture_grave&& texture)
+	void DXContext::retire(TextureGrave&& texture)
 	{
 		Lock lock{ mutex };
-		textureGraveyard[bufferedFrameID].push_back(std::move(texture));
+		texture_graveyard[buffered_frame_id].push_back(std::move(texture));
 	}
 
-	void dx_context::retire(buffer_grave&& buffer)
+	void DXContext::retire(BufferGrave&& buffer)
 	{
 		Lock lock{ mutex };
-		bufferGraveyard[bufferedFrameID].push_back(std::move(buffer));
+		buffer_graveyard[buffered_frame_id].push_back(std::move(buffer));
 	}
 
-	void dx_context::retire(dx_object obj)
+	void DXContext::retire(DXObject obj)
 	{
 		Lock lock{ mutex };
-		objectGraveyard[bufferedFrameID].push_back(obj);
+		object_graveyard[buffered_frame_id].push_back(obj);
 	}
 
-	void dx_context::retire(D3D12MA::Allocation* allocation)
+	void DXContext::retire(D3D12MA::Allocation* allocation)
 	{
 		Lock lock{ mutex };
-		allocationGraveyard[bufferedFrameID].push_back(allocation);
+		allocation_graveyard[buffered_frame_id].push_back(allocation);
 	}
 
-	dx_command_queue& dx_context::getQueue(D3D12_COMMAND_LIST_TYPE type)
+	DXCommandQueue& DXContext::get_queue(D3D12_COMMAND_LIST_TYPE type)
 	{
-		return type == D3D12_COMMAND_LIST_TYPE_DIRECT ? renderQueue :
-			type == D3D12_COMMAND_LIST_TYPE_COMPUTE ? computeQueue :
-			copyQueue;
+		return type == D3D12_COMMAND_LIST_TYPE_DIRECT ? render_queue :
+			type == D3D12_COMMAND_LIST_TYPE_COMPUTE ? compute_queue :
+			copy_queue;
 	}
 
-	dx_command_list* dx_context::getFreeCommandList(dx_command_queue& queue)
+	DXCommandList* DXContext::get_free_command_list(DXCommandQueue& queue)
 	{
-		queue.commandListMutex.lock();
-		dx_command_list* result = queue.freeCommandLists;
+		queue.command_list_mutex.lock();
+		DXCommandList* result = queue.free_command_lists;
 		if (result)
 		{
-			queue.freeCommandLists = result->next;
+			queue.free_command_lists = result->next;
 		}
-		queue.commandListMutex.unlock();
+		queue.command_list_mutex.unlock();
 
 		if (!result)
 		{
-			result = new dx_command_list(queue.commandListType);
-			atomic_increment(queue.totalNumCommandLists);
+			result = new DXCommandList(queue.command_list_type);
+			atomic_increment(queue.total_num_command_lists);
 		}
 
 #if ENABLE_DX_PROFILING
-		result->timeStampQueryHeap = timestampHeaps[bufferedFrameID].heap;
+		result->time_stamp_query_heap = timestampHeaps[buffered_frame_id].heap;
 #endif
 
 		return result;
 	}
 
-	dx_command_list* dx_context::getFreeCopyCommandList()
+	DXCommandList* DXContext::get_free_copy_command_list()
 	{
-		return getFreeCommandList(copyQueue);
+		return get_free_command_list(copy_queue);
 	}
 
-	dx_command_list* dx_context::getFreeComputeCommandList(bool async)
+	DXCommandList* DXContext::get_free_compute_command_list(bool async)
 	{
-		return getFreeCommandList(async ? computeQueue : renderQueue);
+		return get_free_command_list(async ? compute_queue : render_queue);
 	}
 
-	dx_command_list* dx_context::getFreeRenderCommandList()
+	DXCommandList* DXContext::get_free_render_command_list()
 	{
-		dx_command_list* cl = getFreeCommandList(renderQueue);
-		CD3DX12_RECT scissorRect(0, 0, LONG_MAX, LONG_MAX);
-		cl->setScissor(scissorRect);
+		DXCommandList* cl = get_free_command_list(render_queue);
+		CD3DX12_RECT scissor_rect(0, 0, LONG_MAX, LONG_MAX);
+		cl->set_scissor(scissor_rect);
 		return cl;
 	}
 
-	static void enqueueRunningCommandList(dx_command_queue& queue, dx_command_list* commandList)
+	static void enqueue_running_command_list(DXCommandQueue& queue, DXCommandList* command_list)
 	{
-		commandList->next = 0;
-		if (queue.newestRunningCommandList)
+		command_list->next = 0;
+		if (queue.newest_running_command_list)
 		{
-			ASSERT(queue.newestRunningCommandList->next == 0);
-			queue.newestRunningCommandList->next = commandList;
+			ASSERT(queue.newest_running_command_list->next == 0);
+			queue.newest_running_command_list->next = command_list;
 		}
-		queue.newestRunningCommandList = commandList;
-		if (!queue.runningCommandLists)
+		queue.newest_running_command_list = command_list;
+		if (!queue.running_command_lists)
 		{
-			queue.runningCommandLists = commandList;
+			queue.running_command_lists = command_list;
 		}
 	}
 
-	uint64 dx_context::executeCommandList(dx_command_list* commandList)
+	uint64 DXContext::execute_command_list(DXCommandList* command_list)
 	{
-		dx_command_queue& queue = getQueue(commandList->type);
+		DXCommandQueue& queue = get_queue(command_list->type);
 
-		checkResult(commandList->commandList->Close());
+		checkResult(command_list->command_list->Close());
 
-		ID3D12CommandList* d3d12List = commandList->commandList.Get();
-		queue.commandQueue->ExecuteCommandLists(1, &d3d12List);
+		ID3D12CommandList* d3d12_list = command_list->command_list.Get();
+		queue.command_queue->ExecuteCommandLists(1, &d3d12_list);
 
-		uint64 fenceValue = queue.signal();
+		uint64 fence_value = queue.signal();
 
-		commandList->lastExecutionFenceValue = fenceValue;
+		command_list->last_execution_fence_value = fence_value;
 
 		{
-			Lock lock{ queue.commandListMutex };
-			enqueueRunningCommandList(queue, commandList);
-			atomic_increment(queue.numRunningCommandLists);
+			Lock lock{ queue.command_list_mutex };
+			enqueue_running_command_list(queue, command_list);
+			atomic_increment(queue.num_running_command_lists);
 		}
 
 
-		return fenceValue;
+		return fence_value;
 	}
 
-	uint64 dx_context::executeCommandLists(dx_command_list** commandLists, uint32 count)
+	uint64 DXContext::execute_command_lists(DXCommandList** command_lists, uint32 count)
 	{
-		dx_command_queue& queue = getQueue(commandLists[0]->type);
+		DXCommandQueue& queue = get_queue(command_lists[0]->type);
 
-		ID3D12CommandList* d3d12Lists[16];
-
-		for (uint32 i = 0; i < count; ++i)
-		{
-			checkResult(commandLists[i]->commandList->Close());
-			d3d12Lists[i] = commandLists[i]->commandList.Get();
-		}
-
-		queue.commandQueue->ExecuteCommandLists(count, d3d12Lists);
-
-		uint64 fenceValue = queue.signal();
+		ID3D12CommandList* d3d12_lists[16];
 
 		for (uint32 i = 0; i < count; ++i)
 		{
-			commandLists[i]->lastExecutionFenceValue = fenceValue;
+			checkResult(command_lists[i]->command_list->Close());
+			d3d12_lists[i] = command_lists[i]->command_list.Get();
+		}
+
+		queue.command_queue->ExecuteCommandLists(count, d3d12_lists);
+
+		uint64 fence_value = queue.signal();
+
+		for (uint32 i = 0; i < count; ++i)
+		{
+			command_lists[i]->last_execution_fence_value = fence_value;
 		}
 
 		{
-			Lock lock{ queue.commandListMutex };
+			Lock lock{ queue.command_list_mutex };
 			for (uint32 i = 0; i < count; ++i)
 			{
-				enqueueRunningCommandList(queue, commandLists[i]);
+				enqueue_running_command_list(queue, command_lists[i]);
 			}
-			atomic_add(queue.numRunningCommandLists, count);
+			atomic_add(queue.num_running_command_lists, count);
 		}
 
-		return fenceValue;
+		return fence_value;
 	}
 
-	dx_allocation dx_context::allocateDynamicBuffer(uint32 sizeInBytes, uint32 alignment)
+	DXAllocation DXContext::allocate_dynamic_buffer(uint32 size_in_bytes, uint32 alignment)
 	{
-		dx_allocation allocation = frameUploadBuffer.allocate(sizeInBytes, alignment);
+		DXAllocation allocation = frame_upload_buffer.allocate(size_in_bytes, alignment);
 		return allocation;
 	}
 
-	std::pair<dx_dynamic_constant_buffer, void*> dx_context::uploadDynamicConstantBuffer(uint32 sizeInBytes, const void* data)
+	std::pair<DXDynamicConstantBuffer, void*> DXContext::upload_dynamic_constant_buffer(uint32 size_in_bytes, const void* data)
 	{
-		dx_allocation allocation = allocateDynamicBuffer(sizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
-		memcpy(allocation.cpuPtr, data, sizeInBytes);
-		return { { allocation.gpuPtr }, allocation.cpuPtr };
+		DXAllocation allocation = allocate_dynamic_buffer(size_in_bytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+		memcpy(allocation.cpu_ptr, data, size_in_bytes);
+		return { { allocation.gpu_ptr }, allocation.cpu_ptr };
 	}
 
-	std::pair<dx_dynamic_vertex_buffer, void*> dx_context::createDynamicVertexBuffer(uint32 elementSize, uint32 elementCount)
+	std::pair<DXDynamicVertexBuffer, void*> DXContext::create_dynamic_vertex_buffer(uint32 element_size, uint32 element_count)
 	{
-		uint32 sizeInBytes = elementSize * elementCount;
-		dx_allocation allocation = allocateDynamicBuffer(sizeInBytes, elementSize);
+		uint32 size_in_bytes = element_size * element_count;
+		DXAllocation allocation = allocate_dynamic_buffer(size_in_bytes, element_size);
 
-		D3D12_VERTEX_BUFFER_VIEW vertexBufferView = {};
-		vertexBufferView.BufferLocation = allocation.gpuPtr;
-		vertexBufferView.SizeInBytes = sizeInBytes;
-		vertexBufferView.StrideInBytes = elementSize;
+		D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view = {};
+		vertex_buffer_view.BufferLocation = allocation.gpu_ptr;
+		vertex_buffer_view.SizeInBytes = size_in_bytes;
+		vertex_buffer_view.StrideInBytes = element_size;
 
-		return { { vertexBufferView }, allocation.cpuPtr };
+		return { { vertex_buffer_view }, allocation.cpu_ptr };
 	}
 
-	std::pair<dx_dynamic_index_buffer, void*> dx_context::createDynamicIndexBuffer(uint32 elementSize, uint32 elementCount)
+	std::pair<DXDynamicIndexBuffer, void*> DXContext::create_dynamic_index_buffer(uint32 element_size, uint32 element_count)
 	{
-		uint32 sizeInBytes = elementSize * elementCount;
-		dx_allocation allocation = allocateDynamicBuffer(sizeInBytes, elementSize);
+		uint32 size_in_bytes = element_size * element_count;
+		DXAllocation allocation = allocate_dynamic_buffer(size_in_bytes, element_size);
 
-		D3D12_INDEX_BUFFER_VIEW indexBufferView = {};
-		indexBufferView.BufferLocation = allocation.gpuPtr;
-		indexBufferView.SizeInBytes = sizeInBytes;
-		indexBufferView.Format = getIndexBufferFormat(elementSize);
+		D3D12_INDEX_BUFFER_VIEW index_buffer_view = {};
+		index_buffer_view.BufferLocation = allocation.gpu_ptr;
+		index_buffer_view.SizeInBytes = size_in_bytes;
+		index_buffer_view.Format = get_index_buffer_format(element_size);
 
-		return { { indexBufferView }, allocation.cpuPtr };
+		return { { index_buffer_view }, allocation.cpu_ptr };
 	}
 
-	dx_memory_usage dx_context::getMemoryUsage()
+	DXMemoryUsage DXContext::get_memory_usage()
 	{
-		DXGI_QUERY_VIDEO_MEMORY_INFO memoryInfo;
-		checkResult(adapter->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &memoryInfo));
+		DXGI_QUERY_VIDEO_MEMORY_INFO memory_info;
+		checkResult(adapter->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &memory_info));
 
-		return { (uint32)BYTE_TO_MB(memoryInfo.CurrentUsage), (uint32)BYTE_TO_MB(memoryInfo.Budget) };
+		return { (uint32)byte_to_mb(memory_info.CurrentUsage), (uint32)byte_to_mb(memory_info.Budget) };
 	}
 
-	void dx_context::endFrame(dx_command_list* cl)
+	void DXContext::end_frame(DXCommandList* cl)
 	{
 #if ENABLE_DX_PROFILING
 		dxProfilingFrameEndMarker(cl);
-		cl->commandList->ResolveQueryData(timestampHeaps[bufferedFrameID].heap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0, timestampQueryIndex[bufferedFrameID], resolvedTimestampBuffers[bufferedFrameID]->resource.Get(), 0);
+		cl->command_list->ResolveQueryData(timestampHeaps[buffered_frame_id].heap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0, timestampQueryIndex[buffered_frame_id], resolvedTimestampBuffers[buffered_frame_id]->resource.Get(), 0);
 #endif
 	}
 
-	void dx_context::newFrame(uint64 frameID)
+	void DXContext::new_frame(uint64 frame_id)
 	{
-		this->frameID = frameID;
+		this->frame_id = frame_id;
 
 		Lock lock{ mutex };
-		bufferedFrameID = (uint32)(frameID % NUM_BUFFERED_FRAMES);
+		buffered_frame_id = (uint32)(frame_id % NUM_BUFFERED_FRAMES);
 
 #if ENABLE_DX_PROFILING
-		uint64* timestamps = (uint64*)mapBuffer(resolvedTimestampBuffers[bufferedFrameID], true);
+		uint64* timestamps = (uint64*)map_buffer(resolvedTimestampBuffers[buffered_frame_id], true);
 		dxProfilingResolveTimeStamps(timestamps);
-		unmapBuffer(resolvedTimestampBuffers[bufferedFrameID], false);
+		unmap_buffer(resolvedTimestampBuffers[buffered_frame_id], false);
 
-		timestampQueryIndex[bufferedFrameID] = 0;
+		timestampQueryIndex[buffered_frame_id] = 0;
 #endif
 
-		textureGraveyard[bufferedFrameID].clear();
-		bufferGraveyard[bufferedFrameID].clear();
-		objectGraveyard[bufferedFrameID].clear();
-		for (auto allocation : allocationGraveyard[bufferedFrameID])
+		texture_graveyard[buffered_frame_id].clear();
+		buffer_graveyard[buffered_frame_id].clear();
+		object_graveyard[buffered_frame_id].clear();
+		for (auto allocation : allocation_graveyard[buffered_frame_id])
 		{
 			allocation->Release();
 		}
-		allocationGraveyard[bufferedFrameID].clear();
+		allocation_graveyard[buffered_frame_id].clear();
 
-		frameUploadBuffer.reset();
-		frameUploadBuffer.pagePool = &pagePools[bufferedFrameID];
+		frame_upload_buffer.reset();
+		frame_upload_buffer.page_pool = &page_pools[buffered_frame_id];
 
-		pagePools[bufferedFrameID].reset();
-		frameDescriptorAllocator.newFrame(bufferedFrameID);
+		page_pools[buffered_frame_id].reset();
+		frame_descriptor_allocator.new_frame(buffered_frame_id);
 	}
 
-	ERA_CORE_API std::pair<dx_dynamic_vertex_buffer, void*> create_dynamic_vertex_buffer(uint32 element_size, uint32 element_count)
+	ERA_CORE_API std::pair<DXDynamicVertexBuffer, void*> create_dynamic_vertex_buffer(uint32 element_size, uint32 element_count)
 	{
-		return dxContext.createDynamicVertexBuffer(element_size, element_count);
+		return dx_context.create_dynamic_vertex_buffer(element_size, element_count);
 	}
 
-	ERA_CORE_API std::pair<dx_dynamic_index_buffer, void*> create_dynamic_index_buffer(uint32 element_size, uint32 element_count)
+	ERA_CORE_API std::pair<DXDynamicIndexBuffer, void*> create_dynamic_index_buffer(uint32 element_size, uint32 element_count)
 	{
-		return dxContext.createDynamicIndexBuffer(element_size, element_count);
+		return dx_context.create_dynamic_index_buffer(element_size, element_count);
 	}
 
-	dx_memory_usage get_dx_mem_usage()
+	DXMemoryUsage get_dx_mem_usage()
 	{
-		return dxContext.getMemoryUsage();
+		return dx_context.get_memory_usage();
 	}
 
-	ERA_CORE_API dx_context* get_dx_context()
+	ERA_CORE_API DXContext* get_dx_context()
 	{
-		return &dxContext;
+		return &dx_context;
 	}
 }

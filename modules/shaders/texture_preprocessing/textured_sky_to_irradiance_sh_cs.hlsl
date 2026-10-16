@@ -15,21 +15,21 @@
 
 cbuffer cb : register(b0)
 {
-	uint mipLevel;
+	uint mip_level;
 };
 
-TextureCube<float4> srcTexture : register(t0);
-SamplerState linearRepeatSampler : register(s0);
+TextureCube<float4> src_texture : register(t0);
+SamplerState linear_repeat_sampler : register(s0);
 
-RWStructuredBuffer<spherical_harmonics> outSphericalHarmonics : register(u0);
+RWStructuredBuffer<SphericalHarmonics> out_spherical_harmonics : register(u0);
 
 #define BLOCK_SIZE 16
 
-struct spherical_harmonics_vector
+struct SphericalHarmonicsVector
 {
 	float v[9];
 
-	inline void initialize(float color, spherical_harmonics_basis basis)
+	inline void initialize(float color, SphericalHarmonicsBasis basis)
 	{
 		[unroll]
 		for (uint i = 0; i < 9; ++i)
@@ -38,7 +38,7 @@ struct spherical_harmonics_vector
 		}
 	}
 
-	inline void add(spherical_harmonics_vector other)
+	inline void add(SphericalHarmonicsVector other)
 	{
 		[unroll]
 		for (uint i = 0; i < 9; ++i)
@@ -48,21 +48,21 @@ struct spherical_harmonics_vector
 	}
 };
 
-struct spherical_harmonics_rgb
+struct SphericalHarmonicsRGB
 {
-	spherical_harmonics_vector r;
-	spherical_harmonics_vector g;
-	spherical_harmonics_vector b;
+	SphericalHarmonicsVector r;
+	SphericalHarmonicsVector g;
+	SphericalHarmonicsVector b;
 
 	inline void initialize(float3 dir, float3 color)
 	{
-		spherical_harmonics_basis basis = getSHBasis(dir);
+		SphericalHarmonicsBasis basis = get_sh_basis(dir);
 		r.initialize(color.r, basis);
 		g.initialize(color.g, basis);
 		b.initialize(color.b, basis);
 	}
 
-	inline void add(spherical_harmonics_rgb other)
+	inline void add(SphericalHarmonicsRGB other)
 	{
 		r.add(other.r);
 		g.add(other.g);
@@ -70,50 +70,50 @@ struct spherical_harmonics_rgb
 	}
 };
 
-groupshared spherical_harmonics_rgb g_sh[BLOCK_SIZE * BLOCK_SIZE];
+groupshared SphericalHarmonicsRGB g_sh[BLOCK_SIZE * BLOCK_SIZE];
 
 [RootSignature(RS)]
 [numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
-void main(cs_input IN)
+void main(CSInput IN)
 {
-	const uint sampleCount = BLOCK_SIZE * BLOCK_SIZE;
+	const uint sample_count = BLOCK_SIZE * BLOCK_SIZE;
 
-	const float uniformSampleSolidAngle = 4.f * M_PI / sampleCount;
-	float3 dir = uniformSampleSphere((float2(IN.dispatchThreadID.xy) + 0.5f) / float2(BLOCK_SIZE, BLOCK_SIZE)).xyz;
+	const float uniform_sample_solid_angle = 4.f * M_PI / sample_count;
+	float3 dir = uniform_sample_sphere((float2(IN.dispatch_thread_id.xy) + 0.5f) / float2(BLOCK_SIZE, BLOCK_SIZE)).xyz;
 
-	const uint linearIndex = BLOCK_SIZE * IN.dispatchThreadID.y + IN.dispatchThreadID.x;
+	const uint linear_index = BLOCK_SIZE * IN.dispatch_thread_id.y + IN.dispatch_thread_id.x;
 
 
-	float3 radiance = srcTexture.SampleLevel(linearRepeatSampler, dir, mipLevel).rgb;
-	float3 weightedRadiance = radiance * uniformSampleSolidAngle;
+	float3 radiance = src_texture.SampleLevel(linear_repeat_sampler, dir, mip_level).rgb;
+	float3 weighted_radiance = radiance * uniform_sample_solid_angle;
 
-	g_sh[linearIndex].initialize(dir, weightedRadiance);
+	g_sh[linear_index].initialize(dir, weighted_radiance);
 	GroupMemoryBarrierWithGroupSync();
 
-	if (sampleCount >= 256)
+	if (sample_count >= 256)
 	{
-		if (linearIndex < 128) { g_sh[linearIndex].add(g_sh[linearIndex + 128]); }
+		if (linear_index < 128) { g_sh[linear_index].add(g_sh[linear_index + 128]); }
 		GroupMemoryBarrierWithGroupSync();
 
-		if (linearIndex < 64) { g_sh[linearIndex].add(g_sh[linearIndex + 64]); }
+		if (linear_index < 64) { g_sh[linear_index].add(g_sh[linear_index + 64]); }
 		GroupMemoryBarrierWithGroupSync();
 	}
 
-	if (linearIndex < 32) {	g_sh[linearIndex].add(g_sh[linearIndex + 32]); }
+	if (linear_index < 32) {	g_sh[linear_index].add(g_sh[linear_index + 32]); }
 	GroupMemoryBarrierWithGroupSync();
 
-	if (linearIndex < 16) {	g_sh[linearIndex].add(g_sh[linearIndex + 16]); }
+	if (linear_index < 16) {	g_sh[linear_index].add(g_sh[linear_index + 16]); }
 	GroupMemoryBarrierWithGroupSync();
 
 	// From here on we don't need to synchronize, because this is the minimum warp size commonly present.
-	if (linearIndex < 8) { g_sh[linearIndex].add(g_sh[linearIndex + 8]); }
-	if (linearIndex < 4) { g_sh[linearIndex].add(g_sh[linearIndex + 4]); }
-	if (linearIndex < 2) { g_sh[linearIndex].add(g_sh[linearIndex + 2]); }
+	if (linear_index < 8) { g_sh[linear_index].add(g_sh[linear_index + 8]); }
+	if (linear_index < 4) { g_sh[linear_index].add(g_sh[linear_index + 4]); }
+	if (linear_index < 2) { g_sh[linear_index].add(g_sh[linear_index + 2]); }
 	
-	if (linearIndex < 1)
+	if (linear_index < 1)
 	{
-		g_sh[linearIndex].add(g_sh[linearIndex + 1]);
+		g_sh[linear_index].add(g_sh[linear_index + 1]);
 
-		outSphericalHarmonics[0].initialize(g_sh[0].r.v, g_sh[0].g.v, g_sh[0].b.v);
+		out_spherical_harmonics[0].initialize(g_sh[0].r.v, g_sh[0].g.v, g_sh[0].b.v);
 	}
 }

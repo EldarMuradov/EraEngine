@@ -38,33 +38,33 @@ namespace era_engine
 			.method("update", &EditorToolsSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL));
 	}
 
-	static bool editCamera(render_camera& camera)
+	static bool editCamera(RenderCamera& camera)
 	{
 		bool result = false;
 		if (ImGui::BeginTree("Camera"))
 		{
 			if (ImGui::BeginProperties())
 			{
-				result |= ImGui::PropertySliderAngle("Field of view", camera.verticalFOV, 1.f, 150.f);
+				result |= ImGui::PropertySliderAngle("Field of view", camera.vertical_fov, 1.f, 150.f);
 
-				result |= ImGui::PropertyDrag("Near plane", camera.nearPlane, 0.01f, 0.f);
+				result |= ImGui::PropertyDrag("Near plane", camera.near_plane, 0.01f, 0.f);
 
-				bool infiniteFarplane = camera.farPlane < 0.f;
+				bool infiniteFarplane = camera.far_plane < 0.f;
 				if (ImGui::PropertyCheckbox("Infinite far plane", infiniteFarplane))
 				{
 					if (!infiniteFarplane)
 					{
-						camera.farPlane = (camera.farPlane == -1.f) ? 500.f : -camera.farPlane;
+						camera.far_plane = (camera.far_plane == -1.f) ? 500.f : -camera.far_plane;
 					}
 					else
 					{
-						camera.farPlane = -camera.farPlane;
+						camera.far_plane = -camera.far_plane;
 					}
 					result = true;
 				}
 				if (!infiniteFarplane)
 				{
-					result |= ImGui::PropertyDrag("Far plane", camera.farPlane, 0.1f, 0.f);
+					result |= ImGui::PropertyDrag("Far plane", camera.far_plane, 0.1f, 0.f);
 				}
 
 				ImGui::EndProperties();
@@ -75,7 +75,7 @@ namespace era_engine
 		return result;
 	}
 
-	static bool editTonemapping(tonemap_settings& tonemap)
+	static bool editTonemapping(TonemapSettings& tonemap)
 	{
 		bool result = false;
 		if (ImGui::BeginTree("Tonemapping"))
@@ -84,7 +84,7 @@ namespace era_engine
 				[](void* data, int idx)
 				{
 					float t = idx * 0.01f;
-					tonemap_settings& aces = *(tonemap_settings*)data;
+					TonemapSettings& aces = *(TonemapSettings*)data;
 					return aces.tonemap(t);
 				},
 				&tonemap, 100, 0, 0, 0.f, 1.f, ImVec2(250.f, 250.f));
@@ -97,7 +97,7 @@ namespace era_engine
 				result |= ImGui::PropertySlider("Toe strength", tonemap.D, 0.f, 1.f);
 				result |= ImGui::PropertySlider("Tone numerator", tonemap.E, 0.f, 1.f);
 				result |= ImGui::PropertySlider("Toe denominator", tonemap.F, 0.f, 1.f);
-				result |= ImGui::PropertySlider("Linear white", tonemap.linearWhite, 0.f, 100.f);
+				result |= ImGui::PropertySlider("Linear white", tonemap.linear_white, 0.f, 100.f);
 				result |= ImGui::PropertySlider("Exposure", tonemap.exposure, -3.f, 3.f);
 
 				ImGui::EndProperties();
@@ -108,7 +108,7 @@ namespace era_engine
 		return result;
 	}
 
-	static bool editSunShadowParameters(directional_light& sun)
+	static bool editSunShadowParameters(DirectionalLight& sun)
 	{
 		bool result = false;
 		if (ImGui::BeginTree("Sun"))
@@ -118,41 +118,41 @@ namespace era_engine
 				result |= ImGui::PropertySlider("Intensity", sun.intensity, 0.f, 1000.f);
 				result |= ImGui::PropertyColorWheel("Color", sun.color);
 
-				result |= ImGui::PropertyDropdownPowerOfTwo("Shadow resolution", 128, 2048, sun.shadowDimensions);
+				result |= ImGui::PropertyDropdownPowerOfTwo("Shadow resolution", 128, 2048, sun.shadow_dimensions);
 
 				result |= ImGui::PropertyCheckbox("Stabilize", sun.stabilize);
 
-				result |= ImGui::PropertyDrag("Negative z-offset", sun.negativeZOffset, 0.5f, 0.f);
+				result |= ImGui::PropertyDrag("Negative z-offset", sun.negative_z_offset, 0.5f, 0.f);
 
-				result |= ImGui::PropertySlider("Cascade count", sun.numShadowCascades, 1, 4);
+				result |= ImGui::PropertySlider("Cascade count", sun.num_shadow_cascades, 1, 4);
 
 				const float minCascadeDistance = 0.f, maxCascadeDistance = 300.f;
 				const float minBias = 0.f, maxBias = 0.0015f;
 				const float minBlend = 0.f, maxBlend = 10.f;
-				if (sun.numShadowCascades == 1)
+				if (sun.num_shadow_cascades == 1)
 				{
-					result |= ImGui::PropertySlider("Distance", sun.cascadeDistances.x, minCascadeDistance, maxCascadeDistance);
+					result |= ImGui::PropertySlider("Distance", sun.cascade_distances.x, minCascadeDistance, maxCascadeDistance);
 
 					result |= ImGui::PropertySlider("Bias", sun.bias.x, minBias, maxBias, "%.6f");
-					result |= ImGui::PropertySlider("Blend distances", sun.blendDistances.x, minBlend, maxBlend, "%.6f");
+					result |= ImGui::PropertySlider("Blend distances", sun.blend_distances.x, minBlend, maxBlend, "%.6f");
 				}
-				else if (sun.numShadowCascades == 2)
+				else if (sun.num_shadow_cascades == 2)
 				{
-					result |= ImGui::PropertySlider("Distance", sun.cascadeDistances.xy, minCascadeDistance, maxCascadeDistance);
+					result |= ImGui::PropertySlider("Distance", sun.cascade_distances.xy, minCascadeDistance, maxCascadeDistance);
 					result |= ImGui::PropertySlider("Bias", sun.bias.xy, minBias, maxBias, "%.6f");
-					result |= ImGui::PropertySlider("Blend distances", sun.blendDistances.xy, minBlend, maxBlend, "%.6f");
+					result |= ImGui::PropertySlider("Blend distances", sun.blend_distances.xy, minBlend, maxBlend, "%.6f");
 				}
-				else if (sun.numShadowCascades == 3)
+				else if (sun.num_shadow_cascades == 3)
 				{
-					result |= ImGui::PropertySlider("Distance", sun.cascadeDistances.xyz, minCascadeDistance, maxCascadeDistance);
+					result |= ImGui::PropertySlider("Distance", sun.cascade_distances.xyz, minCascadeDistance, maxCascadeDistance);
 					result |= ImGui::PropertySlider("Bias", sun.bias.xyz, minBias, maxBias, "%.6f");
-					result |= ImGui::PropertySlider("Blend distances", sun.blendDistances.xyz, minBlend, maxBlend, "%.6f");
+					result |= ImGui::PropertySlider("Blend distances", sun.blend_distances.xyz, minBlend, maxBlend, "%.6f");
 				}
-				else if (sun.numShadowCascades == 4)
+				else if (sun.num_shadow_cascades == 4)
 				{
-					result |= ImGui::PropertySlider("Distance", sun.cascadeDistances, minCascadeDistance, maxCascadeDistance);
+					result |= ImGui::PropertySlider("Distance", sun.cascade_distances, minCascadeDistance, maxCascadeDistance);
 					result |= ImGui::PropertySlider("Bias", sun.bias, minBias, maxBias, "%.6f");
-					result |= ImGui::PropertySlider("Blend distances", sun.blendDistances, minBlend, maxBlend, "%.6f");
+					result |= ImGui::PropertySlider("Blend distances", sun.blend_distances, minBlend, maxBlend, "%.6f");
 				}
 
 				ImGui::EndProperties();
@@ -163,7 +163,7 @@ namespace era_engine
 		return result;
 	}
 
-	static bool editAO(bool& enable, hbao_settings& settings, const ref<dx_texture>& aoTexture)
+	static bool editAO(bool& enable, HBAOSettings& settings, const ref<DXTexture>& aoTexture)
 	{
 		bool result = false;
 		if (ImGui::BeginProperties())
@@ -171,8 +171,8 @@ namespace era_engine
 			result |= ImGui::PropertyCheckbox("Enable HBAO", enable);
 			if (enable)
 			{
-				result |= ImGui::PropertySlider("Num rays", settings.numRays, 1, 16);
-				result |= ImGui::PropertySlider("Max num steps per ray", settings.maxNumStepsPerRay, 1, 16);
+				result |= ImGui::PropertySlider("Num rays", settings.num_rays, 1, 16);
+				result |= ImGui::PropertySlider("Max num steps per ray", settings.max_num_steps_per_ray, 1, 16);
 				result |= ImGui::PropertySlider("Radius", settings.radius, 0.f, 1.f, "%.3fm");
 				result |= ImGui::PropertySlider("Strength", settings.strength, 0.f, 2.f);
 			}
@@ -186,7 +186,7 @@ namespace era_engine
 		return result;
 	}
 
-	static bool editSSS(bool& enable, sss_settings& settings, const ref<dx_texture>& sssTexture)
+	static bool editSSS(bool& enable, SSSSettings& settings, const ref<DXTexture>& sssTexture)
 	{
 		bool result = false;
 		if (ImGui::BeginProperties())
@@ -194,12 +194,12 @@ namespace era_engine
 			result |= ImGui::PropertyCheckbox("Enable SSS", enable);
 			if (enable)
 			{
-				result |= ImGui::PropertySlider("Num iterations", settings.numSteps, 1, 64);
-				result |= ImGui::PropertySlider("Ray distance", settings.rayDistance, 0.05f, 3.f, "%.3fm");
+				result |= ImGui::PropertySlider("Num iterations", settings.num_steps, 1, 64);
+				result |= ImGui::PropertySlider("Ray distance", settings.ray_distance, 0.05f, 3.f, "%.3fm");
 				result |= ImGui::PropertySlider("Thickness", settings.thickness, 0.05f, 1.f, "%.3fm");
-				result |= ImGui::PropertySlider("Max distance from camera", settings.maxDistanceFromCamera, 5.f, 1000.f, "%.3fm");
-				result |= ImGui::PropertySlider("Distance fadeout range", settings.distanceFadeoutRange, 1.f, 5.f, "%.3fm");
-				result |= ImGui::PropertySlider("Border fadeout", settings.borderFadeout, 0.f, 0.5f);
+				result |= ImGui::PropertySlider("Max distance from camera", settings.max_distance_from_camera, 5.f, 1000.f, "%.3fm");
+				result |= ImGui::PropertySlider("Distance fadeout range", settings.distance_fadeout_range, 1.f, 5.f, "%.3fm");
+				result |= ImGui::PropertySlider("Border fadeout", settings.border_fadeout, 0.f, 0.5f);
 			}
 			ImGui::EndProperties();
 		}
@@ -211,7 +211,7 @@ namespace era_engine
 		return result;
 	}
 
-	static bool editSSR(bool& enable, ssr_settings& settings, const ref<dx_texture>& ssrTexture)
+	static bool editSSR(bool& enable, SSRSettings& settings, const ref<DXTexture>& ssrTexture)
 	{
 		bool result = false;
 		if (ImGui::BeginProperties())
@@ -219,10 +219,10 @@ namespace era_engine
 			result |= ImGui::PropertyCheckbox("Enable SSR", enable);
 			if (enable)
 			{
-				result |= ImGui::PropertySlider("Num iterations", settings.numSteps, 1, 1024);
-				result |= ImGui::PropertySlider("Max distance", settings.maxDistance, 5.f, 1000.f, "%.3fm");
-				result |= ImGui::PropertySlider("Min stride", settings.minStride, 1.f, 50.f, "%.3fm");
-				result |= ImGui::PropertySlider("Max stride", settings.maxStride, settings.minStride, 50.f, "%.3fm");
+				result |= ImGui::PropertySlider("Num iterations", settings.num_steps, 1, 1024);
+				result |= ImGui::PropertySlider("Max distance", settings.max_distance, 5.f, 1000.f, "%.3fm");
+				result |= ImGui::PropertySlider("Min stride", settings.min_stride, 1.f, 50.f, "%.3fm");
+				result |= ImGui::PropertySlider("Max stride", settings.max_stride, settings.min_stride, 50.f, "%.3fm");
 			}
 			ImGui::EndProperties();
 		}
@@ -234,7 +234,7 @@ namespace era_engine
 		return result;
 	}
 
-	static bool editTAA(bool& enable, taa_settings& settings, const ref<dx_texture>& velocityTexture)
+	static bool editTAA(bool& enable, TAASettings& settings, const ref<DXTexture>& velocityTexture)
 	{
 		bool result = false;
 		if (ImGui::BeginProperties())
@@ -242,7 +242,7 @@ namespace era_engine
 			result |= ImGui::PropertyCheckbox("Enable TAA", enable);
 			if (enable)
 			{
-				result |= ImGui::PropertySlider("Jitter strength", settings.cameraJitterStrength);
+				result |= ImGui::PropertySlider("Jitter strength", settings.camera_jitter_strength);
 			}
 			ImGui::EndProperties();
 		}
@@ -254,7 +254,7 @@ namespace era_engine
 		return result;
 	}
 
-	static bool editBloom(bool& enable, bloom_settings& settings, const ref<dx_texture>& bloomTexture)
+	static bool editBloom(bool& enable, BloomSettings& settings, const ref<DXTexture>& bloomTexture)
 	{
 		bool result = false;
 		if (ImGui::BeginProperties())
@@ -275,7 +275,7 @@ namespace era_engine
 		return result;
 	}
 
-	static bool editSharpen(bool& enable, sharpen_settings& settings)
+	static bool editSharpen(bool& enable, SharpenSettings& settings)
 	{
 		bool result = false;
 		if (ImGui::BeginProperties())
@@ -319,9 +319,9 @@ namespace era_engine
 			{
 				ImGui::PropertySlider("Time scale", renderer_holder_rc->timestep_scale);
 
-				dx_memory_usage memoryUsage = get_dx_mem_usage();
+				DXMemoryUsage memoryUsage = get_dx_mem_usage();
 
-				ImGui::PropertyValue("Video memory usage", "%u / %uMB", memoryUsage.currentlyUsed, memoryUsage.available);
+				ImGui::PropertyValue("Video memory usage", "%u / %uMB", memoryUsage.currently_used, memoryUsage.available);
 
 				ImGui::EndProperties();
 			}
@@ -333,7 +333,7 @@ namespace era_engine
 	{
 		bool clicked = false;
 
-		render_camera& camera = renderer_holder_rc->camera;
+		RenderCamera& camera = renderer_holder_rc->camera;
 
 		if (ImGui::BeginPopup("CreateEntityPopup"))
 		{
@@ -541,7 +541,7 @@ namespace era_engine
 			{
 				// TODO: Docs
 				if (ImGui::MenuItem(ICON_FA_MEMORY "  Repository"))
-					os::system_calls::openURL("https://github.com/EldarMuradau/EraEngine");
+					os::SystemCalls::open_url("https://github.com/EldarMuradau/EraEngine");
 
 				ImGui::EndMenu();
 			}
@@ -569,9 +569,9 @@ namespace era_engine
 		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 		if (ImGui::BeginPopupModal(ICON_FA_DESKTOP "  System", 0, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			system_info info = getSystemInfo();
-			ImGui::Value("CPU", info.cpuName.c_str());
-			ImGui::Value("GPU", info.gpuName.c_str());
+			SystemInfo info = get_system_info();
+			ImGui::Value("CPU", info.cpu_name.c_str());
+			ImGui::Value("GPU", info.gpu_name.c_str());
 
 			ImGui::Separator();
 
@@ -602,8 +602,8 @@ namespace era_engine
 	{
 		if (ImGui::Begin("Render"))
 		{
-			main_renderer* renderer = renderer_holder_rc->get_renderer();
-			path_tracer& pathTracer = renderer->pathTracer;
+			MainRenderer* renderer = renderer_holder_rc->get_renderer();
+			PathTracer& pathTracer = renderer->path_tracer;
 
 			if (ImGui::BeginProperties())
 			{
@@ -612,26 +612,26 @@ namespace era_engine
 				//	pathTracer.resetRendering();
 				//}
 
-				ImGui::PropertyDropdown("Aspect ratio", aspectRatioNames, aspect_ratio_mode_count, (uint32&)renderer->aspectRatioMode);
+				ImGui::PropertyDropdown("Aspect ratio", aspect_ratio_names, ASPECT_RATIO_MODE_COUNT, (uint32&)renderer->aspect_ratio_mode);
 
-				ImGui::PropertyCheckbox("Shadow map caching", renderer->settings.cacheShadowMap);
+				ImGui::PropertyCheckbox("Shadow map caching", renderer->settings.cache_shadow_map);
 
 				ImGui::EndProperties();
 			}
 
 			editCamera(renderer_holder_rc->camera);
-			editTonemapping(renderer->settings.tonemapSettings);
+			editTonemapping(renderer->settings.tonemap_settings);
 			editSunShadowParameters(renderer_holder_rc->sun);
 
 			if (ImGui::BeginTree("Post processing"))
 			{
-				if (renderer->spec.allowAO) { editAO(renderer->settings.enableAO, renderer->settings.aoSettings, renderer->getAOResult()); ImGui::Separator(); }
-				if (renderer->spec.allowSSS) { editSSS(renderer->settings.enableSSS, renderer->settings.sssSettings, renderer->getSSSResult()); ImGui::Separator(); }
-				if (renderer->spec.allowSSR) { editSSR(renderer->settings.enableSSR, renderer->settings.ssrSettings, renderer->getSSRResult()); ImGui::Separator(); }
-				if (renderer->spec.allowTAA) { editTAA(renderer->settings.enableTAA, renderer->settings.taaSettings, renderer->getScreenVelocities()); ImGui::Separator(); }
-				if (renderer->spec.allowBloom) { editBloom(renderer->settings.enableBloom, renderer->settings.bloomSettings, renderer->getBloomResult()); ImGui::Separator(); }
+				if (renderer->spec.allow_ao) { editAO(renderer->settings.enable_ao, renderer->settings.ao_settings, renderer->get_ao_result()); ImGui::Separator(); }
+				if (renderer->spec.allow_sss) { editSSS(renderer->settings.enable_sss, renderer->settings.sss_settings, renderer->get_sss_result()); ImGui::Separator(); }
+				if (renderer->spec.allow_ssr) { editSSR(renderer->settings.enable_ssr, renderer->settings.ssr_settings, renderer->get_ssr_result()); ImGui::Separator(); }
+				if (renderer->spec.allow_taa) { editTAA(renderer->settings.enable_taa, renderer->settings.taa_settings, renderer->get_screen_velocities()); ImGui::Separator(); }
+				if (renderer->spec.allow_bloom) { editBloom(renderer->settings.enable_bloom, renderer->settings.bloom_settings, renderer->get_bloom_result()); ImGui::Separator(); }
 
-				editSharpen(renderer->settings.enableSharpen, renderer->settings.sharpenSettings);
+				editSharpen(renderer->settings.enable_sharpen, renderer->settings.sharpen_settings);
 
 				ImGui::EndTree();
 			}
@@ -647,33 +647,33 @@ namespace era_engine
 					{
 						if (handle)
 						{
-							environment.setFromTexture(get_path_from_asset_handle(handle));
+							environment.set_from_texture(get_path_from_asset_handle(handle));
 						}
 						else
 						{
-							environment.setToProcedural(renderer_holder_rc->sun.direction);
+							environment.set_to_procedural(renderer_holder_rc->sun.direction);
 						}
 					}
 
-					ImGui::PropertySlider("Sky intensity", environment.skyIntensity, 0.f, 2.f);
-					ImGui::PropertySlider("GI intensity", environment.globalIlluminationIntensity, 0.f, 2.f);
+					ImGui::PropertySlider("Sky intensity", environment.sky_intensity, 0.f, 2.f);
+					ImGui::PropertySlider("GI intensity", environment.global_illumination_intensity, 0.f, 2.f);
 
-					environment_gi_mode tempMode = environment.giMode;
+					EnvironmentGIMode tempMode = environment.gi_mode;
 
-					ImGui::PropertyDropdown("GI mode", environmentGIModeNames, 1 + 1, (uint32&)tempMode);
+					ImGui::PropertyDropdown("GI mode", environment_gi_mode_names, 1 + 1, (uint32&)tempMode);
 
-					if (tempMode != environment.giMode)
+					if (tempMode != environment.gi_mode)
 					{
-						struct change_gi_mode_data { environment_gi_mode mode; environment_gi_mode& destMode; } data{ tempMode, renderer_holder_rc->environment.giMode };
+						struct ChangeGIModeData { EnvironmentGIMode mode; EnvironmentGIMode& destMode; } data{ tempMode, renderer_holder_rc->environment.gi_mode };
 
 						DefaultJob job_object;
 
 						job_object.data.user_data = &data;
-						job_object.data.data_size = sizeof(change_gi_mode_data);
+						job_object.data.data_size = sizeof(ChangeGIModeData);
 						job_object.data.destroy_after_execution = false;
 
 						job_object.job_func = [](DefaultJob::Data& default_data) {
-							change_gi_mode_data* data = reinterpret_cast<change_gi_mode_data*>(default_data.user_data);
+							ChangeGIModeData* data = reinterpret_cast<ChangeGIModeData*>(default_data.user_data);
 
 							data->destMode = data->mode;
 							};
@@ -684,21 +684,21 @@ namespace era_engine
 					ImGui::EndProperties();
 				}
 
-				if (environment.giMode == environment_gi_raytraced)
+				if (environment.gi_mode == ENVIRONMENT_GI_RAYTRACED)
 				{
 					if (ImGui::BeginTree("Light probe"))
 					{
-						auto& grid = environment.lightProbeGrid;
+						auto& grid = environment.light_probe_grid;
 
 						if (ImGui::BeginProperties())
 						{
-							ImGui::PropertyCheckbox("Visualize probes", grid.visualizeProbes);
-							ImGui::PropertyCheckbox("Visualize rays", grid.visualizeRays);
+							ImGui::PropertyCheckbox("Visualize probes", grid.visualize_probes);
+							ImGui::PropertyCheckbox("Visualize rays", grid.visualize_rays);
 
-							ImGui::PropertyCheckbox("Auto rotate rays", grid.autoRotateRays);
-							if (!grid.autoRotateRays)
+							ImGui::PropertyCheckbox("Auto rotate rays", grid.auto_rotate_rays);
+							if (!grid.auto_rotate_rays)
 							{
-								grid.rotateRays = ImGui::PropertyButton("Rotate", "Go");
+								grid.rotate_rays = ImGui::PropertyButton("Rotate", "Go");
 							}
 
 							ImGui::EndProperties();
@@ -708,7 +708,7 @@ namespace era_engine
 						{
 							if (ImGui::BeginProperties())
 							{
-								ImGui::PropertySlider("Scale", grid.irradianceUIScale, 0.1f, 20.f);
+								ImGui::PropertySlider("Scale", grid.irradiance_ui_scale, 0.1f, 20.f);
 								ImGui::EndProperties();
 							}
 							//if (grid.irradiance)
@@ -721,7 +721,7 @@ namespace era_engine
 						{
 							if (ImGui::BeginProperties())
 							{
-								ImGui::PropertySlider("Scale", grid.depthUIScale, 0.1f, 20.f);
+								ImGui::PropertySlider("Scale", grid.depth_ui_scale, 0.1f, 20.f);
 								ImGui::EndProperties();
 							}
 							//if (grid.depth)
@@ -734,7 +734,7 @@ namespace era_engine
 						{
 							if (ImGui::BeginProperties())
 							{
-								ImGui::PropertySlider("Scale", grid.raytracedRadianceUIScale, 0.1f, 20.f);
+								ImGui::PropertySlider("Scale", grid.raytraced_radiance_ui_scale, 0.1f, 20.f);
 								ImGui::EndProperties();
 							}
 							//if (grid.raytracedRadiance)
@@ -750,29 +750,29 @@ namespace era_engine
 				ImGui::EndTree();
 			}
 
-			if (renderer->mode == renderer_mode_pathtraced)
+			if (renderer->mode == RENDERER_MODE_PATHTRACED)
 			{
 				if (ImGui::BeginProperties())
 				{
 					auto& settings = pathTracer.settings;
 
-					ImGui::PropertySlider("Max recursion depth", settings.recursionDepth, 0, settings.maxRecursionDepth - 1);
-					ImGui::PropertySlider("Start russian roulette after", settings.startRussianRouletteAfter, 0, settings.recursionDepth);
+					ImGui::PropertySlider("Max recursion depth", settings.recursion_depth, 0, settings.max_recursion_depth - 1);
+					ImGui::PropertySlider("Start russian roulette after", settings.start_russian_roulette_after, 0, settings.recursion_depth);
 
-					ImGui::PropertyCheckbox("Use thin lens camera", settings.useThinLensCamera);
-					if (settings.useThinLensCamera)
+					ImGui::PropertyCheckbox("Use thin lens camera", settings.use_thin_lens_camera);
+					if (settings.use_thin_lens_camera)
 					{
-						ImGui::PropertySlider("Focal length", settings.focalLength, 0.5f, 50.f);
-						ImGui::PropertySlider("F-Number", settings.fNumber, 1.f, 128.f);
+						ImGui::PropertySlider("Focal length", settings.focal_length, 0.5f, 50.f);
+						ImGui::PropertySlider("F-Number", settings.f_number, 1.f, 128.f);
 					}
-					ImGui::PropertyCheckbox("Use real materials", settings.useRealMaterials);
-					ImGui::PropertyCheckbox("Enable direct lighting", settings.enableDirectLighting);
-					if (settings.enableDirectLighting)
+					ImGui::PropertyCheckbox("Use real materials", settings.use_real_materials);
+					ImGui::PropertyCheckbox("Enable direct lighting", settings.enable_direct_lighting);
+					if (settings.enable_direct_lighting)
 					{
-						ImGui::PropertySlider("Light intensity scale", settings.lightIntensityScale, 0.f, 50.f);
-						ImGui::PropertySlider("Point light radius", settings.pointLightRadius, 0.01f, 1.f);
+						ImGui::PropertySlider("Light intensity scale", settings.light_intensity_scale, 0.f, 50.f);
+						ImGui::PropertySlider("Point light radius", settings.point_light_radius, 0.01f, 1.f);
 
-						ImGui::PropertyCheckbox("Multiple importance sampling", settings.multipleImportanceSampling);
+						ImGui::PropertyCheckbox("Multiple importance sampling", settings.multiple_importance_sampling);
 					}
 
 					ImGui::EndProperties();

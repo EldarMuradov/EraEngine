@@ -1,68 +1,68 @@
 #ifndef CAMERA_HLSLI
 #define CAMERA_HLSLI
 
-struct camera_cb
+struct CameraCB
 {
-	mat4 viewProj;
+	mat4 view_proj;
 	mat4 view;
 	mat4 proj;
-	mat4 invViewProj;
-	mat4 invView;
-	mat4 invProj;
-	mat4 prevFrameView;
-	mat4 prevFrameViewProj;
+	mat4 inv_view_proj;
+	mat4 inv_view;
+	mat4 inv_proj;
+	mat4 prev_frame_view;
+	mat4 prev_frame_view_proj;
 	vec4 position;
 	vec4 forward;
 	vec4 right;
 	vec4 up;
-	vec4 projectionParams; // nearPlane, farPlane, farPlane / nearPlane, 1 - farPlane / nearPlane
-	vec4 viewSpaceTopLeftFrustumVector; // z = -1.
-	vec2 extentAtDistanceOne;
-	vec2 screenDims;
-	vec2 invScreenDims;
+	vec4 projection_params; // nearPlane, farPlane, farPlane / nearPlane, 1 - farPlane / nearPlane
+	vec4 view_space_top_left_frustum_vector; // z = -1.
+	vec2 extent_at_distance_one;
+	vec2 screen_dims;
+	vec2 inv_screen_dims;
 	vec2 jitter;
-	vec2 prevFrameJitter;
+	vec2 prev_frame_jitter;
 
 #ifdef HLSL
-	float depthBufferDepthToEyeDepth(float depthBufferDepth)
+	float depth_buffer_depth_to_eye_depth(float depth_buffer_depth)
 	{
-		if (projectionParams.y < 0.f) // Infinite far plane.
+		if (projection_params.y < 0.f) // Infinite far plane.
 		{
-			depthBufferDepth = clamp(depthBufferDepth, 0.f, 1.f - 1e-7f); // A depth of 1 is at infinity.
-			return -projectionParams.x / (depthBufferDepth - 1.f);
+			depth_buffer_depth = clamp(depth_buffer_depth, 0.f, 1.f - 1e-7f); // A depth of 1 is at infinity.
+			return -projection_params.x / (depth_buffer_depth - 1.f);
 		}
 		else
 		{
-			const float c1 = projectionParams.z;
-			const float c0 = projectionParams.w;
-			return projectionParams.y / (c0 * depthBufferDepth + c1);
+			const float c1 = projection_params.z;
+			const float c0 = projection_params.w;
+			return projection_params.y / (c0 * depth_buffer_depth + c1);
 		}
 	}
 
 	// NOT normalized. Z-coordinate is 1 unit long.
-	float3 restoreViewDirection(float2 uv)
+	float3 restore_view_direction(float2 uv)
 	{
-		float2 offset = extentAtDistanceOne * uv;
-		return viewSpaceTopLeftFrustumVector.xyz + float3(offset.x, -offset.y, 0.f);
+		float2 offset = extent_at_distance_one * uv;
+		return view_space_top_left_frustum_vector.xyz + float3(offset.x, -offset.y, 0.f);
 	}
 
-	float3 restoreViewSpacePosition(float2 uv, float depth)
+	float3 restore_view_space_position(float2 uv, float depth)
 	{
-		float viewDepth = depthBufferDepthToEyeDepth(depth);
-		return restoreViewDirection(uv) * viewDepth;
+		float view_depth = depth_buffer_depth_to_eye_depth(depth);
+		return restore_view_direction(uv) * view_depth;
 	}
 
-	float3 restoreViewSpacePositionEyeDepth(float2 uv, float eyeDepth)
+	float3 restore_view_space_position_eye_depth(float2 uv, float eye_depth)
 	{
-		return restoreViewDirection(uv) * eyeDepth;
+		return restore_view_direction(uv) * eye_depth;
 	}
 
-	float3 restoreWorldSpacePosition(float2 uv, float depth)
+	float3 restore_world_space_position(float2 uv, float depth)
 	{
 		uv.y = 1.f - uv.y; // Screen uvs start at the top left, so flip y.
 		float3 ndc = float3(uv * 2.f - float2(1.f, 1.f), depth);
-		float4 homPosition = mul(invViewProj, float4(ndc, 1.f));
-		float3 position = homPosition.xyz / homPosition.w;
+		float4 hom_position = mul(inv_view_proj, float4(ndc, 1.f));
+		float3 position = hom_position.xyz / hom_position.w;
 		return position;
 	}
 #endif
@@ -70,57 +70,57 @@ struct camera_cb
 
 #ifdef HLSL
 
-static float depthBufferDepthToEyeDepth(float depthBufferDepth, float4 projectionParams)
+static float depth_buffer_depth_to_eye_depth(float depth_buffer_depth, float4 projection_params)
 {
-	if (projectionParams.y < 0.f) // Infinite far plane.
+	if (projection_params.y < 0.f) // Infinite far plane.
 	{
-		depthBufferDepth = clamp(depthBufferDepth, 0.f, 1.f - 1e-7f); // A depth of 1 is at infinity.
-		return -projectionParams.x / (depthBufferDepth - 1.f);
+		depth_buffer_depth = clamp(depth_buffer_depth, 0.f, 1.f - 1e-7f); // A depth of 1 is at infinity.
+		return -projection_params.x / (depth_buffer_depth - 1.f);
 	}
 	else
 	{
-		const float c1 = projectionParams.z;
-		const float c0 = projectionParams.w;
-		return projectionParams.y / (c0 * depthBufferDepth + c1);
+		const float c1 = projection_params.z;
+		const float c0 = projection_params.w;
+		return projection_params.y / (c0 * depth_buffer_depth + c1);
 	}
 }
 
-static float3 restoreViewSpacePosition(float4x4 invProj, float2 uv, float depth)
+static float3 restore_view_space_position(float4x4 inv_proj, float2 uv, float depth)
 {
 	uv.y = 1.f - uv.y; // Screen uvs start at the top left, so flip y.
 	float3 ndc = float3(uv * 2.f - float2(1.f, 1.f), depth);
-	float4 homPosition = mul(invProj, float4(ndc, 1.f));
-	float3 position = homPosition.xyz / homPosition.w;
+	float4 hom_position = mul(inv_proj, float4(ndc, 1.f));
+	float3 position = hom_position.xyz / hom_position.w;
 	return position;
 }
 
-static float3 restoreWorldSpacePosition(float4x4 invViewProj, float2 uv, float depth)
+static float3 restore_world_space_position(float4x4 inv_view_proj, float2 uv, float depth)
 {
 	uv.y = 1.f - uv.y; // Screen uvs start at the top left, so flip y.
 	float3 ndc = float3(uv * 2.f - float2(1.f, 1.f), depth);
-	float4 homPosition = mul(invViewProj, float4(ndc, 1.f));
-	float3 position = homPosition.xyz / homPosition.w;
+	float4 hom_position = mul(inv_view_proj, float4(ndc, 1.f));
+	float3 position = hom_position.xyz / hom_position.w;
 	return position;
 }
 
 // The directions are NOT normalized. Their z-coordinate is 'nearPlane' long.
-static float3 restoreViewDirection(float4x4 invProj, float2 uv)
+static float3 restore_view_direction(float4x4 inv_proj, float2 uv)
 {
-	return restoreViewSpacePosition(invProj, uv, 0.f);
+	return restore_view_space_position(inv_proj, uv, 0.f);
 }
 
-static float3 restoreWorldDirection(float4x4 invViewProj, float2 uv, float3 cameraPos)
+static float3 restore_world_direction(float4x4 inv_view_proj, float2 uv, float3 camera_pos)
 {
-	return restoreWorldSpacePosition(invViewProj, uv, 0.f) - cameraPos; // At this point, the result should be 'nearPlane' units away from the camera.
+	return restore_world_space_position(inv_view_proj, uv, 0.f) - camera_pos; // At this point, the result should be 'nearPlane' units away from the camera.
 }
 
-struct camera_frustum_planes
+struct CameraFrustumPlanes
 {
 	float4 planes[6];
 };
 
 // Returns true, if object should be culled.
-static bool cullWorldSpaceAABB(camera_frustum_planes planes, float4 min, float4 max)
+static bool cull_world_space_aabb(CameraFrustumPlanes planes, float4 min, float4 max)
 {
 	for (uint i = 0; i < 6; ++i)
 	{
@@ -139,9 +139,9 @@ static bool cullWorldSpaceAABB(camera_frustum_planes planes, float4 min, float4 
 	return false;
 }
 
-static bool cullModelSpaceAABB(camera_frustum_planes planes, float4 min, float4 max, float4x4 transform)
+static bool cull_model_space_aabb(CameraFrustumPlanes planes, float4 min, float4 max, float4x4 transform)
 {
-	float4 worldSpaceCorners[] =
+	float4 world_space_corners[] =
 	{
 		mul(transform, float4(min.x, min.y, min.z, 1.f)),
 		mul(transform, float4(max.x, min.y, min.z, 1.f)),
@@ -161,7 +161,7 @@ static bool cullModelSpaceAABB(camera_frustum_planes planes, float4 min, float4 
 
 		for (uint j = 0; j < 8; ++j)
 		{
-			if (dot(plane, worldSpaceCorners[j]) > 0.f)
+			if (dot(plane, world_space_corners[j]) > 0.f)
 			{
 				inside = true;
 				break;

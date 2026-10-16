@@ -292,7 +292,7 @@ namespace era_engine::physics
 			{
 				size_t j = (i + 1) % loop.size();
 
-				indexed_triangle32 tri;
+				IndexedTriangle32 tri;
 				tri.a = center_idx;
 				tri.b = loop[i];
 				tri.c = loop[j];
@@ -343,7 +343,7 @@ namespace era_engine::physics
 
 	static void build_part_submesh_filtered(
 		const SubmeshAsset& source,
-		const std::vector<indexed_triangle32>& triangles,
+		const std::vector<IndexedTriangle32>& triangles,
 		const std::vector<uint32>& group_bones,
 		SubmeshAsset& out_mesh)
 	{
@@ -469,7 +469,7 @@ namespace era_engine::physics
 
 		for (const auto& tri : triangles)
 		{
-			indexed_triangle32 new_tri;
+			IndexedTriangle32 new_tri;
 			new_tri.a = vertex_remap[tri.a];
 			new_tri.b = vertex_remap[tri.b];
 			new_tri.c = vertex_remap[tri.c];
@@ -550,7 +550,7 @@ namespace era_engine::physics
 				}
 			}
 
-			std::vector<indexed_triangle32> live_tris;
+			std::vector<IndexedTriangle32> live_tris;
 			live_tris.reserve(src.triangles.size());
 
 			for (const auto& tri : src.triangles)

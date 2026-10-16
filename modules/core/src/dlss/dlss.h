@@ -23,36 +23,36 @@
 
 namespace era_engine
 {
-	struct main_renderer;
+	struct MainRenderer;
 
 	namespace dlss
 	{
-		bool checkDLSSStatus(IDXGIAdapter* adapter);
+		bool check_dlss_status(IDXGIAdapter* adapter);
 
-		struct dlss_feature_adapter
+		struct DLSSFeatureAdapter
 		{
-			dlss_feature_adapter() = default;
+			DLSSFeatureAdapter() = default;
 
-			~dlss_feature_adapter();
+			~DLSSFeatureAdapter();
 
-			void initialize(main_renderer* rbd);
+			void initialize(MainRenderer* rbd);
 
-			void updateDLSS(ID3D12GraphicsCommandList* cmdList, float dt);
+			void update_dlss(ID3D12GraphicsCommandList* cmd_list, float dt);
 
 		private:
-			void initializeDLSS();
+			void initialize_dlss();
 
-			main_renderer* renderer = nullptr;
+			MainRenderer* renderer = nullptr;
 
 #if ENABLE_DLSS
 			NVSDK_NGX_Handle* handle = nullptr;
 			NVSDK_NGX_Parameter* params = nullptr;
 #endif
 
-			tonemap_settings tonemapSettings{};
+			TonemapSettings tonemap_settings{};
 
-			unsigned int renderOptimalWidth = 0;
-			unsigned int renderOptimalHeight = 0;
+			unsigned int render_optimal_width = 0;
+			unsigned int render_optimal_height = 0;
 		};
 	}
 }

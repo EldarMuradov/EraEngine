@@ -4,42 +4,42 @@
 #include "dx/dx.h"
 #include "dx/dx_context.h"
 
-#define CREATE_GRAPHICS_PIPELINE dx_graphics_pipeline_generator()
+#define CREATE_GRAPHICS_PIPELINE DXGraphicsPipelineGenerator()
 #define UNBOUNDED_DESCRIPTOR_RANGE -1
 
 namespace era_engine
 {
-	struct dx_root_signature
+	struct DXRootSignature
 	{
-		com<ID3D12RootSignature> rootSignature;
-		uint32* descriptorTableSizes;
-		uint32 numDescriptorTables;
-		uint32 tableRootParameterMask;
-		uint32 totalNumParameters;
+		com<ID3D12RootSignature> root_signature;
+		uint32* descriptor_table_sizes;
+		uint32 num_descriptor_tables;
+		uint32 table_root_parameter_mask;
+		uint32 total_num_parameters;
 	};
 
-	NODISCARD dx_root_signature createRootSignature(dx_blob rootSignatureBlob);
-	NODISCARD dx_root_signature createRootSignature(const wchar* path);
-	NODISCARD dx_root_signature createRootSignature(const D3D12_ROOT_SIGNATURE_DESC1& desc);
-	NODISCARD dx_root_signature createRootSignature(CD3DX12_ROOT_PARAMETER1* rootParameters, uint32 numRootParameters, CD3DX12_STATIC_SAMPLER_DESC* samplers, uint32 numSamplers,
+	NODISCARD DXRootSignature create_root_signature(DXBlob root_signature_blob);
+	NODISCARD DXRootSignature create_root_signature(const wchar* path);
+	NODISCARD DXRootSignature create_root_signature(const D3D12_ROOT_SIGNATURE_DESC1& desc);
+	NODISCARD DXRootSignature create_root_signature(CD3DX12_ROOT_PARAMETER1* root_parameters, uint32 num_root_parameters, CD3DX12_STATIC_SAMPLER_DESC* samplers, uint32 num_samplers,
 		D3D12_ROOT_SIGNATURE_FLAGS flags);
-	NODISCARD dx_root_signature createRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc);
-	NODISCARD dx_root_signature createRootSignature(CD3DX12_ROOT_PARAMETER* rootParameters, uint32 numRootParameters, CD3DX12_STATIC_SAMPLER_DESC* samplers, uint32 numSamplers,
+	NODISCARD DXRootSignature create_root_signature(const D3D12_ROOT_SIGNATURE_DESC& desc);
+	NODISCARD DXRootSignature create_root_signature(CD3DX12_ROOT_PARAMETER* root_parameters, uint32 num_root_parameters, CD3DX12_STATIC_SAMPLER_DESC* samplers, uint32 num_samplers,
 		D3D12_ROOT_SIGNATURE_FLAGS flags);
-	NODISCARD dx_command_signature createCommandSignature(dx_root_signature rootSignature, const D3D12_COMMAND_SIGNATURE_DESC& commandSignatureDesc);
-	NODISCARD dx_root_signature createRootSignature(D3D12_ROOT_SIGNATURE_FLAGS flags);
-	void freeRootSignature(dx_root_signature& rs);
+	NODISCARD DXCommandSignature create_command_signature(DXRootSignature root_signature, const D3D12_COMMAND_SIGNATURE_DESC& command_signature_desc);
+	NODISCARD DXRootSignature create_root_signature(D3D12_ROOT_SIGNATURE_FLAGS flags);
+	void free_root_signature(DXRootSignature& rs);
 
-	dx_command_signature createCommandSignature(dx_root_signature rootSignature, D3D12_INDIRECT_ARGUMENT_DESC* argumentDescs, uint32 numArgumentDescs, uint32 commandStructureSize);
+	DXCommandSignature create_command_signature(DXRootSignature root_signature, D3D12_INDIRECT_ARGUMENT_DESC* argument_descs, uint32 num_argument_descs, uint32 command_structure_size);
 
-	struct dx_graphics_pipeline_generator
+	struct DXGraphicsPipelineGenerator
 	{
 		operator const D3D12_GRAPHICS_PIPELINE_STATE_DESC& () const
 		{
 			return desc;
 		}
 
-		dx_graphics_pipeline_generator()
+		DXGraphicsPipelineGenerator()
 		{
 			desc = {};
 			desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
@@ -51,189 +51,189 @@ namespace era_engine
 			desc.SampleMask = 0xFFFFFFFF;
 		}
 
-		dx_graphics_pipeline_generator& rootSignature(const dx_root_signature& rootSignature)
+		DXGraphicsPipelineGenerator& root_signature(const DXRootSignature& root_signature)
 		{
-			desc.pRootSignature = rootSignature.rootSignature.Get();
+			desc.pRootSignature = root_signature.root_signature.Get();
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& vs(dx_blob shader)
+		DXGraphicsPipelineGenerator& vs(DXBlob shader)
 		{
 			desc.VS = CD3DX12_SHADER_BYTECODE(shader.Get());
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& ps(dx_blob shader)
+		DXGraphicsPipelineGenerator& ps(DXBlob shader)
 		{
 			desc.PS = CD3DX12_SHADER_BYTECODE(shader.Get());
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& gs(dx_blob shader)
+		DXGraphicsPipelineGenerator& gs(DXBlob shader)
 		{
 			desc.GS = CD3DX12_SHADER_BYTECODE(shader.Get());
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& ds(dx_blob shader)
+		DXGraphicsPipelineGenerator& ds(DXBlob shader)
 		{
 			desc.DS = CD3DX12_SHADER_BYTECODE(shader.Get());
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& hs(dx_blob shader)
+		DXGraphicsPipelineGenerator& hs(DXBlob shader)
 		{
 			desc.HS = CD3DX12_SHADER_BYTECODE(shader.Get());
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& alphaToCoverage(bool enable)
+		DXGraphicsPipelineGenerator& alpha_to_coverage(bool enable)
 		{
 			desc.BlendState.AlphaToCoverageEnable = enable;
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& independentRenderTargetBlending(bool enable)
+		DXGraphicsPipelineGenerator& independent_render_target_blending(bool enable)
 		{
 			desc.BlendState.IndependentBlendEnable = enable;
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& blendState(uint32 renderTargetIndex, D3D12_BLEND srcBlend, D3D12_BLEND destBlend, D3D12_BLEND_OP op)
+		DXGraphicsPipelineGenerator& blend_state(uint32 render_target_index, D3D12_BLEND src_blend, D3D12_BLEND dest_blend, D3D12_BLEND_OP op)
 		{
-			ASSERT(!desc.BlendState.RenderTarget[renderTargetIndex].LogicOpEnable);
-			desc.BlendState.RenderTarget[renderTargetIndex].BlendEnable = true;
-			desc.BlendState.RenderTarget[renderTargetIndex].SrcBlend = srcBlend;
-			desc.BlendState.RenderTarget[renderTargetIndex].DestBlend = destBlend;
-			desc.BlendState.RenderTarget[renderTargetIndex].BlendOp = op;
+			ASSERT(!desc.BlendState.RenderTarget[render_target_index].LogicOpEnable);
+			desc.BlendState.RenderTarget[render_target_index].BlendEnable = true;
+			desc.BlendState.RenderTarget[render_target_index].SrcBlend = src_blend;
+			desc.BlendState.RenderTarget[render_target_index].DestBlend = dest_blend;
+			desc.BlendState.RenderTarget[render_target_index].BlendOp = op;
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& alphaBlending(uint32 renderTargetIndex)
+		DXGraphicsPipelineGenerator& alpha_blending(uint32 render_target_index)
 		{
-			return blendState(renderTargetIndex, D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_INV_SRC_ALPHA, D3D12_BLEND_OP_ADD);
+			return blend_state(render_target_index, D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_INV_SRC_ALPHA, D3D12_BLEND_OP_ADD);
 		}
 
-		dx_graphics_pipeline_generator& additiveBlending(uint32 renderTargetIndex)
+		DXGraphicsPipelineGenerator& additive_blending(uint32 render_target_index)
 		{
-			return blendState(renderTargetIndex, D3D12_BLEND_ONE, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD);
+			return blend_state(render_target_index, D3D12_BLEND_ONE, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD);
 		}
 
-		dx_graphics_pipeline_generator& wireframe()
+		DXGraphicsPipelineGenerator& wireframe()
 		{
 			desc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& cullFrontFaces()
+		DXGraphicsPipelineGenerator& cull_front_faces()
 		{
 			desc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& cullingOff()
+		DXGraphicsPipelineGenerator& culling_off()
 		{
 			desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& rasterizeClockwise()
+		DXGraphicsPipelineGenerator& rasterize_clockwise()
 		{
 			desc.RasterizerState.FrontCounterClockwise = false;
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& depthBias(int bias = D3D12_DEFAULT_DEPTH_BIAS, float biasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP, float slopeScaledBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS)
+		DXGraphicsPipelineGenerator& depth_bias(int bias = D3D12_DEFAULT_DEPTH_BIAS, float bias_clamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP, float slope_scaled_bias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS)
 		{
 			desc.RasterizerState.DepthBias = bias;
-			desc.RasterizerState.DepthBiasClamp = biasClamp;
-			desc.RasterizerState.SlopeScaledDepthBias = slopeScaledBias;
+			desc.RasterizerState.DepthBiasClamp = bias_clamp;
+			desc.RasterizerState.SlopeScaledDepthBias = slope_scaled_bias;
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& antialiasing(bool multisampling = false, bool antialiasedlines = false, uint32 forcedSampleCount = 0)
+		DXGraphicsPipelineGenerator& antialiasing(bool multisampling = false, bool antialiasedlines = false, uint32 forced_sample_count = 0)
 		{
 			desc.RasterizerState.MultisampleEnable = multisampling;
 			desc.RasterizerState.AntialiasedLineEnable = antialiasedlines;
-			desc.RasterizerState.ForcedSampleCount = forcedSampleCount;
+			desc.RasterizerState.ForcedSampleCount = forced_sample_count;
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& rasterizeConvervative()
+		DXGraphicsPipelineGenerator& rasterize_convervative()
 		{
 			desc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_ON;
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& depthSettings(bool depthTest = true, bool depthWrite = true, D3D12_COMPARISON_FUNC func = D3D12_COMPARISON_FUNC_LESS)
+		DXGraphicsPipelineGenerator& depth_settings(bool depth_test = true, bool depth_write = true, D3D12_COMPARISON_FUNC func = D3D12_COMPARISON_FUNC_LESS)
 		{
-			desc.DepthStencilState.DepthEnable = depthTest;
-			desc.DepthStencilState.DepthWriteMask = depthWrite ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+			desc.DepthStencilState.DepthEnable = depth_test;
+			desc.DepthStencilState.DepthWriteMask = depth_write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
 			desc.DepthStencilState.DepthFunc = func;
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& stencilSettings(
+		DXGraphicsPipelineGenerator& stencil_settings(
 			D3D12_COMPARISON_FUNC func = D3D12_COMPARISON_FUNC_ALWAYS,
-			D3D12_STENCIL_OP onPass = D3D12_STENCIL_OP_KEEP,
-			D3D12_STENCIL_OP onStencilPassAndDepthFail = D3D12_STENCIL_OP_KEEP,
-			D3D12_STENCIL_OP onFail = D3D12_STENCIL_OP_KEEP,
-			uint8 readMask = D3D12_DEFAULT_STENCIL_READ_MASK, uint8 writeMask = D3D12_DEFAULT_STENCIL_WRITE_MASK)
+			D3D12_STENCIL_OP on_pass = D3D12_STENCIL_OP_KEEP,
+			D3D12_STENCIL_OP on_stencil_pass_and_depth_fail = D3D12_STENCIL_OP_KEEP,
+			D3D12_STENCIL_OP on_fail = D3D12_STENCIL_OP_KEEP,
+			uint8 read_mask = D3D12_DEFAULT_STENCIL_READ_MASK, uint8 write_mask = D3D12_DEFAULT_STENCIL_WRITE_MASK)
 		{
 			desc.DepthStencilState.StencilEnable = true;
-			desc.DepthStencilState.StencilReadMask = readMask;
-			desc.DepthStencilState.StencilWriteMask = writeMask;
+			desc.DepthStencilState.StencilReadMask = read_mask;
+			desc.DepthStencilState.StencilWriteMask = write_mask;
 
-			desc.DepthStencilState.FrontFace.StencilFailOp = onFail;
-			desc.DepthStencilState.FrontFace.StencilDepthFailOp = onStencilPassAndDepthFail;
-			desc.DepthStencilState.FrontFace.StencilPassOp = onPass;
+			desc.DepthStencilState.FrontFace.StencilFailOp = on_fail;
+			desc.DepthStencilState.FrontFace.StencilDepthFailOp = on_stencil_pass_and_depth_fail;
+			desc.DepthStencilState.FrontFace.StencilPassOp = on_pass;
 			desc.DepthStencilState.FrontFace.StencilFunc = func;
 
-			desc.DepthStencilState.BackFace.StencilFailOp = onFail;
-			desc.DepthStencilState.BackFace.StencilDepthFailOp = onStencilPassAndDepthFail;
-			desc.DepthStencilState.BackFace.StencilPassOp = onPass;
+			desc.DepthStencilState.BackFace.StencilFailOp = on_fail;
+			desc.DepthStencilState.BackFace.StencilDepthFailOp = on_stencil_pass_and_depth_fail;
+			desc.DepthStencilState.BackFace.StencilPassOp = on_pass;
 			desc.DepthStencilState.BackFace.StencilFunc = func;
 			return *this;
 		}
 
 		template <uint32 numElements>
-		dx_graphics_pipeline_generator& inputLayout(D3D12_INPUT_ELEMENT_DESC(&elements)[numElements])
+		DXGraphicsPipelineGenerator& input_layout(D3D12_INPUT_ELEMENT_DESC(&elements)[numElements])
 		{
 			desc.InputLayout = { elements, numElements };
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& inputLayout(D3D12_INPUT_ELEMENT_DESC* elements, uint32 numElements)
+		DXGraphicsPipelineGenerator& input_layout(D3D12_INPUT_ELEMENT_DESC* elements, uint32 num_elements)
 		{
-			desc.InputLayout = { elements, numElements };
+			desc.InputLayout = { elements, num_elements };
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& primitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE type)
+		DXGraphicsPipelineGenerator& primitive_topology(D3D12_PRIMITIVE_TOPOLOGY_TYPE type)
 		{
 			desc.PrimitiveTopologyType = type;
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& renderTargets(DXGI_FORMAT rtFormat, DXGI_FORMAT dsvFormat = DXGI_FORMAT_UNKNOWN)
+		DXGraphicsPipelineGenerator& render_targets(DXGI_FORMAT rt_format, DXGI_FORMAT dsv_format = DXGI_FORMAT_UNKNOWN)
 		{
-			return renderTargets(&rtFormat, 1, dsvFormat);
+			return render_targets(&rt_format, 1, dsv_format);
 		}
 
-		dx_graphics_pipeline_generator& renderTargets(const DXGI_FORMAT* rtFormats, uint32 numRenderTargets, DXGI_FORMAT dsvFormat = DXGI_FORMAT_UNKNOWN)
+		DXGraphicsPipelineGenerator& render_targets(const DXGI_FORMAT* rt_formats, uint32 num_render_targets, DXGI_FORMAT dsv_format = DXGI_FORMAT_UNKNOWN)
 		{
-			memcpy(desc.RTVFormats, rtFormats, sizeof(DXGI_FORMAT) * numRenderTargets);
-			desc.NumRenderTargets = numRenderTargets;
-			desc.DSVFormat = dsvFormat;
+			memcpy(desc.RTVFormats, rt_formats, sizeof(DXGI_FORMAT) * num_render_targets);
+			desc.NumRenderTargets = num_render_targets;
+			desc.DSVFormat = dsv_format;
 			return *this;
 		}
 
-		dx_graphics_pipeline_generator& renderTargets(const D3D12_RT_FORMAT_ARRAY& rtFormats, DXGI_FORMAT dsvFormat = DXGI_FORMAT_UNKNOWN)
+		DXGraphicsPipelineGenerator& render_targets(const D3D12_RT_FORMAT_ARRAY& rt_formats, DXGI_FORMAT dsv_format = DXGI_FORMAT_UNKNOWN)
 		{
-			return renderTargets(rtFormats.RTFormats, rtFormats.NumRenderTargets, dsvFormat);
+			return render_targets(rt_formats.RTFormats, rt_formats.NumRenderTargets, dsv_format);
 		}
 
-		dx_graphics_pipeline_generator& multisampling(uint32 count = 1, uint32 quality = 0)
+		DXGraphicsPipelineGenerator& multisampling(uint32 count = 1, uint32 quality = 0)
 		{
 			desc.SampleDesc = { count, quality };
 			return *this;
@@ -373,26 +373,26 @@ namespace era_engine
 		}
 	};
 
-	struct dx_pipeline_stream_base
+	struct DXPipelineStreamBase
 	{
-		virtual void setVertexShader(dx_blob blob) {}
-		virtual void setPixelShader(dx_blob blob) {}
-		virtual void setDomainShader(dx_blob blob) {}
-		virtual void setHullShader(dx_blob blob) {}
-		virtual void setGeometryShader(dx_blob blob) {}
-		virtual void setMeshShader(dx_blob blob) {}
-		virtual void setAmplificationShader(dx_blob blob) {}
+		virtual void set_vertex_shader(DXBlob blob) {}
+		virtual void set_pixel_shader(DXBlob blob) {}
+		virtual void set_domain_shader(DXBlob blob) {}
+		virtual void set_hull_shader(DXBlob blob) {}
+		virtual void set_geometry_shader(DXBlob blob) {}
+		virtual void set_mesh_shader(DXBlob blob) {}
+		virtual void set_amplification_shader(DXBlob blob) {}
 
-		virtual void setRootSignature(dx_root_signature rs) = 0;
+		virtual void set_root_signature(DXRootSignature rs) = 0;
 	};
 
-	struct dx_pipeline
+	struct DXPipeline
 	{
-		dx_pipeline_state* pipeline;
-		dx_root_signature* rootSignature;
+		DXPipelineState* pipeline;
+		DXRootSignature* root_signature;
 	};
 
-	union graphics_pipeline_files
+	union GraphicsPipelineFiles
 	{
 		struct
 		{
@@ -407,53 +407,53 @@ namespace era_engine
 		const char* shaders[7] = {};
 	};
 
-	enum rs_file
+	enum RSFile
 	{
-		rs_in_vertex_shader,
-		rs_in_pixel_shader,
-		rs_in_domain_shader,
-		rs_in_hull_shader,
-		rs_in_geometry_shader,
-		rs_in_mesh_shader,
-		rs_in_amplification_shader,
+		RS_IN_VERTEX_SHADER,
+		RS_IN_PIXEL_SHADER,
+		RS_IN_DOMAIN_SHADER,
+		RS_IN_HULL_SHADER,
+		RS_IN_GEOMETRY_SHADER,
+		RS_IN_MESH_SHADER,
+		RS_IN_AMPLIFICATION_SHADER,
 	};
 
-	dx_pipeline createReloadablePipeline(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc, const graphics_pipeline_files& files, dx_root_signature userRootSignature, bool loadImmediately = false);
-	dx_pipeline createReloadablePipeline(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc, const graphics_pipeline_files& files, rs_file rootSignatureFile = rs_in_pixel_shader, bool loadImmediately = false);
+	DXPipeline create_reloadable_pipeline(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc, const GraphicsPipelineFiles& files, DXRootSignature user_root_signature, bool load_immediately = false);
+	DXPipeline create_reloadable_pipeline(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc, const GraphicsPipelineFiles& files, RSFile root_signature_file = RS_IN_PIXEL_SHADER, bool load_immediately = false);
 
-	dx_pipeline createReloadablePipeline(const char* csFile, dx_root_signature userRootSignature, bool loadImmediately = false);
-	dx_pipeline createReloadablePipeline(const char* csFile, bool loadImmediately = false);
+	DXPipeline create_reloadable_pipeline(const char* cs_file, DXRootSignature user_root_signature, bool load_immediately = false);
+	DXPipeline create_reloadable_pipeline(const char* cs_file, bool load_immediately = false);
 
-	dx_pipeline createReloadablePipeline(const D3D12_PIPELINE_STATE_STREAM_DESC& desc, dx_pipeline_stream_base* stream, const graphics_pipeline_files& files, dx_root_signature userRootSignature, bool loadImmediately);
-	dx_pipeline createReloadablePipeline(const D3D12_PIPELINE_STATE_STREAM_DESC& desc, dx_pipeline_stream_base* stream, const graphics_pipeline_files& files, rs_file rootSignatureFile, bool loadImmediately);
+	DXPipeline create_reloadable_pipeline(const D3D12_PIPELINE_STATE_STREAM_DESC& desc, DXPipelineStreamBase* stream, const GraphicsPipelineFiles& files, DXRootSignature user_root_signature, bool load_immediately);
+	DXPipeline create_reloadable_pipeline(const D3D12_PIPELINE_STATE_STREAM_DESC& desc, DXPipelineStreamBase* stream, const GraphicsPipelineFiles& files, RSFile root_signature_file, bool load_immediately);
 
 	template <typename stream_t>
-	inline NODISCARD dx_pipeline createReloadablePipelineFromStream(const stream_t& stream, const graphics_pipeline_files& files, dx_root_signature userRootSignature)
+	inline NODISCARD DXPipeline create_reloadable_pipeline_from_stream(const stream_t& stream, const GraphicsPipelineFiles& files, DXRootSignature user_root_signature)
 	{
-		static_assert(std::is_base_of_v<dx_pipeline_stream_base, stream_t>, "Stream must inherit from dx_pipeline_stream_base.");
+		static_assert(std::is_base_of_v<DXPipelineStreamBase, stream_t>, "Stream must inherit from DXPipelineStreamBase.");
 
-		stream_t* streamCopy = new stream_t(stream); // Dynamically allocated for permanent storage.
+		stream_t* stream_copy = new stream_t(stream); // Dynamically allocated for permanent storage.
 		D3D12_PIPELINE_STATE_STREAM_DESC desc = {
-			sizeof(stream_t) - 8, (uint8*)streamCopy + 8 // Offset for vTable. This seems very broken. TODO: Verify that this always works.
+			sizeof(stream_t) - 8, (uint8*)stream_copy + 8 // Offset for vTable. This seems very broken. TODO: Verify that this always works.
 		};
 
-		return createReloadablePipeline(desc, streamCopy, files, userRootSignature, false);
+		return create_reloadable_pipeline(desc, stream_copy, files, user_root_signature, false);
 	}
 
 	template <typename stream_t>
-	inline NODISCARD dx_pipeline createReloadablePipelineFromStream(const stream_t& stream, const graphics_pipeline_files& files, rs_file rootSignatureFile = rs_in_pixel_shader)
+	inline NODISCARD DXPipeline create_reloadable_pipeline_from_stream(const stream_t& stream, const GraphicsPipelineFiles& files, RSFile root_signature_file = RS_IN_PIXEL_SHADER)
 	{
-		static_assert(std::is_base_of_v<dx_pipeline_stream_base, stream_t>, "Stream must inherit from dx_pipeline_stream_base.");
+		static_assert(std::is_base_of_v<DXPipelineStreamBase, stream_t>, "Stream must inherit from DXPipelineStreamBase.");
 
-		stream_t* streamCopy = new stream_t(stream); // Dynamically allocated for permanent storage.
+		stream_t* stream_copy = new stream_t(stream); // Dynamically allocated for permanent storage.
 		D3D12_PIPELINE_STATE_STREAM_DESC desc = {
-			sizeof(stream_t) - 8, (uint8*)streamCopy + 8 // Offset for vTable. This seems very broken. TODO: Verify that this always works.
+			sizeof(stream_t) - 8, (uint8*)stream_copy + 8 // Offset for vTable. This seems very broken. TODO: Verify that this always works.
 		};
 
-		return createReloadablePipeline(desc, streamCopy, files, rootSignatureFile, false);
+		return create_reloadable_pipeline(desc, stream_copy, files, root_signature_file, false);
 	}
 
-	void createAllPendingReloadablePipelines();
+	void create_all_pending_reloadable_pipelines();
 
-	void checkForChangedPipelines();
+	void check_for_changed_pipelines();
 }

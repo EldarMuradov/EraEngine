@@ -14,31 +14,31 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API tree_settings
+	struct ERA_CORE_API TreeSettings
 	{
-		float bendStrength;
+		float bend_strength;
 	};
 
 	class ERA_CORE_API TreeComponent : public Component
 	{
 	public:
 		TreeComponent() = default;
-		TreeComponent(ref<Entity::EcsData> _data, const tree_settings& _settings);
+		TreeComponent(ref<Entity::EcsData> _data, const TreeSettings& _settings);
 		~TreeComponent() override;
 
 		ERA_VIRTUAL_REFLECT(Component)
 
 	public:
-		tree_settings settings;
+		TreeSettings settings;
 	};
 
-	void renderTree(struct opaque_render_pass* renderPass, D3D12_GPU_VIRTUAL_ADDRESS transforms, uint32 numInstances, const MultiMesh* mesh, float dt);
+	void render_tree(struct OpaqueRenderPass* render_pass, D3D12_GPU_VIRTUAL_ADDRESS transforms, uint32 num_instances, const MultiMesh* mesh, float dt);
 
-	void initializeTreePipelines();
+	void initialize_tree_pipelines();
 
-	ref<MultiMesh> loadTreeMeshFromFile(const fs::path& sceneFilename);
-	ref<MultiMesh> loadTreeMeshFromHandle(AssetHandle handle);
+	ref<MultiMesh> load_tree_mesh_from_file(const fs::path& scene_filename);
+	ref<MultiMesh> load_tree_mesh_from_handle(AssetHandle handle);
 
-	ref<MultiMesh> loadTreeMeshFromFileAsync(const fs::path& sceneFilename, JobHandle parent_job = {});
-	ref<MultiMesh> loadTreeMeshFromHandleAsync(AssetHandle handle, JobHandle parent_job = {});
+	ref<MultiMesh> load_tree_mesh_from_file_async(const fs::path& scene_filename, JobHandle parent_job = {});
+	ref<MultiMesh> load_tree_mesh_from_handle_async(AssetHandle handle, JobHandle parent_job = {});
 }

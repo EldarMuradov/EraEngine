@@ -10,9 +10,9 @@
 
 namespace era_engine
 {
-	static dx_pipeline defaultPipeline;
-	static dx_pipeline doubleSidedDefaultPipeline;
-	static dx_pipeline alphaCutoutPipeline;
+	static DXPipeline default_pipeline;
+	static DXPipeline double_sided_default_pipeline;
+	static DXPipeline alpha_cutout_pipeline;
 
 	static D3D12_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -20,73 +20,73 @@ namespace era_engine
 		{ "PREV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 	};
 
-	static D3D12_INPUT_ELEMENT_DESC alphaCutoutLayout[] =
+	static D3D12_INPUT_ELEMENT_DESC alpha_cutout_layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "PREV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORDS", 0, DXGI_FORMAT_R32G32_FLOAT, 2, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 	};
 
-	void initializeDepthPrepassPipelines()
+	void initialize_depth_prepass_pipelines()
 	{
 		auto& desc = CREATE_GRAPHICS_PIPELINE
-			.renderTargets(depthOnlyFormat, arraysize(depthOnlyFormat), depthStencilFormat)
-			.inputLayout(layout);
+			.render_targets(depth_only_format, arraysize(depth_only_format), depth_stencil_format)
+			.input_layout(layout);
 
-		defaultPipeline = createReloadablePipeline(desc, { "depth_only_vs", "depth_only_ps" }, rs_in_vertex_shader);
+		default_pipeline = create_reloadable_pipeline(desc, { "depth_only_vs", "depth_only_ps" }, RS_IN_VERTEX_SHADER);
 
-		desc.cullingOff();
-		doubleSidedDefaultPipeline = createReloadablePipeline(desc, { "depth_only_vs", "depth_only_ps" }, rs_in_vertex_shader);
+		desc.culling_off();
+		double_sided_default_pipeline = create_reloadable_pipeline(desc, { "depth_only_vs", "depth_only_ps" }, RS_IN_VERTEX_SHADER);
 
-		desc.inputLayout(alphaCutoutLayout);
-		alphaCutoutPipeline = createReloadablePipeline(desc, { "depth_only_alpha_cutout_vs", "depth_only_alpha_cutout_ps" }, rs_in_vertex_shader);
+		desc.input_layout(alpha_cutout_layout);
+		alpha_cutout_pipeline = create_reloadable_pipeline(desc, { "depth_only_alpha_cutout_vs", "depth_only_alpha_cutout_ps" }, RS_IN_VERTEX_SHADER);
 	}
 
-	static void setupDepthPrepassCommon(dx_command_list* cl, const dx_pipeline& pipeline, dx_dynamic_constant_buffer cameraCBV)
+	static void setup_depth_prepass_common(DXCommandList* cl, const DXPipeline& pipeline, DXDynamicConstantBuffer camera_cbv)
 	{
-		cl->setPipelineState(*pipeline.pipeline);
-		cl->setGraphicsRootSignature(*pipeline.rootSignature);
+		cl->set_pipeline_state(*pipeline.pipeline);
+		cl->set_graphics_root_signature(*pipeline.root_signature);
 
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		cl->setGraphicsDynamicConstantBuffer(DEPTH_ONLY_RS_CAMERA, cameraCBV);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_graphics_dynamic_constant_buffer(DEPTH_ONLY_RS_CAMERA, camera_cbv);
 	}
 
-	PIPELINE_SETUP_IMPL(depth_prepass_pipeline::single_sided)
+	PIPELINE_SETUP_IMPL(DepthPrepassPipeline::SingleSided)
 	{
-		setupDepthPrepassCommon(cl, defaultPipeline, common.cameraCBV);
+		setup_depth_prepass_common(cl, default_pipeline, common.camera_cbv);
 	}
 
-	PIPELINE_SETUP_IMPL(depth_prepass_pipeline::double_sided)
+	PIPELINE_SETUP_IMPL(DepthPrepassPipeline::DoubleSided)
 	{
-		setupDepthPrepassCommon(cl, doubleSidedDefaultPipeline, common.cameraCBV);
+		setup_depth_prepass_common(cl, double_sided_default_pipeline, common.camera_cbv);
 	}
 
-	PIPELINE_SETUP_IMPL(depth_prepass_pipeline::alpha_cutout)
+	PIPELINE_SETUP_IMPL(DepthPrepassPipeline::AlphaCutout)
 	{
-		setupDepthPrepassCommon(cl, alphaCutoutPipeline, common.cameraCBV);
+		setup_depth_prepass_common(cl, alpha_cutout_pipeline, common.camera_cbv);
 	}
 
-	static void render(dx_command_list* cl, const depth_prepass_data& data)
+	static void render(DXCommandList* cl, const DepthPrepassData& data)
 	{
-		cl->setRootGraphicsSRV(DEPTH_ONLY_RS_TRANSFORM, data.transformPtr);
-		cl->setRootGraphicsSRV(DEPTH_ONLY_RS_PREV_FRAME_TRANSFORM, data.prevFrameTransformPtr);
-		cl->setRootGraphicsSRV(DEPTH_ONLY_RS_OBJECT_ID, data.objectIDPtr);
+		cl->set_root_graphics_srv(DEPTH_ONLY_RS_TRANSFORM, data.transform_ptr);
+		cl->set_root_graphics_srv(DEPTH_ONLY_RS_PREV_FRAME_TRANSFORM, data.prev_frame_transform_ptr);
+		cl->set_root_graphics_srv(DEPTH_ONLY_RS_OBJECT_ID, data.object_id_ptr);
 
-		cl->setVertexBuffer(0, data.vertexBuffer.positions);
-		cl->setVertexBuffer(1, data.prevFrameVertexBuffer);
-		cl->setIndexBuffer(data.indexBuffer);
-		cl->drawIndexed(data.submesh.numIndices, data.numInstances, data.submesh.firstIndex, data.submesh.baseVertex, 0);
+		cl->set_vertex_buffer(0, data.vertex_buffer.positions);
+		cl->set_vertex_buffer(1, data.prev_frame_vertex_buffer);
+		cl->set_index_buffer(data.index_buffer);
+		cl->draw_indexed(data.submesh.num_indices, data.num_instances, data.submesh.first_index, data.submesh.base_vertex, 0);
 	}
 
-	DEPTH_ONLY_RENDER_IMPL(depth_prepass_pipeline, depth_prepass_data)
+	DEPTH_ONLY_RENDER_IMPL(DepthPrepassPipeline, DepthPrepassData)
 	{
 		era_engine::render(cl, data);
 	}
 
-	DEPTH_ONLY_RENDER_IMPL(depth_prepass_pipeline::alpha_cutout, depth_prepass_data)
+	DEPTH_ONLY_RENDER_IMPL(DepthPrepassPipeline::AlphaCutout, DepthPrepassData)
 	{
-		cl->setDescriptorHeapSRV(DEPTH_ONLY_RS_ALPHA_TEXTURE, 0, data.alphaCutoutTextureSRV ? data.alphaCutoutTextureSRV : render_resources::whiteTexture->defaultSRV);
-		cl->setVertexBuffer(2, data.vertexBuffer.others);
+		cl->set_descriptor_heap_srv(DEPTH_ONLY_RS_ALPHA_TEXTURE, 0, data.alpha_cutout_texture_srv ? data.alpha_cutout_texture_srv : RenderResources::white_texture->default_srv);
+		cl->set_vertex_buffer(2, data.vertex_buffer.others);
 		era_engine::render(cl, data);
 	}
 }

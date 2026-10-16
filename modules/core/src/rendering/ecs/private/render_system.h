@@ -35,37 +35,37 @@ namespace era_engine
 	private:
 		void load_custom_shaders();
 
-		void resetRenderPasses();
-		void submitRendererParams(uint32 numSpotLightShadowPasses, uint32 numPointLightShadowPasses);
+		void reset_render_passes();
+		void submit_renderer_params(uint32 num_spot_light_shadow_passes, uint32 num_point_light_shadow_passes);
 
 	private:
 		RendererHolderRootComponent* renderer_holder_rc = nullptr;
 
-		Allocator stackArena;
+		Allocator stack_arena;
 
-		raytracing_tlas raytracingTLAS;
+		RaytracingTLAS raytracing_tlas;
 
-		ref<dx_buffer> pointLightBuffer[NUM_BUFFERED_FRAMES];
-		ref<dx_buffer> spotLightBuffer[NUM_BUFFERED_FRAMES];
-		ref<dx_buffer> decalBuffer[NUM_BUFFERED_FRAMES];
+		ref<DXBuffer> point_light_buffer[NUM_BUFFERED_FRAMES];
+		ref<DXBuffer> spot_light_buffer[NUM_BUFFERED_FRAMES];
+		ref<DXBuffer> decal_buffer[NUM_BUFFERED_FRAMES];
 
-		ref<dx_buffer> spotLightShadowInfoBuffer[NUM_BUFFERED_FRAMES];
-		ref<dx_buffer> pointLightShadowInfoBuffer[NUM_BUFFERED_FRAMES];
+		ref<DXBuffer> spot_light_shadow_info_buffer[NUM_BUFFERED_FRAMES];
+		ref<DXBuffer> point_light_shadow_info_buffer[NUM_BUFFERED_FRAMES];
 
-		std::vector<pbr_decal_cb> decals;
+		std::vector<PBRDecalCB> decals;
 
-		ref<dx_texture> decalTexture;
+		ref<DXTexture> decal_texture;
 
-		fire_particle_system fireParticleSystem;
-		smoke_particle_system smokeParticleSystem;
-		boid_particle_system boidParticleSystem;
-		debris_particle_system debrisParticleSystem;
+		FireParticleSystem fire_particle_system;
+		SmokeParticleSystem smoke_particle_system;
+		BoidParticleSystem boid_particle_system;
+		DebrisParticleSystem debris_particle_system;
 
-		opaque_render_pass opaqueRenderPass;
-		transparent_render_pass transparentRenderPass;
-		sun_shadow_render_pass sunShadowRenderPass;
-		spot_shadow_render_pass spotShadowRenderPasses[16];
-		point_shadow_render_pass pointShadowRenderPasses[16];
-		compute_pass computePass;
+		OpaqueRenderPass opaque_render_pass;
+		TransparentRenderPass transparent_render_pass;
+		SunShadowRenderPass sun_shadow_render_pass;
+		SpotShadowRenderPass spot_shadow_render_passes[16];
+		PointShadowRenderPass point_shadow_render_passes[16];
+		ComputePass compute_pass;
 	};
 }

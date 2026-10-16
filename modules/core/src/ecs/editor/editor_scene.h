@@ -16,9 +16,9 @@ namespace era_engine
 	public:
 		enum SceneMode
 		{
-			scene_mode_editor,
-			scene_mode_runtime_playing,
-			scene_mode_runtime_paused,
+			SCENE_MODE_EDITOR,
+			SCENE_MODE_RUNTIME_PLAYING,
+			SCENE_MODE_RUNTIME_PAUSED,
 		};
 
 		EditorScene()
@@ -36,56 +36,56 @@ namespace era_engine
 
 		float get_timestep_scale() const
 		{
-			return (mode == scene_mode_editor || mode == scene_mode_runtime_paused) ? 0.f : timestep_scale;
+			return (mode == SCENE_MODE_EDITOR || mode == SCENE_MODE_RUNTIME_PAUSED) ? 0.f : timestep_scale;
 		}
 
 		void play()
 		{
-			if (mode == scene_mode_editor)
+			if (mode == SCENE_MODE_EDITOR)
 			{
 				//runtime_world->destroy(false);
 			}
-			mode = scene_mode_runtime_playing;
+			mode = SCENE_MODE_RUNTIME_PLAYING;
 		}
 
 		void pause()
 		{
-			if (mode == scene_mode_runtime_playing)
+			if (mode == SCENE_MODE_RUNTIME_PLAYING)
 			{
-				mode = scene_mode_runtime_paused;
+				mode = SCENE_MODE_RUNTIME_PAUSED;
 			}
 		}
 
 		void stop()
 		{
-			mode = scene_mode_editor;
+			mode = SCENE_MODE_EDITOR;
 		}
 
 		bool is_playable() const
 		{
-			return mode == scene_mode_editor || mode == scene_mode_runtime_paused;
+			return mode == SCENE_MODE_EDITOR || mode == SCENE_MODE_RUNTIME_PAUSED;
 		}
 
 		bool is_pausable() const
 		{
-			return mode == scene_mode_runtime_playing;
+			return mode == SCENE_MODE_RUNTIME_PLAYING;
 		}
 
 		bool is_stoppable() const
 		{
-			return mode == scene_mode_runtime_playing || mode == scene_mode_runtime_paused;
+			return mode == SCENE_MODE_RUNTIME_PLAYING || mode == SCENE_MODE_RUNTIME_PAUSED;
 		}
 
 		static inline ref<World> runtime_world = nullptr;
 
-		static inline SceneMode mode = scene_mode_runtime_playing;
+		static inline SceneMode mode = SCENE_MODE_RUNTIME_PLAYING;
 		float timestep_scale = 1.0f;
 
-		render_camera camera;
-		render_camera editor_camera;
+		RenderCamera camera;
+		RenderCamera editor_camera;
 
-		directional_light sun;
-		pbr_environment environment;
+		DirectionalLight sun;
+		PBREnvironment environment;
 
 		fs::path save_path;
 	};

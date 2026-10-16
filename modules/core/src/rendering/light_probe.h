@@ -14,42 +14,42 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API light_probe_grid
+	struct ERA_CORE_API LightProbeGrid
 	{
-		void initialize(vec3 minCorner, vec3 dimensions, float cellSize);
-		void visualize(opaque_render_pass* renderPass);
+		void initialize(vec3 min_corner, vec3 dimensions, float cell_size);
+		void visualize(OpaqueRenderPass* render_pass);
 
-		void updateProbes(dx_command_list* cl, const struct raytracing_tlas& lightProbeTlas, const common_render_data& common) const;
+		void update_probes(DXCommandList* cl, const struct RaytracingTLAS& light_probe_tlas, const CommonRenderData& common) const;
 
-		NODISCARD light_probe_grid_cb getCB() const { return { minCorner, cellSize, numNodesX, numNodesY, numNodesZ }; }
+		NODISCARD LightProbeGridCB get_cb() const { return { min_corner, cell_size, num_nodes_x, num_nodes_y, num_nodes_z }; }
 
-		vec3 minCorner;
-		float cellSize;
+		vec3 min_corner;
+		float cell_size;
 
-		uint32 numNodesX;
-		uint32 numNodesY;
-		uint32 numNodesZ;
-		uint32 totalNumNodes = 0;
+		uint32 num_nodes_x;
+		uint32 num_nodes_y;
+		uint32 num_nodes_z;
+		uint32 total_num_nodes = 0;
 
-		ref<dx_texture> irradiance;
-		ref<dx_texture> depth;
+		ref<DXTexture> irradiance;
+		ref<DXTexture> depth;
 
-		ref<dx_texture> raytracedRadiance;
-		ref<dx_texture> raytracedDirectionAndDistance;
+		ref<DXTexture> raytraced_radiance;
+		ref<DXTexture> raytraced_direction_and_distance;
 
-		bool visualizeProbes = false;
-		bool visualizeRays = false;
-		bool autoRotateRays = true;
+		bool visualize_probes = false;
+		bool visualize_rays = false;
+		bool auto_rotate_rays = true;
 
-		mutable bool rotateRays = false;
+		mutable bool rotate_rays = false;
 
-		float irradianceUIScale = 1.f;
-		float depthUIScale = 1.f;
-		float raytracedRadianceUIScale = 1.f;
+		float irradiance_ui_scale = 1.f;
+		float depth_ui_scale = 1.f;
+		float raytraced_radiance_ui_scale = 1.f;
 
-		mutable quat rayRotation = quat::identity;
+		mutable quat ray_rotation = quat::identity;
 		mutable RandomNumberGenerator rng = { 61913 };
 	};
 
-	void initializeLightProbePipelines();
+	void initialize_light_probe_pipelines();
 }

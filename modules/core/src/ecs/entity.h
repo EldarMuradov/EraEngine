@@ -28,14 +28,14 @@ namespace era_engine
 	{
 	public:
 		using Handle = entt::entity;
-		static inline const entt::null_t NullHandle = entt::null;
+		static inline const entt::null_t null_handle = entt::null;
 
-		static Entity Null;
+		static Entity null;
 
 		struct EcsData final
 		{
-			Entity::Handle entity_handle = Entity::NullHandle;
-			Entity::Handle parent_handle = Entity::NullHandle;
+			Entity::Handle entity_handle = Entity::null_handle;
+			Entity::Handle parent_handle = Entity::null_handle;
 			World* world = nullptr;
 			entt::registry* native_registry = nullptr;
 		};
@@ -123,7 +123,7 @@ namespace era_engine
 		ref<EcsData> internal_data = nullptr;
 
 		friend class World;
-		friend struct eeditor;
+		friend struct EEditor;
 	};
 
 	class ERA_CORE_API EntityPtr

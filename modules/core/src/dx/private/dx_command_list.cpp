@@ -5,623 +5,623 @@
 		  
 namespace era_engine
 {
-	dx_command_list::dx_command_list(D3D12_COMMAND_LIST_TYPE type)
+	DXCommandList::DXCommandList(D3D12_COMMAND_LIST_TYPE type)
 	{
 		this->type = type;
-		checkResult(dxContext.device->CreateCommandAllocator(type, IID_PPV_ARGS(&commandAllocator)));
-		checkResult(dxContext.device->CreateCommandList(0, type, commandAllocator.Get(), 0, IID_PPV_ARGS(&commandList)));
+		checkResult(dx_context.device->CreateCommandAllocator(type, IID_PPV_ARGS(&command_allocator)));
+		checkResult(dx_context.device->CreateCommandList(0, type, command_allocator.Get(), 0, IID_PPV_ARGS(&command_list)));
 
-		dynamicDescriptorHeap.initialize();
+		dynamic_descriptor_heap.initialize();
 	}
 
-	void dx_command_list::barriers(CD3DX12_RESOURCE_BARRIER* barriers, uint32 numBarriers)
+	void DXCommandList::barriers(CD3DX12_RESOURCE_BARRIER* barriers, uint32 num_barriers)
 	{
-		commandList->ResourceBarrier(numBarriers, barriers);
+		command_list->ResourceBarrier(num_barriers, barriers);
 	}
 
-	void dx_command_list::transitionBarrier(const ref<dx_texture>& texture, D3D12_RESOURCE_STATES from, D3D12_RESOURCE_STATES to, uint32 subresource)
+	void DXCommandList::transition_barrier(const ref<DXTexture>& texture, D3D12_RESOURCE_STATES from, D3D12_RESOURCE_STATES to, uint32 subresource)
 	{
-		transitionBarrier(texture->resource, from, to, subresource);
+		transition_barrier(texture->resource, from, to, subresource);
 	}
 
-	void dx_command_list::transitionBarrier(const ref<dx_buffer>& buffer, D3D12_RESOURCE_STATES from, D3D12_RESOURCE_STATES to, uint32 subresource)
+	void DXCommandList::transition_barrier(const ref<DXBuffer>& buffer, D3D12_RESOURCE_STATES from, D3D12_RESOURCE_STATES to, uint32 subresource)
 	{
-		transitionBarrier(buffer->resource, from, to, subresource);
+		transition_barrier(buffer->resource, from, to, subresource);
 	}
 
-	void dx_command_list::transitionBarrier(dx_resource resource, D3D12_RESOURCE_STATES from, D3D12_RESOURCE_STATES to, uint32 subresource)
+	void DXCommandList::transition_barrier(DXResource resource, D3D12_RESOURCE_STATES from, D3D12_RESOURCE_STATES to, uint32 subresource)
 	{
 		CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), from, to, subresource);
-		commandList->ResourceBarrier(1, &barrier);
+		command_list->ResourceBarrier(1, &barrier);
 	}
 
-	void dx_command_list::uavBarrier(const ref<dx_texture>& texture)
+	void DXCommandList::uav_barrier(const ref<DXTexture>& texture)
 	{
-		uavBarrier(texture->resource);
+		uav_barrier(texture->resource);
 	}
 
-	void dx_command_list::uavBarrier(const ref<dx_buffer>& buffer)
+	void DXCommandList::uav_barrier(const ref<DXBuffer>& buffer)
 	{
-		uavBarrier(buffer->resource);
+		uav_barrier(buffer->resource);
 	}
 
-	void dx_command_list::uavBarrier(dx_resource resource)
+	void DXCommandList::uav_barrier(DXResource resource)
 	{
 		CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::UAV(resource.Get());
-		commandList->ResourceBarrier(1, &barrier);
+		command_list->ResourceBarrier(1, &barrier);
 	}
 
-	void dx_command_list::aliasingBarrier(const ref<dx_texture>& before, const ref<dx_texture>& after)
+	void DXCommandList::aliasing_barrier(const ref<DXTexture>& before, const ref<DXTexture>& after)
 	{
-		aliasingBarrier(before->resource, after->resource);
+		aliasing_barrier(before->resource, after->resource);
 	}
 
-	void dx_command_list::aliasingBarrier(const ref<dx_buffer>& before, const ref<dx_buffer>& after)
+	void DXCommandList::aliasing_barrier(const ref<DXBuffer>& before, const ref<DXBuffer>& after)
 	{
-		aliasingBarrier(before->resource, after->resource);
+		aliasing_barrier(before->resource, after->resource);
 	}
 
-	void dx_command_list::aliasingBarrier(dx_resource before, dx_resource after)
+	void DXCommandList::aliasing_barrier(DXResource before, DXResource after)
 	{
 		CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Aliasing(before.Get(), after.Get());
-		commandList->ResourceBarrier(1, &barrier);
+		command_list->ResourceBarrier(1, &barrier);
 	}
 
-	void dx_command_list::assertResourceState(const ref<dx_texture>& texture, D3D12_RESOURCE_STATES state, uint32 subresource)
+	void DXCommandList::assert_resource_state(const ref<DXTexture>& texture, D3D12_RESOURCE_STATES state, uint32 subresource)
 	{
-		assertResourceState(texture->resource, state, subresource);
+		assert_resource_state(texture->resource, state, subresource);
 	}
 
-	void dx_command_list::assertResourceState(const ref<dx_buffer>& buffer, D3D12_RESOURCE_STATES state, uint32 subresource)
+	void DXCommandList::assert_resource_state(const ref<DXBuffer>& buffer, D3D12_RESOURCE_STATES state, uint32 subresource)
 	{
-		assertResourceState(buffer->resource, state, subresource);
+		assert_resource_state(buffer->resource, state, subresource);
 	}
 
-	void dx_command_list::assertResourceState(dx_resource resource, D3D12_RESOURCE_STATES state, uint32 subresource)
+	void DXCommandList::assert_resource_state(DXResource resource, D3D12_RESOURCE_STATES state, uint32 subresource)
 	{
 #ifdef _DEBUG
 		ID3D12DebugCommandList* debugCL = 0;
-		if (SUCCEEDED(commandList->QueryInterface(IID_PPV_ARGS(&debugCL))))
+		if (SUCCEEDED(command_list->QueryInterface(IID_PPV_ARGS(&debugCL))))
 		{
 			ASSERT(debugCL->AssertResourceState(resource.Get(), subresource, state));
 		}
 #endif
 	}
 
-	void dx_command_list::copyResource(dx_resource from, dx_resource to)
+	void DXCommandList::copy_resource(DXResource from, DXResource to)
 	{
-		commandList->CopyResource(to.Get(), from.Get());
+		command_list->CopyResource(to.Get(), from.Get());
 	}
 
-	void dx_command_list::copyTextureRegionToBuffer(const ref<dx_texture>& from, const ref<dx_buffer>& to, uint32 bufferElementOffset, uint32 x, uint32 y, uint32 width, uint32 height)
+	void DXCommandList::copy_texture_region_to_buffer(const ref<DXTexture>& from, const ref<DXBuffer>& to, uint32 buffer_element_offset, uint32 x, uint32 y, uint32 width, uint32 height)
 	{
-		copyTextureRegionToBuffer(from->resource, from->width, from->format, to, bufferElementOffset, x, y, width, height);
+		copy_texture_region_to_buffer(from->resource, from->width, from->format, to, buffer_element_offset, x, y, width, height);
 	}
 
-	void dx_command_list::copyTextureRegionToBuffer(const dx_resource& from, uint32 fromWidth, DXGI_FORMAT format, const ref<dx_buffer>& to, uint32 bufferElementOffset, uint32 x, uint32 y, uint32 width, uint32 height)
+	void DXCommandList::copy_texture_region_to_buffer(const DXResource& from, uint32 from_width, DXGI_FORMAT format, const ref<DXBuffer>& to, uint32 buffer_element_offset, uint32 x, uint32 y, uint32 width, uint32 height)
 	{
-		uint32 numPixelsToCopy = width * height;
+		uint32 num_pixels_to_copy = width * height;
 
-		uint32 numRows = bucketize(numPixelsToCopy, fromWidth);
-		uint32 destWidth = (numRows == 1) ? to->elementCount : fromWidth;
+		uint32 num_rows = bucketize(num_pixels_to_copy, from_width);
+		uint32 dest_width = (num_rows == 1) ? to->element_count : from_width;
 
-		D3D12_TEXTURE_COPY_LOCATION destLocation = {};
-		destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-		destLocation.pResource = to->resource.Get();
-		destLocation.SubresourceIndex = 0;
-		destLocation.PlacedFootprint.Offset = 0;
-		destLocation.PlacedFootprint.Footprint.Format = format;
-		destLocation.PlacedFootprint.Footprint.Width = destWidth;
-		destLocation.PlacedFootprint.Footprint.Height = numRows;
-		destLocation.PlacedFootprint.Footprint.Depth = 1;
-		destLocation.PlacedFootprint.Footprint.RowPitch = align_to(destWidth * getFormatSize(format), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+		D3D12_TEXTURE_COPY_LOCATION dest_location = {};
+		dest_location.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+		dest_location.pResource = to->resource.Get();
+		dest_location.SubresourceIndex = 0;
+		dest_location.PlacedFootprint.Offset = 0;
+		dest_location.PlacedFootprint.Footprint.Format = format;
+		dest_location.PlacedFootprint.Footprint.Width = dest_width;
+		dest_location.PlacedFootprint.Footprint.Height = num_rows;
+		dest_location.PlacedFootprint.Footprint.Depth = 1;
+		dest_location.PlacedFootprint.Footprint.RowPitch = align_to(dest_width * get_format_size(format), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 
-		D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
-		srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-		srcLocation.SubresourceIndex = 0;
-		srcLocation.pResource = from.Get();
+		D3D12_TEXTURE_COPY_LOCATION src_location = {};
+		src_location.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		src_location.SubresourceIndex = 0;
+		src_location.pResource = from.Get();
 
-		D3D12_BOX srcBox = { x, y, 0, x + width, y + height, 1 };
-		commandList->CopyTextureRegion(&destLocation, bufferElementOffset, 0, 0, &srcLocation, &srcBox);
+		D3D12_BOX src_box = { x, y, 0, x + width, y + height, 1 };
+		command_list->CopyTextureRegion(&dest_location, buffer_element_offset, 0, 0, &src_location, &src_box);
 	}
 
-	void dx_command_list::copyTextureRegionToTexture(const ref<dx_texture>& from, const ref<dx_texture>& to, uint32 sourceX, uint32 sourceY, uint32 destX, uint32 destY, uint32 width, uint32 height)
+	void DXCommandList::copy_texture_region_to_texture(const ref<DXTexture>& from, const ref<DXTexture>& to, uint32 source_x, uint32 source_y, uint32 dest_x, uint32 dest_y, uint32 width, uint32 height)
 	{
-		D3D12_TEXTURE_COPY_LOCATION destLocation = { to->resource.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, 0 };
-		D3D12_TEXTURE_COPY_LOCATION srcLocation = { from->resource.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, 0 };
+		D3D12_TEXTURE_COPY_LOCATION dest_location = { to->resource.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, 0 };
+		D3D12_TEXTURE_COPY_LOCATION src_location = { from->resource.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, 0 };
 
-		D3D12_BOX srcBox = { sourceX, sourceY, 0, sourceX + width, sourceY + height, 1 };
-		commandList->CopyTextureRegion(&destLocation, destX, destY, 0, &srcLocation, &srcBox);
+		D3D12_BOX src_box = { source_x, source_y, 0, source_x + width, source_y + height, 1 };
+		command_list->CopyTextureRegion(&dest_location, dest_x, dest_y, 0, &src_location, &src_box);
 	}
 
-	void dx_command_list::copyBufferRegionToBuffer(const ref<dx_buffer>& from, const ref<dx_buffer>& to, uint32 fromElementOffset, uint32 numElements, uint32 toElementOffset)
+	void DXCommandList::copy_buffer_region_to_buffer(const ref<DXBuffer>& from, const ref<DXBuffer>& to, uint32 from_element_offset, uint32 num_elements, uint32 to_element_offset)
 	{
-		commandList->CopyBufferRegion(to->resource.Get(), toElementOffset * to->elementSize, from->resource.Get(), fromElementOffset * from->elementSize, numElements * from->elementSize);
+		command_list->CopyBufferRegion(to->resource.Get(), to_element_offset * to->element_size, from->resource.Get(), from_element_offset * from->element_size, num_elements * from->element_size);
 	}
 
-	void dx_command_list::copyBufferRegionToBuffer_ByteOffset(const ref<dx_buffer>& from, const ref<dx_buffer>& to, uint32 fromByteOffset, uint32 numBytes, uint32 toByteOffset)
+	void DXCommandList::copy_buffer_region_to_buffer_byte_offset(const ref<DXBuffer>& from, const ref<DXBuffer>& to, uint32 from_byte_offset, uint32 num_bytes, uint32 to_byte_offset)
 	{
-		commandList->CopyBufferRegion(to->resource.Get(), toByteOffset, from->resource.Get(), fromByteOffset, numBytes);
+		command_list->CopyBufferRegion(to->resource.Get(), to_byte_offset, from->resource.Get(), from_byte_offset, num_bytes);
 	}
 
-	void dx_command_list::setPipelineState(dx_pipeline_state pipelineState)
+	void DXCommandList::set_pipeline_state(DXPipelineState pipeline_state)
 	{
-		commandList->SetPipelineState(pipelineState.Get());
+		command_list->SetPipelineState(pipeline_state.Get());
 	}
 
-	void dx_command_list::setPipelineState(dx_raytracing_pipeline_state pipelineState)
+	void DXCommandList::set_pipeline_state(DXRaytracingPipelineState pipeline_state)
 	{
-		commandList->SetPipelineState1(pipelineState.Get());
+		command_list->SetPipelineState1(pipeline_state.Get());
 	}
 
-	void dx_command_list::setGraphicsRootSignature(const dx_root_signature& rootSignature)
+	void DXCommandList::set_graphics_root_signature(const DXRootSignature& root_signature)
 	{
-		dynamicDescriptorHeap.parseRootSignature(rootSignature);
-		commandList->SetGraphicsRootSignature(rootSignature.rootSignature.Get());
+		dynamic_descriptor_heap.parse_root_signature(root_signature);
+		command_list->SetGraphicsRootSignature(root_signature.root_signature.Get());
 	}
 
-	void dx_command_list::setGraphics32BitConstants(uint32 rootParameterIndex, uint32 numConstants, const void* constants)
+	void DXCommandList::set_graphics_32bit_constants(uint32 root_parameter_index, uint32 num_constants, const void* constants)
 	{
-		commandList->SetGraphicsRoot32BitConstants(rootParameterIndex, numConstants, constants, 0);
+		command_list->SetGraphicsRoot32BitConstants(root_parameter_index, num_constants, constants, 0);
 	}
 
-	void dx_command_list::setComputeRootSignature(const dx_root_signature& rootSignature)
+	void DXCommandList::set_compute_root_signature(const DXRootSignature& root_signature)
 	{
-		dynamicDescriptorHeap.parseRootSignature(rootSignature);
-		commandList->SetComputeRootSignature(rootSignature.rootSignature.Get());
+		dynamic_descriptor_heap.parse_root_signature(root_signature);
+		command_list->SetComputeRootSignature(root_signature.root_signature.Get());
 	}
 
-	void dx_command_list::setCompute32BitConstants(uint32 rootParameterIndex, uint32 numConstants, const void* constants)
+	void DXCommandList::set_compute_32bit_constants(uint32 root_parameter_index, uint32 num_constants, const void* constants)
 	{
-		commandList->SetComputeRoot32BitConstants(rootParameterIndex, numConstants, constants, 0);
+		command_list->SetComputeRoot32BitConstants(root_parameter_index, num_constants, constants, 0);
 	}
 
-	void dx_command_list::setGraphicsDynamicConstantBuffer(uint32 rootParameterIndex, dx_dynamic_constant_buffer address)
+	void DXCommandList::set_graphics_dynamic_constant_buffer(uint32 root_parameter_index, DXDynamicConstantBuffer address)
 	{
-		commandList->SetGraphicsRootConstantBufferView(rootParameterIndex, address.gpuPtr);
+		command_list->SetGraphicsRootConstantBufferView(root_parameter_index, address.gpu_ptr);
 	}
 
-	void dx_command_list::setComputeDynamicConstantBuffer(uint32 rootParameterIndex, dx_dynamic_constant_buffer address)
+	void DXCommandList::set_compute_dynamic_constant_buffer(uint32 root_parameter_index, DXDynamicConstantBuffer address)
 	{
-		commandList->SetComputeRootConstantBufferView(rootParameterIndex, address.gpuPtr);
+		command_list->SetComputeRootConstantBufferView(root_parameter_index, address.gpu_ptr);
 	}
 
-	void dx_command_list::setRootGraphicsUAV(uint32 rootParameterIndex, const ref<dx_buffer>& buffer)
+	void DXCommandList::set_root_graphics_uav(uint32 root_parameter_index, const ref<DXBuffer>& buffer)
 	{
-		commandList->SetGraphicsRootUnorderedAccessView(rootParameterIndex, buffer->gpuVirtualAddress);
+		command_list->SetGraphicsRootUnorderedAccessView(root_parameter_index, buffer->gpu_virtual_address);
 	}
 
-	void dx_command_list::setRootGraphicsUAV(uint32 rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS address)
+	void DXCommandList::set_root_graphics_uav(uint32 root_parameter_index, D3D12_GPU_VIRTUAL_ADDRESS address)
 	{
-		commandList->SetGraphicsRootUnorderedAccessView(rootParameterIndex, address);
+		command_list->SetGraphicsRootUnorderedAccessView(root_parameter_index, address);
 	}
 
-	void dx_command_list::setRootComputeUAV(uint32 rootParameterIndex, const ref<dx_buffer>& buffer)
+	void DXCommandList::set_root_compute_uav(uint32 root_parameter_index, const ref<DXBuffer>& buffer)
 	{
-		commandList->SetComputeRootUnorderedAccessView(rootParameterIndex, buffer->gpuVirtualAddress);
+		command_list->SetComputeRootUnorderedAccessView(root_parameter_index, buffer->gpu_virtual_address);
 	}
 
-	void dx_command_list::setRootComputeUAV(uint32 rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS address)
+	void DXCommandList::set_root_compute_uav(uint32 root_parameter_index, D3D12_GPU_VIRTUAL_ADDRESS address)
 	{
-		commandList->SetComputeRootUnorderedAccessView(rootParameterIndex, address);
+		command_list->SetComputeRootUnorderedAccessView(root_parameter_index, address);
 	}
 
-	void dx_command_list::setRootGraphicsSRV(uint32 rootParameterIndex, const ref<dx_buffer>& buffer)
+	void DXCommandList::set_root_graphics_srv(uint32 root_parameter_index, const ref<DXBuffer>& buffer)
 	{
-		commandList->SetGraphicsRootShaderResourceView(rootParameterIndex, buffer->gpuVirtualAddress);
+		command_list->SetGraphicsRootShaderResourceView(root_parameter_index, buffer->gpu_virtual_address);
 	}
 
-	void dx_command_list::setRootGraphicsSRV(uint32 rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS address)
+	void DXCommandList::set_root_graphics_srv(uint32 root_parameter_index, D3D12_GPU_VIRTUAL_ADDRESS address)
 	{
-		commandList->SetGraphicsRootShaderResourceView(rootParameterIndex, address);
+		command_list->SetGraphicsRootShaderResourceView(root_parameter_index, address);
 	}
 
-	void dx_command_list::setRootComputeSRV(uint32 rootParameterIndex, const ref<dx_buffer>& buffer)
+	void DXCommandList::set_root_compute_srv(uint32 root_parameter_index, const ref<DXBuffer>& buffer)
 	{
-		commandList->SetComputeRootShaderResourceView(rootParameterIndex, buffer->gpuVirtualAddress);
+		command_list->SetComputeRootShaderResourceView(root_parameter_index, buffer->gpu_virtual_address);
 	}
 
-	void dx_command_list::setRootComputeSRV(uint32 rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS address)
+	void DXCommandList::set_root_compute_srv(uint32 root_parameter_index, D3D12_GPU_VIRTUAL_ADDRESS address)
 	{
-		commandList->SetComputeRootShaderResourceView(rootParameterIndex, address);
+		command_list->SetComputeRootShaderResourceView(root_parameter_index, address);
 	}
 
-	void dx_command_list::setDescriptorHeapResource(uint32 rootParameterIndex, uint32 offset, uint32 count, dx_cpu_descriptor_handle handle)
+	void DXCommandList::set_descriptor_heap_resource(uint32 root_parameter_index, uint32 offset, uint32 count, DXCPUDescriptorHandle handle)
 	{
-		dynamicDescriptorHeap.stageDescriptors(rootParameterIndex, offset, count, handle);
+		dynamic_descriptor_heap.stage_descriptors(root_parameter_index, offset, count, handle);
 	}
 
-	void dx_command_list::setDescriptorHeap(dx_descriptor_range& descriptorRange)
+	void DXCommandList::set_descriptor_heap(DXDescriptorRange& descriptor_range)
 	{
-		descriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] = descriptorRange.descriptorHeap.Get();
+		descriptor_heaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] = descriptor_range.descriptor_heap.Get();
 
-		uint32 numDescriptorHeaps = 0;
+		uint32 num_descriptor_heaps = 0;
 		ID3D12DescriptorHeap* heaps[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] = {};
 
 		for (uint32_t i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
 		{
-			ID3D12DescriptorHeap* heap = descriptorHeaps[i];
+			ID3D12DescriptorHeap* heap = descriptor_heaps[i];
 			if (heap)
 			{
-				heaps[numDescriptorHeaps++] = heap;
+				heaps[num_descriptor_heaps++] = heap;
 			}
 		}
 
-		commandList->SetDescriptorHeaps(numDescriptorHeaps, heaps);
+		command_list->SetDescriptorHeaps(num_descriptor_heaps, heaps);
 	}
 
-	void dx_command_list::setDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, com<ID3D12DescriptorHeap> descriptorHeap)
+	void DXCommandList::set_descriptor_heap(D3D12_DESCRIPTOR_HEAP_TYPE type, com<ID3D12DescriptorHeap> descriptor_heap)
 	{
-		descriptorHeaps[type] = descriptorHeap.Get();
+		descriptor_heaps[type] = descriptor_heap.Get();
 
-		uint32 numDescriptorHeaps = 0;
+		uint32 num_descriptor_heaps = 0;
 		ID3D12DescriptorHeap* heaps[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] = {};
 
 		for (uint32_t i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
 		{
-			ID3D12DescriptorHeap* heap = descriptorHeaps[i];
+			ID3D12DescriptorHeap* heap = descriptor_heaps[i];
 			if (heap)
 			{
-				heaps[numDescriptorHeaps++] = heap;
+				heaps[num_descriptor_heaps++] = heap;
 			}
 		}
 
-		commandList->SetDescriptorHeaps(numDescriptorHeaps, heaps);
+		command_list->SetDescriptorHeaps(num_descriptor_heaps, heaps);
 	}
 
-	void dx_command_list::resetToDynamicDescriptorHeap()
+	void DXCommandList::reset_to_dynamic_descriptor_heap()
 	{
-		dynamicDescriptorHeap.setCurrentDescriptorHeap(this);
+		dynamic_descriptor_heap.set_current_descriptor_heap(this);
 	}
 
-	void dx_command_list::setGraphicsDescriptorTable(uint32 rootParameterIndex, CD3DX12_GPU_DESCRIPTOR_HANDLE handle)
+	void DXCommandList::set_graphics_descriptor_table(uint32 root_parameter_index, CD3DX12_GPU_DESCRIPTOR_HANDLE handle)
 	{
-		commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, handle);
+		command_list->SetGraphicsRootDescriptorTable(root_parameter_index, handle);
 	}
 
-	void dx_command_list::setComputeDescriptorTable(uint32 rootParameterIndex, CD3DX12_GPU_DESCRIPTOR_HANDLE handle)
+	void DXCommandList::set_compute_descriptor_table(uint32 root_parameter_index, CD3DX12_GPU_DESCRIPTOR_HANDLE handle)
 	{
-		commandList->SetComputeRootDescriptorTable(rootParameterIndex, handle);
+		command_list->SetComputeRootDescriptorTable(root_parameter_index, handle);
 	}
 
-	void dx_command_list::clearUAV(const ref<dx_buffer>& buffer, float val)
+	void DXCommandList::clear_uav(const ref<DXBuffer>& buffer, float val)
 	{
-		clearUAV(buffer->resource, buffer->cpuClearUAV, buffer->gpuClearUAV, val);
+		clear_uav(buffer->resource, buffer->cpu_clear_uav, buffer->gpu_clear_uav, val);
 	}
 
-	void dx_command_list::clearUAV(const ref<dx_buffer>& buffer, uint32 val)
+	void DXCommandList::clear_uav(const ref<DXBuffer>& buffer, uint32 val)
 	{
-		clearUAV(buffer->resource, buffer->cpuClearUAV, buffer->gpuClearUAV, val);
+		clear_uav(buffer->resource, buffer->cpu_clear_uav, buffer->gpu_clear_uav, val);
 	}
 
-	void dx_command_list::clearUAV(dx_resource resource, dx_cpu_descriptor_handle cpuHandle, dx_gpu_descriptor_handle gpuHandle, float val)
+	void DXCommandList::clear_uav(DXResource resource, DXCPUDescriptorHandle cpu_handle, DXGPUDescriptorHandle gpu_handle, float val)
 	{
 		float vals[] = { val, val, val, val };
-		commandList->ClearUnorderedAccessViewFloat(gpuHandle, cpuHandle, resource.Get(), vals, 0, 0);
+		command_list->ClearUnorderedAccessViewFloat(gpu_handle, cpu_handle, resource.Get(), vals, 0, 0);
 	}
 
-	void dx_command_list::clearUAV(dx_resource resource, dx_cpu_descriptor_handle cpuHandle, dx_gpu_descriptor_handle gpuHandle, uint32 val)
+	void DXCommandList::clear_uav(DXResource resource, DXCPUDescriptorHandle cpu_handle, DXGPUDescriptorHandle gpu_handle, uint32 val)
 	{
 		uint32 vals[] = { val, val, val, val };
-		commandList->ClearUnorderedAccessViewUint(gpuHandle, cpuHandle, resource.Get(), vals, 0, 0);
+		command_list->ClearUnorderedAccessViewUint(gpu_handle, cpu_handle, resource.Get(), vals, 0, 0);
 	}
 
-	void dx_command_list::setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY topology)
+	void DXCommandList::set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY topology)
 	{
-		commandList->IASetPrimitiveTopology(topology);
+		command_list->IASetPrimitiveTopology(topology);
 	}
 
-	void dx_command_list::setVertexBuffer(uint32 slot, const ref<dx_vertex_buffer>& buffer)
+	void DXCommandList::set_vertex_buffer(uint32 slot, const ref<DXVertexBuffer>& buffer)
 	{
-		commandList->IASetVertexBuffers(slot, 1, &buffer->view);
+		command_list->IASetVertexBuffers(slot, 1, &buffer->view);
 	}
 
-	void dx_command_list::setVertexBuffer(uint32 slot, const dx_dynamic_vertex_buffer& buffer)
+	void DXCommandList::set_vertex_buffer(uint32 slot, const DXDynamicVertexBuffer& buffer)
 	{
-		commandList->IASetVertexBuffers(slot, 1, &buffer.view);
+		command_list->IASetVertexBuffers(slot, 1, &buffer.view);
 	}
 
-	void dx_command_list::setVertexBuffer(uint32 slot, const D3D12_VERTEX_BUFFER_VIEW& buffer)
+	void DXCommandList::set_vertex_buffer(uint32 slot, const D3D12_VERTEX_BUFFER_VIEW& buffer)
 	{
-		commandList->IASetVertexBuffers(slot, 1, &buffer);
+		command_list->IASetVertexBuffers(slot, 1, &buffer);
 	}
 
-	void dx_command_list::setIndexBuffer(const ref<dx_index_buffer>& buffer)
+	void DXCommandList::set_index_buffer(const ref<DXIndexBuffer>& buffer)
 	{
-		commandList->IASetIndexBuffer(&buffer->view);
+		command_list->IASetIndexBuffer(&buffer->view);
 	}
 
-	void dx_command_list::setIndexBuffer(const dx_dynamic_index_buffer& buffer)
+	void DXCommandList::set_index_buffer(const DXDynamicIndexBuffer& buffer)
 	{
-		commandList->IASetIndexBuffer(&buffer.view);
+		command_list->IASetIndexBuffer(&buffer.view);
 	}
 
-	void dx_command_list::setIndexBuffer(const D3D12_INDEX_BUFFER_VIEW& buffer)
+	void DXCommandList::set_index_buffer(const D3D12_INDEX_BUFFER_VIEW& buffer)
 	{
-		commandList->IASetIndexBuffer(&buffer);
+		command_list->IASetIndexBuffer(&buffer);
 	}
 
-	void dx_command_list::setViewport(const D3D12_VIEWPORT& viewport)
+	void DXCommandList::set_viewport(const D3D12_VIEWPORT& viewport)
 	{
-		commandList->RSSetViewports(1, &viewport);
+		command_list->RSSetViewports(1, &viewport);
 	}
 
-	void dx_command_list::setViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
+	void DXCommandList::set_viewport(float x, float y, float width, float height, float min_depth, float max_depth)
 	{
-		D3D12_VIEWPORT viewport = { x, y, width, height, minDepth, maxDepth };
-		setViewport(viewport);
+		D3D12_VIEWPORT viewport = { x, y, width, height, min_depth, max_depth };
+		set_viewport(viewport);
 	}
 
-	void dx_command_list::setScissor(const D3D12_RECT& scissor)
+	void DXCommandList::set_scissor(const D3D12_RECT& scissor)
 	{
-		commandList->RSSetScissorRects(1, &scissor);
+		command_list->RSSetScissorRects(1, &scissor);
 	}
 
-	void dx_command_list::setRenderTarget(const dx_rtv_descriptor_handle* rtvs, uint32 numRTVs, const dx_dsv_descriptor_handle* dsv)
+	void DXCommandList::set_render_target(const DXRTVDescriptorHandle* rtvs, uint32 num_rtvs, const DXDSVDescriptorHandle* dsv)
 	{
-		commandList->OMSetRenderTargets(numRTVs, (D3D12_CPU_DESCRIPTOR_HANDLE*)rtvs, FALSE, (D3D12_CPU_DESCRIPTOR_HANDLE*)dsv);
+		command_list->OMSetRenderTargets(num_rtvs, (D3D12_CPU_DESCRIPTOR_HANDLE*)rtvs, FALSE, (D3D12_CPU_DESCRIPTOR_HANDLE*)dsv);
 	}
 
-	void dx_command_list::setRenderTarget(const dx_render_target& renderTarget)
+	void DXCommandList::set_render_target(const DXRenderTarget& render_target)
 	{
-		setRenderTarget(renderTarget.rtv, renderTarget.numAttachments, renderTarget.dsv ? &renderTarget.dsv : 0);
+		set_render_target(render_target.rtv, render_target.num_attachments, render_target.dsv ? &render_target.dsv : 0);
 	}
 
-	static void getD3D12Rects(D3D12_RECT* d3rects, const clear_rect* rects, uint32 numRects)
+	static void get_d3d12_rects(D3D12_RECT* d3rects, const ClearRect* rects, uint32 num_rects)
 	{
-		for (uint32 i = 0; i < numRects; ++i)
+		for (uint32 i = 0; i < num_rects; ++i)
 		{
 			d3rects[i] = { (LONG)rects[i].x, (LONG)rects[i].y, (LONG)rects[i].x + (LONG)rects[i].width, (LONG)rects[i].y + (LONG)rects[i].height };
 		}
 	}
 
-	void dx_command_list::clearRTV(dx_rtv_descriptor_handle rtv, float r, float g, float b, float a, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_rtv(DXRTVDescriptorHandle rtv, float r, float g, float b, float a, const ClearRect* rects, uint32 num_rects)
 	{
-		float clearColor[] = { r, g, b, a };
-		clearRTV(rtv, clearColor, rects, numRects);
+		float clear_color[] = { r, g, b, a };
+		clear_rtv(rtv, clear_color, rects, num_rects);
 	}
 
-	void dx_command_list::clearRTV(dx_rtv_descriptor_handle rtv, const float* clearColor, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_rtv(DXRTVDescriptorHandle rtv, const float* clear_color, const ClearRect* rects, uint32 num_rects)
 	{
 		D3D12_RECT* d3rects = 0;
-		if (numRects)
+		if (num_rects)
 		{
-			d3rects = (D3D12_RECT*)alloca(sizeof(D3D12_RECT) * numRects);
-			getD3D12Rects(d3rects, rects, numRects);
+			d3rects = (D3D12_RECT*)alloca(sizeof(D3D12_RECT) * num_rects);
+			get_d3d12_rects(d3rects, rects, num_rects);
 		}
 
-		commandList->ClearRenderTargetView(rtv, clearColor, numRects, d3rects);
+		command_list->ClearRenderTargetView(rtv, clear_color, num_rects, d3rects);
 	}
 
-	void dx_command_list::clearRTV(const ref<dx_texture>& texture, float r, float g, float b, float a, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_rtv(const ref<DXTexture>& texture, float r, float g, float b, float a, const ClearRect* rects, uint32 num_rects)
 	{
-		clearRTV(texture->defaultRTV, r, g, b, a, rects, numRects);
+		clear_rtv(texture->default_rtv, r, g, b, a, rects, num_rects);
 	}
 
-	void dx_command_list::clearRTV(const ref<dx_texture>& texture, const float* clearColor, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_rtv(const ref<DXTexture>& texture, const float* clear_color, const ClearRect* rects, uint32 num_rects)
 	{
-		clearRTV(texture->defaultRTV, clearColor, rects, numRects);
+		clear_rtv(texture->default_rtv, clear_color, rects, num_rects);
 	}
 
-	void dx_command_list::clearRTV(const dx_render_target& renderTarget, uint32 attachment, const float* clearColor, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_rtv(const DXRenderTarget& render_target, uint32 attachment, const float* clear_color, const ClearRect* rects, uint32 num_rects)
 	{
-		clearRTV(renderTarget.rtv[attachment], clearColor, rects, numRects);
+		clear_rtv(render_target.rtv[attachment], clear_color, rects, num_rects);
 	}
 
-	void dx_command_list::clearRTV(const dx_render_target& renderTarget, uint32 attachment, float r, float g, float b, float a, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_rtv(const DXRenderTarget& render_target, uint32 attachment, float r, float g, float b, float a, const ClearRect* rects, uint32 num_rects)
 	{
-		clearRTV(renderTarget.rtv[attachment], r, g, b, a, rects, numRects);
+		clear_rtv(render_target.rtv[attachment], r, g, b, a, rects, num_rects);
 	}
 
-	void dx_command_list::clearDepth(dx_dsv_descriptor_handle dsv, float depth, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_depth(DXDSVDescriptorHandle dsv, float depth, const ClearRect* rects, uint32 num_rects)
 	{
 		D3D12_RECT* d3rects = 0;
-		if (numRects)
+		if (num_rects)
 		{
-			d3rects = (D3D12_RECT*)alloca(sizeof(D3D12_RECT) * numRects);
-			getD3D12Rects(d3rects, rects, numRects);
+			d3rects = (D3D12_RECT*)alloca(sizeof(D3D12_RECT) * num_rects);
+			get_d3d12_rects(d3rects, rects, num_rects);
 		}
 
-		commandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, depth, 0, numRects, d3rects);
+		command_list->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, depth, 0, num_rects, d3rects);
 	}
 
-	void dx_command_list::clearDepth(const ref<dx_texture>& texture, float depth, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_depth(const ref<DXTexture>& texture, float depth, const ClearRect* rects, uint32 num_rects)
 	{
-		clearDepth(texture->defaultDSV, depth, rects, numRects);
+		clear_depth(texture->default_dsv, depth, rects, num_rects);
 	}
 
-	void dx_command_list::clearDepth(const dx_render_target& renderTarget, float depth, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_depth(const DXRenderTarget& render_target, float depth, const ClearRect* rects, uint32 num_rects)
 	{
-		clearDepth(renderTarget.dsv, depth, rects, numRects);
+		clear_depth(render_target.dsv, depth, rects, num_rects);
 	}
 
-	void dx_command_list::clearStencil(dx_dsv_descriptor_handle dsv, uint32 stencil, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_stencil(DXDSVDescriptorHandle dsv, uint32 stencil, const ClearRect* rects, uint32 num_rects)
 	{
 		D3D12_RECT* d3rects = 0;
-		if (numRects)
+		if (num_rects)
 		{
-			d3rects = (D3D12_RECT*)alloca(sizeof(D3D12_RECT) * numRects);
-			getD3D12Rects(d3rects, rects, numRects);
+			d3rects = (D3D12_RECT*)alloca(sizeof(D3D12_RECT) * num_rects);
+			get_d3d12_rects(d3rects, rects, num_rects);
 		}
 
-		commandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_STENCIL, 0.f, stencil, numRects, d3rects);
+		command_list->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_STENCIL, 0.f, stencil, num_rects, d3rects);
 	}
 
-	void dx_command_list::clearStencil(const ref<dx_texture>& texture, uint32 stencil, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_stencil(const ref<DXTexture>& texture, uint32 stencil, const ClearRect* rects, uint32 num_rects)
 	{
-		clearStencil(texture->defaultDSV, stencil, rects, numRects);
+		clear_stencil(texture->default_dsv, stencil, rects, num_rects);
 	}
 
-	void dx_command_list::clearStencil(const dx_render_target& renderTarget, uint32 stencil, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_stencil(const DXRenderTarget& render_target, uint32 stencil, const ClearRect* rects, uint32 num_rects)
 	{
-		clearStencil(renderTarget.dsv, stencil, rects, numRects);
+		clear_stencil(render_target.dsv, stencil, rects, num_rects);
 	}
 
-	void dx_command_list::clearDepthAndStencil(dx_dsv_descriptor_handle dsv, float depth, uint32 stencil, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_depth_and_stencil(DXDSVDescriptorHandle dsv, float depth, uint32 stencil, const ClearRect* rects, uint32 num_rects)
 	{
 		D3D12_RECT* d3rects = 0;
-		if (numRects)
+		if (num_rects)
 		{
-			d3rects = (D3D12_RECT*)alloca(sizeof(D3D12_RECT) * numRects);
-			getD3D12Rects(d3rects, rects, numRects);
+			d3rects = (D3D12_RECT*)alloca(sizeof(D3D12_RECT) * num_rects);
+			get_d3d12_rects(d3rects, rects, num_rects);
 		}
 
-		commandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, depth, stencil, numRects, d3rects);
+		command_list->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, depth, stencil, num_rects, d3rects);
 	}
 
-	void dx_command_list::clearDepthAndStencil(const ref<dx_texture>& texture, float depth, uint32 stencil, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_depth_and_stencil(const ref<DXTexture>& texture, float depth, uint32 stencil, const ClearRect* rects, uint32 num_rects)
 	{
-		clearDepthAndStencil(texture->defaultDSV, depth, stencil, rects, numRects);
+		clear_depth_and_stencil(texture->default_dsv, depth, stencil, rects, num_rects);
 	}
 
-	void dx_command_list::clearDepthAndStencil(const dx_render_target& renderTarget, float depth, uint32 stencil, const clear_rect* rects, uint32 numRects)
+	void DXCommandList::clear_depth_and_stencil(const DXRenderTarget& render_target, float depth, uint32 stencil, const ClearRect* rects, uint32 num_rects)
 	{
-		clearDepthAndStencil(renderTarget.dsv, depth, stencil, rects, numRects);
+		clear_depth_and_stencil(render_target.dsv, depth, stencil, rects, num_rects);
 	}
 
-	void dx_command_list::setStencilReference(uint32 stencilReference)
+	void DXCommandList::set_stencil_reference(uint32 stencil_reference)
 	{
-		commandList->OMSetStencilRef(stencilReference);
+		command_list->OMSetStencilRef(stencil_reference);
 	}
 
-	void dx_command_list::setBlendFactor(float blendR, float blendG, float blendB, float blendA)
+	void DXCommandList::set_blend_factor(float blend_r, float blend_g, float blend_b, float blend_a)
 	{
-		const float blendFactor[] = { blendR, blendG, blendB, blendA };
-		commandList->OMSetBlendFactor(blendFactor);
+		const float blend_factor[] = { blend_r, blend_g, blend_b, blend_a };
+		command_list->OMSetBlendFactor(blend_factor);
 	}
 
-	void dx_command_list::draw(uint32 vertexCount, uint32 instanceCount, uint32 startVertex, uint32 startInstance)
+	void DXCommandList::draw(uint32 vertex_count, uint32 instance_count, uint32 start_vertex, uint32 start_instance)
 	{
-		dynamicDescriptorHeap.commitStagedDescriptorsForDraw(this);
-		commandList->DrawInstanced(vertexCount, instanceCount, startVertex, startInstance);
+		dynamic_descriptor_heap.commit_staged_descriptors_for_draw(this);
+		command_list->DrawInstanced(vertex_count, instance_count, start_vertex, start_instance);
 	}
 
-	void dx_command_list::drawIndexed(uint32 indexCount, uint32 instanceCount, uint32 startIndex, int32 baseVertex, uint32 startInstance)
+	void DXCommandList::draw_indexed(uint32 index_count, uint32 instance_count, uint32 start_index, int32 base_vertex, uint32 start_instance)
 	{
-		dynamicDescriptorHeap.commitStagedDescriptorsForDraw(this);
-		commandList->DrawIndexedInstanced(indexCount, instanceCount, startIndex, baseVertex, startInstance);
+		dynamic_descriptor_heap.commit_staged_descriptors_for_draw(this);
+		command_list->DrawIndexedInstanced(index_count, instance_count, start_index, base_vertex, start_instance);
 	}
 
-	void dx_command_list::drawIndirect(dx_command_signature commandSignature, uint32 numCommands, const dx_resource& commandBuffer, uint32 commandBufferOffset)
+	void DXCommandList::draw_indirect(DXCommandSignature command_signature, uint32 num_commands, const DXResource& command_buffer, uint32 command_buffer_offset)
 	{
-		dynamicDescriptorHeap.commitStagedDescriptorsForDraw(this);
-		commandList->ExecuteIndirect(
-			commandSignature.Get(),
-			numCommands,
-			commandBuffer.Get(),
-			commandBufferOffset,
+		dynamic_descriptor_heap.commit_staged_descriptors_for_draw(this);
+		command_list->ExecuteIndirect(
+			command_signature.Get(),
+			num_commands,
+			command_buffer.Get(),
+			command_buffer_offset,
 			0,
 			0);
 	}
 
-	void dx_command_list::drawIndirect(dx_command_signature commandSignature, uint32 maxNumCommands, const dx_resource& numDrawsBuffer, const dx_resource& commandBuffer, uint32 commandBufferOffset)
+	void DXCommandList::draw_indirect(DXCommandSignature command_signature, uint32 max_num_commands, const DXResource& num_draws_buffer, const DXResource& command_buffer, uint32 command_buffer_offset)
 	{
-		dynamicDescriptorHeap.commitStagedDescriptorsForDraw(this);
-		commandList->ExecuteIndirect(
-			commandSignature.Get(),
-			maxNumCommands,
-			commandBuffer.Get(),
-			commandBufferOffset,
-			numDrawsBuffer.Get(),
+		dynamic_descriptor_heap.commit_staged_descriptors_for_draw(this);
+		command_list->ExecuteIndirect(
+			command_signature.Get(),
+			max_num_commands,
+			command_buffer.Get(),
+			command_buffer_offset,
+			num_draws_buffer.Get(),
 			0);
 	}
 
-	void dx_command_list::drawIndirect(dx_command_signature commandSignature, uint32 numCommands, const ref<dx_buffer>& commandBuffer, uint32 commandBufferOffset)
+	void DXCommandList::draw_indirect(DXCommandSignature command_signature, uint32 num_commands, const ref<DXBuffer>& command_buffer, uint32 command_buffer_offset)
 	{
-		drawIndirect(commandSignature, numCommands, commandBuffer->resource, commandBufferOffset);
+		draw_indirect(command_signature, num_commands, command_buffer->resource, command_buffer_offset);
 	}
 
-	void dx_command_list::drawIndirect(dx_command_signature commandSignature, uint32 maxNumCommands, const ref<dx_buffer>& numDrawsBuffer, const ref<dx_buffer>& commandBuffer, uint32 commandBufferOffset)
+	void DXCommandList::draw_indirect(DXCommandSignature command_signature, uint32 max_num_commands, const ref<DXBuffer>& num_draws_buffer, const ref<DXBuffer>& command_buffer, uint32 command_buffer_offset)
 	{
-		drawIndirect(commandSignature, maxNumCommands, numDrawsBuffer->resource, commandBuffer->resource, commandBufferOffset);
+		draw_indirect(command_signature, max_num_commands, num_draws_buffer->resource, command_buffer->resource, command_buffer_offset);
 	}
 
-	void dx_command_list::drawFullscreenTriangle()
+	void DXCommandList::draw_fullscreen_triangle()
 	{
-		dynamicDescriptorHeap.commitStagedDescriptorsForDraw(this);
-		setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		dynamic_descriptor_heap.commit_staged_descriptors_for_draw(this);
+		set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		draw(3, 1, 0, 0);
 	}
 
-	void dx_command_list::drawCubeTriangleStrip()
+	void DXCommandList::draw_cube_triangle_strip()
 	{
-		dynamicDescriptorHeap.commitStagedDescriptorsForDraw(this);
-		setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		dynamic_descriptor_heap.commit_staged_descriptors_for_draw(this);
+		set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		draw(14, 1, 0, 0);
 	}
 
-	void dx_command_list::dispatch(uint32 numGroupsX, uint32 numGroupsY, uint32 numGroupsZ)
+	void DXCommandList::dispatch(uint32 num_groups_x, uint32 num_groups_y, uint32 num_groups_z)
 	{
-		dynamicDescriptorHeap.commitStagedDescriptorsForDispatch(this);
-		commandList->Dispatch(numGroupsX, numGroupsY, numGroupsZ);
+		dynamic_descriptor_heap.commit_staged_descriptors_for_dispatch(this);
+		command_list->Dispatch(num_groups_x, num_groups_y, num_groups_z);
 	}
 
-	void dx_command_list::dispatchIndirect(dx_command_signature commandSignature, uint32 numCommands, const ref<dx_buffer>& commandBuffer, uint32 commandBufferOffset)
+	void DXCommandList::dispatch_indirect(DXCommandSignature command_signature, uint32 num_commands, const ref<DXBuffer>& command_buffer, uint32 command_buffer_offset)
 	{
-		dynamicDescriptorHeap.commitStagedDescriptorsForDispatch(this);
-		commandList->ExecuteIndirect(
-			commandSignature.Get(),
-			numCommands,
-			commandBuffer->resource.Get(),
-			commandBufferOffset,
+		dynamic_descriptor_heap.commit_staged_descriptors_for_dispatch(this);
+		command_list->ExecuteIndirect(
+			command_signature.Get(),
+			num_commands,
+			command_buffer->resource.Get(),
+			command_buffer_offset,
 			0,
 			0);
 	}
 
-	void dx_command_list::dispatchIndirect(dx_command_signature commandSignature, uint32 maxNumCommands, const ref<dx_buffer>& numDispatchesBuffer, const ref<dx_buffer>& commandBuffer, uint32 commandBufferOffset)
+	void DXCommandList::dispatch_indirect(DXCommandSignature command_signature, uint32 max_num_commands, const ref<DXBuffer>& num_dispatches_buffer, const ref<DXBuffer>& command_buffer, uint32 command_buffer_offset)
 	{
-		dynamicDescriptorHeap.commitStagedDescriptorsForDispatch(this);
-		commandList->ExecuteIndirect(
-			commandSignature.Get(),
-			maxNumCommands,
-			commandBuffer->resource.Get(),
-			commandBufferOffset,
-			numDispatchesBuffer->resource.Get(),
+		dynamic_descriptor_heap.commit_staged_descriptors_for_dispatch(this);
+		command_list->ExecuteIndirect(
+			command_signature.Get(),
+			max_num_commands,
+			command_buffer->resource.Get(),
+			command_buffer_offset,
+			num_dispatches_buffer->resource.Get(),
 			0);
 	}
 
-	void dx_command_list::dispatchIndirect(uint32 numCommands, const ref<dx_buffer>& commandBuffer, uint32 commandBufferOffset)
+	void DXCommandList::dispatch_indirect(uint32 num_commands, const ref<DXBuffer>& command_buffer, uint32 command_buffer_offset)
 	{
-		dispatchIndirect(dxContext.defaultDispatchCommandSignature, numCommands, commandBuffer, commandBufferOffset);
+		dispatch_indirect(dx_context.default_dispatch_command_signature, num_commands, command_buffer, command_buffer_offset);
 	}
 
-	void dx_command_list::dispatchIndirect(uint32 maxNumCommands, const ref<dx_buffer>& numDispatchesBuffer, const ref<dx_buffer>& commandBuffer, uint32 commandBufferOffset)
+	void DXCommandList::dispatch_indirect(uint32 max_num_commands, const ref<DXBuffer>& num_dispatches_buffer, const ref<DXBuffer>& command_buffer, uint32 command_buffer_offset)
 	{
-		dispatchIndirect(dxContext.defaultDispatchCommandSignature, maxNumCommands, numDispatchesBuffer, commandBuffer, commandBufferOffset);
+		dispatch_indirect(dx_context.default_dispatch_command_signature, max_num_commands, num_dispatches_buffer, command_buffer, command_buffer_offset);
 	}
 
-	void dx_command_list::dispatchMesh(uint32 numGroupsX, uint32 numGroupsY, uint32 numGroupsZ)
+	void DXCommandList::dispatch_mesh(uint32 num_groups_x, uint32 num_groups_y, uint32 num_groups_z)
 	{
 #ifdef SDK_SUPPORTS_MESH_SHADERS
-		dynamicDescriptorHeap.commitStagedDescriptorsForDraw(this);
-		commandList->DispatchMesh(numGroupsX, numGroupsY, numGroupsZ);
+		dynamic_descriptor_heap.commit_staged_descriptors_for_draw(this);
+		command_list->DispatchMesh(num_groups_x, num_groups_y, num_groups_z);
 #else
 		ASSERT(!"Mesh shaders are not supported with your Windows SDK version.");
 #endif
 	}
 
-	void dx_command_list::raytrace(D3D12_DISPATCH_RAYS_DESC& raytraceDesc)
+	void DXCommandList::raytrace(D3D12_DISPATCH_RAYS_DESC& raytrace_desc)
 	{
-		dynamicDescriptorHeap.commitStagedDescriptorsForDispatch(this);
-		commandList->DispatchRays(&raytraceDesc);
+		dynamic_descriptor_heap.commit_staged_descriptors_for_dispatch(this);
+		command_list->DispatchRays(&raytrace_desc);
 	}
 
-	void dx_command_list::queryTimestamp(uint32 index)
+	void DXCommandList::query_timestamp(uint32 index)
 	{
-		commandList->EndQuery(timeStampQueryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, index);
+		command_list->EndQuery(time_stamp_query_heap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, index);
 	}
 
-	void dx_command_list::reset()
+	void DXCommandList::reset()
 	{
-		commandAllocator->Reset();
-		checkResult(commandList->Reset(commandAllocator.Get(), 0));
+		command_allocator->Reset();
+		checkResult(command_list->Reset(command_allocator.Get(), 0));
 
 		for (uint32 i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
 		{
-			descriptorHeaps[i] = 0;
+			descriptor_heaps[i] = 0;
 		}
 
-		dynamicDescriptorHeap.reset();
+		dynamic_descriptor_heap.reset();
 	}
 
 }

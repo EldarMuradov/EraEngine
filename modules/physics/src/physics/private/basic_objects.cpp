@@ -69,7 +69,7 @@ namespace era_engine::physics
 		terrain = physics->get_physics()->createRigidStatic(PxTransform(create_PxVec3(_point)));
 		terrain->userData = this;
 
-		const uint32 ts = terrain_component->chunksPerDim;
+		const uint32 ts = terrain_component->chunks_per_dim;
 		const size_t verts_per_chunk = terrain_component->chunk(0).heights.size();
 
 		PxReal min_height = PX_MAX_F32;
@@ -129,7 +129,7 @@ namespace era_engine::physics
 		terrain_desc.samples.stride = sizeof(PxHeightFieldSample);
 		terrain_desc.flags = PxHeightFieldFlags();
 
-		const float terrain_width = terrain_component->chunkSize * number_of_vertices_per_chunk;
+		const float terrain_width = terrain_component->chunk_size * number_of_vertices_per_chunk;
 
 		PxHeightFieldGeometry hf_geom;
 		hf_geom.columnScale = terrain_width / (ts - 1);

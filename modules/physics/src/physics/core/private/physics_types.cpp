@@ -93,7 +93,7 @@ namespace era_engine::physics
 	void* ProfilerCallback::zoneStart(const char* eventName, bool detached, uint64_t contextId)
 	{
 #if ENABLE_CPU_PROFILING
-		recordProfileEvent(profile_event_begin_block, eventName);
+		recordProfileEvent(PROFILE_EVENT_BEGIN_BLOCK, eventName);
 #endif
 		return nullptr;
 	}
@@ -101,7 +101,7 @@ namespace era_engine::physics
 	void ProfilerCallback::zoneEnd(void* profilerData, const char* eventName, bool detached, uint64_t contextId)
 	{
 #if ENABLE_CPU_PROFILING
-		recordProfileEvent(profile_event_end_block, eventName);
+		recordProfileEvent(PROFILE_EVENT_END_BLOCK, eventName);
 #endif
 	}
 	

@@ -4,5 +4,5 @@
 
 namespace era_engine
 {
-	void loadAllParticleSystemPipelines();
+	void load_all_particle_system_pipelines();
 }

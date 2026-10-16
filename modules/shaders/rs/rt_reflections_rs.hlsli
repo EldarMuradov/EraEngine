@@ -3,10 +3,10 @@
 
 #include "../common/light_probe.hlsli"
 
-struct rt_reflections_cb
+struct RTReflectionsCB
 {
-	uint32 sampleSkyFromTexture;
-	uint32 frameIndex;
+	uint32 sample_sky_from_texture;
+	uint32 frame_index;
 };
 
 #define RT_REFLECTIONS_RS_RESOURCES	0

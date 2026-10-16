@@ -71,7 +71,7 @@ namespace era_engine::physics
 					VehicleInputContext input_ctx;
 					input_ctx.reverse_pressed = input.keyboard['S'].down;
 					input_ctx.accelerate_pressed = input.keyboard['W'].down || input_ctx.reverse_pressed;
-					input_ctx.brake_pressed = input.keyboard[key_space].down;
+					input_ctx.brake_pressed = input.keyboard[KEY_SPACE].down;
 					input_ctx.steer_left_pressed = input.keyboard['A'].down;
 					input_ctx.steer_right_pressed = input.keyboard['D'].down;
 					input_ctx.steer_amount = 0.0f;

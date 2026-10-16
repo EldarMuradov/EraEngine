@@ -25,7 +25,7 @@ namespace era_engine
 {
 	const UserInput& get_current_frame_input()
 	{
-		dx_window* window = get_object<dx_window>();
+		DXWindow* window = get_object<DXWindow>();
 		return window->get_current_frame_input();
 	}
 

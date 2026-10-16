@@ -17,70 +17,70 @@
 
 namespace era_engine
 {
-    static dx_pipeline treePipeline;
+    static DXPipeline tree_pipeline;
 
-    void initializeTreePipelines()
+    void initialize_tree_pipelines()
     {
         {
             auto& desc = CREATE_GRAPHICS_PIPELINE
-                .inputLayout(inputLayout_position_uv_normal_tangent_colors)
+                .input_layout(input_layout_position_uv_normal_tangent_colors)
                 //.depthSettings(true, false, D3D12_COMPARISON_FUNC_EQUAL)
-                .cullingOff()
-                .renderTargets(opaqueLightPassFormats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depthStencilFormat);
+                .culling_off()
+                .render_targets(opaque_light_pass_formats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depth_stencil_format);
 
-            treePipeline = createReloadablePipeline(desc, { "tree_vs", "tree_ps" });
+            tree_pipeline = create_reloadable_pipeline(desc, { "tree_vs", "tree_ps" });
         }
     }
 
-    struct tree_render_data
+    struct TreeRenderData
     {
-        D3D12_GPU_VIRTUAL_ADDRESS transformPtr;
-        dx_vertex_buffer_group_view vertexBuffer;
-        dx_index_buffer_view indexBuffer;
+        D3D12_GPU_VIRTUAL_ADDRESS transform_ptr;
+        DXVertexBufferGroupView vertex_buffer;
+        DXIndexBufferView index_buffer;
         SubmeshInfo submesh;
 
-        ref<pbr_material> material;
+        ref<PBRMaterial> material;
 
         float time;
 
-        uint32 numInstances;
+        uint32 num_instances;
     };
 
-    struct tree_pipeline
+    struct TreePipeline
     {
         PIPELINE_SETUP_DECL
         {
-            cl->setPipelineState(*treePipeline.pipeline);
-            cl->setGraphicsRootSignature(*treePipeline.rootSignature);
+            cl->set_pipeline_state(*tree_pipeline.pipeline);
+            cl->set_graphics_root_signature(*tree_pipeline.root_signature);
 
-            cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            dx_cpu_descriptor_handle nullTexture = render_resources::nullTextureSRV;
-            dx_cpu_descriptor_handle nullBuffer = render_resources::nullBufferSRV;
+            DXCPUDescriptorHandle null_texture = RenderResources::null_texture_srv;
+            DXCPUDescriptorHandle null_buffer = RenderResources::null_buffer_srv;
 
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 0, common.irradiance ? common.irradiance->defaultSRV : nullTexture);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 1, common.prefilteredRadiance ? common.prefilteredRadiance->defaultSRV : nullTexture);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 2, render_resources::brdfTex);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 3, common.tiledCullingGrid ? common.tiledCullingGrid->defaultSRV : nullTexture);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 4, common.tiledObjectsIndexList ? common.tiledObjectsIndexList->defaultSRV : nullBuffer);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 5, common.pointLightBuffer ? common.pointLightBuffer->defaultSRV : nullBuffer);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 6, common.spotLightBuffer ? common.spotLightBuffer->defaultSRV : nullBuffer);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 7, common.decalBuffer ? common.decalBuffer->defaultSRV : nullBuffer);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 8, common.shadowMap ? common.shadowMap->defaultSRV : nullTexture);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 9, common.pointLightShadowInfoBuffer ? common.pointLightShadowInfoBuffer->defaultSRV : nullBuffer);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 10, common.spotLightShadowInfoBuffer ? common.spotLightShadowInfoBuffer->defaultSRV : nullBuffer);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 11, common.decalTextureAtlas ? common.decalTextureAtlas->defaultSRV : nullTexture);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 12, common.aoTexture ? common.aoTexture : render_resources::whiteTexture);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 13, common.sssTexture ? common.sssTexture : render_resources::whiteTexture);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 14, common.ssrTexture ? common.ssrTexture->defaultSRV : nullTexture);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 15, common.lightProbeIrradiance ? common.lightProbeIrradiance->defaultSRV : nullTexture);
-            cl->setDescriptorHeapSRV(TREE_RS_FRAME_CONSTANTS, 16, common.lightProbeDepth ? common.lightProbeDepth->defaultSRV : nullTexture);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 0, common.irradiance ? common.irradiance->default_srv : null_texture);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 1, common.prefiltered_radiance ? common.prefiltered_radiance->default_srv : null_texture);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 2, RenderResources::brdf_tex);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 3, common.tiled_culling_grid ? common.tiled_culling_grid->default_srv : null_texture);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 4, common.tiled_objects_index_list ? common.tiled_objects_index_list->default_srv : null_buffer);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 5, common.point_light_buffer ? common.point_light_buffer->default_srv : null_buffer);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 6, common.spot_light_buffer ? common.spot_light_buffer->default_srv : null_buffer);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 7, common.decal_buffer ? common.decal_buffer->default_srv : null_buffer);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 8, common.shadow_map ? common.shadow_map->default_srv : null_texture);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 9, common.point_light_shadow_info_buffer ? common.point_light_shadow_info_buffer->default_srv : null_buffer);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 10, common.spot_light_shadow_info_buffer ? common.spot_light_shadow_info_buffer->default_srv : null_buffer);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 11, common.decal_texture_atlas ? common.decal_texture_atlas->default_srv : null_texture);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 12, common.ao_texture ? common.ao_texture : RenderResources::white_texture);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 13, common.sss_texture ? common.sss_texture : RenderResources::white_texture);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 14, common.ssr_texture ? common.ssr_texture->default_srv : null_texture);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 15, common.light_probe_irradiance ? common.light_probe_irradiance->default_srv : null_texture);
+            cl->set_descriptor_heap_srv(TREE_RS_FRAME_CONSTANTS, 16, common.light_probe_depth ? common.light_probe_depth->default_srv : null_texture);
 
-            cl->setGraphicsDynamicConstantBuffer(TREE_RS_CAMERA, common.cameraCBV);
-            cl->setGraphicsDynamicConstantBuffer(TREE_RS_LIGHTING, common.lightingCBV);
+            cl->set_graphics_dynamic_constant_buffer(TREE_RS_CAMERA, common.camera_cbv);
+            cl->set_graphics_dynamic_constant_buffer(TREE_RS_LIGHTING, common.lighting_cbv);
         }
 
-            PIPELINE_RENDER_DECL(tree_render_data)
+            PIPELINE_RENDER_DECL(TreeRenderData)
         {
             const auto& mat = data.material;
 
@@ -88,39 +88,39 @@ namespace era_engine
 
             if (mat->albedo)
             {
-                cl->setDescriptorHeapSRV(TREE_RS_PBR_TEXTURES, 0, mat->albedo);
+                cl->set_descriptor_heap_srv(TREE_RS_PBR_TEXTURES, 0, mat->albedo);
                 flags |= MATERIAL_USE_ALBEDO_TEXTURE;
             }
             if (mat->normal)
             {
-                cl->setDescriptorHeapSRV(TREE_RS_PBR_TEXTURES, 1, mat->normal);
+                cl->set_descriptor_heap_srv(TREE_RS_PBR_TEXTURES, 1, mat->normal);
                 flags |= MATERIAL_USE_NORMAL_TEXTURE;
             }
             if (mat->roughness)
             {
-                cl->setDescriptorHeapSRV(TREE_RS_PBR_TEXTURES, 2, mat->roughness);
+                cl->set_descriptor_heap_srv(TREE_RS_PBR_TEXTURES, 2, mat->roughness);
                 flags |= MATERIAL_USE_ROUGHNESS_TEXTURE;
             }
             if (mat->metallic)
             {
-                cl->setDescriptorHeapSRV(TREE_RS_PBR_TEXTURES, 3, mat->metallic);
+                cl->set_descriptor_heap_srv(TREE_RS_PBR_TEXTURES, 3, mat->metallic);
                 flags |= MATERIAL_USE_METALLIC_TEXTURE;
             }
             flags |= MATERIAL_DOUBLE_SIDED; // Always double sided.
 
-            cl->setGraphics32BitConstants(TREE_RS_MATERIAL,
-                pbr_material_cb(mat->albedoTint, mat->emission.xyz, mat->roughnessOverride, mat->metallicOverride, flags, 1.f, mat->translucency, mat->uvScale)
+            cl->set_graphics_32bit_constants(TREE_RS_MATERIAL,
+                PBRMaterialCB(mat->albedo_tint, mat->emission.xyz, mat->roughness_override, mat->metallic_override, flags, 1.f, mat->translucency, mat->uv_scale)
             );
 
             const SubmeshInfo& submesh = data.submesh;
 
-            cl->setRootGraphicsSRV(TREE_RS_TRANSFORM, data.transformPtr);
-            cl->setGraphics32BitConstants(TREE_RS_CB, tree_cb{ data.time });
+            cl->set_root_graphics_srv(TREE_RS_TRANSFORM, data.transform_ptr);
+            cl->set_graphics_32bit_constants(TREE_RS_CB, TreeCB{ data.time });
 
-            cl->setVertexBuffer(0, data.vertexBuffer.positions);
-            cl->setVertexBuffer(1, data.vertexBuffer.others);
-            cl->setIndexBuffer(data.indexBuffer);
-            cl->drawIndexed(submesh.numIndices, data.numInstances, submesh.firstIndex, submesh.baseVertex, 0);
+            cl->set_vertex_buffer(0, data.vertex_buffer.positions);
+            cl->set_vertex_buffer(1, data.vertex_buffer.others);
+            cl->set_index_buffer(data.index_buffer);
+            cl->draw_indexed(submesh.num_indices, data.num_instances, submesh.first_index, submesh.base_vertex, 0);
         }
     };
 
@@ -129,11 +129,11 @@ namespace era_engine
         using namespace rttr;
         rttr::registration::class_<TreeComponent>("TreeComponent")
             .constructor<>()
-            .constructor<ref<Entity::EcsData>, const tree_settings&>()
+            .constructor<ref<Entity::EcsData>, const TreeSettings&>()
             .property("settings", &TreeComponent::settings);
     }
 
-    TreeComponent::TreeComponent(ref<Entity::EcsData> _data, const tree_settings& _settings)
+    TreeComponent::TreeComponent(ref<Entity::EcsData> _data, const TreeSettings& _settings)
        : Component(_data), settings(_settings)
     {
     }
@@ -142,32 +142,32 @@ namespace era_engine
     {
     }
 
-    void renderTree(opaque_render_pass* renderPass, D3D12_GPU_VIRTUAL_ADDRESS transforms, uint32 numInstances, const MultiMesh* mesh, float dt)
+    void render_tree(OpaqueRenderPass* render_pass, D3D12_GPU_VIRTUAL_ADDRESS transforms, uint32 num_instances, const MultiMesh* mesh, float dt)
     {
         static float time = 0.f;
         time += dt;
 
-        const dx_mesh& dxMesh = mesh->mesh;
+        const DXMesh& dx_mesh = mesh->mesh;
 
         for (auto& sm : mesh->submeshes)
         {
             SubmeshInfo submesh = sm.info;
-            const ref<pbr_material>& material = sm.material;
+            const ref<PBRMaterial>& material = sm.material;
 
-            tree_render_data data;
-            data.transformPtr = transforms;
-            data.vertexBuffer = dxMesh.vertexBuffer;
-            data.indexBuffer = dxMesh.indexBuffer;
+            TreeRenderData data;
+            data.transform_ptr = transforms;
+            data.vertex_buffer = dx_mesh.vertex_buffer;
+            data.index_buffer = dx_mesh.index_buffer;
             data.submesh = submesh;
             data.material = material;
             data.time = time;
-            data.numInstances = numInstances;
+            data.num_instances = num_instances;
 
-            renderPass->renderObject<tree_pipeline>(data);
+            render_pass->render_object<TreePipeline>(data);
         }
     }
 
-    struct tree_mesh_others
+    struct TreeMeshOthers
     {
         vec2 uv;
         vec3 normal;
@@ -175,16 +175,16 @@ namespace era_engine
         uint32 color;
     };
 
-    static uint32 countVertices(std::vector<submesh>& submeshes, const tree_mesh_others* others, uint32 color)
+    static uint32 count_vertices(std::vector<Submesh>& submeshes, const TreeMeshOthers* others, uint32 color)
     {
         uint32 count = 0;
 
         for (auto& sub : submeshes)
         {
-            for (uint32 i = 0; i < sub.info.numVertices; ++i)
+            for (uint32 i = 0; i < sub.info.num_vertices; ++i)
             {
-                uint32 vertexID = i + sub.info.baseVertex;
-                uint32 c = others[vertexID].color;
+                uint32 vertex_id = i + sub.info.base_vertex;
+                uint32 c = others[vertex_id].color;
 
                 count += c == color;
             }
@@ -193,89 +193,89 @@ namespace era_engine
         return count;
     }
 
-    static void fillVertices(std::vector<submesh>& submeshes, const vec3* positions, const tree_mesh_others* others, uint32 color, vec3* outPositions)
+    static void fill_vertices(std::vector<Submesh>& submeshes, const vec3* positions, const TreeMeshOthers* others, uint32 color, vec3* out_positions)
     {
         for (auto& sub : submeshes)
         {
-            for (uint32 i = 0; i < sub.info.numVertices; ++i)
+            for (uint32 i = 0; i < sub.info.num_vertices; ++i)
             {
-                uint32 vertexID = i + sub.info.baseVertex;
-                uint32 c = others[vertexID].color;
+                uint32 vertex_id = i + sub.info.base_vertex;
+                uint32 c = others[vertex_id].color;
 
                 if (c == color)
                 {
-                    *outPositions++ = positions[vertexID];
+                    *out_positions++ = positions[vertex_id];
                 }
             }
         }
     }
 
-    static void analyzeTreeMesh(mesh_builder& builder, std::vector<submesh>& submeshes, const bounding_box& boundingBox)
+    static void analyze_tree_mesh(MeshBuilder& builder, std::vector<Submesh>& submeshes, const BoundingBox& bounding_box)
     {
-        const uint32 trunkVertexColor = 0xFF000000;  // Black.
-        const uint32 branchVertexColor = 0xFFFFFFFF; // White.
+        const uint32 trunk_vertex_color = 0xFF000000;  // Black.
+        const uint32 branch_vertex_color = 0xFFFFFFFF; // White.
 
-        vec3* positions = builder.getPositions();
-        tree_mesh_others* others = (tree_mesh_others*)builder.getOthers();
+        vec3* positions = builder.get_positions();
+        TreeMeshOthers* others = (TreeMeshOthers*)builder.get_others();
 
-        uint32 numTrunkVertices = countVertices(submeshes, others, trunkVertexColor);
-        uint32 numBranchVertices = countVertices(submeshes, others, branchVertexColor);
+        uint32 num_trunk_vertices = count_vertices(submeshes, others, trunk_vertex_color);
+        uint32 num_branch_vertices = count_vertices(submeshes, others, branch_vertex_color);
 
-        vec3* trunkPositions = new vec3[numTrunkVertices];
-        vec3* branchPositions = new vec3[numBranchVertices];
+        vec3* trunk_positions = new vec3[num_trunk_vertices];
+        vec3* branch_positions = new vec3[num_branch_vertices];
 
-        fillVertices(submeshes, positions, others, trunkVertexColor, trunkPositions);
-        fillVertices(submeshes, positions, others, branchVertexColor, branchPositions);
+        fill_vertices(submeshes, positions, others, trunk_vertex_color, trunk_positions);
+        fill_vertices(submeshes, positions, others, branch_vertex_color, branch_positions);
 
-        PointCloud trunkPC(trunkPositions, numTrunkVertices);
-        PointCloud branchPC(branchPositions, numBranchVertices);
+        PointCloud trunk_pc(trunk_positions, num_trunk_vertices);
+        PointCloud branch_pc(branch_positions, num_branch_vertices);
 
-        float scale = 1.f / (boundingBox.maxCorner.y - boundingBox.minCorner.y);
+        float scale = 1.f / (bounding_box.max_corner.y - bounding_box.min_corner.y);
 
         for (auto& sub : submeshes)
         {
-            for (uint32 i = 0; i < sub.info.numVertices; ++i)
+            for (uint32 i = 0; i < sub.info.num_vertices; ++i)
             {
-                uint32 vertexID = i + sub.info.baseVertex;
+                uint32 vertex_id = i + sub.info.base_vertex;
 
-                vec3 query = positions[vertexID];
+                vec3 query = positions[vertex_id];
 
-                float distanceToTrunk = sqrt(trunkPC.nearest_neighbor_index(query).squared_distance);
-                float distanceToBranch = sqrt(branchPC.nearest_neighbor_index(query).squared_distance);
+                float distance_to_trunk = sqrt(trunk_pc.nearest_neighbor_index(query).squared_distance);
+                float distance_to_branch = sqrt(branch_pc.nearest_neighbor_index(query).squared_distance);
 
-                distanceToBranch = min(distanceToTrunk, distanceToBranch);
+                distance_to_branch = min(distance_to_trunk, distance_to_branch);
 
-                others[vertexID].color = packColor(
-                    saturate(inverse_lerp(boundingBox.minCorner.y, boundingBox.maxCorner.y, query.y)),
-                    distanceToTrunk * scale,
-                    distanceToBranch * scale,
+                others[vertex_id].color = pack_color(
+                    saturate(inverse_lerp(bounding_box.min_corner.y, bounding_box.max_corner.y, query.y)),
+                    distance_to_trunk * scale,
+                    distance_to_branch * scale,
                     1.f);
 
                 int a = 0;
             }
         }
 
-        delete[] trunkPositions;
-        delete[] branchPositions;
+        delete[] trunk_positions;
+        delete[] branch_positions;
     }
 
-    ref<MultiMesh> loadTreeMeshFromFile(const fs::path& sceneFilename)
+    ref<MultiMesh> load_tree_mesh_from_file(const fs::path& scene_filename)
     {
-        return import_mesh_from_file(sceneFilename, mesh_creation_flags_default | mesh_creation_flags_with_colors, analyzeTreeMesh);
+        return import_mesh_from_file(scene_filename, MESH_CREATION_FLAGS_DEFAULT | MESH_CREATION_FLAGS_WITH_COLORS, analyze_tree_mesh);
     }
 
-    ref<MultiMesh> loadTreeMeshFromHandle(AssetHandle handle)
+    ref<MultiMesh> load_tree_mesh_from_handle(AssetHandle handle)
     {
-        return import_mesh_from_handle(handle, mesh_creation_flags_default | mesh_creation_flags_with_colors, analyzeTreeMesh);
+        return import_mesh_from_handle(handle, MESH_CREATION_FLAGS_DEFAULT | MESH_CREATION_FLAGS_WITH_COLORS, analyze_tree_mesh);
     }
 
-    ref<MultiMesh> loadTreeMeshFromFileAsync(const fs::path& sceneFilename, JobHandle parent_job)
+    ref<MultiMesh> load_tree_mesh_from_file_async(const fs::path& scene_filename, JobHandle parent_job)
     {
-        return import_mesh_from_file_async(sceneFilename, mesh_creation_flags_default | mesh_creation_flags_with_colors, parent_job, analyzeTreeMesh);
+        return import_mesh_from_file_async(scene_filename, MESH_CREATION_FLAGS_DEFAULT | MESH_CREATION_FLAGS_WITH_COLORS, parent_job, analyze_tree_mesh);
     }
 
-    ref<MultiMesh> loadTreeMeshFromHandleAsync(AssetHandle handle, JobHandle parent_job)
+    ref<MultiMesh> load_tree_mesh_from_handle_async(AssetHandle handle, JobHandle parent_job)
     {
-        return import_mesh_from_handle_async(handle, mesh_creation_flags_default | mesh_creation_flags_with_colors, parent_job, analyzeTreeMesh);
+        return import_mesh_from_handle_async(handle, MESH_CREATION_FLAGS_DEFAULT | MESH_CREATION_FLAGS_WITH_COLORS, parent_job, analyze_tree_mesh);
     }
 }

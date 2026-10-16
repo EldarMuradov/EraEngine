@@ -15,45 +15,45 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API dx_window : win32_window
+	struct ERA_CORE_API DXWindow : Win32Window
 	{
-		dx_window();
-		dx_window(dx_window&) = delete;
-		dx_window(dx_window&&) = default;
+		DXWindow();
+		DXWindow(DXWindow&) = delete;
+		DXWindow(DXWindow&&) = default;
 
-		virtual ~dx_window();
+		virtual ~DXWindow();
 
-		bool initialize(const TCHAR* name, uint32 requestedClientWidth, uint32 requestedClientHeight, color_depth colorDepth = color_depth_10, bool exclusiveFullscreen = false);
-		bool initialize(HINSTANCE hInst, const TCHAR* name, uint32 requestedClientWidth, uint32 requestedClientHeight, color_depth colorDepth = color_depth_10, bool exclusiveFullscreen = false);
+		bool initialize(const TCHAR* name, uint32 requested_client_width, uint32 requested_client_height, ColorDepth color_depth = COLOR_DEPTH_10, bool exclusive_fullscreen = false);
+		bool initialize(HINSTANCE h_inst, const TCHAR* name, uint32 requested_client_width, uint32 requested_client_height, ColorDepth color_depth = COLOR_DEPTH_10, bool exclusive_fullscreen = false);
 
 		virtual void shutdown();
 
-		virtual void swapBuffers();
-		virtual void toggleFullscreen();
-		void toggleVSync();
+		virtual void swap_buffers();
+		virtual void toggle_fullscreen();
+		void toggle_v_sync();
 
-		virtual void onResize();
-		virtual void onMove();
-		virtual void onWindowDisplayChange();
+		virtual void on_resize();
+		virtual void on_move();
+		virtual void on_window_display_change();
 
-		dx_resource backBuffers[NUM_BUFFERED_FRAMES];
-		dx_rtv_descriptor_handle backBufferRTVs[NUM_BUFFERED_FRAMES];
-		uint32 currentBackbufferIndex;
+		DXResource back_buffers[NUM_BUFFERED_FRAMES];
+		DXRTVDescriptorHandle back_buffer_rtvs[NUM_BUFFERED_FRAMES];
+		uint32 current_backbuffer_index;
 
-		color_depth colorDepth;
+		ColorDepth color_depth;
 
 		RTTR_ENABLE()
 
 	private:
-		void updateRenderTargetViews();
+		void update_render_target_views();
 
-		dx_swapchain swapchain;
-		com<ID3D12DescriptorHeap> rtvDescriptorHeap;
+		DXSwapchain swapchain;
+		com<ID3D12DescriptorHeap> rtv_descriptor_heap;
 
-		bool tearingSupported;
-		bool exclusiveFullscreen;
-		bool hdrSupport;
-		bool vSync = false;
+		bool tearing_supported;
+		bool exclusive_fullscreen;
+		bool hdr_support;
+		bool v_sync = false;
 		bool initialized = false;
 	};
 

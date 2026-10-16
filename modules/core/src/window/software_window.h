@@ -8,29 +8,29 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API software_window : win32_window
+	struct ERA_CORE_API SoftwareWindow : Win32Window
 	{
-		software_window() = default;
-		software_window(software_window&) = delete;
-		software_window(software_window&& o) noexcept;
+		SoftwareWindow() = default;
+		SoftwareWindow(SoftwareWindow&) = delete;
+		SoftwareWindow(SoftwareWindow&& o) noexcept;
 
-		~software_window();
+		~SoftwareWindow();
 
-		bool initialize(const TCHAR* name, uint32 requestedClientWidth, uint32 requestedClientHeight,
-			uint8* buffer, uint32 numChannels, uint32 bufferWidth = 0, uint32 bufferHeight = 0);
+		bool initialize(const TCHAR* name, uint32 requested_client_width, uint32 requested_client_height,
+			uint8* buffer, uint32 num_channels, uint32 buffer_width = 0, uint32 buffer_height = 0);
 
-		void changeBlitRegion(uint32 x, uint32 y, uint32 width, uint32 height);
+		void change_blit_region(uint32 x, uint32 y, uint32 width, uint32 height);
 
 		virtual void shutdown();
 
-		void swapBuffers() override;
+		void swap_buffers() override;
 
-		BITMAPINFO* bitmapInfo = 0;
+		BITMAPINFO* bitmap_info = 0;
 		const uint8* buffer = 0;
 
-		uint32 blitX;
-		uint32 blitY;
-		uint32 blitWidth;
-		uint32 blitHeight;
+		uint32 blit_x;
+		uint32 blit_y;
+		uint32 blit_width;
+		uint32 blit_height;
 	};
 }

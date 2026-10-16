@@ -1,25 +1,25 @@
 #include "light_probe_rs.hlsli"
 
-struct ps_input
+struct PSInput
 {
-	float2 uvOffset			: UV_OFFSET;
-	float2 uvScale			: UV_SCALE;
+	float2 uv_offset			: UV_OFFSET;
+	float2 uv_scale			: UV_SCALE;
 	float3 normal			: NORMAL;
 };
 
 Texture2D<float3> irradiance	: register(t0);
-SamplerState linearSampler		: register(s0);
+SamplerState linear_sampler		: register(s0);
 
 
 
 [RootSignature(LIGHT_PROBE_GRID_VISUALIZATION_RS)]
-float4 main(ps_input IN) : SV_TARGET
+float4 main(PSInput IN) : SV_TARGET
 {
-	const float octScale = (float)LIGHT_PROBE_RESOLUTION / (float)LIGHT_PROBE_TOTAL_RESOLUTION;
+	const float oct_scale = (float)LIGHT_PROBE_RESOLUTION / (float)LIGHT_PROBE_TOTAL_RESOLUTION;
 
-	float2 oct = encodeOctahedral(normalize(IN.normal));
-	oct *= octScale;
-	float2 uv = (IN.uvOffset + oct * 0.5f + 0.5f) * IN.uvScale;
+	float2 oct = encode_octahedral(normalize(IN.normal));
+	oct *= oct_scale;
+	float2 uv = (IN.uv_offset + oct * 0.5f + 0.5f) * IN.uv_scale;
 
-	return float4(irradiance.Sample(linearSampler, uv), 1.f);
+	return float4(irradiance.Sample(linear_sampler, uv), 1.f);
 }

@@ -1,18 +1,18 @@
 #ifndef SKY_RS_HLSLI
 #define SKY_RS_HLSLI
 
-struct sky_transform_cb
+struct SkyTransformCB
 {
 	mat4 vp;
-	mat4 prevFrameVP;
+	mat4 prev_frame_vp;
 };
 
-struct sky_cb
+struct SkyCB
 {
 	vec2 jitter;
-	vec2 prevFrameJitter;
+	vec2 prev_frame_jitter;
 	float intensity;
-	vec3 sunDirection;
+	vec3 sun_direction;
 };
 
 #define SKY_PROCEDURAL_RS \

@@ -17,327 +17,327 @@
 
 #include "light_source.hlsli"
 
-#define SSR_RAYCAST_WIDTH (renderWidth / 2)
-#define SSR_RAYCAST_HEIGHT (renderHeight / 2)
+#define SSR_RAYCAST_WIDTH (render_width / 2)
+#define SSR_RAYCAST_HEIGHT (render_height / 2)
 
-#define SSR_RESOLVE_WIDTH (renderWidth / 2)
-#define SSR_RESOLVE_HEIGHT (renderHeight / 2)
+#define SSR_RESOLVE_WIDTH (render_width / 2)
+#define SSR_RESOLVE_HEIGHT (render_height / 2)
 
 namespace era_engine
 {
-	void main_renderer::initialize(color_depth colorDepth, uint32 windowWidth, uint32 windowHeight, renderer_spec spec, bool initDLSS)
+	void MainRenderer::initialize(ColorDepth color_depth, uint32 window_width, uint32 window_height, RendererSpec spec, bool init_dlss)
 	{
-		this->windowWidth = windowWidth;
-		this->windowHeight = windowHeight;
-		const_cast<renderer_spec&>(this->spec) = spec;
+		this->window_width = window_width;
+		this->window_height = window_height;
+		const_cast<RendererSpec&>(this->spec) = spec;
 
-		settings.enableSharpen = spec.allowTAA;
-		spec.allowSSR |= dxContext.featureSupport.raytracing(); // For now, since raytraced reflections use the same intermediate textures.
+		settings.enable_sharpen = spec.allow_taa;
+		spec.allow_ssr |= dx_context.feature_support.raytracing(); // For now, since raytraced reflections use the same intermediate textures.
 
-		recalculateViewport(false);
+		recalculate_viewport(false);
 
-		hdrColorTexture = createTexture(0, renderWidth, renderHeight, hdrFormat, false, true, true, D3D12_RESOURCE_STATE_RENDER_TARGET);
-		SET_NAME(hdrColorTexture->resource, "HDR Color");
+		hdr_color_texture = create_texture(0, render_width, render_height, hdr_format, false, true, true, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		SET_NAME(hdr_color_texture->resource, "HDR Color");
 
-		if (spec.allowSSR)
+		if (spec.allow_ssr)
 		{
-			D3D12_RESOURCE_DESC prevFrameHDRColorDesc = CD3DX12_RESOURCE_DESC::Tex2D(hdrFormat, renderWidth / 2, renderHeight / 2, 1,
+			D3D12_RESOURCE_DESC prev_frame_hdr_color_desc = CD3DX12_RESOURCE_DESC::Tex2D(hdr_format, render_width / 2, render_height / 2, 1,
 				8, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-			prevFrameHDRColorTexture = createTexture(prevFrameHDRColorDesc, 0, 0, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, true);
-			prevFrameHDRColorTempTexture = createTexture(prevFrameHDRColorDesc, 0, 0, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, true);
+			prev_frame_hdr_color_texture = create_texture(prev_frame_hdr_color_desc, 0, 0, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, true);
+			prev_frame_hdr_color_temp_texture = create_texture(prev_frame_hdr_color_desc, 0, 0, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, true);
 
-			SET_NAME(prevFrameHDRColorTexture->resource, "Prev frame HDR Color");
-			SET_NAME(prevFrameHDRColorTempTexture->resource, "Prev frame HDR Color Temp");
+			SET_NAME(prev_frame_hdr_color_texture->resource, "Prev frame HDR Color");
+			SET_NAME(prev_frame_hdr_color_temp_texture->resource, "Prev frame HDR Color Temp");
 		}
 
 		// If object picking is allowed, but none of the others, we still have to allocate screen velocities due to dumb internal reasons with our render targets.
-		if (spec.allowSSR || spec.allowTAA || spec.allowAO || spec.allowObjectPicking)
+		if (spec.allow_ssr || spec.allow_taa || spec.allow_ao || spec.allow_object_picking)
 		{
-			screenVelocitiesTexture = createTexture(0, renderWidth, renderHeight, screenVelocitiesFormat, false, true, false, D3D12_RESOURCE_STATE_RENDER_TARGET);
-			SET_NAME(screenVelocitiesTexture->resource, "Screen velocities");
+			screen_velocities_texture = create_texture(0, render_width, render_height, screen_velocities_format, false, true, false, D3D12_RESOURCE_STATE_RENDER_TARGET);
+			SET_NAME(screen_velocities_texture->resource, "Screen velocities");
 		}
 
-		worldNormalsRoughnessTexture = createTexture(0, renderWidth, renderHeight, worldNormalsRoughnessFormat, false, true, false, D3D12_RESOURCE_STATE_GENERIC_READ);
-		SET_NAME(worldNormalsRoughnessTexture->resource, "World normals / roughness");
+		world_normals_roughness_texture = create_texture(0, render_width, render_height, world_normals_roughness_format, false, true, false, D3D12_RESOURCE_STATE_GENERIC_READ);
+		SET_NAME(world_normals_roughness_texture->resource, "World normals / roughness");
 
-		depthStencilBuffer = createDepthTexture(renderWidth, renderHeight, depthStencilFormat);
-		opaqueDepthBuffer = createDepthTexture(renderWidth, renderHeight, depthStencilFormat, 1, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		D3D12_RESOURCE_DESC linearDepthDesc = CD3DX12_RESOURCE_DESC::Tex2D(linearDepthFormat, renderWidth, renderHeight, 1,
+		depth_stencil_buffer = create_depth_texture(render_width, render_height, depth_stencil_format);
+		opaque_depth_buffer = create_depth_texture(render_width, render_height, depth_stencil_format, 1, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		D3D12_RESOURCE_DESC linear_depth_desc = CD3DX12_RESOURCE_DESC::Tex2D(linear_depth_format, render_width, render_height, 1,
 			6, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-		linearDepthBuffer = createTexture(linearDepthDesc, 0, 0, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, true);
-		SET_NAME(depthStencilBuffer->resource, "Depth buffer");
-		SET_NAME(opaqueDepthBuffer->resource, "Opaque depth buffer");
-		SET_NAME(linearDepthBuffer->resource, "Linear depth buffer");
+		linear_depth_buffer = create_texture(linear_depth_desc, 0, 0, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, true);
+		SET_NAME(depth_stencil_buffer->resource, "Depth buffer");
+		SET_NAME(opaque_depth_buffer->resource, "Opaque depth buffer");
+		SET_NAME(linear_depth_buffer->resource, "Linear depth buffer");
 
-		if (spec.allowAO)
+		if (spec.allow_ao)
 		{
-			aoCalculationTexture = createTexture(0, renderWidth / 2, renderHeight / 2, aoFormat, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-			aoBlurTempTexture = createTexture(0, renderWidth, renderHeight, aoFormat, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-			aoTextures[aoHistoryIndex] = createTexture(0, renderWidth, renderHeight, aoFormat, false, false, true, D3D12_RESOURCE_STATE_GENERIC_READ);
-			aoTextures[1 - aoHistoryIndex] = createTexture(0, renderWidth, renderHeight, aoFormat, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			ao_calculation_texture = create_texture(0, render_width / 2, render_height / 2, ao_format, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			ao_blur_temp_texture = create_texture(0, render_width, render_height, ao_format, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			ao_textures[ao_history_index] = create_texture(0, render_width, render_height, ao_format, false, false, true, D3D12_RESOURCE_STATE_GENERIC_READ);
+			ao_textures[1 - ao_history_index] = create_texture(0, render_width, render_height, ao_format, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-			SET_NAME(aoCalculationTexture->resource, "AO Calculation");
-			SET_NAME(aoBlurTempTexture->resource, "AO Temp");
-			SET_NAME(aoTextures[0]->resource, "AO 0");
-			SET_NAME(aoTextures[1]->resource, "AO 1");
+			SET_NAME(ao_calculation_texture->resource, "AO Calculation");
+			SET_NAME(ao_blur_temp_texture->resource, "AO Temp");
+			SET_NAME(ao_textures[0]->resource, "AO 0");
+			SET_NAME(ao_textures[1]->resource, "AO 1");
 		}
 
-		if (spec.allowSSS)
+		if (spec.allow_sss)
 		{
-			sssCalculationTexture = createTexture(0, renderWidth / 2, renderHeight / 2, sssFormat, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-			sssBlurTempTexture = createTexture(0, renderWidth, renderHeight, sssFormat, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-			sssTextures[sssHistoryIndex] = createTexture(0, renderWidth, renderHeight, sssFormat, false, false, true, D3D12_RESOURCE_STATE_GENERIC_READ);
-			sssTextures[1 - sssHistoryIndex] = createTexture(0, renderWidth, renderHeight, sssFormat, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			sss_calculation_texture = create_texture(0, render_width / 2, render_height / 2, sss_format, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			sss_blur_temp_texture = create_texture(0, render_width, render_height, sss_format, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			sss_textures[sss_history_index] = create_texture(0, render_width, render_height, sss_format, false, false, true, D3D12_RESOURCE_STATE_GENERIC_READ);
+			sss_textures[1 - sss_history_index] = create_texture(0, render_width, render_height, sss_format, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-			SET_NAME(sssCalculationTexture->resource, "SSS Calculation");
-			SET_NAME(sssBlurTempTexture->resource, "SSS Temp");
-			SET_NAME(sssTextures[0]->resource, "SSS 0");
-			SET_NAME(sssTextures[1]->resource, "SSS 1");
+			SET_NAME(sss_calculation_texture->resource, "SSS Calculation");
+			SET_NAME(sss_blur_temp_texture->resource, "SSS Temp");
+			SET_NAME(sss_textures[0]->resource, "SSS 0");
+			SET_NAME(sss_textures[1]->resource, "SSS 1");
 		}
 
-		if (spec.allowSSR)
+		if (spec.allow_ssr)
 		{
-			ssrRaycastTexture = createTexture(0, SSR_RAYCAST_WIDTH, SSR_RAYCAST_HEIGHT, hdrFormat, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-			ssrResolveTexture = createTexture(0, SSR_RESOLVE_WIDTH, SSR_RESOLVE_HEIGHT, hdrFormat, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-			ssrTemporalTextures[ssrHistoryIndex] = createTexture(0, SSR_RESOLVE_WIDTH, SSR_RESOLVE_HEIGHT, hdrFormat, false, false, true, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-			ssrTemporalTextures[1 - ssrHistoryIndex] = createTexture(0, SSR_RESOLVE_WIDTH, SSR_RESOLVE_HEIGHT, hdrFormat, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			ssr_raycast_texture = create_texture(0, SSR_RAYCAST_WIDTH, SSR_RAYCAST_HEIGHT, hdr_format, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			ssr_resolve_texture = create_texture(0, SSR_RESOLVE_WIDTH, SSR_RESOLVE_HEIGHT, hdr_format, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			ssr_temporal_textures[ssr_history_index] = create_texture(0, SSR_RESOLVE_WIDTH, SSR_RESOLVE_HEIGHT, hdr_format, false, false, true, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+			ssr_temporal_textures[1 - ssr_history_index] = create_texture(0, SSR_RESOLVE_WIDTH, SSR_RESOLVE_HEIGHT, hdr_format, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-			SET_NAME(ssrRaycastTexture->resource, "SSR Raycast");
-			SET_NAME(ssrResolveTexture->resource, "SSR Resolve");
-			SET_NAME(ssrTemporalTextures[0]->resource, "SSR Temporal 0");
-			SET_NAME(ssrTemporalTextures[1]->resource, "SSR Temporal 1");
+			SET_NAME(ssr_raycast_texture->resource, "SSR Raycast");
+			SET_NAME(ssr_resolve_texture->resource, "SSR Resolve");
+			SET_NAME(ssr_temporal_textures[0]->resource, "SSR Temporal 0");
+			SET_NAME(ssr_temporal_textures[1]->resource, "SSR Temporal 1");
 		}
 
-		hdrPostProcessingTexture = createTexture(0, renderWidth, renderHeight, hdrFormat, false, true, true, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		SET_NAME(hdrPostProcessingTexture->resource, "HDR Post processing");
+		hdr_post_processing_texture = create_texture(0, render_width, render_height, hdr_format, false, true, true, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		SET_NAME(hdr_post_processing_texture->resource, "HDR Post processing");
 
-		ldrPostProcessingTexture = createTexture(0, renderWidth, renderHeight, ldrFormat, false, true, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		SET_NAME(ldrPostProcessingTexture->resource, "LDR Post processing");
+		ldr_post_processing_texture = create_texture(0, render_width, render_height, ldr_format, false, true, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		SET_NAME(ldr_post_processing_texture->resource, "LDR Post processing");
 
-		if (spec.allowTAA)
+		if (spec.allow_taa)
 		{
-			taaTextures[taaHistoryIndex] = createTexture(0, renderWidth, renderHeight, hdrFormat, false, true, true, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-			taaTextures[1 - taaHistoryIndex] = createTexture(0, renderWidth, renderHeight, hdrFormat, false, true, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			taa_textures[taa_history_index] = create_texture(0, render_width, render_height, hdr_format, false, true, true, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+			taa_textures[1 - taa_history_index] = create_texture(0, render_width, render_height, hdr_format, false, true, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-			SET_NAME(taaTextures[0]->resource, "TAA 0");
-			SET_NAME(taaTextures[1]->resource, "TAA 1");
+			SET_NAME(taa_textures[0]->resource, "TAA 0");
+			SET_NAME(taa_textures[1]->resource, "TAA 1");
 		}
 
-		if (spec.allowBloom)
+		if (spec.allow_bloom)
 		{
-			D3D12_RESOURCE_DESC bloomDesc = CD3DX12_RESOURCE_DESC::Tex2D(hdrFormat, renderWidth / 4, renderHeight / 4, 1,
+			D3D12_RESOURCE_DESC bloom_desc = CD3DX12_RESOURCE_DESC::Tex2D(hdr_format, render_width / 4, render_height / 4, 1,
 				5, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-			bloomTexture = createTexture(bloomDesc, 0, 0, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, true);
-			bloomTempTexture = createTexture(bloomDesc, 0, 0, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, true);
+			bloom_texture = create_texture(bloom_desc, 0, 0, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, true);
+			bloom_temp_texture = create_texture(bloom_desc, 0, 0, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, true);
 
-			SET_NAME(bloomTexture->resource, "Bloom");
-			SET_NAME(bloomTempTexture->resource, "Bloom Temp");
+			SET_NAME(bloom_texture->resource, "Bloom");
+			SET_NAME(bloom_temp_texture->resource, "Bloom Temp");
 		}
 
-		frameResult = createTexture(0, windowWidth, windowHeight, colorDepthToFormat(colorDepth), false, true, true);
-		SET_NAME(frameResult->resource, "Frame result");
+		frame_result = create_texture(0, window_width, window_height, color_depth_to_format(color_depth), false, true, true);
+		SET_NAME(frame_result->resource, "Frame result");
 
-		if (spec.allowObjectPicking)
+		if (spec.allow_object_picking)
 		{
-			hoveredObjectIDReadbackBuffer = createReadbackBuffer(getFormatSize(objectIDsFormat), NUM_BUFFERED_FRAMES);
+			hovered_object_id_readback_buffer = create_readback_buffer(get_format_size(object_ids_format), NUM_BUFFERED_FRAMES);
 
-			objectIDsTexture = createTexture(0, renderWidth, renderHeight, objectIDsFormat, false, true, false, D3D12_RESOURCE_STATE_RENDER_TARGET);
-			SET_NAME(objectIDsTexture->resource, "Object IDs");
+			object_ids_texture = create_texture(0, render_width, render_height, object_ids_format, false, true, false, D3D12_RESOURCE_STATE_RENDER_TARGET);
+			SET_NAME(object_ids_texture->resource, "Object IDs");
 		}
 
-		if (dxContext.featureSupport.raytracing())
+		if (dx_context.feature_support.raytracing())
 		{
-			pathTracer.initialize();
+			path_tracer.initialize();
 		}
 
-		if (initDLSS && dxContext.featureSupport.dlss())
+		if (init_dlss && dx_context.feature_support.dlss())
 		{
 			dlss_adapter.initialize(this);
 		}
 	}
 
-	void main_renderer::beginFrame(uint32 windowWidth, uint32 windowHeight)
+	void MainRenderer::begin_frame(uint32 window_width, uint32 window_height)
 	{
-		if (this->windowWidth != windowWidth || this->windowHeight != windowHeight)
+		if (this->window_width != window_width || this->window_height != window_height)
 		{
-			this->windowWidth = windowWidth;
-			this->windowHeight = windowHeight;
+			this->window_width = window_width;
+			this->window_height = window_height;
 
-			resizeTexture(frameResult, windowWidth, windowHeight);
+			resize_texture(frame_result, window_width, window_height);
 
-			recalculateViewport(true);
+			recalculate_viewport(true);
 		}
 
-		if (objectIDsTexture && windowHovered)
+		if (object_ids_texture && window_hovered)
 		{
-			uint32* id = (uint32*)mapBuffer(hoveredObjectIDReadbackBuffer, true, map_range{ dxContext.bufferedFrameID, 1 });
-			hoveredObjectID = *id;
-			unmapBuffer(hoveredObjectIDReadbackBuffer, false);
+			uint32* id = (uint32*)map_buffer(hovered_object_id_readback_buffer, true, MapRange{ dx_context.buffered_frame_id, 1 });
+			hovered_object_id = *id;
+			unmap_buffer(hovered_object_id_readback_buffer, false);
 		}
 		else
 		{
-			hoveredObjectID = -1;
+			hovered_object_id = -1;
 		}
 
-		opaqueRenderPass = 0;
-		transparentRenderPass = 0;
-		ldrRenderPass = 0;
-		computePass = 0;
+		opaque_render_pass = 0;
+		transparent_render_pass = 0;
+		ldr_render_pass = 0;
+		compute_pass = 0;
 
-		numSunLightShadowRenderPasses = 0;
-		numSpotLightShadowRenderPasses = 0;
-		numPointLightShadowRenderPasses = 0;
+		num_sun_light_shadow_render_passes = 0;
+		num_spot_light_shadow_render_passes = 0;
+		num_point_light_shadow_render_passes = 0;
 
 		environment = 0;
 		tlas = 0;
 
-		pointLights = 0;
-		spotLights = 0;
-		numPointLights = 0;
-		numSpotLights = 0;
+		point_lights = 0;
+		spot_lights = 0;
+		num_point_lights = 0;
+		num_spot_lights = 0;
 		decals = 0;
-		numDecals = 0;
-		decalTextureAtlas = 0;
+		num_decals = 0;
+		decal_texture_atlas = 0;
 	}
 
-	void main_renderer::recalculateViewport(bool resizeTextures)
+	void MainRenderer::recalculate_viewport(bool resize_textures)
 	{
-		if (aspectRatioMode == aspect_ratio_free)
+		if (aspect_ratio_mode == ASPECT_RATIO_FREE)
 		{
-			renderWidth = windowWidth;
-			renderHeight = windowHeight;
-			windowXOffset = 0;
-			windowYOffset = 0;
+			render_width = window_width;
+			render_height = window_height;
+			window_x_offset = 0;
+			window_y_offset = 0;
 		}
 		else
 		{
-			const float targetAspect = aspectRatioMode == aspect_ratio_fix_16_9 ? (16.f / 9.f) : (16.f / 10.f);
+			const float target_aspect = aspect_ratio_mode == ASPECT_RATIO_FIX_16_9 ? (16.f / 9.f) : (16.f / 10.f);
 
-			float aspect = (float)windowWidth / (float)windowHeight;
-			if (aspect > targetAspect)
+			float aspect = (float)window_width / (float)window_height;
+			if (aspect > target_aspect)
 			{
-				renderWidth = (uint32)(windowHeight * targetAspect);
-				renderHeight = windowHeight;
-				windowXOffset = (int32)(windowWidth - renderWidth) / 2;
-				windowYOffset = 0;
+				render_width = (uint32)(window_height * target_aspect);
+				render_height = window_height;
+				window_x_offset = (int32)(window_width - render_width) / 2;
+				window_y_offset = 0;
 			}
 			else
 			{
-				renderWidth = windowWidth;
-				renderHeight = (uint32)(windowWidth / targetAspect);
-				windowXOffset = 0;
-				windowYOffset = (int32)(windowHeight - renderHeight) / 2;
+				render_width = window_width;
+				render_height = (uint32)(window_width / target_aspect);
+				window_x_offset = 0;
+				window_y_offset = (int32)(window_height - render_height) / 2;
 			}
 		}
 
-		if (resizeTextures)
+		if (resize_textures)
 		{
-			resizeTexture(hdrColorTexture, renderWidth, renderHeight);
-			resizeTexture(prevFrameHDRColorTexture, renderWidth / 2, renderHeight / 2);
-			resizeTexture(prevFrameHDRColorTempTexture, renderWidth / 2, renderHeight / 2);
-			resizeTexture(worldNormalsRoughnessTexture, renderWidth, renderHeight);
-			resizeTexture(screenVelocitiesTexture, renderWidth, renderHeight);
-			resizeTexture(depthStencilBuffer, renderWidth, renderHeight);
-			resizeTexture(opaqueDepthBuffer, renderWidth, renderHeight);
-			resizeTexture(linearDepthBuffer, renderWidth, renderHeight);
+			resize_texture(hdr_color_texture, render_width, render_height);
+			resize_texture(prev_frame_hdr_color_texture, render_width / 2, render_height / 2);
+			resize_texture(prev_frame_hdr_color_temp_texture, render_width / 2, render_height / 2);
+			resize_texture(world_normals_roughness_texture, render_width, render_height);
+			resize_texture(screen_velocities_texture, render_width, render_height);
+			resize_texture(depth_stencil_buffer, render_width, render_height);
+			resize_texture(opaque_depth_buffer, render_width, render_height);
+			resize_texture(linear_depth_buffer, render_width, render_height);
 
-			resizeTexture(aoCalculationTexture, renderWidth / 2, renderHeight / 2);
-			resizeTexture(aoBlurTempTexture, renderWidth, renderHeight);
-			resizeTexture(aoTextures[aoHistoryIndex], renderWidth, renderHeight, D3D12_RESOURCE_STATE_GENERIC_READ);
-			resizeTexture(aoTextures[1 - aoHistoryIndex], renderWidth, renderHeight, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			resize_texture(ao_calculation_texture, render_width / 2, render_height / 2);
+			resize_texture(ao_blur_temp_texture, render_width, render_height);
+			resize_texture(ao_textures[ao_history_index], render_width, render_height, D3D12_RESOURCE_STATE_GENERIC_READ);
+			resize_texture(ao_textures[1 - ao_history_index], render_width, render_height, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-			resizeTexture(sssCalculationTexture, renderWidth / 2, renderHeight / 2);
-			resizeTexture(sssBlurTempTexture, renderWidth, renderHeight);
-			resizeTexture(sssTextures[sssHistoryIndex], renderWidth, renderHeight, D3D12_RESOURCE_STATE_GENERIC_READ);
-			resizeTexture(sssTextures[1 - sssHistoryIndex], renderWidth, renderHeight, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			resize_texture(sss_calculation_texture, render_width / 2, render_height / 2);
+			resize_texture(sss_blur_temp_texture, render_width, render_height);
+			resize_texture(sss_textures[sss_history_index], render_width, render_height, D3D12_RESOURCE_STATE_GENERIC_READ);
+			resize_texture(sss_textures[1 - sss_history_index], render_width, render_height, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-			resizeTexture(objectIDsTexture, renderWidth, renderHeight);
+			resize_texture(object_ids_texture, render_width, render_height);
 
-			resizeTexture(ssrRaycastTexture, SSR_RAYCAST_WIDTH, SSR_RAYCAST_HEIGHT);
-			resizeTexture(ssrResolveTexture, SSR_RESOLVE_WIDTH, SSR_RESOLVE_HEIGHT);
-			resizeTexture(ssrTemporalTextures[ssrHistoryIndex], SSR_RESOLVE_WIDTH, SSR_RESOLVE_HEIGHT, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-			resizeTexture(ssrTemporalTextures[1 - ssrHistoryIndex], SSR_RESOLVE_WIDTH, SSR_RESOLVE_HEIGHT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			resize_texture(ssr_raycast_texture, SSR_RAYCAST_WIDTH, SSR_RAYCAST_HEIGHT);
+			resize_texture(ssr_resolve_texture, SSR_RESOLVE_WIDTH, SSR_RESOLVE_HEIGHT);
+			resize_texture(ssr_temporal_textures[ssr_history_index], SSR_RESOLVE_WIDTH, SSR_RESOLVE_HEIGHT, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+			resize_texture(ssr_temporal_textures[1 - ssr_history_index], SSR_RESOLVE_WIDTH, SSR_RESOLVE_HEIGHT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-			resizeTexture(hdrPostProcessingTexture, renderWidth, renderHeight);
+			resize_texture(hdr_post_processing_texture, render_width, render_height);
 
-			resizeTexture(taaTextures[taaHistoryIndex], renderWidth, renderHeight, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-			resizeTexture(taaTextures[1 - taaHistoryIndex], renderWidth, renderHeight, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			resize_texture(taa_textures[taa_history_index], render_width, render_height, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+			resize_texture(taa_textures[1 - taa_history_index], render_width, render_height, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-			resizeTexture(bloomTexture, renderWidth / 4, renderHeight / 4);
-			resizeTexture(bloomTempTexture, renderWidth / 4, renderHeight / 4);
+			resize_texture(bloom_texture, render_width / 4, render_height / 4);
+			resize_texture(bloom_temp_texture, render_width / 4, render_height / 4);
 
-			resizeTexture(ldrPostProcessingTexture, renderWidth, renderHeight);
+			resize_texture(ldr_post_processing_texture, render_width, render_height);
 		}
 
-		culling.allocateIfNecessary(renderWidth, renderHeight);
+		culling.allocate_if_necessary(render_width, render_height);
 	}
 
-	void main_renderer::setCamera(const render_camera& camera)
+	void MainRenderer::set_camera(const RenderCamera& camera)
 	{
-		buildCameraConstantBuffer(camera, settings.taaSettings.cameraJitterStrength * settings.enableTAA, this->jitteredCamera);
-		buildCameraConstantBuffer(camera, 0.f, this->unjitteredCamera);
+		build_camera_constant_buffer(camera, settings.taa_settings.camera_jitter_strength * settings.enable_taa, this->jittered_camera);
+		build_camera_constant_buffer(camera, 0.f, this->unjittered_camera);
 	}
 
-	void main_renderer::dlssPass(float dt)
+	void MainRenderer::dlss_pass(float dt)
 	{
-		dlss_adapter.updateDLSS(dxContext.getFreeRenderCommandList()->commandList.Get(), dt);
+		dlss_adapter.update_dlss(dx_context.get_free_render_command_list()->command_list.Get(), dt);
 	}
 
-	void main_renderer::setEnvironment(const pbr_environment& environment)
+	void MainRenderer::set_environment(const PBREnvironment& environment)
 	{
-		main_renderer::environment = &environment;
+		MainRenderer::environment = &environment;
 	}
 
-	void main_renderer::setSun(const directional_light& light)
+	void MainRenderer::set_sun(const DirectionalLight& light)
 	{
-		sun.cascadeDistances = light.cascadeDistances;
+		sun.cascade_distances = light.cascade_distances;
 		sun.bias = light.bias;
 		sun.direction = light.direction;
-		sun.blendDistances = light.blendDistances;
+		sun.blend_distances = light.blend_distances;
 		sun.radiance = light.color * light.intensity;
-		sun.numShadowCascades = light.numShadowCascades;
+		sun.num_shadow_cascades = light.num_shadow_cascades;
 
-		memcpy(sun.viewProjs, light.viewProjs, sizeof(mat4) * light.numShadowCascades);
-		memcpy(sun.viewports, light.shadowMapViewports, sizeof(vec4) * light.numShadowCascades);
+		memcpy(sun.view_projs, light.view_projs, sizeof(mat4) * light.num_shadow_cascades);
+		memcpy(sun.viewports, light.shadow_map_viewports, sizeof(vec4) * light.num_shadow_cascades);
 	}
 
-	void main_renderer::setPointLights(const ref<dx_buffer>& lights, uint32 numLights, const ref<dx_buffer>& shadowInfoBuffer)
+	void MainRenderer::set_point_lights(const ref<DXBuffer>& lights, uint32 num_lights, const ref<DXBuffer>& shadow_info_buffer)
 	{
-		pointLights = lights;
-		numPointLights = numLights;
-		pointLightShadowInfoBuffer = shadowInfoBuffer;
+		point_lights = lights;
+		num_point_lights = num_lights;
+		point_light_shadow_info_buffer = shadow_info_buffer;
 	}
 
-	void main_renderer::setSpotLights(const ref<dx_buffer>& lights, uint32 numLights, const ref<dx_buffer>& shadowInfoBuffer)
+	void MainRenderer::set_spot_lights(const ref<DXBuffer>& lights, uint32 num_lights, const ref<DXBuffer>& shadow_info_buffer)
 	{
-		spotLights = lights;
-		numSpotLights = numLights;
-		spotLightShadowInfoBuffer = shadowInfoBuffer;
+		spot_lights = lights;
+		num_spot_lights = num_lights;
+		spot_light_shadow_info_buffer = shadow_info_buffer;
 	}
 
-	void main_renderer::setDecals(const ref<dx_buffer>& decals, uint32 numDecals, const ref<dx_texture>& textureAtlas)
+	void MainRenderer::set_decals(const ref<DXBuffer>& decals, uint32 num_decals, const ref<DXTexture>& texture_atlas)
 	{
-		ASSERT(numDecals < MAX_NUM_TOTAL_DECALS);
-		main_renderer::decals = decals;
-		main_renderer::numDecals = numDecals;
-		main_renderer::decalTextureAtlas = textureAtlas;
+		ASSERT(num_decals < MAX_NUM_TOTAL_DECALS);
+		MainRenderer::decals = decals;
+		MainRenderer::num_decals = num_decals;
+		MainRenderer::decal_texture_atlas = texture_atlas;
 	}
 
 	template <typename func_t>
-	uint64 main_renderer::executeComputeTasks(compute_pass_event eventTime, const func_t& additionalTasksCallback)
+	uint64 MainRenderer::execute_compute_tasks(ComputePassEvent event_time, const func_t& additional_tasks_callback)
 	{
 		uint64 result = 0;
 
-		bool hasComputePassEvents = computePass && computePass->passes[eventTime].size() > 0;
-		bool hasAdditionalTasks = !std::is_null_pointer_v<func_t>;
+		bool has_compute_pass_events = compute_pass && compute_pass->passes[event_time].size() > 0;
+		bool has_additional_tasks = !std::is_null_pointer_v<func_t>;
 
-		if (hasComputePassEvents || hasAdditionalTasks)
+		if (has_compute_pass_events || has_additional_tasks)
 		{
-			dx_command_list* cl = dxContext.getFreeComputeCommandList(true);
+			DXCommandList* cl = dx_context.get_free_compute_command_list(true);
 
-			if (hasComputePassEvents)
+			if (has_compute_pass_events)
 			{
-				for (const auto& dc : computePass->passes[eventTime])
+				for (const auto& dc : compute_pass->passes[event_time])
 				{
 					dc.compute(cl, dc.data);
 				}
@@ -345,292 +345,292 @@ namespace era_engine
 
 			if constexpr (!std::is_null_pointer_v<func_t>)
 			{
-				additionalTasksCallback(cl);
+				additional_tasks_callback(cl);
 			}
 
-			result = dxContext.executeCommandList(cl);
+			result = dx_context.execute_command_list(cl);
 		}
 
 		return result;
 	}
 
-	NODISCARD dx_command_list* main_renderer::renderThread0(const common_render_data& commonRenderData)
+	NODISCARD DXCommandList* MainRenderer::render_thread0(const CommonRenderData& common_render_data)
 	{
-		dx_command_list* cl = dxContext.getFreeRenderCommandList();
+		DXCommandList* cl = dx_context.get_free_render_command_list();
 		PROFILE_ALL(cl, "Render thread 0");
 
 		{
 			PROFILE_ALL(cl, "Shadow maps");
 
-			cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-			cl->transitionBarrier(render_resources::shadowMap, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+			cl->transition_barrier(RenderResources::shadow_map, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
-			shadowPasses(cl, sunShadowRenderPasses, numSunLightShadowRenderPasses,
-				spotLightShadowRenderPasses, numSpotLightShadowRenderPasses,
-				pointLightShadowRenderPasses, numPointLightShadowRenderPasses,
-				commonRenderData);
+			shadow_passes(cl, sun_shadow_render_passes, num_sun_light_shadow_render_passes,
+				spot_light_shadow_render_passes, num_spot_light_shadow_render_passes,
+				point_light_shadow_render_passes, num_point_light_shadow_render_passes,
+				common_render_data);
 
-			cl->transitionBarrier(render_resources::shadowMap, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			cl->transition_barrier(RenderResources::shadow_map, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		}
 
 		return cl;
 	}
 
-	NODISCARD dx_command_list* main_renderer::renderThread1(const common_render_data& commonRenderData, bool aspectRatioModeChanged)
+	NODISCARD DXCommandList* MainRenderer::render_thread1(const CommonRenderData& common_render_data, bool aspect_ratio_mode_changed)
 	{
-		dx_command_list* cl = dxContext.getFreeRenderCommandList();
+		DXCommandList* cl = dx_context.get_free_render_command_list();
 		PROFILE_ALL(cl, "Render thread 1");
 
-		if (aspectRatioModeChanged)
+		if (aspect_ratio_mode_changed)
 		{
-			cl->transitionBarrier(frameResult, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
-			cl->clearRTV(frameResult, 0.f, 0.f, 0.f);
-			cl->transitionBarrier(frameResult, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COMMON);
+			cl->transition_barrier(frame_result, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
+			cl->clear_rtv(frame_result, 0.f, 0.f, 0.f);
+			cl->transition_barrier(frame_result, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COMMON);
 		}
 
-		cl->clearDepthAndStencil(depthStencilBuffer);
+		cl->clear_depth_and_stencil(depth_stencil_buffer);
 
 		// ----------------------------------------
 		// DEPTH-ONLY PASS
 		// ----------------------------------------
-		auto depthOnlyRenderTarget = dx_render_target(renderWidth, renderHeight)
-			.colorAttachment(screenVelocitiesTexture, render_resources::nullScreenVelocitiesRTV)
-			.colorAttachment(objectIDsTexture, render_resources::nullObjectIDsRTV)
-			.depthAttachment(depthStencilBuffer);
+		auto depth_only_render_target = DXRenderTarget(render_width, render_height)
+			.color_attachment(screen_velocities_texture, RenderResources::null_screen_velocities_rtv)
+			.color_attachment(object_ids_texture, RenderResources::null_object_ids_rtv)
+			.depth_attachment(depth_stencil_buffer);
 
-		depthPrePass(cl, depthOnlyRenderTarget, opaqueRenderPass,
-			jitteredCamera.viewProj, jitteredCamera.prevFrameViewProj, commonRenderData);
+		depth_pre_pass(cl, depth_only_render_target, opaque_render_pass,
+			jittered_camera.view_proj, jittered_camera.prev_frame_view_proj, common_render_data);
 
-		barrier_batcher(cl)
-			.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		BarrierBatcher(cl)
+			.transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
 		// ----------------------------------------
 		// LIGHT & DECAL CULLING
 		// ----------------------------------------
-		lightAndDecalCulling(cl, depthStencilBuffer, pointLights, spotLights, decals, culling, numPointLights, numSpotLights, numDecals, commonRenderData.cameraCBV);
+		light_and_decal_culling(cl, depth_stencil_buffer, point_lights, spot_lights, decals, culling, num_point_lights, num_spot_lights, num_decals, common_render_data.camera_cbv);
 
 		// ---------------------------------------
 		// LINEAR DEPTH PYRAMID
 		// ---------------------------------------
-		linearDepthPyramid(cl, depthStencilBuffer, linearDepthBuffer, jitteredCamera.projectionParams);
+		linear_depth_pyramid(cl, depth_stencil_buffer, linear_depth_buffer, jittered_camera.projection_params);
 
-		barrier_batcher(cl)
+		BarrierBatcher(cl)
 			//.uav(linearDepthBuffer)
-			.transition(linearDepthBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
-			.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+			.transition(linear_depth_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
+			.transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
 		return cl;
 	}
 
-	NODISCARD dx_command_list* main_renderer::renderThread2(const common_render_data& commonRenderData, const UserInput* input)
+	NODISCARD DXCommandList* MainRenderer::render_thread2(const CommonRenderData& common_render_data, const UserInput* input)
 	{
-		dx_command_list* cl = dxContext.getFreeRenderCommandList();
+		DXCommandList* cl = dx_context.get_free_render_command_list();
 		PROFILE_ALL(cl, "Render thread 2");
 
 		// ----------------------------------------
 		// SKY PASS
 		// ----------------------------------------
 
-		auto skyRenderTarget = dx_render_target(renderWidth, renderHeight)
-			.colorAttachment(hdrColorTexture)
-			.colorAttachment(screenVelocitiesTexture, render_resources::nullScreenVelocitiesRTV)
-			.colorAttachment(objectIDsTexture, render_resources::nullObjectIDsRTV)
-			.depthAttachment(depthStencilBuffer);
+		auto sky_render_target = DXRenderTarget(render_width, render_height)
+			.color_attachment(hdr_color_texture)
+			.color_attachment(screen_velocities_texture, RenderResources::null_screen_velocities_rtv)
+			.color_attachment(object_ids_texture, RenderResources::null_object_ids_rtv)
+			.depth_attachment(depth_stencil_buffer);
 
-		if (environment && !environment->isProcedural())
+		if (environment && !environment->is_procedural())
 		{
 			ASSERT(environment->sky);
 
-			texturedSky(cl, skyRenderTarget, jitteredCamera.proj, jitteredCamera.view, jitteredCamera.prevFrameView, environment->sky, environment->skyIntensity,
-				jitteredCamera.jitter, jitteredCamera.prevFrameJitter);
+			textured_sky(cl, sky_render_target, jittered_camera.proj, jittered_camera.view, jittered_camera.prev_frame_view, environment->sky, environment->sky_intensity,
+				jittered_camera.jitter, jittered_camera.prev_frame_jitter);
 		}
 		else
 		{
-			proceduralSky(cl, skyRenderTarget, jitteredCamera.proj, jitteredCamera.view, jitteredCamera.prevFrameView, sun.direction, environment ? environment->skyIntensity : 1.f,
-				jitteredCamera.jitter, jitteredCamera.prevFrameJitter);
+			procedural_sky(cl, sky_render_target, jittered_camera.proj, jittered_camera.view, jittered_camera.prev_frame_view, sun.direction, environment ? environment->sky_intensity : 1.f,
+				jittered_camera.jitter, jittered_camera.prev_frame_jitter);
 		}
 
-		barrier_batcher(cl)
-			.transition(screenVelocitiesTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
+		BarrierBatcher(cl)
+			.transition(screen_velocities_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
 
 		// ----------------------------------------
 		// AMBIENT OCCLUSION
 		// ----------------------------------------
 
-		if (settings.enableAO)
+		if (settings.enable_ao)
 		{
-			uint32 aoResultIndex = 1 - aoHistoryIndex;
-			ref<dx_texture> aoHistory = aoWasOnLastFrame ? aoTextures[aoHistoryIndex] : render_resources::whiteTexture;
-			ref<dx_texture> aoResult = aoTextures[aoResultIndex];
-			ambientOcclusion(cl, linearDepthBuffer, screenVelocitiesTexture, aoCalculationTexture, aoBlurTempTexture, aoHistory, aoResult, settings.aoSettings, commonRenderData.cameraCBV);
+			uint32 ao_result_index = 1 - ao_history_index;
+			ref<DXTexture> ao_history = ao_was_on_last_frame ? ao_textures[ao_history_index] : RenderResources::white_texture;
+			ref<DXTexture> ao_result = ao_textures[ao_result_index];
+			ambient_occlusion(cl, linear_depth_buffer, screen_velocities_texture, ao_calculation_texture, ao_blur_temp_texture, ao_history, ao_result, settings.ao_settings, common_render_data.camera_cbv);
 
-			barrier_batcher(cl)
+			BarrierBatcher(cl)
 				// UAV barrier is done by hbao-function.
-				.transition(aoTextures[aoResultIndex], D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ) // Read by opaque pass and next frame as history.
-				.transition(aoTextures[aoHistoryIndex], D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS); // For next frame.
+				.transition(ao_textures[ao_result_index], D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ) // Read by opaque pass and next frame as history.
+				.transition(ao_textures[ao_history_index], D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS); // For next frame.
 
-			aoHistoryIndex = aoResultIndex;
+			ao_history_index = ao_result_index;
 		}
 
 		// ----------------------------------------
 		// SCREEN SPACE REFLECTIONS
 		// ----------------------------------------
 
-		if (environment && environment->giMode == environment_gi_raytraced)
+		if (environment && environment->gi_mode == ENVIRONMENT_GI_RAYTRACED)
 		{
-			barrier_batcher(cl)
-				.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+			BarrierBatcher(cl)
+				.transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
 			PROFILE_ALL(cl, "Specular reflections");
-			raytraceRTReflections(cl, *tlas, depthStencilBuffer, worldNormalsRoughnessTexture,
-				screenVelocitiesTexture, ssrRaycastTexture, ssrResolveTexture, ssrTemporalTextures[ssrHistoryIndex],
-				ssrTemporalTextures[1 - ssrHistoryIndex], commonRenderData);
+			raytrace_rt_reflections(cl, *tlas, depth_stencil_buffer, world_normals_roughness_texture,
+				screen_velocities_texture, ssr_raycast_texture, ssr_resolve_texture, ssr_temporal_textures[ssr_history_index],
+				ssr_temporal_textures[1 - ssr_history_index], common_render_data);
 
-			ssrHistoryIndex = 1 - ssrHistoryIndex;
+			ssr_history_index = 1 - ssr_history_index;
 
-			barrier_batcher(cl)
-				.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+			BarrierBatcher(cl)
+				.transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 		}
-		else if (settings.enableSSR)
+		else if (settings.enable_ssr)
 		{
-			barrier_batcher(cl)
-				.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+			BarrierBatcher(cl)
+				.transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-			screenSpaceReflections(cl, prevFrameHDRColorTexture, depthStencilBuffer, linearDepthBuffer, worldNormalsRoughnessTexture,
-				screenVelocitiesTexture, ssrRaycastTexture, ssrResolveTexture, ssrTemporalTextures[ssrHistoryIndex],
-				ssrTemporalTextures[1 - ssrHistoryIndex], settings.ssrSettings, commonRenderData.cameraCBV);
+			screen_space_reflections(cl, prev_frame_hdr_color_texture, depth_stencil_buffer, linear_depth_buffer, world_normals_roughness_texture,
+				screen_velocities_texture, ssr_raycast_texture, ssr_resolve_texture, ssr_temporal_textures[ssr_history_index],
+				ssr_temporal_textures[1 - ssr_history_index], settings.ssr_settings, common_render_data.camera_cbv);
 
-			ssrHistoryIndex = 1 - ssrHistoryIndex;
+			ssr_history_index = 1 - ssr_history_index;
 
-			barrier_batcher(cl)
-				.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+			BarrierBatcher(cl)
+				.transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 		}
 
 		// ----------------------------------------
 		// SCREEN SPACE SHADOWS
 		// ----------------------------------------
 
-		if (settings.enableSSS)
+		if (settings.enable_sss)
 		{
-			uint32 sssResultIndex = 1 - sssHistoryIndex;
-			ref<dx_texture> sssHistory = sssWasOnLastFrame ? sssTextures[sssHistoryIndex] : render_resources::whiteTexture;
-			ref<dx_texture> sssResult = sssTextures[sssResultIndex];
-			screenSpaceShadows(cl, linearDepthBuffer, screenVelocitiesTexture, sssCalculationTexture, sssBlurTempTexture, sssHistory, sssResult, sun.direction, settings.sssSettings, jitteredCamera.view, commonRenderData.cameraCBV);
+			uint32 sss_result_index = 1 - sss_history_index;
+			ref<DXTexture> sss_history = sss_was_on_last_frame ? sss_textures[sss_history_index] : RenderResources::white_texture;
+			ref<DXTexture> sss_result = sss_textures[sss_result_index];
+			screen_space_shadows(cl, linear_depth_buffer, screen_velocities_texture, sss_calculation_texture, sss_blur_temp_texture, sss_history, sss_result, sun.direction, settings.sss_settings, jittered_camera.view, common_render_data.camera_cbv);
 
-			barrier_batcher(cl)
+			BarrierBatcher(cl)
 				// UAV barrier is done by sss-function.
-				.transition(sssTextures[sssResultIndex], D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ) // Read by opaque pass and next frame as history.
-				.transition(sssTextures[sssHistoryIndex], D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS); // For next frame.
+				.transition(sss_textures[sss_result_index], D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ) // Read by opaque pass and next frame as history.
+				.transition(sss_textures[sss_history_index], D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS); // For next frame.
 
-			sssHistoryIndex = sssResultIndex;
+			sss_history_index = sss_result_index;
 		}
 
 		// ----------------------------------------
 		// OPAQUE LIGHT PASS
 		// ----------------------------------------
 
-		barrier_batcher(cl)
-			.transition(worldNormalsRoughnessTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET)
-			.transition(screenVelocitiesTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		BarrierBatcher(cl)
+			.transition(world_normals_roughness_texture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET)
+			.transition(screen_velocities_texture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-		auto hdrOpaqueRenderTarget = dx_render_target(renderWidth, renderHeight)
-			.colorAttachment(hdrColorTexture)
-			.colorAttachment(worldNormalsRoughnessTexture)
-			.colorAttachment(screenVelocitiesTexture, render_resources::nullScreenVelocitiesRTV)
-			.colorAttachment(objectIDsTexture, render_resources::nullObjectIDsRTV)
-			.depthAttachment(depthStencilBuffer);
+		auto hdr_opaque_render_target = DXRenderTarget(render_width, render_height)
+			.color_attachment(hdr_color_texture)
+			.color_attachment(world_normals_roughness_texture)
+			.color_attachment(screen_velocities_texture, RenderResources::null_screen_velocities_rtv)
+			.color_attachment(object_ids_texture, RenderResources::null_object_ids_rtv)
+			.depth_attachment(depth_stencil_buffer);
 
-		opaqueLightPass(cl, hdrOpaqueRenderTarget, opaqueRenderPass, commonRenderData, jitteredCamera.viewProj);
+		opaque_light_pass(cl, hdr_opaque_render_target, opaque_render_pass, common_render_data, jittered_camera.view_proj);
 
-		barrier_batcher(cl)
-			.transition(hdrColorTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
-			.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ)
-			.transition(worldNormalsRoughnessTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ)
-			.transition(screenVelocitiesTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ)
-			.transition(frameResult, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		BarrierBatcher(cl)
+			.transition(hdr_color_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
+			.transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ)
+			.transition(world_normals_roughness_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ)
+			.transition(screen_velocities_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ)
+			.transition(frame_result, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 		// Copy hovered object id to readback buffer.
-		if (objectIDsTexture && input)
+		if (object_ids_texture && input)
 		{
-			windowHovered = input->over_window
-				&& (input->mouse.x - windowXOffset >= 0)
-				&& (input->mouse.x - windowXOffset < (int32)renderWidth)
-				&& (input->mouse.y - windowYOffset >= 0)
-				&& (input->mouse.y - windowYOffset < (int32)renderHeight);
+			window_hovered = input->over_window
+				&& (input->mouse.x - window_x_offset >= 0)
+				&& (input->mouse.x - window_x_offset < (int32)render_width)
+				&& (input->mouse.y - window_y_offset >= 0)
+				&& (input->mouse.y - window_y_offset < (int32)render_height);
 
-			if (windowHovered)
+			if (window_hovered)
 			{
 				PROFILE_ALL(cl, "Copy hovered object ID");
 
-				cl->transitionBarrier(objectIDsTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
-				cl->copyTextureRegionToBuffer(objectIDsTexture, hoveredObjectIDReadbackBuffer, dxContext.bufferedFrameID, input->mouse.x - windowXOffset, input->mouse.y - windowYOffset, 1, 1);
-				cl->transitionBarrier(objectIDsTexture, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+				cl->transition_barrier(object_ids_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
+				cl->copy_texture_region_to_buffer(object_ids_texture, hovered_object_id_readback_buffer, dx_context.buffered_frame_id, input->mouse.x - window_x_offset, input->mouse.y - window_y_offset, 1, 1);
+				cl->transition_barrier(object_ids_texture, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 			}
 		}
 
 		return cl;
 	}
 
-	NODISCARD dx_command_list* main_renderer::renderThread3(common_render_data commonRenderData, dx_dynamic_constant_buffer unjitteredCameraCBV)
+	NODISCARD DXCommandList* MainRenderer::render_thread3(CommonRenderData common_render_data, DXDynamicConstantBuffer unjittered_camera_cbv)
 	{
 		// After this there is no more camera jittering
-		commonRenderData.cameraCBV = unjitteredCameraCBV;
+		common_render_data.camera_cbv = unjittered_camera_cbv;
 
-		dx_command_list* cl = dxContext.getFreeRenderCommandList();
+		DXCommandList* cl = dx_context.get_free_render_command_list();
 		PROFILE_ALL(cl, "Render thread 3");
 
-		barrier_batcher(cl)
-			.transition(opaqueDepthBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+		BarrierBatcher(cl)
+			.transition(opaque_depth_buffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
 
 		{
 			PROFILE_ALL(cl, "Copy depth buffer");
-			cl->copyResource(depthStencilBuffer->resource, opaqueDepthBuffer->resource);
+			cl->copy_resource(depth_stencil_buffer->resource, opaque_depth_buffer->resource);
 		}
 
-		barrier_batcher(cl)
-			.transition(opaqueDepthBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		BarrierBatcher(cl)
+			.transition(opaque_depth_buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-		ref<dx_texture> hdrResult = hdrColorTexture; // Read state
+		ref<DXTexture> hdr_result = hdr_color_texture; // Read state
 
 		// ---------------------------------------
 		// TRANSPARENT LIGHT PASS
 		// ---------------------------------------
 
-		if (transparentRenderPass && transparentRenderPass->pass.size() > 0)
+		if (transparent_render_pass && transparent_render_pass->pass.size() > 0)
 		{
 			// There are some really ugly barriers in this scope
 
-			barrier_batcher(cl)
-				.transition(hdrPostProcessingTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST)
-				.transition(hdrResult, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_SOURCE);
+			BarrierBatcher(cl)
+				.transition(hdr_post_processing_texture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST)
+				.transition(hdr_result, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_SOURCE);
 
 			{
 				DX_PROFILE_BLOCK(cl, "Copy opaque color");
-				cl->copyResource(hdrResult->resource, hdrPostProcessingTexture->resource);
+				cl->copy_resource(hdr_result->resource, hdr_post_processing_texture->resource);
 			}
 
-			barrier_batcher(cl)
-				.transition(hdrPostProcessingTexture, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
-				.transition(hdrResult, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET)
-				.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+			BarrierBatcher(cl)
+				.transition(hdr_post_processing_texture, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+				.transition(hdr_result, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET)
+				.transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
-			auto hdrTransparentRenderTarget = dx_render_target(renderWidth, renderHeight)
-				.colorAttachment(hdrResult)
-				.depthAttachment(depthStencilBuffer);
+			auto hdr_transparent_render_target = DXRenderTarget(render_width, render_height)
+				.color_attachment(hdr_result)
+				.depth_attachment(depth_stencil_buffer);
 
-			transparentLightPass(cl, hdrTransparentRenderTarget, transparentRenderPass, commonRenderData, unjitteredCamera.viewProj);
+			transparent_light_pass(cl, hdr_transparent_render_target, transparent_render_pass, common_render_data, unjittered_camera.view_proj);
 
-			barrier_batcher(cl)
-				.transition(hdrPostProcessingTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
-				.transition(hdrResult, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
-				.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ);
+			BarrierBatcher(cl)
+				.transition(hdr_post_processing_texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
+				.transition(hdr_result, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
+				.transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ);
 		}
 
-		if ((environment && environment->giMode == environment_gi_raytraced) || settings.enableSSR)
+		if ((environment && environment->gi_mode == ENVIRONMENT_GI_RAYTRACED) || settings.enable_ssr)
 		{
-			barrier_batcher(cl)
-				.transition(ssrResolveTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS); // For next frame.
+			BarrierBatcher(cl)
+				.transition(ssr_resolve_texture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS); // For next frame.
 		}
 
 		// ----------------------------------------
@@ -638,206 +638,206 @@ namespace era_engine
 		// ----------------------------------------
 
 		// TAA
-		if (settings.enableTAA)
+		if (settings.enable_taa)
 		{
-			uint32 taaOutputIndex = 1 - taaHistoryIndex;
-			temporalAntiAliasing(cl, hdrResult, screenVelocitiesTexture, opaqueDepthBuffer, taaTextures[taaHistoryIndex], taaTextures[taaOutputIndex], jitteredCamera.projectionParams);
-			hdrResult = taaTextures[taaOutputIndex];
-			taaHistoryIndex = taaOutputIndex;
+			uint32 taa_output_index = 1 - taa_history_index;
+			temporal_anti_aliasing(cl, hdr_result, screen_velocities_texture, opaque_depth_buffer, taa_textures[taa_history_index], taa_textures[taa_output_index], jittered_camera.projection_params);
+			hdr_result = taa_textures[taa_output_index];
+			taa_history_index = taa_output_index;
 		}
 
 		// At this point hdrResult is either the TAA result or the hdrResult. Either one is in read state.
 		// Downsample scene. This is also the copy used in SSR next frame.
-		if (prevFrameHDRColorTexture)
+		if (prev_frame_hdr_color_texture)
 		{
-			downsample(cl, hdrResult, prevFrameHDRColorTexture, prevFrameHDRColorTempTexture);
+			downsample(cl, hdr_result, prev_frame_hdr_color_texture, prev_frame_hdr_color_temp_texture);
 		}
 
 		// Bloom
-		if (settings.enableBloom)
+		if (settings.enable_bloom)
 		{
-			barrier_batcher(cl)
-				.transition(hdrPostProcessingTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			BarrierBatcher(cl)
+				.transition(hdr_post_processing_texture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-			bloom(cl, hdrResult, hdrPostProcessingTexture, bloomTexture, bloomTempTexture, settings.bloomSettings); // Bloom returns result in read state.
-			hdrResult = hdrPostProcessingTexture;
+			bloom(cl, hdr_result, hdr_post_processing_texture, bloom_texture, bloom_temp_texture, settings.bloom_settings); // Bloom returns result in read state.
+			hdr_result = hdr_post_processing_texture;
 		}
 
 		// At this point hdrResult is either the TAA result, the hdrColorTexture, or the hdrPostProcessingTexture. Either one is in read state.
-		tonemap(cl, hdrResult, ldrPostProcessingTexture, settings.tonemapSettings);
+		tonemap(cl, hdr_result, ldr_post_processing_texture, settings.tonemap_settings);
 
 		// ----------------------------------------
 		// LDR RENDERING
 		// ----------------------------------------
 
-		bool renderingLDR = ldrRenderPass && ldrRenderPass->ldrPass.size();
-		bool renderingOverlays = ldrRenderPass && ldrRenderPass->overlays.size();
-		bool renderingOutlines = ldrRenderPass && ldrRenderPass->outlines.size();
-		if (renderingLDR || renderingOverlays || renderingOutlines)
+		bool rendering_ldr = ldr_render_pass && ldr_render_pass->ldr_pass.size();
+		bool rendering_overlays = ldr_render_pass && ldr_render_pass->overlays.size();
+		bool rendering_outlines = ldr_render_pass && ldr_render_pass->outlines.size();
+		if (rendering_ldr || rendering_overlays || rendering_outlines)
 		{
-			barrier_batcher(cl)
+			BarrierBatcher(cl)
 				//.uav(ldrPostProcessingTexture)
-				.transition(ldrPostProcessingTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RENDER_TARGET)
-				.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+				.transition(ldr_post_processing_texture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RENDER_TARGET)
+				.transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
-			auto ldrRenderTarget = dx_render_target(renderWidth, renderHeight)
-				.colorAttachment(ldrPostProcessingTexture)
-				.depthAttachment(depthStencilBuffer);
+			auto ldr_render_target = DXRenderTarget(render_width, render_height)
+				.color_attachment(ldr_post_processing_texture)
+				.depth_attachment(depth_stencil_buffer);
 
-			ldrPass(cl, ldrRenderTarget, depthStencilBuffer, ldrRenderPass, commonRenderData, unjitteredCamera.viewProj);
+			ldr_pass(cl, ldr_render_target, depth_stencil_buffer, ldr_render_pass, common_render_data, unjittered_camera.view_proj);
 
-			barrier_batcher(cl)
-				.transition(ldrPostProcessingTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+			BarrierBatcher(cl)
+				.transition(ldr_post_processing_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		}
 		else
 		{
-			barrier_batcher(cl)
-				.transition(ldrPostProcessingTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
-				.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+			BarrierBatcher(cl)
+				.transition(ldr_post_processing_texture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
+				.transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 		}
 
-		present(cl, ldrPostProcessingTexture, frameResult, settings.enableSharpen ? settings.sharpenSettings : sharpen_settings{ 0.f });
+		present(cl, ldr_post_processing_texture, frame_result, settings.enable_sharpen ? settings.sharpen_settings : SharpenSettings{ 0.f });
 
-		barrier_batcher(cl)
+		BarrierBatcher(cl)
 			//.uav(frameResult)
-			.transition(hdrColorTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET)
-			.transition(screenVelocitiesTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET)
-			.transition(ldrPostProcessingTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-			.transition(frameResult, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON)
-			.transition(linearDepthBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			.transition(hdr_color_texture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET)
+			.transition(screen_velocities_texture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET)
+			.transition(ldr_post_processing_texture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+			.transition(frame_result, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON)
+			.transition(linear_depth_buffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 		return cl;
 	}
 
-	void main_renderer::endFrame(const UserInput* input)
+	void MainRenderer::end_frame(const UserInput* input)
 	{
-		bool aspectRatioModeChanged = aspectRatioMode != oldAspectRatioMode;
-		oldAspectRatioMode = aspectRatioMode;
+		bool aspect_ratio_mode_changed = aspect_ratio_mode != old_aspect_ratio_mode;
+		old_aspect_ratio_mode = aspect_ratio_mode;
 
-		if (aspectRatioModeChanged)
+		if (aspect_ratio_mode_changed)
 		{
-			recalculateViewport(true);
+			recalculate_viewport(true);
 		}
 
-		auto jitteredCameraCBV = dxContext.uploadDynamicConstantBuffer(jitteredCamera);
-		auto unjitteredCameraCBV = dxContext.uploadDynamicConstantBuffer(unjitteredCamera);
+		auto jittered_camera_cbv = dx_context.upload_dynamic_constant_buffer(jittered_camera);
+		auto unjittered_camera_cbv = dx_context.upload_dynamic_constant_buffer(unjittered_camera);
 
-		settings.enableAO &= spec.allowAO;
-		settings.enableSSS &= spec.allowSSS;
-		settings.enableSSR &= spec.allowSSR;
-		settings.enableBloom &= spec.allowBloom;
-		settings.enableTAA &= spec.allowTAA;
+		settings.enable_ao &= spec.allow_ao;
+		settings.enable_sss &= spec.allow_sss;
+		settings.enable_ssr &= spec.allow_ssr;
+		settings.enable_bloom &= spec.allow_bloom;
+		settings.enable_taa &= spec.allow_taa;
 
-		lighting_cb lightingCB =
+		LightingCB lighting_cb =
 		{
 			sun,
-			environment ? environment->lightProbeGrid.getCB() : light_probe_grid_cb{},
+			environment ? environment->light_probe_grid.get_cb() : LightProbeGridCB{},
 			vec2(1.f / SHADOW_MAP_WIDTH, 1.f / SHADOW_MAP_HEIGHT),
-			environment ? environment->globalIlluminationIntensity : 1.f,
-			(environment && environment->giMode == environment_gi_raytraced),
+			environment ? environment->global_illumination_intensity : 1.f,
+			(environment && environment->gi_mode == ENVIRONMENT_GI_RAYTRACED),
 		};
 
-		dx_dynamic_constant_buffer lightingCBV = dxContext.uploadDynamicConstantBuffer(lightingCB);
+		DXDynamicConstantBuffer lighting_cbv = dx_context.upload_dynamic_constant_buffer(lighting_cb);
 
-		common_render_data commonRenderData;
-		commonRenderData.lightingCBV = lightingCBV;
-		commonRenderData.proceduralSky = !(environment && environment->sky);
-		commonRenderData.sky = (environment && environment->sky) ? environment->sky : render_resources::blackCubeTexture;
-		commonRenderData.irradiance = (environment && environment->irradiance) ? environment->irradiance : render_resources::blackCubeTexture;
-		commonRenderData.prefilteredRadiance = (environment && environment->prefilteredRadiance) ? environment->prefilteredRadiance : render_resources::blackCubeTexture;
+		CommonRenderData common_render_data;
+		common_render_data.lighting_cbv = lighting_cbv;
+		common_render_data.procedural_sky = !(environment && environment->sky);
+		common_render_data.sky = (environment && environment->sky) ? environment->sky : RenderResources::black_cube_texture;
+		common_render_data.irradiance = (environment && environment->irradiance) ? environment->irradiance : RenderResources::black_cube_texture;
+		common_render_data.prefiltered_radiance = (environment && environment->prefiltered_radiance) ? environment->prefiltered_radiance : RenderResources::black_cube_texture;
 
-		commonRenderData.globalIlluminationIntensity = environment ? environment->globalIlluminationIntensity : 1.f;
-		commonRenderData.skyIntensity = environment ? environment->skyIntensity : 1.f;
-		commonRenderData.aoTexture = settings.enableAO ? aoTextures[1 - aoHistoryIndex] : render_resources::whiteTexture;
-		commonRenderData.sssTexture = settings.enableSSS ? sssTextures[1 - sssHistoryIndex] : render_resources::whiteTexture;
-		commonRenderData.ssrTexture = settings.enableSSR ? ssrResolveTexture : 0;
-		commonRenderData.tiledCullingGrid = culling.tiledCullingGrid;
-		commonRenderData.tiledObjectsIndexList = culling.tiledObjectsIndexList;
-		commonRenderData.pointLightBuffer = pointLights;
-		commonRenderData.spotLightBuffer = spotLights;
-		commonRenderData.decalBuffer = decals;
-		commonRenderData.shadowMap = render_resources::shadowMap;
-		commonRenderData.decalTextureAtlas = decalTextureAtlas;
-		commonRenderData.pointLightShadowInfoBuffer = pointLightShadowInfoBuffer;
-		commonRenderData.spotLightShadowInfoBuffer = spotLightShadowInfoBuffer;
-		commonRenderData.volumetricsTexture = 0;
-		commonRenderData.cameraCBV = jitteredCameraCBV;
+		common_render_data.global_illumination_intensity = environment ? environment->global_illumination_intensity : 1.f;
+		common_render_data.sky_intensity = environment ? environment->sky_intensity : 1.f;
+		common_render_data.ao_texture = settings.enable_ao ? ao_textures[1 - ao_history_index] : RenderResources::white_texture;
+		common_render_data.sss_texture = settings.enable_sss ? sss_textures[1 - sss_history_index] : RenderResources::white_texture;
+		common_render_data.ssr_texture = settings.enable_ssr ? ssr_resolve_texture : 0;
+		common_render_data.tiled_culling_grid = culling.tiled_culling_grid;
+		common_render_data.tiled_objects_index_list = culling.tiled_objects_index_list;
+		common_render_data.point_light_buffer = point_lights;
+		common_render_data.spot_light_buffer = spot_lights;
+		common_render_data.decal_buffer = decals;
+		common_render_data.shadow_map = RenderResources::shadow_map;
+		common_render_data.decal_texture_atlas = decal_texture_atlas;
+		common_render_data.point_light_shadow_info_buffer = point_light_shadow_info_buffer;
+		common_render_data.spot_light_shadow_info_buffer = spot_light_shadow_info_buffer;
+		common_render_data.volumetrics_texture = 0;
+		common_render_data.camera_cbv = jittered_camera_cbv;
 
-		commonRenderData.lightProbeIrradiance = (environment && environment->giMode == environment_gi_raytraced) ? environment->lightProbeGrid.irradiance : 0;
-		commonRenderData.lightProbeDepth = (environment && environment->giMode == environment_gi_raytraced) ? environment->lightProbeGrid.depth : 0;
-		commonRenderData.opaqueColor = hdrPostProcessingTexture;
-		commonRenderData.opaqueDepth = opaqueDepthBuffer;
-		commonRenderData.worldNormalsAndRoughness = worldNormalsRoughnessTexture;
+		common_render_data.light_probe_irradiance = (environment && environment->gi_mode == ENVIRONMENT_GI_RAYTRACED) ? environment->light_probe_grid.irradiance : 0;
+		common_render_data.light_probe_depth = (environment && environment->gi_mode == ENVIRONMENT_GI_RAYTRACED) ? environment->light_probe_grid.depth : 0;
+		common_render_data.opaque_color = hdr_post_processing_texture;
+		common_render_data.opaque_depth = opaque_depth_buffer;
+		common_render_data.world_normals_and_roughness = world_normals_roughness_texture;
 
-		commonRenderData.cameraJitter = jitteredCamera.jitter;
-		commonRenderData.prevFrameCameraJitter = jitteredCamera.prevFrameJitter;
-		common_particle_simulation_data commonParticleData;
+		common_render_data.camera_jitter = jittered_camera.jitter;
+		common_render_data.prev_frame_camera_jitter = jittered_camera.prev_frame_jitter;
+		CommonParticleSimulationData common_particle_data;
 
-		commonParticleData.cameraPosition = unjitteredCamera.position.xyz;
-		commonParticleData.prevFrameCameraView = unjitteredCamera.prevFrameView;
-		commonParticleData.prevFrameCameraViewProj = unjitteredCamera.prevFrameViewProj;
-		commonParticleData.cameraProjectionParams = unjitteredCamera.projectionParams;
-		commonParticleData.prevFrameDepthBuffer = opaqueDepthBuffer;
-		commonParticleData.prevFrameNormals = worldNormalsRoughnessTexture;
+		common_particle_data.camera_position = unjittered_camera.position.xyz;
+		common_particle_data.prev_frame_camera_view = unjittered_camera.prev_frame_view;
+		common_particle_data.prev_frame_camera_view_proj = unjittered_camera.prev_frame_view_proj;
+		common_particle_data.camera_projection_params = unjittered_camera.projection_params;
+		common_particle_data.prev_frame_depth_buffer = opaque_depth_buffer;
+		common_particle_data.prev_frame_normals = world_normals_roughness_texture;
 
-		if (mode == renderer_mode_rasterized)
+		if (mode == RENDERER_MODE_RASTERIZED)
 		{
-			dx_command_list* cl0 = 0;
-			dx_command_list* cl1 = 0;
-			dx_command_list* cl2 = 0;
-			dx_command_list* cl3 = 0;
+			DXCommandList* cl0 = 0;
+			DXCommandList* cl1 = 0;
+			DXCommandList* cl2 = 0;
+			DXCommandList* cl3 = 0;
 
-			struct render_job_data
+			struct RenderJobData
 			{
-				main_renderer* renderer;
-				const common_render_data& commonRenderData;
+				MainRenderer* renderer;
+				const CommonRenderData& common_render_data;
 
-				bool aspectRatioModeChanged;
+				bool aspect_ratio_mode_changed;
 				const UserInput* input;
-				dx_dynamic_constant_buffer unjitteredCameraCBV;
+				DXDynamicConstantBuffer unjittered_camera_cbv;
 
-				dx_command_list*& cl0;
-				dx_command_list*& cl1;
-				dx_command_list*& cl2;
-				dx_command_list*& cl3;
+				DXCommandList*& cl0;
+				DXCommandList*& cl1;
+				DXCommandList*& cl2;
+				DXCommandList*& cl3;
 			};
 
-			render_job_data jobData =
+			RenderJobData job_data =
 			{
 				this,
-				commonRenderData,
-				aspectRatioModeChanged,
+				common_render_data,
+				aspect_ratio_mode_changed,
 				input,
-				unjitteredCameraCBV,
+				unjittered_camera_cbv,
 				cl0,
 				cl1,
 				cl2,
 				cl3,
 			};
 
-			JobHandle parent_job = high_priority_job_queue.createJob<render_job_data>([](render_job_data& data, JobHandle parent)
+			JobHandle parent_job = high_priority_job_queue.create_job<RenderJobData>([](RenderJobData& data, JobHandle parent)
 				{
-					high_priority_job_queue.createJob<render_job_data>([](render_job_data& data, JobHandle)
+					high_priority_job_queue.create_job<RenderJobData>([](RenderJobData& data, JobHandle)
 						{
-							data.cl0 = data.renderer->renderThread0(data.commonRenderData);
+							data.cl0 = data.renderer->render_thread0(data.common_render_data);
 						}, data, parent).submit_now();
 
-						high_priority_job_queue.createJob<render_job_data>([](render_job_data& data, JobHandle)
+						high_priority_job_queue.create_job<RenderJobData>([](RenderJobData& data, JobHandle)
 							{
-								data.cl1 = data.renderer->renderThread1(data.commonRenderData, data.aspectRatioModeChanged);
+								data.cl1 = data.renderer->render_thread1(data.common_render_data, data.aspect_ratio_mode_changed);
 							}, data, parent).submit_now();
 
-							high_priority_job_queue.createJob<render_job_data>([](render_job_data& data, JobHandle)
+							high_priority_job_queue.create_job<RenderJobData>([](RenderJobData& data, JobHandle)
 								{
-									data.cl2 = data.renderer->renderThread2(data.commonRenderData, data.input);
+									data.cl2 = data.renderer->render_thread2(data.common_render_data, data.input);
 								}, data, parent).submit_now();
 
-								high_priority_job_queue.createJob<render_job_data>([](render_job_data& data, JobHandle)
+								high_priority_job_queue.create_job<RenderJobData>([](RenderJobData& data, JobHandle)
 									{
-										data.cl3 = data.renderer->renderThread3(data.commonRenderData, data.unjitteredCameraCBV);
+										data.cl3 = data.renderer->render_thread3(data.common_render_data, data.unjittered_camera_cbv);
 									}, data, parent).submit_now();
 
-				}, jobData);
+				}, job_data);
 
 			parent_job.submit_now();
 			parent_job.wait_for_completion();
@@ -847,150 +847,150 @@ namespace era_engine
 			ASSERT(cl2);
 			ASSERT(cl3);
 
-			dxContext.renderQueue.waitForOtherQueue(dxContext.computeQueue, executeComputeTasks(compute_pass_frame_start));
-			dxContext.executeCommandList(cl0);
+			dx_context.render_queue.wait_for_other_queue(dx_context.compute_queue, execute_compute_tasks(COMPUTE_PASS_FRAME_START));
+			dx_context.execute_command_list(cl0);
 
-			dxContext.renderQueue.waitForOtherQueue(dxContext.computeQueue, executeComputeTasks(compute_pass_before_depth_prepass));
-			dxContext.executeCommandList(cl1);
+			dx_context.render_queue.wait_for_other_queue(dx_context.compute_queue, execute_compute_tasks(COMPUTE_PASS_BEFORE_DEPTH_PREPASS));
+			dx_context.execute_command_list(cl1);
 
-			dxContext.renderQueue.waitForOtherQueue(dxContext.computeQueue, executeComputeTasks(compute_pass_before_opaque,
-				[this, &commonRenderData, &commonParticleData](dx_command_list* cl)
+			dx_context.render_queue.wait_for_other_queue(dx_context.compute_queue, execute_compute_tasks(COMPUTE_PASS_BEFORE_OPAQUE,
+				[this, &common_render_data, &common_particle_data](DXCommandList* cl)
 				{
-					if (dxContext.featureSupport.raytracing() && tlas)
+					if (dx_context.feature_support.raytracing() && tlas)
 					{
 						tlas->build(cl);
 
-						if (environment && environment->giMode == environment_gi_raytraced)
+						if (environment && environment->gi_mode == ENVIRONMENT_GI_RAYTRACED)
 						{
 							PROFILE_ALL(cl, "Update light probes");
-							environment->lightProbeGrid.updateProbes(cl, *tlas, commonRenderData);
+							environment->light_probe_grid.update_probes(cl, *tlas, common_render_data);
 						}
 					}
 
-					if (computePass && computePass->particleSystemUpdates.size() > 0)
+					if (compute_pass && compute_pass->particle_system_updates.size() > 0)
 					{
-						for (auto& cc : computePass->particleSystemUpdates)
+						for (auto& cc : compute_pass->particle_system_updates)
 						{
-							cc->update(cl, commonParticleData, computePass->dt);
+							cc->update(cl, common_particle_data, compute_pass->dt);
 						}
 					}
 				}));
 
-			dxContext.executeCommandList(cl2);
+			dx_context.execute_command_list(cl2);
 
-			dxContext.renderQueue.waitForOtherQueue(dxContext.computeQueue, executeComputeTasks(compute_pass_before_transparent_and_post_processing));
+			dx_context.render_queue.wait_for_other_queue(dx_context.compute_queue, execute_compute_tasks(COMPUTE_PASS_BEFORE_TRANSPARENT_AND_POST_PROCESSING));
 
-			if (dxContext.featureSupport.dlss() && settings.enableDLSS)
+			if (dx_context.feature_support.dlss() && settings.enable_dlss)
 			{
 				PROFILE_ALL(cl3, "DLSS Evaluation");
-				dlss_adapter.updateDLSS(cl3->commandList.Get(), computePass->dt);
+				dlss_adapter.update_dlss(cl3->command_list.Get(), compute_pass->dt);
 			}
 
-			dxContext.executeCommandList(cl3);
+			dx_context.execute_command_list(cl3);
 		}
-		else if (mode == renderer_mode_visualize_sun_shadow_cascades)
+		else if (mode == RENDERER_MODE_VISUALIZE_SUN_SHADOW_CASCADES)
 		{
-			uint64 maxFence = 0;
-			for (uint32 i = 0; i < compute_pass_event_count; ++i)
+			uint64 max_fence = 0;
+			for (uint32 i = 0; i < COMPUTE_PASS_EVENT_COUNT; ++i)
 			{
-				uint64 fence = executeComputeTasks((compute_pass_event)i);
-				maxFence = max(maxFence, fence);
+				uint64 fence = execute_compute_tasks((ComputePassEvent)i);
+				max_fence = max(max_fence, fence);
 			}
 
-			dxContext.renderQueue.waitForOtherQueue(dxContext.computeQueue, maxFence);
+			dx_context.render_queue.wait_for_other_queue(dx_context.compute_queue, max_fence);
 
-			dx_command_list* cl = dxContext.getFreeRenderCommandList();
+			DXCommandList* cl = dx_context.get_free_render_command_list();
 
-			if (aspectRatioModeChanged)
+			if (aspect_ratio_mode_changed)
 			{
-				cl->transitionBarrier(frameResult, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
-				cl->clearRTV(frameResult, 0.f, 0.f, 0.f);
-				cl->transitionBarrier(frameResult, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COMMON);
+				cl->transition_barrier(frame_result, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
+				cl->clear_rtv(frame_result, 0.f, 0.f, 0.f);
+				cl->transition_barrier(frame_result, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COMMON);
 			}
 
-			cl->clearDepthAndStencil(depthStencilBuffer);
+			cl->clear_depth_and_stencil(depth_stencil_buffer);
 
-			auto& depthOnlyRenderTarget = dx_render_target(renderWidth, renderHeight)
+			auto& depth_only_render_target = DXRenderTarget(render_width, render_height)
 				// No screen space velocities or object IDs needed.
-				.depthAttachment(depthStencilBuffer);
+				.depth_attachment(depth_stencil_buffer);
 
-			depthPrePass(cl, depthOnlyRenderTarget, opaqueRenderPass,
-				unjitteredCamera.viewProj, unjitteredCamera.prevFrameViewProj, commonRenderData);
+			depth_pre_pass(cl, depth_only_render_target, opaque_render_pass,
+				unjittered_camera.view_proj, unjittered_camera.prev_frame_view_proj, common_render_data);
 
-			barrier_batcher(cl)
-				.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
-				.transition(frameResult, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			BarrierBatcher(cl)
+				.transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
+				.transition(frame_result, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-			visualizeSunShadowCascades(cl, depthStencilBuffer, frameResult, lightingCBV, unjitteredCamera.invViewProj, unjitteredCamera.position.xyz, unjitteredCamera.forward.xyz);
+			visualize_sun_shadow_cascades(cl, depth_stencil_buffer, frame_result, lighting_cbv, unjittered_camera.inv_view_proj, unjittered_camera.position.xyz, unjittered_camera.forward.xyz);
 
-			barrier_batcher(cl)
+			BarrierBatcher(cl)
 				//.uav(frameResult)
-				.transition(depthStencilBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE)
-				.transition(frameResult, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
+				.transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE)
+				.transition(frame_result, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
 
-			dxContext.executeCommandList(cl);
+			dx_context.execute_command_list(cl);
 		}
-		else if (mode == renderer_mode_pathtraced && dxContext.featureSupport.raytracing() && tlas)
+		else if (mode == RENDERER_MODE_PATHTRACED && dx_context.feature_support.raytracing() && tlas)
 		{
-			uint64 tlasRebuildFence;
+			uint64 tlas_rebuild_fence;
 			{
-				dx_command_list* cl = dxContext.getFreeComputeCommandList(true);
+				DXCommandList* cl = dx_context.get_free_compute_command_list(true);
 				tlas->build(cl);
-				tlasRebuildFence = dxContext.executeCommandList(cl);
+				tlas_rebuild_fence = dx_context.execute_command_list(cl);
 			}
 
-			dxContext.renderQueue.waitForOtherQueue(dxContext.computeQueue, tlasRebuildFence);
+			dx_context.render_queue.wait_for_other_queue(dx_context.compute_queue, tlas_rebuild_fence);
 
-			pathTracer.finalizeForRender();
+			path_tracer.finalize_for_render();
 
-			dx_command_list* cl = dxContext.getFreeRenderCommandList();
+			DXCommandList* cl = dx_context.get_free_render_command_list();
 
-			D3D12_RESOURCE_STATES frameResultState = D3D12_RESOURCE_STATE_COMMON;
+			D3D12_RESOURCE_STATES frame_result_state = D3D12_RESOURCE_STATE_COMMON;
 
-			if (aspectRatioModeChanged)
+			if (aspect_ratio_mode_changed)
 			{
-				cl->transitionBarrier(frameResult, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
-				cl->clearRTV(frameResult, 0.f, 0.f, 0.f);
-				frameResultState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+				cl->transition_barrier(frame_result, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
+				cl->clear_rtv(frame_result, 0.f, 0.f, 0.f);
+				frame_result_state = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			}
 
-			barrier_batcher(cl)
-				.transition(hdrColorTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-				.transition(frameResult, frameResultState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			BarrierBatcher(cl)
+				.transition(hdr_color_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+				.transition(frame_result, frame_result_state, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 			{
 				PROFILE_ALL(cl, "Raytracing");
 
-				pathTracer.render(cl, *tlas, hdrColorTexture, commonRenderData);
+				path_tracer.render(cl, *tlas, hdr_color_texture, common_render_data);
 			}
 
-			cl->resetToDynamicDescriptorHeap();
+			cl->reset_to_dynamic_descriptor_heap();
 
-			barrier_batcher(cl)
-				.transition(hdrColorTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+			BarrierBatcher(cl)
+				.transition(hdr_color_texture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-			tonemap(cl, hdrColorTexture, ldrPostProcessingTexture, settings.tonemapSettings);
+			tonemap(cl, hdr_color_texture, ldr_post_processing_texture, settings.tonemap_settings);
 
-			barrier_batcher(cl)
-				.transition(ldrPostProcessingTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+			BarrierBatcher(cl)
+				.transition(ldr_post_processing_texture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-			present(cl, ldrPostProcessingTexture, frameResult, { 0.f });
+			present(cl, ldr_post_processing_texture, frame_result, { 0.f });
 
-			barrier_batcher(cl)
-				.transition(hdrColorTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET)
-				.transition(ldrPostProcessingTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-				.transition(frameResult, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
+			BarrierBatcher(cl)
+				.transition(hdr_color_texture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET)
+				.transition(ldr_post_processing_texture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+				.transition(frame_result, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
 
-			if (dxContext.featureSupport.dlss() && settings.enableDLSS)
+			if (dx_context.feature_support.dlss() && settings.enable_dlss)
 			{
 				PROFILE_ALL(cl3, "DLSS Evaluation");
-				dlss_adapter.updateDLSS(cl->commandList.Get(), computePass->dt);
+				dlss_adapter.update_dlss(cl->command_list.Get(), compute_pass->dt);
 			}
 
-			dxContext.executeCommandList(cl);
+			dx_context.execute_command_list(cl);
 		}
 
-		aoWasOnLastFrame = settings.enableAO;
-		sssWasOnLastFrame = settings.enableSSS;
+		ao_was_on_last_frame = settings.enable_ao;
+		sss_was_on_last_frame = settings.enable_sss;
 	}
 }

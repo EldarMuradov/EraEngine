@@ -16,7 +16,7 @@
 
 namespace era_engine
 {
-	bool isImageExtension(const fs::path& extension)
+	bool is_image_extension(const fs::path& extension)
 	{
 		return extension == ".jpg" ||
 			extension == ".png" ||
@@ -24,7 +24,7 @@ namespace era_engine
 			extension == ".hdr" ||
 			extension == ".dds";
 	}
-	bool isImageExtension(const std::string& extension)
+	bool is_image_extension(const std::string& extension)
 	{
 		return extension == ".jpg" ||
 			extension == ".png" ||
@@ -33,12 +33,12 @@ namespace era_engine
 			extension == ".dds";
 	}
 
-	static DXGI_FORMAT makeSRGB(DXGI_FORMAT format)
+	static DXGI_FORMAT make_srgb(DXGI_FORMAT format)
 	{
 		return DirectX::MakeSRGB(format);
 	}
 
-	static DXGI_FORMAT makeLinear(DXGI_FORMAT format)
+	static DXGI_FORMAT make_linear(DXGI_FORMAT format)
 	{
 		switch (format)
 		{
@@ -73,42 +73,42 @@ namespace era_engine
 		return format;
 	}
 
-	static bool tryLoadFromCache(const fs::path& filepath, uint32 flags, fs::path& cacheFilepath, DirectX::ScratchImage& scratchImage, DirectX::TexMetadata& metadata)
+	static bool try_load_from_cache(const fs::path& filepath, uint32 flags, fs::path& cache_filepath, DirectX::ScratchImage& scratch_image, DirectX::TexMetadata& metadata)
 	{
-		fs::path cachedFilename = filepath;
-		cachedFilename.replace_extension("." + std::to_string(flags) + ".cache.dds");
+		fs::path cached_filename = filepath;
+		cached_filename.replace_extension("." + std::to_string(flags) + ".cache.dds");
 
-		cacheFilepath = L"asset_cache" / cachedFilename;
+		cache_filepath = L"asset_cache" / cached_filename;
 
-		bool fromCache = false;
+		bool from_cache = false;
 
-		if (!(flags & image_load_flags_always_load_from_source))
+		if (!(flags & IMAGE_LOAD_FLAGS_ALWAYS_LOAD_FROM_SOURCE))
 		{
 			// Look for cached.
 
-			WIN32_FILE_ATTRIBUTE_DATA cachedData;
-			if (GetFileAttributesExW(cacheFilepath.c_str(), GetFileExInfoStandard, &cachedData))
+			WIN32_FILE_ATTRIBUTE_DATA cached_data;
+			if (GetFileAttributesExW(cache_filepath.c_str(), GetFileExInfoStandard, &cached_data))
 			{
-				FILETIME cachedFiletime = cachedData.ftLastWriteTime;
+				FILETIME cached_filetime = cached_data.ftLastWriteTime;
 
-				WIN32_FILE_ATTRIBUTE_DATA originalData;
-				ASSERT(GetFileAttributesExW(filepath.c_str(), GetFileExInfoStandard, &originalData));
-				FILETIME originalFiletime = originalData.ftLastWriteTime;
+				WIN32_FILE_ATTRIBUTE_DATA original_data;
+				ASSERT(GetFileAttributesExW(filepath.c_str(), GetFileExInfoStandard, &original_data));
+				FILETIME original_filetime = original_data.ftLastWriteTime;
 
-				if (CompareFileTime(&cachedFiletime, &originalFiletime) >= 0)
+				if (CompareFileTime(&cached_filetime, &original_filetime) >= 0)
 				{
 					// Cached file is newer than original, so load this.
-					fromCache = SUCCEEDED(DirectX::LoadFromDDSFile(cacheFilepath.c_str(), DirectX::DDS_FLAGS_NONE, &metadata, scratchImage));
+					from_cache = SUCCEEDED(DirectX::LoadFromDDSFile(cache_filepath.c_str(), DirectX::DDS_FLAGS_NONE, &metadata, scratch_image));
 				}
 			}
 		}
 
-		return fromCache;
+		return from_cache;
 	}
 
-	static void createDesc(DirectX::TexMetadata& metadata, uint32 flags, D3D12_RESOURCE_DESC& textureDesc)
+	static void create_desc(DirectX::TexMetadata& metadata, uint32 flags, D3D12_RESOURCE_DESC& texture_desc)
 	{
-		if (flags & image_load_flags_allocate_full_mipchain)
+		if (flags & IMAGE_LOAD_FLAGS_ALLOCATE_FULL_MIPCHAIN)
 		{
 			metadata.mipLevels = 0;
 		}
@@ -116,13 +116,13 @@ namespace era_engine
 		switch (metadata.dimension)
 		{
 		case DirectX::TEX_DIMENSION_TEXTURE1D:
-			textureDesc = CD3DX12_RESOURCE_DESC::Tex1D(metadata.format, metadata.width, (uint16)metadata.arraySize, (uint16)metadata.mipLevels);
+			texture_desc = CD3DX12_RESOURCE_DESC::Tex1D(metadata.format, metadata.width, (uint16)metadata.arraySize, (uint16)metadata.mipLevels);
 			break;
 		case DirectX::TEX_DIMENSION_TEXTURE2D:
-			textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(metadata.format, metadata.width, (uint32)metadata.height, (uint16)metadata.arraySize, (uint16)metadata.mipLevels);
+			texture_desc = CD3DX12_RESOURCE_DESC::Tex2D(metadata.format, metadata.width, (uint32)metadata.height, (uint16)metadata.arraySize, (uint16)metadata.mipLevels);
 			break;
 		case DirectX::TEX_DIMENSION_TEXTURE3D:
-			textureDesc = CD3DX12_RESOURCE_DESC::Tex3D(metadata.format, metadata.width, (uint32)metadata.height, (uint16)metadata.depth, (uint16)metadata.mipLevels);
+			texture_desc = CD3DX12_RESOURCE_DESC::Tex3D(metadata.format, metadata.width, (uint32)metadata.height, (uint16)metadata.depth, (uint16)metadata.mipLevels);
 			break;
 		default:
 			ASSERT(false);
@@ -130,93 +130,93 @@ namespace era_engine
 		}
 	}
 
-	static void postProcessImage(DirectX::ScratchImage& scratchImage, DirectX::TexMetadata& metadata, uint32 flags, const fs::path& filepath, const fs::path& cacheFilepath)
+	static void post_process_image(DirectX::ScratchImage& scratch_image, DirectX::TexMetadata& metadata, uint32 flags, const fs::path& filepath, const fs::path& cache_filepath)
 	{
-		if (flags & image_load_flags_noncolor)
+		if (flags & IMAGE_LOAD_FLAGS_NONCOLOR)
 		{
-			metadata.format = makeLinear(metadata.format);
+			metadata.format = make_linear(metadata.format);
 		}
 		else
 		{
-			metadata.format = makeSRGB(metadata.format);
+			metadata.format = make_srgb(metadata.format);
 		}
 
-		scratchImage.OverrideFormat(metadata.format);
+		scratch_image.OverrideFormat(metadata.format);
 
-		if (flags & image_load_flags_gen_mips_on_cpu && !DirectX::IsCompressed(metadata.format))
+		if (flags & IMAGE_LOAD_FLAGS_GEN_MIPS_ON_CPU && !DirectX::IsCompressed(metadata.format))
 		{
-			DirectX::ScratchImage mipchainImage;
+			DirectX::ScratchImage mipchain_image;
 
-			checkResult(DirectX::GenerateMipMaps(scratchImage.GetImages(), scratchImage.GetImageCount(), metadata, DirectX::TEX_FILTER_DEFAULT, 0, mipchainImage));
-			scratchImage = std::move(mipchainImage);
-			metadata = scratchImage.GetMetadata();
+			checkResult(DirectX::GenerateMipMaps(scratch_image.GetImages(), scratch_image.GetImageCount(), metadata, DirectX::TEX_FILTER_DEFAULT, 0, mipchain_image));
+			scratch_image = std::move(mipchain_image);
+			metadata = scratch_image.GetMetadata();
 		}
 		else
 		{
 			metadata.mipLevels = max(1u, (uint32)metadata.mipLevels);
 		}
 
-		if (flags & image_load_flags_premultiply_alpha)
+		if (flags & IMAGE_LOAD_FLAGS_PREMULTIPLY_ALPHA)
 		{
-			DirectX::ScratchImage premultipliedAlphaImage;
+			DirectX::ScratchImage premultiplied_alpha_image;
 
-			checkResult(DirectX::PremultiplyAlpha(scratchImage.GetImages(), scratchImage.GetImageCount(), metadata, DirectX::TEX_PMALPHA_DEFAULT, premultipliedAlphaImage));
-			scratchImage = std::move(premultipliedAlphaImage);
-			metadata = scratchImage.GetMetadata();
+			checkResult(DirectX::PremultiplyAlpha(scratch_image.GetImages(), scratch_image.GetImageCount(), metadata, DirectX::TEX_PMALPHA_DEFAULT, premultiplied_alpha_image));
+			scratch_image = std::move(premultiplied_alpha_image);
+			metadata = scratch_image.GetMetadata();
 		}
 
 		if (DirectX::IsCompressed(metadata.format) && metadata.width == 1 && metadata.height == 1)
 		{
 			ASSERT(metadata.mipLevels == 1);
-			ASSERT(scratchImage.GetImageCount() == 1);
+			ASSERT(scratch_image.GetImageCount() == 1);
 
-			DirectX::TexMetadata scaledMetadata = metadata;
-			scaledMetadata.width = 4;
-			scaledMetadata.height = 4;
-			scaledMetadata.mipLevels = 1;
+			DirectX::TexMetadata scaled_metadata = metadata;
+			scaled_metadata.width = 4;
+			scaled_metadata.height = 4;
+			scaled_metadata.mipLevels = 1;
 
-			DirectX::ScratchImage scaledImage;
-			checkResult(scaledImage.Initialize(scaledMetadata));
+			DirectX::ScratchImage scaled_image;
+			checkResult(scaled_image.Initialize(scaled_metadata));
 
-			memcpy(scaledImage.GetImage(0, 0, 0)->pixels, scratchImage.GetImage(0, 0, 0)->pixels, scratchImage.GetPixelsSize());
+			memcpy(scaled_image.GetImage(0, 0, 0)->pixels, scratch_image.GetImage(0, 0, 0)->pixels, scratch_image.GetPixelsSize());
 
-			scratchImage = std::move(scaledImage);
-			metadata = scratchImage.GetMetadata();
+			scratch_image = std::move(scaled_image);
+			metadata = scratch_image.GetMetadata();
 		}
 
-		if (flags & image_load_flags_compress && !DirectX::IsCompressed(metadata.format))
+		if (flags & IMAGE_LOAD_FLAGS_COMPRESS && !DirectX::IsCompressed(metadata.format))
 		{
 			if (metadata.width % 4 == 0 && metadata.height % 4 == 0)
 			{
-				uint32 numChannels = getNumberOfChannels(metadata.format);
+				uint32 num_channels = get_number_of_channels(metadata.format);
 
-				DXGI_FORMAT compressedFormat;
+				DXGI_FORMAT compressed_format;
 
-				switch (numChannels)
+				switch (num_channels)
 				{
-				case 1: compressedFormat = DXGI_FORMAT_BC4_UNORM; break;
-				case 2: compressedFormat = DXGI_FORMAT_BC5_UNORM; break;
+				case 1: compressed_format = DXGI_FORMAT_BC4_UNORM; break;
+				case 2: compressed_format = DXGI_FORMAT_BC5_UNORM; break;
 
 				case 3:
 				case 4:
 				{
-					if (scratchImage.IsAlphaAllOpaque())
+					if (scratch_image.IsAlphaAllOpaque())
 					{
-						compressedFormat = DirectX::IsSRGB(metadata.format) ? DXGI_FORMAT_BC1_UNORM_SRGB : DXGI_FORMAT_BC1_UNORM;
+						compressed_format = DirectX::IsSRGB(metadata.format) ? DXGI_FORMAT_BC1_UNORM_SRGB : DXGI_FORMAT_BC1_UNORM;
 					}
 					else
 					{
-						compressedFormat = DirectX::IsSRGB(metadata.format) ? DXGI_FORMAT_BC3_UNORM_SRGB : DXGI_FORMAT_BC3_UNORM;  // 7 would be better, but takes forever to compress.
+						compressed_format = DirectX::IsSRGB(metadata.format) ? DXGI_FORMAT_BC3_UNORM_SRGB : DXGI_FORMAT_BC3_UNORM;  // 7 would be better, but takes forever to compress.
 					}
 				} break;
 				}
 
-				DirectX::ScratchImage compressedImage;
+				DirectX::ScratchImage compressed_image;
 
-				checkResult(DirectX::Compress(scratchImage.GetImages(), scratchImage.GetImageCount(), metadata,
-					compressedFormat, DirectX::TEX_COMPRESS_PARALLEL, DirectX::TEX_THRESHOLD_DEFAULT, compressedImage));
-				scratchImage = std::move(compressedImage);
-				metadata = scratchImage.GetMetadata();
+				checkResult(DirectX::Compress(scratch_image.GetImages(), scratch_image.GetImageCount(), metadata,
+					compressed_format, DirectX::TEX_COMPRESS_PARALLEL, DirectX::TEX_THRESHOLD_DEFAULT, compressed_image));
+				scratch_image = std::move(compressed_image);
+				metadata = scratch_image.GetMetadata();
 			}
 			else
 			{
@@ -225,95 +225,95 @@ namespace era_engine
 			}
 		}
 
-		if (flags & image_load_flags_cache_to_dds)
+		if (flags & IMAGE_LOAD_FLAGS_CACHE_TO_DDS)
 		{
-			fs::create_directories(cacheFilepath.parent_path());
-			checkResult(DirectX::SaveToDDSFile(scratchImage.GetImages(), scratchImage.GetImageCount(), metadata, DirectX::DDS_FLAGS_NONE, cacheFilepath.c_str()));
+			fs::create_directories(cache_filepath.parent_path());
+			checkResult(DirectX::SaveToDDSFile(scratch_image.GetImages(), scratch_image.GetImageCount(), metadata, DirectX::DDS_FLAGS_NONE, cache_filepath.c_str()));
 		}
 	}
 
-	bool loadImageFromMemory(const void* data, uint32 size, image_format imageFormat, const fs::path& cachingFilepath,
-		uint32 flags, DirectX::ScratchImage& scratchImage, D3D12_RESOURCE_DESC& textureDesc)
+	bool load_image_from_memory(const void* data, uint32 size, ImageFormat image_format, const fs::path& caching_filepath,
+		uint32 flags, DirectX::ScratchImage& scratch_image, D3D12_RESOURCE_DESC& texture_desc)
 	{
-		if (flags & image_load_flags_gen_mips_on_gpu)
+		if (flags & IMAGE_LOAD_FLAGS_GEN_MIPS_ON_GPU)
 		{
-			flags &= ~image_load_flags_gen_mips_on_cpu;
-			flags |= image_load_flags_allocate_full_mipchain;
+			flags &= ~IMAGE_LOAD_FLAGS_GEN_MIPS_ON_CPU;
+			flags |= IMAGE_LOAD_FLAGS_ALLOCATE_FULL_MIPCHAIN;
 		}
 
 
-		fs::path cachedFilename = cachingFilepath.string() + std::to_string(flags) + ".cache.dds";
-		fs::path cacheFilepath = L"asset_cache" / cachedFilename;
+		fs::path cached_filename = caching_filepath.string() + std::to_string(flags) + ".cache.dds";
+		fs::path cache_filepath = L"asset_cache" / cached_filename;
 
-		bool fromCache = false;
+		bool from_cache = false;
 		DirectX::TexMetadata metadata;
 
-		if (!(flags & image_load_flags_always_load_from_source))
+		if (!(flags & IMAGE_LOAD_FLAGS_ALWAYS_LOAD_FROM_SOURCE))
 		{
-			if (fs::exists(cacheFilepath))
+			if (fs::exists(cache_filepath))
 			{
-				fromCache = SUCCEEDED(DirectX::LoadFromDDSFile(cacheFilepath.c_str(), DirectX::DDS_FLAGS_NONE, &metadata, scratchImage));
+				from_cache = SUCCEEDED(DirectX::LoadFromDDSFile(cache_filepath.c_str(), DirectX::DDS_FLAGS_NONE, &metadata, scratch_image));
 			}
 		}
 
-		if (!fromCache)
+		if (!from_cache)
 		{
-			if (flags & image_load_flags_cache_to_dds)
+			if (flags & IMAGE_LOAD_FLAGS_CACHE_TO_DDS)
 			{
-				LOG_MESSAGE("Preprocessing in-memory texture '%ws' for faster loading next time", cachingFilepath.c_str());
-				std::cout << "Preprocessing in-memory texture '" << cachingFilepath.string() << "' for faster loading next time.";
+				LOG_MESSAGE("Preprocessing in-memory texture '%ws' for faster loading next time", caching_filepath.c_str());
+				std::cout << "Preprocessing in-memory texture '" << caching_filepath.string() << "' for faster loading next time.";
 #ifdef _DEBUG
 				std::cout << " Consider running in a release build the first time.";
 #endif
 				std::cout << '\n';
 			}
 
-			if (imageFormat == image_format_dds)
+			if (image_format == IMAGE_FORMAT_DDS)
 			{
-				if (FAILED(DirectX::LoadFromDDSMemory(data, size, DirectX::DDS_FLAGS_NONE, &metadata, scratchImage)))
+				if (FAILED(DirectX::LoadFromDDSMemory(data, size, DirectX::DDS_FLAGS_NONE, &metadata, scratch_image)))
 				{
 					return false;
 				}
 			}
-			else if (imageFormat == image_format_hdr)
+			else if (image_format == IMAGE_FORMAT_HDR)
 			{
-				if (FAILED(DirectX::LoadFromHDRMemory(data, size, &metadata, scratchImage)))
+				if (FAILED(DirectX::LoadFromHDRMemory(data, size, &metadata, scratch_image)))
 				{
 					return false;
 				}
 			}
-			else if (imageFormat == image_format_tga)
+			else if (image_format == IMAGE_FORMAT_TGA)
 			{
-				if (FAILED(DirectX::LoadFromTGAMemory(data, size, &metadata, scratchImage)))
+				if (FAILED(DirectX::LoadFromTGAMemory(data, size, &metadata, scratch_image)))
 				{
 					return false;
 				}
 			}
 			else
 			{
-				ASSERT(imageFormat == image_format_wic);
+				ASSERT(image_format == IMAGE_FORMAT_WIC);
 
-				if (FAILED(DirectX::LoadFromWICMemory(data, size, DirectX::WIC_FLAGS_FORCE_RGB, &metadata, scratchImage)))
+				if (FAILED(DirectX::LoadFromWICMemory(data, size, DirectX::WIC_FLAGS_FORCE_RGB, &metadata, scratch_image)))
 				{
 					return false;
 				}
 			}
 
-			postProcessImage(scratchImage, metadata, flags, cacheFilepath, cacheFilepath);
+			post_process_image(scratch_image, metadata, flags, cache_filepath, cache_filepath);
 		}
 
-		createDesc(metadata, flags, textureDesc);
+		create_desc(metadata, flags, texture_desc);
 
 		return true;
 	}
 
-	bool loadSVGFromFile(const fs::path& filepath, uint32 flags, DirectX::ScratchImage& scratchImage, D3D12_RESOURCE_DESC& textureDesc)
+	bool load_svg_from_file(const fs::path& filepath, uint32 flags, DirectX::ScratchImage& scratch_image, D3D12_RESOURCE_DESC& texture_desc)
 	{
-		fs::path cacheFilepath;
+		fs::path cache_filepath;
 		DirectX::TexMetadata metadata;
-		bool fromCache = tryLoadFromCache(filepath, flags, cacheFilepath, scratchImage, metadata);
+		bool from_cache = try_load_from_cache(filepath, flags, cache_filepath, scratch_image, metadata);
 
-		if (!fromCache)
+		if (!from_cache)
 		{
 			if (!fs::exists(filepath))
 			{
@@ -322,7 +322,7 @@ namespace era_engine
 				return false;
 			}
 
-			if (flags & image_load_flags_cache_to_dds)
+			if (flags & IMAGE_LOAD_FLAGS_CACHE_TO_DDS)
 			{
 				LOG_MESSAGE("Preprocessing asset '%ws' for faster loading next time", filepath.c_str());
 				std::cout << "Preprocessing asset '" << filepath.string() << "' for faster loading next time.";
@@ -336,35 +336,35 @@ namespace era_engine
 			uint32 width = (uint32)ceil(svg->width);
 			uint32 height = (uint32)ceil(svg->height);
 
-			uint8* rawImage = new uint8[width * height * 4];
+			uint8* raw_image = new uint8[width * height * 4];
 
 			NSVGrasterizer* rasterizer = nsvgCreateRasterizer();
-			nsvgRasterize(rasterizer, svg, 0, 0, 1, rawImage, width, height, width * 4);
+			nsvgRasterize(rasterizer, svg, 0, 0, 1, raw_image, width, height, width * 4);
 			nsvgDeleteRasterizer(rasterizer);
 
 			nsvgDelete(svg);
 
-			DirectX::Image dxImage = { width, height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, width * 4, width * height * 4, rawImage };
-			scratchImage.InitializeFromImage(dxImage);
-			metadata = scratchImage.GetMetadata();
+			DirectX::Image dx_image = { width, height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, width * 4, width * height * 4, raw_image };
+			scratch_image.InitializeFromImage(dx_image);
+			metadata = scratch_image.GetMetadata();
 
-			postProcessImage(scratchImage, metadata, flags, filepath, cacheFilepath);
+			post_process_image(scratch_image, metadata, flags, filepath, cache_filepath);
 
-			delete[] rawImage;
+			delete[] raw_image;
 		}
 
-		createDesc(metadata, flags, textureDesc);
+		create_desc(metadata, flags, texture_desc);
 
 		return true;
 	}
 
-	bool loadImageFromFile(const fs::path& filepath, uint32 flags, DirectX::ScratchImage& scratchImage, D3D12_RESOURCE_DESC& textureDesc)
+	bool load_image_from_file(const fs::path& filepath, uint32 flags, DirectX::ScratchImage& scratch_image, D3D12_RESOURCE_DESC& texture_desc)
 	{
-		fs::path cacheFilepath;
+		fs::path cache_filepath;
 		DirectX::TexMetadata metadata;
-		bool fromCache = tryLoadFromCache(filepath, flags, cacheFilepath, scratchImage, metadata);
+		bool from_cache = try_load_from_cache(filepath, flags, cache_filepath, scratch_image, metadata);
 
-		if (!fromCache)
+		if (!from_cache)
 		{
 			if (!fs::exists(filepath))
 			{
@@ -373,7 +373,7 @@ namespace era_engine
 				return false;
 			}
 
-			if (flags & image_load_flags_cache_to_dds)
+			if (flags & IMAGE_LOAD_FLAGS_CACHE_TO_DDS)
 			{
 				LOG_MESSAGE("Preprocessing asset '%ws' for faster loading next time", filepath.c_str());
 				std::cout << "Preprocessing asset '" << filepath.string() << "' for faster loading next time.";
@@ -387,42 +387,42 @@ namespace era_engine
 
 			if (extension == ".dds")
 			{
-				if (FAILED(DirectX::LoadFromDDSFile(filepath.c_str(), DirectX::DDS_FLAGS_NONE, &metadata, scratchImage)))
+				if (FAILED(DirectX::LoadFromDDSFile(filepath.c_str(), DirectX::DDS_FLAGS_NONE, &metadata, scratch_image)))
 				{
 					return false;
 				}
 			}
 			else if (extension == ".hdr")
 			{
-				if (FAILED(DirectX::LoadFromHDRFile(filepath.c_str(), &metadata, scratchImage)))
+				if (FAILED(DirectX::LoadFromHDRFile(filepath.c_str(), &metadata, scratch_image)))
 				{
 					return false;
 				}
 			}
 			else if (extension == ".tga")
 			{
-				if (FAILED(DirectX::LoadFromTGAFile(filepath.c_str(), &metadata, scratchImage)))
+				if (FAILED(DirectX::LoadFromTGAFile(filepath.c_str(), &metadata, scratch_image)))
 				{
 					return false;
 				}
 			}
 			else
 			{
-				if (FAILED(DirectX::LoadFromWICFile(filepath.c_str(), DirectX::WIC_FLAGS_FORCE_RGB, &metadata, scratchImage)))
+				if (FAILED(DirectX::LoadFromWICFile(filepath.c_str(), DirectX::WIC_FLAGS_FORCE_RGB, &metadata, scratch_image)))
 				{
 					return false;
 				}
 			}
 
-			postProcessImage(scratchImage, metadata, flags, filepath, cacheFilepath);
+			post_process_image(scratch_image, metadata, flags, filepath, cache_filepath);
 		}
 
-		createDesc(metadata, flags, textureDesc);
+		create_desc(metadata, flags, texture_desc);
 
 		return true;
 	}
 
-	bool saveImageToFile(const fs::path& filepath, const DirectX::Image& image)
+	bool save_image_to_file(const fs::path& filepath, const DirectX::Image& image)
 	{
 		fs::path extension = filepath.extension();
 

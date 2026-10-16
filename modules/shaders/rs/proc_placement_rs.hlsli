@@ -3,39 +3,39 @@
 
 #include "indirect.hlsli"
 
-struct placement_point
+struct PlacementPoint
 {
 	vec3 position;
-	uint32 meshID;
+	uint32 mesh_id;
 	vec3 normal;
 	uint32 lod;
 };
 
-struct placement_draw
+struct PlacementDraw
 {
-	uint32 transformSRVLow;
-	uint32 transformSRVHigh;
+	uint32 transform_srv_low;
+	uint32 transform_srv_high;
 	D3D12_DRAW_INDEXED_ARGUMENTS draw;
 };
 
-struct placement_transform
+struct PlacementTransform
 {
 	mat4 m;
 };
 
-struct proc_placement_generate_points_cb
+struct ProcPlacementGeneratePointsCB
 {
 	vec4 densities;
 
-	vec3 chunkCorner;
-	float chunkSize;
+	vec3 chunk_corner;
+	float chunk_size;
 
-	float amplitudeScale;
+	float amplitude_scale;
 
-	float uvScale;
+	float uv_scale;
 	
-	uint32 globalMeshOffset;
-	uint32 numMeshes;
+	uint32 global_mesh_offset;
+	uint32 num_meshes;
 };
 
 #define PROC_PLACEMENT_GENERATE_POINTS_RS \
@@ -50,7 +50,7 @@ struct proc_placement_generate_points_cb
 #define PROC_PLACEMENT_GENERATE_POINTS_RS_CB        0
 #define PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES 1
 
-struct prefix_sum_cb
+struct PrefixSumCB
 {
 	uint32 size;
 };
@@ -67,10 +67,10 @@ struct prefix_sum_cb
 #define PROC_PLACEMENT_CREATE_DRAW_CALLS_BLOCK_SIZE 32
 #define PROC_PLACEMENT_CREATE_TRANSFORMS_BLOCK_SIZE 256
 
-struct proc_placement_create_draw_calls_cb
+struct ProcPlacementCreateDrawCallsCB
 {
-	uint32 transformAddressLow;
-	uint32 transformAddressHigh;
+	uint32 transform_address_low;
+	uint32 transform_address_high;
 	uint32 stride;
 };
 

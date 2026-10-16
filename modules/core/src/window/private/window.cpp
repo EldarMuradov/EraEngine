@@ -41,8 +41,8 @@ namespace era_engine
 		UserInput current_input;
 		UserInput previous_input;
 
-		MouseMode current_mouse_mode = MouseMode::Visible;
-		MouseMode previous_mouse_mode = MouseMode::Visible;
+		MouseMode current_mouse_mode = MouseMode::VISIBLE;
+		MouseMode previous_mouse_mode = MouseMode::VISIBLE;
 		bool cursor_visible = true;
 		bool cursor_captured = false;
 
@@ -118,13 +118,13 @@ namespace era_engine
 
 		void toggle_mouse_capture()
 		{
-			if (current_mouse_mode == MouseMode::Visible || current_mouse_mode == MouseMode::Hidden)
+			if (current_mouse_mode == MouseMode::VISIBLE || current_mouse_mode == MouseMode::HIDDEN)
 			{
-				set_mouse_mode(config.use_raw_input ? MouseMode::CapturedRaw : MouseMode::Captured);
+				set_mouse_mode(config.use_raw_input ? MouseMode::CAPTURED_RAW : MouseMode::CAPTURED);
 			}
 			else
 			{
-				set_mouse_mode(MouseMode::Visible);
+				set_mouse_mode(MouseMode::VISIBLE);
 			}
 		}
 
@@ -197,7 +197,7 @@ namespace era_engine
 				cursor_captured = false;
 				ReleaseCapture();
 
-				if (current_mouse_mode == MouseMode::Visible)
+				if (current_mouse_mode == MouseMode::VISIBLE)
 				{
 					SetCursorPos(last_mouse_position.x, last_mouse_position.y);
 				}
@@ -231,62 +231,62 @@ namespace era_engine
 			return cursor_visible;
 		}
 
-		void process_message(UINT msg, WPARAM wParam, LPARAM lParam)
+		void process_message(UINT msg, WPARAM w_param, LPARAM l_param)
 		{
 			switch (msg)
 			{
 			case WM_KEYDOWN:
 			case WM_SYSKEYDOWN:
-				handle_key_down(wParam, lParam);
+				handle_key_down(w_param, l_param);
 				break;
 
 			case WM_KEYUP:
 			case WM_SYSKEYUP:
-				handle_key_up(wParam, lParam);
+				handle_key_up(w_param, l_param);
 				break;
 
 			case WM_MOUSEMOVE:
-				handle_mouse_move(wParam, lParam);
+				handle_mouse_move(w_param, l_param);
 				break;
 
 			case WM_LBUTTONDOWN:
-				handle_mouse_button_down(0, wParam, lParam);
+				handle_mouse_button_down(0, w_param, l_param);
 				break;
 
 			case WM_LBUTTONUP:
-				handle_mouse_button_up(0, wParam, lParam);
+				handle_mouse_button_up(0, w_param, l_param);
 				break;
 
 			case WM_RBUTTONDOWN:
-				handle_mouse_button_down(1, wParam, lParam);
+				handle_mouse_button_down(1, w_param, l_param);
 				break;
 
 			case WM_RBUTTONUP:
-				handle_mouse_button_up(1, wParam, lParam);
+				handle_mouse_button_up(1, w_param, l_param);
 				break;
 
 			case WM_MBUTTONDOWN:
-				handle_mouse_button_down(2, wParam, lParam);
+				handle_mouse_button_down(2, w_param, l_param);
 				break;
 
 			case WM_MBUTTONUP:
-				handle_mouse_button_up(2, wParam, lParam);
+				handle_mouse_button_up(2, w_param, l_param);
 				break;
 
 			case WM_XBUTTONDOWN:
-				handle_mouse_button_down(HIWORD(wParam) == XBUTTON1 ? 3 : 4, wParam, lParam);
+				handle_mouse_button_down(HIWORD(w_param) == XBUTTON1 ? 3 : 4, w_param, l_param);
 				break;
 
 			case WM_XBUTTONUP:
-				handle_mouse_button_up(HIWORD(wParam) == XBUTTON1 ? 3 : 4, wParam, lParam);
+				handle_mouse_button_up(HIWORD(w_param) == XBUTTON1 ? 3 : 4, w_param, l_param);
 				break;
 
 			case WM_MOUSEWHEEL:
-				handle_mouse_wheel(wParam, lParam);
+				handle_mouse_wheel(w_param, l_param);
 				break;
 
 			case WM_INPUT:
-				handle_raw_input(lParam);
+				handle_raw_input(l_param);
 				break;
 
 			case WM_SETFOCUS:
@@ -298,7 +298,7 @@ namespace era_engine
 				break;
 
 			case WM_ACTIVATE:
-				if (LOWORD(wParam) == WA_INACTIVE)
+				if (LOWORD(w_param) == WA_INACTIVE)
 				{
 					handle_focus_lost();
 				}
@@ -323,7 +323,7 @@ namespace era_engine
 		{
 			previous_input = current_input;
 
-			for (int i = 0; i < key_count; i++)
+			for (int i = 0; i < KEY_COUNT; i++)
 			{
 				current_input.keyboard[i].press_event = false;
 				current_input.keyboard[i].release_event = false;
@@ -388,7 +388,7 @@ namespace era_engine
 
 		bool is_key_down(uint32 key) const
 		{
-			if (key < key_count)
+			if (key < KEY_COUNT)
 			{
 				return current_input.keyboard[key].down;
 			}
@@ -397,7 +397,7 @@ namespace era_engine
 
 		bool is_key_pressed(uint32 key) const
 		{
-			if (key < key_count)
+			if (key < KEY_COUNT)
 			{
 				return current_input.keyboard[key].press_event;
 			}
@@ -406,7 +406,7 @@ namespace era_engine
 
 		bool is_key_released(uint32 key) const
 		{
-			if (key < key_count)
+			if (key < KEY_COUNT)
 			{
 				return current_input.keyboard[key].release_event;
 			}
@@ -415,7 +415,7 @@ namespace era_engine
 
 		float get_key_held_time(uint32 key) const
 		{
-			if (key < key_count)
+			if (key < KEY_COUNT)
 			{
 				return current_input.keyboard[key].held_time;
 			}
@@ -486,32 +486,32 @@ namespace era_engine
 		{
 			switch (current_mouse_mode)
 			{
-			case MouseMode::Visible:
+			case MouseMode::VISIBLE:
 				release_mouse();
 				show_cursor();
 				break;
 
-			case MouseMode::Hidden:
+			case MouseMode::HIDDEN:
 				release_mouse();
 				hide_cursor();
 				break;
 
-			case MouseMode::Captured:
+			case MouseMode::CAPTURED:
 				hide_cursor();
 				capture_mouse();
 				break;
 
-			case MouseMode::CapturedRaw:
+			case MouseMode::CAPTURED_RAW:
 				hide_cursor();
 				capture_mouse();
 				break;
 			}
 		}
 
-		void handle_key_down(WPARAM wParam, LPARAM lParam)
+		void handle_key_down(WPARAM w_param, LPARAM l_param)
 		{
-			uint32 key = (uint32)wParam;
-			if (key < key_count)
+			uint32 key = (uint32)w_param;
+			if (key < KEY_COUNT)
 			{
 				if (!current_input.keyboard[key].down)
 				{
@@ -523,20 +523,20 @@ namespace era_engine
 			}
 		}
 
-		void handle_key_up(WPARAM wParam, LPARAM lParam)
+		void handle_key_up(WPARAM w_param, LPARAM l_param)
 		{
-			uint32 key = (uint32)wParam;
-			if (key < key_count)
+			uint32 key = (uint32)w_param;
+			if (key < KEY_COUNT)
 			{
 				current_input.keyboard[key].down = false;
 				current_input.keyboard[key].release_event = true;
 			}
 		}
 
-		void handle_mouse_move(WPARAM wParam, LPARAM lParam)
+		void handle_mouse_move(WPARAM w_param, LPARAM l_param)
 		{
-			int x = GET_X_LPARAM(lParam);
-			int y = GET_Y_LPARAM(lParam);
+			int x = GET_X_LPARAM(l_param);
+			int y = GET_Y_LPARAM(l_param);
 
 			current_input.mouse.dx = x - current_input.mouse.x;
 			current_input.mouse.dy = y - current_input.mouse.y;
@@ -550,8 +550,8 @@ namespace era_engine
 
 			if (width > 0 && height > 0)
 			{
-				current_input.mouse.relX = (float)x / width;
-				current_input.mouse.relY = (float)y / height;
+				current_input.mouse.rel_x = (float)x / width;
+				current_input.mouse.rel_y = (float)y / height;
 				current_input.mouse.reldx = (float)current_input.mouse.dx / width;
 				current_input.mouse.reldy = (float)current_input.mouse.dy / height;
 			}
@@ -564,7 +564,7 @@ namespace era_engine
 			}
 		}
 
-		void handle_mouse_button_down(int button, WPARAM wParam, LPARAM lParam)
+		void handle_mouse_button_down(int button, WPARAM w_param, LPARAM l_param)
 		{
 			InputMouseButton* mouse_button = get_mouse_button(button);
 			if (!mouse_button)
@@ -602,7 +602,7 @@ namespace era_engine
 			}
 		}
 
-		void handle_mouse_button_up(int button, WPARAM wParam, LPARAM lParam)
+		void handle_mouse_button_up(int button, WPARAM w_param, LPARAM l_param)
 		{
 			InputMouseButton* mouse_button = get_mouse_button(button);
 			if (!mouse_button)
@@ -614,9 +614,9 @@ namespace era_engine
 			mouse_button->release_event = true;
 		}
 
-		void handle_mouse_wheel(WPARAM wParam, LPARAM lParam)
+		void handle_mouse_wheel(WPARAM w_param, LPARAM l_param)
 		{
-			float delta = (float)GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+			float delta = (float)GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
 			current_input.mouse.scroll += delta;
 			current_input.mouse.scroll_delta = delta;
 		}
@@ -636,15 +636,15 @@ namespace era_engine
 		float get_raw_dx() const { return raw_mouse_input.dx; }
 		float get_raw_dy() const { return raw_mouse_input.dy; }
 
-		void handle_raw_input(LPARAM lParam)
+		void handle_raw_input(LPARAM l_param)
 		{
-			UINT dwSize = 0;
-			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
+			UINT dw_size = 0;
+			GetRawInputData((HRAWINPUT)l_param, RID_INPUT, NULL, &dw_size, sizeof(RAWINPUTHEADER));
 
-			if (dwSize > 0)
+			if (dw_size > 0)
 			{
-				LPBYTE lpb = new BYTE[dwSize];
-				if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) == dwSize)
+				LPBYTE lpb = new BYTE[dw_size];
+				if (GetRawInputData((HRAWINPUT)l_param, RID_INPUT, lpb, &dw_size, sizeof(RAWINPUTHEADER)) == dw_size)
 				{
 					RAWINPUT* raw = (RAWINPUT*)lpb;
 
@@ -665,7 +665,7 @@ namespace era_engine
 		void handle_focus_gained()
 		{
 			current_input.window_focused = true;
-			if (config.auto_capture_on_focus && previous_mouse_mode != MouseMode::Visible)
+			if (config.auto_capture_on_focus && previous_mouse_mode != MouseMode::VISIBLE)
 			{
 				apply_mouse_mode();
 			}
@@ -677,7 +677,7 @@ namespace era_engine
 			if (cursor_captured)
 			{
 				release_mouse();
-				if (current_mouse_mode == MouseMode::Visible)
+				if (current_mouse_mode == MouseMode::VISIBLE)
 				{
 					show_cursor();
 				}
@@ -687,7 +687,7 @@ namespace era_engine
 
 		void reset_input_state()
 		{
-			for (int i = 0; i < key_count; i++)
+			for (int i = 0; i < KEY_COUNT; i++)
 			{
 				current_input.keyboard[i].down = false;
 				current_input.keyboard[i].press_event = false;
@@ -709,7 +709,7 @@ namespace era_engine
 		{
 			if (is_key_pressed(config.key_toggle_mouse) && cursor_captured)
 			{
-				set_mouse_mode(MouseMode::Visible);
+				set_mouse_mode(MouseMode::VISIBLE);
 			}
 
 			if (is_key_pressed(config.key_toggle_cursor))
@@ -717,7 +717,7 @@ namespace era_engine
 				toggle_cursor_visibility();
 			}
 
-			if (is_key_down(key_alt) && is_key_pressed(key_enter))
+			if (is_key_down(KEY_ALT) && is_key_pressed(KEY_ENTER))
 			{
 				temporarily_show_cursor();
 			}
@@ -781,41 +781,41 @@ namespace era_engine
 		}
 	};
 
-	bool handleWindowsMessages();
+	bool handle_windows_messages();
 
 	static bool running = true;
-	win32_window* win32_window::mainWindow = 0;
+	Win32Window* Win32Window::main_window = 0;
 
-	static bool windowClassInitialized;
-	static const TCHAR* windowClassName = TEXT("APP WINDOW");
+	static bool window_class_initialized;
+	static const TCHAR* window_class_name = TEXT("APP WINDOW");
 
-	static bool atLeastOneWindowWasOpened;
-	static uint32 numOpenWindows;
+	static bool at_least_one_window_was_opened;
+	static uint32 num_open_windows;
 
-	static LRESULT CALLBACK windowCallBack(
+	static LRESULT CALLBACK window_call_back(
 		_In_ HWND   hwnd,
 		_In_ UINT   msg,
-		_In_ WPARAM wParam,
-		_In_ LPARAM lParam
+		_In_ WPARAM w_param,
+		_In_ LPARAM l_param
 	);
 
-	static void setFullscreen(HWND windowHandle, bool fullscreen, WINDOWPLACEMENT& windowPosition)
+	static void set_fullscreen(HWND window_handle, bool fullscreen, WINDOWPLACEMENT& window_position)
 	{
-		DWORD style = GetWindowLong(windowHandle, GWL_STYLE);
+		DWORD style = GetWindowLong(window_handle, GWL_STYLE);
 
 		if (fullscreen)
 		{
 			if (style & WS_OVERLAPPEDWINDOW)
 			{
-				MONITORINFO monitorInfo = { sizeof(MONITORINFO) };
-				if (GetWindowPlacement(windowHandle, &windowPosition) &&
-					GetMonitorInfo(MonitorFromWindow(windowHandle, MONITOR_DEFAULTTOPRIMARY), &monitorInfo))
+				MONITORINFO monitor_info = { sizeof(MONITORINFO) };
+				if (GetWindowPlacement(window_handle, &window_position) &&
+					GetMonitorInfo(MonitorFromWindow(window_handle, MONITOR_DEFAULTTOPRIMARY), &monitor_info))
 				{
-					SetWindowLong(windowHandle, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
-					SetWindowPos(windowHandle, HWND_TOP,
-						monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top,
-						monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left,
-						monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top,
+					SetWindowLong(window_handle, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
+					SetWindowPos(window_handle, HWND_TOP,
+						monitor_info.rcMonitor.left, monitor_info.rcMonitor.top,
+						monitor_info.rcMonitor.right - monitor_info.rcMonitor.left,
+						monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
 						SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 				}
 			}
@@ -824,153 +824,153 @@ namespace era_engine
 		{
 			if (!(style & WS_OVERLAPPEDWINDOW))
 			{
-				SetWindowLong(windowHandle, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
-				SetWindowPlacement(windowHandle, &windowPosition);
-				SetWindowPos(windowHandle, 0, 0, 0, 0, 0,
+				SetWindowLong(window_handle, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
+				SetWindowPlacement(window_handle, &window_position);
+				SetWindowPos(window_handle, 0, 0, 0, 0, 0,
 					SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
 					SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 			}
 		}
 	}
 
-	static int dpiScale(int value, UINT dpi)
+	static int dpi_scale(int value, UINT dpi)
 	{
 		return (int)((float)value * dpi / 96);
 	}
 
-	static int getDefaultTitleBarHeight(HWND handle)
+	static int get_default_title_bar_height(HWND handle)
 	{
-		SIZE titleBarSize = { };
-		const int topAndBottomBorders = 2;
+		SIZE title_bar_size = { };
+		const int top_and_bottom_borders = 2;
 		HTHEME theme = OpenThemeData(handle, L"WINDOW");
 		UINT dpi = GetDpiForWindow(handle);
-		GetThemePartSize(theme, NULL, WP_CAPTION, CS_ACTIVE, NULL, TS_TRUE, &titleBarSize);
+		GetThemePartSize(theme, NULL, WP_CAPTION, CS_ACTIVE, NULL, TS_TRUE, &title_bar_size);
 		CloseThemeData(theme);
 
-		int height = dpiScale(titleBarSize.cy, dpi) + topAndBottomBorders;
+		int height = dpi_scale(title_bar_size.cy, dpi) + top_and_bottom_borders;
 
 		return height;
 	}
 
-	static RECT getTitleBarRect(HWND handle, int32 titleBarHeight)
+	static RECT get_title_bar_rect(HWND handle, int32 title_bar_height)
 	{
 		RECT rect;
 		GetClientRect(handle, &rect);
-		rect.bottom = rect.top + titleBarHeight;
+		rect.bottom = rect.top + title_bar_height;
 		return rect;
 	}
 
-	static void centerRectInRect(RECT& to_center, const RECT& outer_rect)
+	static void center_rect_in_rect(RECT& to_center, const RECT& outer_rect)
 	{
-		int toWidth = to_center.right - to_center.left;
-		int toHeight = to_center.bottom - to_center.top;
-		int outerWidth = outer_rect.right - outer_rect.left;
-		int outerHeight = outer_rect.bottom - outer_rect.top;
+		int to_width = to_center.right - to_center.left;
+		int to_height = to_center.bottom - to_center.top;
+		int outer_width = outer_rect.right - outer_rect.left;
+		int outer_height = outer_rect.bottom - outer_rect.top;
 
-		int paddingX = (outerWidth - toWidth) / 2;
-		int paddingY = (outerHeight - toHeight) / 2;
+		int padding_x = (outer_width - to_width) / 2;
+		int padding_y = (outer_height - to_height) / 2;
 
-		to_center.left = outer_rect.left + paddingX;
-		to_center.top = outer_rect.top + paddingY;
-		to_center.right = to_center.left + toWidth;
-		to_center.bottom = to_center.top + toHeight;
+		to_center.left = outer_rect.left + padding_x;
+		to_center.top = outer_rect.top + padding_y;
+		to_center.right = to_center.left + to_width;
+		to_center.bottom = to_center.top + to_height;
 	}
 
-	struct custom_titlebar_button_rects
+	struct CustomTitlebarButtonRects
 	{
 		RECT close;
 		RECT maximize;
 		RECT minimize;
 	};
 
-	enum titlebar_button_name
+	enum TitlebarButtonName
 	{
-		titlebar_button_none = -1,
-		titlebar_button_close,
-		titlebar_button_minimize,
-		titlebar_button_maximize,
+		TITLEBAR_BUTTON_NONE = -1,
+		TITLEBAR_BUTTON_CLOSE,
+		TITLEBAR_BUTTON_MINIMIZE,
+		TITLEBAR_BUTTON_MAXIMIZE,
 	};
 
-	static custom_titlebar_button_rects getTitleBarButtonRects(HWND handle, int32 buttonHeight)
+	static CustomTitlebarButtonRects get_title_bar_button_rects(HWND handle, int32 button_height)
 	{
 		UINT dpi = GetDpiForWindow(handle);
-		custom_titlebar_button_rects result;
-		int buttonWidth = dpiScale(47, dpi);
-		result.close = getTitleBarRect(handle, buttonHeight);
+		CustomTitlebarButtonRects result;
+		int button_width = dpi_scale(47, dpi);
+		result.close = get_title_bar_rect(handle, button_height);
 
-		result.close.left = result.close.right - buttonWidth;
+		result.close.left = result.close.right - button_width;
 		result.maximize = result.close;
-		result.maximize.left -= buttonWidth;
-		result.maximize.right -= buttonWidth;
+		result.maximize.left -= button_width;
+		result.maximize.right -= button_width;
 		result.minimize = result.maximize;
-		result.minimize.left -= buttonWidth;
-		result.minimize.right -= buttonWidth;
+		result.minimize.left -= button_width;
+		result.minimize.right -= button_width;
 		return result;
 	}
 
-	int hitTest(POINT point, win32_window* window)
+	int hit_test(POINT point, Win32Window* window)
 	{
 		if (!window->fullscreen)
 		{
-			RECT frameRect;
-			GetWindowRect(window->windowHandle, &frameRect);
+			RECT frame_rect;
+			GetWindowRect(window->window_handle, &frame_rect);
 
 			int32 border = 5;
 			int32 corner = 10;
 
-			if (point.x < frameRect.left + border)
+			if (point.x < frame_rect.left + border)
 			{
-				if (point.y < frameRect.top + corner)
+				if (point.y < frame_rect.top + corner)
 					return HTTOPLEFT;
-				if (point.y > frameRect.bottom - corner)
+				if (point.y > frame_rect.bottom - corner)
 					return HTBOTTOMLEFT;
 				return HTLEFT;
 			}
-			if (point.x > frameRect.right - border)
+			if (point.x > frame_rect.right - border)
 			{
-				if (point.y < frameRect.top + corner)
+				if (point.y < frame_rect.top + corner)
 					return HTTOPRIGHT;
-				if (point.y > frameRect.bottom - corner)
+				if (point.y > frame_rect.bottom - corner)
 					return HTBOTTOMRIGHT;
 				return HTRIGHT;
 			}
-			if (point.y < frameRect.top + border)
+			if (point.y < frame_rect.top + border)
 			{
-				if (point.x < frameRect.left + corner)
+				if (point.x < frame_rect.left + corner)
 					return HTTOPLEFT;
-				if (point.x > frameRect.right - corner)
+				if (point.x > frame_rect.right - corner)
 					return HTTOPRIGHT;
 				return HTTOP;
 			}
-			if (point.y > frameRect.bottom - border)
+			if (point.y > frame_rect.bottom - border)
 			{
-				if (point.x < frameRect.left + corner)
+				if (point.x < frame_rect.left + corner)
 					return HTBOTTOMLEFT;
-				if (point.x > frameRect.right - corner)
+				if (point.x > frame_rect.right - corner)
 					return HTBOTTOMRIGHT;
 				return HTBOTTOM;
 			}
 
-			custom_titlebar_button_rects buttonRects = getTitleBarButtonRects(window->windowHandle, window->style.buttonHeight);
-			OffsetRect(&buttonRects.close, frameRect.left, frameRect.top);
-			OffsetRect(&buttonRects.minimize, frameRect.left, frameRect.top);
-			OffsetRect(&buttonRects.maximize, frameRect.left, frameRect.top);
+			CustomTitlebarButtonRects button_rects = get_title_bar_button_rects(window->window_handle, window->style.button_height);
+			OffsetRect(&button_rects.close, frame_rect.left, frame_rect.top);
+			OffsetRect(&button_rects.minimize, frame_rect.left, frame_rect.top);
+			OffsetRect(&button_rects.maximize, frame_rect.left, frame_rect.top);
 
-			if (PtInRect(&buttonRects.close, point))
+			if (PtInRect(&button_rects.close, point))
 				return HTCLOSE;
-			else if (PtInRect(&buttonRects.maximize, point))
+			else if (PtInRect(&button_rects.maximize, point))
 				return HTMAXBUTTON;
-			else if (PtInRect(&buttonRects.minimize, point))
+			else if (PtInRect(&button_rects.minimize, point))
 				return HTMINBUTTON;
 
-			if (point.y < frameRect.top + window->style.titleBarHeight)
+			if (point.y < frame_rect.top + window->style.title_bar_height)
 			{
-				int32 iconPadding = window->style.iconPadding;
-				int32 iconSize = window->style.titleBarHeight - iconPadding * 2;
+				int32 icon_padding = window->style.icon_padding;
+				int32 icon_size = window->style.title_bar_height - icon_padding * 2;
 
-				RECT iconRect = { iconPadding, iconPadding, iconPadding + iconSize, iconPadding + iconSize };
-				OffsetRect(&iconRect, frameRect.left, frameRect.top);
-				if (PtInRect(&iconRect, point))
+				RECT icon_rect = { icon_padding, icon_padding, icon_padding + icon_size, icon_padding + icon_size };
+				OffsetRect(&icon_rect, frame_rect.left, frame_rect.top);
+				if (PtInRect(&icon_rect, point))
 					return HTSYSMENU;
 
 				return HTCAPTION;
@@ -980,7 +980,7 @@ namespace era_engine
 		return HTCLIENT;
 	}
 
-	static HICON createIcon(const uint8* image, uint32 width, uint32 height)
+	static HICON create_icon(const uint8* image, uint32 width, uint32 height)
 	{
 		BITMAPV5HEADER bi;
 
@@ -1048,20 +1048,20 @@ namespace era_engine
 		return handle;
 	}
 
-	bool win32_window::initialize(const TCHAR* name, uint32 clientWidth, uint32 clientHeight, bool visible)
+	bool Win32Window::initialize(const TCHAR* name, uint32 client_width, uint32 client_height, bool visible)
 	{
-		if (!windowClassInitialized)
+		if (!window_class_initialized)
 		{
-			WNDCLASSEX wndClass;
-			ZeroMemory(&wndClass, sizeof(WNDCLASSEX));
-			wndClass.cbSize = sizeof(WNDCLASSEX);
-			wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
-			wndClass.lpfnWndProc = windowCallBack;
-			wndClass.hInstance = GetModuleHandle(NULL);
-			wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-			wndClass.lpszClassName = windowClassName;
+			WNDCLASSEX wnd_class;
+			ZeroMemory(&wnd_class, sizeof(WNDCLASSEX));
+			wnd_class.cbSize = sizeof(WNDCLASSEX);
+			wnd_class.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
+			wnd_class.lpfnWndProc = window_call_back;
+			wnd_class.hInstance = GetModuleHandle(NULL);
+			wnd_class.hCursor = LoadCursor(NULL, IDC_ARROW);
+			wnd_class.lpszClassName = window_class_name;
 
-			if (!RegisterClassEx(&wndClass))
+			if (!RegisterClassEx(&wnd_class))
 			{
 				std::cerr << "Failed to create window class.\n";
 				return false;
@@ -1070,24 +1070,24 @@ namespace era_engine
 			RegisterHotKey(0, 0, 0, VK_SNAPSHOT);
 			RegisterHotKey(0, 1, MOD_CONTROL, VK_SNAPSHOT);
 
-			windowClassInitialized = true;
+			window_class_initialized = true;
 		}
 
-		if (!windowHandle)
+		if (!window_handle)
 		{
-			++numOpenWindows;
+			++num_open_windows;
 
-			this->clientWidth = clientWidth;
-			this->clientHeight = clientHeight;
+			this->client_width = client_width;
+			this->client_height = client_height;
 
-			DWORD windowStyle = WS_OVERLAPPEDWINDOW;
+			DWORD window_style = WS_OVERLAPPEDWINDOW;
 
-			RECT r = { 0, 0, (LONG)clientWidth, (LONG)clientHeight };
-			AdjustWindowRect(&r, windowStyle, FALSE);
+			RECT r = { 0, 0, (LONG)client_width, (LONG)client_height };
+			AdjustWindowRect(&r, window_style, FALSE);
 			int width = r.right - r.left;
 			int height = r.bottom - r.top;
 
-			windowHandle = CreateWindowEx(0, windowClassName, name, windowStyle,
+			window_handle = CreateWindowEx(0, window_class_name, name, window_style,
 #if 1
 				CW_USEDEFAULT, CW_USEDEFAULT,
 #else
@@ -1098,46 +1098,46 @@ namespace era_engine
 
 			fullscreen = false;
 
-			SetWindowLongPtr(windowHandle, GWLP_USERDATA, (LONG_PTR)this);
+			SetWindowLongPtr(window_handle, GWLP_USERDATA, (LONG_PTR)this);
 
-			if (!windowHandle)
+			if (!window_handle)
 			{
 				std::cerr << "Failed to create window.\n";
 				return false;
 			}
 
-			atLeastOneWindowWasOpened = true;
+			at_least_one_window_was_opened = true;
 		}
 
-		if (!mainWindow)
+		if (!main_window)
 		{
-			mainWindow = this;
+			main_window = this;
 		}
 
 		open = true;
 		this->visible = visible;
 		if (visible)
 		{
-			ShowWindow(windowHandle, SW_SHOW);
+			ShowWindow(window_handle, SW_SHOW);
 		}
 
 		return true;
 	}
 
-	bool win32_window::initialize(HINSTANCE hInst, const TCHAR* name, uint32 clientWidth, uint32 clientHeight, bool visible)
+	bool Win32Window::initialize(HINSTANCE h_inst, const TCHAR* name, uint32 client_width, uint32 client_height, bool visible)
 	{
-		if (!windowClassInitialized)
+		if (!window_class_initialized)
 		{
-			WNDCLASSEX wndClass;
-			ZeroMemory(&wndClass, sizeof(WNDCLASSEX));
-			wndClass.cbSize = sizeof(WNDCLASSEX);
-			wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
-			wndClass.lpfnWndProc = windowCallBack;
-			wndClass.hInstance = hInst;
-			wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-			wndClass.lpszClassName = windowClassName;
+			WNDCLASSEX wnd_class;
+			ZeroMemory(&wnd_class, sizeof(WNDCLASSEX));
+			wnd_class.cbSize = sizeof(WNDCLASSEX);
+			wnd_class.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
+			wnd_class.lpfnWndProc = window_call_back;
+			wnd_class.hInstance = h_inst;
+			wnd_class.hCursor = LoadCursor(NULL, IDC_ARROW);
+			wnd_class.lpszClassName = window_class_name;
 
-			if (!RegisterClassEx(&wndClass))
+			if (!RegisterClassEx(&wnd_class))
 			{
 				std::cerr << "Failed to create window class.\n";
 				return false;
@@ -1146,24 +1146,24 @@ namespace era_engine
 			RegisterHotKey(0, 0, 0, VK_SNAPSHOT);
 			RegisterHotKey(0, 1, MOD_CONTROL, VK_SNAPSHOT);
 
-			windowClassInitialized = true;
+			window_class_initialized = true;
 		}
 
-		if (!windowHandle)
+		if (!window_handle)
 		{
-			++numOpenWindows;
+			++num_open_windows;
 
-			this->clientWidth = clientWidth;
-			this->clientHeight = clientHeight;
+			this->client_width = client_width;
+			this->client_height = client_height;
 
-			DWORD windowStyle = WS_OVERLAPPEDWINDOW;
+			DWORD window_style = WS_OVERLAPPEDWINDOW;
 
-			RECT r = { 0, 0, (LONG)clientWidth, (LONG)clientHeight };
-			AdjustWindowRect(&r, windowStyle, FALSE);
+			RECT r = { 0, 0, (LONG)client_width, (LONG)client_height };
+			AdjustWindowRect(&r, window_style, FALSE);
 			int width = r.right - r.left;
 			int height = r.bottom - r.top;
 
-			windowHandle = CreateWindowEx(0, windowClassName, name, windowStyle,
+			window_handle = CreateWindowEx(0, window_class_name, name, window_style,
 #if 1
 				CW_USEDEFAULT, CW_USEDEFAULT,
 #else
@@ -1174,20 +1174,20 @@ namespace era_engine
 
 			fullscreen = false;
 
-			SetWindowLongPtr(windowHandle, GWLP_USERDATA, (LONG_PTR)this);
+			SetWindowLongPtr(window_handle, GWLP_USERDATA, (LONG_PTR)this);
 
-			if (!windowHandle)
+			if (!window_handle)
 			{
 				std::cerr << "Failed to create window.\n";
 				return false;
 			}
 
-			atLeastOneWindowWasOpened = true;
+			at_least_one_window_was_opened = true;
 		}
 
-		if (!mainWindow)
+		if (!main_window)
 		{
-			mainWindow = this;
+			main_window = this;
 		}
 
 		open = true;
@@ -1200,12 +1200,12 @@ namespace era_engine
 		return true;
 	}
 
-	void win32_window::shutdown()
+	void Win32Window::shutdown()
 	{
-		if (windowHandle)
+		if (window_handle)
 		{
-			HWND handle = windowHandle;
-			windowHandle = 0;
+			HWND handle = window_handle;
+			window_handle = 0;
 			DestroyWindow(handle);
 		}
 
@@ -1214,44 +1214,44 @@ namespace era_engine
 		visible = false;
 	}
 
-	void win32_window::toggleFullscreen()
+	void Win32Window::toggle_fullscreen()
 	{
 		fullscreen = !fullscreen;
-		setFullscreen(windowHandle, fullscreen, windowPosition);
+		set_fullscreen(window_handle, fullscreen, window_position);
 	}
 
-	void win32_window::setFileDropCallback(std::function<void(const fs::path&)> cb)
+	void Win32Window::set_file_drop_callback(std::function<void(const fs::path&)> cb)
 	{
-		if (!fileDropCallback)
+		if (!file_drop_callback)
 		{
-			DragAcceptFiles(windowHandle, true);
+			DragAcceptFiles(window_handle, true);
 		}
-		fileDropCallback = cb;
+		file_drop_callback = cb;
 	}
 
-	win32_window::win32_window(win32_window&& o) noexcept
+	Win32Window::Win32Window(Win32Window&& o) noexcept
 	{
 		open = o.open;
-		windowHandle = o.windowHandle;
-		clientWidth = o.clientWidth;
-		clientHeight = o.clientHeight;
-		windowPosition = o.windowPosition;
+		window_handle = o.window_handle;
+		client_width = o.client_width;
+		client_height = o.client_height;
+		window_position = o.window_position;
 		fullscreen = o.fullscreen;
 
-		o.windowHandle = 0;
+		o.window_handle = 0;
 
-		if (windowHandle && open)
+		if (window_handle && open)
 		{
-			SetWindowLongPtr(windowHandle, GWLP_USERDATA, (LONG_PTR)this);
+			SetWindowLongPtr(window_handle, GWLP_USERDATA, (LONG_PTR)this);
 		}
 
-		if (mainWindow == &o)
+		if (main_window == &o)
 		{
-			mainWindow = this;
+			main_window = this;
 		}
 	}
 
-	win32_window::~win32_window()
+	Win32Window::~Win32Window()
 	{
 		shutdown();
 		if (input_handler != nullptr)
@@ -1260,64 +1260,64 @@ namespace era_engine
 		}
 	}
 
-	void win32_window::makeActive()
+	void Win32Window::make_active()
 	{
-		SetForegroundWindow(windowHandle);
+		SetForegroundWindow(window_handle);
 	}
 
-	static void redrawWindowFrame(HWND windowHandle)
+	static void redraw_window_frame(HWND window_handle)
 	{
 		RECT rect;
-		GetClientRect(windowHandle, &rect);
+		GetClientRect(window_handle, &rect);
 
-		AdjustWindowRectExForDpi(&rect, GetWindowLong(windowHandle, GWL_STYLE), FALSE,
+		AdjustWindowRectExForDpi(&rect, GetWindowLong(window_handle, GWL_STYLE), FALSE,
 			0,
-			GetDpiForWindow(windowHandle));
+			GetDpiForWindow(window_handle));
 
-		ClientToScreen(windowHandle, (POINT*)&rect.left);
-		ClientToScreen(windowHandle, (POINT*)&rect.right);
-		SetWindowPos(windowHandle, HWND_TOP,
+		ClientToScreen(window_handle, (POINT*)&rect.left);
+		ClientToScreen(window_handle, (POINT*)&rect.right);
+		SetWindowPos(window_handle, HWND_TOP,
 			rect.left, rect.top,
 			rect.right - rect.left, rect.bottom - rect.top,
 			SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOZORDER);
 
-		handleWindowsMessages(); // Handle messages, so that frame is custom right from the start
+		handle_windows_messages(); // Handle messages, so that frame is custom right from the start
 	}
 
-	void win32_window::setCustomWindowStyle(custom_window_style style)
+	void Win32Window::set_custom_window_style(CustomWindowStyle style)
 	{
-		customWindowStyle = true;
+		custom_window_style = true;
 
-		if (style.titleBarHeight == -1)
+		if (style.title_bar_height == -1)
 		{
-			style.titleBarHeight = getDefaultTitleBarHeight(windowHandle);
+			style.title_bar_height = get_default_title_bar_height(window_handle);
 		}
-		if (style.buttonHeight == -1)
+		if (style.button_height == -1)
 		{
-			style.buttonHeight = style.titleBarHeight;
+			style.button_height = style.title_bar_height;
 		}
-		if (style.borderWidthLeftAndRight == -1)
+		if (style.border_width_left_and_right == -1)
 		{
-			UINT dpi = GetDpiForWindow(windowHandle);
-			style.borderWidthLeftAndRight = GetSystemMetricsForDpi(SM_CXFRAME, dpi);
+			UINT dpi = GetDpiForWindow(window_handle);
+			style.border_width_left_and_right = GetSystemMetricsForDpi(SM_CXFRAME, dpi);
 		}
-		if (style.borderWidthBottom == -1)
+		if (style.border_width_bottom == -1)
 		{
-			UINT dpi = GetDpiForWindow(windowHandle);
-			style.borderWidthBottom = GetSystemMetricsForDpi(SM_CYFRAME, dpi);
+			UINT dpi = GetDpiForWindow(window_handle);
+			style.border_width_bottom = GetSystemMetricsForDpi(SM_CYFRAME, dpi);
 		}
 		this->style = style;
 
-		redrawWindowFrame(windowHandle);
+		redraw_window_frame(window_handle);
 	}
 
-	void win32_window::resetToDefaultWindowStyle()
+	void Win32Window::reset_to_default_window_style()
 	{
-		customWindowStyle = false;
-		redrawWindowFrame(windowHandle);
+		custom_window_style = false;
+		redraw_window_frame(window_handle);
 	}
 
-	const UserInput& win32_window::get_current_frame_input()
+	const UserInput& Win32Window::get_current_frame_input()
 	{
 		if (input_handler == nullptr)
 		{
@@ -1328,43 +1328,43 @@ namespace era_engine
 		return input_handler->get_input();
 	}
 
-	void win32_window::setIcon(const fs::path& filepath)
+	void Win32Window::set_icon(const fs::path& filepath)
 	{
-		DirectX::ScratchImage scratchImage;
+		DirectX::ScratchImage scratch_image;
 		D3D12_RESOURCE_DESC desc;
 
-		if (loadImageFromFile(filepath, image_load_flags_cache_to_dds, scratchImage, desc) && scratchImage.GetImageCount() > 0)
+		if (load_image_from_file(filepath, IMAGE_LOAD_FLAGS_CACHE_TO_DDS, scratch_image, desc) && scratch_image.GetImageCount() > 0)
 		{
-			const auto& image = scratchImage.GetImages()[0];
-			ASSERT(getNumberOfChannels(image.format) == 4);
+			const auto& image = scratch_image.GetImages()[0];
+			ASSERT(get_number_of_channels(image.format) == 4);
 			uint8* pixels = image.pixels;
 			uint32 width = (uint32)image.width;
 			uint32 height = (uint32)image.height;
 
-			HICON icon = createIcon(pixels, width, height);
+			HICON icon = create_icon(pixels, width, height);
 
-			if (customIcon)
-				DestroyIcon(customIcon);
-			customIcon = icon;
+			if (custom_icon)
+				DestroyIcon(custom_icon);
+			custom_icon = icon;
 
-			SendMessage(windowHandle, WM_SETICON, ICON_BIG, (LPARAM)icon);
-			SendMessage(windowHandle, WM_SETICON, ICON_SMALL, (LPARAM)icon);
+			SendMessage(window_handle, WM_SETICON, ICON_BIG, (LPARAM)icon);
+			SendMessage(window_handle, WM_SETICON, ICON_SMALL, (LPARAM)icon);
 		}
 	}
 
-	void win32_window::changeTitle(const TCHAR* format, ...)
+	void Win32Window::change_title(const TCHAR* format, ...)
 	{
-		TCHAR titleBuffer[128];
+		TCHAR title_buffer[128];
 
 		va_list arg;
 		va_start(arg, format);
-		_vstprintf_s(titleBuffer, format, arg);
+		_vstprintf_s(title_buffer, format, arg);
 		va_end(arg);
 
-		SetWindowText(windowHandle, titleBuffer);
+		SetWindowText(window_handle, title_buffer);
 	}
 
-	void win32_window::init_input()
+	void Win32Window::init_input()
 	{
 		if (input_handler != nullptr)
 		{
@@ -1372,7 +1372,7 @@ namespace era_engine
 		}
 
 		input_handler = new Win32InputHandler();
-		input_handler->initialize(windowHandle);
+		input_handler->initialize(window_handle);
 
 		InputConfig config;
 		config.mouse_sensitivity = 0.15f;
@@ -1384,7 +1384,7 @@ namespace era_engine
 		input_handler->set_config(config);
 	}
 
-	void win32_window::begin_frame(float dt)
+	void Win32Window::begin_frame(float dt)
 	{
 		if (input_handler == nullptr)
 		{
@@ -1394,7 +1394,7 @@ namespace era_engine
 		input_handler->begin_frame(dt);
 	}
 
-	void win32_window::update_input(float dt)
+	void Win32Window::update_input(float dt)
 	{
 		if (input_handler == nullptr)
 		{
@@ -1405,7 +1405,7 @@ namespace era_engine
 
 		const UserInput& input = input_handler->get_input();
 
-		if (input.keyboard[key_tab].press_event)
+		if (input.keyboard[KEY_TAB].press_event)
 		{
 			input_handler->capture_mouse();
 		}
@@ -1416,134 +1416,134 @@ namespace era_engine
 		}
 	}
 
-	void win32_window::toggleVisibility()
+	void Win32Window::toggle_visibility()
 	{
 		visible = !visible;
 		if (visible)
 		{
-			ShowWindow(windowHandle, SW_SHOW);
+			ShowWindow(window_handle, SW_SHOW);
 		}
 		else
 		{
-			ShowWindow(windowHandle, SW_HIDE);
+			ShowWindow(window_handle, SW_HIDE);
 		}
 	}
 
-	void win32_window::maximize()
+	void Win32Window::maximize()
 	{
-		ShowWindow(windowHandle, SW_MAXIMIZE);
+		ShowWindow(window_handle, SW_MAXIMIZE);
 	}
 
-	void win32_window::setMinimumSize(int32 minimumWidth, int32 minimumHeight)
+	void Win32Window::set_minimum_size(int32 minimum_width, int32 minimum_height)
 	{
-		this->minimumWidth = minimumWidth;
-		this->minimumHeight = minimumHeight;
+		this->minimum_width = minimum_width;
+		this->minimum_height = minimum_height;
 	}
 
-	void win32_window::moveTo(int x, int y)
+	void Win32Window::move_to(int x, int y)
 	{
-		SetWindowPos(windowHandle, HWND_TOP, x, y, clientWidth, clientHeight, SWP_NOSIZE);
+		SetWindowPos(window_handle, HWND_TOP, x, y, client_width, client_height, SWP_NOSIZE);
 	}
 
-	void win32_window::moveToScreenID(int screenID)
+	void Win32Window::move_to_screen_id(int screen_id)
 	{
-		DISPLAY_DEVICEA dispDevice = { 0 };
-		dispDevice.cb = sizeof(dispDevice);
+		DISPLAY_DEVICEA disp_device = { 0 };
+		disp_device.cb = sizeof(disp_device);
 
-		DEVMODEA devMode = { 0 };
-		devMode.dmSize = sizeof(devMode);
+		DEVMODEA dev_mode = { 0 };
+		dev_mode.dmSize = sizeof(dev_mode);
 
-		if (EnumDisplayDevicesA(NULL, screenID, &dispDevice, 0))
+		if (EnumDisplayDevicesA(NULL, screen_id, &disp_device, 0))
 		{
-			if (EnumDisplaySettingsExA(dispDevice.DeviceName, ENUM_CURRENT_SETTINGS, &devMode, NULL))
+			if (EnumDisplaySettingsExA(disp_device.DeviceName, ENUM_CURRENT_SETTINGS, &dev_mode, NULL))
 			{
-				moveTo(devMode.dmPosition.x, devMode.dmPosition.y);
+				move_to(dev_mode.dmPosition.x, dev_mode.dmPosition.y);
 			}
 		}
 	}
 
-	struct monitor_iterator
+	struct MonitorIterator
 	{
-		DISPLAY_DEVICEA dispDevice;
-		DEVMODEA devMode;
-		DWORD screenID;
+		DISPLAY_DEVICEA disp_device;
+		DEVMODEA dev_mode;
+		DWORD screen_id;
 
-		monitor_iterator();
+		MonitorIterator();
 
-		bool step(monitor_info& info);
+		bool step(MonitorInfo& info);
 	};
 
-	void win32_window::moveToMonitor(const std::string& uniqueID)
+	void Win32Window::move_to_monitor(const std::string& unique_id)
 	{
-		monitor_iterator it;
-		monitor_info monitor;
+		MonitorIterator it;
+		MonitorInfo monitor;
 		while (it.step(monitor))
 		{
-			if (monitor.uniqueID == uniqueID)
+			if (monitor.unique_id == unique_id)
 			{
-				moveTo(monitor.x, monitor.y);
+				move_to(monitor.x, monitor.y);
 				return;
 			}
 		}
 	}
 
-	void win32_window::moveToMonitor(const monitor_info& monitor)
+	void Win32Window::move_to_monitor(const MonitorInfo& monitor)
 	{
-		moveTo(monitor.x, monitor.y);
+		move_to(monitor.x, monitor.y);
 	}
 
-	monitor_iterator::monitor_iterator()
+	MonitorIterator::MonitorIterator()
 	{
-		ZeroMemory(&dispDevice, sizeof(dispDevice));
-		ZeroMemory(&devMode, sizeof(devMode));
-		dispDevice.cb = sizeof(dispDevice);
-		devMode.dmSize = sizeof(devMode);
-		screenID = 0;
+		ZeroMemory(&disp_device, sizeof(disp_device));
+		ZeroMemory(&dev_mode, sizeof(dev_mode));
+		disp_device.cb = sizeof(disp_device);
+		dev_mode.dmSize = sizeof(dev_mode);
+		screen_id = 0;
 	}
 
-	static std::string convertUniqueIDToFolderFriendlyName(const std::string& uniqueID)
+	static std::string convert_unique_id_to_folder_friendly_name(const std::string& unique_id)
 	{
-		std::string result = uniqueID;
+		std::string result = unique_id;
 		std::replace(result.begin(), result.end(), '\\', '_');
 		std::replace(result.begin(), result.end(), '?', '_');
 		return result;
 	}
 
-	bool monitor_iterator::step(monitor_info& info)
+	bool MonitorIterator::step(MonitorInfo& info)
 	{
 		bool result = false;
 
-		if (EnumDisplayDevicesA(NULL, screenID, &dispDevice, 0))
+		if (EnumDisplayDevicesA(NULL, screen_id, &disp_device, 0))
 		{
-			char name[sizeof(dispDevice.DeviceName)];
-			strcpy_s(name, dispDevice.DeviceName);
-			if (EnumDisplayDevicesA(name, 0, &dispDevice, EDD_GET_DEVICE_INTERFACE_NAME))
+			char name[sizeof(disp_device.DeviceName)];
+			strcpy_s(name, disp_device.DeviceName);
+			if (EnumDisplayDevicesA(name, 0, &disp_device, EDD_GET_DEVICE_INTERFACE_NAME))
 			{
-				if (EnumDisplaySettingsExA(name, ENUM_CURRENT_SETTINGS, &devMode, NULL))
+				if (EnumDisplaySettingsExA(name, ENUM_CURRENT_SETTINGS, &dev_mode, NULL))
 				{
-					info.x = devMode.dmPosition.x;
-					info.y = devMode.dmPosition.y;
-					info.width = devMode.dmPelsWidth;
-					info.height = devMode.dmPelsHeight;
-					info.screenID = screenID;
-					info.uniqueID = convertUniqueIDToFolderFriendlyName(dispDevice.DeviceID);
-					info.name = dispDevice.DeviceString;
+					info.x = dev_mode.dmPosition.x;
+					info.y = dev_mode.dmPosition.y;
+					info.width = dev_mode.dmPelsWidth;
+					info.height = dev_mode.dmPelsHeight;
+					info.screen_id = screen_id;
+					info.unique_id = convert_unique_id_to_folder_friendly_name(disp_device.DeviceID);
+					info.name = disp_device.DeviceString;
 					result = true;
 				}
 			}
 		}
 
-		++screenID;
+		++screen_id;
 
 		return result;
 	}
 
-	NODISCARD std::vector<monitor_info> getAllDisplayDevices()
+	NODISCARD std::vector<MonitorInfo> get_all_display_devices()
 	{
-		std::vector<monitor_info> result;
+		std::vector<MonitorInfo> result;
 
-		monitor_iterator it;
-		monitor_info monitor;
+		MonitorIterator it;
+		MonitorInfo monitor;
 		while (it.step(monitor))
 		{
 			result.push_back(monitor);
@@ -1552,11 +1552,11 @@ namespace era_engine
 		return result;
 	}
 
-	NODISCARD std::vector<monitor_info> getAllDisplayDevices(uint32 width, uint32 height)
+	NODISCARD std::vector<MonitorInfo> get_all_display_devices(uint32 width, uint32 height)
 	{
-		std::vector<monitor_info> result;
+		std::vector<MonitorInfo> result;
 
-		for (monitor_info& monitor : getAllDisplayDevices())
+		for (MonitorInfo& monitor : get_all_display_devices())
 		{
 			if (width == monitor.width && height == monitor.height)
 			{
@@ -1567,41 +1567,41 @@ namespace era_engine
 		return result;
 	}
 
-	void setMainWindow(win32_window* window)
+	void set_main_window(Win32Window* window)
 	{
-		win32_window::mainWindow = window;
+		Win32Window::main_window = window;
 	}
 
-	LRESULT CALLBACK windowCallBack(
+	LRESULT CALLBACK window_call_back(
 		_In_ HWND   hwnd,
 		_In_ UINT   msg,
-		_In_ WPARAM wParam,
-		_In_ LPARAM lParam
+		_In_ WPARAM w_param,
+		_In_ LPARAM l_param
 	)
 	{
 		LRESULT result = 0;
 
-		win32_window* window = (win32_window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+		Win32Window* window = (Win32Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
 		if ((msg == WM_MOUSELEAVE || msg == WM_NCMOUSELEAVE || msg == WM_MOUSEMOVE)
-			&& window && window->customWindowStyle)
+			&& window && window->custom_window_style)
 		{
-			if (window->hoveredButton != titlebar_button_none)
+			if (window->hovered_button != TITLEBAR_BUTTON_NONE)
 			{
-				window->hoveredButton = titlebar_button_none;
+				window->hovered_button = TITLEBAR_BUTTON_NONE;
 				//InvalidateRect(0, 0, FALSE);
 				RedrawWindow(hwnd, 0, 0, RDW_INVALIDATE | RDW_FRAME);
 			}
 
-			window->trackingMouse = false;
+			window->tracking_mouse = false;
 		}
 
 		if (window != nullptr && window->input_handler != nullptr)
 		{
-			window->input_handler->process_message(msg, wParam, lParam);
+			window->input_handler->process_message(msg, w_param, l_param);
 		}
 
-		if (handleImGuiInput(hwnd, msg, wParam, lParam))
+		if (handle_imgui_input(hwnd, msg, w_param, l_param))
 			return true;
 
 		switch (msg)
@@ -1615,11 +1615,11 @@ namespace era_engine
 		{
 			if (window && window->open)
 			{
-				window->clientWidth = LOWORD(lParam);
-				window->clientHeight = HIWORD(lParam);
-				window->onResize();
+				window->client_width = LOWORD(l_param);
+				window->client_height = HIWORD(l_param);
+				window->on_resize();
 
-				if (window->customWindowStyle)
+				if (window->custom_window_style)
 				{
 					if (IsZoomed(hwnd))
 					{
@@ -1627,10 +1627,10 @@ namespace era_engine
 					}
 					else
 					{
-						RECT frameRect;
-						GetWindowRect(hwnd, &frameRect);
+						RECT frame_rect;
+						GetWindowRect(hwnd, &frame_rect);
 
-						HRGN region = CreateRectRgn(0, 0, frameRect.right - frameRect.left, frameRect.bottom - frameRect.top);
+						HRGN region = CreateRectRgn(0, 0, frame_rect.right - frame_rect.left, frame_rect.bottom - frame_rect.top);
 						SetWindowRgn(hwnd, region, true);
 						DeleteObject(region);
 					}
@@ -1643,17 +1643,17 @@ namespace era_engine
 		} break;
 		case WM_DESTROY:
 		{
-			if (window && window->windowHandle && window->open)
+			if (window && window->window_handle && window->open)
 			{
 				window->open = false;
-				--numOpenWindows;
+				--num_open_windows;
 				window->shutdown();
 			}
 		} break;
 
 		case WM_ACTIVATEAPP:
 		{
-			if (wParam)
+			if (w_param)
 			{
 				//std::cout << "Activated\n";
 			}
@@ -1661,7 +1661,7 @@ namespace era_engine
 			{
 				//std::cout << "Deactivated\n";
 			}
-			if (window && window->customWindowStyle)
+			if (window && window->custom_window_style)
 			{
 				//InvalidateRect(0, 0, FALSE);
 				RedrawWindow(hwnd, 0, 0, RDW_INVALIDATE | RDW_FRAME);
@@ -1673,48 +1673,48 @@ namespace era_engine
 			if (window)
 			{
 				// For software windows, we draw the content in the client area.
-				software_window* sWindow = dynamic_cast<software_window*>(window);
+				SoftwareWindow* s_window = dynamic_cast<SoftwareWindow*>(window);
 
-				if (sWindow)
+				if (s_window)
 				{
-					const uint8* image = sWindow->buffer;
+					const uint8* image = s_window->buffer;
 					if (image)
 					{
 						PAINTSTRUCT ps;
 						HDC hdc = BeginPaint(hwnd, &ps);
 						StretchDIBits(hdc,
 #if 0
-							0, 0, window->clientWidth, window->clientHeight,
-							0, 0, sWindow->bitmapInfo->bmiHeader.biWidth, abs(sWindow->bitmapInfo->bmiHeader.biHeight),
+							0, 0, window->client_width, window->client_height,
+							0, 0, s_window->bitmap_info->bmiHeader.biWidth, abs(s_window->bitmap_info->bmiHeader.biHeight),
 #else
-							0, window->clientHeight - 1, window->clientWidth, -(int)window->clientHeight,
-							sWindow->blitX, sWindow->blitY, sWindow->blitWidth, sWindow->blitHeight,
+							0, window->client_height - 1, window->client_width, -(int)window->client_height,
+							s_window->blit_x, s_window->blit_y, s_window->blit_width, s_window->blit_height,
 #endif
-							image, sWindow->bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+							image, s_window->bitmap_info, DIB_RGB_COLORS, SRCCOPY);
 						EndPaint(hwnd, &ps);
 					}
 					else
 					{
-						result = DefWindowProc(hwnd, msg, wParam, lParam);
+						result = DefWindowProc(hwnd, msg, w_param, l_param);
 					}
 				}
 				else
 				{
-					result = DefWindowProc(hwnd, msg, wParam, lParam);
+					result = DefWindowProc(hwnd, msg, w_param, l_param);
 				}
 			}
 		} break;
 
 		case WM_GETMINMAXINFO:
 		{
-			MINMAXINFO* info = (MINMAXINFO*)lParam;
+			MINMAXINFO* info = (MINMAXINFO*)l_param;
 
 			if (window)
 			{
-				if (window->minimumWidth != -1)
-					info->ptMinTrackSize.x = window->minimumWidth;
-				if (window->minimumHeight != -1)
-					info->ptMinTrackSize.y = window->minimumHeight;
+				if (window->minimum_width != -1)
+					info->ptMinTrackSize.x = window->minimum_width;
+				if (window->minimum_height != -1)
+					info->ptMinTrackSize.y = window->minimum_height;
 			}
 			return 0;
 		} break;
@@ -1722,164 +1722,164 @@ namespace era_engine
 		case WM_NCACTIVATE:
 		case WM_NCPAINT:
 		{
-			if (!window || !window->customWindowStyle)
-				return DefWindowProc(hwnd, msg, wParam, lParam);
+			if (!window || !window->custom_window_style)
+				return DefWindowProc(hwnd, msg, w_param, l_param);
 
 			HDC hdc = GetDCEx(hwnd, 0, DCX_WINDOW);
 
 			// Render bars and buttons
-			RECT frameRect;
-			GetWindowRect(hwnd, &frameRect);
+			RECT frame_rect;
+			GetWindowRect(hwnd, &frame_rect);
 
-			RECT clientRect;
-			GetClientRect(hwnd, &clientRect);
+			RECT client_rect;
+			GetClientRect(hwnd, &client_rect);
 
-			ClientToScreen(hwnd, (POINT*)&clientRect.left);
-			ClientToScreen(hwnd, (POINT*)&clientRect.right);
+			ClientToScreen(hwnd, (POINT*)&client_rect.left);
+			ClientToScreen(hwnd, (POINT*)&client_rect.right);
 
-			OffsetRect(&clientRect, -frameRect.left, -frameRect.top);
-			OffsetRect(&frameRect, -frameRect.left, -frameRect.top);
+			OffsetRect(&client_rect, -frame_rect.left, -frame_rect.top);
+			OffsetRect(&frame_rect, -frame_rect.left, -frame_rect.top);
 
-			bool hasFocus = GetActiveWindow() == hwnd;
-			bool isMaximized = IsZoomed(hwnd);
+			bool has_focus = GetActiveWindow() == hwnd;
+			bool is_maximized = IsZoomed(hwnd);
 
-			COLORREF titleBarColor = hasFocus
-				? RGB(window->style.titleBarRGB[0], window->style.titleBarRGB[1], window->style.titleBarRGB[2])
-				: RGB(window->style.titleBarUnfocusedRGB[0], window->style.titleBarUnfocusedRGB[1], window->style.titleBarUnfocusedRGB[2]);
-			HBRUSH titleBarBrush = CreateSolidBrush(titleBarColor);
-			HPEN titleBarPen = CreatePen(PS_SOLID, 0, titleBarColor);
+			COLORREF title_bar_color = has_focus
+				? RGB(window->style.title_bar_rgb[0], window->style.title_bar_rgb[1], window->style.title_bar_rgb[2])
+				: RGB(window->style.title_bar_unfocused_rgb[0], window->style.title_bar_unfocused_rgb[1], window->style.title_bar_unfocused_rgb[2]);
+			HBRUSH title_bar_brush = CreateSolidBrush(title_bar_color);
+			HPEN title_bar_pen = CreatePen(PS_SOLID, 0, title_bar_color);
 
-			SelectObject(hdc, titleBarBrush);
-			SelectObject(hdc, titleBarPen);
+			SelectObject(hdc, title_bar_brush);
+			SelectObject(hdc, title_bar_pen);
 
-			Rectangle(hdc, frameRect.left, frameRect.top, frameRect.right, clientRect.top);			// Top bar.
-			Rectangle(hdc, frameRect.left, clientRect.top, clientRect.left, clientRect.bottom);		// Left bar.
-			Rectangle(hdc, clientRect.right, clientRect.top, frameRect.right, clientRect.bottom);	// Right bar.
-			Rectangle(hdc, frameRect.left, clientRect.bottom, frameRect.right, frameRect.bottom);	// Bottom bar.
+			Rectangle(hdc, frame_rect.left, frame_rect.top, frame_rect.right, client_rect.top);			// Top bar.
+			Rectangle(hdc, frame_rect.left, client_rect.top, client_rect.left, client_rect.bottom);		// Left bar.
+			Rectangle(hdc, client_rect.right, client_rect.top, frame_rect.right, client_rect.bottom);	// Right bar.
+			Rectangle(hdc, frame_rect.left, client_rect.bottom, frame_rect.right, frame_rect.bottom);	// Bottom bar.
 
-			COLORREF itemColor = RGB(window->style.titleTextRGB[0], window->style.titleTextRGB[1], window->style.titleTextRGB[2]);
+			COLORREF item_color = RGB(window->style.title_text_rgb[0], window->style.title_text_rgb[1], window->style.title_text_rgb[2]);
 
-			HBRUSH buttonIconBrush = CreateSolidBrush(itemColor);
-			HPEN buttonIconPen = CreatePen(PS_SOLID, 1, itemColor);
+			HBRUSH button_icon_brush = CreateSolidBrush(item_color);
+			HPEN button_icon_pen = CreatePen(PS_SOLID, 1, item_color);
 
-			HBRUSH hoverBrush = CreateSolidBrush(RGB(window->style.buttonHoverRGB[0], window->style.buttonHoverRGB[1], window->style.buttonHoverRGB[2]));
+			HBRUSH hover_brush = CreateSolidBrush(RGB(window->style.button_hover_rgb[0], window->style.button_hover_rgb[1], window->style.button_hover_rgb[2]));
 
-			custom_titlebar_button_rects buttonRects = getTitleBarButtonRects(hwnd, window->style.buttonHeight);
+			CustomTitlebarButtonRects button_rects = get_title_bar_button_rects(hwnd, window->style.button_height);
 
 			UINT dpi = GetDpiForWindow(hwnd);
-			int iconDimension = dpiScale(10, dpi);
+			int icon_dimension = dpi_scale(10, dpi);
 
 			// Minimize button
 			{
-				if (window->hoveredButton == titlebar_button_minimize)
+				if (window->hovered_button == TITLEBAR_BUTTON_MINIMIZE)
 				{
-					FillRect(hdc, &buttonRects.minimize, hoverBrush);
+					FillRect(hdc, &button_rects.minimize, hover_brush);
 				}
-				RECT iconRect = { 0 };
-				iconRect.right = iconDimension;
-				iconRect.bottom = 1;
-				centerRectInRect(iconRect, buttonRects.minimize);
-				FillRect(hdc, &iconRect, buttonIconBrush);
+				RECT icon_rect = { 0 };
+				icon_rect.right = icon_dimension;
+				icon_rect.bottom = 1;
+				center_rect_in_rect(icon_rect, button_rects.minimize);
+				FillRect(hdc, &icon_rect, button_icon_brush);
 			}
 
 			// Maximize button.
 			{
-				HBRUSH frontBrush = titleBarBrush;
-				if (window->hoveredButton == titlebar_button_maximize)
+				HBRUSH front_brush = title_bar_brush;
+				if (window->hovered_button == TITLEBAR_BUTTON_MAXIMIZE)
 				{
-					FillRect(hdc, &buttonRects.maximize, hoverBrush);
-					frontBrush = hoverBrush;
+					FillRect(hdc, &button_rects.maximize, hover_brush);
+					front_brush = hover_brush;
 				}
-				RECT iconRect = { 0 };
-				iconRect.right = iconDimension;
-				iconRect.bottom = iconDimension;
-				centerRectInRect(iconRect, buttonRects.maximize);
-				SelectObject(hdc, buttonIconPen);
+				RECT icon_rect = { 0 };
+				icon_rect.right = icon_dimension;
+				icon_rect.bottom = icon_dimension;
+				center_rect_in_rect(icon_rect, button_rects.maximize);
+				SelectObject(hdc, button_icon_pen);
 				SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
-				Rectangle(hdc, iconRect.left, iconRect.top, iconRect.right, iconRect.bottom);
+				Rectangle(hdc, icon_rect.left, icon_rect.top, icon_rect.right, icon_rect.bottom);
 
-				if (isMaximized)
+				if (is_maximized)
 				{
-					SelectObject(hdc, frontBrush);
-					Rectangle(hdc, iconRect.left - 2, iconRect.top + 2, iconRect.right - 2, iconRect.bottom + 2);
+					SelectObject(hdc, front_brush);
+					Rectangle(hdc, icon_rect.left - 2, icon_rect.top + 2, icon_rect.right - 2, icon_rect.bottom + 2);
 				}
 			}
 
 			// Close button
 			{
-				HPEN customPen = 0;
-				if (window->hoveredButton == titlebar_button_close)
+				HPEN custom_pen = 0;
+				if (window->hovered_button == TITLEBAR_BUTTON_CLOSE)
 				{
 					// Highlight button on hover
-					HBRUSH fillBrush = CreateSolidBrush(RGB(window->style.closeButtonHoverRGB[0], window->style.closeButtonHoverRGB[1], window->style.closeButtonHoverRGB[2]));
-					FillRect(hdc, &buttonRects.close, fillBrush);
-					DeleteObject(fillBrush);
-					customPen = CreatePen(PS_SOLID, 1, RGB(window->style.closeButtonHoverStrokeRGB[0], window->style.closeButtonHoverStrokeRGB[1], window->style.closeButtonHoverStrokeRGB[2]));
-					SelectObject(hdc, customPen);
+					HBRUSH fill_brush = CreateSolidBrush(RGB(window->style.close_button_hover_rgb[0], window->style.close_button_hover_rgb[1], window->style.close_button_hover_rgb[2]));
+					FillRect(hdc, &button_rects.close, fill_brush);
+					DeleteObject(fill_brush);
+					custom_pen = CreatePen(PS_SOLID, 1, RGB(window->style.close_button_hover_stroke_rgb[0], window->style.close_button_hover_stroke_rgb[1], window->style.close_button_hover_stroke_rgb[2]));
+					SelectObject(hdc, custom_pen);
 				}
-				RECT iconRect = { 0, 0, iconDimension, iconDimension };
-				centerRectInRect(iconRect, buttonRects.close);
-				MoveToEx(hdc, iconRect.left, iconRect.top, NULL);
-				LineTo(hdc, iconRect.right + 1, iconRect.bottom + 1);
-				MoveToEx(hdc, iconRect.left, iconRect.bottom, NULL);
-				LineTo(hdc, iconRect.right + 1, iconRect.top - 1);
-				if (customPen)
+				RECT icon_rect = { 0, 0, icon_dimension, icon_dimension };
+				center_rect_in_rect(icon_rect, button_rects.close);
+				MoveToEx(hdc, icon_rect.left, icon_rect.top, NULL);
+				LineTo(hdc, icon_rect.right + 1, icon_rect.bottom + 1);
+				MoveToEx(hdc, icon_rect.left, icon_rect.bottom, NULL);
+				LineTo(hdc, icon_rect.right + 1, icon_rect.top - 1);
+				if (custom_pen)
 				{
-					DeleteObject(customPen);
+					DeleteObject(custom_pen);
 				}
 			}
 
-			DeleteObject(titleBarBrush);
-			DeleteObject(titleBarPen);
+			DeleteObject(title_bar_brush);
+			DeleteObject(title_bar_pen);
 
-			DeleteObject(hoverBrush);
-			DeleteObject(buttonIconPen);
-			DeleteObject(buttonIconBrush);
+			DeleteObject(hover_brush);
+			DeleteObject(button_icon_pen);
+			DeleteObject(button_icon_brush);
 
 
 			// Extra padding for title and icon if window is maximized
-			int32 leftAndTopPadding = 0;
-			if (isMaximized)
+			int32 left_and_top_padding = 0;
+			if (is_maximized)
 			{
-				leftAndTopPadding = 5;
+				left_and_top_padding = 5;
 			}
 
 			HTHEME theme = OpenThemeData(hwnd, L"WINDOW");
 
 			// Draw window title
-			LOGFONT logicalFont;
-			HFONT oldFont = NULL;
-			if (SUCCEEDED(GetThemeSysFont(theme, TMT_CAPTIONFONT, &logicalFont)))
+			LOGFONT logical_font;
+			HFONT old_font = NULL;
+			if (SUCCEEDED(GetThemeSysFont(theme, TMT_CAPTIONFONT, &logical_font)))
 			{
-				HFONT themeFont = CreateFontIndirect(&logicalFont);
-				oldFont = (HFONT)SelectObject(hdc, themeFont);
+				HFONT theme_font = CreateFontIndirect(&logical_font);
+				old_font = (HFONT)SelectObject(hdc, theme_font);
 			}
 
-			wchar_t titleTextBuffer[255] = { 0 };
-			GetWindowTextW(hwnd, titleTextBuffer, arraysize(titleTextBuffer));
-			RECT titleBarTextRect = { window->style.titleLeftOffset + leftAndTopPadding, leftAndTopPadding, buttonRects.minimize.left - 10 + leftAndTopPadding, window->style.titleBarHeight };
-			DTTOPTS drawThemeOptions = { sizeof(drawThemeOptions) };
-			drawThemeOptions.dwFlags = DTT_TEXTCOLOR;
-			drawThemeOptions.crText = itemColor;
+			wchar_t title_text_buffer[255] = { 0 };
+			GetWindowTextW(hwnd, title_text_buffer, arraysize(title_text_buffer));
+			RECT title_bar_text_rect = { window->style.title_left_offset + left_and_top_padding, left_and_top_padding, button_rects.minimize.left - 10 + left_and_top_padding, window->style.title_bar_height };
+			DTTOPTS draw_theme_options = { sizeof(draw_theme_options) };
+			draw_theme_options.dwFlags = DTT_TEXTCOLOR;
+			draw_theme_options.crText = item_color;
 			DrawThemeTextEx(
 				theme,
 				hdc,
 				0, 0,
-				titleTextBuffer,
+				title_text_buffer,
 				-1,
 				DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS,
-				&titleBarTextRect,
-				&drawThemeOptions
+				&title_bar_text_rect,
+				&draw_theme_options
 			);
 
-			if (oldFont)
+			if (old_font)
 			{
-				SelectObject(hdc, oldFont);
+				SelectObject(hdc, old_font);
 			}
 			CloseThemeData(theme);
 
 			// Draw window icon
-			HICON icon = window->customIcon;
+			HICON icon = window->custom_icon;
 			if (!icon)
 			{
 				icon = LoadIcon(NULL, IDI_APPLICATION);
@@ -1887,10 +1887,10 @@ namespace era_engine
 
 			if (icon)
 			{
-				int32 iconPadding = window->style.iconPadding;
-				int32 iconSize = window->style.titleBarHeight - iconPadding * 2;
+				int32 icon_padding = window->style.icon_padding;
+				int32 icon_size = window->style.title_bar_height - icon_padding * 2;
 
-				DrawIconEx(hdc, iconPadding + leftAndTopPadding, iconPadding + leftAndTopPadding, icon, iconSize, iconSize, 0, NULL, DI_NORMAL);
+				DrawIconEx(hdc, icon_padding + left_and_top_padding, icon_padding + left_and_top_padding, icon, icon_size, icon_size, 0, NULL, DI_NORMAL);
 			}
 
 			ReleaseDC(hwnd, hdc);
@@ -1900,120 +1900,120 @@ namespace era_engine
 
 		case WM_NCHITTEST:
 		{
-			if (!window || !window->customWindowStyle)
+			if (!window || !window->custom_window_style)
 			{
-				return DefWindowProc(hwnd, msg, wParam, lParam);
+				return DefWindowProc(hwnd, msg, w_param, l_param);
 			}
 
-			POINT point = { LOWORD(lParam), HIWORD(lParam) };
-			return hitTest(point, window);
+			POINT point = { LOWORD(l_param), HIWORD(l_param) };
+			return hit_test(point, window);
 		} break;
 
 		case WM_NCCALCSIZE:
 		{
-			if (!window || !window->customWindowStyle)
+			if (!window || !window->custom_window_style)
 			{
-				return DefWindowProc(hwnd, msg, wParam, lParam);
+				return DefWindowProc(hwnd, msg, w_param, l_param);
 			}
 
-			RECT* rect = (RECT*)lParam;
+			RECT* rect = (RECT*)l_param;
 			if (rect->top > -10000) // Minimized windows seem to have a top of -32000.
 			{
-				rect->left += window->style.borderWidthLeftAndRight;
-				rect->right -= window->style.borderWidthLeftAndRight;
-				rect->bottom -= window->style.borderWidthBottom;
+				rect->left += window->style.border_width_left_and_right;
+				rect->right -= window->style.border_width_left_and_right;
+				rect->bottom -= window->style.border_width_bottom;
 
 				if (!window->fullscreen)
 				{
-					rect->top += window->style.titleBarHeight;
+					rect->top += window->style.title_bar_height;
 				}
 				else
 				{
-					rect->top += window->style.borderWidthBottom;
+					rect->top += window->style.border_width_bottom;
 				}
 			}
 		} break;
 
 		case WM_NCMOUSEMOVE:
 		{
-			if (window && window->customWindowStyle)
+			if (window && window->custom_window_style)
 			{
-				POINT cursorPoint = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+				POINT cursor_point = { GET_X_LPARAM(l_param), GET_Y_LPARAM(l_param) };
 
-				int hoveredButton = titlebar_button_none;
-				int hit = hitTest(cursorPoint, window);
+				int hovered_button = TITLEBAR_BUTTON_NONE;
+				int hit = hit_test(cursor_point, window);
 
 				if (hit == HTCLOSE)
 				{
-					hoveredButton = titlebar_button_close;
+					hovered_button = TITLEBAR_BUTTON_CLOSE;
 				}
 				else if (hit == HTMAXBUTTON)
 				{
-					hoveredButton = titlebar_button_maximize;
+					hovered_button = TITLEBAR_BUTTON_MAXIMIZE;
 				}
 				else if (hit == HTMINBUTTON)
 				{
-					hoveredButton = titlebar_button_minimize;
+					hovered_button = TITLEBAR_BUTTON_MINIMIZE;
 				}
 
-				if (hoveredButton != window->hoveredButton)
+				if (hovered_button != window->hovered_button)
 				{
-					window->hoveredButton = hoveredButton;
+					window->hovered_button = hovered_button;
 					//InvalidateRect(0, 0, FALSE);
 					RedrawWindow(hwnd, 0, 0, RDW_INVALIDATE | RDW_FRAME);
 				}
 
-				if (!window->trackingMouse)
+				if (!window->tracking_mouse)
 				{
-					TRACKMOUSEEVENT eventTrack = { sizeof(TRACKMOUSEEVENT) };
-					eventTrack.dwFlags = TME_NONCLIENT;
-					eventTrack.hwndTrack = hwnd;
-					eventTrack.dwHoverTime = HOVER_DEFAULT;
+					TRACKMOUSEEVENT event_track = { sizeof(TRACKMOUSEEVENT) };
+					event_track.dwFlags = TME_NONCLIENT;
+					event_track.hwndTrack = hwnd;
+					event_track.dwHoverTime = HOVER_DEFAULT;
 
-					TrackMouseEvent(&eventTrack);
+					TrackMouseEvent(&event_track);
 
-					window->trackingMouse = true;
+					window->tracking_mouse = true;
 				}
 				return 0;
 			}
-			return DefWindowProc(hwnd, msg, wParam, lParam);
+			return DefWindowProc(hwnd, msg, w_param, l_param);
 		}
 
 		case WM_NCLBUTTONDOWN:
 		{
 			// Clicks on buttons will be handled in WM_NCLBUTTONUP, but we still need
 			// to remove default handling of the click to avoid it counting as drag
-			if (window && window->customWindowStyle && window->hoveredButton != titlebar_button_none)
+			if (window && window->custom_window_style && window->hovered_button != TITLEBAR_BUTTON_NONE)
 				return 0;
 			// Default handling allows for dragging and double click to maximize
-			return DefWindowProc(hwnd, msg, wParam, lParam);
+			return DefWindowProc(hwnd, msg, w_param, l_param);
 		}
 
 		case WM_NCLBUTTONUP:
 		{
-			if (window && window->customWindowStyle)
+			if (window && window->custom_window_style)
 			{
-				if (window->hoveredButton == titlebar_button_close)
+				if (window->hovered_button == TITLEBAR_BUTTON_CLOSE)
 				{
-					window->hoveredButton = titlebar_button_none;
+					window->hovered_button = TITLEBAR_BUTTON_NONE;
 					PostMessage(hwnd, WM_CLOSE, 0, 0);
 					return 0;
 				}
-				else if (window->hoveredButton == titlebar_button_minimize)
+				else if (window->hovered_button == TITLEBAR_BUTTON_MINIMIZE)
 				{
-					window->hoveredButton = titlebar_button_none;
+					window->hovered_button = TITLEBAR_BUTTON_NONE;
 					ShowWindow(hwnd, SW_MINIMIZE);
 					return 0;
 				}
-				else if (window->hoveredButton == titlebar_button_maximize)
+				else if (window->hovered_button == TITLEBAR_BUTTON_MAXIMIZE)
 				{
-					window->hoveredButton = titlebar_button_none;
+					window->hovered_button = TITLEBAR_BUTTON_NONE;
 					int mode = IsZoomed(hwnd) ? SW_NORMAL : SW_MAXIMIZE;
 					ShowWindow(hwnd, mode);
 					return 0;
 				}
 			}
-			return DefWindowProc(hwnd, msg, wParam, lParam);
+			return DefWindowProc(hwnd, msg, w_param, l_param);
 		}
 
 		case WM_CREATE:
@@ -2033,18 +2033,18 @@ namespace era_engine
 
 		case WM_DROPFILES:
 		{
-			if (window && window->fileDropCallback)
+			if (window && window->file_drop_callback)
 			{
-				HDROP hdrop = (HDROP)wParam;
+				HDROP hdrop = (HDROP)w_param;
 
-				wchar nextFile[MAX_PATH];
-				uint32 numFiles = DragQueryFileW(hdrop, -1, NULL, 0);
+				wchar next_file[MAX_PATH];
+				uint32 num_files = DragQueryFileW(hdrop, -1, NULL, 0);
 
-				for (uint32 i = 0; i < numFiles; ++i)
+				for (uint32 i = 0; i < num_files; ++i)
 				{
-					if (DragQueryFileW(hdrop, i, nextFile, MAX_PATH) > 0)
+					if (DragQueryFileW(hdrop, i, next_file, MAX_PATH) > 0)
 					{
-						window->fileDropCallback(nextFile);
+						window->file_drop_callback(next_file);
 					}
 				}
 
@@ -2054,14 +2054,14 @@ namespace era_engine
 
 		default:
 		{
-			result = DefWindowProc(hwnd, msg, wParam, lParam);
+			result = DefWindowProc(hwnd, msg, w_param, l_param);
 		} break;
 		}
 
 		return result;
 	}
 
-	bool handleWindowsMessages()
+	bool handle_windows_messages()
 	{
 		MSG msg = { 0 };
 		while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
@@ -2080,12 +2080,12 @@ namespace era_engine
 			DispatchMessage(&msg);
 		}
 
-		if (atLeastOneWindowWasOpened && numOpenWindows == 0)
+		if (at_least_one_window_was_opened && num_open_windows == 0)
 		{
 			running = false;
 		}
 
-		if (win32_window::mainWindow && !win32_window::mainWindow->open)
+		if (Win32Window::main_window && !Win32Window::main_window->open)
 		{
 			running = false;
 		}

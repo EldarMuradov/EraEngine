@@ -3,38 +3,38 @@
 
 #include "indirect.hlsli"
 
-struct particle_dispatch
+struct ParticleDispatch
 {
 	D3D12_DISPATCH_ARGUMENTS emit;
 	D3D12_DISPATCH_ARGUMENTS simulate;
 };
 
-struct particle_draw
+struct ParticleDraw
 {
 	// If you add stuff here, update the command signature creation.
 	D3D12_DRAW_INDEXED_ARGUMENTS arguments;
 };
 
-struct particle_counters
+struct ParticleCounters
 {
-	uint32 numDeadParticles;
-	uint32 numAliveParticlesThisFrame;
-	float emitRateAccum;
-	uint32 newParticles;
+	uint32 num_dead_particles;
+	uint32 num_alive_particles_this_frame;
+	float emit_rate_accum;
+	uint32 new_particles;
 };
 
 #define PARTICLES_EMIT_BLOCK_SIZE		256
 #define PARTICLES_SIMULATE_BLOCK_SIZE	256
 
-struct particle_start_cb
+struct ParticleStartCB
 {
-	float newParticlesRequest;
-	uint32 indexCount;
-	uint32 startIndex;
-	uint32 baseVertex;
+	float new_particles_request;
+	uint32 index_count;
+	uint32 start_index;
+	uint32 base_vertex;
 };
 
-struct particle_sim_cb
+struct ParticleSimCB
 {
 	float dt;
 };

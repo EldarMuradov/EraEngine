@@ -28,7 +28,7 @@ struct wN_vec2
 	wN_vec2(simd_t x, simd_t y) : x(x), y(y) {}
 	wN_vec2(soa_vec2 v, uint32 offset) : x(v.x + offset), y(v.y + offset) {}
 
-	void store(float* xDest, float* yDest) { x.store(xDest); y.store(yDest); }
+	void store(float* x_dest, float* y_dest) { x.store(x_dest); y.store(y_dest); }
 
 	static wN_vec2 NODISCARD zero() { return wN_vec2<simd_t>(simd_t::zero()); }
 };
@@ -60,7 +60,7 @@ struct wN_vec3
 	wN_vec3(wN_vec2<simd_t> xy, simd_t z) : x(xy.x), y(xy.y), z(z) {}
 	wN_vec3(soa_vec3 v, uint32 offset) : x(v.x + offset), y(v.y + offset), z(v.z + offset) {}
 
-	void store(float* xDest, float* yDest, float* zDest) { x.store(xDest); y.store(yDest); z.store(zDest); }
+	void store(float* x_dest, float* y_dest, float* z_dest) { x.store(x_dest); y.store(y_dest); z.store(z_dest); }
 
 	static NODISCARD wN_vec3 zero() { return wN_vec3<simd_t>(simd_t::zero()); }
 };
@@ -97,7 +97,7 @@ struct wN_vec4
 	wN_vec4(wN_vec3<simd_t> xyz, simd_t w) : x(xyz.x), y(xyz.y), z(xyz.z), w(w) {}
 	wN_vec4(soa_vec4 v, uint32 offset) : x(v.x + offset), y(v.y + offset), z(v.z + offset), w(v.w + offset) {}
 
-	void store(float* xDest, float* yDest, float* zDest, float* wDest) { x.store(xDest); y.store(yDest); z.store(zDest); w.store(wDest); }
+	void store(float* x_dest, float* y_dest, float* z_dest, float* w_dest) { x.store(x_dest); y.store(y_dest); z.store(z_dest); w.store(w_dest); }
 
 	static wN_vec4 NODISCARD zero() { return wN_vec4<simd_t>(simd_t::zero()); }
 };
@@ -125,7 +125,7 @@ struct wN_quat
 	wN_quat(wN_vec3<simd_t> axis, simd_t angle);
 	wN_quat(soa_quat v, uint32 offset) : x(v.x + offset), y(v.y + offset), z(v.z + offset), w(v.w + offset) {}
 
-	void store(float* xDest, float* yDest, float* zDest, float* wDest) { x.store(xDest); y.store(yDest); z.store(zDest); w.store(wDest); }
+	void store(float* x_dest, float* y_dest, float* z_dest, float* w_dest) { x.store(x_dest); y.store(y_dest); z.store(z_dest); w.store(w_dest); }
 
 	static wN_quat NODISCARD identity() { return wN_quat<simd_t>(simd_t::zero(), simd_t::zero(), simd_t::zero(), simd_t(1.f)); }
 };
@@ -500,10 +500,10 @@ NODISCARD inline wN_mat3<simd_t> get_skew_matrix(wN_vec3<simd_t> r)
 }
 
 template <typename simd_t>
-NODISCARD inline wN_vec2<simd_t> solve_linear_system(const wN_mat2<simd_t>& A, wN_vec2<simd_t> b)
+NODISCARD inline wN_vec2<simd_t> solve_linear_system(const wN_mat2<simd_t>& a, wN_vec2<simd_t> b)
 {
-	wN_vec2<simd_t> ex(A.m00, A.m10);
-	wN_vec2<simd_t> ey(A.m01, A.m11);
+	wN_vec2<simd_t> ex(a.m00, a.m10);
+	wN_vec2<simd_t> ey(a.m01, a.m11);
 	simd_t det = cross(ex, ey);
 	det = if_then(det != simd_t::zero(), 1.f / det, det);
 
@@ -514,11 +514,11 @@ NODISCARD inline wN_vec2<simd_t> solve_linear_system(const wN_mat2<simd_t>& A, w
 }
 
 template <typename simd_t>
-NODISCARD inline wN_vec3<simd_t> solve_linear_system(const wN_mat3<simd_t>& A, wN_vec3<simd_t> b)
+NODISCARD inline wN_vec3<simd_t> solve_linear_system(const wN_mat3<simd_t>& a, wN_vec3<simd_t> b)
 {
-	wN_vec3<simd_t> ex(A.m00, A.m10, A.m20);
-	wN_vec3<simd_t> ey(A.m01, A.m11, A.m21);
-	wN_vec3<simd_t> ez(A.m02, A.m12, A.m22);
+	wN_vec3<simd_t> ex(a.m00, a.m10, a.m20);
+	wN_vec3<simd_t> ey(a.m01, a.m11, a.m21);
+	wN_vec3<simd_t> ez(a.m02, a.m12, a.m22);
 	simd_t det = dot(ex, cross(ey, ez));
 	det = if_then(det != simd_t::zero(), 1.f / det, det);
 

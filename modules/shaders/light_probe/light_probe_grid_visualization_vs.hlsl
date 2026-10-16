@@ -1,31 +1,31 @@
 #include "light_probe_rs.hlsli"
 
-ConstantBuffer<light_probe_grid_visualization_cb> cb : register(b0);
+ConstantBuffer<LightProbeGridVisualizationCB> cb : register(b0);
 
-struct vs_input
+struct VSInput
 {
 	float3 position		: POSITION;
-	uint instanceID		: SV_InstanceID;
+	uint instance_id		: SV_InstanceID;
 };
 
-struct vs_output
+struct VSOutput
 {
-	float2 uvOffset			: UV_OFFSET;
-	float2 uvScale			: UV_SCALE;
+	float2 uv_offset			: UV_OFFSET;
+	float2 uv_scale			: UV_SCALE;
 	float3 normal			: NORMAL;
 	float4 position			: SV_POSITION;
 };
 
-vs_output main(vs_input IN)
+VSOutput main(VSInput IN)
 {
-	float3 index = linearIndexTo3DIndex(IN.instanceID, cb.countX, cb.countY);
+	float3 index = linear_index_to_3d_index(IN.instance_id, cb.count_x, cb.count_y);
 
 	float radius = 0.1f;
 
-	vs_output OUT;
+	VSOutput OUT;
 	OUT.normal = IN.position;
-	OUT.position = mul(cb.mvp, float4(IN.position * radius + index * cb.cellSize, 1.f));
-	OUT.uvOffset = float2(index.y * cb.countX + index.x, index.z);
-	OUT.uvScale = cb.uvScale;
+	OUT.position = mul(cb.mvp, float4(IN.position * radius + index * cb.cell_size, 1.f));
+	OUT.uv_offset = float2(index.y * cb.count_x + index.x, index.z);
+	OUT.uv_scale = cb.uv_scale;
 	return OUT;
 }

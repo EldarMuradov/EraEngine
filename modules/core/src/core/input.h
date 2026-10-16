@@ -6,71 +6,71 @@ namespace era_engine
 {
     enum class MouseMode
     {
-        Visible,        // Normal cursor, free movement
-        Hidden,         // Cursor hidden but not captured
-        Captured,       // Cursor hidden and locked to center
-        CapturedRaw     // Captured with raw input
+        VISIBLE,        // Normal cursor, free movement
+        HIDDEN,         // Cursor hidden but not captured
+        CAPTURED,       // Cursor hidden and locked to center
+        CAPTURED_RAW     // Captured with raw input
     };
 
-    enum key_code : uint32
+    enum KeyCode : uint32
     {
-        key_none = 0x00,
-        key_left_mouse = VK_LBUTTON,
-        key_right_mouse = VK_RBUTTON,
-        key_middle_mouse = VK_MBUTTON,
-        key_x1_mouse = VK_XBUTTON1,
-        key_x2_mouse = VK_XBUTTON2,
-        key_backspace = VK_BACK,
-        key_tab = VK_TAB,
-        key_enter = VK_RETURN,
-        key_shift = VK_SHIFT,
-        key_ctrl = VK_CONTROL,
-        key_alt = VK_MENU,
-        key_pause = VK_PAUSE,
-        key_caps = VK_CAPITAL,
-        key_esc = VK_ESCAPE,
-        key_space = VK_SPACE,
-        key_page_up = VK_PRIOR,
-        key_page_down = VK_NEXT,
-        key_end = VK_END,
-        key_home = VK_HOME,
-        key_left = VK_LEFT,
-        key_up = VK_UP,
-        key_right = VK_RIGHT,
-        key_down = VK_DOWN,
-        key_print = VK_SNAPSHOT,
-        key_insert = VK_INSERT,
-        key_delete = VK_DELETE,
-        key_0 = '0', key_1 = '1', key_2 = '2', key_3 = '3', key_4 = '4',
-        key_5 = '5', key_6 = '6', key_7 = '7', key_8 = '8', key_9 = '9',
-        key_a = 'A', key_b = 'B', key_c = 'C', key_d = 'D', key_e = 'E',
-        key_f = 'F', key_g = 'G', key_h = 'H', key_i = 'I', key_j = 'J',
-        key_k = 'K', key_l = 'L', key_m = 'M', key_n = 'N', key_o = 'O',
-        key_p = 'P', key_q = 'Q', key_r = 'R', key_s = 'S', key_t = 'T',
-        key_u = 'U', key_v = 'V', key_w = 'W', key_x = 'X', key_y = 'Y',
-        key_z = 'Z',
-        key_numpad_0 = VK_NUMPAD0, key_numpad_1 = VK_NUMPAD1,
-        key_numpad_2 = VK_NUMPAD2, key_numpad_3 = VK_NUMPAD3,
-        key_numpad_4 = VK_NUMPAD4, key_numpad_5 = VK_NUMPAD5,
-        key_numpad_6 = VK_NUMPAD6, key_numpad_7 = VK_NUMPAD7,
-        key_numpad_8 = VK_NUMPAD8, key_numpad_9 = VK_NUMPAD9,
-        key_multiply = VK_MULTIPLY, key_add = VK_ADD,
-        key_subtract = VK_SUBTRACT, key_decimal = VK_DECIMAL,
-        key_divide = VK_DIVIDE,
-        key_f1 = VK_F1, key_f2 = VK_F2, key_f3 = VK_F3, key_f4 = VK_F4,
-        key_f5 = VK_F5, key_f6 = VK_F6, key_f7 = VK_F7, key_f8 = VK_F8,
-        key_f9 = VK_F9, key_f10 = VK_F10, key_f11 = VK_F11, key_f12 = VK_F12,
-        key_num_lock = VK_NUMLOCK, key_scroll_lock = VK_SCROLL,
-        key_left_shift = VK_LSHIFT, key_right_shift = VK_RSHIFT,
-        key_left_ctrl = VK_LCONTROL, key_right_ctrl = VK_RCONTROL,
-        key_left_alt = VK_LMENU, key_right_alt = VK_RMENU,
-        key_semicolon = VK_OEM_1, key_plus = VK_OEM_PLUS,
-        key_comma = VK_OEM_COMMA, key_minus = VK_OEM_MINUS,
-        key_period = VK_OEM_PERIOD, key_slash = VK_OEM_2,
-        key_tilde = VK_OEM_3, key_left_bracket = VK_OEM_4,
-        key_backslash = VK_OEM_5, key_right_bracket = VK_OEM_6,
-        key_quote = VK_OEM_7,
-        key_count = 256
+        KEY_NONE = 0x00,
+        KEY_LEFT_MOUSE = VK_LBUTTON,
+        KEY_RIGHT_MOUSE = VK_RBUTTON,
+        KEY_MIDDLE_MOUSE = VK_MBUTTON,
+        KEY_X1_MOUSE = VK_XBUTTON1,
+        KEY_X2_MOUSE = VK_XBUTTON2,
+        KEY_BACKSPACE = VK_BACK,
+        KEY_TAB = VK_TAB,
+        KEY_ENTER = VK_RETURN,
+        KEY_SHIFT = VK_SHIFT,
+        KEY_CTRL = VK_CONTROL,
+        KEY_ALT = VK_MENU,
+        KEY_PAUSE = VK_PAUSE,
+        KEY_CAPS = VK_CAPITAL,
+        KEY_ESC = VK_ESCAPE,
+        KEY_SPACE = VK_SPACE,
+        KEY_PAGE_UP = VK_PRIOR,
+        KEY_PAGE_DOWN = VK_NEXT,
+        KEY_END = VK_END,
+        KEY_HOME = VK_HOME,
+        KEY_LEFT = VK_LEFT,
+        KEY_UP = VK_UP,
+        KEY_RIGHT = VK_RIGHT,
+        KEY_DOWN = VK_DOWN,
+        KEY_PRINT = VK_SNAPSHOT,
+        KEY_INSERT = VK_INSERT,
+        KEY_DELETE = VK_DELETE,
+        KEY_0 = '0', KEY_1 = '1', KEY_2 = '2', KEY_3 = '3', KEY_4 = '4',
+        KEY_5 = '5', KEY_6 = '6', KEY_7 = '7', KEY_8 = '8', KEY_9 = '9',
+        KEY_A = 'A', KEY_B = 'B', KEY_C = 'C', KEY_D = 'D', KEY_E = 'E',
+        KEY_F = 'F', KEY_G = 'G', KEY_H = 'H', KEY_I = 'I', KEY_J = 'J',
+        KEY_K = 'K', KEY_L = 'L', KEY_M = 'M', KEY_N = 'N', KEY_O = 'O',
+        KEY_P = 'P', KEY_Q = 'Q', KEY_R = 'R', KEY_S = 'S', KEY_T = 'T',
+        KEY_U = 'U', KEY_V = 'V', KEY_W = 'W', KEY_X = 'X', KEY_Y = 'Y',
+        KEY_Z = 'Z',
+        KEY_NUMPAD_0 = VK_NUMPAD0, KEY_NUMPAD_1 = VK_NUMPAD1,
+        KEY_NUMPAD_2 = VK_NUMPAD2, KEY_NUMPAD_3 = VK_NUMPAD3,
+        KEY_NUMPAD_4 = VK_NUMPAD4, KEY_NUMPAD_5 = VK_NUMPAD5,
+        KEY_NUMPAD_6 = VK_NUMPAD6, KEY_NUMPAD_7 = VK_NUMPAD7,
+        KEY_NUMPAD_8 = VK_NUMPAD8, KEY_NUMPAD_9 = VK_NUMPAD9,
+        KEY_MULTIPLY = VK_MULTIPLY, KEY_ADD = VK_ADD,
+        KEY_SUBTRACT = VK_SUBTRACT, KEY_DECIMAL = VK_DECIMAL,
+        KEY_DIVIDE = VK_DIVIDE,
+        KEY_F1 = VK_F1, KEY_F2 = VK_F2, KEY_F3 = VK_F3, KEY_F4 = VK_F4,
+        KEY_F5 = VK_F5, KEY_F6 = VK_F6, KEY_F7 = VK_F7, KEY_F8 = VK_F8,
+        KEY_F9 = VK_F9, KEY_F10 = VK_F10, KEY_F11 = VK_F11, KEY_F12 = VK_F12,
+        KEY_NUM_LOCK = VK_NUMLOCK, KEY_SCROLL_LOCK = VK_SCROLL,
+        KEY_LEFT_SHIFT = VK_LSHIFT, KEY_RIGHT_SHIFT = VK_RSHIFT,
+        KEY_LEFT_CTRL = VK_LCONTROL, KEY_RIGHT_CTRL = VK_RCONTROL,
+        KEY_LEFT_ALT = VK_LMENU, KEY_RIGHT_ALT = VK_RMENU,
+        KEY_SEMICOLON = VK_OEM_1, KEY_PLUS = VK_OEM_PLUS,
+        KEY_COMMA = VK_OEM_COMMA, KEY_MINUS = VK_OEM_MINUS,
+        KEY_PERIOD = VK_OEM_PERIOD, KEY_SLASH = VK_OEM_2,
+        KEY_TILDE = VK_OEM_3, KEY_LEFT_BRACKET = VK_OEM_4,
+        KEY_BACKSLASH = VK_OEM_5, KEY_RIGHT_BRACKET = VK_OEM_6,
+        KEY_QUOTE = VK_OEM_7,
+        KEY_COUNT = 256
     };
 
     struct ERA_CORE_API InputKey
@@ -110,8 +110,8 @@ namespace era_engine
         float raw_dx = 0.0f;
         float raw_dy = 0.0f;
 
-        float relX = 0.0f;
-        float relY = 0.0f;
+        float rel_x = 0.0f;
+        float rel_y = 0.0f;
         float reldx = 0.0f;
         float reldy = 0.0f;
 
@@ -121,7 +121,7 @@ namespace era_engine
 
     struct ERA_CORE_API UserInput
     {
-        InputKey keyboard[key_count];
+        InputKey keyboard[KEY_COUNT];
         MouseInput mouse;
         bool over_window = false;
         bool window_focused = false;
@@ -171,9 +171,9 @@ namespace era_engine
         float idle_time_before_show = 3.0f;
 
         // Key bindings
-        uint32 key_toggle_mouse = key_esc;
-        uint32 key_toggle_cursor = key_tab;
-        uint32 key_capture = key_right_mouse;
+        uint32 key_toggle_mouse = KEY_ESC;
+        uint32 key_toggle_cursor = KEY_TAB;
+        uint32 key_capture = KEY_RIGHT_MOUSE;
 
         // Camera settings
         float camera_distance = 5.0f;

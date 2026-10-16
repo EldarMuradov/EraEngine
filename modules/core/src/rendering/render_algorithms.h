@@ -17,90 +17,90 @@
 
 namespace era_engine
 {
-	enum gaussian_blur_kernel_size
+	enum GaussianBlurKernelSize
 	{
-		gaussian_blur_5x5,
-		gaussian_blur_9x9,
-		gaussian_blur_13x13,
+		GAUSSIAN_BLUR_5X5,
+		GAUSSIAN_BLUR_9X9,
+		GAUSSIAN_BLUR_13X13,
 
-		gaussian_blur_kernel_size_count,
+		GAUSSIAN_BLUR_KERNEL_SIZE_COUNT,
 	};
 
-	struct ssr_settings
+	struct SSRSettings
 	{
-		uint32 numSteps = 400;
-		float maxDistance = 1000.f;
-		float strideCutoff = 100.f;
-		float minStride = 1.f;
-		float maxStride = 30.f;
+		uint32 num_steps = 400;
+		float max_distance = 1000.f;
+		float stride_cutoff = 100.f;
+		float min_stride = 1.f;
+		float max_stride = 30.f;
 	};
-	REFLECT_STRUCT(ssr_settings,
-		(numSteps, "Num steps"),
-		(maxDistance, "Max distance"),
-		(strideCutoff, "Stride cutoff"),
-		(minStride, "Min stride"),
-		(maxStride, "Max stride")
+	REFLECT_STRUCT(SSRSettings,
+		(num_steps, "Num steps"),
+		(max_distance, "Max distance"),
+		(stride_cutoff, "Stride cutoff"),
+		(min_stride, "Min stride"),
+		(max_stride, "Max stride")
 	);
 
-	struct taa_settings
+	struct TAASettings
 	{
-		float cameraJitterStrength = 1.f;
+		float camera_jitter_strength = 1.f;
 	};
-	REFLECT_STRUCT(taa_settings,
-		(cameraJitterStrength, "Camera jitter strength")
+	REFLECT_STRUCT(TAASettings,
+		(camera_jitter_strength, "Camera jitter strength")
 	);
 
-	struct bloom_settings
+	struct BloomSettings
 	{
 		float threshold = 0.500f;
 		float strength = 0.450f; //0.05
 	};
-	REFLECT_STRUCT(bloom_settings,
+	REFLECT_STRUCT(BloomSettings,
 		(threshold, "Threshold"),
 		(strength, "Strength")
 	);
 
-	struct hbao_settings
+	struct HBAOSettings
 	{
 		float radius = 1.0f;
-		uint32 numRays = 4;
-		uint32 maxNumStepsPerRay = 10;
+		uint32 num_rays = 4;
+		uint32 max_num_steps_per_ray = 10;
 		float strength = 1.f;
 	};
-	REFLECT_STRUCT(hbao_settings,
+	REFLECT_STRUCT(HBAOSettings,
 		(radius, "Threshold"),
-		(numRays, "Num rays"),
-		(maxNumStepsPerRay, "Max num steps per ray"),
+		(num_rays, "Num rays"),
+		(max_num_steps_per_ray, "Max num steps per ray"),
 		(strength, "Strength")
 	);
 
-	struct sharpen_settings
+	struct SharpenSettings
 	{
 		float strength = 0.230f; //0.5
 	};
-	REFLECT_STRUCT(sharpen_settings,
+	REFLECT_STRUCT(SharpenSettings,
 		(strength, "Strength")
 	);
 
-	struct sss_settings
+	struct SSSSettings
 	{
-		uint32 numSteps = 16;
-		float rayDistance = 0.5f;
+		uint32 num_steps = 16;
+		float ray_distance = 0.5f;
 		float thickness = 0.05f;
-		float maxDistanceFromCamera = 5.0f;
-		float distanceFadeoutRange = 2.f;
-		float borderFadeout = 0.1f; // In UV-space
+		float max_distance_from_camera = 5.0f;
+		float distance_fadeout_range = 2.f;
+		float border_fadeout = 0.1f; // In UV-space
 	};
-	REFLECT_STRUCT(sss_settings,
-		(numSteps, "Num steps"),
-		(rayDistance, "Ray distance"),
+	REFLECT_STRUCT(SSSSettings,
+		(num_steps, "Num steps"),
+		(ray_distance, "Ray distance"),
 		(thickness, "Thickness"),
-		(maxDistanceFromCamera, "Max distance from camera"),
-		(distanceFadeoutRange, "Distance fadeout range"),
-		(borderFadeout, "Border fadeout")
+		(max_distance_from_camera, "Max distance from camera"),
+		(distance_fadeout_range, "Distance fadeout range"),
+		(border_fadeout, "Border fadeout")
 	);
 
-	struct tonemap_settings
+	struct TonemapSettings
 	{
 		float A = 0.340f; // Shoulder strength. 0.22
 		float B = 0.150f; // Linear strength. 0.3
@@ -109,14 +109,14 @@ namespace era_engine
 		float E = 0.01f; // Toe Numerator
 		float F = 0.34f; // Toe denominator
 		// Note E/F = Toe angle
-		float linearWhite = 11.2f;
+		float linear_white = 11.2f;
 
 		float exposure = -0.080f; //0.2
 
 		NODISCARD float tonemap(float color) const
 		{
 			color *= exp2(exposure);
-			return evaluate(color) / evaluate(linearWhite);
+			return evaluate(color) / evaluate(linear_white);
 		}
 
 		NODISCARD float evaluate(float x) const
@@ -124,23 +124,23 @@ namespace era_engine
 			return ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - (E / F);
 		}
 	};
-	REFLECT_STRUCT(tonemap_settings,
+	REFLECT_STRUCT(TonemapSettings,
 		(A),
 		(B),
 		(C),
 		(D),
 		(E),
 		(F),
-		(linearWhite, "Linear white"),
+		(linear_white, "Linear white"),
 		(exposure, "Exposure")
 	);
 
-	struct light_culling
+	struct LightCulling
 	{
-		ref<dx_buffer> tiledWorldSpaceFrustaBuffer;
+		ref<DXBuffer> tiled_world_space_frusta_buffer;
 
-		ref<dx_buffer> tiledCullingIndexCounter;
-		ref<dx_buffer> tiledObjectsIndexList;
+		ref<DXBuffer> tiled_culling_index_counter;
+		ref<DXBuffer> tiled_objects_index_list;
 
 		// DXGI_FORMAT_R32G32B32A32_UINT
 		// The R&B channel contains the offset into tiledObjectsIndexList
@@ -149,184 +149,184 @@ namespace era_engine
 		// Transparent is in B,A
 		// For more info, see light_culling_cs.hlsl
 
-		ref<dx_texture> tiledCullingGrid;
+		ref<DXTexture> tiled_culling_grid;
 
-		uint32 numCullingTilesX{};
-		uint32 numCullingTilesY{};
+		uint32 num_culling_tiles_x{};
+		uint32 num_culling_tiles_y{};
 
-		void allocateIfNecessary(uint32 renderWidth, uint32 renderHeight);
+		void allocate_if_necessary(uint32 render_width, uint32 render_height);
 	};
 
-	enum stencil_flags
+	enum StencilFlags
 	{
-		stencil_flag_selected_object = (1 << 0),
+		STENCIL_FLAG_SELECTED_OBJECT = (1 << 0),
 	};
 
-	void depthPrePass(dx_command_list* cl,
-		const dx_render_target& depthOnlyRenderTarget,
-		const opaque_render_pass* opaqueRenderPass,
-		const mat4& viewProj, const mat4& prevFrameViewProj,
-		const common_render_data& common);
+	void depth_pre_pass(DXCommandList* cl,
+		const DXRenderTarget& depth_only_render_target,
+		const OpaqueRenderPass* opaque_render_pass,
+		const mat4& view_proj, const mat4& prev_frame_view_proj,
+		const CommonRenderData& common);
 
-	void texturedSky(dx_command_list* cl,
-		const dx_render_target& skyRenderTarget,
-		const mat4& proj, const mat4& view, const mat4& prevFrameView,
-		ref<dx_texture> sky,
-		float skyIntensity,
-		vec2 jitter, vec2 prevFrameJitter);
+	void textured_sky(DXCommandList* cl,
+		const DXRenderTarget& sky_render_target,
+		const mat4& proj, const mat4& view, const mat4& prev_frame_view,
+		ref<DXTexture> sky,
+		float sky_intensity,
+		vec2 jitter, vec2 prev_frame_jitter);
 
-	void proceduralSky(dx_command_list* cl,
-		const dx_render_target& skyRenderTarget,
-		const mat4& proj, const mat4& view, const mat4& prevFrameView,
-		vec3 sunDirection, float skyIntensity,
-		vec2 jitter, vec2 prevFrameJitter);
+	void procedural_sky(DXCommandList* cl,
+		const DXRenderTarget& sky_render_target,
+		const mat4& proj, const mat4& view, const mat4& prev_frame_view,
+		vec3 sun_direction, float sky_intensity,
+		vec2 jitter, vec2 prev_frame_jitter);
 
-	void shadowPasses(dx_command_list* cl,
-		const sun_shadow_render_pass** sunShadowRenderPasses, uint32 numSunLightShadowRenderPasses,
-		const spot_shadow_render_pass** spotLightShadowRenderPasses, uint32 numSpotLightShadowRenderPasses,
-		const point_shadow_render_pass** pointLightShadowRenderPasses, uint32 numPointLightShadowRenderPasses,
-		const common_render_data& common);
+	void shadow_passes(DXCommandList* cl,
+		const SunShadowRenderPass** sun_shadow_render_passes, uint32 num_sun_light_shadow_render_passes,
+		const SpotShadowRenderPass** spot_light_shadow_render_passes, uint32 num_spot_light_shadow_render_passes,
+		const PointShadowRenderPass** point_light_shadow_render_passes, uint32 num_point_light_shadow_render_passes,
+		const CommonRenderData& common);
 
-	void opaqueLightPass(dx_command_list* cl,
-		const dx_render_target& renderTarget,
-		const opaque_render_pass* opaqueRenderPass,
-		const common_render_data& common,
-		const mat4& viewProj);
+	void opaque_light_pass(DXCommandList* cl,
+		const DXRenderTarget& render_target,
+		const OpaqueRenderPass* opaque_render_pass,
+		const CommonRenderData& common,
+		const mat4& view_proj);
 
-	void transparentLightPass(dx_command_list* cl,
-		const dx_render_target& renderTarget,
-		const transparent_render_pass* transparentRenderPass,
-		const common_render_data& common,
-		const mat4& viewProj);
+	void transparent_light_pass(DXCommandList* cl,
+		const DXRenderTarget& render_target,
+		const TransparentRenderPass* transparent_render_pass,
+		const CommonRenderData& common,
+		const mat4& view_proj);
 
-	void ldrPass(dx_command_list* cl,
-		const dx_render_target& ldrRenderTarget,
-		ref<dx_texture> depthStencilBuffer,			// DEPTH_WRITE. Must be same as DSV bound to render-target.
-		const ldr_render_pass* ldrRenderPass,
-		const common_render_data& common,
-		const mat4& viewProj);
+	void ldr_pass(DXCommandList* cl,
+		const DXRenderTarget& ldr_render_target,
+		ref<DXTexture> depth_stencil_buffer,			// DEPTH_WRITE. Must be same as DSV bound to render-target.
+		const LDRRenderPass* ldr_render_pass,
+		const CommonRenderData& common,
+		const mat4& view_proj);
 
-	void copyShadowMapParts(dx_command_list* cl,
-		ref<dx_texture> from,						// PIXEL_SHADER_RESOURCE
-		ref<dx_texture> to,							// DEPTH_WRITE
-		shadow_map_viewport* copies, uint32 numCopies);
+	void copy_shadow_map_parts(DXCommandList* cl,
+		ref<DXTexture> from,						// PIXEL_SHADER_RESOURCE
+		ref<DXTexture> to,							// DEPTH_WRITE
+		ShadowMapViewport* copies, uint32 num_copies);
 
-	void lightAndDecalCulling(dx_command_list* cl,
-		ref<dx_texture> depthStencilBuffer,				// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_buffer> pointLights,
-		ref<dx_buffer> spotLights,
-		ref<dx_buffer> decals,
-		light_culling culling,
-		uint32 numPointLights, uint32 numSpotLights, uint32 numDecals,
-		dx_dynamic_constant_buffer cameraCBV);
+	void light_and_decal_culling(DXCommandList* cl,
+		ref<DXTexture> depth_stencil_buffer,				// NON_PIXEL_SHADER_RESOURCE
+		ref<DXBuffer> point_lights,
+		ref<DXBuffer> spot_lights,
+		ref<DXBuffer> decals,
+		LightCulling culling,
+		uint32 num_point_lights, uint32 num_spot_lights, uint32 num_decals,
+		DXDynamicConstantBuffer camera_cbv);
 
-	void linearDepthPyramid(dx_command_list* cl,
-		ref<dx_texture> depthStencilBuffer,				// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> linearDepthBuffer,				// UNORDERED_ACCESS
-		vec4 projectionParams);
+	void linear_depth_pyramid(DXCommandList* cl,
+		ref<DXTexture> depth_stencil_buffer,				// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> linear_depth_buffer,				// UNORDERED_ACCESS
+		vec4 projection_params);
 
-	void gaussianBlur(dx_command_list* cl,
-		ref<dx_texture> inputOutput,					// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> temp,							// UNORDERED_ACCESS
-		uint32 inputMip, uint32 outputMip, gaussian_blur_kernel_size kernel, uint32 numIterations = 1);
+	void gaussian_blur(DXCommandList* cl,
+		ref<DXTexture> input_output,					// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> temp,							// UNORDERED_ACCESS
+		uint32 input_mip, uint32 output_mip, GaussianBlurKernelSize kernel, uint32 num_iterations = 1);
 
-	void dilate(dx_command_list* cl,
-		ref<dx_texture> inputOutput,					// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> temp,							// UNORDERED_ACCESS
-		uint32 radius, uint32 numIterations = 1);
+	void dilate(DXCommandList* cl,
+		ref<DXTexture> input_output,					// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> temp,							// UNORDERED_ACCESS
+		uint32 radius, uint32 num_iterations = 1);
 
-	void erode(dx_command_list* cl,
-		ref<dx_texture> inputOutput,					// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> temp,							// UNORDERED_ACCESS
-		uint32 radius, uint32 numIterations = 1);
+	void erode(DXCommandList* cl,
+		ref<DXTexture> input_output,					// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> temp,							// UNORDERED_ACCESS
+		uint32 radius, uint32 num_iterations = 1);
 
-	void depthSobel(dx_command_list* cl,
-		ref<dx_texture> input,							// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> output,							// UNORDERED_ACCESS
-		vec4 projectionParams, float threshold);
+	void depth_sobel(DXCommandList* cl,
+		ref<DXTexture> input,							// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> output,							// UNORDERED_ACCESS
+		vec4 projection_params, float threshold);
 
-	void screenSpaceReflections(dx_command_list* cl,
-		ref<dx_texture> prevFrameHDR,					// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> depthStencilBuffer,				// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> linearDepthBuffer,				// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> worldNormalsRoughnessTexture,	// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> screenVelocitiesTexture,		// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> raycastTexture,					// UNORDERED_ACCESS
-		ref<dx_texture> resolveTexture,					// UNORDERED_ACCESS. After call D3D12_RESOURCE_STATE_GENERIC_READ. Also output of this algorithm
-		ref<dx_texture> ssrTemporalHistory,				// NON_PIXEL_SHADER_RESOURCE. After call UNORDERED_ACCESS
-		ref<dx_texture> ssrTemporalOutput,				// UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE
-		ssr_settings settings,
-		dx_dynamic_constant_buffer cameraCBV);
+	void screen_space_reflections(DXCommandList* cl,
+		ref<DXTexture> prev_frame_hdr,					// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> depth_stencil_buffer,				// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> linear_depth_buffer,				// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> world_normals_roughness_texture,	// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> screen_velocities_texture,		// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> raycast_texture,					// UNORDERED_ACCESS
+		ref<DXTexture> resolve_texture,					// UNORDERED_ACCESS. After call D3D12_RESOURCE_STATE_GENERIC_READ. Also output of this algorithm
+		ref<DXTexture> ssr_temporal_history,				// NON_PIXEL_SHADER_RESOURCE. After call UNORDERED_ACCESS
+		ref<DXTexture> ssr_temporal_output,				// UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE
+		SSRSettings settings,
+		DXDynamicConstantBuffer camera_cbv);
 
-	void specularAmbient(dx_command_list* cl,
-		ref<dx_texture> hdrInput,						// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> ssr,							// NON_PIXEL_SHADER_RESOURCE. Can be null
-		ref<dx_texture> worldNormalsTexture,			// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> reflectanceTexture,				// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> environment,					// NON_PIXEL_SHADER_RESOURCE. Can be null
-		ref<dx_texture> ao,								// NON_PIXEL_SHADER_RESOURCE. Can be null
-		ref<dx_texture> output,							// UNORDERED_ACCESS
-		dx_dynamic_constant_buffer cameraCBV);
+	void specular_ambient(DXCommandList* cl,
+		ref<DXTexture> hdr_input,						// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> ssr,							// NON_PIXEL_SHADER_RESOURCE. Can be null
+		ref<DXTexture> world_normals_texture,			// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> reflectance_texture,				// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> environment,					// NON_PIXEL_SHADER_RESOURCE. Can be null
+		ref<DXTexture> ao,								// NON_PIXEL_SHADER_RESOURCE. Can be null
+		ref<DXTexture> output,							// UNORDERED_ACCESS
+		DXDynamicConstantBuffer camera_cbv);
 
-	void temporalAntiAliasing(dx_command_list* cl,
-		ref<dx_texture> hdrInput,						// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> screenVelocitiesTexture,		// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> depthStencilBuffer,				// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> history,						// NON_PIXEL_SHADER_RESOURCE. After call UNORDERED_ACCESS
-		ref<dx_texture> output,							// UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE
-		vec4 jitteredCameraProjectionParams);
+	void temporal_anti_aliasing(DXCommandList* cl,
+		ref<DXTexture> hdr_input,						// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> screen_velocities_texture,		// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> depth_stencil_buffer,				// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> history,						// NON_PIXEL_SHADER_RESOURCE. After call UNORDERED_ACCESS
+		ref<DXTexture> output,							// UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE
+		vec4 jittered_camera_projection_params);
 
-	void downsample(dx_command_list* cl,
-		ref<dx_texture> input,							// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> output,							// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> temp);							// UNORDERED_ACCESS
+	void downsample(DXCommandList* cl,
+		ref<DXTexture> input,							// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> output,							// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> temp);							// UNORDERED_ACCESS
 
-	void bloom(dx_command_list* cl,
-		ref<dx_texture> hdrInput,						// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> output,							// Input as UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> bloomTexture,					// UNORDERED_ACCESS
-		ref<dx_texture> bloomTempTexture,				// UNORDERED_ACCESS
-		bloom_settings settings);
+	void bloom(DXCommandList* cl,
+		ref<DXTexture> hdr_input,						// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> output,							// Input as UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> bloom_texture,					// UNORDERED_ACCESS
+		ref<DXTexture> bloom_temp_texture,				// UNORDERED_ACCESS
+		BloomSettings settings);
 
-	void ambientOcclusion(dx_command_list* cl,
-		ref<dx_texture> linearDepth,					// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> screenVelocitiesTexture,		// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> aoCalculationTexture,			// UNORDERED_ACCESS
-		ref<dx_texture> aoBlurTempTexture,				// UNORDERED_ACCESS
-		ref<dx_texture> history,						// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> output,							// UNORDERED_ACCESS
-		hbao_settings settings,
-		dx_dynamic_constant_buffer cameraCBV);
+	void ambient_occlusion(DXCommandList* cl,
+		ref<DXTexture> linear_depth,					// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> screen_velocities_texture,		// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> ao_calculation_texture,			// UNORDERED_ACCESS
+		ref<DXTexture> ao_blur_temp_texture,				// UNORDERED_ACCESS
+		ref<DXTexture> history,						// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> output,							// UNORDERED_ACCESS
+		HBAOSettings settings,
+		DXDynamicConstantBuffer camera_cbv);
 
-	void screenSpaceShadows(dx_command_list* cl,
-		ref<dx_texture> linearDepth,					// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> screenVelocitiesTexture,		// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> sssCalculationTexture,			// UNORDERED_ACCESS
-		ref<dx_texture> sssBlurTempTexture,				// UNORDERED_ACCESS
-		ref<dx_texture> history,						// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> output,							// UNORDERED_ACCESS
-		vec3 sunDirection,
-		sss_settings settings,
+	void screen_space_shadows(DXCommandList* cl,
+		ref<DXTexture> linear_depth,					// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> screen_velocities_texture,		// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> sss_calculation_texture,			// UNORDERED_ACCESS
+		ref<DXTexture> sss_blur_temp_texture,				// UNORDERED_ACCESS
+		ref<DXTexture> history,						// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> output,							// UNORDERED_ACCESS
+		vec3 sun_direction,
+		SSSSettings settings,
 		const mat4& view,
-		dx_dynamic_constant_buffer cameraCBV);
+		DXDynamicConstantBuffer camera_cbv);
 
-	void tonemap(dx_command_list* cl,
-		ref<dx_texture> hdrInput,						// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> ldrOutput,						// UNORDERED_ACCESS
-		const tonemap_settings& settings);
+	void tonemap(DXCommandList* cl,
+		ref<DXTexture> hdr_input,						// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> ldr_output,						// UNORDERED_ACCESS
+		const TonemapSettings& settings);
 
-	void blit(dx_command_list* cl,
-		ref<dx_texture> input,							// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> output);						// UNORDERED_ACCESS
+	void blit(DXCommandList* cl,
+		ref<DXTexture> input,							// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> output);						// UNORDERED_ACCESS
 
-	void present(dx_command_list* cl,
-		ref<dx_texture> ldrInput,						// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> output,							// UNORDERED_ACCESS
-		sharpen_settings sharpenSettings);
+	void present(DXCommandList* cl,
+		ref<DXTexture> ldr_input,						// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> output,							// UNORDERED_ACCESS
+		SharpenSettings sharpen_settings);
 
-	void visualizeSunShadowCascades(dx_command_list* cl,
-		ref<dx_texture> depthBuffer,					// NON_PIXEL_SHADER_RESOURCE
-		ref<dx_texture> output,							// UNORDERED_ACCESS
-		dx_dynamic_constant_buffer sunCBV,
-		const mat4& invViewProj, vec3 cameraPosition, vec3 cameraForward);
+	void visualize_sun_shadow_cascades(DXCommandList* cl,
+		ref<DXTexture> depth_buffer,					// NON_PIXEL_SHADER_RESOURCE
+		ref<DXTexture> output,							// UNORDERED_ACCESS
+		DXDynamicConstantBuffer sun_cbv,
+		const mat4& inv_view_proj, vec3 camera_position, vec3 camera_forward);
 }

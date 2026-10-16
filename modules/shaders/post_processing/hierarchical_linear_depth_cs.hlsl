@@ -4,100 +4,100 @@
 
 // This shader outputs the depth in world units!
 
-ConstantBuffer<hierarchical_linear_depth_cb> cb	    : register(b0);
+ConstantBuffer<HierarchicalLinearDepthCB> cb	    : register(b0);
 
-RWTexture2D<float> outputMip0						: register(u0);
-RWTexture2D<float> outputMip1						: register(u1);
-RWTexture2D<float> outputMip2						: register(u2);
-RWTexture2D<float> outputMip3						: register(u3);
-RWTexture2D<float> outputMip4						: register(u4);
-RWTexture2D<float> outputMip5						: register(u5);
+RWTexture2D<float> output_mip0						: register(u0);
+RWTexture2D<float> output_mip1						: register(u1);
+RWTexture2D<float> output_mip2						: register(u2);
+RWTexture2D<float> output_mip3						: register(u3);
+RWTexture2D<float> output_mip4						: register(u4);
+RWTexture2D<float> output_mip5						: register(u5);
 
 Texture2D<float> input								: register(t0);
 
-SamplerState linearClampSampler						: register(s0);
+SamplerState linear_clamp_sampler						: register(s0);
 
 groupshared float tile[POST_PROCESSING_BLOCK_SIZE][POST_PROCESSING_BLOCK_SIZE];
 
 [RootSignature(HIERARCHICAL_LINEAR_DEPTH_RS)]
 [numthreads(POST_PROCESSING_BLOCK_SIZE, POST_PROCESSING_BLOCK_SIZE, 1)]
-void main(cs_input IN)
+void main(CSInput IN)
 {
-	const uint2 groupThreadID = IN.groupThreadID.xy;
-	const uint2 dispatchThreadID = IN.dispatchThreadID.xy;
+	const uint2 group_thread_id = IN.group_thread_id.xy;
+	const uint2 dispatch_thread_id = IN.dispatch_thread_id.xy;
 
 #if 0
-	float2 uv = (dispatchThreadID + float2(0.7f, 0.7f)) * cb.invDimensions;
-	float4 depths = input.Gather(linearClampSampler, uv);
+	float2 uv = (dispatch_thread_id + float2(0.7f, 0.7f)) * cb.inv_dimensions;
+	float4 depths = input.Gather(linear_clamp_sampler, uv);
 	depths = depths.wzxy; // This brings it into the same order as the variant below. See https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/gather4--sm5---asm-
 #else
 	float4 depths = float4(
-		input[dispatchThreadID * 2 + uint2(0, 0)],
-		input[dispatchThreadID * 2 + uint2(1, 0)],
-		input[dispatchThreadID * 2 + uint2(0, 1)],
-		input[dispatchThreadID * 2 + uint2(1, 1)]
+		input[dispatch_thread_id * 2 + uint2(0, 0)],
+		input[dispatch_thread_id * 2 + uint2(1, 0)],
+		input[dispatch_thread_id * 2 + uint2(0, 1)],
+		input[dispatch_thread_id * 2 + uint2(1, 1)]
 	);
 #endif
 	float maxdepth = max(depths.x, max(depths.y, max(depths.z, depths.w)));
-	tile[groupThreadID.x][groupThreadID.y] = maxdepth;
+	tile[group_thread_id.x][group_thread_id.y] = maxdepth;
 
 	GroupMemoryBarrierWithGroupSync();
 
-	if (groupThreadID.x % 2 == 0 && groupThreadID.y % 2 == 0)
+	if (group_thread_id.x % 2 == 0 && group_thread_id.y % 2 == 0)
 	{
-		maxdepth = max(tile[groupThreadID.x][groupThreadID.y], 
-			max(tile[groupThreadID.x + 1][groupThreadID.y], 
-			max(tile[groupThreadID.x][groupThreadID.y + 1], 
-				tile[groupThreadID.x + 1][groupThreadID.y + 1])));
-		tile[groupThreadID.x][groupThreadID.y] = maxdepth;
+		maxdepth = max(tile[group_thread_id.x][group_thread_id.y], 
+			max(tile[group_thread_id.x + 1][group_thread_id.y], 
+			max(tile[group_thread_id.x][group_thread_id.y + 1], 
+				tile[group_thread_id.x + 1][group_thread_id.y + 1])));
+		tile[group_thread_id.x][group_thread_id.y] = maxdepth;
 	}
 	GroupMemoryBarrierWithGroupSync();
 
 	const float4 lineardepths = float4
 	(
-		depthBufferDepthToEyeDepth(depths.x, cb.projectionParams),
-		depthBufferDepthToEyeDepth(depths.y, cb.projectionParams),
-		depthBufferDepthToEyeDepth(depths.z, cb.projectionParams),
-		depthBufferDepthToEyeDepth(depths.w, cb.projectionParams)
+		depth_buffer_depth_to_eye_depth(depths.x, cb.projection_params),
+		depth_buffer_depth_to_eye_depth(depths.y, cb.projection_params),
+		depth_buffer_depth_to_eye_depth(depths.z, cb.projection_params),
+		depth_buffer_depth_to_eye_depth(depths.w, cb.projection_params)
 	);
 
-	outputMip0[dispatchThreadID * 2 + uint2(0, 0)] = lineardepths.x;
-	outputMip0[dispatchThreadID * 2 + uint2(1, 0)] = lineardepths.y;
-	outputMip0[dispatchThreadID * 2 + uint2(0, 1)] = lineardepths.z;
-	outputMip0[dispatchThreadID * 2 + uint2(1, 1)] = lineardepths.w;
+	output_mip0[dispatch_thread_id * 2 + uint2(0, 0)] = lineardepths.x;
+	output_mip0[dispatch_thread_id * 2 + uint2(1, 0)] = lineardepths.y;
+	output_mip0[dispatch_thread_id * 2 + uint2(0, 1)] = lineardepths.z;
+	output_mip0[dispatch_thread_id * 2 + uint2(1, 1)] = lineardepths.w;
 
 	maxdepth = max(lineardepths.x, max(lineardepths.y, max(lineardepths.z, lineardepths.w)));
-	tile[groupThreadID.x][groupThreadID.y] = maxdepth;
-	outputMip1[dispatchThreadID] = maxdepth;
+	tile[group_thread_id.x][group_thread_id.y] = maxdepth;
+	output_mip1[dispatch_thread_id] = maxdepth;
 	GroupMemoryBarrierWithGroupSync();
 
-	if (groupThreadID.x % 2 == 0 && groupThreadID.y % 2 == 0)
+	if (group_thread_id.x % 2 == 0 && group_thread_id.y % 2 == 0)
 	{
-		maxdepth = max(tile[groupThreadID.x][groupThreadID.y], max(tile[groupThreadID.x + 1][groupThreadID.y], max(tile[groupThreadID.x][groupThreadID.y + 1], tile[groupThreadID.x + 1][groupThreadID.y + 1])));
-		tile[groupThreadID.x][groupThreadID.y] = maxdepth;
-		outputMip2[dispatchThreadID / 2] = maxdepth;
+		maxdepth = max(tile[group_thread_id.x][group_thread_id.y], max(tile[group_thread_id.x + 1][group_thread_id.y], max(tile[group_thread_id.x][group_thread_id.y + 1], tile[group_thread_id.x + 1][group_thread_id.y + 1])));
+		tile[group_thread_id.x][group_thread_id.y] = maxdepth;
+		output_mip2[dispatch_thread_id / 2] = maxdepth;
 	}
 	GroupMemoryBarrierWithGroupSync();
 
-	if (groupThreadID.x % 4 == 0 && groupThreadID.y % 4 == 0)
+	if (group_thread_id.x % 4 == 0 && group_thread_id.y % 4 == 0)
 	{
-		maxdepth = max(tile[groupThreadID.x][groupThreadID.y], max(tile[groupThreadID.x + 2][groupThreadID.y], max(tile[groupThreadID.x][groupThreadID.y + 2], tile[groupThreadID.x + 2][groupThreadID.y + 2])));
-		tile[groupThreadID.x][groupThreadID.y] = maxdepth;
-		outputMip3[dispatchThreadID / 4] = maxdepth;
+		maxdepth = max(tile[group_thread_id.x][group_thread_id.y], max(tile[group_thread_id.x + 2][group_thread_id.y], max(tile[group_thread_id.x][group_thread_id.y + 2], tile[group_thread_id.x + 2][group_thread_id.y + 2])));
+		tile[group_thread_id.x][group_thread_id.y] = maxdepth;
+		output_mip3[dispatch_thread_id / 4] = maxdepth;
 	}
 	GroupMemoryBarrierWithGroupSync();
 
-	if (groupThreadID.x % 8 == 0 && groupThreadID.y % 8 == 0)
+	if (group_thread_id.x % 8 == 0 && group_thread_id.y % 8 == 0)
 	{
-		maxdepth = max(tile[groupThreadID.x][groupThreadID.y], max(tile[groupThreadID.x + 4][groupThreadID.y], max(tile[groupThreadID.x][groupThreadID.y + 4], tile[groupThreadID.x + 4][groupThreadID.y + 4])));
-		tile[groupThreadID.x][groupThreadID.y] = maxdepth;
-		outputMip4[dispatchThreadID / 8] = maxdepth;
+		maxdepth = max(tile[group_thread_id.x][group_thread_id.y], max(tile[group_thread_id.x + 4][group_thread_id.y], max(tile[group_thread_id.x][group_thread_id.y + 4], tile[group_thread_id.x + 4][group_thread_id.y + 4])));
+		tile[group_thread_id.x][group_thread_id.y] = maxdepth;
+		output_mip4[dispatch_thread_id / 8] = maxdepth;
 	}
 	GroupMemoryBarrierWithGroupSync();
 
-	if (groupThreadID.x % 16 == 0 && groupThreadID.y % 16 == 0)
+	if (group_thread_id.x % 16 == 0 && group_thread_id.y % 16 == 0)
 	{
-		maxdepth = max(tile[groupThreadID.x][groupThreadID.y], max(tile[groupThreadID.x + 8][groupThreadID.y], max(tile[groupThreadID.x][groupThreadID.y + 8], tile[groupThreadID.x + 8][groupThreadID.y + 8])));
-		outputMip5[dispatchThreadID / 16] = maxdepth;
+		maxdepth = max(tile[group_thread_id.x][group_thread_id.y], max(tile[group_thread_id.x + 8][group_thread_id.y], max(tile[group_thread_id.x][group_thread_id.y + 8], tile[group_thread_id.x + 8][group_thread_id.y + 8])));
+		output_mip5[dispatch_thread_id / 16] = maxdepth;
 	}
 }

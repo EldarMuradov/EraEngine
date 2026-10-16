@@ -115,10 +115,10 @@ namespace era_engine::animation
 		for (auto [entity_handle, animation_component, mesh_component, skeleton_component, transform_component] :
 			world->group(components_group<AnimationComponent, MeshComponent, SkeletonComponent, TransformComponent>).each())
 		{
-			const dx_mesh& dxMesh = mesh_component.mesh->mesh;
+			const DXMesh& dx_mesh = mesh_component.mesh->mesh;
 
-			if (dxMesh.vertexBuffer.positions == nullptr ||
-				dxMesh.vertexBuffer.positions->elementCount == 0)
+			if (dx_mesh.vertex_buffer.positions == nullptr ||
+				dx_mesh.vertex_buffer.positions->element_count == 0)
 			{
 				continue;
 			}
@@ -127,7 +127,7 @@ namespace era_engine::animation
 
 			animation_component.current_global_transforms = nullptr;
 
-			auto [vb, skinning_matrices] = skinObject(dxMesh.vertexBuffer, dxMesh.vertexBuffer.positions->elementCount, (uint32)skeleton->joints.size());
+			auto [vb, skinning_matrices] = skin_object(dx_mesh.vertex_buffer, dx_mesh.vertex_buffer.positions->element_count, (uint32)skeleton->joints.size());
 
 			animation_component.prev_frame_vertex_buffer = animation_component.current_vertex_buffer;
 			animation_component.current_vertex_buffer = vb;

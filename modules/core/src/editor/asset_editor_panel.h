@@ -13,68 +13,68 @@
 
 namespace era_engine
 {
-	struct editor_scene;
+	struct EditorScene;
 
-	struct asset_editor_panel
+	struct AssetEditorPanel
 	{
-		virtual void beginFrame();
-		virtual void endFrame() {}
+		virtual void begin_frame();
+		virtual void end_frame() {}
 
-		bool isOpen() const { return windowOpen; }
+		bool is_open() const { return window_open; }
 		void open();
 		void close();
 
 	private:
-		virtual void edit(uint32 renderWidth, uint32 renderHeight) = 0;
-		virtual ref<dx_texture> getRendering() = 0;
-		virtual void setDragDropData(void* data, uint32 size) {}
+		virtual void edit(uint32 render_width, uint32 render_height) = 0;
+		virtual ref<DXTexture> get_rendering() = 0;
+		virtual void set_drag_drop_data(void* data, uint32 size) {}
 
 	protected:
 		const char* title;
-		const char* dragDropTarget;
+		const char* drag_drop_target;
 
-		bool windowOpen = false;
-		bool windowOpenInternal = false;
+		bool window_open = false;
+		bool window_open_internal = false;
 	};
 
-	struct mesh_editor_panel : asset_editor_panel
+	struct MeshEditorPanel : AssetEditorPanel
 	{
-		mesh_editor_panel();
+		MeshEditorPanel();
 
-		virtual void beginFrame() override;
-		virtual void endFrame() override;
+		virtual void begin_frame() override;
+		virtual void end_frame() override;
 
-		void setMesh(ref<MultiMesh> m) { mesh = m; }
-		void setScene(ref<EditorScene> _scene) { scene = _scene; }
+		void set_mesh(ref<MultiMesh> m) { mesh = m; }
+		void set_scene(ref<EditorScene> _scene) { scene = _scene; }
 
-		bool isHovered() const { return hovered; }
+		bool is_hovered() const { return hovered; }
 
-		render_camera camera;
+		RenderCamera camera;
 
 	private:
-		virtual void edit(uint32 renderWidth, uint32 renderHeight) override;
-		virtual ref<dx_texture> getRendering() override;
-		virtual void setDragDropData(void* data, uint32 size) override;
+		virtual void edit(uint32 render_width, uint32 render_height) override;
+		virtual ref<DXTexture> get_rendering() override;
+		virtual void set_drag_drop_data(void* data, uint32 size) override;
 
 		ref<MultiMesh> mesh;
 		ref<EditorScene> scene = nullptr;
-		main_renderer renderer;
+		MainRenderer renderer;
 
 		UserInput input = {};
 
-		camera_controller controller;
+		CameraController controller;
 
-		opaque_render_pass renderPass;
+		OpaqueRenderPass render_pass;
 
 		uint32 width;
 		uint32 height;
 
-		bool appFocusedLastFrame = true;
+		bool app_focused_last_frame = true;
 		bool hovered = false;
 	};
 
-	struct editor_panels
+	struct EditorPanels
 	{
-		mesh_editor_panel meshEditor;
+		MeshEditorPanel mesh_editor;
 	};
 }

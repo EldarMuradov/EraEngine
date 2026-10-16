@@ -9,7 +9,7 @@
 
 namespace era_engine
 {
-	bool dxProfilerWindowOpen = false;
+	bool dx_profiler_window_open = false;
 }
 
 #if ENABLE_DX_PROFILING
@@ -24,26 +24,26 @@ namespace era_engine
 	
 	#define MAX_NUM_DX_PROFILE_FRAMES 1024
 	
-	struct dx_profile_frame : profile_frame
+	struct DXProfileFrame : profile_frame
 	{
 		profile_block blocks[profile_cl_count][MAX_NUM_DX_PROFILE_BLOCKS];
 		uint32 count[profile_cl_count];
 	};
 	
-	static dx_profile_frame profileFrames[MAX_NUM_DX_PROFILE_FRAMES];
+	static DXProfileFrame profileFrames[MAX_NUM_DX_PROFILE_FRAMES];
 	static uint32 profileFrameWriteIndex;
 	static bool pauseRecording;
 	
-	void dxProfilingFrameEndMarker(dx_command_list* cl)
+	void dxProfilingFrameEndMarker(DXCommandList* cl)
 	{
 		ASSERT(cl->type == D3D12_COMMAND_LIST_TYPE_DIRECT);
 	
-		uint32 queryIndex = atomicIncrement(dxContext.timestampQueryIndex[dxContext.bufferedFrameID]);
-		cl->queryTimestamp(queryIndex);
+		uint32 queryIndex = atomicIncrement(dx_context.timestampQueryIndex[dx_context.buffered_frame_id]);
+		cl->query_timestamp(queryIndex);
 	
-		dxProfileEvents[dxContext.bufferedFrameID][queryIndex] = 
+		dxProfileEvents[dx_context.buffered_frame_id][queryIndex] = 
 		{ 
-			profile_event_frame_marker,
+			PROFILE_EVENT_FRAME_MARKER,
 			profile_cl_graphics,
 			getThreadIDFast(),
 			"Frame End" };
@@ -51,15 +51,15 @@ namespace era_engine
 	
 	void dxProfilingResolveTimeStamps(uint64* timestamps)
 	{
-		uint32 currentFrame = profileFrameWriteIndex;
+		uint32 current_frame = profileFrameWriteIndex;
 	
 		if (!pauseRecording)
 		{
-			uint32 numQueries = dxContext.timestampQueryIndex[dxContext.bufferedFrameID];
+			uint32 numQueries = dx_context.timestampQueryIndex[dx_context.buffered_frame_id];
 			if (numQueries == 0)
 				return;
 	
-			profile_event* events = dxProfileEvents[dxContext.bufferedFrameID];
+			profile_event* events = dxProfileEvents[dx_context.buffered_frame_id];
 			for (uint32 i = 0; i < numQueries; ++i)
 			{
 				events[i].timestamp = timestamps[i];
@@ -81,30 +81,30 @@ namespace era_engine
 				stack[cl][0] = INVALID_PROFILE_BLOCK;
 			}
 	
-			dx_profile_frame& frame = profileFrames[profileFrameWriteIndex];
+			DXProfileFrame& frame = profileFrames[profileFrameWriteIndex];
 	
 			uint64 frequencies[] =
 			{
-				dxContext.renderQueue.timeStampFrequency,
-				dxContext.computeQueue.timeStampFrequency
+				dx_context.render_queue.time_stamp_frequency,
+				dx_context.compute_queue.time_stamp_frequency
 			};
 	
 			for (uint32 i = 0; i < numQueries; ++i)
 			{
 				profile_event* e = events + i;
-				profile_cl_type clType = (profile_cl_type)e->clType;
+				ProfileCLType clType = (ProfileCLType)e->clType;
 	
 				uint64 frameEndTimestamp;
 				if (handleProfileEvent(events, i, numQueries, stack[clType], depth[clType], frame.blocks[clType], count[clType], frameEndTimestamp, true))
 				{
 					uint32 previousFrameIndex = (profileFrameWriteIndex == 0) ? (MAX_NUM_DX_PROFILE_FRAMES - 1) : (profileFrameWriteIndex - 1);
-					dx_profile_frame& previousFrame = profileFrames[previousFrameIndex];
+					DXProfileFrame& previousFrame = profileFrames[previousFrameIndex];
 	
 					frame.startClock = (previousFrame.endClock == 0) ? frameEndTimestamp : previousFrame.endClock;
 					frame.endClock = frameEndTimestamp;
-					frame.globalFrameID = dxContext.frameID;
+					frame.globalFrameID = dx_context.frame_id;
 	
-					frame.duration = (float)(frame.endClock - frame.startClock) / dxContext.renderQueue.timeStampFrequency * 1000.f;
+					frame.duration = (float)(frame.endClock - frame.startClock) / dx_context.render_queue.time_stamp_frequency * 1000.f;
 	
 					for (uint32 cl = 0; cl < profile_cl_count; ++cl)
 					{
@@ -130,18 +130,18 @@ namespace era_engine
 			}
 		}
 	
-		if (dxProfilerWindowOpen)
+		if (dx_profiler_window_open)
 		{
-			if (ImGui::Begin(ICON_FA_CHART_BAR "  GPU Profiling", &dxProfilerWindowOpen))
+			if (ImGui::Begin(ICON_FA_CHART_BAR "  GPU Profiling", &dx_profiler_window_open))
 			{
 				static profiler_persistent persistent;
 				profiler_timeline timeline(persistent, MAX_NUM_DX_PROFILE_FRAMES);
 	
 				timeline.drawHeader(pauseRecording);
 	
-				for (uint32 frameIndex = 0; frameIndex < MAX_NUM_DX_PROFILE_FRAMES; ++frameIndex)
+				for (uint32 frame_index = 0; frame_index < MAX_NUM_DX_PROFILE_FRAMES; ++frame_index)
 				{
-					timeline.drawOverviewFrame(profileFrames[frameIndex], frameIndex, currentFrame);
+					timeline.drawOverviewFrame(profileFrames[frame_index], frame_index, current_frame);
 				}
 				timeline.endOverview();
 	
@@ -149,7 +149,7 @@ namespace era_engine
 				{
 					uint32 colorIndex = 0;
 	
-					dx_profile_frame& frame = profileFrames[persistent.highlightFrameIndex];
+					DXProfileFrame& frame = profileFrames[persistent.highlightFrameIndex];
 	
 					timeline.drawHighlightFrameInfo(frame);
 	

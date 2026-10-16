@@ -2,26 +2,26 @@
 #define MATERIAL_HLSLI
 
 
-static uint32 packColor(uint32 r, uint32 g, uint32 b, uint32 a)
+static uint32 pack_color(uint32 r, uint32 g, uint32 b, uint32 a)
 {
     return ((a & 0xFF) << 24) | ((b & 0xFF) << 16) | ((g & 0xFF) << 8) | (r & 0xFF);
 }
 
-static uint32 packColor(float r, float g, float b, float a)
+static uint32 pack_color(float r, float g, float b, float a)
 {
-    return packColor(
+    return pack_color(
         (uint32)clamp(r * 255.f, 0.f, 255.f),
         (uint32)clamp(g * 255.f, 0.f, 255.f),
         (uint32)clamp(b * 255.f, 0.f, 255.f),
         (uint32)clamp(a * 255.f, 0.f, 255.f));
 }
 
-static uint32 packColor(vec4 rgba)
+static uint32 pack_color(vec4 rgba)
 {
-    return packColor(rgba.r, rgba.g, rgba.b, rgba.a);
+    return pack_color(rgba.r, rgba.g, rgba.b, rgba.a);
 }
 
-static vec4 unpackColor(uint32 c)
+static vec4 unpack_color(uint32 c)
 {
     const float mul = 1.f / 255.f;
     float r = (c & 0xFF) * mul;
@@ -31,49 +31,39 @@ static vec4 unpackColor(uint32 c)
     return vec4(r, g, b, a);
 }
 
-struct texture_atlas_cb
+struct TextureAtlasCB
 {
-	uint32 totalNumCells_numCols; // Each 16 bit.
-	uint32 invCols_invRows; // Each 16 bit halfs.
+	uint32 total_num_cells_num_cols; // Each 16 bit.
+	uint32 inv_cols_inv_rows; // Each 16 bit halfs.
 
 	void initialize(uint32 rows, uint32 cols)
 	{
-		totalNumCells_numCols = ((rows * cols) << 16) | cols;
+		total_num_cells_num_cols = ((rows * cols) << 16) | cols;
 
 #ifndef HLSL
-		uint32 invCols = half(1.f / cols).h;
-		uint32 invRows = half(1.f / rows).h;
+		uint32 inv_cols = half(1.f / cols).h;
+		uint32 inv_rows = half(1.f / rows).h;
 #else
-		uint32 invCols = f32tof16(1.f / cols);
-		uint32 invRows = f32tof16(1.f / rows);
+		uint32 inv_cols = f32tof16(1.f / cols);
+		uint32 inv_rows = f32tof16(1.f / rows);
 #endif
 
-		invCols_invRows = (invCols << 16) | invRows;
+		inv_cols_inv_rows = (inv_cols << 16) | inv_rows;
 	}
 
-	uint32 getTotalNumCells()
+	uint32 get_total_num_cells()
 	{
-		return totalNumCells_numCols >> 16;
+		return total_num_cells_num_cols >> 16;
 	}
 
-	uint32 getNumCols()
+	uint32 get_num_cols()
 	{
-		return totalNumCells_numCols & 0xFFFF;
+		return total_num_cells_num_cols & 0xFFFF;
 	}
 
-	float getInvNumCols()
+	float get_inv_num_cols()
 	{
-		uint32 i = invCols_invRows >> 16;
-#ifndef HLSL
-		return half((uint16)i);
-#else
-		return f16tof32(i);
-#endif
-	}
-
-	float getInvNumRows()
-	{
-		uint32 i = invCols_invRows;
+		uint32 i = inv_cols_inv_rows >> 16;
 #ifndef HLSL
 		return half((uint16)i);
 #else
@@ -81,14 +71,24 @@ struct texture_atlas_cb
 #endif
 	}
 
-	uint32 getX(uint32 i)
+	float get_inv_num_rows()
 	{
-		return i % getNumCols();
+		uint32 i = inv_cols_inv_rows;
+#ifndef HLSL
+		return half((uint16)i);
+#else
+		return f16tof32(i);
+#endif
 	}
 
-	uint32 getY(uint32 i)
+	uint32 get_x(uint32 i)
 	{
-		return i / getNumCols();
+		return i % get_num_cols();
+	}
+
+	uint32 get_y(uint32 i)
+	{
+		return i / get_num_cols();
 	}
 };
 
@@ -99,23 +99,23 @@ struct texture_atlas_cb
 #define MATERIAL_DOUBLE_SIDED				(1 << 4)
 #define MATERIAL_USE_32_BIT_INDICES			(1 << 5) // Ugly to put this in the material. Only used in the ray tracing shaders.
 
-struct pbr_material_cb // 24 bytes.
+struct PBRMaterialCB // 24 bytes.
 {
     vec3 emission;      // Since emission can be HDR, we use full precision floats here.
-    uint32 albedoTint;  // RGBA packed into one uint32. Can only be between 0 and 1, which is why we are only using 8 bit per channel.
+    uint32 albedo_tint;  // RGBA packed into one uint32. Can only be between 0 and 1, which is why we are only using 8 bit per channel.
     uint32 roughness_metallic_flags_translucency; // 8 bit each.
-	uint32 normalMapStrength_unused_uvScale; // 8 bit for normal map strength, 8 bit unused, 16 bit half for uvScale.
+	uint32 normal_map_strength_unused_uv_scale; // 8 bit for normal map strength, 8 bit unused, 16 bit half for uvScale.
 
-    void initialize(vec4 albedo_, vec3 emission_, float roughness_, float metallic_, uint32 flags_, float normalMapStrength_ = 1.f, float translucency_ = 0.f,
-		float uvScale = 1.f)
+    void initialize(vec4 albedo_, vec3 emission_, float roughness_, float metallic_, uint32 flags_, float normal_map_strength_ = 1.f, float translucency_ = 0.f,
+		float uv_scale = 1.f)
     {
         emission = emission_;
-        albedoTint = packColor(albedo_);
+        albedo_tint = pack_color(albedo_);
         
 		roughness_ = clamp(roughness_, 0.f, 1.f);
 		metallic_ = clamp(metallic_, 0.f, 1.f);
 		translucency_ = clamp(translucency_, 0.f, 1.f);
-		normalMapStrength_ = clamp(normalMapStrength_, 0.f, 1.f);
+		normal_map_strength_ = clamp(normal_map_strength_, 0.f, 1.f);
 
 		roughness_metallic_flags_translucency =
 			((uint32)(roughness_ * 0xFF) << 24) |
@@ -124,77 +124,77 @@ struct pbr_material_cb // 24 bytes.
 			((uint32)(translucency_ * 0xFF) << 0);
 
 #ifndef HLSL
-		uint32 uvScaleHalf = half(uvScale).h;
+		uint32 uv_scale_half = half(uv_scale).h;
 #else
-		uint32 uvScaleHalf = f32tof16(uvScale);
+		uint32 uv_scale_half = f32tof16(uv_scale);
 #endif
 		
-		normalMapStrength_unused_uvScale =
-			((uint32)(normalMapStrength_ * 0xFF) << 24) |
+		normal_map_strength_unused_uv_scale =
+			((uint32)(normal_map_strength_ * 0xFF) << 24) |
 			0 |
-			uvScaleHalf;
+			uv_scale_half;
     }
 
 #ifndef HLSL
-    pbr_material_cb() {}
+    PBRMaterialCB() {}
 
-    pbr_material_cb(vec4 albedo_, vec3 emission_, float roughness_, float metallic_, uint32 flags_, float normalMapStrength_ = 1.f, float translucency_ = 0.f, float uvScale_ = 1.f)
+    PBRMaterialCB(vec4 albedo_, vec3 emission_, float roughness_, float metallic_, uint32 flags_, float normal_map_strength_ = 1.f, float translucency_ = 0.f, float uv_scale_ = 1.f)
     {
-        initialize(albedo_, emission_, roughness_, metallic_, flags_, normalMapStrength_, translucency_, uvScale_);
+        initialize(albedo_, emission_, roughness_, metallic_, flags_, normal_map_strength_, translucency_, uv_scale_);
     }
 #endif
 
-    vec4 getAlbedo()
+    vec4 get_albedo()
     {
-        return unpackColor(albedoTint);
+        return unpack_color(albedo_tint);
     }
 
-    float getRoughnessOverride()
+    float get_roughness_override()
     {
         return ((roughness_metallic_flags_translucency >> 24) & 0xFF) * (1.f / 255.f);
     }
 
-    float getMetallicOverride()
+    float get_metallic_override()
     {
         return ((roughness_metallic_flags_translucency >> 16) & 0xFF) * (1.f / 255.f);
     }
 
-	float getNormalMapStrength()
+	float get_normal_map_strength()
 	{
-		return ((normalMapStrength_unused_uvScale >> 24) & 0xFF) * (1.f / 255.f);
+		return ((normal_map_strength_unused_uv_scale >> 24) & 0xFF) * (1.f / 255.f);
 	}
 
-	float uvScale()
+	float uv_scale()
 	{
-		uint32 uvScaleHalf = normalMapStrength_unused_uvScale & 0xFFFF;
+		uint32 uv_scale_half = normal_map_strength_unused_uv_scale & 0xFFFF;
 #ifndef HLSL
-		return half((uint16)uvScaleHalf);
+		return half((uint16)uv_scale_half);
 #else
-		return f16tof32(uvScaleHalf);
+		return f16tof32(uv_scale_half);
 #endif
 	}
 
-	float getTranslucency()
+	float get_translucency()
 	{
 		return ((roughness_metallic_flags_translucency >> 0) & 0xFF) * (1.f / 255.f);
 	}
 
-	uint32 getFlags()
+	uint32 get_flags()
 	{
 		return (roughness_metallic_flags_translucency >> 8) & 0xFF;
 	}
 };
 
-struct pbr_decal_cb
+struct PBRDecalCB
 {
 	vec3 position;
-	uint32 albedoTint;			// RGBA packed into one uint32.
+	uint32 albedo_tint;			// RGBA packed into one uint32.
 	vec3 right;					// Scaled by half dimension.
-	uint32 roughnessOverride_metallicOverride;
+	uint32 roughness_override_metallic_override;
 	vec3 up;					// Scaled by half dimension.
-	uint32 viewportXY;			// Top left corner packed into 16 bits each.
+	uint32 viewport_xy;			// Top left corner packed into 16 bits each.
 	vec3 forward;				// Scaled by half dimension.
-	uint32 viewportScale;       // Width and height packed into 16 bits each.
+	uint32 viewport_scale;       // Width and height packed into 16 bits each.
 
 	void initialize(vec3 position_, vec3 right_, vec3 up_, vec3 forward_, vec4 albedo_, float roughness_, float metallic_, vec4 viewport_)
 	{
@@ -203,50 +203,50 @@ struct pbr_decal_cb
 		up = up_;
 		forward = forward_;
 
-		albedoTint = packColor(albedo_);
+		albedo_tint = pack_color(albedo_);
 
 		uint32 r = (uint32)(roughness_ * 0xFFFF);
 		uint32 m = (uint32)(metallic_ * 0xFFFF);
-		roughnessOverride_metallicOverride = (r << 16) | m;
+		roughness_override_metallic_override = (r << 16) | m;
 
 		uint32 x = (uint32)(viewport_.x * 0xFFFF);
 		uint32 y = (uint32)(viewport_.y * 0xFFFF);
 		uint32 w = (uint32)(viewport_.z * 0xFFFF);
 		uint32 h = (uint32)(viewport_.w * 0xFFFF);
-		viewportXY = (x << 16) | y;
-		viewportScale = (w << 16) | h;
+		viewport_xy = (x << 16) | y;
+		viewport_scale = (w << 16) | h;
 	}
 
 #ifndef HLSL
-	pbr_decal_cb() {}
+	PBRDecalCB() {}
 
-	pbr_decal_cb(vec3 position_, vec3 right_, vec3 up_, vec3 forward_, vec4 albedo_, float roughness_, float metallic_, vec4 viewport_)
+	PBRDecalCB(vec3 position_, vec3 right_, vec3 up_, vec3 forward_, vec4 albedo_, float roughness_, float metallic_, vec4 viewport_)
 	{
 		initialize(position_, right_, up_, forward_, albedo_, roughness_, metallic_, viewport_);
 	}
 #endif
 
-	vec4 getAlbedo()
+	vec4 get_albedo()
 	{
-		return unpackColor(albedoTint);
+		return unpack_color(albedo_tint);
 	}
 
-	float getRoughnessOverride()
+	float get_roughness_override()
 	{
-		return (roughnessOverride_metallicOverride >> 16) / (float)0xFFFF;
+		return (roughness_override_metallic_override >> 16) / (float)0xFFFF;
 	}
 
-	float getMetallicOverride()
+	float get_metallic_override()
 	{
-		return (roughnessOverride_metallicOverride & 0xFFFF) / (float)0xFFFF;
+		return (roughness_override_metallic_override & 0xFFFF) / (float)0xFFFF;
 	}
 
-	vec4 getViewport()
+	vec4 get_viewport()
 	{
-		float x = (viewportXY >> 16) / (float)0xFFFF;
-		float y = (viewportXY & 0xFFFF) / (float)0xFFFF;
-		float w = (viewportScale >> 16) / (float)0xFFFF;
-		float h = (viewportScale & 0xFFFF) / (float)0xFFFF;
+		float x = (viewport_xy >> 16) / (float)0xFFFF;
+		float y = (viewport_xy & 0xFFFF) / (float)0xFFFF;
+		float w = (viewport_scale >> 16) / (float)0xFFFF;
+		float h = (viewport_scale & 0xFFFF) / (float)0xFFFF;
 		return vec4(x, y, w, h);
 	}
 };
@@ -257,7 +257,7 @@ struct pbr_decal_cb
 // However emission and specular light should not be modulated by alpha, since these components are not affected by transparency.
 // To counteract the hardware alpha-blending for these components, we pre-divide them by alpha.
 
-static vec4 mergeAlphaBlended(vec3 diffuse, vec3 specular, vec3 emission, float alpha)
+static vec4 merge_alpha_blended(vec3 diffuse, vec3 specular, vec3 emission, float alpha)
 {
 	return vec4((emission + specular) * (1.f / max(alpha, 1e-5f)) + diffuse, alpha);
 }

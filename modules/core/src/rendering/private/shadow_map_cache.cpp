@@ -15,231 +15,231 @@
 
 namespace era_engine
 {
-	bool enableStaticShadowMapCaching = true;
+	bool enable_static_shadow_map_caching = true;
 
-	static constexpr uint16 maximumSize = 2048;
-	static constexpr uint16 minimumSize = 128;
-	static_assert(SHADOW_MAP_WIDTH% maximumSize == 0, "");
-	static_assert(SHADOW_MAP_HEIGHT% maximumSize == 0, "");
-	static_assert(is_power_of_two(maximumSize), "");
-	static_assert(is_power_of_two(minimumSize), "");
+	static constexpr uint16 maximum_size = 2048;
+	static constexpr uint16 minimum_size = 128;
+	static_assert(SHADOW_MAP_WIDTH% maximum_size == 0, "");
+	static_assert(SHADOW_MAP_HEIGHT% maximum_size == 0, "");
+	static_assert(is_power_of_two(maximum_size), "");
+	static_assert(is_power_of_two(minimum_size), "");
 
-	static constexpr uint32 numBuckets = index_of_least_significant_set_bit(maximumSize) - index_of_least_significant_set_bit(minimumSize) + 1;
-	static std::vector<shadow_map_viewport> nodes[numBuckets];
+	static constexpr uint32 num_buckets = index_of_least_significant_set_bit(maximum_size) - index_of_least_significant_set_bit(minimum_size) + 1;
+	static std::vector<ShadowMapViewport> nodes[num_buckets];
 
-	struct shadow_map_cache
+	struct ShadowMapCache
 	{
-		shadow_map_viewport viewport;
-		uint64 lightMovementHash;
+		ShadowMapViewport viewport;
+		uint64 light_movement_hash;
 	};
 
-	static std::unordered_map<uint64, shadow_map_cache> cachedAllocations;
+	static std::unordered_map<uint64, ShadowMapCache> cached_allocations;
 
-	static ref<dx_texture> visTexture;
+	static ref<DXTexture> vis_texture;
 
 	static void initialize()
 	{
-		for (uint32 y = 0; y < SHADOW_MAP_HEIGHT / maximumSize; ++y)
+		for (uint32 y = 0; y < SHADOW_MAP_HEIGHT / maximum_size; ++y)
 		{
-			for (uint32 x = 0; x < SHADOW_MAP_WIDTH / maximumSize; ++x)
+			for (uint32 x = 0; x < SHADOW_MAP_WIDTH / maximum_size; ++x)
 			{
-				nodes[0].push_back({ (uint16)(x * maximumSize), (uint16)(y * maximumSize), maximumSize });
+				nodes[0].push_back({ (uint16)(x * maximum_size), (uint16)(y * maximum_size), maximum_size });
 			}
 		}
 	}
 
-	NODISCARD static uint32 getIndex(uint32 size)
+	NODISCARD static uint32 get_index(uint32 size)
 	{
-		uint32 index = index_of_least_significant_set_bit(size) - index_of_least_significant_set_bit(minimumSize);
-		index = numBuckets - index - 1;
+		uint32 index = index_of_least_significant_set_bit(size) - index_of_least_significant_set_bit(minimum_size);
+		index = num_buckets - index - 1;
 		return index;
 	}
 
-	NODISCARD static shadow_map_viewport allocateShadowViewport(uint32 size)
+	NODISCARD static ShadowMapViewport allocate_shadow_viewport(uint32 size)
 	{
-		ASSERT(size <= maximumSize);
-		ASSERT(size >= minimumSize);
+		ASSERT(size <= maximum_size);
+		ASSERT(size >= minimum_size);
 		ASSERT(is_power_of_two(size));
 
-		uint32 index = getIndex(size);
+		uint32 index = get_index(size);
 
-		uint32 insertIndex = index;
-		for (; insertIndex != -1 && nodes[insertIndex].size() == 0; --insertIndex);
+		uint32 insert_index = index;
+		for (; insert_index != -1 && nodes[insert_index].size() == 0; --insert_index);
 
-		ASSERT(insertIndex != -1); // TODO: Handle error
-		ASSERT(nodes[insertIndex].size() > 0);
+		ASSERT(insert_index != -1); // TODO: Handle error
+		ASSERT(nodes[insert_index].size() > 0);
 
-		for (uint32 i = insertIndex; i < index; ++i)
+		for (uint32 i = insert_index; i < index; ++i)
 		{
-			uint16 nodeSize = 1u << (index_of_least_significant_set_bit(maximumSize) - i);
-			uint16 halfSize = nodeSize / 2;
+			uint16 node_size = 1u << (index_of_least_significant_set_bit(maximum_size) - i);
+			uint16 half_size = node_size / 2;
 
-			shadow_map_viewport n = nodes[i].back();
+			ShadowMapViewport n = nodes[i].back();
 			nodes[i].pop_back();
 
-			nodes[i + 1].push_back({ n.x, n.y, halfSize });
-			nodes[i + 1].push_back({ (uint16)(n.x + halfSize), n.y, halfSize });
-			nodes[i + 1].push_back({ n.x, (uint16)(n.y + halfSize), halfSize });
-			nodes[i + 1].push_back({ (uint16)(n.x + halfSize), (uint16)(n.y + halfSize), halfSize });
+			nodes[i + 1].push_back({ n.x, n.y, half_size });
+			nodes[i + 1].push_back({ (uint16)(n.x + half_size), n.y, half_size });
+			nodes[i + 1].push_back({ n.x, (uint16)(n.y + half_size), half_size });
+			nodes[i + 1].push_back({ (uint16)(n.x + half_size), (uint16)(n.y + half_size), half_size });
 		}
 
-		shadow_map_viewport result = nodes[index].back();
+		ShadowMapViewport result = nodes[index].back();
 		nodes[index].pop_back();
 		return result;
 	}
 
-	static void freeShadowViewport(shadow_map_viewport remove)
+	static void free_shadow_viewport(ShadowMapViewport remove)
 	{
-		if (remove.size == maximumSize)
+		if (remove.size == maximum_size)
 		{
 			nodes[0].push_back(remove);
 			return;
 		}
 
-		uint32 index = getIndex(remove.size);
-		std::vector<shadow_map_viewport>& list = nodes[index];
+		uint32 index = get_index(remove.size);
+		std::vector<ShadowMapViewport>& list = nodes[index];
 		if (list.size() == 0)
 		{
 			list.push_back(remove);
 			return;
 		}
 
-		uint32 doubleSize = remove.size * 2;
-		uint32 shift = index_of_least_significant_set_bit(doubleSize);
+		uint32 double_size = remove.size * 2;
+		uint32 shift = index_of_least_significant_set_bit(double_size);
 
-		uint32 parentX = remove.x >> shift;
-		uint32 parentY = remove.y >> shift;
-		uint32 parentWidth = SHADOW_MAP_WIDTH >> shift;
-		uint32 parentIndex = parentY * parentWidth + parentX;
+		uint32 parent_x = remove.x >> shift;
+		uint32 parent_y = remove.y >> shift;
+		uint32 parent_width = SHADOW_MAP_WIDTH >> shift;
+		uint32 parent_index = parent_y * parent_width + parent_x;
 
-		uint32 nodesWithThisParent = 0;
-		auto insertIt = list.end();
+		uint32 nodes_with_this_parent = 0;
+		auto insert_it = list.end();
 
 		for (auto it = list.begin(); it != list.end(); ++it)
 		{
-			shadow_map_viewport node = *it;
+			ShadowMapViewport node = *it;
 
-			uint32 pX = node.x >> shift;
-			uint32 pY = node.y >> shift;
-			uint32 pi = pY * parentWidth + pX;
+			uint32 p_x = node.x >> shift;
+			uint32 p_y = node.y >> shift;
+			uint32 pi = p_y * parent_width + p_x;
 
-			if (pi == parentIndex)
+			if (pi == parent_index)
 			{
-				++nodesWithThisParent;
+				++nodes_with_this_parent;
 			}
-			else if (pi > parentIndex)
+			else if (pi > parent_index)
 			{
-				insertIt = it;
+				insert_it = it;
 				break;
 			}
 		}
 
-		ASSERT(nodesWithThisParent < 4);
+		ASSERT(nodes_with_this_parent < 4);
 
-		if (nodesWithThisParent == 3)
+		if (nodes_with_this_parent == 3)
 		{
-			auto eraseIt = insertIt - 3;
-			list.erase(eraseIt, insertIt);
-			freeShadowViewport(shadow_map_viewport{ (uint16)(parentX * doubleSize), (uint16)(parentY * doubleSize), (uint16)doubleSize });
+			auto erase_it = insert_it - 3;
+			list.erase(erase_it, insert_it);
+			free_shadow_viewport(ShadowMapViewport{ (uint16)(parent_x * double_size), (uint16)(parent_y * double_size), (uint16)double_size });
 		}
 		else
 		{
-			list.insert(insertIt, remove);
+			list.insert(insert_it, remove);
 		}
 	}
 
-	static void visualize(dx_command_list* cl, ref<dx_texture> texture)
+	static void visualize(DXCommandList* cl, ref<DXTexture> texture)
 	{
-		for (uint32 i = 0; i < numBuckets; ++i)
+		for (uint32 i = 0; i < num_buckets; ++i)
 		{
-			std::vector<shadow_map_viewport>& nodesInLevel = nodes[i];
+			std::vector<ShadowMapViewport>& nodes_in_level = nodes[i];
 
-			for (shadow_map_viewport vp : nodesInLevel)
+			for (ShadowMapViewport vp : nodes_in_level)
 			{
-				clear_rect rect = { vp.x, vp.y, vp.size, vp.size };
-				cl->clearRTV(texture, 0.f, 1.f, 0.f, 1.f, &rect, 1);
+				ClearRect rect = { vp.x, vp.y, vp.size, vp.size };
+				cl->clear_rtv(texture, 0.f, 1.f, 0.f, 1.f, &rect, 1);
 			}
 		}
 
-		for (auto a : cachedAllocations)
+		for (auto a : cached_allocations)
 		{
 			auto vp = a.second.viewport;
-			clear_rect rect = { vp.x, vp.y, vp.size, vp.size };
-			cl->clearRTV(texture, 1.f, 0.f, 0.f, 1.f, &rect, 1);
+			ClearRect rect = { vp.x, vp.y, vp.size, vp.size };
+			cl->clear_rtv(texture, 1.f, 0.f, 0.f, 1.f, &rect, 1);
 		}
 	}
 
 	static bool init = false;
 
-	NODISCARD std::pair<shadow_map_viewport, bool> assignShadowMapViewport(uint64 uniqueLightID, uint64 lightMovementHash, uint32 size)
+	NODISCARD std::pair<ShadowMapViewport, bool> assign_shadow_map_viewport(uint64 unique_light_id, uint64 light_movement_hash, uint32 size)
 	{
 		if (!init)
 		{
 			initialize();
 #if DEBUG_VISUALIZATION
-			visTexture = createTexture(0, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, DXGI_FORMAT_R8G8B8A8_UNORM, false, true, false);
+			vis_texture = create_texture(0, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, DXGI_FORMAT_R8G8B8A8_UNORM, false, true, false);
 #endif
 			init = true;
 		}
 
-		bool staticCacheAvailable = false;
-		shadow_map_viewport vp;
+		bool static_cache_available = false;
+		ShadowMapViewport vp;
 
-		auto it = cachedAllocations.find(uniqueLightID);
-		if (it == cachedAllocations.end())
+		auto it = cached_allocations.find(unique_light_id);
+		if (it == cached_allocations.end())
 		{
 			// New light
-			vp = allocateShadowViewport(size);
-			it = cachedAllocations.insert({ uniqueLightID, { vp, lightMovementHash } }).first;
+			vp = allocate_shadow_viewport(size);
+			it = cached_allocations.insert({ unique_light_id, { vp, light_movement_hash } }).first;
 		}
 		else
 		{
 			if (it->second.viewport.size != size)
 			{
 				// Reallocate
-				freeShadowViewport(it->second.viewport);
-				vp = allocateShadowViewport(size);
+				free_shadow_viewport(it->second.viewport);
+				vp = allocate_shadow_viewport(size);
 				it->second.viewport = vp;
 			}
 			else
 			{
-				if (it->second.lightMovementHash == lightMovementHash)
+				if (it->second.light_movement_hash == light_movement_hash)
 				{
-					staticCacheAvailable = true;
+					static_cache_available = true;
 				}
 
 				vp = it->second.viewport;
 			}
 
-			it->second.lightMovementHash = lightMovementHash;
+			it->second.light_movement_hash = light_movement_hash;
 		}
 
-		staticCacheAvailable &= enableStaticShadowMapCaching;
+		static_cache_available &= enable_static_shadow_map_caching;
 
-		return { vp, staticCacheAvailable };
+		return { vp, static_cache_available };
 	}
 
-	NODISCARD uint64 getLightMovementHash(const directional_light& dl)
+	NODISCARD uint64 get_light_movement_hash(const DirectionalLight& dl)
 	{
 		size_t seed = 0;
-		for (uint32 i = 0; i < dl.numShadowCascades; ++i)
+		for (uint32 i = 0; i < dl.num_shadow_cascades; ++i)
 		{
-			hash_combine(seed, dl.viewProjs[i]);
+			hash_combine(seed, dl.view_projs[i]);
 		}
 		return seed;
 	}
 
-	NODISCARD uint64 getLightMovementHash(const spot_light_cb& sl)
+	NODISCARD uint64 get_light_movement_hash(const SpotLightCB& sl)
 	{
 		size_t seed = 0;
 		hash_combine(seed, sl.direction);
 		hash_combine(seed, sl.position);
-		hash_combine(seed, sl.getOuterCutoff());
-		hash_combine(seed, sl.maxDistance);
+		hash_combine(seed, sl.get_outer_cutoff());
+		hash_combine(seed, sl.max_distance);
 		return seed;
 	}
 
-	NODISCARD uint64 getLightMovementHash(const point_light_cb& pl)
+	NODISCARD uint64 get_light_movement_hash(const PointLightCB& pl)
 	{
 		size_t seed = 0;
 		hash_combine(seed, pl.position);
@@ -247,17 +247,17 @@ namespace era_engine
 		return seed;
 	}
 
-	void updateShadowMapAllocationVisualization()
+	void update_shadow_map_allocation_visualization()
 	{
 #if DEBUG_VISUALIZATION
 		if (updateVisualization)
 		{
-			dx_command_list* cl = dxContext.getFreeRenderCommandList();
-			visualize(cl, visTexture);
-			dxContext.executeCommandList(cl);
+			DXCommandList* cl = dx_context.get_free_render_command_list();
+			visualize(cl, vis_texture);
+			dx_context.execute_command_list(cl);
 
 			ImGui::Begin("Settings");
-			ImGui::Image(visTexture, 512, 512);
+			ImGui::Image(vis_texture, 512, 512);
 			ImGui::End();
 		}
 #endif

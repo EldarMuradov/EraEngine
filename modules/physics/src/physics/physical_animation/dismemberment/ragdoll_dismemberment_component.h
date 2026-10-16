@@ -25,7 +25,7 @@ namespace era_engine::physics
 	struct SubmeshPartSplit
 	{
 		uint32 source_submesh_index = 0;
-		std::vector<std::vector<indexed_triangle32>> group_triangles;
+		std::vector<std::vector<IndexedTriangle32>> group_triangles;
 	};
 
 	struct DismembermentState

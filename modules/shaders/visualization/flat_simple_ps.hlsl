@@ -1,18 +1,18 @@
 #include "visualization_rs.hlsli"
 #include "camera.hlsli"
 
-ConstantBuffer<visualization_cb> cb	: register(b1);
-ConstantBuffer<camera_cb> camera	: register(b2);
+ConstantBuffer<VisualizationCB> cb	: register(b1);
+ConstantBuffer<CameraCB> camera	: register(b2);
 
-struct ps_input
+struct PSInput
 {
-	float3 worldPosition	: WORLD_POSITION;
-	float3 worldNormal		: WORLD_NORMAL;
+	float3 world_position	: WORLD_POSITION;
+	float3 world_normal		: WORLD_NORMAL;
 };
 
 [RootSignature(FLAT_SIMPLE_RS)]
-float4 main(ps_input IN) : SV_TARGET
+float4 main(PSInput IN) : SV_TARGET
 {
-	float ndotv = saturate(dot(normalize(camera.position.xyz - IN.worldPosition), normalize(IN.worldNormal))) * 0.8 + 0.2;
+	float ndotv = saturate(dot(normalize(camera.position.xyz - IN.world_position), normalize(IN.world_normal))) * 0.8 + 0.2;
 	return ndotv * cb.color;
 }

@@ -14,37 +14,37 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API boid_particle_system : particle_system
+	struct ERA_CORE_API BoidParticleSystem : ParticleSystem
 	{
-		static void initializePipeline();
+		static void initialize_pipeline();
 
-		boid_particle_system() {}
-		boid_particle_system(uint32 maxNumParticles, float emitRate);
-		void initialize(uint32 maxNumParticles, float emitRate);
+		BoidParticleSystem() {}
+		BoidParticleSystem(uint32 max_num_particles, float emit_rate);
+		void initialize(uint32 max_num_particles, float emit_rate);
 
-		virtual void update(struct dx_command_list* cl, const common_particle_simulation_data& common, float dt) override;
-		void render(transparent_render_pass* renderPass);
+		virtual void update(struct DXCommandList* cl, const CommonParticleSimulationData& common, float dt) override;
+		void render(TransparentRenderPass* render_pass);
 
-		float emitRate;
-		boid_particle_settings settings;
+		float emit_rate;
+		BoidParticleSettings settings;
 
 	private:
-		static dx_pipeline emitPipeline;
-		static dx_pipeline simulatePipeline;
-		static dx_pipeline renderPipeline;
+		static DXPipeline emit_pipeline;
+		static DXPipeline simulate_pipeline;
+		static DXPipeline render_pipeline;
 
-		ref<MultiMesh> cartoonMesh;
-		dx_vertex_buffer_group_view skinnedVertexBuffer;
+		ref<MultiMesh> cartoon_mesh;
+		DXVertexBufferGroupView skinned_vertex_buffer;
 		float time = 0.f;
 
-		struct boid_material
+		struct BoidMaterial
 		{
 		};
 
-		struct boid_pipeline : particle_render_pipeline<boid_material>
+		struct BoidPipeline : ParticleRenderPipeline<BoidMaterial>
 		{
 			PIPELINE_SETUP_DECL;
-			PARTICLE_PIPELINE_RENDER_DECL(boid_material);
+			PARTICLE_PIPELINE_RENDER_DECL(BoidMaterial);
 		};
 	};
 }

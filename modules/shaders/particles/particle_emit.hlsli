@@ -1,35 +1,35 @@
 #include "cs.hlsli"
 #include "particles_rs.hlsli"
 
-ConstantBuffer<particle_start_cb> simCB					: register(b0, space1);
+ConstantBuffer<ParticleStartCB> sim_cb					: register(b0, space1);
 
-RWStructuredBuffer<particle_draw> drawInfo				: register(u1, space1);
-RWStructuredBuffer<particle_counters> counters			: register(u2, space1);
+RWStructuredBuffer<ParticleDraw> draw_info				: register(u1, space1);
+RWStructuredBuffer<ParticleCounters> counters			: register(u2, space1);
 
 RWStructuredBuffer<particle_data> particles				: register(u3, space1);
-RWStructuredBuffer<uint> deadList						: register(u4, space1);
-RWStructuredBuffer<uint> currentAliveList				: register(u5, space1);
+RWStructuredBuffer<uint> dead_list						: register(u4, space1);
+RWStructuredBuffer<uint> current_alive_list				: register(u5, space1);
 
 [numthreads(PARTICLES_EMIT_BLOCK_SIZE, 1, 1)]
 [RootSignature(PARTICLE_START_RS)]
-void main(cs_input IN)
+void main(CSInput IN)
 {
-	const uint i = IN.dispatchThreadID.x;
-	const uint count = counters[0].newParticles;
+	const uint i = IN.dispatch_thread_id.x;
+	const uint count = counters[0].new_particles;
 	if (i >= count)
 	{
 		return;
 	}
 
 	uint dead;
-	InterlockedAdd(counters[0].numDeadParticles, -1, dead);
+	InterlockedAdd(counters[0].num_dead_particles, -1, dead);
 	
-	uint index = deadList[dead - 1];
+	uint index = dead_list[dead - 1];
 
-	particles[index] = emitParticle(i);
+	particles[index] = emit_particle(i);
 
 	uint alive;
-	InterlockedAdd(counters[0].numAliveParticlesThisFrame, 1, alive);
+	InterlockedAdd(counters[0].num_alive_particles_this_frame, 1, alive);
 
-	currentAliveList[alive] = index;
+	current_alive_list[alive] = index;
 }

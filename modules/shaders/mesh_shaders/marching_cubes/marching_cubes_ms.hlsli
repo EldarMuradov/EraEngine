@@ -1,49 +1,49 @@
 #include "marching_cubes_common.hlsli"
 #include "camera.hlsli"
 
-struct mesh_output
+struct MeshOutput
 {
 	float4 pos : SV_POSITION;
-	float3 worldPos : POSITION;
+	float3 world_pos : POSITION;
 	float3 normal : NORMAL;
 };
 
-struct cube_corner
+struct CubeCorner
 {
 	float3 normal;
 	float value;
 };
-groupshared cube_corner corners[8];
+groupshared CubeCorner corners[8];
 
-ConstantBuffer<camera_cb> camera								: register(b1);
-StructuredBuffer<marching_cubes_lookup> marchingCubesLookup     : register(t0);
+ConstantBuffer<CameraCB> camera								: register(b1);
+StructuredBuffer<MarchingCubesLookup> marching_cubes_lookup     : register(t0);
 
 [RootSignature(MESH_RS)]
 [outputtopology("triangle")]
 [numthreads(32, 1, 1)]
 void main(
-	in uint groupID : SV_GroupID,
-	in uint groupThreadID : SV_GroupThreadID,
-	in payload mesh_payload p,
-	out vertices mesh_output outVerts[12],
-	out indices uint3 outTriangles[5])
+	in uint group_id : SV_GroupID,
+	in uint group_thread_id : SV_GroupThreadID,
+	in payload MeshPayload p,
+	out vertices MeshOutput out_verts[12],
+	out indices uint3 out_triangles[5])
 {
-	const uint meshletID = p.meshletIDs[groupID];
+	const uint meshlet_id = p.meshlet_ids[group_id];
 
 	// Convert linear meshletID into x, y and z coordinates
-	uint miX = (meshletID >> (0 * SHIFT)) & (GRID_SIZE - 1);
-	uint miY = (meshletID >> (1 * SHIFT)) & (GRID_SIZE - 1);
-	uint miZ = (meshletID >> (2 * SHIFT));
+	uint mi_x = (meshlet_id >> (0 * SHIFT)) & (GRID_SIZE - 1);
+	uint mi_y = (meshlet_id >> (1 * SHIFT)) & (GRID_SIZE - 1);
+	uint mi_z = (meshlet_id >> (2 * SHIFT));
 
 	// Corner positions of the cube
-	float3 cornerPos0 = float3(miX, miY, miZ) * STEP_SIZE;
-	float3 cornerPos1 = cornerPos0 + STEP_SIZE;
+	float3 corner_pos0 = float3(mi_x, mi_y, mi_z) * STEP_SIZE;
+	float3 corner_pos1 = corner_pos0 + STEP_SIZE;
 
 	// First 8 lanes evaluate the field for each corner, the other 24 evaluate at offsetted positions in x, y and z so we can compute a normal at each corner from the field gradient
-	float3 pos = float3((groupThreadID & 1) != 0 ? cornerPos1.x : cornerPos0.x, (groupThreadID & 2) != 0 ? cornerPos1.y : cornerPos0.y, (groupThreadID & 4) != 0 ? cornerPos1.z : cornerPos0.z);
+	float3 pos = float3((group_thread_id & 1) != 0 ? corner_pos1.x : corner_pos0.x, (group_thread_id & 2) != 0 ? corner_pos1.y : corner_pos0.y, (group_thread_id & 4) != 0 ? corner_pos1.z : corner_pos0.z);
 
 	const float epsilon = (1.f / 16.f) * STEP_SIZE;
-	uint off = groupThreadID / 8;
+	uint off = group_thread_id / 8;
 	pos.x += (off == 1) ? epsilon : 0.f;
 	pos.y += (off == 2) ? epsilon : 0.f;
 	pos.z += (off == 3) ? epsilon : 0.f;
@@ -58,39 +58,39 @@ void main(
 	normal.z = WaveReadLaneAt(value, WaveGetLaneIndex() + 24);
 
 	// Save intermediates to LDS. Corner positions can be computed directly from indices, so no need to put in LDS.
-	if (groupThreadID < 8)
+	if (group_thread_id < 8)
 	{
-		cube_corner corner;
+		CubeCorner corner;
 		corner.normal = normalize(value - normal);
 		corner.value = value;
-		corners[groupThreadID] = corner;
+		corners[group_thread_id] = corner;
 	}
 
 	// Look up the Marching Cubes index from the signs of corner nodes. Only the lowest 8 lanes are relevant here, hence the 0xFF mask.
 	uint4 ballot = WaveActiveBallot(value >= 0.f);
 	uint index = (ballot.x & 0xFF);
 
-	const uint vertexCount = uint(marchingCubesLookup[index].triangleAndVertexCount >> 16);
-	const uint triangleCount = marchingCubesLookup[index].triangleAndVertexCount & 0xFFFF;
+	const uint vertex_count = uint(marching_cubes_lookup[index].triangle_and_vertex_count >> 16);
+	const uint triangle_count = marching_cubes_lookup[index].triangle_and_vertex_count & 0xFFFF;
 
-	SetMeshOutputCounts(vertexCount, triangleCount);
+	SetMeshOutputCounts(vertex_count, triangle_count);
 
 	// Output up to 12 vertices, one lane per vertex.
-	if (groupThreadID < vertexCount)
+	if (group_thread_id < vertex_count)
 	{
 		// Look up the corner indices for this edge
-		uint lookupWord = groupThreadID >> 2; // Divide by 4.
-		uint lookupID = groupThreadID & 0x3;  // Modulo 4.
+		uint lookup_word = group_thread_id >> 2; // Divide by 4.
+		uint lookup_id = group_thread_id & 0x3;  // Modulo 4.
 
-		uint word = marchingCubesLookup[index].vertices[lookupWord];
-		uint edge = (word >> (lookupID * 8)) & 0xFF;
+		uint word = marching_cubes_lookup[index].vertices[lookup_word];
+		uint edge = (word >> (lookup_id * 8)) & 0xFF;
 
 		uint i0 = edge & 0x7;
 		uint i1 = edge >> 3;
 
 		// Corner positions
-		float3 pos0 = float3((i0 & 1) != 0 ? cornerPos1.x : cornerPos0.x, (i0 & 2) != 0 ? cornerPos1.y : cornerPos0.y, (i0 & 4) != 0 ? cornerPos1.z : cornerPos0.z);
-		float3 pos1 = float3((i1 & 1) != 0 ? cornerPos1.x : cornerPos0.x, (i1 & 2) != 0 ? cornerPos1.y : cornerPos0.y, (i1 & 4) != 0 ? cornerPos1.z : cornerPos0.z);
+		float3 pos0 = float3((i0 & 1) != 0 ? corner_pos1.x : corner_pos0.x, (i0 & 2) != 0 ? corner_pos1.y : corner_pos0.y, (i0 & 4) != 0 ? corner_pos1.z : corner_pos0.z);
+		float3 pos1 = float3((i1 & 1) != 0 ? corner_pos1.x : corner_pos0.x, (i1 & 2) != 0 ? corner_pos1.y : corner_pos0.y, (i1 & 4) != 0 ? corner_pos1.z : corner_pos0.z);
 
 		// Interpolate position and normal
 		float t = corners[i0].value / (corners[i0].value - corners[i1].value);
@@ -99,26 +99,26 @@ void main(
 
 		// Output final vertex
 		pos *= 20.f;
-		outVerts[groupThreadID].pos = mul(camera.viewProj, float4(pos, 1.f));
-		outVerts[groupThreadID].worldPos = pos;
-		outVerts[groupThreadID].normal = normal;
+		out_verts[group_thread_id].pos = mul(camera.view_proj, float4(pos, 1.f));
+		out_verts[group_thread_id].world_pos = pos;
+		out_verts[group_thread_id].normal = normal;
 	}
 
 	// Output up to 5 triangles, one lane per triangle. 
-	if (groupThreadID < triangleCount)
+	if (group_thread_id < triangle_count)
 	{
-		struct single_unpack
+		struct SingleUnpack
 		{
 			uint index;
-			uint shiftDown;
+			uint shift_down;
 		};
 
-		struct unpack_info
+		struct UnpackInfo
 		{
-			single_unpack singleUnpacks[3];
+			SingleUnpack single_unpacks[3];
 		};
 
-		static const unpack_info unpack[5] =
+		static const UnpackInfo unpack[5] =
 		{
 			{ { 0, 0 }, { 0, 8 }, { 0, 16 } },
 			{ { 0, 24 }, { 1, 0 }, { 1, 8 } },
@@ -127,15 +127,15 @@ void main(
 			{ { 3, 0 }, { 3, 8 }, { 3, 16 } },
 		};
 
-		unpack_info info = unpack[groupThreadID];
+		UnpackInfo info = unpack[group_thread_id];
 
-		uint packedIndex = marchingCubesLookup[index].indices[groupThreadID];
+		uint packed_index = marching_cubes_lookup[index].indices[group_thread_id];
 
-		outTriangles[groupThreadID] = uint3
+		out_triangles[group_thread_id] = uint3
 		(
-			(marchingCubesLookup[index].indices[info.singleUnpacks[0].index] >> (info.singleUnpacks[0].shiftDown)) & 0xFF,
-			(marchingCubesLookup[index].indices[info.singleUnpacks[1].index] >> (info.singleUnpacks[1].shiftDown)) & 0xFF,
-			(marchingCubesLookup[index].indices[info.singleUnpacks[2].index] >> (info.singleUnpacks[2].shiftDown)) & 0xFF
+			(marching_cubes_lookup[index].indices[info.single_unpacks[0].index] >> (info.single_unpacks[0].shift_down)) & 0xFF,
+			(marching_cubes_lookup[index].indices[info.single_unpacks[1].index] >> (info.single_unpacks[1].shift_down)) & 0xFF,
+			(marching_cubes_lookup[index].indices[info.single_unpacks[2].index] >> (info.single_unpacks[2].shift_down)) & 0xFF
 		);
 	}
 }

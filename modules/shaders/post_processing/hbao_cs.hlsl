@@ -5,19 +5,19 @@
 
 // This file is based on https://github.com/scanberg/hbao
 
-ConstantBuffer<hbao_cb> cb				: register(b0);
-ConstantBuffer<camera_cb> camera		: register(b1);
+ConstantBuffer<HBAOCB> cb				: register(b0);
+ConstantBuffer<CameraCB> camera		: register(b1);
 
-Texture2D<float> depthBuffer			: register(t0);
+Texture2D<float> depth_buffer			: register(t0);
 
-RWTexture2D<float> resultTexture		: register(u0);
+RWTexture2D<float> result_texture		: register(u0);
 
-SamplerState linearSampler				: register(s0);
+SamplerState linear_sampler				: register(s0);
 
-static float3 positionAt(float2 uv)
+static float3 position_at(float2 uv)
 {
-	float depth = depthBuffer.SampleLevel(linearSampler, uv, cb.depthBufferMipLevel);
-	float3 pos = camera.restoreViewSpacePositionEyeDepth(uv, depth);
+	float depth = depth_buffer.SampleLevel(linear_sampler, uv, cb.depth_buffer_mip_level);
+	float3 pos = camera.restore_view_space_position_eye_depth(uv, depth);
 	return pos;
 }
 
@@ -26,85 +26,85 @@ static float length2(float3 v)
 	return dot(v, v);
 }
 
-static float3 minDiff(float3 P, float3 right, float3 left)
+static float3 min_diff(float3 P, float3 right, float3 left)
 {
 	float3 V1 = right - P;
 	float3 V2 = P - left;
 	return (length2(V1) < length2(V2)) ? V1 : V2;
 }
 
-static float2 rotateDirections(float2 dir, float2 cosSin)
+static float2 rotate_directions(float2 dir, float2 cos_sin)
 {
-	return float2(dir.x * cosSin.x - dir.y * cosSin.y,
-		dir.x * cosSin.y + dir.y * cosSin.x);
+	return float2(dir.x * cos_sin.x - dir.y * cos_sin.y,
+		dir.x * cos_sin.y + dir.y * cos_sin.x);
 }
 
-static float2 snapUVOffset(float2 uv, float2 dims, float2 invDims)
+static float2 snap_uv_offset(float2 uv, float2 dims, float2 inv_dims)
 {
-	return round(uv * dims) * invDims;
+	return round(uv * dims) * inv_dims;
 }
 
-static float tanToSin(float x)
+static float tan_to_sin(float x)
 {
 	return x * rsqrt(x * x + 1.f);
 }
 
-static float invLength(float2 v)
+static float inv_length(float2 v)
 {
 	return rsqrt(dot(v, v));
 }
 
-static const float tanBias = tan(30.f * M_PI / 180.f);
-static float biasedTangent(float3 v)
+static const float tan_bias = tan(30.f * M_PI / 180.f);
+static float biased_tangent(float3 v)
 {
-	return v.z * invLength(v.xy) + tanBias;
+	return v.z * inv_length(v.xy) + tan_bias;
 }
 
 static float tangent(float3 P, float3 S)
 {
-	return -(P.z - S.z) * invLength(S.xy - P.xy);
+	return -(P.z - S.z) * inv_length(S.xy - P.xy);
 }
 
-static float falloff(float d2, float negInvRadius2)
+static float falloff(float d2, float neg_inv_radius2)
 {
-	return d2 * negInvRadius2 + 1.f;
+	return d2 * neg_inv_radius2 + 1.f;
 }
 
-static float horizonOcclusion(float2 centerUV, float2 deltaUV, float3 P, 
-	float3 dPdu, float3 dPdv, float jitter, float numSamples,
-	float radius2, float negInvRadius2,
-	float2 dims, float2 invDims)
+static float horizon_occlusion(float2 center_uv, float2 delta_uv, float3 P, 
+	float3 d_pdu, float3 d_pdv, float jitter, float num_samples,
+	float radius2, float neg_inv_radius2,
+	float2 dims, float2 inv_dims)
 {
 	// Offset the first coord with some noise.
-	float2 uv = centerUV + snapUVOffset(jitter * deltaUV, dims, invDims);
-	deltaUV = snapUVOffset(deltaUV, dims, invDims);
+	float2 uv = center_uv + snap_uv_offset(jitter * delta_uv, dims, inv_dims);
+	delta_uv = snap_uv_offset(delta_uv, dims, inv_dims);
 
 	// Calculate the tangent vector.
-	float3 T = deltaUV.x * dPdu + deltaUV.y * dPdv;
+	float3 T = delta_uv.x * d_pdu + delta_uv.y * d_pdv;
 
 	// Get the angle of the tangent vector from the viewspace axis.
-	float tanH = biasedTangent(T);
-	float sinH = tanToSin(tanH);
+	float tan_h = biased_tangent(T);
+	float sin_h = tan_to_sin(tan_h);
 
 	float ao = 0.f;
 
 	// Sample to find the maximum angle
-	for (float s = 0; s < numSamples; ++s)
+	for (float s = 0; s < num_samples; ++s)
 	{
-		uv += deltaUV;
-		float3 S = positionAt(uv);
-		float tanS = tangent(P, S);
+		uv += delta_uv;
+		float3 S = position_at(uv);
+		float tan_s = tangent(P, S);
 		float d2 = length2(S - P);
 
 		// Is the sample within the radius and the angle greater?
-		if (d2 < radius2 && tanS > tanH)
+		if (d2 < radius2 && tan_s > tan_h)
 		{
-			float sinS = tanToSin(tanS);
+			float sin_s = tan_to_sin(tan_s);
 			// Apply falloff based on the distance.
-			ao += falloff(d2, negInvRadius2) * (sinS - sinH);
+			ao += falloff(d2, neg_inv_radius2) * (sin_s - sin_h);
 
-			tanH = tanS;
-			sinH = sinS;
+			tan_h = tan_s;
+			sin_h = sin_s;
 		}
 	}
 
@@ -113,94 +113,94 @@ static float horizonOcclusion(float2 centerUV, float2 deltaUV, float3 P,
 
 [RootSignature(HBAO_RS)]
 [numthreads(POST_PROCESSING_BLOCK_SIZE, POST_PROCESSING_BLOCK_SIZE, 1)]
-void main(cs_input IN)
+void main(CSInput IN)
 {
-	if (IN.dispatchThreadID.x >= cb.screenWidth || IN.dispatchThreadID.y >= cb.screenHeight) 
+	if (IN.dispatch_thread_id.x >= cb.screen_width || IN.dispatch_thread_id.y >= cb.screen_height) 
 	{
 		return;
 	}
 
-	float2 screenDims = float2(cb.screenWidth, cb.screenHeight);
-	float2 invScreenDims = rcp(screenDims);
+	float2 screen_dims = float2(cb.screen_width, cb.screen_height);
+	float2 inv_screen_dims = rcp(screen_dims);
 
-	float2 centerUV = (IN.dispatchThreadID.xy + float2(0.5f, 0.5f)) * invScreenDims;
-	float3 centerPos = positionAt(centerUV);
+	float2 center_uv = (IN.dispatch_thread_id.xy + float2(0.5f, 0.5f)) * inv_screen_dims;
+	float3 center_pos = position_at(center_uv);
 
-	if (centerPos.z < -1000.f)
+	if (center_pos.z < -1000.f)
 	{
-		resultTexture[IN.dispatchThreadID.xy] = 1.f;
+		result_texture[IN.dispatch_thread_id.xy] = 1.f;
 		return;
 	}
 
-	float3 rightPos = positionAt(centerUV + float2(invScreenDims.x, 0.f));
-	float3 leftPos = positionAt(centerUV - float2(invScreenDims.x, 0.f));
-	float3 topPos = positionAt(centerUV - float2(0.f, invScreenDims.y));
-	float3 bottomPos = positionAt(centerUV + float2(0.f, invScreenDims.y));
+	float3 right_pos = position_at(center_uv + float2(inv_screen_dims.x, 0.f));
+	float3 left_pos = position_at(center_uv - float2(inv_screen_dims.x, 0.f));
+	float3 top_pos = position_at(center_uv - float2(0.f, inv_screen_dims.y));
+	float3 bottom_pos = position_at(center_uv + float2(0.f, inv_screen_dims.y));
 
-	float3 dPdu = minDiff(centerPos, rightPos, leftPos);
-	float3 dPdv = minDiff(centerPos, bottomPos, topPos) * (screenDims.y * invScreenDims.x);
+	float3 d_pdu = min_diff(center_pos, right_pos, left_pos);
+	float3 d_pdv = min_diff(center_pos, bottom_pos, top_pos) * (screen_dims.y * inv_screen_dims.x);
 
-	float2 rayRadiusUV = 0.5f * cb.radius * camera.proj._m00_m11 / -centerPos.z;
+	float2 ray_radius_uv = 0.5f * cb.radius * camera.proj._m00_m11 / -center_pos.z;
 
-	float rayRadiusPix = rayRadiusUV.x * screenDims.x;
+	float ray_radius_pix = ray_radius_uv.x * screen_dims.x;
 
 	float ao = 1.f;
 
-	if (rayRadiusPix > 1.f)
+	if (ray_radius_pix > 1.f)
 	{
 		ao = 0.f;
 
-		float jitter = random(centerUV * 9523.f + cb.seed) * 0.4f;
+		float jitter = random(center_uv * 9523.f + cb.seed) * 0.4f;
 
 		// Compute steps.
-		float numSteps = min((float)cb.maxNumStepsPerRay, rayRadiusPix);
+		float num_steps = min((float)cb.max_num_steps_per_ray, ray_radius_pix);
 
 		// Divide by Ns+1 so that the farthest samples are not fully attenuated.
-		float stepSizePix = rayRadiusPix / (numSteps + 1);
+		float step_size_pix = ray_radius_pix / (num_steps + 1);
 
 		// Clamp numSteps if it is greater than the max kernel footprint.
-		float maxNumSteps = cb.maxNumStepsPerRay / stepSizePix;
-		if (maxNumSteps < numSteps)
+		float max_num_steps = cb.max_num_steps_per_ray / step_size_pix;
+		if (max_num_steps < num_steps)
 		{
 			// Use dithering to avoid AO discontinuities.
-			numSteps = floor(maxNumSteps + jitter);
-			numSteps = max(numSteps, 1);
-			stepSizePix = cb.maxNumStepsPerRay / numSteps;
+			num_steps = floor(max_num_steps + jitter);
+			num_steps = max(num_steps, 1);
+			step_size_pix = cb.max_num_steps_per_ray / num_steps;
 		}
 
-		float2 stepSizeUV = stepSizePix * invScreenDims;
+		float2 step_size_uv = step_size_pix * inv_screen_dims;
 
 
-		float angle = random(centerUV * 5416.f + cb.seed) * M_PI * 2.f;
-		float2 randomRotation = float2(cos(angle), sin(angle)); // TODO: Maybe get this from texture.
+		float angle = random(center_uv * 5416.f + cb.seed) * M_PI * 2.f;
+		float2 random_rotation = float2(cos(angle), sin(angle)); // TODO: Maybe get this from texture.
 
 		// Apply noise to initial rotation.
-		float2 dir = rotateDirections(float2(1.f, 0.f), randomRotation);
+		float2 dir = rotate_directions(float2(1.f, 0.f), random_rotation);
 
-		float2 rayDeltaRotation = cb.rayDeltaRotation;
+		float2 ray_delta_rotation = cb.ray_delta_rotation;
 
 		float radius2 = cb.radius * cb.radius;
-		float negInvRadius2 = rcp(radius2);
+		float neg_inv_radius2 = rcp(radius2);
 
-		for (float d = 0; d < (float)cb.numRays; d += 1.f)
+		for (float d = 0; d < (float)cb.num_rays; d += 1.f)
 		{
-			float2 deltaUV = dir * stepSizeUV;
+			float2 delta_uv = dir * step_size_uv;
 
 			// Sample the pixels along the direction.
-			ao += horizonOcclusion(
-				centerUV, deltaUV,
-				centerPos,
-				dPdu, dPdv,
-				jitter, numSteps,
-				radius2, negInvRadius2,
-				screenDims, invScreenDims);
+			ao += horizon_occlusion(
+				center_uv, delta_uv,
+				center_pos,
+				d_pdu, d_pdv,
+				jitter, num_steps,
+				radius2, neg_inv_radius2,
+				screen_dims, inv_screen_dims);
 
-			dir = rotateDirections(dir, rayDeltaRotation);
+			dir = rotate_directions(dir, ray_delta_rotation);
 		}
 
 		// Average the results and produce the final AO.
-		ao = saturate(1.f - ao / cb.numRays * cb.strength);
+		ao = saturate(1.f - ao / cb.num_rays * cb.strength);
 	}
 
-	resultTexture[IN.dispatchThreadID.xy] = ao;
+	result_texture[IN.dispatch_thread_id.xy] = ao;
 }

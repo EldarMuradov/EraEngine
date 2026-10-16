@@ -50,69 +50,69 @@ namespace era_engine
 			material->Get(AI_MATKEY_METALLIC_FACTOR, metallic);
 			imported.metallic_override = metallic;
 
-			aiString texturePath;
+			aiString texture_path;
 
-			if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
+			if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texture_path) == AI_SUCCESS)
 			{
-				imported.albedo = texturePath.C_Str();
+				imported.albedo = texture_path.C_Str();
 			}
 
-			if (material->GetTexture(aiTextureType_NORMALS, 0, &texturePath) == AI_SUCCESS)
+			if (material->GetTexture(aiTextureType_NORMALS, 0, &texture_path) == AI_SUCCESS)
 			{
-				imported.normal = texturePath.C_Str();
+				imported.normal = texture_path.C_Str();
 			}
 
-			if (material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &texturePath) == AI_SUCCESS)
+			if (material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &texture_path) == AI_SUCCESS)
 			{
-				imported.roughness = texturePath.C_Str();
+				imported.roughness = texture_path.C_Str();
 			}
 
-			if (material->GetTexture(aiTextureType_METALNESS, 0, &texturePath) == AI_SUCCESS)
+			if (material->GetTexture(aiTextureType_METALNESS, 0, &texture_path) == AI_SUCCESS)
 			{
-				imported.metallic = texturePath.C_Str();
+				imported.metallic = texture_path.C_Str();
 			}
 
 			result.materials.push_back(imported);
 		}
 	}
 
-	static void add_bone_weight(animation::SkinningWeights& skinning, uint32 boneIndex, float weight)
+	static void add_bone_weight(animation::SkinningWeights& skinning, uint32 bone_index, float weight)
 	{
-		uint8 weightByte = (uint8)clamp(weight * 255.0f, 0.0f, 255.0f);
-		uint8 boneID = (uint8)boneIndex;
+		uint8 weight_byte = (uint8)clamp(weight * 255.0f, 0.0f, 255.0f);
+		uint8 bone_id = (uint8)bone_index;
 
 		for (int i = 0; i < 4; ++i)
 		{
 			if (skinning.skin_weights[i] == 0)
 			{
-				skinning.skin_indices[i] = boneID;
-				skinning.skin_weights[i] = weightByte;
+				skinning.skin_indices[i] = bone_id;
+				skinning.skin_weights[i] = weight_byte;
 				return;
 			}
 		}
 
-		int minIndex = 0;
-		uint8 minWeight = skinning.skin_weights[0];
+		int min_index = 0;
+		uint8 min_weight = skinning.skin_weights[0];
 
 		for (int i = 1; i < 4; ++i)
 		{
-			if (skinning.skin_weights[i] < minWeight)
+			if (skinning.skin_weights[i] < min_weight)
 			{
-				minIndex = i;
-				minWeight = skinning.skin_weights[i];
+				min_index = i;
+				min_weight = skinning.skin_weights[i];
 			}
 		}
 
-		if (weightByte > minWeight)
+		if (weight_byte > min_weight)
 		{
-			skinning.skin_indices[minIndex] = boneID;
-			skinning.skin_weights[minIndex] = weightByte;
+			skinning.skin_indices[min_index] = bone_id;
+			skinning.skin_weights[min_index] = weight_byte;
 		}
 	}
 
-	static void import_skinning(aiMesh* aiMesh, SubmeshAsset& submesh, uint32 flags)
+	static void import_skinning(aiMesh* ai_mesh, SubmeshAsset& submesh, uint32 flags)
 	{
-		submesh.skin.resize(aiMesh->mNumVertices);
+		submesh.skin.resize(ai_mesh->mNumVertices);
 
 		for (auto& skin : submesh.skin)
 		{
@@ -120,42 +120,42 @@ namespace era_engine
 			skin.skin_weights.fill(0);
 		}
 
-		for (uint32 boneIndex = 0; boneIndex < aiMesh->mNumBones; ++boneIndex)
+		for (uint32 bone_index = 0; bone_index < ai_mesh->mNumBones; ++bone_index)
 		{
-			aiBone* bone = aiMesh->mBones[boneIndex];
+			aiBone* bone = ai_mesh->mBones[bone_index];
 
-			const uint32 jointIndex = flags & mesh_creation_flags_generate_root_motion ? boneIndex + 1 : boneIndex;
+			const uint32 joint_index = flags & MESH_CREATION_FLAGS_GENERATE_ROOT_MOTION ? bone_index + 1 : bone_index;
 
-			for (uint32 weightIndex = 0; weightIndex < bone->mNumWeights; ++weightIndex)
+			for (uint32 weight_index = 0; weight_index < bone->mNumWeights; ++weight_index)
 			{
-				aiVertexWeight weight = bone->mWeights[weightIndex];
+				aiVertexWeight weight = bone->mWeights[weight_index];
 
-				uint32 vertexID = weight.mVertexId;
-				float weightValue = weight.mWeight;
+				uint32 vertex_id = weight.mVertexId;
+				float weight_value = weight.mWeight;
 
-				if (vertexID >= submesh.skin.size())
+				if (vertex_id >= submesh.skin.size())
 				{
 					continue;
 				}
 
-				add_bone_weight(submesh.skin[vertexID], jointIndex, weightValue);
+				add_bone_weight(submesh.skin[vertex_id], joint_index, weight_value);
 			}
 		}
 
 		for (auto& skin : submesh.skin)
 		{
-			uint32 weightSum = skin.skin_weights[0] + skin.skin_weights[1] +
+			uint32 weight_sum = skin.skin_weights[0] + skin.skin_weights[1] +
 				skin.skin_weights[2] + skin.skin_weights[3];
 
-			if (weightSum > 0)
+			if (weight_sum > 0)
 			{
-				uint32 runningSum = 0;
+				uint32 running_sum = 0;
 				for (int i = 0; i < 3; ++i)
 				{
-					skin.skin_weights[i] = (uint8)((uint32)skin.skin_weights[i] * 255 / weightSum);
-					runningSum += skin.skin_weights[i];
+					skin.skin_weights[i] = (uint8)((uint32)skin.skin_weights[i] * 255 / weight_sum);
+					running_sum += skin.skin_weights[i];
 				}
-				skin.skin_weights[3] = (uint8)(255 - runningSum);
+				skin.skin_weights[3] = (uint8)(255 - running_sum);
 			}
 			else
 			{
@@ -166,84 +166,84 @@ namespace era_engine
 		}
 	}
 
-	static void load_meshes(const aiScene* scene, float scaleFactor, ModelAsset& result)
+	static void load_meshes(const aiScene* scene, float scale_factor, ModelAsset& result)
 	{
 		result.meshes.reserve(scene->mNumMeshes);
 
-		for (uint32 meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex)
+		for (uint32 mesh_index = 0; mesh_index < scene->mNumMeshes; ++mesh_index)
 		{
-			aiMesh* aiMesh = scene->mMeshes[meshIndex];
+			aiMesh* ai_mesh = scene->mMeshes[mesh_index];
 
 			MeshAsset mesh;
-			mesh.name = aiMesh->mName.C_Str();
+			mesh.name = ai_mesh->mName.C_Str();
 			mesh.skeleton_index = 0;
 
 			SubmeshAsset submesh;
-			submesh.material_index = aiMesh->mMaterialIndex;
+			submesh.material_index = ai_mesh->mMaterialIndex;
 
-			submesh.positions.reserve(aiMesh->mNumVertices);
-			for (uint32 i = 0; i < aiMesh->mNumVertices; ++i)
+			submesh.positions.reserve(ai_mesh->mNumVertices);
+			for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
 			{
-				aiVector3D pos = aiMesh->mVertices[i];
+				aiVector3D pos = ai_mesh->mVertices[i];
 
-				submesh.positions.push_back(vec3(pos.x, pos.y, pos.z) * scaleFactor);
+				submesh.positions.push_back(vec3(pos.x, pos.y, pos.z) * scale_factor);
 			}
 
-			if (aiMesh->HasNormals())
+			if (ai_mesh->HasNormals())
 			{
-				submesh.normals.reserve(aiMesh->mNumVertices);
-				for (uint32 i = 0; i < aiMesh->mNumVertices; ++i)
+				submesh.normals.reserve(ai_mesh->mNumVertices);
+				for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
 				{
-					aiVector3D normal = aiMesh->mNormals[i];
+					aiVector3D normal = ai_mesh->mNormals[i];
 					submesh.normals.push_back(vec3(normal.x, normal.y, normal.z));
 				}
 			}
 
-			if (aiMesh->HasTextureCoords(0))
+			if (ai_mesh->HasTextureCoords(0))
 			{
-				submesh.uvs.reserve(aiMesh->mNumVertices);
-				for (uint32 i = 0; i < aiMesh->mNumVertices; ++i)
+				submesh.uvs.reserve(ai_mesh->mNumVertices);
+				for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
 				{
-					aiVector3D uv = aiMesh->mTextureCoords[0][i];
+					aiVector3D uv = ai_mesh->mTextureCoords[0][i];
 					submesh.uvs.push_back(vec2(uv.x, uv.y));
 				}
 			}
 
-			if (aiMesh->HasTangentsAndBitangents())
+			if (ai_mesh->HasTangentsAndBitangents())
 			{
-				submesh.tangents.reserve(aiMesh->mNumVertices);
-				for (uint32 i = 0; i < aiMesh->mNumVertices; ++i)
+				submesh.tangents.reserve(ai_mesh->mNumVertices);
+				for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
 				{
-					aiVector3D tangent = aiMesh->mTangents[i];
+					aiVector3D tangent = ai_mesh->mTangents[i];
 					submesh.tangents.push_back(vec3(tangent.x, tangent.y, tangent.z));
 				}
 			}
 
-			if (aiMesh->HasVertexColors(0))
+			if (ai_mesh->HasVertexColors(0))
 			{
-				submesh.colors.reserve(aiMesh->mNumVertices);
-				for (uint32 i = 0; i < aiMesh->mNumVertices; ++i)
+				submesh.colors.reserve(ai_mesh->mNumVertices);
+				for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
 				{
-					aiColor4D color = aiMesh->mColors[0][i];
-					uint32 packed = packColor(color.r, color.g, color.b, color.a);
+					aiColor4D color = ai_mesh->mColors[0][i];
+					uint32 packed = pack_color(color.r, color.g, color.b, color.a);
 					submesh.colors.push_back(packed);
 				}
 			}
 
-			if (aiMesh->HasBones())
+			if (ai_mesh->HasBones())
 			{
-				import_skinning(aiMesh, submesh, result.flags);
+				import_skinning(ai_mesh, submesh, result.flags);
 			}
 
-			submesh.triangles.reserve(aiMesh->mNumFaces);
+			submesh.triangles.reserve(ai_mesh->mNumFaces);
 
-			for (uint32 faceIndex = 0; faceIndex < aiMesh->mNumFaces; ++faceIndex)
+			for (uint32 face_index = 0; face_index < ai_mesh->mNumFaces; ++face_index)
 			{
-				aiFace face = aiMesh->mFaces[faceIndex];
+				aiFace face = ai_mesh->mFaces[face_index];
 
 				if (face.mNumIndices == 3)
 				{
-					indexed_triangle32 triangle;
+					IndexedTriangle32 triangle;
 					triangle.a = (uint32)face.mIndices[0];
 					triangle.b = (uint32)face.mIndices[1];
 					triangle.c = (uint32)face.mIndices[2];
@@ -271,24 +271,24 @@ namespace era_engine
 	}
 
 	static void find_skeleton_roots_recursive(aiNode* node,
-		const std::unordered_set<std::string>& boneNames,
+		const std::unordered_set<std::string>& bone_names,
 		std::vector<aiNode*>& roots)
 	{
-		std::string nodeName = clean_bone_name(node->mName.C_Str());
+		std::string node_name = clean_bone_name(node->mName.C_Str());
 
-		bool isBone = boneNames.find(nodeName) != boneNames.end();
+		bool is_bone = bone_names.find(node_name) != bone_names.end();
 
-		if (isBone)
+		if (is_bone)
 		{
-			bool parentIsBone = false;
+			bool parent_is_bone = false;
 
 			if (node->mParent)
 			{
-				std::string parentName = clean_bone_name(node->mParent->mName.C_Str());
-				parentIsBone = boneNames.find(parentName) != boneNames.end();
+				std::string parent_name = clean_bone_name(node->mParent->mName.C_Str());
+				parent_is_bone = bone_names.find(parent_name) != bone_names.end();
 			}
 
-			if (!parentIsBone)
+			if (!parent_is_bone)
 			{
 				roots.push_back(node);
 				return;
@@ -297,7 +297,7 @@ namespace era_engine
 
 		for (uint32 i = 0; i < node->mNumChildren; ++i)
 		{
-			find_skeleton_roots_recursive(node->mChildren[i], boneNames, roots);
+			find_skeleton_roots_recursive(node->mChildren[i], bone_names, roots);
 		}
 	}
 
@@ -305,223 +305,223 @@ namespace era_engine
 	{
 		std::vector<aiNode*> roots;
 
-		std::unordered_set<std::string> boneNames;
+		std::unordered_set<std::string> bone_names;
 
-		for (uint32 meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex)
+		for (uint32 mesh_index = 0; mesh_index < scene->mNumMeshes; ++mesh_index)
 		{
-			aiMesh* mesh = scene->mMeshes[meshIndex];
+			aiMesh* mesh = scene->mMeshes[mesh_index];
 
-			for (uint32 boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
+			for (uint32 bone_index = 0; bone_index < mesh->mNumBones; ++bone_index)
 			{
-				aiBone* bone = mesh->mBones[boneIndex];
-				std::string boneName = clean_bone_name(bone->mName.C_Str());
-				boneNames.insert(boneName);
+				aiBone* bone = mesh->mBones[bone_index];
+				std::string bone_name = clean_bone_name(bone->mName.C_Str());
+				bone_names.insert(bone_name);
 			}
 		}
 
-		find_skeleton_roots_recursive(scene->mRootNode, boneNames, roots);
+		find_skeleton_roots_recursive(scene->mRootNode, bone_names, roots);
 
 		return roots;
 	}
 
-	static void collect_bone_names_recursive(aiNode* node, std::unordered_set<std::string>& boneNames)
+	static void collect_bone_names_recursive(aiNode* node, std::unordered_set<std::string>& bone_names)
 	{
-		std::string nodeName = clean_bone_name(node->mName.C_Str());
-		boneNames.insert(nodeName);
+		std::string node_name = clean_bone_name(node->mName.C_Str());
+		bone_names.insert(node_name);
 
 		for (uint32 i = 0; i < node->mNumChildren; ++i)
 		{
-			collect_bone_names_recursive(node->mChildren[i], boneNames);
+			collect_bone_names_recursive(node->mChildren[i], bone_names);
 		}
 	}
 
 	static void collect_skeleton_bones(const aiScene* scene,
-		aiNode* skeletonRoot,
-		std::unordered_map<std::string, aiBone*>& skeletonBones)
+		aiNode* skeleton_root,
+		std::unordered_map<std::string, aiBone*>& skeleton_bones)
 	{
-		std::unordered_set<std::string> boneNames;
-		collect_bone_names_recursive(skeletonRoot, boneNames);
+		std::unordered_set<std::string> bone_names;
+		collect_bone_names_recursive(skeleton_root, bone_names);
 
-		for (uint32 meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex)
+		for (uint32 mesh_index = 0; mesh_index < scene->mNumMeshes; ++mesh_index)
 		{
-			aiMesh* mesh = scene->mMeshes[meshIndex];
+			aiMesh* mesh = scene->mMeshes[mesh_index];
 
-			for (uint32 boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
+			for (uint32 bone_index = 0; bone_index < mesh->mNumBones; ++bone_index)
 			{
-				aiBone* bone = mesh->mBones[boneIndex];
-				std::string boneName = clean_bone_name(bone->mName.C_Str());
+				aiBone* bone = mesh->mBones[bone_index];
+				std::string bone_name = clean_bone_name(bone->mName.C_Str());
 
-				if (boneNames.find(boneName) != boneNames.end())
+				if (bone_names.find(bone_name) != bone_names.end())
 				{
-					if (skeletonBones.find(boneName) == skeletonBones.end())
+					if (skeleton_bones.find(bone_name) == skeleton_bones.end())
 					{
-						skeletonBones[boneName] = bone;
+						skeleton_bones[bone_name] = bone;
 					}
 				}
 			}
 		}
 	}
 
-	static void convert_assimp_matrix(const aiMatrix4x4& aiMat, mat4& outMat)
+	static void convert_assimp_matrix(const aiMatrix4x4& ai_mat, mat4& out_mat)
 	{
-		outMat.m[0] = aiMat.a1;
-		outMat.m[1] = aiMat.b1;
-		outMat.m[2] = aiMat.c1;
-		outMat.m[3] = aiMat.d1;
+		out_mat.m[0] = ai_mat.a1;
+		out_mat.m[1] = ai_mat.b1;
+		out_mat.m[2] = ai_mat.c1;
+		out_mat.m[3] = ai_mat.d1;
 
-		outMat.m[4] = aiMat.a2;
-		outMat.m[5] = aiMat.b2;
-		outMat.m[6] = aiMat.c2;
-		outMat.m[7] = aiMat.d2;
+		out_mat.m[4] = ai_mat.a2;
+		out_mat.m[5] = ai_mat.b2;
+		out_mat.m[6] = ai_mat.c2;
+		out_mat.m[7] = ai_mat.d2;
 
-		outMat.m[8] = aiMat.a3;
-		outMat.m[9] = aiMat.b3;
-		outMat.m[10] = aiMat.c3;
-		outMat.m[11] = aiMat.d3;
+		out_mat.m[8] = ai_mat.a3;
+		out_mat.m[9] = ai_mat.b3;
+		out_mat.m[10] = ai_mat.c3;
+		out_mat.m[11] = ai_mat.d3;
 
-		outMat.m[12] = aiMat.a4;
-		outMat.m[13] = aiMat.b4;
-		outMat.m[14] = aiMat.c4;
-		outMat.m[15] = aiMat.d4;
+		out_mat.m[12] = ai_mat.a4;
+		out_mat.m[13] = ai_mat.b4;
+		out_mat.m[14] = ai_mat.c4;
+		out_mat.m[15] = ai_mat.d4;
 	}
 
 	static void process_skeleton_node(aiNode* node,
-		aiNode* parentNode,
-		const std::unordered_map<std::string, aiBone*>& skeletonBones,
-		float scaleFactor,
+		aiNode* parent_node,
+		const std::unordered_map<std::string, aiBone*>& skeleton_bones,
+		float scale_factor,
 		animation::SkeletonAssetImportData& result)
 	{
 		using namespace animation;
 
-		std::string nodeName = clean_bone_name(node->mName.C_Str());
+		std::string node_name = clean_bone_name(node->mName.C_Str());
 
-		auto boneIt = skeletonBones.find(nodeName);
+		auto bone_it = skeleton_bones.find(node_name);
 
-		if (boneIt != skeletonBones.end())
+		if (bone_it != skeleton_bones.end())
 		{
-			if (result.name_to_joint_id.find(nodeName) != result.name_to_joint_id.end())
+			if (result.name_to_joint_id.find(node_name) != result.name_to_joint_id.end())
 			{
 				for (uint32 i = 0; i < node->mNumChildren; ++i)
 				{
-					process_skeleton_node(node->mChildren[i], node, skeletonBones, scaleFactor, result);
+					process_skeleton_node(node->mChildren[i], node, skeleton_bones, scale_factor, result);
 				}
 				return;
 			}
 
-			aiBone* bone = boneIt->second;
+			aiBone* bone = bone_it->second;
 
 			SkeletonJoint joint;
-			joint.name = nodeName;
+			joint.name = node_name;
 
-			aiMatrix4x4 offsetMatrix = bone->mOffsetMatrix;
-			convert_assimp_matrix(offsetMatrix, joint.inv_bind_transform);
+			aiMatrix4x4 offset_matrix = bone->mOffsetMatrix;
+			convert_assimp_matrix(offset_matrix, joint.inv_bind_transform);
 
 			trs temp = mat4_to_trs(invert(joint.inv_bind_transform));
-			temp.position *= scaleFactor;
+			temp.position *= scale_factor;
 
 			joint.bind_transform = trs_to_mat4(temp);
 			joint.inv_bind_transform = invert(joint.bind_transform);
 
-			if (parentNode)
+			if (parent_node)
 			{
-				aiNode* currentParent = parentNode;
-				while (currentParent)
+				aiNode* current_parent = parent_node;
+				while (current_parent)
 				{
-					std::string currentParentName = clean_bone_name(currentParent->mName.C_Str());
-					auto currentParentIt = result.name_to_joint_id.find(currentParentName);
+					std::string current_parent_name = clean_bone_name(current_parent->mName.C_Str());
+					auto current_parent_it = result.name_to_joint_id.find(current_parent_name);
 
-					if (currentParentIt != result.name_to_joint_id.end())
+					if (current_parent_it != result.name_to_joint_id.end())
 					{
-						joint.parent_id = currentParentIt->second;
+						joint.parent_id = current_parent_it->second;
 						break;
 					}
 
-					currentParent = currentParent->mParent;
+					current_parent = current_parent->mParent;
 				}
 			}
 
-			uint32 jointID = (uint32)result.joints.size();
+			uint32 joint_id = (uint32)result.joints.size();
 			result.joints.push_back(joint);
-			result.name_to_joint_id[nodeName] = jointID;
+			result.name_to_joint_id[node_name] = joint_id;
 		}
 
 		for (uint32 i = 0; i < node->mNumChildren; ++i)
 		{
-			process_skeleton_node(node->mChildren[i], node, skeletonBones, scaleFactor, result);
+			process_skeleton_node(node->mChildren[i], node, skeleton_bones, scale_factor, result);
 		}
 	}
 
-	static std::vector<animation::SkeletonAssetImportData> load_skeletons(const aiScene* scene, float scaleFactor, uint32 flags)
+	static std::vector<animation::SkeletonAssetImportData> load_skeletons(const aiScene* scene, float scale_factor, uint32 flags)
 	{
 		using namespace animation;
 
 		std::vector<SkeletonAssetImportData> result;
 
-		std::vector<aiNode*> skeletonRoots = find_skeleton_roots(scene);
+		std::vector<aiNode*> skeleton_roots = find_skeleton_roots(scene);
 
-		printf("Found %zu skeletons\n", skeletonRoots.size());
+		printf("Found %zu skeletons\n", skeleton_roots.size());
 
-		for (size_t i = 0; i < skeletonRoots.size(); ++i)
+		for (size_t i = 0; i < skeleton_roots.size(); ++i)
 		{
-			SkeletonAssetImportData skeletonData;
+			SkeletonAssetImportData skeleton_data;
 
-			std::unordered_map<std::string, aiBone*> skeletonBones;
-			collect_skeleton_bones(scene, skeletonRoots[i], skeletonBones);
+			std::unordered_map<std::string, aiBone*> skeleton_bones;
+			collect_skeleton_bones(scene, skeleton_roots[i], skeleton_bones);
 
-			printf("Skeleton %zu: %zu bones\n", i, skeletonBones.size());
+			printf("Skeleton %zu: %zu bones\n", i, skeleton_bones.size());
 
-			process_skeleton_node(skeletonRoots[i], nullptr, skeletonBones, scaleFactor, skeletonData);
+			process_skeleton_node(skeleton_roots[i], nullptr, skeleton_bones, scale_factor, skeleton_data);
 
-			printf("Processed skeleton %zu: %zu joints\n", i, skeletonData.joints.size());
+			printf("Processed skeleton %zu: %zu joints\n", i, skeleton_data.joints.size());
 
-			for (size_t j = 0; j < skeletonData.joints.size(); ++j)
+			for (size_t j = 0; j < skeleton_data.joints.size(); ++j)
 			{
 				printf("  Joint %zu: %s (parent: %d)\n",
 					j,
-					skeletonData.joints[j].name.c_str(),
-					skeletonData.joints[j].parent_id);
+					skeleton_data.joints[j].name.c_str(),
+					skeleton_data.joints[j].parent_id);
 			}
 
-			result.push_back(std::move(skeletonData));
+			result.push_back(std::move(skeleton_data));
 		}
 
 		if (result.empty())
 		{
-			SkeletonAssetImportData singleSkeleton;
-			std::unordered_map<std::string, aiBone*> allBones;
+			SkeletonAssetImportData single_skeleton;
+			std::unordered_map<std::string, aiBone*> all_bones;
 
-			for (uint32 meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex)
+			for (uint32 mesh_index = 0; mesh_index < scene->mNumMeshes; ++mesh_index)
 			{
-				aiMesh* mesh = scene->mMeshes[meshIndex];
+				aiMesh* mesh = scene->mMeshes[mesh_index];
 
-				for (uint32 boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
+				for (uint32 bone_index = 0; bone_index < mesh->mNumBones; ++bone_index)
 				{
-					aiBone* bone = mesh->mBones[boneIndex];
-					std::string boneName = clean_bone_name(bone->mName.C_Str());
+					aiBone* bone = mesh->mBones[bone_index];
+					std::string bone_name = clean_bone_name(bone->mName.C_Str());
 
-					if (allBones.find(boneName) == allBones.end())
+					if (all_bones.find(bone_name) == all_bones.end())
 					{
-						allBones[boneName] = bone;
+						all_bones[bone_name] = bone;
 					}
 				}
 			}
 
-			if (!allBones.empty())
+			if (!all_bones.empty())
 			{
-				printf("No skeleton roots found, using all %zu bones\n", allBones.size());
-				process_skeleton_node(scene->mRootNode, nullptr, allBones, scaleFactor, singleSkeleton);
+				printf("No skeleton roots found, using all %zu bones\n", all_bones.size());
+				process_skeleton_node(scene->mRootNode, nullptr, all_bones, scale_factor, single_skeleton);
 
-				printf("Processed skeleton: %zu joints\n", singleSkeleton.joints.size());
+				printf("Processed skeleton: %zu joints\n", single_skeleton.joints.size());
 
-				for (size_t j = 0; j < singleSkeleton.joints.size(); ++j)
+				for (size_t j = 0; j < single_skeleton.joints.size(); ++j)
 				{
 					printf("  Joint %zu: %s (parent: %d)\n",
 						j,
-						singleSkeleton.joints[j].name.c_str(),
-						singleSkeleton.joints[j].parent_id);
+						single_skeleton.joints[j].name.c_str(),
+						single_skeleton.joints[j].parent_id);
 				}
 
-				result.push_back(std::move(singleSkeleton));
+				result.push_back(std::move(single_skeleton));
 			}
 		}
 
@@ -537,13 +537,13 @@ namespace era_engine
 
 		for (uint32 i = 0; i < animation->mNumChannels; ++i)
 		{
-			aiNodeAnim* nodeAnim = animation->mChannels[i];
-			std::string animName = nodeAnim->mNodeName.C_Str();
-			std::string cleanAnimName = clean_bone_name(animName);
+			aiNodeAnim* node_anim = animation->mChannels[i];
+			std::string anim_name = node_anim->mNodeName.C_Str();
+			std::string clean_anim_name = clean_bone_name(anim_name);
 
-			if (cleanAnimName == clean_bone || animName == bone_name)
+			if (clean_anim_name == clean_bone || anim_name == bone_name)
 			{
-				result.push_back(nodeAnim);
+				result.push_back(node_anim);
 			}
 		}
 
@@ -551,44 +551,44 @@ namespace era_engine
 	}
 
 	static trs sample_node_animation_component(
-		const aiNodeAnim* nodeAnim,
+		const aiNodeAnim* node_anim,
 		float time,
-		float scaleFactor,
-		float ticksPerSecond)
+		float scale_factor,
+		float ticks_per_second)
 	{
 		trs result = trs::identity;
 
-		if (!nodeAnim)
+		if (!node_anim)
 			return result;
 
-		if (nodeAnim->mNumPositionKeys > 0)
+		if (node_anim->mNumPositionKeys > 0)
 		{
 			aiVector3D position;
 
-			float firstTime = (float)nodeAnim->mPositionKeys[0].mTime / ticksPerSecond;
-			float lastTime = (float)nodeAnim->mPositionKeys[nodeAnim->mNumPositionKeys - 1].mTime / ticksPerSecond;
+			float first_time = (float)node_anim->mPositionKeys[0].mTime / ticks_per_second;
+			float last_time = (float)node_anim->mPositionKeys[node_anim->mNumPositionKeys - 1].mTime / ticks_per_second;
 
-			if (time <= firstTime)
+			if (time <= first_time)
 			{
-				position = nodeAnim->mPositionKeys[0].mValue;
+				position = node_anim->mPositionKeys[0].mValue;
 			}
-			else if (time >= lastTime)
+			else if (time >= last_time)
 			{
-				position = nodeAnim->mPositionKeys[nodeAnim->mNumPositionKeys - 1].mValue;
+				position = node_anim->mPositionKeys[node_anim->mNumPositionKeys - 1].mValue;
 			}
 			else
 			{
-				for (uint32 i = 0; i < nodeAnim->mNumPositionKeys - 1; ++i)
+				for (uint32 i = 0; i < node_anim->mNumPositionKeys - 1; ++i)
 				{
-					float t0 = (float)nodeAnim->mPositionKeys[i].mTime / ticksPerSecond;
-					float t1 = (float)nodeAnim->mPositionKeys[i + 1].mTime / ticksPerSecond;
+					float t0 = (float)node_anim->mPositionKeys[i].mTime / ticks_per_second;
+					float t1 = (float)node_anim->mPositionKeys[i + 1].mTime / ticks_per_second;
 
 					if (time >= t0 && time <= t1)
 					{
 						float alpha = (t1 > t0) ? (time - t0) / (t1 - t0) : 0.0f;
 
-						aiVector3D p0 = nodeAnim->mPositionKeys[i].mValue;
-						aiVector3D p1 = nodeAnim->mPositionKeys[i + 1].mValue;
+						aiVector3D p0 = node_anim->mPositionKeys[i].mValue;
+						aiVector3D p1 = node_anim->mPositionKeys[i + 1].mValue;
 
 						position = p0 + (p1 - p0) * alpha;
 						break;
@@ -596,37 +596,37 @@ namespace era_engine
 				}
 			}
 
-			result.position = vec3(position.x, position.y, position.z) * scaleFactor;
+			result.position = vec3(position.x, position.y, position.z) * scale_factor;
 		}
 
-		if (nodeAnim->mNumRotationKeys > 0)
+		if (node_anim->mNumRotationKeys > 0)
 		{
 			aiQuaternion rotation;
 
-			float firstTime = (float)nodeAnim->mRotationKeys[0].mTime / ticksPerSecond;
-			float lastTime = (float)nodeAnim->mRotationKeys[nodeAnim->mNumRotationKeys - 1].mTime / ticksPerSecond;
+			float first_time = (float)node_anim->mRotationKeys[0].mTime / ticks_per_second;
+			float last_time = (float)node_anim->mRotationKeys[node_anim->mNumRotationKeys - 1].mTime / ticks_per_second;
 
-			if (time <= firstTime)
+			if (time <= first_time)
 			{
-				rotation = nodeAnim->mRotationKeys[0].mValue;
+				rotation = node_anim->mRotationKeys[0].mValue;
 			}
-			else if (time >= lastTime)
+			else if (time >= last_time)
 			{
-				rotation = nodeAnim->mRotationKeys[nodeAnim->mNumRotationKeys - 1].mValue;
+				rotation = node_anim->mRotationKeys[node_anim->mNumRotationKeys - 1].mValue;
 			}
 			else
 			{
-				for (uint32 i = 0; i < nodeAnim->mNumRotationKeys - 1; ++i)
+				for (uint32 i = 0; i < node_anim->mNumRotationKeys - 1; ++i)
 				{
-					float t0 = (float)nodeAnim->mRotationKeys[i].mTime / ticksPerSecond;
-					float t1 = (float)nodeAnim->mRotationKeys[i + 1].mTime / ticksPerSecond;
+					float t0 = (float)node_anim->mRotationKeys[i].mTime / ticks_per_second;
+					float t1 = (float)node_anim->mRotationKeys[i + 1].mTime / ticks_per_second;
 
 					if (time >= t0 && time <= t1)
 					{
 						float alpha = (t1 > t0) ? (time - t0) / (t1 - t0) : 0.0f;
 
-						aiQuaternion q0 = nodeAnim->mRotationKeys[i].mValue;
-						aiQuaternion q1 = nodeAnim->mRotationKeys[i + 1].mValue;
+						aiQuaternion q0 = node_anim->mRotationKeys[i].mValue;
+						aiQuaternion q1 = node_anim->mRotationKeys[i + 1].mValue;
 
 						aiQuaternion::Interpolate(rotation, q0, q1, alpha);
 						break;
@@ -637,34 +637,34 @@ namespace era_engine
 			result.rotation = quat(rotation.x, rotation.y, rotation.z, rotation.w);
 		}
 
-		if (nodeAnim->mNumScalingKeys > 0)
+		if (node_anim->mNumScalingKeys > 0)
 		{
 			aiVector3D scaling;
 
-			float firstTime = (float)nodeAnim->mScalingKeys[0].mTime / ticksPerSecond;
-			float lastTime = (float)nodeAnim->mScalingKeys[nodeAnim->mNumScalingKeys - 1].mTime / ticksPerSecond;
+			float first_time = (float)node_anim->mScalingKeys[0].mTime / ticks_per_second;
+			float last_time = (float)node_anim->mScalingKeys[node_anim->mNumScalingKeys - 1].mTime / ticks_per_second;
 
-			if (time <= firstTime)
+			if (time <= first_time)
 			{
-				scaling = nodeAnim->mScalingKeys[0].mValue;
+				scaling = node_anim->mScalingKeys[0].mValue;
 			}
-			else if (time >= lastTime)
+			else if (time >= last_time)
 			{
-				scaling = nodeAnim->mScalingKeys[nodeAnim->mNumScalingKeys - 1].mValue;
+				scaling = node_anim->mScalingKeys[node_anim->mNumScalingKeys - 1].mValue;
 			}
 			else
 			{
-				for (uint32 i = 0; i < nodeAnim->mNumScalingKeys - 1; ++i)
+				for (uint32 i = 0; i < node_anim->mNumScalingKeys - 1; ++i)
 				{
-					float t0 = (float)nodeAnim->mScalingKeys[i].mTime / ticksPerSecond;
-					float t1 = (float)nodeAnim->mScalingKeys[i + 1].mTime / ticksPerSecond;
+					float t0 = (float)node_anim->mScalingKeys[i].mTime / ticks_per_second;
+					float t1 = (float)node_anim->mScalingKeys[i + 1].mTime / ticks_per_second;
 
 					if (time >= t0 && time <= t1)
 					{
 						float alpha = (t1 > t0) ? (time - t0) / (t1 - t0) : 0.0f;
 
-						aiVector3D s0 = nodeAnim->mScalingKeys[i].mValue;
-						aiVector3D s1 = nodeAnim->mScalingKeys[i + 1].mValue;
+						aiVector3D s0 = node_anim->mScalingKeys[i].mValue;
+						aiVector3D s1 = node_anim->mScalingKeys[i + 1].mValue;
 
 						scaling = s0 + (s1 - s0) * alpha;
 						break;
@@ -704,7 +704,7 @@ namespace era_engine
 	static std::vector<animation::AnimationClipAssetImportData> load_animations(
 		const aiScene* scene,
 		const animation::Skeleton* skeleton,
-		float scaleFactor,
+		float scale_factor,
 		uint32 flags)
 	{
 		using namespace animation;
@@ -716,44 +716,44 @@ namespace era_engine
 			return result;
 		}
 
-		for (uint32 animIndex = 0; animIndex < scene->mNumAnimations; ++animIndex)
+		for (uint32 anim_index = 0; anim_index < scene->mNumAnimations; ++anim_index)
 		{
-			aiAnimation* animation = scene->mAnimations[animIndex];
+			aiAnimation* animation = scene->mAnimations[anim_index];
 
-			AnimationClipAssetImportData animData;
-			animData.name = animation->mName.C_Str();
-			animData.duration = (float)animation->mDuration / (float)animation->mTicksPerSecond;
+			AnimationClipAssetImportData anim_data;
+			anim_data.name = animation->mName.C_Str();
+			anim_data.duration = (float)animation->mDuration / (float)animation->mTicksPerSecond;
 
 			printf("Processing animation: %s (duration: %f seconds, tps: %f)\n",
-				animData.name.c_str(), animData.duration, animation->mTicksPerSecond);
+				anim_data.name.c_str(), anim_data.duration, animation->mTicksPerSecond);
 
-			const float sampleRate = 30.0f;
-			uint32 numSamples = (uint32)std::ceil(animData.duration * sampleRate) + 1;
+			const float sample_rate = 30.0f;
+			uint32 num_samples = (uint32)std::ceil(anim_data.duration * sample_rate) + 1;
 
-			for (uint32 sample = 0; sample < numSamples; ++sample)
+			for (uint32 sample = 0; sample < num_samples; ++sample)
 			{
-				float time = (float)sample / sampleRate;
-				if (time > animData.duration)
-					time = animData.duration;
-				animData.timestamps.push_back(time);
+				float time = (float)sample / sample_rate;
+				if (time > anim_data.duration)
+					time = anim_data.duration;
+				anim_data.timestamps.push_back(time);
 			}
 
-			for (uint32 sample = 0; sample < numSamples; ++sample)
+			for (uint32 sample = 0; sample < num_samples; ++sample)
 			{
-				float time = animData.timestamps[sample];
+				float time = anim_data.timestamps[sample];
 				SkeletonPose pose((uint32)skeleton->joints.size());
 
-				for (uint32 jointId = 0; jointId < skeleton->joints.size(); ++jointId)
+				for (uint32 joint_id = 0; joint_id < skeleton->joints.size(); ++joint_id)
 				{
-					const auto& joint = skeleton->joints[jointId];
+					const auto& joint = skeleton->joints[joint_id];
 
-					std::vector<aiNodeAnim*> nodeAnims = find_all_node_anims_for_bone(animation, joint.name);
+					std::vector<aiNodeAnim*> node_anims = find_all_node_anims_for_bone(animation, joint.name);
 
 					trs final_transform;
 
-					if (!nodeAnims.empty())
+					if (!node_anims.empty())
 					{
-						trs local_bind_pose = get_local_bind_pose(skeleton, jointId);
+						trs local_bind_pose = get_local_bind_pose(skeleton, joint_id);
 
 						final_transform = local_bind_pose;
 
@@ -761,26 +761,26 @@ namespace era_engine
 						bool has_rotation_anim = false;
 						bool has_scale_anim = false;
 
-						for (aiNodeAnim* nodeAnim : nodeAnims)
+						for (aiNodeAnim* node_anim : node_anims)
 						{
 							trs component_transform = sample_node_animation_component(
-								nodeAnim,
+								node_anim,
 								time,
-								scaleFactor,
+								scale_factor,
 								(float)animation->mTicksPerSecond
 							);
 
-							if (nodeAnim->mNumPositionKeys > 1)
+							if (node_anim->mNumPositionKeys > 1)
 							{
 								final_transform.position = component_transform.position;
 								has_position_anim = true;
 							}
-							if (nodeAnim->mNumRotationKeys > 1)
+							if (node_anim->mNumRotationKeys > 1)
 							{
 								final_transform.rotation = component_transform.rotation;
 								has_rotation_anim = true;
 							}
-							if (nodeAnim->mNumScalingKeys > 1)
+							if (node_anim->mNumScalingKeys > 1)
 							{
 								final_transform.scale = component_transform.scale;
 								has_scale_anim = true;
@@ -802,21 +802,21 @@ namespace era_engine
 					}
 					else
 					{
-						final_transform = get_local_bind_pose(skeleton, jointId);
+						final_transform = get_local_bind_pose(skeleton, joint_id);
 					}
 
-					JointTransform jointTransform;
-					jointTransform.set_transform(final_transform);
-					pose.set_joint_transform(jointTransform, jointId);
+					JointTransform joint_transform;
+					joint_transform.set_transform(final_transform);
+					pose.set_joint_transform(joint_transform, joint_id);
 				}
 
-				animData.poses.push_back(pose);
+				anim_data.poses.push_back(pose);
 			}
 
 			printf("Animation '%s': %u samples processed\n",
-				animData.name.c_str(), numSamples);
+				anim_data.name.c_str(), num_samples);
 
-			result.push_back(std::move(animData));
+			result.push_back(std::move(anim_data));
 		}
 
 		printf("Loaded %zu animations\n", result.size());
@@ -1020,22 +1020,22 @@ namespace era_engine
 		}
 
 		aiScene* mutable_scene = const_cast<aiScene*>(scene);
-		if (flags & mesh_creation_flags_flip_x)
+		if (flags & MESH_CREATION_FLAGS_FLIP_X)
 		{
 			mirror_scene_x(mutable_scene);
 		}
 
-		float scaleFactor = 1.0f;
-		if (flags & mesh_creation_flags_sm_to_m)
+		float scale_factor = 1.0f;
+		if (flags & MESH_CREATION_FLAGS_SM_TO_M)
 		{
-			scaleFactor = 0.01f;
+			scale_factor = 0.01f;
 		}
-		else if (flags & mesh_creation_flags_m_to_sm)
+		else if (flags & MESH_CREATION_FLAGS_M_TO_SM)
 		{
-			scaleFactor = 100.0f;
+			scale_factor = 100.0f;
 		}
 
-		std::vector<animation::AnimationClipAssetImportData> animations = load_animations(mutable_scene, skeleton, scaleFactor, flags);
+		std::vector<animation::AnimationClipAssetImportData> animations = load_animations(mutable_scene, skeleton, scale_factor, flags);
 		animation::AnimationAssetClipUtils::import_animations(animations, skeleton, path, flags);
 	}
 
@@ -1070,22 +1070,22 @@ namespace era_engine
 		}
 
 		aiScene* mutable_scene = const_cast<aiScene*>(scene);
-		if (flags & mesh_creation_flags_flip_x)
+		if (flags & MESH_CREATION_FLAGS_FLIP_X)
 		{
 			mirror_scene_x(mutable_scene);
 		}
 
-		float scaleFactor = 1.0f;
-		if (flags & mesh_creation_flags_sm_to_m)
+		float scale_factor = 1.0f;
+		if (flags & MESH_CREATION_FLAGS_SM_TO_M)
 		{
-			scaleFactor = 0.01f;
+			scale_factor = 0.01f;
 		}
-		else if (flags & mesh_creation_flags_m_to_sm)
+		else if (flags & MESH_CREATION_FLAGS_M_TO_SM)
 		{
-			scaleFactor = 100.0f;
+			scale_factor = 100.0f;
 		}
 
-		std::vector<animation::SkeletonAssetImportData> skeletons = load_skeletons(mutable_scene, scaleFactor, flags);
+		std::vector<animation::SkeletonAssetImportData> skeletons = load_skeletons(mutable_scene, scale_factor, flags);
 		std::vector<ref<animation::Skeleton>> imported_skeletons = animation::SkeletonImportUtils::import_skeletons(skeletons);
 
 		animation::SkeletonImportUtils::post_process_skeletons(imported_skeletons, path, flags);
@@ -1122,28 +1122,28 @@ namespace era_engine
 		}
 
 		aiScene* mutable_scene = const_cast<aiScene*>(scene);
-		if (flags & mesh_creation_flags_flip_x)
+		if (flags & MESH_CREATION_FLAGS_FLIP_X)
 		{
 			mirror_scene_x(mutable_scene);
 		}
 
-		float scaleFactor = 1.0f;
-		if (flags & mesh_creation_flags_sm_to_m)
+		float scale_factor = 1.0f;
+		if (flags & MESH_CREATION_FLAGS_SM_TO_M)
 		{
-			scaleFactor = 0.01f;
+			scale_factor = 0.01f;
 		}
-		else if (flags & mesh_creation_flags_m_to_sm)
+		else if (flags & MESH_CREATION_FLAGS_M_TO_SM)
 		{
-			scaleFactor = 100.0f;
+			scale_factor = 100.0f;
 		}
 
-		std::vector<animation::SkeletonAssetImportData> skeletons = load_skeletons(mutable_scene, scaleFactor, flags);
+		std::vector<animation::SkeletonAssetImportData> skeletons = load_skeletons(mutable_scene, scale_factor, flags);
 
 		if (!skeletons.empty())
 		{
 			std::vector<ref<animation::Skeleton>> imported_skeletons = animation::SkeletonImportUtils::import_skeletons(skeletons);
 
-			std::vector<animation::AnimationClipAssetImportData> animations = load_animations(mutable_scene, imported_skeletons[0].get(), scaleFactor, flags);
+			std::vector<animation::AnimationClipAssetImportData> animations = load_animations(mutable_scene, imported_skeletons[0].get(), scale_factor, flags);
 
 			animation::SkeletonImportUtils::post_process_skeletons(imported_skeletons, path, flags);
 
@@ -1190,25 +1190,25 @@ namespace era_engine
 
 		load_materials(mutable_scene, result);
 
-		float scaleFactor = 1.0f;
-		if (flags & mesh_creation_flags_sm_to_m)
+		float scale_factor = 1.0f;
+		if (flags & MESH_CREATION_FLAGS_SM_TO_M)
 		{
-			scaleFactor = 0.01f;
+			scale_factor = 0.01f;
 		}
-		else if (flags & mesh_creation_flags_m_to_sm)
+		else if (flags & MESH_CREATION_FLAGS_M_TO_SM)
 		{
-			scaleFactor = 100.0f;
+			scale_factor = 100.0f;
 		}
 
-		load_meshes(mutable_scene, scaleFactor, result);
+		load_meshes(mutable_scene, scale_factor, result);
 
-		std::vector<animation::SkeletonAssetImportData> skeletons = load_skeletons(mutable_scene, scaleFactor, flags);
+		std::vector<animation::SkeletonAssetImportData> skeletons = load_skeletons(mutable_scene, scale_factor, flags);
 
 		if (!skeletons.empty())
 		{
 			std::vector<ref<animation::Skeleton>> imported_skeletons = animation::SkeletonImportUtils::import_skeletons(skeletons);
 
-			std::vector<animation::AnimationClipAssetImportData> animations = load_animations(mutable_scene, imported_skeletons[0].get(), scaleFactor, flags);
+			std::vector<animation::AnimationClipAssetImportData> animations = load_animations(mutable_scene, imported_skeletons[0].get(), scale_factor, flags);
 
 			animation::SkeletonImportUtils::post_process_skeletons(imported_skeletons, path, flags);
 

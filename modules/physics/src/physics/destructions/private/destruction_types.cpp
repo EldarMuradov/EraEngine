@@ -176,13 +176,13 @@ namespace era_engine::physics
 
 		for (uint32 i = 0; i < indices.size(); i += 3)
 		{
-			asset->triangles.push_back(indexed_triangle32{
+			asset->triangles.push_back(IndexedTriangle32{
 				(uint32)indices[i + 0],
 				(uint32)indices[i + 1],
 				(uint32)indices[i + 2] });
 		}
 
-		generateNormalsAndTangents(asset, MESH_FLAG_DEFAULT);
+		generate_normals_and_tangents(asset, MESH_FLAG_DEFAULT);
 
 		return asset;
 	}

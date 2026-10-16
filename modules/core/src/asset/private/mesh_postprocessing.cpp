@@ -6,7 +6,7 @@
 
 namespace era_engine
 {
-	void generateNormalsAndTangents(std::vector<SubmeshAsset>& submeshes, uint32 flags)
+	void generate_normals_and_tangents(std::vector<SubmeshAsset>& submeshes, uint32 flags)
 	{
 		if (flags & MESH_FLAG_GEN_TANGENTS)
 		{
@@ -21,7 +21,7 @@ namespace era_engine
 				CPU_PRINT_PROFILE_BLOCK("Generating normals");
 
 				sub.normals.resize(sub.positions.size(), vec3(0.f));
-				for (indexed_triangle32 tri : sub.triangles)
+				for (IndexedTriangle32 tri : sub.triangles)
 				{
 					vec3 a = sub.positions[tri.a];
 					vec3 b = sub.positions[tri.b];
@@ -46,7 +46,7 @@ namespace era_engine
 				sub.tangents.resize(sub.positions.size(), vec3(0.f));
 				if (!sub.uvs.empty())
 				{
-					for (indexed_triangle32 tri : sub.triangles)
+					for (IndexedTriangle32 tri : sub.triangles)
 					{
 						vec3 a = sub.positions[tri.a];
 						vec3 b = sub.positions[tri.b];
@@ -62,13 +62,13 @@ namespace era_engine
 						vec2 f = k - h;
 						vec2 g = l - h;
 
-						float invDet = 1.f / (f.x * g.y - f.y * g.x);
+						float inv_det = 1.f / (f.x * g.y - f.y * g.x);
 
 						vec3 t;
 						t.x = g.y * d.x - f.y * e.x;
 						t.y = g.y * d.y - f.y * e.y;
 						t.z = g.y * d.z - f.y * e.z;
-						t *= invDet;
+						t *= inv_det;
 						sub.tangents[tri.a] += t;
 						sub.tangents[tri.b] += t;
 						sub.tangents[tri.c] += t;
@@ -96,7 +96,7 @@ namespace era_engine
 		}
 	}
 
-	void generateNormalsAndTangents(ref<SubmeshAsset> submesh, uint32 flags)
+	void generate_normals_and_tangents(ref<SubmeshAsset> submesh, uint32 flags)
 	{
 		if (flags & MESH_FLAG_GEN_TANGENTS)
 		{
@@ -109,7 +109,7 @@ namespace era_engine
 			CPU_PRINT_PROFILE_BLOCK("Generating normals");
 
 			submesh->normals.resize(submesh->positions.size(), vec3(0.f));
-			for (indexed_triangle32 tri : submesh->triangles)
+			for (IndexedTriangle32 tri : submesh->triangles)
 			{
 				vec3 a = submesh->positions[tri.a];
 				vec3 b = submesh->positions[tri.b];
@@ -134,7 +134,7 @@ namespace era_engine
 			submesh->tangents.resize(submesh->positions.size(), vec3(0.f));
 			if (!submesh->uvs.empty())
 			{
-				for (indexed_triangle32 tri : submesh->triangles)
+				for (IndexedTriangle32 tri : submesh->triangles)
 				{
 					vec3 a = submesh->positions[tri.a];
 					vec3 b = submesh->positions[tri.b];
@@ -150,13 +150,13 @@ namespace era_engine
 					vec2 f = k - h;
 					vec2 g = l - h;
 
-					float invDet = 1.f / (f.x * g.y - f.y * g.x);
+					float inv_det = 1.f / (f.x * g.y - f.y * g.x);
 
 					vec3 t;
 					t.x = g.y * d.x - f.y * e.x;
 					t.y = g.y * d.y - f.y * e.y;
 					t.z = g.y * d.z - f.y * e.z;
-					t *= invDet;
+					t *= inv_det;
 					submesh->tangents[tri.a] += t;
 					submesh->tangents[tri.b] += t;
 					submesh->tangents[tri.c] += t;
@@ -184,46 +184,46 @@ namespace era_engine
 		}
 	}
 
-	void per_material::addTriangles(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals, const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<era_engine::animation::SkinningWeights>& skins, int32 firstIndex, int32 faceSize, std::vector<SubmeshAsset>& outSubmeshes)
+	void PerMaterial::add_triangles(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals, const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<era_engine::animation::SkinningWeights>& skins, int32 first_index, int32 face_size, std::vector<SubmeshAsset>& out_submeshes)
 	{
-		if (faceSize < 3)
+		if (face_size < 3)
 			return;
 
-		int32 aIndex = firstIndex++;
-		int32 bIndex = firstIndex++;
-		add_vertex_result a = addVertex(positions, uvs, normals, tangents, colors, skins, aIndex);
-		add_vertex_result b = addVertex(positions, uvs, normals, tangents, colors, skins, bIndex);
-		for (int32 i = 2; i < faceSize; ++i)
+		int32 a_index = first_index++;
+		int32 b_index = first_index++;
+		AddVertexResult a = add_vertex(positions, uvs, normals, tangents, colors, skins, a_index);
+		AddVertexResult b = add_vertex(positions, uvs, normals, tangents, colors, skins, b_index);
+		for (int32 i = 2; i < face_size; ++i)
 		{
-			int32 cIndex = firstIndex++;
-			add_vertex_result c = addVertex(positions, uvs, normals, tangents, colors, skins, cIndex);
+			int32 c_index = first_index++;
+			AddVertexResult c = add_vertex(positions, uvs, normals, tangents, colors, skins, c_index);
 
 			if (!(a.success && b.success && c.success))
 			{
-				flush(outSubmeshes);
-				a = addVertex(positions, uvs, normals, tangents, colors, skins, aIndex);
-				b = addVertex(positions, uvs, normals, tangents, colors, skins, bIndex);
-				c = addVertex(positions, uvs, normals, tangents, colors, skins, cIndex);
+				flush(out_submeshes);
+				a = add_vertex(positions, uvs, normals, tangents, colors, skins, a_index);
+				b = add_vertex(positions, uvs, normals, tangents, colors, skins, b_index);
+				c = add_vertex(positions, uvs, normals, tangents, colors, skins, c_index);
 				printf("Too many vertices for 16-bit indices. Splitting mesh!\n");
 			}
 
-			sub.triangles.push_back(indexed_triangle32{ a.index, b.index, c.index });
+			sub.triangles.push_back(IndexedTriangle32{ a.index, b.index, c.index });
 
 			b = c;
-			bIndex = cIndex;
+			b_index = c_index;
 		}
 	}
 
-	void per_material::flush(std::vector<SubmeshAsset>& outSubmeshes)
+	void PerMaterial::flush(std::vector<SubmeshAsset>& out_submeshes)
 	{
-		if (vertexToIndex.size() > 0)
+		if (vertex_to_index.size() > 0)
 		{
-			outSubmeshes.push_back(std::move(sub));
-			vertexToIndex.clear();
+			out_submeshes.push_back(std::move(sub));
+			vertex_to_index.clear();
 		}
 	}
 
-	per_material::add_vertex_result per_material::addVertex(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals, const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<era_engine::animation::SkinningWeights>& skins, int32 index)
+	PerMaterial::AddVertexResult PerMaterial::add_vertex(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals, const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<era_engine::animation::SkinningWeights>& skins, int32 index)
 	{
 		vec3 position = positions[index];
 		vec2 uv = !uvs.empty() ? uvs[index] : vec2(0.f, 0.f);
@@ -232,17 +232,17 @@ namespace era_engine
 		uint32 color = !colors.empty() ? colors[index] : 0;
 		animation::SkinningWeights skin = !skins.empty() ? skins[index] : animation::SkinningWeights{};
 
-		full_vertex vertex = { position, uv, normal, tangent, color, skin, };
-		auto it = vertexToIndex.find(vertex);
-		if (it == vertexToIndex.end())
+		FullVertex vertex = { position, uv, normal, tangent, color, skin, };
+		auto it = vertex_to_index.find(vertex);
+		if (it == vertex_to_index.end())
 		{
-			uint32 vertexIndex = (uint32)sub.positions.size();
-			if (vertexIndex > UINT16_MAX)
+			uint32 vertex_index = (uint32)sub.positions.size();
+			if (vertex_index > UINT16_MAX)
 			{
 				return { 0, false };
 			}
 
-			vertexToIndex.insert({ vertex, (uint32)vertexIndex });
+			vertex_to_index.insert({ vertex, (uint32)vertex_index });
 
 			sub.positions.push_back(position);
 			if (!uvs.empty()) { sub.uvs.push_back(uv); }
@@ -251,7 +251,7 @@ namespace era_engine
 			if (!colors.empty()) { sub.colors.push_back(color); }
 			if (!skins.empty()) { sub.skin.push_back(skin); }
 
-			return { (uint32)vertexIndex, true };
+			return { (uint32)vertex_index, true };
 		}
 		else
 			return { it->second, true };

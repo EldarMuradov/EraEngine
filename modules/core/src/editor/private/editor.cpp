@@ -42,15 +42,15 @@
 namespace era_engine
 {
 	template <typename Component_, typename Member_>
-	struct component_member_undo
+	struct ComponentMemberUndo
 	{
-		component_member_undo(Member_& member, Member_ before, Entity entity, void (*callback)(Component_&, Member_, void*) = 0, void* userData = 0)
+		ComponentMemberUndo(Member_& member, Member_ before, Entity entity, void (*callback)(Component_&, Member_, void*) = 0, void* user_data = 0)
 		{
 			this->entity = entity;
-			this->byteOffset = (uint8*)&member - (uint8*)&entity.get_component<Component_>();
+			this->byte_offset = (uint8*)&member - (uint8*)&entity.get_component<Component_>();
 			this->before = before;
 			this->callback = callback;
-			this->userData = userData;
+			this->user_data = user_data;
 		}
 
 		void toggle()
@@ -58,30 +58,30 @@ namespace era_engine
 			if (entity.valid())
 			{
 				Component_& comp = entity.get_component<Component_>();
-				auto& member = *(Member_*)((uint8*)&comp + byteOffset);
+				auto& member = *(Member_*)((uint8*)&comp + byte_offset);
 				std::swap(member, before);
 
 				if (callback)
 				{
-					callback(comp, member, userData);
+					callback(comp, member, user_data);
 				}
 			}
 		}
 
 	private:
 		Entity entity;
-		uint64 byteOffset;
+		uint64 byte_offset;
 
 		Member_ before;
 
 		void (*callback)(Component_&, Member_, void*) = 0;
-		void* userData = 0;
+		void* user_data = 0;
 	};
 
 	template <typename... Component_>
-	struct component_undo
+	struct ComponentUndo
 	{
-		component_undo(Entity entity, Component_... before)
+		ComponentUndo(Entity entity, Component_... before)
 		{
 			this->entity = entity;
 			this->before = std::make_tuple(before...);
@@ -108,9 +108,9 @@ namespace era_engine
 	};
 
 	template <typename Value_>
-	struct settings_undo
+	struct SettingsUndo
 	{
-		settings_undo(Value_& value, Value_ before)
+		SettingsUndo(Value_& value, Value_ before)
 			: value(value), before(before) {}
 
 		void toggle() { std::swap(value, before); }
@@ -121,16 +121,16 @@ namespace era_engine
 		Value_ before;
 	};
 
-	struct entity_existence_undo
+	struct EntityExistenceUndo
 	{
 		// TODO
-		entity_existence_undo(ref<World> _world, Entity _entity)
+		EntityExistenceUndo(ref<World> _world, Entity _entity)
 			: world(_world), entity(_entity)
 		{
 			//size = serializeEntityToMemory(entity, buffer, sizeof(buffer));
 		}
 
-		~entity_existence_undo() {}
+		~EntityExistenceUndo() {}
 
 		void toggle()
 		{
@@ -139,13 +139,13 @@ namespace era_engine
 		}
 
 	private:
-		void deleteEntity()
+		void delete_entity()
 		{
 			//size = serializeEntityToMemory(entity, buffer, sizeof(buffer));
 			//world->destroy_entity(entity);
 		}
 
-		void restoreEntity()
+		void restore_entity()
 		{
 			//Entity::Handle place = entity.get_handle();
 			//entity = world->try_create_entity_in_place(entity, "");
@@ -162,12 +162,12 @@ namespace era_engine
 	};
 
 	template <typename Value_, typename Action_, typename... Args_>
-	void eeditor::undoable(const char* undoLabel, Value_ before, Value_& value,
+	void EEditor::undoable(const char* undo_label, Value_ before, Value_& value,
 		Args_... args)
 	{
 		if (ImGui::IsItemActive() && !ImGui::IsItemActiveLastFrame())
 		{
-			currentUndoBuffer->as<Value_>() = before;
+			current_undo_buffer->as<Value_>() = before;
 		}
 
 		bool changed = ImGui::IsItemDeactivatedAfterEdit();
@@ -180,104 +180,104 @@ namespace era_engine
 		{
 			std::stringstream s;
 			s << std::setprecision(4) << std::boolalpha;
-			s << undoLabel << " from " << currentUndoBuffer->as<Value_>() << " to " << value;
-			Action_ action(value, currentUndoBuffer->as<Value_>(), std::forward<Args_>(args)...);
-			currentUndoStack->pushAction(s.str().c_str(), action);
+			s << undo_label << " from " << current_undo_buffer->as<Value_>() << " to " << value;
+			Action_ action(value, current_undo_buffer->as<Value_>(), std::forward<Args_>(args)...);
+			current_undo_stack->push_action(s.str().c_str(), action);
 		}
 	}
 
-#define UNDOABLE_COMPONENT_SETTING(undoLabel, val, command, ...)					\
+#define UNDOABLE_COMPONENT_SETTING(undo_label, val, command, ...)					\
 	{																				\
 		using value_t = std::decay_t<decltype(val)>;								\
 		value_t before = val;														\
 		command;																	\
-		undoable<value_t, component_member_undo<component_t, value_t>>(undoLabel,	\
-			before, val, selectedEntity, __VA_ARGS__);								\
+		undoable<value_t, ComponentMemberUndo<component_t, value_t>>(undo_label,	\
+			before, val, selected_entity, __VA_ARGS__);								\
 	}
 
-#define UNDOABLE_SETTING(undoLabel, val, command)									\
+#define UNDOABLE_SETTING(undo_label, val, command)									\
 	{																				\
 		using value_t = std::decay_t<decltype(val)>;								\
 		value_t before = val;														\
 		command;																	\
-		undoable<value_t, settings_undo<value_t>>(undoLabel,						\
+		undoable<value_t, SettingsUndo<value_t>>(undo_label,						\
 			before, val);															\
 	}
 
-	void eeditor::updateSelectedEntityUIRotation()
+	void EEditor::update_selected_entity_ui_rotation()
 	{
-		if (selectedEntity.is_valid())
+		if (selected_entity.is_valid())
 		{
 			quat rotation = quat::identity;
 
-			if (TransformComponent* transform = selectedEntity.get_component_if_exists<TransformComponent>())
+			if (TransformComponent* transform = selected_entity.get_component_if_exists<TransformComponent>())
 			{
 				rotation = transform->get_world_rotation();
 			}
 
-			selectedEntityEulerRotation = quat_to_euler(rotation);
+			selected_entity_euler_rotation = quat_to_euler(rotation);
 		}
 	}
 
-	void eeditor::setSelectedEntity(const Entity& entity)
+	void EEditor::set_selected_entity(const Entity& entity)
 	{
-		selectedEntity = entity;
-		updateSelectedEntityUIRotation();
+		selected_entity = entity;
+		update_selected_entity_ui_rotation();
 	}
 
-	void eeditor::initialize(ref<EditorScene> _scene, main_renderer* _renderer, editor_panels* _editorPanels)
+	void EEditor::initialize(ref<EditorScene> _scene, MainRenderer* _renderer, EditorPanels* _editor_panels)
 	{
 		scene = _scene;
 		renderer = _renderer;
-		editorPanels = _editorPanels;
-		cameraController.initialize(&scene->camera);
+		editor_panels = _editor_panels;
+		camera_controller.initialize(&scene->camera);
 
-		systemInfo = getSystemInfo();
+		system_info = get_system_info();
 	}
 
-	bool eeditor::update(const UserInput& input, ldr_render_pass* ldrRenderPass, float dt)
+	bool EEditor::update(const UserInput& input, LDRRenderPass* ldr_render_pass, float dt)
 	{
 		CPU_PROFILE_BLOCK("Update editor");
 
-		currentUndoStack = &undoStacks[this->scene->mode > 0];
-		currentUndoBuffer = &undoBuffers[this->scene->mode > 0];
+		current_undo_stack = &undo_stacks[this->scene->mode > 0];
+		current_undo_buffer = &undo_buffers[this->scene->mode > 0];
 
-		Entity selectedEntityBefore = selectedEntity;
+		Entity selected_entity_before = selected_entity;
 
 		ref<World> world = scene->get_current_world();
 
 		// Clear selected entity, if it became invalid (e.g. if it was deleted).
-		if (!selectedEntity.is_valid())
+		if (!selected_entity.is_valid())
 		{
-			setSelectedEntity({});
+			set_selected_entity({});
 		}
 
-		bool objectChanged = false;
-		objectChanged |= handleUserInput(input, ldrRenderPass, dt);
-		objectChanged |= drawSceneHierarchy();
-		objectChanged |= drawMainMenuBar();
-		drawSettings(dt);
+		bool object_changed = false;
+		object_changed |= handle_user_input(input, ldr_render_pass, dt);
+		object_changed |= draw_scene_hierarchy();
+		object_changed |= draw_main_menu_bar();
+		draw_settings(dt);
 
-		if (objectChanged)
+		if (object_changed)
 		{
-			onObjectMoved();
+			on_object_moved();
 		}
 
 		// This is triggered on undo.
-		if (selectedEntity != selectedEntityBefore)
+		if (selected_entity != selected_entity_before)
 		{
-			setSelectedEntity(selectedEntity);
+			set_selected_entity(selected_entity);
 		}
 
-		return objectChanged;
+		return object_changed;
 	}
 
-	void eeditor::render(ldr_render_pass* ldrRenderPass, float dt)
+	void EEditor::render(LDRRenderPass* ldr_render_pass, float dt)
 	{
 		//TODO
 	}
 
-	static void drawIconsWindow(bool& open)
+	static void draw_icons_window(bool& open)
 	{
 		if (open)
 		{
@@ -309,43 +309,43 @@ namespace era_engine
 		}
 	}
 
-	bool eeditor::drawMainMenuBar()
+	bool EEditor::draw_main_menu_bar()
 	{
-		static bool iconsWindowOpen = false;
-		static bool demoWindowOpen = false;
-		static bool undoWindowOpen = false;
-		static bool soundEditorWindowOpen = false;
+		static bool icons_window_open = false;
+		static bool demo_window_open = false;
+		static bool undo_window_open = false;
+		static bool sound_editor_window_open = false;
 
-		bool objectPotentiallyMoved = false;
+		bool object_potentially_moved = false;
 
-		bool controlsClicked = false;
-		bool aboutClicked = false;
-		bool systemClicked = false;
+		bool controls_clicked = false;
+		bool about_clicked = false;
+		bool system_clicked = false;
 
 		if (ImGui::BeginMainMenuBar())
 		{
 			if (ImGui::BeginMenu(ICON_FA_FILE "  Project"))
 			{
-				char textBuffer[128];
-				auto [undoPossible, undoName] = currentUndoStack->undoPossible();
-				snprintf(textBuffer, sizeof(textBuffer), ICON_FA_UNDO " Undo %s", undoPossible ? undoName : "");
-				if (ImGui::MenuItem(textBuffer, "Ctrl+Z", false, undoPossible))
+				char text_buffer[128];
+				auto [undo_possible, undoName] = current_undo_stack->undo_possible();
+				snprintf(text_buffer, sizeof(text_buffer), ICON_FA_UNDO " Undo %s", undo_possible ? undoName : "");
+				if (ImGui::MenuItem(text_buffer, "Ctrl+Z", false, undo_possible))
 				{
-					currentUndoStack->undo();
-					objectPotentiallyMoved = true;
+					current_undo_stack->undo();
+					object_potentially_moved = true;
 				}
 
-				auto [redoPossible, redoName] = currentUndoStack->redoPossible();
-				snprintf(textBuffer, sizeof(textBuffer), ICON_FA_REDO " Redo %s", redoPossible ? redoName : "");
-				if (ImGui::MenuItem(textBuffer, "Ctrl+Y", false, redoPossible))
+				auto [redo_possible, redoName] = current_undo_stack->redo_possible();
+				snprintf(text_buffer, sizeof(text_buffer), ICON_FA_REDO " Redo %s", redo_possible ? redoName : "");
+				if (ImGui::MenuItem(text_buffer, "Ctrl+Y", false, redo_possible))
 				{
-					currentUndoStack->redo();
-					objectPotentiallyMoved = true;
+					current_undo_stack->redo();
+					object_potentially_moved = true;
 				}
 
-				if (ImGui::MenuItem(undoWindowOpen ? (ICON_FA_HISTORY "  Hide undo history") : (ICON_FA_HISTORY "  Show undo history")))
+				if (ImGui::MenuItem(undo_window_open ? (ICON_FA_HISTORY "  Hide undo history") : (ICON_FA_HISTORY "  Show undo history")))
 				{
-					undoWindowOpen = !undoWindowOpen;
+					undo_window_open = !undo_window_open;
 				}
 				ImGui::Separator();
 
@@ -359,21 +359,21 @@ namespace era_engine
 
 			if (ImGui::BeginMenu(ICON_FA_TOOLS "  Tools"))
 			{
-				if (ImGui::MenuItem(iconsWindowOpen ? (ICON_FA_ICONS "  Hide available icons") : (ICON_FA_ICONS "  Show available icons")))
+				if (ImGui::MenuItem(icons_window_open ? (ICON_FA_ICONS "  Hide available icons") : (ICON_FA_ICONS "  Show available icons")))
 				{
-					iconsWindowOpen = !iconsWindowOpen;
+					icons_window_open = !icons_window_open;
 				}
 
-				if (ImGui::MenuItem(demoWindowOpen ? (ICON_FA_PUZZLE_PIECE "  Hide demo window") : (ICON_FA_PUZZLE_PIECE "  Show demo window")))
+				if (ImGui::MenuItem(demo_window_open ? (ICON_FA_PUZZLE_PIECE "  Hide demo window") : (ICON_FA_PUZZLE_PIECE "  Show demo window")))
 				{
-					demoWindowOpen = !demoWindowOpen;
+					demo_window_open = !demo_window_open;
 				}
 
 				ImGui::Separator();
 
-				if (ImGui::MenuItem(dxProfilerWindowOpen ? (ICON_FA_CHART_BAR "  Hide GPU profiler") : (ICON_FA_CHART_BAR "  Show GPU profiler"), nullptr, nullptr, ENABLE_DX_PROFILING))
+				if (ImGui::MenuItem(dx_profiler_window_open ? (ICON_FA_CHART_BAR "  Hide GPU profiler") : (ICON_FA_CHART_BAR "  Show GPU profiler"), nullptr, nullptr, ENABLE_DX_PROFILING))
 				{
-					dxProfilerWindowOpen = !dxProfilerWindowOpen;
+					dx_profiler_window_open = !dx_profiler_window_open;
 				}
 
 				if (ImGui::MenuItem(cpu_profiler_window_open ? (ICON_FA_CHART_LINE "  Hide CPU profiler") : (ICON_FA_CHART_LINE "  Show CPU profiler"), nullptr, nullptr, ENABLE_CPU_PROFILING))
@@ -394,19 +394,19 @@ namespace era_engine
 
 				ImGui::Separator();
 
-				if (ImGui::MenuItem(soundEditorWindowOpen ? (EDITOR_ICON_AUDIO "  Hide sound editor") : (EDITOR_ICON_AUDIO "  Show sound editor")))
+				if (ImGui::MenuItem(sound_editor_window_open ? (EDITOR_ICON_AUDIO "  Hide sound editor") : (EDITOR_ICON_AUDIO "  Show sound editor")))
 				{
-					soundEditorWindowOpen = !soundEditorWindowOpen;
+					sound_editor_window_open = !sound_editor_window_open;
 				}
 
-				if (ImGui::MenuItem(editorPanels->meshEditor.isOpen() ? (EDITOR_ICON_MESH "  Hide mesh editor") : (EDITOR_ICON_MESH "  Show mesh editor")))
+				if (ImGui::MenuItem(editor_panels->mesh_editor.is_open() ? (EDITOR_ICON_MESH "  Hide mesh editor") : (EDITOR_ICON_MESH "  Show mesh editor")))
 				{
-					if (editorPanels->meshEditor.isOpen())
-						editorPanels->meshEditor.close();
+					if (editor_panels->mesh_editor.is_open())
+						editor_panels->mesh_editor.close();
 					else
 					{
-						editorPanels->meshEditor.open();
-						editorPanels->meshEditor.setScene(scene);
+						editor_panels->mesh_editor.open();
+						editor_panels->mesh_editor.set_scene(scene);
 					}
 				}
 
@@ -414,7 +414,7 @@ namespace era_engine
 
 				if (ImGui::MenuItem(ICON_FA_DESKTOP "  System"))
 				{
-					systemClicked = true;
+					system_clicked = true;
 				}
 
 				ImGui::EndMenu();
@@ -424,7 +424,7 @@ namespace era_engine
 			{
 				// TODO: Docs
 				if (ImGui::MenuItem(ICON_FA_MEMORY "  Repository"))
-					os::system_calls::openURL("https://github.com/EldarMuradau/EraEngine");
+					os::SystemCalls::open_url("https://github.com/EldarMuradau/EraEngine");
 
 				ImGui::EndMenu();
 			}
@@ -433,7 +433,7 @@ namespace era_engine
 			{
 				if (ImGui::MenuItem(ICON_FA_QUESTION "  Author"))
 				{
-					aboutClicked = true;
+					about_clicked = true;
 				}
 
 				ImGui::EndMenu();
@@ -444,7 +444,7 @@ namespace era_engine
 
 		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 
-		if (systemClicked)
+		if (system_clicked)
 		{
 			ImGui::OpenPopup(ICON_FA_DESKTOP "  System");
 		}
@@ -452,8 +452,8 @@ namespace era_engine
 		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 		if (ImGui::BeginPopupModal(ICON_FA_DESKTOP "  System", 0, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			ImGui::Value("CPU", systemInfo.cpuName.c_str());
-			ImGui::Value("GPU", systemInfo.gpuName.c_str());
+			ImGui::Value("CPU", system_info.cpu_name.c_str());
+			ImGui::Value("GPU", system_info.gpu_name.c_str());
 
 			ImGui::Separator();
 
@@ -461,7 +461,7 @@ namespace era_engine
 			ImGui::EndPopup();
 		}
 
-		if (aboutClicked)
+		if (about_clicked)
 		{
 			ImGui::OpenPopup(ICON_FA_QUESTION "  About");
 		}
@@ -479,39 +479,39 @@ namespace era_engine
 			ImGui::EndPopup();
 		}
 
-		if (demoWindowOpen)
+		if (demo_window_open)
 		{
-			ImGui::ShowDemoWindow(&demoWindowOpen);
+			ImGui::ShowDemoWindow(&demo_window_open);
 		}
 
-		drawIconsWindow(iconsWindowOpen);
-		drawSoundEditor(soundEditorWindowOpen);
+		draw_icons_window(icons_window_open);
+		draw_sound_editor(sound_editor_window_open);
 
-		return objectPotentiallyMoved;
+		return object_potentially_moved;
 	}
 
-	static bounding_box getObjectBoundingBox(Entity entity, bool applyPosition)
+	static BoundingBox get_object_bounding_box(Entity entity, bool apply_position)
 	{
-		bounding_box aabb = entity.has_component<MeshComponent>() ? entity.get_component<MeshComponent>()->mesh->aabb : bounding_box::fromCenterRadius(0.f, 1.f);
+		BoundingBox aabb = entity.has_component<MeshComponent>() ? entity.get_component<MeshComponent>()->mesh->aabb : BoundingBox::from_center_radius(0.f, 1.f);
 
 		if (TransformComponent* transform = entity.get_component_if_exists<TransformComponent>())
 		{
 			const trs& world_transform = transform->get_world_transform();
 
-			aabb.minCorner *= world_transform.scale;
-			aabb.maxCorner *= world_transform.scale;
+			aabb.min_corner *= world_transform.scale;
+			aabb.max_corner *= world_transform.scale;
 
-			if (applyPosition)
+			if (apply_position)
 			{
-				aabb.minCorner += world_transform.position;
-				aabb.maxCorner += world_transform.position;
+				aabb.min_corner += world_transform.position;
+				aabb.max_corner += world_transform.position;
 			}
 		}
 		
 		return aabb;
 	}
 
-	void eeditor::renderChilds(Entity& entity)
+	void EEditor::render_childs(Entity& entity)
 	{
 		static int i = 0;
 
@@ -527,17 +527,17 @@ namespace era_engine
 			{
 				Entity child = world->get_entity(*iter);
 				NameComponent* name_component = child.get_component_if_exists<NameComponent>();
-				ImGuiTreeNodeFlags flags = ((selectedEntity == *iter) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
+				ImGuiTreeNodeFlags flags = ((selected_entity == *iter) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
 				if (name_component)
 				{
 					if (ImGui::TreeNodeEx((void*)(uint32)(*iter), flags, name_component->name))
 					{
 						if (ImGui::IsItemClicked())
 						{
-							setSelectedEntity(child);
+							set_selected_entity(child);
 						}
 
-						renderChilds(child);
+						render_childs(child);
 
 						ImGui::TreePop();
 					}
@@ -548,10 +548,10 @@ namespace era_engine
 					{
 						if (ImGui::IsItemClicked())
 						{
-							setSelectedEntity(child);
+							set_selected_entity(child);
 						}
 
-						renderChilds(child);
+						render_childs(child);
 
 						ImGui::TreePop();
 					}
@@ -591,7 +591,7 @@ namespace era_engine
 		ImGui::PopID();
 	}
 
-	static void showVector3(const char* label, vec3& vector, float wdt)
+	static void show_vector3(const char* label, vec3& vector, float wdt)
 	{
 		const float label_indetation = 15.0f;
 
@@ -634,57 +634,57 @@ namespace era_engine
 		ImGui::EndGroup();
 	};
 
-	bool eeditor::drawSceneHierarchy()
+	bool EEditor::draw_scene_hierarchy()
 	{
 		ref<World> world = scene->get_current_world();
 
-		bool objectMovedByWidget = false;
+		bool object_moved_by_widget = false;
 
 		if (ImGui::Begin("Scene Hierarchy"))
 		{
 			if (ImGui::BeginChild("Outliner"))
 			{
 				world->view<NameComponent>()
-					.each([this, &world](Entity::Handle entityHandle, NameComponent& tag)
+					.each([this, &world](Entity::Handle entity_handle, NameComponent& tag)
 						{
-							ImGui::PushID((uint32)entityHandle);
+							ImGui::PushID((uint32)entity_handle);
 							const char* name = tag.name;
-							Entity entity = world->get_entity(entityHandle);
+							Entity entity = world->get_entity(entity_handle);
 
 							Entity parent = world->get_entity(entity.get_parent_handle());
 
 							if (parent.is_valid())
 							{
-								ImGuiTreeNodeFlags flags = ((selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
-								if (ImGui::TreeNodeEx((void*)(uint32)entityHandle, flags, name))
+								ImGuiTreeNodeFlags flags = ((selected_entity == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
+								if (ImGui::TreeNodeEx((void*)(uint32)entity_handle, flags, name))
 								{
 									if (ImGui::IsItemClicked())
 									{
-										setSelectedEntity(entity);
+										set_selected_entity(entity);
 									}
 
-									renderChilds(entity);
+									render_childs(entity);
 
 									ImGui::TreePop();
 								}
 							}
 
-							bool entityDeleted = false;
+							bool entity_deleted = false;
 							if (ImGui::BeginPopupContextItem(name))
 							{
 								if (ImGui::MenuItem("Delete"))
 								{
-									entityDeleted = true;
+									entity_deleted = true;
 								}
 
 								ImGui::EndPopup();
 							}
 
-							if (entityDeleted)
+							if (entity_deleted)
 							{
-								if (entity == selectedEntity)
+								if (entity == selected_entity)
 								{
-									setSelectedEntity({});
+									set_selected_entity({});
 								}
 								//currentUndoStack->pushAction("entity deletion", entity_existence_undo(world, entity)); //TODO
 								world->destroy_entity(entity);
@@ -694,23 +694,23 @@ namespace era_engine
 			}
 			ImGui::EndChild();
 
-			if (selectedEntity.is_valid())
+			if (selected_entity.is_valid())
 			{
 				if (ImGui::Begin("Components"))
 				{
 					ImGui::AlignTextToFramePadding();
 
-					ImGui::PushID((uint32)selectedEntity.get_handle());
+					ImGui::PushID((uint32)selected_entity.get_handle());
 
 					{
-						NameComponent* name_component = selectedEntity.get_component_if_exists<NameComponent>();
+						NameComponent* name_component = selected_entity.get_component_if_exists<NameComponent>();
 
-						NameComponent tagBefore = *name_component;
+						NameComponent tag_before = *name_component;
 						ImGui::InputText("Name", name_component->name, sizeof(NameComponent::name));
 
 						if (ImGui::IsItemActive() && !ImGui::IsItemActiveLastFrame())
 						{
-							currentUndoBuffer->as<NameComponent>() = tagBefore;
+							current_undo_buffer->as<NameComponent>() = tag_before;
 						}
 						if (ImGui::IsItemDeactivatedAfterEdit())
 						{
@@ -725,9 +725,9 @@ namespace era_engine
 					if (ImGui::Button(ICON_FA_TRASH_ALT))
 					{
 						//currentUndoStack->pushAction("entity deletion", entity_existence_undo(world, selectedEntity));
-						world->destroy_entity(selectedEntity);
-						setSelectedEntity({});
-						objectMovedByWidget = true;
+						world->destroy_entity(selected_entity);
+						set_selected_entity({});
+						object_moved_by_widget = true;
 					}
 
 					if (ImGui::IsItemHovered())
@@ -735,9 +735,9 @@ namespace era_engine
 						ImGui::SetTooltip("Delete entity");
 					}
 
-					if (selectedEntity.is_valid())
+					if (selected_entity.is_valid())
 					{
-						EntityEditorUtils::edit_entity(world.get(), selectedEntity.get_handle());
+						EntityEditorUtils::edit_entity(world.get(), selected_entity.get_handle());
 					}
 
 					if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && !ImGui::IsAnyItemHovered())
@@ -766,12 +766,12 @@ namespace era_engine
 		}
 		ImGui::End();
 
-		return objectMovedByWidget;
+		return object_moved_by_widget;
 	}
 
-	void eeditor::onObjectMoved()
+	void EEditor::on_object_moved()
 	{
-		if (selectedEntity.is_valid())
+		if (selected_entity.is_valid())
 		{
 			//if (physics::px_cloth_component* cloth = selectedEntity.get_component_if_exists<physics::px_cloth_component>())
 			//{
@@ -780,43 +780,43 @@ namespace era_engine
 		}
 	}
 
-	bool eeditor::handleUserInput(const UserInput& input, ldr_render_pass* ldrRenderPass, float dt)
+	bool EEditor::handle_user_input(const UserInput& input, LDRRenderPass* ldr_render_pass, float dt)
 	{
 		ref<World> world = this->scene->get_current_world();
 
 		// Returns true, if the user dragged an object using a gizmo.
 
-		if (input.keyboard['F'].press_event && selectedEntity.is_valid())
+		if (input.keyboard['F'].press_event && selected_entity.is_valid())
 		{
-			bounding_box aabb = getObjectBoundingBox(selectedEntity, true);
-			cameraController.centerCameraOnObject(aabb);
+			BoundingBox aabb = get_object_bounding_box(selected_entity, true);
+			camera_controller.center_camera_on_object(aabb);
 		}
 
-		bool inputCaptured = cameraController.update(input, renderer->renderWidth, renderer->renderHeight, dt);
+		bool input_captured = camera_controller.update(input, renderer->render_width, renderer->render_height, dt);
 
-		if (inputCaptured)
+		if (input_captured)
 		{
-			renderer->pathTracer.resetRendering();
+			renderer->path_tracer.reset_rendering();
 		}
 
-		bool objectMovedByGizmo = false;
+		bool object_moved_by_gizmo = false;
 
-		render_camera& camera = this->scene->is_pausable() ? this->scene->editor_camera : this->scene->camera;
+		RenderCamera& camera = this->scene->is_pausable() ? this->scene->editor_camera : this->scene->camera;
 
-		if (&camera != cameraController.camera)
+		if (&camera != camera_controller.camera)
 		{
-			cameraController.camera = &camera;
+			camera_controller.camera = &camera;
 		}
 
-		bool gizmoDrawn = false;
+		bool gizmo_drawn = false;
 
-		if (!inputCaptured && !ImGui::IsAnyItemActive() && ImGui::IsKeyDown(key_shift) && ImGui::IsKeyPressed('A'))
+		if (!input_captured && !ImGui::IsAnyItemActive() && ImGui::IsKeyDown(KEY_SHIFT) && ImGui::IsKeyPressed('A'))
 		{
 			ImGui::OpenPopup("CreateEntityPopup");
-			inputCaptured = true;
+			input_captured = true;
 		}
 
-		inputCaptured |= drawEntityCreationPopup();
+		input_captured |= draw_entity_creation_popup();
 
 		if (ImGui::BeginControlsWindow("##EntityControls", ImVec2(0.f, 0.f), ImVec2(20.f, 90.f)))
 		{
@@ -824,17 +824,17 @@ namespace era_engine
 
 			if (ImGui::Button(ICON_FA_PLUS)) { ImGui::OpenPopup("CreateEntityPopup"); }
 			if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Create entity (Shift+A)"); }
-			inputCaptured |= drawEntityCreationPopup();
+			input_captured |= draw_entity_creation_popup();
 
 			ImGui::PopStyleColor();
 		}
 		ImGui::End();
 
-		bool draggingBefore = gizmo.dragging;
+		bool dragging_before = gizmo.dragging;
 
-		if (selectedEntity.is_valid())
+		if (selected_entity.is_valid())
 		{
-			if (TransformComponent* transform = selectedEntity.get_component_if_exists<TransformComponent>())
+			if (TransformComponent* transform = selected_entity.get_component_if_exists<TransformComponent>())
 			{
 				//if (gizmo.manipulateTransformation(transform->get_world_transform(), camera, input, !inputCaptured, ldrRenderPass))
 				{
@@ -855,9 +855,9 @@ namespace era_engine
 					//if (physics::px_cloth_component* cloth = selectedEntity.getComponentIfExists<physics::px_cloth_component>())
 					//	cloth->translate(selectedEntity.getComponent<transform_component>().position);
 
-					updateSelectedEntityUIRotation();
-					inputCaptured = true;
-					objectMovedByGizmo = true;
+					update_selected_entity_ui_rotation();
+					input_captured = true;
+					object_moved_by_gizmo = true;
 				}
 				//else if (draggingBefore)
 				{
@@ -867,21 +867,21 @@ namespace era_engine
 			}
 			else
 			{
-				gizmo.manipulateNothing(camera, input, !inputCaptured, ldrRenderPass);
+				gizmo.manipulate_nothing(camera, input, !input_captured, ldr_render_pass);
 			}
 
-			if (!inputCaptured && !ImGui::IsAnyItemActive())
+			if (!input_captured && !ImGui::IsAnyItemActive())
 			{
-				if (ImGui::IsKeyPressed(key_backspace) || ImGui::IsKeyPressed(key_delete))
+				if (ImGui::IsKeyPressed(KEY_BACKSPACE) || ImGui::IsKeyPressed(KEY_DELETE))
 				{
 					// Delete entity.
 					//currentUndoStack->pushAction("entity deletion", entity_existence_undo(world, selectedEntity));
-					world->destroy_entity(selectedEntity);
-					setSelectedEntity({});
-					inputCaptured = true;
-					objectMovedByGizmo = true;
+					world->destroy_entity(selected_entity);
+					set_selected_entity({});
+					input_captured = true;
+					object_moved_by_gizmo = true;
 				}
-				else if (ImGui::IsKeyDown(key_ctrl) && ImGui::IsKeyPressed('D'))
+				else if (ImGui::IsKeyDown(KEY_CTRL) && ImGui::IsKeyPressed('D'))
 				{
 					// Duplicate entity.
 					//Entity newEntity = world->copyEntity(selectedEntity);
@@ -894,12 +894,12 @@ namespace era_engine
 		}
 		else
 		{
-			gizmo.manipulateNothing(camera, input, !inputCaptured, ldrRenderPass);
+			gizmo.manipulate_nothing(camera, input, !input_captured, ldr_render_pass);
 		}
 
-		float simControlsWidth = IMGUI_ICON_DEFAULT_SIZE * 3 + IMGUI_ICON_DEFAULT_SPACING * 2 + ImGui::GetStyle().WindowPadding.x * 2;
+		float sim_controls_width = IMGUI_ICON_DEFAULT_SIZE * 3 + IMGUI_ICON_DEFAULT_SPACING * 2 + ImGui::GetStyle().WindowPadding.x * 2;
 
-		if (ImGui::BeginControlsWindow("##SimulationControls", ImVec2(0.5f, 0.f), ImVec2(-simControlsWidth * 0.5f, 20.f)))
+		if (ImGui::BeginControlsWindow("##SimulationControls", ImVec2(0.5f, 0.f), ImVec2(-sim_controls_width * 0.5f, 20.f)))
 		{
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 
@@ -909,9 +909,9 @@ namespace era_engine
 			//	forceStart();
 			//}
 			//ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
-			if (ImGui::IconButton(imgui_icon_pause, imgui_icon_pause, IMGUI_ICON_DEFAULT_SIZE, this->scene->is_pausable()))
+			if (ImGui::IconButton(IMGUI_ICON_PAUSE, IMGUI_ICON_PAUSE, IMGUI_ICON_DEFAULT_SIZE, this->scene->is_pausable()))
 			{
-				forcePause();
+				force_pause();
 			}
 			//ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
 			//if (ImGui::IconButton(imgui_icon_stop, imgui_icon_stop, IMGUI_ICON_DEFAULT_SIZE, this->scene->is_stoppable()))
@@ -922,8 +922,8 @@ namespace era_engine
 			//scene = &this->scene->getCurrentScene();
 			//cameraController.camera = &camera;
 
-			currentUndoStack = &undoStacks[this->scene->mode > 0];
-			currentUndoBuffer = &undoBuffers[this->scene->mode > 0];
+			current_undo_stack = &undo_stacks[this->scene->mode > 0];
+			current_undo_buffer = &undo_buffers[this->scene->mode > 0];
 
 			ImGui::PopStyleColor();
 		}
@@ -931,68 +931,68 @@ namespace era_engine
 
 		if (!ImGui::IsAnyItemActive())
 		{
-			if (!inputCaptured && ImGui::IsKeyDown(key_ctrl) && ImGui::IsKeyPressed('Z'))
+			if (!input_captured && ImGui::IsKeyDown(KEY_CTRL) && ImGui::IsKeyPressed('Z'))
 			{
-				currentUndoStack->undo();
-				inputCaptured = true;
-				objectMovedByGizmo = true;
+				current_undo_stack->undo();
+				input_captured = true;
+				object_moved_by_gizmo = true;
 			}
-			if (!inputCaptured && ImGui::IsKeyDown(key_ctrl) && ImGui::IsKeyPressed('Y'))
+			if (!input_captured && ImGui::IsKeyDown(KEY_CTRL) && ImGui::IsKeyPressed('Y'))
 			{
-				currentUndoStack->redo();
-				inputCaptured = true;
-				objectMovedByGizmo = true;
+				current_undo_stack->redo();
+				input_captured = true;
+				object_moved_by_gizmo = true;
 			}
-			if (!inputCaptured && ImGui::IsKeyDown(key_ctrl) && ImGui::IsKeyPressed('S'))
+			if (!input_captured && ImGui::IsKeyDown(KEY_CTRL) && ImGui::IsKeyPressed('S'))
 			{
-				serializeToFile();
-				inputCaptured = true;
+				serialize_to_file();
+				input_captured = true;
 				ImGui::GetIO().KeysDown['S'] = false; // Hack: Window does not get notified of inputs due to the file dialog.
 			}
-			if (!inputCaptured && ImGui::IsKeyDown(key_ctrl) && ImGui::IsKeyPressed('O'))
+			if (!input_captured && ImGui::IsKeyDown(KEY_CTRL) && ImGui::IsKeyPressed('O'))
 			{
-				deserializeFromFile();
-				inputCaptured = true;
+				deserialize_from_file();
+				input_captured = true;
 				ImGui::GetIO().KeysDown['O'] = false; // Hack: Window does not get notified of inputs due to the file dialog.
 			}
-			if (!inputCaptured && ImGui::IsKeyDown(key_ctrl) && ImGui::IsKeyPressed('L'))
+			if (!input_captured && ImGui::IsKeyDown(KEY_CTRL) && ImGui::IsKeyPressed('L'))
 			{
 				log_window_open = !log_window_open;
-				inputCaptured = true;
+				input_captured = true;
 			}
 		}
 
-		if (!inputCaptured && input.mouse.left.click_event)
+		if (!input_captured && input.mouse.left.click_event)
 		{
-			if (input.keyboard[key_ctrl].down)
+			if (input.keyboard[KEY_CTRL].down)
 			{
-				vec3 dir = -camera.generateWorldSpaceRay(input.mouse.relX, input.mouse.relY).direction;
-				vec3 beforeDir = this->scene->sun.direction;
+				vec3 dir = -camera.generate_world_space_ray(input.mouse.rel_x, input.mouse.rel_y).direction;
+				vec3 before_dir = this->scene->sun.direction;
 				this->scene->sun.direction = dir;
 				//currentUndoStack->pushAction("sun direction", settings_undo<vec3>(this->scene->sun.direction, beforeDir));
-				inputCaptured = true;
+				input_captured = true;
 			}
 			else
 			{
-				if (renderer->hoveredObjectID != -1)
+				if (renderer->hovered_object_id != -1)
 				{
-					setSelectedEntity(world->get_entity(Entity::Handle{ renderer->hoveredObjectID }));
+					set_selected_entity(world->get_entity(Entity::Handle{ renderer->hovered_object_id }));
 				}
 				else
 				{
-					setSelectedEntity({});
+					set_selected_entity({});
 				}
 			}
-			inputCaptured = true;
+			input_captured = true;
 		}
 
-		return objectMovedByGizmo;
+		return object_moved_by_gizmo;
 	}
 
-	bool eeditor::drawEntityCreationPopup()
+	bool EEditor::draw_entity_creation_popup()
 	{
 		ref<World> world = scene->get_current_world();
-		render_camera& camera = this->scene->camera;
+		RenderCamera& camera = this->scene->camera;
 
 		bool clicked = false;
 
@@ -1050,7 +1050,7 @@ namespace era_engine
 
 				//currentUndoStack->pushAction("entity creation", entity_existence_undo(world, empty));
 
-				setSelectedEntity(empty);
+				set_selected_entity(empty);
 				clicked = true;
 			}
 
@@ -1065,12 +1065,12 @@ namespace era_engine
 		return clicked;
 	}
 
-	void eeditor::serializeToFile()
+	void EEditor::serialize_to_file()
 	{
 		//serializeSceneToYAMLFile(*scene, renderer->settings);
 	}
 
-	bool eeditor::deserializeFromFile()
+	bool EEditor::deserialize_from_file()
 	{
 		////std::string environmentName;
 		////if (deserializeSceneFromYAMLFile(*scene, renderer->settings, environmentName))
@@ -1087,7 +1087,7 @@ namespace era_engine
 		return false;
 	}
 
-	bool eeditor::deserializeFromCurrentFile(const fs::path& path)
+	bool EEditor::deserialize_from_current_file(const fs::path& path)
 	{
 		//std::string environmentName;
 		//if (deserializeSceneFromCurrentYAMLFile(path, *scene, renderer->settings, environmentName))
@@ -1104,7 +1104,7 @@ namespace era_engine
 		return false;
 	}
 
-	bool eeditor::editCamera(render_camera& camera)
+	bool EEditor::edit_camera(RenderCamera& camera)
 	{
 		bool result = false;
 		if (ImGui::BeginTree("Camera"))
@@ -1114,29 +1114,29 @@ namespace era_engine
 
 			if (ImGui::BeginProperties())
 			{
-				UNDOABLE_SETTING("field of view", camera.verticalFOV,
-					result |= ImGui::PropertySliderAngle("Field of view", camera.verticalFOV, 1.f, 150.f));
-				UNDOABLE_SETTING("near plane", camera.nearPlane,
-					result |= ImGui::PropertyDrag("Near plane", camera.nearPlane, 0.01f, 0.f));
+				UNDOABLE_SETTING("field of view", camera.vertical_fov,
+					result |= ImGui::PropertySliderAngle("Field of view", camera.vertical_fov, 1.f, 150.f));
+				UNDOABLE_SETTING("near plane", camera.near_plane,
+					result |= ImGui::PropertyDrag("Near plane", camera.near_plane, 0.01f, 0.f));
 
-				bool infiniteFarplane = camera.farPlane < 0.f;
-				UNDOABLE_SETTING("infinite far plane", camera.farPlane,
-					if (ImGui::PropertyCheckbox("Infinite far plane", infiniteFarplane))
+				bool infinite_farplane = camera.far_plane < 0.f;
+				UNDOABLE_SETTING("infinite far plane", camera.far_plane,
+					if (ImGui::PropertyCheckbox("Infinite far plane", infinite_farplane))
 					{
-						if (!infiniteFarplane)
+						if (!infinite_farplane)
 						{
-							camera.farPlane = (camera.farPlane == -1.f) ? 500.f : -camera.farPlane;
+							camera.far_plane = (camera.far_plane == -1.f) ? 500.f : -camera.far_plane;
 						}
 						else
 						{
-							camera.farPlane = -camera.farPlane;
+							camera.far_plane = -camera.far_plane;
 						}
 						result = true;
 					});
-				if (!infiniteFarplane)
+				if (!infinite_farplane)
 				{
-					UNDOABLE_SETTING("far plane", camera.farPlane,
-						result |= ImGui::PropertyDrag("Far plane", camera.farPlane, 0.1f, 0.f));
+					UNDOABLE_SETTING("far plane", camera.far_plane,
+						result |= ImGui::PropertyDrag("Far plane", camera.far_plane, 0.1f, 0.f));
 				}
 
 				ImGui::EndProperties();
@@ -1147,7 +1147,7 @@ namespace era_engine
 		return result;
 	}
 
-	bool eeditor::editTonemapping(tonemap_settings& tonemap)
+	bool EEditor::edit_tonemapping(TonemapSettings& tonemap)
 	{
 		bool result = false;
 		if (ImGui::BeginTree("Tonemapping"))
@@ -1156,7 +1156,7 @@ namespace era_engine
 				[](void* data, int idx)
 				{
 					float t = idx * 0.01f;
-					tonemap_settings& aces = *(tonemap_settings*)data;
+					TonemapSettings& aces = *(TonemapSettings*)data;
 					return aces.tonemap(t);
 				},
 				&tonemap, 100, 0, 0, 0.f, 1.f, ImVec2(250.f, 250.f));
@@ -1175,8 +1175,8 @@ namespace era_engine
 					result |= ImGui::PropertySlider("Tone numerator", tonemap.E, 0.f, 1.f));
 				UNDOABLE_SETTING("toe denominator", tonemap.F,
 					result |= ImGui::PropertySlider("Toe denominator", tonemap.F, 0.f, 1.f));
-				UNDOABLE_SETTING("linear white", tonemap.linearWhite,
-					result |= ImGui::PropertySlider("Linear white", tonemap.linearWhite, 0.f, 100.f));
+				UNDOABLE_SETTING("linear white", tonemap.linear_white,
+					result |= ImGui::PropertySlider("Linear white", tonemap.linear_white, 0.f, 100.f));
 				UNDOABLE_SETTING("exposure", tonemap.exposure,
 					result |= ImGui::PropertySlider("Exposure", tonemap.exposure, -3.f, 3.f));
 				ImGui::EndProperties();
@@ -1187,7 +1187,7 @@ namespace era_engine
 		return result;
 	}
 
-	bool eeditor::editSunShadowParameters(directional_light& sun)
+	bool EEditor::edit_sun_shadow_parameters(DirectionalLight& sun)
 	{
 		bool result = false;
 		if (ImGui::BeginTree("Sun"))
@@ -1199,54 +1199,54 @@ namespace era_engine
 				UNDOABLE_SETTING("sun color", sun.color,
 					result |= ImGui::PropertyColorWheel("Color", sun.color));
 
-				UNDOABLE_SETTING("sun shadow resolution", sun.shadowDimensions,
-					result |= ImGui::PropertyDropdownPowerOfTwo("Shadow resolution", 128, 2048, sun.shadowDimensions));
+				UNDOABLE_SETTING("sun shadow resolution", sun.shadow_dimensions,
+					result |= ImGui::PropertyDropdownPowerOfTwo("Shadow resolution", 128, 2048, sun.shadow_dimensions));
 				UNDOABLE_SETTING("stabilize", sun.stabilize,
 					result |= ImGui::PropertyCheckbox("Stabilize", sun.stabilize));
-				UNDOABLE_SETTING("negative z-offset", sun.negativeZOffset,
-					result |= ImGui::PropertyDrag("Negative z-offset", sun.negativeZOffset, 0.5f, 0.f));
+				UNDOABLE_SETTING("negative z-offset", sun.negative_z_offset,
+					result |= ImGui::PropertyDrag("Negative z-offset", sun.negative_z_offset, 0.5f, 0.f));
 
-				UNDOABLE_SETTING("cascade count", sun.numShadowCascades,
-					result |= ImGui::PropertySlider("Cascade count", sun.numShadowCascades, 1, 4));
+				UNDOABLE_SETTING("cascade count", sun.num_shadow_cascades,
+					result |= ImGui::PropertySlider("Cascade count", sun.num_shadow_cascades, 1, 4));
 
-				const float minCascadeDistance = 0.f, maxCascadeDistance = 300.f;
-				const float minBias = 0.f, maxBias = 0.0015f;
-				const float minBlend = 0.f, maxBlend = 10.f;
-				if (sun.numShadowCascades == 1)
+				const float min_cascade_distance = 0.f, max_cascade_distance = 300.f;
+				const float min_bias = 0.f, max_bias = 0.0015f;
+				const float min_blend = 0.f, max_blend = 10.f;
+				if (sun.num_shadow_cascades == 1)
 				{
-					UNDOABLE_SETTING("cascade distance", sun.cascadeDistances.x,
-						result |= ImGui::PropertySlider("Distance", sun.cascadeDistances.x, minCascadeDistance, maxCascadeDistance));
+					UNDOABLE_SETTING("cascade distance", sun.cascade_distances.x,
+						result |= ImGui::PropertySlider("Distance", sun.cascade_distances.x, min_cascade_distance, max_cascade_distance));
 					UNDOABLE_SETTING("cascade bias", sun.bias.x,
-						result |= ImGui::PropertySlider("Bias", sun.bias.x, minBias, maxBias, "%.6f"));
-					UNDOABLE_SETTING("cascade blend distances", sun.blendDistances.x,
-						result |= ImGui::PropertySlider("Blend distances", sun.blendDistances.x, minBlend, maxBlend, "%.6f"));
+						result |= ImGui::PropertySlider("Bias", sun.bias.x, min_bias, max_bias, "%.6f"));
+					UNDOABLE_SETTING("cascade blend distances", sun.blend_distances.x,
+						result |= ImGui::PropertySlider("Blend distances", sun.blend_distances.x, min_blend, max_blend, "%.6f"));
 				}
-				else if (sun.numShadowCascades == 2)
+				else if (sun.num_shadow_cascades == 2)
 				{
-					UNDOABLE_SETTING("cascade distance", sun.cascadeDistances.xy,
-						result |= ImGui::PropertySlider("Distance", sun.cascadeDistances.xy, minCascadeDistance, maxCascadeDistance));
+					UNDOABLE_SETTING("cascade distance", sun.cascade_distances.xy,
+						result |= ImGui::PropertySlider("Distance", sun.cascade_distances.xy, min_cascade_distance, max_cascade_distance));
 					UNDOABLE_SETTING("cascade bias", sun.bias.xy,
-						result |= ImGui::PropertySlider("Bias", sun.bias.xy, minBias, maxBias, "%.6f"));
-					UNDOABLE_SETTING("cascade blend distances", sun.blendDistances.xy,
-						result |= ImGui::PropertySlider("Blend distances", sun.blendDistances.xy, minBlend, maxBlend, "%.6f"));
+						result |= ImGui::PropertySlider("Bias", sun.bias.xy, min_bias, max_bias, "%.6f"));
+					UNDOABLE_SETTING("cascade blend distances", sun.blend_distances.xy,
+						result |= ImGui::PropertySlider("Blend distances", sun.blend_distances.xy, min_blend, max_blend, "%.6f"));
 				}
-				else if (sun.numShadowCascades == 3)
+				else if (sun.num_shadow_cascades == 3)
 				{
-					UNDOABLE_SETTING("cascade distance", sun.cascadeDistances.xyz,
-						result |= ImGui::PropertySlider("Distance", sun.cascadeDistances.xyz, minCascadeDistance, maxCascadeDistance));
+					UNDOABLE_SETTING("cascade distance", sun.cascade_distances.xyz,
+						result |= ImGui::PropertySlider("Distance", sun.cascade_distances.xyz, min_cascade_distance, max_cascade_distance));
 					UNDOABLE_SETTING("cascade bias", sun.bias.xyz,
-						result |= ImGui::PropertySlider("Bias", sun.bias.xyz, minBias, maxBias, "%.6f"));
-					UNDOABLE_SETTING("cascade blend distances", sun.blendDistances.xyz,
-						result |= ImGui::PropertySlider("Blend distances", sun.blendDistances.xyz, minBlend, maxBlend, "%.6f"));
+						result |= ImGui::PropertySlider("Bias", sun.bias.xyz, min_bias, max_bias, "%.6f"));
+					UNDOABLE_SETTING("cascade blend distances", sun.blend_distances.xyz,
+						result |= ImGui::PropertySlider("Blend distances", sun.blend_distances.xyz, min_blend, max_blend, "%.6f"));
 				}
-				else if (sun.numShadowCascades == 4)
+				else if (sun.num_shadow_cascades == 4)
 				{
-					UNDOABLE_SETTING("cascade distance", sun.cascadeDistances,
-						result |= ImGui::PropertySlider("Distance", sun.cascadeDistances, minCascadeDistance, maxCascadeDistance));
+					UNDOABLE_SETTING("cascade distance", sun.cascade_distances,
+						result |= ImGui::PropertySlider("Distance", sun.cascade_distances, min_cascade_distance, max_cascade_distance));
 					UNDOABLE_SETTING("cascade bias", sun.bias,
-						result |= ImGui::PropertySlider("Bias", sun.bias, minBias, maxBias, "%.6f"));
-					UNDOABLE_SETTING("cascade blend distances", sun.blendDistances,
-						result |= ImGui::PropertySlider("Blend distances", sun.blendDistances, minBlend, maxBlend, "%.6f"));
+						result |= ImGui::PropertySlider("Bias", sun.bias, min_bias, max_bias, "%.6f"));
+					UNDOABLE_SETTING("cascade blend distances", sun.blend_distances,
+						result |= ImGui::PropertySlider("Blend distances", sun.blend_distances, min_blend, max_blend, "%.6f"));
 				}
 
 				ImGui::EndProperties();
@@ -1254,10 +1254,10 @@ namespace era_engine
 
 			if (ImGui::BeginTree("Show##ShowShadowMaps"))
 			{
-				for (uint32 i = 0; i < sun.numShadowCascades; ++i)
+				for (uint32 i = 0; i < sun.num_shadow_cascades; ++i)
 				{
-					auto vp = sun.shadowMapViewports[i];
-					ImGui::Image(render_resources::shadowMap, 0, 0, ImVec2(vp.x, vp.y), ImVec2(vp.x + vp.z, vp.y + vp.w));
+					auto vp = sun.shadow_map_viewports[i];
+					ImGui::Image(RenderResources::shadow_map, 0, 0, ImVec2(vp.x, vp.y), ImVec2(vp.x + vp.z, vp.y + vp.w));
 				}
 				ImGui::EndTree();
 			}
@@ -1267,7 +1267,7 @@ namespace era_engine
 		return result;
 	}
 
-	bool eeditor::editAO(bool& enable, hbao_settings& settings, const ref<dx_texture>& aoTexture)
+	bool EEditor::edit_ao(bool& enable, HBAOSettings& settings, const ref<DXTexture>& ao_texture)
 	{
 		bool result = false;
 		if (ImGui::BeginProperties())
@@ -1276,10 +1276,10 @@ namespace era_engine
 				result |= ImGui::PropertyCheckbox("Enable HBAO", enable));
 			if (enable)
 			{
-				UNDOABLE_SETTING("num AO rays", settings.numRays,
-					result |= ImGui::PropertySlider("Num rays", settings.numRays, 1, 16));
-				UNDOABLE_SETTING("max num steps per AO ray", settings.maxNumStepsPerRay,
-					result |= ImGui::PropertySlider("Max num steps per ray", settings.maxNumStepsPerRay, 1, 16));
+				UNDOABLE_SETTING("num AO rays", settings.num_rays,
+					result |= ImGui::PropertySlider("Num rays", settings.num_rays, 1, 16));
+				UNDOABLE_SETTING("max num steps per AO ray", settings.max_num_steps_per_ray,
+					result |= ImGui::PropertySlider("Max num steps per ray", settings.max_num_steps_per_ray, 1, 16));
 				UNDOABLE_SETTING("AO radius", settings.radius,
 					result |= ImGui::PropertySlider("Radius", settings.radius, 0.f, 1.f, "%.3fm"));
 				UNDOABLE_SETTING("AO strength", settings.strength,
@@ -1287,15 +1287,15 @@ namespace era_engine
 			}
 			ImGui::EndProperties();
 		}
-		if (enable && aoTexture && ImGui::BeginTree("Show##ShowAO"))
+		if (enable && ao_texture && ImGui::BeginTree("Show##ShowAO"))
 		{
-			ImGui::Image(aoTexture);
+			ImGui::Image(ao_texture);
 			ImGui::EndTree();
 		}
 		return result;
 	}
 
-	bool eeditor::editSSS(bool& enable, sss_settings& settings, const ref<dx_texture>& sssTexture)
+	bool EEditor::edit_sss(bool& enable, SSSSettings& settings, const ref<DXTexture>& sss_texture)
 	{
 		bool result = false;
 		if (ImGui::BeginProperties())
@@ -1304,30 +1304,30 @@ namespace era_engine
 				result |= ImGui::PropertyCheckbox("Enable SSS", enable));
 			if (enable)
 			{
-				UNDOABLE_SETTING("num SSS iterations", settings.numSteps,
-					result |= ImGui::PropertySlider("Num iterations", settings.numSteps, 1, 64));
-				UNDOABLE_SETTING("SSS ray distance", settings.rayDistance,
-					result |= ImGui::PropertySlider("Ray distance", settings.rayDistance, 0.05f, 3.f, "%.3fm"));
+				UNDOABLE_SETTING("num SSS iterations", settings.num_steps,
+					result |= ImGui::PropertySlider("Num iterations", settings.num_steps, 1, 64));
+				UNDOABLE_SETTING("SSS ray distance", settings.ray_distance,
+					result |= ImGui::PropertySlider("Ray distance", settings.ray_distance, 0.05f, 3.f, "%.3fm"));
 				UNDOABLE_SETTING("SSS thickness", settings.thickness,
 					result |= ImGui::PropertySlider("Thickness", settings.thickness, 0.05f, 1.f, "%.3fm"));
-				UNDOABLE_SETTING("SSS max distance from camera", settings.maxDistanceFromCamera,
-					result |= ImGui::PropertySlider("Max distance from camera", settings.maxDistanceFromCamera, 5.f, 1000.f, "%.3fm"));
-				UNDOABLE_SETTING("SSS distance fadeout range", settings.distanceFadeoutRange,
-					result |= ImGui::PropertySlider("Distance fadeout range", settings.distanceFadeoutRange, 1.f, 5.f, "%.3fm"));
-				UNDOABLE_SETTING("SSS border fadeout", settings.borderFadeout,
-					result |= ImGui::PropertySlider("Border fadeout", settings.borderFadeout, 0.f, 0.5f));
+				UNDOABLE_SETTING("SSS max distance from camera", settings.max_distance_from_camera,
+					result |= ImGui::PropertySlider("Max distance from camera", settings.max_distance_from_camera, 5.f, 1000.f, "%.3fm"));
+				UNDOABLE_SETTING("SSS distance fadeout range", settings.distance_fadeout_range,
+					result |= ImGui::PropertySlider("Distance fadeout range", settings.distance_fadeout_range, 1.f, 5.f, "%.3fm"));
+				UNDOABLE_SETTING("SSS border fadeout", settings.border_fadeout,
+					result |= ImGui::PropertySlider("Border fadeout", settings.border_fadeout, 0.f, 0.5f));
 			}
 			ImGui::EndProperties();
 		}
-		if (enable && sssTexture && ImGui::BeginTree("Show##ShowSSS"))
+		if (enable && sss_texture && ImGui::BeginTree("Show##ShowSSS"))
 		{
-			ImGui::Image(sssTexture);
+			ImGui::Image(sss_texture);
 			ImGui::EndTree();
 		}
 		return result;
 	}
 
-	bool eeditor::editSSR(bool& enable, ssr_settings& settings, const ref<dx_texture>& ssrTexture)
+	bool EEditor::edit_ssr(bool& enable, SSRSettings& settings, const ref<DXTexture>& ssr_texture)
 	{
 		bool result = false;
 		if (ImGui::BeginProperties())
@@ -1336,26 +1336,26 @@ namespace era_engine
 				result |= ImGui::PropertyCheckbox("Enable SSR", enable));
 			if (enable)
 			{
-				UNDOABLE_SETTING("num SSR iterations", settings.numSteps,
-					result |= ImGui::PropertySlider("Num iterations", settings.numSteps, 1, 1024));
-				UNDOABLE_SETTING("SSR max distance", settings.maxDistance,
-					result |= ImGui::PropertySlider("Max distance", settings.maxDistance, 5.f, 1000.f, "%.3fm"));
-				UNDOABLE_SETTING("SSR min stride", settings.minStride,
-					result |= ImGui::PropertySlider("Min stride", settings.minStride, 1.f, 50.f, "%.3fm"));
-				UNDOABLE_SETTING("SSR max stride", settings.maxStride,
-					result |= ImGui::PropertySlider("Max stride", settings.maxStride, settings.minStride, 50.f, "%.3fm"));
+				UNDOABLE_SETTING("num SSR iterations", settings.num_steps,
+					result |= ImGui::PropertySlider("Num iterations", settings.num_steps, 1, 1024));
+				UNDOABLE_SETTING("SSR max distance", settings.max_distance,
+					result |= ImGui::PropertySlider("Max distance", settings.max_distance, 5.f, 1000.f, "%.3fm"));
+				UNDOABLE_SETTING("SSR min stride", settings.min_stride,
+					result |= ImGui::PropertySlider("Min stride", settings.min_stride, 1.f, 50.f, "%.3fm"));
+				UNDOABLE_SETTING("SSR max stride", settings.max_stride,
+					result |= ImGui::PropertySlider("Max stride", settings.max_stride, settings.min_stride, 50.f, "%.3fm"));
 			}
 			ImGui::EndProperties();
 		}
-		if (enable && ssrTexture && ImGui::BeginTree("Show##ShowSSR"))
+		if (enable && ssr_texture && ImGui::BeginTree("Show##ShowSSR"))
 		{
-			ImGui::Image(ssrTexture);
+			ImGui::Image(ssr_texture);
 			ImGui::EndTree();
 		}
 		return result;
 	}
 
-	bool eeditor::editTAA(bool& enable, taa_settings& settings, const ref<dx_texture>& velocityTexture)
+	bool EEditor::edit_taa(bool& enable, TAASettings& settings, const ref<DXTexture>& velocity_texture)
 	{
 		bool result = false;
 		if (ImGui::BeginProperties())
@@ -1364,20 +1364,20 @@ namespace era_engine
 				result |= ImGui::PropertyCheckbox("Enable TAA", enable));
 			if (enable)
 			{
-				UNDOABLE_SETTING("TAA jitter strength", settings.cameraJitterStrength,
-					result |= ImGui::PropertySlider("Jitter strength", settings.cameraJitterStrength));
+				UNDOABLE_SETTING("TAA jitter strength", settings.camera_jitter_strength,
+					result |= ImGui::PropertySlider("Jitter strength", settings.camera_jitter_strength));
 			}
 			ImGui::EndProperties();
 		}
-		if (enable && velocityTexture && ImGui::BeginTree("Show##ShowTAA"))
+		if (enable && velocity_texture && ImGui::BeginTree("Show##ShowTAA"))
 		{
-			ImGui::Image(velocityTexture);
+			ImGui::Image(velocity_texture);
 			ImGui::EndTree();
 		}
 		return result;
 	}
 
-	bool eeditor::editBloom(bool& enable, bloom_settings& settings, const ref<dx_texture>& bloomTexture)
+	bool EEditor::edit_bloom(bool& enable, BloomSettings& settings, const ref<DXTexture>& bloom_texture)
 	{
 		bool result = false;
 		if (ImGui::BeginProperties())
@@ -1393,15 +1393,15 @@ namespace era_engine
 			}
 			ImGui::EndProperties();
 		}
-		if (enable && bloomTexture && ImGui::BeginTree("Show##ShowBloom"))
+		if (enable && bloom_texture && ImGui::BeginTree("Show##ShowBloom"))
 		{
-			ImGui::Image(bloomTexture);
+			ImGui::Image(bloom_texture);
 			ImGui::EndTree();
 		}
 		return result;
 	}
 
-	bool eeditor::editSharpen(bool& enable, sharpen_settings& settings)
+	bool EEditor::edit_sharpen(bool& enable, SharpenSettings& settings)
 	{
 		bool result = false;
 		if (ImGui::BeginProperties())
@@ -1420,11 +1420,11 @@ namespace era_engine
 
 	volatile bool paused = false;
 
-	void eeditor::forceStart()
+	void EEditor::force_start()
 	{
 		this->scene->play();
-		undoStacks[1].reset();
-		setSelectedEntity({});
+		undo_stacks[1].reset();
+		set_selected_entity({});
 
 		//for (auto [entityHandle, rigidbody, transform] : scene->get_current_world()->group(components_group<physics::DynamicBodyComponent, TransformComponent>).each())
 		//{
@@ -1446,24 +1446,24 @@ namespace era_engine
 		//}
 	}
 
-	void eeditor::forcePause()
+	void EEditor::force_pause()
 	{
 		this->scene->pause();
 		paused = true;
 	}
 
-	void eeditor::forceStop()
+	void EEditor::force_stop()
 	{
 		this->scene->stop();
-		this->scene->environment.forceUpdate(this->scene->sun.direction);
-		setSelectedEntity({});
+		this->scene->environment.force_update(this->scene->sun.direction);
+		set_selected_entity({});
 		//app->linker->reload_src();
 		//physics::PhysicsEngine::get_physics_core()->reset_actors_velocity_and_inertia();
 		paused = false;
-		this->scene->editor_camera.setPositionAndRotation(vec3(0.0f), quat::identity);
+		this->scene->editor_camera.set_position_and_rotation(vec3(0.0f), quat::identity);
 	}
 
-	void eeditor::visualizePhysics(ldr_render_pass* ldrRenderPass) const
+	void EEditor::visualize_physics(LDRRenderPass* ldr_render_pass) const
 	{
 		/*using namespace physx;
 
@@ -1488,13 +1488,13 @@ namespace era_engine
 		}*/
 	}
 
-	void eeditor::drawSettings(float dt)
+	void EEditor::draw_settings(float dt)
 	{
 		ref<World> world = scene->get_current_world();
 
 		if (ImGui::Begin("Settings"))
 		{
-			path_tracer& pathTracer = renderer->pathTracer;
+			PathTracer& path_tracer = renderer->path_tracer;
 
 			ImGui::Text("%.3f ms, %u FPS", dt * 1000.f, (uint32)(1.f / dt));
 
@@ -1504,47 +1504,47 @@ namespace era_engine
 					ImGui::PropertySlider("Time scale", this->scene->timestep_scale));
 
 				UNDOABLE_SETTING("renderer mode", renderer->mode,
-					if (ImGui::PropertyDropdown("Renderer mode", rendererModeNames, renderer_mode_count, (uint32&)renderer->mode))
+					if (ImGui::PropertyDropdown("Renderer mode", renderer_mode_names, RENDERER_MODE_COUNT, (uint32&)renderer->mode))
 					{
-						pathTracer.resetRendering();
+						path_tracer.reset_rendering();
 					});
 
-				dx_memory_usage memoryUsage = dxContext.getMemoryUsage();
+				DXMemoryUsage memory_usage = dx_context.get_memory_usage();
 
-				ImGui::PropertyValue("Video memory usage", "%u / %uMB", memoryUsage.currentlyUsed, memoryUsage.available);
-				ImGui::PropertyValue("Render queue command lists count", "%u", dxContext.renderQueue.totalNumCommandLists);
+				ImGui::PropertyValue("Video memory usage", "%u / %uMB", memory_usage.currently_used, memory_usage.available);
+				ImGui::PropertyValue("Render queue command lists count", "%u", dx_context.render_queue.total_num_command_lists);
 
-				UNDOABLE_SETTING("aspect ratio", renderer->aspectRatioMode,
-					ImGui::PropertyDropdown("Aspect ratio", aspectRatioNames, aspect_ratio_mode_count, (uint32&)renderer->aspectRatioMode));
+				UNDOABLE_SETTING("aspect ratio", renderer->aspect_ratio_mode,
+					ImGui::PropertyDropdown("Aspect ratio", aspect_ratio_names, ASPECT_RATIO_MODE_COUNT, (uint32&)renderer->aspect_ratio_mode));
 
-				UNDOABLE_SETTING("static shadow map caching", enableStaticShadowMapCaching,
-					ImGui::PropertyCheckbox("Static shadow map caching", enableStaticShadowMapCaching));
+				UNDOABLE_SETTING("static shadow map caching", enable_static_shadow_map_caching,
+					ImGui::PropertyCheckbox("Static shadow map caching", enable_static_shadow_map_caching));
 
-				UNDOABLE_SETTING("shadow map caching", renderer->settings.cacheShadowMap,
-					ImGui::PropertyCheckbox("Shadow map caching", renderer->settings.cacheShadowMap));
+				UNDOABLE_SETTING("shadow map caching", renderer->settings.cache_shadow_map,
+					ImGui::PropertyCheckbox("Shadow map caching", renderer->settings.cache_shadow_map));
 
 				ImGui::EndProperties();
 			}
 
 			if (!this->scene->is_pausable())
 			{
-				editCamera(this->scene->camera);
+				edit_camera(this->scene->camera);
 			}
 			else
 			{
-				editCamera(this->scene->editor_camera);
+				edit_camera(this->scene->editor_camera);
 			}
-			editTonemapping(renderer->settings.tonemapSettings);
-			editSunShadowParameters(this->scene->sun);
+			edit_tonemapping(renderer->settings.tonemap_settings);
+			edit_sun_shadow_parameters(this->scene->sun);
 
 			if (ImGui::BeginTree("Post processing"))
 			{
-				if (renderer->spec.allowAO) { editAO(renderer->settings.enableAO, renderer->settings.aoSettings, renderer->getAOResult()); ImGui::Separator(); }
-				if (renderer->spec.allowSSS) { editSSS(renderer->settings.enableSSS, renderer->settings.sssSettings, renderer->getSSSResult()); ImGui::Separator(); }
-				if (renderer->spec.allowSSR) { editSSR(renderer->settings.enableSSR, renderer->settings.ssrSettings, renderer->getSSRResult()); ImGui::Separator(); }
-				if (renderer->spec.allowTAA) { editTAA(renderer->settings.enableTAA, renderer->settings.taaSettings, renderer->getScreenVelocities()); ImGui::Separator(); }
-				if (renderer->spec.allowBloom) { editBloom(renderer->settings.enableBloom, renderer->settings.bloomSettings, renderer->getBloomResult()); ImGui::Separator(); }
-				if (renderer->spec.allowDLSS)
+				if (renderer->spec.allow_ao) { edit_ao(renderer->settings.enable_ao, renderer->settings.ao_settings, renderer->get_ao_result()); ImGui::Separator(); }
+				if (renderer->spec.allow_sss) { edit_sss(renderer->settings.enable_sss, renderer->settings.sss_settings, renderer->get_sss_result()); ImGui::Separator(); }
+				if (renderer->spec.allow_ssr) { edit_ssr(renderer->settings.enable_ssr, renderer->settings.ssr_settings, renderer->get_ssr_result()); ImGui::Separator(); }
+				if (renderer->spec.allow_taa) { edit_taa(renderer->settings.enable_taa, renderer->settings.taa_settings, renderer->get_screen_velocities()); ImGui::Separator(); }
+				if (renderer->spec.allow_bloom) { edit_bloom(renderer->settings.enable_bloom, renderer->settings.bloom_settings, renderer->get_bloom_result()); ImGui::Separator(); }
+				if (renderer->spec.allow_dlss)
 				{
 
 #if ENABLE_DLSS
@@ -1552,28 +1552,28 @@ namespace era_engine
 					if (ImGui::BeginProperties())
 					{
 						// For now it's only fsr2 wrapper. I do not have rtx gpu now :(((
-						ImGui::PropertyCheckbox("Enable FSR 2.0", renderer->settings.enableDLSS);
+						ImGui::PropertyCheckbox("Enable FSR 2.0", renderer->settings.enable_dlss);
 
 						ImGui::EndProperties();
 					}
 
-					if (renderer->settings.enableDLSS)
+					if (renderer->settings.enable_dlss)
 					{
-						if (!renderer->dlssInited)
+						if (!renderer->dlss_inited)
 						{
 							renderer->dlss_adapter.initialize(renderer);
 						}
 					}
 					else
 					{
-						renderer->settings.tonemapSettings = renderer->settings.defaultTonemapSettings;
+						renderer->settings.tonemap_settings = renderer->settings.default_tonemap_settings;
 					}
 					ImGui::Separator();
 
 #endif
 
 				}
-				editSharpen(renderer->settings.enableSharpen, renderer->settings.sharpenSettings);
+				edit_sharpen(renderer->settings.enable_sharpen, renderer->settings.sharpen_settings);
 
 				ImGui::EndTree();
 			}
@@ -1589,53 +1589,53 @@ namespace era_engine
 					{
 						if (handle)
 						{
-							environment.setFromTexture(get_path_from_asset_handle(handle));
+							environment.set_from_texture(get_path_from_asset_handle(handle));
 						}
 						else
 						{
-							environment.setToProcedural(this->scene->sun.direction);
+							environment.set_to_procedural(this->scene->sun.direction);
 						}
 					}
 
-					UNDOABLE_SETTING("sky intensity", environment.skyIntensity,
-						ImGui::PropertySlider("Sky intensity", environment.skyIntensity, 0.f, 2.f));
-					UNDOABLE_SETTING("GI intensity", environment.globalIlluminationIntensity,
-						ImGui::PropertySlider("GI intensity", environment.globalIlluminationIntensity, 0.f, 2.f));
+					UNDOABLE_SETTING("sky intensity", environment.sky_intensity,
+						ImGui::PropertySlider("Sky intensity", environment.sky_intensity, 0.f, 2.f));
+					UNDOABLE_SETTING("GI intensity", environment.global_illumination_intensity,
+						ImGui::PropertySlider("GI intensity", environment.global_illumination_intensity, 0.f, 2.f));
 
-					environment_gi_mode tempMode = environment.giMode;
+					EnvironmentGIMode temp_mode = environment.gi_mode;
 
-					ImGui::PropertyDropdown("GI mode", environmentGIModeNames, 1 + 1, (uint32&)tempMode);
+					ImGui::PropertyDropdown("GI mode", environment_gi_mode_names, 1 + 1, (uint32&)temp_mode);
 
-					if (tempMode != environment.giMode)
+					if (temp_mode != environment.gi_mode)
 					{
-						struct change_gi_mode_data { environment_gi_mode mode; environment_gi_mode& destMode; } data{ tempMode, this->scene->environment.giMode };
-						main_thread_job_queue.createJob<change_gi_mode_data>([](change_gi_mode_data& data, JobHandle job)
+						struct ChangeGIModeData { EnvironmentGIMode mode; EnvironmentGIMode& dest_mode; } data{ temp_mode, this->scene->environment.gi_mode };
+						main_thread_job_queue.create_job<ChangeGIModeData>([](ChangeGIModeData& data, JobHandle job)
 							{
-								data.destMode = data.mode;
+								data.dest_mode = data.mode;
 							}, data).submit_now();
 					}
 
 					ImGui::EndProperties();
 				}
 
-				if (environment.giMode == environment_gi_raytraced)
+				if (environment.gi_mode == ENVIRONMENT_GI_RAYTRACED)
 				{
 					if (ImGui::BeginTree("Light probe"))
 					{
-						auto& grid = environment.lightProbeGrid;
+						auto& grid = environment.light_probe_grid;
 
 						if (ImGui::BeginProperties())
 						{
-							UNDOABLE_SETTING("visualize probes", grid.visualizeProbes,
-								ImGui::PropertyCheckbox("Visualize probes", grid.visualizeProbes));
-							UNDOABLE_SETTING("visualize rays", grid.visualizeRays,
-								ImGui::PropertyCheckbox("Visualize rays", grid.visualizeRays));
+							UNDOABLE_SETTING("visualize probes", grid.visualize_probes,
+								ImGui::PropertyCheckbox("Visualize probes", grid.visualize_probes));
+							UNDOABLE_SETTING("visualize rays", grid.visualize_rays,
+								ImGui::PropertyCheckbox("Visualize rays", grid.visualize_rays));
 
-							UNDOABLE_SETTING("auto rotate rays", grid.autoRotateRays,
-								ImGui::PropertyCheckbox("Auto rotate rays", grid.autoRotateRays));
-							if (!grid.autoRotateRays)
+							UNDOABLE_SETTING("auto rotate rays", grid.auto_rotate_rays,
+								ImGui::PropertyCheckbox("Auto rotate rays", grid.auto_rotate_rays));
+							if (!grid.auto_rotate_rays)
 							{
-								grid.rotateRays = ImGui::PropertyButton("Rotate", "Go");
+								grid.rotate_rays = ImGui::PropertyButton("Rotate", "Go");
 							}
 
 							ImGui::EndProperties();
@@ -1645,13 +1645,13 @@ namespace era_engine
 						{
 							if (ImGui::BeginProperties())
 							{
-								UNDOABLE_SETTING("irradiance UI scale", grid.irradianceUIScale,
-									ImGui::PropertySlider("Scale", grid.irradianceUIScale, 0.1f, 20.f));
+								UNDOABLE_SETTING("irradiance UI scale", grid.irradiance_ui_scale,
+									ImGui::PropertySlider("Scale", grid.irradiance_ui_scale, 0.1f, 20.f));
 								ImGui::EndProperties();
 							}
 							if(grid.irradiance)
 							{
-								ImGui::Image(grid.irradiance, (uint32)(grid.irradiance->width * grid.irradianceUIScale));
+								ImGui::Image(grid.irradiance, (uint32)(grid.irradiance->width * grid.irradiance_ui_scale));
 							}
 							ImGui::EndTree();
 						}
@@ -1659,13 +1659,13 @@ namespace era_engine
 						{
 							if (ImGui::BeginProperties())
 							{
-								UNDOABLE_SETTING("depth UI scale", grid.depthUIScale,
-									ImGui::PropertySlider("Scale", grid.depthUIScale, 0.1f, 20.f));
+								UNDOABLE_SETTING("depth UI scale", grid.depth_ui_scale,
+									ImGui::PropertySlider("Scale", grid.depth_ui_scale, 0.1f, 20.f));
 								ImGui::EndProperties();
 							}
 							if(grid.depth)
 							{
-								ImGui::Image(grid.depth, (uint32)(grid.depth->width * grid.depthUIScale));
+								ImGui::Image(grid.depth, (uint32)(grid.depth->width * grid.depth_ui_scale));
 							}
 							ImGui::EndTree();
 						}
@@ -1673,13 +1673,13 @@ namespace era_engine
 						{
 							if (ImGui::BeginProperties())
 							{
-								UNDOABLE_SETTING("raytraced radiance UI scale", grid.raytracedRadianceUIScale,
-									ImGui::PropertySlider("Scale", grid.raytracedRadianceUIScale, 0.1f, 20.f));
+								UNDOABLE_SETTING("raytraced radiance UI scale", grid.raytraced_radiance_ui_scale,
+									ImGui::PropertySlider("Scale", grid.raytraced_radiance_ui_scale, 0.1f, 20.f));
 								ImGui::EndProperties();
 							}
-							if(grid.raytracedRadiance)
+							if(grid.raytraced_radiance)
 							{
-								ImGui::Image(grid.raytracedRadiance, (uint32)(grid.raytracedRadiance->width * grid.raytracedRadianceUIScale));
+								ImGui::Image(grid.raytraced_radiance, (uint32)(grid.raytraced_radiance->width * grid.raytraced_radiance_ui_scale));
 							}
 							ImGui::EndTree();
 						}
@@ -1733,27 +1733,27 @@ namespace era_engine
 				bool change = false;
 				if (ImGui::BeginProperties())
 				{
-					const float maxVolume = 3.f;
-					UNDOABLE_SETTING("master volume", masterAudioSettings.volume,
-						change |= ImGui::PropertySlider("Master volume", masterAudioSettings.volume, 0.f, maxVolume));
+					const float max_volume = 3.f;
+					UNDOABLE_SETTING("master volume", master_audio_settings.volume,
+						change |= ImGui::PropertySlider("Master volume", master_audio_settings.volume, 0.f, max_volume));
 
 					ImGui::PropertySeparator();
 
-					for (uint32 i = 0; i < sound_type_count; ++i)
+					for (uint32 i = 0; i < SOUND_TYPE_COUNT; ++i)
 					{
-						UNDOABLE_SETTING(soundTypeNames[i], soundTypeVolumes[i],
-							change |= ImGui::PropertySlider(soundTypeNames[i], soundTypeVolumes[i], 0.f, 1.f));
+						UNDOABLE_SETTING(sound_type_names[i], sound_type_volumes[i],
+							change |= ImGui::PropertySlider(sound_type_names[i], sound_type_volumes[i], 0.f, 1.f));
 					}
 
 					ImGui::PropertySeparator();
 
-					UNDOABLE_SETTING("toggle reverb", masterAudioSettings.reverbEnabled,
-						ImGui::PropertyCheckbox("Reverb enabled", masterAudioSettings.reverbEnabled));
+					UNDOABLE_SETTING("toggle reverb", master_audio_settings.reverb_enabled,
+						ImGui::PropertyCheckbox("Reverb enabled", master_audio_settings.reverb_enabled));
 
-					if (masterAudioSettings.reverbEnabled)
+					if (master_audio_settings.reverb_enabled)
 					{
-						UNDOABLE_SETTING("reverb preset", masterAudioSettings.reverbPreset,
-							change |= ImGui::PropertyDropdown("Reverb preset", reverbPresetNames, reverb_preset_count, (uint32&)masterAudioSettings.reverbPreset));
+						UNDOABLE_SETTING("reverb preset", master_audio_settings.reverb_preset,
+							change |= ImGui::PropertyDropdown("Reverb preset", reverb_preset_names, REVERB_PRESET_COUNT, (uint32&)master_audio_settings.reverb_preset));
 					}
 
 					ImGui::EndProperties();
@@ -1761,38 +1761,38 @@ namespace era_engine
 				ImGui::EndTree();
 			}
 
-			if (renderer->mode == renderer_mode_pathtraced)
+			if (renderer->mode == RENDERER_MODE_PATHTRACED)
 			{
 				if (ImGui::BeginProperties())
 				{
-					auto& settings = pathTracer.settings;
+					auto& settings = path_tracer.settings;
 
-					UNDOABLE_SETTING("max recursion depth", settings.recursionDepth,
-						ImGui::PropertySlider("Max recursion depth", settings.recursionDepth, 0, settings.maxRecursionDepth - 1));
-					UNDOABLE_SETTING("start russion roulette after", settings.startRussianRouletteAfter,
-						ImGui::PropertySlider("Start russian roulette after", settings.startRussianRouletteAfter, 0, settings.recursionDepth));
-					UNDOABLE_SETTING("use thin lens camera", settings.useThinLensCamera,
-						ImGui::PropertyCheckbox("Use thin lens camera", settings.useThinLensCamera));
-					if (settings.useThinLensCamera)
+					UNDOABLE_SETTING("max recursion depth", settings.recursion_depth,
+						ImGui::PropertySlider("Max recursion depth", settings.recursion_depth, 0, settings.max_recursion_depth - 1));
+					UNDOABLE_SETTING("start russion roulette after", settings.start_russian_roulette_after,
+						ImGui::PropertySlider("Start russian roulette after", settings.start_russian_roulette_after, 0, settings.recursion_depth));
+					UNDOABLE_SETTING("use thin lens camera", settings.use_thin_lens_camera,
+						ImGui::PropertyCheckbox("Use thin lens camera", settings.use_thin_lens_camera));
+					if (settings.use_thin_lens_camera)
 					{
-						UNDOABLE_SETTING("focal length", settings.focalLength,
-							ImGui::PropertySlider("Focal length", settings.focalLength, 0.5f, 50.f));
-						UNDOABLE_SETTING("f-number", settings.fNumber,
-							ImGui::PropertySlider("F-Number", settings.fNumber, 1.f, 128.f));
+						UNDOABLE_SETTING("focal length", settings.focal_length,
+							ImGui::PropertySlider("Focal length", settings.focal_length, 0.5f, 50.f));
+						UNDOABLE_SETTING("f-number", settings.f_number,
+							ImGui::PropertySlider("F-Number", settings.f_number, 1.f, 128.f));
 					}
-					UNDOABLE_SETTING("use real materials", settings.useRealMaterials,
-						ImGui::PropertyCheckbox("Use real materials", settings.useRealMaterials));
-					UNDOABLE_SETTING("enable direct lighting", settings.enableDirectLighting,
-						ImGui::PropertyCheckbox("Enable direct lighting", settings.enableDirectLighting));
-					if (settings.enableDirectLighting)
+					UNDOABLE_SETTING("use real materials", settings.use_real_materials,
+						ImGui::PropertyCheckbox("Use real materials", settings.use_real_materials));
+					UNDOABLE_SETTING("enable direct lighting", settings.enable_direct_lighting,
+						ImGui::PropertyCheckbox("Enable direct lighting", settings.enable_direct_lighting));
+					if (settings.enable_direct_lighting)
 					{
-						UNDOABLE_SETTING("light intensity scale", settings.lightIntensityScale,
-							ImGui::PropertySlider("Light intensity scale", settings.lightIntensityScale, 0.f, 50.f));
-						UNDOABLE_SETTING("point light radius", settings.pointLightRadius,
-							ImGui::PropertySlider("Point light radius", settings.pointLightRadius, 0.01f, 1.f));
+						UNDOABLE_SETTING("light intensity scale", settings.light_intensity_scale,
+							ImGui::PropertySlider("Light intensity scale", settings.light_intensity_scale, 0.f, 50.f));
+						UNDOABLE_SETTING("point light radius", settings.point_light_radius,
+							ImGui::PropertySlider("Point light radius", settings.point_light_radius, 0.01f, 1.f));
 
-						UNDOABLE_SETTING("multiple importance sampling", settings.multipleImportanceSampling,
-							ImGui::PropertyCheckbox("Multiple importance sampling", settings.multipleImportanceSampling));
+						UNDOABLE_SETTING("multiple importance sampling", settings.multiple_importance_sampling,
+							ImGui::PropertyCheckbox("Multiple importance sampling", settings.multiple_importance_sampling));
 					}
 
 					ImGui::EndProperties();
@@ -1813,7 +1813,7 @@ namespace era_engine
 		ImGui::End();
 	}
 
-	void editTexture(const char* name, ref<dx_texture>& tex, uint32 loadFlags)
+	void edit_texture(const char* name, ref<DXTexture>& tex, uint32 load_flags)
 	{
 		AssetHandle asset = {};
 		if (tex)
@@ -1825,14 +1825,14 @@ namespace era_engine
 		{
 			fs::path path = get_path_from_asset_handle(asset);
 			fs::path relative = fs::relative(path, fs::current_path());
-			if (auto newTex = loadTextureFromFileAsync(path, loadFlags))
+			if (auto new_tex = load_texture_from_file_async(path, load_flags))
 			{
-				tex = newTex;
+				tex = new_tex;
 			}
 		}
 	}
 
-	void editMesh(const char* name, ref<MultiMesh>& mesh, uint32 loadFlags)
+	void edit_mesh(const char* name, ref<MultiMesh>& mesh, uint32 load_flags)
 	{
 		AssetHandle asset = {};
 		if (mesh)
@@ -1844,52 +1844,52 @@ namespace era_engine
 		{
 			fs::path path = get_path_from_asset_handle(asset);
 			fs::path relative = fs::relative(path, fs::current_path());
-			if (auto newMesh = import_mesh_from_file(path, loadFlags))
+			if (auto new_mesh = import_mesh_from_file(path, load_flags))
 			{
-				mesh = newMesh;
+				mesh = new_mesh;
 			}
 		}
 	}
 
-	void editMaterial(const ref<pbr_material>& material)
+	void edit_material(const ref<PBRMaterial>& material)
 	{
 		if (ImGui::BeginProperties())
 		{
 			AssetHandle dummy = {};
 
-			editTexture("Albedo", material->albedo, image_load_flags_default);
-			editTexture("Normal", material->normal, image_load_flags_default_noncolor);
-			editTexture("Roughness", material->roughness, image_load_flags_default_noncolor);
-			editTexture("Metallic", material->metallic, image_load_flags_default_noncolor);
+			edit_texture("Albedo", material->albedo, IMAGE_LOAD_FLAGS_DEFAULT);
+			edit_texture("Normal", material->normal, IMAGE_LOAD_FLAGS_DEFAULT_NONCOLOR);
+			edit_texture("Roughness", material->roughness, IMAGE_LOAD_FLAGS_DEFAULT_NONCOLOR);
+			edit_texture("Metallic", material->metallic, IMAGE_LOAD_FLAGS_DEFAULT_NONCOLOR);
 
 			ImGui::PropertyColor("Emission", material->emission);
-			ImGui::PropertyColor("Albedo tint", material->albedoTint);
-			ImGui::PropertyDropdown("Shader", pbrMaterialShaderNames, pbr_material_shader_count, (uint32&)material->shader);
-			ImGui::PropertySlider("UV scale", material->uvScale, 0.0f, 150.0f);
+			ImGui::PropertyColor("Albedo tint", material->albedo_tint);
+			ImGui::PropertyDropdown("Shader", pbr_material_shader_names, PBR_MATERIAL_SHADER_COUNT, (uint32&)material->shader);
+			ImGui::PropertySlider("UV scale", material->uv_scale, 0.0f, 150.0f);
 			ImGui::PropertySlider("Translucency", material->translucency);
 
 			if (!material->roughness)
 			{
-				ImGui::PropertySlider("Roughness override", material->roughnessOverride);
+				ImGui::PropertySlider("Roughness override", material->roughness_override);
 			}
 
 			if (!material->metallic)
 			{
-				ImGui::PropertySlider("Metallic override", material->metallicOverride);
+				ImGui::PropertySlider("Metallic override", material->metallic_override);
 			}
 
 			ImGui::EndProperties();
 		}
 	}
 
-	void editSubmeshTransform(trs* transform)
+	void edit_submesh_transform(trs* transform)
 	{
 		ImGui::Drag("Position", transform->position, 0.1f);
-		vec3 selectedEntityEulerRotation = quat_to_euler(transform->rotation);
+		vec3 selected_entity_euler_rotation = quat_to_euler(transform->rotation);
 
-		if (ImGui::Drag("Rotation", selectedEntityEulerRotation, 0.1f))
+		if (ImGui::Drag("Rotation", selected_entity_euler_rotation, 0.1f))
 		{
-			transform->rotation = euler_to_quat(selectedEntityEulerRotation);
+			transform->rotation = euler_to_quat(selected_entity_euler_rotation);
 		}
 
 		ImGui::Drag("Scale", transform->scale, 0.1f);

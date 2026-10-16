@@ -1,21 +1,21 @@
 #include "outline_rs.hlsli"
 
-ConstantBuffer<outline_marker_cb> outline : register(b0);
+ConstantBuffer<OutlineMarkerCB> outline : register(b0);
 
-struct vs_input
+struct VSInput
 {
 	float3 position		: POSITION;
 };
 
-struct vs_output
+struct VSOutput
 {
 	float4 position			: SV_POSITION;
 };
 
 [RootSignature(OUTLINE_MARKER_RS)]
-vs_output main(vs_input IN)
+VSOutput main(VSInput IN)
 {
-	vs_output OUT;
+	VSOutput OUT;
 	OUT.position = mul(outline.mvp, float4(IN.position, 1.f));
 	return OUT;
 }

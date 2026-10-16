@@ -10,12 +10,12 @@ namespace era_engine
 {
 	enum class FileSystemChange
 	{
-		None = 0,
-		Add,
-		Delete,
-		Modify,
-		Rename,
-		Count
+		NONE = 0,
+		ADD,
+		REMOVE,
+		MODIFY,
+		RENAME,
+		COUNT
 	};
 
 	struct ERA_CORE_API FileSystemEvent

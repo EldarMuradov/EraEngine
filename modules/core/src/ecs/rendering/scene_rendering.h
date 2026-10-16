@@ -7,57 +7,57 @@
 
 namespace era_engine
 {
-	struct scene_lighting
+	struct SceneLighting
 	{
-		ref<dx_buffer> spotLightBuffer;
-		ref<dx_buffer> pointLightBuffer;
+		ref<DXBuffer> spot_light_buffer;
+		ref<DXBuffer> point_light_buffer;
 
-		ref<dx_buffer> spotLightShadowInfoBuffer;
-		ref<dx_buffer> pointLightShadowInfoBuffer;
+		ref<DXBuffer> spot_light_shadow_info_buffer;
+		ref<DXBuffer> point_light_shadow_info_buffer;
 
-		spot_shadow_render_pass* spotShadowRenderPasses;
-		point_shadow_render_pass* pointShadowRenderPasses;
+		SpotShadowRenderPass* spot_shadow_render_passes;
+		PointShadowRenderPass* point_shadow_render_passes;
 
-		uint32 maxNumSpotShadowRenderPasses;
-		uint32 maxNumPointShadowRenderPasses;
+		uint32 max_num_spot_shadow_render_passes;
+		uint32 max_num_point_shadow_render_passes;
 
-		uint32 numSpotShadowRenderPasses = 0;
-		uint32 numPointShadowRenderPasses = 0;
+		uint32 num_spot_shadow_render_passes = 0;
+		uint32 num_point_shadow_render_passes = 0;
 	};
 
-	struct offset_count
+	struct OffsetCount
 	{
 		uint32 offset;
 		uint32 count;
 	};
 
-	enum light_frustum_type
+	enum LightFrustumType
 	{
-		light_frustum_standard,
-		light_frustum_sphere
+		LIGHT_FRUSTUM_STANDARD,
+		LIGHT_FRUSTUM_SPHERE
 	};
 
-	struct light_frustum
+	struct LightFrustum
 	{
 		union
 		{
-			camera_frustum_planes frustum;
-			bounding_sphere sphere;
+			CameraFrustumPlanes frustum;
+			BoundingSphere sphere;
 		};
 
-		light_frustum_type type;
+		LightFrustumType type;
 	};
 
-	struct shadow_pass
+	struct ShadowPass
 	{
-		light_frustum frustum;
-		shadow_render_pass_base* pass;
-		bool isPointLight;
+		LightFrustum frustum;
+		ShadowRenderPassBase* pass;
+		bool is_point_light;
 	};
 
-	struct shadow_passes
+	struct ShadowPasses
 	{
-		shadow_pass* shadowRenderPasses;
-		uint32 numShadowRenderPasses;
+		ShadowPass* shadow_render_passes;
+		uint32 num_shadow_render_passes;
 	};
 }

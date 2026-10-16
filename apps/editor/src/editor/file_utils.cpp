@@ -37,7 +37,7 @@ namespace era_engine
 				TransformComponent* transform_component = entity.get_component<TransformComponent>();
 				transform_component->type = TransformComponent::DYNAMIC;
 
-				addRaytracingComponentAsync(entity, mesh);
+				add_raytracing_component_async(entity, mesh);
 			}
 			else if (auto mesh = import_mesh_from_file_async(relative.string()))
 			{
@@ -45,12 +45,12 @@ namespace era_engine
 				entity.add_component<animation::AnimationComponent>();
 				entity.add_component<MeshComponent>(mesh);
 
-				addRaytracingComponentAsync(entity, mesh);
+				add_raytracing_component_async(entity, mesh);
 			}
 		}
 		else if (ext == ".hdr")
 		{
-			world->get_root_component<RendererHolderRootComponent>()->environment.setFromTexture(relative);
+			world->get_root_component<RendererHolderRootComponent>()->environment.set_from_texture(relative);
 		}
 	}
 }

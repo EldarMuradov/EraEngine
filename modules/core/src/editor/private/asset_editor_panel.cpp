@@ -16,37 +16,37 @@
 
 namespace era_engine
 {
-	void asset_editor_panel::beginFrame()
+	void AssetEditorPanel::begin_frame()
 	{
-		windowOpen = windowOpenInternal;
+		window_open = window_open_internal;
 
-		if (windowOpen)
+		if (window_open)
 		{
 			ImGui::SetNextWindowSize(ImVec2(1280, 800), ImGuiCond_FirstUseEver);
-			if (ImGui::Begin(title, &windowOpenInternal, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+			if (ImGui::Begin(title, &window_open_internal, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 			{
 				if (ImGui::BeginTable("##table", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_Resizable))
 				{
 					ImGui::TableSetupColumn("ViewportColumn");
 					ImGui::TableSetupColumn("SettingsColumn", ImGuiTableColumnFlags_WidthFixed, 300);
 
-					ImVec2 contentSize;
+					ImVec2 content_size;
 
 					if (ImGui::TableNextColumn())
 					{
-						contentSize = ImGui::GetContentRegionAvail();
-						ref<dx_texture> rendering = getRendering();
+						content_size = ImGui::GetContentRegionAvail();
+						ref<DXTexture> rendering = get_rendering();
 						if (rendering)
 						{
-							ImVec2 minCorner = ImGui::GetCursorPos();
-							ImGui::Image(rendering, (uint32)contentSize.x, (uint32)contentSize.y);
+							ImVec2 min_corner = ImGui::GetCursorPos();
+							ImGui::Image(rendering, (uint32)content_size.x, (uint32)content_size.y);
 
-							ImGui::SetCursorPos(ImVec2(minCorner.x + 4.5f, minCorner.y + 4.5f));
-							ImGui::Dummy(ImVec2(contentSize.x - 9.f, contentSize.y - 9.f));
+							ImGui::SetCursorPos(ImVec2(min_corner.x + 4.5f, min_corner.y + 4.5f));
+							ImGui::Dummy(ImVec2(content_size.x - 9.f, content_size.y - 9.f));
 
-							if (dragDropTarget && ImGui::BeginDragDropTarget())
+							if (drag_drop_target && ImGui::BeginDragDropTarget())
 							{
-								if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(dragDropTarget)) { setDragDropData(payload->Data, payload->DataSize); }
+								if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(drag_drop_target)) { set_drag_drop_data(payload->Data, payload->DataSize); }
 								ImGui::EndDragDropTarget();
 							}
 						}
@@ -54,7 +54,7 @@ namespace era_engine
 
 					if (ImGui::TableNextColumn())
 					{
-						edit((uint32)contentSize.x, (uint32)contentSize.y);
+						edit((uint32)content_size.x, (uint32)content_size.y);
 					}
 
 					ImGui::EndTable();
@@ -64,102 +64,102 @@ namespace era_engine
 		}
 	}
 
-	void asset_editor_panel::open()
+	void AssetEditorPanel::open()
 	{
-		windowOpenInternal = true;
+		window_open_internal = true;
 	}
 
-	void asset_editor_panel::close()
+	void AssetEditorPanel::close()
 	{
-		windowOpenInternal = false;
+		window_open_internal = false;
 	}
 
-	mesh_editor_panel::mesh_editor_panel()
+	MeshEditorPanel::MeshEditorPanel()
 	{
 		title = EDITOR_ICON_MESH "  Mesh Editor";
-		dragDropTarget = EDITOR_ICON_MESH;
+		drag_drop_target = EDITOR_ICON_MESH;
 
-		renderer_spec spec = { false, false, false, false, false, false };
+		RendererSpec spec = { false, false, false, false, false, false };
 
-		renderer.initialize(color_depth_8, 1280, 800, spec);
+		renderer.initialize(COLOR_DEPTH_8, 1280, 800, spec);
 
-		camera.initializeIngame(vec3(0.f, 0.f, 25.f), quat::identity, deg2rad(80.f), 0.01f);
+		camera.initialize_ingame(vec3(0.f, 0.f, 25.f), quat::identity, deg2rad(80.f), 0.01f);
 
 		controller.initialize(&camera);
 	}
 
-	void mesh_editor_panel::edit(uint32 renderWidth, uint32 renderHeight)
+	void MeshEditorPanel::edit(uint32 render_width, uint32 render_height)
 	{
-		width = renderWidth;
-		height = renderHeight;
+		width = render_width;
+		height = render_height;
 
-		renderer.beginFrame(renderWidth, renderHeight);
+		renderer.begin_frame(render_width, render_height);
 
-		directional_light& sun = scene->sun;
-		pbr_environment& environment = scene->environment;
+		DirectionalLight& sun = scene->sun;
+		PBREnvironment& environment = scene->environment;
 
 		environment.update(sun.direction);
 
-		sun.updateMatrices(camera);
-		environment.lightProbeGrid.visualize(&renderPass);
+		sun.update_matrices(camera);
+		environment.light_probe_grid.visualize(&render_pass);
 
-		renderer.setEnvironment(environment);
-		renderer.setSun(sun);
+		renderer.set_environment(environment);
+		renderer.set_sun(sun);
 
-		camera.setViewport(renderWidth, renderHeight);
-		camera.updateMatrices();
+		camera.set_viewport(render_width, render_height);
+		camera.update_matrices();
 
-		renderPass.reset();
+		render_pass.reset();
 
 		if (this->mesh)
 		{
-			dx_allocation transformAllocation = dxContext.allocateDynamicBuffer(sizeof(mat4), 4);
-			dx_allocation objectIDAllocation = dxContext.allocateDynamicBuffer(sizeof(uint32), 4);
+			DXAllocation transform_allocation = dx_context.allocate_dynamic_buffer(sizeof(mat4), 4);
+			DXAllocation object_id_allocation = dx_context.allocate_dynamic_buffer(sizeof(uint32), 4);
 
-			mat4* transform = (mat4*)transformAllocation.cpuPtr;
+			mat4* transform = (mat4*)transform_allocation.cpu_ptr;
 			transform[0] = mat4::identity;
 
-			uint32* objectID = (uint32*)objectIDAllocation.cpuPtr;
-			objectID[0] = (uint32)0;
+			uint32* object_id = (uint32*)object_id_allocation.cpu_ptr;
+			object_id[0] = (uint32)0;
 
-			D3D12_GPU_VIRTUAL_ADDRESS transformsAddress = transformAllocation.gpuPtr;
-			D3D12_GPU_VIRTUAL_ADDRESS baseObjectID = objectIDAllocation.gpuPtr;
+			D3D12_GPU_VIRTUAL_ADDRESS transforms_address = transform_allocation.gpu_ptr;
+			D3D12_GPU_VIRTUAL_ADDRESS base_object_id = object_id_allocation.gpu_ptr;
 
-			const dx_mesh& mesh = this->mesh->mesh;
+			const DXMesh& mesh = this->mesh->mesh;
 
-			pbr_render_data data;
-			data.transformPtr = transformsAddress;
-			data.vertexBuffer = mesh.vertexBuffer;
-			data.indexBuffer = mesh.indexBuffer;
-			data.numInstances = 1;
+			PBRRenderData data;
+			data.transform_ptr = transforms_address;
+			data.vertex_buffer = mesh.vertex_buffer;
+			data.index_buffer = mesh.index_buffer;
+			data.num_instances = 1;
 
-			depth_prepass_data depthPrepassData;
-			depthPrepassData.transformPtr = transformsAddress;
-			depthPrepassData.prevFrameTransformPtr = transformsAddress;
-			depthPrepassData.objectIDPtr = baseObjectID;
-			depthPrepassData.vertexBuffer = mesh.vertexBuffer;
-			depthPrepassData.prevFrameVertexBuffer = mesh.vertexBuffer.positions;
-			depthPrepassData.indexBuffer = mesh.indexBuffer;
-			depthPrepassData.numInstances = 1;
+			DepthPrepassData depth_prepass_data;
+			depth_prepass_data.transform_ptr = transforms_address;
+			depth_prepass_data.prev_frame_transform_ptr = transforms_address;
+			depth_prepass_data.object_id_ptr = base_object_id;
+			depth_prepass_data.vertex_buffer = mesh.vertex_buffer;
+			depth_prepass_data.prev_frame_vertex_buffer = mesh.vertex_buffer.positions;
+			depth_prepass_data.index_buffer = mesh.index_buffer;
+			depth_prepass_data.num_instances = 1;
 
 			for (auto& sm : this->mesh->submeshes)
 			{
 				SubmeshInfo submesh = sm.info;
-				const ref<pbr_material>& material = sm.material;
+				const ref<PBRMaterial>& material = sm.material;
 
 				data.material = material;
 				data.submesh = submesh;
 
-				depthPrepassData.submesh = data.submesh;
-				depthPrepassData.alphaCutoutTextureSRV = (sm.material && sm.material->albedo) ? sm.material->albedo->defaultSRV : dx_cpu_descriptor_handle{};
+				depth_prepass_data.submesh = data.submesh;
+				depth_prepass_data.alpha_cutout_texture_srv = (sm.material && sm.material->albedo) ? sm.material->albedo->default_srv : DXCPUDescriptorHandle{};
 
-				renderPass.renderObject<pbr_pipeline::opaque_double_sided>(data);
-				renderPass.renderDepthOnly<depth_prepass_pipeline::single_sided>(depthPrepassData);
+				render_pass.render_object<PBRPipeline::OpaqueDoubleSided>(data);
+				render_pass.render_depth_only<DepthPrepassPipeline::SingleSided>(depth_prepass_data);
 			}
 		}
 
-		renderer.submitRenderPass(&renderPass);
-		renderer.setCamera(camera);
+		renderer.submit_render_pass(&render_pass);
+		renderer.set_camera(camera);
 
 		if (ImGui::BeginTabBar("Tabs"))
 		{
@@ -170,7 +170,7 @@ namespace era_engine
 					if (ImGui::BeginProperties())
 					{
 						ImGui::PropertyValue("Load state", asset_load_state_names[mesh->load_state.load()]);
-						editMesh("Mesh", mesh, mesh_creation_flags_default);
+						edit_mesh("Mesh", mesh, MESH_CREATION_FLAGS_DEFAULT);
 						ImGui::EndProperties();
 					}
 					if (ImGui::BeginTree("Childs"))
@@ -180,7 +180,7 @@ namespace era_engine
 							ImGui::PushID(&sub);
 							if (ImGui::BeginTree(sub.name.c_str()))
 							{
-								editMaterial(sub.material);
+								edit_material(sub.material);
 								ImGui::EndTree();
 							}
 							ImGui::PopID();
@@ -263,40 +263,40 @@ namespace era_engine
 		}
 	}
 
-	void mesh_editor_panel::beginFrame()
+	void MeshEditorPanel::begin_frame()
 	{
-		windowOpen = windowOpenInternal;
+		window_open = window_open_internal;
 
-		if (windowOpen)
+		if (window_open)
 		{
 			ImGui::SetNextWindowSize(ImVec2(1280, 800), ImGuiCond_FirstUseEver);
-			if (ImGui::Begin(title, &windowOpenInternal, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+			if (ImGui::Begin(title, &window_open_internal, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 			{
 				if (ImGui::BeginTable("##table", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_Resizable))
 				{
 					ImGui::TableSetupColumn("ViewportColumn");
 					ImGui::TableSetupColumn("SettingsColumn", ImGuiTableColumnFlags_WidthFixed, 300);
 
-					ImVec2 contentSize;
+					ImVec2 content_size;
 
 					if (ImGui::TableNextColumn())
 					{
-						contentSize = ImGui::GetContentRegionAvail();
-						ref<dx_texture> rendering = getRendering();
+						content_size = ImGui::GetContentRegionAvail();
+						ref<DXTexture> rendering = get_rendering();
 						if (rendering)
 						{
-							ImVec2 minCorner = ImGui::GetCursorPos();
-							ImGui::Image(rendering, (uint32)contentSize.x, (uint32)contentSize.y);
+							ImVec2 min_corner = ImGui::GetCursorPos();
+							ImGui::Image(rendering, (uint32)content_size.x, (uint32)content_size.y);
 
 							if (ImGui::IsItemHovered())
 							{
 								hovered = true;
-								ImVec2 relativeMouse = ImGui::GetMousePos() - ImGui::GetItemRectMin();
-								vec2 mousePos = { relativeMouse.x, relativeMouse.y };
-								if (appFocusedLastFrame)
+								ImVec2 relative_mouse = ImGui::GetMousePos() - ImGui::GetItemRectMin();
+								vec2 mouse_pos = { relative_mouse.x, relative_mouse.y };
+								if (app_focused_last_frame)
 								{
-									input.mouse.dx = (int32)(mousePos.x - input.mouse.x);
-									input.mouse.dy = (int32)(mousePos.y - input.mouse.y);
+									input.mouse.dx = (int32)(mouse_pos.x - input.mouse.x);
+									input.mouse.dy = (int32)(mouse_pos.y - input.mouse.y);
 									input.mouse.reldx = (float)input.mouse.dx / (width - 1);
 									input.mouse.reldy = (float)input.mouse.dy / (height - 1);
 								}
@@ -307,10 +307,10 @@ namespace era_engine
 									input.mouse.reldx = 0.f;
 									input.mouse.reldy = 0.f;
 								}
-								input.mouse.x = (int32)mousePos.x;
-								input.mouse.y = (int32)mousePos.y;
-								input.mouse.relX = mousePos.x / (width - 1);
-								input.mouse.relY = mousePos.y / (height - 1);
+								input.mouse.x = (int32)mouse_pos.x;
+								input.mouse.y = (int32)mouse_pos.y;
+								input.mouse.rel_x = mouse_pos.x / (width - 1);
+								input.mouse.rel_y = mouse_pos.y / (height - 1);
 								input.mouse.left = { ImGui::IsMouseDown(ImGuiMouseButton_Left), ImGui::IsMouseClicked(ImGuiMouseButton_Left), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) };
 								input.mouse.right = { ImGui::IsMouseDown(ImGuiMouseButton_Right), ImGui::IsMouseClicked(ImGuiMouseButton_Right), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Right) };
 								input.mouse.middle = { ImGui::IsMouseDown(ImGuiMouseButton_Middle), ImGui::IsMouseClicked(ImGuiMouseButton_Middle), ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Middle) };
@@ -359,12 +359,12 @@ namespace era_engine
 								input.over_window = false;
 							}
 
-							ImGui::SetCursorPos(ImVec2(minCorner.x + 4.5f, minCorner.y + 4.5f));
-							ImGui::Dummy(ImVec2(contentSize.x - 9.f, contentSize.y - 9.f));
+							ImGui::SetCursorPos(ImVec2(min_corner.x + 4.5f, min_corner.y + 4.5f));
+							ImGui::Dummy(ImVec2(content_size.x - 9.f, content_size.y - 9.f));
 
-							if (dragDropTarget && ImGui::BeginDragDropTarget())
+							if (drag_drop_target && ImGui::BeginDragDropTarget())
 							{
-								if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(dragDropTarget)) { setDragDropData(payload->Data, payload->DataSize); }
+								if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(drag_drop_target)) { set_drag_drop_data(payload->Data, payload->DataSize); }
 								ImGui::EndDragDropTarget();
 							}
 						}
@@ -372,7 +372,7 @@ namespace era_engine
 
 					if (ImGui::TableNextColumn())
 					{
-						edit((uint32)contentSize.x, (uint32)contentSize.y);
+						edit((uint32)content_size.x, (uint32)content_size.y);
 					}
 
 					ImGui::EndTable();
@@ -382,21 +382,21 @@ namespace era_engine
 		}
 	}
 
-	void mesh_editor_panel::endFrame()
+	void MeshEditorPanel::end_frame()
 	{
-		if (isOpen())
+		if (is_open())
 		{
-			renderer.endFrame(&input);
+			renderer.end_frame(&input);
 			controller.update(input, width, height, 1.0f / 10.0f);
 		}
 	}
 
-	ref<dx_texture> mesh_editor_panel::getRendering()
+	ref<DXTexture> MeshEditorPanel::get_rendering()
 	{
-		return renderer.frameResult;
+		return renderer.frame_result;
 	}
 
-	void mesh_editor_panel::setDragDropData(void* data, uint32 size)
+	void MeshEditorPanel::set_drag_drop_data(void* data, uint32 size)
 	{
 		const char* filename = (const char*)data;
 

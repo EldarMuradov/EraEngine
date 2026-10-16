@@ -6,8 +6,8 @@ namespace era_engine
 {
 	enum class ConfigurationType
 	{
-		Debug,
-		Release
+		DEBUG,
+		RELEASE
 	};
 
 	struct ERA_CORE_API Project
@@ -21,7 +21,7 @@ namespace era_engine
 #if defined(_DEBUG)
 		static inline ConfigurationType config = ConfigurationType::Debug;
 #else
-		static inline ConfigurationType config = ConfigurationType::Release;
+		static inline ConfigurationType config = ConfigurationType::RELEASE;
 #endif
 	};
 }

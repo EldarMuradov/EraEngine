@@ -13,16 +13,16 @@
 	"visibility=SHADER_VISIBILITY_PIXEL)," \
 "DescriptorTable(SRV(t0, numDescriptors=1, flags = DESCRIPTORS_VOLATILE), visibility=SHADER_VISIBILITY_PIXEL)"
 
-struct ps_input
+struct PSInput
 {
 	float2 uv	: TEXCOORDS;
 };
 
-SamplerState texSampler				: register(s0);
+SamplerState tex_sampler				: register(s0);
 Texture2D<float4> tex				: register(t0);
 
 [RootSignature(BLIT_RS)]
-float4 main(ps_input IN) : SV_TARGET
+float4 main(PSInput IN) : SV_TARGET
 {
-	return tex.Sample(texSampler, IN.uv);
+	return tex.Sample(tex_sampler, IN.uv);
 }

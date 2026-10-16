@@ -12,51 +12,51 @@
 
 namespace era_engine
 {
-	enum environment_gi_mode
+	enum EnvironmentGIMode
 	{
-		environment_gi_baked,
-		environment_gi_raytraced,
+		ENVIRONMENT_GI_BAKED,
+		ENVIRONMENT_GI_RAYTRACED,
 	};
 
-	static inline const char* environmentGIModeNames[] =
+	static inline const char* environment_gi_mode_names[] =
 	{
 		"Baked",
 		"Raytraced",
 	};
 
-	struct ERA_CORE_API pbr_environment
+	struct ERA_CORE_API PBREnvironment
 	{
-		pbr_environment() = default;
-		pbr_environment(const pbr_environment& other) noexcept = default;
-		pbr_environment(pbr_environment&& other) noexcept = default;
-		pbr_environment& operator=(const pbr_environment& other) noexcept = default;
-		pbr_environment& operator=(pbr_environment&& other) noexcept = default;
+		PBREnvironment() = default;
+		PBREnvironment(const PBREnvironment& other) noexcept = default;
+		PBREnvironment(PBREnvironment&& other) noexcept = default;
+		PBREnvironment& operator=(const PBREnvironment& other) noexcept = default;
+		PBREnvironment& operator=(PBREnvironment&& other) noexcept = default;
 
-		NODISCARD bool isProcedural() const { return sky == 0; }
+		NODISCARD bool is_procedural() const { return sky == 0; }
 
-		void setFromTexture(const fs::path& filename);
-		void setToProcedural(vec3 sunDirection);
+		void set_from_texture(const fs::path& filename);
+		void set_to_procedural(vec3 sun_direction);
 
-		void update(vec3 sunDirection);
-		void forceUpdate(vec3 sunDirection);
+		void update(vec3 sun_direction);
+		void force_update(vec3 sun_direction);
 
 		void allocate();
 
-		environment_gi_mode giMode = environment_gi_baked;
+		EnvironmentGIMode gi_mode = ENVIRONMENT_GI_BAKED;
 
-		ref<dx_texture> sky;
-		ref<dx_texture> irradiance;
-		ref<dx_texture> prefilteredRadiance;
+		ref<DXTexture> sky;
+		ref<DXTexture> irradiance;
+		ref<DXTexture> prefiltered_radiance;
 
-		float globalIlluminationIntensity = 1.4f;
-		float skyIntensity = 1.85f;
+		float global_illumination_intensity = 1.4f;
+		float sky_intensity = 1.85f;
 
-		light_probe_grid lightProbeGrid;
+		LightProbeGrid light_probe_grid;
 
-		static const uint32 skyResolution = 2048;
-		static const uint32 irradianceResolution = 32;
-		static const uint32 prefilteredRadianceResolution = 128;
+		static const uint32 sky_resolution = 2048;
+		static const uint32 irradiance_resolution = 32;
+		static const uint32 prefiltered_radiance_resolution = 128;
 
-		vec3 lastSunDirection = { -1, -1, -1 };
+		vec3 last_sun_direction = { -1, -1, -1 };
 	};
 }

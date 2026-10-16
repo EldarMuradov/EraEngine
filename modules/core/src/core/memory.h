@@ -11,22 +11,22 @@
 namespace era_engine
 {
 	template<typename T>
-	constexpr auto KB(T n) { return (1024ull * (n)); }
+	constexpr auto kb(T n) { return (1024ull * (n)); }
 
 	template<typename T>
-	constexpr auto MB(T n) { return (1024ull * KB(n)); }
+	constexpr auto mb(T n) { return (1024ull * kb(n)); }
 
 	template<typename T>
-	constexpr auto GB(T n) { return (1024ull * MB(n)); }
+	constexpr auto gb(T n) { return (1024ull * mb(n)); }
 
 	template<typename T>
-	constexpr auto BYTE_TO_KB(T b) { return ((b) / 1024); }
+	constexpr auto byte_to_kb(T b) { return ((b) / 1024); }
 
 	template<typename T>
-	constexpr auto BYTE_TO_MB(T b) { return ((b) / (1024 * 1024)); }
+	constexpr auto byte_to_mb(T b) { return ((b) / (1024 * 1024)); }
 
 	template<typename T>
-	constexpr auto BYTE_TO_GB(T b) { return ((b) / (1024 * 1024)); }
+	constexpr auto byte_to_gb(T b) { return ((b) / (1024 * 1024)); }
 
 	NODISCARD inline uint32 align_to(uint32 current_offset, uint32 alignment)
 	{
@@ -52,14 +52,14 @@ namespace era_engine
 		return (uint8*)current_address + adjustment;
 	}
 
-	inline bool ranges_overlap(uint64 fromA, uint64 toA, uint64 fromB, uint64 toB) noexcept
+	inline bool ranges_overlap(uint64 from_a, uint64 to_a, uint64 from_b, uint64 to_b) noexcept
 	{
-		return !(toA <= fromB || fromA >= toB);
+		return !(to_a <= from_b || from_a >= to_b);
 	}
 
-	inline bool ranges_overlap(void* fromA, void* toA, void* fromB, void* toB) noexcept
+	inline bool ranges_overlap(void* from_a, void* to_a, void* from_b, void* to_b) noexcept
 	{
-		return !(toA <= fromB || fromA >= toB);
+		return !(to_a <= from_b || from_a >= to_b);
 	}
 
 	struct ERA_CORE_API MemoryMarker
@@ -75,7 +75,7 @@ namespace era_engine
 		Allocator(Allocator&&) = default;
 		~Allocator() { reset(true); }
 
-		void initialize(uint64 _minimum_block_size = 0, uint64 _reserve_size = GB(8));
+		void initialize(uint64 _minimum_block_size = 0, uint64 _reserve_size = gb(8));
 
 		void ensure_free_size(uint64 size);
 

@@ -1,33 +1,33 @@
 #ifndef DEPTH_ONLY_RS_HLSLI
 #define DEPTH_ONLY_RS_HLSLI
 
-struct shadow_transform_cb
+struct ShadowTransformCB
 {
     mat4 mvp;
 };
 
-struct point_shadow_cb
+struct PointShadowCB
 {
-    vec3 lightPosition;
-    float maxDistance;
+    vec3 light_position;
+    float max_distance;
     float flip;
 };
 
-struct depth_only_object_id_cb
+struct DepthOnlyObjectIDCB
 {
     uint32 id;
 };
 
-struct depth_only_camera_jitter_cb
+struct DepthOnlyCameraJitterCB
 {
     vec2 jitter;
-    vec2 prevFrameJitter;
+    vec2 prev_frame_jitter;
 };
 
-struct depth_only_transform_cb
+struct DepthOnlyTransformCB
 {
     mat4 mvp;
-    mat4 prevFrameMVP;
+    mat4 prev_frame_mvp;
 };
 
 #define SHADOW_RS \

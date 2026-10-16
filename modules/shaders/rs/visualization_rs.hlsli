@@ -1,7 +1,7 @@
 #ifndef VISUALIZATION_HLSLI
 #define VISUALIZATION_HLSLI
 
-struct visualization_cb
+struct VisualizationCB
 {
 	vec4 color;
 };
@@ -30,11 +30,11 @@ struct visualization_cb
 #define FLAT_UNLIT_RS_TRANFORM			0
 #define FLAT_UNLIT_RS_CB				1
 
-struct visualize_sun_shadow_cascades_cb
+struct VisualizeSunShadowCascadesCB
 {
-	mat4 invViewProj;
-	vec4 cameraPosition;
-	vec4 cameraForward;
+	mat4 inv_view_proj;
+	vec4 camera_position;
+	vec4 camera_forward;
 };
 
 #define VISUALIZE_SUN_SHADOW_CASCADES_RS \

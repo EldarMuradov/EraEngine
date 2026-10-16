@@ -3,15 +3,15 @@
 
 #include "transform.hlsli"
 
-struct water_cb
+struct WaterCB
 {
-    vec4 deepColor;
-    vec4 shallowColor;
-    vec2 uvOffset;
-    float uvScale;
-    float shallowDepth;
-    float transitionStrength;
-    float normalmapStrength;
+    vec4 deep_color;
+    vec4 shallow_color;
+    vec2 uv_offset;
+    float uv_scale;
+    float shallow_depth;
+    float transition_strength;
+    float normalmap_strength;
 };
 
 #define WATER_RS \

@@ -59,15 +59,15 @@ namespace era_engine::animation
 		vec3(1.f, 1.f, 1.f),
 	};
 
-	static void draw_skeleton(const Skeleton& skeleton, const SkeletonPose& pose, const trs& transform, ldr_render_pass* render_pass)
+	static void draw_skeleton(const Skeleton& skeleton, const SkeletonPose& pose, const trs& transform, LDRRenderPass* render_pass)
 	{
 		const uint32 num_joints = (uint32)skeleton.joints.size();
 
-		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(position_color), num_joints * 2);
-		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), num_joints * 2);
+		auto [vb, vertexPtr] = dx_context.create_dynamic_vertex_buffer(sizeof(PositionColor), num_joints * 2);
+		auto [ib, index_ptr] = dx_context.create_dynamic_index_buffer(sizeof(uint16), num_joints * 2);
 
-		position_color* vertices = (position_color*)vertexPtr;
-		indexed_line16* lines = (indexed_line16*)indexPtr;
+		PositionColor* vertices = (PositionColor*)vertexPtr;
+		IndexedLine16* lines = (IndexedLine16*)index_ptr;
 
 		for (uint32 i = 0; i < num_joints; ++i)
 		{
@@ -91,7 +91,7 @@ namespace era_engine::animation
 			*lines++ = { (uint16)(2 * i), (uint16)(2 * i + 1) };
 		}
 
-		renderDebug<debug_unlit_line_pipeline::position_color>(trs_to_mat4(transform), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), render_pass, true);
+		render_debug<DebugUnlitLinePipeline::PositionColor>(trs_to_mat4(transform), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), render_pass, true);
 	}
 
 	SkeletonSystem::SkeletonSystem(World* _world)
@@ -127,7 +127,7 @@ namespace era_engine::animation
 		{
 			if (skeleton.draw_sceleton)
 			{
-				draw_skeleton(*skeleton.skeleton, skeleton.get_current_pose(), transform.get_world_transform(), renderer_holder_rc->ldrRenderPass);
+				draw_skeleton(*skeleton.skeleton, skeleton.get_current_pose(), transform.get_world_transform(), renderer_holder_rc->ldr_render_pass);
 			}
 		}
 	}

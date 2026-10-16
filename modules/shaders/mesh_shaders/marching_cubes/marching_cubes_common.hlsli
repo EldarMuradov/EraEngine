@@ -1,11 +1,11 @@
-struct marching_cubes_lookup
+struct MarchingCubesLookup
 {
 	uint indices[4];
 	uint vertices[3];
-	uint triangleAndVertexCount;
+	uint triangle_and_vertex_count;
 };
 
-struct mesh_payload
+struct MeshPayload
 {
-	uint meshletIDs[64];
+	uint meshlet_ids[64];
 };

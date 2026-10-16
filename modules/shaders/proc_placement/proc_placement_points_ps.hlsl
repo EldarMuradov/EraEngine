@@ -13,10 +13,10 @@
 	    "filter = FILTER_MIN_MAG_MIP_LINEAR)"
 
 Texture2D<float4> albedo    : register(t0, space1);
-SamplerState wrapSampler    : register(s0, space1);
+SamplerState wrap_sampler    : register(s0, space1);
 
 [RootSignature(RS)]
 float4 main(float2 uv : TEXCOORDS) : SV_TARGET
 {
-	return albedo.Sample(wrapSampler, uv);
+	return albedo.Sample(wrap_sampler, uv);
 }

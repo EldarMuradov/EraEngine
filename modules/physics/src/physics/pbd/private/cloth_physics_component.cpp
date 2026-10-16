@@ -60,7 +60,7 @@ namespace era_engine::physics
 		}
 	}
 
-	std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, SubmeshInfo> ClothPhysicsComponent::get_render_data(ClothRenderComponent* render_component)
+	std::tuple<DXVertexBufferGroupView, DXVertexBufferGroupView, DXIndexBufferView, SubmeshInfo> ClothPhysicsComponent::get_render_data(ClothRenderComponent* render_component)
 	{
 		uint32 num_vertices = num_x * num_z;
 		uint32 num_triangles = (num_x - 1) * (num_z - 1) * 2;
@@ -68,19 +68,19 @@ namespace era_engine::physics
 		auto [position_vertex_buffer, position_ptr] = create_dynamic_vertex_buffer(sizeof(vec3), num_vertices);
 		memcpy(position_ptr, get_positions(), num_vertices * sizeof(vec3));
 
-		dx_vertex_buffer_group_view vb = animation::skinCloth(position_vertex_buffer, num_x, num_z);
+		DXVertexBufferGroupView vb = animation::skin_cloth(position_vertex_buffer, num_x, num_z);
 		SubmeshInfo sm{};
-		sm.baseVertex = 0;
-		sm.firstIndex = 0;
-		sm.numIndices = num_triangles * 3;
-		sm.numVertices = num_vertices;
+		sm.base_vertex = 0;
+		sm.first_index = 0;
+		sm.num_indices = num_triangles * 3;
+		sm.num_vertices = num_vertices;
 
-		dx_vertex_buffer_group_view prev = render_component->prevFrameVB;
-		render_component->prevFrameVB = vb;
+		DXVertexBufferGroupView prev = render_component->prev_frame_vb;
+		render_component->prev_frame_vb = vb;
 
-		if (!render_component->indexBuffer)
+		if (!render_component->index_buffer)
 		{
-			std::vector<indexed_triangle16> triangles;
+			std::vector<IndexedTriangle16> triangles;
 			triangles.reserve(num_triangles);
 			for (uint32 y = 0; y < num_z - 1; ++y)
 			{
@@ -96,9 +96,9 @@ namespace era_engine::physics
 				}
 			}
 
-			render_component->indexBuffer = createIndexBuffer(sizeof(uint16), (uint32)triangles.size() * 3, triangles.data());
+			render_component->index_buffer = create_index_buffer(sizeof(uint16), (uint32)triangles.size() * 3, triangles.data());
 		}
 
-		return { vb, prev, render_component->indexBuffer, sm };
+		return { vb, prev, render_component->index_buffer, sm };
 	}
 }

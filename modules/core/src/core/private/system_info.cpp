@@ -9,50 +9,50 @@
 
 namespace era_engine
 {
-	ERA_CORE_API system_info getSystemInfo()
+	ERA_CORE_API SystemInfo get_system_info()
 	{
-		system_info system;
-		char cpuName[64] = "";
+		SystemInfo system;
+		char cpu_name[64] = "";
 
-		int cpuInfo[4] = { -1 };
-		__cpuid(cpuInfo, 0x80000000);
-		uint32 nExIds = cpuInfo[0];
+		int cpu_info[4] = { -1 };
+		__cpuid(cpu_info, 0x80000000);
+		uint32 n_ex_ids = cpu_info[0];
 		// Get the information associated with each extended ID
-		for (uint32 i = 0x80000000; i <= nExIds; ++i)
+		for (uint32 i = 0x80000000; i <= n_ex_ids; ++i)
 		{
-			__cpuid(cpuInfo, i);
+			__cpuid(cpu_info, i);
 			// Interpret CPU brand string and cache information
 			if (i == 0x80000002)
 			{
-				memcpy(cpuName,
-					cpuInfo,
-					sizeof(cpuInfo));
+				memcpy(cpu_name,
+					cpu_info,
+					sizeof(cpu_info));
 			}
 			else if (i == 0x80000003)
 			{
-				memcpy(cpuName + 16,
-					cpuInfo,
-					sizeof(cpuInfo));
+				memcpy(cpu_name + 16,
+					cpu_info,
+					sizeof(cpu_info));
 			}
 			else if (i == 0x80000004)
 			{
-				memcpy(cpuName + 32, cpuInfo, sizeof(cpuInfo));
+				memcpy(cpu_name + 32, cpu_info, sizeof(cpu_info));
 			}
 		}
 
-		MEMORYSTATUSEX memoryState;
-		memoryState.dwLength = sizeof(memoryState);
+		MEMORYSTATUSEX memory_state;
+		memory_state.dwLength = sizeof(memory_state);
 
-		GlobalMemoryStatusEx(&memoryState);
+		GlobalMemoryStatusEx(&memory_state);
 
-		system.cpuName = cpuName;
-		system.mainMemory = memoryState.ullTotalPhys;
+		system.cpu_name = cpu_name;
+		system.main_memory = memory_state.ullTotalPhys;
 
-		DXGI_ADAPTER_DESC1 gpuDesc;
-		dxContext.adapter->GetDesc1(&gpuDesc);
+		DXGI_ADAPTER_DESC1 gpu_desc;
+		dx_context.adapter->GetDesc1(&gpu_desc);
 
-		system.gpuName = wstring_to_string(gpuDesc.Description);
-		system.videoMemory = gpuDesc.DedicatedVideoMemory;
+		system.gpu_name = wstring_to_string(gpu_desc.Description);
+		system.video_memory = gpu_desc.DedicatedVideoMemory;
 
 		return system;
 	}

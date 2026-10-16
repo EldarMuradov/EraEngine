@@ -70,15 +70,15 @@ namespace era_engine
 		using namespace physics;
 
 		{
-			mesh_builder builder;
+			MeshBuilder builder;
 
 			sphere_render_material = get_default_pbr_material();
 
 			sphere_mesh = make_ref<MultiMesh>();
-			builder.pushSphere({ });
-			sphere_mesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, sphere_render_material });
+			builder.push_sphere({ });
+			sphere_mesh->submeshes.push_back({ builder.end_submesh(), {}, trs::identity, sphere_render_material });
 
-			sphere_mesh->mesh = builder.createDXMesh();
+			sphere_mesh->mesh = builder.create_dx_mesh();
 			sphere_mesh->load_state = AssetLoadState::LOADED;
 		}
 
@@ -103,11 +103,11 @@ namespace era_engine
 
 		auto default_plane_mat = create_pbr_material(default_plane_mat_desc);
 
-		mesh_builder builder;
+		MeshBuilder builder;
 
 		ref<MultiMesh> ground_mesh = make_ref<MultiMesh>();
-		builder.pushBox({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
-		ground_mesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, default_plane_mat });
+		builder.push_box({ vec3(0.f), vec3(30.f, 4.f, 30.f) });
+		ground_mesh->submeshes.push_back({ builder.end_submesh(), {}, trs::identity, default_plane_mat });
 
 		Entity plane = world->create_entity("Platform");
 		plane.add_component<PlanePhysicsComponent>(CollisionType::TERRAIN, vec3(0.0f, -5.0f, 0.0f));
@@ -115,7 +115,7 @@ namespace era_engine
 		plane.get_component<TransformComponent>()->set_world_transform(trs{ vec3(10.0f, -9.0f, 0.0f), quat(vec3(1.0f, 0.0f, 0.0f), deg2rad(0.0f)), vec3(5.0f, 1.0f, 5.0f) });
 
 		ground_mesh->load_state = AssetLoadState::LOADED;
-		ground_mesh->mesh = builder.createDXMesh();
+		ground_mesh->mesh = builder.create_dx_mesh();
 	}
 
 	void EditorInitSystem::update(float dt)
@@ -125,7 +125,7 @@ namespace era_engine
 		const InputReceiverComponent* input_receiver = camera_entity.get_component<InputReceiverComponent>();
 
 		const UserInput& frame_input = input_receiver->get_frame_input();
-		if (frame_input.keyboard[key_code::key_space].press_event)
+		if (frame_input.keyboard[KeyCode::KEY_SPACE].press_event)
 		{
 			Entity sphere = world->create_entity("Sphere");
 

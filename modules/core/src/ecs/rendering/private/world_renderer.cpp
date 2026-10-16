@@ -28,149 +28,149 @@
 namespace era_engine
 {
 
-	static bool shouldRender(bounding_sphere s, bounding_box aabb, const trs& transform)
+	static bool should_render(BoundingSphere s, BoundingBox aabb, const trs& transform)
 	{
 		s.center = conjugate(transform.rotation) * (s.center - transform.position) + transform.position;
-		aabb.minCorner *= transform.scale;
-		aabb.maxCorner *= transform.scale;
-		return aabb.contains(s.center) || sphereVsAABB(s, aabb);
+		aabb.min_corner *= transform.scale;
+		aabb.max_corner *= transform.scale;
+		return aabb.contains(s.center) || sphere_vs_aabb(s, aabb);
 	}
 
-	static bool shouldRender(const camera_frustum_planes& frustum, const MeshComponent& mesh, const TransformComponent& transform)
+	static bool should_render(const CameraFrustumPlanes& frustum, const MeshComponent& mesh, const TransformComponent& transform)
 	{
-		return mesh.mesh && !mesh.is_hidden && mesh.mesh->has_visible_submeshes() && (mesh.mesh->load_state.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || !frustum.cullModelSpaceAABB(mesh.mesh->aabb, transform.get_world_transform()));
+		return mesh.mesh && !mesh.is_hidden && mesh.mesh->has_visible_submeshes() && (mesh.mesh->load_state.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.max_corner.x == mesh.mesh->aabb.min_corner.x) || !frustum.cull_model_space_aabb(mesh.mesh->aabb, transform.get_world_transform()));
 	}
 
-	static bool shouldRender(const bounding_sphere& frustum, const MeshComponent& mesh, const TransformComponent& transform)
+	static bool should_render(const BoundingSphere& frustum, const MeshComponent& mesh, const TransformComponent& transform)
 	{
-		return mesh.mesh && !mesh.is_hidden && mesh.mesh->has_visible_submeshes() && (mesh.mesh->load_state.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.maxCorner.x == mesh.mesh->aabb.minCorner.x) || shouldRender(frustum, mesh.mesh->aabb, transform.get_world_transform()));
+		return mesh.mesh && !mesh.is_hidden && mesh.mesh->has_visible_submeshes() && (mesh.mesh->load_state.load() == AssetLoadState::LOADED) && ((mesh.mesh->aabb.max_corner.x == mesh.mesh->aabb.min_corner.x) || should_render(frustum, mesh.mesh->aabb, transform.get_world_transform()));
 	}
 
-	static bool shouldRender(const light_frustum& frustum, const MeshComponent& mesh, const TransformComponent& transform)
+	static bool should_render(const LightFrustum& frustum, const MeshComponent& mesh, const TransformComponent& transform)
 	{
-		return (frustum.type == light_frustum_standard) ? shouldRender(frustum.frustum, mesh, transform) : shouldRender(frustum.sphere, mesh, transform);
+		return (frustum.type == LIGHT_FRUSTUM_STANDARD) ? should_render(frustum.frustum, mesh, transform) : should_render(frustum.sphere, mesh, transform);
 	}
 
 	template <typename group_t>
-	std::unordered_map<MultiMesh*, offset_count> getOffsetsPerMesh(group_t group)
+	std::unordered_map<MultiMesh*, OffsetCount> get_offsets_per_mesh(group_t group)
 	{
-		uint32 groupSize = (uint32)group.size();
+		uint32 group_size = (uint32)group.size();
 
-		std::unordered_map<MultiMesh*, offset_count> ocPerMesh;
+		std::unordered_map<MultiMesh*, OffsetCount> oc_per_mesh;
 
 		uint32 index = 0;
-		for (Entity::Handle entityHandle : group)
+		for (Entity::Handle entity_handle : group)
 		{
-			MeshComponent& mesh = group.get<MeshComponent>(entityHandle);
-			++ocPerMesh[mesh.mesh.get()].count;
+			MeshComponent& mesh = group.get<MeshComponent>(entity_handle);
+			++oc_per_mesh[mesh.mesh.get()].count;
 		}
 
 		uint32 offset = 0;
-		for (auto& [mesh, oc] : ocPerMesh)
+		for (auto& [mesh, oc] : oc_per_mesh)
 		{
 			oc.offset = offset;
 			offset += oc.count;
 			oc.count = 0;
 		}
 
-		ocPerMesh.erase(nullptr);
+		oc_per_mesh.erase(nullptr);
 
-		return ocPerMesh;
+		return oc_per_mesh;
 	}
 
-	static void addToRenderPass(PbrMaterialShader shader, const pbr_render_data& data, const depth_prepass_data& depthPrepassData,
-		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass)
+	static void add_to_render_pass(PbrMaterialShader shader, const PBRRenderData& data, const DepthPrepassData& depth_prepass_data,
+		OpaqueRenderPass* opaque_render_pass, TransparentRenderPass* transparent_render_pass)
 	{
 		switch (shader)
 		{
-		case pbr_material_shader_default:
-		case pbr_material_shader_double_sided:
+		case PBR_MATERIAL_SHADER_DEFAULT:
+		case PBR_MATERIAL_SHADER_DOUBLE_SIDED:
 		{
-			if (shader == pbr_material_shader_default)
+			if (shader == PBR_MATERIAL_SHADER_DEFAULT)
 			{
-				opaqueRenderPass->renderObject<pbr_pipeline::opaque>(data);
-				opaqueRenderPass->renderDepthOnly<depth_prepass_pipeline::single_sided>(depthPrepassData);
+				opaque_render_pass->render_object<PBRPipeline::Opaque>(data);
+				opaque_render_pass->render_depth_only<DepthPrepassPipeline::SingleSided>(depth_prepass_data);
 			}
 			else
 			{
-				opaqueRenderPass->renderObject<pbr_pipeline::opaque_double_sided>(data);
-				opaqueRenderPass->renderDepthOnly<depth_prepass_pipeline::double_sided>(depthPrepassData);
+				opaque_render_pass->render_object<PBRPipeline::OpaqueDoubleSided>(data);
+				opaque_render_pass->render_depth_only<DepthPrepassPipeline::DoubleSided>(depth_prepass_data);
 			}
 		} break;
-		case pbr_material_shader_alpha_cutout:
+		case PBR_MATERIAL_SHADER_ALPHA_CUTOUT:
 		{
-			opaqueRenderPass->renderObject<pbr_pipeline::opaque_double_sided>(data);
-			opaqueRenderPass->renderDepthOnly<depth_prepass_pipeline::alpha_cutout>(depthPrepassData);
+			opaque_render_pass->render_object<PBRPipeline::OpaqueDoubleSided>(data);
+			opaque_render_pass->render_depth_only<DepthPrepassPipeline::AlphaCutout>(depth_prepass_data);
 		} break;
-		case pbr_material_shader_transparent:
+		case PBR_MATERIAL_SHADER_TRANSPARENT:
 		{
-			transparentRenderPass->renderObject<pbr_pipeline::transparent>(data);
+			transparent_render_pass->render_object<PBRPipeline::Transparent>(data);
 		} break;
 		}
 	}
 
-	static void addToStaticRenderPass(PbrMaterialShader shader, const shadow_render_data& shadowData, shadow_render_pass_base* shadowRenderPass, bool isPointLight)
+	static void add_to_static_render_pass(PbrMaterialShader shader, const ShadowRenderData& shadow_data, ShadowRenderPassBase* shadow_render_pass, bool is_point_light)
 	{
 		switch (shader)
 		{
-		case pbr_material_shader_default:
+		case PBR_MATERIAL_SHADER_DEFAULT:
 		{
-			if (isPointLight)
+			if (is_point_light)
 			{
-				shadowRenderPass->renderStaticObject<point_shadow_pipeline::single_sided>(shadowData);
+				shadow_render_pass->render_static_object<PointShadowPipeline::SingleSided>(shadow_data);
 			}
 			else
 			{
-				shadowRenderPass->renderStaticObject<shadow_pipeline::single_sided>(shadowData);
+				shadow_render_pass->render_static_object<ShadowPipeline::SingleSided>(shadow_data);
 			}
 		} break;
-		case pbr_material_shader_double_sided:
-		case pbr_material_shader_alpha_cutout:
+		case PBR_MATERIAL_SHADER_DOUBLE_SIDED:
+		case PBR_MATERIAL_SHADER_ALPHA_CUTOUT:
 		{
-			if (isPointLight)
+			if (is_point_light)
 			{
-				shadowRenderPass->renderStaticObject<point_shadow_pipeline::double_sided>(shadowData);
+				shadow_render_pass->render_static_object<PointShadowPipeline::DoubleSided>(shadow_data);
 			}
 			else
 			{
-				shadowRenderPass->renderStaticObject<shadow_pipeline::double_sided>(shadowData);
+				shadow_render_pass->render_static_object<ShadowPipeline::DoubleSided>(shadow_data);
 			}
 		} break;
-		case pbr_material_shader_transparent:
+		case PBR_MATERIAL_SHADER_TRANSPARENT:
 		{
 			// Do nothing
 		} break;
 		}
 	}
 
-	static void addToDynamicRenderPass(PbrMaterialShader shader, const shadow_render_data& shadowData, shadow_render_pass_base* shadowRenderPass, bool isPointLight)
+	static void add_to_dynamic_render_pass(PbrMaterialShader shader, const ShadowRenderData& shadow_data, ShadowRenderPassBase* shadow_render_pass, bool is_point_light)
 	{
 		switch (shader)
 		{
-		case pbr_material_shader_default:
+		case PBR_MATERIAL_SHADER_DEFAULT:
 		{
-			if (isPointLight)
+			if (is_point_light)
 			{
-				shadowRenderPass->renderDynamicObject<point_shadow_pipeline::single_sided>(shadowData);
+				shadow_render_pass->render_dynamic_object<PointShadowPipeline::SingleSided>(shadow_data);
 			}
 			else
 			{
-				shadowRenderPass->renderDynamicObject<shadow_pipeline::single_sided>(shadowData);
+				shadow_render_pass->render_dynamic_object<ShadowPipeline::SingleSided>(shadow_data);
 			}
 		} break;
-		case pbr_material_shader_double_sided:
-		case pbr_material_shader_alpha_cutout:
+		case PBR_MATERIAL_SHADER_DOUBLE_SIDED:
+		case PBR_MATERIAL_SHADER_ALPHA_CUTOUT:
 		{
-			if (isPointLight)
+			if (is_point_light)
 			{
-				shadowRenderPass->renderDynamicObject<point_shadow_pipeline::double_sided>(shadowData);
+				shadow_render_pass->render_dynamic_object<PointShadowPipeline::DoubleSided>(shadow_data);
 			}
 			else
 			{
-				shadowRenderPass->renderDynamicObject<shadow_pipeline::double_sided>(shadowData);
+				shadow_render_pass->render_dynamic_object<ShadowPipeline::DoubleSided>(shadow_data);
 			}
 		} break;
-		case pbr_material_shader_transparent:
+		case PBR_MATERIAL_SHADER_TRANSPARENT:
 		{
 			// Do nothing
 		} break;
@@ -178,21 +178,21 @@ namespace era_engine
 	}
 
 	template <typename group_t>
-	static void renderStaticObjectsToMainCamera(group_t group, std::unordered_map<MultiMesh*, offset_count> ocPerMesh,
-		const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
-		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass)
+	static void render_static_objects_to_main_camera(group_t group, std::unordered_map<MultiMesh*, OffsetCount> oc_per_mesh,
+		const CameraFrustumPlanes& frustum, Allocator& arena, Entity::Handle selected_object_id,
+		OpaqueRenderPass* opaque_render_pass, TransparentRenderPass* transparent_render_pass, LDRRenderPass* ldr_render_pass)
 	{
-		uint32 groupSize = (uint32)group.size();
+		uint32 group_size = (uint32)group.size();
 
-		dx_allocation transformAllocation = dxContext.allocateDynamicBuffer(groupSize * sizeof(mat4), 4);
-		mat4* transforms = (mat4*)transformAllocation.cpuPtr;
+		DXAllocation transform_allocation = dx_context.allocate_dynamic_buffer(group_size * sizeof(mat4), 4);
+		mat4* transforms = (mat4*)transform_allocation.cpu_ptr;
 
-		dx_allocation objectIDAllocation = dxContext.allocateDynamicBuffer(groupSize * sizeof(uint32), 4);
-		uint32* objectIDs = (uint32*)objectIDAllocation.cpuPtr;
+		DXAllocation object_id_allocation = dx_context.allocate_dynamic_buffer(group_size * sizeof(uint32), 4);
+		uint32* object_ids = (uint32*)object_id_allocation.cpu_ptr;
 
-		for (auto [entityHandle, transform, mesh] : group.each())
+		for (auto [entity_handle, transform, mesh] : group.each())
 		{
-			if (!shouldRender(frustum, mesh, transform))
+			if (!should_render(frustum, mesh, transform))
 				continue;
 
 			if (transform.type == TransformComponent::DYNAMIC)
@@ -200,64 +200,64 @@ namespace era_engine
 
 			std::lock_guard<std::mutex> lock{ mesh.mesh->mutex };
 
-			const dx_mesh& dxMesh = mesh.mesh->mesh;
+			const DXMesh& dx_mesh = mesh.mesh->mesh;
 
-			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
+			OffsetCount& oc = oc_per_mesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
 			const trs& world_transform = transform.get_world_transform();
 
 			transforms[index] = trs_to_mat4(world_transform);
-			objectIDs[index] = (uint32)entityHandle;
+			object_ids[index] = (uint32)entity_handle;
 
 			++oc.count;
 
-			if (entityHandle == selectedObjectID)
+			if (entity_handle == selected_object_id)
 			{
-				for (submesh& sm : mesh.mesh->submeshes)
+				for (Submesh& sm : mesh.mesh->submeshes)
 				{
 					if (sm.is_visible)
 					{
-						renderOutline(ldrRenderPass, transforms[index], dxMesh.vertexBuffer, dxMesh.indexBuffer, sm.info);
+						render_outline(ldr_render_pass, transforms[index], dx_mesh.vertex_buffer, dx_mesh.index_buffer, sm.info);
 					}
 				}
 			}
 		}
 
-		D3D12_GPU_VIRTUAL_ADDRESS transformsAddress = transformAllocation.gpuPtr;
-		D3D12_GPU_VIRTUAL_ADDRESS objectIDAddress = objectIDAllocation.gpuPtr;
+		D3D12_GPU_VIRTUAL_ADDRESS transforms_address = transform_allocation.gpu_ptr;
+		D3D12_GPU_VIRTUAL_ADDRESS object_id_address = object_id_allocation.gpu_ptr;
 
-		uint32 numDrawCalls = 0;
+		uint32 num_draw_calls = 0;
 
-		for (auto& [mesh, oc] : ocPerMesh)
+		for (auto& [mesh, oc] : oc_per_mesh)
 		{
 			if (oc.count == 0)
 				continue;
 
 			std::lock_guard<std::mutex> lock{ mesh->mutex };
 
-			D3D12_GPU_VIRTUAL_ADDRESS baseM = transformsAddress + (oc.offset * sizeof(mat4));
-			D3D12_GPU_VIRTUAL_ADDRESS baseObjectID = objectIDAddress + (oc.offset * sizeof(uint32));
+			D3D12_GPU_VIRTUAL_ADDRESS base_m = transforms_address + (oc.offset * sizeof(mat4));
+			D3D12_GPU_VIRTUAL_ADDRESS base_object_id = object_id_address + (oc.offset * sizeof(uint32));
 
-			const dx_mesh& dxMesh = mesh->mesh;
+			const DXMesh& dx_mesh = mesh->mesh;
 
-			if (!dxMesh.indexBuffer || !dxMesh.vertexBuffer.positions)
+			if (!dx_mesh.index_buffer || !dx_mesh.vertex_buffer.positions)
 				continue;
 
-			pbr_render_data data;
-			data.transformPtr = baseM;
-			data.vertexBuffer = dxMesh.vertexBuffer;
-			data.indexBuffer = dxMesh.indexBuffer;
-			data.numInstances = oc.count;
+			PBRRenderData data;
+			data.transform_ptr = base_m;
+			data.vertex_buffer = dx_mesh.vertex_buffer;
+			data.index_buffer = dx_mesh.index_buffer;
+			data.num_instances = oc.count;
 
-			depth_prepass_data depthPrepassData;
-			depthPrepassData.transformPtr = baseM;
-			depthPrepassData.prevFrameTransformPtr = baseM;
-			depthPrepassData.objectIDPtr = baseObjectID;
-			depthPrepassData.vertexBuffer = dxMesh.vertexBuffer;
-			depthPrepassData.prevFrameVertexBuffer = dxMesh.vertexBuffer.positions;
-			depthPrepassData.indexBuffer = dxMesh.indexBuffer;
-			depthPrepassData.numInstances = oc.count;
+			DepthPrepassData depth_prepass_data;
+			depth_prepass_data.transform_ptr = base_m;
+			depth_prepass_data.prev_frame_transform_ptr = base_m;
+			depth_prepass_data.object_id_ptr = base_object_id;
+			depth_prepass_data.vertex_buffer = dx_mesh.vertex_buffer;
+			depth_prepass_data.prev_frame_vertex_buffer = dx_mesh.vertex_buffer.positions;
+			depth_prepass_data.index_buffer = dx_mesh.index_buffer;
+			depth_prepass_data.num_instances = oc.count;
 
 			for (auto& sm : mesh->submeshes)
 			{
@@ -269,30 +269,30 @@ namespace era_engine
 				data.submesh = sm.info;
 				data.material = sm.material;
 
-				depthPrepassData.submesh = data.submesh;
-				depthPrepassData.alphaCutoutTextureSRV = (sm.material && sm.material->albedo) ? sm.material->albedo->defaultSRV : dx_cpu_descriptor_handle{};
+				depth_prepass_data.submesh = data.submesh;
+				depth_prepass_data.alpha_cutout_texture_srv = (sm.material && sm.material->albedo) ? sm.material->albedo->default_srv : DXCPUDescriptorHandle{};
 
-				addToRenderPass(sm.material->shader, data, depthPrepassData, opaqueRenderPass, transparentRenderPass);
+				add_to_render_pass(sm.material->shader, data, depth_prepass_data, opaque_render_pass, transparent_render_pass);
 
-				++numDrawCalls;
+				++num_draw_calls;
 			}
 		}
 
-		CPU_PROFILE_STAT("Static draw calls", numDrawCalls);
+		CPU_PROFILE_STAT("Static draw calls", num_draw_calls);
 	}
 
 	template <typename group_t>
-	static void renderStaticObjectsToShadowMap(group_t group, std::unordered_map<MultiMesh*, offset_count> ocPerMesh,
-		const light_frustum& frustum, Allocator& arena, shadow_render_pass_base* shadowRenderPass)
+	static void render_static_objects_to_shadow_map(group_t group, std::unordered_map<MultiMesh*, OffsetCount> oc_per_mesh,
+		const LightFrustum& frustum, Allocator& arena, ShadowRenderPassBase* shadow_render_pass)
 	{
-		uint32 groupSize = (uint32)group.size();
+		uint32 group_size = (uint32)group.size();
 
-		dx_allocation transformAllocation = dxContext.allocateDynamicBuffer(groupSize * sizeof(mat4), 4);
-		mat4* transforms = (mat4*)transformAllocation.cpuPtr;
+		DXAllocation transform_allocation = dx_context.allocate_dynamic_buffer(group_size * sizeof(mat4), 4);
+		mat4* transforms = (mat4*)transform_allocation.cpu_ptr;
 
-		for (auto [entityHandle, transform, mesh] : group.each())
+		for (auto [entity_handle, transform, mesh] : group.each())
 		{
-			if (!shouldRender(frustum, mesh, transform))
+			if (!should_render(frustum, mesh, transform))
 				continue;
 
 			if (transform.type == TransformComponent::DYNAMIC)
@@ -300,9 +300,9 @@ namespace era_engine
 
 			std::lock_guard<std::mutex> lock{ mesh.mesh->mutex };
 
-			const dx_mesh& dxMesh = mesh.mesh->mesh;
+			const DXMesh& dx_mesh = mesh.mesh->mesh;
 
-			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
+			OffsetCount& oc = oc_per_mesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
 			const trs& world_transform = transform.get_world_transform();
@@ -312,27 +312,27 @@ namespace era_engine
 			++oc.count;
 		}
 
-		D3D12_GPU_VIRTUAL_ADDRESS transformsAddress = transformAllocation.gpuPtr;
+		D3D12_GPU_VIRTUAL_ADDRESS transforms_address = transform_allocation.gpu_ptr;
 
-		for (auto& [mesh, oc] : ocPerMesh)
+		for (auto& [mesh, oc] : oc_per_mesh)
 		{
 			if (oc.count == 0)
 				continue;
 
 			std::lock_guard<std::mutex> lock{ mesh->mutex };
 
-			D3D12_GPU_VIRTUAL_ADDRESS baseM = transformsAddress + (oc.offset * sizeof(mat4));
+			D3D12_GPU_VIRTUAL_ADDRESS base_m = transforms_address + (oc.offset * sizeof(mat4));
 
-			const dx_mesh& dxMesh = mesh->mesh;
+			const DXMesh& dx_mesh = mesh->mesh;
 
-			if (!dxMesh.indexBuffer || !dxMesh.vertexBuffer.positions)
+			if (!dx_mesh.index_buffer || !dx_mesh.vertex_buffer.positions)
 				continue;
 
-			shadow_render_data data;
-			data.transformPtr = baseM;
-			data.vertexBuffer = dxMesh.vertexBuffer.positions;
-			data.indexBuffer = dxMesh.indexBuffer;
-			data.numInstances = oc.count;
+			ShadowRenderData data;
+			data.transform_ptr = base_m;
+			data.vertex_buffer = dx_mesh.vertex_buffer.positions;
+			data.index_buffer = dx_mesh.index_buffer;
+			data.num_instances = oc.count;
 
 			for (auto& sm : mesh->submeshes)
 			{
@@ -341,72 +341,72 @@ namespace era_engine
 					continue;
 				}
 				data.submesh = sm.info;
-				addToStaticRenderPass(sm.material->shader, data, shadowRenderPass, frustum.type == light_frustum_sphere);
+				add_to_static_render_pass(sm.material->shader, data, shadow_render_pass, frustum.type == LIGHT_FRUSTUM_SPHERE);
 			}
 		}
 	}
 
-	static void renderStaticObjects(World* world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
-		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
+	static void render_static_objects(World* world, const CameraFrustumPlanes& frustum, Allocator& arena, Entity::Handle selected_object_id,
+		OpaqueRenderPass* opaque_render_pass, TransparentRenderPass* transparent_render_pass, LDRRenderPass* ldr_render_pass, ShadowPasses& shadow)
 	{
 		CPU_PROFILE_BLOCK("Static objects");
 
-		using specialized_components = ComponentsGroup<
+		using SpecializedComponents = ComponentsGroup<
 			animation::AnimationComponent,
 			TreeComponent
 		>;
 
 		auto group = world->group(
 			components_group<TransformComponent, MeshComponent>,
-			specialized_components{});
+			SpecializedComponents{});
 
-		std::unordered_map<MultiMesh*, offset_count> ocPerMesh = getOffsetsPerMesh(group);
+		std::unordered_map<MultiMesh*, OffsetCount> oc_per_mesh = get_offsets_per_mesh(group);
 
-		renderStaticObjectsToMainCamera(group, ocPerMesh, frustum, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass);
+		render_static_objects_to_main_camera(group, oc_per_mesh, frustum, arena, selected_object_id, opaque_render_pass, transparent_render_pass, ldr_render_pass);
 
-		for (uint32 i = 0; i < shadow.numShadowRenderPasses; ++i)
+		for (uint32 i = 0; i < shadow.num_shadow_render_passes; ++i)
 		{
-			auto& pass = shadow.shadowRenderPasses[i];
-			renderStaticObjectsToShadowMap(group, ocPerMesh, pass.frustum, arena, pass.pass);
+			auto& pass = shadow.shadow_render_passes[i];
+			render_static_objects_to_shadow_map(group, oc_per_mesh, pass.frustum, arena, pass.pass);
 		}
 	}
 
 	template <typename group_t>
-	static void renderDynamicObjectsToMainCamera(group_t group, std::unordered_map<MultiMesh*, offset_count> ocPerMesh,
-		const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
-		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass)
+	static void render_dynamic_objects_to_main_camera(group_t group, std::unordered_map<MultiMesh*, OffsetCount> oc_per_mesh,
+		const CameraFrustumPlanes& frustum, Allocator& arena, Entity::Handle selected_object_id,
+		OpaqueRenderPass* opaque_render_pass, TransparentRenderPass* transparent_render_pass, LDRRenderPass* ldr_render_pass)
 	{
-		uint32 groupSize = (uint32)group.size();
+		uint32 group_size = (uint32)group.size();
 
-		dx_allocation transformAllocation = dxContext.allocateDynamicBuffer(groupSize * sizeof(mat4) * 2, 4);
-		mat4* transforms = (mat4*)transformAllocation.cpuPtr;
-		mat4* prevFrameTransforms = transforms + groupSize;
+		DXAllocation transform_allocation = dx_context.allocate_dynamic_buffer(group_size * sizeof(mat4) * 2, 4);
+		mat4* transforms = (mat4*)transform_allocation.cpu_ptr;
+		mat4* prev_frame_transforms = transforms + group_size;
 
-		dx_allocation objectIDAllocation = dxContext.allocateDynamicBuffer(groupSize * sizeof(uint32), 4);
-		uint32* objectIDs = (uint32*)objectIDAllocation.cpuPtr;
+		DXAllocation object_id_allocation = dx_context.allocate_dynamic_buffer(group_size * sizeof(uint32), 4);
+		uint32* object_ids = (uint32*)object_id_allocation.cpu_ptr;
 
-		for (auto [entityHandle, transform, mesh] : group.each())
+		for (auto [entity_handle, transform, mesh] : group.each())
 		{
-			if (!shouldRender(frustum, mesh, transform))
+			if (!should_render(frustum, mesh, transform))
 				continue;
 
 			if (transform.type != TransformComponent::DYNAMIC)
 				continue;
 
-			const dx_mesh& dxMesh = mesh.mesh->mesh;
+			const DXMesh& dx_mesh = mesh.mesh->mesh;
 
-			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
+			OffsetCount& oc = oc_per_mesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
 			const trs& world_transform = transform.get_world_transform();
 
 			transforms[index] = trs_to_mat4(world_transform);
-			prevFrameTransforms[index] = trs_to_mat4(world_transform);
-			objectIDs[index] = (uint32)entityHandle;
+			prev_frame_transforms[index] = trs_to_mat4(world_transform);
+			object_ids[index] = (uint32)entity_handle;
 
 			++oc.count;
 
-			if (entityHandle == selectedObjectID)
+			if (entity_handle == selected_object_id)
 			{
 				for (auto& sm : mesh.mesh->submeshes)
 				{
@@ -414,45 +414,45 @@ namespace era_engine
 					{
 						continue;
 					}
-					renderOutline(ldrRenderPass, transforms[index], dxMesh.vertexBuffer, dxMesh.indexBuffer, sm.info);
+					render_outline(ldr_render_pass, transforms[index], dx_mesh.vertex_buffer, dx_mesh.index_buffer, sm.info);
 				}
 			}
 		}
 
-		D3D12_GPU_VIRTUAL_ADDRESS transformsAddress = transformAllocation.gpuPtr;
-		D3D12_GPU_VIRTUAL_ADDRESS prevFrameTransformsAddress = transformAllocation.gpuPtr + (groupSize * sizeof(mat4));
-		D3D12_GPU_VIRTUAL_ADDRESS objectIDAddress = objectIDAllocation.gpuPtr;
+		D3D12_GPU_VIRTUAL_ADDRESS transforms_address = transform_allocation.gpu_ptr;
+		D3D12_GPU_VIRTUAL_ADDRESS prev_frame_transforms_address = transform_allocation.gpu_ptr + (group_size * sizeof(mat4));
+		D3D12_GPU_VIRTUAL_ADDRESS object_id_address = object_id_allocation.gpu_ptr;
 
-		uint32 numDrawCalls = 0;
+		uint32 num_draw_calls = 0;
 
-		for (auto& [mesh, oc] : ocPerMesh)
+		for (auto& [mesh, oc] : oc_per_mesh)
 		{
 			if (oc.count == 0)
 				continue;
 
-			D3D12_GPU_VIRTUAL_ADDRESS baseM = transformsAddress + (oc.offset * sizeof(mat4));
-			D3D12_GPU_VIRTUAL_ADDRESS prevBaseM = prevFrameTransformsAddress + (oc.offset * sizeof(mat4));
-			D3D12_GPU_VIRTUAL_ADDRESS baseObjectID = objectIDAddress + (oc.offset * sizeof(uint32));
+			D3D12_GPU_VIRTUAL_ADDRESS base_m = transforms_address + (oc.offset * sizeof(mat4));
+			D3D12_GPU_VIRTUAL_ADDRESS prev_base_m = prev_frame_transforms_address + (oc.offset * sizeof(mat4));
+			D3D12_GPU_VIRTUAL_ADDRESS base_object_id = object_id_address + (oc.offset * sizeof(uint32));
 
-			const dx_mesh& dxMesh = mesh->mesh;
+			const DXMesh& dx_mesh = mesh->mesh;
 
-			if (!dxMesh.indexBuffer || !dxMesh.vertexBuffer.positions)
+			if (!dx_mesh.index_buffer || !dx_mesh.vertex_buffer.positions)
 				continue;
 
-			pbr_render_data data;
-			data.transformPtr = baseM;
-			data.vertexBuffer = dxMesh.vertexBuffer;
-			data.indexBuffer = dxMesh.indexBuffer;
-			data.numInstances = oc.count;
+			PBRRenderData data;
+			data.transform_ptr = base_m;
+			data.vertex_buffer = dx_mesh.vertex_buffer;
+			data.index_buffer = dx_mesh.index_buffer;
+			data.num_instances = oc.count;
 
-			depth_prepass_data depthPrepassData;
-			depthPrepassData.transformPtr = baseM;
-			depthPrepassData.prevFrameTransformPtr = prevBaseM;
-			depthPrepassData.objectIDPtr = baseObjectID;
-			depthPrepassData.vertexBuffer = dxMesh.vertexBuffer;
-			depthPrepassData.prevFrameVertexBuffer = dxMesh.vertexBuffer.positions;
-			depthPrepassData.indexBuffer = dxMesh.indexBuffer;
-			depthPrepassData.numInstances = oc.count;
+			DepthPrepassData depth_prepass_data;
+			depth_prepass_data.transform_ptr = base_m;
+			depth_prepass_data.prev_frame_transform_ptr = prev_base_m;
+			depth_prepass_data.object_id_ptr = base_object_id;
+			depth_prepass_data.vertex_buffer = dx_mesh.vertex_buffer;
+			depth_prepass_data.prev_frame_vertex_buffer = dx_mesh.vertex_buffer.positions;
+			depth_prepass_data.index_buffer = dx_mesh.index_buffer;
+			depth_prepass_data.num_instances = oc.count;
 
 			for (auto& sm : mesh->submeshes)
 			{
@@ -463,30 +463,30 @@ namespace era_engine
 				data.submesh = sm.info;
 				data.material = sm.material;
 
-				depthPrepassData.submesh = data.submesh;
-				depthPrepassData.alphaCutoutTextureSRV = (sm.material && sm.material->albedo) ? sm.material->albedo->defaultSRV : dx_cpu_descriptor_handle{};
+				depth_prepass_data.submesh = data.submesh;
+				depth_prepass_data.alpha_cutout_texture_srv = (sm.material && sm.material->albedo) ? sm.material->albedo->default_srv : DXCPUDescriptorHandle{};
 
-				addToRenderPass(sm.material->shader, data, depthPrepassData, opaqueRenderPass, transparentRenderPass);
+				add_to_render_pass(sm.material->shader, data, depth_prepass_data, opaque_render_pass, transparent_render_pass);
 
-				++numDrawCalls;
+				++num_draw_calls;
 			}
 		}
 
-		CPU_PROFILE_STAT("Dynamic draw calls", numDrawCalls);
+		CPU_PROFILE_STAT("Dynamic draw calls", num_draw_calls);
 	}
 
 	template <typename group_t>
-	static void renderDynamicObjectsToShadowMap(group_t group, std::unordered_map<MultiMesh*, offset_count> ocPerMesh,
-		const light_frustum& frustum, Allocator& arena, shadow_render_pass_base* shadowRenderPass)
+	static void render_dynamic_objects_to_shadow_map(group_t group, std::unordered_map<MultiMesh*, OffsetCount> oc_per_mesh,
+		const LightFrustum& frustum, Allocator& arena, ShadowRenderPassBase* shadow_render_pass)
 	{
-		uint32 groupSize = (uint32)group.size();
+		uint32 group_size = (uint32)group.size();
 
-		dx_allocation transformAllocation = dxContext.allocateDynamicBuffer(groupSize * sizeof(mat4), 4);
-		mat4* transforms = (mat4*)transformAllocation.cpuPtr;
+		DXAllocation transform_allocation = dx_context.allocate_dynamic_buffer(group_size * sizeof(mat4), 4);
+		mat4* transforms = (mat4*)transform_allocation.cpu_ptr;
 
-		for (auto [entityHandle, transform, mesh] : group.each())
+		for (auto [entity_handle, transform, mesh] : group.each())
 		{
-			if (!shouldRender(frustum, mesh, transform))
+			if (!should_render(frustum, mesh, transform))
 				continue;
 
 			if (transform.type != TransformComponent::DYNAMIC)
@@ -494,10 +494,10 @@ namespace era_engine
 
 			std::lock_guard<std::mutex> lock{ mesh.mesh->mutex };
 
-			const dx_mesh& dxMesh = mesh.mesh->mesh;
-			if (!ocPerMesh.contains(mesh.mesh.get()))
+			const DXMesh& dx_mesh = mesh.mesh->mesh;
+			if (!oc_per_mesh.contains(mesh.mesh.get()))
 				continue;
-			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
+			OffsetCount& oc = oc_per_mesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
 			const trs& world_transform = transform.get_world_transform();
@@ -507,27 +507,27 @@ namespace era_engine
 			++oc.count;
 		}
 
-		D3D12_GPU_VIRTUAL_ADDRESS transformsAddress = transformAllocation.gpuPtr;
+		D3D12_GPU_VIRTUAL_ADDRESS transforms_address = transform_allocation.gpu_ptr;
 
-		for (auto& [mesh, oc] : ocPerMesh)
+		for (auto& [mesh, oc] : oc_per_mesh)
 		{
 			if (oc.count == 0)
 				continue;
 
 			std::lock_guard<std::mutex> lock{ mesh->mutex };
 
-			D3D12_GPU_VIRTUAL_ADDRESS baseM = transformsAddress + (oc.offset * sizeof(mat4));
+			D3D12_GPU_VIRTUAL_ADDRESS base_m = transforms_address + (oc.offset * sizeof(mat4));
 
-			const dx_mesh& dxMesh = mesh->mesh;
+			const DXMesh& dx_mesh = mesh->mesh;
 
-			if (!dxMesh.indexBuffer || !dxMesh.vertexBuffer.positions)
+			if (!dx_mesh.index_buffer || !dx_mesh.vertex_buffer.positions)
 				continue;
 
-			shadow_render_data data;
-			data.transformPtr = baseM;
-			data.vertexBuffer = dxMesh.vertexBuffer.positions;
-			data.indexBuffer = dxMesh.indexBuffer;
-			data.numInstances = oc.count;
+			ShadowRenderData data;
+			data.transform_ptr = base_m;
+			data.vertex_buffer = dx_mesh.vertex_buffer.positions;
+			data.index_buffer = dx_mesh.index_buffer;
+			data.num_instances = oc.count;
 
 			for (auto& sm : mesh->submeshes)
 			{
@@ -536,13 +536,13 @@ namespace era_engine
 					continue;
 				}
 				data.submesh = sm.info;
-				addToDynamicRenderPass(sm.material->shader, data, shadowRenderPass, frustum.type == light_frustum_sphere);
+				add_to_dynamic_render_pass(sm.material->shader, data, shadow_render_pass, frustum.type == LIGHT_FRUSTUM_SPHERE);
 			}
 		}
 	}
 
-	static void renderDynamicObjects(World* world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
-		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
+	static void render_dynamic_objects(World* world, const CameraFrustumPlanes& frustum, Allocator& arena, Entity::Handle selected_object_id,
+		OpaqueRenderPass* opaque_render_pass, TransparentRenderPass* transparent_render_pass, LDRRenderPass* ldr_render_pass, ShadowPasses& shadow)
 	{
 		CPU_PROFILE_BLOCK("Dynamic objects");
 
@@ -550,44 +550,44 @@ namespace era_engine
 			components_group<TransformComponent, MeshComponent>,
 			components_group<animation::AnimationComponent>);
 
-		std::unordered_map<MultiMesh*, offset_count> ocPerMesh = getOffsetsPerMesh(group);
-		renderDynamicObjectsToMainCamera(group, ocPerMesh, frustum, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass);
+		std::unordered_map<MultiMesh*, OffsetCount> oc_per_mesh = get_offsets_per_mesh(group);
+		render_dynamic_objects_to_main_camera(group, oc_per_mesh, frustum, arena, selected_object_id, opaque_render_pass, transparent_render_pass, ldr_render_pass);
 
-		for (uint32 i = 0; i < shadow.numShadowRenderPasses; ++i)
+		for (uint32 i = 0; i < shadow.num_shadow_render_passes; ++i)
 		{
-			auto& pass = shadow.shadowRenderPasses[i];
-			renderDynamicObjectsToShadowMap(group, ocPerMesh, pass.frustum, arena, pass.pass);
+			auto& pass = shadow.shadow_render_passes[i];
+			render_dynamic_objects_to_shadow_map(group, oc_per_mesh, pass.frustum, arena, pass.pass);
 		}
 	}
 
-	static void renderAnimatedObjects(World* world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
-		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, shadow_passes& shadow)
+	static void render_animated_objects(World* world, const CameraFrustumPlanes& frustum, Allocator& arena, Entity::Handle selected_object_id,
+		OpaqueRenderPass* opaque_render_pass, TransparentRenderPass* transparent_render_pass, LDRRenderPass* ldr_render_pass, ShadowPasses& shadow)
 	{
 		CPU_PROFILE_BLOCK("Animated objects");
 
 		auto group = world->group(
 			components_group<TransformComponent, MeshComponent, animation::AnimationComponent>);
 
-		uint32 groupSize = (uint32)group.size();
+		uint32 group_size = (uint32)group.size();
 
-		if (groupSize == 0)
+		if (group_size == 0)
 		{
 			return;
 		}
 
-		dx_allocation transformAllocation = dxContext.allocateDynamicBuffer(groupSize * sizeof(mat4) * 2, 4);
-		mat4* transforms = (mat4*)transformAllocation.cpuPtr;
-		mat4* prevFrameTransforms = transforms + groupSize;
+		DXAllocation transform_allocation = dx_context.allocate_dynamic_buffer(group_size * sizeof(mat4) * 2, 4);
+		mat4* transforms = (mat4*)transform_allocation.cpu_ptr;
+		mat4* prev_frame_transforms = transforms + group_size;
 
-		dx_allocation objectIDAllocation = dxContext.allocateDynamicBuffer(groupSize * sizeof(uint32), 4);
-		uint32* objectIDs = (uint32*)objectIDAllocation.cpuPtr;
+		DXAllocation object_id_allocation = dx_context.allocate_dynamic_buffer(group_size * sizeof(uint32), 4);
+		uint32* object_ids = (uint32*)object_id_allocation.cpu_ptr;
 
-		D3D12_GPU_VIRTUAL_ADDRESS transformsAddress = transformAllocation.gpuPtr;
-		D3D12_GPU_VIRTUAL_ADDRESS prevFrameTransformsAddress = transformAllocation.gpuPtr + (groupSize * sizeof(mat4));
-		D3D12_GPU_VIRTUAL_ADDRESS objectIDAddress = objectIDAllocation.gpuPtr;
+		D3D12_GPU_VIRTUAL_ADDRESS transforms_address = transform_allocation.gpu_ptr;
+		D3D12_GPU_VIRTUAL_ADDRESS prev_frame_transforms_address = transform_allocation.gpu_ptr + (group_size * sizeof(mat4));
+		D3D12_GPU_VIRTUAL_ADDRESS object_id_address = object_id_allocation.gpu_ptr;
 
 		uint32 index = 0;
-		for (auto [entityHandle, transform, mesh, anim] : group.each())
+		for (auto [entity_handle, transform, mesh, anim] : group.each())
 		{
 			std::lock_guard<std::mutex> lock{ mesh.mesh->mutex };
 
@@ -596,29 +596,29 @@ namespace era_engine
 
 			const trs& world_transform = transform.get_world_transform();
 			transforms[index] = trs_to_mat4(world_transform);
-			prevFrameTransforms[index] = trs_to_mat4(world_transform); //TODO
-			objectIDs[index] = (uint32)entityHandle;
+			prev_frame_transforms[index] = trs_to_mat4(world_transform); //TODO
+			object_ids[index] = (uint32)entity_handle;
 
-			D3D12_GPU_VIRTUAL_ADDRESS baseM = transformsAddress + (index * sizeof(mat4));
-			D3D12_GPU_VIRTUAL_ADDRESS prevBaseM = prevFrameTransformsAddress + (index * sizeof(mat4));
-			D3D12_GPU_VIRTUAL_ADDRESS baseObjectID = objectIDAddress + (index * sizeof(uint32));
+			D3D12_GPU_VIRTUAL_ADDRESS base_m = transforms_address + (index * sizeof(mat4));
+			D3D12_GPU_VIRTUAL_ADDRESS prev_base_m = prev_frame_transforms_address + (index * sizeof(mat4));
+			D3D12_GPU_VIRTUAL_ADDRESS base_object_id = object_id_address + (index * sizeof(uint32));
 
-			const dx_mesh& dxMesh = mesh.mesh->mesh;
+			const DXMesh& dx_mesh = mesh.mesh->mesh;
 
-			pbr_render_data data;
-			data.transformPtr = baseM;
-			data.vertexBuffer = anim.current_vertex_buffer;
-			data.indexBuffer = dxMesh.indexBuffer;
-			data.numInstances = 1;
+			PBRRenderData data;
+			data.transform_ptr = base_m;
+			data.vertex_buffer = anim.current_vertex_buffer;
+			data.index_buffer = dx_mesh.index_buffer;
+			data.num_instances = 1;
 
-			depth_prepass_data depthPrepassData;
-			depthPrepassData.transformPtr = baseM;
-			depthPrepassData.prevFrameTransformPtr = prevBaseM;
-			depthPrepassData.objectIDPtr = baseObjectID;
-			depthPrepassData.vertexBuffer = anim.current_vertex_buffer;
-			depthPrepassData.prevFrameVertexBuffer = anim.prev_frame_vertex_buffer.positions ? anim.prev_frame_vertex_buffer.positions : anim.current_vertex_buffer.positions;
-			depthPrepassData.indexBuffer = dxMesh.indexBuffer;
-			depthPrepassData.numInstances = 1;
+			DepthPrepassData depth_prepass_data;
+			depth_prepass_data.transform_ptr = base_m;
+			depth_prepass_data.prev_frame_transform_ptr = prev_base_m;
+			depth_prepass_data.object_id_ptr = base_object_id;
+			depth_prepass_data.vertex_buffer = anim.current_vertex_buffer;
+			depth_prepass_data.prev_frame_vertex_buffer = anim.prev_frame_vertex_buffer.positions ? anim.prev_frame_vertex_buffer.positions : anim.current_vertex_buffer.positions;
+			depth_prepass_data.index_buffer = dx_mesh.index_buffer;
+			depth_prepass_data.num_instances = 1;
 
 			for (auto& sm : mesh.mesh->submeshes)
 			{
@@ -629,29 +629,29 @@ namespace era_engine
 				data.submesh = sm.info;
 				data.material = sm.material;
 
-				data.submesh.baseVertex -= mesh.mesh->submeshes[0].info.baseVertex; // Vertex buffer from skinning already points to first vertex.
+				data.submesh.base_vertex -= mesh.mesh->submeshes[0].info.base_vertex; // Vertex buffer from skinning already points to first vertex.
 
-				depthPrepassData.submesh = data.submesh;
-				depthPrepassData.alphaCutoutTextureSRV = (sm.material && sm.material->albedo) ? sm.material->albedo->defaultSRV : dx_cpu_descriptor_handle{};
+				depth_prepass_data.submesh = data.submesh;
+				depth_prepass_data.alpha_cutout_texture_srv = (sm.material && sm.material->albedo) ? sm.material->albedo->default_srv : DXCPUDescriptorHandle{};
 
-				addToRenderPass(sm.material->shader, data, depthPrepassData, opaqueRenderPass, transparentRenderPass);
+				add_to_render_pass(sm.material->shader, data, depth_prepass_data, opaque_render_pass, transparent_render_pass);
 
-				shadow_render_data shadowData;
-				shadowData.transformPtr = baseM;
-				shadowData.vertexBuffer = anim.current_vertex_buffer.positions;
-				shadowData.indexBuffer = dxMesh.indexBuffer;
-				shadowData.submesh = data.submesh;
-				shadowData.numInstances = 1;
+				ShadowRenderData shadow_data;
+				shadow_data.transform_ptr = base_m;
+				shadow_data.vertex_buffer = anim.current_vertex_buffer.positions;
+				shadow_data.index_buffer = dx_mesh.index_buffer;
+				shadow_data.submesh = data.submesh;
+				shadow_data.num_instances = 1;
 
-				for (uint32 i = 0; i < shadow.numShadowRenderPasses; ++i)
+				for (uint32 i = 0; i < shadow.num_shadow_render_passes; ++i)
 				{
-					auto& pass = shadow.shadowRenderPasses[i];
-					addToDynamicRenderPass(sm.material->shader, shadowData, pass.pass, pass.frustum.type == light_frustum_sphere);
+					auto& pass = shadow.shadow_render_passes[i];
+					add_to_dynamic_render_pass(sm.material->shader, shadow_data, pass.pass, pass.frustum.type == LIGHT_FRUSTUM_SPHERE);
 				}
 
-				if (entityHandle == selectedObjectID)
+				if (entity_handle == selected_object_id)
 				{
-					renderOutline(ldrRenderPass, transforms[index], anim.current_vertex_buffer, dxMesh.indexBuffer, data.submesh);
+					render_outline(ldr_render_pass, transforms[index], anim.current_vertex_buffer, dx_mesh.index_buffer, data.submesh);
 				}
 			}
 
@@ -659,51 +659,51 @@ namespace era_engine
 		}
 	}
 
-	static void renderTerrain(const render_camera& camera, World* world, Allocator& arena, Entity::Handle selectedObjectID,
-		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
-		compute_pass* computePass, float dt)
+	static void render_terrain(const RenderCamera& camera, World* world, Allocator& arena, Entity::Handle selected_object_id,
+		OpaqueRenderPass* opaque_render_pass, TransparentRenderPass* transparent_render_pass, LDRRenderPass* ldr_render_pass, SunShadowRenderPass* sun_shadow_render_pass,
+		ComputePass* compute_pass, float dt)
 	{
-		MemoryMarker tempMemoryMarker = arena.get_marker();
-		TransformComponent* waterPlaneTransforms = arena.allocate<TransformComponent>(world->number_of_components_of_type<WaterComponent>());
-		uint32 numWaterPlanes = 0;
+		MemoryMarker temp_memory_marker = arena.get_marker();
+		TransformComponent* water_plane_transforms = arena.allocate<TransformComponent>(world->number_of_components_of_type<WaterComponent>());
+		uint32 num_water_planes = 0;
 
-		for (auto [entityHandle, water, transform] : world->group(components_group<WaterComponent, TransformComponent>).each())
+		for (auto [entity_handle, water, transform] : world->group(components_group<WaterComponent, TransformComponent>).each())
 		{
 			const trs& world_transform = transform.get_world_transform();
 
-			water.render(camera, transparentRenderPass, world_transform.position, vec2(world_transform.scale.x, world_transform.scale.z), dt);
+			water.render(camera, transparent_render_pass, world_transform.position, vec2(world_transform.scale.x, world_transform.scale.z), dt);
 
-			waterPlaneTransforms[numWaterPlanes++] = transform;
+			water_plane_transforms[num_water_planes++] = transform;
 		}
 
-		for (auto [entityHandle, terrain, position] : world->group(components_group<TerrainComponent, TransformComponent>).each())
+		for (auto [entity_handle, terrain, position] : world->group(components_group<TerrainComponent, TransformComponent>).each())
 		{
 			const trs& world_transform = position.get_world_transform();
 
-			terrain.render(camera, opaqueRenderPass, sunShadowRenderPass, ldrRenderPass,
-				world_transform.position, selectedObjectID == entityHandle, waterPlaneTransforms, numWaterPlanes);
+			terrain.render(camera, opaque_render_pass, sun_shadow_render_pass, ldr_render_pass,
+				world_transform.position, selected_object_id == entity_handle, water_plane_transforms, num_water_planes);
 		}
-		arena.reset_to_marker(tempMemoryMarker);
+		arena.reset_to_marker(temp_memory_marker);
 
-		for (auto [entityHandle, terrain, position, placement] : world->group(components_group<TerrainComponent, TransformComponent, ProcPlacementComponent>).each())
+		for (auto [entity_handle, terrain, position, placement] : world->group(components_group<TerrainComponent, TransformComponent, ProcPlacementComponent>).each())
 		{
 			const trs& world_transform = position.get_world_transform();
 
 			placement.generate(camera, terrain, world_transform.position);
-			placement.render(ldrRenderPass);
+			placement.render(ldr_render_pass);
 		}
 
-		for (auto [entityHandle, terrain, position, grass] : world->group(components_group<TerrainComponent, TransformComponent, GrassComponent>).each())
+		for (auto [entity_handle, terrain, position, grass] : world->group(components_group<TerrainComponent, TransformComponent, GrassComponent>).each())
 		{
 			const trs& world_transform = position.get_world_transform();
 
-			grass.generate(computePass, camera, terrain, world_transform.position, dt);
-			grass.render(opaqueRenderPass);
+			grass.generate(compute_pass, camera, terrain, world_transform.position, dt);
+			grass.render(opaque_render_pass);
 		}
 	}
 
-	static void renderTrees(World* world, const camera_frustum_planes& frustum, Allocator& arena, Entity::Handle selectedObjectID,
-		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass,
+	static void render_trees(World* world, const CameraFrustumPlanes& frustum, Allocator& arena, Entity::Handle selected_object_id,
+		OpaqueRenderPass* opaque_render_pass, TransparentRenderPass* transparent_render_pass, LDRRenderPass* ldr_render_pass, SunShadowRenderPass* sun_shadow_render_pass,
 		float dt)
 	{
 		CPU_PROFILE_BLOCK("Trees");
@@ -711,38 +711,38 @@ namespace era_engine
 		auto group = world->group(
 			components_group<TransformComponent, MeshComponent, TreeComponent>);
 
-		uint32 groupSize = (uint32)group.size();
+		uint32 group_size = (uint32)group.size();
 
-		if (groupSize == 0)
+		if (group_size == 0)
 		{
 			return;
 		}
 
-		std::unordered_map<MultiMesh*, offset_count> ocPerMesh = getOffsetsPerMesh(group);
+		std::unordered_map<MultiMesh*, OffsetCount> oc_per_mesh = get_offsets_per_mesh(group);
 
-		dx_allocation transformAllocation = dxContext.allocateDynamicBuffer(groupSize * sizeof(mat4), 4);
-		mat4* transforms = (mat4*)transformAllocation.cpuPtr;
+		DXAllocation transform_allocation = dx_context.allocate_dynamic_buffer(group_size * sizeof(mat4), 4);
+		mat4* transforms = (mat4*)transform_allocation.cpu_ptr;
 
-		dx_allocation objectIDAllocation = dxContext.allocateDynamicBuffer(groupSize * sizeof(uint32), 4);
-		uint32* objectIDs = (uint32*)objectIDAllocation.cpuPtr;
+		DXAllocation object_id_allocation = dx_context.allocate_dynamic_buffer(group_size * sizeof(uint32), 4);
+		uint32* object_ids = (uint32*)object_id_allocation.cpu_ptr;
 
-		for (auto [entityHandle, transform, mesh, tree] : group.each())
+		for (auto [entity_handle, transform, mesh, tree] : group.each())
 		{
-			if (!shouldRender(frustum, mesh, transform))
+			if (!should_render(frustum, mesh, transform))
 				continue;
 
-			const dx_mesh& dxMesh = mesh.mesh->mesh;
+			const DXMesh& dx_mesh = mesh.mesh->mesh;
 
-			offset_count& oc = ocPerMesh.at(mesh.mesh.get());
+			OffsetCount& oc = oc_per_mesh.at(mesh.mesh.get());
 
 			uint32 index = oc.offset + oc.count;
 
 			transforms[index] = trs_to_mat4(transform.get_world_transform());
-			objectIDs[index] = (uint32)entityHandle;
+			object_ids[index] = (uint32)entity_handle;
 
 			++oc.count;
 
-			if (entityHandle == selectedObjectID)
+			if (entity_handle == selected_object_id)
 			{
 				for (auto& sm : mesh.mesh->submeshes)
 				{
@@ -750,48 +750,48 @@ namespace era_engine
 					{
 						continue;
 					}
-					renderOutline(ldrRenderPass, transforms[index], dxMesh.vertexBuffer, dxMesh.indexBuffer, sm.info);
+					render_outline(ldr_render_pass, transforms[index], dx_mesh.vertex_buffer, dx_mesh.index_buffer, sm.info);
 				}
 			}
 		}
 
-		D3D12_GPU_VIRTUAL_ADDRESS transformsAddress = transformAllocation.gpuPtr;
-		D3D12_GPU_VIRTUAL_ADDRESS objectIDAddress = objectIDAllocation.gpuPtr;
+		D3D12_GPU_VIRTUAL_ADDRESS transforms_address = transform_allocation.gpu_ptr;
+		D3D12_GPU_VIRTUAL_ADDRESS object_id_address = object_id_allocation.gpu_ptr;
 
-		for (auto& [mesh, oc] : ocPerMesh)
+		for (auto& [mesh, oc] : oc_per_mesh)
 		{
 			if (oc.count == 0)
 				continue;
 
-			D3D12_GPU_VIRTUAL_ADDRESS baseM = transformsAddress + (oc.offset * sizeof(mat4));
-			D3D12_GPU_VIRTUAL_ADDRESS baseObjectID = objectIDAddress + (oc.offset * sizeof(uint32));
+			D3D12_GPU_VIRTUAL_ADDRESS base_m = transforms_address + (oc.offset * sizeof(mat4));
+			D3D12_GPU_VIRTUAL_ADDRESS base_object_id = object_id_address + (oc.offset * sizeof(uint32));
 
-			renderTree(opaqueRenderPass, baseM, oc.count, mesh, dt);
+			render_tree(opaque_render_pass, base_m, oc.count, mesh, dt);
 		}
 	}
 
-	static void renderCloth(World* world, Entity::Handle selectedObjectID,
-		opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass)
+	static void render_cloth(World* world, Entity::Handle selected_object_id,
+		OpaqueRenderPass* opaque_render_pass, TransparentRenderPass* transparent_render_pass, LDRRenderPass* ldr_render_pass, SunShadowRenderPass* sun_shadow_render_pass)
 	{
 		CPU_PROFILE_BLOCK("Cloth");
 
 		auto group = world->group(
 			components_group<TransformComponent, ClothRenderComponent>);
 
-		uint32 groupSize = (uint32)group.size();
+		uint32 group_size = (uint32)group.size();
 
-		if (groupSize == 0)
+		if (group_size == 0)
 		{
 			return;
 		}
 
-		dx_allocation transformAllocation = dxContext.allocateDynamicBuffer(1 * sizeof(mat4), 4);
-		*(mat4*)transformAllocation.cpuPtr = mat4::identity;
+		DXAllocation transform_allocation = dx_context.allocate_dynamic_buffer(1 * sizeof(mat4), 4);
+		*(mat4*)transform_allocation.cpu_ptr = mat4::identity;
 
-		dx_allocation objectIDAllocation = dxContext.allocateDynamicBuffer(groupSize * sizeof(uint32), 4);
-		uint32* objectIDs = (uint32*)objectIDAllocation.cpuPtr;
+		DXAllocation object_id_allocation = dx_context.allocate_dynamic_buffer(group_size * sizeof(uint32), 4);
+		uint32* object_ids = (uint32*)object_id_allocation.cpu_ptr;
 
-		D3D12_GPU_VIRTUAL_ADDRESS objectIDAddress = objectIDAllocation.gpuPtr;
+		D3D12_GPU_VIRTUAL_ADDRESS object_id_address = object_id_allocation.gpu_ptr;
 
 		PbrMaterialDesc desc;
 		// TODO: change it. Temporal solution
@@ -799,218 +799,218 @@ namespace era_engine
 		desc.normal = get_asset_path("/resources/assets/Sponza/textures/sponza_fabric_ddn.jpg");
 		desc.roughness = get_asset_path("/resources/assets/Sponza/textures/sponza_curtain_diff.png");
 		desc.metallic = "";
-		desc.shader = pbr_material_shader_double_sided;
+		desc.shader = PBR_MATERIAL_SHADER_DOUBLE_SIDED;
 
 		static auto cloth_material = create_pbr_material(desc);
 
 		uint32 index = 0;
 		for (auto [entity_handle, cloth, render] : group.each())
 		{
-			objectIDs[index] = (uint32)entity_handle;
-			D3D12_GPU_VIRTUAL_ADDRESS baseObjectID = objectIDAddress + (index * sizeof(uint32));
+			object_ids[index] = (uint32)entity_handle;
+			D3D12_GPU_VIRTUAL_ADDRESS base_object_id = object_id_address + (index * sizeof(uint32));
 
-			auto [vb, prevFrameVB, ib, sm] = render.get_render_data();
+			auto [vb, prev_frame_vb, ib, sm] = render.get_render_data();
 
-			pbr_render_data data;
-			data.transformPtr = transformAllocation.gpuPtr;
-			data.vertexBuffer = vb;
-			data.indexBuffer = ib;
+			PBRRenderData data;
+			data.transform_ptr = transform_allocation.gpu_ptr;
+			data.vertex_buffer = vb;
+			data.index_buffer = ib;
 			data.submesh = sm;
 			data.material = cloth_material;
-			data.numInstances = 1;
+			data.num_instances = 1;
 
-			depth_prepass_data depthPrepassData;
-			depthPrepassData.transformPtr = transformAllocation.gpuPtr;
-			depthPrepassData.prevFrameTransformPtr = transformAllocation.gpuPtr;
-			depthPrepassData.objectIDPtr = baseObjectID;
-			depthPrepassData.vertexBuffer = vb;
-			depthPrepassData.prevFrameVertexBuffer = prevFrameVB.positions ? prevFrameVB.positions : vb.positions;
-			depthPrepassData.indexBuffer = ib;
-			depthPrepassData.submesh = sm;
-			depthPrepassData.numInstances = 1;
-			depthPrepassData.alphaCutoutTextureSRV = (cloth_material && cloth_material->albedo) ? cloth_material->albedo->defaultSRV : dx_cpu_descriptor_handle{};
+			DepthPrepassData depth_prepass_data;
+			depth_prepass_data.transform_ptr = transform_allocation.gpu_ptr;
+			depth_prepass_data.prev_frame_transform_ptr = transform_allocation.gpu_ptr;
+			depth_prepass_data.object_id_ptr = base_object_id;
+			depth_prepass_data.vertex_buffer = vb;
+			depth_prepass_data.prev_frame_vertex_buffer = prev_frame_vb.positions ? prev_frame_vb.positions : vb.positions;
+			depth_prepass_data.index_buffer = ib;
+			depth_prepass_data.submesh = sm;
+			depth_prepass_data.num_instances = 1;
+			depth_prepass_data.alpha_cutout_texture_srv = (cloth_material && cloth_material->albedo) ? cloth_material->albedo->default_srv : DXCPUDescriptorHandle{};
 
-			addToRenderPass(cloth_material->shader, data, depthPrepassData, opaqueRenderPass, transparentRenderPass);
+			add_to_render_pass(cloth_material->shader, data, depth_prepass_data, opaque_render_pass, transparent_render_pass);
 
-			if (sunShadowRenderPass)
+			if (sun_shadow_render_pass)
 			{
-				shadow_render_data shadowData;
-				shadowData.transformPtr = transformAllocation.gpuPtr;
-				shadowData.vertexBuffer = vb.positions;
-				shadowData.indexBuffer = ib;
-				shadowData.numInstances = 1;
-				shadowData.submesh = data.submesh;
+				ShadowRenderData shadow_data;
+				shadow_data.transform_ptr = transform_allocation.gpu_ptr;
+				shadow_data.vertex_buffer = vb.positions;
+				shadow_data.index_buffer = ib;
+				shadow_data.num_instances = 1;
+				shadow_data.submesh = data.submesh;
 
-				addToDynamicRenderPass(cloth_material->shader, shadowData, &sunShadowRenderPass->cascades[0], false);
+				add_to_dynamic_render_pass(cloth_material->shader, shadow_data, &sun_shadow_render_pass->cascades[0], false);
 			}
 
-			if (entity_handle == selectedObjectID)
+			if (entity_handle == selected_object_id)
 			{
-				renderOutline(ldrRenderPass, mat4::identity, vb, ib, sm);
+				render_outline(ldr_render_pass, mat4::identity, vb, ib, sm);
 			}
 
 			++index;
 		}
 	}
 
-	static void setupSunShadowPass(directional_light& sun, sun_shadow_render_pass* sunShadowRenderPass, bool invalidateShadowMapCache)
+	static void setup_sun_shadow_pass(DirectionalLight& sun, SunShadowRenderPass* sun_shadow_render_pass, bool invalidate_shadow_map_cache)
 	{
-		shadow_render_command command = determineSunShadowInfo(sun, invalidateShadowMapCache);
-		sunShadowRenderPass->numCascades = sun.numShadowCascades;
-		for (uint32 i = 0; i < sun.numShadowCascades; ++i)
+		ShadowRenderCommand command = determine_sun_shadow_info(sun, invalidate_shadow_map_cache);
+		sun_shadow_render_pass->num_cascades = sun.num_shadow_cascades;
+		for (uint32 i = 0; i < sun.num_shadow_cascades; ++i)
 		{
-			sun_cascade_render_pass& cascadePass = sunShadowRenderPass->cascades[i];
-			cascadePass.viewport = command.viewports[i];
-			cascadePass.viewProj = sun.viewProjs[i];
+			SunCascadeRenderPass& cascade_pass = sun_shadow_render_pass->cascades[i];
+			cascade_pass.viewport = command.viewports[i];
+			cascade_pass.view_proj = sun.view_projs[i];
 		}
-		sunShadowRenderPass->copyFromStaticCache = !command.renderStaticGeometry;
+		sun_shadow_render_pass->copy_from_static_cache = !command.render_static_geometry;
 	}
 
-	static void setupSpotShadowPasses(World* world, scene_lighting& lighting, bool invalidateShadowMapCache)
+	static void setup_spot_shadow_passes(World* world, SceneLighting& lighting, bool invalidate_shadow_map_cache)
 	{
-		uint32 numSpotLights = world->number_of_components_of_type<SpotLightComponent>();
-		if (numSpotLights)
+		uint32 num_spot_lights = world->number_of_components_of_type<SpotLightComponent>();
+		if (num_spot_lights)
 		{
-			auto* slPtr = (spot_light_cb*)mapBuffer(lighting.spotLightBuffer, false);
-			auto* siPtr = (spot_shadow_info*)mapBuffer(lighting.spotLightShadowInfoBuffer, false);
+			auto* sl_ptr = (SpotLightCB*)map_buffer(lighting.spot_light_buffer, false);
+			auto* si_ptr = (SpotShadowInfo*)map_buffer(lighting.spot_light_shadow_info_buffer, false);
 
-			for (auto [entityHandle, transform, sl] : world->view<TransformComponent, SpotLightComponent>().each())
+			for (auto [entity_handle, transform, sl] : world->view<TransformComponent, SpotLightComponent>().each())
 			{
 				const trs& world_transform = transform.get_world_transform();
 
-				spot_light_cb cb(world_transform.position, world_transform.rotation * vec3(0.f, 0.f, -1.f), sl.color * sl.intensity, sl.innerAngle, sl.outerAngle, sl.distance);
+				SpotLightCB cb(world_transform.position, world_transform.rotation * vec3(0.f, 0.f, -1.f), sl.color * sl.intensity, sl.inner_angle, sl.outer_angle, sl.distance);
 
-				if (sl.castsShadow && lighting.numSpotShadowRenderPasses < lighting.maxNumSpotShadowRenderPasses)
+				if (sl.casts_shadow && lighting.num_spot_shadow_render_passes < lighting.max_num_spot_shadow_render_passes)
 				{
-					cb.shadowInfoIndex = lighting.numSpotShadowRenderPasses++;
+					cb.shadow_info_index = lighting.num_spot_shadow_render_passes++;
 
-					auto [command, si] = determineSpotShadowInfo(cb, (uint32)entityHandle, sl.shadowMapResolution, invalidateShadowMapCache);
-					spot_shadow_render_pass& pass = lighting.spotShadowRenderPasses[cb.shadowInfoIndex];
+					auto [command, si] = determine_spot_shadow_info(cb, (uint32)entity_handle, sl.shadow_map_resolution, invalidate_shadow_map_cache);
+					SpotShadowRenderPass& pass = lighting.spot_shadow_render_passes[cb.shadow_info_index];
 
-					pass.copyFromStaticCache = !command.renderStaticGeometry;
+					pass.copy_from_static_cache = !command.render_static_geometry;
 					pass.viewport = command.viewports[0];
-					pass.viewProjMatrix = si.viewProj;
+					pass.view_proj_matrix = si.view_proj;
 
-					*siPtr++ = si;
+					*si_ptr++ = si;
 				}
 
-				*slPtr++ = cb;
+				*sl_ptr++ = cb;
 			}
 
-			unmapBuffer(lighting.spotLightBuffer, true, { 0, numSpotLights });
-			unmapBuffer(lighting.spotLightShadowInfoBuffer, true, { 0, lighting.numSpotShadowRenderPasses });
+			unmap_buffer(lighting.spot_light_buffer, true, { 0, num_spot_lights });
+			unmap_buffer(lighting.spot_light_shadow_info_buffer, true, { 0, lighting.num_spot_shadow_render_passes });
 		}
 	}
 
-	static void setupPointShadowPasses(World* world, scene_lighting& lighting, bool invalidateShadowMapCache)
+	static void setup_point_shadow_passes(World* world, SceneLighting& lighting, bool invalidate_shadow_map_cache)
 	{
-		uint32 numPointLights = world->number_of_components_of_type<PointLightComponent>();
-		if (numPointLights)
+		uint32 num_point_lights = world->number_of_components_of_type<PointLightComponent>();
+		if (num_point_lights)
 		{
-			auto* plPtr = (point_light_cb*)mapBuffer(lighting.pointLightBuffer, false);
-			auto* siPtr = (point_shadow_info*)mapBuffer(lighting.pointLightShadowInfoBuffer, false);
+			auto* pl_ptr = (PointLightCB*)map_buffer(lighting.point_light_buffer, false);
+			auto* si_ptr = (PointShadowInfo*)map_buffer(lighting.point_light_shadow_info_buffer, false);
 
-			for (auto [entityHandle, position, pl] : world->view<TransformComponent, PointLightComponent>().each())
+			for (auto [entity_handle, position, pl] : world->view<TransformComponent, PointLightComponent>().each())
 			{
 				const trs& world_transform = position.get_world_transform();
 
-				point_light_cb cb(world_transform.position, pl.color * pl.intensity, pl.radius);
+				PointLightCB cb(world_transform.position, pl.color * pl.intensity, pl.radius);
 
-				if (pl.castsShadow && lighting.numPointShadowRenderPasses < lighting.maxNumPointShadowRenderPasses)
+				if (pl.casts_shadow && lighting.num_point_shadow_render_passes < lighting.max_num_point_shadow_render_passes)
 				{
-					cb.shadowInfoIndex = lighting.numPointShadowRenderPasses++;
+					cb.shadow_info_index = lighting.num_point_shadow_render_passes++;
 
-					auto [command, si] = determinePointShadowInfo(cb, (uint32)entityHandle, pl.shadowMapResolution, invalidateShadowMapCache);
-					point_shadow_render_pass& pass = lighting.pointShadowRenderPasses[cb.shadowInfoIndex];
+					auto [command, si] = determine_point_shadow_info(cb, (uint32)entity_handle, pl.shadow_map_resolution, invalidate_shadow_map_cache);
+					PointShadowRenderPass& pass = lighting.point_shadow_render_passes[cb.shadow_info_index];
 
-					pass.copyFromStaticCache0 = !command.renderStaticGeometry;
-					pass.copyFromStaticCache1 = !command.renderStaticGeometry;
+					pass.copy_from_static_cache0 = !command.render_static_geometry;
+					pass.copy_from_static_cache1 = !command.render_static_geometry;
 					pass.viewport0 = command.viewports[0];
 					pass.viewport1 = command.viewports[1];
-					pass.lightPosition = cb.position;
-					pass.maxDistance = cb.radius;
+					pass.light_position = cb.position;
+					pass.max_distance = cb.radius;
 
-					*siPtr++ = si;
+					*si_ptr++ = si;
 				}
 
-				*plPtr++ = cb;
+				*pl_ptr++ = cb;
 			}
 
-			unmapBuffer(lighting.pointLightBuffer, true, { 0, numPointLights });
-			unmapBuffer(lighting.pointLightShadowInfoBuffer, true, { 0, lighting.numPointShadowRenderPasses });
+			unmap_buffer(lighting.point_light_buffer, true, { 0, num_point_lights });
+			unmap_buffer(lighting.point_light_shadow_info_buffer, true, { 0, lighting.num_point_shadow_render_passes });
 		}
 	}
 
-	void render_world(const render_camera& camera, World* world, Allocator& arena, Entity::Handle selectedObjectID, directional_light& sun, scene_lighting& lighting, bool invalidateShadowMapCache, opaque_render_pass* opaqueRenderPass, transparent_render_pass* transparentRenderPass, ldr_render_pass* ldrRenderPass, sun_shadow_render_pass* sunShadowRenderPass, compute_pass* computePass, float dt)
+	void render_world(const RenderCamera& camera, World* world, Allocator& arena, Entity::Handle selected_object_id, DirectionalLight& sun, SceneLighting& lighting, bool invalidate_shadow_map_cache, OpaqueRenderPass* opaque_render_pass, TransparentRenderPass* transparent_render_pass, LDRRenderPass* ldr_render_pass, SunShadowRenderPass* sun_shadow_render_pass, ComputePass* compute_pass, float dt)
 	{
 		CPU_PROFILE_BLOCK("Submit scene render commands");
 
-		setupSunShadowPass(sun, sunShadowRenderPass, invalidateShadowMapCache);
-		setupSpotShadowPasses(world, lighting, invalidateShadowMapCache);
-		setupPointShadowPasses(world, lighting, invalidateShadowMapCache);
+		setup_sun_shadow_pass(sun, sun_shadow_render_pass, invalidate_shadow_map_cache);
+		setup_spot_shadow_passes(world, lighting, invalidate_shadow_map_cache);
+		setup_point_shadow_passes(world, lighting, invalidate_shadow_map_cache);
 
-		shadow_passes staticShadowPasses = {};
-		shadow_passes dynamicShadowPasses = {};
+		ShadowPasses static_shadow_passes = {};
+		ShadowPasses dynamic_shadow_passes = {};
 
-		MemoryMarker tempMemoryMarker = arena.get_marker();
-		uint32 numShadowCastingLights = 1 + lighting.numSpotShadowRenderPasses + lighting.numPointShadowRenderPasses;
-		staticShadowPasses.shadowRenderPasses = arena.allocate<shadow_pass>(numShadowCastingLights);
-		dynamicShadowPasses.shadowRenderPasses = arena.allocate<shadow_pass>(numShadowCastingLights);
+		MemoryMarker temp_memory_marker = arena.get_marker();
+		uint32 num_shadow_casting_lights = 1 + lighting.num_spot_shadow_render_passes + lighting.num_point_shadow_render_passes;
+		static_shadow_passes.shadow_render_passes = arena.allocate<ShadowPass>(num_shadow_casting_lights);
+		dynamic_shadow_passes.shadow_render_passes = arena.allocate<ShadowPass>(num_shadow_casting_lights);
 
 		{
-			auto& outPass = dynamicShadowPasses.shadowRenderPasses[dynamicShadowPasses.numShadowRenderPasses++];
-			outPass.frustum.frustum = getWorldSpaceFrustumPlanes(sunShadowRenderPass->cascades[sunShadowRenderPass->numCascades - 1].viewProj);
-			outPass.frustum.type = light_frustum_standard;
-			outPass.pass = &sunShadowRenderPass->cascades[0];
+			auto& out_pass = dynamic_shadow_passes.shadow_render_passes[dynamic_shadow_passes.num_shadow_render_passes++];
+			out_pass.frustum.frustum = get_world_space_frustum_planes(sun_shadow_render_pass->cascades[sun_shadow_render_pass->num_cascades - 1].view_proj);
+			out_pass.frustum.type = LIGHT_FRUSTUM_STANDARD;
+			out_pass.pass = &sun_shadow_render_pass->cascades[0];
 
-			if (!sunShadowRenderPass->copyFromStaticCache)
+			if (!sun_shadow_render_pass->copy_from_static_cache)
 			{
-				staticShadowPasses.shadowRenderPasses[staticShadowPasses.numShadowRenderPasses++] = outPass;
+				static_shadow_passes.shadow_render_passes[static_shadow_passes.num_shadow_render_passes++] = out_pass;
 			}
 		}
 
-		for (uint32 i = 0; i < lighting.numSpotShadowRenderPasses; ++i)
+		for (uint32 i = 0; i < lighting.num_spot_shadow_render_passes; ++i)
 		{
-			auto pass = &lighting.spotShadowRenderPasses[i];
-			auto& outPass = dynamicShadowPasses.shadowRenderPasses[dynamicShadowPasses.numShadowRenderPasses++];
-			outPass.frustum.frustum = getWorldSpaceFrustumPlanes(pass->viewProjMatrix);
-			outPass.frustum.type = light_frustum_standard;
-			outPass.pass = pass;
+			auto pass = &lighting.spot_shadow_render_passes[i];
+			auto& out_pass = dynamic_shadow_passes.shadow_render_passes[dynamic_shadow_passes.num_shadow_render_passes++];
+			out_pass.frustum.frustum = get_world_space_frustum_planes(pass->view_proj_matrix);
+			out_pass.frustum.type = LIGHT_FRUSTUM_STANDARD;
+			out_pass.pass = pass;
 
-			if (!pass->copyFromStaticCache)
+			if (!pass->copy_from_static_cache)
 			{
-				staticShadowPasses.shadowRenderPasses[staticShadowPasses.numShadowRenderPasses++] = outPass;
+				static_shadow_passes.shadow_render_passes[static_shadow_passes.num_shadow_render_passes++] = out_pass;
 			}
 		}
 
-		for (uint32 i = 0; i < lighting.numPointShadowRenderPasses; ++i)
+		for (uint32 i = 0; i < lighting.num_point_shadow_render_passes; ++i)
 		{
-			auto pass = &lighting.pointShadowRenderPasses[i];
-			auto& outPass = dynamicShadowPasses.shadowRenderPasses[dynamicShadowPasses.numShadowRenderPasses++];
-			outPass.frustum.sphere = { pass->lightPosition, pass->maxDistance };
-			outPass.frustum.type = light_frustum_sphere;
-			outPass.pass = pass;
-			outPass.isPointLight = true;
+			auto pass = &lighting.point_shadow_render_passes[i];
+			auto& out_pass = dynamic_shadow_passes.shadow_render_passes[dynamic_shadow_passes.num_shadow_render_passes++];
+			out_pass.frustum.sphere = { pass->light_position, pass->max_distance };
+			out_pass.frustum.type = LIGHT_FRUSTUM_SPHERE;
+			out_pass.pass = pass;
+			out_pass.is_point_light = true;
 
-			if (!pass->copyFromStaticCache0)
+			if (!pass->copy_from_static_cache0)
 			{
-				staticShadowPasses.shadowRenderPasses[staticShadowPasses.numShadowRenderPasses++] = outPass;
+				static_shadow_passes.shadow_render_passes[static_shadow_passes.num_shadow_render_passes++] = out_pass;
 			}
 		}
 
-		bool sunRenderStaticGeometry = !sunShadowRenderPass->copyFromStaticCache;
+		bool sun_render_static_geometry = !sun_shadow_render_pass->copy_from_static_cache;
 
-		camera_frustum_planes frustum = camera.getWorldSpaceFrustumPlanes();
+		CameraFrustumPlanes frustum = camera.get_world_space_frustum_planes();
 
-		renderStaticObjects(world, frustum, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, staticShadowPasses);
-		renderDynamicObjects(world, frustum, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, dynamicShadowPasses);
-		renderAnimatedObjects(world, frustum, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, dynamicShadowPasses);
-		renderTerrain(camera, world, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, sunRenderStaticGeometry ? sunShadowRenderPass : 0,
-			computePass, dt);
-		renderTrees(world, frustum, arena, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, sunShadowRenderPass, dt);
-		renderCloth(world, selectedObjectID, opaqueRenderPass, transparentRenderPass, ldrRenderPass, sunShadowRenderPass);
+		render_static_objects(world, frustum, arena, selected_object_id, opaque_render_pass, transparent_render_pass, ldr_render_pass, static_shadow_passes);
+		render_dynamic_objects(world, frustum, arena, selected_object_id, opaque_render_pass, transparent_render_pass, ldr_render_pass, dynamic_shadow_passes);
+		render_animated_objects(world, frustum, arena, selected_object_id, opaque_render_pass, transparent_render_pass, ldr_render_pass, dynamic_shadow_passes);
+		render_terrain(camera, world, arena, selected_object_id, opaque_render_pass, transparent_render_pass, ldr_render_pass, sun_render_static_geometry ? sun_shadow_render_pass : 0,
+			compute_pass, dt);
+		render_trees(world, frustum, arena, selected_object_id, opaque_render_pass, transparent_render_pass, ldr_render_pass, sun_shadow_render_pass, dt);
+		render_cloth(world, selected_object_id, opaque_render_pass, transparent_render_pass, ldr_render_pass, sun_shadow_render_pass);
 
-		arena.reset_to_marker(tempMemoryMarker);
+		arena.reset_to_marker(temp_memory_marker);
 	}
 
 }

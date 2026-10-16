@@ -20,87 +20,87 @@
 
 namespace era_engine
 {
-	static dx_pipeline generatePointsPipeline;
-	static dx_pipeline prefixSumPipeline;
-	static dx_pipeline createDrawCallsPipeline;
-	static dx_pipeline createTransformsPipeline;
+	static DXPipeline generate_points_pipeline;
+	static DXPipeline prefix_sum_pipeline;
+	static DXPipeline create_draw_calls_pipeline;
+	static DXPipeline create_transforms_pipeline;
 
-	static dx_pipeline visualizePointsPipeline;
+	static DXPipeline visualize_points_pipeline;
 
-	static dx_mesh visualizePointsMesh;
-	static SubmeshInfo visualizePointsSubmesh;
-	static dx_command_signature visualizePointsCommandSignature;
+	static DXMesh visualize_points_mesh;
+	static SubmeshInfo visualize_points_submesh;
+	static DXCommandSignature visualize_points_command_signature;
 
-	void initializeProceduralPlacementPipelines()
+	void initialize_procedural_placement_pipelines()
 	{
-		generatePointsPipeline = createReloadablePipeline("proc_placement_generate_points_cs");
-		prefixSumPipeline = createReloadablePipeline("proc_placement_prefix_sum_cs");
-		createDrawCallsPipeline = createReloadablePipeline("proc_placement_create_draw_calls_cs");
-		createTransformsPipeline = createReloadablePipeline("proc_placement_create_transforms_cs");
+		generate_points_pipeline = create_reloadable_pipeline("proc_placement_generate_points_cs");
+		prefix_sum_pipeline = create_reloadable_pipeline("proc_placement_prefix_sum_cs");
+		create_draw_calls_pipeline = create_reloadable_pipeline("proc_placement_create_draw_calls_cs");
+		create_transforms_pipeline = create_reloadable_pipeline("proc_placement_create_transforms_cs");
 
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.inputLayout(inputLayout_position_uv_normal_tangent)
-				.renderTargets(ldrFormat, depthStencilFormat);
+				.input_layout(input_layout_position_uv_normal_tangent)
+				.render_targets(ldr_format, depth_stencil_format);
 
-			visualizePointsPipeline = createReloadablePipeline(desc, { "proc_placement_points_vs", "proc_placement_points_ps" }, rs_in_pixel_shader, true);
+			visualize_points_pipeline = create_reloadable_pipeline(desc, { "proc_placement_points_vs", "proc_placement_points_ps" }, RS_IN_PIXEL_SHADER, true);
 		}
 
 
-		mesh_builder builder(mesh_creation_flags_with_positions);
+		MeshBuilder builder(MESH_CREATION_FLAGS_WITH_POSITIONS);
 		//builder.pushSphere({});
-		builder.pushArrow({});
-		visualizePointsSubmesh = builder.endSubmesh();
-		visualizePointsMesh = builder.createDXMesh();
+		builder.push_arrow({});
+		visualize_points_submesh = builder.end_submesh();
+		visualize_points_mesh = builder.create_dx_mesh();
 
 
-		D3D12_INDIRECT_ARGUMENT_DESC argumentDescs[2] = {};
-		argumentDescs[0].Type = D3D12_INDIRECT_ARGUMENT_TYPE_SHADER_RESOURCE_VIEW;
-		argumentDescs[0].ShaderResourceView.RootParameterIndex = 1;
-		argumentDescs[1].Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
-		visualizePointsCommandSignature = createCommandSignature(*visualizePointsPipeline.rootSignature, argumentDescs, arraysize(argumentDescs), sizeof(placement_draw));
+		D3D12_INDIRECT_ARGUMENT_DESC argument_descs[2] = {};
+		argument_descs[0].Type = D3D12_INDIRECT_ARGUMENT_TYPE_SHADER_RESOURCE_VIEW;
+		argument_descs[0].ShaderResourceView.RootParameterIndex = 1;
+		argument_descs[1].Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
+		visualize_points_command_signature = create_command_signature(*visualize_points_pipeline.root_signature, argument_descs, arraysize(argument_descs), sizeof(PlacementDraw));
 	}
 
-	struct render_proc_placement_layer_data
+	struct RenderProcPlacementLayerData
 	{
-		ref<dx_buffer> commandBuffer;
-		uint32 commandBufferOffset;
+		ref<DXBuffer> command_buffer;
+		uint32 command_buffer_offset;
 
-		dx_vertex_buffer_group_view vertexBuffer;
-		dx_index_buffer_view indexBuffer;
+		DXVertexBufferGroupView vertex_buffer;
+		DXIndexBufferView index_buffer;
 
-		ref<dx_texture> albedo;
+		ref<DXTexture> albedo;
 	};
 
-	struct render_proc_placement_layer_pipeline
+	struct RenderProcPlacementLayerPipeline
 	{
 		PIPELINE_SETUP_DECL;
-		PIPELINE_RENDER_DECL(render_proc_placement_layer_data);
+		PIPELINE_RENDER_DECL(RenderProcPlacementLayerData);
 	};
 
-	PIPELINE_SETUP_IMPL(render_proc_placement_layer_pipeline)
+	PIPELINE_SETUP_IMPL(RenderProcPlacementLayerPipeline)
 	{
-		cl->setPipelineState(*visualizePointsPipeline.pipeline);
-		cl->setGraphicsRootSignature(*visualizePointsPipeline.rootSignature);
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		cl->setGraphicsDynamicConstantBuffer(0, common.cameraCBV);
+		cl->set_pipeline_state(*visualize_points_pipeline.pipeline);
+		cl->set_graphics_root_signature(*visualize_points_pipeline.root_signature);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_graphics_dynamic_constant_buffer(0, common.camera_cbv);
 	}
 
-	PIPELINE_RENDER_IMPL(render_proc_placement_layer_pipeline, render_proc_placement_layer_data)
+	PIPELINE_RENDER_IMPL(RenderProcPlacementLayerPipeline, RenderProcPlacementLayerData)
 	{
-		cl->setVertexBuffer(0, data.vertexBuffer.positions);
-		cl->setVertexBuffer(1, data.vertexBuffer.others);
-		cl->setIndexBuffer(data.indexBuffer);
-		cl->setDescriptorHeapSRV(2, 0, data.albedo);
-		cl->drawIndirect(visualizePointsCommandSignature, 1, data.commandBuffer, data.commandBufferOffset * sizeof(placement_draw));
+		cl->set_vertex_buffer(0, data.vertex_buffer.positions);
+		cl->set_vertex_buffer(1, data.vertex_buffer.others);
+		cl->set_index_buffer(data.index_buffer);
+		cl->set_descriptor_heap_srv(2, 0, data.albedo);
+		cl->draw_indirect(visualize_points_command_signature, 1, data.command_buffer, data.command_buffer_offset * sizeof(PlacementDraw));
 	}
 
 #define READBACK 0
 
 #if READBACK
-	static ref<dx_buffer> readbackIndirect;
-	static ref<dx_buffer> readbackMeshCounts;
-	static ref<dx_buffer> readbackMeshOffsets;
+	static ref<DXBuffer> readbackIndirect;
+	static ref<DXBuffer> readbackMeshCounts;
+	static ref<DXBuffer> readbackMeshOffsets;
 #endif
 
 	RTTR_REGISTRATION
@@ -108,40 +108,40 @@ namespace era_engine
 		using namespace rttr;
 		rttr::registration::class_<ProcPlacementComponent>("ProcPlacementComponent")
 			.constructor<>()
-			.constructor<ref<Entity::EcsData>, const std::vector<proc_placement_layer_desc>&>()
+			.constructor<ref<Entity::EcsData>, const std::vector<ProcPlacementLayerDesc>&>()
 			.property("layers", &ProcPlacementComponent::layers);
 	}
 
-	ProcPlacementComponent::ProcPlacementComponent(ref<Entity::EcsData> _data, const std::vector<proc_placement_layer_desc>& _layers)
+	ProcPlacementComponent::ProcPlacementComponent(ref<Entity::EcsData> _data, const std::vector<ProcPlacementLayerDesc>& _layers)
 		: Component(_data)
 	{
-		std::vector<placement_draw> drawArgs;
+		std::vector<PlacementDraw> draw_args;
 
 		{
-			placement_draw draw;
-			draw.draw.BaseVertexLocation = visualizePointsSubmesh.baseVertex;
-			draw.draw.IndexCountPerInstance = visualizePointsSubmesh.numIndices;
-			draw.draw.StartIndexLocation = visualizePointsSubmesh.firstIndex;
+			PlacementDraw draw;
+			draw.draw.BaseVertexLocation = visualize_points_submesh.base_vertex;
+			draw.draw.IndexCountPerInstance = visualize_points_submesh.num_indices;
+			draw.draw.StartIndexLocation = visualize_points_submesh.first_index;
 			draw.draw.InstanceCount = 0;
 			draw.draw.StartInstanceLocation = 0;
-			drawArgs.push_back(draw);
+			draw_args.push_back(draw);
 
 			submesh_to_mesh.push_back(0);
 		}
 
-		uint32 globalMeshOffset = 1;
+		uint32 global_mesh_offset = 1;
 
-		for (const auto& layerDesc : layers)
+		for (const auto& layer_desc : layers)
 		{
 			PlacementLayer layer;
-			layer.name = layerDesc.name;
-			layer.footprint = layerDesc.footprint;
-			layer.global_mesh_offset = globalMeshOffset;
+			layer.name = layer_desc.name;
+			layer.footprint = layer_desc.footprint;
+			layer.global_mesh_offset = global_mesh_offset;
 			layer.num_meshes = 0;
 
 			for (uint32 i = 0; i < 4; ++i)
 			{
-				const ref<MultiMesh>& mesh = layerDesc.meshes[i];
+				const ref<MultiMesh>& mesh = layer_desc.meshes[i];
 				layer.meshes[i] = mesh;
 
 				if (mesh)
@@ -150,40 +150,40 @@ namespace era_engine
 
 					for (const auto& sub : mesh->submeshes)
 					{
-						placement_draw draw;
-						draw.draw.BaseVertexLocation = sub.info.baseVertex;
-						draw.draw.IndexCountPerInstance = sub.info.numIndices;
-						draw.draw.StartIndexLocation = sub.info.firstIndex;
+						PlacementDraw draw;
+						draw.draw.BaseVertexLocation = sub.info.base_vertex;
+						draw.draw.IndexCountPerInstance = sub.info.num_indices;
+						draw.draw.StartIndexLocation = sub.info.first_index;
 						draw.draw.InstanceCount = 0;
 						draw.draw.StartInstanceLocation = 0;
-						drawArgs.push_back(draw);
+						draw_args.push_back(draw);
 
-						submesh_to_mesh.push_back(globalMeshOffset + i);
+						submesh_to_mesh.push_back(global_mesh_offset + i);
 
 						has_valid_meshes = true;
 					}
 				}
 			}
 
-			globalMeshOffset += layer.num_meshes;
+			global_mesh_offset += layer.num_meshes;
 
 			this->layers.push_back(layer);
 		}
 
-		ASSERT(globalMeshOffset <= 512); // Prefix sum currently only supports up to 512 points.
+		ASSERT(global_mesh_offset <= 512); // Prefix sum currently only supports up to 512 points.
 
-		placement_point_buffer = createBuffer(sizeof(placement_point), 100000, 0, true);
-		transform_buffer = createBuffer(sizeof(placement_transform), 100000, 0, true);
-		mesh_count_buffer = createBuffer(sizeof(uint32), globalMeshOffset, 0, true, true);
-		mesh_offset_buffer = createBuffer(sizeof(uint32), globalMeshOffset, 0, true, true);
-		submesh_to_mesh_buffer = createBuffer(sizeof(uint32), (uint32)submesh_to_mesh.size(), submesh_to_mesh.data());
-		draw_indirect_buffer = createBuffer(sizeof(placement_draw), (uint32)drawArgs.size(), drawArgs.data(), true);
+		placement_point_buffer = create_buffer(sizeof(PlacementPoint), 100000, 0, true);
+		transform_buffer = create_buffer(sizeof(PlacementTransform), 100000, 0, true);
+		mesh_count_buffer = create_buffer(sizeof(uint32), global_mesh_offset, 0, true, true);
+		mesh_offset_buffer = create_buffer(sizeof(uint32), global_mesh_offset, 0, true, true);
+		submesh_to_mesh_buffer = create_buffer(sizeof(uint32), (uint32)submesh_to_mesh.size(), submesh_to_mesh.data());
+		draw_indirect_buffer = create_buffer(sizeof(PlacementDraw), (uint32)draw_args.size(), draw_args.data(), true);
 
 
 #if READBACK
-		readbackIndirect = createReadbackBuffer(sizeof(placement_draw), (uint32)drawArgs.size());
-		readbackMeshCounts = createReadbackBuffer(sizeof(uint32), globalMeshOffset);
-		readbackMeshOffsets = createReadbackBuffer(sizeof(uint32), globalMeshOffset);
+		readbackIndirect = create_readback_buffer(sizeof(PlacementDraw), (uint32)draw_args.size());
+		readbackMeshCounts = create_readback_buffer(sizeof(uint32), global_mesh_offset);
+		readbackMeshOffsets = create_readback_buffer(sizeof(uint32), global_mesh_offset);
 #endif
 	}
 
@@ -191,14 +191,14 @@ namespace era_engine
 	{
 	}
 
-	void ProcPlacementComponent::generate(const render_camera& camera, const TerrainComponent& terrain, const vec3& position_offset)
+	void ProcPlacementComponent::generate(const RenderCamera& camera, const TerrainComponent& terrain, const vec3& position_offset)
 	{
 		if (!has_valid_meshes)
 		{
 			return;
 		}
 
-		dx_command_list* cl = dxContext.getFreeComputeCommandList(false);
+		DXCommandList* cl = dx_context.get_free_compute_command_list(false);
 
 		{
 			PROFILE_ALL(cl, "Procedural placement");
@@ -206,48 +206,48 @@ namespace era_engine
 			{
 				PROFILE_ALL(cl, "Generate points");
 
-				camera_frustum_planes frustum = camera.getWorldSpaceFrustumPlanes();
+				CameraFrustumPlanes frustum = camera.get_world_space_frustum_planes();
 
-				const float radiusInUVSpace = sqrt(1.f / (2.f * sqrt(3.f) * arraysize(POISSON_SAMPLES)));
-				float diameterInUVSpace = radiusInUVSpace * 2.f;
-				float diameterInWorldSpace = diameterInUVSpace * terrain.chunkSize;
+				const float radius_in_uv_space = sqrt(1.f / (2.f * sqrt(3.f) * arraysize(POISSON_SAMPLES)));
+				float diameter_in_uv_space = radius_in_uv_space * 2.f;
+				float diameter_in_world_space = diameter_in_uv_space * terrain.chunk_size;
 
-				cl->setPipelineState(*generatePointsPipeline.pipeline);
-				cl->setComputeRootSignature(*generatePointsPipeline.rootSignature);
+				cl->set_pipeline_state(*generate_points_pipeline.pipeline);
+				cl->set_compute_root_signature(*generate_points_pipeline.root_signature);
 
-				vec3 minCorner = terrain.get_min_corner(position_offset);
-				vec3 chunkSize(terrain.chunkSize, terrain.amplitudeScale, terrain.chunkSize);
+				vec3 min_corner = terrain.get_min_corner(position_offset);
+				vec3 chunk_size(terrain.chunk_size, terrain.amplitude_scale, terrain.chunk_size);
 
-				cl->clearUAV(mesh_count_buffer, 0u);
+				cl->clear_uav(mesh_count_buffer, 0u);
 
-				for (uint32 z = 0; z < terrain.chunksPerDim; ++z)
+				for (uint32 z = 0; z < terrain.chunks_per_dim; ++z)
 				{
-					for (uint32 x = 0; x < terrain.chunksPerDim; ++x)
+					for (uint32 x = 0; x < terrain.chunks_per_dim; ++x)
 					{
 						auto& chunk = terrain.chunk(x, z);
-						vec3 chunkMinCorner = minCorner + vec3(x * terrain.chunkSize, 0.f, z * terrain.chunkSize);
-						vec3 chunkMaxCorner = chunkMinCorner + chunkSize;
+						vec3 chunk_min_corner = min_corner + vec3(x * terrain.chunk_size, 0.f, z * terrain.chunk_size);
+						vec3 chunk_max_corner = chunk_min_corner + chunk_size;
 
-						bounding_box aabb = { chunkMinCorner, chunkMaxCorner };
-						if (!frustum.cullWorldSpaceAABB(aabb))
+						BoundingBox aabb = { chunk_min_corner, chunk_max_corner };
+						if (!frustum.cull_world_space_aabb(aabb))
 						{
-							cl->setDescriptorHeapSRV(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 0, chunk.heightmap);
-							cl->setDescriptorHeapSRV(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 1, chunk.normalmap);
-							cl->setDescriptorHeapUAV(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 2, placement_point_buffer);
-							cl->setDescriptorHeapUAV(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 3, mesh_count_buffer);
+							cl->set_descriptor_heap_srv(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 0, chunk.heightmap);
+							cl->set_descriptor_heap_srv(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 1, chunk.normalmap);
+							cl->set_descriptor_heap_uav(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 2, placement_point_buffer);
+							cl->set_descriptor_heap_uav(PROC_PLACEMENT_GENERATE_POINTS_RS_RESOURCES, 3, mesh_count_buffer);
 
 
-							proc_placement_generate_points_cb cb;
-							cb.amplitudeScale = terrain.amplitudeScale;
-							cb.chunkCorner = chunkMinCorner;
-							cb.chunkSize = terrain.chunkSize;
+							ProcPlacementGeneratePointsCB cb;
+							cb.amplitude_scale = terrain.amplitude_scale;
+							cb.chunk_corner = chunk_min_corner;
+							cb.chunk_size = terrain.chunk_size;
 
 							for (const auto& layer : layers)
 							{
 								float footprint = layer.footprint;
 
-								float scaling = diameterInWorldSpace / footprint;
-								uint32 numGroupsPerDim = (uint32)ceil(scaling);
+								float scaling = diameter_in_world_space / footprint;
+								uint32 num_groups_per_dim = (uint32)ceil(scaling);
 
 								cb.densities = vec4(0.f);
 								for (uint32 i = 0; i < layer.num_meshes; ++i)
@@ -255,15 +255,15 @@ namespace era_engine
 									cb.densities.data[i] = layer.densities[i];
 								}
 
-								cb.uvScale = 1.f / scaling;
-								cb.numMeshes = layer.num_meshes;
-								cb.globalMeshOffset = layer.global_mesh_offset;
+								cb.uv_scale = 1.f / scaling;
+								cb.num_meshes = layer.num_meshes;
+								cb.global_mesh_offset = layer.global_mesh_offset;
 
-								cl->setCompute32BitConstants(PROC_PLACEMENT_GENERATE_POINTS_RS_CB, cb);
+								cl->set_compute_32bit_constants(PROC_PLACEMENT_GENERATE_POINTS_RS_CB, cb);
 
-								cl->dispatch(numGroupsPerDim, numGroupsPerDim, 1);
+								cl->dispatch(num_groups_per_dim, num_groups_per_dim, 1);
 
-								barrier_batcher(cl)
+								BarrierBatcher(cl)
 									.uav(placement_point_buffer)
 									.uav(mesh_count_buffer);
 							}
@@ -272,98 +272,98 @@ namespace era_engine
 				}
 			}
 
-			barrier_batcher(cl)
+			BarrierBatcher(cl)
 				.transition(mesh_count_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ)
 				.transition(placement_point_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
 
 			{
 				PROFILE_ALL(cl, "Prefix sum");
 
-				cl->setPipelineState(*prefixSumPipeline.pipeline);
-				cl->setComputeRootSignature(*prefixSumPipeline.rootSignature);
+				cl->set_pipeline_state(*prefix_sum_pipeline.pipeline);
+				cl->set_compute_root_signature(*prefix_sum_pipeline.root_signature);
 
-				cl->setCompute32BitConstants(PROC_PLACEMENT_PREFIX_SUM_RS_CB, prefix_sum_cb{ mesh_count_buffer->elementCount - 1 });
+				cl->set_compute_32bit_constants(PROC_PLACEMENT_PREFIX_SUM_RS_CB, PrefixSumCB{ mesh_count_buffer->element_count - 1 });
 
 				// Offset by 1 element, since that is the point count.
-				cl->setRootComputeUAV(PROC_PLACEMENT_PREFIX_SUM_RS_OUTPUT, mesh_offset_buffer->gpuVirtualAddress + mesh_offset_buffer->elementSize);
-				cl->setRootComputeSRV(PROC_PLACEMENT_PREFIX_SUM_RS_INPUT, mesh_count_buffer->gpuVirtualAddress + mesh_count_buffer->elementSize);
+				cl->set_root_compute_uav(PROC_PLACEMENT_PREFIX_SUM_RS_OUTPUT, mesh_offset_buffer->gpu_virtual_address + mesh_offset_buffer->element_size);
+				cl->set_root_compute_srv(PROC_PLACEMENT_PREFIX_SUM_RS_INPUT, mesh_count_buffer->gpu_virtual_address + mesh_count_buffer->element_size);
 
 				cl->dispatch(1);
 			}
 
-			barrier_batcher(cl)
+			BarrierBatcher(cl)
 				.transition(mesh_offset_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
 
 			{
 				PROFILE_ALL(cl, "Create draw calls");
 
-				cl->setPipelineState(*createDrawCallsPipeline.pipeline);
-				cl->setComputeRootSignature(*createDrawCallsPipeline.rootSignature);
+				cl->set_pipeline_state(*create_draw_calls_pipeline.pipeline);
+				cl->set_compute_root_signature(*create_draw_calls_pipeline.root_signature);
 
-				proc_placement_create_draw_calls_cb cb;
-				cb.transformAddressHigh = (uint32)(transform_buffer->gpuVirtualAddress >> 32);
-				cb.transformAddressLow = (uint32)(transform_buffer->gpuVirtualAddress & 0xFFFFFFFF);
-				cb.stride = transform_buffer->elementSize;
-				cl->setCompute32BitConstants(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_CB, cb);
-				cl->setRootComputeUAV(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_OUTPUT, draw_indirect_buffer);
-				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_MESH_COUNTS, mesh_count_buffer);
-				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_MESH_OFFSETS, mesh_offset_buffer);
-				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_SUBMESH_TO_MESH, submesh_to_mesh_buffer);
+				ProcPlacementCreateDrawCallsCB cb;
+				cb.transform_address_high = (uint32)(transform_buffer->gpu_virtual_address >> 32);
+				cb.transform_address_low = (uint32)(transform_buffer->gpu_virtual_address & 0xFFFFFFFF);
+				cb.stride = transform_buffer->element_size;
+				cl->set_compute_32bit_constants(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_CB, cb);
+				cl->set_root_compute_uav(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_OUTPUT, draw_indirect_buffer);
+				cl->set_root_compute_srv(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_MESH_COUNTS, mesh_count_buffer);
+				cl->set_root_compute_srv(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_MESH_OFFSETS, mesh_offset_buffer);
+				cl->set_root_compute_srv(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS_SUBMESH_TO_MESH, submesh_to_mesh_buffer);
 
-				cl->dispatch(bucketize(draw_indirect_buffer->elementCount, PROC_PLACEMENT_CREATE_DRAW_CALLS_BLOCK_SIZE));
+				cl->dispatch(bucketize(draw_indirect_buffer->element_count, PROC_PLACEMENT_CREATE_DRAW_CALLS_BLOCK_SIZE));
 			}
 
 #if READBACK
-			cl->copyBufferRegionToBuffer(meshCountBuffer, readbackMeshCounts, 0, meshCountBuffer->elementCount, 0);
+			cl->copy_buffer_region_to_buffer(meshCountBuffer, readbackMeshCounts, 0, meshCountBuffer->element_count, 0);
 #endif
 
-			barrier_batcher(cl)
+			BarrierBatcher(cl)
 				.transition(mesh_count_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 				.uav(draw_indirect_buffer);
 
 			{
 				PROFILE_ALL(cl, "Create transforms");
 
-				cl->setPipelineState(*createTransformsPipeline.pipeline);
-				cl->setComputeRootSignature(*createTransformsPipeline.rootSignature);
+				cl->set_pipeline_state(*create_transforms_pipeline.pipeline);
+				cl->set_compute_root_signature(*create_transforms_pipeline.root_signature);
 
-				cl->setRootComputeUAV(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_TRANSFORMS, transform_buffer);
-				cl->setRootComputeUAV(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_MESH_COUNTS, mesh_count_buffer);
-				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_POINTS, placement_point_buffer);
-				cl->setRootComputeSRV(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_MESH_OFFSETS, mesh_offset_buffer);
+				cl->set_root_compute_uav(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_TRANSFORMS, transform_buffer);
+				cl->set_root_compute_uav(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_MESH_COUNTS, mesh_count_buffer);
+				cl->set_root_compute_srv(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_POINTS, placement_point_buffer);
+				cl->set_root_compute_srv(PROC_PLACEMENT_CREATE_TRANSFORMS_RS_MESH_OFFSETS, mesh_offset_buffer);
 
-				cl->dispatch(bucketize(placement_point_buffer->elementCount, PROC_PLACEMENT_CREATE_TRANSFORMS_BLOCK_SIZE)); // TODO
-				cl->uavBarrier(transform_buffer);
-				cl->uavBarrier(mesh_count_buffer);
+				cl->dispatch(bucketize(placement_point_buffer->element_count, PROC_PLACEMENT_CREATE_TRANSFORMS_BLOCK_SIZE)); // TODO
+				cl->uav_barrier(transform_buffer);
+				cl->uav_barrier(mesh_count_buffer);
 			}
 	}
 
 #if READBACK
-		cl->transitionBarrier(draw_indirect_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
-		cl->copyBufferRegionToBuffer(draw_indirect_buffer, readbackIndirect, 0, draw_indirect_buffer->elementCount, 0);
-		cl->copyBufferRegionToBuffer(mesh_offset_buffer, readbackMeshOffsets, 0, mesh_offset_buffer->elementCount, 0);
+		cl->transition_barrier(draw_indirect_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
+		cl->copy_buffer_region_to_buffer(draw_indirect_buffer, readbackIndirect, 0, draw_indirect_buffer->element_count, 0);
+		cl->copy_buffer_region_to_buffer(mesh_offset_buffer, readbackMeshOffsets, 0, mesh_offset_buffer->element_count, 0);
 #endif
 
-		dxContext.executeCommandList(cl);
+		dx_context.execute_command_list(cl);
 
 #if READBACK
-		dxContext.flushApplication();
+		dx_context.flush_application();
 
 		{
-			placement_draw* draw = (placement_draw*)mapBuffer(readbackIndirect, true);
-			uint32* offsets = (uint32*)mapBuffer(readbackMeshOffsets, true);
-			uint32* counts = (uint32*)mapBuffer(readbackMeshCounts, true);
+			PlacementDraw* draw = (PlacementDraw*)map_buffer(readbackIndirect, true);
+			uint32* offsets = (uint32*)map_buffer(readbackMeshOffsets, true);
+			uint32* counts = (uint32*)map_buffer(readbackMeshCounts, true);
 
-			for (uint32 i = 0; i < readbackIndirect->elementCount; ++i)
+			for (uint32 i = 0; i < readbackIndirect->element_count; ++i)
 			{
-				uint32 meshID = submeshToMesh[i];
+				uint32 mesh_id = submeshToMesh[i];
 
-				D3D12_GPU_VIRTUAL_ADDRESS expectedAddress = transformBuffer->gpuVirtualAddress + offsets[meshID] * transformBuffer->elementSize;
+				D3D12_GPU_VIRTUAL_ADDRESS expectedAddress = transformBuffer->gpu_virtual_address + offsets[mesh_id] * transformBuffer->element_size;
 				uint32 expectedHigh = (uint32)(expectedAddress >> 32);
 				uint32 expectedLow = (uint32)(expectedAddress & 0xFFFFFFFF);
 
-				ASSERT(draw[i].transformSRVHigh == expectedHigh);
-				ASSERT(draw[i].transformSRVLow == expectedLow);
+				ASSERT(draw[i].transform_srv_high == expectedHigh);
+				ASSERT(draw[i].transform_srv_low == expectedLow);
 			}
 
 			LOG_MESSAGE("%u vs %u (%u), %u vs %u (%u), %u vs %u (%u)",
@@ -371,23 +371,23 @@ namespace era_engine
 				draw[1].draw.InstanceCount, counts[1], offsets[1],
 				draw[2].draw.InstanceCount, counts[2], offsets[2]);
 
-			unmapBuffer(readbackMeshCounts, false);
-			unmapBuffer(readbackMeshOffsets, false);
-			unmapBuffer(readbackIndirect, false);
+			unmap_buffer(readbackMeshCounts, false);
+			unmap_buffer(readbackMeshOffsets, false);
+			unmap_buffer(readbackIndirect, false);
 		}
 #endif
 	}
 
-	void ProcPlacementComponent::render(ldr_render_pass* render_pass)
+	void ProcPlacementComponent::render(LDRRenderPass* render_pass)
 	{
 #if 0
 
-		render_proc_placement_layer_data data = { transform_buffer, draw_indirect_buffer, 0, visualize_points_mesh.vertexBuffer, visualize_points_mesh.indexBuffer };
-		render_pass->renderObject<render_proc_placement_layer_pipeline>(data);
+		RenderProcPlacementLayerData data = { transform_buffer, draw_indirect_buffer, 0, visualize_points_mesh.vertex_buffer, visualize_points_mesh.index_buffer };
+		render_pass->render_object<RenderProcPlacementLayerPipeline>(data);
 
 #else
 
-		uint32 drawCallOffset = 1;
+		uint32 draw_call_offset = 1;
 
 		for (const auto& layer : layers)
 		{
@@ -396,12 +396,12 @@ namespace era_engine
 				for (uint32 j = 0; j < (uint32)layer.meshes[i]->submeshes.size(); ++j)
 				{
 					// TODO: We could pack the vertex and index buffer into the indirect call, but I'm not sure if that fits well with stuff like procedural objects.
-					render_proc_placement_layer_data data = { draw_indirect_buffer, drawCallOffset,
-						layer.meshes[i]->mesh.vertexBuffer, layer.meshes[i]->mesh.indexBuffer, layer.meshes[i]->submeshes[j].material->albedo };
+					RenderProcPlacementLayerData data = { draw_indirect_buffer, draw_call_offset,
+						layer.meshes[i]->mesh.vertex_buffer, layer.meshes[i]->mesh.index_buffer, layer.meshes[i]->submeshes[j].material->albedo };
 
-					render_pass->renderObject<render_proc_placement_layer_pipeline>(data);
+					render_pass->render_object<RenderProcPlacementLayerPipeline>(data);
 
-					++drawCallOffset;
+					++draw_call_offset;
 				}
 			}
 		}

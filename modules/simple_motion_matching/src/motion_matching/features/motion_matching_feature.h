@@ -28,7 +28,7 @@ namespace era_engine
 
 		World* world = nullptr;
 
-		Entity entity = Entity::Null;
+		Entity entity = Entity::null;
 
 		const animation::SkeletonComponent* skeleton_component = nullptr;
 		const animation::AnimationComponent* animation_component = nullptr;

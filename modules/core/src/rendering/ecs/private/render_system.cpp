@@ -49,43 +49,43 @@ namespace era_engine
 		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
 		ASSERT(renderer_holder_rc != nullptr);
 
-		if (dxContext.featureSupport.raytracing())
+		if (dx_context.feature_support.raytracing())
 		{
-			raytracingTLAS.initialize();
+			raytracing_tlas.initialize();
 		}
 
-		renderer_holder_rc->camera.initializeIngame(vec3::zero, quat::identity, deg2rad(70.f), 0.2f);
-		renderer_holder_rc->environment.setFromTexture(get_asset_path("/resources/assets/sky/sunset_in_the_chalk_quarry_4k.hdr"));
-		renderer_holder_rc->environment.lightProbeGrid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
+		renderer_holder_rc->camera.initialize_ingame(vec3::zero, quat::identity, deg2rad(70.f), 0.2f);
+		renderer_holder_rc->environment.set_from_texture(get_asset_path("/resources/assets/sky/sunset_in_the_chalk_quarry_4k.hdr"));
+		renderer_holder_rc->environment.light_probe_grid.initialize(vec3(-20.f, -1.f, -20.f), vec3(40.f, 20.f, 40.f), 1.5f);
 
 		renderer_holder_rc->sun.direction = normalize(vec3(-0.6f, -1.f, -0.3f));
 		renderer_holder_rc->sun.color = vec3(1.f, 0.93f, 0.76f);
 		renderer_holder_rc->sun.intensity = 11.1f;
-		renderer_holder_rc->sun.numShadowCascades = 3;
-		renderer_holder_rc->sun.shadowDimensions = 2048;
-		renderer_holder_rc->sun.cascadeDistances = vec4(9.f, 25.f, 50.f, 10000.f);
+		renderer_holder_rc->sun.num_shadow_cascades = 3;
+		renderer_holder_rc->sun.shadow_dimensions = 2048;
+		renderer_holder_rc->sun.cascade_distances = vec4(9.f, 25.f, 50.f, 10000.f);
 		renderer_holder_rc->sun.bias = vec4(0.0001f, 0.000784f, 0.000524f, 0.0035f);
-		renderer_holder_rc->sun.blendDistances = vec4(5.f, 10.f, 10.f, 10.f);
+		renderer_holder_rc->sun.blend_distances = vec4(5.f, 10.f, 10.f, 10.f);
 		renderer_holder_rc->sun.stabilize = true;
 
 		for (uint32 i = 0; i < NUM_BUFFERED_FRAMES; ++i)
 		{
-			pointLightBuffer[i] = createUploadBuffer(sizeof(point_light_cb), 512, 0);
-			spotLightBuffer[i] = createUploadBuffer(sizeof(spot_light_cb), 512, 0);
-			decalBuffer[i] = createUploadBuffer(sizeof(pbr_decal_cb), 512, 0);
+			point_light_buffer[i] = create_upload_buffer(sizeof(PointLightCB), 512, 0);
+			spot_light_buffer[i] = create_upload_buffer(sizeof(SpotLightCB), 512, 0);
+			decal_buffer[i] = create_upload_buffer(sizeof(PBRDecalCB), 512, 0);
 
-			spotLightShadowInfoBuffer[i] = createUploadBuffer(sizeof(spot_shadow_info), 512, 0);
-			pointLightShadowInfoBuffer[i] = createUploadBuffer(sizeof(point_shadow_info), 512, 0);
+			spot_light_shadow_info_buffer[i] = create_upload_buffer(sizeof(SpotShadowInfo), 512, 0);
+			point_light_shadow_info_buffer[i] = create_upload_buffer(sizeof(PointShadowInfo), 512, 0);
 
-			SET_NAME(pointLightBuffer[i]->resource, "Point lights");
-			SET_NAME(spotLightBuffer[i]->resource, "Spot lights");
-			SET_NAME(decalBuffer[i]->resource, "Decals");
+			SET_NAME(point_light_buffer[i]->resource, "Point lights");
+			SET_NAME(spot_light_buffer[i]->resource, "Spot lights");
+			SET_NAME(decal_buffer[i]->resource, "Decals");
 
-			SET_NAME(spotLightShadowInfoBuffer[i]->resource, "Spot light shadow infos");
-			SET_NAME(pointLightShadowInfoBuffer[i]->resource, "Point light shadow infos");
+			SET_NAME(spot_light_shadow_info_buffer[i]->resource, "Spot light shadow infos");
+			SET_NAME(point_light_shadow_info_buffer[i]->resource, "Point light shadow infos");
 		}
 
-		stackArena.initialize();
+		stack_arena.initialize();
 	}
 
 	RenderSystem::~RenderSystem()
@@ -112,67 +112,67 @@ namespace era_engine
 		uint32 render_width = renderer_holder_rc->width;
 		uint32 render_height = renderer_holder_rc->height;
 
-		main_renderer* renderer = renderer_holder_rc->renderer;
+		MainRenderer* renderer = renderer_holder_rc->renderer;
 
-		ImGui::Image(renderer->frameResult, render_width, render_height);
+		ImGui::Image(renderer->frame_result, render_width, render_height);
 	}
 
 	void RenderSystem::before_render(float dt)
 	{
 		ZoneScopedN("RenderSystem::before_render");
-		main_renderer* renderer = renderer_holder_rc->renderer;
+		MainRenderer* renderer = renderer_holder_rc->renderer;
 
-		renderer->beginFrame(renderer_holder_rc->width, renderer_holder_rc->height);
+		renderer->begin_frame(renderer_holder_rc->width, renderer_holder_rc->height);
 
-		resetRenderPasses();
+		reset_render_passes();
 
-		stackArena.reset();
+		stack_arena.reset();
 	}
 
 	void RenderSystem::update(float dt)
 	{
 		ZoneScopedN("RenderSystem::update");
-		main_renderer* renderer = renderer_holder_rc->renderer;
+		MainRenderer* renderer = renderer_holder_rc->renderer;
 
-		directional_light& sun = renderer_holder_rc->sun;
-		pbr_environment& environment = renderer_holder_rc->environment;
+		DirectionalLight& sun = renderer_holder_rc->sun;
+		PBREnvironment& environment = renderer_holder_rc->environment;
 
-		render_camera& camera = renderer_holder_rc->camera;
+		RenderCamera& camera = renderer_holder_rc->camera;
 
 		environment.update(sun.direction);
-		sun.updateMatrices(camera);
-		setAudioListener(camera.position, camera.rotation, vec3(0.f));
-		environment.lightProbeGrid.visualize(&opaqueRenderPass);
+		sun.update_matrices(camera);
+		set_audio_listener(camera.position, camera.rotation, vec3(0.f));
+		environment.light_probe_grid.visualize(&opaque_render_pass);
 
 		{
-			for (auto [entityHandle, transform, terrain] : world->group(components_group<TransformComponent, TerrainComponent>).each())
+			for (auto [entity_handle, transform, terrain] : world->group(components_group<TransformComponent, TerrainComponent>).each())
 			{
 				terrain.update();
 			}
 
-			scene_lighting lighting;
-			lighting.spotLightBuffer = spotLightBuffer[dxContext.bufferedFrameID];
-			lighting.pointLightBuffer = pointLightBuffer[dxContext.bufferedFrameID];
-			lighting.spotLightShadowInfoBuffer = spotLightShadowInfoBuffer[dxContext.bufferedFrameID];
-			lighting.pointLightShadowInfoBuffer = pointLightShadowInfoBuffer[dxContext.bufferedFrameID];
-			lighting.spotShadowRenderPasses = spotShadowRenderPasses;
-			lighting.pointShadowRenderPasses = pointShadowRenderPasses;
-			lighting.maxNumSpotShadowRenderPasses = arraysize(spotShadowRenderPasses);
-			lighting.maxNumPointShadowRenderPasses = arraysize(pointShadowRenderPasses);
+			SceneLighting lighting;
+			lighting.spot_light_buffer = spot_light_buffer[dx_context.buffered_frame_id];
+			lighting.point_light_buffer = point_light_buffer[dx_context.buffered_frame_id];
+			lighting.spot_light_shadow_info_buffer = spot_light_shadow_info_buffer[dx_context.buffered_frame_id];
+			lighting.point_light_shadow_info_buffer = point_light_shadow_info_buffer[dx_context.buffered_frame_id];
+			lighting.spot_shadow_render_passes = spot_shadow_render_passes;
+			lighting.point_shadow_render_passes = point_shadow_render_passes;
+			lighting.max_num_spot_shadow_render_passes = arraysize(spot_shadow_render_passes);
+			lighting.max_num_point_shadow_render_passes = arraysize(point_shadow_render_passes);
 
-			render_world(camera, world, stackArena, Entity::NullHandle, sun, lighting, !renderer->settings.cacheShadowMap,
-				&opaqueRenderPass, &transparentRenderPass, renderer_holder_rc->ldrRenderPass, &sunShadowRenderPass, &computePass, dt);
+			render_world(camera, world, stack_arena, Entity::null_handle, sun, lighting, !renderer->settings.cache_shadow_map,
+				&opaque_render_pass, &transparent_render_pass, renderer_holder_rc->ldr_render_pass, &sun_shadow_render_pass, &compute_pass, dt);
 
-			renderer->setSpotLights(spotLightBuffer[dxContext.bufferedFrameID], world->number_of_components_of_type<SpotLightComponent>(), spotLightShadowInfoBuffer[dxContext.bufferedFrameID]);
-			renderer->setPointLights(pointLightBuffer[dxContext.bufferedFrameID], world->number_of_components_of_type<PointLightComponent>(), pointLightShadowInfoBuffer[dxContext.bufferedFrameID]);
+			renderer->set_spot_lights(spot_light_buffer[dx_context.buffered_frame_id], world->number_of_components_of_type<SpotLightComponent>(), spot_light_shadow_info_buffer[dx_context.buffered_frame_id]);
+			renderer->set_point_lights(point_light_buffer[dx_context.buffered_frame_id], world->number_of_components_of_type<PointLightComponent>(), point_light_shadow_info_buffer[dx_context.buffered_frame_id]);
 
 			if (decals.size())
 			{
-				updateUploadBufferData(decalBuffer[dxContext.bufferedFrameID], decals.data(), (uint32)(sizeof(pbr_decal_cb) * decals.size()));
-				renderer->setDecals(decalBuffer[dxContext.bufferedFrameID], (uint32)decals.size(), decalTexture);
+				update_upload_buffer_data(decal_buffer[dx_context.buffered_frame_id], decals.data(), (uint32)(sizeof(PBRDecalCB) * decals.size()));
+				renderer->set_decals(decal_buffer[dx_context.buffered_frame_id], (uint32)decals.size(), decal_texture);
 			}
 
-			submitRendererParams(lighting.numSpotShadowRenderPasses, lighting.numPointShadowRenderPasses);
+			submit_renderer_params(lighting.num_spot_shadow_render_passes, lighting.num_point_shadow_render_passes);
 		}
 	}
 
@@ -180,107 +180,107 @@ namespace era_engine
 	{
 		ZoneScopedN("RenderSystem::after_render");
 
-		main_renderer* renderer = renderer_holder_rc->renderer;
+		MainRenderer* renderer = renderer_holder_rc->renderer;
 
-		directional_light& sun = renderer_holder_rc->sun;
-		pbr_environment& environment = renderer_holder_rc->environment;
+		DirectionalLight& sun = renderer_holder_rc->sun;
+		PBREnvironment& environment = renderer_holder_rc->environment;
 
-		render_camera& camera = renderer_holder_rc->camera;
+		RenderCamera& camera = renderer_holder_rc->camera;
 
-		animation::performSkinning(&computePass);
+		animation::perform_skinning(&compute_pass);
 
-		if (dxContext.featureSupport.raytracing())
+		if (dx_context.feature_support.raytracing())
 		{
-			raytracingTLAS.reset();
+			raytracing_tlas.reset();
 
-			for (auto [entityHandle, transform, raytrace] : world->group(components_group<TransformComponent, RaytraceComponent>).each())
+			for (auto [entity_handle, transform, raytrace] : world->group(components_group<TransformComponent, RaytraceComponent>).each())
 			{
-				auto handle = raytracingTLAS.instantiate(raytrace.type, transform.get_world_transform());
+				auto handle = raytracing_tlas.instantiate(raytrace.type, transform.get_world_transform());
 			}
 
-			renderer->setRaytracingScene(&raytracingTLAS);
+			renderer->set_raytracing_scene(&raytracing_tlas);
 		}
 
-		renderer->setEnvironment(environment);
-		renderer->setSun(sun);
-		renderer->setCamera(camera);
+		renderer->set_environment(environment);
+		renderer->set_sun(sun);
+		renderer->set_camera(camera);
 
-		endFrameCommon();
+		end_frame_common();
 
 		const UserInput& input = get_current_frame_input();
-		renderer->endFrame(&input);
+		renderer->end_frame(&input);
 	}
 
 	void RenderSystem::load_custom_shaders()
 	{
-		if (dxContext.featureSupport.meshShaders())
+		if (dx_context.feature_support.mesh_shaders())
 		{
-			initializeMeshShader();
+			initialize_mesh_shader();
 		}
 	}
 
-	void RenderSystem::resetRenderPasses()
+	void RenderSystem::reset_render_passes()
 	{
-		opaqueRenderPass.reset();
-		transparentRenderPass.reset();
-		renderer_holder_rc->ldrRenderPass->reset();
-		sunShadowRenderPass.reset();
-		computePass.reset();
+		opaque_render_pass.reset();
+		transparent_render_pass.reset();
+		renderer_holder_rc->ldr_render_pass->reset();
+		sun_shadow_render_pass.reset();
+		compute_pass.reset();
 
-		for (uint32 i = 0; i < arraysize(spotShadowRenderPasses); ++i)
+		for (uint32 i = 0; i < arraysize(spot_shadow_render_passes); ++i)
 		{
-			spotShadowRenderPasses[i].reset();
+			spot_shadow_render_passes[i].reset();
 		}
 
-		for (uint32 i = 0; i < arraysize(pointShadowRenderPasses); ++i)
+		for (uint32 i = 0; i < arraysize(point_shadow_render_passes); ++i)
 		{
-			pointShadowRenderPasses[i].reset();
+			point_shadow_render_passes[i].reset();
 		}
 	}
 
-	void RenderSystem::submitRendererParams(uint32 numSpotLightShadowPasses, uint32 numPointLightShadowPasses)
+	void RenderSystem::submit_renderer_params(uint32 num_spot_light_shadow_passes, uint32 num_point_light_shadow_passes)
 	{
-		main_renderer* renderer = renderer_holder_rc->renderer;
+		MainRenderer* renderer = renderer_holder_rc->renderer;
 
 		{
 			CPU_PROFILE_BLOCK("Sort render passes");
-			ZoneScopedN("RenderSystem::submitRendererParams");
+			ZoneScopedN("RenderSystem::submit_renderer_params");
 
-			opaqueRenderPass.sort();
-			transparentRenderPass.sort();
-			renderer_holder_rc->ldrRenderPass->sort();
+			opaque_render_pass.sort();
+			transparent_render_pass.sort();
+			renderer_holder_rc->ldr_render_pass->sort();
 
-			for (uint32 i = 0; i < sunShadowRenderPass.numCascades; ++i)
+			for (uint32 i = 0; i < sun_shadow_render_pass.num_cascades; ++i)
 			{
-				sunShadowRenderPass.cascades[i].sort();
+				sun_shadow_render_pass.cascades[i].sort();
 			}
 
-			for (uint32 i = 0; i < numSpotLightShadowPasses; ++i)
+			for (uint32 i = 0; i < num_spot_light_shadow_passes; ++i)
 			{
-				spotShadowRenderPasses[i].sort();
+				spot_shadow_render_passes[i].sort();
 			}
 
-			for (uint32 i = 0; i < numPointLightShadowPasses; ++i)
+			for (uint32 i = 0; i < num_point_light_shadow_passes; ++i)
 			{
-				pointShadowRenderPasses[i].sort();
+				point_shadow_render_passes[i].sort();
 			}
 		}
 
-		renderer->submitRenderPass(&opaqueRenderPass);
-		renderer->submitRenderPass(&transparentRenderPass);
-		renderer->submitRenderPass(renderer_holder_rc->ldrRenderPass);
-		renderer->submitComputePass(&computePass);
+		renderer->submit_render_pass(&opaque_render_pass);
+		renderer->submit_render_pass(&transparent_render_pass);
+		renderer->submit_render_pass(renderer_holder_rc->ldr_render_pass);
+		renderer->submit_compute_pass(&compute_pass);
 
-		renderer->submitShadowRenderPass(&sunShadowRenderPass);
+		renderer->submit_shadow_render_pass(&sun_shadow_render_pass);
 
-		for (uint32 i = 0; i < numSpotLightShadowPasses; ++i)
+		for (uint32 i = 0; i < num_spot_light_shadow_passes; ++i)
 		{
-			renderer->submitShadowRenderPass(&spotShadowRenderPasses[i]);
+			renderer->submit_shadow_render_pass(&spot_shadow_render_passes[i]);
 		}
 
-		for (uint32 i = 0; i < numPointLightShadowPasses; ++i)
+		for (uint32 i = 0; i < num_point_light_shadow_passes; ++i)
 		{
-			renderer->submitShadowRenderPass(&pointShadowRenderPasses[i]);
+			renderer->submit_shadow_render_pass(&point_shadow_render_passes[i]);
 		}
 	}
 

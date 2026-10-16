@@ -1,10 +1,10 @@
 #ifndef PARTICLES_HLSLI
 #define PARTICLES_HLSLI
 
-static float getRelLife(float life, float maxLife)
+static float get_rel_life(float life, float max_life)
 {
-	float relLife = saturate((maxLife - life) / maxLife);
-	return relLife;
+	float rel_life = saturate((max_life - life) / max_life);
+	return rel_life;
 }
 
 #endif

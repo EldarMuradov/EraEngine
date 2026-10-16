@@ -242,20 +242,20 @@ TEST(Core_Serialization, MultipleValues)
 
 TEST(Core_Serialization, EngineStructs)
 {
-	const bounding_box box = bounding_box::fromMinMax(vec3(-1.0f), vec3(2.0f));
-	const bounding_box box_result = round_trip(box);
-	EXPECT_EQ(box_result.minCorner, box.minCorner);
-	EXPECT_EQ(box_result.maxCorner, box.maxCorner);
+	const BoundingBox box = BoundingBox::from_min_max(vec3(-1.0f), vec3(2.0f));
+	const BoundingBox box_result = round_trip(box);
+	EXPECT_EQ(box_result.min_corner, box.min_corner);
+	EXPECT_EQ(box_result.max_corner, box.max_corner);
 
-	bounding_sphere sphere;
+	BoundingSphere sphere;
 	sphere.center = vec3(1.0f, 2.0f, 3.0f);
 	sphere.radius = 4.0f;
-	const bounding_sphere sphere_result = round_trip(sphere);
+	const BoundingSphere sphere_result = round_trip(sphere);
 	EXPECT_EQ(sphere_result.center, sphere.center);
 	EXPECT_FLOAT_EQ(sphere_result.radius, sphere.radius);
 
-	const std::vector<indexed_triangle16> triangles = { { 0, 1, 2 }, { 2, 3, 0 } };
-	const std::vector<indexed_triangle16> triangles_result = round_trip(triangles);
+	const std::vector<IndexedTriangle16> triangles = { { 0, 1, 2 }, { 2, 3, 0 } };
+	const std::vector<IndexedTriangle16> triangles_result = round_trip(triangles);
 	ASSERT_EQ(triangles_result.size(), 2u);
 	EXPECT_EQ(triangles_result[1].a, 2);
 	EXPECT_EQ(triangles_result[1].b, 3);

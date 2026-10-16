@@ -19,7 +19,7 @@
 namespace era_engine
 {
 	class MultiMesh;
-	struct ldr_render_pass;
+	struct LDRRenderPass;
 }
 
 namespace era_engine::animation
@@ -48,8 +48,8 @@ namespace era_engine::animation
 		bool enable_root_motion = true;
 
 		// Render data
-		dx_vertex_buffer_group_view current_vertex_buffer;
-		dx_vertex_buffer_group_view prev_frame_vertex_buffer;
+		DXVertexBufferGroupView current_vertex_buffer;
+		DXVertexBufferGroupView prev_frame_vertex_buffer;
 
 		trs* current_global_transforms = nullptr;
 

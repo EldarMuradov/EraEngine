@@ -4,111 +4,111 @@
 
 namespace era_engine
 {
-    void pbr_raytracer::initialize(const wchar* shaderPath, uint32 maxPayloadSize, uint32 maxRecursionDepth, const D3D12_ROOT_SIGNATURE_DESC& globalDesc)
+    void PBRRaytracer::initialize(const wchar* shader_path, uint32 max_payload_size, uint32 max_recursion_depth, const D3D12_ROOT_SIGNATURE_DESC& global_desc)
     {
         // 6 Elements: Vertex buffer, index buffer, albedo texture, normal map, roughness texture, metallic texture.
-        CD3DX12_DESCRIPTOR_RANGE hitSRVRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 6, 0, 1);
-        CD3DX12_ROOT_PARAMETER hitRootParameters[] =
+        CD3DX12_DESCRIPTOR_RANGE hit_srv_range(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 6, 0, 1);
+        CD3DX12_ROOT_PARAMETER hit_root_parameters[] =
         {
-            root_constants<pbr_material_cb>(0, 1),
-            root_descriptor_table(1, &hitSRVRange),
+            root_constants<PBRMaterialCB>(0, 1),
+            root_descriptor_table(1, &hit_srv_range),
         };
 
-        D3D12_ROOT_SIGNATURE_DESC hitDesc =
+        D3D12_ROOT_SIGNATURE_DESC hit_desc =
         {
-            arraysize(hitRootParameters), hitRootParameters
+            arraysize(hit_root_parameters), hit_root_parameters
         };
 
-        raytracing_mesh_hitgroup radianceHitgroup = { L"radianceClosestHit" };
-        raytracing_mesh_hitgroup shadowHitgroup = { };
+        RaytracingMeshHitgroup radiance_hitgroup = { L"radianceClosestHit" };
+        RaytracingMeshHitgroup shadow_hitgroup = { };
 
         pipeline =
-            raytracing_pipeline_builder(shaderPath, maxPayloadSize, maxRecursionDepth, true, false)
-            .globalRootSignature(globalDesc)
+            RaytracingPipelineBuilder(shader_path, max_payload_size, max_recursion_depth, true, false)
+            .global_root_signature(global_desc)
             .raygen(L"rayGen")
-            .hitgroup(L"RADIANCE", L"radianceMiss", radianceHitgroup, hitDesc)
-            .hitgroup(L"SHADOW", L"shadowMiss", shadowHitgroup)
+            .hitgroup(L"RADIANCE", L"radianceMiss", radiance_hitgroup, hit_desc)
+            .hitgroup(L"SHADOW", L"shadowMiss", shadow_hitgroup)
             .finish();
 
-        ASSERT(numRayTypes == 0 || numRayTypes == (uint32)pipeline.shaderBindingTableDesc.hitGroups.size());
-        numRayTypes = (uint32)pipeline.shaderBindingTableDesc.hitGroups.size();
+        ASSERT(num_ray_types == 0 || num_ray_types == (uint32)pipeline.shader_binding_table_desc.hit_groups.size());
+        num_ray_types = (uint32)pipeline.shader_binding_table_desc.hit_groups.size();
 
-        bindingTable.initialize(&pipeline);
+        binding_table.initialize(&pipeline);
 
         // Common stuff
-        if (!descriptorHeap.descriptorHeap)
+        if (!descriptor_heap.descriptor_heap)
         {
-            descriptorHeap.initialize(2048); // TODO
+            descriptor_heap.initialize(2048); // TODO
         }
 
-        registeredPBRRaytracers.push_back(this);
+        registered_pbr_raytracers.push_back(this);
     }
 
-    void pbr_raytracer::pushTexture(const ref<dx_texture>& tex, uint32& flags, uint32 flag)
+    void PBRRaytracer::push_texture(const ref<DXTexture>& tex, uint32& flags, uint32 flag)
     {
         if (tex)
         {
-            descriptorHeap.push().create2DTextureSRV(tex);
+            descriptor_heap.push().create_2d_texture_srv(tex);
             flags |= flag;
         }
         else
         {
-            descriptorHeap.push().createNullTextureSRV();
+            descriptor_heap.push().create_null_texture_srv();
         }
     }
 
-    NODISCARD raytracing_object_type pbr_raytracer::defineObjectType(const ref<raytracing_blas>& blas, const std::vector<ref<pbr_material>>& materials)
+    NODISCARD RaytracingObjectType PBRRaytracer::define_object_type(const ref<RaytracingBLAS>& blas, const std::vector<ref<PBRMaterial>>& materials)
     {
-        uint32 numGeometries = (uint32)blas->geometries.size();
+        uint32 num_geometries = (uint32)blas->geometries.size();
 
-        shader_data* hitData = (shader_data*)alloca(sizeof(shader_data) * numRayTypes);
+        ShaderData* hit_data = (ShaderData*)alloca(sizeof(ShaderData) * num_ray_types);
 
         Lock lock{ mutex };
 
-        for (uint32 i = 0; i < numGeometries; ++i)
+        for (uint32 i = 0; i < num_geometries; ++i)
         {
-            ASSERT(blas->geometries[i].type == raytracing_mesh_geometry); // For now we only support meshes, not procedurals.
+            ASSERT(blas->geometries[i].type == RAYTRACING_MESH_GEOMETRY); // For now we only support meshes, not procedurals.
 
             SubmeshInfo submesh = blas->geometries[i].submesh;
-            const ref<pbr_material>& material = materials[i];
+            const ref<PBRMaterial>& material = materials[i];
 
-            dx_gpu_descriptor_handle base = descriptorHeap.currentGPU;
+            DXGPUDescriptorHandle base = descriptor_heap.current_gpu;
 
-            descriptorHeap.push().createBufferSRV(blas->geometries[i].vertexBuffer.others, { submesh.baseVertex, submesh.numVertices });
-            descriptorHeap.push().createRawBufferSRV(blas->geometries[i].indexBuffer, { submesh.firstIndex, submesh.numIndices });
+            descriptor_heap.push().create_buffer_srv(blas->geometries[i].vertex_buffer.others, { submesh.base_vertex, submesh.num_vertices });
+            descriptor_heap.push().create_raw_buffer_srv(blas->geometries[i].index_buffer, { submesh.first_index, submesh.num_indices });
 
             uint32 flags = 0;
-            pushTexture(material->albedo, flags, MATERIAL_USE_ALBEDO_TEXTURE);
-            pushTexture(material->normal, flags, MATERIAL_USE_NORMAL_TEXTURE);
-            pushTexture(material->roughness, flags, MATERIAL_USE_ROUGHNESS_TEXTURE);
-            pushTexture(material->metallic, flags, MATERIAL_USE_METALLIC_TEXTURE);
+            push_texture(material->albedo, flags, MATERIAL_USE_ALBEDO_TEXTURE);
+            push_texture(material->normal, flags, MATERIAL_USE_NORMAL_TEXTURE);
+            push_texture(material->roughness, flags, MATERIAL_USE_ROUGHNESS_TEXTURE);
+            push_texture(material->metallic, flags, MATERIAL_USE_METALLIC_TEXTURE);
 
-            if (blas->geometries[i].indexBuffer->elementSize == 4)
+            if (blas->geometries[i].index_buffer->element_size == 4)
             {
                 flags |= MATERIAL_USE_32_BIT_INDICES;
             }
 
-            hitData[0].materialCB.initialize(
-                material->albedoTint,
+            hit_data[0].material_cb.initialize(
+                material->albedo_tint,
                 material->emission.xyz,
-                material->roughnessOverride,
-                material->metallicOverride,
+                material->roughness_override,
+                material->metallic_override,
                 flags
             );
-            hitData[0].resources = base;
+            hit_data[0].resources = base;
 
             // The other shader types don't need any data, so we don't set it here
-            for (auto rt : registeredPBRRaytracers)
+            for (auto rt : registered_pbr_raytracers)
             {
-                rt->bindingTable.push(hitData);
+                rt->binding_table.push(hit_data);
             }
         }
 
-        raytracing_object_type result = { blas, instanceContributionToHitGroupIndex };
+        RaytracingObjectType result = { blas, instance_contribution_to_hit_group_index };
 
-        instanceContributionToHitGroupIndex += numGeometries * numRayTypes;
+        instance_contribution_to_hit_group_index += num_geometries * num_ray_types;
 
-        for (auto rt : registeredPBRRaytracers)
+        for (auto rt : registered_pbr_raytracers)
         {
             rt->dirty = true;
         }
@@ -116,11 +116,11 @@ namespace era_engine
         return result;
     }
 
-    void pbr_raytracer::finalizeForRender()
+    void PBRRaytracer::finalize_for_render()
     {
         if (dirty)
         {
-            bindingTable.build();
+            binding_table.build();
             dirty = false;
         }
     }

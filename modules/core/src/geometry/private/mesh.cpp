@@ -47,7 +47,7 @@ namespace era_engine
 
 		fs::path texture_path(input_path);
 
-		if (flags & mesh_creation_flags_override_textures_with_local_folder)
+		if (flags & MESH_CREATION_FLAGS_OVERRIDE_TEXTURES_WITH_LOCAL_FOLDER)
 		{
 			texture_path = fs::path("textures") / texture_path.filename();
 		}
@@ -74,10 +74,10 @@ namespace era_engine
 	{
 		using namespace animation;
 
-		result->aabb = bounding_box::negativeInfinity();
+		result->aabb = BoundingBox::negative_infinity();
 
 		result->model_asset = import_3d_model_from_file(filename, flags);
-		mesh_builder builder(flags | mesh_creation_flags_with_skin);
+		MeshBuilder builder(flags | MESH_CREATION_FLAGS_WITH_SKIN);
 
 		for (PbrMaterialDesc& material_desc : result->model_asset->materials)
 		{
@@ -112,7 +112,7 @@ namespace era_engine
 			{
 				PbrMaterialDesc& material_desc = result->model_asset->materials[sub.material_index];
 
-				ref<pbr_material> material;
+				ref<PBRMaterial> material;
 				if (!async)
 				{
 					material = create_pbr_material(material_desc);
@@ -122,12 +122,12 @@ namespace era_engine
 					material = create_pbr_material_async(material_desc, parent_job);
 				}
 
-				bounding_box aabb;
-				builder.pushMesh(sub, 1.f, &aabb);
-				result->submeshes.push_back({ builder.endSubmesh(), aabb, trs::identity, material, mesh.name });
+				BoundingBox aabb;
+				builder.push_mesh(sub, 1.f, &aabb);
+				result->submeshes.push_back({ builder.end_submesh(), aabb, trs::identity, material, mesh.name });
 
-				result->aabb.grow(aabb.minCorner);
-				result->aabb.grow(aabb.maxCorner);
+				result->aabb.grow(aabb.min_corner);
+				result->aabb.grow(aabb.max_corner);
 			}
 		}
 		
@@ -136,7 +136,7 @@ namespace era_engine
 			cb(builder, result->submeshes, result->aabb);
 		}
 
-		result->mesh = builder.createDXMesh();
+		result->mesh = builder.create_dx_mesh();
 
 		result->load_state.store(AssetLoadState::LOADED, std::memory_order_release);
 
@@ -180,7 +180,7 @@ namespace era_engine
 
 			MeshLoadingData data = { cb, filename, result, flags };
 
-			JobHandle job = low_priority_job_queue.createJob<MeshLoadingData>([](MeshLoadingData& data, JobHandle job)
+			JobHandle job = low_priority_job_queue.create_job<MeshLoadingData>([](MeshLoadingData& data, JobHandle job)
 				{
 					mesh_import_worker(data.mesh, data.path, data.flags, data.cb, true, job);
 				}, data, parent_job);
@@ -301,9 +301,9 @@ namespace era_engine
 				return false;
 			}
 
-			aabb = bounding_box::negativeInfinity();
+			aabb = BoundingBox::negative_infinity();
 
-			mesh_builder builder(flags | mesh_creation_flags_with_skin);
+			MeshBuilder builder(flags | MESH_CREATION_FLAGS_WITH_SKIN);
 
 			for (auto& mesh : model_asset->meshes)
 			{
@@ -317,20 +317,20 @@ namespace era_engine
 					PbrMaterialDesc& material_desc = model_asset->materials[sub.material_index];
 					material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-					ref<pbr_material> material = create_pbr_material(material_desc);
+					ref<PBRMaterial> material = create_pbr_material(material_desc);
 
-					bounding_box aabb;
-					builder.pushMesh(sub, 1.f, &aabb);
-					submeshes.push_back({ builder.endSubmesh(), aabb, trs::identity, material, mesh.name });
+					BoundingBox aabb;
+					builder.push_mesh(sub, 1.f, &aabb);
+					submeshes.push_back({ builder.end_submesh(), aabb, trs::identity, material, mesh.name });
 
-					aabb.grow(aabb.minCorner);
-					aabb.grow(aabb.maxCorner);
+					aabb.grow(aabb.min_corner);
+					aabb.grow(aabb.max_corner);
 				}
 			}
 
-			mesh = builder.createDXMesh();
+			mesh = builder.create_dx_mesh();
 
-			if (has_flag(flags, mesh_creation_flags_compact))
+			if (has_flag(flags, MESH_CREATION_FLAGS_COMPACT))
 			{
 				model_asset.reset();
 			}
@@ -368,9 +368,9 @@ namespace era_engine
 
 		model_asset = new_model_asset;
 
-		aabb = bounding_box::negativeInfinity();
+		aabb = BoundingBox::negative_infinity();
 
-		mesh_builder builder(flags | mesh_creation_flags_with_skin);
+		MeshBuilder builder(flags | MESH_CREATION_FLAGS_WITH_SKIN);
 
 		uint32 submesh_index = 0;
 
@@ -386,13 +386,13 @@ namespace era_engine
 				PbrMaterialDesc& material_desc = model_asset->materials[sub.material_index];
 				material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-				ref<pbr_material> material = create_pbr_material(material_desc);
+				ref<PBRMaterial> material = create_pbr_material(material_desc);
 
-				bounding_box aabb;
-				builder.pushMesh(sub, 1.f, &aabb);
+				BoundingBox aabb;
+				builder.push_mesh(sub, 1.f, &aabb);
 
-				submesh sm;
-				sm.info = builder.endSubmesh();
+				Submesh sm;
+				sm.info = builder.end_submesh();
 				sm.aabb = aabb;
 				sm.transform = trs::identity;
 				sm.material = material;
@@ -401,21 +401,21 @@ namespace era_engine
 
 				submeshes.push_back(std::move(sm));
 
-				aabb.grow(aabb.minCorner);
-				aabb.grow(aabb.maxCorner);
+				aabb.grow(aabb.min_corner);
+				aabb.grow(aabb.max_corner);
 
 				submesh_index++;
 			}
 		}
 
-		mesh = builder.createDXMesh();
+		mesh = builder.create_dx_mesh();
 
 		load_state.store(AssetLoadState::LOADED, std::memory_order_release);
 	}
 
 	bool MultiMesh::has_visible_submeshes() const
 	{
-		for (const submesh& sub : submeshes)
+		for (const Submesh& sub : submeshes)
 		{
 			if (sub.is_visible)
 			{

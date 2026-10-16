@@ -12,31 +12,31 @@
 
 namespace era_engine
 {
-	enum channel_state
+	enum ChannelState
 	{
-		channel_state_to_play,
-		channel_state_playing,
+		CHANNEL_STATE_TO_PLAY,
+		CHANNEL_STATE_PLAYING,
 
-		channel_state_stopping,
-		channel_state_stopped,
+		CHANNEL_STATE_STOPPING,
+		CHANNEL_STATE_STOPPED,
 
-		channel_state_virtualizing,
-		channel_state_virtual,
+		CHANNEL_STATE_VIRTUALIZING,
+		CHANNEL_STATE_VIRTUAL,
 	};
 
-	struct ERA_CORE_API property_fader
+	struct ERA_CORE_API PropertyFader
 	{
 		void initialize(float start)
 		{
 			current = start;
-			totalTime = 0.f;
+			total_time = 0.f;
 		}
 
-		void startFade(float to, float time)
+		void start_fade(float to, float time)
 		{
 			this->from = current;
 			this->to = to;
-			this->totalTime = time;
+			this->total_time = time;
 			this->timer = 0.f;
 
 			if (time <= 0.f)
@@ -47,80 +47,80 @@ namespace era_engine
 
 		void update(float dt)
 		{
-			if (totalTime != 0.f)
+			if (total_time != 0.f)
 			{
 				timer += dt;
-				current = lerp(from, to, clamp01(timer / totalTime));
+				current = lerp(from, to, clamp01(timer / total_time));
 			}
 		}
 
 		float from, to;
-		float totalTime;
+		float total_time;
 		float timer;
 
 		float current;
 	};
 
-	struct ERA_CORE_API audio_context
+	struct ERA_CORE_API AudioContext
 	{
 		com<IXAudio2> xaudio;
 
-		IXAudio2MasteringVoice* masterVoice;
-		XAUDIO2_VOICE_DETAILS masterVoiceDetails;
+		IXAudio2MasteringVoice* master_voice;
+		XAUDIO2_VOICE_DETAILS master_voice_details;
 
-		IXAudio2SubmixVoice* soundTypeSubmixVoices[sound_type_count];
-		XAUDIO2_VOICE_DETAILS soundTypeSubmixVoiceDetails[sound_type_count];
-		IXAudio2SubmixVoice* reverbSubmixVoices[sound_type_count];
+		IXAudio2SubmixVoice* sound_type_submix_voices[SOUND_TYPE_COUNT];
+		XAUDIO2_VOICE_DETAILS sound_type_submix_voice_details[SOUND_TYPE_COUNT];
+		IXAudio2SubmixVoice* reverb_submix_voices[SOUND_TYPE_COUNT];
 
-		X3DAUDIO_HANDLE xaudio3D;
+		X3DAUDIO_HANDLE xaudio_3d;
 		X3DAUDIO_LISTENER listener;
 	};
 
-	struct ERA_CORE_API audio_channel
+	struct ERA_CORE_API AudioChannel
 	{
-		audio_channel(const audio_context& context, const ref<audio_sound>& sound, const sound_settings& settings);
-		audio_channel(const audio_context& context, const ref<audio_sound>& sound, vec3 position, const sound_settings& settings);
-		~audio_channel();
+		AudioChannel(const AudioContext& context, const ref<AudioSound>& _sound, const SoundSettings& settings);
+		AudioChannel(const AudioContext& context, const ref<AudioSound>& _sound, vec3 position, const SoundSettings& settings);
+		~AudioChannel();
 
-		void update(const audio_context& context, float dt);
-		void stop(float fadeOutTime);
+		void update(const AudioContext& context, float dt);
+		void stop(float fade_out_time);
 
-		sound_settings* getSettings() { return &userSettings; }
+		SoundSettings* get_settings() { return &user_settings; }
 
-		bool hasStopped();
+		bool has_stopped();
 
-		ref<audio_sound> sound;
+		ref<AudioSound> sound;
 		bool positioned;
 		vec3 position;
 
 	private:
-		void initialize(const audio_context& context, const ref<audio_sound>& sound, const sound_settings& settings, bool positioned, vec3 position = vec3(0.f));
+		void initialize(const AudioContext& context, const ref<AudioSound>& sound, const SoundSettings& settings, bool positioned, vec3 position = vec3(0.f));
 
-		void updateSoundSettings(const audio_context& context, float dt);
+		void update_sound_settings(const AudioContext& context, float dt);
 
-		bool shouldBeVirtual();
+		bool should_be_virtual();
 
-		uint32 update3DTimer = 0;
+		uint32 update_3d_timer = 0;
 
-		volatile channel_state state = channel_state_to_play;
+		volatile ChannelState state = CHANNEL_STATE_TO_PLAY;
 
-		property_fader upDownFader;
-		property_fader volumeFader;
-		property_fader pitchFader;
+		PropertyFader up_down_fader;
+		PropertyFader volume_fader;
+		PropertyFader pitch_fader;
 
 		IXAudio2SourceVoice* voice;
 
-		uint32 srcChannels;
+		uint32 src_channels;
 
-		sound_settings userSettings;
-		sound_settings oldUserSettings;
+		SoundSettings user_settings;
+		SoundSettings old_user_settings;
 
-		float oldVolume = -1.f;
-		float oldPitch = -1.f;
+		float old_volume = -1.f;
+		float old_pitch = -1.f;
 
 		struct voice_callback : IXAudio2VoiceCallback
 		{
-			audio_channel* channel;
+			AudioChannel* channel;
 
 			virtual void __stdcall OnVoiceProcessingPassStart(uint32 bytesRequired) override {}
 			virtual void __stdcall OnVoiceProcessingPassEnd() override {}
@@ -131,16 +131,16 @@ namespace era_engine
 			virtual void __stdcall OnLoopEnd(void* bufferContext) override {}
 		};
 
-		voice_callback voiceCallback;
+		voice_callback voice_callback;
 
-		HANDLE threadHandle = INVALID_HANDLE_VALUE;
+		HANDLE thread_handle = INVALID_HANDLE_VALUE;
 
-		HANDLE bufferEndSemaphore;
+		HANDLE buffer_end_semaphore;
 
-		bool threadStopped = true;
+		bool thread_stopped = true;
 
-		friend DWORD WINAPI streamFileAudio(void* parameter);
-		friend DWORD WINAPI streamSynthAudio(void* parameter);
+		friend DWORD WINAPI stream_file_audio(void* parameter);
+		friend DWORD WINAPI stream_synth_audio(void* parameter);
 	};
 
 }

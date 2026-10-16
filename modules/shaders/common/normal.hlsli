@@ -4,13 +4,13 @@
 #if 0
 // Spheremap Transform
 // https://aras-p.info/texts/CompactNormalStorage.html#method04spheremap
-static float2 packNormal(float3 n)
+static float2 pack_normal(float3 n)
 {
     float p = sqrt(n.z * 8 + 8);
     return float2(n.xy / p + 0.5);
 }
 
-static float3 unpackNormal(float2 enc)
+static float3 unpack_normal(float2 enc)
 {
     float2 fenc = enc * 4 - 2;
     float f = dot(fenc, fenc);
@@ -30,7 +30,7 @@ static float3 unpackNormal(float2 enc)
 
 // Stereographic Transform
 // https://aras-p.info/texts/CompactNormalStorage.html#method07stereo
-static float2 packNormal(float3 n)
+static float2 pack_normal(float3 n)
 {
     float2 enc = n.xy / (n.z + 1.f);
 
@@ -42,7 +42,7 @@ static float2 packNormal(float3 n)
     return enc;
 }
 
-static float3 unpackNormal(float2 enc)
+static float3 unpack_normal(float2 enc)
 {
     // enc = enc * 2 - vec2(1, 1);
     //const float scale = 1.7777f;
@@ -56,13 +56,13 @@ static float3 unpackNormal(float2 enc)
 
 #endif
 
-static float3 sampleNormalMap(Texture2D<float3> normalMap, SamplerState s, float2 uv)
+static float3 sample_normal_map(Texture2D<float3> normal_map, SamplerState s, float2 uv)
 {
-    float3 N = normalMap.Sample(s, uv).xyz;
-    bool reconstructZ = N.z == 0.f;
+    float3 N = normal_map.Sample(s, uv).xyz;
+    bool reconstruct_z = N.z == 0.f;
     N = N * 2.f - 1.f;
 
-    if (reconstructZ)
+    if (reconstruct_z)
     {
         N.z = sqrt(1.f - dot(N.xy, N.xy));
     }
@@ -70,13 +70,13 @@ static float3 sampleNormalMap(Texture2D<float3> normalMap, SamplerState s, float
     return N;
 }
 
-static float3 combineNormalMaps(float3 n1, float3 n2)
+static float3 combine_normal_maps(float3 n1, float3 n2)
 {
     // Whiteout blend: https://blog.selfshadow.com/publications/blending-in-detail/
     return normalize(float3(n1.xy + n2.xy, n1.z * n2.z));
 }
 
-static float3 scaleNormalMap(float3 n, float strength)
+static float3 scale_normal_map(float3 n, float strength)
 {
     return n * float3(strength, strength, 1.f);
 }

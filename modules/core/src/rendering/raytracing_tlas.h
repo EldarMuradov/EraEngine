@@ -6,25 +6,25 @@
 
 namespace era_engine
 {
-	struct raytracing_instance_handle
+	struct RaytracingInstanceHandle
 	{
-		uint32 instanceIndex;
+		uint32 instance_index;
 	};
 
-	struct raytracing_tlas
+	struct RaytracingTLAS
 	{
-		void initialize(raytracing_as_rebuild_mode rebuildMode = raytracing_as_rebuild);
+		void initialize(RaytracingASRebuildMode rebuild_mode = RAYTRACING_AS_REBUILD);
 
 		// Call these each frame to rebuild the structure
 		void reset();
-		raytracing_instance_handle instantiate(raytracing_object_type type, const trs& transform);
-		void build(struct dx_command_list* cl);
+		RaytracingInstanceHandle instantiate(RaytracingObjectType type, const trs& transform);
+		void build(struct DXCommandList* cl);
 
-		std::vector<D3D12_RAYTRACING_INSTANCE_DESC> allInstances;
+		std::vector<D3D12_RAYTRACING_INSTANCE_DESC> all_instances;
 
-		raytracing_as_rebuild_mode rebuildMode;
+		RaytracingASRebuildMode rebuild_mode;
 
-		ref<dx_buffer> scratch;
-		ref<dx_buffer> tlas;
+		ref<DXBuffer> scratch;
+		ref<DXBuffer> tlas;
 	};
 }

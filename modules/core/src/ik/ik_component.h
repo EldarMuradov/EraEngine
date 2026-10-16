@@ -75,7 +75,7 @@ namespace era_engine
         IKTargetComponent(ref<Entity::EcsData> _data);
         ~IKTargetComponent() override;
 
-        Entity::Handle owner_entity = Entity::NullHandle;
+        Entity::Handle owner_entity = Entity::null_handle;
         uint32 chain_index = 0;
         float weight = 1.0f;
 

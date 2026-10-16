@@ -9,227 +9,227 @@
 
 namespace era_engine
 {
-	struct dx_descriptor_page
+	struct DXDescriptorPage
 	{
-		dx_descriptor_page(D3D12_DESCRIPTOR_HEAP_TYPE type, uint64 capacity, bool shaderVisible);
+		DXDescriptorPage(D3D12_DESCRIPTOR_HEAP_TYPE type, uint64 capacity, bool shader_visible);
 
-		std::pair<dx_descriptor_allocation, bool> allocate(uint64 count);
-		void free(dx_descriptor_allocation allocation);
+		std::pair<DXDescriptorAllocation, bool> allocate(uint64 count);
+		void free(DXDescriptorAllocation allocation);
 
 		D3D12_DESCRIPTOR_HEAP_TYPE type;
-		com<ID3D12DescriptorHeap> descriptorHeap;
+		com<ID3D12DescriptorHeap> descriptor_heap;
 
-		CD3DX12_CPU_DESCRIPTOR_HANDLE cpuBase;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuBase;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cpu_base;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE gpu_base;
 
-		uint32 descriptorSize;
+		uint32 descriptor_size;
 
 		BlockAllocator allocator;
 	};
 
-	dx_descriptor_page::dx_descriptor_page(D3D12_DESCRIPTOR_HEAP_TYPE type, uint64 capacity, bool shaderVisible)
+	DXDescriptorPage::DXDescriptorPage(D3D12_DESCRIPTOR_HEAP_TYPE type, uint64 capacity, bool shader_visible)
 	{
 		allocator.initialize(capacity);
 
 		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 		desc.NumDescriptors = (uint32)capacity;
 		desc.Type = type;
-		if (shaderVisible)
+		if (shader_visible)
 		{
 			desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		}
 
-		checkResult(dxContext.device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeap)));
+		checkResult(dx_context.device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptor_heap)));
 
-		cpuBase = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-		gpuBase = shaderVisible ? descriptorHeap->GetGPUDescriptorHandleForHeapStart() : CD3DX12_GPU_DESCRIPTOR_HANDLE{};
-		descriptorSize = dxContext.device->GetDescriptorHandleIncrementSize(type);
+		cpu_base = descriptor_heap->GetCPUDescriptorHandleForHeapStart();
+		gpu_base = shader_visible ? descriptor_heap->GetGPUDescriptorHandleForHeapStart() : CD3DX12_GPU_DESCRIPTOR_HANDLE{};
+		descriptor_size = dx_context.device->GetDescriptorHandleIncrementSize(type);
 	}
 
-	std::pair<dx_descriptor_allocation, bool> dx_descriptor_page::allocate(uint64 count)
+	std::pair<DXDescriptorAllocation, bool> DXDescriptorPage::allocate(uint64 count)
 	{
 		uint64 offset = allocator.allocate(count);
 		if (offset == UINT64_MAX)
 		{
-			return { dx_descriptor_allocation{}, false };
+			return { DXDescriptorAllocation{}, false };
 		}
 
-		dx_descriptor_allocation result;
+		DXDescriptorAllocation result;
 		result.count = count;
-		result.cpuBase.InitOffsetted(cpuBase, (uint32)offset, descriptorSize);
-		result.gpuBase.InitOffsetted(gpuBase, (uint32)offset, descriptorSize);
-		result.descriptorSize = descriptorSize;
+		result.cpu_base.InitOffsetted(cpu_base, (uint32)offset, descriptor_size);
+		result.gpu_base.InitOffsetted(gpu_base, (uint32)offset, descriptor_size);
+		result.descriptor_size = descriptor_size;
 
 		return { result, true };
 	}
 
-	void dx_descriptor_page::free(dx_descriptor_allocation allocation)
+	void DXDescriptorPage::free(DXDescriptorAllocation allocation)
 	{
-		uint64 offset = (allocation.cpuBase.ptr - cpuBase.ptr) / descriptorSize;
+		uint64 offset = (allocation.cpu_base.ptr - cpu_base.ptr) / descriptor_size;
 		allocator.free(offset, allocation.count);
 	}
 
-	void dx_descriptor_heap::initialize(D3D12_DESCRIPTOR_HEAP_TYPE type, bool shaderVisible, uint64 pageSize)
+	void DXDescriptorHeap::initialize(D3D12_DESCRIPTOR_HEAP_TYPE type, bool shader_visible, uint64 page_size)
 	{
 		this->type = type;
-		this->pageSize = pageSize;
-		this->shaderVisible = shaderVisible;
+		this->page_size = page_size;
+		this->shader_visible = shader_visible;
 	}
 
-	dx_descriptor_allocation dx_descriptor_heap::allocate(uint64 count)
+	DXDescriptorAllocation DXDescriptorHeap::allocate(uint64 count)
 	{
 		if (count == 0)
 			return {};
 
-		ASSERT(count <= pageSize);
+		ASSERT(count <= page_size);
 
 		// Lock section
 		mutex.lock();
 
-		for (uint32 i = 0; i < (uint32)allPages.size(); ++i)
+		for (uint32 i = 0; i < (uint32)all_pages.size(); ++i)
 		{
-			auto [allocation, success] = allPages[i]->allocate(count);
+			auto [allocation, success] = all_pages[i]->allocate(count);
 			if (success)
 			{
-				allocation.pageIndex = i;
+				allocation.page_index = i;
 				mutex.unlock();
 				return allocation;
 			}
 		}
 
-		uint32 pageIndex = (uint32)allPages.size();
-		allPages.push_back(new dx_descriptor_page(type, pageSize, shaderVisible));
+		uint32 page_index = (uint32)all_pages.size();
+		all_pages.push_back(new DXDescriptorPage(type, page_size, shader_visible));
 
-		auto [allocation, success] = allPages.back()->allocate(count);
+		auto [allocation, success] = all_pages.back()->allocate(count);
 		ASSERT(success);
-		allocation.pageIndex = pageIndex;
+		allocation.page_index = page_index;
 
 		mutex.unlock();
 
 		return allocation;
 	}
 
-	void dx_descriptor_heap::free(dx_descriptor_allocation allocation)
+	void DXDescriptorHeap::free(DXDescriptorAllocation allocation)
 	{
 		if (allocation.valid())
 		{
 			Lock lock{ mutex };
-			allPages[allocation.pageIndex]->free(allocation);
+			all_pages[allocation.page_index]->free(allocation);
 		}
 	}
 
-	com<ID3D12DescriptorHeap> dx_descriptor_heap::getHeap(int index) const
+	com<ID3D12DescriptorHeap> DXDescriptorHeap::get_heap(int index) const
 	{
-		return allPages[index]->descriptorHeap;
+		return all_pages[index]->descriptor_heap;
 	}
 
-	struct dx_frame_descriptor_page
+	struct DXFrameDescriptorPage
 	{
-		com<ID3D12DescriptorHeap> descriptorHeap;
-		dx_double_descriptor_handle base;
-		uint32 usedDescriptors;
-		uint32 maxNumDescriptors;
-		uint32 descriptorHandleIncrementSize;
+		com<ID3D12DescriptorHeap> descriptor_heap;
+		DXDoubleDescriptorHandle base;
+		uint32 used_descriptors;
+		uint32 max_num_descriptors;
+		uint32 descriptor_handle_increment_size;
 
-		dx_frame_descriptor_page* next;
+		DXFrameDescriptorPage* next;
 	};
 
-	void dx_frame_descriptor_allocator::initialize()
+	void DXFrameDescriptorAllocator::initialize()
 	{
-		currentFrame = NUM_BUFFERED_FRAMES - 1;
+		current_frame = NUM_BUFFERED_FRAMES - 1;
 	}
 
-	void dx_frame_descriptor_allocator::newFrame(uint32 bufferedFrameID)
+	void DXFrameDescriptorAllocator::new_frame(uint32 buffered_frame_id)
 	{
 		Lock lock{ mutex };
 
-		currentFrame = bufferedFrameID;
+		current_frame = buffered_frame_id;
 
-		while (usedPages[currentFrame])
+		while (used_pages[current_frame])
 		{
-			dx_frame_descriptor_page* page = usedPages[currentFrame];
-			usedPages[currentFrame] = page->next;
-			page->next = freePages;
-			freePages = page;
+			DXFrameDescriptorPage* page = used_pages[current_frame];
+			used_pages[current_frame] = page->next;
+			page->next = free_pages;
+			free_pages = page;
 		}
 	}
 
-	dx_descriptor_range dx_frame_descriptor_allocator::allocateContiguousDescriptorRange(uint32 count)
+	DXDescriptorRange DXFrameDescriptorAllocator::allocate_contiguous_descriptor_range(uint32 count)
 	{
 		// Lock section
 		mutex.lock();
 
-		dx_frame_descriptor_page* current = usedPages[currentFrame];
-		if (!current || (current->maxNumDescriptors - current->usedDescriptors < count))
+		DXFrameDescriptorPage* current = used_pages[current_frame];
+		if (!current || (current->max_num_descriptors - current->used_descriptors < count))
 		{
-			dx_frame_descriptor_page* freePage = freePages;
-			if (!freePage)
+			DXFrameDescriptorPage* free_page = free_pages;
+			if (!free_page)
 			{
-				freePage = (dx_frame_descriptor_page*)calloc(1, sizeof(dx_frame_descriptor_page));
+				free_page = (DXFrameDescriptorPage*)calloc(1, sizeof(DXFrameDescriptorPage));
 
 				D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 				desc.NumDescriptors = 1024;
 				desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 				desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-				checkResult(dxContext.device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&freePage->descriptorHeap)));
+				checkResult(dx_context.device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&free_page->descriptor_heap)));
 
-				freePage->maxNumDescriptors = desc.NumDescriptors;
-				freePage->descriptorHandleIncrementSize = dxContext.device->GetDescriptorHandleIncrementSize(desc.Type);
-				freePage->base.cpuHandle = freePage->descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-				freePage->base.gpuHandle = freePage->descriptorHeap->GetGPUDescriptorHandleForHeapStart();
+				free_page->max_num_descriptors = desc.NumDescriptors;
+				free_page->descriptor_handle_increment_size = dx_context.device->GetDescriptorHandleIncrementSize(desc.Type);
+				free_page->base.cpu_handle = free_page->descriptor_heap->GetCPUDescriptorHandleForHeapStart();
+				free_page->base.gpu_handle = free_page->descriptor_heap->GetGPUDescriptorHandleForHeapStart();
 			}
 
-			freePages = freePage->next;
-			freePage->usedDescriptors = 0;
-			freePage->next = current;
-			usedPages[currentFrame] = freePage;
-			current = freePage;
+			free_pages = free_page->next;
+			free_page->used_descriptors = 0;
+			free_page->next = current;
+			used_pages[current_frame] = free_page;
+			current = free_page;
 		}
 
-		uint32 index = current->usedDescriptors;
-		current->usedDescriptors += count;
+		uint32 index = current->used_descriptors;
+		current->used_descriptors += count;
 
 		mutex.unlock();
 
-		dx_descriptor_range result;
+		DXDescriptorRange result;
 
-		result.base.cpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(current->base.cpuHandle, index, current->descriptorHandleIncrementSize);
-		result.base.gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(current->base.gpuHandle, index, current->descriptorHandleIncrementSize);
-		result.descriptorHandleIncrementSize = current->descriptorHandleIncrementSize;
-		result.descriptorHeap = current->descriptorHeap;
-		result.maxNumDescriptors = count;
-		result.pushIndex = 0;
+		result.base.cpu_handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(current->base.cpu_handle, index, current->descriptor_handle_increment_size);
+		result.base.gpu_handle = CD3DX12_GPU_DESCRIPTOR_HANDLE(current->base.gpu_handle, index, current->descriptor_handle_increment_size);
+		result.descriptor_handle_increment_size = current->descriptor_handle_increment_size;
+		result.descriptor_heap = current->descriptor_heap;
+		result.max_num_descriptors = count;
+		result.push_index = 0;
 
 		return result;
 	}
 
-	void dx_pushable_descriptor_heap::initialize(uint32 maxSize, bool shaderVisible)
+	void DXPushableDescriptorHeap::initialize(uint32 max_size, bool shader_visible)
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-		desc.NumDescriptors = maxSize;
+		desc.NumDescriptors = max_size;
 		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
-		if (shaderVisible)
+		if (shader_visible)
 		{
 			desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		}
 
-		checkResult(dxContext.device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeap)));
+		checkResult(dx_context.device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptor_heap)));
 
 		reset();
 	}
 
-	void dx_pushable_descriptor_heap::reset()
+	void DXPushableDescriptorHeap::reset()
 	{
-		currentCPU = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-		currentGPU = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
+		current_cpu = descriptor_heap->GetCPUDescriptorHandleForHeapStart();
+		current_gpu = descriptor_heap->GetGPUDescriptorHandleForHeapStart();
 	}
 
-	dx_cpu_descriptor_handle dx_pushable_descriptor_heap::push()
+	DXCPUDescriptorHandle DXPushableDescriptorHeap::push()
 	{
-		++currentGPU;
-		return currentCPU++;
+		++current_gpu;
+		return current_cpu++;
 	}
 
 }

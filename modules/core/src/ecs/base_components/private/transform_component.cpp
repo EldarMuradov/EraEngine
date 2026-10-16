@@ -113,7 +113,7 @@ namespace era_engine
 	{
 		const Entity::Handle parent_handle = get_entity().get_parent_handle();
 
-		if (parent_handle != Entity::NullHandle)
+		if (parent_handle != Entity::null_handle)
 		{
 			TransformComponent* parent_transform = get_world()->get_entity(parent_handle).get_component<TransformComponent>();
 			local_transform = invert(parent_transform->get_world_transform()) * transform;
@@ -134,7 +134,7 @@ namespace era_engine
 		Entity root_entity = world->get_root_entity();
 
 		Entity::Handle ancestor = get_entity().get_parent_handle();
-		while (ancestor != Entity::NullHandle && ancestor != root_entity.get_handle())
+		while (ancestor != Entity::null_handle && ancestor != root_entity.get_handle())
 		{
 			Entity ancestor_entity = world->get_entity(ancestor);
 			TransformComponent* ancestor_transform_component = ancestor_entity.get_component<TransformComponent>();

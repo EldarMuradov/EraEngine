@@ -8,23 +8,23 @@
 
 namespace era_engine
 {
-	struct dx_command_list;
-	struct dx_texture;
-	struct dx_buffer;
+	struct DXCommandList;
+	struct DXTexture;
+	struct DXBuffer;
 
-	void initializeTexturePreprocessing();
+	void initialize_texture_preprocessing();
 
-	void generateMipMapsOnGPU(dx_command_list* cl, ref<dx_texture>& texture);
-	NODISCARD ref<dx_texture> equirectangularToCubemap(dx_command_list* cl, const ref<dx_texture>& equirectangular, uint32 resolution, uint32 numMips = 0, DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN);
+	void generate_mip_maps_on_gpu(DXCommandList* cl, ref<DXTexture>& texture);
+	NODISCARD ref<DXTexture> equirectangular_to_cubemap(DXCommandList* cl, const ref<DXTexture>& equirectangular, uint32 resolution, uint32 num_mips = 0, DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN);
 
-	void texturedSkyToIrradiance(dx_command_list* cl, const ref<dx_texture>& sky, ref<dx_texture>& outIrradiance);
-	void texturedSkyToPrefilteredRadiance(dx_command_list* cl, const ref<dx_texture>& sky, ref<dx_texture>& outPrefilteredRadiance);
+	void textured_sky_to_irradiance(DXCommandList* cl, const ref<DXTexture>& sky, ref<DXTexture>& out_irradiance);
+	void textured_sky_to_prefiltered_radiance(DXCommandList* cl, const ref<DXTexture>& sky, ref<DXTexture>& out_prefiltered_radiance);
 
-	void proceduralSkyToIrradiance(dx_command_list* cl, vec3 sunDirection, ref<dx_texture>& outIrradiance);
+	void procedural_sky_to_irradiance(DXCommandList* cl, vec3 sun_direction, ref<DXTexture>& out_irradiance);
 	//void proceduralSkyToPrefilteredRadiance(dx_command_list* cl, vec3 sunDirection, ref<dx_texture>& outPrefilteredRadiance);
 
-	NODISCARD ref<dx_texture> integrateBRDF(dx_command_list* cl, uint32 resolution = 512);
+	NODISCARD ref<DXTexture> integrate_brdf(DXCommandList* cl, uint32 resolution = 512);
 
-	void texturedSkyToIrradianceSH(dx_command_list* cl, const ref<dx_texture>& environment, ref<dx_buffer> shBuffer, uint32 shIndex);
-	NODISCARD ref<dx_buffer> texturedSkyToIrradianceSH(dx_command_list* cl, const ref<dx_texture>& environment); // Creates buffer with one spherical harmonics set.
+	void textured_sky_to_irradiance_sh(DXCommandList* cl, const ref<DXTexture>& environment, ref<DXBuffer> sh_buffer, uint32 sh_index);
+	NODISCARD ref<DXBuffer> textured_sky_to_irradiance_sh(DXCommandList* cl, const ref<DXTexture>& environment); // Creates buffer with one spherical harmonics set.
 }

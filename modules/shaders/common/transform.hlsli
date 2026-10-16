@@ -8,7 +8,7 @@
 #define mat3x4 mat4
 #endif
 
-struct transform_cb
+struct TransformCB
 {
     mat4 mvp;
     mat3x4 m;

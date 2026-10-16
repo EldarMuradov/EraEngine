@@ -4,31 +4,31 @@
 
 namespace era_engine
 {
-    void dx_raytracer::fillOutRayTracingRenderDesc(const ref<dx_buffer>& bindingTableBuffer,
-        D3D12_DISPATCH_RAYS_DESC& raytraceDesc,
-        uint32 renderWidth, uint32 renderHeight, uint32 renderDepth,
-        uint32 numRayTypes, uint32 numHitGroups)
+    void DXRaytracer::fill_out_ray_tracing_render_desc(const ref<DXBuffer>& binding_table_buffer,
+        D3D12_DISPATCH_RAYS_DESC& raytrace_desc,
+        uint32 render_width, uint32 render_height, uint32 render_depth,
+        uint32 num_ray_types, uint32 num_hit_groups)
     {
-        raytraceDesc.Width = renderWidth;
-        raytraceDesc.Height = renderHeight;
-        raytraceDesc.Depth = renderDepth;
+        raytrace_desc.Width = render_width;
+        raytrace_desc.Height = render_height;
+        raytrace_desc.Depth = render_depth;
 
-        uint32 numHitShaders = numHitGroups * numRayTypes;
+        uint32 num_hit_shaders = num_hit_groups * num_ray_types;
 
         // Pointer to the entry point of the ray-generation shader
-        raytraceDesc.RayGenerationShaderRecord.StartAddress = bindingTableBuffer->gpuVirtualAddress + pipeline.shaderBindingTableDesc.raygenOffset;
-        raytraceDesc.RayGenerationShaderRecord.SizeInBytes = pipeline.shaderBindingTableDesc.entrySize;
+        raytrace_desc.RayGenerationShaderRecord.StartAddress = binding_table_buffer->gpu_virtual_address + pipeline.shader_binding_table_desc.raygen_offset;
+        raytrace_desc.RayGenerationShaderRecord.SizeInBytes = pipeline.shader_binding_table_desc.entry_size;
 
         // Pointer to the entry point(s) of the miss shader
-        raytraceDesc.MissShaderTable.StartAddress = bindingTableBuffer->gpuVirtualAddress + pipeline.shaderBindingTableDesc.missOffset;
-        raytraceDesc.MissShaderTable.StrideInBytes = pipeline.shaderBindingTableDesc.entrySize;
-        raytraceDesc.MissShaderTable.SizeInBytes = pipeline.shaderBindingTableDesc.entrySize * numRayTypes;
+        raytrace_desc.MissShaderTable.StartAddress = binding_table_buffer->gpu_virtual_address + pipeline.shader_binding_table_desc.miss_offset;
+        raytrace_desc.MissShaderTable.StrideInBytes = pipeline.shader_binding_table_desc.entry_size;
+        raytrace_desc.MissShaderTable.SizeInBytes = pipeline.shader_binding_table_desc.entry_size * num_ray_types;
 
         // Pointer to the entry point(s) of the hit shader.
-        raytraceDesc.HitGroupTable.StartAddress = bindingTableBuffer->gpuVirtualAddress + pipeline.shaderBindingTableDesc.hitOffset;
-        raytraceDesc.HitGroupTable.StrideInBytes = pipeline.shaderBindingTableDesc.entrySize;
-        raytraceDesc.HitGroupTable.SizeInBytes = pipeline.shaderBindingTableDesc.entrySize * numHitShaders;
+        raytrace_desc.HitGroupTable.StartAddress = binding_table_buffer->gpu_virtual_address + pipeline.shader_binding_table_desc.hit_offset;
+        raytrace_desc.HitGroupTable.StrideInBytes = pipeline.shader_binding_table_desc.entry_size;
+        raytrace_desc.HitGroupTable.SizeInBytes = pipeline.shader_binding_table_desc.entry_size * num_hit_shaders;
 
-        raytraceDesc.CallableShaderTable = {};
+        raytrace_desc.CallableShaderTable = {};
     }
 }

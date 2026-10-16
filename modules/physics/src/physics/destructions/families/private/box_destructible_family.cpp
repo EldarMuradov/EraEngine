@@ -20,16 +20,16 @@ namespace era_engine::physics
 	{
 		using namespace Nv::Blast;
 
-		mesh_builder builder;
+		MeshBuilder builder;
 
 		box_render_material = create_pbr_material_async({ "", "" });
-		box_render_material->shader = pbr_material_shader_double_sided;
+		box_render_material->shader = PBR_MATERIAL_SHADER_DOUBLE_SIDED;
 
 		box_mesh = make_ref<MultiMesh>();
-		builder.pushBox({ });
-		box_mesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, box_render_material });
+		builder.push_box({ });
+		box_mesh->submeshes.push_back({ builder.end_submesh(), {}, trs::identity, box_render_material });
 
-		box_mesh->mesh = builder.createDXMesh();
+		box_mesh->mesh = builder.create_dx_mesh();
 
 		const ExtPxAsset* px_asset = blast_asset->px_asset;
 		const uint32 chunk_count = px_asset->getChunkCount();

@@ -42,7 +42,7 @@ constexpr float oneDiv120 = 1.0f / 120.0f;
 
 inline constexpr float lerp(float l, float u, float t) { return l + t * (u - l); }
 inline constexpr float inverse_lerp(float l, float u, float v) { return (v - l) / (u - l); }
-inline constexpr float remap(float v, float oldL, float oldU, float newL, float newU) { return lerp(newL, newU, inverse_lerp(oldL, oldU, v)); }
+inline constexpr float remap(float v, float old_l, float old_u, float new_l, float new_u) { return lerp(new_l, new_u, inverse_lerp(old_l, old_u, v)); }
 inline constexpr float clamp(float v, float l, float u) { float r = max(l, v); r = min(u, r); return r; }
 inline constexpr uint32 clamp(uint32 v, uint32 l, uint32 u) { uint32 r = max(l, v); r = min(u, r); return r; }
 inline constexpr int32 clamp(int32 v, int32 l, int32 u) { int32 r = max(l, v); r = min(u, r); return r; }
@@ -50,8 +50,8 @@ inline constexpr float clamp01(float v) { return clamp(v, 0.f, 1.f); }
 inline constexpr float saturate(float v) { return clamp01(v); }
 inline constexpr float smoothstep(float t) { return t * t * (3.f - 2.f * t); }
 inline constexpr float smoothstep(float l, float u, float v) { return smoothstep(clamp01(inverse_lerp(l, u, v))); }
-inline constexpr uint32 bucketize(uint32 problemSize, uint32 bucketSize) { return (problemSize + bucketSize - 1) / bucketSize; }
-inline constexpr uint64 bucketize(uint64 problemSize, uint64 bucketSize) { return (problemSize + bucketSize - 1) / bucketSize; }
+inline constexpr uint32 bucketize(uint32 problem_size, uint32 bucket_size) { return (problem_size + bucket_size - 1) / bucket_size; }
+inline constexpr uint64 bucketize(uint64 problem_size, uint64 bucket_size) { return (problem_size + bucket_size - 1) / bucket_size; }
 
 inline float frac(float v) { return fmodf(v, 1.f); }
 inline void copy_sign(float from, float& to) { to = copysign(to, from); }
@@ -910,33 +910,33 @@ inline uint32 max_element_index(vec4 a) {
 
 ERA_CORE_API float map_value(float value, float in_range_a, float in_range_b, float out_range_a, float out_range_b);
 
-inline vec2 remap(vec2 v, vec2 oldL, vec2 oldU, vec2 newL, vec2 newU)
+inline vec2 remap(vec2 v, vec2 old_l, vec2 old_u, vec2 new_l, vec2 new_u)
 {
 	return
 	{
-		remap(v.x, oldL.x, oldU.x, newL.x, newU.x),
-		remap(v.y, oldL.y, oldU.y, newL.y, newU.y),
+		remap(v.x, old_l.x, old_u.x, new_l.x, new_u.x),
+		remap(v.y, old_l.y, old_u.y, new_l.y, new_u.y),
 	};
 }
 
-inline vec3 remap(vec3 v, vec3 oldL, vec3 oldU, vec3 newL, vec3 newU)
+inline vec3 remap(vec3 v, vec3 old_l, vec3 old_u, vec3 new_l, vec3 new_u)
 {
 	return
 	{
-		remap(v.x, oldL.x, oldU.x, newL.x, newU.x),
-		remap(v.y, oldL.y, oldU.y, newL.y, newU.y),
-		remap(v.z, oldL.z, oldU.z, newL.z, newU.z),
+		remap(v.x, old_l.x, old_u.x, new_l.x, new_u.x),
+		remap(v.y, old_l.y, old_u.y, new_l.y, new_u.y),
+		remap(v.z, old_l.z, old_u.z, new_l.z, new_u.z),
 	};
 }
 
-inline vec4 remap(vec4 v, vec4 oldL, vec4 oldU, vec4 newL, vec4 newU)
+inline vec4 remap(vec4 v, vec4 old_l, vec4 old_u, vec4 new_l, vec4 new_u)
 {
 	return
 	{
-		remap(v.x, oldL.x, oldU.x, newL.x, newU.x),
-		remap(v.y, oldL.y, oldU.y, newL.y, newU.y),
-		remap(v.z, oldL.z, oldU.z, newL.z, newU.z),
-		remap(v.w, oldL.w, oldU.w, newL.w, newU.w),
+		remap(v.x, old_l.x, old_u.x, new_l.x, new_u.x),
+		remap(v.y, old_l.y, old_u.y, new_l.y, new_u.y),
+		remap(v.z, old_l.z, old_u.z, new_l.z, new_u.z),
+		remap(v.w, old_l.w, old_u.w, new_l.w, new_u.w),
 	};
 }
 
@@ -1042,7 +1042,7 @@ ERA_CORE_API mat4 look_at(vec3 eye, vec3 target, vec3 up);
 ERA_CORE_API mat4 create_view_matrix(vec3 position, quat rotation);
 ERA_CORE_API mat4 invert_affine(const mat4& m);
 
-ERA_CORE_API bool point_in_triangle(vec3 point, vec3 triA, vec3 triB, vec3& triC);
+ERA_CORE_API bool point_in_triangle(vec3 point, vec3 tri_a, vec3 tri_b, vec3& tri_c);
 ERA_CORE_API bool point_in_rectangle(vec2 p, vec2 top_left, vec2 bottom_right);
 ERA_CORE_API bool point_in_box(vec3 p, vec3 min_corner, vec3 max_corner);
 
@@ -1051,8 +1051,8 @@ ERA_CORE_API vec2 direction_to_panorama_uv(vec3 dir);
 ERA_CORE_API float angle_to_zero_to_two_pi(float angle);
 ERA_CORE_API float angle_to_neg_pi_to_pi(float angle);
 
-ERA_CORE_API vec2 solve_linear_system(const mat2& A, vec2 b);
-ERA_CORE_API vec3 solve_linear_system(const mat3& A, vec3 b);
+ERA_CORE_API vec2 solve_linear_system(const mat2& a, vec2 b);
+ERA_CORE_API vec3 solve_linear_system(const mat3& a, vec3 b);
 
 ERA_CORE_API vec3 get_barycentric_coordinates(vec2 a, vec2 b, vec2 c, vec2 p);
 ERA_CORE_API vec3 get_barycentric_coordinates(vec3 a, vec3 b, vec3 c, vec3 p);
@@ -1062,7 +1062,7 @@ ERA_CORE_API void get_tangents(vec3 normal, vec3& out_tangent, vec3& out_bitange
 ERA_CORE_API vec3 get_tangent(vec3 normal);
 
 // W = PDF = 1 / 4pi
-ERA_CORE_API vec4 uniform_sample_sphere(vec2 E);
+ERA_CORE_API vec4 uniform_sample_sphere(vec2 e);
 
 struct ERA_CORE_API singular_value_decomposition
 {
@@ -1076,9 +1076,9 @@ struct ERA_CORE_API QRDecomposition
 	mat3 Q, R;
 };
 
-ERA_CORE_API singular_value_decomposition compute_svd(const mat3& A);
+ERA_CORE_API singular_value_decomposition compute_svd(const mat3& a);
 ERA_CORE_API QRDecomposition create_qr_decomposition(const mat3& mat);
-ERA_CORE_API bool get_eigen(const mat3& A, vec3& out_eigen_values, mat3& out_eigen_vectors);
+ERA_CORE_API bool get_eigen(const mat3& a, vec3& out_eigen_values, mat3& out_eigen_vectors);
 
 template <typename T>
 void exclusive_prefix_sum(const T* input, T* output, uint32 count)
@@ -1365,9 +1365,9 @@ struct alignas(16) catmull_rom_spline
 		}
 	}
 
-	inline T evaluate(uint32 numActualPoints, float t) const
+	inline T evaluate(uint32 num_actual_points, float t) const
 	{
-		return evaluate_spline(ts, values, numActualPoints, t);
+		return evaluate_spline(ts, values, num_actual_points, t);
 	}
 };
 

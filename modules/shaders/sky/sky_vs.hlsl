@@ -1,26 +1,26 @@
 #include "sky_rs.hlsli"
 
-ConstantBuffer<sky_transform_cb> transform : register(b0);
+ConstantBuffer<SkyTransformCB> transform : register(b0);
 
-struct vs_input
+struct VSInput
 {
-	uint vertexID	: SV_VertexID;
+	uint vertex_id	: SV_VertexID;
 };
 
-struct vs_output
+struct VSOutput
 {
 	float3 uv				: TEXCOORDS;
 	float3 ndc				: NDC;
-	float3 prevFrameNDC		: PREV_FRAME_NDC;
+	float3 prev_frame_ndc		: PREV_FRAME_NDC;
 
 	float4 position			: SV_Position;
 };
 
-vs_output main(vs_input IN)
+VSOutput main(VSInput IN)
 {
-	vs_output OUT;
+	VSOutput OUT;
 
-	uint b = 1u << IN.vertexID;
+	uint b = 1u << IN.vertex_id;
 	float3 pos = float3(
 		(0x287a & b) != 0, 
 		(0x02af & b) != 0, 
@@ -32,7 +32,7 @@ vs_output main(vs_input IN)
 	OUT.position.z = OUT.position.w - 1e-6f;
 
 	OUT.ndc = OUT.position.xyw;
-	OUT.prevFrameNDC = mul(transform.prevFrameVP, float4(pos, 1.f)).xyw;
+	OUT.prev_frame_ndc = mul(transform.prev_frame_vp, float4(pos, 1.f)).xyw;
 
 	return OUT;
 }

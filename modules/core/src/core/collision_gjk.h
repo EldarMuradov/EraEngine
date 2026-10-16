@@ -8,61 +8,61 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API sphere_support_fn
+	struct ERA_CORE_API SphereSupportFn
 	{
 		vec3 operator()(vec3 dir) const
 		{
 			return normalize(dir) * s.radius + s.center;
 		}
 
-		const bounding_sphere& s;
+		const BoundingSphere& s;
 	};
 
-	struct ERA_CORE_API capsule_support_fn
+	struct ERA_CORE_API CapsuleSupportFn
 	{
 		vec3 operator()(const vec3& dir) const
 		{
-			float distA = dot(dir, c.positionA);
-			float distB = dot(dir, c.positionB);
-			vec3 fartherPoint = distA > distB ? c.positionA : c.positionB;
-			return normalize(dir) * c.radius + fartherPoint;
+			float dist_a = dot(dir, c.position_a);
+			float dist_b = dot(dir, c.position_b);
+			vec3 farther_point = dist_a > dist_b ? c.position_a : c.position_b;
+			return normalize(dir) * c.radius + farther_point;
 		}
 
-		const bounding_capsule& c;
+		const BoundingCapsule& c;
 	};
 
-	struct ERA_CORE_API cylinder_support_fn
+	struct ERA_CORE_API CylinderSupportFn
 	{
 		vec3 operator()(const vec3& dir) const
 		{
-			float distA = dot(dir, c.positionA);
-			float distB = dot(dir, c.positionB);
-			vec3 fartherPoint = distA > distB ? c.positionA : c.positionB;
+			float dist_a = dot(dir, c.position_a);
+			float dist_b = dot(dir, c.position_b);
+			vec3 farther_point = dist_a > dist_b ? c.position_a : c.position_b;
 
-			vec3 n = c.positionA - c.positionB;
+			vec3 n = c.position_a - c.position_b;
 
-			vec3 projectedDir = noz(cross(cross(n, dir), n));
-			return fartherPoint + projectedDir * c.radius;
+			vec3 projected_dir = noz(cross(cross(n, dir), n));
+			return farther_point + projected_dir * c.radius;
 		}
 
-		const bounding_cylinder& c;
+		const BoundingCylinder& c;
 	};
 
-	struct ERA_CORE_API aabb_support_fn
+	struct ERA_CORE_API AABBSupportFn
 	{
 		vec3 operator()(vec3 dir) const
 		{
 			return vec3(
-				(dir.x < 0.f) ? b.minCorner.x : b.maxCorner.x,
-				(dir.y < 0.f) ? b.minCorner.y : b.maxCorner.y,
-				(dir.z < 0.f) ? b.minCorner.z : b.maxCorner.z
+				(dir.x < 0.f) ? b.min_corner.x : b.max_corner.x,
+				(dir.y < 0.f) ? b.min_corner.y : b.max_corner.y,
+				(dir.z < 0.f) ? b.min_corner.z : b.max_corner.z
 			);
 		}
 
-		const bounding_box& b;
+		const BoundingBox& b;
 	};
 
-	struct ERA_CORE_API obb_support_fn
+	struct ERA_CORE_API OBBSupportFn
 	{
 		vec3 operator()(vec3 dir) const
 		{
@@ -76,24 +76,24 @@ namespace era_engine
 			return b.center + b.rotation * r;
 		}
 
-		const bounding_oriented_box& b;
+		const BoundingOrientedBox& b;
 	};
 
-	struct ERA_CORE_API hull_support_fn
+	struct ERA_CORE_API HullSupportFn
 	{
 		vec3 operator()(vec3 dir) const
 		{
 			dir = conjugate(h.rotation) * dir;
 			vec3 result;
 
-			float maxDist = -FLT_MAX;
+			float max_dist = -FLT_MAX;
 
-			for (const vec3& v : h.geometryPtr->vertices)
+			for (const vec3& v : h.geometry_ptr->vertices)
 			{
 				float d = dot(dir, v);
-				if (d > maxDist)
+				if (d > max_dist)
 				{
-					maxDist = d;
+					max_dist = d;
 					result = v;
 				}
 			}
@@ -101,10 +101,10 @@ namespace era_engine
 			return h.position + h.rotation * result;
 		};
 
-		const bounding_hull& h;
+		const BoundingHull& h;
 	};
 
-	union extruded_triangle_support_fn
+	union ExtrudedTriangleSupportFn
 	{
 		struct
 		{
@@ -112,7 +112,7 @@ namespace era_engine
 			vec3 d, e, f;
 		};
 
-		extruded_triangle_support_fn(vec3 a, vec3 b, vec3 c, float extrusion = 10.f)
+		ExtrudedTriangleSupportFn(vec3 a, vec3 b, vec3 c, float extrusion = 10.f)
 			: a(a), b(b), c(c),
 			d(a.x, a.y - extrusion, a.z),
 			e(b.x, b.y - extrusion, b.z),
@@ -121,15 +121,15 @@ namespace era_engine
 
 		vec3 operator()(vec3 dir) const
 		{
-			float maxD = dot(a, dir);
+			float max_d = dot(a, dir);
 			vec3 result = a;
 
 			for (uint32 i = 1; i < 6; ++i)
 			{
 				float d = dot(points[i], dir);
-				if (d > maxD)
+				if (d > max_d)
 				{
-					maxD = d;
+					max_d = d;
 					result = points[i];
 				}
 			}
@@ -140,90 +140,90 @@ namespace era_engine
 		vec3 points[6];
 	};
 
-	struct ERA_CORE_API gjk_support_point
+	struct ERA_CORE_API GJKSupportPoint
 	{
-		gjk_support_point()
+		GJKSupportPoint()
 		{
 		}
 
-		gjk_support_point(const vec3& a, const vec3& b)
+		GJKSupportPoint(const vec3& a, const vec3& b)
 		{
-			shapeAPoint = a;
-			shapeBPoint = b;
+			shape_a_point = a;
+			shape_b_point = b;
 			minkowski = a - b;
 		}
 
-		vec3 shapeAPoint;
-		vec3 shapeBPoint;
+		vec3 shape_a_point;
+		vec3 shape_b_point;
 		vec3 minkowski;
 	};
 
-	struct ERA_CORE_API gjk_simplex
+	struct ERA_CORE_API GJKSimplex
 	{
-		gjk_support_point a; // This is only used for the epa.
-		gjk_support_point b, c, d;
-		uint32 numPoints = 0;
+		GJKSupportPoint a; // This is only used for the epa.
+		GJKSupportPoint b, c, d;
+		uint32 num_points = 0;
 	};
 
 	template <typename shapeA_t, typename shapeB_t>
-	static gjk_support_point support(const shapeA_t& a, const shapeB_t& b, const vec3& dir)
+	static GJKSupportPoint support(const shapeA_t& a, const shapeB_t& b, const vec3& dir)
 	{
-		vec3 farthestInA = a(dir);
-		vec3 farthestInB = b(-dir);
-		return gjk_support_point(farthestInA, farthestInB);
+		vec3 farthest_in_a = a(dir);
+		vec3 farthest_in_b = b(-dir);
+		return GJKSupportPoint(farthest_in_a, farthest_in_b);
 	}
 
-	static inline vec3 crossABA(const vec3& a, const vec3& b)
+	static inline vec3 cross_aba(const vec3& a, const vec3& b)
 	{
 		return cross(cross(a, b), a);
 	}
 
-	enum gjk_internal_success
+	enum GJKInternalSuccess
 	{
-		gjk_stop,
-		gjk_dont_stop,
-		gjk_unexpected_error, // Happens very very seldom. I don't know the reason yet, but instead of asserting we return this. I figure it's better than crashing.
+		GJK_STOP,
+		GJK_DONT_STOP,
+		GJK_UNEXPECTED_ERROR, // Happens very very seldom. I don't know the reason yet, but instead of asserting we return this. I figure it's better than crashing.
 	};
 
-	gjk_internal_success updateGJKSimplex(gjk_simplex& s, const gjk_support_point& a, vec3& dir);
+	GJKInternalSuccess update_gjk_simplex(GJKSimplex& s, const GJKSupportPoint& a, vec3& dir);
 
 	template <typename shapeA_t, typename shapeB_t>
-	static bool gjkIntersectionTest(const shapeA_t& shapeA, const shapeB_t& shapeB, gjk_simplex& outSimplex)
+	static bool gjk_intersection_test(const shapeA_t& shape_a, const shapeB_t& shape_b, GJKSimplex& out_simplex)
 	{
 		vec3 dir(1.f, 0.1f, -0.2f); // Arbitrary.
 
 		// First point.
-		outSimplex.c = support(shapeA, shapeB, dir);
-		if (dot(outSimplex.c.minkowski, dir) < 0.f)
+		out_simplex.c = support(shape_a, shape_b, dir);
+		if (dot(out_simplex.c.minkowski, dir) < 0.f)
 			return false;
 
 		// Second point.
-		dir = -outSimplex.c.minkowski;
-		outSimplex.b = support(shapeA, shapeB, dir);
-		if (dot(outSimplex.b.minkowski, dir) < 0.f)
+		dir = -out_simplex.c.minkowski;
+		out_simplex.b = support(shape_a, shape_b, dir);
+		if (dot(out_simplex.b.minkowski, dir) < 0.f)
 			return false;
 
-		dir = crossABA(outSimplex.c.minkowski - outSimplex.b.minkowski, -outSimplex.b.minkowski);
-		outSimplex.numPoints = 2;
+		dir = cross_aba(out_simplex.c.minkowski - out_simplex.b.minkowski, -out_simplex.b.minkowski);
+		out_simplex.num_points = 2;
 
 		while (true)
 		{
 			if (squared_length(dir) < 0.0001f)
 				return false;
 
-			gjk_support_point a = support(shapeA, shapeB, dir);
+			GJKSupportPoint a = support(shape_a, shape_b, dir);
 			if (dot(a.minkowski, dir) < 0.f)
 				return false;
 
-			gjk_internal_success success = updateGJKSimplex(outSimplex, a, dir);
-			if (success == gjk_stop)
+			GJKInternalSuccess success = update_gjk_simplex(out_simplex, a, dir);
+			if (success == GJK_STOP)
 			{
-				ASSERT(outSimplex.numPoints == 3);
-				outSimplex.a = a;
-				outSimplex.numPoints = 4;
+				ASSERT(out_simplex.num_points == 3);
+				out_simplex.a = a;
+				out_simplex.num_points = 4;
 				break;
 			}
-			else if (success == gjk_unexpected_error)
+			else if (success == GJK_UNEXPECTED_ERROR)
 				return false;
 		}
 

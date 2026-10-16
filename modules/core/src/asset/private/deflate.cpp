@@ -48,8 +48,8 @@ namespace era_engine
 
 		void flush_byte()
 		{
-			uint32 flushCount = (bit_count % 8);
-			consume_bits(flushCount);
+			uint32 flush_count = (bit_count % 8);
+			consume_bits(flush_count);
 		}
 
 		uint64 bytes_remaining() const
@@ -95,8 +95,8 @@ namespace era_engine
 			ASSERT(_max_code_length_in_bits <= 16);
 
 			max_code_length_in_bits = _max_code_length_in_bits;
-			uint32 entryCount = (1 << max_code_length_in_bits);
-			entries.resize(entryCount);
+			uint32 entry_count = (1 << max_code_length_in_bits);
+			entries.resize(entry_count);
 
 			uint32 bl_count[16] = {};
 			for (uint32 i = 0; i < num_symbols; ++i)
@@ -167,9 +167,9 @@ namespace era_engine
 	{
 		BitStream stream = { data, compressed_size };
 
-		uint32 zlibHeader0 = *stream.consume<uint8>();
-		uint32 zlibHeader1 = *stream.consume<uint8>();
-		uint32 counter = (((zlibHeader0 * 256 + zlibHeader1) % 31 != 0) || (zlibHeader1 & 32) || ((zlibHeader0 & 15) != 8));
+		uint32 zlib_header0 = *stream.consume<uint8>();
+		uint32 zlib_header1 = *stream.consume<uint8>();
+		uint32 counter = (((zlib_header0 * 256 + zlib_header1) % 31 != 0) || (zlib_header1 & 32) || ((zlib_header0 & 15) != 8));
 		ASSERT(counter == 0);
 
 		uint8* output_start = output;
@@ -193,17 +193,17 @@ namespace era_engine
 
 				while (LEN)
 				{
-					uint16 useLEN = LEN;
-					useLEN = (uint16)min((uint64)useLEN, stream.bytes_remaining());
+					uint16 use_len = LEN;
+					use_len = (uint16)min((uint64)use_len, stream.bytes_remaining());
 
-					uint8* source = stream.consume<uint8>(useLEN);
-					uint16 copy_count = useLEN;
+					uint8* source = stream.consume<uint8>(use_len);
+					uint16 copy_count = use_len;
 					while (copy_count--)
 					{
 						*output++ = *source++;
 					}
 
-					LEN -= useLEN;
+					LEN -= use_len;
 				}
 			}
 			else
@@ -219,17 +219,17 @@ namespace era_engine
 					HDIST = stream.consume_bits(5) + 1;
 					uint32 HCLEN = stream.consume_bits(4) + 4;
 
-					uint32 HCLENSwizzle[] = { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 };
-					ASSERT(HCLEN <= arraysize(HCLENSwizzle));
-					uint32 HCLENTable[arraysize(HCLENSwizzle)] = {};
+					uint32 hclen_swizzle[] = { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 };
+					ASSERT(HCLEN <= arraysize(hclen_swizzle));
+					uint32 hclen_table[arraysize(hclen_swizzle)] = {};
 
 					for (uint32 i = 0; i < HCLEN; ++i)
 					{
-						HCLENTable[HCLENSwizzle[i]] = stream.consume_bits(3);
+						hclen_table[hclen_swizzle[i]] = stream.consume_bits(3);
 					}
 
 					HuffmanTable dict_table;
-					dict_table.initialize(7, HCLENTable, arraysize(HCLENSwizzle));
+					dict_table.initialize(7, hclen_table, arraysize(hclen_swizzle));
 
 					uint32 out_index = 0;
 					while (out_index < HLIT + HDIST)

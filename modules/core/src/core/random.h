@@ -76,7 +76,7 @@ namespace era_engine
 			return normalize(random_vec3_between(-1.f, 1.f));
 		}
 
-		inline NODISCARD quat randomRotation(float max_angle = M_PI)
+		inline NODISCARD quat random_rotation(float max_angle = M_PI)
 		{
 			return quat(random_point_on_unit_sphere(), random_float_between(-max_angle, max_angle));
 		}
@@ -305,10 +305,10 @@ namespace era_engine
 		return vec4(v, d.x, d.y, d.z);
 	}
 
-	typedef vec3(*fbm_noise_2D)(vec2);
-	typedef vec4(*fbm_noise_3D)(vec3);
+	typedef vec3(*FBMNoise2D)(vec2);
+	typedef vec4(*FBMNoise3D)(vec3);
 
-	NODISCARD inline vec3 fbm(fbm_noise_2D noise_func, vec2 x, uint32 num_octaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
+	NODISCARD inline vec3 fbm(FBMNoise2D noise_func, vec2 x, uint32 num_octaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
 	{
 		float value = 0.f;
 		float amplitude = 0.5f;
@@ -334,7 +334,7 @@ namespace era_engine
 		return vec3(value, deriv.x, deriv.y);
 	}
 
-	NODISCARD inline vec4 fbm(fbm_noise_3D noise_func, vec3 x, uint32 num_octaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
+	NODISCARD inline vec4 fbm(FBMNoise3D noise_func, vec3 x, uint32 num_octaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
 	{
 		float value = 0.f;
 		float amplitude = 0.5;

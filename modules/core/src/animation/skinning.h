@@ -8,25 +8,25 @@
 
 namespace era_engine
 {
-	struct dx_vertex_buffer_group_view;
-	struct dx_vertex_buffer_view;
-	struct compute_pass;
+	struct DXVertexBufferGroupView;
+	struct DXVertexBufferView;
+	struct ComputePass;
 }
 
 namespace era_engine::animation
 {
-	struct vertex_range
+	struct VertexRange
 	{
-		uint32 firstVertex;
-		uint32 numVertices;
+		uint32 first_vertex;
+		uint32 num_vertices;
 	};
 
-	ERA_CORE_API void initializeSkinning();
-	ERA_CORE_API std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer_group_view& vertexBuffer, vertex_range range, uint32 numJoints);
-	ERA_CORE_API std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer_group_view& vertexBuffer, uint32 numVertices, uint32 numJoints);
-	ERA_CORE_API std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer_group_view& vertexBuffer, SubmeshInfo submesh, uint32 numJoints);
+	ERA_CORE_API void initialize_skinning();
+	ERA_CORE_API std::tuple<DXVertexBufferGroupView, mat4*> skin_object(const DXVertexBufferGroupView& vertex_buffer, VertexRange range, uint32 num_joints);
+	ERA_CORE_API std::tuple<DXVertexBufferGroupView, mat4*> skin_object(const DXVertexBufferGroupView& vertex_buffer, uint32 num_vertices, uint32 num_joints);
+	ERA_CORE_API std::tuple<DXVertexBufferGroupView, mat4*> skin_object(const DXVertexBufferGroupView& vertex_buffer, SubmeshInfo submesh, uint32 num_joints);
 
-	ERA_CORE_API dx_vertex_buffer_group_view skinCloth(const dx_vertex_buffer_view& positions, uint32 gridSizeX, uint32 gridSizeY);
+	ERA_CORE_API DXVertexBufferGroupView skin_cloth(const DXVertexBufferView& positions, uint32 grid_size_x, uint32 grid_size_y);
 
-	ERA_CORE_API void performSkinning(compute_pass* computePass);
+	ERA_CORE_API void perform_skinning(ComputePass* compute_pass);
 }

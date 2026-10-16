@@ -8,34 +8,34 @@ namespace era_engine
 {
     PointCloud::PointCloud(vec3* _positions, uint32 _num_positions)
     {
-        using kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
+        using KDTree = nanoflann::KDTreeSingleIndexAdaptor<
             nanoflann::L2_Simple_Adaptor<float, PointCloud>,
             PointCloud, 3>;
 
         positions = _positions;
         num_positions = _num_positions;
 
-        index = new kd_tree_t(3, *this, { 10 });
+        index = new KDTree(3, *this, { 10 });
     }
 
     PointCloud::~PointCloud()
     {
-        using kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
+        using KDTree = nanoflann::KDTreeSingleIndexAdaptor<
             nanoflann::L2_Simple_Adaptor<float, PointCloud>,
             PointCloud, 3>;
 
-        kd_tree_t* _index = (kd_tree_t*)index;
+        KDTree* _index = (KDTree*)index;
 
         delete _index;
     }
 
     NearestNeighborQueryResult PointCloud::nearest_neighbor_index(vec3 query) const
     {
-        using kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
+        using KDTree = nanoflann::KDTreeSingleIndexAdaptor<
             nanoflann::L2_Simple_Adaptor<float, PointCloud>,
             PointCloud, 3>;
 
-        kd_tree_t* _index = (kd_tree_t*)index;
+        KDTree* _index = (KDTree*)index;
 
         size_t result_index = 0;
         float squared_distance = 0.0f;

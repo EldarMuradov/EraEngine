@@ -32,99 +32,99 @@
 namespace era_engine
 {
 	// Defined in render_algorithms.cpp.
-	void loadCommonShaders();
+	void load_common_shaders();
 
-	static vec2 haltonSequence[128];
+	static vec2 halton_sequence[128];
 
-	void initializeRenderUtils()
+	void initialize_render_utils()
 	{
-		initializeTexturePreprocessing();
-		initializeDepthPrepassPipelines();
-		initializeOutlinePipelines();
-		animation::initializeSkinning();
-		initializeShadowPipelines();
-		initializeTerrainPipelines();
-		initializeLightProbePipelines();
-		initializeRTReflectionsPipelines();
-		initializeProceduralPlacementPipelines();
-		initializeGrassPipelines();
-		initializeWaterPipelines();
-		initializeTreePipelines();
-		loadCommonShaders();
+		initialize_texture_preprocessing();
+		initialize_depth_prepass_pipelines();
+		initialize_outline_pipelines();
+		animation::initialize_skinning();
+		initialize_shadow_pipelines();
+		initialize_terrain_pipelines();
+		initialize_light_probe_pipelines();
+		initialize_rt_reflections_pipelines();
+		initialize_procedural_placement_pipelines();
+		initialize_grass_pipelines();
+		initialize_water_pipelines();
+		initialize_tree_pipelines();
+		load_common_shaders();
 
-		debug_simple_pipeline::initialize();
-		debug_unlit_pipeline::initialize();
-		debug_unlit_line_pipeline::initialize();
-		pbr_pipeline::initialize();
-		particle_system::initializePipeline();
-		initializeBitonicSort();
-		loadAllParticleSystemPipelines();
+		DebugSimplePipeline::initialize();
+		DebugUnlitPipeline::initialize();
+		DebugUnlitLinePipeline::initialize();
+		PBRPipeline::initialize();
+		ParticleSystem::initialize_pipeline();
+		initialize_bitonic_sort();
+		load_all_particle_system_pipelines();
 
-		createAllPendingReloadablePipelines();
-		render_resources::initializeGlobalResources();
+		create_all_pending_reloadable_pipelines();
+		RenderResources::initialize_global_resources();
 
-		for (uint32 i = 0; i < arraysize(haltonSequence); ++i)
+		for (uint32 i = 0; i < arraysize(halton_sequence); ++i)
 		{
-			haltonSequence[i] = halton23(i) * 2.f - vec2(1.f);
+			halton_sequence[i] = halton23(i) * 2.f - vec2(1.f);
 		}
 	}
 
-	void endFrameCommon()
+	void end_frame_common()
 	{
-		checkForChangedPipelines();
+		check_for_changed_pipelines();
 	}
 
-	void buildCameraConstantBuffer(const render_camera& camera, float cameraJitterStrength, camera_cb& outCB)
+	void build_camera_constant_buffer(const RenderCamera& camera, float camera_jitter_strength, CameraCB& out_cb)
 	{
-		if (cameraJitterStrength > 0.f)
+		if (camera_jitter_strength > 0.f)
 		{
-			vec2 jitter = haltonSequence[dxContext.frameID % arraysize(haltonSequence)] / vec2((float)camera.width, (float)camera.height) * cameraJitterStrength;
-			buildCameraConstantBuffer(camera.getJitteredVersion(jitter), jitter, outCB);
+			vec2 jitter = halton_sequence[dx_context.frame_id % arraysize(halton_sequence)] / vec2((float)camera.width, (float)camera.height) * camera_jitter_strength;
+			build_camera_constant_buffer(camera.get_jittered_version(jitter), jitter, out_cb);
 		}
 		else
 		{
-			buildCameraConstantBuffer(camera, vec2(0.f, 0.f), outCB);
+			build_camera_constant_buffer(camera, vec2(0.f, 0.f), out_cb);
 		}
 	}
 
-	void buildCameraConstantBuffer(const render_camera& camera, vec2 jitter, camera_cb& outCB)
+	void build_camera_constant_buffer(const RenderCamera& camera, vec2 jitter, CameraCB& out_cb)
 	{
-		outCB.prevFrameView = outCB.view;
-		outCB.prevFrameViewProj = outCB.viewProj;
-		outCB.viewProj = camera.viewProj;
-		outCB.view = camera.view;
-		outCB.proj = camera.proj;
-		outCB.invViewProj = camera.invViewProj;
-		outCB.invView = camera.invView;
-		outCB.invProj = camera.invProj;
-		outCB.position = vec4(camera.position, 1.f);
-		outCB.forward = vec4(camera.rotation * vec3(0.f, 0.f, -1.f), 0.f);
-		outCB.right = vec4(camera.rotation * vec3(1.f, 0.f, 0.f), 0.f);
-		outCB.up = vec4(camera.rotation * vec3(0.f, 1.f, 0.f), 0.f);
-		outCB.projectionParams = vec4(camera.nearPlane, camera.farPlane, camera.farPlane / camera.nearPlane, 1.f - camera.farPlane / camera.nearPlane);
-		outCB.viewSpaceTopLeftFrustumVector = vec4(camera.restoreViewSpacePosition(vec2(0.f, 0.f), 0.f) / camera.nearPlane, 0.f);
-		outCB.extentAtDistanceOne = abs(camera.restoreViewSpacePosition(vec2(1.f, 1.f), 0.f).xy / camera.nearPlane - outCB.viewSpaceTopLeftFrustumVector.xy);
-		outCB.screenDims = vec2((float)camera.width, (float)camera.height);
-		outCB.invScreenDims = vec2(1.f / camera.width, 1.f / camera.height);
-		outCB.prevFrameJitter = outCB.jitter;
-		outCB.jitter = jitter;
+		out_cb.prev_frame_view = out_cb.view;
+		out_cb.prev_frame_view_proj = out_cb.view_proj;
+		out_cb.view_proj = camera.view_proj;
+		out_cb.view = camera.view;
+		out_cb.proj = camera.proj;
+		out_cb.inv_view_proj = camera.inv_view_proj;
+		out_cb.inv_view = camera.inv_view;
+		out_cb.inv_proj = camera.inv_proj;
+		out_cb.position = vec4(camera.position, 1.f);
+		out_cb.forward = vec4(camera.rotation * vec3(0.f, 0.f, -1.f), 0.f);
+		out_cb.right = vec4(camera.rotation * vec3(1.f, 0.f, 0.f), 0.f);
+		out_cb.up = vec4(camera.rotation * vec3(0.f, 1.f, 0.f), 0.f);
+		out_cb.projection_params = vec4(camera.near_plane, camera.far_plane, camera.far_plane / camera.near_plane, 1.f - camera.far_plane / camera.near_plane);
+		out_cb.view_space_top_left_frustum_vector = vec4(camera.restore_view_space_position(vec2(0.f, 0.f), 0.f) / camera.near_plane, 0.f);
+		out_cb.extent_at_distance_one = abs(camera.restore_view_space_position(vec2(1.f, 1.f), 0.f).xy / camera.near_plane - out_cb.view_space_top_left_frustum_vector.xy);
+		out_cb.screen_dims = vec2((float)camera.width, (float)camera.height);
+		out_cb.inv_screen_dims = vec2(1.f / camera.width, 1.f / camera.height);
+		out_cb.prev_frame_jitter = out_cb.jitter;
+		out_cb.jitter = jitter;
 	}
 
-	raytracing_object_type defineBlasFromMesh(const ref<MultiMesh>& mesh)
+	RaytracingObjectType define_blas_from_mesh(const ref<MultiMesh>& mesh)
 	{
-		if (dxContext.featureSupport.raytracing())
+		if (dx_context.feature_support.raytracing())
 		{
-			raytracing_blas_builder blasBuilder;
-			std::vector<ref<pbr_material>> raytracingMaterials;
+			RaytracingBLASBuilder blas_builder;
+			std::vector<ref<PBRMaterial>> raytracing_materials;
 
 			for (auto& sm : mesh->submeshes)
 			{
-				blasBuilder.push(mesh->mesh.vertexBuffer, mesh->mesh.indexBuffer, sm.info);
-				raytracingMaterials.push_back(sm.material);
+				blas_builder.push(mesh->mesh.vertex_buffer, mesh->mesh.index_buffer, sm.info);
+				raytracing_materials.push_back(sm.material);
 			}
 
-			ref<raytracing_blas> blas = blasBuilder.finish();
-			raytracing_object_type type = pbr_raytracer::defineObjectType(blas, raytracingMaterials);
+			ref<RaytracingBLAS> blas = blas_builder.finish();
+			RaytracingObjectType type = PBRRaytracer::define_object_type(blas, raytracing_materials);
 			return type;
 		}
 		else
@@ -133,32 +133,32 @@ namespace era_engine
 		}
 	}
 
-	void addRaytracingComponentAsync(Entity entity, ref<MultiMesh> mesh)
+	void add_raytracing_component_async(Entity entity, ref<MultiMesh> mesh)
 	{
-		struct add_ray_tracing_data
+		struct AddRayTracingData
 		{
 			Entity entity;
 			ref<MultiMesh> mesh;
 		};
 
-		add_ray_tracing_data data = { entity, mesh };
+		AddRayTracingData data = { entity, mesh };
 
-		low_priority_job_queue.createJob<add_ray_tracing_data>([](add_ray_tracing_data& data, JobHandle)
+		low_priority_job_queue.create_job<AddRayTracingData>([](AddRayTracingData& data, JobHandle)
 			{
 				data.mesh->load_job.wait_for_completion();
 
-				struct create_component_data
+				struct CreateComponentData
 				{
 					Entity entity;
-					raytracing_object_type blas;
+					RaytracingObjectType blas;
 				};
 
-				create_component_data createData = { data.entity, defineBlasFromMesh(data.mesh) };
+				CreateComponentData create_data = { data.entity, define_blas_from_mesh(data.mesh) };
 
-				main_thread_job_queue.createJob<create_component_data>([](create_component_data& data, JobHandle)
+				main_thread_job_queue.create_job<CreateComponentData>([](CreateComponentData& data, JobHandle)
 					{
 						data.entity.add_component<RaytraceComponent>(data.blas);
-					}, createData).submit_now();
+					}, create_data).submit_now();
 
 			}, data).submit_now();
 	}

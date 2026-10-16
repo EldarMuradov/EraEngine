@@ -16,41 +16,41 @@ namespace era_engine
 	// Loading from cache is not done if the original file has a newer write time or if the cache was created with different flags.
 	// Therefore: If you change these flags in code, delete the texture cache!
 
-	enum image_load_flags
+	enum ImageLoadFlags
 	{
-		image_load_flags_none = 0,
-		image_load_flags_noncolor = (1 << 0),
-		image_load_flags_compress = (1 << 1),
-		image_load_flags_gen_mips_on_cpu = (1 << 2),
-		image_load_flags_gen_mips_on_gpu = (1 << 3),
-		image_load_flags_allocate_full_mipchain = (1 << 4), // Use if you want to create the mip chain on the GPU.
-		image_load_flags_premultiply_alpha = (1 << 5),
-		image_load_flags_cache_to_dds = (1 << 6),
-		image_load_flags_always_load_from_source = (1 << 7), // By default the system will always try to load a cached version of the texture. You can prevent this with this flag.
+		IMAGE_LOAD_FLAGS_NONE = 0,
+		IMAGE_LOAD_FLAGS_NONCOLOR = (1 << 0),
+		IMAGE_LOAD_FLAGS_COMPRESS = (1 << 1),
+		IMAGE_LOAD_FLAGS_GEN_MIPS_ON_CPU = (1 << 2),
+		IMAGE_LOAD_FLAGS_GEN_MIPS_ON_GPU = (1 << 3),
+		IMAGE_LOAD_FLAGS_ALLOCATE_FULL_MIPCHAIN = (1 << 4), // Use if you want to create the mip chain on the GPU.
+		IMAGE_LOAD_FLAGS_PREMULTIPLY_ALPHA = (1 << 5),
+		IMAGE_LOAD_FLAGS_CACHE_TO_DDS = (1 << 6),
+		IMAGE_LOAD_FLAGS_ALWAYS_LOAD_FROM_SOURCE = (1 << 7), // By default the system will always try to load a cached version of the texture. You can prevent this with this flag.
 
-		image_load_flags_default = image_load_flags_compress | image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds,
-		image_load_flags_default_noncolor = image_load_flags_default | image_load_flags_noncolor,
+		IMAGE_LOAD_FLAGS_DEFAULT = IMAGE_LOAD_FLAGS_COMPRESS | IMAGE_LOAD_FLAGS_GEN_MIPS_ON_CPU | IMAGE_LOAD_FLAGS_CACHE_TO_DDS,
+		IMAGE_LOAD_FLAGS_DEFAULT_NONCOLOR = IMAGE_LOAD_FLAGS_DEFAULT | IMAGE_LOAD_FLAGS_NONCOLOR,
 	};
 
-	enum image_format
+	enum ImageFormat
 	{
-		image_format_dds,
-		image_format_hdr,
-		image_format_tga,
-		image_format_wic, // Other formats: png, jpeg, etc.
+		IMAGE_FORMAT_DDS,
+		IMAGE_FORMAT_HDR,
+		IMAGE_FORMAT_TGA,
+		IMAGE_FORMAT_WIC, // Other formats: png, jpeg, etc.
 	};
 
-	bool isImageExtension(const fs::path& extension);
-	bool isImageExtension(const std::string& extension);
+	bool is_image_extension(const fs::path& extension);
+	bool is_image_extension(const std::string& extension);
 
-	bool loadImageFromMemory(const void* data, uint32 size, image_format imageFormat, const fs::path& cachingFilepath,
-		uint32 flags, DirectX::ScratchImage& scratchImage, D3D12_RESOURCE_DESC& textureDesc);
-	bool loadImageFromFile(const fs::path& filepath, uint32 flags, DirectX::ScratchImage& scratchImage, D3D12_RESOURCE_DESC& textureDesc);
-	bool loadSVGFromFile(const fs::path& filepath, uint32 flags, DirectX::ScratchImage& scratchImage, D3D12_RESOURCE_DESC& textureDesc);
+	bool load_image_from_memory(const void* data, uint32 size, ImageFormat image_format, const fs::path& caching_filepath,
+		uint32 flags, DirectX::ScratchImage& scratch_image, D3D12_RESOURCE_DESC& texture_desc);
+	bool load_image_from_file(const fs::path& filepath, uint32 flags, DirectX::ScratchImage& scratch_image, D3D12_RESOURCE_DESC& texture_desc);
+	bool load_svg_from_file(const fs::path& filepath, uint32 flags, DirectX::ScratchImage& scratch_image, D3D12_RESOURCE_DESC& texture_desc);
 
-	bool saveImageToFile(const fs::path& filepath, const DirectX::Image& image);
+	bool save_image_to_file(const fs::path& filepath, const DirectX::Image& image);
 
-	NODISCARD inline constexpr bool isUAVCompatibleFormat(DXGI_FORMAT format)
+	NODISCARD inline constexpr bool is_uav_compatible_format(DXGI_FORMAT format)
 	{
 		switch (format)
 		{
@@ -78,7 +78,7 @@ namespace era_engine
 		}
 	}
 
-	NODISCARD inline constexpr bool isSRGBFormat(DXGI_FORMAT format)
+	NODISCARD inline constexpr bool is_srgb_format(DXGI_FORMAT format)
 	{
 		switch (format)
 		{
@@ -95,7 +95,7 @@ namespace era_engine
 		}
 	}
 
-	NODISCARD inline constexpr bool isBGRFormat(DXGI_FORMAT format)
+	NODISCARD inline constexpr bool is_bgr_format(DXGI_FORMAT format)
 	{
 		switch (format)
 		{
@@ -111,7 +111,7 @@ namespace era_engine
 		}
 	}
 
-	NODISCARD inline constexpr bool isDepthFormat(DXGI_FORMAT format)
+	NODISCARD inline constexpr bool is_depth_format(DXGI_FORMAT format)
 	{
 		switch (format)
 		{
@@ -125,7 +125,7 @@ namespace era_engine
 		}
 	}
 
-	NODISCARD inline constexpr bool isStencilFormat(DXGI_FORMAT format)
+	NODISCARD inline constexpr bool is_stencil_format(DXGI_FORMAT format)
 	{
 		switch (format)
 		{
@@ -137,40 +137,40 @@ namespace era_engine
 		}
 	}
 
-	NODISCARD inline constexpr DXGI_FORMAT getSRGBFormat(DXGI_FORMAT format)
+	NODISCARD inline constexpr DXGI_FORMAT get_srgb_format(DXGI_FORMAT format)
 	{
-		DXGI_FORMAT srgbFormat = format;
+		DXGI_FORMAT srgb_format = format;
 		switch (format)
 		{
 		case DXGI_FORMAT_R8G8B8A8_UNORM:
-			srgbFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+			srgb_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 			break;
 		case DXGI_FORMAT_BC1_UNORM:
-			srgbFormat = DXGI_FORMAT_BC1_UNORM_SRGB;
+			srgb_format = DXGI_FORMAT_BC1_UNORM_SRGB;
 			break;
 		case DXGI_FORMAT_BC2_UNORM:
-			srgbFormat = DXGI_FORMAT_BC2_UNORM_SRGB;
+			srgb_format = DXGI_FORMAT_BC2_UNORM_SRGB;
 			break;
 		case DXGI_FORMAT_BC3_UNORM:
-			srgbFormat = DXGI_FORMAT_BC3_UNORM_SRGB;
+			srgb_format = DXGI_FORMAT_BC3_UNORM_SRGB;
 			break;
 		case DXGI_FORMAT_B8G8R8A8_UNORM:
-			srgbFormat = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+			srgb_format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
 			break;
 		case DXGI_FORMAT_B8G8R8X8_UNORM:
-			srgbFormat = DXGI_FORMAT_B8G8R8X8_UNORM_SRGB;
+			srgb_format = DXGI_FORMAT_B8G8R8X8_UNORM_SRGB;
 			break;
 		case DXGI_FORMAT_BC7_UNORM:
-			srgbFormat = DXGI_FORMAT_BC7_UNORM_SRGB;
+			srgb_format = DXGI_FORMAT_BC7_UNORM_SRGB;
 			break;
 		}
 
-		return srgbFormat;
+		return srgb_format;
 	}
 
-	NODISCARD inline constexpr DXGI_FORMAT getUAVCompatibleFormat(DXGI_FORMAT format)
+	NODISCARD inline constexpr DXGI_FORMAT get_uav_compatible_format(DXGI_FORMAT format)
 	{
-		DXGI_FORMAT uavFormat = format;
+		DXGI_FORMAT uav_format = format;
 
 		switch (format)
 		{
@@ -182,18 +182,18 @@ namespace era_engine
 		case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
 		case DXGI_FORMAT_B8G8R8X8_TYPELESS:
 		case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
-			uavFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+			uav_format = DXGI_FORMAT_R8G8B8A8_UNORM;
 			break;
 		case DXGI_FORMAT_R32_TYPELESS:
 		case DXGI_FORMAT_D32_FLOAT:
-			uavFormat = DXGI_FORMAT_R32_FLOAT;
+			uav_format = DXGI_FORMAT_R32_FLOAT;
 			break;
 		}
 
-		return uavFormat;
+		return uav_format;
 	}
 
-	NODISCARD inline constexpr DXGI_FORMAT getDepthReadFormat(DXGI_FORMAT format)
+	NODISCARD inline constexpr DXGI_FORMAT get_depth_read_format(DXGI_FORMAT format)
 	{
 		switch (format)
 		{
@@ -206,7 +206,7 @@ namespace era_engine
 		return format;
 	}
 
-	NODISCARD inline constexpr DXGI_FORMAT getStencilReadFormat(DXGI_FORMAT format)
+	NODISCARD inline constexpr DXGI_FORMAT get_stencil_read_format(DXGI_FORMAT format)
 	{
 		switch (format)
 		{
@@ -217,7 +217,7 @@ namespace era_engine
 		return format;
 	}
 
-	NODISCARD inline constexpr uint32 getFormatSize(DXGI_FORMAT format)
+	NODISCARD inline constexpr uint32 get_format_size(DXGI_FORMAT format)
 	{
 		uint32 size = 0;
 
@@ -314,69 +314,69 @@ namespace era_engine
 		return size;
 	}
 
-	NODISCARD inline constexpr DXGI_FORMAT getTypelessFormat(DXGI_FORMAT format)
+	NODISCARD inline constexpr DXGI_FORMAT get_typeless_format(DXGI_FORMAT format)
 	{
-		DXGI_FORMAT typelessFormat = format;
+		DXGI_FORMAT typeless_format = format;
 
 		switch (format)
 		{
 		case DXGI_FORMAT_R32G32B32A32_FLOAT:
 		case DXGI_FORMAT_R32G32B32A32_UINT:
 		case DXGI_FORMAT_R32G32B32A32_SINT:
-			typelessFormat = DXGI_FORMAT_R32G32B32A32_TYPELESS;
+			typeless_format = DXGI_FORMAT_R32G32B32A32_TYPELESS;
 			break;
 		case DXGI_FORMAT_R32G32B32_FLOAT:
 		case DXGI_FORMAT_R32G32B32_UINT:
 		case DXGI_FORMAT_R32G32B32_SINT:
-			typelessFormat = DXGI_FORMAT_R32G32B32_TYPELESS;
+			typeless_format = DXGI_FORMAT_R32G32B32_TYPELESS;
 			break;
 		case DXGI_FORMAT_R16G16B16A16_FLOAT:
 		case DXGI_FORMAT_R16G16B16A16_UNORM:
 		case DXGI_FORMAT_R16G16B16A16_UINT:
 		case DXGI_FORMAT_R16G16B16A16_SNORM:
 		case DXGI_FORMAT_R16G16B16A16_SINT:
-			typelessFormat = DXGI_FORMAT_R16G16B16A16_TYPELESS;
+			typeless_format = DXGI_FORMAT_R16G16B16A16_TYPELESS;
 			break;
 		case DXGI_FORMAT_R32G32_FLOAT:
 		case DXGI_FORMAT_R32G32_UINT:
 		case DXGI_FORMAT_R32G32_SINT:
-			typelessFormat = DXGI_FORMAT_R32G32_TYPELESS;
+			typeless_format = DXGI_FORMAT_R32G32_TYPELESS;
 			break;
 		case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
-			typelessFormat = DXGI_FORMAT_R32G8X24_TYPELESS;
+			typeless_format = DXGI_FORMAT_R32G8X24_TYPELESS;
 			break;
 		case DXGI_FORMAT_D24_UNORM_S8_UINT:
-			typelessFormat = DXGI_FORMAT_R24G8_TYPELESS;
+			typeless_format = DXGI_FORMAT_R24G8_TYPELESS;
 			break;
 		case DXGI_FORMAT_R10G10B10A2_UNORM:
 		case DXGI_FORMAT_R10G10B10A2_UINT:
-			typelessFormat = DXGI_FORMAT_R10G10B10A2_TYPELESS;
+			typeless_format = DXGI_FORMAT_R10G10B10A2_TYPELESS;
 			break;
 		case DXGI_FORMAT_R8G8B8A8_UNORM:
 		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
 		case DXGI_FORMAT_R8G8B8A8_UINT:
 		case DXGI_FORMAT_R8G8B8A8_SNORM:
 		case DXGI_FORMAT_R8G8B8A8_SINT:
-			typelessFormat = DXGI_FORMAT_R8G8B8A8_TYPELESS;
+			typeless_format = DXGI_FORMAT_R8G8B8A8_TYPELESS;
 			break;
 		case DXGI_FORMAT_R16G16_FLOAT:
 		case DXGI_FORMAT_R16G16_UNORM:
 		case DXGI_FORMAT_R16G16_UINT:
 		case DXGI_FORMAT_R16G16_SNORM:
 		case DXGI_FORMAT_R16G16_SINT:
-			typelessFormat = DXGI_FORMAT_R16G16_TYPELESS;
+			typeless_format = DXGI_FORMAT_R16G16_TYPELESS;
 			break;
 		case DXGI_FORMAT_D32_FLOAT:
 		case DXGI_FORMAT_R32_FLOAT:
 		case DXGI_FORMAT_R32_UINT:
 		case DXGI_FORMAT_R32_SINT:
-			typelessFormat = DXGI_FORMAT_R32_TYPELESS;
+			typeless_format = DXGI_FORMAT_R32_TYPELESS;
 			break;
 		case DXGI_FORMAT_R8G8_UNORM:
 		case DXGI_FORMAT_R8G8_UINT:
 		case DXGI_FORMAT_R8G8_SNORM:
 		case DXGI_FORMAT_R8G8_SINT:
-			typelessFormat = DXGI_FORMAT_R8G8_TYPELESS;
+			typeless_format = DXGI_FORMAT_R8G8_TYPELESS;
 			break;
 		case DXGI_FORMAT_R16_FLOAT:
 		case DXGI_FORMAT_D16_UNORM:
@@ -384,54 +384,54 @@ namespace era_engine
 		case DXGI_FORMAT_R16_UINT:
 		case DXGI_FORMAT_R16_SNORM:
 		case DXGI_FORMAT_R16_SINT:
-			typelessFormat = DXGI_FORMAT_R16_TYPELESS;
+			typeless_format = DXGI_FORMAT_R16_TYPELESS;
 			break;
 		case DXGI_FORMAT_R8_UNORM:
 		case DXGI_FORMAT_R8_UINT:
 		case DXGI_FORMAT_R8_SNORM:
 		case DXGI_FORMAT_R8_SINT:
-			typelessFormat = DXGI_FORMAT_R8_TYPELESS;
+			typeless_format = DXGI_FORMAT_R8_TYPELESS;
 			break;
 		case DXGI_FORMAT_BC1_UNORM:
 		case DXGI_FORMAT_BC1_UNORM_SRGB:
-			typelessFormat = DXGI_FORMAT_BC1_TYPELESS;
+			typeless_format = DXGI_FORMAT_BC1_TYPELESS;
 			break;
 		case DXGI_FORMAT_BC2_UNORM:
 		case DXGI_FORMAT_BC2_UNORM_SRGB:
-			typelessFormat = DXGI_FORMAT_BC2_TYPELESS;
+			typeless_format = DXGI_FORMAT_BC2_TYPELESS;
 			break;
 		case DXGI_FORMAT_BC3_UNORM:
 		case DXGI_FORMAT_BC3_UNORM_SRGB:
-			typelessFormat = DXGI_FORMAT_BC3_TYPELESS;
+			typeless_format = DXGI_FORMAT_BC3_TYPELESS;
 			break;
 		case DXGI_FORMAT_BC4_UNORM:
 		case DXGI_FORMAT_BC4_SNORM:
-			typelessFormat = DXGI_FORMAT_BC4_TYPELESS;
+			typeless_format = DXGI_FORMAT_BC4_TYPELESS;
 			break;
 		case DXGI_FORMAT_BC5_UNORM:
 		case DXGI_FORMAT_BC5_SNORM:
-			typelessFormat = DXGI_FORMAT_BC5_TYPELESS;
+			typeless_format = DXGI_FORMAT_BC5_TYPELESS;
 			break;
 		case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
-			typelessFormat = DXGI_FORMAT_B8G8R8A8_TYPELESS;
+			typeless_format = DXGI_FORMAT_B8G8R8A8_TYPELESS;
 			break;
 		case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
-			typelessFormat = DXGI_FORMAT_B8G8R8X8_TYPELESS;
+			typeless_format = DXGI_FORMAT_B8G8R8X8_TYPELESS;
 			break;
 		case DXGI_FORMAT_BC6H_UF16:
 		case DXGI_FORMAT_BC6H_SF16:
-			typelessFormat = DXGI_FORMAT_BC6H_TYPELESS;
+			typeless_format = DXGI_FORMAT_BC6H_TYPELESS;
 			break;
 		case DXGI_FORMAT_BC7_UNORM:
 		case DXGI_FORMAT_BC7_UNORM_SRGB:
-			typelessFormat = DXGI_FORMAT_BC7_TYPELESS;
+			typeless_format = DXGI_FORMAT_BC7_TYPELESS;
 			break;
 		}
 
-		return typelessFormat;
+		return typeless_format;
 	}
 
-	NODISCARD inline constexpr uint32 getNumberOfChannels(DXGI_FORMAT format)
+	NODISCARD inline constexpr uint32 get_number_of_channels(DXGI_FORMAT format)
 	{
 		switch (format)
 		{

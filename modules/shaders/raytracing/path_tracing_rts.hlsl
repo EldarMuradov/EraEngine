@@ -7,7 +7,7 @@
 // Raytracing intrinsics: https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#ray-system-values
 // Ray flags: https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#ray-flags
 
-struct mesh_vertex
+struct MeshVertex
 {
 	float2 uv;
 	float3 normal;
@@ -16,40 +16,40 @@ struct mesh_vertex
 
 
 // Global.
-RaytracingAccelerationStructure rtScene		: register(t0);
+RaytracingAccelerationStructure rt_scene		: register(t0);
 TextureCube<float4> sky						: register(t1);
 
 RWTexture2D<float4> output					: register(u0);
 
-ConstantBuffer<camera_cb> camera			: register(b0);
-ConstantBuffer<path_tracing_cb> constants	: register(b1);
+ConstantBuffer<CameraCB> camera			: register(b0);
+ConstantBuffer<PathTracingCB> constants	: register(b1);
 
-SamplerState wrapSampler					: register(s0);
+SamplerState wrap_sampler					: register(s0);
 
 // Radiance hit group.
-ConstantBuffer<pbr_material_cb> material	: register(b0, space1);
-StructuredBuffer<mesh_vertex> meshVertices	: register(t0, space1);
-ByteAddressBuffer meshIndices				: register(t1, space1);
-Texture2D<float4> albedoTex					: register(t2, space1);
-Texture2D<float3> normalTex					: register(t3, space1);
-Texture2D<float> roughTex					: register(t4, space1);
-Texture2D<float> metalTex					: register(t5, space1);
+ConstantBuffer<PBRMaterialCB> material	: register(b0, space1);
+StructuredBuffer<MeshVertex> mesh_vertices	: register(t0, space1);
+ByteAddressBuffer mesh_indices				: register(t1, space1);
+Texture2D<float4> albedo_tex					: register(t2, space1);
+Texture2D<float3> normal_tex					: register(t3, space1);
+Texture2D<float> rough_tex					: register(t4, space1);
+Texture2D<float> metal_tex					: register(t5, space1);
 
-struct radiance_ray_payload
+struct RadianceRayPayload
 {
 	float3 color;
 	uint recursion;
-	uint randSeed;
+	uint rand_seed;
 };
 
-struct shadow_ray_payload
+struct ShadowRayPayload
 {
 	float visible;
 };
 
 #define NUM_LIGHTS 3
 
-static const point_light_cb pointLights[NUM_LIGHTS] =
+static const PointLightCB point_lights[NUM_LIGHTS] =
 {
 	// Position, radius, radiance. The last value (-1) is only useful for rasterization, where this is the index into a list of shadow maps (-1 means no shadows).
 	{
@@ -72,7 +72,7 @@ static const point_light_cb pointLights[NUM_LIGHTS] =
 	},
 };
 
-static float3 traceRadianceRay(float3 origin, float3 direction, uint randSeed, uint recursion)
+static float3 trace_radiance_ray(float3 origin, float3 direction, uint rand_seed, uint recursion)
 {
 	// This is replaced by the russian roulette below.
 	/*if (recursion >= constants.maxRecursionDepth)
@@ -84,19 +84,19 @@ static float3 traceRadianceRay(float3 origin, float3 direction, uint randSeed, u
 	// Lower numbers make rays terminate earlier, which improves performance, but hurts the convergence speed.
 	// I think normally you wouldn't want the termination probability to go to 1, but DirectX will remove the device, if you exceed
 	// the recursion limit.
-	float russianRouletteFactor = 1.f;
-	if (recursion >= constants.startRussianRouletteAfter)
+	float russian_roulette_factor = 1.f;
+	if (recursion >= constants.start_russian_roulette_after)
 	{
-		uint rouletteSteps = constants.maxRecursionDepth - constants.startRussianRouletteAfter + 1;
-		uint stepsRemaining = recursion - constants.startRussianRouletteAfter + 1;
-		float stopProbability = min(1.f, (float)stepsRemaining / (float)rouletteSteps);
+		uint roulette_steps = constants.max_recursion_depth - constants.start_russian_roulette_after + 1;
+		uint steps_remaining = recursion - constants.start_russian_roulette_after + 1;
+		float stop_probability = min(1.f, (float)steps_remaining / (float)roulette_steps);
 
-		if (nextRand(randSeed) <= stopProbability)
+		if (next_rand(rand_seed) <= stop_probability)
 		{
 			return (float3)0.f;
 		}
 
-		russianRouletteFactor = 1.f / (1.f - stopProbability);
+		russian_roulette_factor = 1.f / (1.f - stop_probability);
 	}
 
 	RayDesc ray;
@@ -105,9 +105,9 @@ static float3 traceRadianceRay(float3 origin, float3 direction, uint randSeed, u
 	ray.TMin = 0.01f;
 	ray.TMax = 10000.f;
 
-	radiance_ray_payload payload = { float3(0.f, 0.f, 0.f), recursion + 1, randSeed };
+	RadianceRayPayload payload = { float3(0.f, 0.f, 0.f), recursion + 1, rand_seed };
 
-	TraceRay(rtScene,
+	TraceRay(rt_scene,
 		RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
 		0xFF,				// Cull mask.
 		RADIANCE,			// Addend on the hit index.
@@ -116,12 +116,12 @@ static float3 traceRadianceRay(float3 origin, float3 direction, uint randSeed, u
 		ray,
 		payload);
 
-	return payload.color * russianRouletteFactor;
+	return payload.color * russian_roulette_factor;
 }
 
-static float traceShadowRay(float3 origin, float3 direction, float distance, uint recursion) // This shader type is also used for ambient occlusion. Just set the distance to something small.
+static float trace_shadow_ray(float3 origin, float3 direction, float distance, uint recursion) // This shader type is also used for ambient occlusion. Just set the distance to something small.
 {
-	if (recursion >= constants.maxRecursionDepth)
+	if (recursion >= constants.max_recursion_depth)
 	{
 		return 1.f;
 	}
@@ -133,9 +133,9 @@ static float traceShadowRay(float3 origin, float3 direction, float distance, uin
 	ray.TMin = 0.01f;
 	ray.TMax = distance;
 
-	shadow_ray_payload payload = { 0.f };
+	ShadowRayPayload payload = { 0.f };
 
-	TraceRay(rtScene,
+	TraceRay(rt_scene,
 		RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER, // No need to invoke closest hit shader.
 		0xFF,				// Cull mask.
 		SHADOW,				// Addend on the hit index.
@@ -157,49 +157,49 @@ static float traceShadowRay(float3 origin, float3 direction, float distance, uin
 [shader("raygeneration")]
 void rayGen()
 {
-	uint3 launchIndex = DispatchRaysIndex();
-	uint3 launchDim = DispatchRaysDimensions();
+	uint3 launch_index = DispatchRaysIndex();
+	uint3 launch_dim = DispatchRaysDimensions();
 
-	uint randSeed = initRand(launchIndex.x + launchIndex.y * launchDim.x, constants.frameCount, 16);
+	uint rand_seed = init_rand(launch_index.x + launch_index.y * launch_dim.x, constants.frame_count, 16);
 
 	// Jitter for anti-aliasing.
-	float2 pixelOffset = float2(nextRand(randSeed), nextRand(randSeed));
-	float2 uv = (float2(launchIndex.xy) + pixelOffset) / float2(launchDim.xy);
+	float2 pixel_offset = float2(next_rand(rand_seed), next_rand(rand_seed));
+	float2 uv = (float2(launch_index.xy) + pixel_offset) / float2(launch_dim.xy);
 
 	float3 origin = camera.position.xyz;
-	float3 direction = restoreWorldDirection(camera.invViewProj, uv, origin);
+	float3 direction = restore_world_direction(camera.inv_view_proj, uv, origin);
 
-	if (constants.useThinLensCamera)
+	if (constants.use_thin_lens_camera)
 	{
-		direction /= camera.projectionParams.x;
+		direction /= camera.projection_params.x;
 
-		float3 focalPoint = origin + constants.focalLength * direction;
+		float3 focal_point = origin + constants.focal_length * direction;
 
-		float2 rnd = float2(2.f * M_PI * nextRand(randSeed), constants.lensRadius * nextRand(randSeed));
-		float2 originOffset = float2(cos(rnd.x) * rnd.y, sin(rnd.x) * rnd.y);
+		float2 rnd = float2(2.f * M_PI * next_rand(rand_seed), constants.lens_radius * next_rand(rand_seed));
+		float2 origin_offset = float2(cos(rnd.x) * rnd.y, sin(rnd.x) * rnd.y);
 
-		origin += camera.right.xyz * originOffset.x + camera.up.xyz * originOffset.y;
-		direction = focalPoint - origin;
+		origin += camera.right.xyz * origin_offset.x + camera.up.xyz * origin_offset.y;
+		direction = focal_point - origin;
 	}
 
 	direction = normalize(direction);
 
 	// Trace ray
-	float3 color = traceRadianceRay(origin, direction, randSeed, 0);
+	float3 color = trace_radiance_ray(origin, direction, rand_seed, 0);
 
 	// Blend result color with previous frames.
-	float3 previousColor = output[launchIndex.xy].xyz;
-	float previousCount = (float)constants.numAccumulatedFrames;
-	float3 newColor = (previousCount * previousColor + color) / (previousCount + 1);
+	float3 previous_color = output[launch_index.xy].xyz;
+	float previous_count = (float)constants.num_accumulated_frames;
+	float3 new_color = (previous_count * previous_color + color) / (previous_count + 1);
 
-	output[launchIndex.xy] = float4(newColor, 1.f);
+	output[launch_index.xy] = float4(new_color, 1.f);
 }
 
 // ----------------------------------------
 // RADIANCE
 // ----------------------------------------
 
-static float probabilityToSampleDiffuse(float roughness)
+static float probability_to_sample_diffuse(float roughness)
 {
 	// I don't know what a good way to choose is. My understanding is that it doesn't really matter, as long as you account for the probability in your results. 
 	// It has an impact on covergence speed though.
@@ -208,170 +208,170 @@ static float probabilityToSampleDiffuse(float roughness)
 	return roughness;
 }
 
-static float3 calculateIndirectLighting(inout uint randSeed, surface_info surface, uint recursion)
+static float3 calculate_indirect_lighting(inout uint rand_seed, SurfaceInfo surface, uint recursion)
 {
-	float probDiffuse = probabilityToSampleDiffuse(surface.roughness);
-	float chooseDiffuse = (nextRand(randSeed) < probDiffuse);
+	float prob_diffuse = probability_to_sample_diffuse(surface.roughness);
+	float choose_diffuse = (next_rand(rand_seed) < prob_diffuse);
 
-	if (chooseDiffuse)
+	if (choose_diffuse)
 	{
-		float3 L = getCosHemisphereSample(randSeed, surface.N);
-		float3 bounceColor = traceRadianceRay(surface.P, L, randSeed, recursion);
+		float3 L = get_cos_hemisphere_sample(rand_seed, surface.N);
+		float3 bounce_color = trace_radiance_ray(surface.P, L, rand_seed, recursion);
 
 		// Accumulate the color: (NdotL * incomingLight * dif / pi) 
 		// Probability of sampling:  (NdotL / pi) * probDiffuse
-		return bounceColor * surface.albedo.rgb / probDiffuse;
+		return bounce_color * surface.albedo.rgb / prob_diffuse;
 	}
 	else
 	{
-		float3 H = importanceSampleGGX(randSeed, surface.N, surface.roughness);
+		float3 H = importance_sample_ggx(rand_seed, surface.N, surface.roughness);
 		float3 L = reflect(-surface.V, H);
 
-		float3 bounceColor = traceRadianceRay(surface.P, L, randSeed, recursion);
+		float3 bounce_color = trace_radiance_ray(surface.P, L, rand_seed, recursion);
 
-		float NdotV = saturate(dot(surface.N, surface.V));
-		float NdotL = saturate(dot(surface.N, L));
-		float NdotH = saturate(dot(surface.N, H));
-		float LdotH = saturate(dot(L, H));
+		float ndot_v = saturate(dot(surface.N, surface.V));
+		float ndot_l = saturate(dot(surface.N, L));
+		float ndot_h = saturate(dot(surface.N, H));
+		float ldot_h = saturate(dot(L, H));
 
-		float D = distributionGGX(NdotH, surface.roughness);
-		float G = geometrySmith(NdotL, NdotV, surface.roughness);
-		float3 F = fresnelSchlick(LdotH, surface.F0);
+		float D = distribution_ggx(ndot_h, surface.roughness);
+		float G = geometry_smith(ndot_l, ndot_v, surface.roughness);
+		float3 F = fresnel_schlick(ldot_h, surface.F0);
 
 		float3 numerator = D * G * F;
-		float denominator = 4.f * NdotV * NdotL;
+		float denominator = 4.f * ndot_v * ndot_l;
 		float3 brdf = numerator / max(denominator, 0.001f);
 
 		// Probability of sampling vector H from GGX.
-		float ggxProb = max(D * NdotH / (4.f * LdotH), 0.01f);
+		float ggx_prob = max(D * ndot_h / (4.f * ldot_h), 0.01f);
 
 		// Accumulate the color:  ggx-BRDF * incomingLight * NdotL / probability-of-sampling
 		//    -> Should really simplify the math above.
-		return NdotL * bounceColor * brdf / (ggxProb * (1.f - probDiffuse));
+		return ndot_l * bounce_color * brdf / (ggx_prob * (1.f - prob_diffuse));
 	}
 }
 
 [shader("closesthit")]
-void radianceClosestHit(inout radiance_ray_payload payload, in BuiltInTriangleIntersectionAttributes attribs)
+void radianceClosestHit(inout RadianceRayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
 {
-	uint flags = material.getFlags();
+	uint flags = material.get_flags();
 
-	uint3 tri = (flags & MATERIAL_USE_32_BIT_INDICES) ? load3x32BitIndices(meshIndices) : load3x16BitIndices(meshIndices);
+	uint3 tri = (flags & MATERIAL_USE_32_BIT_INDICES) ? load_3x_32bit_indices(mesh_indices) : load_3x_16bit_indices(mesh_indices);
 
 	// Interpolate vertex attributes over triangle.
-	float2 uvs[] = { meshVertices[tri.x].uv, meshVertices[tri.y].uv, meshVertices[tri.z].uv };
-	float3 normals[] = { meshVertices[tri.x].normal, meshVertices[tri.y].normal, meshVertices[tri.z].normal };
+	float2 uvs[] = { mesh_vertices[tri.x].uv, mesh_vertices[tri.y].uv, mesh_vertices[tri.z].uv };
+	float3 normals[] = { mesh_vertices[tri.x].normal, mesh_vertices[tri.y].normal, mesh_vertices[tri.z].normal };
 
-	float2 uv = interpolateAttribute(uvs, attribs);
+	float2 uv = interpolate_attribute(uvs, attribs);
 
-	surface_info surface;
-	surface.N = normalize(transformDirectionToWorld(interpolateAttribute(normals, attribs)));
+	SurfaceInfo surface;
+	surface.N = normalize(transform_direction_to_world(interpolate_attribute(normals, attribs)));
 	surface.V = -WorldRayDirection();
-	surface.P = hitWorldPosition();
+	surface.P = hit_world_position();
 
 	surface.emission = (float3)0.f;
 	surface.albedo = (float4)1.f;
 	surface.roughness = 1.f;
 	surface.metallic = 0.f;
 
-	if (constants.useRealMaterials)
+	if (constants.use_real_materials)
 	{
-		uint mipLevel = 0;
+		uint mip_level = 0;
 
 		surface.albedo = (((flags & MATERIAL_USE_ALBEDO_TEXTURE)
-			? albedoTex.SampleLevel(wrapSampler, uv, mipLevel)
+			? albedo_tex.SampleLevel(wrap_sampler, uv, mip_level)
 			: float4(1.f, 1.f, 1.f, 1.f))
-			* unpackColor(material.albedoTint));
+			* unpack_color(material.albedo_tint));
 
 		// We ignore normal maps for now.
 
 		surface.roughness = (flags & MATERIAL_USE_ROUGHNESS_TEXTURE)
-			? roughTex.SampleLevel(wrapSampler, uv, mipLevel)
-			: material.getRoughnessOverride();
+			? rough_tex.SampleLevel(wrap_sampler, uv, mip_level)
+			: material.get_roughness_override();
 
 		surface.metallic = (flags & MATERIAL_USE_METALLIC_TEXTURE)
-			? metalTex.SampleLevel(wrapSampler, uv, mipLevel)
-			: material.getMetallicOverride();
+			? metal_tex.SampleLevel(wrap_sampler, uv, mip_level)
+			: material.get_metallic_override();
 
 		surface.emission = material.emission;
 	}
 
 	surface.roughness = clamp(surface.roughness, 0.01f, 0.99f);
 
-	surface.inferRemainingProperties();
+	surface.infer_remaining_properties();
 
 	payload.color = surface.emission;
-	payload.color += calculateIndirectLighting(payload.randSeed, surface, payload.recursion);
+	payload.color += calculate_indirect_lighting(payload.rand_seed, surface, payload.recursion);
 
 
-	if (constants.enableDirectLighting)
+	if (constants.enable_direct_lighting)
 	{
 		// Sun light.
 		{
-			float3 sunL = -normalize(float3(-0.6f, -1.f, -0.3f));
-			float3 sunRadiance = float3(1.f, 0.93f, 0.76f) * constants.lightIntensityScale * 2.f;
+			float3 sun_l = -normalize(float3(-0.6f, -1.f, -0.3f));
+			float3 sun_radiance = float3(1.f, 0.93f, 0.76f) * constants.light_intensity_scale * 2.f;
 
-			light_info light;
-			light.initialize(surface, sunL, sunRadiance);
+			LightInfo light;
+			light.initialize(surface, sun_l, sun_radiance);
 
 			payload.color +=
-				calculateDirectLighting(surface, light).evaluate(surface.albedo)
-				* traceShadowRay(surface.P, sunL, 10000.f, payload.recursion);
+				calculate_direct_lighting(surface, light).evaluate(surface.albedo)
+				* trace_shadow_ray(surface.P, sun_l, 10000.f, payload.recursion);
 		}
 
 		// Random point light.
 		{
-			uint lightIndex = min(uint(NUM_LIGHTS * nextRand(payload.randSeed)), NUM_LIGHTS - 1);
+			uint light_index = min(uint(NUM_LIGHTS * next_rand(payload.rand_seed)), NUM_LIGHTS - 1);
 
-			light_info light;
-			light.initializeFromRandomPointOnSphereLight(surface, pointLights[lightIndex], constants.pointLightRadius, payload.randSeed);
+			LightInfo light;
+			light.initialize_from_random_point_on_sphere_light(surface, point_lights[light_index], constants.point_light_radius, payload.rand_seed);
 
-			float pointLightVisibility = traceShadowRay(surface.P, light.L, light.distanceToLight, payload.recursion);
+			float point_light_visibility = trace_shadow_ray(surface.P, light.L, light.distance_to_light, payload.recursion);
 
-			float3 pointLightColor =
-				calculateDirectLighting(surface, light).evaluate(surface.albedo)
-				* pointLightVisibility;
+			float3 point_light_color =
+				calculate_direct_lighting(surface, light).evaluate(surface.albedo)
+				* point_light_visibility;
 
-			float pointLightSolidAngle = solidAngleOfSphere(constants.pointLightRadius, light.distanceToLight) * 0.5f; // Divide by 2, since we are only interested in hemisphere.
-			if (constants.multipleImportanceSampling)
+			float point_light_solid_angle = solid_angle_of_sphere(constants.point_light_radius, light.distance_to_light) * 0.5f; // Divide by 2, since we are only interested in hemisphere.
+			if (constants.multiple_importance_sampling)
 			{
 				// Multiple importance sampling. At least if I've done this correctly. See http://www.cs.uu.nl/docs/vakken/magr/2015-2016/slides/lecture%2008%20-%20variance%20reduction.pdf, slide 50.
-				float lightPDF = 1.f / (pointLightSolidAngle * NUM_LIGHTS); // Correct for PDFs, see comment below.
+				float light_pdf = 1.f / (point_light_solid_angle * NUM_LIGHTS); // Correct for PDFs, see comment below.
 
 				// Lambertian part.
-				float diffusePDF = dot(surface.N, light.L) * M_INV_PI; // Cosine-distributed for Lambertian BRDF.
+				float diffuse_pdf = dot(surface.N, light.L) * M_INV_PI; // Cosine-distributed for Lambertian BRDF.
 
 				// Specular part.
-				float D = distributionGGX(surface, light);
-				float specularPDF = max(D * light.NdotH / (4.f * light.LdotH), 0.01f);
+				float D = distribution_ggx(surface, light);
+				float specular_pdf = max(D * light.ndot_h / (4.f * light.ldot_h), 0.01f);
 
-				float probDiffuse = probabilityToSampleDiffuse(surface.roughness);
+				float prob_diffuse = probability_to_sample_diffuse(surface.roughness);
 
 				// Total BRDF PDF. This is the probability that we had randomly hit this direction using our brdf importance sampling.
-				float brdfPDF = lerp(specularPDF, diffusePDF, probDiffuse);
+				float brdf_pdf = lerp(specular_pdf, diffuse_pdf, prob_diffuse);
 
 				// Blend PDFs.
-				float t = lightPDF / (lightPDF + brdfPDF);
-				float misPDF = lerp(brdfPDF, lightPDF, t); // Balance heuristic.
+				float t = light_pdf / (light_pdf + brdf_pdf);
+				float mis_pdf = lerp(brdf_pdf, light_pdf, t); // Balance heuristic.
 
-				pointLightColor /= misPDF;
+				point_light_color /= mis_pdf;
 			}
 			else
 			{
-				pointLightColor = pointLightColor
+				point_light_color = point_light_color
 					* NUM_LIGHTS			 // Correct for probability of choosing this particular light.
-					* pointLightSolidAngle;  // Correct for probability of "randomly" hitting this light. I *think* this is correct. See https://github.com/NVIDIA/Q2RTX/blob/master/src/refresh/vkpt/shader/light_lists.h#L295.
+					* point_light_solid_angle;  // Correct for probability of "randomly" hitting this light. I *think* this is correct. See https://github.com/NVIDIA/Q2RTX/blob/master/src/refresh/vkpt/shader/light_lists.h#L295.
 			}
 
-			payload.color += pointLightColor;
+			payload.color += point_light_color;
 		}
 	}
 }
 
 [shader("miss")]
-void radianceMiss(inout radiance_ray_payload payload)
+void radianceMiss(inout RadianceRayPayload payload)
 {
-	payload.color = sky.SampleLevel(wrapSampler, WorldRayDirection(), 0).xyz;
+	payload.color = sky.SampleLevel(wrap_sampler, WorldRayDirection(), 0).xyz;
 }
 
 // ----------------------------------------
@@ -379,7 +379,7 @@ void radianceMiss(inout radiance_ray_payload payload)
 // ----------------------------------------
 
 [shader("miss")]
-void shadowMiss(inout shadow_ray_payload payload)
+void shadowMiss(inout ShadowRayPayload payload)
 {
 	payload.visible = 1.f;
 }

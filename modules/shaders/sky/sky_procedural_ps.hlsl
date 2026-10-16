@@ -2,35 +2,35 @@
 #include "sky_rs.hlsli"
 #include "procedural_sky.hlsli"
 
-ConstantBuffer<sky_cb> cb : register(b1);
+ConstantBuffer<SkyCB> cb : register(b1);
 
-struct ps_input
+struct PSInput
 {
 	float3 uv				: TEXCOORDS;
 	float3 ndc				: NDC;
-	float3 prevFrameNDC		: PREV_FRAME_NDC;
+	float3 prev_frame_ndc		: PREV_FRAME_NDC;
 };
 
-struct ps_output
+struct PSOutput
 {
 	float4 color			: SV_Target0;
-	float2 screenVelocity	: SV_Target1;
-	uint objectID			: SV_Target2;
+	float2 screen_velocity	: SV_Target1;
+	uint object_id			: SV_Target2;
 };
 
 [RootSignature(SKY_PROCEDURAL_RS)]
-ps_output main(ps_input IN)
+PSOutput main(PSInput IN)
 {
 	float3 V = normalize(IN.uv);
-	float3 L = -cb.sunDirection;
+	float3 L = -cb.sun_direction;
 
-	float3 color = proceduralSky(V, L);
+	float3 color = procedural_sky(V, L);
 
 	color *= cb.intensity;
 
-	ps_output OUT;
+	PSOutput OUT;
 	OUT.color = float4(max(color, 0.f), 0.f);
-	OUT.screenVelocity = screenSpaceVelocity(IN.ndc, IN.prevFrameNDC, cb.jitter, cb.prevFrameJitter);
-	OUT.objectID = 0xFFFFFFFF; // -1.
+	OUT.screen_velocity = screen_space_velocity(IN.ndc, IN.prev_frame_ndc, cb.jitter, cb.prev_frame_jitter);
+	OUT.object_id = 0xFFFFFFFF; // -1.
 	return OUT;
 }

@@ -23,86 +23,86 @@
 namespace era_engine
 {
 
-	static dx_pipeline waterPipeline;
+	static DXPipeline water_pipeline;
 
-	static ref<dx_texture> normalmap1;
-	static ref<dx_texture> normalmap2;
-	static ref<dx_texture> foamTexture;
-	static ref<dx_texture> noiseTexture;
+	static ref<DXTexture> normalmap1;
+	static ref<DXTexture> normalmap2;
+	static ref<DXTexture> foam_texture;
+	static ref<DXTexture> noise_texture;
 
-	void initializeWaterPipelines()
+	void initialize_water_pipelines()
 	{
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.cullingOff()
-				.renderTargets(transparentLightPassFormats, arraysize(transparentLightPassFormats), depthStencilFormat);
+				.culling_off()
+				.render_targets(transparent_light_pass_formats, arraysize(transparent_light_pass_formats), depth_stencil_format);
 
-			waterPipeline = createReloadablePipeline(desc, { "water_vs", "water_ps" });
+			water_pipeline = create_reloadable_pipeline(desc, { "water_vs", "water_ps" });
 		}
 
-		normalmap1 = loadTextureFromFileAsync(get_asset_path("/resources/assets/water/waterNM1.png"), image_load_flags_noncolor | image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
-		normalmap2 = loadTextureFromFileAsync(get_asset_path("/resources/assets/water/waterNM2.png"), image_load_flags_noncolor | image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
-		foamTexture = loadTextureFromFileAsync(get_asset_path("/resources/assets/water/waterFoam.dds"), image_load_flags_noncolor | image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
-		noiseTexture = loadTextureFromFileAsync(get_asset_path("/resources/assets/water/waterNoise.dds"), image_load_flags_noncolor | image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
+		normalmap1 = load_texture_from_file_async(get_asset_path("/resources/assets/water/waterNM1.png"), IMAGE_LOAD_FLAGS_NONCOLOR | IMAGE_LOAD_FLAGS_GEN_MIPS_ON_CPU | IMAGE_LOAD_FLAGS_CACHE_TO_DDS);
+		normalmap2 = load_texture_from_file_async(get_asset_path("/resources/assets/water/waterNM2.png"), IMAGE_LOAD_FLAGS_NONCOLOR | IMAGE_LOAD_FLAGS_GEN_MIPS_ON_CPU | IMAGE_LOAD_FLAGS_CACHE_TO_DDS);
+		foam_texture = load_texture_from_file_async(get_asset_path("/resources/assets/water/waterFoam.dds"), IMAGE_LOAD_FLAGS_NONCOLOR | IMAGE_LOAD_FLAGS_GEN_MIPS_ON_CPU | IMAGE_LOAD_FLAGS_CACHE_TO_DDS);
+		noise_texture = load_texture_from_file_async(get_asset_path("/resources/assets/water/waterNoise.dds"), IMAGE_LOAD_FLAGS_NONCOLOR | IMAGE_LOAD_FLAGS_GEN_MIPS_ON_CPU | IMAGE_LOAD_FLAGS_CACHE_TO_DDS);
 	}
 
 
-	struct water_render_data
+	struct WaterRenderData
 	{
 		mat4 m;
 
-		water_settings settings;
+		WaterSettings settings;
 		float time;
 	};
 
-	struct water_pipeline
+	struct WaterPipeline
 	{
 		PIPELINE_SETUP_DECL;
-		PIPELINE_RENDER_DECL(water_render_data);
+		PIPELINE_RENDER_DECL(WaterRenderData);
 	};
 
-	PIPELINE_SETUP_IMPL(water_pipeline)
+	PIPELINE_SETUP_IMPL(WaterPipeline)
 	{
-		cl->setPipelineState(*waterPipeline.pipeline);
-		cl->setGraphicsRootSignature(*waterPipeline.rootSignature);
+		cl->set_pipeline_state(*water_pipeline.pipeline);
+		cl->set_graphics_root_signature(*water_pipeline.root_signature);
 
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-		cl->setGraphicsDynamicConstantBuffer(WATER_RS_CAMERA, common.cameraCBV);
-		cl->setGraphicsDynamicConstantBuffer(WATER_RS_LIGHTING, common.lightingCBV);
-		cl->setDescriptorHeapSRV(WATER_RS_TEXTURES, 0, common.opaqueColor);
-		cl->setDescriptorHeapSRV(WATER_RS_TEXTURES, 1, common.opaqueDepth);
-		cl->setDescriptorHeapSRV(WATER_RS_TEXTURES, 2, normalmap1 ? normalmap1 : render_resources::defaultNormalMap);
-		cl->setDescriptorHeapSRV(WATER_RS_TEXTURES, 3, normalmap2 ? normalmap2 : render_resources::defaultNormalMap);
-		cl->setDescriptorHeapSRV(WATER_RS_TEXTURES, 4, foamTexture ? foamTexture : render_resources::blackTexture);
-		cl->setDescriptorHeapSRV(WATER_RS_TEXTURES, 5, noiseTexture ? noiseTexture : render_resources::blackTexture);
+		cl->set_graphics_dynamic_constant_buffer(WATER_RS_CAMERA, common.camera_cbv);
+		cl->set_graphics_dynamic_constant_buffer(WATER_RS_LIGHTING, common.lighting_cbv);
+		cl->set_descriptor_heap_srv(WATER_RS_TEXTURES, 0, common.opaque_color);
+		cl->set_descriptor_heap_srv(WATER_RS_TEXTURES, 1, common.opaque_depth);
+		cl->set_descriptor_heap_srv(WATER_RS_TEXTURES, 2, normalmap1 ? normalmap1 : RenderResources::default_normal_map);
+		cl->set_descriptor_heap_srv(WATER_RS_TEXTURES, 3, normalmap2 ? normalmap2 : RenderResources::default_normal_map);
+		cl->set_descriptor_heap_srv(WATER_RS_TEXTURES, 4, foam_texture ? foam_texture : RenderResources::black_texture);
+		cl->set_descriptor_heap_srv(WATER_RS_TEXTURES, 5, noise_texture ? noise_texture : RenderResources::black_texture);
 
-		dx_cpu_descriptor_handle nullTexture = render_resources::nullTextureSRV;
+		DXCPUDescriptorHandle null_texture = RenderResources::null_texture_srv;
 
-		cl->setDescriptorHeapSRV(WATER_RS_FRAME_CONSTANTS, 0, common.irradiance);
-		cl->setDescriptorHeapSRV(WATER_RS_FRAME_CONSTANTS, 1, common.prefilteredRadiance);
-		cl->setDescriptorHeapSRV(WATER_RS_FRAME_CONSTANTS, 2, render_resources::brdfTex);
-		cl->setDescriptorHeapSRV(WATER_RS_FRAME_CONSTANTS, 3, common.shadowMap);
-		cl->setDescriptorHeapSRV(WATER_RS_FRAME_CONSTANTS, 4, common.aoTexture ? common.aoTexture : render_resources::whiteTexture);
-		cl->setDescriptorHeapSRV(WATER_RS_FRAME_CONSTANTS, 5, common.sssTexture ? common.sssTexture : render_resources::whiteTexture);
-		cl->setDescriptorHeapSRV(WATER_RS_FRAME_CONSTANTS, 6, common.ssrTexture ? common.ssrTexture->defaultSRV : nullTexture);
+		cl->set_descriptor_heap_srv(WATER_RS_FRAME_CONSTANTS, 0, common.irradiance);
+		cl->set_descriptor_heap_srv(WATER_RS_FRAME_CONSTANTS, 1, common.prefiltered_radiance);
+		cl->set_descriptor_heap_srv(WATER_RS_FRAME_CONSTANTS, 2, RenderResources::brdf_tex);
+		cl->set_descriptor_heap_srv(WATER_RS_FRAME_CONSTANTS, 3, common.shadow_map);
+		cl->set_descriptor_heap_srv(WATER_RS_FRAME_CONSTANTS, 4, common.ao_texture ? common.ao_texture : RenderResources::white_texture);
+		cl->set_descriptor_heap_srv(WATER_RS_FRAME_CONSTANTS, 5, common.sss_texture ? common.sss_texture : RenderResources::white_texture);
+		cl->set_descriptor_heap_srv(WATER_RS_FRAME_CONSTANTS, 6, common.ssr_texture ? common.ssr_texture->default_srv : null_texture);
 	}
 
-	PIPELINE_RENDER_IMPL(water_pipeline, water_render_data)
+	PIPELINE_RENDER_IMPL(WaterPipeline, WaterRenderData)
 	{
 		PROFILE_ALL(cl, "Water");
 
-		water_cb cb;
-		cb.deepColor = data.settings.deepWaterColor;
-		cb.shallowColor = data.settings.shallowWaterColor;
-		cb.shallowDepth = data.settings.shallowDepth;
-		cb.transitionStrength = data.settings.transitionStrength;
-		cb.uvOffset = normalize(vec2(1.f, 1.f)) * data.time * 0.05f;
-		cb.uvScale = data.settings.uvScale;
-		cb.normalmapStrength = data.settings.normalStrength;
+		WaterCB cb;
+		cb.deep_color = data.settings.deep_water_color;
+		cb.shallow_color = data.settings.shallow_water_color;
+		cb.shallow_depth = data.settings.shallow_depth;
+		cb.transition_strength = data.settings.transition_strength;
+		cb.uv_offset = normalize(vec2(1.f, 1.f)) * data.time * 0.05f;
+		cb.uv_scale = data.settings.uv_scale;
+		cb.normalmap_strength = data.settings.normal_strength;
 
-		cl->setGraphics32BitConstants(WATER_RS_TRANSFORM, transform_cb{ viewProj * data.m, data.m });
-		cl->setGraphics32BitConstants(WATER_RS_SETTINGS, cb);
+		cl->set_graphics_32bit_constants(WATER_RS_TRANSFORM, TransformCB{ view_proj * data.m, data.m });
+		cl->set_graphics_32bit_constants(WATER_RS_SETTINGS, cb);
 		cl->draw(4, 1, 0, 0);
 	}
 
@@ -111,11 +111,11 @@ namespace era_engine
 		using namespace rttr;
 		rttr::registration::class_<WaterComponent>("WaterComponent")
 			.constructor<>()
-			.constructor<ref<Entity::EcsData>, const water_settings&>()
+			.constructor<ref<Entity::EcsData>, const WaterSettings&>()
 			.property("settings", &WaterComponent::settings);
 	}
 
-	WaterComponent::WaterComponent(ref<Entity::EcsData> _data, const water_settings& _settings)
+	WaterComponent::WaterComponent(ref<Entity::EcsData> _data, const WaterSettings& _settings)
 		: Component(_data), settings(_settings)
 	{
 	}
@@ -124,10 +124,10 @@ namespace era_engine
 	{
 	}
 
-	void WaterComponent::render(const render_camera& camera, transparent_render_pass* render_pass, const vec3& position_offset, const vec2& scale, float dt)
+	void WaterComponent::render(const RenderCamera& camera, TransparentRenderPass* render_pass, const vec3& position_offset, const vec2& scale, float dt)
 	{
 		time += dt;
-		render_pass->renderObject<water_pipeline, water_render_data>({ create_model_matrix(position_offset, quat::identity, vec3(scale.x, 1.f, scale.y)), settings, time });
+		render_pass->render_object<WaterPipeline, WaterRenderData>({ create_model_matrix(position_offset, quat::identity, vec3(scale.x, 1.f, scale.y)), settings, time });
 	}
 
 }

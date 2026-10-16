@@ -13,11 +13,11 @@ namespace
 
 TEST(Core_Memory, SizeHelpers)
 {
-	EXPECT_EQ(KB(1), 1024ull);
-	EXPECT_EQ(MB(2), 2ull * 1024ull * 1024ull);
-	EXPECT_EQ(GB(1), 1024ull * 1024ull * 1024ull);
-	EXPECT_EQ(BYTE_TO_KB(4096), 4);
-	EXPECT_EQ(BYTE_TO_MB(3 * 1024 * 1024), 3);
+	EXPECT_EQ(kb(1), 1024ull);
+	EXPECT_EQ(mb(2), 2ull * 1024ull * 1024ull);
+	EXPECT_EQ(gb(1), 1024ull * 1024ull * 1024ull);
+	EXPECT_EQ(byte_to_kb(4096), 4);
+	EXPECT_EQ(byte_to_mb(3 * 1024 * 1024), 3);
 }
 
 TEST(Core_Memory, AlignTo)
@@ -50,7 +50,7 @@ TEST(Core_Memory, RangesOverlap)
 
 TEST(Core_Memory, AllocatorAllocatesSequentially)
 {
-	Allocator allocator(0, MB(16));
+	Allocator allocator(0, mb(16));
 
 	EXPECT_EQ(allocator.allocate(0), nullptr);
 
@@ -77,7 +77,7 @@ TEST(Core_Memory, AllocatorAllocatesSequentially)
 
 TEST(Core_Memory, AllocatorRespectsAlignment)
 {
-	Allocator allocator(0, MB(16));
+	Allocator allocator(0, mb(16));
 
 	allocator.allocate(3);
 	void* aligned = allocator.allocate(16, 256);
@@ -88,7 +88,7 @@ TEST(Core_Memory, AllocatorRespectsAlignment)
 
 TEST(Core_Memory, AllocatorClearsToZero)
 {
-	Allocator allocator(0, MB(16));
+	Allocator allocator(0, mb(16));
 
 	uint8* dirty = allocator.allocate<uint8>(64);
 	std::memset(dirty, 0xFF, 64);
@@ -106,21 +106,21 @@ TEST(Core_Memory, AllocatorClearsToZero)
 
 TEST(Core_Memory, AllocatorGrowsBeyondPage)
 {
-	Allocator allocator(0, MB(16));
+	Allocator allocator(0, mb(16));
 
-	uint8* large = allocator.allocate<uint8>(uint32(MB(4)));
+	uint8* large = allocator.allocate<uint8>(uint32(mb(4)));
 	ASSERT_NE(large, nullptr);
 
 	large[0] = 1;
-	large[MB(4) - 1] = 2;
+	large[mb(4) - 1] = 2;
 
 	EXPECT_EQ(large[0], 1);
-	EXPECT_EQ(large[MB(4) - 1], 2);
+	EXPECT_EQ(large[mb(4) - 1], 2);
 }
 
 TEST(Core_Memory, AllocatorMarkers)
 {
-	Allocator allocator(0, MB(16));
+	Allocator allocator(0, mb(16));
 
 	allocator.allocate(100);
 	const MemoryMarker marker = allocator.get_marker();
@@ -146,7 +146,7 @@ TEST(Core_Memory, AllocatorMarkers)
 
 TEST(Core_Memory, AllocatorSetCurrent)
 {
-	Allocator allocator(0, MB(16));
+	Allocator allocator(0, mb(16));
 
 	uint8* first = allocator.allocate<uint8>(32);
 	allocator.allocate(64);

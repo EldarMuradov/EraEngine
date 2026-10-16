@@ -16,42 +16,42 @@
 
 namespace era_engine
 {
-	enum gizmo_axis
+	enum GizmoAxis
 	{
-		gizmo_axis_x,
-		gizmo_axis_y,
-		gizmo_axis_z,
+		GIZMO_AXIS_X,
+		GIZMO_AXIS_Y,
+		GIZMO_AXIS_Z,
 	};
 
 	static union
 	{
 		struct
 		{
-			SubmeshInfo translationSubmesh;
-			SubmeshInfo rotationSubmesh;
-			SubmeshInfo scaleSubmesh;
-			SubmeshInfo planeSubmesh;
-			SubmeshInfo boxSubmesh;
+			SubmeshInfo translation_submesh;
+			SubmeshInfo rotation_submesh;
+			SubmeshInfo scale_submesh;
+			SubmeshInfo plane_submesh;
+			SubmeshInfo box_submesh;
 		};
 
 		SubmeshInfo submeshes[5];
 	};
 
-	static bounding_cylinder cylinders[3] =
+	static BoundingCylinder cylinders[3] =
 	{
-		bounding_cylinder{ vec3(0.f), vec3(1.f, 0.f, 0.f), 1.f },
-		bounding_cylinder{ vec3(0.f), vec3(0.f, 1.f, 0.f), 1.f },
-		bounding_cylinder{ vec3(0.f), vec3(0.f, 0.f, 1.f), 1.f },
+		BoundingCylinder{ vec3(0.f), vec3(1.f, 0.f, 0.f), 1.f },
+		BoundingCylinder{ vec3(0.f), vec3(0.f, 1.f, 0.f), 1.f },
+		BoundingCylinder{ vec3(0.f), vec3(0.f, 0.f, 1.f), 1.f },
 	};
 
-	static bounding_torus tori[3] =
+	static BoundingTorus tori[3] =
 	{
-		bounding_torus{ vec3(0.f), vec3(1.f, 0.f, 0.f), 1.f, 1.f },
-		bounding_torus{ vec3(0.f), vec3(0.f, 1.f, 0.f), 1.f, 1.f },
-		bounding_torus{ vec3(0.f), vec3(0.f, 0.f, 1.f), 1.f, 1.f },
+		BoundingTorus{ vec3(0.f), vec3(1.f, 0.f, 0.f), 1.f, 1.f },
+		BoundingTorus{ vec3(0.f), vec3(0.f, 1.f, 0.f), 1.f, 1.f },
+		BoundingTorus{ vec3(0.f), vec3(0.f, 0.f, 1.f), 1.f, 1.f },
 	};
 
-	struct gizmo_rectangle
+	struct GizmoRectangle
 	{
 		vec3 position;
 		vec3 tangent;
@@ -59,226 +59,226 @@ namespace era_engine
 		vec2 radius;
 	};
 
-	static gizmo_rectangle rectangles[] =
+	static GizmoRectangle rectangles[] =
 	{
-		gizmo_rectangle{ vec3(1.f, 0.f, 1.f), vec3(1.f, 0.f, 0.f), vec3(0.f, 0.f, 1.f), vec2(1.f) },
-		gizmo_rectangle{ vec3(1.f, 1.f, 0.f), vec3(1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f), vec2(1.f) },
-		gizmo_rectangle{ vec3(0.f, 1.f, 1.f), vec3(0.f, 1.f, 0.f), vec3(0.f, 0.f, 1.f), vec2(1.f) },
+		GizmoRectangle{ vec3(1.f, 0.f, 1.f), vec3(1.f, 0.f, 0.f), vec3(0.f, 0.f, 1.f), vec2(1.f) },
+		GizmoRectangle{ vec3(1.f, 1.f, 0.f), vec3(1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f), vec2(1.f) },
+		GizmoRectangle{ vec3(0.f, 1.f, 1.f), vec3(0.f, 1.f, 0.f), vec3(0.f, 0.f, 1.f), vec2(1.f) },
 	};
 
-	static dx_mesh mesh;
+	static DXMesh mesh;
 
-	void initializeTransformationGizmos()
+	void initialize_transformation_gizmos()
 	{
-		mesh_builder mesh(mesh_creation_flags_with_positions | mesh_creation_flags_with_normals);
-		float shaftLength = 1.f;
-		float headLength = 0.2f;
+		MeshBuilder mesh(MESH_CREATION_FLAGS_WITH_POSITIONS | MESH_CREATION_FLAGS_WITH_NORMALS);
+		float shaft_length = 1.f;
+		float head_length = 0.2f;
 		float radius = 0.03f;
-		float headRadius = 0.065f;
+		float head_radius = 0.065f;
 
-		arrow_mesh_desc arrowMesh;
-		arrowMesh.slices = 6;
-		arrowMesh.shaftRadius = radius;
-		arrowMesh.headRadius = headRadius;
-		arrowMesh.shaftLength = shaftLength;
-		arrowMesh.headLength = headLength;
-		mesh.pushArrow(arrowMesh);
-		translationSubmesh = mesh.endSubmesh();
+		ArrowMeshDesc arrow_mesh;
+		arrow_mesh.slices = 6;
+		arrow_mesh.shaft_radius = radius;
+		arrow_mesh.head_radius = head_radius;
+		arrow_mesh.shaft_length = shaft_length;
+		arrow_mesh.head_length = head_length;
+		mesh.push_arrow(arrow_mesh);
+		translation_submesh = mesh.end_submesh();
 
-		torus_mesh_desc torusMesh;
-		torusMesh.slices = 6;
-		torusMesh.segments = 64;
-		torusMesh.torusRadius = shaftLength;
-		torusMesh.tubeRadius = radius;
-		mesh.pushTorus(torusMesh);
-		rotationSubmesh = mesh.endSubmesh();
+		TorusMeshDesc torus_mesh;
+		torus_mesh.slices = 6;
+		torus_mesh.segments = 64;
+		torus_mesh.torus_radius = shaft_length;
+		torus_mesh.tube_radius = radius;
+		mesh.push_torus(torus_mesh);
+		rotation_submesh = mesh.end_submesh();
 
-		mace_mesh_desc maceMesh;
-		maceMesh.slices = 6;
-		maceMesh.shaftRadius = radius;
-		maceMesh.headRadius = headRadius;
-		maceMesh.shaftLength = shaftLength;
-		maceMesh.headLength = headLength;
-		mesh.pushMace(maceMesh);
-		scaleSubmesh = mesh.endSubmesh();
+		MaceMeshDesc mace_mesh;
+		mace_mesh.slices = 6;
+		mace_mesh.shaft_radius = radius;
+		mace_mesh.head_radius = head_radius;
+		mace_mesh.shaft_length = shaft_length;
+		mace_mesh.head_length = head_length;
+		mesh.push_mace(mace_mesh);
+		scale_submesh = mesh.end_submesh();
 
-		box_mesh_desc planeMesh;
-		planeMesh.radius = vec3(shaftLength, 0.01f, shaftLength) * 0.2f;
-		planeMesh.center = vec3(shaftLength, 0.f, shaftLength) * 0.35f;
-		mesh.pushBox(planeMesh);
-		planeSubmesh = mesh.endSubmesh();
+		BoxMeshDesc plane_mesh;
+		plane_mesh.radius = vec3(shaft_length, 0.01f, shaft_length) * 0.2f;
+		plane_mesh.center = vec3(shaft_length, 0.f, shaft_length) * 0.35f;
+		mesh.push_box(plane_mesh);
+		plane_submesh = mesh.end_submesh();
 
-		box_mesh_desc boxMesh;
-		boxMesh.radius = (shaftLength + headLength) * 0.3f;
-		mesh.pushBox(boxMesh);
-		boxSubmesh = mesh.endSubmesh();
+		BoxMeshDesc box_mesh;
+		box_mesh.radius = (shaft_length + head_length) * 0.3f;
+		mesh.push_box(box_mesh);
+		box_submesh = mesh.end_submesh();
 
-		era_engine::mesh = mesh.createDXMesh();
+		era_engine::mesh = mesh.create_dx_mesh();
 
 		for (uint32 i = 0; i < 3; ++i)
 		{
-			cylinders[i].positionB *= shaftLength + headLength;
+			cylinders[i].position_b *= shaft_length + head_length;
 			cylinders[i].radius *= radius * 1.1f;
 
-			tori[i].majorRadius *= shaftLength;
-			tori[i].tubeRadius *= radius * 1.1f;
+			tori[i].major_radius *= shaft_length;
+			tori[i].tube_radius *= radius * 1.1f;
 
-			rectangles[i].position *= shaftLength * 0.35f;
-			rectangles[i].radius *= shaftLength * 0.2f;
+			rectangles[i].position *= shaft_length * 0.35f;
+			rectangles[i].radius *= shaft_length * 0.2f;
 		}
 	}
 
-	uint32 transformation_gizmo::handleTranslation(trs& transform, ray r, const UserInput& input, float snapping, float scaling)
+	uint32 TransformationGizmo::handle_translation(trs& transform, ray r, const UserInput& input, float snapping, float scaling)
 	{
-		quat rot = (space == transformation_global) ? quat::identity : transform.rotation;
+		quat rot = (space == TRANSFORMATION_GLOBAL) ? quat::identity : transform.rotation;
 
-		uint32 hoverAxisIndex = -1;
-		float minT = FLT_MAX;
+		uint32 hover_axis_index = -1;
+		float min_t = FLT_MAX;
 		for (uint32 i = 0; i < 3; ++i)
 		{
 			float t;
-			bounding_cylinder cylinder = { rot * cylinders[i].positionA * scaling + transform.position, rot * cylinders[i].positionB * scaling + transform.position, cylinders[i].radius * scaling };
-			if (r.intersectCylinder(cylinder, t) && t < minT)
+			BoundingCylinder cylinder = { rot * cylinders[i].position_a * scaling + transform.position, rot * cylinders[i].position_b * scaling + transform.position, cylinders[i].radius * scaling };
+			if (r.intersect_cylinder(cylinder, t) && t < min_t)
 			{
-				hoverAxisIndex = i;
-				minT = t;
+				hover_axis_index = i;
+				min_t = t;
 			}
 
-			if (r.intersectRectangle(rot * rectangles[i].position * scaling + transform.position, rot * rectangles[i].tangent, rot * rectangles[i].bitangent, rectangles[i].radius * scaling, t) && t < minT)
+			if (r.intersect_rectangle(rot * rectangles[i].position * scaling + transform.position, rot * rectangles[i].tangent, rot * rectangles[i].bitangent, rectangles[i].radius * scaling, t) && t < min_t)
 			{
-				hoverAxisIndex = i + 3;
-				minT = t;
+				hover_axis_index = i + 3;
+				min_t = t;
 			}
 		}
 
-		if (input.mouse.left.click_event && hoverAxisIndex != -1)
+		if (input.mouse.left.click_event && hover_axis_index != -1)
 		{
 			dragging = true;
-			axisIndex = hoverAxisIndex;
+			axis_index = hover_axis_index;
 
-			if (hoverAxisIndex < 3)
+			if (hover_axis_index < 3)
 			{
-				vec3 candidate0(0.f); candidate0.data[(axisIndex + 1) % 3] = 1.f;
-				vec3 candidate1(0.f); candidate1.data[(axisIndex + 2) % 3] = 1.f;
+				vec3 candidate0(0.f); candidate0.data[(axis_index + 1) % 3] = 1.f;
+				vec3 candidate1(0.f); candidate1.data[(axis_index + 2) % 3] = 1.f;
 
-				const vec4 axisPlanes[] =
+				const vec4 axis_planes[] =
 				{
-					createPlane(transform.position, rot * candidate0),
-					createPlane(transform.position, rot * candidate1),
+					create_plane(transform.position, rot * candidate0),
+					create_plane(transform.position, rot * candidate1),
 				};
 
-				float a = abs(dot(r.direction, axisPlanes[0].xyz));
-				float b = abs(dot(r.direction, axisPlanes[1].xyz));
+				float a = abs(dot(r.direction, axis_planes[0].xyz));
+				float b = abs(dot(r.direction, axis_planes[1].xyz));
 
-				plane = (a > b) ? axisPlanes[0] : axisPlanes[1];
+				plane = (a > b) ? axis_planes[0] : axis_planes[1];
 
-				vec3 axis(0.f); axis.data[axisIndex] = 1.f;
+				vec3 axis(0.f); axis.data[axis_index] = 1.f;
 				axis = rot * axis;
 
 				float t;
-				r.intersectPlane(plane.xyz, plane.w, t);
+				r.intersect_plane(plane.xyz, plane.w, t);
 				anchor = dot(r.origin + t * r.direction - transform.position, axis);
 			}
 			else
 			{
-				plane = createPlane(rot * rectangles[axisIndex - 3].position + transform.position, rot * cross(rectangles[axisIndex - 3].tangent, rectangles[axisIndex - 3].bitangent));
-				anchor3 = r.origin + minT * r.direction - transform.position;
+				plane = create_plane(rot * rectangles[axis_index - 3].position + transform.position, rot * cross(rectangles[axis_index - 3].tangent, rectangles[axis_index - 3].bitangent));
+				anchor3 = r.origin + min_t * r.direction - transform.position;
 			}
-			originalPosition = transform.position;
+			original_position = transform.position;
 
-			originalTransform = transform;
+			original_transform = transform;
 		}
 
 		if (dragging)
 		{
 			float t;
-			r.intersectPlane(plane.xyz, plane.w, t);
+			r.intersect_plane(plane.xyz, plane.w, t);
 
-			if (axisIndex < 3)
+			if (axis_index < 3)
 			{
-				vec3 axis(0.f); axis.data[axisIndex] = 1.f;
+				vec3 axis(0.f); axis.data[axis_index] = 1.f;
 				axis = rot * axis;
 
-				float amount = (dot(r.origin + t * r.direction - originalPosition, axis) - anchor);
+				float amount = (dot(r.origin + t * r.direction - original_position, axis) - anchor);
 
 				if (snapping > 0.f)
 				{
 					amount = ::round(amount / snapping) * snapping;
 				}
 
-				transform.position = originalPosition + amount * axis;
+				transform.position = original_position + amount * axis;
 			}
 			else
 			{
-				vec3 amount = r.origin + t * r.direction - originalPosition - anchor3;
+				vec3 amount = r.origin + t * r.direction - original_position - anchor3;
 
 				if (snapping > 0.f)
 				{
-					vec3 tangent = rot * rectangles[axisIndex - 3].tangent;
-					vec3 bitangent = rot * rectangles[axisIndex - 3].bitangent;
+					vec3 tangent = rot * rectangles[axis_index - 3].tangent;
+					vec3 bitangent = rot * rectangles[axis_index - 3].bitangent;
 
-					float tangentAmount = ::round(dot(tangent, amount) / snapping) * snapping;
-					float bitangentAmount = ::round(dot(bitangent, amount) / snapping) * snapping;
+					float tangent_amount = ::round(dot(tangent, amount) / snapping) * snapping;
+					float bitangent_amount = ::round(dot(bitangent, amount) / snapping) * snapping;
 
-					amount = tangent * tangentAmount + bitangent * bitangentAmount;
+					amount = tangent * tangent_amount + bitangent * bitangent_amount;
 				}
 
-				transform.position = originalPosition + amount;
+				transform.position = original_position + amount;
 			}
 		}
 
-		return dragging ? axisIndex : hoverAxisIndex;
+		return dragging ? axis_index : hover_axis_index;
 	}
 
-	uint32 transformation_gizmo::handleRotation(trs& transform, ray r, const UserInput& input, float snapping, float scaling)
+	uint32 TransformationGizmo::handle_rotation(trs& transform, ray r, const UserInput& input, float snapping, float scaling)
 	{
-		quat rot = (space == transformation_global) ? quat::identity : transform.rotation;
+		quat rot = (space == TRANSFORMATION_GLOBAL) ? quat::identity : transform.rotation;
 
-		uint32 hoverAxisIndex = -1;
-		float minT = FLT_MAX;
+		uint32 hover_axis_index = -1;
+		float min_t = FLT_MAX;
 		for (uint32 i = 0; i < 3; ++i)
 		{
 			float t;
-			bounding_torus torus = { rot * tori[i].position * scaling + transform.position, rot * tori[i].upAxis, tori[i].majorRadius * scaling, tori[i].tubeRadius * scaling };
-			if (r.intersectTorus(torus, t) && t < minT)
+			BoundingTorus torus = { rot * tori[i].position * scaling + transform.position, rot * tori[i].up_axis, tori[i].major_radius * scaling, tori[i].tube_radius * scaling };
+			if (r.intersect_torus(torus, t) && t < min_t)
 			{
-				hoverAxisIndex = i;
-				minT = t;
+				hover_axis_index = i;
+				min_t = t;
 			}
 		}
 
-		if (input.mouse.left.click_event && hoverAxisIndex != -1)
+		if (input.mouse.left.click_event && hover_axis_index != -1)
 		{
 			dragging = true;
-			axisIndex = hoverAxisIndex;
+			axis_index = hover_axis_index;
 
-			vec3 planeNormal(0.f); planeNormal.data[axisIndex] = 1.f;
-			planeNormal = rot * planeNormal;
-			plane = createPlane(transform.position, planeNormal);
+			vec3 plane_normal(0.f); plane_normal.data[axis_index] = 1.f;
+			plane_normal = rot * plane_normal;
+			plane = create_plane(transform.position, plane_normal);
 
 			float t;
-			r.intersectPlane(plane.xyz, plane.w, t);
+			r.intersect_plane(plane.xyz, plane.w, t);
 
 			vec3 p = r.origin + t * r.direction - transform.position;
 			p = conjugate(rot) * p;
-			float x = p.data[(axisIndex + 1) % 3];
-			float y = p.data[(axisIndex + 2) % 3];
+			float x = p.data[(axis_index + 1) % 3];
+			float y = p.data[(axis_index + 2) % 3];
 
 			anchor = ::atan2(y, x);
-			originalRotation = quat(planeNormal, anchor);
+			original_rotation = quat(plane_normal, anchor);
 
-			originalTransform = transform;
+			original_transform = transform;
 		}
 
 		if (dragging)
 		{
 			float t;
-			r.intersectPlane(plane.xyz, plane.w, t);
+			r.intersect_plane(plane.xyz, plane.w, t);
 
 			vec3 p = r.origin + t * r.direction - transform.position;
 			p = conjugate(rot) * p;
-			float x = p.data[(axisIndex + 1) % 3];
-			float y = p.data[(axisIndex + 2) % 3];
+			float x = p.data[(axis_index + 1) % 3];
+			float y = p.data[(axis_index + 2) % 3];
 
 			float angle = ::atan2(y, x);
 
@@ -287,208 +287,208 @@ namespace era_engine
 				angle = ::round((angle - anchor) / snapping) * snapping + anchor;
 			}
 
-			quat currentRotation(plane.xyz, angle);
-			quat deltaRotation = currentRotation * conjugate(originalRotation);
-			transform.rotation = normalize(deltaRotation * transform.rotation);
-			if (space == transformation_global)
+			quat current_rotation(plane.xyz, angle);
+			quat delta_rotation = current_rotation * conjugate(original_rotation);
+			transform.rotation = normalize(delta_rotation * transform.rotation);
+			if (space == TRANSFORMATION_GLOBAL)
 			{
-				originalRotation = currentRotation;
+				original_rotation = current_rotation;
 			}
 		}
 
-		return dragging ? axisIndex : hoverAxisIndex;
+		return dragging ? axis_index : hover_axis_index;
 	}
 
-	uint32 transformation_gizmo::handleScaling(trs& transform, ray r, const UserInput& input, float scaling, const render_camera& camera, bool allowNonUniform)
+	uint32 TransformationGizmo::handle_scaling(trs& transform, ray r, const UserInput& input, float scaling, const RenderCamera& camera, bool allow_non_uniform)
 	{
 		// We only allow scaling in local space
 		quat rot = transform.rotation;
 
-		const float cylinderHeight = cylinders[0].positionB.x;
-		const float uniformRadius = cylinderHeight * 0.3f * scaling;
+		const float cylinder_height = cylinders[0].position_b.x;
+		const float uniform_radius = cylinder_height * 0.3f * scaling;
 
-		bounding_box uniformBox = bounding_box::fromCenterRadius(vec3(0.f), uniformRadius);
+		BoundingBox uniform_box = BoundingBox::from_center_radius(vec3(0.f), uniform_radius);
 
-		ray localRay = r;
-		localRay.origin = inverse_transform_position(transform, r.origin) * transform.scale; // inverseTransformPosition applies scale, but we don't want this.
-		localRay.direction = inverse_transform_direction(transform, r.direction);
+		ray local_ray = r;
+		local_ray.origin = inverse_transform_position(transform, r.origin) * transform.scale; // inverseTransformPosition applies scale, but we don't want this.
+		local_ray.direction = inverse_transform_direction(transform, r.direction);
 
-		uint32 hoverAxisIndex = -1;
-		float minT = FLT_MAX;
-		if (localRay.intersectAABB(uniformBox, minT))
+		uint32 hover_axis_index = -1;
+		float min_t = FLT_MAX;
+		if (local_ray.intersect_aabb(uniform_box, min_t))
 		{
-			hoverAxisIndex = 3;
+			hover_axis_index = 3;
 		}
-		else if (allowNonUniform)
+		else if (allow_non_uniform)
 		{
-			float minT = FLT_MAX;
+			float min_t = FLT_MAX;
 			for (uint32 i = 0; i < 3; ++i)
 			{
 				float t;
-				bounding_cylinder cylinder = { rot * cylinders[i].positionA * scaling + transform.position, rot * cylinders[i].positionB * scaling + transform.position, cylinders[i].radius * scaling };
-				if (r.intersectCylinder(cylinder, t) && t < minT)
+				BoundingCylinder cylinder = { rot * cylinders[i].position_a * scaling + transform.position, rot * cylinders[i].position_b * scaling + transform.position, cylinders[i].radius * scaling };
+				if (r.intersect_cylinder(cylinder, t) && t < min_t)
 				{
-					hoverAxisIndex = i;
-					minT = t;
+					hover_axis_index = i;
+					min_t = t;
 				}
 			}
 		}
 
-		if (input.mouse.left.click_event && hoverAxisIndex != -1)
+		if (input.mouse.left.click_event && hover_axis_index != -1)
 		{
-			if (hoverAxisIndex < 3)
+			if (hover_axis_index < 3)
 			{
 				// Non-uniform scaling
-				vec3 candidate0(0.f); candidate0.data[(hoverAxisIndex + 1) % 3] = 1.f;
-				vec3 candidate1(0.f); candidate1.data[(hoverAxisIndex + 2) % 3] = 1.f;
+				vec3 candidate0(0.f); candidate0.data[(hover_axis_index + 1) % 3] = 1.f;
+				vec3 candidate1(0.f); candidate1.data[(hover_axis_index + 2) % 3] = 1.f;
 
-				const vec4 axisPlanes[] =
+				const vec4 axis_planes[] =
 				{
-					createPlane(transform.position, rot * candidate0),
-					createPlane(transform.position, rot * candidate1),
+					create_plane(transform.position, rot * candidate0),
+					create_plane(transform.position, rot * candidate1),
 				};
 
 				dragging = true;
-				axisIndex = hoverAxisIndex;
+				axis_index = hover_axis_index;
 
-				float a = abs(dot(r.direction, axisPlanes[0].xyz));
-				float b = abs(dot(r.direction, axisPlanes[1].xyz));
+				float a = abs(dot(r.direction, axis_planes[0].xyz));
+				float b = abs(dot(r.direction, axis_planes[1].xyz));
 
-				plane = (a > b) ? axisPlanes[0] : axisPlanes[1];
+				plane = (a > b) ? axis_planes[0] : axis_planes[1];
 
-				vec3 axis(0.f); axis.data[axisIndex] = 1.f;
+				vec3 axis(0.f); axis.data[axis_index] = 1.f;
 				axis = rot * axis;
 
 				float t;
-				r.intersectPlane(plane.xyz, plane.w, t);
+				r.intersect_plane(plane.xyz, plane.w, t);
 				anchor = dot(r.origin + t * r.direction - transform.position, axis);
 				anchor = max(anchor, 0.0001f);
-				originalScale = transform.scale;
+				original_scale = transform.scale;
 			}
 			else
 			{
 				// Uniform scaling
-				ASSERT(hoverAxisIndex == 3);
+				ASSERT(hover_axis_index == 3);
 
 				dragging = true;
-				axisIndex = hoverAxisIndex;
+				axis_index = hover_axis_index;
 
-				plane = createPlane(transform.position, camera.rotation * vec3(0.f, 0.f, 1.f)); // Backward axis.
+				plane = create_plane(transform.position, camera.rotation * vec3(0.f, 0.f, 1.f)); // Backward axis.
 
 				float t;
-				r.intersectPlane(plane.xyz, plane.w, t);
+				r.intersect_plane(plane.xyz, plane.w, t);
 				anchor = dot(r.origin + t * r.direction - transform.position, camera.rotation * vec3(1.f, 1.f, 0.f));
 				anchor = max(anchor, 0.0001f);
-				originalScale = transform.scale;
+				original_scale = transform.scale;
 			}
 
-			originalTransform = transform;
+			original_transform = transform;
 		}
 
 		if (dragging)
 		{
-			if (axisIndex < 3)
+			if (axis_index < 3)
 			{
 				float t;
-				r.intersectPlane(plane.xyz, plane.w, t);
+				r.intersect_plane(plane.xyz, plane.w, t);
 
-				vec3 axis(0.f); axis.data[axisIndex] = 1.f;
+				vec3 axis(0.f); axis.data[axis_index] = 1.f;
 				axis = rot * axis;
 
 				vec3 d = (dot(r.origin + t * r.direction - transform.position, axis) / anchor) * axis;
 
 				d = conjugate(rot) * d;
-				transform.scale.data[axisIndex] = originalScale.data[axisIndex] * d.data[axisIndex];
+				transform.scale.data[axis_index] = original_scale.data[axis_index] * d.data[axis_index];
 			}
 			else
 			{
-				ASSERT(axisIndex == 3);
+				ASSERT(axis_index == 3);
 
 				float t;
-				r.intersectPlane(plane.xyz, plane.w, t);
+				r.intersect_plane(plane.xyz, plane.w, t);
 
 				float d = (dot(r.origin + t * r.direction - transform.position, camera.rotation * vec3(1.f, 1.f, 0.f)) / anchor);
 
-				transform.scale = originalScale * d;
+				transform.scale = original_scale * d;
 			}
 		}
 
-		return dragging ? axisIndex : hoverAxisIndex;
+		return dragging ? axis_index : hover_axis_index;
 	}
 
-	bool transformation_gizmo::handleUserInput(bool allowKeyboardInput,
-		bool allowTranslation, bool allowRotation, bool allowScaling, bool allowSpaceChange)
+	bool TransformationGizmo::handle_user_input(bool allow_keyboard_input,
+		bool allow_translation, bool allow_rotation, bool allow_scaling, bool allow_space_change)
 	{
-		bool keyboardInteraction = false;
-		bool uiInteraction = false;
+		bool keyboard_interaction = false;
+		bool ui_interaction = false;
 
-		if (allowKeyboardInput && !ImGui::IsAnyItemActive() && !ImGui::AnyModifiersDown())
+		if (allow_keyboard_input && !ImGui::IsAnyItemActive() && !ImGui::AnyModifiersDown())
 		{
-			if (type != transformation_type_scale)
+			if (type != TRANSFORMATION_TYPE_SCALE)
 			{
-				if (ImGui::IsKeyPressed('G') && allowSpaceChange)
+				if (ImGui::IsKeyPressed('G') && allow_space_change)
 				{
-					space = (transformation_space)(1 - space);
+					space = (TransformationSpace)(1 - space);
 					dragging = false;
-					keyboardInteraction = true;
+					keyboard_interaction = true;
 				}
 			}
 			if (ImGui::IsKeyPressed('Q'))
 			{
-				type = transformation_type_none;
+				type = TRANSFORMATION_TYPE_NONE;
 				dragging = false;
-				keyboardInteraction = true;
+				keyboard_interaction = true;
 			}
-			if (ImGui::IsKeyPressed('W') && allowTranslation)
+			if (ImGui::IsKeyPressed('W') && allow_translation)
 			{
-				type = transformation_type_translation;
+				type = TRANSFORMATION_TYPE_TRANSLATION;
 				dragging = false;
-				keyboardInteraction = true;
+				keyboard_interaction = true;
 			}
-			if (ImGui::IsKeyPressed('E') && allowRotation)
+			if (ImGui::IsKeyPressed('E') && allow_rotation)
 			{
-				type = transformation_type_rotation;
+				type = TRANSFORMATION_TYPE_ROTATION;
 				dragging = false;
-				keyboardInteraction = true;
+				keyboard_interaction = true;
 			}
-			if (ImGui::IsKeyPressed('R') && allowScaling)
+			if (ImGui::IsKeyPressed('R') && allow_scaling)
 			{
-				type = transformation_type_scale;
+				type = TRANSFORMATION_TYPE_SCALE;
 				dragging = false;
-				keyboardInteraction = true;
+				keyboard_interaction = true;
 			}
 		}
 
 		if (ImGui::BeginControlsWindow("##GizmoControls", ImVec2(0.f, 0.f), ImVec2(20.f, 20.f)))
 		{
-			transformation_space constantLocal = transformation_local;
-			transformation_space& space = (type == transformation_type_scale) ? constantLocal : this->space;
+			TransformationSpace constant_local = TRANSFORMATION_LOCAL;
+			TransformationSpace& space = (type == TRANSFORMATION_TYPE_SCALE) ? constant_local : this->space;
 
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 
-			bool allowGlobal = space == transformation_global || allowSpaceChange;
-			bool allowLocal = space == transformation_local || allowSpaceChange;
-			if (type == transformation_type_scale)
+			bool allow_global = space == TRANSFORMATION_GLOBAL || allow_space_change;
+			bool allow_local = space == TRANSFORMATION_LOCAL || allow_space_change;
+			if (type == TRANSFORMATION_TYPE_SCALE)
 			{
-				allowGlobal = false;
+				allow_global = false;
 			}
 
 			ImGui::PushID(&this->space);
-			uiInteraction |= ImGui::IconRadioButton(imgui_icon_global, (int*)&space, transformation_global, IMGUI_ICON_DEFAULT_SIZE, allowGlobal);
+			ui_interaction |= ImGui::IconRadioButton(IMGUI_ICON_GLOBAL, (int*)&space, TRANSFORMATION_GLOBAL, IMGUI_ICON_DEFAULT_SIZE, allow_global);
 			ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
-			uiInteraction |= ImGui::IconRadioButton(imgui_icon_local, (int*)&space, transformation_local, IMGUI_ICON_DEFAULT_SIZE, allowLocal);
+			ui_interaction |= ImGui::IconRadioButton(IMGUI_ICON_LOCAL, (int*)&space, TRANSFORMATION_LOCAL, IMGUI_ICON_DEFAULT_SIZE, allow_local);
 			ImGui::PopID();
 
 			ImGui::SameLine(0.f, (float)IMGUI_ICON_DEFAULT_SIZE);
 
 			ImGui::PushID(&type);
-			uiInteraction |= ImGui::IconRadioButton(imgui_icon_cross, (int*)&type, transformation_type_none, IMGUI_ICON_DEFAULT_SIZE, true);
+			ui_interaction |= ImGui::IconRadioButton(IMGUI_ICON_CROSS, (int*)&type, TRANSFORMATION_TYPE_NONE, IMGUI_ICON_DEFAULT_SIZE, true);
 			ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
-			uiInteraction |= ImGui::IconRadioButton(imgui_icon_translate, (int*)&type, transformation_type_translation, IMGUI_ICON_DEFAULT_SIZE, allowTranslation);
+			ui_interaction |= ImGui::IconRadioButton(IMGUI_ICON_TRANSLATE, (int*)&type, TRANSFORMATION_TYPE_TRANSLATION, IMGUI_ICON_DEFAULT_SIZE, allow_translation);
 			ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
-			uiInteraction |= ImGui::IconRadioButton(imgui_icon_rotate, (int*)&type, transformation_type_rotation, IMGUI_ICON_DEFAULT_SIZE, allowRotation);
+			ui_interaction |= ImGui::IconRadioButton(IMGUI_ICON_ROTATE, (int*)&type, TRANSFORMATION_TYPE_ROTATION, IMGUI_ICON_DEFAULT_SIZE, allow_rotation);
 			ImGui::SameLine(0.f, IMGUI_ICON_DEFAULT_SPACING);
-			uiInteraction |= ImGui::IconRadioButton(imgui_icon_scale, (int*)&type, transformation_type_scale, IMGUI_ICON_DEFAULT_SIZE, allowScaling);
+			ui_interaction |= ImGui::IconRadioButton(IMGUI_ICON_SCALE, (int*)&type, TRANSFORMATION_TYPE_SCALE, IMGUI_ICON_DEFAULT_SIZE, allow_scaling);
 			ImGui::PopID();
 
 			ImGui::SameLine(0.f, (float)IMGUI_ICON_DEFAULT_SIZE);
@@ -498,40 +498,40 @@ namespace era_engine
 
 		ImGui::End();
 
-		return keyboardInteraction || uiInteraction;
+		return keyboard_interaction || ui_interaction;
 	}
 
-	void transformation_gizmo::manipulateInternal(trs& transform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass, bool allowNonUniformScale)
+	void TransformationGizmo::manipulate_internal(trs& transform, const RenderCamera& camera, const UserInput& input, bool allow_input, LDRRenderPass* ldr_render_pass, bool allow_non_uniform_scale)
 	{
-		if (!input.mouse.left.down || !allowInput)
+		if (!input.mouse.left.down || !allow_input)
 		{
 			dragging = false;
 		}
 
-		if (type == transformation_type_none)
+		if (type == TRANSFORMATION_TYPE_NONE)
 			return;
 
-		uint32 highlightAxis = -1;
+		uint32 highlight_axis = -1;
 
 		// Scale gizmos based on distance to camera.
-		float scaling = length(transform.position - camera.position) / camera.getMinProjectionExtent() * 0.1f;
+		float scaling = length(transform.position - camera.position) / camera.get_min_projection_extent() * 0.1f;
 
-		if (allowInput)
+		if (allow_input)
 		{
-			float snapping = input.keyboard[key_ctrl].down ? (type == transformation_type_rotation ? deg2rad(45.f) : 0.5f) : 0.f;
+			float snapping = input.keyboard[KEY_CTRL].down ? (type == TRANSFORMATION_TYPE_ROTATION ? deg2rad(45.f) : 0.5f) : 0.f;
 
-			ray r = camera.generateWorldSpaceRay(input.mouse.relX, input.mouse.relY);
+			ray r = camera.generate_world_space_ray(input.mouse.rel_x, input.mouse.rel_y);
 
 			switch (type)
 			{
-			case transformation_type_translation: highlightAxis = handleTranslation(transform, r, input, snapping, scaling); break;
-			case transformation_type_rotation: highlightAxis = handleRotation(transform, r, input, snapping, scaling); break;
-			case transformation_type_scale: highlightAxis = handleScaling(transform, r, input, scaling, camera, allowNonUniformScale); break; // TODO: Snapping for scale.
+			case TRANSFORMATION_TYPE_TRANSLATION: highlight_axis = handle_translation(transform, r, input, snapping, scaling); break;
+			case TRANSFORMATION_TYPE_ROTATION: highlight_axis = handle_rotation(transform, r, input, snapping, scaling); break;
+			case TRANSFORMATION_TYPE_SCALE: highlight_axis = handle_scaling(transform, r, input, scaling, camera, allow_non_uniform_scale); break; // TODO: Snapping for scale.
 			}
 		}
 
 		// Render
-		quat rot = (space == transformation_global && type != transformation_type_scale) ? quat::identity : transform.rotation;
+		quat rot = (space == TRANSFORMATION_GLOBAL && type != TRANSFORMATION_TYPE_SCALE) ? quat::identity : transform.rotation;
 
 		{
 			const quat rotations[] =
@@ -548,35 +548,35 @@ namespace era_engine
 				vec4(0.f, 0.f, 1.f, 1.f),
 			};
 
-			if (type != transformation_type_scale || allowNonUniformScale)
+			if (type != TRANSFORMATION_TYPE_SCALE || allow_non_uniform_scale)
 			{
 				for (uint32 i = 0; i < 3; ++i)
 				{
-					debug_render_data data = {
+					DebugRenderData data = {
 						create_model_matrix(transform.position, rotations[i], scaling),
-						mesh.vertexBuffer, mesh.indexBuffer,
+						mesh.vertex_buffer, mesh.index_buffer,
 						submeshes[type],
-						colors[i] * (highlightAxis == i ? 0.5f : 1.f)
+						colors[i] * (highlight_axis == i ? 0.5f : 1.f)
 					};
 
-					ldrRenderPass->renderOverlay<debug_simple_pipeline>(data);
+					ldr_render_pass->render_overlay<DebugSimplePipeline>(data);
 				}
 			}
 
-			if (type == transformation_type_scale)
+			if (type == TRANSFORMATION_TYPE_SCALE)
 			{
-				debug_render_data data = {
+				DebugRenderData data = {
 					create_model_matrix(transform.position, rot, scaling),
-					mesh.vertexBuffer, mesh.indexBuffer,
-					boxSubmesh,
-					vec4(0.5f) * (highlightAxis == 3 ? 0.5f : 1.f)
+					mesh.vertex_buffer, mesh.index_buffer,
+					box_submesh,
+					vec4(0.5f) * (highlight_axis == 3 ? 0.5f : 1.f)
 				};
 
-				ldrRenderPass->renderOverlay<debug_simple_pipeline>(data);
+				ldr_render_pass->render_overlay<DebugSimplePipeline>(data);
 			}
 		}
 
-		if (type == transformation_type_translation)
+		if (type == TRANSFORMATION_TYPE_TRANSLATION)
 		{
 			const quat rotations[] =
 			{
@@ -594,153 +594,153 @@ namespace era_engine
 
 			for (uint32 i = 0; i < 3; ++i)
 			{
-				debug_render_data data = {
+				DebugRenderData data = {
 					create_model_matrix(transform.position, rotations[i], scaling),
-					mesh.vertexBuffer, mesh.indexBuffer,
-					planeSubmesh,
-					colors[i] * (highlightAxis == i + 3 ? 0.5f : 1.f)
+					mesh.vertex_buffer, mesh.index_buffer,
+					plane_submesh,
+					colors[i] * (highlight_axis == i + 3 ? 0.5f : 1.f)
 				};
 
-				ldrRenderPass->renderOverlay<debug_simple_pipeline>(data);
+				ldr_render_pass->render_overlay<DebugSimplePipeline>(data);
 			}
 		}
 	}
 
-	void transformation_gizmo::manipulateHandles(vec3* handles, uint32 numHandles)
+	void TransformationGizmo::manipulate_handles(vec3* handles, uint32 num_handles)
 	{
 	}
 
-	bool transformation_gizmo::manipulateTransformation(trs& transform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool TransformationGizmo::manipulate_transformation(trs& transform, const RenderCamera& camera, const UserInput& input, bool allow_input, LDRRenderPass* ldr_render_pass)
 	{
-		bool inputCaptured = handleUserInput(allowInput, true, true, true, true);
-		manipulateInternal(transform, camera, input, allowInput, ldrRenderPass);
+		bool input_captured = handle_user_input(allow_input, true, true, true, true);
+		manipulate_internal(transform, camera, input, allow_input, ldr_render_pass);
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulatePosition(vec3& position, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool TransformationGizmo::manipulate_position(vec3& position, const RenderCamera& camera, const UserInput& input, bool allow_input, LDRRenderPass* ldr_render_pass)
 	{
-		if (type == transformation_type_rotation || type == transformation_type_scale)
+		if (type == TRANSFORMATION_TYPE_ROTATION || type == TRANSFORMATION_TYPE_SCALE)
 		{
-			type = transformation_type_translation;
+			type = TRANSFORMATION_TYPE_TRANSLATION;
 		}
-		space = transformation_global;
+		space = TRANSFORMATION_GLOBAL;
 
-		bool inputCaptured = handleUserInput(allowInput, true, false, false, false);
+		bool input_captured = handle_user_input(allow_input, true, false, false, false);
 		trs transform = { position, quat::identity, vec3(1.f, 1.f, 1.f) };
-		manipulateInternal(transform, camera, input, allowInput, ldrRenderPass);
+		manipulate_internal(transform, camera, input, allow_input, ldr_render_pass);
 		position = transform.position;
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulatePositionRotation(vec3& position, quat& rotation, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool TransformationGizmo::manipulate_position_rotation(vec3& position, quat& rotation, const RenderCamera& camera, const UserInput& input, bool allow_input, LDRRenderPass* ldr_render_pass)
 	{
-		if (type == transformation_type_scale)
+		if (type == TRANSFORMATION_TYPE_SCALE)
 		{
-			type = transformation_type_translation;
+			type = TRANSFORMATION_TYPE_TRANSLATION;
 		}
 
-		bool inputCaptured = handleUserInput(allowInput, true, true, false, true);
+		bool input_captured = handle_user_input(allow_input, true, true, false, true);
 		trs transform = { position, rotation, vec3(1.f, 1.f, 1.f) };
-		manipulateInternal(transform, camera, input, allowInput, ldrRenderPass);
+		manipulate_internal(transform, camera, input, allow_input, ldr_render_pass);
 		position = transform.position;
 		rotation = transform.rotation;
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulatePositionScale(vec3& position, vec3& scale, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool TransformationGizmo::manipulate_position_scale(vec3& position, vec3& scale, const RenderCamera& camera, const UserInput& input, bool allow_input, LDRRenderPass* ldr_render_pass)
 	{
-		if (type == transformation_type_rotation)
+		if (type == TRANSFORMATION_TYPE_ROTATION)
 		{
-			type = transformation_type_translation;
+			type = TRANSFORMATION_TYPE_TRANSLATION;
 		}
 
-		bool inputCaptured = handleUserInput(allowInput, true, false, true, false);
+		bool input_captured = handle_user_input(allow_input, true, false, true, false);
 		trs transform = { position, quat::identity, scale };
-		manipulateInternal(transform, camera, input, allowInput, ldrRenderPass);
+		manipulate_internal(transform, camera, input, allow_input, ldr_render_pass);
 		position = transform.position;
 		scale = transform.scale;
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulateNothing(const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool TransformationGizmo::manipulate_nothing(const RenderCamera& camera, const UserInput& input, bool allow_input, LDRRenderPass* ldr_render_pass)
 	{
 		dragging = false;
-		bool inputCaptured = handleUserInput(allowInput, true, true, true, true);
+		bool input_captured = handle_user_input(allow_input, true, true, true, true);
 		return false;
 	}
 
-	bool transformation_gizmo::manipulateBoundingSphere(bounding_sphere& sphere, const trs& parentTransform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool TransformationGizmo::manipulate_bounding_sphere(BoundingSphere& sphere, const trs& parent_transform, const RenderCamera& camera, const UserInput& input, bool allow_input, LDRRenderPass* ldr_render_pass)
 	{
-		if (type == transformation_type_rotation)
+		if (type == TRANSFORMATION_TYPE_ROTATION)
 		{
-			type = transformation_type_translation;
+			type = TRANSFORMATION_TYPE_TRANSLATION;
 		}
 
-		bool inputCaptured = handleUserInput(allowInput, true, false, true, true);
-		trs transform = { parentTransform.rotation * sphere.center + parentTransform.position, parentTransform.rotation, vec3(sphere.radius) };
-		manipulateInternal(transform, camera, input, allowInput, ldrRenderPass, false);
-		sphere.center = conjugate(parentTransform.rotation) * (transform.position - parentTransform.position);
+		bool input_captured = handle_user_input(allow_input, true, false, true, true);
+		trs transform = { parent_transform.rotation * sphere.center + parent_transform.position, parent_transform.rotation, vec3(sphere.radius) };
+		manipulate_internal(transform, camera, input, allow_input, ldr_render_pass, false);
+		sphere.center = conjugate(parent_transform.rotation) * (transform.position - parent_transform.position);
 		sphere.radius = transform.scale.x;
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulateBoundingCapsule(bounding_capsule& capsule, const trs& parentTransform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool TransformationGizmo::manipulate_bounding_capsule(BoundingCapsule& capsule, const trs& parent_transform, const RenderCamera& camera, const UserInput& input, bool allow_input, LDRRenderPass* ldr_render_pass)
 	{
-		bool inputCaptured = handleUserInput(allowInput, true, true, true, true);
+		bool input_captured = handle_user_input(allow_input, true, true, true, true);
 
-		vec3 a = parentTransform.position + parentTransform.rotation * capsule.positionA;
-		vec3 b = parentTransform.position + parentTransform.rotation * capsule.positionB;
+		vec3 a = parent_transform.position + parent_transform.rotation * capsule.position_a;
+		vec3 b = parent_transform.position + parent_transform.rotation * capsule.position_b;
 
 		vec3 center = 0.5f * (a + b);
 
-		trs transform = { center, parentTransform.rotation, capsule.radius };
+		trs transform = { center, parent_transform.rotation, capsule.radius };
 
 		a = inverse_transform_position(transform, a);
 		b = inverse_transform_position(transform, b);
 
-		manipulateInternal(transform, camera, input, allowInput, ldrRenderPass, false);
+		manipulate_internal(transform, camera, input, allow_input, ldr_render_pass, false);
 
 		a = transform_position(transform, a);
 		b = transform_position(transform, b);
 
-		capsule.positionA = conjugate(parentTransform.rotation) * (a - parentTransform.position);
-		capsule.positionB = conjugate(parentTransform.rotation) * (b - parentTransform.position);
+		capsule.position_a = conjugate(parent_transform.rotation) * (a - parent_transform.position);
+		capsule.position_b = conjugate(parent_transform.rotation) * (b - parent_transform.position);
 
 		capsule.radius = transform.scale.x;
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulateBoundingCylinder(bounding_cylinder& cylinder, const trs& parentTransform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool TransformationGizmo::manipulate_bounding_cylinder(BoundingCylinder& cylinder, const trs& parent_transform, const RenderCamera& camera, const UserInput& input, bool allow_input, LDRRenderPass* ldr_render_pass)
 	{
-		bounding_capsule c = { cylinder.positionA, cylinder.positionB, cylinder.radius };
-		bool result = manipulateBoundingCapsule(c, parentTransform, camera, input, allowInput, ldrRenderPass);
-		cylinder = { c.positionA, c.positionB, c.radius };
+		BoundingCapsule c = { cylinder.position_a, cylinder.position_b, cylinder.radius };
+		bool result = manipulate_bounding_capsule(c, parent_transform, camera, input, allow_input, ldr_render_pass);
+		cylinder = { c.position_a, c.position_b, c.radius };
 		return result;
 	}
 
-	bool transformation_gizmo::manipulateBoundingBox(bounding_box& aabb, const trs& parentTransform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool TransformationGizmo::manipulate_bounding_box(BoundingBox& aabb, const trs& parent_transform, const RenderCamera& camera, const UserInput& input, bool allow_input, LDRRenderPass* ldr_render_pass)
 	{
-		if (type == transformation_type_rotation)
+		if (type == TRANSFORMATION_TYPE_ROTATION)
 		{
-			type = transformation_type_translation;
+			type = TRANSFORMATION_TYPE_TRANSLATION;
 		}
 
-		bool inputCaptured = handleUserInput(allowInput, true, false, true, true);
-		trs transform = { parentTransform.rotation * aabb.getCenter() + parentTransform.position, parentTransform.rotation, aabb.getRadius() };
-		manipulateInternal(transform, camera, input, allowInput, ldrRenderPass);
-		vec3 center = conjugate(parentTransform.rotation) * (transform.position - parentTransform.position);
+		bool input_captured = handle_user_input(allow_input, true, false, true, true);
+		trs transform = { parent_transform.rotation * aabb.get_center() + parent_transform.position, parent_transform.rotation, aabb.get_radius() };
+		manipulate_internal(transform, camera, input, allow_input, ldr_render_pass);
+		vec3 center = conjugate(parent_transform.rotation) * (transform.position - parent_transform.position);
 		vec3 radius = transform.scale;
-		aabb = bounding_box::fromCenterRadius(center, radius);
+		aabb = BoundingBox::from_center_radius(center, radius);
 		return dragging;
 	}
 
-	bool transformation_gizmo::manipulateOrientedBoundingBox(bounding_oriented_box& obb, const trs& parentTransform, const render_camera& camera, const UserInput& input, bool allowInput, ldr_render_pass* ldrRenderPass)
+	bool TransformationGizmo::manipulate_oriented_bounding_box(BoundingOrientedBox& obb, const trs& parent_transform, const RenderCamera& camera, const UserInput& input, bool allow_input, LDRRenderPass* ldr_render_pass)
 	{
-		bool inputCaptured = handleUserInput(allowInput, true, true, true, true);
-		trs transform = { parentTransform.rotation * obb.center + parentTransform.position, parentTransform.rotation, obb.radius };
-		manipulateInternal(transform, camera, input, allowInput, ldrRenderPass);
-		obb.center = conjugate(parentTransform.rotation) * (transform.position - parentTransform.position);
-		obb.rotation = conjugate(parentTransform.rotation) * transform.rotation * obb.rotation;
+		bool input_captured = handle_user_input(allow_input, true, true, true, true);
+		trs transform = { parent_transform.rotation * obb.center + parent_transform.position, parent_transform.rotation, obb.radius };
+		manipulate_internal(transform, camera, input, allow_input, ldr_render_pass);
+		obb.center = conjugate(parent_transform.rotation) * (transform.position - parent_transform.position);
+		obb.rotation = conjugate(parent_transform.rotation) * transform.rotation * obb.rotation;
 		obb.radius = transform.scale;
 		return dragging;
 	}

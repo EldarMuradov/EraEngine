@@ -9,95 +9,95 @@
 
 namespace era_engine
 {
-	struct dx_descriptor_page;
+	struct DXDescriptorPage;
 
-	struct dx_descriptor_allocation
+	struct DXDescriptorAllocation
 	{
-		inline NODISCARD CD3DX12_CPU_DESCRIPTOR_HANDLE cpuAt(uint32 index = 0) const { ASSERT(index < count); return CD3DX12_CPU_DESCRIPTOR_HANDLE(cpuBase, index, descriptorSize); }
-		inline NODISCARD CD3DX12_GPU_DESCRIPTOR_HANDLE gpuAt(uint32 index = 0) const { ASSERT(index < count); return CD3DX12_GPU_DESCRIPTOR_HANDLE(gpuBase, index, descriptorSize); }
+		inline NODISCARD CD3DX12_CPU_DESCRIPTOR_HANDLE cpu_at(uint32 index = 0) const { ASSERT(index < count); return CD3DX12_CPU_DESCRIPTOR_HANDLE(cpu_base, index, descriptor_size); }
+		inline NODISCARD CD3DX12_GPU_DESCRIPTOR_HANDLE gpu_at(uint32 index = 0) const { ASSERT(index < count); return CD3DX12_GPU_DESCRIPTOR_HANDLE(gpu_base, index, descriptor_size); }
 
 		NODISCARD inline bool valid() const { return count > 0; }
 
 		uint64 count = 0;
 
 	private:
-		CD3DX12_CPU_DESCRIPTOR_HANDLE cpuBase;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuBase;
-		uint32 descriptorSize;
-		uint32 pageIndex;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cpu_base;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE gpu_base;
+		uint32 descriptor_size;
+		uint32 page_index;
 
-		friend struct dx_descriptor_page;
-		friend struct dx_descriptor_heap;
+		friend struct DXDescriptorPage;
+		friend struct DXDescriptorHeap;
 	};
 
-	struct dx_descriptor_heap
+	struct DXDescriptorHeap
 	{
-		void initialize(D3D12_DESCRIPTOR_HEAP_TYPE type, bool shaderVisible, uint64 pageSize = 4096);
+		void initialize(D3D12_DESCRIPTOR_HEAP_TYPE type, bool shader_visible, uint64 page_size = 4096);
 
-		dx_descriptor_allocation allocate(uint64 count = 1);
-		void free(dx_descriptor_allocation allocation);
+		DXDescriptorAllocation allocate(uint64 count = 1);
+		void free(DXDescriptorAllocation allocation);
 
-		com<ID3D12DescriptorHeap> getHeap(int index) const;
+		com<ID3D12DescriptorHeap> get_heap(int index) const;
 
 		D3D12_DESCRIPTOR_HEAP_TYPE type;
 
 	private:
 		std::mutex mutex;
-		uint64 pageSize;
-		bool shaderVisible;
-		std::vector<dx_descriptor_page*> allPages;
+		uint64 page_size;
+		bool shader_visible;
+		std::vector<DXDescriptorPage*> all_pages;
 	};
 
-	struct dx_descriptor_range
+	struct DXDescriptorRange
 	{
-		inline dx_double_descriptor_handle pushHandle()
+		inline DXDoubleDescriptorHandle push_handle()
 		{
-			dx_double_descriptor_handle result =
+			DXDoubleDescriptorHandle result =
 			{
-				CD3DX12_CPU_DESCRIPTOR_HANDLE(base.cpuHandle, pushIndex, descriptorHandleIncrementSize) ,
-				CD3DX12_GPU_DESCRIPTOR_HANDLE(base.gpuHandle, pushIndex, descriptorHandleIncrementSize) ,
+				CD3DX12_CPU_DESCRIPTOR_HANDLE(base.cpu_handle, push_index, descriptor_handle_increment_size) ,
+				CD3DX12_GPU_DESCRIPTOR_HANDLE(base.gpu_handle, push_index, descriptor_handle_increment_size) ,
 			};
-			++pushIndex;
+			++push_index;
 			return result;
 		}
 
-		com<ID3D12DescriptorHeap> descriptorHeap;
+		com<ID3D12DescriptorHeap> descriptor_heap;
 		D3D12_DESCRIPTOR_HEAP_TYPE type;
-		uint32 descriptorHandleIncrementSize;
+		uint32 descriptor_handle_increment_size;
 
 	private:
-		dx_double_descriptor_handle base;
+		DXDoubleDescriptorHandle base;
 
-		uint32 maxNumDescriptors;
+		uint32 max_num_descriptors;
 
-		uint32 pushIndex;
+		uint32 push_index;
 
-		friend struct dx_frame_descriptor_allocator;
+		friend struct DXFrameDescriptorAllocator;
 	};
 
-	struct dx_frame_descriptor_page;
+	struct DXFrameDescriptorPage;
 
-	struct dx_frame_descriptor_allocator
+	struct DXFrameDescriptorAllocator
 	{
-		dx_frame_descriptor_page* usedPages[NUM_BUFFERED_FRAMES];
-		dx_frame_descriptor_page* freePages;
-		uint32 currentFrame;
+		DXFrameDescriptorPage* used_pages[NUM_BUFFERED_FRAMES];
+		DXFrameDescriptorPage* free_pages;
+		uint32 current_frame;
 
 		std::mutex mutex;
 
 		void initialize();
-		void newFrame(uint32 bufferedFrameID);
-		dx_descriptor_range allocateContiguousDescriptorRange(uint32 count);
+		void new_frame(uint32 buffered_frame_id);
+		DXDescriptorRange allocate_contiguous_descriptor_range(uint32 count);
 	};
 
-	struct dx_pushable_descriptor_heap
+	struct DXPushableDescriptorHeap
 	{
-		void initialize(uint32 maxSize, bool shaderVisible = true);
+		void initialize(uint32 max_size, bool shader_visible = true);
 		void reset();
-		dx_cpu_descriptor_handle push();
+		DXCPUDescriptorHandle push();
 
-		com<ID3D12DescriptorHeap> descriptorHeap;
-		dx_cpu_descriptor_handle currentCPU;
-		dx_gpu_descriptor_handle currentGPU;
+		com<ID3D12DescriptorHeap> descriptor_heap;
+		DXCPUDescriptorHandle current_cpu;
+		DXGPUDescriptorHandle current_gpu;
 	};
 }

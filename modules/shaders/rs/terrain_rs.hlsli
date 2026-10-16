@@ -5,26 +5,26 @@
 #define TERRAIN_LOD_0_VERTICES_PER_DIMENSION 129u
 #define TERRAIN_MAX_LOD 5u
 
-struct terrain_cb
+struct TerrainCB
 {
-	vec3 minCorner;
+	vec3 min_corner;
 	uint32 lod;
-	float chunkSize;
-	float amplitudeScale;
-	uint32 scaleDownByLODs; // 4 * 8 bit.
+	float chunk_size;
+	float amplitude_scale;
+	uint32 scale_down_by_lods; // 4 * 8 bit.
 };
 
-struct terrain_water_plane_cb
+struct TerrainWaterPlaneCB
 {
-	vec4 waterMinMaxXZ[4];
-	vec4 waterHeights;
-	uint32 numWaterPlanes;
+	vec4 water_min_max_xz[4];
+	vec4 water_heights;
+	uint32 num_water_planes;
 };
 
-#define SCALE_DOWN_BY_LODS(negX, posX, negZ, posZ) ((negX << 24) | (posX << 16) | (negZ << 8) | posZ)
-#define DECODE_LOD_SCALE(v, negX, posX, negZ, posZ) negX = v >> 24, posX = (v >> 16) & 0xFF, negZ = (v >> 8) & 0xFF, posZ = v & 0xFF;
+#define SCALE_DOWN_BY_LODS(neg_x, pos_x, neg_z, pos_z) ((neg_x << 24) | (pos_x << 16) | (neg_z << 8) | pos_z)
+#define DECODE_LOD_SCALE(v, neg_x, pos_x, neg_z, pos_z) neg_x = v >> 24, pos_x = (v >> 16) & 0xFF, neg_z = (v >> 8) & 0xFF, pos_z = v & 0xFF;
 
-struct terrain_transform_cb
+struct TerrainTransformCB
 {
 	mat4 vp;
 };
@@ -118,31 +118,31 @@ struct terrain_transform_cb
 #define TERRAIN_OUTLINE_RS_CB				1
 #define TERRAIN_OUTLINE_RS_HEIGHTMAP		2
 
-struct terrain_generation_settings_cb
+struct TerrainGenerationSettingsCB
 {
-	vec2 domainWarpNoiseOffset;
-	vec2 noiseOffset;
+	vec2 domain_warp_noise_offset;
+	vec2 noise_offset;
 
-	uint32 heightWidth;
-	uint32 heightHeight;
-	uint32 normalWidth;
-	uint32 normalHeight;
+	uint32 height_width;
+	uint32 height_height;
+	uint32 normal_width;
+	uint32 normal_height;
 
-	float positionScale;
-	float normalScale;
+	float position_scale;
+	float normal_scale;
 
 	float scale;
 
-	float domainWarpStrength;
+	float domain_warp_strength;
 
-	uint32 domainWarpOctaves;
+	uint32 domain_warp_octaves;
 
-	uint32 noiseOctaves;
+	uint32 noise_octaves;
 };
 
-struct terrain_generation_cb
+struct TerrainGenerationCB
 {
-	vec2 minCorner;
+	vec2 min_corner;
 };
 
 #define TERRAIN_GENERATION_RS \

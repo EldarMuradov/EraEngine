@@ -46,66 +46,66 @@ namespace era_engine
 			&& a.translucency == b.translucency;
 	}
 
-	static std::unordered_map<PbrMaterialDesc, weakref<pbr_material>> materialCache;
+	static std::unordered_map<PbrMaterialDesc, weakref<PBRMaterial>> material_cache;
 	static std::mutex mutex;
 
-	ref<pbr_material> create_pbr_material(const PbrMaterialDesc& desc)
+	ref<PBRMaterial> create_pbr_material(const PbrMaterialDesc& desc)
 	{
 		std::lock_guard lock{ mutex };
 
-		auto sp = materialCache[desc].lock();
+		auto sp = material_cache[desc].lock();
 		if (!sp)
 		{
-			ref<pbr_material> material = make_ref<pbr_material>();
+			ref<PBRMaterial> material = make_ref<PBRMaterial>();
 
-			if (!desc.albedo.empty()) material->albedo = loadTextureFromFile(desc.albedo, desc.albedo_flags);
-			if (!desc.normal.empty()) material->normal = loadTextureFromFile(desc.normal, desc.normal_flags);
-			if (!desc.roughness.empty()) material->roughness = loadTextureFromFile(desc.roughness, desc.roughness_flags);
-			if (!desc.metallic.empty()) material->metallic = loadTextureFromFile(desc.metallic, desc.metallic_flags);
+			if (!desc.albedo.empty()) material->albedo = load_texture_from_file(desc.albedo, desc.albedo_flags);
+			if (!desc.normal.empty()) material->normal = load_texture_from_file(desc.normal, desc.normal_flags);
+			if (!desc.roughness.empty()) material->roughness = load_texture_from_file(desc.roughness, desc.roughness_flags);
+			if (!desc.metallic.empty()) material->metallic = load_texture_from_file(desc.metallic, desc.metallic_flags);
 			material->emission = desc.emission;
-			material->albedoTint = desc.albedo_tint;
-			material->roughnessOverride = desc.roughness_override;
-			material->metallicOverride = desc.metallic_override;
+			material->albedo_tint = desc.albedo_tint;
+			material->roughness_override = desc.roughness_override;
+			material->metallic_override = desc.metallic_override;
 			material->shader = desc.shader;
-			material->uvScale = desc.uv_scale;
+			material->uv_scale = desc.uv_scale;
 			material->translucency = desc.translucency;
 
-			materialCache[desc] = sp = material;
+			material_cache[desc] = sp = material;
 		}
 
 		return sp;
 	}
 
-	ref<pbr_material> create_pbr_material_async(const PbrMaterialDesc& desc, JobHandle parent_job)
+	ref<PBRMaterial> create_pbr_material_async(const PbrMaterialDesc& desc, JobHandle parent_job)
 	{
 		std::lock_guard lock{ mutex };
 
-		auto sp = materialCache[desc].lock();
+		auto sp = material_cache[desc].lock();
 		if (!sp)
 		{
-			ref<pbr_material> material = make_ref<pbr_material>();
+			ref<PBRMaterial> material = make_ref<PBRMaterial>();
 
-			if (!desc.albedo.empty()) material->albedo = loadTextureFromFileAsync(desc.albedo, desc.albedo_flags, parent_job);
-			if (!desc.normal.empty()) material->normal = loadTextureFromFileAsync(desc.normal, desc.normal_flags, parent_job);
-			if (!desc.roughness.empty()) material->roughness = loadTextureFromFileAsync(desc.roughness, desc.roughness_flags, parent_job);
-			if (!desc.metallic.empty()) material->metallic = loadTextureFromFileAsync(desc.metallic, desc.metallic_flags, parent_job);
+			if (!desc.albedo.empty()) material->albedo = load_texture_from_file_async(desc.albedo, desc.albedo_flags, parent_job);
+			if (!desc.normal.empty()) material->normal = load_texture_from_file_async(desc.normal, desc.normal_flags, parent_job);
+			if (!desc.roughness.empty()) material->roughness = load_texture_from_file_async(desc.roughness, desc.roughness_flags, parent_job);
+			if (!desc.metallic.empty()) material->metallic = load_texture_from_file_async(desc.metallic, desc.metallic_flags, parent_job);
 			material->emission = desc.emission;
-			material->albedoTint = desc.albedo_tint;
-			material->roughnessOverride = desc.roughness_override;
-			material->metallicOverride = desc.metallic_override;
+			material->albedo_tint = desc.albedo_tint;
+			material->roughness_override = desc.roughness_override;
+			material->metallic_override = desc.metallic_override;
 			material->shader = desc.shader;
-			material->uvScale = desc.uv_scale;
+			material->uv_scale = desc.uv_scale;
 			material->translucency = desc.translucency;
 
-			materialCache[desc] = sp = material;
+			material_cache[desc] = sp = material;
 		}
 
 		return sp;
 	}
 
-	ref<pbr_material> get_default_pbr_material()
+	ref<PBRMaterial> get_default_pbr_material()
 	{
-		static ref<pbr_material> material = create_pbr_material({});
+		static ref<PBRMaterial> material = create_pbr_material({});
 		return material;
 	}
 }

@@ -76,7 +76,7 @@
 		for (int32 i = 0; i < resultSize; i++) \
 		{ \
 			const auto& hit = buffer.getTouch(i); \
-			results[i] = hit.shape ? *reinterpret_cast<Entity::Handle*>(hit.shape->userData) : Entity::NullHandle; \
+			results[i] = hit.shape ? *reinterpret_cast<Entity::Handle*>(hit.shape->userData) : Entity::null_handle; \
 		}
 
 #include <core/math.h>

@@ -3,60 +3,60 @@
 
 #define BLOCK_SIZE 512
 
-ConstantBuffer<skinning_cb> skinningCB					: register(b0);
+ConstantBuffer<SkinningCB> skinning_cb					: register(b0);
 
-StructuredBuffer<skinned_mesh_position> inputPositions	: register(t0);
-StructuredBuffer<skinned_mesh_others> inputOthers		: register(t1);
+StructuredBuffer<SkinnedMeshPosition> input_positions	: register(t0);
+StructuredBuffer<SkinnedMeshOthers> input_others		: register(t1);
 
-StructuredBuffer<float4x4> skinningMatrices				: register(t2);
-RWStructuredBuffer<mesh_position> outputPositions		: register(u0);
-RWStructuredBuffer<mesh_others> outputOthers			: register(u1);
+StructuredBuffer<float4x4> skinning_matrices				: register(t2);
+RWStructuredBuffer<MeshPosition> output_positions		: register(u0);
+RWStructuredBuffer<MeshOthers> output_others			: register(u1);
 
 [RootSignature(SKINNING_RS)]
 [numthreads(BLOCK_SIZE, 1, 1)]
-void main(cs_input IN)
+void main(CSInput IN)
 {
-	uint index = IN.dispatchThreadID.x;
+	uint index = IN.dispatch_thread_id.x;
 
-	if (index >= skinningCB.numVertices)
+	if (index >= skinning_cb.num_vertices)
 	{
 		return;
 	}
 
-	float3 inputPosition = inputPositions[skinningCB.firstVertex + index].position;
-	skinned_mesh_others inputOther = inputOthers[skinningCB.firstVertex + index];
+	float3 input_position = input_positions[skinning_cb.first_vertex + index].position;
+	SkinnedMeshOthers input_other = input_others[skinning_cb.first_vertex + index];
 
-	uint4 skinIndices = uint4(
-		inputOther.skinIndices >> 24,
-		(inputOther.skinIndices >> 16) & 0xFF,
-		(inputOther.skinIndices >> 8) & 0xFF,
-		inputOther.skinIndices & 0xFF
+	uint4 skin_indices = uint4(
+		input_other.skin_indices >> 24,
+		(input_other.skin_indices >> 16) & 0xFF,
+		(input_other.skin_indices >> 8) & 0xFF,
+		input_other.skin_indices & 0xFF
 		);
 
-	float4 skinWeights = float4(
-		inputOther.skinWeights >> 24,
-		(inputOther.skinWeights >> 16) & 0xFF,
-		(inputOther.skinWeights >> 8) & 0xFF,
-		inputOther.skinWeights & 0xFF
+	float4 skin_weights = float4(
+		input_other.skin_weights >> 24,
+		(input_other.skin_weights >> 16) & 0xFF,
+		(input_other.skin_weights >> 8) & 0xFF,
+		input_other.skin_weights & 0xFF
 		) * (1.f / 255.f);
 
-	skinWeights /= dot(skinWeights, (float4)1.f);
+	skin_weights /= dot(skin_weights, (float4)1.f);
 
-	skinIndices += skinningCB.firstJoint.xxxx;
+	skin_indices += skinning_cb.first_joint.xxxx;
 
 	float4x4 s =
-		skinningMatrices[skinIndices.x] * skinWeights.x +
-		skinningMatrices[skinIndices.y] * skinWeights.y +
-		skinningMatrices[skinIndices.z] * skinWeights.z +
-		skinningMatrices[skinIndices.w] * skinWeights.w;
+		skinning_matrices[skin_indices.x] * skin_weights.x +
+		skinning_matrices[skin_indices.y] * skin_weights.y +
+		skinning_matrices[skin_indices.z] * skin_weights.z +
+		skinning_matrices[skin_indices.w] * skin_weights.w;
 
-	float3 position = mul(s, float4(inputPosition, 1.f)).xyz;
-	float3 normal = mul(s, float4(inputOther.normal, 0.f)).xyz;
-	float3 tangent = mul(s, float4(inputOther.tangent, 0.f)).xyz;
+	float3 position = mul(s, float4(input_position, 1.f)).xyz;
+	float3 normal = mul(s, float4(input_other.normal, 0.f)).xyz;
+	float3 tangent = mul(s, float4(input_other.tangent, 0.f)).xyz;
 
 
-	mesh_position outputPosition = { position };
-	mesh_others outputOther = { inputOther.uv, normal, tangent };
-	outputPositions[skinningCB.writeOffset + index] = outputPosition;
-	outputOthers[skinningCB.writeOffset + index] = outputOther;
+	MeshPosition output_position = { position };
+	MeshOthers output_other = { input_other.uv, normal, tangent };
+	output_positions[skinning_cb.write_offset + index] = output_position;
+	output_others[skinning_cb.write_offset + index] = output_other;
 }

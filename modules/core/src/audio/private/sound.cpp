@@ -17,99 +17,99 @@
 
 namespace era_engine
 {
-    static HANDLE openFile(const fs::path& path);
-    static void closeFile(HANDLE& fileHandle);
-    static bool getWFX(HANDLE fileHandle, const fs::path& path, WAVEFORMATEXTENSIBLE& wfx);
-    static bool findChunk(HANDLE fileHandle, uint32 fourcc, uint32& chunkSize, uint32& chunkDataPosition);
-    static bool readChunkData(HANDLE fileHandle, void* buffer, uint32 buffersize, uint32 bufferoffset);
+    static HANDLE open_file(const fs::path& path);
+    static void close_file(HANDLE& file_handle);
+    static bool get_wfx(HANDLE file_handle, const fs::path& path, WAVEFORMATEXTENSIBLE& wfx);
+    static bool find_chunk(HANDLE file_handle, uint32 fourcc, uint32& chunk_size, uint32& chunk_data_position);
+    static bool read_chunk_data(HANDLE file_handle, void* buffer, uint32 buffersize, uint32 bufferoffset);
 
-    static std::unordered_map<uint64, ref<audio_sound>> fileSounds;
-    static std::unordered_map<uint64, ref<audio_sound>> synthSounds;
+    static std::unordered_map<uint64, ref<AudioSound>> file_sounds;
+    static std::unordered_map<uint64, ref<AudioSound>> synth_sounds;
 
-    static bool checkForExistingFileSound(sound_id id)
+    static bool check_for_existing_file_sound(SoundID id)
     {
-        auto it = fileSounds.find(id.hash);
-        return (it != fileSounds.end()) && it->second != 0;
+        auto it = file_sounds.find(id.hash);
+        return (it != file_sounds.end()) && it->second != 0;
     }
 
-    static bool checkForExistingSynthSound(sound_id id)
+    static bool check_for_existing_synth_sound(SoundID id)
     {
-        auto it = synthSounds.find(id.hash);
-        return (it != synthSounds.end()) && it->second != 0;
+        auto it = synth_sounds.find(id.hash);
+        return (it != synth_sounds.end()) && it->second != 0;
     }
 
-    void registerSound(sound_id id, const ref<audio_sound>& sound)
+    void register_sound(SoundID id, const ref<AudioSound>& sound)
     {
-        if (!sound->isSynth)
+        if (!sound->is_synth)
         {
-            fileSounds[id.hash] = sound;
+            file_sounds[id.hash] = sound;
         }
         else
         {
-            synthSounds[id.hash] = sound;
+            synth_sounds[id.hash] = sound;
         }
     }
 
-    bool loadFileSound(sound_id id)
+    bool load_file_sound(SoundID id)
     {
-        if (checkForExistingFileSound(id))
+        if (check_for_existing_file_sound(id))
             return true;
         else
         {
-            const sound_spec& spec = getSoundSpec(id);
+            const SoundSpec& spec = get_sound_spec(id);
 
             fs::path path = get_path_from_asset_handle(spec.asset);
             if (!path.empty())
             {
-                HANDLE fileHandle = openFile(path);
-                if (fileHandle != INVALID_HANDLE_VALUE)
+                HANDLE file_handle = open_file(path);
+                if (file_handle != INVALID_HANDLE_VALUE)
                 {
                     WAVEFORMATEXTENSIBLE wfx;
-                    uint32 chunkSize, chunkPosition;
+                    uint32 chunk_size, chunk_position;
 
                     bool success = false;
-                    BYTE* dataBuffer = 0;
+                    BYTE* data_buffer = 0;
 
                     // Find and retrieve format chunk
-                    if (getWFX(fileHandle, path, wfx))
+                    if (get_wfx(file_handle, path, wfx))
                     {
                         // Find data chunk
-                        if (findChunk(fileHandle, fourccDATA, chunkSize, chunkPosition))
+                        if (find_chunk(file_handle, fourccDATA, chunk_size, chunk_position))
                         {
                             success = true;
 
                             if (!spec.stream)
                             {
-                                dataBuffer = new BYTE[chunkSize];
-                                success = readChunkData(fileHandle, dataBuffer, chunkSize, chunkPosition);
+                                data_buffer = new BYTE[chunk_size];
+                                success = read_chunk_data(file_handle, data_buffer, chunk_size, chunk_position);
                                 if (!success)
                                 {
-                                    delete[] dataBuffer;
+                                    delete[] data_buffer;
                                 }
 
-                                closeFile(fileHandle);
+                                close_file(file_handle);
                             }
                         }
                     }
                     if (success)
                     {
-                        ref<audio_sound> sound = make_ref<audio_sound>();
+                        ref<AudioSound> sound = make_ref<AudioSound>();
                         sound->id = id;
                         sound->path = path;
                         sound->stream = spec.stream;
-                        sound->fileHandle = fileHandle;
+                        sound->file_handle = file_handle;
                         sound->wfx = wfx;
-                        sound->chunkSize = chunkSize;
-                        sound->chunkPosition = chunkPosition;
-                        sound->dataBuffer = dataBuffer;
-                        sound->isSynth = false;
+                        sound->chunk_size = chunk_size;
+                        sound->chunk_position = chunk_position;
+                        sound->data_buffer = data_buffer;
+                        sound->is_synth = false;
                         sound->type = spec.type;
 
-                        registerSound(id, sound);
+                        register_sound(id, sound);
                     }
                     else
                     {
-                        closeFile(fileHandle);
+                        close_file(file_handle);
                     }
 
                     return success;
@@ -120,42 +120,42 @@ namespace era_engine
         }
     }
 
-    void unloadSound(sound_id id)
+    void unload_sound(SoundID id)
     {
-        fileSounds.erase(id.hash);
-        synthSounds.erase(id.hash);
+        file_sounds.erase(id.hash);
+        synth_sounds.erase(id.hash);
     }
 
-    void unloadAllSounds()
+    void unload_all_sounds()
     {
-        fileSounds.clear();
-        synthSounds.clear();
+        file_sounds.clear();
+        synth_sounds.clear();
     }
 
-    NODISCARD ref<audio_sound> getSound(sound_id id)
+    NODISCARD ref<AudioSound> get_sound(SoundID id)
     {
-        auto it = fileSounds.find(id.hash);
-        ref<audio_sound> result = (it != fileSounds.end()) ? it->second : 0;
+        auto it = file_sounds.find(id.hash);
+        ref<AudioSound> result = (it != file_sounds.end()) ? it->second : 0;
         if (result)
             return result;
 
-        it = synthSounds.find(id.hash);
-        result = (it != synthSounds.end()) ? it->second : 0;
+        it = synth_sounds.find(id.hash);
+        result = (it != synth_sounds.end()) ? it->second : 0;
         return result;
     }
 
-    audio_sound::~audio_sound()
+    AudioSound::~AudioSound()
     {
-        closeFile(fileHandle);
-        if (dataBuffer)
+        close_file(file_handle);
+        if (data_buffer)
         {
-            delete[] dataBuffer;
+            delete[] data_buffer;
         }
     }
 
-    static HANDLE openFile(const fs::path& path)
+    static HANDLE open_file(const fs::path& path)
     {
-        HANDLE fileHandle = CreateFileW(
+        HANDLE file_handle = CreateFileW(
             path.c_str(),
             GENERIC_READ,
             FILE_SHARE_READ,
@@ -164,59 +164,59 @@ namespace era_engine
             0, //FILE_FLAG_NO_BUFFERING,
             NULL);
 
-        if (fileHandle == INVALID_HANDLE_VALUE)
+        if (file_handle == INVALID_HANDLE_VALUE)
         {
             LOG_ERROR("Could not open file '%ws'", path.c_str());
         }
 
-        return fileHandle;
+        return file_handle;
     }
 
-    static void closeFile(HANDLE& fileHandle)
+    static void close_file(HANDLE& file_handle)
     {
-        if (fileHandle != INVALID_HANDLE_VALUE)
+        if (file_handle != INVALID_HANDLE_VALUE)
         {
-            CloseHandle(fileHandle);
-            fileHandle = INVALID_HANDLE_VALUE;
+            CloseHandle(file_handle);
+            file_handle = INVALID_HANDLE_VALUE;
         }
     }
 
-    static bool findChunk(HANDLE fileHandle, uint32 fourcc, uint32& chunkSize, uint32& chunkDataPosition)
+    static bool find_chunk(HANDLE file_handle, uint32 fourcc, uint32& chunk_size, uint32& chunk_data_position)
     {
-        if (SetFilePointer(fileHandle, 0, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
+        if (SetFilePointer(file_handle, 0, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
         {
             LOG_ERROR("Could not set file pointer");
             return false;
         }
 
-        DWORD chunkType;
-        DWORD chunkDataSize;
-        DWORD riffDataSize = 0;
-        DWORD fileType;
-        DWORD bytesRead = 0;
+        DWORD chunk_type;
+        DWORD chunk_data_size;
+        DWORD riff_data_size = 0;
+        DWORD file_type;
+        DWORD bytes_read = 0;
         DWORD offset = 0;
 
         HRESULT hr = S_OK;
         while (hr == S_OK)
         {
-            DWORD dwRead;
-            if (ReadFile(fileHandle, &chunkType, sizeof(DWORD), &dwRead, NULL) == 0)
+            DWORD dw_read;
+            if (ReadFile(file_handle, &chunk_type, sizeof(DWORD), &dw_read, NULL) == 0)
             {
                 LOG_ERROR("Could not read chunk type");
                 return false;
             }
 
-            if (ReadFile(fileHandle, &chunkDataSize, sizeof(DWORD), &dwRead, NULL) == 0)
+            if (ReadFile(file_handle, &chunk_data_size, sizeof(DWORD), &dw_read, NULL) == 0)
             {
                 LOG_ERROR("Could not read chunk data size");
                 return false;
             }
 
-            if (chunkType == fourccRIFF)
+            if (chunk_type == fourccRIFF)
             {
-                riffDataSize = chunkDataSize;
-                chunkDataSize = 4;
-                if (ReadFile(fileHandle, &fileType, sizeof(DWORD), &dwRead, NULL) == 0)
+                riff_data_size = chunk_data_size;
+                chunk_data_size = 4;
+                if (ReadFile(file_handle, &file_type, sizeof(DWORD), &dw_read, NULL) == 0)
                 {
                     LOG_ERROR("Could not read file type");
                     return false;
@@ -224,7 +224,7 @@ namespace era_engine
             }
             else
             {
-                if (SetFilePointer(fileHandle, chunkDataSize, NULL, FILE_CURRENT) == INVALID_SET_FILE_POINTER)
+                if (SetFilePointer(file_handle, chunk_data_size, NULL, FILE_CURRENT) == INVALID_SET_FILE_POINTER)
                 {
                     LOG_ERROR("Could not set file pointer");
                     return false;
@@ -233,32 +233,32 @@ namespace era_engine
 
             offset += sizeof(DWORD) * 2;
 
-            if (chunkType == fourcc)
+            if (chunk_type == fourcc)
             {
-                chunkSize = chunkDataSize;
-                chunkDataPosition = offset;
+                chunk_size = chunk_data_size;
+                chunk_data_position = offset;
                 return true;
             }
 
-            offset += chunkDataSize;
+            offset += chunk_data_size;
 
-            if (bytesRead >= riffDataSize)
+            if (bytes_read >= riff_data_size)
                 return false;
         }
 
         return true;
     }
 
-    static bool readChunkData(HANDLE fileHandle, void* buffer, uint32 buffersize, uint32 bufferoffset)
+    static bool read_chunk_data(HANDLE file_handle, void* buffer, uint32 buffersize, uint32 bufferoffset)
     {
-        if (SetFilePointer(fileHandle, bufferoffset, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
+        if (SetFilePointer(file_handle, bufferoffset, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
         {
             LOG_ERROR("Could not set file pointer");
             return false;
         }
 
-        DWORD dwRead;
-        if (ReadFile(fileHandle, buffer, buffersize, &dwRead, NULL) == 0)
+        DWORD dw_read;
+        if (ReadFile(file_handle, buffer, buffersize, &dw_read, NULL) == 0)
         {
             LOG_ERROR("Could not read chunk");
             return false;
@@ -267,16 +267,16 @@ namespace era_engine
         return true;
     }
 
-    static bool getWFX(HANDLE fileHandle, const fs::path& path, WAVEFORMATEXTENSIBLE& wfx)
+    static bool get_wfx(HANDLE file_handle, const fs::path& path, WAVEFORMATEXTENSIBLE& wfx)
     {
-        uint32 chunkSize, chunkPosition;
+        uint32 chunk_size, chunk_position;
 
         //Check the file type, should be fourccWAVE or 'XWMA'.
-        if (!findChunk(fileHandle, fourccRIFF, chunkSize, chunkPosition))
+        if (!find_chunk(file_handle, fourccRIFF, chunk_size, chunk_position))
             return false;
 
         DWORD filetype;
-        if (!readChunkData(fileHandle, &filetype, sizeof(DWORD), chunkPosition))
+        if (!read_chunk_data(file_handle, &filetype, sizeof(DWORD), chunk_position))
             return false;
 
         if (filetype != fourccWAVE)
@@ -285,20 +285,20 @@ namespace era_engine
             return false;
         }
 
-        if (!findChunk(fileHandle, fourccFMT, chunkSize, chunkPosition))
+        if (!find_chunk(file_handle, fourccFMT, chunk_size, chunk_position))
             return false;
-        if (!readChunkData(fileHandle, &wfx, chunkSize, chunkPosition))
+        if (!read_chunk_data(file_handle, &wfx, chunk_size, chunk_position))
             return false;
 
         return true;
     }
 
-    NODISCARD bool isSoundExtension(const fs::path& extension)
+    NODISCARD bool is_sound_extension(const fs::path& extension)
     {
         return extension == ".wav";
     }
 
-    NODISCARD bool isSoundExtension(const std::string& extension)
+    NODISCARD bool is_sound_extension(const std::string& extension)
     {
         return extension == ".wav";
     }

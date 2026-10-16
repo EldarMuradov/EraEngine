@@ -9,7 +9,7 @@
 // Raytracing intrinsics: https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#ray-system-values
 // Ray flags: https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#ray-flags
 
-struct mesh_vertex
+struct MeshVertex
 {
 	float2 uv;
 	float3 normal;
@@ -17,41 +17,41 @@ struct mesh_vertex
 };
 
 // Global.
-RaytracingAccelerationStructure rtScene		: register(t0);
+RaytracingAccelerationStructure rt_scene		: register(t0);
 TextureCube<float4> sky						: register(t1);
 
 Texture2D<float3> irradiance				: register(t2);
 Texture2D<float2> depth						: register(t3);
 
-RWTexture2D<float3> radianceOutput			: register(u0);
-RWTexture2D<float4> directionDepthOutput	: register(u1);
+RWTexture2D<float3> radiance_output			: register(u0);
+RWTexture2D<float4> direction_depth_output	: register(u1);
 
-ConstantBuffer<light_probe_trace_cb> cb		: register(b0);
-ConstantBuffer<directional_light_cb> sun	: register(b1);
+ConstantBuffer<LightProbeTraceCB> cb		: register(b0);
+ConstantBuffer<DirectionalLightCB> sun	: register(b1);
 
-SamplerState linearSampler					: register(s0);
+SamplerState linear_sampler					: register(s0);
 
 // Radiance hit group.
-ConstantBuffer<pbr_material_cb> material	: register(b0, space1);
-StructuredBuffer<mesh_vertex> meshVertices	: register(t0, space1);
-ByteAddressBuffer meshIndices				: register(t1, space1);
-Texture2D<float4> albedoTex					: register(t2, space1);
-Texture2D<float3> normalTex					: register(t3, space1);
-Texture2D<float> roughTex					: register(t4, space1);
-Texture2D<float> metalTex					: register(t5, space1);
+ConstantBuffer<PBRMaterialCB> material	: register(b0, space1);
+StructuredBuffer<MeshVertex> mesh_vertices	: register(t0, space1);
+ByteAddressBuffer mesh_indices				: register(t1, space1);
+Texture2D<float4> albedo_tex					: register(t2, space1);
+Texture2D<float3> normal_tex					: register(t3, space1);
+Texture2D<float> rough_tex					: register(t4, space1);
+Texture2D<float> metal_tex					: register(t5, space1);
 
-struct radiance_ray_payload
+struct RadianceRayPayload
 {
 	float3 color;
 	float distance;
 };
 
-struct shadow_ray_payload
+struct ShadowRayPayload
 {
 	float visible;
 };
 
-static float4 traceRadianceRay(float3 origin, float3 direction)
+static float4 trace_radiance_ray(float3 origin, float3 direction)
 {
 	RayDesc ray;
 	ray.Origin = origin;
@@ -59,9 +59,9 @@ static float4 traceRadianceRay(float3 origin, float3 direction)
 	ray.TMin = 0.01f;
 	ray.TMax = 10000.f;
 
-	radiance_ray_payload payload = { float3(0.f, 0.f, 0.f), 10000.f };
+	RadianceRayPayload payload = { float3(0.f, 0.f, 0.f), 10000.f };
 
-	TraceRay(rtScene,
+	TraceRay(rt_scene,
 		RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
 		0xFF,				// Cull mask.
 		RADIANCE,			// Addend on the hit index.
@@ -73,7 +73,7 @@ static float4 traceRadianceRay(float3 origin, float3 direction)
 	return float4(payload.color, payload.distance);
 }
 
-static float traceShadowRay(float3 origin, float3 direction, float distance)
+static float trace_shadow_ray(float3 origin, float3 direction, float distance)
 {
 #ifdef SHADOW
 	RayDesc ray;
@@ -82,9 +82,9 @@ static float traceShadowRay(float3 origin, float3 direction, float distance)
 	ray.TMin = 0.01f;
 	ray.TMax = distance;
 
-	shadow_ray_payload payload = { 0.f };
+	ShadowRayPayload payload = { 0.f };
 
-	TraceRay(rtScene,
+	TraceRay(rt_scene,
 		RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER, // No need to invoke closest hit shader.
 		0xFF,				// Cull mask.
 		SHADOW,				// Addend on the hit index.
@@ -106,20 +106,20 @@ static float traceShadowRay(float3 origin, float3 direction, float distance)
 [shader("raygeneration")]
 void rayGen()
 {
-	uint3 launchIndex = DispatchRaysIndex();
-	uint3 launchDim = DispatchRaysDimensions();
+	uint3 launch_index = DispatchRaysIndex();
+	uint3 launch_dim = DispatchRaysDimensions();
 
-	uint rayID = launchIndex.x;
-	uint probeID = launchIndex.y;
+	uint ray_id = launch_index.x;
+	uint probe_id = launch_index.y;
 
-	float3 origin = cb.grid.linearIndexToPosition(probeID);
-	float3 direction = sphericalFibonacci(rayID, NUM_RAYS_PER_PROBE);
+	float3 origin = cb.grid.linear_index_to_position(probe_id);
+	float3 direction = spherical_fibonacci(ray_id, NUM_RAYS_PER_PROBE);
 
-	direction = mul(cb.rayRotation, float4(direction, 0.f)).xyz;
+	direction = mul(cb.ray_rotation, float4(direction, 0.f)).xyz;
 
-	float4 radianceAndDistance = traceRadianceRay(origin, direction);
-	radianceOutput[launchIndex.xy] = radianceAndDistance.xyz;
-	directionDepthOutput[launchIndex.xy] = float4(direction, radianceAndDistance.w);
+	float4 radiance_and_distance = trace_radiance_ray(origin, direction);
+	radiance_output[launch_index.xy] = radiance_and_distance.xyz;
+	direction_depth_output[launch_index.xy] = float4(direction, radiance_and_distance.w);
 }
 
 // ----------------------------------------
@@ -127,68 +127,68 @@ void rayGen()
 // ----------------------------------------
 
 [shader("closesthit")]
-void radianceClosestHit(inout radiance_ray_payload payload, in BuiltInTriangleIntersectionAttributes attribs)
+void radianceClosestHit(inout RadianceRayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
 {
-	uint flags = material.getFlags();
+	uint flags = material.get_flags();
 
-	uint3 tri = (flags & MATERIAL_USE_32_BIT_INDICES) ? load3x32BitIndices(meshIndices) : load3x16BitIndices(meshIndices);
+	uint3 tri = (flags & MATERIAL_USE_32_BIT_INDICES) ? load_3x_32bit_indices(mesh_indices) : load_3x_16bit_indices(mesh_indices);
 
 	// Interpolate vertex attributes over triangle.
-	float2 uvs[] = { meshVertices[tri.x].uv, meshVertices[tri.y].uv, meshVertices[tri.z].uv };
-	float3 normals[] = { meshVertices[tri.x].normal, meshVertices[tri.y].normal, meshVertices[tri.z].normal };
+	float2 uvs[] = { mesh_vertices[tri.x].uv, mesh_vertices[tri.y].uv, mesh_vertices[tri.z].uv };
+	float3 normals[] = { mesh_vertices[tri.x].normal, mesh_vertices[tri.y].normal, mesh_vertices[tri.z].normal };
 
-	float2 uv = interpolateAttribute(uvs, attribs);
+	float2 uv = interpolate_attribute(uvs, attribs);
 
-	surface_info surface;
-	surface.N = normalize(transformDirectionToWorld(interpolateAttribute(normals, attribs))); // We ignore normal maps.
+	SurfaceInfo surface;
+	surface.N = normalize(transform_direction_to_world(interpolate_attribute(normals, attribs))); // We ignore normal maps.
 	surface.V = -WorldRayDirection();
-	surface.P = hitWorldPosition();
+	surface.P = hit_world_position();
 
-	uint mipLevel = 3;
+	uint mip_level = 3;
 
 	surface.albedo = (((flags & MATERIAL_USE_ALBEDO_TEXTURE)
-		? albedoTex.SampleLevel(linearSampler, uv, mipLevel)
+		? albedo_tex.SampleLevel(linear_sampler, uv, mip_level)
 		: float4(1.f, 1.f, 1.f, 1.f))
-		* unpackColor(material.albedoTint));
+		* unpack_color(material.albedo_tint));
 
 	surface.roughness = (flags & MATERIAL_USE_ROUGHNESS_TEXTURE)
-		? roughTex.SampleLevel(linearSampler, uv, mipLevel)
-		: material.getRoughnessOverride();
+		? rough_tex.SampleLevel(linear_sampler, uv, mip_level)
+		: material.get_roughness_override();
 
 	surface.metallic = (flags & MATERIAL_USE_METALLIC_TEXTURE)
-		? metalTex.SampleLevel(linearSampler, uv, mipLevel)
-		: material.getMetallicOverride();
+		? metal_tex.SampleLevel(linear_sampler, uv, mip_level)
+		: material.get_metallic_override();
 
 	surface.emission = material.emission;
 	surface.roughness = clamp(surface.roughness, 0.01f, 0.99f);
 
-	surface.inferRemainingProperties();
+	surface.infer_remaining_properties();
 
 	float3 L = -sun.direction;
-	float sunVisibility = traceShadowRay(surface.P, L, 10000.f);
+	float sun_visibility = trace_shadow_ray(surface.P, L, 10000.f);
 
-	light_info light;
+	LightInfo light;
 	light.initialize(surface, L, sun.radiance);
 
-	light_contribution totalLighting = { float3(0.f, 0.f, 0.f), float3(0.f, 0.f, 0.f) };
-	totalLighting.add(calculateDirectLighting(surface, light), sunVisibility);
+	LightContribution total_lighting = { float3(0.f, 0.f, 0.f), float3(0.f, 0.f, 0.f) };
+	total_lighting.add(calculate_direct_lighting(surface, light), sun_visibility);
 
-	totalLighting.diffuse += cb.grid.sampleIrradianceAtPosition(surface.P, surface.N, irradiance, depth, linearSampler);
+	total_lighting.diffuse += cb.grid.sample_irradiance_at_position(surface.P, surface.N, irradiance, depth, linear_sampler);
 
-	payload.color = totalLighting.evaluate(surface.albedo).rgb + surface.emission;
+	payload.color = total_lighting.evaluate(surface.albedo).rgb + surface.emission;
 	payload.distance = RayTCurrent();
 }
 
 [shader("miss")]
-void radianceMiss(inout radiance_ray_payload payload)
+void radianceMiss(inout RadianceRayPayload payload)
 {
-	if (cb.sampleSkyFromTexture == 1)
+	if (cb.sample_sky_from_texture == 1)
 	{
-		payload.color = sky.SampleLevel(linearSampler, WorldRayDirection(), 8).xyz; // We sample a very high mip level of the sky here, because a small sun makes the samples very noisy.
+		payload.color = sky.SampleLevel(linear_sampler, WorldRayDirection(), 8).xyz; // We sample a very high mip level of the sky here, because a small sun makes the samples very noisy.
 	}
 	else
 	{
-		payload.color = proceduralSkySimple(normalize(WorldRayDirection()), normalize(-sun.direction));
+		payload.color = procedural_sky_simple(normalize(WorldRayDirection()), normalize(-sun.direction));
 	}
 }
 
@@ -197,7 +197,7 @@ void radianceMiss(inout radiance_ray_payload payload)
 // ----------------------------------------
 
 [shader("miss")]
-void shadowMiss(inout shadow_ray_payload payload)
+void shadowMiss(inout ShadowRayPayload payload)
 {
 	payload.visible = 1.f;
 }

@@ -14,55 +14,55 @@
 
 namespace era_engine
 {
-	struct dx_texture
+	struct DXTexture
 	{
-		virtual ~dx_texture();
+		virtual ~DXTexture();
 
-		dx_cpu_descriptor_handle uavAt(uint32 index) { return srvUavAllocation.cpuAt(1 + index); }
-		dx_rtv_descriptor_handle rtvAt(uint32 index) { return rtvAllocation.cpuAt(index); }
+		DXCPUDescriptorHandle uav_at(uint32 index) { return srv_uav_allocation.cpu_at(1 + index); }
+		DXRTVDescriptorHandle rtv_at(uint32 index) { return rtv_allocation.cpu_at(index); }
 
-		void setName(const wchar* name) const;
-		std::wstring getName() const;
+		void set_name(const wchar* name) const;
+		std::wstring get_name() const;
 
-		dx_resource resource;
+		DXResource resource;
 		D3D12MA::Allocation* allocation = 0;
 
-		dx_descriptor_allocation srvUavAllocation = {};
-		dx_descriptor_allocation rtvAllocation = {};
-		dx_descriptor_allocation dsvAllocation = {};
+		DXDescriptorAllocation srv_uav_allocation = {};
+		DXDescriptorAllocation rtv_allocation = {};
+		DXDescriptorAllocation dsv_allocation = {};
 
-		dx_cpu_descriptor_handle defaultSRV; // SRV for the whole texture (all mip levels).
-		dx_cpu_descriptor_handle defaultUAV; // UAV for the first mip level.
+		DXCPUDescriptorHandle default_srv; // SRV for the whole texture (all mip levels).
+		DXCPUDescriptorHandle default_uav; // UAV for the first mip level.
 
-		dx_cpu_descriptor_handle stencilSRV; // For depth stencil textures.
+		DXCPUDescriptorHandle stencil_srv; // For depth stencil textures.
 
-		dx_rtv_descriptor_handle defaultRTV;
+		DXRTVDescriptorHandle default_rtv;
 
-		dx_dsv_descriptor_handle defaultDSV;
+		DXDSVDescriptorHandle default_dsv;
 
 		uint32 width, height, depth;
 		DXGI_FORMAT format;
 
-		D3D12_RESOURCE_STATES initialState;
+		D3D12_RESOURCE_STATES initial_state;
 
-		bool supportsRTV;
-		bool supportsDSV;
-		bool supportsUAV;
-		bool supportsSRV;
+		bool supports_rtv;
+		bool supports_dsv;
+		bool supports_uav;
+		bool supports_srv;
 
-		uint32 requestedNumMipLevels;
-		uint32 numMipLevels;
+		uint32 requested_num_mip_levels;
+		uint32 num_mip_levels;
 
 		AssetHandle handle;
 		uint32 flags = 0;
 
-		std::atomic<AssetLoadState> loadState = AssetLoadState::LOADED;
-		JobHandle loadJob;
+		std::atomic<AssetLoadState> load_state = AssetLoadState::LOADED;
+		JobHandle load_job;
 	};
 
-	struct dx_texture_atlas
+	struct DXTextureAtlas
 	{
-		NODISCARD std::pair<vec2, vec2> getUVs(uint32 x, uint32 y) const
+		NODISCARD std::pair<vec2, vec2> get_uvs(uint32 x, uint32 y) const
 		{
 			ASSERT(x < cols);
 			ASSERT(y < rows);
@@ -75,87 +75,87 @@ namespace era_engine
 			return { uv0, uv1 };
 		}
 
-		NODISCARD std::pair<vec2, vec2> getUVs(uint32 i) const
+		NODISCARD std::pair<vec2, vec2> get_uvs(uint32 i) const
 		{
 			uint32 x = i % cols;
 			uint32 y = i / cols;
-			return getUVs(x, y);
+			return get_uvs(x, y);
 		}
 
-		ref<dx_texture> texture;
+		ref<DXTexture> texture;
 
 		uint32 cols;
 		uint32 rows;
 	};
 
-	struct dx_tiled_texture
+	struct DXTiledTexture
 	{
-		inline NODISCARD bool isMipPacked(uint32 index) const { return index >= numStandard; }
+		inline NODISCARD bool is_mip_packed(uint32 index) const { return index >= num_standard; }
 
-		struct tiled_texture_mip_desc
+		struct TiledTextureMipDesc
 		{
-			CD3DX12_TILED_RESOURCE_COORDINATE startCoordinate;
-			D3D12_TILE_REGION_SIZE regionSize;
+			CD3DX12_TILED_RESOURCE_COORDINATE start_coordinate;
+			D3D12_TILE_REGION_SIZE region_size;
 		};
 
-		ref<dx_texture> texture;
-		std::vector<tiled_texture_mip_desc> mipDescs;
-		D3D12_TILE_SHAPE tileShape;
+		ref<DXTexture> texture;
+		std::vector<TiledTextureMipDesc> mip_descs;
+		D3D12_TILE_SHAPE tile_shape;
 
-		uint32 numStandard;
-		uint32 numPacked;
+		uint32 num_standard;
+		uint32 num_packed;
 	};
 
-	struct texture_grave
+	struct TextureGrave
 	{
-		texture_grave() {}
-		texture_grave(const texture_grave& o) = delete;
-		texture_grave(texture_grave&& o) = default;
+		TextureGrave() {}
+		TextureGrave(const TextureGrave& o) = delete;
+		TextureGrave(TextureGrave&& o) = default;
 
-		texture_grave& operator=(const texture_grave& o) = delete;
-		texture_grave& operator=(texture_grave&& o) = default;
+		TextureGrave& operator=(const TextureGrave& o) = delete;
+		TextureGrave& operator=(TextureGrave&& o) = default;
 
-		~texture_grave();
+		~TextureGrave();
 
-		dx_resource resource;
+		DXResource resource;
 
-		dx_descriptor_allocation srvUavAllocation = {};
-		dx_descriptor_allocation rtvAllocation = {};
-		dx_descriptor_allocation dsvAllocation = {};
+		DXDescriptorAllocation srv_uav_allocation = {};
+		DXDescriptorAllocation rtv_allocation = {};
+		DXDescriptorAllocation dsv_allocation = {};
 	};
 
-	NODISCARD D3D12_RESOURCE_ALLOCATION_INFO getTextureAllocationInfo(uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips, D3D12_RESOURCE_FLAGS flags);
+	NODISCARD D3D12_RESOURCE_ALLOCATION_INFO get_texture_allocation_info(uint32 width, uint32 height, DXGI_FORMAT format, bool allocate_mips, D3D12_RESOURCE_FLAGS flags);
 
-	void uploadTextureSubresourceData(ref<dx_texture> texture, D3D12_SUBRESOURCE_DATA* subresourceData, uint32 firstSubresource, uint32 numSubresources);
-	NODISCARD ref<dx_texture> createTexture(D3D12_RESOURCE_DESC textureDesc, D3D12_SUBRESOURCE_DATA* subresourceData, uint32 numSubresources, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
-	NODISCARD ref<dx_texture> createTexture(const void* data, uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips = false, bool allowRenderTarget = false, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
-	NODISCARD ref<dx_texture> createDepthTexture(uint32 width, uint32 height, DXGI_FORMAT format, uint32 arrayLength = 1, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE);
-	NODISCARD ref<dx_texture> createCubeTexture(const void* data, uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips = false, bool allowRenderTarget = false, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
-	NODISCARD ref<dx_texture> createVolumeTexture(const void* data, uint32 width, uint32 height, uint32 depth, DXGI_FORMAT format, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON);
-	void resizeTexture(ref<dx_texture> texture, uint32 newWidth, uint32 newHeight, D3D12_RESOURCE_STATES initialState = (D3D12_RESOURCE_STATES)-1);
+	void upload_texture_subresource_data(ref<DXTexture> texture, D3D12_SUBRESOURCE_DATA* subresource_data, uint32 first_subresource, uint32 num_subresources);
+	NODISCARD ref<DXTexture> create_texture(D3D12_RESOURCE_DESC texture_desc, D3D12_SUBRESOURCE_DATA* subresource_data, uint32 num_subresources, D3D12_RESOURCE_STATES initial_state = D3D12_RESOURCE_STATE_COMMON, bool mip_uavs = false);
+	NODISCARD ref<DXTexture> create_texture(const void* data, uint32 width, uint32 height, DXGI_FORMAT format, bool allocate_mips = false, bool allow_render_target = false, bool allow_unordered_access = false, D3D12_RESOURCE_STATES initial_state = D3D12_RESOURCE_STATE_COMMON, bool mip_uavs = false);
+	NODISCARD ref<DXTexture> create_depth_texture(uint32 width, uint32 height, DXGI_FORMAT format, uint32 array_length = 1, D3D12_RESOURCE_STATES initial_state = D3D12_RESOURCE_STATE_DEPTH_WRITE);
+	NODISCARD ref<DXTexture> create_cube_texture(const void* data, uint32 width, uint32 height, DXGI_FORMAT format, bool allocate_mips = false, bool allow_render_target = false, bool allow_unordered_access = false, D3D12_RESOURCE_STATES initial_state = D3D12_RESOURCE_STATE_COMMON, bool mip_uavs = false);
+	NODISCARD ref<DXTexture> create_volume_texture(const void* data, uint32 width, uint32 height, uint32 depth, DXGI_FORMAT format, bool allow_unordered_access = false, D3D12_RESOURCE_STATES initial_state = D3D12_RESOURCE_STATE_COMMON);
+	void resize_texture(ref<DXTexture> texture, uint32 new_width, uint32 new_height, D3D12_RESOURCE_STATES initial_state = (D3D12_RESOURCE_STATES)-1);
 
-	NODISCARD ref<dx_texture> createPlacedTexture(dx_heap heap, uint64 offset, uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips = false, bool allowRenderTarget = false, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
-	NODISCARD ref<dx_texture> createPlacedTexture(dx_heap heap, uint64 offset, D3D12_RESOURCE_DESC textureDesc, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
+	NODISCARD ref<DXTexture> create_placed_texture(DXHeap heap, uint64 offset, uint32 width, uint32 height, DXGI_FORMAT format, bool allocate_mips = false, bool allow_render_target = false, bool allow_unordered_access = false, D3D12_RESOURCE_STATES initial_state = D3D12_RESOURCE_STATE_COMMON, bool mip_uavs = false);
+	NODISCARD ref<DXTexture> create_placed_texture(DXHeap heap, uint64 offset, D3D12_RESOURCE_DESC texture_desc, D3D12_RESOURCE_STATES initial_state = D3D12_RESOURCE_STATE_COMMON, bool mip_uavs = false);
 
-	NODISCARD ref<dx_texture> createPlacedDepthTexture(dx_heap heap, uint64 offset, uint32 width, uint32 height, DXGI_FORMAT format, uint32 arrayLength = 1, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE, bool allowDepthStencil = true);
-	NODISCARD ref<dx_texture> createPlacedDepthTexture(dx_heap heap, uint64 offset, D3D12_RESOURCE_DESC textureDesc, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE);
+	NODISCARD ref<DXTexture> create_placed_depth_texture(DXHeap heap, uint64 offset, uint32 width, uint32 height, DXGI_FORMAT format, uint32 array_length = 1, D3D12_RESOURCE_STATES initial_state = D3D12_RESOURCE_STATE_DEPTH_WRITE, bool allow_depth_stencil = true);
+	NODISCARD ref<DXTexture> create_placed_depth_texture(DXHeap heap, uint64 offset, D3D12_RESOURCE_DESC texture_desc, D3D12_RESOURCE_STATES initial_state = D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
-	NODISCARD dx_tiled_texture createTiledTexture(D3D12_RESOURCE_DESC textureDesc, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
-	NODISCARD dx_tiled_texture createTiledTexture(uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips = false, bool allowRenderTarget = false, bool allowUnorderedAccess = false, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
+	NODISCARD DXTiledTexture create_tiled_texture(D3D12_RESOURCE_DESC texture_desc, D3D12_RESOURCE_STATES initial_state = D3D12_RESOURCE_STATE_COMMON, bool mip_uavs = false);
+	NODISCARD DXTiledTexture create_tiled_texture(uint32 width, uint32 height, DXGI_FORMAT format, bool allocate_mips = false, bool allow_render_target = false, bool allow_unordered_access = false, D3D12_RESOURCE_STATES initial_state = D3D12_RESOURCE_STATE_COMMON, bool mip_uavs = false);
 
 	// This system caches textures. It does not keep the resource alive (we store weak ptrs).
 	// So if no one else has a reference, the texture gets deleted.
 	// This means you should keep a reference to your textures yourself and not call this every frame.
 
-	ERA_CORE_API ref<dx_texture> loadTextureFromFile(const fs::path& filename, uint32 flags = image_load_flags_default);
-	ERA_CORE_API ref<dx_texture> loadTextureFromHandle(AssetHandle handle, uint32 flags = image_load_flags_default);
-	ERA_CORE_API ref<dx_texture> loadTextureFromFileAsync(const fs::path& filename, uint32 flags = image_load_flags_default, JobHandle parent_job = {});
-	ERA_CORE_API ref<dx_texture> loadTextureFromHandleAsync(AssetHandle handle, uint32 flags = image_load_flags_default, JobHandle parent_job = {});
+	ERA_CORE_API ref<DXTexture> load_texture_from_file(const fs::path& filename, uint32 flags = IMAGE_LOAD_FLAGS_DEFAULT);
+	ERA_CORE_API ref<DXTexture> load_texture_from_handle(AssetHandle handle, uint32 flags = IMAGE_LOAD_FLAGS_DEFAULT);
+	ERA_CORE_API ref<DXTexture> load_texture_from_file_async(const fs::path& filename, uint32 flags = IMAGE_LOAD_FLAGS_DEFAULT, JobHandle parent_job = {});
+	ERA_CORE_API ref<DXTexture> load_texture_from_handle_async(AssetHandle handle, uint32 flags = IMAGE_LOAD_FLAGS_DEFAULT, JobHandle parent_job = {});
 
-	ERA_CORE_API ref<dx_texture> loadTextureFromMemory(const void* ptr, uint32 size, image_format imageFormat, const fs::path& cacheFilename, uint32 flags = image_load_flags_default);
-	ERA_CORE_API ref<dx_texture> loadVolumeTextureFromDirectory(const fs::path& dirname, uint32 flags = image_load_flags_compress | image_load_flags_cache_to_dds | image_load_flags_noncolor);
+	ERA_CORE_API ref<DXTexture> load_texture_from_memory(const void* ptr, uint32 size, ImageFormat image_format, const fs::path& cache_filename, uint32 flags = IMAGE_LOAD_FLAGS_DEFAULT);
+	ERA_CORE_API ref<DXTexture> load_volume_texture_from_directory(const fs::path& dirname, uint32 flags = IMAGE_LOAD_FLAGS_COMPRESS | IMAGE_LOAD_FLAGS_CACHE_TO_DDS | IMAGE_LOAD_FLAGS_NONCOLOR);
 
-	void copyTextureToCPUBuffer(const ref<dx_texture>& texture, void* buffer, D3D12_RESOURCE_STATES beforeAndAfterState = D3D12_RESOURCE_STATE_COMMON);
-	ERA_CORE_API void saveTextureToFile(const ref<dx_texture>& texture, const fs::path& path);
-	void saveTextureToFile(dx_resource texture, uint32 width, uint32 height, DXGI_FORMAT format, const fs::path& path);
+	void copy_texture_to_cpu_buffer(const ref<DXTexture>& texture, void* buffer, D3D12_RESOURCE_STATES before_and_after_state = D3D12_RESOURCE_STATE_COMMON);
+	ERA_CORE_API void save_texture_to_file(const ref<DXTexture>& texture, const fs::path& path);
+	void save_texture_to_file(DXResource texture, uint32 width, uint32 height, DXGI_FORMAT format, const fs::path& path);
 }

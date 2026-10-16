@@ -28,7 +28,7 @@ namespace era_engine
 	{
 		std::lock_guard _lock{ world_data->sync };
 
-		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), Entity::NullHandle, this, &world_data->registry);
+		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), Entity::null_handle, this, &world_data->registry);
 		world_data->entity_datas.emplace(new_data->entity_handle, new_data);
 		world_data->root_entity = Entity(new_data);
 		world_data->root_entity.add_component<TransformComponent>();
@@ -64,7 +64,7 @@ namespace era_engine
 
 		if (world_data->entity_datas.find(_handle) == world_data->entity_datas.cend())
 		{
-			if (world_data->registry.create(_handle) == Entity::NullHandle)
+			if (world_data->registry.create(_handle) == Entity::null_handle)
 			{
 				LOG_ERROR("ECS> Entity creation failed!");
 			}
@@ -106,12 +106,12 @@ namespace era_engine
 
 	void World::destroy_entity(Entity::Handle _handle, bool _destroy_childs, bool _destroy_components)
 	{
-		if (_handle == Entity::NullHandle)
+		if (_handle == Entity::null_handle)
 		{
 			return;
 		}
 
-		Entity::Handle parent_handle = Entity::NullHandle;
+		Entity::Handle parent_handle = Entity::null_handle;
 		{
 			std::lock_guard _lock{ world_data->sync };
 
@@ -146,7 +146,7 @@ namespace era_engine
 		{
 			return create_entity(place.internal_data->entity_handle, _name);
 		}
-		return Entity::Null;
+		return Entity::null;
 	}
 
 	Entity World::get_entity(Entity::Handle _handle) const

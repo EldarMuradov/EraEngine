@@ -4,10 +4,10 @@
 
 namespace era_engine
 {
-	struct dx_command_list;
-	struct dx_buffer;
+	struct DXCommandList;
+	struct DXBuffer;
 
-	void initializeBitonicSort();
+	void initialize_bitonic_sort();
 
 	// These functions sort a buffer of values based on a key. The currently supported variants are:
 	// - bitonicSortUint: Key and value are packed into a single uint. The sorting algorithm will simply sort this buffer. The user must pack the key into
@@ -21,14 +21,14 @@ namespace era_engine
 	// buffer to the location where the count sits.
 	// The count does not need to be a power of two.
 
-	void bitonicSortUint(dx_command_list* cl,
-		const ref<dx_buffer>& sortKeysAndValues, uint32 sortOffset, uint32 maxNumElements,
-		const ref<dx_buffer>& counterBuffer, uint32 counterBufferOffset, bool sortAscending);
-	void bitonicSortFloat(dx_command_list* cl,
-		const ref<dx_buffer>& sortKeys, uint32 sortKeyOffset,
-		const ref<dx_buffer>& sortValues, uint32 sortValueOffset, uint32 maxNumElements,
-		const ref<dx_buffer>& counterBuffer, uint32 counterBufferOffset, bool sortAscending);
+	void bitonic_sort_uint(DXCommandList* cl,
+		const ref<DXBuffer>& sort_keys_and_values, uint32 sort_offset, uint32 max_num_elements,
+		const ref<DXBuffer>& counter_buffer, uint32 counter_buffer_offset, bool sort_ascending);
+	void bitonic_sort_float(DXCommandList* cl,
+		const ref<DXBuffer>& sort_keys, uint32 sort_key_offset,
+		const ref<DXBuffer>& sort_values, uint32 sort_value_offset, uint32 max_num_elements,
+		const ref<DXBuffer>& counter_buffer, uint32 counter_buffer_offset, bool sort_ascending);
 
-	void testBitonicSortUint(uint32 numElements, bool ascending);
-	void testBitonicSortFloat(uint32 numElements, bool ascending);
+	void test_bitonic_sort_uint(uint32 num_elements, bool ascending);
+	void test_bitonic_sort_float(uint32 num_elements, bool ascending);
 }

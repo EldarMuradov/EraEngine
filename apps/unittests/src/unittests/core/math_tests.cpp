@@ -541,49 +541,49 @@ TEST(Core_Random, ValuesStayInRange)
 		const vec3 point = rng.random_point_on_unit_sphere();
 		EXPECT_NEAR(length(point), 1.0f, 1e-3f);
 
-		const quat rotation = rng.randomRotation();
+		const quat rotation = rng.random_rotation();
 		EXPECT_NEAR(length(rotation.v4), 1.0f, 1e-3f);
 	}
 }
 
 TEST(Core_BoundingVolumes, BoundingBox)
 {
-	bounding_box box = bounding_box::negativeInfinity();
+	BoundingBox box = BoundingBox::negative_infinity();
 	box.grow(vec3(1.0f, -2.0f, 0.0f));
 	box.grow(vec3(-1.0f, 2.0f, 4.0f));
 
-	EXPECT_EQ(box.minCorner, vec3(-1.0f, -2.0f, 0.0f));
-	EXPECT_EQ(box.maxCorner, vec3(1.0f, 2.0f, 4.0f));
-	EXPECT_EQ(box.getCenter(), vec3(0.0f, 0.0f, 2.0f));
-	EXPECT_EQ(box.getRadius(), vec3(1.0f, 2.0f, 2.0f));
+	EXPECT_EQ(box.min_corner, vec3(-1.0f, -2.0f, 0.0f));
+	EXPECT_EQ(box.max_corner, vec3(1.0f, 2.0f, 4.0f));
+	EXPECT_EQ(box.get_center(), vec3(0.0f, 0.0f, 2.0f));
+	EXPECT_EQ(box.get_radius(), vec3(1.0f, 2.0f, 2.0f));
 	EXPECT_FLOAT_EQ(box.volume(), 32.0f);
 
 	EXPECT_TRUE(box.contains(vec3(0.0f, 0.0f, 2.0f)));
-	EXPECT_TRUE(box.contains(box.maxCorner));
+	EXPECT_TRUE(box.contains(box.max_corner));
 	EXPECT_FALSE(box.contains(vec3(0.0f, 0.0f, 5.0f)));
 
 	box.pad(vec3(1.0f));
-	EXPECT_EQ(box.minCorner, vec3(-2.0f, -3.0f, -1.0f));
-	EXPECT_EQ(box.maxCorner, vec3(2.0f, 3.0f, 5.0f));
+	EXPECT_EQ(box.min_corner, vec3(-2.0f, -3.0f, -1.0f));
+	EXPECT_EQ(box.max_corner, vec3(2.0f, 3.0f, 5.0f));
 
-	const bounding_box from_center = bounding_box::fromCenterRadius(vec3(1.0f), vec3(0.5f));
-	EXPECT_EQ(from_center.minCorner, vec3(0.5f));
-	EXPECT_EQ(from_center.maxCorner, vec3(1.5f));
+	const BoundingBox from_center = BoundingBox::from_center_radius(vec3(1.0f), vec3(0.5f));
+	EXPECT_EQ(from_center.min_corner, vec3(0.5f));
+	EXPECT_EQ(from_center.max_corner, vec3(1.5f));
 
-	const bounding_box rotated = bounding_box::fromMinMax(vec3(-1.0f, -2.0f, -3.0f), vec3(1.0f, 2.0f, 3.0f))
-		.transformToAABB(quat(vec3(0.0f, 1.0f, 0.0f), M_PI_OVER_2), vec3(10.0f, 0.0f, 0.0f));
-	EXPECT_TRUE(fuzzy_equals(rotated.minCorner, vec3(7.0f, -2.0f, -1.0f)));
-	EXPECT_TRUE(fuzzy_equals(rotated.maxCorner, vec3(13.0f, 2.0f, 1.0f)));
+	const BoundingBox rotated = BoundingBox::from_min_max(vec3(-1.0f, -2.0f, -3.0f), vec3(1.0f, 2.0f, 3.0f))
+		.transform_to_aabb(quat(vec3(0.0f, 1.0f, 0.0f), M_PI_OVER_2), vec3(10.0f, 0.0f, 0.0f));
+	EXPECT_TRUE(fuzzy_equals(rotated.min_corner, vec3(7.0f, -2.0f, -1.0f)));
+	EXPECT_TRUE(fuzzy_equals(rotated.max_corner, vec3(13.0f, 2.0f, 1.0f)));
 }
 
 TEST(Core_BoundingVolumes, BoundingRectangle)
 {
-	bounding_rectangle rectangle = bounding_rectangle::negativeInfinity();
+	BoundingRectangle rectangle = BoundingRectangle::negative_infinity();
 	rectangle.grow(vec2(1.0f, 1.0f));
 	rectangle.grow(vec2(-1.0f, 3.0f));
 
-	EXPECT_EQ(rectangle.getCenter(), vec2(0.0f, 2.0f));
-	EXPECT_EQ(rectangle.getRadius(), vec2(1.0f, 1.0f));
+	EXPECT_EQ(rectangle.get_center(), vec2(0.0f, 2.0f));
+	EXPECT_EQ(rectangle.get_radius(), vec2(1.0f, 1.0f));
 	EXPECT_TRUE(rectangle.contains(vec2(0.0f, 2.0f)));
 	EXPECT_FALSE(rectangle.contains(vec2(0.0f, 0.0f)));
 }
@@ -595,19 +595,19 @@ TEST(Core_BoundingVolumes, RayIntersections)
 	r.direction = vec3(0.0f, 0.0f, 1.0f);
 
 	float t = 0.0f;
-	EXPECT_TRUE(r.intersectSphere(vec3(0.0f), 1.0f, t));
+	EXPECT_TRUE(r.intersect_sphere(vec3(0.0f), 1.0f, t));
 	EXPECT_NEAR(t, 9.0f, tolerance);
-	EXPECT_FALSE(r.intersectSphere(vec3(5.0f, 0.0f, 0.0f), 1.0f, t));
+	EXPECT_FALSE(r.intersect_sphere(vec3(5.0f, 0.0f, 0.0f), 1.0f, t));
 
-	EXPECT_TRUE(r.intersectAABB(bounding_box::fromCenterRadius(vec3(0.0f), vec3(2.0f)), t));
+	EXPECT_TRUE(r.intersect_aabb(BoundingBox::from_center_radius(vec3(0.0f), vec3(2.0f)), t));
 	EXPECT_NEAR(t, 8.0f, tolerance);
-	EXPECT_FALSE(r.intersectAABB(bounding_box::fromCenterRadius(vec3(0.0f, 5.0f, 0.0f), vec3(1.0f)), t));
+	EXPECT_FALSE(r.intersect_aabb(BoundingBox::from_center_radius(vec3(0.0f, 5.0f, 0.0f), vec3(1.0f)), t));
 
-	EXPECT_TRUE(r.intersectPlane(vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, 3.0f), t));
+	EXPECT_TRUE(r.intersect_plane(vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, 3.0f), t));
 	EXPECT_NEAR(t, 13.0f, tolerance);
 
 	bool front_facing = false;
-	EXPECT_TRUE(r.intersectTriangle(vec3(-1.0f, -1.0f, 0.0f), vec3(1.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), t, front_facing));
+	EXPECT_TRUE(r.intersect_triangle(vec3(-1.0f, -1.0f, 0.0f), vec3(1.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), t, front_facing));
 	EXPECT_NEAR(t, 10.0f, tolerance);
-	EXPECT_FALSE(r.intersectTriangle(vec3(2.0f, 2.0f, 0.0f), vec3(3.0f, 2.0f, 0.0f), vec3(2.0f, 3.0f, 0.0f), t, front_facing));
+	EXPECT_FALSE(r.intersect_triangle(vec3(2.0f, 2.0f, 0.0f), vec3(3.0f, 2.0f, 0.0f), vec3(2.0f, 3.0f, 0.0f), t, front_facing));
 }

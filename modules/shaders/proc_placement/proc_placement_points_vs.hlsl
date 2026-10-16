@@ -1,30 +1,30 @@
 #include "proc_placement_rs.hlsli"
 #include "camera.hlsli"
 
-ConstantBuffer<camera_cb> camera						: register(b0);
-StructuredBuffer<placement_transform> transforms		: register(t0);
+ConstantBuffer<CameraCB> camera						: register(b0);
+StructuredBuffer<PlacementTransform> transforms		: register(t0);
 
-struct vs_input
+struct VSInput
 {
 	float3 position		: POSITION;
 	float2 uv			: TEXCOORDS;
 	float3 normal		: NORMAL;
 	float3 tangent		: TANGENT;
 
-	uint instanceID		: SV_InstanceID;
+	uint instance_id		: SV_InstanceID;
 };
 
-struct vs_output
+struct VSOutput
 {
 	float2 uv			: TEXCOORDS;
 	float4 position		: SV_POSITION;
 };
 
-vs_output main(vs_input IN)
+VSOutput main(VSInput IN)
 {
-	float4x4 mvp = mul(camera.viewProj, transforms[IN.instanceID].m);
+	float4x4 mvp = mul(camera.view_proj, transforms[IN.instance_id].m);
 
-	vs_output OUT;
+	VSOutput OUT;
 	OUT.position = mul(mvp, float4(IN.position * 0.02f, 1.f));
 	OUT.uv = IN.uv;
 	return OUT;

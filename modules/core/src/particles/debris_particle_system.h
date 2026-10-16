@@ -14,39 +14,39 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API debris_particle_system : particle_system
+	struct ERA_CORE_API DebrisParticleSystem : ParticleSystem
 	{
-		static void initializePipeline();
+		static void initialize_pipeline();
 
-		debris_particle_system() {}
-		debris_particle_system(uint32 maxNumParticles);
-		void initialize(uint32 maxNumParticles);
+		DebrisParticleSystem() {}
+		DebrisParticleSystem(uint32 max_num_particles);
+		void initialize(uint32 max_num_particles);
 
 		void burst(vec3 position);
 
-		virtual void update(struct dx_command_list* cl, const common_particle_simulation_data& common, float dt) override;
-		void render(transparent_render_pass* renderPass);
+		virtual void update(struct DXCommandList* cl, const CommonParticleSimulationData& common, float dt) override;
+		void render(TransparentRenderPass* render_pass);
 
 	private:
-		static dx_pipeline emitPipeline;
-		static dx_pipeline simulatePipeline;
-		static dx_pipeline renderPipeline;
+		static DXPipeline emit_pipeline;
+		static DXPipeline simulate_pipeline;
+		static DXPipeline render_pipeline;
 
-		struct debris_material
+		struct DebrisMaterial
 		{
 		};
 
-		struct debris_pipeline : particle_render_pipeline<debris_material>
+		struct DebrisPipeline : ParticleRenderPipeline<DebrisMaterial>
 		{
 			PIPELINE_SETUP_DECL;
-			PARTICLE_PIPELINE_RENDER_DECL(debris_material);
+			PARTICLE_PIPELINE_RENDER_DECL(DebrisMaterial);
 		};
 
-		struct debris_burst
+		struct DebrisBurst
 		{
 			vec3 position;
 		};
 
-		std::vector<debris_burst> bursts;
+		std::vector<DebrisBurst> bursts;
 	};
 }

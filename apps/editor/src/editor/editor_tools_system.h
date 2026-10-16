@@ -36,7 +36,7 @@ namespace era_engine
 	private:
 		RendererHolderRootComponent* renderer_holder_rc = nullptr;
 
-		Entity selected_entity = Entity::Null;
+		Entity selected_entity = Entity::null;
 		vec3 selected_entity_euler_rotation = vec3::zero;
 	};
 }

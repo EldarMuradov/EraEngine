@@ -132,7 +132,7 @@ namespace era_engine::physics
 		physx::PxTolerancesScale tolerance_scale;
 
 		const uint32 nb_cpu_dispatcher_threads = 4;
-		static constexpr uint64 scratch_mem_block_size = MB(64U);
+		static constexpr uint64 scratch_mem_block_size = mb(64U);
 
 		ref<BlastCore> blast_core;
 

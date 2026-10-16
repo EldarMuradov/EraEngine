@@ -6,35 +6,35 @@
 
 namespace era_engine
 {
-	undo_stack::undo_stack()
+	UndoStack::UndoStack()
 	{
-		memorySize = MB(2);
-		memory = (uint8*)malloc(memorySize);
+		memory_size = mb(2);
+		memory = (uint8*)malloc(memory_size);
 		reset();
 	}
 
-	void undo_stack::pushAction(const char* name, const void* entry, uint64 entrySize, toggle_func toggle)
+	void UndoStack::push_action(const char* name, const void* entry, uint64 entry_size, ToggleFunc toggle)
 	{
-		uint64 nameLength = strlen(name) + 1;
-		uint64 alignedNameLength = align_to(nameLength, 16);
-		uint64 requiredSpace = sizeof(entry_header) + alignedNameLength + entrySize;
-		uint64 availableSpaceAtEnd = memory + memorySize - nextToWrite;
+		uint64 name_length = strlen(name) + 1;
+		uint64 aligned_name_length = align_to(name_length, 16);
+		uint64 required_space = sizeof(EntryHeader) + aligned_name_length + entry_size;
+		uint64 available_space_at_end = memory + memory_size - next_to_write;
 
 		uint8* address;
 
 		if (!newest)
 		{
-			nextToWrite = memory;
-			address = nextToWrite;
+			next_to_write = memory;
+			address = next_to_write;
 			oldest = 0;
 		}
 		else
 		{
 			ASSERT(oldest);
-			address = (requiredSpace <= availableSpaceAtEnd) ? nextToWrite : memory;
+			address = (required_space <= available_space_at_end) ? next_to_write : memory;
 		}
 
-		uint8* end = (uint8*)align_to(address + requiredSpace, 16);
+		uint8* end = (uint8*)align_to(address + required_space, 16);
 
 		// Clean up blocks which are overriden by the new block
 		oldest = newest;
@@ -42,10 +42,10 @@ namespace era_engine
 		{
 			while (true)
 			{
-				void* oldestBegin = oldest;
-				void* oldestEnd = oldest->getOneAfterEnd();
+				void* oldest_begin = oldest;
+				void* oldest_end = oldest->get_one_after_end();
 
-				if (ranges_overlap(address, end, oldestBegin, oldestEnd))
+				if (ranges_overlap(address, end, oldest_begin, oldest_end))
 				{
 					oldest = oldest->newer;
 					break;
@@ -61,11 +61,11 @@ namespace era_engine
 			oldest->older = 0;
 		}
 
-		entry_header* header = (entry_header*)address;
-		header->nameLength = alignedNameLength;
+		EntryHeader* header = (EntryHeader*)address;
+		header->name_length = aligned_name_length;
 
-		char* thisName = header->getName();
-		memcpy(thisName, name, nameLength);
+		char* this_name = header->get_name();
+		memcpy(this_name, name, name_length);
 
 		header->older = newest;
 		if (newest)
@@ -81,83 +81,83 @@ namespace era_engine
 		header->newer = 0;
 
 		header->toggle = toggle;
-		header->entrySize = entrySize;
+		header->entry_size = entry_size;
 
-		void* data = header->getData();
-		memcpy(data, entry, entrySize);
+		void* data = header->get_data();
+		memcpy(data, entry, entry_size);
 
-		nextToWrite = end;
+		next_to_write = end;
 	}
 
-	std::pair<bool, const char*> undo_stack::undoPossible()
+	std::pair<bool, const char*> UndoStack::undo_possible()
 	{
 		return
 		{
 			newest != 0,
-			newest ? newest->getName() : 0
+			newest ? newest->get_name() : 0
 		};
 	}
 
-	std::pair<bool, const char*> undo_stack::redoPossible()
+	std::pair<bool, const char*> UndoStack::redo_possible()
 	{
 		return
 		{
 			newest && newest->newer || !newest && oldest,
-			(newest && newest->newer) ? newest->newer->getName() : (!newest && oldest) ? oldest->getName() : 0
+			(newest && newest->newer) ? newest->newer->get_name() : (!newest && oldest) ? oldest->get_name() : 0
 		};
 	}
 
-	void undo_stack::undo()
+	void UndoStack::undo()
 	{
 		if (newest)
 		{
-			void* data = newest->getData();
+			void* data = newest->get_data();
 			newest->toggle(data);
 
 			newest = newest->older;
 			if (newest)
 			{
-				nextToWrite = (uint8*)align_to(((uint8*)data + newest->entrySize), 16);
+				next_to_write = (uint8*)align_to(((uint8*)data + newest->entry_size), 16);
 			}
 			else
 			{
-				nextToWrite = memory;
+				next_to_write = memory;
 			}
 
 			// Keep link to newer
 		}
 	}
 
-	void undo_stack::redo()
+	void UndoStack::redo()
 	{
 		if (newest && newest->newer)
 		{
 			newest = newest->newer;
 
-			void* data = newest->getData();
+			void* data = newest->get_data();
 			newest->toggle(data);
 
-			nextToWrite = (uint8*)align_to(((uint8*)data + newest->entrySize), 16);
+			next_to_write = (uint8*)align_to(((uint8*)data + newest->entry_size), 16);
 		}
 
 		if (!newest && oldest)
 		{
-			void* data = oldest->getData();
+			void* data = oldest->get_data();
 			oldest->toggle(data);
 
-			nextToWrite = (uint8*)align_to(((uint8*)data + oldest->entrySize), 16);
+			next_to_write = (uint8*)align_to(((uint8*)data + oldest->entry_size), 16);
 			newest = oldest;
 		}
 	}
 
-	void undo_stack::reset()
+	void UndoStack::reset()
 	{
-		nextToWrite = memory;
+		next_to_write = memory;
 		oldest = 0;
 		newest = 0;
 	}
 
-	bool undo_stack::showHistory(bool& open)
+	bool UndoStack::show_history(bool& open)
 	{
 		bool result = false;
 
@@ -172,14 +172,14 @@ namespace era_engine
 
 				ImGui::Separator();
 
-				bool currentFound = false;
+				bool current_found = false;
 
 				bool clicked = false;
-				entry_header* target = 0;
+				EntryHeader* target = 0;
 				int32 direction = 0;
 
 				bool current = !newest;
-				currentFound |= current;
+				current_found |= current;
 				if (ImGui::Selectable("no changes##UndoHistory", current) && !current)
 				{
 					clicked = true;
@@ -187,23 +187,23 @@ namespace era_engine
 					direction = -1;
 				}
 
-				for (entry_header* entry = oldest; entry; entry = entry->newer)
+				for (EntryHeader* entry = oldest; entry; entry = entry->newer)
 				{
 					ImGui::PushID(entry);
 
 					bool current = entry == newest;
-					currentFound |= current;
-					if (ImGui::Selectable(entry->getName(), current) && !current)
+					current_found |= current;
+					if (ImGui::Selectable(entry->get_name(), current) && !current)
 					{
 						clicked = true;
 						target = entry;
-						direction = currentFound ? 1 : -1;
+						direction = current_found ? 1 : -1;
 					}
 
 					ImGui::PopID();
 				}
 
-				ASSERT(currentFound);
+				ASSERT(current_found);
 
 				if (clicked)
 				{
@@ -223,7 +223,7 @@ namespace era_engine
 		return result;
 	}
 
-	void undo_stack::verify()
+	void UndoStack::verify()
 	{
 		for (auto entry = oldest; entry; entry = entry->newer)
 		{

@@ -28,13 +28,13 @@ namespace era_engine
 
 		~RendererHolderRootComponent() override;
 
-		main_renderer* get_renderer() const;
+		MainRenderer* get_renderer() const;
 
-		render_camera camera;
+		RenderCamera camera;
 
-		directional_light sun;
-		pbr_environment environment;
-		ldr_render_pass* ldrRenderPass = nullptr;
+		DirectionalLight sun;
+		PBREnvironment environment;
+		LDRRenderPass* ldr_render_pass = nullptr;
 
 		uint32_t width = 1920;
 		uint32_t height = 1080;
@@ -44,7 +44,7 @@ namespace era_engine
 		ERA_VIRTUAL_REFLECT(Component)
 
 	private:
-		main_renderer* renderer = nullptr;
+		MainRenderer* renderer = nullptr;
 
 		UserInput* active_render_input = nullptr;
 

@@ -12,10 +12,10 @@
 #define M_INV_2_PI 0.1591549430918953f
 #define M_INV_ATAN float2(M_INV_2_PI, M_INV_PI)
 
-static float inverseLerp(float l, float u, float v) { return (v - l) / (u - l); }
-static float remap(float v, float oldL, float oldU, float newL, float newU) { return lerp(newL, newU, inverseLerp(oldL, oldU, v)); }
+static float inverse_lerp(float l, float u, float v) { return (v - l) / (u - l); }
+static float remap(float v, float old_l, float old_u, float new_l, float new_u) { return lerp(new_l, new_u, inverse_lerp(old_l, old_u, v)); }
 
-static float solidAngleOfSphere(float radius, float distance)
+static float solid_angle_of_sphere(float radius, float distance)
 {
 	// The angular radius of a sphere is p = arcsin(radius / d). 
 	// The solid angle of a circular cap (projection of sphere) is 2pi * (1 - cos(p)).
@@ -31,46 +31,46 @@ static float3 square(float3 v) { return v * v; }
 static float4 square(float4 v) { return v * v; }
 static float pow3(float v) { return v * v * v; }
 
-static float maxComponent(float3 a) { return max(a.x, max(a.y, a.z)); }
+static float max_component(float3 a) { return max(a.x, max(a.y, a.z)); }
 
-static uint flatten2D(uint2 coord, uint2 dim)
+static uint flatten_2d(uint2 coord, uint2 dim)
 {
 	return coord.x + coord.y * dim.x;
 }
 
-static uint flatten2D(uint2 coord, uint width)
+static uint flatten_2d(uint2 coord, uint width)
 {
 	return coord.x + coord.y * width;
 }
 
 // Flattened array index to 2D array index.
-static uint2 unflatten2D(uint idx, uint2 dim)
+static uint2 unflatten_2d(uint idx, uint2 dim)
 {
 	return uint2(idx % dim.x, idx / dim.x);
 }
 
-static uint2 unflatten2D(uint idx, uint width)
+static uint2 unflatten_2d(uint idx, uint width)
 {
 	return uint2(idx % width, idx / width);
 }
 
-inline bool isSaturated(float a) { return a == saturate(a); }
-inline bool isSaturated(float2 a) { return isSaturated(a.x) && isSaturated(a.y); }
-inline bool isSaturated(float3 a) { return isSaturated(a.x) && isSaturated(a.y) && isSaturated(a.z); }
-inline bool isSaturated(float4 a) { return isSaturated(a.x) && isSaturated(a.y) && isSaturated(a.z) && isSaturated(a.w); }
+inline bool is_saturated(float a) { return a == saturate(a); }
+inline bool is_saturated(float2 a) { return is_saturated(a.x) && is_saturated(a.y); }
+inline bool is_saturated(float3 a) { return is_saturated(a.x) && is_saturated(a.y) && is_saturated(a.z); }
+inline bool is_saturated(float4 a) { return is_saturated(a.x) && is_saturated(a.y) && is_saturated(a.z) && is_saturated(a.w); }
 
-static float2 screenSpaceVelocity(float3 ndc, float3 prevFrameNDC, float2 jitter, float2 prevFrameJitter)
+static float2 screen_space_velocity(float3 ndc, float3 prev_frame_ndc, float2 jitter, float2 prev_frame_jitter)
 {
-	float2 currNDC = (ndc.xy / ndc.z) - jitter;
-	float2 prevNDC = (prevFrameNDC.xy / prevFrameNDC.z) - prevFrameJitter;
+	float2 curr_ndc = (ndc.xy / ndc.z) - jitter;
+	float2 prev_ndc = (prev_frame_ndc.xy / prev_frame_ndc.z) - prev_frame_jitter;
 
-	float2 motion = (prevNDC - currNDC) * float2(0.5f, -0.5f);
+	float2 motion = (prev_ndc - curr_ndc) * float2(0.5f, -0.5f);
 	return motion;
 }
 
-static float2 quadFromVertexID(uint vertexID)
+static float2 quad_from_vertex_id(uint vertex_id)
 {
-	return float2((vertexID << 1) & 2, vertexID & 2) - 1.f;
+	return float2((vertex_id << 1) & 2, vertex_id & 2) - 1.f;
 }
 
 #define pack_float	4
@@ -84,34 +84,34 @@ static float2 quadFromVertexID(uint vertexID)
 // The values are internally stored packed. This is because HLSL packs arrays in constant buffers
 // in float4s. See https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-packing-rules.
 // In order to conform to C++'s packing rules, we declare an array of float4s and cast it to an array of floats.
-#define spline(data_type, maxNumPoints) catmull_rom_spline_##data_type##_##maxNumPoints
+#define spline(data_type, max_num_points) catmull_rom_spline_##data_type##_##max_num_points
 
-#define defineSpline(data_type, maxNumPoints)															\
-struct spline(data_type, maxNumPoints)																	\
+#define defineSpline(data_type, max_num_points)															\
+struct spline(data_type, max_num_points)																	\
 {																										\
-	float4 packedTs[maxNumPoints / 4];																	\
-	float4 packedValues[pack(maxNumPoints, data_type)];													\
+	float4 packed_ts[max_num_points / 4];																	\
+	float4 packed_values[pack(max_num_points, data_type)];													\
 																										\
-	inline data_type evaluate(int numActualPoints, float t)												\
+	inline data_type evaluate(int num_actual_points, float t)												\
 	{																									\
-		float ts[maxNumPoints] = (float[maxNumPoints])packedTs;											\
-		data_type values[maxNumPoints] = (data_type[maxNumPoints])packedValues;							\
+		float ts[max_num_points] = (float[max_num_points])packed_ts;											\
+		data_type values[max_num_points] = (data_type[max_num_points])packed_values;							\
 																										\
 		int k = 0;																						\
-		[unroll(maxNumPoints)]																			\
+		[unroll(max_num_points)]																			\
 		while (ts[k] < t)																				\
 		{																								\
 			++k;																						\
 		}																								\
 																										\
-		const float h1 = inverseLerp(ts[k - 1], ts[k], t);												\
+		const float h1 = inverse_lerp(ts[k - 1], ts[k], t);												\
 		const float h2 = h1 * h1;																		\
 		const float h3 = h2 * h1;																		\
 		const float4 h = float4(h3, h2, h1, 1.f);														\
 																										\
 		data_type result = (data_type)0;																\
 																										\
-		int m = numActualPoints - 1;																	\
+		int m = num_actual_points - 1;																	\
 		result += values[clamp(k - 2, 0, m)] * dot(float4(-1, 2, -1, 0), h);							\
 		result += values[k - 1] * dot(float4(3, -5, 0, 2), h);											\
 		result += values[k] * dot(float4(-3, 4, 1, 0), h);												\
@@ -123,25 +123,25 @@ struct spline(data_type, maxNumPoints)																	\
 	}																									\
 };
 
-static inline uint packHalfs(float left, float right)
+static inline uint pack_halfs(float left, float right)
 {
 	return (f32tof16(left) << 16) | f32tof16(right);
 }
 
-static inline float unpackHalfsLeft(uint x)
+static inline float unpack_halfs_left(uint x)
 {
 	return f16tof32(x >> 16);
 }
 
-static inline float unpackHalfsRight(uint x)
+static inline float unpack_halfs_right(uint x)
 {
 	return f16tof32(x);
 }
 
-static inline void unpackHalfs(uint x, out float left, out float right)
+static inline void unpack_halfs(uint x, out float left, out float right)
 {
-	left = unpackHalfsLeft(x);
-	right = unpackHalfsRight(x);
+	left = unpack_halfs_left(x);
+	right = unpack_halfs_right(x);
 }
 
 static inline float cross2(float2 a, float2 b)
@@ -150,21 +150,21 @@ static inline float cross2(float2 a, float2 b)
 }
 
 //	https://www.lgdv.tf.fau.de/publications/spherical-fibonacci-mapping/
-static float3 sphericalFibonacci(float i, float n)
+static float3 spherical_fibonacci(float i, float n)
 {
 	const float PHI = sqrt(5.f) * 0.5f + 0.5f;
 #   define madfrac(a, b) ((a)*(b)-floor((a)*(b)))
 	float phi = 2.f * M_PI * madfrac(i, PHI - 1);
-	float cosTheta = 1.f - (2.f * i + 1.f) * (1.f / n);
-	float sinTheta = sqrt(saturate(1.f - cosTheta * cosTheta));
+	float cos_theta = 1.f - (2.f * i + 1.f) * (1.f / n);
+	float sin_theta = sqrt(saturate(1.f - cos_theta * cos_theta));
 
-	float sinPhi, cosPhi;
-	sincos(phi, sinPhi, cosPhi);
+	float sin_phi, cos_phi;
+	sincos(phi, sin_phi, cos_phi);
 
 	return float3(
-		cosPhi * sinTheta,
-		sinPhi * sinTheta,
-		cosTheta);
+		cos_phi * sin_theta,
+		sin_phi * sin_theta,
+		cos_theta);
 
 #   undef madfrac
 }

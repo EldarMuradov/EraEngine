@@ -4,75 +4,75 @@
 #include "lighting.hlsli"
 #include "depth_only_rs.hlsli"
 
-ConstantBuffer<camera_cb> camera		: register(b1);
-ConstantBuffer<lighting_cb> lighting	: register(b2);
+ConstantBuffer<CameraCB> camera		: register(b1);
+ConstantBuffer<LightingCB> lighting	: register(b2);
 
-TextureCube<float4> irradianceTexture			: register(t0, space2);
-TextureCube<float4> prefilteredRadianceTexture	: register(t1, space2);
+TextureCube<float4> irradiance_texture			: register(t0, space2);
+TextureCube<float4> prefiltered_radiance_texture	: register(t1, space2);
 
 Texture2D<float2> brdf							: register(t2, space2);
 
-Texture2D<float> shadowMap						: register(t3, space2);
+Texture2D<float> shadow_map						: register(t3, space2);
 
-Texture2D<float> aoTexture						: register(t4, space2);
-Texture2D<float> sssTexture						: register(t5, space2);
-Texture2D<float4> ssrTexture					: register(t6, space2);
+Texture2D<float> ao_texture						: register(t4, space2);
+Texture2D<float> sss_texture						: register(t5, space2);
+Texture2D<float4> ssr_texture					: register(t6, space2);
 
-SamplerState clampSampler						: register(s0);
-SamplerComparisonState shadowSampler			: register(s1);
+SamplerState clamp_sampler						: register(s0);
+SamplerComparisonState shadow_sampler			: register(s1);
 
 #ifdef NO_DEPTH_PREPASS
-ConstantBuffer<depth_only_object_id_cb> id		: register(b3);
+ConstantBuffer<DepthOnlyObjectIDCB> id		: register(b3);
 #endif
 
-struct ps_input
+struct PSInput
 {
 	float2 uv				: TEXCOORDS;
 	float3 normal			: NORMAL;
 	float3 tangent			: TANGENT;
-	float3 worldPosition	: POSITION;
+	float3 world_position	: POSITION;
 
 #ifdef NO_DEPTH_PREPASS
 	float3 ndc				: NDC;
-	float3 prevFrameNDC		: PREV_FRAME_NDC;
+	float3 prev_frame_ndc		: PREV_FRAME_NDC;
 #endif
 
-	float4 screenPosition	: SV_POSITION;
-	bool isFrontFace		: SV_IsFrontFace;
+	float4 screen_position	: SV_POSITION;
+	bool is_front_face		: SV_IsFrontFace;
 };
 
-struct ps_output
+struct PSOutput
 {
-	float4 hdrColor				: SV_Target0;
-	float4 worldNormalRoughness	: SV_Target1;
+	float4 hdr_color				: SV_Target0;
+	float4 world_normal_roughness	: SV_Target1;
 
 #ifdef NO_DEPTH_PREPASS
-	float2 screenVelocity		: SV_Target2;
-	uint objectID				: SV_Target3;
+	float2 screen_velocity		: SV_Target2;
+	uint object_id				: SV_Target3;
 #endif
 };
 
 [earlydepthstencil]
 [RootSignature(GRASS_RS)]
-ps_output main(ps_input IN)
+PSOutput main(PSInput IN)
 {
 	float3 N = IN.normal;
 	float3 T = IN.tangent;
-	if (!IN.isFrontFace)
+	if (!IN.is_front_face)
 	{
 		N = -N;
 	}
 	N = normalize(N);
 	N = normalize(N + T * IN.uv.x * 0.8);
 
-	float3 camToP = IN.worldPosition - camera.position.xyz;
-	float pixelDepth = dot(camera.forward.xyz, camToP);
+	float3 cam_to_p = IN.world_position - camera.position.xyz;
+	float pixel_depth = dot(camera.forward.xyz, cam_to_p);
 
 #if 1
-	N = lerp(N, float3(0.f, 1.f, 0.f), smoothstep(80.f, 100.f, pixelDepth) * 0.4f);
+	N = lerp(N, float3(0.f, 1.f, 0.f), smoothstep(80.f, 100.f, pixel_depth) * 0.4f);
 #endif
 
-	surface_info surface;
+	SurfaceInfo surface;
 
 	surface.albedo = float4(lerp(pow(float3(121, 208, 33) / 255, 2.2), pow(float3(193, 243, 118) / 255, 2.2), IN.uv.y), 1.f);
 	surface.N = N;
@@ -81,30 +81,30 @@ ps_output main(ps_input IN)
 	surface.metallic = 0.f;
 	surface.emission = 0.f;
 
-	surface.P = IN.worldPosition;
-	surface.V = -normalize(camToP);
+	surface.P = IN.world_position;
+	surface.V = -normalize(cam_to_p);
 
-	surface.inferRemainingProperties();
+	surface.infer_remaining_properties();
 
-	float2 screenUV = IN.screenPosition.xy * camera.invScreenDims;
+	float2 screen_uv = IN.screen_position.xy * camera.inv_screen_dims;
 
-	light_contribution totalLighting = { float3(0.f, 0.f, 0.f), float3(0.f, 0.f, 0.f) };
+	LightContribution total_lighting = { float3(0.f, 0.f, 0.f), float3(0.f, 0.f, 0.f) };
 
-	totalLighting.addSunLight(surface, lighting, screenUV, pixelDepth,
-		shadowMap, shadowSampler, lighting.shadowMapTexelSize, sssTexture, clampSampler, 0.5f);
+	total_lighting.add_sun_light(surface, lighting, screen_uv, pixel_depth,
+		shadow_map, shadow_sampler, lighting.shadow_map_texel_size, sss_texture, clamp_sampler, 0.5f);
 
-	totalLighting.addImageBasedAmbientLighting(surface, irradianceTexture, prefilteredRadianceTexture, brdf, ssrTexture, aoTexture,
-		clampSampler, screenUV, lighting.globalIlluminationIntensity);
+	total_lighting.add_image_based_ambient_lighting(surface, irradiance_texture, prefiltered_radiance_texture, brdf, ssr_texture, ao_texture,
+		clamp_sampler, screen_uv, lighting.global_illumination_intensity);
 
 	surface.roughness = 1.f;
 
-	ps_output OUT;
-	OUT.hdrColor = totalLighting.evaluate(surface.albedo);
-	OUT.worldNormalRoughness = float4(packNormal(surface.N), surface.roughness, 0.f);
+	PSOutput OUT;
+	OUT.hdr_color = total_lighting.evaluate(surface.albedo);
+	OUT.world_normal_roughness = float4(pack_normal(surface.N), surface.roughness, 0.f);
 
 #ifdef NO_DEPTH_PREPASS
-	OUT.screenVelocity = screenSpaceVelocity(IN.ndc, IN.prevFrameNDC, camera.jitter, camera.prevFrameJitter);
-	OUT.objectID = id.id;
+	OUT.screen_velocity = screen_space_velocity(IN.ndc, IN.prev_frame_ndc, camera.jitter, camera.prev_frame_jitter);
+	OUT.object_id = id.id;
 #endif
 
 	return OUT;

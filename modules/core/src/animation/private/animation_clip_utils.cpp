@@ -127,7 +127,7 @@ namespace era_engine::animation
 				TrackInfo& track_info = clip_info.tracks[i];
 				track_info.joint_id = skeleton->joints[i].name;
 				track_info.parent_index = skeleton->joints[i].parent_id == INVALID_JOINT ? acl::k_invalid_track_index : skeleton->joints[i].parent_id;
-				if (flags & mesh_creation_flags_yzx_to_xyz &&
+				if (flags & MESH_CREATION_FLAGS_YZX_TO_XYZ &&
 					track_info.parent_index == acl::k_invalid_track_index)
 				{
 					track_info.joint_transforms.emplace_back(current_pose.get_joint_transform(i).get_transform() * trs { vec3::zero, euler_to_quat(vec3(0.0f, -M_PI / 2.0f, 0.0f)), vec3(1.0f) });
@@ -217,7 +217,7 @@ namespace era_engine::animation
 
 			if (!fs::exists(fs::path(clip_path.string() + AssetExtension<AnimationAssetClip>::get_asset_type())))
 			{
-				if (flags & mesh_creation_flags_generate_root_motion)
+				if (flags & MESH_CREATION_FLAGS_GENERATE_ROOT_MOTION)
 				{
 					generate_root_motion_in_place(anim, 0);
 				}

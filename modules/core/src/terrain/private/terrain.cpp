@@ -28,294 +28,294 @@
 
 namespace era_engine
 {
-	static dx_pipeline terrainGenerationPipeline;
-	static dx_pipeline terrainPipeline;
-	static dx_pipeline terrainDepthOnlyPipeline;
-	static dx_pipeline terrainShadowPipeline;
-	static dx_pipeline terrainOutlinePipeline;
-	static ref<dx_index_buffer> terrainIndexBuffers[TERRAIN_MAX_LOD + 1];
+	static DXPipeline terrain_generation_pipeline;
+	static DXPipeline terrain_pipeline;
+	static DXPipeline terrain_depth_only_pipeline;
+	static DXPipeline terrain_shadow_pipeline;
+	static DXPipeline terrain_outline_pipeline;
+	static ref<DXIndexBuffer> terrain_index_buffers[TERRAIN_MAX_LOD + 1];
 
-	struct terrain_render_data_common
+	struct TerrainRenderDataCommon
 	{
-		vec3 minCorner;
+		vec3 min_corner;
 		int32 lod;
-		float chunkSize;
-		float amplitudeScale;
+		float chunk_size;
+		float amplitude_scale;
 
-		int32 lod_negX;
-		int32 lod_posX;
-		int32 lod_negZ;
-		int32 lod_posZ;
+		int32 lod_neg_x;
+		int32 lod_pos_x;
+		int32 lod_neg_z;
+		int32 lod_pos_z;
 
-		ref<dx_texture> heightmap;
+		ref<DXTexture> heightmap;
 
-		uint32 objectID;
+		uint32 object_id;
 	};
 
-	struct terrain_render_data
+	struct TerrainRenderData
 	{
-		terrain_render_data_common common;
+		TerrainRenderDataCommon common;
 
-		ref<dx_texture> normalmap;
+		ref<DXTexture> normalmap;
 
-		ref<pbr_material> groundMaterial;
-		ref<pbr_material> rockMaterial;
-		ref<pbr_material> mudMaterial;
+		ref<PBRMaterial> ground_material;
+		ref<PBRMaterial> rock_material;
+		ref<PBRMaterial> mud_material;
 
-		dx_dynamic_constant_buffer waterPlanesCBV;
+		DXDynamicConstantBuffer water_planes_cbv;
 	};
 
-	struct terrain_pipeline
-	{
-		PIPELINE_SETUP_DECL;
-		PIPELINE_RENDER_DECL(terrain_render_data);
-	};
-
-	struct terrain_depth_prepass_pipeline
+	struct TerrainPipeline
 	{
 		PIPELINE_SETUP_DECL;
-		DEPTH_ONLY_RENDER_DECL(terrain_render_data_common);
+		PIPELINE_RENDER_DECL(TerrainRenderData);
 	};
 
-	struct terrain_shadow_pipeline
+	struct TerrainDepthPrepassPipeline
 	{
 		PIPELINE_SETUP_DECL;
-		PIPELINE_RENDER_DECL(terrain_render_data_common);
+		DEPTH_ONLY_RENDER_DECL(TerrainRenderDataCommon);
 	};
 
-	struct terrain_outline_pipeline
+	struct TerrainShadowPipeline
 	{
 		PIPELINE_SETUP_DECL;
-		PIPELINE_RENDER_DECL(terrain_render_data_common);
+		PIPELINE_RENDER_DECL(TerrainRenderDataCommon);
 	};
 
-	void initializeTerrainPipelines()
+	struct TerrainOutlinePipeline
 	{
-		terrainGenerationPipeline = createReloadablePipeline("terrain_generation_cs");
+		PIPELINE_SETUP_DECL;
+		PIPELINE_RENDER_DECL(TerrainRenderDataCommon);
+	};
+
+	void initialize_terrain_pipelines()
+	{
+		terrain_generation_pipeline = create_reloadable_pipeline("terrain_generation_cs");
 
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
 				//.wireframe()
-				.renderTargets(opaqueLightPassFormats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depthStencilFormat)
-				.depthSettings(true, false, D3D12_COMPARISON_FUNC_EQUAL);
+				.render_targets(opaque_light_pass_formats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depth_stencil_format)
+				.depth_settings(true, false, D3D12_COMPARISON_FUNC_EQUAL);
 
-			terrainPipeline = createReloadablePipeline(desc, { "terrain_vs", "terrain_ps" });
+			terrain_pipeline = create_reloadable_pipeline(desc, { "terrain_vs", "terrain_ps" });
 		}
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.renderTargets(depthOnlyFormat, arraysize(depthOnlyFormat), depthStencilFormat);
+				.render_targets(depth_only_format, arraysize(depth_only_format), depth_stencil_format);
 
-			terrainDepthOnlyPipeline = createReloadablePipeline(desc, { "terrain_depth_only_vs", "depth_only_ps" }, rs_in_vertex_shader);
+			terrain_depth_only_pipeline = create_reloadable_pipeline(desc, { "terrain_depth_only_vs", "depth_only_ps" }, RS_IN_VERTEX_SHADER);
 		}
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.renderTargets(0, 0, shadowDepthFormat);
+				.render_targets(0, 0, shadow_depth_format);
 
-			terrainShadowPipeline = createReloadablePipeline(desc, { "terrain_shadow_vs" }, rs_in_vertex_shader);
+			terrain_shadow_pipeline = create_reloadable_pipeline(desc, { "terrain_shadow_vs" }, RS_IN_VERTEX_SHADER);
 			//pointLightShadowPipeline = createReloadablePipeline(desc, { "shadow_point_light_vs", "shadow_point_light_ps" }, rs_in_vertex_shader);
 		}
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.renderTargets(0, 0, depthStencilFormat)
-				.stencilSettings(D3D12_COMPARISON_FUNC_ALWAYS,
+				.render_targets(0, 0, depth_stencil_format)
+				.stencil_settings(D3D12_COMPARISON_FUNC_ALWAYS,
 					D3D12_STENCIL_OP_REPLACE,
 					D3D12_STENCIL_OP_REPLACE,
 					D3D12_STENCIL_OP_KEEP,
 					D3D12_DEFAULT_STENCIL_READ_MASK,
-					stencil_flag_selected_object) // Mark selected object.
-				.depthSettings(false, false);
+					STENCIL_FLAG_SELECTED_OBJECT) // Mark selected object.
+				.depth_settings(false, false);
 
-			terrainOutlinePipeline = createReloadablePipeline(desc, { "terrain_outline_vs" }, rs_in_vertex_shader);
+			terrain_outline_pipeline = create_reloadable_pipeline(desc, { "terrain_outline_vs" }, RS_IN_VERTEX_SHADER);
 		}
 
-		uint32 numSegmentsPerDim = TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1;
-		uint32 numTrisLod0 = numSegmentsPerDim * numSegmentsPerDim * 2;
+		uint32 num_segments_per_dim = TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1;
+		uint32 num_tris_lod0 = num_segments_per_dim * num_segments_per_dim * 2;
 
-		indexed_triangle16* tris = new indexed_triangle16[numTrisLod0];
+		IndexedTriangle16* tris = new IndexedTriangle16[num_tris_lod0];
 
 		for (uint32 lod = 0; lod < TERRAIN_MAX_LOD + 1; ++lod)
 		{
-			uint32 numSegmentsPerDim = (TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1) >> lod;
-			uint32 stride = numSegmentsPerDim + 1;
-			uint32 numTris = numSegmentsPerDim * numSegmentsPerDim * 2;
+			uint32 num_segments_per_dim = (TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1) >> lod;
+			uint32 stride = num_segments_per_dim + 1;
+			uint32 num_tris = num_segments_per_dim * num_segments_per_dim * 2;
 
 			uint32 i = 0;
-			for (uint32 z = 0; z < numSegmentsPerDim; ++z)
+			for (uint32 z = 0; z < num_segments_per_dim; ++z)
 			{
-				for (uint32 x = 0; x < numSegmentsPerDim; ++x)
+				for (uint32 x = 0; x < num_segments_per_dim; ++x)
 				{
 					tris[i++] = { (uint16)(stride * z + x),		(uint16)(stride * (z + 1) + x), (uint16)(stride * z + x + 1) };
 					tris[i++] = { (uint16)(stride * z + x + 1), (uint16)(stride * (z + 1) + x), (uint16)(stride * (z + 1) + x + 1) };
 				}
 			}
 
-			terrainIndexBuffers[lod] = createIndexBuffer(sizeof(uint16), numTris * 3, tris);
+			terrain_index_buffers[lod] = create_index_buffer(sizeof(uint16), num_tris * 3, tris);
 		}
 
 		delete[] tris;
 	}
 
-	PIPELINE_SETUP_IMPL(terrain_pipeline)
+	PIPELINE_SETUP_IMPL(TerrainPipeline)
 	{
-		cl->setPipelineState(*terrainPipeline.pipeline);
-		cl->setGraphicsRootSignature(*terrainPipeline.rootSignature);
+		cl->set_pipeline_state(*terrain_pipeline.pipeline);
+		cl->set_graphics_root_signature(*terrain_pipeline.root_signature);
 
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		cl->setGraphicsDynamicConstantBuffer(TERRAIN_RS_CAMERA, common.cameraCBV);
-		cl->setGraphicsDynamicConstantBuffer(TERRAIN_RS_LIGHTING, common.lightingCBV);
+		cl->set_graphics_dynamic_constant_buffer(TERRAIN_RS_CAMERA, common.camera_cbv);
+		cl->set_graphics_dynamic_constant_buffer(TERRAIN_RS_LIGHTING, common.lighting_cbv);
 
-		dx_cpu_descriptor_handle nullTexture = render_resources::nullTextureSRV;
+		DXCPUDescriptorHandle null_texture = RenderResources::null_texture_srv;
 
-		cl->setDescriptorHeapSRV(TERRAIN_RS_FRAME_CONSTANTS, 0, common.irradiance);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_FRAME_CONSTANTS, 1, common.prefilteredRadiance);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_FRAME_CONSTANTS, 2, render_resources::brdfTex);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_FRAME_CONSTANTS, 3, common.shadowMap);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_FRAME_CONSTANTS, 4, common.aoTexture ? common.aoTexture : render_resources::whiteTexture);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_FRAME_CONSTANTS, 5, common.sssTexture ? common.sssTexture : render_resources::whiteTexture);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_FRAME_CONSTANTS, 6, common.ssrTexture ? common.ssrTexture->defaultSRV : nullTexture);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_FRAME_CONSTANTS, 0, common.irradiance);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_FRAME_CONSTANTS, 1, common.prefiltered_radiance);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_FRAME_CONSTANTS, 2, RenderResources::brdf_tex);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_FRAME_CONSTANTS, 3, common.shadow_map);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_FRAME_CONSTANTS, 4, common.ao_texture ? common.ao_texture : RenderResources::white_texture);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_FRAME_CONSTANTS, 5, common.sss_texture ? common.sss_texture : RenderResources::white_texture);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_FRAME_CONSTANTS, 6, common.ssr_texture ? common.ssr_texture->default_srv : null_texture);
 	}
 
-	static terrain_cb getTerrainCB(const terrain_render_data_common& common)
+	static TerrainCB get_terrain_cb(const TerrainRenderDataCommon& common)
 	{
-		uint32 lod_negX = max(0, common.lod_negX - common.lod);
-		uint32 lod_posX = max(0, common.lod_posX - common.lod);
-		uint32 lod_negZ = max(0, common.lod_negZ - common.lod);
-		uint32 lod_posZ = max(0, common.lod_posZ - common.lod);
+		uint32 lod_neg_x = max(0, common.lod_neg_x - common.lod);
+		uint32 lod_pos_x = max(0, common.lod_pos_x - common.lod);
+		uint32 lod_neg_z = max(0, common.lod_neg_z - common.lod);
+		uint32 lod_pos_z = max(0, common.lod_pos_z - common.lod);
 
-		uint32 scaleDownByLODs = SCALE_DOWN_BY_LODS(lod_negX, lod_posX, lod_negZ, lod_posZ);
+		uint32 scale_down_by_lods = SCALE_DOWN_BY_LODS(lod_neg_x, lod_pos_x, lod_neg_z, lod_pos_z);
 
-		return terrain_cb{ common.minCorner, (uint32)common.lod, common.chunkSize, common.amplitudeScale, scaleDownByLODs };
+		return TerrainCB{ common.min_corner, (uint32)common.lod, common.chunk_size, common.amplitude_scale, scale_down_by_lods };
 	}
 
-	PIPELINE_RENDER_IMPL(terrain_pipeline, terrain_render_data)
+	PIPELINE_RENDER_IMPL(TerrainPipeline, TerrainRenderData)
 	{
 		PROFILE_ALL(cl, "Terrain");
 
-		uint32 numSegmentsPerDim = (TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1) >> data.common.lod;
-		uint32 numTris = numSegmentsPerDim * numSegmentsPerDim * 2;
+		uint32 num_segments_per_dim = (TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1) >> data.common.lod;
+		uint32 num_tris = num_segments_per_dim * num_segments_per_dim * 2;
 
-		auto cb = getTerrainCB(data.common);
+		auto cb = get_terrain_cb(data.common);
 
-		cl->setGraphics32BitConstants(TERRAIN_RS_TRANSFORM, viewProj);
-		cl->setGraphics32BitConstants(TERRAIN_RS_CB, cb);
-		cl->setGraphicsDynamicConstantBuffer(TERRAIN_RS_WATER, data.waterPlanesCBV);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_HEIGHTMAP, 0, data.common.heightmap);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_NORMALMAP, 0, data.normalmap);
+		cl->set_graphics_32bit_constants(TERRAIN_RS_TRANSFORM, view_proj);
+		cl->set_graphics_32bit_constants(TERRAIN_RS_CB, cb);
+		cl->set_graphics_dynamic_constant_buffer(TERRAIN_RS_WATER, data.water_planes_cbv);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_HEIGHTMAP, 0, data.common.heightmap);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_NORMALMAP, 0, data.normalmap);
 
-		cl->setDescriptorHeapSRV(TERRAIN_RS_TEXTURES, 0, data.groundMaterial->albedo ? data.groundMaterial->albedo : render_resources::blackTexture);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_TEXTURES, 1, data.groundMaterial->normal ? data.groundMaterial->normal : render_resources::defaultNormalMap);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_TEXTURES, 2, data.groundMaterial->roughness ? data.groundMaterial->roughness : render_resources::whiteTexture);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_TEXTURES, 0, data.ground_material->albedo ? data.ground_material->albedo : RenderResources::black_texture);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_TEXTURES, 1, data.ground_material->normal ? data.ground_material->normal : RenderResources::default_normal_map);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_TEXTURES, 2, data.ground_material->roughness ? data.ground_material->roughness : RenderResources::white_texture);
 
-		cl->setDescriptorHeapSRV(TERRAIN_RS_TEXTURES, 3, data.rockMaterial->albedo ? data.rockMaterial->albedo : render_resources::blackTexture);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_TEXTURES, 4, data.rockMaterial->normal ? data.rockMaterial->normal : render_resources::defaultNormalMap);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_TEXTURES, 5, data.rockMaterial->roughness ? data.rockMaterial->roughness : render_resources::whiteTexture);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_TEXTURES, 3, data.rock_material->albedo ? data.rock_material->albedo : RenderResources::black_texture);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_TEXTURES, 4, data.rock_material->normal ? data.rock_material->normal : RenderResources::default_normal_map);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_TEXTURES, 5, data.rock_material->roughness ? data.rock_material->roughness : RenderResources::white_texture);
 
-		cl->setDescriptorHeapSRV(TERRAIN_RS_TEXTURES, 6, data.mudMaterial->albedo ? data.mudMaterial->albedo : render_resources::blackTexture);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_TEXTURES, 7, data.mudMaterial->normal ? data.mudMaterial->normal : render_resources::defaultNormalMap);
-		cl->setDescriptorHeapSRV(TERRAIN_RS_TEXTURES, 8, data.mudMaterial->roughness ? data.mudMaterial->roughness : render_resources::whiteTexture);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_TEXTURES, 6, data.mud_material->albedo ? data.mud_material->albedo : RenderResources::black_texture);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_TEXTURES, 7, data.mud_material->normal ? data.mud_material->normal : RenderResources::default_normal_map);
+		cl->set_descriptor_heap_srv(TERRAIN_RS_TEXTURES, 8, data.mud_material->roughness ? data.mud_material->roughness : RenderResources::white_texture);
 
-		cl->setIndexBuffer(terrainIndexBuffers[data.common.lod]);
-		cl->drawIndexed(numTris * 3, 1, 0, 0, 0);
+		cl->set_index_buffer(terrain_index_buffers[data.common.lod]);
+		cl->draw_indexed(num_tris * 3, 1, 0, 0, 0);
 	}
 
-	PIPELINE_SETUP_IMPL(terrain_depth_prepass_pipeline)
+	PIPELINE_SETUP_IMPL(TerrainDepthPrepassPipeline)
 	{
-		cl->setPipelineState(*terrainDepthOnlyPipeline.pipeline);
-		cl->setGraphicsRootSignature(*terrainDepthOnlyPipeline.rootSignature);
+		cl->set_pipeline_state(*terrain_depth_only_pipeline.pipeline);
+		cl->set_graphics_root_signature(*terrain_depth_only_pipeline.root_signature);
 
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		cl->setGraphicsDynamicConstantBuffer(TERRAIN_DEPTH_ONLY_RS_CAMERA, common.cameraCBV);
+		cl->set_graphics_dynamic_constant_buffer(TERRAIN_DEPTH_ONLY_RS_CAMERA, common.camera_cbv);
 	}
 
-	DEPTH_ONLY_RENDER_IMPL(terrain_depth_prepass_pipeline, terrain_render_data_common)
+	DEPTH_ONLY_RENDER_IMPL(TerrainDepthPrepassPipeline, TerrainRenderDataCommon)
 	{
 		PROFILE_ALL(cl, "Terrain depth prepass");
 
-		uint32 numSegmentsPerDim = (TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1) >> data.lod;
-		uint32 numTris = numSegmentsPerDim * numSegmentsPerDim * 2;
+		uint32 num_segments_per_dim = (TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1) >> data.lod;
+		uint32 num_tris = num_segments_per_dim * num_segments_per_dim * 2;
 
-		cl->setGraphics32BitConstants(TERRAIN_DEPTH_ONLY_RS_OBJECT_ID, data.objectID);
-		cl->setGraphics32BitConstants(TERRAIN_DEPTH_ONLY_RS_TRANSFORM, depth_only_transform_cb{ viewProj, prevFrameViewProj });
+		cl->set_graphics_32bit_constants(TERRAIN_DEPTH_ONLY_RS_OBJECT_ID, data.object_id);
+		cl->set_graphics_32bit_constants(TERRAIN_DEPTH_ONLY_RS_TRANSFORM, DepthOnlyTransformCB{ view_proj, prev_frame_view_proj });
 
-		auto cb = getTerrainCB(data);
-		cl->setGraphics32BitConstants(TERRAIN_DEPTH_ONLY_RS_CB, cb);
-		cl->setDescriptorHeapSRV(TERRAIN_DEPTH_ONLY_RS_HEIGHTMAP, 0, data.heightmap);
+		auto cb = get_terrain_cb(data);
+		cl->set_graphics_32bit_constants(TERRAIN_DEPTH_ONLY_RS_CB, cb);
+		cl->set_descriptor_heap_srv(TERRAIN_DEPTH_ONLY_RS_HEIGHTMAP, 0, data.heightmap);
 
-		cl->setIndexBuffer(terrainIndexBuffers[data.lod]);
-		cl->drawIndexed(numTris * 3, 1, 0, 0, 0);
+		cl->set_index_buffer(terrain_index_buffers[data.lod]);
+		cl->draw_indexed(num_tris * 3, 1, 0, 0, 0);
 	}
 
-	PIPELINE_SETUP_IMPL(terrain_shadow_pipeline)
+	PIPELINE_SETUP_IMPL(TerrainShadowPipeline)
 	{
-		cl->setPipelineState(*terrainShadowPipeline.pipeline);
-		cl->setGraphicsRootSignature(*terrainShadowPipeline.rootSignature);
+		cl->set_pipeline_state(*terrain_shadow_pipeline.pipeline);
+		cl->set_graphics_root_signature(*terrain_shadow_pipeline.root_signature);
 
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	PIPELINE_RENDER_IMPL(terrain_shadow_pipeline, terrain_render_data_common)
+	PIPELINE_RENDER_IMPL(TerrainShadowPipeline, TerrainRenderDataCommon)
 	{
 		PROFILE_ALL(cl, "Terrain shadow");
 
-		uint32 numSegmentsPerDim = (TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1) >> data.lod;
-		uint32 numTris = numSegmentsPerDim * numSegmentsPerDim * 2;
+		uint32 num_segments_per_dim = (TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1) >> data.lod;
+		uint32 num_tris = num_segments_per_dim * num_segments_per_dim * 2;
 
-		cl->setGraphics32BitConstants(TERRAIN_SHADOW_RS_TRANSFORM, viewProj);
-		auto cb = getTerrainCB(data);
-		cl->setGraphics32BitConstants(TERRAIN_SHADOW_RS_CB, cb);
-		cl->setDescriptorHeapSRV(TERRAIN_SHADOW_RS_HEIGHTMAP, 0, data.heightmap);
+		cl->set_graphics_32bit_constants(TERRAIN_SHADOW_RS_TRANSFORM, view_proj);
+		auto cb = get_terrain_cb(data);
+		cl->set_graphics_32bit_constants(TERRAIN_SHADOW_RS_CB, cb);
+		cl->set_descriptor_heap_srv(TERRAIN_SHADOW_RS_HEIGHTMAP, 0, data.heightmap);
 
-		cl->setIndexBuffer(terrainIndexBuffers[data.lod]);
-		cl->drawIndexed(numTris * 3, 1, 0, 0, 0);
+		cl->set_index_buffer(terrain_index_buffers[data.lod]);
+		cl->draw_indexed(num_tris * 3, 1, 0, 0, 0);
 	}
 
-	PIPELINE_SETUP_IMPL(terrain_outline_pipeline)
+	PIPELINE_SETUP_IMPL(TerrainOutlinePipeline)
 	{
-		cl->setPipelineState(*terrainOutlinePipeline.pipeline);
-		cl->setGraphicsRootSignature(*terrainOutlinePipeline.rootSignature);
+		cl->set_pipeline_state(*terrain_outline_pipeline.pipeline);
+		cl->set_graphics_root_signature(*terrain_outline_pipeline.root_signature);
 
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	PIPELINE_RENDER_IMPL(terrain_outline_pipeline, terrain_render_data_common)
+	PIPELINE_RENDER_IMPL(TerrainOutlinePipeline, TerrainRenderDataCommon)
 	{
 		PROFILE_ALL(cl, "Terrain outline");
 
-		uint32 numSegmentsPerDim = (TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1) >> data.lod;
-		uint32 numTris = numSegmentsPerDim * numSegmentsPerDim * 2;
+		uint32 num_segments_per_dim = (TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1) >> data.lod;
+		uint32 num_tris = num_segments_per_dim * num_segments_per_dim * 2;
 
-		cl->setGraphics32BitConstants(TERRAIN_OUTLINE_RS_TRANSFORM, terrain_transform_cb{ viewProj });
+		cl->set_graphics_32bit_constants(TERRAIN_OUTLINE_RS_TRANSFORM, TerrainTransformCB{ view_proj });
 
-		auto cb = getTerrainCB(data);
-		cl->setGraphics32BitConstants(TERRAIN_OUTLINE_RS_CB, cb);
-		cl->setDescriptorHeapSRV(TERRAIN_OUTLINE_RS_HEIGHTMAP, 0, data.heightmap);
+		auto cb = get_terrain_cb(data);
+		cl->set_graphics_32bit_constants(TERRAIN_OUTLINE_RS_CB, cb);
+		cl->set_descriptor_heap_srv(TERRAIN_OUTLINE_RS_HEIGHTMAP, 0, data.heightmap);
 
-		cl->setIndexBuffer(terrainIndexBuffers[data.lod]);
-		cl->drawIndexed(numTris * 3, 1, 0, 0, 0);
+		cl->set_index_buffer(terrain_index_buffers[data.lod]);
+		cl->draw_indexed(num_tris * 3, 1, 0, 0, 0);
 	}
 
-	struct height_generator
+	struct HeightGenerator
 	{
-		fbm_noise_2D noiseFunc = value_noise;
+		FBMNoise2D noise_func = value_noise;
 
 		virtual float height(vec2 position) const = 0;
 		virtual vec2 grad(vec2 position) const = 0;
 	};
 
-	struct height_generator_warped : height_generator
+	struct HeightGeneratorWarped : HeightGenerator
 	{
 		TerrainGenerationSettings settings;
 
 		virtual float height(vec2 position) const override
 		{
-			vec2 fbmPosition = position * settings.scale;
+			vec2 fbm_position = position * settings.scale;
 
-			vec3 domainWarpValue = fbm(noiseFunc, fbmPosition + settings.domainWarpNoiseOffset, settings.domainWarpOctaves);
+			vec3 domain_warp_value = fbm(noise_func, fbm_position + settings.domain_warp_noise_offset, settings.domain_warp_octaves);
 
-			vec2 warpedFbmPosition = fbmPosition + vec2(domainWarpValue.x * settings.domainWarpStrength) + settings.noiseOffset + vec2(1000.f);
-			vec3 value = fbm(noiseFunc, warpedFbmPosition); // We are using a lower number of noise octaves here, since the heightmap is lowres anyway.
+			vec2 warped_fbm_position = fbm_position + vec2(domain_warp_value.x * settings.domain_warp_strength) + settings.noise_offset + vec2(1000.f);
+			vec3 value = fbm(noise_func, warped_fbm_position); // We are using a lower number of noise octaves here, since the heightmap is lowres anyway.
 			float height = value.x;
 
 			height = height * 0.5f + 0.5f;
@@ -325,49 +325,49 @@ namespace era_engine
 
 		virtual vec2 grad(vec2 position) const override
 		{
-			vec2 fbmPosition = position * settings.scale;
-			float J_fbmPosition_position = settings.scale;
+			vec2 fbm_position = position * settings.scale;
+			float j_fbm_position_position = settings.scale;
 
-			vec3 domainWarpValue = fbm(noiseFunc, fbmPosition + settings.domainWarpNoiseOffset, settings.domainWarpOctaves);
-			float domainWarpHeight = domainWarpValue.x;
-			vec2 J_domainWarpHeight_fbmPosition = domainWarpValue.yz;
+			vec3 domain_warp_value = fbm(noise_func, fbm_position + settings.domain_warp_noise_offset, settings.domain_warp_octaves);
+			float domain_warp_height = domain_warp_value.x;
+			vec2 j_domain_warp_height_fbm_position = domain_warp_value.yz;
 
-			vec2 warpedFbmPosition = fbmPosition + vec2(domainWarpHeight * settings.domainWarpStrength) + settings.noiseOffset + vec2(1000.f);
-			float J_warpedFbmPosition_fbmPosition = 1.f;
-			float J_warpedFbmPosition_domainWarpHeight = settings.domainWarpStrength;
+			vec2 warped_fbm_position = fbm_position + vec2(domain_warp_height * settings.domain_warp_strength) + settings.noise_offset + vec2(1000.f);
+			float j_warped_fbm_position_fbm_position = 1.f;
+			float j_warped_fbm_position_domain_warp_height = settings.domain_warp_strength;
 
-			vec3 value = fbm(noiseFunc, warpedFbmPosition, settings.noiseOctaves);
+			vec3 value = fbm(noise_func, warped_fbm_position, settings.noise_octaves);
 			float height = value.x;
-			vec2 J_height_warpedFbmPosition = value.yz;
+			vec2 j_height_warped_fbm_position = value.yz;
 
-			float scaledHeight = height * 0.5f + 0.5f;
-			float J_scaledHeight_height = 0.5f;
+			float scaled_height = height * 0.5f + 0.5f;
+			float j_scaled_height_height = 0.5f;
 
-			vec2 grad = J_scaledHeight_height * J_height_warpedFbmPosition *
-				(J_warpedFbmPosition_fbmPosition + J_warpedFbmPosition_domainWarpHeight * J_domainWarpHeight_fbmPosition) * J_fbmPosition_position;
+			vec2 grad = j_scaled_height_height * j_height_warped_fbm_position *
+				(j_warped_fbm_position_fbm_position + j_warped_fbm_position_domain_warp_height * j_domain_warp_height_fbm_position) * j_fbm_position_position;
 
 			return grad;
 		}
 	};
 
-	struct height_generator_layered : height_generator
+	struct HeightGeneratorLayered : HeightGenerator
 	{
-		float largeScaleWeight = 0.2f;
-		float smallScaleWeight = 0.8f;
+		float large_scale_weight = 0.2f;
+		float small_scale_weight = 0.8f;
 
 		virtual float height(vec2 position) const override
 		{
-			vec2 fbmPosition = position * 0.01f;
+			vec2 fbm_position = position * 0.01f;
 
-			vec2 largeScaleFbmPosition = position * 0.0001f;
+			vec2 large_scale_fbm_position = position * 0.0001f;
 
-			vec3 value = fbm(noiseFunc, fbmPosition);
+			vec3 value = fbm(noise_func, fbm_position);
 			float height = value.x;
 
-			vec3 largeScaleValue = fbm(noiseFunc, largeScaleFbmPosition, 3);
-			float largeScaleHeight = largeScaleValue.x;
+			vec3 large_scale_value = fbm(noise_func, large_scale_fbm_position, 3);
+			float large_scale_height = large_scale_value.x;
 
-			height = largeScaleHeight * largeScaleWeight + height * smallScaleWeight;
+			height = large_scale_height * large_scale_weight + height * small_scale_weight;
 
 			height = abs(height);
 
@@ -379,71 +379,71 @@ namespace era_engine
 
 		virtual vec2 grad(vec2 position) const override
 		{
-			vec2 fbmPosition = position * 0.01f;
-			float J_fbmPosition_position = 0.01f;
+			vec2 fbm_position = position * 0.01f;
+			float j_fbm_position_position = 0.01f;
 
-			vec2 largeScaleFbmPosition = position * 0.0001f;
-			float J_largeScaleFbmPosition_position = 0.0001f;
+			vec2 large_scale_fbm_position = position * 0.0001f;
+			float j_large_scale_fbm_position_position = 0.0001f;
 
-			vec3 value = fbm(noiseFunc, fbmPosition);
+			vec3 value = fbm(noise_func, fbm_position);
 			float height = value.x;
-			vec2 J_height_fbmPosition = value.yz;
+			vec2 j_height_fbm_position = value.yz;
 
-			vec3 largeScaleValue = fbm(noiseFunc, largeScaleFbmPosition, 3);
-			float largeScaleHeight = largeScaleValue.x;
-			vec2 J_largeScaleHeight_largeScaleFbmPosition = largeScaleValue.yz;
+			vec3 large_scale_value = fbm(noise_func, large_scale_fbm_position, 3);
+			float large_scale_height = large_scale_value.x;
+			vec2 j_large_scale_height_large_scale_fbm_position = large_scale_value.yz;
 
-			float combinedHeight = largeScaleHeight * largeScaleWeight + height * smallScaleWeight;
-			vec2 J_combinedHeight_height = smallScaleWeight;
-			vec2 J_combinedHeight_largeScaleHeight = largeScaleWeight;
+			float combined_height = large_scale_height * large_scale_weight + height * small_scale_weight;
+			vec2 j_combined_height_height = small_scale_weight;
+			vec2 j_combined_height_large_scale_height = large_scale_weight;
 
-			float absHeight = (combinedHeight < 0.f) ? -combinedHeight : combinedHeight;
-			float J_absHeight_combinedHeight = (combinedHeight < 0.f) ? -1.f : 1.f;
+			float abs_height = (combined_height < 0.f) ? -combined_height : combined_height;
+			float j_abs_height_combined_height = (combined_height < 0.f) ? -1.f : 1.f;
 
-			float oneMinusHeight = 1.f - absHeight;
-			float J_oneMinusHeight_absHeight = -1.f;
+			float one_minus_height = 1.f - abs_height;
+			float j_one_minus_height_abs_height = -1.f;
 
-			float powHeight = oneMinusHeight * oneMinusHeight;
-			float J_powHeight_oneMinusHeight = 2.f * oneMinusHeight;
+			float pow_height = one_minus_height * one_minus_height;
+			float j_pow_height_one_minus_height = 2.f * one_minus_height;
 
-			vec2 J_combinedHeight_position =
-				J_combinedHeight_height * J_height_fbmPosition * J_fbmPosition_position
-				+ J_combinedHeight_largeScaleHeight * J_largeScaleHeight_largeScaleFbmPosition * J_largeScaleFbmPosition_position;
+			vec2 j_combined_height_position =
+				j_combined_height_height * j_height_fbm_position * j_fbm_position_position
+				+ j_combined_height_large_scale_height * j_large_scale_height_large_scale_fbm_position * j_large_scale_fbm_position_position;
 
 			vec2 grad =
-				J_powHeight_oneMinusHeight
-				* J_oneMinusHeight_absHeight
-				* J_absHeight_combinedHeight
-				* J_combinedHeight_position;
+				j_pow_height_one_minus_height
+				* j_one_minus_height_abs_height
+				* j_abs_height_combined_height
+				* j_combined_height_position;
 
 			return grad;
 		}
 	};
 
-	const uint32 normalMapDimension = 2048;
+	const uint32 normal_map_dimension = 2048;
 
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
 		registration::class_<TerrainComponent>("TerrainComponent")
 			.constructor<>()
-			.property("genSettings", &TerrainComponent::genSettings);
+			.property("genSettings", &TerrainComponent::gen_settings);
 	}
 
-	TerrainComponent::TerrainComponent(ref<Entity::EcsData> _data, uint32 _chunks_per_dim, float _chunk_size, float _amplitude_scale, ref<pbr_material> ground_material, ref<pbr_material> rock_material, ref<pbr_material> _mud_material, const TerrainGenerationSettings& _gen_settings)
+	TerrainComponent::TerrainComponent(ref<Entity::EcsData> _data, uint32 _chunks_per_dim, float _chunk_size, float _amplitude_scale, ref<PBRMaterial> _ground_material, ref<PBRMaterial> _rock_material, ref<PBRMaterial> _mud_material, const TerrainGenerationSettings& _gen_settings)
 		: Component(_data),
-		chunksPerDim(_chunks_per_dim),
-		chunkSize(_chunk_size),
-		genSettings(_gen_settings)
+		chunks_per_dim(_chunks_per_dim),
+		chunk_size(_chunk_size),
+		gen_settings(_gen_settings)
 	{
-		oldGenSettings.scale = -FLT_MAX; // Set to garbage so that it is updated in the first frame.
+		old_gen_settings.scale = -FLT_MAX; // Set to garbage so that it is updated in the first frame.
 
-		this->amplitudeScale = _amplitude_scale;
+		this->amplitude_scale = _amplitude_scale;
 		this->chunks.resize(_chunks_per_dim * _chunks_per_dim);
 
-		this->groundMaterial = ground_material;
-		this->rockMaterial = rock_material;
-		this->mudMaterial = _mud_material;
+		this->ground_material = _ground_material;
+		this->rock_material = _rock_material;
+		this->mud_material = _mud_material;
 	}
 
 	TerrainComponent::~TerrainComponent()
@@ -452,190 +452,190 @@ namespace era_engine
 
 	void TerrainComponent::update()
 	{
-		if (memcmp(&genSettings, &oldGenSettings, sizeof(TerrainGenerationSettings)) != 0)
+		if (memcmp(&gen_settings, &old_gen_settings, sizeof(TerrainGenerationSettings)) != 0)
 		{
-			generate_chunks_GPU();
+			generate_chunks_gpu();
 
-			oldGenSettings = genSettings;
+			old_gen_settings = gen_settings;
 		}
 	}
 
-	void TerrainComponent::render(const render_camera& camera, 
-		opaque_render_pass* renderPass, 
-		sun_shadow_render_pass* shadowPass, 
-		ldr_render_pass* ldrPass, 
-		vec3 positionOffset, 
+	void TerrainComponent::render(const RenderCamera& camera, 
+		OpaqueRenderPass* render_pass, 
+		SunShadowRenderPass* shadow_pass, 
+		LDRRenderPass* ldr_pass, 
+		vec3 position_offset, 
 		bool selected, 
-		TransformComponent* waterPlaneTransforms,
-		uint32 numWaters)
+		TransformComponent* water_plane_transforms,
+		uint32 num_waters)
 	{
-		camera_frustum_planes frustum = camera.getWorldSpaceFrustumPlanes();
-		camera_frustum_planes sunFrustum = {};
-		if (shadowPass)
+		CameraFrustumPlanes frustum = camera.get_world_space_frustum_planes();
+		CameraFrustumPlanes sun_frustum = {};
+		if (shadow_pass)
 		{
-			sunFrustum = getWorldSpaceFrustumPlanes(shadowPass->cascades[shadowPass->numCascades - 1].viewProj);
+			sun_frustum = get_world_space_frustum_planes(shadow_pass->cascades[shadow_pass->num_cascades - 1].view_proj);
 		}
 
-		positionOffset = get_min_corner(positionOffset);
+		position_offset = get_min_corner(position_offset);
 
-		int32 lodStride = (chunksPerDim + 2);
-		uint32 paddedNumChunks = (chunksPerDim + 2) * (chunksPerDim + 2);
-		int32* lodBuffer = (int32*)alloca(sizeof(int32) * paddedNumChunks);
-		int32* lods = lodBuffer + lodStride + 1;
+		int32 lod_stride = (chunks_per_dim + 2);
+		uint32 padded_num_chunks = (chunks_per_dim + 2) * (chunks_per_dim + 2);
+		int32* lod_buffer = (int32*)alloca(sizeof(int32) * padded_num_chunks);
+		int32* lods = lod_buffer + lod_stride + 1;
 
-		vec3 chunkCenterOffset = vec3(chunkSize, 0.f, chunkSize) * 0.5f;
+		vec3 chunk_center_offset = vec3(chunk_size, 0.f, chunk_size) * 0.5f;
 
-		for (int32 z = -1; z < (int32)chunksPerDim + 1; ++z)
+		for (int32 z = -1; z < (int32)chunks_per_dim + 1; ++z)
 		{
-			for (int32 x = -1; x < (int32)chunksPerDim + 1; ++x)
+			for (int32 x = -1; x < (int32)chunks_per_dim + 1; ++x)
 			{
-				vec3 localMinCorner(x * chunkSize, 0.f, z * chunkSize);
-				vec3 minCorner = localMinCorner + positionOffset;
-				vec3 chunkCenter = minCorner + chunkCenterOffset;
+				vec3 local_min_corner(x * chunk_size, 0.f, z * chunk_size);
+				vec3 min_corner = local_min_corner + position_offset;
+				vec3 chunk_center = min_corner + chunk_center_offset;
 
-				float distance = length(chunkCenter - camera.position);
+				float distance = length(chunk_center - camera.position);
 				int32 lod = (int32)(saturate(distance / 500.f) * TERRAIN_MAX_LOD);
-				lods[z * lodStride + x] = lod;
+				lods[z * lod_stride + x] = lod;
 			}
 		}
 
-		terrain_water_plane_cb waterPlanes;
-		waterPlanes.numWaterPlanes = min(numWaters, 4u);
-		for (uint32 i = 0; i < waterPlanes.numWaterPlanes; ++i)
+		TerrainWaterPlaneCB water_planes;
+		water_planes.num_water_planes = min(num_waters, 4u);
+		for (uint32 i = 0; i < water_planes.num_water_planes; ++i)
 		{
-			const trs& world_transform = waterPlaneTransforms[i].get_world_transform();
+			const trs& world_transform = water_plane_transforms[i].get_world_transform();
 			const vec3& pos = world_transform.position;
 			const vec3& scale = world_transform.scale;
-			waterPlanes.waterMinMaxXZ[i] = vec4(pos.x, pos.z, pos.x, pos.z) + vec4(-scale.x, -scale.z, scale.x, scale.z);
-			waterPlanes.waterHeights.data[i] = pos.y;
+			water_planes.water_min_max_xz[i] = vec4(pos.x, pos.z, pos.x, pos.z) + vec4(-scale.x, -scale.z, scale.x, scale.z);
+			water_planes.water_heights.data[i] = pos.y;
 		}
 
-		auto waterCBV = dxContext.uploadDynamicConstantBuffer(waterPlanes);
+		auto water_cbv = dx_context.upload_dynamic_constant_buffer(water_planes);
 
-		for (int32 z = 0; z < (int32)chunksPerDim; ++z)
+		for (int32 z = 0; z < (int32)chunks_per_dim; ++z)
 		{
-			for (int32 x = 0; x < (int32)chunksPerDim; ++x)
+			for (int32 x = 0; x < (int32)chunks_per_dim; ++x)
 			{
 				const TerrainChunk& c = chunk(x, z);
 
-				int32 lod = lods[z * lodStride + x];
+				int32 lod = lods[z * lod_stride + x];
 
-				vec3 localMinCorner(x * chunkSize, 0.f, z * chunkSize);
-				vec3 minCorner = localMinCorner + positionOffset;
-				vec3 maxCorner = minCorner + vec3(chunkSize, amplitudeScale, chunkSize);
+				vec3 local_min_corner(x * chunk_size, 0.f, z * chunk_size);
+				vec3 min_corner = local_min_corner + position_offset;
+				vec3 max_corner = min_corner + vec3(chunk_size, amplitude_scale, chunk_size);
 
-				terrain_render_data_common common =
+				TerrainRenderDataCommon common =
 				{
-					minCorner,
+					min_corner,
 					lod,
-					chunkSize,
-					amplitudeScale,
-					lods[(z)*lodStride + (x - 1)],
-					lods[(z)*lodStride + (x + 1)],
-					lods[(z - 1) * lodStride + (x)],
-					lods[(z + 1) * lodStride + (x)],
+					chunk_size,
+					amplitude_scale,
+					lods[(z)*lod_stride + (x - 1)],
+					lods[(z)*lod_stride + (x + 1)],
+					lods[(z - 1) * lod_stride + (x)],
+					lods[(z + 1) * lod_stride + (x)],
 					c.heightmap,
 					(uint32_t)component_data->entity_handle,
 				};
 
-				bounding_box aabb = { minCorner, maxCorner };
-				if (!frustum.cullWorldSpaceAABB(aabb))
+				BoundingBox aabb = { min_corner, max_corner };
+				if (!frustum.cull_world_space_aabb(aabb))
 				{
-					terrain_render_data data = {
+					TerrainRenderData data = {
 						common,
 						c.normalmap,
-						groundMaterial, rockMaterial, mudMaterial,
-						waterCBV
+						ground_material, rock_material, mud_material,
+						water_cbv
 					};
-					renderPass->renderObject<terrain_pipeline, terrain_depth_prepass_pipeline>(data, common);
+					render_pass->render_object<TerrainPipeline, TerrainDepthPrepassPipeline>(data, common);
 				}
 
-				if (shadowPass)
+				if (shadow_pass)
 				{
-					if (!sunFrustum.cullWorldSpaceAABB(aabb))
+					if (!sun_frustum.cull_world_space_aabb(aabb))
 					{
-						shadowPass->renderStaticObject<terrain_shadow_pipeline>(0, common);
+						shadow_pass->render_static_object<TerrainShadowPipeline>(0, common);
 					}
 				}
 
-				if (ldrPass && selected)
+				if (ldr_pass && selected)
 				{
-					ldrPass->renderOutline<terrain_outline_pipeline>(common);
+					ldr_pass->render_outline<TerrainOutlinePipeline>(common);
 				}
 			}
 		}
 	}
 
-	void TerrainComponent::generate_chunks_CPU()
+	void TerrainComponent::generate_chunks_cpu()
 	{
-		height_generator_warped generator;
-		generator.settings = genSettings;
+		HeightGeneratorWarped generator;
+		generator.settings = gen_settings;
 
-		struct terrain_gen_job_data
+		struct TerrainGenJobData
 		{
 			TerrainComponent& terrain;
-			height_generator_warped generator;
+			HeightGeneratorWarped generator;
 		};
 
-		terrain_gen_job_data data =
+		TerrainGenJobData data =
 		{
 			*this,
 			generator,
 		};
 
-		JobHandle parent_job = high_priority_job_queue.createJob<terrain_gen_job_data>([](terrain_gen_job_data& data, JobHandle parent)
+		JobHandle parent_job = high_priority_job_queue.create_job<TerrainGenJobData>([](TerrainGenJobData& data, JobHandle parent)
 			{
-				for (int32 cz = 0; cz < (int32)data.terrain.chunksPerDim; ++cz)
+				for (int32 cz = 0; cz < (int32)data.terrain.chunks_per_dim; ++cz)
 				{
-					for (int32 cx = 0; cx < (int32)data.terrain.chunksPerDim; ++cx)
+					for (int32 cx = 0; cx < (int32)data.terrain.chunks_per_dim; ++cx)
 					{
-						struct chunk_gen_job_data
+						struct ChunkGenJobData
 						{
 							TerrainComponent& terrain;
-							height_generator_warped generator;
+							HeightGeneratorWarped generator;
 							int32 cx, cz;
 						};
 
-						chunk_gen_job_data chunkData =
+						ChunkGenJobData chunk_data =
 						{
 							data.terrain,
 							data.generator,
 							cx, cz,
 						};
 
-						JobHandle job = high_priority_job_queue.createJob<chunk_gen_job_data>([](chunk_gen_job_data& data, JobHandle)
+						JobHandle job = high_priority_job_queue.create_job<ChunkGenJobData>([](ChunkGenJobData& data, JobHandle)
 							{
-								float chunkSize = data.terrain.chunkSize;
-								uint32 numSegmentsPerDim = TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1;
-								float positionScale = chunkSize / (float)numSegmentsPerDim;
-								float normalScale = chunkSize / (float)(normalMapDimension - 1);
+								float chunk_size = data.terrain.chunk_size;
+								uint32 num_segments_per_dim = TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1;
+								float position_scale = chunk_size / (float)num_segments_per_dim;
+								float normal_scale = chunk_size / (float)(normal_map_dimension - 1);
 
 								int32 cx = data.cx;
 								int32 cz = data.cz;
-								height_generator_warped& generator = data.generator;
-								float amplitudeScale = data.terrain.amplitudeScale;
+								HeightGeneratorWarped& generator = data.generator;
+								float amplitude_scale = data.terrain.amplitude_scale;
 
-								vec2 minCorner = vec2(cx * chunkSize, cz * chunkSize);
+								vec2 min_corner = vec2(cx * chunk_size, cz * chunk_size);
 
 								auto& c = data.terrain.chunk(cx, cz);
 
 								c.heights.resize(TERRAIN_LOD_0_VERTICES_PER_DIMENSION * TERRAIN_LOD_0_VERTICES_PER_DIMENSION);
 								uint16* heights = c.heights.data();
-								vec2* normals = new vec2[normalMapDimension * normalMapDimension];
+								vec2* normals = new vec2[normal_map_dimension * normal_map_dimension];
 
-								float minHeight = FLT_MAX;
-								float maxHeight = -FLT_MAX;
+								float min_height = FLT_MAX;
+								float max_height = -FLT_MAX;
 
 								for (uint32 z = 0; z < TERRAIN_LOD_0_VERTICES_PER_DIMENSION; ++z)
 								{
 									for (uint32 x = 0; x < TERRAIN_LOD_0_VERTICES_PER_DIMENSION; ++x)
 									{
-										vec2 position = vec2(x * positionScale, z * positionScale) + minCorner;
+										vec2 position = vec2(x * position_scale, z * position_scale) + min_corner;
 
 										float height = generator.height(position);
 
-										minHeight = min(minHeight, height * amplitudeScale);
-										maxHeight = max(maxHeight, height * amplitudeScale);
+										min_height = min(min_height, height * amplitude_scale);
+										max_height = max(max_height, height * amplitude_scale);
 
 										ASSERT(height >= 0.f);
 										ASSERT(height <= 1.f);
@@ -644,24 +644,24 @@ namespace era_engine
 									}
 								}
 
-								c.heightmap = createTexture(heights, TERRAIN_LOD_0_VERTICES_PER_DIMENSION, TERRAIN_LOD_0_VERTICES_PER_DIMENSION, DXGI_FORMAT_R16_UNORM, false, false, true, D3D12_RESOURCE_STATE_GENERIC_READ);
+								c.heightmap = create_texture(heights, TERRAIN_LOD_0_VERTICES_PER_DIMENSION, TERRAIN_LOD_0_VERTICES_PER_DIMENSION, DXGI_FORMAT_R16_UNORM, false, false, true, D3D12_RESOURCE_STATE_GENERIC_READ);
 
-								for (uint32 z = 0; z < normalMapDimension; ++z)
+								for (uint32 z = 0; z < normal_map_dimension; ++z)
 								{
-									for (uint32 x = 0; x < normalMapDimension; ++x)
+									for (uint32 x = 0; x < normal_map_dimension; ++x)
 									{
-										vec2 position = vec2(x * normalScale, z * normalScale) + minCorner;
+										vec2 position = vec2(x * normal_scale, z * normal_scale) + min_corner;
 
 										vec2 grad = generator.grad(position);
 
-										normals[z * normalMapDimension + x] = -grad;
+										normals[z * normal_map_dimension + x] = -grad;
 									}
 								}
 
-								c.normalmap = createTexture(normals, normalMapDimension, normalMapDimension, DXGI_FORMAT_R32G32_FLOAT);
+								c.normalmap = create_texture(normals, normal_map_dimension, normal_map_dimension, DXGI_FORMAT_R32G32_FLOAT);
 
 								delete[] normals;
-							}, chunkData, parent);
+							}, chunk_data, parent);
 					}
 				}
 			}, data);
@@ -670,94 +670,94 @@ namespace era_engine
 		parent_job.wait_for_completion();
 	}
 
-	void TerrainComponent::generate_chunks_GPU()
+	void TerrainComponent::generate_chunks_gpu()
 	{
-		uint32 numSegmentsPerDim = TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1;
-		float positionScale = chunkSize / (float)numSegmentsPerDim;
-		float normalScale = chunkSize / (float)(normalMapDimension - 1);
+		uint32 num_segments_per_dim = TERRAIN_LOD_0_VERTICES_PER_DIMENSION - 1;
+		float position_scale = chunk_size / (float)num_segments_per_dim;
+		float normal_scale = chunk_size / (float)(normal_map_dimension - 1);
 
-		terrain_generation_settings_cb settings;
-		settings.heightWidth = TERRAIN_LOD_0_VERTICES_PER_DIMENSION;
-		settings.heightHeight = TERRAIN_LOD_0_VERTICES_PER_DIMENSION;
-		settings.normalWidth = normalMapDimension;
-		settings.normalHeight = normalMapDimension;
-		settings.positionScale = positionScale;
-		settings.normalScale = normalScale;
+		TerrainGenerationSettingsCB settings;
+		settings.height_width = TERRAIN_LOD_0_VERTICES_PER_DIMENSION;
+		settings.height_height = TERRAIN_LOD_0_VERTICES_PER_DIMENSION;
+		settings.normal_width = normal_map_dimension;
+		settings.normal_height = normal_map_dimension;
+		settings.position_scale = position_scale;
+		settings.normal_scale = normal_scale;
 
-		settings.scale = genSettings.scale;
-		settings.domainWarpStrength = genSettings.domainWarpStrength;
-		settings.domainWarpNoiseOffset = genSettings.domainWarpNoiseOffset;
-		settings.domainWarpOctaves = genSettings.domainWarpOctaves;
-		settings.noiseOffset = genSettings.noiseOffset;
-		settings.noiseOctaves = genSettings.noiseOctaves;
+		settings.scale = gen_settings.scale;
+		settings.domain_warp_strength = gen_settings.domain_warp_strength;
+		settings.domain_warp_noise_offset = gen_settings.domain_warp_noise_offset;
+		settings.domain_warp_octaves = gen_settings.domain_warp_octaves;
+		settings.noise_offset = gen_settings.noise_offset;
+		settings.noise_octaves = gen_settings.noise_octaves;
 
-		auto settingsCBV = dxContext.uploadDynamicConstantBuffer(settings);
+		auto settings_cbv = dx_context.upload_dynamic_constant_buffer(settings);
 
 		bool mipmaps = true;
 
-		dx_command_list* cl = dxContext.getFreeRenderCommandList();
+		DXCommandList* cl = dx_context.get_free_render_command_list();
 
 		{
 			PROFILE_ALL(cl, "Generate terrain chunks");
 
-			for (int32 cz = 0; cz < (int32)chunksPerDim; ++cz)
+			for (int32 cz = 0; cz < (int32)chunks_per_dim; ++cz)
 			{
-				for (int32 cx = 0; cx < (int32)chunksPerDim; ++cx)
+				for (int32 cx = 0; cx < (int32)chunks_per_dim; ++cx)
 				{
-					cl->setPipelineState(*terrainGenerationPipeline.pipeline);
-					cl->setComputeRootSignature(*terrainGenerationPipeline.rootSignature);
-					cl->setComputeDynamicConstantBuffer(TERRAIN_GENERATION_RS_SETTINGS, settingsCBV);
+					cl->set_pipeline_state(*terrain_generation_pipeline.pipeline);
+					cl->set_compute_root_signature(*terrain_generation_pipeline.root_signature);
+					cl->set_compute_dynamic_constant_buffer(TERRAIN_GENERATION_RS_SETTINGS, settings_cbv);
 
-					vec2 minCorner = vec2(cx * chunkSize, cz * chunkSize);
+					vec2 min_corner = vec2(cx * chunk_size, cz * chunk_size);
 
 					auto& c = chunk(cx, cz);
 
 					if (!c.heightmap)
 					{
-						c.heightmap = createTexture(0, TERRAIN_LOD_0_VERTICES_PER_DIMENSION, TERRAIN_LOD_0_VERTICES_PER_DIMENSION, DXGI_FORMAT_R16_UNORM, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-						c.normalmap = createTexture(0, normalMapDimension, normalMapDimension, DXGI_FORMAT_R32G32_FLOAT, mipmaps, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+						c.heightmap = create_texture(0, TERRAIN_LOD_0_VERTICES_PER_DIMENSION, TERRAIN_LOD_0_VERTICES_PER_DIMENSION, DXGI_FORMAT_R16_UNORM, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+						c.normalmap = create_texture(0, normal_map_dimension, normal_map_dimension, DXGI_FORMAT_R32G32_FLOAT, mipmaps, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 					}
 					else
 					{
-						barrier_batcher(cl)
+						BarrierBatcher(cl)
 							.transition(c.heightmap, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 							.transition(c.normalmap, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 					}
 
-					terrain_generation_cb cb;
-					cb.minCorner = minCorner;
+					TerrainGenerationCB cb;
+					cb.min_corner = min_corner;
 
-					cl->setCompute32BitConstants(TERRAIN_GENERATION_RS_CB, cb);
-					cl->setDescriptorHeapUAV(TERRAIN_GENERATION_RS_TEXTURES, 0, c.heightmap);
-					cl->setDescriptorHeapUAV(TERRAIN_GENERATION_RS_TEXTURES, 1, c.normalmap);
+					cl->set_compute_32bit_constants(TERRAIN_GENERATION_RS_CB, cb);
+					cl->set_descriptor_heap_uav(TERRAIN_GENERATION_RS_TEXTURES, 0, c.heightmap);
+					cl->set_descriptor_heap_uav(TERRAIN_GENERATION_RS_TEXTURES, 1, c.normalmap);
 
-					cl->dispatch(bucketize(normalMapDimension, 16), bucketize(normalMapDimension, 16));
+					cl->dispatch(bucketize(normal_map_dimension, 16), bucketize(normal_map_dimension, 16));
 
-					barrier_batcher(cl)
+					BarrierBatcher(cl)
 						.transition(c.heightmap, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ)
 						.transition(c.normalmap, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
 
 					if (mipmaps)
 					{
-						generateMipMapsOnGPU(cl, c.normalmap);
+						generate_mip_maps_on_gpu(cl, c.normalmap);
 					}
 
 				}
 			}
 		}
-		dxContext.executeCommandList(cl);
+		dx_context.execute_command_list(cl);
 
 		{
 			CPU_PROFILE_BLOCK("Copy heights to CPU");
 
-			for (int32 cz = 0; cz < (int32)chunksPerDim; ++cz)
+			for (int32 cz = 0; cz < (int32)chunks_per_dim; ++cz)
 			{
-				for (int32 cx = 0; cx < (int32)chunksPerDim; ++cx)
+				for (int32 cx = 0; cx < (int32)chunks_per_dim; ++cx)
 				{
 					auto& c = chunk(cx, cz);
 
 					c.heights.resize(TERRAIN_LOD_0_VERTICES_PER_DIMENSION * TERRAIN_LOD_0_VERTICES_PER_DIMENSION);
-					copyTextureToCPUBuffer(c.heightmap, c.heights.data(), D3D12_RESOURCE_STATE_GENERIC_READ);
+					copy_texture_to_cpu_buffer(c.heightmap, c.heights.data(), D3D12_RESOURCE_STATE_GENERIC_READ);
 				}
 			}
 		}

@@ -10,128 +10,128 @@
 
 namespace era_engine
 {
-	static dx_pipeline simplePipeline;
-	static dx_pipeline unlitPositionPipeline;
-	static dx_pipeline unlitPositionColorPipeline;
-	static dx_pipeline unlitLinePositionPipeline;
-	static dx_pipeline unlitLinePositionColorPipeline;
+	static DXPipeline simple_pipeline;
+	static DXPipeline unlit_position_pipeline;
+	static DXPipeline unlit_position_color_pipeline;
+	static DXPipeline unlit_line_position_pipeline;
+	static DXPipeline unlit_line_position_color_pipeline;
 
-	static D3D12_INPUT_ELEMENT_DESC inputLayout_position_color[] =
+	static D3D12_INPUT_ELEMENT_DESC input_layout_position_color[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 	};
 
-	void debug_simple_pipeline::initialize()
+	void DebugSimplePipeline::initialize()
 	{
 		auto& desc = CREATE_GRAPHICS_PIPELINE
-			.inputLayout(inputLayout_position_normal)
-			.renderTargets(ldrFormat, depthStencilFormat);
+			.input_layout(input_layout_position_normal)
+			.render_targets(ldr_format, depth_stencil_format);
 
-		simplePipeline = createReloadablePipeline(desc, { "flat_simple_vs", "flat_simple_ps" });
+		simple_pipeline = create_reloadable_pipeline(desc, { "flat_simple_vs", "flat_simple_ps" });
 	}
 
-	PIPELINE_SETUP_IMPL(debug_simple_pipeline)
+	PIPELINE_SETUP_IMPL(DebugSimplePipeline)
 	{
-		cl->setPipelineState(*simplePipeline.pipeline);
-		cl->setGraphicsRootSignature(*simplePipeline.rootSignature);
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_pipeline_state(*simple_pipeline.pipeline);
+		cl->set_graphics_root_signature(*simple_pipeline.root_signature);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		cl->setGraphicsDynamicConstantBuffer(FLAT_SIMPLE_RS_CAMERA, common.cameraCBV);
+		cl->set_graphics_dynamic_constant_buffer(FLAT_SIMPLE_RS_CAMERA, common.camera_cbv);
 	}
 
-	PIPELINE_RENDER_IMPL(debug_simple_pipeline, debug_render_data)
+	PIPELINE_RENDER_IMPL(DebugSimplePipeline, DebugRenderData)
 	{
-		cl->setGraphics32BitConstants(FLAT_SIMPLE_RS_TRANFORM, transform_cb{ viewProj * data.transform, data.transform });
-		cl->setGraphics32BitConstants(FLAT_SIMPLE_RS_CB, visualization_cb{ data.color });
-		cl->setVertexBuffer(0, data.vertexBuffer.positions);
-		cl->setVertexBuffer(1, data.vertexBuffer.others);
-		cl->setIndexBuffer(data.indexBuffer);
-		cl->drawIndexed(data.submesh.numIndices, 1, data.submesh.firstIndex, data.submesh.baseVertex, 0);
+		cl->set_graphics_32bit_constants(FLAT_SIMPLE_RS_TRANFORM, TransformCB{ view_proj * data.transform, data.transform });
+		cl->set_graphics_32bit_constants(FLAT_SIMPLE_RS_CB, VisualizationCB{ data.color });
+		cl->set_vertex_buffer(0, data.vertex_buffer.positions);
+		cl->set_vertex_buffer(1, data.vertex_buffer.others);
+		cl->set_index_buffer(data.index_buffer);
+		cl->draw_indexed(data.submesh.num_indices, 1, data.submesh.first_index, data.submesh.base_vertex, 0);
 	}
 
-	void debug_unlit_pipeline::initialize()
-	{
-		auto& desc = CREATE_GRAPHICS_PIPELINE
-			.inputLayout(inputLayout_position)
-			.cullingOff()
-			.renderTargets(ldrFormat, depthStencilFormat);
-		unlitPositionPipeline = createReloadablePipeline(desc, { "flat_unlit_position_vs", "flat_unlit_ps" });
-
-		desc.inputLayout(inputLayout_position_color);
-		unlitPositionColorPipeline = createReloadablePipeline(desc, { "flat_unlit_position_color_vs", "flat_unlit_ps" });
-	}
-
-	PIPELINE_SETUP_IMPL(debug_unlit_pipeline::position)
-	{
-		cl->setPipelineState(*unlitPositionPipeline.pipeline);
-		cl->setGraphicsRootSignature(*unlitPositionPipeline.rootSignature);
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	}
-
-	PIPELINE_SETUP_IMPL(debug_unlit_pipeline::position_color)
-	{
-		cl->setPipelineState(*unlitPositionColorPipeline.pipeline);
-		cl->setGraphicsRootSignature(*unlitPositionColorPipeline.rootSignature);
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	}
-
-	PIPELINE_RENDER_IMPL(debug_unlit_pipeline, debug_render_data)
-	{
-		cl->setGraphics32BitConstants(FLAT_UNLIT_RS_TRANFORM, viewProj * data.transform);
-		cl->setGraphics32BitConstants(FLAT_UNLIT_RS_CB, visualization_cb{ data.color });
-		cl->setVertexBuffer(0, data.vertexBuffer.positions);
-		cl->setIndexBuffer(data.indexBuffer);
-		cl->drawIndexed(data.submesh.numIndices, 1, data.submesh.firstIndex, data.submesh.baseVertex, 0);
-	}
-
-	void debug_unlit_line_pipeline::initialize()
+	void DebugUnlitPipeline::initialize()
 	{
 		auto& desc = CREATE_GRAPHICS_PIPELINE
-			.inputLayout(inputLayout_position)
-			.renderTargets(ldrFormat, depthStencilFormat)
-			.primitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
-		unlitLinePositionPipeline = createReloadablePipeline(desc, { "flat_unlit_position_vs", "flat_unlit_ps" });
+			.input_layout(input_layout_position)
+			.culling_off()
+			.render_targets(ldr_format, depth_stencil_format);
+		unlit_position_pipeline = create_reloadable_pipeline(desc, { "flat_unlit_position_vs", "flat_unlit_ps" });
 
-		desc.inputLayout(inputLayout_position_color);
-		unlitLinePositionColorPipeline = createReloadablePipeline(desc, { "flat_unlit_position_color_vs", "flat_unlit_ps" });
+		desc.input_layout(input_layout_position_color);
+		unlit_position_color_pipeline = create_reloadable_pipeline(desc, { "flat_unlit_position_color_vs", "flat_unlit_ps" });
 	}
 
-	PIPELINE_SETUP_IMPL(debug_unlit_line_pipeline::position)
+	PIPELINE_SETUP_IMPL(DebugUnlitPipeline::Position)
 	{
-		cl->setPipelineState(*unlitLinePositionPipeline.pipeline);
-		cl->setGraphicsRootSignature(*unlitLinePositionPipeline.rootSignature);
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+		cl->set_pipeline_state(*unlit_position_pipeline.pipeline);
+		cl->set_graphics_root_signature(*unlit_position_pipeline.root_signature);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	PIPELINE_SETUP_IMPL(debug_unlit_line_pipeline::position_color)
+	PIPELINE_SETUP_IMPL(DebugUnlitPipeline::PositionColor)
 	{
-		cl->setPipelineState(*unlitLinePositionColorPipeline.pipeline);
-		cl->setGraphicsRootSignature(*unlitLinePositionColorPipeline.rootSignature);
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+		cl->set_pipeline_state(*unlit_position_color_pipeline.pipeline);
+		cl->set_graphics_root_signature(*unlit_position_color_pipeline.root_signature);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	PIPELINE_RENDER_IMPL(debug_unlit_line_pipeline, debug_render_data)
+	PIPELINE_RENDER_IMPL(DebugUnlitPipeline, DebugRenderData)
 	{
-		cl->setGraphics32BitConstants(FLAT_UNLIT_RS_TRANFORM, viewProj * data.transform);
-		cl->setGraphics32BitConstants(FLAT_UNLIT_RS_CB, data.color);
-		cl->setVertexBuffer(0, data.vertexBuffer.positions);
-		cl->setIndexBuffer(data.indexBuffer);
-		cl->drawIndexed(data.submesh.numIndices, 1, data.submesh.firstIndex, data.submesh.baseVertex, 0);
+		cl->set_graphics_32bit_constants(FLAT_UNLIT_RS_TRANFORM, view_proj * data.transform);
+		cl->set_graphics_32bit_constants(FLAT_UNLIT_RS_CB, VisualizationCB{ data.color });
+		cl->set_vertex_buffer(0, data.vertex_buffer.positions);
+		cl->set_index_buffer(data.index_buffer);
+		cl->draw_indexed(data.submesh.num_indices, 1, data.submesh.first_index, data.submesh.base_vertex, 0);
 	}
 
-	void renderPoint(vec3 pos, vec4 color, ldr_render_pass* renderPass, bool overlay)
+	void DebugUnlitLinePipeline::initialize()
 	{
-		renderWireSphere(pos, 0.05f, color, renderPass, overlay);
+		auto& desc = CREATE_GRAPHICS_PIPELINE
+			.input_layout(input_layout_position)
+			.render_targets(ldr_format, depth_stencil_format)
+			.primitive_topology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
+		unlit_line_position_pipeline = create_reloadable_pipeline(desc, { "flat_unlit_position_vs", "flat_unlit_ps" });
+
+		desc.input_layout(input_layout_position_color);
+		unlit_line_position_color_pipeline = create_reloadable_pipeline(desc, { "flat_unlit_position_color_vs", "flat_unlit_ps" });
 	}
 
-	void renderTriangle(vec3 a, vec3 b, vec3 c, vec4 color, ldr_render_pass* renderPass, bool overlay)
+	PIPELINE_SETUP_IMPL(DebugUnlitLinePipeline::Position)
 	{
-		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), 3);
-		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), 3);
+		cl->set_pipeline_state(*unlit_line_position_pipeline.pipeline);
+		cl->set_graphics_root_signature(*unlit_line_position_pipeline.root_signature);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+	}
+
+	PIPELINE_SETUP_IMPL(DebugUnlitLinePipeline::PositionColor)
+	{
+		cl->set_pipeline_state(*unlit_line_position_color_pipeline.pipeline);
+		cl->set_graphics_root_signature(*unlit_line_position_color_pipeline.root_signature);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+	}
+
+	PIPELINE_RENDER_IMPL(DebugUnlitLinePipeline, DebugRenderData)
+	{
+		cl->set_graphics_32bit_constants(FLAT_UNLIT_RS_TRANFORM, view_proj * data.transform);
+		cl->set_graphics_32bit_constants(FLAT_UNLIT_RS_CB, data.color);
+		cl->set_vertex_buffer(0, data.vertex_buffer.positions);
+		cl->set_index_buffer(data.index_buffer);
+		cl->draw_indexed(data.submesh.num_indices, 1, data.submesh.first_index, data.submesh.base_vertex, 0);
+	}
+
+	void render_point(vec3 pos, vec4 color, LDRRenderPass* render_pass, bool overlay)
+	{
+		render_wire_sphere(pos, 0.05f, color, render_pass, overlay);
+	}
+
+	void render_triangle(vec3 a, vec3 b, vec3 c, vec4 color, LDRRenderPass* render_pass, bool overlay)
+	{
+		auto [vb, vertexPtr] = dx_context.create_dynamic_vertex_buffer(sizeof(vec3), 3);
+		auto [ib, index_ptr] = dx_context.create_dynamic_index_buffer(sizeof(uint16), 3);
 
 		vec3* vertices = (vec3*)vertexPtr;
-		indexed_triangle16* triangles = (indexed_triangle16*)indexPtr;
+		IndexedTriangle16* triangles = (IndexedTriangle16*)index_ptr;
 
 		*vertices++ = a;
 		*vertices++ = b;
@@ -139,76 +139,76 @@ namespace era_engine
 
 		*triangles = { 0, 1, 2 };
 
-		renderDebug<debug_unlit_pipeline::position>(mat4::identity, vb, ib, color, renderPass, overlay);
+		render_debug<DebugUnlitPipeline::Position>(mat4::identity, vb, ib, color, render_pass, overlay);
 	}
 
-	void renderDisk(vec3 position, vec3 upAxis, float radius, vec4 color, ldr_render_pass* renderPass, bool overlay)
+	void render_disk(vec3 position, vec3 up_axis, float radius, vec4 color, LDRRenderPass* render_pass, bool overlay)
 	{
-		const uint32 numSegments = 32;
+		const uint32 num_segments = 32;
 
-		uint32 numTriangles = numSegments;
-		uint32 numVertices = numSegments + 1;
+		uint32 num_triangles = num_segments;
+		uint32 num_vertices = num_segments + 1;
 
-		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), numVertices);
-		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), numTriangles * 3);
+		auto [vb, vertexPtr] = dx_context.create_dynamic_vertex_buffer(sizeof(vec3), num_vertices);
+		auto [ib, index_ptr] = dx_context.create_dynamic_index_buffer(sizeof(uint16), num_triangles * 3);
 
 		vec3* vertices = (vec3*)vertexPtr;
-		indexed_triangle16* triangles = (indexed_triangle16*)indexPtr;
+		IndexedTriangle16* triangles = (IndexedTriangle16*)index_ptr;
 
-		float deltaRot = M_TAU / numSegments;
+		float delta_rot = M_TAU / num_segments;
 		float rot = 0.f;
-		for (uint32 i = 0; i < numSegments; ++i)
+		for (uint32 i = 0; i < num_segments; ++i)
 		{
 			*vertices++ = vec3(cos(rot), sin(rot), 0.f) * radius;
-			rot += deltaRot;
+			rot += delta_rot;
 		}
 
 		*vertices++ = vec3(0.f, 0.f, 0.f);
 
-		uint16 center = (uint16)numVertices - 1;
+		uint16 center = (uint16)num_vertices - 1;
 
-		for (uint16 i = 0; i < numSegments; ++i)
+		for (uint16 i = 0; i < num_segments; ++i)
 		{
 			uint16 next = i + 1;
-			if (i == numSegments - 1)
+			if (i == num_segments - 1)
 			{
 				next = 0;
 			}
 			*triangles++ = { center, i, next };
 		}
 
-		renderDebug<debug_unlit_pipeline::position>(create_model_matrix(position, rotate_from_to(vec3(0.f, 0.f, 1.f), upAxis)), vb, ib, color, renderPass, overlay);
+		render_debug<DebugUnlitPipeline::Position>(create_model_matrix(position, rotate_from_to(vec3(0.f, 0.f, 1.f), up_axis)), vb, ib, color, render_pass, overlay);
 	}
 
-	void renderRing(vec3 position, vec3 upAxis, float outerRadius, float innerRadius, vec4 color, ldr_render_pass* renderPass, bool overlay)
+	void render_ring(vec3 position, vec3 up_axis, float outer_radius, float inner_radius, vec4 color, LDRRenderPass* render_pass, bool overlay)
 	{
-		const uint32 numSegments = 32;
+		const uint32 num_segments = 32;
 
-		uint32 numTriangles = numSegments * 2;
-		uint32 numVertices = numSegments * 2;
+		uint32 num_triangles = num_segments * 2;
+		uint32 num_vertices = num_segments * 2;
 
-		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), numVertices);
-		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), numTriangles * 3);
+		auto [vb, vertexPtr] = dx_context.create_dynamic_vertex_buffer(sizeof(vec3), num_vertices);
+		auto [ib, index_ptr] = dx_context.create_dynamic_index_buffer(sizeof(uint16), num_triangles * 3);
 
 		vec3* outer = (vec3*)vertexPtr;
-		vec3* inner = outer + numSegments;
-		indexed_triangle16* triangles = (indexed_triangle16*)indexPtr;
+		vec3* inner = outer + num_segments;
+		IndexedTriangle16* triangles = (IndexedTriangle16*)index_ptr;
 
-		float deltaRot = M_TAU / numSegments;
+		float delta_rot = M_TAU / num_segments;
 		float rot = 0.f;
-		for (uint32 i = 0; i < numSegments; ++i)
+		for (uint32 i = 0; i < num_segments; ++i)
 		{
 			vec3 p = vec3(cos(rot), sin(rot), 0.f);
-			*outer++ = p * outerRadius;
-			*inner++ = p * innerRadius;
-			rot += deltaRot;
+			*outer++ = p * outer_radius;
+			*inner++ = p * inner_radius;
+			rot += delta_rot;
 		}
 
-		uint16 offset = (uint16)numSegments;
-		for (uint16 i = 0; i < numSegments; ++i)
+		uint16 offset = (uint16)num_segments;
+		for (uint16 i = 0; i < num_segments; ++i)
 		{
 			uint16 next = i + 1;
-			if (i == numSegments - 1)
+			if (i == num_segments - 1)
 			{
 				next = 0;
 			}
@@ -216,77 +216,77 @@ namespace era_engine
 			*triangles++ = { next, (uint16)(i + offset), (uint16)(next + offset) };
 		}
 
-		renderDebug<debug_unlit_pipeline::position>(create_model_matrix(position, rotate_from_to(vec3(0.f, 0.f, 1.f), upAxis)), vb, ib, color, renderPass, overlay);
+		render_debug<DebugUnlitPipeline::Position>(create_model_matrix(position, rotate_from_to(vec3(0.f, 0.f, 1.f), up_axis)), vb, ib, color, render_pass, overlay);
 	}
 
-	void renderAngleRing(vec3 position, vec3 upAxis, float outerRadius, float innerRadius,
-		vec3 zeroDegAxis, float minAngle, float maxAngle, vec4 color, ldr_render_pass* renderPass, bool overlay)
+	void render_angle_ring(vec3 position, vec3 up_axis, float outer_radius, float inner_radius,
+		vec3 zero_deg_axis, float min_angle, float max_angle, vec4 color, LDRRenderPass* render_pass, bool overlay)
 	{
-		const uint32 numSegments360 = 32;
+		const uint32 num_segments360 = 32;
 
-		const float deltaRot = M_TAU / numSegments360;
-		float angleRange = maxAngle - minAngle;
-		const uint32 numSegments = (uint32)ceil(angleRange / deltaRot);
+		const float delta_rot = M_TAU / num_segments360;
+		float angle_range = max_angle - min_angle;
+		const uint32 num_segments = (uint32)ceil(angle_range / delta_rot);
 
-		uint32 numTriangles = numSegments * 2;
-		uint32 numVertices = (numSegments + 1) * 2;
+		uint32 num_triangles = num_segments * 2;
+		uint32 num_vertices = (num_segments + 1) * 2;
 
-		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), numVertices);
-		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), numTriangles * 3);
+		auto [vb, vertexPtr] = dx_context.create_dynamic_vertex_buffer(sizeof(vec3), num_vertices);
+		auto [ib, index_ptr] = dx_context.create_dynamic_index_buffer(sizeof(uint16), num_triangles * 3);
 
 		vec3* outer = (vec3*)vertexPtr;
-		vec3* inner = outer + (numSegments + 1);
-		indexed_triangle16* triangles = (indexed_triangle16*)indexPtr;
+		vec3* inner = outer + (num_segments + 1);
+		IndexedTriangle16* triangles = (IndexedTriangle16*)index_ptr;
 
-		vec3 x = zeroDegAxis;
-		vec3 z = cross(upAxis, x);
+		vec3 x = zero_deg_axis;
+		vec3 z = cross(up_axis, x);
 
-		float rot = minAngle;
-		for (uint32 i = 0; i < numSegments + 1; ++i)
+		float rot = min_angle;
+		for (uint32 i = 0; i < num_segments + 1; ++i)
 		{
 			vec3 p = cos(rot) * x + sin(rot) * z;
-			*outer++ = p * outerRadius + position;
-			*inner++ = p * innerRadius + position;
-			rot += deltaRot;
-			rot = min(rot, maxAngle);
+			*outer++ = p * outer_radius + position;
+			*inner++ = p * inner_radius + position;
+			rot += delta_rot;
+			rot = min(rot, max_angle);
 		}
 
-		uint16 offset = (uint16)(numSegments + 1);
-		for (uint16 i = 0; i < numSegments; ++i)
+		uint16 offset = (uint16)(num_segments + 1);
+		for (uint16 i = 0; i < num_segments; ++i)
 		{
 			uint16 next = i + 1;
 			*triangles++ = { i, next, (uint16)(i + offset) };
 			*triangles++ = { next, (uint16)(i + offset), (uint16)(next + offset) };
 		}
 
-		renderDebug<debug_unlit_pipeline::position>(mat4::identity, vb, ib, color, renderPass, overlay);
+		render_debug<DebugUnlitPipeline::Position>(mat4::identity, vb, ib, color, render_pass, overlay);
 	}
 
-	static std::tuple<dx_dynamic_vertex_buffer, dx_dynamic_index_buffer> getWireRing()
+	static std::tuple<DXDynamicVertexBuffer, DXDynamicIndexBuffer> get_wire_ring()
 	{
-		const uint32 numSegments = 32;
+		const uint32 num_segments = 32;
 
-		uint32 numLines = numSegments;
-		uint32 numVertices = numSegments;
+		uint32 num_lines = num_segments;
+		uint32 num_vertices = num_segments;
 
-		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), numVertices);
-		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), numLines * 2);
+		auto [vb, vertexPtr] = dx_context.create_dynamic_vertex_buffer(sizeof(vec3), num_vertices);
+		auto [ib, index_ptr] = dx_context.create_dynamic_index_buffer(sizeof(uint16), num_lines * 2);
 
 		vec3* vertices = (vec3*)vertexPtr;
-		indexed_line16* lines = (indexed_line16*)indexPtr;
+		IndexedLine16* lines = (IndexedLine16*)index_ptr;
 
-		float deltaRot = M_TAU / numSegments;
+		float delta_rot = M_TAU / num_segments;
 		float rot = 0.f;
-		for (uint32 i = 0; i < numSegments; ++i)
+		for (uint32 i = 0; i < num_segments; ++i)
 		{
 			*vertices++ = vec3(cos(rot), sin(rot), 0.f);
-			rot += deltaRot;
+			rot += delta_rot;
 		}
 
-		for (uint16 i = 0; i < numSegments; ++i)
+		for (uint16 i = 0; i < num_segments; ++i)
 		{
 			uint16 next = i + 1;
-			if (i == numSegments - 1)
+			if (i == num_segments - 1)
 			{
 				next = 0;
 			}
@@ -296,35 +296,35 @@ namespace era_engine
 		return { vb, ib };
 	}
 
-	static std::tuple<dx_dynamic_vertex_buffer, dx_dynamic_index_buffer> getWireCapsuleCrossSection(float length, float radius)
+	static std::tuple<DXDynamicVertexBuffer, DXDynamicIndexBuffer> get_wire_capsule_cross_section(float length, float radius)
 	{
-		const uint32 numSegmentsPerHalf = 16;
+		const uint32 num_segments_per_half = 16;
 
-		uint32 numVertices = numSegmentsPerHalf * 2 + 2;
-		uint32 numLines = numVertices;
+		uint32 num_vertices = num_segments_per_half * 2 + 2;
+		uint32 num_lines = num_vertices;
 
-		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), numVertices);
-		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), numLines * 2);
+		auto [vb, vertexPtr] = dx_context.create_dynamic_vertex_buffer(sizeof(vec3), num_vertices);
+		auto [ib, index_ptr] = dx_context.create_dynamic_index_buffer(sizeof(uint16), num_lines * 2);
 
-		vec3* verticesA = (vec3*)vertexPtr;
-		vec3* verticesB = verticesA + (numSegmentsPerHalf + 1);
-		indexed_line16* lines = (indexed_line16*)indexPtr;
+		vec3* vertices_a = (vec3*)vertexPtr;
+		vec3* vertices_b = vertices_a + (num_segments_per_half + 1);
+		IndexedLine16* lines = (IndexedLine16*)index_ptr;
 
-		float deltaRot = M_PI / numSegmentsPerHalf;
+		float delta_rot = M_PI / num_segments_per_half;
 		float rot = 0.f;
-		float halfLength = length * 0.5f;
-		for (uint32 i = 0; i < numSegmentsPerHalf + 1; ++i)
+		float half_length = length * 0.5f;
+		for (uint32 i = 0; i < num_segments_per_half + 1; ++i)
 		{
 			float x = cos(rot), y = sin(rot);
-			*verticesA++ = vec3(radius * x, radius * y + halfLength, 0.f);
-			*verticesB++ = -vec3(radius * x, radius * y + halfLength, 0.f);
-			rot += deltaRot;
+			*vertices_a++ = vec3(radius * x, radius * y + half_length, 0.f);
+			*vertices_b++ = -vec3(radius * x, radius * y + half_length, 0.f);
+			rot += delta_rot;
 		}
 
-		for (uint16 i = 0; i < numLines; ++i)
+		for (uint16 i = 0; i < num_lines; ++i)
 		{
 			uint16 next = i + 1;
-			if (i == numLines - 1)
+			if (i == num_lines - 1)
 			{
 				next = 0;
 			}
@@ -334,31 +334,31 @@ namespace era_engine
 		return { vb, ib };
 	}
 
-	void renderLine(vec3 positionA, vec3 positionB, vec4 color, ldr_render_pass* renderPass, bool overlay)
+	void render_line(vec3 position_a, vec3 position_b, vec4 color, LDRRenderPass* render_pass, bool overlay)
 	{
 		//CPU_PROFILE_BLOCK("Render line");
 
-		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), 2);
-		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), 2);
+		auto [vb, vertexPtr] = dx_context.create_dynamic_vertex_buffer(sizeof(vec3), 2);
+		auto [ib, index_ptr] = dx_context.create_dynamic_index_buffer(sizeof(uint16), 2);
 
 		vec3* vertices = (vec3*)vertexPtr;
-		indexed_line16* lines = (indexed_line16*)indexPtr;
+		IndexedLine16* lines = (IndexedLine16*)index_ptr;
 
-		*vertices++ = positionA;
-		*vertices++ = positionB;
+		*vertices++ = position_a;
+		*vertices++ = position_b;
 
 		*lines++ = { 0, 1 };
 
-		renderDebug<debug_unlit_line_pipeline::position>(mat4::identity, vb, ib, color, renderPass, overlay);
+		render_debug<DebugUnlitLinePipeline::Position>(mat4::identity, vb, ib, color, render_pass, overlay);
 	}
 
-	void renderWireTriangle(vec3 a, vec3 b, vec3 c, vec4 color, ldr_render_pass* renderPass, bool overlay)
+	void render_wire_triangle(vec3 a, vec3 b, vec3 c, vec4 color, LDRRenderPass* render_pass, bool overlay)
 	{
-		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), 3);
-		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), 3);
+		auto [vb, vertexPtr] = dx_context.create_dynamic_vertex_buffer(sizeof(vec3), 3);
+		auto [ib, index_ptr] = dx_context.create_dynamic_index_buffer(sizeof(uint16), 3);
 
 		vec3* vertices = (vec3*)vertexPtr;
-		indexed_triangle16* triangles = (indexed_triangle16*)indexPtr;
+		IndexedTriangle16* triangles = (IndexedTriangle16*)index_ptr;
 
 		*vertices++ = a;
 		*vertices++ = b;
@@ -366,140 +366,140 @@ namespace era_engine
 
 		*triangles = { 0, 1, 2 };
 
-		renderDebug<debug_unlit_line_pipeline::position>(mat4::identity, vb, ib, color, renderPass, overlay);
+		render_debug<DebugUnlitLinePipeline::Position>(mat4::identity, vb, ib, color, render_pass, overlay);
 	}
 
-	void renderWireSphere(vec3 position, float radius, vec4 color, ldr_render_pass* renderPass, bool overlay)
+	void render_wire_sphere(vec3 position, float radius, vec4 color, LDRRenderPass* render_pass, bool overlay)
 	{
 		CPU_PROFILE_BLOCK("Render wire sphere");
 
-		auto [vb, ib] = getWireRing();
+		auto [vb, ib] = get_wire_ring();
 
-		renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(position, quat::identity, radius), vb, ib, color, renderPass, overlay);
-		renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(position, quat(vec3(0.f, 1.f, 0.f), deg2rad(90.f)), radius), vb, ib, color, renderPass, overlay);
-		renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(position, quat(vec3(1.f, 0.f, 0.f), deg2rad(90.f)), radius), vb, ib, color, renderPass, overlay);
+		render_debug<DebugUnlitLinePipeline::Position>(create_model_matrix(position, quat::identity, radius), vb, ib, color, render_pass, overlay);
+		render_debug<DebugUnlitLinePipeline::Position>(create_model_matrix(position, quat(vec3(0.f, 1.f, 0.f), deg2rad(90.f)), radius), vb, ib, color, render_pass, overlay);
+		render_debug<DebugUnlitLinePipeline::Position>(create_model_matrix(position, quat(vec3(1.f, 0.f, 0.f), deg2rad(90.f)), radius), vb, ib, color, render_pass, overlay);
 	}
 
-	void renderWireCapsule(vec3 positionA, vec3 positionB, float radius, vec4 color, ldr_render_pass* renderPass, bool overlay)
+	void render_wire_capsule(vec3 position_a, vec3 position_b, float radius, vec4 color, LDRRenderPass* render_pass, bool overlay)
 	{
 		CPU_PROFILE_BLOCK("Render wire capsule");
 
-		vec3 center = 0.5f * (positionA + positionB);
-		quat rotation = rotate_from_to(vec3(0.f, 1.f, 0.f), positionA - positionB);
-		auto [vb, ib] = getWireCapsuleCrossSection(length(positionA - positionB), radius);
+		vec3 center = 0.5f * (position_a + position_b);
+		quat rotation = rotate_from_to(vec3(0.f, 1.f, 0.f), position_a - position_b);
+		auto [vb, ib] = get_wire_capsule_cross_section(length(position_a - position_b), radius);
 
-		renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(center, rotation * quat::identity, 1.f), vb, ib, color, renderPass, overlay);
-		renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(center, rotation * quat(vec3(0.f, 1.f, 0.f), deg2rad(90.f)), 1.f), vb, ib, color, renderPass, overlay);
+		render_debug<DebugUnlitLinePipeline::Position>(create_model_matrix(center, rotation * quat::identity, 1.f), vb, ib, color, render_pass, overlay);
+		render_debug<DebugUnlitLinePipeline::Position>(create_model_matrix(center, rotation * quat(vec3(0.f, 1.f, 0.f), deg2rad(90.f)), 1.f), vb, ib, color, render_pass, overlay);
 	}
 
-	void renderWireCylinder(vec3 positionA, vec3 positionB, float radius, vec4 color, ldr_render_pass* renderPass, bool overlay)
+	void render_wire_cylinder(vec3 position_a, vec3 position_b, float radius, vec4 color, LDRRenderPass* render_pass, bool overlay)
 	{
 		CPU_PROFILE_BLOCK("Render wire cylinder");
 
-		quat rotation = rotate_from_to(vec3(0.f, 1.f, 0.f), positionA - positionB);
+		quat rotation = rotate_from_to(vec3(0.f, 1.f, 0.f), position_a - position_b);
 
 		{
-			auto [vb, ib] = getWireRing();
+			auto [vb, ib] = get_wire_ring();
 			quat rotate90deg(vec3(1.f, 0.f, 0.f), deg2rad(90.f));
-			renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(positionA, rotation * rotate90deg, radius), vb, ib, color, renderPass, overlay);
-			renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(positionB, rotation * rotate90deg, radius), vb, ib, color, renderPass, overlay);
+			render_debug<DebugUnlitLinePipeline::Position>(create_model_matrix(position_a, rotation * rotate90deg, radius), vb, ib, color, render_pass, overlay);
+			render_debug<DebugUnlitLinePipeline::Position>(create_model_matrix(position_b, rotation * rotate90deg, radius), vb, ib, color, render_pass, overlay);
 		}
 
 		{
-			auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), 8);
-			auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), 8);
+			auto [vb, vertexPtr] = dx_context.create_dynamic_vertex_buffer(sizeof(vec3), 8);
+			auto [ib, index_ptr] = dx_context.create_dynamic_index_buffer(sizeof(uint16), 8);
 
 			vec3* vertices = (vec3*)vertexPtr;
-			indexed_line16* lines = (indexed_line16*)indexPtr;
+			IndexedLine16* lines = (IndexedLine16*)index_ptr;
 
-			vec3 xAxis = rotation * vec3(radius, 0.f, 0.f);
-			vec3 zAxis = rotation * vec3(0.f, 0.f, radius);
+			vec3 x_axis = rotation * vec3(radius, 0.f, 0.f);
+			vec3 z_axis = rotation * vec3(0.f, 0.f, radius);
 
-			*vertices++ = positionA + xAxis;
-			*vertices++ = positionB + xAxis;
+			*vertices++ = position_a + x_axis;
+			*vertices++ = position_b + x_axis;
 
-			*vertices++ = positionA + zAxis;
-			*vertices++ = positionB + zAxis;
+			*vertices++ = position_a + z_axis;
+			*vertices++ = position_b + z_axis;
 
-			*vertices++ = positionA - xAxis;
-			*vertices++ = positionB - xAxis;
+			*vertices++ = position_a - x_axis;
+			*vertices++ = position_b - x_axis;
 
-			*vertices++ = positionA - zAxis;
-			*vertices++ = positionB - zAxis;
+			*vertices++ = position_a - z_axis;
+			*vertices++ = position_b - z_axis;
 
 			*lines++ = { 0, 1 };
 			*lines++ = { 2, 3 };
 			*lines++ = { 4, 5 };
 			*lines++ = { 6, 7 };
 
-			renderDebug<debug_unlit_line_pipeline::position>(mat4::identity, vb, ib, color, renderPass, overlay);
+			render_debug<DebugUnlitLinePipeline::Position>(mat4::identity, vb, ib, color, render_pass, overlay);
 		}
 	}
 
-	void renderWireCone(vec3 position, vec3 direction, float distance, float angle, vec4 color, ldr_render_pass* renderPass, bool overlay)
+	void render_wire_cone(vec3 position, vec3 direction, float distance, float angle, vec4 color, LDRRenderPass* render_pass, bool overlay)
 	{
 		CPU_PROFILE_BLOCK("Render wire cone");
 
-		const uint32 numSegments = 32;
-		const uint32 numConeLines = 8;
-		static_assert(numSegments % numConeLines == 0, "");
+		const uint32 num_segments = 32;
+		const uint32 num_cone_lines = 8;
+		static_assert(num_segments % num_cone_lines == 0, "");
 
-		uint32 numLines = numConeLines + numSegments;
-		uint32 numVertices = 1 + numSegments;
+		uint32 num_lines = num_cone_lines + num_segments;
+		uint32 num_vertices = 1 + num_segments;
 
-		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), numVertices);
-		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), numLines * 2);
+		auto [vb, vertexPtr] = dx_context.create_dynamic_vertex_buffer(sizeof(vec3), num_vertices);
+		auto [ib, index_ptr] = dx_context.create_dynamic_index_buffer(sizeof(uint16), num_lines * 2);
 
 		vec3* vertices = (vec3*)vertexPtr;
-		indexed_line16* lines = (indexed_line16*)indexPtr;
+		IndexedLine16* lines = (IndexedLine16*)index_ptr;
 
-		float halfAngle = angle * 0.5f;
-		float axisLength = tan(halfAngle);
+		float half_angle = angle * 0.5f;
+		float axis_length = tan(half_angle);
 
-		vec3 xAxis, yAxis;
-		get_tangents(direction, xAxis, yAxis);
-		vec3 zAxis = direction * distance;
-		xAxis *= distance * axisLength;
-		yAxis *= distance * axisLength;
+		vec3 x_axis, y_axis;
+		get_tangents(direction, x_axis, y_axis);
+		vec3 z_axis = direction * distance;
+		x_axis *= distance * axis_length;
+		y_axis *= distance * axis_length;
 
 		*vertices++ = position;
 
-		float deltaRot = M_TAU / numSegments;
+		float delta_rot = M_TAU / num_segments;
 		float rot = 0.f;
-		for (uint32 i = 0; i < numSegments; ++i)
+		for (uint32 i = 0; i < num_segments; ++i)
 		{
-			*vertices++ = position + zAxis + xAxis * cos(rot) + yAxis * sin(rot);
-			rot += deltaRot;
+			*vertices++ = position + z_axis + x_axis * cos(rot) + y_axis * sin(rot);
+			rot += delta_rot;
 		}
 
-		const uint16 step = numSegments / numConeLines;
+		const uint16 step = num_segments / num_cone_lines;
 
-		for (uint16 i = 0; i < numConeLines; ++i)
+		for (uint16 i = 0; i < num_cone_lines; ++i)
 		{
 			uint16 next = 1u + i * step;
 			*lines++ = { 0, next };
 		}
 
-		for (uint16 i = 0; i < numSegments; ++i)
+		for (uint16 i = 0; i < num_segments; ++i)
 		{
 			uint16 cur = i + 1;
 			uint16 next = i + 2;
-			if (i == numSegments - 1)
+			if (i == num_segments - 1)
 			{
 				next = 1;
 			}
 			*lines++ = { cur, next };
 		}
 
-		renderDebug<debug_unlit_line_pipeline::position>(mat4::identity, vb, ib, color, renderPass, overlay);
+		render_debug<DebugUnlitLinePipeline::Position>(mat4::identity, vb, ib, color, render_pass, overlay);
 	}
 
-	void renderWireBox(vec3 position, vec3 radius, quat rotation, vec4 color, ldr_render_pass* renderPass, bool overlay)
+	void render_wire_box(vec3 position, vec3 radius, quat rotation, vec4 color, LDRRenderPass* render_pass, bool overlay)
 	{
 		CPU_PROFILE_BLOCK("Render wire box");
 
-		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), 8);
-		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), 12 * 2);
+		auto [vb, vertexPtr] = dx_context.create_dynamic_vertex_buffer(sizeof(vec3), 8);
+		auto [ib, index_ptr] = dx_context.create_dynamic_index_buffer(sizeof(uint16), 12 * 2);
 
 		vec3* vertices = (vec3*)vertexPtr;
 		*vertices++ = vec3(-1.f, 1.f, -1.f);
@@ -511,7 +511,7 @@ namespace era_engine
 		*vertices++ = vec3(-1.f, -1.f, 1.f);
 		*vertices++ = vec3(1.f, -1.f, 1.f);
 
-		indexed_line16* lines = (indexed_line16*)indexPtr;
+		IndexedLine16* lines = (IndexedLine16*)index_ptr;
 		*lines++ = { 0, 1 };
 		*lines++ = { 1, 3 };
 		*lines++ = { 3, 2 };
@@ -527,24 +527,24 @@ namespace era_engine
 		*lines++ = { 2, 6 };
 		*lines++ = { 3, 7 };
 
-		renderDebug<debug_unlit_line_pipeline::position>(create_model_matrix(position, rotation, radius), vb, ib, color, renderPass, overlay);
+		render_debug<DebugUnlitLinePipeline::Position>(create_model_matrix(position, rotation, radius), vb, ib, color, render_pass, overlay);
 	}
 
-	void renderCameraFrustum(const render_camera& frustum, vec4 color, ldr_render_pass* renderPass, float alternativeFarPlane, bool overlay)
+	void render_camera_frustum(const RenderCamera& frustum, vec4 color, LDRRenderPass* render_pass, float alternative_far_plane, bool overlay)
 	{
 		CPU_PROFILE_BLOCK("Render camera frustum");
 
-		auto [vb, vertexPtr] = dxContext.createDynamicVertexBuffer(sizeof(vec3), 8);
-		auto [ib, indexPtr] = dxContext.createDynamicIndexBuffer(sizeof(uint16), 12 * 2);
+		auto [vb, vertexPtr] = dx_context.create_dynamic_vertex_buffer(sizeof(vec3), 8);
+		auto [ib, index_ptr] = dx_context.create_dynamic_index_buffer(sizeof(uint16), 12 * 2);
 
 		vec3* vertices = (vec3*)vertexPtr;
-		camera_frustum_corners corners = frustum.getWorldSpaceFrustumCorners(alternativeFarPlane);
+		CameraFrustumCorners corners = frustum.get_world_space_frustum_corners(alternative_far_plane);
 		for (uint32 i = 0; i < 8; ++i)
 		{
 			*vertices++ = corners.corners[i];
 		}
 
-		indexed_line16* lines = (indexed_line16*)indexPtr;
+		IndexedLine16* lines = (IndexedLine16*)index_ptr;
 		*lines++ = { 0, 1 };
 		*lines++ = { 1, 3 };
 		*lines++ = { 3, 2 };
@@ -560,6 +560,6 @@ namespace era_engine
 		*lines++ = { 2, 6 };
 		*lines++ = { 3, 7 };
 
-		renderDebug<debug_unlit_line_pipeline::position>(mat4::identity, vb, ib, color, renderPass, overlay);
+		render_debug<DebugUnlitLinePipeline::Position>(mat4::identity, vb, ib, color, render_pass, overlay);
 	}
 }

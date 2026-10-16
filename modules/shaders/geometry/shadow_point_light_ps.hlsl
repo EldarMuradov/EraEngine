@@ -1,9 +1,9 @@
-struct ps_input
+struct PSInput
 {
-	float clipDepth		: CLIP_DEPTH;
+	float clip_depth		: CLIP_DEPTH;
 };
 
-void main(ps_input IN)
+void main(PSInput IN)
 {
-	clip(IN.clipDepth);
+	clip(IN.clip_depth);
 }

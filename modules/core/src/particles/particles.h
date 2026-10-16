@@ -13,110 +13,110 @@
 
 namespace era_engine
 {
-	struct dx_command_list;
+	struct DXCommandList;
 
-	enum sort_mode
+	enum SortMode
 	{
-		sort_mode_none,
-		sort_mode_front_to_back,
-		sort_mode_back_to_front,
+		SORT_MODE_NONE,
+		SORT_MODE_FRONT_TO_BACK,
+		SORT_MODE_BACK_TO_FRONT,
 	};
 
-	struct ERA_CORE_API common_particle_simulation_data
+	struct ERA_CORE_API CommonParticleSimulationData
 	{
-		mat4 prevFrameCameraView;
-		mat4 prevFrameCameraViewProj;
+		mat4 prev_frame_camera_view;
+		mat4 prev_frame_camera_view_proj;
 
-		vec4 cameraProjectionParams;
+		vec4 camera_projection_params;
 
-		vec3 cameraPosition;
+		vec3 camera_position;
 
-		ref<dx_texture> prevFrameDepthBuffer;
-		ref<dx_texture> prevFrameNormals;
+		ref<DXTexture> prev_frame_depth_buffer;
+		ref<DXTexture> prev_frame_normals;
 	};
 
-	struct ERA_CORE_API particle_system
+	struct ERA_CORE_API ParticleSystem
 	{
-		virtual ~particle_system() {}
+		virtual ~ParticleSystem() {}
 
-		virtual void update(struct dx_command_list* cl, const common_particle_simulation_data& common, float dt) = 0;
+		virtual void update(struct DXCommandList* cl, const CommonParticleSimulationData& common, float dt) = 0;
 
 	protected:
 
-		struct particle_parameter_setter
+		struct ParticleParameterSetter
 		{
-			virtual void setRootParameters(dx_command_list* cl) = 0;
+			virtual void set_root_parameters(DXCommandList* cl) = 0;
 		};
 
-		void initializeAsBillboard(uint32 particleStructSize, uint32 maxNumParticles, sort_mode sortMode = sort_mode_none);
-		void initializeAsMesh(uint32 particleStructSize, dx_mesh mesh, SubmeshInfo submesh, uint32 maxNumParticles, sort_mode sortMode = sort_mode_none);
+		void initialize_as_billboard(uint32 particle_struct_size, uint32 max_num_particles, SortMode sort_mode = SORT_MODE_NONE);
+		void initialize_as_mesh(uint32 particle_struct_size, DXMesh mesh, SubmeshInfo submesh, uint32 max_num_particles, SortMode sort_mode = SORT_MODE_NONE);
 
-		particle_draw_info getDrawInfo(const struct dx_pipeline& renderPipeline);
+		ParticleDrawInfo get_draw_info(const struct DXPipeline& render_pipeline);
 
-		static dx_mesh billboardMesh;
+		static DXMesh billboard_mesh;
 		SubmeshInfo submesh;
 
 	protected:
-		void updateInternal(struct dx_command_list* cl, float newParticles, float dt, const dx_pipeline& emitPipeline, const dx_pipeline& simulatePipeline, particle_parameter_setter* parameterSetter);
+		void update_internal(struct DXCommandList* cl, float new_particles, float dt, const DXPipeline& emit_pipeline, const DXPipeline& simulate_pipeline, ParticleParameterSetter* parameter_setter);
 
 	private:
-		static void initializePipeline();
+		static void initialize_pipeline();
 
-		void initializeInternal(uint32 particleStructSize, uint32 maxNumParticles, SubmeshInfo submesh, sort_mode sortMode);
+		void initialize_internal(uint32 particle_struct_size, uint32 max_num_particles, SubmeshInfo submesh, SortMode sort_mode);
 
 		template <typename T>
-		void setResources(dx_command_list* cl, const T& cb, uint32 offset, particle_parameter_setter* parameterSetter)
+		void set_resources(DXCommandList* cl, const T& cb, uint32 offset, ParticleParameterSetter* parameter_setter)
 		{
-			cl->setCompute32BitConstants(offset + PARTICLE_COMPUTE_RS_CB, cb);
-			setResources(cl, offset, parameterSetter);
+			cl->set_compute_32bit_constants(offset + PARTICLE_COMPUTE_RS_CB, cb);
+			set_resources(cl, offset, parameter_setter);
 		}
 
-		void setResources(dx_command_list* cl, uint32 offset, particle_parameter_setter* parameterSetter);
+		void set_resources(DXCommandList* cl, uint32 offset, ParticleParameterSetter* parameter_setter);
 
-		uint32 getAliveListOffset(uint32 alive);
-		uint32 getDeadListOffset();
-		uint32 getNumUserRootParameters(const struct dx_pipeline& pipeline);
+		uint32 get_alive_list_offset(uint32 alive);
+		uint32 get_dead_list_offset();
+		uint32 get_num_user_root_parameters(const struct DXPipeline& pipeline);
 
-		uint32 maxNumParticles;
-		uint32 currentAlive = 0;
+		uint32 max_num_particles;
+		uint32 current_alive = 0;
 
-		ref<dx_buffer> particlesBuffer;
-		ref<dx_buffer> listBuffer; // Counters, dead, alive 0, alive 1.
-		ref<dx_buffer> dispatchBuffer;
-		ref<dx_buffer> sortBuffer;
+		ref<DXBuffer> particles_buffer;
+		ref<DXBuffer> list_buffer; // Counters, dead, alive 0, alive 1.
+		ref<DXBuffer> dispatch_buffer;
+		ref<DXBuffer> sort_buffer;
 
-		sort_mode sortMode;
+		SortMode sort_mode;
 
 		uint32 index;
 
-		static ref<dx_buffer> particleDrawCommandBuffer;
-		static dx_command_signature particleCommandSignature;
+		static ref<DXBuffer> particle_draw_command_buffer;
+		static DXCommandSignature particle_command_signature;
 
-		friend void initializeRenderUtils();
-		template <typename T> friend struct particle_render_pipeline;
+		friend void initialize_render_utils();
+		template <typename T> friend struct ParticleRenderPipeline;
 	};
 
 	template <typename render_data_t>
-	struct particle_render_pipeline
+	struct ParticleRenderPipeline
 	{
-		static void render(dx_command_list* cl, const mat4& viewProj, const particle_render_command<render_data_t>& rc);
+		static void render(DXCommandList* cl, const mat4& view_proj, const ParticleRenderCommand<render_data_t>& rc);
 	};
 
 	template<typename render_data_t>
-	inline void particle_render_pipeline<render_data_t>::render(dx_command_list* cl, const mat4& viewProj, const particle_render_command<render_data_t>& rc)
+	inline void ParticleRenderPipeline<render_data_t>::render(DXCommandList* cl, const mat4& view_proj, const ParticleRenderCommand<render_data_t>& rc)
 	{
-		const particle_draw_info& info = rc.drawInfo;
+		const ParticleDrawInfo& info = rc.draw_info;
 
-		cl->setRootGraphicsSRV(info.rootParameterOffset + PARTICLE_RENDERING_RS_PARTICLES, info.particleBuffer->gpuVirtualAddress);
-		cl->setRootGraphicsSRV(info.rootParameterOffset + PARTICLE_RENDERING_RS_ALIVE_LIST, info.aliveList->gpuVirtualAddress + info.aliveListOffset);
+		cl->set_root_graphics_srv(info.root_parameter_offset + PARTICLE_RENDERING_RS_PARTICLES, info.particle_buffer->gpu_virtual_address);
+		cl->set_root_graphics_srv(info.root_parameter_offset + PARTICLE_RENDERING_RS_ALIVE_LIST, info.alive_list->gpu_virtual_address + info.alive_list_offset);
 
-		cl->setVertexBuffer(0, rc.vertexBuffer.positions);
-		if (rc.vertexBuffer.others)
-			cl->setVertexBuffer(1, rc.vertexBuffer.others);
+		cl->set_vertex_buffer(0, rc.vertex_buffer.positions);
+		if (rc.vertex_buffer.others)
+			cl->set_vertex_buffer(1, rc.vertex_buffer.others);
 
-		cl->setIndexBuffer(rc.indexBuffer);
+		cl->set_index_buffer(rc.index_buffer);
 
-		cl->drawIndirect(particle_system::particleCommandSignature, 1, info.commandBuffer, info.commandBufferOffset);
+		cl->draw_indirect(ParticleSystem::particle_command_signature, 1, info.command_buffer, info.command_buffer_offset);
 	}
 }
 

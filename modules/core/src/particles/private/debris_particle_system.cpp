@@ -12,104 +12,104 @@
 
 namespace era_engine
 {
-	dx_pipeline debris_particle_system::emitPipeline;
-	dx_pipeline debris_particle_system::simulatePipeline;
-	dx_pipeline debris_particle_system::renderPipeline;
+	DXPipeline DebrisParticleSystem::emit_pipeline;
+	DXPipeline DebrisParticleSystem::simulate_pipeline;
+	DXPipeline DebrisParticleSystem::render_pipeline;
 
-	void debris_particle_system::initializePipeline()
+	void DebrisParticleSystem::initialize_pipeline()
 	{
 #define name "debris_particle_system"
 
-		emitPipeline = createReloadablePipeline(EMIT_PIPELINE_NAME(name));
-		simulatePipeline = createReloadablePipeline(SIMULATE_PIPELINE_NAME(name));
+		emit_pipeline = create_reloadable_pipeline(EMIT_PIPELINE_NAME(name));
+		simulate_pipeline = create_reloadable_pipeline(SIMULATE_PIPELINE_NAME(name));
 
 		auto desc = CREATE_GRAPHICS_PIPELINE
-			.inputLayout(inputLayout_position)
-			.renderTargets(transparentLightPassFormats, arraysize(transparentLightPassFormats), depthStencilFormat)
-			.alphaBlending(0)
-			.depthSettings(true, false);
+			.input_layout(input_layout_position)
+			.render_targets(transparent_light_pass_formats, arraysize(transparent_light_pass_formats), depth_stencil_format)
+			.alpha_blending(0)
+			.depth_settings(true, false);
 
-		renderPipeline = createReloadablePipeline(desc, { VERTEX_SHADER_NAME(name), PIXEL_SHADER_NAME(name) });
+		render_pipeline = create_reloadable_pipeline(desc, { VERTEX_SHADER_NAME(name), PIXEL_SHADER_NAME(name) });
 
 #undef name
 	}
 
-	debris_particle_system::debris_particle_system(uint32 maxNumParticles)
+	DebrisParticleSystem::DebrisParticleSystem(uint32 max_num_particles)
 	{
-		initialize(maxNumParticles);
+		initialize(max_num_particles);
 	}
 
-	void debris_particle_system::initialize(uint32 maxNumParticles)
+	void DebrisParticleSystem::initialize(uint32 max_num_particles)
 	{
-		particle_system::initializeAsBillboard(sizeof(debris_particle_data), maxNumParticles, sort_mode_back_to_front);
+		ParticleSystem::initialize_as_billboard(sizeof(DebrisParticleData), max_num_particles, SORT_MODE_BACK_TO_FRONT);
 	}
 
-	void debris_particle_system::burst(vec3 position)
+	void DebrisParticleSystem::burst(vec3 position)
 	{
 		bursts.push_back({ position });
 	}
 
-	void debris_particle_system::update(struct dx_command_list* cl, const common_particle_simulation_data& common, float dt)
+	void DebrisParticleSystem::update(struct DXCommandList* cl, const CommonParticleSimulationData& common, float dt)
 	{
-		struct setter : public particle_parameter_setter
+		struct Setter : public ParticleParameterSetter
 		{
-			dx_dynamic_constant_buffer cbv;
-			ref<dx_texture> depthBuffer;
-			ref<dx_texture> normals;
+			DXDynamicConstantBuffer cbv;
+			ref<DXTexture> depth_buffer;
+			ref<DXTexture> normals;
 
-			virtual void setRootParameters(dx_command_list* cl) override
+			virtual void set_root_parameters(DXCommandList* cl) override
 			{
-				cl->setComputeDynamicConstantBuffer(DEBRIS_PARTICLE_SYSTEM_COMPUTE_RS_CBV, cbv);
-				cl->setDescriptorHeapSRV(DEBRIS_PARTICLE_SYSTEM_COMPUTE_RS_TEXTURES, 0, depthBuffer);
-				cl->setDescriptorHeapSRV(DEBRIS_PARTICLE_SYSTEM_COMPUTE_RS_TEXTURES, 1, normals);
+				cl->set_compute_dynamic_constant_buffer(DEBRIS_PARTICLE_SYSTEM_COMPUTE_RS_CBV, cbv);
+				cl->set_descriptor_heap_srv(DEBRIS_PARTICLE_SYSTEM_COMPUTE_RS_TEXTURES, 0, depth_buffer);
+				cl->set_descriptor_heap_srv(DEBRIS_PARTICLE_SYSTEM_COMPUTE_RS_TEXTURES, 1, normals);
 			}
 		};
 
-		const float linearDamping = 0.4f;
+		const float linear_damping = 0.4f;
 
-		debris_simulation_cb cb;
-		cb.cameraVP = common.prevFrameCameraViewProj;
-		cb.cameraProjectionParams = common.cameraProjectionParams;
-		cb.cameraPosition = common.cameraPosition;
-		cb.frameIndex = (uint32)dxContext.frameID;
-		cb.drag = 1.f / (1.f + dt * linearDamping);
+		DebrisSimulationCB cb;
+		cb.camera_vp = common.prev_frame_camera_view_proj;
+		cb.camera_projection_params = common.camera_projection_params;
+		cb.camera_position = common.camera_position;
+		cb.frame_index = (uint32)dx_context.frame_id;
+		cb.drag = 1.f / (1.f + dt * linear_damping);
 
-		uint32 numBursts = (uint32)min(arraysize(cb.emitPositions), bursts.size());
-		uint32 numNewParticles = numBursts * 256;
-		for (uint32 i = 0; i < numBursts; ++i)
+		uint32 num_bursts = (uint32)min(arraysize(cb.emit_positions), bursts.size());
+		uint32 num_new_particles = num_bursts * 256;
+		for (uint32 i = 0; i < num_bursts; ++i)
 		{
-			cb.emitPositions[i] = vec4(bursts[i].position, 1.f);
+			cb.emit_positions[i] = vec4(bursts[i].position, 1.f);
 		}
 
-		setter s;
-		s.cbv = dxContext.uploadDynamicConstantBuffer(cb);
-		s.depthBuffer = common.prevFrameDepthBuffer;
-		s.normals = common.prevFrameNormals;
+		Setter s;
+		s.cbv = dx_context.upload_dynamic_constant_buffer(cb);
+		s.depth_buffer = common.prev_frame_depth_buffer;
+		s.normals = common.prev_frame_normals;
 
-		updateInternal(cl, (float)numNewParticles, dt, emitPipeline, simulatePipeline, &s);
+		update_internal(cl, (float)num_new_particles, dt, emit_pipeline, simulate_pipeline, &s);
 
 		bursts.clear();
 	}
 
-	void debris_particle_system::render(transparent_render_pass* renderPass)
+	void DebrisParticleSystem::render(TransparentRenderPass* render_pass)
 	{
-		debris_material material;
+		DebrisMaterial material;
 
-		renderPass->renderParticles<debris_pipeline>(billboardMesh.vertexBuffer, billboardMesh.indexBuffer,
-			getDrawInfo(renderPipeline),
+		render_pass->render_particles<DebrisPipeline>(billboard_mesh.vertex_buffer, billboard_mesh.index_buffer,
+			get_draw_info(render_pipeline),
 			material);
 	}
 
-	PIPELINE_SETUP_IMPL(debris_particle_system::debris_pipeline)
+	PIPELINE_SETUP_IMPL(DebrisParticleSystem::DebrisPipeline)
 	{
-		cl->setPipelineState(*renderPipeline.pipeline);
-		cl->setGraphicsRootSignature(*renderPipeline.rootSignature);
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		cl->setGraphicsDynamicConstantBuffer(DEBRIS_PARTICLE_SYSTEM_RENDERING_RS_CAMERA, common.cameraCBV);
+		cl->set_pipeline_state(*render_pipeline.pipeline);
+		cl->set_graphics_root_signature(*render_pipeline.root_signature);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_graphics_dynamic_constant_buffer(DEBRIS_PARTICLE_SYSTEM_RENDERING_RS_CAMERA, common.camera_cbv);
 	}
 
-	PARTICLE_PIPELINE_RENDER_IMPL(debris_particle_system::debris_pipeline, debris_particle_system::debris_material)
+	PARTICLE_PIPELINE_RENDER_IMPL(DebrisParticleSystem::DebrisPipeline, DebrisParticleSystem::DebrisMaterial)
 	{
-		particle_render_pipeline::render(cl, viewProj, rc);
+		ParticleRenderPipeline::render(cl, view_proj, rc);
 	}
 }

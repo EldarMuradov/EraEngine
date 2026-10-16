@@ -10,29 +10,29 @@
 
 #define MAX_NUM_INDICES_PER_TILE (MAX_NUM_LIGHTS_PER_TILE + NUM_DECAL_BUCKETS)
 
-struct light_culling_frustum_plane
+struct LightCullingFrustumPlane
 {
     vec3 N;
     float d;
 };
 
-struct light_culling_view_frustum
+struct LightCullingViewFrustum
 {
-    light_culling_frustum_plane planes[4]; // Left, right, top, bottom frustum planes.
+    LightCullingFrustumPlane planes[4]; // Left, right, top, bottom frustum planes.
 };
 
-struct frusta_cb
+struct FrustaCB
 {
-    uint32 numThreadsX;
-    uint32 numThreadsY;
+    uint32 num_threads_x;
+    uint32 num_threads_y;
 };
 
-struct light_culling_cb
+struct LightCullingCB
 {
-    uint32 numThreadGroupsX;
-    uint32 numPointLights;
-    uint32 numSpotLights;
-    uint32 numDecals;
+    uint32 num_thread_groups_x;
+    uint32 num_point_lights;
+    uint32 num_spot_lights;
+    uint32 num_decals;
 };
 
 #define WORLD_SPACE_TILED_FRUSTA_RS \

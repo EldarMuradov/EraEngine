@@ -1,12 +1,12 @@
 #ifndef OUTLINE_RS_HLSLI
 #define OUTLINE_RS_HLSLI
 
-struct outline_marker_cb
+struct OutlineMarkerCB
 {
     mat4 mvp;
 };
 
-struct outline_drawer_cb
+struct OutlineDrawerCB
 {
     int width, height;
 };

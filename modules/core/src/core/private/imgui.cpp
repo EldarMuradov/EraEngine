@@ -22,18 +22,18 @@
 
 #define MAX_NUM_IMGUI_IMAGES_PER_FRAME 128
 
-static com<ID3D12DescriptorHeap> imguiDescriptorHeap;
-static CD3DX12_CPU_DESCRIPTOR_HANDLE startCPUDescriptor;
-static CD3DX12_GPU_DESCRIPTOR_HANDLE startGPUDescriptor;
-static uint32 descriptorHandleIncrementSize;
-static uint32 numImagesThisFrame;
+static com<ID3D12DescriptorHeap> imgui_descriptor_heap;
+static CD3DX12_CPU_DESCRIPTOR_HANDLE start_cpu_descriptor;
+static CD3DX12_GPU_DESCRIPTOR_HANDLE start_gpu_descriptor;
+static uint32 descriptor_handle_increment_size;
+static uint32 num_images_this_frame;
 
-static ref<era_engine::dx_texture> iconsTexture;
-static ImTextureID iconsTextureID;
+static ref<era_engine::DXTexture> icons_texture;
+static ImTextureID icons_texture_id;
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND h_wnd, UINT msg, WPARAM w_param, LPARAM l_param);
 
-static void setStyle()
+static void set_style()
 {
 	auto& colors = ImGui::GetStyle().Colors;
 	colors[ImGuiCol_WindowBg] = ImVec4{ 0.1f, 0.105f, 0.11f, 1.0f };
@@ -72,10 +72,10 @@ static void setStyle()
 
 namespace era_engine
 {
-	ImGuiContext* initializeImGui(struct dx_window& window)
+	ImGuiContext* initialize_imgui(struct DXWindow& window)
 	{
 		IMGUI_CHECKVERSION();
-		auto imguiContext = ImGui::CreateContext();
+		auto imgui_context = ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
 		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -94,65 +94,65 @@ namespace era_engine
 			style.Colors[ImGuiCol_WindowBg].w = 1.f;
 		}
 
-		setStyle();
+		set_style();
 
 		io.FontDefault = io.Fonts->AddFontFromFileTTF(get_asset_path("/resources/fonts/opensans/OpenSans-Regular.ttf").c_str(), 18.f);
 
 		// Merge in icons.
-		static const ImWchar iconsRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-		ImFontConfig iconsConfig;
-		iconsConfig.MergeMode = true;
-		iconsConfig.PixelSnapH = true;
-		io.FontDefault = io.Fonts->AddFontFromFileTTF((get_asset_path("/resources/fonts/icons/") + FONT_ICON_FILE_NAME_FAS).c_str(), 16.f, &iconsConfig, iconsRanges);
+		static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+		ImFontConfig icons_config;
+		icons_config.MergeMode = true;
+		icons_config.PixelSnapH = true;
+		io.FontDefault = io.Fonts->AddFontFromFileTTF((get_asset_path("/resources/fonts/icons/") + FONT_ICON_FILE_NAME_FAS).c_str(), 16.f, &icons_config, icons_ranges);
 
 		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 		desc.NumDescriptors = NUM_BUFFERED_FRAMES * MAX_NUM_IMGUI_IMAGES_PER_FRAME + 2;
 		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-		checkResult(dxContext.device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&imguiDescriptorHeap)));
+		checkResult(dx_context.device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&imgui_descriptor_heap)));
 
-		startCPUDescriptor = imguiDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-		startGPUDescriptor = imguiDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
-		descriptorHandleIncrementSize = dxContext.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		start_cpu_descriptor = imgui_descriptor_heap->GetCPUDescriptorHandleForHeapStart();
+		start_gpu_descriptor = imgui_descriptor_heap->GetGPUDescriptorHandleForHeapStart();
+		descriptor_handle_increment_size = dx_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-		DXGI_FORMAT screenFormat = (window.colorDepth == color_depth_8) ? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R10G10B10A2_UNORM;
+		DXGI_FORMAT screen_format = (window.color_depth == COLOR_DEPTH_8) ? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R10G10B10A2_UNORM;
 
-		ImGui_ImplWin32_Init(window.windowHandle);
-		ImGui_ImplDX12_Init(dxContext.device.Get(), NUM_BUFFERED_FRAMES,
-			screenFormat, imguiDescriptorHeap.Get(),
-			startCPUDescriptor,
-			startGPUDescriptor);
+		ImGui_ImplWin32_Init(window.window_handle);
+		ImGui_ImplDX12_Init(dx_context.device.Get(), NUM_BUFFERED_FRAMES,
+			screen_format, imgui_descriptor_heap.Get(),
+			start_cpu_descriptor,
+			start_gpu_descriptor);
 
 		{
-			iconsTexture = loadTextureFromFile(get_asset_path("/resources/icons/icons_ui.svg"), image_load_flags_gen_mips_on_cpu | image_load_flags_cache_to_dds);
+			icons_texture = load_texture_from_file(get_asset_path("/resources/icons/icons_ui.svg"), IMAGE_LOAD_FLAGS_GEN_MIPS_ON_CPU | IMAGE_LOAD_FLAGS_CACHE_TO_DDS);
 
-			CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(startCPUDescriptor, 1, descriptorHandleIncrementSize);
-			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(startGPUDescriptor, 1, descriptorHandleIncrementSize);
-			dxContext.device->CopyDescriptorsSimple(1, cpuHandle, iconsTexture->defaultSRV.cpuHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			CD3DX12_CPU_DESCRIPTOR_HANDLE cpu_handle(start_cpu_descriptor, 1, descriptor_handle_increment_size);
+			CD3DX12_GPU_DESCRIPTOR_HANDLE gpu_handle(start_gpu_descriptor, 1, descriptor_handle_increment_size);
+			dx_context.device->CopyDescriptorsSimple(1, cpu_handle, icons_texture->default_srv.cpu_handle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-			iconsTextureID = (ImTextureID)gpuHandle.ptr;
+			icons_texture_id = (ImTextureID)gpu_handle.ptr;
 		}
 
-		return imguiContext;
+		return imgui_context;
 	}
 
-	void newImGuiFrame(float dt)
+	void new_imgui_frame(float dt)
 	{
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 	}
 
-	void renderImGui(dx_command_list* cl)
+	void render_imgui(DXCommandList* cl)
 	{
 		DX_PROFILE_BLOCK(cl, "ImGui");
 
 		ImGui::Render();
 		if (cl)
 		{
-			cl->setDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, imguiDescriptorHeap);
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cl->commandList.Get());
+			cl->set_descriptor_heap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, imgui_descriptor_heap);
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cl->command_list.Get());
 		}
 
 		auto& io = ImGui::GetIO();
@@ -161,29 +161,29 @@ namespace era_engine
 			ImGui::UpdatePlatformWindows();
 			if (cl)
 			{
-				ImGui::RenderPlatformWindowsDefault(0, cl->commandList.Get());
+				ImGui::RenderPlatformWindowsDefault(0, cl->command_list.Get());
 			}
 		}
 
-		numImagesThisFrame = 0;
+		num_images_this_frame = 0;
 	}
 
-	LRESULT handleImGuiInput(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	LRESULT handle_imgui_input(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
 	{
-		return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam);
+		return ImGui_ImplWin32_WndProcHandler(hwnd, msg, w_param, l_param);
 	}
 }
 
-static ImTextureID pushTexture(era_engine::dx_cpu_descriptor_handle handle)
+static ImTextureID push_texture(era_engine::DXCPUDescriptorHandle handle)
 {
-	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(startCPUDescriptor, 2 + era_engine::dxContext.bufferedFrameID * MAX_NUM_IMGUI_IMAGES_PER_FRAME + numImagesThisFrame, descriptorHandleIncrementSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(startGPUDescriptor, 2 + era_engine::dxContext.bufferedFrameID * MAX_NUM_IMGUI_IMAGES_PER_FRAME + numImagesThisFrame, descriptorHandleIncrementSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cpu_handle(start_cpu_descriptor, 2 + era_engine::dx_context.buffered_frame_id * MAX_NUM_IMGUI_IMAGES_PER_FRAME + num_images_this_frame, descriptor_handle_increment_size);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE gpu_handle(start_gpu_descriptor, 2 + era_engine::dx_context.buffered_frame_id * MAX_NUM_IMGUI_IMAGES_PER_FRAME + num_images_this_frame, descriptor_handle_increment_size);
 
-	era_engine::dxContext.device->CopyDescriptorsSimple(1, cpuHandle, handle.cpuHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	era_engine::dx_context.device->CopyDescriptorsSimple(1, cpu_handle, handle.cpu_handle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	++numImagesThisFrame;
+	++num_images_this_frame;
 
-	return (ImTextureID)gpuHandle.ptr;
+	return (ImTextureID)gpu_handle.ptr;
 }
 
 namespace ImGui
@@ -192,7 +192,7 @@ namespace ImGui
 
 	bool AnyModifiersDown()
 	{
-		return ImGui::IsKeyDown(key_ctrl) || ImGui::IsKeyDown(key_shift) || ImGui::IsKeyDown(key_alt);
+		return ImGui::IsKeyDown(KEY_CTRL) || ImGui::IsKeyDown(KEY_SHIFT) || ImGui::IsKeyDown(KEY_ALT);
 	}
 
 	bool IsItemActiveLastFrame()
@@ -208,24 +208,24 @@ namespace ImGui
 	bool BeginWindowHiddenTabBar(const char* name, bool* open, ImGuiWindowFlags flags)
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-		ImGuiWindowClass windowClass;
-		windowClass.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_AutoHideTabBar;
-		ImGui::SetNextWindowClass(&windowClass);
+		ImGuiWindowClass window_class;
+		window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_AutoHideTabBar;
+		ImGui::SetNextWindowClass(&window_class);
 		bool result = ImGui::Begin(name, open, flags);
 		ImGui::PopStyleVar();
 		return result;
 	}
 
-	bool BeginControlsWindow(const char* name, ImVec2 parentRelativeOffset, ImVec2 parentAbsoluteOffset)
+	bool BeginControlsWindow(const char* name, ImVec2 parent_relative_offset, ImVec2 parent_absolute_offset)
 	{
 		if (ImGui::GetCurrentWindow())
 		{
 			// Only do this if there is a parent window.
 
-			ImVec2 parentPos = ImGui::GetWindowPos();
-			ImVec2 parentSize = ImGui::GetWindowSize();
+			ImVec2 parent_pos = ImGui::GetWindowPos();
+			ImVec2 parent_size = ImGui::GetWindowSize();
 
-			ImGui::SetNextWindowPos(parentPos + parentSize * parentRelativeOffset + parentAbsoluteOffset);
+			ImGui::SetNextWindowPos(parent_pos + parent_size * parent_relative_offset + parent_absolute_offset);
 		}
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 10.f);
@@ -237,20 +237,20 @@ namespace ImGui
 		return result;
 	}
 
-	static void Image(era_engine::dx_cpu_descriptor_handle& handle, ImVec2 size, ImVec2 uv0, ImVec2 uv1)
+	static void Image(era_engine::DXCPUDescriptorHandle& handle, ImVec2 size, ImVec2 uv0, ImVec2 uv1)
 	{
-		if (numImagesThisFrame < MAX_NUM_IMGUI_IMAGES_PER_FRAME)
+		if (num_images_this_frame < MAX_NUM_IMGUI_IMAGES_PER_FRAME)
 		{
-			ImGui::Image(pushTexture(handle), size, uv0, uv1);
+			ImGui::Image(push_texture(handle), size, uv0, uv1);
 		}
 	}
 
-	static void Image(era_engine::dx_cpu_descriptor_handle& handle, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1)
+	static void Image(era_engine::DXCPUDescriptorHandle& handle, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1)
 	{
 		ImGui::Image(handle, ImVec2((float)width, (float)height), uv0, uv1);
 	}
 
-	static void Image(const ref<dx_texture>& texture, ImVec2 size, ImVec2 uv0, ImVec2 uv1)
+	static void Image(const ref<DXTexture>& texture, ImVec2 size, ImVec2 uv0, ImVec2 uv1)
 	{
 		if (texture)
 		{
@@ -264,40 +264,40 @@ namespace ImGui
 				size.y = texture->height * size.x / (float)texture->width;
 			}
 
-			ImGui::Image(texture->defaultSRV, size, uv0, uv1);
+			ImGui::Image(texture->default_srv, size, uv0, uv1);
 		}
 	}
 
-	void Image(const ref<dx_texture>& texture, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1)
+	void Image(const ref<DXTexture>& texture, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1)
 	{
 		ImGui::Image(texture, ImVec2((float)width, (float)height), uv0, uv1);
 	}
 
-	static bool ImageButton(era_engine::dx_cpu_descriptor_handle& handle, ImVec2 size, ImVec2 uvTopLeft, ImVec2 uvBottomRight)
+	static bool ImageButton(era_engine::DXCPUDescriptorHandle& handle, ImVec2 size, ImVec2 uv_top_left, ImVec2 uv_bottom_right)
 	{
-		if (numImagesThisFrame < MAX_NUM_IMGUI_IMAGES_PER_FRAME)
+		if (num_images_this_frame < MAX_NUM_IMGUI_IMAGES_PER_FRAME)
 		{
-			return ImGui::ImageButton(pushTexture(handle), size, uvTopLeft, uvBottomRight);
+			return ImGui::ImageButton(push_texture(handle), size, uv_top_left, uv_bottom_right);
 		}
 		return false;
 	}
 
-	static bool ImageButton(era_engine::dx_cpu_descriptor_handle& handle, uint32 width, uint32 height, ImVec2 uvTopLeft, ImVec2 uvBottomRight)
+	static bool ImageButton(era_engine::DXCPUDescriptorHandle& handle, uint32 width, uint32 height, ImVec2 uv_top_left, ImVec2 uv_bottom_right)
 	{
-		return ImGui::ImageButton(handle, ImVec2((float)width, (float)height), uvTopLeft, uvBottomRight);
+		return ImGui::ImageButton(handle, ImVec2((float)width, (float)height), uv_top_left, uv_bottom_right);
 	}
 
-	static bool ImageButton(const ref<dx_texture>& texture, ImVec2 size, ImVec2 uvTopLeft, ImVec2 uvBottomRight)
+	static bool ImageButton(const ref<DXTexture>& texture, ImVec2 size, ImVec2 uv_top_left, ImVec2 uv_bottom_right)
 	{
-		return ImGui::ImageButton(texture->defaultSRV, size, uvTopLeft, uvBottomRight);
+		return ImGui::ImageButton(texture->default_srv, size, uv_top_left, uv_bottom_right);
 	}
 
-	bool ImageButton(const ref<dx_texture>& texture, uint32 width, uint32 height, ImVec2 uvTopLeft, ImVec2 uvBottomRight)
+	bool ImageButton(const ref<DXTexture>& texture, uint32 width, uint32 height, ImVec2 uv_top_left, ImVec2 uv_bottom_right)
 	{
-		return ImGui::ImageButton(texture->defaultSRV, ImVec2((float)width, (float)height), uvTopLeft, uvBottomRight);
+		return ImGui::ImageButton(texture->default_srv, ImVec2((float)width, (float)height), uv_top_left, uv_bottom_right);
 	}
 
-	void Icon(imgui_icon icon, uint32 size)
+	void Icon(ImGuiIcon icon, uint32 size)
 	{
 		float row = (float)(icon / IMGUI_ICON_COLS);
 		float col = (float)(icon % IMGUI_ICON_COLS);
@@ -307,14 +307,14 @@ namespace ImGui
 		float top = row / IMGUI_ICON_ROWS;
 		float bottom = (row + 1) / IMGUI_ICON_ROWS;
 
-		ImGui::Image(iconsTextureID, ImVec2((float)size, (float)size), ImVec2(left, top), ImVec2(right, bottom));
+		ImGui::Image(icons_texture_id, ImVec2((float)size, (float)size), ImVec2(left, top), ImVec2(right, bottom));
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip(imguiIconNames[icon]);
+			ImGui::SetTooltip(imgui_icon_names[icon]);
 		}
 	}
 
-	bool IconButton(uint32 id, era_engine::imgui_icon icon, uint32 size, bool enabled)
+	bool IconButton(uint32 id, era_engine::ImGuiIcon icon, uint32 size, bool enabled)
 	{
 		float row = (float)(icon / IMGUI_ICON_COLS);
 		float col = (float)(icon % IMGUI_ICON_COLS);
@@ -330,10 +330,10 @@ namespace ImGui
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.2f);
 		}
-		bool result = ImGui::ImageButton(iconsTextureID, ImVec2((float)size, (float)size), ImVec2(left, top), ImVec2(right, bottom), 0);
+		bool result = ImGui::ImageButton(icons_texture_id, ImVec2((float)size, (float)size), ImVec2(left, top), ImVec2(right, bottom), 0);
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip(imguiIconNames[icon]);
+			ImGui::SetTooltip(imgui_icon_names[icon]);
 		}
 		if (!enabled)
 		{
@@ -344,7 +344,7 @@ namespace ImGui
 		return result;
 	}
 
-	bool IconRadioButton(era_engine::imgui_icon icon, int* current, int value, uint32 size, bool enabled)
+	bool IconRadioButton(era_engine::ImGuiIcon icon, int* current, int value, uint32 size, bool enabled)
 	{
 		float row = (float)(icon / IMGUI_ICON_COLS);
 		float col = (float)(icon % IMGUI_ICON_COLS);
@@ -362,11 +362,11 @@ namespace ImGui
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.2f);
 		}
-		bool clicked = ImGui::ImageButton(iconsTextureID, ImVec2((float)size, (float)size), ImVec2(left, top), ImVec2(right, bottom),
+		bool clicked = ImGui::ImageButton(icons_texture_id, ImVec2((float)size, (float)size), ImVec2(left, top), ImVec2(right, bottom),
 			0, active ? ImVec4(1, 1, 1, 0.4f) : ImVec4(0, 0, 0, 0));
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip(imguiIconNames[icon]);
+			ImGui::SetTooltip(imgui_icon_names[icon]);
 		}
 		if (!enabled)
 		{
@@ -464,23 +464,23 @@ namespace ImGui
 	bool SelectableWrapped(const char* label, int width, bool selected, ImGuiSelectableFlags flags)
 	{
 		ImVec2 padding = ImGui::GetStyle().FramePadding;
-		float textWidth = width - padding.x * 2;
+		float text_width = width - padding.x * 2;
 
-		ImVec2 textSize = ImGui::CalcTextSize(label, 0, false, textWidth);
-		bool result = ImGui::Selectable("##label", selected, flags, textSize + padding * 2);
-		ImGui::RenderTextWrapped(ImGui::GetItemRectMin() + padding, label, 0, textWidth);
+		ImVec2 text_size = ImGui::CalcTextSize(label, 0, false, text_width);
+		bool result = ImGui::Selectable("##label", selected, flags, text_size + padding * 2);
+		ImGui::RenderTextWrapped(ImGui::GetItemRectMin() + padding, label, 0, text_width);
 		return result;
 	}
 
-	bool BeginTree(const char* label, bool defaultOpen)
+	bool BeginTree(const char* label, bool default_open)
 	{
-		return ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding | (defaultOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None));
+		return ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding | (default_open ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None));
 	}
 
-	bool BeginTreeColoredText(const char* label, vec3 color, bool defaultOpen)
+	bool BeginTreeColoredText(const char* label, vec3 color, bool default_open)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(color.x, color.y, color.z, 1.f));
-		bool result = ImGui::BeginTree(label, defaultOpen);
+		bool result = ImGui::BeginTree(label, default_open);
 		ImGui::PopStyleColor();
 		return result;
 	}
@@ -506,7 +506,7 @@ namespace ImGui
 	}
 
 	template <typename tooptip_func>
-	static bool AssetHandleInternal(const char* label, const char* type, era_engine::AssetHandle& asset, const char* clearText, tooptip_func tooltipFunc)
+	static bool AssetHandleInternal(const char* label, const char* type, era_engine::AssetHandle& asset, const char* clear_text, tooptip_func tooltip_func)
 	{
 		char buffer[512] = "";
 		if (asset)
@@ -519,10 +519,10 @@ namespace ImGui
 			snprintf(buffer, sizeof(buffer), "%s", type);
 		}
 
-		if (clearText)
+		if (clear_text)
 		{
-			float resetWidth = ImGui::CalcButtonWidth(clearText) + ImGui::GetStyle().ItemSpacing.x;
-			ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth() - resetWidth);
+			float reset_width = ImGui::CalcButtonWidth(clear_text) + ImGui::GetStyle().ItemSpacing.x;
+			ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth() - reset_width);
 		}
 
 		ImGui::InputText("", buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
@@ -545,15 +545,15 @@ namespace ImGui
 				ImGui::BeginTooltip();
 				ImGui::Text(path.string().c_str());
 				ImGui::Text("Asset handle: % llu", asset.value);
-				tooltipFunc();
+				tooltip_func();
 				ImGui::EndTooltip();
 			}
 		}
 
-		if (clearText)
+		if (clear_text)
 		{
 			ImGui::SameLine();
-			if (ImGui::DisableableButton(clearText, asset))
+			if (ImGui::DisableableButton(clear_text, asset))
 			{
 				asset = {};
 				result = true;
@@ -563,14 +563,14 @@ namespace ImGui
 		return result;
 	}
 
-	bool AssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const char* clearText)
+	bool AssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const char* clear_text)
 	{
-		return AssetHandleInternal(label, type, asset, clearText, []() {});
+		return AssetHandleInternal(label, type, asset, clear_text, []() {});
 	}
 
-	bool TextureAssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const ref<dx_texture>& texture, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1, const char* clearText)
+	bool TextureAssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const ref<DXTexture>& texture, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1, const char* clear_text)
 	{
-		return AssetHandleInternal(label, type, asset, clearText, [=]() { ImGui::Image(texture, width, height, uv0, uv1); });
+		return AssetHandleInternal(label, type, asset, clear_text, [=]() { ImGui::Image(texture, width, height, uv0, uv1); });
 	}
 
 	bool Drag(const char* label, float& f, float speed, float min, float max, const char* format)
@@ -663,58 +663,58 @@ namespace ImGui
 		return result;
 	}
 
-	static bool PropertySliderInternal(ImGuiDataType_ type, int32 count, const char* label, void* f, void* minValue, void* maxValue, const char* format, ImGuiSliderFlags flags = ImGuiSliderFlags_None)
+	static bool PropertySliderInternal(ImGuiDataType_ type, int32 count, const char* label, void* f, void* min_value, void* max_value, const char* format, ImGuiSliderFlags flags = ImGuiSliderFlags_None)
 	{
 		pre(label);
 		bool result;
 		if (count == 1)
 		{
-			result = ImGui::SliderScalar("", type, f, minValue, maxValue, format, flags);
+			result = ImGui::SliderScalar("", type, f, min_value, max_value, format, flags);
 		}
 		else
 		{
-			result = ImGui::SliderScalarN("", type, f, count, minValue, maxValue, format, flags);
+			result = ImGui::SliderScalarN("", type, f, count, min_value, max_value, format, flags);
 		}
 		post();
 		return result;
 	}
 
-	bool PropertySlider(const char* label, float& f, float minValue, float maxValue, const char* format, ImGuiSliderFlags flags)
+	bool PropertySlider(const char* label, float& f, float min_value, float max_value, const char* format, ImGuiSliderFlags flags)
 	{
-		return ImGui::PropertySliderInternal(ImGuiDataType_Float, 1, label, &f, &minValue, &maxValue, format, flags);
+		return ImGui::PropertySliderInternal(ImGuiDataType_Float, 1, label, &f, &min_value, &max_value, format, flags);
 	}
 
-	bool PropertySlider(const char* label, vec2& f, float minValue, float maxValue, const char* format, ImGuiSliderFlags flags)
+	bool PropertySlider(const char* label, vec2& f, float min_value, float max_value, const char* format, ImGuiSliderFlags flags)
 	{
-		return ImGui::PropertySliderInternal(ImGuiDataType_Float, 2, label, f.data, &minValue, &maxValue, format, flags);
+		return ImGui::PropertySliderInternal(ImGuiDataType_Float, 2, label, f.data, &min_value, &max_value, format, flags);
 	}
 
-	bool PropertySlider(const char* label, vec3& f, float minValue, float maxValue, const char* format, ImGuiSliderFlags flags)
+	bool PropertySlider(const char* label, vec3& f, float min_value, float max_value, const char* format, ImGuiSliderFlags flags)
 	{
-		return ImGui::PropertySliderInternal(ImGuiDataType_Float, 3, label, f.data, &minValue, &maxValue, format, flags);
+		return ImGui::PropertySliderInternal(ImGuiDataType_Float, 3, label, f.data, &min_value, &max_value, format, flags);
 	}
 
-	bool PropertySlider(const char* label, vec4& f, float minValue, float maxValue, const char* format, ImGuiSliderFlags flags)
+	bool PropertySlider(const char* label, vec4& f, float min_value, float max_value, const char* format, ImGuiSliderFlags flags)
 	{
-		return ImGui::PropertySliderInternal(ImGuiDataType_Float, 4, label, f.data, &minValue, &maxValue, format, flags);
+		return ImGui::PropertySliderInternal(ImGuiDataType_Float, 4, label, f.data, &min_value, &max_value, format, flags);
 	}
 
-	bool PropertySliderAngle(const char* label, float& fRad, float minValueDeg, float maxValueDeg, const char* format)
+	bool PropertySliderAngle(const char* label, float& f_rad, float min_value_deg, float max_value_deg, const char* format)
 	{
 		pre(label);
-		bool result = ImGui::SliderAngle("", &fRad, minValueDeg, maxValueDeg, format);
+		bool result = ImGui::SliderAngle("", &f_rad, min_value_deg, max_value_deg, format);
 		post();
 		return result;
 	}
 
-	bool PropertySlider(const char* label, int32& v, int minValue, int maxValue, const char* format)
+	bool PropertySlider(const char* label, int32& v, int min_value, int max_value, const char* format)
 	{
-		return ImGui::PropertySliderInternal(ImGuiDataType_S32, 1, label, &v, &minValue, &maxValue, format);
+		return ImGui::PropertySliderInternal(ImGuiDataType_S32, 1, label, &v, &min_value, &max_value, format);
 	}
 
-	bool PropertySlider(const char* label, uint32& v, uint32 minValue, uint32 maxValue, const char* format)
+	bool PropertySlider(const char* label, uint32& v, uint32 min_value, uint32 max_value, const char* format)
 	{
-		return ImGui::PropertySliderInternal(ImGuiDataType_U32, 1, label, &v, &minValue, &maxValue, format);
+		return ImGui::PropertySliderInternal(ImGuiDataType_U32, 1, label, &v, &min_value, &max_value, format);
 	}
 
 	static bool PropertyInputInternal(ImGuiDataType_ type, int32 count, const char* label, void* f, const char* format)
@@ -846,12 +846,12 @@ namespace ImGui
 		ASSERT(is_power_of_two(current));
 		ASSERT(is_power_of_two(from));
 		ASSERT(is_power_of_two(to));
-		uint32 logCurrent = log2(current);
-		uint32 logFrom = log2(from);
-		uint32 logTo = log2(to);
-		uint32 count = logTo - logFrom + 1;
+		uint32 log_current = log2(current);
+		uint32 log_from = log2(from);
+		uint32 log_to = log2(to);
+		uint32 count = log_to - log_from + 1;
 
-		logCurrent -= logFrom;
+		log_current -= log_from;
 
 		static const char* names[] =
 		{
@@ -861,9 +861,9 @@ namespace ImGui
 		};
 
 		pre(label);
-		bool result = ImGui::Dropdown("", names + logFrom, count, logCurrent);
-		logCurrent += logFrom;
-		current = 1 << logCurrent;
+		bool result = ImGui::Dropdown("", names + log_from, count, log_current);
+		log_current += log_from;
+		current = 1 << log_current;
 		post();
 		return result;
 	}
@@ -903,30 +903,30 @@ namespace ImGui
 		return result;
 	}
 
-	bool PropertyButton(const char* label, const char* buttonText, const char* hoverText, ImVec2 size)
+	bool PropertyButton(const char* label, const char* button_text, const char* hover_text, ImVec2 size)
 	{
 		pre(label);
-		bool result = ImGui::Button(buttonText, size);
-		if (hoverText && ImGui::IsItemHovered())
+		bool result = ImGui::Button(button_text, size);
+		if (hover_text && ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip(hoverText);
+			ImGui::SetTooltip(hover_text);
 		}
 		post();
 		return result;
 	}
 
-	bool PropertyInputText(const char* label, char* buffer, uint32 bufferSize, bool disableInput)
+	bool PropertyInputText(const char* label, char* buffer, uint32 buffer_size, bool disable_input)
 	{
 		pre(label);
 
-		if (disableInput)
+		if (disable_input)
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.6f);
 		}
 
-		bool result = ImGui::InputText("", buffer, bufferSize, disableInput ? ImGuiInputTextFlags_ReadOnly : 0);
+		bool result = ImGui::InputText("", buffer, buffer_size, disable_input ? ImGuiInputTextFlags_ReadOnly : 0);
 
-		if (disableInput)
+		if (disable_input)
 		{
 			ImGui::PopStyleVar();
 		}
@@ -935,23 +935,23 @@ namespace ImGui
 		return result;
 	}
 
-	bool PropertyAssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const char* clearText)
+	bool PropertyAssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const char* clear_text)
 	{
 		pre(label);
-		bool result = AssetHandle("", type, asset, clearText);
+		bool result = AssetHandle("", type, asset, clear_text);
 		post();
 		return result;
 	}
 
-	bool PropertyTextureAssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const ref<dx_texture>& texture, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1, const char* clearText)
+	bool PropertyTextureAssetHandle(const char* label, const char* type, era_engine::AssetHandle& asset, const ref<DXTexture>& texture, uint32 width, uint32 height, ImVec2 uv0, ImVec2 uv1, const char* clear_text)
 	{
 		pre(label);
-		bool result = TextureAssetHandle("", type, asset, texture, width, height, uv0, uv1, clearText);
+		bool result = TextureAssetHandle("", type, asset, texture, width, height, uv0, uv1, clear_text);
 		post();
 		return result;
 	}
 
-	bool PropertyDragDropStringTarget(const char* label, const char* dragDropID, std::string& value, const char* clearLabel)
+	bool PropertyDragDropStringTarget(const char* label, const char* drag_drop_id, std::string& value, const char* clear_label)
 	{
 		pre(label);
 
@@ -960,7 +960,7 @@ namespace ImGui
 		ImGui::InputText("", value.data(), value.length(), ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::BeginDragDropTarget())
 		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(dragDropID))
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(drag_drop_id))
 			{
 				value = (const char*)payload->Data;
 				result = true;
@@ -969,9 +969,9 @@ namespace ImGui
 			ImGui::EndDragDropTarget();
 		}
 
-		if (clearLabel)
+		if (clear_label)
 		{
-			if (ImGui::Button(clearLabel))
+			if (ImGui::Button(clear_label))
 			{
 				value.clear();
 				result = true;
@@ -1071,9 +1071,9 @@ namespace tween
 
 namespace ImGui
 {
-	static float SplineValue(float p, const float* x, const float* y, uint32 numPoints)
+	static float SplineValue(float p, const float* x, const float* y, uint32 num_points)
 	{
-		if (numPoints < 2 || !x || !y)
+		if (num_points < 2 || !x || !y)
 		{
 			return 0;
 		}
@@ -1083,12 +1083,12 @@ namespace ImGui
 			return y[0];
 		}
 
-		float output = evaluate_spline(x, y, numPoints, p);
+		float output = evaluate_spline(x, y, num_points, p);
 
 		return output;
 	}
 
-	bool Spline(const char* label, ImVec2 size, uint32 maxpoints, float* x, float* y, uint32 drawResolution)
+	bool Spline(const char* label, ImVec2 size, uint32 maxpoints, float* x, float* y, uint32 draw_resolution)
 	{
 		if (size.x == 0)
 		{
@@ -1270,11 +1270,11 @@ namespace ImGui
 		}
 
 		// Draw smooth curve
-		drawResolution = min(drawResolution, (uint32)size.x);
-		for (uint32 i = 0; i < drawResolution; ++i)
+		draw_resolution = min(draw_resolution, (uint32)size.x);
+		for (uint32 i = 0; i < draw_resolution; ++i)
 		{
-			float px = (i + 0) / float(drawResolution);
-			float qx = (i + 1) / float(drawResolution);
+			float px = (i + 0) / float(draw_resolution);
+			float qx = (i + 1) / float(draw_resolution);
 			float py = 1 - SplineValue(px, x, y, max);
 			float qy = 1 - SplineValue(qx, x, y, max);
 			ImVec2 p(px * (bb.Max.x - bb.Min.x) + bb.Min.x, py * (bb.Max.y - bb.Min.y) + bb.Min.y);
@@ -1410,11 +1410,11 @@ namespace ImGui
 		return modified;
 	}
 
-	bool PropertySpline(const char* label, uint32 maxNumPoints, float* x, float* y, uint32 drawResolution)
+	bool PropertySpline(const char* label, uint32 max_num_points, float* x, float* y, uint32 draw_resolution)
 	{
 		pre(label);
 		float size = ImGui::GetContentRegionAvail().x;
-		bool result = ImGui::Spline("", ImVec2(size, size), maxNumPoints, x, y, drawResolution);
+		bool result = ImGui::Spline("", ImVec2(size, size), max_num_points, x, y, draw_resolution);
 		post();
 		return result;
 	}

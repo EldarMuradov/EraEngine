@@ -8,54 +8,54 @@
 
 namespace era_engine
 {
-	struct dx_allocation
+	struct DXAllocation
 	{
-		void* cpuPtr;
-		D3D12_GPU_VIRTUAL_ADDRESS gpuPtr;
+		void* cpu_ptr;
+		D3D12_GPU_VIRTUAL_ADDRESS gpu_ptr;
 
-		dx_resource resource;
-		uint32 offsetInResource;
+		DXResource resource;
+		uint32 offset_in_resource;
 	};
 
-	struct dx_page
+	struct DXPage
 	{
-		dx_resource buffer;
-		dx_page* next;
+		DXResource buffer;
+		DXPage* next;
 
-		uint8* cpuBasePtr;
-		D3D12_GPU_VIRTUAL_ADDRESS gpuBasePtr;
+		uint8* cpu_base_ptr;
+		D3D12_GPU_VIRTUAL_ADDRESS gpu_base_ptr;
 
-		uint64 pageSize;
-		uint64 currentOffset;
+		uint64 page_size;
+		uint64 current_offset;
 	};
 
-	struct dx_page_pool
+	struct DXPagePool
 	{
-		void initialize(uint32 sizeInBytes);
+		void initialize(uint32 size_in_bytes);
 
-		NODISCARD dx_page* getFreePage();
-		void returnPage(dx_page* page);
+		NODISCARD DXPage* get_free_page();
+		void return_page(DXPage* page);
 		void reset();
 
 		Allocator arena;
 
 		std::mutex mutex;
 
-		uint64 pageSize;
-		dx_page* freePages;
-		dx_page* usedPages;
-		dx_page* lastUsedPage;
+		uint64 page_size;
+		DXPage* free_pages;
+		DXPage* used_pages;
+		DXPage* last_used_page;
 
 	private:
-		NODISCARD dx_page* allocateNewPage();
+		NODISCARD DXPage* allocate_new_page();
 	};
 
-	struct dx_upload_buffer
+	struct DXUploadBuffer
 	{
-		NODISCARD dx_allocation allocate(uint64 size, uint64 alignment);
+		NODISCARD DXAllocation allocate(uint64 size, uint64 alignment);
 		void reset();
 
-		dx_page_pool* pagePool = 0;
-		dx_page* currentPage = 0;
+		DXPagePool* page_pool = 0;
+		DXPage* current_page = 0;
 	};
 }

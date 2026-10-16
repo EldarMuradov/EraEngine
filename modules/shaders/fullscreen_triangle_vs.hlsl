@@ -1,20 +1,20 @@
-struct vs_input
+struct VSInput
 {
-	uint vertexID	: SV_VertexID;
+	uint vertex_id	: SV_VertexID;
 };
 
-struct vs_output
+struct VSOutput
 {
 	float2 uv		: TEXCOORDS;
 	float4 position : SV_Position;
 };
 
-vs_output main(vs_input IN)
+VSOutput main(VSInput IN)
 {
-	vs_output OUT;
+	VSOutput OUT;
 
-	float x = float((IN.vertexID & 1) << 2) - 1.f;
-	float y = 1.f - float((IN.vertexID & 2) << 1);
+	float x = float((IN.vertex_id & 1) << 2) - 1.f;
+	float y = 1.f - float((IN.vertex_id & 2) << 1);
 	float u = x * 0.5f + 0.5f;
 	float v = y * 0.5f + 0.5f;
 	OUT.position = float4(x, -y, 0.f, 1.f);

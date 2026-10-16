@@ -6,112 +6,112 @@
 
 namespace era_engine
 {
-	struct dx_texture;
-	struct dx_buffer;
+	struct DXTexture;
+	struct DXBuffer;
 
-	struct texture_mip_range
+	struct TextureMipRange
 	{
 		uint32 first = 0;
 		uint32 count = (uint32)-1; // Use all mips.
 	};
 
-	struct buffer_range
+	struct BufferRange
 	{
-		uint32 firstElement = 0;
-		uint32 numElements = (uint32)-1; // Use all elements.
+		uint32 first_element = 0;
+		uint32 num_elements = (uint32)-1; // Use all elements.
 	};
 
-	struct dx_cpu_descriptor_handle
+	struct DXCPUDescriptorHandle
 	{
-		dx_cpu_descriptor_handle() = default;
-		dx_cpu_descriptor_handle(CD3DX12_CPU_DESCRIPTOR_HANDLE handle) : cpuHandle(handle) {}
-		dx_cpu_descriptor_handle(D3D12_CPU_DESCRIPTOR_HANDLE handle) : cpuHandle(handle) {}
-		dx_cpu_descriptor_handle(CD3DX12_DEFAULT) : cpuHandle(D3D12_DEFAULT) {}
+		DXCPUDescriptorHandle() = default;
+		DXCPUDescriptorHandle(CD3DX12_CPU_DESCRIPTOR_HANDLE handle) : cpu_handle(handle) {}
+		DXCPUDescriptorHandle(D3D12_CPU_DESCRIPTOR_HANDLE handle) : cpu_handle(handle) {}
+		DXCPUDescriptorHandle(CD3DX12_DEFAULT) : cpu_handle(D3D12_DEFAULT) {}
 
-		inline operator CD3DX12_CPU_DESCRIPTOR_HANDLE() const { return cpuHandle; }
-		inline operator bool() const { return cpuHandle.ptr != 0; }
+		inline operator CD3DX12_CPU_DESCRIPTOR_HANDLE() const { return cpu_handle; }
+		inline operator bool() const { return cpu_handle.ptr != 0; }
 
-		dx_cpu_descriptor_handle& create2DTextureSRV(const ref<dx_texture>& texture, texture_mip_range mipRange = {}, DXGI_FORMAT overrideFormat = DXGI_FORMAT_UNKNOWN);
-		dx_cpu_descriptor_handle& createCubemapSRV(const ref<dx_texture>& texture, texture_mip_range mipRange = {}, DXGI_FORMAT overrideFormat = DXGI_FORMAT_UNKNOWN);
-		dx_cpu_descriptor_handle& createCubemapArraySRV(const ref<dx_texture>& texture, texture_mip_range mipRange = {}, uint32 firstCube = 0, uint32 numCubes = 1, DXGI_FORMAT overrideFormat = DXGI_FORMAT_UNKNOWN);
-		dx_cpu_descriptor_handle& createVolumeTextureSRV(const ref<dx_texture>& texture, texture_mip_range mipRange = {}, DXGI_FORMAT overrideFormat = DXGI_FORMAT_UNKNOWN);
-		dx_cpu_descriptor_handle& createDepthTextureSRV(const ref<dx_texture>& texture);
-		dx_cpu_descriptor_handle& createDepthTextureArraySRV(const ref<dx_texture>& texture);
-		dx_cpu_descriptor_handle& createStencilTextureSRV(const ref<dx_texture>& texture);
-		dx_cpu_descriptor_handle& createNullTextureSRV();
-		dx_cpu_descriptor_handle& createBufferSRV(const ref<dx_buffer>& buffer, buffer_range bufferRange = {});
-		dx_cpu_descriptor_handle& createRawBufferSRV(const ref<dx_buffer>& buffer, buffer_range bufferRange = {});
-		dx_cpu_descriptor_handle& createNullBufferSRV();
-		dx_cpu_descriptor_handle& create2DTextureUAV(const ref<dx_texture>& texture, uint32 mipSlice = 0, DXGI_FORMAT overrideFormat = DXGI_FORMAT_UNKNOWN);
-		dx_cpu_descriptor_handle& create2DTextureArrayUAV(const ref<dx_texture>& texture, uint32 mipSlice = 0, DXGI_FORMAT overrideFormat = DXGI_FORMAT_UNKNOWN);
-		dx_cpu_descriptor_handle& createCubemapUAV(const ref<dx_texture>& texture, uint32 mipSlice = 0, DXGI_FORMAT overrideFormat = DXGI_FORMAT_UNKNOWN);
-		dx_cpu_descriptor_handle& createVolumeTextureUAV(const ref<dx_texture>& texture, uint32 mipSlice = 0, DXGI_FORMAT overrideFormat = DXGI_FORMAT_UNKNOWN);
-		dx_cpu_descriptor_handle& createNullTextureUAV();
-		dx_cpu_descriptor_handle& createBufferUAV(const ref<dx_buffer>& buffer, buffer_range bufferRange = {});
-		dx_cpu_descriptor_handle& createBufferUintUAV(const ref<dx_buffer>& buffer, buffer_range bufferRange = {});
-		dx_cpu_descriptor_handle& createRawBufferUAV(const ref<dx_buffer>& buffer, buffer_range bufferRange = {});
-		dx_cpu_descriptor_handle& createNullBufferUAV();
-		dx_cpu_descriptor_handle& createRaytracingAccelerationStructureSRV(const ref<dx_buffer>& tlas);
+		DXCPUDescriptorHandle& create_2d_texture_srv(const ref<DXTexture>& texture, TextureMipRange mip_range = {}, DXGI_FORMAT override_format = DXGI_FORMAT_UNKNOWN);
+		DXCPUDescriptorHandle& create_cubemap_srv(const ref<DXTexture>& texture, TextureMipRange mip_range = {}, DXGI_FORMAT override_format = DXGI_FORMAT_UNKNOWN);
+		DXCPUDescriptorHandle& create_cubemap_array_srv(const ref<DXTexture>& texture, TextureMipRange mip_range = {}, uint32 first_cube = 0, uint32 num_cubes = 1, DXGI_FORMAT override_format = DXGI_FORMAT_UNKNOWN);
+		DXCPUDescriptorHandle& create_volume_texture_srv(const ref<DXTexture>& texture, TextureMipRange mip_range = {}, DXGI_FORMAT override_format = DXGI_FORMAT_UNKNOWN);
+		DXCPUDescriptorHandle& create_depth_texture_srv(const ref<DXTexture>& texture);
+		DXCPUDescriptorHandle& create_depth_texture_array_srv(const ref<DXTexture>& texture);
+		DXCPUDescriptorHandle& create_stencil_texture_srv(const ref<DXTexture>& texture);
+		DXCPUDescriptorHandle& create_null_texture_srv();
+		DXCPUDescriptorHandle& create_buffer_srv(const ref<DXBuffer>& buffer, BufferRange buffer_range = {});
+		DXCPUDescriptorHandle& create_raw_buffer_srv(const ref<DXBuffer>& buffer, BufferRange buffer_range = {});
+		DXCPUDescriptorHandle& create_null_buffer_srv();
+		DXCPUDescriptorHandle& create_2d_texture_uav(const ref<DXTexture>& texture, uint32 mip_slice = 0, DXGI_FORMAT override_format = DXGI_FORMAT_UNKNOWN);
+		DXCPUDescriptorHandle& create_2d_texture_array_uav(const ref<DXTexture>& texture, uint32 mip_slice = 0, DXGI_FORMAT override_format = DXGI_FORMAT_UNKNOWN);
+		DXCPUDescriptorHandle& create_cubemap_uav(const ref<DXTexture>& texture, uint32 mip_slice = 0, DXGI_FORMAT override_format = DXGI_FORMAT_UNKNOWN);
+		DXCPUDescriptorHandle& create_volume_texture_uav(const ref<DXTexture>& texture, uint32 mip_slice = 0, DXGI_FORMAT override_format = DXGI_FORMAT_UNKNOWN);
+		DXCPUDescriptorHandle& create_null_texture_uav();
+		DXCPUDescriptorHandle& create_buffer_uav(const ref<DXBuffer>& buffer, BufferRange buffer_range = {});
+		DXCPUDescriptorHandle& create_buffer_uint_uav(const ref<DXBuffer>& buffer, BufferRange buffer_range = {});
+		DXCPUDescriptorHandle& create_raw_buffer_uav(const ref<DXBuffer>& buffer, BufferRange buffer_range = {});
+		DXCPUDescriptorHandle& create_null_buffer_uav();
+		DXCPUDescriptorHandle& create_raytracing_acceleration_structure_srv(const ref<DXBuffer>& tlas);
 
-		dx_cpu_descriptor_handle operator+(uint32 i);
-		dx_cpu_descriptor_handle& operator+=(uint32 i);
-		dx_cpu_descriptor_handle& operator++();
-		dx_cpu_descriptor_handle operator++(int);
+		DXCPUDescriptorHandle operator+(uint32 i);
+		DXCPUDescriptorHandle& operator+=(uint32 i);
+		DXCPUDescriptorHandle& operator++();
+		DXCPUDescriptorHandle operator++(int);
 
-		CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cpu_handle;
 	};
 
-	struct dx_gpu_descriptor_handle
+	struct DXGPUDescriptorHandle
 	{
-		dx_gpu_descriptor_handle() = default;
-		dx_gpu_descriptor_handle(CD3DX12_GPU_DESCRIPTOR_HANDLE handle) : gpuHandle(handle) {}
-		dx_gpu_descriptor_handle(D3D12_GPU_DESCRIPTOR_HANDLE handle) : gpuHandle(handle) {}
-		dx_gpu_descriptor_handle(CD3DX12_DEFAULT) : gpuHandle(D3D12_DEFAULT) {}
+		DXGPUDescriptorHandle() = default;
+		DXGPUDescriptorHandle(CD3DX12_GPU_DESCRIPTOR_HANDLE handle) : gpu_handle(handle) {}
+		DXGPUDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE handle) : gpu_handle(handle) {}
+		DXGPUDescriptorHandle(CD3DX12_DEFAULT) : gpu_handle(D3D12_DEFAULT) {}
 
-		inline operator CD3DX12_GPU_DESCRIPTOR_HANDLE() const { return gpuHandle; }
-		inline operator bool() const { return gpuHandle.ptr != 0; }
+		inline operator CD3DX12_GPU_DESCRIPTOR_HANDLE() const { return gpu_handle; }
+		inline operator bool() const { return gpu_handle.ptr != 0; }
 
-		dx_gpu_descriptor_handle operator+(uint32 i);
-		dx_gpu_descriptor_handle& operator+=(uint32 i);
-		dx_gpu_descriptor_handle& operator++();
-		dx_gpu_descriptor_handle operator++(int);
+		DXGPUDescriptorHandle operator+(uint32 i);
+		DXGPUDescriptorHandle& operator+=(uint32 i);
+		DXGPUDescriptorHandle& operator++();
+		DXGPUDescriptorHandle operator++(int);
 
-		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE gpu_handle;
 	};
 
-	struct dx_double_descriptor_handle : dx_cpu_descriptor_handle, dx_gpu_descriptor_handle
+	struct DXDoubleDescriptorHandle : DXCPUDescriptorHandle, DXGPUDescriptorHandle
 	{
 	};
 
-	struct dx_rtv_descriptor_handle
+	struct DXRTVDescriptorHandle
 	{
-		dx_rtv_descriptor_handle() = default;
-		dx_rtv_descriptor_handle(CD3DX12_CPU_DESCRIPTOR_HANDLE handle) : cpuHandle(handle) {}
-		dx_rtv_descriptor_handle(D3D12_CPU_DESCRIPTOR_HANDLE handle) : cpuHandle(handle) {}
-		dx_rtv_descriptor_handle(CD3DX12_DEFAULT) : cpuHandle(D3D12_DEFAULT) {}
+		DXRTVDescriptorHandle() = default;
+		DXRTVDescriptorHandle(CD3DX12_CPU_DESCRIPTOR_HANDLE handle) : cpu_handle(handle) {}
+		DXRTVDescriptorHandle(D3D12_CPU_DESCRIPTOR_HANDLE handle) : cpu_handle(handle) {}
+		DXRTVDescriptorHandle(CD3DX12_DEFAULT) : cpu_handle(D3D12_DEFAULT) {}
 
-		inline operator CD3DX12_CPU_DESCRIPTOR_HANDLE() const { return cpuHandle; }
-		inline operator bool() const { return cpuHandle.ptr != 0; }
+		inline operator CD3DX12_CPU_DESCRIPTOR_HANDLE() const { return cpu_handle; }
+		inline operator bool() const { return cpu_handle.ptr != 0; }
 
-		dx_rtv_descriptor_handle& create2DTextureRTV(const ref<dx_texture>& texture, uint32 arraySlice = 0, uint32 mipSlice = 0);
-		dx_rtv_descriptor_handle& createNullTextureRTV(DXGI_FORMAT format);
+		DXRTVDescriptorHandle& create_2d_texture_rtv(const ref<DXTexture>& texture, uint32 array_slice = 0, uint32 mip_slice = 0);
+		DXRTVDescriptorHandle& create_null_texture_rtv(DXGI_FORMAT format);
 
-		CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cpu_handle;
 	};
 
-	struct dx_dsv_descriptor_handle
+	struct DXDSVDescriptorHandle
 	{
-		dx_dsv_descriptor_handle() = default;
-		dx_dsv_descriptor_handle(CD3DX12_CPU_DESCRIPTOR_HANDLE handle) : cpuHandle(handle) {}
-		dx_dsv_descriptor_handle(D3D12_CPU_DESCRIPTOR_HANDLE handle) : cpuHandle(handle) {}
-		dx_dsv_descriptor_handle(CD3DX12_DEFAULT) : cpuHandle(D3D12_DEFAULT) {}
+		DXDSVDescriptorHandle() = default;
+		DXDSVDescriptorHandle(CD3DX12_CPU_DESCRIPTOR_HANDLE handle) : cpu_handle(handle) {}
+		DXDSVDescriptorHandle(D3D12_CPU_DESCRIPTOR_HANDLE handle) : cpu_handle(handle) {}
+		DXDSVDescriptorHandle(CD3DX12_DEFAULT) : cpu_handle(D3D12_DEFAULT) {}
 
-		inline operator CD3DX12_CPU_DESCRIPTOR_HANDLE() const { return cpuHandle; }
-		inline operator bool() const { return cpuHandle.ptr != 0; }
+		inline operator CD3DX12_CPU_DESCRIPTOR_HANDLE() const { return cpu_handle; }
+		inline operator bool() const { return cpu_handle.ptr != 0; }
 
-		dx_dsv_descriptor_handle& create2DTextureDSV(const ref<dx_texture>& texture, uint32 arraySlice = 0, uint32 mipSlice = 0);
+		DXDSVDescriptorHandle& create_2d_texture_dsv(const ref<DXTexture>& texture, uint32 array_slice = 0, uint32 mip_slice = 0);
 
-		CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cpu_handle;
 	};
 
 }

@@ -8,12 +8,12 @@ static const uint SHIFT = DEFAULT_SHIFT;
 #define GRID_SIZE (1u << SHIFT)
 #define STEP_SIZE (1.f / float(GRID_SIZE))
 
-struct constant_cb
+struct ConstantCB
 {
 	float4 balls[MAX_BALL_COUNT];
 };
 
-ConstantBuffer<constant_cb> constants : register(b0);
+ConstantBuffer<ConstantCB> constants : register(b0);
 
 // The isosurface is defined where this function returns zero.
 float field(vec3 pos)

@@ -51,7 +51,7 @@ namespace era_engine
 		return rgb;
 	}
 
-	NODISCARD inline vec3 randomRGB(RandomNumberGenerator& rng)
+	NODISCARD inline vec3 random_rgb(RandomNumberGenerator& rng)
 	{
 		vec3 hsv =
 		{
@@ -62,7 +62,7 @@ namespace era_engine
 		return hsv2rgb(hsv);
 	}
 
-	NODISCARD inline vec3 linearToSRGB(vec3 color)
+	NODISCARD inline vec3 linear_to_srgb(vec3 color)
 	{
 		// Approximately pow(color, 1.0 / 2.2).
 		float r = color.r < 0.0031308f ? 12.92f * color.r : 1.055f * pow(abs(color.r), 1.f / 2.4f) - 0.055f;
@@ -71,7 +71,7 @@ namespace era_engine
 		return vec3(r, g, b);
 	}
 
-	NODISCARD inline vec3 sRGBToLinear(vec3 color)
+	NODISCARD inline vec3 srgb_to_linear(vec3 color)
 	{
 		// Approximately pow(color, 2.2).
 		float r = color.r < 0.04045f ? color.r / 12.92f : pow(abs(color.r + 0.055f) / 1.055f, 2.4f);
@@ -80,7 +80,7 @@ namespace era_engine
 		return vec3(r, g, b);
 	}
 
-	NODISCARD inline vec3 rec709ToRec2020(vec3 color)
+	NODISCARD inline vec3 rec709_to_rec2020(vec3 color)
 	{
 		static const mat3 conversion =
 		{
@@ -91,7 +91,7 @@ namespace era_engine
 		return conversion * color;
 	}
 
-	NODISCARD inline vec3 rec2020ToRec709(vec3 color)
+	NODISCARD inline vec3 rec2020_to_rec709(vec3 color)
 	{
 		static const mat3 conversion =
 		{
@@ -102,7 +102,7 @@ namespace era_engine
 		return conversion * color;
 	}
 
-	NODISCARD inline vec3 linearToST2084(vec3 color)
+	NODISCARD inline vec3 linear_to_st2084(vec3 color)
 	{
 		float m1 = 2610.f / 4096.f / 4.f;
 		float m2 = 2523.f / 4096.f * 128.f;
@@ -113,11 +113,11 @@ namespace era_engine
 		return pow((c1 + c2 * cp) / (1.f + c3 * cp), m2);
 	}
 
-	NODISCARD inline vec3 YxyToXYZ(vec3 Yxy)
+	NODISCARD inline vec3 yxy_to_xyz(vec3 yxy)
 	{
-		float Y = Yxy.r;
-		float x = Yxy.g;
-		float y = Yxy.b;
+		float Y = yxy.r;
+		float x = yxy.g;
+		float y = yxy.b;
 
 		float X = x * (Y / y);
 		float Z = (1.f - x - y) * (Y / y);
@@ -125,7 +125,7 @@ namespace era_engine
 		return vec3(X, Y, Z);
 	}
 
-	NODISCARD inline vec3 XYZToRGB(vec3 XYZ)
+	NODISCARD inline vec3 xyz_to_rgb(vec3 xyz)
 	{
 		// CIE/E.
 		static const mat3 M =
@@ -135,13 +135,13 @@ namespace era_engine
 			0.0052982f, -0.0146949f, 1.0093968f
 		};
 
-		return M * XYZ;
+		return M * xyz;
 	}
 
-	NODISCARD inline vec3 YxyToRGB(vec3 Yxy)
+	NODISCARD inline vec3 yxy_to_rgb(vec3 yxy)
 	{
-		vec3 XYZ = YxyToXYZ(Yxy);
-		vec3 RGB = XYZToRGB(XYZ);
+		vec3 XYZ = yxy_to_xyz(yxy);
+		vec3 RGB = xyz_to_rgb(XYZ);
 		return RGB;
 	}
 }

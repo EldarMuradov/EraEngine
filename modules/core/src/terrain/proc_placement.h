@@ -10,7 +10,7 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API proc_placement_layer_desc
+	struct ERA_CORE_API ProcPlacementLayerDesc
 	{
 		const char* name;
 		float footprint;
@@ -21,11 +21,11 @@ namespace era_engine
 	{
 	public:
 		ProcPlacementComponent() = default;
-		ProcPlacementComponent(ref<Entity::EcsData> _data, const std::vector<proc_placement_layer_desc>& _layers);
+		ProcPlacementComponent(ref<Entity::EcsData> _data, const std::vector<ProcPlacementLayerDesc>& _layers);
 		~ProcPlacementComponent() override;
 
-		void generate(const render_camera& camera, const TerrainComponent& terrain, const vec3& position_offset);
-		void render(struct ldr_render_pass* render_pass);
+		void generate(const RenderCamera& camera, const TerrainComponent& terrain, const vec3& position_offset);
+		void render(struct LDRRenderPass* render_pass);
 
 		struct PlacementLayer
 		{
@@ -51,13 +51,13 @@ namespace era_engine
 
 		std::vector<uint32> submesh_to_mesh;
 
-		ref<dx_buffer> placement_point_buffer;
-		ref<dx_buffer> transform_buffer;
-		ref<dx_buffer> mesh_count_buffer;
-		ref<dx_buffer> mesh_offset_buffer;
-		ref<dx_buffer> submesh_to_mesh_buffer;
-		ref<dx_buffer> draw_indirect_buffer;
+		ref<DXBuffer> placement_point_buffer;
+		ref<DXBuffer> transform_buffer;
+		ref<DXBuffer> mesh_count_buffer;
+		ref<DXBuffer> mesh_offset_buffer;
+		ref<DXBuffer> submesh_to_mesh_buffer;
+		ref<DXBuffer> draw_indirect_buffer;
 	};
 
-	void initializeProceduralPlacementPipelines();
+	void initialize_procedural_placement_pipelines();
 }

@@ -38,23 +38,23 @@ static uint hash(uint4 v) { return hash(v.x ^ hash(v.y) ^ hash(v.z) ^ hash(v.w))
 
 // Construct a float with half-open range [0:1] using low 23 bits.
 // All zeroes yields 0.0, all ones yields the next smallest representable value below 1.0.
-static float floatConstruct(uint m)
+static float float_construct(uint m)
 {
-	const uint ieeeMantissa = 0x007FFFFFu; // binary32 mantissa bitmask
-	const uint ieeeOne = 0x3F800000u; // 1.0 in IEEE binary32
+	const uint ieee_mantissa = 0x007FFFFFu; // binary32 mantissa bitmask
+	const uint ieee_one = 0x3F800000u; // 1.0 in IEEE binary32
 
-	m &= ieeeMantissa;                     // Keep only mantissa bits (fractional part)
-	m |= ieeeOne;                          // Add fractional part to 1.0
+	m &= ieee_mantissa;                     // Keep only mantissa bits (fractional part)
+	m |= ieee_one;                          // Add fractional part to 1.0
 
 	float  f = asfloat(m);       // Range [1:2]
 	return f - 1.f;              // Range [0:1]
 }
 
 // Pseudo-random value in half-open range [0:1].
-static float random(float  x) { return floatConstruct(hash(asuint(x))); }
-static float random(float2 v) { return floatConstruct(hash(asuint(v))); }
-static float random(float3 v) { return floatConstruct(hash(asuint(v))); }
-static float random(float4 v) { return floatConstruct(hash(asuint(v))); }
+static float random(float  x) { return float_construct(hash(asuint(x))); }
+static float random(float2 v) { return float_construct(hash(asuint(v))); }
+static float random(float3 v) { return float_construct(hash(asuint(v))); }
+static float random(float4 v) { return float_construct(hash(asuint(v))); }
 
 static float2 hammersley(uint i, uint N)
 {
@@ -72,17 +72,17 @@ static float2 hammersley(uint i, uint N)
 
 // "Next Generation Post Processing in Call of Duty: Advanced Warfare"
 // http://advances.realtimerendering.com/s2014/index.html
-static float interleavedGradientNoise(float2 uv, uint frameCount)
+static float interleaved_gradient_noise(float2 uv, uint frame_count)
 {
-	frameCount &= 1023;
-	const float2 magicFrameScale = float2(47.f, 17.f) * 0.695f;
-	uv += frameCount * magicFrameScale;
+	frame_count &= 1023;
+	const float2 magic_frame_scale = float2(47.f, 17.f) * 0.695f;
+	uv += frame_count * magic_frame_scale;
 
 	const float3 magic = float3(0.06711056f, 0.00583715f, 52.9829189f);
 	return frac(magic.z * frac(dot(uv, magic.xy)));
 }
 
-static uint initRand(uint val0, uint val1, uint backoff = 16)
+static uint init_rand(uint val0, uint val1, uint backoff = 16)
 {
 	uint v0 = val0, v1 = val1, s0 = 0;
 
@@ -97,21 +97,21 @@ static uint initRand(uint val0, uint val1, uint backoff = 16)
 }
 
 // Returns a pseudorandom float in [0..1].
-static float nextRand(inout uint s)
+static float next_rand(inout uint s)
 {
 	s = (1664525u * s + 1013904223u);
 	return float(s & 0x00FFFFFF) / float(0x01000000);
 }
 
 // Returns a pseudorandom float in [lo..hi].
-static float nextRandBetween(inout uint s, float lo, float hi)
+static float next_rand_between(inout uint s, float lo, float hi)
 {
-	return nextRand(s) * (hi - lo) + lo;
+	return next_rand(s) * (hi - lo) + lo;
 }
 
 // Utility function to get a vector perpendicular to an input vector 
 //    (from "Efficient Construction of Perpendicular Vectors Without Branching")
-static float3 getPerpendicularVector(float3 u)
+static float3 get_perpendicular_vector(float3 u)
 {
 	float3 a = abs(u);
 	uint xm = ((a.x - a.y) < 0 && (a.x - a.z) < 0) ? 1 : 0;
@@ -121,53 +121,53 @@ static float3 getPerpendicularVector(float3 u)
 }
 
 // Get a cosine-weighted random vector centered around a specified normal direction.
-static float3 getCosHemisphereSample(inout uint randSeed, float3 hitNorm)
+static float3 get_cos_hemisphere_sample(inout uint rand_seed, float3 hit_norm)
 {
 	// Get 2 random numbers to select our sample with.
-	float2 randVal = float2(nextRand(randSeed), nextRand(randSeed));
+	float2 rand_val = float2(next_rand(rand_seed), next_rand(rand_seed));
 
 	// Cosine weighted hemisphere sample from RNG.
-	float3 bitangent = getPerpendicularVector(hitNorm);
-	float3 tangent = cross(bitangent, hitNorm);
-	float r = sqrt(randVal.x);
-	float phi = 2.0f * 3.14159265f * randVal.y;
+	float3 bitangent = get_perpendicular_vector(hit_norm);
+	float3 tangent = cross(bitangent, hit_norm);
+	float r = sqrt(rand_val.x);
+	float phi = 2.0f * 3.14159265f * rand_val.y;
 
 	// Get our cosine-weighted hemisphere lobe sample direction.
-	return tangent * (r * cos(phi).x) + bitangent * (r * sin(phi)) + hitNorm.xyz * sqrt(1 - randVal.x);
+	return tangent * (r * cos(phi).x) + bitangent * (r * sin(phi)) + hit_norm.xyz * sqrt(1 - rand_val.x);
 }
 
-static float3 getRandomPointOnUnitSphere(inout uint randSeed)
+static float3 get_random_point_on_unit_sphere(inout uint rand_seed)
 {
-	float2 h = float2(nextRand(randSeed), nextRand(randSeed)) * float2(2.f, 2.f * M_PI) - float2(1.f, 0.f);
+	float2 h = float2(next_rand(rand_seed), next_rand(rand_seed)) * float2(2.f, 2.f * M_PI) - float2(1.f, 0.f);
 	float phi = h.y;
 	return normalize(float3(sqrt(1.f - h.x * h.x) * float2(sin(phi), cos(phi)), h.x));
 }
 
-static float3 getRandomPointOnSphere(inout uint randSeed, float radius)
+static float3 get_random_point_on_sphere(inout uint rand_seed, float radius)
 {
-	return getRandomPointOnUnitSphere(randSeed) * radius;
+	return get_random_point_on_unit_sphere(rand_seed) * radius;
 }
 
-static float2 getRandomPointOnUnitDisk(inout uint randSeed)
+static float2 get_random_point_on_unit_disk(inout uint rand_seed)
 {
 	float d;
 	float2 result;
 
 	do 
 	{
-		result = float2(nextRand(randSeed), nextRand(randSeed)) * 2.f - 1.f;
+		result = float2(next_rand(rand_seed), next_rand(rand_seed)) * 2.f - 1.f;
 		d = dot(result, result);
 	} while (d >= 1.f);
 
 	return result;
 }
 
-static float2 getRandomPointOnDisk(inout uint randSeed, float radius)
+static float2 get_random_point_on_disk(inout uint rand_seed, float radius)
 {
-	return getRandomPointOnUnitDisk(randSeed) * radius;
+	return get_random_point_on_unit_disk(rand_seed) * radius;
 }
 
-static float3 valueNoise(float2 x)
+static float3 value_noise(float2 x)
 {
 	float2 p = floor(x);
 	float2 w = frac(x);
@@ -194,7 +194,7 @@ static float3 valueNoise(float2 x)
 	return float3(value, deriv.x, deriv.y);
 }
 
-static float3 fbm(float2 x, uint numOctaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
+static float3 fbm(float2 x, uint num_octaves = 6, float lacunarity = 1.98f, float gain = 0.49f)
 {
 	float value = 0.f;
 	float amplitude = 0.5f;
@@ -202,9 +202,9 @@ static float3 fbm(float2 x, uint numOctaves = 6, float lacunarity = 1.98f, float
 	float2 deriv = 0.f;
 	float m = 1.f;
 
-	for (uint32 i = 0; i < numOctaves; ++i)
+	for (uint32 i = 0; i < num_octaves; ++i)
 	{
-		float3 n = valueNoise(x);
+		float3 n = value_noise(x);
 
 		value += amplitude * n.x;		// Accumulate values.
 		deriv += amplitude * m * n.yz;  // Accumulate derivatives.

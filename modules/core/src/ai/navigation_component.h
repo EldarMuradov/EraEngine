@@ -20,10 +20,10 @@ namespace era_engine::ai
 	public:
 		enum class NavType
 		{
-			nav_type_none,
-			nav_type_a_Star,
-			nav_type_dijkstra,
-			nav_type_count
+			NAV_TYPE_NONE,
+			NAV_TYPE_A_STAR,
+			NAV_TYPE_DIJKSTRA,
+			NAV_TYPE_COUNT
 		};
 
 		NavigationComponent() = default;

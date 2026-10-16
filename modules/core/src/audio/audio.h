@@ -14,40 +14,40 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API master_audio_settings
+	struct ERA_CORE_API MasterAudioSettings
 	{
 		float volume = 0.1f;
-		bool reverbEnabled = true;
-		reverb_preset reverbPreset = reverb_preset_default;
+		bool reverb_enabled = true;
+		ReverbPreset reverb_preset = REVERB_PRESET_DEFAULT;
 	};
 
-	extern master_audio_settings masterAudioSettings;
-	extern float soundTypeVolumes[sound_type_count];
+	extern MasterAudioSettings master_audio_settings;
+	extern float sound_type_volumes[SOUND_TYPE_COUNT];
 
-	bool initializeAudio();
-	void shutdownAudio();
+	bool initialize_audio();
+	void shutdown_audio();
 
-	void setAudioListener(vec3 position, quat rotation, vec3 velocity = vec3(0.f));
+	void set_audio_listener(vec3 position, quat rotation, vec3 velocity = vec3(0.f));
 
-	void updateAudio(float dt);
+	void update_audio(float dt);
 
-	struct ERA_CORE_API sound_handle
+	struct ERA_CORE_API SoundHandle
 	{
 		operator bool() { return id != 0; }
 		uint32 id;
 	};
 
-	sound_handle play2DSound(const sound_id& id, const sound_settings& settings);
-	sound_handle play3DSound(const sound_id& id, vec3 position, const sound_settings& settings);
+	SoundHandle play_2d_sound(const SoundID& id, const SoundSettings& settings);
+	SoundHandle play_3d_sound(const SoundID& id, vec3 position, const SoundSettings& settings);
 
-	void restartAllSounds();
+	void restart_all_sounds();
 
-	bool soundStillPlaying(sound_handle handle);
-	bool stop(sound_handle handle, float fadeOutTime = 0.1f);
+	bool sound_still_playing(SoundHandle handle);
+	bool stop(SoundHandle handle, float fade_out_time = 0.1f);
 
 	// Only hold on to this pointer for one frame! Retrieve each frame! Returns null, if sound has stopped already.
-	sound_settings* getSettings(sound_handle handle);
+	SoundSettings* get_settings(SoundHandle handle);
 
-	float dbToVolume(float db);
-	float volumeToDB(float volume);
+	float db_to_volume(float db);
+	float volume_to_db(float volume);
 }

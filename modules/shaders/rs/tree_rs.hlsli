@@ -3,7 +3,7 @@
 
 #include "transform.hlsli"
 
-struct tree_cb
+struct TreeCB
 {
     float time;
 };

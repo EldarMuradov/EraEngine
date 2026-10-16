@@ -11,34 +11,34 @@
 
 namespace era_engine
 {
-    static std::unordered_map<uint64, sound_spec> soundRegistry;
-    static const fs::path soundRegistryPath = fs::path(L"resources/sounds.yaml").lexically_normal();
+    static std::unordered_map<uint64, SoundSpec> sound_registry;
+    static const fs::path sound_registry_path = fs::path(L"resources/sounds.yaml").lexically_normal();
 
-    void loadSoundRegistry()
+    void load_sound_registry()
     {
-        std::ifstream stream(soundRegistryPath);
+        std::ifstream stream(sound_registry_path);
         YAML::Node n = YAML::Load(stream);
 
-        for (auto entryNode : n)
+        for (auto entry_node : n)
         {
-            sound_spec spec = {};
+            SoundSpec spec = {};
 
-            YAML_LOAD(entryNode, spec.asset, "Asset");
-            YAML_LOAD_ENUM(entryNode, spec.type, "Type");
-            YAML_LOAD(entryNode, spec.stream, "Stream");
-            YAML_LOAD(entryNode, spec.name, "Tag");
+            YAML_LOAD(entry_node, spec.asset, "Asset");
+            YAML_LOAD_ENUM(entry_node, spec.type, "Type");
+            YAML_LOAD(entry_node, spec.stream, "Stream");
+            YAML_LOAD(entry_node, spec.name, "Tag");
 
             uint64 hash = hash_string64(spec.name.c_str());
 
-            soundRegistry[hash] = spec;
+            sound_registry[hash] = spec;
         }
     }
 
-    static void saveSoundRegistry()
+    static void save_sound_registry()
     {
         YAML::Node out;
 
-        for (auto [id, spec] : soundRegistry)
+        for (auto [id, spec] : sound_registry)
         {
             YAML::Node n;
             n["Tag"] = spec.name;
@@ -49,14 +49,14 @@ namespace era_engine
             out.push_back(n);
         }
 
-        fs::create_directories(soundRegistryPath.parent_path());
+        fs::create_directories(sound_registry_path.parent_path());
 
         LOG_MESSAGE("Rewriting sound registry");
-        std::ofstream fout(soundRegistryPath);
+        std::ofstream fout(sound_registry_path);
         fout << out;
     }
 
-    void drawSoundEditor(bool& open)
+    void draw_sound_editor(bool& open)
     {
         if (open)
         {
@@ -69,15 +69,15 @@ namespace era_engine
 
                 if (ImGui::DisableableButton("Save registry", dirty))
                 {
-                    saveSoundRegistry();
+                    save_sound_registry();
 
-                    unloadAllSounds(); // Unload, such that the spec gets reloaded when the sound is played the next time.
-                    restartAllSounds();
+                    unload_all_sounds(); // Unload, such that the spec gets reloaded when the sound is played the next time.
+                    restart_all_sounds();
 
                     dirty = false;
                 }
 
-                for (auto& [id, spec] : soundRegistry)
+                for (auto& [id, spec] : sound_registry)
                 {
                     std::string& name = spec.name;
                     if (filter.PassFilter(name.c_str()))
@@ -87,7 +87,7 @@ namespace era_engine
                             if (ImGui::BeginProperties())
                             {
                                 dirty |= ImGui::PropertyAssetHandle("Asset", EDITOR_ICON_AUDIO, spec.asset);
-                                dirty |= ImGui::PropertyDropdown("Type", soundTypeNames, sound_type_count, (uint32&)spec.type);
+                                dirty |= ImGui::PropertyDropdown("Type", sound_type_names, SOUND_TYPE_COUNT, (uint32&)spec.type);
                                 dirty |= ImGui::PropertyCheckbox("Stream", spec.stream);
 
                                 ImGui::EndProperties();
@@ -105,11 +105,11 @@ namespace era_engine
                 ImGui::SameLine();
                 if (ImGui::DisableableButton("Add sound", input[0] != 0))
                 {
-                    sound_spec spec = {};
+                    SoundSpec spec = {};
                     spec.name = input;
 
                     uint64 hash = hash_string64(input);
-                    soundRegistry.insert({ hash, spec });
+                    sound_registry.insert({ hash, spec });
 
                     input[0] = 0;
                 }
@@ -118,11 +118,11 @@ namespace era_engine
         }
     }
 
-    static sound_spec nullSpec = {};
+    static SoundSpec null_spec = {};
 
-    NODISCARD const sound_spec& getSoundSpec(const sound_id& id)
+    NODISCARD const SoundSpec& get_sound_spec(const SoundID& id)
     {
-        auto it = soundRegistry.find(id.hash);
-        return (it != soundRegistry.end()) ? it->second : nullSpec;
+        auto it = sound_registry.find(id.hash);
+        return (it != sound_registry.end()) ? it->second : null_spec;
     }
 }

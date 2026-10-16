@@ -58,7 +58,7 @@ namespace era_engine
 
                 const trs& world_transform = transform.get_world_transform();
 
-                render_camera* camera = camera_holder.get_render_camera();
+                RenderCamera* camera = camera_holder.get_render_camera();
 
                 GameplayTppCameraComponent::OrbitState& orbit = gameplay_camera.orbit;
 
@@ -96,7 +96,7 @@ namespace era_engine
                 const vec3 look_direction = normalize(look_delta_position);
                 camera->rotation = look_at_quaternion(look_direction, vec3::up);
 
-                camera->updateMatrices();
+                camera->update_matrices();
 
                 look_delta_position.y = 0.0f;
                 const vec3 look_yaw_direction = normalize(look_delta_position);

@@ -57,11 +57,11 @@ namespace era_engine::physics
 			nb_lines = rb->getNbLines();
 		});
 
-		auto [vb, vertexPtr] = create_dynamic_vertex_buffer(sizeof(position_color), nb_lines * 2);
+		auto [vb, vertexPtr] = create_dynamic_vertex_buffer(sizeof(PositionColor), nb_lines * 2);
 		auto [ib, indexPtr] = create_dynamic_index_buffer(sizeof(uint16), nb_lines * 2);
 
-		position_color* vertices = (position_color*)vertexPtr;
-		indexed_line16* render_lines = (indexed_line16*)indexPtr;
+		PositionColor* vertices = (PositionColor*)vertexPtr;
+		IndexedLine16* render_lines = (IndexedLine16*)indexPtr;
 
 		for (uint32 i = 0; i < nb_lines; ++i)
 		{
@@ -73,6 +73,6 @@ namespace era_engine::physics
 			*render_lines++ = { (uint16)(2 * i), (uint16)(2 * i + 1) };
 		}
 
-		renderDebug<debug_unlit_line_pipeline::position_color>(trs_to_mat4(trs::identity), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), renderer_holder_rc->ldrRenderPass, true);
+		render_debug<DebugUnlitLinePipeline::PositionColor>(trs_to_mat4(trs::identity), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), renderer_holder_rc->ldr_render_pass, true);
 	}
 }

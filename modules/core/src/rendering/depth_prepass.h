@@ -7,47 +7,47 @@
 
 namespace era_engine
 {
-	struct depth_prepass_data
+	struct DepthPrepassData
 	{
-		D3D12_GPU_VIRTUAL_ADDRESS transformPtr;
-		D3D12_GPU_VIRTUAL_ADDRESS prevFrameTransformPtr;
-		D3D12_GPU_VIRTUAL_ADDRESS objectIDPtr;
+		D3D12_GPU_VIRTUAL_ADDRESS transform_ptr;
+		D3D12_GPU_VIRTUAL_ADDRESS prev_frame_transform_ptr;
+		D3D12_GPU_VIRTUAL_ADDRESS object_id_ptr;
 
-		dx_vertex_buffer_group_view vertexBuffer;
-		dx_vertex_buffer_view prevFrameVertexBuffer;
-		dx_index_buffer_view indexBuffer;
+		DXVertexBufferGroupView vertex_buffer;
+		DXVertexBufferView prev_frame_vertex_buffer;
+		DXIndexBufferView index_buffer;
 
 		SubmeshInfo submesh;
 
-		uint32 numInstances;
+		uint32 num_instances;
 
-		dx_cpu_descriptor_handle alphaCutoutTextureSRV = {};
+		DXCPUDescriptorHandle alpha_cutout_texture_srv = {};
 	};
 
-	struct depth_prepass_pipeline
+	struct DepthPrepassPipeline
 	{
-		DEPTH_ONLY_RENDER_DECL(depth_prepass_data);
+		DEPTH_ONLY_RENDER_DECL(DepthPrepassData);
 
-		struct single_sided;
-		struct double_sided;
-		struct alpha_cutout;
+		struct SingleSided;
+		struct DoubleSided;
+		struct AlphaCutout;
 	};
 
-	struct depth_prepass_pipeline::single_sided : depth_prepass_pipeline
-	{
-		PIPELINE_SETUP_DECL;
-	};
-
-	struct depth_prepass_pipeline::double_sided : depth_prepass_pipeline
+	struct DepthPrepassPipeline::SingleSided : DepthPrepassPipeline
 	{
 		PIPELINE_SETUP_DECL;
 	};
 
-	struct depth_prepass_pipeline::alpha_cutout : depth_prepass_pipeline
+	struct DepthPrepassPipeline::DoubleSided : DepthPrepassPipeline
 	{
 		PIPELINE_SETUP_DECL;
-		DEPTH_ONLY_RENDER_DECL(depth_prepass_data);
 	};
 
-	void initializeDepthPrepassPipelines();
+	struct DepthPrepassPipeline::AlphaCutout : DepthPrepassPipeline
+	{
+		PIPELINE_SETUP_DECL;
+		DEPTH_ONLY_RENDER_DECL(DepthPrepassData);
+	};
+
+	void initialize_depth_prepass_pipelines();
 }

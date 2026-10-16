@@ -40,8 +40,8 @@ TEST(ECS_Entity, DefaultEntityIsInvalid)
 	Entity entity;
 
 	EXPECT_FALSE(entity.is_valid());
-	EXPECT_FALSE(Entity::Null.is_valid());
-	EXPECT_EQ(entity, Entity::Null);
+	EXPECT_FALSE(Entity::null.is_valid());
+	EXPECT_EQ(entity, Entity::null);
 }
 
 TEST(ECS_Entity, CopiesShareIdentity)
@@ -178,7 +178,7 @@ TEST(ECS_Entity, EntityPtrTracksLifetime)
 	EntityPtr ptr;
 	EXPECT_TRUE(ptr.is_empty());
 
-	Entity::Handle handle = Entity::NullHandle;
+	Entity::Handle handle = Entity::null_handle;
 	{
 		Entity entity = world->create_entity("Entity");
 		entity.add_component<EntityTestComponent>();

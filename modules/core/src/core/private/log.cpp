@@ -66,13 +66,13 @@ namespace era_engine
 	void log_message(MessageType type, const char* format, ...)
 	{
 		std::lock_guard lock{ mutex };
-		arena.ensure_free_size(KB(1));
+		arena.ensure_free_size(kb(1));
 
 		char* buffer = (char*)arena.get_current();
 
 		va_list args;
 		va_start(args, format);
-		int count_written = vsnprintf(buffer, KB(1), format, args);
+		int count_written = vsnprintf(buffer, kb(1), format, args);
 		va_end(args);
 
 		messages.push_back({ buffer, type, 5.f, nullptr, nullptr, 0 });
@@ -95,7 +95,7 @@ namespace era_engine
 	LogSystem::LogSystem(World* _world)
 		: System(_world)
 	{
-		arena.initialize(0, MB(128));
+		arena.initialize(0, mb(128));
 	}
 
 	LogSystem::~LogSystem()

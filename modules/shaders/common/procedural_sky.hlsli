@@ -4,7 +4,7 @@
 #include "random.hlsli"
 #include "math.hlsli"
 
-static float getStars(float3 V)
+static float get_stars(float3 V)
 {
 	const float scale = 60.f;
 	float3 id = floor(V * scale);
@@ -21,7 +21,7 @@ static float getStars(float3 V)
 
 // Based on Morgan McGuire @morgan3d
 // https://www.shadertoy.com/view/4dS3Wd
-float fbmNoise(float2 st)
+float fbm_noise(float2 st)
 {
 	float2 i = floor(st);
 	float2 f = frac(st);
@@ -40,7 +40,7 @@ float fbmNoise(float2 st)
 }
 
 #define FBM_OCTAVES 6
-float cloudFBM(float2 st)
+float cloud_fbm(float2 st)
 {
 	// Initial values
 	float value = 0.f;
@@ -50,26 +50,26 @@ float cloudFBM(float2 st)
 	// Loop of octaves
 	for (int i = 0; i < FBM_OCTAVES; ++i)
 	{
-		value += amplitude * fbmNoise(st);
+		value += amplitude * fbm_noise(st);
 		st *= 2.;
 		amplitude *= .5;
 	}
 	return value;
 }
 
-static float getCloudValue(float2 p, float intensity)
+static float get_cloud_value(float2 p, float intensity)
 {
 	const float density = 0.5f;
 	const float sharpness = 0.1f;
 	const float scale = 1.f / 0.05f;
 
-	float noise = cloudFBM(p);
+	float noise = cloud_fbm(p);
 
 	noise = saturate(1.f - exp(-(noise - density) * sharpness)) * scale;
 	return noise * intensity;
 }
 
-static float getClouds(float3 V)
+static float get_clouds(float3 V)
 {
 	const float height = 1000.f;
 
@@ -87,19 +87,19 @@ static float getClouds(float3 V)
 			float intensity = 1.f - smoothstep(0.f, 30000.f, l);
 
 			float2 p = hit.xz * 0.0007f;
-			result = getCloudValue(p, intensity);
+			result = get_cloud_value(p, intensity);
 		}
 #if 0
 		const float delta = 0.1f;
-		const float invDelta = 1.f / delta;
+		const float inv_delta = 1.f / delta;
 
-		float nx = getCloudValue(p + float2(delta, 0.f), intensity);
-		float nz = getCloudValue(p + float2(0.f, delta), intensity);
+		float nx = get_cloud_value(p + float2(delta, 0.f), intensity);
+		float nz = get_cloud_value(p + float2(0.f, delta), intensity);
 
 		float3 N = normalize(float3(
-			-(nx - value) * invDelta,
+			-(nx - value) * inv_delta,
 			-1.f,
-			-(nz - value) * invDelta
+			-(nz - value) * inv_delta
 			));
 
 #endif
@@ -107,9 +107,9 @@ static float getClouds(float3 V)
 	return result;
 }
 
-static float3 proceduralSky(float3 V, float3 L)
+static float3 procedural_sky(float3 V, float3 L)
 {
-	float LdotV = dot(V, L);
+	float ldot_v = dot(V, L);
 
 	// https://www.shadertoy.com/view/tt3cDl
 	float3 skycolor = float3(0.2f, 0.4f, 0.8f) * max(0.2f, L.y);
@@ -119,25 +119,25 @@ static float3 proceduralSky(float3 V, float3 L)
 			max(0.f, (1.f - max(0.f, (1.f - L.y * 3.f)) * V.y * 4.f)),
 			0.f,
 			L.y)
-		* saturate(pow(saturate(0.5f * LdotV + 0.5f), (8.f - L.y * 5.f)))
+		* saturate(pow(saturate(0.5f * ldot_v + 0.5f), (8.f - L.y * 5.f)))
 		* suncolor;
 
 	float3 color = skycolor;
 	//color += saturate(2.f * pow(saturate(LdotV), 800.f)) * (suncolor + 0.4f.xxx);
-	color += saturate(2.f * pow(saturate(LdotV), 2500.f)) * (suncolor + 0.4f.xxx) * 300.f;
+	color += saturate(2.f * pow(saturate(ldot_v), 2500.f)) * (suncolor + 0.4f.xxx) * 300.f;
 	color += square(sunhalo);
 	color += square(1.f - V.y) * suncolor * 0.5f;
 
-	color += (getStars(V * 1.5f) + getStars(V * 3.f)) * saturate(-0.3f - L.y);
+	color += (get_stars(V * 1.5f) + get_stars(V * 3.f)) * saturate(-0.3f - L.y);
 
-	color += getClouds(V);
+	color += get_clouds(V);
 
 	return color;
 }
 
-static float3 proceduralSkySimple(float3 V, float3 L)
+static float3 procedural_sky_simple(float3 V, float3 L)
 {
-	float LdotV = dot(V, L);
+	float ldot_v = dot(V, L);
 
 	// https://www.shadertoy.com/view/tt3cDl
 	float3 skycolor = float3(0.2f, 0.4f, 0.8f) * max(0.2f, L.y);
@@ -147,7 +147,7 @@ static float3 proceduralSkySimple(float3 V, float3 L)
 			max(0.f, (1.f - max(0.f, (1.f - L.y * 3.f)) * V.y * 4.f)),
 			0.f,
 			L.y)
-		* saturate(pow(saturate(0.5f * LdotV + 0.5f), (8.f - L.y * 5.f)))
+		* saturate(pow(saturate(0.5f * ldot_v + 0.5f), (8.f - L.y * 5.f)))
 		* suncolor;
 
 
@@ -155,7 +155,7 @@ static float3 proceduralSkySimple(float3 V, float3 L)
 	color += square(sunhalo);
 	color += square(1.f - V.y) * suncolor * 0.5f;
 
-	color += getClouds(V);
+	color += get_clouds(V);
 
 	return color;
 }

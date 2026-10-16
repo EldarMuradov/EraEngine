@@ -12,63 +12,63 @@
 
 namespace era_engine
 {
-	struct dx_raytracer
+	struct DXRaytracer
 	{
 	protected:
-		void fillOutRayTracingRenderDesc(const ref<dx_buffer>& bindingTableBuffer,
-			D3D12_DISPATCH_RAYS_DESC& raytraceDesc,
-			uint32 renderWidth, uint32 renderHeight, uint32 renderDepth,
-			uint32 numRayTypes, uint32 numHitGroups);
+		void fill_out_ray_tracing_render_desc(const ref<DXBuffer>& binding_table_buffer,
+			D3D12_DISPATCH_RAYS_DESC& raytrace_desc,
+			uint32 render_width, uint32 render_height, uint32 render_depth,
+			uint32 num_ray_types, uint32 num_hit_groups);
 
-		template <typename input_resources, typename output_resources>
-		dx_gpu_descriptor_handle copyGlobalResourcesToDescriptorHeap(const input_resources& in, const output_resources& out);
+		template <typename InputResources, typename OutputResources>
+		DXGPUDescriptorHandle copy_global_resources_to_descriptor_heap(const InputResources& in, const OutputResources& out);
 
-		template <typename input_resources, typename output_resources>
-		void allocateDescriptorHeapSpaceForGlobalResources(dx_pushable_descriptor_heap& descriptorHeap);
+		template <typename InputResources, typename OutputResources>
+		void allocate_descriptor_heap_space_for_global_resources(DXPushableDescriptorHeap& descriptor_heap);
 
-		dx_raytracing_pipeline pipeline;
+		DXRaytracingPipeline pipeline;
 
-		dx_cpu_descriptor_handle resourceCPUBase[NUM_BUFFERED_FRAMES];
-		dx_gpu_descriptor_handle resourceGPUBase[NUM_BUFFERED_FRAMES];
+		DXCPUDescriptorHandle resource_cpu_base[NUM_BUFFERED_FRAMES];
+		DXGPUDescriptorHandle resource_gpu_base[NUM_BUFFERED_FRAMES];
 	};
 
-	template<typename input_resources, typename output_resources>
-	inline dx_gpu_descriptor_handle dx_raytracer::copyGlobalResourcesToDescriptorHeap(const input_resources& in, const output_resources& out)
+	template<typename InputResources, typename OutputResources>
+	inline DXGPUDescriptorHandle DXRaytracer::copy_global_resources_to_descriptor_heap(const InputResources& in, const OutputResources& out)
 	{
-		dx_cpu_descriptor_handle cpuHandle = resourceCPUBase[dxContext.bufferedFrameID];
-		dx_gpu_descriptor_handle gpuHandle = resourceGPUBase[dxContext.bufferedFrameID];
+		DXCPUDescriptorHandle cpu_handle = resource_cpu_base[dx_context.buffered_frame_id];
+		DXGPUDescriptorHandle gpu_handle = resource_gpu_base[dx_context.buffered_frame_id];
 
-		const uint32 numInputResources = sizeof(input_resources) / sizeof(dx_cpu_descriptor_handle);
-		const uint32 numOutputResources = sizeof(output_resources) / sizeof(dx_cpu_descriptor_handle);
-		const uint32 totalNumResources = numInputResources + numOutputResources;
+		const uint32 num_input_resources = sizeof(InputResources) / sizeof(DXCPUDescriptorHandle);
+		const uint32 num_output_resources = sizeof(OutputResources) / sizeof(DXCPUDescriptorHandle);
+		const uint32 total_num_resources = num_input_resources + num_output_resources;
 
-		D3D12_CPU_DESCRIPTOR_HANDLE handles[totalNumResources];
-		memcpy(handles, &in, sizeof(input_resources));
-		memcpy((D3D12_CPU_DESCRIPTOR_HANDLE*)handles + numInputResources, &out, sizeof(output_resources));
+		D3D12_CPU_DESCRIPTOR_HANDLE handles[total_num_resources];
+		memcpy(handles, &in, sizeof(InputResources));
+		memcpy((D3D12_CPU_DESCRIPTOR_HANDLE*)handles + num_input_resources, &out, sizeof(OutputResources));
 
-		dxContext.device->CopyDescriptors(
-			1, (D3D12_CPU_DESCRIPTOR_HANDLE*)&cpuHandle, &totalNumResources,
-			totalNumResources, handles, nullptr,
+		dx_context.device->CopyDescriptors(
+			1, (D3D12_CPU_DESCRIPTOR_HANDLE*)&cpu_handle, &total_num_resources,
+			total_num_resources, handles, nullptr,
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
 		);
 
-		return gpuHandle;
+		return gpu_handle;
 	}
 
-	template<typename input_resources, typename output_resources>
-	inline void dx_raytracer::allocateDescriptorHeapSpaceForGlobalResources(dx_pushable_descriptor_heap& descriptorHeap)
+	template<typename InputResources, typename OutputResources>
+	inline void DXRaytracer::allocate_descriptor_heap_space_for_global_resources(DXPushableDescriptorHeap& descriptor_heap)
 	{
-		const uint32 numInputResources = sizeof(input_resources) / sizeof(dx_cpu_descriptor_handle);
-		const uint32 numOutputResources = sizeof(output_resources) / sizeof(dx_cpu_descriptor_handle);
-		const uint32 totalNumResources = numInputResources + numOutputResources;
+		const uint32 num_input_resources = sizeof(InputResources) / sizeof(DXCPUDescriptorHandle);
+		const uint32 num_output_resources = sizeof(OutputResources) / sizeof(DXCPUDescriptorHandle);
+		const uint32 total_num_resources = num_input_resources + num_output_resources;
 
 		for (uint32 i = 0; i < NUM_BUFFERED_FRAMES; ++i)
 		{
-			resourceCPUBase[i] = descriptorHeap.currentCPU;
-			resourceGPUBase[i] = descriptorHeap.currentGPU;
+			resource_cpu_base[i] = descriptor_heap.current_cpu;
+			resource_gpu_base[i] = descriptor_heap.current_gpu;
 
-			for (uint32 j = 0; j < totalNumResources; ++j)
-				descriptorHeap.push();
+			for (uint32 j = 0; j < total_num_resources; ++j)
+				descriptor_heap.push();
 		}
 	}
 }

@@ -5,197 +5,197 @@
 
 namespace era_engine
 {
-	static bool pointInAABB(vec3 point, bounding_box aabb)
+	static bool point_in_aabb(vec3 point, BoundingBox aabb)
 	{
-		return point.x >= aabb.minCorner.x
-			&& point.y >= aabb.minCorner.y
-			&& point.z >= aabb.minCorner.z
-			&& point.x <= aabb.maxCorner.x
-			&& point.y <= aabb.maxCorner.y
-			&& point.z <= aabb.maxCorner.z;
+		return point.x >= aabb.min_corner.x
+			&& point.y >= aabb.min_corner.y
+			&& point.z >= aabb.min_corner.z
+			&& point.x <= aabb.max_corner.x
+			&& point.y <= aabb.max_corner.y
+			&& point.z <= aabb.max_corner.z;
 	}
 
-	static float closestPointOnLineSegment(vec3 point, vec3 lineA, vec3 lineB)
+	static float closest_point_on_line_segment(vec3 point, vec3 line_a, vec3 line_b)
 	{
-		vec3 ab = lineB - lineA;
-		float t = dot(point - lineA, ab) / squared_length(ab);
+		vec3 ab = line_b - line_a;
+		float t = dot(point - line_a, ab) / squared_length(ab);
 		t = clamp(t, 0.f, 1.f);
 		return t;
 	}
 
-	void bounding_box::grow(vec3 o)
+	void BoundingBox::grow(vec3 o)
 	{
-		minCorner.x = min(minCorner.x, o.x);
-		minCorner.y = min(minCorner.y, o.y);
-		minCorner.z = min(minCorner.z, o.z);
-		maxCorner.x = max(maxCorner.x, o.x);
-		maxCorner.y = max(maxCorner.y, o.y);
-		maxCorner.z = max(maxCorner.z, o.z);
+		min_corner.x = min(min_corner.x, o.x);
+		min_corner.y = min(min_corner.y, o.y);
+		min_corner.z = min(min_corner.z, o.z);
+		max_corner.x = max(max_corner.x, o.x);
+		max_corner.y = max(max_corner.y, o.y);
+		max_corner.z = max(max_corner.z, o.z);
 	}
 
-	void bounding_box::pad(vec3 p)
+	void BoundingBox::pad(vec3 p)
 	{
-		minCorner -= p;
-		maxCorner += p;
+		min_corner -= p;
+		max_corner += p;
 	}
 
-	vec3 bounding_box::getCenter() const
+	vec3 BoundingBox::get_center() const
 	{
-		return (minCorner + maxCorner) * 0.5f;
+		return (min_corner + max_corner) * 0.5f;
 	}
 
-	vec3 bounding_box::getRadius() const
+	vec3 BoundingBox::get_radius() const
 	{
-		return (maxCorner - minCorner) * 0.5f;
+		return (max_corner - min_corner) * 0.5f;
 	}
 
-	bool bounding_box::contains(vec3 p) const
+	bool BoundingBox::contains(vec3 p) const
 	{
-		return p.x >= minCorner.x && p.x <= maxCorner.x
-			&& p.y >= minCorner.y && p.y <= maxCorner.y
-			&& p.z >= minCorner.z && p.z <= maxCorner.z;
+		return p.x >= min_corner.x && p.x <= max_corner.x
+			&& p.y >= min_corner.y && p.y <= max_corner.y
+			&& p.z >= min_corner.z && p.z <= max_corner.z;
 	}
 
-	bounding_box bounding_box::transformToAABB(quat rotation, vec3 translation) const
+	BoundingBox BoundingBox::transform_to_aabb(quat rotation, vec3 translation) const
 	{
-		bounding_box result = bounding_box::negativeInfinity();
-		result.grow(rotation * minCorner + translation);
-		result.grow(rotation * vec3(maxCorner.x, minCorner.y, minCorner.z) + translation);
-		result.grow(rotation * vec3(minCorner.x, maxCorner.y, minCorner.z) + translation);
-		result.grow(rotation * vec3(maxCorner.x, maxCorner.y, minCorner.z) + translation);
-		result.grow(rotation * vec3(minCorner.x, minCorner.y, maxCorner.z) + translation);
-		result.grow(rotation * vec3(maxCorner.x, minCorner.y, maxCorner.z) + translation);
-		result.grow(rotation * vec3(minCorner.x, maxCorner.y, maxCorner.z) + translation);
-		result.grow(rotation * maxCorner + translation);
+		BoundingBox result = BoundingBox::negative_infinity();
+		result.grow(rotation * min_corner + translation);
+		result.grow(rotation * vec3(max_corner.x, min_corner.y, min_corner.z) + translation);
+		result.grow(rotation * vec3(min_corner.x, max_corner.y, min_corner.z) + translation);
+		result.grow(rotation * vec3(max_corner.x, max_corner.y, min_corner.z) + translation);
+		result.grow(rotation * vec3(min_corner.x, min_corner.y, max_corner.z) + translation);
+		result.grow(rotation * vec3(max_corner.x, min_corner.y, max_corner.z) + translation);
+		result.grow(rotation * vec3(min_corner.x, max_corner.y, max_corner.z) + translation);
+		result.grow(rotation * max_corner + translation);
 		return result;
 	}
 
-	bounding_oriented_box bounding_box::transformToOBB(quat rotation, vec3 translation) const
+	BoundingOrientedBox BoundingBox::transform_to_obb(quat rotation, vec3 translation) const
 	{
-		bounding_oriented_box obb;
-		obb.center = rotation * getCenter() + translation;
-		obb.radius = getRadius();
+		BoundingOrientedBox obb;
+		obb.center = rotation * get_center() + translation;
+		obb.radius = get_radius();
 		obb.rotation = rotation;
 		return obb;
 	}
 
-	bounding_box_corners bounding_box::getCorners() const
+	BoundingBoxCorners BoundingBox::get_corners() const
 	{
-		bounding_box_corners result;
-		result.i = minCorner;
-		result.x = vec3(maxCorner.x, minCorner.y, minCorner.z);
-		result.y = vec3(minCorner.x, maxCorner.y, minCorner.z);
-		result.xy = vec3(maxCorner.x, maxCorner.y, minCorner.z);
-		result.z = vec3(minCorner.x, minCorner.y, maxCorner.z);
-		result.xz = vec3(maxCorner.x, minCorner.y, maxCorner.z);
-		result.yz = vec3(minCorner.x, maxCorner.y, maxCorner.z);
-		result.xyz = maxCorner;
+		BoundingBoxCorners result;
+		result.i = min_corner;
+		result.x = vec3(max_corner.x, min_corner.y, min_corner.z);
+		result.y = vec3(min_corner.x, max_corner.y, min_corner.z);
+		result.xy = vec3(max_corner.x, max_corner.y, min_corner.z);
+		result.z = vec3(min_corner.x, min_corner.y, max_corner.z);
+		result.xz = vec3(max_corner.x, min_corner.y, max_corner.z);
+		result.yz = vec3(min_corner.x, max_corner.y, max_corner.z);
+		result.xyz = max_corner;
 		return result;
 	}
 
-	bounding_box_corners bounding_box::getCorners(quat rotation, vec3 translation) const
+	BoundingBoxCorners BoundingBox::get_corners(quat rotation, vec3 translation) const
 	{
-		bounding_box_corners result;
-		result.i = rotation * minCorner + translation;
-		result.x = rotation * vec3(maxCorner.x, minCorner.y, minCorner.z) + translation;
-		result.y = rotation * vec3(minCorner.x, maxCorner.y, minCorner.z) + translation;
-		result.xy = rotation * vec3(maxCorner.x, maxCorner.y, minCorner.z) + translation;
-		result.z = rotation * vec3(minCorner.x, minCorner.y, maxCorner.z) + translation;
-		result.xz = rotation * vec3(maxCorner.x, minCorner.y, maxCorner.z) + translation;
-		result.yz = rotation * vec3(minCorner.x, maxCorner.y, maxCorner.z) + translation;
-		result.xyz = rotation * maxCorner + translation;
+		BoundingBoxCorners result;
+		result.i = rotation * min_corner + translation;
+		result.x = rotation * vec3(max_corner.x, min_corner.y, min_corner.z) + translation;
+		result.y = rotation * vec3(min_corner.x, max_corner.y, min_corner.z) + translation;
+		result.xy = rotation * vec3(max_corner.x, max_corner.y, min_corner.z) + translation;
+		result.z = rotation * vec3(min_corner.x, min_corner.y, max_corner.z) + translation;
+		result.xz = rotation * vec3(max_corner.x, min_corner.y, max_corner.z) + translation;
+		result.yz = rotation * vec3(min_corner.x, max_corner.y, max_corner.z) + translation;
+		result.xyz = rotation * max_corner + translation;
 		return result;
 	}
 
-	bounding_box bounding_box::everything()
+	BoundingBox BoundingBox::everything()
 	{
-		return bounding_box{ vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX), vec3(FLT_MAX, FLT_MAX, FLT_MAX) };
+		return BoundingBox{ vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX), vec3(FLT_MAX, FLT_MAX, FLT_MAX) };
 	}
 
-	bounding_box bounding_box::negativeInfinity()
+	BoundingBox BoundingBox::negative_infinity()
 	{
-		return bounding_box{ vec3(FLT_MAX, FLT_MAX, FLT_MAX), vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX) };
+		return BoundingBox{ vec3(FLT_MAX, FLT_MAX, FLT_MAX), vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX) };
 	}
 
-	bounding_box bounding_box::fromMinMax(vec3 minCorner, vec3 maxCorner)
+	BoundingBox BoundingBox::from_min_max(vec3 min_corner, vec3 max_corner)
 	{
-		return bounding_box{ minCorner, maxCorner };
+		return BoundingBox{ min_corner, max_corner };
 	}
 
-	bounding_box bounding_box::fromCenterRadius(vec3 center, vec3 radius)
+	BoundingBox BoundingBox::from_center_radius(vec3 center, vec3 radius)
 	{
-		return bounding_box{ center - radius, center + radius };
+		return BoundingBox{ center - radius, center + radius };
 	}
 
-	bounding_box bounding_oriented_box::getAABB() const
+	BoundingBox BoundingOrientedBox::get_aabb() const
 	{
-		bounding_box bb = { -radius, radius };
-		return bb.transformToAABB(rotation, center);
+		BoundingBox bb = { -radius, radius };
+		return bb.transform_to_aabb(rotation, center);
 	}
 
-	bounding_box bounding_oriented_box::transformToAABB(quat rotation, vec3 translation) const
+	BoundingBox BoundingOrientedBox::transform_to_aabb(quat rotation, vec3 translation) const
 	{
-		bounding_box bb = { -radius, radius };
-		return bb.transformToAABB(rotation * this->rotation, rotation * center + translation);
+		BoundingBox bb = { -radius, radius };
+		return bb.transform_to_aabb(rotation * this->rotation, rotation * center + translation);
 	}
 
-	bounding_oriented_box bounding_oriented_box::transformToOBB(quat rotation, vec3 translation) const
+	BoundingOrientedBox BoundingOrientedBox::transform_to_obb(quat rotation, vec3 translation) const
 	{
-		return bounding_oriented_box{ rotation * this->rotation, rotation * center + translation, radius };
+		return BoundingOrientedBox{ rotation * this->rotation, rotation * center + translation, radius };
 	}
 
-	bounding_box_corners bounding_oriented_box::getCorners() const
+	BoundingBoxCorners BoundingOrientedBox::get_corners() const
 	{
-		bounding_box bb = { -radius, radius };
-		return bb.getCorners(rotation, center);
+		BoundingBox bb = { -radius, radius };
+		return bb.get_corners(rotation, center);
 	}
 
-	void bounding_rectangle::grow(vec2 o)
+	void BoundingRectangle::grow(vec2 o)
 	{
-		minCorner.x = min(minCorner.x, o.x);
-		minCorner.y = min(minCorner.y, o.y);
-		maxCorner.x = max(maxCorner.x, o.x);
-		maxCorner.y = max(maxCorner.y, o.y);
+		min_corner.x = min(min_corner.x, o.x);
+		min_corner.y = min(min_corner.y, o.y);
+		max_corner.x = max(max_corner.x, o.x);
+		max_corner.y = max(max_corner.y, o.y);
 	}
 
-	void bounding_rectangle::pad(vec2 p)
+	void BoundingRectangle::pad(vec2 p)
 	{
-		minCorner -= p;
-		maxCorner += p;
+		min_corner -= p;
+		max_corner += p;
 	}
 
-	vec2 bounding_rectangle::getCenter() const
+	vec2 BoundingRectangle::get_center() const
 	{
-		return (minCorner + maxCorner) * 0.5f;
+		return (min_corner + max_corner) * 0.5f;
 	}
 
-	vec2 bounding_rectangle::getRadius() const
+	vec2 BoundingRectangle::get_radius() const
 	{
-		return (maxCorner - minCorner) * 0.5f;
+		return (max_corner - min_corner) * 0.5f;
 	}
 
-	bool bounding_rectangle::contains(vec2 p) const
+	bool BoundingRectangle::contains(vec2 p) const
 	{
-		return p.x >= minCorner.x && p.x <= maxCorner.x
-			&& p.y >= minCorner.y && p.y <= maxCorner.y;
+		return p.x >= min_corner.x && p.x <= max_corner.x
+			&& p.y >= min_corner.y && p.y <= max_corner.y;
 	}
 
-	bounding_rectangle bounding_rectangle::negativeInfinity()
+	BoundingRectangle BoundingRectangle::negative_infinity()
 	{
-		return bounding_rectangle{ vec2(FLT_MAX, FLT_MAX), vec2(-FLT_MAX, -FLT_MAX) };
+		return BoundingRectangle{ vec2(FLT_MAX, FLT_MAX), vec2(-FLT_MAX, -FLT_MAX) };
 	}
 
-	bounding_rectangle bounding_rectangle::fromMinMax(vec2 minCorner, vec2 maxCorner)
+	BoundingRectangle BoundingRectangle::from_min_max(vec2 min_corner, vec2 max_corner)
 	{
-		return bounding_rectangle{ minCorner, maxCorner };
+		return BoundingRectangle{ min_corner, max_corner };
 	}
 
-	bounding_rectangle bounding_rectangle::fromCenterRadius(vec2 center, vec2 radius)
+	BoundingRectangle BoundingRectangle::from_center_radius(vec2 center, vec2 radius)
 	{
-		return bounding_rectangle{ center - radius, center + radius };
+		return BoundingRectangle{ center - radius, center + radius };
 	}
 
-	bool ray::intersectPlane(vec3 normal, float d, float& outT) const
+	bool ray::intersect_plane(vec3 normal, float d, float& out_t) const
 	{
 		float ndotd = dot(direction, normal);
 		if (abs(ndotd) < 1e-6f)
@@ -203,67 +203,67 @@ namespace era_engine
 			return false;
 		}
 
-		outT = -(dot(origin, normal) + d) / ndotd;
+		out_t = -(dot(origin, normal) + d) / ndotd;
 		return true;
 	}
 
-	bool ray::intersectPlane(vec3 normal, vec3 point, float& outT) const
+	bool ray::intersect_plane(vec3 normal, vec3 point, float& out_t) const
 	{
 		float d = -dot(normal, point);
-		return intersectPlane(normal, d, outT);
+		return intersect_plane(normal, d, out_t);
 	}
 
-	bool ray::intersectAABB(const bounding_box& a, float& outT) const
+	bool ray::intersect_aabb(const BoundingBox& a, float& out_t) const
 	{
-		vec3 invDir = vec3(1.f / direction.x, 1.f / direction.y, 1.f / direction.z); // This can be Inf (when one direction component is 0) but still works
+		vec3 inv_dir = vec3(1.f / direction.x, 1.f / direction.y, 1.f / direction.z); // This can be Inf (when one direction component is 0) but still works
 
-		float tx1 = (a.minCorner.x - origin.x) * invDir.x;
-		float tx2 = (a.maxCorner.x - origin.x) * invDir.x;
+		float tx1 = (a.min_corner.x - origin.x) * inv_dir.x;
+		float tx2 = (a.max_corner.x - origin.x) * inv_dir.x;
 
-		outT = min(tx1, tx2);
+		out_t = min(tx1, tx2);
 		float tmax = max(tx1, tx2);
 
-		float ty1 = (a.minCorner.y - origin.y) * invDir.y;
-		float ty2 = (a.maxCorner.y - origin.y) * invDir.y;
+		float ty1 = (a.min_corner.y - origin.y) * inv_dir.y;
+		float ty2 = (a.max_corner.y - origin.y) * inv_dir.y;
 
-		outT = max(outT, min(ty1, ty2));
+		out_t = max(out_t, min(ty1, ty2));
 		tmax = min(tmax, max(ty1, ty2));
 
-		float tz1 = (a.minCorner.z - origin.z) * invDir.z;
-		float tz2 = (a.maxCorner.z - origin.z) * invDir.z;
+		float tz1 = (a.min_corner.z - origin.z) * inv_dir.z;
+		float tz2 = (a.max_corner.z - origin.z) * inv_dir.z;
 
-		outT = max(outT, min(tz1, tz2));
+		out_t = max(out_t, min(tz1, tz2));
 		tmax = min(tmax, max(tz1, tz2));
 
-		bool result = tmax >= outT && outT > 0.f;
+		bool result = tmax >= out_t && out_t > 0.f;
 
 		return result;
 	}
 
-	bool ray::intersectOBB(const bounding_oriented_box& a, float& outT) const
+	bool ray::intersect_obb(const BoundingOrientedBox& a, float& out_t) const
 	{
 		//return (conjugate(m.rotation) * (pos - m.position)) / m.scale;
-		ray localR = { conjugate(a.rotation) * (origin - a.center), conjugate(a.rotation) * direction };
-		return localR.intersectAABB(bounding_box::fromCenterRadius(0.f, a.radius), outT);
+		ray local_r = { conjugate(a.rotation) * (origin - a.center), conjugate(a.rotation) * direction };
+		return local_r.intersect_aabb(BoundingBox::from_center_radius(0.f, a.radius), out_t);
 	}
 
-	bool ray::intersectTriangle(vec3 a, vec3 b, vec3 c, float& outT, bool& outFrontFacing) const
+	bool ray::intersect_triangle(vec3 a, vec3 b, vec3 c, float& out_t, bool& out_front_facing) const
 	{
 		vec3 normal = noz(cross(b - a, c - a));
 		float d = -dot(normal, a);
 
-		float nDotR = dot(direction, normal);
-		if (fabsf(nDotR) <= 1e-6f)
+		float n_dot_r = dot(direction, normal);
+		if (fabsf(n_dot_r) <= 1e-6f)
 			return false;
 
-		outT = -(dot(origin, normal) + d) / nDotR;
+		out_t = -(dot(origin, normal) + d) / n_dot_r;
 
-		vec3 q = origin + outT * direction;
-		outFrontFacing = nDotR < 0.f;
-		return outT >= 0.f && point_in_triangle(q, a, b, c);
+		vec3 q = origin + out_t * direction;
+		out_front_facing = n_dot_r < 0.f;
+		return out_t >= 0.f && point_in_triangle(q, a, b, c);
 	}
 
-	bool ray::intersectSphere(vec3 center, float radius, float& outT) const
+	bool ray::intersect_sphere(vec3 center, float radius, float& out_t) const
 	{
 		vec3 m = origin - center;
 		float b = dot(m, direction);
@@ -277,26 +277,26 @@ namespace era_engine
 		if (discr < 0.f)
 			return false;
 
-		outT = -b - sqrt(discr);
+		out_t = -b - sqrt(discr);
 
-		if (outT < 0.f)
-			outT = 0.f;
+		if (out_t < 0.f)
+			out_t = 0.f;
 
 		return true;
 	}
 
-	bool ray::intersectCylinder(const bounding_cylinder& cylinder, float& outT) const
+	bool ray::intersect_cylinder(const BoundingCylinder& cylinder, float& out_t) const
 	{
 		vec3 d = direction;
 		vec3 o = origin;
 
-		vec3 axis = cylinder.positionB - cylinder.positionA;
+		vec3 axis = cylinder.position_b - cylinder.position_a;
 		float height = length(axis);
 
 		quat q = rotate_from_to(axis, vec3(0.f, 1.f, 0.f));
 
 		// Cylinder base is at 0,0,0. Second point is above it
-		o = q * (o - cylinder.positionA);
+		o = q * (o - cylinder.position_a);
 		d = q * d;
 
 		float epsilon = 1e-6f;
@@ -315,73 +315,73 @@ namespace era_engine
 			if (delta < epsilon)
 				return false;
 
-			outT = (-b - sqrt(delta)) / a;
-			if (outT <= epsilon)
+			out_t = (-b - sqrt(delta)) / a;
+			if (out_t <= epsilon)
 				return false; // Behind ray
 
-			y = o.y + outT * d.y;
+			y = o.y + out_t * d.y;
 		}
 
 		// Check bases. Always true if the above if is not taken
 		if (y > height + epsilon || y < -epsilon)
 		{
-			vec3 posA = vec3(0.f, 0.f, 0.f);
-			vec3 posB = vec3(0.f, height, 0.f);
+			vec3 pos_a = vec3(0.f, 0.f, 0.f);
+			vec3 pos_b = vec3(0.f, height, 0.f);
 
-			ray localRay = { o, d };
+			ray local_ray = { o, d };
 
 			float dist;
-			bool b1 = d.y < 0.f && localRay.intersectDisk(posB, vec3(0.f, 1.f, 0.f), cylinder.radius, dist);
+			bool b1 = d.y < 0.f && local_ray.intersect_disk(pos_b, vec3(0.f, 1.f, 0.f), cylinder.radius, dist);
 			if (b1)
-				outT = dist;
-			bool b2 = d.y > 0.f && localRay.intersectDisk(posA, vec3(0.f, -1.f, 0.f), cylinder.radius, dist);
+				out_t = dist;
+			bool b2 = d.y > 0.f && local_ray.intersect_disk(pos_a, vec3(0.f, -1.f, 0.f), cylinder.radius, dist);
 			if (b2)
-				outT = dist;
+				out_t = dist;
 
-			y = o.y + outT * d.y;
+			y = o.y + out_t * d.y;
 		}
 
 		return y > -epsilon && y < height + epsilon;
 	}
 
-	bool ray::intersectCapsule(const bounding_capsule& capsule, float& outT) const
+	bool ray::intersect_capsule(const BoundingCapsule& capsule, float& out_t) const
 	{
-		outT = FLT_MAX;
+		out_t = FLT_MAX;
 		float t;
 		bool result = false;
-		if (intersectCylinder(bounding_cylinder{ capsule.positionA, capsule.positionB, capsule.radius }, t))
+		if (intersect_cylinder(BoundingCylinder{ capsule.position_a, capsule.position_b, capsule.radius }, t))
 		{
-			outT = t;
+			out_t = t;
 			result = true;
 		}
-		if (intersectSphere(bounding_sphere{ capsule.positionA, capsule.radius }, t))
+		if (intersect_sphere(BoundingSphere{ capsule.position_a, capsule.radius }, t))
 		{
-			outT = min(outT, t);
+			out_t = min(out_t, t);
 			result = true;
 		}
-		if (intersectSphere(bounding_sphere{ capsule.positionB, capsule.radius }, t))
+		if (intersect_sphere(BoundingSphere{ capsule.position_b, capsule.radius }, t))
 		{
-			outT = min(outT, t);
+			out_t = min(out_t, t);
 			result = true;
 		}
 		return result;
 	}
 
-	bool ray::intersectDisk(vec3 pos, vec3 normal, float radius, float& outT) const
+	bool ray::intersect_disk(vec3 pos, vec3 normal, float radius, float& out_t) const
 	{
-		bool intersectsPlane = intersectPlane(normal, pos, outT);
-		if (intersectsPlane)
-			return length(origin + outT * direction - pos) <= radius;
+		bool intersects_plane = intersect_plane(normal, pos, out_t);
+		if (intersects_plane)
+			return length(origin + out_t * direction - pos) <= radius;
 		return false;
 	}
 
-	bool ray::intersectRectangle(vec3 pos, vec3 tangent, vec3 bitangent, vec2 radius, float& outT) const
+	bool ray::intersect_rectangle(vec3 pos, vec3 tangent, vec3 bitangent, vec2 radius, float& out_t) const
 	{
 		vec3 normal = cross(tangent, bitangent);
-		bool intersectsPlane = intersectPlane(normal, pos, outT);
-		if (intersectsPlane)
+		bool intersects_plane = intersect_plane(normal, pos, out_t);
+		if (intersects_plane)
 		{
-			vec3 offset = origin + outT * direction - pos;
+			vec3 offset = origin + out_t * direction - pos;
 			vec2 projected(dot(offset, tangent), dot(offset, bitangent));
 			projected = abs(projected);
 			if (projected.x <= radius.x && projected.y <= radius.y)
@@ -390,68 +390,68 @@ namespace era_engine
 		return false;
 	}
 
-	static bool isZero(float x)
+	static bool is_zero(float x)
 	{
 		return abs(x) < 1e-6f;
 	}
 
-	struct solve_2_result
+	struct Solve2Result
 	{
-		uint32 numResults;
+		uint32 num_results;
 		float results[2];
 	};
 
-	struct solve_3_result
+	struct Solve3Result
 	{
-		uint32 numResults;
+		uint32 num_results;
 		float results[3];
 	};
 
-	struct solve_4_result
+	struct Solve4Result
 	{
-		uint32 numResults;
+		uint32 num_results;
 		float results[4];
 	};
 
-	static solve_2_result solve2(float c0, float c1, float c2)
+	static Solve2Result solve2(float c0, float c1, float c2)
 	{
 		float p = c1 / (2 * c2);
 		float q = c0 / c2;
 
 		float D = p * p - q;
 
-		if (isZero(D))
+		if (is_zero(D))
 			return { 1, -p };
 		else if (D < 0)
 			return { 0 };
 		else /* if (D > 0) */
 		{
-			float sqrt_D = sqrt(D);
+			float sqrt_d = sqrt(D);
 
-			return { 2, sqrt_D - p, -sqrt_D - p };
+			return { 2, sqrt_d - p, -sqrt_d - p };
 		}
 	}
 
-	static solve_3_result solve3(float c0, float c1, float c2, float c3)
+	static Solve3Result solve3(float c0, float c1, float c2, float c3)
 	{
 		float A = c2 / c3;
 		float B = c1 / c3;
 		float C = c0 / c3;
 
-		float sq_A = A * A;
-		float p = 1.f / 3 * (-1.f / 3 * sq_A + B);
-		float q = 1.f / 2 * (2.f / 27 * A * sq_A - 1.f / 3 * A * B + C);
+		float sq_a = A * A;
+		float p = 1.f / 3 * (-1.f / 3 * sq_a + B);
+		float q = 1.f / 2 * (2.f / 27 * A * sq_a - 1.f / 3 * A * B + C);
 
 		/* use Cardano's formula */
 
 		float cb_p = p * p * p;
 		float D = q * q + cb_p;
 
-		solve_3_result s = {};
+		Solve3Result s = {};
 
-		if (isZero(D))
+		if (is_zero(D))
 		{
-			if (isZero(q))
+			if (is_zero(q))
 				s = { 1, 0.f };
 			else
 			{
@@ -472,9 +472,9 @@ namespace era_engine
 		}
 		else /* one real solution */
 		{
-			float sqrt_D = sqrt(D);
-			float u = cbrt(sqrt_D - q);
-			float v = -cbrt(sqrt_D + q);
+			float sqrt_d = sqrt(D);
+			float u = cbrt(sqrt_d - q);
+			float v = -cbrt(sqrt_d + q);
 
 			s = { 1, u + v };
 		}
@@ -482,7 +482,7 @@ namespace era_engine
 		/* resubstitute */
 		float sub = 1.f / 3.f * A;
 
-		for (uint32 i = 0; i < s.numResults; ++i)
+		for (uint32 i = 0; i < s.num_results; ++i)
 			s.results[i] -= sub;
 
 		return s;
@@ -494,7 +494,7 @@ namespace era_engine
 	 *      c[0] + c[1]*x + c[2]*x^2 + c[3]*x^3 + c[4]*x^4 = 0
 	 *
 	 */
-	static solve_4_result solve4(float c0, float c1, float c2, float c3, float c4)
+	static Solve4Result solve4(float c0, float c1, float c2, float c3, float c4)
 	{
 		/* normal form: x^4 + Ax^3 + Bx^2 + Cx + D = 0 */
 
@@ -506,28 +506,28 @@ namespace era_engine
 		/*  substitute x = y - A/4 to eliminate cubic term:
 		x^4 + px^2 + qx + r = 0 */
 
-		float sq_A = A * A;
-		float p = -3.f / 8 * sq_A + B;
-		float q = 1.f / 8 * sq_A * A - 1.f / 2 * A * B + C;
-		float r = -3.f / 256 * sq_A * sq_A + 1.f / 16 * sq_A * B - 1.f / 4 * A * C + D;
-		solve_4_result s = {};
+		float sq_a = A * A;
+		float p = -3.f / 8 * sq_a + B;
+		float q = 1.f / 8 * sq_a * A - 1.f / 2 * A * B + C;
+		float r = -3.f / 256 * sq_a * sq_a + 1.f / 16 * sq_a * B - 1.f / 4 * A * C + D;
+		Solve4Result s = {};
 
-		if (isZero(r))
+		if (is_zero(r))
 		{
 			/* no absolute term: y(y^3 + py + q) = 0 */
 
 			auto s3 = solve3(q, p, 0, 1);
-			for (uint32 i = 0; i < s3.numResults; ++i)
-				s.results[s.numResults++] = s3.results[i];
+			for (uint32 i = 0; i < s3.num_results; ++i)
+				s.results[s.num_results++] = s3.results[i];
 
-			s.results[s.numResults++] = 0.f;
+			s.results[s.num_results++] = 0.f;
 		}
 		else
 		{
 			/* solve the resolvent cubic ... */
 			auto s3 = solve3(1.f / 2 * r * p - 1.f / 8 * q * q, -r, -0.5f * p, 1.f);
-			for (uint32 i = 0; i < s3.numResults; ++i)
-				s.results[s.numResults++] = s3.results[i];
+			for (uint32 i = 0; i < s3.num_results; ++i)
+				s.results[s.num_results++] = s3.results[i];
 
 			/* ... and take the one real solution ... */
 			float z = s.results[0];
@@ -536,14 +536,14 @@ namespace era_engine
 			float u = z * z - r;
 			float v = 2.f * z - p;
 
-			if (isZero(u))
+			if (is_zero(u))
 				u = 0;
 			else if (u > 0)
 				u = sqrt(u);
 			else
 				return {};
 
-			if (isZero(v))
+			if (is_zero(v))
 				v = 0;
 			else if (v > 0)
 				v = sqrt(v);
@@ -552,29 +552,29 @@ namespace era_engine
 
 			auto s2 = solve2(z - u, q < 0 ? -v : v, 1);
 			s = {};
-			for (uint32 i = 0; i < s2.numResults; ++i)
-				s.results[s.numResults++] = s2.results[i];
+			for (uint32 i = 0; i < s2.num_results; ++i)
+				s.results[s.num_results++] = s2.results[i];
 
 			s2 = solve2(z + u, q < 0 ? v : -v, 1);
-			for (uint32 i = 0; i < s2.numResults; ++i)
-				s.results[s.numResults++] = s2.results[i];
+			for (uint32 i = 0; i < s2.num_results; ++i)
+				s.results[s.num_results++] = s2.results[i];
 		}
 
 		/* resubstitute */
 		float sub = 1.f / 4 * A;
 
-		for (uint32 i = 0; i < s.numResults; ++i)
+		for (uint32 i = 0; i < s.num_results; ++i)
 			s.results[i] -= sub;
 
 		return s;
 	}
 
-	bool ray::intersectTorus(const bounding_torus& torus, float& outT) const
+	bool ray::intersect_torus(const BoundingTorus& torus, float& out_t) const
 	{
 		vec3 d = direction;
 		vec3 o = origin;
 
-		vec3 axis = torus.upAxis;
+		vec3 axis = torus.up_axis;
 
 		quat q = rotate_from_to(axis, vec3(0.f, 1.f, 0.f));
 
@@ -584,12 +584,12 @@ namespace era_engine
 		// define the coefficients of the quartic equation
 		float sum_d_sqrd = dot(d, d);
 
-		float e = dot(o, o) - torus.majorRadius * torus.majorRadius - torus.tubeRadius * torus.tubeRadius;
+		float e = dot(o, o) - torus.major_radius * torus.major_radius - torus.tube_radius * torus.tube_radius;
 		float f = dot(o, d);
-		float four_a_sqrd = 4.f * torus.majorRadius * torus.majorRadius;
+		float four_a_sqrd = 4.f * torus.major_radius * torus.major_radius;
 
 		auto solution = solve4(
-			e * e - four_a_sqrd * (torus.tubeRadius * torus.tubeRadius - o.y * o.y),
+			e * e - four_a_sqrd * (torus.tube_radius * torus.tube_radius - o.y * o.y),
 			4.f * f * e + 2.f * four_a_sqrd * o.y * d.y,
 			2.f * sum_d_sqrd * e + 4.f * f * f + four_a_sqrd * d.y * d.y,
 			4.f * sum_d_sqrd * f,
@@ -597,28 +597,28 @@ namespace era_engine
 		);
 
 		// ray misses the torus
-		if (solution.numResults == 0)
+		if (solution.num_results == 0)
 			return false;
 
 		// find the smallest root greater than kEpsilon, if any
 		// the roots array is not sorted
-		float minT = FLT_MAX;
-		for (uint32 i = 0; i < solution.numResults; ++i)
+		float min_t = FLT_MAX;
+		for (uint32 i = 0; i < solution.num_results; ++i)
 		{
 			float t = solution.results[i];
-			if ((t > 1e-6f) && (t < minT))
-				minT = t;
+			if ((t > 1e-6f) && (t < min_t))
+				min_t = t;
 		}
-		outT = minT;
+		out_t = min_t;
 
 		return true;
 	}
 
-	bool ray::intersectHull(const bounding_hull& hull, const bounding_hull_geometry& geometry, float& outT) const
+	bool ray::intersect_hull(const BoundingHull& hull, const BoundingHullGeometry& geometry, float& out_t) const
 	{
-		ray localR = { conjugate(hull.rotation) * (origin - hull.position), conjugate(hull.rotation) * direction };
+		ray local_r = { conjugate(hull.rotation) * (origin - hull.position), conjugate(hull.rotation) * direction };
 
-		float minT = FLT_MAX;
+		float min_t = FLT_MAX;
 		bool result = false;
 
 		for (uint32 i = 0; i < (uint32)geometry.faces.size(); ++i)
@@ -630,163 +630,163 @@ namespace era_engine
 
 			float t;
 			bool ff;
-			if (localR.intersectTriangle(a, b, c, t, ff) && t < minT)
+			if (local_r.intersect_triangle(a, b, c, t, ff) && t < min_t)
 			{
-				minT = t;
+				min_t = t;
 				result = true;
 			}
 		}
 
-		outT = minT;
+		out_t = min_t;
 		return result;
 	}
 
-	bool sphereVsCylinder(const bounding_sphere& s, const bounding_cylinder& c)
+	bool sphere_vs_cylinder(const BoundingSphere& s, const BoundingCylinder& c)
 	{
-		vec3 ab = c.positionB - c.positionA;
-		float t = dot(s.center - c.positionA, ab) / squared_length(ab);
+		vec3 ab = c.position_b - c.position_a;
+		float t = dot(s.center - c.position_a, ab) / squared_length(ab);
 		if (t >= 0.f && t <= 1.f)
-			return sphereVsSphere(s, bounding_sphere{ lerp(c.positionA, c.positionB, t), c.radius });
+			return sphere_vs_sphere(s, BoundingSphere{ lerp(c.position_a, c.position_b, t), c.radius });
 
-		vec3 p = (t <= 0.f) ? c.positionA : c.positionB;
+		vec3 p = (t <= 0.f) ? c.position_a : c.position_b;
 		vec3 up = (t <= 0.f) ? -ab : ab;
 
-		vec3 projectedDirToCenter = normalize(cross(cross(up, s.center - p), up));
-		vec3 endA = p + projectedDirToCenter * c.radius;
-		vec3 endB = p - projectedDirToCenter * c.radius;
+		vec3 projected_dir_to_center = normalize(cross(cross(up, s.center - p), up));
+		vec3 end_a = p + projected_dir_to_center * c.radius;
+		vec3 end_b = p - projected_dir_to_center * c.radius;
 
-		vec3 closestToSphere = closestPoint_PointSegment(s.center, line_segment{ endA, endB });
-		float sqDistance = squared_length(closestToSphere - s.center);
+		vec3 closest_to_sphere = closest_point_point_segment(s.center, LineSegment{ end_a, end_b });
+		float sq_distance = squared_length(closest_to_sphere - s.center);
 
-		return sqDistance <= s.radius;
+		return sq_distance <= s.radius;
 	}
 
-	bool sphereVsHull(const bounding_sphere& s, const bounding_hull& h)
+	bool sphere_vs_hull(const BoundingSphere& s, const BoundingHull& h)
 	{
-		sphere_support_fn sphereSupport{ s };
-		hull_support_fn hullSupport{ h };
+		SphereSupportFn sphere_support{ s };
+		HullSupportFn hull_support{ h };
 
-		gjk_simplex gjkSimplex;
-		return gjkIntersectionTest(sphereSupport, hullSupport, gjkSimplex);
+		GJKSimplex gjk_simplex;
+		return gjk_intersection_test(sphere_support, hull_support, gjk_simplex);
 	}
 
-	bool sphereVsTriangle(const bounding_sphere& s, vec3 a, vec3 b, vec3 c)
+	bool sphere_vs_triangle(const BoundingSphere& s, vec3 a, vec3 b, vec3 c)
 	{
-		vec3 p = closestPoint_PointTriangle(s.center, a, b, c);
+		vec3 p = closest_point_point_triangle(s.center, a, b, c);
 		vec3 v = p - s.center;
 		return dot(v, v) <= s.radius * s.radius;
 	}
 
-	bool capsuleVsAABB(const bounding_capsule& c, const bounding_box& b)
+	bool capsule_vs_aabb(const BoundingCapsule& c, const BoundingBox& b)
 	{
-		capsule_support_fn capsuleSupport{ c };
-		aabb_support_fn boxSupport{ b };
+		CapsuleSupportFn capsule_support{ c };
+		AABBSupportFn box_support{ b };
 
-		gjk_simplex gjkSimplex;
-		return gjkIntersectionTest(capsuleSupport, boxSupport, gjkSimplex);
+		GJKSimplex gjk_simplex;
+		return gjk_intersection_test(capsule_support, box_support, gjk_simplex);
 	}
 
-	bool capsuleVsOBB(const bounding_capsule& c, const bounding_oriented_box& o)
+	bool capsule_vs_obb(const BoundingCapsule& c, const BoundingOrientedBox& o)
 	{
-		bounding_box aabb = bounding_box::fromCenterRadius(o.center, o.radius);
-		bounding_capsule c_ = {
-			conjugate(o.rotation) * (c.positionA - o.center) + o.center,
-			conjugate(o.rotation) * (c.positionB - o.center) + o.center,
+		BoundingBox aabb = BoundingBox::from_center_radius(o.center, o.radius);
+		BoundingCapsule c_ = {
+			conjugate(o.rotation) * (c.position_a - o.center) + o.center,
+			conjugate(o.rotation) * (c.position_b - o.center) + o.center,
 			c.radius };
 
-		return capsuleVsAABB(c_, aabb);
+		return capsule_vs_aabb(c_, aabb);
 	}
 
-	bool capsuleVsHull(const bounding_capsule& c, const bounding_hull& h)
+	bool capsule_vs_hull(const BoundingCapsule& c, const BoundingHull& h)
 	{
-		capsule_support_fn capsuleSupport{ c };
-		hull_support_fn hullSupport{ h };
+		CapsuleSupportFn capsule_support{ c };
+		HullSupportFn hull_support{ h };
 
-		gjk_simplex gjkSimplex;
-		return gjkIntersectionTest(capsuleSupport, hullSupport, gjkSimplex);
+		GJKSimplex gjk_simplex;
+		return gjk_intersection_test(capsule_support, hull_support, gjk_simplex);
 	}
 
-	bool capsuleVsTriangle(const bounding_capsule& capsule, vec3 a, vec3 b, vec3 c)
+	bool capsule_vs_triangle(const BoundingCapsule& capsule, vec3 a, vec3 b, vec3 c)
 	{
-		ray r = { capsule.positionA, normalize(capsule.positionB - capsule.positionA) };
+		ray r = { capsule.position_a, normalize(capsule.position_b - capsule.position_a) };
 
-		vec3 triNormal = normalize(cross(b - a, c - a));
-		float d = -dot(triNormal, a);
+		vec3 tri_normal = normalize(cross(b - a, c - a));
+		float d = -dot(tri_normal, a);
 
-		float ndotd = dot(r.direction, triNormal);
+		float ndotd = dot(r.direction, tri_normal);
 
-		float t = -(dot(r.origin, triNormal) + d) / ndotd;
+		float t = -(dot(r.origin, tri_normal) + d) / ndotd;
 
 		vec3 trace = r.origin + t * r.direction;
-		vec3 closest = closestPoint_PointTriangle(trace, a, b, c);
+		vec3 closest = closest_point_point_triangle(trace, a, b, c);
 
-		vec3 reference = closestPoint_PointSegment(closest, { capsule.positionA, capsule.positionB });
+		vec3 reference = closest_point_point_segment(closest, { capsule.position_a, capsule.position_b });
 
-		return sphereVsTriangle(bounding_sphere{ reference, capsule.radius }, a, b, c);
+		return sphere_vs_triangle(BoundingSphere{ reference, capsule.radius }, a, b, c);
 	}
 
-	bool cylinderVsCylinder(const bounding_cylinder& a, const bounding_cylinder& b)
+	bool cylinder_vs_cylinder(const BoundingCylinder& a, const BoundingCylinder& b)
 	{
-		cylinder_support_fn cylinderSupportA{ a };
-		cylinder_support_fn cylinderSupportB{ b };
+		CylinderSupportFn cylinder_support_a{ a };
+		CylinderSupportFn cylinder_support_b{ b };
 
-		gjk_simplex gjkSimplex;
-		return gjkIntersectionTest(cylinderSupportA, cylinderSupportB, gjkSimplex);
+		GJKSimplex gjk_simplex;
+		return gjk_intersection_test(cylinder_support_a, cylinder_support_b, gjk_simplex);
 	}
 
-	bool cylinderVsAABB(const bounding_cylinder& c, const bounding_box& b)
+	bool cylinder_vs_aabb(const BoundingCylinder& c, const BoundingBox& b)
 	{
-		cylinder_support_fn cylinderSupport{ c };
-		aabb_support_fn boxSupport{ b };
+		CylinderSupportFn cylinder_support{ c };
+		AABBSupportFn box_support{ b };
 
-		gjk_simplex gjkSimplex;
-		return gjkIntersectionTest(cylinderSupport, boxSupport, gjkSimplex);
+		GJKSimplex gjk_simplex;
+		return gjk_intersection_test(cylinder_support, box_support, gjk_simplex);
 	}
 
-	bool cylinderVsOBB(const bounding_cylinder& c, const bounding_oriented_box& o)
+	bool cylinder_vs_obb(const BoundingCylinder& c, const BoundingOrientedBox& o)
 	{
-		bounding_box aabb = bounding_box::fromCenterRadius(o.center, o.radius);
-		bounding_cylinder c_ = {
-			conjugate(o.rotation) * (c.positionA - o.center) + o.center,
-			conjugate(o.rotation) * (c.positionB - o.center) + o.center,
+		BoundingBox aabb = BoundingBox::from_center_radius(o.center, o.radius);
+		BoundingCylinder c_ = {
+			conjugate(o.rotation) * (c.position_a - o.center) + o.center,
+			conjugate(o.rotation) * (c.position_b - o.center) + o.center,
 			c.radius };
 
-		return cylinderVsAABB(c_, aabb);
+		return cylinder_vs_aabb(c_, aabb);
 	}
 
-	bool cylinderVsHull(const bounding_cylinder& c, const bounding_hull& h)
+	bool cylinder_vs_hull(const BoundingCylinder& c, const BoundingHull& h)
 	{
-		cylinder_support_fn cylinderSupport{ c };
-		hull_support_fn hullSupport{ h };
+		CylinderSupportFn cylinder_support{ c };
+		HullSupportFn hull_support{ h };
 
-		gjk_simplex gjkSimplex;
-		return gjkIntersectionTest(cylinderSupport, hullSupport, gjkSimplex);
+		GJKSimplex gjk_simplex;
+		return gjk_intersection_test(cylinder_support, hull_support, gjk_simplex);
 	}
 
-	bool aabbVsHull(const bounding_box& a, const bounding_hull& h)
+	bool aabb_vs_hull(const BoundingBox& a, const BoundingHull& h)
 	{
-		aabb_support_fn aabbSupport{ a };
-		hull_support_fn hullSupport{ h };
+		AABBSupportFn aabb_support{ a };
+		HullSupportFn hull_support{ h };
 
-		gjk_simplex gjkSimplex;
-		return gjkIntersectionTest(aabbSupport, hullSupport, gjkSimplex);
+		GJKSimplex gjk_simplex;
+		return gjk_intersection_test(aabb_support, hull_support, gjk_simplex);
 	}
 
-	bool aabbVsPlane(const bounding_box& a, vec4 plane)
+	bool aabb_vs_plane(const BoundingBox& a, vec4 plane)
 	{
-		vec3 center = a.getCenter();
-		vec3 radius = a.getRadius();
+		vec3 center = a.get_center();
+		vec3 radius = a.get_radius();
 
 		float r = dot(radius, abs(plane.xyz));
-		float s = abs(signedDistanceToPlane(center, plane));
+		float s = abs(signed_distance_to_plane(center, plane));
 
 		return s <= r;
 	}
 
-	bool aabbVsTriangle(const bounding_box& aabb, vec3 a, vec3 b, vec3 c)
+	bool aabb_vs_triangle(const BoundingBox& aabb, vec3 a, vec3 b, vec3 c)
 	{
-		vec3 radius = aabb.getRadius();
-		vec3 center = aabb.getCenter();
+		vec3 radius = aabb.get_radius();
+		vec3 center = aabb.get_center();
 
 		a -= center;
 		b -= center;
@@ -1009,11 +1009,11 @@ namespace era_engine
 			return false;
 
 		{
-			vec3 triNormal = cross(f0, f1);
-			float triD = dot(triNormal, a);
+			vec3 tri_normal = cross(f0, f1);
+			float tri_d = dot(tri_normal, a);
 
-			float r = dot(radius, abs(triNormal));
-			float s = abs(triD);
+			float r = dot(radius, abs(tri_normal));
+			float s = abs(tri_d);
 
 			if (s > r)
 				return false;
@@ -1022,9 +1022,9 @@ namespace era_engine
 		return true;
 	}
 
-	bool obbVsOBB(const bounding_oriented_box& a, const bounding_oriented_box& b)
+	bool obb_vs_obb(const BoundingOrientedBox& a, const BoundingOrientedBox& b)
 	{
-		union obb_axes
+		union OBBAxes
 		{
 			struct
 			{
@@ -1035,41 +1035,41 @@ namespace era_engine
 
 		float ra, rb, penetration;
 
-		obb_axes axesA = {
+		OBBAxes axes_a = {
 			a.rotation * vec3(1.f, 0.f, 0.f),
 			a.rotation * vec3(0.f, 1.f, 0.f),
 			a.rotation * vec3(0.f, 0.f, 1.f),
 		};
 
-		obb_axes axesB = {
+		OBBAxes axes_b = {
 			b.rotation * vec3(1.f, 0.f, 0.f),
 			b.rotation * vec3(0.f, 1.f, 0.f),
 			b.rotation * vec3(0.f, 0.f, 1.f),
 		};
 
 		mat3 r;
-		r.m00 = dot(axesA.x, axesB.x);
-		r.m10 = dot(axesA.y, axesB.x);
-		r.m20 = dot(axesA.z, axesB.x);
-		r.m01 = dot(axesA.x, axesB.y);
-		r.m11 = dot(axesA.y, axesB.y);
-		r.m21 = dot(axesA.z, axesB.y);
-		r.m02 = dot(axesA.x, axesB.z);
-		r.m12 = dot(axesA.y, axesB.z);
-		r.m22 = dot(axesA.z, axesB.z);
+		r.m00 = dot(axes_a.x, axes_b.x);
+		r.m10 = dot(axes_a.y, axes_b.x);
+		r.m20 = dot(axes_a.z, axes_b.x);
+		r.m01 = dot(axes_a.x, axes_b.y);
+		r.m11 = dot(axes_a.y, axes_b.y);
+		r.m21 = dot(axes_a.z, axes_b.y);
+		r.m02 = dot(axes_a.x, axes_b.z);
+		r.m12 = dot(axes_a.y, axes_b.z);
+		r.m22 = dot(axes_a.z, axes_b.z);
 
 		vec3 tw = b.center - a.center;
 		vec3 t = conjugate(a.rotation) * tw;
 
-		mat3 absR;
+		mat3 abs_r;
 		for (uint32 i = 0; i < 9; ++i)
-			absR.m[i] = abs(r.m[i]) + EPSILON; // Add in an epsilon term to counteract arithmetic errors when two edges are parallel and their cross product is (near) 0
+			abs_r.m[i] = abs(r.m[i]) + EPSILON; // Add in an epsilon term to counteract arithmetic errors when two edges are parallel and their cross product is (near) 0
 
 		// Test a's faces
 		for (uint32 i = 0; i < 3; ++i)
 		{
 			ra = a.radius.data[i];
-			rb = dot(row(absR, i), b.radius);
+			rb = dot(row(abs_r, i), b.radius);
 			float d = t.data[i];
 			penetration = ra + rb - abs(d);
 			if (penetration < 0.f)
@@ -1079,7 +1079,7 @@ namespace era_engine
 		// Test b's faces
 		for (uint32 i = 0; i < 3; ++i)
 		{
-			ra = dot(col(absR, i), a.radius);
+			ra = dot(col(abs_r, i), a.radius);
 			rb = b.radius.data[i];
 			float d = dot(col(r, i), t);
 			penetration = ra + rb - abs(d);
@@ -1088,64 +1088,64 @@ namespace era_engine
 		}
 
 		// Test a.x x b.x
-		ra = a.radius.y * absR.m20 + a.radius.z * absR.m10;
-		rb = b.radius.y * absR.m02 + b.radius.z * absR.m01;
+		ra = a.radius.y * abs_r.m20 + a.radius.z * abs_r.m10;
+		rb = b.radius.y * abs_r.m02 + b.radius.z * abs_r.m01;
 		penetration = ra + rb - abs(t.z * r.m10 - t.y * r.m20);
 		if (penetration < 0.f)
 			return false;
 
 		// Test a.x x b.y.
-		ra = a.radius.y * absR.m21 + a.radius.z * absR.m11;
-		rb = b.radius.x * absR.m02 + b.radius.z * absR.m00;
+		ra = a.radius.y * abs_r.m21 + a.radius.z * abs_r.m11;
+		rb = b.radius.x * abs_r.m02 + b.radius.z * abs_r.m00;
 		penetration = ra + rb - abs(t.z * r.m11 - t.y * r.m21);
 		if (penetration < 0.f)
 			return false;
 
 		// Test a.x x b.z
-		ra = a.radius.y * absR.m22 + a.radius.z * absR.m12;
-		rb = b.radius.x * absR.m01 + b.radius.y * absR.m00;
+		ra = a.radius.y * abs_r.m22 + a.radius.z * abs_r.m12;
+		rb = b.radius.x * abs_r.m01 + b.radius.y * abs_r.m00;
 		penetration = ra + rb - abs(t.z * r.m12 - t.y * r.m22);
 		if (penetration < 0.f)
 			return false;
 
 		// Test a.y x b.x
-		ra = a.radius.x * absR.m20 + a.radius.z * absR.m00;
-		rb = b.radius.y * absR.m12 + b.radius.z * absR.m11;
+		ra = a.radius.x * abs_r.m20 + a.radius.z * abs_r.m00;
+		rb = b.radius.y * abs_r.m12 + b.radius.z * abs_r.m11;
 		penetration = ra + rb - abs(t.x * r.m20 - t.z * r.m00);
 		if (penetration < 0.f)
 			return false;
 
 		// Test a.y x b.y.
-		ra = a.radius.x * absR.m21 + a.radius.z * absR.m01;
-		rb = b.radius.x * absR.m12 + b.radius.z * absR.m10;
+		ra = a.radius.x * abs_r.m21 + a.radius.z * abs_r.m01;
+		rb = b.radius.x * abs_r.m12 + b.radius.z * abs_r.m10;
 		penetration = ra + rb - abs(t.x * r.m21 - t.z * r.m01);
 		if (penetration < 0.f)
 			return false;
 
 		// Test a.y x b.z
-		ra = a.radius.x * absR.m22 + a.radius.z * absR.m02;
-		rb = b.radius.x * absR.m11 + b.radius.y * absR.m10;
+		ra = a.radius.x * abs_r.m22 + a.radius.z * abs_r.m02;
+		rb = b.radius.x * abs_r.m11 + b.radius.y * abs_r.m10;
 		penetration = ra + rb - abs(t.x * r.m22 - t.z * r.m02);
 		if (penetration < 0.f)
 			return false;
 
 		// Test a.z x b.x
-		ra = a.radius.x * absR.m10 + a.radius.y * absR.m00;
-		rb = b.radius.y * absR.m22 + b.radius.z * absR.m21;
+		ra = a.radius.x * abs_r.m10 + a.radius.y * abs_r.m00;
+		rb = b.radius.y * abs_r.m22 + b.radius.z * abs_r.m21;
 		penetration = ra + rb - abs(t.y * r.m00 - t.x * r.m10);
 		if (penetration < 0.f)
 			return false;
 
 		// Test a.z x b.y
-		ra = a.radius.x * absR.m11 + a.radius.y * absR.m01;
-		rb = b.radius.x * absR.m22 + b.radius.z * absR.m20;
+		ra = a.radius.x * abs_r.m11 + a.radius.y * abs_r.m01;
+		rb = b.radius.x * abs_r.m22 + b.radius.z * abs_r.m20;
 		penetration = ra + rb - abs(t.y * r.m01 - t.x * r.m11);
 		if (penetration < 0.f)
 			return false;
 
 		// Test a.z x b.z
-		ra = a.radius.x * absR.m12 + a.radius.y * absR.m02;
-		rb = b.radius.x * absR.m21 + b.radius.y * absR.m20;
+		ra = a.radius.x * abs_r.m12 + a.radius.y * abs_r.m02;
+		rb = b.radius.x * abs_r.m21 + b.radius.y * abs_r.m20;
 		penetration = ra + rb - abs(t.y * r.m02 - t.x * r.m12);
 		if (penetration < 0.f)
 			return false;
@@ -1153,16 +1153,16 @@ namespace era_engine
 		return true;
 	}
 
-	bool obbVsHull(const bounding_oriented_box& o, const bounding_hull& h)
+	bool obb_vs_hull(const BoundingOrientedBox& o, const BoundingHull& h)
 	{
-		obb_support_fn obbSupport{ o };
-		hull_support_fn hullSupport{ h };
+		OBBSupportFn obb_support{ o };
+		HullSupportFn hull_support{ h };
 
-		gjk_simplex gjkSimplex;
-		return gjkIntersectionTest(obbSupport, hullSupport, gjkSimplex);
+		GJKSimplex gjk_simplex;
+		return gjk_intersection_test(obb_support, hull_support, gjk_simplex);
 	}
 
-	bool obbVsPlane(const bounding_oriented_box& a, vec4 plane)
+	bool obb_vs_plane(const BoundingOrientedBox& a, vec4 plane)
 	{
 		vec3 center = a.center;
 		vec3 radius = a.radius;
@@ -1175,30 +1175,30 @@ namespace era_engine
 			+ radius.y * abs(dot(plane.xyz, e1))
 			+ radius.z * abs(dot(plane.xyz, e2));
 
-		float s = abs(signedDistanceToPlane(center, plane));
+		float s = abs(signed_distance_to_plane(center, plane));
 
 		return s <= r;
 	}
 
-	bool obbVsTriangle(const bounding_oriented_box& obb, vec3 a, vec3 b, vec3 c)
+	bool obb_vs_triangle(const BoundingOrientedBox& obb, vec3 a, vec3 b, vec3 c)
 	{
 		a = conjugate(obb.rotation) * (a - obb.center);
 		b = conjugate(obb.rotation) * (b - obb.center);
 		c = conjugate(obb.rotation) * (c - obb.center);
 
-		return aabbVsTriangle({ -obb.radius, obb.radius }, a, b, c);
+		return aabb_vs_triangle({ -obb.radius, obb.radius }, a, b, c);
 	}
 
-	bool hullVsHull(const bounding_hull& a, const bounding_hull& b)
+	bool hull_vs_hull(const BoundingHull& a, const BoundingHull& b)
 	{
-		hull_support_fn hullSupport1{ a };
-		hull_support_fn hullSupport2{ b };
+		HullSupportFn hull_support1{ a };
+		HullSupportFn hull_support2{ b };
 
-		gjk_simplex gjkSimplex;
-		return gjkIntersectionTest(hullSupport1, hullSupport2, gjkSimplex);
+		GJKSimplex gjk_simplex;
+		return gjk_intersection_test(hull_support1, hull_support2, gjk_simplex);
 	}
 
-	float closestPoint_SegmentSegment(const line_segment& l1, const line_segment& l2, vec3& c1, vec3& c2)
+	float closest_point_segment_segment(const LineSegment& l1, const LineSegment& l2, vec3& c1, vec3& c2)
 	{
 		float s, t;
 		vec3 d1 = l1.b - l1.a; // Direction vector of segment S1
@@ -1266,7 +1266,7 @@ namespace era_engine
 		return squared_length(c1 - c2);
 	}
 
-	vec3 closestPoint_PointTriangle(const vec3& p, const vec3& a, const vec3& b, const vec3& c)
+	vec3 closest_point_point_triangle(const vec3& p, const vec3& a, const vec3& b, const vec3& c)
 	{
 		vec3 ab = b - a;
 		vec3 ac = c - a;
@@ -1321,54 +1321,54 @@ namespace era_engine
 		return a + ab * v + ac * w; // = u*a + v*b + w*c, u = va * denom = 1.0f - v - w
 	}
 
-	static void addBoundingHullEdge(uint32 a, uint32 b, uint32 face, std::unordered_map<uint32, bounding_hull_edge*>& edgeMap, std::vector<bounding_hull_edge>& edges, uint32& edgeIndex)
+	static void add_bounding_hull_edge(uint32 a, uint32 b, uint32 face, std::unordered_map<uint32, BoundingHullEdge*>& edge_map, std::vector<BoundingHullEdge>& edges, uint32& edge_index)
 	{
 		uint32 from = min(a, b);
 		uint32 to = max(a, b);
 		uint32 edge = (from << 16) | to;
 
-		auto it = edgeMap.find(edge);
-		if (it == edgeMap.end())
+		auto it = edge_map.find(edge);
+		if (it == edge_map.end())
 		{
-			auto& newEdge = edges[edgeIndex++];
-			newEdge.from = from;
-			newEdge.to = to;
-			newEdge.faceA = face;
-			edgeMap.insert({ edge, &newEdge });
+			auto& new_edge = edges[edge_index++];
+			new_edge.from = from;
+			new_edge.to = to;
+			new_edge.face_a = face;
+			edge_map.insert({ edge, &new_edge });
 		}
 		else
 		{
 			ASSERT(it->second->from == from);
 			ASSERT(it->second->to == to);
-			ASSERT(it->second->faceA != UINT16_MAX);
-			ASSERT(it->second->faceB == UINT16_MAX);
-			it->second->faceB = face;
+			ASSERT(it->second->face_a != UINT16_MAX);
+			ASSERT(it->second->face_b == UINT16_MAX);
+			it->second->face_b = face;
 		}
 	}
 
 	template <typename triangle_t>
-	static bounding_hull_geometry hullFromMesh(vec3* vertices, uint32 numVertices, triangle_t* triangles, uint32 numTriangles)
+	static BoundingHullGeometry hull_from_mesh(vec3* vertices, uint32 num_vertices, triangle_t* triangles, uint32 num_triangles)
 	{
-		bounding_hull_geometry hull;
+		BoundingHullGeometry hull;
 
-		uint32 numEdges = numVertices + numTriangles - 2; // Euler characteristic for convex polyhedra
+		uint32 num_edges = num_vertices + num_triangles - 2; // Euler characteristic for convex polyhedra
 
-		hull.vertices.resize(numVertices);
-		hull.faces.resize(numTriangles);
-		hull.edges.resize(numEdges, { UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX });
-		hull.aabb = bounding_box::negativeInfinity();
+		hull.vertices.resize(num_vertices);
+		hull.faces.resize(num_triangles);
+		hull.edges.resize(num_edges, { UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX });
+		hull.aabb = BoundingBox::negative_infinity();
 
-		for (uint32 i = 0; i < numVertices; ++i)
+		for (uint32 i = 0; i < num_vertices; ++i)
 		{
 			hull.vertices[i] = vertices[i];
 			hull.aabb.grow(vertices[i]);
 		}
 
-		std::unordered_map<uint32, bounding_hull_edge*> edgeMap;
+		std::unordered_map<uint32, BoundingHullEdge*> edge_map;
 
-		uint32 edgeIndex = 0;
+		uint32 edge_index = 0;
 
-		for (uint32 i = 0; i < numTriangles; ++i)
+		for (uint32 i = 0; i < num_triangles; ++i)
 		{
 			triangle_t tri = triangles[i];
 
@@ -1386,24 +1386,24 @@ namespace era_engine
 			hull.faces[i].c = c;
 			hull.faces[i].normal = normal;
 
-			addBoundingHullEdge(a, b, i, edgeMap, hull.edges, edgeIndex);
-			addBoundingHullEdge(b, c, i, edgeMap, hull.edges, edgeIndex);
-			addBoundingHullEdge(a, c, i, edgeMap, hull.edges, edgeIndex);
+			add_bounding_hull_edge(a, b, i, edge_map, hull.edges, edge_index);
+			add_bounding_hull_edge(b, c, i, edge_map, hull.edges, edge_index);
+			add_bounding_hull_edge(a, c, i, edge_map, hull.edges, edge_index);
 		}
 
-		ASSERT(edgeIndex == numEdges);
+		ASSERT(edge_index == num_edges);
 
 		return hull;
 	}
 
-	bounding_hull_geometry bounding_hull_geometry::fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle16* triangles, uint32 numTriangles)
+	BoundingHullGeometry BoundingHullGeometry::from_mesh(vec3* vertices, uint32 num_vertices, IndexedTriangle16* triangles, uint32 num_triangles)
 	{
-		return hullFromMesh(vertices, numVertices, triangles, numTriangles);
+		return hull_from_mesh(vertices, num_vertices, triangles, num_triangles);
 	}
 
-	bounding_hull_geometry bounding_hull_geometry::fromMesh(vec3* vertices, uint32 numVertices, indexed_triangle32* triangles, uint32 numTriangles)
+	BoundingHullGeometry BoundingHullGeometry::from_mesh(vec3* vertices, uint32 num_vertices, IndexedTriangle32* triangles, uint32 num_triangles)
 	{
-		return hullFromMesh(vertices, numVertices, triangles, numTriangles);
+		return hull_from_mesh(vertices, num_vertices, triangles, num_triangles);
 	}
 
 }

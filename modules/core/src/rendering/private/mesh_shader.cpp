@@ -14,60 +14,60 @@
 
 namespace era_engine
 {
-	static dx_pipeline meshletPipeline;
-	static dx_pipeline blobPipeline;
-	static dx_pipeline kochPipeline;
+	static DXPipeline meshlet_pipeline;
+	static DXPipeline blob_pipeline;
+	static DXPipeline koch_pipeline;
 
-	static ref<dx_buffer> marchingCubesBuffer;
+	static ref<DXBuffer> marching_cubes_buffer;
 
-	struct marching_cubes_lookup
+	struct MarchingCubesLookup
 	{
 		uint32 indices[4];
 		uint8 vertices[12];
-		uint16 triangleCount;
-		uint16 vertexCount;
+		uint16 triangle_count;
+		uint16 vertex_count;
 	};
 
-	extern const marching_cubes_lookup marchingCubesLookup[256];
+	extern const MarchingCubesLookup marching_cubes_lookup[256];
 
-	struct subset
+	struct Subset
 	{
 		uint32 offset;
 		uint32 count;
 	};
 
-	struct mesh_shader_SubmeshInfo
+	struct MeshShaderSubmeshInfo
 	{
-		uint32 firstVertex;
-		uint32 numVertices;
+		uint32 first_vertex;
+		uint32 num_vertices;
 
-		uint32 firstMeshlet;
-		uint32 numMeshlets;
+		uint32 first_meshlet;
+		uint32 num_meshlets;
 
-		uint32 firstUniqueVertexIndex;
-		uint32 numUniqueVertexIndices;
+		uint32 first_unique_vertex_index;
+		uint32 num_unique_vertex_indices;
 
-		uint32 firstPackedTriangle;
-		uint32 numPackedTriangles;
+		uint32 first_packed_triangle;
+		uint32 num_packed_triangles;
 
-		uint32 firstMeshletSubset;
-		uint32 numMeshletSubsets;
+		uint32 first_meshlet_subset;
+		uint32 num_meshlet_subsets;
 	};
 
-	struct mesh_shader_mesh
+	struct MeshShaderMesh
 	{
-		::std::vector<mesh_shader_SubmeshInfo> submeshes;
-		::std::vector<subset> subsets;
+		::std::vector<MeshShaderSubmeshInfo> submeshes;
+		::std::vector<Subset> subsets;
 
-		ref<dx_buffer> vertices;
-		ref<dx_buffer> meshlets;
-		ref<dx_buffer> uniqueVertexIndices;
-		ref<dx_buffer> primitiveIndices;
+		ref<DXBuffer> vertices;
+		ref<DXBuffer> meshlets;
+		ref<DXBuffer> unique_vertex_indices;
+		ref<DXBuffer> primitive_indices;
 	};
 
-	static ref<mesh_shader_mesh> loadMeshShaderMeshFromFile(const char* filename);
+	static ref<MeshShaderMesh> load_mesh_shader_mesh_from_file(const char* filename);
 
-	struct meta_ball
+	struct MetaBall
 	{
 		vec3 pos;
 		vec3 dir;
@@ -80,11 +80,11 @@ namespace era_engine
 	static const uint32 BALL_COUNT = DEFAULT_BALL_COUNT;
 	static const uint32 SHIFT = DEFAULT_SHIFT;
 
-	struct mesh_shader_blob_render_data
+	struct MeshShaderBlobRenderData
 	{
-		meta_ball balls[MAX_BALL_COUNT];
+		MetaBall balls[MAX_BALL_COUNT];
 
-		mesh_shader_blob_render_data()
+		MeshShaderBlobRenderData()
 		{
 			for (uint32 i = 0; i < BALL_COUNT; ++i)
 			{
@@ -104,35 +104,35 @@ namespace era_engine
 		}
 	};
 
-	struct mesh_shader_blob_pipeline
+	struct MeshShaderBlobPipeline
 	{
-		using render_data_t = mesh_shader_blob_render_data;
+		using render_data_t = MeshShaderBlobRenderData;
 
 		PIPELINE_SETUP_DECL;
-		PIPELINE_RENDER_DECL(mesh_shader_blob_render_data);
+		PIPELINE_RENDER_DECL(MeshShaderBlobRenderData);
 	};
 
-	PIPELINE_SETUP_IMPL(mesh_shader_blob_pipeline)
+	PIPELINE_SETUP_IMPL(MeshShaderBlobPipeline)
 	{
-		cl->setPipelineState(*blobPipeline.pipeline);
-		cl->setGraphicsRootSignature(*blobPipeline.rootSignature);
+		cl->set_pipeline_state(*blob_pipeline.pipeline);
+		cl->set_graphics_root_signature(*blob_pipeline.root_signature);
 
-		cl->setGraphicsDynamicConstantBuffer(1, common.cameraCBV);
-		cl->setRootGraphicsSRV(2, marchingCubesBuffer);
+		cl->set_graphics_dynamic_constant_buffer(1, common.camera_cbv);
+		cl->set_root_graphics_srv(2, marching_cubes_buffer);
 
-		cl->setDescriptorHeapSRV(3, 0, common.sky);
+		cl->set_descriptor_heap_srv(3, 0, common.sky);
 	}
 
-	PIPELINE_RENDER_IMPL(mesh_shader_blob_pipeline, mesh_shader_blob_render_data)
+	PIPELINE_RENDER_IMPL(MeshShaderBlobPipeline, MeshShaderBlobRenderData)
 	{
 		DX_PROFILE_BLOCK(cl, "Mesh shader blob");
 
-		struct constant_cb
+		struct ConstantCB
 		{
 			vec4 balls[MAX_BALL_COUNT];
 		};
 
-		constant_cb cb;
+		ConstantCB cb;
 
 		for (uint32 i = 0; i < BALL_COUNT; ++i)
 		{
@@ -140,117 +140,117 @@ namespace era_engine
 			cb.balls[i] = vec4(data.balls[i].pos, radius * radius);
 		}
 
-		auto b = dxContext.uploadDynamicConstantBuffer(cb);
+		auto b = dx_context.upload_dynamic_constant_buffer(cb);
 
-		cl->setGraphicsDynamicConstantBuffer(0, b);
+		cl->set_graphics_dynamic_constant_buffer(0, b);
 
 
-		const uint32 gridSize = (1 << SHIFT);
-		cl->dispatchMesh((gridSize / 4) * (gridSize / 4) * (gridSize / 4), 1, 1);
+		const uint32 grid_size = (1 << SHIFT);
+		cl->dispatch_mesh((grid_size / 4) * (grid_size / 4) * (grid_size / 4), 1, 1);
 	};
 
-	struct mesh_shader_koch_pipeline
+	struct MeshShaderKochPipeline
 	{
 		PIPELINE_SETUP_DECL;
 		PIPELINE_RENDER_DECL(void*);
 	};
 
-	PIPELINE_SETUP_IMPL(mesh_shader_koch_pipeline)
+	PIPELINE_SETUP_IMPL(MeshShaderKochPipeline)
 	{
-		cl->setPipelineState(*kochPipeline.pipeline);
-		cl->setGraphicsRootSignature(*kochPipeline.rootSignature);
+		cl->set_pipeline_state(*koch_pipeline.pipeline);
+		cl->set_graphics_root_signature(*koch_pipeline.root_signature);
 
-		cl->setGraphicsDynamicConstantBuffer(0, common.cameraCBV);
-		cl->setRootGraphicsSRV(1, marchingCubesBuffer);
+		cl->set_graphics_dynamic_constant_buffer(0, common.camera_cbv);
+		cl->set_root_graphics_srv(1, marching_cubes_buffer);
 
-		cl->setDescriptorHeapSRV(2, 0, common.sky);
+		cl->set_descriptor_heap_srv(2, 0, common.sky);
 	}
 
-	PIPELINE_RENDER_IMPL(mesh_shader_koch_pipeline, void*)
+	PIPELINE_RENDER_IMPL(MeshShaderKochPipeline, void*)
 	{
 		DX_PROFILE_BLOCK(cl, "Mesh shader koch");
 
-		const uint32 gridSize = (1 << SHIFT);
-		cl->dispatchMesh((gridSize / 4) * (gridSize / 4) * (gridSize / 4), 1, 1);
+		const uint32 grid_size = (1 << SHIFT);
+		cl->dispatch_mesh((grid_size / 4) * (grid_size / 4) * (grid_size / 4), 1, 1);
 	};
 
-	void initializeMeshShader()
+	void initialize_mesh_shader()
 	{
-		D3D12_RT_FORMAT_ARRAY renderTargetFormat = {};
-		renderTargetFormat.NumRenderTargets = 1;
-		renderTargetFormat.RTFormats[0] = hdrFormat;
+		D3D12_RT_FORMAT_ARRAY render_target_format = {};
+		render_target_format.NumRenderTargets = 1;
+		render_target_format.RTFormats[0] = hdr_format;
 
 		{
-			struct pipeline_state_stream : dx_pipeline_stream_base
+			struct PipelineStateStream : DXPipelineStreamBase
 			{
 				// Will be set by reloader
-				CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE rootSignature;
+				CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE root_signature;
 				CD3DX12_PIPELINE_STATE_STREAM_MS ms;
 				CD3DX12_PIPELINE_STATE_STREAM_PS ps;
 
 				// Initialized here
-				CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT dsvFormat;
-				CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rtvFormats;
+				CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT dsv_format;
+				CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rtv_formats;
 
-				void setRootSignature(dx_root_signature rs) override { rootSignature = rs.rootSignature.Get(); }
-				void setMeshShader(dx_blob blob) override { ms = CD3DX12_SHADER_BYTECODE(blob.Get()); }
-				void setPixelShader(dx_blob blob) override { ps = CD3DX12_SHADER_BYTECODE(blob.Get()); }
+				void set_root_signature(DXRootSignature rs) override { root_signature = rs.root_signature.Get(); }
+				void set_mesh_shader(DXBlob blob) override { ms = CD3DX12_SHADER_BYTECODE(blob.Get()); }
+				void set_pixel_shader(DXBlob blob) override { ps = CD3DX12_SHADER_BYTECODE(blob.Get()); }
 			};
 
-			pipeline_state_stream stream;
-			stream.dsvFormat = depthStencilFormat;
-			stream.rtvFormats = renderTargetFormat;
+			PipelineStateStream stream;
+			stream.dsv_format = depth_stencil_format;
+			stream.rtv_formats = render_target_format;
 
-			graphics_pipeline_files files = {};
+			GraphicsPipelineFiles files = {};
 			files.ms = "meshlet_ms";
 			files.ps = "mesh_shader_ps";
-			meshletPipeline = createReloadablePipelineFromStream(stream, files, rs_in_mesh_shader);
+			meshlet_pipeline = create_reloadable_pipeline_from_stream(stream, files, RS_IN_MESH_SHADER);
 		}
 		{
-			struct pipeline_state_stream : dx_pipeline_stream_base
+			struct PipelineStateStream : DXPipelineStreamBase
 			{
 				// Will be set by reloader
-				CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE rootSignature;
+				CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE root_signature;
 				CD3DX12_PIPELINE_STATE_STREAM_AS as;
 				CD3DX12_PIPELINE_STATE_STREAM_MS ms;
 				CD3DX12_PIPELINE_STATE_STREAM_PS ps;
 
 				// Initialized here
-				CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT dsvFormat;
-				CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rtvFormats;
+				CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT dsv_format;
+				CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rtv_formats;
 				CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER rasterizer;
 
-				void setRootSignature(dx_root_signature rs) override { rootSignature = rs.rootSignature.Get(); }
-				void setAmplificationShader(dx_blob blob) override { as = CD3DX12_SHADER_BYTECODE(blob.Get()); }
-				void setMeshShader(dx_blob blob) override { ms = CD3DX12_SHADER_BYTECODE(blob.Get()); }
-				void setPixelShader(dx_blob blob) override { ps = CD3DX12_SHADER_BYTECODE(blob.Get()); }
+				void set_root_signature(DXRootSignature rs) override { root_signature = rs.root_signature.Get(); }
+				void set_amplification_shader(DXBlob blob) override { as = CD3DX12_SHADER_BYTECODE(blob.Get()); }
+				void set_mesh_shader(DXBlob blob) override { ms = CD3DX12_SHADER_BYTECODE(blob.Get()); }
+				void set_pixel_shader(DXBlob blob) override { ps = CD3DX12_SHADER_BYTECODE(blob.Get()); }
 			};
 
-			auto rasterizerDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			auto rasterizer_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 			//rasterizerDesc.FillMode = D3D12_FILL_MODE_WIREFRAME;
-			rasterizerDesc.FrontCounterClockwise = TRUE; // Righthanded coordinate system
+			rasterizer_desc.FrontCounterClockwise = TRUE; // Righthanded coordinate system
 
-			pipeline_state_stream stream;
-			stream.dsvFormat = depthStencilFormat;
-			stream.rtvFormats = renderTargetFormat;
-			stream.rasterizer = rasterizerDesc;
+			PipelineStateStream stream;
+			stream.dsv_format = depth_stencil_format;
+			stream.rtv_formats = render_target_format;
+			stream.rasterizer = rasterizer_desc;
 
-			graphics_pipeline_files files = {};
+			GraphicsPipelineFiles files = {};
 			files.as = "meta_ball_as";
 			files.ms = "meta_ball_ms";
 			files.ps = "glass_ps";
-			blobPipeline = createReloadablePipelineFromStream(stream, files, rs_in_mesh_shader);
+			blob_pipeline = create_reloadable_pipeline_from_stream(stream, files, RS_IN_MESH_SHADER);
 
 			files.as = "koch_as";
 			files.ms = "koch_ms";
-			kochPipeline = createReloadablePipelineFromStream(stream, files, rs_in_mesh_shader);
+			koch_pipeline = create_reloadable_pipeline_from_stream(stream, files, RS_IN_MESH_SHADER);
 
 
-			marchingCubesBuffer = createBuffer(sizeof(marching_cubes_lookup), arraysize(marchingCubesLookup), (void*)marchingCubesLookup);
+			marching_cubes_buffer = create_buffer(sizeof(MarchingCubesLookup), arraysize(marching_cubes_lookup), (void*)marching_cubes_lookup);
 		}
 	}
 
-	void testRenderMeshShader(transparent_render_pass* ldrRenderPass, float dt)
+	void test_render_mesh_shader(TransparentRenderPass* ldr_render_pass, float dt)
 	{
 		/*overlayRenderPass->renderObjectWithMeshShader(1, 1, 1,
 			cubeMaterial,
@@ -268,68 +268,68 @@ namespace era_engine
 			);
 		}*/
 
-		static mesh_shader_blob_render_data blobData;
+		static MeshShaderBlobRenderData blob_data;
 
-		const float animationSpeed = 0.25f;
-		const float frameTime = animationSpeed * dt;
+		const float animation_speed = 0.25f;
+		const float frame_time = animation_speed * dt;
 		for (uint32 i = 0; i < BALL_COUNT; ++i)
 		{
-			vec3 d = vec3(0.5f, 0.5f, 0.5f) - blobData.balls[i].pos;
-			blobData.balls[i].dir += d * (5.f * frameTime / (2.f + dot(d, d)));
-			blobData.balls[i].pos += blobData.balls[i].dir * frameTime;
+			vec3 d = vec3(0.5f, 0.5f, 0.5f) - blob_data.balls[i].pos;
+			blob_data.balls[i].dir += d * (5.f * frame_time / (2.f + dot(d, d)));
+			blob_data.balls[i].pos += blob_data.balls[i].dir * frame_time;
 		}
 
-		ldrRenderPass->renderObject<mesh_shader_blob_pipeline>(blobData);
+		ldr_render_pass->render_object<MeshShaderBlobPipeline>(blob_data);
 		//ldrRenderPass->renderObject<mesh_shader_koch_pipeline>(0);
 	}
 
-	enum attribute_type
+	enum AttributeType
 	{
-		attribute_type_position,
-		attribute_type_normal,
-		attribute_type_texCoord,
-		attribute_type_tangent,
-		attribute_type_bitangent,
-		attribute_type_count,
+		ATTRIBUTE_TYPE_POSITION,
+		ATTRIBUTE_TYPE_NORMAL,
+		ATTRIBUTE_TYPE_TEX_COORD,
+		ATTRIBUTE_TYPE_TANGENT,
+		ATTRIBUTE_TYPE_BITANGENT,
+		ATTRIBUTE_TYPE_COUNT,
 	};
 
-	struct mesh_header
+	struct MeshHeader
 	{
 		uint32 indices;
-		uint32 indexSubsets;
-		uint32 attributes[attribute_type_count];
+		uint32 index_subsets;
+		uint32 attributes[ATTRIBUTE_TYPE_COUNT];
 
 		uint32 meshlets;
-		uint32 meshletSubsets;
-		uint32 uniqueVertexIndices;
-		uint32 primitiveIndices;
-		uint32 cullData;
+		uint32 meshlet_subsets;
+		uint32 unique_vertex_indices;
+		uint32 primitive_indices;
+		uint32 cull_data;
 	};
 
-	struct buffer_view
+	struct BufferView
 	{
 		uint32 offset;
 		uint32 size;
 	};
 
-	struct buffer_accessor
+	struct BufferAccessor
 	{
-		uint32 bufferView;
+		uint32 buffer_view;
 		uint32 offset;
 		uint32 size;
 		uint32 stride;
 		uint32 count;
 	};
 
-	struct file_header
+	struct FileHeader
 	{
 		uint32 prolog;
 		uint32 version;
 
-		uint32 meshCount;
-		uint32 accessorCount;
-		uint32 bufferViewCount;
-		uint32 bufferSize;
+		uint32 mesh_count;
+		uint32 accessor_count;
+		uint32 buffer_view_count;
+		uint32 buffer_size;
 	};
 
 	enum FileVersion
@@ -340,28 +340,28 @@ namespace era_engine
 
 	// Meshlet stuff
 
-	struct meshlet_info
+	struct MeshletInfo
 	{
-		uint32 numVertices;
-		uint32 firstVertex;
-		uint32 numPrimitives;
-		uint32 firstPrimitive;
+		uint32 num_vertices;
+		uint32 first_vertex;
+		uint32 num_primitives;
+		uint32 first_primitive;
 	};
 
-	struct packed_triangle
+	struct PackedTriangle
 	{
 		uint32 i0 : 10;
 		uint32 i1 : 10;
 		uint32 i2 : 10;
 	};
 
-	struct mesh_vertex
+	struct MeshVertex
 	{
 		vec3 position;
 		vec3 normal;
 	};
 
-	static ref<mesh_shader_mesh> loadMeshShaderMeshFromFile(const char* filename)
+	static ref<MeshShaderMesh> load_mesh_shader_mesh_from_file(const char* filename)
 	{
 		std::ifstream stream(filename, std::ios::binary);
 		if (!stream.is_open())
@@ -370,11 +370,11 @@ namespace era_engine
 			return 0;
 		}
 
-		std::vector<mesh_header> meshHeaders;
-		std::vector<buffer_view> bufferViews;
-		std::vector<buffer_accessor> accessors;
+		std::vector<MeshHeader> mesh_headers;
+		std::vector<BufferView> buffer_views;
+		std::vector<BufferAccessor> accessors;
 
-		file_header header;
+		FileHeader header;
 		stream.read((char*)&header, sizeof(header));
 
 		const uint32 prolog = 'MSHL';
@@ -389,18 +389,18 @@ namespace era_engine
 		}
 
 		// Read mesh metdata
-		meshHeaders.resize(header.meshCount);
-		stream.read((char*)meshHeaders.data(), meshHeaders.size() * sizeof(meshHeaders[0]));
+		mesh_headers.resize(header.mesh_count);
+		stream.read((char*)mesh_headers.data(), mesh_headers.size() * sizeof(mesh_headers[0]));
 
-		accessors.resize(header.accessorCount);
+		accessors.resize(header.accessor_count);
 		stream.read((char*)accessors.data(), accessors.size() * sizeof(accessors[0]));
 
-		bufferViews.resize(header.bufferViewCount);
-		stream.read((char*)bufferViews.data(), bufferViews.size() * sizeof(bufferViews[0]));
+		buffer_views.resize(header.buffer_view_count);
+		stream.read((char*)buffer_views.data(), buffer_views.size() * sizeof(buffer_views[0]));
 
 		std::vector<uint8> m_buffer;
-		m_buffer.resize(header.bufferSize);
-		stream.read((char*)m_buffer.data(), header.bufferSize);
+		m_buffer.resize(header.buffer_size);
+		stream.read((char*)m_buffer.data(), header.buffer_size);
 
 		char eofbyte;
 		stream.read(&eofbyte, 1); // Read last byte to hit the eof bit.
@@ -408,53 +408,53 @@ namespace era_engine
 
 		stream.close();
 
-		std::vector<mesh_shader_SubmeshInfo> submeshes(meshHeaders.size());
+		std::vector<MeshShaderSubmeshInfo> submeshes(mesh_headers.size());
 
 		//std::vector<uint32> indices;
 		//std::vector<subset> indexSubsets;
-		std::vector<mesh_vertex> vertices;
-		std::vector<meshlet_info> meshlets;
-		std::vector<uint32> uniqueVertexIndices;
-		std::vector<packed_triangle> primitiveIndices;
-		std::vector<subset> meshletSubsets;
+		std::vector<MeshVertex> vertices;
+		std::vector<MeshletInfo> meshlets;
+		std::vector<uint32> unique_vertex_indices;
+		std::vector<PackedTriangle> primitive_indices;
+		std::vector<Subset> meshlet_subsets;
 
-		for (uint32_t i = 0; i < (uint32)meshHeaders.size(); ++i)
+		for (uint32_t i = 0; i < (uint32)mesh_headers.size(); ++i)
 		{
-			mesh_header& meshView = meshHeaders[i];
-			mesh_shader_SubmeshInfo& sm = submeshes[i];
+			MeshHeader& mesh_view = mesh_headers[i];
+			MeshShaderSubmeshInfo& sm = submeshes[i];
 
 #if 0
 			// Index data
 			{
-				buffer_accessor& accessor = accessors[meshView.indices];
-				buffer_view& bufferView = bufferViews[accessor.bufferView];
+				BufferAccessor& accessor = accessors[mesh_view.indices];
+				BufferView& buffer_view = buffer_views[accessor.buffer_view];
 
 				ASSERT(accessor.size == sizeof(uint32));
-				ASSERT(accessor.count * accessor.size == bufferView.size);
+				ASSERT(accessor.count * accessor.size == buffer_view.size);
 
-				uint32* start = (uint32*)(m_buffer.data() + bufferView.offset);
+				uint32* start = (uint32*)(m_buffer.data() + buffer_view.offset);
 
-				sm.firstIndex = (uint32)indices.size();
-				sm.numIndices = accessor.count;
+				sm.first_index = (uint32)indices.size();
+				sm.num_indices = accessor.count;
 
-				indices.insert(indices.end(), start, start + sm.numIndices);
+				indices.insert(indices.end(), start, start + sm.num_indices);
 			}
 #endif
 
 #if 0
 			// Index Subset data
 			{
-				buffer_accessor& accessor = accessors[meshView.indexSubsets];
-				buffer_view& bufferView = bufferViews[accessor.bufferView];
+				BufferAccessor& accessor = accessors[mesh_view.index_subsets];
+				BufferView& buffer_view = buffer_views[accessor.buffer_view];
 
-				ASSERT(accessor.count * accessor.size == bufferView.size);
+				ASSERT(accessor.count * accessor.size == buffer_view.size);
 
-				subset* start = (subset*)(m_buffer.data() + bufferView.offset);
+				subset* start = (subset*)(m_buffer.data() + buffer_view.offset);
 
-				sm.firstIndexSubset = (uint32)indexSubsets.size();
+				sm.first_index_subset = (uint32)index_subsets.size();
 				sm.numIndexSubsets = accessor.count;
 
-				indexSubsets.insert(indexSubsets.end(), start, start + sm.numIndexSubsets);
+				index_subsets.insert(index_subsets.end(), start, start + sm.numIndexSubsets);
 			}
 #endif
 
@@ -462,129 +462,129 @@ namespace era_engine
 
 			bool first = true;
 
-			for (uint32 j = 0; j < attribute_type_count; ++j)
+			for (uint32 j = 0; j < ATTRIBUTE_TYPE_COUNT; ++j)
 			{
-				if (meshView.attributes[j] == -1)
+				if (mesh_view.attributes[j] == -1)
 					continue;
 
-				buffer_accessor& accessor = accessors[meshView.attributes[j]];
+				BufferAccessor& accessor = accessors[mesh_view.attributes[j]];
 
-				buffer_view& bufferView = bufferViews[accessor.bufferView];
+				BufferView& buffer_view = buffer_views[accessor.buffer_view];
 
 				if (first)
 				{
-					sm.firstVertex = (uint32)vertices.size();
-					sm.numVertices = accessor.count;
-					vertices.resize(vertices.size() + sm.numVertices);
+					sm.first_vertex = (uint32)vertices.size();
+					sm.num_vertices = accessor.count;
+					vertices.resize(vertices.size() + sm.num_vertices);
 					first = false;
 				}
 				else
 				{
-					ASSERT(sm.numVertices == accessor.count);
+					ASSERT(sm.num_vertices == accessor.count);
 				}
 
-				uint8* data = m_buffer.data() + bufferView.offset + accessor.offset;
+				uint8* data = m_buffer.data() + buffer_view.offset + accessor.offset;
 
-				for (uint32 vertexID = 0; vertexID < sm.numVertices; ++vertexID)
+				for (uint32 vertex_id = 0; vertex_id < sm.num_vertices; ++vertex_id)
 				{
-					mesh_vertex& v = vertices[sm.firstVertex + vertexID];
+					MeshVertex& v = vertices[sm.first_vertex + vertex_id];
 
-					uint8* attributeData = data + accessor.stride * vertexID;
+					uint8* attribute_data = data + accessor.stride * vertex_id;
 
-					if (j == attribute_type_position)
+					if (j == ATTRIBUTE_TYPE_POSITION)
 					{
-						v.position = *(vec3*)attributeData;
+						v.position = *(vec3*)attribute_data;
 					}
-					else if (j == attribute_type_normal)
+					else if (j == ATTRIBUTE_TYPE_NORMAL)
 					{
-						v.normal = *(vec3*)attributeData;
+						v.normal = *(vec3*)attribute_data;
 					}
 				}
 			}
 
 			// Meshlet data
 			{
-				buffer_accessor& accessor = accessors[meshView.meshlets];
-				buffer_view& bufferView = bufferViews[accessor.bufferView];
+				BufferAccessor& accessor = accessors[mesh_view.meshlets];
+				BufferView& buffer_view = buffer_views[accessor.buffer_view];
 
-				meshlet_info* start = (meshlet_info*)(m_buffer.data() + bufferView.offset);
+				MeshletInfo* start = (MeshletInfo*)(m_buffer.data() + buffer_view.offset);
 
-				ASSERT(accessor.count * accessor.size == bufferView.size);
+				ASSERT(accessor.count * accessor.size == buffer_view.size);
 
-				sm.firstMeshlet = (uint32)meshlets.size();
-				sm.numMeshlets = accessor.count;
+				sm.first_meshlet = (uint32)meshlets.size();
+				sm.num_meshlets = accessor.count;
 
-				meshlets.insert(meshlets.end(), start, start + sm.numMeshlets);
+				meshlets.insert(meshlets.end(), start, start + sm.num_meshlets);
 			}
 
 			// Meshlet Subset data
 			{
-				buffer_accessor& accessor = accessors[meshView.meshletSubsets];
-				buffer_view& bufferView = bufferViews[accessor.bufferView];
+				BufferAccessor& accessor = accessors[mesh_view.meshlet_subsets];
+				BufferView& buffer_view = buffer_views[accessor.buffer_view];
 
-				subset* start = (subset*)(m_buffer.data() + bufferView.offset);
+				Subset* start = (Subset*)(m_buffer.data() + buffer_view.offset);
 
-				ASSERT(accessor.count * accessor.size == bufferView.size);
+				ASSERT(accessor.count * accessor.size == buffer_view.size);
 
-				sm.firstMeshletSubset = (uint32)meshletSubsets.size();
-				sm.numMeshletSubsets = accessor.count;
+				sm.first_meshlet_subset = (uint32)meshlet_subsets.size();
+				sm.num_meshlet_subsets = accessor.count;
 
-				meshletSubsets.insert(meshletSubsets.end(), start, start + sm.numMeshletSubsets);
+				meshlet_subsets.insert(meshlet_subsets.end(), start, start + sm.num_meshlet_subsets);
 			}
 
 			// Unique Vertex Index data
 			{
-				buffer_accessor& accessor = accessors[meshView.uniqueVertexIndices];
-				buffer_view& bufferView = bufferViews[accessor.bufferView];
+				BufferAccessor& accessor = accessors[mesh_view.unique_vertex_indices];
+				BufferView& buffer_view = buffer_views[accessor.buffer_view];
 
-				ASSERT(accessor.count * accessor.size == bufferView.size);
+				ASSERT(accessor.count * accessor.size == buffer_view.size);
 
-				sm.firstUniqueVertexIndex = (uint32)uniqueVertexIndices.size();
-				sm.numUniqueVertexIndices = accessor.count;
+				sm.first_unique_vertex_index = (uint32)unique_vertex_indices.size();
+				sm.num_unique_vertex_indices = accessor.count;
 
 				if (accessor.size == sizeof(uint32))
 				{
-					uint32* start = (uint32*)(m_buffer.data() + bufferView.offset);
-					uniqueVertexIndices.insert(uniqueVertexIndices.end(), start, start + sm.numUniqueVertexIndices);
+					uint32* start = (uint32*)(m_buffer.data() + buffer_view.offset);
+					unique_vertex_indices.insert(unique_vertex_indices.end(), start, start + sm.num_unique_vertex_indices);
 				}
 				else
 				{
 					ASSERT(accessor.size == sizeof(uint16));
 
-					uint16* start = (uint16*)(m_buffer.data() + bufferView.offset);
+					uint16* start = (uint16*)(m_buffer.data() + buffer_view.offset);
 
 					std::vector<uint16> temp;
-					temp.insert(temp.end(), start, start + sm.numUniqueVertexIndices);
+					temp.insert(temp.end(), start, start + sm.num_unique_vertex_indices);
 
 					for (uint16 t : temp)
 					{
-						uniqueVertexIndices.push_back((uint32)t);
+						unique_vertex_indices.push_back((uint32)t);
 					}
 				}
 			}
 
 			// Primitive Index data
 			{
-				buffer_accessor& accessor = accessors[meshView.primitiveIndices];
-				buffer_view& bufferView = bufferViews[accessor.bufferView];
+				BufferAccessor& accessor = accessors[mesh_view.primitive_indices];
+				BufferView& buffer_view = buffer_views[accessor.buffer_view];
 
-				packed_triangle* start = (packed_triangle*)(m_buffer.data() + bufferView.offset);
+				PackedTriangle* start = (PackedTriangle*)(m_buffer.data() + buffer_view.offset);
 
-				ASSERT(accessor.count * accessor.size == bufferView.size);
+				ASSERT(accessor.count * accessor.size == buffer_view.size);
 
-				sm.firstPackedTriangle = (uint32)primitiveIndices.size();
-				sm.numPackedTriangles = accessor.count;
+				sm.first_packed_triangle = (uint32)primitive_indices.size();
+				sm.num_packed_triangles = accessor.count;
 
-				primitiveIndices.insert(primitiveIndices.end(), start, start + sm.numPackedTriangles);
+				primitive_indices.insert(primitive_indices.end(), start, start + sm.num_packed_triangles);
 			}
 
 #if 0
 			// Cull data
 			{
-				buffer_accessor& accessor = accessors[meshView.CullData];
-				buffer_view& bufferView = bufferViews[accessor.BufferView];
+				BufferAccessor& accessor = accessors[mesh_view.CullData];
+				BufferView& buffer_view = buffer_views[accessor.BufferView];
 
-				mesh.CullingData = MakeSpan(reinterpret_cast<CullData*>(m_buffer.data() + bufferView.Offset), accessor.Count);
+				mesh.CullingData = MakeSpan(reinterpret_cast<CullData*>(m_buffer.data() + buffer_view.Offset), accessor.Count);
 			}
 #endif
 		}
@@ -609,7 +609,7 @@ namespace era_engine
 			}
 
 			// Find the byte offset of the position attribute with its vertex buffer
-			uint32_t positionOffset = 0;
+			uint32_t position_offset = 0;
 
 			for (uint32_t j = 0; j < m.LayoutDesc.NumElements; ++j)
 			{
@@ -621,11 +621,11 @@ namespace era_engine
 
 				if (desc.InputSlot == vbIndexPos)
 				{
-					positionOffset += GetFormatSize(m.LayoutElems[j].Format);
+					position_offset += GetFormatSize(m.LayoutElems[j].Format);
 				}
 			}
 
-			XMFLOAT3* v0 = reinterpret_cast<XMFLOAT3*>(m.Vertices[vbIndexPos].data() + positionOffset);
+			XMFLOAT3* v0 = reinterpret_cast<XMFLOAT3*>(m.Vertices[vbIndexPos].data() + position_offset);
 			uint32_t stride = m.VertexStrides[vbIndexPos];
 
 			BoundingSphere::CreateFromPoints(m.BoundingSphere, m.VertexCount, v0, stride);
@@ -641,18 +641,18 @@ namespace era_engine
 		}
 #endif
 
-		ref<mesh_shader_mesh> result = make_ref<mesh_shader_mesh>();
+		ref<MeshShaderMesh> result = make_ref<MeshShaderMesh>();
 		result->submeshes = std::move(submeshes);
-		result->subsets = std::move(meshletSubsets);
-		result->vertices = createBuffer(sizeof(mesh_vertex), (uint32)vertices.size(), vertices.data());
-		result->meshlets = createBuffer(sizeof(meshlet_info), (uint32)meshlets.size(), meshlets.data());
-		result->uniqueVertexIndices = createBuffer(sizeof(uint32), (uint32)uniqueVertexIndices.size(), uniqueVertexIndices.data());
-		result->primitiveIndices = createBuffer(sizeof(packed_triangle), (uint32)primitiveIndices.size(), primitiveIndices.data());
+		result->subsets = std::move(meshlet_subsets);
+		result->vertices = create_buffer(sizeof(MeshVertex), (uint32)vertices.size(), vertices.data());
+		result->meshlets = create_buffer(sizeof(MeshletInfo), (uint32)meshlets.size(), meshlets.data());
+		result->unique_vertex_indices = create_buffer(sizeof(uint32), (uint32)unique_vertex_indices.size(), unique_vertex_indices.data());
+		result->primitive_indices = create_buffer(sizeof(PackedTriangle), (uint32)primitive_indices.size(), primitive_indices.data());
 
 		return result;
 	}
 
-	const marching_cubes_lookup marchingCubesLookup[256] =
+	const MarchingCubesLookup marching_cubes_lookup[256] =
 	{
 		/*  Packed 8bit indices                                 Two 3bit (octal) corner indices defining the edge                 */
 		{ { 0x00000000, 0x00000000, 0x00000000, 0x00000000 }, { 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 }, 0, 0 },
@@ -919,8 +919,8 @@ namespace era_engine
 
 namespace era_engine
 {
-	void initializeMeshShader() {}
-	void testRenderMeshShader(transparent_render_pass* ldrRenderPass, float dt) {}
+	void initialize_mesh_shader() {}
+	void test_render_mesh_shader(TransparentRenderPass* ldr_render_pass, float dt) {}
 }
 
 #endif

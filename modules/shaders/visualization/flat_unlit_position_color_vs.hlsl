@@ -1,25 +1,25 @@
-struct transform_cb
+struct TransformCB
 {
 	float4x4 mvp;
 };
 
-ConstantBuffer<transform_cb> transform : register(b0);
+ConstantBuffer<TransformCB> transform : register(b0);
 
-struct vs_input
+struct VSInput
 {
 	float3 position		: POSITION;
 	float3 color		: COLOR;
 };
 
-struct vs_output
+struct VSOutput
 {
 	float3 color		: COLOR;
 	float4 position		: SV_POSITION;
 };
 
-vs_output main(vs_input IN)
+VSOutput main(VSInput IN)
 {
-	vs_output OUT;
+	VSOutput OUT;
 	OUT.position = mul(transform.mvp, float4(IN.position, 1.f));
 	OUT.color = IN.color;
 	return OUT;

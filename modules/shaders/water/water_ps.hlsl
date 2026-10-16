@@ -3,108 +3,108 @@
 #include "normal.hlsli"
 #include "lighting.hlsli"
 
-SamplerState clampSampler								: register(s0);
-SamplerState wrapSampler								: register(s1);
-SamplerComparisonState shadowSampler					: register(s2);
+SamplerState clamp_sampler								: register(s0);
+SamplerState wrap_sampler								: register(s1);
+SamplerComparisonState shadow_sampler					: register(s2);
 
-ConstantBuffer<water_cb> cb								: register(b0, space1);
-ConstantBuffer<camera_cb> camera						: register(b1, space1);
-ConstantBuffer<lighting_cb> lighting					: register(b2, space1);
+ConstantBuffer<WaterCB> cb								: register(b0, space1);
+ConstantBuffer<CameraCB> camera						: register(b1, space1);
+ConstantBuffer<LightingCB> lighting					: register(b2, space1);
 
-Texture2D<float3> opaqueColor							: register(t0);
-Texture2D<float> opaqueDepth							: register(t1);
+Texture2D<float3> opaque_color							: register(t0);
+Texture2D<float> opaque_depth							: register(t1);
 Texture2D<float3> normalmap1							: register(t2);
 Texture2D<float3> normalmap2							: register(t3);
-Texture2D<float3> foamTexture							: register(t4);
-Texture2D<float> noiseTexture							: register(t5);
+Texture2D<float3> foam_texture							: register(t4);
+Texture2D<float> noise_texture							: register(t5);
 
-TextureCube<float4> irradianceTexture					: register(t0, space2);
-TextureCube<float4> prefilteredRadianceTexture			: register(t1, space2);
+TextureCube<float4> irradiance_texture					: register(t0, space2);
+TextureCube<float4> prefiltered_radiance_texture			: register(t1, space2);
 
 Texture2D<float2> brdf									: register(t2, space2);
 
-Texture2D<float> shadowMap								: register(t3, space2);
+Texture2D<float> shadow_map								: register(t3, space2);
 
-Texture2D<float> aoTexture								: register(t4, space2);
-Texture2D<float> sssTexture								: register(t5, space2);
-Texture2D<float4> ssrTexture							: register(t6, space2);
+Texture2D<float> ao_texture								: register(t4, space2);
+Texture2D<float> sss_texture								: register(t5, space2);
+Texture2D<float4> ssr_texture							: register(t6, space2);
 
-struct ps_input
+struct PSInput
 {
-	float3 worldPosition	: POSITION;
+	float3 world_position	: POSITION;
 
-    float4 screenPosition	: SV_POSITION;
+    float4 screen_position	: SV_POSITION;
 };
 
 [earlydepthstencil]
 [RootSignature(WATER_RS)]
-float4 main(ps_input IN) : SV_TARGET
+float4 main(PSInput IN) : SV_TARGET
 {
-	float2 uv = IN.worldPosition.xz * 0.1f * cb.uvScale;
-	float2 uv0 = uv - cb.uvOffset;
-	float2 uv1 = (uv + cb.uvOffset) * 0.7f;
+	float2 uv = IN.world_position.xz * 0.1f * cb.uv_scale;
+	float2 uv0 = uv - cb.uv_offset;
+	float2 uv1 = (uv + cb.uv_offset) * 0.7f;
 
-	float3 N0 = scaleNormalMap(sampleNormalMap(normalmap2, wrapSampler, uv0), cb.normalmapStrength);
-	float3 N1 = scaleNormalMap(sampleNormalMap(normalmap1, wrapSampler, uv1), cb.normalmapStrength * 0.6f);
+	float3 N0 = scale_normal_map(sample_normal_map(normalmap2, wrap_sampler, uv0), cb.normalmap_strength);
+	float3 N1 = scale_normal_map(sample_normal_map(normalmap1, wrap_sampler, uv1), cb.normalmap_strength * 0.6f);
 
-	float3 N = combineNormalMaps(N0, N1).xzy;
-
-
-	const float refractionDistortionFactor = 0.015f;
-
-	float2 screenUV = IN.screenPosition.xy * camera.invScreenDims;
-	float2 distortedScreenUV = (screenUV + ((N.xz + N.xy) * 0.5f) * refractionDistortionFactor);
+	float3 N = combine_normal_maps(N0, N1).xzy;
 
 
-	float sceneDepth = camera.depthBufferDepthToEyeDepth(opaqueDepth.Sample(clampSampler, distortedScreenUV));
-	float thisDepth = camera.depthBufferDepthToEyeDepth(IN.screenPosition.z);
-	if (sceneDepth < thisDepth)
+	const float refraction_distortion_factor = 0.015f;
+
+	float2 screen_uv = IN.screen_position.xy * camera.inv_screen_dims;
+	float2 distorted_screen_uv = (screen_uv + ((N.xz + N.xy) * 0.5f) * refraction_distortion_factor);
+
+
+	float scene_depth = camera.depth_buffer_depth_to_eye_depth(opaque_depth.Sample(clamp_sampler, distorted_screen_uv));
+	float this_depth = camera.depth_buffer_depth_to_eye_depth(IN.screen_position.z);
+	if (scene_depth < this_depth)
 	{
-		distortedScreenUV = screenUV;
-		sceneDepth = camera.depthBufferDepthToEyeDepth(opaqueDepth.Sample(clampSampler, distortedScreenUV));
+		distorted_screen_uv = screen_uv;
+		scene_depth = camera.depth_buffer_depth_to_eye_depth(opaque_depth.Sample(clamp_sampler, distorted_screen_uv));
 	}
 
-	float3 sceneColor = opaqueColor.Sample(clampSampler, distortedScreenUV);
+	float3 scene_color = opaque_color.Sample(clamp_sampler, distorted_screen_uv);
 
-	float transition = saturate((sceneDepth - (thisDepth + cb.shallowDepth)) * cb.transitionStrength);
+	float transition = saturate((scene_depth - (this_depth + cb.shallow_depth)) * cb.transition_strength);
 
-	const float noiseUVScale = 0.7f;
-	float specularNoise = 1.f + 
-		3.f * noiseTexture.Sample(wrapSampler, uv0 * noiseUVScale) * 
-		noiseTexture.Sample(wrapSampler, uv1 * noiseUVScale) *
-		noiseTexture.Sample(wrapSampler, uv * noiseUVScale);
+	const float noise_uv_scale = 0.7f;
+	float specular_noise = 1.f + 
+		3.f * noise_texture.Sample(wrap_sampler, uv0 * noise_uv_scale) * 
+		noise_texture.Sample(wrap_sampler, uv1 * noise_uv_scale) *
+		noise_texture.Sample(wrap_sampler, uv * noise_uv_scale);
 
-	surface_info surface;
+	SurfaceInfo surface;
 
-	surface.albedo = lerp(cb.shallowColor, cb.deepColor, transition);
+	surface.albedo = lerp(cb.shallow_color, cb.deep_color, transition);
 	surface.N = N;
 	surface.roughness = 0.2f;
 	surface.roughness = clamp(surface.roughness, 0.01f, 0.99f);
 	surface.metallic = 0.f;
 	surface.emission = 0.f;
 
-	surface.P = IN.worldPosition;
-	float3 camToP = surface.P - camera.position.xyz;
-	surface.V = -normalize(camToP);
+	surface.P = IN.world_position;
+	float3 cam_to_p = surface.P - camera.position.xyz;
+	surface.V = -normalize(cam_to_p);
 
-	surface.inferRemainingProperties();
+	surface.infer_remaining_properties();
 
-	float pixelDepth = dot(camera.forward.xyz, camToP);
+	float pixel_depth = dot(camera.forward.xyz, cam_to_p);
 
-	light_contribution totalLighting = { float3(0.f, 0.f, 0.f), float3(0.f, 0.f, 0.f) };
+	LightContribution total_lighting = { float3(0.f, 0.f, 0.f), float3(0.f, 0.f, 0.f) };
 
-	totalLighting.addSunLight(surface, lighting, screenUV, pixelDepth,
-		shadowMap, shadowSampler, lighting.shadowMapTexelSize, sssTexture, clampSampler);
+	total_lighting.add_sun_light(surface, lighting, screen_uv, pixel_depth,
+		shadow_map, shadow_sampler, lighting.shadow_map_texel_size, sss_texture, clamp_sampler);
 
 	// Ambient light
-	float ao = aoTexture.SampleLevel(clampSampler, screenUV, 0);
+	float ao = ao_texture.SampleLevel(clamp_sampler, screen_uv, 0);
 
-	ambient_factors factors = getAmbientFactors(surface);
-	totalLighting.diffuse += diffuseIBL(factors.kd, surface, irradianceTexture, clampSampler) * lighting.globalIlluminationIntensity * ao;
-	float3 specular = specularIBL(factors.ks, surface, prefilteredRadianceTexture, brdf, clampSampler, specularNoise);
-	totalLighting.specular += specular * lighting.globalIlluminationIntensity * ao;
+	AmbientFactors factors = get_ambient_factors(surface);
+	total_lighting.diffuse += diffuse_ibl(factors.kd, surface, irradiance_texture, clamp_sampler) * lighting.global_illumination_intensity * ao;
+	float3 specular = specular_ibl(factors.ks, surface, prefiltered_radiance_texture, brdf, clamp_sampler, specular_noise);
+	total_lighting.specular += specular * lighting.global_illumination_intensity * ao;
 
-	float3 color = lerp(sceneColor, totalLighting.diffuse * surface.albedo.xyz, surface.albedo.a) + totalLighting.specular; // albedo
+	float3 color = lerp(scene_color, total_lighting.diffuse * surface.albedo.xyz, surface.albedo.a) + total_lighting.specular; // albedo
 
 	return float4(color, 1.f);
 }

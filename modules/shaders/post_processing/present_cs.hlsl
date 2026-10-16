@@ -2,46 +2,46 @@
 #include "post_processing_rs.hlsli"
 #include "color.hlsli"
 
-ConstantBuffer<present_cb> present	: register(b0);
+ConstantBuffer<PresentCB> present	: register(b0);
 RWTexture2D<float4> output	: register(u0);
 Texture2D<float4>	input	: register(t0);
 
 [numthreads(POST_PROCESSING_BLOCK_SIZE, POST_PROCESSING_BLOCK_SIZE, 1)]
 [RootSignature(PRESENT_RS)]
-void main(cs_input IN)
+void main(CSInput IN)
 {
-	int xOffset = present.offset >> 16;
-	int yOffset = present.offset & 0xFFFF;
+	int x_offset = present.offset >> 16;
+	int y_offset = present.offset & 0xFFFF;
 
-	int2 center = IN.dispatchThreadID.xy - int2(xOffset, yOffset);
+	int2 center = IN.dispatch_thread_id.xy - int2(x_offset, y_offset);
 
 	float3 scene = input[center + int2(0, 0)].rgb;
 
-	if (present.sharpenStrength > 0.f)
+	if (present.sharpen_strength > 0.f)
 	{
 		float3 top = input[center + int2(0, -1)].rgb;
 		float3 left = input[center + int2(-1, 0)].rgb;
 		float3 right = input[center + int2(1, 0)].rgb;
 		float3 bottom = input[center + int2(0, 1)].rgb;
 
-		scene = max(scene + (4.f * scene - top - bottom - left - right) * present.sharpenStrength, 0.f);
+		scene = max(scene + (4.f * scene - top - bottom - left - right) * present.sharpen_strength, 0.f);
 	}
 
-	if (present.displayMode == present_sdr)
+	if (present.display_mode == present_sdr)
 	{
-		scene = linearToSRGB(scene);
+		scene = linear_to_srgb(scene);
 	}
-	else if (present.displayMode == present_hdr)
+	else if (present.display_mode == present_hdr)
 	{
 		const float st2084max = 10000.f;
-		const float hdrScalar = present.standardNits / st2084max;
+		const float hdr_scalar = present.standard_nits / st2084max;
 
 		// The HDR scene is in Rec.709, but the display is Rec.2020.
-		scene = rec709ToRec2020(scene);
+		scene = rec709_to_rec2020(scene);
 
 		// Apply the ST.2084 curve to the scene.
-		scene = linearToST2084(scene * hdrScalar);
+		scene = linear_to_st2084(scene * hdr_scalar);
 	}
 
-	output[IN.dispatchThreadID.xy] = float4(scene, 1.f);
+	output[IN.dispatch_thread_id.xy] = float4(scene, 1.f);
 }

@@ -37,10 +37,10 @@ namespace era_engine
 			ASSERT(loader.status());
 		};
 
-		dx_window* window = get_object<dx_window>();
+		DXWindow* window = get_object<DXWindow>();
 		window->initialize(TEXT("  Example Game"), 1920, 1080);
-		window->setIcon(get_asset_path("/resources/icons/Logo.ico"));
-		window->setCustomWindowStyle();
+		window->set_icon(get_asset_path("/resources/icons/Logo.ico"));
+		window->set_custom_window_style();
 		window->maximize();
 		window->init_input();
 

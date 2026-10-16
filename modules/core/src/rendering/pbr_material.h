@@ -11,7 +11,7 @@
 namespace era_engine
 {
 
-	static inline const char* pbrMaterialShaderNames[] =
+	static inline const char* pbr_material_shader_names[] =
 	{
 		"Default",
 		"Double sided",
@@ -19,23 +19,23 @@ namespace era_engine
 		"Transparent",
 	};
 
-	struct pbr_material
+	struct PBRMaterial
 	{
-		ref<dx_texture> albedo;
-		ref<dx_texture> normal;
-		ref<dx_texture> roughness;
-		ref<dx_texture> metallic;
+		ref<DXTexture> albedo;
+		ref<DXTexture> normal;
+		ref<DXTexture> roughness;
+		ref<DXTexture> metallic;
 
 		vec4 emission;
-		vec4 albedoTint;
-		float roughnessOverride;
-		float metallicOverride;
+		vec4 albedo_tint;
+		float roughness_override;
+		float metallic_override;
 		PbrMaterialShader shader;
-		float uvScale;
+		float uv_scale;
 		float translucency;
 	};
 
-	ERA_CORE_API ref<pbr_material> create_pbr_material(const PbrMaterialDesc& desc);
-	ERA_CORE_API ref<pbr_material> create_pbr_material_async(const PbrMaterialDesc& desc, JobHandle parent_job = {});
-	ERA_CORE_API ref<pbr_material> get_default_pbr_material();
+	ERA_CORE_API ref<PBRMaterial> create_pbr_material(const PbrMaterialDesc& desc);
+	ERA_CORE_API ref<PBRMaterial> create_pbr_material_async(const PbrMaterialDesc& desc, JobHandle parent_job = {});
+	ERA_CORE_API ref<PBRMaterial> get_default_pbr_material();
 }

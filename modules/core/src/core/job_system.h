@@ -47,7 +47,7 @@ namespace era_engine
 
         template <typename Data_,
             ValidJobDataType<Data_> = true>
-        JobHandle createJob(JobFunction<Data_> function, const Data_& data, JobHandle parent = {})
+        JobHandle create_job(JobFunction<Data_> function, const Data_& data, JobHandle parent = {})
         {
             int32 handle = allocate_job();
             auto& job = all_jobs[handle];

@@ -19,23 +19,23 @@ namespace era_engine
 	RendererHolderRootComponent::RendererHolderRootComponent(ref<Entity::EcsData> _data)
 		: Component(_data)
 	{
-		renderer_spec spec;
-		spec.allowObjectPicking = true;
-		spec.allowAO = true;
-		spec.allowSSS = true;
-		spec.allowSSR = true;
-		spec.allowTAA = true;
-		spec.allowBloom = true;
-		spec.allowDLSS = true;
+		RendererSpec spec;
+		spec.allow_object_picking = true;
+		spec.allow_ao = true;
+		spec.allow_sss = true;
+		spec.allow_ssr = true;
+		spec.allow_taa = true;
+		spec.allow_bloom = true;
+		spec.allow_dlss = true;
 
-		renderer = new main_renderer();
+		renderer = new MainRenderer();
 
-		dx_window* window = get_object<dx_window>();
+		DXWindow* window = get_object<DXWindow>();
 		ASSERT(window != nullptr);
 
-		ldrRenderPass = new ldr_render_pass();
+		ldr_render_pass = new LDRRenderPass();
 
-		renderer->initialize(window->colorDepth, window->clientWidth, window->clientHeight, spec);
+		renderer->initialize(window->color_depth, window->client_width, window->client_height, spec);
 	}
 
 	RendererHolderRootComponent& RendererHolderRootComponent::operator=(const RendererHolderRootComponent& other) noexcept
@@ -44,7 +44,7 @@ namespace era_engine
 		{
 			camera = other.camera;
 			sun = other.sun;
-			ldrRenderPass = other.ldrRenderPass;
+			ldr_render_pass = other.ldr_render_pass;
 			environment = other.environment;
 		}
 
@@ -57,7 +57,7 @@ namespace era_engine
 		{
 			camera = std::move(other.camera);
 			sun = std::move(other.sun);
-			ldrRenderPass = std::move(other.ldrRenderPass);
+			ldr_render_pass = std::move(other.ldr_render_pass);
 			environment = std::move(other.environment);
 		}
 
@@ -66,11 +66,11 @@ namespace era_engine
 
 	RendererHolderRootComponent::~RendererHolderRootComponent()
 	{
-		delete ldrRenderPass;
+		delete ldr_render_pass;
 		delete renderer;
 	}
 
-	main_renderer* RendererHolderRootComponent::get_renderer() const
+	MainRenderer* RendererHolderRootComponent::get_renderer() const
 	{
 		return renderer;
 	}

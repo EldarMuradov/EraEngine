@@ -1,31 +1,31 @@
 #include "sky_rs.hlsli"
 #include "math.hlsli"
 
-ConstantBuffer<sky_cb> cb : register(b1);
+ConstantBuffer<SkyCB> cb : register(b1);
 
-struct ps_input
+struct PSInput
 {
 	float3 uv				: TEXCOORDS;
 	float3 ndc				: NDC;
-	float3 prevFrameNDC		: PREV_FRAME_NDC;
+	float3 prev_frame_ndc		: PREV_FRAME_NDC;
 };
 
-SamplerState texSampler	: register(s0);
+SamplerState tex_sampler	: register(s0);
 TextureCube<float4> tex	: register(t0);
 
-struct ps_output
+struct PSOutput
 {
 	float4 color			: SV_Target0;
-	float2 screenVelocity	: SV_Target1;
-	uint objectID			: SV_Target2;
+	float2 screen_velocity	: SV_Target1;
+	uint object_id			: SV_Target2;
 };
 
 [RootSignature(SKY_TEXTURE_RS)]
-ps_output main(ps_input IN)
+PSOutput main(PSInput IN)
 {
-	ps_output OUT;
-	OUT.color = float4((tex.Sample(texSampler, IN.uv) * cb.intensity).xyz, 0.f);
-	OUT.screenVelocity = screenSpaceVelocity(IN.ndc, IN.prevFrameNDC, cb.jitter, cb.prevFrameJitter);
-	OUT.objectID = 0xFFFFFFFF; // -1.
+	PSOutput OUT;
+	OUT.color = float4((tex.Sample(tex_sampler, IN.uv) * cb.intensity).xyz, 0.f);
+	OUT.screen_velocity = screen_space_velocity(IN.ndc, IN.prev_frame_ndc, cb.jitter, cb.prev_frame_jitter);
+	OUT.object_id = 0xFFFFFFFF; // -1.
 	return OUT;
 }

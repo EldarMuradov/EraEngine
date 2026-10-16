@@ -4,36 +4,36 @@
 
 namespace era_engine
 {
-	struct file_browser
+	struct FileBrowser
 	{
-		file_browser();
+		FileBrowser();
 		void draw();
 
-		enum dir_entry_type
+		enum DirEntryType
 		{
-			dir_entry_type_none,
+			DIR_ENTRY_TYPE_NONE,
 
-			dir_entry_type_directory,
-			dir_entry_type_empty_directory,
-			dir_entry_type_mesh,
-			dir_entry_type_image,
-			dir_entry_type_image_hdr,
-			dir_entry_type_font,
-			dir_entry_type_audio,
-			dir_entry_type_code
+			DIR_ENTRY_TYPE_DIRECTORY,
+			DIR_ENTRY_TYPE_EMPTY_DIRECTORY,
+			DIR_ENTRY_TYPE_MESH,
+			DIR_ENTRY_TYPE_IMAGE,
+			DIR_ENTRY_TYPE_IMAGE_HDR,
+			DIR_ENTRY_TYPE_FONT,
+			DIR_ENTRY_TYPE_AUDIO,
+			DIR_ENTRY_TYPE_CODE
 		};
 
 	private:
-		struct dir_entry
+		struct DirEntry
 		{
 			fs::path filename;
-			dir_entry_type type;
+			DirEntryType type;
 		};
 
-		void changeCurrentPath(const fs::path& path);
+		void change_current_path(const fs::path& path);
 		void refresh();
 
-		fs::path currentPath;
-		std::vector<dir_entry> currentPathEntries;
+		fs::path current_path;
+		std::vector<DirEntry> current_path_entries;
 	};
 }

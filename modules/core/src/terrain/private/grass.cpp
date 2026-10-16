@@ -20,284 +20,284 @@
 
 namespace era_engine
 {
-	static const uint32 numSegmentsLOD0 = 4;
+	static const uint32 num_segments_lod0 = 4;
 
-	static dx_pipeline grassPipeline;
-	static dx_pipeline grassDepthOnlyPipeline;
+	static DXPipeline grass_pipeline;
+	static DXPipeline grass_depth_only_pipeline;
 
-	static dx_pipeline grassNoDepthPrepassPipeline;
+	static DXPipeline grass_no_depth_prepass_pipeline;
 
-	static dx_pipeline grassGenerationPipeline;
-	static dx_pipeline grassCreateDrawCallsPipeline;
+	static DXPipeline grass_generation_pipeline;
+	static DXPipeline grass_create_draw_calls_pipeline;
 
-	static dx_command_signature grassCommandSignature;
+	static DXCommandSignature grass_command_signature;
 
-	void initializeGrassPipelines()
+	void initialize_grass_pipelines()
 	{
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.depthSettings(true, false, D3D12_COMPARISON_FUNC_EQUAL)
-				.cullingOff()
-				.renderTargets(opaqueLightPassFormats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depthStencilFormat);
+				.depth_settings(true, false, D3D12_COMPARISON_FUNC_EQUAL)
+				.culling_off()
+				.render_targets(opaque_light_pass_formats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depth_stencil_format);
 
-			grassPipeline = createReloadablePipeline(desc, { "grass_vs", "grass_ps" });
+			grass_pipeline = create_reloadable_pipeline(desc, { "grass_vs", "grass_ps" });
 		}
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.cullingOff()
-				.renderTargets(depthOnlyFormat, arraysize(depthOnlyFormat), depthStencilFormat);
+				.culling_off()
+				.render_targets(depth_only_format, arraysize(depth_only_format), depth_stencil_format);
 
-			grassDepthOnlyPipeline = createReloadablePipeline(desc, { "grass_depth_only_vs", "depth_only_ps" }, rs_in_vertex_shader);
+			grass_depth_only_pipeline = create_reloadable_pipeline(desc, { "grass_depth_only_vs", "depth_only_ps" }, RS_IN_VERTEX_SHADER);
 		}
 		{
 			auto& desc = CREATE_GRAPHICS_PIPELINE
-				.cullingOff()
-				.renderTargets(opaqueLightPassFormats, OPQAUE_LIGHT_PASS_FULL, depthStencilFormat);
+				.culling_off()
+				.render_targets(opaque_light_pass_formats, OPQAUE_LIGHT_PASS_FULL, depth_stencil_format);
 
-			grassNoDepthPrepassPipeline = createReloadablePipeline(desc, { "grass_no_depth_prepass_vs", "grass_no_depth_prepass_ps" });
+			grass_no_depth_prepass_pipeline = create_reloadable_pipeline(desc, { "grass_no_depth_prepass_vs", "grass_no_depth_prepass_ps" });
 		}
 
-		grassGenerationPipeline = createReloadablePipeline("grass_generation_cs");
-		grassCreateDrawCallsPipeline = createReloadablePipeline("grass_create_draw_calls_cs");
+		grass_generation_pipeline = create_reloadable_pipeline("grass_generation_cs");
+		grass_create_draw_calls_pipeline = create_reloadable_pipeline("grass_create_draw_calls_cs");
 
 
-		D3D12_INDIRECT_ARGUMENT_DESC argumentDesc;
-		argumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
-		grassCommandSignature = createCommandSignature({}, &argumentDesc, 1, sizeof(grass_draw));
+		D3D12_INDIRECT_ARGUMENT_DESC argument_desc;
+		argument_desc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
+		grass_command_signature = create_command_signature({}, &argument_desc, 1, sizeof(GrassDraw));
 	}
 
-	static grass_cb createGrassCB(const GrassSettings& settings, vec2 windDirection, uint32 numVertices)
+	static GrassCB create_grass_cb(const GrassSettings& settings, vec2 wind_direction, uint32 num_vertices)
 	{
-		grass_cb cb;
-		cb.numVertices = numVertices;
-		cb.halfWidth = settings.bladeWidth * 0.5f;
-		cb.windDirection = windDirection;
+		GrassCB cb;
+		cb.num_vertices = num_vertices;
+		cb.half_width = settings.blade_width * 0.5f;
+		cb.wind_direction = wind_direction;
 		return cb;
 	}
 
-	static grass_cb createGrassCB_LOD0(const GrassSettings& settings, vec2 windDirection)
+	static GrassCB create_grass_cb_lod0(const GrassSettings& settings, vec2 wind_direction)
 	{
-		const uint32 numVerticesLOD0 = numSegmentsLOD0 * 2 + 1;
-		return createGrassCB(settings, windDirection, numVerticesLOD0);
+		const uint32 num_vertices_lod0 = num_segments_lod0 * 2 + 1;
+		return create_grass_cb(settings, wind_direction, num_vertices_lod0);
 	}
 
-	static grass_cb createGrassCB_LOD1(const GrassSettings& settings, vec2 windDirection)
+	static GrassCB create_grass_cb_lod1(const GrassSettings& settings, vec2 wind_direction)
 	{
-		const uint32 numVerticesLOD0 = numSegmentsLOD0 * 2 + 1;
-		const uint32 numVerticesLOD1 = numVerticesLOD0 / 2 + 1;
-		return createGrassCB(settings, windDirection, numVerticesLOD1);
+		const uint32 num_vertices_lod0 = num_segments_lod0 * 2 + 1;
+		const uint32 num_vertices_lod1 = num_vertices_lod0 / 2 + 1;
+		return create_grass_cb(settings, wind_direction, num_vertices_lod1);
 	}
 
-	struct grass_render_data
+	struct GrassRenderData
 	{
 		GrassSettings settings;
-		ref<dx_buffer> drawBuffer;
-		ref<dx_buffer> bladeBufferLOD0;
-		ref<dx_buffer> bladeBufferLOD1;
+		ref<DXBuffer> draw_buffer;
+		ref<DXBuffer> blade_buffer_lod0;
+		ref<DXBuffer> blade_buffer_lod1;
 
-		vec2 windDirection;
+		vec2 wind_direction;
 
-		uint32 objectID;
+		uint32 object_id;
 	};
 
-	static void setup(dx_command_list* cl, const common_render_data& common, const dx_pipeline& pipeline)
+	static void setup(DXCommandList* cl, const CommonRenderData& common, const DXPipeline& pipeline)
 	{
-		cl->setPipelineState(*pipeline.pipeline);
-		cl->setGraphicsRootSignature(*pipeline.rootSignature);
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-		cl->setGraphicsDynamicConstantBuffer(GRASS_RS_CAMERA, common.cameraCBV);
-		cl->setGraphicsDynamicConstantBuffer(GRASS_RS_LIGHTING, common.lightingCBV);
+		cl->set_pipeline_state(*pipeline.pipeline);
+		cl->set_graphics_root_signature(*pipeline.root_signature);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		cl->set_graphics_dynamic_constant_buffer(GRASS_RS_CAMERA, common.camera_cbv);
+		cl->set_graphics_dynamic_constant_buffer(GRASS_RS_LIGHTING, common.lighting_cbv);
 
 
-		dx_cpu_descriptor_handle nullTexture = render_resources::nullTextureSRV;
+		DXCPUDescriptorHandle null_texture = RenderResources::null_texture_srv;
 
-		cl->setDescriptorHeapSRV(GRASS_RS_FRAME_CONSTANTS, 0, common.irradiance);
-		cl->setDescriptorHeapSRV(GRASS_RS_FRAME_CONSTANTS, 1, common.prefilteredRadiance);
-		cl->setDescriptorHeapSRV(GRASS_RS_FRAME_CONSTANTS, 2, render_resources::brdfTex);
-		cl->setDescriptorHeapSRV(GRASS_RS_FRAME_CONSTANTS, 3, common.shadowMap);
-		cl->setDescriptorHeapSRV(GRASS_RS_FRAME_CONSTANTS, 4, common.aoTexture ? common.aoTexture : render_resources::whiteTexture);
-		cl->setDescriptorHeapSRV(GRASS_RS_FRAME_CONSTANTS, 5, common.sssTexture ? common.sssTexture : render_resources::whiteTexture);
-		cl->setDescriptorHeapSRV(GRASS_RS_FRAME_CONSTANTS, 6, common.ssrTexture ? common.ssrTexture->defaultSRV : nullTexture);
+		cl->set_descriptor_heap_srv(GRASS_RS_FRAME_CONSTANTS, 0, common.irradiance);
+		cl->set_descriptor_heap_srv(GRASS_RS_FRAME_CONSTANTS, 1, common.prefiltered_radiance);
+		cl->set_descriptor_heap_srv(GRASS_RS_FRAME_CONSTANTS, 2, RenderResources::brdf_tex);
+		cl->set_descriptor_heap_srv(GRASS_RS_FRAME_CONSTANTS, 3, common.shadow_map);
+		cl->set_descriptor_heap_srv(GRASS_RS_FRAME_CONSTANTS, 4, common.ao_texture ? common.ao_texture : RenderResources::white_texture);
+		cl->set_descriptor_heap_srv(GRASS_RS_FRAME_CONSTANTS, 5, common.sss_texture ? common.sss_texture : RenderResources::white_texture);
+		cl->set_descriptor_heap_srv(GRASS_RS_FRAME_CONSTANTS, 6, common.ssr_texture ? common.ssr_texture->default_srv : null_texture);
 	}
 
-	static void render(dx_command_list* cl, const grass_render_data& data, uint32 cbRootParameterIndex, uint32 bladeRootParameterIndex)
+	static void render(DXCommandList* cl, const GrassRenderData& data, uint32 cb_root_parameter_index, uint32 blade_root_parameter_index)
 	{
 		{
-			grass_cb cb = createGrassCB_LOD0(data.settings, data.windDirection);
+			GrassCB cb = create_grass_cb_lod0(data.settings, data.wind_direction);
 
-			cl->setRootGraphicsSRV(bladeRootParameterIndex, data.bladeBufferLOD0);
-			cl->setGraphics32BitConstants(cbRootParameterIndex, cb);
+			cl->set_root_graphics_srv(blade_root_parameter_index, data.blade_buffer_lod0);
+			cl->set_graphics_32bit_constants(cb_root_parameter_index, cb);
 
-			cl->drawIndirect(grassCommandSignature, 1, data.drawBuffer, 0 * sizeof(grass_draw));
+			cl->draw_indirect(grass_command_signature, 1, data.draw_buffer, 0 * sizeof(GrassDraw));
 		}
 
 		{
-			grass_cb cb = createGrassCB_LOD1(data.settings, data.windDirection);
+			GrassCB cb = create_grass_cb_lod1(data.settings, data.wind_direction);
 
-			cl->setRootGraphicsSRV(bladeRootParameterIndex, data.bladeBufferLOD1);
-			cl->setGraphics32BitConstants(cbRootParameterIndex, cb);
+			cl->set_root_graphics_srv(blade_root_parameter_index, data.blade_buffer_lod1);
+			cl->set_graphics_32bit_constants(cb_root_parameter_index, cb);
 
-			cl->drawIndirect(grassCommandSignature, 1, data.drawBuffer, 1 * sizeof(grass_draw));
+			cl->draw_indirect(grass_command_signature, 1, data.draw_buffer, 1 * sizeof(GrassDraw));
 		}
 	}
 
-	struct grass_pipeline
+	struct GrassPipeline
 	{
 		PIPELINE_SETUP_DECL
 		{
-			era_engine::setup(cl, common, grassPipeline);
+			era_engine::setup(cl, common, grass_pipeline);
 		}
 
-		PIPELINE_RENDER_DECL(grass_render_data)
+		PIPELINE_RENDER_DECL(GrassRenderData)
 		{
 			PROFILE_ALL(cl, "Grass");
 			era_engine::render(cl, data, GRASS_RS_CB, GRASS_RS_BLADES);
 		}
 	};
 
-	struct grass_depth_prepass_pipeline
+	struct GrassDepthPrepassPipeline
 	{
 		PIPELINE_SETUP_DECL
 		{
-			cl->setPipelineState(*grassDepthOnlyPipeline.pipeline);
-			cl->setGraphicsRootSignature(*grassDepthOnlyPipeline.rootSignature);
-			cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			cl->set_pipeline_state(*grass_depth_only_pipeline.pipeline);
+			cl->set_graphics_root_signature(*grass_depth_only_pipeline.root_signature);
+			cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-			cl->setGraphicsDynamicConstantBuffer(GRASS_DEPTH_ONLY_RS_CAMERA, common.cameraCBV);
+			cl->set_graphics_dynamic_constant_buffer(GRASS_DEPTH_ONLY_RS_CAMERA, common.camera_cbv);
 		}
 
-		DEPTH_ONLY_RENDER_DECL(grass_render_data)
+		DEPTH_ONLY_RENDER_DECL(GrassRenderData)
 		{
 			PROFILE_ALL(cl, "Grass depth prepass");
 
-			cl->setGraphics32BitConstants(GRASS_DEPTH_ONLY_RS_OBJECT_ID, data.objectID);
+			cl->set_graphics_32bit_constants(GRASS_DEPTH_ONLY_RS_OBJECT_ID, data.object_id);
 			era_engine::render(cl, data, GRASS_DEPTH_ONLY_RS_CB, GRASS_DEPTH_ONLY_RS_BLADES);
 		}
 	};
 
-	struct grass_no_depth_prepass_pipeline
+	struct GrassNoDepthPrepassPipeline
 	{
 		PIPELINE_SETUP_DECL
 		{
-			era_engine::setup(cl, common, grassNoDepthPrepassPipeline);
+			era_engine::setup(cl, common, grass_no_depth_prepass_pipeline);
 		}
 
-		PIPELINE_RENDER_DECL(grass_render_data)
+		PIPELINE_RENDER_DECL(GrassRenderData)
 		{
 			PROFILE_ALL(cl, "Grass");
 
-			cl->setGraphics32BitConstants(GRASS_RS_OBJECT_ID, data.objectID);
+			cl->set_graphics_32bit_constants(GRASS_RS_OBJECT_ID, data.object_id);
 			era_engine::render(cl, data, GRASS_RS_CB, GRASS_RS_BLADES);
 		}
 	};
 
-	struct grass_update_data
+	struct GrassUpdateData
 	{
-		struct grass_update_TerrainChunk
+		struct GrassUpdateTerrainChunk
 		{
-			ref<dx_texture> heightmap;
-			ref<dx_texture> normalmap;
+			ref<DXTexture> heightmap;
+			ref<DXTexture> normalmap;
 		};
 
-		std::vector<grass_update_TerrainChunk> chunks;
+		std::vector<GrassUpdateTerrainChunk> chunks;
 
 		GrassSettings settings;
 
-		camera_frustum_planes cameraFrustum;
-		vec3 cameraPosition;
+		CameraFrustumPlanes camera_frustum;
+		vec3 camera_position;
 
-		vec3 minCorner;
-		uint32 chunksPerDim;
-		float chunkSize;
-		float amplitudeScale;
+		vec3 min_corner;
+		uint32 chunks_per_dim;
+		float chunk_size;
+		float amplitude_scale;
 
 		float time;
-		float prevTime;
+		float prev_time;
 
-		ref<dx_buffer> drawBuffer;
-		ref<dx_buffer> countBuffer;
-		ref<dx_buffer> bladeBufferLOD0;
-		ref<dx_buffer> bladeBufferLOD1;
+		ref<DXBuffer> draw_buffer;
+		ref<DXBuffer> count_buffer;
+		ref<DXBuffer> blade_buffer_lod0;
+		ref<DXBuffer> blade_buffer_lod1;
 	};
 
-	struct grass_update_pipeline
+	struct GrassUpdatePipeline
 	{
-		PIPELINE_COMPUTE_DECL(grass_update_data)
+		PIPELINE_COMPUTE_DECL(GrassUpdateData)
 		{
 			PROFILE_ALL(cl, "Grass generation");
 
 			{
 				PROFILE_ALL(cl, "Generate blades");
 
-				cl->setPipelineState(*grassGenerationPipeline.pipeline);
-				cl->setComputeRootSignature(*grassGenerationPipeline.rootSignature);
+				cl->set_pipeline_state(*grass_generation_pipeline.pipeline);
+				cl->set_compute_root_signature(*grass_generation_pipeline.root_signature);
 
-				vec3 minCorner = data.minCorner;
-				vec3 chunkSize(data.chunkSize, data.amplitudeScale, data.chunkSize);
+				vec3 min_corner = data.min_corner;
+				vec3 chunk_size(data.chunk_size, data.amplitude_scale, data.chunk_size);
 
-				cl->setDescriptorHeap(dxContext.srvUavAllocator.type, dxContext.srvUavAllocatorShaderVisible.getHeap(0).Get());
-				cl->clearUAV(data.countBuffer, 0u);
-				cl->resetToDynamicDescriptorHeap();
+				cl->set_descriptor_heap(dx_context.srv_uav_allocator.type, dx_context.srv_uav_allocator_shader_visible.get_heap(0).Get());
+				cl->clear_uav(data.count_buffer, 0u);
+				cl->reset_to_dynamic_descriptor_heap();
 
-				uint32 numGrassBladesPerDim = data.settings.numGrassBladesPerChunkDim & (~1); // Make sure this is an even number.
-				numGrassBladesPerDim = min(numGrassBladesPerDim, 1024u);
-				const float lodChangeEndDistance = data.settings.lodChangeStartDistance + data.settings.lodChangeTransitionDistance;
-				const float cullEndDistance = data.settings.cullStartDistance + data.settings.cullTransitionDistance;
+				uint32 num_grass_blades_per_dim = data.settings.num_grass_blades_per_chunk_dim & (~1); // Make sure this is an even number.
+				num_grass_blades_per_dim = min(num_grass_blades_per_dim, 1024u);
+				const float lod_change_end_distance = data.settings.lod_change_start_distance + data.settings.lod_change_transition_distance;
+				const float cull_end_distance = data.settings.cull_start_distance + data.settings.cull_transition_distance;
 
-				grass_generation_common_cb common;
-				memcpy(common.frustumPlanes, data.cameraFrustum.planes, sizeof(vec4) * 6);
-				common.amplitudeScale = data.amplitudeScale;
-				common.chunkSize = data.chunkSize;
-				common.cameraPosition = data.cameraPosition;
-				common.lodChangeStartDistance = data.settings.lodChangeStartDistance;
-				common.lodChangeEndDistance = lodChangeEndDistance;
-				common.cullStartDistance = data.settings.cullStartDistance;
-				common.cullEndDistance = cullEndDistance;
-				common.uvScale = 1.f / numGrassBladesPerDim;
-				common.baseHeight = data.settings.bladeHeight;
+				GrassGenerationCommonCB common;
+				memcpy(common.frustum_planes, data.camera_frustum.planes, sizeof(vec4) * 6);
+				common.amplitude_scale = data.amplitude_scale;
+				common.chunk_size = data.chunk_size;
+				common.camera_position = data.camera_position;
+				common.lod_change_start_distance = data.settings.lod_change_start_distance;
+				common.lod_change_end_distance = lod_change_end_distance;
+				common.cull_start_distance = data.settings.cull_start_distance;
+				common.cull_end_distance = cull_end_distance;
+				common.uv_scale = 1.f / num_grass_blades_per_dim;
+				common.base_height = data.settings.blade_height;
 				common.time = data.time;
-				common.prevFrameTime = data.prevTime;
+				common.prev_frame_time = data.prev_time;
 
-				auto commonCBV = dxContext.uploadDynamicConstantBuffer(common);
-				cl->setComputeDynamicConstantBuffer(GRASS_GENERATION_RS_COMMON, commonCBV);
+				auto common_cbv = dx_context.upload_dynamic_constant_buffer(common);
+				cl->set_compute_dynamic_constant_buffer(GRASS_GENERATION_RS_COMMON, common_cbv);
 
 
-				for (uint32 z = 0; z < data.chunksPerDim; ++z)
+				for (uint32 z = 0; z < data.chunks_per_dim; ++z)
 				{
-					for (uint32 x = 0; x < data.chunksPerDim; ++x)
+					for (uint32 x = 0; x < data.chunks_per_dim; ++x)
 					{
-						auto& chunk = data.chunks[z * data.chunksPerDim + x];
-						vec3 chunkMinCorner = minCorner + vec3(x * data.chunkSize, 0.f, z * data.chunkSize);
-						vec3 chunkMaxCorner = chunkMinCorner + chunkSize;
+						auto& chunk = data.chunks[z * data.chunks_per_dim + x];
+						vec3 chunk_min_corner = min_corner + vec3(x * data.chunk_size, 0.f, z * data.chunk_size);
+						vec3 chunk_max_corner = chunk_min_corner + chunk_size;
 
-						bounding_box aabb = { chunkMinCorner, chunkMaxCorner };
-						if (!data.cameraFrustum.cullWorldSpaceAABB(aabb))
+						BoundingBox aabb = { chunk_min_corner, chunk_max_corner };
+						if (!data.camera_frustum.cull_world_space_aabb(aabb))
 						{
-							uint32 chunkNumGrassBladesPerDim = numGrassBladesPerDim;
-							uint32 lodIndex = 0;
+							uint32 chunk_num_grass_blades_per_dim = num_grass_blades_per_dim;
+							uint32 lod_index = 0;
 
-							float sqDistance = point_in_box(data.cameraPosition, aabb.minCorner, aabb.maxCorner)
+							float sq_distance = point_in_box(data.camera_position, aabb.min_corner, aabb.max_corner)
 								? 0.f
-								: squared_length(data.cameraPosition - closestPoint_PointAABB(data.cameraPosition, aabb));
-							if (sqDistance > lodChangeEndDistance * lodChangeEndDistance)
+								: squared_length(data.camera_position - closest_point_point_aabb(data.camera_position, aabb));
+							if (sq_distance > lod_change_end_distance * lod_change_end_distance)
 							{
-								chunkNumGrassBladesPerDim /= 2;
-								lodIndex = 1;
+								chunk_num_grass_blades_per_dim /= 2;
+								lod_index = 1;
 							}
-							if (sqDistance > cullEndDistance * cullEndDistance)
+							if (sq_distance > cull_end_distance * cull_end_distance)
 							{
 								continue;
 							}
 
-							cl->setDescriptorHeapSRV(GRASS_GENERATION_RS_RESOURCES, 0, chunk.heightmap);
-							cl->setDescriptorHeapSRV(GRASS_GENERATION_RS_RESOURCES, 1, chunk.normalmap);
-							cl->setDescriptorHeapUAV(GRASS_GENERATION_RS_RESOURCES, 2, data.bladeBufferLOD0);
-							cl->setDescriptorHeapUAV(GRASS_GENERATION_RS_RESOURCES, 3, data.bladeBufferLOD1);
-							cl->setDescriptorHeapUAV(GRASS_GENERATION_RS_RESOURCES, 4, data.countBuffer);
+							cl->set_descriptor_heap_srv(GRASS_GENERATION_RS_RESOURCES, 0, chunk.heightmap);
+							cl->set_descriptor_heap_srv(GRASS_GENERATION_RS_RESOURCES, 1, chunk.normalmap);
+							cl->set_descriptor_heap_uav(GRASS_GENERATION_RS_RESOURCES, 2, data.blade_buffer_lod0);
+							cl->set_descriptor_heap_uav(GRASS_GENERATION_RS_RESOURCES, 3, data.blade_buffer_lod1);
+							cl->set_descriptor_heap_uav(GRASS_GENERATION_RS_RESOURCES, 4, data.count_buffer);
 
-							cl->setCompute32BitConstants(GRASS_GENERATION_RS_CB, grass_generation_cb{ chunkMinCorner, lodIndex });
+							cl->set_compute_32bit_constants(GRASS_GENERATION_RS_CB, GrassGenerationCB{ chunk_min_corner, lod_index });
 
-							cl->dispatch(bucketize(chunkNumGrassBladesPerDim, GRASS_GENERATION_BLOCK_SIZE), bucketize(chunkNumGrassBladesPerDim, GRASS_GENERATION_BLOCK_SIZE), 1);
+							cl->dispatch(bucketize(chunk_num_grass_blades_per_dim, GRASS_GENERATION_BLOCK_SIZE), bucketize(chunk_num_grass_blades_per_dim, GRASS_GENERATION_BLOCK_SIZE), 1);
 
 							//barrier_batcher(cl)
 							//	.uav(data.bladeBufferLOD0)
@@ -308,19 +308,19 @@ namespace era_engine
 				}
 			}
 
-			cl->transitionBarrier(data.countBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+			cl->transition_barrier(data.count_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
 			{
 				PROFILE_ALL(cl, "Create draw calls");
 
-				cl->setPipelineState(*grassCreateDrawCallsPipeline.pipeline);
-				cl->setComputeRootSignature(*grassCreateDrawCallsPipeline.rootSignature);
+				cl->set_pipeline_state(*grass_create_draw_calls_pipeline.pipeline);
+				cl->set_compute_root_signature(*grass_create_draw_calls_pipeline.root_signature);
 
-				cl->setCompute32BitConstants(GRASS_CREATE_DRAW_CALLS_RS_CB, grass_create_draw_calls_cb{ data.bladeBufferLOD0->elementCount });
-				cl->setRootComputeUAV(GRASS_CREATE_DRAW_CALLS_RS_OUTPUT, data.drawBuffer);
-				cl->setRootComputeSRV(GRASS_CREATE_DRAW_CALLS_RS_MESH_COUNTS, data.countBuffer);
+				cl->set_compute_32bit_constants(GRASS_CREATE_DRAW_CALLS_RS_CB, GrassCreateDrawCallsCB{ data.blade_buffer_lod0->element_count });
+				cl->set_root_compute_uav(GRASS_CREATE_DRAW_CALLS_RS_OUTPUT, data.draw_buffer);
+				cl->set_root_compute_srv(GRASS_CREATE_DRAW_CALLS_RS_MESH_COUNTS, data.count_buffer);
 
-				cl->dispatch(bucketize(data.drawBuffer->elementCount, GRASS_CREATE_DRAW_CALLS_BLOCK_SIZE));
+				cl->dispatch(bucketize(data.draw_buffer->element_count, GRASS_CREATE_DRAW_CALLS_BLOCK_SIZE));
 			}
 		}
 	};
@@ -337,29 +337,29 @@ namespace era_engine
 	GrassComponent::GrassComponent(ref<Entity::EcsData> _data, const GrassSettings& _settings)
 		: Component(_data), settings(_settings)
 	{
-		uint32 num_vertices_LOD0 = numSegmentsLOD0 * 2 + 1;
-		uint32 num_vertices_LOD1 = num_vertices_LOD0 / 2 + 1;
+		uint32 num_vertices_lod0 = num_segments_lod0 * 2 + 1;
+		uint32 num_vertices_lod1 = num_vertices_lod0 / 2 + 1;
 
-		grass_draw draw[2] = {};
-		draw[0].draw.VertexCountPerInstance = num_vertices_LOD0;
-		draw[1].draw.VertexCountPerInstance = num_vertices_LOD1;
+		GrassDraw draw[2] = {};
+		draw[0].draw.VertexCountPerInstance = num_vertices_lod0;
+		draw[1].draw.VertexCountPerInstance = num_vertices_lod1;
 
-		draw_buffer = createBuffer(sizeof(grass_draw), 2, &draw, true);
-		count_buffer = createBuffer(sizeof(uint32), 2, 0, true, true);
-		blade_buffer_LOD0 = createBuffer(sizeof(grass_blade), settings.numGrassBladesPerChunkDim * 2000, 0, true);
-		blade_buffer_LOD1 = createBuffer(sizeof(grass_blade), settings.numGrassBladesPerChunkDim * 2000, 0, true);
+		draw_buffer = create_buffer(sizeof(GrassDraw), 2, &draw, true);
+		count_buffer = create_buffer(sizeof(uint32), 2, 0, true, true);
+		blade_buffer_lod0 = create_buffer(sizeof(GrassBlade), settings.num_grass_blades_per_chunk_dim * 2000, 0, true);
+		blade_buffer_lod1 = create_buffer(sizeof(GrassBlade), settings.num_grass_blades_per_chunk_dim * 2000, 0, true);
 	}
 
 	GrassComponent::~GrassComponent()
 	{
 	}
 
-	void GrassComponent::generate(compute_pass* compute_pass, const render_camera& camera, const TerrainComponent& terrain, const vec3& position_offset, float dt)
+	void GrassComponent::generate(ComputePass* compute_pass, const RenderCamera& camera, const TerrainComponent& terrain, const vec3& position_offset, float dt)
 	{
 		prev_time = time;
 		time += dt;
 
-		grass_update_data data;
+		GrassUpdateData data;
 		data.chunks.reserve(terrain.chunks.size());
 		for (const auto& chunk : terrain.chunks)
 		{
@@ -367,36 +367,36 @@ namespace era_engine
 		}
 
 		data.settings = settings;
-		data.cameraFrustum = camera.getWorldSpaceFrustumPlanes();
-		data.cameraPosition = camera.position;
+		data.camera_frustum = camera.get_world_space_frustum_planes();
+		data.camera_position = camera.position;
 
-		data.minCorner = terrain.get_min_corner(position_offset);
-		data.chunksPerDim = terrain.chunksPerDim;
-		data.chunkSize = terrain.chunkSize;
-		data.amplitudeScale = terrain.amplitudeScale;
+		data.min_corner = terrain.get_min_corner(position_offset);
+		data.chunks_per_dim = terrain.chunks_per_dim;
+		data.chunk_size = terrain.chunk_size;
+		data.amplitude_scale = terrain.amplitude_scale;
 
 		data.time = time;
-		data.prevTime = prev_time;
+		data.prev_time = prev_time;
 
-		data.drawBuffer = draw_buffer;
-		data.countBuffer = count_buffer;
-		data.bladeBufferLOD0 = blade_buffer_LOD0;
-		data.bladeBufferLOD1 = blade_buffer_LOD1;
+		data.draw_buffer = draw_buffer;
+		data.count_buffer = count_buffer;
+		data.blade_buffer_lod0 = blade_buffer_lod0;
+		data.blade_buffer_lod1 = blade_buffer_lod1;
 
-		compute_pass_event eventTime = GrassSettings::depthPrepass ? compute_pass_before_depth_prepass : compute_pass_before_opaque;
-		compute_pass->addTask<grass_update_pipeline>(eventTime, std::move(data));
+		ComputePassEvent event_time = GrassSettings::depth_prepass ? COMPUTE_PASS_BEFORE_DEPTH_PREPASS : COMPUTE_PASS_BEFORE_OPAQUE;
+		compute_pass->add_task<GrassUpdatePipeline>(event_time, std::move(data));
 	}
 
-	void GrassComponent::render(opaque_render_pass* render_pass)
+	void GrassComponent::render(OpaqueRenderPass* render_pass)
 	{
-		grass_render_data data = { settings, draw_buffer, blade_buffer_LOD0, blade_buffer_LOD1, wind_direction, (uint32_t)component_data->entity_handle };
-		if (GrassSettings::depthPrepass)
+		GrassRenderData data = { settings, draw_buffer, blade_buffer_lod0, blade_buffer_lod1, wind_direction, (uint32_t)component_data->entity_handle };
+		if (GrassSettings::depth_prepass)
 		{
-			render_pass->renderObject<grass_pipeline, grass_depth_prepass_pipeline>(data, data);
+			render_pass->render_object<GrassPipeline, GrassDepthPrepassPipeline>(data, data);
 		}
 		else
 		{
-			render_pass->renderObject<grass_no_depth_prepass_pipeline>(data);
+			render_pass->render_object<GrassNoDepthPrepassPipeline>(data);
 		}
 	}
 

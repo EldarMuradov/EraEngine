@@ -169,7 +169,7 @@ namespace era_engine
 					frame->start_clock = (previous_frame->end_clock == 0) ? frame_end_timestamp : previous_frame->end_clock;
 					frame->end_clock = frame_end_timestamp;
 
-					frame->global_frame_id = dxContext.frameID;
+					frame->global_frame_id = dx_context.frame_id;
 
 					frame->duration = (float)(frame->end_clock - frame->start_clock) / clock_frequency * 1000.f;
 

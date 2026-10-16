@@ -41,48 +41,48 @@
 
 namespace era_engine
 {
-	bool handleWindowsMessages();
+	bool handle_windows_messages();
 
-	static uint64 fenceValues[NUM_BUFFERED_FRAMES];
-	static uint64 frameID;
+	static uint64 fence_values[NUM_BUFFERED_FRAMES];
+	static uint64 frame_id;
 
-	static bool newFrame(float& dt, dx_window& window)
+	static bool new_frame(float& dt, DXWindow& window)
 	{
 		static bool first = true;
-		static float perfFreq;
-		static LARGE_INTEGER lastTime;
+		static float perf_freq;
+		static LARGE_INTEGER last_time;
 
 		if (first)
 		{
-			LARGE_INTEGER perfFreqResult;
-			QueryPerformanceFrequency(&perfFreqResult);
-			perfFreq = (float)perfFreqResult.QuadPart;
+			LARGE_INTEGER perf_freq_result;
+			QueryPerformanceFrequency(&perf_freq_result);
+			perf_freq = (float)perf_freq_result.QuadPart;
 
-			QueryPerformanceCounter(&lastTime);
+			QueryPerformanceCounter(&last_time);
 
 			first = false;
 		}
 
-		LARGE_INTEGER currentTime;
-		QueryPerformanceCounter(&currentTime);
-		dt = ((float)(currentTime.QuadPart - lastTime.QuadPart) / perfFreq);
-		lastTime = currentTime;
+		LARGE_INTEGER current_time;
+		QueryPerformanceCounter(&current_time);
+		dt = ((float)(current_time.QuadPart - last_time.QuadPart) / perf_freq);
+		last_time = current_time;
 
-		bool result = handleWindowsMessages();
+		bool result = handle_windows_messages();
 
-		newImGuiFrame(dt);
+		new_imgui_frame(dt);
 		ImGui::DockSpaceOverViewport();
 
 		cpu_profiling_resolve_time_stamps();
 
 		{
 			ZoneScopedN("Wait for queued frame to finish rendering");
-			dxContext.renderQueue.waitForFence(fenceValues[window.currentBackbufferIndex]);
+			dx_context.render_queue.wait_for_fence(fence_values[window.current_backbuffer_index]);
 		}
 
 		{
-			ZoneScopedN("dxContext.newFrame");
-			dxContext.newFrame(frameID);
+			ZoneScopedN("dx_context.new_frame");
+			dx_context.new_frame(frame_id);
 		}
 
 		return result;
@@ -98,7 +98,7 @@ namespace era_engine
 			{
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu(std::to_string(frameID).c_str()))
+			if (ImGui::BeginMenu(std::to_string(frame_id).c_str()))
 			{
 				ImGui::EndMenu();
 			}
@@ -116,35 +116,35 @@ namespace era_engine
 		DebugVarsStorage::get_instance()->draw_vars(debug_vars_opened);
 	}
 
-	static void renderToMainWindow(dx_window& window)
+	static void render_to_main_window(DXWindow& window)
 	{
-		dx_resource backbuffer = window.backBuffers[window.currentBackbufferIndex];
-		dx_rtv_descriptor_handle rtv = window.backBufferRTVs[window.currentBackbufferIndex];
+		DXResource backbuffer = window.back_buffers[window.current_backbuffer_index];
+		DXRTVDescriptorHandle rtv = window.back_buffer_rtvs[window.current_backbuffer_index];
 
-		dx_command_list* cl = dxContext.getFreeRenderCommandList();
+		DXCommandList* cl = dx_context.get_free_render_command_list();
 
 		{
 			DX_PROFILE_BLOCK(cl, "Blit to backbuffer");
 
-			CD3DX12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.f, 0.f, (float)window.clientWidth, (float)window.clientHeight);
-			cl->setViewport(viewport);
+			CD3DX12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.f, 0.f, (float)window.client_width, (float)window.client_height);
+			cl->set_viewport(viewport);
 
-			cl->transitionBarrier(backbuffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
+			cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-			cl->clearRTV(rtv, 0.f, 0.f, 0.f);
-			cl->setRenderTarget(&rtv, 1, 0);
+			cl->clear_rtv(rtv, 0.f, 0.f, 0.f);
+			cl->set_render_target(&rtv, 1, 0);
 
-			renderImGui(cl);
+			render_imgui(cl);
 
-			cl->transitionBarrier(backbuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+			cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 		}
-		dxContext.endFrame(cl);
+		dx_context.end_frame(cl);
 
-		uint64 result = dxContext.executeCommandList(cl);
+		uint64 result = dx_context.execute_command_list(cl);
 
-		window.swapBuffers();
+		window.swap_buffers();
 
-		fenceValues[window.currentBackbufferIndex] = result;
+		fence_values[window.current_backbuffer_index] = result;
 	}
 
 	Engine* Engine::instance_object = nullptr;
@@ -180,7 +180,7 @@ namespace era_engine
 			::ShowWindow(::GetConsoleWindow(), SW_SHOW);
 		}
 
-		const bool dx_inited = dxContext.initialize();
+		const bool dx_inited = dx_context.initialize();
 		ASSERT(dx_inited);
 
 		timer_result = timeBeginPeriod(1);
@@ -216,16 +216,16 @@ namespace era_engine
 		initialize_job_system();
 		initialize_file_registry();
 
-		initializeRenderUtils();
+		initialize_render_utils();
 
-		dx_window* window = get_object<dx_window>();
-		initializeImGui(*window);
+		DXWindow* window = get_object<DXWindow>();
+		initialize_imgui(*window);
 
-		file_browser fileBrowser;
+		FileBrowser file_browser;
 
 		// Wait for initialization to finish
-		fenceValues[NUM_BUFFERED_FRAMES - 1] = dxContext.renderQueue.signal();
-		dxContext.flushApplication();
+		fence_values[NUM_BUFFERED_FRAMES - 1] = dx_context.render_queue.signal();
+		dx_context.flush_application();
 
 		if (initial_task)
 		{
@@ -250,7 +250,7 @@ namespace era_engine
 
 			{
 				ZoneScopedN("Engine::start_frame");
-				status = newFrame(dt, *window);
+				status = new_frame(dt, *window);
 			}
 
 			window->update_input(dt);
@@ -288,16 +288,16 @@ namespace era_engine
 
 			{
 				ZoneScopedN("Engine::render");
-				fileBrowser.draw();
+				file_browser.draw();
 
 				ImGui::End();
 
-				renderToMainWindow(*window);
+				render_to_main_window(*window);
 			}
 
 			cpu_profiling_frame_end_marker();
 
-			++frameID;
+			++frame_id;
 
 			FrameMark;
 		}
@@ -320,9 +320,9 @@ namespace era_engine
 
 	void Engine::terminate()
 	{
-		dxContext.flushApplication();
+		dx_context.flush_application();
 
-		dxContext.quit();
+		dx_context.quit();
 
 		instance_object = nullptr;
 	}

@@ -5,13 +5,13 @@
 
 #define LIGHT_PROBE_BLOCK_SIZE LIGHT_PROBE_TOTAL_RESOLUTION
 
-struct light_probe_grid_visualization_cb
+struct LightProbeGridVisualizationCB
 {
 	mat4 mvp;
-	vec2 uvScale;
-	float cellSize;
-	uint32 countX;
-	uint32 countY;
+	vec2 uv_scale;
+	float cell_size;
+	uint32 count_x;
+	uint32 count_y;
 };
 
 #define LIGHT_PROBE_GRID_VISUALIZATION_RS \
@@ -31,12 +31,12 @@ struct light_probe_grid_visualization_cb
 #define LIGHT_PROBE_GRID_VISUALIZATION_RS_CB			0
 #define LIGHT_PROBE_GRID_VISUALIZATION_RS_IRRADIANCE	1
 
-struct light_probe_ray_visualization_cb
+struct LightProbeRayVisualizationCB
 {
 	mat4 mvp;
-	float cellSize;
-	uint32 countX;
-	uint32 countY;
+	float cell_size;
+	uint32 count_x;
+	uint32 count_y;
 };
 
 #define LIGHT_PROBE_RAY_VISUALIZATION_RS \
@@ -69,10 +69,10 @@ struct light_probe_ray_visualization_cb
 #define LIGHT_PROBE_TEST_SAMPLE_RS_GRID			1
 #define LIGHT_PROBE_TEST_SAMPLE_RS_TEXTURES		2
 
-struct light_probe_update_cb
+struct LightProbeUpdateCB
 {
-	uint32 countX;
-	uint32 countY;
+	uint32 count_x;
+	uint32 count_y;
 };
 
 #define LIGHT_PROBE_UPDATE_RS \
@@ -83,11 +83,11 @@ struct light_probe_update_cb
 #define LIGHT_PROBE_UPDATE_RS_CB				0
 #define LIGHT_PROBE_UPDATE_RS_RAYTRACE_RESULTS	1
 
-struct light_probe_trace_cb
+struct LightProbeTraceCB
 {
-	mat4 rayRotation;
-	light_probe_grid_cb grid;
-	uint32 sampleSkyFromTexture;
+	mat4 ray_rotation;
+	LightProbeGridCB grid;
+	uint32 sample_sky_from_texture;
 };
 
 #endif

@@ -34,22 +34,22 @@ namespace era_engine
 
 	void free_file(const EntireFile& file);
 
-	struct ERA_CORE_API sized_string
+	struct ERA_CORE_API SizedString
 	{
-		sized_string() : str(0), length(0) {}
-		sized_string(const char* str, uint32 length) : str(str), length(length) {}
-		template<uint32 len> sized_string(const char(&str)[len]) : str(str), length(len - 1) {}
+		SizedString() : str(0), length(0) {}
+		SizedString(const char* str, uint32 length) : str(str), length(length) {}
+		template<uint32 len> SizedString(const char(&str)[len]) : str(str), length(len - 1) {}
 
 		const char* str;
 		uint32 length;
 	};
 
-	inline bool operator==(sized_string a, sized_string b)
+	inline bool operator==(SizedString a, SizedString b)
 	{
 		return a.length == b.length && strncmp(a.str, b.str, a.length) == 0;
 	}
 
-	inline std::string name_to_string(sized_string str)
+	inline std::string name_to_string(SizedString str)
 	{
 		std::string name;
 		name.reserve(str.length);
@@ -71,7 +71,7 @@ namespace era_engine
 		return name;
 	}
 
-	inline std::string relative_filepath(sized_string str, const fs::path& scene_path)
+	inline std::string relative_filepath(SizedString str, const fs::path& scene_path)
 	{
 		fs::path p = std::string(str.str, str.length);
 		fs::path abs = (p.is_absolute()) ? p : scene_path.parent_path() / p;

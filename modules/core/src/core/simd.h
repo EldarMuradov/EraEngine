@@ -344,8 +344,8 @@ NODISCARD inline w4_float fmsub(w4_float a, w4_float b, w4_float c) { return _mm
 NODISCARD inline w4_float sqrt(w4_float a) { return _mm_sqrt_ps(a); }
 NODISCARD inline w4_float rsqrt(w4_float a) { return _mm_rsqrt_ps(a); }
 
-NODISCARD inline w4_float if_then(w4_float cond, w4_float ifCase, w4_float elseCase) { return _mm_blendv_ps(elseCase, ifCase, cond); }
-NODISCARD inline w4_int if_then(w4_int cond, w4_int ifCase, w4_int elseCase) { return reinterpret(if_then(reinterpret(cond), reinterpret(ifCase), reinterpret(elseCase))); }
+NODISCARD inline w4_float if_then(w4_float cond, w4_float if_case, w4_float else_case) { return _mm_blendv_ps(else_case, if_case, cond); }
+NODISCARD inline w4_int if_then(w4_int cond, w4_int if_case, w4_int else_case) { return reinterpret(if_then(reinterpret(cond), reinterpret(if_case), reinterpret(else_case))); }
 
 NODISCARD inline int to_bit_mask(w4_float a) { return _mm_movemask_ps(a); }
 NODISCARD inline int to_bit_mask(w4_int a) { return to_bit_mask(reinterpret(a)); }
@@ -368,7 +368,7 @@ NODISCARD inline w4_float maximum(w4_float a, w4_float b) { return _mm_max_ps(a,
 
 NODISCARD inline w4_float lerp(w4_float l, w4_float u, w4_float t) { return fmadd(t, u - l, l); }
 NODISCARD inline w4_float inverse_lerp(w4_float l, w4_float u, w4_float v) { return (v - l) / (u - l); }
-NODISCARD inline w4_float remap(w4_float v, w4_float oldL, w4_float oldU, w4_float newL, w4_float newU) { return lerp(newL, newU, inverse_lerp(oldL, oldU, v)); }
+NODISCARD inline w4_float remap(w4_float v, w4_float old_l, w4_float old_u, w4_float new_l, w4_float new_u) { return lerp(new_l, new_u, inverse_lerp(old_l, old_u, v)); }
 NODISCARD inline w4_float clamp(w4_float v, w4_float l, w4_float u) { return minimum(u, maximum(l, v)); }
 NODISCARD inline w4_float clamp01(w4_float v) { return clamp(v, 0.f, 1.f); }
 
@@ -709,7 +709,7 @@ NODISCARD inline w8_float maximum(w8_float a, w8_float b) { return _mm256_max_ps
 
 NODISCARD inline w8_float lerp(w8_float l, w8_float u, w8_float t) { return fmadd(t, u - l, l); }
 NODISCARD inline w8_float inverse_lerp(w8_float l, w8_float u, w8_float v) { return (v - l) / (u - l); }
-NODISCARD inline w8_float remap(w8_float v, w8_float oldL, w8_float oldU, w8_float newL, w8_float newU) { return lerp(newL, newU, inverse_lerp(oldL, oldU, v)); }
+NODISCARD inline w8_float remap(w8_float v, w8_float old_l, w8_float old_u, w8_float new_l, w8_float new_u) { return lerp(new_l, new_u, inverse_lerp(old_l, old_u, v)); }
 NODISCARD inline w8_float clamp(w8_float v, w8_float l, w8_float u) { return minimum(u, maximum(l, v)); }
 NODISCARD inline w8_float clamp01(w8_float v) { return clamp(v, 0.f, 1.f); }
 
@@ -1029,7 +1029,7 @@ inline w16_float maximum(w16_float a, w16_float b) { return _mm512_max_ps(a, b);
 
 inline w16_float lerp(w16_float l, w16_float u, w16_float t) { return fmadd(t, u - l, l); }
 inline w16_float inverse_lerp(w16_float l, w16_float u, w16_float v) { return (v - l) / (u - l); }
-inline w16_float remap(w16_float v, w16_float oldL, w16_float oldU, w16_float newL, w16_float newU) { return lerp(newL, newU, inverse_lerp(oldL, oldU, v)); }
+inline w16_float remap(w16_float v, w16_float old_l, w16_float old_u, w16_float new_l, w16_float new_u) { return lerp(new_l, new_u, inverse_lerp(old_l, old_u, v)); }
 inline w16_float clamp(w16_float v, w16_float l, w16_float u) { return minimum(u, maximum(l, v)); }
 inline w16_float clamp01(w16_float v) { return clamp(v, 0.f, 1.f); }
 

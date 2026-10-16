@@ -5,73 +5,73 @@
 
 namespace era_engine
 {
-	struct undo_stack
+	struct UndoStack
 	{
-		undo_stack();
+		UndoStack();
 
 		template <typename T>
-		void pushAction(const char* name, const T& entry); // Type T must have member function void toggle().
+		void push_action(const char* name, const T& entry); // Type T must have member function void toggle().
 
-		std::pair<bool, const char*> undoPossible();
-		std::pair<bool, const char*> redoPossible();
+		std::pair<bool, const char*> undo_possible();
+		std::pair<bool, const char*> redo_possible();
 
 		void undo();
 		void redo();
 
 		void reset();
-		bool showHistory(bool& open);
+		bool show_history(bool& open);
 		void verify();
 
 	private:
-		typedef void (*toggle_func)(void*);
+		typedef void (*ToggleFunc)(void*);
 
-		void pushAction(const char* name, const void* entry, uint64 entrySize, toggle_func toggle);
+		void push_action(const char* name, const void* entry, uint64 entry_size, ToggleFunc toggle);
 
-		struct alignas(16) entry_header
+		struct alignas(16) EntryHeader
 		{
-			NODISCARD char* getName() const
+			NODISCARD char* get_name() const
 			{
 				return (char*)(this + 1);
 			}
 
-			NODISCARD void* getData()
+			NODISCARD void* get_data()
 			{
-				return (uint8*)getName() + nameLength;
+				return (uint8*)get_name() + name_length;
 			}
 
-			NODISCARD void* getOneAfterEnd()
+			NODISCARD void* get_one_after_end()
 			{
-				return (uint8*)getData() + entrySize;
+				return (uint8*)get_data() + entry_size;
 			}
 
-			toggle_func toggle;
+			ToggleFunc toggle;
 
-			entry_header* newer;
-			entry_header* older;
+			EntryHeader* newer;
+			EntryHeader* older;
 
-			uint64 nameLength; // Includes null-terminator.
-			uint64 entrySize;
+			uint64 name_length; // Includes null-terminator.
+			uint64 entry_size;
 		};
 
 		uint8* memory = nullptr;
-		uint32 memorySize{};
+		uint32 memory_size{};
 
-		uint8* nextToWrite = nullptr;
-		entry_header* oldest = nullptr;
-		entry_header* newest = nullptr;
+		uint8* next_to_write = nullptr;
+		EntryHeader* oldest = nullptr;
+		EntryHeader* newest = nullptr;
 	};
 
 	template<typename T>
-	inline void undo_stack::pushAction(const char* name, const T& entry)
+	inline void UndoStack::push_action(const char* name, const T& entry)
 	{
 		static_assert(std::is_trivially_destructible_v<T>, "Undo entries must be trivially destructible.");
 
-		toggle_func toggle = [](void* data)
+		ToggleFunc toggle = [](void* data)
 			{
 				T* t = (T*)data;
 				t->toggle();
 			};
 
-		pushAction(name, &entry, sizeof(T), toggle);
+		push_action(name, &entry, sizeof(T), toggle);
 	}
 }

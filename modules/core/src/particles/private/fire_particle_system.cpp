@@ -10,115 +10,115 @@
 
 namespace era_engine
 {
-	dx_pipeline fire_particle_system::emitPipeline;
-	dx_pipeline fire_particle_system::simulatePipeline;
-	dx_pipeline fire_particle_system::renderPipeline;
+	DXPipeline FireParticleSystem::emit_pipeline;
+	DXPipeline FireParticleSystem::simulate_pipeline;
+	DXPipeline FireParticleSystem::render_pipeline;
 
-	void fire_particle_system::initializePipeline()
+	void FireParticleSystem::initialize_pipeline()
 	{
 #define name "fire_particle_system"
 
-		emitPipeline = createReloadablePipeline(EMIT_PIPELINE_NAME(name));
-		simulatePipeline = createReloadablePipeline(SIMULATE_PIPELINE_NAME(name));
+		emit_pipeline = create_reloadable_pipeline(EMIT_PIPELINE_NAME(name));
+		simulate_pipeline = create_reloadable_pipeline(SIMULATE_PIPELINE_NAME(name));
 
 		auto desc = CREATE_GRAPHICS_PIPELINE
-			.inputLayout(inputLayout_position)
-			.renderTargets(transparentLightPassFormats, arraysize(transparentLightPassFormats), depthStencilFormat)
+			.input_layout(input_layout_position)
+			.render_targets(transparent_light_pass_formats, arraysize(transparent_light_pass_formats), depth_stencil_format)
 			//.additiveBlending(0)
-			.alphaBlending(0)
-			.depthSettings(true, false);
+			.alpha_blending(0)
+			.depth_settings(true, false);
 
-		renderPipeline = createReloadablePipeline(desc, { VERTEX_SHADER_NAME(name), PIXEL_SHADER_NAME(name) });
+		render_pipeline = create_reloadable_pipeline(desc, { VERTEX_SHADER_NAME(name), PIXEL_SHADER_NAME(name) });
 
 #undef name
 	}
 
-	fire_particle_system::fire_particle_system(uint32 maxNumParticles, float emitRate, const std::string& textureFilename, uint32 cols, uint32 rows, vec3 pos)
+	FireParticleSystem::FireParticleSystem(uint32 max_num_particles, float emit_rate, const std::string& texture_filename, uint32 cols, uint32 rows, vec3 pos)
 	{
-		initialize(maxNumParticles, emitRate, textureFilename, cols, rows, pos);
+		initialize(max_num_particles, emit_rate, texture_filename, cols, rows, pos);
 	}
 
-	void fire_particle_system::initialize(uint32 maxNumParticles, float emitRate, const std::string& textureFilename, uint32 cols, uint32 rows, vec3 pos)
+	void FireParticleSystem::initialize(uint32 max_num_particles, float emit_rate, const std::string& texture_filename, uint32 cols, uint32 rows, vec3 pos)
 	{
-		this->emitRate = emitRate;
-		auto tex = loadTextureFromFileAsync(textureFilename);
+		this->emit_rate = emit_rate;
+		auto tex = load_texture_from_file_async(texture_filename);
 
 		position = pos;
 
 		if (!tex)
 		{
-			tex = render_resources::whiteTexture;
+			tex = RenderResources::white_texture;
 		}
 
-		particle_system::initializeAsBillboard(sizeof(fire_particle_data), maxNumParticles, sort_mode_back_to_front);
+		ParticleSystem::initialize_as_billboard(sizeof(FireParticleData), max_num_particles, SORT_MODE_BACK_TO_FRONT);
 
 		atlas.texture = tex;
 		atlas.cols = cols;
 		atlas.rows = rows;
 
-		atlasCB.initialize(rows, cols);
+		atlas_cb.initialize(rows, cols);
 
-		settings.sizeOverLifetime.values[0] = 0.25f;
-		settings.sizeOverLifetime.values[1] = 0.7f;
+		settings.size_over_lifetime.values[0] = 0.25f;
+		settings.size_over_lifetime.values[1] = 0.7f;
 
-		settings.intensityOverLifetime.ts[0] = 0.f;
-		settings.intensityOverLifetime.ts[1] = 0.1f;
-		settings.intensityOverLifetime.ts[2] = 0.25f;
-		settings.intensityOverLifetime.ts[3] = 1.f;
-		settings.intensityOverLifetime.values[0] = 0.f;
-		settings.intensityOverLifetime.values[1] = 0.8f;
-		settings.intensityOverLifetime.values[2] = 0.9f;
-		settings.intensityOverLifetime.values[3] = 1.f;
+		settings.intensity_over_lifetime.ts[0] = 0.f;
+		settings.intensity_over_lifetime.ts[1] = 0.1f;
+		settings.intensity_over_lifetime.ts[2] = 0.25f;
+		settings.intensity_over_lifetime.ts[3] = 1.f;
+		settings.intensity_over_lifetime.values[0] = 0.f;
+		settings.intensity_over_lifetime.values[1] = 0.8f;
+		settings.intensity_over_lifetime.values[2] = 0.9f;
+		settings.intensity_over_lifetime.values[3] = 1.f;
 	}
 
-	void fire_particle_system::update(struct dx_command_list* cl, const common_particle_simulation_data& common, float dt)
+	void FireParticleSystem::update(struct DXCommandList* cl, const CommonParticleSimulationData& common, float dt)
 	{
-		struct setter : public particle_parameter_setter
+		struct Setter : public ParticleParameterSetter
 		{
-			fire_simulation_cb cb;
+			FireSimulationCB cb;
 
-			virtual void setRootParameters(dx_command_list* cl) override
+			virtual void set_root_parameters(DXCommandList* cl) override
 			{
-				cl->setCompute32BitConstants(FIRE_PARTICLE_SYSTEM_COMPUTE_RS_CBV, cb);
+				cl->set_compute_32bit_constants(FIRE_PARTICLE_SYSTEM_COMPUTE_RS_CBV, cb);
 			}
 		};
 
-		setter s;
-		s.cb.cameraPosition = common.cameraPosition;
-		s.cb.emitPosition = position;
-		s.cb.frameIndex = (uint32)dxContext.frameID;
+		Setter s;
+		s.cb.camera_position = common.camera_position;
+		s.cb.emit_position = position;
+		s.cb.frame_index = (uint32)dx_context.frame_id;
 
-		updateInternal(cl, emitRate * dt, dt, emitPipeline, simulatePipeline, &s);
+		update_internal(cl, emit_rate * dt, dt, emit_pipeline, simulate_pipeline, &s);
 	}
 
-	void fire_particle_system::render(transparent_render_pass* renderPass)
+	void FireParticleSystem::render(TransparentRenderPass* render_pass)
 	{
-		fire_rendering_cb cb;
-		cb.atlas = atlasCB;
+		FireRenderingCB cb;
+		cb.atlas = atlas_cb;
 		cb.settings = settings;
 
-		fire_material material;
+		FireMaterial material;
 		material.atlas = atlas;
-		material.cbv = dxContext.uploadDynamicConstantBuffer(cb);
+		material.cbv = dx_context.upload_dynamic_constant_buffer(cb);
 
-		renderPass->renderParticles<fire_pipeline>(billboardMesh.vertexBuffer, billboardMesh.indexBuffer,
-			getDrawInfo(renderPipeline),
+		render_pass->render_particles<FirePipeline>(billboard_mesh.vertex_buffer, billboard_mesh.index_buffer,
+			get_draw_info(render_pipeline),
 			material);
 	}
 
-	PIPELINE_SETUP_IMPL(fire_particle_system::fire_pipeline)
+	PIPELINE_SETUP_IMPL(FireParticleSystem::FirePipeline)
 	{
-		cl->setPipelineState(*renderPipeline.pipeline);
-		cl->setGraphicsRootSignature(*renderPipeline.rootSignature);
-		cl->setGraphicsDynamicConstantBuffer(FIRE_PARTICLE_SYSTEM_RENDERING_RS_CAMERA, common.cameraCBV);
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_pipeline_state(*render_pipeline.pipeline);
+		cl->set_graphics_root_signature(*render_pipeline.root_signature);
+		cl->set_graphics_dynamic_constant_buffer(FIRE_PARTICLE_SYSTEM_RENDERING_RS_CAMERA, common.camera_cbv);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	PARTICLE_PIPELINE_RENDER_IMPL(fire_particle_system::fire_pipeline, fire_particle_system::fire_material)
+	PARTICLE_PIPELINE_RENDER_IMPL(FireParticleSystem::FirePipeline, FireParticleSystem::FireMaterial)
 	{
-		cl->setGraphicsDynamicConstantBuffer(FIRE_PARTICLE_SYSTEM_RENDERING_RS_CBV, rc.data.cbv);
-		cl->setDescriptorHeapSRV(FIRE_PARTICLE_SYSTEM_RENDERING_RS_TEXTURE, 0, rc.data.atlas.texture);
+		cl->set_graphics_dynamic_constant_buffer(FIRE_PARTICLE_SYSTEM_RENDERING_RS_CBV, rc.data.cbv);
+		cl->set_descriptor_heap_srv(FIRE_PARTICLE_SYSTEM_RENDERING_RS_TEXTURE, 0, rc.data.atlas.texture);
 
-		particle_render_pipeline::render(cl, viewProj, rc);
+		ParticleRenderPipeline::render(cl, view_proj, rc);
 	}
 }

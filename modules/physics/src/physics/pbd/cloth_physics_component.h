@@ -31,7 +31,7 @@ namespace era_engine::physics
 
 		void sync_positions_buffers_locked();
 
-		std::tuple<dx_vertex_buffer_group_view, dx_vertex_buffer_group_view, dx_index_buffer_view, SubmeshInfo> get_render_data(ClothRenderComponent* render_component);
+		std::tuple<DXVertexBufferGroupView, DXVertexBufferGroupView, DXIndexBufferView, SubmeshInfo> get_render_data(ClothRenderComponent* render_component);
 
 		// Simple cloth setup.
 		uint32 num_x = 0;

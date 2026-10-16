@@ -131,14 +131,14 @@ namespace era_engine::animation
 
 	void Skeleton::analyze_joints()
 	{
-		for (uint32 jointID = 0; jointID < (uint32)joints.size(); ++jointID)
+		for (uint32 joint_id = 0; joint_id < (uint32)joints.size(); ++joint_id)
 		{
-			SkeletonJoint& j = joints[jointID];
+			SkeletonJoint& j = joints[joint_id];
 
 			std::string name = j.name;
 			std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
-			LimbType c = limb_type_none;
+			LimbType c = LIMB_TYPE_NONE;
 
 			bool left = contains(name, "left") || 
 				ends_with(name, ".l") || 
@@ -151,35 +151,35 @@ namespace era_engine::animation
 				contains(name, "shoulder") ||
 				contains(name, "clavicle"))
 			{
-				c = limb_type_torso;
+				c = LIMB_TYPE_TORSO;
 			}
 			else if (contains(name, "head") ||
 				contains(name, "neck"))
 			{
-				c = limb_type_head;
+				c = LIMB_TYPE_HEAD;
 			}
 			else if (contains(name, "arm"))
 			{
-				LimbType parentType = (j.parent_id != INVALID_JOINT) ? joints[j.parent_id].limb_type : limb_type_none;
+				LimbType parent_type = (j.parent_id != INVALID_JOINT) ? joints[j.parent_id].limb_type : LIMB_TYPE_NONE;
 
 				if (contains(name, "lower") ||
 					contains(name, "lo") ||
 					contains(name, "fore"))
 				{
-					c = left ? limb_type_lower_arm_left : limb_type_lower_arm_right;
+					c = left ? LIMB_TYPE_LOWER_ARM_LEFT : LIMB_TYPE_LOWER_ARM_RIGHT;
 				}
 				else if (contains(name, "upper") ||
 					contains(name, "up"))
 				{
-					c = left ? limb_type_upper_arm_left : limb_type_upper_arm_right;
+					c = left ? LIMB_TYPE_UPPER_ARM_LEFT : LIMB_TYPE_UPPER_ARM_RIGHT;
 				}
-				else if (parentType == limb_type_torso)
+				else if (parent_type == LIMB_TYPE_TORSO)
 				{
-					c = left ? limb_type_upper_arm_left : limb_type_upper_arm_right;
+					c = left ? LIMB_TYPE_UPPER_ARM_LEFT : LIMB_TYPE_UPPER_ARM_RIGHT;
 				}
 				else
 				{
-					c = left ? limb_type_lower_arm_left : limb_type_lower_arm_right;
+					c = left ? LIMB_TYPE_LOWER_ARM_LEFT : LIMB_TYPE_LOWER_ARM_RIGHT;
 				}
 			}
 			else if (contains(name, "hand") ||
@@ -190,42 +190,42 @@ namespace era_engine::animation
 				contains(name, "ring") ||
 				contains(name, "pinky"))
 			{
-				c = left ? limb_type_hand_left : limb_type_hand_right;
+				c = left ? LIMB_TYPE_HAND_LEFT : LIMB_TYPE_HAND_RIGHT;
 			}
 			else if (contains(name, "leg") ||
 				contains(name, "thigh") ||
 				contains(name, "shin") ||
 				contains(name, "calf"))
 			{
-				LimbType parentType = (j.parent_id != INVALID_JOINT) ? joints[j.parent_id].limb_type : limb_type_none;
+				LimbType parent_type = (j.parent_id != INVALID_JOINT) ? joints[j.parent_id].limb_type : LIMB_TYPE_NONE;
 
 				if (contains(name, "lower") ||
 					contains(name, "lo") ||
 					contains(name, "shin") ||
 					contains(name, "calf"))
 				{
-					c = left ? limb_type_lower_leg_left : limb_type_lower_leg_right;
+					c = left ? LIMB_TYPE_LOWER_LEG_LEFT : LIMB_TYPE_LOWER_LEG_RIGHT;
 				}
 				else if (contains(name, "upper") ||
 					contains(name, "up") ||
 					contains(name, "thigh"))
 				{
-					c = left ? limb_type_upper_leg_left : limb_type_upper_leg_right;
+					c = left ? LIMB_TYPE_UPPER_LEG_LEFT : LIMB_TYPE_UPPER_LEG_RIGHT;
 				}
-				else if (parentType == limb_type_torso)
+				else if (parent_type == LIMB_TYPE_TORSO)
 				{
-					c = left ? limb_type_upper_leg_left : limb_type_upper_leg_right;
+					c = left ? LIMB_TYPE_UPPER_LEG_LEFT : LIMB_TYPE_UPPER_LEG_RIGHT;
 				}
 				else
 				{
-					c = left ? limb_type_lower_leg_left : limb_type_lower_leg_right;
+					c = left ? LIMB_TYPE_LOWER_LEG_LEFT : LIMB_TYPE_LOWER_LEG_RIGHT;
 				}
 			}
 			else if (contains(name, "foot") ||
 				contains(name, "toe") ||
 				contains(name, "ball"))
 			{
-				c = left ? limb_type_foot_left : limb_type_foot_right;
+				c = left ? LIMB_TYPE_FOOT_LEFT : LIMB_TYPE_FOOT_RIGHT;
 			}
 
 			j.limb_type = c;
@@ -380,7 +380,7 @@ namespace era_engine::animation
 
 		GameAssetsProvider provider;
 
-		if (!skeletons.empty() && (flags & mesh_creation_flags_with_skin))
+		if (!skeletons.empty() && (flags & MESH_CREATION_FLAGS_WITH_SKIN))
 		{
 			uint32 skeleton_index = 0;
 			for (ref<Skeleton>& imported_skeleton : skeletons)
@@ -391,7 +391,7 @@ namespace era_engine::animation
 
 				if (!fs::exists(fs::path(skeleton_path.string() + AssetExtension<Skeleton>::get_asset_type())))
 				{
-					if (flags & mesh_creation_flags_generate_root_motion)
+					if (flags & MESH_CREATION_FLAGS_GENERATE_ROOT_MOTION)
 					{
 						static const std::string root_joint_name = "EE_GeneratedRoot";
 
@@ -432,7 +432,7 @@ namespace era_engine::animation
 
 						if (joint.parent_id == INVALID_JOINT)
 						{
-							if (flags & mesh_creation_flags_yzx_to_xyz)
+							if (flags & MESH_CREATION_FLAGS_YZX_TO_XYZ)
 							{
 								joint_transform.set_transform(mat4_to_trs(joint.bind_transform) * trs { vec3::zero, euler_to_quat(vec3(0.0f, -M_PI / 2.0f, 0.0f)), vec3(1.0f) });
 							}

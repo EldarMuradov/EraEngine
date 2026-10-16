@@ -14,33 +14,33 @@
 
 namespace era_engine
 {
-	class ERA_CORE_API directional_light
+	class ERA_CORE_API DirectionalLight
 	{
 	public:
 
-		directional_light() = default;
-		directional_light(const directional_light& other) noexcept = default;
-		directional_light(directional_light&& other) noexcept = default;
-		directional_light& operator=(const directional_light& other) noexcept = default;
-		directional_light& operator=(directional_light&& other) noexcept = default;
+		DirectionalLight() = default;
+		DirectionalLight(const DirectionalLight& other) noexcept = default;
+		DirectionalLight(DirectionalLight&& other) noexcept = default;
+		DirectionalLight& operator=(const DirectionalLight& other) noexcept = default;
+		DirectionalLight& operator=(DirectionalLight&& other) noexcept = default;
 
-		void updateMatrices(const render_camera& camera);
+		void update_matrices(const RenderCamera& camera);
 
-		vec4 cascadeDistances;
+		vec4 cascade_distances;
 		vec4 bias;
-		vec4 blendDistances;
-		vec4 shadowMapViewports[MAX_NUM_SUN_SHADOW_CASCADES];
+		vec4 blend_distances;
+		vec4 shadow_map_viewports[MAX_NUM_SUN_SHADOW_CASCADES];
 
-		mat4 viewProjs[MAX_NUM_SUN_SHADOW_CASCADES];
+		mat4 view_projs[MAX_NUM_SUN_SHADOW_CASCADES];
 
 		vec3 color;
 		vec3 direction;
 
 		float intensity;
-		float negativeZOffset = 750.0f;
+		float negative_z_offset = 750.0f;
 
-		uint32 shadowDimensions = 2048;
-		uint32 numShadowCascades;
+		uint32 shadow_dimensions = 2048;
+		uint32 num_shadow_cascades;
 
 		bool stabilize;
 
@@ -51,7 +51,7 @@ namespace era_engine
 	{
 	public:
 		PointLightComponent() = default;
-		PointLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _radius, bool _castsShadow = false, uint32 _shadowMapResolution = 2048);
+		PointLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _radius, bool _casts_shadow = false, uint32 _shadow_map_resolution = 2048);
 		PointLightComponent(const PointLightComponent&) = default;
 		virtual ~PointLightComponent();
 
@@ -62,16 +62,16 @@ namespace era_engine
 		float intensity{};
 		float radius{};
 
-		uint32 shadowMapResolution{};
+		uint32 shadow_map_resolution{};
 
-		bool castsShadow{};
+		bool casts_shadow{};
 	};
 
 	class ERA_CORE_API SpotLightComponent final : public Component
 	{
 	public:
 		SpotLightComponent() = default;
-		SpotLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _distance, float _innerAngle, float _outerAngle, bool _castsShadow = false, uint32 _shadowMapResolution = 2048);		
+		SpotLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _distance, float _inner_angle, float _outer_angle, bool _casts_shadow = false, uint32 _shadow_map_resolution = 2048);		
 		SpotLightComponent(const SpotLightComponent&) = default;
 		virtual ~SpotLightComponent();
 
@@ -82,13 +82,13 @@ namespace era_engine
 
 		float intensity;
 		float distance;
-		float innerAngle;
-		float outerAngle;
+		float inner_angle;
+		float outer_angle;
 
-		uint32 shadowMapResolution;
+		uint32 shadow_map_resolution;
 
-		bool castsShadow;
+		bool casts_shadow;
 	};
 
-	ERA_CORE_API mat4 getSpotLightViewProjectionMatrix(const spot_light_cb& sl);
+	ERA_CORE_API mat4 get_spot_light_view_projection_matrix(const SpotLightCB& sl);
 }

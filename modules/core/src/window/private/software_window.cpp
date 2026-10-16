@@ -4,90 +4,90 @@
 
 namespace era_engine
 {
-	software_window::software_window(software_window&& o) noexcept
-		: win32_window(std::move(o))
+	SoftwareWindow::SoftwareWindow(SoftwareWindow&& o) noexcept
+		: Win32Window(std::move(o))
 	{
-		bitmapInfo = o.bitmapInfo;
-		o.bitmapInfo = 0;
+		bitmap_info = o.bitmap_info;
+		o.bitmap_info = 0;
 
 		buffer = o.buffer;
 		o.buffer = 0;
 	}
 
-	bool software_window::initialize(const TCHAR* name, uint32 requestedClientWidth, uint32 requestedClientHeight,
-		uint8* buffer, uint32 numChannels, uint32 bufferWidth, uint32 bufferHeight)
+	bool SoftwareWindow::initialize(const TCHAR* name, uint32 requested_client_width, uint32 requested_client_height,
+		uint8* buffer, uint32 num_channels, uint32 buffer_width, uint32 buffer_height)
 	{
-		ASSERT(numChannels == 1 || numChannels == 3 || numChannels == 4);
+		ASSERT(num_channels == 1 || num_channels == 3 || num_channels == 4);
 
-		if (!win32_window::initialize(name, requestedClientWidth, requestedClientHeight))
+		if (!Win32Window::initialize(name, requested_client_width, requested_client_height))
 			return false;
 
-		if (!bitmapInfo)
+		if (!bitmap_info)
 		{
-			bitmapInfo = (BITMAPINFO*)malloc(sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * 256);
-			if (!bitmapInfo)
+			bitmap_info = (BITMAPINFO*)malloc(sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * 256);
+			if (!bitmap_info)
 				return false;
 
-			bitmapInfo->bmiHeader.biSize = sizeof(bitmapInfo->bmiHeader);
-			bitmapInfo->bmiHeader.biCompression = BI_RGB;
-			bitmapInfo->bmiHeader.biSizeImage = 0;
-			bitmapInfo->bmiHeader.biXPelsPerMeter = 0;
-			bitmapInfo->bmiHeader.biYPelsPerMeter = 0;
-			bitmapInfo->bmiHeader.biClrUsed = 0;
-			bitmapInfo->bmiHeader.biClrImportant = 0;
+			bitmap_info->bmiHeader.biSize = sizeof(bitmap_info->bmiHeader);
+			bitmap_info->bmiHeader.biCompression = BI_RGB;
+			bitmap_info->bmiHeader.biSizeImage = 0;
+			bitmap_info->bmiHeader.biXPelsPerMeter = 0;
+			bitmap_info->bmiHeader.biYPelsPerMeter = 0;
+			bitmap_info->bmiHeader.biClrUsed = 0;
+			bitmap_info->bmiHeader.biClrImportant = 0;
 
 			for (int i = 0; i < 256; ++i)
 			{
-				bitmapInfo->bmiColors[i].rgbRed = i;
-				bitmapInfo->bmiColors[i].rgbGreen = i;
-				bitmapInfo->bmiColors[i].rgbBlue = i;
-				bitmapInfo->bmiColors[i].rgbReserved = 0;
+				bitmap_info->bmiColors[i].rgbRed = i;
+				bitmap_info->bmiColors[i].rgbGreen = i;
+				bitmap_info->bmiColors[i].rgbBlue = i;
+				bitmap_info->bmiColors[i].rgbReserved = 0;
 			}
 		}
 
-		bitmapInfo->bmiHeader.biWidth = bufferWidth == 0 ? clientWidth : bufferWidth;
-		bitmapInfo->bmiHeader.biHeight = bufferHeight == 0 ? clientHeight : bufferHeight;
-		bitmapInfo->bmiHeader.biPlanes = 1;
-		bitmapInfo->bmiHeader.biBitCount = 8 * numChannels;
+		bitmap_info->bmiHeader.biWidth = buffer_width == 0 ? client_width : buffer_width;
+		bitmap_info->bmiHeader.biHeight = buffer_height == 0 ? client_height : buffer_height;
+		bitmap_info->bmiHeader.biPlanes = 1;
+		bitmap_info->bmiHeader.biBitCount = 8 * num_channels;
 
-		blitX = 0;
-		blitY = 0;
-		blitWidth = bufferWidth == 0 ? clientWidth : bufferWidth;
-		blitHeight = bufferHeight == 0 ? clientHeight : bufferHeight;
+		blit_x = 0;
+		blit_y = 0;
+		blit_width = buffer_width == 0 ? client_width : buffer_width;
+		blit_height = buffer_height == 0 ? client_height : buffer_height;
 
 		this->buffer = buffer;
 
 		return true;
 	}
 
-	void software_window::changeBlitRegion(uint32 x, uint32 y, uint32 width, uint32 height)
+	void SoftwareWindow::change_blit_region(uint32 x, uint32 y, uint32 width, uint32 height)
 	{
-		blitX = x;
-		blitY = y;
-		blitWidth = width;
-		blitHeight = height;
+		blit_x = x;
+		blit_y = y;
+		blit_width = width;
+		blit_height = height;
 	}
 
-	void software_window::shutdown()
+	void SoftwareWindow::shutdown()
 	{
-		if (bitmapInfo)
+		if (bitmap_info)
 		{
-			free(bitmapInfo);
-			bitmapInfo = 0;
+			free(bitmap_info);
+			bitmap_info = 0;
 		}
-		win32_window::shutdown();
+		Win32Window::shutdown();
 	}
 
-	software_window::~software_window()
+	SoftwareWindow::~SoftwareWindow()
 	{
 		shutdown();
 	}
 
-	void software_window::swapBuffers()
+	void SoftwareWindow::swap_buffers()
 	{
-		RECT r = { 0, 0, (LONG)clientWidth, (LONG)clientHeight };
-		InvalidateRect(windowHandle, &r, TRUE);
-		UpdateWindow(windowHandle);
+		RECT r = { 0, 0, (LONG)client_width, (LONG)client_height };
+		InvalidateRect(window_handle, &r, TRUE);
+		UpdateWindow(window_handle);
 	}
 
 }

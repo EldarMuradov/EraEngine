@@ -1,13 +1,13 @@
 #ifndef SKINNING_RS_HLSLI
 #define SKINNING_RS_HLSLI
 
-struct skinning_cb
+struct SkinningCB
 {
-    uint32 firstJoint;
-    uint32 numJoints;
-    uint32 firstVertex;
-    uint32 numVertices;
-    uint32 writeOffset;
+    uint32 first_joint;
+    uint32 num_joints;
+    uint32 first_vertex;
+    uint32 num_vertices;
+    uint32 write_offset;
 };
 
 #define SKINNING_RS \
@@ -25,11 +25,11 @@ struct skinning_cb
 #define SKINNING_RS_OUTPUT0                     4
 #define SKINNING_RS_OUTPUT1                     5
 
-struct cloth_skinning_cb
+struct ClothSkinningCB
 {
-    uint32 gridSizeX;
-    uint32 gridSizeY;
-    uint32 writeOffset;
+    uint32 grid_size_x;
+    uint32 grid_size_y;
+    uint32 write_offset;
 };
 
 #define CLOTH_SKINNING_RS \
@@ -43,29 +43,29 @@ struct cloth_skinning_cb
 #define CLOTH_SKINNING_RS_OUTPUT0               2
 #define CLOTH_SKINNING_RS_OUTPUT1               3
 
-struct mesh_position
+struct MeshPosition
 {
     vec3 position;
 };
 
-struct mesh_others
+struct MeshOthers
 {
     vec2 uv;
     vec3 normal;
     vec3 tangent;
 };
 
-struct skinned_mesh_position
+struct SkinnedMeshPosition
 {
     vec3 position;
 };
 
-struct skinned_mesh_others
+struct SkinnedMeshOthers
 {
     vec2 uv;
     vec3 normal;
     vec3 tangent;
-    uint32 skinIndices;
-    uint32 skinWeights;
+    uint32 skin_indices;
+    uint32 skin_weights;
 };
 #endif

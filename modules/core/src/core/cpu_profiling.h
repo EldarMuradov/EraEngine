@@ -100,12 +100,12 @@ namespace era_engine
 		CpuProfileBlockRecorder(const char* name)
 			: name(name)
 		{
-			recordProfileEvent(profile_event_begin_block, name);
+			recordProfileEvent(PROFILE_EVENT_BEGIN_BLOCK, name);
 		}
 
 		~CpuProfileBlockRecorder()
 		{
-			recordProfileEvent(profile_event_end_block, name);
+			recordProfileEvent(PROFILE_EVENT_END_BLOCK, name);
 		}
 
 		const char* name;
@@ -113,7 +113,7 @@ namespace era_engine
 
 	inline void cpu_profiling_frame_end_marker()
 	{
-		recordProfileEvent(profile_event_frame_marker, 0);
+		recordProfileEvent(PROFILE_EVENT_FRAME_MARKER, 0);
 	}
 
 	inline void CPU_PROFILE_STAT(const char* label, bool value) { _CPU_PROFILE_STAT(label, value, bool_value, profile_stat_type_bool); }

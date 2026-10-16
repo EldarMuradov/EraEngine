@@ -28,239 +28,239 @@
 
 namespace era_engine
 {
-	struct renderer_settings
+	struct RendererSettings
 	{
-		tonemap_settings tonemapSettings{};
-		tonemap_settings defaultTonemapSettings{};
+		TonemapSettings tonemap_settings{};
+		TonemapSettings default_tonemap_settings{};
 
-		hbao_settings aoSettings;
+		HBAOSettings ao_settings;
 
-		sss_settings sssSettings;
+		SSSSettings sss_settings;
 
-		ssr_settings ssrSettings;
+		SSRSettings ssr_settings;
 
-		taa_settings taaSettings;
+		TAASettings taa_settings;
 
-		bloom_settings bloomSettings;
+		BloomSettings bloom_settings;
 
-		sharpen_settings sharpenSettings;
+		SharpenSettings sharpen_settings;
 
-		bool enableAO = true;
-		bool enableSSS = true;
-		bool enableSSR = true;
-		bool enableTAA = true;
-		bool enableDLSS = false;
-		bool enableSharpen = true;
-		bool cacheShadowMap = false;
-		bool enableBloom = true;
+		bool enable_ao = true;
+		bool enable_sss = true;
+		bool enable_ssr = true;
+		bool enable_taa = true;
+		bool enable_dlss = false;
+		bool enable_sharpen = true;
+		bool cache_shadow_map = false;
+		bool enable_bloom = true;
 	};
-	REFLECT_STRUCT(renderer_settings,
-		(tonemapSettings, "Tonemap"),
-		(enableAO, "Enable AO"),
-		(aoSettings, "AO"),
-		(enableSSS, "Enable SSS"),
-		(sssSettings, "SSS"),
-		(enableSSR, "Enable SSR"),
-		(ssrSettings, "SSR"),
-		(enableTAA, "Enable TAA"),
-		(taaSettings, "TAA"),
-		(enableBloom, "Enable Bloom"),
-		(bloomSettings, "Bloom"),
-		(enableSharpen, "Enable sharpen"),
-		(sharpenSettings, "Sharpen")
+	REFLECT_STRUCT(RendererSettings,
+		(tonemap_settings, "Tonemap"),
+		(enable_ao, "Enable AO"),
+		(ao_settings, "AO"),
+		(enable_sss, "Enable SSS"),
+		(sss_settings, "SSS"),
+		(enable_ssr, "Enable SSR"),
+		(ssr_settings, "SSR"),
+		(enable_taa, "Enable TAA"),
+		(taa_settings, "TAA"),
+		(enable_bloom, "Enable Bloom"),
+		(bloom_settings, "Bloom"),
+		(enable_sharpen, "Enable sharpen"),
+		(sharpen_settings, "Sharpen")
 	);
 
-	enum aspect_ratio_mode
+	enum AspectRatioMode
 	{
-		aspect_ratio_free,
-		aspect_ratio_fix_16_9,
-		aspect_ratio_fix_16_10,
+		ASPECT_RATIO_FREE,
+		ASPECT_RATIO_FIX_16_9,
+		ASPECT_RATIO_FIX_16_10,
 
-		aspect_ratio_mode_count,
+		ASPECT_RATIO_MODE_COUNT,
 	};
 
-	static const char* aspectRatioNames[] =
+	static const char* aspect_ratio_names[] =
 	{
 		"Free",
 		"16:9",
 		"16:10",
 	};
 
-	enum renderer_mode
+	enum RendererMode
 	{
-		renderer_mode_rasterized,
-		renderer_mode_visualize_sun_shadow_cascades,
-		renderer_mode_pathtraced,
+		RENDERER_MODE_RASTERIZED,
+		RENDERER_MODE_VISUALIZE_SUN_SHADOW_CASCADES,
+		RENDERER_MODE_PATHTRACED,
 
-		renderer_mode_count,
+		RENDERER_MODE_COUNT,
 	};
 
-	static const char* rendererModeNames[] =
+	static const char* renderer_mode_names[] =
 	{
 		"Rasterized",
 		"Visualize sun shadow cascades",
 		"Path-traced",
 	};
 
-	struct renderer_spec
+	struct RendererSpec
 	{
-		bool allowObjectPicking = true;
-		bool allowAO = true;
-		bool allowSSS = true;
-		bool allowSSR = true;
-		bool allowTAA = true;
-		bool allowBloom = true;
-		bool allowDLSS = true;
+		bool allow_object_picking = true;
+		bool allow_ao = true;
+		bool allow_sss = true;
+		bool allow_ssr = true;
+		bool allow_taa = true;
+		bool allow_bloom = true;
+		bool allow_dlss = true;
 	};
 
-	struct main_renderer
+	struct MainRenderer
 	{
-		main_renderer() = default;
-		void initialize(color_depth colorDepth, uint32 windowWidth, uint32 windowHeight, renderer_spec spec, bool initDLSS = false);
+		MainRenderer() = default;
+		void initialize(ColorDepth color_depth, uint32 window_width, uint32 window_height, RendererSpec spec, bool init_dlss = false);
 
-		void beginFrame(uint32 windowWidth, uint32 windowHeight);
-		void endFrame(const UserInput* input);
+		void begin_frame(uint32 window_width, uint32 window_height);
+		void end_frame(const UserInput* input);
 
-		void setCamera(const render_camera& camera);
+		void set_camera(const RenderCamera& camera);
 
-		void dlssPass(float dt);
+		void dlss_pass(float dt);
 
-		void submitRenderPass(opaque_render_pass* renderPass) { ASSERT(!opaqueRenderPass); opaqueRenderPass = renderPass; }
-		void submitRenderPass(transparent_render_pass* renderPass) { ASSERT(!transparentRenderPass); transparentRenderPass = renderPass; }
-		void submitRenderPass(ldr_render_pass* renderPass) { ASSERT(!ldrRenderPass); ldrRenderPass = renderPass; }
-		void submitComputePass(compute_pass* computePass) { ASSERT(!this->computePass); this->computePass = computePass; }
+		void submit_render_pass(OpaqueRenderPass* render_pass) { ASSERT(!opaque_render_pass); opaque_render_pass = render_pass; }
+		void submit_render_pass(TransparentRenderPass* render_pass) { ASSERT(!transparent_render_pass); transparent_render_pass = render_pass; }
+		void submit_render_pass(LDRRenderPass* render_pass) { ASSERT(!ldr_render_pass); ldr_render_pass = render_pass; }
+		void submit_compute_pass(ComputePass* compute_pass) { ASSERT(!this->compute_pass); this->compute_pass = compute_pass; }
 
-		void submitShadowRenderPass(sun_shadow_render_pass* renderPass) { ASSERT(numSunLightShadowRenderPasses < MAX_NUM_SUN_LIGHT_SHADOW_PASSES); sunShadowRenderPasses[numSunLightShadowRenderPasses++] = renderPass; }
-		void submitShadowRenderPass(spot_shadow_render_pass* renderPass) { ASSERT(numSpotLightShadowRenderPasses < MAX_NUM_SPOT_LIGHT_SHADOW_PASSES);	spotLightShadowRenderPasses[numSpotLightShadowRenderPasses++] = renderPass; }
-		void submitShadowRenderPass(point_shadow_render_pass* renderPass) { ASSERT(numPointLightShadowRenderPasses < MAX_NUM_POINT_LIGHT_SHADOW_PASSES); pointLightShadowRenderPasses[numPointLightShadowRenderPasses++] = renderPass; }
+		void submit_shadow_render_pass(SunShadowRenderPass* render_pass) { ASSERT(num_sun_light_shadow_render_passes < MAX_NUM_SUN_LIGHT_SHADOW_PASSES); sun_shadow_render_passes[num_sun_light_shadow_render_passes++] = render_pass; }
+		void submit_shadow_render_pass(SpotShadowRenderPass* render_pass) { ASSERT(num_spot_light_shadow_render_passes < MAX_NUM_SPOT_LIGHT_SHADOW_PASSES);	spot_light_shadow_render_passes[num_spot_light_shadow_render_passes++] = render_pass; }
+		void submit_shadow_render_pass(PointShadowRenderPass* render_pass) { ASSERT(num_point_light_shadow_render_passes < MAX_NUM_POINT_LIGHT_SHADOW_PASSES); point_light_shadow_render_passes[num_point_light_shadow_render_passes++] = render_pass; }
 
-		void setRaytracingScene(raytracing_tlas* tlas) { this->tlas = tlas; }
+		void set_raytracing_scene(RaytracingTLAS* tlas) { this->tlas = tlas; }
 
-		void setEnvironment(const pbr_environment& environment);
-		void setSun(const directional_light& light);
+		void set_environment(const PBREnvironment& environment);
+		void set_sun(const DirectionalLight& light);
 
-		void setPointLights(const ref<dx_buffer>& lights, uint32 numLights, const ref<dx_buffer>& shadowInfoBuffer);
-		void setSpotLights(const ref<dx_buffer>& lights, uint32 numLights, const ref<dx_buffer>& shadowInfoBuffer);
-		void setDecals(const ref<dx_buffer>& decals, uint32 numDecals, const ref<dx_texture>& textureAtlas);
+		void set_point_lights(const ref<DXBuffer>& lights, uint32 num_lights, const ref<DXBuffer>& shadow_info_buffer);
+		void set_spot_lights(const ref<DXBuffer>& lights, uint32 num_lights, const ref<DXBuffer>& shadow_info_buffer);
+		void set_decals(const ref<DXBuffer>& decals, uint32 num_decals, const ref<DXTexture>& texture_atlas);
 
-		NODISCARD const ref<dx_texture>& getAOResult() const { return aoTextures[aoHistoryIndex]; }
-		NODISCARD const ref<dx_texture>& getSSSResult() const { return sssTextures[sssHistoryIndex]; }
-		NODISCARD const ref<dx_texture>& getSSRResult() const { return ssrResolveTexture; }
-		NODISCARD const ref<dx_texture>& getBloomResult() const { return bloomTexture; }
-		NODISCARD const ref<dx_texture>& getScreenVelocities() const { return screenVelocitiesTexture; }
+		NODISCARD const ref<DXTexture>& get_ao_result() const { return ao_textures[ao_history_index]; }
+		NODISCARD const ref<DXTexture>& get_sss_result() const { return sss_textures[sss_history_index]; }
+		NODISCARD const ref<DXTexture>& get_ssr_result() const { return ssr_resolve_texture; }
+		NODISCARD const ref<DXTexture>& get_bloom_result() const { return bloom_texture; }
+		NODISCARD const ref<DXTexture>& get_screen_velocities() const { return screen_velocities_texture; }
 
 		// Settings
-		renderer_mode mode = renderer_mode_rasterized;
-		aspect_ratio_mode aspectRatioMode = aspect_ratio_free;
+		RendererMode mode = RENDERER_MODE_RASTERIZED;
+		AspectRatioMode aspect_ratio_mode = ASPECT_RATIO_FREE;
 
-		renderer_settings settings{};
+		RendererSettings settings{};
 
-		uint32 renderWidth{};
-		uint32 renderHeight{};
-		ref<dx_texture> frameResult;
+		uint32 render_width{};
+		uint32 render_height{};
+		ref<DXTexture> frame_result;
 
-		uint32 hoveredObjectID = -1;
+		uint32 hovered_object_id = -1;
 
-		const renderer_spec spec;
+		const RendererSpec spec;
 
-		path_tracer pathTracer{};
+		PathTracer path_tracer{};
 
 	private:
 		template <typename func_t = std::nullptr_t>
-		uint64 executeComputeTasks(compute_pass_event eventTime, const func_t& additionalTasksCallback = nullptr);
+		uint64 execute_compute_tasks(ComputePassEvent event_time, const func_t& additional_tasks_callback = nullptr);
 
-		NODISCARD dx_command_list* renderThread0(const common_render_data& commonRenderData);
-		NODISCARD dx_command_list* renderThread1(const common_render_data& commonRenderData, bool aspectRatioModeChanged);
-		NODISCARD dx_command_list* renderThread2(const common_render_data& commonRenderData, const UserInput* input);
-		NODISCARD dx_command_list* renderThread3(common_render_data commonRenderData, dx_dynamic_constant_buffer unjitteredCameraCBV);
+		NODISCARD DXCommandList* render_thread0(const CommonRenderData& common_render_data);
+		NODISCARD DXCommandList* render_thread1(const CommonRenderData& common_render_data, bool aspect_ratio_mode_changed);
+		NODISCARD DXCommandList* render_thread2(const CommonRenderData& common_render_data, const UserInput* input);
+		NODISCARD DXCommandList* render_thread3(CommonRenderData common_render_data, DXDynamicConstantBuffer unjittered_camera_cbv);
 
-		void recalculateViewport(bool resizeTextures);
+		void recalculate_viewport(bool resize_textures);
 
-		const sun_shadow_render_pass* sunShadowRenderPasses[MAX_NUM_SUN_LIGHT_SHADOW_PASSES];
-		const spot_shadow_render_pass* spotLightShadowRenderPasses[MAX_NUM_SPOT_LIGHT_SHADOW_PASSES];
-		const point_shadow_render_pass* pointLightShadowRenderPasses[MAX_NUM_POINT_LIGHT_SHADOW_PASSES];
-		uint32 numSunLightShadowRenderPasses{};
-		uint32 numSpotLightShadowRenderPasses{};
-		uint32 numPointLightShadowRenderPasses{};
+		const SunShadowRenderPass* sun_shadow_render_passes[MAX_NUM_SUN_LIGHT_SHADOW_PASSES];
+		const SpotShadowRenderPass* spot_light_shadow_render_passes[MAX_NUM_SPOT_LIGHT_SHADOW_PASSES];
+		const PointShadowRenderPass* point_light_shadow_render_passes[MAX_NUM_POINT_LIGHT_SHADOW_PASSES];
+		uint32 num_sun_light_shadow_render_passes{};
+		uint32 num_spot_light_shadow_render_passes{};
+		uint32 num_point_light_shadow_render_passes{};
 
-		raytracing_tlas* tlas;
+		RaytracingTLAS* tlas;
 
-		const pbr_environment* environment;
-		directional_light_cb sun{};
+		const PBREnvironment* environment;
+		DirectionalLightCB sun{};
 
-		ref<dx_buffer> pointLights;
-		ref<dx_buffer> spotLights;
-		ref<dx_buffer> pointLightShadowInfoBuffer;
-		ref<dx_buffer> spotLightShadowInfoBuffer;
-		ref<dx_buffer> decals;
-		uint32 numPointLights{};
-		uint32 numSpotLights{};
-		uint32 numDecals{};
+		ref<DXBuffer> point_lights;
+		ref<DXBuffer> spot_lights;
+		ref<DXBuffer> point_light_shadow_info_buffer;
+		ref<DXBuffer> spot_light_shadow_info_buffer;
+		ref<DXBuffer> decals;
+		uint32 num_point_lights{};
+		uint32 num_spot_lights{};
+		uint32 num_decals{};
 
-		ref<dx_texture> decalTextureAtlas;
+		ref<DXTexture> decal_texture_atlas;
 
-		const opaque_render_pass* opaqueRenderPass;
-		const transparent_render_pass* transparentRenderPass;
-		const ldr_render_pass* ldrRenderPass;
-		const compute_pass* computePass;
+		const OpaqueRenderPass* opaque_render_pass;
+		const TransparentRenderPass* transparent_render_pass;
+		const LDRRenderPass* ldr_render_pass;
+		const ComputePass* compute_pass;
 
-		uint32 windowWidth{};
-		uint32 windowHeight{};
-		int32 windowXOffset{};
-		int32 windowYOffset{};
+		uint32 window_width{};
+		uint32 window_height{};
+		int32 window_x_offset{};
+		int32 window_y_offset{};
 
-		ref<dx_texture> hdrColorTexture;
-		ref<dx_texture> worldNormalsRoughnessTexture;
-		ref<dx_texture> screenVelocitiesTexture;
-		ref<dx_texture> objectIDsTexture;
-		ref<dx_texture> depthStencilBuffer;
-		ref<dx_texture> linearDepthBuffer;
-		ref<dx_texture> opaqueDepthBuffer; // The depth-stencil buffer gets copied to this texture after the opaque pass.
+		ref<DXTexture> hdr_color_texture;
+		ref<DXTexture> world_normals_roughness_texture;
+		ref<DXTexture> screen_velocities_texture;
+		ref<DXTexture> object_ids_texture;
+		ref<DXTexture> depth_stencil_buffer;
+		ref<DXTexture> linear_depth_buffer;
+		ref<DXTexture> opaque_depth_buffer; // The depth-stencil buffer gets copied to this texture after the opaque pass.
 
-		ref<dx_texture> aoCalculationTexture;
-		ref<dx_texture> aoBlurTempTexture;
-		ref<dx_texture> aoTextures[2]; // These get flip-flopped from frame to frame.
-		volatile uint32 aoHistoryIndex = 0;
+		ref<DXTexture> ao_calculation_texture;
+		ref<DXTexture> ao_blur_temp_texture;
+		ref<DXTexture> ao_textures[2]; // These get flip-flopped from frame to frame.
+		volatile uint32 ao_history_index = 0;
 
-		ref<dx_texture> sssCalculationTexture;
-		ref<dx_texture> sssBlurTempTexture;
-		ref<dx_texture> sssTextures[2]; // These get flip-flopped from frame to frame.
-		volatile uint32 sssHistoryIndex = 0;
+		ref<DXTexture> sss_calculation_texture;
+		ref<DXTexture> sss_blur_temp_texture;
+		ref<DXTexture> sss_textures[2]; // These get flip-flopped from frame to frame.
+		volatile uint32 sss_history_index = 0;
 
-		ref<dx_texture> ssrRaycastTexture;
-		ref<dx_texture> ssrResolveTexture;
-		ref<dx_texture> ssrTemporalTextures[2]; // These get flip-flopped from frame to frame.
-		volatile uint32 ssrHistoryIndex = 0;
+		ref<DXTexture> ssr_raycast_texture;
+		ref<DXTexture> ssr_resolve_texture;
+		ref<DXTexture> ssr_temporal_textures[2]; // These get flip-flopped from frame to frame.
+		volatile uint32 ssr_history_index = 0;
 
-		ref<dx_texture> prevFrameHDRColorTexture; // This is downsampled by a factor of 2 and contains up to 8 mip levels.
-		ref<dx_texture> prevFrameHDRColorTempTexture;
+		ref<DXTexture> prev_frame_hdr_color_texture; // This is downsampled by a factor of 2 and contains up to 8 mip levels.
+		ref<DXTexture> prev_frame_hdr_color_temp_texture;
 
-		ref<dx_texture> hdrPostProcessingTexture;
-		ref<dx_texture> ldrPostProcessingTexture;
-		ref<dx_texture> taaTextures[2]; // These get flip-flopped from frame to frame.
-		volatile uint32 taaHistoryIndex = 0;
+		ref<DXTexture> hdr_post_processing_texture;
+		ref<DXTexture> ldr_post_processing_texture;
+		ref<DXTexture> taa_textures[2]; // These get flip-flopped from frame to frame.
+		volatile uint32 taa_history_index = 0;
 
-		ref<dx_texture> bloomTexture;
-		ref<dx_texture> bloomTempTexture;
+		ref<DXTexture> bloom_texture;
+		ref<DXTexture> bloom_temp_texture;
 
-		ref<dx_buffer> hoveredObjectIDReadbackBuffer;
+		ref<DXBuffer> hovered_object_id_readback_buffer;
 
-		camera_cb jitteredCamera{};
-		camera_cb unjitteredCamera{};
+		CameraCB jittered_camera{};
+		CameraCB unjittered_camera{};
 
-		light_culling culling{};
+		LightCulling culling{};
 
-		dlss::dlss_feature_adapter dlss_adapter{};
+		dlss::DLSSFeatureAdapter dlss_adapter{};
 
-		aspect_ratio_mode oldAspectRatioMode = aspect_ratio_free;
-		renderer_mode oldMode = renderer_mode_rasterized;
+		AspectRatioMode old_aspect_ratio_mode = ASPECT_RATIO_FREE;
+		RendererMode old_mode = RENDERER_MODE_RASTERIZED;
 
-		bool dlssInited = false;
-		bool aoWasOnLastFrame = false;
-		bool windowHovered = false;
-		bool sssWasOnLastFrame = false;
+		bool dlss_inited = false;
+		bool ao_was_on_last_frame = false;
+		bool window_hovered = false;
+		bool sss_was_on_last_frame = false;
 
-		friend dlss::dlss_feature_adapter;
-		friend struct eeditor;
+		friend dlss::DLSSFeatureAdapter;
+		friend struct EEditor;
 	};
 }

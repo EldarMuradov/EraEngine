@@ -94,7 +94,7 @@ TEST(ECS_World, RootEntityHasBaseComponents)
 
 	ASSERT_TRUE(root.is_valid());
 	EXPECT_EQ(root.get_world(), world);
-	EXPECT_TRUE(root.get_parent_handle() == Entity::NullHandle);
+	EXPECT_TRUE(root.get_parent_handle() == Entity::null_handle);
 	EXPECT_TRUE(root.has_component<TransformComponent>());
 	EXPECT_TRUE(root.has_component<TagsComponent>());
 
@@ -203,7 +203,7 @@ TEST(ECS_World, DestroyNullHandleIsNoop)
 	world->init();
 
 	world->create_entity();
-	world->destroy_entity(static_cast<Entity::Handle>(Entity::NullHandle));
+	world->destroy_entity(static_cast<Entity::Handle>(Entity::null_handle));
 
 	EXPECT_EQ(world->size(), 2u);
 

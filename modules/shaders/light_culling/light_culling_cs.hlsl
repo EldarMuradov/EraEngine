@@ -13,42 +13,42 @@
       a sorting step, to properly draw the decals.
 */
 
-ConstantBuffer<camera_cb> camera	                : register(b0);
-ConstantBuffer<light_culling_cb> cb	                : register(b1);
+ConstantBuffer<CameraCB> camera	                : register(b0);
+ConstantBuffer<LightCullingCB> cb	                : register(b1);
 
-Texture2D<float> depthBuffer                        : register(t0);
-StructuredBuffer<light_culling_view_frustum> frusta : register(t1);
+Texture2D<float> depth_buffer                        : register(t0);
+StructuredBuffer<LightCullingViewFrustum> frusta : register(t1);
 
-StructuredBuffer<point_light_cb> pointLights        : register(t2);
-StructuredBuffer<spot_light_cb> spotLights          : register(t3);
-StructuredBuffer<pbr_decal_cb> decals               : register(t4);
+StructuredBuffer<PointLightCB> point_lights        : register(t2);
+StructuredBuffer<SpotLightCB> spot_lights          : register(t3);
+StructuredBuffer<PBRDecalCB> decals               : register(t4);
 
-RWTexture2D<uint4> tiledCullingGrid                 : register(u0);
-RWStructuredBuffer<uint> tiledCullingIndexCounter   : register(u1);
+RWTexture2D<uint4> tiled_culling_grid                 : register(u0);
+RWStructuredBuffer<uint> tiled_culling_index_counter   : register(u1);
 
-RWStructuredBuffer<uint> tiledObjectsIndexList      : register(u2);
+RWStructuredBuffer<uint> tiled_objects_index_list      : register(u2);
 
-groupshared uint groupMinDepth;
-groupshared uint groupMaxDepth;
-groupshared light_culling_view_frustum groupFrustum;
+groupshared uint group_min_depth;
+groupshared uint group_max_depth;
+groupshared LightCullingViewFrustum group_frustum;
 
-groupshared float3 groupViewSpaceAABBCorners[8];
-groupshared float3 groupViewSpaceAABBCenter;
-groupshared float3 groupViewSpaceAABBExtent;
+groupshared float3 group_view_space_aabb_corners[8];
+groupshared float3 group_view_space_aabb_center;
+groupshared float3 group_view_space_aabb_extent;
 
-groupshared uint groupTileDepthMask;
+groupshared uint group_tile_depth_mask;
 
-groupshared uint groupObjectsStartOffset;
+groupshared uint group_objects_start_offset;
 
 // Opaque
-groupshared uint groupObjectsListOpaque[MAX_NUM_INDICES_PER_TILE];
-groupshared uint groupLightCountOpaque;
+groupshared uint group_objects_list_opaque[MAX_NUM_INDICES_PER_TILE];
+groupshared uint group_light_count_opaque;
 
 // Transparent
-groupshared uint groupObjectsListTransparent[MAX_NUM_INDICES_PER_TILE];
-groupshared uint groupLightCountTransparent;
+groupshared uint group_objects_list_transparent[MAX_NUM_INDICES_PER_TILE];
+groupshared uint group_light_count_transparent;
 
-struct spot_light_bounding_volume
+struct SpotLightBoundingVolume
 {
     float3 tip;
     float height;
@@ -56,36 +56,36 @@ struct spot_light_bounding_volume
     float radius;
 };
 
-static spot_light_bounding_volume getSpotLightBoundingVolume(spot_light_cb sl)
+static SpotLightBoundingVolume get_spot_light_bounding_volume(SpotLightCB sl)
 {
-    spot_light_bounding_volume result;
+    SpotLightBoundingVolume result;
     result.tip = sl.position;
     result.direction = sl.direction;
-    result.height = sl.maxDistance;
+    result.height = sl.max_distance;
 
-    float oc = sl.getOuterCutoff();
+    float oc = sl.get_outer_cutoff();
     result.radius = result.height * sqrt(1.f - oc * oc) / oc; // Same as height * tan(acos(oc)).
     return result;
 }
 
-static bool pointLightOutsidePlane(point_light_cb pl, light_culling_frustum_plane plane)
+static bool point_light_outside_plane(PointLightCB pl, LightCullingFrustumPlane plane)
 {
     return dot(plane.N, pl.position) - plane.d < -pl.radius;
 }
 
-static bool pointLightInsideFrustum(point_light_cb pl, light_culling_view_frustum frustum, light_culling_frustum_plane nearPlane, light_culling_frustum_plane farPlane)
+static bool point_light_inside_frustum(PointLightCB pl, LightCullingViewFrustum frustum, LightCullingFrustumPlane near_plane, LightCullingFrustumPlane far_plane)
 {
     bool result = true;
 
-    if (pointLightOutsidePlane(pl, nearPlane)
-        || pointLightOutsidePlane(pl, farPlane))
+    if (point_light_outside_plane(pl, near_plane)
+        || point_light_outside_plane(pl, far_plane))
     {
         result = false;
     }
 
     for (int i = 0; i < 4 && result; ++i)
     {
-        if (pointLightOutsidePlane(pl, frustum.planes[i]))
+        if (point_light_outside_plane(pl, frustum.planes[i]))
         {
             result = false;
         }
@@ -94,39 +94,39 @@ static bool pointLightInsideFrustum(point_light_cb pl, light_culling_view_frustu
     return result;
 }
 
-static bool sphereInAABB(vec3 sphereCenter, float sphereRadius, float3 aabbCenter, float3 aabbExtents)
+static bool sphere_in_aabb(vec3 sphere_center, float sphere_radius, float3 aabb_center, float3 aabb_extents)
 {
-    float3 delta = max(0, abs(aabbCenter - sphereCenter) - aabbExtents);
-    float distSq = dot(delta, delta);
+    float3 delta = max(0, abs(aabb_center - sphere_center) - aabb_extents);
+    float dist_sq = dot(delta, delta);
 
-    return distSq <= sphereRadius * sphereRadius;
+    return dist_sq <= sphere_radius * sphere_radius;
 }
 
-static bool pointOutsidePlane(float3 p, light_culling_frustum_plane plane)
+static bool point_outside_plane(float3 p, LightCullingFrustumPlane plane)
 {
     return dot(plane.N, p) - plane.d < 0;
 }
 
-static bool spotLightOutsidePlane(spot_light_bounding_volume sl, light_culling_frustum_plane plane)
+static bool spot_light_outside_plane(SpotLightBoundingVolume sl, LightCullingFrustumPlane plane)
 {
     float3 m = normalize(cross(cross(plane.N, sl.direction), sl.direction));
     float3 Q = sl.tip + sl.direction * sl.height - m * sl.radius;
-    return pointOutsidePlane(sl.tip, plane) && pointOutsidePlane(Q, plane);
+    return point_outside_plane(sl.tip, plane) && point_outside_plane(Q, plane);
 }
 
-static bool spotLightInsideFrustum(spot_light_bounding_volume sl, light_culling_view_frustum frustum, light_culling_frustum_plane nearPlane, light_culling_frustum_plane farPlane)
+static bool spot_light_inside_frustum(SpotLightBoundingVolume sl, LightCullingViewFrustum frustum, LightCullingFrustumPlane near_plane, LightCullingFrustumPlane far_plane)
 {
     bool result = true;
 
-    if (spotLightOutsidePlane(sl, nearPlane)
-        || spotLightOutsidePlane(sl, farPlane))
+    if (spot_light_outside_plane(sl, near_plane)
+        || spot_light_outside_plane(sl, far_plane))
     {
         result = false;
     }
 
     for (int i = 0; i < 4 && result; ++i)
     {
-        if (spotLightOutsidePlane(sl, frustum.planes[i]))
+        if (spot_light_outside_plane(sl, frustum.planes[i]))
         {
             result = false;
         }
@@ -135,7 +135,7 @@ static bool spotLightInsideFrustum(spot_light_bounding_volume sl, light_culling_
     return result;
 }
 
-static bool decalOutsidePlane(pbr_decal_cb decal, light_culling_frustum_plane plane)
+static bool decal_outside_plane(PBRDecalCB decal, LightCullingFrustumPlane plane)
 {
     float x = dot(decal.right, plane.N)     >= 0.f ? 1.f : -1.f;
     float y = dot(decal.up, plane.N)        >= 0.f ? 1.f : -1.f;
@@ -143,23 +143,23 @@ static bool decalOutsidePlane(pbr_decal_cb decal, light_culling_frustum_plane pl
 
     float3 diag = x * decal.right + y * decal.up + z * decal.forward;
 
-    float3 nPoint = decal.position + diag;
-    return pointOutsidePlane(nPoint, plane);
+    float3 n_point = decal.position + diag;
+    return point_outside_plane(n_point, plane);
 }
 
-static bool decalInsideFrustum(pbr_decal_cb decal, light_culling_view_frustum frustum, light_culling_frustum_plane nearPlane, light_culling_frustum_plane farPlane)
+static bool decal_inside_frustum(PBRDecalCB decal, LightCullingViewFrustum frustum, LightCullingFrustumPlane near_plane, LightCullingFrustumPlane far_plane)
 {
     bool result = true;
 
-    if (decalOutsidePlane(decal, nearPlane)
-        || decalOutsidePlane(decal, farPlane))
+    if (decal_outside_plane(decal, near_plane)
+        || decal_outside_plane(decal, far_plane))
     {
         result = false;
     }
 
     for (int i = 0; i < 4 && result; ++i)
     {		
-        if (decalOutsidePlane(decal, frustum.planes[i]))
+        if (decal_outside_plane(decal, frustum.planes[i]))
         {
             result = false;
         }
@@ -168,239 +168,239 @@ static bool decalInsideFrustum(pbr_decal_cb decal, light_culling_view_frustum fr
     return result;
 }
 
-static uint getLightMask(float sphereCenterDepth, float radius, float depthRangeRecip, float nearZ)
+static uint get_light_mask(float sphere_center_depth, float radius, float depth_range_recip, float near_z)
 {
-    const float plMin = sphereCenterDepth - radius;
-    const float plMax = sphereCenterDepth + radius;
-    const uint plMaskIndexMin = max(0, min(31, floor((plMin - nearZ) * depthRangeRecip)));
-    const uint plMaskIndexMax = max(0, min(31, floor((plMax - nearZ) * depthRangeRecip)));
+    const float pl_min = sphere_center_depth - radius;
+    const float pl_max = sphere_center_depth + radius;
+    const uint pl_mask_index_min = max(0, min(31, floor((pl_min - near_z) * depth_range_recip)));
+    const uint pl_mask_index_max = max(0, min(31, floor((pl_max - near_z) * depth_range_recip)));
 
     // Set all bits between plMaskIndexMin and (inclusive) plMaskIndexMax
-    uint lightMask = 0xFFFFFFFF;
-    lightMask >>= 31 - (plMaskIndexMax - plMaskIndexMin);
-    lightMask <<= plMaskIndexMin;
-    return lightMask;
+    uint light_mask = 0xFFFFFFFF;
+    light_mask >>= 31 - (pl_mask_index_max - pl_mask_index_min);
+    light_mask <<= pl_mask_index_min;
+    return light_mask;
 }
 
-#define groupAppendLight(type, index)                               \
+#define group_append_light(type, index)                               \
     {                                                               \
         uint v;                                                     \
-        InterlockedAdd(groupLightCount##type, 1, v);                \
+        InterlockedAdd(group_light_count_##type, 1, v);                \
         if (v < MAX_NUM_LIGHTS_PER_TILE)                            \
         {                                                           \
-            groupObjectsList##type[TILE_LIGHT_OFFSET + v] = index;  \
+            group_objects_list_##type[TILE_LIGHT_OFFSET + v] = index;  \
         }                                                           \
     }
 
 // We flip the index, such that the first set bit corresponds to the front-most decal. We render the decals front to back, such that we can early exit when alpha >= 1.
-#define groupAppendDecal(type, index)                               \
+#define group_append_decal(type, index)                               \
     {                                                               \
         const uint v = MAX_NUM_TOTAL_DECALS - index - 1;            \
         const uint bucket = v >> 5u;                                \
         const uint bit = v & ((1u << 5u) - 1);                      \
-        InterlockedOr(groupObjectsList##type[bucket], 1u << bit);   \
+        InterlockedOr(group_objects_list_##type[bucket], 1u << bit);   \
     }
 
-#define groupAppendLightOpaque(index) groupAppendLight(Opaque, index)
-#define groupAppendLightTransparent(index) groupAppendLight(Transparent, index)
-#define groupAppendDecalOpaque(index) groupAppendDecal(Opaque, index)
-#define groupAppendDecalTransparent(index) groupAppendDecal(Transparent, index)
+#define group_append_light_opaque(index) group_append_light(opaque, index)
+#define group_append_light_transparent(index) group_append_light(transparent, index)
+#define group_append_decal_opaque(index) group_append_decal(opaque, index)
+#define group_append_decal_transparent(index) group_append_decal(transparent, index)
 
 [RootSignature(LIGHT_CULLING_RS)]
 [numthreads(LIGHT_CULLING_TILE_SIZE, LIGHT_CULLING_TILE_SIZE, 1)]
-void main(cs_input IN)
+void main(CSInput IN)
 {
     uint i;
 
     // Initialize
-    if (IN.groupIndex == 0)
+    if (IN.group_index == 0)
     {
-        groupMinDepth = asuint(0.9999999f);
-        groupMaxDepth = 0;
+        group_min_depth = asuint(0.9999999f);
+        group_max_depth = 0;
 
-        groupLightCountOpaque = 0;
-        groupLightCountTransparent = 0;
+        group_light_count_opaque = 0;
+        group_light_count_transparent = 0;
 
-        groupTileDepthMask = 0;
+        group_tile_depth_mask = 0;
 
-        groupFrustum = frusta[IN.groupID.y * cb.numThreadGroupsX + IN.groupID.x];
+        group_frustum = frusta[IN.group_id.y * cb.num_thread_groups_x + IN.group_id.x];
     }
 
     // Initialize decal masks to zero.
-    for (i = IN.groupIndex; i < NUM_DECAL_BUCKETS; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
+    for (i = IN.group_index; i < NUM_DECAL_BUCKETS; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
     {
-        groupObjectsListOpaque[i] = 0;
+        group_objects_list_opaque[i] = 0;
     }
-    for (i = IN.groupIndex; i < NUM_DECAL_BUCKETS; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
+    for (i = IN.group_index; i < NUM_DECAL_BUCKETS; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
     {
-        groupObjectsListTransparent[i] = 0;
+        group_objects_list_transparent[i] = 0;
     }
 
     GroupMemoryBarrierWithGroupSync();
 
     // Determine minimum and maximum depth.
-    uint2 screenSize;
-    depthBuffer.GetDimensions(screenSize.x, screenSize.y);
+    uint2 screen_size;
+    depth_buffer.GetDimensions(screen_size.x, screen_size.y);
 
-    const float fDepth = depthBuffer[min(IN.dispatchThreadID.xy, screenSize - 1)];
+    const float f_depth = depth_buffer[min(IN.dispatch_thread_id.xy, screen_size - 1)];
     // Since the depth is between 0 and 1, we can perform min and max operations on the bit pattern as uint. This is because native HLSL does not support floating point atomics.
-    if (fDepth != 1.f)
+    if (f_depth != 1.f)
     {
-        const uint uDepth = asuint(fDepth);
+        const uint u_depth = asuint(f_depth);
 
-        InterlockedMin(groupMinDepth, uDepth);
-        InterlockedMax(groupMaxDepth, uDepth);
+        InterlockedMin(group_min_depth, u_depth);
+        InterlockedMax(group_max_depth, u_depth);
     }
     GroupMemoryBarrierWithGroupSync();
 
-    const float minDepth = asfloat(groupMinDepth);
-    const float maxDepth = asfloat(groupMaxDepth);
+    const float min_depth = asfloat(group_min_depth);
+    const float max_depth = asfloat(group_max_depth);
 
     const float3 forward = camera.forward.xyz;
-    const float3 cameraPos = camera.position.xyz;
+    const float3 camera_pos = camera.position.xyz;
 
-    const float nearZ = camera.depthBufferDepthToEyeDepth(minDepth); // Positive.
-    const float farZ  = camera.depthBufferDepthToEyeDepth(maxDepth); // Positive.
-    const float myZ   = camera.depthBufferDepthToEyeDepth(fDepth);   // Positive.
+    const float near_z = camera.depth_buffer_depth_to_eye_depth(min_depth); // Positive.
+    const float far_z  = camera.depth_buffer_depth_to_eye_depth(max_depth); // Positive.
+    const float my_z   = camera.depth_buffer_depth_to_eye_depth(f_depth);   // Positive.
 
-    const float depthRangeRecip = 31.f / (farZ - nearZ);
-    const uint depthMaskIndex = max(0, min(31, floor((myZ - nearZ) * depthRangeRecip)));
-    InterlockedOr(groupTileDepthMask, 1u << depthMaskIndex);
+    const float depth_range_recip = 31.f / (far_z - near_z);
+    const uint depth_mask_index = max(0, min(31, floor((my_z - near_z) * depth_range_recip)));
+    InterlockedOr(group_tile_depth_mask, 1u << depth_mask_index);
 
-    const light_culling_frustum_plane cameraNearPlane = {  forward,  dot(forward, cameraPos + camera.projectionParams.x * forward) };
-    const light_culling_frustum_plane nearPlane       = {  forward,  dot(forward, cameraPos + nearZ * forward) };
-    const light_culling_frustum_plane farPlane        = { -forward, -dot(forward, cameraPos + farZ  * forward) };
+    const LightCullingFrustumPlane camera_near_plane = {  forward,  dot(forward, camera_pos + camera.projection_params.x * forward) };
+    const LightCullingFrustumPlane near_plane       = {  forward,  dot(forward, camera_pos + near_z * forward) };
+    const LightCullingFrustumPlane far_plane        = { -forward, -dot(forward, camera_pos + far_z  * forward) };
 
-    if (IN.groupIndex < 8)
+    if (IN.group_index < 8)
     {
-        const uint x = IN.groupIndex & 0x1;
-        const uint y = (IN.groupIndex >> 1) & 0x1;
-        const uint z = (IN.groupIndex >> 2);
+        const uint x = IN.group_index & 0x1;
+        const uint y = (IN.group_index >> 1) & 0x1;
+        const uint z = (IN.group_index >> 2);
 
-        const uint2 coord = (IN.groupID.xy + uint2(x, y)) * LIGHT_CULLING_TILE_SIZE;
-        const float2 uv = (float2(coord) + 0.5f) / screenSize;
+        const uint2 coord = (IN.group_id.xy + uint2(x, y)) * LIGHT_CULLING_TILE_SIZE;
+        const float2 uv = (float2(coord) + 0.5f) / screen_size;
 
-        groupViewSpaceAABBCorners[IN.groupIndex] = camera.restoreViewSpacePosition(uv, lerp(minDepth, maxDepth, z));
+        group_view_space_aabb_corners[IN.group_index] = camera.restore_view_space_position(uv, lerp(min_depth, max_depth, z));
     }
 
     GroupMemoryBarrierWithGroupSync();
 
-    if (IN.groupIndex == 0)
+    if (IN.group_index == 0)
     {
-        float3 minAABB = 10000000;
-        float3 maxAABB = -10000000;
+        float3 min_aabb = 10000000;
+        float3 max_aabb = -10000000;
 
         for (uint i = 0; i < 8; ++i)
         {
-            minAABB = min(minAABB, groupViewSpaceAABBCorners[i]);
-            maxAABB = max(maxAABB, groupViewSpaceAABBCorners[i]);
+            min_aabb = min(min_aabb, group_view_space_aabb_corners[i]);
+            max_aabb = max(max_aabb, group_view_space_aabb_corners[i]);
         }
 
-        groupViewSpaceAABBCenter = (maxAABB + minAABB) * 0.5f;
-        groupViewSpaceAABBExtent = maxAABB - groupViewSpaceAABBCenter;
+        group_view_space_aabb_center = (max_aabb + min_aabb) * 0.5f;
+        group_view_space_aabb_extent = max_aabb - group_view_space_aabb_center;
     }
 
     GroupMemoryBarrierWithGroupSync();
 
     // Decals
-    const uint numDecals = cb.numDecals;
-    for (i = IN.groupIndex; i < numDecals; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
+    const uint num_decals = cb.num_decals;
+    for (i = IN.group_index; i < num_decals; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
     {
-        pbr_decal_cb d = decals[i];
-        if (decalInsideFrustum(d, groupFrustum, cameraNearPlane, farPlane))
+        PBRDecalCB d = decals[i];
+        if (decal_inside_frustum(d, group_frustum, camera_near_plane, far_plane))
         {
-            groupAppendDecalTransparent(i);
+            group_append_decal_transparent(i);
 
-            if (!decalOutsidePlane(d, nearPlane))
+            if (!decal_outside_plane(d, near_plane))
             {
-                groupAppendDecalOpaque(i);
+                group_append_decal_opaque(i);
             }
         }
     }
 
     // Point lights
-    const uint numPointLights = cb.numPointLights;
-    for (i = IN.groupIndex; i < numPointLights; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
+    const uint num_point_lights = cb.num_point_lights;
+    for (i = IN.group_index; i < num_point_lights; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
     {
-        point_light_cb pl = pointLights[i];
-        if (pointLightInsideFrustum(pl, groupFrustum, cameraNearPlane, farPlane))
+        PointLightCB pl = point_lights[i];
+        if (point_light_inside_frustum(pl, group_frustum, camera_near_plane, far_plane))
         {
-            groupAppendLightTransparent(i);
+            group_append_light_transparent(i);
 
             pl.position = mul(camera.view, float4(pl.position, 1.f)).xyz;
 
-            if (sphereInAABB(pl.position, pl.radius, groupViewSpaceAABBCenter, groupViewSpaceAABBExtent))
+            if (sphere_in_aabb(pl.position, pl.radius, group_view_space_aabb_center, group_view_space_aabb_extent))
             {
-                const uint lightMask = getLightMask(-pl.position.z, pl.radius, depthRangeRecip, nearZ);
+                const uint light_mask = get_light_mask(-pl.position.z, pl.radius, depth_range_recip, near_z);
 
-                if (lightMask & groupTileDepthMask)
+                if (light_mask & group_tile_depth_mask)
                 {
-                    groupAppendLightOpaque(i);
+                    group_append_light_opaque(i);
                 }
             }
         }
     }
 
     GroupMemoryBarrierWithGroupSync();
-    const uint numTilePointLightsOpaque = groupLightCountOpaque;
-    const uint numTilePointLightsTransparent = groupLightCountTransparent;
+    const uint num_tile_point_lights_opaque = group_light_count_opaque;
+    const uint num_tile_point_lights_transparent = group_light_count_transparent;
 
     // Spot lights
-    const uint numSpotLights = cb.numSpotLights;
-    for (i = IN.groupIndex; i < numSpotLights; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
+    const uint num_spot_lights = cb.num_spot_lights;
+    for (i = IN.group_index; i < num_spot_lights; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
     {
-        const spot_light_cb sl = spotLights[i];
-        const spot_light_bounding_volume slBV = getSpotLightBoundingVolume(sl);
-        if (spotLightInsideFrustum(slBV, groupFrustum, cameraNearPlane, farPlane))
+        const SpotLightCB sl = spot_lights[i];
+        const SpotLightBoundingVolume sl_bv = get_spot_light_bounding_volume(sl);
+        if (spot_light_inside_frustum(sl_bv, group_frustum, camera_near_plane, far_plane))
         {
-            groupAppendLightTransparent(i);
+            group_append_light_transparent(i);
 
-            const float oc = sl.getOuterCutoff();
-            const float radius = sl.maxDistance * 0.5f / (oc * oc);
+            const float oc = sl.get_outer_cutoff();
+            const float radius = sl.max_distance * 0.5f / (oc * oc);
             const float3 center = mul(camera.view, float4(sl.position + sl.direction * radius, 1.f)).xyz;
 
-            if (sphereInAABB(center, radius, groupViewSpaceAABBCenter, groupViewSpaceAABBExtent))
+            if (sphere_in_aabb(center, radius, group_view_space_aabb_center, group_view_space_aabb_extent))
             {
-                const uint lightMask = getLightMask(-center.z, radius, depthRangeRecip, nearZ);
+                const uint light_mask = get_light_mask(-center.z, radius, depth_range_recip, near_z);
 
-                if (lightMask & groupTileDepthMask)
+                if (light_mask & group_tile_depth_mask)
                 {
-                    groupAppendLightOpaque(i);
+                    group_append_light_opaque(i);
                 }
             }
         }
     }
 
     GroupMemoryBarrierWithGroupSync();
-    const uint numTileSpotLightsOpaque = groupLightCountOpaque - numTilePointLightsOpaque;
-    const uint numTileSpotLightsTransparent = groupLightCountTransparent - numTilePointLightsTransparent;
+    const uint num_tile_spot_lights_opaque = group_light_count_opaque - num_tile_point_lights_opaque;
+    const uint num_tile_spot_lights_transparent = group_light_count_transparent - num_tile_point_lights_transparent;
 
-    const uint totalIndexCountOpaque = groupLightCountOpaque + NUM_DECAL_BUCKETS;
-    const uint totalIndexCountTransparent = groupLightCountTransparent + NUM_DECAL_BUCKETS;
-    const uint totalIndexCount = totalIndexCountOpaque + totalIndexCountTransparent;
-    if (IN.groupIndex == 0)
+    const uint total_index_count_opaque = group_light_count_opaque + NUM_DECAL_BUCKETS;
+    const uint total_index_count_transparent = group_light_count_transparent + NUM_DECAL_BUCKETS;
+    const uint total_index_count = total_index_count_opaque + total_index_count_transparent;
+    if (IN.group_index == 0)
     {
-        InterlockedAdd(tiledCullingIndexCounter[0], totalIndexCount, groupObjectsStartOffset);
+        InterlockedAdd(tiled_culling_index_counter[0], total_index_count, group_objects_start_offset);
 
-        tiledCullingGrid[IN.groupID.xy] = uint4(
-            groupObjectsStartOffset,
-            (numTilePointLightsOpaque << 20) | (numTileSpotLightsOpaque << 10),
-            groupObjectsStartOffset + totalIndexCountOpaque, // Transparent objects are directly after opaques.
-            (numTilePointLightsTransparent << 20) | (numTileSpotLightsTransparent << 10)
+        tiled_culling_grid[IN.group_id.xy] = uint4(
+            group_objects_start_offset,
+            (num_tile_point_lights_opaque << 20) | (num_tile_spot_lights_opaque << 10),
+            group_objects_start_offset + total_index_count_opaque, // Transparent objects are directly after opaques.
+            (num_tile_point_lights_transparent << 20) | (num_tile_spot_lights_transparent << 10)
         );
     }
 
     GroupMemoryBarrierWithGroupSync();
 
-    const uint offsetOpaque = groupObjectsStartOffset + 0;
-    for (i = IN.groupIndex; i < totalIndexCountOpaque; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
+    const uint offset_opaque = group_objects_start_offset + 0;
+    for (i = IN.group_index; i < total_index_count_opaque; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
     {
-        tiledObjectsIndexList[offsetOpaque + i] = groupObjectsListOpaque[i];
+        tiled_objects_index_list[offset_opaque + i] = group_objects_list_opaque[i];
     }
 
-    const uint offsetTransparent = groupObjectsStartOffset + totalIndexCountOpaque;
-    for (i = IN.groupIndex; i < totalIndexCountTransparent; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
+    const uint offset_transparent = group_objects_start_offset + total_index_count_opaque;
+    for (i = IN.group_index; i < total_index_count_transparent; i += LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE)
     {
-        tiledObjectsIndexList[offsetTransparent + i] = groupObjectsListTransparent[i];
+        tiled_objects_index_list[offset_transparent + i] = group_objects_list_transparent[i];
     }
 }

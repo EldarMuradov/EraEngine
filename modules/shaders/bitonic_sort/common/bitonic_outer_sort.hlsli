@@ -1,58 +1,58 @@
 #include "cs.hlsli"
 #include "bitonic_sort_rs.hlsli"
 
-ConstantBuffer<bitonic_sort_cb> cb		: register(b0);
-ConstantBuffer<bitonic_sort_kj_cb> kj	: register(b1);
-StructuredBuffer<uint> counterBuffer	: register(t0);
-RWStructuredBuffer<uint> sortBuffer     : register(u0);
+ConstantBuffer<BitonicSortCB> cb		: register(b0);
+ConstantBuffer<BitonicSortKjCB> kj	: register(b1);
+StructuredBuffer<uint> counter_buffer	: register(t0);
+RWStructuredBuffer<uint> sort_buffer     : register(u0);
 
 #if defined(BITONIC_SORT_FLOAT)
-RWStructuredBuffer<float> comparisonBuffer  : register(u1);
+RWStructuredBuffer<float> comparison_buffer  : register(u1);
 #endif
 
 [numthreads(1024, 1, 1)]
 [RootSignature(BITONIC_SORT_RS)]
-void main(cs_input IN)
+void main(CSInput IN)
 {
-    uint listCount = counterBuffer[cb.counterOffset];
+    uint list_count = counter_buffer[cb.counter_offset];
 
     // Form unique index pair from dispatch thread ID.
     uint k = kj.k;
     uint j = kj.j;
-    uint index2 = insertOneBit(IN.dispatchThreadID.x, j);
+    uint index2 = insert_one_bit(IN.dispatch_thread_id.x, j);
     uint index1 = index2 ^ (k == 2 * j ? k - 1 : j);
 
-    if (index2 >= listCount)
+    if (index2 >= list_count)
     {
         return;
     }
 
 #if defined(BITONIC_SORT_UINT)
-    key_value a = sortBuffer[index1];
-    key_value b = sortBuffer[index2];
+    KeyValue a = sort_buffer[index1];
+    KeyValue b = sort_buffer[index2];
 
-    if (shouldSwapUint(a, b, cb.nullItem))
+    if (should_swap_uint(a, b, cb.null_item))
     {
-        sortBuffer[index1] = b;
-        sortBuffer[index2] = a;
+        sort_buffer[index1] = b;
+        sort_buffer[index2] = a;
     }
 #elif defined(BITONIC_SORT_FLOAT)
 
-    bool ascending = cb.nullItem > 0.f;
+    bool ascending = cb.null_item > 0.f;
 
-    float a = comparisonBuffer[index1];
-    float b = comparisonBuffer[index2];
+    float a = comparison_buffer[index1];
+    float b = comparison_buffer[index2];
 
-    if (shouldSwapFloat(a, b, ascending))
+    if (should_swap_float(a, b, ascending))
     {
-        uint aVal = sortBuffer[index1];
-        uint bVal = sortBuffer[index2];
+        uint a_val = sort_buffer[index1];
+        uint b_val = sort_buffer[index2];
 
-        sortBuffer[index1] = bVal;
-        sortBuffer[index2] = aVal;
+        sort_buffer[index1] = b_val;
+        sort_buffer[index2] = a_val;
 
-        comparisonBuffer[index1] = b;
-        comparisonBuffer[index2] = a;
+        comparison_buffer[index1] = b;
+        comparison_buffer[index2] = a;
     }
 #endif
 }

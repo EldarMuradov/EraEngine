@@ -1,25 +1,25 @@
 #include "transform.hlsli"
 
-ConstantBuffer<transform_cb> transform : register(b0);
+ConstantBuffer<TransformCB> transform : register(b0);
 
-struct vs_input
+struct VSInput
 {
 	float3 position			: POSITION;
 	float3 normal			: NORMAL;
 };
 
-struct vs_output
+struct VSOutput
 {
-	float3 worldPosition	: WORLD_POSITION;
-	float3 worldNormal		: WORLD_NORMAL;
+	float3 world_position	: WORLD_POSITION;
+	float3 world_normal		: WORLD_NORMAL;
 	float4 position			: SV_POSITION;
 };
 
-vs_output main(vs_input IN)
+VSOutput main(VSInput IN)
 {
-	vs_output OUT;
+	VSOutput OUT;
 	OUT.position = mul(transform.mvp, float4(IN.position, 1.f));
-	OUT.worldPosition = mul(transform.m, float4(IN.position, 1.f)).xyz;
-	OUT.worldNormal = mul(transform.m, float4(IN.normal, 0.f)).xyz;
+	OUT.world_position = mul(transform.m, float4(IN.position, 1.f)).xyz;
+	OUT.world_normal = mul(transform.m, float4(IN.normal, 0.f)).xyz;
 	return OUT;
 }

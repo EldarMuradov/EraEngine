@@ -1,31 +1,31 @@
 #include "depth_only_rs.hlsli"
 
-struct light_vp
+struct LightVp
 {
-	float4x4 viewProj;
+	float4x4 view_proj;
 };
 
 StructuredBuffer<float4x4> transforms	: register(t0);
-ConstantBuffer<light_vp> vp				: register(b0);
+ConstantBuffer<LightVp> vp				: register(b0);
 
-struct vs_input
+struct VSInput
 {
 	float3 position		: POSITION;
 
-	uint instanceID		: SV_InstanceID;
+	uint instance_id		: SV_InstanceID;
 };
 
-struct vs_output
+struct VSOutput
 {
 	float4 position			: SV_POSITION;
 };
 
 [RootSignature(SHADOW_RS)]
-vs_output main(vs_input IN)
+VSOutput main(VSInput IN)
 {
-	float4 worldPosition = mul(transforms[IN.instanceID], float4(IN.position, 1.f));
+	float4 world_position = mul(transforms[IN.instance_id], float4(IN.position, 1.f));
 
-	vs_output OUT;
-	OUT.position = mul(vp.viewProj, worldPosition);
+	VSOutput OUT;
+	OUT.position = mul(vp.view_proj, world_position);
 	return OUT;
 }

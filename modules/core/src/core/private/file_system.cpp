@@ -78,49 +78,49 @@ namespace era_engine
 			{
 				filenotify = (FILE_NOTIFY_INFORMATION*)(&buffer[offset]);
 
-				FileSystemChange change = FileSystemChange::None;
+				FileSystemChange change = FileSystemChange::NONE;
 
 				switch (filenotify->Action)
 				{
-				case FILE_ACTION_ADDED: { change = FileSystemChange::Add; } break;
-				case FILE_ACTION_REMOVED: { change = FileSystemChange::Delete; } break;
-				case FILE_ACTION_MODIFIED: { change = FileSystemChange::Modify; } break;
+				case FILE_ACTION_ADDED: { change = FileSystemChange::ADD; } break;
+				case FILE_ACTION_REMOVED: { change = FileSystemChange::REMOVE; } break;
+				case FILE_ACTION_MODIFIED: { change = FileSystemChange::MODIFY; } break;
 				case FILE_ACTION_RENAMED_OLD_NAME:
 				{
 					uint32 filename_length = filenotify->FileNameLength / sizeof(WCHAR);
 					old_path = (params->directory / std::wstring(filenotify->FileName, filename_length)).lexically_normal();
 				} break;
-				case FILE_ACTION_RENAMED_NEW_NAME: { change = FileSystemChange::Rename; } break;
+				case FILE_ACTION_RENAMED_NEW_NAME: { change = FileSystemChange::RENAME; } break;
 				}
 
-				if (change != FileSystemChange::None)
+				if (change != FileSystemChange::NONE)
 				{
 					uint32 filename_length = filenotify->FileNameLength / sizeof(WCHAR);
 					fs::path path = (params->directory / std::wstring(filenotify->FileName, filename_length)).lexically_normal();
 
-					if (change == FileSystemChange::Modify)
+					if (change == FileSystemChange::MODIFY)
 					{
-						auto writeTime = fs::last_write_time(path);
+						auto write_time = fs::last_write_time(path);
 
 						// The filesystem usually sends multiple notifications for changed files, since the file is first written, then metadata is changed etc.
 						// This check prevents these notifications if they are too close together in time.
 						// This is a pretty crude fix. In this setup files should not change at the same time, since we only ever track one file.
 						if (path == last_changed_path
-							&& std::chrono::duration_cast<std::chrono::milliseconds>(writeTime - last_changed_path_timestamp).count() < 200)
+							&& std::chrono::duration_cast<std::chrono::milliseconds>(write_time - last_changed_path_timestamp).count() < 200)
 						{
 							last_changed_path = path;
-							last_changed_path_timestamp = writeTime;
+							last_changed_path_timestamp = write_time;
 							break;
 						}
 
 						last_changed_path = path;
-						last_changed_path_timestamp = writeTime;
+						last_changed_path_timestamp = write_time;
 					}
 
 					FileSystemEvent e;
 					e.change = change;
 					e.path = std::move(path);
-					if (change == FileSystemChange::Rename)
+					if (change == FileSystemChange::RENAME)
 					{
 						e.old_path = std::move(old_path);
 					}

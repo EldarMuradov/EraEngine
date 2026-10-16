@@ -24,10 +24,10 @@ namespace era_engine
 	{
 		MeshUtils() = delete;
 	public:
-		static Entity load_entity_mesh_from_file(ref<World> world, const fs::path& filename, uint32 flags = mesh_creation_flags_default, MeshLoadCallback cb = nullptr);
-		static Entity load_entity_mesh_from_handle(ref<World> world, AssetHandle handle, uint32 flags = mesh_creation_flags_default, MeshLoadCallback cb = nullptr);
+		static Entity load_entity_mesh_from_file(ref<World> world, const fs::path& filename, uint32 flags = MESH_CREATION_FLAGS_DEFAULT, MeshLoadCallback cb = nullptr);
+		static Entity load_entity_mesh_from_handle(ref<World> world, AssetHandle handle, uint32 flags = MESH_CREATION_FLAGS_DEFAULT, MeshLoadCallback cb = nullptr);
 		
-		static Entity load_entity_mesh_from_file_async(ref<World> world, const fs::path& filename, uint32 flags = mesh_creation_flags_default, MeshLoadCallback cb = nullptr, JobHandle parent_job = {});
-		static Entity load_entity_mesh_from_handle_async(ref<World> world, AssetHandle handle, uint32 flags = mesh_creation_flags_default, MeshLoadCallback cb = nullptr, JobHandle parent_job = {});
+		static Entity load_entity_mesh_from_file_async(ref<World> world, const fs::path& filename, uint32 flags = MESH_CREATION_FLAGS_DEFAULT, MeshLoadCallback cb = nullptr, JobHandle parent_job = {});
+		static Entity load_entity_mesh_from_handle_async(ref<World> world, AssetHandle handle, uint32 flags = MESH_CREATION_FLAGS_DEFAULT, MeshLoadCallback cb = nullptr, JobHandle parent_job = {});
 	};
 }

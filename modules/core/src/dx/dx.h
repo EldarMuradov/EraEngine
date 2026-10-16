@@ -16,25 +16,25 @@ namespace D3D12MA { class Allocator; class Allocation; };
 
 namespace era_engine
 {
-	typedef com<ID3D12Object> dx_object;
-	typedef com<IDXGIAdapter4> dx_adapter;
-	typedef com<ID3D12Device5> dx_device;
-	typedef com<IDXGIFactory4> dx_factory;
-	typedef com<IDXGISwapChain4> dx_swapchain;
-	typedef com<ID3D12Resource> dx_resource;
-	typedef com<ID3D12CommandAllocator> dx_command_allocator;
-	typedef com<ID3DBlob> dx_blob;
-	typedef com<ID3D12PipelineState> dx_pipeline_state;
-	typedef com<ID3D12Resource> dx_resource;
-	typedef com<ID3D12CommandSignature> dx_command_signature;
-	typedef com<ID3D12Heap> dx_heap;
-	typedef com<ID3D12StateObject> dx_raytracing_pipeline_state;
-	typedef com<ID3D12QueryHeap> dx_query_heap;
+	typedef com<ID3D12Object> DXObject;
+	typedef com<IDXGIAdapter4> DXAdapter;
+	typedef com<ID3D12Device5> DXDevice;
+	typedef com<IDXGIFactory4> DXFactory;
+	typedef com<IDXGISwapChain4> DXSwapchain;
+	typedef com<ID3D12Resource> DXResource;
+	typedef com<ID3D12CommandAllocator> DXCommandAllocator;
+	typedef com<ID3DBlob> DXBlob;
+	typedef com<ID3D12PipelineState> DXPipelineState;
+	typedef com<ID3D12Resource> DXResource;
+	typedef com<ID3D12CommandSignature> DXCommandSignature;
+	typedef com<ID3D12Heap> DXHeap;
+	typedef com<ID3D12StateObject> DXRaytracingPipelineState;
+	typedef com<ID3D12QueryHeap> DXQueryHeap;
 
 #ifdef SDK_SUPPORTS_MESH_SHADERS
-	typedef com<ID3D12GraphicsCommandList6> dx_graphics_command_list;
+	typedef com<ID3D12GraphicsCommandList6> DXGraphicsCommandList;
 #else
-	typedef com<ID3D12GraphicsCommandList4> dx_graphics_command_list;
+	typedef com<ID3D12GraphicsCommandList4> DXGraphicsCommandList;
 #endif
 }
 

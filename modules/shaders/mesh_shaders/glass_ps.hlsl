@@ -1,19 +1,19 @@
 #include "camera.hlsli"
 
-struct ps_input
+struct PSInput
 {
-	float3 worldPos : POSITION;
+	float3 world_pos : POSITION;
 	float3 normal	: NORMAL;
 }; 
 
-ConstantBuffer<camera_cb> camera	: register(b1);
+ConstantBuffer<CameraCB> camera	: register(b1);
 
-SamplerState texSampler				: register(s0, space1);
+SamplerState tex_sampler				: register(s0, space1);
 TextureCube<float4> tex				: register(t0, space1);
 
-float4 main(ps_input IN) : SV_TARGET
+float4 main(PSInput IN) : SV_TARGET
 {
-	float3 V = normalize(IN.worldPos - camera.position.xyz);
+	float3 V = normalize(IN.world_pos - camera.position.xyz);
 	float3 N = normalize(IN.normal);
 
 	// Compute reflection and refraction vectors.
@@ -21,16 +21,16 @@ float4 main(ps_input IN) : SV_TARGET
 	float c = dot(V, N);
 	float d = ETA * c;
 	float k = saturate(d * d + (1.f - ETA * ETA));
-	float3 reflVec = V - 2.f * c * N;				// reflect(V, N)
-	float3 refrVec = ETA * V - (d + sqrt(k)) * N;	// refract(V, N, ETA)
+	float3 refl_vec = V - 2.f * c * N;				// reflect(V, N)
+	float3 refr_vec = ETA * V - (d + sqrt(k)) * N;	// refract(V, N, ETA)
 
 	// Sample and blend.
-	float3 refl = tex.Sample(texSampler, reflVec).rgb;
-	float3 refr = tex.Sample(texSampler, refrVec).rgb;
+	float3 refl = tex.Sample(tex_sampler, refl_vec).rgb;
+	float3 refr = tex.Sample(tex_sampler, refr_vec).rgb;
 	float3 sky = lerp(refl, refr, k);
 
 	// Add a cheap and fake bubble color effect.
-	float3 bubbleTint = 0.25f * pow(1.f - k, 5.f) * abs(N);
+	float3 bubble_tint = 0.25f * pow(1.f - k, 5.f) * abs(N);
 
-	return float4(sky + bubbleTint, 1.f);
+	return float4(sky + bubble_tint, 1.f);
 }

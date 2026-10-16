@@ -12,67 +12,67 @@
 
 namespace era_engine
 {
-	static dx_pipeline outlinePipeline;
+	static DXPipeline outline_pipeline;
 
-	void initializeOutlinePipelines()
+	void initialize_outline_pipelines()
 	{
-		auto& markerDesc = CREATE_GRAPHICS_PIPELINE
-			.inputLayout(inputLayout_position)
-			.renderTargets(0, 0, depthStencilFormat)
-			.stencilSettings(D3D12_COMPARISON_FUNC_ALWAYS,
+		auto& marker_desc = CREATE_GRAPHICS_PIPELINE
+			.input_layout(input_layout_position)
+			.render_targets(0, 0, depth_stencil_format)
+			.stencil_settings(D3D12_COMPARISON_FUNC_ALWAYS,
 				D3D12_STENCIL_OP_REPLACE,
 				D3D12_STENCIL_OP_REPLACE,
 				D3D12_STENCIL_OP_KEEP,
 				D3D12_DEFAULT_STENCIL_READ_MASK,
-				stencil_flag_selected_object) // Mark selected object
-			.depthSettings(false, false)
-			.cullingOff(); // Since this is fairly light-weight, we only render double sided
+				STENCIL_FLAG_SELECTED_OBJECT) // Mark selected object
+			.depth_settings(false, false)
+			.culling_off(); // Since this is fairly light-weight, we only render double sided
 
-		outlinePipeline = createReloadablePipeline(markerDesc, { "outline_vs" }, rs_in_vertex_shader);
+		outline_pipeline = create_reloadable_pipeline(marker_desc, { "outline_vs" }, RS_IN_VERTEX_SHADER);
 	}
 
-	struct outline_render_data
+	struct OutlineRenderData
 	{
 		mat4 transform;
-		dx_vertex_buffer_view vertexBuffer;
-		dx_index_buffer_view indexBuffer;
+		DXVertexBufferView vertex_buffer;
+		DXIndexBufferView index_buffer;
 		SubmeshInfo submesh;
 	};
 
-	struct outline_pipeline
+	struct OutlinePipeline
 	{
 		PIPELINE_SETUP_DECL
 		{
-			cl->setPipelineState(*outlinePipeline.pipeline);
-			cl->setGraphicsRootSignature(*outlinePipeline.rootSignature);
+			cl->set_pipeline_state(*outline_pipeline.pipeline);
+			cl->set_graphics_root_signature(*outline_pipeline.root_signature);
 
-			cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		}
 
-			PIPELINE_RENDER_DECL(outline_render_data)
+			PIPELINE_RENDER_DECL(OutlineRenderData)
 		{
-			cl->setGraphics32BitConstants(OUTLINE_RS_MVP, outline_marker_cb{ viewProj * data.transform });
+			cl->set_graphics_32bit_constants(OUTLINE_RS_MVP, OutlineMarkerCB{ view_proj * data.transform });
 
-			cl->setVertexBuffer(0, data.vertexBuffer);
-			cl->setIndexBuffer(data.indexBuffer);
-			cl->drawIndexed(data.submesh.numIndices, 1, data.submesh.firstIndex, data.submesh.baseVertex, 0);
+			cl->set_vertex_buffer(0, data.vertex_buffer);
+			cl->set_index_buffer(data.index_buffer);
+			cl->draw_indexed(data.submesh.num_indices, 1, data.submesh.first_index, data.submesh.base_vertex, 0);
 		}
 	};
 
-	void renderOutline(ldr_render_pass* renderPass, const mat4& transform, dx_vertex_buffer_view vertexBuffer, dx_index_buffer_view indexBuffer, SubmeshInfo submesh)
+	void render_outline(LDRRenderPass* render_pass, const mat4& transform, DXVertexBufferView vertex_buffer, DXIndexBufferView index_buffer, SubmeshInfo submesh)
 	{
-		outline_render_data data = {
+		OutlineRenderData data = {
 			transform,
-			vertexBuffer,
-			indexBuffer,
+			vertex_buffer,
+			index_buffer,
 			submesh,
 		};
 
-		renderPass->renderOutline<outline_pipeline>(data);
+		render_pass->render_outline<OutlinePipeline>(data);
 	}
 
-	void renderOutline(ldr_render_pass* renderPass, const mat4& transform, dx_vertex_buffer_group_view vertexBuffer, dx_index_buffer_view indexBuffer, SubmeshInfo submesh)
+	void render_outline(LDRRenderPass* render_pass, const mat4& transform, DXVertexBufferGroupView vertex_buffer, DXIndexBufferView index_buffer, SubmeshInfo submesh)
 	{
-		renderOutline(renderPass, transform, vertexBuffer.positions, indexBuffer, submesh);
+		render_outline(render_pass, transform, vertex_buffer.positions, index_buffer, submesh);
 	}
 }

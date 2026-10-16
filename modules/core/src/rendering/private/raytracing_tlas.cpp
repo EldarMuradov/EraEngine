@@ -7,109 +7,109 @@
 
 namespace era_engine
 {
-    void raytracing_tlas::initialize(raytracing_as_rebuild_mode rebuildMode)
+    void RaytracingTLAS::initialize(RaytracingASRebuildMode rebuild_mode)
     {
-        this->rebuildMode = rebuildMode;
-        allInstances.reserve(4096); // TODO
+        this->rebuild_mode = rebuild_mode;
+        all_instances.reserve(4096); // TODO
     }
 
-    void raytracing_tlas::reset()
+    void RaytracingTLAS::reset()
     {
-        allInstances.clear();
+        all_instances.clear();
     }
 
-    raytracing_instance_handle raytracing_tlas::instantiate(raytracing_object_type type, const trs& transform)
+    RaytracingInstanceHandle RaytracingTLAS::instantiate(RaytracingObjectType type, const trs& transform)
     {
-        uint32 result = (uint32)allInstances.size();
-        D3D12_RAYTRACING_INSTANCE_DESC& instance = allInstances.emplace_back();
+        uint32 result = (uint32)all_instances.size();
+        D3D12_RAYTRACING_INSTANCE_DESC& instance = all_instances.emplace_back();
 
         instance.Flags = 0;// D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE;
-        instance.InstanceContributionToHitGroupIndex = type.instanceContributionToHitGroupIndex;
+        instance.InstanceContributionToHitGroupIndex = type.instance_contribution_to_hit_group_index;
 
         mat4 m = transpose(trs_to_mat4(transform));
         memcpy(instance.Transform, &m, sizeof(instance.Transform));
-        instance.AccelerationStructure = type.blas->blas->gpuVirtualAddress;
+        instance.AccelerationStructure = type.blas->blas->gpu_virtual_address;
         instance.InstanceMask = 0xFF;
         instance.InstanceID = 0; // This value will be exposed to the shader via InstanceID()
 
         return { result };
     }
 
-    void raytracing_tlas::build(dx_command_list* cl)
+    void RaytracingTLAS::build(DXCommandList* cl)
     {
-        uint32 totalNumInstances = (uint32)allInstances.size();
+        uint32 total_num_instances = (uint32)all_instances.size();
 
         D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
         inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
         inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-        inputs.NumDescs = totalNumInstances;
+        inputs.NumDescs = total_num_instances;
         inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
-        if (rebuildMode == raytracing_as_refit)
+        if (rebuild_mode == RAYTRACING_AS_REFIT)
         {
             inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
         }
 
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info;
-        dxContext.device->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
+        dx_context.device->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
         info.ScratchDataSizeInBytes = align_to(info.ScratchDataSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
         info.ResultDataMaxSizeInBytes = align_to(info.ResultDataMaxSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
 
-        bool fromScratch = false;
+        bool from_scratch = false;
 
         // Allocate
-        if (!tlas || tlas->totalSize < info.ResultDataMaxSizeInBytes)
+        if (!tlas || tlas->total_size < info.ResultDataMaxSizeInBytes)
         {
             if (tlas)
             {
-                resizeBuffer(tlas, (uint32)info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+                resize_buffer(tlas, (uint32)info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
             }
             else
             {
-                tlas = createRaytracingTLASBuffer((uint32)info.ResultDataMaxSizeInBytes);
+                tlas = create_raytracing_tlas_buffer((uint32)info.ResultDataMaxSizeInBytes);
                 SET_NAME(tlas->resource, "TLAS Result");
             }
 
-            fromScratch = true;
+            from_scratch = true;
         }
 
-        if (!scratch || scratch->totalSize < info.ScratchDataSizeInBytes)
+        if (!scratch || scratch->total_size < info.ScratchDataSizeInBytes)
         {
             if (scratch)
             {
-                resizeBuffer(scratch, (uint32)info.ScratchDataSizeInBytes);
+                resize_buffer(scratch, (uint32)info.ScratchDataSizeInBytes);
             }
             else
             {
-                scratch = createBuffer(1, (uint32)info.ScratchDataSizeInBytes, 0, true, false);
+                scratch = create_buffer(1, (uint32)info.ScratchDataSizeInBytes, 0, true, false);
                 SET_NAME(scratch->resource, "TLAS Scratch");
             }
         }
 
-        dx_dynamic_constant_buffer gpuInstances = dxContext.uploadDynamicConstantBuffer(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * totalNumInstances, allInstances.data()).first;
+        DXDynamicConstantBuffer gpu_instances = dx_context.upload_dynamic_constant_buffer(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * total_num_instances, all_instances.data()).first;
 
-        inputs.InstanceDescs = gpuInstances.gpuPtr;
+        inputs.InstanceDescs = gpu_instances.gpu_ptr;
 
-        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
-        asDesc.Inputs = inputs;
-        asDesc.DestAccelerationStructureData = tlas->gpuVirtualAddress;
-        asDesc.ScratchAccelerationStructureData = scratch->gpuVirtualAddress;
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC as_desc = {};
+        as_desc.Inputs = inputs;
+        as_desc.DestAccelerationStructureData = tlas->gpu_virtual_address;
+        as_desc.ScratchAccelerationStructureData = scratch->gpu_virtual_address;
 
-        if (!fromScratch)
+        if (!from_scratch)
         {
-            barrier_batcher(cl)
+            BarrierBatcher(cl)
                 .uav(tlas)
                 .uav(scratch);
 
-            if (rebuildMode == raytracing_as_refit)
+            if (rebuild_mode == RAYTRACING_AS_REFIT)
             {
-                asDesc.Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
-                asDesc.SourceAccelerationStructureData = tlas->gpuVirtualAddress;
+                as_desc.Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+                as_desc.SourceAccelerationStructureData = tlas->gpu_virtual_address;
             }
         }
 
-        cl->commandList->BuildRaytracingAccelerationStructure(&asDesc, 0, 0);
-        cl->uavBarrier(tlas);
+        cl->command_list->BuildRaytracingAccelerationStructure(&as_desc, 0, 0);
+        cl->uav_barrier(tlas);
     }
 
 }

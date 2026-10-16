@@ -11,15 +11,15 @@
 cbuffer cb : register(b0)
 {
 	float3 L;
-	uint irradianceMapSize;
+	uint irradiance_map_size;
 };
 
-RWTexture2DArray<float4> outIrradiance : register(u0);
+RWTexture2DArray<float4> out_irradiance : register(u0);
 
 static const float pi = 3.141592653589793238462643383279f;
 
 // Transform from dispatch ID to cubemap face direction
-static const float3x3 rotateUV[6] = {
+static const float3x3 rotate_uv[6] = {
 	// +X
 	float3x3(0,  0,  1,
 			 0, -1,  0,
@@ -49,44 +49,44 @@ static const float3x3 rotateUV[6] = {
 
 #define NUM_SAMPLES 1024
 
-groupshared float3 radianceSamples[NUM_SAMPLES];
+groupshared float3 radiance_samples[NUM_SAMPLES];
 groupshared float3 directions[NUM_SAMPLES];
 
 [RootSignature(RS)]
 [numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
-void main(cs_input IN)
+void main(CSInput IN)
 {
-	for (uint i = IN.groupIndex; i < NUM_SAMPLES; i += BLOCK_SIZE * BLOCK_SIZE)
+	for (uint i = IN.group_index; i < NUM_SAMPLES; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
-		float3 V = sphericalFibonacci(i, NUM_SAMPLES);
-		radianceSamples[i] = proceduralSkySimple(V, L);
+		float3 V = spherical_fibonacci(i, NUM_SAMPLES);
+		radiance_samples[i] = procedural_sky_simple(V, L);
 		directions[i] = V;
 	}
 
 	GroupMemoryBarrierWithGroupSync();
 
 
-	uint3 texCoord = IN.dispatchThreadID;
-	if (texCoord.x >= irradianceMapSize || texCoord.y >= irradianceMapSize) return;
+	uint3 tex_coord = IN.dispatch_thread_id;
+	if (tex_coord.x >= irradiance_map_size || tex_coord.y >= irradiance_map_size) return;
 
 
-	float3 V = float3(texCoord.xy / float(irradianceMapSize) - 0.5f, 0.5f);
-	V = normalize(mul(rotateUV[texCoord.z], V));
+	float3 V = float3(tex_coord.xy / float(irradiance_map_size) - 0.5f, 0.5f);
+	V = normalize(mul(rotate_uv[tex_coord.z], V));
 
 	float3 result = 0.f;
-	float totalWeight = 0.f;
+	float total_weight = 0.f;
 
 	for (uint j = 0; j < NUM_SAMPLES; ++j)
 	{
-		float3 rad = radianceSamples[j];
+		float3 rad = radiance_samples[j];
 		float3 L = directions[j];
 
 		float weight = max(0.f, dot(V, L));
 		result += rad * weight;
-		totalWeight += weight;
+		total_weight += weight;
 	}
 
-	result *= 1.f / max(totalWeight, 1e-4f);
+	result *= 1.f / max(total_weight, 1e-4f);
 
-	outIrradiance[texCoord] = float4(result, 1.f);
+	out_irradiance[tex_coord] = float4(result, 1.f);
 }

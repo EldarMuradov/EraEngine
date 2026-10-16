@@ -1,44 +1,44 @@
 #include "material.hlsli"
 #include "camera.hlsli"
 
-struct smoke_particle_data
+struct SmokeParticleData
 {
 	vec3 position;
-	uint32 maxLife_life;
+	uint32 max_life_life;
 	vec3 velocity;
-	uint32 sinAngle_cosAngle;
+	uint32 sin_angle_cos_angle;
 };
 
 defineSpline(float, 4)
 defineSpline(float, 8)
 
-struct smoke_particle_settings
+struct SmokeParticleSettings
 {
-	spline(float, 8) lifeScaleFromDistance;
-	spline(float, 4) intensityOverLifetime;
-	spline(float, 4) atlasProgressionOverLifetime;
+	spline(float, 8) life_scale_from_distance;
+	spline(float, 4) intensity_over_lifetime;
+	spline(float, 4) atlas_progression_over_lifetime;
 };
 
-struct smoke_simulation_cb
+struct SmokeSimulationCB
 {
-	vec3 emitPosition;
-	uint32 frameIndex;
-	vec3 cameraPosition;
+	vec3 emit_position;
+	uint32 frame_index;
+	vec3 camera_position;
 	uint32 padding;
 
-	spline(float, 8) lifeScaleFromDistance;
+	spline(float, 8) life_scale_from_distance;
 };
 
-struct smoke_rendering_cb
+struct SmokeRenderingCB
 {
-	spline(float, 4) intensityOverLifetime;
-	spline(float, 4) atlasProgressionOverLifetime;
+	spline(float, 4) intensity_over_lifetime;
+	spline(float, 4) atlas_progression_over_lifetime;
 
-	texture_atlas_cb atlas;
+	TextureAtlasCB atlas;
 };
 
 #ifdef HLSL
-#define particle_data smoke_particle_data
+#define particle_data SmokeParticleData
 #endif
 
 #ifdef PARTICLE_SIMULATION
@@ -48,45 +48,45 @@ struct smoke_rendering_cb
 #define USER_PARTICLE_SIMULATION_RS \
 	"CBV(b0)"
 
-ConstantBuffer<smoke_simulation_cb> cb		: register(b0);
+ConstantBuffer<SmokeSimulationCB> cb		: register(b0);
 
-static particle_data emitParticle(uint emitIndex)
+static particle_data emit_particle(uint emit_index)
 {
-	uint rng = initRand(emitIndex, cb.frameIndex);
+	uint rng = init_rand(emit_index, cb.frame_index);
 
 	const float radius = 4.f;
 
-	float2 offset2D = getRandomPointOnDisk(rng, radius);
-	float3 offset = float3(offset2D.x, nextRand(rng) * 0.5f, offset2D.y);
-	float3 position = cb.emitPosition + offset;
-	float3 velocity = float3(nextRand(rng), nextRand(rng) * 3.f + 4.f, nextRand(rng));
+	float2 offset_2d = get_random_point_on_disk(rng, radius);
+	float3 offset = float3(offset_2d.x, next_rand(rng) * 0.5f, offset_2d.y);
+	float3 position = cb.emit_position + offset;
+	float3 velocity = float3(next_rand(rng), next_rand(rng) * 3.f + 4.f, next_rand(rng));
 
 	float distance = saturate(length(offset.xz) / radius);
-	float lifeScale = cb.lifeScaleFromDistance.evaluate(8, distance);
+	float life_scale = cb.life_scale_from_distance.evaluate(8, distance);
 
-	float maxLife = nextRand(rng) * 5.f * lifeScale + 3.f;
+	float max_life = next_rand(rng) * 5.f * life_scale + 3.f;
 
-	float angle = nextRand(rng) * 2.f * M_PI;
-	float sinAngle, cosAngle;
-	sincos(angle, sinAngle, cosAngle);
+	float angle = next_rand(rng) * 2.f * M_PI;
+	float sin_angle, cos_angle;
+	sincos(angle, sin_angle, cos_angle);
 
 	particle_data particle = {
 		position,
-		packHalfs(maxLife, maxLife),
+		pack_halfs(max_life, max_life),
 		velocity,
-		packHalfs(sinAngle, cosAngle)
+		pack_halfs(sin_angle, cos_angle)
 	};
 
 	return particle;
 }
 
-static bool simulateParticle(inout particle_data particle, float dt, out float sortKey)
+static bool simulate_particle(inout particle_data particle, float dt, out float sort_key)
 {
-	float life = unpackHalfsRight(particle.maxLife_life);
+	float life = unpack_halfs_right(particle.max_life_life);
 	life -= dt;
 	if (life <= 0)
 	{
-		sortKey = 0;
+		sort_key = 0;
 		return false;
 	}
 	else
@@ -94,11 +94,11 @@ static bool simulateParticle(inout particle_data particle, float dt, out float s
 		float3 gravity = float3(0.f, -1.f * dt, 0.f);
 		particle.position = particle.position + 0.5f * gravity * dt + particle.velocity * dt;
 		particle.velocity = particle.velocity + gravity;
-		float maxLife = unpackHalfsLeft(particle.maxLife_life);
-		particle.maxLife_life = packHalfs(maxLife, life);
+		float max_life = unpack_halfs_left(particle.max_life_life);
+		particle.max_life_life = pack_halfs(max_life, life);
 
-		float3 V = particle.position - cb.cameraPosition;
-		sortKey = dot(V, V);
+		float3 V = particle.position - cb.camera_position;
+		sort_key = dot(V, V);
 
 		return true;
 	}
@@ -119,60 +119,60 @@ static bool simulateParticle(inout particle_data particle, float dt, out float s
         "filter = FILTER_MIN_MAG_MIP_LINEAR," \
         "visibility=SHADER_VISIBILITY_PIXEL)"
 
-struct vs_input
+struct VSInput
 {
 	float3 position			: POSITION;
 };
 
-struct vs_output
+struct VSOutput
 {
 	float intensity : INTENSITY;
 	float2 uv				: TEXCOORDS;
 	float4 position			: SV_Position;
 };
 
-ConstantBuffer<smoke_rendering_cb> cb	: register(b0);
-ConstantBuffer<camera_cb> camera		: register(b1);
+ConstantBuffer<SmokeRenderingCB> cb	: register(b0);
+ConstantBuffer<CameraCB> camera		: register(b1);
 
 Texture2D<float4> tex					: register(t0);
-SamplerState texSampler					: register(s0);
+SamplerState tex_sampler					: register(s0);
 
-static vs_output vertexShader(vs_input IN, StructuredBuffer<particle_data> particles, uint index)
+static VSOutput vertex_shader(VSInput IN, StructuredBuffer<particle_data> particles, uint index)
 {
 	float3 pos = particles[index].position;
 
-	uint maxLife_life = particles[index].maxLife_life;
-	float life = unpackHalfsRight(maxLife_life);
-	float maxLife = unpackHalfsLeft(maxLife_life);
-	float relLife = clamp(1.f - life / maxLife, 0.01f, 0.99f);
+	uint max_life_life = particles[index].max_life_life;
+	float life = unpack_halfs_right(max_life_life);
+	float max_life = unpack_halfs_left(max_life_life);
+	float rel_life = clamp(1.f - life / max_life, 0.01f, 0.99f);
 
 	float2 rotation; // Sin(angle), cos(angle).
-	unpackHalfs(particles[index].sinAngle_cosAngle, rotation.x, rotation.y);
+	unpack_halfs(particles[index].sin_angle_cos_angle, rotation.x, rotation.y);
 
-	float2 localPosition = IN.position.xy * 1.f;
-	localPosition = float2(dot(localPosition, float2(rotation.y, -rotation.x)), dot(localPosition, rotation));
-	pos += localPosition.x * camera.right.xyz + localPosition.y * camera.up.xyz;
+	float2 local_position = IN.position.xy * 1.f;
+	local_position = float2(dot(local_position, float2(rotation.y, -rotation.x)), dot(local_position, rotation));
+	pos += local_position.x * camera.right.xyz + local_position.y * camera.up.xyz;
 
-	texture_atlas_cb atlas = cb.atlas;
-	uint atlasIndex = cb.atlasProgressionOverLifetime.evaluate(4, relLife) * (atlas.getTotalNumCells() - 1);
-	uint x = atlas.getX(atlasIndex);
-	uint y = atlas.getY(atlasIndex);
+	TextureAtlasCB atlas = cb.atlas;
+	uint atlas_index = cb.atlas_progression_over_lifetime.evaluate(4, rel_life) * (atlas.get_total_num_cells() - 1);
+	uint x = atlas.get_x(atlas_index);
+	uint y = atlas.get_y(atlas_index);
 
-	float invCols = atlas.getInvNumCols();
-	float invRows = atlas.getInvNumRows();
-	float2 uv0 = float2(x * invCols, y * invRows);
-	float2 uv1 = float2((x + 1) * invCols, (y + 1) * invRows);
+	float inv_cols = atlas.get_inv_num_cols();
+	float inv_rows = atlas.get_inv_num_rows();
+	float2 uv0 = float2(x * inv_cols, y * inv_rows);
+	float2 uv1 = float2((x + 1) * inv_cols, (y + 1) * inv_rows);
 
-	vs_output OUT;
-	OUT.position = mul(camera.viewProj, float4(pos, 1.f));
+	VSOutput OUT;
+	OUT.position = mul(camera.view_proj, float4(pos, 1.f));
 	OUT.uv = lerp(uv0, uv1, IN.position.xy * 0.5f + 0.5f);
 	OUT.intensity = 10.f;// cb.intensityOverLifetime.evaluate(4, relLife);
 	return OUT;
 }
 
-static float4 pixelShader(vs_output IN)
+static float4 pixel_shader(VSOutput IN)
 {
-	float4 color = tex.Sample(texSampler, IN.uv);
+	float4 color = tex.Sample(tex_sampler, IN.uv);
 	color.rgb *= IN.intensity;
 	return color;
 }

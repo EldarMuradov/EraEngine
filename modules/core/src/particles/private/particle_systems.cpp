@@ -8,11 +8,11 @@
 
 namespace era_engine
 {
-	void loadAllParticleSystemPipelines()
+	void load_all_particle_system_pipelines()
 	{
-		fire_particle_system::initializePipeline();
-		smoke_particle_system::initializePipeline();
-		boid_particle_system::initializePipeline();
-		debris_particle_system::initializePipeline();
+		FireParticleSystem::initialize_pipeline();
+		SmokeParticleSystem::initialize_pipeline();
+		BoidParticleSystem::initialize_pipeline();
+		DebrisParticleSystem::initialize_pipeline();
 	}
 }

@@ -9,105 +9,105 @@
 
 namespace era_engine
 {
-	dx_pipeline smoke_particle_system::emitPipeline;
-	dx_pipeline smoke_particle_system::simulatePipeline;
-	dx_pipeline smoke_particle_system::renderPipeline;
+	DXPipeline SmokeParticleSystem::emit_pipeline;
+	DXPipeline SmokeParticleSystem::simulate_pipeline;
+	DXPipeline SmokeParticleSystem::render_pipeline;
 
-	void smoke_particle_system::initializePipeline()
+	void SmokeParticleSystem::initialize_pipeline()
 	{
 #define name "smoke_particle_system"
 
-		emitPipeline = createReloadablePipeline(EMIT_PIPELINE_NAME(name));
-		simulatePipeline = createReloadablePipeline(SIMULATE_PIPELINE_NAME(name));
+		emit_pipeline = create_reloadable_pipeline(EMIT_PIPELINE_NAME(name));
+		simulate_pipeline = create_reloadable_pipeline(SIMULATE_PIPELINE_NAME(name));
 
 		auto desc = CREATE_GRAPHICS_PIPELINE
-			.inputLayout(inputLayout_position)
-			.renderTargets(transparentLightPassFormats, arraysize(transparentLightPassFormats), depthStencilFormat)
-			.alphaBlending(0)
-			.depthSettings(true, false);
+			.input_layout(input_layout_position)
+			.render_targets(transparent_light_pass_formats, arraysize(transparent_light_pass_formats), depth_stencil_format)
+			.alpha_blending(0)
+			.depth_settings(true, false);
 
-		renderPipeline = createReloadablePipeline(desc, { VERTEX_SHADER_NAME(name), PIXEL_SHADER_NAME(name) });
+		render_pipeline = create_reloadable_pipeline(desc, { VERTEX_SHADER_NAME(name), PIXEL_SHADER_NAME(name) });
 
 #undef name
 	}
 
-	smoke_particle_system::smoke_particle_system(uint32 maxNumParticles, float emitRate, const std::string& textureFilename, uint32 cols, uint32 rows, vec3 pos)
+	SmokeParticleSystem::SmokeParticleSystem(uint32 max_num_particles, float emit_rate, const std::string& texture_filename, uint32 cols, uint32 rows, vec3 pos)
 	{
-		initialize(maxNumParticles, emitRate, textureFilename, cols, rows, pos);
+		initialize(max_num_particles, emit_rate, texture_filename, cols, rows, pos);
 	}
 
-	void smoke_particle_system::initialize(uint32 maxNumParticles, float emitRate, const std::string& textureFilename, uint32 cols, uint32 rows, vec3 pos)
+	void SmokeParticleSystem::initialize(uint32 max_num_particles, float emit_rate, const std::string& texture_filename, uint32 cols, uint32 rows, vec3 pos)
 	{
-		this->emitRate = emitRate;
-		auto tex = loadTextureFromFileAsync(textureFilename);
+		this->emit_rate = emit_rate;
+		auto tex = load_texture_from_file_async(texture_filename);
 		position = pos;
 		if (!tex)
 		{
-			tex = render_resources::whiteTexture;
+			tex = RenderResources::white_texture;
 		}
 
-		particle_system::initializeAsBillboard(sizeof(smoke_particle_data), maxNumParticles, sort_mode_back_to_front);
+		ParticleSystem::initialize_as_billboard(sizeof(SmokeParticleData), max_num_particles, SORT_MODE_BACK_TO_FRONT);
 
 		atlas.texture = tex;
 		atlas.cols = cols;
 		atlas.rows = rows;
 
-		atlasCB.initialize(rows, cols);
+		atlas_cb.initialize(rows, cols);
 	}
 
-	void smoke_particle_system::update(struct dx_command_list* cl, const common_particle_simulation_data& common, float dt)
+	void SmokeParticleSystem::update(struct DXCommandList* cl, const CommonParticleSimulationData& common, float dt)
 	{
-		struct setter : public particle_parameter_setter
+		struct Setter : public ParticleParameterSetter
 		{
-			dx_dynamic_constant_buffer cb;
+			DXDynamicConstantBuffer cb;
 
-			virtual void setRootParameters(dx_command_list* cl) override
+			virtual void set_root_parameters(DXCommandList* cl) override
 			{
-				cl->setComputeDynamicConstantBuffer(SMOKE_PARTICLE_SYSTEM_COMPUTE_RS_CBV, cb);
+				cl->set_compute_dynamic_constant_buffer(SMOKE_PARTICLE_SYSTEM_COMPUTE_RS_CBV, cb);
 			}
 		};
 
-		smoke_simulation_cb cb;
-		cb.cameraPosition = common.cameraPosition;
-		cb.emitPosition = position;
-		cb.frameIndex = (uint32)dxContext.frameID;
-		cb.lifeScaleFromDistance = settings.lifeScaleFromDistance;
+		SmokeSimulationCB cb;
+		cb.camera_position = common.camera_position;
+		cb.emit_position = position;
+		cb.frame_index = (uint32)dx_context.frame_id;
+		cb.life_scale_from_distance = settings.life_scale_from_distance;
 
-		setter s;
-		s.cb = dxContext.uploadDynamicConstantBuffer(cb);
+		Setter s;
+		s.cb = dx_context.upload_dynamic_constant_buffer(cb);
 
-		updateInternal(cl, emitRate * dt, dt, emitPipeline, simulatePipeline, &s);
+		update_internal(cl, emit_rate * dt, dt, emit_pipeline, simulate_pipeline, &s);
 	}
 
-	void smoke_particle_system::render(transparent_render_pass* renderPass)
+	void SmokeParticleSystem::render(TransparentRenderPass* render_pass)
 	{
-		smoke_rendering_cb cb;
-		cb.atlas = atlasCB;
-		cb.intensityOverLifetime = settings.intensityOverLifetime;
-		cb.atlasProgressionOverLifetime = settings.atlasProgressionOverLifetime;
+		SmokeRenderingCB cb;
+		cb.atlas = atlas_cb;
+		cb.intensity_over_lifetime = settings.intensity_over_lifetime;
+		cb.atlas_progression_over_lifetime = settings.atlas_progression_over_lifetime;
 
-		smoke_material material;
+		SmokeMaterial material;
 		material.atlas = atlas;
-		material.cbv = dxContext.uploadDynamicConstantBuffer(cb);
+		material.cbv = dx_context.upload_dynamic_constant_buffer(cb);
 
-		renderPass->renderParticles<smoke_pipeline>(billboardMesh.vertexBuffer, billboardMesh.indexBuffer,
-			getDrawInfo(renderPipeline),
+		render_pass->render_particles<SmokePipeline>(billboard_mesh.vertex_buffer, billboard_mesh.index_buffer,
+			get_draw_info(render_pipeline),
 			material);
 	}
 
-	PIPELINE_SETUP_IMPL(smoke_particle_system::smoke_pipeline)
+	PIPELINE_SETUP_IMPL(SmokeParticleSystem::SmokePipeline)
 	{
-		cl->setPipelineState(*renderPipeline.pipeline);
-		cl->setGraphicsRootSignature(*renderPipeline.rootSignature);
-		cl->setGraphicsDynamicConstantBuffer(SMOKE_PARTICLE_SYSTEM_RENDERING_RS_CAMERA, common.cameraCBV);
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_pipeline_state(*render_pipeline.pipeline);
+		cl->set_graphics_root_signature(*render_pipeline.root_signature);
+		cl->set_graphics_dynamic_constant_buffer(SMOKE_PARTICLE_SYSTEM_RENDERING_RS_CAMERA, common.camera_cbv);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	PARTICLE_PIPELINE_RENDER_IMPL(smoke_particle_system::smoke_pipeline, smoke_particle_system::smoke_material)
+	PARTICLE_PIPELINE_RENDER_IMPL(SmokeParticleSystem::SmokePipeline, SmokeParticleSystem::SmokeMaterial)
 	{
-		cl->setGraphicsDynamicConstantBuffer(SMOKE_PARTICLE_SYSTEM_RENDERING_RS_CBV, rc.data.cbv);
-		cl->setDescriptorHeapSRV(SMOKE_PARTICLE_SYSTEM_RENDERING_RS_TEXTURE, 0, rc.data.atlas.texture);
+		cl->set_graphics_dynamic_constant_buffer(SMOKE_PARTICLE_SYSTEM_RENDERING_RS_CBV, rc.data.cbv);
+		cl->set_descriptor_heap_srv(SMOKE_PARTICLE_SYSTEM_RENDERING_RS_TEXTURE, 0, rc.data.atlas.texture);
 
-		particle_render_pipeline::render(cl, viewProj, rc);
+		ParticleRenderPipeline::render(cl, view_proj, rc);
 	}
 }

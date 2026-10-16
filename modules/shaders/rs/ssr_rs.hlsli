@@ -5,19 +5,19 @@
 
 #define SSR_GGX_IMPORTANCE_SAMPLE_BIAS 0.1f
 
-struct ssr_raycast_cb
+struct SSRRaycastCB
 {
     vec2 dimensions;
-    vec2 invDimensions;
-    uint32 frameIndex;
+    vec2 inv_dimensions;
+    uint32 frame_index;
 
-    uint32 numSteps;
+    uint32 num_steps;
 
-    float maxDistance;
+    float max_distance;
 
-    float strideCutoff;
-    float minStride;
-    float maxStride;
+    float stride_cutoff;
+    float min_stride;
+    float max_stride;
 };
 
 
@@ -41,10 +41,10 @@ struct ssr_raycast_cb
 #define SSR_RAYCAST_RS_CAMERA       1
 #define SSR_RAYCAST_RS_TEXTURES     2
 
-struct ssr_resolve_cb
+struct SSRResolveCB
 {
     vec2 dimensions;
-    vec2 invDimensions;
+    vec2 inv_dimensions;
 };
 
 #define SSR_RESOLVE_RS \
@@ -67,9 +67,9 @@ struct ssr_resolve_cb
 #define SSR_RESOLVE_RS_CAMERA       1
 #define SSR_RESOLVE_RS_TEXTURES     2
 
-struct ssr_temporal_cb
+struct SSRTemporalCB
 {
-    vec2 invDimensions;
+    vec2 inv_dimensions;
 };
 
 #define SSR_TEMPORAL_RS \
@@ -85,9 +85,9 @@ struct ssr_temporal_cb
 #define SSR_TEMPORAL_RS_CB           0
 #define SSR_TEMPORAL_RS_TEXTURES     1
 
-struct ssr_median_blur_cb
+struct SSRMedianBlurCB
 {
-    vec2 invDimensions;
+    vec2 inv_dimensions;
 };
 
 #define SSR_MEDIAN_BLUR_RS \

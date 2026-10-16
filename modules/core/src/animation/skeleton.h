@@ -15,8 +15,8 @@
 
 namespace era_engine::animation
 {
-	extern const char* limb_type_names[limb_type_count];
-	extern const vec3 limb_type_colors[limb_type_count];
+	extern const char* limb_type_names[LIMB_TYPE_COUNT];
+	extern const vec3 limb_type_colors[LIMB_TYPE_COUNT];
 
 	class ERA_CORE_API JointTransform
 	{
@@ -44,13 +44,13 @@ namespace era_engine::animation
 
 	struct ERA_CORE_API LimbDimensions final
 	{
-		float minY = 0.0;
-		float maxY = 0.0f;
+		float min_y = 0.0;
+		float max_y = 0.0f;
 		float radius = 0.0f;
-		float xOffset = 0.0f;
-		float zOffset = 0.0f;
+		float x_offset = 0.0f;
+		float z_offset = 0.0f;
 
-		ERA_BINARY_SERIALIZE(minY, maxY, radius, xOffset, zOffset)
+		ERA_BINARY_SERIALIZE(min_y, max_y, radius, x_offset, z_offset)
 	};
 
 	struct ERA_CORE_API SkeletonLimb final

@@ -9,12 +9,12 @@ namespace era_engine
 {
 	enum ProfileEventType : uint16
 	{
-		profile_event_none,
-		profile_event_frame_marker,
-		profile_event_begin_block,
-		profile_event_end_block,
+		PROFILE_EVENT_NONE,
+		PROFILE_EVENT_FRAME_MARKER,
+		PROFILE_EVENT_BEGIN_BLOCK,
+		PROFILE_EVENT_END_BLOCK,
 
-		profile_event_count
+		PROFILE_EVENT_COUNT
 	};
 
 	struct ERA_CORE_API ProfileEvent

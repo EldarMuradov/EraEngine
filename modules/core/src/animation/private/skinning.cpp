@@ -14,90 +14,90 @@
 
 namespace era_engine::animation
 {
-	static dx_pipeline skinningPipeline;
-	static dx_pipeline clothSkinningPipeline;
+	static DXPipeline skinning_pipeline;
+	static DXPipeline cloth_skinning_pipeline;
 
-	struct skinning_call
+	struct SkinningCall
 	{
-		dx_vertex_buffer_group_view vertexBuffer;
-		vertex_range range;
-		uint32 jointOffset;
-		uint32 numJoints;
-		uint32 vertexOffset;
+		DXVertexBufferGroupView vertex_buffer;
+		VertexRange range;
+		uint32 joint_offset;
+		uint32 num_joints;
+		uint32 vertex_offset;
 	};
 
-	struct cloth_skinning_call
+	struct ClothSkinningCall
 	{
-		dx_vertex_buffer_view vertexBuffer;
-		uint32 gridSizeX;
-		uint32 gridSizeY;
-		uint32 vertexOffset;
+		DXVertexBufferView vertex_buffer;
+		uint32 grid_size_x;
+		uint32 grid_size_y;
+		uint32 vertex_offset;
 	};
 
-	struct skinning_data
+	struct SkinningData
 	{
-		vertex_buffer_group skinnedVertexBuffer;
-		ref<dx_buffer> skinningMatricesBuffer;
+		VertexBufferGroup skinned_vertex_buffer;
+		ref<DXBuffer> skinning_matrices_buffer;
 
-		mat4* skinningMatrices;
-		uint32 numSkinningMatrices;
-		uint32 matrixOffset;
+		mat4* skinning_matrices;
+		uint32 num_skinning_matrices;
+		uint32 matrix_offset;
 
-		skinning_call* calls;
-		uint32 numCalls;
+		SkinningCall* calls;
+		uint32 num_calls;
 
-		cloth_skinning_call* clothCalls;
-		uint32 numClothCalls;
+		ClothSkinningCall* cloth_calls;
+		uint32 num_cloth_calls;
 	};
 
-	struct skinning_pipeline
+	struct SkinningPipeline
 	{
 		PIPELINE_SETUP_DECL{}
 
-			PIPELINE_COMPUTE_DECL(skinning_data)
+			PIPELINE_COMPUTE_DECL(SkinningData)
 		{
 			PROFILE_ALL(cl, "Skinning");
 
-			if (data.numCalls)
+			if (data.num_calls)
 			{
 				PROFILE_ALL(cl, "Skeletal");
 
-				mat4* mats = (mat4*)mapBuffer(data.skinningMatricesBuffer, false);
-				memcpy(mats + data.matrixOffset, data.skinningMatrices, sizeof(mat4) * data.numSkinningMatrices);
-				unmapBuffer(data.skinningMatricesBuffer, true, map_range{ data.matrixOffset, data.numSkinningMatrices });
+				mat4* mats = (mat4*)map_buffer(data.skinning_matrices_buffer, false);
+				memcpy(mats + data.matrix_offset, data.skinning_matrices, sizeof(mat4) * data.num_skinning_matrices);
+				unmap_buffer(data.skinning_matrices_buffer, true, MapRange{ data.matrix_offset, data.num_skinning_matrices });
 
-				cl->setPipelineState(*skinningPipeline.pipeline);
-				cl->setComputeRootSignature(*skinningPipeline.rootSignature);
+				cl->set_pipeline_state(*skinning_pipeline.pipeline);
+				cl->set_compute_root_signature(*skinning_pipeline.root_signature);
 
-				cl->setRootComputeSRV(SKINNING_RS_MATRICES, data.skinningMatricesBuffer->gpuVirtualAddress + sizeof(mat4) * data.matrixOffset);
-				cl->setRootComputeUAV(SKINNING_RS_OUTPUT0, data.skinnedVertexBuffer.positions);
-				cl->setRootComputeUAV(SKINNING_RS_OUTPUT1, data.skinnedVertexBuffer.others);
+				cl->set_root_compute_srv(SKINNING_RS_MATRICES, data.skinning_matrices_buffer->gpu_virtual_address + sizeof(mat4) * data.matrix_offset);
+				cl->set_root_compute_uav(SKINNING_RS_OUTPUT0, data.skinned_vertex_buffer.positions);
+				cl->set_root_compute_uav(SKINNING_RS_OUTPUT1, data.skinned_vertex_buffer.others);
 
-				for (uint32 i = 0; i < data.numCalls; ++i)
+				for (uint32 i = 0; i < data.num_calls; ++i)
 				{
 					auto& c = data.calls[i];
-					cl->setRootComputeSRV(SKINNING_RS_INPUT_VERTEX_BUFFER0, c.vertexBuffer.positions.view.BufferLocation);
-					cl->setRootComputeSRV(SKINNING_RS_INPUT_VERTEX_BUFFER1, c.vertexBuffer.others.view.BufferLocation);
-					cl->setCompute32BitConstants(SKINNING_RS_CB, skinning_cb{ c.jointOffset, c.numJoints, c.range.firstVertex, c.range.numVertices, c.vertexOffset });
-					cl->dispatch(bucketize(c.range.numVertices, 512));
+					cl->set_root_compute_srv(SKINNING_RS_INPUT_VERTEX_BUFFER0, c.vertex_buffer.positions.view.BufferLocation);
+					cl->set_root_compute_srv(SKINNING_RS_INPUT_VERTEX_BUFFER1, c.vertex_buffer.others.view.BufferLocation);
+					cl->set_compute_32bit_constants(SKINNING_RS_CB, SkinningCB{ c.joint_offset, c.num_joints, c.range.first_vertex, c.range.num_vertices, c.vertex_offset });
+					cl->dispatch(bucketize(c.range.num_vertices, 512));
 				}
 			}
-			if (data.numClothCalls)
+			if (data.num_cloth_calls)
 			{
 				PROFILE_ALL(cl, "Cloth");
 
-				cl->setPipelineState(*clothSkinningPipeline.pipeline);
-				cl->setComputeRootSignature(*clothSkinningPipeline.rootSignature);
+				cl->set_pipeline_state(*cloth_skinning_pipeline.pipeline);
+				cl->set_compute_root_signature(*cloth_skinning_pipeline.root_signature);
 
-				cl->setRootComputeUAV(CLOTH_SKINNING_RS_OUTPUT0, data.skinnedVertexBuffer.positions);
-				cl->setRootComputeUAV(CLOTH_SKINNING_RS_OUTPUT1, data.skinnedVertexBuffer.others);
+				cl->set_root_compute_uav(CLOTH_SKINNING_RS_OUTPUT0, data.skinned_vertex_buffer.positions);
+				cl->set_root_compute_uav(CLOTH_SKINNING_RS_OUTPUT1, data.skinned_vertex_buffer.others);
 
-				for (uint32 i = 0; i < data.numClothCalls; ++i)
+				for (uint32 i = 0; i < data.num_cloth_calls; ++i)
 				{
-					auto& c = data.clothCalls[i];
-					cl->setRootComputeSRV(CLOTH_SKINNING_RS_INPUT, c.vertexBuffer.view.BufferLocation);
-					cl->setCompute32BitConstants(CLOTH_SKINNING_RS_CB, cloth_skinning_cb{ c.gridSizeX, c.gridSizeY, c.vertexOffset });
-					cl->dispatch(bucketize(c.gridSizeX, 15), bucketize(c.gridSizeY, 15)); // 15 is correct here.
+					auto& c = data.cloth_calls[i];
+					cl->set_root_compute_srv(CLOTH_SKINNING_RS_INPUT, c.vertex_buffer.view.BufferLocation);
+					cl->set_compute_32bit_constants(CLOTH_SKINNING_RS_CB, ClothSkinningCB{ c.grid_size_x, c.grid_size_y, c.vertex_offset });
+					cl->dispatch(bucketize(c.grid_size_x, 15), bucketize(c.grid_size_y, 15)); // 15 is correct here.
 				}
 			}
 		}
@@ -106,143 +106,143 @@ namespace era_engine::animation
 #define MAX_NUM_SKINNING_MATRICES_PER_FRAME 4096
 #define MAX_NUM_SKINNED_VERTICES_PER_FRAME (1024 * 256)
 
-	static ref<dx_buffer> skinningMatricesBuffer; // Buffered frames are in a single dx_buffer.
+	static ref<DXBuffer> skinning_matrices_buffer; // Buffered frames are in a single dx_buffer.
 
-	static uint32 currentSkinnedVertexBuffer;
-	static vertex_buffer_group skinnedVertexBuffer[2]; // We have two of these, so that we can compute screen space velocities.
+	static uint32 current_skinned_vertex_buffer;
+	static VertexBufferGroup skinned_vertex_buffer[2]; // We have two of these, so that we can compute screen space velocities.
 
-	static mat4 skinningMatrices[MAX_NUM_SKINNING_MATRICES_PER_FRAME];
-	static volatile uint32 numSkinningMatricesThisFrame;
+	static mat4 skinning_matrices[MAX_NUM_SKINNING_MATRICES_PER_FRAME];
+	static volatile uint32 num_skinning_matrices_this_frame;
 
-	static skinning_call calls[1024];
-	static volatile uint32 numCalls;
+	static SkinningCall calls[1024];
+	static volatile uint32 num_calls;
 
-	static cloth_skinning_call clothCalls[128];
-	static volatile uint32 numClothCalls;
+	static ClothSkinningCall cloth_calls[128];
+	static volatile uint32 num_cloth_calls;
 
-	static volatile uint32 totalNumVertices;
+	static volatile uint32 total_num_vertices;
 
-	ERA_CORE_API void initializeSkinning()
+	ERA_CORE_API void initialize_skinning()
 	{
-		skinningMatricesBuffer = createUploadBuffer(sizeof(mat4), MAX_NUM_SKINNING_MATRICES_PER_FRAME * NUM_BUFFERED_FRAMES, 0);
+		skinning_matrices_buffer = create_upload_buffer(sizeof(mat4), MAX_NUM_SKINNING_MATRICES_PER_FRAME * NUM_BUFFERED_FRAMES, 0);
 
 		for (uint32 i = 0; i < 2; ++i)
 		{
-			skinnedVertexBuffer[i].positions = createVertexBuffer(sizeof(vec3), MAX_NUM_SKINNED_VERTICES_PER_FRAME, 0, true);
-			skinnedVertexBuffer[i].others = createVertexBuffer(
-				getVertexOthersSize(mesh_creation_flags_with_positions | mesh_creation_flags_with_uvs | mesh_creation_flags_with_normals | mesh_creation_flags_with_tangents),
+			skinned_vertex_buffer[i].positions = create_vertex_buffer(sizeof(vec3), MAX_NUM_SKINNED_VERTICES_PER_FRAME, 0, true);
+			skinned_vertex_buffer[i].others = create_vertex_buffer(
+				get_vertex_others_size(MESH_CREATION_FLAGS_WITH_POSITIONS | MESH_CREATION_FLAGS_WITH_UVS | MESH_CREATION_FLAGS_WITH_NORMALS | MESH_CREATION_FLAGS_WITH_TANGENTS),
 				MAX_NUM_SKINNED_VERTICES_PER_FRAME, 0, true);
 		}
 
-		skinningPipeline = createReloadablePipeline("skinning_cs");
-		clothSkinningPipeline = createReloadablePipeline("cloth_skinning_cs");
+		skinning_pipeline = create_reloadable_pipeline("skinning_cs");
+		cloth_skinning_pipeline = create_reloadable_pipeline("cloth_skinning_cs");
 	}
 
-	ERA_CORE_API std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer_group_view& vertexBuffer, vertex_range range, uint32 numJoints)
+	ERA_CORE_API std::tuple<DXVertexBufferGroupView, mat4*> skin_object(const DXVertexBufferGroupView& vertex_buffer, VertexRange range, uint32 num_joints)
 	{
-		uint32 jointOffset = atomic_add(numSkinningMatricesThisFrame, numJoints);
-		ASSERT(jointOffset + numJoints <= MAX_NUM_SKINNING_MATRICES_PER_FRAME);
+		uint32 joint_offset = atomic_add(num_skinning_matrices_this_frame, num_joints);
+		ASSERT(joint_offset + num_joints <= MAX_NUM_SKINNING_MATRICES_PER_FRAME);
 
-		uint32 vertexOffset = atomic_add(totalNumVertices, range.numVertices);
-		ASSERT(vertexOffset + range.numVertices <= MAX_NUM_SKINNED_VERTICES_PER_FRAME);
+		uint32 vertex_offset = atomic_add(total_num_vertices, range.num_vertices);
+		ASSERT(vertex_offset + range.num_vertices <= MAX_NUM_SKINNED_VERTICES_PER_FRAME);
 
-		uint32 callIndex = atomic_increment(numCalls);
-		ASSERT(callIndex < arraysize(calls));
+		uint32 call_index = atomic_increment(num_calls);
+		ASSERT(call_index < arraysize(calls));
 
-		calls[callIndex] =
+		calls[call_index] =
 		{
-			vertexBuffer,
+			vertex_buffer,
 			range,
-			jointOffset,
-			numJoints,
-			vertexOffset
+			joint_offset,
+			num_joints,
+			vertex_offset
 		};
 
-		uint32 numVertices = range.numVertices;
+		uint32 num_vertices = range.num_vertices;
 
-		auto& positions = skinnedVertexBuffer[currentSkinnedVertexBuffer].positions;
-		auto& others = skinnedVertexBuffer[currentSkinnedVertexBuffer].others;
+		auto& positions = skinned_vertex_buffer[current_skinned_vertex_buffer].positions;
+		auto& others = skinned_vertex_buffer[current_skinned_vertex_buffer].others;
 
-		dx_vertex_buffer_group_view result;
-		result.positions.view.BufferLocation = positions->gpuVirtualAddress + positions->elementSize * vertexOffset;
-		result.positions.view.SizeInBytes = positions->elementSize * numVertices;
-		result.positions.view.StrideInBytes = positions->elementSize;
-		result.others.view.BufferLocation = others->gpuVirtualAddress + others->elementSize * vertexOffset;
-		result.others.view.SizeInBytes = others->elementSize * numVertices;
-		result.others.view.StrideInBytes = others->elementSize;
+		DXVertexBufferGroupView result;
+		result.positions.view.BufferLocation = positions->gpu_virtual_address + positions->element_size * vertex_offset;
+		result.positions.view.SizeInBytes = positions->element_size * num_vertices;
+		result.positions.view.StrideInBytes = positions->element_size;
+		result.others.view.BufferLocation = others->gpu_virtual_address + others->element_size * vertex_offset;
+		result.others.view.SizeInBytes = others->element_size * num_vertices;
+		result.others.view.StrideInBytes = others->element_size;
 
-		return { result, skinningMatrices + jointOffset };
+		return { result, skinning_matrices + joint_offset };
 	}
 
-	ERA_CORE_API  std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer_group_view& vertexBuffer, uint32 numVertices, uint32 numJoints)
+	ERA_CORE_API  std::tuple<DXVertexBufferGroupView, mat4*> skin_object(const DXVertexBufferGroupView& vertex_buffer, uint32 num_vertices, uint32 num_joints)
 	{
-		auto [vb, mats] = skinObject(vertexBuffer, vertex_range{ 0, numVertices }, numJoints);
+		auto [vb, mats] = skin_object(vertex_buffer, VertexRange{ 0, num_vertices }, num_joints);
 		return { vb, mats };
 	}
 
-	ERA_CORE_API  std::tuple<dx_vertex_buffer_group_view, mat4*> skinObject(const dx_vertex_buffer_group_view& vertexBuffer, SubmeshInfo submesh, uint32 numJoints)
+	ERA_CORE_API  std::tuple<DXVertexBufferGroupView, mat4*> skin_object(const DXVertexBufferGroupView& vertex_buffer, SubmeshInfo submesh, uint32 num_joints)
 	{
-		auto [vb, mats] = skinObject(vertexBuffer, vertex_range{ submesh.baseVertex, submesh.numVertices }, numJoints);
+		auto [vb, mats] = skin_object(vertex_buffer, VertexRange{ submesh.base_vertex, submesh.num_vertices }, num_joints);
 
 		return { vb, mats };
 	}
 
-	ERA_CORE_API  dx_vertex_buffer_group_view skinCloth(const dx_vertex_buffer_view& inpositions, uint32 gridSizeX, uint32 gridSizeY)
+	ERA_CORE_API  DXVertexBufferGroupView skin_cloth(const DXVertexBufferView& inpositions, uint32 grid_size_x, uint32 grid_size_y)
 	{
-		uint32 numVertices = gridSizeX * gridSizeY;
-		uint32 vertexOffset = atomic_add(totalNumVertices, numVertices);
-		ASSERT(vertexOffset + numVertices <= MAX_NUM_SKINNED_VERTICES_PER_FRAME);
+		uint32 num_vertices = grid_size_x * grid_size_y;
+		uint32 vertex_offset = atomic_add(total_num_vertices, num_vertices);
+		ASSERT(vertex_offset + num_vertices <= MAX_NUM_SKINNED_VERTICES_PER_FRAME);
 
-		uint32 callIndex = atomic_increment(numClothCalls);
-		ASSERT(callIndex < arraysize(clothCalls));
+		uint32 call_index = atomic_increment(num_cloth_calls);
+		ASSERT(call_index < arraysize(cloth_calls));
 
-		clothCalls[callIndex] =
+		cloth_calls[call_index] =
 		{
 			inpositions,
-			gridSizeX,
-			gridSizeY,
-			vertexOffset
+			grid_size_x,
+			grid_size_y,
+			vertex_offset
 		};
 
-		auto& positions = skinnedVertexBuffer[currentSkinnedVertexBuffer].positions;
-		auto& others = skinnedVertexBuffer[currentSkinnedVertexBuffer].others;
+		auto& positions = skinned_vertex_buffer[current_skinned_vertex_buffer].positions;
+		auto& others = skinned_vertex_buffer[current_skinned_vertex_buffer].others;
 
-		dx_vertex_buffer_group_view result;
-		result.positions.view.BufferLocation = positions->gpuVirtualAddress + positions->elementSize * vertexOffset;
-		result.positions.view.SizeInBytes = positions->elementSize * numVertices;
-		result.positions.view.StrideInBytes = positions->elementSize;
-		result.others.view.BufferLocation = others->gpuVirtualAddress + others->elementSize * vertexOffset;
-		result.others.view.SizeInBytes = others->elementSize * numVertices;
-		result.others.view.StrideInBytes = others->elementSize;
+		DXVertexBufferGroupView result;
+		result.positions.view.BufferLocation = positions->gpu_virtual_address + positions->element_size * vertex_offset;
+		result.positions.view.SizeInBytes = positions->element_size * num_vertices;
+		result.positions.view.StrideInBytes = positions->element_size;
+		result.others.view.BufferLocation = others->gpu_virtual_address + others->element_size * vertex_offset;
+		result.others.view.SizeInBytes = others->element_size * num_vertices;
+		result.others.view.StrideInBytes = others->element_size;
 		return result;
 	}
 
-	ERA_CORE_API void performSkinning(compute_pass* computePass)
+	ERA_CORE_API void perform_skinning(ComputePass* compute_pass)
 	{
 		// TODO: We currently make no attempt to ensure that all draw calls have actually been written completely, if executed on another thread. 
-		if (numCalls > 0 || numClothCalls > 0)
+		if (num_calls > 0 || num_cloth_calls > 0)
 		{
-			skinning_data data;
-			data.skinnedVertexBuffer = skinnedVertexBuffer[currentSkinnedVertexBuffer];
-			data.skinningMatricesBuffer = skinningMatricesBuffer;
+			SkinningData data;
+			data.skinned_vertex_buffer = skinned_vertex_buffer[current_skinned_vertex_buffer];
+			data.skinning_matrices_buffer = skinning_matrices_buffer;
 
-			data.skinningMatrices = skinningMatrices;
-			data.numSkinningMatrices = numSkinningMatricesThisFrame;
-			data.matrixOffset = dxContext.bufferedFrameID * MAX_NUM_SKINNING_MATRICES_PER_FRAME;
+			data.skinning_matrices = skinning_matrices;
+			data.num_skinning_matrices = num_skinning_matrices_this_frame;
+			data.matrix_offset = dx_context.buffered_frame_id * MAX_NUM_SKINNING_MATRICES_PER_FRAME;
 
 			data.calls = calls;
-			data.numCalls = numCalls;
+			data.num_calls = num_calls;
 
-			data.clothCalls = clothCalls;
-			data.numClothCalls = numClothCalls;
+			data.cloth_calls = cloth_calls;
+			data.num_cloth_calls = num_cloth_calls;
 
-			computePass->addTask<skinning_pipeline>(compute_pass_frame_start, data);
+			compute_pass->add_task<SkinningPipeline>(COMPUTE_PASS_FRAME_START, data);
 
-			currentSkinnedVertexBuffer = 1 - currentSkinnedVertexBuffer;
-			numCalls = 0;
-			numClothCalls = 0;
-			numSkinningMatricesThisFrame = 0;
-			totalNumVertices = 0;
+			current_skinned_vertex_buffer = 1 - current_skinned_vertex_buffer;
+			num_calls = 0;
+			num_cloth_calls = 0;
+			num_skinning_matrices_this_frame = 0;
+			total_num_vertices = 0;
 		}
 	}
 }

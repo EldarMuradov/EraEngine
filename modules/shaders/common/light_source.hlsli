@@ -10,108 +10,108 @@
 
 #define MAX_NUM_SUN_SHADOW_CASCADES 4
 
-static float getAttenuation(float distance, float maxDistance)
+static float get_attenuation(float distance, float max_distance)
 {
 	// https://imdoingitwrong.wordpress.com/2011/02/10/improved-light-attenuation/
-	float relDist = min(distance / maxDistance, 1.f);
-	float d = distance / (1.f - relDist * relDist);
+	float rel_dist = min(distance / max_distance, 1.f);
+	float d = distance / (1.f - rel_dist * rel_dist);
 
 	float att = 1.f / (d * d + 1.f);
 	return att;
 }
 
-struct directional_light_cb
+struct DirectionalLightCB
 {
-	mat4 viewProjs[MAX_NUM_SUN_SHADOW_CASCADES];
+	mat4 view_projs[MAX_NUM_SUN_SHADOW_CASCADES];
 	vec4 viewports[MAX_NUM_SUN_SHADOW_CASCADES];
 
-	vec4 cascadeDistances;
+	vec4 cascade_distances;
 	vec4 bias;
 
 	vec3 direction;
-	uint32 numShadowCascades;
+	uint32 num_shadow_cascades;
 	vec3 radiance;
 	uint32 padding;
-	vec4 blendDistances;
+	vec4 blend_distances;
 };
 
-struct point_light_cb
+struct PointLightCB
 {
 	vec3 position;
 	float radius; // Maximum distance.
 	vec3 radiance;
-	int shadowInfoIndex; // -1, if light casts no shadows.
+	int shadow_info_index; // -1, if light casts no shadows.
 
-	void initialize(vec3 position_, vec3 radiance_, float radius_, int shadowInfoIndex_ = -1)
+	void initialize(vec3 position_, vec3 radiance_, float radius_, int shadow_info_index_ = -1)
 	{
 		position = position_;
 		radiance = radiance_;
 		radius = radius_;
-		shadowInfoIndex = shadowInfoIndex_;
+		shadow_info_index = shadow_info_index_;
 	}
 
 #ifndef HLSL
-	point_light_cb() {}
+	PointLightCB() {}
 
-	point_light_cb(vec3 position_, vec3 radiance_, float radius_, int shadowInfoIndex_ = -1)
+	PointLightCB(vec3 position_, vec3 radiance_, float radius_, int shadow_info_index_ = -1)
 	{
-		initialize(position_, radiance_, radius_, shadowInfoIndex_);
+		initialize(position_, radiance_, radius_, shadow_info_index_);
 	}
 #endif
 };
 
-struct spot_light_cb
+struct SpotLightCB
 {
 	vec3 position;
-	int innerAndOuterCutoff; // cos(innerAngle) << 16 | cos(outerAngle). Both are packed into 16 bit signed ints.
+	int inner_and_outer_cutoff; // cos(innerAngle) << 16 | cos(outerAngle). Both are packed into 16 bit signed ints.
 	vec3 direction;
-	float maxDistance;
+	float max_distance;
 	vec3 radiance;
-	int shadowInfoIndex; // -1, if light casts no shadows.
+	int shadow_info_index; // -1, if light casts no shadows.
 
-	void initialize(vec3 position_, vec3 direction_, vec3 radiance_, float innerAngle_, float outerAngle_, float maxDistance_, int shadowInfoIndex_ = -1)
+	void initialize(vec3 position_, vec3 direction_, vec3 radiance_, float inner_angle_, float outer_angle_, float max_distance_, int shadow_info_index_ = -1)
 	{
 		position = position_;
 		direction = direction_;
 		radiance = radiance_;
 		
-		int inner = (int)(cos(innerAngle_) * ((1 << 15) - 1));
-		int outer = (int)(cos(outerAngle_) * ((1 << 15) - 1));
-		innerAndOuterCutoff = (inner << 16) | outer;
+		int inner = (int)(cos(inner_angle_) * ((1 << 15) - 1));
+		int outer = (int)(cos(outer_angle_) * ((1 << 15) - 1));
+		inner_and_outer_cutoff = (inner << 16) | outer;
 
-		maxDistance = maxDistance_;
-		shadowInfoIndex = shadowInfoIndex_;
+		max_distance = max_distance_;
+		shadow_info_index = shadow_info_index_;
 	}
 
 #ifndef HLSL
-	spot_light_cb() {}
+	SpotLightCB() {}
 
-	spot_light_cb(vec3 position_, vec3 direction_, vec3 radiance_, float innerAngle_, float outerAngle_, float maxDistance_, int shadowInfoIndex_ = -1)
+	SpotLightCB(vec3 position_, vec3 direction_, vec3 radiance_, float inner_angle_, float outer_angle_, float max_distance_, int shadow_info_index_ = -1)
 	{
-		initialize(position_, direction_, radiance_, innerAngle_, outerAngle_, maxDistance_, shadowInfoIndex_);
+		initialize(position_, direction_, radiance_, inner_angle_, outer_angle_, max_distance_, shadow_info_index_);
 	}
 #endif
 
-	float getInnerCutoff()
-#ifndef HLSL
-		const
-#endif
-	{
-		return (innerAndOuterCutoff >> 16) / float((1 << 15) - 1);
-	}
-
-	float getOuterCutoff()
+	float get_inner_cutoff()
 #ifndef HLSL
 		const
 #endif
 	{
-		return (innerAndOuterCutoff & 0xFFFF) / float((1 << 15) - 1);
+		return (inner_and_outer_cutoff >> 16) / float((1 << 15) - 1);
+	}
+
+	float get_outer_cutoff()
+#ifndef HLSL
+		const
+#endif
+	{
+		return (inner_and_outer_cutoff & 0xFFFF) / float((1 << 15) - 1);
 	}
 };
 
-struct spot_shadow_info
+struct SpotShadowInfo
 {
-	mat4 viewProj;
+	mat4 view_proj;
 
 	vec4 viewport;
 
@@ -119,13 +119,13 @@ struct spot_shadow_info
 	float padding0[3];
 };
 
-struct point_shadow_info
+struct PointShadowInfo
 {
 	vec4 viewport0;
 	vec4 viewport1;
 };
 
-struct spherical_harmonics
+struct SphericalHarmonics
 {
 	vec4 coefficients[7];
 
@@ -176,9 +176,9 @@ struct spherical_harmonics
 	}
 
 #ifndef HLSL
-	spherical_harmonics() {}
+	SphericalHarmonics() {}
 
-	spherical_harmonics(float r[9], float g[9], float b[9])
+	SphericalHarmonics(float r[9], float g[9], float b[9])
 	{
 		initialize(r, g, b);
 	}
@@ -198,29 +198,29 @@ struct spherical_harmonics
 		x1.z = dot(coefficients[2], N);
 
 		// 4 of the quadratic polynomials.
-		vec4 vB = N.xyzz * N.yzzx;
+		vec4 v_b = N.xyzz * N.yzzx;
 
-		x2.x = dot(coefficients[3], vB);
-		x2.y = dot(coefficients[4], vB);
-		x2.z = dot(coefficients[5], vB);
+		x2.x = dot(coefficients[3], v_b);
+		x2.y = dot(coefficients[4], v_b);
+		x2.z = dot(coefficients[5], v_b);
 
 		// Final quadratic polynomial.
-		float vC = N.x * N.x - N.y * N.y;
-		x3 = coefficients[6].xyz * vC;
+		float v_c = N.x * N.x - N.y * N.y;
+		x3 = coefficients[6].xyz * v_c;
 
 		return max(0, x1 + x2 + x3);
 	}
 #endif
 };
 
-struct spherical_harmonics_basis
+struct SphericalHarmonicsBasis
 {
 	float v[9];
 };
 
-static spherical_harmonics_basis getSHBasis(vec3 dir)
+static SphericalHarmonicsBasis get_sh_basis(vec3 dir)
 {
-	spherical_harmonics_basis result;
+	SphericalHarmonicsBasis result;
 	result.v[0] = 0.282095f;
 	result.v[1] = -0.488603f * dir.y;
 	result.v[2] = 0.488603f * dir.z;
@@ -233,14 +233,14 @@ static spherical_harmonics_basis getSHBasis(vec3 dir)
 	return result;
 }
 
-struct lighting_cb
+struct LightingCB
 {
-	directional_light_cb sun;
-	light_probe_grid_cb lightProbeGrid;
+	DirectionalLightCB sun;
+	LightProbeGridCB light_probe_grid;
 
-	vec2 shadowMapTexelSize;
-	float globalIlluminationIntensity;
-	uint32 useRaytracedGlobalIllumination;
+	vec2 shadow_map_texel_size;
+	float global_illumination_intensity;
+	uint32 use_raytraced_global_illumination;
 };
 
 #endif

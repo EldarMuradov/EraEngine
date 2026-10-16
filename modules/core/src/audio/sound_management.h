@@ -4,11 +4,11 @@
 
 namespace era_engine
 {
-	struct sound_spec;
-	struct sound_id;
+	struct SoundSpec;
+	struct SoundID;
 
-	void loadSoundRegistry();
-	void drawSoundEditor(bool& open);
+	void load_sound_registry();
+	void draw_sound_editor(bool& open);
 
-	NODISCARD const sound_spec& getSoundSpec(const sound_id& id);
+	NODISCARD const SoundSpec& get_sound_spec(const SoundID& id);
 }

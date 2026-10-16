@@ -7,15 +7,15 @@
 
 namespace era_engine
 {
-	NODISCARD dx_page* dx_page_pool::allocateNewPage()
+	NODISCARD DXPage* DXPagePool::allocate_new_page()
 	{
 		mutex.lock();
-		dx_page* result = arena.allocate<dx_page>(1, true);
+		DXPage* result = arena.allocate<DXPage>(1, true);
 		mutex.unlock();
 
-		auto desc = CD3DX12_RESOURCE_DESC::Buffer(pageSize);
+		auto desc = CD3DX12_RESOURCE_DESC::Buffer(page_size);
 		CD3DX12_HEAP_PROPERTIES props(D3D12_HEAP_TYPE_UPLOAD);
-		checkResult(dxContext.device->CreateCommittedResource(
+		checkResult(dx_context.device->CreateCommittedResource(
 			&props,
 			D3D12_HEAP_FLAG_NONE,
 			&desc,
@@ -24,97 +24,97 @@ namespace era_engine
 			IID_PPV_ARGS(&result->buffer)
 		));
 
-		result->gpuBasePtr = result->buffer->GetGPUVirtualAddress();
-		result->buffer->Map(0, 0, (void**)&result->cpuBasePtr);
-		result->pageSize = pageSize;
+		result->gpu_base_ptr = result->buffer->GetGPUVirtualAddress();
+		result->buffer->Map(0, 0, (void**)&result->cpu_base_ptr);
+		result->page_size = page_size;
 
 		return result;
 	}
 
-	NODISCARD dx_page* dx_page_pool::getFreePage()
+	NODISCARD DXPage* DXPagePool::get_free_page()
 	{
 		mutex.lock();
-		dx_page* result = freePages;
+		DXPage* result = free_pages;
 		if (result)
 		{
-			freePages = result->next;
+			free_pages = result->next;
 		}
 		mutex.unlock();
 
 		if (!result)
 		{
-			result = allocateNewPage();
+			result = allocate_new_page();
 		}
 
-		result->currentOffset = 0;
+		result->current_offset = 0;
 
 		return result;
 	}
 
-	void dx_page_pool::returnPage(dx_page* page)
+	void DXPagePool::return_page(DXPage* page)
 	{
 		Lock lock{ mutex };
-		page->next = usedPages;
-		usedPages = page;
-		if (!lastUsedPage)
+		page->next = used_pages;
+		used_pages = page;
+		if (!last_used_page)
 		{
-			lastUsedPage = page;
+			last_used_page = page;
 		}
 	}
 
-	void dx_page_pool::reset()
+	void DXPagePool::reset()
 	{
-		if (lastUsedPage)
+		if (last_used_page)
 		{
-			lastUsedPage->next = freePages;
+			last_used_page->next = free_pages;
 		}
-		freePages = usedPages;
-		usedPages = 0;
-		lastUsedPage = 0;
+		free_pages = used_pages;
+		used_pages = 0;
+		last_used_page = 0;
 	}
 
-	NODISCARD dx_allocation dx_upload_buffer::allocate(uint64 size, uint64 alignment)
+	NODISCARD DXAllocation DXUploadBuffer::allocate(uint64 size, uint64 alignment)
 	{
-		ASSERT(size <= pagePool->pageSize);
+		ASSERT(size <= page_pool->page_size);
 
-		uint64 alignedOffset = currentPage ? align_to(currentPage->currentOffset, alignment) : 0;
+		uint64 aligned_offset = current_page ? align_to(current_page->current_offset, alignment) : 0;
 
-		dx_page* page = currentPage;
-		if (!page || alignedOffset + size > page->pageSize)
+		DXPage* page = current_page;
+		if (!page || aligned_offset + size > page->page_size)
 		{
-			page = pagePool->getFreePage();
-			alignedOffset = 0;
+			page = page_pool->get_free_page();
+			aligned_offset = 0;
 
-			if (currentPage)
+			if (current_page)
 			{
-				pagePool->returnPage(currentPage);
+				page_pool->return_page(current_page);
 			}
-			currentPage = page;
+			current_page = page;
 		}
 
-		dx_allocation result;
-		result.cpuPtr = page->cpuBasePtr + alignedOffset;
-		result.gpuPtr = page->gpuBasePtr + alignedOffset;
+		DXAllocation result;
+		result.cpu_ptr = page->cpu_base_ptr + aligned_offset;
+		result.gpu_ptr = page->gpu_base_ptr + aligned_offset;
 		result.resource = page->buffer;
-		result.offsetInResource = (uint32)alignedOffset;
+		result.offset_in_resource = (uint32)aligned_offset;
 
-		page->currentOffset = alignedOffset + size;
+		page->current_offset = aligned_offset + size;
 
 		return result;
 	}
 
-	void dx_upload_buffer::reset()
+	void DXUploadBuffer::reset()
 	{
-		if (currentPage && pagePool)
+		if (current_page && page_pool)
 		{
-			pagePool->returnPage(currentPage);
+			page_pool->return_page(current_page);
 		}
-		currentPage = 0;
+		current_page = 0;
 	}
 
-	void dx_page_pool::initialize(uint32 sizeInBytes)
+	void DXPagePool::initialize(uint32 size_in_bytes)
 	{
-		pageSize = sizeInBytes;
-		arena.initialize(0, sizeof(dx_page) * 512);
+		page_size = size_in_bytes;
+		arena.initialize(0, sizeof(DXPage) * 512);
 	}
 }

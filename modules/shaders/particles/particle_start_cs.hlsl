@@ -1,50 +1,50 @@
 #include "cs.hlsli"
 #include "particles_rs.hlsli"
 
-ConstantBuffer<particle_start_cb> cb					: register(b0, space1);
+ConstantBuffer<ParticleStartCB> cb					: register(b0, space1);
 
-RWStructuredBuffer<particle_dispatch> dispatchInfo		: register(u0, space1);
-RWStructuredBuffer<particle_draw> drawInfo				: register(u1, space1);
-RWStructuredBuffer<particle_counters> counters			: register(u2, space1);
+RWStructuredBuffer<ParticleDispatch> dispatch_info		: register(u0, space1);
+RWStructuredBuffer<ParticleDraw> draw_info				: register(u1, space1);
+RWStructuredBuffer<ParticleCounters> counters			: register(u2, space1);
 
-static uint bucketize(uint problemSize, uint bucketSize) 
+static uint bucketize(uint problem_size, uint bucket_size) 
 { 
-	return (problemSize + bucketSize - 1) / bucketSize; 
+	return (problem_size + bucket_size - 1) / bucket_size; 
 }
 
 [numthreads(1, 1, 1)]
 [RootSignature(PARTICLE_START_RS)]
-void main(cs_input IN)
+void main(CSInput IN)
 {
-	particle_counters c = counters[0];
-	particle_draw draw = drawInfo[0];
-	particle_dispatch dispatch = dispatchInfo[0];
+	ParticleCounters c = counters[0];
+	ParticleDraw draw = draw_info[0];
+	ParticleDispatch dispatch = dispatch_info[0];
 
-	c.emitRateAccum += cb.newParticlesRequest; // TODO: How do we prevent this from running to infinity, if the system is saturated?
+	c.emit_rate_accum += cb.new_particles_request; // TODO: How do we prevent this from running to infinity, if the system is saturated?
 
-	uint spaceLeft = c.numDeadParticles;
-	uint numNewParticles = min((uint)c.emitRateAccum, spaceLeft);
+	uint space_left = c.num_dead_particles;
+	uint num_new_particles = min((uint)c.emit_rate_accum, space_left);
 
-	c.emitRateAccum -= numNewParticles;
+	c.emit_rate_accum -= num_new_particles;
 
-	uint numAliveParticlesInLastFrame = draw.arguments.InstanceCount;
+	uint num_alive_particles_in_last_frame = draw.arguments.InstanceCount;
 
-	dispatch.emit.ThreadGroupCountX = bucketize(numNewParticles, PARTICLES_EMIT_BLOCK_SIZE);
+	dispatch.emit.ThreadGroupCountX = bucketize(num_new_particles, PARTICLES_EMIT_BLOCK_SIZE);
 	dispatch.emit.ThreadGroupCountY = 1;
 	dispatch.emit.ThreadGroupCountZ = 1;
 
-	dispatch.simulate.ThreadGroupCountX = bucketize(numAliveParticlesInLastFrame + numNewParticles, PARTICLES_SIMULATE_BLOCK_SIZE);
+	dispatch.simulate.ThreadGroupCountX = bucketize(num_alive_particles_in_last_frame + num_new_particles, PARTICLES_SIMULATE_BLOCK_SIZE);
 	dispatch.simulate.ThreadGroupCountY = 1;
 	dispatch.simulate.ThreadGroupCountZ = 1;
 
-	c.numAliveParticlesThisFrame = numAliveParticlesInLastFrame;
+	c.num_alive_particles_this_frame = num_alive_particles_in_last_frame;
 	draw.arguments.InstanceCount = 0;
-	draw.arguments.IndexCountPerInstance = cb.indexCount;
-	draw.arguments.StartIndexLocation = cb.startIndex;
-	draw.arguments.BaseVertexLocation = cb.baseVertex;
-	c.newParticles = numNewParticles;
+	draw.arguments.IndexCountPerInstance = cb.index_count;
+	draw.arguments.StartIndexLocation = cb.start_index;
+	draw.arguments.BaseVertexLocation = cb.base_vertex;
+	c.new_particles = num_new_particles;
 
-	dispatchInfo[0] = dispatch;
-	drawInfo[0] = draw;
+	dispatch_info[0] = dispatch;
+	draw_info[0] = draw;
 	counters[0] = c;
 }

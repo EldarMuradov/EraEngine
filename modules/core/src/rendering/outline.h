@@ -8,7 +8,7 @@
 
 namespace era_engine
 {
-	void initializeOutlinePipelines();
-	void renderOutline(struct ldr_render_pass* renderPass, const mat4& transform, dx_vertex_buffer_view vertexBuffer, dx_index_buffer_view indexBuffer, SubmeshInfo submesh);
-	void renderOutline(struct ldr_render_pass* renderPass, const mat4& transform, dx_vertex_buffer_group_view vertexBuffer, dx_index_buffer_view indexBuffer, SubmeshInfo submesh);
+	void initialize_outline_pipelines();
+	void render_outline(struct LDRRenderPass* render_pass, const mat4& transform, DXVertexBufferView vertex_buffer, DXIndexBufferView index_buffer, SubmeshInfo submesh);
+	void render_outline(struct LDRRenderPass* render_pass, const mat4& transform, DXVertexBufferGroupView vertex_buffer, DXIndexBufferView index_buffer, SubmeshInfo submesh);
 }

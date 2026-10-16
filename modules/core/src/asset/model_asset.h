@@ -42,7 +42,7 @@ namespace era_engine
 		std::vector<uint32> colors;
 		std::vector<animation::SkinningWeights> skin;
 
-		std::vector<indexed_triangle32> triangles;
+		std::vector<IndexedTriangle32> triangles;
 
 		ERA_BINARY_SERIALIZE(material_index, positions, uvs, normals, tangents, colors, skin, triangles)
 	};
@@ -76,7 +76,7 @@ namespace era_engine
 		ERA_BINARY_SERIALIZE(flags, meshes, materials)
 	};
 
-	ERA_CORE_API ModelAsset import_3d_model_from_file(const fs::path& path, uint32 mesh_flags = mesh_creation_flags_default);
+	ERA_CORE_API ModelAsset import_3d_model_from_file(const fs::path& path, uint32 mesh_flags = MESH_CREATION_FLAGS_DEFAULT);
 
 	inline bool is_mesh_extension(const std::string& extension)
 	{

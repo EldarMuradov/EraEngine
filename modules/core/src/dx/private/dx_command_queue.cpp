@@ -8,12 +8,12 @@
 
 namespace era_engine
 {
-	static DWORD processRunningCommandLists(void* data);
+	static DWORD process_running_command_lists(void* data);
 
-	void dx_command_queue::initialize(dx_device device, D3D12_COMMAND_LIST_TYPE type)
+	void DXCommandQueue::initialize(DXDevice device, D3D12_COMMAND_LIST_TYPE type)
 	{
-		fenceValue = 0;
-		commandListType = type;
+		fence_value = 0;
+		command_list_type = type;
 
 		D3D12_COMMAND_QUEUE_DESC desc = {};
 		desc.Type = type;
@@ -21,11 +21,11 @@ namespace era_engine
 		desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 		desc.NodeMask = 0;
 
-		checkResult(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&commandQueue)));
-		checkResult(device->CreateFence(fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+		checkResult(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&command_queue)));
+		checkResult(device->CreateFence(fence_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
 
-		timeStampFrequency = 0; // Default value, if timing is not supported on this queue.
-		timeStampToCPU = 0;
+		time_stamp_frequency = 0; // Default value, if timing is not supported on this queue.
+		time_stamp_to_cpu = 0;
 
 		D3D12_FEATURE_DATA_D3D12_OPTIONS3 options3 = {};
 		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS3, &options3, sizeof(options3))))
@@ -33,112 +33,112 @@ namespace era_engine
 			if (type == D3D12_COMMAND_LIST_TYPE_COPY &&
 				options3.CopyQueueTimestampQueriesSupported)
 			{
-				if (SUCCEEDED(commandQueue->GetTimestampFrequency(&timeStampFrequency)))
+				if (SUCCEEDED(command_queue->GetTimestampFrequency(&time_stamp_frequency)))
 				{
-					uint64 gpuTimestamp, cpuTimestamp;
-					if (SUCCEEDED(commandQueue->GetClockCalibration(&gpuTimestamp, &cpuTimestamp)))
+					uint64 gpu_timestamp, cpu_timestamp;
+					if (SUCCEEDED(command_queue->GetClockCalibration(&gpu_timestamp, &cpu_timestamp)))
 					{
-						if (gpuTimestamp > cpuTimestamp)
+						if (gpu_timestamp > cpu_timestamp)
 						{
-							timeStampToCPU = (int64)(gpuTimestamp - cpuTimestamp);
+							time_stamp_to_cpu = (int64)(gpu_timestamp - cpu_timestamp);
 						}
 						else
 						{
-							timeStampToCPU = -(int64)(cpuTimestamp - gpuTimestamp);
+							time_stamp_to_cpu = -(int64)(cpu_timestamp - gpu_timestamp);
 						}
 					}
 				}
 			}
 		}
 
-		processThreadHandle = CreateThread(0, 0, processRunningCommandLists, this, 0, 0);
+		process_thread_handle = CreateThread(0, 0, process_running_command_lists, this, 0, 0);
 
 		switch (type)
 		{
-		case D3D12_COMMAND_LIST_TYPE_DIRECT: SET_NAME(commandQueue, "Render command queue"); break;
-		case D3D12_COMMAND_LIST_TYPE_COMPUTE: SET_NAME(commandQueue, "Compute command queue"); break;
-		case D3D12_COMMAND_LIST_TYPE_COPY: SET_NAME(commandQueue, "Copy command queue"); break;
+		case D3D12_COMMAND_LIST_TYPE_DIRECT: SET_NAME(command_queue, "Render command queue"); break;
+		case D3D12_COMMAND_LIST_TYPE_COMPUTE: SET_NAME(command_queue, "Compute command queue"); break;
+		case D3D12_COMMAND_LIST_TYPE_COPY: SET_NAME(command_queue, "Copy command queue"); break;
 		}
 	}
 
-	uint64 dx_command_queue::signal()
+	uint64 DXCommandQueue::signal()
 	{
-		uint64 fenceValueForSignal = atomic_increment(fenceValue) + 1;
-		checkResult(commandQueue->Signal(fence.Get(), fenceValueForSignal));
+		uint64 fence_value_for_signal = atomic_increment(fence_value) + 1;
+		checkResult(command_queue->Signal(fence.Get(), fence_value_for_signal));
 
-		return fenceValueForSignal;
+		return fence_value_for_signal;
 	}
 
-	NODISCARD bool dx_command_queue::isFenceComplete(uint64 fenceValue) const
+	NODISCARD bool DXCommandQueue::is_fence_complete(uint64 fence_value) const
 	{
-		return fence->GetCompletedValue() >= fenceValue;
+		return fence->GetCompletedValue() >= fence_value;
 	}
 
-	void dx_command_queue::waitForFence(uint64 fenceValue)
+	void DXCommandQueue::wait_for_fence(uint64 fence_value)
 	{
-		if (!isFenceComplete(fenceValue))
+		if (!is_fence_complete(fence_value))
 		{
-			HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-			ASSERT(fenceEvent);
+			HANDLE fence_event = CreateEvent(NULL, FALSE, FALSE, NULL);
+			ASSERT(fence_event);
 
-			fence->SetEventOnCompletion(fenceValue, fenceEvent);
-			WaitForSingleObject(fenceEvent, DWORD_MAX);
+			fence->SetEventOnCompletion(fence_value, fence_event);
+			WaitForSingleObject(fence_event, DWORD_MAX);
 
-			CloseHandle(fenceEvent);
+			CloseHandle(fence_event);
 		}
 	}
 
-	void dx_command_queue::waitForOtherQueue(dx_command_queue& other)
+	void DXCommandQueue::wait_for_other_queue(DXCommandQueue& other)
 	{
-		commandQueue->Wait(other.fence.Get(), other.signal());
+		command_queue->Wait(other.fence.Get(), other.signal());
 	}
 
-	void dx_command_queue::waitForOtherQueue(dx_command_queue& other, uint64 fenceValue)
+	void DXCommandQueue::wait_for_other_queue(DXCommandQueue& other, uint64 fence_value)
 	{
-		commandQueue->Wait(other.fence.Get(), fenceValue);
+		command_queue->Wait(other.fence.Get(), fence_value);
 	}
 
-	void dx_command_queue::flush()
+	void DXCommandQueue::flush()
 	{
-		while (numRunningCommandLists) {}
+		while (num_running_command_lists) {}
 
-		waitForFence(signal());
+		wait_for_fence(signal());
 	}
 
-	static DWORD processRunningCommandLists(void* data)
+	static DWORD process_running_command_lists(void* data)
 	{
-		dx_command_queue& queue = *(dx_command_queue*)data;
+		DXCommandQueue& queue = *(DXCommandQueue*)data;
 
-		while (dxContext.running)
+		while (dx_context.running)
 		{
 			while (true)
 			{
-				queue.commandListMutex.lock();
-				dx_command_list* list = queue.runningCommandLists;
+				queue.command_list_mutex.lock();
+				DXCommandList* list = queue.running_command_lists;
 				if (list)
 				{
-					queue.runningCommandLists = list->next;
-					if (list == queue.newestRunningCommandList)
+					queue.running_command_lists = list->next;
+					if (list == queue.newest_running_command_list)
 					{
 						ASSERT(list->next == 0);
-						queue.newestRunningCommandList = 0;
+						queue.newest_running_command_list = 0;
 					}
 				}
-				queue.commandListMutex.unlock();
+				queue.command_list_mutex.unlock();
 
 				if (list)
 				{
-					queue.waitForFence(list->lastExecutionFenceValue);
+					queue.wait_for_fence(list->last_execution_fence_value);
 					list->reset();
 
-					queue.commandListMutex.lock();
+					queue.command_list_mutex.lock();
 
-					list->next = queue.freeCommandLists;
-					queue.freeCommandLists = list;
+					list->next = queue.free_command_lists;
+					queue.free_command_lists = list;
 
-					atomic_decrement(queue.numRunningCommandLists);
+					atomic_decrement(queue.num_running_command_lists);
 
-					queue.commandListMutex.unlock();
+					queue.command_list_mutex.unlock();
 				}
 				else
 				{

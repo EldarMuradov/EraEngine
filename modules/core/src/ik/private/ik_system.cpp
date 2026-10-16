@@ -172,13 +172,13 @@ namespace era_engine
         for (auto [entity_handle, target_component, transform_component] : world->group(components_group<IKTargetComponent, TransformComponent>).each())
         {
             vec3 point = transform_component.get_world_transform().position;
-            renderWireSphere(point, 0.05f, vec4(1.0f, 0.f, 1.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
+            render_wire_sphere(point, 0.05f, vec4(1.0f, 0.f, 1.0f, 1.0f), renderer_holder_rc->ldr_render_pass);
         }
 
         for (auto [entity_handle, target_component, transform_component] : world->group(components_group<FBIKTargetComponent, TransformComponent>).each())
         {
             vec3 point = transform_component.get_world_transform().position;
-            renderWireSphere(point, 0.05f, vec4(1.0f, 0.f, 1.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
+            render_wire_sphere(point, 0.05f, vec4(1.0f, 0.f, 1.0f, 1.0f), renderer_holder_rc->ldr_render_pass);
         }
 
         for (auto [entity_handle, full_body_ik_component] : world->view<FBIKComponent>().each())
@@ -200,11 +200,11 @@ namespace era_engine
             for (size_t i = 0; i < nodes.size(); ++i)
             {
                 const vec4 color = nodes[i].effector != INVALID_JOINT ? vec4(0.0f, 1.0f, 1.0f, 1.0f) : vec4(1.0f, 1.0f, 0.0f, 1.0f);
-                renderWireSphere(positions[i], 0.03f, color, renderer_holder_rc->ldrRenderPass);
+                render_wire_sphere(positions[i], 0.03f, color, renderer_holder_rc->ldr_render_pass);
 
                 if (nodes[i].parent != INVALID_JOINT)
                 {
-                    renderLine(positions[nodes[i].parent], positions[i], vec4(1.0f, 1.0f, 0.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
+                    render_line(positions[nodes[i].parent], positions[i], vec4(1.0f, 1.0f, 0.0f, 1.0f), renderer_holder_rc->ldr_render_pass);
                 }
             }
 
@@ -212,7 +212,7 @@ namespace era_engine
             {
                 if (effector.enabled && effector.position_weight > 0.0f)
                 {
-                    renderWireSphere(effector.target_position, 0.06f, vec4(0.0f, 1.f, 1.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
+                    render_wire_sphere(effector.target_position, 0.06f, vec4(0.0f, 1.f, 1.0f, 1.0f), renderer_holder_rc->ldr_render_pass);
                 }
             }
         }
@@ -228,9 +228,9 @@ namespace era_engine
 
                 for (const vec3& position : chain.solver->get_solved_positions())
                 {
-                    renderWireSphere(position, 0.05f, vec4(1.0f, 1.f, 0.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
+                    render_wire_sphere(position, 0.05f, vec4(1.0f, 1.f, 0.0f, 1.0f), renderer_holder_rc->ldr_render_pass);
                 }
-                renderWireSphere(chain.target_world_position, 0.06f, vec4(0.0f, 1.f, 1.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
+                render_wire_sphere(chain.target_world_position, 0.06f, vec4(0.0f, 1.f, 1.0f, 1.0f), renderer_holder_rc->ldr_render_pass);
             }
         }
 	}

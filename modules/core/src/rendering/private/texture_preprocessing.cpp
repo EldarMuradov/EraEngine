@@ -11,520 +11,520 @@
 
 namespace era_engine
 {
-	static dx_pipeline mipmapPipeline;
-	static dx_pipeline equirectangularToCubemapPipeline;
+	static DXPipeline mipmap_pipeline;
+	static DXPipeline equirectangular_to_cubemap_pipeline;
 
-	static dx_pipeline texturedSkyToIrradiancePipeline;
-	static dx_pipeline texturedSkyToIrradianceSHPipeline;
-	static dx_pipeline texturedSkyToPrefilteredRadiancePipeline;
+	static DXPipeline textured_sky_to_irradiance_pipeline;
+	static DXPipeline textured_sky_to_irradiance_sh_pipeline;
+	static DXPipeline textured_sky_to_prefiltered_radiance_pipeline;
 
-	static dx_pipeline proceduralSkyToIrradiancePipeline;
+	static DXPipeline procedural_sky_to_irradiance_pipeline;
 	//static dx_pipeline proceduralSkyToPrefilteredRadiancePipeline;
 
-	static dx_pipeline integrateBRDFPipeline;
+	static DXPipeline integrate_brdf_pipeline;
 
-	struct mipmap_cb
+	struct MipmapCB
 	{
-		uint32 srcMipLevel;				// Texture level of source mip
-		uint32 numMipLevelsToGenerate;	// The shader can generate up to 4 mips at once.
-		uint32 srcDimensionFlags;		// Flags specifying whether width and height are even or odd (see above).
-		uint32 isSRGB;					// Must apply gamma correction to sRGB textures.
-		vec2 texelSize;					// 1.0 / OutMip1.Dimensions
+		uint32 src_mip_level;				// Texture level of source mip
+		uint32 num_mip_levels_to_generate;	// The shader can generate up to 4 mips at once.
+		uint32 src_dimension_flags;		// Flags specifying whether width and height are even or odd (see above).
+		uint32 is_srgb;					// Must apply gamma correction to sRGB textures.
+		vec2 texel_size;					// 1.0 / OutMip1.Dimensions
 	};
 
-	struct equirectangular_to_cubemap_cb
+	struct EquirectangularToCubemapCB
 	{
-		uint32 cubemapSize;				// Size of the cubemap face in pixels at the current mipmap level.
-		uint32 firstMip;				// The first mip level to generate.
-		uint32 numMipLevelsToGenerate;	// The number of mips to generate.
-		uint32 isSRGB;
+		uint32 cubemap_size;				// Size of the cubemap face in pixels at the current mipmap level.
+		uint32 first_mip;				// The first mip level to generate.
+		uint32 num_mip_levels_to_generate;	// The number of mips to generate.
+		uint32 is_srgb;
 	};
 
-	struct textured_sky_to_irradiance_cb
+	struct TexturedSkyToIrradianceCB
 	{
-		uint32 irradianceMapSize;
+		uint32 irradiance_map_size;
 	};
 
-	struct textured_sky_to_irradiance_sh_cb
+	struct TexturedSkyToIrradianceSHCB
 	{
-		uint32 mipLevel;
+		uint32 mip_level;
 	};
 
-	struct procedural_sky_to_irradiance_cb
+	struct ProceduralSkyToIrradianceCB
 	{
-		vec3 sunDirection;
-		uint32 irradianceMapSize;
+		vec3 sun_direction;
+		uint32 irradiance_map_size;
 	};
 
-	struct textured_sky_to_prefiltered_radiance_cb
+	struct TexturedSkyToPrefilteredRadianceCB
 	{
-		uint32 cubemapSize;				// Size of the cubemap face in pixels at the current mipmap level.
-		uint32 firstMip;				// The first mip level to generate.
-		uint32 numMipLevelsToGenerate;	// The number of mips to generate.
-		uint32 totalNumMipLevels;
+		uint32 cubemap_size;				// Size of the cubemap face in pixels at the current mipmap level.
+		uint32 first_mip;				// The first mip level to generate.
+		uint32 num_mip_levels_to_generate;	// The number of mips to generate.
+		uint32 total_num_mip_levels;
 	};
 
-	struct integrate_brdf_cb
+	struct IntegrateBRDFCB
 	{
-		uint32 textureDim;
+		uint32 texture_dim;
 	};
 
-	void initializeTexturePreprocessing()
+	void initialize_texture_preprocessing()
 	{
-		mipmapPipeline = createReloadablePipeline("generate_mips_cs");
-		equirectangularToCubemapPipeline = createReloadablePipeline("equirectangular_to_cubemap_cs");
+		mipmap_pipeline = create_reloadable_pipeline("generate_mips_cs");
+		equirectangular_to_cubemap_pipeline = create_reloadable_pipeline("equirectangular_to_cubemap_cs");
 
-		texturedSkyToIrradiancePipeline = createReloadablePipeline("textured_sky_to_irradiance_cs");
-		texturedSkyToIrradianceSHPipeline = createReloadablePipeline("textured_sky_to_irradiance_sh_cs");
-		texturedSkyToPrefilteredRadiancePipeline = createReloadablePipeline("textured_sky_to_prefiltered_radiance_cs");
+		textured_sky_to_irradiance_pipeline = create_reloadable_pipeline("textured_sky_to_irradiance_cs");
+		textured_sky_to_irradiance_sh_pipeline = create_reloadable_pipeline("textured_sky_to_irradiance_sh_cs");
+		textured_sky_to_prefiltered_radiance_pipeline = create_reloadable_pipeline("textured_sky_to_prefiltered_radiance_cs");
 
-		proceduralSkyToIrradiancePipeline = createReloadablePipeline("procedural_sky_to_irradiance_cs");
+		procedural_sky_to_irradiance_pipeline = create_reloadable_pipeline("procedural_sky_to_irradiance_cs");
 		//proceduralSkyToPrefilteredRadiancePipeline = createReloadablePipeline("procedural_sky_to_prefiltered_radiance_cs");
 
-		integrateBRDFPipeline = createReloadablePipeline("integrate_brdf_cs");
+		integrate_brdf_pipeline = create_reloadable_pipeline("integrate_brdf_cs");
 	}
 
-	void generateMipMapsOnGPU(dx_command_list* cl, ref<dx_texture>& texture)
+	void generate_mip_maps_on_gpu(DXCommandList* cl, ref<DXTexture>& texture)
 	{
-		dx_resource resource = texture->resource;
+		DXResource resource = texture->resource;
 		if (!resource)
 		{
 			return;
 		}
 
-		D3D12_RESOURCE_DESC resourceDesc = resource->GetDesc();
+		D3D12_RESOURCE_DESC resource_desc = resource->GetDesc();
 
-		uint32 numMips = resourceDesc.MipLevels;
-		if (numMips == 1)
+		uint32 num_mips = resource_desc.MipLevels;
+		if (num_mips == 1)
 		{
 			return;
 		}
 
-		if (resourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D ||
-			resourceDesc.DepthOrArraySize != 1 ||
-			resourceDesc.SampleDesc.Count > 1)
+		if (resource_desc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D ||
+			resource_desc.DepthOrArraySize != 1 ||
+			resource_desc.SampleDesc.Count > 1)
 		{
 			std::cerr << "GenerateMips is only supported for non-multi-sampled 2D Textures.\n";
 			return;
 		}
 
-		dx_resource uavResource = resource;
-		dx_resource aliasResource; // In case the format of our texture does not support UAVs.
+		DXResource uav_resource = resource;
+		DXResource alias_resource; // In case the format of our texture does not support UAVs.
 
-		if (!texture->supportsUAV)
+		if (!texture->supports_uav)
 		{
-			D3D12_RESOURCE_DESC aliasDesc = resourceDesc;
+			D3D12_RESOURCE_DESC alias_desc = resource_desc;
 			// Placed resources can't be render targets or depth-stencil views.
-			aliasDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-			aliasDesc.Flags &= ~(D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+			alias_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+			alias_desc.Flags &= ~(D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
 			// Describe a UAV compatible resource that is used to perform
 			// mipmapping of the original texture.
-			D3D12_RESOURCE_DESC uavDesc = aliasDesc;   // The flags for the UAV description must match that of the alias description.
-			uavDesc.Format = getUAVCompatibleFormat(resourceDesc.Format);
+			D3D12_RESOURCE_DESC uav_desc = alias_desc;   // The flags for the UAV description must match that of the alias description.
+			uav_desc.Format = get_uav_compatible_format(resource_desc.Format);
 
-			D3D12_RESOURCE_DESC resourceDescs[] = {
-				aliasDesc,
-				uavDesc
+			D3D12_RESOURCE_DESC resource_descs[] = {
+				alias_desc,
+				uav_desc
 			};
 
 			// Create a heap that is large enough to store a copy of the original resource.
-			D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = dxContext.device->GetResourceAllocationInfo(0, arraysize(resourceDescs), resourceDescs);
+			D3D12_RESOURCE_ALLOCATION_INFO allocation_info = dx_context.device->GetResourceAllocationInfo(0, arraysize(resource_descs), resource_descs);
 
-			D3D12_HEAP_DESC heapDesc = {};
-			heapDesc.SizeInBytes = allocationInfo.SizeInBytes;
-			heapDesc.Alignment = allocationInfo.Alignment;
-			heapDesc.Flags = D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES;
-			heapDesc.Properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-			heapDesc.Properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-			heapDesc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+			D3D12_HEAP_DESC heap_desc = {};
+			heap_desc.SizeInBytes = allocation_info.SizeInBytes;
+			heap_desc.Alignment = allocation_info.Alignment;
+			heap_desc.Flags = D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES;
+			heap_desc.Properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+			heap_desc.Properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+			heap_desc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
 
-			dx_heap heap;
-			checkResult(dxContext.device->CreateHeap(&heapDesc, IID_PPV_ARGS(&heap)));
-			dxContext.retire(heap);
+			DXHeap heap;
+			checkResult(dx_context.device->CreateHeap(&heap_desc, IID_PPV_ARGS(&heap)));
+			dx_context.retire(heap);
 
-			checkResult(dxContext.device->CreatePlacedResource(
+			checkResult(dx_context.device->CreatePlacedResource(
 				heap.Get(),
 				0,
-				&aliasDesc,
+				&alias_desc,
 				D3D12_RESOURCE_STATE_COMMON,
 				0,
-				IID_PPV_ARGS(&aliasResource)
+				IID_PPV_ARGS(&alias_resource)
 			));
 
-			SET_NAME(aliasResource, "Alias resource for mip map generation");
+			SET_NAME(alias_resource, "Alias resource for mip map generation");
 
-			dxContext.retire(aliasResource);
+			dx_context.retire(alias_resource);
 
-			checkResult(dxContext.device->CreatePlacedResource(
+			checkResult(dx_context.device->CreatePlacedResource(
 				heap.Get(),
 				0,
-				&uavDesc,
+				&uav_desc,
 				D3D12_RESOURCE_STATE_COMMON,
 				0,
-				IID_PPV_ARGS(&uavResource)
+				IID_PPV_ARGS(&uav_resource)
 			));
 
-			SET_NAME(uavResource, "UAV resource for mip map generation");
+			SET_NAME(uav_resource, "UAV resource for mip map generation");
 
-			dxContext.retire(uavResource);
+			dx_context.retire(uav_resource);
 
-			cl->aliasingBarrier(0, aliasResource);
+			cl->aliasing_barrier(0, alias_resource);
 
 			// Copy the original resource to the alias resource.
-			cl->copyResource(resource, aliasResource);
+			cl->copy_resource(resource, alias_resource);
 
 			// Add an aliasing barrier for the UAV compatible resource.
-			cl->aliasingBarrier(aliasResource, uavResource);
+			cl->aliasing_barrier(alias_resource, uav_resource);
 		}
 
-		bool isSRGB = isSRGBFormat(resourceDesc.Format);
-		cl->setPipelineState(*mipmapPipeline.pipeline);
-		cl->setComputeRootSignature(*mipmapPipeline.rootSignature);
+		bool is_srgb = is_srgb_format(resource_desc.Format);
+		cl->set_pipeline_state(*mipmap_pipeline.pipeline);
+		cl->set_compute_root_signature(*mipmap_pipeline.root_signature);
 
-		mipmap_cb cb;
-		cb.isSRGB = isSRGB;
+		MipmapCB cb;
+		cb.is_srgb = is_srgb;
 
-		resourceDesc = uavResource->GetDesc();
+		resource_desc = uav_resource->GetDesc();
 
-		DXGI_FORMAT overrideFormat = isSRGB ? getSRGBFormat(resourceDesc.Format) : resourceDesc.Format;
+		DXGI_FORMAT override_format = is_srgb ? get_srgb_format(resource_desc.Format) : resource_desc.Format;
 
-		ref<dx_texture> tmpTexture = make_ref<dx_texture>();
-		tmpTexture->resource = uavResource;
+		ref<DXTexture> tmp_texture = make_ref<DXTexture>();
+		tmp_texture->resource = uav_resource;
 
-		uint32 numSrcMipLevels = resourceDesc.MipLevels - 1;
-		uint32 numDstMipLevels = resourceDesc.MipLevels - 1;
-		uint32 numDescriptors = numSrcMipLevels + numDstMipLevels;
+		uint32 num_src_mip_levels = resource_desc.MipLevels - 1;
+		uint32 num_dst_mip_levels = resource_desc.MipLevels - 1;
+		uint32 num_descriptors = num_src_mip_levels + num_dst_mip_levels;
 
-		dx_descriptor_range descriptors = dxContext.frameDescriptorAllocator.allocateContiguousDescriptorRange(numDescriptors);
+		DXDescriptorRange descriptors = dx_context.frame_descriptor_allocator.allocate_contiguous_descriptor_range(num_descriptors);
 
-		dx_double_descriptor_handle srvOffset;
-		for (uint32 i = 0; i < numSrcMipLevels; ++i)
+		DXDoubleDescriptorHandle srv_offset;
+		for (uint32 i = 0; i < num_src_mip_levels; ++i)
 		{
-			dx_double_descriptor_handle h = descriptors.pushHandle();
-			h.create2DTextureSRV(tmpTexture, { i, 1 }, overrideFormat);
+			DXDoubleDescriptorHandle h = descriptors.push_handle();
+			h.create_2d_texture_srv(tmp_texture, { i, 1 }, override_format);
 			if (i == 0)
 			{
-				srvOffset = h;
+				srv_offset = h;
 			}
 		}
 
-		dx_double_descriptor_handle uavOffset;
-		for (uint32 i = 0; i < numDstMipLevels; ++i)
+		DXDoubleDescriptorHandle uav_offset;
+		for (uint32 i = 0; i < num_dst_mip_levels; ++i)
 		{
 			uint32 mip = i + 1;
-			dx_double_descriptor_handle h = descriptors.pushHandle();
-			h.create2DTextureUAV(tmpTexture, mip);
+			DXDoubleDescriptorHandle h = descriptors.push_handle();
+			h.create_2d_texture_uav(tmp_texture, mip);
 			if (i == 0)
 			{
-				uavOffset = h;
+				uav_offset = h;
 			}
 		}
 
-		cl->setDescriptorHeap(descriptors);
+		cl->set_descriptor_heap(descriptors);
 
-		for (uint32 srcMip = 0; srcMip < resourceDesc.MipLevels - 1u; )
+		for (uint32 src_mip = 0; src_mip < resource_desc.MipLevels - 1u; )
 		{
-			uint64 srcWidth = resourceDesc.Width >> srcMip;
-			uint32 srcHeight = resourceDesc.Height >> srcMip;
-			uint32 dstWidth = (uint32)(srcWidth >> 1);
-			uint32 dstHeight = srcHeight >> 1;
+			uint64 src_width = resource_desc.Width >> src_mip;
+			uint32 src_height = resource_desc.Height >> src_mip;
+			uint32 dst_width = (uint32)(src_width >> 1);
+			uint32 dst_height = src_height >> 1;
 
 			// 0b00(0): Both width and height are even.
 			// 0b01(1): Width is odd, height is even.
 			// 0b10(2): Width is even, height is odd.
 			// 0b11(3): Both width and height are odd.
-			cb.srcDimensionFlags = (srcHeight & 1) << 1 | (srcWidth & 1);
+			cb.src_dimension_flags = (src_height & 1) << 1 | (src_width & 1);
 
-			DWORD mipCount;
+			DWORD mip_count;
 
 			// The number of times we can half the size of the texture and get
 			// exactly a 50% reduction in size.
 			// A 1 bit in the width or height indicates an odd dimension.
 			// The case where either the width or the height is exactly 1 is handled
 			// as a special case (as the dimension does not require reduction).
-			_BitScanForward(&mipCount, (dstWidth == 1 ? dstHeight : dstWidth) | (dstHeight == 1 ? dstWidth : dstHeight));
+			_BitScanForward(&mip_count, (dst_width == 1 ? dst_height : dst_width) | (dst_height == 1 ? dst_width : dst_height));
 
 			// Maximum number of mips to generate is 4.
-			mipCount = min(4, (int)mipCount + 1);
+			mip_count = min(4, (int)mip_count + 1);
 			// Clamp to total number of mips left over.
-			mipCount = (srcMip + mipCount) >= resourceDesc.MipLevels ?
-				resourceDesc.MipLevels - srcMip - 1 : mipCount;
+			mip_count = (src_mip + mip_count) >= resource_desc.MipLevels ?
+				resource_desc.MipLevels - src_mip - 1 : mip_count;
 
 			// Dimensions should not reduce to 0.
 			// This can happen if the width and height are not the same.
-			dstWidth = max(1u, dstWidth);
-			dstHeight = max(1u, dstHeight);
+			dst_width = max(1u, dst_width);
+			dst_height = max(1u, dst_height);
 
-			cb.srcMipLevel = srcMip;
-			cb.numMipLevelsToGenerate = mipCount;
-			cb.texelSize.x = 1.f / (float)dstWidth;
-			cb.texelSize.y = 1.f / (float)dstHeight;
+			cb.src_mip_level = src_mip;
+			cb.num_mip_levels_to_generate = mip_count;
+			cb.texel_size.x = 1.f / (float)dst_width;
+			cb.texel_size.y = 1.f / (float)dst_height;
 
-			cl->setCompute32BitConstants(0, cb);
+			cl->set_compute_32bit_constants(0, cb);
 
-			cl->setComputeDescriptorTable(1, CD3DX12_GPU_DESCRIPTOR_HANDLE(srvOffset.gpuHandle, srcMip, descriptors.descriptorHandleIncrementSize));
-			cl->setComputeDescriptorTable(2, CD3DX12_GPU_DESCRIPTOR_HANDLE(uavOffset.gpuHandle, srcMip, descriptors.descriptorHandleIncrementSize));
+			cl->set_compute_descriptor_table(1, CD3DX12_GPU_DESCRIPTOR_HANDLE(srv_offset.gpu_handle, src_mip, descriptors.descriptor_handle_increment_size));
+			cl->set_compute_descriptor_table(2, CD3DX12_GPU_DESCRIPTOR_HANDLE(uav_offset.gpu_handle, src_mip, descriptors.descriptor_handle_increment_size));
 
-			cl->dispatch(bucketize(dstWidth, 8), bucketize(dstHeight, 8));
+			cl->dispatch(bucketize(dst_width, 8), bucketize(dst_height, 8));
 
-			cl->uavBarrier(uavResource);
+			cl->uav_barrier(uav_resource);
 
-			srcMip += mipCount;
+			src_mip += mip_count;
 		}
 
-		if (aliasResource)
+		if (alias_resource)
 		{
-			cl->aliasingBarrier(uavResource, aliasResource);
+			cl->aliasing_barrier(uav_resource, alias_resource);
 			// Copy the alias resource back to the original resource.
-			barrier_batcher(cl)
-				.transition(aliasResource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COPY_SOURCE)
+			BarrierBatcher(cl)
+				.transition(alias_resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COPY_SOURCE)
 				.transition(resource, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
-			cl->copyResource(aliasResource, resource);
-			cl->transitionBarrier(resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+			cl->copy_resource(alias_resource, resource);
+			cl->transition_barrier(resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
 		}
 
-		cl->resetToDynamicDescriptorHeap();
+		cl->reset_to_dynamic_descriptor_heap();
 	}
 
-	NODISCARD ref<dx_texture> equirectangularToCubemap(dx_command_list* cl, const ref<dx_texture>& equirectangular, uint32 resolution, uint32 numMips, DXGI_FORMAT format)
+	NODISCARD ref<DXTexture> equirectangular_to_cubemap(DXCommandList* cl, const ref<DXTexture>& equirectangular, uint32 resolution, uint32 num_mips, DXGI_FORMAT format)
 	{
 		ASSERT(equirectangular->resource);
 
-		CD3DX12_RESOURCE_DESC cubemapDesc(equirectangular->resource->GetDesc());
-		cubemapDesc.Width = cubemapDesc.Height = resolution;
-		cubemapDesc.DepthOrArraySize = 6;
-		cubemapDesc.MipLevels = numMips;
+		CD3DX12_RESOURCE_DESC cubemap_desc(equirectangular->resource->GetDesc());
+		cubemap_desc.Width = cubemap_desc.Height = resolution;
+		cubemap_desc.DepthOrArraySize = 6;
+		cubemap_desc.MipLevels = num_mips;
 		if (format != DXGI_FORMAT_UNKNOWN)
 		{
-			cubemapDesc.Format = format;
+			cubemap_desc.Format = format;
 		}
-		if (isUAVCompatibleFormat(cubemapDesc.Format))
+		if (is_uav_compatible_format(cubemap_desc.Format))
 		{
-			cubemapDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+			cubemap_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		}
 
-		ref<dx_texture> cubemap = createTexture(cubemapDesc, 0, 0);
+		ref<DXTexture> cubemap = create_texture(cubemap_desc, 0, 0);
 
-		cubemapDesc = CD3DX12_RESOURCE_DESC(cubemap->resource->GetDesc());
-		numMips = cubemapDesc.MipLevels;
+		cubemap_desc = CD3DX12_RESOURCE_DESC(cubemap->resource->GetDesc());
+		num_mips = cubemap_desc.MipLevels;
 
-		dx_resource cubemapResource = cubemap->resource;
-		SET_NAME(cubemapResource, "Cubemap");
-		dx_resource stagingResource = cubemapResource;
+		DXResource cubemap_resource = cubemap->resource;
+		SET_NAME(cubemap_resource, "Cubemap");
+		DXResource staging_resource = cubemap_resource;
 
-		ref<dx_texture> stagingTexture = make_ref<dx_texture>();
-		stagingTexture->resource = cubemapResource;
+		ref<DXTexture> staging_texture = make_ref<DXTexture>();
+		staging_texture->resource = cubemap_resource;
 
 
-		if ((cubemapDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == 0)
+		if ((cubemap_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == 0)
 		{
-			CD3DX12_RESOURCE_DESC stagingDesc = cubemapDesc;
-			stagingDesc.Format = getUAVCompatibleFormat(cubemapDesc.Format);
-			stagingDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+			CD3DX12_RESOURCE_DESC staging_desc = cubemap_desc;
+			staging_desc.Format = get_uav_compatible_format(cubemap_desc.Format);
+			staging_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
-			auto heapDesc = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-			checkResult(dxContext.device->CreateCommittedResource(
-				&heapDesc,
+			auto heap_desc = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+			checkResult(dx_context.device->CreateCommittedResource(
+				&heap_desc,
 				D3D12_HEAP_FLAG_NONE,
-				&stagingDesc,
+				&staging_desc,
 				D3D12_RESOURCE_STATE_COMMON,
 				0,
-				IID_PPV_ARGS(&stagingResource)
+				IID_PPV_ARGS(&staging_resource)
 			));
 
-			SET_NAME(stagingResource, "Staging resource for equirectangular to cubemap");
+			SET_NAME(staging_resource, "Staging resource for equirectangular to cubemap");
 
-			stagingTexture->resource = stagingResource;
+			staging_texture->resource = staging_resource;
 		}
 
-		cl->setPipelineState(*equirectangularToCubemapPipeline.pipeline);
-		cl->setComputeRootSignature(*equirectangularToCubemapPipeline.rootSignature);
+		cl->set_pipeline_state(*equirectangular_to_cubemap_pipeline.pipeline);
+		cl->set_compute_root_signature(*equirectangular_to_cubemap_pipeline.root_signature);
 
-		bool isSRGB = isSRGBFormat(cubemapDesc.Format);
+		bool is_srgb = is_srgb_format(cubemap_desc.Format);
 
-		equirectangular_to_cubemap_cb equirectangularToCubemapCB;
-		equirectangularToCubemapCB.isSRGB = isSRGB;
+		EquirectangularToCubemapCB equirectangular_to_cubemap_cb;
+		equirectangular_to_cubemap_cb.is_srgb = is_srgb;
 
-		dx_descriptor_range descriptors = dxContext.frameDescriptorAllocator.allocateContiguousDescriptorRange(numMips + 1);
+		DXDescriptorRange descriptors = dx_context.frame_descriptor_allocator.allocate_contiguous_descriptor_range(num_mips + 1);
 
-		dx_double_descriptor_handle srvOffset = descriptors.pushHandle();
-		srvOffset.create2DTextureSRV(equirectangular);
+		DXDoubleDescriptorHandle srv_offset = descriptors.push_handle();
+		srv_offset.create_2d_texture_srv(equirectangular);
 
-		cl->setDescriptorHeap(descriptors);
-		cl->setComputeDescriptorTable(1, srvOffset);
+		cl->set_descriptor_heap(descriptors);
+		cl->set_compute_descriptor_table(1, srv_offset);
 
-		for (uint32 mipSlice = 0; mipSlice < numMips; )
+		for (uint32 mip_slice = 0; mip_slice < num_mips; )
 		{
 			// Maximum number of mips to generate per pass is 5.
-			uint32 numMips = min(5u, cubemapDesc.MipLevels - mipSlice);
+			uint32 num_mips = min(5u, cubemap_desc.MipLevels - mip_slice);
 
-			equirectangularToCubemapCB.firstMip = mipSlice;
-			equirectangularToCubemapCB.cubemapSize = max((uint32)cubemapDesc.Width, cubemapDesc.Height) >> mipSlice;
-			equirectangularToCubemapCB.numMipLevelsToGenerate = numMips;
+			equirectangular_to_cubemap_cb.first_mip = mip_slice;
+			equirectangular_to_cubemap_cb.cubemap_size = max((uint32)cubemap_desc.Width, cubemap_desc.Height) >> mip_slice;
+			equirectangular_to_cubemap_cb.num_mip_levels_to_generate = num_mips;
 
-			cl->setCompute32BitConstants(0, equirectangularToCubemapCB);
+			cl->set_compute_32bit_constants(0, equirectangular_to_cubemap_cb);
 
 
-			for (uint32 mip = 0; mip < numMips; ++mip)
+			for (uint32 mip = 0; mip < num_mips; ++mip)
 			{
-				dx_double_descriptor_handle h = descriptors.pushHandle();
-				h.create2DTextureArrayUAV(stagingTexture, mipSlice + mip, getUAVCompatibleFormat(cubemapDesc.Format));
+				DXDoubleDescriptorHandle h = descriptors.push_handle();
+				h.create_2d_texture_array_uav(staging_texture, mip_slice + mip, get_uav_compatible_format(cubemap_desc.Format));
 				if (mip == 0)
 				{
-					cl->setComputeDescriptorTable(2, h.gpuHandle);
+					cl->set_compute_descriptor_table(2, h.gpu_handle);
 				}
 			}
 
-			cl->dispatch(bucketize(equirectangularToCubemapCB.cubemapSize, 16), bucketize(equirectangularToCubemapCB.cubemapSize, 16), 6);
+			cl->dispatch(bucketize(equirectangular_to_cubemap_cb.cubemap_size, 16), bucketize(equirectangular_to_cubemap_cb.cubemap_size, 16), 6);
 
-			mipSlice += numMips;
+			mip_slice += num_mips;
 		}
 
-		cl->uavBarrier(stagingResource);
+		cl->uav_barrier(staging_resource);
 
-		if (stagingResource != cubemapResource)
+		if (staging_resource != cubemap_resource)
 		{
-			cl->copyResource(stagingTexture->resource, cubemap->resource);
-			cl->transitionBarrier(cubemap->resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+			cl->copy_resource(staging_texture->resource, cubemap->resource);
+			cl->transition_barrier(cubemap->resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
 		}
 
 		return cubemap;
 	}
 
-	void texturedSkyToIrradiance(dx_command_list* cl, const ref<dx_texture>& sky, ref<dx_texture>& outIrradiance)
+	void textured_sky_to_irradiance(DXCommandList* cl, const ref<DXTexture>& sky, ref<DXTexture>& out_irradiance)
 	{
 		ASSERT(sky && sky->resource);
-		ASSERT(outIrradiance && outIrradiance->resource);
+		ASSERT(out_irradiance && out_irradiance->resource);
 
-		ASSERT(outIrradiance->supportsUAV);
-		ASSERT(outIrradiance->depth == 6);
-		ASSERT(outIrradiance->width == outIrradiance->height);
+		ASSERT(out_irradiance->supports_uav);
+		ASSERT(out_irradiance->depth == 6);
+		ASSERT(out_irradiance->width == out_irradiance->height);
 
-		cl->setPipelineState(*texturedSkyToIrradiancePipeline.pipeline);
-		cl->setComputeRootSignature(*texturedSkyToIrradiancePipeline.rootSignature);
+		cl->set_pipeline_state(*textured_sky_to_irradiance_pipeline.pipeline);
+		cl->set_compute_root_signature(*textured_sky_to_irradiance_pipeline.root_signature);
 
-		textured_sky_to_irradiance_cb cb;
-		cb.irradianceMapSize = outIrradiance->width;
+		TexturedSkyToIrradianceCB cb;
+		cb.irradiance_map_size = out_irradiance->width;
 
-		cl->setCompute32BitConstants(0, cb);
-		cl->setDescriptorHeapSRV(1, 0, sky);
-		cl->setDescriptorHeapUAV(1, 1, outIrradiance);
+		cl->set_compute_32bit_constants(0, cb);
+		cl->set_descriptor_heap_srv(1, 0, sky);
+		cl->set_descriptor_heap_uav(1, 1, out_irradiance);
 
-		cl->dispatch(bucketize(cb.irradianceMapSize, 16), bucketize(cb.irradianceMapSize, 16), 6);
+		cl->dispatch(bucketize(cb.irradiance_map_size, 16), bucketize(cb.irradiance_map_size, 16), 6);
 
-		cl->uavBarrier(outIrradiance);
+		cl->uav_barrier(out_irradiance);
 	}
 
-	void texturedSkyToPrefilteredRadiance(dx_command_list* cl, const ref<dx_texture>& sky, ref<dx_texture>& outPrefilteredRadiance)
+	void textured_sky_to_prefiltered_radiance(DXCommandList* cl, const ref<DXTexture>& sky, ref<DXTexture>& out_prefiltered_radiance)
 	{
 		ASSERT(sky && sky->resource);
-		ASSERT(outPrefilteredRadiance && outPrefilteredRadiance->resource);
+		ASSERT(out_prefiltered_radiance && out_prefiltered_radiance->resource);
 
-		ASSERT(outPrefilteredRadiance->supportsUAV);
-		ASSERT(outPrefilteredRadiance->depth == 6);
-		ASSERT(outPrefilteredRadiance->width == outPrefilteredRadiance->height);
+		ASSERT(out_prefiltered_radiance->supports_uav);
+		ASSERT(out_prefiltered_radiance->depth == 6);
+		ASSERT(out_prefiltered_radiance->width == out_prefiltered_radiance->height);
 
-		cl->setPipelineState(*texturedSkyToPrefilteredRadiancePipeline.pipeline);
-		cl->setComputeRootSignature(*texturedSkyToPrefilteredRadiancePipeline.rootSignature);
+		cl->set_pipeline_state(*textured_sky_to_prefiltered_radiance_pipeline.pipeline);
+		cl->set_compute_root_signature(*textured_sky_to_prefiltered_radiance_pipeline.root_signature);
 
-		textured_sky_to_prefiltered_radiance_cb cb;
-		cb.totalNumMipLevels = outPrefilteredRadiance->numMipLevels;
+		TexturedSkyToPrefilteredRadianceCB cb;
+		cb.total_num_mip_levels = out_prefiltered_radiance->num_mip_levels;
 
-		cl->setDescriptorHeapSRV(1, 0, sky);
+		cl->set_descriptor_heap_srv(1, 0, sky);
 
-		uint32 dimensions = outPrefilteredRadiance->width;
+		uint32 dimensions = out_prefiltered_radiance->width;
 
-		for (uint32 mipSlice = 0; mipSlice < outPrefilteredRadiance->numMipLevels; )
+		for (uint32 mip_slice = 0; mip_slice < out_prefiltered_radiance->num_mip_levels; )
 		{
 			// Maximum number of mips to generate per pass is 5.
-			uint32 numMips = min(5u, outPrefilteredRadiance->numMipLevels - mipSlice);
+			uint32 num_mips = min(5u, out_prefiltered_radiance->num_mip_levels - mip_slice);
 
-			cb.firstMip = mipSlice;
-			cb.cubemapSize = dimensions >> mipSlice;
-			cb.numMipLevelsToGenerate = numMips;
+			cb.first_mip = mip_slice;
+			cb.cubemap_size = dimensions >> mip_slice;
+			cb.num_mip_levels_to_generate = num_mips;
 
-			cl->setCompute32BitConstants(0, cb);
+			cl->set_compute_32bit_constants(0, cb);
 
-			for (uint32 mip = 0; mip < numMips; ++mip)
+			for (uint32 mip = 0; mip < num_mips; ++mip)
 			{
-				cl->setDescriptorHeapUAV(1, 1 + mip, outPrefilteredRadiance->uavAt(mipSlice + mip));
+				cl->set_descriptor_heap_uav(1, 1 + mip, out_prefiltered_radiance->uav_at(mip_slice + mip));
 			}
 
-			cl->dispatch(bucketize(cb.cubemapSize, 16), bucketize(cb.cubemapSize, 16), 6);
+			cl->dispatch(bucketize(cb.cubemap_size, 16), bucketize(cb.cubemap_size, 16), 6);
 
-			mipSlice += numMips;
+			mip_slice += num_mips;
 		}
 
-		cl->uavBarrier(outPrefilteredRadiance);
+		cl->uav_barrier(out_prefiltered_radiance);
 	}
 
-	void proceduralSkyToIrradiance(dx_command_list* cl, vec3 sunDirection, ref<dx_texture>& outIrradiance)
+	void procedural_sky_to_irradiance(DXCommandList* cl, vec3 sun_direction, ref<DXTexture>& out_irradiance)
 	{
-		ASSERT(outIrradiance && outIrradiance->resource);
+		ASSERT(out_irradiance && out_irradiance->resource);
 
-		ASSERT(outIrradiance->supportsUAV);
-		ASSERT(outIrradiance->depth == 6);
-		ASSERT(outIrradiance->width == outIrradiance->height);
+		ASSERT(out_irradiance->supports_uav);
+		ASSERT(out_irradiance->depth == 6);
+		ASSERT(out_irradiance->width == out_irradiance->height);
 
-		cl->setPipelineState(*proceduralSkyToIrradiancePipeline.pipeline);
-		cl->setComputeRootSignature(*proceduralSkyToIrradiancePipeline.rootSignature);
+		cl->set_pipeline_state(*procedural_sky_to_irradiance_pipeline.pipeline);
+		cl->set_compute_root_signature(*procedural_sky_to_irradiance_pipeline.root_signature);
 
-		procedural_sky_to_irradiance_cb cb;
-		cb.sunDirection = -sunDirection;
-		cb.irradianceMapSize = outIrradiance->width;
+		ProceduralSkyToIrradianceCB cb;
+		cb.sun_direction = -sun_direction;
+		cb.irradiance_map_size = out_irradiance->width;
 
-		cl->setCompute32BitConstants(0, cb);
-		cl->setDescriptorHeapUAV(1, 0, outIrradiance);
+		cl->set_compute_32bit_constants(0, cb);
+		cl->set_descriptor_heap_uav(1, 0, out_irradiance);
 
-		cl->dispatch(bucketize(cb.irradianceMapSize, 16), bucketize(cb.irradianceMapSize, 16), 6);
+		cl->dispatch(bucketize(cb.irradiance_map_size, 16), bucketize(cb.irradiance_map_size, 16), 6);
 
-		cl->uavBarrier(outIrradiance);
+		cl->uav_barrier(out_irradiance);
 	}
 
 #if 0
-	void proceduralSkyToPrefilteredRadiance(dx_command_list* cl, vec3 sunDirection, ref<dx_texture>& outPrefilteredRadiance)
+	void proceduralSkyToPrefilteredRadiance(DXCommandList* cl, vec3 sun_direction, ref<DXTexture>& out_prefiltered_radiance)
 	{
-		ASSERT(outPrefilteredRadiance && outPrefilteredRadiance->resource);
+		ASSERT(out_prefiltered_radiance && out_prefiltered_radiance->resource);
 
-		ASSERT(outPrefilteredRadiance->supportsUAV);
-		ASSERT(outPrefilteredRadiance->depth == 6);
-		ASSERT(outPrefilteredRadiance->width == outPrefilteredRadiance->height);
+		ASSERT(out_prefiltered_radiance->supports_uav);
+		ASSERT(out_prefiltered_radiance->depth == 6);
+		ASSERT(out_prefiltered_radiance->width == out_prefiltered_radiance->height);
 
-		cl->setPipelineState(*proceduralSkyToPrefilteredRadiancePipeline.pipeline);
-		cl->setComputeRootSignature(*proceduralSkyToPrefilteredRadiancePipeline.rootSignature);
+		cl->set_pipeline_state(*proceduralSkyToPrefilteredRadiancePipeline.pipeline);
+		cl->set_compute_root_signature(*proceduralSkyToPrefilteredRadiancePipeline.root_signature);
 
-		textured_sky_to_prefiltered_radiance_cb cb;
-		cb.totalNumMipLevels = outPrefilteredRadiance->numMipLevels;
+		TexturedSkyToPrefilteredRadianceCB cb;
+		cb.total_num_mip_levels = out_prefiltered_radiance->num_mip_levels;
 
-		uint32 dimensions = outPrefilteredRadiance->width;
+		uint32 dimensions = out_prefiltered_radiance->width;
 
-		for (uint32 mipSlice = 0; mipSlice < outPrefilteredRadiance->numMipLevels; )
+		for (uint32 mip_slice = 0; mip_slice < out_prefiltered_radiance->num_mip_levels; )
 		{
 			// Maximum number of mips to generate per pass is 5.
-			uint32 numMips = min(5u, outPrefilteredRadiance->numMipLevels - mipSlice);
+			uint32 num_mips = min(5u, out_prefiltered_radiance->num_mip_levels - mip_slice);
 
-			cb.firstMip = mipSlice;
-			cb.cubemapSize = dimensions >> mipSlice;
-			cb.numMipLevelsToGenerate = numMips;
+			cb.first_mip = mip_slice;
+			cb.cubemap_size = dimensions >> mip_slice;
+			cb.num_mip_levels_to_generate = num_mips;
 
-			cl->setCompute32BitConstants(0, cb);
+			cl->set_compute_32bit_constants(0, cb);
 
-			for (uint32 mip = 0; mip < numMips; ++mip)
+			for (uint32 mip = 0; mip < num_mips; ++mip)
 			{
-				cl->setDescriptorHeapUAV(1, mip, outPrefilteredRadiance->uavAt(mipSlice + mip));
+				cl->set_descriptor_heap_uav(1, mip, out_prefiltered_radiance->uav_at(mip_slice + mip));
 			}
 
-			cl->dispatch(bucketize(cb.cubemapSize, 16), bucketize(cb.cubemapSize, 16), 6);
+			cl->dispatch(bucketize(cb.cubemap_size, 16), bucketize(cb.cubemap_size, 16), 6);
 
-			mipSlice += numMips;
+			mip_slice += num_mips;
 		}
 
-		cl->uavBarrier(outPrefilteredRadiance);
+		cl->uav_barrier(out_prefiltered_radiance);
 	}
 #endif
 
-	NODISCARD ref<dx_texture> integrateBRDF(dx_command_list* cl, uint32 resolution)
+	NODISCARD ref<DXTexture> integrate_brdf(DXCommandList* cl, uint32 resolution)
 	{
 		CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(
 			DXGI_FORMAT_R16G16_FLOAT,
@@ -532,54 +532,54 @@ namespace era_engine
 
 		desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
-		ref<dx_texture> brdf = createTexture(desc, 0, 0);
+		ref<DXTexture> brdf = create_texture(desc, 0, 0);
 		desc = CD3DX12_RESOURCE_DESC(brdf->resource->GetDesc());
 
 		SET_NAME(brdf->resource, "BRDF");
 
-		cl->setPipelineState(*integrateBRDFPipeline.pipeline);
-		cl->setComputeRootSignature(*integrateBRDFPipeline.rootSignature);
+		cl->set_pipeline_state(*integrate_brdf_pipeline.pipeline);
+		cl->set_compute_root_signature(*integrate_brdf_pipeline.root_signature);
 
-		integrate_brdf_cb integrateBrdfCB;
-		integrateBrdfCB.textureDim = resolution;
+		IntegrateBRDFCB integrate_brdf_cb;
+		integrate_brdf_cb.texture_dim = resolution;
 
-		cl->setCompute32BitConstants(0, integrateBrdfCB);
+		cl->set_compute_32bit_constants(0, integrate_brdf_cb);
 
-		cl->resetToDynamicDescriptorHeap();
-		cl->setDescriptorHeapUAV(1, 0, brdf);
+		cl->reset_to_dynamic_descriptor_heap();
+		cl->set_descriptor_heap_uav(1, 0, brdf);
 
 		cl->dispatch(bucketize(resolution, 16), bucketize(resolution, 16), 1);
 
-		cl->uavBarrier(brdf);
+		cl->uav_barrier(brdf);
 
 		return brdf;
 	}
 
-	void texturedSkyToIrradianceSH(dx_command_list* cl, const ref<dx_texture>& environment, ref<dx_buffer> shBuffer, uint32 shIndex)
+	void textured_sky_to_irradiance_sh(DXCommandList* cl, const ref<DXTexture>& environment, ref<DXBuffer> sh_buffer, uint32 sh_index)
 	{
-		cl->setPipelineState(*texturedSkyToIrradianceSHPipeline.pipeline);
-		cl->setComputeRootSignature(*texturedSkyToIrradianceSHPipeline.rootSignature);
+		cl->set_pipeline_state(*textured_sky_to_irradiance_sh_pipeline.pipeline);
+		cl->set_compute_root_signature(*textured_sky_to_irradiance_sh_pipeline.root_signature);
 
 		ASSERT(environment->width == environment->height);
 		ASSERT(environment->width >= 64);
 		ASSERT(environment->depth == 6);
-		ASSERT(shBuffer->elementCount > shIndex);
+		ASSERT(sh_buffer->element_count > sh_index);
 
-		textured_sky_to_irradiance_sh_cb cb;
-		cb.mipLevel = environment->numMipLevels == 1 ? 0 : (environment->numMipLevels - 6);
+		TexturedSkyToIrradianceSHCB cb;
+		cb.mip_level = environment->num_mip_levels == 1 ? 0 : (environment->num_mip_levels - 6);
 
-		cl->setCompute32BitConstants(0, cb);
-		cl->setDescriptorHeapSRV(1, 0, environment);
-		cl->setRootComputeUAV(2, shBuffer->gpuVirtualAddress + sizeof(spherical_harmonics) * shIndex);
+		cl->set_compute_32bit_constants(0, cb);
+		cl->set_descriptor_heap_srv(1, 0, environment);
+		cl->set_root_compute_uav(2, sh_buffer->gpu_virtual_address + sizeof(SphericalHarmonics) * sh_index);
 
 		cl->dispatch(1, 1);
-		cl->uavBarrier(shBuffer);
+		cl->uav_barrier(sh_buffer);
 	}
 
-	NODISCARD ref<dx_buffer> texturedSkyToIrradianceSH(dx_command_list* cl, const ref<dx_texture>& environment)
+	NODISCARD ref<DXBuffer> textured_sky_to_irradiance_sh(DXCommandList* cl, const ref<DXTexture>& environment)
 	{
-		ref<dx_buffer> buffer = createBuffer(sizeof(spherical_harmonics), 1, 0, true);
-		texturedSkyToIrradianceSH(cl, environment, buffer, 0);
+		ref<DXBuffer> buffer = create_buffer(sizeof(SphericalHarmonics), 1, 0, true);
+		textured_sky_to_irradiance_sh(cl, environment, buffer, 0);
 		return buffer;
 	}
 }

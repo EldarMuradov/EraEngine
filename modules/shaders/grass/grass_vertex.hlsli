@@ -9,51 +9,51 @@
 #define DISABLE_WIND				0
 #define DISABLE_ALL_GRASS_DYNAMICS  0
 
-static float getRelY(uint vertexID, uint numVertices, uint lod)
+static float get_rel_y(uint vertex_id, uint num_vertices, uint lod)
 {
-	uint numLevels = numVertices >> 1 >> lod;
+	uint num_levels = num_vertices >> 1 >> lod;
 
-	uint vertical = vertexID >> 1 >> lod;
-	return (float)vertical * (1.f / numLevels);
+	uint vertical = vertex_id >> 1 >> lod;
+	return (float)vertical * (1.f / num_levels);
 }
 
-struct grass_bend_settings
+struct GrassBendSettings
 {
-	float relTipOffsetZ;
-	float controlPointZ;
-	float controlPointY;
+	float rel_tip_offset_z;
+	float control_point_z;
+	float control_point_y;
 };
 
-static float2 grassUV(grass_blade blade, uint vertexID, uint numVertices)
+static float2 grass_uv(GrassBlade blade, uint vertex_id, uint num_vertices)
 {
-	uint leftRight = vertexID & 1;
-	float relX = (float)leftRight * 2.f - 1.f;
-	relX *= (vertexID != numVertices - 1);
+	uint left_right = vertex_id & 1;
+	float rel_x = (float)left_right * 2.f - 1.f;
+	rel_x *= (vertex_id != num_vertices - 1);
 
-	float relY0 = getRelY(vertexID, numVertices, 0);
-	float relY1 = getRelY(vertexID, numVertices, 1);
+	float rel_y0 = get_rel_y(vertex_id, num_vertices, 0);
+	float rel_y1 = get_rel_y(vertex_id, num_vertices, 1);
 
-	float relY = lerp(relY0, relY1, blade.lod());
+	float rel_y = lerp(rel_y0, rel_y1, blade.lod());
 
-	float2 uv = float2(relX, relY);
+	float2 uv = float2(rel_x, rel_y);
 
 	return uv;
 }
 
-static float3 grassPosition(grass_blade blade, float2 uv, float height, float halfWidth, grass_bend_settings bend, float2 wind)
+static float3 grass_position(GrassBlade blade, float2 uv, float height, float half_width, GrassBendSettings bend, float2 wind)
 {
-	float relX = uv.x;
-	float relY = uv.y;
-	float relY2 = relY * relY;
+	float rel_x = uv.x;
+	float rel_y = uv.y;
+	float rel_y2 = rel_y * rel_y;
 
-	float2 zy = float2(bend.controlPointZ, bend.controlPointY) * (2.f * relY - 2.f * relY2) + float2(bend.relTipOffsetZ, 1.f) * relY2;
+	float2 zy = float2(bend.control_point_z, bend.control_point_y) * (2.f * rel_y - 2.f * rel_y2) + float2(bend.rel_tip_offset_z, 1.f) * rel_y2;
 #if DISABLE_ALL_GRASS_DYNAMICS || DISABLE_BEND
-	zy = float2(0.f, relY);
+	zy = float2(0.f, rel_y);
 #endif
 
 	zy *= height;
 
-	float x = relX * halfWidth;
+	float x = rel_x * half_width;
 	float y = zy.y;
 	float z = zy.x;
 
@@ -70,17 +70,17 @@ static float3 grassPosition(grass_blade blade, float2 uv, float height, float ha
 #if DISABLE_ALL_GRASS_DYNAMICS || DISABLE_WIND
 	wind = float2(0.f, 0.f);
 #endif
-	position.xz += wind * relY;
+	position.xz += wind * rel_y;
 	position += blade.position;
 
 	return position;
 }
 
-static float3 grassNormal(grass_blade blade, float2 uv, float height, grass_bend_settings bend, float2 wind)
+static float3 grass_normal(GrassBlade blade, float2 uv, float height, GrassBendSettings bend, float2 wind)
 {
-	float relY = uv.y;
+	float rel_y = uv.y;
 
-	float2 d_zy = float2(bend.controlPointZ, bend.controlPointY) * (2.f - 4.f * relY) + float2(bend.relTipOffsetZ, 1.f) * (2.f * relY);
+	float2 d_zy = float2(bend.control_point_z, bend.control_point_y) * (2.f - 4.f * rel_y) + float2(bend.rel_tip_offset_z, 1.f) * (2.f * rel_y);
 #if DISABLE_ALL_GRASS_DYNAMICS || DISABLE_BEND
 	d_zy = float2(0.f, 1.f);
 #endif

@@ -14,39 +14,39 @@
 
 namespace era_engine
 {
-	dx_pipeline boid_particle_system::emitPipeline;
-	dx_pipeline boid_particle_system::simulatePipeline;
-	dx_pipeline boid_particle_system::renderPipeline;
+	DXPipeline BoidParticleSystem::emit_pipeline;
+	DXPipeline BoidParticleSystem::simulate_pipeline;
+	DXPipeline BoidParticleSystem::render_pipeline;
 
-	void boid_particle_system::initializePipeline()
+	void BoidParticleSystem::initialize_pipeline()
 	{
 #define name "boid_particle_system"
 
-		emitPipeline = createReloadablePipeline(EMIT_PIPELINE_NAME(name));
-		simulatePipeline = createReloadablePipeline(SIMULATE_PIPELINE_NAME(name));
+		emit_pipeline = create_reloadable_pipeline(EMIT_PIPELINE_NAME(name));
+		simulate_pipeline = create_reloadable_pipeline(SIMULATE_PIPELINE_NAME(name));
 
 		auto desc = CREATE_GRAPHICS_PIPELINE
-			.inputLayout(inputLayout_position_uv_normal_tangent)
-			.renderTargets(transparentLightPassFormats, arraysize(transparentLightPassFormats), depthStencilFormat)
-			.depthSettings(true, true);
+			.input_layout(input_layout_position_uv_normal_tangent)
+			.render_targets(transparent_light_pass_formats, arraysize(transparent_light_pass_formats), depth_stencil_format)
+			.depth_settings(true, true);
 
-		renderPipeline = createReloadablePipeline(desc, { VERTEX_SHADER_NAME(name), PIXEL_SHADER_NAME(name) });
+		render_pipeline = create_reloadable_pipeline(desc, { VERTEX_SHADER_NAME(name), PIXEL_SHADER_NAME(name) });
 
 #undef name
 	}
 
-	boid_particle_system::boid_particle_system(uint32 maxNumParticles, float emitRate)
+	BoidParticleSystem::BoidParticleSystem(uint32 max_num_particles, float emit_rate)
 	{
-		initialize(maxNumParticles, emitRate);
+		initialize(max_num_particles, emit_rate);
 	}
 
-	void boid_particle_system::initialize(uint32 maxNumParticles, float emitRate)
+	void BoidParticleSystem::initialize(uint32 max_num_particles, float emit_rate)
 	{
-		this->emitRate = emitRate;
-		cartoonMesh = import_animated_mesh_from_file(get_asset_path("/resources/assets/cartoon/cartoon.fbx"));
-		if (cartoonMesh)
+		this->emit_rate = emit_rate;
+		cartoon_mesh = import_animated_mesh_from_file(get_asset_path("/resources/assets/cartoon/cartoon.fbx"));
+		if (cartoon_mesh)
 		{
-			particle_system::initializeAsMesh(sizeof(boid_particle_data), cartoonMesh->mesh, cartoonMesh->submeshes[0].info, maxNumParticles, sort_mode_none);
+			ParticleSystem::initialize_as_mesh(sizeof(BoidParticleData), cartoon_mesh->mesh, cartoon_mesh->submeshes[0].info, max_num_particles, SORT_MODE_NONE);
 
 			settings.radius = 15.f;
 		}
@@ -57,7 +57,7 @@ namespace era_engine
 		}
 	}
 
-	void boid_particle_system::update(struct dx_command_list* cl, const common_particle_simulation_data& common, float dt)
+	void BoidParticleSystem::update(struct DXCommandList* cl, const CommonParticleSimulationData& common, float dt)
 	{
 		//if (cartoonMesh)
 		//{
@@ -96,32 +96,32 @@ namespace era_engine
 		//}
 	}
 
-	void boid_particle_system::render(transparent_render_pass* renderPass)
+	void BoidParticleSystem::render(TransparentRenderPass* render_pass)
 	{
-		if (cartoonMesh)
+		if (cartoon_mesh)
 		{
-			boid_material material;
+			BoidMaterial material;
 
-			renderPass->renderParticles<boid_pipeline>(skinnedVertexBuffer, cartoonMesh->mesh.indexBuffer,
-				getDrawInfo(renderPipeline),
+			render_pass->render_particles<BoidPipeline>(skinned_vertex_buffer, cartoon_mesh->mesh.index_buffer,
+				get_draw_info(render_pipeline),
 				material);
 		}
 	}
 
-	PIPELINE_SETUP_IMPL(boid_particle_system::boid_pipeline)
+	PIPELINE_SETUP_IMPL(BoidParticleSystem::BoidPipeline)
 	{
-		cl->setPipelineState(*renderPipeline.pipeline);
-		cl->setGraphicsRootSignature(*renderPipeline.rootSignature);
-		cl->setGraphicsDynamicConstantBuffer(BOID_PARTICLE_SYSTEM_RENDERING_RS_CAMERA, common.cameraCBV);
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_pipeline_state(*render_pipeline.pipeline);
+		cl->set_graphics_root_signature(*render_pipeline.root_signature);
+		cl->set_graphics_dynamic_constant_buffer(BOID_PARTICLE_SYSTEM_RENDERING_RS_CAMERA, common.camera_cbv);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		cl->setDescriptorHeapSRV(BOID_PARTICLE_SYSTEM_RENDERING_RS_PBR, 0, common.irradiance);
-		cl->setDescriptorHeapSRV(BOID_PARTICLE_SYSTEM_RENDERING_RS_PBR, 1, common.prefilteredRadiance);
-		cl->setDescriptorHeapSRV(BOID_PARTICLE_SYSTEM_RENDERING_RS_PBR, 2, render_resources::brdfTex);
+		cl->set_descriptor_heap_srv(BOID_PARTICLE_SYSTEM_RENDERING_RS_PBR, 0, common.irradiance);
+		cl->set_descriptor_heap_srv(BOID_PARTICLE_SYSTEM_RENDERING_RS_PBR, 1, common.prefiltered_radiance);
+		cl->set_descriptor_heap_srv(BOID_PARTICLE_SYSTEM_RENDERING_RS_PBR, 2, RenderResources::brdf_tex);
 	}
 
-	PARTICLE_PIPELINE_RENDER_IMPL(boid_particle_system::boid_pipeline, boid_particle_system::boid_material)
+	PARTICLE_PIPELINE_RENDER_IMPL(BoidParticleSystem::BoidPipeline, BoidParticleSystem::BoidMaterial)
 	{
-		particle_render_pipeline::render(cl, viewProj, rc);
+		ParticleRenderPipeline::render(cl, view_proj, rc);
 	}
 }

@@ -49,9 +49,9 @@ namespace era_engine
 			const UserInput& user_input = receiver.get_frame_input();
 			const vec3& input = receiver.get_current_input();
 
-			render_camera* camera = camera_holder.get_render_camera();
+			RenderCamera* camera = camera_holder.get_render_camera();
 
-			camera->setViewport(renderer_holder_rc->width, renderer_holder_rc->height);
+			camera->set_viewport(renderer_holder_rc->width, renderer_holder_rc->height);
 
 			if (camera_holder.get_camera_type() == CameraHolderComponent::FREE_CAMERA ||
 				(camera_holder.get_camera_type() == CameraHolderComponent::FREE_CAMERA_ON_HOLD && user_input.mouse.right.down))
@@ -72,7 +72,7 @@ namespace era_engine
 
 				transform.set_world_transform(trs{ camera->position, camera->rotation, world_transform.scale });
 
-				camera->updateMatrices();
+				camera->update_matrices();
 
 			}
 			else if(camera_holder.get_camera_type() == CameraHolderComponent::ATTACHED_TO_TRS)
@@ -82,22 +82,22 @@ namespace era_engine
 				camera->position = world_transform.position;
 				camera->rotation = world_transform.rotation;
 
-				camera->updateMatrices();
+				camera->update_matrices();
 			}
 		}
 
 		for (auto [handle, camera_holder, transform] : world->group(components_group<CameraHolderComponent, TransformComponent>, components_group<InputReceiverComponent>).each())
 		{
-			render_camera* camera = camera_holder.get_render_camera();
+			RenderCamera* camera = camera_holder.get_render_camera();
 
-			camera->setViewport(renderer_holder_rc->width, renderer_holder_rc->height);
+			camera->set_viewport(renderer_holder_rc->width, renderer_holder_rc->height);
 
 			const trs& world_transform = transform.get_world_transform();
 
 			camera->position = world_transform.position;
 			camera->rotation = world_transform.rotation;
 
-			camera->updateMatrices();
+			camera->update_matrices();
 		}
 	}
 

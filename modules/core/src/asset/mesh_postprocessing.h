@@ -13,7 +13,7 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API full_vertex
+	struct ERA_CORE_API FullVertex
 	{
 		vec3 position;
 		vec2 uv;
@@ -23,18 +23,18 @@ namespace era_engine
 		animation::SkinningWeights skin;
 	};
 
-	static bool operator==(const full_vertex& a, const full_vertex& b)
+	static bool operator==(const FullVertex& a, const FullVertex& b)
 	{
-		return memcmp(&a, &b, sizeof(full_vertex)) == 0;
+		return memcmp(&a, &b, sizeof(FullVertex)) == 0;
 	}
 }
 
 namespace std
 {
 	template<>
-	struct hash<era_engine::full_vertex>
+	struct hash<era_engine::FullVertex>
 	{
-		size_t operator()(const era_engine::full_vertex& x) const
+		size_t operator()(const era_engine::FullVertex& x) const
 		{
 			size_t seed = 0;
 
@@ -53,29 +53,29 @@ namespace std
 
 namespace era_engine
 {
-	struct ERA_CORE_API per_material
+	struct ERA_CORE_API PerMaterial
 	{
-		void addTriangles(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals,
+		void add_triangles(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals,
 			const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<animation::SkinningWeights>& skins,
-			int32 firstIndex, int32 faceSize, std::vector<SubmeshAsset>& outSubmeshes);
+			int32 first_index, int32 face_size, std::vector<SubmeshAsset>& out_submeshes);
 
-		void flush(std::vector<SubmeshAsset>& outSubmeshes);
+		void flush(std::vector<SubmeshAsset>& out_submeshes);
 
-		std::unordered_map<full_vertex, uint16> vertexToIndex;
+		std::unordered_map<FullVertex, uint16> vertex_to_index;
 		SubmeshAsset sub;
 
 	private:
-		struct add_vertex_result
+		struct AddVertexResult
 		{
 			uint32 index;
 			bool success;
 		};
 
-		add_vertex_result addVertex(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals,
+		AddVertexResult add_vertex(const std::vector<vec3>& positions, const std::vector<vec2>& uvs, const std::vector<vec3>& normals,
 			const std::vector<vec3>& tangents, const std::vector<uint32>& colors, const std::vector<animation::SkinningWeights>& skins,
 			int32 index);
 	};
 
-	ERA_CORE_API void generateNormalsAndTangents(std::vector<SubmeshAsset>& submeshes, uint32 flags);
-	ERA_CORE_API void generateNormalsAndTangents(ref<SubmeshAsset> submesh, uint32 flags);
+	ERA_CORE_API void generate_normals_and_tangents(std::vector<SubmeshAsset>& submeshes, uint32 flags);
+	ERA_CORE_API void generate_normals_and_tangents(ref<SubmeshAsset> submesh, uint32 flags);
 }

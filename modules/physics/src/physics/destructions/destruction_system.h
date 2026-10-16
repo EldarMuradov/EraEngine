@@ -35,13 +35,13 @@ namespace era_engine::physics
 
 		EntityPtr build_chunk(Entity parent,
 			const trs& world_transform,
-			const ref<pbr_material>& material,
+			const ref<PBRMaterial>& material,
 			const std::pair<ref<SubmeshAsset>, ref<NvMesh>>& mesh,
 			DestructibleComponent* destructibe_component) const;
 
 		std::vector<EntityPtr> build_chunks(Entity parent,
 			const trs& world_transform,
-			const ref<pbr_material>& material,
+			const ref<PBRMaterial>& material,
 			const std::vector<std::pair<ref<SubmeshAsset>, ref<NvMesh>>>& meshes,
 			DestructibleComponent* destructibe_component) const;
 

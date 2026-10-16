@@ -1,12 +1,12 @@
 #include "ssr_rs.hlsli"
 #include "cs.hlsli"
 
-ConstantBuffer<ssr_median_blur_cb> cb	: register(b0);
+ConstantBuffer<SSRMedianBlurCB> cb	: register(b0);
 
 RWTexture2D<float4> output	            : register(u0);
 Texture2D<float4> input	                : register(t0);
 
-SamplerState linearSampler			    : register(s0);
+SamplerState linear_sampler			    : register(s0);
 
 #define s2(a, b)                            temp = a; a = min(a, b); b = max(temp, b);
 #define t2(a, b)                            s2(v[a], v[b]);
@@ -15,16 +15,16 @@ SamplerState linearSampler			    : register(s0);
 
 [numthreads(SSR_BLOCK_SIZE, SSR_BLOCK_SIZE, 1)]
 [RootSignature(SSR_MEDIAN_BLUR_RS)]
-void main(cs_input IN)
+void main(CSInput IN)
 {
-    const float2 uv = (IN.dispatchThreadID.xy + 0.5f) * cb.invDimensions;
+    const float2 uv = (IN.dispatch_thread_id.xy + 0.5f) * cb.inv_dimensions;
     //const float depth = texture_depth.SampleLevel(sampler_point_clamp, uv, 1);
     //if (depth == 0.0f)
     //    return;
 
 #if 0
     // Disable.
-    output[IN.dispatchThreadID.xy] = input.SampleLevel(linearSampler, uv, 0);
+    output[IN.dispatch_thread_id.xy] = input.SampleLevel(linear_sampler, uv, 0);
     return;
 #endif
 
@@ -32,17 +32,17 @@ void main(cs_input IN)
 
     // Add the pixels which make up our window to the pixel array.
     [unroll]
-    for (int dX = -2; dX <= 2; ++dX)
+    for (int d_x = -2; d_x <= 2; ++d_x)
     {
         [unroll]
-        for (int dY = -2; dY <= 2; ++dY)
+        for (int d_y = -2; d_y <= 2; ++d_y)
         {
-            float2 offset = float2(float(dX), float(dY));
+            float2 offset = float2(float(d_x), float(d_y));
 
             // If a pixel in the window is located at (x+dX, y+dY), put it at index (dX + R)(2R + 1) + (dY + R) of the
             // pixel array. This will fill the pixel array, with the top left pixel of the window at pixel[0] and the
             // bottom right pixel of the window at pixel[N-1].
-            v[(dX + 2) * 5 + (dY + 2)] = input.SampleLevel(linearSampler, uv + offset * cb.invDimensions, 0);
+            v[(d_x + 2) * 5 + (d_y + 2)] = input.SampleLevel(linear_sampler, uv + offset * cb.inv_dimensions, 0);
         }
     }
 
@@ -67,5 +67,5 @@ void main(cs_input IN)
     t25(12, 17, 7, 17, 7, 10, 12, 18, 7, 12);
     t24(10, 18, 12, 20, 10, 20, 10, 12);
 
-    output[IN.dispatchThreadID.xy] = v[12];
+    output[IN.dispatch_thread_id.xy] = v[12];
 }

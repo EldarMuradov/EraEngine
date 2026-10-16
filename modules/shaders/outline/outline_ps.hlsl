@@ -1,31 +1,31 @@
 #include "outline_rs.hlsli"
 
-struct ps_input
+struct PSInput
 {
 	float2 uv				: TEXCOORDS;
-	float4 screenPosition	: SV_POSITION;
+	float4 screen_position	: SV_POSITION;
 };
 
-ConstantBuffer<outline_drawer_cb> outline : register(b0);
+ConstantBuffer<OutlineDrawerCB> outline : register(b0);
 
 Texture2D<uint2> stencil	: register(t0);
 
 static const int selected = (1 << 0); // TODO: This must be the same as in renderer.
 
-static uint sampleAt(int2 texCoords)
+static uint sample_at(int2 tex_coords)
 {
 	uint result = 1;
-	if (texCoords.x >= 0 && texCoords.y >= 0 && texCoords.x < outline.width && texCoords.y < outline.height)
+	if (tex_coords.x >= 0 && tex_coords.y >= 0 && tex_coords.x < outline.width && tex_coords.y < outline.height)
 	{
-		result = (stencil[texCoords].y & selected) != 0;
+		result = (stencil[tex_coords].y & selected) != 0;
 	}
 	return result;
 }
 
 [RootSignature(OUTLINE_DRAWER_RS)]
-float4 main(ps_input IN) : SV_TARGET
+float4 main(PSInput IN) : SV_TARGET
 {
-	int2 texCoords = int2(IN.screenPosition.xy);
+	int2 tex_coords = int2(IN.screen_position.xy);
 
 	uint s = 0;
 
@@ -34,7 +34,7 @@ float4 main(ps_input IN) : SV_TARGET
 	{
 		for (int y = -2; y <= 2; ++y)
 		{
-			s += sampleAt(texCoords + int2(x, y));
+			s += sample_at(tex_coords + int2(x, y));
 		}
 	}
 

@@ -5,6 +5,6 @@
 
 namespace era_engine
 {
-	void initializeMeshShader();
-	void testRenderMeshShader(transparent_render_pass* ldrRenderPass, float dt);
+	void initialize_mesh_shader();
+	void test_render_mesh_shader(TransparentRenderPass* ldr_render_pass, float dt);
 }

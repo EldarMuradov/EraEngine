@@ -12,101 +12,101 @@
 
 namespace era_engine
 {
-    void path_tracer::initialize()
+    void PathTracer::initialize()
     {
-        const wchar* shaderPath = L"shaders/raytracing/path_tracing_rts.hlsl";
+        const wchar* shader_path = L"shaders/raytracing/path_tracing_rts.hlsl";
 
-        const uint32 numInputResources = sizeof(input_resources) / sizeof(dx_cpu_descriptor_handle);
-        const uint32 numOutputResources = sizeof(output_resources) / sizeof(dx_cpu_descriptor_handle);
+        const uint32 num_input_resources = sizeof(InputResources) / sizeof(DXCPUDescriptorHandle);
+        const uint32 num_output_resources = sizeof(OutputResources) / sizeof(DXCPUDescriptorHandle);
 
-        CD3DX12_DESCRIPTOR_RANGE resourceRanges[] =
+        CD3DX12_DESCRIPTOR_RANGE resource_ranges[] =
         {
             // Must be input first, then output
-            CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, numInputResources, 0),
-            CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, numOutputResources, 0),
+            CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, num_input_resources, 0),
+            CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, num_output_resources, 0),
         };
 
-        CD3DX12_ROOT_PARAMETER globalRootParameters[] =
+        CD3DX12_ROOT_PARAMETER global_root_parameters[] =
         {
-            root_descriptor_table(arraysize(resourceRanges), resourceRanges),
+            root_descriptor_table(arraysize(resource_ranges), resource_ranges),
             root_cbv(0), // Camera
-            root_constants<path_tracing_cb>(1),
+            root_constants<PathTracingCB>(1),
         };
 
-        CD3DX12_STATIC_SAMPLER_DESC globalStaticSampler(0, D3D12_FILTER_MIN_MAG_MIP_LINEAR);
+        CD3DX12_STATIC_SAMPLER_DESC global_static_sampler(0, D3D12_FILTER_MIN_MAG_MIP_LINEAR);
 
-        D3D12_ROOT_SIGNATURE_DESC globalDesc =
+        D3D12_ROOT_SIGNATURE_DESC global_desc =
         {
-            arraysize(globalRootParameters), globalRootParameters,
-            1, &globalStaticSampler
+            arraysize(global_root_parameters), global_root_parameters,
+            1, &global_static_sampler
         };
 
-        pbr_raytracer::initialize(shaderPath, settings.maxPayloadSize, settings.maxRecursionDepth, globalDesc);
+        PBRRaytracer::initialize(shader_path, settings.max_payload_size, settings.max_recursion_depth, global_desc);
 
-        allocateDescriptorHeapSpaceForGlobalResources<input_resources, output_resources>(descriptorHeap);
+        allocate_descriptor_heap_space_for_global_resources<InputResources, OutputResources>(descriptor_heap);
 
-        oldSettings = settings;
+        old_settings = settings;
     }
 
-    void path_tracer::render(dx_command_list* cl, const raytracing_tlas& tlas,
-        const ref<dx_texture>& output,
-        const common_render_data& common)
+    void PathTracer::render(DXCommandList* cl, const RaytracingTLAS& tlas,
+        const ref<DXTexture>& output,
+        const CommonRenderData& common)
     {
-        if (memcmp(&settings, &oldSettings, sizeof(path_tracer_settings)) != 0)
+        if (memcmp(&settings, &old_settings, sizeof(PathTracerSettings)) != 0)
         {
-            resetRendering();
-            oldSettings = settings;
+            reset_rendering();
+            old_settings = settings;
         }
 
-        input_resources in;
-        in.tlas = tlas.tlas->raytracingSRV;
-        in.sky = common.sky->defaultSRV;
+        InputResources in;
+        in.tlas = tlas.tlas->raytracing_srv;
+        in.sky = common.sky->default_srv;
 
-        output_resources out;
-        out.output = output->defaultUAV;
+        OutputResources out;
+        out.output = output->default_uav;
 
-        dx_gpu_descriptor_handle gpuHandle = copyGlobalResourcesToDescriptorHeap(in, out);
+        DXGPUDescriptorHandle gpu_handle = copy_global_resources_to_descriptor_heap(in, out);
 
         // Fill out description
-        D3D12_DISPATCH_RAYS_DESC raytraceDesc;
-        fillOutRayTracingRenderDesc(bindingTable.getBuffer(), raytraceDesc,
+        D3D12_DISPATCH_RAYS_DESC raytrace_desc;
+        fill_out_ray_tracing_render_desc(binding_table.get_buffer(), raytrace_desc,
             output->width, output->height, 1,
-            numRayTypes, bindingTable.getNumberOfHitGroups());
+            num_ray_types, binding_table.get_number_of_hit_groups());
 
         // Set up pipeline
-        cl->setDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, descriptorHeap.descriptorHeap);
+        cl->set_descriptor_heap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, descriptor_heap.descriptor_heap);
 
-        cl->setPipelineState(pipeline.pipeline);
-        cl->setComputeRootSignature(pipeline.rootSignature);
+        cl->set_pipeline_state(pipeline.pipeline);
+        cl->set_compute_root_signature(pipeline.root_signature);
 
-        uint32 depth = min(settings.recursionDepth, settings.maxRecursionDepth - 1);
+        uint32 depth = min(settings.recursion_depth, settings.max_recursion_depth - 1);
 
-        cl->setComputeDescriptorTable(PATH_TRACING_RS_RESOURCES, gpuHandle);
-        cl->setComputeDynamicConstantBuffer(PATH_TRACING_RS_CAMERA, common.cameraCBV);
-        cl->setCompute32BitConstants(PATH_TRACING_RS_CB,
-            path_tracing_cb
+        cl->set_compute_descriptor_table(PATH_TRACING_RS_RESOURCES, gpu_handle);
+        cl->set_compute_dynamic_constant_buffer(PATH_TRACING_RS_CAMERA, common.camera_cbv);
+        cl->set_compute_32bit_constants(PATH_TRACING_RS_CB,
+            PathTracingCB
             {
-                (uint32)dxContext.frameID,
-                numAveragedFrames,
+                (uint32)dx_context.frame_id,
+                num_averaged_frames,
                 depth,
-                clamp(settings.startRussianRouletteAfter, 0u, depth),
-                (uint32)settings.useThinLensCamera,
-                settings.focalLength,
-                settings.focalLength / (2.f * settings.fNumber),
-                (uint32)settings.useRealMaterials,
-                (uint32)settings.enableDirectLighting,
-                settings.lightIntensityScale,
-                settings.pointLightRadius,
-                (uint32)settings.multipleImportanceSampling,
+                clamp(settings.start_russian_roulette_after, 0u, depth),
+                (uint32)settings.use_thin_lens_camera,
+                settings.focal_length,
+                settings.focal_length / (2.f * settings.f_number),
+                (uint32)settings.use_real_materials,
+                (uint32)settings.enable_direct_lighting,
+                settings.light_intensity_scale,
+                settings.point_light_radius,
+                (uint32)settings.multiple_importance_sampling,
             });
 
-        cl->raytrace(raytraceDesc);
+        cl->raytrace(raytrace_desc);
 
-        ++numAveragedFrames;
+        ++num_averaged_frames;
     }
 
-    void path_tracer::resetRendering()
+    void PathTracer::reset_rendering()
     {
-        numAveragedFrames = 0;
+        num_averaged_frames = 0;
     }
 }

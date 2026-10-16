@@ -5,7 +5,7 @@
 #include "random.hlsli"
 #include "light_source.hlsli"
 
-struct surface_info
+struct SurfaceInfo
 {
 	// Set from outside.
 	float3 P;
@@ -18,84 +18,84 @@ struct surface_info
 	float3 emission;
 
 	// Inferred from properties above.
-	float alphaRoughness;
-	float alphaRoughnessSquared;
-	float NdotV;
+	float alpha_roughness;
+	float alpha_roughness_squared;
+	float ndot_v;
 	float3 F0;
 	float3 F;
 	float3 R;
 
-	inline void inferRemainingProperties()
+	inline void infer_remaining_properties()
 	{
-		alphaRoughness = roughness * roughness;
-		alphaRoughnessSquared = alphaRoughness * alphaRoughness;
-		NdotV = saturate(dot(N, V));
+		alpha_roughness = roughness * roughness;
+		alpha_roughness_squared = alpha_roughness * alpha_roughness;
+		ndot_v = saturate(dot(N, V));
 		F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo.xyz, metallic);
 		R = reflect(-V, N);
 
 		float F90 = saturate(50.f * dot(F0, (1.f / 3.f)));
-		F = F0 + (F90 - F0) * pow(1.f - NdotV, 5.f); // Fresnel.
+		F = F0 + (F90 - F0) * pow(1.f - ndot_v, 5.f); // Fresnel.
 	}
 };
 
-struct light_info
+struct LightInfo
 {
 	float3 L;
 	float3 H;
-	float NdotL;
-	float NdotH;
-	float LdotH;
-	float VdotH;
+	float ndot_l;
+	float ndot_h;
+	float ldot_h;
+	float vdot_h;
 
 	float3 radiance;
-	float distanceToLight; // Only set if using a specialized initialize function. 
+	float distance_to_light; // Only set if using a specialized initialize function. 
 
-	inline void initialize(surface_info surface, float3 L_, float3 rad)
+	inline void initialize(SurfaceInfo surface, float3 L_, float3 rad)
 	{
 		L = L_;
 		H = normalize(L + surface.V);
 
-		NdotL = saturate(dot(surface.N, L));
-		NdotH = saturate(dot(surface.N, H));
-		LdotH = saturate(dot(L, H));
-		VdotH = saturate(dot(surface.V, H));
+		ndot_l = saturate(dot(surface.N, L));
+		ndot_h = saturate(dot(surface.N, H));
+		ldot_h = saturate(dot(L, H));
+		vdot_h = saturate(dot(surface.V, H));
 
 		radiance = rad;
 	}
 
-	inline void initializeFromPointLight(surface_info surface, point_light_cb pl)
+	inline void initialize_from_point_light(SurfaceInfo surface, PointLightCB pl)
 	{
 		float3 L = pl.position - surface.P;
-		distanceToLight = length(L);
-		L /= distanceToLight;
+		distance_to_light = length(L);
+		L /= distance_to_light;
 
-		initialize(surface, L, pl.radiance * getAttenuation(distanceToLight, pl.radius) * LIGHT_RADIANCE_SCALE);
+		initialize(surface, L, pl.radiance * get_attenuation(distance_to_light, pl.radius) * LIGHT_RADIANCE_SCALE);
 	}
 
-	inline void initializeFromRandomPointOnSphereLight(surface_info surface, point_light_cb pl, float radius, inout uint randSeed)
+	inline void initialize_from_random_point_on_sphere_light(SurfaceInfo surface, PointLightCB pl, float radius, inout uint rand_seed)
 	{
-		float3 randomPointOnLight = pl.position + getRandomPointOnSphere(randSeed, radius);
+		float3 random_point_on_light = pl.position + get_random_point_on_sphere(rand_seed, radius);
 
-		float3 L = randomPointOnLight - surface.P;
-		distanceToLight = length(L);
-		L /= distanceToLight;
+		float3 L = random_point_on_light - surface.P;
+		distance_to_light = length(L);
+		L /= distance_to_light;
 
-		initialize(surface, L, pl.radiance * getAttenuation(distanceToLight, pl.radius) * LIGHT_RADIANCE_SCALE);
+		initialize(surface, L, pl.radiance * get_attenuation(distance_to_light, pl.radius) * LIGHT_RADIANCE_SCALE);
 	}
 
-	inline void initializeFromSpotLight(surface_info surface, spot_light_cb sl)
+	inline void initialize_from_spot_light(SurfaceInfo surface, SpotLightCB sl)
 	{
 		float3 L = (sl.position - surface.P);
-		distanceToLight = length(L);
-		L /= distanceToLight;
+		distance_to_light = length(L);
+		L /= distance_to_light;
 
-		float innerCutoff = sl.getInnerCutoff();
-		float outerCutoff = sl.getOuterCutoff();
-		float epsilon = innerCutoff - outerCutoff;
+		float inner_cutoff = sl.get_inner_cutoff();
+		float outer_cutoff = sl.get_outer_cutoff();
+		float epsilon = inner_cutoff - outer_cutoff;
 
 		float theta = dot(-L, sl.direction);
-		float attenuation = getAttenuation(distanceToLight, sl.maxDistance);
-		float intensity = saturate((theta - outerCutoff) / epsilon) * attenuation;
+		float attenuation = get_attenuation(distance_to_light, sl.max_distance);
+		float intensity = saturate((theta - outer_cutoff) / epsilon) * attenuation;
 
 		initialize(surface, L, sl.radiance * intensity * LIGHT_RADIANCE_SCALE);
 	}
@@ -107,42 +107,42 @@ struct light_info
 // FRESNEL (Surface becomes more reflective when seen from a grazing angle).
 // ----------------------------------------
 
-static float3 fresnelSchlick(float LdotH, float3 F0)
+static float3 fresnel_schlick(float ldot_h, float3 F0)
 {
-	return F0 + (float3(1.f, 1.f, 1.f) - F0) * pow(1.f - LdotH, 5.f);
+	return F0 + (float3(1.f, 1.f, 1.f) - F0) * pow(1.f - ldot_h, 5.f);
 }
 
-static float3 fresnelSchlick(float3 F0, float F90, float VdotH)
+static float3 fresnel_schlick(float3 F0, float F90, float vdot_h)
 {
-	return F0 + (F90 - F0) * pow(1.f - VdotH, 5.f);
+	return F0 + (F90 - F0) * pow(1.f - vdot_h, 5.f);
 }
 
-static float3 fresnelSchlickRoughness(float LdotH, float3 F0, float roughness)
+static float3 fresnel_schlick_roughness(float ldot_h, float3 F0, float roughness)
 {
 	float v = 1.f - roughness;
-	return F0 + (max(float3(v, v, v), F0) - F0) * pow(1.f - LdotH, 5.f);
+	return F0 + (max(float3(v, v, v), F0) - F0) * pow(1.f - ldot_h, 5.f);
 }
 
 // ----------------------------------------
 // DISTRIBUTION (Microfacets' orientation based on roughness).
 // ----------------------------------------
 
-static float distributionGGX(float NdotH, float roughness)
+static float distribution_ggx(float ndot_h, float roughness)
 {
 	float a = roughness * roughness;
 	float a2 = a * a;
-	float NdotH2 = NdotH * NdotH;
+	float ndot_h2 = ndot_h * ndot_h;
 
-	float d = (NdotH2 * (a2 - 1.f) + 1.f);
+	float d = (ndot_h2 * (a2 - 1.f) + 1.f);
 	return a2 / max(d * d * M_PI, 0.001f);
 }
 
-static float distributionGGX(surface_info surface, light_info light)
+static float distribution_ggx(SurfaceInfo surface, LightInfo light)
 {
-	float NdotH = light.NdotH;
-	float NdotH2 = NdotH * NdotH;
-	float a2 = surface.alphaRoughnessSquared;
-	float d = (NdotH2 * (a2 - 1.f) + 1.f);
+	float ndot_h = light.ndot_h;
+	float ndot_h2 = ndot_h * ndot_h;
+	float a2 = surface.alpha_roughness_squared;
+	float d = (ndot_h2 * (a2 - 1.f) + 1.f);
 	return a2 / max(d * d * M_PI, 0.001f);
 }
 
@@ -150,22 +150,22 @@ static float distributionGGX(surface_info surface, light_info light)
 // GEOMETRIC MASKING (Microfacets may shadow each-other).
 // ----------------------------------------
 
-static float geometrySmith(float NdotL, float NdotV, float roughness)
+static float geometry_smith(float ndot_l, float ndot_v, float roughness)
 {
 	float k = (roughness * roughness) * 0.5f;
 
-	float ggx2 = NdotV / (NdotV * (1.f - k) + k);
-	float ggx1 = NdotL / (NdotL * (1.f - k) + k);
+	float ggx2 = ndot_v / (ndot_v * (1.f - k) + k);
+	float ggx1 = ndot_l / (ndot_l * (1.f - k) + k);
 
 	return ggx1 * ggx2;
 }
 
-static float geometrySmith(surface_info surface, light_info light)
+static float geometry_smith(SurfaceInfo surface, LightInfo light)
 {
-	float k = surface.alphaRoughness * 0.5f;
+	float k = surface.alpha_roughness * 0.5f;
 
-	float ggx2 = surface.NdotV / (surface.NdotV * (1.f - k) + k);
-	float ggx1 = light.NdotL / (light.NdotL * (1.f - k) + k);
+	float ggx2 = surface.ndot_v / (surface.ndot_v * (1.f - k) + k);
+	float ggx1 = light.ndot_l / (light.ndot_l * (1.f - k) + k);
 
 	return ggx1 * ggx2;
 }
@@ -176,42 +176,42 @@ static float geometrySmith(surface_info surface, light_info light)
 
 // When using this function to sample, the probability density is:
 //      pdf = D * NdotH / (4 * HdotV)
-static float3 importanceSampleGGX(inout uint randSeed, float3 N, float roughness)
+static float3 importance_sample_ggx(inout uint rand_seed, float3 N, float roughness)
 {
 	// Get our uniform random numbers.
-	float2 randVal = float2(nextRand(randSeed), nextRand(randSeed));
+	float2 rand_val = float2(next_rand(rand_seed), next_rand(rand_seed));
 
 	// Get an orthonormal basis from the normal.
-	float3 B = getPerpendicularVector(N);
+	float3 B = get_perpendicular_vector(N);
 	float3 T = cross(B, N);
 
 	// GGX NDF sampling.
 	float a2 = roughness * roughness;
-	float cosThetaH = sqrt(max(0.f, (1.f - randVal.x) / ((a2 - 1.f) * randVal.x + 1.f)));
-	float sinThetaH = sqrt(max(0.f, 1.f - cosThetaH * cosThetaH));
-	float phiH = randVal.y * M_PI * 2.f;
+	float cos_theta_h = sqrt(max(0.f, (1.f - rand_val.x) / ((a2 - 1.f) * rand_val.x + 1.f)));
+	float sin_theta_h = sqrt(max(0.f, 1.f - cos_theta_h * cos_theta_h));
+	float phi_h = rand_val.y * M_PI * 2.f;
 
 	// Get our GGX NDF sample (i.e., the half vector).
-	return T * (sinThetaH * cos(phiH)) +
-		B * (sinThetaH * sin(phiH)) +
-		N * cosThetaH;
+	return T * (sin_theta_h * cos(phi_h)) +
+		B * (sin_theta_h * sin(phi_h)) +
+		N * cos_theta_h;
 }
 
 // Call this with a hammersley distribution as Xi.
-static float4 importanceSampleGGX(float2 Xi, float3 N, float roughness)
+static float4 importance_sample_ggx(float2 xi, float3 N, float roughness)
 {
 	float a = roughness * roughness;
 	float a2 = a * a;
 
-	float phi = 2.f * M_PI * Xi.x;
-	float cosTheta = sqrt((1.f - Xi.y) / (1.f + (a2 - 1.f) * Xi.y));
-	float sinTheta = sqrt(1.f - cosTheta * cosTheta);
+	float phi = 2.f * M_PI * xi.x;
+	float cos_theta = sqrt((1.f - xi.y) / (1.f + (a2 - 1.f) * xi.y));
+	float sin_theta = sqrt(1.f - cos_theta * cos_theta);
 
 	// From spherical coordinates to cartesian coordinates.
 	float3 H;
-	H.x = cos(phi) * sinTheta;
-	H.y = sin(phi) * sinTheta;
-	H.z = cosTheta;
+	H.x = cos(phi) * sin_theta;
+	H.y = sin(phi) * sin_theta;
+	H.z = cos_theta;
 
 	// From tangent-space vector to world-space sample vector.
 	float3 up = abs(N.z) < 0.999f ? float3(0.f, 0.f, 1.f) : float3(1.f, 0.f, 0.f);
@@ -220,23 +220,23 @@ static float4 importanceSampleGGX(float2 Xi, float3 N, float roughness)
 
 	H = tangent * H.x + bitangent * H.y + N * H.z;
 
-	float d = (cosTheta * a2 - cosTheta) * cosTheta + 1.f;
+	float d = (cos_theta * a2 - cos_theta) * cos_theta + 1.f;
 	float D = a2 / (M_PI * d * d);
-	float pdf = D * cosTheta;
+	float pdf = D * cos_theta;
 	return float4(normalize(H), pdf);
 }
 
 // W = PDF = 1 / 4pi
-static float4 uniformSampleSphere(float2 E)
+static float4 uniform_sample_sphere(float2 E)
 {
 	float phi = 2 * M_PI * E.x;
-	float cosTheta = 1.f - 2.f * E.y;
-	float sinTheta = sqrt(1.f - cosTheta * cosTheta);
+	float cos_theta = 1.f - 2.f * E.y;
+	float sin_theta = sqrt(1.f - cos_theta * cos_theta);
 
 	float3 H;
-	H.x = sinTheta * cos(phi);
-	H.y = sinTheta * sin(phi);
-	H.z = cosTheta;
+	H.x = sin_theta * cos(phi);
+	H.y = sin_theta * sin(phi);
+	H.z = cos_theta;
 
 	float PDF = 1.f / (4.f * M_PI);
 

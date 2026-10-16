@@ -23,12 +23,12 @@ namespace era_engine
 	{
 	}
 
-	void CameraHolderComponent::set_render_camera(render_camera* _camera)
+	void CameraHolderComponent::set_render_camera(RenderCamera* _camera)
 	{
 		camera = _camera;
 	}
 
-	render_camera* CameraHolderComponent::get_render_camera() const
+	RenderCamera* CameraHolderComponent::get_render_camera() const
 	{
 		return camera;
 	}

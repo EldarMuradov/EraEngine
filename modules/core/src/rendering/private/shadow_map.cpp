@@ -8,143 +8,143 @@
 
 namespace era_engine
 {
-	shadow_render_command determineSunShadowInfo(directional_light& sun, bool invalidateCache)
+	ShadowRenderCommand determine_sun_shadow_info(DirectionalLight& sun, bool invalidate_cache)
 	{
-		bool staticCacheAvailable = !invalidateCache;
+		bool static_cache_available = !invalidate_cache;
 
-		uint64 movementHash = getLightMovementHash(sun);
+		uint64 movement_hash = get_light_movement_hash(sun);
 
-		shadow_render_command result{};
+		ShadowRenderCommand result{};
 
-		for (uint32 i = 0; i < sun.numShadowCascades; ++i)
+		for (uint32 i = 0; i < sun.num_shadow_cascades; ++i)
 		{
-			auto [vp, cache] = assignShadowMapViewport(i, movementHash, sun.shadowDimensions);
+			auto [vp, cache] = assign_shadow_map_viewport(i, movement_hash, sun.shadow_dimensions);
 
-			sun.shadowMapViewports[i] = vec4(vp.x, vp.y, vp.size, vp.size) / vec4((float)SHADOW_MAP_WIDTH, (float)SHADOW_MAP_HEIGHT, (float)SHADOW_MAP_WIDTH, (float)SHADOW_MAP_HEIGHT);
+			sun.shadow_map_viewports[i] = vec4(vp.x, vp.y, vp.size, vp.size) / vec4((float)SHADOW_MAP_WIDTH, (float)SHADOW_MAP_HEIGHT, (float)SHADOW_MAP_WIDTH, (float)SHADOW_MAP_HEIGHT);
 			result.viewports[i] = vp;
 
-			staticCacheAvailable &= cache;
+			static_cache_available &= cache;
 		}
 
-		result.renderStaticGeometry = !staticCacheAvailable;
-		result.renderDynamicGeometry = true;
+		result.render_static_geometry = !static_cache_available;
+		result.render_dynamic_geometry = true;
 
 		return result;
 	}
 
-	std::pair<shadow_render_command, spot_shadow_info> determineSpotShadowInfo(const spot_light_cb& spotLight, uint32 lightID, uint32 resolution, bool invalidateCache)
+	std::pair<ShadowRenderCommand, SpotShadowInfo> determine_spot_shadow_info(const SpotLightCB& spot_light, uint32 light_id, uint32 resolution, bool invalidate_cache)
 	{
-		uint64 uniqueID = ((uint64)(lightID + 1) << 32);
+		uint64 unique_id = ((uint64)(light_id + 1) << 32);
 
-		uint64 movementHash = getLightMovementHash(spotLight);
+		uint64 movement_hash = get_light_movement_hash(spot_light);
 
-		shadow_render_command result{};
+		ShadowRenderCommand result{};
 
-		auto [vp, staticCacheAvailable] = assignShadowMapViewport(uniqueID, movementHash, resolution);
+		auto [vp, static_cache_available] = assign_shadow_map_viewport(unique_id, movement_hash, resolution);
 		result.viewports[0] = vp;
 
-		result.renderStaticGeometry = !staticCacheAvailable || invalidateCache;
-		result.renderDynamicGeometry = true;
+		result.render_static_geometry = !static_cache_available || invalidate_cache;
+		result.render_dynamic_geometry = true;
 
-		spot_shadow_info si;
+		SpotShadowInfo si;
 		si.viewport = vec4(vp.x, vp.y, vp.size, vp.size) / vec4((float)SHADOW_MAP_WIDTH, (float)SHADOW_MAP_HEIGHT, (float)SHADOW_MAP_WIDTH, (float)SHADOW_MAP_HEIGHT);
-		si.viewProj = getSpotLightViewProjectionMatrix(spotLight);
+		si.view_proj = get_spot_light_view_projection_matrix(spot_light);
 		si.bias = 0.00002f;
 		return { result, si };
 	}
 
-	std::pair<shadow_render_command, point_shadow_info> determinePointShadowInfo(const point_light_cb& pointLight, uint32 lightID, uint32 resolution, bool invalidateCache)
+	std::pair<ShadowRenderCommand, PointShadowInfo> determine_point_shadow_info(const PointLightCB& point_light, uint32 light_id, uint32 resolution, bool invalidate_cache)
 	{
-		uint64 uniqueID = ((uint64)(lightID + 1) << 32);
+		uint64 unique_id = ((uint64)(light_id + 1) << 32);
 
-		uint64 movementHash = getLightMovementHash(pointLight);
+		uint64 movement_hash = get_light_movement_hash(point_light);
 
-		shadow_render_command result{};
+		ShadowRenderCommand result{};
 
-		auto [vp0, staticCacheAvailable0] = assignShadowMapViewport(uniqueID, movementHash, resolution);
-		auto [vp1, staticCacheAvailable1] = assignShadowMapViewport(uniqueID + 1, movementHash, resolution);
+		auto [vp0, staticCacheAvailable0] = assign_shadow_map_viewport(unique_id, movement_hash, resolution);
+		auto [vp1, staticCacheAvailable1] = assign_shadow_map_viewport(unique_id + 1, movement_hash, resolution);
 		result.viewports[0] = vp0;
 		result.viewports[1] = vp1;
 
-		result.renderStaticGeometry = !staticCacheAvailable0 || !staticCacheAvailable1 || invalidateCache;
-		result.renderDynamicGeometry = true;
+		result.render_static_geometry = !staticCacheAvailable0 || !staticCacheAvailable1 || invalidate_cache;
+		result.render_dynamic_geometry = true;
 
-		point_shadow_info si;
+		PointShadowInfo si;
 		si.viewport0 = vec4(vp0.x, vp0.y, vp0.size, vp0.size) / vec4((float)SHADOW_MAP_WIDTH, (float)SHADOW_MAP_HEIGHT, (float)SHADOW_MAP_WIDTH, (float)SHADOW_MAP_HEIGHT);
 		si.viewport1 = vec4(vp1.x, vp1.y, vp1.size, vp1.size) / vec4((float)SHADOW_MAP_WIDTH, (float)SHADOW_MAP_HEIGHT, (float)SHADOW_MAP_WIDTH, (float)SHADOW_MAP_HEIGHT);
 		return { result, si };
 	}
 
-	static dx_pipeline shadowPipeline;
-	static dx_pipeline doubleSidedShadowPipeline;
+	static DXPipeline shadow_pipeline;
+	static DXPipeline double_sided_shadow_pipeline;
 
-	static dx_pipeline pointLightShadowPipeline;
-	static dx_pipeline doubleSidedPointLightShadowPipeline;
+	static DXPipeline point_light_shadow_pipeline;
+	static DXPipeline double_sided_point_light_shadow_pipeline;
 
-	void initializeShadowPipelines()
+	void initialize_shadow_pipelines()
 	{
 		auto& desc = CREATE_GRAPHICS_PIPELINE
-			.renderTargets(0, 0, shadowDepthFormat)
-			.inputLayout(inputLayout_position);
+			.render_targets(0, 0, shadow_depth_format)
+			.input_layout(input_layout_position);
 
-		shadowPipeline = createReloadablePipeline(desc, { "shadow_vs" }, rs_in_vertex_shader);
-		pointLightShadowPipeline = createReloadablePipeline(desc, { "shadow_point_light_vs", "shadow_point_light_ps" }, rs_in_vertex_shader);
+		shadow_pipeline = create_reloadable_pipeline(desc, { "shadow_vs" }, RS_IN_VERTEX_SHADER);
+		point_light_shadow_pipeline = create_reloadable_pipeline(desc, { "shadow_point_light_vs", "shadow_point_light_ps" }, RS_IN_VERTEX_SHADER);
 
-		desc.cullingOff();
-		doubleSidedShadowPipeline = createReloadablePipeline(desc, { "shadow_vs" }, rs_in_vertex_shader);
-		doubleSidedPointLightShadowPipeline = createReloadablePipeline(desc, { "shadow_point_light_vs", "shadow_point_light_ps" }, rs_in_vertex_shader);
+		desc.culling_off();
+		double_sided_shadow_pipeline = create_reloadable_pipeline(desc, { "shadow_vs" }, RS_IN_VERTEX_SHADER);
+		double_sided_point_light_shadow_pipeline = create_reloadable_pipeline(desc, { "shadow_point_light_vs", "shadow_point_light_ps" }, RS_IN_VERTEX_SHADER);
 	}
 
-	PIPELINE_SETUP_IMPL(shadow_pipeline::single_sided)
+	PIPELINE_SETUP_IMPL(ShadowPipeline::SingleSided)
 	{
-		cl->setPipelineState(*shadowPipeline.pipeline);
-		cl->setGraphicsRootSignature(*shadowPipeline.rootSignature);
+		cl->set_pipeline_state(*shadow_pipeline.pipeline);
+		cl->set_graphics_root_signature(*shadow_pipeline.root_signature);
 
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	PIPELINE_SETUP_IMPL(shadow_pipeline::double_sided)
+	PIPELINE_SETUP_IMPL(ShadowPipeline::DoubleSided)
 	{
-		cl->setPipelineState(*doubleSidedShadowPipeline.pipeline);
-		cl->setGraphicsRootSignature(*doubleSidedShadowPipeline.rootSignature);
+		cl->set_pipeline_state(*double_sided_shadow_pipeline.pipeline);
+		cl->set_graphics_root_signature(*double_sided_shadow_pipeline.root_signature);
 
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	PIPELINE_RENDER_IMPL(shadow_pipeline, shadow_render_data)
+	PIPELINE_RENDER_IMPL(ShadowPipeline, ShadowRenderData)
 	{
-		cl->setRootGraphicsSRV(SHADOW_RS_TRANSFORMS, data.transformPtr);
-		cl->setGraphics32BitConstants(SHADOW_RS_VIEWPROJ, viewProj);
+		cl->set_root_graphics_srv(SHADOW_RS_TRANSFORMS, data.transform_ptr);
+		cl->set_graphics_32bit_constants(SHADOW_RS_VIEWPROJ, view_proj);
 
-		cl->setVertexBuffer(0, data.vertexBuffer);
-		cl->setIndexBuffer(data.indexBuffer);
+		cl->set_vertex_buffer(0, data.vertex_buffer);
+		cl->set_index_buffer(data.index_buffer);
 
-		cl->drawIndexed(data.submesh.numIndices, data.numInstances, data.submesh.firstIndex, data.submesh.baseVertex, 0);
+		cl->draw_indexed(data.submesh.num_indices, data.num_instances, data.submesh.first_index, data.submesh.base_vertex, 0);
 	}
 
-	PIPELINE_SETUP_IMPL(point_shadow_pipeline::single_sided)
+	PIPELINE_SETUP_IMPL(PointShadowPipeline::SingleSided)
 	{
-		cl->setPipelineState(*pointLightShadowPipeline.pipeline);
-		cl->setGraphicsRootSignature(*pointLightShadowPipeline.rootSignature);
+		cl->set_pipeline_state(*point_light_shadow_pipeline.pipeline);
+		cl->set_graphics_root_signature(*point_light_shadow_pipeline.root_signature);
 
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	PIPELINE_SETUP_IMPL(point_shadow_pipeline::double_sided)
+	PIPELINE_SETUP_IMPL(PointShadowPipeline::DoubleSided)
 	{
-		cl->setPipelineState(*doubleSidedPointLightShadowPipeline.pipeline);
-		cl->setGraphicsRootSignature(*doubleSidedPointLightShadowPipeline.rootSignature);
+		cl->set_pipeline_state(*double_sided_point_light_shadow_pipeline.pipeline);
+		cl->set_graphics_root_signature(*double_sided_point_light_shadow_pipeline.root_signature);
 
-		cl->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cl->set_primitive_topology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	PIPELINE_RENDER_IMPL(point_shadow_pipeline, shadow_render_data)
+	PIPELINE_RENDER_IMPL(PointShadowPipeline, ShadowRenderData)
 	{
-		cl->setRootGraphicsSRV(SHADOW_RS_TRANSFORMS, data.transformPtr);
+		cl->set_root_graphics_srv(SHADOW_RS_TRANSFORMS, data.transform_ptr);
 
-		cl->setVertexBuffer(0, data.vertexBuffer);
-		cl->setIndexBuffer(data.indexBuffer);
+		cl->set_vertex_buffer(0, data.vertex_buffer);
+		cl->set_index_buffer(data.index_buffer);
 
-		cl->drawIndexed(data.submesh.numIndices, data.numInstances, data.submesh.firstIndex, data.submesh.baseVertex, 0);
+		cl->draw_indexed(data.submesh.num_indices, data.num_instances, data.submesh.first_index, data.submesh.base_vertex, 0);
 	}
 }

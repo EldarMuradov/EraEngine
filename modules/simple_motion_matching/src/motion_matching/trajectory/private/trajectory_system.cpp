@@ -186,7 +186,7 @@ namespace era_engine
 
             const vec3 input = noz(motion_component.get_desired_input());
 
-            const bool desired_strafe = motion_component.follow_input_rotation ? true : reciever_component.get_frame_input().keyboard[key_ctrl].down;
+            const bool desired_strafe = motion_component.follow_input_rotation ? true : reciever_component.get_frame_input().keyboard[KEY_CTRL].down;
             const float strafe_direction = motion_component.input_movement_yaw;
 
             float simulation_fwrd_speed = lerpf(motion_component.run_fwrd_speed, motion_component.walk_fwrd_speed, motion_component.desired_gait);
@@ -252,7 +252,7 @@ namespace era_engine
                 {
                     const trs& world_transform = transform_component.get_world_transform();
                     vec3 dir = world_transform.rotation * vec3::forward;
-                    renderLine(world_transform.position, world_transform.position + 0.6f * dir, vec4(1.0f, 1.0f, 0.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
+                    render_line(world_transform.position, world_transform.position + 0.6f * dir, vec4(1.0f, 1.0f, 0.0f, 1.0f), renderer_holder_rc->ldr_render_pass);
                 }
             }
         }
@@ -266,12 +266,12 @@ namespace era_engine
         for (size_t i = 1; i < trajectory_positions.size(); i++)
         {
             vec3 point = trajectory_positions[i];
-            renderWireSphere(point, 0.05f, color, renderer_holder_rc->ldrRenderPass);
+            render_wire_sphere(point, 0.05f, color, renderer_holder_rc->ldr_render_pass);
 
             vec3 dir = trajectory_rotations[i] * vec3(0.0f, 0.0f, 1.0f);
-            renderLine(point, point + 0.6f * dir, color, renderer_holder_rc->ldrRenderPass);
-            renderLine(point, point + 0.3f * trajectory_velocities[i], vec4(1.0f, 1.0f, 1.0f, 1.0f), renderer_holder_rc->ldrRenderPass);
-            renderLine(trajectory_positions[i - 1], point, color, renderer_holder_rc->ldrRenderPass);
+            render_line(point, point + 0.6f * dir, color, renderer_holder_rc->ldr_render_pass);
+            render_line(point, point + 0.3f * trajectory_velocities[i], vec4(1.0f, 1.0f, 1.0f, 1.0f), renderer_holder_rc->ldr_render_pass);
+            render_line(trajectory_positions[i - 1], point, color, renderer_holder_rc->ldr_render_pass);
         }
     }
 

@@ -20,88 +20,88 @@
 
 namespace era_engine
 {
-	struct eeditor
+	struct EEditor
 	{
-		void initialize(ref<EditorScene> _scene, main_renderer* _renderer, editor_panels* _editorPanels);
+		void initialize(ref<EditorScene> _scene, MainRenderer* _renderer, EditorPanels* _editor_panels);
 
-		bool update(const UserInput& input, ldr_render_pass* ldrRenderPass, float dt);
+		bool update(const UserInput& input, LDRRenderPass* ldr_render_pass, float dt);
 
-		void render(ldr_render_pass* ldrRenderPass, float dt);
+		void render(LDRRenderPass* ldr_render_pass, float dt);
 
-		Entity selectedEntity = Entity::Null;
+		Entity selected_entity = Entity::null;
 
 	private:
-		struct undo_buffer
+		struct UndoBuffer
 		{
 			uint8 before[128];
 			template <typename T> inline T& as() { return *(T*)before; }
 		};
 
-		void forceStart();
-		void forcePause();
-		void forceStop();
+		void force_start();
+		void force_pause();
+		void force_stop();
 
-		void visualizePhysics(ldr_render_pass* ldrRenderPass) const;
+		void visualize_physics(LDRRenderPass* ldr_render_pass) const;
 
-		void drawSettings(float dt);
-		bool drawMainMenuBar();
-		bool drawSceneHierarchy();
-		void renderChilds(Entity& entity);
-		bool handleUserInput(const UserInput& input, ldr_render_pass* ldrRenderPass, float dt);
-		bool drawEntityCreationPopup();
+		void draw_settings(float dt);
+		bool draw_main_menu_bar();
+		bool draw_scene_hierarchy();
+		void render_childs(Entity& entity);
+		bool handle_user_input(const UserInput& input, LDRRenderPass* ldr_render_pass, float dt);
+		bool draw_entity_creation_popup();
 
-		void updateSelectedEntityUIRotation();
+		void update_selected_entity_ui_rotation();
 
-		void setSelectedEntity(const Entity& entity);
+		void set_selected_entity(const Entity& entity);
 
-		bool editCamera(render_camera& camera);
-		bool editTonemapping(tonemap_settings& tonemap);
-		bool editSunShadowParameters(directional_light& sun);
-		bool editAO(bool& enable, hbao_settings& settings, const ref<dx_texture>& aoTexture);
-		bool editSSS(bool& enable, sss_settings& settings, const ref<dx_texture>& sssTexture);
-		bool editSSR(bool& enable, ssr_settings& settings, const ref<dx_texture>& ssrTexture);
-		bool editTAA(bool& enable, taa_settings& settings, const ref<dx_texture>& velocityTexture);
-		bool editBloom(bool& enable, bloom_settings& settings, const ref<dx_texture>& bloomTexture);
-		bool editSharpen(bool& enable, sharpen_settings& settings);
+		bool edit_camera(RenderCamera& camera);
+		bool edit_tonemapping(TonemapSettings& tonemap);
+		bool edit_sun_shadow_parameters(DirectionalLight& sun);
+		bool edit_ao(bool& enable, HBAOSettings& settings, const ref<DXTexture>& ao_texture);
+		bool edit_sss(bool& enable, SSSSettings& settings, const ref<DXTexture>& sss_texture);
+		bool edit_ssr(bool& enable, SSRSettings& settings, const ref<DXTexture>& ssr_texture);
+		bool edit_taa(bool& enable, TAASettings& settings, const ref<DXTexture>& velocity_texture);
+		bool edit_bloom(bool& enable, BloomSettings& settings, const ref<DXTexture>& bloom_texture);
+		bool edit_sharpen(bool& enable, SharpenSettings& settings);
 
-		void onObjectMoved();
+		void on_object_moved();
 
-		void serializeToFile();
-		bool deserializeFromFile();
-		bool deserializeFromCurrentFile(const fs::path& path);
+		void serialize_to_file();
+		bool deserialize_from_file();
+		bool deserialize_from_current_file(const fs::path& path);
 
 		template <typename Value_, typename Action_, typename... Args_>
-		void undoable(const char* undoLabel, Value_ before, Value_& now, Args_... args);
+		void undoable(const char* undo_label, Value_ before, Value_& now, Args_... args);
 
 		ref<EditorScene> scene = nullptr;
 
-		main_renderer* renderer = nullptr;
-		editor_panels* editorPanels = nullptr;
+		MainRenderer* renderer = nullptr;
+		EditorPanels* editor_panels = nullptr;
 
-		undo_stack undoStacks[2];
-		undo_buffer undoBuffers[2];
+		UndoStack undo_stacks[2];
+		UndoBuffer undo_buffers[2];
 
-		undo_stack* currentUndoStack = nullptr;
-		undo_buffer* currentUndoBuffer = nullptr;
+		UndoStack* current_undo_stack = nullptr;
+		UndoBuffer* current_undo_buffer = nullptr;
 
-		transformation_gizmo gizmo;
+		TransformationGizmo gizmo;
 
-		camera_controller cameraController;
+		CameraController camera_controller;
 
-		vec3 selectedEntityEulerRotation;
+		vec3 selected_entity_euler_rotation;
 
-		system_info systemInfo;
+		SystemInfo system_info;
 
-		bool renderPhysicsShapes = false;
+		bool render_physics_shapes = false;
 
-		friend struct selection_undo;
+		friend struct SelectionUndo;
 	};
 
-	void editTexture(const char* name, ref<dx_texture>& tex, uint32 loadFlags);
+	void edit_texture(const char* name, ref<DXTexture>& tex, uint32 load_flags);
 
-	void editMesh(const char* name, ref<MultiMesh>& mesh, uint32 loadFlags);
+	void edit_mesh(const char* name, ref<MultiMesh>& mesh, uint32 load_flags);
 
-	void editMaterial(const ref<pbr_material>& material);
+	void edit_material(const ref<PBRMaterial>& material);
 	
-	void editSubmeshTransform(trs* transform);
+	void edit_submesh_transform(trs* transform);
 }

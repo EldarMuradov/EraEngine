@@ -1,24 +1,24 @@
 #include "cs.hlsli"
 #include "proc_placement_rs.hlsli"
 
-ConstantBuffer<proc_placement_create_draw_calls_cb> cb	: register(b0);
-StructuredBuffer<uint> meshCounts						: register(t0);
-StructuredBuffer<uint> meshOffsets						: register(t1);
-StructuredBuffer<uint> submeshToMesh					: register(t2);
-RWStructuredBuffer<placement_draw> draws				: register(u0);
+ConstantBuffer<ProcPlacementCreateDrawCallsCB> cb	: register(b0);
+StructuredBuffer<uint> mesh_counts						: register(t0);
+StructuredBuffer<uint> mesh_offsets						: register(t1);
+StructuredBuffer<uint> submesh_to_mesh					: register(t2);
+RWStructuredBuffer<PlacementDraw> draws				: register(u0);
 
 [RootSignature(PROC_PLACEMENT_CREATE_DRAW_CALLS_RS)]
 [numthreads(PROC_PLACEMENT_CREATE_DRAW_CALLS_BLOCK_SIZE, 1, 1)]
-void main(cs_input IN)
+void main(CSInput IN)
 {
-	uint id = IN.dispatchThreadID.x;
-	uint meshID = submeshToMesh[id];
+	uint id = IN.dispatch_thread_id.x;
+	uint mesh_id = submesh_to_mesh[id];
 
-	placement_draw draw = draws[id];
-	draw.draw.InstanceCount = meshCounts[meshID];
+	PlacementDraw draw = draws[id];
+	draw.draw.InstanceCount = mesh_counts[mesh_id];
 
-	uint offset = meshOffsets[meshID] * cb.stride;
-	draw.transformSRVLow = cb.transformAddressLow + offset;
-	draw.transformSRVHigh = cb.transformAddressHigh + uint(draw.transformSRVLow < cb.transformAddressLow);
+	uint offset = mesh_offsets[mesh_id] * cb.stride;
+	draw.transform_srv_low = cb.transform_address_low + offset;
+	draw.transform_srv_high = cb.transform_address_high + uint(draw.transform_srv_low < cb.transform_address_low);
 	draws[id] = draw;
 }

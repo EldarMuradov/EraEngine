@@ -26,8 +26,8 @@ namespace era_engine
 
 		~CameraHolderComponent() override;
 
-		void set_render_camera(render_camera* _camera);
-		render_camera* get_render_camera() const;
+		void set_render_camera(RenderCamera* _camera);
+		RenderCamera* get_render_camera() const;
 
 		CameraType get_camera_type() const;
 		void set_camera_type(CameraType _type);
@@ -35,7 +35,7 @@ namespace era_engine
 		ERA_VIRTUAL_REFLECT(Component)
 
 	private:
-		render_camera* camera = nullptr;
+		RenderCamera* camera = nullptr;
 
 		CameraType type = ATTACHED_TO_TRS;
 	};

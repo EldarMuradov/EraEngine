@@ -7,63 +7,63 @@
 
 namespace era_engine
 {
-	struct shadow_render_command
+	struct ShadowRenderCommand
 	{
-		bool renderStaticGeometry;
-		bool renderDynamicGeometry;
+		bool render_static_geometry;
+		bool render_dynamic_geometry;
 
-		shadow_map_viewport viewports[4];
+		ShadowMapViewport viewports[4];
 	};
 
-	shadow_render_command determineSunShadowInfo(directional_light& sun, bool invalidateCache);
-	std::pair<shadow_render_command, spot_shadow_info> determineSpotShadowInfo(const spot_light_cb& spotLight, uint32 lightID, uint32 resolution, bool invalidateCache);
-	std::pair<shadow_render_command, point_shadow_info> determinePointShadowInfo(const point_light_cb& pointLight, uint32 lightID, uint32 resolution, bool invalidateCache);
+	ShadowRenderCommand determine_sun_shadow_info(DirectionalLight& sun, bool invalidate_cache);
+	std::pair<ShadowRenderCommand, SpotShadowInfo> determine_spot_shadow_info(const SpotLightCB& spot_light, uint32 light_id, uint32 resolution, bool invalidate_cache);
+	std::pair<ShadowRenderCommand, PointShadowInfo> determine_point_shadow_info(const PointLightCB& point_light, uint32 light_id, uint32 resolution, bool invalidate_cache);
 
-	struct shadow_render_data
+	struct ShadowRenderData
 	{
-		D3D12_GPU_VIRTUAL_ADDRESS transformPtr;
-		dx_vertex_buffer_view vertexBuffer;
-		dx_index_buffer_view indexBuffer;
+		D3D12_GPU_VIRTUAL_ADDRESS transform_ptr;
+		DXVertexBufferView vertex_buffer;
+		DXIndexBufferView index_buffer;
 		SubmeshInfo submesh;
 
-		uint32 numInstances;
+		uint32 num_instances;
 	};
 
-	struct shadow_pipeline
+	struct ShadowPipeline
 	{
-		PIPELINE_RENDER_DECL(shadow_render_data);
+		PIPELINE_RENDER_DECL(ShadowRenderData);
 
-		struct single_sided;
-		struct double_sided;
+		struct SingleSided;
+		struct DoubleSided;
 	};
 
-	struct shadow_pipeline::single_sided : shadow_pipeline
-	{
-		PIPELINE_SETUP_DECL;
-	};
-
-	struct shadow_pipeline::double_sided : shadow_pipeline
+	struct ShadowPipeline::SingleSided : ShadowPipeline
 	{
 		PIPELINE_SETUP_DECL;
 	};
 
-	struct point_shadow_pipeline
-	{
-		PIPELINE_RENDER_DECL(shadow_render_data);
-
-		struct single_sided;
-		struct double_sided;
-	};
-
-	struct point_shadow_pipeline::single_sided : point_shadow_pipeline
+	struct ShadowPipeline::DoubleSided : ShadowPipeline
 	{
 		PIPELINE_SETUP_DECL;
 	};
 
-	struct point_shadow_pipeline::double_sided : point_shadow_pipeline
+	struct PointShadowPipeline
+	{
+		PIPELINE_RENDER_DECL(ShadowRenderData);
+
+		struct SingleSided;
+		struct DoubleSided;
+	};
+
+	struct PointShadowPipeline::SingleSided : PointShadowPipeline
 	{
 		PIPELINE_SETUP_DECL;
 	};
 
-	void initializeShadowPipelines();
+	struct PointShadowPipeline::DoubleSided : PointShadowPipeline
+	{
+		PIPELINE_SETUP_DECL;
+	};
+
+	void initialize_shadow_pipelines();
 }

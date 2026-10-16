@@ -17,15 +17,15 @@
 
 namespace era_engine
 {
-	static void initializeTexture(ref<dx_texture> result, D3D12_RESOURCE_DESC textureDesc, D3D12_SUBRESOURCE_DATA* subresourceData, uint32 numSubresources, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, bool mipUAVs = false);
+	static void initialize_texture(ref<DXTexture> result, D3D12_RESOURCE_DESC texture_desc, D3D12_SUBRESOURCE_DATA* subresource_data, uint32 num_subresources, D3D12_RESOURCE_STATES initial_state = D3D12_RESOURCE_STATE_COMMON, bool mip_uavs = false);
 
-	static void uploadImageToGPU(ref<dx_texture> result, DirectX::ScratchImage& scratchImage, D3D12_RESOURCE_DESC& textureDesc, uint32 flags)
+	static void upload_image_to_gpu(ref<DXTexture> result, DirectX::ScratchImage& scratch_image, D3D12_RESOURCE_DESC& texture_desc, uint32 flags)
 	{
-		const DirectX::Image* images = scratchImage.GetImages();
-		uint32 numImages = (uint32)scratchImage.GetImageCount();
+		const DirectX::Image* images = scratch_image.GetImages();
+		uint32 num_images = (uint32)scratch_image.GetImageCount();
 
 		D3D12_SUBRESOURCE_DATA subresources[128];
-		for (uint32 i = 0; i < numImages; ++i)
+		for (uint32 i = 0; i < num_images; ++i)
 		{
 			D3D12_SUBRESOURCE_DATA& subresource = subresources[i];
 			subresource.RowPitch = images[i].rowPitch;
@@ -33,178 +33,178 @@ namespace era_engine
 			subresource.pData = images[i].pixels;
 		}
 
-		initializeTexture(result, textureDesc, subresources, numImages);
+		initialize_texture(result, texture_desc, subresources, num_images);
 		SET_NAME(result->resource, "Loaded from file");
 
-		if (flags & image_load_flags_gen_mips_on_gpu)
+		if (flags & IMAGE_LOAD_FLAGS_GEN_MIPS_ON_GPU)
 		{
-			dxContext.renderQueue.waitForOtherQueue(dxContext.copyQueue);
-			dx_command_list* cl = dxContext.getFreeRenderCommandList();
-			generateMipMapsOnGPU(cl, result);
-			dxContext.executeCommandList(cl);
+			dx_context.render_queue.wait_for_other_queue(dx_context.copy_queue);
+			DXCommandList* cl = dx_context.get_free_render_command_list();
+			generate_mip_maps_on_gpu(cl, result);
+			dx_context.execute_command_list(cl);
 		}
 	}
 
-	NODISCARD static ref<dx_texture> uploadImageToGPU(DirectX::ScratchImage& scratchImage, D3D12_RESOURCE_DESC& textureDesc, uint32 flags)
+	NODISCARD static ref<DXTexture> upload_image_to_gpu(DirectX::ScratchImage& scratch_image, D3D12_RESOURCE_DESC& texture_desc, uint32 flags)
 	{
-		ref<dx_texture> result = make_ref<dx_texture>();
-		uploadImageToGPU(result, scratchImage, textureDesc, flags);
+		ref<DXTexture> result = make_ref<DXTexture>();
+		upload_image_to_gpu(result, scratch_image, texture_desc, flags);
 		return result;
 	}
 
-	NODISCARD static void textureLoaderThread(ref<dx_texture> result, const fs::path& path, uint32 flags)
+	NODISCARD static void texture_loader_thread(ref<DXTexture> result, const fs::path& path, uint32 flags)
 	{
-		DirectX::ScratchImage scratchImage;
-		D3D12_RESOURCE_DESC textureDesc;
+		DirectX::ScratchImage scratch_image;
+		D3D12_RESOURCE_DESC texture_desc;
 
 		if (path.extension() == ".svg")
 		{
-			if (!loadSVGFromFile(path, flags, scratchImage, textureDesc))
+			if (!load_svg_from_file(path, flags, scratch_image, texture_desc))
 				return;
 		}
-		else if (!loadImageFromFile(path, flags, scratchImage, textureDesc))
+		else if (!load_image_from_file(path, flags, scratch_image, texture_desc))
 			return;
 
-		uploadImageToGPU(result, scratchImage, textureDesc, flags);
+		upload_image_to_gpu(result, scratch_image, texture_desc, flags);
 
-		result->loadState.store(AssetLoadState::LOADED, std::memory_order_release);
+		result->load_state.store(AssetLoadState::LOADED, std::memory_order_release);
 	}
 
-	NODISCARD static ref<dx_texture> loadTextureInternal(const fs::path& path, AssetHandle handle, uint32 flags,
+	NODISCARD static ref<DXTexture> load_texture_internal(const fs::path& path, AssetHandle handle, uint32 flags,
 		bool async, JobHandle parent_job)
 	{
-		if (flags & image_load_flags_gen_mips_on_gpu)
+		if (flags & IMAGE_LOAD_FLAGS_GEN_MIPS_ON_GPU)
 		{
-			flags &= ~image_load_flags_gen_mips_on_cpu;
-			flags |= image_load_flags_allocate_full_mipchain;
+			flags &= ~IMAGE_LOAD_FLAGS_GEN_MIPS_ON_CPU;
+			flags |= IMAGE_LOAD_FLAGS_ALLOCATE_FULL_MIPCHAIN;
 		}
 
 		if (!async)
 		{
-			DirectX::ScratchImage scratchImage;
-			D3D12_RESOURCE_DESC textureDesc;
+			DirectX::ScratchImage scratch_image;
+			D3D12_RESOURCE_DESC texture_desc;
 
 			if (path.extension() == ".svg")
 			{
-				if (!loadSVGFromFile(path, flags, scratchImage, textureDesc))
+				if (!load_svg_from_file(path, flags, scratch_image, texture_desc))
 					return 0;
 			}
-			else if (!loadImageFromFile(path, flags, scratchImage, textureDesc))
+			else if (!load_image_from_file(path, flags, scratch_image, texture_desc))
 				return 0;
 
-			ref<dx_texture> result = uploadImageToGPU(scratchImage, textureDesc, flags);
+			ref<DXTexture> result = upload_image_to_gpu(scratch_image, texture_desc, flags);
 			result->handle = handle;
 			result->flags = flags;
-			result->loadJob = {};
+			result->load_job = {};
 
 			return result;
 		}
 		else
 		{
-			ref<dx_texture> result = make_ref<dx_texture>();
+			ref<DXTexture> result = make_ref<DXTexture>();
 			result->width = 1;
 			result->height = 1;
 			result->depth = 1;
 			result->format = DXGI_FORMAT_R8G8B8A8_UNORM;
-			result->defaultSRV = render_resources::nullTextureSRV;
+			result->default_srv = RenderResources::null_texture_srv;
 			result->handle = handle;
 			result->flags = flags;
-			result->loadState = AssetLoadState::LOADING;
+			result->load_state = AssetLoadState::LOADING;
 
-			struct texture_loading_data
+			struct TextureLoadingData
 			{
-				ref<dx_texture> texture;
+				ref<DXTexture> texture;
 				fs::path path;
 				uint32 flags;
 			};
 
-			texture_loading_data data = { result, path, flags };
+			TextureLoadingData data = { result, path, flags };
 
-			JobHandle job = low_priority_job_queue.createJob<texture_loading_data>([](texture_loading_data& data, JobHandle)
+			JobHandle job = low_priority_job_queue.create_job<TextureLoadingData>([](TextureLoadingData& data, JobHandle)
 				{
-					textureLoaderThread(data.texture, data.path, data.flags);
+					texture_loader_thread(data.texture, data.path, data.flags);
 				}, data, parent_job);
 			job.submit_now();
 
-			result->loadJob = job;
+			result->load_job = job;
 
 			return result;
 		}
 	}
 
-	NODISCARD static ref<dx_texture> loadTextureFromMemoryInternal(const void* ptr, uint32 size, image_format imageFormat, const fs::path& cachePath, uint32 flags)
+	NODISCARD static ref<DXTexture> load_texture_from_memory_internal(const void* ptr, uint32 size, ImageFormat image_format, const fs::path& cache_path, uint32 flags)
 	{
-		DirectX::ScratchImage scratchImage;
-		D3D12_RESOURCE_DESC textureDesc;
+		DirectX::ScratchImage scratch_image;
+		D3D12_RESOURCE_DESC texture_desc;
 
-		if (!loadImageFromMemory(ptr, size, imageFormat, cachePath, flags, scratchImage, textureDesc))
+		if (!load_image_from_memory(ptr, size, image_format, cache_path, flags, scratch_image, texture_desc))
 			return nullptr;
 
-		ref<dx_texture> result = uploadImageToGPU(scratchImage, textureDesc, flags);
+		ref<DXTexture> result = upload_image_to_gpu(scratch_image, texture_desc, flags);
 		result->flags = flags;
 		return result;
 	}
 
-	NODISCARD static ref<dx_texture> loadVolumeTextureInternal(const fs::path& dirname, uint32 flags)
+	NODISCARD static ref<DXTexture> load_volume_texture_internal(const fs::path& dirname, uint32 flags)
 	{
 		// No mip maps allowed for now!
-		ASSERT(!(flags & image_load_flags_allocate_full_mipchain));
-		ASSERT(!(flags & image_load_flags_gen_mips_on_cpu));
-		ASSERT(!(flags & image_load_flags_gen_mips_on_gpu));
+		ASSERT(!(flags & IMAGE_LOAD_FLAGS_ALLOCATE_FULL_MIPCHAIN));
+		ASSERT(!(flags & IMAGE_LOAD_FLAGS_GEN_MIPS_ON_CPU));
+		ASSERT(!(flags & IMAGE_LOAD_FLAGS_GEN_MIPS_ON_GPU));
 
-		std::vector<DirectX::ScratchImage> scratchImages;
-		D3D12_RESOURCE_DESC textureDesc = {};
+		std::vector<DirectX::ScratchImage> scratch_images;
+		D3D12_RESOURCE_DESC texture_desc = {};
 
-		uint32 totalSize = 0;
+		uint32 total_size = 0;
 
 		for (auto& p : fs::directory_iterator(dirname))
 		{
 			auto& path = p.path();
-			DirectX::ScratchImage& s = scratchImages.emplace_back();
-			if (!loadImageFromFile(p, flags, s, textureDesc))
+			DirectX::ScratchImage& s = scratch_images.emplace_back();
+			if (!load_image_from_file(p, flags, s, texture_desc))
 				return nullptr;
 
 			ASSERT(s.GetImageCount() == 1);
 			const auto& image = s.GetImages()[0];
 
-			if (scratchImages.size() > 1)
+			if (scratch_images.size() > 1)
 			{
-				ASSERT(image.width == scratchImages.begin()->GetImages()[0].width);
-				ASSERT(image.height == scratchImages.begin()->GetImages()[0].height);
-				ASSERT(image.slicePitch == scratchImages.begin()->GetImages()[0].slicePitch);
+				ASSERT(image.width == scratch_images.begin()->GetImages()[0].width);
+				ASSERT(image.height == scratch_images.begin()->GetImages()[0].height);
+				ASSERT(image.slicePitch == scratch_images.begin()->GetImages()[0].slicePitch);
 			}
 
-			totalSize += (uint32)image.slicePitch;
+			total_size += (uint32)image.slicePitch;
 		}
 
-		uint32 width = (uint32)textureDesc.Width;
-		uint32 height = textureDesc.Height;
-		uint32 depth = (uint32)scratchImages.size();
+		uint32 width = (uint32)texture_desc.Width;
+		uint32 height = texture_desc.Height;
+		uint32 depth = (uint32)scratch_images.size();
 
-		uint8* allPixels = new uint8[totalSize];
+		uint8* all_pixels = new uint8[total_size];
 
 		for (uint32 i = 0; i < depth; ++i)
 		{
-			DirectX::ScratchImage& s = scratchImages[i];
+			DirectX::ScratchImage& s = scratch_images[i];
 			const auto& image = s.GetImages()[0];
 
-			memcpy(allPixels + i * image.slicePitch, image.pixels, image.slicePitch);
+			memcpy(all_pixels + i * image.slicePitch, image.pixels, image.slicePitch);
 		}
 
 		D3D12_SUBRESOURCE_DATA subresource;
-		subresource.RowPitch = scratchImages.begin()->GetImages()[0].rowPitch;
-		subresource.SlicePitch = scratchImages.begin()->GetImages()[0].slicePitch;
-		subresource.pData = allPixels;
+		subresource.RowPitch = scratch_images.begin()->GetImages()[0].rowPitch;
+		subresource.SlicePitch = scratch_images.begin()->GetImages()[0].slicePitch;
+		subresource.pData = all_pixels;
 
-		ref<dx_texture> result = createVolumeTexture(0, width, height, depth, textureDesc.Format, false);
-		uploadTextureSubresourceData(result, &subresource, 0, 1);
+		ref<DXTexture> result = create_volume_texture(0, width, height, depth, texture_desc.Format, false);
+		upload_texture_subresource_data(result, &subresource, 0, 1);
 
-		delete[] allPixels;
+		delete[] all_pixels;
 
 		return result;
 	}
 
-	struct texture_key
+	struct TextureKey
 	{
 		AssetHandle handle;
 		uint32 flags;
@@ -214,9 +214,9 @@ namespace era_engine
 namespace std
 {
 	template<>
-	struct hash<era_engine::texture_key>
+	struct hash<era_engine::TextureKey>
 	{
-		size_t operator()(const era_engine::texture_key& x) const
+		size_t operator()(const era_engine::TextureKey& x) const
 		{
 			size_t seed = 0;
 			hash_combine(seed, x.handle);
@@ -228,188 +228,188 @@ namespace std
 
 namespace era_engine
 {
-	static bool operator==(const texture_key& a, const texture_key& b)
+	static bool operator==(const TextureKey& a, const TextureKey& b)
 	{
 		return a.handle == b.handle && a.flags == b.flags;
 	}
 
-	static std::unordered_map<texture_key, weakref<dx_texture>> textureCache;
+	static std::unordered_map<TextureKey, weakref<DXTexture>> texture_cache;
 	static std::mutex mutex;
 
-	static ref<dx_texture> loadTextureFromFileAndHandle(const fs::path& filename, AssetHandle handle, uint32 flags,
+	static ref<DXTexture> load_texture_from_file_and_handle(const fs::path& filename, AssetHandle handle, uint32 flags,
 		bool async = false, JobHandle parent_job = {})
 	{
 		if (!fs::exists(filename))
 			return 0;
 
-		texture_key key = { handle, flags };
+		TextureKey key = { handle, flags };
 
 		Lock lock{ mutex };
 
-		ref<dx_texture> result = textureCache[key].lock();
+		ref<DXTexture> result = texture_cache[key].lock();
 		if (!result)
 		{
-			result = loadTextureInternal(filename, handle, flags, async, parent_job);
-			textureCache[key] = result;
+			result = load_texture_internal(filename, handle, flags, async, parent_job);
+			texture_cache[key] = result;
 		}
 		return result;
 	}
 
-	ref<dx_texture> loadTextureFromFile(const fs::path& filename, uint32 flags)
+	ref<DXTexture> load_texture_from_file(const fs::path& filename, uint32 flags)
 	{
 		fs::path path = filename.lexically_normal().make_preferred();
 
 		AssetHandle handle = get_asset_handle_from_path(path);
-		return loadTextureFromFileAndHandle(path, handle, flags);
+		return load_texture_from_file_and_handle(path, handle, flags);
 	}
 
-	ref<dx_texture> loadTextureFromHandle(AssetHandle handle, uint32 flags)
+	ref<DXTexture> load_texture_from_handle(AssetHandle handle, uint32 flags)
 	{
-		fs::path sceneFilename = get_path_from_asset_handle(handle);
-		return loadTextureFromFileAndHandle(sceneFilename, handle, flags);
+		fs::path scene_filename = get_path_from_asset_handle(handle);
+		return load_texture_from_file_and_handle(scene_filename, handle, flags);
 	}
 
-	ref<dx_texture> loadTextureFromFileAsync(const fs::path& filename, uint32 flags, JobHandle parent_job)
+	ref<DXTexture> load_texture_from_file_async(const fs::path& filename, uint32 flags, JobHandle parent_job)
 	{
 		fs::path path = filename.lexically_normal().make_preferred();
 
 		AssetHandle handle = get_asset_handle_from_path(path);
-		return loadTextureFromFileAndHandle(path, handle, flags, true, parent_job);
+		return load_texture_from_file_and_handle(path, handle, flags, true, parent_job);
 	}
 
-	ref<dx_texture> loadTextureFromHandleAsync(AssetHandle handle, uint32 flags, JobHandle parent_job)
+	ref<DXTexture> load_texture_from_handle_async(AssetHandle handle, uint32 flags, JobHandle parent_job)
 	{
-		fs::path sceneFilename = get_path_from_asset_handle(handle);
-		return loadTextureFromFileAndHandle(sceneFilename, handle, flags, true, parent_job);
+		fs::path scene_filename = get_path_from_asset_handle(handle);
+		return load_texture_from_file_and_handle(scene_filename, handle, flags, true, parent_job);
 	}
 
-	ref<dx_texture> loadTextureFromMemory(const void* ptr, uint32 size, image_format imageFormat, const fs::path& cacheFilename, uint32 flags)
+	ref<DXTexture> load_texture_from_memory(const void* ptr, uint32 size, ImageFormat image_format, const fs::path& cache_filename, uint32 flags)
 	{
-		return loadTextureFromMemoryInternal(ptr, size, imageFormat, cacheFilename, flags);
+		return load_texture_from_memory_internal(ptr, size, image_format, cache_filename, flags);
 	}
 
-	ref<dx_texture> loadVolumeTextureFromDirectory(const fs::path& dirname, uint32 flags)
+	ref<DXTexture> load_volume_texture_from_directory(const fs::path& dirname, uint32 flags)
 	{
-		return loadVolumeTextureInternal(dirname, flags);
+		return load_volume_texture_internal(dirname, flags);
 	}
 
-	static bool checkFormatSupport(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport, D3D12_FORMAT_SUPPORT1 support)
+	static bool check_format_support(D3D12_FEATURE_DATA_FORMAT_SUPPORT format_support, D3D12_FORMAT_SUPPORT1 support)
 	{
-		return (formatSupport.Support1 & support) != 0;
+		return (format_support.Support1 & support) != 0;
 	}
 
-	static bool checkFormatSupport(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport, D3D12_FORMAT_SUPPORT2 support)
+	static bool check_format_support(D3D12_FEATURE_DATA_FORMAT_SUPPORT format_support, D3D12_FORMAT_SUPPORT2 support)
 	{
-		return (formatSupport.Support2 & support) != 0;
+		return (format_support.Support2 & support) != 0;
 	}
 
-	static bool formatSupportsRTV(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport)
+	static bool format_supports_rtv(D3D12_FEATURE_DATA_FORMAT_SUPPORT format_support)
 	{
-		return checkFormatSupport(formatSupport, D3D12_FORMAT_SUPPORT1_RENDER_TARGET);
+		return check_format_support(format_support, D3D12_FORMAT_SUPPORT1_RENDER_TARGET);
 	}
 
-	static bool formatSupportsDSV(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport)
+	static bool format_supports_dsv(D3D12_FEATURE_DATA_FORMAT_SUPPORT format_support)
 	{
-		return checkFormatSupport(formatSupport, D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL);
+		return check_format_support(format_support, D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL);
 	}
 
-	static bool formatSupportsSRV(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport)
+	static bool format_supports_srv(D3D12_FEATURE_DATA_FORMAT_SUPPORT format_support)
 	{
-		return checkFormatSupport(formatSupport, D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE);
+		return check_format_support(format_support, D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE);
 	}
 
-	static bool formatSupportsUAV(D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport)
+	static bool format_supports_uav(D3D12_FEATURE_DATA_FORMAT_SUPPORT format_support)
 	{
-		return checkFormatSupport(formatSupport, D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW) &&
-			checkFormatSupport(formatSupport, D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) &&
-			checkFormatSupport(formatSupport, D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE);
+		return check_format_support(format_support, D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW) &&
+			check_format_support(format_support, D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) &&
+			check_format_support(format_support, D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE);
 	}
 
-	D3D12_RESOURCE_ALLOCATION_INFO getTextureAllocationInfo(uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips, D3D12_RESOURCE_FLAGS flags)
+	D3D12_RESOURCE_ALLOCATION_INFO get_texture_allocation_info(uint32 width, uint32 height, DXGI_FORMAT format, bool allocate_mips, D3D12_RESOURCE_FLAGS flags)
 	{
-		uint32 numMips = allocateMips ? 0 : 1;
-		auto desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 1, numMips, 1, 0, flags);
-		return dxContext.device->GetResourceAllocationInfo(0, 1, &desc);
+		uint32 num_mips = allocate_mips ? 0 : 1;
+		auto desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 1, num_mips, 1, 0, flags);
+		return dx_context.device->GetResourceAllocationInfo(0, 1, &desc);
 	}
 
-	void uploadTextureSubresourceData(ref<dx_texture> texture, D3D12_SUBRESOURCE_DATA* subresourceData, uint32 firstSubresource, uint32 numSubresources)
+	void upload_texture_subresource_data(ref<DXTexture> texture, D3D12_SUBRESOURCE_DATA* subresource_data, uint32 first_subresource, uint32 num_subresources)
 	{
-		dx_command_list* cl = dxContext.getFreeCopyCommandList();
-		cl->transitionBarrier(texture, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+		DXCommandList* cl = dx_context.get_free_copy_command_list();
+		cl->transition_barrier(texture, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
 
-		uint64 requiredSize = GetRequiredIntermediateSize(texture->resource.Get(), firstSubresource, numSubresources);
+		uint64 required_size = GetRequiredIntermediateSize(texture->resource.Get(), first_subresource, num_subresources);
 
-		dx_resource intermediateResource;
+		DXResource intermediate_resource;
 
-		auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(requiredSize);
+		auto buffer_desc = CD3DX12_RESOURCE_DESC::Buffer(required_size);
 
 #if !USE_D3D12_BLOCK_ALLOCATOR
 
-		auto heapDesc = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		checkResult(dxContext.device->CreateCommittedResource(
-			&heapDesc,
+		auto heap_desc = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		checkResult(dx_context.device->CreateCommittedResource(
+			&heap_desc,
 			D3D12_HEAP_FLAG_NONE,
-			&bufferDesc,
+			&buffer_desc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			0,
-			IID_PPV_ARGS(&intermediateResource)
+			IID_PPV_ARGS(&intermediate_resource)
 		));
 #else
-		D3D12MA::ALLOCATION_DESC allocationDesc = {};
-		allocationDesc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
+		D3D12MA::ALLOCATION_DESC allocation_desc = {};
+		allocation_desc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
 
 		D3D12MA::Allocation* allocation;
-		checkResult(dxContext.memoryAllocator->CreateResource(
-			&allocationDesc,
-			&bufferDesc,
+		checkResult(dx_context.memory_allocator->CreateResource(
+			&allocation_desc,
+			&buffer_desc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			0,
 			&allocation,
-			IID_PPV_ARGS(&intermediateResource)));
-		dxContext.retire(allocation);
+			IID_PPV_ARGS(&intermediate_resource)));
+		dx_context.retire(allocation);
 #endif
 
-		UpdateSubresources<128>(cl->commandList.Get(), texture->resource.Get(), intermediateResource.Get(), 0, firstSubresource, numSubresources, subresourceData);
-		dxContext.retire(intermediateResource);
+		UpdateSubresources<128>(cl->command_list.Get(), texture->resource.Get(), intermediate_resource.Get(), 0, first_subresource, num_subresources, subresource_data);
+		dx_context.retire(intermediate_resource);
 
 		// We are omitting the transition to common here, since the resource automatically decays to common state after being accessed on a copy queue.
 		//cl->transitionBarrier(texture, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
 
-		dxContext.executeCommandList(cl);
+		dx_context.execute_command_list(cl);
 	}
 
-	static void initializeTexture(ref<dx_texture> result, D3D12_RESOURCE_DESC textureDesc, D3D12_SUBRESOURCE_DATA* subresourceData, uint32 numSubresources, D3D12_RESOURCE_STATES initialState, bool mipUAVs)
+	static void initialize_texture(ref<DXTexture> result, D3D12_RESOURCE_DESC texture_desc, D3D12_SUBRESOURCE_DATA* subresource_data, uint32 num_subresources, D3D12_RESOURCE_STATES initial_state, bool mip_uavs)
 	{
-		result->requestedNumMipLevels = textureDesc.MipLevels;
+		result->requested_num_mip_levels = texture_desc.MipLevels;
 
-		uint32 maxNumMipLevels = (uint32)log2((float)max((uint32)textureDesc.Width, textureDesc.Height)) + 1;
-		textureDesc.MipLevels = min(maxNumMipLevels, result->requestedNumMipLevels);
+		uint32 max_num_mip_levels = (uint32)log2((float)max((uint32)texture_desc.Width, texture_desc.Height)) + 1;
+		texture_desc.MipLevels = min(max_num_mip_levels, result->requested_num_mip_levels);
 
-		D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport;
-		formatSupport.Format = textureDesc.Format;
-		checkResult(dxContext.device->CheckFeatureSupport(
+		D3D12_FEATURE_DATA_FORMAT_SUPPORT format_support;
+		format_support.Format = texture_desc.Format;
+		checkResult(dx_context.device->CheckFeatureSupport(
 			D3D12_FEATURE_FORMAT_SUPPORT,
-			&formatSupport,
+			&format_support,
 			sizeof(D3D12_FEATURE_DATA_FORMAT_SUPPORT)));
 
-		result->supportsRTV = (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) && formatSupportsRTV(formatSupport);
-		result->supportsDSV = (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) && formatSupportsDSV(formatSupport);
-		result->supportsUAV = (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) && formatSupportsUAV(formatSupport);
-		result->supportsSRV = formatSupportsSRV(formatSupport);
+		result->supports_rtv = (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) && format_supports_rtv(format_support);
+		result->supports_dsv = (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) && format_supports_dsv(format_support);
+		result->supports_uav = (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) && format_supports_uav(format_support);
+		result->supports_srv = format_supports_srv(format_support);
 
-		if (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && !result->supportsRTV)
+		if (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && !result->supports_rtv)
 		{
 			std::cerr << "Warning. Requested RTV, but not supported by format.\n";
 			__debugbreak();
 		}
 
-		if (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL && !result->supportsDSV)
+		if (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL && !result->supports_dsv)
 		{
 			std::cerr << "Warning. Requested DSV, but not supported by format.\n";
 			__debugbreak();
 		}
 
-		if (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS && !result->supportsUAV)
+		if (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS && !result->supports_uav)
 		{
 			std::cerr << "Warning. Requested UAV, but not supported by format.\n";
 			__debugbreak();
@@ -418,22 +418,22 @@ namespace era_engine
 		// Create
 #if !USE_D3D12_BLOCK_ALLOCATOR
 
-		auto heapDesc = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		checkResult(dxContext.device->CreateCommittedResource(&heapDesc,
+		auto heap_desc = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+		checkResult(dx_context.device->CreateCommittedResource(&heap_desc,
 			D3D12_HEAP_FLAG_NONE,
-			&textureDesc,
-			initialState,
+			&texture_desc,
+			initial_state,
 			0,
 			IID_PPV_ARGS(&result->resource)));
 #else
-		D3D12MA::ALLOCATION_DESC allocationDesc = {};
-		allocationDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
+		D3D12MA::ALLOCATION_DESC allocation_desc = {};
+		allocation_desc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
 
 		D3D12MA::Allocation* allocation;
-		checkResult(dxContext.memoryAllocator->CreateResource(
-			&allocationDesc,
-			&textureDesc,
-			initialState,
+		checkResult(dx_context.memory_allocator->CreateResource(
+			&allocation_desc,
+			&texture_desc,
+			initial_state,
 			0,
 			&allocation,
 			IID_PPV_ARGS(&result->resource)));
@@ -441,431 +441,431 @@ namespace era_engine
 		result->allocation = allocation;
 #endif
 
-		result->numMipLevels = result->resource->GetDesc().MipLevels;
+		result->num_mip_levels = result->resource->GetDesc().MipLevels;
 
-		result->format = textureDesc.Format;
-		result->width = (uint32)textureDesc.Width;
-		result->height = textureDesc.Height;
-		result->depth = textureDesc.DepthOrArraySize;
+		result->format = texture_desc.Format;
+		result->width = (uint32)texture_desc.Width;
+		result->height = texture_desc.Height;
+		result->depth = texture_desc.DepthOrArraySize;
 
-		result->initialState = initialState;
+		result->initial_state = initial_state;
 
 		// Upload
-		if (subresourceData)
+		if (subresource_data)
 		{
-			uploadTextureSubresourceData(result, subresourceData, 0, numSubresources);
+			upload_texture_subresource_data(result, subresource_data, 0, num_subresources);
 		}
 
-		uint32 numUAVMips = 0;
-		if (result->supportsUAV)
+		uint32 num_uav_mips = 0;
+		if (result->supports_uav)
 		{
-			numUAVMips = (mipUAVs ? result->numMipLevels : 1);
+			num_uav_mips = (mip_uavs ? result->num_mip_levels : 1);
 		}
-		result->srvUavAllocation = dxContext.srvUavAllocator.allocate(1 + numUAVMips);
+		result->srv_uav_allocation = dx_context.srv_uav_allocator.allocate(1 + num_uav_mips);
 
 		// SRV
-		if (textureDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+		if (texture_desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
 		{
-			result->defaultSRV = dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(0)).createVolumeTextureSRV(result);
+			result->default_srv = DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(0)).create_volume_texture_srv(result);
 		}
-		else if (textureDesc.DepthOrArraySize == 6)
+		else if (texture_desc.DepthOrArraySize == 6)
 		{
-			result->defaultSRV = dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(0)).createCubemapSRV(result);
+			result->default_srv = DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(0)).create_cubemap_srv(result);
 		}
 		else
 		{
-			result->defaultSRV = dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(0)).create2DTextureSRV(result);
+			result->default_srv = DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(0)).create_2d_texture_srv(result);
 		}
 
 		// RTV
-		if (result->supportsRTV)
+		if (result->supports_rtv)
 		{
-			result->rtvAllocation = dxContext.rtvAllocator.allocate(textureDesc.DepthOrArraySize);
-			for (uint32 i = 0; i < textureDesc.DepthOrArraySize; ++i)
+			result->rtv_allocation = dx_context.rtv_allocator.allocate(texture_desc.DepthOrArraySize);
+			for (uint32 i = 0; i < texture_desc.DepthOrArraySize; ++i)
 			{
-				dx_rtv_descriptor_handle(result->rtvAllocation.cpuAt(i)).create2DTextureRTV(result, i);
+				DXRTVDescriptorHandle(result->rtv_allocation.cpu_at(i)).create_2d_texture_rtv(result, i);
 			}
-			result->defaultRTV = result->rtvAllocation.cpuAt(0);
+			result->default_rtv = result->rtv_allocation.cpu_at(0);
 		}
 
 		// UAV
-		if (result->supportsUAV)
+		if (result->supports_uav)
 		{
-			result->defaultUAV = result->srvUavAllocation.cpuAt(1);
+			result->default_uav = result->srv_uav_allocation.cpu_at(1);
 
-			for (uint32 i = 0; i < numUAVMips; ++i)
+			for (uint32 i = 0; i < num_uav_mips; ++i)
 			{
-				if (textureDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+				if (texture_desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
 				{
-					dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(1 + i)).createVolumeTextureUAV(result, i);
+					DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(1 + i)).create_volume_texture_uav(result, i);
 				}
-				else if (textureDesc.DepthOrArraySize == 6)
+				else if (texture_desc.DepthOrArraySize == 6)
 				{
-					dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(1 + i)).createCubemapUAV(result, i);
+					DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(1 + i)).create_cubemap_uav(result, i);
 				}
 				else
 				{
-					dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(1 + i)).create2DTextureUAV(result, i);
+					DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(1 + i)).create_2d_texture_uav(result, i);
 				}
 			}
 		}
 	}
 
-	NODISCARD ref<dx_texture> createTexture(D3D12_RESOURCE_DESC textureDesc, D3D12_SUBRESOURCE_DATA* subresourceData, uint32 numSubresources, D3D12_RESOURCE_STATES initialState, bool mipUAVs)
+	NODISCARD ref<DXTexture> create_texture(D3D12_RESOURCE_DESC texture_desc, D3D12_SUBRESOURCE_DATA* subresource_data, uint32 num_subresources, D3D12_RESOURCE_STATES initial_state, bool mip_uavs)
 	{
-		ref<dx_texture> result = make_ref<dx_texture>();
-		initializeTexture(result, textureDesc, subresourceData, numSubresources, initialState, mipUAVs);
+		ref<DXTexture> result = make_ref<DXTexture>();
+		initialize_texture(result, texture_desc, subresource_data, num_subresources, initial_state, mip_uavs);
 		return result;
 	}
 
-	NODISCARD ref<dx_texture> createTexture(const void* data, uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips, bool allowRenderTarget, bool allowUnorderedAccess, D3D12_RESOURCE_STATES initialState, bool mipUAVs)
+	NODISCARD ref<DXTexture> create_texture(const void* data, uint32 width, uint32 height, DXGI_FORMAT format, bool allocate_mips, bool allow_render_target, bool allow_unordered_access, D3D12_RESOURCE_STATES initial_state, bool mip_uavs)
 	{
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE
-			| (allowRenderTarget ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : D3D12_RESOURCE_FLAG_NONE)
-			| (allowUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE)
+			| (allow_render_target ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : D3D12_RESOURCE_FLAG_NONE)
+			| (allow_unordered_access ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE)
 			;
 
-		uint32 numMips = allocateMips ? 0 : 1;
-		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 1, numMips, 1, 0, flags);
+		uint32 num_mips = allocate_mips ? 0 : 1;
+		CD3DX12_RESOURCE_DESC texture_desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 1, num_mips, 1, 0, flags);
 
 		if (data)
 		{
-			uint32 formatSize = getFormatSize(textureDesc.Format);
+			uint32 format_size = get_format_size(texture_desc.Format);
 
 			D3D12_SUBRESOURCE_DATA subresource;
-			subresource.RowPitch = width * formatSize;
-			subresource.SlicePitch = width * height * formatSize;
+			subresource.RowPitch = width * format_size;
+			subresource.SlicePitch = width * height * format_size;
 			subresource.pData = data;
 
-			return createTexture(textureDesc, &subresource, 1, initialState, mipUAVs);
+			return create_texture(texture_desc, &subresource, 1, initial_state, mip_uavs);
 		}
 		else
 		{
-			return createTexture(textureDesc, 0, 0, initialState, mipUAVs);
+			return create_texture(texture_desc, 0, 0, initial_state, mip_uavs);
 		}
 	}
 
-	NODISCARD dx_tiled_texture createTiledTexture(D3D12_RESOURCE_DESC textureDesc, D3D12_RESOURCE_STATES initialState, bool mipUAVs)
+	NODISCARD DXTiledTexture create_tiled_texture(D3D12_RESOURCE_DESC texture_desc, D3D12_RESOURCE_STATES initial_state, bool mip_uavs)
 	{
-		ref<dx_texture> result = make_ref<dx_texture>();
+		ref<DXTexture> result = make_ref<DXTexture>();
 
-		result->requestedNumMipLevels = textureDesc.MipLevels;
+		result->requested_num_mip_levels = texture_desc.MipLevels;
 
-		uint32 maxNumMipLevels = (uint32)log2((float)max((uint32)textureDesc.Width, textureDesc.Height)) + 1;
-		textureDesc.MipLevels = min(maxNumMipLevels, result->requestedNumMipLevels);
-		textureDesc.Layout = D3D12_TEXTURE_LAYOUT_64KB_UNDEFINED_SWIZZLE;
+		uint32 max_num_mip_levels = (uint32)log2((float)max((uint32)texture_desc.Width, texture_desc.Height)) + 1;
+		texture_desc.MipLevels = min(max_num_mip_levels, result->requested_num_mip_levels);
+		texture_desc.Layout = D3D12_TEXTURE_LAYOUT_64KB_UNDEFINED_SWIZZLE;
 
-		D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport;
-		formatSupport.Format = textureDesc.Format;
-		checkResult(dxContext.device->CheckFeatureSupport(
+		D3D12_FEATURE_DATA_FORMAT_SUPPORT format_support;
+		format_support.Format = texture_desc.Format;
+		checkResult(dx_context.device->CheckFeatureSupport(
 			D3D12_FEATURE_FORMAT_SUPPORT,
-			&formatSupport,
+			&format_support,
 			sizeof(D3D12_FEATURE_DATA_FORMAT_SUPPORT)));
 
-		result->supportsRTV = (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) && formatSupportsRTV(formatSupport);
-		result->supportsDSV = (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) && formatSupportsDSV(formatSupport);
-		result->supportsUAV = (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) && formatSupportsUAV(formatSupport);
-		result->supportsSRV = formatSupportsSRV(formatSupport);
+		result->supports_rtv = (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) && format_supports_rtv(format_support);
+		result->supports_dsv = (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) && format_supports_dsv(format_support);
+		result->supports_uav = (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) && format_supports_uav(format_support);
+		result->supports_srv = format_supports_srv(format_support);
 
-		if (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && !result->supportsRTV)
+		if (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && !result->supports_rtv)
 		{
 			std::cerr << "Warning. Requested RTV, but not supported by format.\n";
 			__debugbreak();
 		}
 
-		if (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL && !result->supportsDSV)
+		if (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL && !result->supports_dsv)
 		{
 			std::cerr << "Warning. Requested DSV, but not supported by format.\n";
 			__debugbreak();
 		}
 
-		if (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS && !result->supportsUAV)
+		if (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS && !result->supports_uav)
 		{
 			std::cerr << "Warning. Requested UAV, but not supported by format.\n";
 			__debugbreak();
 		}
 
 		// Create
-		checkResult(dxContext.device->CreateReservedResource(
-			&textureDesc,
-			initialState,
+		checkResult(dx_context.device->CreateReservedResource(
+			&texture_desc,
+			initial_state,
 			0,
 			IID_PPV_ARGS(&result->resource)));
 
-		result->numMipLevels = result->resource->GetDesc().MipLevels;
+		result->num_mip_levels = result->resource->GetDesc().MipLevels;
 
-		result->format = textureDesc.Format;
-		result->width = (uint32)textureDesc.Width;
-		result->height = textureDesc.Height;
-		result->depth = textureDesc.DepthOrArraySize;
+		result->format = texture_desc.Format;
+		result->width = (uint32)texture_desc.Width;
+		result->height = texture_desc.Height;
+		result->depth = texture_desc.DepthOrArraySize;
 
-		result->initialState = initialState;
+		result->initial_state = initial_state;
 
-		uint32 numUAVMips = 0;
-		if (result->supportsUAV)
+		uint32 num_uav_mips = 0;
+		if (result->supports_uav)
 		{
-			numUAVMips = (mipUAVs ? result->numMipLevels : 1);
+			num_uav_mips = (mip_uavs ? result->num_mip_levels : 1);
 		}
-		result->srvUavAllocation = dxContext.srvUavAllocator.allocate(1 + numUAVMips);
+		result->srv_uav_allocation = dx_context.srv_uav_allocator.allocate(1 + num_uav_mips);
 
 		// SRV
-		if (textureDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+		if (texture_desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
 		{
-			result->defaultSRV = dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(0)).createVolumeTextureSRV(result);
+			result->default_srv = DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(0)).create_volume_texture_srv(result);
 		}
-		else if (textureDesc.DepthOrArraySize == 6)
+		else if (texture_desc.DepthOrArraySize == 6)
 		{
-			result->defaultSRV = dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(0)).createCubemapSRV(result);
+			result->default_srv = DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(0)).create_cubemap_srv(result);
 		}
 		else
 		{
-			result->defaultSRV = dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(0)).create2DTextureSRV(result);
+			result->default_srv = DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(0)).create_2d_texture_srv(result);
 		}
 
 		// RTV
-		if (result->supportsRTV)
+		if (result->supports_rtv)
 		{
-			result->rtvAllocation = dxContext.rtvAllocator.allocate(textureDesc.DepthOrArraySize);
-			for (uint32 i = 0; i < textureDesc.DepthOrArraySize; ++i)
+			result->rtv_allocation = dx_context.rtv_allocator.allocate(texture_desc.DepthOrArraySize);
+			for (uint32 i = 0; i < texture_desc.DepthOrArraySize; ++i)
 			{
-				dx_rtv_descriptor_handle(result->rtvAllocation.cpuAt(i)).create2DTextureRTV(result, i);
+				DXRTVDescriptorHandle(result->rtv_allocation.cpu_at(i)).create_2d_texture_rtv(result, i);
 			}
-			result->defaultRTV = result->rtvAllocation.cpuAt(0);
+			result->default_rtv = result->rtv_allocation.cpu_at(0);
 		}
 
 		// UAV
-		if (result->supportsUAV)
+		if (result->supports_uav)
 		{
-			result->defaultUAV = result->srvUavAllocation.cpuAt(1);
+			result->default_uav = result->srv_uav_allocation.cpu_at(1);
 
-			for (uint32 i = 0; i < numUAVMips; ++i)
+			for (uint32 i = 0; i < num_uav_mips; ++i)
 			{
-				if (textureDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+				if (texture_desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
 				{
-					dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(1 + i)).createVolumeTextureUAV(result, i);
+					DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(1 + i)).create_volume_texture_uav(result, i);
 				}
-				else if (textureDesc.DepthOrArraySize == 6)
+				else if (texture_desc.DepthOrArraySize == 6)
 				{
-					dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(1 + i)).createCubemapUAV(result, i);
+					DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(1 + i)).create_cubemap_uav(result, i);
 				}
 				else
 				{
-					dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(1 + i)).create2DTextureUAV(result, i);
+					DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(1 + i)).create_2d_texture_uav(result, i);
 				}
 			}
 		}
 
-		dx_tiled_texture tiled;
+		DXTiledTexture tiled;
 		tiled.texture = result;
 
-		uint32 numTiles = 0;
-		D3D12_TILE_SHAPE tileShape = {};
-		uint32 subresourceCount = result->numMipLevels;
-		std::vector<D3D12_SUBRESOURCE_TILING> tilings(subresourceCount);
-		D3D12_PACKED_MIP_INFO packedMipInfo;
+		uint32 num_tiles = 0;
+		D3D12_TILE_SHAPE tile_shape = {};
+		uint32 subresource_count = result->num_mip_levels;
+		std::vector<D3D12_SUBRESOURCE_TILING> tilings(subresource_count);
+		D3D12_PACKED_MIP_INFO packed_mip_info;
 
-		dxContext.device->GetResourceTiling(result->resource.Get(), &numTiles, &packedMipInfo, &tileShape, &subresourceCount, 0, &tilings[0]);
+		dx_context.device->GetResourceTiling(result->resource.Get(), &num_tiles, &packed_mip_info, &tile_shape, &subresource_count, 0, &tilings[0]);
 
-		tiled.tileShape = tileShape;
-		tiled.mipDescs.resize(result->numMipLevels);
-		tiled.numStandard = packedMipInfo.NumStandardMips;
-		tiled.numPacked = packedMipInfo.NumPackedMips;
+		tiled.tile_shape = tile_shape;
+		tiled.mip_descs.resize(result->num_mip_levels);
+		tiled.num_standard = packed_mip_info.NumStandardMips;
+		tiled.num_packed = packed_mip_info.NumPackedMips;
 
-		ASSERT(tiled.numStandard + tiled.numPacked == result->numMipLevels);
+		ASSERT(tiled.num_standard + tiled.num_packed == result->num_mip_levels);
 
-		for (uint32 i = 0; i < result->numMipLevels; ++i)
+		for (uint32 i = 0; i < result->num_mip_levels; ++i)
 		{
-			auto& mip = tiled.mipDescs[i];
+			auto& mip = tiled.mip_descs[i];
 
-			mip.startCoordinate = CD3DX12_TILED_RESOURCE_COORDINATE(0, 0, 0, i);
-			mip.regionSize.Width = tilings[i].WidthInTiles;
-			mip.regionSize.Height = tilings[i].HeightInTiles;
-			mip.regionSize.Depth = tilings[i].DepthInTiles;
-			mip.regionSize.NumTiles = tilings[i].WidthInTiles * tilings[i].HeightInTiles * tilings[i].DepthInTiles;
-			mip.regionSize.UseBox = true;
+			mip.start_coordinate = CD3DX12_TILED_RESOURCE_COORDINATE(0, 0, 0, i);
+			mip.region_size.Width = tilings[i].WidthInTiles;
+			mip.region_size.Height = tilings[i].HeightInTiles;
+			mip.region_size.Depth = tilings[i].DepthInTiles;
+			mip.region_size.NumTiles = tilings[i].WidthInTiles * tilings[i].HeightInTiles * tilings[i].DepthInTiles;
+			mip.region_size.UseBox = true;
 
 			// Handle packed mips
-			if (i >= packedMipInfo.NumStandardMips)
+			if (i >= packed_mip_info.NumStandardMips)
 			{
 				// All packed mips have the same start coordinate and size
-				mip.startCoordinate.Subresource = packedMipInfo.NumStandardMips;
-				mip.regionSize.NumTiles = packedMipInfo.NumTilesForPackedMips;
-				mip.regionSize.UseBox = false;
+				mip.start_coordinate.Subresource = packed_mip_info.NumStandardMips;
+				mip.region_size.NumTiles = packed_mip_info.NumTilesForPackedMips;
+				mip.region_size.UseBox = false;
 			}
 		}
 
 		return tiled;
 	}
 
-	NODISCARD dx_tiled_texture createTiledTexture(uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips, bool allowRenderTarget, bool allowUnorderedAccess, D3D12_RESOURCE_STATES initialState, bool mipUAVs)
+	NODISCARD DXTiledTexture create_tiled_texture(uint32 width, uint32 height, DXGI_FORMAT format, bool allocate_mips, bool allow_render_target, bool allow_unordered_access, D3D12_RESOURCE_STATES initial_state, bool mip_uavs)
 	{
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE
-			| (allowRenderTarget ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : D3D12_RESOURCE_FLAG_NONE)
-			| (allowUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE);
+			| (allow_render_target ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : D3D12_RESOURCE_FLAG_NONE)
+			| (allow_unordered_access ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE);
 
-		uint32 numMips = allocateMips ? 0 : 1;
-		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 1, numMips, 1, 0, flags, D3D12_TEXTURE_LAYOUT_64KB_UNDEFINED_SWIZZLE);
+		uint32 num_mips = allocate_mips ? 0 : 1;
+		CD3DX12_RESOURCE_DESC texture_desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 1, num_mips, 1, 0, flags, D3D12_TEXTURE_LAYOUT_64KB_UNDEFINED_SWIZZLE);
 
-		return createTiledTexture(textureDesc, initialState, mipUAVs);
+		return create_tiled_texture(texture_desc, initial_state, mip_uavs);
 	}
 
-	static void initializeDepthTexture(ref<dx_texture> result, uint32 width, uint32 height, DXGI_FORMAT format, uint32 arrayLength, D3D12_RESOURCE_STATES initialState, bool allocateDescriptors)
+	static void initialize_depth_texture(ref<DXTexture> result, uint32 width, uint32 height, DXGI_FORMAT format, uint32 array_length, D3D12_RESOURCE_STATES initial_state, bool allocate_descriptors)
 	{
-		result->numMipLevels = 1;
-		result->requestedNumMipLevels = 1;
+		result->num_mip_levels = 1;
+		result->requested_num_mip_levels = 1;
 		result->format = format;
 		result->width = width;
 		result->height = height;
-		result->depth = arrayLength;
+		result->depth = array_length;
 
-		D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport;
-		formatSupport.Format = format;
-		checkResult(dxContext.device->CheckFeatureSupport(
+		D3D12_FEATURE_DATA_FORMAT_SUPPORT format_support;
+		format_support.Format = format;
+		checkResult(dx_context.device->CheckFeatureSupport(
 			D3D12_FEATURE_FORMAT_SUPPORT,
-			&formatSupport,
+			&format_support,
 			sizeof(D3D12_FEATURE_DATA_FORMAT_SUPPORT)));
 
-		result->supportsRTV = false;
-		result->supportsDSV = allocateDescriptors && formatSupportsDSV(formatSupport);
-		result->supportsUAV = false;
-		result->supportsSRV = allocateDescriptors && formatSupportsSRV(formatSupport);
+		result->supports_rtv = false;
+		result->supports_dsv = allocate_descriptors && format_supports_dsv(format_support);
+		result->supports_uav = false;
+		result->supports_srv = allocate_descriptors && format_supports_srv(format_support);
 
-		result->initialState = initialState;
+		result->initial_state = initial_state;
 
-		if (allocateDescriptors)
+		if (allocate_descriptors)
 		{
-			ASSERT(result->supportsDSV);
+			ASSERT(result->supports_dsv);
 
-			result->dsvAllocation = dxContext.dsvAllocator.allocate();
-			result->defaultDSV = dx_dsv_descriptor_handle(result->dsvAllocation.cpuAt(0)).create2DTextureDSV(result);
+			result->dsv_allocation = dx_context.dsv_allocator.allocate();
+			result->default_dsv = DXDSVDescriptorHandle(result->dsv_allocation.cpu_at(0)).create_2d_texture_dsv(result);
 
-			if (arrayLength == 1)
+			if (array_length == 1)
 			{
-				result->srvUavAllocation = dxContext.srvUavAllocator.allocate(1 + isStencilFormat(format));
-				result->defaultSRV = dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(0)).createDepthTextureSRV(result);
+				result->srv_uav_allocation = dx_context.srv_uav_allocator.allocate(1 + is_stencil_format(format));
+				result->default_srv = DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(0)).create_depth_texture_srv(result);
 
-				if (isStencilFormat(format))
+				if (is_stencil_format(format))
 				{
-					result->stencilSRV = dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(1)).createStencilTextureSRV(result);
+					result->stencil_srv = DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(1)).create_stencil_texture_srv(result);
 				}
 			}
 			else
 			{
-				result->srvUavAllocation = dxContext.srvUavAllocator.allocate();
-				result->defaultSRV = dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(0)).createDepthTextureArraySRV(result);
+				result->srv_uav_allocation = dx_context.srv_uav_allocator.allocate();
+				result->default_srv = DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(0)).create_depth_texture_array_srv(result);
 			}
 		}
 	}
 
-	NODISCARD ref<dx_texture> createDepthTexture(uint32 width, uint32 height, DXGI_FORMAT format, uint32 arrayLength, D3D12_RESOURCE_STATES initialState)
+	NODISCARD ref<DXTexture> create_depth_texture(uint32 width, uint32 height, DXGI_FORMAT format, uint32 array_length, D3D12_RESOURCE_STATES initial_state)
 	{
-		ref<dx_texture> result = make_ref<dx_texture>();
+		ref<DXTexture> result = make_ref<DXTexture>();
 
-		D3D12_CLEAR_VALUE optimizedClearValue = {};
-		optimizedClearValue.Format = format;
-		optimizedClearValue.DepthStencil = { 1.f, 0 };
+		D3D12_CLEAR_VALUE optimized_clear_value = {};
+		optimized_clear_value.Format = format;
+		optimized_clear_value.DepthStencil = { 1.f, 0 };
 
-		D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(getTypelessFormat(format), width, height,
-			arrayLength, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+		D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(get_typeless_format(format), width, height,
+			array_length, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
 #if !USE_D3D12_BLOCK_ALLOCATOR
 
-		auto heapDesc = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		checkResult(dxContext.device->CreateCommittedResource(
-			&heapDesc,
+		auto heap_desc = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+		checkResult(dx_context.device->CreateCommittedResource(
+			&heap_desc,
 			D3D12_HEAP_FLAG_NONE,
 			&desc,
-			initialState,
-			&optimizedClearValue,
+			initial_state,
+			&optimized_clear_value,
 			IID_PPV_ARGS(&result->resource)
 		));
 #else
-		D3D12MA::ALLOCATION_DESC allocationDesc = {};
-		allocationDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
+		D3D12MA::ALLOCATION_DESC allocation_desc = {};
+		allocation_desc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
 
 		D3D12MA::Allocation* allocation;
-		checkResult(dxContext.memoryAllocator->CreateResource(
-			&allocationDesc,
+		checkResult(dx_context.memory_allocator->CreateResource(
+			&allocation_desc,
 			&desc,
-			initialState,
-			&optimizedClearValue,
+			initial_state,
+			&optimized_clear_value,
 			&allocation,
 			IID_PPV_ARGS(&result->resource)));
 
 		result->allocation = allocation;
 #endif
 
-		initializeDepthTexture(result, width, height, format, arrayLength, initialState, true);
+		initialize_depth_texture(result, width, height, format, array_length, initial_state, true);
 
 		return result;
 	}
 
-	NODISCARD ref<dx_texture> createCubeTexture(const void* data, uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips, bool allowRenderTarget, bool allowUnorderedAccess, D3D12_RESOURCE_STATES initialState, bool mipUAVs)
+	NODISCARD ref<DXTexture> create_cube_texture(const void* data, uint32 width, uint32 height, DXGI_FORMAT format, bool allocate_mips, bool allow_render_target, bool allow_unordered_access, D3D12_RESOURCE_STATES initial_state, bool mip_uavs)
 	{
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE
-			| (allowRenderTarget ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : D3D12_RESOURCE_FLAG_NONE)
-			| (allowUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE)
+			| (allow_render_target ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : D3D12_RESOURCE_FLAG_NONE)
+			| (allow_unordered_access ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE)
 			;
 
-		uint32 numMips = allocateMips ? 0 : 1;
-		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 6, numMips, 1, 0, flags);
+		uint32 num_mips = allocate_mips ? 0 : 1;
+		CD3DX12_RESOURCE_DESC texture_desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 6, num_mips, 1, 0, flags);
 
 		if (data)
 		{
-			uint32 formatSize = getFormatSize(textureDesc.Format);
+			uint32 format_size = get_format_size(texture_desc.Format);
 
 			D3D12_SUBRESOURCE_DATA subresources[6];
 			for (uint32 i = 0; i < 6; ++i)
 			{
 				auto& subresource = subresources[i];
-				subresource.RowPitch = width * formatSize;
-				subresource.SlicePitch = width * height * formatSize;
+				subresource.RowPitch = width * format_size;
+				subresource.SlicePitch = width * height * format_size;
 				subresource.pData = data;
 			}
 
-			return createTexture(textureDesc, subresources, 6, initialState, mipUAVs);
+			return create_texture(texture_desc, subresources, 6, initial_state, mip_uavs);
 		}
 		else
 		{
-			return createTexture(textureDesc, 0, 0, initialState, mipUAVs);
+			return create_texture(texture_desc, 0, 0, initial_state, mip_uavs);
 		}
 	}
 
-	NODISCARD ref<dx_texture> createVolumeTexture(const void* data, uint32 width, uint32 height, uint32 depth, DXGI_FORMAT format, bool allowUnorderedAccess, D3D12_RESOURCE_STATES initialState)
+	NODISCARD ref<DXTexture> create_volume_texture(const void* data, uint32 width, uint32 height, uint32 depth, DXGI_FORMAT format, bool allow_unordered_access, D3D12_RESOURCE_STATES initial_state)
 	{
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE
-			| (allowUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE)
+			| (allow_unordered_access ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE)
 			;
 
-		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex3D(format, width, height, depth, 1, flags);
+		CD3DX12_RESOURCE_DESC texture_desc = CD3DX12_RESOURCE_DESC::Tex3D(format, width, height, depth, 1, flags);
 
 		if (data)
 		{
-			uint32 formatSize = getFormatSize(textureDesc.Format);
+			uint32 format_size = get_format_size(texture_desc.Format);
 
 			D3D12_SUBRESOURCE_DATA* subresources = (D3D12_SUBRESOURCE_DATA*)alloca(sizeof(D3D12_SUBRESOURCE_DATA) * depth);
 			for (uint32 i = 0; i < depth; ++i)
 			{
 				auto& subresource = subresources[i];
-				subresource.RowPitch = width * formatSize;
-				subresource.SlicePitch = width * height * formatSize;
+				subresource.RowPitch = width * format_size;
+				subresource.SlicePitch = width * height * format_size;
 				subresource.pData = data;
 			}
 
-			return createTexture(textureDesc, subresources, depth, initialState);
+			return create_texture(texture_desc, subresources, depth, initial_state);
 		}
 		else
 		{
-			return createTexture(textureDesc, 0, 0, initialState);
+			return create_texture(texture_desc, 0, 0, initial_state);
 		}
 	}
 
-	void dx_texture::setName(const wchar* name) const
+	void DXTexture::set_name(const wchar* name) const
 	{
 		checkResult(resource->SetName(name));
 	}
 
-	std::wstring dx_texture::getName() const
+	std::wstring DXTexture::get_name() const
 	{
 		if (!resource)
 			return L"";
@@ -878,127 +878,127 @@ namespace era_engine
 		return name;
 	}
 
-	NODISCARD ref<dx_texture> createPlacedTexture(dx_heap heap, uint64 offset, uint32 width, uint32 height, DXGI_FORMAT format, bool allocateMips, bool allowRenderTarget, bool allowUnorderedAccess, D3D12_RESOURCE_STATES initialState, bool mipUAVs)
+	NODISCARD ref<DXTexture> create_placed_texture(DXHeap heap, uint64 offset, uint32 width, uint32 height, DXGI_FORMAT format, bool allocate_mips, bool allow_render_target, bool allow_unordered_access, D3D12_RESOURCE_STATES initial_state, bool mip_uavs)
 	{
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE
-			| (allowRenderTarget ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : D3D12_RESOURCE_FLAG_NONE)
-			| (allowUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE)
+			| (allow_render_target ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : D3D12_RESOURCE_FLAG_NONE)
+			| (allow_unordered_access ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE)
 			;
 
-		uint32 numMips = allocateMips ? 0 : 1;
-		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 1, numMips, 1, 0, flags);
+		uint32 num_mips = allocate_mips ? 0 : 1;
+		CD3DX12_RESOURCE_DESC texture_desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 1, num_mips, 1, 0, flags);
 
-		return createPlacedTexture(heap, offset, textureDesc, initialState, mipUAVs);
+		return create_placed_texture(heap, offset, texture_desc, initial_state, mip_uavs);
 	}
 
-	NODISCARD ref<dx_texture> createPlacedTexture(dx_heap heap, uint64 offset, D3D12_RESOURCE_DESC textureDesc, D3D12_RESOURCE_STATES initialState, bool mipUAVs)
+	NODISCARD ref<DXTexture> create_placed_texture(DXHeap heap, uint64 offset, D3D12_RESOURCE_DESC texture_desc, D3D12_RESOURCE_STATES initial_state, bool mip_uavs)
 	{
-		ref<dx_texture> result = make_ref<dx_texture>();
+		ref<DXTexture> result = make_ref<DXTexture>();
 
-		result->requestedNumMipLevels = textureDesc.MipLevels;
+		result->requested_num_mip_levels = texture_desc.MipLevels;
 
-		uint32 maxNumMipLevels = (uint32)log2((float)max((uint32)textureDesc.Width, textureDesc.Height)) + 1;
-		textureDesc.MipLevels = min(maxNumMipLevels, result->requestedNumMipLevels);
+		uint32 max_num_mip_levels = (uint32)log2((float)max((uint32)texture_desc.Width, texture_desc.Height)) + 1;
+		texture_desc.MipLevels = min(max_num_mip_levels, result->requested_num_mip_levels);
 
-		D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport;
-		formatSupport.Format = textureDesc.Format;
-		checkResult(dxContext.device->CheckFeatureSupport(
+		D3D12_FEATURE_DATA_FORMAT_SUPPORT format_support;
+		format_support.Format = texture_desc.Format;
+		checkResult(dx_context.device->CheckFeatureSupport(
 			D3D12_FEATURE_FORMAT_SUPPORT,
-			&formatSupport,
+			&format_support,
 			sizeof(D3D12_FEATURE_DATA_FORMAT_SUPPORT)));
 
-		result->supportsRTV = (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) && formatSupportsRTV(formatSupport);
-		result->supportsDSV = (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) && formatSupportsDSV(formatSupport);
-		result->supportsUAV = (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) && formatSupportsUAV(formatSupport);
-		result->supportsSRV = formatSupportsSRV(formatSupport);
+		result->supports_rtv = (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) && format_supports_rtv(format_support);
+		result->supports_dsv = (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) && format_supports_dsv(format_support);
+		result->supports_uav = (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) && format_supports_uav(format_support);
+		result->supports_srv = format_supports_srv(format_support);
 
-		if (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && !result->supportsRTV)
+		if (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && !result->supports_rtv)
 		{
 			std::cerr << "Warning. Requested RTV, but not supported by format.\n";
 			__debugbreak();
 		}
 
-		if (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL && !result->supportsDSV)
+		if (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL && !result->supports_dsv)
 		{
 			std::cerr << "Warning. Requested DSV, but not supported by format.\n";
 			__debugbreak();
 		}
 
-		if (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS && !result->supportsUAV)
+		if (texture_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS && !result->supports_uav)
 		{
 			std::cerr << "Warning. Requested UAV, but not supported by format.\n";
 			__debugbreak();
 		}
 
 		// Create
-		checkResult(dxContext.device->CreatePlacedResource(
+		checkResult(dx_context.device->CreatePlacedResource(
 			heap.Get(),
 			offset,
-			&textureDesc,
-			initialState,
+			&texture_desc,
+			initial_state,
 			0,
 			IID_PPV_ARGS(&result->resource)
 		));
 
-		result->numMipLevels = result->resource->GetDesc().MipLevels;
+		result->num_mip_levels = result->resource->GetDesc().MipLevels;
 
-		result->format = textureDesc.Format;
-		result->width = (uint32)textureDesc.Width;
-		result->height = textureDesc.Height;
-		result->depth = textureDesc.DepthOrArraySize;
+		result->format = texture_desc.Format;
+		result->width = (uint32)texture_desc.Width;
+		result->height = texture_desc.Height;
+		result->depth = texture_desc.DepthOrArraySize;
 
-		result->initialState = initialState;
+		result->initial_state = initial_state;
 
-		uint32 numUAVMips = 0;
-		if (result->supportsUAV)
+		uint32 num_uav_mips = 0;
+		if (result->supports_uav)
 		{
-			numUAVMips = (mipUAVs ? result->numMipLevels : 1);
+			num_uav_mips = (mip_uavs ? result->num_mip_levels : 1);
 		}
-		result->srvUavAllocation = dxContext.srvUavAllocator.allocate(1 + numUAVMips);
+		result->srv_uav_allocation = dx_context.srv_uav_allocator.allocate(1 + num_uav_mips);
 
 		// SRV
-		if (textureDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+		if (texture_desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
 		{
-			result->defaultSRV = dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(0)).createVolumeTextureSRV(result);
+			result->default_srv = DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(0)).create_volume_texture_srv(result);
 		}
-		else if (textureDesc.DepthOrArraySize == 6)
+		else if (texture_desc.DepthOrArraySize == 6)
 		{
-			result->defaultSRV = dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(0)).createCubemapSRV(result);
+			result->default_srv = DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(0)).create_cubemap_srv(result);
 		}
 		else
 		{
-			result->defaultSRV = dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(0)).create2DTextureSRV(result);
+			result->default_srv = DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(0)).create_2d_texture_srv(result);
 		}
 
 		// RTV
-		if (result->supportsRTV)
+		if (result->supports_rtv)
 		{
-			result->rtvAllocation = dxContext.rtvAllocator.allocate(textureDesc.DepthOrArraySize);
-			for (uint32 i = 0; i < textureDesc.DepthOrArraySize; ++i)
+			result->rtv_allocation = dx_context.rtv_allocator.allocate(texture_desc.DepthOrArraySize);
+			for (uint32 i = 0; i < texture_desc.DepthOrArraySize; ++i)
 			{
-				dx_rtv_descriptor_handle(result->rtvAllocation.cpuAt(i)).create2DTextureRTV(result, i);
+				DXRTVDescriptorHandle(result->rtv_allocation.cpu_at(i)).create_2d_texture_rtv(result, i);
 			}
-			result->defaultRTV = result->rtvAllocation.cpuAt(0);
+			result->default_rtv = result->rtv_allocation.cpu_at(0);
 		}
 
 		// UAV
-		if (result->supportsUAV)
+		if (result->supports_uav)
 		{
-			result->defaultUAV = result->srvUavAllocation.cpuAt(1);
+			result->default_uav = result->srv_uav_allocation.cpu_at(1);
 
-			for (uint32 i = 0; i < numUAVMips; ++i)
+			for (uint32 i = 0; i < num_uav_mips; ++i)
 			{
-				if (textureDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+				if (texture_desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
 				{
-					dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(1 + i)).createVolumeTextureUAV(result, i);
+					DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(1 + i)).create_volume_texture_uav(result, i);
 				}
-				else if (textureDesc.DepthOrArraySize == 6)
+				else if (texture_desc.DepthOrArraySize == 6)
 				{
-					dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(1 + i)).createCubemapUAV(result, i);
+					DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(1 + i)).create_cubemap_uav(result, i);
 				}
 				else
 				{
-					dx_cpu_descriptor_handle(result->srvUavAllocation.cpuAt(1 + i)).create2DTextureUAV(result, i);
+					DXCPUDescriptorHandle(result->srv_uav_allocation.cpu_at(1 + i)).create_2d_texture_uav(result, i);
 				}
 			}
 		}
@@ -1006,73 +1006,73 @@ namespace era_engine
 		return result;
 	}
 
-	NODISCARD ref<dx_texture> createPlacedDepthTexture(dx_heap heap, uint64 offset, uint32 width, uint32 height, DXGI_FORMAT format, uint32 arrayLength, D3D12_RESOURCE_STATES initialState, bool allowDepthStencil)
+	NODISCARD ref<DXTexture> create_placed_depth_texture(DXHeap heap, uint64 offset, uint32 width, uint32 height, DXGI_FORMAT format, uint32 array_length, D3D12_RESOURCE_STATES initial_state, bool allow_depth_stencil)
 	{
-		ref<dx_texture> result = make_ref<dx_texture>();
+		ref<DXTexture> result = make_ref<DXTexture>();
 
-		D3D12_CLEAR_VALUE optimizedClearValue = {};
-		optimizedClearValue.Format = format;
-		optimizedClearValue.DepthStencil = { 1.f, 0 };
+		D3D12_CLEAR_VALUE optimized_clear_value = {};
+		optimized_clear_value.Format = format;
+		optimized_clear_value.DepthStencil = { 1.f, 0 };
 
-		D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(getTypelessFormat(format), width, height,
-			arrayLength, 1, 1, 0, allowDepthStencil ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL : D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+		D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(get_typeless_format(format), width, height,
+			array_length, 1, 1, 0, allow_depth_stencil ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL : D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
 
-		checkResult(dxContext.device->CreatePlacedResource(
+		checkResult(dx_context.device->CreatePlacedResource(
 			heap.Get(),
 			offset,
 			&desc,
-			initialState,
-			allowDepthStencil ? &optimizedClearValue : 0,
+			initial_state,
+			allow_depth_stencil ? &optimized_clear_value : 0,
 			IID_PPV_ARGS(&result->resource)
 		));
 
-		initializeDepthTexture(result, width, height, format, arrayLength, initialState, allowDepthStencil);
+		initialize_depth_texture(result, width, height, format, array_length, initial_state, allow_depth_stencil);
 
 		return result;
 	}
 
-	NODISCARD ref<dx_texture> createPlacedDepthTexture(dx_heap heap, uint64 offset, D3D12_RESOURCE_DESC textureDesc, D3D12_RESOURCE_STATES initialState)
+	NODISCARD ref<DXTexture> create_placed_depth_texture(DXHeap heap, uint64 offset, D3D12_RESOURCE_DESC texture_desc, D3D12_RESOURCE_STATES initial_state)
 	{
-		ref<dx_texture> result = make_ref<dx_texture>();
+		ref<DXTexture> result = make_ref<DXTexture>();
 
-		D3D12_CLEAR_VALUE optimizedClearValue = {};
-		optimizedClearValue.Format = textureDesc.Format;
-		optimizedClearValue.DepthStencil = { 1.f, 0 };
+		D3D12_CLEAR_VALUE optimized_clear_value = {};
+		optimized_clear_value.Format = texture_desc.Format;
+		optimized_clear_value.DepthStencil = { 1.f, 0 };
 
-		checkResult(dxContext.device->CreatePlacedResource(
+		checkResult(dx_context.device->CreatePlacedResource(
 			heap.Get(),
 			offset,
-			&textureDesc,
-			initialState,
-			&optimizedClearValue,
+			&texture_desc,
+			initial_state,
+			&optimized_clear_value,
 			IID_PPV_ARGS(&result->resource)
 		));
 
-		initializeDepthTexture(result, (uint32)textureDesc.Width, textureDesc.Height, textureDesc.Format, textureDesc.DepthOrArraySize, initialState, true);
+		initialize_depth_texture(result, (uint32)texture_desc.Width, texture_desc.Height, texture_desc.Format, texture_desc.DepthOrArraySize, initial_state, true);
 
 		return result;
 	}
 
-	static void retire(dx_resource resource, dx_descriptor_allocation srvUavAllocation, dx_descriptor_allocation rtvAllocation, dx_descriptor_allocation dsvAllocation)
+	static void retire(DXResource resource, DXDescriptorAllocation srv_uav_allocation, DXDescriptorAllocation rtv_allocation, DXDescriptorAllocation dsv_allocation)
 	{
-		texture_grave grave;
+		TextureGrave grave;
 		grave.resource = resource;
-		grave.srvUavAllocation = srvUavAllocation;
-		grave.rtvAllocation = rtvAllocation;
-		grave.dsvAllocation = dsvAllocation;
-		dxContext.retire(std::move(grave));
+		grave.srv_uav_allocation = srv_uav_allocation;
+		grave.rtv_allocation = rtv_allocation;
+		grave.dsv_allocation = dsv_allocation;
+		dx_context.retire(std::move(grave));
 	}
 
-	dx_texture::~dx_texture()
+	DXTexture::~DXTexture()
 	{
-		retire(resource, srvUavAllocation, rtvAllocation, dsvAllocation);
+		retire(resource, srv_uav_allocation, rtv_allocation, dsv_allocation);
 		if (allocation)
 		{
-			dxContext.retire(allocation);
+			dx_context.retire(allocation);
 		}
 	}
 
-	void resizeTexture(ref<dx_texture> texture, uint32 newWidth, uint32 newHeight, D3D12_RESOURCE_STATES initialState)
+	void resize_texture(ref<DXTexture> texture, uint32 new_width, uint32 new_height, D3D12_RESOURCE_STATES initial_state)
 	{
 		if (!texture)
 			return;
@@ -1082,143 +1082,143 @@ namespace era_engine
 		texture->resource->GetPrivateData(WKPDID_D3DDebugObjectNameW, &size, name);
 		name[min((uint32)arraysize(name) - 1, size)] = 0;
 
-		bool hasMipUAVs = texture->srvUavAllocation.count > 2;
+		bool has_mip_uavs = texture->srv_uav_allocation.count > 2;
 
-		retire(texture->resource, texture->srvUavAllocation, texture->rtvAllocation, texture->dsvAllocation);
+		retire(texture->resource, texture->srv_uav_allocation, texture->rtv_allocation, texture->dsv_allocation);
 		if (texture->allocation)
 		{
-			dxContext.retire(texture->allocation);
+			dx_context.retire(texture->allocation);
 		}
 
 		D3D12_RESOURCE_DESC desc = texture->resource->GetDesc();
 		texture->resource.Reset();
 
-		D3D12_RESOURCE_STATES state = (initialState == -1) ? texture->initialState : initialState;
-		D3D12_CLEAR_VALUE optimizedClearValue = {};
-		D3D12_CLEAR_VALUE* clearValue = 0;
+		D3D12_RESOURCE_STATES state = (initial_state == -1) ? texture->initial_state : initial_state;
+		D3D12_CLEAR_VALUE optimized_clear_value = {};
+		D3D12_CLEAR_VALUE* clear_value = 0;
 
 		if (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL)
 		{
-			optimizedClearValue.Format = texture->format;
-			optimizedClearValue.DepthStencil = { 1.f, 0 };
-			clearValue = &optimizedClearValue;
+			optimized_clear_value.Format = texture->format;
+			optimized_clear_value.DepthStencil = { 1.f, 0 };
+			clear_value = &optimized_clear_value;
 		}
 
-		uint32 maxNumMipLevels = (uint32)log2((float)max(newWidth, newHeight)) + 1;
-		desc.MipLevels = min(maxNumMipLevels, texture->requestedNumMipLevels);
+		uint32 max_num_mip_levels = (uint32)log2((float)max(new_width, new_height)) + 1;
+		desc.MipLevels = min(max_num_mip_levels, texture->requested_num_mip_levels);
 
-		desc.Width = newWidth;
-		desc.Height = newHeight;
-		texture->width = newWidth;
-		texture->height = newHeight;
+		desc.Width = new_width;
+		desc.Height = new_height;
+		texture->width = new_width;
+		texture->height = new_height;
 
 #if !USE_D3D12_BLOCK_ALLOCATOR
 
-		auto heapDesc = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		checkResult(dxContext.device->CreateCommittedResource(
-			&heapDesc,
+		auto heap_desc = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+		checkResult(dx_context.device->CreateCommittedResource(
+			&heap_desc,
 			D3D12_HEAP_FLAG_NONE,
 			&desc,
 			state,
-			clearValue,
+			clear_value,
 			IID_PPV_ARGS(&texture->resource)
 		));
 #else
-		D3D12MA::ALLOCATION_DESC allocationDesc = {};
-		allocationDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
+		D3D12MA::ALLOCATION_DESC allocation_desc = {};
+		allocation_desc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
 
 		D3D12MA::Allocation* allocation;
-		checkResult(dxContext.memoryAllocator->CreateResource(
-			&allocationDesc,
+		checkResult(dx_context.memory_allocator->CreateResource(
+			&allocation_desc,
 			&desc,
 			state,
-			clearValue,
+			clear_value,
 			&allocation,
 			IID_PPV_ARGS(&texture->resource)));
 
 		texture->allocation = allocation;
 #endif
 
-		texture->numMipLevels = texture->resource->GetDesc().MipLevels;
+		texture->num_mip_levels = texture->resource->GetDesc().MipLevels;
 
-		uint32 numUAVMips = 0;
-		if (texture->supportsUAV)
+		uint32 num_uav_mips = 0;
+		if (texture->supports_uav)
 		{
-			numUAVMips = (hasMipUAVs ? texture->numMipLevels : 1);
+			num_uav_mips = (has_mip_uavs ? texture->num_mip_levels : 1);
 		}
 
 		// RTV
-		if (texture->supportsRTV)
+		if (texture->supports_rtv)
 		{
-			texture->rtvAllocation = dxContext.rtvAllocator.allocate();
-			texture->defaultRTV = dx_rtv_descriptor_handle(texture->rtvAllocation.cpuAt(0)).create2DTextureRTV(texture);
+			texture->rtv_allocation = dx_context.rtv_allocator.allocate();
+			texture->default_rtv = DXRTVDescriptorHandle(texture->rtv_allocation.cpu_at(0)).create_2d_texture_rtv(texture);
 		}
 
 		// DSV & SRV
-		if (texture->supportsDSV)
+		if (texture->supports_dsv)
 		{
-			texture->dsvAllocation = dxContext.dsvAllocator.allocate(1);
-			texture->defaultDSV = dx_dsv_descriptor_handle(texture->dsvAllocation.cpuAt(0)).create2DTextureDSV(texture);
+			texture->dsv_allocation = dx_context.dsv_allocator.allocate(1);
+			texture->default_dsv = DXDSVDescriptorHandle(texture->dsv_allocation.cpu_at(0)).create_2d_texture_dsv(texture);
 
-			texture->srvUavAllocation = dxContext.srvUavAllocator.allocate(1 + isStencilFormat(texture->format));
+			texture->srv_uav_allocation = dx_context.srv_uav_allocator.allocate(1 + is_stencil_format(texture->format));
 			if (texture->depth == 1)
 			{
-				texture->defaultSRV = dx_cpu_descriptor_handle(texture->srvUavAllocation.cpuAt(0)).createDepthTextureSRV(texture);
+				texture->default_srv = DXCPUDescriptorHandle(texture->srv_uav_allocation.cpu_at(0)).create_depth_texture_srv(texture);
 			}
 			else
 			{
-				texture->defaultSRV = dx_cpu_descriptor_handle(texture->srvUavAllocation.cpuAt(0)).createDepthTextureArraySRV(texture);
+				texture->default_srv = DXCPUDescriptorHandle(texture->srv_uav_allocation.cpu_at(0)).create_depth_texture_array_srv(texture);
 			}
 
-			if (isStencilFormat(texture->format))
+			if (is_stencil_format(texture->format))
 			{
-				texture->stencilSRV = dx_cpu_descriptor_handle(texture->srvUavAllocation.cpuAt(1)).createStencilTextureSRV(texture);
+				texture->stencil_srv = DXCPUDescriptorHandle(texture->srv_uav_allocation.cpu_at(1)).create_stencil_texture_srv(texture);
 			}
 		}
 		else
 		{
-			texture->srvUavAllocation = dxContext.srvUavAllocator.allocate(1 + numUAVMips);
+			texture->srv_uav_allocation = dx_context.srv_uav_allocator.allocate(1 + num_uav_mips);
 
 			if (desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
 			{
-				texture->defaultSRV = dx_cpu_descriptor_handle(texture->srvUavAllocation.cpuAt(0)).createVolumeTextureSRV(texture);
+				texture->default_srv = DXCPUDescriptorHandle(texture->srv_uav_allocation.cpu_at(0)).create_volume_texture_srv(texture);
 			}
 			else if (texture->depth == 6)
 			{
-				texture->defaultSRV = dx_cpu_descriptor_handle(texture->srvUavAllocation.cpuAt(0)).createCubemapSRV(texture);
+				texture->default_srv = DXCPUDescriptorHandle(texture->srv_uav_allocation.cpu_at(0)).create_cubemap_srv(texture);
 			}
 			else
 			{
-				texture->defaultSRV = dx_cpu_descriptor_handle(texture->srvUavAllocation.cpuAt(0)).create2DTextureSRV(texture);
+				texture->default_srv = DXCPUDescriptorHandle(texture->srv_uav_allocation.cpu_at(0)).create_2d_texture_srv(texture);
 			}
 
 			// UAV
-			if (texture->supportsUAV)
+			if (texture->supports_uav)
 			{
-				texture->defaultUAV = texture->srvUavAllocation.cpuAt(1);
+				texture->default_uav = texture->srv_uav_allocation.cpu_at(1);
 
-				for (uint32 i = 0; i < numUAVMips; ++i)
+				for (uint32 i = 0; i < num_uav_mips; ++i)
 				{
 					if (desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
 					{
-						dx_cpu_descriptor_handle(texture->srvUavAllocation.cpuAt(1 + i)).createVolumeTextureUAV(texture, i);
+						DXCPUDescriptorHandle(texture->srv_uav_allocation.cpu_at(1 + i)).create_volume_texture_uav(texture, i);
 					}
 					else if (desc.DepthOrArraySize == 6)
 					{
-						dx_cpu_descriptor_handle(texture->srvUavAllocation.cpuAt(1 + i)).createCubemapUAV(texture, i);
+						DXCPUDescriptorHandle(texture->srv_uav_allocation.cpu_at(1 + i)).create_cubemap_uav(texture, i);
 					}
 					else
 					{
-						dx_cpu_descriptor_handle(texture->srvUavAllocation.cpuAt(1 + i)).create2DTextureUAV(texture, i);
+						DXCPUDescriptorHandle(texture->srv_uav_allocation.cpu_at(1 + i)).create_2d_texture_uav(texture, i);
 					}
 				}
 			}
 		}
 
-		texture->setName(name);
+		texture->set_name(name);
 	}
 
-	texture_grave::~texture_grave()
+	TextureGrave::~TextureGrave()
 	{
 		wchar name[128];
 
@@ -1228,103 +1228,103 @@ namespace era_engine
 			resource->GetPrivateData(WKPDID_D3DDebugObjectNameW, &size, name);
 			name[min((uint32)arraysize(name) - 1, size)] = 0;
 
-			dxContext.srvUavAllocator.free(srvUavAllocation);
-			dxContext.rtvAllocator.free(rtvAllocation);
-			dxContext.dsvAllocator.free(dsvAllocation);
+			dx_context.srv_uav_allocator.free(srv_uav_allocation);
+			dx_context.rtv_allocator.free(rtv_allocation);
+			dx_context.dsv_allocator.free(dsv_allocation);
 		}
 	}
 
-	void saveTextureToFile(const ref<dx_texture>& texture, const fs::path& path)
+	void save_texture_to_file(const ref<DXTexture>& texture, const fs::path& path)
 	{
-		saveTextureToFile(texture->resource, texture->width, texture->height, texture->format, path);
+		save_texture_to_file(texture->resource, texture->width, texture->height, texture->format, path);
 	}
 
-	void saveTextureToFile(dx_resource texture, uint32 width, uint32 height, DXGI_FORMAT format, const fs::path& path)
+	void save_texture_to_file(DXResource texture, uint32 width, uint32 height, DXGI_FORMAT format, const fs::path& path)
 	{
 		ASSERT(format == DXGI_FORMAT_R8G8B8A8_UNORM);
-		uint32 outputSize = 4;
+		uint32 output_size = 4;
 
-		uint32 readbackPitch = align_to(width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
-		ref<dx_buffer> readbackBuffer = createReadbackBuffer(outputSize, readbackPitch * height);
+		uint32 readback_pitch = align_to(width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+		ref<DXBuffer> readback_buffer = create_readback_buffer(output_size, readback_pitch * height);
 
-		dx_command_list* cl = dxContext.getFreeRenderCommandList();
+		DXCommandList* cl = dx_context.get_free_render_command_list();
 
-		cl->transitionBarrier(texture, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_GENERIC_READ);
-		cl->copyTextureRegionToBuffer(texture, width, format, readbackBuffer, 0, 0, 0, width, height);
-		cl->transitionBarrier(texture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COMMON);
+		cl->transition_barrier(texture, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_GENERIC_READ);
+		cl->copy_texture_region_to_buffer(texture, width, format, readback_buffer, 0, 0, 0, width, height);
+		cl->transition_barrier(texture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COMMON);
 
-		uint64 fence = dxContext.executeCommandList(cl);
+		uint64 fence = dx_context.execute_command_list(cl);
 
-		dxContext.renderQueue.waitForFence(fence);
+		dx_context.render_queue.wait_for_fence(fence);
 
-		uint8* output = new uint8[width * height * outputSize];
+		uint8* output = new uint8[width * height * output_size];
 
 		uint8* dest = output;
-		uint32 destPitch = outputSize * width;
+		uint32 dest_pitch = output_size * width;
 
-		uint8* result = (uint8*)mapBuffer(readbackBuffer, true);
-		uint32 resultPitch = (uint32)align_to(outputSize * width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+		uint8* result = (uint8*)map_buffer(readback_buffer, true);
+		uint32 result_pitch = (uint32)align_to(output_size * width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 
 		for (uint32 h = 0; h < height; ++h)
 		{
-			memcpy(dest, result, destPitch);
-			result += resultPitch;
-			dest += destPitch;
+			memcpy(dest, result, dest_pitch);
+			result += result_pitch;
+			dest += dest_pitch;
 		}
 
-		unmapBuffer(readbackBuffer, false);
+		unmap_buffer(readback_buffer, false);
 
 		DirectX::Image image;
 		image.width = width;
 		image.height = height;
 		image.format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-		image.rowPitch = width * getFormatSize(image.format);
+		image.rowPitch = width * get_format_size(image.format);
 		image.slicePitch = image.rowPitch * height;
 		image.pixels = output;
 
-		saveImageToFile(path, image);
+		save_image_to_file(path, image);
 
 		delete[] output;
 	}
 
-	void copyTextureToCPUBuffer(const ref<dx_texture>& texture, void* buffer, D3D12_RESOURCE_STATES beforeAndAfterState)
+	void copy_texture_to_cpu_buffer(const ref<DXTexture>& texture, void* buffer, D3D12_RESOURCE_STATES before_and_after_state)
 	{
-		uint32 outputSize = getFormatSize(texture->format);
+		uint32 output_size = get_format_size(texture->format);
 
-		uint32 readbackPitch = align_to(texture->width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
-		ref<dx_buffer> readbackBuffer = createReadbackBuffer(outputSize, readbackPitch * texture->height);
+		uint32 readback_pitch = align_to(texture->width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+		ref<DXBuffer> readback_buffer = create_readback_buffer(output_size, readback_pitch * texture->height);
 
-		dx_command_list* cl = dxContext.getFreeRenderCommandList();
+		DXCommandList* cl = dx_context.get_free_render_command_list();
 
 		bool transition = false;
-		if ((beforeAndAfterState & D3D12_RESOURCE_STATE_COPY_SOURCE) == 0)
+		if ((before_and_after_state & D3D12_RESOURCE_STATE_COPY_SOURCE) == 0)
 		{
-			cl->transitionBarrier(texture, beforeAndAfterState, D3D12_RESOURCE_STATE_GENERIC_READ);
+			cl->transition_barrier(texture, before_and_after_state, D3D12_RESOURCE_STATE_GENERIC_READ);
 			transition = true;
 		}
-		cl->copyTextureRegionToBuffer(texture->resource, texture->width, texture->format, readbackBuffer, 0, 0, 0, texture->width, texture->height);
+		cl->copy_texture_region_to_buffer(texture->resource, texture->width, texture->format, readback_buffer, 0, 0, 0, texture->width, texture->height);
 		if (transition)
 		{
-			cl->transitionBarrier(texture, D3D12_RESOURCE_STATE_GENERIC_READ, beforeAndAfterState);
+			cl->transition_barrier(texture, D3D12_RESOURCE_STATE_GENERIC_READ, before_and_after_state);
 		}
 
-		uint64 fence = dxContext.executeCommandList(cl);
+		uint64 fence = dx_context.execute_command_list(cl);
 
-		dxContext.renderQueue.waitForFence(fence);
+		dx_context.render_queue.wait_for_fence(fence);
 
 		uint8* dest = (uint8*)buffer;
-		uint32 destPitch = outputSize * texture->width;
+		uint32 dest_pitch = output_size * texture->width;
 
-		uint8* result = (uint8*)mapBuffer(readbackBuffer, true);
-		uint32 resultPitch = (uint32)align_to(outputSize * texture->width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+		uint8* result = (uint8*)map_buffer(readback_buffer, true);
+		uint32 result_pitch = (uint32)align_to(output_size * texture->width, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 
 		for (uint32 h = 0; h < texture->height; ++h)
 		{
-			memcpy(dest, result, destPitch);
-			result += resultPitch;
-			dest += destPitch;
+			memcpy(dest, result, dest_pitch);
+			result += result_pitch;
+			dest += dest_pitch;
 		}
 
-		unmapBuffer(readbackBuffer, false);
+		unmap_buffer(readback_buffer, false);
 	}
 }

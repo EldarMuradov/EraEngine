@@ -13,173 +13,173 @@
 
 namespace era_engine
 {
-	enum raytracing_as_rebuild_mode
+	enum RaytracingASRebuildMode
 	{
-		raytracing_as_rebuild,
-		raytracing_as_refit,
+		RAYTRACING_AS_REBUILD,
+		RAYTRACING_AS_REFIT,
 	};
 
-	enum raytracing_geometry_type
+	enum RaytracingGeometryType
 	{
-		raytracing_mesh_geometry,
-		raytracing_procedural_geometry,
+		RAYTRACING_MESH_GEOMETRY,
+		RAYTRACING_PROCEDURAL_GEOMETRY,
 	};
 
-	struct raytracing_blas_geometry
+	struct RaytracingBLASGeometry
 	{
-		raytracing_geometry_type type;
+		RaytracingGeometryType type;
 
 		// Only valid for mesh geometry
-		vertex_buffer_group vertexBuffer;
-		ref<dx_index_buffer> indexBuffer;
+		VertexBufferGroup vertex_buffer;
+		ref<DXIndexBuffer> index_buffer;
 		SubmeshInfo submesh;
 	};
 
-	struct raytracing_blas
+	struct RaytracingBLAS
 	{
-		ref<dx_buffer> scratch;
-		ref<dx_buffer> blas;
+		ref<DXBuffer> scratch;
+		ref<DXBuffer> blas;
 
-		std::vector<raytracing_blas_geometry> geometries;
+		std::vector<RaytracingBLASGeometry> geometries;
 	};
 
-	struct raytracing_blas_builder
+	struct RaytracingBLASBuilder
 	{
-		raytracing_blas_builder& push(vertex_buffer_group vertexBuffer, ref<dx_index_buffer> indexBuffer, SubmeshInfo submesh, bool opaque = true, const trs& localTransform = trs::identity);
-		raytracing_blas_builder& push(const std::vector<bounding_box>& boundingBoxes, bool opaque);
-		NODISCARD ref<raytracing_blas> finish(bool keepScratch = false);
+		RaytracingBLASBuilder& push(VertexBufferGroup vertex_buffer, ref<DXIndexBuffer> index_buffer, SubmeshInfo submesh, bool opaque = true, const trs& local_transform = trs::identity);
+		RaytracingBLASBuilder& push(const std::vector<BoundingBox>& bounding_boxes, bool opaque);
+		NODISCARD ref<RaytracingBLAS> finish(bool keep_scratch = false);
 
 	private:
-		std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometryDescs;
+		std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometry_descs;
 
-		std::vector<raytracing_blas_geometry> geometries;
+		std::vector<RaytracingBLASGeometry> geometries;
 
-		std::vector<mat4> localTransforms;				// For meshes
-		std::vector<D3D12_RAYTRACING_AABB> aabbDescs;	// For procedurals
+		std::vector<mat4> local_transforms;				// For meshes
+		std::vector<D3D12_RAYTRACING_AABB> aabb_descs;	// For procedurals
 	};
 
-	struct raytracing_object_type
+	struct RaytracingObjectType
 	{
-		ref<raytracing_blas> blas;
-		uint32 instanceContributionToHitGroupIndex;
+		ref<RaytracingBLAS> blas;
+		uint32 instance_contribution_to_hit_group_index;
 	};
 
 	class RaytraceComponent final : public Component
 	{
 	public:
 		RaytraceComponent() = default;
-		RaytraceComponent(ref<Entity::EcsData> _data, const raytracing_object_type& _type);
+		RaytraceComponent(ref<Entity::EcsData> _data, const RaytracingObjectType& _type);
 		virtual ~RaytraceComponent();
 
 		ERA_VIRTUAL_REFLECT(Component)
 	public:
-		raytracing_object_type type;
+		RaytracingObjectType type;
 	};
 
-	struct raytracing_shader
+	struct RaytracingShader
 	{
 		void* mesh;
 		void* procedural;
 	};
 
-	struct raytracing_shader_binding_table_desc
+	struct RaytracingShaderBindingTableDesc
 	{
-		uint32 entrySize;
+		uint32 entry_size;
 
 		void* raygen;
 		std::vector<void*> miss;
-		std::vector<raytracing_shader> hitGroups;
+		std::vector<RaytracingShader> hit_groups;
 
-		uint32 raygenOffset;
-		uint32 missOffset;
-		uint32 hitOffset;
+		uint32 raygen_offset;
+		uint32 miss_offset;
+		uint32 hit_offset;
 	};
 
-	struct dx_raytracing_pipeline
+	struct DXRaytracingPipeline
 	{
-		dx_raytracing_pipeline_state pipeline;
-		dx_root_signature rootSignature;
+		DXRaytracingPipelineState pipeline;
+		DXRootSignature root_signature;
 
-		raytracing_shader_binding_table_desc shaderBindingTableDesc;
+		RaytracingShaderBindingTableDesc shader_binding_table_desc;
 	};
 
-	struct raytracing_mesh_hitgroup
+	struct RaytracingMeshHitgroup
 	{
-		const wchar* closestHit;	// Optional
-		const wchar* anyHit;		// Optional
+		const wchar* closest_hit;	// Optional
+		const wchar* any_hit;		// Optional
 	};
 
-	struct raytracing_procedural_hitgroup
+	struct RaytracingProceduralHitgroup
 	{
 		const wchar* intersection;
-		const wchar* closestHit;	// Optional
-		const wchar* anyHit;		// Optional
+		const wchar* closest_hit;	// Optional
+		const wchar* any_hit;		// Optional
 	};
 
-	struct raytracing_pipeline_builder
+	struct RaytracingPipelineBuilder
 	{
-		raytracing_pipeline_builder(const wchar* shaderFilename, uint32 payloadSize, uint32 maxRecursionDepth, bool hasMeshGeometry, bool hasProceduralGeometry);
+		RaytracingPipelineBuilder(const wchar* shader_filename, uint32 payload_size, uint32 max_recursion_depth, bool has_mesh_geometry, bool has_procedural_geometry);
 
-		raytracing_pipeline_builder& globalRootSignature(D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc);
-		raytracing_pipeline_builder& raygen(const wchar* entryPoint, D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {});
+		RaytracingPipelineBuilder& global_root_signature(D3D12_ROOT_SIGNATURE_DESC root_signature_desc);
+		RaytracingPipelineBuilder& raygen(const wchar* entry_point, D3D12_ROOT_SIGNATURE_DESC root_signature_desc = {});
 
 		// The root signature describes parameters for both hit shaders. Miss will not get any arguments for now
-		raytracing_pipeline_builder& hitgroup(const wchar* groupName, const wchar* miss,
-			raytracing_mesh_hitgroup mesh, D3D12_ROOT_SIGNATURE_DESC meshRootSignatureDesc = {},
-			raytracing_procedural_hitgroup procedural = {}, D3D12_ROOT_SIGNATURE_DESC proceduralRootSignatureDesc = {});
+		RaytracingPipelineBuilder& hitgroup(const wchar* group_name, const wchar* miss,
+			RaytracingMeshHitgroup mesh, D3D12_ROOT_SIGNATURE_DESC mesh_root_signature_desc = {},
+			RaytracingProceduralHitgroup procedural = {}, D3D12_ROOT_SIGNATURE_DESC procedural_root_signature_desc = {});
 
-		dx_raytracing_pipeline finish();
+		DXRaytracingPipeline finish();
 
 	private:
-		struct raytracing_root_signature
+		struct RaytracingRootSignature
 		{
-			dx_root_signature rootSignature;
-			ID3D12RootSignature* rootSignaturePtr;
+			DXRootSignature root_signature;
+			ID3D12RootSignature* root_signature_ptr;
 		};
 
-		raytracing_root_signature createRaytracingRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc);
+		RaytracingRootSignature create_raytracing_root_signature(const D3D12_ROOT_SIGNATURE_DESC& desc);
 
-		raytracing_root_signature globalRS;
-		raytracing_root_signature raygenRS;
+		RaytracingRootSignature global_rs;
+		RaytracingRootSignature raygen_rs;
 
-		std::vector<const wchar*> emptyAssociations;
-		std::vector<const wchar*> allExports;
+		std::vector<const wchar*> empty_associations;
+		std::vector<const wchar*> all_exports;
 
-		const wchar* raygenEntryPoint;
-		std::vector<const wchar*> missEntryPoints;
+		const wchar* raygen_entry_point;
+		std::vector<const wchar*> miss_entry_points;
 
-		std::vector<const wchar*> shaderNameDefines;
+		std::vector<const wchar*> shader_name_defines;
 
-		uint32 payloadSize;
-		uint32 maxRecursionDepth;
+		uint32 payload_size;
+		uint32 max_recursion_depth;
 
-		bool hasMeshGeometry;
-		bool hasProceduralGeometry;
+		bool has_mesh_geometry;
+		bool has_procedural_geometry;
 
-		uint32 tableEntrySize = 0;
+		uint32 table_entry_size = 0;
 
-		const wchar* shaderFilename;
+		const wchar* shader_filename;
 
 		// Since these store pointers to each other, they are not resizable arrays
 		D3D12_STATE_SUBOBJECT subobjects[512];
-		uint32 numSubobjects = 0;
+		uint32 num_subobjects = 0;
 
 		D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION associations[16];
-		uint32 numAssociations = 0;
+		uint32 num_associations = 0;
 
-		D3D12_HIT_GROUP_DESC hitGroups[8];
-		uint32 numHitGroups = 0;
+		D3D12_HIT_GROUP_DESC hit_groups[8];
+		uint32 num_hit_groups = 0;
 
 		D3D12_EXPORT_DESC exports[24];
-		uint32 numExports = 0;
+		uint32 num_exports = 0;
 
-		const wchar* stringBuffer[128];
-		uint32 numStrings = 0;
+		const wchar* string_buffer[128];
+		uint32 num_strings = 0;
 
-		raytracing_root_signature rootSignatures[8];
-		uint32 numRootSignatures = 0;
+		RaytracingRootSignature root_signatures[8];
+		uint32 num_root_signatures = 0;
 
-		std::wstring groupNameStorage[8];
-		uint32 groupNameStoragePtr = 0;
+		std::wstring group_name_storage[8];
+		uint32 group_name_storage_ptr = 0;
 	};
 }

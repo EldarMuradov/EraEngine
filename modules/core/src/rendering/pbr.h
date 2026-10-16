@@ -7,47 +7,47 @@
 
 namespace era_engine
 {
-	struct dx_command_list;
+	struct DXCommandList;
 
-	struct pbr_render_data
+	struct PBRRenderData
 	{
-		D3D12_GPU_VIRTUAL_ADDRESS transformPtr;
-		dx_vertex_buffer_group_view vertexBuffer;
-		dx_index_buffer_view indexBuffer;
+		D3D12_GPU_VIRTUAL_ADDRESS transform_ptr;
+		DXVertexBufferGroupView vertex_buffer;
+		DXIndexBufferView index_buffer;
 		SubmeshInfo submesh;
 
-		ref<pbr_material> material;
+		ref<PBRMaterial> material;
 
-		uint32 numInstances;
+		uint32 num_instances;
 	};
 
-	struct pbr_pipeline
+	struct PBRPipeline
 	{
 		static void initialize();
 
-		static void initialize(std::string_view vsPath, std::string_view pbrPsPath, std::string_view prbTransparentPsPath);
+		static void initialize(std::string_view vs_path, std::string_view pbr_ps_path, std::string_view prb_transparent_ps_path);
 
-		PIPELINE_RENDER_DECL(pbr_render_data);
+		PIPELINE_RENDER_DECL(PBRRenderData);
 
-		struct opaque;
-		struct opaque_double_sided;
-		struct transparent;
+		struct Opaque;
+		struct OpaqueDoubleSided;
+		struct Transparent;
 
 	protected:
-		static void setupPBRCommon(dx_command_list* cl, const common_render_data& common);
+		static void setup_pbr_common(DXCommandList* cl, const CommonRenderData& common);
 	};
 
-	struct pbr_pipeline::opaque : pbr_pipeline
+	struct PBRPipeline::Opaque : PBRPipeline
 	{
 		PIPELINE_SETUP_DECL;
 	};
 
-	struct pbr_pipeline::opaque_double_sided : pbr_pipeline
+	struct PBRPipeline::OpaqueDoubleSided : PBRPipeline
 	{
 		PIPELINE_SETUP_DECL;
 	};
 
-	struct pbr_pipeline::transparent : pbr_pipeline
+	struct PBRPipeline::Transparent : PBRPipeline
 	{
 		PIPELINE_SETUP_DECL;
 	};

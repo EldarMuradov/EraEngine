@@ -14,40 +14,40 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API smoke_particle_system : particle_system
+	struct ERA_CORE_API SmokeParticleSystem : ParticleSystem
 	{
-		static void initializePipeline();
+		static void initialize_pipeline();
 
-		smoke_particle_system() {}
-		smoke_particle_system(uint32 maxNumParticles, float emitRate, const std::string& textureFilename, uint32 cols, uint32 rows, vec3 pos);
-		void initialize(uint32 maxNumParticles, float emitRate, const std::string& textureFilename, uint32 cols, uint32 rows, vec3 pos);
+		SmokeParticleSystem() {}
+		SmokeParticleSystem(uint32 max_num_particles, float emit_rate, const std::string& texture_filename, uint32 cols, uint32 rows, vec3 pos);
+		void initialize(uint32 max_num_particles, float emit_rate, const std::string& texture_filename, uint32 cols, uint32 rows, vec3 pos);
 
-		virtual void update(struct dx_command_list* cl, const common_particle_simulation_data& common, float dt) override;
-		void render(transparent_render_pass* renderPass);
+		virtual void update(struct DXCommandList* cl, const CommonParticleSimulationData& common, float dt) override;
+		void render(TransparentRenderPass* render_pass);
 
-		float emitRate;
-		smoke_particle_settings settings;
+		float emit_rate;
+		SmokeParticleSettings settings;
 
 	private:
-		texture_atlas_cb atlasCB;
-		dx_texture_atlas atlas;
+		TextureAtlasCB atlas_cb;
+		DXTextureAtlas atlas;
 
 		vec3 position;
 
-		static dx_pipeline emitPipeline;
-		static dx_pipeline simulatePipeline;
-		static dx_pipeline renderPipeline;
+		static DXPipeline emit_pipeline;
+		static DXPipeline simulate_pipeline;
+		static DXPipeline render_pipeline;
 
-		struct smoke_material
+		struct SmokeMaterial
 		{
-			dx_texture_atlas atlas;
-			dx_dynamic_constant_buffer cbv;
+			DXTextureAtlas atlas;
+			DXDynamicConstantBuffer cbv;
 		};
 
-		struct smoke_pipeline : particle_render_pipeline<smoke_material>
+		struct SmokePipeline : ParticleRenderPipeline<SmokeMaterial>
 		{
 			PIPELINE_SETUP_DECL;
-			PARTICLE_PIPELINE_RENDER_DECL(smoke_material);
+			PARTICLE_PIPELINE_RENDER_DECL(SmokeMaterial);
 		};
 	};
 }

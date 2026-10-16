@@ -13,66 +13,66 @@
     "SRV(t2), " \
     "SRV(t3)"
 
-struct mesh_output
+struct MeshOutput
 {
 	float4 pos : SV_POSITION;
 	float3 color : COLOR0;
 };
 
-struct mesh_vertex
+struct MeshVertex
 {
     float3 position;
     float3 normal;
 };
 
-struct meshlet_info
+struct MeshletInfo
 {
-    uint numVertices;
-    uint firstVertex;
-    uint numPrimitives;
-    uint firstPrimitive;
+    uint num_vertices;
+    uint first_vertex;
+    uint num_primitives;
+    uint first_primitive;
 };
 
-ConstantBuffer<transform_cb> transform      : register(b0);
+ConstantBuffer<TransformCB> transform      : register(b0);
 
-StructuredBuffer<mesh_vertex> vertices      : register(t0);
-StructuredBuffer<meshlet_info> meshlets     : register(t1);
-StructuredBuffer<uint> uniqueVertexIndices  : register(t2);
-StructuredBuffer<uint> primitiveIndices     : register(t3);
+StructuredBuffer<MeshVertex> vertices      : register(t0);
+StructuredBuffer<MeshletInfo> meshlets     : register(t1);
+StructuredBuffer<uint> unique_vertex_indices  : register(t2);
+StructuredBuffer<uint> primitive_indices     : register(t3);
 
 [outputtopology("triangle")]
 [numthreads(128, 1, 1)]
 [RootSignature(MESH_RS)]
 void main(
-    in uint groupThreadID : SV_GroupThreadID, 
-    in uint groupID : SV_GroupID, 
-    out vertices mesh_output outVerts[64], 
-    out indices uint3 outIndices[126]
+    in uint group_thread_id : SV_GroupThreadID, 
+    in uint group_id : SV_GroupID, 
+    out vertices MeshOutput out_verts[64], 
+    out indices uint3 out_indices[126]
 )
 {
-    meshlet_info m = meshlets[groupID];
+    MeshletInfo m = meshlets[group_id];
 
-    SetMeshOutputCounts(m.numVertices, m.numPrimitives);
+    SetMeshOutputCounts(m.num_vertices, m.num_primitives);
 
-    if (groupThreadID < m.numPrimitives)
+    if (group_thread_id < m.num_primitives)
     {
-        uint packedPrimitive = primitiveIndices[m.firstPrimitive + groupThreadID];
+        uint packed_primitive = primitive_indices[m.first_primitive + group_thread_id];
 
         // Unpacks a 10 bits per index triangle from a 32-bit uint.
-        outIndices[groupThreadID] = uint3(packedPrimitive & 0x3FF, (packedPrimitive >> 10) & 0x3FF, (packedPrimitive >> 20) & 0x3FF);
+        out_indices[group_thread_id] = uint3(packed_primitive & 0x3FF, (packed_primitive >> 10) & 0x3FF, (packed_primitive >> 20) & 0x3FF);
     }
 
-    if (groupThreadID < m.numVertices)
+    if (group_thread_id < m.num_vertices)
     {
-        uint vertexIndex = uniqueVertexIndices[m.firstVertex + groupThreadID];
-        uint meshletIndex = groupID;
+        uint vertex_index = unique_vertex_indices[m.first_vertex + group_thread_id];
+        uint meshlet_index = group_id;
 
         // Color based on meshlet index for visualization.
-        outVerts[groupThreadID].color = float3(
-            float(meshletIndex & 1),
-            float(meshletIndex & 3) / 4,
-            float(meshletIndex & 7) / 8);
+        out_verts[group_thread_id].color = float3(
+            float(meshlet_index & 1),
+            float(meshlet_index & 3) / 4,
+            float(meshlet_index & 7) / 8);
 
-        outVerts[groupThreadID].pos = mul(transform.mvp, float4(vertices[vertexIndex].position, 1.f));
+        out_verts[group_thread_id].pos = mul(transform.mvp, float4(vertices[vertex_index].position, 1.f));
     }
 }

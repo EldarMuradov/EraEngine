@@ -11,30 +11,30 @@ namespace era_engine
 {
 	struct UserInput;
 
-	struct ERA_CORE_API runtime_camera_controller
+	struct ERA_CORE_API RuntimeCameraController
 	{
-		void initialize(render_camera* camera) { this->camera = camera; }
+		void initialize(RenderCamera* camera) { this->camera = camera; }
 
-		void update(uint32 viewportWidth, uint32 viewportHeight);
+		void update(uint32 viewport_width, uint32 viewport_height);
 
-		render_camera* camera = nullptr;
+		RenderCamera* camera = nullptr;
 	};
 
-	struct ERA_CORE_API camera_controller
+	struct ERA_CORE_API CameraController
 	{
-		void initialize(render_camera* camera) { this->camera = camera; }
+		void initialize(RenderCamera* camera) { this->camera = camera; }
 
 		// Returns true, if camera is moved, and therefore input is captured
-		bool centerCameraOnObject(const bounding_box& aabb);
-		bool update(const UserInput& input, uint32 viewportWidth, uint32 viewportHeight, float dt);
+		bool center_camera_on_object(const BoundingBox& aabb);
+		bool update(const UserInput& input, uint32 viewport_width, uint32 viewport_height, float dt);
 
-		render_camera* camera = nullptr;
+		RenderCamera* camera = nullptr;
 
 	private:
-		float orbitRadius = 10.f;
-		float centeringTime = -1.f;
+		float orbit_radius = 10.f;
+		float centering_time = -1.f;
 
-		vec3 centeringPositionStart;
-		vec3 centeringPositionTarget;
+		vec3 centering_position_start;
+		vec3 centering_position_target;
 	};
 }

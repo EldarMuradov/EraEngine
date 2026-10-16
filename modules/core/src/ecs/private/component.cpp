@@ -95,7 +95,7 @@ namespace era_engine
 	{
 		if (component == nullptr)
 		{
-			return Entity::Null;
+			return Entity::null;
 		}
 		return component->get_entity();
 	}

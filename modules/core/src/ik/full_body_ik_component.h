@@ -53,7 +53,7 @@ namespace era_engine
 		FBIKTargetComponent(ref<Entity::EcsData> _data);
 		~FBIKTargetComponent() override;
 
-		Entity::Handle owner_entity = Entity::NullHandle;
+		Entity::Handle owner_entity = Entity::null_handle;
 		uint32 effector_index = 0;
 
 		float position_weight = 1.0f;

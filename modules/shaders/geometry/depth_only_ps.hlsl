@@ -2,26 +2,26 @@
 #include "camera.hlsli"
 #include "math.hlsli"
 
-ConstantBuffer<camera_cb> camera	: register(b0, space1);
+ConstantBuffer<CameraCB> camera	: register(b0, space1);
 
-struct ps_input
+struct PSInput
 {
 	float3 ndc						: NDC;
-	float3 prevFrameNDC				: PREV_FRAME_NDC;
+	float3 prev_frame_ndc				: PREV_FRAME_NDC;
 
-	nointerpolation uint objectID	: OBJECT_ID;
+	nointerpolation uint object_id	: OBJECT_ID;
 };
 
-struct ps_output
+struct PSOutput
 {
-	float2 screenVelocity	: SV_Target0;
-	uint objectID			: SV_Target1;
+	float2 screen_velocity	: SV_Target0;
+	uint object_id			: SV_Target1;
 };
 
-ps_output main(ps_input IN)
+PSOutput main(PSInput IN)
 {
-	ps_output OUT;
-	OUT.screenVelocity = screenSpaceVelocity(IN.ndc, IN.prevFrameNDC, camera.jitter, camera.prevFrameJitter);
-	OUT.objectID = IN.objectID;
+	PSOutput OUT;
+	OUT.screen_velocity = screen_space_velocity(IN.ndc, IN.prev_frame_ndc, camera.jitter, camera.prev_frame_jitter);
+	OUT.object_id = IN.object_id;
 	return OUT;
 }

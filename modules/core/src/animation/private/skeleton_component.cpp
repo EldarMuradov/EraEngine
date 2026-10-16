@@ -75,9 +75,9 @@ namespace era_engine::animation
 	void SkeletonComponent::blend_local_transforms(const trs* local_transforms1, const trs* local_transforms2, float t, trs* out_blended_local_transforms) const
 	{
 		t = clamp01(t);
-		for (uint32 jointID = 0; jointID < (uint32)skeleton->joints.size(); ++jointID)
+		for (uint32 joint_id = 0; joint_id < (uint32)skeleton->joints.size(); ++joint_id)
 		{
-			out_blended_local_transforms[jointID] = lerp(local_transforms1[jointID], local_transforms2[jointID], t);
+			out_blended_local_transforms[joint_id] = lerp(local_transforms1[joint_id], local_transforms2[joint_id], t);
 		}
 	}
 

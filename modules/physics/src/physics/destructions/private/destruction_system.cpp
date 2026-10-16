@@ -133,7 +133,7 @@ namespace era_engine::physics
 	{
 		MeshComponent* mesh_component = entity.get_component<MeshComponent>();
 
-		ASSERT(!has_flag(mesh_component->mesh->flags, mesh_creation_flags_compact));
+		ASSERT(!has_flag(mesh_component->mesh->flags, MESH_CREATION_FLAGS_COMPACT));
 		ASSERT(destructibe_component->fracture_desc.chunks_count > 0);
 
 		if (mesh_component->mesh->load_state != AssetLoadState::LOADED ||
@@ -185,24 +185,24 @@ namespace era_engine::physics
 
 	EntityPtr DestructionSystem::build_chunk(Entity parent,
 		const trs& world_transform,
-		const ref<pbr_material>& material,
+		const ref<PBRMaterial>& material,
 		const std::pair<ref<SubmeshAsset>, ref<NvMesh>>& mesh,
 		DestructibleComponent* destructibe_component) const
 	{
-		mesh_builder builder{ mesh_creation_flags_default, mesh_index_uint32 };
+		MeshBuilder builder{ MESH_CREATION_FLAGS_DEFAULT, MESH_INDEX_UINT32 };
 
 		ref<MultiMesh> created_mesh = make_ref<MultiMesh>();
 
-		builder.pushMesh(*mesh.first, 1.0f, &created_mesh->aabb);
+		builder.push_mesh(*mesh.first, 1.0f, &created_mesh->aabb);
 
 		created_mesh->model_asset = ModelAsset();
 		created_mesh->model_asset->meshes.emplace_back().submeshes.emplace_back(*mesh.first);
 		created_mesh->model_asset->materials.emplace_back();
 		created_mesh->model_asset->meshes[0].submeshes[0].material_index = 0;
 
-		created_mesh->submeshes.push_back({ builder.endSubmesh(), {}, trs::identity, material });
+		created_mesh->submeshes.push_back({ builder.end_submesh(), {}, trs::identity, material });
 
-		created_mesh->mesh = builder.createDXMesh();
+		created_mesh->mesh = builder.create_dx_mesh();
 
 		created_mesh->load_state = AssetLoadState::LOADED;
 
@@ -249,7 +249,7 @@ namespace era_engine::physics
 
 	std::vector<EntityPtr> DestructionSystem::build_chunks(Entity parent,
 		const trs& world_transform,
-		const ref<pbr_material>& material,
+		const ref<PBRMaterial>& material,
 		const std::vector<std::pair<ref<SubmeshAsset>, ref<NvMesh>>>& meshes,
 		DestructibleComponent* destructibe_component) const
 	{

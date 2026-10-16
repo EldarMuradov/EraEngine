@@ -12,132 +12,132 @@
 
 namespace era_engine
 {
-	ref<dx_texture> render_resources::brdfTex;
-	ref<dx_texture> render_resources::whiteTexture;
-	ref<dx_texture> render_resources::blackTexture;
-	ref<dx_texture> render_resources::blackCubeTexture;
-	ref<dx_texture> render_resources::noiseTexture;
-	ref<dx_texture> render_resources::defaultNormalMap;
+	ref<DXTexture> RenderResources::brdf_tex;
+	ref<DXTexture> RenderResources::white_texture;
+	ref<DXTexture> RenderResources::black_texture;
+	ref<DXTexture> RenderResources::black_cube_texture;
+	ref<DXTexture> RenderResources::noise_texture;
+	ref<DXTexture> RenderResources::default_normal_map;
 
-	ref<dx_texture> render_resources::shadowMap;
-	ref<dx_texture> render_resources::staticShadowMapCache;
+	ref<DXTexture> RenderResources::shadow_map;
+	ref<DXTexture> RenderResources::static_shadow_map_cache;
 
-	dx_cpu_descriptor_handle render_resources::nullTextureSRV;
-	dx_cpu_descriptor_handle render_resources::nullBufferSRV;
+	DXCPUDescriptorHandle RenderResources::null_texture_srv;
+	DXCPUDescriptorHandle RenderResources::null_buffer_srv;
 
-	dx_rtv_descriptor_handle render_resources::nullScreenVelocitiesRTV;
-	dx_rtv_descriptor_handle render_resources::nullObjectIDsRTV;
+	DXRTVDescriptorHandle RenderResources::null_screen_velocities_rtv;
+	DXRTVDescriptorHandle RenderResources::null_object_ids_rtv;
 
-	dx_heap render_resources::resourceHeap;
-	std::unordered_map<uint64, render_resources::temporary_render_resources> render_resources::resourceMap;
+	DXHeap RenderResources::resource_heap;
+	std::unordered_map<uint64, RenderResources::TemporaryRenderResources> RenderResources::resource_map;
 
-	bool render_resources::dirty = false;
+	bool RenderResources::dirty = false;
 
-	void render_resources::initializeGlobalResources()
+	void RenderResources::initialize_global_resources()
 	{
 		{
 			uint8 white[] = { 255, 255, 255, 255 };
-			whiteTexture = createTexture(white, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
-			SET_NAME(whiteTexture->resource, "White");
+			white_texture = create_texture(white, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
+			SET_NAME(white_texture->resource, "White");
 		}
 		{
 			uint8 black[] = { 0, 0, 0, 255 };
-			blackTexture = createTexture(black, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
-			SET_NAME(blackTexture->resource, "Black");
+			black_texture = create_texture(black, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
+			SET_NAME(black_texture->resource, "Black");
 
-			blackCubeTexture = createCubeTexture(black, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
-			SET_NAME(blackCubeTexture->resource, "Black cube");
+			black_cube_texture = create_cube_texture(black, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
+			SET_NAME(black_cube_texture->resource, "Black cube");
 		}
 		{
 			uint8 up[] = { 128, 128, 255, 255 };
-			defaultNormalMap = createTexture(up, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
-			SET_NAME(defaultNormalMap->resource, "Default normal map");
+			default_normal_map = create_texture(up, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
+			SET_NAME(default_normal_map->resource, "Default normal map");
 		}
 
-		noiseTexture = loadTextureFromFile(get_asset_path("/resources/noise/blue_noise.dds"), image_load_flags_noncolor); // Already compressed and in DDS format.
+		noise_texture = load_texture_from_file(get_asset_path("/resources/noise/blue_noise.dds"), IMAGE_LOAD_FLAGS_NONCOLOR); // Already compressed and in DDS format.
 
-		shadowMap = createDepthTexture(SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, shadowDepthFormat, 1, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		SET_NAME(shadowMap->resource, "Shadow map");
+		shadow_map = create_depth_texture(SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, shadow_depth_format, 1, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		SET_NAME(shadow_map->resource, "Shadow map");
 
-		staticShadowMapCache = createDepthTexture(SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, shadowDepthFormat, 1, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		SET_NAME(staticShadowMapCache->resource, "Static shadow map cache");
+		static_shadow_map_cache = create_depth_texture(SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, shadow_depth_format, 1, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		SET_NAME(static_shadow_map_cache->resource, "Static shadow map cache");
 
 		{
-			dx_command_list* cl = dxContext.getFreeRenderCommandList();
-			brdfTex = integrateBRDF(cl);
-			dxContext.executeCommandList(cl);
+			DXCommandList* cl = dx_context.get_free_render_command_list();
+			brdf_tex = integrate_brdf(cl);
+			dx_context.execute_command_list(cl);
 		}
 
-		nullTextureSRV = dx_cpu_descriptor_handle(dxContext.srvUavAllocator.allocate(1).cpuAt(0)).createNullTextureSRV();
-		nullBufferSRV = dx_cpu_descriptor_handle(dxContext.srvUavAllocator.allocate(1).cpuAt(0)).createNullBufferSRV();
+		null_texture_srv = DXCPUDescriptorHandle(dx_context.srv_uav_allocator.allocate(1).cpu_at(0)).create_null_texture_srv();
+		null_buffer_srv = DXCPUDescriptorHandle(dx_context.srv_uav_allocator.allocate(1).cpu_at(0)).create_null_buffer_srv();
 
-		nullScreenVelocitiesRTV = dx_rtv_descriptor_handle(dxContext.rtvAllocator.allocate(1).cpuAt(0)).createNullTextureRTV(screenVelocitiesFormat);
-		nullObjectIDsRTV = dx_rtv_descriptor_handle(dxContext.rtvAllocator.allocate(1).cpuAt(0)).createNullTextureRTV(objectIDsFormat);
+		null_screen_velocities_rtv = DXRTVDescriptorHandle(dx_context.rtv_allocator.allocate(1).cpu_at(0)).create_null_texture_rtv(screen_velocities_format);
+		null_object_ids_rtv = DXRTVDescriptorHandle(dx_context.rtv_allocator.allocate(1).cpu_at(0)).create_null_texture_rtv(object_ids_format);
 	}
 
-	void render_resources::declareTemporaryResourceNeeds(uint64 id, const std::vector<render_resource_desc>& descs)
+	void RenderResources::declare_temporary_resource_needs(uint64 id, const std::vector<RenderResourceDesc>& descs)
 	{
-		uint64 hash = hashResourceRequirements(descs);
+		uint64 hash = hash_resource_requirements(descs);
 
-		auto it = resourceMap.find(id);
-		if (it == resourceMap.end() || it->second.hash != hash)
+		auto it = resource_map.find(id);
+		if (it == resource_map.end() || it->second.hash != hash)
 		{
 			dirty = true;
 
-			temporary_render_resources resources;
+			TemporaryRenderResources resources;
 			resources.hash = hash;
 			resources.descs = descs;
-			getAllocationInfo(resources);
-			resourceMap[id] = std::move(resources);
+			get_allocation_info(resources);
+			resource_map[id] = std::move(resources);
 		}
 	}
 
-	void render_resources::evaluate()
+	void RenderResources::evaluate()
 	{
 		if (dirty)
 		{
-			if (resourceHeap)
+			if (resource_heap)
 			{
-				dxContext.retire(resourceHeap);
+				dx_context.retire(resource_heap);
 			}
 
-			uint64 maxAlignment = 0;
-			uint64 maxSize = 0;
-			for (auto& it : resourceMap)
+			uint64 max_alignment = 0;
+			uint64 max_size = 0;
+			for (auto& it : resource_map)
 			{
-				maxAlignment = max(maxAlignment, it.second.alignment);
-				maxSize = max(maxSize, it.second.totalAllocationSize);
+				max_alignment = max(max_alignment, it.second.alignment);
+				max_size = max(max_size, it.second.total_allocation_size);
 			}
 
-			D3D12_HEAP_DESC heapDesc = {};
-			heapDesc.SizeInBytes = maxSize;
-			heapDesc.Alignment = maxAlignment;
-			heapDesc.Flags = D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES;
-			heapDesc.Properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-			heapDesc.Properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-			heapDesc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+			D3D12_HEAP_DESC heap_desc = {};
+			heap_desc.SizeInBytes = max_size;
+			heap_desc.Alignment = max_alignment;
+			heap_desc.Flags = D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES;
+			heap_desc.Properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+			heap_desc.Properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+			heap_desc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
 
-			checkResult(dxContext.device->CreateHeap(&heapDesc, IID_PPV_ARGS(&resourceHeap)));
+			checkResult(dx_context.device->CreateHeap(&heap_desc, IID_PPV_ARGS(&resource_heap)));
 
 
-			for (auto& it : resourceMap)
+			for (auto& it : resource_map)
 			{
-				temporary_render_resources& resources = it.second;
-				allocateResources(resources);
+				TemporaryRenderResources& resources = it.second;
+				allocate_resources(resources);
 			}
 
 			dirty = false;
 		}
 	}
 
-	const std::vector<ref<dx_texture>>& render_resources::getTemporaryResources(uint64 id, dx_command_list* cl)
+	const std::vector<ref<DXTexture>>& RenderResources::get_temporary_resources(uint64 id, DXCommandList* cl)
 	{
 		ASSERT(!dirty);
 
-		std::vector<ref<dx_texture>>& textures = resourceMap[id].textures;
+		std::vector<ref<DXTexture>>& textures = resource_map[id].textures;
 
-		barrier_batcher batcher(cl);
-		for (const ref<dx_texture>& texture : textures)
+		BarrierBatcher batcher(cl);
+		for (const ref<DXTexture>& texture : textures)
 		{
 			batcher.aliasing(0, texture);
 		}
@@ -145,34 +145,34 @@ namespace era_engine
 		return textures;
 	}
 
-	void render_resources::getAllocationInfo(temporary_render_resources& resources)
+	void RenderResources::get_allocation_info(TemporaryRenderResources& resources)
 	{
-		resources.offsetsInBytes.clear();
+		resources.offsets_in_bytes.clear();
 
 		uint64 offset = 0;
-		for (const render_resource_desc& desc : resources.descs)
+		for (const RenderResourceDesc& desc : resources.descs)
 		{
-			D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = dxContext.device->GetResourceAllocationInfo(0, 1, &desc.desc);
+			D3D12_RESOURCE_ALLOCATION_INFO allocation_info = dx_context.device->GetResourceAllocationInfo(0, 1, &desc.desc);
 
 			if (offset == 0)
 			{
-				resources.alignment = allocationInfo.Alignment;
+				resources.alignment = allocation_info.Alignment;
 			}
 
-			offset = align_to(offset, allocationInfo.Alignment);
+			offset = align_to(offset, allocation_info.Alignment);
 
-			resources.offsetsInBytes.push_back(offset);
+			resources.offsets_in_bytes.push_back(offset);
 
-			offset += allocationInfo.SizeInBytes;
+			offset += allocation_info.SizeInBytes;
 		}
 
-		resources.totalAllocationSize = offset;
+		resources.total_allocation_size = offset;
 	}
 
-	NODISCARD uint64 render_resources::hashResourceRequirements(const std::vector<render_resource_desc>& descs)
+	NODISCARD uint64 RenderResources::hash_resource_requirements(const std::vector<RenderResourceDesc>& descs)
 	{
 		uint64 hash = 0;
-		for (const render_resource_desc& desc : descs)
+		for (const RenderResourceDesc& desc : descs)
 		{
 			hash_combine(hash, (uint32)desc.desc.Dimension);
 			hash_combine(hash, desc.desc.Alignment);
@@ -189,20 +189,20 @@ namespace era_engine
 		return hash;
 	}
 
-	void render_resources::allocateResources(temporary_render_resources& resources)
+	void RenderResources::allocate_resources(TemporaryRenderResources& resources)
 	{
 		resources.textures.clear();
 
 		for (uint32 i = 0; i < (uint32)resources.descs.size(); ++i)
 		{
-			uint64 offset = resources.offsetsInBytes[i];
+			uint64 offset = resources.offsets_in_bytes[i];
 			auto& desc = resources.descs[i];
 
-			ref<dx_texture> texture =
-				isDepthFormat(desc.desc.Format)
-				? createPlacedDepthTexture(resourceHeap, offset, desc.desc, desc.initialState)
-				: createPlacedTexture(resourceHeap, offset, desc.desc, desc.initialState);
-			texture->setName(desc.name);
+			ref<DXTexture> texture =
+				is_depth_format(desc.desc.Format)
+				? create_placed_depth_texture(resource_heap, offset, desc.desc, desc.initial_state)
+				: create_placed_texture(resource_heap, offset, desc.desc, desc.initial_state);
+			texture->set_name(desc.name);
 
 			resources.textures.push_back(texture);
 		}

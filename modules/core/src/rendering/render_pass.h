@@ -12,74 +12,74 @@
 
 namespace era_engine
 {
-	struct opaque_render_pass
+	struct OpaqueRenderPass
 	{
 		void sort()
 		{
 			CPU_PROFILE_BLOCK("Sort opaque render passes");
 
 			pass.sort();
-			depthPrepass.sort();
+			depth_prepass.sort();
 		}
 
 		void reset()
 		{
 			pass.clear();
-			depthPrepass.clear();
+			depth_prepass.clear();
 		}
 
 		template <typename pipeline_t, typename render_data_t>
-		void renderObject(const render_data_t& renderData)
+		void render_object(const render_data_t& render_data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			pass.emplace_back<pipeline_t, render_data_t>(sortKey, renderData);
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			pass.emplace_back<pipeline_t, render_data_t>(sort_key, render_data);
 		}
 
 		template <typename pipeline_t, typename render_data_t,
 			class = typename std::enable_if_t<!std::is_lvalue_reference_v<render_data_t>>>
-		void renderObject(render_data_t&& renderData)
+		void render_object(render_data_t&& render_data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			pass.emplace_back<pipeline_t, render_data_t>(sortKey, std::move(renderData));
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			pass.emplace_back<pipeline_t, render_data_t>(sort_key, std::move(render_data));
 		}
 
 		template <typename pipeline_t, typename render_data_t>
-		void renderDepthOnly(const render_data_t& renderData)
+		void render_depth_only(const render_data_t& render_data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			depthPrepass.emplace_back<pipeline_t, render_data_t>(sortKey, renderData);
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			depth_prepass.emplace_back<pipeline_t, render_data_t>(sort_key, render_data);
 		}
 
 		template <typename pipeline_t, typename render_data_t,
 			class = typename std::enable_if_t<!std::is_lvalue_reference_v<render_data_t>>>
-		void renderDepthOnly(render_data_t&& renderData)
+		void render_depth_only(render_data_t&& render_data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			depthPrepass.emplace_back<pipeline_t, render_data_t>(sortKey, std::move(renderData));
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			depth_prepass.emplace_back<pipeline_t, render_data_t>(sort_key, std::move(render_data));
 		}
 
 		template <typename pipeline_t, typename depth_prepass_pipeline_t, typename render_data_t, typename depth_prepass_render_data_t>
-		void renderObject(const render_data_t& renderData,
-			const depth_prepass_render_data_t& depthPrepassRenderData)
+		void render_object(const render_data_t& render_data,
+			const depth_prepass_render_data_t& depth_prepass_render_data)
 		{
-			renderObject<pipeline_t, render_data_t>(renderData);
-			renderDepthOnly<depth_prepass_pipeline_t, depth_prepass_render_data_t>(depthPrepassRenderData);
+			render_object<pipeline_t, render_data_t>(render_data);
+			render_depth_only<depth_prepass_pipeline_t, depth_prepass_render_data_t>(depth_prepass_render_data);
 		}
 
 		template <typename pipeline_t, typename depth_prepass_pipeline_t, typename render_data_t, typename depth_prepass_render_data_t,
 			class = typename std::enable_if_t<!std::is_lvalue_reference_v<render_data_t> && !std::is_lvalue_reference_v<depth_prepass_render_data_t>>>
-		void renderObject(render_data_t&& renderData,
-			depth_prepass_render_data_t&& depthPrepassRenderData)
+		void render_object(render_data_t&& render_data,
+			depth_prepass_render_data_t&& depth_prepass_render_data)
 		{
-			renderObject<pipeline_t, render_data_t>(std::move(renderData));
-			renderDepthOnly<depth_prepass_pipeline_t, depth_prepass_render_data_t>(std::move(depthPrepassRenderData));
+			render_object<pipeline_t, render_data_t>(std::move(render_data));
+			render_depth_only<depth_prepass_pipeline_t, depth_prepass_render_data_t>(std::move(depth_prepass_render_data));
 		}
 
-		default_render_command_buffer<uint64> pass;
-		depth_prepass_render_command_buffer<uint64> depthPrepass;
+		DefaultRenderCommandBuffer<uint64> pass;
+		DepthPrepassRenderCommandBuffer<uint64> depth_prepass;
 	};
 
-	struct transparent_render_pass
+	struct TransparentRenderPass
 	{
 		void sort()
 		{
@@ -94,178 +94,178 @@ namespace era_engine
 		}
 
 		template <typename pipeline_t, typename render_data_t>
-		void renderObject(const render_data_t& data)
+		void render_object(const render_data_t& data)
 		{
 			float depth = 0.f; // TODO
 			pass.emplace_back<pipeline_t, render_data_t>(-depth, data); // Negative depth -> sort from back to front.
 		}
 
 		template <typename pipeline_t, typename render_data_t>
-		void renderParticles(const dx_vertex_buffer_group_view& vertexBuffer,
-			const dx_index_buffer_view& indexBuffer,
-			const particle_draw_info& drawInfo,
+		void render_particles(const DXVertexBufferGroupView& vertex_buffer,
+			const DXIndexBufferView& index_buffer,
+			const ParticleDrawInfo& draw_info,
 			const render_data_t& data)
 		{
 			float depth = 0.f; // TODO
-			auto& command = pass.emplace_back<pipeline_t, particle_render_command<render_data_t>>(-depth); // Negative depth -> sort from back to front.
-			command.vertexBuffer = vertexBuffer;
-			command.indexBuffer = indexBuffer;
-			command.drawInfo = drawInfo;
+			auto& command = pass.emplace_back<pipeline_t, ParticleRenderCommand<render_data_t>>(-depth); // Negative depth -> sort from back to front.
+			command.vertex_buffer = vertex_buffer;
+			command.index_buffer = index_buffer;
+			command.draw_info = draw_info;
 			command.data = data;
 		}
 
-		default_render_command_buffer<float> pass;
+		DefaultRenderCommandBuffer<float> pass;
 	};
 
-	struct ldr_render_pass
+	struct LDRRenderPass
 	{
 		void sort()
 		{
 			CPU_PROFILE_BLOCK("Sort LDR render passes");
 
-			ldrPass.sort();
+			ldr_pass.sort();
 			overlays.sort();
 			outlines.sort();
 		}
 
 		void reset()
 		{
-			ldrPass.clear();
+			ldr_pass.clear();
 			overlays.clear();
 			outlines.clear();
 		}
 
 		template <typename pipeline_t, typename render_data_t>
-		void renderObject(const render_data_t& data)
+		void render_object(const render_data_t& data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			ldrPass.emplace_back<pipeline_t, render_data_t>(sortKey, data);
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			ldr_pass.emplace_back<pipeline_t, render_data_t>(sort_key, data);
 		}
 
 		template <typename pipeline_t, typename render_data_t,
 			class = typename std::enable_if_t<!std::is_lvalue_reference_v<render_data_t>>>
-		void renderObject(render_data_t&& data)
+		void render_object(render_data_t&& data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			ldrPass.emplace_back<pipeline_t, render_data_t>(sortKey, std::move(data));
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			ldr_pass.emplace_back<pipeline_t, render_data_t>(sort_key, std::move(data));
 		}
 
 		template <typename pipeline_t, typename render_data_t>
-		void renderOverlay(const render_data_t& data)
+		void render_overlay(const render_data_t& data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			overlays.emplace_back<pipeline_t, render_data_t>(sortKey, data);
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			overlays.emplace_back<pipeline_t, render_data_t>(sort_key, data);
 		}
 
 		template <typename pipeline_t, typename render_data_t,
 			class = typename std::enable_if_t<!std::is_lvalue_reference_v<render_data_t>>>
-		void renderOverlay(render_data_t&& data)
+		void render_overlay(render_data_t&& data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			overlays.emplace_back<pipeline_t, render_data_t>(sortKey, std::move(data));
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			overlays.emplace_back<pipeline_t, render_data_t>(sort_key, std::move(data));
 		}
 
 		template <typename pipeline_t, typename render_data_t>
-		void renderOutline(const render_data_t& data)
+		void render_outline(const render_data_t& data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			outlines.emplace_back<pipeline_t, render_data_t>(sortKey, data);
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			outlines.emplace_back<pipeline_t, render_data_t>(sort_key, data);
 		}
 
 		template <typename pipeline_t, typename render_data_t,
 			class = typename std::enable_if_t<!std::is_lvalue_reference_v<render_data_t>>>
-		void renderOutline(render_data_t&& data)
+		void render_outline(render_data_t&& data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			outlines.emplace_back<pipeline_t, render_data_t>(sortKey, std::move(data));
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			outlines.emplace_back<pipeline_t, render_data_t>(sort_key, std::move(data));
 		}
 
-		default_render_command_buffer<uint64> ldrPass;
-		default_render_command_buffer<uint64> overlays;
-		default_render_command_buffer<uint64> outlines;
+		DefaultRenderCommandBuffer<uint64> ldr_pass;
+		DefaultRenderCommandBuffer<uint64> overlays;
+		DefaultRenderCommandBuffer<uint64> outlines;
 	};
 
-	struct shadow_render_pass_base
+	struct ShadowRenderPassBase
 	{
 		void sort()
 		{
-			staticPass.sort();
-			dynamicPass.sort();
+			static_pass.sort();
+			dynamic_pass.sort();
 		}
 
 		void reset()
 		{
-			staticPass.clear();
-			dynamicPass.clear();
+			static_pass.clear();
+			dynamic_pass.clear();
 		}
 
 		template <typename pipeline_t, typename render_data_t>
-		void renderStaticObject(const render_data_t& renderData)
+		void render_static_object(const render_data_t& render_data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			staticPass.emplace_back<pipeline_t, render_data_t>(sortKey, renderData);
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			static_pass.emplace_back<pipeline_t, render_data_t>(sort_key, render_data);
 		}
 
 		template <typename pipeline_t, typename render_data_t,
 			class = typename std::enable_if_t<!std::is_lvalue_reference_v<render_data_t>>>
-		void renderStaticObject(render_data_t&& renderData)
+		void render_static_object(render_data_t&& render_data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			staticPass.emplace_back<pipeline_t, render_data_t>(sortKey, std::move(renderData));
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			static_pass.emplace_back<pipeline_t, render_data_t>(sort_key, std::move(render_data));
 		}
 
 		template <typename pipeline_t, typename render_data_t>
-		void renderDynamicObject(const render_data_t& renderData)
+		void render_dynamic_object(const render_data_t& render_data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			dynamicPass.emplace_back<pipeline_t, render_data_t>(sortKey, renderData);
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			dynamic_pass.emplace_back<pipeline_t, render_data_t>(sort_key, render_data);
 		}
 
 		template <typename pipeline_t, typename render_data_t,
 			class = typename std::enable_if_t<!std::is_lvalue_reference_v<render_data_t>>>
-		void renderDynamicObject(render_data_t&& renderData)
+		void render_dynamic_object(render_data_t&& render_data)
 		{
-			uint64 sortKey = (uint64)pipeline_t::setup;
-			dynamicPass.emplace_back<pipeline_t, render_data_t>(sortKey, std::move(renderData));
+			uint64 sort_key = (uint64)pipeline_t::setup;
+			dynamic_pass.emplace_back<pipeline_t, render_data_t>(sort_key, std::move(render_data));
 		}
 
-		default_render_command_buffer<uint64> staticPass;
-		default_render_command_buffer<uint64> dynamicPass;
+		DefaultRenderCommandBuffer<uint64> static_pass;
+		DefaultRenderCommandBuffer<uint64> dynamic_pass;
 	};
 
-	struct sun_cascade_render_pass : shadow_render_pass_base
+	struct SunCascadeRenderPass : ShadowRenderPassBase
 	{
-		mat4 viewProj;
-		shadow_map_viewport viewport;
+		mat4 view_proj;
+		ShadowMapViewport viewport;
 	};
 
-	struct sun_shadow_render_pass
+	struct SunShadowRenderPass
 	{
 		// Since each cascade includes the next lower one, if you submit a draw to cascade N, it will also be rendered in N-1 automatically. No need to add it to the lower one.
 		template <typename pipeline_t, typename render_data_t>
-		void renderStaticObject(uint32 cascadeIndex, const render_data_t& renderData)
+		void render_static_object(uint32 cascade_index, const render_data_t& render_data)
 		{
-			cascades[cascadeIndex].renderStaticObject<pipeline_t>(renderData);
+			cascades[cascade_index].render_static_object<pipeline_t>(render_data);
 		}
 
 		template <typename pipeline_t, typename render_data_t,
 			class = typename std::enable_if_t<!std::is_lvalue_reference_v<render_data_t>>>
-		void renderStaticObject(uint32 cascadeIndex, render_data_t&& renderData)
+		void render_static_object(uint32 cascade_index, render_data_t&& render_data)
 		{
-			cascades[cascadeIndex].renderStaticObject<pipeline_t>(std::move(renderData));
+			cascades[cascade_index].render_static_object<pipeline_t>(std::move(render_data));
 		}
 
 		template <typename pipeline_t, typename render_data_t>
-		void renderDynamicObject(uint32 cascadeIndex, const render_data_t& renderData)
+		void render_dynamic_object(uint32 cascade_index, const render_data_t& render_data)
 		{
-			cascades[cascadeIndex].renderDynamicObject<pipeline_t>(renderData);
+			cascades[cascade_index].render_dynamic_object<pipeline_t>(render_data);
 		}
 
 		template <typename pipeline_t, typename render_data_t,
 			class = typename std::enable_if_t<!std::is_lvalue_reference_v<render_data_t>>>
-		void renderDynamicObject(uint32 cascadeIndex, render_data_t&& renderData)
+		void render_dynamic_object(uint32 cascade_index, render_data_t&& render_data)
 		{
-			cascades[cascadeIndex].renderDynamicObject<pipeline_t>(std::move(renderData));
+			cascades[cascade_index].render_dynamic_object<pipeline_t>(std::move(render_data));
 		}
 
 		void reset()
@@ -273,87 +273,87 @@ namespace era_engine
 			for (uint32 i = 0; i < MAX_NUM_SUN_SHADOW_CASCADES; ++i)
 				cascades[i].reset();
 
-			copyFromStaticCache = false;
+			copy_from_static_cache = false;
 		}
 
-		sun_cascade_render_pass cascades[MAX_NUM_SUN_SHADOW_CASCADES];
-		uint32 numCascades;
-		bool copyFromStaticCache;
+		SunCascadeRenderPass cascades[MAX_NUM_SUN_SHADOW_CASCADES];
+		uint32 num_cascades;
+		bool copy_from_static_cache;
 	};
 
-	struct spot_shadow_render_pass : shadow_render_pass_base
+	struct SpotShadowRenderPass : ShadowRenderPassBase
 	{
 		void reset()
 		{
-			shadow_render_pass_base::reset();
-			copyFromStaticCache = false;
+			ShadowRenderPassBase::reset();
+			copy_from_static_cache = false;
 		}
 
-		mat4 viewProjMatrix;
-		shadow_map_viewport viewport;
-		bool copyFromStaticCache;
+		mat4 view_proj_matrix;
+		ShadowMapViewport viewport;
+		bool copy_from_static_cache;
 	};
 
 	// TODO: Split this into positive and negative direction for frustum culling
-	struct point_shadow_render_pass : shadow_render_pass_base
+	struct PointShadowRenderPass : ShadowRenderPassBase
 	{
-		shadow_map_viewport viewport0;
-		shadow_map_viewport viewport1;
-		vec3 lightPosition;
-		float maxDistance;
-		bool copyFromStaticCache0;
-		bool copyFromStaticCache1;
+		ShadowMapViewport viewport0;
+		ShadowMapViewport viewport1;
+		vec3 light_position;
+		float max_distance;
+		bool copy_from_static_cache0;
+		bool copy_from_static_cache1;
 
 		void reset()
 		{
-			shadow_render_pass_base::reset();
+			ShadowRenderPassBase::reset();
 
-			copyFromStaticCache0 = false;
-			copyFromStaticCache1 = false;
+			copy_from_static_cache0 = false;
+			copy_from_static_cache1 = false;
 		}
 	};
 
-	enum compute_pass_event
+	enum ComputePassEvent
 	{
-		compute_pass_frame_start,
-		compute_pass_before_depth_prepass,
-		compute_pass_before_opaque,
-		compute_pass_before_transparent_and_post_processing,
+		COMPUTE_PASS_FRAME_START,
+		COMPUTE_PASS_BEFORE_DEPTH_PREPASS,
+		COMPUTE_PASS_BEFORE_OPAQUE,
+		COMPUTE_PASS_BEFORE_TRANSPARENT_AND_POST_PROCESSING,
 
-		compute_pass_event_count,
+		COMPUTE_PASS_EVENT_COUNT,
 	};
 
-	struct compute_pass
+	struct ComputePass
 	{
 		void reset()
 		{
-			particleSystemUpdates.clear();
+			particle_system_updates.clear();
 
-			for (uint32 i = 0; i < compute_pass_event_count; ++i)
+			for (uint32 i = 0; i < COMPUTE_PASS_EVENT_COUNT; ++i)
 				passes[i].clear();
 		}
 
-		void updateParticleSystem(struct particle_system* p)
+		void update_particle_system(struct ParticleSystem* p)
 		{
-			particleSystemUpdates.push_back(p);
+			particle_system_updates.push_back(p);
 		}
 
 		template <typename pipeline_t, typename render_data_t>
-		void addTask(compute_pass_event eventTime, const render_data_t& data)
+		void add_task(ComputePassEvent event_time, const render_data_t& data)
 		{
-			passes[eventTime].emplace_back<pipeline_t, render_data_t>(eventTime, data);
+			passes[event_time].emplace_back<pipeline_t, render_data_t>(event_time, data);
 		}
 
 		template <typename pipeline_t, typename render_data_t,
 			class = typename std::enable_if_t<!std::is_lvalue_reference_v<render_data_t>>>
-		void addTask(compute_pass_event eventTime, render_data_t&& data)
+		void add_task(ComputePassEvent event_time, render_data_t&& data)
 		{
-			passes[eventTime].emplace_back<pipeline_t, render_data_t>(eventTime, std::move(data));
+			passes[event_time].emplace_back<pipeline_t, render_data_t>(event_time, std::move(data));
 		}
 
 		float dt;
-		std::vector<struct particle_system*> particleSystemUpdates;
+		std::vector<struct ParticleSystem*> particle_system_updates;
 
-		compute_command_buffer<uint64> passes[compute_pass_event_count];
+		ComputeCommandBuffer<uint64> passes[COMPUTE_PASS_EVENT_COUNT];
 	};
 }

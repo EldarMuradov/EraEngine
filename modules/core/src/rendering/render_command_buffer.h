@@ -7,112 +7,112 @@
 
 namespace era_engine
 {
-	struct dx_command_list;
-	struct common_render_data;
+	struct DXCommandList;
+	struct CommonRenderData;
 
 	template <typename key_t, typename command_header>
-	struct render_command_buffer
+	struct RenderCommandBuffer
 	{
 	private:
-		struct command_key
+		struct CommandKey
 		{
 			key_t key;
 			void* data;
 		};
 
-		struct command_wrapper_base
+		struct CommandWrapperBase
 		{
 			command_header header;
 
-			virtual ~command_wrapper_base() {}
+			virtual ~CommandWrapperBase() {}
 		};
 
 		template <typename pipeline_t, typename command_t>
-		command_t& pushInternal(key_t sortKey)
+		command_t& push_internal(key_t sort_key)
 		{
-			struct command_wrapper : command_wrapper_base
+			struct CommandWrapper : CommandWrapperBase
 			{
 				command_t command;
 			};
 
-			command_wrapper* commandWrapper = arena.allocate<command_wrapper>();
-			new (commandWrapper) command_wrapper;
+			CommandWrapper* command_wrapper = arena.allocate<CommandWrapper>();
+			new (command_wrapper) CommandWrapper;
 
-			commandWrapper->header.template initialize<pipeline_t, command_wrapper>();
+			command_wrapper->header.template initialize<pipeline_t, CommandWrapper>();
 
-			command_key key{};
-			key.key = sortKey;
-			key.data = commandWrapper;
+			CommandKey key{};
+			key.key = sort_key;
+			key.data = command_wrapper;
 
 			keys.push_back(key);
-			return commandWrapper->command;
+			return command_wrapper->command;
 		}
 
-		std::vector<command_key> keys;
+		std::vector<CommandKey> keys;
 		Allocator arena;
 
 	public:
-		render_command_buffer()
+		RenderCommandBuffer()
 		{
-			arena.initialize(0, GB(4));
+			arena.initialize(0, gb(4));
 			keys.reserve(128);
 		}
 
 		NODISCARD uint64 size() const { return keys.size(); }
-		void sort() { std::sort(keys.begin(), keys.end(), [](command_key a, command_key b) { return a.key < b.key; }); }
+		void sort() { std::sort(keys.begin(), keys.end(), [](CommandKey a, CommandKey b) { return a.key < b.key; }); }
 
 		template <typename pipeline_t, typename command_t, typename... args_t>
-		command_t& emplace_back(key_t sortKey, args_t&&... args)
+		command_t& emplace_back(key_t sort_key, args_t&&... args)
 		{
-			command_t& command = pushInternal<pipeline_t, command_t>(sortKey);
+			command_t& command = push_internal<pipeline_t, command_t>(sort_key);
 			new (&command) command_t(std::forward<args_t>(args)...);
 			return command;
 		}
 
 		template <typename pipeline_t, typename command_t>
-		void push_back(key_t sortKey, const command_t& commandToPush)
+		void push_back(key_t sort_key, const command_t& command_to_push)
 		{
-			command_t& command = pushInternal<pipeline_t, command_t>(sortKey);
-			new (&command) command_t(commandToPush);
+			command_t& command = push_internal<pipeline_t, command_t>(sort_key);
+			new (&command) command_t(command_to_push);
 		}
 
 		template <typename pipeline_t, typename command_t>
-		void push_back(key_t sortKey, command_t&& commandToPush)
+		void push_back(key_t sort_key, command_t&& command_to_push)
 		{
-			command_t& command = pushInternal<pipeline_t, command_t>(sortKey);
-			new (&command) command_t(std::move(commandToPush));
+			command_t& command = push_internal<pipeline_t, command_t>(sort_key);
+			new (&command) command_t(std::move(command_to_push));
 		}
 
 		void clear()
 		{
 			for (auto& key : keys)
 			{
-				command_wrapper_base* wrapperBase = (command_wrapper_base*)key.data;
-				wrapperBase->~command_wrapper_base();
+				CommandWrapperBase* wrapper_base = (CommandWrapperBase*)key.data;
+				wrapper_base->~CommandWrapperBase();
 			}
 
 			arena.reset();
 			keys.clear();
 		}
 
-		struct iterator_return : command_header
+		struct IteratorReturn : command_header
 		{
 			void* data;
 		};
 
 		struct iterator
 		{
-			typename std::vector<command_key>::const_iterator keyIterator;
+			typename std::vector<CommandKey>::const_iterator key_iterator;
 
-			friend bool operator==(const iterator& a, const iterator& b) { return a.keyIterator == b.keyIterator; }
+			friend bool operator==(const iterator& a, const iterator& b) { return a.key_iterator == b.key_iterator; }
 			friend bool operator!=(const iterator& a, const iterator& b) { return !(a == b); }
-			iterator& operator++() { ++keyIterator; return *this; }
+			iterator& operator++() { ++key_iterator; return *this; }
 
-			iterator_return operator*()
+			IteratorReturn operator*()
 			{
-				command_wrapper_base* wrapperBase = (command_wrapper_base*)keyIterator->data;
-				void* data = keyIterator->data;
-				return iterator_return{ wrapperBase->header, data };
+				CommandWrapperBase* wrapper_base = (CommandWrapperBase*)key_iterator->data;
+				void* data = key_iterator->data;
+				return IteratorReturn{ wrapper_base->header, data };
 			}
 		};
 
@@ -123,67 +123,67 @@ namespace era_engine
 		NODISCARD iterator end() const { return iterator{ keys.end() }; }
 	};
 
-	struct default_command_header
+	struct DefaultCommandHeader
 	{
-		typedef void (*generic_pipeline_render_func)(dx_command_list*, const mat4&, void*);
+		typedef void (*GenericPipelineRenderFunc)(DXCommandList*, const mat4&, void*);
 
-		template <typename pipeline_t, typename command_wrapper>
+		template <typename pipeline_t, typename CommandWrapper>
 		void initialize()
 		{
 			setup = pipeline_t::setup;
-			render = [](dx_command_list* cl, const mat4& viewProj, void* data)
+			render = [](DXCommandList* cl, const mat4& view_proj, void* data)
 				{
-					command_wrapper* wrapper = (command_wrapper*)data;
-					pipeline_t::render(cl, viewProj, wrapper->command);
+					CommandWrapper* wrapper = (CommandWrapper*)data;
+					pipeline_t::render(cl, view_proj, wrapper->command);
 				};
 		}
 
-		pipeline_setup_func setup;
-		generic_pipeline_render_func render;
+		PipelineSetupFunc setup;
+		GenericPipelineRenderFunc render;
 	};
 
 	template <typename key_t>
-	struct default_render_command_buffer : render_command_buffer<key_t, default_command_header> {};
+	struct DefaultRenderCommandBuffer : RenderCommandBuffer<key_t, DefaultCommandHeader> {};
 
-	struct depth_prepass_command_header
+	struct DepthPrepassCommandHeader
 	{
-		typedef void (*generic_pipeline_render_func)(dx_command_list*, const mat4&, const mat4&, void*);
+		typedef void (*GenericPipelineRenderFunc)(DXCommandList*, const mat4&, const mat4&, void*);
 
-		template <typename pipeline_t, typename command_wrapper>
+		template <typename pipeline_t, typename CommandWrapper>
 		void initialize()
 		{
 			setup = pipeline_t::setup;
-			render = [](dx_command_list* cl, const mat4& viewProj, const mat4& prevFrameViewProj, void* data)
+			render = [](DXCommandList* cl, const mat4& view_proj, const mat4& prev_frame_view_proj, void* data)
 				{
-					command_wrapper* wrapper = (command_wrapper*)data;
-					pipeline_t::render(cl, viewProj, prevFrameViewProj, wrapper->command);
+					CommandWrapper* wrapper = (CommandWrapper*)data;
+					pipeline_t::render(cl, view_proj, prev_frame_view_proj, wrapper->command);
 				};
 		}
 
-		pipeline_setup_func setup;
-		generic_pipeline_render_func render;
+		PipelineSetupFunc setup;
+		GenericPipelineRenderFunc render;
 	};
 
 	template <typename key_t>
-	struct depth_prepass_render_command_buffer : render_command_buffer<key_t, depth_prepass_command_header> {};
+	struct DepthPrepassRenderCommandBuffer : RenderCommandBuffer<key_t, DepthPrepassCommandHeader> {};
 
-	struct compute_command_header
+	struct ComputeCommandHeader
 	{
-		typedef void (*generic_compute_func)(dx_command_list*, void*);
+		typedef void (*GenericComputeFunc)(DXCommandList*, void*);
 
-		template <typename pipeline_t, typename command_wrapper>
+		template <typename pipeline_t, typename CommandWrapper>
 		void initialize()
 		{
-			compute = [](dx_command_list* cl, void* data)
+			compute = [](DXCommandList* cl, void* data)
 				{
-					command_wrapper* wrapper = (command_wrapper*)data;
+					CommandWrapper* wrapper = (CommandWrapper*)data;
 					pipeline_t::compute(cl, wrapper->command);
 				};
 		}
 
-		generic_compute_func compute;
+		GenericComputeFunc compute;
 	};
 
 	template <typename key_t>
-	struct compute_command_buffer : render_command_buffer<key_t, compute_command_header> {};
+	struct ComputeCommandBuffer : RenderCommandBuffer<key_t, ComputeCommandHeader> {};
 }

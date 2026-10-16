@@ -8,35 +8,35 @@
 
 namespace era_engine
 {
-	DXGI_FORMAT getIndexBufferFormat(uint32 elementSize)
+	DXGI_FORMAT get_index_buffer_format(uint32 element_size)
 	{
 		DXGI_FORMAT result = DXGI_FORMAT_UNKNOWN;
-		if (elementSize == 1)
+		if (element_size == 1)
 		{
 			result = DXGI_FORMAT_R8_UINT;
 		}
-		else if (elementSize == 2)
+		else if (element_size == 2)
 		{
 			result = DXGI_FORMAT_R16_UINT;
 		}
-		else if (elementSize == 4)
+		else if (element_size == 4)
 		{
 			result = DXGI_FORMAT_R32_UINT;
 		}
 		return result;
 	}
 
-	void* mapBuffer(const ref<dx_buffer>& buffer, bool intentsReading, map_range readRange)
+	void* map_buffer(const ref<DXBuffer>& buffer, bool intents_reading, MapRange read_range)
 	{
 		D3D12_RANGE range = { 0, 0 };
 		D3D12_RANGE* r = 0;
 
-		if (intentsReading)
+		if (intents_reading)
 		{
-			if (readRange.numElements != -1)
+			if (read_range.num_elements != -1)
 			{
-				range.Begin = readRange.firstElement * buffer->elementSize;
-				range.End = range.Begin + readRange.numElements * buffer->elementSize;
+				range.Begin = read_range.first_element * buffer->element_size;
+				range.End = range.Begin + read_range.num_elements * buffer->element_size;
 				r = &range;
 			}
 		}
@@ -50,17 +50,17 @@ namespace era_engine
 		return result;
 	}
 
-	void unmapBuffer(const ref<dx_buffer>& buffer, bool hasWritten, map_range writtenRange)
+	void unmap_buffer(const ref<DXBuffer>& buffer, bool has_written, MapRange written_range)
 	{
 		D3D12_RANGE range = { 0, 0 };
 		D3D12_RANGE* r = 0;
 
-		if (hasWritten)
+		if (has_written)
 		{
-			if (writtenRange.numElements != -1)
+			if (written_range.num_elements != -1)
 			{
-				range.Begin = writtenRange.firstElement * buffer->elementSize;
-				range.End = range.Begin + writtenRange.numElements * buffer->elementSize;
+				range.Begin = written_range.first_element * buffer->element_size;
+				range.End = range.Begin + written_range.num_elements * buffer->element_size;
 				r = &range;
 			}
 		}
@@ -72,156 +72,156 @@ namespace era_engine
 		buffer->resource->Unmap(0, r);
 	}
 
-	void updateUploadBufferData(const ref<dx_buffer>& buffer, void* data, uint32 size)
+	void update_upload_buffer_data(const ref<DXBuffer>& buffer, void* data, uint32 size)
 	{
-		void* mapped = mapBuffer(buffer, false);
+		void* mapped = map_buffer(buffer, false);
 		memcpy(mapped, data, size);
-		unmapBuffer(buffer, true);
+		unmap_buffer(buffer, true);
 	}
 
-	static void uploadBufferData(ref<dx_buffer> buffer, const void* bufferData)
+	static void upload_buffer_data(ref<DXBuffer> buffer, const void* buffer_data)
 	{
-		dx_command_list* cl = dxContext.getFreeCopyCommandList();
+		DXCommandList* cl = dx_context.get_free_copy_command_list();
 
-		dx_resource intermediateResource;
+		DXResource intermediate_resource;
 
-		auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer->totalSize);
+		auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer->total_size);
 
 #if !USE_D3D12_BLOCK_ALLOCATOR
 
 		CD3DX12_HEAP_PROPERTIES props(D3D12_HEAP_TYPE_UPLOAD);
-		checkResult(dxContext.device->CreateCommittedResource(
+		checkResult(dx_context.device->CreateCommittedResource(
 			&props,
 			D3D12_HEAP_FLAG_NONE,
 			&desc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			0,
-			IID_PPV_ARGS(&intermediateResource)));
+			IID_PPV_ARGS(&intermediate_resource)));
 #else
-		D3D12MA::ALLOCATION_DESC allocationDesc = {};
-		allocationDesc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
+		D3D12MA::ALLOCATION_DESC allocation_desc = {};
+		allocation_desc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
 
 		D3D12MA::Allocation* allocation;
-		checkResult(dxContext.memoryAllocator->CreateResource(
-			&allocationDesc,
+		checkResult(dx_context.memory_allocator->CreateResource(
+			&allocation_desc,
 			&desc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			0,
 			&allocation,
-			IID_PPV_ARGS(&intermediateResource)));
+			IID_PPV_ARGS(&intermediate_resource)));
 
-		dxContext.retire(allocation);
+		dx_context.retire(allocation);
 #endif
 
-		D3D12_SUBRESOURCE_DATA subresourceData = {};
-		subresourceData.pData = bufferData;
-		subresourceData.RowPitch = buffer->totalSize;
-		subresourceData.SlicePitch = subresourceData.RowPitch;
+		D3D12_SUBRESOURCE_DATA subresource_data = {};
+		subresource_data.pData = buffer_data;
+		subresource_data.RowPitch = buffer->total_size;
+		subresource_data.SlicePitch = subresource_data.RowPitch;
 
-		cl->transitionBarrier(buffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+		cl->transition_barrier(buffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
 
-		UpdateSubresources(cl->commandList.Get(),
-			buffer->resource.Get(), intermediateResource.Get(),
-			0, 0, 1, &subresourceData);
+		UpdateSubresources(cl->command_list.Get(),
+			buffer->resource.Get(), intermediate_resource.Get(),
+			0, 0, 1, &subresource_data);
 
 		// We are omitting the transition to common here, since the resource automatically decays to common state after being accessed on a copy queue.
 
-		dxContext.retire(intermediateResource);
-		dxContext.executeCommandList(cl);
+		dx_context.retire(intermediate_resource);
+		dx_context.execute_command_list(cl);
 	}
 
-	void updateBufferDataRange(ref<dx_buffer> buffer, const void* data, uint32 offset, uint32 size)
+	void update_buffer_data_range(ref<DXBuffer> buffer, const void* data, uint32 offset, uint32 size)
 	{
-		ASSERT(offset + size <= buffer->totalSize);
+		ASSERT(offset + size <= buffer->total_size);
 
-		dx_command_list* cl = dxContext.getFreeCopyCommandList();
+		DXCommandList* cl = dx_context.get_free_copy_command_list();
 
-		dx_resource intermediateResource;
+		DXResource intermediate_resource;
 
 		auto desc = CD3DX12_RESOURCE_DESC::Buffer(size);
 
 #if !USE_D3D12_BLOCK_ALLOCATOR
 
 		CD3DX12_HEAP_PROPERTIES props(D3D12_HEAP_TYPE_UPLOAD);
-		checkResult(dxContext.device->CreateCommittedResource(
+		checkResult(dx_context.device->CreateCommittedResource(
 			&props,
 			D3D12_HEAP_FLAG_NONE,
 			&desc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			0,
-			IID_PPV_ARGS(&intermediateResource)));
+			IID_PPV_ARGS(&intermediate_resource)));
 #else
-		D3D12MA::ALLOCATION_DESC allocationDesc = {};
-		allocationDesc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
+		D3D12MA::ALLOCATION_DESC allocation_desc = {};
+		allocation_desc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
 
 		D3D12MA::Allocation* allocation;
-		checkResult(dxContext.memoryAllocator->CreateResource(
-			&allocationDesc,
+		checkResult(dx_context.memory_allocator->CreateResource(
+			&allocation_desc,
 			&desc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			0,
 			&allocation,
-			IID_PPV_ARGS(&intermediateResource)));
+			IID_PPV_ARGS(&intermediate_resource)));
 
-		dxContext.retire(allocation);
+		dx_context.retire(allocation);
 #endif
 
-		cl->transitionBarrier(buffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+		cl->transition_barrier(buffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
 
 		void* mapped;
-		checkResult(intermediateResource->Map(0, 0, &mapped));
+		checkResult(intermediate_resource->Map(0, 0, &mapped));
 		memcpy(mapped, data, size);
-		intermediateResource->Unmap(0, 0);
+		intermediate_resource->Unmap(0, 0);
 
-		cl->commandList->CopyBufferRegion(buffer->resource.Get(), offset, intermediateResource.Get(), 0, size);
+		cl->command_list->CopyBufferRegion(buffer->resource.Get(), offset, intermediate_resource.Get(), 0, size);
 
 		// We are omitting the transition to common here, since the resource automatically decays to common state after being accessed on a copy queue.
 
-		dxContext.retire(intermediateResource);
-		dxContext.executeCommandList(cl);
+		dx_context.retire(intermediate_resource);
+		dx_context.execute_command_list(cl);
 	}
 
-	static void initializeBuffer(ref<dx_buffer> buffer, uint32 elementSize, uint32 elementCount, void* data, bool allowUnorderedAccess, bool allowClearing, bool raytracing = false,
-		D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_DEFAULT)
+	static void initialize_buffer(ref<DXBuffer> buffer, uint32 element_size, uint32 element_count, void* data, bool allow_unordered_access, bool allow_clearing, bool raytracing = false,
+		D3D12_RESOURCE_STATES initial_state = D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE heap_type = D3D12_HEAP_TYPE_DEFAULT)
 	{
-		D3D12_RESOURCE_FLAGS flags = allowUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
+		D3D12_RESOURCE_FLAGS flags = allow_unordered_access ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
 
-		buffer->elementSize = elementSize;
-		buffer->elementCount = elementCount;
-		buffer->totalSize = elementSize * elementCount;
-		buffer->heapType = heapType;
-		buffer->supportsSRV = heapType != D3D12_HEAP_TYPE_READBACK;
-		buffer->supportsUAV = allowUnorderedAccess;
-		buffer->supportsClearing = allowClearing;
+		buffer->element_size = element_size;
+		buffer->element_count = element_count;
+		buffer->total_size = element_size * element_count;
+		buffer->heap_type = heap_type;
+		buffer->supports_srv = heap_type != D3D12_HEAP_TYPE_READBACK;
+		buffer->supports_uav = allow_unordered_access;
+		buffer->supports_clearing = allow_clearing;
 		buffer->raytracing = raytracing;
 
-		buffer->defaultSRV = {};
-		buffer->defaultUAV = {};
-		buffer->cpuClearUAV = {};
-		buffer->gpuClearUAV = {};
-		buffer->raytracingSRV = {};
+		buffer->default_srv = {};
+		buffer->default_uav = {};
+		buffer->cpu_clear_uav = {};
+		buffer->gpu_clear_uav = {};
+		buffer->raytracing_srv = {};
 
-		auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer->totalSize, flags);
+		auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer->total_size, flags);
 
 #if !USE_D3D12_BLOCK_ALLOCATOR
 
-		CD3DX12_HEAP_PROPERTIES props(heapType);
-		checkResult(dxContext.device->CreateCommittedResource(
+		CD3DX12_HEAP_PROPERTIES props(heap_type);
+		checkResult(dx_context.device->CreateCommittedResource(
 			&props,
 			D3D12_HEAP_FLAG_NONE,
 			&desc,
-			initialState,
+			initial_state,
 			0,
 			IID_PPV_ARGS(&buffer->resource)));
 #else
-		D3D12MA::ALLOCATION_DESC allocationDesc = {};
-		allocationDesc.HeapType = heapType;
+		D3D12MA::ALLOCATION_DESC allocation_desc = {};
+		allocation_desc.HeapType = heap_type;
 
 		D3D12MA::Allocation* allocation;
-		checkResult(dxContext.memoryAllocator->CreateResource(
-			&allocationDesc,
+		checkResult(dx_context.memory_allocator->CreateResource(
+			&allocation_desc,
 			&desc,
-			initialState,
+			initial_state,
 			0,
 			&allocation,
 			IID_PPV_ARGS(&buffer->resource)));
@@ -229,165 +229,165 @@ namespace era_engine
 		buffer->allocation = allocation;
 #endif
 
-		buffer->gpuVirtualAddress = buffer->resource->GetGPUVirtualAddress();
+		buffer->gpu_virtual_address = buffer->resource->GetGPUVirtualAddress();
 
 		// Upload
 		if (data)
 		{
-			if (heapType == D3D12_HEAP_TYPE_DEFAULT)
+			if (heap_type == D3D12_HEAP_TYPE_DEFAULT)
 			{
-				uploadBufferData(buffer, data);
+				upload_buffer_data(buffer, data);
 			}
-			else if (heapType == D3D12_HEAP_TYPE_UPLOAD)
+			else if (heap_type == D3D12_HEAP_TYPE_UPLOAD)
 			{
-				void* dataPtr = mapBuffer(buffer, false);
-				memcpy(dataPtr, data, buffer->totalSize);
-				unmapBuffer(buffer, true);
+				void* data_ptr = map_buffer(buffer, false);
+				memcpy(data_ptr, data, buffer->total_size);
+				unmap_buffer(buffer, true);
 			}
 		}
 
-		uint32 numDescriptors = buffer->supportsSRV + buffer->supportsUAV + buffer->supportsClearing + raytracing;
-		buffer->descriptorAllocation = dxContext.srvUavAllocator.allocate(numDescriptors);
+		uint32 num_descriptors = buffer->supports_srv + buffer->supports_uav + buffer->supports_clearing + raytracing;
+		buffer->descriptor_allocation = dx_context.srv_uav_allocator.allocate(num_descriptors);
 
 		uint32 index = 0;
 
-		if (buffer->supportsSRV)
+		if (buffer->supports_srv)
 		{
-			buffer->defaultSRV = dx_cpu_descriptor_handle(buffer->descriptorAllocation.cpuAt(index++)).createBufferSRV(buffer);
+			buffer->default_srv = DXCPUDescriptorHandle(buffer->descriptor_allocation.cpu_at(index++)).create_buffer_srv(buffer);
 		}
 
-		if (buffer->supportsUAV)
+		if (buffer->supports_uav)
 		{
-			buffer->defaultUAV = dx_cpu_descriptor_handle(buffer->descriptorAllocation.cpuAt(index++)).createBufferUAV(buffer);
+			buffer->default_uav = DXCPUDescriptorHandle(buffer->descriptor_allocation.cpu_at(index++)).create_buffer_uav(buffer);
 		}
 
-		if (buffer->supportsClearing)
+		if (buffer->supports_clearing)
 		{
-			buffer->cpuClearUAV = dx_cpu_descriptor_handle(buffer->descriptorAllocation.cpuAt(index++)).createBufferUintUAV(buffer);
+			buffer->cpu_clear_uav = DXCPUDescriptorHandle(buffer->descriptor_allocation.cpu_at(index++)).create_buffer_uint_uav(buffer);
 
-			buffer->shaderVisibleDescriptorAllocation = dxContext.srvUavAllocatorShaderVisible.allocate(1);
-			dx_cpu_descriptor_handle(buffer->shaderVisibleDescriptorAllocation.cpuAt(0)).createBufferUintUAV(buffer);
-			buffer->gpuClearUAV = buffer->shaderVisibleDescriptorAllocation.gpuAt(0);
+			buffer->shader_visible_descriptor_allocation = dx_context.srv_uav_allocator_shader_visible.allocate(1);
+			DXCPUDescriptorHandle(buffer->shader_visible_descriptor_allocation.cpu_at(0)).create_buffer_uint_uav(buffer);
+			buffer->gpu_clear_uav = buffer->shader_visible_descriptor_allocation.gpu_at(0);
 		}
 
 		if (raytracing)
 		{
-			buffer->raytracingSRV = dx_cpu_descriptor_handle(buffer->descriptorAllocation.cpuAt(index++)).createRaytracingAccelerationStructureSRV(buffer);
+			buffer->raytracing_srv = DXCPUDescriptorHandle(buffer->descriptor_allocation.cpu_at(index++)).create_raytracing_acceleration_structure_srv(buffer);
 		}
 
-		ASSERT(index == numDescriptors);
+		ASSERT(index == num_descriptors);
 	}
 
-	ref<dx_buffer> createBuffer(uint32 elementSize, uint32 elementCount, void* data, bool allowUnorderedAccess, bool allowClearing, D3D12_RESOURCE_STATES initialState)
+	ref<DXBuffer> create_buffer(uint32 element_size, uint32 element_count, void* data, bool allow_unordered_access, bool allow_clearing, D3D12_RESOURCE_STATES initial_state)
 	{
-		ref<dx_buffer> result = make_ref<dx_buffer>();
-		initializeBuffer(result, elementSize, elementCount, data, allowUnorderedAccess, allowClearing, false, initialState, D3D12_HEAP_TYPE_DEFAULT);
+		ref<DXBuffer> result = make_ref<DXBuffer>();
+		initialize_buffer(result, element_size, element_count, data, allow_unordered_access, allow_clearing, false, initial_state, D3D12_HEAP_TYPE_DEFAULT);
 		return result;
 	}
 
-	ref<dx_buffer> createUploadBuffer(uint32 elementSize, uint32 elementCount, void* data)
+	ref<DXBuffer> create_upload_buffer(uint32 element_size, uint32 element_count, void* data)
 	{
-		ref<dx_buffer> result = make_ref<dx_buffer>();
-		initializeBuffer(result, elementSize, elementCount, data, false, false, false, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
+		ref<DXBuffer> result = make_ref<DXBuffer>();
+		initialize_buffer(result, element_size, element_count, data, false, false, false, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
 		return result;
 	}
 
-	ref<dx_buffer> createReadbackBuffer(uint32 elementSize, uint32 elementCount, D3D12_RESOURCE_STATES initialState)
+	ref<DXBuffer> create_readback_buffer(uint32 element_size, uint32 element_count, D3D12_RESOURCE_STATES initial_state)
 	{
-		ref<dx_buffer> result = make_ref<dx_buffer>();
-		initializeBuffer(result, elementSize, elementCount, 0, false, false, false, initialState, D3D12_HEAP_TYPE_READBACK);
+		ref<DXBuffer> result = make_ref<DXBuffer>();
+		initialize_buffer(result, element_size, element_count, 0, false, false, false, initial_state, D3D12_HEAP_TYPE_READBACK);
 		return result;
 	}
 
-	ref<dx_vertex_buffer> createVertexBuffer(uint32 elementSize, uint32 elementCount, void* data, bool allowUnorderedAccess, bool allowClearing)
+	ref<DXVertexBuffer> create_vertex_buffer(uint32 element_size, uint32 element_count, void* data, bool allow_unordered_access, bool allow_clearing)
 	{
-		ref<dx_vertex_buffer> result = make_ref<dx_vertex_buffer>();
-		initializeBuffer(result, elementSize, elementCount, data, true, allowClearing);
-		result->view.BufferLocation = result->gpuVirtualAddress;
-		result->view.SizeInBytes = result->totalSize;
-		result->view.StrideInBytes = elementSize;
+		ref<DXVertexBuffer> result = make_ref<DXVertexBuffer>();
+		initialize_buffer(result, element_size, element_count, data, true, allow_clearing);
+		result->view.BufferLocation = result->gpu_virtual_address;
+		result->view.SizeInBytes = result->total_size;
+		result->view.StrideInBytes = element_size;
 		return result;
 	}
 
-	ref<dx_vertex_buffer> createUploadVertexBuffer(uint32 elementSize, uint32 elementCount, void* data)
+	ref<DXVertexBuffer> create_upload_vertex_buffer(uint32 element_size, uint32 element_count, void* data)
 	{
-		ref<dx_vertex_buffer> result = make_ref<dx_vertex_buffer>();
-		initializeBuffer(result, elementSize, elementCount, data, false, false, false, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
-		result->view.BufferLocation = result->gpuVirtualAddress;
-		result->view.SizeInBytes = result->totalSize;
-		result->view.StrideInBytes = elementSize;
+		ref<DXVertexBuffer> result = make_ref<DXVertexBuffer>();
+		initialize_buffer(result, element_size, element_count, data, false, false, false, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
+		result->view.BufferLocation = result->gpu_virtual_address;
+		result->view.SizeInBytes = result->total_size;
+		result->view.StrideInBytes = element_size;
 		return result;
 	}
 
-	ref<dx_index_buffer> createIndexBuffer(uint32 elementSize, uint32 elementCount, void* data, bool allowUnorderedAccess, bool allowClearing)
+	ref<DXIndexBuffer> create_index_buffer(uint32 element_size, uint32 element_count, void* data, bool allow_unordered_access, bool allow_clearing)
 	{
-		ref<dx_index_buffer> result = make_ref<dx_index_buffer>();
-		initializeBuffer(result, elementSize, elementCount, data, allowUnorderedAccess, allowClearing);
-		result->view.BufferLocation = result->gpuVirtualAddress;
-		result->view.SizeInBytes = result->totalSize;
-		result->view.Format = getIndexBufferFormat(elementSize);
+		ref<DXIndexBuffer> result = make_ref<DXIndexBuffer>();
+		initialize_buffer(result, element_size, element_count, data, allow_unordered_access, allow_clearing);
+		result->view.BufferLocation = result->gpu_virtual_address;
+		result->view.SizeInBytes = result->total_size;
+		result->view.Format = get_index_buffer_format(element_size);
 		return result;
 	}
 
-	ref<dx_buffer> createRaytracingTLASBuffer(uint32 size)
+	ref<DXBuffer> create_raytracing_tlas_buffer(uint32 size)
 	{
-		ref<dx_buffer> result = make_ref<dx_buffer>();
-		initializeBuffer(result, size, 1, nullptr, true, false, true, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+		ref<DXBuffer> result = make_ref<DXBuffer>();
+		initialize_buffer(result, size, 1, nullptr, true, false, true, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
 		return result;
 	}
 
-	static void retire(dx_resource resource, dx_descriptor_allocation descriptorAllocation, dx_descriptor_allocation shaderVisibleDescriptorAllocation)
+	static void retire(DXResource resource, DXDescriptorAllocation descriptor_allocation, DXDescriptorAllocation shader_visible_descriptor_allocation)
 	{
-		buffer_grave grave;
+		BufferGrave grave;
 		grave.resource = resource;
-		grave.descriptorAllocation = descriptorAllocation;
-		grave.shaderVisibleDescriptorAllocation = shaderVisibleDescriptorAllocation;
-		dxContext.retire(std::move(grave));
+		grave.descriptor_allocation = descriptor_allocation;
+		grave.shader_visible_descriptor_allocation = shader_visible_descriptor_allocation;
+		dx_context.retire(std::move(grave));
 	}
 
-	dx_buffer::~dx_buffer()
+	DXBuffer::~DXBuffer()
 	{
-		retire(resource, descriptorAllocation, shaderVisibleDescriptorAllocation);
+		retire(resource, descriptor_allocation, shader_visible_descriptor_allocation);
 		if (allocation)
 		{
-			dxContext.retire(allocation);
+			dx_context.retire(allocation);
 		}
 	}
 
-	void resizeBuffer(ref<dx_buffer> buffer, uint32 newElementCount, D3D12_RESOURCE_STATES initialState)
+	void resize_buffer(ref<DXBuffer> buffer, uint32 new_element_count, D3D12_RESOURCE_STATES initial_state)
 	{
-		retire(buffer->resource, buffer->descriptorAllocation, buffer->shaderVisibleDescriptorAllocation);
+		retire(buffer->resource, buffer->descriptor_allocation, buffer->shader_visible_descriptor_allocation);
 		if (buffer->allocation)
 		{
-			dxContext.retire(buffer->allocation);
+			dx_context.retire(buffer->allocation);
 		}
 
-		buffer->elementCount = newElementCount;
-		buffer->totalSize = buffer->elementCount * buffer->elementSize;
+		buffer->element_count = new_element_count;
+		buffer->total_size = buffer->element_count * buffer->element_size;
 
 		auto desc = buffer->resource->GetDesc();
 
-		auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(buffer->totalSize, desc.Flags);
+		auto buffer_desc = CD3DX12_RESOURCE_DESC::Buffer(buffer->total_size, desc.Flags);
 
 #if !USE_D3D12_BLOCK_ALLOCATOR
 
-		CD3DX12_HEAP_PROPERTIES props(buffer->heapType);
-		checkResult(dxContext.device->CreateCommittedResource(
+		CD3DX12_HEAP_PROPERTIES props(buffer->heap_type);
+		checkResult(dx_context.device->CreateCommittedResource(
 			&props,
 			D3D12_HEAP_FLAG_NONE,
-			&bufferDesc,
-			initialState,
+			&buffer_desc,
+			initial_state,
 			0,
 			IID_PPV_ARGS(&buffer->resource)));
 #else
-		D3D12MA::ALLOCATION_DESC allocationDesc = {};
-		allocationDesc.HeapType = buffer->heapType;
+		D3D12MA::ALLOCATION_DESC allocation_desc = {};
+		allocation_desc.HeapType = buffer->heap_type;
 
 		D3D12MA::Allocation* allocation;
-		checkResult(dxContext.memoryAllocator->CreateResource(
-			&allocationDesc,
-			&bufferDesc,
-			initialState,
+		checkResult(dx_context.memory_allocator->CreateResource(
+			&allocation_desc,
+			&buffer_desc,
+			initial_state,
 			0,
 			&allocation,
 			IID_PPV_ARGS(&buffer->resource)));
@@ -395,47 +395,47 @@ namespace era_engine
 		buffer->allocation = allocation;
 #endif
 
-		buffer->gpuVirtualAddress = buffer->resource->GetGPUVirtualAddress();
+		buffer->gpu_virtual_address = buffer->resource->GetGPUVirtualAddress();
 
 
-		uint32 numDescriptors = buffer->supportsSRV + buffer->supportsUAV + buffer->supportsClearing + buffer->raytracing;
-		buffer->descriptorAllocation = dxContext.srvUavAllocator.allocate(numDescriptors);
+		uint32 num_descriptors = buffer->supports_srv + buffer->supports_uav + buffer->supports_clearing + buffer->raytracing;
+		buffer->descriptor_allocation = dx_context.srv_uav_allocator.allocate(num_descriptors);
 
 		uint32 index = 0;
 
-		if (buffer->supportsSRV)
+		if (buffer->supports_srv)
 		{
-			buffer->defaultSRV = dx_cpu_descriptor_handle(buffer->descriptorAllocation.cpuAt(index++)).createBufferSRV(buffer);
+			buffer->default_srv = DXCPUDescriptorHandle(buffer->descriptor_allocation.cpu_at(index++)).create_buffer_srv(buffer);
 		}
 
-		if (buffer->supportsUAV)
+		if (buffer->supports_uav)
 		{
-			buffer->defaultUAV = dx_cpu_descriptor_handle(buffer->descriptorAllocation.cpuAt(index++)).createBufferUAV(buffer);
+			buffer->default_uav = DXCPUDescriptorHandle(buffer->descriptor_allocation.cpu_at(index++)).create_buffer_uav(buffer);
 		}
 
-		if (buffer->supportsClearing)
+		if (buffer->supports_clearing)
 		{
-			buffer->cpuClearUAV = dx_cpu_descriptor_handle(buffer->descriptorAllocation.cpuAt(index++)).createBufferUintUAV(buffer);
+			buffer->cpu_clear_uav = DXCPUDescriptorHandle(buffer->descriptor_allocation.cpu_at(index++)).create_buffer_uint_uav(buffer);
 
-			buffer->shaderVisibleDescriptorAllocation = dxContext.srvUavAllocatorShaderVisible.allocate(1);
-			dx_cpu_descriptor_handle(buffer->shaderVisibleDescriptorAllocation.cpuAt(0)).createBufferUintUAV(buffer);
-			buffer->gpuClearUAV = buffer->shaderVisibleDescriptorAllocation.gpuAt(0);
+			buffer->shader_visible_descriptor_allocation = dx_context.srv_uav_allocator_shader_visible.allocate(1);
+			DXCPUDescriptorHandle(buffer->shader_visible_descriptor_allocation.cpu_at(0)).create_buffer_uint_uav(buffer);
+			buffer->gpu_clear_uav = buffer->shader_visible_descriptor_allocation.gpu_at(0);
 		}
 
 		if (buffer->raytracing)
 		{
-			buffer->raytracingSRV = dx_cpu_descriptor_handle(buffer->descriptorAllocation.cpuAt(index++)).createRaytracingAccelerationStructureSRV(buffer);
+			buffer->raytracing_srv = DXCPUDescriptorHandle(buffer->descriptor_allocation.cpu_at(index++)).create_raytracing_acceleration_structure_srv(buffer);
 		}
 
-		ASSERT(index == numDescriptors);
+		ASSERT(index == num_descriptors);
 	}
 
-	buffer_grave::~buffer_grave()
+	BufferGrave::~BufferGrave()
 	{
 		if (resource)
 		{
-			dxContext.srvUavAllocator.free(descriptorAllocation);
-			dxContext.srvUavAllocatorShaderVisible.free(shaderVisibleDescriptorAllocation);
+			dx_context.srv_uav_allocator.free(descriptor_allocation);
+			dx_context.srv_uav_allocator_shader_visible.free(shader_visible_descriptor_allocation);
 		}
 	}
 

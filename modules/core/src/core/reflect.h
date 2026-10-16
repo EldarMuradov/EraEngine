@@ -11,20 +11,20 @@ namespace era_engine
 {
 	template <typename T> struct type_descriptor {};
 
-	struct member_list_base {};
+	struct MemberListBase {};
 
 	template <auto... member_pointers>
-	struct member_list : member_list_base
+	struct member_list : MemberListBase
 	{
 		static inline const uint32 num_members = sizeof...(member_pointers);
 
 		template <typename T, typename F>
-		constexpr static auto applyImpl(F f, T& v, const char* memberNames[num_members])
+		constexpr static auto apply_impl(F f, T& v, const char* member_names[num_members])
 		{
 			uint32 i = 0;
 			([&]
 				{
-					f(memberNames[i], v.*member_pointers);
+					f(member_names[i], v.*member_pointers);
 					++i;
 				} (), ...);
 		}
@@ -48,12 +48,12 @@ namespace era_engine
 	{																																\
 		static inline const char* member_names[] = { MACRO_FOR_EACH(MEMBER_NAME, MEMBER_NAME, , __VA_ARGS__) };						\
 		static inline const char* struct_name = #name;																				\
-		template <typename T, typename F> constexpr static auto apply(F f, T& v) { return applyImpl(f, v, member_names); }			\
+		template <typename T, typename F> constexpr static auto apply(F f, T& v) { return apply_impl(f, v, member_names); }			\
     };
 
 namespace era_engine
 {
-	template <typename T> struct is_reflected : std::is_base_of<member_list_base, type_descriptor<T>> {};
+	template <typename T> struct is_reflected : std::is_base_of<MemberListBase, type_descriptor<T>> {};
 	template <typename T> inline constexpr bool is_reflected_v = is_reflected<T>::value;
 
 	template <typename T, typename = std::enable_if_t<is_reflected_v<T>>>

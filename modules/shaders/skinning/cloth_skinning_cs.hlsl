@@ -15,17 +15,17 @@
 #define BLOCK_SIZE NUM_QUADS_PER_DIM
 #define NUM_THREADS (BLOCK_SIZE * BLOCK_SIZE)
 
-ConstantBuffer<cloth_skinning_cb> skinningCB		: register(b0);
+ConstantBuffer<ClothSkinningCB> skinning_cb		: register(b0);
 
-StructuredBuffer<mesh_position> inputPositions		: register(t0);
-RWStructuredBuffer<mesh_position> outputPositions	: register(u0);
-RWStructuredBuffer<mesh_others> outputOthers		: register(u1);
+StructuredBuffer<MeshPosition> input_positions		: register(t0);
+RWStructuredBuffer<MeshPosition> output_positions	: register(u0);
+RWStructuredBuffer<MeshOthers> output_others		: register(u1);
 
 groupshared float3 g_positions[NUM_TOTAL_VERTS_TO_LOAD];
 groupshared int3 g_normals[NUM_TOTAL_VERTS_TO_LOAD];
 groupshared int3 g_tangents[NUM_TOTAL_VERTS_TO_LOAD];
 
-static void processTriangle(int a, int b, int c, float2 aUV, float2 bUV, float2 cUV)
+static void process_triangle(int a, int b, int c, float2 a_uv, float2 b_uv, float2 c_uv)
 {
 	float3 edge0 = g_positions[b] - g_positions[a];
 	float3 edge1 = g_positions[c] - g_positions[a];
@@ -43,11 +43,11 @@ static void processTriangle(int a, int b, int c, float2 aUV, float2 bUV, float2 
 	InterlockedAdd(g_normals[c].y, inormal.y);
 	InterlockedAdd(g_normals[c].z, inormal.z);
 
-	float2 deltaUV0 = cUV - aUV;
-	float2 deltaUV1 = bUV - aUV;
+	float2 delta_uv0 = c_uv - a_uv;
+	float2 delta_uv1 = b_uv - a_uv;
 
-	float f = 1.f / cross2(deltaUV0, deltaUV1);
-	float3 tangent = f * (deltaUV1.y * edge0 - deltaUV0.y * edge1);
+	float f = 1.f / cross2(delta_uv0, delta_uv1);
+	float3 tangent = f * (delta_uv1.y * edge0 - delta_uv0.y * edge1);
 	int3 itangent = int3(tangent * 0xFFFF);
 
 	InterlockedAdd(g_tangents[a].x, itangent.x);
@@ -64,18 +64,18 @@ static void processTriangle(int a, int b, int c, float2 aUV, float2 bUV, float2 
 
 [RootSignature(CLOTH_SKINNING_RS)]
 [numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
-void main(cs_input IN)
+void main(CSInput IN)
 {
-	const int2 firstVertexToProcess = IN.groupID.xy * GROUP_FIRST_VERTEX_STRIDE;
-	const int2 firstVertexToLoad = firstVertexToProcess - int2(1, 1);
+	const int2 first_vertex_to_process = IN.group_id.xy * GROUP_FIRST_VERTEX_STRIDE;
+	const int2 first_vertex_to_load = first_vertex_to_process - int2(1, 1);
 
 	uint t;
-	for (t = IN.groupIndex; t < NUM_TOTAL_VERTS_TO_LOAD; t += NUM_THREADS)
+	for (t = IN.group_index; t < NUM_TOTAL_VERTS_TO_LOAD; t += NUM_THREADS)
 	{
-		int2 globalIndex2D = firstVertexToLoad + unflatten2D(t, NUM_VERTS_TO_LOAD_PER_DIM);
-		globalIndex2D = clamp(globalIndex2D, 0, int2(skinningCB.gridSizeX - 1, skinningCB.gridSizeY - 1));
-		const int index = flatten2D(globalIndex2D, skinningCB.gridSizeX);
-		g_positions[t] = inputPositions[index].position;
+		int2 global_index_2d = first_vertex_to_load + unflatten_2d(t, NUM_VERTS_TO_LOAD_PER_DIM);
+		global_index_2d = clamp(global_index_2d, 0, int2(skinning_cb.grid_size_x - 1, skinning_cb.grid_size_y - 1));
+		const int index = flatten_2d(global_index_2d, skinning_cb.grid_size_x);
+		g_positions[t] = input_positions[index].position;
 		g_normals[t] = int3(0, 0, 0);
 		g_tangents[t] = int3(0, 0, 0);
 	}
@@ -84,44 +84,44 @@ void main(cs_input IN)
 
 	// Each thread processes one quad -> two triangles.
 	{
-		const int2 quadIndex = unflatten2D(IN.groupIndex, NUM_QUADS_PER_DIM);
-		const int tlIndex = flatten2D(quadIndex, NUM_VERTS_TO_LOAD_PER_DIM);
-		const int trIndex = tlIndex + 1;
-		const int blIndex = tlIndex + NUM_VERTS_TO_LOAD_PER_DIM;
-		const int brIndex = blIndex + 1;
+		const int2 quad_index = unflatten_2d(IN.group_index, NUM_QUADS_PER_DIM);
+		const int tl_index = flatten_2d(quad_index, NUM_VERTS_TO_LOAD_PER_DIM);
+		const int tr_index = tl_index + 1;
+		const int bl_index = tl_index + NUM_VERTS_TO_LOAD_PER_DIM;
+		const int br_index = bl_index + 1;
 
-		const float2 tlUV = float2(0.f, 0.f);
-		const float2 trUV = float2(1.f, 0.f);
-		const float2 blUV = float2(0.f, 1.f);
-		const float2 brUV = float2(1.f, 1.f);
+		const float2 tl_uv = float2(0.f, 0.f);
+		const float2 tr_uv = float2(1.f, 0.f);
+		const float2 bl_uv = float2(0.f, 1.f);
+		const float2 br_uv = float2(1.f, 1.f);
 
-		processTriangle(tlIndex, blIndex, trIndex, tlUV, blUV, trUV);
-		processTriangle(brIndex, trIndex, blIndex, brUV, trUV, blUV);
+		process_triangle(tl_index, bl_index, tr_index, tl_uv, bl_uv, tr_uv);
+		process_triangle(br_index, tr_index, bl_index, br_uv, tr_uv, bl_uv);
 	}
 
 	GroupMemoryBarrierWithGroupSync();
 
-	float2 invSize = float2(1.f, 1.f) / float2(skinningCB.gridSizeX - 1, skinningCB.gridSizeY - 1);
+	float2 inv_size = float2(1.f, 1.f) / float2(skinning_cb.grid_size_x - 1, skinning_cb.grid_size_y - 1);
 
-	for (t = IN.groupIndex; t < NUM_TOTAL_VERTS_TO_WRITE; t += NUM_THREADS)
+	for (t = IN.group_index; t < NUM_TOTAL_VERTS_TO_WRITE; t += NUM_THREADS)
 	{
-		uint2 blockIndex2D = unflatten2D(t, NUM_VERTS_TO_WRITE_PER_DIM);
-		uint2 globalIndex2D = blockIndex2D + firstVertexToProcess;
+		uint2 block_index_2d = unflatten_2d(t, NUM_VERTS_TO_WRITE_PER_DIM);
+		uint2 global_index_2d = block_index_2d + first_vertex_to_process;
 
-		if (globalIndex2D.x < skinningCB.gridSizeX && globalIndex2D.y < skinningCB.gridSizeY)
+		if (global_index_2d.x < skinning_cb.grid_size_x && global_index_2d.y < skinning_cb.grid_size_y)
 		{
-			uint globalIndex = flatten2D(globalIndex2D, skinningCB.gridSizeX);
-			uint readIndex = (blockIndex2D.y + 1) * NUM_VERTS_TO_LOAD_PER_DIM + blockIndex2D.x + 1;
+			uint global_index = flatten_2d(global_index_2d, skinning_cb.grid_size_x);
+			uint read_index = (block_index_2d.y + 1) * NUM_VERTS_TO_LOAD_PER_DIM + block_index_2d.x + 1;
 
-			mesh_position position;
-			position.position = g_positions[readIndex];
-			outputPositions[skinningCB.writeOffset + globalIndex] = position;
+			MeshPosition position;
+			position.position = g_positions[read_index];
+			output_positions[skinning_cb.write_offset + global_index] = position;
 
-			mesh_others others;
-			others.uv = globalIndex2D * invSize;
-			others.normal = (float3)g_normals[readIndex] / 0xFFFF;
-			others.tangent = (float3)g_tangents[readIndex] / 0xFFFF;
-			outputOthers[skinningCB.writeOffset + globalIndex] = others;
+			MeshOthers others;
+			others.uv = global_index_2d * inv_size;
+			others.normal = (float3)g_normals[read_index] / 0xFFFF;
+			others.tangent = (float3)g_tangents[read_index] / 0xFFFF;
+			output_others[skinning_cb.write_offset + global_index] = others;
 		}
 	}
 }

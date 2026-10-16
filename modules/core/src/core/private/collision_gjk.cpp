@@ -4,9 +4,9 @@
 
 namespace era_engine
 {
-	gjk_internal_success updateGJKSimplex(gjk_simplex& s, const gjk_support_point& a, vec3& dir)
+	GJKInternalSuccess update_gjk_simplex(GJKSimplex& s, const GJKSupportPoint& a, vec3& dir)
 	{
-		if (s.numPoints == 2)
+		if (s.num_points == 2)
 		{
 			// Triangle case
 			vec3 ao = -a.minkowski;
@@ -18,15 +18,15 @@ namespace era_engine
 			if (dot(ao, abp) > 0.f)
 			{
 				s.c = a;
-				dir = crossABA(ab, ao);
-				return gjk_dont_stop;
+				dir = cross_aba(ab, ao);
+				return GJK_DONT_STOP;
 			}
 			vec3 acp = cross(abc, ac);
 			if (dot(ao, acp) > 0.f)
 			{
 				s.b = a;
-				dir = crossABA(ac, ao);
-				return gjk_dont_stop;
+				dir = cross_aba(ac, ao);
+				return GJK_DONT_STOP;
 			}
 
 			// Sort so that normal abc of triangle points outside (negative new search dir)
@@ -34,25 +34,25 @@ namespace era_engine
 			{
 				s.d = s.b;
 				s.b = a;
-				s.numPoints = 3;
+				s.num_points = 3;
 				dir = abc;
-				return gjk_dont_stop;
+				return GJK_DONT_STOP;
 			}
 			if (dot(ao, -abc) >= 0.f)
 			{
 				s.d = s.c;
 				s.c = s.b;
 				s.b = a;
-				s.numPoints = 3;
+				s.num_points = 3;
 				dir = -abc;
-				return gjk_dont_stop;
+				return GJK_DONT_STOP;
 			}
 
 			//ASSERT(false);
 			std::cerr << "GJK ERROR 0\n";
-			return gjk_unexpected_error;
+			return GJK_UNEXPECTED_ERROR;
 		}
-		if (s.numPoints == 3)
+		if (s.num_points == 3)
 		{
 			// Tetrahedron case
 			vec3 ao = -a.minkowski;
@@ -64,7 +64,7 @@ namespace era_engine
 			if (dot(bcd, dir) > 0.00001f || dot(bcd, s.b.minkowski) < -0.00001f)
 			{
 				std::cerr << "GJK ERROR 0\n";
-				return gjk_unexpected_error;
+				return GJK_UNEXPECTED_ERROR;
 			}
 
 			// Normals of faces (point outside)
@@ -73,51 +73,51 @@ namespace era_engine
 			vec3 adc = cross(ad, ac);
 
 			int32 flags = 0;
-			const int32 overABCFlag = 1;
-			const int32 overABDFlag = 2;
-			const int32 overADCFlag = 4;
+			const int32 over_abc_flag = 1;
+			const int32 over_abd_flag = 2;
+			const int32 over_adc_flag = 4;
 
-			flags |= (dot(abc, ao) > 0.f) ? overABCFlag : 0;
-			flags |= (dot(abd, ao) > 0.f) ? overABDFlag : 0;
-			flags |= (dot(adc, ao) > 0.f) ? overADCFlag : 0;
+			flags |= (dot(abc, ao) > 0.f) ? over_abc_flag : 0;
+			flags |= (dot(abd, ao) > 0.f) ? over_abd_flag : 0;
+			flags |= (dot(adc, ao) > 0.f) ? over_adc_flag : 0;
 
-			if (flags == (overABCFlag | overABDFlag | overADCFlag))
+			if (flags == (over_abc_flag | over_abd_flag | over_adc_flag))
 			{
 				std::cerr << "GJK ERROR 0\n";
-				return gjk_unexpected_error;
+				return GJK_UNEXPECTED_ERROR;
 			}
 
 			if (flags == 0)
-				return gjk_stop;
+				return GJK_STOP;
 
-			if (flags == overABCFlag)
+			if (flags == over_abc_flag)
 			{
 			overABC1:
 				if (dot(cross(abc, ab), ao) > 0.f)
 				{
 					// New line: ab
 					s.c = a;
-					s.numPoints = 2;
-					dir = crossABA(ab, ao);
-					return gjk_dont_stop;
+					s.num_points = 2;
+					dir = cross_aba(ab, ao);
+					return GJK_DONT_STOP;
 				}
 			overABC2:
 				if (dot(cross(ac, abc), ao) > 0.f)
 				{
 					// New line: ac
 					s.b = a;
-					s.numPoints = 2;
-					dir = crossABA(ac, ao);
-					return gjk_dont_stop;
+					s.num_points = 2;
+					dir = cross_aba(ac, ao);
+					return GJK_DONT_STOP;
 				}
 
 				// Stay in triangle case: bca
 				s.d = a;
 				dir = abc;
-				return gjk_dont_stop;
+				return GJK_DONT_STOP;
 			}
 
-			if (flags == overABDFlag)
+			if (flags == over_abd_flag)
 			{
 			overABD1:
 				if (dot(cross(abd, ad), ao) > 0.f)
@@ -125,36 +125,36 @@ namespace era_engine
 					// New line: ad
 					s.b = s.d;
 					s.c = a;
-					s.numPoints = 2;
-					dir = crossABA(ad, ao);
-					return gjk_dont_stop;
+					s.num_points = 2;
+					dir = cross_aba(ad, ao);
+					return GJK_DONT_STOP;
 				}
 			overABD2:
 				if (dot(cross(ab, abd), ao) > 0.f)
 				{
 					// New line: ab
 					s.c = a;
-					s.numPoints = 2;
-					dir = crossABA(ab, ao);
-					return gjk_dont_stop;
+					s.num_points = 2;
+					dir = cross_aba(ab, ao);
+					return GJK_DONT_STOP;
 				}
 
 				// Stay in triangle case: bad
 				s.c = a;
 				dir = abd;
-				return gjk_dont_stop;
+				return GJK_DONT_STOP;
 			}
 
-			if (flags == overADCFlag)
+			if (flags == over_adc_flag)
 			{
 			overADC1:
 				if (dot(cross(adc, ac), ao) > 0.f)
 				{
 					// New line: ac
 					s.b = a;
-					s.numPoints = 2;
-					dir = crossABA(ac, ao);
-					return gjk_dont_stop;
+					s.num_points = 2;
+					dir = cross_aba(ac, ao);
+					return GJK_DONT_STOP;
 				}
 			overADC2:
 				if (dot(cross(ad, adc), ao) > 0.f)
@@ -162,18 +162,18 @@ namespace era_engine
 					// New line: ad
 					s.b = a;
 					s.c = s.d;
-					s.numPoints = 2;
-					dir = crossABA(ad, ao);
-					return gjk_dont_stop;
+					s.num_points = 2;
+					dir = cross_aba(ad, ao);
+					return GJK_DONT_STOP;
 				}
 
 				// Stay in triangle case: acd
 				s.b = a;
 				dir = adc;
-				return gjk_dont_stop;
+				return GJK_DONT_STOP;
 			}
 
-			if (flags == (overABCFlag | overABDFlag))
+			if (flags == (over_abc_flag | over_abd_flag))
 			{
 				if (dot(cross(abc, ab), ao) > 0.f)
 				{
@@ -182,7 +182,7 @@ namespace era_engine
 				goto overABC2;
 			}
 
-			if (flags == (overABDFlag | overADCFlag))
+			if (flags == (over_abd_flag | over_adc_flag))
 			{
 				if (dot(cross(abd, ad), ao) > 0.f)
 				{
@@ -191,7 +191,7 @@ namespace era_engine
 				goto overABD2;
 			}
 
-			if (flags == (overADCFlag | overABCFlag))
+			if (flags == (over_adc_flag | over_abc_flag))
 			{
 				if (dot(cross(adc, ac), ao) > 0.f)
 				{
@@ -202,11 +202,11 @@ namespace era_engine
 
 			//ASSERT(false);
 			std::cerr << "GJK ERROR 1\n";
-			return gjk_unexpected_error;
+			return GJK_UNEXPECTED_ERROR;
 		}
 
 		//ASSERT(false);
 		std::cerr << "GJK ERROR 2\n";
-		return gjk_unexpected_error;
+		return GJK_UNEXPECTED_ERROR;
 	}
 }

@@ -49,17 +49,17 @@ namespace era_engine
 
     float perlin_noise(float x, float y, float z)
     {
-        float flooredX = floor(x);
-        float flooredY = floor(y);
-        float flooredZ = floor(z);
+        float floored_x = floor(x);
+        float floored_y = floor(y);
+        float floored_z = floor(z);
 
-        int X = (int)flooredX & 255,                  // FIND UNIT CUBE THAT
-            Y = (int)flooredY & 255,                  // CONTAINS POINT.
-            Z = (int)flooredZ & 255;
+        int X = (int)floored_x & 255,                  // FIND UNIT CUBE THAT
+            Y = (int)floored_y & 255,                  // CONTAINS POINT.
+            Z = (int)floored_z & 255;
 
-        x -= flooredX;                                // FIND RELATIVE X,Y,Z
-        y -= flooredY;                                // OF POINT IN CUBE.
-        z -= flooredZ;
+        x -= floored_x;                                // FIND RELATIVE X,Y,Z
+        y -= floored_y;                                // OF POINT IN CUBE.
+        z -= floored_z;
 
         float u = fade(x),                                // COMPUTE FADE CURVES
             v = fade(y),                                // FOR EACH OF X,Y,Z.

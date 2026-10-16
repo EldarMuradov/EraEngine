@@ -93,7 +93,7 @@ namespace era_engine
 				Lock lock{ file_registry_mutex };
 				switch (e.change)
 				{
-				case FileSystemChange::Add:
+				case FileSystemChange::ADD:
 				{
 					LOG_MESSAGE("Asset '%ws' added", normal_path.c_str());
 
@@ -104,7 +104,7 @@ namespace era_engine
 					handle_to_path.insert({ handle, normal_path });
 				} break;
 
-				case FileSystemChange::Delete:
+				case FileSystemChange::REMOVE:
 				{
 					LOG_MESSAGE("Asset '%ws' deleted", normal_path.c_str());
 
@@ -122,12 +122,12 @@ namespace era_engine
 					}
 				} break;
 
-				case FileSystemChange::Modify:
+				case FileSystemChange::MODIFY:
 				{
 					LOG_MESSAGE("Asset '%ws' modified", normal_path.c_str());
 				} break;
 
-				case FileSystemChange::Rename:
+				case FileSystemChange::RENAME:
 				{
 					fs::path old_path_normal = e.old_path.lexically_normal().make_preferred().c_str();
 					LOG_MESSAGE("Asset renamed from '%ws' to '%ws'", old_path_normal, normal_path.c_str());

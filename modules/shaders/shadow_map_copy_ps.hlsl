@@ -13,22 +13,22 @@
 	"visibility=SHADER_VISIBILITY_PIXEL)," \
 "DescriptorTable(SRV(t0, numDescriptors=1, flags = DESCRIPTORS_VOLATILE), visibility=SHADER_VISIBILITY_PIXEL)"
 
-struct ps_input
+struct PSInput
 {
 	float2 uv	: TEXCOORDS;
 };
 
-cbuffer shadow_map_copy_cb : register(b0)
+cbuffer ShadowMapCopyCB : register(b0)
 {
-	float2 uvOffset;
-	float2 uvScale;
+	float2 uv_offset;
+	float2 uv_scale;
 };
 
-SamplerState texSampler				: register(s0);
-Texture2D<float> shadowMap			: register(t0);
+SamplerState tex_sampler				: register(s0);
+Texture2D<float> shadow_map			: register(t0);
 
 [RootSignature(SHADOW_MAP_COPY_RS)]
-float main(ps_input IN) : SV_Depth
+float main(PSInput IN) : SV_Depth
 {
-	return shadowMap.Sample(texSampler, IN.uv * uvScale + uvOffset);
+	return shadow_map.Sample(tex_sampler, IN.uv * uv_scale + uv_offset);
 }

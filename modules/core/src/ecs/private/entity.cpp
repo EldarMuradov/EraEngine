@@ -12,7 +12,7 @@
 namespace era_engine
 {
 
-	Entity Entity::Null = Entity(nullptr);
+	Entity Entity::null = Entity(nullptr);
 
 	RTTR_REGISTRATION
 	{
@@ -73,7 +73,7 @@ namespace era_engine
 	bool Entity::is_valid() const
 	{
 		return internal_data != nullptr &&
-			   internal_data->entity_handle != Entity::NullHandle &&
+			   internal_data->entity_handle != Entity::null_handle &&
 			   internal_data->world != nullptr;
 	}
 
@@ -207,7 +207,7 @@ namespace era_engine
 		{
 			return Entity(internal_data);
 		}
-		return Entity::Null;
+		return Entity::null;
 	}
 
 	bool EntityPtr::operator==(const EntityPtr& _other) const

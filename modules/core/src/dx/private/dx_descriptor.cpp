@@ -7,9 +7,9 @@
 
 namespace era_engine
 {
-	inline constexpr uint32 getShader4ComponentMapping(DXGI_FORMAT format)
+	inline constexpr uint32 get_shader4_component_mapping(DXGI_FORMAT format)
 	{
-		switch (getNumberOfChannels(format))
+		switch (get_number_of_channels(format))
 		{
 		case 1:
 			return D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(
@@ -39,426 +39,426 @@ namespace era_engine
 		return D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::create2DTextureSRV(const ref<dx_texture>& texture, texture_mip_range mipRange, DXGI_FORMAT overrideFormat)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_2d_texture_srv(const ref<DXTexture>& texture, TextureMipRange mip_range, DXGI_FORMAT override_format)
 	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = (overrideFormat == DXGI_FORMAT_UNKNOWN) ? texture->resource->GetDesc().Format : overrideFormat;
-		srvDesc.Shader4ComponentMapping = getShader4ComponentMapping(srvDesc.Format);
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MostDetailedMip = mipRange.first;
-		srvDesc.Texture2D.MipLevels = mipRange.count;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.Format = (override_format == DXGI_FORMAT_UNKNOWN) ? texture->resource->GetDesc().Format : override_format;
+		srv_desc.Shader4ComponentMapping = get_shader4_component_mapping(srv_desc.Format);
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srv_desc.Texture2D.MostDetailedMip = mip_range.first;
+		srv_desc.Texture2D.MipLevels = mip_range.count;
 
-		dxContext.device->CreateShaderResourceView(texture->resource.Get(), &srvDesc, cpuHandle);
+		dx_context.device->CreateShaderResourceView(texture->resource.Get(), &srv_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createCubemapSRV(const ref<dx_texture>& texture, texture_mip_range mipRange, DXGI_FORMAT overrideFormat)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_cubemap_srv(const ref<DXTexture>& texture, TextureMipRange mip_range, DXGI_FORMAT override_format)
 	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = (overrideFormat == DXGI_FORMAT_UNKNOWN) ? texture->resource->GetDesc().Format : overrideFormat;
-		srvDesc.Shader4ComponentMapping = getShader4ComponentMapping(srvDesc.Format);
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-		srvDesc.TextureCube.MostDetailedMip = mipRange.first;
-		srvDesc.TextureCube.MipLevels = mipRange.count;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.Format = (override_format == DXGI_FORMAT_UNKNOWN) ? texture->resource->GetDesc().Format : override_format;
+		srv_desc.Shader4ComponentMapping = get_shader4_component_mapping(srv_desc.Format);
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+		srv_desc.TextureCube.MostDetailedMip = mip_range.first;
+		srv_desc.TextureCube.MipLevels = mip_range.count;
 
-		dxContext.device->CreateShaderResourceView(texture->resource.Get(), &srvDesc, cpuHandle);
+		dx_context.device->CreateShaderResourceView(texture->resource.Get(), &srv_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createCubemapArraySRV(const ref<dx_texture>& texture, texture_mip_range mipRange, uint32 firstCube, uint32 numCubes, DXGI_FORMAT overrideFormat)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_cubemap_array_srv(const ref<DXTexture>& texture, TextureMipRange mip_range, uint32 first_cube, uint32 num_cubes, DXGI_FORMAT override_format)
 	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = (overrideFormat == DXGI_FORMAT_UNKNOWN) ? texture->resource->GetDesc().Format : overrideFormat;
-		srvDesc.Shader4ComponentMapping = getShader4ComponentMapping(srvDesc.Format);
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
-		srvDesc.TextureCubeArray.MostDetailedMip = mipRange.first;
-		srvDesc.TextureCubeArray.MipLevels = mipRange.count;
-		srvDesc.TextureCubeArray.NumCubes = numCubes;
-		srvDesc.TextureCubeArray.First2DArrayFace = firstCube * 6;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.Format = (override_format == DXGI_FORMAT_UNKNOWN) ? texture->resource->GetDesc().Format : override_format;
+		srv_desc.Shader4ComponentMapping = get_shader4_component_mapping(srv_desc.Format);
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
+		srv_desc.TextureCubeArray.MostDetailedMip = mip_range.first;
+		srv_desc.TextureCubeArray.MipLevels = mip_range.count;
+		srv_desc.TextureCubeArray.NumCubes = num_cubes;
+		srv_desc.TextureCubeArray.First2DArrayFace = first_cube * 6;
 
-		dxContext.device->CreateShaderResourceView(texture->resource.Get(), &srvDesc, cpuHandle);
+		dx_context.device->CreateShaderResourceView(texture->resource.Get(), &srv_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createVolumeTextureSRV(const ref<dx_texture>& texture, texture_mip_range mipRange, DXGI_FORMAT overrideFormat)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_volume_texture_srv(const ref<DXTexture>& texture, TextureMipRange mip_range, DXGI_FORMAT override_format)
 	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = (overrideFormat == DXGI_FORMAT_UNKNOWN) ? texture->resource->GetDesc().Format : overrideFormat;
-		srvDesc.Shader4ComponentMapping = getShader4ComponentMapping(srvDesc.Format);
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-		srvDesc.Texture3D.MostDetailedMip = mipRange.first;
-		srvDesc.Texture3D.MipLevels = mipRange.count;
-		srvDesc.Texture3D.ResourceMinLODClamp = 0;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.Format = (override_format == DXGI_FORMAT_UNKNOWN) ? texture->resource->GetDesc().Format : override_format;
+		srv_desc.Shader4ComponentMapping = get_shader4_component_mapping(srv_desc.Format);
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+		srv_desc.Texture3D.MostDetailedMip = mip_range.first;
+		srv_desc.Texture3D.MipLevels = mip_range.count;
+		srv_desc.Texture3D.ResourceMinLODClamp = 0;
 
-		dxContext.device->CreateShaderResourceView(texture->resource.Get(), &srvDesc, cpuHandle);
+		dx_context.device->CreateShaderResourceView(texture->resource.Get(), &srv_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createDepthTextureSRV(const ref<dx_texture>& texture)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_depth_texture_srv(const ref<DXTexture>& texture)
 	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = getDepthReadFormat(texture->format);
-		srvDesc.Shader4ComponentMapping = D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(0, 0, 0, 0);
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MipLevels = 1;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.Format = get_depth_read_format(texture->format);
+		srv_desc.Shader4ComponentMapping = D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(0, 0, 0, 0);
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srv_desc.Texture2D.MipLevels = 1;
 
-		dxContext.device->CreateShaderResourceView(texture->resource.Get(), &srvDesc, cpuHandle);
+		dx_context.device->CreateShaderResourceView(texture->resource.Get(), &srv_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createDepthTextureArraySRV(const ref<dx_texture>& texture)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_depth_texture_array_srv(const ref<DXTexture>& texture)
 	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = getDepthReadFormat(texture->format);
-		srvDesc.Shader4ComponentMapping = D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(0, 0, 0, 0);
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-		srvDesc.Texture2DArray.MipLevels = 1;
-		srvDesc.Texture2DArray.FirstArraySlice = 0;
-		srvDesc.Texture2DArray.ArraySize = texture->resource->GetDesc().DepthOrArraySize;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.Format = get_depth_read_format(texture->format);
+		srv_desc.Shader4ComponentMapping = D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(0, 0, 0, 0);
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+		srv_desc.Texture2DArray.MipLevels = 1;
+		srv_desc.Texture2DArray.FirstArraySlice = 0;
+		srv_desc.Texture2DArray.ArraySize = texture->resource->GetDesc().DepthOrArraySize;
 
-		dxContext.device->CreateShaderResourceView(texture->resource.Get(), &srvDesc, cpuHandle);
+		dx_context.device->CreateShaderResourceView(texture->resource.Get(), &srv_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createStencilTextureSRV(const ref<dx_texture>& texture)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_stencil_texture_srv(const ref<DXTexture>& texture)
 	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = getStencilReadFormat(texture->format);
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MipLevels = 1;
-		srvDesc.Texture2D.PlaneSlice = 1;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.Format = get_stencil_read_format(texture->format);
+		srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srv_desc.Texture2D.MipLevels = 1;
+		srv_desc.Texture2D.PlaneSlice = 1;
 
-		dxContext.device->CreateShaderResourceView(texture->resource.Get(), &srvDesc, cpuHandle);
+		dx_context.device->CreateShaderResourceView(texture->resource.Get(), &srv_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullTextureSRV()
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_null_texture_srv()
 	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Texture2D.MipLevels = 0;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srv_desc.Format = DXGI_FORMAT_R32_FLOAT;
+		srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srv_desc.Texture2D.MipLevels = 0;
 
-		dxContext.device->CreateShaderResourceView(0, &srvDesc, cpuHandle);
+		dx_context.device->CreateShaderResourceView(0, &srv_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createBufferSRV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_buffer_srv(const ref<DXBuffer>& buffer, BufferRange buffer_range)
 	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-		srvDesc.Buffer.FirstElement = bufferRange.firstElement;
-		srvDesc.Buffer.NumElements = (bufferRange.numElements != -1) ? bufferRange.numElements : (buffer->elementCount - bufferRange.firstElement);
-		srvDesc.Buffer.StructureByteStride = buffer->elementSize;
-		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srv_desc.Format = DXGI_FORMAT_UNKNOWN;
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srv_desc.Buffer.FirstElement = buffer_range.first_element;
+		srv_desc.Buffer.NumElements = (buffer_range.num_elements != -1) ? buffer_range.num_elements : (buffer->element_count - buffer_range.first_element);
+		srv_desc.Buffer.StructureByteStride = buffer->element_size;
+		srv_desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-		dxContext.device->CreateShaderResourceView(buffer->resource.Get(), &srvDesc, cpuHandle);
+		dx_context.device->CreateShaderResourceView(buffer->resource.Get(), &srv_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createRawBufferSRV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_raw_buffer_srv(const ref<DXBuffer>& buffer, BufferRange buffer_range)
 	{
-		uint32 firstElementByteOffset = bufferRange.firstElement * buffer->elementSize;
-		ASSERT(firstElementByteOffset % 16 == 0);
+		uint32 first_element_byte_offset = buffer_range.first_element * buffer->element_size;
+		ASSERT(first_element_byte_offset % 16 == 0);
 
-		uint32 count = (bufferRange.numElements != -1) ? bufferRange.numElements : (buffer->elementCount - bufferRange.firstElement);
-		uint32 totalSize = count * buffer->elementSize;
+		uint32 count = (buffer_range.num_elements != -1) ? buffer_range.num_elements : (buffer->element_count - buffer_range.first_element);
+		uint32 total_size = count * buffer->element_size;
 
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-		srvDesc.Buffer.FirstElement = firstElementByteOffset / 4;
-		srvDesc.Buffer.NumElements = totalSize / 4;
-		srvDesc.Buffer.StructureByteStride = 0;
-		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srv_desc.Format = DXGI_FORMAT_R32_TYPELESS;
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srv_desc.Buffer.FirstElement = first_element_byte_offset / 4;
+		srv_desc.Buffer.NumElements = total_size / 4;
+		srv_desc.Buffer.StructureByteStride = 0;
+		srv_desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
 
-		dxContext.device->CreateShaderResourceView(buffer->resource.Get(), &srvDesc, cpuHandle);
+		dx_context.device->CreateShaderResourceView(buffer->resource.Get(), &srv_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullBufferSRV()
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_null_buffer_srv()
 	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Buffer.FirstElement = 0;
-		srvDesc.Buffer.NumElements = 1;
-		srvDesc.Buffer.StructureByteStride = 0;
-		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.Format = DXGI_FORMAT_R32_TYPELESS;
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srv_desc.Buffer.FirstElement = 0;
+		srv_desc.Buffer.NumElements = 1;
+		srv_desc.Buffer.StructureByteStride = 0;
+		srv_desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
 
-		dxContext.device->CreateShaderResourceView(0, &srvDesc, cpuHandle);
+		dx_context.device->CreateShaderResourceView(0, &srv_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::create2DTextureUAV(const ref<dx_texture>& texture, uint32 mipSlice, DXGI_FORMAT overrideFormat)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_2d_texture_uav(const ref<DXTexture>& texture, uint32 mip_slice, DXGI_FORMAT override_format)
 	{
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-		uavDesc.Format = overrideFormat;
-		uavDesc.Texture2D.MipSlice = mipSlice;
-		dxContext.device->CreateUnorderedAccessView(texture->resource.Get(), 0, &uavDesc, cpuHandle);
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+		uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+		uav_desc.Format = override_format;
+		uav_desc.Texture2D.MipSlice = mip_slice;
+		dx_context.device->CreateUnorderedAccessView(texture->resource.Get(), 0, &uav_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::create2DTextureArrayUAV(const ref<dx_texture>& texture, uint32 mipSlice, DXGI_FORMAT overrideFormat)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_2d_texture_array_uav(const ref<DXTexture>& texture, uint32 mip_slice, DXGI_FORMAT override_format)
 	{
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
-		uavDesc.Format = overrideFormat;
-		uavDesc.Texture2DArray.FirstArraySlice = 0;
-		uavDesc.Texture2DArray.ArraySize = texture->resource->GetDesc().DepthOrArraySize;
-		uavDesc.Texture2DArray.MipSlice = mipSlice;
-		dxContext.device->CreateUnorderedAccessView(texture->resource.Get(), 0, &uavDesc, cpuHandle);
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+		uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+		uav_desc.Format = override_format;
+		uav_desc.Texture2DArray.FirstArraySlice = 0;
+		uav_desc.Texture2DArray.ArraySize = texture->resource->GetDesc().DepthOrArraySize;
+		uav_desc.Texture2DArray.MipSlice = mip_slice;
+		dx_context.device->CreateUnorderedAccessView(texture->resource.Get(), 0, &uav_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createCubemapUAV(const ref<dx_texture>& texture, uint32 mipSlice, DXGI_FORMAT overrideFormat)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_cubemap_uav(const ref<DXTexture>& texture, uint32 mip_slice, DXGI_FORMAT override_format)
 	{
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
-		uavDesc.Format = overrideFormat;
-		uavDesc.Texture2DArray.FirstArraySlice = 0;
-		uavDesc.Texture2DArray.ArraySize = texture->resource->GetDesc().DepthOrArraySize;
-		uavDesc.Texture2DArray.MipSlice = mipSlice;
-		dxContext.device->CreateUnorderedAccessView(texture->resource.Get(), 0, &uavDesc, cpuHandle);
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+		uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+		uav_desc.Format = override_format;
+		uav_desc.Texture2DArray.FirstArraySlice = 0;
+		uav_desc.Texture2DArray.ArraySize = texture->resource->GetDesc().DepthOrArraySize;
+		uav_desc.Texture2DArray.MipSlice = mip_slice;
+		dx_context.device->CreateUnorderedAccessView(texture->resource.Get(), 0, &uav_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createVolumeTextureUAV(const ref<dx_texture>& texture, uint32 mipSlice, DXGI_FORMAT overrideFormat)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_volume_texture_uav(const ref<DXTexture>& texture, uint32 mip_slice, DXGI_FORMAT override_format)
 	{
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
-		uavDesc.Format = overrideFormat;
-		uavDesc.Texture3D.MipSlice = mipSlice;
-		uavDesc.Texture3D.FirstWSlice = 0;
-		uavDesc.Texture3D.WSize = texture->depth;
-		dxContext.device->CreateUnorderedAccessView(texture->resource.Get(), 0, &uavDesc, cpuHandle);
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+		uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
+		uav_desc.Format = override_format;
+		uav_desc.Texture3D.MipSlice = mip_slice;
+		uav_desc.Texture3D.FirstWSlice = 0;
+		uav_desc.Texture3D.WSize = texture->depth;
+		dx_context.device->CreateUnorderedAccessView(texture->resource.Get(), 0, &uav_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullTextureUAV()
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_null_texture_uav()
 	{
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-		uavDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+		uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+		uav_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
-		dxContext.device->CreateUnorderedAccessView(0, 0, &uavDesc, cpuHandle);
+		dx_context.device->CreateUnorderedAccessView(0, 0, &uav_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createBufferUAV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_buffer_uav(const ref<DXBuffer>& buffer, BufferRange buffer_range)
 	{
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-		uavDesc.Buffer.CounterOffsetInBytes = 0;
-		uavDesc.Buffer.FirstElement = bufferRange.firstElement;
-		uavDesc.Buffer.NumElements = (bufferRange.numElements != -1) ? bufferRange.numElements : (buffer->elementCount - bufferRange.firstElement);
-		uavDesc.Buffer.StructureByteStride = buffer->elementSize;
-		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+		uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		uav_desc.Buffer.CounterOffsetInBytes = 0;
+		uav_desc.Buffer.FirstElement = buffer_range.first_element;
+		uav_desc.Buffer.NumElements = (buffer_range.num_elements != -1) ? buffer_range.num_elements : (buffer->element_count - buffer_range.first_element);
+		uav_desc.Buffer.StructureByteStride = buffer->element_size;
+		uav_desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 
-		dxContext.device->CreateUnorderedAccessView(buffer->resource.Get(), 0, &uavDesc, cpuHandle);
+		dx_context.device->CreateUnorderedAccessView(buffer->resource.Get(), 0, &uav_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createBufferUintUAV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_buffer_uint_uav(const ref<DXBuffer>& buffer, BufferRange buffer_range)
 	{
-		uint32 firstElementByteOffset = bufferRange.firstElement * buffer->elementSize;
-		ASSERT(firstElementByteOffset % 16 == 0);
+		uint32 first_element_byte_offset = buffer_range.first_element * buffer->element_size;
+		ASSERT(first_element_byte_offset % 16 == 0);
 
-		uint32 count = (bufferRange.numElements != -1) ? bufferRange.numElements : (buffer->elementCount - bufferRange.firstElement);
-		uint32 totalSize = count * buffer->elementSize;
+		uint32 count = (buffer_range.num_elements != -1) ? buffer_range.num_elements : (buffer->element_count - buffer_range.first_element);
+		uint32 total_size = count * buffer->element_size;
 
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.Format = DXGI_FORMAT_R32_UINT;
-		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-		uavDesc.Buffer.CounterOffsetInBytes = 0;
-		uavDesc.Buffer.FirstElement = firstElementByteOffset / 4;
-		uavDesc.Buffer.NumElements = totalSize / 4;
-		uavDesc.Buffer.StructureByteStride = 0;
-		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+		uav_desc.Format = DXGI_FORMAT_R32_UINT;
+		uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		uav_desc.Buffer.CounterOffsetInBytes = 0;
+		uav_desc.Buffer.FirstElement = first_element_byte_offset / 4;
+		uav_desc.Buffer.NumElements = total_size / 4;
+		uav_desc.Buffer.StructureByteStride = 0;
+		uav_desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 
-		dxContext.device->CreateUnorderedAccessView(buffer->resource.Get(), 0, &uavDesc, cpuHandle);
+		dx_context.device->CreateUnorderedAccessView(buffer->resource.Get(), 0, &uav_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createRawBufferUAV(const ref<dx_buffer>& buffer, buffer_range bufferRange)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_raw_buffer_uav(const ref<DXBuffer>& buffer, BufferRange buffer_range)
 	{
-		uint32 firstElementByteOffset = bufferRange.firstElement * buffer->elementSize;
-		ASSERT(firstElementByteOffset % 16 == 0);
+		uint32 first_element_byte_offset = buffer_range.first_element * buffer->element_size;
+		ASSERT(first_element_byte_offset % 16 == 0);
 
-		uint32 count = (bufferRange.numElements != -1) ? bufferRange.numElements : (buffer->elementCount - bufferRange.firstElement);
-		uint32 totalSize = count * buffer->elementSize;
+		uint32 count = (buffer_range.num_elements != -1) ? buffer_range.num_elements : (buffer->element_count - buffer_range.first_element);
+		uint32 total_size = count * buffer->element_size;
 
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-		uavDesc.Buffer.FirstElement = firstElementByteOffset / 4;
-		uavDesc.Buffer.NumElements = totalSize / 4;
-		uavDesc.Buffer.StructureByteStride = 0;
-		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+		uav_desc.Format = DXGI_FORMAT_R32_TYPELESS;
+		uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		uav_desc.Buffer.FirstElement = first_element_byte_offset / 4;
+		uav_desc.Buffer.NumElements = total_size / 4;
+		uav_desc.Buffer.StructureByteStride = 0;
+		uav_desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
 
-		dxContext.device->CreateUnorderedAccessView(buffer->resource.Get(), 0, &uavDesc, cpuHandle);
+		dx_context.device->CreateUnorderedAccessView(buffer->resource.Get(), 0, &uav_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createNullBufferUAV()
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_null_buffer_uav()
 	{
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+		uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		uav_desc.Format = DXGI_FORMAT_UNKNOWN;
 
-		dxContext.device->CreateUnorderedAccessView(0, 0, &uavDesc, cpuHandle);
+		dx_context.device->CreateUnorderedAccessView(0, 0, &uav_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::createRaytracingAccelerationStructureSRV(const ref<dx_buffer>& tlas)
+	DXCPUDescriptorHandle& DXCPUDescriptorHandle::create_raytracing_acceleration_structure_srv(const ref<DXBuffer>& tlas)
 	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.RaytracingAccelerationStructure.Location = tlas->gpuVirtualAddress;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+		srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srv_desc.RaytracingAccelerationStructure.Location = tlas->gpu_virtual_address;
 
-		dxContext.device->CreateShaderResourceView(nullptr, &srvDesc, cpuHandle);
+		dx_context.device->CreateShaderResourceView(nullptr, &srv_desc, cpu_handle);
 
 		return *this;
 	}
 
-	NODISCARD dx_cpu_descriptor_handle dx_cpu_descriptor_handle::operator+(uint32 i)
+	NODISCARD DXCPUDescriptorHandle DXCPUDescriptorHandle::operator+(uint32 i)
 	{
-		return { CD3DX12_CPU_DESCRIPTOR_HANDLE(cpuHandle, i, dxContext.descriptorHandleIncrementSize) };
+		return { CD3DX12_CPU_DESCRIPTOR_HANDLE(cpu_handle, i, dx_context.descriptor_handle_increment_size) };
 	}
 
-	NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::operator+=(uint32 i)
+	NODISCARD DXCPUDescriptorHandle& DXCPUDescriptorHandle::operator+=(uint32 i)
 	{
-		cpuHandle.Offset(i, dxContext.descriptorHandleIncrementSize);
+		cpu_handle.Offset(i, dx_context.descriptor_handle_increment_size);
 		return *this;
 	}
 
-	NODISCARD dx_cpu_descriptor_handle& dx_cpu_descriptor_handle::operator++()
+	NODISCARD DXCPUDescriptorHandle& DXCPUDescriptorHandle::operator++()
 	{
-		cpuHandle.Offset(dxContext.descriptorHandleIncrementSize);
+		cpu_handle.Offset(dx_context.descriptor_handle_increment_size);
 		return *this;
 	}
 
-	NODISCARD dx_cpu_descriptor_handle dx_cpu_descriptor_handle::operator++(int)
+	NODISCARD DXCPUDescriptorHandle DXCPUDescriptorHandle::operator++(int)
 	{
-		dx_cpu_descriptor_handle result = *this;
-		cpuHandle.Offset(dxContext.descriptorHandleIncrementSize);
+		DXCPUDescriptorHandle result = *this;
+		cpu_handle.Offset(dx_context.descriptor_handle_increment_size);
 		return result;
 	}
 
-	NODISCARD dx_gpu_descriptor_handle dx_gpu_descriptor_handle::operator+(uint32 i)
+	NODISCARD DXGPUDescriptorHandle DXGPUDescriptorHandle::operator+(uint32 i)
 	{
-		return { CD3DX12_GPU_DESCRIPTOR_HANDLE(gpuHandle, i, dxContext.descriptorHandleIncrementSize) };
+		return { CD3DX12_GPU_DESCRIPTOR_HANDLE(gpu_handle, i, dx_context.descriptor_handle_increment_size) };
 	}
 
-	NODISCARD dx_gpu_descriptor_handle& dx_gpu_descriptor_handle::operator+=(uint32 i)
+	NODISCARD DXGPUDescriptorHandle& DXGPUDescriptorHandle::operator+=(uint32 i)
 	{
-		gpuHandle.Offset(i, dxContext.descriptorHandleIncrementSize);
+		gpu_handle.Offset(i, dx_context.descriptor_handle_increment_size);
 		return *this;
 	}
 
-	NODISCARD dx_gpu_descriptor_handle& dx_gpu_descriptor_handle::operator++()
+	NODISCARD DXGPUDescriptorHandle& DXGPUDescriptorHandle::operator++()
 	{
-		gpuHandle.Offset(dxContext.descriptorHandleIncrementSize);
+		gpu_handle.Offset(dx_context.descriptor_handle_increment_size);
 		return *this;
 	}
 
-	NODISCARD dx_gpu_descriptor_handle dx_gpu_descriptor_handle::operator++(int)
+	NODISCARD DXGPUDescriptorHandle DXGPUDescriptorHandle::operator++(int)
 	{
-		dx_gpu_descriptor_handle result = *this;
-		gpuHandle.Offset(dxContext.descriptorHandleIncrementSize);
+		DXGPUDescriptorHandle result = *this;
+		gpu_handle.Offset(dx_context.descriptor_handle_increment_size);
 		return result;
 	}
 
-	dx_rtv_descriptor_handle& dx_rtv_descriptor_handle::create2DTextureRTV(const ref<dx_texture>& texture, uint32 arraySlice, uint32 mipSlice)
+	DXRTVDescriptorHandle& DXRTVDescriptorHandle::create_2d_texture_rtv(const ref<DXTexture>& texture, uint32 array_slice, uint32 mip_slice)
 	{
-		ASSERT(texture->supportsRTV);
+		ASSERT(texture->supports_rtv);
 
-		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
-		rtvDesc.Format = texture->format;
+		D3D12_RENDER_TARGET_VIEW_DESC rtv_desc;
+		rtv_desc.Format = texture->format;
 
 		if (texture->depth == 1)
 		{
-			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-			rtvDesc.Texture2D.MipSlice = mipSlice;
-			rtvDesc.Texture2D.PlaneSlice = 0;
+			rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+			rtv_desc.Texture2D.MipSlice = mip_slice;
+			rtv_desc.Texture2D.PlaneSlice = 0;
 
-			dxContext.device->CreateRenderTargetView(texture->resource.Get(), &rtvDesc, cpuHandle);
+			dx_context.device->CreateRenderTargetView(texture->resource.Get(), &rtv_desc, cpu_handle);
 		}
 		else
 		{
-			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
-			rtvDesc.Texture2DArray.FirstArraySlice = arraySlice;
-			rtvDesc.Texture2DArray.ArraySize = 1;
-			rtvDesc.Texture2DArray.MipSlice = mipSlice;
-			rtvDesc.Texture2DArray.PlaneSlice = 0;
+			rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+			rtv_desc.Texture2DArray.FirstArraySlice = array_slice;
+			rtv_desc.Texture2DArray.ArraySize = 1;
+			rtv_desc.Texture2DArray.MipSlice = mip_slice;
+			rtv_desc.Texture2DArray.PlaneSlice = 0;
 
-			dxContext.device->CreateRenderTargetView(texture->resource.Get(), &rtvDesc, cpuHandle);
+			dx_context.device->CreateRenderTargetView(texture->resource.Get(), &rtv_desc, cpu_handle);
 		}
 		return *this;
 	}
 
-	dx_rtv_descriptor_handle& dx_rtv_descriptor_handle::createNullTextureRTV(DXGI_FORMAT format)
+	DXRTVDescriptorHandle& DXRTVDescriptorHandle::create_null_texture_rtv(DXGI_FORMAT format)
 	{
-		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-		rtvDesc.Format = format;
-		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+		D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
+		rtv_desc.Format = format;
+		rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
-		dxContext.device->CreateRenderTargetView(0, &rtvDesc, cpuHandle);
+		dx_context.device->CreateRenderTargetView(0, &rtv_desc, cpu_handle);
 
 		return *this;
 	}
 
-	dx_dsv_descriptor_handle& dx_dsv_descriptor_handle::create2DTextureDSV(const ref<dx_texture>& texture, uint32 arraySlice, uint32 mipSlice)
+	DXDSVDescriptorHandle& DXDSVDescriptorHandle::create_2d_texture_dsv(const ref<DXTexture>& texture, uint32 array_slice, uint32 mip_slice)
 	{
-		ASSERT(texture->supportsDSV);
-		ASSERT(isDepthFormat(texture->format));
+		ASSERT(texture->supports_dsv);
+		ASSERT(is_depth_format(texture->format));
 
-		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-		dsvDesc.Format = texture->format;
+		D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
+		dsv_desc.Format = texture->format;
 
 		if (texture->depth == 1)
 		{
-			dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-			dsvDesc.Texture2D.MipSlice = mipSlice;
+			dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+			dsv_desc.Texture2D.MipSlice = mip_slice;
 
-			dxContext.device->CreateDepthStencilView(texture->resource.Get(), &dsvDesc, cpuHandle);
+			dx_context.device->CreateDepthStencilView(texture->resource.Get(), &dsv_desc, cpu_handle);
 		}
 		else
 		{
-			dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
-			dsvDesc.Texture2DArray.FirstArraySlice = arraySlice;
-			dsvDesc.Texture2DArray.ArraySize = 1;
-			dsvDesc.Texture2DArray.MipSlice = mipSlice;
+			dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+			dsv_desc.Texture2DArray.FirstArraySlice = array_slice;
+			dsv_desc.Texture2DArray.ArraySize = 1;
+			dsv_desc.Texture2DArray.MipSlice = mip_slice;
 
-			dxContext.device->CreateDepthStencilView(texture->resource.Get(), &dsvDesc, cpuHandle);
+			dx_context.device->CreateDepthStencilView(texture->resource.Get(), &dsv_desc, cpu_handle);
 		}
 		return *this;
 	}

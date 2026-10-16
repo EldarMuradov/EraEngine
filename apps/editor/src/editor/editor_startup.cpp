@@ -33,10 +33,10 @@ namespace era_engine
 			ASSERT(loader.status());
 		};
 
-		dx_window* window = get_object<dx_window>();
+		DXWindow* window = get_object<DXWindow>();
 		window->initialize(TEXT("  Editor - Era Engine - <DX12>"), 1920, 1080);
-		window->setIcon(get_asset_path("/resources/icons/Logo.ico"));
-		window->setCustomWindowStyle();
+		window->set_icon(get_asset_path("/resources/icons/Logo.ico"));
+		window->set_custom_window_style();
 		window->maximize();
 		window->init_input();
 
@@ -44,7 +44,7 @@ namespace era_engine
 		game_world->get_system_scheduler()->set_fixed_update_rate(60.0f);
 		game_world->init();
 
-		window->setFileDropCallback([&game_world](const fs::path& s) { EditorFileUtils::handle_file_drop(s, game_world); });
+		window->set_file_drop_callback([&game_world](const fs::path& s) { EditorFileUtils::handle_file_drop(s, game_world); });
 		
 		game_world->add_tag("physics");
 		game_world->add_tag("render");
@@ -53,7 +53,7 @@ namespace era_engine
 
 		game_world->add_tag("debug");
 
-		initializeTransformationGizmos();
+		initialize_transformation_gizmos();
 
 		{
 			using namespace physics;

@@ -6,27 +6,27 @@
 
 namespace era_engine
 {
-	void os::system_calls::showInExplorer(std::string_view path)
+	void os::SystemCalls::show_in_explorer(std::string_view path)
 	{
-		ShellExecuteA(NULL, "open", path_parser::makeWindowsStyle(path).c_str(), NULL, NULL, SW_SHOWNORMAL);
+		ShellExecuteA(NULL, "open", PathParser::make_windows_style(path).c_str(), NULL, NULL, SW_SHOWNORMAL);
 	}
 
-	void os::system_calls::openFile(std::filesystem::path& path)
+	void os::SystemCalls::open_file(std::filesystem::path& path)
 	{
 		ShellExecuteW(0, 0, path.c_str(), 0, 0, SW_SHOWNORMAL);
 	}
 
-	void os::system_calls::editFile(std::string_view file)
+	void os::SystemCalls::edit_file(std::string_view file)
 	{
 		ShellExecuteW(NULL, NULL, std::wstring(file.begin(), file.end()).c_str(), NULL, NULL, SW_NORMAL);
 	}
 
-	void os::system_calls::openURL(std::string_view url)
+	void os::SystemCalls::open_url(std::string_view url)
 	{
 		ShellExecuteA(0, 0, url.data(), 0, 0, SW_SHOW);
 	}
 
-	NODISCARD std::string os::path_parser::makeWindowsStyle(std::string_view path)
+	NODISCARD std::string os::PathParser::make_windows_style(std::string_view path)
 	{
 		std::string result;
 		result.resize(path.size());
@@ -37,7 +37,7 @@ namespace era_engine
 		return result;
 	}
 
-	NODISCARD std::string os::path_parser::makeNonWindowsStyle(std::string_view path)
+	NODISCARD std::string os::PathParser::make_non_windows_style(std::string_view path)
 	{
 		std::string result;
 		result.resize(path.size());
@@ -48,7 +48,7 @@ namespace era_engine
 		return result;
 	}
 
-	NODISCARD std::string os::path_parser::getContainingFolder(std::string_view path)
+	NODISCARD std::string os::PathParser::get_containing_folder(std::string_view path)
 	{
 		std::string result;
 
@@ -71,7 +71,7 @@ namespace era_engine
 		return result;
 	}
 
-	NODISCARD std::string os::path_parser::getElementName(std::string_view path)
+	NODISCARD std::string os::PathParser::get_element_name(std::string_view path)
 	{
 		std::string result;
 
@@ -87,7 +87,7 @@ namespace era_engine
 		return result;
 	}
 
-	NODISCARD std::string os::path_parser::getExtension(std::string_view path)
+	NODISCARD std::string os::PathParser::get_extension(std::string_view path)
 	{
 		std::string result;
 
@@ -99,38 +99,38 @@ namespace era_engine
 		return result;
 	}
 
-	NODISCARD std::string os::path_parser::fileTypeToString(file_type fileType)
+	NODISCARD std::string os::PathParser::file_type_to_string(FileType file_type)
 	{
-		switch (fileType)
+		switch (file_type)
 		{
-		case os::path_parser::file_type::model:		return "Model";
-		case os::path_parser::file_type::texture:		return "Texture";
-		case os::path_parser::file_type::shader:		return "Shader";
-		case os::path_parser::file_type::material:	return "Material";
-		case os::path_parser::file_type::sound:		return "Sound";
-		case os::path_parser::file_type::scene:		return "Scene";
-		case os::path_parser::file_type::script:		return "Script";
-		case os::path_parser::file_type::font:		return "Font";
+		case os::PathParser::FileType::MODEL:		return "Model";
+		case os::PathParser::FileType::TEXTURE:		return "Texture";
+		case os::PathParser::FileType::SHADER:		return "Shader";
+		case os::PathParser::FileType::MATERIAL:	return "Material";
+		case os::PathParser::FileType::SOUND:		return "Sound";
+		case os::PathParser::FileType::SCENE:		return "Scene";
+		case os::PathParser::FileType::SCRIPT:		return "Script";
+		case os::PathParser::FileType::FONT:		return "Font";
 		}
 
 		return "Unknown";
 	}
 
-	NODISCARD os::path_parser::file_type os::path_parser::getFileType(std::string_view path)
+	NODISCARD os::PathParser::FileType os::PathParser::get_file_type(std::string_view path)
 	{
-		std::string ext = getExtension(path);
+		std::string ext = get_extension(path);
 		std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-		if (ext == "fbx" || ext == "obj")											return os::path_parser::file_type::model;
-		else if (ext == "png" || ext == "jpeg" || ext == "jpg" || ext == "tga")		return os::path_parser::file_type::texture;
-		else if (ext == "glsl")														return os::path_parser::file_type::shader;
-		else if (ext == "ovmat")													return os::path_parser::file_type::material;
-		else if (ext == "wav" || ext == "mp3" || ext == "ogg")						return os::path_parser::file_type::sound;
-		else if (ext == "ovscene")													return os::path_parser::file_type::scene;
-		else if (ext == "lua")														return os::path_parser::file_type::script;
-		else if (ext == "ttf")														return os::path_parser::file_type::font;
+		if (ext == "fbx" || ext == "obj")											return os::PathParser::FileType::MODEL;
+		else if (ext == "png" || ext == "jpeg" || ext == "jpg" || ext == "tga")		return os::PathParser::FileType::TEXTURE;
+		else if (ext == "glsl")														return os::PathParser::FileType::SHADER;
+		else if (ext == "ovmat")													return os::PathParser::FileType::MATERIAL;
+		else if (ext == "wav" || ext == "mp3" || ext == "ogg")						return os::PathParser::FileType::SOUND;
+		else if (ext == "ovscene")													return os::PathParser::FileType::SCENE;
+		else if (ext == "lua")														return os::PathParser::FileType::SCRIPT;
+		else if (ext == "ttf")														return os::PathParser::FileType::FONT;
 
-		return os::path_parser::file_type::none;
+		return os::PathParser::FileType::NONE;
 	}
 
 }

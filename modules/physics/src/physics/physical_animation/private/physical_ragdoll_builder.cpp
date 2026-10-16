@@ -1698,7 +1698,7 @@ namespace era_engine::physics
 		struct LimbNode
 		{
 			Entity limb;
-			Entity::Handle parent = Entity::NullHandle;
+			Entity::Handle parent = Entity::null_handle;
 			D6JointComponent* parent_joint = nullptr;
 			const PxRigidDynamic* rigid_dynamic = nullptr;
 			BodyInertia inertia;
@@ -1731,7 +1731,7 @@ namespace era_engine::physics
 
 		auto is_in_subtree = [&nodes](Entity::Handle handle, Entity::Handle subtree_root)
 		{
-			while (handle != Entity::NullHandle)
+			while (handle != Entity::null_handle)
 			{
 				if (handle == subtree_root)
 				{

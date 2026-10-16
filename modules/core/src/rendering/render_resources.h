@@ -13,60 +13,60 @@
 
 namespace era_engine
 {
-	struct render_resource_desc
+	struct RenderResourceDesc
 	{
 		const wchar* name;
 		D3D12_RESOURCE_DESC desc;
-		D3D12_RESOURCE_STATES initialState;
+		D3D12_RESOURCE_STATES initial_state;
 	};
 
-	struct render_resources
+	struct RenderResources
 	{
-		static void initializeGlobalResources();
+		static void initialize_global_resources();
 
 		// Call from renderer in beginFrame().
-		static void declareTemporaryResourceNeeds(uint64 id, const std::vector<render_resource_desc>& descs);
+		static void declare_temporary_resource_needs(uint64 id, const std::vector<RenderResourceDesc>& descs);
 
 		// Call from central place after all renderers have declared their needs.
 		static void evaluate();
 
 		// Call from renderer in endFrame().
-		static const std::vector<ref<dx_texture>>& getTemporaryResources(uint64 id, dx_command_list* cl);
+		static const std::vector<ref<DXTexture>>& get_temporary_resources(uint64 id, DXCommandList* cl);
 
-		static dx_cpu_descriptor_handle nullTextureSRV;
-		static dx_cpu_descriptor_handle nullBufferSRV;
+		static DXCPUDescriptorHandle null_texture_srv;
+		static DXCPUDescriptorHandle null_buffer_srv;
 
-		static dx_rtv_descriptor_handle nullScreenVelocitiesRTV;
-		static dx_rtv_descriptor_handle nullObjectIDsRTV;
+		static DXRTVDescriptorHandle null_screen_velocities_rtv;
+		static DXRTVDescriptorHandle null_object_ids_rtv;
 
-		static ref<dx_texture> brdfTex;
-		static ref<dx_texture> whiteTexture;
-		static ref<dx_texture> blackTexture;
-		static ref<dx_texture> blackCubeTexture;
-		static ref<dx_texture> noiseTexture;
-		static ref<dx_texture> defaultNormalMap;
+		static ref<DXTexture> brdf_tex;
+		static ref<DXTexture> white_texture;
+		static ref<DXTexture> black_texture;
+		static ref<DXTexture> black_cube_texture;
+		static ref<DXTexture> noise_texture;
+		static ref<DXTexture> default_normal_map;
 
-		static ref<dx_texture> shadowMap;
-		static ref<dx_texture> staticShadowMapCache;
+		static ref<DXTexture> shadow_map;
+		static ref<DXTexture> static_shadow_map_cache;
 
 	private:
-		struct temporary_render_resources
+		struct TemporaryRenderResources
 		{
 			uint64 hash;
 			uint64 alignment;
-			uint64 totalAllocationSize;
-			std::vector<uint64> offsetsInBytes;
-			std::vector<render_resource_desc> descs;
-			std::vector<ref<dx_texture>> textures;
+			uint64 total_allocation_size;
+			std::vector<uint64> offsets_in_bytes;
+			std::vector<RenderResourceDesc> descs;
+			std::vector<ref<DXTexture>> textures;
 		};
 
-		static void getAllocationInfo(temporary_render_resources& resources);
-		NODISCARD static uint64 hashResourceRequirements(const std::vector<render_resource_desc>& descs);
+		static void get_allocation_info(TemporaryRenderResources& resources);
+		NODISCARD static uint64 hash_resource_requirements(const std::vector<RenderResourceDesc>& descs);
 
-		static void allocateResources(temporary_render_resources& resources);
+		static void allocate_resources(TemporaryRenderResources& resources);
 
-		static dx_heap resourceHeap;
-		static std::unordered_map<uint64, temporary_render_resources> resourceMap;
+		static DXHeap resource_heap;
+		static std::unordered_map<uint64, TemporaryRenderResources> resource_map;
 
 		static bool dirty;
 	};

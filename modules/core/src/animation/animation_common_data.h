@@ -11,28 +11,28 @@ namespace era_engine::animation
 {
 	enum LimbType
 	{
-		limb_type_none,
+		LIMB_TYPE_NONE,
 
-		limb_type_torso,
-		limb_type_head,
+		LIMB_TYPE_TORSO,
+		LIMB_TYPE_HEAD,
 
-		limb_type_upper_arm_right,
-		limb_type_lower_arm_right,
-		limb_type_hand_right,
+		LIMB_TYPE_UPPER_ARM_RIGHT,
+		LIMB_TYPE_LOWER_ARM_RIGHT,
+		LIMB_TYPE_HAND_RIGHT,
 
-		limb_type_upper_arm_left,
-		limb_type_lower_arm_left,
-		limb_type_hand_left,
+		LIMB_TYPE_UPPER_ARM_LEFT,
+		LIMB_TYPE_LOWER_ARM_LEFT,
+		LIMB_TYPE_HAND_LEFT,
 
-		limb_type_upper_leg_right,
-		limb_type_lower_leg_right,
-		limb_type_foot_right,
+		LIMB_TYPE_UPPER_LEG_RIGHT,
+		LIMB_TYPE_LOWER_LEG_RIGHT,
+		LIMB_TYPE_FOOT_RIGHT,
 
-		limb_type_upper_leg_left,
-		limb_type_lower_leg_left,
-		limb_type_foot_left,
+		LIMB_TYPE_UPPER_LEG_LEFT,
+		LIMB_TYPE_LOWER_LEG_LEFT,
+		LIMB_TYPE_FOOT_LEFT,
 
-		limb_type_count,
+		LIMB_TYPE_COUNT,
 	};
 
 	struct ERA_CORE_API SkeletonJoint final

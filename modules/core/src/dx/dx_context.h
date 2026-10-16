@@ -13,152 +13,152 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API dx_memory_usage
+	struct ERA_CORE_API DXMemoryUsage
 	{
 		// In MB.
-		uint32 currentlyUsed;
+		uint32 currently_used;
 		uint32 available;
 	};
 
-	enum dx_raytracing_tier
+	enum DXRaytracingTier
 	{
-		dx_raytracing_not_available,
-		dx_raytracing_1_0,
-		dx_raytracing_1_1
+		DX_RAYTRACING_NOT_AVAILABLE,
+		DX_RAYTRACING_1_0,
+		DX_RAYTRACING_1_1
 	};
 
-	enum DLSS_status
+	enum DLSSStatus
 	{
-		DLSS_status_not_available,
-		DLSS_status_FSR_wrapper,
-		DLSS_status_3_0,
-		DLSS_status_3_5
+		DLSS_STATUS_NOT_AVAILABLE,
+		DLSS_STATUS_FSR_WRAPPER,
+		DLSS_STATUS_3_0,
+		DLSS_STATUS_3_5
 	};
 
-	enum dx_mesh_shader_tier
+	enum DXMeshShaderTier
 	{
-		dx_mesh_shader_not_available,
-		dx_mesh_shader_1_0
+		DX_MESH_SHADER_NOT_AVAILABLE,
+		DX_MESH_SHADER_1_0
 	};
 
-	enum dx_tiling_tier
+	enum DXTilingTier
 	{
-		dx_tiling_not_available,
-		dx_tiling_1,
-		dx_tiling_2,
-		dx_tiling_3,
-		dx_tiling_4
+		DX_TILING_NOT_AVAILABLE,
+		DX_TILING_1,
+		DX_TILING_2,
+		DX_TILING_3,
+		DX_TILING_4
 	};
 
-	struct ERA_CORE_API dx_feature_support
+	struct ERA_CORE_API DXFeatureSupport
 	{
-		dx_raytracing_tier raytracingTier = dx_raytracing_1_0;
-		dx_mesh_shader_tier meshShaderTier = dx_mesh_shader_1_0;
-		dx_tiling_tier tilingTier = dx_tiling_1;
-		DLSS_status dlss_status = DLSS_status_FSR_wrapper;
+		DXRaytracingTier raytracing_tier = DX_RAYTRACING_1_0;
+		DXMeshShaderTier mesh_shader_tier = DX_MESH_SHADER_1_0;
+		DXTilingTier tiling_tier = DX_TILING_1;
+		DLSSStatus dlss_status = DLSS_STATUS_FSR_WRAPPER;
 
-		constexpr bool raytracing() const { return raytracingTier >= dx_raytracing_1_0; }
-		constexpr bool meshShaders() const { return meshShaderTier >= dx_mesh_shader_1_0; }
-		constexpr bool tiling() const { return tilingTier >= dx_tiling_1; }
-		constexpr bool dlss() const { return dlss_status >= DLSS_status_FSR_wrapper; }
+		constexpr bool raytracing() const { return raytracing_tier >= DX_RAYTRACING_1_0; }
+		constexpr bool mesh_shaders() const { return mesh_shader_tier >= DX_MESH_SHADER_1_0; }
+		constexpr bool tiling() const { return tiling_tier >= DX_TILING_1; }
+		constexpr bool dlss() const { return dlss_status >= DLSS_STATUS_FSR_WRAPPER; }
 	};
 
-	struct dx_context
+	struct DXContext
 	{
 		bool initialize();
 		void quit();
 
-		void newFrame(uint64 frameID);
-		void endFrame(dx_command_list* cl);
-		void flushApplication();
+		void new_frame(uint64 frame_id);
+		void end_frame(DXCommandList* cl);
+		void flush_application();
 
-		dx_command_list* getFreeCopyCommandList();
-		dx_command_list* getFreeComputeCommandList(bool async);
-		dx_command_list* getFreeRenderCommandList();
-		uint64 executeCommandList(dx_command_list* commandList);
-		uint64 executeCommandLists(dx_command_list** commandLists, uint32 count);
+		DXCommandList* get_free_copy_command_list();
+		DXCommandList* get_free_compute_command_list(bool async);
+		DXCommandList* get_free_render_command_list();
+		uint64 execute_command_list(DXCommandList* command_list);
+		uint64 execute_command_lists(DXCommandList** command_lists, uint32 count);
 
 		// Careful with these functions. They are not thread safe.
-		dx_allocation allocateDynamicBuffer(uint32 sizeInBytes, uint32 alignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+		DXAllocation allocate_dynamic_buffer(uint32 size_in_bytes, uint32 alignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
 
-		std::pair<dx_dynamic_constant_buffer, void*> uploadDynamicConstantBuffer(uint32 sizeInBytes, const void* data);
-		template <typename T> dx_dynamic_constant_buffer uploadDynamicConstantBuffer(const T& data)
+		std::pair<DXDynamicConstantBuffer, void*> upload_dynamic_constant_buffer(uint32 size_in_bytes, const void* data);
+		template <typename T> DXDynamicConstantBuffer upload_dynamic_constant_buffer(const T& data)
 		{
-			return uploadDynamicConstantBuffer(sizeof(T), &data).first;
+			return upload_dynamic_constant_buffer(sizeof(T), &data).first;
 		}
 
-		std::pair<dx_dynamic_vertex_buffer, void*> createDynamicVertexBuffer(uint32 elementSize, uint32 elementCount);
-		std::pair<dx_dynamic_index_buffer, void*> createDynamicIndexBuffer(uint32 elementSize, uint32 elementCount);
+		std::pair<DXDynamicVertexBuffer, void*> create_dynamic_vertex_buffer(uint32 element_size, uint32 element_count);
+		std::pair<DXDynamicIndexBuffer, void*> create_dynamic_index_buffer(uint32 element_size, uint32 element_count);
 
-		dx_memory_usage getMemoryUsage();
+		DXMemoryUsage get_memory_usage();
 
-		dx_factory factory;
-		dx_adapter adapter;
-		dx_device device;
+		DXFactory factory;
+		DXAdapter adapter;
+		DXDevice device;
 
-		dx_command_queue renderQueue;
-		dx_command_queue computeQueue;
-		dx_command_queue copyQueue;
+		DXCommandQueue render_queue;
+		DXCommandQueue compute_queue;
+		DXCommandQueue copy_queue;
 
-		dx_feature_support featureSupport;
+		DXFeatureSupport feature_support;
 
-		uint64 frameID;
-		uint32 bufferedFrameID;
+		uint64 frame_id;
+		uint32 buffered_frame_id;
 
-		dx_descriptor_heap srvUavAllocator;
-		dx_descriptor_heap srvUavAllocatorShaderVisible; // Used for resources, which can be UAV cleared.
+		DXDescriptorHeap srv_uav_allocator;
+		DXDescriptorHeap srv_uav_allocator_shader_visible; // Used for resources, which can be UAV cleared.
 
-		dx_descriptor_heap rtvAllocator;
-		dx_descriptor_heap dsvAllocator;
+		DXDescriptorHeap rtv_allocator;
+		DXDescriptorHeap dsv_allocator;
 
 #if ENABLE_DX_PROFILING
 		volatile uint32 timestampQueryIndex[NUM_BUFFERED_FRAMES];
 #endif
 
-		dx_upload_buffer frameUploadBuffer;
+		DXUploadBuffer frame_upload_buffer;
 
-		dx_frame_descriptor_allocator frameDescriptorAllocator;
+		DXFrameDescriptorAllocator frame_descriptor_allocator;
 
 		volatile bool running = true;
 
-		uint32 descriptorHandleIncrementSize;
+		uint32 descriptor_handle_increment_size;
 
-		D3D12MA::Allocator* memoryAllocator;
+		D3D12MA::Allocator* memory_allocator;
 
-		void retire(struct texture_grave&& texture);
-		void retire(struct buffer_grave&& buffer);
-		void retire(dx_object obj);
+		void retire(struct TextureGrave&& texture);
+		void retire(struct BufferGrave&& buffer);
+		void retire(DXObject obj);
 		void retire(D3D12MA::Allocation* allocation);
 
-		dx_command_signature defaultDispatchCommandSignature;
+		DXCommandSignature default_dispatch_command_signature;
 
 	private:
 #if ENABLE_DX_PROFILING
-		dx_timestamp_query_heap timestampHeaps[NUM_BUFFERED_FRAMES];
-		ref<dx_buffer> resolvedTimestampBuffers[NUM_BUFFERED_FRAMES];
+		DXTimestampQueryHeap timestampHeaps[NUM_BUFFERED_FRAMES];
+		ref<DXBuffer> resolvedTimestampBuffers[NUM_BUFFERED_FRAMES];
 #endif
 
-		dx_page_pool pagePools[NUM_BUFFERED_FRAMES];
+		DXPagePool page_pools[NUM_BUFFERED_FRAMES];
 
 		std::mutex mutex;
 
-		std::vector<struct texture_grave> textureGraveyard[NUM_BUFFERED_FRAMES];
-		std::vector<struct buffer_grave> bufferGraveyard[NUM_BUFFERED_FRAMES];
-		std::vector<dx_object> objectGraveyard[NUM_BUFFERED_FRAMES];
-		std::vector<D3D12MA::Allocation*> allocationGraveyard[NUM_BUFFERED_FRAMES];
+		std::vector<struct TextureGrave> texture_graveyard[NUM_BUFFERED_FRAMES];
+		std::vector<struct BufferGrave> buffer_graveyard[NUM_BUFFERED_FRAMES];
+		std::vector<DXObject> object_graveyard[NUM_BUFFERED_FRAMES];
+		std::vector<D3D12MA::Allocation*> allocation_graveyard[NUM_BUFFERED_FRAMES];
 
-		dx_command_queue& getQueue(D3D12_COMMAND_LIST_TYPE type);
-		dx_command_list* getFreeCommandList(dx_command_queue& queue);
+		DXCommandQueue& get_queue(D3D12_COMMAND_LIST_TYPE type);
+		DXCommandList* get_free_command_list(DXCommandQueue& queue);
 
-		friend struct dlss_feature_adapter;
+		friend struct DLSSFeatureAdapter;
 	};
 
-	extern dx_context& dxContext;
+	extern DXContext& dx_context;
 
-	ERA_CORE_API dx_context* get_dx_context();
+	ERA_CORE_API DXContext* get_dx_context();
 
-	ERA_CORE_API std::pair<dx_dynamic_vertex_buffer, void*> create_dynamic_vertex_buffer(uint32 element_size, uint32 element_count);
-	ERA_CORE_API std::pair<dx_dynamic_index_buffer, void*> create_dynamic_index_buffer(uint32 element_size, uint32 element_count);
+	ERA_CORE_API std::pair<DXDynamicVertexBuffer, void*> create_dynamic_vertex_buffer(uint32 element_size, uint32 element_count);
+	ERA_CORE_API std::pair<DXDynamicIndexBuffer, void*> create_dynamic_index_buffer(uint32 element_size, uint32 element_count);
 
-	ERA_CORE_API dx_memory_usage get_dx_mem_usage();
+	ERA_CORE_API DXMemoryUsage get_dx_mem_usage();
 }

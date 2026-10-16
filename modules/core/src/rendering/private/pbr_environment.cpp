@@ -12,94 +12,94 @@
 
 namespace era_engine
 {
-	void pbr_environment::setFromTexture(const fs::path& filename)
+	void PBREnvironment::set_from_texture(const fs::path& filename)
 	{
 		allocate();
 
-		ref<dx_texture> equiSky = loadTextureFromFileAsync(filename,
-			image_load_flags_noncolor | image_load_flags_cache_to_dds | image_load_flags_gen_mips_on_cpu);
+		ref<DXTexture> equi_sky = load_texture_from_file_async(filename,
+			IMAGE_LOAD_FLAGS_NONCOLOR | IMAGE_LOAD_FLAGS_CACHE_TO_DDS | IMAGE_LOAD_FLAGS_GEN_MIPS_ON_CPU);
 
-		if (equiSky)
+		if (equi_sky)
 		{
-			struct post_process_sky_data
+			struct PostProcessSkyData
 			{
-				ref<dx_texture> equiSky;
-				ref<dx_texture>& sky;
-				ref<dx_texture>& irradiance;
-				ref<dx_texture>& prefilteredRadiance;
+				ref<DXTexture> equi_sky;
+				ref<DXTexture>& sky;
+				ref<DXTexture>& irradiance;
+				ref<DXTexture>& prefiltered_radiance;
 			};
 
-			post_process_sky_data data =
+			PostProcessSkyData data =
 			{
-				equiSky,
+				equi_sky,
 				sky,
 				irradiance,
-				prefilteredRadiance,
+				prefiltered_radiance,
 			};
 
-			low_priority_job_queue.createJob<post_process_sky_data>([](post_process_sky_data& data, JobHandle)
+			low_priority_job_queue.create_job<PostProcessSkyData>([](PostProcessSkyData& data, JobHandle)
 				{
-					dxContext.renderQueue.waitForOtherQueue(dxContext.copyQueue);
-					dx_command_list* cl = dxContext.getFreeRenderCommandList();
+					dx_context.render_queue.wait_for_other_queue(dx_context.copy_queue);
+					DXCommandList* cl = dx_context.get_free_render_command_list();
 
 					//generateMipMapsOnGPU(cl, data.equiSky);
 
-					data.sky = equirectangularToCubemap(cl, data.equiSky, skyResolution, 0, DXGI_FORMAT_R16G16B16A16_FLOAT);
-					data.sky->handle = data.equiSky->handle;
-					texturedSkyToIrradiance(cl, data.sky, data.irradiance);
-					texturedSkyToPrefilteredRadiance(cl, data.sky, data.prefilteredRadiance);
+					data.sky = equirectangular_to_cubemap(cl, data.equi_sky, sky_resolution, 0, DXGI_FORMAT_R16G16B16A16_FLOAT);
+					data.sky->handle = data.equi_sky->handle;
+					textured_sky_to_irradiance(cl, data.sky, data.irradiance);
+					textured_sky_to_prefiltered_radiance(cl, data.sky, data.prefiltered_radiance);
 
 					SET_NAME(data.sky->resource, "Sky");
 
-					dxContext.executeCommandList(cl);
-				}, data).submit_after(equiSky->loadJob);
+					dx_context.execute_command_list(cl);
+				}, data).submit_after(equi_sky->load_job);
 		}
 	}
 
-	void pbr_environment::setToProcedural(vec3 sunDirection)
+	void PBREnvironment::set_to_procedural(vec3 sun_direction)
 	{
-		dx_command_list* cl = dxContext.getFreeRenderCommandList();
+		DXCommandList* cl = dx_context.get_free_render_command_list();
 
 		allocate();
 
 		sky = 0;
-		proceduralSkyToIrradiance(cl, sunDirection, irradiance);
+		procedural_sky_to_irradiance(cl, sun_direction, irradiance);
 		// TODO: Prefiltered radiance.
 
-		dxContext.executeCommandList(cl);
+		dx_context.execute_command_list(cl);
 
-		lastSunDirection = sunDirection;
+		last_sun_direction = sun_direction;
 	}
 
-	void pbr_environment::update(vec3 sunDirection)
+	void PBREnvironment::update(vec3 sun_direction)
 	{
-		if (isProcedural() && lastSunDirection != sunDirection)
+		if (is_procedural() && last_sun_direction != sun_direction)
 		{
-			setToProcedural(sunDirection);
+			set_to_procedural(sun_direction);
 		}
 	}
 
-	void pbr_environment::forceUpdate(vec3 sunDirection)
+	void PBREnvironment::force_update(vec3 sun_direction)
 	{
-		if (isProcedural())
+		if (is_procedural())
 		{
-			setToProcedural(sunDirection);
+			set_to_procedural(sun_direction);
 		}
 	}
 
-	void pbr_environment::allocate()
+	void PBREnvironment::allocate()
 	{
 		if (!irradiance)
 		{
-			irradiance = createCubeTexture(0, irradianceResolution, irradianceResolution, DXGI_FORMAT_R16G16B16A16_FLOAT, false, false, true);
+			irradiance = create_cube_texture(0, irradiance_resolution, irradiance_resolution, DXGI_FORMAT_R16G16B16A16_FLOAT, false, false, true);
 			SET_NAME(irradiance->resource, "Irradiance");
 		}
 
-		if (!prefilteredRadiance)
+		if (!prefiltered_radiance)
 		{
-			prefilteredRadiance = createCubeTexture(0, prefilteredRadianceResolution, prefilteredRadianceResolution, DXGI_FORMAT_R16G16B16A16_FLOAT,
+			prefiltered_radiance = create_cube_texture(0, prefiltered_radiance_resolution, prefiltered_radiance_resolution, DXGI_FORMAT_R16G16B16A16_FLOAT,
 				true, false, true, D3D12_RESOURCE_STATE_COMMON, true);
-			SET_NAME(prefilteredRadiance->resource, "Prefiltered Radiance");
+			SET_NAME(prefiltered_radiance->resource, "Prefiltered Radiance");
 		}
 	}
 

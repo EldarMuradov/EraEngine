@@ -33,10 +33,10 @@ namespace era_engine
 
 		memory = (uint8*)VirtualAlloc(0, _reserve_size, MEM_RESERVE, PAGE_READWRITE);
 
-		SYSTEM_INFO systemInfo;
-		GetSystemInfo(&systemInfo);
+		SYSTEM_INFO system_info;
+		GetSystemInfo(&system_info);
 
-		page_size = systemInfo.dwPageSize;
+		page_size = system_info.dwPageSize;
 		size_left_total = _reserve_size;
 		minimum_block_size = _minimum_block_size;
 		reserve_size = _reserve_size;
@@ -59,17 +59,17 @@ namespace era_engine
 	{
 		if (size_left_current < size)
 		{
-			uint64 allocationSize = max(size, minimum_block_size);
-			allocationSize = page_size * bucketize(allocationSize, page_size);
-			VirtualAlloc(memory + committed_memory, allocationSize, MEM_COMMIT, PAGE_READWRITE);
+			uint64 allocation_size = max(size, minimum_block_size);
+			allocation_size = page_size * bucketize(allocation_size, page_size);
+			VirtualAlloc(memory + committed_memory, allocation_size, MEM_COMMIT, PAGE_READWRITE);
 
-			size_left_total += allocationSize;
-			size_left_current += allocationSize;
-			committed_memory += allocationSize;
+			size_left_total += allocation_size;
+			size_left_current += allocation_size;
+			committed_memory += allocation_size;
 		}
 	}
 
-	void* Allocator::allocate(uint64 size, uint64 alignment, bool clearToZero)
+	void* Allocator::allocate(uint64 size, uint64 alignment, bool clear_to_zero)
 	{
 		if (size == 0)
 		{
@@ -97,7 +97,7 @@ namespace era_engine
 			size_left_total -= size;
 		}
 
-		if (clearToZero && result)
+		if (clear_to_zero && result)
 		{
 			memset(result, 0, size);
 		}

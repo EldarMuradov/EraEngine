@@ -1,42 +1,42 @@
 #include "light_probe_rs.hlsli"
 
-ConstantBuffer<light_probe_ray_visualization_cb> cb : register(b0);
+ConstantBuffer<LightProbeRayVisualizationCB> cb : register(b0);
 Texture2D<float3> radiance							: register(t0);
-Texture2D<float4> directionAndDistance				: register(t1);
+Texture2D<float4> direction_and_distance				: register(t1);
 
-struct vs_input
+struct VSInput
 {
-	uint vertexID		: SV_VertexID;
-	uint instanceID		: SV_InstanceID;
+	uint vertex_id		: SV_VertexID;
+	uint instance_id		: SV_InstanceID;
 };
 
-struct vs_output
+struct VSOutput
 {
 	float3 color			: COLOR;
 	float distance			: DISTANCE;
 	float4 position			: SV_POSITION;
 };
 
-vs_output main(vs_input IN)
+VSOutput main(VSInput IN)
 {
-	uint probeID = IN.instanceID / NUM_RAYS_PER_PROBE;
-	uint rayID = IN.instanceID % NUM_RAYS_PER_PROBE;
+	uint probe_id = IN.instance_id / NUM_RAYS_PER_PROBE;
+	uint ray_id = IN.instance_id % NUM_RAYS_PER_PROBE;
 
-	uint2 c = uint2(rayID, probeID);
+	uint2 c = uint2(ray_id, probe_id);
 
-	float4 dirDist = directionAndDistance[c];
+	float4 dir_dist = direction_and_distance[c];
 
-	float3 index = linearIndexTo3DIndex(probeID, cb.countX, cb.countY);
-	float3 position = index * cb.cellSize;
+	float3 index = linear_index_to_3d_index(probe_id, cb.count_x, cb.count_y);
+	float3 position = index * cb.cell_size;
 
-	if (IN.vertexID == 1)
+	if (IN.vertex_id == 1)
 	{
-		position += dirDist.xyz * dirDist.w;
+		position += dir_dist.xyz * dir_dist.w;
 	}
 
-	vs_output OUT;
+	VSOutput OUT;
 	OUT.position = mul(cb.mvp, float4(position, 1.f));
 	OUT.color = radiance[c];
-	OUT.distance = dirDist.w;
+	OUT.distance = dir_dist.w;
 	return OUT;
 }

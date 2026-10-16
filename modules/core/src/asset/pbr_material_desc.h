@@ -11,12 +11,12 @@ namespace era_engine
 {
 	enum PbrMaterialShader
 	{
-		pbr_material_shader_default,
-		pbr_material_shader_double_sided,
-		pbr_material_shader_alpha_cutout,
-		pbr_material_shader_transparent,
+		PBR_MATERIAL_SHADER_DEFAULT,
+		PBR_MATERIAL_SHADER_DOUBLE_SIDED,
+		PBR_MATERIAL_SHADER_ALPHA_CUTOUT,
+		PBR_MATERIAL_SHADER_TRANSPARENT,
 
-		pbr_material_shader_count,
+		PBR_MATERIAL_SHADER_COUNT,
 	};
 
 	struct ERA_CORE_API PbrMaterialDesc
@@ -26,16 +26,16 @@ namespace era_engine
 		std::string roughness;
 		std::string metallic;
 
-		uint32 albedo_flags = image_load_flags_default;
-		uint32 normal_flags = image_load_flags_default_noncolor;
-		uint32 roughness_flags = image_load_flags_default_noncolor;
-		uint32 metallic_flags = image_load_flags_default_noncolor;
+		uint32 albedo_flags = IMAGE_LOAD_FLAGS_DEFAULT;
+		uint32 normal_flags = IMAGE_LOAD_FLAGS_DEFAULT_NONCOLOR;
+		uint32 roughness_flags = IMAGE_LOAD_FLAGS_DEFAULT_NONCOLOR;
+		uint32 metallic_flags = IMAGE_LOAD_FLAGS_DEFAULT_NONCOLOR;
 
 		vec4 emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		vec4 albedo_tint = vec4(1.f);
 		float roughness_override = 1.f;
 		float metallic_override = 0.f;
-		PbrMaterialShader shader = pbr_material_shader_default;
+		PbrMaterialShader shader = PBR_MATERIAL_SHADER_DEFAULT;
 		float uv_scale = 1.f;
 		float translucency = 0.f;
 

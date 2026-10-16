@@ -22,16 +22,16 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API audio_synth
+	struct ERA_CORE_API AudioSynth
 	{
-		NODISCARD virtual uint32 getSamples(float* buffer, uint32 numSamples) = 0;
-		NODISCARD virtual float getDuration() const { return 0.f; } // You only need to override this, if you don't stream the audio.
+		NODISCARD virtual uint32 get_samples(float* buffer, uint32 num_samples) = 0;
+		NODISCARD virtual float get_duration() const { return 0.f; } // You only need to override this, if you don't stream the audio.
 	};
 
-	struct ERA_CORE_API sine_synth : audio_synth
+	struct ERA_CORE_API SineSynth : AudioSynth
 	{
-		sine_synth(float duration = 10.f, float hz = C_HZ)
-			: audio_synth()
+		SineSynth(float duration = 10.f, float hz = C_HZ)
+			: AudioSynth()
 		{
 			this->hz = hz;
 
@@ -40,31 +40,31 @@ namespace era_engine
 			duration = floor(waves) / hz;
 
 			this->duration = duration;
-			this->totalNumSamples = (uint32)(duration * numChannels * sampleHz);
+			this->total_num_samples = (uint32)(duration * num_channels * sample_hz);
 		}
 
-		NODISCARD virtual uint32 getSamples(float* buffer, uint32 numSamples) override
+		NODISCARD virtual uint32 get_samples(float* buffer, uint32 num_samples) override
 		{
-			if (offset + numSamples > totalNumSamples)
+			if (offset + num_samples > total_num_samples)
 			{
-				numSamples = totalNumSamples - offset;
+				num_samples = total_num_samples - offset;
 			}
 
-			float factor = M_TAU / sampleHz * hz;
-			for (uint32 i = 0; i < numSamples; ++i, ++offset)
+			float factor = M_TAU / sample_hz * hz;
+			for (uint32 i = 0; i < num_samples; ++i, ++offset)
 			{
 				buffer[i] = sin(offset * factor);
 			}
-			return numSamples;
+			return num_samples;
 		}
 
-		NODISCARD virtual float getDuration() const override { return duration; }
+		NODISCARD virtual float get_duration() const override { return duration; }
 
-		static const uint32 numChannels = 1;
-		static const uint32 sampleHz = 44100;
+		static const uint32 num_channels = 1;
+		static const uint32 sample_hz = 44100;
 
 	private:
-		uint32 totalNumSamples;
+		uint32 total_num_samples;
 		float hz;
 		float duration;
 

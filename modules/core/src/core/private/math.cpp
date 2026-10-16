@@ -621,14 +621,14 @@ float get_yaw_angle(const quat& q)
 quat slerp(quat from, quat to, float t)
 {
 	float d = dot(from, to);
-	float absDot = d < 0.f ? -d : d;
+	float abs_dot = d < 0.f ? -d : d;
 	float scale0 = 1.f - t;
 	float scale1 = t;
 
-	if ((1.f - absDot) > 0.1f)
+	if ((1.f - abs_dot) > 0.1f)
 	{
 
-		float angle = acosf(absDot);
+		float angle = acosf(abs_dot);
 		float inv_sin_theta = 1.f / sinf(angle);
 		scale0 = (sinf((1.f - t) * angle) * inv_sin_theta);
 		scale1 = (sinf((t * angle)) * inv_sin_theta);
@@ -639,12 +639,12 @@ quat slerp(quat from, quat to, float t)
 		scale1 = -scale1;
 	}
 
-	float newX = (scale0 * from.x) + (scale1 * to.x);
-	float newY = (scale0 * from.y) + (scale1 * to.y);
-	float newZ = (scale0 * from.z) + (scale1 * to.z);
-	float newW = (scale0 * from.w) + (scale1 * to.w);
+	float new_x = (scale0 * from.x) + (scale1 * to.x);
+	float new_y = (scale0 * from.y) + (scale1 * to.y);
+	float new_z = (scale0 * from.z) + (scale1 * to.z);
+	float new_w = (scale0 * from.w) + (scale1 * to.w);
 
-	return normalize(quat(newX, newY, newZ, newW));
+	return normalize(quat(new_x, new_y, new_z, new_w));
 }
 
 quat nlerp(quat* qs, float* weights, uint32 count)
@@ -1248,15 +1248,15 @@ mat4 create_view_matrix(vec3 eye, float pitch, float yaw)
 	float cos_yaw = cosf(yaw);
 	float sin_yaw = sinf(yaw);
 
-	vec3 xAxis(cos_yaw, 0, -sin_yaw);
-	vec3 yAxis(sin_yaw * sin_pitch, cos_pitch, cos_yaw * sin_pitch);
-	vec3 zAxis(sin_yaw * cos_pitch, -sin_pitch, cos_pitch * cos_yaw);
+	vec3 x_axis(cos_yaw, 0, -sin_yaw);
+	vec3 y_axis(sin_yaw * sin_pitch, cos_pitch, cos_yaw * sin_pitch);
+	vec3 z_axis(sin_yaw * cos_pitch, -sin_pitch, cos_pitch * cos_yaw);
 
 	mat4 result;
-	result.m00 = xAxis.x; result.m10 = yAxis.x; result.m20 = zAxis.x; result.m30 = 0.f;
-	result.m01 = xAxis.y; result.m11 = yAxis.y; result.m21 = zAxis.y; result.m31 = 0.f;
-	result.m02 = xAxis.z; result.m12 = yAxis.z; result.m22 = zAxis.z; result.m32 = 0.f;
-	result.m03 = -dot(xAxis, eye); result.m13 = -dot(yAxis, eye); result.m23 = -dot(zAxis, eye); result.m33 = 1.f;
+	result.m00 = x_axis.x; result.m10 = y_axis.x; result.m20 = z_axis.x; result.m30 = 0.f;
+	result.m01 = x_axis.y; result.m11 = y_axis.y; result.m21 = z_axis.y; result.m31 = 0.f;
+	result.m02 = x_axis.z; result.m12 = y_axis.z; result.m22 = z_axis.z; result.m32 = 0.f;
+	result.m03 = -dot(x_axis, eye); result.m13 = -dot(y_axis, eye); result.m23 = -dot(z_axis, eye); result.m33 = 1.f;
 
 	return result;
 }
@@ -1270,29 +1270,29 @@ mat4 create_sky_view_matrix(const mat4& v)
 
 mat4 look_at(vec3 eye, vec3 target, vec3 up)
 {
-	vec3 zAxis = normalize(eye - target);
-	vec3 xAxis = normalize(cross(up, zAxis));
-	vec3 yAxis = normalize(cross(zAxis, xAxis));
+	vec3 z_axis = normalize(eye - target);
+	vec3 x_axis = normalize(cross(up, z_axis));
+	vec3 y_axis = normalize(cross(z_axis, x_axis));
 
 	mat4 result;
-	result.m00 = xAxis.x; result.m10 = yAxis.x; result.m20 = zAxis.x; result.m30 = 0.f;
-	result.m01 = xAxis.y; result.m11 = yAxis.y; result.m21 = zAxis.y; result.m31 = 0.f;
-	result.m02 = xAxis.z; result.m12 = yAxis.z; result.m22 = zAxis.z; result.m32 = 0.f;
-	result.m03 = -dot(xAxis, eye); result.m13 = -dot(yAxis, eye); result.m23 = -dot(zAxis, eye); result.m33 = 1.f;
+	result.m00 = x_axis.x; result.m10 = y_axis.x; result.m20 = z_axis.x; result.m30 = 0.f;
+	result.m01 = x_axis.y; result.m11 = y_axis.y; result.m21 = z_axis.y; result.m31 = 0.f;
+	result.m02 = x_axis.z; result.m12 = y_axis.z; result.m22 = z_axis.z; result.m32 = 0.f;
+	result.m03 = -dot(x_axis, eye); result.m13 = -dot(y_axis, eye); result.m23 = -dot(z_axis, eye); result.m33 = 1.f;
 
 	return result;
 }
 
 quat look_at_quaternion(vec3 forward, vec3 up)
 {
-	vec3 zAxis = -normalize(forward);
-	vec3 xAxis = normalize(cross(up, zAxis));
-	vec3 yAxis = normalize(cross(zAxis, xAxis));
+	vec3 z_axis = -normalize(forward);
+	vec3 x_axis = normalize(cross(up, z_axis));
+	vec3 y_axis = normalize(cross(z_axis, x_axis));
 
 	mat3 m;
-	m.m00 = xAxis.x; m.m01 = yAxis.x; m.m02 = zAxis.x;
-	m.m10 = xAxis.y; m.m11 = yAxis.y; m.m12 = zAxis.y;
-	m.m20 = xAxis.z; m.m21 = yAxis.z; m.m22 = zAxis.z;
+	m.m00 = x_axis.x; m.m01 = y_axis.x; m.m02 = z_axis.x;
+	m.m10 = x_axis.y; m.m11 = y_axis.y; m.m12 = z_axis.y;
+	m.m20 = x_axis.z; m.m21 = y_axis.z; m.m22 = z_axis.z;
 
 	return mat3_to_quaternion(m);
 }
@@ -1306,14 +1306,14 @@ mat4 create_view_matrix(vec3 position, quat rotation)
 
 mat4 invert_affine(const mat4& m)
 {
-	vec3 xAxis(m.m00, m.m10, m.m20);
-	vec3 yAxis(m.m01, m.m11, m.m21);
-	vec3 zAxis(m.m02, m.m12, m.m22);
+	vec3 x_axis(m.m00, m.m10, m.m20);
+	vec3 y_axis(m.m01, m.m11, m.m21);
+	vec3 z_axis(m.m02, m.m12, m.m22);
 	vec3 pos(m.m03, m.m13, m.m23);
 
-	vec3 inv_x_axis = xAxis / squared_length(xAxis);
-	vec3 inv_y_xis = yAxis / squared_length(yAxis);
-	vec3 inv_z_axis = zAxis / squared_length(zAxis);
+	vec3 inv_x_axis = x_axis / squared_length(x_axis);
+	vec3 inv_y_xis = y_axis / squared_length(y_axis);
+	vec3 inv_z_axis = z_axis / squared_length(z_axis);
 	vec3 inv_pos(-dot(inv_x_axis, pos), -dot(inv_y_xis, pos), -dot(inv_z_axis, pos));
 
 	mat4 result;
@@ -1324,15 +1324,15 @@ mat4 invert_affine(const mat4& m)
 	return result;
 }
 
-bool point_in_triangle(vec3 point, vec3 triA, vec3 triB, vec3& triC)
+bool point_in_triangle(vec3 point, vec3 tri_a, vec3 tri_b, vec3& tri_c)
 {
-	vec3 e10 = triB - triA;
-	vec3 e20 = triC - triA;
+	vec3 e10 = tri_b - tri_a;
+	vec3 e20 = tri_c - tri_a;
 	float a = dot(e10, e10);
 	float b = dot(e10, e20);
 	float c = dot(e20, e20);
 	float ac_bb = (a * c) - (b * b);
-	vec3 vp = point - triA;
+	vec3 vp = point - tri_a;
 	float d = dot(vp, e10);
 	float e = dot(vp, e20);
 	float x = (d * c) - (e * b);
@@ -1355,16 +1355,16 @@ bool point_in_box(vec3 p, vec3 min_corner, vec3 max_corner)
 
 vec2 direction_to_panorama_uv(vec3 dir)
 {
-	const vec2 invAtan = vec2(INV_TAU, INV_PI);
+	const vec2 inv_atan = vec2(INV_TAU, INV_PI);
 
-	vec2 panoUV = vec2(atan2(-dir.x, -dir.z), acos(dir.y)) * invAtan;
+	vec2 pano_uv = vec2(atan2(-dir.x, -dir.z), acos(dir.y)) * inv_atan;
 
-	while (panoUV.x < 0.f) { panoUV.x += 1.f; }
-	while (panoUV.y < 0.f) { panoUV.y += 1.f; }
-	while (panoUV.x > 1.f) { panoUV.x -= 1.f; }
-	while (panoUV.y > 1.f) { panoUV.y -= 1.f; }
+	while (pano_uv.x < 0.f) { pano_uv.x += 1.f; }
+	while (pano_uv.y < 0.f) { pano_uv.y += 1.f; }
+	while (pano_uv.x > 1.f) { pano_uv.x -= 1.f; }
+	while (pano_uv.y > 1.f) { pano_uv.y -= 1.f; }
 
-	return panoUV;
+	return pano_uv;
 }
 
 float angle_to_zero_to_two_pi(float angle)
@@ -1387,9 +1387,9 @@ float angle_to_neg_pi_to_pi(float angle)
 	return angle - M_PI;
 }
 
-vec2 solve_linear_system(const mat2& A, vec2 b)
+vec2 solve_linear_system(const mat2& a, vec2 b)
 {
-	float a11 = A.m00, a12 = A.m01, a21 = A.m10, a22 = A.m11;
+	float a11 = a.m00, a12 = a.m01, a21 = a.m10, a22 = a.m11;
 	float det = a11 * a22 - a12 * a21;
 	if (det != 0.f)
 	{
@@ -1401,11 +1401,11 @@ vec2 solve_linear_system(const mat2& A, vec2 b)
 	return x;
 }
 
-vec3 solve_linear_system(const mat3& A, vec3 b)
+vec3 solve_linear_system(const mat3& a, vec3 b)
 {
-	vec3 ex(A.m00, A.m10, A.m20);
-	vec3 ey(A.m01, A.m11, A.m21);
-	vec3 ez(A.m02, A.m12, A.m22);
+	vec3 ex(a.m00, a.m10, a.m20);
+	vec3 ey(a.m01, a.m11, a.m21);
+	vec3 ez(a.m02, a.m12, a.m22);
 	float det = dot(ex, cross(ey, ez));
 	if (det != 0.f)
 	{
@@ -1473,10 +1473,10 @@ void get_tangents(vec3 normal, vec3& out_tangent, vec3& out_bitangent)
 	out_bitangent = cross(normal, out_tangent);
 }
 
-vec4 uniform_sample_sphere(vec2 E)
+vec4 uniform_sample_sphere(vec2 e)
 {
-	float phi = 2 * M_PI * E.x;
-	float cos_theta = 1.f - 2.f * E.y;
+	float phi = 2 * M_PI * e.x;
+	float cos_theta = 1.f - 2.f * e.y;
 	float sin_theta = sqrt(1.f - cos_theta * cos_theta);
 
 	vec3 H;
@@ -1493,18 +1493,18 @@ vec4 uniform_sample_sphere(vec2 E)
 #define _cstar 0.923879532f // cos(pi/8)
 #define _sstar 0.3826834323f // sin(p/8)
 
-static void cond_swap(bool c, float& X, float& Y)
+static void cond_swap(bool c, float& x, float& y)
 {
-	float Z = X;
-	X = c ? Y : X;
-	Y = c ? Z : Y;
+	float Z = x;
+	x = c ? y : x;
+	y = c ? Z : y;
 }
 
-static void cond_neg_swap(bool c, float& X, float& Y)
+static void cond_neg_swap(bool c, float& x, float& y)
 {
-	float Z = -X;
-	X = c ? Y : X;
-	Y = c ? Z : Y;
+	float Z = -x;
+	x = c ? y : x;
+	y = c ? Z : y;
 }
 
 static void approximate_givens_quaternion(float a11, float a12, float a22, float& ch, float& sh)
@@ -1611,65 +1611,65 @@ static float dist2(float x, float y, float z)
 	return x * x + y * y + z * z;
 }
 
-static void sort_singular_values(mat3& B, mat3& V)
+static void sort_singular_values(mat3& b, mat3& v)
 {
-	float* Bm = B.m;
-	float* Vm = V.m;
-	float rho1 = dist2(Bm[0], Bm[1], Bm[2]);
-	float rho2 = dist2(Bm[3], Bm[4], Bm[5]);
-	float rho3 = dist2(Bm[6], Bm[7], Bm[8]);
+	float* bm = b.m;
+	float* vm = v.m;
+	float rho1 = dist2(bm[0], bm[1], bm[2]);
+	float rho2 = dist2(bm[3], bm[4], bm[5]);
+	float rho3 = dist2(bm[6], bm[7], bm[8]);
 
 	bool c = rho1 < rho2;
-	cond_neg_swap(c, Bm[0], Bm[3]); cond_neg_swap(c, Vm[0], Vm[3]);
-	cond_neg_swap(c, Bm[1], Bm[4]); cond_neg_swap(c, Vm[1], Vm[4]);
-	cond_neg_swap(c, Bm[2], Bm[5]); cond_neg_swap(c, Vm[2], Vm[5]);
+	cond_neg_swap(c, bm[0], bm[3]); cond_neg_swap(c, vm[0], vm[3]);
+	cond_neg_swap(c, bm[1], bm[4]); cond_neg_swap(c, vm[1], vm[4]);
+	cond_neg_swap(c, bm[2], bm[5]); cond_neg_swap(c, vm[2], vm[5]);
 	cond_swap(c, rho1, rho2);
 	c = rho1 < rho3;
-	cond_neg_swap(c, Bm[0], Bm[6]); cond_neg_swap(c, Vm[0], Vm[6]);
-	cond_neg_swap(c, Bm[1], Bm[7]); cond_neg_swap(c, Vm[1], Vm[7]);
-	cond_neg_swap(c, Bm[2], Bm[8]); cond_neg_swap(c, Vm[2], Vm[8]);
+	cond_neg_swap(c, bm[0], bm[6]); cond_neg_swap(c, vm[0], vm[6]);
+	cond_neg_swap(c, bm[1], bm[7]); cond_neg_swap(c, vm[1], vm[7]);
+	cond_neg_swap(c, bm[2], bm[8]); cond_neg_swap(c, vm[2], vm[8]);
 	cond_swap(c, rho1, rho3);
 	c = rho2 < rho3;
-	cond_neg_swap(c, Bm[3], Bm[6]); cond_neg_swap(c, Vm[3], Vm[6]);
-	cond_neg_swap(c, Bm[4], Bm[7]); cond_neg_swap(c, Vm[4], Vm[7]);
-	cond_neg_swap(c, Bm[5], Bm[8]); cond_neg_swap(c, Vm[5], Vm[8]);
+	cond_neg_swap(c, bm[3], bm[6]); cond_neg_swap(c, vm[3], vm[6]);
+	cond_neg_swap(c, bm[4], bm[7]); cond_neg_swap(c, vm[4], vm[7]);
+	cond_neg_swap(c, bm[5], bm[8]); cond_neg_swap(c, vm[5], vm[8]);
 }
 
-static void qr_decomposition(mat3& B, mat3& Q, mat3& R)
+static void qr_decomposition(mat3& b_mat, mat3& q_mat, mat3& r_mat)
 {
 	float ch1, sh1, ch2, sh2, ch3, sh3;
 	float a, b;
 
 	// first givens rotation (ch,0,0,sh)
-	qr_givens_quaternion(B.m00, B.m10, ch1, sh1);
+	qr_givens_quaternion(b_mat.m00, b_mat.m10, ch1, sh1);
 	a = 1 - 2 * sh1 * sh1;
 	b = 2 * ch1 * sh1;
 
 	// Apply B = Q' * B.
-	float* Rm = R.m;
-	float* Bm = B.m;
-	Rm[0] = a * Bm[0] + b * Bm[1];  Rm[3] = a * Bm[3] + b * Bm[4];  Rm[6] = a * Bm[6] + b * Bm[7];
-	Rm[1] = -b * Bm[0] + a * Bm[1]; Rm[4] = -b * Bm[3] + a * Bm[4]; Rm[7] = -b * Bm[6] + a * Bm[7];
-	Rm[2] = Bm[2];          Rm[5] = Bm[5];          Rm[8] = Bm[8];
+	float* rm = r_mat.m;
+	float* bm = b_mat.m;
+	rm[0] = a * bm[0] + b * bm[1];  rm[3] = a * bm[3] + b * bm[4];  rm[6] = a * bm[6] + b * bm[7];
+	rm[1] = -b * bm[0] + a * bm[1]; rm[4] = -b * bm[3] + a * bm[4]; rm[7] = -b * bm[6] + a * bm[7];
+	rm[2] = bm[2];          rm[5] = bm[5];          rm[8] = bm[8];
 
 	// Second givens rotation (ch,0,-sh,0).
-	qr_givens_quaternion(Rm[0], Rm[2], ch2, sh2);
+	qr_givens_quaternion(rm[0], rm[2], ch2, sh2);
 	a = 1 - 2 * sh2 * sh2;
 	b = 2 * ch2 * sh2;
 
 	// Apply B = Q' * B.
-	Bm[0] = a * Rm[0] + b * Rm[2];  Bm[3] = a * Rm[3] + b * Rm[5];  Bm[6] = a * Rm[6] + b * Rm[8];
-	Bm[1] = Rm[1];           Bm[4] = Rm[4];           Bm[7] = Rm[7];
-	Bm[2] = -b * Rm[0] + a * Rm[2]; Bm[5] = -b * Rm[3] + a * Rm[5]; Bm[8] = -b * Rm[6] + a * Rm[8];
+	bm[0] = a * rm[0] + b * rm[2];  bm[3] = a * rm[3] + b * rm[5];  bm[6] = a * rm[6] + b * rm[8];
+	bm[1] = rm[1];           bm[4] = rm[4];           bm[7] = rm[7];
+	bm[2] = -b * rm[0] + a * rm[2]; bm[5] = -b * rm[3] + a * rm[5]; bm[8] = -b * rm[6] + a * rm[8];
 
 	// Third givens rotation (ch,sh,0,0).
-	qr_givens_quaternion(Bm[4], Bm[5], ch3, sh3);
+	qr_givens_quaternion(bm[4], bm[5], ch3, sh3);
 	a = 1 - 2 * sh3 * sh3;
 	b = 2 * ch3 * sh3;
 	// R is now set to desired value.
-	Rm[0] = Bm[0];             Rm[3] = Bm[3];           Rm[6] = Bm[6];
-	Rm[1] = a * Bm[1] + b * Bm[2];     Rm[4] = a * Bm[4] + b * Bm[5];   Rm[7] = a * Bm[7] + b * Bm[8];
-	Rm[2] = -b * Bm[1] + a * Bm[2];    Rm[5] = -b * Bm[4] + a * Bm[5];  Rm[8] = -b * Bm[7] + a * Bm[8];
+	rm[0] = bm[0];             rm[3] = bm[3];           rm[6] = bm[6];
+	rm[1] = a * bm[1] + b * bm[2];     rm[4] = a * bm[4] + b * bm[5];   rm[7] = a * bm[7] + b * bm[8];
+	rm[2] = -b * bm[1] + a * bm[2];    rm[5] = -b * bm[4] + a * bm[5];  rm[8] = -b * bm[7] + a * bm[8];
 
 	// Construct the cumulative rotation Q=Q1 * Q2 * Q3.
 	// The number of floating point operations for three quaternion multiplications
@@ -1679,23 +1679,23 @@ static void qr_decomposition(mat3& B, mat3& Q, mat3& R)
 	float sh22 = sh2 * sh2;
 	float sh32 = sh3 * sh3;
 
-	float* Qm = Q.m;
-	Qm[0] = (-1 + 2 * sh12) * (-1 + 2 * sh22);
-	Qm[3] = 4 * ch2 * ch3 * (-1 + 2 * sh12) * sh2 * sh3 + 2 * ch1 * sh1 * (-1 + 2 * sh32);
-	Qm[6] = 4 * ch1 * ch3 * sh1 * sh3 - 2 * ch2 * (-1 + 2 * sh12) * sh2 * (-1 + 2 * sh32);
+	float* qm = q_mat.m;
+	qm[0] = (-1 + 2 * sh12) * (-1 + 2 * sh22);
+	qm[3] = 4 * ch2 * ch3 * (-1 + 2 * sh12) * sh2 * sh3 + 2 * ch1 * sh1 * (-1 + 2 * sh32);
+	qm[6] = 4 * ch1 * ch3 * sh1 * sh3 - 2 * ch2 * (-1 + 2 * sh12) * sh2 * (-1 + 2 * sh32);
 
-	Qm[1] = 2 * ch1 * sh1 * (1 - 2 * sh22);
-	Qm[4] = -8 * ch1 * ch2 * ch3 * sh1 * sh2 * sh3 + (-1 + 2 * sh12) * (-1 + 2 * sh32);
-	Qm[7] = -2 * ch3 * sh3 + 4 * sh1 * (ch3 * sh1 * sh3 + ch1 * ch2 * sh2 * (-1 + 2 * sh32));
+	qm[1] = 2 * ch1 * sh1 * (1 - 2 * sh22);
+	qm[4] = -8 * ch1 * ch2 * ch3 * sh1 * sh2 * sh3 + (-1 + 2 * sh12) * (-1 + 2 * sh32);
+	qm[7] = -2 * ch3 * sh3 + 4 * sh1 * (ch3 * sh1 * sh3 + ch1 * ch2 * sh2 * (-1 + 2 * sh32));
 
-	Qm[2] = 2 * ch2 * sh2;
-	Qm[5] = 2 * ch3 * (1 - 2 * sh22) * sh3;
-	Qm[8] = (-1 + 2 * sh22) * (-1 + 2 * sh32);
+	qm[2] = 2 * ch2 * sh2;
+	qm[5] = 2 * ch3 * (1 - 2 * sh22) * sh3;
+	qm[8] = (-1 + 2 * sh22) * (-1 + 2 * sh32);
 }
 
-singular_value_decomposition compute_svd(const mat3& A)
+singular_value_decomposition compute_svd(const mat3& a)
 {
-	mat3 ATA = transpose(A) * A;
+	mat3 ATA = transpose(a) * a;
 
 	mat3 U, V;
 
@@ -1703,7 +1703,7 @@ singular_value_decomposition compute_svd(const mat3& A)
 	jacobi_eigenanlysis(ATA.m00, ATA.m10, ATA.m11, ATA.m20, ATA.m21, ATA.m22, q);
 	V = quaternion_to_mat3(q);
 
-	mat3 B = A * V;
+	mat3 B = a * V;
 
 	sort_singular_values(B, V);
 	mat3 S;
@@ -1796,18 +1796,18 @@ QRDecomposition create_qr_decomposition(const mat3& mat)
 	return result;
 }
 
-bool get_eigen(const mat3& A, vec3& out_eigen_values, mat3& out_eigen_vectors)
+bool get_eigen(const mat3& a, vec3& out_eigen_values, mat3& out_eigen_vectors)
 {
-	mat3 Q = create_qr_decomposition(A).Q;
-	mat3 Qt = transpose(Q);
+	mat3 Q = create_qr_decomposition(a).Q;
+	mat3 qt = transpose(Q);
 
-	mat3 tmp = Qt * A;
+	mat3 tmp = qt * a;
 	mat3 E = tmp * Q;
 
 	mat3 U = Q;
 
 	vec3 res = diagonal(E);
-	vec3 init = diagonal(A);
+	vec3 init = diagonal(a);
 
 	vec3 error = init - res;
 	double e = dot(error, error);
@@ -1817,9 +1817,9 @@ bool get_eigen(const mat3& A, vec3& out_eigen_values, mat3& out_eigen_vectors)
 		init = res;
 
 		mat3 Q = create_qr_decomposition(E).Q;
-		mat3 Qt = transpose(Q);
+		mat3 qt = transpose(Q);
 
-		tmp = Qt * E;
+		tmp = qt * E;
 		E = tmp * Q;
 
 		tmp = U * Q;

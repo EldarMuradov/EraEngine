@@ -26,10 +26,10 @@ namespace era_engine
 
 				rttr::type type = comp->get_type();
 				const char* comp_name = type.get_name().data();
-				const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
+				const ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
 
 				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
-				bool open = ImGui::TreeNodeEx(comp_name, treeNodeFlags, comp_name);
+				bool open = ImGui::TreeNodeEx(comp_name, tree_node_flags, comp_name);
 				ImGui::PopStyleVar();
 				if (open)
 				{

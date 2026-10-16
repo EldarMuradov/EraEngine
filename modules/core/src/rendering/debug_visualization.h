@@ -13,90 +13,90 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API position_color
+	struct ERA_CORE_API PositionColor
 	{
 		vec3 position;
 		vec3 color;
 	};
 
-	struct debug_render_data
+	struct DebugRenderData
 	{
 		mat4 transform;
-		dx_vertex_buffer_group_view vertexBuffer;
-		dx_index_buffer_view indexBuffer;
+		DXVertexBufferGroupView vertex_buffer;
+		DXIndexBufferView index_buffer;
 		SubmeshInfo submesh;
 
 		vec4 color;
 	};
 
-	struct debug_simple_pipeline
+	struct DebugSimplePipeline
 	{
 		// Layout: position, normal.
 		static void initialize();
 
 		PIPELINE_SETUP_DECL;
-		PIPELINE_RENDER_DECL(debug_render_data);
+		PIPELINE_RENDER_DECL(DebugRenderData);
 	};
 
-	struct ERA_CORE_API debug_unlit_pipeline
+	struct ERA_CORE_API DebugUnlitPipeline
 	{
 		static void initialize();
 
-		struct position;
-		struct position_color;
+		struct Position;
+		struct PositionColor;
 
-		PIPELINE_RENDER_DECL(debug_render_data);
+		PIPELINE_RENDER_DECL(DebugRenderData);
 	};
 
-	struct ERA_CORE_API debug_unlit_pipeline::position : debug_unlit_pipeline { PIPELINE_SETUP_DECL; };
-	struct ERA_CORE_API debug_unlit_pipeline::position_color : debug_unlit_pipeline { PIPELINE_SETUP_DECL; };
+	struct ERA_CORE_API DebugUnlitPipeline::Position : DebugUnlitPipeline { PIPELINE_SETUP_DECL; };
+	struct ERA_CORE_API DebugUnlitPipeline::PositionColor : DebugUnlitPipeline { PIPELINE_SETUP_DECL; };
 
-	struct ERA_CORE_API debug_unlit_line_pipeline
+	struct ERA_CORE_API DebugUnlitLinePipeline
 	{
 		static void initialize();
 
-		struct position;
-		struct position_color;
+		struct Position;
+		struct PositionColor;
 
-		PIPELINE_RENDER_DECL(debug_render_data);
+		PIPELINE_RENDER_DECL(DebugRenderData);
 	};
 
-	struct ERA_CORE_API debug_unlit_line_pipeline::position : debug_unlit_line_pipeline { PIPELINE_SETUP_DECL; };
-	struct ERA_CORE_API debug_unlit_line_pipeline::position_color : debug_unlit_line_pipeline { PIPELINE_SETUP_DECL; };
+	struct ERA_CORE_API DebugUnlitLinePipeline::Position : DebugUnlitLinePipeline { PIPELINE_SETUP_DECL; };
+	struct ERA_CORE_API DebugUnlitLinePipeline::PositionColor : DebugUnlitLinePipeline { PIPELINE_SETUP_DECL; };
 
 	template <typename pipeline_t>
-	static void renderDebug(const mat4& transform, const struct dx_dynamic_vertex_buffer& vb, const struct dx_dynamic_index_buffer& ib, vec4 color,
-		ldr_render_pass* renderPass, bool overlay = false)
+	static void render_debug(const mat4& transform, const struct DXDynamicVertexBuffer& vb, const struct DXDynamicIndexBuffer& ib, vec4 color,
+		LDRRenderPass* render_pass, bool overlay = false)
 	{
 		SubmeshInfo sm;
-		sm.baseVertex = 0;
-		sm.numVertices = vb.view.SizeInBytes / vb.view.StrideInBytes;
-		sm.firstIndex = 0;
-		sm.numIndices = ib.view.SizeInBytes / getFormatSize(ib.view.Format);
+		sm.base_vertex = 0;
+		sm.num_vertices = vb.view.SizeInBytes / vb.view.StrideInBytes;
+		sm.first_index = 0;
+		sm.num_indices = ib.view.SizeInBytes / get_format_size(ib.view.Format);
 
-		debug_render_data data = {
-			transform, dx_vertex_buffer_group_view(vb), ib, sm, color
+		DebugRenderData data = {
+			transform, DXVertexBufferGroupView(vb), ib, sm, color
 		};
 
 		if (overlay)
-			renderPass->renderOverlay<pipeline_t>(data);
+			render_pass->render_overlay<pipeline_t>(data);
 		else
-			renderPass->renderObject<pipeline_t>(data);
+			render_pass->render_object<pipeline_t>(data);
 	}
 
-	ERA_CORE_API void renderPoint(vec3 pos, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
-	ERA_CORE_API void renderTriangle(vec3 a, vec3 b, vec3 c, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
-	ERA_CORE_API void renderDisk(vec3 position, vec3 upAxis, float radius, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
-	ERA_CORE_API void renderRing(vec3 position, vec3 upAxis, float outerRadius, float innerRadius, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
-	ERA_CORE_API void renderAngleRing(vec3 position, vec3 upAxis, float outerRadius, float innerRadius,
-		vec3 zeroDegAxis, float minAngle, float maxAngle, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
+	ERA_CORE_API void render_point(vec3 pos, vec4 color, LDRRenderPass* render_pass, bool overlay = false);
+	ERA_CORE_API void render_triangle(vec3 a, vec3 b, vec3 c, vec4 color, LDRRenderPass* render_pass, bool overlay = false);
+	ERA_CORE_API void render_disk(vec3 position, vec3 up_axis, float radius, vec4 color, LDRRenderPass* render_pass, bool overlay = false);
+	ERA_CORE_API void render_ring(vec3 position, vec3 up_axis, float outer_radius, float inner_radius, vec4 color, LDRRenderPass* render_pass, bool overlay = false);
+	ERA_CORE_API void render_angle_ring(vec3 position, vec3 up_axis, float outer_radius, float inner_radius,
+		vec3 zero_deg_axis, float min_angle, float max_angle, vec4 color, LDRRenderPass* render_pass, bool overlay = false);
 
-	ERA_CORE_API void renderLine(vec3 positionA, vec3 positionB, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
-	ERA_CORE_API void renderWireTriangle(vec3 a, vec3 b, vec3 c, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
-	ERA_CORE_API void renderWireSphere(vec3 position, float radius, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
-	ERA_CORE_API void renderWireCapsule(vec3 positionA, vec3 positionB, float radius, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
-	ERA_CORE_API void renderWireCylinder(vec3 positionA, vec3 positionB, float radius, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
-	ERA_CORE_API void renderWireCone(vec3 position, vec3 direction, float distance, float angle, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
-	ERA_CORE_API void renderWireBox(vec3 position, vec3 radius, quat rotation, vec4 color, ldr_render_pass* renderPass, bool overlay = false);
-	ERA_CORE_API void renderCameraFrustum(const render_camera& frustum, vec4 color, ldr_render_pass* renderPass, float alternativeFarPlane = -1.f, bool overlay = false);
+	ERA_CORE_API void render_line(vec3 position_a, vec3 position_b, vec4 color, LDRRenderPass* render_pass, bool overlay = false);
+	ERA_CORE_API void render_wire_triangle(vec3 a, vec3 b, vec3 c, vec4 color, LDRRenderPass* render_pass, bool overlay = false);
+	ERA_CORE_API void render_wire_sphere(vec3 position, float radius, vec4 color, LDRRenderPass* render_pass, bool overlay = false);
+	ERA_CORE_API void render_wire_capsule(vec3 position_a, vec3 position_b, float radius, vec4 color, LDRRenderPass* render_pass, bool overlay = false);
+	ERA_CORE_API void render_wire_cylinder(vec3 position_a, vec3 position_b, float radius, vec4 color, LDRRenderPass* render_pass, bool overlay = false);
+	ERA_CORE_API void render_wire_cone(vec3 position, vec3 direction, float distance, float angle, vec4 color, LDRRenderPass* render_pass, bool overlay = false);
+	ERA_CORE_API void render_wire_box(vec3 position, vec3 radius, quat rotation, vec4 color, LDRRenderPass* render_pass, bool overlay = false);
+	ERA_CORE_API void render_camera_frustum(const RenderCamera& frustum, vec4 color, LDRRenderPass* render_pass, float alternative_far_plane = -1.f, bool overlay = false);
 }
