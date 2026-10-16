@@ -11,9 +11,12 @@ namespace era_engine
 	{
 	public:
 		NameComponent() = default;
-		NameComponent(ref<Entity::EcsData> _data, const char* n);
+		NameComponent(ref<Entity::EcsData> _data, const char* n = "");
 
 		~NameComponent() override;
+
+		std::string get_name() const;
+		void set_name(std::string new_name);
 
 		ERA_VIRTUAL_REFLECT(Component)
 

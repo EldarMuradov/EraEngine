@@ -8,6 +8,8 @@
 
 #include <animation/animation.h>
 
+#include <ecs/serialization/component_registry.h>
+
 #include <rttr/registration>
 
 namespace era_engine
@@ -17,7 +19,9 @@ namespace era_engine
 	{
 		using namespace rttr;
 		registration::class_<MotionDataComponent>("MotionDataComponent")
-			.constructor<ref<Entity::EcsData>>();
+			.constructor<ref<Entity::EcsData>>()
+			.property("search_time", &MotionDataComponent::search_time);
+		ComponentRegistry::register_component<MotionDataComponent>();
 	}
 
 	MotionDataComponent::MotionDataComponent(ref<Entity::EcsData> _data)

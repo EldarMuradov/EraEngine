@@ -1,5 +1,9 @@
 #include "physics/joint.h"
 #include "physics/core/physics.h"
+
+#include <ecs/serialization/component_registry.h>
+#include <ecs/serialization/serialization_meta.h>
+#include <ecs/serialization/value_adapters.h>
 #include "physics/core/physics_utils.h"
 #include "physics/body_component.h"
 
@@ -73,23 +77,99 @@ namespace era_engine::physics
 			value("BROKEN", JointComponent::State::BROKEN)
 		);
 
+		registration::class_<JointComponent::BaseDescriptor>("JointBaseDescriptor")
+			.property("connected_entity", &JointComponent::BaseDescriptor::connected_entity)
+			.property("second_connected_entity", &JointComponent::BaseDescriptor::second_connected_entity)
+			.property("local_frame", &JointComponent::BaseDescriptor::local_frame)
+			.property("second_local_frame", &JointComponent::BaseDescriptor::second_local_frame);
+
 		registration::class_<JointComponent>("JointComponent")
-			.constructor<>();
+			.constructor<>()
+			.property("base_descriptor", &JointComponent::get_base_descriptor, &JointComponent::set_base_descriptor)
+			.property("enable_collision", &JointComponent::enable_collision)
+			.property("always_update", &JointComponent::always_update)
+			.property("break_force", &JointComponent::break_force)
+			.property("disabled", &JointComponent::disabled)
+			.property("disable_preprocessing", &JointComponent::disable_preprocessing);
 
 		registration::class_<FixedJointComponent>("FixedJointComponent")
-			.constructor<>();
+			.constructor<ref<Entity::EcsData>>();
+		ComponentRegistry::register_component<FixedJointComponent>();
 
 		registration::class_<RevoluteJointComponent>("RevoluteJointComponent")
-			.constructor<>();
+			.constructor<ref<Entity::EcsData>>()
+			.property("enable_drive", &RevoluteJointComponent::enable_drive)
+			.property("drive_velocity", &RevoluteJointComponent::drive_velocity)
+			.property("drive_force_limit", &RevoluteJointComponent::drive_force_limit)
+			.property("drive_gear_ratio", &RevoluteJointComponent::drive_gear_ratio)
+			.property("linear_limit", &RevoluteJointComponent::linear_limit);
+		ComponentRegistry::register_component<RevoluteJointComponent>();
 
 		registration::class_<DistanceJointComponent>("DistanceJointComponent")
-			.constructor<>();
+			.constructor<ref<Entity::EcsData>>()
+			.property("stiffness", &DistanceJointComponent::stiffness)
+			.property("damping", &DistanceJointComponent::damping)
+			.property("min_distance", &DistanceJointComponent::min_distance)
+			.property("max_distance", &DistanceJointComponent::max_distance)
+			.property("spring_enabled", &DistanceJointComponent::spring_enabled);
+		ComponentRegistry::register_component<DistanceJointComponent>();
 
 		registration::class_<SphericalJointComponent>("SphericalJointComponent")
-			.constructor<>();
+			.constructor<ref<Entity::EcsData>>()
+			.property("angular_limit", &SphericalJointComponent::angular_limit);
+		ComponentRegistry::register_component<SphericalJointComponent>();
+
+		registration::enumeration<D6JointComponent::Motion>("D6JointMotion")
+		(
+			value("LOCKED", D6JointComponent::Motion::LOCKED),
+			value("LIMITED", D6JointComponent::Motion::LIMITED),
+			value("FREE", D6JointComponent::Motion::FREE)
+		);
+		ValueAdapters::register_observable<D6JointComponent::Motion>();
 
 		registration::class_<D6JointComponent>("D6JointComponent")
-			.constructor<>();
+			.constructor<ref<Entity::EcsData>>()
+			.property("perform_slerp_drive", &D6JointComponent::perform_slerp_drive)
+			.property("swing_y_limit", &D6JointComponent::swing_y_limit)
+			.property("swing_z_limit", &D6JointComponent::swing_z_limit)
+			.property("twist_min_limit", &D6JointComponent::twist_min_limit)
+			.property("twist_max_limit", &D6JointComponent::twist_max_limit)
+			.property("linear_limit", &D6JointComponent::linear_limit)
+			.property("distance_limit", &D6JointComponent::distance_limit)
+			.property("linear_x_motion_type", &D6JointComponent::linear_x_motion_type)
+			.property("linear_y_motion_type", &D6JointComponent::linear_y_motion_type)
+			.property("linear_z_motion_type", &D6JointComponent::linear_z_motion_type)
+			.property("swing_limit_stiffness", &D6JointComponent::swing_limit_stiffness)
+			.property("swing_limit_damping", &D6JointComponent::swing_limit_damping)
+			.property("swing_limit_restitution", &D6JointComponent::swing_limit_restitution)
+			.property("twist_limit_stiffness", &D6JointComponent::twist_limit_stiffness)
+			.property("twist_limit_damping", &D6JointComponent::twist_limit_damping)
+			.property("twist_limit_restitution", &D6JointComponent::twist_limit_restitution)
+			.property("swing_y_motion_type", &D6JointComponent::swing_y_motion_type)
+			.property("swing_z_motion_type", &D6JointComponent::swing_z_motion_type)
+			.property("twist_motion_type", &D6JointComponent::twist_motion_type)
+			.property("slerp_drive_force_limit", &D6JointComponent::slerp_drive_force_limit)
+			.property("swing_drive_force_limit", &D6JointComponent::swing_drive_force_limit)
+			.property("twist_drive_force_limit", &D6JointComponent::twist_drive_force_limit)
+			.property("linear_drive_force_limit", &D6JointComponent::linear_drive_force_limit)
+			.property("drive_limits_are_forces", &D6JointComponent::drive_limits_are_forces)
+			.property("improved_slerp", &D6JointComponent::improved_slerp)
+			.property("slerp_drive_stiffness", &D6JointComponent::slerp_drive_stiffness)
+			.property("swing_drive_stiffness", &D6JointComponent::swing_drive_stiffness)
+			.property("twist_drive_stiffness", &D6JointComponent::twist_drive_stiffness)
+			.property("linear_drive_stiffness", &D6JointComponent::linear_drive_stiffness)
+			.property("slerp_drive_damping", &D6JointComponent::slerp_drive_damping)
+			.property("swing_drive_damping", &D6JointComponent::swing_drive_damping)
+			.property("twist_drive_damping", &D6JointComponent::twist_drive_damping)
+			.property("linear_drive_damping", &D6JointComponent::linear_drive_damping)
+			.property("slerp_drive_accelerated", &D6JointComponent::slerp_drive_accelerated)
+			.property("swing_drive_accelerated", &D6JointComponent::swing_drive_accelerated)
+			.property("twist_drive_accelerated", &D6JointComponent::twist_drive_accelerated)
+			.property("linear_drive_accelerated", &D6JointComponent::linear_drive_accelerated)
+			.property("angular_drive_velocity", &D6JointComponent::angular_drive_velocity)
+			.property("linear_drive_velocity", &D6JointComponent::linear_drive_velocity)
+			.property("drive_transform", &D6JointComponent::drive_transform);
+		ComponentRegistry::register_component<D6JointComponent>();
 	}
 
 	JointComponent::JointComponent(ref<Entity::EcsData> _data, const BaseDescriptor& _base_descriptor)
@@ -104,6 +184,16 @@ namespace era_engine::physics
 
 	JointComponent::~JointComponent()
 	{
+	}
+
+	const JointComponent::BaseDescriptor& JointComponent::get_base_descriptor() const
+	{
+		return base_descriptor;
+	}
+
+	void JointComponent::set_base_descriptor(const BaseDescriptor& new_base_descriptor)
+	{
+		base_descriptor = new_base_descriptor;
 	}
 
 	JointComponent::State JointComponent::get_state() const

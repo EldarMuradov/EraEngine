@@ -16,6 +16,8 @@ namespace era_engine
 
 		~TrajectoryComponent() override;
 
+		void on_deserialized() override;
+
 		ERA_VIRTUAL_REFLECT(Component)
 
 	public:

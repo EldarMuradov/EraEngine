@@ -1038,14 +1038,8 @@ namespace era_engine::physics
 
 		DefaultJob job_object;
 
-		job_object.data.user_data = data;
-		job_object.data.data_size = sizeof(DismembermentTaskData);
-		job_object.data.destroy_after_execution = false;
-
-		job_object.job_func = [](DefaultJob::Data& default_data)
+		job_object.job_func = [data]()
 			{
-				DismembermentTaskData* data = reinterpret_cast<DismembermentTaskData*>(default_data.user_data);
-
 				std::vector<uint32> live_bones;
 
 				for (uint32 g = 0; g < data->parts.size(); ++g)

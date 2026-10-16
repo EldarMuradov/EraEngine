@@ -39,6 +39,8 @@ namespace era_engine::physics
 
 		float density = 500.0f;
 
+		ERA_VIRTUAL_REFLECT(Component)
+
 	private:
 		vec3* view_pos_buffer = nullptr;
 		physx::PxVec4* native_pos_buffer = nullptr;

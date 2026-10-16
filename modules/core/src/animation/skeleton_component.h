@@ -38,6 +38,8 @@ namespace era_engine::animation
 
 		void apply_override_pose(const SkeletonPose& pose);
 
+		void on_deserialized() override;
+
 		ERA_VIRTUAL_REFLECT(Component)
 
 	public:

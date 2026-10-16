@@ -38,7 +38,7 @@ namespace era_engine::physics
 		static constexpr bool in_place_delete = true;
 
 		JointComponent() = default;
-		JointComponent(ref<Entity::EcsData> _data, const BaseDescriptor& _base_descriptor);
+		JointComponent(ref<Entity::EcsData> _data, const BaseDescriptor& _base_descriptor = {});
 
 		~JointComponent() override;
 
@@ -52,11 +52,14 @@ namespace era_engine::physics
 		const trs& get_first_local_frame() const;
 		const trs& get_second_local_frame() const;
 
+		const BaseDescriptor& get_base_descriptor() const;
+		void set_base_descriptor(const BaseDescriptor& new_base_descriptor);
+
 		ObservableMember<bool> enable_collision = false;
 
-		ObservableMember<bool> always_update;
+		ObservableMember<bool> always_update = false;
 
-		ObservableMember<float> break_force;
+		ObservableMember<float> break_force = FLT_MAX;
 
 		ObservableMember<bool> disabled = false;
 		ObservableMember<bool> disable_preprocessing = false;
@@ -78,7 +81,7 @@ namespace era_engine::physics
 	{
 	public:
 		FixedJointComponent() = default;
-		FixedJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
+		FixedJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor = {});
 		~FixedJointComponent() override;
 
 		ERA_VIRTUAL_REFLECT(JointComponent)
@@ -88,7 +91,7 @@ namespace era_engine::physics
 	{
 	public:
 		RevoluteJointComponent() = default;
-		RevoluteJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
+		RevoluteJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor = {});
 		~RevoluteJointComponent() override;
 
 		ObservableMember<bool> enable_drive = false;
@@ -98,7 +101,7 @@ namespace era_engine::physics
 		ObservableMember<float> drive_gear_ratio = 0.0f;
 
 		//x = lower, y = upper
-		ObservableMember<vec2> linear_limit;
+		ObservableMember<vec2> linear_limit = vec2(0.0f);
 
 		ERA_VIRTUAL_REFLECT(JointComponent)
 	};
@@ -107,7 +110,7 @@ namespace era_engine::physics
 	{
 	public:
 		DistanceJointComponent() = default;
-		DistanceJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
+		DistanceJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor = {});
 		~DistanceJointComponent() override;
 
 		ObservableMember<float> stiffness = 0.0f;
@@ -125,11 +128,11 @@ namespace era_engine::physics
 	{
 	public:
 		SphericalJointComponent() = default;
-		SphericalJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
+		SphericalJointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor = {});
 		~SphericalJointComponent() override;
 
 		//x = swing_y, y = swing_z
-		ObservableMember<vec2> angular_limit;
+		ObservableMember<vec2> angular_limit = vec2(0.0f);
 
 		ERA_VIRTUAL_REFLECT(JointComponent)
 	};
@@ -145,7 +148,7 @@ namespace era_engine::physics
 		};
 
 		D6JointComponent() = default;
-		D6JointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor);
+		D6JointComponent(ref<Entity::EcsData> _data, const JointComponent::BaseDescriptor& _base_descriptor = {});
 		~D6JointComponent() override;
 
 		bool perform_slerp_drive = false;

@@ -10,7 +10,7 @@ namespace era_engine
 	class ERA_CORE_API MeshComponent : public Component
 	{
 	public:
-		MeshComponent(ref<Entity::EcsData> _data, ref<MultiMesh> _mesh, bool _is_hidden = false);
+		MeshComponent(ref<Entity::EcsData> _data, ref<MultiMesh> _mesh = nullptr, bool _is_hidden = false);
 		~MeshComponent() override;
 
 		ERA_VIRTUAL_REFLECT(Component)

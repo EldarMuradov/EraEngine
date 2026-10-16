@@ -66,6 +66,8 @@ namespace era_engine
         bool add_chain_to_component(const std::vector<std::string>& joint_names,
             const std::vector<FBIKJointSettings>* constraints = nullptr);
 
+        void on_deserialized() override;
+
 		ERA_VIRTUAL_REFLECT(Component)
 	};
 

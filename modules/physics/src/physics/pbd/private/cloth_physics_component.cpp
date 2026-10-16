@@ -1,6 +1,9 @@
 #include "physics/pbd/cloth_physics_component.h"
 #include "physics/core/physics.h"
 
+#include <ecs/serialization/component_registry.h>
+#include <ecs/serialization/serialization_meta.h>
+
 #include <ecs/rendering/cloth_render_component.h>
 
 #include <core/memory.h>
@@ -18,8 +21,9 @@ namespace era_engine::physics
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		registration::class_<ClothRenderComponent>("ClothRenderComponent")
+		registration::class_<ClothPhysicsComponent>("ClothPhysicsComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<ref<Entity::EcsData>>();
+		ComponentRegistry::register_component<ClothPhysicsComponent>();
 	}
 
 	ClothPhysicsComponent::ClothPhysicsComponent(ref<Entity::EcsData> _data)

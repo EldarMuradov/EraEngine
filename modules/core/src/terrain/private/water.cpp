@@ -1,6 +1,8 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "terrain/water.h"
+#include "ecs/serialization/component_registry.h"
+#include "ecs/serialization/serialization_meta.h"
 
 #include "core/string.h"
 #include "core/math.h"
@@ -109,10 +111,11 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		rttr::registration::class_<WaterComponent>("WaterComponent")
+		rttr::registration::class_<WaterComponent>("WaterComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>()
 			.constructor<ref<Entity::EcsData>, const WaterSettings&>()
 			.property("settings", &WaterComponent::settings);
+		ComponentRegistry::register_component<WaterComponent>();
 	}
 
 	WaterComponent::WaterComponent(ref<Entity::EcsData> _data, const WaterSettings& _settings)

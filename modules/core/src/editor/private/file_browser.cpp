@@ -52,6 +52,9 @@ namespace era_engine
 		if (type == FileBrowser::DIR_ENTRY_TYPE_CODE)
 			return ICON_FA_FILE_CODE;
 
+		if (type == FileBrowser::DIR_ENTRY_TYPE_PREFAB)
+			return EDITOR_ICON_PREFAB;
+
 		return ICON_FA_FILE;
 	}
 
@@ -171,6 +174,10 @@ namespace era_engine
 								{
 									ImGui::SetTooltip("Drag&drop into scene to instantiate.");
 								}
+								else if (p.type == DIR_ENTRY_TYPE_PREFAB)
+								{
+									ImGui::SetTooltip("Drag&drop into scene or hierarchy to instantiate, or onto a prefab property.");
+								}
 							}
 
 							// Context menu
@@ -218,6 +225,28 @@ namespace era_engine
 									fs::path full_path = current_path / p.filename;
 									std::string str = full_path.string();
 									ImGui::SetDragDropPayload(EDITOR_ICON_AUDIO, str.c_str(), str.length() + 1, ImGuiCond_Once);
+									ImGui::EndDragDropSource();
+								}
+							}
+							if (p.type == DIR_ENTRY_TYPE_PREFAB)
+							{
+								if (ImGui::BeginDragDropSource())
+								{
+									fs::path full_path = current_path / p.filename;
+									std::string str = full_path.string();
+									ImGui::SetDragDropPayload(EDITOR_ICON_PREFAB, str.c_str(), str.length() + 1, ImGuiCond_Once);
+									ImGui::Text("Drop into scene or hierarchy to instantiate.");
+									ImGui::EndDragDropSource();
+								}
+							}
+							if (p.type == DIR_ENTRY_TYPE_NONE || p.type == DIR_ENTRY_TYPE_CODE || p.type == DIR_ENTRY_TYPE_FONT)
+							{
+								if (ImGui::BeginDragDropSource())
+								{
+									fs::path full_path = current_path / p.filename;
+									std::string str = full_path.string();
+									ImGui::SetDragDropPayload(EDITOR_ICON_FILE, str.c_str(), str.length() + 1, ImGuiCond_Once);
+									ImGui::Text("%s", p.filename.string().c_str());
 									ImGui::EndDragDropSource();
 								}
 							}
@@ -278,6 +307,10 @@ namespace era_engine
 				else if (extension == ".cs")
 				{
 					type = DIR_ENTRY_TYPE_CODE;
+				}
+				else if (extension == ".eprefab")
+				{
+					type = DIR_ENTRY_TYPE_PREFAB;
 				}
 				else if (is_sound_extension(extension))
 				{

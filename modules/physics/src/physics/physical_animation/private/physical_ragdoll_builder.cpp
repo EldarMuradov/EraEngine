@@ -19,6 +19,8 @@
 
 #include <algorithm>
 
+#include <ecs/prefab/transient_component.h>
+
 namespace era_engine::physics
 {
 	static Entity create_child_entity(
@@ -32,6 +34,7 @@ namespace era_engine::physics
 		PhysicsLimbChain* chain = nullptr)
 	{
 		Entity child = parent.get_world()->create_entity(entity_name.data());
+		child.add_component<TransientComponent>();
 		child.set_parent(parent.get_handle());
 
 		if (is_physically_animated)
@@ -107,6 +110,7 @@ namespace era_engine::physics
 		ASSERT(entity.is_valid());
 
 		Entity attachment = entity.get_world()->create_entity(entity_name.data());
+		attachment.add_component<TransientComponent>();
 		attachment.set_parent(entity.get_handle());
 
 		DynamicBodyComponent* dynamic_body_component = attachment.add_component<DynamicBodyComponent>();
@@ -164,6 +168,7 @@ namespace era_engine::physics
 		descriptor.second_local_frame = e1_to_e1_joint_transform;
 
 		Entity joint_entity = e0.get_world()->create_entity();
+		joint_entity.add_component<TransientComponent>();
 		joint_entity.set_parent(source.get_handle());
 
 		D6JointComponent* joint_component = joint_entity.add_component<D6JointComponent>(descriptor);
@@ -262,6 +267,7 @@ namespace era_engine::physics
 		descriptor.second_local_frame = trs::identity;
 
 		Entity joint_entity = e1.get_world()->create_entity();
+		joint_entity.add_component<TransientComponent>();
 		joint_entity.set_parent(source.get_handle());
 
 		PhysicalAnimationLimbComponent* e1_limb_component = e1.get_component<PhysicalAnimationLimbComponent>();

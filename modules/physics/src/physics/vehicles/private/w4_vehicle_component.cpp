@@ -1,5 +1,8 @@
 #include "physics/vehicles/w4_vehicle_component.h"
 
+#include <ecs/serialization/component_registry.h>
+#include <ecs/serialization/serialization_meta.h>
+
 #include <rttr/registration>
 
 namespace era_engine::physics
@@ -7,8 +10,9 @@ namespace era_engine::physics
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		registration::class_<W4VehicleComponent>("W4VehicleComponent")
+		registration::class_<W4VehicleComponent>("W4VehicleComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>();
+		ComponentRegistry::register_component<W4VehicleComponent>();
 	}
 
 	W4VehicleComponent::W4VehicleComponent(ref<Entity::EcsData> _data)

@@ -138,11 +138,12 @@ namespace era_engine
 
 		result->mesh = builder.create_dx_mesh();
 
+		const fs::path mesh_path = filename.parent_path() / filename.stem();
+		result->source_path = fs::path(mesh_path).concat(MultiMesh::get_asset_type_impl()).lexically_normal().make_preferred();
+
 		result->load_state.store(AssetLoadState::LOADED, std::memory_order_release);
 
 		GameAssetsProvider provider;
-
-		fs::path mesh_path = filename.parent_path() / filename.stem();
 
 		JobHandle save_job = provider.save_game_asset_to_file_async<MultiMesh>(mesh_path, result.get());
 		save_job.wait_for_completion();
@@ -319,7 +320,6 @@ namespace era_engine
 
 					ref<PBRMaterial> material = create_pbr_material(material_desc);
 
-					BoundingBox aabb;
 					builder.push_mesh(sub, 1.f, &aabb);
 					submeshes.push_back({ builder.end_submesh(), aabb, trs::identity, material, mesh.name });
 

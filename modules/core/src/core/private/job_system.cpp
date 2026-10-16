@@ -136,7 +136,10 @@ namespace era_engine
 
     void JobHandle::submit_now()
     {
-        queue->submit(index);
+        if (queue != nullptr)
+        {
+            queue->submit(index);
+        }
     }
 
     void JobHandle::submit_after(JobHandle before)
@@ -146,7 +149,10 @@ namespace era_engine
 
     void JobHandle::wait_for_completion()
     {
-        queue->wait_for_completion(index);
+        if (queue != nullptr)
+        {
+            queue->wait_for_completion(index);
+        }
     }
 
     JobQueue high_priority_job_queue;
@@ -176,12 +182,7 @@ namespace era_engine
             {
                 if (job_data.job_func)
                 {
-                    job_data.job_func(job_data.data);
-                }
-                if (job_data.data.user_data && job_data.data.destroy_after_execution)
-                {
-                    delete job_data.data.user_data;
-                    job_data.data.user_data = nullptr;
+                    job_data.job_func();
                 }
             }, data, parent_job);
 

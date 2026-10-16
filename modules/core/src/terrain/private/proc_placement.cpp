@@ -1,6 +1,8 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "terrain/proc_placement.h"
+#include "ecs/serialization/component_registry.h"
+#include "ecs/serialization/serialization_meta.h"
 
 #include "dx/dx_command_list.h"
 #include "dx/dx_pipeline.h"
@@ -106,10 +108,11 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		rttr::registration::class_<ProcPlacementComponent>("ProcPlacementComponent")
+		rttr::registration::class_<ProcPlacementComponent>("ProcPlacementComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>()
 			.constructor<ref<Entity::EcsData>, const std::vector<ProcPlacementLayerDesc>&>()
 			.property("layers", &ProcPlacementComponent::layers);
+		ComponentRegistry::register_component<ProcPlacementComponent>();
 	}
 
 	ProcPlacementComponent::ProcPlacementComponent(ref<Entity::EcsData> _data, const std::vector<ProcPlacementLayerDesc>& _layers)
@@ -131,7 +134,7 @@ namespace era_engine
 
 		uint32 global_mesh_offset = 1;
 
-		for (const auto& layer_desc : layers)
+		for (const auto& layer_desc : _layers)
 		{
 			PlacementLayer layer;
 			layer.name = layer_desc.name;

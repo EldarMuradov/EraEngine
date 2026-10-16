@@ -1,5 +1,3 @@
-// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
-
 #pragma once
 
 #include "core/math.h"
@@ -217,6 +215,33 @@ namespace YAML
 			m.m31 = n[13].as<float>();
 			m.m32 = n[14].as<float>();
 			m.m33 = n[15].as<float>();
+			return true;
+		}
+	};
+
+	template<>
+	struct convert<trs>
+	{
+		NODISCARD static Node encode(const trs& t)
+		{
+			Node n;
+			n["position"] = t.position;
+			n["rotation"] = t.rotation;
+			n["scale"] = t.scale;
+			return n;
+		}
+
+		static bool decode(const Node& n, trs& t)
+		{
+			if (!n.IsMap())
+				return false;
+			t = trs::identity;
+			if (n["position"])
+				t.position = n["position"].as<vec3>();
+			if (n["rotation"])
+				t.rotation = n["rotation"].as<quat>();
+			if (n["scale"])
+				t.scale = n["scale"].as<vec3>();
 			return true;
 		}
 	};

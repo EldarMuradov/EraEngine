@@ -27,6 +27,11 @@ namespace era_engine
 		void add_reciever(InputReceiverComponent* reciever);
 		void remove_reciever(InputReceiverComponent* reciever);
 
+		std::vector<EntityPtr> get_reciever_entities() const;
+		void set_reciever_entities(std::vector<EntityPtr> entities);
+
+		void on_deserialized() override;
+
 		ERA_VIRTUAL_REFLECT(Component)
 
 	private:
@@ -39,6 +44,7 @@ namespace era_engine
 		vec3 last_input = vec3::zero;
 
 		std::vector<InputReceiverComponent*> recievers;
+		std::vector<EntityPtr> pending_reciever_entities;
 
 		friend class InputSystem;
 	};

@@ -12,6 +12,8 @@
 
 #include "rendering/debug_visualization.h"
 
+#include "ecs/serialization/component_registry.h"
+
 #include <rttr/registration>
 
 #include <algorithm>
@@ -46,7 +48,16 @@ namespace era_engine::animation
 	{
 		using namespace rttr;
 		registration::class_<AnimationComponent>("AnimationComponent")
-			.constructor<ref<Entity::EcsData>>();
+			.constructor<ref<Entity::EcsData>>()
+			.property("current_animation", &AnimationComponent::current_animation)
+			.property("current_anim_position", &AnimationComponent::current_anim_position)
+			.property("play", &AnimationComponent::play)
+			.property("update_skeleton", &AnimationComponent::update_skeleton)
+			.property("loop", &AnimationComponent::loop)
+			.property("enable_root_motion", &AnimationComponent::enable_root_motion)
+			.property("blend_time", &AnimationComponent::blend_time)
+			.property("inertial_blend", &AnimationComponent::inertial_blend_inited);
+		ComponentRegistry::register_component<AnimationComponent>();
 	}
 
 	AnimationComponent::AnimationComponent(ref<Entity::EcsData> _data)
@@ -56,6 +67,22 @@ namespace era_engine::animation
 
 	AnimationComponent::~AnimationComponent()
 	{
+	}
+
+	void AnimationComponent::on_deserialized()
+	{
+		if (inertial_blend_inited && inertial_sampler == nullptr)
+		{
+			const SkeletonComponent* skeleton_component = get_entity().get_component_if_exists<SkeletonComponent>();
+			if (skeleton_component != nullptr && skeleton_component->skeleton != nullptr)
+			{
+				activate_inertial_blend();
+			}
+			else
+			{
+				inertial_blend_inited = false;
+			}
+		}
 	}
 
 	void AnimationComponent::activate_inertial_blend()

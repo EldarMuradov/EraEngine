@@ -1,4 +1,6 @@
 #include "rendering/ecs/renderer_holder_root_component.h"
+#include "ecs/serialization/component_registry.h"
+#include "ecs/serialization/serialization_meta.h"
 
 #include "window/dx_window.h"
 
@@ -12,8 +14,9 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		rttr::registration::class_<RendererHolderRootComponent>("RendererHolderRootComponent")
+		rttr::registration::class_<RendererHolderRootComponent>("RendererHolderRootComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<ref<Entity::EcsData>>();
+		ComponentRegistry::register_component<RendererHolderRootComponent>();
 	}
 
 	RendererHolderRootComponent::RendererHolderRootComponent(ref<Entity::EcsData> _data)

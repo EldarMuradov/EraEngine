@@ -3,17 +3,31 @@
 #include <ecs/base_components/transform_component.h>
 
 #include <ecs/entity.h>
+#include <ecs/serialization/component_registry.h>
 
 #include <rttr/registration>
 
+RTTR_REGISTRATION
+{
+	using namespace rttr;
+	using namespace era_engine;
+
+	registration::class_<MotionComponent>("MotionComponent")
+		.constructor<ref<Entity::EcsData>>()
+		.property("follow_input_rotation", &MotionComponent::follow_input_rotation)
+		.property("velocity_halflife", &MotionComponent::velocity_halflife)
+		.property("rotation_halflife", &MotionComponent::rotation_halflife)
+		.property("run_fwrd_speed", &MotionComponent::run_fwrd_speed)
+		.property("run_side_speed", &MotionComponent::run_side_speed)
+		.property("run_back_speed", &MotionComponent::run_back_speed)
+		.property("walk_fwrd_speed", &MotionComponent::walk_fwrd_speed)
+		.property("walk_side_speed", &MotionComponent::walk_side_speed)
+		.property("walk_back_speed", &MotionComponent::walk_back_speed);
+	ComponentRegistry::register_component<MotionComponent>();
+}
+
 namespace era_engine
 {
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
-		registration::class_<MotionComponent>("MotionComponent")
-			.constructor<ref<Entity::EcsData>>();
-	}
 
 	MotionComponent::MotionComponent(ref<Entity::EcsData> _data)
 		: Component(_data)

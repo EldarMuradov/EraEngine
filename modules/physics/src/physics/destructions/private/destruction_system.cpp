@@ -18,6 +18,8 @@
 #include <ecs/rendering/mesh_component.h>
 
 #include <rttr/policy.h>
+#include <ecs/prefab/transient_component.h>
+
 #include <rttr/registration>
 
 namespace era_engine::physics
@@ -207,6 +209,7 @@ namespace era_engine::physics
 		created_mesh->load_state = AssetLoadState::LOADED;
 
 		Entity created_entity = world->create_entity("Chunk");
+		created_entity.add_component<TransientComponent>();
 		created_entity.set_parent(parent.get_handle());
 		created_entity.get_component<TransformComponent>()->set_world_transform(trs(world_transform.position, world_transform.rotation, vec3(1.0f)));
 		created_entity.add_component<MeshComponent>(created_mesh);
@@ -361,6 +364,7 @@ namespace era_engine::physics
 				descriptor.second_local_frame = inv_vertex_world_transform * neighbour_world_transform;
 
 				Entity connector = world->create_entity();
+				connector.add_component<TransientComponent>();
 
 				FixedJointComponent* joint_component = connector.add_component<FixedJointComponent>(descriptor);
 

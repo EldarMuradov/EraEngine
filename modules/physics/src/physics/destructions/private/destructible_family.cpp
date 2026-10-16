@@ -16,6 +16,8 @@
 #include "NvBlastTkAsset.h"
 #include "NvBlastTkJoint.h"
 
+#include <ecs/prefab/transient_component.h>
+
 namespace era_engine::physics
 {
 	static constexpr float RIGIDBODY_DENSITY = 2000.0f;
@@ -63,6 +65,7 @@ namespace era_engine::physics
 		settings.damage_accelerator_enabled = true;
 
 		root_entity = world->create_entity();
+		root_entity.get().add_component<TransientComponent>();
 	}
 
 	DestructibleFamily::~DestructibleFamily()

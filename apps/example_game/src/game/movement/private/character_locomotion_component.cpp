@@ -12,6 +12,8 @@
 #include <animation/animation_pose_sampler.h>
 #include <animation/animation.h>
 
+#include <ecs/serialization/component_registry.h>
+
 #include <rttr/registration>
 
 namespace era_engine
@@ -21,20 +23,38 @@ namespace era_engine
 		using namespace rttr;
 		registration::class_<CharacterLocomotionComponent>("CharacterLocomotionComponent")
 			.constructor<ref<Entity::EcsData>>();
+		ComponentRegistry::register_component<CharacterLocomotionComponent>();
 	}
 
 	CharacterLocomotionComponent::CharacterLocomotionComponent(ref<Entity::EcsData> _data)
 		: Component(_data)
 	{
-		Entity entity = get_entity();
+		if (bind_motion_data())
+		{
+			get_entity().get_component<MotionDataComponent>()->search_time = 0.3f;
+		}
+	}
 
-		MotionDataComponent* motion_data_component = entity.get_component<MotionDataComponent>();
+	void CharacterLocomotionComponent::on_deserialized()
+	{
+		if (!bind_motion_data())
+		{
+			LOG_ERROR("CharacterLocomotionComponent> Entity has no MotionDataComponent.");
+		}
+	}
+
+	bool CharacterLocomotionComponent::bind_motion_data()
+	{
+		MotionDataComponent* motion_data_component = get_entity().get_component_if_exists<MotionDataComponent>();
+		if (motion_data_component == nullptr)
+		{
+			return false;
+		}
 
 		motion_data_component->get_motion_database_id_func = std::bind(&CharacterLocomotionComponent::get_motion_database_id, this);
 		motion_data_component->on_search_succeeded_func = std::bind(&CharacterLocomotionComponent::on_search_succeeded, this, std::placeholders::_1);
 		motion_data_component->need_force_start_search_func = std::bind(&CharacterLocomotionComponent::need_force_start_search, this);
-
-		motion_data_component->search_time = 0.3f;
+		return true;
 	}
 
 	CharacterLocomotionComponent::~CharacterLocomotionComponent()

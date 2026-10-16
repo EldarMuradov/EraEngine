@@ -5,6 +5,8 @@
 
 #include "core/log.h"
 
+#include "ecs/serialization/component_registry.h"
+
 #include <rttr/registration>
 
 namespace era_engine
@@ -12,13 +14,51 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
+		registration::enumeration<FBIKSolverType>("FBIKSolverType")
+			(
+				value("JACOBIAN", FBIKSolverType::JACOBIAN),
+				value("FABRIK", FBIKSolverType::FABRIK)
+			);
+
+		registration::enumeration<IKLimitType>("IKLimitType")
+			(
+				value("FREE", IKLimitType::FREE),
+				value("LIMITED", IKLimitType::LIMITED),
+				value("LOCKED", IKLimitType::LOCKED)
+			);
+
+		registration::class_<FBIKJointSettings>("FBIKJointSettings")
+			.property("angular_stiffness", &FBIKJointSettings::angular_stiffness)
+			.property("linear_stiffness", &FBIKJointSettings::linear_stiffness)
+			.property("angular_limit_types", &FBIKJointSettings::angular_limit_types)
+			.property("angular_limits_deg", &FBIKJointSettings::angular_limits_deg)
+			.property("frame_offset", &FBIKJointSettings::frame_offset);
+
+		registration::class_<IKChain>("IKChain")
+			.property("joint_ids", &IKChain::joint_ids)
+			.property("constraints", &IKChain::constraints)
+			.property("rotation_weight", &IKChain::rotation_weight)
+			.property("pole_vector_local", &IKChain::pole_vector_local)
+			.property("pole_weight", &IKChain::pole_weight)
+			.property("soft_reach_distance", &IKChain::soft_reach_distance)
+			.property("weight", &IKChain::weight)
+			.property("iterations", &IKChain::iterations)
+			.property("tolerance", &IKChain::tolerance)
+			.property("enabled", &IKChain::enabled);
+
 		registration::class_<IKComponent>("IKComponent")
 			.constructor<ref<Entity::EcsData>>()
+			.property("solver_type", &IKComponent::solver_type)
+			.property("chains", &IKComponent::chains)
 			.property("enabled", &IKComponent::enabled);
+		ComponentRegistry::register_component<IKComponent>();
 
 		registration::class_<IKTargetComponent>("IKTargetComponent")
 			.constructor<ref<Entity::EcsData>>()
+			.property("owner_entity", &IKTargetComponent::owner_entity)
+			.property("chain_index", &IKTargetComponent::chain_index)
 			.property("weight", &IKTargetComponent::weight);
+		ComponentRegistry::register_component<IKTargetComponent>();
 	}
 
 	static bool is_ancestor_or_self(const animation::Skeleton& skeleton, uint32 ancestor_id, uint32 joint_id)
@@ -118,6 +158,11 @@ namespace era_engine
 			result &= chain.init(skeleton_component->skeleton.get(), solver_type);
 		}
 		return result;
+	}
+
+	void IKComponent::on_deserialized()
+	{
+		init();
 	}
 
 	bool IKComponent::reinit()

@@ -20,7 +20,12 @@ namespace era_engine
 		bool need_force_start_search() const;
 		void on_search_succeeded(const SearchResult&) const;
 
-		mutable vec3 prev_input;
+		void on_deserialized() override;
+
+		mutable vec3 prev_input = vec3::zero;
+
+	private:
+		bool bind_motion_data();
 
 		ERA_VIRTUAL_REFLECT(Component)
 	};

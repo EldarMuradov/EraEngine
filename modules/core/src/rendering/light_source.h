@@ -51,26 +51,28 @@ namespace era_engine
 	{
 	public:
 		PointLightComponent() = default;
+		PointLightComponent(ref<Entity::EcsData> _data);
 		PointLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _radius, bool _casts_shadow = false, uint32 _shadow_map_resolution = 2048);
 		PointLightComponent(const PointLightComponent&) = default;
 		virtual ~PointLightComponent();
 
 		ERA_VIRTUAL_REFLECT(Component)
 	public:
-		vec3 color{};
+		vec3 color = vec3(1.0f);
 
-		float intensity{};
-		float radius{};
+		float intensity = 1.0f;
+		float radius = 10.0f;
 
-		uint32 shadow_map_resolution{};
+		uint32 shadow_map_resolution = 2048;
 
-		bool casts_shadow{};
+		bool casts_shadow = false;
 	};
 
 	class ERA_CORE_API SpotLightComponent final : public Component
 	{
 	public:
 		SpotLightComponent() = default;
+		SpotLightComponent(ref<Entity::EcsData> _data);
 		SpotLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _distance, float _inner_angle, float _outer_angle, bool _casts_shadow = false, uint32 _shadow_map_resolution = 2048);		
 		SpotLightComponent(const SpotLightComponent&) = default;
 		virtual ~SpotLightComponent();
@@ -78,16 +80,16 @@ namespace era_engine
 		ERA_VIRTUAL_REFLECT(Component)
 
 	public:
-		vec3 color;
+		vec3 color = vec3(1.0f);
 
-		float intensity;
-		float distance;
-		float inner_angle;
-		float outer_angle;
+		float intensity = 1.0f;
+		float distance = 10.0f;
+		float inner_angle = deg2rad(20.0f);
+		float outer_angle = deg2rad(30.0f);
 
-		uint32 shadow_map_resolution;
+		uint32 shadow_map_resolution = 2048;
 
-		bool casts_shadow;
+		bool casts_shadow = false;
 	};
 
 	ERA_CORE_API mat4 get_spot_light_view_projection_matrix(const SpotLightCB& sl);

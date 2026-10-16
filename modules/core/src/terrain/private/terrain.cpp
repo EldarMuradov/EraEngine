@@ -1,6 +1,8 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "terrain/terrain.h"
+#include "ecs/serialization/component_registry.h"
+#include "ecs/serialization/serialization_meta.h"
 
 #include "dx/dx_context.h"
 #include "dx/dx_command_list.h"
@@ -425,9 +427,10 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		registration::class_<TerrainComponent>("TerrainComponent")
+		registration::class_<TerrainComponent>("TerrainComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>()
 			.property("genSettings", &TerrainComponent::gen_settings);
+		ComponentRegistry::register_component<TerrainComponent>();
 	}
 
 	TerrainComponent::TerrainComponent(ref<Entity::EcsData> _data, uint32 _chunks_per_dim, float _chunk_size, float _amplitude_scale, ref<PBRMaterial> _ground_material, ref<PBRMaterial> _rock_material, ref<PBRMaterial> _mud_material, const TerrainGenerationSettings& _gen_settings)

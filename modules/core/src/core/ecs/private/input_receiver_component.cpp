@@ -1,5 +1,7 @@
 #include "core/ecs/input_receiver_component.h"
 
+#include "ecs/serialization/component_registry.h"
+
 #include <rttr/registration>
 
 namespace era_engine
@@ -10,6 +12,7 @@ namespace era_engine
 		using namespace rttr;
 		registration::class_<InputReceiverComponent>("InputReceiverComponent")
 			.constructor<ref<Entity::EcsData>>();
+		ComponentRegistry::register_component<InputReceiverComponent>();
 	}
 
 

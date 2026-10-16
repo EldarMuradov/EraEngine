@@ -297,7 +297,7 @@ namespace era_engine
 			}
 		}
 
-		const IKLimitType* types = joint.angular_limit_types;
+		const IKLimitType* types = joint.angular_limit_types.data();
 		if (types[0] == IKLimitType::FREE && 
 			types[1] == IKLimitType::FREE && 
 			types[2] == IKLimitType::FREE)

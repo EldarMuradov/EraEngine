@@ -1,4 +1,6 @@
 #include "ecs/observable_member.h"
+#include "ecs/serialization/component_registry.h"
+#include "ecs/serialization/serialization_meta.h"
 #include "ecs/base_components/transform_component.h"
 #include "ecs/world.h"
 
@@ -10,8 +12,9 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		registration::class_<ObservableMemberChangedFlagComponent>("ObservableMemberChangedFlagComponent")
+		registration::class_<ObservableMemberChangedFlagComponent>("ObservableMemberChangedFlagComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<ref<Entity::EcsData>>();
+		ComponentRegistry::register_component<ObservableMemberChangedFlagComponent>();
 	}
 
 	ObservableMemberChangedFlagComponent::ObservableMemberChangedFlagComponent(ref<Entity::EcsData> _data)

@@ -3,6 +3,9 @@
 #include "physics/shape_utils.h"
 #include "physics/shape_component.h"
 
+#include <ecs/serialization/component_registry.h>
+#include <ecs/serialization/serialization_meta.h>
+
 #include <terrain/terrain.h>
 
 #include <rttr/registration>
@@ -14,11 +17,37 @@ namespace era_engine::physics
 	{
 		using namespace rttr;
 		registration::class_<PlanePhysicsComponent>("PlanePhysicsComponent")
+			.constructor<ref<Entity::EcsData>>()
+			.property("collision_type", &PlanePhysicsComponent::collision_type)
+			.property("point", &PlanePhysicsComponent::point)
+			.property("normal", &PlanePhysicsComponent::normal);
+		ComponentRegistry::register_component<PlanePhysicsComponent>();
+
+		registration::class_<TerrainPhysicsComponent>("TerrainPhysicsComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>();
+		ComponentRegistry::register_component<TerrainPhysicsComponent>();
+	}
+
+	PlanePhysicsComponent::PlanePhysicsComponent(ref<Entity::EcsData> _data)
+		: Component(_data)
+	{
 	}
 
 	PlanePhysicsComponent::PlanePhysicsComponent(ref<Entity::EcsData> _data, CollisionType _collision_type, const vec3& _point, const vec3& _norm)
-		: Component(_data), point(_point), normal(_norm)
+		: Component(_data), collision_type(_collision_type), point(_point), normal(_norm)
+	{
+		create_plane();
+	}
+
+	void PlanePhysicsComponent::on_deserialized()
+	{
+		if (plane == nullptr)
+		{
+			create_plane();
+		}
+	}
+
+	void PlanePhysicsComponent::create_plane()
 	{
 		using namespace physx;
 
@@ -30,7 +59,7 @@ namespace era_engine::physics
 		PxShape* buffer[1];
 		plane->getShapes(buffer, 1);
 		buffer[0]->userData = this;
-		ShapeUtils::setup_filtering(get_world(), buffer[0], static_cast<uint32>(_collision_type), std::nullopt);
+		ShapeUtils::setup_filtering(get_world(), buffer[0], static_cast<uint32>(collision_type), std::nullopt);
 
 		PhysicsEngine::execute_write([&]() {
 			physics->get_scene()->addActor(*plane);
@@ -40,6 +69,11 @@ namespace era_engine::physics
 	PlanePhysicsComponent::~PlanePhysicsComponent()
 	{
 		using namespace physx;
+
+		if (plane == nullptr)
+		{
+			return;
+		}
 
 		auto physics = PhysicsEngine::get_physics_core();
 
@@ -164,6 +198,11 @@ namespace era_engine::physics
 	TerrainPhysicsComponent::~TerrainPhysicsComponent()
 	{
 		using namespace physx;
+
+		if (terrain == nullptr)
+		{
+			return;
+		}
 
 		auto physics = PhysicsEngine::get_physics_core();
 

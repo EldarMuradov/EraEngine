@@ -21,6 +21,8 @@ namespace era_engine::physics
 
 		bool check_collision(uint32 first_type, uint32 second_type) const;
 
+		ERA_VIRTUAL_REFLECT(Component)
+
 	private:
 		std::array<uint32, TYPES_COUNT> collision_map = {};
 	};

@@ -5,6 +5,7 @@
 
 #include "ecs/base_components/transform_component.h"
 #include "ecs/world.h"
+#include "ecs/serialization/component_registry.h"
 
 #include <rttr/registration>
 
@@ -40,11 +41,19 @@ namespace era_engine::ai
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
+		rttr::registration::enumeration<NavigationComponent::NavType>("NavType")
+			(
+				value("NONE", NavigationComponent::NavType::NAV_TYPE_NONE),
+				value("A_STAR", NavigationComponent::NavType::NAV_TYPE_A_STAR),
+				value("DIJKSTRA", NavigationComponent::NavType::NAV_TYPE_DIJKSTRA)
+			);
+
 		rttr::registration::class_<NavigationComponent>("NavigationComponent")
-			.constructor<>()
+			.constructor<ref<Entity::EcsData>>()
 			.constructor<ref<Entity::EcsData>, NavigationComponent::NavType>()
 			.property("destination", &NavigationComponent::destination)
 			.property("type", &NavigationComponent::type);
+		ComponentRegistry::register_component<NavigationComponent>();
 	}
 
 	void NavigationComponent::process_path()

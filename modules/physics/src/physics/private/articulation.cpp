@@ -1,5 +1,8 @@
 #include "physics/articulation.h"
 
+#include <ecs/serialization/component_registry.h>
+#include <ecs/serialization/serialization_meta.h>
+
 #include <rttr/registration>
 
 namespace era_engine::physics
@@ -22,8 +25,9 @@ namespace era_engine::physics
 			value("ALL", ArticulationCacheFlags::ALL)
 		);
 
-		registration::class_<ArticulationComponent>("ArticulationComponent")
+		registration::class_<ArticulationComponent>("ArticulationComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>();
+		ComponentRegistry::register_component<ArticulationComponent>();
 	}
 
 	ArticulationComponent::ArticulationComponent(ref<Entity::EcsData> _data, const ArticulationComponentDescriptor& _descriptor)
@@ -80,6 +84,11 @@ namespace era_engine::physics
 
 	ArticulationComponent::~ArticulationComponent()
 	{
+		if (articulation == nullptr)
+		{
+			return;
+		}
+
 		PhysicsEngine::get_physics_core()->get_scene()->removeArticulation(*articulation);
 
 		joints.clear();

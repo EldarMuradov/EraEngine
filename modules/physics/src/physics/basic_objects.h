@@ -19,16 +19,24 @@ namespace era_engine::physics
 		static constexpr bool in_place_delete = true;
 
 		PlanePhysicsComponent() = default;
+		PlanePhysicsComponent(ref<Entity::EcsData> _data);
 		PlanePhysicsComponent(ref<Entity::EcsData> _data, CollisionType _collision_type, const vec3& _point, const vec3& _norm = vec3(0.0f, 1.0f, 0.0f));
 		~PlanePhysicsComponent() override;
 
+		void on_deserialized() override;
+
 		ref<PhysicsMaterial> material;
+
+		CollisionType collision_type = CollisionType::NONE;
+		vec3 point = vec3::zero;
+		vec3 normal = vec3(0.0f, 1.0f, 0.0f);
 
 		ERA_VIRTUAL_REFLECT(Component)
 
 	private:
-		vec3 point = vec3::zero;
-		vec3 normal = vec3::zero;
+		void create_plane();
+
+	private:
 		physx::PxRigidStatic* plane = nullptr;
 	};
 

@@ -27,7 +27,7 @@ namespace era_engine::ai
 		};
 
 		NavigationComponent() = default;
-		NavigationComponent(ref<Entity::EcsData> _data, NavType _type);
+		NavigationComponent(ref<Entity::EcsData> _data, NavType _type = NavType::NAV_TYPE_A_STAR);
 		virtual ~NavigationComponent();
 
 		void process_path();
@@ -37,7 +37,7 @@ namespace era_engine::ai
 	public:
 		vec3 destination = vec3(0.0f);
 
-		NavType type;
+		NavType type = NavType::NAV_TYPE_A_STAR;
 
 	private:
 		void create_path(const vec3& to, const vec3& from);

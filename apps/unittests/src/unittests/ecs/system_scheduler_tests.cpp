@@ -163,6 +163,23 @@ namespace
 		ERA_VIRTUAL_REFLECT(System)
 	};
 
+	// Overwrites the type list passed to initialize_systems, like a lazily registered RTTR type reallocating the type storage.
+	class UnitTestMutatingSystem final : public System
+	{
+	public:
+		UnitTestMutatingSystem(World* _world) : System(_world)
+		{
+			if (types_to_mutate != nullptr)
+			{
+				std::fill(types_to_mutate->begin(), types_to_mutate->end(), rttr::type::get<int>());
+			}
+		}
+
+		static inline std::vector<rttr::type>* types_to_mutate = nullptr;
+
+		ERA_VIRTUAL_REFLECT(System)
+	};
+
 	const std::string unittest_tag = "unittest";
 	const std::string optional_tag = "unittest_optional";
 
@@ -232,6 +249,9 @@ RTTR_REGISTRATION
 		.method("join", &UnitTestConcurrentSystem::join)
 		(metadata("update_group", update_types::GAMEPLAY_NORMAL_CONCURRENT),
 			metadata("After", std::vector<std::string>{ "UnitTestConcurrentSystem::left", "UnitTestConcurrentSystem::right" }));
+
+	registration::class_<UnitTestMutatingSystem>("UnitTestMutatingSystem")
+		.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", unittest_tag));
 
 	registration::class_<UnitTestOptionalSystem>("UnitTestOptionalSystem")
 		.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", optional_tag))
@@ -499,4 +519,17 @@ TEST(ECS_UpdateGroups, DefaultGroupsAreRegistered)
 	EXPECT_LT(position("END"), static_cast<ptrdiff_t>(order.size()));
 
 	delete world;
+}
+
+TEST_F(SchedulerTest, TypeRangeChangesDuringInitializationAreIgnored)
+{
+	std::vector<rttr::type> types = { rttr::type::get<UnitTestMutatingSystem>(), rttr::type::get<UnitTestOmegaSystem>() };
+
+	UnitTestMutatingSystem::types_to_mutate = &types;
+	scheduler->initialize_systems(rttr::array_range<rttr::type>(types.data(), types.size()));
+	UnitTestMutatingSystem::types_to_mutate = nullptr;
+
+	scheduler->initialize_all_systems();
+
+	EXPECT_EQ(ScheduleLog::count("Omega::init"), 1u);
 }

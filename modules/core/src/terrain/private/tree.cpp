@@ -1,6 +1,8 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "terrain/tree.h"
+#include "ecs/serialization/component_registry.h"
+#include "ecs/serialization/serialization_meta.h"
 
 #include "core/color.h"
 #include "core/nearest_neighbor.h"
@@ -127,10 +129,11 @@ namespace era_engine
     RTTR_REGISTRATION
     {
         using namespace rttr;
-        rttr::registration::class_<TreeComponent>("TreeComponent")
+        rttr::registration::class_<TreeComponent>("TreeComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
             .constructor<>()
             .constructor<ref<Entity::EcsData>, const TreeSettings&>()
             .property("settings", &TreeComponent::settings);
+        ComponentRegistry::register_component<TreeComponent>();
     }
 
     TreeComponent::TreeComponent(ref<Entity::EcsData> _data, const TreeSettings& _settings)

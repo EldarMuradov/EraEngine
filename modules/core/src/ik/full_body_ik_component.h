@@ -26,6 +26,8 @@ namespace era_engine
 		void reset();
 		bool is_initialized() const;
 
+		void on_deserialized() override;
+
 		FBIKSolverType solver_type = FBIKSolverType::FABRIK;
 
 		std::vector<IKEffector> effectors;

@@ -33,6 +33,8 @@ namespace era_engine::animation
 		void activate_inertial_blend();
 		void trigger_reset_inertial_blend(const SkeletonPose& reset_pose, float _blend_time);
 
+		void on_deserialized() override;
+
 		ERA_VIRTUAL_REFLECT(Component)
 
 	public:

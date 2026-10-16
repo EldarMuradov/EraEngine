@@ -304,7 +304,9 @@ namespace era_engine
 		const type base_type = type::get<System>();
 		const type world_ptr_type = type::get<World*>();
 
-		for (const type& type_instance : types)
+		const std::vector<type> type_list(types.begin(), types.end());
+
+		for (const type& type_instance : type_list)
 		{
 			const type wrapped_type = type_instance.get_raw_type();
 			if (!base_type.is_base_of(type_instance) || wrapped_type == base_type || !type_instance.is_class())

@@ -6,6 +6,7 @@
 
 #include "animation/animation_common_data.h"
 
+#include <array>
 #include <vector>
 
 namespace era_engine
@@ -36,7 +37,7 @@ namespace era_engine
 		vec3 linear_stiffness = vec3(1.0f); // Joints don't translate by default.
 
 		// x - twist range, y and z - the swing ellipse.
-		IKLimitType angular_limit_types[3] = { IKLimitType::FREE, IKLimitType::FREE, IKLimitType::FREE };
+		std::array<IKLimitType, 3> angular_limit_types = { IKLimitType::FREE, IKLimitType::FREE, IKLimitType::FREE };
 		vec3 angular_limits_deg = vec3(0.0f);
 
 		quat frame_offset = quat::identity; // Joint frame in the joint space.

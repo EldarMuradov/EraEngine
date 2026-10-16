@@ -2,174 +2,147 @@
 #include "ecs/world.h"
 #include "ecs/component.h"
 #include "ecs/base_components/base_components.h"
+#include "ecs/editor/property_editor.h"
+#include "ecs/serialization/component_registry.h"
+
+#include "core/editor_icons.h"
 
 #include "imgui/imgui_internal.h"
 
 namespace era_engine
 {
-	void EntityEditorUtils::edit_entity(World* world, const Entity::Handle handle)
+	static void draw_add_component_button(Entity& entity)
 	{
-		ImGui::AlignTextToFramePadding();
-
-		ImGui::PushID((uint32)handle);
-
-		entt::registry& registry = world->get_registry();
-		for (auto&& curr : registry.storage())
+		if (ImGui::Button(ICON_FA_PLUS "  Add component", ImVec2(-1.0f, 0.0f)))
 		{
-			entt::id_type cid = curr.first;
-			auto& storage = curr.second;
-			entt::type_info ctype = storage.type();
+			ImGui::OpenPopup("AddComponentPopup");
+		}
 
-			if (storage.contains(handle))
+		if (ImGui::BeginPopup("AddComponentPopup"))
+		{
+			static ImGuiTextFilter filter;
+			if (ImGui::IsWindowAppearing())
 			{
-				const Component* comp = static_cast<const Component*>(registry.storage(cid)->get(handle));
+				filter.Clear();
+				ImGui::SetKeyboardFocusHere();
+			}
+			filter.Draw("##filter", 250.0f);
+			ImGui::Separator();
 
-				rttr::type type = comp->get_type();
-				const char* comp_name = type.get_name().data();
-				const ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
-
-				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
-				bool open = ImGui::TreeNodeEx(comp_name, tree_node_flags, comp_name);
-				ImGui::PopStyleVar();
-				if (open)
+			std::vector<const ComponentTypeInfo*> component_types = ComponentRegistry::get_all();
+			std::sort(component_types.begin(), component_types.end(), [](const ComponentTypeInfo* a, const ComponentTypeInfo* b)
 				{
-					for (auto& prop : type.get_properties())
-					{
-						const rttr::type prop_type = prop.get_type();
-						if (prop_type.is_arithmetic())
-						{
-							if (prop_type == rttr::type::get<bool>())
-							{
-								auto value = prop.get_value(*comp).to_bool();
-								if (ImGui::Checkbox(prop.get_name().data(), &value))
-								{
-									prop.set_value(*comp, value);
-								}
-							}
-							else if (prop_type == rttr::type::get<char>())
-							{
-								auto value = prop.get_value(*comp).to_bool();
-								if (ImGui::Checkbox(prop.get_name().data(), &value))
-								{
-									prop.set_value(*comp, (char)value);
-								}
-							}
-							else if (prop_type == rttr::type::get<int8_t>())
-							{
-								auto value = prop.get_value(*comp).to_int();
-								if (ImGui::InputInt(prop.get_name().data(), &value))
-								{
-									prop.set_value(*comp, (int8_t)value);
-								}
-							}
-							else if (prop_type == rttr::type::get<int16_t>())
-							{
-								auto value = prop.get_value(*comp).to_int();
-								if (ImGui::InputInt(prop.get_name().data(), &value))
-								{
-									prop.set_value(*comp, (int16_t)value);
-								}
-							}
-							else if (prop_type == rttr::type::get<int32_t>())
-							{
-								auto value = prop.get_value(*comp).to_int();
-								if (ImGui::InputInt(prop.get_name().data(), &value))
-								{
-									prop.set_value(*comp, (int32_t)value);
-								}
-							}
-							else if (prop_type == rttr::type::get<int64_t>())
-							{
-								auto value = prop.get_value(*comp).to_int();
-								if (ImGui::InputInt(prop.get_name().data(), &value))
-								{
-									prop.set_value(*comp, (int64_t)value);
-								}
-							}
-							else if (prop_type == rttr::type::get<uint8_t>())
-							{
-								auto value = prop.get_value(*comp).to_int();
-								if (ImGui::InputInt(prop.get_name().data(), &value))
-								{
-									prop.set_value(*comp, (uint8_t)value);
-								}
-							}
-							else if (prop_type == rttr::type::get<uint16_t>())
-							{
-								auto value = prop.get_value(*comp).to_int();
-								if (ImGui::InputInt(prop.get_name().data(), &value))
-								{
-									prop.set_value(*comp, (uint16_t)value);
-								}
-							}
-							else if (prop_type == rttr::type::get<uint32_t>())
-							{
-								auto value = prop.get_value(*comp).to_int();
-								if (ImGui::InputInt(prop.get_name().data(), &value))
-								{
-									prop.set_value(*comp, (uint32_t)value);
-								}
-							}
-							else if (prop_type == rttr::type::get<uint64_t>())
-							{
-								auto value = prop.get_value(*comp).to_int();
-								if (ImGui::InputInt(prop.get_name().data(), &value))
-								{
-									prop.set_value(*comp, (uint64_t)value);
-								}
-							}
-							else if (prop_type == rttr::type::get<float>())
-							{
-								auto value = prop.get_value(*comp).to_float();
-								if (ImGui::InputFloat(prop.get_name().data(), &value))
-								{
-									prop.set_value(*comp, value);
-								}
-							}
-							else if (prop_type == rttr::type::get<double>())
-							{
-								auto value = prop.get_value(*comp).to_double();
-								if (ImGui::InputDouble(prop.get_name().data(), &value))
-								{
-									prop.set_value(*comp, value);
-								}
-							}
-						}
-						else if (prop_type == rttr::type::get<trs>())
-						{
-							trs value = prop.get_value(*comp).get_value<trs>();
-							show_vector3("Position", value.position, 1080);
-							ImGui::SameLine();
-							vec3 rot = quat_to_euler(value.rotation);
-							show_vector3("Rotation", rot, 1080);
-							value.rotation = euler_to_quat(rot);
-							ImGui::SameLine();
-							show_vector3("Scale", value.scale, 1080);
-							prop.set_value(*comp, value);
-						}
-						else if (prop_type.is_enumeration())
-						{
-							ImGui::Text("Enum: %s. Value: %s", prop.get_name().data(), prop.get_enumeration().value_to_name({prop.get_value(*comp)}).data());
-						}
-						else if (prop_type == rttr::type::get<std::string>() || prop_type == rttr::type::get<char*>())
-						{
-							auto value = prop.get_value(*comp).to_string();
-							char buf[64];
-							strcpy_s(buf, value.data());
-							if (ImGui::InputText(prop.get_name().data(), value.data(), 256))
-							{
-								prop.set_value(*comp, buf);
-							}
-						}
-						else
-						{
-							ImGui::Text("Property: %s.", prop.get_name().data());
-						}
-					}
-					ImGui::TreePop();
+					return a->type.get_name() < b->type.get_name();
+				});
+
+			for (const ComponentTypeInfo* info : component_types)
+			{
+				if (!info->is_serializable() || info->get(entity) != nullptr)
+				{
+					continue;
+				}
+
+				const std::string name = info->type.get_name().to_string();
+				if (filter.PassFilter(name.c_str()) && ImGui::Selectable(name.c_str()))
+				{
+					info->add(entity);
+					ImGui::CloseCurrentPopup();
 				}
 			}
+			ImGui::EndPopup();
 		}
+	}
+
+	void EntityEditorUtils::edit_entity(World* world, const Entity::Handle handle)
+	{
+		Entity entity = world->get_entity(handle);
+		if (!entity.is_valid())
+		{
+			return;
+		}
+
+		ImGui::PushID(static_cast<int>(static_cast<uint32>(handle)));
+
+		std::vector<const ComponentTypeInfo*> component_types;
+		std::vector<std::string> unregistered_types;
+
+		for (auto [storage_id, storage] : world->get_registry().storage())
+		{
+			if (!storage.contains(handle))
+			{
+				continue;
+			}
+
+			if (const ComponentTypeInfo* info = ComponentRegistry::find_by_storage_id(storage_id))
+			{
+				component_types.push_back(info);
+			}
+			else
+			{
+				unregistered_types.emplace_back(storage.type().name());
+			}
+		}
+
+		const rttr::type transform_type = rttr::type::get<TransformComponent>();
+		std::sort(component_types.begin(), component_types.end(), [&transform_type](const ComponentTypeInfo* a, const ComponentTypeInfo* b)
+			{
+				if ((a->type == transform_type) != (b->type == transform_type))
+				{
+					return a->type == transform_type;
+				}
+				return a->type.get_name() < b->type.get_name();
+			});
+
+		const ComponentTypeInfo* component_to_remove = nullptr;
+
+		for (const ComponentTypeInfo* info : component_types)
+		{
+			Component* component = info->get(entity);
+			if (component == nullptr)
+			{
+				continue;
+			}
+
+			const std::string name = info->type.get_name().to_string();
+			ImGui::PushID(name.c_str());
+
+			const bool open = ImGui::CollapsingHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+			if (!info->is_serializable() && ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Runtime-only component, not saved to prefabs");
+			}
+
+			if (ImGui::BeginPopupContextItem("ComponentContext"))
+			{
+				if (ImGui::MenuItem("Remove component", nullptr, false, info->type != transform_type))
+				{
+					component_to_remove = info;
+				}
+				ImGui::EndPopup();
+			}
+
+			if (open)
+			{
+				ImGui::Indent();
+				PropertyEditor::edit_object(*component, world);
+				ImGui::Unindent();
+			}
+
+			ImGui::PopID();
+		}
+
+		for (const std::string& name : unregistered_types)
+		{
+			ImGui::TextDisabled("%s (not registered)", name.c_str());
+		}
+
+		if (component_to_remove != nullptr)
+		{
+			component_to_remove->remove(entity);
+		}
+
+		ImGui::Separator();
+		draw_add_component_button(entity);
 
 		ImGui::PopID();
 	}

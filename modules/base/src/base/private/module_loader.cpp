@@ -71,8 +71,11 @@ namespace era_engine
 
         type base_type = type::get<IModule>();
 
+        // The range points into RTTR's type storage, which module initialization can reallocate.
+        const std::vector<type> type_list(types.begin(), types.end());
+
         bool found = false;
-        for (const type& type_instance : types)
+        for (const type& type_instance : type_list)
         {
             if (base_type.is_base_of(type_instance) && type_instance.get_raw_type() != base_type && type_instance.is_class())
             {

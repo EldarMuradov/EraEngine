@@ -1,5 +1,8 @@
 #include "physics/physical_animation/dismemberment/ragdoll_dismemberment_component.h"
 
+#include <ecs/serialization/component_registry.h>
+#include <ecs/serialization/serialization_meta.h>
+
 #include <rttr/registration>
 
 namespace era_engine::physics
@@ -7,11 +10,13 @@ namespace era_engine::physics
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		registration::class_<RagdollDismembermentComponent>("RagdollDismembermentComponent")
+		registration::class_<RagdollDismembermentComponent>("RagdollDismembermentComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>();
+		ComponentRegistry::register_component<RagdollDismembermentComponent>();
 
-		registration::class_<RagdollDismembermentLimbComponent>("RagdollDismembermentLimbComponent")
+		registration::class_<RagdollDismembermentLimbComponent>("RagdollDismembermentLimbComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>();
+		ComponentRegistry::register_component<RagdollDismembermentLimbComponent>();
 	}
 
 	RagdollDismembermentLimbComponent::RagdollDismembermentLimbComponent(ref<Entity::EcsData> _data)

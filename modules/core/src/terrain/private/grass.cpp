@@ -1,6 +1,8 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "terrain/grass.h"
+#include "ecs/serialization/component_registry.h"
+#include "ecs/serialization/serialization_meta.h"
 
 #include "core/math.h"
 
@@ -328,10 +330,11 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		registration::class_<GrassComponent>("GrassComponent")
+		registration::class_<GrassComponent>("GrassComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>()
 			.constructor<ref<Entity::EcsData>, const GrassSettings&>()
 			.property("settings", &GrassComponent::settings);
+		ComponentRegistry::register_component<GrassComponent>();
 	}
 
 	GrassComponent::GrassComponent(ref<Entity::EcsData> _data, const GrassSettings& _settings)

@@ -34,6 +34,8 @@ namespace era_engine
 		AssetHandle handle;
 		uint32 flags = 0;
 
+		fs::path source_path;
+
 		std::atomic<AssetLoadState> load_state = AssetLoadState::UNLOADED;
 		JobHandle load_job;
 	};
@@ -45,6 +47,7 @@ namespace era_engine
 
 		static ref<GameAsset> try_get_asset_from_cache(const fs::path& filename, uint32 flags);
 		static void try_add_asset_to_cache(ref<GameAsset> asset, const fs::path& filename, uint32 flags);
+		static void remove_asset_from_cache(const fs::path& filename, uint32 flags);
 	};
 
 

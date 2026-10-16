@@ -66,6 +66,10 @@ namespace era_engine
 		return component_data->entity_handle;
 	}
 
+	void Component::on_deserialized()
+	{
+	}
+
 	ComponentDataPtr::ComponentDataPtr(const Component* _component)
 		: component_weak_data(_component->component_data)
 	{

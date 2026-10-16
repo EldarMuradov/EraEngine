@@ -182,7 +182,7 @@ namespace era_engine
 	{
 		GJK_STOP,
 		GJK_DONT_STOP,
-		GJK_UNEXPECTED_ERROR, // Happens very very seldom. I don't know the reason yet, but instead of asserting we return this. I figure it's better than crashing.
+		GJK_UNEXPECTED_ERROR,
 	};
 
 	GJKInternalSuccess update_gjk_simplex(GJKSimplex& s, const GJKSupportPoint& a, vec3& dir);
@@ -190,18 +190,22 @@ namespace era_engine
 	template <typename shapeA_t, typename shapeB_t>
 	static bool gjk_intersection_test(const shapeA_t& shape_a, const shapeB_t& shape_b, GJKSimplex& out_simplex)
 	{
-		vec3 dir(1.f, 0.1f, -0.2f); // Arbitrary.
+		vec3 dir(1.f, 0.1f, -0.2f);
 
 		// First point.
 		out_simplex.c = support(shape_a, shape_b, dir);
 		if (dot(out_simplex.c.minkowski, dir) < 0.f)
+		{
 			return false;
+		}
 
 		// Second point.
 		dir = -out_simplex.c.minkowski;
 		out_simplex.b = support(shape_a, shape_b, dir);
 		if (dot(out_simplex.b.minkowski, dir) < 0.f)
+		{
 			return false;
+		}
 
 		dir = cross_aba(out_simplex.c.minkowski - out_simplex.b.minkowski, -out_simplex.b.minkowski);
 		out_simplex.num_points = 2;
@@ -209,11 +213,15 @@ namespace era_engine
 		while (true)
 		{
 			if (squared_length(dir) < 0.0001f)
+			{
 				return false;
+			}
 
 			GJKSupportPoint a = support(shape_a, shape_b, dir);
 			if (dot(a.minkowski, dir) < 0.f)
+			{
 				return false;
+			}
 
 			GJKInternalSuccess success = update_gjk_simplex(out_simplex, a, dir);
 			if (success == GJK_STOP)
@@ -224,7 +232,9 @@ namespace era_engine
 				break;
 			}
 			else if (success == GJK_UNEXPECTED_ERROR)
+			{
 				return false;
+			}
 		}
 
 		return true;

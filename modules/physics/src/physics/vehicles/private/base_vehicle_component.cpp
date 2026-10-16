@@ -1,5 +1,8 @@
 #include "physics/vehicles/base_vehicle_component.h"
 #include "physics/core/physics.h"
+
+#include <ecs/serialization/component_registry.h>
+#include <ecs/serialization/serialization_meta.h>
 #include "physics/vehicles/tank_vehicle_component.h"
 #include "physics/vehicles/w4_vehicle_component.h"
 
@@ -11,8 +14,9 @@ namespace era_engine::physics
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		registration::class_<VehicleBaseComponent>("VehicleBaseComponent")
+		registration::class_<VehicleBaseComponent>("VehicleBaseComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>();
+		ComponentRegistry::register_component<VehicleBaseComponent>();
 	}
 
 	VehicleBaseComponent::VehicleBaseComponent(ref<Entity::EcsData> _data)

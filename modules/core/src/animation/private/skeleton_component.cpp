@@ -2,6 +2,8 @@
 
 #include "core/math.h"
 
+#include "ecs/serialization/component_registry.h"
+
 #include <rttr/registration>
 
 namespace era_engine::animation
@@ -10,7 +12,10 @@ namespace era_engine::animation
 	{
 		using namespace rttr;
 		registration::class_<SkeletonComponent>("SkeletonComponent")
-			.constructor<ref<Entity::EcsData>>();
+			.constructor<ref<Entity::EcsData>>()
+			.property("skeleton", &SkeletonComponent::skeleton)
+			.property("draw_skeleton", &SkeletonComponent::draw_sceleton);
+		ComponentRegistry::register_component<SkeletonComponent>();
 	}
 
 	SkeletonComponent::SkeletonComponent(ref<Entity::EcsData> _data)
@@ -20,6 +25,14 @@ namespace era_engine::animation
 
 	SkeletonComponent::~SkeletonComponent()
 	{
+	}
+
+	void SkeletonComponent::on_deserialized()
+	{
+		if (skeleton != nullptr && local_transforms.empty())
+		{
+			apply_pose(skeleton->get_default_pose());
+		}
 	}
 
 	SkeletonPose SkeletonComponent::get_current_pose() const

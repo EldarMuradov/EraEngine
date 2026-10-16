@@ -24,51 +24,32 @@ namespace era_engine
 		ref<T> asset = make_ref<T>();
 		asset->handle = get_asset_handle_from_path(final_path);
 		asset->flags = flags;
-
-		GameAssetCache::try_add_asset_to_cache(asset, final_path, flags);
-
-		struct AssetLoadingData
-		{
-			ref<T> asset = nullptr;
-			fs::path path;
-		};
-
-		AssetLoadingData* data = new AssetLoadingData{ asset, final_path };
+		asset->source_path = final_path;
+		asset->load_state = AssetLoadState::LOADING;
 
 		DefaultJob job_object;
 
-		job_object.data.user_data = data;
-		job_object.data.data_size = sizeof(AssetLoadingData);
-
-		job_object.job_func = [](DefaultJob::Data& default_data)
+		job_object.job_func = [asset, final_path, flags]()
 			{
-				AssetLoadingData* data = reinterpret_cast<AssetLoadingData*>(default_data.user_data);
+				std::ifstream is(final_path, std::ios_base::binary);
 
-				std::ifstream is(data->path, std::ios_base::binary);
-
-				if (!is.is_open())
+				if (!is.is_open() || !asset->deserialize(is))
 				{
-					data->asset->load_state = AssetLoadState::UNLOADED;
+					GameAssetCache::remove_asset_from_cache(final_path, flags);
+					asset->load_state = AssetLoadState::FAILED;
 					return;
 				}
 
-				if (!data->asset->deserialize(is))
-				{
-					data->asset->load_state = AssetLoadState::UNLOADED;
-					is.close();
-					return;
-				}
-
-				data->asset->handle = get_asset_handle_from_path(data->path);
-				data->asset->load_state = AssetLoadState::LOADED;
-
-				is.close();
+				asset->handle = get_asset_handle_from_path(final_path);
+				asset->load_state = AssetLoadState::LOADED;
 			};
 
 		JobHandle job = schedule_low_priority_job(job_object, parent_job);
-		job.submit_now();
-
 		asset->load_job = job;
+
+		GameAssetCache::try_add_asset_to_cache(asset, final_path, flags);
+
+		job.submit_now();
 
 		return asset;
 	}
@@ -90,45 +71,26 @@ namespace era_engine
 		final_path.append(filename);
 		final_path = final_path.lexically_normal().make_preferred();
 
-		struct AssetLoadingData
-		{
-			const T* asset = nullptr;
-			fs::path path;
-		};
-
-		AssetLoadingData* data = new AssetLoadingData{ asset, final_path };
-
 		DefaultJob job_object;
 
-		job_object.data.user_data = data;
-		job_object.data.data_size = sizeof(AssetLoadingData);
-
-		job_object.job_func = [](DefaultJob::Data& default_data)
+		job_object.job_func = [asset, final_path]()
 			{
-				AssetLoadingData* data = reinterpret_cast<AssetLoadingData*>(default_data.user_data);
-
-				if (!std::filesystem::exists(data->path.parent_path()))
+				if (!fs::exists(final_path.parent_path()))
 				{
-					if (!std::filesystem::create_directories(data->path.parent_path()))
+					if (!fs::create_directories(final_path.parent_path()))
 					{
 						return;
 					}
 				}
 
-				std::ofstream of(data->path, std::ios_base::binary | std::ios_base::trunc);
+				std::ofstream of(final_path, std::ios_base::binary | std::ios_base::trunc);
 
 				if (!of.is_open())
 				{
 					return;
 				}
 
-				if (!data->asset->serialize(of))
-				{
-					of.close();
-					return;
-				}
-
-				of.close();
+				asset->serialize(of);
 			};
 
 		JobHandle job = schedule_low_priority_job(job_object, parent_job);

@@ -2,6 +2,7 @@
 #include "rendering/ecs/renderer_holder_root_component.h"
 
 #include "core/imgui.h"
+#include "core/editor_icons.h"
 #include "core/log.h"
 #include "core/string.h"
 #include "core/cpu_profiling.h"
@@ -16,6 +17,7 @@
 #include "ecs/rendering/scene_rendering.h"
 #include "core/ecs/camera_holder_component.h"
 #include "ecs/rendering/mesh_component.h"
+#include "ecs/prefab/prefab_utils.h"
 
 #include "audio/audio.h"
 
@@ -115,6 +117,19 @@ namespace era_engine
 		MainRenderer* renderer = renderer_holder_rc->renderer;
 
 		ImGui::Image(renderer->frame_result, render_width, render_height);
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_PREFAB))
+			{
+				const RenderCamera& camera = renderer_holder_rc->camera;
+
+				PrefabInstantiateParams params;
+				params.transform = trs(camera.position + camera.rotation * vec3(0.0f, 0.0f, -3.0f));
+				PrefabUtils::instantiate_async(world, fs::path(static_cast<const char*>(payload->Data)), params);
+			}
+			ImGui::EndDragDropTarget();
+		}
 	}
 
 	void RenderSystem::before_render(float dt)

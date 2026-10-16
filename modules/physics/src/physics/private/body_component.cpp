@@ -8,6 +8,9 @@
 #include "ecs/world.h"
 #include "ecs/base_components/transform_component.h"
 
+#include <ecs/serialization/component_registry.h>
+#include <ecs/serialization/serialization_meta.h>
+
 #include <rttr/registration>
 
 namespace era_engine::physics
@@ -20,10 +23,37 @@ namespace era_engine::physics
 			.constructor<>();
 
 		registration::class_<DynamicBodyComponent>("DynamicBodyComponent")
-			.constructor<>();
+			.constructor<ref<Entity::EcsData>>()
+			.property("compute_center_of_mass", &DynamicBodyComponent::compute_center_of_mass)
+			.property("use_gravity", &DynamicBodyComponent::use_gravity)
+			.property("ccd", &DynamicBodyComponent::ccd)
+			.property("speculative_ccd", &DynamicBodyComponent::speculative_ccd)
+			.property("kinematic", &DynamicBodyComponent::kinematic)
+			.property("kinematic_motion_type", &DynamicBodyComponent::kinematic_motion_type)
+			.property("simulated", &DynamicBodyComponent::simulated)
+			.property("constraints", &DynamicBodyComponent::constraints)
+			.property("mass", &DynamicBodyComponent::mass)
+			.property("angular_damping", &DynamicBodyComponent::angular_damping)
+			.property("linear_damping", &DynamicBodyComponent::linear_damping)
+			.property("sleep_threshold", &DynamicBodyComponent::sleep_threshold)
+			.property("stabilization_threshold", &DynamicBodyComponent::stabilization_threshold)
+			.property("solver_position_iterations_count", &DynamicBodyComponent::solver_position_iterations_count)
+			.property("solver_velocity_iterations_count", &DynamicBodyComponent::solver_velocity_iterations_count)
+			.property("max_angular_velocity", &DynamicBodyComponent::max_angular_velocity)
+			.property("max_linear_velocity", &DynamicBodyComponent::max_linear_velocity)
+			.property("max_contact_impulse", &DynamicBodyComponent::max_contact_impulse)
+			.property("max_depenetration_velocity", &DynamicBodyComponent::max_depenetration_velocity)
+			.property("linear_velocity", &DynamicBodyComponent::linear_velocity)
+			.property("angular_velocity", &DynamicBodyComponent::angular_velocity)
+			.property("center_of_mass", &DynamicBodyComponent::center_of_mass)
+			.property("mass_space_inertia_tensor", &DynamicBodyComponent::mass_space_inertia_tensor)
+			.property("enable_gyroscopic_forces", &DynamicBodyComponent::enable_gyroscopic_forces);
+		ComponentRegistry::register_component<DynamicBodyComponent>();
 
 		registration::class_<StaticBodyComponent>("StaticBodyComponent")
-			.constructor<>();
+			.constructor<ref<Entity::EcsData>>()
+			.property("simulated", &StaticBodyComponent::simulated);
+		ComponentRegistry::register_component<StaticBodyComponent>();
 	}
 
 	BodyComponent::BodyComponent(ref<Entity::EcsData> _data)

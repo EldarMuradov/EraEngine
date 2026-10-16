@@ -1,6 +1,8 @@
 // Copyright (c) 2023-present Eldar Muradov. All rights reserved.
 
 #include "rendering/raytracing.h"
+#include "ecs/serialization/component_registry.h"
+#include "ecs/serialization/serialization_meta.h"
 
 #include "core/string.h"
 
@@ -560,10 +562,11 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		rttr::registration::class_<RaytraceComponent>("RaytraceComponent")
+		rttr::registration::class_<RaytraceComponent>("RaytraceComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>()
 			.constructor<ref<Entity::EcsData>, const RaytracingObjectType&>()
 			.property("type", &RaytraceComponent::type);
+		ComponentRegistry::register_component<RaytraceComponent>();
 	}
 
 	RaytraceComponent::RaytraceComponent(ref<Entity::EcsData> _data, const RaytracingObjectType& _type)

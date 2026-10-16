@@ -2,6 +2,8 @@
 
 #include "rendering/light_source.h"
 
+#include "ecs/serialization/component_registry.h"
+
 #include <rttr/registration>
 
 namespace era_engine
@@ -130,22 +132,29 @@ namespace era_engine
 			.property("stabilize", &DirectionalLight::stabilize);
 
 		registration::class_<PointLightComponent>("PointLightComponent")
-			.constructor<>()
+			.constructor<ref<Entity::EcsData>>()
 			.property("color", &PointLightComponent::color)
 			.property("intensity", &PointLightComponent::intensity)
 			.property("radius", &PointLightComponent::radius)
-			.property("castsShadow", &PointLightComponent::casts_shadow)
-			.property("shadowMapResolution", &PointLightComponent::shadow_map_resolution);
+			.property("casts_shadow", &PointLightComponent::casts_shadow)
+			.property("shadow_map_resolution", &PointLightComponent::shadow_map_resolution);
+		ComponentRegistry::register_component<PointLightComponent>();
 
 		registration::class_<SpotLightComponent>("SpotLightComponent")
-			.constructor<>()
+			.constructor<ref<Entity::EcsData>>()
 			.property("color", &SpotLightComponent::color)
 			.property("intensity", &SpotLightComponent::intensity)
 			.property("distance", &SpotLightComponent::distance)
-			.property("innerAngle", &SpotLightComponent::inner_angle)
-			.property("outerAngle", &SpotLightComponent::outer_angle)
-			.property("castsShadow", &SpotLightComponent::casts_shadow)
-			.property("shadowMapResolution", &SpotLightComponent::shadow_map_resolution);
+			.property("inner_angle", &SpotLightComponent::inner_angle)
+			.property("outer_angle", &SpotLightComponent::outer_angle)
+			.property("casts_shadow", &SpotLightComponent::casts_shadow)
+			.property("shadow_map_resolution", &SpotLightComponent::shadow_map_resolution);
+		ComponentRegistry::register_component<SpotLightComponent>();
+	}
+
+	PointLightComponent::PointLightComponent(ref<Entity::EcsData> _data)
+		: Component(_data)
+	{
 	}
 
 	PointLightComponent::PointLightComponent(ref<Entity::EcsData> _data, const vec3& _color, float _intensity, float _radius, bool _casts_shadow, uint32 _shadow_map_resolution)
@@ -154,6 +163,11 @@ namespace era_engine
 	}
 
 	PointLightComponent::~PointLightComponent()
+	{
+	}
+
+	SpotLightComponent::SpotLightComponent(ref<Entity::EcsData> _data)
+		: Component(_data)
 	{
 	}
 

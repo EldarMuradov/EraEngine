@@ -1,5 +1,3 @@
-// Copyright (c) 2023-present Eldar Muradov. All rights reserved.
-
 #include "core/collision_gjk.h"
 
 namespace era_engine
@@ -48,7 +46,6 @@ namespace era_engine
 				return GJK_DONT_STOP;
 			}
 
-			//ASSERT(false);
 			std::cerr << "GJK ERROR 0\n";
 			return GJK_UNEXPECTED_ERROR;
 		}
@@ -88,7 +85,9 @@ namespace era_engine
 			}
 
 			if (flags == 0)
+			{
 				return GJK_STOP;
+			}
 
 			if (flags == over_abc_flag)
 			{
@@ -200,12 +199,10 @@ namespace era_engine
 				goto overADC2;
 			}
 
-			//ASSERT(false);
 			std::cerr << "GJK ERROR 1\n";
 			return GJK_UNEXPECTED_ERROR;
 		}
 
-		//ASSERT(false);
 		std::cerr << "GJK ERROR 2\n";
 		return GJK_UNEXPECTED_ERROR;
 	}

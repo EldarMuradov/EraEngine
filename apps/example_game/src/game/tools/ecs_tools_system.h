@@ -5,6 +5,10 @@
 
 #include <core/math.h>
 
+#include <ecs/editor/scene_editor_panels.h>
+
+#include <memory>
+
 namespace era_engine
 {
 	class RendererHolderRootComponent;
@@ -21,22 +25,14 @@ namespace era_engine
 		ERA_VIRTUAL_REFLECT(System)
 
 	private:
-		void draw_creation_popup();
 		void draw_world();
 
 		void draw_main_menu();
 		void draw_settings();
 
-		void draw_childs(const Entity& entity);
-
-		void update_selected_entity_ui_rotation();
-
-		void set_selected_entity(const Entity& entity);
-
 	private:
 		RendererHolderRootComponent* renderer_holder_rc = nullptr;
 
-		Entity selected_entity = Entity::null;
-		vec3 selected_entity_euler_rotation = vec3::zero;
+		std::unique_ptr<SceneEditorPanels> scene_panels;
 	};
 }

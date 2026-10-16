@@ -1,4 +1,6 @@
 #include "core/ecs/camera_holder_component.h"
+#include "ecs/serialization/component_registry.h"
+#include "ecs/serialization/serialization_meta.h"
 
 #include <rttr/registration>
 
@@ -8,8 +10,9 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		registration::class_<CameraHolderComponent>("CameraHolderComponent")
+		registration::class_<CameraHolderComponent>("CameraHolderComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<ref<Entity::EcsData>>();
+		ComponentRegistry::register_component<CameraHolderComponent>();
 	}
 
 

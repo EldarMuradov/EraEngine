@@ -1,6 +1,9 @@
 #include "physics/soft_body.h"
 #include "physics/core/physics.h"
 
+#include <ecs/serialization/component_registry.h>
+#include <ecs/serialization/serialization_meta.h>
+
 #include "ecs/base_components/transform_component.h"
 
 #include <rttr/registration>
@@ -11,8 +14,9 @@ namespace era_engine::physics
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		rttr::registration::class_<SoftBodyComponent>("SoftBodyComponent")
+		rttr::registration::class_<SoftBodyComponent>("SoftBodyComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>();
+		ComponentRegistry::register_component<SoftBodyComponent>();
 	}
 
 	/*static void process_soft_body(physx::PxSoftBody* softBody, const physx::PxFEMParameters& femParams, const physx::PxTransform& transform, const physx::PxReal density, const physx::PxReal scale, const physx::PxU32 iterCount)

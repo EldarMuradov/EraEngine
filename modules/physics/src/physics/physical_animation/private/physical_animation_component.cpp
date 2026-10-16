@@ -2,6 +2,9 @@
 #include "physics/physical_animation/dismemberment/ragdoll_dismemberment_component.h"
 #include "physics/body_component.h"
 #include "physics/joint.h"
+
+#include <ecs/serialization/component_registry.h>
+#include <ecs/serialization/serialization_meta.h>
 #include "physics/physical_animation/states/blend_in_simulation_state.h"
 #include "physics/physical_animation/states/blend_out_simulation_state.h"
 #include "physics/physical_animation/states/enabled_simulation_state.h"
@@ -24,10 +27,16 @@ namespace era_engine::physics
 	{
 		using namespace rttr;
 		registration::class_<PhysicalAnimationComponent>("PhysicalAnimationComponent")
-			.constructor<>();
+			.constructor<ref<Entity::EcsData>>()
+			.property("use_fixed_pelvis_attachment", &PhysicalAnimationComponent::use_fixed_pelvis_attachment)
+			.property("blend_in_time", &PhysicalAnimationComponent::blend_in_time)
+			.property("blend_out_time", &PhysicalAnimationComponent::blend_out_time)
+			.property("animation_blend_factor", &PhysicalAnimationComponent::animation_blend_factor);
+		ComponentRegistry::register_component<PhysicalAnimationComponent>();
 
-		registration::class_<PhysicalAnimationLimbComponent>("PhysicalAnimationLimbComponent")
+		registration::class_<PhysicalAnimationLimbComponent>("PhysicalAnimationLimbComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>();
+		ComponentRegistry::register_component<PhysicalAnimationLimbComponent>();
 	}
 
 	bool PhysicsLimbChain::has_any_colliding_limb() const

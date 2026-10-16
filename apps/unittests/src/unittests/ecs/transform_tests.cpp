@@ -55,6 +55,23 @@ TEST(ECS_Transform, DefaultIsIdentity)
 	delete world;
 }
 
+TEST(ECS_Transform, ConstructorTransformIsKept)
+{
+	World* world = new World("GameWorld");
+	world->init();
+
+	Entity entity = world->create_entity();
+	const trs initial = trs(vec3(1.0f, 2.0f, 3.0f), quat::identity, vec3(2.0f, 2.0f, 2.0f));
+
+	TransformComponent transform(entity.get_data_weakref().lock(), initial, TransformComponent::STATIC);
+
+	EXPECT_EQ(transform.type, TransformComponent::STATIC);
+	EXPECT_TRUE(fuzzy_equals(transform.get_local_transform(), initial));
+	EXPECT_TRUE(fuzzy_equals(transform.get_world_transform(), initial));
+
+	delete world;
+}
+
 TEST(ECS_Transform, WorldEqualsLocalUnderRoot)
 {
 	World* world = new World("GameWorld");

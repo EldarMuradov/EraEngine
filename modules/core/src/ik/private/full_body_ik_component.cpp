@@ -3,6 +3,8 @@
 #include "animation/skeleton.h"
 #include "animation/skeleton_component.h"
 
+#include "ecs/serialization/component_registry.h"
+
 #include <rttr/registration>
 
 namespace era_engine
@@ -10,15 +12,46 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
+		registration::class_<IKEffector>("IKEffector")
+			.property("joint_id", &IKEffector::joint_id)
+			.property("position_weight", &IKEffector::position_weight)
+			.property("rotation_weight", &IKEffector::rotation_weight)
+			.property("solve_as_limb", &IKEffector::solve_as_limb)
+			.property("pole_vector_local", &IKEffector::pole_vector_local)
+			.property("pole_weight", &IKEffector::pole_weight)
+			.property("soft_reach_distance", &IKEffector::soft_reach_distance)
+			.property("min_reach_distance", &IKEffector::min_reach_distance)
+			.property("enabled", &IKEffector::enabled)
+			.property("depth", &IKEffector::depth)
+			.property("pull", &IKEffector::pull);
+
+		registration::class_<FBIKSettings>("FBIKSettings")
+			.property("iterations", &FBIKSettings::iterations)
+			.property("tolerance", &FBIKSettings::tolerance)
+			.property("weight", &FBIKSettings::weight)
+			.property("damping", &FBIKSettings::damping)
+			.property("max_motion_strength", &FBIKSettings::max_motion_strength)
+			.property("min_motion_strength", &FBIKSettings::min_motion_strength)
+			.property("target_clamp", &FBIKSettings::target_clamp);
+
 		registration::class_<FBIKComponent>("FBIKComponent")
 			.constructor<ref<Entity::EcsData>>()
+			.property("solver_type", &FBIKComponent::solver_type)
+			.property("effectors", &FBIKComponent::effectors)
+			.property("joint_settings", &FBIKComponent::joint_settings)
+			.property("settings", &FBIKComponent::settings)
+			.property("root_joint_id", &FBIKComponent::root_joint_id)
 			.property("enabled", &FBIKComponent::enabled)
 			.property("draw_debug", &FBIKComponent::draw_debug);
+		ComponentRegistry::register_component<FBIKComponent>();
 
 		registration::class_<FBIKTargetComponent>("FBIKTargetComponent")
 			.constructor<ref<Entity::EcsData>>()
+			.property("owner_entity", &FBIKTargetComponent::owner_entity)
+			.property("effector_index", &FBIKTargetComponent::effector_index)
 			.property("position_weight", &FBIKTargetComponent::position_weight)
 			.property("rotation_weight", &FBIKTargetComponent::rotation_weight);
+		ComponentRegistry::register_component<FBIKTargetComponent>();
 	}
 
 	FBIKComponent::FBIKComponent(ref<Entity::EcsData> _data)
@@ -117,6 +150,11 @@ namespace era_engine
 			return false;
 		}
 		return true;
+	}
+
+	void FBIKComponent::on_deserialized()
+	{
+		init();
 	}
 
 	bool FBIKComponent::reinit()

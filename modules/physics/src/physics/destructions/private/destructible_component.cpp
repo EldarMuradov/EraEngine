@@ -1,5 +1,8 @@
 #include "physics/destructions/destructible_component.h"
 
+#include <ecs/serialization/component_registry.h>
+#include <ecs/serialization/serialization_meta.h>
+
 #include <rttr/registration>
 
 namespace era_engine::physics
@@ -7,11 +10,13 @@ namespace era_engine::physics
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		registration::class_<DestructibleComponent>("DestructibleComponent")
+		registration::class_<DestructibleComponent>("DestructibleComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>();
+		ComponentRegistry::register_component<DestructibleComponent>();
 
-		registration::class_<DestructibleFractureChunkComponent>("DestructibleFractureChunkComponent")
+		registration::class_<DestructibleFractureChunkComponent>("DestructibleFractureChunkComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>();
+		ComponentRegistry::register_component<DestructibleFractureChunkComponent>();
 	}
 
 	DestructibleComponent::DestructibleComponent()

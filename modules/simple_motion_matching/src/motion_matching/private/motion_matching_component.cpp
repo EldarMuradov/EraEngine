@@ -9,6 +9,8 @@
 
 #include <animation/animation.h>
 
+#include <ecs/serialization/component_registry.h>
+
 #include <rttr/registration>
 
 namespace era_engine
@@ -19,6 +21,7 @@ namespace era_engine
 		using namespace rttr;
 		registration::class_<MotionMatchingComponent>("MotionMatchingComponent")
 			.constructor<ref<Entity::EcsData>>();
+		ComponentRegistry::register_component<MotionMatchingComponent>();
 	}
 
 	MotionMatchingComponent::MotionMatchingComponent(ref<Entity::EcsData> _data)

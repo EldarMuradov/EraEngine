@@ -1,5 +1,6 @@
 #include "ecs/rendering/mesh_component.h"
 #include "ecs/world.h"
+#include "ecs/serialization/component_registry.h"
 
 #include <rttr/registration>
 
@@ -9,9 +10,11 @@ namespace era_engine
 	{
 		using namespace rttr;
 		rttr::registration::class_<MeshComponent>("MeshComponent")
+			.constructor<ref<Entity::EcsData>>()
 			.constructor<ref<Entity::EcsData>, ref<MultiMesh>, bool>()
 			.property("mesh", &MeshComponent::mesh)
 			.property("is_hidden", &MeshComponent::is_hidden);
+		ComponentRegistry::register_component<MeshComponent>();
 	}
 
 	MeshComponent::MeshComponent(ref<Entity::EcsData> _data, ref<MultiMesh> _mesh, bool _is_hidden)

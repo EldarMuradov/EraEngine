@@ -6,6 +6,9 @@
 
 #include "asset/model_asset.h"
 
+#include <ecs/serialization/component_registry.h>
+#include <ecs/serialization/serialization_meta.h>
+
 #include <rttr/registration>
 
 namespace era_engine::physics
@@ -15,22 +18,39 @@ namespace era_engine::physics
     {
         using namespace rttr;
         registration::class_<ShapeComponent>("ShapeComponent")
-            .constructor<>();
+            .constructor<>()
+            .property("local_position", &ShapeComponent::local_position)
+            .property("local_rotation", &ShapeComponent::local_rotation)
+            .property("collision_type", &ShapeComponent::collision_type)
+            .property("collision_filter_data", &ShapeComponent::collision_filter_data)
+            .property("use_in_scene_queries", &ShapeComponent::use_in_scene_queries)
+            .property("is_trigger", &ShapeComponent::is_trigger);
 
         registration::class_<BoxShapeComponent>("BoxShapeComponent")
-            .constructor<>();
+            .constructor<ref<Entity::EcsData>>()
+            .property("half_extents", &BoxShapeComponent::half_extents);
+        ComponentRegistry::register_component<BoxShapeComponent>();
 
         registration::class_<SphereShapeComponent>("SphereShapeComponent")
-            .constructor<>();
+            .constructor<ref<Entity::EcsData>>()
+            .property("radius", &SphereShapeComponent::radius);
+        ComponentRegistry::register_component<SphereShapeComponent>();
 
         registration::class_<CapsuleShapeComponent>("CapsuleShapeComponent")
-            .constructor<>();
+            .constructor<ref<Entity::EcsData>>()
+            .property("radius", &CapsuleShapeComponent::radius)
+            .property("half_height", &CapsuleShapeComponent::half_height);
+        ComponentRegistry::register_component<CapsuleShapeComponent>();
 
-        registration::class_<TriangleMeshShapeComponent>("TriangleMeshShapeComponent")
-            .constructor<>();
+        registration::class_<TriangleMeshShapeComponent>("TriangleMeshShapeComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
+            .constructor<ref<Entity::EcsData>>()
+            .property("size", &TriangleMeshShapeComponent::size);
+        ComponentRegistry::register_component<TriangleMeshShapeComponent>();
 
-        registration::class_<ConvexMeshShapeComponent>("ConvexMeshShapeComponent")
-            .constructor<>();
+        registration::class_<ConvexMeshShapeComponent>("ConvexMeshShapeComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
+            .constructor<ref<Entity::EcsData>>()
+            .property("size", &ConvexMeshShapeComponent::size);
+        ComponentRegistry::register_component<ConvexMeshShapeComponent>();
     }
 
     ShapeComponent::ShapeComponent(ref<Entity::EcsData> _data)

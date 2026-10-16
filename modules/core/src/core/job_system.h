@@ -15,7 +15,7 @@ namespace era_engine
         void wait_for_completion();
 
         int32 index = -1;
-        struct JobQueue* queue;
+        struct JobQueue* queue = nullptr;
     };
 
     template <typename Data_>
@@ -107,20 +107,12 @@ namespace era_engine
     extern JobQueue low_priority_job_queue;
     extern JobQueue main_thread_job_queue;
 
-    void initialize_job_system();
+    ERA_CORE_API void initialize_job_system();
     void execute_main_thread_jobs();
 
     struct DefaultJob
     {
-        struct Data
-        {
-            void* user_data = nullptr;
-            size_t data_size = 0;
-            bool destroy_after_execution = true;
-        };
-
-        Data data;
-        std::function<void(Data&)> job_func;
+        std::function<void()> job_func;
     };
     ERA_CORE_API JobHandle schedule_low_priority_job(const DefaultJob& job, JobHandle parent_job = {});
 }

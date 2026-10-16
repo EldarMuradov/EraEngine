@@ -27,6 +27,9 @@ namespace era_engine
 
 		Entity::Handle get_handle() const;
 
+		// Called after a prefab instance is fully created and all components are deserialized.
+		virtual void on_deserialized();
+
 		ERA_REFLECT
 
 	protected:

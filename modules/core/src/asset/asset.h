@@ -30,6 +30,7 @@ namespace era_engine
 		UNLOADED = 0,
 		LOADING,
 		LOADED,
+		FAILED,
 
 		COUNT,
 	};
@@ -39,6 +40,7 @@ namespace era_engine
 		"Unloaded",
 		"Loading",
 		"Loaded",
+		"Failed",
 	};
 
 	static const uint32 BIN_HEADER = 'BIN ';

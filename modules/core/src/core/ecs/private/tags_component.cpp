@@ -1,4 +1,6 @@
 #include "core/ecs/tags_component.h"
+#include "ecs/serialization/component_registry.h"
+#include "ecs/serialization/serialization_meta.h"
 
 #include <rttr/registration>
 
@@ -8,8 +10,9 @@ namespace era_engine
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		registration::class_<TagsComponent>("TagsComponent")
+		registration::class_<TagsComponent>("TagsComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<ref<Entity::EcsData>>();
+		ComponentRegistry::register_component<TagsComponent>();
 	}
 
 

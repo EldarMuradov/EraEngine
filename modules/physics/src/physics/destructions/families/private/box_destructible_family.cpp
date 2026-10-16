@@ -9,6 +9,7 @@
 #include <ecs/world.h>
 #include <ecs/base_components/transform_component.h>
 #include <ecs/rendering/mesh_component.h>
+#include <ecs/prefab/transient_component.h>
 
 namespace era_engine::physics
 {
@@ -42,6 +43,7 @@ namespace era_engine::physics
 		for (uint32 i = 0; i < chunk_count; ++i)
 		{
 			Entity chunk_entity = world->create_entity();
+			chunk_entity.add_component<TransientComponent>();
 
 			chunk_entity.set_parent(root_handle);
 

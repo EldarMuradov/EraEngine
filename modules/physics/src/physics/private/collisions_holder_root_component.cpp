@@ -1,5 +1,8 @@
 #include "physics/collisions_holder_root_component.h"
 
+#include <ecs/serialization/component_registry.h>
+#include <ecs/serialization/serialization_meta.h>
+
 #include <core/math.h>
 
 #include <rttr/registration>
@@ -9,8 +12,9 @@ namespace era_engine::physics
 	RTTR_REGISTRATION
 	{
 		using namespace rttr;
-		registration::class_<CollisionsHolderRootComponent>("CollisionsHolderRootComponent")
+		registration::class_<CollisionsHolderRootComponent>("CollisionsHolderRootComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
 			.constructor<>();
+		ComponentRegistry::register_component<CollisionsHolderRootComponent>();
 	}
 
 	CollisionsHolderRootComponent::CollisionsHolderRootComponent(ref<Entity::EcsData> _data)
