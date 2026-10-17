@@ -34,6 +34,8 @@ namespace era_engine
 
 	private:
 		void load_custom_shaders();
+		void draw_imgui_viewport();
+		void instantiate_dropped_prefab(const char* path);
 
 		void reset_render_passes();
 		void submit_renderer_params(uint32 num_spot_light_shadow_passes, uint32 num_point_light_shadow_passes);

@@ -9,6 +9,10 @@
 #include "core/ecs/private/input_system.h"
 #include "core/ecs/input_receiver_component.h"
 
+#include "engine/engine.h"
+
+#include "window/dx_window.h"
+
 #include "rendering/mesh_shader.h"
 
 #include "ecs/update_groups.h"
@@ -102,33 +106,24 @@ namespace era_engine
 	{
 		ZoneScopedN("RenderSystem::begin_frame");
 
-		ImGui::BeginWindowHiddenTabBar("Scene Viewport");
-		ImVec2 resolution = ImGui::GetContentRegionAvail();
-
-		if (resolution.x > 0 && resolution.y > 0)
+		if (renderer_holder_rc->present_mode == RendererHolderRootComponent::PRESENT_TO_IMGUI_WINDOW)
 		{
-			renderer_holder_rc->width = (uint32)resolution.x;
-			renderer_holder_rc->height = (uint32)resolution.y;
+			draw_imgui_viewport();
+			return;
 		}
 
-		uint32 render_width = renderer_holder_rc->width;
-		uint32 render_height = renderer_holder_rc->height;
-
-		MainRenderer* renderer = renderer_holder_rc->renderer;
-
-		ImGui::Image(renderer->frame_result, render_width, render_height);
-
-		if (ImGui::BeginDragDropTarget())
+		const DXWindow* window = get_object<DXWindow>();
+		if (window->client_width > 0 && window->client_height > 0)
 		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_PREFAB))
-			{
-				const RenderCamera& camera = renderer_holder_rc->camera;
+			renderer_holder_rc->width = window->client_width;
+			renderer_holder_rc->height = window->client_height;
+		}
 
-				PrefabInstantiateParams params;
-				params.transform = trs(camera.position + camera.rotation * vec3(0.0f, 0.0f, -3.0f));
-				PrefabUtils::instantiate_async(world, fs::path(static_cast<const char*>(payload->Data)), params);
-			}
-			ImGui::EndDragDropTarget();
+		const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+		if (payload != nullptr && payload->IsDataType(EDITOR_ICON_PREFAB)
+			&& ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !ImGui::GetIO().WantCaptureMouse)
+		{
+			instantiate_dropped_prefab(static_cast<const char*>(payload->Data));
 		}
 	}
 
@@ -224,6 +219,47 @@ namespace era_engine
 
 		const UserInput& input = get_current_frame_input();
 		renderer->end_frame(&input);
+
+		if (renderer_holder_rc->present_mode == RendererHolderRootComponent::PRESENT_TO_MAIN_WINDOW)
+		{
+			get_object<DXWindow>()->present_texture = renderer->frame_result;
+		}
+	}
+
+	void RenderSystem::draw_imgui_viewport()
+	{
+		ImGui::BeginWindowHiddenTabBar("Scene Viewport");
+		ImVec2 resolution = ImGui::GetContentRegionAvail();
+
+		if (resolution.x > 0 && resolution.y > 0)
+		{
+			renderer_holder_rc->width = (uint32)resolution.x;
+			renderer_holder_rc->height = (uint32)resolution.y;
+		}
+
+		MainRenderer* renderer = renderer_holder_rc->renderer;
+
+		ImGui::Image(renderer->frame_result, renderer_holder_rc->width, renderer_holder_rc->height);
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EDITOR_ICON_PREFAB))
+			{
+				instantiate_dropped_prefab(static_cast<const char*>(payload->Data));
+			}
+			ImGui::EndDragDropTarget();
+		}
+
+		ImGui::End();
+	}
+
+	void RenderSystem::instantiate_dropped_prefab(const char* path)
+	{
+		const RenderCamera& camera = renderer_holder_rc->camera;
+
+		PrefabInstantiateParams params;
+		params.transform = trs(camera.position + camera.rotation * vec3(0.0f, 0.0f, -3.0f));
+		PrefabUtils::instantiate_async(world, fs::path(path), params);
 	}
 
 	void RenderSystem::load_custom_shaders()

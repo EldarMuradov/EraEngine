@@ -84,6 +84,7 @@ namespace era_engine
 
 		RendererHolderRootComponent* renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
 		ASSERT(renderer_holder_rc != nullptr);
+		renderer_holder_rc->present_mode = RendererHolderRootComponent::PRESENT_TO_IMGUI_WINDOW;
 
 		camera_entity = world->create_entity("CameraEntity");
 

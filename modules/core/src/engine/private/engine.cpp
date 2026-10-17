@@ -71,7 +71,7 @@ namespace era_engine
 		bool result = handle_windows_messages();
 
 		new_imgui_frame(dt);
-		ImGui::DockSpaceOverViewport();
+		ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
 
 		cpu_profiling_resolve_time_stamps();
 
@@ -129,9 +129,28 @@ namespace era_engine
 			CD3DX12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.f, 0.f, (float)window.client_width, (float)window.client_height);
 			cl->set_viewport(viewport);
 
-			cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
+			const ref<DXTexture>& frame = window.present_texture;
+			const bool copy_frame = frame != nullptr
+				&& frame->width == window.client_width
+				&& frame->height == window.client_height
+				&& frame->format == color_depth_to_format(window.color_depth);
 
-			cl->clear_rtv(rtv, 0.f, 0.f, 0.f);
+			if (copy_frame)
+			{
+				cl->transition_barrier(frame, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE);
+				cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+				cl->copy_resource(frame->resource, backbuffer);
+				cl->transition_barrier(frame, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON);
+				cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_RENDER_TARGET);
+			}
+			else
+			{
+				cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
+				const ImVec4 clear_color = ImGui::GetStyleColorVec4(ImGuiCol_DockingEmptyBg);
+				cl->clear_rtv(rtv, clear_color.x, clear_color.y, clear_color.z);
+			}
+			window.present_texture = nullptr;
+
 			cl->set_render_target(&rtv, 1, 0);
 
 			render_imgui(cl);
@@ -289,8 +308,6 @@ namespace era_engine
 			{
 				ZoneScopedN("Engine::render");
 				file_browser.draw();
-
-				ImGui::End();
 
 				render_to_main_window(*window);
 			}

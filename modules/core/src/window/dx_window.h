@@ -8,6 +8,7 @@
 
 #include "dx/dx.h"
 #include "dx/dx_descriptor.h"
+#include "dx/dx_texture.h"
 
 #include "rendering/render_utils.h"
 
@@ -39,6 +40,8 @@ namespace era_engine
 		DXResource back_buffers[NUM_BUFFERED_FRAMES];
 		DXRTVDescriptorHandle back_buffer_rtvs[NUM_BUFFERED_FRAMES];
 		uint32 current_backbuffer_index;
+
+		ref<DXTexture> present_texture;
 
 		ColorDepth color_depth;
 

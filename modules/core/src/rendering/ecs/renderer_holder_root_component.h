@@ -18,6 +18,12 @@ namespace era_engine
 	class ERA_CORE_API RendererHolderRootComponent final : public Component
 	{
 	public:
+		enum PresentMode : uint8
+		{
+			PRESENT_TO_MAIN_WINDOW = 0,
+			PRESENT_TO_IMGUI_WINDOW
+		};
+
 		RendererHolderRootComponent() = default;
 		RendererHolderRootComponent(ref<Entity::EcsData> _data);
 
@@ -38,6 +44,8 @@ namespace era_engine
 
 		uint32_t width = 1920;
 		uint32_t height = 1080;
+
+		PresentMode present_mode = PRESENT_TO_MAIN_WINDOW;
 
 		float timestep_scale = 1.0f;
 

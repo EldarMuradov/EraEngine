@@ -102,6 +102,7 @@ namespace era_engine
 
 		RendererHolderRootComponent* renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
 		ASSERT(renderer_holder_rc != nullptr);
+		renderer_holder_rc->present_mode = RendererHolderRootComponent::PRESENT_TO_MAIN_WINDOW;
 
 		CollisionsHolderRootComponent* collisions_holder_rc = world->add_root_component<CollisionsHolderRootComponent>();
 		ASSERT(collisions_holder_rc != nullptr);
