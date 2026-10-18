@@ -37,316 +37,313 @@
 
 #include <timeapi.h>
 
-#pragma comment(lib, "winmm.lib") 
+#pragma comment(lib, "winmm.lib")
 
 namespace era_engine
 {
-	bool handle_windows_messages();
+    bool handle_windows_messages();
 
-	static uint64 fence_values[NUM_BUFFERED_FRAMES];
-	static uint64 frame_id;
+    static uint64 fence_values[NUM_BUFFERED_FRAMES];
+    static uint64 frame_id;
 
-	static bool new_frame(float& dt, DXWindow& window)
-	{
-		static bool first = true;
-		static float perf_freq;
-		static LARGE_INTEGER last_time;
+    static bool new_frame(float& dt, DXWindow& window)
+    {
+        static bool first = true;
+        static float perf_freq;
+        static LARGE_INTEGER last_time;
 
-		if (first)
-		{
-			LARGE_INTEGER perf_freq_result;
-			QueryPerformanceFrequency(&perf_freq_result);
-			perf_freq = (float)perf_freq_result.QuadPart;
+        if (first)
+        {
+            LARGE_INTEGER perf_freq_result;
+            QueryPerformanceFrequency(&perf_freq_result);
+            perf_freq = (float)perf_freq_result.QuadPart;
 
-			QueryPerformanceCounter(&last_time);
+            QueryPerformanceCounter(&last_time);
 
-			first = false;
-		}
+            first = false;
+        }
 
-		LARGE_INTEGER current_time;
-		QueryPerformanceCounter(&current_time);
-		dt = ((float)(current_time.QuadPart - last_time.QuadPart) / perf_freq);
-		last_time = current_time;
+        LARGE_INTEGER current_time;
+        QueryPerformanceCounter(&current_time);
+        dt = ((float)(current_time.QuadPart - last_time.QuadPart) / perf_freq);
+        last_time = current_time;
 
-		bool result = handle_windows_messages();
+        bool result = handle_windows_messages();
 
-		new_imgui_frame(dt);
-		ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+        new_imgui_frame(dt);
+        ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
 
-		cpu_profiling_resolve_time_stamps();
+        cpu_profiling_resolve_time_stamps();
 
-		{
-			ZoneScopedN("Wait for queued frame to finish rendering");
-			dx_context.render_queue.wait_for_fence(fence_values[window.current_backbuffer_index]);
-		}
+        {
+            ZoneScopedN("Wait for queued frame to finish rendering");
+            dx_context.render_queue.wait_for_fence(fence_values[window.current_backbuffer_index]);
+        }
 
-		{
-			ZoneScopedN("dx_context.new_frame");
-			dx_context.new_frame(frame_id);
-		}
+        {
+            ZoneScopedN("dx_context.new_frame");
+            dx_context.new_frame(frame_id);
+        }
 
-		return result;
-	}
+        return result;
+    }
 
-	static void draw_debug_menu_bar(float elapsed, uint64 gameplay_fixed_frame_id)
-	{
-		const float fps = 1.0f / elapsed;
-		bool debug_vars_opened = false;
-		if (ImGui::BeginMainMenuBar())
-		{
-			if (ImGui::BeginMenu(std::to_string(fps).c_str()))
-			{
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu(std::to_string(frame_id).c_str()))
-			{
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu(std::to_string(gameplay_fixed_frame_id).c_str()))
-			{
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Debug Vars Menu"))
-			{
-				ImGui::EndMenu();
-			}
-			ImGui::EndMainMenuBar();
-		}
+    static void draw_debug_menu_bar(float elapsed, uint64 gameplay_fixed_frame_id)
+    {
+        const float fps = 1.0f / elapsed;
+        bool debug_vars_opened = false;
+        if (ImGui::BeginMainMenuBar())
+        {
+            if (ImGui::BeginMenu(std::to_string(fps).c_str()))
+            {
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu(std::to_string(frame_id).c_str()))
+            {
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu(std::to_string(gameplay_fixed_frame_id).c_str()))
+            {
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Debug Vars Menu"))
+            {
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
 
-		DebugVarsStorage::get_instance()->draw_vars(debug_vars_opened);
-	}
+        DebugVarsStorage::get_instance()->draw_vars(debug_vars_opened);
+    }
 
-	static void render_to_main_window(DXWindow& window)
-	{
-		DXResource backbuffer = window.back_buffers[window.current_backbuffer_index];
-		DXRTVDescriptorHandle rtv = window.back_buffer_rtvs[window.current_backbuffer_index];
+    static void render_to_main_window(DXWindow& window)
+    {
+        DXResource backbuffer = window.back_buffers[window.current_backbuffer_index];
+        DXRTVDescriptorHandle rtv = window.back_buffer_rtvs[window.current_backbuffer_index];
 
-		DXCommandList* cl = dx_context.get_free_render_command_list();
+        DXCommandList* cl = dx_context.get_free_render_command_list();
 
-		{
-			DX_PROFILE_BLOCK(cl, "Blit to backbuffer");
+        {
+            DX_PROFILE_BLOCK(cl, "Blit to backbuffer");
 
-			CD3DX12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.f, 0.f, (float)window.client_width, (float)window.client_height);
-			cl->set_viewport(viewport);
+            CD3DX12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.f, 0.f, (float)window.client_width, (float)window.client_height);
+            cl->set_viewport(viewport);
 
-			const ref<DXTexture>& frame = window.present_texture;
-			const bool copy_frame = frame != nullptr
-				&& frame->width == window.client_width
-				&& frame->height == window.client_height
-				&& frame->format == color_depth_to_format(window.color_depth);
+            const ref<DXTexture>& frame = window.present_texture;
+            const bool copy_frame = frame != nullptr && frame->width == window.client_width && frame->height == window.client_height && frame->format == color_depth_to_format(window.color_depth);
 
-			if (copy_frame)
-			{
-				cl->transition_barrier(frame, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE);
-				cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
-				cl->copy_resource(frame->resource, backbuffer);
-				cl->transition_barrier(frame, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON);
-				cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_RENDER_TARGET);
-			}
-			else
-			{
-				cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
-				const ImVec4 clear_color = ImGui::GetStyleColorVec4(ImGuiCol_DockingEmptyBg);
-				cl->clear_rtv(rtv, clear_color.x, clear_color.y, clear_color.z);
-			}
-			window.present_texture = nullptr;
+            if (copy_frame)
+            {
+                cl->transition_barrier(frame, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE);
+                cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+                cl->copy_resource(frame->resource, backbuffer);
+                cl->transition_barrier(frame, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON);
+                cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            }
+            else
+            {
+                cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET);
+                const ImVec4 clear_color = ImGui::GetStyleColorVec4(ImGuiCol_DockingEmptyBg);
+                cl->clear_rtv(rtv, clear_color.x, clear_color.y, clear_color.z);
+            }
+            window.present_texture = nullptr;
 
-			cl->set_render_target(&rtv, 1, 0);
+            cl->set_render_target(&rtv, 1, 0);
 
-			render_imgui(cl);
+            render_imgui(cl);
 
-			cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-		}
-		dx_context.end_frame(cl);
+            cl->transition_barrier(backbuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+        }
+        dx_context.end_frame(cl);
 
-		uint64 result = dx_context.execute_command_list(cl);
+        uint64 result = dx_context.execute_command_list(cl);
 
-		window.swap_buffers();
+        window.swap_buffers();
 
-		fence_values[window.current_backbuffer_index] = result;
-	}
+        fence_values[window.current_backbuffer_index] = result;
+    }
 
-	Engine* Engine::instance_object = nullptr;
+    Engine* Engine::instance_object = nullptr;
 
-	static bool verbose = false;
-	static bool main_menu = false;
+    static bool verbose = false;
+    static bool main_menu = false;
 
-	static MMRESULT timer_result;
+    static MMRESULT timer_result;
 
-	Engine::Engine(int argc, char** argv)
-	{
-		using namespace clara;
+    Engine::Engine(int argc, char** argv)
+    {
+        using namespace clara;
 
-		running = true;
-		instance_object = this;
+        running = true;
+        instance_object = this;
 
 #ifndef _DEBUG
-		::ShowWindow(::GetConsoleWindow(), SW_HIDE);
+        ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
 #endif
 
-		Parser cli;
-		cli += Opt(verbose, "verbose")["-v"]["--verbose"]("Enable verbose logging");
-		cli += Opt(main_menu, "main-menu")["-mm"]["--main-menu"]("Enable main menu bar");
+        Parser cli;
+        cli += Opt(verbose, "verbose")["-v"]["--verbose"]("Enable verbose logging");
+        cli += Opt(main_menu, "main-menu")["-mm"]["--main-menu"]("Enable main menu bar");
 
-		auto result = cli.parse(Args(argc, argv));
-		if (!result)
-		{
-			std::cerr << "Error in command line: " << result.errorMessage() << std::endl;
-		}
+        auto result = cli.parse(Args(argc, argv));
+        if (!result)
+        {
+            std::cerr << "Error in command line: " << result.errorMessage() << std::endl;
+        }
 
-		if (verbose)
-		{
-			::ShowWindow(::GetConsoleWindow(), SW_SHOW);
-		}
+        if (verbose)
+        {
+            ::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+        }
 
-		const bool dx_inited = dx_context.initialize();
-		ASSERT(dx_inited);
+        const bool dx_inited = dx_context.initialize();
+        ASSERT(dx_inited);
 
-		timer_result = timeBeginPeriod(1);
-		if (timer_result != TIMERR_NOERROR)
-		{
-			std::cerr << "Failed to set precise Windows timer resolution." << std::endl;
-		}
+        timer_result = timeBeginPeriod(1);
+        if (timer_result != TIMERR_NOERROR)
+        {
+            std::cerr << "Failed to set precise Windows timer resolution." << std::endl;
+        }
 
-		std::cout << "Windows scheduler precision set to 1ms. Running physics thread..." << std::endl;
-	}
+        std::cout << "Windows scheduler precision set to 1ms. Running physics thread..." << std::endl;
+    }
 
-	Engine::~Engine()
-	{
-	}
+    Engine::~Engine()
+    {
+    }
 
-	Engine* Engine::instance()
-	{
-		return instance_object;
-	}
+    Engine* Engine::instance()
+    {
+        return instance_object;
+    }
 
-	void Engine::release()
-	{
-		instance()->running = false;
-	}
+    void Engine::release()
+    {
+        instance()->running = false;
+    }
 
-	Engine* Engine::create_instance(int argc, char** argv)
-	{
-		return new Engine(argc, argv);
-	}
+    Engine* Engine::create_instance(int argc, char** argv)
+    {
+        return new Engine(argc, argv);
+    }
 
-	bool Engine::run(const std::function<void(void)>& initial_task /* = nullptr */)
-	{
-		initialize_job_system();
-		initialize_file_registry();
+    bool Engine::run(const std::function<void(void)>& initial_task /* = nullptr */)
+    {
+        initialize_job_system();
+        initialize_file_registry();
 
-		initialize_render_utils();
+        initialize_render_utils();
 
-		DXWindow* window = get_object<DXWindow>();
-		initialize_imgui(*window);
+        DXWindow* window = get_object<DXWindow>();
+        initialize_imgui(*window);
 
-		FileBrowser file_browser;
+        FileBrowser file_browser;
 
-		// Wait for initialization to finish
-		fence_values[NUM_BUFFERED_FRAMES - 1] = dx_context.render_queue.signal();
-		dx_context.flush_application();
+        // Wait for initialization to finish
+        fence_values[NUM_BUFFERED_FRAMES - 1] = dx_context.render_queue.signal();
+        dx_context.flush_application();
 
-		if (initial_task)
-		{
-			initial_task();
-		}
+        if (initial_task)
+        {
+            initial_task();
+        }
 
-		execute_main_thread_jobs();
+        execute_main_thread_jobs();
 
-		for (auto& [name, world] : get_worlds())
-		{
-			WorldSystemScheduler* scheduler = world->get_system_scheduler();
-			scheduler->initialize_all_systems();
-		}
+        for (auto& [name, world] : get_worlds())
+        {
+            WorldSystemScheduler* scheduler = world->get_system_scheduler();
+            scheduler->initialize_all_systems();
+        }
 
-		float dt = 0.0f;
-		bool status = true;
-		while (status)
-		{
-			ZoneScopedN("Engine::update");
+        float dt = 0.0f;
+        bool status = true;
+        while (status)
+        {
+            ZoneScopedN("Engine::update");
 
-			window->begin_frame(dt);
+            window->begin_frame(dt);
 
-			{
-				ZoneScopedN("Engine::start_frame");
-				status = new_frame(dt, *window);
-			}
+            {
+                ZoneScopedN("Engine::start_frame");
+                status = new_frame(dt, *window);
+            }
 
-			window->update_input(dt);
+            window->update_input(dt);
 
-			uint64 gameplay_fixed_frame_id = 0;
+            uint64 gameplay_fixed_frame_id = 0;
 
-			{
-				ZoneScopedN("Engine::update_worlds");
+            {
+                ZoneScopedN("Engine::update_worlds");
 
-				auto& worlds = get_worlds();
-				for (auto& [name, world] : worlds)
-				{
-					ZoneScopedN("Engine::normal_update_world");
+                auto& worlds = get_worlds();
+                for (auto& [name, world] : worlds)
+                {
+                    ZoneScopedN("Engine::normal_update_world");
 
-					WorldSystemScheduler* scheduler = world->get_system_scheduler();
-					scheduler->update_normal(dt);
+                    WorldSystemScheduler* scheduler = world->get_system_scheduler();
+                    scheduler->update_normal(dt);
 
-					if (name == World::GAMEPLAY_WORLD_NAME && gameplay_fixed_frame_id == 0)
-					{
-						gameplay_fixed_frame_id = world->get_fixed_frame_id();
-					}
-				}
-			}
+                    if (name == World::GAMEPLAY_WORLD_NAME && gameplay_fixed_frame_id == 0)
+                    {
+                        gameplay_fixed_frame_id = world->get_fixed_frame_id();
+                    }
+                }
+            }
 
-			if (main_menu)
-			{
-				draw_debug_menu_bar(dt, gameplay_fixed_frame_id);
-			}
+            if (main_menu)
+            {
+                draw_debug_menu_bar(dt, gameplay_fixed_frame_id);
+            }
 
-			{
-				ZoneScopedN("Engine::execute_main_thread_jobs");
+            {
+                ZoneScopedN("Engine::execute_main_thread_jobs");
 
-				execute_main_thread_jobs();
-			}
+                execute_main_thread_jobs();
+            }
 
-			{
-				ZoneScopedN("Engine::render");
-				file_browser.draw();
+            {
+                ZoneScopedN("Engine::render");
+                file_browser.draw();
 
-				render_to_main_window(*window);
-			}
+                render_to_main_window(*window);
+            }
 
-			cpu_profiling_frame_end_marker();
+            cpu_profiling_frame_end_marker();
 
-			++frame_id;
+            ++frame_id;
 
-			FrameMark;
-		}
+            FrameMark;
+        }
 
-		for (auto& [name, world] : get_worlds())
-		{
-			WorldSystemScheduler* scheduler = world->get_system_scheduler();
-			scheduler->stop();
-		}
+        for (auto& [name, world] : get_worlds())
+        {
+            WorldSystemScheduler* scheduler = world->get_system_scheduler();
+            scheduler->stop();
+        }
 
-		terminate();
+        terminate();
 
-		if (timer_result == TIMERR_NOERROR)
-		{
-			timeEndPeriod(1);
-		}
+        if (timer_result == TIMERR_NOERROR)
+        {
+            timeEndPeriod(1);
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	void Engine::terminate()
-	{
-		dx_context.flush_application();
+    void Engine::terminate()
+    {
+        dx_context.flush_application();
 
-		dx_context.quit();
+        dx_context.quit();
 
-		instance_object = nullptr;
-	}
+        instance_object = nullptr;
+    }
 
-	bool Engine::update()
-	{
-		return true;
-	}
+    bool Engine::update()
+    {
+        return true;
+    }
 
 }

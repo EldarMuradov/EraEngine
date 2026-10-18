@@ -12,7 +12,7 @@ namespace era_engine
         static const uint32 max_recursion_depth = 4;
         static const uint32 max_payload_size = 5 * sizeof(float); // Radiance-payload is 1 x float3, 2 x uint.
 
-        uint32 recursion_depth = max_recursion_depth - 1; // [0, maxRecursionDepth - 1]. 0 and 1 don't really make sense. 0 means, that no primary ray is shot. 1 means that no bounce is computed, which leads to 0 light reaching the primary hit.
+        uint32 recursion_depth = max_recursion_depth - 1;      // [0, maxRecursionDepth - 1]. 0 and 1 don't really make sense. 0 means, that no primary ray is shot. 1 means that no bounce is computed, which leads to 0 light reaching the primary hit.
         uint32 start_russian_roulette_after = recursion_depth; // [0, recursionDepth].
 
         float light_intensity_scale = 1.f;

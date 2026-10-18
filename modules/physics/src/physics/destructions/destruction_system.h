@@ -9,53 +9,53 @@
 
 namespace era_engine
 {
-	struct SubmeshAsset;
+    struct SubmeshAsset;
 }
 
 namespace era_engine::physics
 {
-	class NvMesh;
-	class DestructibleComponent;
-	class JointComponent;
+    class NvMesh;
+    class DestructibleComponent;
+    class JointComponent;
 
-	class DestructionSystem final : public System
-	{
-	public:
-		DestructionSystem(World* _world);
+    class DestructionSystem final : public System
+    {
+    public:
+        DestructionSystem(World* _world);
 
-		void init() override;
-		void update(float dt) override;
+        void init() override;
+        void update(float dt) override;
 
-		void process_added_destructibles(float dt);
+        void process_added_destructibles(float dt);
 
-		void on_destructible_created(entt::registry& registry, entt::entity entity_handle);
+        void on_destructible_created(entt::registry& registry, entt::entity entity_handle);
 
-	private:
-		bool init_fracture_based_entity(Entity entity, DestructibleComponent* destructibe_component) const;
+    private:
+        bool init_fracture_based_entity(Entity entity, DestructibleComponent* destructibe_component) const;
 
-		EntityPtr build_chunk(Entity parent,
-			const trs& world_transform,
-			const ref<PBRMaterial>& material,
-			const std::pair<ref<SubmeshAsset>, ref<NvMesh>>& mesh,
-			DestructibleComponent* destructibe_component) const;
+        EntityPtr build_chunk(Entity parent,
+            const trs& world_transform,
+            const ref<PBRMaterial>& material,
+            const std::pair<ref<SubmeshAsset>, ref<NvMesh>>& mesh,
+            DestructibleComponent* destructibe_component) const;
 
-		std::vector<EntityPtr> build_chunks(Entity parent,
-			const trs& world_transform,
-			const ref<PBRMaterial>& material,
-			const std::vector<std::pair<ref<SubmeshAsset>, ref<NvMesh>>>& meshes,
-			DestructibleComponent* destructibe_component) const;
+        std::vector<EntityPtr> build_chunks(Entity parent,
+            const trs& world_transform,
+            const ref<PBRMaterial>& material,
+            const std::vector<std::pair<ref<SubmeshAsset>, ref<NvMesh>>>& meshes,
+            DestructibleComponent* destructibe_component) const;
 
-		void process_broken_joint(JointComponent* broken_joint) const;
+        void process_broken_joint(JointComponent* broken_joint) const;
 
-		bool connect_touching_chunks(Entity parent, DestructibleComponent* destructibe_component) const;
+        bool connect_touching_chunks(Entity parent, DestructibleComponent* destructibe_component) const;
 
-		void connect_with_neighbours(DestructibleComponent* parent_destructibe_component, Entity chunk) const;
+        void connect_with_neighbours(DestructibleComponent* parent_destructibe_component, Entity chunk) const;
 
-		ERA_VIRTUAL_REFLECT(System)
+        ERA_VIRTUAL_REFLECT(System)
 
-	private:
-		std::vector<Entity::Handle> destructibles_to_init;
+    private:
+        std::vector<Entity::Handle> destructibles_to_init;
 
-		SpinLock sync;
-	};
+        SpinLock sync;
+    };
 }

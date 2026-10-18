@@ -161,7 +161,7 @@ namespace era_engine
             FILE_SHARE_READ,
             NULL,
             OPEN_EXISTING,
-            0, //FILE_FLAG_NO_BUFFERING,
+            0, // FILE_FLAG_NO_BUFFERING,
             NULL);
 
         if (file_handle == INVALID_HANDLE_VALUE)
@@ -271,7 +271,7 @@ namespace era_engine
     {
         uint32 chunk_size, chunk_position;
 
-        //Check the file type, should be fourccWAVE or 'XWMA'.
+        // Check the file type, should be fourccWAVE or 'XWMA'.
         if (!find_chunk(file_handle, fourccRIFF, chunk_size, chunk_position))
             return false;
 

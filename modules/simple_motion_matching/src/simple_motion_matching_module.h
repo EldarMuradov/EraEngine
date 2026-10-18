@@ -6,16 +6,16 @@
 
 namespace era_engine
 {
-	class ERA_MOTION_MATCHING_API SimpleMotionMatchingModule : public IModule
-	{
-	public:
-		SimpleMotionMatchingModule() noexcept;
+    class ERA_MOTION_MATCHING_API SimpleMotionMatchingModule : public IModule
+    {
+    public:
+        SimpleMotionMatchingModule() noexcept;
 
-		~SimpleMotionMatchingModule() override;
+        ~SimpleMotionMatchingModule() override;
 
-		bool initialize(void* engine) override;
-		bool terminate() override;
+        bool initialize(void* engine) override;
+        bool terminate() override;
 
-		RTTR_ENABLE(IModule)
-	};
+        RTTR_ENABLE(IModule)
+    };
 }

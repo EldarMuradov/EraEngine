@@ -33,8 +33,7 @@ namespace era_engine::ai
             std::stack<NavNode> path;
             std::vector<NavNode> usable_path;
 
-            while (!(map[vec2(x, y)].parent_position == vec2(x, y))
-                && map[vec2(x, y)].position != NAV_INF_POS)
+            while (!(map[vec2(x, y)].parent_position == vec2(x, y)) && map[vec2(x, y)].position != NAV_INF_POS)
             {
                 path.push(map[vec2(x, y)]);
                 int temp_x = map[vec2(x, y)].parent_position.x;
@@ -138,7 +137,8 @@ namespace era_engine::ai
                         {
                             all_map[vec2(x + new_x, y + new_y)].parent_position = vec2(x, y);
                             destination_found = true;
-                            return PathFinder::a_star_make_path(all_map, to);;
+                            return PathFinder::a_star_make_path(all_map, to);
+                            ;
                         }
                         else if (closed_list[vec2(x + new_x, y + new_y)] == false)
                         {

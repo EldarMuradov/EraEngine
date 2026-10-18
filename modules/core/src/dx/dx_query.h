@@ -5,10 +5,10 @@
 
 namespace era_engine
 {
-	struct DXTimestampQueryHeap
-	{
-		void initialize(uint32 max_count);
+    struct DXTimestampQueryHeap
+    {
+        void initialize(uint32 max_count);
 
-		DXQueryHeap heap;
-	};
+        DXQueryHeap heap;
+    };
 }

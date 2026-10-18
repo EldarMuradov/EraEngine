@@ -34,93 +34,93 @@ namespace era_engine::physics
 
         ASSERT(physical_animation_component_ptr.get() != nullptr);
 
-		PhysicalAnimationComponent* physical_animation_component = dynamic_cast<PhysicalAnimationComponent*>(physical_animation_component_ptr.get_for_write());
-		Entity ragdoll = physical_animation_component->get_entity();
+        PhysicalAnimationComponent* physical_animation_component = dynamic_cast<PhysicalAnimationComponent*>(physical_animation_component_ptr.get_for_write());
+        Entity ragdoll = physical_animation_component->get_entity();
 
-		const trs& ragdoll_transform = ragdoll.get_component<TransformComponent>()->get_world_transform();
+        const trs& ragdoll_transform = ragdoll.get_component<TransformComponent>()->get_world_transform();
 
-		physical_animation_component->blend_weight = 1.0f;
+        physical_animation_component->blend_weight = 1.0f;
 
-		PhysicalAnimationUtils::set_attachment_active(physical_animation_component, false);
-		const SkeletonComponent* skeleton_component = ragdoll.get_component<SkeletonComponent>();
+        PhysicalAnimationUtils::set_attachment_active(physical_animation_component, false);
+        const SkeletonComponent* skeleton_component = ragdoll.get_component<SkeletonComponent>();
 
-		auto process_limb = [&skeleton_component, &ragdoll_transform](PhysicalAnimationLimbComponent* limb_component)
-			{
-				if (limb_component->get_current_state_type() == PhysicalLimbStateType::DISMEMBERED ||
-					limb_component->get_current_state_type() == PhysicalLimbStateType::PARTIAL_DISMEMBERED)
-				{
-					return;
-				}
-				PhysicalAnimationUtils::force_sync_limb_to_skeleton(limb_component, skeleton_component, ragdoll_transform);
-				PhysicalAnimationUtils::set_simulation_for_limb(limb_component, true, true);
-			};
+        auto process_limb = [&skeleton_component, &ragdoll_transform](PhysicalAnimationLimbComponent* limb_component)
+        {
+            if (limb_component->get_current_state_type() == PhysicalLimbStateType::DISMEMBERED ||
+                limb_component->get_current_state_type() == PhysicalLimbStateType::PARTIAL_DISMEMBERED)
+            {
+                return;
+            }
+            PhysicalAnimationUtils::force_sync_limb_to_skeleton(limb_component, skeleton_component, ragdoll_transform);
+            PhysicalAnimationUtils::set_simulation_for_limb(limb_component, true, true);
+        };
 
-		traverse_simulation_graph(process_limb);
+        traverse_simulation_graph(process_limb);
 
-		AnimationComponent* animation_component = physical_animation_component->get_entity().get_component<AnimationComponent>();
-		animation_component->update_skeleton = false;
-		animation_component->play = false;
+        AnimationComponent* animation_component = physical_animation_component->get_entity().get_component<AnimationComponent>();
+        animation_component->update_skeleton = false;
+        animation_component->play = false;
 
-		BaseSimulationState::on_enter();
+        BaseSimulationState::on_enter();
     }
 
     void RagdollSimulationState::on_exit()
     {
-		using namespace animation;
+        using namespace animation;
 
-		ASSERT(physical_animation_component_ptr.get() != nullptr);
-		PhysicalAnimationComponent* physical_animation_component = dynamic_cast<PhysicalAnimationComponent*>(physical_animation_component_ptr.get_for_write());
+        ASSERT(physical_animation_component_ptr.get() != nullptr);
+        PhysicalAnimationComponent* physical_animation_component = dynamic_cast<PhysicalAnimationComponent*>(physical_animation_component_ptr.get_for_write());
 
-		Entity ragdoll = physical_animation_component->get_entity();
+        Entity ragdoll = physical_animation_component->get_entity();
 
-		const trs& ragdoll_transform = ragdoll.get_component<TransformComponent>()->get_world_transform();
+        const trs& ragdoll_transform = ragdoll.get_component<TransformComponent>()->get_world_transform();
 
-		PhysicalAnimationUtils::set_attachment_active(physical_animation_component, true);
+        PhysicalAnimationUtils::set_attachment_active(physical_animation_component, true);
 
-		AnimationComponent* animation_component = ragdoll.get_component<AnimationComponent>();
-		animation_component->play = true;
-		animation_component->update_skeleton = true;
+        AnimationComponent* animation_component = ragdoll.get_component<AnimationComponent>();
+        animation_component->play = true;
+        animation_component->update_skeleton = true;
 
-		SkeletonComponent* skeleton_component = ragdoll.get_component<SkeletonComponent>();
+        SkeletonComponent* skeleton_component = ragdoll.get_component<SkeletonComponent>();
 
-		trs pelvis_local_transform = SkeletonUtils::get_object_space_joint_transform(animation_component->current_animation_pose, skeleton_component->skeleton.get(), physical_animation_component->root_joint_id, 0);
-		pelvis_local_transform.scale = vec3(1.0f);
+        trs pelvis_local_transform = SkeletonUtils::get_object_space_joint_transform(animation_component->current_animation_pose, skeleton_component->skeleton.get(), physical_animation_component->root_joint_id, 0);
+        pelvis_local_transform.scale = vec3(1.0f);
 
-		const trs pelvis_world_transform = ragdoll_transform * pelvis_local_transform;
-		PhysicsUtils::manual_set_physics_transform_locked(physical_animation_component->attachment_body.get(), pelvis_world_transform, true);
+        const trs pelvis_world_transform = ragdoll_transform * pelvis_local_transform;
+        PhysicsUtils::manual_set_physics_transform_locked(physical_animation_component->attachment_body.get(), pelvis_world_transform, true);
 
-		for (const EntityPtr& limb_ptr : physical_animation_component->limbs)
-		{
-			Entity limb = limb_ptr.get();
-			PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
-			ASSERT(limb_data_component != nullptr);
+        for (const EntityPtr& limb_ptr : physical_animation_component->limbs)
+        {
+            Entity limb = limb_ptr.get();
+            PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
+            ASSERT(limb_data_component != nullptr);
 
-			if (limb_data_component->get_current_state_type() == PhysicalLimbStateType::DISMEMBERED ||
-				limb_data_component->get_current_state_type() == PhysicalLimbStateType::PARTIAL_DISMEMBERED)
-			{
-				continue;
-			}
+            if (limb_data_component->get_current_state_type() == PhysicalLimbStateType::DISMEMBERED ||
+                limb_data_component->get_current_state_type() == PhysicalLimbStateType::PARTIAL_DISMEMBERED)
+            {
+                continue;
+            }
 
-			trs limb_object_space_pose = SkeletonUtils::get_object_space_joint_transform(animation_component->current_animation_pose,
-				skeleton_component->skeleton.get(),
-				limb_data_component->joint_id);
-			limb_object_space_pose.scale = vec3(1.0f);
+            trs limb_object_space_pose = SkeletonUtils::get_object_space_joint_transform(animation_component->current_animation_pose,
+                skeleton_component->skeleton.get(),
+                limb_data_component->joint_id);
+            limb_object_space_pose.scale = vec3(1.0f);
 
-			if (limb_data_component->drive_joint_component.get() != nullptr)
-			{
-				D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_data_component->drive_joint_component.get_for_write());
+            if (limb_data_component->drive_joint_component.get() != nullptr)
+            {
+                D6JointComponent* drive_joint = dynamic_cast<D6JointComponent*>(limb_data_component->drive_joint_component.get_for_write());
 
-				PhysicsUtils::manual_set_physics_transform_locked(drive_joint->get_first_entity_ptr().get(), ragdoll_transform * limb_object_space_pose, true);
-			}
+                PhysicsUtils::manual_set_physics_transform_locked(drive_joint->get_first_entity_ptr().get(), ragdoll_transform * limb_object_space_pose, true);
+            }
 
-			PhysicsUtils::manual_set_physics_transform_locked(limb, ragdoll_transform * limb_object_space_pose, true);
+            PhysicsUtils::manual_set_physics_transform_locked(limb, ragdoll_transform * limb_object_space_pose, true);
 
-			limb_data_component->collision.reset();
-			limb_data_component->prev_physics_pose = limb_object_space_pose;
-			limb_data_component->physics_pose = limb_object_space_pose;
-			limb_data_component->target_pose = limb_object_space_pose;
-		}
+            limb_data_component->collision.reset();
+            limb_data_component->prev_physics_pose = limb_object_space_pose;
+            limb_data_component->physics_pose = limb_object_space_pose;
+            limb_data_component->target_pose = limb_object_space_pose;
+        }
 
-		BaseSimulationState::on_exit();
-	}
+        BaseSimulationState::on_exit();
+    }
 }

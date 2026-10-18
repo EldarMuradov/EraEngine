@@ -7,57 +7,57 @@
 
 namespace era_engine
 {
-	struct SceneLighting
-	{
-		ref<DXBuffer> spot_light_buffer;
-		ref<DXBuffer> point_light_buffer;
+    struct SceneLighting
+    {
+        ref<DXBuffer> spot_light_buffer;
+        ref<DXBuffer> point_light_buffer;
 
-		ref<DXBuffer> spot_light_shadow_info_buffer;
-		ref<DXBuffer> point_light_shadow_info_buffer;
+        ref<DXBuffer> spot_light_shadow_info_buffer;
+        ref<DXBuffer> point_light_shadow_info_buffer;
 
-		SpotShadowRenderPass* spot_shadow_render_passes;
-		PointShadowRenderPass* point_shadow_render_passes;
+        SpotShadowRenderPass* spot_shadow_render_passes;
+        PointShadowRenderPass* point_shadow_render_passes;
 
-		uint32 max_num_spot_shadow_render_passes;
-		uint32 max_num_point_shadow_render_passes;
+        uint32 max_num_spot_shadow_render_passes;
+        uint32 max_num_point_shadow_render_passes;
 
-		uint32 num_spot_shadow_render_passes = 0;
-		uint32 num_point_shadow_render_passes = 0;
-	};
+        uint32 num_spot_shadow_render_passes = 0;
+        uint32 num_point_shadow_render_passes = 0;
+    };
 
-	struct OffsetCount
-	{
-		uint32 offset;
-		uint32 count;
-	};
+    struct OffsetCount
+    {
+        uint32 offset;
+        uint32 count;
+    };
 
-	enum LightFrustumType
-	{
-		LIGHT_FRUSTUM_STANDARD,
-		LIGHT_FRUSTUM_SPHERE
-	};
+    enum LightFrustumType
+    {
+        LIGHT_FRUSTUM_STANDARD,
+        LIGHT_FRUSTUM_SPHERE
+    };
 
-	struct LightFrustum
-	{
-		union
-		{
-			CameraFrustumPlanes frustum;
-			BoundingSphere sphere;
-		};
+    struct LightFrustum
+    {
+        union
+        {
+            CameraFrustumPlanes frustum;
+            BoundingSphere sphere;
+        };
 
-		LightFrustumType type;
-	};
+        LightFrustumType type;
+    };
 
-	struct ShadowPass
-	{
-		LightFrustum frustum;
-		ShadowRenderPassBase* pass;
-		bool is_point_light;
-	};
+    struct ShadowPass
+    {
+        LightFrustum frustum;
+        ShadowRenderPassBase* pass;
+        bool is_point_light;
+    };
 
-	struct ShadowPasses
-	{
-		ShadowPass* shadow_render_passes;
-		uint32 num_shadow_render_passes;
-	};
+    struct ShadowPasses
+    {
+        ShadowPass* shadow_render_passes;
+        uint32 num_shadow_render_passes;
+    };
 }

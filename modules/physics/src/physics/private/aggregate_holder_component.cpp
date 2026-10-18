@@ -8,28 +8,26 @@
 
 namespace era_engine::physics
 {
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
-		registration::class_<AggregateHolderComponent>("AggregateHolderComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
-			.constructor<>();
-		ComponentRegistry::register_component<AggregateHolderComponent>();
-	}
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
+        registration::class_<AggregateHolderComponent>("AggregateHolderComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
+            .constructor<>();
+        ComponentRegistry::register_component<AggregateHolderComponent>();
+    }
 
-	AggregateHolderComponent::AggregateHolderComponent()
-	{
-		ASSERT(!PhysicsEngine::get_physics_core()->is_gpu());
-	}
+    AggregateHolderComponent::AggregateHolderComponent()
+    {
+        ASSERT(!PhysicsEngine::get_physics_core()->is_gpu());
+    }
 
-	AggregateHolderComponent::AggregateHolderComponent(ref<Entity::EcsData> _data)
-		: Component(_data)
-	{
-		
-	}
+    AggregateHolderComponent::AggregateHolderComponent(ref<Entity::EcsData> _data)
+        : Component(_data)
+    {
+    }
 
-	AggregateHolderComponent::~AggregateHolderComponent()
-	{
-
-	}
+    AggregateHolderComponent::~AggregateHolderComponent()
+    {
+    }
 
 }

@@ -1,12 +1,12 @@
-#pragma once 
+#pragma once
 
 #include "core_api.h"
 
 namespace era_engine
 {
-	class ERA_CORE_API BinaryDataArchive final
-	{
-	public:
+    class ERA_CORE_API BinaryDataArchive final
+    {
+    public:
         BinaryDataArchive() = default;
         BinaryDataArchive(size_t size);
         BinaryDataArchive(size_t size, uint8 value);
@@ -30,5 +30,5 @@ namespace era_engine
 
     private:
         std::vector<uint8> storage;
-	};
+    };
 }

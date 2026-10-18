@@ -7,18 +7,18 @@
 
 namespace era_engine::physics
 {
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
-		registration::class_<W4VehicleComponent>("W4VehicleComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
-			.constructor<>();
-		ComponentRegistry::register_component<W4VehicleComponent>();
-	}
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
+        registration::class_<W4VehicleComponent>("W4VehicleComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
+            .constructor<>();
+        ComponentRegistry::register_component<W4VehicleComponent>();
+    }
 
-	W4VehicleComponent::W4VehicleComponent(ref<Entity::EcsData> _data)
-		: VehicleBaseComponent(_data)
-	{
-	}
+    W4VehicleComponent::W4VehicleComponent(ref<Entity::EcsData> _data)
+        : VehicleBaseComponent(_data)
+    {
+    }
 
     VehicleControlOutput W4VehicleComponent::process_input(const VehicleInputContext& input, float dt, float current_speed)
     {
@@ -150,7 +150,7 @@ namespace era_engine::physics
     }
 
     void W4VehicleComponent::apply_vehicle_rules(const VehicleInputContext& input, float dt, float current_speed, VehicleControlOutput& output)
-	{
+    {
         if (wants_reverse && current_speed > 1.0f)
         {
             output.brake = std::max(output.brake, 0.8f);
@@ -162,8 +162,8 @@ namespace era_engine::physics
             output.throttle = 0.0f;
         }
 
-        if (!input.steer_left_pressed && 
-            !input.steer_right_pressed && 
+        if (!input.steer_left_pressed &&
+            !input.steer_right_pressed &&
             std::abs(current_speed) > 0.5f)
         {
             if (current_steer >= 0.01f)
@@ -175,6 +175,6 @@ namespace era_engine::physics
                 current_steer = std::min(0.0f, current_steer + STEER_RETURN_SPEED * dt);
             }
         }
-	}
+    }
 
 }

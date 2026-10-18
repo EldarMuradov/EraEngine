@@ -46,7 +46,7 @@ namespace era_engine::animation
 
     void InertialBlendSampler::blend_pose(SkeletonPose* output_pose) const
     {
-        std::lock_guard<std::mutex> _lock{ lock };
+        std::lock_guard<std::mutex> _lock{lock};
 
         if (output_pose)
         {
@@ -63,40 +63,40 @@ namespace era_engine::animation
             };
 
             for (uint32 joint_index = 1; joint_index < skeleton->joints.size(); ++joint_index)
-			{
-				const InertialJointTransition& joint_transitions = joints_transitions[joint_index];
-				JointTransform joint_transform = output_pose->get_joint_transform(joint_index);
+            {
+                const InertialJointTransition& joint_transitions = joints_transitions[joint_index];
+                JointTransform joint_transform = output_pose->get_joint_transform(joint_index);
 
-				float translation_inertia = calc_inertial_factor(blend_elapsed, joint_transitions.translation);
+                float translation_inertia = calc_inertial_factor(blend_elapsed, joint_transitions.translation);
 
-				const vec3 inertial_translation = joint_transitions.translation.axis * translation_inertia + joint_transform.get_translation();
+                const vec3 inertial_translation = joint_transitions.translation.axis * translation_inertia + joint_transform.get_translation();
 
-				joint_transform.set_translation(inertial_translation);
+                joint_transform.set_translation(inertial_translation);
 
-				float rotation_inertia = calc_inertial_factor(blend_elapsed, joint_transitions.rotation);
-				const quat inertial_rotation = quat(joint_transitions.rotation.axis, rotation_inertia) * joint_transform.get_rotation();
+                float rotation_inertia = calc_inertial_factor(blend_elapsed, joint_transitions.rotation);
+                const quat inertial_rotation = quat(joint_transitions.rotation.axis, rotation_inertia) * joint_transform.get_rotation();
 
-				joint_transform.set_rotation(normalize(inertial_rotation));
+                joint_transform.set_rotation(normalize(inertial_rotation));
 
-				output_pose->set_joint_transform(joint_transform, joint_index);
+                output_pose->set_joint_transform(joint_transform, joint_index);
             }
         }
     }
 
     void InertialBlendSampler::cache_pose(float dt, SkeletonPose* output_pose)
     {
-        std::lock_guard<std::mutex> _lock{ lock };
+        std::lock_guard<std::mutex> _lock{lock};
 
-        if (output_pose != nullptr && 
+        if (output_pose != nullptr &&
             dt > 0.f)
         {
-            pose_buffer.push({ *output_pose, dt, blend_elapsed });
+            pose_buffer.push({*output_pose, dt, blend_elapsed});
         }
     }
 
     void InertialBlendSampler::init_inertial_blend(const SkeletonPose& current_pose)
     {
-        std::lock_guard<std::mutex> _lock{ lock };
+        std::lock_guard<std::mutex> _lock{lock};
 
         if (max_blend_time < 0.0f)
         {
@@ -177,7 +177,7 @@ namespace era_engine::animation
 
                     ASSERT(!isnan(joint_transitions.translation.value) && !isinf(joint_transitions.translation.value));
 
-                    if (delta_time > EPSILON && 
+                    if (delta_time > EPSILON &&
                         joint_transitions.translation.value > EPSILON)
                     {
                         const vec3 prev_translation = prev2_joint_transform.get_translation() - current_joint_transform.get_translation();
@@ -201,7 +201,7 @@ namespace era_engine::animation
 
                     ASSERT(!isnan(joint_transitions.translation.value) && !isinf(joint_transitions.translation.value));
 
-                    if (delta_time > EPSILON && 
+                    if (delta_time > EPSILON &&
                         joint_transitions.rotation.value > EPSILON)
                     {
                         const quat prev_q = normalize(prev2_joint_transform.get_rotation() * inversed_current_q);
@@ -218,7 +218,7 @@ namespace era_engine::animation
 
     std::optional<SkeletonPose> InertialBlendSampler::get_last_pose() const
     {
-        std::lock_guard<std::mutex> _lock{ lock };
+        std::lock_guard<std::mutex> _lock{lock};
 
         if (pose_buffer.is_empty())
         {
@@ -229,7 +229,7 @@ namespace era_engine::animation
 
     float InertialBlendSampler::get_last_pose_anim_position() const
     {
-        std::lock_guard<std::mutex> _lock{ lock };
+        std::lock_guard<std::mutex> _lock{lock};
 
         if (pose_buffer.is_empty())
         {
@@ -240,8 +240,8 @@ namespace era_engine::animation
 
     bool InertialBlendSampler::is_in_blend() const
     {
-        return blend_elapsed >= 0.f && 
-            (blend_elapsed + EPSILON) < max_blend_time;
+        return blend_elapsed >= 0.f &&
+               (blend_elapsed + EPSILON) < max_blend_time;
     }
 
     const std::vector<InertialBlendSampler::InertialJointTransition>& InertialBlendSampler::get_inertialization_info() const

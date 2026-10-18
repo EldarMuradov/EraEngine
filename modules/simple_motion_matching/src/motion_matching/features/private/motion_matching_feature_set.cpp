@@ -2,11 +2,11 @@
 
 namespace era_engine
 {
-	MotionMatchingFeatureSet::MotionMatchingFeatureSet()
-	{
-	}
+    MotionMatchingFeatureSet::MotionMatchingFeatureSet()
+    {
+    }
 
-	void MotionMatchingFeatureSet::add_feature(rttr::type feature_type, std::vector<float>&& params_values)
+    void MotionMatchingFeatureSet::add_feature(rttr::type feature_type, std::vector<float>&& params_values)
     {
         Feature& feature = features.emplace_back();
         feature.feature_type = feature_type;

@@ -4,18 +4,18 @@
 
 namespace era_engine::physics
 {
-	class ShapeSystem final : public System
-	{
-	public:
-		ShapeSystem(World* _world);
-		void init() override;
-		void update(float dt) override;
+    class ShapeSystem final : public System
+    {
+    public:
+        ShapeSystem(World* _world);
+        void init() override;
+        void update(float dt) override;
 
-		void process_skeleton_attachments(float dt) const;
+        void process_skeleton_attachments(float dt) const;
 
-		ERA_VIRTUAL_REFLECT(System)
+        ERA_VIRTUAL_REFLECT(System)
 
-	private:
-		std::vector<Entity::Handle> shapes_to_init;
-	};
+    private:
+        std::vector<Entity::Handle> shapes_to_init;
+    };
 }

@@ -8,23 +8,23 @@
 
 namespace era_engine::physics
 {
-	class ERA_PHYSICS_API DestructibleBoxAsset : public DestructibleAsset
-	{
-	public:
-		struct Desc
-		{
-			DestructibleBoxGenerator::Settings generator_settings;
-			float static_height = 0.0f;
-			bool joint_all_bonds = false;
-		};
+    class ERA_PHYSICS_API DestructibleBoxAsset : public DestructibleAsset
+    {
+    public:
+        struct Desc
+        {
+            DestructibleBoxGenerator::Settings generator_settings;
+            float static_height = 0.0f;
+            bool joint_all_bonds = false;
+        };
 
-		DestructibleBoxAsset(const Desc& desc);
-		~DestructibleBoxAsset() override;
+        DestructibleBoxAsset(const Desc& desc);
+        ~DestructibleBoxAsset() override;
 
-		DestructibleFamilyPtr create_family(World* world, Nv::Blast::ExtPxManager& manager, const ActorDesc& desc) override;
+        DestructibleFamilyPtr create_family(World* world, Nv::Blast::ExtPxManager& manager, const ActorDesc& desc) override;
 
-	private:
-		physx::PxConvexMesh* box_mesh = nullptr;
-		GeneratorAsset	generator_asset;
-	};
+    private:
+        physx::PxConvexMesh* box_mesh = nullptr;
+        GeneratorAsset generator_asset;
+    };
 }

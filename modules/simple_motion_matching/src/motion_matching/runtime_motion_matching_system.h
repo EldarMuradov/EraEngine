@@ -6,15 +6,15 @@
 
 namespace era_engine
 {
-	class RuntimeMotionMatchingSystem final : public System
-	{
-	public:
-		RuntimeMotionMatchingSystem(World* _world);
-		~RuntimeMotionMatchingSystem() override;
+    class RuntimeMotionMatchingSystem final : public System
+    {
+    public:
+        RuntimeMotionMatchingSystem(World* _world);
+        ~RuntimeMotionMatchingSystem() override;
 
-		void init() override;
-		void update(float dt) override;
+        void init() override;
+        void update(float dt) override;
 
-		ERA_VIRTUAL_REFLECT(System)
-	};
+        ERA_VIRTUAL_REFLECT(System)
+    };
 }

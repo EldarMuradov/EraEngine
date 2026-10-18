@@ -8,17 +8,17 @@
 
 namespace era_engine
 {
-	struct PrefabEntityDesc
-	{
-		uint32 id = 0;
-		uint32 parent = 0;
-		YAML::Node components;
-	};
+    struct PrefabEntityDesc
+    {
+        uint32 id = 0;
+        uint32 parent = 0;
+        YAML::Node components;
+    };
 
-	struct PrefabAsset::Impl
-	{
-		YAML::Node document;
-		std::vector<PrefabEntityDesc> entities;
-		std::unordered_map<AssetReference, ref<GameAsset>, AssetReferenceHash> dependencies;
-	};
+    struct PrefabAsset::Impl
+    {
+        YAML::Node document;
+        std::vector<PrefabEntityDesc> entities;
+        std::unordered_map<AssetReference, ref<GameAsset>, AssetReferenceHash> dependencies;
+    };
 }

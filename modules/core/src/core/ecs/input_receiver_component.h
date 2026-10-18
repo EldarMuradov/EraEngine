@@ -10,31 +10,31 @@
 namespace era_engine
 {
 
-	class ERA_CORE_API InputReceiverComponent final : public Component
-	{
-	public:
-		InputReceiverComponent() = default;
-		InputReceiverComponent(ref<Entity::EcsData> _data);
+    class ERA_CORE_API InputReceiverComponent final : public Component
+    {
+    public:
+        InputReceiverComponent() = default;
+        InputReceiverComponent(ref<Entity::EcsData> _data);
 
-		~InputReceiverComponent() override;
+        ~InputReceiverComponent() override;
 
-		const vec3& get_current_input() const;
+        const vec3& get_current_input() const;
 
-		bool is_active() const;
+        bool is_active() const;
 
-		const UserInput& get_frame_input() const;
+        const UserInput& get_frame_input() const;
 
-		ERA_VIRTUAL_REFLECT(Component)
+        ERA_VIRTUAL_REFLECT(Component)
 
-	private:
-		UserInput frame_input{};
+    private:
+        UserInput frame_input{};
 
-		vec3 current_input = vec3::zero;
+        vec3 current_input = vec3::zero;
 
-		bool active = true;
+        bool active = true;
 
-		friend class InputSystem;
-		friend class InputSenderComponent;
-	};
+        friend class InputSystem;
+        friend class InputSenderComponent;
+    };
 
 }

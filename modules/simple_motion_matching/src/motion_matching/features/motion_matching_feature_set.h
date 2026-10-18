@@ -7,16 +7,16 @@
 
 namespace era_engine
 {
-	class ERA_MOTION_MATCHING_API MotionMatchingFeatureSet final
-	{
-	public:
-		struct Feature
-		{
-			rttr::type feature_type = rttr::detail::get_invalid_type();
-			std::vector<float> params_values;
-		};
+    class ERA_MOTION_MATCHING_API MotionMatchingFeatureSet final
+    {
+    public:
+        struct Feature
+        {
+            rttr::type feature_type = rttr::detail::get_invalid_type();
+            std::vector<float> params_values;
+        };
 
-		MotionMatchingFeatureSet();
+        MotionMatchingFeatureSet();
 
         void add_feature(rttr::type feature_type, std::vector<float>&& params_values);
 
@@ -26,15 +26,15 @@ namespace era_engine
 
         const std::vector<float>* get_feature_values(rttr::type type) const;
 
-		void clear();
+        void clear();
 
-		template <class T>
-		const std::vector<float>* get_feature_values() const
-		{
-			return get_feature_values(rttr::type::get<T>());
-		}
+        template <class T>
+        const std::vector<float>* get_feature_values() const
+        {
+            return get_feature_values(rttr::type::get<T>());
+        }
 
-	private:
-		std::vector<Feature> features;
-	};
+    private:
+        std::vector<Feature> features;
+    };
 }

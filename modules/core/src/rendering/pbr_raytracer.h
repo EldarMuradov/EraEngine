@@ -15,7 +15,6 @@ namespace era_engine
         void finalize_for_render();
 
     protected:
-
         void initialize(const wchar* shader_path, uint32 max_payload_size, uint32 max_recursion_depth, const D3D12_ROOT_SIGNATURE_DESC& global_desc);
 
         struct ShaderData // This struct is 32 bytes large, which together with the 32 byte shader identifier is a nice multiple of the required 32-byte-alignment of the binding table entries

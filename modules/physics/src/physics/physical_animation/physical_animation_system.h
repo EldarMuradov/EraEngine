@@ -16,78 +16,80 @@
 
 namespace era_engine
 {
-	class RendererHolderRootComponent;
+    class RendererHolderRootComponent;
 }
 
 namespace era_engine::physics
 {
-	class CollisionsHolderRootComponent;
+    class CollisionsHolderRootComponent;
 
-	class PhysicalAnimationSystem final : public System
-	{
-	public:
-		PhysicalAnimationSystem(World* _world);
+    class PhysicalAnimationSystem final : public System
+    {
+    public:
+        PhysicalAnimationSystem(World* _world);
 
-		void init() override;
-		void update_before_physics(float dt);
-		void update_after_physics(float dt);
+        void init() override;
+        void update_before_physics(float dt);
+        void update_after_physics(float dt);
 
-		void update_normal(float dt);
+        void update_normal(float dt);
 
-		void update_ragdolls(float dt);
+        void update_ragdolls(float dt);
 
-		void update_profile_data(float);
-	private:
-		void filter_states_by_collisions(float dt) const;
+        void update_profile_data(float);
 
-		void update_chains_states(const PhysicalAnimationComponent* physical_animation_component, float dt) const;
+    private:
+        void filter_states_by_collisions(float dt) const;
 
-		void update_chain(const ref<PhysicsLimbChain>& chain,
-			float dt,
-			bool is_in_ragdoll,
-			bool force_simulation = false) const;
+        void update_chains_states(const PhysicalAnimationComponent* physical_animation_component, float dt) const;
 
-		void update_target_pose(PhysicalAnimationComponent* physical_animation_component,
-			const animation::SkeletonPose& current_animation_pose,
-			const animation::Skeleton* skeleton,
-			const trs& ragdoll_world_space_pose);
+        void update_chain(const ref<PhysicsLimbChain>& chain,
+            float dt,
+            bool is_in_ragdoll,
+            bool force_simulation = false) const;
 
-		void update_ragdoll_profiles(PhysicalAnimationComponent* physical_animation_component,
-			const vec3& velocity,
-			float dt,
-			bool force_reload = false) const;
+        void update_target_pose(PhysicalAnimationComponent* physical_animation_component,
+            const animation::SkeletonPose& current_animation_pose,
+            const animation::Skeleton* skeleton,
+            const trs& ragdoll_world_space_pose);
 
-		bool should_be_simulated(Entity ragdoll) const;
+        void update_ragdoll_profiles(PhysicalAnimationComponent* physical_animation_component,
+            const vec3& velocity,
+            float dt,
+            bool force_reload = false) const;
 
-		void load_profiles_asset();
-		bool save_profiles_asset() const;
+        bool should_be_simulated(Entity ragdoll) const;
 
-		const RagdollProfilesAsset* get_profiles_asset(const PhysicalAnimationComponent* physical_animation_component) const;
+        void load_profiles_asset();
+        bool save_profiles_asset() const;
 
-		void process_added_pacs();
+        const RagdollProfilesAsset* get_profiles_asset(const PhysicalAnimationComponent* physical_animation_component) const;
 
-		void on_pac_created(entt::registry& registry, entt::entity entity_handle);
-		void on_pac_removed(entt::registry& registry, entt::entity entity_handle);
+        void process_added_pacs();
 
-		ERA_VIRTUAL_REFLECT(System)
+        void on_pac_created(entt::registry& registry, entt::entity entity_handle);
+        void on_pac_removed(entt::registry& registry, entt::entity entity_handle);
 
-	private:
-		std::vector<Entity::Handle> pacs_to_init;
-		SpinLock sync;
+        ERA_VIRTUAL_REFLECT(System)
 
-		std::vector<PhysicalAnimationComponent*> active_ragdolls;
+    private:
+        std::vector<Entity::Handle> pacs_to_init;
+        SpinLock sync;
 
-		const CollisionsHolderRootComponent* collisions_holder_rc = nullptr;
-		RendererHolderRootComponent* renderer_holder_rc = nullptr;
+        std::vector<PhysicalAnimationComponent*> active_ragdolls;
 
-		entt::group<entt::owned_t<>,
-			entt::get_t<TransformComponent,
-			PhysicalAnimationComponent,
-			animation::AnimationComponent,
-			animation::SkeletonComponent>> ragdolls_group;
+        const CollisionsHolderRootComponent* collisions_holder_rc = nullptr;
+        RendererHolderRootComponent* renderer_holder_rc = nullptr;
 
-		ref<RagdollProfilesAsset> profiles_asset = nullptr;
+        entt::group<entt::owned_t<>,
+            entt::get_t<TransformComponent,
+                PhysicalAnimationComponent,
+                animation::AnimationComponent,
+                animation::SkeletonComponent>>
+            ragdolls_group;
 
-		std::unique_ptr<RagdollDrivePoseSampler> pose_sampler;
-	};
+        ref<RagdollProfilesAsset> profiles_asset = nullptr;
+
+        std::unique_ptr<RagdollDrivePoseSampler> pose_sampler;
+    };
 }

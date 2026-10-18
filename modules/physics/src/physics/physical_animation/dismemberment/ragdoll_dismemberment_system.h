@@ -16,60 +16,61 @@
 
 namespace era_engine
 {
-	class RendererHolderRootComponent;
+    class RendererHolderRootComponent;
 }
 
 namespace era_engine::physics
 {
-	class CollisionsHolderRootComponent;
+    class CollisionsHolderRootComponent;
 
-	class RagdollDismembermentSystem final : public System
-	{
-	public:
-		RagdollDismembermentSystem(World* _world);
+    class RagdollDismembermentSystem final : public System
+    {
+    public:
+        RagdollDismembermentSystem(World* _world);
 
-		void init() override;
-		void update_ragdolls(float dt);
+        void init() override;
+        void update_ragdolls(float dt);
 
-		void process_added_rdcs();
+        void process_added_rdcs();
 
-		void on_rdc_created(entt::registry& registry, entt::entity entity_handle);
+        void on_rdc_created(entt::registry& registry, entt::entity entity_handle);
 
-		void rebuild_multimesh(
-			MultiMesh& multimesh,
-			const DismembermentState& state);
+        void rebuild_multimesh(
+            MultiMesh& multimesh,
+            const DismembermentState& state);
 
-		void process_dismemberment(
-			Entity entity,
-			RagdollDismembermentComponent& rdc,
-			const std::vector<Entity>& dismembered_limbs);
+        void process_dismemberment(
+            Entity entity,
+            RagdollDismembermentComponent& rdc,
+            const std::vector<Entity>& dismembered_limbs);
 
-		void start_dismemberment_task(
-			Entity entity,
-			RagdollDismembermentComponent& rdc);
+        void start_dismemberment_task(
+            Entity entity,
+            RagdollDismembermentComponent& rdc);
 
-		void apply_dismemberment_result(
-			Entity entity,
-			PhysicalAnimationComponent& pac,
-			RagdollDismembermentComponent& rdc);
+        void apply_dismemberment_result(
+            Entity entity,
+            PhysicalAnimationComponent& pac,
+            RagdollDismembermentComponent& rdc);
 
-		ERA_VIRTUAL_REFLECT(System)
+        ERA_VIRTUAL_REFLECT(System)
 
-	private:
-		std::vector<Entity::Handle> rdcs_to_init;
-		std::vector<RagdollDismembermentComponent*> active_ragdolls;
+    private:
+        std::vector<Entity::Handle> rdcs_to_init;
+        std::vector<RagdollDismembermentComponent*> active_ragdolls;
 
-		SpinLock sync;
+        SpinLock sync;
 
-		ref<RagdollDismembermentProfile> dismemberment_profile;
+        ref<RagdollDismembermentProfile> dismemberment_profile;
 
-		const CollisionsHolderRootComponent* collisions_holder_rc = nullptr;
-		RendererHolderRootComponent* renderer_holder_rc = nullptr;
+        const CollisionsHolderRootComponent* collisions_holder_rc = nullptr;
+        RendererHolderRootComponent* renderer_holder_rc = nullptr;
 
-		entt::group<entt::owned_t<>,
-			entt::get_t<TransformComponent,
-			PhysicalAnimationComponent,
-			RagdollDismembermentComponent,
-			animation::SkeletonComponent>> ragdolls_group;
-	};
+        entt::group<entt::owned_t<>,
+            entt::get_t<TransformComponent,
+                PhysicalAnimationComponent,
+                RagdollDismembermentComponent,
+                animation::SkeletonComponent>>
+            ragdolls_group;
+    };
 }

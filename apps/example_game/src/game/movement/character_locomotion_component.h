@@ -6,27 +6,27 @@
 
 namespace era_engine
 {
-	class SearchResult;
+    class SearchResult;
 
-	class CharacterLocomotionComponent final : public Component
-	{
-	public:
-		CharacterLocomotionComponent() = default;
-		CharacterLocomotionComponent(ref<Entity::EcsData> _data);
+    class CharacterLocomotionComponent final : public Component
+    {
+    public:
+        CharacterLocomotionComponent() = default;
+        CharacterLocomotionComponent(ref<Entity::EcsData> _data);
 
-		~CharacterLocomotionComponent() override;
+        ~CharacterLocomotionComponent() override;
 
-		std::string get_motion_database_id() const;
-		bool need_force_start_search() const;
-		void on_search_succeeded(const SearchResult&) const;
+        std::string get_motion_database_id() const;
+        bool need_force_start_search() const;
+        void on_search_succeeded(const SearchResult&) const;
 
-		void on_deserialized() override;
+        void on_deserialized() override;
 
-		mutable vec3 prev_input = vec3::zero;
+        mutable vec3 prev_input = vec3::zero;
 
-	private:
-		bool bind_motion_data();
+    private:
+        bool bind_motion_data();
 
-		ERA_VIRTUAL_REFLECT(Component)
-	};
+        ERA_VIRTUAL_REFLECT(Component)
+    };
 }

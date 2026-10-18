@@ -4,24 +4,24 @@
 
 namespace era_engine
 {
-	class RegistrableVar;
+    class RegistrableVar;
 
-	class ERA_CORE_API DebugVarsStorage final
-	{
-	public:
-		DebugVarsStorage();
+    class ERA_CORE_API DebugVarsStorage final
+    {
+    public:
+        DebugVarsStorage();
 
-		static DebugVarsStorage* get_instance();
+        static DebugVarsStorage* get_instance();
 
-		void register_var(RegistrableVar* var);
+        void register_var(RegistrableVar* var);
 
-		std::vector<RegistrableVar*>& get_vars();
+        std::vector<RegistrableVar*>& get_vars();
 
-		void reset_all();
+        void reset_all();
 
-		void draw_vars(bool& opened);
+        void draw_vars(bool& opened);
 
-	private:
-		std::vector<RegistrableVar*> vars;
-	};
+    private:
+        std::vector<RegistrableVar*> vars;
+    };
 }

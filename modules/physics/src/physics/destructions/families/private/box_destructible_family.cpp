@@ -13,105 +13,105 @@
 
 namespace era_engine::physics
 {
-	BoxDestructibleFamily::BoxDestructibleFamily(World* _world,
-		Nv::Blast::ExtPxManager& _px_manager,
-		DestructibleAsset* _blast_asset,
-		const DestructibleAsset::ActorDesc& desc)
-		: DestructibleFamily(_world, _px_manager, _blast_asset)
-	{
-		using namespace Nv::Blast;
+    BoxDestructibleFamily::BoxDestructibleFamily(World* _world,
+        Nv::Blast::ExtPxManager& _px_manager,
+        DestructibleAsset* _blast_asset,
+        const DestructibleAsset::ActorDesc& desc)
+        : DestructibleFamily(_world, _px_manager, _blast_asset)
+    {
+        using namespace Nv::Blast;
 
-		MeshBuilder builder;
+        MeshBuilder builder;
 
-		box_render_material = create_pbr_material_async({ "", "" });
-		box_render_material->shader = PBR_MATERIAL_SHADER_DOUBLE_SIDED;
+        box_render_material = create_pbr_material_async({"", ""});
+        box_render_material->shader = PBR_MATERIAL_SHADER_DOUBLE_SIDED;
 
-		box_mesh = make_ref<MultiMesh>();
-		builder.push_box({ });
-		box_mesh->submeshes.push_back({ builder.end_submesh(), {}, trs::identity, box_render_material });
+        box_mesh = make_ref<MultiMesh>();
+        builder.push_box({});
+        box_mesh->submeshes.push_back({builder.end_submesh(), {}, trs::identity, box_render_material});
 
-		box_mesh->mesh = builder.create_dx_mesh();
+        box_mesh->mesh = builder.create_dx_mesh();
 
-		const ExtPxAsset* px_asset = blast_asset->px_asset;
-		const uint32 chunk_count = px_asset->getChunkCount();
-		const ExtPxChunk* chunks = px_asset->getChunks();
-		const ExtPxSubchunk* sub_chunks = px_asset->getSubchunks();
+        const ExtPxAsset* px_asset = blast_asset->px_asset;
+        const uint32 chunk_count = px_asset->getChunkCount();
+        const ExtPxChunk* chunks = px_asset->getChunks();
+        const ExtPxSubchunk* sub_chunks = px_asset->getSubchunks();
 
-		const Entity::Handle root_handle = root_entity.get().get_handle();
+        const Entity::Handle root_handle = root_entity.get().get_handle();
 
-		entities.reserve(chunk_count);
-		for (uint32 i = 0; i < chunk_count; ++i)
-		{
-			Entity chunk_entity = world->create_entity();
-			chunk_entity.add_component<TransientComponent>();
+        entities.reserve(chunk_count);
+        for (uint32 i = 0; i < chunk_count; ++i)
+        {
+            Entity chunk_entity = world->create_entity();
+            chunk_entity.add_component<TransientComponent>();
 
-			chunk_entity.set_parent(root_handle);
+            chunk_entity.set_parent(root_handle);
 
-			const vec3 scale = physx::create_vec3(sub_chunks[chunks[i].firstSubchunkIndex].geometry.scale.scale);
+            const vec3 scale = physx::create_vec3(sub_chunks[chunks[i].firstSubchunkIndex].geometry.scale.scale);
 
-			TransformComponent* transform_component = chunk_entity.get_component<TransformComponent>();
-			transform_component->set_world_scale(scale);
+            TransformComponent* transform_component = chunk_entity.get_component<TransformComponent>();
+            transform_component->set_world_scale(scale);
 
-			MeshComponent* mesh_component = chunk_entity.add_component<MeshComponent>(box_mesh);
-			mesh_component->is_hidden = true;
+            MeshComponent* mesh_component = chunk_entity.add_component<MeshComponent>(box_mesh);
+            mesh_component->is_hidden = true;
 
-			entities.emplace_back(chunk_entity);
-		}
+            entities.emplace_back(chunk_entity);
+        }
 
-		initialize(desc);
-	}
+        initialize(desc);
+    }
 
-	BoxDestructibleFamily::~BoxDestructibleFamily()
-	{
-	}
+    BoxDestructibleFamily::~BoxDestructibleFamily()
+    {
+    }
 
-	void BoxDestructibleFamily::on_actor_created(const Nv::Blast::ExtPxActor& actor)
-	{
-		const uint32* chunk_indices = actor.getChunkIndices();
-		uint32 chunk_count = actor.getChunkCount();
-		for (uint32 i = 0; i < chunk_count; ++i)
-		{
-			const uint32 chunk_index = chunk_indices[i];
+    void BoxDestructibleFamily::on_actor_created(const Nv::Blast::ExtPxActor& actor)
+    {
+        const uint32* chunk_indices = actor.getChunkIndices();
+        uint32 chunk_count = actor.getChunkCount();
+        for (uint32 i = 0; i < chunk_count; ++i)
+        {
+            const uint32 chunk_index = chunk_indices[i];
 
-			Entity chunk_entity = entities[chunk_index].get();
+            Entity chunk_entity = entities[chunk_index].get();
 
-			chunk_entity.get_component<MeshComponent>()->is_hidden = false;
-		}
-	}
+            chunk_entity.get_component<MeshComponent>()->is_hidden = false;
+        }
+    }
 
-	void BoxDestructibleFamily::on_actor_update(const Nv::Blast::ExtPxActor& actor)
-	{
-		using namespace physx;
-		using namespace Nv::Blast;
+    void BoxDestructibleFamily::on_actor_update(const Nv::Blast::ExtPxActor& actor)
+    {
+        using namespace physx;
+        using namespace Nv::Blast;
 
-		const ExtPxChunk* chunks = blast_asset->px_asset->getChunks();
-		const ExtPxSubchunk* sub_chunks = blast_asset->px_asset->getSubchunks();
-		const uint32* chunk_indices = actor.getChunkIndices();
-		uint32 chunk_count = actor.getChunkCount();
-		for (uint32 i = 0; i < chunk_count; ++i)
-		{
-			const uint32 chunk_index = chunk_indices[i];
+        const ExtPxChunk* chunks = blast_asset->px_asset->getChunks();
+        const ExtPxSubchunk* sub_chunks = blast_asset->px_asset->getSubchunks();
+        const uint32* chunk_indices = actor.getChunkIndices();
+        uint32 chunk_count = actor.getChunkCount();
+        for (uint32 i = 0; i < chunk_count; ++i)
+        {
+            const uint32 chunk_index = chunk_indices[i];
 
-			const PxTransform world_transform = actor.getPhysXActor().getGlobalPose() * sub_chunks[chunks[chunk_index].firstSubchunkIndex].transform;
+            const PxTransform world_transform = actor.getPhysXActor().getGlobalPose() * sub_chunks[chunks[chunk_index].firstSubchunkIndex].transform;
 
-			Entity chunk_entity = entities[chunk_index].get();
-			TransformComponent* transform = chunk_entity.get_component<TransformComponent>();
+            Entity chunk_entity = entities[chunk_index].get();
+            TransformComponent* transform = chunk_entity.get_component<TransformComponent>();
 
-			transform->set_world_transform(create_trs(world_transform));
-		}
-	}
+            transform->set_world_transform(create_trs(world_transform));
+        }
+    }
 
-	void BoxDestructibleFamily::on_actor_destroyed(const Nv::Blast::ExtPxActor& actor)
-	{
-		const uint32* chunk_indices = actor.getChunkIndices();
-		uint32 chunk_count = actor.getChunkCount();
-		for (uint32 i = 0; i < chunk_count; ++i)
-		{
-			const uint32 chunk_index = chunk_indices[i];
+    void BoxDestructibleFamily::on_actor_destroyed(const Nv::Blast::ExtPxActor& actor)
+    {
+        const uint32* chunk_indices = actor.getChunkIndices();
+        uint32 chunk_count = actor.getChunkCount();
+        for (uint32 i = 0; i < chunk_count; ++i)
+        {
+            const uint32 chunk_index = chunk_indices[i];
 
-			Entity chunk_entity = entities[chunk_index].get();
+            Entity chunk_entity = entities[chunk_index].get();
 
-			chunk_entity.get_component<MeshComponent>()->is_hidden = true;
-		}
-	}
+            chunk_entity.get_component<MeshComponent>()->is_hidden = true;
+        }
+    }
 }

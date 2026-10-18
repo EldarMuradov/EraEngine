@@ -109,7 +109,7 @@ namespace era_engine
                     spec.name = input;
 
                     uint64 hash = hash_string64(input);
-                    sound_registry.insert({ hash, spec });
+                    sound_registry.insert({hash, spec});
 
                     input[0] = 0;
                 }

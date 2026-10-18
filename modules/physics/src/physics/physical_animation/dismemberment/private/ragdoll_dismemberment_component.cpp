@@ -7,75 +7,75 @@
 
 namespace era_engine::physics
 {
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
-		registration::class_<RagdollDismembermentComponent>("RagdollDismembermentComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
-			.constructor<>();
-		ComponentRegistry::register_component<RagdollDismembermentComponent>();
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
+        registration::class_<RagdollDismembermentComponent>("RagdollDismembermentComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
+            .constructor<>();
+        ComponentRegistry::register_component<RagdollDismembermentComponent>();
 
-		registration::class_<RagdollDismembermentLimbComponent>("RagdollDismembermentLimbComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
-			.constructor<>();
-		ComponentRegistry::register_component<RagdollDismembermentLimbComponent>();
-	}
+        registration::class_<RagdollDismembermentLimbComponent>("RagdollDismembermentLimbComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
+            .constructor<>();
+        ComponentRegistry::register_component<RagdollDismembermentLimbComponent>();
+    }
 
-	RagdollDismembermentLimbComponent::RagdollDismembermentLimbComponent(ref<Entity::EcsData> _data)
-		: Component(_data)
-	{
-	}
+    RagdollDismembermentLimbComponent::RagdollDismembermentLimbComponent(ref<Entity::EcsData> _data)
+        : Component(_data)
+    {
+    }
 
-	void RagdollDismembermentLimbComponent::apply_damage(float damage)
-	{
-		if (!can_be_dismembered)
-		{
-			return;
-		}
+    void RagdollDismembermentLimbComponent::apply_damage(float damage)
+    {
+        if (!can_be_dismembered)
+        {
+            return;
+        }
 
-		if (damage <= 0.0f)
-		{
-			return;
-		}
+        if (damage <= 0.0f)
+        {
+            return;
+        }
 
-		if (is_dismembered())
-		{
-			return;
-		}
+        if (is_dismembered())
+        {
+            return;
+        }
 
-		current_health -= damage;
+        current_health -= damage;
 
-		if (current_health <= 0.0f)
-		{
-			trigger_dismembering();
-			current_health = 0.0f;
-		}
-	}
+        if (current_health <= 0.0f)
+        {
+            trigger_dismembering();
+            current_health = 0.0f;
+        }
+    }
 
-	void RagdollDismembermentLimbComponent::trigger_dismembering()
-	{
-		if (!can_be_dismembered || is_dismembered())
-		{
-			return;
-		}
-		state = DismemberState::PENDING;
-	}
+    void RagdollDismembermentLimbComponent::trigger_dismembering()
+    {
+        if (!can_be_dismembered || is_dismembered())
+        {
+            return;
+        }
+        state = DismemberState::PENDING;
+    }
 
-	bool RagdollDismembermentLimbComponent::is_dismembered() const
-	{
-		return state == DismemberState::DISMEMBERED;
-	}
+    bool RagdollDismembermentLimbComponent::is_dismembered() const
+    {
+        return state == DismemberState::DISMEMBERED;
+    }
 
-	bool RagdollDismembermentLimbComponent::is_pending() const
-	{
-		return state == DismemberState::PENDING;
-	}
+    bool RagdollDismembermentLimbComponent::is_pending() const
+    {
+        return state == DismemberState::PENDING;
+    }
 
-	DismemberState RagdollDismembermentLimbComponent::get_current_state() const
-	{
-		return state;
-	}
+    DismemberState RagdollDismembermentLimbComponent::get_current_state() const
+    {
+        return state;
+    }
 
-	RagdollDismembermentComponent::RagdollDismembermentComponent(ref<Entity::EcsData> _data)
-		: Component(_data)
-	{
-	}
+    RagdollDismembermentComponent::RagdollDismembermentComponent(ref<Entity::EcsData> _data)
+        : Component(_data)
+    {
+    }
 }

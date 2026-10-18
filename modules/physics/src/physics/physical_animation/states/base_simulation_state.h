@@ -9,37 +9,37 @@
 
 namespace era_engine::physics
 {
-	class PhysicalAnimationLimbComponent;
+    class PhysicalAnimationLimbComponent;
 
-	enum class SimulationStateType : uint8
-	{
-		DISABLED = 0,
-		BLEND_IN,
-		ENABLED,
-		BLEND_OUT,
-		RAGDOLL,
+    enum class SimulationStateType : uint8
+    {
+        DISABLED = 0,
+        BLEND_IN,
+        ENABLED,
+        BLEND_OUT,
+        RAGDOLL,
 
-		USER_STATE
-	};
+        USER_STATE
+    };
 
-	class ERA_PHYSICS_API BaseSimulationState
-	{
-	public:
-		BaseSimulationState() = default;
-		BaseSimulationState(ComponentPtr _physical_animation_component_ptr);
-		virtual ~BaseSimulationState();
+    class ERA_PHYSICS_API BaseSimulationState
+    {
+    public:
+        BaseSimulationState() = default;
+        BaseSimulationState(ComponentPtr _physical_animation_component_ptr);
+        virtual ~BaseSimulationState();
 
-		virtual SimulationStateType try_switch_to(SimulationStateType desired_type) const;
+        virtual SimulationStateType try_switch_to(SimulationStateType desired_type) const;
 
-		virtual void on_enter();
-		virtual void on_exit();
+        virtual void on_enter();
+        virtual void on_exit();
 
-		virtual void update(float dt);
+        virtual void update(float dt);
 
-	protected:
-		void traverse_simulation_graph(const std::function<void(PhysicalAnimationLimbComponent*)>& action_for_limb);
+    protected:
+        void traverse_simulation_graph(const std::function<void(PhysicalAnimationLimbComponent*)>& action_for_limb);
 
-	protected:
-		ComponentPtr physical_animation_component_ptr = nullptr;
-	};
+    protected:
+        ComponentPtr physical_animation_component_ptr = nullptr;
+    };
 }

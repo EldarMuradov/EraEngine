@@ -43,19 +43,19 @@ namespace era_engine::physics
         if (physical_animation_component->simulated)
         {
             auto process_limb = [](PhysicalAnimationLimbComponent* limb_component)
+            {
+                if (limb_component->get_current_state_type() == PhysicalLimbStateType::DISMEMBERED ||
+                    limb_component->get_current_state_type() == PhysicalLimbStateType::PARTIAL_DISMEMBERED)
                 {
-                    if (limb_component->get_current_state_type() == PhysicalLimbStateType::DISMEMBERED ||
-                        limb_component->get_current_state_type() == PhysicalLimbStateType::PARTIAL_DISMEMBERED)
-                    {
-                        return;
-                    }
+                    return;
+                }
 
-                    limb_component->collision.reset();
-                    limb_component->force_switch_state(PhysicalLimbStateType::KINEMATIC);
+                limb_component->collision.reset();
+                limb_component->force_switch_state(PhysicalLimbStateType::KINEMATIC);
 
-                    PhysicalAnimationUtils::set_motor_drive_active(limb_component, false);
-                    PhysicalAnimationUtils::set_simulation_for_limb(limb_component, false, false);
-                };
+                PhysicalAnimationUtils::set_motor_drive_active(limb_component, false);
+                PhysicalAnimationUtils::set_simulation_for_limb(limb_component, false, false);
+            };
 
             traverse_simulation_graph(process_limb);
 
@@ -83,15 +83,15 @@ namespace era_engine::physics
         const trs& ragdoll_transform = ragdoll.get_component<TransformComponent>()->get_world_transform();
 
         auto process_limb = [&skeleton_component, &ragdoll_transform](PhysicalAnimationLimbComponent* limb_component)
+        {
+            if (limb_component->get_current_state_type() == PhysicalLimbStateType::DISMEMBERED ||
+                limb_component->get_current_state_type() == PhysicalLimbStateType::PARTIAL_DISMEMBERED)
             {
-                if (limb_component->get_current_state_type() == PhysicalLimbStateType::DISMEMBERED ||
-                    limb_component->get_current_state_type() == PhysicalLimbStateType::PARTIAL_DISMEMBERED)
-                {
-                    return;
-                }
+                return;
+            }
 
-                PhysicalAnimationUtils::force_sync_limb_to_skeleton(limb_component, skeleton_component, ragdoll_transform);
-            };
+            PhysicalAnimationUtils::force_sync_limb_to_skeleton(limb_component, skeleton_component, ragdoll_transform);
+        };
 
         traverse_simulation_graph(process_limb);
     }

@@ -8,19 +8,19 @@
 
 namespace era_engine
 {
-	struct DXTexture;
+    struct DXTexture;
 
-	struct DXRenderTarget
-	{
-		DXRenderTarget(uint32 width, uint32 height)
-		{
-			viewport = { 0.f, 0.f, (float)width, (float)height, 0.f, 1.f };
-		}
+    struct DXRenderTarget
+    {
+        DXRenderTarget(uint32 width, uint32 height)
+        {
+            viewport = {0.f, 0.f, (float)width, (float)height, 0.f, 1.f};
+        }
 
-		NODISCARD DXRenderTarget& color_attachment(const ref<DXTexture>& attachment, DXRTVDescriptorHandle use_if_null = CD3DX12_DEFAULT())
-		{
-			ASSERT(push_index < arraysize(rtv));
-			rtv[push_index++] = attachment ? attachment->default_rtv : use_if_null;
+        NODISCARD DXRenderTarget& color_attachment(const ref<DXTexture>& attachment, DXRTVDescriptorHandle use_if_null = CD3DX12_DEFAULT())
+        {
+            ASSERT(push_index < arraysize(rtv));
+            rtv[push_index++] = attachment ? attachment->default_rtv : use_if_null;
 
             if (attachment)
             {
@@ -29,22 +29,22 @@ namespace era_engine
             }
 
             return *this;
-		}
+        }
 
-		NODISCARD DXRenderTarget& depth_attachment(const ref<DXTexture>& attachment, DXDSVDescriptorHandle use_if_null = CD3DX12_DEFAULT())
-		{
-			ASSERT(!dsv);
-			dsv = attachment ? attachment->default_dsv : use_if_null;
-			return *this;
-		}
+        NODISCARD DXRenderTarget& depth_attachment(const ref<DXTexture>& attachment, DXDSVDescriptorHandle use_if_null = CD3DX12_DEFAULT())
+        {
+            ASSERT(!dsv);
+            dsv = attachment ? attachment->default_dsv : use_if_null;
+            return *this;
+        }
 
-		uint32 num_attachments = 0;
-		D3D12_VIEWPORT viewport;
+        uint32 num_attachments = 0;
+        D3D12_VIEWPORT viewport;
 
-		DXRTVDescriptorHandle rtv[8];
-		DXDSVDescriptorHandle dsv = CD3DX12_DEFAULT();
+        DXRTVDescriptorHandle rtv[8];
+        DXDSVDescriptorHandle dsv = CD3DX12_DEFAULT();
 
-	private:
-		uint32 push_index = 0;
-	};
+    private:
+        uint32 push_index = 0;
+    };
 }

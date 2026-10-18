@@ -7,15 +7,15 @@
 namespace era_engine
 {
 
-	struct ERA_CORE_API SystemInfo
-	{
-		std::string cpu_name;
-		std::string gpu_name;
+    struct ERA_CORE_API SystemInfo
+    {
+        std::string cpu_name;
+        std::string gpu_name;
 
-		// In bytes.
-		uint64 main_memory;
-		uint64 video_memory;
-	};
+        // In bytes.
+        uint64 main_memory;
+        uint64 video_memory;
+    };
 
-	ERA_CORE_API SystemInfo get_system_info();
+    ERA_CORE_API SystemInfo get_system_info();
 }

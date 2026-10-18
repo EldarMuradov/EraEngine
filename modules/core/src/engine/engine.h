@@ -9,61 +9,62 @@
 namespace era_engine
 {
 
-	class ERA_CORE_API Engine final
-	{
-		Engine(int argc, char** argv);
-		~Engine();
-	public:
-		Engine(const Engine&) = delete;
-		Engine& operator=(const Engine&) const = delete;
+    class ERA_CORE_API Engine final
+    {
+        Engine(int argc, char** argv);
+        ~Engine();
 
-		static Engine* instance();
-		static void release();
+    public:
+        Engine(const Engine&) = delete;
+        Engine& operator=(const Engine&) const = delete;
 
-		static Engine* create_instance(int argc, char** argv);
+        static Engine* instance();
+        static void release();
 
-		bool run(const std::function<void(void)>& initial_task = nullptr);
+        static Engine* create_instance(int argc, char** argv);
 
-		void terminate();
+        bool run(const std::function<void(void)>& initial_task = nullptr);
 
-		template<typename Object>
-		Object* get(std::vector<rttr::argument> args = std::vector<rttr::argument>())
-		{
-			rttr::type type = rttr::type::get<Object>();
-			Engine* engine = instance();
+        void terminate();
 
-			auto iter = engine->single_objects.find(type);
-			if (iter != engine->single_objects.end())
-			{
-				return iter->second.get_value<Object*>();
-			}
+        template <typename Object>
+        Object* get(std::vector<rttr::argument> args = std::vector<rttr::argument>())
+        {
+            rttr::type type = rttr::type::get<Object>();
+            Engine* engine = instance();
 
-			rttr::variant object = type.create(args);
-			engine->single_objects.emplace(type, object);
-			return object.get_value<Object*>();
-		}
+            auto iter = engine->single_objects.find(type);
+            if (iter != engine->single_objects.end())
+            {
+                return iter->second.get_value<Object*>();
+            }
 
-	private:
-		bool update();
+            rttr::variant object = type.create(args);
+            engine->single_objects.emplace(type, object);
+            return object.get_value<Object*>();
+        }
 
-		bool running = false;
+    private:
+        bool update();
 
-		std::unordered_map<rttr::type, rttr::variant> single_objects;
+        bool running = false;
 
-		static Engine* instance_object;
-	};
+        std::unordered_map<rttr::type, rttr::variant> single_objects;
 
-	template<typename Object>
-	inline Object* get_object(std::vector<rttr::argument> args = std::vector<rttr::argument>())
-	{
-		return Engine::instance()->get<Object>(args);
-	}
+        static Engine* instance_object;
+    };
 
-	template<typename Object>
-	inline Object* get_transient_object(std::vector<rttr::argument> args = std::vector<rttr::argument>())
-	{
-		rttr::type type = rttr::type::get<Object>();
-		rttr::variant object = type.create(args);
-		return object.get_value<Object*>();
-	}
+    template <typename Object>
+    inline Object* get_object(std::vector<rttr::argument> args = std::vector<rttr::argument>())
+    {
+        return Engine::instance()->get<Object>(args);
+    }
+
+    template <typename Object>
+    inline Object* get_transient_object(std::vector<rttr::argument> args = std::vector<rttr::argument>())
+    {
+        rttr::type type = rttr::type::get<Object>();
+        rttr::variant object = type.create(args);
+        return object.get_value<Object*>();
+    }
 }

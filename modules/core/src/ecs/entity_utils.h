@@ -12,50 +12,50 @@
 
 namespace era_engine
 {
-	class ERA_CORE_API EntityUtils final
-	{
-		EntityUtils() = delete;
+    class ERA_CORE_API EntityUtils final
+    {
+        EntityUtils() = delete;
 
-	public:
-		template <typename Context_, typename... Args_>
-		static Context_& create_or_get_context_variable(entt::registry& registry, Args_&&... a)
-		{
-			auto& c = registry.ctx();
-			Context_* context = c.find<Context_>();
-			if (!context)
-			{
-				context = &c.emplace<Context_>(std::forward<Args_>(a)...);
-			}
+    public:
+        template <typename Context_, typename... Args_>
+        static Context_& create_or_get_context_variable(entt::registry& registry, Args_&&... a)
+        {
+            auto& c = registry.ctx();
+            Context_* context = c.find<Context_>();
+            if (!context)
+            {
+                context = &c.emplace<Context_>(std::forward<Args_>(a)...);
+            }
 
-			return *context;
-		}
+            return *context;
+        }
 
-		template <typename Context_>
-		static Context_& get_context_variable(entt::registry& registry)
-		{
-			auto& c = registry.ctx();
-			return *c.find<Context_>();
-		}
+        template <typename Context_>
+        static Context_& get_context_variable(entt::registry& registry)
+        {
+            auto& c = registry.ctx();
+            return *c.find<Context_>();
+        }
 
-		template <typename Context_>
-		static Context_* try_get_context_variable(entt::registry& registry)
-		{
-			auto& c = registry.ctx();
-			return c.find<Context_>();
-		}
+        template <typename Context_>
+        static Context_* try_get_context_variable(entt::registry& registry)
+        {
+            auto& c = registry.ctx();
+            return c.find<Context_>();
+        }
 
-		template <typename Context_>
-		static bool does_context_variable_exist(entt::registry& registry)
-		{
-			auto& c = registry.ctx();
-			return c.contains<Context_>();
-		}
+        template <typename Context_>
+        static bool does_context_variable_exist(entt::registry& registry)
+        {
+            auto& c = registry.ctx();
+            return c.contains<Context_>();
+        }
 
-		template <typename Context_>
-		static void delete_context_variable(entt::registry& registry)
-		{
-			auto& c = registry.ctx();
-			c.erase<Context_>();
-		}
-	};
+        template <typename Context_>
+        static void delete_context_variable(entt::registry& registry)
+        {
+            auto& c = registry.ctx();
+            c.erase<Context_>();
+        }
+    };
 }

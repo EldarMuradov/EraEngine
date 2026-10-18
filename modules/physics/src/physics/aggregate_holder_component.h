@@ -10,23 +10,23 @@
 
 namespace era_engine::physics
 {
-	class ERA_PHYSICS_API AggregateHolderComponent : public Component
-	{
-	public:
-		AggregateHolderComponent();
+    class ERA_PHYSICS_API AggregateHolderComponent : public Component
+    {
+    public:
+        AggregateHolderComponent();
 
-		AggregateHolderComponent(ref<Entity::EcsData> _data);
-		~AggregateHolderComponent() override;
+        AggregateHolderComponent(ref<Entity::EcsData> _data);
+        ~AggregateHolderComponent() override;
 
-		bool enable_self_collision = true;
-		uint32 max_actors = 32;
+        bool enable_self_collision = true;
+        uint32 max_actors = 32;
 
-		ERA_VIRTUAL_REFLECT(Component)
+        ERA_VIRTUAL_REFLECT(Component)
 
-	private:
-		ref<Aggregate> aggregate;
+    private:
+        ref<Aggregate> aggregate;
 
-		friend class Physics;
-		friend class PhysicsSystem;
-	};
+        friend class Physics;
+        friend class PhysicsSystem;
+    };
 }

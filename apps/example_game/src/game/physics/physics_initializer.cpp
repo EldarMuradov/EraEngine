@@ -14,60 +14,60 @@
 
 namespace era_engine
 {
-	PhysicsInitializer::PhysicsInitializer(World* _world)
-		: world(_world)
-	{
-	}
+    PhysicsInitializer::PhysicsInitializer(World* _world)
+        : world(_world)
+    {
+    }
 
-	PhysicsInitializer::~PhysicsInitializer()
-	{
-	}
+    PhysicsInitializer::~PhysicsInitializer()
+    {
+    }
 
-	void PhysicsInitializer::init()
-	{
-		using namespace physics;
+    void PhysicsInitializer::init()
+    {
+        using namespace physics;
 
-		CollisionsHolderRootComponent* collision_holder_rc = world->add_root_component<CollisionsHolderRootComponent>();
-		ASSERT(collision_holder_rc != nullptr);
+        CollisionsHolderRootComponent* collision_holder_rc = world->add_root_component<CollisionsHolderRootComponent>();
+        ASSERT(collision_holder_rc != nullptr);
 
-		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::RAGDOLL), 
-			static_cast<uint32>(CollisionType::TERRAIN), true);
+        collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::RAGDOLL),
+            static_cast<uint32>(CollisionType::TERRAIN), true);
 
-		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::RAGDOLL), 
-			static_cast<uint32>(GameCollisionType::STATICS), true);
+        collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::RAGDOLL),
+            static_cast<uint32>(GameCollisionType::STATICS), true);
 
-		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::RAGDOLL),
-			static_cast<uint32>(CollisionType::RAGDOLL), true);
+        collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::RAGDOLL),
+            static_cast<uint32>(CollisionType::RAGDOLL), true);
 
-		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::RAGDOLL),
-			static_cast<uint32>(GameCollisionType::DYNAMICS), true);
+        collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::RAGDOLL),
+            static_cast<uint32>(GameCollisionType::DYNAMICS), true);
 
-		collision_holder_rc->set_collision_filter(static_cast<uint32>(GameCollisionType::DYNAMICS),
-			static_cast<uint32>(GameCollisionType::DYNAMICS), true);
+        collision_holder_rc->set_collision_filter(static_cast<uint32>(GameCollisionType::DYNAMICS),
+            static_cast<uint32>(GameCollisionType::DYNAMICS), true);
 
-		collision_holder_rc->set_collision_filter(static_cast<uint32>(GameCollisionType::STATICS),
-			static_cast<uint32>(GameCollisionType::DYNAMICS), true);
+        collision_holder_rc->set_collision_filter(static_cast<uint32>(GameCollisionType::STATICS),
+            static_cast<uint32>(GameCollisionType::DYNAMICS), true);
 
-		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::TERRAIN),
-			static_cast<uint32>(GameCollisionType::DYNAMICS), true);
+        collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::TERRAIN),
+            static_cast<uint32>(GameCollisionType::DYNAMICS), true);
 
-		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::TERRAIN),
-			static_cast<uint32>(GameCollisionType::CCT), true);
+        collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::TERRAIN),
+            static_cast<uint32>(GameCollisionType::CCT), true);
 
-		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::VEHICLE),
-			static_cast<uint32>(GameCollisionType::DYNAMICS), true);
+        collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::VEHICLE),
+            static_cast<uint32>(GameCollisionType::DYNAMICS), true);
 
-		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::VEHICLE),
-			static_cast<uint32>(GameCollisionType::DYNAMICS), true);
+        collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::VEHICLE),
+            static_cast<uint32>(GameCollisionType::DYNAMICS), true);
 
-		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::VEHICLE),
-			static_cast<uint32>(CollisionType::TERRAIN), true);
+        collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::VEHICLE),
+            static_cast<uint32>(CollisionType::TERRAIN), true);
 
-		collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::VEHICLE),
-			static_cast<uint32>(CollisionType::RAGDOLL), true);
+        collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::VEHICLE),
+            static_cast<uint32>(CollisionType::RAGDOLL), true);
 
-		//collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::VEHICLE),
-		//	static_cast<uint32>(GameCollisionType::CCT), true);
-	}
+        // collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::VEHICLE),
+        //	static_cast<uint32>(GameCollisionType::CCT), true);
+    }
 
 }

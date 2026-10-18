@@ -23,7 +23,7 @@ namespace era_engine
         uint32 result = (uint32)all_instances.size();
         D3D12_RAYTRACING_INSTANCE_DESC& instance = all_instances.emplace_back();
 
-        instance.Flags = 0;// D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE;
+        instance.Flags = 0; // D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE;
         instance.InstanceContributionToHitGroupIndex = type.instance_contribution_to_hit_group_index;
 
         mat4 m = transpose(trs_to_mat4(transform));
@@ -32,7 +32,7 @@ namespace era_engine
         instance.InstanceMask = 0xFF;
         instance.InstanceID = 0; // This value will be exposed to the shader via InstanceID()
 
-        return { result };
+        return {result};
     }
 
     void RaytracingTLAS::build(DXCommandList* cl)

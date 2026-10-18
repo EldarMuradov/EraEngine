@@ -11,28 +11,28 @@
 
 namespace era_engine
 {
-	class RendererHolderRootComponent;
+    class RendererHolderRootComponent;
 
-	class EditorToolsSystem final : public System
-	{
-	public:
-		EditorToolsSystem(World* _world);
-		~EditorToolsSystem() override;
+    class EditorToolsSystem final : public System
+    {
+    public:
+        EditorToolsSystem(World* _world);
+        ~EditorToolsSystem() override;
 
-		void init() override;
-		void update(float dt) override;
+        void init() override;
+        void update(float dt) override;
 
-		ERA_VIRTUAL_REFLECT(System)
+        ERA_VIRTUAL_REFLECT(System)
 
-	private:
-		void draw_world();
+    private:
+        void draw_world();
 
-		void draw_main_menu();
-		void draw_settings();
+        void draw_main_menu();
+        void draw_settings();
 
-	private:
-		RendererHolderRootComponent* renderer_holder_rc = nullptr;
+    private:
+        RendererHolderRootComponent* renderer_holder_rc = nullptr;
 
-		std::unique_ptr<SceneEditorPanels> scene_panels;
-	};
+        std::unique_ptr<SceneEditorPanels> scene_panels;
+    };
 }

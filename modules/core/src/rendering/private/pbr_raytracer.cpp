@@ -9,26 +9,25 @@ namespace era_engine
         // 6 Elements: Vertex buffer, index buffer, albedo texture, normal map, roughness texture, metallic texture.
         CD3DX12_DESCRIPTOR_RANGE hit_srv_range(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 6, 0, 1);
         CD3DX12_ROOT_PARAMETER hit_root_parameters[] =
-        {
-            root_constants<PBRMaterialCB>(0, 1),
-            root_descriptor_table(1, &hit_srv_range),
-        };
+            {
+                root_constants<PBRMaterialCB>(0, 1),
+                root_descriptor_table(1, &hit_srv_range),
+            };
 
         D3D12_ROOT_SIGNATURE_DESC hit_desc =
-        {
-            arraysize(hit_root_parameters), hit_root_parameters
-        };
+            {
+                arraysize(hit_root_parameters), hit_root_parameters};
 
-        RaytracingMeshHitgroup radiance_hitgroup = { L"radianceClosestHit" };
-        RaytracingMeshHitgroup shadow_hitgroup = { };
+        RaytracingMeshHitgroup radiance_hitgroup = {L"radianceClosestHit"};
+        RaytracingMeshHitgroup shadow_hitgroup = {};
 
         pipeline =
             RaytracingPipelineBuilder(shader_path, max_payload_size, max_recursion_depth, true, false)
-            .global_root_signature(global_desc)
-            .raygen(L"rayGen")
-            .hitgroup(L"RADIANCE", L"radianceMiss", radiance_hitgroup, hit_desc)
-            .hitgroup(L"SHADOW", L"shadowMiss", shadow_hitgroup)
-            .finish();
+                .global_root_signature(global_desc)
+                .raygen(L"rayGen")
+                .hitgroup(L"RADIANCE", L"radianceMiss", radiance_hitgroup, hit_desc)
+                .hitgroup(L"SHADOW", L"shadowMiss", shadow_hitgroup)
+                .finish();
 
         ASSERT(num_ray_types == 0 || num_ray_types == (uint32)pipeline.shader_binding_table_desc.hit_groups.size());
         num_ray_types = (uint32)pipeline.shader_binding_table_desc.hit_groups.size();
@@ -63,7 +62,7 @@ namespace era_engine
 
         ShaderData* hit_data = (ShaderData*)alloca(sizeof(ShaderData) * num_ray_types);
 
-        Lock lock{ mutex };
+        Lock lock{mutex};
 
         for (uint32 i = 0; i < num_geometries; ++i)
         {
@@ -74,8 +73,8 @@ namespace era_engine
 
             DXGPUDescriptorHandle base = descriptor_heap.current_gpu;
 
-            descriptor_heap.push().create_buffer_srv(blas->geometries[i].vertex_buffer.others, { submesh.base_vertex, submesh.num_vertices });
-            descriptor_heap.push().create_raw_buffer_srv(blas->geometries[i].index_buffer, { submesh.first_index, submesh.num_indices });
+            descriptor_heap.push().create_buffer_srv(blas->geometries[i].vertex_buffer.others, {submesh.base_vertex, submesh.num_vertices});
+            descriptor_heap.push().create_raw_buffer_srv(blas->geometries[i].index_buffer, {submesh.first_index, submesh.num_indices});
 
             uint32 flags = 0;
             push_texture(material->albedo, flags, MATERIAL_USE_ALBEDO_TEXTURE);
@@ -93,8 +92,7 @@ namespace era_engine
                 material->emission.xyz,
                 material->roughness_override,
                 material->metallic_override,
-                flags
-            );
+                flags);
             hit_data[0].resources = base;
 
             // The other shader types don't need any data, so we don't set it here
@@ -104,7 +102,7 @@ namespace era_engine
             }
         }
 
-        RaytracingObjectType result = { blas, instance_contribution_to_hit_group_index };
+        RaytracingObjectType result = {blas, instance_contribution_to_hit_group_index};
 
         instance_contribution_to_hit_group_index += num_geometries * num_ray_types;
 

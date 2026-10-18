@@ -12,7 +12,10 @@ namespace era_engine
 
         for (uint32 i = 0; i < num_threads; ++i)
         {
-            std::thread thread([this, i]() { thread_func(i); });
+            std::thread thread([this, i]()
+                {
+                    thread_func(i);
+                });
 
             HANDLE handle = (HANDLE)thread.native_handle();
             SetThreadPriority(handle, thread_priority);
@@ -28,7 +31,7 @@ namespace era_engine
     void JobQueue::add_continuation(int32 first, JobHandle second)
     {
         JobQueueEntry& first_job = all_jobs[first];
-        //ASSERT(firstJob.continuation.index == -1);
+        // ASSERT(firstJob.continuation.index == -1);
 
         int32 unfinished = first_job.num_unfinished_jobs++;
         if (unfinished == 0)
@@ -112,7 +115,7 @@ namespace era_engine
         if (queue.try_dequeue(handle))
         {
             JobQueueEntry& job = all_jobs[handle];
-            job.function(job.templated_function, job.data, { handle, this });
+            job.function(job.templated_function, job.data, {handle, this});
 
             finish_job(handle);
 
@@ -176,7 +179,7 @@ namespace era_engine
         main_thread_job_queue.wait_for_completion();
     }
 
-    JobHandle schedule_low_priority_job(const DefaultJob& data, JobHandle parent_job/* = {}*/)
+    JobHandle schedule_low_priority_job(const DefaultJob& data, JobHandle parent_job /* = {}*/)
     {
         JobHandle job = low_priority_job_queue.create_job<DefaultJob>([](DefaultJob& job_data, JobHandle job)
             {
@@ -184,7 +187,8 @@ namespace era_engine
                 {
                     job_data.job_func();
                 }
-            }, data, parent_job);
+            },
+            data, parent_job);
 
         return job;
     }

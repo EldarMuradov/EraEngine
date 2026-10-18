@@ -13,38 +13,38 @@
 
 namespace era_engine::ai
 {
-	struct NavNode;
+    struct NavNode;
 
-	class ERA_CORE_API NavigationComponent : public Component
-	{
-	public:
-		enum class NavType
-		{
-			NAV_TYPE_NONE,
-			NAV_TYPE_A_STAR,
-			NAV_TYPE_DIJKSTRA,
-			NAV_TYPE_COUNT
-		};
+    class ERA_CORE_API NavigationComponent : public Component
+    {
+    public:
+        enum class NavType
+        {
+            NAV_TYPE_NONE,
+            NAV_TYPE_A_STAR,
+            NAV_TYPE_DIJKSTRA,
+            NAV_TYPE_COUNT
+        };
 
-		NavigationComponent() = default;
-		NavigationComponent(ref<Entity::EcsData> _data, NavType _type = NavType::NAV_TYPE_A_STAR);
-		virtual ~NavigationComponent();
+        NavigationComponent() = default;
+        NavigationComponent(ref<Entity::EcsData> _data, NavType _type = NavType::NAV_TYPE_A_STAR);
+        virtual ~NavigationComponent();
 
-		void process_path();
+        void process_path();
 
-		ERA_VIRTUAL_REFLECT(Component)
+        ERA_VIRTUAL_REFLECT(Component)
 
-	public:
-		vec3 destination = vec3(0.0f);
+    public:
+        vec3 destination = vec3(0.0f);
 
-		NavType type = NavType::NAV_TYPE_A_STAR;
+        NavType type = NavType::NAV_TYPE_A_STAR;
 
-	private:
-		void create_path(const vec3& to, const vec3& from);
+    private:
+        void create_path(const vec3& to, const vec3& from);
 
-	private:
-		CoroutineReturn<NavNode> nav_coroutine;
+    private:
+        CoroutineReturn<NavNode> nav_coroutine;
 
-		vec3 previous_destination = vec3(NAV_INF_POS);
-	};
+        vec3 previous_destination = vec3(NAV_INF_POS);
+    };
 }

@@ -6,10 +6,10 @@
 
 int main(int argc, char** argv)
 {
-	using namespace era_engine;
+    using namespace era_engine;
 
-	GameStartup startup;
-	startup.start(argc, argv);
+    GameStartup startup;
+    startup.start(argc, argv);
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

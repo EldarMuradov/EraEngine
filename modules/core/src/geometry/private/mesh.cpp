@@ -17,412 +17,413 @@
 
 namespace era_engine
 {
-	struct MeshKey
-	{
-		AssetHandle handle;
-		uint32 flags;
-	};
+    struct MeshKey
+    {
+        AssetHandle handle;
+        uint32 flags;
+    };
 }
 
 namespace std
 {
-	template<>
-	struct hash<era_engine::MeshKey>
-	{
-		size_t operator()(const era_engine::MeshKey& x) const
-		{
-			size_t seed = 0;
-			hash_combine(seed, x.handle);
-			hash_combine(seed, x.flags);
-			return seed;
-		}
-	};
+    template <>
+    struct hash<era_engine::MeshKey>
+    {
+        size_t operator()(const era_engine::MeshKey& x) const
+        {
+            size_t seed = 0;
+            hash_combine(seed, x.handle);
+            hash_combine(seed, x.flags);
+            return seed;
+        }
+    };
 }
 
 namespace era_engine
 {
-	inline std::string convert_material_path(std::string_view input_path, const fs::path& model_filepath, uint32 flags)
-	{
-		fs::path model_dir = model_filepath.parent_path();
-
-		fs::path texture_path(input_path);
-
-		if (flags & MESH_CREATION_FLAGS_OVERRIDE_TEXTURES_WITH_LOCAL_FOLDER)
-		{
-			texture_path = fs::path("textures") / texture_path.filename();
-		}
-
-		if (texture_path.is_absolute())
-		{
-			return texture_path.string();
-		}
-
-		fs::path full_path = (model_dir / texture_path).lexically_normal();
-
-		std::string converted_path = full_path.string();
-		replace_all(converted_path, "\\", "/");
-
-		return converted_path;
-	}
-
-	static void mesh_import_worker(ref<MultiMesh> result, 
-		const fs::path& filename, 
-		uint32 flags, 
-		const MeshLoadCallback& cb,
-		bool async, 
-		JobHandle parent_job)
-	{
-		using namespace animation;
-
-		result->aabb = BoundingBox::negative_infinity();
-
-		result->model_asset = import_3d_model_from_file(filename, flags);
-		MeshBuilder builder(flags | MESH_CREATION_FLAGS_WITH_SKIN);
-
-		for (PbrMaterialDesc& material_desc : result->model_asset->materials)
-		{
-			if (!material_desc.albedo.empty() && *material_desc.albedo.c_str() != 'F')
-			{
-				material_desc.albedo = convert_material_path(material_desc.albedo, filename, flags);
-			}
-			if (!material_desc.normal.empty() && *material_desc.normal.c_str() != 'F')
-			{
-				material_desc.normal = convert_material_path(material_desc.normal, filename, flags);
-			}
-			if (!material_desc.roughness.empty() && *material_desc.roughness.c_str() != 'F')
-			{
-				material_desc.roughness = convert_material_path(material_desc.roughness, filename, flags);
-			}
-			if (!material_desc.metallic.empty() && *material_desc.metallic.c_str() != 'F')
-			{
-				material_desc.metallic = convert_material_path(material_desc.metallic, filename, flags);
-			}
-
-			material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-		}
-
-		for (auto& mesh : result->model_asset->meshes)
-		{
-			if (result->model_asset->materials.empty())
-			{
-				result->model_asset->materials.push_back(PbrMaterialDesc{});
-			}
-
-			for (auto& sub : mesh.submeshes)
-			{
-				PbrMaterialDesc& material_desc = result->model_asset->materials[sub.material_index];
-
-				ref<PBRMaterial> material;
-				if (!async)
-				{
-					material = create_pbr_material(material_desc);
-				}
-				else
-				{
-					material = create_pbr_material_async(material_desc, parent_job);
-				}
-
-				BoundingBox aabb;
-				builder.push_mesh(sub, 1.f, &aabb);
-				result->submeshes.push_back({ builder.end_submesh(), aabb, trs::identity, material, mesh.name });
-
-				result->aabb.grow(aabb.min_corner);
-				result->aabb.grow(aabb.max_corner);
-			}
-		}
-		
-		if (cb)
-		{
-			cb(builder, result->submeshes, result->aabb);
-		}
-
-		result->mesh = builder.create_dx_mesh();
-
-		const fs::path mesh_path = filename.parent_path() / filename.stem();
-		result->source_path = fs::path(mesh_path).concat(MultiMesh::get_asset_type_impl()).lexically_normal().make_preferred();
-
-		result->load_state.store(AssetLoadState::LOADED, std::memory_order_release);
-
-		GameAssetsProvider provider;
-
-		JobHandle save_job = provider.save_game_asset_to_file_async<MultiMesh>(mesh_path, result.get());
-		save_job.wait_for_completion();
-	}
-
-	static ref<MultiMesh> import_mesh_from_file_internal(const fs::path& filename, 
-		AssetHandle handle, 
-		uint32 flags, 
-		const MeshLoadCallback& cb,
-		bool async, 
-		JobHandle parent_job)
-	{
-		ref<MultiMesh> result = make_ref<MultiMesh>();
-		result->handle = handle;
-		result->flags = flags;
-		result->load_state = AssetLoadState::LOADING;
-
-		if (!async)
-		{
-			mesh_import_worker(result, filename, flags, cb, false, {});
-			result->load_job = {};
-			return result;
-		}
-		else
-		{
-			struct MeshLoadingData
-			{
-				MeshLoadCallback cb;
-				fs::path path;
-				ref<MultiMesh> mesh;
-				uint32 flags;
-			};
-
-			constexpr int a = sizeof(MeshLoadingData);
-
-			MeshLoadingData data = { cb, filename, result, flags };
-
-			JobHandle job = low_priority_job_queue.create_job<MeshLoadingData>([](MeshLoadingData& data, JobHandle job)
-				{
-					mesh_import_worker(data.mesh, data.path, data.flags, data.cb, true, job);
-				}, data, parent_job);
-			job.submit_now();
-
-			result->load_job = job;
-
-			return result;
-		}
-	}
-
-	static bool operator==(const MeshKey& a, const MeshKey& b)
-	{
-		return a.handle == b.handle && a.flags == b.flags;
-	}
-
-	static std::unordered_map<MeshKey, weakref<MultiMesh>> mesh_cache;
-	static std::mutex mutex;
-
-	static ref<MultiMesh> import_mesh_from_file_and_handle(const fs::path& filename, 
-		AssetHandle handle, 
-		uint32 flags, 
-		const MeshLoadCallback& cb,
-		bool async = false, 
-		JobHandle parent_job = {})
-	{
-		if (!fs::exists(filename))
-		{
-			return nullptr;
-		}
-
-		MeshKey key = { handle, flags };
-
-		std::lock_guard _lock{ mutex };
-		ref<MultiMesh> result = { mesh_cache[key].lock(), {} };
-		if (!result)
-		{
-			result = import_mesh_from_file_internal(filename, handle, flags, cb, async, parent_job);
-			mesh_cache[key] = result;
-		}
-
-		return result;
-	}
-
-	ref<MultiMesh> import_mesh_from_file(const fs::path& filename, uint32 flags, const MeshLoadCallback& cb)
-	{
-		fs::path path = filename.lexically_normal().make_preferred();
-
-		AssetHandle handle = get_asset_handle_from_path(path);
-		return import_mesh_from_file_and_handle(path, handle, flags, cb);
-	}
-
-	ref<MultiMesh> import_mesh_from_handle(AssetHandle handle, uint32 flags, const MeshLoadCallback& cb)
-	{
-		fs::path filename = get_path_from_asset_handle(handle);
-		return import_mesh_from_file_and_handle(filename, handle, flags, cb);
-	}
-
-	ref<MultiMesh> import_mesh_from_file_async(const fs::path& filename, uint32 flags, JobHandle parent_job, const MeshLoadCallback& cb)
-	{
-		fs::path path = filename.lexically_normal().make_preferred();
-
-		AssetHandle handle = get_asset_handle_from_path(path);
-		return import_mesh_from_file_and_handle(path, handle, flags, cb, true, parent_job);
-	}
-
-	ref<MultiMesh> import_mesh_from_handle_async(AssetHandle handle, uint32 flags, JobHandle parent_job, const MeshLoadCallback& cb)
-	{
-		fs::path filename = get_path_from_asset_handle(handle);
-		return import_mesh_from_file_and_handle(filename, handle, flags, cb, true, parent_job);
-	}
-
-	MultiMesh::~MultiMesh()
-	{
-	}
-
-	bool MultiMesh::serialize(std::ostream& os) const
-	{
-		if (!model_asset.has_value())
-		{
-			ASSERT(model_asset.has_value());
-			return false;
-		}
-
-		const BinaryDataArchive& serialized_data = BinarySerializer::serialize(model_asset);
-
-		try
-		{
-			if (!IO::write_value(os, serialized_data))
-			{
-				return false;
-			}
-		}
-		catch (...)
-		{
-			LOG_ERROR("Exception thrown while serializing asset!");
-			return false;
-		}
-
-		return true;
-	}
-
-	bool MultiMesh::deserialize(std::istream& is)
-	{
-		try
-		{
-			std::lock_guard<std::mutex> lock{ mutex };
-
-			BinaryDataArchive deserialized_data;
-
-			if (!IO::read_value(is, deserialized_data))
-			{
-				return false;
-			}
-
-			if (BinarySerializer::deserialize(BinaryData(deserialized_data), model_asset) != deserialized_data.size())
-			{
-				return false;
-			}
-
-			aabb = BoundingBox::negative_infinity();
-
-			MeshBuilder builder(flags | MESH_CREATION_FLAGS_WITH_SKIN);
-
-			for (auto& mesh : model_asset->meshes)
-			{
-				if (model_asset->materials.empty())
-				{
-					model_asset->materials.push_back(PbrMaterialDesc{});
-				}
-
-				for (auto& sub : mesh.submeshes)
-				{
-					PbrMaterialDesc& material_desc = model_asset->materials[sub.material_index];
-					material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-
-					ref<PBRMaterial> material = create_pbr_material(material_desc);
-
-					builder.push_mesh(sub, 1.f, &aabb);
-					submeshes.push_back({ builder.end_submesh(), aabb, trs::identity, material, mesh.name });
-
-					aabb.grow(aabb.min_corner);
-					aabb.grow(aabb.max_corner);
-				}
-			}
-
-			mesh = builder.create_dx_mesh();
-
-			if (has_flag(flags, MESH_CREATION_FLAGS_COMPACT))
-			{
-				model_asset.reset();
-			}
-
-			load_state.store(AssetLoadState::LOADED, std::memory_order_release);
-		}
-		catch (...)
-		{
-			LOG_ERROR("Exception thrown while serializing asset!");
-			return false;
-		}
-
-		return true;
-	}
-
-	std::string MultiMesh::get_asset_type_impl()
-	{
-		return std::string(".emesh");
-	}
-
-	void MultiMesh::update_mesh(const ModelAsset& new_model_asset)
-	{
-		std::lock_guard<std::mutex> lock{ mutex };
-
-		load_state.store(AssetLoadState::UNLOADED, std::memory_order_release);
-
-		std::vector<bool> old_visibility;
-		old_visibility.reserve(submeshes.size());
-		for (const auto& sm : submeshes)
-		{
-			old_visibility.push_back(sm.is_visible);
-		}
-
-		submeshes.clear();
-
-		model_asset = new_model_asset;
-
-		aabb = BoundingBox::negative_infinity();
-
-		MeshBuilder builder(flags | MESH_CREATION_FLAGS_WITH_SKIN);
-
-		uint32 submesh_index = 0;
-
-		for (auto& mesh : model_asset->meshes)
-		{
-			if (model_asset->materials.empty())
-			{
-				model_asset->materials.push_back(PbrMaterialDesc{});
-			}
-
-			for (auto& sub : mesh.submeshes)
-			{
-				PbrMaterialDesc& material_desc = model_asset->materials[sub.material_index];
-				material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-
-				ref<PBRMaterial> material = create_pbr_material(material_desc);
-
-				BoundingBox aabb;
-				builder.push_mesh(sub, 1.f, &aabb);
-
-				Submesh sm;
-				sm.info = builder.end_submesh();
-				sm.aabb = aabb;
-				sm.transform = trs::identity;
-				sm.material = material;
-				sm.name = mesh.name;
-				sm.is_visible = (submesh_index < old_visibility.size()) ? old_visibility[submesh_index] : true;
-
-				submeshes.push_back(std::move(sm));
-
-				aabb.grow(aabb.min_corner);
-				aabb.grow(aabb.max_corner);
-
-				submesh_index++;
-			}
-		}
-
-		mesh = builder.create_dx_mesh();
-
-		load_state.store(AssetLoadState::LOADED, std::memory_order_release);
-	}
-
-	bool MultiMesh::has_visible_submeshes() const
-	{
-		for (const Submesh& sub : submeshes)
-		{
-			if (sub.is_visible)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
+    inline std::string convert_material_path(std::string_view input_path, const fs::path& model_filepath, uint32 flags)
+    {
+        fs::path model_dir = model_filepath.parent_path();
+
+        fs::path texture_path(input_path);
+
+        if (flags & MESH_CREATION_FLAGS_OVERRIDE_TEXTURES_WITH_LOCAL_FOLDER)
+        {
+            texture_path = fs::path("textures") / texture_path.filename();
+        }
+
+        if (texture_path.is_absolute())
+        {
+            return texture_path.string();
+        }
+
+        fs::path full_path = (model_dir / texture_path).lexically_normal();
+
+        std::string converted_path = full_path.string();
+        replace_all(converted_path, "\\", "/");
+
+        return converted_path;
+    }
+
+    static void mesh_import_worker(ref<MultiMesh> result,
+        const fs::path& filename,
+        uint32 flags,
+        const MeshLoadCallback& cb,
+        bool async,
+        JobHandle parent_job)
+    {
+        using namespace animation;
+
+        result->aabb = BoundingBox::negative_infinity();
+
+        result->model_asset = import_3d_model_from_file(filename, flags);
+        MeshBuilder builder(flags | MESH_CREATION_FLAGS_WITH_SKIN);
+
+        for (PbrMaterialDesc& material_desc : result->model_asset->materials)
+        {
+            if (!material_desc.albedo.empty() && *material_desc.albedo.c_str() != 'F')
+            {
+                material_desc.albedo = convert_material_path(material_desc.albedo, filename, flags);
+            }
+            if (!material_desc.normal.empty() && *material_desc.normal.c_str() != 'F')
+            {
+                material_desc.normal = convert_material_path(material_desc.normal, filename, flags);
+            }
+            if (!material_desc.roughness.empty() && *material_desc.roughness.c_str() != 'F')
+            {
+                material_desc.roughness = convert_material_path(material_desc.roughness, filename, flags);
+            }
+            if (!material_desc.metallic.empty() && *material_desc.metallic.c_str() != 'F')
+            {
+                material_desc.metallic = convert_material_path(material_desc.metallic, filename, flags);
+            }
+
+            material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        }
+
+        for (auto& mesh : result->model_asset->meshes)
+        {
+            if (result->model_asset->materials.empty())
+            {
+                result->model_asset->materials.push_back(PbrMaterialDesc{});
+            }
+
+            for (auto& sub : mesh.submeshes)
+            {
+                PbrMaterialDesc& material_desc = result->model_asset->materials[sub.material_index];
+
+                ref<PBRMaterial> material;
+                if (!async)
+                {
+                    material = create_pbr_material(material_desc);
+                }
+                else
+                {
+                    material = create_pbr_material_async(material_desc, parent_job);
+                }
+
+                BoundingBox aabb;
+                builder.push_mesh(sub, 1.f, &aabb);
+                result->submeshes.push_back({builder.end_submesh(), aabb, trs::identity, material, mesh.name});
+
+                result->aabb.grow(aabb.min_corner);
+                result->aabb.grow(aabb.max_corner);
+            }
+        }
+
+        if (cb)
+        {
+            cb(builder, result->submeshes, result->aabb);
+        }
+
+        result->mesh = builder.create_dx_mesh();
+
+        const fs::path mesh_path = filename.parent_path() / filename.stem();
+        result->source_path = fs::path(mesh_path).concat(MultiMesh::get_asset_type_impl()).lexically_normal().make_preferred();
+
+        result->load_state.store(AssetLoadState::LOADED, std::memory_order_release);
+
+        GameAssetsProvider provider;
+
+        JobHandle save_job = provider.save_game_asset_to_file_async<MultiMesh>(mesh_path, result.get());
+        save_job.wait_for_completion();
+    }
+
+    static ref<MultiMesh> import_mesh_from_file_internal(const fs::path& filename,
+        AssetHandle handle,
+        uint32 flags,
+        const MeshLoadCallback& cb,
+        bool async,
+        JobHandle parent_job)
+    {
+        ref<MultiMesh> result = make_ref<MultiMesh>();
+        result->handle = handle;
+        result->flags = flags;
+        result->load_state = AssetLoadState::LOADING;
+
+        if (!async)
+        {
+            mesh_import_worker(result, filename, flags, cb, false, {});
+            result->load_job = {};
+            return result;
+        }
+        else
+        {
+            struct MeshLoadingData
+            {
+                MeshLoadCallback cb;
+                fs::path path;
+                ref<MultiMesh> mesh;
+                uint32 flags;
+            };
+
+            constexpr int a = sizeof(MeshLoadingData);
+
+            MeshLoadingData data = {cb, filename, result, flags};
+
+            JobHandle job = low_priority_job_queue.create_job<MeshLoadingData>([](MeshLoadingData& data, JobHandle job)
+                {
+                    mesh_import_worker(data.mesh, data.path, data.flags, data.cb, true, job);
+                },
+                data, parent_job);
+            job.submit_now();
+
+            result->load_job = job;
+
+            return result;
+        }
+    }
+
+    static bool operator==(const MeshKey& a, const MeshKey& b)
+    {
+        return a.handle == b.handle && a.flags == b.flags;
+    }
+
+    static std::unordered_map<MeshKey, weakref<MultiMesh>> mesh_cache;
+    static std::mutex mutex;
+
+    static ref<MultiMesh> import_mesh_from_file_and_handle(const fs::path& filename,
+        AssetHandle handle,
+        uint32 flags,
+        const MeshLoadCallback& cb,
+        bool async = false,
+        JobHandle parent_job = {})
+    {
+        if (!fs::exists(filename))
+        {
+            return nullptr;
+        }
+
+        MeshKey key = {handle, flags};
+
+        std::lock_guard _lock{mutex};
+        ref<MultiMesh> result = {mesh_cache[key].lock(), {}};
+        if (!result)
+        {
+            result = import_mesh_from_file_internal(filename, handle, flags, cb, async, parent_job);
+            mesh_cache[key] = result;
+        }
+
+        return result;
+    }
+
+    ref<MultiMesh> import_mesh_from_file(const fs::path& filename, uint32 flags, const MeshLoadCallback& cb)
+    {
+        fs::path path = filename.lexically_normal().make_preferred();
+
+        AssetHandle handle = get_asset_handle_from_path(path);
+        return import_mesh_from_file_and_handle(path, handle, flags, cb);
+    }
+
+    ref<MultiMesh> import_mesh_from_handle(AssetHandle handle, uint32 flags, const MeshLoadCallback& cb)
+    {
+        fs::path filename = get_path_from_asset_handle(handle);
+        return import_mesh_from_file_and_handle(filename, handle, flags, cb);
+    }
+
+    ref<MultiMesh> import_mesh_from_file_async(const fs::path& filename, uint32 flags, JobHandle parent_job, const MeshLoadCallback& cb)
+    {
+        fs::path path = filename.lexically_normal().make_preferred();
+
+        AssetHandle handle = get_asset_handle_from_path(path);
+        return import_mesh_from_file_and_handle(path, handle, flags, cb, true, parent_job);
+    }
+
+    ref<MultiMesh> import_mesh_from_handle_async(AssetHandle handle, uint32 flags, JobHandle parent_job, const MeshLoadCallback& cb)
+    {
+        fs::path filename = get_path_from_asset_handle(handle);
+        return import_mesh_from_file_and_handle(filename, handle, flags, cb, true, parent_job);
+    }
+
+    MultiMesh::~MultiMesh()
+    {
+    }
+
+    bool MultiMesh::serialize(std::ostream& os) const
+    {
+        if (!model_asset.has_value())
+        {
+            ASSERT(model_asset.has_value());
+            return false;
+        }
+
+        const BinaryDataArchive& serialized_data = BinarySerializer::serialize(model_asset);
+
+        try
+        {
+            if (!IO::write_value(os, serialized_data))
+            {
+                return false;
+            }
+        }
+        catch (...)
+        {
+            LOG_ERROR("Exception thrown while serializing asset!");
+            return false;
+        }
+
+        return true;
+    }
+
+    bool MultiMesh::deserialize(std::istream& is)
+    {
+        try
+        {
+            std::lock_guard<std::mutex> lock{mutex};
+
+            BinaryDataArchive deserialized_data;
+
+            if (!IO::read_value(is, deserialized_data))
+            {
+                return false;
+            }
+
+            if (BinarySerializer::deserialize(BinaryData(deserialized_data), model_asset) != deserialized_data.size())
+            {
+                return false;
+            }
+
+            aabb = BoundingBox::negative_infinity();
+
+            MeshBuilder builder(flags | MESH_CREATION_FLAGS_WITH_SKIN);
+
+            for (auto& mesh : model_asset->meshes)
+            {
+                if (model_asset->materials.empty())
+                {
+                    model_asset->materials.push_back(PbrMaterialDesc{});
+                }
+
+                for (auto& sub : mesh.submeshes)
+                {
+                    PbrMaterialDesc& material_desc = model_asset->materials[sub.material_index];
+                    material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+                    ref<PBRMaterial> material = create_pbr_material(material_desc);
+
+                    builder.push_mesh(sub, 1.f, &aabb);
+                    submeshes.push_back({builder.end_submesh(), aabb, trs::identity, material, mesh.name});
+
+                    aabb.grow(aabb.min_corner);
+                    aabb.grow(aabb.max_corner);
+                }
+            }
+
+            mesh = builder.create_dx_mesh();
+
+            if (has_flag(flags, MESH_CREATION_FLAGS_COMPACT))
+            {
+                model_asset.reset();
+            }
+
+            load_state.store(AssetLoadState::LOADED, std::memory_order_release);
+        }
+        catch (...)
+        {
+            LOG_ERROR("Exception thrown while serializing asset!");
+            return false;
+        }
+
+        return true;
+    }
+
+    std::string MultiMesh::get_asset_type_impl()
+    {
+        return std::string(".emesh");
+    }
+
+    void MultiMesh::update_mesh(const ModelAsset& new_model_asset)
+    {
+        std::lock_guard<std::mutex> lock{mutex};
+
+        load_state.store(AssetLoadState::UNLOADED, std::memory_order_release);
+
+        std::vector<bool> old_visibility;
+        old_visibility.reserve(submeshes.size());
+        for (const auto& sm : submeshes)
+        {
+            old_visibility.push_back(sm.is_visible);
+        }
+
+        submeshes.clear();
+
+        model_asset = new_model_asset;
+
+        aabb = BoundingBox::negative_infinity();
+
+        MeshBuilder builder(flags | MESH_CREATION_FLAGS_WITH_SKIN);
+
+        uint32 submesh_index = 0;
+
+        for (auto& mesh : model_asset->meshes)
+        {
+            if (model_asset->materials.empty())
+            {
+                model_asset->materials.push_back(PbrMaterialDesc{});
+            }
+
+            for (auto& sub : mesh.submeshes)
+            {
+                PbrMaterialDesc& material_desc = model_asset->materials[sub.material_index];
+                material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+                ref<PBRMaterial> material = create_pbr_material(material_desc);
+
+                BoundingBox aabb;
+                builder.push_mesh(sub, 1.f, &aabb);
+
+                Submesh sm;
+                sm.info = builder.end_submesh();
+                sm.aabb = aabb;
+                sm.transform = trs::identity;
+                sm.material = material;
+                sm.name = mesh.name;
+                sm.is_visible = (submesh_index < old_visibility.size()) ? old_visibility[submesh_index] : true;
+
+                submeshes.push_back(std::move(sm));
+
+                aabb.grow(aabb.min_corner);
+                aabb.grow(aabb.max_corner);
+
+                submesh_index++;
+            }
+        }
+
+        mesh = builder.create_dx_mesh();
+
+        load_state.store(AssetLoadState::LOADED, std::memory_order_release);
+    }
+
+    bool MultiMesh::has_visible_submeshes() const
+    {
+        for (const Submesh& sub : submeshes)
+        {
+            if (sub.is_visible)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

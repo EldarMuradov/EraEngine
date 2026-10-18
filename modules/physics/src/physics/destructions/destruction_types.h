@@ -35,10 +35,10 @@ namespace era_engine::physics
     class ERA_PHYSICS_API NvMesh final
     {
     public:
-		NvMesh(const std::vector<physx::PxVec3>& verts,
-			const std::vector<physx::PxVec3>& norms,
-			const std::vector<physx::PxVec2>& uvis,
-			const std::vector<uint32_t>& inds);
+        NvMesh(const std::vector<physx::PxVec3>& verts,
+            const std::vector<physx::PxVec3>& norms,
+            const std::vector<physx::PxVec2>& uvis,
+            const std::vector<uint32_t>& inds);
         NvMesh(Nv::Blast::Mesh* in_mesh);
         NvMesh();
 
@@ -63,9 +63,9 @@ namespace era_engine::physics
     class DestructibleFamily;
     typedef std::shared_ptr<DestructibleFamily> DestructibleFamilyPtr;
 
-	class ERA_PHYSICS_API DestructibleAsset
-	{
-	public:
+    class ERA_PHYSICS_API DestructibleAsset
+    {
+    public:
         struct ActorDesc
         {
             NvBlastID id;
@@ -73,8 +73,8 @@ namespace era_engine::physics
             Nv::Blast::TkGroup* group = nullptr;
         };
 
-		DestructibleAsset();
-		virtual ~DestructibleAsset();
+        DestructibleAsset();
+        virtual ~DestructibleAsset();
 
         size_t get_asset_size() const;
 
@@ -89,9 +89,8 @@ namespace era_engine::physics
     protected:
         void initialize();
 
-	protected:
-
-		friend class DestructionUtils;
-		friend class DestructionSystem;
-	};
+    protected:
+        friend class DestructionUtils;
+        friend class DestructionSystem;
+    };
 }

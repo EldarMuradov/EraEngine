@@ -16,89 +16,88 @@
 
 namespace era_engine
 {
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
 
-		registration::class_<CameraSystem>("CameraSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("base")))
-			.method("update", &CameraSystem::update)(metadata("update_group", update_types::BEFORE_RENDER));
-	}
+        registration::class_<CameraSystem>("CameraSystem")
+            .constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("base")))
+            .method("update", &CameraSystem::update)(metadata("update_group", update_types::BEFORE_RENDER));
+    }
 
-	CameraSystem::CameraSystem(World* _world)
-		: System(_world)
-	{
-		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
-		ASSERT(renderer_holder_rc != nullptr);
-	}
+    CameraSystem::CameraSystem(World* _world)
+        : System(_world)
+    {
+        renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
+        ASSERT(renderer_holder_rc != nullptr);
+    }
 
-	CameraSystem::~CameraSystem()
-	{
-	}
+    CameraSystem::~CameraSystem()
+    {
+    }
 
-	void CameraSystem::init()
-	{
-	}
+    void CameraSystem::init()
+    {
+    }
 
-	void CameraSystem::update(float dt)
-	{
-		ZoneScopedN("CameraSystem::render");
+    void CameraSystem::update(float dt)
+    {
+        ZoneScopedN("CameraSystem::render");
 
-		for (auto [handle, camera_holder, receiver, transform] : world->group(components_group<CameraHolderComponent, InputReceiverComponent, TransformComponent>).each())
-		{
-			const UserInput& user_input = receiver.get_frame_input();
-			const vec3& input = receiver.get_current_input();
+        for (auto [handle, camera_holder, receiver, transform] : world->group(components_group<CameraHolderComponent, InputReceiverComponent, TransformComponent>).each())
+        {
+            const UserInput& user_input = receiver.get_frame_input();
+            const vec3& input = receiver.get_current_input();
 
-			RenderCamera* camera = camera_holder.get_render_camera();
+            RenderCamera* camera = camera_holder.get_render_camera();
 
-			camera->set_viewport(renderer_holder_rc->width, renderer_holder_rc->height);
+            camera->set_viewport(renderer_holder_rc->width, renderer_holder_rc->height);
 
-			if (camera_holder.get_camera_type() == CameraHolderComponent::FREE_CAMERA ||
-				(camera_holder.get_camera_type() == CameraHolderComponent::FREE_CAMERA_ON_HOLD && user_input.mouse.right.down))
-			{
-				const trs& world_transform = transform.get_world_transform();
+            if (camera_holder.get_camera_type() == CameraHolderComponent::FREE_CAMERA ||
+                (camera_holder.get_camera_type() == CameraHolderComponent::FREE_CAMERA_ON_HOLD && user_input.mouse.right.down))
+            {
+                const trs& world_transform = transform.get_world_transform();
 
-				const float CAMERA_MOVEMENT_SPEED = 8.0f;
-				const float CAMERA_SENSITIVITY = 4.0f;
+                const float CAMERA_MOVEMENT_SPEED = 8.0f;
+                const float CAMERA_SENSITIVITY = 4.0f;
 
-				vec2 turn_angle(0.f, 0.f);
-				turn_angle = vec2(-user_input.mouse.reldx, -user_input.mouse.reldy) * CAMERA_SENSITIVITY;
+                vec2 turn_angle(0.f, 0.f);
+                turn_angle = vec2(-user_input.mouse.reldx, -user_input.mouse.reldy) * CAMERA_SENSITIVITY;
 
-				quat& camera_rotation = camera->rotation;
-				camera_rotation = quat(vec3(0.f, 1.f, 0.f), turn_angle.x) * camera_rotation;
-				camera_rotation = camera_rotation * quat(vec3(1.f, 0.f, 0.f), turn_angle.y);
+                quat& camera_rotation = camera->rotation;
+                camera_rotation = quat(vec3(0.f, 1.f, 0.f), turn_angle.x) * camera_rotation;
+                camera_rotation = camera_rotation * quat(vec3(1.f, 0.f, 0.f), turn_angle.y);
 
-				camera->position += camera_rotation * input * dt * CAMERA_MOVEMENT_SPEED;
+                camera->position += camera_rotation * input * dt * CAMERA_MOVEMENT_SPEED;
 
-				transform.set_world_transform(trs{ camera->position, camera->rotation, world_transform.scale });
+                transform.set_world_transform(trs{camera->position, camera->rotation, world_transform.scale});
 
-				camera->update_matrices();
+                camera->update_matrices();
+            }
+            else if (camera_holder.get_camera_type() == CameraHolderComponent::ATTACHED_TO_TRS)
+            {
+                const trs& world_transform = transform.get_world_transform();
 
-			}
-			else if(camera_holder.get_camera_type() == CameraHolderComponent::ATTACHED_TO_TRS)
-			{
-				const trs& world_transform = transform.get_world_transform();
+                camera->position = world_transform.position;
+                camera->rotation = world_transform.rotation;
 
-				camera->position = world_transform.position;
-				camera->rotation = world_transform.rotation;
+                camera->update_matrices();
+            }
+        }
 
-				camera->update_matrices();
-			}
-		}
+        for (auto [handle, camera_holder, transform] : world->group(components_group<CameraHolderComponent, TransformComponent>, components_group<InputReceiverComponent>).each())
+        {
+            RenderCamera* camera = camera_holder.get_render_camera();
 
-		for (auto [handle, camera_holder, transform] : world->group(components_group<CameraHolderComponent, TransformComponent>, components_group<InputReceiverComponent>).each())
-		{
-			RenderCamera* camera = camera_holder.get_render_camera();
+            camera->set_viewport(renderer_holder_rc->width, renderer_holder_rc->height);
 
-			camera->set_viewport(renderer_holder_rc->width, renderer_holder_rc->height);
+            const trs& world_transform = transform.get_world_transform();
 
-			const trs& world_transform = transform.get_world_transform();
+            camera->position = world_transform.position;
+            camera->rotation = world_transform.rotation;
 
-			camera->position = world_transform.position;
-			camera->rotation = world_transform.rotation;
-
-			camera->update_matrices();
-		}
-	}
+            camera->update_matrices();
+        }
+    }
 
 }

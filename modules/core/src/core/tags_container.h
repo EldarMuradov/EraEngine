@@ -5,28 +5,28 @@
 namespace era_engine
 {
 
-	class ERA_CORE_API TagsContainer final
-	{
-	public:
-		TagsContainer();
-		~TagsContainer() = default;
+    class ERA_CORE_API TagsContainer final
+    {
+    public:
+        TagsContainer();
+        ~TagsContainer() = default;
 
-		void add_tag(const std::string& tag);
-		bool remove_tag(const std::string& tag);
+        void add_tag(const std::string& tag);
+        bool remove_tag(const std::string& tag);
 
-		bool has_tag(const std::string& tag) const;
+        bool has_tag(const std::string& tag) const;
 
-		void clear();
+        void clear();
 
-		size_t size() const;
+        size_t size() const;
 
-		void refresh();
+        void refresh();
 
-		const std::vector<std::string>& get_tags() const;
+        const std::vector<std::string>& get_tags() const;
 
-	private:
-		bool is_dirty = false;
-		std::vector<std::string> tags;
-	};
+    private:
+        bool is_dirty = false;
+        std::vector<std::string> tags;
+    };
 
 }

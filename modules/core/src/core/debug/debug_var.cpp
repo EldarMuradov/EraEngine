@@ -6,14 +6,14 @@
 namespace era_engine
 {
 
-	RegistrableVar::RegistrableVar(const std::string& _name)
-		: name(_name)
-	{
-		DebugVarsStorage::get_instance()->register_var(this);
-	}
+    RegistrableVar::RegistrableVar(const std::string& _name)
+        : name(_name)
+    {
+        DebugVarsStorage::get_instance()->register_var(this);
+    }
 
-	RegistrableVar::~RegistrableVar()
-	{
-	}
+    RegistrableVar::~RegistrableVar()
+    {
+    }
 
 }

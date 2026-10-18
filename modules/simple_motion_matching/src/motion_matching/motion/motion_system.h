@@ -6,19 +6,19 @@
 
 namespace era_engine
 {
-	class MotionSystem final : public System
-	{
-	public:
-		MotionSystem(World* _world);
-		~MotionSystem() override;
+    class MotionSystem final : public System
+    {
+    public:
+        MotionSystem(World* _world);
+        ~MotionSystem() override;
 
-		void init() override;
-		void update(float dt) override;
-		void update_transforms(float dt);
+        void init() override;
+        void update(float dt) override;
+        void update_transforms(float dt);
 
-		void update_base(float dt);
-		void reset_input(float dt);
+        void update_base(float dt);
+        void reset_input(float dt);
 
-		ERA_VIRTUAL_REFLECT(System)
-	};
+        ERA_VIRTUAL_REFLECT(System)
+    };
 }

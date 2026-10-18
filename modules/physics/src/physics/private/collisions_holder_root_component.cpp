@@ -9,21 +9,21 @@
 
 namespace era_engine::physics
 {
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
-		registration::class_<CollisionsHolderRootComponent>("CollisionsHolderRootComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
-			.constructor<>();
-		ComponentRegistry::register_component<CollisionsHolderRootComponent>();
-	}
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
+        registration::class_<CollisionsHolderRootComponent>("CollisionsHolderRootComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
+            .constructor<>();
+        ComponentRegistry::register_component<CollisionsHolderRootComponent>();
+    }
 
-	CollisionsHolderRootComponent::CollisionsHolderRootComponent(ref<Entity::EcsData> _data)
-		: Component(_data)
-	{
-	}
+    CollisionsHolderRootComponent::CollisionsHolderRootComponent(ref<Entity::EcsData> _data)
+        : Component(_data)
+    {
+    }
 
-	void CollisionsHolderRootComponent::set_collision_filter(uint32 type, uint32 types_to_collide_with, bool collide)
-	{
+    void CollisionsHolderRootComponent::set_collision_filter(uint32 type, uint32 types_to_collide_with, bool collide)
+    {
         ASSERT(type != 0);
         ASSERT((type & (type - 1)) == 0);
         const size_t type_index = log2(type);
@@ -53,10 +53,10 @@ namespace era_engine::physics
                 ASSERT(check_collision(type, type_to_collide_with) == collide);
             }
         }
-	}
+    }
 
-	uint32 CollisionsHolderRootComponent::get_collision_filter(uint32 types) const
-	{
+    uint32 CollisionsHolderRootComponent::get_collision_filter(uint32 types) const
+    {
         uint32 result = 0;
 
         for (uint32 i = 0; i < TYPES_COUNT; ++i)
@@ -71,8 +71,8 @@ namespace era_engine::physics
         return result;
     }
 
-	bool CollisionsHolderRootComponent::check_collision(uint32 first_type, uint32 second_type) const
-	{
+    bool CollisionsHolderRootComponent::check_collision(uint32 first_type, uint32 second_type) const
+    {
         const uint32 collision_filter = get_collision_filter(first_type);
 
         return (collision_filter & second_type) > 0;

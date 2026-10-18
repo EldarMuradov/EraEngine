@@ -5,97 +5,97 @@
 
 namespace era_engine
 {
-	template<class T, CompatibleAssetType<T>>
-	inline ref<T> GameAssetsProvider::load_game_asset_from_file(const fs::path& path, bool load_from_cache/* = true*/, JobHandle parent_job /*= {}*/, uint32 flags /*= 0*/)
-	{
-		fs::path final_path = path.parent_path();
-		final_path.append(path.filename().string());
-		final_path = final_path.lexically_normal().make_preferred();
+    template <class T, CompatibleAssetType<T>>
+    inline ref<T> GameAssetsProvider::load_game_asset_from_file(const fs::path& path, bool load_from_cache /* = true*/, JobHandle parent_job /*= {}*/, uint32 flags /*= 0*/)
+    {
+        fs::path final_path = path.parent_path();
+        final_path.append(path.filename().string());
+        final_path = final_path.lexically_normal().make_preferred();
 
-		if(load_from_cache)
-		{
-			ref<GameAsset> cached_asset = GameAssetCache::try_get_asset_from_cache(final_path, flags);
-			if (cached_asset != nullptr)
-			{
-				return std::dynamic_pointer_cast<T>(cached_asset);
-			}
-		}
+        if (load_from_cache)
+        {
+            ref<GameAsset> cached_asset = GameAssetCache::try_get_asset_from_cache(final_path, flags);
+            if (cached_asset != nullptr)
+            {
+                return std::dynamic_pointer_cast<T>(cached_asset);
+            }
+        }
 
-		ref<T> asset = make_ref<T>();
-		asset->handle = get_asset_handle_from_path(final_path);
-		asset->flags = flags;
-		asset->source_path = final_path;
-		asset->load_state = AssetLoadState::LOADING;
+        ref<T> asset = make_ref<T>();
+        asset->handle = get_asset_handle_from_path(final_path);
+        asset->flags = flags;
+        asset->source_path = final_path;
+        asset->load_state = AssetLoadState::LOADING;
 
-		DefaultJob job_object;
+        DefaultJob job_object;
 
-		job_object.job_func = [asset, final_path, flags]()
-			{
-				std::ifstream is(final_path, std::ios_base::binary);
+        job_object.job_func = [asset, final_path, flags]()
+        {
+            std::ifstream is(final_path, std::ios_base::binary);
 
-				if (!is.is_open() || !asset->deserialize(is))
-				{
-					GameAssetCache::remove_asset_from_cache(final_path, flags);
-					asset->load_state = AssetLoadState::FAILED;
-					return;
-				}
+            if (!is.is_open() || !asset->deserialize(is))
+            {
+                GameAssetCache::remove_asset_from_cache(final_path, flags);
+                asset->load_state = AssetLoadState::FAILED;
+                return;
+            }
 
-				asset->handle = get_asset_handle_from_path(final_path);
-				asset->load_state = AssetLoadState::LOADED;
-			};
+            asset->handle = get_asset_handle_from_path(final_path);
+            asset->load_state = AssetLoadState::LOADED;
+        };
 
-		JobHandle job = schedule_low_priority_job(job_object, parent_job);
-		asset->load_job = job;
+        JobHandle job = schedule_low_priority_job(job_object, parent_job);
+        asset->load_job = job;
 
-		GameAssetCache::try_add_asset_to_cache(asset, final_path, flags);
+        GameAssetCache::try_add_asset_to_cache(asset, final_path, flags);
 
-		job.submit_now();
+        job.submit_now();
 
-		return asset;
-	}
+        return asset;
+    }
 
-	template<class T, CompatibleAssetType<T>>
-	inline JobHandle GameAssetsProvider::save_game_asset_to_file_async(const fs::path& path, const T* asset, JobHandle parent_job/* = {}*/, bool append_ext/* = true*/)
-	{
-		if (asset == nullptr)
-		{
-			return {};
-		}
+    template <class T, CompatibleAssetType<T>>
+    inline JobHandle GameAssetsProvider::save_game_asset_to_file_async(const fs::path& path, const T* asset, JobHandle parent_job /* = {}*/, bool append_ext /* = true*/)
+    {
+        if (asset == nullptr)
+        {
+            return {};
+        }
 
-		fs::path final_path = path.parent_path();
-		std::string filename = path.filename().string();
-		if (append_ext)
-		{
-			filename += AssetExtension<T>::get_asset_type();
-		}
-		final_path.append(filename);
-		final_path = final_path.lexically_normal().make_preferred();
+        fs::path final_path = path.parent_path();
+        std::string filename = path.filename().string();
+        if (append_ext)
+        {
+            filename += AssetExtension<T>::get_asset_type();
+        }
+        final_path.append(filename);
+        final_path = final_path.lexically_normal().make_preferred();
 
-		DefaultJob job_object;
+        DefaultJob job_object;
 
-		job_object.job_func = [asset, final_path]()
-			{
-				if (!fs::exists(final_path.parent_path()))
-				{
-					if (!fs::create_directories(final_path.parent_path()))
-					{
-						return;
-					}
-				}
+        job_object.job_func = [asset, final_path]()
+        {
+            if (!fs::exists(final_path.parent_path()))
+            {
+                if (!fs::create_directories(final_path.parent_path()))
+                {
+                    return;
+                }
+            }
 
-				std::ofstream of(final_path, std::ios_base::binary | std::ios_base::trunc);
+            std::ofstream of(final_path, std::ios_base::binary | std::ios_base::trunc);
 
-				if (!of.is_open())
-				{
-					return;
-				}
+            if (!of.is_open())
+            {
+                return;
+            }
 
-				asset->serialize(of);
-			};
+            asset->serialize(of);
+        };
 
-		JobHandle job = schedule_low_priority_job(job_object, parent_job);
-		job.submit_now();
+        JobHandle job = schedule_low_priority_job(job_object, parent_job);
+        job.submit_now();
 
-		return job;
-	}
+        return job;
+    }
 }

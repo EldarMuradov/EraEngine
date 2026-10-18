@@ -7,13 +7,12 @@
 
 namespace era_engine::physics
 {
-	class ERA_PHYSICS_API DestructibleModelAsset : public DestructibleAsset
-	{
-	public:
+    class ERA_PHYSICS_API DestructibleModelAsset : public DestructibleAsset
+    {
+    public:
+        DestructibleModelAsset();
+        ~DestructibleModelAsset() override;
 
-		DestructibleModelAsset();
-		~DestructibleModelAsset() override;
-
-		ref<NvMesh> model = nullptr;
-	};
+        ref<NvMesh> model = nullptr;
+    };
 }

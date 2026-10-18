@@ -23,60 +23,59 @@
 
 namespace era_engine
 {
-	const UserInput& get_current_frame_input()
-	{
-		DXWindow* window = get_object<DXWindow>();
-		return window->get_current_frame_input();
-	}
+    const UserInput& get_current_frame_input()
+    {
+        DXWindow* window = get_object<DXWindow>();
+        return window->get_current_frame_input();
+    }
 
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
 
-		registration::class_<InputSystem>("InputSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("base")))
-			.method("update", &InputSystem::update)(metadata("update_group", update_types::INPUT));
-	}
+        registration::class_<InputSystem>("InputSystem")
+            .constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("base")))
+            .method("update", &InputSystem::update)(metadata("update_group", update_types::INPUT));
+    }
 
-	InputSystem::InputSystem(World* _world)
-		: System(_world)
-	{
-		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
-		ASSERT(renderer_holder_rc != nullptr);
-	}
+    InputSystem::InputSystem(World* _world)
+        : System(_world)
+    {
+        renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
+        ASSERT(renderer_holder_rc != nullptr);
+    }
 
-	InputSystem::~InputSystem()
-	{
-	}
+    InputSystem::~InputSystem()
+    {
+    }
 
-	void InputSystem::init()
-	{
-	}
+    void InputSystem::init()
+    {
+    }
 
-	void InputSystem::update(float dt)
-	{
-		ZoneScopedN("InputSystem::update");
+    void InputSystem::update(float dt)
+    {
+        ZoneScopedN("InputSystem::update");
 
-		static bool app_focused_last_frame = true;
+        static bool app_focused_last_frame = true;
 
-		const UserInput& input = get_current_frame_input();
+        const UserInput& input = get_current_frame_input();
 
-		vec3 current_input = vec3(
-			(input.keyboard['D'].down ? 1.0f : 0.0f) + (input.keyboard['A'].down ? -1.f : 0.0f),
-			(input.keyboard['E'].down ? 1.0f : 0.0f) + (input.keyboard['Q'].down ? -1.f : 0.0f),
-			(input.keyboard['W'].down ? -1.0f : 0.0f) + (input.keyboard['S'].down ? 1.f : 0.0f)
-		);
+        vec3 current_input = vec3(
+            (input.keyboard['D'].down ? 1.0f : 0.0f) + (input.keyboard['A'].down ? -1.f : 0.0f),
+            (input.keyboard['E'].down ? 1.0f : 0.0f) + (input.keyboard['Q'].down ? -1.f : 0.0f),
+            (input.keyboard['W'].down ? -1.0f : 0.0f) + (input.keyboard['S'].down ? 1.f : 0.0f));
 
-		for (auto [handle, transform, sender] : world->group(components_group<TransformComponent, InputSenderComponent>).each())
-		{
-			sender.frame_input = input;
-			sender.last_input = sender.current_input;
-			sender.current_input = current_input;
+        for (auto [handle, transform, sender] : world->group(components_group<TransformComponent, InputSenderComponent>).each())
+        {
+            sender.frame_input = input;
+            sender.last_input = sender.current_input;
+            sender.current_input = current_input;
 
-			sender.notify_input();
-		}
+            sender.notify_input();
+        }
 
-		app_focused_last_frame = ImGui::IsMousePosValid();
-	}
+        app_focused_last_frame = ImGui::IsMousePosValid();
+    }
 
 }

@@ -25,12 +25,12 @@ namespace era_engine
     {
         {
             auto& desc = CREATE_GRAPHICS_PIPELINE
-                .input_layout(input_layout_position_uv_normal_tangent_colors)
-                //.depthSettings(true, false, D3D12_COMPARISON_FUNC_EQUAL)
-                .culling_off()
-                .render_targets(opaque_light_pass_formats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depth_stencil_format);
+                             .input_layout(input_layout_position_uv_normal_tangent_colors)
+                             //.depthSettings(true, false, D3D12_COMPARISON_FUNC_EQUAL)
+                             .culling_off()
+                             .render_targets(opaque_light_pass_formats, OPQAUE_LIGHT_PASS_NO_VELOCITIES_NO_OBJECT_ID, depth_stencil_format);
 
-            tree_pipeline = create_reloadable_pipeline(desc, { "tree_vs", "tree_ps" });
+            tree_pipeline = create_reloadable_pipeline(desc, {"tree_vs", "tree_ps"});
         }
     }
 
@@ -82,7 +82,7 @@ namespace era_engine
             cl->set_graphics_dynamic_constant_buffer(TREE_RS_LIGHTING, common.lighting_cbv);
         }
 
-            PIPELINE_RENDER_DECL(TreeRenderData)
+        PIPELINE_RENDER_DECL(TreeRenderData)
         {
             const auto& mat = data.material;
 
@@ -111,13 +111,12 @@ namespace era_engine
             flags |= MATERIAL_DOUBLE_SIDED; // Always double sided.
 
             cl->set_graphics_32bit_constants(TREE_RS_MATERIAL,
-                PBRMaterialCB(mat->albedo_tint, mat->emission.xyz, mat->roughness_override, mat->metallic_override, flags, 1.f, mat->translucency, mat->uv_scale)
-            );
+                PBRMaterialCB(mat->albedo_tint, mat->emission.xyz, mat->roughness_override, mat->metallic_override, flags, 1.f, mat->translucency, mat->uv_scale));
 
             const SubmeshInfo& submesh = data.submesh;
 
             cl->set_root_graphics_srv(TREE_RS_TRANSFORM, data.transform_ptr);
-            cl->set_graphics_32bit_constants(TREE_RS_CB, TreeCB{ data.time });
+            cl->set_graphics_32bit_constants(TREE_RS_CB, TreeCB{data.time});
 
             cl->set_vertex_buffer(0, data.vertex_buffer.positions);
             cl->set_vertex_buffer(1, data.vertex_buffer.others);
@@ -137,7 +136,7 @@ namespace era_engine
     }
 
     TreeComponent::TreeComponent(ref<Entity::EcsData> _data, const TreeSettings& _settings)
-       : Component(_data), settings(_settings)
+        : Component(_data), settings(_settings)
     {
     }
 

@@ -4,10 +4,10 @@
 
 namespace era_engine
 {
-	enum class GameCollisionType : uint32
-	{
-		DYNAMICS = physics::CollisionType::COLLISION_1,
-		STATICS = physics::CollisionType::COLLISION_2,
-		CCT = physics::CollisionType::COLLISION_3,
-	};
+    enum class GameCollisionType : uint32
+    {
+        DYNAMICS = physics::CollisionType::COLLISION_1,
+        STATICS = physics::CollisionType::COLLISION_2,
+        CCT = physics::CollisionType::COLLISION_3,
+    };
 }

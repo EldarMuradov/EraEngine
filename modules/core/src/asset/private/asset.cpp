@@ -6,10 +6,10 @@
 
 namespace era_engine
 {
-	static RandomNumberGenerator rng = time(0);
+    static RandomNumberGenerator rng = time(0);
 
-	NODISCARD AssetHandle AssetHandle::generate()
-	{
-		return AssetHandle(rng.random_uint64());
-	}
+    NODISCARD AssetHandle AssetHandle::generate()
+    {
+        return AssetHandle(rng.random_uint64());
+    }
 }

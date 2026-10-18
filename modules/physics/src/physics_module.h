@@ -6,16 +6,16 @@
 
 namespace era_engine
 {
-	class ERA_PHYSICS_API PhysicsModule : public IModule
-	{
-	public:
-		PhysicsModule() noexcept;
+    class ERA_PHYSICS_API PhysicsModule : public IModule
+    {
+    public:
+        PhysicsModule() noexcept;
 
-		~PhysicsModule() override;
+        ~PhysicsModule() override;
 
-		bool initialize(void* engine) override;
-		bool terminate() override;
+        bool initialize(void* engine) override;
+        bool terminate() override;
 
-		RTTR_ENABLE(IModule)
-	};
+        RTTR_ENABLE(IModule)
+    };
 }

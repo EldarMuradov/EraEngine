@@ -125,7 +125,6 @@ namespace era_engine::physics
         RaycastQuery() = delete;
 
     public:
-
         class ERA_PHYSICS_API Params final : public SceneQueryDistancedBaseParams
         {
         public:
@@ -144,7 +143,6 @@ namespace era_engine::physics
         SweepQuery() = delete;
 
     public:
-
         class ERA_PHYSICS_API Params final : public SceneQueryDistancedBaseParams
         {
         public:
@@ -165,7 +163,6 @@ namespace era_engine::physics
         OverlapQuery() = delete;
 
     public:
-
         class ERA_PHYSICS_API Params final : public SceneQueryDistancedBaseParams
         {
         public:

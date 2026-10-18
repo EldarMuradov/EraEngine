@@ -5,20 +5,20 @@
 namespace era_engine
 {
 
-	class RendererHolderRootComponent;
+    class RendererHolderRootComponent;
 
-	class CameraSystem final : public System
-	{
-	public:
-		CameraSystem(World* _world);
-		~CameraSystem();
+    class CameraSystem final : public System
+    {
+    public:
+        CameraSystem(World* _world);
+        ~CameraSystem();
 
-		void init() override;
-		void update(float dt) override;
+        void init() override;
+        void update(float dt) override;
 
-		ERA_VIRTUAL_REFLECT(System)
+        ERA_VIRTUAL_REFLECT(System)
 
-	private:
-		RendererHolderRootComponent* renderer_holder_rc = nullptr;
-	};
+    private:
+        RendererHolderRootComponent* renderer_holder_rc = nullptr;
+    };
 }

@@ -42,8 +42,7 @@ namespace era_engine
         registration::class_<CoreModule>("CoreModule")
             .constructor<>()(policy::ctor::as_raw_ptr)
             .method("initialize", &CoreModule::initialize)
-            .method("terminate", &CoreModule::terminate)
-            (metadata("module_type", IModule::Type::ENGINE));
+            .method("terminate", &CoreModule::terminate)(metadata("module_type", IModule::Type::ENGINE));
     }
 
 }

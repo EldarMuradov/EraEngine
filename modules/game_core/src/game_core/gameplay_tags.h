@@ -4,9 +4,9 @@
 
 namespace era_engine
 {
-	class ERA_GAME_CORE_API Dummy
-	{
-	public:
-		Dummy() = default;
-	};
+    class ERA_GAME_CORE_API Dummy
+    {
+    public:
+        Dummy() = default;
+    };
 }

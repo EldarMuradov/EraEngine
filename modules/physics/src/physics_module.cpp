@@ -28,7 +28,7 @@ namespace era_engine
         IModule::initialize(engine);
 
         PhysicsDescriptor desc;
-        //desc.broad_phase = physx::PxBroadPhaseType::eGPU;
+        // desc.broad_phase = physx::PxBroadPhaseType::eGPU;
 
 #if _DEBUG
         desc.enable_pvd = true;
@@ -61,8 +61,7 @@ namespace era_engine
         registration::class_<PhysicsModule>("PhysicsModule")
             .constructor<>()(policy::ctor::as_raw_ptr)
             .method("initialize", &PhysicsModule::initialize)
-            .method("terminate", &PhysicsModule::terminate)
-            (metadata("module_type", IModule::Type::ENGINE));
+            .method("terminate", &PhysicsModule::terminate)(metadata("module_type", IModule::Type::ENGINE));
     }
 
 }

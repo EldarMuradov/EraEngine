@@ -16,58 +16,58 @@
 
 namespace era_engine
 {
-	class RendererHolderRootComponent;
+    class RendererHolderRootComponent;
 
-	class RenderSystem final : public System
-	{
-	public:
-		RenderSystem(World* _world);
-		~RenderSystem();
+    class RenderSystem final : public System
+    {
+    public:
+        RenderSystem(World* _world);
+        ~RenderSystem();
 
-		void init() override;
-		void begin_frame(float dt);
-		void before_render(float dt);
-		void update(float dt) override;
-		void after_render(float dt);
+        void init() override;
+        void begin_frame(float dt);
+        void before_render(float dt);
+        void update(float dt) override;
+        void after_render(float dt);
 
-		ERA_VIRTUAL_REFLECT(System)
+        ERA_VIRTUAL_REFLECT(System)
 
-	private:
-		void load_custom_shaders();
-		void draw_imgui_viewport();
-		void instantiate_dropped_prefab(const char* path);
+    private:
+        void load_custom_shaders();
+        void draw_imgui_viewport();
+        void instantiate_dropped_prefab(const char* path);
 
-		void reset_render_passes();
-		void submit_renderer_params(uint32 num_spot_light_shadow_passes, uint32 num_point_light_shadow_passes);
+        void reset_render_passes();
+        void submit_renderer_params(uint32 num_spot_light_shadow_passes, uint32 num_point_light_shadow_passes);
 
-	private:
-		RendererHolderRootComponent* renderer_holder_rc = nullptr;
+    private:
+        RendererHolderRootComponent* renderer_holder_rc = nullptr;
 
-		Allocator stack_arena;
+        Allocator stack_arena;
 
-		RaytracingTLAS raytracing_tlas;
+        RaytracingTLAS raytracing_tlas;
 
-		ref<DXBuffer> point_light_buffer[NUM_BUFFERED_FRAMES];
-		ref<DXBuffer> spot_light_buffer[NUM_BUFFERED_FRAMES];
-		ref<DXBuffer> decal_buffer[NUM_BUFFERED_FRAMES];
+        ref<DXBuffer> point_light_buffer[NUM_BUFFERED_FRAMES];
+        ref<DXBuffer> spot_light_buffer[NUM_BUFFERED_FRAMES];
+        ref<DXBuffer> decal_buffer[NUM_BUFFERED_FRAMES];
 
-		ref<DXBuffer> spot_light_shadow_info_buffer[NUM_BUFFERED_FRAMES];
-		ref<DXBuffer> point_light_shadow_info_buffer[NUM_BUFFERED_FRAMES];
+        ref<DXBuffer> spot_light_shadow_info_buffer[NUM_BUFFERED_FRAMES];
+        ref<DXBuffer> point_light_shadow_info_buffer[NUM_BUFFERED_FRAMES];
 
-		std::vector<PBRDecalCB> decals;
+        std::vector<PBRDecalCB> decals;
 
-		ref<DXTexture> decal_texture;
+        ref<DXTexture> decal_texture;
 
-		FireParticleSystem fire_particle_system;
-		SmokeParticleSystem smoke_particle_system;
-		BoidParticleSystem boid_particle_system;
-		DebrisParticleSystem debris_particle_system;
+        FireParticleSystem fire_particle_system;
+        SmokeParticleSystem smoke_particle_system;
+        BoidParticleSystem boid_particle_system;
+        DebrisParticleSystem debris_particle_system;
 
-		OpaqueRenderPass opaque_render_pass;
-		TransparentRenderPass transparent_render_pass;
-		SunShadowRenderPass sun_shadow_render_pass;
-		SpotShadowRenderPass spot_shadow_render_passes[16];
-		PointShadowRenderPass point_shadow_render_passes[16];
-		ComputePass compute_pass;
-	};
+        OpaqueRenderPass opaque_render_pass;
+        TransparentRenderPass transparent_render_pass;
+        SunShadowRenderPass sun_shadow_render_pass;
+        SpotShadowRenderPass spot_shadow_render_passes[16];
+        PointShadowRenderPass point_shadow_render_passes[16];
+        ComputePass compute_pass;
+    };
 }

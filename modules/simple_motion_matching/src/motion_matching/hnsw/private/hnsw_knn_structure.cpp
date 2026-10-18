@@ -62,14 +62,14 @@ namespace era_engine
         return found_samples;
     }
 
-	bool HnswKnnStructure::serialize(std::ostream& os, const MotionMatchingDatabase& database) const
-	{
+    bool HnswKnnStructure::serialize(std::ostream& os, const MotionMatchingDatabase& database) const
+    {
         IO::write_value(os, max_edges_per_vertex);
         IO::write_value(os, construction_exploration_factor);
         IO::write_value(os, search_exploration_factor);
 
-		return true;
-	}
+        return true;
+    }
 
     bool HnswKnnStructure::deserialize(std::istream& is, const MotionMatchingDatabase& database)
     {

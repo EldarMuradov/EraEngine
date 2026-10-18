@@ -18,49 +18,50 @@
 namespace era_engine
 {
 
-	void GameStartup::start(int argc, char** argv)
-	{
-		Engine* engine = Engine::create_instance(argc, argv);
+    void GameStartup::start(int argc, char** argv)
+    {
+        Engine* engine = Engine::create_instance(argc, argv);
 
-		auto initial_task = [&engine]() {
-			ModuleLoader loader = ModuleLoader(engine);
+        auto initial_task = [&engine]()
+        {
+            ModuleLoader loader = ModuleLoader(engine);
 
-			PhysicsModule* physics_module = new PhysicsModule();
-			physics_module->initialize(engine);
+            PhysicsModule* physics_module = new PhysicsModule();
+            physics_module->initialize(engine);
 
-			SimpleMotionMatchingModule* simple_mm_module = new SimpleMotionMatchingModule();
-			simple_mm_module->initialize(engine);
+            SimpleMotionMatchingModule* simple_mm_module = new SimpleMotionMatchingModule();
+            simple_mm_module->initialize(engine);
 
-			loader.add_module(physics_module);
-			loader.add_module(simple_mm_module);
+            loader.add_module(physics_module);
+            loader.add_module(simple_mm_module);
 
-			ASSERT(loader.status());
-		};
+            ASSERT(loader.status());
+        };
 
-		DXWindow* window = get_object<DXWindow>();
-		window->initialize(TEXT("  Example Game"), 1920, 1080);
-		window->set_icon(get_asset_path("/resources/icons/Logo.ico"));
-		window->set_custom_window_style();
-		window->maximize();
-		window->init_input();
+        DXWindow* window = get_object<DXWindow>();
+        window->initialize(TEXT("  Example Game"), 1920, 1080);
+        window->set_icon(get_asset_path("/resources/icons/Logo.ico"));
+        window->set_custom_window_style();
+        window->maximize();
+        window->init_input();
 
-		World* game_world = new World(World::GAMEPLAY_WORLD_NAME);
-		game_world->get_system_scheduler()->set_fixed_update_rate(60.0f);
-		game_world->init();
+        World* game_world = new World(World::GAMEPLAY_WORLD_NAME);
+        game_world->get_system_scheduler()->set_fixed_update_rate(60.0f);
+        game_world->init();
 
-		game_world->add_tag("physics");
-		game_world->add_tag("render");
-		game_world->add_tag("base");
-		game_world->add_tag("game");
-		game_world->add_tag("motion_matching");
-		game_world->add_tag("debug");
+        game_world->add_tag("physics");
+        game_world->add_tag("render");
+        game_world->add_tag("base");
+        game_world->add_tag("game");
+        game_world->add_tag("motion_matching");
+        game_world->add_tag("debug");
 
-		PhysicsInitializer physics_initializer = PhysicsInitializer(game_world);
-		physics_initializer.init();
+        PhysicsInitializer physics_initializer = PhysicsInitializer(game_world);
+        physics_initializer.init();
 
-		engine->run(initial_task);
+        engine->run(initial_task);
 
-		delete game_world;
-	}
+        delete game_world;
+    }
 
 }

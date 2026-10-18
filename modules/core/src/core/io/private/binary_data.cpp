@@ -4,8 +4,7 @@
 namespace era_engine
 {
     BinaryData::BinaryData(const uint8* _storage, size_t _size)
-        : storage(_storage)
-        , storage_size(_size)
+        : storage(_storage), storage_size(_size)
     {
     }
 

@@ -8,21 +8,21 @@
 
 namespace era_engine
 {
-	class EditorInitSystem final : public System
-	{
-	public:
-		EditorInitSystem(World* _world);
-		~EditorInitSystem();
+    class EditorInitSystem final : public System
+    {
+    public:
+        EditorInitSystem(World* _world);
+        ~EditorInitSystem();
 
-		void init() override;
-		void update(float dt) override;
+        void init() override;
+        void update(float dt) override;
 
-		ERA_VIRTUAL_REFLECT(System)
+        ERA_VIRTUAL_REFLECT(System)
 
-	private:
-		Entity camera_entity;
+    private:
+        Entity camera_entity;
 
-		ref<MultiMesh> sphere_mesh;
-		ref<PBRMaterial> sphere_render_material;
-	};
+        ref<MultiMesh> sphere_mesh;
+        ref<PBRMaterial> sphere_render_material;
+    };
 }

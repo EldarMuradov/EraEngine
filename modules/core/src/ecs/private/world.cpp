@@ -8,249 +8,249 @@
 
 namespace era_engine
 {
-	std::unordered_map<std::string, World*> worlds;
+    std::unordered_map<std::string, World*> worlds;
 
-	World::World(const std::string& _name)
-	{
-		world_data = new WorldData();
-		world_data->name = _name;
-		world_data->scheduler = new WorldSystemScheduler(this, 1, 1);
+    World::World(const std::string& _name)
+    {
+        world_data = new WorldData();
+        world_data->name = _name;
+        world_data->scheduler = new WorldSystemScheduler(this, 1, 1);
 
-		worlds.emplace(_name, this);
-	}
+        worlds.emplace(_name, this);
+    }
 
-	World::~World()
-	{
-		destroy();
-	}
+    World::~World()
+    {
+        destroy();
+    }
 
-	void World::init()
-	{
-		std::lock_guard _lock{ world_data->sync };
+    void World::init()
+    {
+        std::lock_guard _lock{world_data->sync};
 
-		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), Entity::null_handle, this, &world_data->registry);
-		world_data->entity_datas.emplace(new_data->entity_handle, new_data);
-		world_data->root_entity = Entity(new_data);
-		world_data->root_entity.add_component<TransformComponent>();
-		world_data->root_entity.add_component<NameComponent>("RootEntity");
-		world_data->root_entity.add_component<TagsComponent>();
-	}
+        ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), Entity::null_handle, this, &world_data->registry);
+        world_data->entity_datas.emplace(new_data->entity_handle, new_data);
+        world_data->root_entity = Entity(new_data);
+        world_data->root_entity.add_component<TransformComponent>();
+        world_data->root_entity.add_component<NameComponent>("RootEntity");
+        world_data->root_entity.add_component<TagsComponent>();
+    }
 
-	Entity World::create_entity()
-	{
-		std::lock_guard _lock{ world_data->sync};
+    Entity World::create_entity()
+    {
+        std::lock_guard _lock{world_data->sync};
 
-		ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), world_data->root_entity.get_handle(), this, &world_data->registry);
-		world_data->entity_datas.emplace(new_data->entity_handle, new_data);
+        ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(world_data->registry.create(), world_data->root_entity.get_handle(), this, &world_data->registry);
+        world_data->entity_datas.emplace(new_data->entity_handle, new_data);
 
-		Entity entity = Entity(new_data);
-		add_base_components(entity);
+        Entity entity = Entity(new_data);
+        add_base_components(entity);
 
-		EntityContainer::emplace_pair(this, world_data->root_entity.get_handle(), new_data->entity_handle);
+        EntityContainer::emplace_pair(this, world_data->root_entity.get_handle(), new_data->entity_handle);
 
-		return entity;
-	}
+        return entity;
+    }
 
-	Entity World::create_entity(const char* _name)
-	{
-		Entity created_entity = create_entity();
-		created_entity.add_component<NameComponent>(_name);
-		return created_entity;
-	}
+    Entity World::create_entity(const char* _name)
+    {
+        Entity created_entity = create_entity();
+        created_entity.add_component<NameComponent>(_name);
+        return created_entity;
+    }
 
-	Entity World::create_entity(Entity::Handle _handle)
-	{
-		std::lock_guard _lock{ world_data->sync };
+    Entity World::create_entity(Entity::Handle _handle)
+    {
+        std::lock_guard _lock{world_data->sync};
 
-		if (world_data->entity_datas.find(_handle) == world_data->entity_datas.cend())
-		{
-			if (world_data->registry.create(_handle) == Entity::null_handle)
-			{
-				LOG_ERROR("ECS> Entity creation failed!");
-			}
+        if (world_data->entity_datas.find(_handle) == world_data->entity_datas.cend())
+        {
+            if (world_data->registry.create(_handle) == Entity::null_handle)
+            {
+                LOG_ERROR("ECS> Entity creation failed!");
+            }
 
-			ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(_handle, world_data->root_entity.get_handle(), this, &world_data->registry);
-			world_data->entity_datas.emplace(new_data->entity_handle, new_data);
+            ref<Entity::EcsData> new_data = make_ref<Entity::EcsData>(_handle, world_data->root_entity.get_handle(), this, &world_data->registry);
+            world_data->entity_datas.emplace(new_data->entity_handle, new_data);
 
-			Entity entity = Entity(new_data);
-			add_base_components(entity);
+            Entity entity = Entity(new_data);
+            add_base_components(entity);
 
-			EntityContainer::emplace_pair(this, world_data->root_entity.get_handle(), new_data->entity_handle);
+            EntityContainer::emplace_pair(this, world_data->root_entity.get_handle(), new_data->entity_handle);
 
-			return entity;
-		}
-		return Entity(world_data->entity_datas[_handle]);
-	}
+            return entity;
+        }
+        return Entity(world_data->entity_datas[_handle]);
+    }
 
-	Entity World::create_entity(Entity::Handle _handle, const char* _name)
-	{
-		Entity created_entity = create_entity(_handle);
-		created_entity.add_component<NameComponent>(_name);
-		return created_entity;
-	}
+    Entity World::create_entity(Entity::Handle _handle, const char* _name)
+    {
+        Entity created_entity = create_entity(_handle);
+        created_entity.add_component<NameComponent>(_name);
+        return created_entity;
+    }
 
-	uint64 World::get_fixed_frame_id() const
-	{
-		return fixed_frame_id;
-	}
+    uint64 World::get_fixed_frame_id() const
+    {
+        return fixed_frame_id;
+    }
 
-	float World::get_fixed_update_dt() const
-	{
-		return fixed_update_dt;
-	}
+    float World::get_fixed_update_dt() const
+    {
+        return fixed_update_dt;
+    }
 
-	void World::destroy_entity(const Entity& _entity)
-	{
-		destroy_entity(_entity.get_handle());
-	}
+    void World::destroy_entity(const Entity& _entity)
+    {
+        destroy_entity(_entity.get_handle());
+    }
 
-	void World::destroy_entity(Entity::Handle _handle, bool _destroy_childs, bool _destroy_components)
-	{
-		if (_handle == Entity::null_handle)
-		{
-			return;
-		}
+    void World::destroy_entity(Entity::Handle _handle, bool _destroy_childs, bool _destroy_components)
+    {
+        if (_handle == Entity::null_handle)
+        {
+            return;
+        }
 
-		Entity::Handle parent_handle = Entity::null_handle;
-		{
-			std::lock_guard _lock{ world_data->sync };
+        Entity::Handle parent_handle = Entity::null_handle;
+        {
+            std::lock_guard _lock{world_data->sync};
 
-			const auto data_iter = world_data->entity_datas.find(_handle);
-			if (data_iter == world_data->entity_datas.end())
-			{
-				return;
-			}
-			parent_handle = data_iter->second->parent_handle;
-		}
+            const auto data_iter = world_data->entity_datas.find(_handle);
+            if (data_iter == world_data->entity_datas.end())
+            {
+                return;
+            }
+            parent_handle = data_iter->second->parent_handle;
+        }
 
-		if (_destroy_childs)
-		{
-			for (const Entity::Handle child : EntityContainer::get_childs(this, _handle))
-			{
-				destroy_entity(child);
-			}
-		}
+        if (_destroy_childs)
+        {
+            for (const Entity::Handle child : EntityContainer::get_childs(this, _handle))
+            {
+                destroy_entity(child);
+            }
+        }
 
-		EntityContainer::erase(this, _handle);
-		EntityContainer::erase_pair(this, parent_handle, _handle);
+        EntityContainer::erase(this, _handle);
+        EntityContainer::erase_pair(this, parent_handle, _handle);
 
-		world_data->registry.destroy(_handle);
+        world_data->registry.destroy(_handle);
 
-		std::lock_guard _lock{ world_data->sync };
-		world_data->entity_datas.erase(_handle);
-	}
+        std::lock_guard _lock{world_data->sync};
+        world_data->entity_datas.erase(_handle);
+    }
 
-	Entity World::try_create_entity_in_place(const Entity& place, const char* _name)
-	{
-		if(place.is_valid())
-		{
-			return create_entity(place.internal_data->entity_handle, _name);
-		}
-		return Entity::null;
-	}
+    Entity World::try_create_entity_in_place(const Entity& place, const char* _name)
+    {
+        if (place.is_valid())
+        {
+            return create_entity(place.internal_data->entity_handle, _name);
+        }
+        return Entity::null;
+    }
 
-	Entity World::get_entity(Entity::Handle _handle) const
-	{
-		std::lock_guard _lock{ world_data->sync };
+    Entity World::get_entity(Entity::Handle _handle) const
+    {
+        std::lock_guard _lock{world_data->sync};
 
-		if (world_data->entity_datas.find(_handle) == world_data->entity_datas.cend())
-		{
-			return Entity();
-		}
-		return Entity(world_data->entity_datas.at(_handle));
-	}
+        if (world_data->entity_datas.find(_handle) == world_data->entity_datas.cend())
+        {
+            return Entity();
+        }
+        return Entity(world_data->entity_datas.at(_handle));
+    }
 
-	void World::destroy(bool _destroy_components)
-	{
-		if (world_data == nullptr)
-		{
-			return;
-		}
+    void World::destroy(bool _destroy_components)
+    {
+        if (world_data == nullptr)
+        {
+            return;
+        }
 
-		const auto world_iter = worlds.find(world_data->name);
-		if (world_iter != worlds.end() && world_iter->second == this)
-		{
-			worlds.erase(world_iter);
-		}
+        const auto world_iter = worlds.find(world_data->name);
+        if (world_iter != worlds.end() && world_iter->second == this)
+        {
+            worlds.erase(world_iter);
+        }
 
-		world_data->scheduler->stop();
+        world_data->scheduler->stop();
 
-		world_data->registry.clear();
-		{
-			std::lock_guard _lock{ world_data->sync };
-			world_data->entity_datas.clear();
-		}
+        world_data->registry.clear();
+        {
+            std::lock_guard _lock{world_data->sync};
+            world_data->entity_datas.clear();
+        }
 
-		delete world_data->scheduler;
-		world_data->scheduler = nullptr;
+        delete world_data->scheduler;
+        world_data->scheduler = nullptr;
 
-		delete world_data;
-		world_data = nullptr;
-	}
+        delete world_data;
+        world_data = nullptr;
+    }
 
-	void World::add_tag(const std::string& tag)
-	{
-		world_data->root_entity.get_component<TagsComponent>()->add_tag(tag);
-		world_data->scheduler->refresh_graph();
-	}
+    void World::add_tag(const std::string& tag)
+    {
+        world_data->root_entity.get_component<TagsComponent>()->add_tag(tag);
+        world_data->scheduler->refresh_graph();
+    }
 
-	bool World::remove_tag(const std::string& tag)
-	{
-		const bool removed = world_data->root_entity.get_component<TagsComponent>()->remove_tag(tag);
-		world_data->scheduler->refresh_graph();
-		return removed;
-	}
+    bool World::remove_tag(const std::string& tag)
+    {
+        const bool removed = world_data->root_entity.get_component<TagsComponent>()->remove_tag(tag);
+        world_data->scheduler->refresh_graph();
+        return removed;
+    }
 
-	bool World::has_tag(const std::string& tag) const
-	{
-		return world_data->root_entity.get_component<TagsComponent>()->has_tag(tag);
-	}
+    bool World::has_tag(const std::string& tag) const
+    {
+        return world_data->root_entity.get_component<TagsComponent>()->has_tag(tag);
+    }
 
-	void World::clear_tags()
-	{
-		world_data->root_entity.get_component<TagsComponent>()->clear();
-		world_data->scheduler->refresh_graph();
-	}
+    void World::clear_tags()
+    {
+        world_data->root_entity.get_component<TagsComponent>()->clear();
+        world_data->scheduler->refresh_graph();
+    }
 
-	const TagsContainer& World::get_tags_container() const
-	{
-		return world_data->root_entity.get_component<TagsComponent>()->get_container();
-	}
+    const TagsContainer& World::get_tags_container() const
+    {
+        return world_data->root_entity.get_component<TagsComponent>()->get_container();
+    }
 
-	size_t World::size() const noexcept
-	{
-		return world_data->entity_datas.size();
-	}
+    size_t World::size() const noexcept
+    {
+        return world_data->entity_datas.size();
+    }
 
-	entt::registry& World::get_registry()
-	{
-		return world_data->registry;
-	}
+    entt::registry& World::get_registry()
+    {
+        return world_data->registry;
+    }
 
-	WorldSystemScheduler* World::get_system_scheduler() const
-	{
-		return world_data->scheduler;
-	}
+    WorldSystemScheduler* World::get_system_scheduler() const
+    {
+        return world_data->scheduler;
+    }
 
-	Entity World::get_root_entity() const
-	{
-		return world_data->root_entity;
-	}
+    Entity World::get_root_entity() const
+    {
+        return world_data->root_entity;
+    }
 
-	void World::add_base_components(Entity& entity)
-	{
-		entity.add_component<TransformComponent>();
-	}
+    void World::add_base_components(Entity& entity)
+    {
+        entity.add_component<TransformComponent>();
+    }
 
-	World* get_world_by_name(const std::string& _name)
-	{
-		const auto world_iter = worlds.find(_name);
-		return world_iter != worlds.end() ? world_iter->second : nullptr;
-	}
+    World* get_world_by_name(const std::string& _name)
+    {
+        const auto world_iter = worlds.find(_name);
+        return world_iter != worlds.end() ? world_iter->second : nullptr;
+    }
 
-	std::unordered_map<std::string, World*>& get_worlds()
-	{
-		return worlds;
-	}
+    std::unordered_map<std::string, World*>& get_worlds()
+    {
+        return worlds;
+    }
 
 }

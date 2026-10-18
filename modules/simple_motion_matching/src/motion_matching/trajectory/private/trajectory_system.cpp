@@ -30,10 +30,10 @@ namespace era_engine
     static DebugVar<bool> draw_rotation = DebugVar<bool>("motion_matching.debug_draw.draw_rotation", false);
     static DebugVar<bool> draw_trajectories = DebugVar<bool>("motion_matching.debug_draw.draw_trajectories", false);
 
-    // Predict what the desired velocity will be in the 
-    // future. Here we need to use the future trajectory 
-    // rotation as well as predicted future camera 
-    // position to find an accurate desired velocity in 
+    // Predict what the desired velocity will be in the
+    // future. Here we need to use the future trajectory
+    // rotation as well as predicted future camera
+    // position to find an accurate desired velocity in
     // the world space
     static void trajectory_desired_velocities_predict(
         std::vector<vec3>& desired_velocities,
@@ -95,7 +95,7 @@ namespace era_engine
         }
     }
 
-    // Predict desired rotations given the estimated future 
+    // Predict desired rotations given the estimated future
     // camera rotation and other parameters
     static void trajectory_desired_rotations_predict(
         std::vector<quat>& desired_rotations,
@@ -179,8 +179,7 @@ namespace era_engine
     {
         using namespace animation;
 
-        for (auto [handle, transform_component, reciever_component, trajectory_component, motion_component] 
-            : world->group(components_group<TransformComponent, InputReceiverComponent, TrajectoryComponent, MotionComponent>).each())
+        for (auto [handle, transform_component, reciever_component, trajectory_component, motion_component] : world->group(components_group<TransformComponent, InputReceiverComponent, TrajectoryComponent, MotionComponent>).each())
         {
             const trs& current_world_transform = transform_component.get_world_transform();
 
@@ -236,8 +235,7 @@ namespace era_engine
     {
         if (draw_trajectories || draw_rotation)
         {
-            for (auto [handle, transform_component, trajectory_component]
-                : world->group(components_group<TransformComponent, TrajectoryComponent>).each())
+            for (auto [handle, transform_component, trajectory_component] : world->group(components_group<TransformComponent, TrajectoryComponent>).each())
             {
                 if (draw_trajectories)
                 {
@@ -258,8 +256,8 @@ namespace era_engine
         }
     }
 
-    void TrajectoryMotionSystem::draw_trajectory(const std::vector<vec3>& trajectory_positions, 
-        const std::vector<quat>& trajectory_rotations, 
+    void TrajectoryMotionSystem::draw_trajectory(const std::vector<vec3>& trajectory_positions,
+        const std::vector<quat>& trajectory_rotations,
         const std::vector<vec3>& trajectory_velocities,
         const vec4& color)
     {
@@ -274,5 +272,4 @@ namespace era_engine
             render_line(trajectory_positions[i - 1], point, color, renderer_holder_rc->ldr_render_pass);
         }
     }
-
 }

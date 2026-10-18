@@ -8,27 +8,27 @@
 
 namespace era_engine
 {
-	class MotionMatchingDatabase;
+    class MotionMatchingDatabase;
 
-	class GameInitSystem final : public System
-	{
-	public:
-		GameInitSystem(World* _world);
-		~GameInitSystem();
+    class GameInitSystem final : public System
+    {
+    public:
+        GameInitSystem(World* _world);
+        ~GameInitSystem();
 
-		void init() override;
-		void update(float dt) override;
+        void init() override;
+        void update(float dt) override;
 
-		ERA_VIRTUAL_REFLECT(System)
+        ERA_VIRTUAL_REFLECT(System)
 
-	private:
-		Entity camera_entity;
+    private:
+        Entity camera_entity;
 
-		ref<MultiMesh> sphere_mesh;
-		ref<PBRMaterial> sphere_render_material;
+        ref<MultiMesh> sphere_mesh;
+        ref<PBRMaterial> sphere_render_material;
 
-		ref<MotionMatchingDatabase> database;
+        ref<MotionMatchingDatabase> database;
 
-		Entity character;
-	};
+        Entity character;
+    };
 }

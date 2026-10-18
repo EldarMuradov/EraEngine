@@ -6,9 +6,9 @@
 
 #include "raytracing.hlsli"
 
-#define PATH_TRACING_RS_RESOURCES   0
-#define PATH_TRACING_RS_CAMERA      1
-#define PATH_TRACING_RS_CB          2
+#define PATH_TRACING_RS_RESOURCES 0
+#define PATH_TRACING_RS_CAMERA 1
+#define PATH_TRACING_RS_CB 2
 
 namespace era_engine
 {
@@ -20,26 +20,25 @@ namespace era_engine
         const uint32 num_output_resources = sizeof(OutputResources) / sizeof(DXCPUDescriptorHandle);
 
         CD3DX12_DESCRIPTOR_RANGE resource_ranges[] =
-        {
-            // Must be input first, then output
-            CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, num_input_resources, 0),
-            CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, num_output_resources, 0),
-        };
+            {
+                // Must be input first, then output
+                CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, num_input_resources, 0),
+                CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, num_output_resources, 0),
+            };
 
         CD3DX12_ROOT_PARAMETER global_root_parameters[] =
-        {
-            root_descriptor_table(arraysize(resource_ranges), resource_ranges),
-            root_cbv(0), // Camera
-            root_constants<PathTracingCB>(1),
-        };
+            {
+                root_descriptor_table(arraysize(resource_ranges), resource_ranges),
+                root_cbv(0), // Camera
+                root_constants<PathTracingCB>(1),
+            };
 
         CD3DX12_STATIC_SAMPLER_DESC global_static_sampler(0, D3D12_FILTER_MIN_MAG_MIP_LINEAR);
 
         D3D12_ROOT_SIGNATURE_DESC global_desc =
-        {
-            arraysize(global_root_parameters), global_root_parameters,
-            1, &global_static_sampler
-        };
+            {
+                arraysize(global_root_parameters), global_root_parameters,
+                1, &global_static_sampler};
 
         PBRRaytracer::initialize(shader_path, settings.max_payload_size, settings.max_recursion_depth, global_desc);
 
@@ -84,8 +83,7 @@ namespace era_engine
         cl->set_compute_descriptor_table(PATH_TRACING_RS_RESOURCES, gpu_handle);
         cl->set_compute_dynamic_constant_buffer(PATH_TRACING_RS_CAMERA, common.camera_cbv);
         cl->set_compute_32bit_constants(PATH_TRACING_RS_CB,
-            PathTracingCB
-            {
+            PathTracingCB{
                 (uint32)dx_context.frame_id,
                 num_averaged_frames,
                 depth,

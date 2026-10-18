@@ -85,31 +85,30 @@ namespace era_engine
         const uint32 num_output_resources = sizeof(OutputResources) / sizeof(DXCPUDescriptorHandle);
 
         CD3DX12_DESCRIPTOR_RANGE resource_ranges[] =
-        {
-            // Must be input first, then output
-            CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, num_input_resources, 0),
-            CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, num_output_resources, 0),
-        };
+            {
+                // Must be input first, then output
+                CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, num_input_resources, 0),
+                CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, num_output_resources, 0),
+            };
 
         CD3DX12_ROOT_PARAMETER global_root_parameters[] =
-        {
-            root_descriptor_table(arraysize(resource_ranges), resource_ranges),
-            root_constants<RTReflectionsCB>(0),
-            root_cbv(1), // Camera.
-            root_cbv(2), // Sun.
-        };
+            {
+                root_descriptor_table(arraysize(resource_ranges), resource_ranges),
+                root_constants<RTReflectionsCB>(0),
+                root_cbv(1), // Camera.
+                root_cbv(2), // Sun.
+            };
 
         CD3DX12_STATIC_SAMPLER_DESC global_static_samplers[] =
-        {
-           CD3DX12_STATIC_SAMPLER_DESC(0, D3D12_FILTER_MIN_MAG_MIP_LINEAR),
-           CD3DX12_STATIC_SAMPLER_DESC(1, D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP),
-        };
+            {
+                CD3DX12_STATIC_SAMPLER_DESC(0, D3D12_FILTER_MIN_MAG_MIP_LINEAR),
+                CD3DX12_STATIC_SAMPLER_DESC(1, D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP),
+            };
 
         D3D12_ROOT_SIGNATURE_DESC global_desc =
-        {
-            arraysize(global_root_parameters), global_root_parameters,
-            arraysize(global_static_samplers), global_static_samplers
-        };
+            {
+                arraysize(global_root_parameters), global_root_parameters,
+                arraysize(global_static_samplers), global_static_samplers};
 
         PBRRaytracer::initialize(shader_path, 3 * sizeof(float), max_recursion_depth, global_desc);
 

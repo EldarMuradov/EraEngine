@@ -39,8 +39,7 @@ namespace era_engine
         registration::class_<DynXPhysicsModule>("DynXPhysicsModule")
             .constructor<>()(policy::ctor::as_raw_ptr)
             .method("initialize", &DynXPhysicsModule::initialize)
-            .method("terminate", &DynXPhysicsModule::terminate)
-            (metadata("module_type", IModule::Type::ENGINE));
+            .method("terminate", &DynXPhysicsModule::terminate)(metadata("module_type", IModule::Type::ENGINE));
     }
 
 }

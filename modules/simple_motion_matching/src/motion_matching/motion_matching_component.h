@@ -8,20 +8,20 @@
 
 namespace era_engine
 {
-	class MotionMatchingFeatureSet;
-	class MotionMatchingDatabase;
+    class MotionMatchingFeatureSet;
+    class MotionMatchingDatabase;
 
-	class ERA_MOTION_MATCHING_API MotionMatchingComponent final : public Component
-	{
-	public:
-		MotionMatchingComponent() = default;
-		MotionMatchingComponent(ref<Entity::EcsData> _data);
+    class ERA_MOTION_MATCHING_API MotionMatchingComponent final : public Component
+    {
+    public:
+        MotionMatchingComponent() = default;
+        MotionMatchingComponent(ref<Entity::EcsData> _data);
 
-		~MotionMatchingComponent() override;
+        ~MotionMatchingComponent() override;
 
-		SearchResult search_animation(const MotionMatchingFeatureSet& feature_set, const std::string& database_id) const;
-		SearchResult search_animation(const MotionMatchingFeatureSet& feature_set, const MotionMatchingDatabase* database) const;
+        SearchResult search_animation(const MotionMatchingFeatureSet& feature_set, const std::string& database_id) const;
+        SearchResult search_animation(const MotionMatchingFeatureSet& feature_set, const MotionMatchingDatabase* database) const;
 
-		ERA_VIRTUAL_REFLECT(Component)
-	};
+        ERA_VIRTUAL_REFLECT(Component)
+    };
 }

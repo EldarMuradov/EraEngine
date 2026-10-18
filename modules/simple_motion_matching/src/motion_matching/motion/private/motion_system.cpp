@@ -26,198 +26,196 @@
 
 namespace era_engine
 {
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
 
-		registration::class_<MotionSystem>("MotionSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("motion_matching")))
-			.method("update", &MotionSystem::update)(metadata("update_group", update_types::GAMEPLAY_BEFORE_PHYSICS))
-			.method("update_transforms", &MotionSystem::update_transforms)(metadata("update_group", update_types::GAMEPLAY_BEFORE_PHYSICS),
-				metadata("After", std::vector<std::string>{"MotionSystem::update"}))
-			.method("update_base", &MotionSystem::update_base)(metadata("update_group", update_types::GAMEPLAY_NORMAL_CONCURRENT))
-			.method("reset_input", &MotionSystem::reset_input)(metadata("update_group", update_types::END_FIXED));
-	}
+        registration::class_<MotionSystem>("MotionSystem")
+            .constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("motion_matching")))
+            .method("update", &MotionSystem::update)(metadata("update_group", update_types::GAMEPLAY_BEFORE_PHYSICS))
+            .method("update_transforms", &MotionSystem::update_transforms)(metadata("update_group", update_types::GAMEPLAY_BEFORE_PHYSICS),
+                metadata("After", std::vector<std::string>{"MotionSystem::update"}))
+            .method("update_base", &MotionSystem::update_base)(metadata("update_group", update_types::GAMEPLAY_NORMAL_CONCURRENT))
+            .method("reset_input", &MotionSystem::reset_input)(metadata("update_group", update_types::END_FIXED));
+    }
 
-	MotionSystem::MotionSystem(World* _world)
-		: System(_world)
-	{
-	}
+    MotionSystem::MotionSystem(World* _world)
+        : System(_world)
+    {
+    }
 
-	MotionSystem::~MotionSystem()
-	{
-	}
+    MotionSystem::~MotionSystem()
+    {
+    }
 
-	void MotionSystem::init()
-	{
-	}
+    void MotionSystem::init()
+    {
+    }
 
-	void MotionSystem::update(float dt)
-	{
-		ZoneScopedN("MotionSystem::update");
+    void MotionSystem::update(float dt)
+    {
+        ZoneScopedN("MotionSystem::update");
 
-        for (auto&& [handle, transform_component, reciever_component, motion_component]
-			: world->group(components_group<TransformComponent, InputReceiverComponent, MotionComponent>).each())
+        for (auto&& [handle, transform_component, reciever_component, motion_component] : world->group(components_group<TransformComponent, InputReceiverComponent, MotionComponent>).each())
         {
-			const trs& desired_world_transform = transform_component.get_world_transform();
+            const trs& desired_world_transform = transform_component.get_world_transform();
 
-			const vec3 input = noz(motion_component.get_desired_input());
+            const vec3 input = noz(motion_component.get_desired_input());
 
-			const bool desired_strafe = motion_component.follow_input_rotation ? true : reciever_component.get_frame_input().keyboard[KEY_CTRL].down;
-			const float strafe_direction = motion_component.input_movement_yaw;
+            const bool desired_strafe = motion_component.follow_input_rotation ? true : reciever_component.get_frame_input().keyboard[KEY_CTRL].down;
+            const float strafe_direction = motion_component.input_movement_yaw;
 
-			MotionUtils::desired_gait_update(
-				motion_component.desired_gait,
-				motion_component.desired_gait_velocity,
-				dt);
+            MotionUtils::desired_gait_update(
+                motion_component.desired_gait,
+                motion_component.desired_gait_velocity,
+                dt);
 
-			const float simulation_fwrd_speed = lerpf(motion_component.run_fwrd_speed, motion_component.walk_fwrd_speed, motion_component.desired_gait);
-			const float simulation_side_speed = lerpf(motion_component.run_side_speed, motion_component.walk_side_speed, motion_component.desired_gait);
-			const float simulation_back_speed = lerpf(motion_component.run_back_speed, motion_component.walk_back_speed, motion_component.desired_gait);
+            const float simulation_fwrd_speed = lerpf(motion_component.run_fwrd_speed, motion_component.walk_fwrd_speed, motion_component.desired_gait);
+            const float simulation_side_speed = lerpf(motion_component.run_side_speed, motion_component.walk_side_speed, motion_component.desired_gait);
+            const float simulation_back_speed = lerpf(motion_component.run_back_speed, motion_component.walk_back_speed, motion_component.desired_gait);
 
-			const vec3 desired_velocity_curr = MotionUtils::desired_velocity_update(
-				input,
-				motion_component.input_movement_rotation,
-				simulation_fwrd_speed,
-				simulation_side_speed,
-				simulation_back_speed);
+            const vec3 desired_velocity_curr = MotionUtils::desired_velocity_update(
+                input,
+                motion_component.input_movement_rotation,
+                simulation_fwrd_speed,
+                simulation_side_speed,
+                simulation_back_speed);
 
-			const quat desired_rotation_curr = MotionUtils::desired_rotation_update(
-				desired_world_transform.rotation,
-				length(input) > 0.01f,
-				strafe_direction,
-				desired_strafe,
-				desired_velocity_curr);
+            const quat desired_rotation_curr = MotionUtils::desired_rotation_update(
+                desired_world_transform.rotation,
+                length(input) > 0.01f,
+                strafe_direction,
+                desired_strafe,
+                desired_velocity_curr);
 
-			motion_component.desired_velocity_change_prev = motion_component.desired_velocity_change_curr;
-			motion_component.desired_velocity_change_curr = (desired_velocity_curr - motion_component.desired_velocity) * dt;
-			motion_component.desired_velocity = desired_velocity_curr;
+            motion_component.desired_velocity_change_prev = motion_component.desired_velocity_change_curr;
+            motion_component.desired_velocity_change_curr = (desired_velocity_curr - motion_component.desired_velocity) * dt;
+            motion_component.desired_velocity = desired_velocity_curr;
 
-			motion_component.desired_rotation_change_prev = motion_component.desired_rotation_change_curr;
-			motion_component.desired_rotation_change_curr = quat_to_scaled_angle_axis(abs((conjugate(desired_rotation_curr) * motion_component.desired_rotation))) * dt;
-			motion_component.desired_rotation = desired_rotation_curr;
-		}
-	}
+            motion_component.desired_rotation_change_prev = motion_component.desired_rotation_change_curr;
+            motion_component.desired_rotation_change_curr = quat_to_scaled_angle_axis(abs((conjugate(desired_rotation_curr) * motion_component.desired_rotation))) * dt;
+            motion_component.desired_rotation = desired_rotation_curr;
+        }
+    }
 
-	void MotionSystem::update_transforms(float dt)
-	{
-		ZoneScopedN("MotionSystem::update_transforms");
+    void MotionSystem::update_transforms(float dt)
+    {
+        ZoneScopedN("MotionSystem::update_transforms");
 
-		for (auto&& [handle, transform_component, reciever_component, motion_component]
-			: world->group(components_group<TransformComponent, InputReceiverComponent, MotionComponent>).each())
-		{
-			trs desired_world_transform = transform_component.get_world_transform();
+        for (auto&& [handle, transform_component, reciever_component, motion_component] : world->group(components_group<TransformComponent, InputReceiverComponent, MotionComponent>).each())
+        {
+            trs desired_world_transform = transform_component.get_world_transform();
 
-			if (motion_component.has_root_motion())
-			{
-				RootMotion& root_motion = motion_component.root_motion.value();
-				root_motion.update_motion(dt);
+            if (motion_component.has_root_motion())
+            {
+                RootMotion& root_motion = motion_component.root_motion.value();
+                root_motion.update_motion(dt);
 
-				const float current_position = root_motion.get_position_by_time(root_motion.get_current_time());
+                const float current_position = root_motion.get_position_by_time(root_motion.get_current_time());
 
-				//motion_component.velocity = root_motion.get_world_linear_velocity(current_position);
-				//motion_component.acceleration = root_motion.get_world_linear_acceleration(current_position);
+                // motion_component.velocity = root_motion.get_world_linear_velocity(current_position);
+                // motion_component.acceleration = root_motion.get_world_linear_acceleration(current_position);
 
-				MotionUtils::simulation_positions_update(
-					desired_world_transform.position,
-					motion_component.velocity,
-					motion_component.acceleration,
-					motion_component.desired_velocity,
-					motion_component.velocity_halflife,
-					dt);
+                MotionUtils::simulation_positions_update(
+                    desired_world_transform.position,
+                    motion_component.velocity,
+                    motion_component.acceleration,
+                    motion_component.desired_velocity,
+                    motion_component.velocity_halflife,
+                    dt);
 
-				MotionUtils::simulation_rotations_update(
-					desired_world_transform.rotation,
-					motion_component.angular_velocity,
-					motion_component.desired_rotation,
-					motion_component.rotation_halflife,
-					dt);
+                MotionUtils::simulation_rotations_update(
+                    desired_world_transform.rotation,
+                    motion_component.angular_velocity,
+                    motion_component.desired_rotation,
+                    motion_component.rotation_halflife,
+                    dt);
 
-				const trs world_root_transform = root_motion.get_world_transform(current_position);
+                const trs world_root_transform = root_motion.get_world_transform(current_position);
 
-				RootMotionType motion_type = root_motion.get_motion_type();
-				if (motion_type == RootMotionType::LOCATION)
-				{
-					desired_world_transform.position = world_root_transform.position;
-				}
-				else if (motion_type == RootMotionType::ROTATION)
-				{
-					desired_world_transform.rotation = world_root_transform.rotation;
-				}
-				else
-				{
-					desired_world_transform = world_root_transform;
-				}
+                RootMotionType motion_type = root_motion.get_motion_type();
+                if (motion_type == RootMotionType::LOCATION)
+                {
+                    desired_world_transform.position = world_root_transform.position;
+                }
+                else if (motion_type == RootMotionType::ROTATION)
+                {
+                    desired_world_transform.rotation = world_root_transform.rotation;
+                }
+                else
+                {
+                    desired_world_transform = world_root_transform;
+                }
 
-				if (physics::CharacterControllerComponent* cct_component = world->get_entity(handle).get_component_if_exists<physics::CharacterControllerComponent>())
-				{
-					const vec3 root_velocity = desired_world_transform.rotation * root_motion.get_linear_velocity(current_position);
-					vec3& raw_cct_velocity = cct_component->velocity.get_for_write();
-					raw_cct_velocity.x = root_velocity.x;
-					raw_cct_velocity.z = root_velocity.z;
-					transform_component.set_world_rotation(desired_world_transform.rotation);
-				}
-				else
-				{
-					transform_component.set_world_transform(desired_world_transform);
-				}
-			}
-			else
-			{
-				MotionUtils::simulation_positions_update(
-					desired_world_transform.position,
-					motion_component.velocity,
-					motion_component.acceleration,
-					motion_component.desired_velocity,
-					motion_component.velocity_halflife,
-					dt);
+                if (physics::CharacterControllerComponent* cct_component = world->get_entity(handle).get_component_if_exists<physics::CharacterControllerComponent>())
+                {
+                    const vec3 root_velocity = desired_world_transform.rotation * root_motion.get_linear_velocity(current_position);
+                    vec3& raw_cct_velocity = cct_component->velocity.get_for_write();
+                    raw_cct_velocity.x = root_velocity.x;
+                    raw_cct_velocity.z = root_velocity.z;
+                    transform_component.set_world_rotation(desired_world_transform.rotation);
+                }
+                else
+                {
+                    transform_component.set_world_transform(desired_world_transform);
+                }
+            }
+            else
+            {
+                MotionUtils::simulation_positions_update(
+                    desired_world_transform.position,
+                    motion_component.velocity,
+                    motion_component.acceleration,
+                    motion_component.desired_velocity,
+                    motion_component.velocity_halflife,
+                    dt);
 
-				MotionUtils::simulation_rotations_update(
-					desired_world_transform.rotation,
-					motion_component.angular_velocity,
-					motion_component.desired_rotation,
-					motion_component.rotation_halflife,
-					dt);
+                MotionUtils::simulation_rotations_update(
+                    desired_world_transform.rotation,
+                    motion_component.angular_velocity,
+                    motion_component.desired_rotation,
+                    motion_component.rotation_halflife,
+                    dt);
 
-				if (physics::CharacterControllerComponent* cct_component = world->get_entity(handle).get_component_if_exists<physics::CharacterControllerComponent>())
-				{
-					vec3& raw_cct_velocity = cct_component->velocity.get_for_write();
-					raw_cct_velocity.x = motion_component.velocity.x;
-					raw_cct_velocity.z = motion_component.velocity.z;
-					transform_component.set_world_rotation(desired_world_transform.rotation);
-				}
-				else
-				{
-					transform_component.set_world_transform(desired_world_transform);
-				}
-			}
+                if (physics::CharacterControllerComponent* cct_component = world->get_entity(handle).get_component_if_exists<physics::CharacterControllerComponent>())
+                {
+                    vec3& raw_cct_velocity = cct_component->velocity.get_for_write();
+                    raw_cct_velocity.x = motion_component.velocity.x;
+                    raw_cct_velocity.z = motion_component.velocity.z;
+                    transform_component.set_world_rotation(desired_world_transform.rotation);
+                }
+                else
+                {
+                    transform_component.set_world_transform(desired_world_transform);
+                }
+            }
 
-			motion_component.last_velocity = motion_component.velocity;
-		}
-	}
+            motion_component.last_velocity = motion_component.velocity;
+        }
+    }
 
-	void MotionSystem::update_base(float dt)
-	{
-		ZoneScopedN("MotionSystem::update_base");
+    void MotionSystem::update_base(float dt)
+    {
+        ZoneScopedN("MotionSystem::update_base");
 
-		for (auto&& [handle, transform_component, motion_component, reciever_component] : world->group(components_group<TransformComponent, MotionComponent, InputReceiverComponent>).each())
-		{
-			Entity movable = world->get_entity(handle);
+        for (auto&& [handle, transform_component, motion_component, reciever_component] : world->group(components_group<TransformComponent, MotionComponent, InputReceiverComponent>).each())
+        {
+            Entity movable = world->get_entity(handle);
 
-			const UserInput& user_input = reciever_component.get_frame_input();
-			const vec3& input = reciever_component.get_current_input();
+            const UserInput& user_input = reciever_component.get_frame_input();
+            const vec3& input = reciever_component.get_current_input();
 
-			motion_component.apply_input(input);
-		}
-	}
+            motion_component.apply_input(input);
+        }
+    }
 
-	void MotionSystem::reset_input(float dt)
-	{
-		ZoneScopedN("MotionSystem::reset_input");
+    void MotionSystem::reset_input(float dt)
+    {
+        ZoneScopedN("MotionSystem::reset_input");
 
-		for (auto&& [handle, transform_component, motion_component] : world->group(components_group<TransformComponent, MotionComponent>).each())
-		{
-			motion_component.apply_desired_input();
-		}
-	}
+        for (auto&& [handle, transform_component, motion_component] : world->group(components_group<TransformComponent, MotionComponent>).each())
+        {
+            motion_component.apply_desired_input();
+        }
+    }
 }

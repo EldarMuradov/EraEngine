@@ -81,12 +81,13 @@ namespace era_engine::physics
             body_component->detach_shape(shape);
         }
 
-        PhysicsEngine::execute_write([&]() {
-            if (shape->isReleasable())
+        PhysicsEngine::execute_write([&]()
             {
-                PX_RELEASE(shape)
-            }
-        });
+                if (shape->isReleasable())
+                {
+                    PX_RELEASE(shape)
+                }
+            });
     }
 
     physx::PxShape* ShapeComponent::get_shape() const
@@ -137,17 +138,17 @@ namespace era_engine::physics
 
         ref<Physics> physics = PhysicsEngine::get_physics_core();
 
-        PxMaterial* used_material = material == nullptr 
-            ? physics->get_default_material()->get_native_material() 
-            : material->get_native_material();
+        PxMaterial* used_material = material == nullptr
+                                        ? physics->get_default_material()->get_native_material()
+                                        : material->get_native_material();
 
-        shape = physics->get_physics()->createShape(PxBoxGeometry(half_extents.x, half_extents.y, half_extents.z), 
+        shape = physics->get_physics()->createShape(PxBoxGeometry(half_extents.x, half_extents.y, half_extents.z),
             *used_material, true);
         shape->userData = this;
 
-        //PhysicsEngine::execute_write([&]() {
-        //    shape->setFlag(physx::PxShapeFlag::eVISUALIZATION, false);
-        //    });
+        // PhysicsEngine::execute_write([&]() {
+        //     shape->setFlag(physx::PxShapeFlag::eVISUALIZATION, false);
+        //     });
 
         return shape;
     }
@@ -168,16 +169,16 @@ namespace era_engine::physics
         ref<Physics> physics = PhysicsEngine::get_physics_core();
 
         PxMaterial* used_material = material == nullptr
-            ? physics->get_default_material()->get_native_material()
-            : material->get_native_material();
+                                        ? physics->get_default_material()->get_native_material()
+                                        : material->get_native_material();
 
-        shape = physics->get_physics()->createShape(PxSphereGeometry(radius), 
+        shape = physics->get_physics()->createShape(PxSphereGeometry(radius),
             *used_material, true);
         shape->userData = this;
 
-        //PhysicsEngine::execute_write([&]() {
-        //    shape->setFlag(physx::PxShapeFlag::eVISUALIZATION, false);
-        //    });
+        // PhysicsEngine::execute_write([&]() {
+        //     shape->setFlag(physx::PxShapeFlag::eVISUALIZATION, false);
+        //     });
 
         return shape;
     }
@@ -198,16 +199,16 @@ namespace era_engine::physics
         ref<Physics> physics = PhysicsEngine::get_physics_core();
 
         PxMaterial* used_material = material == nullptr
-			? physics->get_default_material()->get_native_material()
-			: material->get_native_material();
+                                        ? physics->get_default_material()->get_native_material()
+                                        : material->get_native_material();
 
-		shape = physics->get_physics()->createShape(PxCapsuleGeometry(radius, half_height),
-			*used_material, true);
-		shape->userData = this;
+        shape = physics->get_physics()->createShape(PxCapsuleGeometry(radius, half_height),
+            *used_material, true);
+        shape->userData = this;
 
-		//PhysicsEngine::execute_write([&]() {
-		//	shape->setFlag(physx::PxShapeFlag::eVISUALIZATION, false);
-		//	});
+        // PhysicsEngine::execute_write([&]() {
+        //	shape->setFlag(physx::PxShapeFlag::eVISUALIZATION, false);
+        //	});
 
         return shape;
     }
@@ -228,16 +229,17 @@ namespace era_engine::physics
         ref<Physics> physics = PhysicsEngine::get_physics_core();
 
         PxMaterial* used_material = material == nullptr
-            ? physics->get_default_material()->get_native_material()
-            : material->get_native_material();
+                                        ? physics->get_default_material()->get_native_material()
+                                        : material->get_native_material();
 
         shape = physics->get_physics()->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(create_PxVec3(size)), PxMeshGeometryFlag::eTIGHT_BOUNDS),
             *used_material, true);
         shape->userData = this;
 
-        PhysicsEngine::execute_write([&]() {
-            shape->setRestOffset(-0.005f);
-            //shape->setFlag(physx::PxShapeFlag::eVISUALIZATION, false);
+        PhysicsEngine::execute_write([&]()
+            {
+                shape->setRestOffset(-0.005f);
+                // shape->setFlag(physx::PxShapeFlag::eVISUALIZATION, false);
             });
 
         return shape;
@@ -259,16 +261,17 @@ namespace era_engine::physics
         ref<Physics> physics = PhysicsEngine::get_physics_core();
 
         PxMaterial* used_material = material == nullptr
-            ? physics->get_default_material()->get_native_material()
-            : material->get_native_material();
+                                        ? physics->get_default_material()->get_native_material()
+                                        : material->get_native_material();
 
         shape = physics->get_physics()->createShape(PxConvexMeshGeometry(mesh, PxMeshScale(), PxConvexMeshGeometryFlag::eTIGHT_BOUNDS),
             *used_material, true);
         shape->userData = this;
 
-        PhysicsEngine::execute_write([&]() {
-            shape->setRestOffset(-0.005f);
-            //shape->setFlag(physx::PxShapeFlag::eVISUALIZATION, false);
+        PhysicsEngine::execute_write([&]()
+            {
+                shape->setRestOffset(-0.005f);
+                // shape->setFlag(physx::PxShapeFlag::eVISUALIZATION, false);
             });
 
         return shape;

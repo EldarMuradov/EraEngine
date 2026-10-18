@@ -16,42 +16,42 @@
 namespace era_engine::physics
 {
 
-	vec3 PhysicalAnimationUtils::calculate_delta_rotation_time_derivative(const quat& delta_rotation, float dt)
-	{
-		float delta_angle = 0.0f;
-		vec3 delta_axis = vec3::zero;
-		get_axis_rotation(delta_rotation, delta_axis, delta_angle);
+    vec3 PhysicalAnimationUtils::calculate_delta_rotation_time_derivative(const quat& delta_rotation, float dt)
+    {
+        float delta_angle = 0.0f;
+        vec3 delta_axis = vec3::zero;
+        get_axis_rotation(delta_rotation, delta_axis, delta_angle);
 
-		const vec3 desired_angular_velocity = normalize(delta_axis) * delta_angle / dt;
-		return desired_angular_velocity;
-	}
+        const vec3 desired_angular_velocity = normalize(delta_axis) * delta_angle / dt;
+        return desired_angular_velocity;
+    }
 
     bool PhysicalAnimationUtils::is_body_limb(RagdollLimbType type)
     {
         return type == RagdollLimbType::BODY_LOWER ||
-            type == RagdollLimbType::BODY_MIDDLE ||
-            type == RagdollLimbType::BODY_UPPER;
+               type == RagdollLimbType::BODY_MIDDLE ||
+               type == RagdollLimbType::BODY_UPPER;
     }
 
     bool PhysicalAnimationUtils::is_head_limb(RagdollLimbType type)
     {
-        return type == RagdollLimbType::NECK || 
-            type == RagdollLimbType::HEAD;
+        return type == RagdollLimbType::NECK ||
+               type == RagdollLimbType::HEAD;
     }
 
     bool PhysicalAnimationUtils::is_leg_limb(RagdollLimbType type)
     {
         return type == RagdollLimbType::LEG ||
-            type == RagdollLimbType::CALF ||
-            type == RagdollLimbType::FOOT;
+               type == RagdollLimbType::CALF ||
+               type == RagdollLimbType::FOOT;
     }
 
     bool PhysicalAnimationUtils::is_arm_limb(RagdollLimbType type)
     {
-        return type == RagdollLimbType::CLAVICLE || 
-            type == RagdollLimbType::ARM ||
-            type == RagdollLimbType::FOREARM ||
-            type == RagdollLimbType::HAND;
+        return type == RagdollLimbType::CLAVICLE ||
+               type == RagdollLimbType::ARM ||
+               type == RagdollLimbType::FOREARM ||
+               type == RagdollLimbType::HAND;
     }
 
     void PhysicalAnimationUtils::reset_motor_drive(PhysicalAnimationLimbComponent* limb_component)
@@ -184,14 +184,14 @@ namespace era_engine::physics
 
         limb_component->collision.reset();
         limb_component->prev_physics_pose = limb_object_space_pose;
-		limb_component->physics_pose = limb_object_space_pose;
+        limb_component->physics_pose = limb_object_space_pose;
 
-		PhysicsUtils::manual_set_physics_transform_locked(limb, ragdoll_world_transform * limb_object_space_pose, true);
+        PhysicsUtils::manual_set_physics_transform_locked(limb, ragdoll_world_transform * limb_object_space_pose, true);
 
-		DynamicBodyComponent* dynamic_body_component = limb.get_component<DynamicBodyComponent>();
-		ASSERT(dynamic_body_component != nullptr);
+        DynamicBodyComponent* dynamic_body_component = limb.get_component<DynamicBodyComponent>();
+        ASSERT(dynamic_body_component != nullptr);
 
-		dynamic_body_component->linear_velocity = vec3::zero;
-		dynamic_body_component->angular_velocity = vec3::zero;
-	}
+        dynamic_body_component->linear_velocity = vec3::zero;
+        dynamic_body_component->angular_velocity = vec3::zero;
+    }
 }

@@ -20,290 +20,286 @@
 
 namespace era_engine::physics
 {
-	static constexpr float RIGIDBODY_DENSITY = 2000.0f;
+    static constexpr float RIGIDBODY_DENSITY = 2000.0f;
 
-	class BlastOverlapCallback : public physx::PxOverlapCallback
-	{
-	public:
-		BlastOverlapCallback(Nv::Blast::ExtPxManager& _px_manager, std::set<Nv::Blast::ExtPxActor*>& _actor_buffer)
-			: px_manager(_px_manager), actor_buffer(_actor_buffer), physx::PxOverlapCallback(hit_buffer, sizeof(hit_buffer) / sizeof(hit_buffer[0])) {}
+    class BlastOverlapCallback : public physx::PxOverlapCallback
+    {
+    public:
+        BlastOverlapCallback(Nv::Blast::ExtPxManager& _px_manager, std::set<Nv::Blast::ExtPxActor*>& _actor_buffer)
+            : px_manager(_px_manager), actor_buffer(_actor_buffer), physx::PxOverlapCallback(hit_buffer, sizeof(hit_buffer) / sizeof(hit_buffer[0])) {}
 
-		physx::PxAgain processTouches(const physx::PxOverlapHit* buffer, physx::PxU32 nb_hits)
-		{
-			using namespace physx;
-			using namespace Nv::Blast;
+        physx::PxAgain processTouches(const physx::PxOverlapHit* buffer, physx::PxU32 nb_hits)
+        {
+            using namespace physx;
+            using namespace Nv::Blast;
 
-			for (PxU32 i = 0; i < nb_hits; ++i)
-			{
-				PxRigidDynamic* rigid_dynamic = buffer[i].actor->is<PxRigidDynamic>();
-				if (rigid_dynamic != nullptr)
-				{
-					ExtPxActor* actor = px_manager.getActorFromPhysXActor(*rigid_dynamic);
-					if (actor != nullptr)
-					{
-						actor_buffer.insert(actor);
-					}
-				}
-			}
-			return true;
-		}
+            for (PxU32 i = 0; i < nb_hits; ++i)
+            {
+                PxRigidDynamic* rigid_dynamic = buffer[i].actor->is<PxRigidDynamic>();
+                if (rigid_dynamic != nullptr)
+                {
+                    ExtPxActor* actor = px_manager.getActorFromPhysXActor(*rigid_dynamic);
+                    if (actor != nullptr)
+                    {
+                        actor_buffer.insert(actor);
+                    }
+                }
+            }
+            return true;
+        }
 
-	private:
-		physx::PxOverlapHit hit_buffer[1024];
-		Nv::Blast::ExtPxManager& px_manager;
-		std::set<Nv::Blast::ExtPxActor*>& actor_buffer;
-	};
+    private:
+        physx::PxOverlapHit hit_buffer[1024];
+        Nv::Blast::ExtPxManager& px_manager;
+        std::set<Nv::Blast::ExtPxActor*>& actor_buffer;
+    };
 
-	DestructibleFamily::DestructibleFamily(World* _world, Nv::Blast::ExtPxManager& _px_manager, DestructibleAsset* _blast_asset)
-		: world(_world)
-		, px_manager(_px_manager)
-		, blast_asset(_blast_asset)
-		, listener(this)
-	{
-		settings.stress_solver_enabled = false;
-		settings.stress_damage_enabled = false;
-		settings.damage_accelerator_enabled = true;
+    DestructibleFamily::DestructibleFamily(World* _world, Nv::Blast::ExtPxManager& _px_manager, DestructibleAsset* _blast_asset)
+        : world(_world), px_manager(_px_manager), blast_asset(_blast_asset), listener(this)
+    {
+        settings.stress_solver_enabled = false;
+        settings.stress_damage_enabled = false;
+        settings.damage_accelerator_enabled = true;
 
-		root_entity = world->create_entity();
-		root_entity.get().add_component<TransientComponent>();
-	}
+        root_entity = world->create_entity();
+        root_entity.get().add_component<TransientComponent>();
+    }
 
-	DestructibleFamily::~DestructibleFamily()
-	{
-		for (EntityPtr entity_ptr : entities)
-		{
-			world->destroy_entity(entity_ptr.get());
-		}
+    DestructibleFamily::~DestructibleFamily()
+    {
+        for (EntityPtr entity_ptr : entities)
+        {
+            world->destroy_entity(entity_ptr.get());
+        }
 
-		world->destroy_entity(root_entity.get());
+        world->destroy_entity(root_entity.get());
 
-		if (stress_solver != nullptr)
-		{
-			stress_solver->release();
-		}
-		if (px_family != nullptr)
-		{
-			px_family->unsubscribe(listener);
-			px_family->release();
-		}
+        if (stress_solver != nullptr)
+        {
+            stress_solver->release();
+        }
+        if (px_family != nullptr)
+        {
+            px_family->unsubscribe(listener);
+            px_family->release();
+        }
 
-		// Self released
-		if (tk_family != nullptr)
-		{
-			tk_family->release();
-		}
-	}
+        // Self released
+        if (tk_family != nullptr)
+        {
+            tk_family->release();
+        }
+    }
 
-	void DestructibleFamily::set_settings(const Settings& _settings)
-	{
-		const bool reload_stress_solver_needed = (settings.stress_solver_enabled != _settings.stress_solver_enabled);
+    void DestructibleFamily::set_settings(const Settings& _settings)
+    {
+        const bool reload_stress_solver_needed = (settings.stress_solver_enabled != _settings.stress_solver_enabled);
 
-		settings = _settings;
-		refresh_stress_solver_settings();
-		refresh_damage_accelerator_settings();
+        settings = _settings;
+        refresh_stress_solver_settings();
+        refresh_damage_accelerator_settings();
 
-		if (reload_stress_solver_needed)
-		{
-			reload_stress_solver();
-		}
+        if (reload_stress_solver_needed)
+        {
+            reload_stress_solver();
+        }
 
-		px_family->setMaterial(&settings.material);
-	}
+        px_family->setMaterial(&settings.material);
+    }
 
-	const DestructibleFamily::Settings& DestructibleFamily::get_settings() const
-	{
-		return settings;
-	}
+    const DestructibleFamily::Settings& DestructibleFamily::get_settings() const
+    {
+        return settings;
+    }
 
-	size_t DestructibleFamily::get_family_size() const
-	{
-		return family_size;
-	}
+    size_t DestructibleFamily::get_family_size() const
+    {
+        return family_size;
+    }
 
-	uint32 DestructibleFamily::get_actor_count() const
-	{
-		return static_cast<uint32>(tk_family->getActorCount());
-	}
+    uint32 DestructibleFamily::get_actor_count() const
+    {
+        return static_cast<uint32>(tk_family->getActorCount());
+    }
 
-	DestructibleAsset* DestructibleFamily::get_destructible_asset()
-	{
-		return blast_asset;
-	}
+    DestructibleAsset* DestructibleFamily::get_destructible_asset()
+    {
+        return blast_asset;
+    }
 
-	const Nv::Blast::ExtPxFamily* DestructibleFamily::get_family() const
-	{
-		return px_family;
-	}
+    const Nv::Blast::ExtPxFamily* DestructibleFamily::get_family() const
+    {
+        return px_family;
+    }
 
-	const NvBlastExtMaterial& DestructibleFamily::get_material() const
-	{
-		return settings.material;
-	}
-	
-	void DestructibleFamily::reset_stress()
-	{
-		if (stress_solver != nullptr)
-		{
-			stress_solver->getSolver().reset();
-		}
-	}
+    const NvBlastExtMaterial& DestructibleFamily::get_material() const
+    {
+        return settings.material;
+    }
 
-	void DestructibleFamily::refresh_stress_solver_settings()
-	{
-		if (stress_solver != nullptr)
-		{
-			stress_solver->getSolver().setSettings(settings.stress_solver_settings);
-		}
-	}
+    void DestructibleFamily::reset_stress()
+    {
+        if (stress_solver != nullptr)
+        {
+            stress_solver->getSolver().reset();
+        }
+    }
 
-	void DestructibleFamily::refresh_damage_accelerator_settings()
-	{
-		px_family->getPxAsset().setAccelerator(settings.damage_accelerator_enabled ? blast_asset->damage_accelerator : nullptr);
-	}
+    void DestructibleFamily::refresh_stress_solver_settings()
+    {
+        if (stress_solver != nullptr)
+        {
+            stress_solver->getSolver().setSettings(settings.stress_solver_settings);
+        }
+    }
 
-	void DestructibleFamily::reload_stress_solver()
-	{
-		using namespace Nv::Blast;
+    void DestructibleFamily::refresh_damage_accelerator_settings()
+    {
+        px_family->getPxAsset().setAccelerator(settings.damage_accelerator_enabled ? blast_asset->damage_accelerator : nullptr);
+    }
 
-		if (stress_solver != nullptr)
-		{
-			stress_solver->release();
-			stress_solver = nullptr;
-		}
+    void DestructibleFamily::reload_stress_solver()
+    {
+        using namespace Nv::Blast;
 
-		if (settings.stress_solver_enabled)
-		{
-			stress_solver = ExtPxStressSolver::create(*px_family, settings.stress_solver_settings);
-			px_family->userData = stress_solver;
-		}
-	}
+        if (stress_solver != nullptr)
+        {
+            stress_solver->release();
+            stress_solver = nullptr;
+        }
 
-	bool DestructibleFamily::overlap(const physx::PxGeometry& geometry, const physx::PxTransform& pose, std::function<void(Nv::Blast::ExtPxActor*, DestructibleFamily&)> hit_call)
-	{
-		using namespace Nv::Blast;
+        if (settings.stress_solver_enabled)
+        {
+            stress_solver = ExtPxStressSolver::create(*px_family, settings.stress_solver_settings);
+            px_family->userData = stress_solver;
+        }
+    }
 
-		std::set<ExtPxActor*> actors_to_damage;
-		BlastOverlapCallback overlap_callback(px_manager, actors_to_damage);
-		PhysicsEngine::get_physics_core()->get_scene()->overlap(geometry, pose, overlap_callback);
+    bool DestructibleFamily::overlap(const physx::PxGeometry& geometry, const physx::PxTransform& pose, std::function<void(Nv::Blast::ExtPxActor*, DestructibleFamily&)> hit_call)
+    {
+        using namespace Nv::Blast;
 
-		for (ExtPxActor* actor : actors_to_damage)
-		{
-			hit_call(actor, *this);
-		}
+        std::set<ExtPxActor*> actors_to_damage;
+        BlastOverlapCallback overlap_callback(px_manager, actors_to_damage);
+        PhysicsEngine::get_physics_core()->get_scene()->overlap(geometry, pose, overlap_callback);
 
-		return !actors_to_damage.empty();
-	}
+        for (ExtPxActor* actor : actors_to_damage)
+        {
+            hit_call(actor, *this);
+        }
 
-	void DestructibleFamily::update_pre_split(float dt)
-	{
-		using namespace Nv::Blast;
-		using namespace physx;
+        return !actors_to_damage.empty();
+    }
 
-		if (!is_spawned)
-		{
-			ExtPxSpawnSettings spawn_settings = {
-				PhysicsEngine::get_physics_core()->get_scene(),
-				PhysicsEngine::get_physics_core()->get_default_material()->get_native_material(),
-				RIGIDBODY_DENSITY
-			};
+    void DestructibleFamily::update_pre_split(float dt)
+    {
+        using namespace Nv::Blast;
+        using namespace physx;
 
-			px_family->spawn(create_PxTransform(initial_transform), PxVec3(1.0f), spawn_settings);
-			reload_stress_solver();
+        if (!is_spawned)
+        {
+            ExtPxSpawnSettings spawn_settings = {
+                PhysicsEngine::get_physics_core()->get_scene(),
+                PhysicsEngine::get_physics_core()->get_default_material()->get_native_material(),
+                RIGIDBODY_DENSITY};
 
-			is_spawned = true;
-		}
+            px_family->spawn(create_PxTransform(initial_transform), PxVec3(1.0f), spawn_settings);
+            reload_stress_solver();
 
-		// Collect potential actors to health update.
-		actors_to_update_health.clear();
+            is_spawned = true;
+        }
 
-		for (const ExtPxActor* actor : actors)
-		{
-			if (actor->getTkActor().isPending())
-			{
-				actors_to_update_health.emplace(actor);
-			}
-		}
-	}
+        // Collect potential actors to health update.
+        actors_to_update_health.clear();
 
-	void DestructibleFamily::update_after_split(float dt)
-	{
-		using namespace Nv::Blast;
+        for (const ExtPxActor* actor : actors)
+        {
+            if (actor->getTkActor().isPending())
+            {
+                actors_to_update_health.emplace(actor);
+            }
+        }
+    }
 
-		{
-			ZoneScopedN("Actor Health Update");
-			for (const ExtPxActor* actor : actors)
-			{
-				on_actor_update(*actor);
+    void DestructibleFamily::update_after_split(float dt)
+    {
+        using namespace Nv::Blast;
 
-				if (actors_to_update_health.find(actor) != actors_to_update_health.end())
-				{
-					on_actor_health_update(*actor);
-				}
-			}
-		}
-		
-		{
-			ZoneScopedN("Stress Solver");
-			stress_solve_time = 0;
-			if (stress_solver != nullptr)
-			{
-				auto before = std::chrono::steady_clock::now();
-				stress_solver->update(settings.stress_damage_enabled);
-				auto after = std::chrono::steady_clock::now();
+        {
+            ZoneScopedN("Actor Health Update");
+            for (const ExtPxActor* actor : actors)
+            {
+                on_actor_update(*actor);
 
-				auto elapsed = after - before;
+                if (actors_to_update_health.find(actor) != actors_to_update_health.end())
+                {
+                    on_actor_health_update(*actor);
+                }
+            }
+        }
 
-				float solver_elapsed_dt = std::chrono::duration<float>(elapsed).count();
-				stress_solve_time += solver_elapsed_dt;
-			}
-		}
+        {
+            ZoneScopedN("Stress Solver");
+            stress_solve_time = 0;
+            if (stress_solver != nullptr)
+            {
+                auto before = std::chrono::steady_clock::now();
+                stress_solver->update(settings.stress_damage_enabled);
+                auto after = std::chrono::steady_clock::now();
 
-		{
-			ZoneScopedN("Actors Update");
-			on_update();
-		}
+                auto elapsed = after - before;
 
-		px_family->postSplitUpdate();
-	}
+                float solver_elapsed_dt = std::chrono::duration<float>(elapsed).count();
+                stress_solve_time += solver_elapsed_dt;
+            }
+        }
 
-	void DestructibleFamily::initialize(const DestructibleAsset::ActorDesc& desc)
-	{
-		using namespace Nv::Blast;
+        {
+            ZoneScopedN("Actors Update");
+            on_update();
+        }
 
-		ExtPxFamilyDesc family_desc{};
-		family_desc.actorDesc = nullptr; // If you use it one day, consider changing code which needs get_bond_health_max() from DestructibleAsset.
-		family_desc.group = desc.group;
-		family_desc.pxAsset = blast_asset->px_asset;
-		px_family = px_manager.createFamily(family_desc);
-		px_family->setMaterial(&settings.material);
+        px_family->postSplitUpdate();
+    }
 
-		tk_family = &px_family->getTkFamily();
-		tk_family->setID(desc.id);
+    void DestructibleFamily::initialize(const DestructibleAsset::ActorDesc& desc)
+    {
+        using namespace Nv::Blast;
 
-		refresh_damage_accelerator_settings();
+        ExtPxFamilyDesc family_desc{};
+        family_desc.actorDesc = nullptr; // If you use it one day, consider changing code which needs get_bond_health_max() from DestructibleAsset.
+        family_desc.group = desc.group;
+        family_desc.pxAsset = blast_asset->px_asset;
+        px_family = px_manager.createFamily(family_desc);
+        px_family->setMaterial(&settings.material);
 
-		family_size = NvBlastFamilyGetSize(tk_family->getFamilyLL(), nullptr);
+        tk_family = &px_family->getTkFamily();
+        tk_family->setID(desc.id);
 
-		px_family->subscribe(listener);
+        refresh_damage_accelerator_settings();
 
-		initial_transform = physx::create_trs(desc.transform);
-	}
+        family_size = NvBlastFamilyGetSize(tk_family->getFamilyLL(), nullptr);
 
-	void DestructibleFamily::process_actor_created(Nv::Blast::ExtPxFamily&, Nv::Blast::ExtPxActor& actor)
-	{
-		total_visible_chunk_count += actor.getChunkCount();
-		actors.emplace(&actor);
+        px_family->subscribe(listener);
 
-		on_actor_created(actor);
-		on_actor_health_update(actor);
-	}
+        initial_transform = physx::create_trs(desc.transform);
+    }
 
-	void DestructibleFamily::process_actor_destroyed(Nv::Blast::ExtPxFamily&, Nv::Blast::ExtPxActor& actor)
-	{
-		total_visible_chunk_count -= actor.getChunkCount();
-		on_actor_destroyed(actor);
+    void DestructibleFamily::process_actor_created(Nv::Blast::ExtPxFamily&, Nv::Blast::ExtPxActor& actor)
+    {
+        total_visible_chunk_count += actor.getChunkCount();
+        actors.emplace(&actor);
 
-		actors.erase(actors.find(&actor));
-	}
+        on_actor_created(actor);
+        on_actor_health_update(actor);
+    }
+
+    void DestructibleFamily::process_actor_destroyed(Nv::Blast::ExtPxFamily&, Nv::Blast::ExtPxActor& actor)
+    {
+        total_visible_chunk_count -= actor.getChunkCount();
+        on_actor_destroyed(actor);
+
+        actors.erase(actors.find(&actor));
+    }
 
 }

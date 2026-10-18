@@ -16,14 +16,14 @@
 
 namespace era_engine::physics
 {
-	DestructibleModelAsset::DestructibleModelAsset()
-		: DestructibleAsset()
-	{
-		initialize();
-	}
+    DestructibleModelAsset::DestructibleModelAsset()
+        : DestructibleAsset()
+    {
+        initialize();
+    }
 
-	DestructibleModelAsset::~DestructibleModelAsset()
-	{
-	}
+    DestructibleModelAsset::~DestructibleModelAsset()
+    {
+    }
 
 }

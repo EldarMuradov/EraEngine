@@ -4,21 +4,21 @@
 
 namespace era_engine
 {
-	class RendererHolderRootComponent;
+    class RendererHolderRootComponent;
 }
 
 namespace era_engine::physics
 {
-	class PhysicsVisualizationSystem final : public System
-	{
-	public:
-		PhysicsVisualizationSystem(World* _world);
-		void init() override;
-		void update(float dt) override;
+    class PhysicsVisualizationSystem final : public System
+    {
+    public:
+        PhysicsVisualizationSystem(World* _world);
+        void init() override;
+        void update(float dt) override;
 
-		ERA_VIRTUAL_REFLECT(System)
+        ERA_VIRTUAL_REFLECT(System)
 
-	private:
-		const RendererHolderRootComponent* renderer_holder_rc = nullptr;
-	};
+    private:
+        const RendererHolderRootComponent* renderer_holder_rc = nullptr;
+    };
 }

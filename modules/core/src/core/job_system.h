@@ -38,7 +38,7 @@ namespace era_engine
             uint8 data[DATA_SIZE];
         };
 
-        template<typename T_>
+        template <typename T_>
         using ValidJobDataType = std::enable_if_t<sizeof(T_) <= JobQueueEntry::DATA_SIZE, bool>;
 
         static_assert(sizeof(JobQueueEntry) % 64 == 0);
@@ -62,18 +62,18 @@ namespace era_engine
 
             job.templated_function = function;
             job.function = [](void* templated_function, void* raw_data, JobHandle job)
-                {
-                    Data_& data = *(Data_*)raw_data;
+            {
+                Data_& data = *(Data_*)raw_data;
 
-                    auto function = (JobFunction<Data_>)templated_function;
-                    function(data, job);
+                auto function = (JobFunction<Data_>)templated_function;
+                function(data, job);
 
-                    data.~Data_();
-                };
+                data.~Data_();
+            };
 
-            new(job.data) Data_(data);
+            new (job.data) Data_(data);
 
-            return JobHandle{ handle, this };
+            return JobHandle{handle, this};
         }
 
         void wait_for_completion();

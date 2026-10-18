@@ -7,12 +7,12 @@
 
 namespace era_engine
 {
-    template<typename T>
-    class RingBuffer {
+    template <typename T>
+    class RingBuffer
+    {
     public:
         explicit RingBuffer(size_t _capacity)
-            : capacity(_capacity)
-            , buffer(_capacity)
+            : capacity(_capacity), buffer(_capacity)
         {
         }
 
@@ -20,11 +20,7 @@ namespace era_engine
         RingBuffer& operator=(const RingBuffer&) = delete;
 
         RingBuffer(RingBuffer&& other) noexcept
-            : capacity(other.capacity)
-            , buffer(std::move(other.buffer))
-            , head(other.head)
-            , tail(other.tail)
-            , full(other.full)
+            : capacity(other.capacity), buffer(std::move(other.buffer)), head(other.head), tail(other.tail), full(other.full)
         {
             other.capacity = 0;
             other.head = 0;

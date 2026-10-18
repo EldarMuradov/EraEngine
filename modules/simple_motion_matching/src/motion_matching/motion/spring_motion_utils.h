@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #include "motion_matching_api.h"
 
@@ -6,7 +6,7 @@
 
 #include <core/math.h>
 
-namespace era_engine 
+namespace era_engine
 {
     static inline float halflife_to_damping(float halflife, float eps = 1e-5f)
     {
@@ -28,10 +28,10 @@ namespace era_engine
         return sqrtf(stiffness) / (2.0f * PIf);
     }
 
-	class ERA_MOTION_MATCHING_API SpringMotionUtils
-	{
-	public:
-		SpringMotionUtils() = delete;
+    class ERA_MOTION_MATCHING_API SpringMotionUtils
+    {
+    public:
+        SpringMotionUtils() = delete;
 
         static float damper_exact(float x, float g, float halflife, float dt, float eps = 1e-5f);
 
@@ -119,5 +119,5 @@ namespace era_engine
             const vec3& in_v,
             float halflife,
             float dt);
-	};
+    };
 }

@@ -4,4 +4,4 @@
 #define ERA_CORE_API __declspec(dllexport)
 #else
 #define ERA_CORE_API __declspec(dllimport)
-#endif 
+#endif

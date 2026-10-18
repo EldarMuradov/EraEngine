@@ -11,7 +11,11 @@
 #include <xaudio2.h>
 #include <functional>
 
-#define SOUND_ID(id) SoundID{ id, COMPILE_TIME_STRING_HASH_64(id) }
+#define SOUND_ID(id)                        \
+    SoundID                                 \
+    {                                       \
+        id, COMPILE_TIME_STRING_HASH_64(id) \
+    }
 
 namespace era_engine
 {
@@ -29,9 +33,9 @@ namespace era_engine
     };
 
     static const char* sound_type_names[] =
-    {
-        "Music",
-        "Effects",
+        {
+            "Music",
+            "Effects",
     };
 
     struct ERA_CORE_API SoundSpec
@@ -87,8 +91,8 @@ namespace era_engine
         static_assert(std::is_base_of_v<AudioSynth, Synth_>, "Synthesizer must inherit from AudioSynth");
         static_assert(sizeof(Synth_) <= MAX_SYNTH_SIZE);
 
-        SoundID id = { id_str, hash_string64(id_str) };
-        SoundSpec spec = { {}, type, stream };
+        SoundID id = {id_str, hash_string64(id_str)};
+        SoundSpec spec = {{}, type, stream};
 
         bool check_for_existing_synth_sound(SoundID);
         void register_sound(SoundID, const ref<AudioSound>&);
@@ -99,7 +103,7 @@ namespace era_engine
         {
             struct SynthSound : AudioSound
             {
-                std::function<AudioSynth* (void*)> createFunc;
+                std::function<AudioSynth*(void*)> createFunc;
 
                 virtual AudioSynth* create_synth(void* buffer) const override
                 {
@@ -139,16 +143,16 @@ namespace era_engine
                 auto s = make_ref<SynthSound>();
 
                 s->createFunc = [=](void* buffer)
-                    {
-                        return new(buffer) Synth_(a...);
-                    };
+                {
+                    return new (buffer) Synth_(a...);
+                };
 
                 sound = s;
             }
 
             sound->id = id;
             sound->stream = stream;
-            sound->wfx = { wfx };
+            sound->wfx = {wfx};
             sound->data_buffer = data_buffer;
             sound->chunk_size = dataSize;
             sound->is_synth = true;

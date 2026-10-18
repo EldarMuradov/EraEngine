@@ -17,9 +17,9 @@ namespace era_engine::physics
 
             bool operator==(const Vertex& other) const
             {
-                return fuzzy_equals(position, other.position) && 
-                    fuzzy_equals(normal, other.normal) &&
-                    fuzzy_equals(uv, other.uv);
+                return fuzzy_equals(position, other.position) &&
+                       fuzzy_equals(normal, other.normal) &&
+                       fuzzy_equals(uv, other.uv);
             }
 
             bool operator!=(const Vertex& other) const
@@ -41,7 +41,7 @@ namespace era_engine::physics
                 Vertex vertex = {
                     vec3(triangle.a.p.x, triangle.a.p.y, triangle.a.p.z),
                     vec3(triangle.a.n.x, triangle.a.n.y, triangle.a.n.z),
-                    vec2(triangle.a.uv->x, triangle.a.uv->y) };
+                    vec2(triangle.a.uv->x, triangle.a.uv->y)};
 
                 auto it = std::find(vertices.begin(), vertices.end(), vertex);
                 if (it != vertices.end())
@@ -61,7 +61,7 @@ namespace era_engine::physics
                 Vertex vertex = {
                     vec3(triangle.b.p.x, triangle.b.p.y, triangle.b.p.z),
                     vec3(triangle.b.n.x, triangle.b.n.y, triangle.b.n.z),
-                    vec2(triangle.b.uv->x, triangle.b.uv->y) };
+                    vec2(triangle.b.uv->x, triangle.b.uv->y)};
 
                 auto it = std::find(vertices.begin(), vertices.end(), vertex);
                 if (it != vertices.end())
@@ -81,7 +81,7 @@ namespace era_engine::physics
                 Vertex vertex = {
                     vec3(triangle.c.p.x, triangle.c.p.y, triangle.c.p.z),
                     vec3(triangle.c.n.x, triangle.c.n.y, triangle.c.n.z),
-                    vec2(triangle.c.uv->x, triangle.c.uv->y) };
+                    vec2(triangle.c.uv->x, triangle.c.uv->y)};
 
                 auto it = std::find(vertices.begin(), vertices.end(), vertex);
                 if (it != vertices.end())
@@ -103,7 +103,7 @@ namespace era_engine::physics
 
     NvBlastID DestructionUtils::generate_id_from_string(const char* str)
     {
-        uint32 h[4] = { 5381, 5381, 5381, 5381 };
+        uint32 h[4] = {5381, 5381, 5381, 5381};
 
         uint32 i = 0;
 
@@ -139,25 +139,21 @@ namespace era_engine::physics
         generator = NvBlastExtAuthoringCreateVoronoiSitesGenerator(mesh->mesh, reinterpret_cast<Nv::Blast::RandomGeneratorBase*>(rnd_gen.get()));
     }
 
-    VoronoiSitesGenerator::~VoronoiSitesGenerator()
-    {
-        RELEASE_PTR(generator)
-    }
+    VoronoiSitesGenerator::~VoronoiSitesGenerator(){
+        RELEASE_PTR(generator)}
 
     FractureTool::FractureTool()
     {
         fracture = NvBlastExtAuthoringCreateFractureTool();
     }
 
-    FractureTool::~FractureTool()
-    {
-        PX_RELEASE(fracture)
-    }
+    FractureTool::~FractureTool(){
+        PX_RELEASE(fracture)}
 
-    std::vector<std::pair<ref<SubmeshAsset>, ref<NvMesh>>> FractureUtils::fracture_nvmesh_into_submeshes(uint32 total_chunks, 
-        ref<NvMesh> mesh, 
-        bool replace /*= false*/, 
-        uint32 chunk_id/* = 0*/)
+    std::vector<std::pair<ref<SubmeshAsset>, ref<NvMesh>>> FractureUtils::fracture_nvmesh_into_submeshes(uint32 total_chunks,
+        ref<NvMesh> mesh,
+        bool replace /*= false*/,
+        uint32 chunk_id /* = 0*/)
     {
         FractureTool fracture_tool = FractureTool();
 
@@ -167,7 +163,7 @@ namespace era_engine::physics
         if (fracture_tool.fracture->isMeshContainOpenEdges(mesh->mesh))
         {
             LOG_WARNING("NvBlast> Mesh contains open edges!");
-            //return {};
+            // return {};
         }
 
         VoronoiSitesGenerator generator = VoronoiSitesGenerator(mesh);
@@ -232,17 +228,17 @@ namespace era_engine::physics
             uint32 index = 0;
             for (size_t j = 0; j < chunk_size; ++j)
             {
-                pos.push_back({ chunk[j].a.p.x, chunk[j].a.p.y, chunk[j].a.p.z });
-                pos.push_back({ chunk[j].b.p.x, chunk[j].b.p.y, chunk[j].b.p.z });
-                pos.push_back({ chunk[j].c.p.x, chunk[j].c.p.y, chunk[j].c.p.z });
+                pos.push_back({chunk[j].a.p.x, chunk[j].a.p.y, chunk[j].a.p.z});
+                pos.push_back({chunk[j].b.p.x, chunk[j].b.p.y, chunk[j].b.p.z});
+                pos.push_back({chunk[j].c.p.x, chunk[j].c.p.y, chunk[j].c.p.z});
 
-                norm.push_back({ chunk[j].a.n.x, chunk[j].a.n.y, chunk[j].a.n.z });
-                norm.push_back({ chunk[j].b.n.x, chunk[j].b.n.y, chunk[j].b.n.z });
-                norm.push_back({ chunk[j].c.n.x, chunk[j].c.n.y, chunk[j].c.n.z });
+                norm.push_back({chunk[j].a.n.x, chunk[j].a.n.y, chunk[j].a.n.z});
+                norm.push_back({chunk[j].b.n.x, chunk[j].b.n.y, chunk[j].b.n.z});
+                norm.push_back({chunk[j].c.n.x, chunk[j].c.n.y, chunk[j].c.n.z});
 
-                tex.push_back({ chunk[j].a.uv[0].x, chunk[j].a.uv[0].y });
-                tex.push_back({ chunk[j].b.uv[0].x, chunk[j].b.uv[0].y });
-                tex.push_back({ chunk[j].c.uv[0].x, chunk[j].c.uv[0].y });
+                tex.push_back({chunk[j].a.uv[0].x, chunk[j].a.uv[0].y});
+                tex.push_back({chunk[j].b.uv[0].x, chunk[j].b.uv[0].y});
+                tex.push_back({chunk[j].c.uv[0].x, chunk[j].c.uv[0].y});
 
                 indexs.push_back(index++);
                 indexs.push_back(index++);

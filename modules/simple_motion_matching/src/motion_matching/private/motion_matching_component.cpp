@@ -16,46 +16,46 @@
 namespace era_engine
 {
 
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
-		registration::class_<MotionMatchingComponent>("MotionMatchingComponent")
-			.constructor<ref<Entity::EcsData>>();
-		ComponentRegistry::register_component<MotionMatchingComponent>();
-	}
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
+        registration::class_<MotionMatchingComponent>("MotionMatchingComponent")
+            .constructor<ref<Entity::EcsData>>();
+        ComponentRegistry::register_component<MotionMatchingComponent>();
+    }
 
-	MotionMatchingComponent::MotionMatchingComponent(ref<Entity::EcsData> _data)
-		: Component(_data)
-	{	
-	}
+    MotionMatchingComponent::MotionMatchingComponent(ref<Entity::EcsData> _data)
+        : Component(_data)
+    {
+    }
 
-	MotionMatchingComponent::~MotionMatchingComponent()
-	{
-	}
+    MotionMatchingComponent::~MotionMatchingComponent()
+    {
+    }
 
-	SearchResult MotionMatchingComponent::search_animation(const MotionMatchingFeatureSet& feature_set, const std::string& database_id) const
-	{
-		ref<MotionMatchingDatabase> database = MotionDatabaseRegistry::get_by_id(database_id);
-		return search_animation(feature_set, database.get());
-	}
+    SearchResult MotionMatchingComponent::search_animation(const MotionMatchingFeatureSet& feature_set, const std::string& database_id) const
+    {
+        ref<MotionMatchingDatabase> database = MotionDatabaseRegistry::get_by_id(database_id);
+        return search_animation(feature_set, database.get());
+    }
 
-	SearchResult MotionMatchingComponent::search_animation(const MotionMatchingFeatureSet& feature_set, const MotionMatchingDatabase* database) const
-	{
-		using namespace animation;
+    SearchResult MotionMatchingComponent::search_animation(const MotionMatchingFeatureSet& feature_set, const MotionMatchingDatabase* database) const
+    {
+        using namespace animation;
 
-		if (database == nullptr)
-		{
-			return SearchResult();
-		}
+        if (database == nullptr)
+        {
+            return SearchResult();
+        }
 
-		AnimationComponent* animation_component = get_entity().get_component<AnimationComponent>();
+        AnimationComponent* animation_component = get_entity().get_component<AnimationComponent>();
 
-		SearchParams search_params;
-		search_params.current_anim_position = animation_component->current_anim_position;
-		search_params.current_animation = animation_component->current_animation;
-		search_params.query = feature_set.get_all_feature_values();
+        SearchParams search_params;
+        search_params.current_anim_position = animation_component->current_anim_position;
+        search_params.current_animation = animation_component->current_animation;
+        search_params.query = feature_set.get_all_feature_values();
 
-		return database->search(search_params);
-	}
+        return database->search(search_params);
+    }
 
 }

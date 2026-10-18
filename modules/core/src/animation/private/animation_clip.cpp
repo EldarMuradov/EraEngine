@@ -79,7 +79,7 @@ namespace era_engine::animation
 
     static rtm::qvvf trs_to_qvvf(const trs& t)
     {
-        return { quat_to_quatf(t.rotation), vec3_to_vector4f(t.position), vec3_to_vector4f(t.scale) };
+        return {quat_to_quatf(t.rotation), vec3_to_vector4f(t.position), vec3_to_vector4f(t.scale)};
     }
 
     class StringStream : public sjson::StreamWriter
@@ -99,8 +99,7 @@ namespace era_engine::animation
         {
         public:
             JointTransformSamplingWriter(const JointTransform& _bind_transform, JointTransform& _joint_transform)
-                : bind_transform(_bind_transform)
-                , joint_transform(_joint_transform)
+                : bind_transform(_bind_transform), joint_transform(_joint_transform)
             {
             }
 
@@ -160,11 +159,7 @@ namespace era_engine::animation
         {
         public:
             PoseSamplingWriter(const SkeletonPose& _bind_pose, SkeletonPose& _pose, const std::vector<uint32>& _mapping, const std::vector<uint32>& _mapping2 = empty_mapping)
-                : acl::track_writer()
-                , bind_pose(_bind_pose)
-                , pose(_pose)
-                , mapping(_mapping)
-                , support_mapping(_mapping2)
+                : acl::track_writer(), bind_pose(_bind_pose), pose(_pose), mapping(_mapping), support_mapping(_mapping2)
             {
             }
 
@@ -321,24 +316,22 @@ namespace era_engine::animation
         };
     }
 
-	AnimationAssetClip::AnimationAssetClip()
-	{
+    AnimationAssetClip::AnimationAssetClip()
+    {
         allocator = std::make_unique<AnimationAllocator>();
         joints = acl::track_array_qvvf();
         curves = acl::track_array_float1f();
-	}
+    }
 
-	AnimationAssetClip::AnimationAssetClip(AnimationAssetClip&& other) noexcept
-        : joint_name_mapping(std::move(other.joint_name_mapping))
-        , curve_name_mapping(std::move(other.curve_name_mapping))
-        , allocator(std::move(other.allocator))
-	{
+    AnimationAssetClip::AnimationAssetClip(AnimationAssetClip&& other) noexcept
+        : joint_name_mapping(std::move(other.joint_name_mapping)), curve_name_mapping(std::move(other.curve_name_mapping)), allocator(std::move(other.allocator))
+    {
         joints = std::move(other.joints);
         curves = std::move(other.curves);
-	}
+    }
 
-	AnimationAssetClip& AnimationAssetClip::operator=(AnimationAssetClip&& other) noexcept
-	{
+    AnimationAssetClip& AnimationAssetClip::operator=(AnimationAssetClip&& other) noexcept
+    {
         if (this != &other)
         {
             joints = std::move(other.joints);
@@ -350,24 +343,24 @@ namespace era_engine::animation
         return *this;
     }
 
-	AnimationAssetClip::~AnimationAssetClip()
-	{
+    AnimationAssetClip::~AnimationAssetClip()
+    {
         joints = acl::track_array_qvvf();
         curves = acl::track_array_float1f();
-	}
+    }
 
-	bool AnimationAssetClip::is_valid() const
-	{
-		return true;
-	}
+    bool AnimationAssetClip::is_valid() const
+    {
+        return true;
+    }
 
-	float AnimationAssetClip::get_duration() const
-	{
-		return joints.get_finite_duration();
-	}
+    float AnimationAssetClip::get_duration() const
+    {
+        return joints.get_finite_duration();
+    }
 
-	bool AnimationAssetClip::sample_joint(float sample_time, std::string_view joint_name, const JointTransform& bind_transform, JointTransform& out_transform) const
-	{
+    bool AnimationAssetClip::sample_joint(float sample_time, std::string_view joint_name, const JointTransform& bind_transform, JointTransform& out_transform) const
+    {
         auto iter = get_joint_mapping().find(joint_name.data());
         if (iter == get_joint_mapping().end())
         {
@@ -377,8 +370,8 @@ namespace era_engine::animation
         return sample_joint(sample_time, iter->second, bind_transform, out_transform);
     }
 
-	bool AnimationAssetClip::sample_joint(float sample_time, uint32 joint_index, const JointTransform& bind_transform, JointTransform& out_transform) const
-	{
+    bool AnimationAssetClip::sample_joint(float sample_time, uint32 joint_index, const JointTransform& bind_transform, JointTransform& out_transform) const
+    {
         ASSERT(joint_index < joints.get_num_tracks());
         acl_animation_clip_details::JointTransformSamplingWriter sampling_writer(bind_transform, out_transform);
         joints.sample_track(joint_index, sample_time, acl::sample_rounding_policy::none, sampling_writer);
@@ -386,8 +379,8 @@ namespace era_engine::animation
         return true;
     }
 
-	bool AnimationAssetClip::sample_joints(float sample_time, SkeletonPose& out_pose) const
-	{
+    bool AnimationAssetClip::sample_joints(float sample_time, SkeletonPose& out_pose) const
+    {
         std::vector<uint32> dummy;
         acl_animation_clip_details::PoseSamplingWriter sampling_writer(SkeletonPose(out_pose), out_pose, dummy);
         joints.sample_tracks(sample_time, acl::sample_rounding_policy::none, sampling_writer);
@@ -403,18 +396,18 @@ namespace era_engine::animation
         return true;
     }
 
-	float AnimationAssetClip::get_sample_rate() const
-	{
-		return joints.get_sample_rate();
-	}
+    float AnimationAssetClip::get_sample_rate() const
+    {
+        return joints.get_sample_rate();
+    }
 
-	uint32 AnimationAssetClip::get_num_samples_per_track() const
-	{
-		return joints.get_num_samples_per_track();
-	}
+    uint32 AnimationAssetClip::get_num_samples_per_track() const
+    {
+        return joints.get_num_samples_per_track();
+    }
 
-	bool AnimationAssetClip::sample_curve(float sample_time, std::string_view curve_name, float& out_curve_value) const
-	{
+    bool AnimationAssetClip::sample_curve(float sample_time, std::string_view curve_name, float& out_curve_value) const
+    {
         auto iter = get_curve_mapping().find(curve_name.data());
         if (iter == get_curve_mapping().end())
         {
@@ -426,22 +419,22 @@ namespace era_engine::animation
         return true;
     }
 
-	void AnimationAssetClip::sample_curve(float sample_time, uint32 curve_index, float& out_curve_value) const
-	{
+    void AnimationAssetClip::sample_curve(float sample_time, uint32 curve_index, float& out_curve_value) const
+    {
         ASSERT(curve_index < curves.get_num_tracks());
         acl_animation_clip_details::CurveSamplingWriter sampling_writer(out_curve_value);
         curves.sample_track(curve_index, sample_time, acl::sample_rounding_policy::none, sampling_writer);
-	}
+    }
 
-	void AnimationAssetClip::sample_curves(float sample_time, std::vector<float>& out_curve_values) const
-	{
+    void AnimationAssetClip::sample_curves(float sample_time, std::vector<float>& out_curve_values) const
+    {
         ASSERT(out_curve_values.size() == curves.get_num_tracks());
         acl_animation_clip_details::CurvesSamplingWriter sampling_writer(out_curve_values);
         curves.sample_tracks(sample_time, acl::sample_rounding_policy::none, sampling_writer);
-	}
+    }
 
-	void AnimationAssetClip::add_curve(const std::string& name, const std::vector<float>& values)
-	{
+    void AnimationAssetClip::add_curve(const std::string& name, const std::vector<float>& values)
+    {
         if (get_curve_mapping().count(name) == 0)
         {
             std::unordered_map<std::string, uint32> curve_name_mapping_copy = get_curve_mapping();
@@ -490,10 +483,10 @@ namespace era_engine::animation
 
             curves[curve_index] = std::move(float1_track);
         }
-	}
+    }
 
-	void AnimationAssetClip::remove_curve(const std::string& name)
-	{
+    void AnimationAssetClip::remove_curve(const std::string& name)
+    {
         auto it = get_curve_mapping().find(name);
         if (it != get_curve_mapping().end())
         {
@@ -519,17 +512,17 @@ namespace era_engine::animation
             curve_name_mapping = std::move(new_curve_mapping);
             curves = std::move(new_curves);
         }
-	}
+    }
 
-	const std::unordered_map<std::string, uint32>& AnimationAssetClip::get_joint_mapping() const
-	{
+    const std::unordered_map<std::string, uint32>& AnimationAssetClip::get_joint_mapping() const
+    {
         return joint_name_mapping;
-	}
+    }
 
-	const std::unordered_map<std::string, uint32>& AnimationAssetClip::get_curve_mapping() const
-	{
+    const std::unordered_map<std::string, uint32>& AnimationAssetClip::get_curve_mapping() const
+    {
         return curve_name_mapping;
-	}
+    }
 
     std::string AnimationAssetClip::get_asset_type_impl()
     {
@@ -606,14 +599,14 @@ namespace era_engine::animation
 
     bool AnimationAssetClip::deserialize(std::istream& is)
     {
-		BinaryDataArchive serialized_data;
+        BinaryDataArchive serialized_data;
 
-		if (!IO::read_value(is, serialized_data))
-		{
-			return false;
-		}
+        if (!IO::read_value(is, serialized_data))
+        {
+            return false;
+        }
 
-		AnimationSerializationData data{};
+        AnimationSerializationData data{};
         if (BinarySerializer::deserialize(BinaryData(serialized_data), data) != serialized_data.size())
         {
             return false;

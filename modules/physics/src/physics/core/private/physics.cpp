@@ -24,595 +24,594 @@
 
 namespace era_engine::physics
 {
-	static physx::PxOmniPvd* omni_pvd = NULL;
+    static physx::PxOmniPvd* omni_pvd = NULL;
 
-	static physx::PxFilterFlags contact_report_filter_shader(
-		physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filter_data0,
-		physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filter_data1,
-		physx::PxPairFlags& pair_flags, const void* constant_block, physx::PxU32 constant_block_size)
-	{
-		UNUSED(constant_block_size);
-		UNUSED(constant_block);
+    static physx::PxFilterFlags contact_report_filter_shader(
+        physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filter_data0,
+        physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filter_data1,
+        physx::PxPairFlags& pair_flags, const void* constant_block, physx::PxU32 constant_block_size)
+    {
+        UNUSED(constant_block_size);
+        UNUSED(constant_block);
 
-		if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1))
-		{
-			pair_flags = physx::PxPairFlag::eTRIGGER_DEFAULT;
-			return physx::PxFilterFlag::eDEFAULT;
-		}
+        if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1))
+        {
+            pair_flags = physx::PxPairFlag::eTRIGGER_DEFAULT;
+            return physx::PxFilterFlag::eDEFAULT;
+        }
 
-		if ((filter_data0.word0 & filter_data1.word1) && (filter_data1.word0 & filter_data0.word1))
-		{
-			pair_flags = physx::PxPairFlag::eCONTACT_DEFAULT;
-			pair_flags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
-			pair_flags |= physx::PxPairFlag::eNOTIFY_CONTACT_POINTS;
-			pair_flags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
-			pair_flags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
-			pair_flags |= physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
-			pair_flags |= physx::PxPairFlag::ePOST_SOLVER_VELOCITY;
+        if ((filter_data0.word0 & filter_data1.word1) && (filter_data1.word0 & filter_data0.word1))
+        {
+            pair_flags = physx::PxPairFlag::eCONTACT_DEFAULT;
+            pair_flags |= physx::PxPairFlag::eDETECT_CCD_CONTACT;
+            pair_flags |= physx::PxPairFlag::eNOTIFY_CONTACT_POINTS;
+            pair_flags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
+            pair_flags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
+            pair_flags |= physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
+            pair_flags |= physx::PxPairFlag::ePOST_SOLVER_VELOCITY;
 
-			return physx::PxFilterFlag::eDEFAULT;
-		}
+            return physx::PxFilterFlag::eDEFAULT;
+        }
 
-		return physx::PxFilterFlag::eSUPPRESS;
-	}
+        return physx::PxFilterFlag::eSUPPRESS;
+    }
 
-	static void clear_collider_from_collection(const physics::BodyComponent* collider,
-		physx::PxArray<SimulationEventCallback::CollidersPair>& collection)
-	{
-		const auto c = &collection[0];
-		for (uint32 i = 0; i < collection.size(); i++)
-		{
-			const SimulationEventCallback::CollidersPair cc = c[i];
-			if (cc.first == collider || cc.second == collider)
-			{
-				collection.remove(i--);
-				if (collection.empty())
-				{
-					break;
-				}
-			}
-		}
-	}
+    static void clear_collider_from_collection(const physics::BodyComponent* collider,
+        physx::PxArray<SimulationEventCallback::CollidersPair>& collection)
+    {
+        const auto c = &collection[0];
+        for (uint32 i = 0; i < collection.size(); i++)
+        {
+            const SimulationEventCallback::CollidersPair cc = c[i];
+            if (cc.first == collider || cc.second == collider)
+            {
+                collection.remove(i--);
+                if (collection.empty())
+                {
+                    break;
+                }
+            }
+        }
+    }
 
-	Physics::Physics(const PhysicsDescriptor& _descriptor)
-		: descriptor(_descriptor)
-	{
-		using namespace physx;
+    Physics::Physics(const PhysicsDescriptor& _descriptor)
+        : descriptor(_descriptor)
+    {
+        using namespace physx;
 
-		allocator.initialize(mb(128));
+        allocator.initialize(mb(128));
 
-		allocator_callback = new PhysicsAllocatorCallback();
-		foundation = PxCreateFoundation(PX_PHYSICS_VERSION, *allocator_callback, error_reporter);
+        allocator_callback = new PhysicsAllocatorCallback();
+        foundation = PxCreateFoundation(PX_PHYSICS_VERSION, *allocator_callback, error_reporter);
 
-		if (foundation == nullptr)
-		{
-			throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
-		}
+        if (foundation == nullptr)
+        {
+            throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
+        }
 
-		if (descriptor.broad_phase == PxBroadPhaseType::eGPU && PxGetSuggestedCudaDeviceOrdinal(foundation->getErrorCallback()) < 0)
-		{
-			throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
-		}
+        if (descriptor.broad_phase == PxBroadPhaseType::eGPU && PxGetSuggestedCudaDeviceOrdinal(foundation->getErrorCallback()) < 0)
+        {
+            throw std::exception("Failed to create {PxFoundation}. Error in {PhysicsEngine} ctor.");
+        }
 
-		tolerance_scale.length = 1.0f;
-		tolerance_scale.speed = 10.0f;
-
-#if defined(VISUALIZE_PHYSICS)
-		// PVD and OmniPVD must exist before PxCreatePhysics to be attached to the SDK.
-		if (descriptor.enable_pvd)
-		{
-			pvd = PxCreatePvd(*foundation);
-
-			transport = PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
-			if (pvd && transport)
-			{
-				pvd->connect(*transport,
-					PxPvdInstrumentationFlag::ePROFILE
-				);
-			}
-
-			omni_pvd = PxCreateOmniPvd(*foundation);
-			if (omni_pvd)
-			{
-				OmniPvdWriter* omniWriter = omni_pvd->getWriter();
-				OmniPvdFileWriteStream* fStream = omni_pvd->getFileWriteStream();
-				if (omniWriter && fStream)
-				{
-					fStream->setFileName(descriptor.omni_pvd_path);
-					omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*fStream));
-				}
-				else
-				{
-					LOG_ERROR("Physics> Could not get PxOmniPvd writer or file write stream.");
-					PX_RELEASE(omni_pvd)
-				}
-			}
-			else
-			{
-				LOG_ERROR("Physics> Could not create PxOmniPvd.");
-			}
-		}
-#endif
-
-		physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, tolerance_scale, false, pvd, omni_pvd);
-
-		if (!PxInitExtensions(*physics, pvd))
-		{
-			LOG_ERROR("Physics> Failed to initialize extensions.");
-		}
-
-		default_material = create_material(0.8f, 0.8f, 0.6f);
-
-		if (descriptor.enable_pvd && physics->getOmniPvd())
-		{
-			const bool result = omni_pvd->startSampling();
-			ASSERT(result);
-		}
-
-		dispatcher = PxDefaultCpuDispatcherCreate(nb_cpu_dispatcher_threads);
-
-		blast_core = make_ref<BlastCore>(*this);
-		materials.reserve(64);
-
-		PxCudaContextManagerDesc cuda_context_manager_desc;
-		cuda_context_manager_desc.graphicsDevice = get_dx_context()->device.Get();
-
-		cuda_context_manager = PxCreateCudaContextManager(*foundation, cuda_context_manager_desc, &profiler_callback);
-
-		PxInitVehicleExtension(*foundation);
-	}
-
-	Physics::~Physics()
-	{
-		release_locked();
-
-		{
-			ScopedSpinLock lock{ sync };
-			allocator.reset();
-		}
-	}
-
-	void Physics::init_scene()
-	{
-		using namespace physx;
-
-		ScopedSpinLock lock{ sync };
-
-		PxSceneDesc scene_desc(tolerance_scale);
-		scene_desc.gravity = PX_GRAVITY;
-		scene_desc.cpuDispatcher = dispatcher;
-		if (descriptor.enable_tgs_solver)
-		{
-			scene_desc.solverType = PxSolverType::eTGS;
-		}
-		else
-		{
-			scene_desc.solverType = PxSolverType::ePGS;
-		}
-		scene_desc.flags |= PxSceneFlag::eENABLE_CCD;
-		scene_desc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-		scene_desc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
-		scene_desc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
-		scene_desc.flags |= PxSceneFlag::eENABLE_PCM;
-		scene_desc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
-
-		scene_desc.frictionType = PxFrictionType::ePATCH;
-		scene_desc.bounceThresholdVelocity = 2.0f;
-		scene_desc.cudaContextManager = cuda_context_manager;
-
-		if (descriptor.broad_phase == PxBroadPhaseType::eGPU)
-		{
-			if (descriptor.enable_tgs_solver)
-			{
-				scene_desc.flags |= PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS;
-			}
-			scene_desc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
-			scene_desc.gpuMaxNumPartitions = 8;
-			scene_desc.gpuDynamicsConfig.foundLostPairsCapacity *= 8;
-			scene_desc.gpuDynamicsConfig.tempBufferCapacity *= 8;
-			scene_desc.gpuDynamicsConfig.heapCapacity *= 8;
-		}
-
-		scene_desc.broadPhaseType = descriptor.broad_phase;
-
-		scene_desc.filterShader = contact_report_filter_shader;
-
-		simulation_event_callback = make_ref<SimulationEventCallback>();
-
-		scene_desc.simulationEventCallback = simulation_event_callback.get();
-
-		scene = physics->createScene(scene_desc);
-
-		static constexpr uint64 align = 16U;
-		scratch_mem_block = allocator.allocate(scratch_mem_block_size, align, true);
-
-		cct_manager = PxCreateControllerManager(*scene);
-
-		if (is_gpu())
-		{
-			ASSERT(cuda_context_manager->contextIsValid());
-			LOG_MESSAGE(cuda_context_manager->getUsingConcurrentStreams() ? "ConcurrentCudaStreams" : "NonConcurrentCudaStreams");
-		}
+        tolerance_scale.length = 1.0f;
+        tolerance_scale.speed = 10.0f;
 
 #if defined(VISUALIZE_PHYSICS)
+        // PVD and OmniPVD must exist before PxCreatePhysics to be attached to the SDK.
+        if (descriptor.enable_pvd)
+        {
+            pvd = PxCreatePvd(*foundation);
 
-		{
-			PxSceneWriteLock lock{*scene};
-			scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
-			scene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 1.0f);
-			scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_FNORMALS, 1.0f);
-			scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
-		}
+            transport = PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
+            if (pvd && transport)
+            {
+                pvd->connect(*transport,
+                    PxPvdInstrumentationFlag::ePROFILE);
+            }
 
-		if (descriptor.enable_pvd && pvd)
-		{
-			PxSceneReadLock lock{ *scene };
-
-			PxPvdSceneClient* pvd_client = scene->getScenePvdClient();
-			if (pvd_client)
-			{
-				pvd_client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
-				pvd_client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
-				pvd_client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
-			}
-		}
+            omni_pvd = PxCreateOmniPvd(*foundation);
+            if (omni_pvd)
+            {
+                OmniPvdWriter* omniWriter = omni_pvd->getWriter();
+                OmniPvdFileWriteStream* fStream = omni_pvd->getFileWriteStream();
+                if (omniWriter && fStream)
+                {
+                    fStream->setFileName(descriptor.omni_pvd_path);
+                    omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*fStream));
+                }
+                else
+                {
+                    LOG_ERROR("Physics> Could not get PxOmniPvd writer or file write stream.");
+                    PX_RELEASE(omni_pvd)
+                }
+            }
+            else
+            {
+                LOG_ERROR("Physics> Could not create PxOmniPvd.");
+            }
+        }
 #endif
-	}
-
-	physx::PxScene* Physics::get_scene() const
-	{
-		return scene;
-	}
-
-	physx::PxPhysics* Physics::get_physics() const
-	{
-		return physics;
-	}
-
-	const ref<PhysicsMaterial>& Physics::get_default_material() const
-	{
-		return default_material;
-	}
-
-	const PhysicsDescriptor& Physics::get_descriptor() const
-	{
-		return descriptor;
-	}
-
-	ref<PhysicsMaterial> Physics::create_material(float restitution, float static_friction, float dynamic_friction)
-	{
-		ref<PhysicsMaterial> material = make_ref<PhysicsMaterial>(physics, restitution, static_friction, dynamic_friction);
-		
-		ScopedSpinLock lock{ sync };
-		return materials.emplace_back(std::move(material));
-	}
-
-	physx::PxCudaContextManager* Physics::get_cuda_context_manager() const
-	{
-		return cuda_context_manager;
-	}
-
-	physx::PxCpuDispatcher* Physics::get_cpu_dispatcher() const
-	{
-		return dispatcher;
-	}
-
-	physx::PxTolerancesScale Physics::get_tolerance_scale() const
-	{
-		return tolerance_scale;
-	}
-
-	ref<BlastCore> Physics::get_blast_core() const
-	{
-		return blast_core;
-	}
-
-	bool Physics::is_gpu() const
-	{
-		return descriptor.broad_phase == physx::PxBroadPhaseType::eGPU;
-	}
-
-	void Physics::release_locked()
-	{
-		release_scene_locked();
-
-		ScopedSpinLock lock{ sync };
-
-		if (physics != nullptr)
-		{
-			physx::PxCloseVehicleExtension();
-			PxCloseExtensions();
-		}
-
-		PX_RELEASE(default_material)
-		materials.clear();
-		simulation_event_callback.reset();
-
-		blast_core.reset();
-
-		PX_RELEASE(physics)
-		PX_RELEASE(dispatcher)
-
-		PX_RELEASE(pvd)
-		PX_RELEASE(omni_pvd)
-		PX_RELEASE(transport)
-
-		PX_RELEASE(cuda_context_manager)
-		PX_RELEASE(foundation)
-
-		RELEASE_PTR(allocator_callback)
-	}
-
-	void Physics::start()
-	{
-	}
-
-	void Physics::update_locked(float dt)
-	{
-		ScopedSpinLock _lock{ sync };
-
-		start_simulation(dt);
-		end_simulation(dt);
-	}
-
-	void Physics::clear_collisions()
-	{
-		simulation_event_callback->clear();
-	}
-
-	void Physics::start_simulation(float dt)
-	{
-		using namespace physx;
-
-		PxSceneWriteLock write_lock(*scene);
-
-		{
-			ZoneScopedN("Physics::simulate");
-			bool status = scene->simulate(dt, nullptr, scratch_mem_block, scratch_mem_block_size);
-			ASSERT(status);
-		}
-
-		{
-			ZoneScopedN("Physics::fetchResults");
-			scene->fetchResults(true);
-		}
-	}
-
-	void Physics::end_simulation(float dt)
-	{
-		{
-			ZoneScopedN("Physics::process_simulation_event_callbacks");
-			process_simulation_event_callbacks();
-		}
-
-		{
-			ZoneScopedN("Physics::sync_transforms");
-			sync_transforms_locked();
-		}
-	}
-
-	void Physics::reset_actors_velocity_and_inertia_locked()
-	{
-		using namespace physx;
-
-		PxU32 nb_active_actors = 0;
-		PxActor** active_actors = nullptr;
-
-		{
-			PxSceneReadLock lock{ *scene };
-			active_actors = scene->getActiveActors(nb_active_actors);
-		}
-
-		for (size_t i = 0; i < nb_active_actors; ++i)
-		{
-			if (auto rd = active_actors[i]->is<PxRigidDynamic>())
-			{
-				PxSceneWriteLock lock{ *scene };
-				rd->setAngularVelocity(PxVec3(0.0f));
-				rd->setLinearVelocity(PxVec3(0.0f));
-			}
-		}
-	}
-
-	void Physics::add_shape_to_entity_data(ShapeComponent* shape)
-	{
-		ScopedSpinLock lock{ sync };
-		colliders_map[shape->get_handle()].push_back(shape);
-	}
-
-	void Physics::remove_shape_from_entity_data(ShapeComponent* shape)
-	{
-		ScopedSpinLock lock{ sync };
-
-		auto& shapes = colliders_map[shape->get_handle()];
-		const auto& end = shapes.end();
-		for (auto iter = shapes.begin(); iter != end; ++iter)
-		{
-			if (*iter == shape)
-			{
-				shapes.erase(iter);
-				break;
-			}
-		}
-	}
-
-	void Physics::add_actor_locked(BodyComponent* actor, physx::PxRigidActor* physx_actor)
-	{
-		using namespace physx;
-
-		if (AggregateHolderComponent* aggregate_component = actor->get_world()->get_entity(actor->get_entity().get_parent_handle()).get_component_if_exists<AggregateHolderComponent>())
-		{
-			PxSceneWriteLock lock{ *scene };
-			aggregate_component->aggregate->add_actor(physx_actor);
-		}
-		else
-		{
-			PxSceneWriteLock lock{ *scene };
-			scene->addActor(*physx_actor);
-		}
-
-		{
-			ScopedSpinLock l{ sync };
-			actors.emplace(actor);
-			actors_map.insert(std::make_pair(physx_actor, actor));
-		}
-	}
-
-	void Physics::remove_actor_locked(BodyComponent* actor)
-	{
-		using namespace physx;
-
-		{
-			ScopedSpinLock l{ sync };
-			actors.erase(actor);
-			actors_map.erase(actor->get_rigid_actor());
-		}
-
-		if (AggregateHolderComponent* aggregate_component = actor->get_world()->get_entity(actor->get_entity().get_parent_handle()).get_component_if_exists<AggregateHolderComponent>())
-		{
-			PxSceneWriteLock lock{ *scene };
-			aggregate_component->aggregate->remove_actor(actor->get_rigid_actor());
-		}
-		else
-		{
-			PxSceneWriteLock lock{ *scene };
-			scene->removeActor(*actor->get_rigid_actor());
-		}
-	}
-
-	void Physics::release_scene_locked()
-	{
-		using namespace physx;
-
-		if (scene != nullptr)
-		{
-			PxSceneWriteLock lock{ *scene };
-			scene->flushSimulation();
-
-			for (auto& actor : actors)
-			{
-				scene->removeActor(*actor->get_rigid_actor());
-			}
-		}
-
-		{
-			ScopedSpinLock lock{ sync };
-
-			actors.clear();
-			actors_map.clear();
-			colliders_map.clear();
-
-			nb_active_actors = 0;
-
-			PX_RELEASE(cct_manager)
-
-			PX_RELEASE(scene)
-		}
-	}
-
-	void Physics::explode(const vec3& world_pos, float damage_radius, float explosive_impulse)
-	{
-		using namespace physx;
-		PxVec3 pos = create_PxVec3(world_pos);
-		ExplodeOverlapCallback overlap_callback(pos, damage_radius, explosive_impulse);
-		scene->overlap(PxSphereGeometry(damage_radius), PxTransform(pos), overlap_callback);
-	}
-
-	void Physics::sync_transforms_locked()
-	{
-		using namespace physx;
-
-		PxSceneReadLock lock{ *scene };
-
-		uint32 temp_nb = 0;
-		PxActor** active_actors = scene->getActiveActors(temp_nb);
-		nb_active_actors.store(temp_nb, std::memory_order_relaxed);
-
-		for (size_t i = 0; i < nb_active_actors; ++i)
-		{
-			if (!active_actors[i]->userData)
-			{
-				continue;
-			}
-
-			if (auto rb = active_actors[i]->is<PxRigidDynamic>())
-			{
-				Component* data = static_cast<Component*>(active_actors[i]->userData);
-
-				if (data == nullptr)
-				{
-					continue;
-				}
-
-				if (data->get_type() == rttr::type::get<CharacterControllerComponent>())
-				{
-					continue;
-				}
-
-				// Check joint shape sync.
-				{
-					auto& colliders = colliders_map[data->get_handle()];
-
-					if (!colliders.empty())
-					{
-						auto& shape_component = colliders.front(); // Only for single-shape entities.
-
-						if (shape_component->attachment_active)
-						{
-							continue;
-						}
-					}
-				}
-
-				const auto& pxt = rb->getGlobalPose();
-				const auto& pos = pxt.p;
-				const auto& rot = pxt.q;
-
-				TransformComponent* transform_component = data->get_entity().get_component<TransformComponent>();
-				trs new_transform(create_vec3(pos), create_quat(rot), transform_component->get_local_transform().scale);
-
-				transform_component->set_world_transform(new_transform);
-			}
-		}
-
-		//if (is_gpu())
-		//{
-		//	for (auto&& [name, world] : get_worlds())
-		//	{
-		//		for (auto [entity_handle, transform, soft_body] : world->group(components_group<TransformComponent, SoftBodyComponent>).each())
-		//		{
-		//			soft_body.copy_deformed_vertices_from_gpu_async(0);
-		//		}
-		//	}
-		//}
-	}
-
-	void Physics::process_simulation_event_callbacks()
-	{
-		simulation_event_callback->sendCollisionEvents();
-		simulation_event_callback->sendTriggerEvents();
-		simulation_event_callback->sendJointEvents();
-	}
-
-	ref<Physics> PhysicsEngine::get_physics_core()
-	{
-		return physics_core;
-	}
-
-	void PhysicsEngine::execute_read(const std::function<void()>& func)
-	{
-		using namespace physx;
-
-		PxSceneReadLock lock(*physics_core->get_scene());
-		func();
-	}
-
-	void PhysicsEngine::execute_write(const std::function<void()>& func)
-	{
-		using namespace physx;
-
-		PxSceneWriteLock lock(*physics_core->get_scene());
-		func();
-	}
+
+        physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, tolerance_scale, false, pvd, omni_pvd);
+
+        if (!PxInitExtensions(*physics, pvd))
+        {
+            LOG_ERROR("Physics> Failed to initialize extensions.");
+        }
+
+        default_material = create_material(0.8f, 0.8f, 0.6f);
+
+        if (descriptor.enable_pvd && physics->getOmniPvd())
+        {
+            const bool result = omni_pvd->startSampling();
+            ASSERT(result);
+        }
+
+        dispatcher = PxDefaultCpuDispatcherCreate(nb_cpu_dispatcher_threads);
+
+        blast_core = make_ref<BlastCore>(*this);
+        materials.reserve(64);
+
+        PxCudaContextManagerDesc cuda_context_manager_desc;
+        cuda_context_manager_desc.graphicsDevice = get_dx_context()->device.Get();
+
+        cuda_context_manager = PxCreateCudaContextManager(*foundation, cuda_context_manager_desc, &profiler_callback);
+
+        PxInitVehicleExtension(*foundation);
+    }
+
+    Physics::~Physics()
+    {
+        release_locked();
+
+        {
+            ScopedSpinLock lock{sync};
+            allocator.reset();
+        }
+    }
+
+    void Physics::init_scene()
+    {
+        using namespace physx;
+
+        ScopedSpinLock lock{sync};
+
+        PxSceneDesc scene_desc(tolerance_scale);
+        scene_desc.gravity = PX_GRAVITY;
+        scene_desc.cpuDispatcher = dispatcher;
+        if (descriptor.enable_tgs_solver)
+        {
+            scene_desc.solverType = PxSolverType::eTGS;
+        }
+        else
+        {
+            scene_desc.solverType = PxSolverType::ePGS;
+        }
+        scene_desc.flags |= PxSceneFlag::eENABLE_CCD;
+        scene_desc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+        scene_desc.flags |= PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
+        scene_desc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
+        scene_desc.flags |= PxSceneFlag::eENABLE_PCM;
+        scene_desc.flags |= PxSceneFlag::eREQUIRE_RW_LOCK;
+
+        scene_desc.frictionType = PxFrictionType::ePATCH;
+        scene_desc.bounceThresholdVelocity = 2.0f;
+        scene_desc.cudaContextManager = cuda_context_manager;
+
+        if (descriptor.broad_phase == PxBroadPhaseType::eGPU)
+        {
+            if (descriptor.enable_tgs_solver)
+            {
+                scene_desc.flags |= PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS;
+            }
+            scene_desc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
+            scene_desc.gpuMaxNumPartitions = 8;
+            scene_desc.gpuDynamicsConfig.foundLostPairsCapacity *= 8;
+            scene_desc.gpuDynamicsConfig.tempBufferCapacity *= 8;
+            scene_desc.gpuDynamicsConfig.heapCapacity *= 8;
+        }
+
+        scene_desc.broadPhaseType = descriptor.broad_phase;
+
+        scene_desc.filterShader = contact_report_filter_shader;
+
+        simulation_event_callback = make_ref<SimulationEventCallback>();
+
+        scene_desc.simulationEventCallback = simulation_event_callback.get();
+
+        scene = physics->createScene(scene_desc);
+
+        static constexpr uint64 align = 16U;
+        scratch_mem_block = allocator.allocate(scratch_mem_block_size, align, true);
+
+        cct_manager = PxCreateControllerManager(*scene);
+
+        if (is_gpu())
+        {
+            ASSERT(cuda_context_manager->contextIsValid());
+            LOG_MESSAGE(cuda_context_manager->getUsingConcurrentStreams() ? "ConcurrentCudaStreams" : "NonConcurrentCudaStreams");
+        }
+
+#if defined(VISUALIZE_PHYSICS)
+
+        {
+            PxSceneWriteLock lock{*scene};
+            scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
+            scene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 1.0f);
+            scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_FNORMALS, 1.0f);
+            scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
+        }
+
+        if (descriptor.enable_pvd && pvd)
+        {
+            PxSceneReadLock lock{*scene};
+
+            PxPvdSceneClient* pvd_client = scene->getScenePvdClient();
+            if (pvd_client)
+            {
+                pvd_client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
+                pvd_client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
+                pvd_client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
+            }
+        }
+#endif
+    }
+
+    physx::PxScene* Physics::get_scene() const
+    {
+        return scene;
+    }
+
+    physx::PxPhysics* Physics::get_physics() const
+    {
+        return physics;
+    }
+
+    const ref<PhysicsMaterial>& Physics::get_default_material() const
+    {
+        return default_material;
+    }
+
+    const PhysicsDescriptor& Physics::get_descriptor() const
+    {
+        return descriptor;
+    }
+
+    ref<PhysicsMaterial> Physics::create_material(float restitution, float static_friction, float dynamic_friction)
+    {
+        ref<PhysicsMaterial> material = make_ref<PhysicsMaterial>(physics, restitution, static_friction, dynamic_friction);
+
+        ScopedSpinLock lock{sync};
+        return materials.emplace_back(std::move(material));
+    }
+
+    physx::PxCudaContextManager* Physics::get_cuda_context_manager() const
+    {
+        return cuda_context_manager;
+    }
+
+    physx::PxCpuDispatcher* Physics::get_cpu_dispatcher() const
+    {
+        return dispatcher;
+    }
+
+    physx::PxTolerancesScale Physics::get_tolerance_scale() const
+    {
+        return tolerance_scale;
+    }
+
+    ref<BlastCore> Physics::get_blast_core() const
+    {
+        return blast_core;
+    }
+
+    bool Physics::is_gpu() const
+    {
+        return descriptor.broad_phase == physx::PxBroadPhaseType::eGPU;
+    }
+
+    void Physics::release_locked()
+    {
+        release_scene_locked();
+
+        ScopedSpinLock lock{sync};
+
+        if (physics != nullptr)
+        {
+            physx::PxCloseVehicleExtension();
+            PxCloseExtensions();
+        }
+
+        PX_RELEASE(default_material)
+        materials.clear();
+        simulation_event_callback.reset();
+
+        blast_core.reset();
+
+        PX_RELEASE(physics)
+        PX_RELEASE(dispatcher)
+
+        PX_RELEASE(pvd)
+        PX_RELEASE(omni_pvd)
+        PX_RELEASE(transport)
+
+        PX_RELEASE(cuda_context_manager)
+        PX_RELEASE(foundation)
+
+        RELEASE_PTR(allocator_callback)
+    }
+
+    void Physics::start()
+    {
+    }
+
+    void Physics::update_locked(float dt)
+    {
+        ScopedSpinLock _lock{sync};
+
+        start_simulation(dt);
+        end_simulation(dt);
+    }
+
+    void Physics::clear_collisions()
+    {
+        simulation_event_callback->clear();
+    }
+
+    void Physics::start_simulation(float dt)
+    {
+        using namespace physx;
+
+        PxSceneWriteLock write_lock(*scene);
+
+        {
+            ZoneScopedN("Physics::simulate");
+            bool status = scene->simulate(dt, nullptr, scratch_mem_block, scratch_mem_block_size);
+            ASSERT(status);
+        }
+
+        {
+            ZoneScopedN("Physics::fetchResults");
+            scene->fetchResults(true);
+        }
+    }
+
+    void Physics::end_simulation(float dt)
+    {
+        {
+            ZoneScopedN("Physics::process_simulation_event_callbacks");
+            process_simulation_event_callbacks();
+        }
+
+        {
+            ZoneScopedN("Physics::sync_transforms");
+            sync_transforms_locked();
+        }
+    }
+
+    void Physics::reset_actors_velocity_and_inertia_locked()
+    {
+        using namespace physx;
+
+        PxU32 nb_active_actors = 0;
+        PxActor** active_actors = nullptr;
+
+        {
+            PxSceneReadLock lock{*scene};
+            active_actors = scene->getActiveActors(nb_active_actors);
+        }
+
+        for (size_t i = 0; i < nb_active_actors; ++i)
+        {
+            if (auto rd = active_actors[i]->is<PxRigidDynamic>())
+            {
+                PxSceneWriteLock lock{*scene};
+                rd->setAngularVelocity(PxVec3(0.0f));
+                rd->setLinearVelocity(PxVec3(0.0f));
+            }
+        }
+    }
+
+    void Physics::add_shape_to_entity_data(ShapeComponent* shape)
+    {
+        ScopedSpinLock lock{sync};
+        colliders_map[shape->get_handle()].push_back(shape);
+    }
+
+    void Physics::remove_shape_from_entity_data(ShapeComponent* shape)
+    {
+        ScopedSpinLock lock{sync};
+
+        auto& shapes = colliders_map[shape->get_handle()];
+        const auto& end = shapes.end();
+        for (auto iter = shapes.begin(); iter != end; ++iter)
+        {
+            if (*iter == shape)
+            {
+                shapes.erase(iter);
+                break;
+            }
+        }
+    }
+
+    void Physics::add_actor_locked(BodyComponent* actor, physx::PxRigidActor* physx_actor)
+    {
+        using namespace physx;
+
+        if (AggregateHolderComponent* aggregate_component = actor->get_world()->get_entity(actor->get_entity().get_parent_handle()).get_component_if_exists<AggregateHolderComponent>())
+        {
+            PxSceneWriteLock lock{*scene};
+            aggregate_component->aggregate->add_actor(physx_actor);
+        }
+        else
+        {
+            PxSceneWriteLock lock{*scene};
+            scene->addActor(*physx_actor);
+        }
+
+        {
+            ScopedSpinLock l{sync};
+            actors.emplace(actor);
+            actors_map.insert(std::make_pair(physx_actor, actor));
+        }
+    }
+
+    void Physics::remove_actor_locked(BodyComponent* actor)
+    {
+        using namespace physx;
+
+        {
+            ScopedSpinLock l{sync};
+            actors.erase(actor);
+            actors_map.erase(actor->get_rigid_actor());
+        }
+
+        if (AggregateHolderComponent* aggregate_component = actor->get_world()->get_entity(actor->get_entity().get_parent_handle()).get_component_if_exists<AggregateHolderComponent>())
+        {
+            PxSceneWriteLock lock{*scene};
+            aggregate_component->aggregate->remove_actor(actor->get_rigid_actor());
+        }
+        else
+        {
+            PxSceneWriteLock lock{*scene};
+            scene->removeActor(*actor->get_rigid_actor());
+        }
+    }
+
+    void Physics::release_scene_locked()
+    {
+        using namespace physx;
+
+        if (scene != nullptr)
+        {
+            PxSceneWriteLock lock{*scene};
+            scene->flushSimulation();
+
+            for (auto& actor : actors)
+            {
+                scene->removeActor(*actor->get_rigid_actor());
+            }
+        }
+
+        {
+            ScopedSpinLock lock{sync};
+
+            actors.clear();
+            actors_map.clear();
+            colliders_map.clear();
+
+            nb_active_actors = 0;
+
+            PX_RELEASE(cct_manager)
+
+            PX_RELEASE(scene)
+        }
+    }
+
+    void Physics::explode(const vec3& world_pos, float damage_radius, float explosive_impulse)
+    {
+        using namespace physx;
+        PxVec3 pos = create_PxVec3(world_pos);
+        ExplodeOverlapCallback overlap_callback(pos, damage_radius, explosive_impulse);
+        scene->overlap(PxSphereGeometry(damage_radius), PxTransform(pos), overlap_callback);
+    }
+
+    void Physics::sync_transforms_locked()
+    {
+        using namespace physx;
+
+        PxSceneReadLock lock{*scene};
+
+        uint32 temp_nb = 0;
+        PxActor** active_actors = scene->getActiveActors(temp_nb);
+        nb_active_actors.store(temp_nb, std::memory_order_relaxed);
+
+        for (size_t i = 0; i < nb_active_actors; ++i)
+        {
+            if (!active_actors[i]->userData)
+            {
+                continue;
+            }
+
+            if (auto rb = active_actors[i]->is<PxRigidDynamic>())
+            {
+                Component* data = static_cast<Component*>(active_actors[i]->userData);
+
+                if (data == nullptr)
+                {
+                    continue;
+                }
+
+                if (data->get_type() == rttr::type::get<CharacterControllerComponent>())
+                {
+                    continue;
+                }
+
+                // Check joint shape sync.
+                {
+                    auto& colliders = colliders_map[data->get_handle()];
+
+                    if (!colliders.empty())
+                    {
+                        auto& shape_component = colliders.front(); // Only for single-shape entities.
+
+                        if (shape_component->attachment_active)
+                        {
+                            continue;
+                        }
+                    }
+                }
+
+                const auto& pxt = rb->getGlobalPose();
+                const auto& pos = pxt.p;
+                const auto& rot = pxt.q;
+
+                TransformComponent* transform_component = data->get_entity().get_component<TransformComponent>();
+                trs new_transform(create_vec3(pos), create_quat(rot), transform_component->get_local_transform().scale);
+
+                transform_component->set_world_transform(new_transform);
+            }
+        }
+
+        // if (is_gpu())
+        //{
+        //	for (auto&& [name, world] : get_worlds())
+        //	{
+        //		for (auto [entity_handle, transform, soft_body] : world->group(components_group<TransformComponent, SoftBodyComponent>).each())
+        //		{
+        //			soft_body.copy_deformed_vertices_from_gpu_async(0);
+        //		}
+        //	}
+        // }
+    }
+
+    void Physics::process_simulation_event_callbacks()
+    {
+        simulation_event_callback->sendCollisionEvents();
+        simulation_event_callback->sendTriggerEvents();
+        simulation_event_callback->sendJointEvents();
+    }
+
+    ref<Physics> PhysicsEngine::get_physics_core()
+    {
+        return physics_core;
+    }
+
+    void PhysicsEngine::execute_read(const std::function<void()>& func)
+    {
+        using namespace physx;
+
+        PxSceneReadLock lock(*physics_core->get_scene());
+        func();
+    }
+
+    void PhysicsEngine::execute_write(const std::function<void()>& func)
+    {
+        using namespace physx;
+
+        PxSceneWriteLock lock(*physics_core->get_scene());
+        func();
+    }
 
 }

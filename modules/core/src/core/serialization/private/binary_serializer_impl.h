@@ -12,17 +12,17 @@
 
 namespace era_engine
 {
-	using DynamicContainerSize = uint32;
+    using DynamicContainerSize = uint32;
 
-	inline size_t get_tail_size(size_t tail_size, size_t offset)
-	{
-		if (offset >= tail_size)
-		{
-			return 0;
-		}
+    inline size_t get_tail_size(size_t tail_size, size_t offset)
+    {
+        if (offset >= tail_size)
+        {
+            return 0;
+        }
 
-		return tail_size - offset;
-	}
+        return tail_size - offset;
+    }
 
     struct ByteArraySerializeHelper
     {

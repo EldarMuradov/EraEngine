@@ -6,14 +6,14 @@
 
 namespace era_engine
 {
-	// Marks an entity created at runtime: the entity and its subtree are never serialized.
-	class ERA_CORE_API TransientComponent final : public Component
-	{
-	public:
-		TransientComponent() = default;
-		TransientComponent(ref<Entity::EcsData> _data);
-		~TransientComponent() override;
+    // Marks an entity created at runtime: the entity and its subtree are never serialized.
+    class ERA_CORE_API TransientComponent final : public Component
+    {
+    public:
+        TransientComponent() = default;
+        TransientComponent(ref<Entity::EcsData> _data);
+        ~TransientComponent() override;
 
-		ERA_VIRTUAL_REFLECT(Component)
-	};
+        ERA_VIRTUAL_REFLECT(Component)
+    };
 }

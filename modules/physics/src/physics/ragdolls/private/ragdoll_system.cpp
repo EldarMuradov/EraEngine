@@ -17,277 +17,275 @@
 
 namespace era_engine::physics
 {
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
 
-		registration::class_<RagdollSystem>("RagdollSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("physics")))
+        registration::class_<RagdollSystem>("RagdollSystem")
+            .constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("physics")))
 
-			.method("update", &RagdollSystem::update)
-			(metadata("update_group", update_types::PHYSICS),
-			 metadata("After", std::vector<std::string>{"PhysicsSystem::update"}))
+            .method("update", &RagdollSystem::update)(metadata("update_group", update_types::PHYSICS),
+                metadata("After", std::vector<std::string>{"PhysicsSystem::update"}))
 
-			.method("update_normal", &RagdollSystem::update_normal)
-			(metadata("update_group", update_types::GAMEPLAY_NORMAL),
-			metadata("After", std::vector<std::string>{"SkeletonSystem::update"}));
-	}
+            .method("update_normal", &RagdollSystem::update_normal)(metadata("update_group", update_types::GAMEPLAY_NORMAL),
+                metadata("After", std::vector<std::string>{"SkeletonSystem::update"}));
+    }
 
-	RagdollSystem::RagdollSystem(World* _world)
-		: System(_world)
-	{
-	}
+    RagdollSystem::RagdollSystem(World* _world)
+        : System(_world)
+    {
+    }
 
-	void RagdollSystem::init()
-	{
-		entt::registry& registry = world->get_registry();
-		registry.on_construct<RagdollComponent>().connect<&RagdollSystem::on_ragdoll_created>(this);
-		registry.on_destroy<RagdollComponent>().connect<&RagdollSystem::on_ragdoll_removed>(this);
+    void RagdollSystem::init()
+    {
+        entt::registry& registry = world->get_registry();
+        registry.on_construct<RagdollComponent>().connect<&RagdollSystem::on_ragdoll_created>(this);
+        registry.on_destroy<RagdollComponent>().connect<&RagdollSystem::on_ragdoll_removed>(this);
 
-		ragdolls_group = world->group(components_group<TransformComponent, RagdollComponent, animation::SkeletonComponent>);
-	}
+        ragdolls_group = world->group(components_group<TransformComponent, RagdollComponent, animation::SkeletonComponent>);
+    }
 
-	void RagdollSystem::update(float dt)
-	{
-		ZoneScopedN("RagdollSystem::update");
+    void RagdollSystem::update(float dt)
+    {
+        ZoneScopedN("RagdollSystem::update");
 
-		process_added_ragdolls();
+        process_added_ragdolls();
 
-		for (auto&& [entity_handle, transform_component, ragdoll_component, skeleton_component] : ragdolls_group.each())
-		{
-			PhysicalRagdollBuilder::try_finalize_ragdoll(&ragdoll_component);
-		}
+        for (auto&& [entity_handle, transform_component, ragdoll_component, skeleton_component] : ragdolls_group.each())
+        {
+            PhysicalRagdollBuilder::try_finalize_ragdoll(&ragdoll_component);
+        }
 
-		for (auto [entity_handle, transform_component, ragdoll_component] : world->group(components_group<TransformComponent, RagdollComponent>).each())
-		{
-			if (!ragdoll_component.loaded)
-			{
-				continue;
-			}
+        for (auto [entity_handle, transform_component, ragdoll_component] : world->group(components_group<TransformComponent, RagdollComponent>).each())
+        {
+            if (!ragdoll_component.loaded)
+            {
+                continue;
+            }
 
-			if (ragdoll_component.simulated.is_changed())
-			{
-				for (const EntityPtr& limb_ptr : ragdoll_component.limbs)
-				{
-					Entity limb = limb_ptr.get();
-					limb.get_component<RagdollLimbComponent>()->simulated = ragdoll_component.simulated;
-				}
-				ragdoll_component.simulated.sync_changes();
-			}
-			ragdoll_component.elapsed_blend_time = 0.0f;
-			ragdoll_component.reached_physics_pose = false;
-		}
+            if (ragdoll_component.simulated.is_changed())
+            {
+                for (const EntityPtr& limb_ptr : ragdoll_component.limbs)
+                {
+                    Entity limb = limb_ptr.get();
+                    limb.get_component<RagdollLimbComponent>()->simulated = ragdoll_component.simulated;
+                }
+                ragdoll_component.simulated.sync_changes();
+            }
+            ragdoll_component.elapsed_blend_time = 0.0f;
+            ragdoll_component.reached_physics_pose = false;
+        }
 
-		for (auto [entity_handle, transform_component, ragdoll_limb_component] : world->group(components_group<TransformComponent, RagdollLimbComponent>).each())
-		{
-			if (ragdoll_limb_component.simulated.is_changed())
-			{
-				Entity limb = world->get_entity(entity_handle);
+        for (auto [entity_handle, transform_component, ragdoll_limb_component] : world->group(components_group<TransformComponent, RagdollLimbComponent>).each())
+        {
+            if (ragdoll_limb_component.simulated.is_changed())
+            {
+                Entity limb = world->get_entity(entity_handle);
 
-				DynamicBodyComponent* body_component = limb.get_component<DynamicBodyComponent>();
-				body_component->simulated = ragdoll_limb_component.simulated;
+                DynamicBodyComponent* body_component = limb.get_component<DynamicBodyComponent>();
+                body_component->simulated = ragdoll_limb_component.simulated;
 
-				ragdoll_limb_component.simulated.sync_changes();
-			}
+                ragdoll_limb_component.simulated.sync_changes();
+            }
 
-			ragdoll_limb_component.prev_physics_pose = ragdoll_limb_component.physics_pose;
-			ragdoll_limb_component.physics_pose = transform_component.get_local_transform();
-		}
-	}
+            ragdoll_limb_component.prev_physics_pose = ragdoll_limb_component.physics_pose;
+            ragdoll_limb_component.physics_pose = transform_component.get_local_transform();
+        }
+    }
 
-	void RagdollSystem::update_normal(float dt)
-	{
-		using namespace animation;
+    void RagdollSystem::update_normal(float dt)
+    {
+        using namespace animation;
 
-		ZoneScopedN("RagdollSystem::update_normal");
+        ZoneScopedN("RagdollSystem::update_normal");
 
-		for (auto&& [entity_handle, transform_component, ragdoll_component, skeleton_component] : ragdolls_group.each())
-		{
-			if (!ragdoll_component.simulated || !ragdoll_component.loaded)
-			{
-				continue;
-			}
+        for (auto&& [entity_handle, transform_component, ragdoll_component, skeleton_component] : ragdolls_group.each())
+        {
+            if (!ragdoll_component.simulated || !ragdoll_component.loaded)
+            {
+                continue;
+            }
 
-			Entity ragdoll = world->get_entity(entity_handle);
+            Entity ragdoll = world->get_entity(entity_handle);
 
-			ref<Skeleton> skeleton = skeleton_component.skeleton;
-			if (skeleton == nullptr)
-			{
-				continue;
-			}
-			
-			{
-				const float fixed_update_dt = world->get_fixed_update_dt();
+            ref<Skeleton> skeleton = skeleton_component.skeleton;
+            if (skeleton == nullptr)
+            {
+                continue;
+            }
 
-				const uint32 root_id = 0;
-				ragdoll_component.local_joint_poses[root_id] = SkeletonUtils::get_object_space_joint_transform(&skeleton_component, root_id);
+            {
+                const float fixed_update_dt = world->get_fixed_update_dt();
 
-				auto simulated_joints_end = ragdoll_component.simulated_joints.end();
+                const uint32 root_id = 0;
+                ragdoll_component.local_joint_poses[root_id] = SkeletonUtils::get_object_space_joint_transform(&skeleton_component, root_id);
 
-				if (!ragdoll_component.reached_physics_pose)
-				{
-					ragdoll_component.elapsed_blend_time += dt;
-				}
+                auto simulated_joints_end = ragdoll_component.simulated_joints.end();
 
-				const float blend_value = ragdoll_component.reached_physics_pose ? 1.0f : std::min(ragdoll_component.elapsed_blend_time / fixed_update_dt, 1.0f);
-				if (ragdoll_component.elapsed_blend_time >= fixed_update_dt)
-				{
-					ragdoll_component.reached_physics_pose = true;
-				}
+                if (!ragdoll_component.reached_physics_pose)
+                {
+                    ragdoll_component.elapsed_blend_time += dt;
+                }
 
-				for (const uint32 simulation_joint : ragdoll_component.simulated_joints_set)
-				{
-					const uint32 parent_id = skeleton->joints.at(simulation_joint).parent_id;
-					const trs& parent_local = ragdoll_component.local_joint_poses[parent_id];
+                const float blend_value = ragdoll_component.reached_physics_pose ? 1.0f : std::min(ragdoll_component.elapsed_blend_time / fixed_update_dt, 1.0f);
+                if (ragdoll_component.elapsed_blend_time >= fixed_update_dt)
+                {
+                    ragdoll_component.reached_physics_pose = true;
+                }
 
-					trs inverse_parent_local = invert(parent_local);
+                for (const uint32 simulation_joint : ragdoll_component.simulated_joints_set)
+                {
+                    const uint32 parent_id = skeleton->joints.at(simulation_joint).parent_id;
+                    const trs& parent_local = ragdoll_component.local_joint_poses[parent_id];
 
-					trs limb_current_pose = skeleton_component.get_joint_transform(simulation_joint);
-					limb_current_pose.scale = vec3(1.0f);
+                    trs inverse_parent_local = invert(parent_local);
 
-					auto limb_iter = ragdoll_component.simulated_joints.find(simulation_joint);
-					if (limb_iter == ragdoll_component.simulated_joints.end())
-					{
-						const trs calculated_transform = parent_local * limb_current_pose;
-						ragdoll_component.local_joint_poses[simulation_joint] = calculated_transform;
-					}
-					else
-					{
-						Entity limb = limb_iter->second.get();
-						RagdollLimbComponent* ragdoll_limb = limb.get_component<RagdollLimbComponent>();
+                    trs limb_current_pose = skeleton_component.get_joint_transform(simulation_joint);
+                    limb_current_pose.scale = vec3(1.0f);
 
-						trs new_transform = inverse_parent_local * ragdoll_limb->physics_pose;
+                    auto limb_iter = ragdoll_component.simulated_joints.find(simulation_joint);
+                    if (limb_iter == ragdoll_component.simulated_joints.end())
+                    {
+                        const trs calculated_transform = parent_local * limb_current_pose;
+                        ragdoll_component.local_joint_poses[simulation_joint] = calculated_transform;
+                    }
+                    else
+                    {
+                        Entity limb = limb_iter->second.get();
+                        RagdollLimbComponent* ragdoll_limb = limb.get_component<RagdollLimbComponent>();
 
-						const trs prev_transform = inverse_parent_local * ragdoll_limb->prev_physics_pose;
+                        trs new_transform = inverse_parent_local * ragdoll_limb->physics_pose;
 
-						if (!fuzzy_equals(prev_transform, new_transform))
-						{
-							new_transform.position = lerp(prev_transform.position,
-								new_transform.position,
-								blend_value);
+                        const trs prev_transform = inverse_parent_local * ragdoll_limb->prev_physics_pose;
 
-							new_transform.rotation = slerp(prev_transform.rotation,
-								new_transform.rotation,
-								blend_value);
-						}
+                        if (!fuzzy_equals(prev_transform, new_transform))
+                        {
+                            new_transform.position = lerp(prev_transform.position,
+                                new_transform.position,
+                                blend_value);
 
-						new_transform.rotation = normalize(new_transform.rotation);
+                            new_transform.rotation = slerp(prev_transform.rotation,
+                                new_transform.rotation,
+                                blend_value);
+                        }
 
-						skeleton_component.set_joint_transform(new_transform, simulation_joint);
+                        new_transform.rotation = normalize(new_transform.rotation);
 
-						trs new_local_child_transform = parent_local * new_transform;
-						new_local_child_transform.rotation = normalize(new_local_child_transform.rotation);
+                        skeleton_component.set_joint_transform(new_transform, simulation_joint);
 
-						ragdoll_component.local_joint_poses[simulation_joint] = new_local_child_transform;
-					}
-				}
-			}
-		}
-	}
+                        trs new_local_child_transform = parent_local * new_transform;
+                        new_local_child_transform.rotation = normalize(new_local_child_transform.rotation);
 
-	void RagdollSystem::process_added_ragdolls()
-	{
-		using namespace physx;
-		using namespace animation;
+                        ragdoll_component.local_joint_poses[simulation_joint] = new_local_child_transform;
+                    }
+                }
+            }
+        }
+    }
 
-		ScopedSpinLock _lock{ sync };
+    void RagdollSystem::process_added_ragdolls()
+    {
+        using namespace physx;
+        using namespace animation;
 
-		for (Entity::Handle entity_handle : std::exchange(ragdolls_to_init, {}))
-		{
-			Entity entity = world->get_entity(entity_handle);
+        ScopedSpinLock _lock{sync};
 
-			const SkeletonComponent* skeleton_component = entity.get_component<SkeletonComponent>();
+        for (Entity::Handle entity_handle : std::exchange(ragdolls_to_init, {}))
+        {
+            Entity entity = world->get_entity(entity_handle);
 
-			const ref<Skeleton> skeleton = skeleton_component->skeleton;
-			if (skeleton == nullptr)
-			{
-				continue;
-			}
+            const SkeletonComponent* skeleton_component = entity.get_component<SkeletonComponent>();
 
-			RagdollComponent* ragdoll_component = entity.get_component<RagdollComponent>();
+            const ref<Skeleton> skeleton = skeleton_component->skeleton;
+            if (skeleton == nullptr)
+            {
+                continue;
+            }
 
-			PhysicalRagdollBuilder::RuntimeContext context;
-			context.world = world;
-			context.ragdoll = entity;
-			context.ragdoll_component = ragdoll_component;
-			context.default_profile = nullptr;
-			context.enable_physical_animation = false;
+            RagdollComponent* ragdoll_component = entity.get_component<RagdollComponent>();
 
-			PhysicalRagdollBuilder::build_ragdoll(context);
+            PhysicalRagdollBuilder::RuntimeContext context;
+            context.world = world;
+            context.ragdoll = entity;
+            context.ragdoll_component = ragdoll_component;
+            context.default_profile = nullptr;
+            context.enable_physical_animation = false;
 
-			for (const EntityPtr& limb_ptr : ragdoll_component->limbs)
-			{
-				const RagdollLimbComponent* limb_component = limb_ptr.get().get_component<RagdollLimbComponent>();
-				ragdoll_component->simulated_joints.emplace(limb_component->joint_id, limb_ptr);
-			}
+            PhysicalRagdollBuilder::build_ragdoll(context);
 
-			ragdoll_component->root_joint_id = ragdoll_component->joint_init_ids.attachment_idx;
+            for (const EntityPtr& limb_ptr : ragdoll_component->limbs)
+            {
+                const RagdollLimbComponent* limb_component = limb_ptr.get().get_component<RagdollLimbComponent>();
+                ragdoll_component->simulated_joints.emplace(limb_component->joint_id, limb_ptr);
+            }
 
-			for (auto& [joint_id, limb_ptr] : ragdoll_component->simulated_joints)
-			{
-				uint32 calculation_id = joint_id;
-				ragdoll_component->simulated_joints_set.emplace(calculation_id);
+            ragdoll_component->root_joint_id = ragdoll_component->joint_init_ids.attachment_idx;
 
-				while (calculation_id != INVALID_JOINT)
-				{
-					const uint32 parent_id = skeleton->joints.at(calculation_id).parent_id;
-					if (parent_id != INVALID_JOINT)
-					{
-						ragdoll_component->simulated_joints_set.emplace(parent_id);
-						calculation_id = parent_id;
-					}
-					else
-					{
-						break;
-					}
-				}
-			}
+            for (auto& [joint_id, limb_ptr] : ragdoll_component->simulated_joints)
+            {
+                uint32 calculation_id = joint_id;
+                ragdoll_component->simulated_joints_set.emplace(calculation_id);
 
-			const uint32 simulation_graph_size = static_cast<uint32>(ragdoll_component->simulated_joints_set.size() + 1u);
+                while (calculation_id != INVALID_JOINT)
+                {
+                    const uint32 parent_id = skeleton->joints.at(calculation_id).parent_id;
+                    if (parent_id != INVALID_JOINT)
+                    {
+                        ragdoll_component->simulated_joints_set.emplace(parent_id);
+                        calculation_id = parent_id;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
 
-			ragdoll_component->local_joint_poses.reserve(simulation_graph_size);
-			ragdoll_component->local_joint_poses[0] = trs::identity;
-			ragdoll_component->local_joint_poses[INVALID_JOINT] = trs::identity;
-		}
-	}
+            const uint32 simulation_graph_size = static_cast<uint32>(ragdoll_component->simulated_joints_set.size() + 1u);
 
-	void RagdollSystem::on_ragdoll_created(entt::registry& registry, entt::entity entity_handle)
-	{
-		ScopedSpinLock _lock{ sync };
+            ragdoll_component->local_joint_poses.reserve(simulation_graph_size);
+            ragdoll_component->local_joint_poses[0] = trs::identity;
+            ragdoll_component->local_joint_poses[INVALID_JOINT] = trs::identity;
+        }
+    }
 
-		ragdolls_to_init.push_back(static_cast<Entity::Handle>(entity_handle));
-	}
+    void RagdollSystem::on_ragdoll_created(entt::registry& registry, entt::entity entity_handle)
+    {
+        ScopedSpinLock _lock{sync};
 
-	void RagdollSystem::on_ragdoll_removed(entt::registry& registry, entt::entity entity_handle)
-	{
-		Entity entity = world->get_entity(entity_handle);
-		RagdollComponent* ragdoll_component = entity.get_component<RagdollComponent>();
+        ragdolls_to_init.push_back(static_cast<Entity::Handle>(entity_handle));
+    }
 
-		if (!ragdoll_component->loaded)
-		{
-			return;
-		}
+    void RagdollSystem::on_ragdoll_removed(entt::registry& registry, entt::entity entity_handle)
+    {
+        Entity entity = world->get_entity(entity_handle);
+        RagdollComponent* ragdoll_component = entity.get_component<RagdollComponent>();
 
-		for (const EntityPtr& limb_ptr : ragdoll_component->limbs)
-		{
-			Entity limb = limb_ptr.get();
-			if (!limb.is_valid())
-			{
-				continue;
-			}
+        if (!ragdoll_component->loaded)
+        {
+            return;
+        }
 
-			RagdollLimbComponent* limb_component = limb.get_component_if_exists<RagdollLimbComponent>();
-			if (limb_component == nullptr)
-			{
-				continue;
-			}
+        for (const EntityPtr& limb_ptr : ragdoll_component->limbs)
+        {
+            Entity limb = limb_ptr.get();
+            if (!limb.is_valid())
+            {
+                continue;
+            }
 
-			if (!limb_component->joint_entity_ptr.is_empty())
-			{
-				world->destroy_entity(limb_component->joint_entity_ptr.get());
-			}
+            RagdollLimbComponent* limb_component = limb.get_component_if_exists<RagdollLimbComponent>();
+            if (limb_component == nullptr)
+            {
+                continue;
+            }
 
-			world->destroy_entity(limb);
-		}
-	}
+            if (!limb_component->joint_entity_ptr.is_empty())
+            {
+                world->destroy_entity(limb_component->joint_entity_ptr.get());
+            }
+
+            world->destroy_entity(limb);
+        }
+    }
 }

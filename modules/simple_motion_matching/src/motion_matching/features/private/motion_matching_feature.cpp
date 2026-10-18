@@ -11,58 +11,58 @@
 
 namespace era_engine
 {
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
-		registration::class_<FeatureDesc>("FeatureDesc")
-			.constructor<>()(policy::ctor::as_raw_ptr);
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
+        registration::class_<FeatureDesc>("FeatureDesc")
+            .constructor<>()(policy::ctor::as_raw_ptr);
 
-		registration::class_<MotionMatchingFeature>("MotionMatchingFeature")
-			.constructor<>()(policy::ctor::as_raw_ptr);
-	}
+        registration::class_<MotionMatchingFeature>("MotionMatchingFeature")
+            .constructor<>()(policy::ctor::as_raw_ptr);
+    }
 
-	void FeatureComputationContext::fill_context(Entity _entity, float _dt)
-	{
-		using namespace animation;
+    void FeatureComputationContext::fill_context(Entity _entity, float _dt)
+    {
+        using namespace animation;
 
-		entity = _entity;
-		dt = _dt;
+        entity = _entity;
+        dt = _dt;
 
-		world = entity.get_world();
-		
-		skeleton_component = entity.get_component<SkeletonComponent>();
-		animation_component = entity.get_component<AnimationComponent>();
-		
-		trajectory_component = entity.get_component<TrajectoryComponent>();
-		motion_component = entity.get_component<MotionComponent>();
-	}
+        world = entity.get_world();
 
-	MotionMatchingFeature::~MotionMatchingFeature()
-	{
-	}
+        skeleton_component = entity.get_component<SkeletonComponent>();
+        animation_component = entity.get_component<AnimationComponent>();
 
-	std::vector<float> MotionMatchingFeature::compute_features(const FeatureComputationContext& context) const
-	{
-		return  std::vector<float>{};
-	}
+        trajectory_component = entity.get_component<TrajectoryComponent>();
+        motion_component = entity.get_component<MotionComponent>();
+    }
 
-	bool MotionMatchingFeature::mark_animation(const animation::SkeletonComponent* skeleton_component, ref<animation::AnimationAssetClip> clip) const
-	{
-		return true;
-	}
+    MotionMatchingFeature::~MotionMatchingFeature()
+    {
+    }
 
-	bool MotionMatchingFeature::sample_animation(const animation::Skeleton* skeleton, ref<animation::AnimationAssetClip> clip, float sample_rate, std::vector<ref<MotionMatchingDatabase::Sample>>& out_samples) const
-	{
-		return true;
-	}
+    std::vector<float> MotionMatchingFeature::compute_features(const FeatureComputationContext& context) const
+    {
+        return std::vector<float>{};
+    }
 
-	const std::vector<ref<FeatureDesc>>& MotionMatchingFeature::get_descriptors() const
-	{
-		return descriptors;
-	}
+    bool MotionMatchingFeature::mark_animation(const animation::SkeletonComponent* skeleton_component, ref<animation::AnimationAssetClip> clip) const
+    {
+        return true;
+    }
 
-	uint32 MotionMatchingFeature::get_feature_size() const
-	{
-		return 0;
-	}
+    bool MotionMatchingFeature::sample_animation(const animation::Skeleton* skeleton, ref<animation::AnimationAssetClip> clip, float sample_rate, std::vector<ref<MotionMatchingDatabase::Sample>>& out_samples) const
+    {
+        return true;
+    }
+
+    const std::vector<ref<FeatureDesc>>& MotionMatchingFeature::get_descriptors() const
+    {
+        return descriptors;
+    }
+
+    uint32 MotionMatchingFeature::get_feature_size() const
+    {
+        return 0;
+    }
 }

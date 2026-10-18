@@ -9,112 +9,112 @@
 
 RTTR_REGISTRATION
 {
-	using namespace rttr;
-	using namespace era_engine;
+    using namespace rttr;
+    using namespace era_engine;
 
-	registration::class_<MotionComponent>("MotionComponent")
-		.constructor<ref<Entity::EcsData>>()
-		.property("follow_input_rotation", &MotionComponent::follow_input_rotation)
-		.property("velocity_halflife", &MotionComponent::velocity_halflife)
-		.property("rotation_halflife", &MotionComponent::rotation_halflife)
-		.property("run_fwrd_speed", &MotionComponent::run_fwrd_speed)
-		.property("run_side_speed", &MotionComponent::run_side_speed)
-		.property("run_back_speed", &MotionComponent::run_back_speed)
-		.property("walk_fwrd_speed", &MotionComponent::walk_fwrd_speed)
-		.property("walk_side_speed", &MotionComponent::walk_side_speed)
-		.property("walk_back_speed", &MotionComponent::walk_back_speed);
-	ComponentRegistry::register_component<MotionComponent>();
+    registration::class_<MotionComponent>("MotionComponent")
+        .constructor<ref<Entity::EcsData>>()
+        .property("follow_input_rotation", &MotionComponent::follow_input_rotation)
+        .property("velocity_halflife", &MotionComponent::velocity_halflife)
+        .property("rotation_halflife", &MotionComponent::rotation_halflife)
+        .property("run_fwrd_speed", &MotionComponent::run_fwrd_speed)
+        .property("run_side_speed", &MotionComponent::run_side_speed)
+        .property("run_back_speed", &MotionComponent::run_back_speed)
+        .property("walk_fwrd_speed", &MotionComponent::walk_fwrd_speed)
+        .property("walk_side_speed", &MotionComponent::walk_side_speed)
+        .property("walk_back_speed", &MotionComponent::walk_back_speed);
+    ComponentRegistry::register_component<MotionComponent>();
 }
 
 namespace era_engine
 {
 
-	MotionComponent::MotionComponent(ref<Entity::EcsData> _data)
-		: Component(_data)
-	{
-	}
+    MotionComponent::MotionComponent(ref<Entity::EcsData> _data)
+        : Component(_data)
+    {
+    }
 
-	MotionComponent::~MotionComponent()
-	{
-	}
+    MotionComponent::~MotionComponent()
+    {
+    }
 
-	bool MotionComponent::has_root_motion() const
-	{
-		return root_motion.has_value();
-	}
+    bool MotionComponent::has_root_motion() const
+    {
+        return root_motion.has_value();
+    }
 
-	void MotionComponent::init_root_motion(const animation::Skeleton* skeleton, 
-		const ref<animation::AnimationAssetClip>& animation, 
-		float start_position, 
-		float duration,
-		RootMotionType type)
-	{
-		if (!root_motion.has_value())
-		{
-			root_motion = RootMotion(skeleton);
-		}
+    void MotionComponent::init_root_motion(const animation::Skeleton* skeleton,
+        const ref<animation::AnimationAssetClip>& animation,
+        float start_position,
+        float duration,
+        RootMotionType type)
+    {
+        if (!root_motion.has_value())
+        {
+            root_motion = RootMotion(skeleton);
+        }
 
-		root_motion->attach_to_animation(animation, start_position, duration, type);
+        root_motion->attach_to_animation(animation, start_position, duration, type);
 
-		const TransformComponent* transform_component = get_entity().get_component<TransformComponent>();
-		root_motion->set_initial_world_transform(transform_component->get_world_transform());
-	}
+        const TransformComponent* transform_component = get_entity().get_component<TransformComponent>();
+        root_motion->set_initial_world_transform(transform_component->get_world_transform());
+    }
 
-	void MotionComponent::reset_root_motion()
-	{
-		root_motion.reset();
-	}
+    void MotionComponent::reset_root_motion()
+    {
+        root_motion.reset();
+    }
 
-	const vec3& MotionComponent::get_current_input() const
-	{
-		return current_input;
-	}
+    const vec3& MotionComponent::get_current_input() const
+    {
+        return current_input;
+    }
 
-	const vec3& MotionComponent::get_desired_input() const
-	{
-		return desired_input;
-	}
+    const vec3& MotionComponent::get_desired_input() const
+    {
+        return desired_input;
+    }
 
-	const vec3& MotionComponent::get_last_input() const
-	{
-		return last_input;
-	}
+    const vec3& MotionComponent::get_last_input() const
+    {
+        return last_input;
+    }
 
-	const vec3& MotionComponent::get_velocity() const
-	{
-		return velocity;
-	}
+    const vec3& MotionComponent::get_velocity() const
+    {
+        return velocity;
+    }
 
-	const vec3& MotionComponent::get_last_velocity() const
-	{
-		return last_velocity;
-	}
+    const vec3& MotionComponent::get_last_velocity() const
+    {
+        return last_velocity;
+    }
 
-	void MotionComponent::apply_input(const vec3& input, bool force)
-	{
-		desired_input += input;
-		if (force)
-		{
-			apply_desired_input();
-		}
-	}
+    void MotionComponent::apply_input(const vec3& input, bool force)
+    {
+        desired_input += input;
+        if (force)
+        {
+            apply_desired_input();
+        }
+    }
 
-	const quat& MotionComponent::get_input_movement_rotation() const
-	{
-		return input_movement_rotation;
-	}
+    const quat& MotionComponent::get_input_movement_rotation() const
+    {
+        return input_movement_rotation;
+    }
 
-	void MotionComponent::set_input_movement_rotation(const quat& new_input_rotation)
-	{
-		input_movement_rotation = new_input_rotation;
-		input_movement_yaw = get_yaw_angle(new_input_rotation);
-	}
+    void MotionComponent::set_input_movement_rotation(const quat& new_input_rotation)
+    {
+        input_movement_rotation = new_input_rotation;
+        input_movement_yaw = get_yaw_angle(new_input_rotation);
+    }
 
-	void MotionComponent::apply_desired_input()
-	{
-		last_input = current_input;
-		current_input = noz(desired_input);
-		desired_input = vec3::zero;
-	}
+    void MotionComponent::apply_desired_input()
+    {
+        last_input = current_input;
+        current_input = noz(desired_input);
+        desired_input = vec3::zero;
+    }
 
 }

@@ -9,81 +9,81 @@
 
 namespace era_engine
 {
-	class ERA_MOTION_MATCHING_API MotionComponent final : public Component
-	{
-	public:
-		MotionComponent() = default;
-		MotionComponent(ref<Entity::EcsData> _data);
+    class ERA_MOTION_MATCHING_API MotionComponent final : public Component
+    {
+    public:
+        MotionComponent() = default;
+        MotionComponent(ref<Entity::EcsData> _data);
 
-		~MotionComponent() override;
+        ~MotionComponent() override;
 
-		bool has_root_motion() const;
+        bool has_root_motion() const;
 
-		void init_root_motion(const animation::Skeleton* skeleton, 
-			const ref<animation::AnimationAssetClip>& animation, 
-			float start_position, 
-			float duration,
-			RootMotionType type);
+        void init_root_motion(const animation::Skeleton* skeleton,
+            const ref<animation::AnimationAssetClip>& animation,
+            float start_position,
+            float duration,
+            RootMotionType type);
 
-		void reset_root_motion();
+        void reset_root_motion();
 
-		const vec3& get_current_input() const;
-		const vec3& get_desired_input() const;
-		const vec3& get_last_input() const;
+        const vec3& get_current_input() const;
+        const vec3& get_desired_input() const;
+        const vec3& get_last_input() const;
 
-		const vec3& get_velocity() const;
-		const vec3& get_last_velocity() const;
+        const vec3& get_velocity() const;
+        const vec3& get_last_velocity() const;
 
-		void apply_input(const vec3& input, bool force = false);
+        void apply_input(const vec3& input, bool force = false);
 
-		const quat& get_input_movement_rotation() const;
-		void set_input_movement_rotation(const quat& new_input_rotation);
+        const quat& get_input_movement_rotation() const;
+        void set_input_movement_rotation(const quat& new_input_rotation);
 
-		ERA_VIRTUAL_REFLECT(Component)
+        ERA_VIRTUAL_REFLECT(Component)
 
-	protected:
-		void apply_desired_input();
+    protected:
+        void apply_desired_input();
 
-	protected:
-		vec3 current_input = vec3::zero;
-		vec3 last_input = vec3::zero;
-		vec3 desired_input = vec3::zero;
+    protected:
+        vec3 current_input = vec3::zero;
+        vec3 last_input = vec3::zero;
+        vec3 desired_input = vec3::zero;
 
-		bool follow_input_rotation = true;
+        bool follow_input_rotation = true;
 
-		float input_movement_yaw = 0.0f;
-		quat input_movement_rotation = quat::identity;
+        float input_movement_yaw = 0.0f;
+        quat input_movement_rotation = quat::identity;
 
-		vec3 desired_velocity = vec3::zero;
-		vec3 desired_velocity_change_curr = vec3::zero;
-		vec3 desired_velocity_change_prev = vec3::zero;
+        vec3 desired_velocity = vec3::zero;
+        vec3 desired_velocity_change_curr = vec3::zero;
+        vec3 desired_velocity_change_prev = vec3::zero;
 
-		quat desired_rotation = quat::identity;
-		vec3 desired_rotation_change_curr = vec3::zero;
-		vec3 desired_rotation_change_prev = vec3::zero;
+        quat desired_rotation = quat::identity;
+        vec3 desired_rotation_change_curr = vec3::zero;
+        vec3 desired_rotation_change_prev = vec3::zero;
 
-		float desired_gait = 0.0f;
-		float desired_gait_velocity = 0.0f;
+        float desired_gait = 0.0f;
+        float desired_gait_velocity = 0.0f;
 
-		vec3 velocity = vec3::zero;
-		vec3 acceleration = vec3::zero;
-		vec3 angular_velocity = vec3::zero;
-		vec3 last_velocity = vec3::zero;
+        vec3 velocity = vec3::zero;
+        vec3 acceleration = vec3::zero;
+        vec3 angular_velocity = vec3::zero;
+        vec3 last_velocity = vec3::zero;
 
-		float velocity_halflife = 0.27f;
-		float rotation_halflife = 0.27f;
+        float velocity_halflife = 0.27f;
+        float rotation_halflife = 0.27f;
 
-		float run_fwrd_speed = 4.5f;
-		float run_side_speed = 3.5f;
-		float run_back_speed = 2.25f;
+        float run_fwrd_speed = 4.5f;
+        float run_side_speed = 3.5f;
+        float run_back_speed = 2.25f;
 
-		float walk_fwrd_speed = 2.25f;
-		float walk_side_speed = 1.75f;
-		float walk_back_speed = 1.5f;
+        float walk_fwrd_speed = 2.25f;
+        float walk_side_speed = 1.75f;
+        float walk_back_speed = 1.5f;
 
-		std::optional<RootMotion> root_motion;
+        std::optional<RootMotion> root_motion;
 
-		friend class MotionSystem;
-		friend class TrajectoryMotionSystem;
-	};
+        friend class MotionSystem;
+        friend class TrajectoryMotionSystem;
+    };
 }

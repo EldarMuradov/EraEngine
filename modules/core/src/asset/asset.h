@@ -8,58 +8,60 @@
 
 namespace era_engine
 {
-	struct ERA_CORE_API AssetHandle
-	{
-		AssetHandle() : value(0) {}
-		AssetHandle(uint64 value) : value(value) {}
+    struct ERA_CORE_API AssetHandle
+    {
+        AssetHandle()
+            : value(0) {}
+        AssetHandle(uint64 value)
+            : value(value) {}
 
-		static NODISCARD AssetHandle generate();
+        static NODISCARD AssetHandle generate();
 
-		operator bool() { return value != 0; }
+        operator bool() { return value != 0; }
 
-		uint64 value;
-	};
+        uint64 value;
+    };
 
-	inline bool operator==(AssetHandle a, AssetHandle b)
-	{
-		return a.value == b.value;
-	}
+    inline bool operator==(AssetHandle a, AssetHandle b)
+    {
+        return a.value == b.value;
+    }
 
-	enum AssetLoadState
-	{
-		UNLOADED = 0,
-		LOADING,
-		LOADED,
-		FAILED,
+    enum AssetLoadState
+    {
+        UNLOADED = 0,
+        LOADING,
+        LOADED,
+        FAILED,
 
-		COUNT,
-	};
+        COUNT,
+    };
 
-	static const char* asset_load_state_names[] =
-	{
-		"Unloaded",
-		"Loading",
-		"Loaded",
-		"Failed",
-	};
+    static const char* asset_load_state_names[] =
+        {
+            "Unloaded",
+            "Loading",
+            "Loaded",
+            "Failed",
+    };
 
-	static const uint32 BIN_HEADER = 'BIN ';
+    static const uint32 BIN_HEADER = 'BIN ';
 
-	struct BinaryHeader
-	{
-		uint32 header = BIN_HEADER;
-		uint32 version = 1;
-	};
+    struct BinaryHeader
+    {
+        uint32 header = BIN_HEADER;
+        uint32 version = 1;
+    };
 }
 
 namespace std
 {
-	template<>
-	struct hash<era_engine::AssetHandle>
-	{
-		size_t operator()(const era_engine::AssetHandle& x) const
-		{
-			return std::hash<uint64>()(x.value);
-		}
-	};
+    template <>
+    struct hash<era_engine::AssetHandle>
+    {
+        size_t operator()(const era_engine::AssetHandle& x) const
+        {
+            return std::hash<uint64>()(x.value);
+        }
+    };
 }

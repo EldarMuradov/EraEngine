@@ -6,9 +6,9 @@
 
 int main(int argc, char** argv)
 {
-	::testing::InitGoogleTest(&argc, argv);
+    ::testing::InitGoogleTest(&argc, argv);
 
-	era_engine::initialize_job_system();
+    era_engine::initialize_job_system();
 
-	return RUN_ALL_TESTS();
+    return RUN_ALL_TESTS();
 }

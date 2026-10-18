@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #include "motion_matching_api.h"
 
@@ -6,11 +6,11 @@
 
 #include <core/math.h>
 
-namespace era_engine 
+namespace era_engine
 {
-	class ERA_MOTION_MATCHING_API MotionUtils
-	{
-	public:
+    class ERA_MOTION_MATCHING_API MotionUtils
+    {
+    public:
         MotionUtils() = delete;
 
         static void desired_gait_update(
@@ -47,5 +47,5 @@ namespace era_engine
             const quat& desired_rotation,
             float halflife,
             float dt);
-	};
+    };
 }

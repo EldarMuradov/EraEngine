@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #include "motion_matching_api.h"
 
@@ -6,24 +6,24 @@
 
 #include <core/math.h>
 
-namespace era_engine 
+namespace era_engine
 {
-	namespace animation
-	{
-		class AnimationRootSampler;
-	}
+    namespace animation
+    {
+        class AnimationRootSampler;
+    }
 
-	class ERA_MOTION_MATCHING_API RootTrajectoryUtils
-	{
-	public:
-		RootTrajectoryUtils() = delete;
+    class ERA_MOTION_MATCHING_API RootTrajectoryUtils
+    {
+    public:
+        RootTrajectoryUtils() = delete;
 
-		static float get_angular_velocity(const animation::AnimationRootSampler& sampler, float position);
-		static float get_angular_acceleration(const animation::AnimationRootSampler& sampler, float position);
+        static float get_angular_velocity(const animation::AnimationRootSampler& sampler, float position);
+        static float get_angular_acceleration(const animation::AnimationRootSampler& sampler, float position);
 
-		static vec3 get_linear_velocity(const animation::AnimationRootSampler& sampler, float position);
-		static vec3 get_linear_acceleration(const animation::AnimationRootSampler& sampler, float position);
+        static vec3 get_linear_velocity(const animation::AnimationRootSampler& sampler, float position);
+        static vec3 get_linear_acceleration(const animation::AnimationRootSampler& sampler, float position);
 
-		static trs get_trs_from_origin(const animation::AnimationRootSampler& sampler, float origin_anim_position, float anim_position);
-	};
+        static trs get_trs_from_origin(const animation::AnimationRootSampler& sampler, float origin_anim_position, float anim_position);
+    };
 }

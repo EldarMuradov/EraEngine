@@ -10,21 +10,21 @@
 
 namespace era_engine::physics
 {
-	class ERA_PHYSICS_API BoxDestructibleFamily : public DestructibleFamily
-	{
-	public:
-		BoxDestructibleFamily(World* _world,
-			Nv::Blast::ExtPxManager& _px_manager,
-			DestructibleAsset* _blast_asset,
-			const DestructibleAsset::ActorDesc& desc);
-		~BoxDestructibleFamily() override;
+    class ERA_PHYSICS_API BoxDestructibleFamily : public DestructibleFamily
+    {
+    public:
+        BoxDestructibleFamily(World* _world,
+            Nv::Blast::ExtPxManager& _px_manager,
+            DestructibleAsset* _blast_asset,
+            const DestructibleAsset::ActorDesc& desc);
+        ~BoxDestructibleFamily() override;
 
-	protected:
-		void on_actor_created(const Nv::Blast::ExtPxActor& actor) override;
-		void on_actor_update(const Nv::Blast::ExtPxActor& actor) override;
-		void on_actor_destroyed(const Nv::Blast::ExtPxActor& actor) override;
+    protected:
+        void on_actor_created(const Nv::Blast::ExtPxActor& actor) override;
+        void on_actor_update(const Nv::Blast::ExtPxActor& actor) override;
+        void on_actor_destroyed(const Nv::Blast::ExtPxActor& actor) override;
 
-		ref<MultiMesh> box_mesh;
-		ref<PBRMaterial> box_render_material;
-	};
+        ref<MultiMesh> box_mesh;
+        ref<PBRMaterial> box_render_material;
+    };
 }

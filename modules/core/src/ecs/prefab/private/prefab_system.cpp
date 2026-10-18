@@ -10,32 +10,32 @@
 
 namespace era_engine
 {
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
 
-		registration::class_<PrefabSystem>("PrefabSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("base")))
-			.method("update", &PrefabSystem::update)(metadata("update_group", update_types::BEGIN));
-	}
+        registration::class_<PrefabSystem>("PrefabSystem")
+            .constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("base")))
+            .method("update", &PrefabSystem::update)(metadata("update_group", update_types::BEGIN));
+    }
 
-	PrefabSystem::PrefabSystem(World* _world)
-		: System(_world)
-	{
-	}
+    PrefabSystem::PrefabSystem(World* _world)
+        : System(_world)
+    {
+    }
 
-	PrefabSystem::~PrefabSystem()
-	{
-	}
+    PrefabSystem::~PrefabSystem()
+    {
+    }
 
-	void PrefabSystem::init()
-	{
-	}
+    void PrefabSystem::init()
+    {
+    }
 
-	void PrefabSystem::update(float dt)
-	{
-		ZoneScopedN("PrefabSystem::update");
+    void PrefabSystem::update(float dt)
+    {
+        ZoneScopedN("PrefabSystem::update");
 
-		PrefabUtils::process_spawn_queue(world);
-	}
+        PrefabUtils::process_spawn_queue(world);
+    }
 }

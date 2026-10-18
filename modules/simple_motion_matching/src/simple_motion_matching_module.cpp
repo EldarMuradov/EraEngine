@@ -38,8 +38,7 @@ namespace era_engine
         registration::class_<SimpleMotionMatchingModule>("SimpleMotionMatchingModule")
             .constructor<>()(policy::ctor::as_raw_ptr)
             .method("initialize", &SimpleMotionMatchingModule::initialize)
-            .method("terminate", &SimpleMotionMatchingModule::terminate)
-            (metadata("module_type", IModule::Type::ENGINE));
+            .method("terminate", &SimpleMotionMatchingModule::terminate)(metadata("module_type", IModule::Type::ENGINE));
     }
 
 }

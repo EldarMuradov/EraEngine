@@ -14,42 +14,42 @@
 
 namespace era_engine
 {
-	class ClothRenderComponent;
+    class ClothRenderComponent;
 
-	class Allocator;
+    class Allocator;
 }
 
 namespace era_engine::physics
 {
-	class ERA_PHYSICS_API ClothPhysicsComponent : public Component
-	{
-	public:
-		ClothPhysicsComponent() = default;
-		ClothPhysicsComponent(ref<Entity::EcsData> _data);
+    class ERA_PHYSICS_API ClothPhysicsComponent : public Component
+    {
+    public:
+        ClothPhysicsComponent() = default;
+        ClothPhysicsComponent(ref<Entity::EcsData> _data);
 
-		vec3* get_positions() const;
+        vec3* get_positions() const;
 
-		void sync_positions_buffers_locked();
+        void sync_positions_buffers_locked();
 
-		std::tuple<DXVertexBufferGroupView, DXVertexBufferGroupView, DXIndexBufferView, SubmeshInfo> get_render_data(ClothRenderComponent* render_component);
+        std::tuple<DXVertexBufferGroupView, DXVertexBufferGroupView, DXIndexBufferView, SubmeshInfo> get_render_data(ClothRenderComponent* render_component);
 
-		// Simple cloth setup.
-		uint32 num_x = 0;
-		uint32 num_z = 0;
+        // Simple cloth setup.
+        uint32 num_x = 0;
+        uint32 num_z = 0;
 
-		float density = 500.0f;
+        float density = 500.0f;
 
-		ERA_VIRTUAL_REFLECT(Component)
+        ERA_VIRTUAL_REFLECT(Component)
 
-	private:
-		vec3* view_pos_buffer = nullptr;
-		physx::PxVec4* native_pos_buffer = nullptr;
-		physx::PxU32 num_particles = 0;
+    private:
+        vec3* view_pos_buffer = nullptr;
+        physx::PxVec4* native_pos_buffer = nullptr;
+        physx::PxU32 num_particles = 0;
 
-	private:
-		std::unique_ptr<Allocator> allocator;
-		std::unique_ptr<DeformableSurface> surface;
+    private:
+        std::unique_ptr<Allocator> allocator;
+        std::unique_ptr<DeformableSurface> surface;
 
-		friend class ClothPhysicsSystem;
-	};
+        friend class ClothPhysicsSystem;
+    };
 }

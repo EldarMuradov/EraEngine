@@ -7,15 +7,15 @@
 
 namespace era_engine
 {
-	class GameplayTppCameraSystem final : public System
-	{
-	public:
-		GameplayTppCameraSystem(World* _world);
-		~GameplayTppCameraSystem() override;
+    class GameplayTppCameraSystem final : public System
+    {
+    public:
+        GameplayTppCameraSystem(World* _world);
+        ~GameplayTppCameraSystem() override;
 
-		void init() override;
-		void update(float dt) override;
+        void init() override;
+        void update(float dt) override;
 
-		ERA_VIRTUAL_REFLECT(System)
-	};
+        ERA_VIRTUAL_REFLECT(System)
+    };
 }

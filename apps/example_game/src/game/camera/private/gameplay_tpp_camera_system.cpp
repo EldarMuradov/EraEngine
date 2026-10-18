@@ -29,7 +29,6 @@ namespace era_engine
     GameplayTppCameraSystem::GameplayTppCameraSystem(World* _world)
         : System(_world)
     {
-
     }
 
     GameplayTppCameraSystem::~GameplayTppCameraSystem()
@@ -44,14 +43,14 @@ namespace era_engine
     {
         ZoneScopedN("GameplayTppCameraSystem::update");
 
-        for (auto [handle, camera_holder, receiver, gameplay_camera, transform, motion] 
-            : world->group(components_group<CameraHolderComponent, 
-				InputReceiverComponent,
-				GameplayTppCameraComponent,
-				TransformComponent,
-				MotionComponent>).each())
-		{
-			if (camera_holder.get_camera_type() == CameraHolderComponent::USER_DEFINED)
+        for (auto [handle, camera_holder, receiver, gameplay_camera, transform, motion] : world->group(components_group<CameraHolderComponent,
+                                                                                                           InputReceiverComponent,
+                                                                                                           GameplayTppCameraComponent,
+                                                                                                           TransformComponent,
+                                                                                                           MotionComponent>)
+                                                                                              .each())
+        {
+            if (camera_holder.get_camera_type() == CameraHolderComponent::USER_DEFINED)
             {
                 const UserInput& user_input = receiver.get_frame_input();
                 const vec3& input = receiver.get_current_input();

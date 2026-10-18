@@ -18,190 +18,190 @@
 
 namespace era_engine::physics
 {
-	DestructibleAsset::DestructibleAsset()
-	{
-	}
+    DestructibleAsset::DestructibleAsset()
+    {
+    }
 
-	DestructibleAsset::~DestructibleAsset()
-	{
+    DestructibleAsset::~DestructibleAsset()
+    {
         if (damage_accelerator)
         {
             damage_accelerator->release();
         }
-	}
+    }
 
-	size_t DestructibleAsset::get_asset_size() const
-	{
-		return px_asset->getTkAsset().getDataSize();
-	}
+    size_t DestructibleAsset::get_asset_size() const
+    {
+        return px_asset->getTkAsset().getDataSize();
+    }
 
-	void DestructibleAsset::initialize()
-	{
-		using namespace Nv::Blast;
+    void DestructibleAsset::initialize()
+    {
+        using namespace Nv::Blast;
 
-		// Calc max healths.
-		const auto& actor_desc = px_asset->getDefaultActorDesc();
-		if (actor_desc.initialBondHealths)
-		{
-			bond_health_max = FLT_MIN;
-			const uint32 bond_count = px_asset->getTkAsset().getBondCount();
-			for (uint32 i = 0; i < bond_count; ++i)
-			{
-				bond_health_max = std::max<float>(bond_health_max, actor_desc.initialBondHealths[i]);
-			}
-		}
-		else
-		{
-			bond_health_max = actor_desc.uniformInitialBondHealth;
-		}
+        // Calc max healths.
+        const auto& actor_desc = px_asset->getDefaultActorDesc();
+        if (actor_desc.initialBondHealths)
+        {
+            bond_health_max = FLT_MIN;
+            const uint32 bond_count = px_asset->getTkAsset().getBondCount();
+            for (uint32 i = 0; i < bond_count; ++i)
+            {
+                bond_health_max = std::max<float>(bond_health_max, actor_desc.initialBondHealths[i]);
+            }
+        }
+        else
+        {
+            bond_health_max = actor_desc.uniformInitialBondHealth;
+        }
 
-		if (actor_desc.initialSupportChunkHealths)
-		{
-			support_chunk_health_max = FLT_MIN;
-			const uint32 node_count = px_asset->getTkAsset().getGraph().nodeCount;
-			for (uint32 i = 0; i < node_count; ++i)
-			{
-				support_chunk_health_max = std::max<float>(support_chunk_health_max, actor_desc.initialSupportChunkHealths[i]);
-			}
-		}
-		else
-		{
-			support_chunk_health_max = actor_desc.uniformInitialLowerSupportChunkHealth;
-		}
+        if (actor_desc.initialSupportChunkHealths)
+        {
+            support_chunk_health_max = FLT_MIN;
+            const uint32 node_count = px_asset->getTkAsset().getGraph().nodeCount;
+            for (uint32 i = 0; i < node_count; ++i)
+            {
+                support_chunk_health_max = std::max<float>(support_chunk_health_max, actor_desc.initialSupportChunkHealths[i]);
+            }
+        }
+        else
+        {
+            support_chunk_health_max = actor_desc.uniformInitialLowerSupportChunkHealth;
+        }
 
-		damage_accelerator = NvBlastExtDamageAcceleratorCreate(px_asset->getTkAsset().getAssetLL(), 3);
-	}
+        damage_accelerator = NvBlastExtDamageAcceleratorCreate(px_asset->getTkAsset().getAssetLL(), 3);
+    }
 
-	NvMesh::NvMesh(const std::vector<physx::PxVec3>& verts,
-		const std::vector<physx::PxVec3>& norms,
-		const std::vector<physx::PxVec2>& uvis,
-		const std::vector<uint32_t>& inds)
-		: vertices(verts),
-		normals(norms),
-		uvs(uvis),
-		indices(inds)
-	{
-		using namespace Nv::Blast;
+    NvMesh::NvMesh(const std::vector<physx::PxVec3>& verts,
+        const std::vector<physx::PxVec3>& norms,
+        const std::vector<physx::PxVec2>& uvis,
+        const std::vector<uint32_t>& inds)
+        : vertices(verts),
+          normals(norms),
+          uvs(uvis),
+          indices(inds)
+    {
+        using namespace Nv::Blast;
 
-		mesh = NvBlastExtAuthoringCreateMesh((NvcVec3*)vertices.data(), 
-			(NvcVec3*)normals.data(), 
-			(NvcVec2*)uvs.data(),
-			vertices.size(), 
-			indices.data(), 
-			indices.size());
-	}
+        mesh = NvBlastExtAuthoringCreateMesh((NvcVec3*)vertices.data(),
+            (NvcVec3*)normals.data(),
+            (NvcVec2*)uvs.data(),
+            vertices.size(),
+            indices.data(),
+            indices.size());
+    }
 
-	NvMesh::NvMesh()
-	{
-		using namespace Nv::Blast;
+    NvMesh::NvMesh()
+    {
+        using namespace Nv::Blast;
 
-		if (!vertices.empty() &&
-			!indices.empty())
-		{
-			mesh = NvBlastExtAuthoringCreateMesh((NvcVec3*)vertices.data(),
-				(NvcVec3*)normals.data(),
-				(NvcVec2*)uvs.data(),
-				vertices.size(),
-				indices.data(),
-				indices.size());
-		}
-	}
+        if (!vertices.empty() &&
+            !indices.empty())
+        {
+            mesh = NvBlastExtAuthoringCreateMesh((NvcVec3*)vertices.data(),
+                (NvcVec3*)normals.data(),
+                (NvcVec2*)uvs.data(),
+                vertices.size(),
+                indices.data(),
+                indices.size());
+        }
+    }
 
-	NvMesh::NvMesh(Nv::Blast::Mesh* in_mesh)
-	{
-		using namespace physx;
-		using namespace Nv::Blast;
+    NvMesh::NvMesh(Nv::Blast::Mesh* in_mesh)
+    {
+        using namespace physx;
+        using namespace Nv::Blast;
 
-		mesh = in_mesh;
+        mesh = in_mesh;
 
-		const size_t nb_verts = mesh->getVerticesCount();
-		const Vertex* verts = mesh->getVertices();
+        const size_t nb_verts = mesh->getVerticesCount();
+        const Vertex* verts = mesh->getVertices();
 
-		for (size_t i = 0; i < nb_verts; ++i)
-		{
-			vertices.push_back(PxVec3(verts[i].p.x, verts[i].p.y, verts[i].p.z));
-			uvs.push_back(PxVec2(verts[i].uv->x, verts[i].uv->y));
+        for (size_t i = 0; i < nb_verts; ++i)
+        {
+            vertices.push_back(PxVec3(verts[i].p.x, verts[i].p.y, verts[i].p.z));
+            uvs.push_back(PxVec2(verts[i].uv->x, verts[i].uv->y));
 
-			normals.push_back(PxVec3(verts[i].n.x, verts[i].n.y, verts[i].n.z));
-		}
-	}
+            normals.push_back(PxVec3(verts[i].n.x, verts[i].n.y, verts[i].n.z));
+        }
+    }
 
-	NvMesh::~NvMesh()
-	{
-		release();
-	}
+    NvMesh::~NvMesh()
+    {
+        release();
+    }
 
-	void NvMesh::release()
-	{
-		clean_mesh();
+    void NvMesh::release()
+    {
+        clean_mesh();
 
-		vertices.clear();
-		normals.clear();
-		uvs.clear();
-		indices.clear();
+        vertices.clear();
+        normals.clear();
+        uvs.clear();
+        indices.clear();
 
-		RELEASE_PTR(mesh);
-	}
+        RELEASE_PTR(mesh);
+    }
 
-	void NvMesh::clean_mesh()
-	{
-		using namespace Nv::Blast;
+    void NvMesh::clean_mesh()
+    {
+        using namespace Nv::Blast;
 
-		MeshCleaner* cleaner = NvBlastExtAuthoringCreateMeshCleaner();
-		mesh = cleaner->cleanMesh(mesh);
+        MeshCleaner* cleaner = NvBlastExtAuthoringCreateMeshCleaner();
+        mesh = cleaner->cleanMesh(mesh);
 
-		RELEASE_PTR(cleaner)
-	}
+        RELEASE_PTR(cleaner)
+    }
 
-	ref<SubmeshAsset> NvMesh::create_render_submesh() const
-	{
-		using namespace physx;
+    ref<SubmeshAsset> NvMesh::create_render_submesh() const
+    {
+        using namespace physx;
 
-		ref<SubmeshAsset> asset = make_ref<SubmeshAsset>();
+        ref<SubmeshAsset> asset = make_ref<SubmeshAsset>();
 
-		for (auto& vert : vertices)
-		{
-			asset->positions.push_back(create_vec3(vert));
-		}
+        for (auto& vert : vertices)
+        {
+            asset->positions.push_back(create_vec3(vert));
+        }
 
-		for (auto& uv : uvs)
-		{
-			asset->uvs.push_back(create_vec2(uv));
-		}
+        for (auto& uv : uvs)
+        {
+            asset->uvs.push_back(create_vec2(uv));
+        }
 
-		for (auto& norm : normals)
-		{
-			asset->normals.push_back(create_vec3(norm));
-		}
+        for (auto& norm : normals)
+        {
+            asset->normals.push_back(create_vec3(norm));
+        }
 
-		for (uint32 i = 0; i < indices.size(); i += 3)
-		{
-			asset->triangles.push_back(IndexedTriangle32{
-				(uint32)indices[i + 0],
-				(uint32)indices[i + 1],
-				(uint32)indices[i + 2] });
-		}
+        for (uint32 i = 0; i < indices.size(); i += 3)
+        {
+            asset->triangles.push_back(IndexedTriangle32{
+                (uint32)indices[i + 0],
+                (uint32)indices[i + 1],
+                (uint32)indices[i + 2]});
+        }
 
-		generate_normals_and_tangents(asset, MESH_FLAG_DEFAULT);
+        generate_normals_and_tangents(asset, MESH_FLAG_DEFAULT);
 
-		return asset;
-	}
+        return asset;
+    }
 
-	static uint32 find_chunk_for_facet(const std::vector<std::vector<uint32>>& connected_components, uint32 facet_index)
-	{
-		for (uint32 chunk_idx = 0; chunk_idx < connected_components.size(); ++chunk_idx)
-		{
-			for (uint32 facet_in_chunk : connected_components[chunk_idx])
-			{
-				if (facet_in_chunk == facet_index)
-				{
-					return chunk_idx;
-				}
-			}
-		}
+    static uint32 find_chunk_for_facet(const std::vector<std::vector<uint32>>& connected_components, uint32 facet_index)
+    {
+        for (uint32 chunk_idx = 0; chunk_idx < connected_components.size(); ++chunk_idx)
+        {
+            for (uint32 facet_in_chunk : connected_components[chunk_idx])
+            {
+                if (facet_in_chunk == facet_index)
+                {
+                    return chunk_idx;
+                }
+            }
+        }
 
-		return 0;
-	}
+        return 0;
+    }
 
     static NvcVec3 calculate_face_normal(const Nv::Blast::Vertex* vertices, const Nv::Blast::Edge* edges, const Nv::Blast::Facet& facet)
     {
@@ -211,17 +211,17 @@ namespace era_engine::physics
         const Vertex& v1 = vertices[edges[facet.firstEdgeNumber].s];
         const Vertex& v2 = vertices[edges[facet.firstEdgeNumber + 1].s];
 
-        NvcVec3 edge1 = { v1.p.x - v0.p.x, v1.p.y - v0.p.y, v1.p.z - v0.p.z };
-        NvcVec3 edge2 = { v2.p.x - v0.p.x, v2.p.y - v0.p.y, v2.p.z - v0.p.z };
+        NvcVec3 edge1 = {v1.p.x - v0.p.x, v1.p.y - v0.p.y, v1.p.z - v0.p.z};
+        NvcVec3 edge2 = {v2.p.x - v0.p.x, v2.p.y - v0.p.y, v2.p.z - v0.p.z};
 
         NvcVec3 normal = {
             edge1.y * edge2.z - edge1.z * edge2.y,
             edge1.z * edge2.x - edge1.x * edge2.z,
-            edge1.x * edge2.y - edge1.y * edge2.x
-        };
+            edge1.x * edge2.y - edge1.y * edge2.x};
 
         float length = std::sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
-        if (length > 0.0f) {
+        if (length > 0.0f)
+        {
             normal.x /= length;
             normal.y /= length;
             normal.z /= length;
@@ -231,14 +231,14 @@ namespace era_engine::physics
     }
 
 
-	Nv::Blast::TkAsset* NvMesh::create_tk_asset(Nv::Blast::TkFramework& framework) const
-	{
-		using namespace Nv::Blast;
+    Nv::Blast::TkAsset* NvMesh::create_tk_asset(Nv::Blast::TkFramework& framework) const
+    {
+        using namespace Nv::Blast;
 
-		if (mesh == nullptr)
-		{
-			return nullptr;
-		}
+        if (mesh == nullptr)
+        {
+            return nullptr;
+        }
 
         const uint32 facet_count = mesh->getFacetCount();
         const uint32 edge_count = mesh->getEdgesCount();
@@ -300,7 +300,7 @@ namespace era_engine::physics
             const auto& component = connected_components[chunk_idx];
 
             float chunk_volume = 0.0f;
-            NvcVec3 chunk_centroid = { 0, 0, 0 };
+            NvcVec3 chunk_centroid = {0, 0, 0};
             float total_area = 0.0f;
 
             for (uint32 facet_idx : component)
@@ -311,20 +311,18 @@ namespace era_engine::physics
                 const Vertex& v1 = vertices[edges[facet.firstEdgeNumber].s];
                 const Vertex& v2 = vertices[edges[facet.firstEdgeNumber + 1].s];
 
-                NvcVec3 edge1 = { v1.p.x - v0.p.x, v1.p.y - v0.p.y, v1.p.z - v0.p.z };
-                NvcVec3 edge2 = { v2.p.x - v0.p.x, v2.p.y - v0.p.y, v2.p.z - v0.p.z };
+                NvcVec3 edge1 = {v1.p.x - v0.p.x, v1.p.y - v0.p.y, v1.p.z - v0.p.z};
+                NvcVec3 edge2 = {v2.p.x - v0.p.x, v2.p.y - v0.p.y, v2.p.z - v0.p.z};
                 NvcVec3 cross = {
                     edge1.y * edge2.z - edge1.z * edge2.y,
                     edge1.z * edge2.x - edge1.x * edge2.z,
-                    edge1.x * edge2.y - edge1.y * edge2.x
-                };
+                    edge1.x * edge2.y - edge1.y * edge2.x};
                 float area = std::sqrt(cross.x * cross.x + cross.y * cross.y + cross.z * cross.z) * 0.5f;
 
                 NvcVec3 triCentroid = {
                     (v0.p.x + v1.p.x + v2.p.x) / 3.0f,
                     (v0.p.y + v1.p.y + v2.p.y) / 3.0f,
-                    (v0.p.z + v1.p.z + v2.p.z) / 3.0f
-                };
+                    (v0.p.z + v1.p.z + v2.p.z) / 3.0f};
 
                 chunk_centroid.x += triCentroid.x * area;
                 chunk_centroid.y += triCentroid.y * area;
@@ -378,8 +376,7 @@ namespace era_engine::physics
                     NvcVec3 bond_normal = {
                         (face_normal0.x + face_normal1.x) * 0.5f,
                         (face_normal0.y + face_normal1.y) * 0.5f,
-                        (face_normal0.z + face_normal1.z) * 0.5f
-                    };
+                        (face_normal0.z + face_normal1.z) * 0.5f};
 
                     float length = std::sqrt(bond_normal.x * bond_normal.x + bond_normal.y * bond_normal.y + bond_normal.z * bond_normal.z);
                     if (length > 0.0f)
@@ -392,8 +389,7 @@ namespace era_engine::physics
                     NvcVec3 edge_vector = {
                         v1.p.x - v0.p.x,
                         v1.p.y - v0.p.y,
-                        v1.p.z - v0.p.z
-                    };
+                        v1.p.z - v0.p.z};
 
                     float edge_length = std::sqrt(edge_vector.x * edge_vector.x + edge_vector.y * edge_vector.y + edge_vector.z * edge_vector.z);
 
@@ -415,7 +411,7 @@ namespace era_engine::physics
             }
         }
 
-		NvBlastAssetDesc asset_desc{};
+        NvBlastAssetDesc asset_desc{};
         asset_desc.chunkCount = chunk_count;
         asset_desc.chunkDescs = chunk_descs.data();
         asset_desc.bondCount = static_cast<uint32>(bond_descs.size());
@@ -428,15 +424,15 @@ namespace era_engine::physics
         void* scratch_memory = malloc(scratch_memory_size);
 
         if (asset_memory == nullptr || scratch_memory == nullptr)
-		{
+        {
             if (asset_memory)
-			{
-				_aligned_free(asset_memory);
-			}
+            {
+                _aligned_free(asset_memory);
+            }
             if (scratch_memory)
-			{
-				free(scratch_memory);
-			}
+            {
+                free(scratch_memory);
+            }
             return nullptr;
         }
 
@@ -445,7 +441,7 @@ namespace era_engine::physics
         free(scratch_memory);
 
         if (blast_asset == nullptr)
-		{
+        {
             _aligned_free(asset_memory);
             return nullptr;
         }
@@ -458,7 +454,7 @@ namespace era_engine::physics
             return nullptr;
         }
 
-		return tk_asset;
-	}
+        return tk_asset;
+    }
 
 }

@@ -72,9 +72,9 @@ namespace era_engine::physics
             float get_total_percentage() const
             {
                 return head_mass_percentage + neck_mass_percentage +
-                    body_upper_mass_percentage + body_middle_mass_percentage + body_lower_mass_percentage +
-                    2.0f * (clavicle_mass_percentage + arm_mass_percentage + forearm_mass_percentage + hand_mass_percentage) +
-                    2.0f * (leg_mass_percentage + calf_mass_percentage + foot_mass_percentage);
+                       body_upper_mass_percentage + body_middle_mass_percentage + body_lower_mass_percentage +
+                       2.0f * (clavicle_mass_percentage + arm_mass_percentage + forearm_mass_percentage + hand_mass_percentage) +
+                       2.0f * (leg_mass_percentage + calf_mass_percentage + foot_mass_percentage);
             }
         };
 
@@ -258,15 +258,15 @@ namespace era_engine::physics
         FOOT
     };
 
-	class ERA_PHYSICS_API RagdollLimbComponent : public Component
-	{
-	public:
-		RagdollLimbComponent() = default;
-		RagdollLimbComponent(ref<Entity::EcsData> _data, uint32 _joint_id = INVALID_JOINT);
+    class ERA_PHYSICS_API RagdollLimbComponent : public Component
+    {
+    public:
+        RagdollLimbComponent() = default;
+        RagdollLimbComponent(ref<Entity::EcsData> _data, uint32 _joint_id = INVALID_JOINT);
 
-		~RagdollLimbComponent() override;
+        ~RagdollLimbComponent() override;
 
-		uint32 joint_id = INVALID_JOINT;
+        uint32 joint_id = INVALID_JOINT;
 
         // Prev frame physics body local space transfrom.
         trs prev_physics_pose = trs::identity;
@@ -284,16 +284,16 @@ namespace era_engine::physics
         RagdollLimbType type = RagdollLimbType::BODY_LOWER;
 
         ERA_VIRTUAL_REFLECT(Component)
-	};
+    };
 
-	class ERA_PHYSICS_API RagdollComponent : public Component
-	{
-	public:
-		RagdollComponent() = default;
-		RagdollComponent(ref<Entity::EcsData> _data);
-		~RagdollComponent() override;
+    class ERA_PHYSICS_API RagdollComponent : public Component
+    {
+    public:
+        RagdollComponent() = default;
+        RagdollComponent(ref<Entity::EcsData> _data);
+        ~RagdollComponent() override;
 
-		ObservableMember<bool> simulated = false;
+        ObservableMember<bool> simulated = false;
 
         bool loaded = false;
 
@@ -307,7 +307,7 @@ namespace era_engine::physics
 
         uint32 root_joint_id = 0;
 
-		std::vector<EntityPtr> limbs;
+        std::vector<EntityPtr> limbs;
 
         ERA_VIRTUAL_REFLECT(Component)
 
@@ -318,5 +318,5 @@ namespace era_engine::physics
 
         friend class RagdollSystem;
         friend class PhysicalAnimationSystem;
-	};
+    };
 }

@@ -7,21 +7,21 @@
 namespace era_engine
 {
 
-	class ERA_CORE_API NameComponent final : public Component
-	{
-	public:
-		NameComponent() = default;
-		NameComponent(ref<Entity::EcsData> _data, const char* n = "");
+    class ERA_CORE_API NameComponent final : public Component
+    {
+    public:
+        NameComponent() = default;
+        NameComponent(ref<Entity::EcsData> _data, const char* n = "");
 
-		~NameComponent() override;
+        ~NameComponent() override;
 
-		std::string get_name() const;
-		void set_name(std::string new_name);
+        std::string get_name() const;
+        void set_name(std::string new_name);
 
-		ERA_VIRTUAL_REFLECT(Component)
+        ERA_VIRTUAL_REFLECT(Component)
 
-	public:
-		char name[32]{};
-	};
+    public:
+        char name[32]{};
+    };
 
 }

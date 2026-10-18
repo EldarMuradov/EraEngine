@@ -15,22 +15,21 @@
 namespace era_engine
 {
 
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
-		registration::class_<MotionDataComponent>("MotionDataComponent")
-			.constructor<ref<Entity::EcsData>>()
-			.property("search_time", &MotionDataComponent::search_time);
-		ComponentRegistry::register_component<MotionDataComponent>();
-	}
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
+        registration::class_<MotionDataComponent>("MotionDataComponent")
+            .constructor<ref<Entity::EcsData>>()
+            .property("search_time", &MotionDataComponent::search_time);
+        ComponentRegistry::register_component<MotionDataComponent>();
+    }
 
-	MotionDataComponent::MotionDataComponent(ref<Entity::EcsData> _data)
-		: Component(_data)
-	{
-		
-	}
+    MotionDataComponent::MotionDataComponent(ref<Entity::EcsData> _data)
+        : Component(_data)
+    {
+    }
 
-	MotionDataComponent::~MotionDataComponent()
-	{
-	}
+    MotionDataComponent::~MotionDataComponent()
+    {
+    }
 }

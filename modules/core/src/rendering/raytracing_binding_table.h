@@ -46,7 +46,7 @@ namespace era_engine
         ref<DXBuffer> binding_table_buffer;
     };
 
-    template<typename ShaderData>
+    template <typename ShaderData>
     inline void RaytracingBindingTable<ShaderData>::initialize(const DXRaytracingPipeline* pipeline)
     {
         this->pipeline = pipeline;
@@ -65,13 +65,10 @@ namespace era_engine
         }
     }
 
-    template<typename ShaderData>
+    template <typename ShaderData>
     inline void RaytracingBindingTable<ShaderData>::allocate()
     {
-        total_binding_table_size = (uint32)
-            (align_to(sizeof(BindingTableEntry), D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT)
-                + align_to(sizeof(BindingTableEntry) * num_ray_types, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT)
-                + align_to(sizeof(BindingTableEntry) * num_ray_types * max_num_hit_groups, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT));
+        total_binding_table_size = (uint32)(align_to(sizeof(BindingTableEntry), D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT) + align_to(sizeof(BindingTableEntry) * num_ray_types, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT) + align_to(sizeof(BindingTableEntry) * num_ray_types * max_num_hit_groups, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT));
 
         if (!binding_table)
             binding_table = _aligned_malloc(total_binding_table_size, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
@@ -87,7 +84,7 @@ namespace era_engine
         hit = (BindingTableEntry*)align_to(miss + num_ray_types, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
     }
 
-    template<typename ShaderData>
+    template <typename ShaderData>
     inline void RaytracingBindingTable<ShaderData>::push(const ShaderData* sd)
     {
         if (current_hit_group >= max_num_hit_groups)
@@ -108,7 +105,7 @@ namespace era_engine
         }
     }
 
-    template<typename ShaderData>
+    template <typename ShaderData>
     inline void RaytracingBindingTable<ShaderData>::build()
     {
         binding_table_buffer = create_buffer(1, max(total_binding_table_size, 1u), binding_table);

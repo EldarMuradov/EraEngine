@@ -12,12 +12,12 @@
 
 namespace era_engine::physics
 {
-	class ERA_PHYSICS_API TankVehicleComponent : public VehicleBaseComponent
-	{
-	public:
-		TankVehicleComponent() = default;
-		TankVehicleComponent(ref<Entity::EcsData> _data);
+    class ERA_PHYSICS_API TankVehicleComponent : public VehicleBaseComponent
+    {
+    public:
+        TankVehicleComponent() = default;
+        TankVehicleComponent(ref<Entity::EcsData> _data);
 
-		ERA_VIRTUAL_REFLECT(VehicleBaseComponent)
-	};
+        ERA_VIRTUAL_REFLECT(VehicleBaseComponent)
+    };
 }

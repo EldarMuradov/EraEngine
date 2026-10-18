@@ -7,61 +7,61 @@
 
 namespace era_engine
 {
-	class World;
+    class World;
 
-	class ERA_CORE_API Component
-	{
-	public:
-		Component() = default;
-		Component(ref<Entity::EcsData> _data) noexcept;
-		Component(const Component& _component) noexcept;
-		Component(Component&& _component) noexcept;
-		virtual ~Component();
+    class ERA_CORE_API Component
+    {
+    public:
+        Component() = default;
+        Component(ref<Entity::EcsData> _data) noexcept;
+        Component(const Component& _component) noexcept;
+        Component(Component&& _component) noexcept;
+        virtual ~Component();
 
-		Component& operator=(const Component& _component) noexcept;
-		Component& operator=(Component&& _component) noexcept;
+        Component& operator=(const Component& _component) noexcept;
+        Component& operator=(Component&& _component) noexcept;
 
-		World* get_world() const;
+        World* get_world() const;
 
-		Entity get_entity() const;
+        Entity get_entity() const;
 
-		Entity::Handle get_handle() const;
+        Entity::Handle get_handle() const;
 
-		// Called after a prefab instance is fully created and all components are deserialized.
-		virtual void on_deserialized();
+        // Called after a prefab instance is fully created and all components are deserialized.
+        virtual void on_deserialized();
 
-		ERA_REFLECT
+        ERA_REFLECT
 
-	protected:
-		ref<Entity::EcsData> component_data = nullptr;
+    protected:
+        ref<Entity::EcsData> component_data = nullptr;
 
-		friend class ComponentDataPtr;
-	};
+        friend class ComponentDataPtr;
+    };
 
-	class ERA_CORE_API ComponentDataPtr
-	{
-	public:
-		ComponentDataPtr() = default;
-		ComponentDataPtr(const Component* _component);
+    class ERA_CORE_API ComponentDataPtr
+    {
+    public:
+        ComponentDataPtr() = default;
+        ComponentDataPtr(const Component* _component);
 
-	private:
-		weakref<Entity::EcsData> component_weak_data;
-	};
+    private:
+        weakref<Entity::EcsData> component_weak_data;
+    };
 
-	class ERA_CORE_API ComponentPtr
-	{
-	public:
-		ComponentPtr() = default;
-		ComponentPtr(Component* _component);
+    class ERA_CORE_API ComponentPtr
+    {
+    public:
+        ComponentPtr() = default;
+        ComponentPtr(Component* _component);
 
-		const Component* get() const;
-		Component* get_for_write();
+        const Component* get() const;
+        Component* get_for_write();
 
-		bool is_empty() const;
+        bool is_empty() const;
 
-		Entity get_entity() const;
+        Entity get_entity() const;
 
-	private:
-		Component* component = nullptr;
-	};
+    private:
+        Component* component = nullptr;
+    };
 }

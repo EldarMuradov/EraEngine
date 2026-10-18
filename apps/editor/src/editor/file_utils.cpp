@@ -16,41 +16,41 @@
 
 namespace era_engine
 {
-	void EditorFileUtils::handle_file_drop(const fs::path& filename, World* world)
-	{
-		fs::path path = filename;
-		fs::path relative = fs::relative(path, fs::current_path());
-		fs::path ext = relative.extension();
+    void EditorFileUtils::handle_file_drop(const fs::path& filename, World* world)
+    {
+        fs::path path = filename;
+        fs::path relative = fs::relative(path, fs::current_path());
+        fs::path ext = relative.extension();
 
-		if (is_mesh_extension(ext))
-		{
-			fs::path path = filename;
-			path = path.stem();
+        if (is_mesh_extension(ext))
+        {
+            fs::path path = filename;
+            path = path.stem();
 
-			if (auto mesh = import_animated_mesh_from_file_async(relative.string()))
-			{
-				auto entity = world->create_entity();
-				entity.add_component<MeshComponent>(mesh);
-				entity.add_component<animation::AnimationComponent>();
-				entity.add_component<animation::SkeletonComponent>();
+            if (auto mesh = import_animated_mesh_from_file_async(relative.string()))
+            {
+                auto entity = world->create_entity();
+                entity.add_component<MeshComponent>(mesh);
+                entity.add_component<animation::AnimationComponent>();
+                entity.add_component<animation::SkeletonComponent>();
 
-				TransformComponent* transform_component = entity.get_component<TransformComponent>();
-				transform_component->type = TransformComponent::DYNAMIC;
+                TransformComponent* transform_component = entity.get_component<TransformComponent>();
+                transform_component->type = TransformComponent::DYNAMIC;
 
-				add_raytracing_component_async(entity, mesh);
-			}
-			else if (auto mesh = import_mesh_from_file_async(relative.string()))
-			{
-				auto entity = world->create_entity();
-				entity.add_component<animation::AnimationComponent>();
-				entity.add_component<MeshComponent>(mesh);
+                add_raytracing_component_async(entity, mesh);
+            }
+            else if (auto mesh = import_mesh_from_file_async(relative.string()))
+            {
+                auto entity = world->create_entity();
+                entity.add_component<animation::AnimationComponent>();
+                entity.add_component<MeshComponent>(mesh);
 
-				add_raytracing_component_async(entity, mesh);
-			}
-		}
-		else if (ext == ".hdr")
-		{
-			world->get_root_component<RendererHolderRootComponent>()->environment.set_from_texture(relative);
-		}
-	}
+                add_raytracing_component_async(entity, mesh);
+            }
+        }
+        else if (ext == ".hdr")
+        {
+            world->get_root_component<RendererHolderRootComponent>()->environment.set_from_texture(relative);
+        }
+    }
 }

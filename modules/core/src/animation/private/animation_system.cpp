@@ -20,124 +20,124 @@
 namespace era_engine::animation
 {
 
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
 
-		registration::class_<AnimationSystem>("AnimationSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("render")))
-			.method("update", &AnimationSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL))
-			
-			.method("update_mesh", &AnimationSystem::update_mesh)(metadata("update_group", update_types::BEFORE_RENDER));
-	}
+        registration::class_<AnimationSystem>("AnimationSystem")
+            .constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("render")))
+            .method("update", &AnimationSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL))
 
-	AnimationSystem::AnimationSystem(World* _world)
-		: System(_world)
-	{
-		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
-		ASSERT(renderer_holder_rc != nullptr);
-	}
+            .method("update_mesh", &AnimationSystem::update_mesh)(metadata("update_group", update_types::BEFORE_RENDER));
+    }
 
-	AnimationSystem::~AnimationSystem()
-	{
-		allocator->reset();
-	}
+    AnimationSystem::AnimationSystem(World* _world)
+        : System(_world)
+    {
+        renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
+        ASSERT(renderer_holder_rc != nullptr);
+    }
 
-	void AnimationSystem::init()
-	{
-		allocator = make_ref<Allocator>();
-	}
+    AnimationSystem::~AnimationSystem()
+    {
+        allocator->reset();
+    }
 
-	void AnimationSystem::update(float dt)
-	{
-		ZoneScopedN("AnimationSystem::update");
+    void AnimationSystem::init()
+    {
+        allocator = make_ref<Allocator>();
+    }
 
-		for (auto [entity_handle, animation_component, mesh_component, skeleton_component, transform_component] :
-			world->group(components_group<AnimationComponent, MeshComponent, SkeletonComponent, TransformComponent>).each())
-		{
-			if (animation_component.current_animation != nullptr &&
-				animation_component.current_animation->is_valid() &&
-				animation_component.play)
-			{
-				const float anim_duration = animation_component.current_animation->get_duration();
+    void AnimationSystem::update(float dt)
+    {
+        ZoneScopedN("AnimationSystem::update");
 
-				if (animation_component.current_anim_position < anim_duration)
-				{
-					ref<Skeleton> skeleton = skeleton_component.skeleton;
+        for (auto [entity_handle, animation_component, mesh_component, skeleton_component, transform_component] :
+            world->group(components_group<AnimationComponent, MeshComponent, SkeletonComponent, TransformComponent>).each())
+        {
+            if (animation_component.current_animation != nullptr &&
+                animation_component.current_animation->is_valid() &&
+                animation_component.play)
+            {
+                const float anim_duration = animation_component.current_animation->get_duration();
 
-					AnimationPoseSampler sampler;
-					sampler.init(skeleton.get(), animation_component.current_animation);
-					
-					if(!animation_component.enable_root_motion)
-					{
-						sampler.set_joint_enabled(skeleton->joints[0].name, false);
-					}
+                if (animation_component.current_anim_position < anim_duration)
+                {
+                    ref<Skeleton> skeleton = skeleton_component.skeleton;
 
-					SkeletonPose result_pose = SkeletonPose(skeleton->joints.size());
-					sampler.sample_pose(animation_component.current_anim_position, result_pose);
-					if (result_pose.is_valid())
-					{
-						if (animation_component.inertial_blend_inited)
-						{
-							animation_component.inertial_sampler->process_pose(dt, &result_pose);
-						}
+                    AnimationPoseSampler sampler;
+                    sampler.init(skeleton.get(), animation_component.current_animation);
 
-						if (animation_component.update_skeleton)
-						{
-							skeleton_component.apply_pose(result_pose);
-						}
-						animation_component.current_animation_pose = result_pose;
-					}
-				}
+                    if (!animation_component.enable_root_motion)
+                    {
+                        sampler.set_joint_enabled(skeleton->joints[0].name, false);
+                    }
 
-				animation_component.current_anim_position += dt;
+                    SkeletonPose result_pose = SkeletonPose(skeleton->joints.size());
+                    sampler.sample_pose(animation_component.current_anim_position, result_pose);
+                    if (result_pose.is_valid())
+                    {
+                        if (animation_component.inertial_blend_inited)
+                        {
+                            animation_component.inertial_sampler->process_pose(dt, &result_pose);
+                        }
 
-				if (animation_component.current_anim_position >= anim_duration)
-				{
-					if (animation_component.loop)
-					{
-						animation_component.current_anim_position = fmod(animation_component.current_anim_position, anim_duration);
-					}
-					else
-					{
-						animation_component.current_anim_position = anim_duration;
-					}
-				}
-			}
-		}
-	}
+                        if (animation_component.update_skeleton)
+                        {
+                            skeleton_component.apply_pose(result_pose);
+                        }
+                        animation_component.current_animation_pose = result_pose;
+                    }
+                }
 
-	void AnimationSystem::update_mesh(float dt)
-	{
-		ZoneScopedN("AnimationSystem::update_mesh");
+                animation_component.current_anim_position += dt;
 
-		MemoryMarker marker = allocator->get_marker();
-		for (auto [entity_handle, animation_component, mesh_component, skeleton_component, transform_component] :
-			world->group(components_group<AnimationComponent, MeshComponent, SkeletonComponent, TransformComponent>).each())
-		{
-			const DXMesh& dx_mesh = mesh_component.mesh->mesh;
+                if (animation_component.current_anim_position >= anim_duration)
+                {
+                    if (animation_component.loop)
+                    {
+                        animation_component.current_anim_position = fmod(animation_component.current_anim_position, anim_duration);
+                    }
+                    else
+                    {
+                        animation_component.current_anim_position = anim_duration;
+                    }
+                }
+            }
+        }
+    }
 
-			if (dx_mesh.vertex_buffer.positions == nullptr ||
-				dx_mesh.vertex_buffer.positions->element_count == 0)
-			{
-				continue;
-			}
+    void AnimationSystem::update_mesh(float dt)
+    {
+        ZoneScopedN("AnimationSystem::update_mesh");
 
-			ref<Skeleton> skeleton = skeleton_component.skeleton;
+        MemoryMarker marker = allocator->get_marker();
+        for (auto [entity_handle, animation_component, mesh_component, skeleton_component, transform_component] :
+            world->group(components_group<AnimationComponent, MeshComponent, SkeletonComponent, TransformComponent>).each())
+        {
+            const DXMesh& dx_mesh = mesh_component.mesh->mesh;
 
-			animation_component.current_global_transforms = nullptr;
+            if (dx_mesh.vertex_buffer.positions == nullptr ||
+                dx_mesh.vertex_buffer.positions->element_count == 0)
+            {
+                continue;
+            }
 
-			auto [vb, skinning_matrices] = skin_object(dx_mesh.vertex_buffer, dx_mesh.vertex_buffer.positions->element_count, (uint32)skeleton->joints.size());
+            ref<Skeleton> skeleton = skeleton_component.skeleton;
 
-			animation_component.prev_frame_vertex_buffer = animation_component.current_vertex_buffer;
-			animation_component.current_vertex_buffer = vb;
+            animation_component.current_global_transforms = nullptr;
 
-			trs* global_transforms = allocator->allocate<trs>((uint32)skeleton->joints.size());
+            auto [vb, skinning_matrices] = skin_object(dx_mesh.vertex_buffer, dx_mesh.vertex_buffer.positions->element_count, (uint32)skeleton->joints.size());
 
-			skeleton_component.get_skinning_matrices_from_local_transforms(global_transforms, skinning_matrices, trs::identity);
+            animation_component.prev_frame_vertex_buffer = animation_component.current_vertex_buffer;
+            animation_component.current_vertex_buffer = vb;
 
-			animation_component.current_global_transforms = global_transforms;
-		}
-		allocator->reset_to_marker(marker);
-	}
+            trs* global_transforms = allocator->allocate<trs>((uint32)skeleton->joints.size());
+
+            skeleton_component.get_skinning_matrices_from_local_transforms(global_transforms, skinning_matrices, trs::identity);
+
+            animation_component.current_global_transforms = global_transforms;
+        }
+        allocator->reset_to_marker(marker);
+    }
 }

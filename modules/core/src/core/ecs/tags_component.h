@@ -9,29 +9,29 @@
 namespace era_engine
 {
 
-	class ERA_CORE_API TagsComponent final : public Component
-	{
-	public:
-		TagsComponent() = default;
-		TagsComponent(ref<Entity::EcsData> _data);
+    class ERA_CORE_API TagsComponent final : public Component
+    {
+    public:
+        TagsComponent() = default;
+        TagsComponent(ref<Entity::EcsData> _data);
 
-		~TagsComponent() override;
+        ~TagsComponent() override;
 
-		void add_tag(const std::string& tag);
-		bool remove_tag(const std::string& tag);
+        void add_tag(const std::string& tag);
+        bool remove_tag(const std::string& tag);
 
-		bool has_tag(const std::string& tag) const;
+        bool has_tag(const std::string& tag) const;
 
-		size_t size() const;
+        size_t size() const;
 
-		void clear();
-	
-		const TagsContainer& get_container() const;
+        void clear();
 
-		ERA_VIRTUAL_REFLECT(Component)
+        const TagsContainer& get_container() const;
 
-	private:
-		TagsContainer container;
-	};
+        ERA_VIRTUAL_REFLECT(Component)
+
+    private:
+        TagsContainer container;
+    };
 
 }

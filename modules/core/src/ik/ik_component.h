@@ -44,11 +44,11 @@ namespace era_engine
         std::vector<IKEffector> effectors;
     };
 
-	class ERA_CORE_API IKComponent : public Component
-	{
-	public:
-		IKComponent(ref<Entity::EcsData> _data);
-		~IKComponent() override;
+    class ERA_CORE_API IKComponent : public Component
+    {
+    public:
+        IKComponent(ref<Entity::EcsData> _data);
+        ~IKComponent() override;
 
         bool init();
 
@@ -68,8 +68,8 @@ namespace era_engine
 
         void on_deserialized() override;
 
-		ERA_VIRTUAL_REFLECT(Component)
-	};
+        ERA_VIRTUAL_REFLECT(Component)
+    };
 
     class ERA_CORE_API IKTargetComponent : public Component
     {
@@ -83,5 +83,4 @@ namespace era_engine
 
         ERA_VIRTUAL_REFLECT(Component)
     };
-
 }

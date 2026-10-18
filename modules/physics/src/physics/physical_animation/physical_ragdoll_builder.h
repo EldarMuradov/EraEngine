@@ -98,7 +98,7 @@ namespace era_engine::physics
         static bool build_bodies(const RuntimeContext& ctx);
         static bool build_constraint_joints(const RuntimeContext& ctx);
 
-        static bool build_kinematics(const RuntimeContext& ctx); // Only if enable_physical_animation == true.
+        static bool build_kinematics(const RuntimeContext& ctx);   // Only if enable_physical_animation == true.
         static bool build_drive_joints(const RuntimeContext& ctx); // Only if enable_physical_animation == true.
     };
 }

@@ -15,7 +15,7 @@ namespace era_engine
         positions = _positions;
         num_positions = _num_positions;
 
-        index = new KDTree(3, *this, { 10 });
+        index = new KDTree(3, *this, {10});
     }
 
     PointCloud::~PointCloud()
@@ -44,6 +44,6 @@ namespace era_engine
 
         _index->findNeighbors(result_set, &query.data[0]);
 
-        return { (uint32)result_index, squared_distance };
+        return {(uint32)result_index, squared_distance};
     }
 }

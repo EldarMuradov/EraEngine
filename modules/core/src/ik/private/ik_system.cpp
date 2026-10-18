@@ -18,39 +18,38 @@
 
 namespace era_engine
 {
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
 
-		registration::class_<IKSystem>("IKSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("base")))
-			.method("update", &IKSystem::update)
-			(metadata("update_group", update_types::GAMEPLAY_NORMAL), 
-				metadata("Before", std::vector<std::string>{"SkeletonSystem::update"}),
+        registration::class_<IKSystem>("IKSystem")
+            .constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("base")))
+            .method("update", &IKSystem::update)(metadata("update_group", update_types::GAMEPLAY_NORMAL),
+                metadata("Before", std::vector<std::string>{"SkeletonSystem::update"}),
                 metadata("After", std::vector<std::string>{"AnimationSystem::update"}))
-			.method("debug_draw", &IKSystem::debug_draw)(metadata("update_group", update_types::RENDER));
-	}
+            .method("debug_draw", &IKSystem::debug_draw)(metadata("update_group", update_types::RENDER));
+    }
 
-	IKSystem::IKSystem(World* _world)
-		: System(_world)
-	{
-		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
-		ASSERT(renderer_holder_rc != nullptr);
-	}
+    IKSystem::IKSystem(World* _world)
+        : System(_world)
+    {
+        renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
+        ASSERT(renderer_holder_rc != nullptr);
+    }
 
-	IKSystem::~IKSystem()
-	{
-	}
+    IKSystem::~IKSystem()
+    {
+    }
 
-	void IKSystem::init()
-	{
-	}
+    void IKSystem::init()
+    {
+    }
 
-	void IKSystem::update(float dt)
-	{
+    void IKSystem::update(float dt)
+    {
         using namespace animation;
 
-		ZoneScopedN("IKSystem::update");
+        ZoneScopedN("IKSystem::update");
 
         for (auto [entity_handle, target_component, transform_component] : world->group(components_group<IKTargetComponent, TransformComponent>).each())
         {
@@ -95,10 +94,10 @@ namespace era_engine
             effector.rotation_weight = target_component.rotation_weight;
         }
 
-        for (auto [handle, full_body_ik_component, skeleton_component, transform_component]
-            : world->group(components_group<FBIKComponent,
-                SkeletonComponent,
-                TransformComponent>).each())
+        for (auto [handle, full_body_ik_component, skeleton_component, transform_component] : world->group(components_group<FBIKComponent,
+                                                                                                               SkeletonComponent,
+                                                                                                               TransformComponent>)
+                                                                                                  .each())
         {
             if (!full_body_ik_component.enabled || !full_body_ik_component.is_initialized() || full_body_ik_component.settings.weight <= 0.0f)
             {
@@ -123,10 +122,10 @@ namespace era_engine
             }
         }
 
-        for (auto [handle, ik_component, skeleton_component, transform_component]
-            : world->group(components_group<IKComponent,
-                SkeletonComponent,
-                TransformComponent>).each())
+        for (auto [handle, ik_component, skeleton_component, transform_component] : world->group(components_group<IKComponent,
+                                                                                                     SkeletonComponent,
+                                                                                                     TransformComponent>)
+                                                                                        .each())
         {
             if (!ik_component.enabled || !ik_component.is_initialized())
             {
@@ -165,10 +164,10 @@ namespace era_engine
                 skeleton_component.apply_pose(current_pose);
             }
         }
-	}
+    }
 
-	void IKSystem::debug_draw(float dt)
-	{
+    void IKSystem::debug_draw(float dt)
+    {
         for (auto [entity_handle, target_component, transform_component] : world->group(components_group<IKTargetComponent, TransformComponent>).each())
         {
             vec3 point = transform_component.get_world_transform().position;
@@ -233,5 +232,5 @@ namespace era_engine
                 render_wire_sphere(chain.target_world_position, 0.06f, vec4(0.0f, 1.f, 1.0f, 1.0f), renderer_holder_rc->ldr_render_pass);
             }
         }
-	}
+    }
 }

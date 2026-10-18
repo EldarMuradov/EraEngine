@@ -4,16 +4,16 @@
 
 namespace era_engine
 {
-	extern bool log_window_open;
+    extern bool log_window_open;
 
-	enum MessageType : uint8_t
-	{
-		MESSAGE_TYPE_NORMAL,
-		MESSAGE_TYPE_WARNING,
-		MESSAGE_TYPE_ERROR,
+    enum MessageType : uint8_t
+    {
+        MESSAGE_TYPE_NORMAL,
+        MESSAGE_TYPE_WARNING,
+        MESSAGE_TYPE_ERROR,
 
-		MESSAGE_TYPE_COUNT,
-	};
+        MESSAGE_TYPE_COUNT,
+    };
 }
 
 #if ENABLE_MESSAGE_LOG
@@ -34,20 +34,20 @@ namespace era_engine
 
 namespace era_engine
 {
-	ERA_CORE_API void log_message_internal(MessageType type, const char* file, const char* function, uint32 line, const char* format, ...);
-	ERA_CORE_API void log_message(MessageType type, const char* format, ...);
+    ERA_CORE_API void log_message_internal(MessageType type, const char* file, const char* function, uint32 line, const char* format, ...);
+    ERA_CORE_API void log_message(MessageType type, const char* format, ...);
 
-	class ERA_CORE_API LogSystem final : public System
-	{
-	public:
-		LogSystem(World* _world);
-		~LogSystem();
+    class ERA_CORE_API LogSystem final : public System
+    {
+    public:
+        LogSystem(World* _world);
+        ~LogSystem();
 
-		void init() override;
-		void update(float dt) override;
+        void init() override;
+        void update(float dt) override;
 
-		ERA_VIRTUAL_REFLECT(System)
-	};
+        ERA_VIRTUAL_REFLECT(System)
+    };
 }
 
 #else

@@ -18,46 +18,46 @@
 
 namespace era_engine
 {
-	class MultiMesh;
-	struct LDRRenderPass;
+    class MultiMesh;
+    struct LDRRenderPass;
 }
 
 namespace era_engine::animation
 {
-	class ERA_CORE_API AnimationComponent : public Component
-	{
-	public:
-		AnimationComponent(ref<Entity::EcsData> _data);
-		~AnimationComponent() override;
+    class ERA_CORE_API AnimationComponent : public Component
+    {
+    public:
+        AnimationComponent(ref<Entity::EcsData> _data);
+        ~AnimationComponent() override;
 
-		void activate_inertial_blend();
-		void trigger_reset_inertial_blend(const SkeletonPose& reset_pose, float _blend_time);
+        void activate_inertial_blend();
+        void trigger_reset_inertial_blend(const SkeletonPose& reset_pose, float _blend_time);
 
-		void on_deserialized() override;
+        void on_deserialized() override;
 
-		ERA_VIRTUAL_REFLECT(Component)
+        ERA_VIRTUAL_REFLECT(Component)
 
-	public:
-		ref<AnimationAssetClip> current_animation;
-		float current_anim_position = 0.0f;
+    public:
+        ref<AnimationAssetClip> current_animation;
+        float current_anim_position = 0.0f;
 
-		SkeletonPose current_animation_pose;
+        SkeletonPose current_animation_pose;
 
-		bool play = true;
-		bool update_skeleton = true;
-		bool loop = false;
+        bool play = true;
+        bool update_skeleton = true;
+        bool loop = false;
 
-		bool enable_root_motion = true;
+        bool enable_root_motion = true;
 
-		// Render data
-		DXVertexBufferGroupView current_vertex_buffer;
-		DXVertexBufferGroupView prev_frame_vertex_buffer;
+        // Render data
+        DXVertexBufferGroupView current_vertex_buffer;
+        DXVertexBufferGroupView prev_frame_vertex_buffer;
 
-		trs* current_global_transforms = nullptr;
+        trs* current_global_transforms = nullptr;
 
-		ref<InertialBlendSampler> inertial_sampler;
-		float blend_time = 0.16f;
+        ref<InertialBlendSampler> inertial_sampler;
+        float blend_time = 0.16f;
 
-		bool inertial_blend_inited = false;
-	};
+        bool inertial_blend_inited = false;
+    };
 }

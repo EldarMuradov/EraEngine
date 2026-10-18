@@ -10,34 +10,34 @@
 namespace era_engine
 {
 
-	class ERA_CORE_API CameraHolderComponent final : public Component
-	{
-	public:
-		enum CameraType : uint8_t
-		{
-			FREE_CAMERA = 0,
-			FREE_CAMERA_ON_HOLD,
-			ATTACHED_TO_TRS,
-			USER_DEFINED
-		};
+    class ERA_CORE_API CameraHolderComponent final : public Component
+    {
+    public:
+        enum CameraType : uint8_t
+        {
+            FREE_CAMERA = 0,
+            FREE_CAMERA_ON_HOLD,
+            ATTACHED_TO_TRS,
+            USER_DEFINED
+        };
 
-		CameraHolderComponent() = default;
-		CameraHolderComponent(ref<Entity::EcsData> _data);
+        CameraHolderComponent() = default;
+        CameraHolderComponent(ref<Entity::EcsData> _data);
 
-		~CameraHolderComponent() override;
+        ~CameraHolderComponent() override;
 
-		void set_render_camera(RenderCamera* _camera);
-		RenderCamera* get_render_camera() const;
+        void set_render_camera(RenderCamera* _camera);
+        RenderCamera* get_render_camera() const;
 
-		CameraType get_camera_type() const;
-		void set_camera_type(CameraType _type);
+        CameraType get_camera_type() const;
+        void set_camera_type(CameraType _type);
 
-		ERA_VIRTUAL_REFLECT(Component)
+        ERA_VIRTUAL_REFLECT(Component)
 
-	private:
-		RenderCamera* camera = nullptr;
+    private:
+        RenderCamera* camera = nullptr;
 
-		CameraType type = ATTACHED_TO_TRS;
-	};
+        CameraType type = ATTACHED_TO_TRS;
+    };
 
 }

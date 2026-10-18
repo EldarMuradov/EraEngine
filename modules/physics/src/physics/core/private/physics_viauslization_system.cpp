@@ -13,66 +13,67 @@
 
 namespace era_engine::physics
 {
-	static DebugVar<bool> visualize_shapes = DebugVar<bool>("physics.visualize_shapes", false);
+    static DebugVar<bool> visualize_shapes = DebugVar<bool>("physics.visualize_shapes", false);
 
-	RTTR_REGISTRATION
-	{
-		using namespace rttr;
+    RTTR_REGISTRATION
+    {
+        using namespace rttr;
 
-		registration::class_<PhysicsVisualizationSystem>("PhysicsVisualizationSystem")
-			.constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("physics")))
-			.method("update", &PhysicsVisualizationSystem::update)(metadata("update_group", update_types::RENDER), metadata("After", std::vector<std::string>{"AnimationSystem::update"}));
-	}
+        registration::class_<PhysicsVisualizationSystem>("PhysicsVisualizationSystem")
+            .constructor<World*>()(policy::ctor::as_raw_ptr, metadata("Tag", std::string("physics")))
+            .method("update", &PhysicsVisualizationSystem::update)(metadata("update_group", update_types::RENDER), metadata("After", std::vector<std::string>{"AnimationSystem::update"}));
+    }
 
-	PhysicsVisualizationSystem::PhysicsVisualizationSystem(World* _world)
-		: System(_world)
-	{
-	}
+    PhysicsVisualizationSystem::PhysicsVisualizationSystem(World* _world)
+        : System(_world)
+    {
+    }
 
-	void PhysicsVisualizationSystem::init()
-	{
-		renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
-		ASSERT(renderer_holder_rc != nullptr);
-	}
+    void PhysicsVisualizationSystem::init()
+    {
+        renderer_holder_rc = world->add_root_component<RendererHolderRootComponent>();
+        ASSERT(renderer_holder_rc != nullptr);
+    }
 
-	void PhysicsVisualizationSystem::update(float dt)
-	{
-		using namespace physx;
+    void PhysicsVisualizationSystem::update(float dt)
+    {
+        using namespace physx;
 
-		if (!visualize_shapes)
-		{
-			return;
-		}
+        if (!visualize_shapes)
+        {
+            return;
+        }
 
-		auto scene = physics::PhysicsEngine::get_physics_core()->get_scene();
+        auto scene = physics::PhysicsEngine::get_physics_core()->get_scene();
 
-		const PxDebugLine* lines = nullptr;
+        const PxDebugLine* lines = nullptr;
 
-		size_t nb_lines = 0;
+        size_t nb_lines = 0;
 
-		PhysicsEngine::execute_write([&]() {
-			const PxRenderBuffer* rb = &scene->getRenderBuffer();
+        PhysicsEngine::execute_write([&]()
+            {
+                const PxRenderBuffer* rb = &scene->getRenderBuffer();
 
-			lines = rb->getLines();
-			nb_lines = rb->getNbLines();
-		});
+                lines = rb->getLines();
+                nb_lines = rb->getNbLines();
+            });
 
-		auto [vb, vertexPtr] = create_dynamic_vertex_buffer(sizeof(PositionColor), nb_lines * 2);
-		auto [ib, indexPtr] = create_dynamic_index_buffer(sizeof(uint16), nb_lines * 2);
+        auto [vb, vertexPtr] = create_dynamic_vertex_buffer(sizeof(PositionColor), nb_lines * 2);
+        auto [ib, indexPtr] = create_dynamic_index_buffer(sizeof(uint16), nb_lines * 2);
 
-		PositionColor* vertices = (PositionColor*)vertexPtr;
-		IndexedLine16* render_lines = (IndexedLine16*)indexPtr;
+        PositionColor* vertices = (PositionColor*)vertexPtr;
+        IndexedLine16* render_lines = (IndexedLine16*)indexPtr;
 
-		for (uint32 i = 0; i < nb_lines; ++i)
-		{
-			const PxDebugLine& line = lines[i];
+        for (uint32 i = 0; i < nb_lines; ++i)
+        {
+            const PxDebugLine& line = lines[i];
 
-			*vertices++ = { create_vec3(line.pos0), vec3(1.f, 1.f, 1.f) };
-			*vertices++ = { create_vec3(line.pos1), vec3(1.f, 1.f, 1.f) };
+            *vertices++ = {create_vec3(line.pos0), vec3(1.f, 1.f, 1.f)};
+            *vertices++ = {create_vec3(line.pos1), vec3(1.f, 1.f, 1.f)};
 
-			*render_lines++ = { (uint16)(2 * i), (uint16)(2 * i + 1) };
-		}
+            *render_lines++ = {(uint16)(2 * i), (uint16)(2 * i + 1)};
+        }
 
-		render_debug<DebugUnlitLinePipeline::PositionColor>(trs_to_mat4(trs::identity), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), renderer_holder_rc->ldr_render_pass, true);
-	}
+        render_debug<DebugUnlitLinePipeline::PositionColor>(trs_to_mat4(trs::identity), vb, ib, vec4(1.f, 1.f, 1.f, 1.f), renderer_holder_rc->ldr_render_pass, true);
+    }
 }

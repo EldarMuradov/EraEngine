@@ -8,7 +8,11 @@
 #include <sdkddkver.h>
 
 #define USE_D3D12_BLOCK_ALLOCATOR 1
-namespace D3D12MA { class Allocator; class Allocation; };
+namespace D3D12MA
+{
+    class Allocator;
+    class Allocation;
+};
 
 #ifdef __ID3D12GraphicsCommandList6_INTERFACE_DEFINED__
 #define SDK_SUPPORTS_MESH_SHADERS
@@ -16,25 +20,25 @@ namespace D3D12MA { class Allocator; class Allocation; };
 
 namespace era_engine
 {
-	typedef com<ID3D12Object> DXObject;
-	typedef com<IDXGIAdapter4> DXAdapter;
-	typedef com<ID3D12Device5> DXDevice;
-	typedef com<IDXGIFactory4> DXFactory;
-	typedef com<IDXGISwapChain4> DXSwapchain;
-	typedef com<ID3D12Resource> DXResource;
-	typedef com<ID3D12CommandAllocator> DXCommandAllocator;
-	typedef com<ID3DBlob> DXBlob;
-	typedef com<ID3D12PipelineState> DXPipelineState;
-	typedef com<ID3D12Resource> DXResource;
-	typedef com<ID3D12CommandSignature> DXCommandSignature;
-	typedef com<ID3D12Heap> DXHeap;
-	typedef com<ID3D12StateObject> DXRaytracingPipelineState;
-	typedef com<ID3D12QueryHeap> DXQueryHeap;
+    typedef com<ID3D12Object> DXObject;
+    typedef com<IDXGIAdapter4> DXAdapter;
+    typedef com<ID3D12Device5> DXDevice;
+    typedef com<IDXGIFactory4> DXFactory;
+    typedef com<IDXGISwapChain4> DXSwapchain;
+    typedef com<ID3D12Resource> DXResource;
+    typedef com<ID3D12CommandAllocator> DXCommandAllocator;
+    typedef com<ID3DBlob> DXBlob;
+    typedef com<ID3D12PipelineState> DXPipelineState;
+    typedef com<ID3D12Resource> DXResource;
+    typedef com<ID3D12CommandSignature> DXCommandSignature;
+    typedef com<ID3D12Heap> DXHeap;
+    typedef com<ID3D12StateObject> DXRaytracingPipelineState;
+    typedef com<ID3D12QueryHeap> DXQueryHeap;
 
 #ifdef SDK_SUPPORTS_MESH_SHADERS
-	typedef com<ID3D12GraphicsCommandList6> DXGraphicsCommandList;
+    typedef com<ID3D12GraphicsCommandList6> DXGraphicsCommandList;
 #else
-	typedef com<ID3D12GraphicsCommandList4> DXGraphicsCommandList;
+    typedef com<ID3D12GraphicsCommandList4> DXGraphicsCommandList;
 #endif
 }
 

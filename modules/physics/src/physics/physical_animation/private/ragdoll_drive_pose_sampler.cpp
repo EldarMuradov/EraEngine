@@ -14,178 +14,178 @@
 
 namespace era_engine::physics
 {
-	RagdollDrivePoseSampler::RagdollDrivePoseSampler()
-	{
-	}
+    RagdollDrivePoseSampler::RagdollDrivePoseSampler()
+    {
+    }
 
-	void RagdollDrivePoseSampler::sample_pose(PhysicalAnimationComponent* physical_animation_component,
-		animation::SkeletonComponent* skeleton_to_update,
-		const animation::SkeletonPose& pose,
-		float dt) const
-	{
-		using namespace animation;
+    void RagdollDrivePoseSampler::sample_pose(PhysicalAnimationComponent* physical_animation_component,
+        animation::SkeletonComponent* skeleton_to_update,
+        const animation::SkeletonPose& pose,
+        float dt) const
+    {
+        using namespace animation;
 
-		if (!pose.is_valid())
-		{
-			return;
-		}
+        if (!pose.is_valid())
+        {
+            return;
+        }
 
-		ref<Skeleton> skeleton = skeleton_to_update->skeleton;
-		ASSERT(skeleton != nullptr);
+        ref<Skeleton> skeleton = skeleton_to_update->skeleton;
+        ASSERT(skeleton != nullptr);
 
-		const float fixed_update_dt = physical_animation_component->get_world()->get_fixed_update_dt();
+        const float fixed_update_dt = physical_animation_component->get_world()->get_fixed_update_dt();
 
-		const uint32 root_id = 0;
-		trs root_local_transform = SkeletonUtils::get_object_space_joint_transform(pose, skeleton.get(), root_id);
-		root_local_transform.scale = vec3(1.0f);
+        const uint32 root_id = 0;
+        trs root_local_transform = SkeletonUtils::get_object_space_joint_transform(pose, skeleton.get(), root_id);
+        root_local_transform.scale = vec3(1.0f);
 
-		auto simulated_joints_end = physical_animation_component->simulated_joints.end();
+        auto simulated_joints_end = physical_animation_component->simulated_joints.end();
 
-		if (!physical_animation_component->reached_physics_pose)
-		{
-			physical_animation_component->elapsed_blend_time += dt;
-		}
+        if (!physical_animation_component->reached_physics_pose)
+        {
+            physical_animation_component->elapsed_blend_time += dt;
+        }
 
-		const float blend_value = physical_animation_component->reached_physics_pose ? 1.0f : std::min(physical_animation_component->elapsed_blend_time / fixed_update_dt, 1.0f);
-		if (physical_animation_component->elapsed_blend_time >= fixed_update_dt)
-		{
-			physical_animation_component->reached_physics_pose = true;
-		}
+        const float blend_value = physical_animation_component->reached_physics_pose ? 1.0f : std::min(physical_animation_component->elapsed_blend_time / fixed_update_dt, 1.0f);
+        if (physical_animation_component->elapsed_blend_time >= fixed_update_dt)
+        {
+            physical_animation_component->reached_physics_pose = true;
+        }
 
-		for (const uint32 simulation_joint : physical_animation_component->simulated_joints_set)
-		{
-			if (simulation_joint == root_id)
-			{
-				continue;
-			}
+        for (const uint32 simulation_joint : physical_animation_component->simulated_joints_set)
+        {
+            if (simulation_joint == root_id)
+            {
+                continue;
+            }
 
-			const uint32 parent_id = skeleton->joints.at(simulation_joint).parent_id;
-			const trs& parent_local = physical_animation_component->local_joint_poses[parent_id];
-			const trs inverse_parent_local = invert(parent_local);
+            const uint32 parent_id = skeleton->joints.at(simulation_joint).parent_id;
+            const trs& parent_local = physical_animation_component->local_joint_poses[parent_id];
+            const trs inverse_parent_local = invert(parent_local);
 
-			trs limb_animation_pose = pose.get_joint_transform(simulation_joint).get_transform();
-			limb_animation_pose.scale = vec3(1.0f);
+            trs limb_animation_pose = pose.get_joint_transform(simulation_joint).get_transform();
+            limb_animation_pose.scale = vec3(1.0f);
 
-			trs animation_object_space_pose = parent_local * limb_animation_pose;
+            trs animation_object_space_pose = parent_local * limb_animation_pose;
 
-			auto limb_iter = physical_animation_component->simulated_joints.find(simulation_joint);
-			if (limb_iter == simulated_joints_end)
-			{
-				physical_animation_component->local_joint_poses[simulation_joint] = animation_object_space_pose;
-			}
-			else
-			{
-				Entity limb = limb_iter->second.get();
+            auto limb_iter = physical_animation_component->simulated_joints.find(simulation_joint);
+            if (limb_iter == simulated_joints_end)
+            {
+                physical_animation_component->local_joint_poses[simulation_joint] = animation_object_space_pose;
+            }
+            else
+            {
+                Entity limb = limb_iter->second.get();
 
-				PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
+                PhysicalAnimationLimbComponent* limb_data_component = limb.get_component<PhysicalAnimationLimbComponent>();
 
-				// Combine blend types to process ragdoll profile transition.
-				PhysicalLimbBlendType result_type = limb_data_component->blend_type | limb_data_component->prev_blend_type;
-				if (result_type == PhysicalLimbBlendType::NONE)
-				{
-					// By default use PURE_ANIMATION blend type.
-					result_type = PhysicalLimbBlendType::PURE_ANIMATION;
-				}
+                // Combine blend types to process ragdoll profile transition.
+                PhysicalLimbBlendType result_type = limb_data_component->blend_type | limb_data_component->prev_blend_type;
+                if (result_type == PhysicalLimbBlendType::NONE)
+                {
+                    // By default use PURE_ANIMATION blend type.
+                    result_type = PhysicalLimbBlendType::PURE_ANIMATION;
+                }
 
-				if (RagdollDismembermentLimbComponent* dismembered_limb = limb.get_component_if_exists<RagdollDismembermentLimbComponent>())
-				{
-					if (dismembered_limb->is_dismembered())
-					{
-						result_type = PhysicalLimbBlendType::PURE_PHYSICS;
-					}
-				}
+                if (RagdollDismembermentLimbComponent* dismembered_limb = limb.get_component_if_exists<RagdollDismembermentLimbComponent>())
+                {
+                    if (dismembered_limb->is_dismembered())
+                    {
+                        result_type = PhysicalLimbBlendType::PURE_PHYSICS;
+                    }
+                }
 
-				if (result_type != PhysicalLimbBlendType::PURE_ANIMATION)
-				{
-					const trs new_transform = sample_limb(limb,
-						limb_data_component,
-						physical_animation_component,
-						result_type,
-						animation_object_space_pose,
-						inverse_parent_local,
-						blend_value);
+                if (result_type != PhysicalLimbBlendType::PURE_ANIMATION)
+                {
+                    const trs new_transform = sample_limb(limb,
+                        limb_data_component,
+                        physical_animation_component,
+                        result_type,
+                        animation_object_space_pose,
+                        inverse_parent_local,
+                        blend_value);
 
-					if (physical_animation_component->mesh_update_type == SkeletonUpdateType::ROTATION)
-					{
-						skeleton_to_update->set_joint_rotation(new_transform.rotation, simulation_joint);
-					}
-					else if (physical_animation_component->mesh_update_type == SkeletonUpdateType::TRANSLATION)
-					{
-						skeleton_to_update->set_joint_translation(new_transform.position, simulation_joint);
-					}
-					else if (physical_animation_component->mesh_update_type == SkeletonUpdateType::TRANSFORM)
-					{
-						skeleton_to_update->set_joint_transform(new_transform, simulation_joint);
-					}
+                    if (physical_animation_component->mesh_update_type == SkeletonUpdateType::ROTATION)
+                    {
+                        skeleton_to_update->set_joint_rotation(new_transform.rotation, simulation_joint);
+                    }
+                    else if (physical_animation_component->mesh_update_type == SkeletonUpdateType::TRANSLATION)
+                    {
+                        skeleton_to_update->set_joint_translation(new_transform.position, simulation_joint);
+                    }
+                    else if (physical_animation_component->mesh_update_type == SkeletonUpdateType::TRANSFORM)
+                    {
+                        skeleton_to_update->set_joint_transform(new_transform, simulation_joint);
+                    }
 
-					trs new_local_child_transform = parent_local * new_transform;
-					new_local_child_transform.rotation = normalize(new_local_child_transform.rotation);
+                    trs new_local_child_transform = parent_local * new_transform;
+                    new_local_child_transform.rotation = normalize(new_local_child_transform.rotation);
 
-					physical_animation_component->local_joint_poses[simulation_joint] = new_local_child_transform;
-				}
-				else
-				{
-					physical_animation_component->local_joint_poses[simulation_joint] = animation_object_space_pose;
-				}
-			}
-		}
-	}
+                    physical_animation_component->local_joint_poses[simulation_joint] = new_local_child_transform;
+                }
+                else
+                {
+                    physical_animation_component->local_joint_poses[simulation_joint] = animation_object_space_pose;
+                }
+            }
+        }
+    }
 
-	void RagdollDrivePoseSampler::blend_with_transform(const trs& from_joint_transform, float blend_value, trs& out_transform) const
-	{
-		out_transform.position = lerp(from_joint_transform.position,
-			out_transform.position,
-			blend_value);
+    void RagdollDrivePoseSampler::blend_with_transform(const trs& from_joint_transform, float blend_value, trs& out_transform) const
+    {
+        out_transform.position = lerp(from_joint_transform.position,
+            out_transform.position,
+            blend_value);
 
-		if (!fuzzy_equals(from_joint_transform.rotation, out_transform.rotation))
-		{
-			out_transform.rotation = slerp(from_joint_transform.rotation,
-				out_transform.rotation,
-				blend_value);
-		}
-	}
+        if (!fuzzy_equals(from_joint_transform.rotation, out_transform.rotation))
+        {
+            out_transform.rotation = slerp(from_joint_transform.rotation,
+                out_transform.rotation,
+                blend_value);
+        }
+    }
 
-	trs RagdollDrivePoseSampler::sample_limb(Entity limb,
-		PhysicalAnimationLimbComponent* limb_data_component,
-		PhysicalAnimationComponent* physical_animation_component,
-		PhysicalLimbBlendType result_type,
-		const trs& limb_animation_transform,
-		const trs& inverse_parent_local_transform,
-		float blend_time) const
-	{
-		if (fuzzy_equals(physical_animation_component->blend_weight, 0.0f))
-		{
-			return inverse_parent_local_transform * limb_animation_transform;
-		}
+    trs RagdollDrivePoseSampler::sample_limb(Entity limb,
+        PhysicalAnimationLimbComponent* limb_data_component,
+        PhysicalAnimationComponent* physical_animation_component,
+        PhysicalLimbBlendType result_type,
+        const trs& limb_animation_transform,
+        const trs& inverse_parent_local_transform,
+        float blend_time) const
+    {
+        if (fuzzy_equals(physical_animation_component->blend_weight, 0.0f))
+        {
+            return inverse_parent_local_transform * limb_animation_transform;
+        }
 
-		trs new_object_pose = limb_data_component->physics_pose;
+        trs new_object_pose = limb_data_component->physics_pose;
 
-		if (!has_flag(result_type, PhysicalLimbBlendType::PURE_PHYSICS))
-		{
-			if (has_flag(result_type, PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE))
-			{
-				blend_with_transform(limb_animation_transform,
-					physical_animation_component->animation_blend_factor,
-					new_object_pose);
-			}
+        if (!has_flag(result_type, PhysicalLimbBlendType::PURE_PHYSICS))
+        {
+            if (has_flag(result_type, PhysicalLimbBlendType::BLEND_WITH_ANIMATION_POSE))
+            {
+                blend_with_transform(limb_animation_transform,
+                    physical_animation_component->animation_blend_factor,
+                    new_object_pose);
+            }
 
-			if (has_flag(result_type, PhysicalLimbBlendType::BLEND_WITH_PREV_POSE))
-			{
-				blend_with_transform(limb_data_component->prev_physics_pose,
-					blend_time,
-					new_object_pose);
-			}
-		}
+            if (has_flag(result_type, PhysicalLimbBlendType::BLEND_WITH_PREV_POSE))
+            {
+                blend_with_transform(limb_data_component->prev_physics_pose,
+                    blend_time,
+                    new_object_pose);
+            }
+        }
 
-		if (!fuzzy_equals(physical_animation_component->blend_weight, 1.0f))
-		{
-			blend_with_transform(limb_animation_transform,
-				physical_animation_component->blend_weight,
-				new_object_pose);
-		}
+        if (!fuzzy_equals(physical_animation_component->blend_weight, 1.0f))
+        {
+            blend_with_transform(limb_animation_transform,
+                physical_animation_component->blend_weight,
+                new_object_pose);
+        }
 
-		new_object_pose.rotation = normalize(new_object_pose.rotation);
+        new_object_pose.rotation = normalize(new_object_pose.rotation);
 
-		return inverse_parent_local_transform * new_object_pose;
-	}
+        return inverse_parent_local_transform * new_object_pose;
+    }
 }

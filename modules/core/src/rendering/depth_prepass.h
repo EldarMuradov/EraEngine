@@ -7,47 +7,47 @@
 
 namespace era_engine
 {
-	struct DepthPrepassData
-	{
-		D3D12_GPU_VIRTUAL_ADDRESS transform_ptr;
-		D3D12_GPU_VIRTUAL_ADDRESS prev_frame_transform_ptr;
-		D3D12_GPU_VIRTUAL_ADDRESS object_id_ptr;
+    struct DepthPrepassData
+    {
+        D3D12_GPU_VIRTUAL_ADDRESS transform_ptr;
+        D3D12_GPU_VIRTUAL_ADDRESS prev_frame_transform_ptr;
+        D3D12_GPU_VIRTUAL_ADDRESS object_id_ptr;
 
-		DXVertexBufferGroupView vertex_buffer;
-		DXVertexBufferView prev_frame_vertex_buffer;
-		DXIndexBufferView index_buffer;
+        DXVertexBufferGroupView vertex_buffer;
+        DXVertexBufferView prev_frame_vertex_buffer;
+        DXIndexBufferView index_buffer;
 
-		SubmeshInfo submesh;
+        SubmeshInfo submesh;
 
-		uint32 num_instances;
+        uint32 num_instances;
 
-		DXCPUDescriptorHandle alpha_cutout_texture_srv = {};
-	};
+        DXCPUDescriptorHandle alpha_cutout_texture_srv = {};
+    };
 
-	struct DepthPrepassPipeline
-	{
-		DEPTH_ONLY_RENDER_DECL(DepthPrepassData);
+    struct DepthPrepassPipeline
+    {
+        DEPTH_ONLY_RENDER_DECL(DepthPrepassData);
 
-		struct SingleSided;
-		struct DoubleSided;
-		struct AlphaCutout;
-	};
+        struct SingleSided;
+        struct DoubleSided;
+        struct AlphaCutout;
+    };
 
-	struct DepthPrepassPipeline::SingleSided : DepthPrepassPipeline
-	{
-		PIPELINE_SETUP_DECL;
-	};
+    struct DepthPrepassPipeline::SingleSided : DepthPrepassPipeline
+    {
+        PIPELINE_SETUP_DECL;
+    };
 
-	struct DepthPrepassPipeline::DoubleSided : DepthPrepassPipeline
-	{
-		PIPELINE_SETUP_DECL;
-	};
+    struct DepthPrepassPipeline::DoubleSided : DepthPrepassPipeline
+    {
+        PIPELINE_SETUP_DECL;
+    };
 
-	struct DepthPrepassPipeline::AlphaCutout : DepthPrepassPipeline
-	{
-		PIPELINE_SETUP_DECL;
-		DEPTH_ONLY_RENDER_DECL(DepthPrepassData);
-	};
+    struct DepthPrepassPipeline::AlphaCutout : DepthPrepassPipeline
+    {
+        PIPELINE_SETUP_DECL;
+        DEPTH_ONLY_RENDER_DECL(DepthPrepassData);
+    };
 
-	void initialize_depth_prepass_pipelines();
+    void initialize_depth_prepass_pipelines();
 }

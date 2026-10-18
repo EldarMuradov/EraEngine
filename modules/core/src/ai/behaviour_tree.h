@@ -14,19 +14,15 @@ namespace era_engine::ai
         BehaviourTree()
         {
             tree = aitoolkit::bt::sel<Type>::make(
-                {
-                    aitoolkit::bt::seq<Type>::make(
-                    {
-                        aitoolkit::bt::check<Type>::make([](const Type& bb)
-                        {
-                            return true;
-                        }),
+                {aitoolkit::bt::seq<Type>::make(
+                    {aitoolkit::bt::check<Type>::make([](const Type& bb)
+                         {
+                             return true;
+                         }),
                         aitoolkit::bt::task<Type>::make([](Type& bb)
-                        {
-                            return aitoolkit::bt::execution_state::success;
-                        })
-                    })
-                });
+                            {
+                                return aitoolkit::bt::execution_state::success;
+                            })})});
         }
 
         aitoolkit::bt::execution_state evaluate(Type type);
@@ -34,7 +30,7 @@ namespace era_engine::ai
         aitoolkit::bt::sel<Type> tree;
     };
 
-    template<typename Type>
+    template <typename Type>
     inline aitoolkit::bt::execution_state BehaviourTree<Type>::evaluate(Type type)
     {
         auto state = tree.evaluate(type);
