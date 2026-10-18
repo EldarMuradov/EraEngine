@@ -1,0 +1,51 @@
+# clang-format 17+ (VS 2022: VC/Tools/Llvm). Applied by the pre-commit hook to changed lines only, see tools/format.
+---
+Language: Cpp
+BasedOnStyle: Microsoft
+Standard: c++20
+UseTab: Never
+TabWidth: 4
+IndentWidth: 4
+ContinuationIndentWidth: 4
+AccessModifierOffset: -4
+NamespaceIndentation: All
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+SortIncludes: Never
+IncludeBlocks: Preserve
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: BinPack
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortEnumsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: Yes
+FixNamespaceComments: false
+IndentCaseLabels: true
+IndentPPDirectives: None
+MaxEmptyLinesToKeep: 2
+KeepEmptyLinesAtTheStartOfBlocks: true
+LambdaBodyIndentation: Signature
+ColumnLimit: 0
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: true
+  BeforeWhile: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: true
+AlignAfterOpenBracket: DontAlign
+...

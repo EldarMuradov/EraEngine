@@ -11,13 +11,16 @@
 #   era_add_runtime(<target> [FILES <files...>] [DIRS <dirs...>])
 #       Declares files/directories that must be deployed next to every app that (transitively)
 #       links <target>. Generator expressions are allowed.
+#
+#   era_format(<target> [EXCLUDE <dirs...>])
+#       Enables clang-format in the pre-commit hook for <target>'s directory. EXCLUDE paths are
+#       relative to it (vendored code). The list is written to <build>/era_format_paths.txt.
 
 include_guard(GLOBAL)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /arch:AVX2 /Zi /Gy /GF /EHsc")
 
-# Third-party prebuilt binaries exist only for Debug and Release; other configs use Release ones.
 set(ERA_THIRDPARTY_CONFIG "$<IF:$<CONFIG:Debug>,Debug,Release>")
 
 
@@ -31,7 +34,6 @@ function(era_add_runtime target)
     endif()
 endfunction()
 
-# Collects all targets reachable from <target> through LINK_LIBRARIES / INTERFACE_LINK_LIBRARIES.
 function(_era_collect_link_closure target out_var)
     set(visited "")
     set(pending ${target})
@@ -66,7 +68,6 @@ function(_era_collect_link_closure target out_var)
     set(${out_var} ${visited} PARENT_SCOPE)
 endfunction()
 
-# Deferred to the end of the top-level CMakeLists, when every target is declared.
 function(_era_finalize_app app)
     _era_collect_link_closure(${app} dependencies)
 
@@ -112,8 +113,6 @@ set(ERA_RUNTIME_DIRS
     \"${runtime_dirs_content}\")
 ")
 
-    # Runs on every build of the app, so module DLLs are refreshed even when the exe is not relinked.
-    # file(COPY) skips files whose timestamps already match, so an up-to-date deploy is cheap.
     add_custom_target(${app}_runtime
         COMMAND ${CMAKE_COMMAND} "-DERA_RUNTIME_MANIFEST=${manifest}" -P "${ERA_ENGINE_PATH}/cmake/scripts/deploy_runtime.cmake"
         COMMENT "Deploying runtime dependencies of ${app}"
@@ -178,10 +177,6 @@ target_link_libraries(era_common INTERFACE
     era_engine_runtime
 )
 
-# ------------------------------------------------------------------------------------------------
-# Modules and apps
-# ------------------------------------------------------------------------------------------------
-
 function(_era_glob_sources out_var)
     file(GLOB_RECURSE sources CONFIGURE_DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
@@ -226,15 +221,38 @@ function(era_app name)
 
     set_target_properties(${name} PROPERTIES FOLDER apps)
 
-    # DEFER evaluates its arguments when the call runs, so bake the name in now.
     cmake_language(EVAL CODE "cmake_language(DEFER DIRECTORY [[${CMAKE_SOURCE_DIR}]] CALL _era_finalize_app [[${name}]])")
 endfunction()
 
-# Puts third-party targets into a separate folder of the generated solution.
 function(era_thirdparty_folder)
     foreach(target IN LISTS ARGN)
         if(TARGET ${target})
             set_target_properties(${target} PROPERTIES FOLDER thirdparty)
         endif()
     endforeach()
+endfunction()
+
+set(ERA_FORMAT_PATHS_FILE ${CMAKE_BINARY_DIR}/era_format_paths.txt)
+
+function(_era_write_format_paths)
+    get_property(entries GLOBAL PROPERTY ERA_FORMAT_ENTRIES)
+    list(JOIN entries "\n" content)
+    file(CONFIGURE OUTPUT ${ERA_FORMAT_PATHS_FILE} CONTENT "${content}\n" @ONLY)
+endfunction()
+
+function(era_format target)
+    cmake_parse_arguments(ARG "" "" "EXCLUDE" ${ARGN})
+
+    get_target_property(dir ${target} SOURCE_DIR)
+    file(RELATIVE_PATH dir ${CMAKE_SOURCE_DIR} ${dir})
+    set_property(GLOBAL APPEND PROPERTY ERA_FORMAT_ENTRIES "+${dir}")
+    foreach(exclude IN LISTS ARG_EXCLUDE)
+        set_property(GLOBAL APPEND PROPERTY ERA_FORMAT_ENTRIES "-${dir}/${exclude}")
+    endforeach()
+
+    get_property(scheduled GLOBAL PROPERTY ERA_FORMAT_WRITE_SCHEDULED)
+    if(NOT scheduled)
+        set_property(GLOBAL PROPERTY ERA_FORMAT_WRITE_SCHEDULED TRUE)
+        cmake_language(DEFER DIRECTORY ${CMAKE_SOURCE_DIR} CALL _era_write_format_paths)
+    endif()
 endfunction()

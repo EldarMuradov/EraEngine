@@ -22,13 +22,13 @@ namespace era_engine
 			ASSERT(push_index < arraysize(rtv));
 			rtv[push_index++] = attachment ? attachment->default_rtv : use_if_null;
 
-			if (attachment)
-			{
-				// Change numAttachments only, if attachment is valid. This way the invalid attachments at the end are ignored, when the render target is bound to the command list.
-				num_attachments = push_index;
-			}
+            if (attachment)
+            {
+                // Change num_attachments only, if attachment is valid. This way the invalid attachments at the end are ignored, when the render target is bound to the command list.
+                num_attachments = push_index;
+            }
 
-			return *this;
+            return *this;
 		}
 
 		NODISCARD DXRenderTarget& depth_attachment(const ref<DXTexture>& attachment, DXDSVDescriptorHandle use_if_null = CD3DX12_DEFAULT())

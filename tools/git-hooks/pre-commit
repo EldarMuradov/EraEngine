@@ -1,0 +1,14 @@
+#!/bin/sh
+# Installed via tools/install_git_hooks.bat (git config core.hooksPath tools/git-hooks).
+
+root="$(git rev-parse --show-toplevel)"
+python="$root/tools/Python312/python.exe"
+if [ ! -x "$python" ]; then
+    python="$(command -v py || command -v python)"
+fi
+if [ -z "$python" ]; then
+    echo "[format] python not found, skipping." >&2
+    exit 0
+fi
+
+exec "$python" "$root/tools/format/format_staged.py"

@@ -3,3 +3,5 @@ era_module(base
 
 # base.dll owns the Tracy client; every consumer imports it.
 target_compile_definitions(base PRIVATE TRACY_EXPORTS INTERFACE TRACY_IMPORTS)
+
+era_format(base)
