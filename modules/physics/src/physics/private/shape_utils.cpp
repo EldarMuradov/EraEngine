@@ -11,6 +11,8 @@
 #include "asset/model_asset.h"
 #include "asset/file_registry.h"
 
+#include "terrain/terrain.h"
+
 #include <extensions/PxTetMakerExt.h>
 
 namespace era_engine::physics
@@ -67,14 +69,8 @@ namespace era_engine::physics
         {
             if (mesh_desc.isValid())
             {
-                PxCookingParams convex_mesh_desc = PxCookingParams(PhysicsEngine::get_physics_core()->get_tolerance_scale());
-                if (PhysicsEngine::get_physics_core()->is_gpu())
-                {
-                    convex_mesh_desc.buildGPUData = true;
-                }
-                convex_mesh_desc.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
-                convex_mesh_desc.meshPreprocessParams = PxMeshPreprocessingFlag::eENABLE_INERTIA;
-                return PxCreateConvexMesh(convex_mesh_desc, mesh_desc, PhysicsEngine::get_physics_core()->get_physics()->getPhysicsInsertionCallback());
+                PxCookingParams cooking_params = PhysicsEngine::get_physics_core()->get_cooking_params();
+                return PxCreateConvexMesh(cooking_params, mesh_desc, PhysicsEngine::get_physics_core()->get_physics()->getPhysicsInsertionCallback());
             }
         }
         catch (...)
@@ -163,12 +159,7 @@ namespace era_engine::physics
         {
             if (mesh_desc.triangles.count > 0 && mesh_desc.isValid())
             {
-                PxCookingParams cooking_params = PxCookingParams(PhysicsEngine::get_physics_core()->get_tolerance_scale());
-                if (PhysicsEngine::get_physics_core()->is_gpu())
-                {
-                    cooking_params.buildGPUData = true;
-                }
-                cooking_params.midphaseDesc = PxMeshMidPhase::eBVH34;
+                PxCookingParams cooking_params = PhysicsEngine::get_physics_core()->get_cooking_params();
                 return PxCreateTriangleMesh(cooking_params, mesh_desc);
             }
         }
@@ -178,6 +169,79 @@ namespace era_engine::physics
             throw;
         }
         return nullptr;
+    }
+
+    static float get_height_field_height_scale(const TerrainComponent& terrain)
+    {
+        using namespace physx;
+
+        return std::max(terrain.amplitude_scale / float(UINT16_MAX), PX_MIN_HEIGHTFIELD_Y_SCALE);
+    }
+
+    physx::PxHeightField* ShapeUtils::build_height_field(const TerrainComponent& terrain)
+    {
+        using namespace physx;
+
+        if (!terrain.has_heights())
+        {
+            return nullptr;
+        }
+
+        const uint32 vertices_per_chunk_dim = TerrainComponent::get_vertices_per_chunk_dim();
+        const uint32 segments_per_chunk_dim = vertices_per_chunk_dim - 1;
+        const uint32 samples_per_dim = terrain.chunks_per_dim * segments_per_chunk_dim + 1;
+
+        std::vector<PxHeightFieldSample> samples(samples_per_dim * samples_per_dim);
+
+        for (uint32 cz = 0; cz < terrain.chunks_per_dim; ++cz)
+        {
+            for (uint32 cx = 0; cx < terrain.chunks_per_dim; ++cx)
+            {
+                const std::vector<uint16>& heights = terrain.chunk(cx, cz).heights;
+
+                for (uint32 z = 0; z < vertices_per_chunk_dim; ++z)
+                {
+                    for (uint32 x = 0; x < vertices_per_chunk_dim; ++x)
+                    {
+                        const uint32 row = cx * segments_per_chunk_dim + x;
+                        const uint32 column = cz * segments_per_chunk_dim + z;
+
+                        // Default tessellation (flag cleared) splits quads like the terrain index buffers.
+                        PxHeightFieldSample& sample = samples[row * samples_per_dim + column];
+                        sample.height = PxI16(int32(heights[z * vertices_per_chunk_dim + x]) - 32768);
+                        sample.materialIndex0 = 0;
+                        sample.materialIndex1 = 0;
+                    }
+                }
+            }
+        }
+
+        PxHeightFieldDesc desc;
+        desc.format = PxHeightFieldFormat::eS16_TM;
+        desc.nbRows = samples_per_dim;
+        desc.nbColumns = samples_per_dim;
+        desc.samples.data = samples.data();
+        desc.samples.stride = sizeof(PxHeightFieldSample);
+
+        ref<Physics> physics = PhysicsEngine::get_physics_core();
+        PxHeightField* height_field = PxCreateHeightField(desc, physics->get_physics()->getPhysicsInsertionCallback());
+        if (height_field == nullptr)
+        {
+            LOG_ERROR("Physics> Failed to create terrain height field (%u x %u samples).", samples_per_dim, samples_per_dim);
+        }
+        return height_field;
+    }
+
+    physx::PxHeightFieldGeometry ShapeUtils::create_height_field_geometry(const TerrainComponent& terrain, physx::PxHeightField* height_field)
+    {
+        const float sample_spacing = terrain.chunk_size / float(TerrainComponent::get_vertices_per_chunk_dim() - 1);
+        return physx::PxHeightFieldGeometry(height_field, physx::PxMeshGeometryFlags(), get_height_field_height_scale(terrain), sample_spacing, sample_spacing);
+    }
+
+    vec3 ShapeUtils::get_height_field_offset(const TerrainComponent& terrain)
+    {
+        const vec3 min_corner = terrain.get_min_corner(vec3::zero);
+        return vec3(min_corner.x, 32768.0f * get_height_field_height_scale(terrain), min_corner.z);
     }
 
     bool ShapeUtils::is_trigger(const physx::PxFilterData& data)

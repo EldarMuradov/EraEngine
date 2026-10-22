@@ -38,7 +38,7 @@ namespace era_engine::physics
         convex_mesh_desc.points.stride = sizeof(PxVec3);
         convex_mesh_desc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
 
-        PxCookingParams cooking_params = PxCookingParams(PhysicsEngine::get_physics_core()->get_tolerance_scale());
+        PxCookingParams cooking_params = PhysicsEngine::get_physics_core()->get_cooking_params();
 
         if (PhysicsEngine::get_physics_core()->is_gpu())
         {

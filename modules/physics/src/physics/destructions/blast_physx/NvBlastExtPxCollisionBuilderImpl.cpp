@@ -107,14 +107,8 @@ CollisionHull* ExtPxCollisionBuilderImpl::buildCollisionGeometry(uint32_t vertic
 	convexMeshDescr.points.count  = (uint32_t)vertexData.size();
 	convexMeshDescr.flags         = PxConvexFlag::eCOMPUTE_CONVEX;
 
-	PxCookingParams cookingParams = PxCookingParams(PxGetPhysics().getTolerancesScale());
-	if (era_engine::physics::PhysicsEngine::get_physics_core()->is_gpu())
-	{
-		cookingParams.buildGPUData = true;
-	}
-	//cookingParams.meshWeldTolerance = 0.15f;
-	cookingParams.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
-	cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eENABLE_INERTIA;
+	PxCookingParams cookingParams = era_engine::physics::PhysicsEngine::get_physics_core()->get_cooking_params();
+
 	resultConvexMesh = PxCreateConvexMesh(cookingParams, convexMeshDescr, PxGetPhysics().getPhysicsInsertionCallback());
 	if (!resultConvexMesh)
 	{
@@ -208,13 +202,7 @@ physx::PxConvexMesh* ExtPxCollisionBuilderImpl::buildConvexMesh(const CollisionH
 	convexMeshDescr.polygons.count  = (uint32_t)hull.polygonDataCount;
 	convexMeshDescr.polygons.stride = sizeof(PxHullPolygon);
 
-	PxCookingParams cookingParams = PxCookingParams(PxGetPhysics().getTolerancesScale());
-	if (era_engine::physics::PhysicsEngine::get_physics_core()->is_gpu())
-	{
-		cookingParams.buildGPUData = true;
-	}
-	cookingParams.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
-	cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eENABLE_INERTIA;
+	PxCookingParams cookingParams = era_engine::physics::PhysicsEngine::get_physics_core()->get_cooking_params();
 	return PxCreateConvexMesh(cookingParams, convexMeshDescr, PxGetPhysics().getPhysicsInsertionCallback());
 }
 

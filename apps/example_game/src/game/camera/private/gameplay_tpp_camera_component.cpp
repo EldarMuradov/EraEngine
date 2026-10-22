@@ -22,6 +22,8 @@ namespace era_engine
             .property("camera_min_pitch", &GameplayTppCameraComponent::camera_min_pitch)
             .property("camera_max_pitch", &GameplayTppCameraComponent::camera_max_pitch)
             .property("camera_smooth_speed", &GameplayTppCameraComponent::camera_smooth_speed)
+            .property("follow_target_heading", &GameplayTppCameraComponent::follow_target_heading)
+            .property("follow_heading_speed", &GameplayTppCameraComponent::follow_heading_speed)
             .property("orbit", &GameplayTppCameraComponent::orbit);
         ComponentRegistry::register_component<GameplayTppCameraComponent>();
     }

@@ -40,12 +40,24 @@ namespace era_engine
         void reset_render_passes();
         void submit_renderer_params(uint32 num_spot_light_shadow_passes, uint32 num_point_light_shadow_passes);
 
+        void build_raytracing_scene();
+        const RaytracingObjectType* get_raytracing_object_type(const ref<MultiMesh>& mesh);
+
     private:
         RendererHolderRootComponent* renderer_holder_rc = nullptr;
 
         Allocator stack_arena;
 
         RaytracingTLAS raytracing_tlas;
+
+        struct RaytracingMeshEntry
+        {
+            weakref<MultiMesh> mesh;
+            RaytracingObjectType type;
+        };
+
+        // BLAS is shared by all entities with the same mesh.
+        std::unordered_map<const MultiMesh*, RaytracingMeshEntry> raytracing_mesh_types;
 
         ref<DXBuffer> point_light_buffer[NUM_BUFFERED_FRAMES];
         ref<DXBuffer> spot_light_buffer[NUM_BUFFERED_FRAMES];

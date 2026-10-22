@@ -365,7 +365,7 @@ namespace era_engine
 
     void LightProbeTracer::initialize()
     {
-        const wchar* shader_path = L"shaders/light_probe/light_probe_trace_rts.hlsl";
+        const wchar* shader_path = L"light_probe/light_probe_trace_rts.hlsl";
 
         const uint32 num_input_resources = sizeof(InputResources) / sizeof(DXCPUDescriptorHandle);
         const uint32 num_output_resources = sizeof(OutputResources) / sizeof(DXCPUDescriptorHandle);

@@ -25,7 +25,7 @@ struct SSRRaycastCB
     "RootFlags(0), " \
     "RootConstants(b0, num32BitConstants = 10), " \
     "CBV(b1), " \
-    "DescriptorTable( UAV(u0, numDescriptors = 1), SRV(t0, numDescriptors = 5) )," \
+    "DescriptorTable( UAV(u0, numDescriptors = 1), SRV(t0, numDescriptors = 6) )," \
     "StaticSampler(s0," \
         "addressU = TEXTURE_ADDRESS_CLAMP," \
         "addressV = TEXTURE_ADDRESS_CLAMP," \
@@ -51,7 +51,7 @@ struct SSRResolveCB
     "RootFlags(0), " \
     "RootConstants(b0, num32BitConstants = 4), " \
     "CBV(b1), " \
-    "DescriptorTable( UAV(u0, numDescriptors = 1), SRV(t0, numDescriptors = 5) )," \
+    "DescriptorTable( UAV(u0, numDescriptors = 1), SRV(t0, numDescriptors = 6) )," \
     "StaticSampler(s0," \
         "addressU = TEXTURE_ADDRESS_CLAMP," \
         "addressV = TEXTURE_ADDRESS_CLAMP," \
@@ -75,15 +75,22 @@ struct SSRTemporalCB
 #define SSR_TEMPORAL_RS \
     "RootFlags(0), " \
     "RootConstants(b0, num32BitConstants = 2), " \
-    "DescriptorTable( UAV(u0, numDescriptors = 1), SRV(t0, numDescriptors = 3) )," \
+    "CBV(b1), " \
+    "DescriptorTable( UAV(u0, numDescriptors = 1), SRV(t0, numDescriptors = 6) )," \
     "StaticSampler(s0," \
         "addressU = TEXTURE_ADDRESS_CLAMP," \
         "addressV = TEXTURE_ADDRESS_CLAMP," \
         "addressW = TEXTURE_ADDRESS_CLAMP," \
-        "filter = FILTER_MIN_MAG_MIP_LINEAR)"
+        "filter = FILTER_MIN_MAG_MIP_LINEAR), " \
+    "StaticSampler(s1," \
+        "addressU = TEXTURE_ADDRESS_CLAMP," \
+        "addressV = TEXTURE_ADDRESS_CLAMP," \
+        "addressW = TEXTURE_ADDRESS_CLAMP," \
+        "filter = FILTER_MIN_MAG_MIP_POINT)"
 
 #define SSR_TEMPORAL_RS_CB           0
-#define SSR_TEMPORAL_RS_TEXTURES     1
+#define SSR_TEMPORAL_RS_CAMERA       1
+#define SSR_TEMPORAL_RS_TEXTURES     2
 
 struct SSRMedianBlurCB
 {

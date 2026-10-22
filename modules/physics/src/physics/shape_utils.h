@@ -12,6 +12,7 @@ namespace era_engine
 {
     struct MeshAsset;
     struct SubmeshAsset;
+    class TerrainComponent;
 }
 
 namespace era_engine::physics
@@ -25,6 +26,11 @@ namespace era_engine::physics
     public:
         static physx::PxConvexMesh* build_convex_mesh(const MeshAsset* asset, const vec3& size);
         static physx::PxTriangleMesh* build_triangle_mesh(const MeshAsset* asset);
+
+        static physx::PxHeightField* build_height_field(const TerrainComponent& terrain);
+        static physx::PxHeightFieldGeometry create_height_field_geometry(const TerrainComponent& terrain, physx::PxHeightField* height_field);
+
+        static vec3 get_height_field_offset(const TerrainComponent& terrain);
 
         static bool is_trigger(const physx::PxFilterData& data);
 

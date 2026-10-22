@@ -34,6 +34,9 @@ namespace era_engine
 
         vec2 noise_offset = vec2(0.f, 0.f);
         uint32 noise_octaves = 15;
+
+        // Gaussian sigma (meters) applied to generated heights, shared by rendering and physics. 0 disables.
+        float smoothing_sigma = 1.0f;
     };
 
     class ERA_CORE_API TerrainComponent : public Component
@@ -63,9 +66,18 @@ namespace era_engine
 
         vec3 get_min_corner(const vec3& position_offset) const
         {
-            float xz_offset = -(chunk_size * chunks_per_dim) * 0.5f; // Offsets entire terrain by half.
+            float xz_offset = -(chunk_size * chunks_per_dim) * 0.5f;
             return position_offset + vec3(xz_offset, 0.f, xz_offset);
         }
+
+        static uint32 get_vertices_per_chunk_dim();
+
+        bool has_heights() const;
+
+        uint32 get_heights_version() const { return heights_version; }
+        void mark_heights_changed() { ++heights_version; }
+
+        void smooth_heights();
 
         ERA_VIRTUAL_REFLECT(Component)
 
@@ -83,10 +95,13 @@ namespace era_engine
     private:
         void generate_chunks_cpu();
         void generate_chunks_gpu();
+        void upload_heightmaps();
 
         TerrainGenerationSettings old_gen_settings;
 
         std::vector<TerrainChunk> chunks;
+
+        uint32 heights_version = 0;
 
         friend struct GrassComponent;
     };

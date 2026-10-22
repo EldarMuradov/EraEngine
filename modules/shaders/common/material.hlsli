@@ -98,6 +98,7 @@ struct TextureAtlasCB
 #define MATERIAL_USE_METALLIC_TEXTURE		(1 << 3)
 #define MATERIAL_DOUBLE_SIDED				(1 << 4)
 #define MATERIAL_USE_32_BIT_INDICES			(1 << 5) // Ugly to put this in the material. Only used in the ray tracing shaders.
+#define MATERIAL_USE_EMISSION_TEXTURE		(1 << 6)
 
 struct PBRMaterialCB // 24 bytes.
 {

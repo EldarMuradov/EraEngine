@@ -27,6 +27,7 @@ namespace era_engine
 
         vec4 cascade_distances;
         vec4 bias;
+        vec4 depth_bias;
         vec4 blend_distances;
         vec4 shadow_map_viewports[MAX_NUM_SUN_SHADOW_CASCADES];
 

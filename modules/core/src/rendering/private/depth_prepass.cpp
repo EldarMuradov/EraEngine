@@ -13,6 +13,7 @@ namespace era_engine
     static DXPipeline default_pipeline;
     static DXPipeline double_sided_default_pipeline;
     static DXPipeline alpha_cutout_pipeline;
+    static DXPipeline transparent_motion_vectors_pipeline;
 
     static D3D12_INPUT_ELEMENT_DESC layout[] =
         {
@@ -40,6 +41,13 @@ namespace era_engine
 
         desc.input_layout(alpha_cutout_layout);
         alpha_cutout_pipeline = create_reloadable_pipeline(desc, {"depth_only_alpha_cutout_vs", "depth_only_alpha_cutout_ps"}, RS_IN_VERTEX_SHADER);
+
+        auto& motion_vectors_desc = CREATE_GRAPHICS_PIPELINE
+                                        .render_targets(screen_velocities_format, depth_stencil_format)
+                                        .depth_settings(true, false)
+                                        .input_layout(layout);
+
+        transparent_motion_vectors_pipeline = create_reloadable_pipeline(motion_vectors_desc, {"depth_only_vs", "motion_vectors_ps"}, RS_IN_VERTEX_SHADER);
     }
 
     static void setup_depth_prepass_common(DXCommandList* cl, const DXPipeline& pipeline, DXDynamicConstantBuffer camera_cbv)
@@ -64,6 +72,11 @@ namespace era_engine
     PIPELINE_SETUP_IMPL(DepthPrepassPipeline::AlphaCutout)
     {
         setup_depth_prepass_common(cl, alpha_cutout_pipeline, common.camera_cbv);
+    }
+
+    PIPELINE_SETUP_IMPL(DepthPrepassPipeline::TransparentMotionVectors)
+    {
+        setup_depth_prepass_common(cl, transparent_motion_vectors_pipeline, common.camera_cbv);
     }
 
     static void render(DXCommandList* cl, const DepthPrepassData& data)

@@ -91,12 +91,12 @@ namespace era_engine::physics
         if (is_tgs)
         {
             dynamic_body_component->solver_velocity_iterations_count.get_for_write() = is_gpu ? 1 : 1;
-            dynamic_body_component->solver_position_iterations_count.get_for_write() = is_gpu ? 24 : 8;
+            dynamic_body_component->solver_position_iterations_count.get_for_write() = is_gpu ? 24 : 10;
         }
         else
         {
-            dynamic_body_component->solver_velocity_iterations_count.get_for_write() = is_gpu ? 6 : 4;
-            dynamic_body_component->solver_position_iterations_count.get_for_write() = is_gpu ? 12 : 10;
+            dynamic_body_component->solver_velocity_iterations_count.get_for_write() = is_gpu ? 8 : 6;
+            dynamic_body_component->solver_position_iterations_count.get_for_write() = is_gpu ? 16 : 12;
         }
 
         return dynamic_body_component;
@@ -1120,10 +1120,10 @@ namespace era_engine::physics
             structure.left_foot_joint,
             structure.left_foot_end_joint,
             settings.shapes_settings.foot_radius,
-            1.0f,
+            0.8f,
             true,
             ctx.enable_physical_animation ? physical_animation_component->left_leg_chain.get() : nullptr,
-            ctx.enable_physical_animation ? CollisionType::NONE : CollisionType::RAGDOLL,
+            CollisionType::RAGDOLL,
             settings.object_space_settings.left_foot_joint_adjastment,
             settings.object_space_settings.left_foot_end_joint_adjastment,
             settings.local_shape_settings.left_foot_joint_adjastment,
@@ -1174,10 +1174,10 @@ namespace era_engine::physics
             structure.right_foot_joint,
             structure.right_foot_end_joint,
             settings.shapes_settings.foot_radius,
-            1.0f,
+            0.8f,
             true,
             ctx.enable_physical_animation ? physical_animation_component->right_leg_chain.get() : nullptr,
-            ctx.enable_physical_animation ? CollisionType::NONE : CollisionType::RAGDOLL,
+            CollisionType::RAGDOLL,
             settings.object_space_settings.right_foot_joint_adjastment,
             settings.object_space_settings.right_foot_end_joint_adjastment,
             settings.local_shape_settings.right_foot_joint_adjastment,
@@ -1803,10 +1803,10 @@ namespace era_engine::physics
 
         for (const LimitValues& values : limit_values)
         {
-            values.joint->twist_limit_stiffness = values.stiffness;
-            values.joint->twist_limit_damping = values.damping;
-            values.joint->swing_limit_stiffness = values.stiffness;
-            values.joint->swing_limit_damping = values.damping;
+            values.joint->twist_limit_stiffness = max(values.stiffness, 120.0f);
+            values.joint->twist_limit_damping = max(values.damping, 20.0f);
+            values.joint->swing_limit_stiffness = max(values.stiffness, 120.0f);
+            values.joint->swing_limit_damping = max(values.damping, 20.0f);
         }
     }
 

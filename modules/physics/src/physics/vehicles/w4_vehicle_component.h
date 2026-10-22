@@ -2,47 +2,22 @@
 
 #include "physics_api.h"
 
-#include "physics/physx_api.h"
 #include "physics/vehicles/base_vehicle_component.h"
-
-#include "core/math.h"
-
-#include "ecs/component.h"
-#include "ecs/observable_member.h"
+#include "physics/vehicles/vehicle_config.h"
+#include "physics/vehicles/vehicle_controller.h"
+#include "physics/shape_component.h"
 
 namespace era_engine::physics
 {
-    struct VehicleInputContext
+    struct VehicleDebugData
     {
-        bool accelerate_pressed = false;
-        bool brake_pressed = false;
-        bool reverse_pressed = false;
-
-        bool steer_left_pressed = false;
-        bool steer_right_pressed = false;
-
-        // For analog steering
-        float steer_amount = 0.0f; // -1.0 to 1.0 (left to right)
-
-        // For controller/analog input
-        float throttle_axis = 0.0f; // 0 to 1
-        float brake_axis = 0.0f;    // 0 to 1
+        float forward_speed = 0.0f; // m/s
+        float engine_rpm = 0.0f;
+        int32 gear = 0; // -1 = reverse, 0 = neutral.
+        uint32 grounded_wheels = 0;
+        float steer_angle = 0.0f; // rad
+        VehicleCommands commands;
     };
-
-    struct VehicleControlOutput
-    {
-        float brake = 0.0f;
-        float throttle = 0.0f;
-        float steer = 0.0f;
-        bool reverse = false;
-    };
-
-    static constexpr float THROTTLE_RAMP_UP = 3.0f;
-    static constexpr float THROTTLE_RAMP_DOWN = 5.0f;
-    static constexpr float BRAKE_RAMP_UP = 4.0f;
-    static constexpr float BRAKE_RAMP_DOWN = 6.0f;
-    static constexpr float STEER_SPEED = 4.0f;
-    static constexpr float STEER_RETURN_SPEED = 2.0f;
 
     class ERA_PHYSICS_API W4VehicleComponent : public VehicleBaseComponent
     {
@@ -50,21 +25,86 @@ namespace era_engine::physics
         W4VehicleComponent() = default;
         W4VehicleComponent(ref<Entity::EcsData> _data);
 
-        VehicleControlOutput process_input(const VehicleInputContext& input, float dt, float current_speed = 0.0f);
+        const VehicleDebugData& get_debug_data() const;
 
-        float get_speed_based_steering_factor(bool is_accelerating, float current_speed);
+        VehicleConfig config = VehicleConfig::make_default();
 
-        void process_reverse_request(const VehicleInputContext& input, float current_speed, VehicleControlOutput& output);
-        void process_throttle_and_brake(const VehicleInputContext& input, float dt, float current_speed, VehicleControlOutput& output);
-        void process_steering(const VehicleInputContext& input, float dt, float current_speed, VehicleControlOutput& output);
-        void apply_vehicle_rules(const VehicleInputContext& input, float dt, float current_speed, VehicleControlOutput& output);
-
-        float current_steer = 0.0f;
-        float throttle = 0.0f;
-        float brake = 0.0f;
-
-        bool wants_reverse = false;
+        VehicleDriverInput driver_input;
 
         ERA_VIRTUAL_REFLECT(VehicleBaseComponent)
+
+    private:
+        VehicleController controller;
+        VehicleDebugData debug_data;
+
+        VehicleConfig built_config;
+        bool build_failed = false;
+
+        uint32 generation = 0;
+
+        friend class VehicleSystem;
+    };
+
+    class ERA_PHYSICS_API VehicleWheelComponent : public Component
+    {
+    public:
+        VehicleWheelComponent() = default;
+        VehicleWheelComponent(ref<Entity::EcsData> _data, uint32 _wheel_id = 0);
+
+        // axle * 2 + (left ? 1 : 0)
+        uint32 wheel_id = 0;
+
+        bool should_spin = true;
+
+        ERA_VIRTUAL_REFLECT(Component)
+    };
+
+    class ERA_PHYSICS_API VehicleDoorComponent : public Component
+    {
+    public:
+        VehicleDoorComponent() = default;
+        VehicleDoorComponent(ref<Entity::EcsData> _data);
+
+        void toggle();
+
+        float open = 0.0f;       // [0, 1].
+        float max_angle = 70.0f; // deg
+        float speed = 1.5f;
+
+        std::vector<vec3> collision_hull;
+
+        ERA_VIRTUAL_REFLECT(Component)
+
+    private:
+        float current = 0.0f;
+
+        physx::PxShape* shape = nullptr;
+        uint32 shape_generation = 0;
+
+        friend class VehicleSystem;
+    };
+
+    class ERA_PHYSICS_API VehicleShapeComponent final : public ShapeComponent
+    {
+    public:
+        VehicleShapeComponent() = default;
+        VehicleShapeComponent(ref<Entity::EcsData> _data);
+
+        ERA_VIRTUAL_REFLECT(ShapeComponent)
+
+    private:
+        friend class VehicleSystem;
+    };
+
+    class ERA_PHYSICS_API VehicleSteeringWheelComponent : public Component
+    {
+    public:
+        VehicleSteeringWheelComponent() = default;
+        VehicleSteeringWheelComponent(ref<Entity::EcsData> _data);
+
+        vec3 axis = vec3(0.0f, 0.0f, -1.0f);
+        float ratio = 14.0f; // deg
+
+        ERA_VIRTUAL_REFLECT(Component)
     };
 }

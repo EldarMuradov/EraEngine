@@ -164,8 +164,8 @@ namespace era_engine::physics
         void swap_objects();
 
     public:
-        BodyComponent* this_actor = nullptr;
-        BodyComponent* other_actor = nullptr;
+        Component* this_actor = nullptr;
+        Component* other_actor = nullptr;
 
         physx::PxVec3 impulse;
         physx::PxVec3 this_velocity;

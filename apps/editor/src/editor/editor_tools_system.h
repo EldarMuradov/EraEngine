@@ -12,6 +12,7 @@
 namespace era_engine
 {
     class RendererHolderRootComponent;
+    class VehicleImportPanel;
 
     class EditorToolsSystem final : public System
     {
@@ -34,5 +35,6 @@ namespace era_engine
         RendererHolderRootComponent* renderer_holder_rc = nullptr;
 
         std::unique_ptr<SceneEditorPanels> scene_panels;
+        std::unique_ptr<VehicleImportPanel> vehicle_import_panel;
     };
 }

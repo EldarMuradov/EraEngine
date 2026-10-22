@@ -56,6 +56,8 @@ namespace era_engine::physics
 
         ref<BlastCore> get_blast_core() const;
 
+        physx::PxCookingParams get_cooking_params() const;
+
         bool is_gpu() const;
 
         void release_locked();
@@ -76,6 +78,9 @@ namespace era_engine::physics
         void add_actor_locked(BodyComponent* actor, physx::PxRigidActor* physx_actor);
         void remove_actor_locked(BodyComponent* actor);
 
+        void register_actor_locked(physx::PxRigidActor* physx_actor, Component* component);
+        void unregister_actor_locked(physx::PxRigidActor* physx_actor);
+
         void release_scene_locked();
 
         void explode(const vec3& world_pos, float damage_radius, float explosive_impulse);
@@ -90,7 +95,7 @@ namespace era_engine::physics
         std::set<BodyComponent*> actors;
 
         std::unordered_map<Entity::Handle, std::vector<ShapeComponent*>> colliders_map;
-        std::unordered_map<physx::PxRigidActor*, BodyComponent*> actors_map;
+        std::unordered_map<physx::PxRigidActor*, Component*> actors_map;
 
         ref<SimulationEventCallback> simulation_event_callback = nullptr;
 

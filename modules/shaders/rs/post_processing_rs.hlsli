@@ -147,7 +147,7 @@ struct TAACB
 #define TAA_RS \
     "RootFlags(0), " \
     "RootConstants(num32BitConstants=8, b0),"  \
-    "DescriptorTable( UAV(u0, numDescriptors = 1), SRV(t0, numDescriptors = 4) ), " \
+    "DescriptorTable( UAV(u0, numDescriptors = 1), SRV(t0, numDescriptors = 5) ), " \
     "StaticSampler(s0," \
         "addressU = TEXTURE_ADDRESS_CLAMP," \
         "addressV = TEXTURE_ADDRESS_CLAMP," \

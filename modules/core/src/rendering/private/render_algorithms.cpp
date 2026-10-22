@@ -517,6 +517,33 @@ namespace era_engine
         }
     }
 
+    void transparent_motion_vectors_pass(DXCommandList* cl,
+        const DXRenderTarget& render_target,
+        const TransparentRenderPass* transparent_render_pass,
+        const mat4& view_proj, const mat4& prev_frame_view_proj,
+        const CommonRenderData& common)
+    {
+        if (transparent_render_pass && transparent_render_pass->motion_vectors.size() > 0)
+        {
+            PROFILE_ALL(cl, "Transparent motion vectors");
+
+            cl->set_render_target(render_target);
+            cl->set_viewport(render_target.viewport);
+
+            PipelineSetupFunc last_setup_func = 0;
+
+            for (const auto& dc : transparent_render_pass->motion_vectors)
+            {
+                if (dc.setup != last_setup_func)
+                {
+                    dc.setup(cl, common);
+                    last_setup_func = dc.setup;
+                }
+                dc.render(cl, view_proj, prev_frame_view_proj, dc.data);
+            }
+        }
+    }
+
     void ldr_pass(DXCommandList* cl,
         const DXRenderTarget& ldr_render_target,
         ref<DXTexture> depth_stencil_buffer,
@@ -866,9 +893,13 @@ namespace era_engine
 
     void ssr_temporal(DXCommandList* cl,
         ref<DXTexture> screen_velocities_texture,
+        ref<DXTexture> prev_frame_screen_velocities,
+        ref<DXTexture> depth_stencil_buffer,
+        ref<DXTexture> raycast_texture,
         ref<DXTexture> resolve_texture,
         ref<DXTexture> ssr_temporal_history,
-        ref<DXTexture> ssr_temporal_output)
+        ref<DXTexture> ssr_temporal_output,
+        DXDynamicConstantBuffer camera_cbv)
     {
         uint32 resolve_width = resolve_texture->width;
         uint32 resolve_height = resolve_texture->height;
@@ -880,11 +911,15 @@ namespace era_engine
             cl->set_compute_root_signature(*ssr_temporal_pipeline.root_signature);
 
             cl->set_compute_32bit_constants(SSR_TEMPORAL_RS_CB, SSRTemporalCB{vec2(1.f / resolve_width, 1.f / resolve_height)});
+            cl->set_compute_dynamic_constant_buffer(SSR_TEMPORAL_RS_CAMERA, camera_cbv);
 
             cl->set_descriptor_heap_uav(SSR_TEMPORAL_RS_TEXTURES, 0, ssr_temporal_output);
             cl->set_descriptor_heap_srv(SSR_TEMPORAL_RS_TEXTURES, 1, resolve_texture);
             cl->set_descriptor_heap_srv(SSR_TEMPORAL_RS_TEXTURES, 2, ssr_temporal_history);
             cl->set_descriptor_heap_srv(SSR_TEMPORAL_RS_TEXTURES, 3, screen_velocities_texture);
+            cl->set_descriptor_heap_srv(SSR_TEMPORAL_RS_TEXTURES, 4, depth_stencil_buffer);
+            cl->set_descriptor_heap_srv(SSR_TEMPORAL_RS_TEXTURES, 5, raycast_texture);
+            cl->set_descriptor_heap_srv(SSR_TEMPORAL_RS_TEXTURES, 6, prev_frame_screen_velocities);
 
             cl->dispatch(bucketize(resolve_width, SSR_BLOCK_SIZE), bucketize(resolve_height, SSR_BLOCK_SIZE));
 
@@ -920,6 +955,7 @@ namespace era_engine
         ref<DXTexture> linear_depth_buffer,
         ref<DXTexture> world_normals_roughness_texture,
         ref<DXTexture> screen_velocities_texture,
+        ref<DXTexture> prev_frame_screen_velocities,
         ref<DXTexture> raycast_texture,
         ref<DXTexture> resolve_texture,
         ref<DXTexture> ssr_temporal_history,
@@ -959,6 +995,7 @@ namespace era_engine
             cl->set_descriptor_heap_srv(SSR_RAYCAST_RS_TEXTURES, 3, world_normals_roughness_texture);
             cl->set_descriptor_heap_srv(SSR_RAYCAST_RS_TEXTURES, 4, RenderResources::noise_texture);
             cl->set_descriptor_heap_srv(SSR_RAYCAST_RS_TEXTURES, 5, screen_velocities_texture);
+            cl->set_descriptor_heap_srv(SSR_RAYCAST_RS_TEXTURES, 6, prev_frame_screen_velocities);
 
             cl->dispatch(bucketize(raycast_width, SSR_BLOCK_SIZE), bucketize(raycast_height, SSR_BLOCK_SIZE));
 
@@ -982,16 +1019,19 @@ namespace era_engine
             cl->set_descriptor_heap_srv(SSR_RESOLVE_RS_TEXTURES, 3, raycast_texture);
             cl->set_descriptor_heap_srv(SSR_RESOLVE_RS_TEXTURES, 4, prev_frame_hdr);
             cl->set_descriptor_heap_srv(SSR_RESOLVE_RS_TEXTURES, 5, screen_velocities_texture);
+            cl->set_descriptor_heap_srv(SSR_RESOLVE_RS_TEXTURES, 6, prev_frame_screen_velocities);
 
             cl->dispatch(bucketize(resolve_width, SSR_BLOCK_SIZE), bucketize(resolve_height, SSR_BLOCK_SIZE));
 
             BarrierBatcher(cl)
                 //.uav(resolveTexture)
-                .transition(resolve_texture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
-                .transition(raycast_texture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+                .transition(resolve_texture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
         }
 
-        ssr_temporal(cl, screen_velocities_texture, resolve_texture, ssr_temporal_history, ssr_temporal_output);
+        ssr_temporal(cl, screen_velocities_texture, prev_frame_screen_velocities, depth_stencil_buffer, raycast_texture, resolve_texture, ssr_temporal_history, ssr_temporal_output, camera_cbv);
+
+        BarrierBatcher(cl)
+            .transition(raycast_texture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     }
 
     void specular_ambient(DXCommandList* cl,
@@ -1028,6 +1068,7 @@ namespace era_engine
     void temporal_anti_aliasing(DXCommandList* cl,
         ref<DXTexture> hdr_input,
         ref<DXTexture> screen_velocities_texture,
+        ref<DXTexture> prev_frame_screen_velocities,
         ref<DXTexture> depth_stencil_buffer,
         ref<DXTexture> history,
         ref<DXTexture> output,
@@ -1043,6 +1084,7 @@ namespace era_engine
         cl->set_descriptor_heap_srv(TAA_RS_TEXTURES, 2, history);
         cl->set_descriptor_heap_srv(TAA_RS_TEXTURES, 3, screen_velocities_texture);
         cl->set_descriptor_heap_srv(TAA_RS_TEXTURES, 4, depth_stencil_buffer);
+        cl->set_descriptor_heap_srv(TAA_RS_TEXTURES, 5, prev_frame_screen_velocities);
 
         uint32 render_width = depth_stencil_buffer->width;
         uint32 render_height = depth_stencil_buffer->height;

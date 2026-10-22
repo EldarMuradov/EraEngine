@@ -4,6 +4,7 @@
 #include "rendering/raytracing.h"
 #include "rendering/raytraced_reflections.h"
 
+#include "core/log.h"
 #include "core/job_system.h"
 
 #include "dx/dx_command_list.h"
@@ -53,8 +54,10 @@ namespace era_engine
         // If object picking is allowed, but none of the others, we still have to allocate screen velocities due to dumb internal reasons with our render targets.
         if (spec.allow_ssr || spec.allow_taa || spec.allow_ao || spec.allow_object_picking)
         {
-            screen_velocities_texture = create_texture(0, render_width, render_height, screen_velocities_format, false, true, false, D3D12_RESOURCE_STATE_RENDER_TARGET);
-            SET_NAME(screen_velocities_texture->resource, "Screen velocities");
+            screen_velocities_texture = create_texture(0, render_width, render_height, screen_velocities_format, false, true, false, D3D12_RESOURCE_STATE_GENERIC_READ);
+            prev_frame_screen_velocities_texture = create_texture(0, render_width, render_height, screen_velocities_format, false, true, false, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            SET_NAME(screen_velocities_texture->resource, "Screen velocities 0");
+            SET_NAME(prev_frame_screen_velocities_texture->resource, "Screen velocities 1");
         }
 
         world_normals_roughness_texture = create_texture(0, render_width, render_height, world_normals_roughness_format, false, true, false, D3D12_RESOURCE_STATE_GENERIC_READ);
@@ -236,7 +239,8 @@ namespace era_engine
             resize_texture(prev_frame_hdr_color_texture, render_width / 2, render_height / 2);
             resize_texture(prev_frame_hdr_color_temp_texture, render_width / 2, render_height / 2);
             resize_texture(world_normals_roughness_texture, render_width, render_height);
-            resize_texture(screen_velocities_texture, render_width, render_height);
+            resize_texture(screen_velocities_texture, render_width, render_height, D3D12_RESOURCE_STATE_GENERIC_READ);
+            resize_texture(prev_frame_screen_velocities_texture, render_width, render_height, D3D12_RESOURCE_STATE_RENDER_TARGET);
             resize_texture(depth_stencil_buffer, render_width, render_height);
             resize_texture(opaque_depth_buffer, render_width, render_height);
             resize_texture(linear_depth_buffer, render_width, render_height);
@@ -272,6 +276,11 @@ namespace era_engine
         culling.allocate_if_necessary(render_width, render_height);
     }
 
+    uint32 MainRenderer::get_num_available_modes()
+    {
+        return dx_context.feature_support.raytracing() ? RENDERER_MODE_COUNT : RENDERER_MODE_PATHTRACED;
+    }
+
     void MainRenderer::set_camera(const RenderCamera& camera)
     {
         build_camera_constant_buffer(camera, settings.taa_settings.camera_jitter_strength * settings.enable_taa, this->jittered_camera);
@@ -291,7 +300,7 @@ namespace era_engine
     void MainRenderer::set_sun(const DirectionalLight& light)
     {
         sun.cascade_distances = light.cascade_distances;
-        sun.bias = light.bias;
+        sun.bias = light.depth_bias;
         sun.direction = light.direction;
         sun.blend_distances = light.blend_distances;
         sun.radiance = light.color * light.intensity;
@@ -498,7 +507,7 @@ namespace era_engine
                 .transition(depth_stencil_buffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
             screen_space_reflections(cl, prev_frame_hdr_color_texture, depth_stencil_buffer, linear_depth_buffer, world_normals_roughness_texture,
-                screen_velocities_texture, ssr_raycast_texture, ssr_resolve_texture, ssr_temporal_textures[ssr_history_index],
+                screen_velocities_texture, prev_frame_screen_velocities_texture, ssr_raycast_texture, ssr_resolve_texture, ssr_temporal_textures[ssr_history_index],
                 ssr_temporal_textures[1 - ssr_history_index], settings.ssr_settings, common_render_data.camera_cbv);
 
             ssr_history_index = 1 - ssr_history_index;
@@ -617,6 +626,20 @@ namespace era_engine
 
             transparent_light_pass(cl, hdr_transparent_render_target, transparent_render_pass, common_render_data, unjittered_camera.view_proj);
 
+            if (screen_velocities_texture && transparent_render_pass->motion_vectors.size() > 0)
+            {
+                cl->transition_barrier(screen_velocities_texture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+                auto motion_vectors_render_target = DXRenderTarget(render_width, render_height)
+                                                        .color_attachment(screen_velocities_texture)
+                                                        .depth_attachment(depth_stencil_buffer);
+
+                transparent_motion_vectors_pass(cl, motion_vectors_render_target, transparent_render_pass,
+                    unjittered_camera.view_proj, unjittered_camera.prev_frame_view_proj, common_render_data);
+
+                cl->transition_barrier(screen_velocities_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
+            }
+
             BarrierBatcher(cl)
                 .transition(hdr_post_processing_texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
                 .transition(hdr_result, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
@@ -637,7 +660,7 @@ namespace era_engine
         if (settings.enable_taa)
         {
             uint32 taa_output_index = 1 - taa_history_index;
-            temporal_anti_aliasing(cl, hdr_result, screen_velocities_texture, opaque_depth_buffer, taa_textures[taa_history_index], taa_textures[taa_output_index], jittered_camera.projection_params);
+            temporal_anti_aliasing(cl, hdr_result, screen_velocities_texture, prev_frame_screen_velocities_texture, opaque_depth_buffer, taa_textures[taa_history_index], taa_textures[taa_output_index], jittered_camera.projection_params);
             hdr_result = taa_textures[taa_output_index];
             taa_history_index = taa_output_index;
         }
@@ -697,7 +720,7 @@ namespace era_engine
         BarrierBatcher(cl)
             //.uav(frameResult)
             .transition(hdr_color_texture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET)
-            .transition(screen_velocities_texture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET)
+            .transition(prev_frame_screen_velocities_texture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET) // Written next frame.
             .transition(ldr_post_processing_texture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
             .transition(frame_result, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON)
             .transition(linear_depth_buffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -707,12 +730,23 @@ namespace era_engine
 
     void MainRenderer::end_frame(const UserInput* input)
     {
+        if (mode == RENDERER_MODE_PATHTRACED && !dx_context.feature_support.raytracing())
+        {
+            LOG_ERROR("Path tracing requires DXR support, falling back to rasterization");
+            mode = RENDERER_MODE_RASTERIZED;
+        }
+
         bool aspect_ratio_mode_changed = aspect_ratio_mode != old_aspect_ratio_mode;
         old_aspect_ratio_mode = aspect_ratio_mode;
 
         if (aspect_ratio_mode_changed)
         {
             recalculate_viewport(true);
+        }
+
+        if (mode == RENDERER_MODE_RASTERIZED && screen_velocities_texture)
+        {
+            std::swap(screen_velocities_texture, prev_frame_screen_velocities_texture);
         }
 
         auto jittered_camera_cbv = dx_context.upload_dynamic_constant_buffer(jittered_camera);
@@ -965,7 +999,8 @@ namespace era_engine
             {
                 PROFILE_ALL(cl, "Raytracing");
 
-                path_tracer.render(cl, *tlas, hdr_color_texture, common_render_data);
+                common_render_data.camera_cbv = unjittered_camera_cbv;
+                path_tracer.render(cl, *tlas, hdr_color_texture, unjittered_camera, common_render_data);
             }
 
             cl->reset_to_dynamic_descriptor_heap();
@@ -984,12 +1019,6 @@ namespace era_engine
                 .transition(hdr_color_texture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET)
                 .transition(ldr_post_processing_texture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
                 .transition(frame_result, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
-
-            if (dx_context.feature_support.dlss() && settings.enable_dlss)
-            {
-                PROFILE_ALL(cl3, "DLSS Evaluation");
-                dlss_adapter.update_dlss(cl->command_list.Get(), compute_pass->dt);
-            }
 
             dx_context.execute_command_list(cl);
         }

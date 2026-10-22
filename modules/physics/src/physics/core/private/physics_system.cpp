@@ -466,6 +466,10 @@ namespace era_engine::physics
                     for (ShapeComponent* shape_component : colliders)
                     {
                         PxShape* shape = shape_component->create_shape();
+                        if (shape == nullptr)
+                        {
+                            continue;
+                        }
 
                         dynamic_body_component->actor->attachShape(*shape);
 
@@ -521,6 +525,10 @@ namespace era_engine::physics
                 PhysicsEngine::execute_write([&]()
                     {
                         PxShape* shape = shape_component->create_shape();
+                        if (shape == nullptr)
+                        {
+                            return;
+                        }
 
                         static_body_component->actor->attachShape(*shape);
                         ShapeUtils::setup_filtering(world, shape, static_cast<uint32>(shape_component->collision_type.get()), shape_component->collision_filter_data);

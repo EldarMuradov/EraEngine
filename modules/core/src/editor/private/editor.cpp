@@ -1223,14 +1223,14 @@ namespace era_engine
                     result |= ImGui::PropertySlider("Cascade count", sun.num_shadow_cascades, 1, 4));
 
                 const float min_cascade_distance = 0.f, max_cascade_distance = 300.f;
-                const float min_bias = 0.f, max_bias = 0.0015f;
+                const float min_bias = 0.f, max_bias = 0.5f;
                 const float min_blend = 0.f, max_blend = 10.f;
                 if (sun.num_shadow_cascades == 1)
                 {
                     UNDOABLE_SETTING("cascade distance", sun.cascade_distances.x,
                         result |= ImGui::PropertySlider("Distance", sun.cascade_distances.x, min_cascade_distance, max_cascade_distance));
                     UNDOABLE_SETTING("cascade bias", sun.bias.x,
-                        result |= ImGui::PropertySlider("Bias", sun.bias.x, min_bias, max_bias, "%.6f"));
+                        result |= ImGui::PropertySlider("Bias", sun.bias.x, min_bias, max_bias, "%.3f"));
                     UNDOABLE_SETTING("cascade blend distances", sun.blend_distances.x,
                         result |= ImGui::PropertySlider("Blend distances", sun.blend_distances.x, min_blend, max_blend, "%.6f"));
                 }
@@ -1239,7 +1239,7 @@ namespace era_engine
                     UNDOABLE_SETTING("cascade distance", sun.cascade_distances.xy,
                         result |= ImGui::PropertySlider("Distance", sun.cascade_distances.xy, min_cascade_distance, max_cascade_distance));
                     UNDOABLE_SETTING("cascade bias", sun.bias.xy,
-                        result |= ImGui::PropertySlider("Bias", sun.bias.xy, min_bias, max_bias, "%.6f"));
+                        result |= ImGui::PropertySlider("Bias", sun.bias.xy, min_bias, max_bias, "%.3f"));
                     UNDOABLE_SETTING("cascade blend distances", sun.blend_distances.xy,
                         result |= ImGui::PropertySlider("Blend distances", sun.blend_distances.xy, min_blend, max_blend, "%.6f"));
                 }
@@ -1248,7 +1248,7 @@ namespace era_engine
                     UNDOABLE_SETTING("cascade distance", sun.cascade_distances.xyz,
                         result |= ImGui::PropertySlider("Distance", sun.cascade_distances.xyz, min_cascade_distance, max_cascade_distance));
                     UNDOABLE_SETTING("cascade bias", sun.bias.xyz,
-                        result |= ImGui::PropertySlider("Bias", sun.bias.xyz, min_bias, max_bias, "%.6f"));
+                        result |= ImGui::PropertySlider("Bias", sun.bias.xyz, min_bias, max_bias, "%.3f"));
                     UNDOABLE_SETTING("cascade blend distances", sun.blend_distances.xyz,
                         result |= ImGui::PropertySlider("Blend distances", sun.blend_distances.xyz, min_blend, max_blend, "%.6f"));
                 }
@@ -1257,7 +1257,7 @@ namespace era_engine
                     UNDOABLE_SETTING("cascade distance", sun.cascade_distances,
                         result |= ImGui::PropertySlider("Distance", sun.cascade_distances, min_cascade_distance, max_cascade_distance));
                     UNDOABLE_SETTING("cascade bias", sun.bias,
-                        result |= ImGui::PropertySlider("Bias", sun.bias, min_bias, max_bias, "%.6f"));
+                        result |= ImGui::PropertySlider("Bias", sun.bias, min_bias, max_bias, "%.3f"));
                     UNDOABLE_SETTING("cascade blend distances", sun.blend_distances,
                         result |= ImGui::PropertySlider("Blend distances", sun.blend_distances, min_blend, max_blend, "%.6f"));
                 }

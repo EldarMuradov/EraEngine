@@ -6,7 +6,6 @@
 
 #include <physics/body_component.h>
 #include <physics/shape_component.h>
-#include <physics/basic_objects.h>
 #include <physics/joint.h>
 #include <physics/ragdolls/ragdoll_component.h>
 #include <physics/collisions_holder_root_component.h>
@@ -66,8 +65,8 @@ namespace era_engine
         collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::VEHICLE),
             static_cast<uint32>(CollisionType::RAGDOLL), true);
 
-        // collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::VEHICLE),
-        //	static_cast<uint32>(GameCollisionType::CCT), true);
+        collision_holder_rc->set_collision_filter(static_cast<uint32>(CollisionType::VEHICLE),
+            static_cast<uint32>(GameCollisionType::STATICS), true);
     }
 
 }

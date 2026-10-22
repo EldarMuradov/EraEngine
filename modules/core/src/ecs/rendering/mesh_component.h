@@ -13,11 +13,19 @@ namespace era_engine
         MeshComponent(ref<Entity::EcsData> _data, ref<MultiMesh> _mesh = nullptr, bool _is_hidden = false);
         ~MeshComponent() override;
 
+        // Returns the transform rendered in the previous frame.
+        mat4 update_frame_transform(const mat4& transform, uint64 frame_id);
+
         ERA_VIRTUAL_REFLECT(Component)
 
     public:
         ref<MultiMesh> mesh;
         bool is_hidden = false;
+
+    private:
+        mat4 frame_transform = mat4::identity;
+        mat4 prev_frame_transform = mat4::identity;
+        uint64 frame_transform_id = UINT64_MAX;
     };
 
     class MeshUtils final

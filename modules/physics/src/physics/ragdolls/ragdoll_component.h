@@ -210,11 +210,11 @@ namespace era_engine::physics
         struct BodySettings
         {
             float max_depenetration_velocity = 5.0f;
-            float linear_damping = 0.05f;
-            float angular_damping = 0.05f;
+            float linear_damping = 0.1f;
+            float angular_damping = 0.15f;
             float max_linear_velocity = 500.0f;
             float max_angular_velocity = 35.0f;
-            float sleep_threshold = 0.02f;
+            float sleep_threshold = 0.05f;
         };
 
         struct ConstraintLimitSettings

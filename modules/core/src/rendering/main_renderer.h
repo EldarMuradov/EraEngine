@@ -163,6 +163,8 @@ namespace era_engine
 
         void set_raytracing_scene(RaytracingTLAS* tlas) { this->tlas = tlas; }
 
+        NODISCARD ERA_CORE_API static uint32 get_num_available_modes();
+
         void set_environment(const PBREnvironment& environment);
         void set_sun(const DirectionalLight& light);
 
@@ -239,6 +241,7 @@ namespace era_engine
         ref<DXTexture> hdr_color_texture;
         ref<DXTexture> world_normals_roughness_texture;
         ref<DXTexture> screen_velocities_texture;
+        ref<DXTexture> prev_frame_screen_velocities_texture; // Swapped with screen_velocities_texture every frame.
         ref<DXTexture> object_ids_texture;
         ref<DXTexture> depth_stencil_buffer;
         ref<DXTexture> linear_depth_buffer;

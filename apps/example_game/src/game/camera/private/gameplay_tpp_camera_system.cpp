@@ -43,12 +43,11 @@ namespace era_engine
     {
         ZoneScopedN("GameplayTppCameraSystem::update");
 
-        for (auto [handle, camera_holder, receiver, gameplay_camera, transform, motion] : world->group(components_group<CameraHolderComponent,
-                                                                                                           InputReceiverComponent,
-                                                                                                           GameplayTppCameraComponent,
-                                                                                                           TransformComponent,
-                                                                                                           MotionComponent>)
-                                                                                              .each())
+        for (auto [handle, camera_holder, receiver, gameplay_camera, transform] : world->group(components_group<CameraHolderComponent,
+                                                                                                   InputReceiverComponent,
+                                                                                                   GameplayTppCameraComponent,
+                                                                                                   TransformComponent>)
+                                                                                      .each())
         {
             if (camera_holder.get_camera_type() == CameraHolderComponent::USER_DEFINED)
             {
@@ -70,6 +69,13 @@ namespace era_engine
                     orbit.pitch += mouse_dy * gameplay_camera.camera_sensitivity;
 
                     orbit.pitch = clamp(orbit.pitch, gameplay_camera.camera_min_pitch, gameplay_camera.camera_max_pitch);
+                }
+                else if (gameplay_camera.follow_target_heading)
+                {
+                    const vec3 forward = world_transform.rotation * vec3::forward;
+                    const float target_yaw = rad2deg(atan2(-forward.x, -forward.z));
+                    const float delta = fmod(target_yaw - orbit.yaw + 540.0f, 360.0f) - 180.0f;
+                    orbit.yaw += delta * min(1.0f, gameplay_camera.follow_heading_speed * dt);
                 }
 
                 if (user_input.mouse.scroll_delta != 0.0f)
@@ -100,7 +106,10 @@ namespace era_engine
                 look_delta_position.y = 0.0f;
                 const vec3 look_yaw_direction = normalize(look_delta_position);
 
-                motion.set_input_movement_rotation(look_at_quaternion(look_yaw_direction, vec3::up));
+                if (MotionComponent* motion = world->get_entity(handle).get_component_if_exists<MotionComponent>())
+                {
+                    motion->set_input_movement_rotation(look_at_quaternion(look_yaw_direction, vec3::up));
+                }
             }
         }
     }

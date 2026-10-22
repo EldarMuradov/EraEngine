@@ -5,6 +5,8 @@
 #include "core_api.h"
 #include "rendering/pbr_raytracer.h"
 
+#include "camera.hlsli"
+
 namespace era_engine
 {
     struct PathTracerSettings
@@ -33,6 +35,7 @@ namespace era_engine
 
         void render(DXCommandList* cl, const RaytracingTLAS& tlas,
             const ref<DXTexture>& output,
+            const CameraCB& camera,
             const CommonRenderData& common);
 
         ERA_CORE_API void reset_rendering();
@@ -40,8 +43,16 @@ namespace era_engine
         PathTracerSettings settings;
 
     private:
+        bool is_accumulation_valid(const RaytracingTLAS& tlas, const ref<DXTexture>& output, const CameraCB& camera) const;
+
         uint32 num_averaged_frames = 0;
         PathTracerSettings old_settings;
+
+        uint64 last_frame_id = 0;
+        uint32 last_width = 0;
+        uint32 last_height = 0;
+        mat4 last_view_proj = mat4::identity;
+        std::vector<D3D12_RAYTRACING_INSTANCE_DESC> last_instances;
 
         struct InputResources
         {

@@ -254,8 +254,11 @@ namespace era_engine::physics
                 PxRigidActor* actor1 = r1;
                 PxRigidActor* actor2 = r2;
 
-                BodyComponent* rb1 = PhysicsEngine::get_physics_core()->actors_map[actor1];
-                BodyComponent* rb2 = PhysicsEngine::get_physics_core()->actors_map[actor2];
+                const auto& actors_map = PhysicsEngine::get_physics_core()->actors_map;
+                const auto iter1 = actors_map.find(actor1);
+                const auto iter2 = actors_map.find(actor2);
+                Component* rb1 = iter1 != actors_map.end() ? iter1->second : nullptr;
+                Component* rb2 = iter2 != actors_map.end() ? iter2->second : nullptr;
 
                 if (!rb1 || !rb2)
                 {
@@ -283,8 +286,11 @@ namespace era_engine::physics
                 PxRigidActor* actor1 = r1;
                 PxRigidActor* actor2 = r2;
 
-                BodyComponent* rb1 = PhysicsEngine::get_physics_core()->actors_map[actor1];
-                BodyComponent* rb2 = PhysicsEngine::get_physics_core()->actors_map[actor2];
+                const auto& actors_map = PhysicsEngine::get_physics_core()->actors_map;
+                const auto iter1 = actors_map.find(actor1);
+                const auto iter2 = actors_map.find(actor2);
+                Component* rb1 = iter1 != actors_map.end() ? iter1->second : nullptr;
+                Component* rb2 = iter2 != actors_map.end() ? iter2->second : nullptr;
 
                 if (!rb1 || !rb2)
                 {
@@ -347,7 +353,10 @@ namespace era_engine::physics
         }
 
         Component* shape_component = static_cast<Component*>(hit.shape->userData);
-        ASSERT(shape_component != nullptr);
+        if (shape_component == nullptr)
+        {
+            return;
+        }
 
         CharacterControllerCollision cct_collision_info;
         cct_collision_info.character_controller = cct_component;

@@ -40,6 +40,13 @@ namespace era_engine::physics
             return physx::PxFilterFlag::eDEFAULT;
         }
 
+        const uint32 non_static_only = static_cast<uint32>(physics::FilterData::NON_STATIC_ONLY_FLAG);
+        if (((filter_data0.word2 & non_static_only) && physx::PxGetFilterObjectType(attributes1) == physx::PxFilterObjectType::eRIGID_STATIC) ||
+            ((filter_data1.word2 & non_static_only) && physx::PxGetFilterObjectType(attributes0) == physx::PxFilterObjectType::eRIGID_STATIC))
+        {
+            return physx::PxFilterFlag::eSUPPRESS;
+        }
+
         if ((filter_data0.word0 & filter_data1.word1) && (filter_data1.word0 & filter_data0.word1))
         {
             pair_flags = physx::PxPairFlag::eCONTACT_DEFAULT;
@@ -201,15 +208,11 @@ namespace era_engine::physics
 
         if (descriptor.broad_phase == PxBroadPhaseType::eGPU)
         {
-            if (descriptor.enable_tgs_solver)
-            {
-                scene_desc.flags |= PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS;
-            }
             scene_desc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
             scene_desc.gpuMaxNumPartitions = 8;
+            scene_desc.gpuDynamicsConfig.tempBufferCapacity *= 2;
+            scene_desc.gpuDynamicsConfig.heapCapacity *= 2;
             scene_desc.gpuDynamicsConfig.foundLostPairsCapacity *= 8;
-            scene_desc.gpuDynamicsConfig.tempBufferCapacity *= 8;
-            scene_desc.gpuDynamicsConfig.heapCapacity *= 8;
         }
 
         scene_desc.broadPhaseType = descriptor.broad_phase;
@@ -304,6 +307,18 @@ namespace era_engine::physics
     ref<BlastCore> Physics::get_blast_core() const
     {
         return blast_core;
+    }
+
+    physx::PxCookingParams Physics::get_cooking_params() const
+    {
+        using namespace physx;
+
+        PxCookingParams cooking_params = PxCookingParams(tolerance_scale);
+        cooking_params.buildGPUData = is_gpu();
+        cooking_params.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
+        cooking_params.meshPreprocessParams = PxMeshPreprocessingFlag::eENABLE_INERTIA;
+        cooking_params.midphaseDesc = PxMeshMidPhase::eBVH34;
+        return cooking_params;
     }
 
     bool Physics::is_gpu() const
@@ -455,6 +470,18 @@ namespace era_engine::physics
             actors.emplace(actor);
             actors_map.insert(std::make_pair(physx_actor, actor));
         }
+    }
+
+    void Physics::register_actor_locked(physx::PxRigidActor* physx_actor, Component* component)
+    {
+        ScopedSpinLock l{sync};
+        actors_map[physx_actor] = component;
+    }
+
+    void Physics::unregister_actor_locked(physx::PxRigidActor* physx_actor)
+    {
+        ScopedSpinLock l{sync};
+        actors_map.erase(physx_actor);
     }
 
     void Physics::remove_actor_locked(BodyComponent* actor)

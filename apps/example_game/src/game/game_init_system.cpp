@@ -6,6 +6,7 @@
 #include <core/string.h>
 #include <core/ecs/camera_holder_component.h>
 #include <core/debug/debug_var.h>
+#include <core/log.h>
 
 #include <asset/game_asset.h>
 
@@ -19,18 +20,19 @@
 #include <ecs/rendering/world_renderer.h>
 #include <ecs/rendering/scene_rendering.h>
 #include <ecs/rendering/mesh_component.h>
+#include <ecs/prefab/prefab_utils.h>
 
 #include <physics/body_component.h>
 #include <physics/core/physics.h>
 #include <physics/shape_component.h>
 #include <physics/cct_component.h>
-#include <physics/basic_objects.h>
 #include <physics/joint.h>
 #include <physics/ragdolls/ragdoll_component.h>
 #include <physics/physical_animation/physical_animation_component.h>
 #include <physics/collisions_holder_root_component.h>
 #include <physics/pbd/cloth_physics_component.h>
 #include <physics/vehicles/w4_vehicle_component.h>
+#include <physics/vehicles/vehicle_import_utils.h>
 #include <physics/physical_animation/dismemberment/ragdoll_dismemberment_component.h>
 #include <physics/destructions/destructible_component.h>
 
@@ -131,6 +133,7 @@ namespace era_engine
 
         GameAssetsProvider provider;
 
+        if (true)
         {
             if (true)
             {
@@ -264,19 +267,19 @@ namespace era_engine
                 }
 
                 // ref<MultiMesh> mesh = import_animated_mesh_from_file_async(get_asset_path("/resources/assets/test_character/Walking.fbx"),
-                //	mesh_creation_flags_animated | mesh_creation_flags_sm_to_m | mesh_creation_flags_generate_root_motion | mesh_creation_flags_override_textures_with_local_folder | mesh_creation_flags_flip_x);
+                //	MESH_CREATION_FLAGS_ANIMATED | MESH_CREATION_FLAGS_SM_TO_M | MESH_CREATION_FLAGS_GENERATE_ROOT_MOTION | MESH_CREATION_FLAGS_OVERRIDE_TEXTURES_WITH_LOCAL_FOLDER | MESH_CREATION_FLAGS_FLIP_X);
 
                 ref<MultiMesh> mesh = provider.load_game_asset_from_file<MultiMesh>(get_asset_path("/resources/assets/test_character/Character.emesh"), true, {}, MESH_CREATION_FLAGS_ANIMATED);
 
                 character = world->create_entity("Character");
-                camera_entity = character;
+                // camera_entity = character;
 
                 character.add_component<MeshComponent>(mesh);
-                character.add_component<GameplayTppCameraComponent>();
-                CameraHolderComponent* camera_holder_component = character.add_component<CameraHolderComponent>();
-                camera_holder_component->set_camera_type(CameraHolderComponent::USER_DEFINED);
-                camera_holder_component->set_render_camera(&renderer_holder_rc->camera);
-                character.add_component<InputSenderComponent>()->add_reciever(character.add_component<InputReceiverComponent>());
+                // character.add_component<GameplayTppCameraComponent>();
+                // CameraHolderComponent* camera_holder_component = character.add_component<CameraHolderComponent>();
+                // camera_holder_component->set_camera_type(CameraHolderComponent::USER_DEFINED);
+                // camera_holder_component->set_render_camera(&renderer_holder_rc->camera);
+                // character.add_component<InputSenderComponent>()->add_reciever(character.add_component<InputReceiverComponent>());
 
                 TransformComponent* transform_component = character.get_component<TransformComponent>();
                 transform_component->set_world_transform(trs{vec3(0.0f, 1.0f, 2.0f), quat::identity, vec3(1.0f)});
@@ -312,13 +315,13 @@ namespace era_engine
                 cct_component->step_offset = 0.05f;
                 cct_component->handle_non_cct_contacts = false;
 
-                character.add_component<MotionComponent>();
-                TrajectoryComponent* trajectory_component = character.add_component<TrajectoryComponent>();
-                trajectory_component->time_offsets[0] = 0.0f;
-                trajectory_component->time_offsets[1] = 0.12f;
-                trajectory_component->time_offsets[2] = 0.32f;
-                trajectory_component->time_offsets[3] = 0.54f;
-                trajectory_component->time_offsets[4] = 0.76f;
+                // character.add_component<MotionComponent>();
+                // TrajectoryComponent* trajectory_component = character.add_component<TrajectoryComponent>();
+                // trajectory_component->time_offsets[0] = 0.0f;
+                // trajectory_component->time_offsets[1] = 0.12f;
+                // trajectory_component->time_offsets[2] = 0.32f;
+                // trajectory_component->time_offsets[3] = 0.54f;
+                // trajectory_component->time_offsets[4] = 0.76f;
 
                 RagdollJointIds joint_init_ids;
                 joint_init_ids.head_end_idx = skeleton->name_to_joint_id.at("mixamorig:HeadTop_End");
@@ -648,8 +651,8 @@ namespace era_engine
                     add_animation("/resources/assets/test_character/animations/Running_mixamo.com_clip0.eanm");
                     add_animation("/resources/assets/test_character/animations/StrafeL_mixamo.com_clip0.eanm");
                     add_animation("/resources/assets/test_character/animations/StrafeR_mixamo.com_clip0.eanm");
-                    add_animation("/resources/assets/test_character/animations/Run Forward Arc Left_mixamo.com_clip0.eanm");
-                    add_animation("/resources/assets/test_character/animations/Run Forward Arc Right_mixamo.com_clip0.eanm");
+                    // add_animation("/resources/assets/test_character/animations/Run Forward Arc Left_mixamo.com_clip0.eanm");
+                    // add_animation("/resources/assets/test_character/animations/Run Forward Arc Right_mixamo.com_clip0.eanm");
                     add_animation("/resources/assets/test_character/animations/Running Left Turn_mixamo.com_clip0.eanm");
                     add_animation("/resources/assets/test_character/animations/Running Right Turn_mixamo.com_clip0.eanm");
                     add_animation("/resources/assets/test_character/animations/Running Turn 180L_mixamo.com_clip0.eanm");
@@ -779,10 +782,10 @@ namespace era_engine
 
                 animation_component->enable_root_motion = false;
 
-                character.add_component<MotionDataComponent>();
-                character.add_component<CharacterLocomotionComponent>();
+                /*              character.add_component<MotionDataComponent>();
+                              character.add_component<CharacterLocomotionComponent>();
 
-                character.add_component<MotionMatchingComponent>();
+                              character.add_component<MotionMatchingComponent>();*/
 
                 RagdollSettings settings;
                 settings.shapes_settings.head_radius = 0.1f;
@@ -826,7 +829,6 @@ namespace era_engine
 
                 // character.add_component<RagdollDismembermentComponent>();
 
-                // Rotation limited around every joint frame axis relative to the rest pose.
                 auto make_limited_joint = [](float limit_deg, float stiffness = 0.0f)
                 {
                     FBIKJointSettings joint;
@@ -878,7 +880,6 @@ namespace era_engine
                     full_body_ik->settings.iterations = 16;
                     full_body_ik->enabled = false;
 
-                    // The hips don't move.
                     FBIKJointSettings hips_settings;
                     hips_settings.angular_stiffness = vec3(1.0f);
                     full_body_ik->set_joint_settings("mixamorig:Hips", hips_settings);
@@ -888,12 +889,10 @@ namespace era_engine
                     full_body_ik->set_joint_settings("mixamorig:Spine1", spine_settings);
                     full_body_ik->set_joint_settings("mixamorig:Spine2", spine_settings);
 
-                    // Without a limit a clavicle turns into the body when the hand reaches far to the other side.
                     const FBIKJointSettings clavicle_settings = make_limited_joint(30.0f);
                     full_body_ik->set_joint_settings("mixamorig:LeftShoulder", clavicle_settings);
                     full_body_ik->set_joint_settings("mixamorig:RightShoulder", clavicle_settings);
 
-                    // A target starts at its joint in the default pose.
                     const SkeletonPose default_pose = skeleton->get_default_pose();
                     const trs character_transform = transform_component->get_world_transform();
 
@@ -922,7 +921,6 @@ namespace era_engine
 
                     add_target("mixamorig:RightHand", 0.0f, -vec3::forward);
 
-                    // The root effector moves the hips, the feet stay planted.
                     // add_target("mixamorig:Hips", 0.0f, vec3::zero);
                     // add_target("mixamorig:LeftFoot", 1.0f, vec3::forward);
                     // add_target("mixamorig:RightFoot", 1.0f, vec3::forward);
@@ -943,7 +941,7 @@ namespace era_engine
         //	cloth_component->num_z = 10;
         //}
 
-        /*if (auto mesh = import_mesh_from_file_async(get_asset_path("/resources/assets/Sponza/sponza.obj"), mesh_creation_flags_unreal_asset))
+        /*if (auto mesh = import_mesh_from_file_async(get_asset_path("/resources/assets/Sponza/sponza.obj"), MESH_CREATION_FLAGS_UNREAL_ASSET))
         {
             auto sponza = world->create_entity("Sponza");
             sponza.add_component<MeshComponent>(mesh);
@@ -952,9 +950,9 @@ namespace era_engine
             transform_component->set_world_position(vec3(5.0f, -3.75f, 35.0f));
         }*/
 
-        // if (auto mesh = import_mesh_from_file_async(get_asset_path("/resources/assets/box.fbx"), mesh_creation_flags_default))
+        if (auto mesh = import_mesh_from_file_async(get_asset_path("/resources/assets/box.fbx"), MESH_CREATION_FLAGS_UNREAL_ASSET))
         {
-            ref<MultiMesh> mesh = provider.load_game_asset_from_file<MultiMesh>(get_asset_path("/resources/assets/box.emesh"), true, {}, MESH_CREATION_FLAGS_DEFAULT);
+            // ref<MultiMesh> mesh = provider.load_game_asset_from_file<MultiMesh>(get_asset_path("/resources/assets/box.emesh"), true, {}, MESH_CREATION_FLAGS_DEFAULT);
             mesh->load_job.wait_for_completion();
 
             Entity box = world->create_entity("Box");
@@ -970,29 +968,76 @@ namespace era_engine
             descructible_component->material = PhysicsEngine::get_physics_core()->create_material(0.1f, 0.8f, 0.7f);
         }
 
-        //{
-        //	Entity vehicle = world->create_entity("Vehicle");
-        //	vehicle.get_component<TransformComponent>()->set_world_position(vec3(0.0f, 5.0f, 0.0f));
-        //	vehicle.add_component<physics::W4VehicleComponent>();
-        //	camera_entity.get_component<InputSenderComponent>()->add_reciever(vehicle.add_component<InputReceiverComponent>());
-        //}
+        if (true)
+        {
+            const fs::path model_path = get_asset_path("/resources/assets/bmw-330i/source/FINAL_MODEL_25.fbx");
+            const fs::path prefab_path = model_path.parent_path() / "bmw_330i.eprefab";
 
-        Entity plane = world->create_entity("Platform");
-        plane.add_component<PlanePhysicsComponent>(CollisionType::TERRAIN, vec3(0.0f, -5.0f, 0.0f));
-        plane.add_component<MeshComponent>(ground_mesh);
-        plane.get_component<TransformComponent>()->set_world_transform(trs{vec3(10.0f, -9.0f, 0.0f), quat(vec3(1.0f, 0.0f, 0.0f), deg2rad(0.0f)), vec3(5.0f, 1.0f, 5.0f)});
+            Entity vehicle = Entity::null;
+            if (fs::exists(prefab_path))
+            {
+                const std::vector<Entity> roots = PrefabUtils::instantiate(world, prefab_path);
+                if (!roots.empty())
+                {
+                    vehicle = roots.front();
+                }
+            }
+            else if (ref<MultiMesh> source = import_mesh_from_file(model_path, MESH_CREATION_FLAGS_DEFAULT);
+                     source != nullptr && source->model_asset.has_value())
+            {
+                VehicleImportSettings settings;
+                settings.mass = 1550.0f;
+
+                const VehicleImportSetup setup = VehicleImportUtils::analyze(*source->model_asset, settings);
+                if (setup.error.empty())
+                {
+                    vehicle = VehicleImportUtils::create_vehicle(world, source, setup, model_path.parent_path(), "bmw_330i");
+                }
+                else
+                {
+                    LOG_ERROR("BMW 330i import: %s", setup.error.c_str());
+                }
+            }
+
+            if (vehicle.is_valid())
+            {
+                vehicle.get_component<TransformComponent>()->set_world_position(vec3(0.0f, -4.7f, 0.0f));
+
+                camera_entity = vehicle;
+
+                GameplayTppCameraComponent* tpp_camera_component = vehicle.add_component<GameplayTppCameraComponent>();
+                tpp_camera_component->follow_target_heading = true;
+                tpp_camera_component->orbit.yaw = 180.0f;
+                tpp_camera_component->orbit.pitch = 12.0f;
+                tpp_camera_component->orbit.distance = 7.0f;
+                tpp_camera_component->orbit.height = 1.2f;
+
+                CameraHolderComponent* camera_holder_component = vehicle.add_component<CameraHolderComponent>();
+                camera_holder_component->set_camera_type(CameraHolderComponent::USER_DEFINED);
+                camera_holder_component->set_render_camera(&renderer_holder_rc->camera);
+                vehicle.add_component<InputSenderComponent>()->add_reciever(vehicle.add_component<InputReceiverComponent>());
+            }
+        }
+
+        // Entity plane = world->create_entity("Platform");
+        // plane.add_component<MeshComponent>(ground_mesh);
+        // plane.get_component<TransformComponent>()->set_world_transform(trs{vec3(10.0f, -9.0f, 0.0f), quat(vec3(1.0f, 0.0f, 0.0f), deg2rad(0.0f)), vec3(5.0f, 1.0f, 5.0f)});
+        // plane.add_component<PlaneShapeComponent>()->local_position = vec3(0.0f, 4.0f, 0.0f);
+        // plane.add_component<StaticBodyComponent>()->simulated = true;
 
         ground_mesh->load_state = AssetLoadState::LOADED;
         ground_mesh->mesh = builder.create_dx_mesh();
 
         {
-            /*uint32 num_terrain_chunks = 4;
-            float terrain_chunk_size = 10.f;
+            ref<PhysicsMaterial> terrain_material = PhysicsEngine::get_physics_core()->create_material(0.1f, 0.5f, 0.5f);
+
+            uint32 num_terrain_chunks = 8;
+            float terrain_chunk_size = 15.f;
 
             PbrMaterialDesc terrain_ground_desc;
             terrain_ground_desc.albedo = get_asset_path("/resources/assets/terrain/grass.bmp");
             terrain_ground_desc.normal = get_asset_path("/resources/assets/terrain/grass_normal.bmp");
-            terrain_ground_desc.albedo_flags &= ~image_load_flags_compress;
+            terrain_ground_desc.albedo_flags &= ~IMAGE_LOAD_FLAGS_COMPRESS;
 
             PbrMaterialDesc terrain_rock_desc;
             terrain_rock_desc.albedo = get_asset_path("/resources/assets/terrain/rock.bmp");
@@ -1006,10 +1051,13 @@ namespace era_engine
 
             Entity terrain = world->create_entity("Terrain");
 
-            terrain.get_component<TransformComponent>()->set_world_position(vec3(0.0f, 25.0f, 0.0f));
+            terrain.get_component<TransformComponent>()->set_world_position(vec3(0.0f, -20.0f, 0.0f));
 
-            terrain.add_component<TerrainComponent>(num_terrain_chunks, terrain_chunk_size, 10.f, terrain_ground_material, terrain_rock_material, terrain_mud_material)->update();*/
-            // terrain.add_component<TerrainPhysicsComponent>(CollisionType::TERRAIN, vec3(0.0f, 25.0, 0.0f));
+            terrain.add_component<TerrainComponent>(num_terrain_chunks, terrain_chunk_size, 10.f, terrain_ground_material, terrain_rock_material, terrain_mud_material);
+            TerrainShapeComponent* terrain_shape = terrain.add_component<TerrainShapeComponent>();
+            terrain_shape->material = terrain_material;
+            terrain_shape->collision_type.get_for_write() = CollisionType::TERRAIN;
+            terrain.add_component<StaticBodyComponent>()->simulated = true;
             // terrain.add_component<GrassComponent>(GrassSettings{ .bladeHeight = 0.15f, .bladeWidth = 0.0075f,.numGrassBladesPerChunkDim = 150 });
 
             // std::vector<proc_placement_layer_desc> layers =
@@ -1035,7 +1083,7 @@ namespace era_engine
         using namespace physics;
 
         const InputReceiverComponent* input_receiver = camera_entity.get_component_if_exists<InputReceiverComponent>();
-        if (input_receiver == nullptr)
+        if (input_receiver == nullptr || camera_entity.get_component_if_exists<W4VehicleComponent>() != nullptr)
         {
             return;
         }

@@ -14,7 +14,7 @@ namespace era_engine
     {
     public:
         GameInitSystem(World* _world);
-        ~GameInitSystem();
+        ~GameInitSystem() override;
 
         void init() override;
         void update(float dt) override;

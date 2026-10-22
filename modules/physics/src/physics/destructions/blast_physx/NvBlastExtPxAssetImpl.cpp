@@ -211,14 +211,8 @@ NV_INLINE bool serializeConvexMesh(const PxConvexMesh& convexMesh, PxCooking& co
 	desc.polygons.data = hullPolygonsScratch.begin();
 	desc.polygons.stride = sizeof(PxHullPolygon);
 
-	PxCookingParams cookingParams = PxCookingParams(PxGetPhysics().getTolerancesScale());
-	if (era_engine::physics::PhysicsEngine::get_physics_core()->is_gpu())
-	{
-		cookingParams.buildGPUData = true;
-	}
+	PxCookingParams cookingParams = era_engine::physics::PhysicsEngine::get_physics_core()->get_cooking_params();
 	//cookingParams.meshWeldTolerance = 0.15f;
-	cookingParams.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
-	cookingParams.meshPreprocessParams = PxMeshPreprocessingFlag::eENABLE_INERTIA;
 
 	return PxCookConvexMesh(cookingParams, desc, stream);
 }

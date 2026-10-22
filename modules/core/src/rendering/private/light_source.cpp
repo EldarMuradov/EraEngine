@@ -105,6 +105,7 @@ namespace era_engine
             }
 
             view_projs[cascade] = proj_matrix * view_matrix;
+            depth_bias.data[cascade] = bias.data[cascade] / (cascade_extents.z + negative_z_offset);
         }
     }
 

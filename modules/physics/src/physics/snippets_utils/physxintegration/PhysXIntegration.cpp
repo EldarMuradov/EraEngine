@@ -28,10 +28,6 @@
 
 #include "PhysXIntegration.h"
 
-#include "physics/shape_utils.h"
-
-#include "ecs/world.h"
-
 namespace snippetvehicle
 {
 
@@ -155,7 +151,7 @@ void PhysXActorVehicle::destroy()
 	BaseVehicle::destroy();
 }
 
-void PhysXActorVehicle::setUpActor(era_engine::World* world, PxScene& scene, const PxTransform& pose, const char* vehicleName, uint32 collision_type)
+void PhysXActorVehicle::setUpActor(PxScene& scene, const PxTransform& pose, const char* vehicleName)
 {
 	//Give the vehicle a start pose by appylying a pose to the PxRigidDynamic associated with the vehicle. 
 	//This vehicle has components that are configured to read the pose from the PxRigidDynamic 
@@ -164,19 +160,6 @@ void PhysXActorVehicle::setUpActor(era_engine::World* world, PxScene& scene, con
 	//each vehicle update. This is not essential but it is anticipated that this will be a typical component 
 	//configuration. 
 	mPhysXState.physxActor.rigidBody->setGlobalPose(pose);
-
-	mPhysXState.physxActor.rigidBody->setActorFlag(PxActorFlag::eVISUALIZATION, true);
-	PxShape* shapes[256];
-	PxU32 nbShapes = mPhysXState.physxActor.rigidBody->getShapes(shapes, 256);
-
-	for (PxU32 i = 0; i < nbShapes; ++i)
-	{
-		shapes[i]->setFlag(PxShapeFlag::eVISUALIZATION, true);
-		shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
-		shapes[i]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
-
-		era_engine::physics::ShapeUtils::setup_filtering(world, shapes[i], collision_type, std::nullopt);
-	}
 
 	//Add the physx actor to the physx scene.
 	//As described above, a vehicle may be coupled to a physx scene or it can be simulated without any reference to 

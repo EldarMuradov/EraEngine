@@ -26,6 +26,18 @@ namespace era_engine
     {
     }
 
+    mat4 MeshComponent::update_frame_transform(const mat4& transform, uint64 frame_id)
+    {
+        if (frame_transform_id != frame_id)
+        {
+            const bool rendered_last_frame = frame_transform_id != UINT64_MAX && frame_transform_id + 1 == frame_id;
+            prev_frame_transform = rendered_last_frame ? frame_transform : transform;
+            frame_transform_id = frame_id;
+        }
+        frame_transform = transform;
+        return prev_frame_transform;
+    }
+
     Entity MeshUtils::load_entity_mesh_from_file(ref<World> world, const fs::path& filename, uint32 flags, MeshLoadCallback cb)
     {
         ref<MultiMesh> mesh = import_mesh_from_file(filename, flags, cb);

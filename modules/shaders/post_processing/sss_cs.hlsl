@@ -18,7 +18,7 @@ SamplerState point_sampler			    : register(s0);
 void main(CSInput IN)
 {
     float2 uv = (IN.dispatch_thread_id.xy + 0.5f) * cb.inv_dimensions;
-	float depth = linear_depth_buffer.SampleLevel(point_sampler, uv, 1);
+	float depth = linear_depth_buffer.SampleLevel(point_sampler, uv, 0);
 
     float visibility = 1.f;
 
@@ -27,16 +27,25 @@ void main(CSInput IN)
         float3 ray_origin = camera.restore_view_space_position_eye_depth(uv, depth);
         float3 ray_direction = cb.light_direction;
 
-        float jitter = random(uv * 51239.f + cb.seed) * 0.05f + 1.2f;
+        float jitter = interleaved_gradient_noise(float2(IN.dispatch_thread_id.xy), (uint)cb.seed);
 
         float occlusion = 0.f;
 
         float step_size = cb.ray_distance / cb.num_steps;
         float3 step = ray_direction * step_size;
 
-        float3 ray_pos = ray_origin + step * jitter;
+        float3 ray_pos = ray_origin + step * (jitter - 1.f);
 
-        float threshold = 0.02f;
+        // Depth change across one pixel at the origin (smoother side of each axis, so silhouettes don't inflate it).
+        // Point-sampled depth under the ray is off by up to that much, which made sloped and distant ground shadow itself.
+        const float2 texel = camera.inv_screen_dims;
+        const float left = linear_depth_buffer.SampleLevel(point_sampler, uv - float2(texel.x, 0.f), 0);
+        const float right = linear_depth_buffer.SampleLevel(point_sampler, uv + float2(texel.x, 0.f), 0);
+        const float up = linear_depth_buffer.SampleLevel(point_sampler, uv - float2(0.f, texel.y), 0);
+        const float down = linear_depth_buffer.SampleLevel(point_sampler, uv + float2(0.f, texel.y), 0);
+        const float pixel_depth_delta = max(min(abs(left - depth), abs(right - depth)), min(abs(up - depth), abs(down - depth)));
+
+        float threshold = 0.02f + pixel_depth_delta;
 
         for (uint i = 0; i < cb.num_steps; ++i)
         {
@@ -50,10 +59,10 @@ void main(CSInput IN)
             if (is_saturated(uv) && is_saturated(proj.z))
             {
                 float ray_depth = proj.w;
-                float depth = linear_depth_buffer.SampleLevel(point_sampler, uv, 1);
+                float depth = linear_depth_buffer.SampleLevel(point_sampler, uv, 0);
                 float delta = ray_depth - depth;
 
-                if (delta > threshold && delta < cb.thickness)
+                if (delta > threshold && delta < threshold + cb.thickness)
                 {
                     float border_dist = min(1.f - max(uv.x, uv.y), min(uv.x, uv.y));
                     occlusion = saturate(border_dist * cb.inv_border_fadeout);

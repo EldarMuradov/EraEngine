@@ -10,7 +10,7 @@ namespace era_engine
     {
     public:
         DragNDropSystem(World* _world);
-        ~DragNDropSystem();
+        ~DragNDropSystem() override;
 
         void init() override;
         void update(float dt) override;

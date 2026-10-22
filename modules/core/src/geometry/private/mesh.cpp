@@ -52,12 +52,7 @@ namespace era_engine
             texture_path = fs::path("textures") / texture_path.filename();
         }
 
-        if (texture_path.is_absolute())
-        {
-            return texture_path.string();
-        }
-
-        fs::path full_path = (model_dir / texture_path).lexically_normal();
+        fs::path full_path = find_model_texture(texture_path, model_filepath);
 
         std::string converted_path = full_path.string();
         replace_all(converted_path, "\\", "/");
@@ -81,24 +76,31 @@ namespace era_engine
 
         for (PbrMaterialDesc& material_desc : result->model_asset->materials)
         {
-            if (!material_desc.albedo.empty() && *material_desc.albedo.c_str() != 'F')
+            if (!material_desc.albedo.empty())
             {
                 material_desc.albedo = convert_material_path(material_desc.albedo, filename, flags);
             }
-            if (!material_desc.normal.empty() && *material_desc.normal.c_str() != 'F')
+            if (!material_desc.normal.empty())
             {
                 material_desc.normal = convert_material_path(material_desc.normal, filename, flags);
             }
-            if (!material_desc.roughness.empty() && *material_desc.roughness.c_str() != 'F')
+            if (!material_desc.roughness.empty())
             {
                 material_desc.roughness = convert_material_path(material_desc.roughness, filename, flags);
             }
-            if (!material_desc.metallic.empty() && *material_desc.metallic.c_str() != 'F')
+            if (!material_desc.metallic.empty())
             {
                 material_desc.metallic = convert_material_path(material_desc.metallic, filename, flags);
             }
+            if (!material_desc.emission_texture.empty())
+            {
+                material_desc.emission_texture = convert_material_path(material_desc.emission_texture, filename, flags);
+            }
 
-            material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            if (material_desc.emission_texture.empty())
+            {
+                material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            }
         }
 
         for (auto& mesh : result->model_asset->meshes)
@@ -317,15 +319,19 @@ namespace era_engine
                 for (auto& sub : mesh.submeshes)
                 {
                     PbrMaterialDesc& material_desc = model_asset->materials[sub.material_index];
-                    material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+                    if (material_desc.emission_texture.empty())
+                    {
+                        material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+                    }
 
                     ref<PBRMaterial> material = create_pbr_material(material_desc);
 
-                    builder.push_mesh(sub, 1.f, &aabb);
-                    submeshes.push_back({builder.end_submesh(), aabb, trs::identity, material, mesh.name});
+                    BoundingBox submesh_aabb;
+                    builder.push_mesh(sub, 1.f, &submesh_aabb);
+                    submeshes.push_back({builder.end_submesh(), submesh_aabb, trs::identity, material, mesh.name});
 
-                    aabb.grow(aabb.min_corner);
-                    aabb.grow(aabb.max_corner);
+                    aabb.grow(submesh_aabb.min_corner);
+                    aabb.grow(submesh_aabb.max_corner);
                 }
             }
 
@@ -385,16 +391,19 @@ namespace era_engine
             for (auto& sub : mesh.submeshes)
             {
                 PbrMaterialDesc& material_desc = model_asset->materials[sub.material_index];
-                material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+                if (material_desc.emission_texture.empty())
+                {
+                    material_desc.emission = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+                }
 
                 ref<PBRMaterial> material = create_pbr_material(material_desc);
 
-                BoundingBox aabb;
-                builder.push_mesh(sub, 1.f, &aabb);
+                BoundingBox submesh_aabb;
+                builder.push_mesh(sub, 1.f, &submesh_aabb);
 
                 Submesh sm;
                 sm.info = builder.end_submesh();
-                sm.aabb = aabb;
+                sm.aabb = submesh_aabb;
                 sm.transform = trs::identity;
                 sm.material = material;
                 sm.name = mesh.name;
@@ -402,8 +411,8 @@ namespace era_engine
 
                 submeshes.push_back(std::move(sm));
 
-                aabb.grow(aabb.min_corner);
-                aabb.grow(aabb.max_corner);
+                aabb.grow(submesh_aabb.min_corner);
+                aabb.grow(submesh_aabb.max_corner);
 
                 submesh_index++;
             }

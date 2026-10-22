@@ -1,5 +1,6 @@
 #include "editor/editor_tools_system.h"
 #include "editor/file_utils.h"
+#include "editor/vehicle_import_panel.h"
 
 #include <engine/engine.h>
 
@@ -128,31 +129,31 @@ namespace era_engine
                 result |= ImGui::PropertySlider("Cascade count", sun.num_shadow_cascades, 1, 4);
 
                 const float minCascadeDistance = 0.f, maxCascadeDistance = 300.f;
-                const float minBias = 0.f, maxBias = 0.0015f;
+                const float minBias = 0.f, maxBias = 0.5f;
                 const float minBlend = 0.f, maxBlend = 10.f;
                 if (sun.num_shadow_cascades == 1)
                 {
                     result |= ImGui::PropertySlider("Distance", sun.cascade_distances.x, minCascadeDistance, maxCascadeDistance);
 
-                    result |= ImGui::PropertySlider("Bias", sun.bias.x, minBias, maxBias, "%.6f");
+                    result |= ImGui::PropertySlider("Bias", sun.bias.x, minBias, maxBias, "%.3f");
                     result |= ImGui::PropertySlider("Blend distances", sun.blend_distances.x, minBlend, maxBlend, "%.6f");
                 }
                 else if (sun.num_shadow_cascades == 2)
                 {
                     result |= ImGui::PropertySlider("Distance", sun.cascade_distances.xy, minCascadeDistance, maxCascadeDistance);
-                    result |= ImGui::PropertySlider("Bias", sun.bias.xy, minBias, maxBias, "%.6f");
+                    result |= ImGui::PropertySlider("Bias", sun.bias.xy, minBias, maxBias, "%.3f");
                     result |= ImGui::PropertySlider("Blend distances", sun.blend_distances.xy, minBlend, maxBlend, "%.6f");
                 }
                 else if (sun.num_shadow_cascades == 3)
                 {
                     result |= ImGui::PropertySlider("Distance", sun.cascade_distances.xyz, minCascadeDistance, maxCascadeDistance);
-                    result |= ImGui::PropertySlider("Bias", sun.bias.xyz, minBias, maxBias, "%.6f");
+                    result |= ImGui::PropertySlider("Bias", sun.bias.xyz, minBias, maxBias, "%.3f");
                     result |= ImGui::PropertySlider("Blend distances", sun.blend_distances.xyz, minBlend, maxBlend, "%.6f");
                 }
                 else if (sun.num_shadow_cascades == 4)
                 {
                     result |= ImGui::PropertySlider("Distance", sun.cascade_distances, minCascadeDistance, maxCascadeDistance);
-                    result |= ImGui::PropertySlider("Bias", sun.bias, minBias, maxBias, "%.6f");
+                    result |= ImGui::PropertySlider("Bias", sun.bias, minBias, maxBias, "%.3f");
                     result |= ImGui::PropertySlider("Blend distances", sun.blend_distances, minBlend, maxBlend, "%.6f");
                 }
 
@@ -306,6 +307,7 @@ namespace era_engine
         ASSERT(renderer_holder_rc != nullptr);
 
         scene_panels = std::make_unique<SceneEditorPanels>(world);
+        vehicle_import_panel = std::make_unique<VehicleImportPanel>(world);
     }
 
     void EditorToolsSystem::update(float dt)
@@ -336,6 +338,7 @@ namespace era_engine
         draw_main_menu();
 
         scene_panels->draw();
+        vehicle_import_panel->draw();
     }
 
     void EditorToolsSystem::draw_main_menu()
@@ -373,6 +376,10 @@ namespace era_engine
                 if (ImGui::MenuItem(ICON_FA_DESKTOP "  System"))
                 {
                     systemClicked = true;
+                }
+                if (ImGui::MenuItem(ICON_FA_CAR "  Vehicle import..."))
+                {
+                    vehicle_import_panel->open();
                 }
 
                 ImGui::EndMenu();
@@ -458,10 +465,7 @@ namespace era_engine
 
             if (ImGui::BeginProperties())
             {
-                // if (ImGui::PropertyDropdown("Renderer mode", rendererModeNames, renderer_mode_count, (uint32&)renderer->mode))
-                //{
-                //	pathTracer.resetRendering();
-                // }
+                ImGui::PropertyDropdown("Renderer mode", renderer_mode_names, MainRenderer::get_num_available_modes(), (uint32&)renderer->mode);
 
                 ImGui::PropertyDropdown("Aspect ratio", aspect_ratio_names, ASPECT_RATIO_MODE_COUNT, (uint32&)renderer->aspect_ratio_mode);
 

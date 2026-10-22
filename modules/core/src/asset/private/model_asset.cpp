@@ -15,9 +15,99 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <DirectXTex/DirectXTex.h>
+
 namespace era_engine
 {
-    static void load_materials(const aiScene* scene, ModelAsset& result)
+    static constexpr float MIN_TRANSPARENT_ALPHA = 0.1f;
+    static constexpr float OPACITY_TEXTURE_ALPHA = 0.35f;
+    static constexpr float GLASS_ROUGHNESS = 0.05f;
+    static constexpr uint32 NORMAL_MAP_SAMPLES_PER_AXIS = 32;
+
+    fs::path find_model_texture(const fs::path& texture_path, const fs::path& model_path)
+    {
+        if (texture_path.is_absolute() && fs::exists(texture_path))
+        {
+            return texture_path;
+        }
+
+        const fs::path model_dir = model_path.parent_path();
+        const fs::path full_path = (model_dir / texture_path).lexically_normal();
+        if (fs::exists(full_path))
+        {
+            return full_path;
+        }
+
+        const fs::path file_name = texture_path.filename();
+        for (const fs::path& candidate : {model_dir / file_name, model_dir / "textures" / file_name, model_dir.parent_path() / "textures" / file_name})
+        {
+            if (fs::exists(candidate))
+            {
+                return candidate.lexically_normal();
+            }
+        }
+
+        return full_path;
+    }
+
+    static bool is_normal_map(const fs::path& path)
+    {
+        DirectX::ScratchImage image;
+        const std::wstring extension = path.extension().wstring();
+
+        HRESULT hr;
+        if (_wcsicmp(extension.c_str(), L".dds") == 0)
+        {
+            hr = DirectX::LoadFromDDSFile(path.c_str(), DirectX::DDS_FLAGS_NONE, nullptr, image);
+        }
+        else if (_wcsicmp(extension.c_str(), L".tga") == 0)
+        {
+            hr = DirectX::LoadFromTGAFile(path.c_str(), nullptr, image);
+        }
+        else
+        {
+            hr = DirectX::LoadFromWICFile(path.c_str(), DirectX::WIC_FLAGS_IGNORE_SRGB, nullptr, image);
+        }
+
+        if (FAILED(hr))
+        {
+            return false;
+        }
+
+        DirectX::ScratchImage converted;
+        const DirectX::Image* source = image.GetImage(0, 0, 0);
+        if (DirectX::IsCompressed(source->format))
+        {
+            hr = DirectX::Decompress(*source, DXGI_FORMAT_R8G8B8A8_UNORM, converted);
+        }
+        else if (source->format != DXGI_FORMAT_R8G8B8A8_UNORM)
+        {
+            hr = DirectX::Convert(*source, DXGI_FORMAT_R8G8B8A8_UNORM, DirectX::TEX_FILTER_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, converted);
+        }
+        if (FAILED(hr))
+        {
+            return false;
+        }
+
+        const DirectX::Image* pixels = converted.GetImageCount() > 0 ? converted.GetImage(0, 0, 0) : source;
+
+        vec3 sum = vec3::zero;
+        for (uint32 y = 0; y < NORMAL_MAP_SAMPLES_PER_AXIS; ++y)
+        {
+            for (uint32 x = 0; x < NORMAL_MAP_SAMPLES_PER_AXIS; ++x)
+            {
+                const size_t px = (pixels->width - 1) * x / (NORMAL_MAP_SAMPLES_PER_AXIS - 1);
+                const size_t py = (pixels->height - 1) * y / (NORMAL_MAP_SAMPLES_PER_AXIS - 1);
+                const uint8* texel = pixels->pixels + py * pixels->rowPitch + px * 4;
+                sum += vec3(texel[0], texel[1], texel[2]) / 255.0f;
+            }
+        }
+
+        const vec3 mean = sum / float(NORMAL_MAP_SAMPLES_PER_AXIS * NORMAL_MAP_SAMPLES_PER_AXIS);
+        return mean.z > 0.7f && std::abs(mean.x - 0.5f) < 0.15f && std::abs(mean.y - 0.5f) < 0.15f;
+    }
+
+    static void load_materials(const aiScene* scene, const fs::path& model_path, ModelAsset& result)
     {
         result.materials.reserve(scene->mNumMaterials);
 
@@ -46,6 +136,16 @@ namespace era_engine
                 }
             }
 
+            float opacity = 1.0f;
+            const bool has_opacity_value = material->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS && opacity < 0.999f;
+            const bool has_opacity_texture = material->GetTextureCount(aiTextureType_OPACITY) > 0;
+            if (has_opacity_value || has_opacity_texture)
+            {
+                imported.shader = PBR_MATERIAL_SHADER_TRANSPARENT;
+                imported.albedo_tint.w = has_opacity_value ? std::max(opacity, MIN_TRANSPARENT_ALPHA) : OPACITY_TEXTURE_ALPHA;
+                imported.roughness_override = std::min(imported.roughness_override, GLASS_ROUGHNESS);
+            }
+
             float metallic = 0.0f;
             material->Get(AI_MATKEY_METALLIC_FACTOR, metallic);
             imported.metallic_override = metallic;
@@ -60,6 +160,20 @@ namespace era_engine
             if (material->GetTexture(aiTextureType_NORMALS, 0, &texture_path) == AI_SUCCESS)
             {
                 imported.normal = texture_path.C_Str();
+            }
+            else if (material->GetTexture(aiTextureType_HEIGHT, 0, &texture_path) == AI_SUCCESS &&
+                     is_normal_map(find_model_texture(texture_path.C_Str(), model_path)))
+            {
+                imported.normal = texture_path.C_Str();
+            }
+
+            if (material->GetTexture(aiTextureType_EMISSIVE, 0, &texture_path) == AI_SUCCESS)
+            {
+                imported.emission_texture = texture_path.C_Str();
+
+                float emission_intensity = 1.0f;
+                material->Get(AI_MATKEY_EMISSIVE_INTENSITY, emission_intensity);
+                imported.emission = vec4(vec3(emission_intensity), 1.0f);
             }
 
             if (material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &texture_path) == AI_SUCCESS)
@@ -166,97 +280,147 @@ namespace era_engine
         }
     }
 
+    struct MeshInstance
+    {
+        aiMatrix4x4 transform;
+        std::string name;
+    };
+
+    static void collect_mesh_instances(const aiNode* node, const aiMatrix4x4& parent_transform, std::vector<std::vector<MeshInstance>>& instances)
+    {
+        const aiMatrix4x4 transform = parent_transform * node->mTransformation;
+
+        for (uint32 i = 0; i < node->mNumMeshes; ++i)
+        {
+            instances[node->mMeshes[i]].push_back({transform, node->mName.C_Str()});
+        }
+
+        for (uint32 i = 0; i < node->mNumChildren; ++i)
+        {
+            collect_mesh_instances(node->mChildren[i], transform, instances);
+        }
+    }
+
+    static MeshAsset load_mesh(aiMesh* ai_mesh, const aiMatrix4x4& transform, const std::string& name, float scale_factor, uint32 flags)
+    {
+        const aiMatrix3x3 linear(transform);
+        const float determinant = linear.Determinant();
+
+        aiMatrix3x3 normal_matrix = linear;
+        if (determinant != 0.0f)
+        {
+            normal_matrix.Inverse().Transpose();
+        }
+
+        MeshAsset mesh;
+        mesh.name = name;
+        mesh.skeleton_index = 0;
+
+        SubmeshAsset submesh;
+        submesh.material_index = ai_mesh->mMaterialIndex;
+
+        submesh.positions.reserve(ai_mesh->mNumVertices);
+        for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
+        {
+            aiVector3D pos = transform * ai_mesh->mVertices[i];
+
+            submesh.positions.push_back(vec3(pos.x, pos.y, pos.z) * scale_factor);
+        }
+
+        if (ai_mesh->HasNormals())
+        {
+            submesh.normals.reserve(ai_mesh->mNumVertices);
+            for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
+            {
+                aiVector3D normal = (normal_matrix * ai_mesh->mNormals[i]).NormalizeSafe();
+                submesh.normals.push_back(vec3(normal.x, normal.y, normal.z));
+            }
+        }
+
+        if (ai_mesh->HasTextureCoords(0))
+        {
+            submesh.uvs.reserve(ai_mesh->mNumVertices);
+            for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
+            {
+                aiVector3D uv = ai_mesh->mTextureCoords[0][i];
+                submesh.uvs.push_back(vec2(uv.x, uv.y));
+            }
+        }
+
+        if (ai_mesh->HasTangentsAndBitangents())
+        {
+            submesh.tangents.reserve(ai_mesh->mNumVertices);
+            for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
+            {
+                aiVector3D tangent = (linear * ai_mesh->mTangents[i]).NormalizeSafe();
+                submesh.tangents.push_back(vec3(tangent.x, tangent.y, tangent.z));
+            }
+        }
+
+        if (ai_mesh->HasVertexColors(0))
+        {
+            submesh.colors.reserve(ai_mesh->mNumVertices);
+            for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
+            {
+                aiColor4D color = ai_mesh->mColors[0][i];
+                uint32 packed = pack_color(color.r, color.g, color.b, color.a);
+                submesh.colors.push_back(packed);
+            }
+        }
+
+        if (ai_mesh->HasBones())
+        {
+            import_skinning(ai_mesh, submesh, flags);
+        }
+
+        submesh.triangles.reserve(ai_mesh->mNumFaces);
+
+        const bool flip_winding = determinant < 0.0f;
+
+        for (uint32 face_index = 0; face_index < ai_mesh->mNumFaces; ++face_index)
+        {
+            aiFace face = ai_mesh->mFaces[face_index];
+
+            if (face.mNumIndices == 3)
+            {
+                IndexedTriangle32 triangle;
+                triangle.a = (uint32)face.mIndices[0];
+                triangle.b = (uint32)face.mIndices[flip_winding ? 2 : 1];
+                triangle.c = (uint32)face.mIndices[flip_winding ? 1 : 2];
+                submesh.triangles.push_back(triangle);
+            }
+            else
+            {
+                printf("Warning: Face with %d indices (expected 3)\n", face.mNumIndices);
+            }
+        }
+
+        mesh.submeshes.push_back(submesh);
+        return mesh;
+    }
+
     static void load_meshes(const aiScene* scene, float scale_factor, ModelAsset& result)
     {
+        std::vector<std::vector<MeshInstance>> instances(scene->mNumMeshes);
+        collect_mesh_instances(scene->mRootNode, aiMatrix4x4(), instances);
+
         result.meshes.reserve(scene->mNumMeshes);
 
         for (uint32 mesh_index = 0; mesh_index < scene->mNumMeshes; ++mesh_index)
         {
             aiMesh* ai_mesh = scene->mMeshes[mesh_index];
 
-            MeshAsset mesh;
-            mesh.name = ai_mesh->mName.C_Str();
-            mesh.skeleton_index = 0;
-
-            SubmeshAsset submesh;
-            submesh.material_index = ai_mesh->mMaterialIndex;
-
-            submesh.positions.reserve(ai_mesh->mNumVertices);
-            for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
+            if (ai_mesh->HasBones() || instances[mesh_index].empty())
             {
-                aiVector3D pos = ai_mesh->mVertices[i];
-
-                submesh.positions.push_back(vec3(pos.x, pos.y, pos.z) * scale_factor);
+                result.meshes.push_back(load_mesh(ai_mesh, aiMatrix4x4(), ai_mesh->mName.C_Str(), scale_factor, result.flags));
+                continue;
             }
 
-            if (ai_mesh->HasNormals())
+            for (const MeshInstance& instance : instances[mesh_index])
             {
-                submesh.normals.reserve(ai_mesh->mNumVertices);
-                for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
-                {
-                    aiVector3D normal = ai_mesh->mNormals[i];
-                    submesh.normals.push_back(vec3(normal.x, normal.y, normal.z));
-                }
+                const std::string& name = instance.name.empty() ? std::string(ai_mesh->mName.C_Str()) : instance.name;
+                result.meshes.push_back(load_mesh(ai_mesh, instance.transform, name, scale_factor, result.flags));
             }
-
-            if (ai_mesh->HasTextureCoords(0))
-            {
-                submesh.uvs.reserve(ai_mesh->mNumVertices);
-                for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
-                {
-                    aiVector3D uv = ai_mesh->mTextureCoords[0][i];
-                    submesh.uvs.push_back(vec2(uv.x, uv.y));
-                }
-            }
-
-            if (ai_mesh->HasTangentsAndBitangents())
-            {
-                submesh.tangents.reserve(ai_mesh->mNumVertices);
-                for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
-                {
-                    aiVector3D tangent = ai_mesh->mTangents[i];
-                    submesh.tangents.push_back(vec3(tangent.x, tangent.y, tangent.z));
-                }
-            }
-
-            if (ai_mesh->HasVertexColors(0))
-            {
-                submesh.colors.reserve(ai_mesh->mNumVertices);
-                for (uint32 i = 0; i < ai_mesh->mNumVertices; ++i)
-                {
-                    aiColor4D color = ai_mesh->mColors[0][i];
-                    uint32 packed = pack_color(color.r, color.g, color.b, color.a);
-                    submesh.colors.push_back(packed);
-                }
-            }
-
-            if (ai_mesh->HasBones())
-            {
-                import_skinning(ai_mesh, submesh, result.flags);
-            }
-
-            submesh.triangles.reserve(ai_mesh->mNumFaces);
-
-            for (uint32 face_index = 0; face_index < ai_mesh->mNumFaces; ++face_index)
-            {
-                aiFace face = ai_mesh->mFaces[face_index];
-
-                if (face.mNumIndices == 3)
-                {
-                    IndexedTriangle32 triangle;
-                    triangle.a = (uint32)face.mIndices[0];
-                    triangle.b = (uint32)face.mIndices[1];
-                    triangle.c = (uint32)face.mIndices[2];
-                    submesh.triangles.push_back(triangle);
-                }
-                else
-                {
-                    printf("Warning: Face with %d indices (expected 3)\n", face.mNumIndices);
-                }
-            }
-
-            mesh.submeshes.push_back(submesh);
-            result.meshes.push_back(mesh);
         }
     }
 
@@ -1174,6 +1338,7 @@ namespace era_engine
                 aiProcess_JoinIdenticalVertices |
                 aiProcess_ImproveCacheLocality |
                 aiProcess_GenUVCoords |
+                aiProcess_FlipUVs | // D3D texture origin is top-left.
                 aiProcess_SortByPType);
 
         if (scene == nullptr ||
@@ -1185,9 +1350,12 @@ namespace era_engine
         }
 
         aiScene* mutable_scene = const_cast<aiScene*>(scene);
-        mirror_scene_x(mutable_scene);
+        if (flags & MESH_CREATION_FLAGS_FLIP_X)
+        {
+            mirror_scene_x(mutable_scene);
+        }
 
-        load_materials(mutable_scene, result);
+        load_materials(mutable_scene, path, result);
 
         float scale_factor = 1.0f;
         if (flags & MESH_CREATION_FLAGS_SM_TO_M)

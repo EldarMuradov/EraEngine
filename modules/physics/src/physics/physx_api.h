@@ -7,32 +7,10 @@
 #include <PxPhysics.h>
 #include <PxPhysicsAPI.h>
 
-#include <extensions/PxRaycastCCD.h>
-#include <extensions/PxRemeshingExt.h>
-#include <extensions/PxParticleExt.h>
-
-#include <PxPBDParticleSystem.h>
-
 #include <cudamanager/PxCudaContextManager.h>
 #include <cudamanager/PxCudaContext.h>
 
 #define PX_CONTACT_BUFFER_SIZE 64
-
-#define PX_ENABLE_RAYCAST_CCD 0
-
-#define PX_PARTICLE_USE_ALLOCATOR 1
-
-#define PX_PHYSICS_ENABLED 1
-
-#define PX_NB_MAX_RAYCAST_HITS 64
-#define PX_NB_MAX_RAYCAST_DISTANCE 128
-
-
-#if DEBUG || _DEBUG
-#define PX_BLAST_ENABLE 0
-#else
-#define PX_BLAST_ENABLE 1
-#endif
 
 #ifndef PX_RELEASE
 #define PX_RELEASE(x) \
@@ -54,40 +32,6 @@
 #define PX_PINNED_HOST_ALLOC(cudaContextManager, pinnedHostBuffer, numElements) cudaContextManager->allocPinnedHostBuffer(pinnedHostBuffer, numElements, PX_FL)
 #define PX_PINNED_HOST_ALLOC_T(T, cudaContextManager, numElements) cudaContextManager->allocPinnedHostBuffer<T>(numElements, PX_FL)
 #define PX_PINNED_HOST_FREE(cudaContextManager, pinnedHostBuffer) cudaContextManager->freePinnedHostBuffer(pinnedHostBuffer);
-
-#define PX_SCENE_QUERY_SETUP(block_single)                                                                                                                 \
-    const physx::PxHitFlags hitFlags = physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL | physx::PxHitFlag::eMESH_MULTIPLE | physx::PxHitFlag::eUV; \
-    physx::PxQueryFilterData filterData;                                                                                                                   \
-    filterData.flags |= physx::PxQueryFlag::eDYNAMIC | physx::PxQueryFlag::eSTATIC;                                                                        \
-    filterData.data.word0 = layer_mask;                                                                                                                    \
-    filterData.data.word1 = block_single ? 1 : 0;                                                                                                          \
-    filterData.data.word2 = hit_triggers ? 1 : 0
-
-#define PX_SCENE_QUERY_SETUP_SWEEP_CAST_ALL() \
-    PX_SCENE_QUERY_SETUP(true);               \
-    physx::PxSweepBufferN<1> buffer
-
-#define PX_SCENE_QUERY_SETUP_SWEEP_CAST() \
-    PX_SCENE_QUERY_SETUP(false);          \
-    DynamicHitBuffer<physx::PxSweepHit> buffer
-
-#define PX_SCENE_QUERY_SETUP_CHECK() \
-    PX_SCENE_QUERY_SETUP(false);     \
-    physx::PxOverlapBufferN<1> buffer
-
-#define PX_SCENE_QUERY_SETUP_OVERLAP() \
-    PX_SCENE_QUERY_SETUP(false);       \
-    DynamicHitBuffer<physx::PxOverlapHit> buffer
-
-#define PX_SCENE_QUERY_COLLECT_OVERLAP()                                                                        \
-    results.clear();                                                                                            \
-    results.resize(buffer.getNbTouches());                                                                      \
-    size_t resultSize = results.size();                                                                         \
-    for (int32 i = 0; i < resultSize; i++)                                                                      \
-    {                                                                                                           \
-        const auto& hit = buffer.getTouch(i);                                                                   \
-        results[i] = hit.shape ? *reinterpret_cast<Entity::Handle*>(hit.shape->userData) : Entity::null_handle; \
-    }
 
 #include <core/math.h>
 #include <core/math_simd.h>

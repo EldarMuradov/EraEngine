@@ -449,6 +449,28 @@ namespace era_engine
     {
     }
 
+    uint32 TerrainComponent::get_vertices_per_chunk_dim()
+    {
+        return TERRAIN_LOD_0_VERTICES_PER_DIMENSION;
+    }
+
+    bool TerrainComponent::has_heights() const
+    {
+        if (chunks.empty())
+        {
+            return false;
+        }
+
+        for (const TerrainChunk& c : chunks)
+        {
+            if (c.heights.size() != TERRAIN_LOD_0_VERTICES_PER_DIMENSION * TERRAIN_LOD_0_VERTICES_PER_DIMENSION)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     void TerrainComponent::update()
     {
         if (memcmp(&gen_settings, &old_gen_settings, sizeof(TerrainGenerationSettings)) != 0)
@@ -669,6 +691,13 @@ namespace era_engine
 
         parent_job.submit_now();
         parent_job.wait_for_completion();
+
+        if (gen_settings.smoothing_sigma > 0.f)
+        {
+            smooth_heights();
+            upload_heightmaps();
+        }
+        mark_heights_changed();
     }
 
     void TerrainComponent::generate_chunks_gpu()
@@ -716,7 +745,8 @@ namespace era_engine
                     if (!c.heightmap)
                     {
                         c.heightmap = create_texture(0, TERRAIN_LOD_0_VERTICES_PER_DIMENSION, TERRAIN_LOD_0_VERTICES_PER_DIMENSION, DXGI_FORMAT_R16_UNORM, false, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-                        c.normalmap = create_texture(0, normal_map_dimension, normal_map_dimension, DXGI_FORMAT_R32G32_FLOAT, mipmaps, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+                        // Half precision is enough for the gradient and halves the largest terrain allocation (2048^2 with mips: 22 MB instead of 43 MB per chunk).
+                        c.normalmap = create_texture(0, normal_map_dimension, normal_map_dimension, DXGI_FORMAT_R16G16_FLOAT, mipmaps, false, true, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
                     }
                     else
                     {
@@ -760,6 +790,109 @@ namespace era_engine
                     copy_texture_to_cpu_buffer(c.heightmap, c.heights.data(), D3D12_RESOURCE_STATE_GENERIC_READ);
                 }
             }
+        }
+
+        if (gen_settings.smoothing_sigma > 0.f)
+        {
+            smooth_heights();
+            upload_heightmaps();
+        }
+        mark_heights_changed();
+    }
+
+    void TerrainComponent::smooth_heights()
+    {
+        if (gen_settings.smoothing_sigma <= 0.f || !has_heights())
+        {
+            return;
+        }
+
+        CPU_PROFILE_BLOCK("Smooth terrain heights");
+
+        const uint32 vertices_per_chunk_dim = TERRAIN_LOD_0_VERTICES_PER_DIMENSION;
+        const uint32 segments_per_chunk_dim = vertices_per_chunk_dim - 1;
+        const uint32 n = chunks_per_dim * segments_per_chunk_dim + 1;
+
+        const float sigma = gen_settings.smoothing_sigma / (chunk_size / (float)segments_per_chunk_dim);
+        const int32 radius = (int32)ceil(3.f * sigma);
+
+        std::vector<float> weights(2 * radius + 1);
+        float weight_sum = 0.f;
+        for (int32 i = -radius; i <= radius; ++i)
+        {
+            weights[i + radius] = exp(-0.5f * (float)(i * i) / (sigma * sigma));
+            weight_sum += weights[i + radius];
+        }
+        for (float& w : weights)
+        {
+            w /= weight_sum;
+        }
+
+        std::vector<float> grid(n * n);
+        for (uint32 cz = 0; cz < chunks_per_dim; ++cz)
+        {
+            for (uint32 cx = 0; cx < chunks_per_dim; ++cx)
+            {
+                const std::vector<uint16>& heights = chunk(cx, cz).heights;
+                for (uint32 z = 0; z < vertices_per_chunk_dim; ++z)
+                {
+                    for (uint32 x = 0; x < vertices_per_chunk_dim; ++x)
+                    {
+                        grid[(cz * segments_per_chunk_dim + z) * n + cx * segments_per_chunk_dim + x] = (float)heights[z * vertices_per_chunk_dim + x];
+                    }
+                }
+            }
+        }
+
+        // Separable, clamped to the terrain edges.
+        std::vector<float> blurred_x(n * n);
+        for (uint32 z = 0; z < n; ++z)
+        {
+            for (int32 x = 0; x < (int32)n; ++x)
+            {
+                float sum = 0.f;
+                for (int32 i = -radius; i <= radius; ++i)
+                {
+                    sum += weights[i + radius] * grid[z * n + clamp(x + i, 0, (int32)n - 1)];
+                }
+                blurred_x[z * n + x] = sum;
+            }
+        }
+        for (int32 z = 0; z < (int32)n; ++z)
+        {
+            for (uint32 x = 0; x < n; ++x)
+            {
+                float sum = 0.f;
+                for (int32 i = -radius; i <= radius; ++i)
+                {
+                    sum += weights[i + radius] * blurred_x[clamp(z + i, 0, (int32)n - 1) * n + x];
+                }
+                grid[z * n + x] = sum;
+            }
+        }
+
+        for (uint32 cz = 0; cz < chunks_per_dim; ++cz)
+        {
+            for (uint32 cx = 0; cx < chunks_per_dim; ++cx)
+            {
+                TerrainChunk& c = chunk(cx, cz);
+                for (uint32 z = 0; z < vertices_per_chunk_dim; ++z)
+                {
+                    for (uint32 x = 0; x < vertices_per_chunk_dim; ++x)
+                    {
+                        const float value = grid[(cz * segments_per_chunk_dim + z) * n + cx * segments_per_chunk_dim + x];
+                        c.heights[z * vertices_per_chunk_dim + x] = (uint16)clamp(value + 0.5f, 0.f, (float)UINT16_MAX);
+                    }
+                }
+            }
+        }
+    }
+
+    void TerrainComponent::upload_heightmaps()
+    {
+        for (TerrainChunk& c : chunks)
+        {
+            c.heightmap = create_texture(c.heights.data(), TERRAIN_LOD_0_VERTICES_PER_DIMENSION, TERRAIN_LOD_0_VERTICES_PER_DIMENSION, DXGI_FORMAT_R16_UNORM, false, false, true, D3D12_RESOURCE_STATE_GENERIC_READ);
         }
     }
 }

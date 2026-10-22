@@ -70,7 +70,7 @@ struct BaseVehicleParams
 		if (!axleDescription.isValid())
 			return false;
 		if (!frame.isValid())
-			return true;
+			return false;
 		if (!scale.isValid())
 			return false;
 		if (!suspensionStateCalculationParams.isValid())

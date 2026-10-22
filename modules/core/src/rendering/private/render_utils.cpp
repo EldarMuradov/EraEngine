@@ -120,7 +120,7 @@ namespace era_engine
             for (auto& sm : mesh->submeshes)
             {
                 blas_builder.push(mesh->mesh.vertex_buffer, mesh->mesh.index_buffer, sm.info);
-                raytracing_materials.push_back(sm.material);
+                raytracing_materials.push_back(sm.material ? sm.material : get_default_pbr_material());
             }
 
             ref<RaytracingBLAS> blas = blas_builder.finish();
@@ -131,38 +131,5 @@ namespace era_engine
         {
             return {};
         }
-    }
-
-    void add_raytracing_component_async(Entity entity, ref<MultiMesh> mesh)
-    {
-        struct AddRayTracingData
-        {
-            Entity entity;
-            ref<MultiMesh> mesh;
-        };
-
-        AddRayTracingData data = {entity, mesh};
-
-        low_priority_job_queue.create_job<AddRayTracingData>([](AddRayTracingData& data, JobHandle)
-                                  {
-                                      data.mesh->load_job.wait_for_completion();
-
-                                      struct CreateComponentData
-                                      {
-                                          Entity entity;
-                                          RaytracingObjectType blas;
-                                      };
-
-                                      CreateComponentData create_data = {data.entity, define_blas_from_mesh(data.mesh)};
-
-                                      main_thread_job_queue.create_job<CreateComponentData>([](CreateComponentData& data, JobHandle)
-                                                               {
-                                                                   data.entity.add_component<RaytraceComponent>(data.blas);
-                                                               },
-                                                               create_data)
-                                          .submit_now();
-                                  },
-                                  data)
-            .submit_now();
     }
 }

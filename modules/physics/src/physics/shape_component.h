@@ -43,6 +43,8 @@ namespace era_engine::physics
         physx::PxShape* get_shape() const;
         const physx::PxGeometry& get_geometry() const;
 
+        virtual physx::PxTransform get_local_pose() const;
+
         ObservableMember<vec3> local_position = vec3::zero;
         ObservableMember<quat> local_rotation = quat::identity;
 
@@ -154,5 +156,42 @@ namespace era_engine::physics
 
     protected:
         physx::PxShape* create_shape() override;
+    };
+
+    class ERA_PHYSICS_API PlaneShapeComponent final : public ShapeComponent
+    {
+    public:
+        PlaneShapeComponent() = default;
+        PlaneShapeComponent(ref<Entity::EcsData> _data);
+        ~PlaneShapeComponent() override;
+
+        physx::PxTransform get_local_pose() const override;
+
+        ERA_VIRTUAL_REFLECT(ShapeComponent)
+
+    protected:
+        physx::PxShape* create_shape() override;
+    };
+
+    class ERA_PHYSICS_API TerrainShapeComponent final : public ShapeComponent
+    {
+    public:
+        TerrainShapeComponent() = default;
+        TerrainShapeComponent(ref<Entity::EcsData> _data);
+        ~TerrainShapeComponent() override;
+
+        physx::PxTransform get_local_pose() const override;
+
+        ERA_VIRTUAL_REFLECT(ShapeComponent)
+
+    protected:
+        physx::PxShape* create_shape() override;
+
+    private:
+        void sync_with_terrain();
+
+        uint32 built_heights_version = 0;
+
+        friend class ShapeSystem;
     };
 }

@@ -108,6 +108,15 @@ namespace era_engine
                 cl->set_descriptor_heap_srv(TREE_RS_PBR_TEXTURES, 3, mat->metallic);
                 flags |= MATERIAL_USE_METALLIC_TEXTURE;
             }
+            if (mat->emission_texture)
+            {
+                cl->set_descriptor_heap_srv(TREE_RS_PBR_TEXTURES, 4, mat->emission_texture);
+                flags |= MATERIAL_USE_EMISSION_TEXTURE;
+            }
+            else
+            {
+                cl->set_descriptor_heap_srv(TREE_RS_PBR_TEXTURES, 4, RenderResources::null_texture_srv);
+            }
             flags |= MATERIAL_DOUBLE_SIDED; // Always double sided.
 
             cl->set_graphics_32bit_constants(TREE_RS_MATERIAL,

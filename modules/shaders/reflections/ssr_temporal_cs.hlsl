@@ -1,15 +1,22 @@
 #include "ssr_rs.hlsli"
 #include "cs.hlsli"
+#include "camera.hlsli"
+#include "math.hlsli"
 
 ConstantBuffer<SSRTemporalCB> cb	: register(b0);
+ConstantBuffer<CameraCB> camera		: register(b1);
 
 RWTexture2D<float4> output			: register(u0);
 
 Texture2D<float4> curr_resolve	    : register(t0);
 Texture2D<float4> prev_resolve	    : register(t1);
 Texture2D<float2> motion		    : register(t2);
+Texture2D<float> depth_buffer	    : register(t3);
+Texture2D<float4> raycast		    : register(t4);
+Texture2D<float2> prev_frame_motion	    : register(t5);
 
 SamplerState linear_sampler			: register(s0);
+SamplerState point_sampler			: register(s1);
 
 static const int2 sample_offset[9] = 
 { 
@@ -105,6 +112,11 @@ static float4 clip_aabb(float3 aabb_min, float3 aabb_max, float4 p, float4 q)
     }
 }
 
+static float2 camera_motion(float4 world_pos)
+{
+    return screen_space_velocity(mul(camera.view_proj, world_pos).xyw, mul(camera.prev_frame_view_proj, world_pos).xyw, camera.jitter, camera.prev_frame_jitter);
+}
+
 [numthreads(SSR_BLOCK_SIZE, SSR_BLOCK_SIZE, 1)]
 [RootSignature(SSR_TEMPORAL_RS)]
 void main(CSInput IN)
@@ -117,19 +129,44 @@ void main(CSInput IN)
     return;
 #endif
 
-    const float2 m = motion.SampleLevel(linear_sampler, uv, 0);
+    float2 m = motion.SampleLevel(point_sampler, uv, 0);
+    const bool disoccluded = is_disoccluded(m, prev_frame_motion.SampleLevel(point_sampler, uv + m, 0), 1.f / cb.inv_dimensions);
+
+    const float4 ray = raycast.SampleLevel(point_sampler, uv, 0);
+    const float depth = depth_buffer.SampleLevel(point_sampler, uv, 0);
+    if (ray.z > 0.f && depth < 1.f)
+    {
+        const float3 surface_pos = restore_view_space_position(camera.inv_proj, uv, depth);
+        const float3 hit_pos = restore_view_space_position(camera.inv_proj, ray.xy, ray.z);
+        const float3 virtual_pos = surface_pos + normalize(surface_pos) * length(hit_pos - surface_pos);
+
+        const float4 surface_world_pos = mul(camera.inv_view, float4(surface_pos, 1.f));
+        const float4 hit_world_pos = mul(camera.inv_view, float4(hit_pos, 1.f));
+        const float4 virtual_world_pos = mul(camera.inv_view, float4(virtual_pos, 1.f));
+
+        const float2 surface_camera_motion = camera_motion(surface_world_pos);
+        const float2 hit_camera_motion = camera_motion(hit_world_pos);
+        const float2 virtual_camera_motion = camera_motion(virtual_world_pos);
+
+        // Own motion of the reflector and of the reflected object (motion vectors minus camera motion).
+        const float2 hit_m = motion.SampleLevel(point_sampler, ray.xy, 0);
+        m = virtual_camera_motion + (m - surface_camera_motion) + (hit_m - hit_camera_motion);
+    }
+
     const float2 prev_uv = uv + m;
 
     float4 prev = prev_resolve.SampleLevel(linear_sampler, prev_uv, 0);
 
     float4 current = 0.f.xxxx;
     float4 current_min, current_max, current_average;
-    resolver_aabb(curr_resolve, linear_sampler, 0.f, 10.f, 3.f, uv, cb.inv_dimensions, current_min, current_max, current_average, current);
+    resolver_aabb(curr_resolve, linear_sampler, 0.f, 10.f, 1.5f, uv, cb.inv_dimensions, current_min, current_max, current_average, current);
 
     prev.xyz = clip_aabb(current_min.xyz, current_max.xyz, clamp(current_average, current_min, current_max), prev).xyz;
     prev.a = clamp(prev.a, current_min.a, current_max.a);
 
-    float blend_final = lerp(0.85f, 0.98f, saturate(1.f - length(m) * 100.f));
+    const float motion_pixels = length(m / cb.inv_dimensions);
+    float blend_final = lerp(0.92f, 0.75f, saturate(motion_pixels / 16.f));
+    blend_final = (is_saturated(prev_uv) && !disoccluded) ? blend_final : 0.f;
 
     float4 result = lerp(current, prev, blend_final);
     output[IN.dispatch_thread_id.xy] = max(0, result);

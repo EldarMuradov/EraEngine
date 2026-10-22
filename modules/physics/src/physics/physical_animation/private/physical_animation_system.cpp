@@ -33,6 +33,7 @@
 #include <rttr/registration>
 
 #include <imgui/imgui.h>
+#include <physics/vehicles/w4_vehicle_component.h>
 
 namespace era_engine::physics
 {
@@ -572,6 +573,12 @@ namespace era_engine::physics
             if (first_entity.get_parent_handle() == second_entity.get_parent_handle())
             {
                 continue;
+            }
+
+            if (collision.other_actor->get_entity().has_component<VehicleShapeComponent>() ||
+                collision.this_actor->get_entity().has_component<VehicleShapeComponent>())
+            {
+                force_ragdoll = true;
             }
 
             PhysicalAnimationLimbComponent* first_limb_data_component = first_entity.get_component_if_exists<PhysicalAnimationLimbComponent>();

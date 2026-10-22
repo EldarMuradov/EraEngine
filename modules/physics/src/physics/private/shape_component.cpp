@@ -6,6 +6,8 @@
 
 #include "asset/model_asset.h"
 
+#include "terrain/terrain.h"
+
 #include <ecs/serialization/component_registry.h>
 #include <ecs/serialization/serialization_meta.h>
 
@@ -51,6 +53,14 @@ namespace era_engine::physics
             .constructor<ref<Entity::EcsData>>()
             .property("size", &ConvexMeshShapeComponent::size);
         ComponentRegistry::register_component<ConvexMeshShapeComponent>();
+
+        registration::class_<PlaneShapeComponent>("PlaneShapeComponent")
+            .constructor<ref<Entity::EcsData>>();
+        ComponentRegistry::register_component<PlaneShapeComponent>();
+
+        registration::class_<TerrainShapeComponent>("TerrainShapeComponent")(rttr::metadata(SerializationMeta::NOT_SERIALIZABLE_CLASS, true))
+            .constructor<ref<Entity::EcsData>>();
+        ComponentRegistry::register_component<TerrainShapeComponent>();
     }
 
     ShapeComponent::ShapeComponent(ref<Entity::EcsData> _data)
@@ -99,6 +109,11 @@ namespace era_engine::physics
     {
         ASSERT(shape != nullptr);
         return shape->getGeometry();
+    }
+
+    physx::PxTransform ShapeComponent::get_local_pose() const
+    {
+        return physx::create_PxTransform(trs(local_position, local_rotation, vec3(1.0f)));
     }
 
     void ShapeComponent::sync_with_joint(weakref<Entity::EcsData> _entity_reference, uint32 _connected_joint_id)
@@ -275,6 +290,139 @@ namespace era_engine::physics
             });
 
         return shape;
+    }
+
+    PlaneShapeComponent::PlaneShapeComponent(ref<Entity::EcsData> _data)
+        : ShapeComponent(_data)
+    {
+        collision_type.get_silent_for_write() = CollisionType::TERRAIN;
+    }
+
+    PlaneShapeComponent::~PlaneShapeComponent()
+    {
+    }
+
+    physx::PxTransform PlaneShapeComponent::get_local_pose() const
+    {
+        using namespace physx;
+
+        const PxTransform pose = ShapeComponent::get_local_pose();
+        return PxTransform(pose.p, pose.q * PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f)));
+    }
+
+    physx::PxShape* PlaneShapeComponent::create_shape()
+    {
+        using namespace physx;
+
+        ref<Physics> physics = PhysicsEngine::get_physics_core();
+
+        PxMaterial* used_material = material == nullptr
+                                        ? physics->get_default_material()->get_native_material()
+                                        : material->get_native_material();
+
+        shape = physics->get_physics()->createShape(PxPlaneGeometry(), *used_material, true);
+        shape->userData = this;
+        shape->setLocalPose(get_local_pose());
+
+        return shape;
+    }
+
+    TerrainShapeComponent::TerrainShapeComponent(ref<Entity::EcsData> _data)
+        : ShapeComponent(_data)
+    {
+    }
+
+    TerrainShapeComponent::~TerrainShapeComponent()
+    {
+    }
+
+    physx::PxTransform TerrainShapeComponent::get_local_pose() const
+    {
+        const TerrainComponent* terrain = get_entity().get_component_if_exists<TerrainComponent>();
+        ASSERT(terrain != nullptr);
+        return physx::PxTransform(physx::create_PxVec3(ShapeUtils::get_height_field_offset(*terrain)));
+    }
+
+    physx::PxShape* TerrainShapeComponent::create_shape()
+    {
+        using namespace physx;
+
+        const TerrainComponent* terrain = get_entity().get_component_if_exists<TerrainComponent>();
+        ASSERT(terrain != nullptr);
+        if (terrain == nullptr)
+        {
+            return nullptr;
+        }
+
+        PxHeightField* height_field = ShapeUtils::build_height_field(*terrain);
+        if (height_field == nullptr)
+        {
+            return nullptr;
+        }
+
+        ref<Physics> physics = PhysicsEngine::get_physics_core();
+
+        PxMaterial* used_material = material == nullptr
+                                        ? physics->get_default_material()->get_native_material()
+                                        : material->get_native_material();
+
+        shape = physics->get_physics()->createShape(ShapeUtils::create_height_field_geometry(*terrain, height_field), *used_material, true);
+        // The shape holds its own reference.
+        height_field->release();
+
+        shape->userData = this;
+        shape->setLocalPose(get_local_pose());
+        ShapeUtils::enable_shape_visualization(shape, false);
+
+        built_heights_version = terrain->get_heights_version();
+
+        return shape;
+    }
+
+    void TerrainShapeComponent::sync_with_terrain()
+    {
+        using namespace physx;
+
+        const TerrainComponent* terrain = get_entity().get_component_if_exists<TerrainComponent>();
+        if (terrain == nullptr)
+        {
+            return;
+        }
+
+        if (shape != nullptr && built_heights_version == terrain->get_heights_version())
+        {
+            return;
+        }
+
+        BodyComponent* body_component = PhysicsUtils::get_body_component(component_data);
+        if (body_component == nullptr || body_component->get_rigid_actor() == nullptr)
+        {
+            // PhysicsSystem creates the shape together with the body.
+            return;
+        }
+
+        if (shape == nullptr)
+        {
+            if (create_shape() != nullptr)
+            {
+                body_component->get_rigid_actor()->attachShape(*shape);
+                ShapeUtils::setup_filtering(get_world(), shape, static_cast<uint32>(collision_type.get()), collision_filter_data);
+            }
+            return;
+        }
+
+        PxHeightField* height_field = ShapeUtils::build_height_field(*terrain);
+        if (height_field == nullptr)
+        {
+            return;
+        }
+
+        shape->setGeometry(ShapeUtils::create_height_field_geometry(*terrain, height_field));
+        height_field->release();
+        shape->setLocalPose(get_local_pose());
+        shape->setRestOffset(-0.005f);
+
+        built_heights_version = terrain->get_heights_version();
     }
 
 }

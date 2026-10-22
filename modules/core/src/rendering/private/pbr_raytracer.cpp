@@ -2,6 +2,8 @@
 
 #include "rendering/pbr_raytracer.h"
 
+#include "core/log.h"
+
 namespace era_engine
 {
     void PBRRaytracer::initialize(const wchar* shader_path, uint32 max_payload_size, uint32 max_recursion_depth, const D3D12_ROOT_SIGNATURE_DESC& global_desc)
@@ -34,18 +36,32 @@ namespace era_engine
 
         binding_table.initialize(&pipeline);
 
-        // Common stuff
+        Lock lock{mutex};
+
         if (!descriptor_heap.descriptor_heap)
         {
-            descriptor_heap.initialize(2048); // TODO
+            descriptor_heap.initialize(max_num_descriptors);
+        }
+
+        ShaderData* hit_data = (ShaderData*)alloca(sizeof(ShaderData) * num_ray_types);
+        for (const ShaderData& data : all_hit_data)
+        {
+            hit_data[0] = data;
+            binding_table.push(hit_data);
         }
 
         registered_pbr_raytracers.push_back(this);
     }
 
+    uint32 PBRRaytracer::get_num_free_descriptors()
+    {
+        const uint64 used_bytes = descriptor_heap.current_cpu.cpu_handle.ptr - descriptor_heap.descriptor_heap->GetCPUDescriptorHandleForHeapStart().ptr;
+        return max_num_descriptors - (uint32)(used_bytes / dx_context.descriptor_handle_increment_size);
+    }
+
     void PBRRaytracer::push_texture(const ref<DXTexture>& tex, uint32& flags, uint32 flag)
     {
-        if (tex)
+        if (tex && tex->resource)
         {
             descriptor_heap.push().create_2d_texture_srv(tex);
             flags |= flag;
@@ -63,6 +79,13 @@ namespace era_engine
         ShaderData* hit_data = (ShaderData*)alloca(sizeof(ShaderData) * num_ray_types);
 
         Lock lock{mutex};
+
+        // 6 descriptors per geometry, see hit_srv_range.
+        if (get_num_free_descriptors() < num_geometries * 6 + num_reserved_descriptors)
+        {
+            LOG_ERROR("PBRRaytracer: descriptor heap is full, object is excluded from raytracing");
+            return {};
+        }
 
         for (uint32 i = 0; i < num_geometries; ++i)
         {
@@ -94,6 +117,8 @@ namespace era_engine
                 material->metallic_override,
                 flags);
             hit_data[0].resources = base;
+
+            all_hit_data.push_back(hit_data[0]);
 
             // The other shader types don't need any data, so we don't set it here
             for (auto rt : registered_pbr_raytracers)

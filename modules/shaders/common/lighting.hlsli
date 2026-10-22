@@ -181,7 +181,16 @@ static float sample_cascaded_shadow_map_simple(float4x4 vp[4], float3 world_posi
 	}
 }
 
-static float sample_cascaded_shadow_map_pcf(float4x4 vp[4], float3 world_position,
+// Moves the receiver along the normal so that PCF taps (bilinear, pcf_radius + 1 texels away) don't self-shadow sloped surfaces.
+static float3 cascade_normal_offset(float4x4 vp, float4 viewport, float2 texel_size, float pcf_radius, float3 N, float3 L)
+{
+	const float texel_world_size = 2.f / length(vp[0].xyz) * texel_size.x / viewport.z; // Orthographic cascade.
+	const float ndot_l = saturate(dot(N, L));
+	const float sin_theta = sqrt(1.f - ndot_l * ndot_l);
+	return N * (texel_world_size * (pcf_radius + 1.f) * sin_theta);
+}
+
+static float sample_cascaded_shadow_map_pcf(float4x4 vp[4], float3 world_position, float3 N, float3 L,
 	Texture2D<float> shadow_map, float4 viewports[4],
 	SamplerComparisonState shadow_map_sampler,
 	float2 texel_size, float pixel_depth, uint num_cascades, float4 cascade_distances, float4 bias, float4 blend_distances)
@@ -207,7 +216,8 @@ static float sample_cascaded_shadow_map_pcf(float4x4 vp[4], float3 world_positio
 			16.f, 9.f, 4.f, 1.f,
 		};
 
-		float visibility = sample_shadow_map_pcf(vp[current_cascade_index], world_position,
+		float visibility = sample_shadow_map_pcf(vp[current_cascade_index],
+			world_position + cascade_normal_offset(vp[current_cascade_index], viewports[current_cascade_index], texel_size, pcf_radius[current_cascade_index], N, L),
 			shadow_map, viewports[current_cascade_index],
 			shadow_map_sampler, texel_size, bias[current_cascade_index], pcf_radius[current_cascade_index], num_pcf_samples[current_cascade_index]);
 
@@ -220,7 +230,8 @@ static float sample_cascaded_shadow_map_pcf(float4x4 vp[4], float3 world_positio
 		[branch]
 		if (current_cascade_index != next_cascade_index && alpha != 0.f)
 		{
-			next_cascade_visibility = sample_shadow_map_pcf(vp[next_cascade_index], world_position,
+			next_cascade_visibility = sample_shadow_map_pcf(vp[next_cascade_index],
+				world_position + cascade_normal_offset(vp[next_cascade_index], viewports[next_cascade_index], texel_size, pcf_radius[next_cascade_index], N, L),
 				shadow_map, viewports[next_cascade_index],
 				shadow_map_sampler, texel_size, bias[next_cascade_index], pcf_radius[next_cascade_index], num_pcf_samples[next_cascade_index]);
 		}
@@ -324,7 +335,7 @@ void LightContribution::add_sun_light(SurfaceInfo surface, LightingCB lighting, 
 	LightInfo light;
 	light.initialize(surface, L, lighting.sun.radiance);
 
-	float visibility = sample_cascaded_shadow_map_pcf(lighting.sun.view_projs, surface.P,
+	float visibility = sample_cascaded_shadow_map_pcf(lighting.sun.view_projs, surface.P, surface.N, L,
 		shadow_map, lighting.sun.viewports,
 		shadow_sampler, lighting.shadow_map_texel_size, pixel_depth, lighting.sun.num_shadow_cascades,
 		lighting.sun.cascade_distances, lighting.sun.bias, lighting.sun.blend_distances);

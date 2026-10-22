@@ -25,6 +25,9 @@ namespace era_engine
         float camera_max_pitch = 60.0f;  // Allow looking down
         float camera_smooth_speed = 25.0f;
 
+        bool follow_target_heading = false;
+        float follow_heading_speed = 2.5f;
+
         OrbitState orbit;
 
         ERA_VIRTUAL_REFLECT(Component)

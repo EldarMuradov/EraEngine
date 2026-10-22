@@ -18,7 +18,7 @@ struct TreeCB
     "RootConstants(num32BitConstants=6, b0, space=1, visibility=SHADER_VISIBILITY_PIXEL),"  \
     "CBV(b1, space=1), " \
     "CBV(b2, space=1, visibility=SHADER_VISIBILITY_PIXEL),"  \
-    "DescriptorTable(SRV(t0, numDescriptors=4, space=1), visibility=SHADER_VISIBILITY_PIXEL), " \
+    "DescriptorTable(SRV(t0, numDescriptors=5, space=1), visibility=SHADER_VISIBILITY_PIXEL), " \
     "DescriptorTable(SRV(t0, space=2, numDescriptors=17), visibility=SHADER_VISIBILITY_PIXEL), " \
     "StaticSampler(s0," \
         "addressU = TEXTURE_ADDRESS_WRAP," \

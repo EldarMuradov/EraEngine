@@ -177,11 +177,16 @@ namespace era_engine
         checkResult(DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&library)));
         checkResult(library->CreateIncludeHandler(&include_handler));
 
-        std::string source = "#include \"" + wstring_to_string(filename) + "\"\n";
+        const std::wstring path = std::wstring(ENGINE_PATH) + L"/modules/shaders/" + filename;
+        if (!fs::exists(path))
+        {
+            std::cerr << "Raytracing shader not found: " << wstring_to_string(path) << '\n';
+            ASSERT(false);
+            return 0;
+        }
 
-        // Create blob from the string.
         com<IDxcBlobEncoding> text_blob;
-        checkResult(library->CreateBlobWithEncodingFromPinned((LPBYTE)source.c_str(), (uint32)source.length(), 0, &text_blob));
+        checkResult(library->CreateBlobFromFile(path.c_str(), nullptr, &text_blob));
 
         std::vector<DxcDefine> defines;
 
@@ -206,7 +211,7 @@ namespace era_engine
 
         // Compile
         com<IDxcOperationResult> operation_result;
-        checkResult(compiler->Compile(text_blob.Get(), 0, L"", L"lib_6_3", 0, 0, defines.data(), (uint32)defines.size(), include_handler.Get(), &operation_result));
+        checkResult(compiler->Compile(text_blob.Get(), path.c_str(), L"", L"lib_6_3", 0, 0, defines.data(), (uint32)defines.size(), include_handler.Get(), &operation_result));
 
         // Verify the result
         HRESULT result_code;

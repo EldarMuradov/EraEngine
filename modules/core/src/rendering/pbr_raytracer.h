@@ -34,9 +34,15 @@ namespace era_engine
 
     private:
         static void push_texture(const ref<DXTexture>& tex, uint32& flags, uint32 flag);
+        static uint32 get_num_free_descriptors();
+
+        static constexpr uint32 max_num_descriptors = 16384;
+        static constexpr uint32 num_reserved_descriptors = 64;
 
         static inline uint32 instance_contribution_to_hit_group_index = 0;
         static inline std::mutex mutex;
+
+        static inline std::vector<ShaderData> all_hit_data;
 
         bool dirty = true;
         static inline std::vector<PBRRaytracer*> registered_pbr_raytracers;

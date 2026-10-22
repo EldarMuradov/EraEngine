@@ -28,6 +28,7 @@ Texture2D<float4> albedo_tex								: register(t0, space1);
 Texture2D<float3> normal_tex								: register(t1, space1);
 Texture2D<float> rough_tex								: register(t2, space1);
 Texture2D<float> metal_tex								: register(t3, space1);
+Texture2D<float3> emission_tex							: register(t4, space1);
 
 
 TextureCube<float4> irradiance_texture					: register(t0, space2);
@@ -106,7 +107,9 @@ PSOutput main(PSInput IN)
 		? metal_tex.Sample(wrap_sampler, material_uv)
 		: material.get_metallic_override();
 
-	surface.emission = material.emission;
+	surface.emission = (flags & MATERIAL_USE_EMISSION_TEXTURE)
+		? emission_tex.Sample(wrap_sampler, material_uv) * material.emission
+		: material.emission;
 
 	surface.P = IN.world_position;
 	float3 cam_to_p = surface.P - camera.position.xyz;

@@ -76,6 +76,8 @@ namespace era_engine
         ERA_BINARY_SERIALIZE(flags, meshes, materials)
     };
 
+    ERA_CORE_API fs::path find_model_texture(const fs::path& texture_path, const fs::path& model_path);
+
     ERA_CORE_API ModelAsset import_3d_model_from_file(const fs::path& path, uint32 mesh_flags = MESH_CREATION_FLAGS_DEFAULT);
 
     inline bool is_mesh_extension(const std::string& extension)

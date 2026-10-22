@@ -31,6 +31,7 @@ namespace era_engine
         struct SingleSided;
         struct DoubleSided;
         struct AlphaCutout;
+        struct TransparentMotionVectors;
     };
 
     struct DepthPrepassPipeline::SingleSided : DepthPrepassPipeline
@@ -47,6 +48,11 @@ namespace era_engine
     {
         PIPELINE_SETUP_DECL;
         DEPTH_ONLY_RENDER_DECL(DepthPrepassData);
+    };
+
+    struct DepthPrepassPipeline::TransparentMotionVectors : DepthPrepassPipeline
+    {
+        PIPELINE_SETUP_DECL;
     };
 
     void initialize_depth_prepass_pipelines();

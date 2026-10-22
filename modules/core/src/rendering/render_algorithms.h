@@ -81,9 +81,9 @@ namespace era_engine
     {
         uint32 num_steps = 16;
         float ray_distance = 0.5f;
-        float thickness = 0.05f;
-        float max_distance_from_camera = 5.0f;
-        float distance_fadeout_range = 2.f;
+        float thickness = 0.2f;
+        float max_distance_from_camera = 30.f;
+        float distance_fadeout_range = 5.f;
         float border_fadeout = 0.1f; // In UV-space
     };
     REFLECT_STRUCT(SSSSettings,
@@ -192,6 +192,12 @@ namespace era_engine
         const CommonRenderData& common,
         const mat4& view_proj);
 
+    void transparent_motion_vectors_pass(DXCommandList* cl,
+        const DXRenderTarget& render_target,
+        const TransparentRenderPass* transparent_render_pass,
+        const mat4& view_proj, const mat4& prev_frame_view_proj,
+        const CommonRenderData& common);
+
     void ldr_pass(DXCommandList* cl,
         const DXRenderTarget& ldr_render_target,
         ref<DXTexture> depth_stencil_buffer, // DEPTH_WRITE. Must be same as DSV bound to render-target.
@@ -244,6 +250,7 @@ namespace era_engine
         ref<DXTexture> linear_depth_buffer,             // NON_PIXEL_SHADER_RESOURCE
         ref<DXTexture> world_normals_roughness_texture, // NON_PIXEL_SHADER_RESOURCE
         ref<DXTexture> screen_velocities_texture,       // NON_PIXEL_SHADER_RESOURCE
+        ref<DXTexture> prev_frame_screen_velocities,    // NON_PIXEL_SHADER_RESOURCE
         ref<DXTexture> raycast_texture,                 // UNORDERED_ACCESS
         ref<DXTexture> resolve_texture,                 // UNORDERED_ACCESS. After call D3D12_RESOURCE_STATE_GENERIC_READ. Also output of this algorithm
         ref<DXTexture> ssr_temporal_history,            // NON_PIXEL_SHADER_RESOURCE. After call UNORDERED_ACCESS
@@ -262,11 +269,12 @@ namespace era_engine
         DXDynamicConstantBuffer camera_cbv);
 
     void temporal_anti_aliasing(DXCommandList* cl,
-        ref<DXTexture> hdr_input,                 // NON_PIXEL_SHADER_RESOURCE
-        ref<DXTexture> screen_velocities_texture, // NON_PIXEL_SHADER_RESOURCE
-        ref<DXTexture> depth_stencil_buffer,      // NON_PIXEL_SHADER_RESOURCE
-        ref<DXTexture> history,                   // NON_PIXEL_SHADER_RESOURCE. After call UNORDERED_ACCESS
-        ref<DXTexture> output,                    // UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE
+        ref<DXTexture> hdr_input,                    // NON_PIXEL_SHADER_RESOURCE
+        ref<DXTexture> screen_velocities_texture,    // NON_PIXEL_SHADER_RESOURCE
+        ref<DXTexture> prev_frame_screen_velocities, // NON_PIXEL_SHADER_RESOURCE
+        ref<DXTexture> depth_stencil_buffer,         // NON_PIXEL_SHADER_RESOURCE
+        ref<DXTexture> history,                      // NON_PIXEL_SHADER_RESOURCE. After call UNORDERED_ACCESS
+        ref<DXTexture> output,                       // UNORDERED_ACCESS. After call NON_PIXEL_SHADER_RESOURCE
         vec4 jittered_camera_projection_params);
 
     void downsample(DXCommandList* cl,

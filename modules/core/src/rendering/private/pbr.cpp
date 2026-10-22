@@ -111,6 +111,7 @@ namespace era_engine
         cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 1, null_texture);
         cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 2, null_texture);
         cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 3, null_texture);
+        cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 4, null_texture);
     }
 
     PIPELINE_SETUP_IMPL(PBRPipeline::Opaque)
@@ -162,6 +163,11 @@ namespace era_engine
         {
             cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 3, mat->metallic);
             flags |= MATERIAL_USE_METALLIC_TEXTURE;
+        }
+        if (mat->emission_texture)
+        {
+            cl->set_descriptor_heap_srv(DEFAULT_PBR_RS_PBR_TEXTURES, 4, mat->emission_texture);
+            flags |= MATERIAL_USE_EMISSION_TEXTURE;
         }
         if (mat->shader != PBR_MATERIAL_SHADER_DEFAULT)
         {

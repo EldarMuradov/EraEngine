@@ -86,11 +86,20 @@ namespace era_engine
             CPU_PROFILE_BLOCK("Sort transparent render pass");
 
             pass.sort();
+            motion_vectors.sort();
         }
 
         void reset()
         {
             pass.clear();
+            motion_vectors.clear();
+        }
+
+        template <typename pipeline_t, typename render_data_t>
+        void render_motion_vectors(const render_data_t& data)
+        {
+            uint64 sort_key = (uint64)pipeline_t::setup;
+            motion_vectors.emplace_back<pipeline_t, render_data_t>(sort_key, data);
         }
 
         template <typename pipeline_t, typename render_data_t>
@@ -115,6 +124,7 @@ namespace era_engine
         }
 
         DefaultRenderCommandBuffer<float> pass;
+        DepthPrepassRenderCommandBuffer<uint64> motion_vectors;
     };
 
     struct LDRRenderPass

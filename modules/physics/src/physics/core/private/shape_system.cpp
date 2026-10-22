@@ -37,6 +37,51 @@ namespace era_engine::physics
     {
     }
 
+    template <typename ShapeType>
+    static void sync_shape_changes(World* world)
+    {
+        using namespace physx;
+
+        for (auto [entity_handle, transform, shape_component] : world->group(components_group<TransformComponent, ShapeType>).each())
+        {
+            if (shape_component.get_shape() == nullptr)
+            {
+                continue;
+            }
+
+            if (shape_component.local_position.is_changed() ||
+                shape_component.local_rotation.is_changed())
+            {
+                shape_component.get_shape()->setLocalPose(shape_component.get_local_pose());
+                shape_component.local_rotation.sync_changes();
+                shape_component.local_position.sync_changes();
+            }
+
+            if (shape_component.use_in_scene_queries.is_changed())
+            {
+                shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
+                shape_component.use_in_scene_queries.sync_changes();
+            }
+
+            if (shape_component.is_trigger.is_changed())
+            {
+                shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
+                shape_component.is_trigger.sync_changes();
+            }
+
+            if (shape_component.collision_filter_data.is_changed() ||
+                shape_component.collision_type.is_changed())
+            {
+                ShapeUtils::setup_filtering(world,
+                    shape_component.get_shape(),
+                    static_cast<uint32>(shape_component.collision_type.get()),
+                    shape_component.collision_filter_data);
+                shape_component.collision_type.sync_changes();
+                shape_component.collision_filter_data.sync_changes();
+            }
+        }
+    }
+
     void ShapeSystem::update(float dt)
     {
         using namespace physx;
@@ -45,200 +90,18 @@ namespace era_engine::physics
 
         PxSceneWriteLock write_lock(*PhysicsEngine::get_physics_core()->get_scene());
 
-        for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<TransformComponent, BoxShapeComponent>).each())
+        for (auto [entity_handle, shape_component] : world->view<TerrainShapeComponent>().each())
         {
-            if (shape_component.get_shape() == nullptr)
-            {
-                continue;
-            }
-
-            if (shape_component.local_position.is_changed() ||
-                shape_component.local_rotation.is_changed())
-            {
-                shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
-                shape_component.local_rotation.sync_changes();
-                shape_component.local_position.sync_changes();
-            }
-
-            if (shape_component.use_in_scene_queries.is_changed())
-            {
-                shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
-                shape_component.use_in_scene_queries.sync_changes();
-            }
-
-            if (shape_component.is_trigger.is_changed())
-            {
-                shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
-                shape_component.is_trigger.sync_changes();
-            }
-
-            if (shape_component.collision_filter_data.is_changed() ||
-                shape_component.collision_type.is_changed())
-            {
-                ShapeUtils::setup_filtering(world,
-                    shape_component.get_shape(),
-                    static_cast<uint32>(shape_component.collision_type.get()),
-                    shape_component.collision_filter_data);
-                shape_component.collision_type.sync_changes();
-                shape_component.collision_filter_data.sync_changes();
-            }
+            shape_component.sync_with_terrain();
         }
 
-        for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<TransformComponent, CapsuleShapeComponent>).each())
-        {
-            if (shape_component.get_shape() == nullptr)
-            {
-                continue;
-            }
-
-            if (shape_component.local_position.is_changed() ||
-                shape_component.local_rotation.is_changed())
-            {
-                shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
-                shape_component.local_rotation.sync_changes();
-                shape_component.local_position.sync_changes();
-            }
-
-            if (shape_component.use_in_scene_queries.is_changed())
-            {
-                shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
-                shape_component.use_in_scene_queries.sync_changes();
-            }
-
-            if (shape_component.is_trigger.is_changed())
-            {
-                shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
-                shape_component.is_trigger.sync_changes();
-            }
-
-            if (shape_component.collision_filter_data.is_changed() ||
-                shape_component.collision_type.is_changed())
-            {
-                ShapeUtils::setup_filtering(world,
-                    shape_component.get_shape(),
-                    static_cast<uint32>(shape_component.collision_type.get()),
-                    shape_component.collision_filter_data);
-                shape_component.collision_type.sync_changes();
-                shape_component.collision_filter_data.sync_changes();
-            }
-        }
-
-        for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<TransformComponent, SphereShapeComponent>).each())
-        {
-            if (shape_component.get_shape() == nullptr)
-            {
-                continue;
-            }
-
-            if (shape_component.local_position.is_changed() ||
-                shape_component.local_rotation.is_changed())
-            {
-                shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
-                shape_component.local_rotation.sync_changes();
-                shape_component.local_position.sync_changes();
-            }
-
-            if (shape_component.use_in_scene_queries.is_changed())
-            {
-                shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
-                shape_component.use_in_scene_queries.sync_changes();
-            }
-
-            if (shape_component.is_trigger.is_changed())
-            {
-                shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
-                shape_component.is_trigger.sync_changes();
-            }
-
-            if (shape_component.collision_filter_data.is_changed() ||
-                shape_component.collision_type.is_changed())
-            {
-                ShapeUtils::setup_filtering(world,
-                    shape_component.get_shape(),
-                    static_cast<uint32>(shape_component.collision_type.get()),
-                    shape_component.collision_filter_data);
-                shape_component.collision_type.sync_changes();
-                shape_component.collision_filter_data.sync_changes();
-            }
-        }
-
-        for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<TransformComponent, ConvexMeshShapeComponent>).each())
-        {
-            if (shape_component.get_shape() == nullptr)
-            {
-                continue;
-            }
-
-            if (shape_component.local_position.is_changed() ||
-                shape_component.local_rotation.is_changed())
-            {
-                shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
-                shape_component.local_rotation.sync_changes();
-                shape_component.local_position.sync_changes();
-            }
-
-            if (shape_component.use_in_scene_queries.is_changed())
-            {
-                shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
-                shape_component.use_in_scene_queries.sync_changes();
-            }
-
-            if (shape_component.is_trigger.is_changed())
-            {
-                shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
-                shape_component.is_trigger.sync_changes();
-            }
-
-            if (shape_component.collision_filter_data.is_changed() ||
-                shape_component.collision_type.is_changed())
-            {
-                ShapeUtils::setup_filtering(world,
-                    shape_component.get_shape(),
-                    static_cast<uint32>(shape_component.collision_type.get()),
-                    shape_component.collision_filter_data);
-                shape_component.collision_type.sync_changes();
-                shape_component.collision_filter_data.sync_changes();
-            }
-        }
-
-        for (auto [entity_handle, changed_flag, shape_component] : world->group(components_group<TransformComponent, TriangleMeshShapeComponent>).each())
-        {
-            if (shape_component.get_shape() == nullptr)
-            {
-                continue;
-            }
-
-            if (shape_component.local_position.is_changed() ||
-                shape_component.local_rotation.is_changed())
-            {
-                shape_component.get_shape()->setLocalPose(create_PxTransform(trs(shape_component.local_position, shape_component.local_rotation, vec3(1.0f))));
-                shape_component.local_rotation.sync_changes();
-                shape_component.local_position.sync_changes();
-            }
-
-            if (shape_component.use_in_scene_queries.is_changed())
-            {
-                shape_component.get_shape()->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, shape_component.use_in_scene_queries);
-                shape_component.use_in_scene_queries.sync_changes();
-            }
-
-            if (shape_component.is_trigger.is_changed())
-            {
-                shape_component.get_shape()->setFlag(PxShapeFlag::eTRIGGER_SHAPE, shape_component.is_trigger);
-                shape_component.is_trigger.sync_changes();
-            }
-
-            if (shape_component.collision_filter_data.is_changed() ||
-                shape_component.collision_type.is_changed())
-            {
-                ShapeUtils::setup_filtering(world,
-                    shape_component.get_shape(),
-                    static_cast<uint32>(shape_component.collision_type.get()),
-                    shape_component.collision_filter_data);
-                shape_component.collision_type.sync_changes();
-                shape_component.collision_filter_data.sync_changes();
-            }
-        }
+        sync_shape_changes<BoxShapeComponent>(world);
+        sync_shape_changes<CapsuleShapeComponent>(world);
+        sync_shape_changes<SphereShapeComponent>(world);
+        sync_shape_changes<ConvexMeshShapeComponent>(world);
+        sync_shape_changes<TriangleMeshShapeComponent>(world);
+        sync_shape_changes<PlaneShapeComponent>(world);
+        sync_shape_changes<TerrainShapeComponent>(world);
     }
 
     void ShapeSystem::process_skeleton_attachments(float dt) const

@@ -79,7 +79,7 @@ namespace era_engine
 
     void RTReflectionsRaytracer::initialize()
     {
-        const wchar* shader_path = L"shaders/reflections/rt_reflections_rts.hlsl";
+        const wchar* shader_path = L"reflections/rt_reflections_rts.hlsl";
 
         const uint32 num_input_resources = sizeof(InputResources) / sizeof(DXCPUDescriptorHandle);
         const uint32 num_output_resources = sizeof(OutputResources) / sizeof(DXCPUDescriptorHandle);
@@ -117,9 +117,13 @@ namespace era_engine
 
     void ssr_temporal(DXCommandList* cl,
         ref<DXTexture> screen_velocities_texture,
+        ref<DXTexture> prev_frame_screen_velocities,
+        ref<DXTexture> depth_stencil_buffer,
+        ref<DXTexture> raycast_texture,
         ref<DXTexture> resolve_texture,
         ref<DXTexture> ssr_temporal_history,
-        ref<DXTexture> ssr_temporal_output);
+        ref<DXTexture> ssr_temporal_output,
+        DXDynamicConstantBuffer camera_cbv);
 
     void RTReflectionsRaytracer::render(DXCommandList* cl, const RaytracingTLAS& tlas,
         ref<DXTexture> depth_stencil_buffer,
@@ -183,8 +187,7 @@ namespace era_engine
                 //.uav(resolveTexture)
                 .transition(resolve_texture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-            ssr_temporal(cl, screen_velocities_texture, resolve_texture, temporal_history, temporal_output);
+            ssr_temporal(cl, screen_velocities_texture, screen_velocities_texture, depth_stencil_buffer, RenderResources::black_texture, resolve_texture, temporal_history, temporal_output, common.camera_cbv);
         }
     }
-
 }

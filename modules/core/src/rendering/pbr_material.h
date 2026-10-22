@@ -25,6 +25,7 @@ namespace era_engine
         ref<DXTexture> normal;
         ref<DXTexture> roughness;
         ref<DXTexture> metallic;
+        ref<DXTexture> emission_texture;
 
         vec4 emission;
         vec4 albedo_tint;

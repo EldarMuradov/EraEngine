@@ -1,10 +1,9 @@
 #include "physics/vehicles/base_vehicle_component.h"
-#include "physics/core/physics.h"
+#include "physics/vehicles/tank_vehicle_component.h"
+#include "physics/vehicles/w4_vehicle_component.h"
 
 #include <ecs/serialization/component_registry.h>
 #include <ecs/serialization/serialization_meta.h>
-#include "physics/vehicles/tank_vehicle_component.h"
-#include "physics/vehicles/w4_vehicle_component.h"
 
 #include <rttr/registration>
 
@@ -22,17 +21,11 @@ namespace era_engine::physics
     VehicleBaseComponent::VehicleBaseComponent(ref<Entity::EcsData> _data)
         : Component(_data)
     {
-        init_material_friction_table();
     }
 
-    void VehicleBaseComponent::init_material_friction_table()
+    bool VehicleBaseComponent::is_created() const
     {
-        material = PhysicsEngine::get_physics_core()->create_material(0.8f, 0.8f, 0.6f);
-
-        material_frictions[0].friction = 1.0f;
-        material_frictions[0].material = material->get_native_material();
-        default_material_friction = 1.0f;
-        nb_material_frictions = 1;
+        return simulation != nullptr;
     }
 
     VehicleBaseComponent* VehicleUtils::get_vehicle_component(Entity entity)

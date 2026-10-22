@@ -32,11 +32,6 @@
 #include "vehicle/PxVehicleAPI.h"
 #include "../base/Base.h"
 
-namespace era_engine
-{
-	class World;
-}
-
 namespace snippetvehicle
 {
 
@@ -122,7 +117,7 @@ public:
 	bool initialize(PxPhysics& physics, const PxCookingParams& params, PxMaterial& defaultMaterial);
 	virtual void destroy();
 
-	void setUpActor(era_engine::World* world, PxScene& scene, const PxTransform& pose, const char* vehicleName, uint32 collision_type = -1);
+	void setUpActor(PxScene& scene, const PxTransform& pose, const char* vehicleName);
 
 	virtual void getDataForPhysXActorBeginComponent(
 		const PxVehicleAxleDescription*& axleDescription,

@@ -207,13 +207,10 @@ namespace era_engine::physics
 
             // Test cloth data.
             {
-                PxCookingParams params(PhysicsEngine::get_physics_core()->get_tolerance_scale());
+                PxCookingParams params = PhysicsEngine::get_physics_core()->get_cooking_params();
                 params.meshWeldTolerance = 0.001f;
                 params.meshPreprocessParams = PxMeshPreprocessingFlags(PxMeshPreprocessingFlag::eWELD_VERTICES);
                 params.buildTriangleAdjacencies = false;
-                params.buildGPUData = true;
-                params.midphaseDesc = PxMeshMidPhase::eBVH34;
-                params.meshPreprocessParams |= PxMeshPreprocessingFlag::eENABLE_VERT_MAPPING;
 
                 PxReal size = 5.0f;
 

@@ -140,7 +140,7 @@ struct wN_quat
         struct
         {
             wN_vec3<simd_t> v;
-            simd_t cosHalfAngle;
+            simd_t cos_half_angle;
         };
         wN_vec4<simd_t> v4;
         simd_t data[4];

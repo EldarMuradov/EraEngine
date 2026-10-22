@@ -481,7 +481,7 @@ struct ERA_CORE_API quat
         struct
         {
             vec3 v;
-            float cosHalfAngle;
+            float cos_half_angle;
         };
         vec4 v4;
         w4_float f4;
@@ -1029,6 +1029,7 @@ inline float dot(const vec4& a, const vec4& b)
     w4_float m = a.f4 * b.f4;
     return add_elements(m);
 }
+
 inline float dot(const quat& a, const quat& b)
 {
     w4_float m = a.f4 * b.f4;
@@ -1039,6 +1040,7 @@ inline float cross(const vec2& a, const vec2& b)
 {
     return a.x * b.y - a.y * b.x;
 }
+
 inline vec3 cross(const vec3& a, const vec3& b)
 {
     vec3 result = {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
@@ -1049,10 +1051,12 @@ inline float squared_length(const vec2& a)
 {
     return dot(a, a);
 }
+
 inline float squared_length(const vec3& a)
 {
     return dot(a, a);
 }
+
 inline float squared_length(const vec4& a)
 {
     return dot(a, a);
@@ -1062,10 +1066,12 @@ inline float length(const vec2& a)
 {
     return sqrt(squared_length(a));
 }
+
 inline float length(const vec3& a)
 {
     return sqrt(squared_length(a));
 }
+
 inline float length(const vec4& a)
 {
     return sqrt(squared_length(a));
@@ -1076,11 +1082,13 @@ inline float squared_distance(const vec2& a, const vec2& b)
     vec2 delta = a - b;
     return dot(delta, delta);
 }
+
 inline float squared_distance(const vec3& a, const vec3& b)
 {
     vec3 delta = a - b;
     return dot(delta, delta);
 }
+
 inline float squared_distance(const vec4& a, const vec4& b)
 {
     vec4 delta = a - b;
@@ -1091,10 +1099,12 @@ inline float distance(const vec2& a, const vec2& b)
 {
     return sqrt(squared_distance(a, b));
 }
+
 inline float distance(const vec3& a, const vec3& b)
 {
     return sqrt(squared_distance(a, b));
 }
+
 inline float distance(const vec4& a, const vec4& b)
 {
     return sqrt(squared_distance(a, b));
@@ -1105,11 +1115,13 @@ inline vec2 noz(const vec2& a)
     float sl = squared_length(a);
     return (sl < 1e-8f) ? vec2(0.f, 0.f) : (a * (1.f / sqrt(sl)));
 }
+
 inline vec3 noz(const vec3& a)
 {
     float sl = squared_length(a);
     return (sl < 1e-8f) ? vec3(0.f, 0.f, 0.f) : (a * (1.f / sqrt(sl)));
 }
+
 inline vec4 noz(const vec4& a)
 {
     float sl = squared_length(a);
@@ -1121,11 +1133,13 @@ inline vec2 normalize(const vec2& a)
     float l = length(a);
     return a * (1.f / l);
 }
+
 inline vec3 normalize(const vec3& a)
 {
     float l = length(a);
     return a * (1.f / l);
 }
+
 inline vec4 normalize(const vec4& a)
 {
     float l = length(a);
@@ -1137,12 +1151,14 @@ inline void copy_sign(const vec2& from, vec2& to)
     copy_sign(from.x, to.x);
     copy_sign(from.y, to.y);
 }
+
 inline void copy_sign(const vec3& from, vec3& to)
 {
     copy_sign(from.x, to.x);
     copy_sign(from.y, to.y);
     copy_sign(from.z, to.z);
 }
+
 inline void copy_sign(const vec4& from, vec4& to)
 {
     copy_sign(from.x, to.x);
@@ -1155,14 +1171,17 @@ inline vec2 abs(const vec2& a)
 {
     return vec2(abs(a.x), abs(a.y));
 }
+
 inline vec3 abs(const vec3& a)
 {
     return vec3(abs(a.x), abs(a.y), abs(a.z));
 }
+
 inline vec4 abs(const vec4& a)
 {
     return vec4(abs(a.f4));
 }
+
 inline quat abs(const quat& a)
 {
     return a.w < 0.0 ? -a : a;
@@ -1172,10 +1191,12 @@ inline vec2 floor(const vec2& a)
 {
     return vec2(floor(a.x), floor(a.y));
 }
+
 inline vec3 floor(const vec3& a)
 {
     return vec3(floor(a.x), floor(a.y), floor(a.z));
 }
+
 inline vec4 floor(const vec4& a)
 {
     return vec4(floor(a.f4));
@@ -1185,10 +1206,12 @@ inline vec2 round(vec2 a)
 {
     return vec2(round(a.x), round(a.y));
 }
+
 inline vec3 round(vec3 a)
 {
     return vec3(round(a.x), round(a.y), round(a.z));
 }
+
 inline vec4 round(vec4 a)
 {
     return vec4(round(a.f4));
@@ -1198,10 +1221,12 @@ inline vec2 frac(vec2 a)
 {
     return vec2(frac(a.x), frac(a.y));
 }
+
 inline vec3 frac(vec3 a)
 {
     return vec3(frac(a.x), frac(a.y), frac(a.z));
 }
+
 inline vec4 frac(vec4 a)
 {
     return vec4(frac(a.x), frac(a.y), frac(a.z), frac(a.w));
@@ -1211,6 +1236,7 @@ inline quat normalize(quat a)
 {
     return {normalize(a.v4).f4};
 }
+
 inline quat conjugate(quat a)
 {
     return {-a.x, -a.y, -a.z, a.w};
@@ -1221,6 +1247,7 @@ inline quat operator+(quat a, quat b)
     quat result = {a.f4 + b.f4};
     return result;
 }
+
 inline quat operator-(quat a, quat b)
 {
     quat result = {a.f4 - b.f4};
@@ -1356,7 +1383,7 @@ inline vec3 exp(vec3 v)
 }
 inline vec4 exp(vec4 v)
 {
-    return vec4(exp(v.f4));
+    return vec4(exp(v.x), exp(v.y), exp(v.z), exp(v.w));
 }
 
 inline vec2 pow(vec2 v, float e)
@@ -1369,7 +1396,7 @@ inline vec3 pow(vec3 v, float e)
 }
 inline vec4 pow(vec4 v, float e)
 {
-    return vec4(pow(v.f4, w4_float(e)));
+    return vec4(pow(v.x, e), pow(v.y, e), pow(v.z, e), pow(v.w, e));
 }
 
 inline vec2 min(vec2 a, vec2 b)
@@ -1639,11 +1666,6 @@ inline bool operator==(const trs& a, const trs& b)
 inline bool operator!=(const trs& a, const trs& b)
 {
     return !operator==(a, b);
-}
-
-static inline quat operator-(const quat& q, const quat& p)
-{
-    return quat(q.x - p.x, q.y - p.y, q.z - p.z, q.w - p.w);
 }
 
 ERA_CORE_API mat2 transpose(const mat2& a);
@@ -2005,7 +2027,7 @@ inline vec2 clamp(const vec2& v, float l, float u)
 {
     vec2 result;
     result.x = clamp(v.x, l, u);
-    result.y = clamp(v.x, l, u);
+    result.y = clamp(v.y, l, u);
     return result;
 }
 
@@ -2013,7 +2035,7 @@ inline vec3 clamp(const vec3& v, float l, float u)
 {
     vec3 result;
     result.x = clamp(v.x, l, u);
-    result.y = clamp(v.x, l, u);
+    result.y = clamp(v.y, l, u);
     result.z = clamp(v.z, l, u);
     return result;
 }

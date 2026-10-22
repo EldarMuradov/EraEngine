@@ -23,7 +23,6 @@
 #include <physics/core/physics.h>
 #include <physics/shape_component.h>
 #include <physics/cct_component.h>
-#include <physics/basic_objects.h>
 #include <physics/joint.h>
 #include <physics/ragdolls/ragdoll_component.h>
 #include <physics/physical_animation/physical_animation_component.h>
@@ -111,9 +110,11 @@ namespace era_engine
         ground_mesh->submeshes.push_back({builder.end_submesh(), {}, trs::identity, default_plane_mat});
 
         Entity plane = world->create_entity("Platform");
-        plane.add_component<PlanePhysicsComponent>(CollisionType::TERRAIN, vec3(0.0f, -5.0f, 0.0f));
         plane.add_component<MeshComponent>(ground_mesh);
         plane.get_component<TransformComponent>()->set_world_transform(trs{vec3(10.0f, -9.0f, 0.0f), quat(vec3(1.0f, 0.0f, 0.0f), deg2rad(0.0f)), vec3(5.0f, 1.0f, 5.0f)});
+        // Top face of the platform box (y = -5).
+        plane.add_component<PlaneShapeComponent>()->local_position = vec3(0.0f, 4.0f, 0.0f);
+        plane.add_component<StaticBodyComponent>()->simulated = true;
 
         ground_mesh->load_state = AssetLoadState::LOADED;
         ground_mesh->mesh = builder.create_dx_mesh();

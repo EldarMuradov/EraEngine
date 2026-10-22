@@ -14,6 +14,8 @@
 #include "window/dx_window.h"
 
 #include "rendering/mesh_shader.h"
+#include "rendering/pbr_material.h"
+#include "rendering/render_utils.h"
 
 #include "ecs/update_groups.h"
 #include "ecs/base_components/transform_component.h"
@@ -70,7 +72,7 @@ namespace era_engine
         renderer_holder_rc->sun.num_shadow_cascades = 3;
         renderer_holder_rc->sun.shadow_dimensions = 2048;
         renderer_holder_rc->sun.cascade_distances = vec4(9.f, 25.f, 50.f, 10000.f);
-        renderer_holder_rc->sun.bias = vec4(0.0001f, 0.000784f, 0.000524f, 0.0035f);
+        renderer_holder_rc->sun.bias = vec4(0.02f, 0.03f, 0.05f, 0.1f);
         renderer_holder_rc->sun.blend_distances = vec4(5.f, 10.f, 10.f, 10.f);
         renderer_holder_rc->sun.stabilize = true;
 
@@ -200,13 +202,7 @@ namespace era_engine
 
         if (dx_context.feature_support.raytracing())
         {
-            raytracing_tlas.reset();
-
-            for (auto [entity_handle, transform, raytrace] : world->group(components_group<TransformComponent, RaytraceComponent>).each())
-            {
-                auto handle = raytracing_tlas.instantiate(raytrace.type, transform.get_world_transform());
-            }
-
+            build_raytracing_scene();
             renderer->set_raytracing_scene(&raytracing_tlas);
         }
 
@@ -259,6 +255,81 @@ namespace era_engine
         PrefabInstantiateParams params;
         params.transform = trs(camera.position + camera.rotation * vec3(0.0f, 0.0f, -3.0f));
         PrefabUtils::instantiate_async(world, fs::path(path), params);
+    }
+
+    static bool is_texture_loading(const ref<DXTexture>& texture)
+    {
+        if (!texture)
+        {
+            return false;
+        }
+        const AssetLoadState state = texture->load_state.load(std::memory_order_acquire);
+        return state == AssetLoadState::UNLOADED || state == AssetLoadState::LOADING;
+    }
+
+    static bool is_mesh_ready_for_raytracing(const MultiMesh& mesh)
+    {
+        if (mesh.load_state.load(std::memory_order_acquire) != AssetLoadState::LOADED || mesh.submeshes.empty())
+        {
+            return false;
+        }
+
+        for (const Submesh& submesh : mesh.submeshes)
+        {
+            const ref<PBRMaterial>& material = submesh.material;
+            if (material && (is_texture_loading(material->albedo) || is_texture_loading(material->normal) || is_texture_loading(material->roughness) || is_texture_loading(material->metallic)))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    const RaytracingObjectType* RenderSystem::get_raytracing_object_type(const ref<MultiMesh>& mesh)
+    {
+        auto it = raytracing_mesh_types.find(mesh.get());
+        if (it == raytracing_mesh_types.end() || it->second.mesh.expired())
+        {
+            if (!is_mesh_ready_for_raytracing(*mesh))
+            {
+                return nullptr;
+            }
+            it = raytracing_mesh_types.insert_or_assign(mesh.get(), RaytracingMeshEntry{mesh, define_blas_from_mesh(mesh)}).first;
+        }
+
+        return it->second.type.blas ? &it->second.type : nullptr;
+    }
+
+    void RenderSystem::build_raytracing_scene()
+    {
+        raytracing_tlas.reset();
+
+        const MainRenderer* renderer = renderer_holder_rc->renderer;
+        if (renderer->mode != RENDERER_MODE_PATHTRACED && renderer_holder_rc->environment.gi_mode != ENVIRONMENT_GI_RAYTRACED)
+        {
+            return;
+        }
+
+        for (auto [entity_handle, transform, mesh] : world->group(components_group<TransformComponent, MeshComponent>).each())
+        {
+            if (!mesh.mesh || mesh.is_hidden)
+            {
+                continue;
+            }
+
+            if (const RaytracingObjectType* type = get_raytracing_object_type(mesh.mesh))
+            {
+                raytracing_tlas.instantiate(*type, transform.get_world_transform());
+            }
+        }
+
+        for (auto [entity_handle, transform, raytrace] : world->group(components_group<TransformComponent, RaytraceComponent>).each())
+        {
+            if (raytrace.type.blas)
+            {
+                raytracing_tlas.instantiate(raytrace.type, transform.get_world_transform());
+            }
+        }
     }
 
     void RenderSystem::load_custom_shaders()

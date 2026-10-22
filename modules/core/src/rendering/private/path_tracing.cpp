@@ -14,7 +14,7 @@ namespace era_engine
 {
     void PathTracer::initialize()
     {
-        const wchar* shader_path = L"shaders/raytracing/path_tracing_rts.hlsl";
+        const wchar* shader_path = L"raytracing/path_tracing_rts.hlsl";
 
         const uint32 num_input_resources = sizeof(InputResources) / sizeof(DXCPUDescriptorHandle);
         const uint32 num_output_resources = sizeof(OutputResources) / sizeof(DXCPUDescriptorHandle);
@@ -47,15 +47,27 @@ namespace era_engine
         old_settings = settings;
     }
 
+    bool PathTracer::is_accumulation_valid(const RaytracingTLAS& tlas, const ref<DXTexture>& output, const CameraCB& camera) const
+    {
+        return last_frame_id + 1 == dx_context.frame_id && last_width == output->width && last_height == output->height && memcmp(&last_view_proj, &camera.view_proj, sizeof(mat4)) == 0 && last_instances.size() == tlas.all_instances.size() && memcmp(last_instances.data(), tlas.all_instances.data(), sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * last_instances.size()) == 0 && memcmp(&settings, &old_settings, sizeof(PathTracerSettings)) == 0;
+    }
+
     void PathTracer::render(DXCommandList* cl, const RaytracingTLAS& tlas,
         const ref<DXTexture>& output,
+        const CameraCB& camera,
         const CommonRenderData& common)
     {
-        if (memcmp(&settings, &old_settings, sizeof(PathTracerSettings)) != 0)
+        if (!is_accumulation_valid(tlas, output, camera))
         {
             reset_rendering();
+
             old_settings = settings;
+            last_width = output->width;
+            last_height = output->height;
+            last_view_proj = camera.view_proj;
+            last_instances = tlas.all_instances;
         }
+        last_frame_id = dx_context.frame_id;
 
         InputResources in;
         in.tlas = tlas.tlas->raytracing_srv;
